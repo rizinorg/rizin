@@ -1914,7 +1914,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		free(es);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
-		bool color_enabled = rz_config_get_i(cfg, "scr.color");
+		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
 		char color_str[32], reset_str[32];
 
 		if (color_enabled) {
