@@ -37,6 +37,7 @@ NAME=dbg.maps.count.after.map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
+dm
 dm~?
 db @ sym.imp.puts
 dc~?
