@@ -1914,20 +1914,19 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		free(es);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
-		char alphaChar = node->name[0];
-		const char *color;
+		bool color_enabled = rz_config_get_i(cfg, "scr.color");
+		char color_str[32], reset_str[32];
 
-		switch (alphaChar % 6) {
-			case 0: color = Color_BWHITE; break;
-			case 1: color = Color_BGREEN; break;
-			case 2: color = Color_BYELLOW; break;
-			case 3: color = Color_BBLUE; break;
-			case 4: color = Color_BMAGENTA; break;
-			default: color = Color_BCYAN; break;
+		if (color_enabled) {
+			RzColor color_val = rz_cons_pal_get("label");
+			RzColor reset_val = rz_cons_pal_get("help");
+			rz_cons_rgb_str(color_str, sizeof(color_str), &color_val);
+			rz_cons_rgb_str(reset_str, sizeof(reset_str), &reset_val);
+		} else {
+			color_str[0] = reset_str[0] = '\0';
 		}
 
-		rz_cons_printf("%s%20s" Color_RESET ": " Color_CYAN "%s" Color_RESET "\n",
-			color, node->name, node->desc ? node->desc : "");
+		rz_cons_printf("%s%20s: %s%s\n", color_str, node->name, reset_str, node->desc ? node->desc : "");
 		break;
 	}
 	case RZ_OUTPUT_MODE_STR_BUF:
