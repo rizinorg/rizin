@@ -174,6 +174,38 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	rz_pvector_free(files);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, const char **argv) {
+	// Get the command descriptor for ecl to access its details
+	RzCmdDesc *cd = rz_cmd_get_desc(core->rcmd, "ecl");
+	if (!cd || !cd->help || !cd->help->details) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzCmdDescDetail *details = cd->help->details;
+	const RzCmdDescDetailEntry *entry = details[0].entries;
+
+	// Find the longest color name for formatting
+	size_t max_len = 0;
+	const RzCmdDescDetailEntry *tmp_entry = entry;
+	while (tmp_entry && tmp_entry->text) {
+		size_t len = strlen(tmp_entry->text);
+		if (len > max_len) {
+			max_len = len;
+		}
+		tmp_entry++;
+	}
+
+	// Print each color with its description
+	while (entry && entry->text) {
+		char *pad = rz_str_pad(' ', max_len + 1 - strlen(entry->text));
+		rz_cons_printf("%s:%s%s\n", entry->text, pad, entry->comment);
+		free(pad);
+		entry++;
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 3) {
 		if (!rz_cons_pal_set(argv[1], argv[2])) {
