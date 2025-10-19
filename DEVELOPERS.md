@@ -363,7 +363,7 @@ a license/copyright entry as well.
 In particular, the SPDX header may look like:
 ```C
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-License-Identifier: LPGL-3.0-only
+// SPDX-License-Identifier: LGPL-3.0-only
 ```
 
 You can use the [REUSE Software](https://reuse.software/) to check the
