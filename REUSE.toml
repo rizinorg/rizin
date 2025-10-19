@@ -1,0 +1,334 @@
+version = 1
+SPDX-PackageName = "Rizin"
+SPDX-PackageSupplier = "RizinOrg <info@rizin.re>"
+SPDX-PackageDownloadLocation = "https://github.com/rizinorg/rizin"
+
+[[annotations]]
+path = "test/db/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**/**.sdb.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".github/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".appveyor.yml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".builds/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".clang-format"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "subprojects/nettle/.clang-format"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".gitattributes"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**/.gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".pylintrc"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**.yml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**.md"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**.in"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**/meson.build"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "meson.build"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "meson_options.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "**/meson_options.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "doc/examples/egg/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "doc/fortunes**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "doc/hud"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "doc/img/rizin.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only OR CC-BY-SA-4.0"
+
+[[annotations]]
+path = "test/notworking_db/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/.gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/fuzz/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/scripts/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/unit/legacy_unit/**/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/prj/**.rzdb"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "subprojects/rizin-shell-parser/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 ret2libc <sirmy15@gmail.com>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "CODEOWNERS"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "Dockerfile**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "Doxyfile"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "dist/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "binrz/rizin/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "binrz/man/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/bin/d/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/flag/d/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/magic/d/default/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995 Ian F. Darwin"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = "librz/syscall/d/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2011 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/syscall/d2/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2018 RadareOrg <pancake@nopcode.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "subprojects/**.wrap"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/unit/.gitignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "test/unit/rz_test_cmd_test"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/arch/p_gnu/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "1989-2021 Free Software Foundation, Inc."
+SPDX-License-Identifier = "GPL-2.0-or-later"
+
+[[annotations]]
+path = "librz/arch/isa_gnu/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "1989-2021 Free Software Foundation, Inc."
+SPDX-License-Identifier = "GPL-2.0-or-later"
+
+[[annotations]]
+path = "librz/include/sflib/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2004 Philippe Biondi <phil@secdev.org>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "librz/magic/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["1986-1995 Ian F. Darwin", "1995-present Christos Zoulas and others"]
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = "subprojects/rzheap/rz_jemalloc/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["2002-present Jason Evans <jasone@canonware.com>", "2007-2012 Mozilla Foundation.", "2009-present Facebook, Inc."]
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = "subprojects/rzspp/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009-2020 pancake <pancake@nopcode.org>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "subprojects/rzwinkd/profiles.h"
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["2014-2017 The Lemon Man <thatlemon@gmail.com>", "2019-2020 GustavoLCR <gugulcr@gmail.com>"]
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "subprojects/mpc/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2013-present Daniel Holden <contact@theorangeduck.com>"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = ["librz/include/**/**.h", "librz/include/**.h", "librz/include/**.h.in"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".dockerignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ".prettierignore"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = ["test/prj/**.rzdb", "test/prj/**.rzdb.gz"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
