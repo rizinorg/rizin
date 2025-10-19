@@ -197,7 +197,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 
 	// Print each color with its description
 	while (entry && entry->text) {
-		char *pad = rz_str_pad(' ', max_len + 1 - strlen(entry->text));
+		char *pad = rz_str_pad(' ', max_len + 2 - strlen(entry->text));
 		rz_cons_printf("%s:%s%s\n", entry->text, pad, entry->comment);
 		free(pad);
 		entry++;
