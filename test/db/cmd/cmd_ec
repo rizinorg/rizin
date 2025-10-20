@@ -346,13 +346,13 @@ RUN
 NAME=ecl- list colors with descriptions
 FILE==
 CMDS=<<EOF
-ecl~^comment:
-ecl~^args:
-ecl~^fname:
+ecl~^comment
+ecl~^args
+ecl~^fname
 EOF
 EXPECT=<<EOF
-comment:             Color for code comments
-args:                Color for function arguments
-fname:               Color for function names
+comment             Color for code comments
+args                Color for function arguments
+fname               Color for function names
 EOF
 RUN
