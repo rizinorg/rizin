@@ -83,14 +83,14 @@ rules to make the git history more readable and consistent:
 
 Following the widespread availability of large language models and generative AI,
 Rizin Organization has received a growing number of changes generated partially or
-entirely using such tools. Many of these contains changes which are completely unusable
-in our codebase. While AI tools can help draft changes, they must not replace human
-understanding and proper code changes.
+entirely using such tools. Many of these are completely unusable in our codebase.
+While AI tools can help to draft changes, they must not replace human understanding
+and proper code modifications.
 
 If you use AI tools to help prepare a code change, you must:
 
 - **Disclose** which AI tools were used and specify what they were used for.
-- **Verify** that the code changes actually compiles, works and is not copyrighted by somebody else.
+- **Verify** that the code compiles, works and is not copyrighted by somebody else.
 - **Avoid** fabricated code, placeholder text, or references to non-existent code.
 
 Changes that appear to be unverified AI output will be closed without response.

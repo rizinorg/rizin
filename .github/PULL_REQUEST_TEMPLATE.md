@@ -6,7 +6,7 @@
 - [ ] I've documented every `RZ_API` function and struct this PR changes.
 - [ ] I've added tests that prove my changes are effective (required for changes to `RZ_API`).
 - [ ] I've updated the [Rizin book](https://github.com/rizinorg/book) with the relevant information (if needed).
-- [ ] I've used AI tools to generate fully or partially these code changes and i'm sure they are not copyrighted by somebody else.
+- [ ] I've used AI tools to generate fully or partially these code changes and I'm sure the changes are not copyrighted by somebody else.
 
 **Detailed description**
 
