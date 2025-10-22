@@ -6,10 +6,12 @@
 - [ ] I've documented every `RZ_API` function and struct this PR changes.
 - [ ] I've added tests that prove my changes are effective (required for changes to `RZ_API`).
 - [ ] I've updated the [Rizin book](https://github.com/rizinorg/book) with the relevant information (if needed).
+- [ ] I've used AI tools to generate fully or partially these code changes and I'm sure the changes are not copyrighted by somebody else.
 
 **Detailed description**
 
-<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request. -->
+<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request.
+If you have used AI tools to generate these code changes, please disclose software used, model name. -->
 
 ...
 
