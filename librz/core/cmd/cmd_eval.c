@@ -174,6 +174,65 @@ RZ_API void rz_core_theme_nextpal(RzCore *core, RzConsPalSeekMode mode) {
 	rz_pvector_free(files);
 }
 
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdDesc *cd = rz_cmd_get_desc(core->rcmd, "ecl");
+	if (!cd || !cd->help || !cd->help->details) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzCmdDescDetail *details = cd->help->details;
+	const RzCmdDescDetailEntry *entry = details[0].entries;
+
+	size_t max_len = 0;
+	const RzCmdDescDetailEntry *tmp_entry = entry;
+	while (tmp_entry && tmp_entry->text) {
+		size_t len = strlen(tmp_entry->text);
+		if (len > max_len) {
+			max_len = len;
+		}
+		tmp_entry++;
+	}
+
+	int pal_len = rz_cons_pal_len();
+	for (int i = 0; i < pal_len; i++) {
+		const char *color_name = rz_cons_pal_get_name(i);
+		if (!color_name) {
+			continue;
+		}
+
+		const char *description = NULL;
+		const RzCmdDescDetailEntry *desc_entry = details[0].entries;
+		while (desc_entry && desc_entry->text) {
+			if (!strcmp(desc_entry->text, color_name)) {
+				description = desc_entry->comment;
+				break;
+			}
+			desc_entry++;
+		}
+
+		if (!description) {
+			continue;
+		}
+
+		RzColor rcolor = rz_cons_pal_get_i(i);
+
+		char color_str[128];
+		rz_cons_rgb_str_mode(core->cons->context->color_mode, color_str, sizeof(color_str), &rcolor);
+
+		char *pad = rz_str_pad(' ', max_len + 2 - strlen(color_name));
+
+		rz_cons_printf(" %s##" Color_RESET " %s%s%s\n",
+			color_str,
+			color_name,
+			pad,
+			description);
+
+		free(pad);
+	}
+
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 3) {
 		if (!rz_cons_pal_set(argv[1], argv[2])) {

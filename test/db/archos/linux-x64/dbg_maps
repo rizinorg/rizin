@@ -13,10 +13,11 @@ NAME=dbg.maps.count
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
-dm~?
+. scripts/alt_count.rz
+.(alt_count `dm~?` 9 10)
 EOF
 EXPECT=<<EOF
-9
+10
 EOF
 RUN
 
@@ -24,12 +25,13 @@ NAME=debug map flags count
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
-fl@F:maps~?
-dm*~?
+. scripts/alt_count.rz
+.(alt_count `fl@F:maps~?` 9 10)
+.(alt_count `dm*~?` 11 12)
 EOF
 EXPECT=<<EOF
-9
-11
+10
+12
 EOF
 RUN
 
@@ -37,31 +39,29 @@ NAME=dbg.maps.count.after.map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
-dm~?
+. scripts/alt_count.rz
+.(alt_count `dm~?` 9 10)
 db @ sym.imp.puts
 dc~?
 echo ----
 $dm=%b64- `dm | base64 -w 0`
 $dm~x86-helloworld-gcc~?
-$libc_count=$`$dm~/usr/lib32/libc.so.6~?`
-%= `$libc_count`-6
-%! %vi 5
-%% $libc_count
+.(alt_count `$dm~/usr/lib32/libc.so.6~?` 6 5)
 $dm~unk~?
-$dm~[v~?
+.(alt_count `$dm~[v~?` 2 3)
 $dm~/usr/lib32/ld-linux.so.2~?
 $dm~[stack~?
 echo ----
 dc
 EOF
 EXPECT=<<EOF
-9
+10
 0
 ----
 2
 5
 2
-2
+3
 5
 1
 ----

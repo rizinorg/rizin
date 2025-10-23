@@ -72,6 +72,7 @@ static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
 static const RzCmdDescDetail cmd_debug_inject_assembly_details[2];
 static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
+static const RzCmdDescDetail cmd_eval_color_list_help_details[2];
 static const RzCmdDescDetail mark_describe_details[2];
 static const RzCmdDescDetail egg_config_details[2];
 static const RzCmdDescDetail history_list_or_exec_details[2];
@@ -11628,6 +11629,92 @@ static const RzCmdDescArg cmd_eval_color_list_args[] = {
 static const RzCmdDescHelp cmd_eval_color_list_help = {
 	.summary = "List eval colors and keys",
 	.args = cmd_eval_color_list_args,
+};
+
+static const RzCmdDescDetailEntry cmd_eval_color_list_help_Color_space_Palette_space_Keys_detail_entries[] = {
+	{ .text = "comment", .arg_str = NULL, .comment = "Color for code comments" },
+	{ .text = "usrcmt", .arg_str = NULL, .comment = "Color for user comments" },
+	{ .text = "args", .arg_str = NULL, .comment = "Color for function arguments" },
+	{ .text = "fname", .arg_str = NULL, .comment = "Color for function names" },
+	{ .text = "floc", .arg_str = NULL, .comment = "Color for function locations" },
+	{ .text = "fline", .arg_str = NULL, .comment = "Color for function lines" },
+	{ .text = "flag", .arg_str = NULL, .comment = "Color for flags" },
+	{ .text = "label", .arg_str = NULL, .comment = "Color for labels" },
+	{ .text = "help", .arg_str = NULL, .comment = "Color for help messages" },
+	{ .text = "flow", .arg_str = NULL, .comment = "Color for control flow" },
+	{ .text = "flow2", .arg_str = NULL, .comment = "Color for control flow (alternative)" },
+	{ .text = "prompt", .arg_str = NULL, .comment = "Color for prompt" },
+	{ .text = "offset", .arg_str = NULL, .comment = "Color for offsets" },
+	{ .text = "input", .arg_str = NULL, .comment = "Color for user input" },
+	{ .text = "invalid", .arg_str = NULL, .comment = "Color for invalid instructions" },
+	{ .text = "other", .arg_str = NULL, .comment = "Color for other elements" },
+	{ .text = "b0x00", .arg_str = NULL, .comment = "Color for null bytes (0x00)" },
+	{ .text = "b0x7f", .arg_str = NULL, .comment = "Color for 0x7f bytes" },
+	{ .text = "b0xff", .arg_str = NULL, .comment = "Color for 0xff bytes" },
+	{ .text = "math", .arg_str = NULL, .comment = "Color for math operations" },
+	{ .text = "bin", .arg_str = NULL, .comment = "Color for binary information" },
+	{ .text = "btext", .arg_str = NULL, .comment = "Color for text in binary" },
+	{ .text = "push", .arg_str = NULL, .comment = "Color for push instructions" },
+	{ .text = "pop", .arg_str = NULL, .comment = "Color for pop instructions" },
+	{ .text = "crypto", .arg_str = NULL, .comment = "Color for crypto instructions" },
+	{ .text = "jmp", .arg_str = NULL, .comment = "Color for jump instructions" },
+	{ .text = "cjmp", .arg_str = NULL, .comment = "Color for conditional jumps" },
+	{ .text = "call", .arg_str = NULL, .comment = "Color for call instructions" },
+	{ .text = "nop", .arg_str = NULL, .comment = "Color for nop instructions" },
+	{ .text = "ret", .arg_str = NULL, .comment = "Color for return instructions" },
+	{ .text = "trap", .arg_str = NULL, .comment = "Color for trap/interrupt instructions" },
+	{ .text = "ucall", .arg_str = NULL, .comment = "Color for unknown calls" },
+	{ .text = "ujmp", .arg_str = NULL, .comment = "Color for unknown jumps" },
+	{ .text = "swi", .arg_str = NULL, .comment = "Color for software interrupts" },
+	{ .text = "cmp", .arg_str = NULL, .comment = "Color for compare instructions" },
+	{ .text = "reg", .arg_str = NULL, .comment = "Color for registers" },
+	{ .text = "creg", .arg_str = NULL, .comment = "Color for changed registers" },
+	{ .text = "num", .arg_str = NULL, .comment = "Color for numbers" },
+	{ .text = "mov", .arg_str = NULL, .comment = "Color for move instructions" },
+	{ .text = "func_var", .arg_str = NULL, .comment = "Color for function variables" },
+	{ .text = "func_var_type", .arg_str = NULL, .comment = "Color for function variable types" },
+	{ .text = "func_var_addr", .arg_str = NULL, .comment = "Color for function variable addresses" },
+	{ .text = "widget_bg", .arg_str = NULL, .comment = "Color for widget background" },
+	{ .text = "widget_sel", .arg_str = NULL, .comment = "Color for selected widget" },
+	{ .text = "meta", .arg_str = NULL, .comment = "Color for metadata" },
+	{ .text = "ai.read", .arg_str = NULL, .comment = "Color for memory read access" },
+	{ .text = "ai.write", .arg_str = NULL, .comment = "Color for memory write access" },
+	{ .text = "ai.exec", .arg_str = NULL, .comment = "Color for executable memory" },
+	{ .text = "ai.seq", .arg_str = NULL, .comment = "Color for sequential memory" },
+	{ .text = "ai.ascii", .arg_str = NULL, .comment = "Color for ASCII in memory" },
+	{ .text = "graph.box", .arg_str = NULL, .comment = "Color for graph box" },
+	{ .text = "graph.box2", .arg_str = NULL, .comment = "Color for graph box (alternative 2)" },
+	{ .text = "graph.box3", .arg_str = NULL, .comment = "Color for graph box (alternative 3)" },
+	{ .text = "graph.box4", .arg_str = NULL, .comment = "Color for graph box (alternative 4)" },
+	{ .text = "graph.true", .arg_str = NULL, .comment = "Color for true branch in graph" },
+	{ .text = "graph.false", .arg_str = NULL, .comment = "Color for false branch in graph" },
+	{ .text = "graph.ujump", .arg_str = NULL, .comment = "Color for unknown jump in graph" },
+	{ .text = "graph.current", .arg_str = NULL, .comment = "Color for current node in graph" },
+	{ .text = "graph.traced", .arg_str = NULL, .comment = "Color for traced node in graph" },
+	{ .text = "diff.unknown", .arg_str = NULL, .comment = "Color for unknown diff" },
+	{ .text = "diff.new", .arg_str = NULL, .comment = "Color for new diff" },
+	{ .text = "diff.match", .arg_str = NULL, .comment = "Color for matched diff" },
+	{ .text = "diff.unmatch", .arg_str = NULL, .comment = "Color for unmatched diff" },
+	{ .text = "gui.cflow", .arg_str = NULL, .comment = "Color for GUI control flow" },
+	{ .text = "gui.dataoffset", .arg_str = NULL, .comment = "Color for GUI data offset" },
+	{ .text = "gui.background", .arg_str = NULL, .comment = "Color for GUI background" },
+	{ .text = "gui.alt_background", .arg_str = NULL, .comment = "Color for GUI alternate background" },
+	{ .text = "gui.border", .arg_str = NULL, .comment = "Color for GUI border" },
+	{ .text = "wordhl", .arg_str = NULL, .comment = "Color for highlighted word" },
+	{ .text = "linehl", .arg_str = NULL, .comment = "Color for highlighted line" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_eval_color_list_help_details[] = {
+	{ .name = "Color Palette Keys", .entries = cmd_eval_color_list_help_Color_space_Palette_space_Keys_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_eval_color_list_help_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_eval_color_list_help_help = {
+	.summary = "List colors with descriptions",
+	.details = cmd_eval_color_list_help_details,
+	.args = cmd_eval_color_list_help_args,
 };
 
 static const RzCmdDescArg cmd_eval_color_display_palette_css_args[] = {
@@ -23385,6 +23472,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ec_cd = rz_cmd_desc_group_modes_new(core->rcmd, e_cd, "ec", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_eval_color_list_handler, &cmd_eval_color_list_help, &ec_help);
 	rz_warn_if_fail(ec_cd);
+	RzCmdDesc *cmd_eval_color_list_help_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecl", rz_cmd_eval_color_list_help_handler, &cmd_eval_color_list_help_help);
+	rz_warn_if_fail(cmd_eval_color_list_help_cd);
+
 	RzCmdDesc *cmd_eval_color_display_palette_css_cd = rz_cmd_desc_argv_new(core->rcmd, ec_cd, "ecc", rz_cmd_eval_color_display_palette_css_handler, &cmd_eval_color_display_palette_css_help);
 	rz_warn_if_fail(cmd_eval_color_display_palette_css_cd);
 

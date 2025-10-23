@@ -1913,10 +1913,22 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		rz_cons_printf("e %s=%s\n", node->name, es);
 		free(es);
 		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%20s: %s\n", node->name,
-			node->desc ? node->desc : "");
+	case RZ_OUTPUT_MODE_STANDARD: {
+		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
+		char color_str[32], reset_str[32];
+
+		if (color_enabled) {
+			RzColor color_val = rz_cons_pal_get("label");
+			RzColor reset_val = rz_cons_pal_get("help");
+			rz_cons_rgb_str(color_str, sizeof(color_str), &color_val);
+			rz_cons_rgb_str(reset_str, sizeof(reset_str), &reset_val);
+		} else {
+			color_str[0] = reset_str[0] = '\0';
+		}
+
+		rz_cons_printf("%s%20s: %s%s\n", color_str, node->name, reset_str, node->desc ? node->desc : "");
 		break;
+	}
 	case RZ_OUTPUT_MODE_STR_BUF:
 		rz_strbuf_appendf(state->d.sbuf, "%20s: %10s - %s\n", node->name,
 			rz_config_node_type(node),

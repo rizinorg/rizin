@@ -342,3 +342,17 @@ EXPECT=<<EOF
 ["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","durian","focus","gb","gentoo","lima","mars","matrix","monokai","nord","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","white","white2","xvilka","zenburn"]
 EOF
 RUN
+
+NAME=ecl- list colors with descriptions
+FILE==
+CMDS=<<EOF
+ecl~:0
+ecl~:2
+ecl~:3
+EOF
+EXPECT=<<EOF
+ ## comment             Color for code comments
+ ## args                Color for function arguments
+ ## fname               Color for function names
+EOF
+RUN

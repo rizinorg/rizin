@@ -1475,6 +1475,8 @@ RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv);
 // "ec"
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "ecl"
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, const char **argv);
 // "ecc"
 RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv);
 // "ecd"
