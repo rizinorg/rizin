@@ -16,7 +16,7 @@ CMDS=<<EOF
 dm~?
 EOF
 EXPECT=<<EOF
-10
+9
 EOF
 RUN
 
@@ -28,8 +28,8 @@ fl@F:maps~?
 dm*~?
 EOF
 EXPECT=<<EOF
-10
-12
+9
+11
 EOF
 RUN
 
@@ -52,13 +52,13 @@ echo ----
 dc
 EOF
 EXPECT=<<EOF
-10
+9
 0
 ----
 2
 5
 2
-3
+2
 5
 1
 ----

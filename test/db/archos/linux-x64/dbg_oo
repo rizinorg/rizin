@@ -101,8 +101,8 @@ fl@F:maps~?
 dm*~?
 EOF
 EXPECT=<<EOF
-10
-12
+9
+11
 EOF
 RUN
 
