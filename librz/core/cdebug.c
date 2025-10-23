@@ -633,6 +633,9 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 	RzListIter *iter;
 	RzDebugMap *map;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	bool use_utf8 = rz_cons_singleton()->use_utf8;
+	const char *block = use_utf8 ? UTF_BLOCK : "#";
+	const char *h_line = use_utf8 ? RUNE_LINE_HORIZ : "-";
 	if (width < 1) {
 		width = 30;
 	}
@@ -640,24 +643,31 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 	mul = findMinMax(maps, &min, &max, 0, width);
 	ut64 last = min;
 	if (min != -1 && mul != 0) {
-		const char *color_prefix = ""; // Color escape code prefixed to string (address coloring)
-		const char *color_suffix = ""; // Color escape code appended to end of string
+		const char *color_prefix = "";
+		const char *color_suffix = "";
 		const char *fmtstr;
-		char humansz[8]; // Holds the human formatted size string [124K]
-		int skip = 0; // Number of maps to skip when re-calculating the minmax
+		char humansz[8];
+		int skip = 0;
 		rz_list_foreach (maps, iter, map) {
-			rz_num_units(humansz, sizeof(humansz), map->size); // Convert map size to human readable string
+			rz_num_units(humansz, sizeof(humansz), map->size);
+			const char *bar_color = "";
 			if (colors) {
 				color_suffix = Color_RESET;
-				if ((map->perm & 2) && (map->perm & 1)) { // Writable & Executable
+				if ((map->perm & RZ_PERM_W) && (map->perm & RZ_PERM_X)) {
 					color_prefix = pal->widget_sel;
-				} else if (map->perm & 2) { // Writable
-					color_prefix = pal->graph_false;
-				} else if (map->perm & 1) { // Executable
-					color_prefix = pal->graph_true;
+					bar_color = pal->widget_sel;
+				} else if (map->perm & RZ_PERM_X) {
+					color_prefix = pal->ai_exec;
+					bar_color = pal->ai_exec;
+				} else if (map->perm & RZ_PERM_W) {
+					color_prefix = pal->ai_write;
+					bar_color = pal->ai_write;
+				} else if (map->perm & RZ_PERM_R) {
+					color_prefix = pal->ai_read;
+					bar_color = pal->ai_read;
 				} else {
 					color_prefix = "";
-					color_suffix = "";
+					bar_color = "";
 				}
 			} else {
 				color_prefix = "";
@@ -668,29 +678,45 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 			}
 			skip++;
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 // Prefix formatting string (before bar)
-				? "map %4.8s %c %s0x%016" PFMT64x "%s |"
-				: "map %4.8s %c %s0x%08" PFMT64x "%s |";
+				? "map %5s %c %s0x%016" PFMT64x "%s %s|%s"
+				: "map %5s %c %s0x%08" PFMT64x "%s %s|%s";
 			rz_cons_printf(fmtstr, humansz,
 				(addr >= map->addr &&
 					addr < map->addr_end)
 					? '*'
 					: '-',
-				color_prefix, map->addr, color_suffix); // * indicates map is within our current sought offset
+				color_prefix, map->addr, color_suffix,
+				colors && bar_color[0] ? bar_color : "",
+				colors && bar_color[0] ? Color_RESET : ""); // * indicates map is within our current sought offset
 			int col;
-			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
-				ut64 pos = min + (col * mul); // Current address space to check
-				ut64 npos = min + ((col + 1) * mul); // Next address space to check
+			for (col = 0; col < width; col++) {
+				ut64 pos = min + (col * mul);
+				ut64 npos = min + ((col + 1) * mul);
 				if (map->addr < npos && map->addr_end > pos) {
-					rz_cons_printf("#"); // TODO: Comment what a # represents
+					if (colors && bar_color[0]) {
+						rz_cons_printf("%s%s%s", bar_color, block, Color_RESET);
+					} else {
+						rz_cons_printf("%s", block);
+					}
 				} else {
-					rz_cons_printf("-");
+					if (colors && bar_color[0]) {
+						rz_cons_printf("%s%s%s", bar_color, h_line, Color_RESET);
+					} else {
+						rz_cons_printf("%s", h_line);
+					}
 				}
 			}
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 ? // Suffix formatting string (after bar)
-				"| %s0x%016" PFMT64x "%s %s %s\n"
-							    : "| %s0x%08" PFMT64x "%s %s %s\n";
-			rz_cons_printf(fmtstr, color_prefix, map->addr_end, color_suffix,
-				rz_str_rwx_i(map->perm), map->name);
+				"%s|%s %s0x%016" PFMT64x "%s %s%s%s %s\n"
+							    : "%s|%s %s0x%08" PFMT64x "%s %s%s%s %s\n";
+			rz_cons_printf(fmtstr,
+				colors && bar_color[0] ? bar_color : "",
+				colors && bar_color[0] ? Color_RESET : "",
+				color_prefix, map->addr_end, color_suffix,
+				colors && bar_color[0] ? bar_color : "",
+				rz_str_rwx_i(map->perm),
+				colors && bar_color[0] ? Color_RESET : "",
+				map->name);
 			last = map->addr;
 		}
 	}
