@@ -169,8 +169,8 @@ RZ_API void sdbkv_free(RZ_NULLABLE SdbKv *kv);
 /* num.c */
 RZ_API bool sdb_num_exists(Sdb *, const char *key);
 RZ_API int sdb_num_base(const char *s);
-RZ_API ut64 sdb_num_get(Sdb *s, const char *key);
 RZ_API bool sdb_num_set(Sdb *s, const char *key, ut64 v);
+RZ_API ut64 sdb_num_get(Sdb *s, const char *key);
 RZ_API bool sdb_num_add(Sdb *s, const char *key, ut64 v);
 RZ_API ut64 sdb_num_inc(Sdb *s, const char *key, ut64 n);
 RZ_API ut64 sdb_num_dec(Sdb *s, const char *key, ut64 n);
@@ -233,7 +233,7 @@ RZ_API bool sdb_array_append_num(Sdb *s, const char *key, ut64 val);
 RZ_API bool sdb_array_prepend(Sdb *s, const char *key, const char *val);
 RZ_API bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 val);
 RZ_API char *sdb_array_get(Sdb *s, const char *key, int idx);
-RZ_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx);
+RZ_API bool sdb_array_get_num(RZ_NONNULL RZ_BORROW Sdb *s, RZ_NONNULL const char *key, int idx, RZ_OUT RZ_NONNULL ut64 *out_number);
 RZ_API int sdb_array_get_idx(Sdb *s, const char *key, const char *val); // agetv
 RZ_API bool sdb_array_insert(Sdb *s, const char *key, int idx, const char *val);
 RZ_API int sdb_array_insert_num(Sdb *s, const char *key, int idx, ut64 val);
