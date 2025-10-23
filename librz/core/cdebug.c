@@ -643,17 +643,17 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 	mul = findMinMax(maps, &min, &max, 0, width);
 	ut64 last = min;
 	if (min != -1 && mul != 0) {
-		const char *color_prefix = "";
-		const char *color_suffix = "";
+		const char *color_prefix = ""; // Color escape code prefixed to string (address coloring)
+		const char *color_suffix = ""; // Color escape code appended to end of string
 		const char *fmtstr;
-		char humansz[8];
-		int skip = 0;
+		char humansz[8]; // Holds the human formatted size string [124K]
+		int skip = 0; // Number of maps to skip when re-calculating the minmax
 		rz_list_foreach (maps, iter, map) {
 			rz_num_units(humansz, sizeof(humansz), map->size);
 			const char *bar_color = "";
 			if (colors) {
 				color_suffix = Color_RESET;
-				if ((map->perm & RZ_PERM_W) && (map->perm & RZ_PERM_X)) {
+				if ((map->perm & RZ_PERM_W) && (map->perm & RZ_PERM_X)) { // Writable & Executable
 					color_prefix = pal->widget_sel;
 					bar_color = pal->widget_sel;
 				} else if (map->perm & RZ_PERM_X) {
@@ -689,9 +689,9 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 				colors && bar_color[0] ? bar_color : "",
 				colors && bar_color[0] ? Color_RESET : ""); // * indicates map is within our current sought offset
 			int col;
-			for (col = 0; col < width; col++) {
-				ut64 pos = min + (col * mul);
-				ut64 npos = min + ((col + 1) * mul);
+			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
+				ut64 pos = min + (col * mul); // Current address space to check
+				ut64 npos = min + ((col + 1) * mul); // Next address space to check
 				if (map->addr < npos && map->addr_end > pos) {
 					if (colors && bar_color[0]) {
 						rz_cons_printf("%s%s%s", bar_color, block, Color_RESET);

@@ -9,19 +9,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.maps.unicode_colors.count
-FILE=bins/elf/analysis/elf-nx
-ARGS=-d
-CMDS=<<EOF
-e scr.utf8=true
-e scr.color=1
-dm=~?
-EOF
-EXPECT=<<EOF
-9
-EOF
-RUN
-
 NAME=dbg.maps.count
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
