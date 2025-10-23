@@ -96,10 +96,9 @@ NAME=dm flags after ood
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-e log.level=4
 CMDS=<<EOF
-. scripts/alt_count.rz
 ood
-.(alt_count `fl@F:maps~?` 9 10)
-.(alt_count `dm*~?` 11 12)
+fl@F:maps~?
+dm*~?
 EOF
 EXPECT=<<EOF
 10

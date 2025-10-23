@@ -1,2 +1,0 @@
-# If `result` is `alt_count`, print `count`
-(alt_count result alt_count count; $count=$${result}; %= `$count`-${alt_count}; %! %vi ${count}; %% $count)
