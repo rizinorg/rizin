@@ -9,14 +9,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.maps.count
+NAME=dbg.maps
 FILE=bins/elf/analysis/elf-nx
 ARGS=-d
 CMDS=<<EOF
 dm~?
+dm | sed 's/\(f7\|ff\)[0-9a-f]\{6\}/\1______/g' | sed 's,[^[:space:]]*\(\([/_]\)rizin\2test\2bins\2elf\2analysis\2elf[-_]nx\),...\1,g'
 EOF
 EXPECT=<<EOF
 9
+0x08048000 - 0x08049000 - usr     4K s r-x .../rizin/test/bins/elf/analysis/elf-nx .../rizin/test/bins/elf/analysis/elf-nx ; ..._rizin_test_bins_elf_analysis_elf_nx.r_x
+0x08049000 - 0x0804a000 - usr     4K s rw- .../rizin/test/bins/elf/analysis/elf-nx .../rizin/test/bins/elf/analysis/elf-nx ; ..._rizin_test_bins_elf_analysis_elf_nx.rw
+0xf7______ - 0xf7______ - usr    16K s r-- [vvar] [vvar] ; vvar_.r
+0xf7______ - 0xf7______ - usr     8K s r-x [vdso] [vdso] ; vdso_.r_x
+0xf7______ - 0xf7______ - usr     4K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r
+0xf7______ - 0xf7______ * usr   140K s r-x /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r_x
+0xf7______ - 0xf7______ - usr    56K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r.f7______
+0xf7______ - 0xf7______ - usr    12K s rw- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.rw
+0xff______ - 0xff______ - usr   132K s rw- [stack] [stack] ; stack_.rw
 EOF
 RUN
 
