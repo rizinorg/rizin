@@ -315,7 +315,7 @@ arch_isa_includes = [
   'isa',
 ]
 
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
   # plugins
   arch_plugins_list += [
     'riscv_cs',
@@ -388,9 +388,6 @@ if get_option('use_gpl')
     'isa_gnu/cris/cris-opc.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    # 'isa_gnu/riscv/riscv-opc.c',
-    # 'isa_gnu/riscv/riscv.c',
-    'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',

@@ -338,6 +338,9 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_CPL = 45, /* complement */
 	RZ_ANALYSIS_OP_TYPE_CRYPTO = 46,
 	RZ_ANALYSIS_OP_TYPE_SYNC = 47,
+	RZ_ANALYSIS_OP_TYPE_BCNT = 48, /* bit-counting operations like pop count */
+	RZ_ANALYSIS_OP_TYPE_REV = 49, /* byte-reversal and bit-reversal operations  */
+	RZ_ANALYSIS_OP_TYPE_REDUCE = 50, /* instructions that reduce a sequence, like string operations or vector sum */
 // RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	RZ_ANALYSIS_OP_TYPE_PRIV = 40, /* privileged instruction */

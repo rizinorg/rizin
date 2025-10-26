@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/moste00/capstone.git
+revision = refactor_riscv_autosync
+directory = capstone-riscv-updated
+patch_directory = capstone-riscv-updated
+depth = 1

@@ -21,7 +21,7 @@ option('rizin_bindings', type: 'string', value: '', description: 'Path where riz
 
 option('checks_level', type: 'integer', value: 2, description: 'Value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL)')
 option('use_sys_capstone', type: 'feature', value: 'disabled')
-option('use_capstone_version', type: 'combo', choices: ['v4', 'v5', 'v6', 'next'], value: 'next', description: 'Specify which version of capstone to use')
+option('use_capstone_version', type: 'combo', choices: ['v4', 'v5', 'v6', 'next', 'capstone-riscv-updated'], value: 'next', description: 'Specify which version of capstone to use')
 option('use_sys_magic', type: 'feature', value: 'disabled')
 option('use_sys_zydis', type: 'feature', value: 'disabled')
 option('use_sys_libzip', type: 'feature', value: 'disabled')

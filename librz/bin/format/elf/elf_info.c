@@ -6,6 +6,13 @@
 
 #include "elf.h"
 #include "elf/glibc_elf.h"
+#include "rz_bin.h"
+#include "rz_bp.h"
+#include "rz_util/rz_buf.h"
+#include "rz_util/rz_log.h"
+#include "rz_util/rz_str.h"
+#include "rz_util/rz_strbuf.h"
+#include <termios.h>
 
 #define VERSYM_VERSION 0x7fff
 
@@ -733,7 +740,131 @@ static inline bool is_elf_class32(ELFOBJ *bin) {
 	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS32;
 }
 
-static int get_bits_mips(ELFOBJ *bin) {
+static RzBuffer *get_riscv_attributes_section(ELFOBJ *bin) {
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".riscv.attributes");
+	if (!section || section->type != SHT_RISCV_ATTRIBUTES /* shouldn't really be possible */) {
+		return NULL;
+	}
+	return rz_buf_new_slice(bin->b, section->offset, section->size);
+}
+
+typedef enum {
+	RISCV_ATTR_NONE = 0,
+	RISCV_ATTR_TRUNCATED_NT_STRING = 1,
+	RISCV_ATTR_NT_STRING = 2,
+	RISCV_ATTR_ULEB128 = 3,
+	RISCV_ATTR_TRUNCATED_ULEB128 = 4,
+} riscv_attr_type;
+
+static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr_tag, int result_maxlen, ut8 *result, int *result_len) {
+	// format:
+	/*
+	 * <format-byte> <subsection 4-byte length> <null-terminated vendor name> <one or more tag-value pairs> */
+	/* <tag-value-pair> = <even uleb128 tag> <uleb128 value>
+	 *				    | <odd  uleb128 tag> <null-terminated string value>
+	 */
+	ut64 curr = 0;
+
+	// format byte
+	ut8 format;
+	if (!sec || !rz_buf_read8_offset(sec, &curr, &format) || format != 'A') {
+		RZ_LOG_ERROR("Can't read the format byte of the RISCV attrbiute section or found a different format (expected 'A' at section start)\n");
+		return RISCV_ATTR_NONE;
+	}
+
+	// subsection length
+	ut32 subsec_len;
+	if (!rz_buf_read_ble32_offset(sec, &curr, &subsec_len, /* big endian? */ false)) {
+		RZ_LOG_ERROR("Can't read the subsection length of the RISCV attribute section\n");
+		return RISCV_ATTR_NONE;
+	}
+
+	// skip vendor name
+	ut8 byte = 1;
+	while (byte != '\0') {
+		if (!rz_buf_read8_offset(sec, &curr, &byte)) {
+			RZ_LOG_ERROR("Can't read vendor name in RISCV attribute section\n");
+			return RISCV_ATTR_NONE;
+		}
+	}
+
+	// now parse the tag-value array
+	while (curr < rz_buf_size(sec)) {
+		ut64 tag;
+		ut32 num_bytes_read = rz_buf_uleb128_at(sec, curr, &tag);
+		curr += num_bytes_read;
+
+		if (num_bytes_read > 8) {
+			RZ_LOG_WARN("Can't interpret tag value between offsets %llu-%llu: "
+				    "tag is too large at %d bytes, parser can only represent 64-bit tags (skipped)\n",
+				curr - num_bytes_read, curr, num_bytes_read);
+			continue;
+		}
+		if (tag != attr_tag) {
+			continue;
+		}
+
+		// RISCV ABI spec says that there are only 2 types of values associated with tags
+		// 		1- Even tags: ULEB128 values (self-delimiting, no header length necessary)
+		// 		2- Odd tags: Null-terminated strings (also self-delimiting)
+		// Like ARM but even simpler, no special cases for tags below 32
+		bool tag_is_odd = tag & 0x1;
+
+		int result_curr = 0;
+		// value is a null-terminated string
+		if (tag_is_odd) {
+			int string_starts_at = curr;
+			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
+				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
+				if (!succeeded) {
+					RZ_LOG_ERROR("Can't read the null-terminated string for tag %lld, starting at offset %d\n", tag, string_starts_at);
+					break;
+				}
+				// done
+				if (result[result_curr - 1] == '\0') {
+					break;
+				}
+			}
+
+			bool result_overflow = false;
+			// have we filled the buffer ?
+			if (result_curr == result_maxlen) {
+				result_overflow = result[result_maxlen - 1] != '\0';
+				// must force the last byte to null, in case the original string was too long
+				result[result_maxlen - 1] = '\0';
+			}
+			*result_len = result_curr;
+			return result_overflow ? RISCV_ATTR_TRUNCATED_NT_STRING : RISCV_ATTR_NT_STRING;
+		} else { // value is a self-delimiting ULEB128 integer
+			int uleb_starts_at = curr;
+			while (curr < rz_buf_size(sec) && result_curr < result_maxlen) {
+				bool succeeded = rz_buf_read8_offset(sec, &curr, &result[result_curr++]);
+				if (!succeeded) {
+					RZ_LOG_ERROR("Can't read the ULEB128 value for tag %lld, starting at offset %d\n", tag, uleb_starts_at);
+					break;
+				}
+				// last byte in the variable encoding, most-significant bit not set
+				if (!(result[result_curr - 1] & 0x80)) {
+					break;
+				}
+			}
+
+			bool result_overflow = false;
+			// have we filled the buffer ?
+			if (result_curr == result_maxlen) {
+				result_overflow = result[result_maxlen - 1] & 0x80;
+				// must force the last byte to a terminal byte, in case the original number was too long
+				result[result_maxlen - 1] = result[result_maxlen - 1] & 0x7F;
+			}
+			*result_len = result_curr;
+			return result_overflow ? RISCV_ATTR_TRUNCATED_ULEB128 : RISCV_ATTR_ULEB128;
+		}
+	}
+	return RISCV_ATTR_NONE;
+}
+
+static int
+get_bits_mips(ELFOBJ *bin) {
 	if (is_elf_class64(bin)) {
 		return 64;
 	}
@@ -778,6 +909,10 @@ static bool arch_is_arcompact(ELFOBJ *bin) {
 
 static bool arch_is_parisc(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_PARISC;
+}
+
+static bool arch_is_riscv(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_RISCV;
 }
 
 static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
@@ -1945,7 +2080,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
  * \param elf type
  * \return allocated string
  *
- * Only work on mips right now. Use the elf header to deduce the cpu
+ * Use the elf header to deduce the cpu
  */
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
@@ -1966,6 +2101,15 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return get_cpu_arm(bin);
 	} else if (arch_is_h8xx(bin)) {
 		return get_cpu_h8xx(bin);
+	} else if (arch_is_riscv(bin)) {
+		ut8 archstr[256];
+		int archstr_len;
+		riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, 256, archstr, &archstr_len);
+		if (typ == RISCV_ATTR_NT_STRING) {
+			return rz_str_dup((const char *)archstr);
+		}
+		// some hardcoded fallback, the mafd + vector
+		return strdup("rv64i2p0_c2p0_m2p0_a2p0_f2p0_d2p0_v2p0");
 	}
 	return NULL;
 }

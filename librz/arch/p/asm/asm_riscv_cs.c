@@ -3,6 +3,7 @@
 
 #include <rz_asm.h>
 #include <rz_lib.h>
+#include <capstone/capstone.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(riscv_asm);
@@ -13,6 +14,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	cs_insn *insn;
 	cs_mode mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	mode |= mode_from_arch_string(a->cpu);
 	op->size = 4;
 	if (ctx->omode != mode) {
 		cs_close(&ctx->handle);
@@ -49,11 +51,11 @@ fin:
 }
 
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
-	.name = "riscv.cs",
+	.name = "riscv",
 	.desc = "RISC-V Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "riscv",
-	.cpus = "",
+	.cpus = NULL,
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = riscv_asm_init,
