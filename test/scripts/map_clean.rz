@@ -3,5 +3,5 @@
 (map_clean_i bin; $cmd | sed 's/[fe][0-9a-f]\{7\}/________/g' | sed 's,[^[:space:]]*\(\([/_]\)rizin\2test\2bins\2${bin}\),...\1,g')
 
 (dm_clean; $cmd=dm; .(map_clean) | sed 's/1..\(K.*stack\)/1__\1/g')
-(fl_F_maps_clean; $cmd="fl@F:maps"; .(map_clean))
-(dm_star_clean; $cmd=dm*; .(map_clean))
+(fl_F_maps_clean; $cmd="fl@F:maps"; .(map_clean) | sed 's/1[0-9]\{5\}\(.*stack\)/1_____\1/g')
+(dm_star_clean; $cmd=dm*; .(map_clean) | sed 's/\(stack.*2\)[0-9]\{4\}/\1____/g')
