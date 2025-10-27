@@ -347,7 +347,7 @@ jobs:
           verbose: true
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results-${{ matrix.name }}
           path: test/results.json
@@ -521,12 +521,12 @@ jobs:
         working-directory: rizin
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rizin-static.tar.xz
           path: rizin/rizin-static.tar.xz
@@ -554,7 +554,7 @@ jobs:
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
           mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: rizin-src.tar.xz
           path: build/meson-dist/rizin-src.tar.xz
@@ -615,7 +615,7 @@ jobs:
           ./dist/osx/build_osx_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rizin.pkg
           path: ./rizin.pkg
@@ -658,11 +658,11 @@ jobs:
       - name: Build and create zip/installer
         shell: pwsh
         run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
           path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: .\dist\windows\Output\rizin.exe
@@ -691,7 +691,7 @@ jobs:
           cd /tmp
           rm -rf android-dir/include android-dir/lib
           tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
