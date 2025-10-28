@@ -89,7 +89,7 @@ typedef enum {
 	RZ_ROP_DETAIL_SEARCH_NON = 0,
 	RZ_ROP_DETAIL_SEARCH_STACK = 1 << 0, ///< Search ROP gadgets by stack changes.
 	// RZ_ROP_DETAIL_SEARCH_SIZE = 1 << 1, ///< Search ROP gadgets by gadget sizes.
-	// RZ_ROP_DETAIL_SEARCH_WRITE = 1 << 2, ///< Search ROP gadgets by writted registers.
+	// RZ_ROP_DETAIL_SEARCH_WRITE = 1 << 2, ///< Search ROP gadgets by written registers.
 	// RZ_ROP_DETAIL_SEARCH_READ = 1 << 3, ///< Search ROP gadgets by read registers.
 } RzRopDetailSearchMask;
 
@@ -97,11 +97,11 @@ typedef enum {
  * \brief Filter conditions while searching ROP gadgets by stack changes.
  */
 typedef enum {
-	ROP_STACK_CMP_EQ, // ==
-	ROP_STACK_CMP_GT, // >
-	ROP_STACK_CMP_GE, // >=
-	ROP_STACK_CMP_LT, // <
-	ROP_STACK_CMP_LE, // <=
+	ROP_STACK_CMP_EQ = 1, // ==
+	ROP_STACK_CMP_GT = 1 << 1, // >
+	ROP_STACK_CMP_GE = ROP_STACK_CMP_GT | ROP_STACK_CMP_EQ, // >=
+	ROP_STACK_CMP_LT = 1 << 2, // <
+	ROP_STACK_CMP_LE = ROP_STACK_CMP_LT | ROP_STACK_CMP_EQ, // <=
 } RopStackCmpOp;
 
 /**

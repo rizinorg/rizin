@@ -20,6 +20,7 @@ static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
+static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -2229,6 +2230,15 @@ static const RzCmdDescHelp cmd_detail_gadget_help = {
 	.args = cmd_detail_gadget_args,
 };
 
+static const RzCmdDescDetailEntry cmd_rop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search ROP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Rs \"<0x200\"" },
+	{ .text = "Search ROP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Rs =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_rop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_rop_search_stack_args[] = {
 	{
 		.name = "Stack changes",
@@ -2241,6 +2251,7 @@ static const RzCmdDescArg cmd_rop_search_stack_args[] = {
 };
 static const RzCmdDescHelp cmd_rop_search_stack_help = {
 	.summary = "Search rop gadgets given stack changes",
+	.details = cmd_rop_search_stack_details,
 	.args = cmd_rop_search_stack_args,
 };
 

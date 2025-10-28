@@ -568,6 +568,13 @@ commands:
           - name: Stack changes
             type: RZ_CMD_ARG_TYPE_STRING
             optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search ROP gadgets with less than 0x200 stack changes"
+                comment: "/Rs \"<0x200\""
+              - text: "Search ROP gadgets with 0x100 stack changes"
+                comment: "/Rs =0x100"
   - name: "/v"
     summary: Value search.
     subcommands:

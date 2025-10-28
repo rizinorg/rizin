@@ -95,10 +95,6 @@ RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *input = argc > 1 ? argv[1] : "";
-	if (!input) {
-		return RZ_CMD_STATUS_ERROR;
-	}
 	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_STACK, state);
 	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
 	return status;
