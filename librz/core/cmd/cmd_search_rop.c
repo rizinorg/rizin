@@ -434,13 +434,14 @@ compound:
  * \param greparg RZ_NULLABLE Pointer to a string containing the grep argument.
  * \param regexp Flag specifying whether regular expressions should be used.
  * \param mask ROP request mask specifying the ROP request parameters.
+ * \param detail_mask search ROP gadgets given details.
  * \param state RZ_BORROW Pointer to the command state output structure.
  * \return RZ_OUT A pointer to the newly created RzRopSearchContext object, or NULL if memory allocation fails.
  *
  * This function allocates and initializes a new RzRopSearchContext object.
  */
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
-	const RzRopRequestMask mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
+	const RzRopRequestMask mask, const RzRopDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
 
 	rz_return_val_if_fail(core, NULL);
 	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
@@ -452,6 +453,7 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
 	context->mask = mask;
+	context->detail_mask = detail_mask;
 	context->state = state;
 	context->max_instr = rz_config_get_i(core->config, "rop.len");
 	context->max_count = rz_config_get_i(core->config, "search.maxhits");
