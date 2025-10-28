@@ -96,6 +96,49 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 	return strcmp(s1, s2);
 }
 
+RZ_API const char *rz_core_autocomplete_rotate_theme(RzCore *core, RzLine *line) {
+	static int current_index = 0;
+	rz_return_val_if_fail(core && line, NULL);
+
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes || rz_pvector_empty(themes)) {
+		RZ_LOG_ERROR("No themes found\n");
+		return NULL;
+	}
+
+	int theme_count = rz_pvector_len(themes);
+	const char *theme_name = rz_pvector_at(themes, current_index);
+	if (!theme_name) {
+		rz_pvector_free(themes);
+		return NULL;
+	}
+
+	// Copy theme safely before freeing vector
+	char *safe_theme = rz_str_dup(theme_name);
+
+	const char *prefix = "eco ";
+	size_t prefix_len = strlen(prefix);
+	if (!rz_str_startswith(line->buffer.data, prefix)) {
+		rz_str_ncpy(line->buffer.data, prefix, sizeof(line->buffer.data) - 1);
+	}
+	size_t available = sizeof(line->buffer.data) - prefix_len - 1;
+	rz_str_ncpy(line->buffer.data + prefix_len, safe_theme, available);
+
+	line->buffer.length = strlen(line->buffer.data);
+	line->buffer.index = line->buffer.length;
+
+	// Apply the theme command immediately
+	char cmd[256];
+	snprintf(cmd, sizeof(cmd), "eco %s", safe_theme);
+	rz_core_cmd0(core, cmd);
+
+	current_index = (current_index + 1) % theme_count;
+
+	rz_pvector_free(themes);
+
+	return safe_theme;
+}
+
 /**
  * \brief Get names of available rizin themes.
  *
