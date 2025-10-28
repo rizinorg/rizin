@@ -1452,13 +1452,13 @@ static bool parse_detail_search_stack_change(RzCore *core, const char *str, RopS
 		return true;
 	}
 
-	if (p[0] == '>' && p[1] == '=') {
+	if (rz_str_startswith(p, ">=")) {
 		*op = ROP_STACK_CMP_GE;
 		p += 2;
-	} else if (p[0] == '<' && p[1] == '=') {
+	} else if (rz_str_startswith(p, "<=")) {
 		*op = ROP_STACK_CMP_LE;
 		p += 2;
-	} else if (p[0] == '=' && p[1] == '=') {
+	} else if (rz_str_startswith(p, "==")) {
 		*op = ROP_STACK_CMP_EQ;
 		p += 2;
 	} else if (p[0] == '>') {
