@@ -3039,7 +3039,7 @@ enum {
 #define R_ARM_THM_ABS5           7 /* Direct & 0x7C (LDR, STR).  */
 #define R_ARM_ABS8               8 /* Direct 8 bit */
 #define R_ARM_SBREL32            9
-#define R_ARM_THM_PC22           10 /* PC relative 24 bit (Thumb32 BL).  */
+#define R_ARM_THM_CALL           10 /* PC relative 24 bit (Thumb32 BL).  */
 #define R_ARM_THM_PC8            11 /* PC relative & 0x3FC (Thumb16 LDR, ADD, ADR).  */
 #define R_ARM_BREL_ADJ           12
 #define R_ARM_SWI24              13 /* Obsolete static relocation.  */
@@ -3055,7 +3055,7 @@ enum {
 #define R_ARM_JUMP_SLOT          22 /* Create PLT entry */
 #define R_ARM_RELATIVE           23 /* Adjust by program base */
 #define R_ARM_GOTOFF32           24 /* 32 bit offset to GOT */
-#define R_ARM_GOTPC              25 /* 32 bit PC relative offset to GOT */
+#define R_ARM_BASE_PREL          25 /* 32 bit PC relative offset to GOT */
 #define R_ARM_GOT_BREL           26 /* 32 bit GOT entry */
 #define R_ARM_PLT32              27 /* Deprecated, 32 bit PLT address.  */
 #define R_ARM_CALL               28 /* PC relative 24 bit (BL, BLX).  */
@@ -3134,7 +3134,7 @@ enum {
 #define R_ARM_GNU_VTINHERIT      101
 #define R_ARM_THM_JUMP11         102 /* PC relative & 0xFFE (Thumb16 B).  */
 #define R_ARM_THM_JUMP8          103 /* PC relative & 0x1FE \
-	     (Thumb16 B/B<cond>).  */
+    (Thumb16 B/B<cond>).  */
 #define R_ARM_TLS_GD32          104 /* PC-rel 32 bit for global dynamic thread local data */
 #define R_ARM_TLS_LDM32         105 /* PC-rel 32 bit for local dynamic thread local data */
 #define R_ARM_TLS_LDO32         106 /* 32 bit offset relative to TLS block */

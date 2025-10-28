@@ -836,6 +836,7 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
 	ut16 keephw1 = 0, keephw2 = 0;
+	ut32 keep = 0;
 	ut32 nbytes = 4;
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
@@ -846,7 +847,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		return;
 	case R_ARM_THM_JUMP24:
 		/* fall-thru */
-	case R_ARM_THM_PC22:
+	case R_ARM_THM_CALL:
 		// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
 		// I1 = NOT(J1 EOR S)
 		// I2 = NOT(J2 EOR S)
@@ -865,6 +866,341 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 				((val >> 1) & 0x07ff), // imm11
 			big_endian);
 		break;
+	// Arm and Data instructions
+	//  case R_ARM_PC24: //Deprecated
+	//  case R_ARM_PLT32: //Deprecated
+	case R_ARM_ABS32:
+		val = fs->S + fs->A;
+		rz_write_ble32(buf, val, big_endian);
+		break;
+	case R_ARM_REL32:
+		val = fs->S + fs->A - fs->P;
+		rz_write_ble32(buf, val, big_endian);
+		break;
+
+	case R_ARM_CALL:
+	case R_ARM_JUMP24:
+		val = fs->S + fs->A - fs->P;
+		keep = rz_read_ble32(&buf[0], big_endian);
+		keep = (keep & 0xFC000000) | ((val >> 2) & 0x03FFFFFE);
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_MOVW_PREL_NC:
+		val = fs->S + fs->A - fs->P;
+		keep = rz_read_ble32(&buf[0], big_endian);
+		keep = (keep & 0xFFF0F000) |
+			((val & 0xF000) << 4) | // imm4
+			(val & 0x0FFF); // imm12
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_THM_MOVW_PREL_NC:
+		// val = imm4:i:imm3:imm8
+		val = fs->S + fs->A - fs->P;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val & 0xF000) >> 12) | // imm4
+			((val & 0x0800) >> 1); // i
+		keephw2 = (keephw2 & 0x8F00) |
+			((val & 0x0700) << 4) | // imm3
+			((val & 0x00FF)); // imm8
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_THM_JUMP19: ///
+		// val = S:J1:J2:imm6:imm11:0
+		val = fs->S + fs->A - fs->P;
+
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBC0) |
+			((val >> 10) & 0x0400) | // S
+			((val >> 12) & 0x003F); // imm6
+
+		keephw2 = (keephw2 & 0xD000) |
+			(((val >> 19) & 1) << 13) | // J1
+			(((val >> 18) & 1) << 11) | // J2
+			((val >> 1) & 0x07FF); // imm11
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_THM_ALU_PREL_11_0:
+		// val = i:imm3;imm8
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC); // S+A-Pa
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBFF) |
+			((val >> 1) & 0x0400); // i
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_ABS16:
+		val = fs->S + fs->A;
+		rz_write_ble16(buf, (val & 0xFFFF), big_endian);
+		break;
+	case R_ARM_ABS12:
+		val = fs->S + fs->A;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0xFFFFF000) |
+			((val & 0xFFF));
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_THM_ABS5:
+		val = ((fs->S + fs->A) & 0x7C) >> 2;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xF83F) |
+			(val << 6);
+		rz_write_ble16(buf, keephw1, big_endian);
+		break;
+	case R_ARM_ABS8:
+		val = fs->S + fs->A;
+		rz_write_ble8(buf, (val & 0xFF));
+		break;
+	case R_ARM_SBREL32:
+		val = fs->S + fs->A - fs->B;
+		rz_write_ble32(buf, (val & 0xFFFFFFF), big_endian);
+		break;
+	case R_ARM_THM_PC8:
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
+		val = (val & 0x3FC) >> 2;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xFF00) | val;
+		rz_write_ble16(buf, keephw1, big_endian);
+		break;
+
+	case R_ARM_GOTOFF32:
+		val = fs->S + fs->A - fs->GOT;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		break;
+	case R_ARM_BASE_PREL:
+		if (fs->S == 0) { // NUll symbol
+			val = fs->GOT + fs->A;
+		} else {
+			val = fs->B + fs->A;
+		}
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		break;
+	case R_ARM_GOT_BREL:
+		val = fs->G + fs->A;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		break;
+	case R_ARM_BASE_ABS:
+		rz_write_ble32(buf, (fs->A & 0xFFFFFFFF), big_endian);
+		break;
+	case R_ARM_PREL31:
+		val = fs->S + fs->A - fs->P;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0x80000000) |
+			(val & 0x7FFFFFFF);
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_MOVW_ABS_NC:
+		// val = imm4:imm12
+		val = (fs->S + fs->A) & 0xFFFF;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0xFFF0F000) |
+			(((val >> 12) & 0xF) << 16) | // imm4
+			(val & 0xFFF); // imm12
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_MOVT_ABS:
+		/* fall through */
+	case R_ARM_MOVT_PREL:
+		// val = imm4:imm12
+		val = (fs->S + fs->A) >> 16;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0xFFF0F000) |
+			(((val >> 12) & 0xF) << 16) | // imm4
+			(val & 0xFFF); // imm12
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_THM_MOVW_ABS_NC:
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) & 0xFFFF;
+		keephw1 = rz_read_ble16(&buf[0],big_endian);
+		keephw2 = rz_read_ble16(&buf[2],big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0)|
+					((val >> 1) & 0x0400)| //i
+					((val >> 12) & 0x000F); //imm4
+
+		keephw2 = (keephw2 & 0x8F00)|
+					((val << 4) & 0x7000)| //imm3
+					(val & 0x00FF); //imm8
+		
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_THM_MOVT_ABS:
+		/* fall through */
+	case R_ARM_THM_MOVT_PREL:
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) >> 16;
+		keephw1 = rz_read_ble16(&buf[0],big_endian);
+		keephw2 = rz_read_ble16(&buf[2],big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0)|
+					((val >> 1) & 0x0400)| //i
+					((val >> 12) & 0x000F); //imm4
+
+		keephw2 = (keephw2 & 0x8F00)|
+					((val << 4) & 0x7000)| //imm3
+					(val & 0x00FF); //imm8
+		
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_THM_JUMP6:
+		// val = i:imm5
+    	val = ((fs->S + fs->A) & 0x7E) >> 1;
+    	keephw1 = rz_read_ble16(buf, big_endian);
+    	keephw1 = (keephw1 & 0xFD07) |
+              	((val << 4) & 0x0200) |  // i
+              	((val << 3) & 0x00F8);   // imm5
+    	rz_write_ble16(buf, keephw1, big_endian);
+    	break;
+	case R_ARM_THM_PC12:
+		// val = imm12
+		val = (fs->S + fs->A) & 0xFFF;
+		keep = rz_read_ble32(buf,big_endian);
+		keep = (keep & 0xFFFFF000)| val;
+		rz_write_ble32(buf,keep,big_endian);
+		break;
+	case R_ARM_ABS32_NOI:
+		/* fall through */
+	case R_ARM_REL32_NOI:
+		val = fs->S + fs->A;
+		rz_write_ble32(buf,(val & 0xFFFFFFFF), big_endian);
+		break;
+	case R_ARM_MOVW_BREL:
+		/* fall through */
+	case R_ARM_MOVW_BREL_NC:
+		// val = imm4:imm12
+		val = (fs->S + fs->A - fs->B) & 0xFFFF;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0xFFF0F000) |
+			(((val >> 12) & 0xF) << 16) | // imm4
+			(val & 0xFFF); // imm12
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_MOVT_BREL:
+		val = (fs->S + fs->A)>>16;
+		keep = rz_read_ble32(buf, big_endian);
+		keep = (keep & 0xFFF0F000) |
+			(((val >> 12) & 0xF) << 16) | // imm4
+			(val & 0xFFF); // imm12
+		rz_write_ble32(buf, keep, big_endian);
+		break;
+	case R_ARM_THM_MOVW_BREL:
+		/* fall through */
+	case R_ARM_THM_MOVW_BREL_NC:
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs-> A - fs->B) & 0xFFFF;
+		keephw1 = rz_read_ble16(&buf[0],big_endian);
+		keephw2 = rz_read_ble16(&buf[2],big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0)|
+					((val >> 1) & 0x0400)| //i
+					((val >> 12) & 0x000F); //imm4
+
+		keephw2 = (keephw2 & 0x8F00)|
+					((val << 4) & 0x7000)| //imm3
+					(val & 0x00FF); //imm8
+		
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;		
+	case R_ARM_THM_MOVT_BREL:
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) >> 16;
+		keephw1 = rz_read_ble16(&buf[0],big_endian);
+		keephw2 = rz_read_ble16(&buf[2],big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0)|
+					((val >> 1) & 0x0400)| //i
+					((val >> 12) & 0x000F); //imm4
+
+		keephw2 = (keephw2 & 0x8F00)|
+					((val << 4) & 0x7000)| //imm3
+					(val & 0x00FF); //imm8
+		
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		break;
+	case R_ARM_GOT_PREL:
+		/* fall through */
+	case R_ARM_GOT_ABS:
+		val = fs->G + fs->GOT + fs->A;
+		rz_write_ble32(buf,(val & 0xFFFFFFFF),big_endian);
+		break;
+	case R_ARM_THM_GOT_BREL12:
+		/* fall through */
+	case R_ARM_TLS_IE12GP:
+		/* fall through */
+	case R_ARM_GOT_BREL12:
+		// val = imm12
+		val = (fs->G + fs->A) && 0xFFF; // G(S) + A - GOT_ORG
+		keep = rz_read_ble32(buf,big_endian);
+		keep = (keep & 0xFFFFF000)|val;
+		rz_write_ble32(buf,keep,big_endian);
+		break;
+	case R_ARM_GOTOFF12:
+		// val = imm12
+		val = (fs->S + fs->A)&0xFFF;
+		keep = rz_read_ble32(buf,big_endian);
+		keep = (keep & 0xFFFFF000)|val;
+		rz_write_ble32(buf,keep,big_endian);
+		break;
+	case R_ARM_THM_JUMP11:
+		// val = imm11
+		val = ((fs->S + fs->A) & 0xFFE)>>1;
+		keephw1 = rz_read_ble16(buf,big_endian);
+		keephw1 = (keephw1 & 0xF800)|val;
+		rz_write_ble16(buf,keephw1,big_endian);
+		break;
+	case R_ARM_THM_JUMP8:
+		// val - imm8
+		val = ((fs->S + fs->A)&0x1FE)>>1;
+		keephw1 = rz_read_ble16(buf,big_endian);
+		keephw1 = (keephw1 & 0xFF00)|val;
+		rz_write_ble16(buf,keephw1,big_endian);
+		break;
+	case R_ARM_TLS_GD32:
+		/* fall through */
+	case R_ARM_TLS_LDM32:
+		/* fall through */
+	case R_ARM_TLS_IE32:
+		val = fs->G + fs->GOT + fs->A;
+		rz_write_ble32(buf,(val & 0xFFFFFFFF),big_endian);
+		break;
+
+
+//group relocations left
+//Below relocaitons left
+// Verify once all again carfeully
+	// case R_ARM_GLOB_DAT:
+	// case R_ARM_JUMP_SLOT:
+	// case R_ARM_RELATIVE:
+
+	// case R_ARM_LDR_PC_G0:
+	// case R_ARM_ALU_PC_G0_NC:
+	// case R_ARM_ALU_PC_G0:
+	// case R_ARM_ALU_PC_G1_NC:
+	// case R_ARM_ALU_PC_G1:
+	// case R_ARM_ALU_PC_G2:
+
+	// case R_ARM_THM_BF16:
+	// case R_ARM_THM_BF12:
+	// case R_ARM_THM_BF18:
+
+	// Non normal data instructions:
 	default:
 		val = fs->S + fs->A;
 		if (!rel->sym && rel->mode == DT_REL) {

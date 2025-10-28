@@ -140,13 +140,13 @@ static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 }
 
 // Custom function for arm specific relocations
-static RzBinReloc *reloc_convert_add_t(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, st64 addend, bool T, const char *print_name) {
+static RzBinReloc *reloc_convert_add_t(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, bool T, const char *print_name) {
 	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
 		return NULL;
 	}
 
-	r->addend = (r->addend | T) + addend;
+	r->addend = (r->addend | T);
 	r->type = type;
 	r->print_name = print_name;
 	return r;
@@ -177,9 +177,13 @@ static RzBinReloc *reloc_convert_add_t(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 #define IFCN(BIT_SIZE, RELOC_NAME) \
 	return reloc_convert_ifunc(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
 
-// Custom add for arm specific relocations
-#define ADD_T(BIT_SIZE, ADDEND, T, RELOC_NAME) \
-	return reloc_convert_add_t(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDEND, T, RELOC_NAME)
+/*
+Custom add for arm specific relocations
+We do A|T this would result the same as (S+A)|T
+Then -P is added during patching
+*/
+#define ADD_T(BIT_SIZE, T, RELOC_NAME) \
+	return reloc_convert_add_t(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, T, RELOC_NAME)
 
 static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 B = bin->baddr;
@@ -302,32 +306,33 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	switch (rel->type) {
 	case R_ARM_NONE:
 		return reloc_convert_set(bin, rel, 0, "R_ARM_NONE");
-	case R_ARM_ABS32: ADD_T(32, 0, T, "R_ARM_ABS32");
-	case R_ARM_REL32: ADD_T(32, -P, T, "R_ARM_REL32");
+	//case R_ARM_ABS32: ADD_T(32, 0, T, "R_ARM_ABS32");
+	case R_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
+	case R_ARM_REL32: ADD_T(32, T, "R_ARM_REL32");
 	case R_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
 	case R_ARM_ABS8: ADD(8, 0, "R_ARM_ABS8");
-	case R_ARM_SBREL32: ADD_T(32, -B, T, "R_ARM_SBREL32");
-	case R_ARM_GLOB_DAT: ADD_T(32, 0, T, "R_ARM_GLOB_DAT");
-	case R_ARM_JUMP_SLOT: ADD_T(32, 0, T, "R_ARM_JUMP_SLOT");
+	case R_ARM_SBREL32: ADD_T(32, T, "R_ARM_SBREL32");
+	case R_ARM_GLOB_DAT: ADD_T(32, T, "R_ARM_GLOB_DAT");
+	case R_ARM_JUMP_SLOT: ADD_T(32, T, "R_ARM_JUMP_SLOT");
 	case R_ARM_COPY: ADD(32, 0, "R_ARM_COPY"); // copy symbol at runtime
 	case R_ARM_RELATIVE: ADD(32, B, "R_ARM_RELATIVE");
-	case R_ARM_GOTOFF32: ADD_T(32, -GOT, T, "R_ARM_GOTOFF32");
-	case R_ARM_GOTPC: ADD(32, GOT - P, "R_ARM_GOTPC");
-	case R_ARM_CALL: ADD_T(24, -P, T, "R_ARM_CALL");
-	case R_ARM_JUMP24: ADD_T(24, -P, T, "R_ARM_JUMP24");
-	case R_ARM_THM_JUMP24: ADD_T(24, -P, T, "R_ARM_THM_JUMP24");
-	case R_ARM_THM_PC22: ADD(24, -P, "R_ARM_THM_PC22");
-	case R_ARM_PREL31: ADD_T(32, -P, T, "R_ARM_PREL31");
-	case R_ARM_MOVW_PREL_NC: ADD_T(16, -P, T, "R_ARM_MOVW_PREL_NC");
+	case R_ARM_GOTOFF32: ADD_T(32, T, "R_ARM_GOTOFF32");
+	case R_ARM_BASE_PREL: ADD(32, -P, "R_ARM_GOTPC");
+	case R_ARM_CALL: ADD_T(24, T, "R_ARM_CALL");
+	case R_ARM_JUMP24: ADD_T(24, T, "R_ARM_JUMP24");
+	case R_ARM_THM_JUMP24: ADD_T(24, T, "R_ARM_THM_JUMP24");
+	case R_ARM_THM_CALL: ADD_T(24, T, "R_ARM_THM_PC22");
+	case R_ARM_PREL31: ADD_T(32, T, "R_ARM_PREL31");
+	case R_ARM_MOVW_PREL_NC: ADD_T(16, T, "R_ARM_MOVW_PREL_NC");
 	case R_ARM_MOVT_PREL: ADD(32, -P, "R_ARM_MOVT_PREL");
-	case R_ARM_THM_MOVW_PREL_NC: ADD_T(16, -P, T, "R_ARM_THM_MOVW_PREL_NC");
+	case R_ARM_THM_MOVW_PREL_NC: ADD_T(16, T, "R_ARM_THM_MOVW_PREL_NC");
 	case R_ARM_REL32_NOI: ADD(32, -P, "R_ARM_REL32_NOI");
 	case R_ARM_ABS32_NOI: ADD(32, 0, "R_ARM_ABS32_NOI");
-	case R_ARM_ALU_PC_G0_NC: ADD_T(32, -P, T, "R_ARM_ALU_PC_G0_NC");
-	case R_ARM_ALU_PC_G0: ADD_T(32, -P, T, "R_ARM_ALU_PC_G0");
-	case R_ARM_ALU_PC_G1_NC: ADD_T(32, -P, T, "R_ARM_ALU_PC_G1_NC");
-	case R_ARM_ALU_PC_G1: ADD_T(32, -P, T, "R_ARM_ALU_PC_G1");
-	case R_ARM_ALU_PC_G2: ADD_T(32, -P, T, "R_ARM_ALU_PC_G2");
+	case R_ARM_ALU_PC_G0_NC: ADD_T(32, T, "R_ARM_ALU_PC_G0_NC");
+	case R_ARM_ALU_PC_G0: ADD_T(32, T, "R_ARM_ALU_PC_G0");
+	case R_ARM_ALU_PC_G1_NC: ADD_T(32, T, "R_ARM_ALU_PC_G1_NC");
+	case R_ARM_ALU_PC_G1: ADD_T(32, T, "R_ARM_ALU_PC_G1");
+	case R_ARM_ALU_PC_G2: ADD_T(32, T, "R_ARM_ALU_PC_G2");
 	case R_ARM_LDR_PC_G1: ADD(32, -P, "R_ARM_LDR_PC_G1");
 	case R_ARM_LDR_PC_G2: ADD(32, -P, "R_ARM_LDR_PC_G2");
 	case R_ARM_LDRS_PC_G0: ADD(32, -P, "R_ARM_LDRS_PC_G0");
@@ -336,7 +341,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_LDC_PC_G0: ADD(32, -P, "R_ARM_LDC_PC_G0");
 	case R_ARM_LDC_PC_G1: ADD(32, -P, "R_ARM_LDC_PC_G1");
 	case R_ARM_LDC_PC_G2: ADD(32, -P, "R_ARM_LDC_PC_G2");
-	case R_ARM_PC24: ADD_T(32, -P, T, "R_ARM_PC24"); // Depracated
+	case R_ARM_PC24: ADD_T(32, T, "R_ARM_PC24"); // Depracated
 	case R_ARM_LDR_PC_G0: ADD(32, -P, "R_ARM_LDR_PC_G0");
 	case R_ARM_ABS12: ADD(32, 0, "R_ARM_ABS12");
 	case R_ARM_THM_ABS5: ADD(16, 0, "R_ARM_THM_ABS5");
@@ -350,7 +355,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_TLS_DTPOFF32: UNHANDL("R_ARM_TLS_DTPOFF32");
 	case R_ARM_TLS_TPOFF32: UNHANDL("R_ARM_TLS_TPOFF32");
 	case R_ARM_GOT_BREL: ADD(32, 0, "R_ARM_GOT_BREL");
-	case R_ARM_PLT32: ADD_T(32, -P, T, "R_ARM_PLT32"); // Deprecated
+	case R_ARM_PLT32: ADD_T(32, T, "R_ARM_PLT32"); // Deprecated
 	case R_ARM_BASE_ABS: ADD(32, B, "R_ARM_BASE_ABS");
 	case R_ARM_ALU_PCREL_7_0: UNHANDL("R_ARM_ALU_PCREL_7_0");
 	case R_ARM_ALU_PCREL_15_8: UNHANDL("R_ARM_ALU_PCREL_15_8");
@@ -359,23 +364,23 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_ALU_SBREL_19_12_NC: ADD(32, -B, "R_ARM_ALU_SBREL_19_12"); // Deprecated
 	case R_ARM_ALU_SBREL_27_20_CK: ADD(32, -B, "R_ARM_ALU_SBREL_27_20"); // Deprecated
 	case R_ARM_TARGET1: UNHANDL("R_ARM_TARGET1"); // (S + A) | T or ((S + | A) | T) – P
-	case R_ARM_SBREL31: ADD_T(32, -B, T, "R_ARM_SBREL31");
+	case R_ARM_SBREL31: ADD_T(32, T, "R_ARM_SBREL31");
 	case R_ARM_V4BX: UNHANDL("R_ARM_V4BX");
 	case R_ARM_TARGET2: UNHANDL("R_ARM_TARGET2");
-	case R_ARM_MOVW_ABS_NC: ADD_T(32, 0, T, "R_ARM_MOVW_ABS_NC");
+	case R_ARM_MOVW_ABS_NC: ADD_T(32, T, "R_ARM_MOVW_ABS_NC");
 	case R_ARM_MOVT_ABS: ADD(32, 0, "R_ARM_MOVT_ABS");
-	case R_ARM_THM_MOVW_ABS_NC: ADD_T(32, 0, T, "R_ARM_THM_MOVW_ABS_NC");
+	case R_ARM_THM_MOVW_ABS_NC: ADD_T(32, T, "R_ARM_THM_MOVW_ABS_NC");
 	case R_ARM_THM_MOVT_ABS: ADD(32, 0, "R_ARM_THM_MOVT_ABS");
 	case R_ARM_THM_MOVT_PREL: ADD(32, -P, "R_ARM_THM_MOVT_PREL");
-	case R_ARM_THM_JUMP19: ADD_T(32, -P, T, "R_ARM_THM_JUMP19");
+	case R_ARM_THM_JUMP19: ADD_T(32, T, "R_ARM_THM_JUMP19");
 	case R_ARM_THM_JUMP6: ADD(16, -P, "R_ARM_THM_JUMP6");
-	case R_ARM_THM_ALU_PREL_11_0: ADD_T(32, -Pa, T, "R_ARM_THM_ALU_PREL_11_0");
+	case R_ARM_THM_ALU_PREL_11_0: ADD_T(32, T, "R_ARM_THM_ALU_PREL_11_0");
 	case R_ARM_THM_PC12: ADD(32, -Pa, "R_ARM_THM_PC12");
-	case R_ARM_ALU_SB_G0_NC: ADD_T(32, -B, T, "R_ARM_ALU_SB_G0_NC");
-	case R_ARM_ALU_SB_G0: ADD_T(32, -B, T, "R_ARM_ALU_SB_G0");
-	case R_ARM_ALU_SB_G1_NC: ADD_T(32, -B, T, "R_ARM_ALU_SB_G1_NC");
-	case R_ARM_ALU_SB_G1: ADD_T(32, -B, T, "R_ARM_ALU_SB_G1");
-	case R_ARM_ALU_SB_G2: ADD_T(32, -B, T, "R_ARM_ALU_SB_G2");
+	case R_ARM_ALU_SB_G0_NC: ADD_T(32, T, "R_ARM_ALU_SB_G0_NC");
+	case R_ARM_ALU_SB_G0: ADD_T(32, T, "R_ARM_ALU_SB_G0");
+	case R_ARM_ALU_SB_G1_NC: ADD_T(32, T, "R_ARM_ALU_SB_G1_NC");
+	case R_ARM_ALU_SB_G1: ADD_T(32, T, "R_ARM_ALU_SB_G1");
+	case R_ARM_ALU_SB_G2: ADD_T(32, T, "R_ARM_ALU_SB_G2");
 	case R_ARM_LDR_SB_G0: ADD(32, -B, "R_ARM_LDR_SB_G0");
 	case R_ARM_LDR_SB_G1: ADD(32, -B, "R_ARM_LDR_SB_G1");
 	case R_ARM_LDR_SB_G2: ADD(32, -B, "R_ARM_LDR_SB_G2");
@@ -385,12 +390,12 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_LDC_SB_G0: ADD(32, -B, "R_ARM_LDC_SB_G0");
 	case R_ARM_LDC_SB_G1: ADD(32, -B, "R_ARM_LDC_SB_G1");
 	case R_ARM_LDC_SB_G2: ADD(32, -B, "R_ARM_LDC_SB_G2");
-	case R_ARM_MOVW_BREL_NC: ADD_T(16, -B, T, "R_ARM_MOVW_BREL_NC");
+	case R_ARM_MOVW_BREL_NC: ADD_T(16, T, "R_ARM_MOVW_BREL_NC");
 	case R_ARM_MOVT_BREL: ADD(32, -B, "R_ARM_MOVT_BREL");
-	case R_ARM_MOVW_BREL: ADD_T(16, -B, T, "R_ARM_MOVW_BREL");
-	case R_ARM_THM_MOVW_BREL_NC: ADD_T(16, -B, T, "R_ARM_THM_MOVW_BREL_NC");
+	case R_ARM_MOVW_BREL: ADD_T(16, T, "R_ARM_MOVW_BREL");
+	case R_ARM_THM_MOVW_BREL_NC: ADD_T(16, T, "R_ARM_THM_MOVW_BREL_NC");
 	case R_ARM_THM_MOVT_BREL: ADD(32, -B, "R_ARM_THM_MOVT_BREL");
-	case R_ARM_THM_MOVW_BREL: ADD_T(16, -B, T, "R_ARM_THM_MOVW_BREL");
+	case R_ARM_THM_MOVW_BREL: ADD_T(16, T, "R_ARM_THM_MOVW_BREL");
 	case R_ARM_TLS_GOTDESC: UNHANDL("R_ARM_TLS_GOTDESC");
 	case R_ARM_TLS_CALL: UNHANDL("R_ARM_TLS_CALL");
 	case R_ARM_TLS_DESCSEQ: UNHANDL("R_ARM_TLS_DESCSEQ");
@@ -398,7 +403,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_PLT32_ABS: UNHANDL("R_ARM_PLT32_ABS");
 	case R_ARM_GOT_ABS: ADD(32, 0, "R_ARM_GOT_ABS");
 	case R_ARM_GOT_PREL: ADD(32, -P, "R_ARM_GOT_PREL");
-	case R_ARM_GOT_BREL12: ADD(32, -GOT, "R_ARM_GOT_BREL12");
+	case R_ARM_GOT_BREL12: ADD(32, 0, "R_ARM_GOT_BREL12");
 	case R_ARM_GOTOFF12: ADD(32, -GOT, "R_ARM_GOTOFF12");
 	case R_ARM_GOTRELAX: UNHANDL("R_ARM_GOTRELAX");
 	case R_ARM_GNU_VTENTRY: UNHANDL("R_ARM_GNU_VTENTRY");
@@ -412,18 +417,18 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_TLS_LE32: UNHANDL("R_ARM_TLS_LE32");
 	case R_ARM_TLS_LDO12: UNHANDL("R_ARM_TLS_LDO12");
 	case R_ARM_TLS_LE12: UNHANDL("R_ARM_TLS_LE12");
-	case R_ARM_TLS_IE12GP: ADD(32, -GOT, "R_ARM_TLS_IE12GP");
+	case R_ARM_TLS_IE12GP: ADD(32, 0, "R_ARM_TLS_IE12GP");
 	case R_ARM_ME_TOO: UNHANDL("R_ARM_ME_TOO");
 	case R_ARM_THM_TLS_DESCSEQ: UNHANDL("R_ARM_THM_TLS_DESCSEQ");
 	case R_ARM_THM_TLS_DESCSEQ32: UNHANDL("R_ARM_THM_TLS_DESCSEQ32");
-	case R_ARM_THM_GOT_BREL12: ADD(32, -GOT, "R_ARM_THM_GOT_BREL12");
-	case R_ARM_THM_ALU_ABS_G0_NC: ADD_T(16, 0, T, "R_ARM_THM_ALU_ABS_G0_NC");
+	case R_ARM_THM_GOT_BREL12: ADD(32, 0, "R_ARM_THM_GOT_BREL12");
+	case R_ARM_THM_ALU_ABS_G0_NC: ADD_T(16, T, "R_ARM_THM_ALU_ABS_G0_NC");
 	case R_ARM_THM_ALU_ABS_G1_NC: ADD(16, 0, "R_ARM_THM_ALU_ABS_G1_NC");
 	case R_ARM_THM_ALU_ABS_G2_NC: ADD(16, 0, "R_ARM_THM_ALU_ABS_G2_NC");
 	case R_ARM_THM_ALU_ABS_G3: ADD(16, 0, "R_ARM_THM_ALU_ABS_G3");
-	case R_ARM_THM_BF16: ADD_T(16, -P, T, "R_ARM_THM_BF16");
-	case R_ARM_THM_BF12: ADD_T(16, -P, T, "R_ARM_THM_BF12");
-	case R_ARM_THM_BF18: ADD_T(16, -P, T, "R_ARM_THM_BF18");
+	case R_ARM_THM_BF16: ADD_T(16, T, "R_ARM_THM_BF16");
+	case R_ARM_THM_BF12: ADD_T(16, T, "R_ARM_THM_BF12");
+	case R_ARM_THM_BF18: ADD_T(16, T, "R_ARM_THM_BF18");
 
 	// FIXME: Quite a few relocations missing here. It's incorrect to place them all under "reg relocations".
 	default: ADD(32, GOT, "ARM REG RELOC");
