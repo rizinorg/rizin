@@ -1091,7 +1091,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		rz_write_ble32(buf, keep, big_endian);
 		break;
 	case R_ARM_MOVT_BREL:
-		val = (fs->S + fs->A)>>16;
+		val = (fs->S + fs->A) >> 16;
 		keep = rz_read_ble32(buf, big_endian);
 		keep = (keep & 0xFFF0F000) |
 			(((val >> 12) & 0xF) << 16) | // imm4
@@ -1146,14 +1146,14 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		/* fall through */
 	case R_ARM_GOT_BREL12:
 		// val = imm12
-		val = (fs->G + fs->A) && 0xFFF; // G(S) + A - GOT_ORG
+		val = (fs->G + fs->A) & 0xFFF; // G(S) + A - GOT_ORG
 		keep = rz_read_ble32(buf,big_endian);
 		keep = (keep & 0xFFFFF000)|val;
 		rz_write_ble32(buf,keep,big_endian);
 		break;
 	case R_ARM_GOTOFF12:
 		// val = imm12
-		val = (fs->S + fs->A)&0xFFF;
+		val = (fs->S + fs->A) & 0xFFF;
 		keep = rz_read_ble32(buf,big_endian);
 		keep = (keep & 0xFFFFF000)|val;
 		rz_write_ble32(buf,keep,big_endian);
@@ -1167,7 +1167,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 	case R_ARM_THM_JUMP8:
 		// val - imm8
-		val = ((fs->S + fs->A)&0x1FE)>>1;
+		val = ((fs->S + fs->A) & 0x1FE)>>1;
 		keephw1 = rz_read_ble16(buf,big_endian);
 		keephw1 = (keephw1 & 0xFF00)|val;
 		rz_write_ble16(buf,keephw1,big_endian);

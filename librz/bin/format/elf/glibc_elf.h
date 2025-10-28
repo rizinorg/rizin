@@ -3133,28 +3133,27 @@ enum {
 #define R_ARM_GNU_VTENTRY        100
 #define R_ARM_GNU_VTINHERIT      101
 #define R_ARM_THM_JUMP11         102 /* PC relative & 0xFFE (Thumb16 B).  */
-#define R_ARM_THM_JUMP8          103 /* PC relative & 0x1FE \
-    (Thumb16 B/B<cond>).  */
-#define R_ARM_TLS_GD32          104 /* PC-rel 32 bit for global dynamic thread local data */
-#define R_ARM_TLS_LDM32         105 /* PC-rel 32 bit for local dynamic thread local data */
-#define R_ARM_TLS_LDO32         106 /* 32 bit offset relative to TLS block */
-#define R_ARM_TLS_IE32          107 /* PC-rel 32 bit for GOT entry of static TLS block offset */
-#define R_ARM_TLS_LE32          108 /* 32 bit offset relative to static TLS block */
-#define R_ARM_TLS_LDO12         109 /* 12 bit relative to TLS block (LDR, STR).  */
-#define R_ARM_TLS_LE12          110 /* 12 bit relative to static TLS block (LDR, STR).  */
-#define R_ARM_TLS_IE12GP        111 /* 12 bit GOT entry relative to GOT origin (LDR).  */
-#define R_ARM_ME_TOO            128 /* Obsolete.  */
-#define R_ARM_THM_TLS_DESCSEQ   129
-#define R_ARM_THM_TLS_DESCSEQ16 129
-#define R_ARM_THM_TLS_DESCSEQ32 130
-#define R_ARM_THM_GOT_BREL12    131 /* GOT entry relative to GOT origin, 12 bit (Thumb32 LDR).  */
-#define R_ARM_THM_ALU_ABS_G0_NC 132
-#define R_ARM_THM_ALU_ABS_G1_NC 133
-#define R_ARM_THM_ALU_ABS_G2_NC 134
-#define R_ARM_THM_ALU_ABS_G3    135
-#define R_ARM_THM_BF16          136
-#define R_ARM_THM_BF12          137
-#define R_ARM_THM_BF18          138
+#define R_ARM_THM_JUMP8          103 /* PC relative & 0x1FE (Thumb16 B/B<cond>).  */
+#define R_ARM_TLS_GD32           104 /* PC-rel 32 bit for global dynamic thread local data */
+#define R_ARM_TLS_LDM32          105 /* PC-rel 32 bit for local dynamic thread local data */
+#define R_ARM_TLS_LDO32          106 /* 32 bit offset relative to TLS block */
+#define R_ARM_TLS_IE32           107 /* PC-rel 32 bit for GOT entry of static TLS block offset */
+#define R_ARM_TLS_LE32           108 /* 32 bit offset relative to static TLS block */
+#define R_ARM_TLS_LDO12          109 /* 12 bit relative to TLS block (LDR, STR).  */
+#define R_ARM_TLS_LE12           110 /* 12 bit relative to static TLS block (LDR, STR).  */
+#define R_ARM_TLS_IE12GP         111 /* 12 bit GOT entry relative to GOT origin (LDR).  */
+#define R_ARM_ME_TOO             128 /* Obsolete.  */
+#define R_ARM_THM_TLS_DESCSEQ    129
+#define R_ARM_THM_TLS_DESCSEQ16  129
+#define R_ARM_THM_TLS_DESCSEQ32  130
+#define R_ARM_THM_GOT_BREL12     131 /* GOT entry relative to GOT origin, 12 bit (Thumb32 LDR).  */
+#define R_ARM_THM_ALU_ABS_G0_NC  132
+#define R_ARM_THM_ALU_ABS_G1_NC  133
+#define R_ARM_THM_ALU_ABS_G2_NC  134
+#define R_ARM_THM_ALU_ABS_G3     135
+#define R_ARM_THM_BF16           136
+#define R_ARM_THM_BF12           137
+#define R_ARM_THM_BF18           138
 /*
 ARM32 relocations:
 139-159 Reserved for Future Allocation
