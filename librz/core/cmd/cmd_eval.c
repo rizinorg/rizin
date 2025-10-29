@@ -96,6 +96,12 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 	return strcmp(s1, s2);
 }
 
+/**
+ * \brief Rotate through available color themes
+ * \param core The core instance
+ * \param line The input line
+ * \return The new theme name
+ */
 RZ_API const char *rz_core_autocomplete_rotate_theme(RzCore *core, RzLine *line) {
 	static int current_index = 0;
 	rz_return_val_if_fail(core && line, NULL);

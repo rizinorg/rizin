@@ -544,7 +544,7 @@ static void autocmplt_cmd_arg_string(RzCore *core, RzLineNSCompletionResult *res
 	}
 
 	RzLineBuffer *buf = &cons->line->buffer;
-	if (!buf->data) {
+	if (!buf) {
 		return;
 	}
 
