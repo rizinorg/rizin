@@ -83,6 +83,28 @@ typedef enum {
 } RzRopRequestMask;
 
 /**
+ * \brief ROP search mask for filtering gadgets given details.
+ */
+typedef enum {
+	RZ_ROP_DETAIL_SEARCH_NON = 0,
+	RZ_ROP_DETAIL_SEARCH_STACK = 1 << 0, ///< Search ROP gadgets by stack changes.
+	// RZ_ROP_DETAIL_SEARCH_SIZE = 1 << 1, ///< Search ROP gadgets by gadget sizes.
+	// RZ_ROP_DETAIL_SEARCH_WRITE = 1 << 2, ///< Search ROP gadgets by written registers.
+	// RZ_ROP_DETAIL_SEARCH_READ = 1 << 3, ///< Search ROP gadgets by read registers.
+} RzRopDetailSearchMask;
+
+/**
+ * \brief Filter conditions while searching ROP gadgets by stack changes.
+ */
+typedef enum {
+	ROP_STACK_CMP_EQ = 1, // ==
+	ROP_STACK_CMP_GT = 1 << 1, // >
+	ROP_STACK_CMP_GE = ROP_STACK_CMP_GT | ROP_STACK_CMP_EQ, // >=
+	ROP_STACK_CMP_LT = 1 << 2, // <
+	ROP_STACK_CMP_LE = ROP_STACK_CMP_LT | ROP_STACK_CMP_EQ, // <=
+} RopStackCmpOp;
+
+/**
  * \brief Pair representing an end gadget with instruction offset and delay size.
  */
 typedef struct rz_rop_endlist_pair_t {
@@ -110,6 +132,7 @@ typedef struct rz_rop_search_context_t {
 	bool regexp; ///< Regular expression argument flag.
 	bool cache; ///< Cache the search results.
 	RzRopRequestMask mask; ///< Mask for kind of rop request operation.
+	RzRopDetailSearchMask detail_mask; ///< Mask for searching gadgets given details.
 	RzCmdStateOutput *state; ///< Command state output.
 	int increment; ///< ROP search increment value.
 	ut64 max_count; ///< Maximum number of hits (0: no limit).
@@ -154,7 +177,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_N
 
 // ROP Search Context APIs
 RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
-	RzRopRequestMask mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state);
+	RzRopRequestMask mask, RzRopDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context);
 
 // ROP Constraint APIs

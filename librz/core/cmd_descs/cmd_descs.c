@@ -20,6 +20,7 @@ static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
+static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -160,6 +161,7 @@ static const RzCmdDescArg cmd_info_gadget_args[2];
 static const RzCmdDescArg cmd_search_gadget_args[2];
 static const RzCmdDescArg cmd_query_gadget_args[2];
 static const RzCmdDescArg cmd_detail_gadget_args[2];
+static const RzCmdDescArg cmd_rop_search_stack_args[2];
 static const RzCmdDescArg cmd_search_value_args[3];
 static const RzCmdDescArg cmd_search_value_alias_v1_args[2];
 static const RzCmdDescArg cmd_search_value_alias_v2_args[2];
@@ -2226,6 +2228,31 @@ static const RzCmdDescArg cmd_detail_gadget_args[] = {
 static const RzCmdDescHelp cmd_detail_gadget_help = {
 	.summary = "Gadget detail info",
 	.args = cmd_detail_gadget_args,
+};
+
+static const RzCmdDescDetailEntry cmd_rop_search_stack_Usage_space_example_detail_entries[] = {
+	{ .text = "Search ROP gadgets with less than 0x200 stack changes", .arg_str = NULL, .comment = "/Rs \"<0x200\"" },
+	{ .text = "Search ROP gadgets with 0x100 stack changes", .arg_str = NULL, .comment = "/Rs =0x100" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_rop_search_stack_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_search_stack_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_rop_search_stack_args[] = {
+	{
+		.name = "Stack changes",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_rop_search_stack_help = {
+	.summary = "Search rop gadgets given stack changes",
+	.details = cmd_rop_search_stack_details,
+	.args = cmd_rop_search_stack_args,
 };
 
 static const RzCmdDescHelp slash_v_help = {
@@ -21553,6 +21580,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_detail_gadget_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_detail_gadget_handler, &cmd_detail_gadget_help);
 	rz_warn_if_fail(cmd_detail_gadget_cd);
+
+	RzCmdDesc *cmd_rop_search_stack_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_search_stack_handler, &cmd_rop_search_stack_help);
+	rz_warn_if_fail(cmd_rop_search_stack_cd);
 
 	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/v", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_handler, &cmd_search_value_help, &slash_v_help);
 	rz_warn_if_fail(slash_v_cd);

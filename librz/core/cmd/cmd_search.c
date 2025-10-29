@@ -53,7 +53,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
 	return status;
 }
@@ -68,7 +68,7 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
 	const RzCmdStatus cmd_status = rz_core_rop_search(core, context);
 	rz_pvector_fini(constraints);
 	rz_core_rop_search_context_free(context);
@@ -80,7 +80,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, true, RZ_ROP_GADGET_PRINT, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, true, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_rop_search(core, context);
 	rz_core_rop_search_context_free(context);
 	return status;
@@ -88,9 +88,15 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_rop_search(core, context);
 	rz_core_rop_search_context_free(context);
+	return status;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_STACK, state);
+	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
 	return status;
 }
 
