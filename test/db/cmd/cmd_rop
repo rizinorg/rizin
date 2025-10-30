@@ -2376,3 +2376,244 @@ Register dependencies:
 
 EOF
 RUN
+
+NAME=search rop gadgets given the detailed gadget size (=4)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "=4"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "<10"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "<=10"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl ">10"
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl ">=10"
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
