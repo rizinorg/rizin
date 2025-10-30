@@ -1286,7 +1286,7 @@ RZ_API void rz_listinfo_free(RzListInfo *info) {
 	free(info);
 }
 
-RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va) {
+RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RzTableVisualOptions *opts) {
 	ut64 mul, min = -1, max = -1;
 	RzListIter *iter;
 	RzListInfo *info;
@@ -1324,7 +1324,7 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list
 			}
 			char *b = rz_strbuf_drain(buf);
 			char no[64];
-			if (va) {
+			if (opts->va) {
 				rz_table_add_rowf(table, "sxsxsss",
 					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
 					info->vitv.addr,

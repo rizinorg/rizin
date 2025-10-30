@@ -302,7 +302,13 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot print section bars\n");
 		goto list_err;
 	}
-	rz_table_visual_list(table, list, core->offset, 1, cols, core->io->va);
+	RzTableVisualOptions opts = {
+		.unicode = rz_config_get_b(core->config, "scr.utf8"),
+		.color = rz_config_get_i(core->config, "scr.color"),
+		.va = core->io->va,
+		.pal = &core->cons->context->pal
+	};
+	rz_table_visual_list(table, list, core->offset, 1, cols, &opts);
 
 	char *s = rz_table_tostring(table);
 	if (!s) {

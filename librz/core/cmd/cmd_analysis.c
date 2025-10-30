@@ -3646,8 +3646,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_ascii_handler(RzCore *core, int arg
 		rz_list_append(flist, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, flist, core->offset, core->blocksize,
-		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+	RzTableVisualOptions opts = {
+		.unicode = rz_config_get_b(core->config, "scr.utf8"),
+		.color = rz_config_get_i(core->config, "scr.color"),
+		.va = core->io->va,
+		.pal = &core->cons->context->pal
+	};
+	rz_table_visual_list(table, flist, core->offset, core->blocksize, rz_cons_get_size(NULL), &opts);
 	char *tablestr = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", tablestr);
 	free(tablestr);

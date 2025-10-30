@@ -55,6 +55,18 @@ typedef struct {
 
 typedef void (*RzTableSelector)(RzTableRow *acc, RzTableRow *new_row, int nth);
 
+struct rz_cons_printable_palette_t;
+
+/**
+ * \brief Visual rendering options for \ref rz_table_visual_list
+ */
+typedef struct rz_table_visual_options_t {
+	bool unicode; ///< Use Unicode runes for lines/blocks when true
+	bool color; ///< Enable ANSI colors for bars and permission strings
+	bool va; ///< Use virtual addresses when true; physical otherwise
+	struct rz_cons_printable_palette_t *pal; ///< Palette for colors; required if color is true
+} RzTableVisualOptions;
+
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);
 
@@ -86,7 +98,17 @@ RZ_API void rz_table_group(RzTable *t, int nth, RzTableSelector fcn);
 RZ_API bool rz_table_query(RzTable *t, const char *q);
 RZ_API void rz_table_hide_header(RzTable *t);
 RZ_API bool rz_table_align(RzTable *t, int nth, int align);
-RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
+/**
+ * \brief Render a visual list (bars) into an RzTable
+ *
+ * \param table Output table (columns are set internally)
+ * \param list  Items to visualize (each entry is an RzListInfo with name/intervals/perms)
+ * \param seek  Current seek address used to mark the cursor region
+ * \param len   Cursor span length (0 to hide cursor line)
+ * \param width Console width used to compute bar columns
+ * \param opts  Rendering options (must be non-NULL)
+ */
+RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RzTableVisualOptions *opts);
 RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t);
 RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *cols); // const char *name, ...);
 #ifdef __cplusplus

@@ -777,8 +777,13 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	RzList *info_list = rz_debug_traces_info(dbg, offset);
 	RzTable *table = rz_table_new();
 	table->cons = rz_cons_singleton();
-	rz_table_visual_list(table, info_list, offset, 1,
-		rz_cons_get_size(NULL), dbg->iob.io->va);
+	RzTableVisualOptions opts = {
+		.unicode = rz_cons_singleton()->use_utf8,
+		.color = false, // Disabled color for this call site
+		.va = dbg->iob.io->va,
+		.pal = &rz_cons_singleton()->context->pal
+	};
+	rz_table_visual_list(table, info_list, offset, 1, rz_cons_get_size(NULL), &opts);
 	char *s = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", s);
 	free(s);
