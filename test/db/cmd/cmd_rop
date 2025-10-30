@@ -607,38 +607,91 @@ RUN
 NAME=search rop gadgets given the detailed stack change (=0)
 FILE=bins/arm/crackme.arm32.bin
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
 /Rs "=0"
 EOF
 EXPECT=<<EOF
-Gadget 0x307
+Gadget 0x900
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x4
 
-Gadget 0x309
+Gadget 0x934
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x80007ab
 
-Gadget 0x30a
+Gadget 0xc0c
 Stack change: 0x0
-Changed registers: rax 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0x30c
-Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
 
-Gadget 0x1525
+Gadget 0xc10
 Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
 
 EOF
@@ -647,1304 +700,91 @@ RUN
 NAME=search rop gadgets given the detailed stack change (<0x2000)
 FILE=bins/arm/crackme.arm32.bin
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
 /Rs "<0x2000"
 EOF
 EXPECT=<<EOF
-Gadget 0x293
-Stack change: 0xd01
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rsi
-
-Gadget 0x294
-Stack change: 0xd01
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0x296
-Stack change: 0xd01
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x307
+Gadget 0x900
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x4
 
-Gadget 0x309
+Gadget 0x934
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x80007ab
 
-Gadget 0x30a
+Gadget 0xc0c
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x30c
+Gadget 0xc10
 Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
 
-Gadget 0x706
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x20020000 New Value: 0x20020000
-Memory Write: rax Initial Value: 0x20020000 New Value: 0x20020000
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x707
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x708
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x709
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70a
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70b
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70c
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70e
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x710
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x71d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Write: rbx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x723
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x0
-Memory Read: rbx Value: 0x0
-Memory Read: r9 Value: 0x70
-Memory Write: r9 Initial Value: 0x80007a5 New Value: 0x9e807a5
-
-Gadget 0x729
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: r9 Value: 0x70
-Memory Write: r9 Initial Value: 0x9e807a5 New Value: 0xbd007ad
-
-Gadget 0x72a
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x70
-Memory Write: rcx Initial Value: 0xbd007ad New Value: 0xdb807bd
-
-Gadget 0x72d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x72c
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x730
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rsi
-Memory Read: rbx Value: 0x19
-Memory Write: rbx Initial Value: 0x7 New Value: 0x38
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xdb807bd New Value: 0xdc03de80
-
-Gadget 0x732
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x19
-Memory Write: rbx Initial Value: 0x38 New Value: 0xc0
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xdc03de80 New Value: 0x1ef4000
-
-Gadget 0x733
-Stack change: 0x8
-Changed registers: rbx rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x0
-Memory Read: rcx Value: 0x0
-Memory Read: r8 Value: 0x70
-Memory Write: r8 Initial Value: 0x1ef4000 New Value: 0xf7a00000
-
-Gadget 0x735
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: r8 Value: 0x70
-Memory Write: r8 Initial Value: 0xf7a00000 New Value: 0xd0000000
-
-Gadget 0x736
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xd0000000 New Value: 0x0
-
-Gadget 0x753
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xb62
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0xc01
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc02
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc04
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc06
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xc3d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffffffff8083f140
-
-Gadget 0xc3e
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffffffff8083f140
-
-Gadget 0xc44
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xc45
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xcd7
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xcc9
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020000 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xcca
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccb
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccc
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccd
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccf
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var Read: rcx
-
-Gadget 0xcd1
-Stack change: 0x8
-Changed registers: rsp rcx 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0xcd6
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0xcd8
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xd11
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0x1
-
-Gadget 0xd12
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0x1 New Value: 0xff
-
-Gadget 0xf7a
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Memory Read: rax Value: 0x0
-Var write: rsi Initial value: 0x0 New Value: 0x8a
-Memory Read: rsi Value: 0x8a
-
-Gadget 0xf7b
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0xcf
-
-Gadget 0xf7c
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0x114
-
-Gadget 0xf7d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Write: rax Initial Value: 0xff New Value: 0xff
-Memory Read: rsi Value: 0x114
-
-Gadget 0xf7e
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0x159
-
-Gadget 0xf7f
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x159
-
-Gadget 0xf80
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x159
-
-Gadget 0x1175
-Stack change: 0x500
-Changed registers: rax rdx rsp 
-Register dependencies:
-Var Read: rax
-Var Read: r14
-Memory Read: rax Value: 0xfffffffff2004583
-Var Read: rdx
-Var write: rax Initial value: 0x0 New Value: 0x20
-Var write: rax Initial value: 0x0 New Value: 0x20
-
-Gadget 0x1176
-Stack change: 0x500
-Changed registers: rax rdx rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-Memory Read: rax Value: 0xfffffffff20045a3
-Var write: rax Initial value: 0x20 New Value: 0x40
-Var write: rax Initial value: 0x20 New Value: 0x40
-
-Gadget 0x1178
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfffffffff20045c3
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117a
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117b
-Stack change: 0x500
-Changed registers: r10 rdx rax rsp 
-Register dependencies:
-Var Read: r14
-Var Read: r10
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117c
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var write: rdx Initial value: 0x27 New Value: 0x2f
-Var write: rdx Initial value: 0x27 New Value: 0x2f
-Var Read: rax
-
-Gadget 0x117d
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117e
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117f
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x1181
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1182
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1184
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1185
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1183
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x8a
-Memory Write: rdx Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x1186
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x11ac
-Stack change: 0x8f9
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13ba
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Var write: rsi Initial value: 0x159 New Value: 0x1e3
-
-Gadget 0x13bb
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bc
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bd
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0x5f
-Memory Write: rax Initial Value: 0xff New Value: 0x5f
-
-Gadget 0x13be
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bf
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13c0
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13eb
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x9df3032c
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0x5f New Value: 0xbf
-Memory Write: rax Initial Value: 0x5f New Value: 0xbf
-
-Gadget 0x13ee
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Var write: rsi Initial value: 0x2b2 New Value: 0x33c
-
-Gadget 0x13ef
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f0
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f1
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xbf New Value: 0x1f
-Memory Write: rax Initial Value: 0xbf New Value: 0x1f
-
-Gadget 0x13f2
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f3
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13f4
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x140b
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43d
-Memory Write: rsi Initial Value: 0x88 New Value: 0x88
-Memory Write: rcx Initial Value: 0x88 New Value: 0x88
-Var Read: rax
-
-Gadget 0x140e
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x140f
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1525
+Gadget 0x10cc
 Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
 
-Gadget 0x1630
-Stack change: 0x8
-Changed registers: rax rdx rsp 
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
-Memory Read: rbx Value: 0x20020020
-Memory Read: rax Value: 0x20020020
-Var write: rax Initial value: 0xc0 New Value: 0xdf
 
-Gadget 0x1632
-Stack change: 0x8
-Changed registers: rax rdx rsp 
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Read: rax Value: 0x20020020
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x1634
-Stack change: 0x8
-Changed registers: rdx rsp 
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x1735
-Stack change: 0x3ba
-Changed registers: rbp rax rsp 
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rdi Initial Value: 0xff New Value: 0xff
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x44 New Value: 0x88
-Memory Write: rsi Initial Value: 0x44 New Value: 0x88
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x1739
-Stack change: 0x3ba
-Changed registers: rdi rax rsp 
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x88 New Value: 0x10
-Memory Write: rsi Initial Value: 0x88 New Value: 0x10
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173a
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0xf0d68e0
-Memory Write: rdi Initial Value: 0xff New Value: 0xff
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x10 New Value: 0x20
-Memory Write: rsi Initial Value: 0x10 New Value: 0x20
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173b
-Stack change: 0x3ba
-Changed registers: rdi rax rsp 
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x20 New Value: 0x40
-Memory Write: rsi Initial Value: 0x20 New Value: 0x40
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173c
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rax Initial Value: 0xff New Value: 0xe2
-Memory Write: rdi Initial Value: 0xff New Value: 0xe2
-Var Read: rax
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x40 New Value: 0x80
-Memory Write: rsi Initial Value: 0x40 New Value: 0x80
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var write: rax Initial value: 0xfffffee2 New Value: 0xfffffef8
 
-Gadget 0x173e
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rax Initial Value: 0xe2 New Value: 0xf8
-Memory Write: rdi Initial Value: 0xe2 New Value: 0xf8
-Var Read: rax
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x80 New Value: 0x0
-Memory Write: rsi Initial Value: 0x80 New Value: 0x0
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var write: rax Initial value: 0xfffffef8 New Value: 0xfffffedb
 
-Gadget 0x1740
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x0 New Value: 0x0
-Memory Write: rsi Initial Value: 0x0 New Value: 0x0
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x1741
-Stack change: 0x3ba
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x2002042b
-Memory Read: rsi Value: 0x2002042b
-Memory Write: rbx Initial Value: 0xff New Value: 0xfe
-Memory Write: rsi Initial Value: 0xff New Value: 0xfe
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
-
-Gadget 0x1745
-Stack change: 0x3ba
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
-
-Gadget 0x1748
-Stack change: 0x3ba
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x17d3
-Stack change: 0xef
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x17d4
-Stack change: 0xef
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x195b
-Stack change: 0xd00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0xad
-Memory Write: rcx Initial Value: 0x7 New Value: 0x7
-Memory Write: rcx Initial Value: 0x7 New Value: 0x7
-
-Gadget 0x195e
-Stack change: 0xd00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x19d5
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x67 New Value: 0xff
-
-Gadget 0x1a11
-Stack change: 0x500
-Changed registers: rbx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Read: rbx Value: 0x786b470
-
-Gadget 0x1a13
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a14
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a15
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a85
-Stack change: 0x8
-Changed registers: rsp rdi 
-Register dependencies:
-Var Read: rdi
-Memory Write: rax Initial Value: 0xffffffff New Value: 0xffff0119
-
-Gadget 0x1a86
-Stack change: 0x8
-Changed registers: rsp rdi 
-Register dependencies:
-Var Read: rdi
-Memory Write: rax Initial Value: 0xffff0119 New Value: 0xffff0119
-
-Gadget 0x1a87
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a88
-Stack change: 0x8
-Changed registers: rdi rsp 
-Register dependencies:
-Memory Write: rax Initial Value: 0xffffffff New Value: 0xffff0119
-Memory Write: rdi Initial Value: 0xffffffff New Value: 0xffff0119
-Var Read: rdi
-
-Gadget 0x1a89
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a8a
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffff0104
-Memory Write: rax Initial Value: 0xffffffff New Value: 0x68
-
-Gadget 0x1aae
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ab4
-Stack change: 0x1500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ac6
-Stack change: 0x8
-Changed registers: rsp rax rcx 
-Register dependencies:
-Memory Read: rcx Value: 0xb0
-Memory Read: rbx Value: 0x20020079
-Memory Read: rbx Value: 0x20020079
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0xff New Value: 0x4
-Memory Write: rax Initial Value: 0xff New Value: 0x4
-
-Gadget 0x1ac8
-Stack change: 0x8
-Changed registers: rbp rax rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x133
-Memory Read: rcx Value: 0x133
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x4 New Value: 0x18
-Memory Write: rax Initial Value: 0x4 New Value: 0x18
-
-Gadget 0x1ac9
-Stack change: 0x8
-Changed registers: rax rcx rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020079
-Memory Read: rbx Value: 0x20020079
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x18 New Value: 0x1c
-Memory Write: rax Initial Value: 0x18 New Value: 0x1c
-
-Gadget 0x1acc
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x1c New Value: 0x30
-Memory Write: rax Initial Value: 0x1c New Value: 0x30
-
-Gadget 0x1acd
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74aba4
-Memory Write: rdx Initial Value: 0xff New Value: 0x12
-Memory Write: rax Initial Value: 0xff New Value: 0x12
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x30 New Value: 0x43
-Memory Write: rax Initial Value: 0x30 New Value: 0x43
-
-Gadget 0x1ace
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74aba4
-Memory Write: rdx Initial Value: 0x12 New Value: 0x25
-Memory Write: rax Initial Value: 0x12 New Value: 0x25
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x43 New Value: 0x57
-Memory Write: rax Initial Value: 0x43 New Value: 0x57
-
-Gadget 0x1acf
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927ec
-Memory Read: rax Value: 0xfde927ec
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x57 New Value: 0x6b
-Memory Write: rax Initial Value: 0x57 New Value: 0x6b
-
-Gadget 0x1ad0
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x6b New Value: 0x7f
-Memory Write: rax Initial Value: 0x6b New Value: 0x7f
-
-Gadget 0x1ad1
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x7f New Value: 0x93
-Memory Write: rax Initial Value: 0x7f New Value: 0x93
-
-Gadget 0x1ad2
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x93 New Value: 0xa7
-Memory Write: rax Initial Value: 0x93 New Value: 0xa7
-
-Gadget 0x1ad8
-Stack change: 0x1900
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ad6
-Stack change: 0x1d00
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x66
-Memory Read: rcx Value: 0x66
-Var Read: rcx
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xff New Value: 0xd8
-Memory Write: rax Initial Value: 0xff New Value: 0xd8
-
-Gadget 0x1ad9
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xd8 New Value: 0xb1
-Memory Write: rax Initial Value: 0xd8 New Value: 0xb1
-
-Gadget 0x1ada
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xb1 New Value: 0x8a
-Memory Write: rax Initial Value: 0xb1 New Value: 0x8a
-
-Gadget 0x1adb
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74ac0d
-Memory Write: rdx Initial Value: 0xff New Value: 0x0
-Memory Write: rcx Initial Value: 0xff New Value: 0x0
-
-Gadget 0x1adc
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ade
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1aeb
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1a881b4b New Value: 0x1c9ef360
-Memory Write: rax Initial Value: 0x1a881b4b New Value: 0x1c9ef360
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x20020017
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x20020017
-
-Gadget 0x1aec
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1c9ef360 New Value: 0x1eb5cb75
-Memory Write: rax Initial Value: 0x1c9ef360 New Value: 0x1eb5cb75
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x20020017 New Value: 0x4004002f
-Memory Write: rbx Initial Value: 0x20020017 New Value: 0x4004002f
-
-Gadget 0x1aee
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1eb5cb75 New Value: 0x20cca38a
-Memory Write: rax Initial Value: 0x1eb5cb75 New Value: 0x20cca38a
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x4004002f New Value: 0x60060047
-Memory Write: rbx Initial Value: 0x4004002f New Value: 0x60060047
-
-Gadget 0x1af1
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x60060047 New Value: 0x8008005f
-Memory Write: rbx Initial Value: 0x60060047 New Value: 0x8008005f
-
-Gadget 0x1af2
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x6b74aba3
-Memory Write: rdx Initial Value: 0xffffffff New Value: 0x6b74aba3
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x8008005f New Value: 0xa00a0077
-Memory Write: rbx Initial Value: 0x8008005f New Value: 0xa00a0077
-
-Gadget 0x1af7
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xa00a0077 New Value: 0xc00c008f
-Memory Write: rbx Initial Value: 0xa00a0077 New Value: 0xc00c008f
-
-Gadget 0x1af8
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xc00c008f New Value: 0xe00e00a7
-Memory Write: rbx Initial Value: 0xc00c008f New Value: 0xe00e00a7
-
-Gadget 0x1d56
-Stack change: 0x8
-Changed registers: rbx rbp rsp 
-Register dependencies:
-Var Read: rbx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0xa7 New Value: 0x7f
-Memory Write: rax Initial Value: 0xa7 New Value: 0x7f
-Memory Write: rax Initial Value: 0xffffffff New Value: 0x216d815
-
-Gadget 0x1d58
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x7f New Value: 0x57
-Memory Write: rax Initial Value: 0x7f New Value: 0x57
-Memory Write: rax Initial Value: 0x216d815 New Value: 0x216d815
-
-Gadget 0x1d5a
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Write: rax Initial Value: 0x216d815 New Value: 0x216d815
-
-Gadget 0x1d5d
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x40b
-
-Gadget 0x1d60
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x47b
-Memory Write: rsi Initial Value: 0xd0 New Value: 0xc5
-Memory Write: rax Initial Value: 0xd0 New Value: 0xc5
-
-Gadget 0x1d63
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-
-Gadget 0x1d66
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1eac
-Stack change: 0xfffffffffffffe18
-Changed registers: rdx rsp rbp 
-Register dependencies:
-Var Read: rdx
-Var Read: rcx
-
-Gadget 0x1eae
-Stack change: 0xfffffffffffffe18
-Changed registers: rsp rbp 
-Register dependencies:
-
-Gadget 0x2058
-Stack change: 0x861
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x2065
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0xffffffffb2d4325a
-
-Gadget 0x2067
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-Var write: rdx Initial value: 0x9c New Value: 0x216d814
-
-Gadget 0x2068
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-Var write: rdx Initial value: 0x216d814 New Value: 0x0
-
-Gadget 0x206a
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0x206b
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x206c
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x206d
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x206e
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x20e0
-Stack change: 0x368
-Changed registers: rsp 
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
 
 EOF
@@ -1953,1612 +793,1585 @@ RUN
 NAME=search rop gadgets given the detailed stack change (<=0x2000)
 FILE=bins/arm/crackme.arm32.bin
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
 /Rs "<=0x2000"
 EOF
 EXPECT=<<EOF
-Gadget 0x293
-Stack change: 0xd01
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rsi
-
-Gadget 0x294
-Stack change: 0xd01
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0x296
-Stack change: 0xd01
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x307
+Gadget 0x900
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x4
 
-Gadget 0x309
+Gadget 0x934
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rsi
+Memory Read: r1 Value: 0x80007ab
 
-Gadget 0x30a
+Gadget 0xc0c
 Stack change: 0x0
-Changed registers: rax 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x30c
+Gadget 0xc10
 Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
 
-Gadget 0x706
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x20020000 New Value: 0x20020000
-Memory Write: rax Initial Value: 0x20020000 New Value: 0x20020000
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x707
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x708
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x709
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70a
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70b
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70c
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x70e
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x710
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x71d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Write: rbx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x723
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x0
-Memory Read: rbx Value: 0x0
-Memory Read: r9 Value: 0x70
-Memory Write: r9 Initial Value: 0x80007a5 New Value: 0x9e807a5
-
-Gadget 0x729
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: r9 Value: 0x70
-Memory Write: r9 Initial Value: 0x9e807a5 New Value: 0xbd007ad
-
-Gadget 0x72a
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x70
-Memory Write: rcx Initial Value: 0xbd007ad New Value: 0xdb807bd
-
-Gadget 0x72d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x72c
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x730
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rsi
-Memory Read: rbx Value: 0x19
-Memory Write: rbx Initial Value: 0x7 New Value: 0x38
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xdb807bd New Value: 0xdc03de80
-
-Gadget 0x732
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x19
-Memory Write: rbx Initial Value: 0x38 New Value: 0xc0
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xdc03de80 New Value: 0x1ef4000
-
-Gadget 0x733
-Stack change: 0x8
-Changed registers: rbx rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x0
-Memory Read: rcx Value: 0x0
-Memory Read: r8 Value: 0x70
-Memory Write: r8 Initial Value: 0x1ef4000 New Value: 0xf7a00000
-
-Gadget 0x735
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: r8 Value: 0x70
-Memory Write: r8 Initial Value: 0xf7a00000 New Value: 0xd0000000
-
-Gadget 0x736
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x70
-Memory Write: rax Initial Value: 0xd0000000 New Value: 0x0
-
-Gadget 0x753
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xb62
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0xc01
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc02
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc04
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-Memory Write: rcx Initial Value: 0x0 New Value: 0x0
-
-Gadget 0xc06
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xc3d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffffffff8083f140
-
-Gadget 0xc3e
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffffffff8083f140
-
-Gadget 0xc44
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xc45
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xcd7
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xcc9
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020000 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xcca
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccb
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccc
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccd
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var write: rbx Initial value: 0x20020020 New Value: 0x20020020
-Var Read: rcx
-
-Gadget 0xccf
-Stack change: 0x8
-Changed registers: rbx rsp rcx 
-Register dependencies:
-Var Read: rbx
-Var Read: rcx
-
-Gadget 0xcd1
-Stack change: 0x8
-Changed registers: rsp rcx 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0xcd6
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0xcd8
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0xd11
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0x1
-
-Gadget 0xd12
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0x1 New Value: 0xff
-
-Gadget 0xf7a
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Memory Read: rax Value: 0x0
-Var write: rsi Initial value: 0x0 New Value: 0x8a
-Memory Read: rsi Value: 0x8a
-
-Gadget 0xf7b
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0xcf
-
-Gadget 0xf7c
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Memory Read: rax Value: 0x0
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0x114
-
-Gadget 0xf7d
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Write: rax Initial Value: 0xff New Value: 0xff
-Memory Read: rsi Value: 0x114
-
-Gadget 0xf7e
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Memory Read: rsi Value: 0x159
-
-Gadget 0xf7f
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x159
-
-Gadget 0xf80
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x159
-
-Gadget 0x1175
-Stack change: 0x500
-Changed registers: rax rdx rsp 
-Register dependencies:
-Var Read: rax
-Var Read: r14
-Memory Read: rax Value: 0xfffffffff2004583
-Var Read: rdx
-Var write: rax Initial value: 0x0 New Value: 0x20
-Var write: rax Initial value: 0x0 New Value: 0x20
-
-Gadget 0x1176
-Stack change: 0x500
-Changed registers: rax rdx rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-Memory Read: rax Value: 0xfffffffff20045a3
-Var write: rax Initial value: 0x20 New Value: 0x40
-Var write: rax Initial value: 0x20 New Value: 0x40
-
-Gadget 0x1178
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfffffffff20045c3
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117a
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117b
-Stack change: 0x500
-Changed registers: r10 rdx rax rsp 
-Register dependencies:
-Var Read: r14
-Var Read: r10
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117c
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var write: rdx Initial value: 0x27 New Value: 0x2f
-Var write: rdx Initial value: 0x27 New Value: 0x2f
-Var Read: rax
-
-Gadget 0x117d
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117e
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x117f
-Stack change: 0x500
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-
-Gadget 0x1181
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1182
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1184
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1185
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1183
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x8a
-Memory Write: rdx Initial Value: 0x0 New Value: 0x0
-Memory Write: rax Initial Value: 0x0 New Value: 0x0
-
-Gadget 0x1186
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x11ac
-Stack change: 0x8f9
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13ba
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Var write: rsi Initial value: 0x159 New Value: 0x1e3
-
-Gadget 0x13bb
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bc
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bd
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xff New Value: 0x5f
-Memory Write: rax Initial Value: 0xff New Value: 0x5f
-
-Gadget 0x13be
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13bf
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13c0
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13eb
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x9df3032c
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0x5f New Value: 0xbf
-Memory Write: rax Initial Value: 0x5f New Value: 0xbf
-
-Gadget 0x13ee
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-Var write: rsi Initial value: 0x2b2 New Value: 0x33c
-
-Gadget 0x13ef
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f0
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f1
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Write: rbx Initial Value: 0xbf New Value: 0x1f
-Memory Write: rax Initial Value: 0xbf New Value: 0x1f
-
-Gadget 0x13f2
-Stack change: 0x8
-Changed registers: rsi rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rsi
-
-Gadget 0x13f3
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x13f4
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x140b
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43d
-Memory Write: rsi Initial Value: 0x88 New Value: 0x88
-Memory Write: rcx Initial Value: 0x88 New Value: 0x88
-Var Read: rax
-
-Gadget 0x140e
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x140f
-Stack change: 0x500
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1525
+Gadget 0x10cc
 Stack change: 0x0
-Changed registers: 
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
 
-Gadget 0x1630
-Stack change: 0x8
-Changed registers: rax rdx rsp 
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
-Memory Read: rbx Value: 0x20020020
-Memory Read: rax Value: 0x20020020
-Var write: rax Initial value: 0xc0 New Value: 0xdf
 
-Gadget 0x1632
-Stack change: 0x8
-Changed registers: rax rdx rsp 
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rbx Value: 0x20020020
-Memory Read: rax Value: 0x20020020
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x1634
-Stack change: 0x8
-Changed registers: rdx rsp 
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Var Read: rax
-Var Read: rdx
 
-Gadget 0x1735
-Stack change: 0x3ba
-Changed registers: rbp rax rsp 
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rdi Initial Value: 0xff New Value: 0xff
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x44 New Value: 0x88
-Memory Write: rsi Initial Value: 0x44 New Value: 0x88
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x1739
-Stack change: 0x3ba
-Changed registers: rdi rax rsp 
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x88 New Value: 0x10
-Memory Write: rsi Initial Value: 0x88 New Value: 0x10
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173a
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0xf0d68e0
-Memory Write: rdi Initial Value: 0xff New Value: 0xff
-Memory Write: rbx Initial Value: 0xff New Value: 0xff
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x10 New Value: 0x20
-Memory Write: rsi Initial Value: 0x10 New Value: 0x20
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173b
-Stack change: 0x3ba
-Changed registers: rdi rax rsp 
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x20 New Value: 0x40
-Memory Write: rsi Initial Value: 0x20 New Value: 0x40
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x173c
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rax Initial Value: 0xff New Value: 0xe2
-Memory Write: rdi Initial Value: 0xff New Value: 0xe2
-Var Read: rax
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x40 New Value: 0x80
-Memory Write: rsi Initial Value: 0x40 New Value: 0x80
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var write: rax Initial value: 0xfffffee2 New Value: 0xfffffef8
 
-Gadget 0x173e
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Write: rax Initial Value: 0xe2 New Value: 0xf8
-Memory Write: rdi Initial Value: 0xe2 New Value: 0xf8
-Var Read: rax
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x80 New Value: 0x0
-Memory Write: rsi Initial Value: 0x80 New Value: 0x0
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var write: rax Initial value: 0xfffffef8 New Value: 0xfffffedb
 
-Gadget 0x1740
-Stack change: 0x3ba
-Changed registers: rax rsp 
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
-Memory Read: r11 Value: 0x40b
-Memory Read: rsi Value: 0x40b
-Memory Write: r11 Initial Value: 0x0 New Value: 0x0
-Memory Write: rsi Initial Value: 0x0 New Value: 0x0
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
 
-Gadget 0x1741
-Stack change: 0x3ba
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x2002042b
-Memory Read: rsi Value: 0x2002042b
-Memory Write: rbx Initial Value: 0xff New Value: 0xfe
-Memory Write: rsi Initial Value: 0xff New Value: 0xfe
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
-
-Gadget 0x1745
-Stack change: 0x3ba
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x15
-Memory Read: rax Value: 0x15
-Var Read: rax
-
-Gadget 0x1748
-Stack change: 0x3ba
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x17d3
-Stack change: 0xef
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x17d4
-Stack change: 0xef
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x195b
-Stack change: 0xd00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0xad
-Memory Write: rcx Initial Value: 0x7 New Value: 0x7
-Memory Write: rcx Initial Value: 0x7 New Value: 0x7
-
-Gadget 0x195e
-Stack change: 0xd00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x19d5
-Stack change: 0x900
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x67 New Value: 0xff
-
-Gadget 0x1a11
-Stack change: 0x500
-Changed registers: rbx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b470
-Memory Read: rbx Value: 0x786b470
-
-Gadget 0x1a13
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a14
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a15
-Stack change: 0x500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a85
-Stack change: 0x8
-Changed registers: rsp rdi 
-Register dependencies:
-Var Read: rdi
-Memory Write: rax Initial Value: 0xffffffff New Value: 0xffff0119
-
-Gadget 0x1a86
-Stack change: 0x8
-Changed registers: rsp rdi 
-Register dependencies:
-Var Read: rdi
-Memory Write: rax Initial Value: 0xffff0119 New Value: 0xffff0119
-
-Gadget 0x1a87
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a88
-Stack change: 0x8
-Changed registers: rdi rsp 
-Register dependencies:
-Memory Write: rax Initial Value: 0xffffffff New Value: 0xffff0119
-Memory Write: rdi Initial Value: 0xffffffff New Value: 0xffff0119
-Var Read: rdi
-
-Gadget 0x1a89
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1a8a
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xffff0104
-Memory Write: rax Initial Value: 0xffffffff New Value: 0x68
-
-Gadget 0x1aae
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ab4
-Stack change: 0x1500
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ac6
-Stack change: 0x8
-Changed registers: rsp rax rcx 
-Register dependencies:
-Memory Read: rcx Value: 0xb0
-Memory Read: rbx Value: 0x20020079
-Memory Read: rbx Value: 0x20020079
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0xff New Value: 0x4
-Memory Write: rax Initial Value: 0xff New Value: 0x4
-
-Gadget 0x1ac8
-Stack change: 0x8
-Changed registers: rbp rax rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x133
-Memory Read: rcx Value: 0x133
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x4 New Value: 0x18
-Memory Write: rax Initial Value: 0x4 New Value: 0x18
-
-Gadget 0x1ac9
-Stack change: 0x8
-Changed registers: rax rcx rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020079
-Memory Read: rbx Value: 0x20020079
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x18 New Value: 0x1c
-Memory Write: rax Initial Value: 0x18 New Value: 0x1c
-
-Gadget 0x1acc
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x1c New Value: 0x30
-Memory Write: rax Initial Value: 0x1c New Value: 0x30
-
-Gadget 0x1acd
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74aba4
-Memory Write: rdx Initial Value: 0xff New Value: 0x12
-Memory Write: rax Initial Value: 0xff New Value: 0x12
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x30 New Value: 0x43
-Memory Write: rax Initial Value: 0x30 New Value: 0x43
-
-Gadget 0x1ace
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74aba4
-Memory Write: rdx Initial Value: 0x12 New Value: 0x25
-Memory Write: rax Initial Value: 0x12 New Value: 0x25
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x43 New Value: 0x57
-Memory Write: rax Initial Value: 0x43 New Value: 0x57
-
-Gadget 0x1acf
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927ec
-Memory Read: rax Value: 0xfde927ec
-Var Read: rax
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x57 New Value: 0x6b
-Memory Write: rax Initial Value: 0x57 New Value: 0x6b
-
-Gadget 0x1ad0
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-Var Read: rdx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x6b New Value: 0x7f
-Memory Write: rax Initial Value: 0x6b New Value: 0x7f
-
-Gadget 0x1ad1
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x7f New Value: 0x93
-Memory Write: rax Initial Value: 0x7f New Value: 0x93
-
-Gadget 0x1ad2
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x93 New Value: 0xa7
-Memory Write: rax Initial Value: 0x93 New Value: 0xa7
-
-Gadget 0x1ad8
-Stack change: 0x1900
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ad6
-Stack change: 0x1d00
-Changed registers: rcx rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x66
-Memory Read: rcx Value: 0x66
-Var Read: rcx
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xff New Value: 0xd8
-Memory Write: rax Initial Value: 0xff New Value: 0xd8
-
-Gadget 0x1ad9
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xd8 New Value: 0xb1
-Memory Write: rax Initial Value: 0xd8 New Value: 0xb1
-
-Gadget 0x1ada
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rax Value: 0xfde927eb
-Memory Write: rax Initial Value: 0xb1 New Value: 0x8a
-Memory Write: rax Initial Value: 0xb1 New Value: 0x8a
-
-Gadget 0x1adb
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rdx Value: 0x6b74ac0d
-Memory Write: rdx Initial Value: 0xff New Value: 0x0
-Memory Write: rcx Initial Value: 0xff New Value: 0x0
-
-Gadget 0x1adc
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1ade
-Stack change: 0x1d00
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x1aeb
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1a881b4b New Value: 0x1c9ef360
-Memory Write: rax Initial Value: 0x1a881b4b New Value: 0x1c9ef360
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x20020017
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x20020017
-
-Gadget 0x1aec
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1c9ef360 New Value: 0x1eb5cb75
-Memory Write: rax Initial Value: 0x1c9ef360 New Value: 0x1eb5cb75
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x20020017 New Value: 0x4004002f
-Memory Write: rbx Initial Value: 0x20020017 New Value: 0x4004002f
-
-Gadget 0x1aee
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x43b
-Memory Write: rsi Initial Value: 0x1eb5cb75 New Value: 0x20cca38a
-Memory Write: rax Initial Value: 0x1eb5cb75 New Value: 0x20cca38a
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x4004002f New Value: 0x60060047
-Memory Write: rbx Initial Value: 0x4004002f New Value: 0x60060047
-
-Gadget 0x1af1
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Write: r10 Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x60060047 New Value: 0x8008005f
-Memory Write: rbx Initial Value: 0x60060047 New Value: 0x8008005f
-
-Gadget 0x1af2
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x1dc0f817
-Memory Write: rbx Initial Value: 0xffffffff New Value: 0x6b74aba3
-Memory Write: rdx Initial Value: 0xffffffff New Value: 0x6b74aba3
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0x8008005f New Value: 0xa00a0077
-Memory Write: rbx Initial Value: 0x8008005f New Value: 0xa00a0077
-
-Gadget 0x1af7
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xa00a0077 New Value: 0xc00c008f
-Memory Write: rbx Initial Value: 0xa00a0077 New Value: 0xc00c008f
-
-Gadget 0x1af8
-Stack change: 0x1100
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x88abe796
-Memory Write: rbx Initial Value: 0xc00c008f New Value: 0xe00e00a7
-Memory Write: rbx Initial Value: 0xc00c008f New Value: 0xe00e00a7
-
-Gadget 0x1d56
-Stack change: 0x8
-Changed registers: rbx rbp rsp 
-Register dependencies:
-Var Read: rbx
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0xa7 New Value: 0x7f
-Memory Write: rax Initial Value: 0xa7 New Value: 0x7f
-Memory Write: rax Initial Value: 0xffffffff New Value: 0x216d815
-
-Gadget 0x1d58
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rbx Value: 0x20020018
-Memory Write: rbx Initial Value: 0x7f New Value: 0x57
-Memory Write: rax Initial Value: 0x7f New Value: 0x57
-Memory Write: rax Initial Value: 0x216d815 New Value: 0x216d815
-
-Gadget 0x1d5a
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Write: rax Initial Value: 0x216d815 New Value: 0x216d815
-
-Gadget 0x1d5d
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x40b
-
-Gadget 0x1d60
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x47b
-Memory Write: rsi Initial Value: 0xd0 New Value: 0xc5
-Memory Write: rax Initial Value: 0xd0 New Value: 0xc5
-
-Gadget 0x1d63
-Stack change: 0x8
-Changed registers: rbp rsp 
-Register dependencies:
-
-Gadget 0x1d66
-Stack change: 0x8
-Changed registers: rax rsp 
-Register dependencies:
-Var Read: rax
-
-Gadget 0x1eac
-Stack change: 0xfffffffffffffe18
-Changed registers: rdx rsp rbp 
-Register dependencies:
-Var Read: rdx
-Var Read: rcx
-
-Gadget 0x1eae
-Stack change: 0xfffffffffffffe18
-Changed registers: rsp rbp 
-Register dependencies:
-
-Gadget 0x2058
-Stack change: 0x861
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x2065
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rbx Value: 0xffffffffb2d4325a
-
-Gadget 0x2067
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-Var write: rdx Initial value: 0x9c New Value: 0x216d814
-
-Gadget 0x2068
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rdx
-Var Read: rax
-Var write: rdx Initial value: 0x216d814 New Value: 0x0
-
-Gadget 0x206a
-Stack change: 0x8
-Changed registers: rdx rax rsp 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-
-Gadget 0x206b
-Stack change: 0x8
-Changed registers: rsp 
-Register dependencies:
-
-Gadget 0x206c
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x206d
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x206e
-Stack change: 0x8
-Changed registers: rcx rsp 
-Register dependencies:
-Var Read: rcx
-
-Gadget 0x20e0
-Stack change: 0x368
-Changed registers: rsp 
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
 Register dependencies:
 
 EOF
 RUN
 
-NAME=search rop gadgets given the detailed stack change (>0x2000)
-FILE=bins/arm/crackme.arm32.bin
+NAME=search rop gadgets given the detailed stack change (>0x1)
+FILE=bins/arm/elf/hello-linux-arm64
 CMDS=<<EOF
-/Rs ">0x2000"
+/Rs ">0x1"
 EOF
 EXPECT=<<EOF
-Gadget 0xd48
-Stack change: 0x20ef
-Changed registers: rsp 
+Gadget 0x401a1c
+Stack change: 0x4b0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0xd76
-Stack change: 0x794e
-Changed registers: rsp 
+Gadget 0x401a20
+Stack change: 0x4b0
+Changed registers: x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0xd86
-Stack change: 0x714e
-Changed registers: rsp 
+Gadget 0x401a24
+Stack change: 0x4b0
+Changed registers: x25 x26 sp 
 Register dependencies:
 
-Gadget 0x11ad
-Stack change: 0x80fd
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x7 New Value: 0x67
-Memory Write: rax Initial Value: 0x7 New Value: 0x67
-
-Gadget 0x11ae
-Stack change: 0x80fd
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x67 New Value: 0x67
-Memory Write: rax Initial Value: 0x67 New Value: 0x67
-
-Gadget 0x11b0
-Stack change: 0x80fd
-Changed registers: rsp 
+Gadget 0x401a28
+Stack change: 0x4b0
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x122a
-Stack change: 0x2d00
-Changed registers: rsp 
+Gadget 0x402438
+Stack change: 0x970
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1232
-Stack change: 0x3100
-Changed registers: rsp 
+Gadget 0x40243c
+Stack change: 0x970
+Changed registers: x25 x26 x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1934
-Stack change: 0x8170
-Changed registers: rsp 
+Gadget 0x402440
+Stack change: 0x970
+Changed registers: x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1938
-Stack change: 0x9168
-Changed registers: rsp 
-Register dependencies:
-Memory Write: rsi Initial Value: 0xffffffffffffffff New Value: 0x40b
-
-Gadget 0x1939
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x402444
+Stack change: 0x970
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x1933
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d94
+Stack change: 0x600
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0x1935
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d98
+Stack change: 0x600
+Changed registers: x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0x193a
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d9c
+Stack change: 0x600
+Changed registers: x25 x26 sp 
 Register dependencies:
 
-Gadget 0x1a84
-Stack change: 0x6008028
-Changed registers: rax rdx rsp rdi 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-Var Read: rdi
-Memory Write: rax Initial Value: 0xfffffff8 New Value: 0xffff0119
-
-Gadget 0x1c85
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b458
-Memory Write: rdi Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rsi Value: 0x409
-Memory Write: rsi Initial Value: 0x13 New Value: 0x28
-Memory Write: rax Initial Value: 0x13 New Value: 0x28
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c8c
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x409
-Memory Write: rsi Initial Value: 0x28 New Value: 0x13
-Memory Write: rax Initial Value: 0x28 New Value: 0x13
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c8f
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c92
-Stack change: 0x21ef
-Changed registers: rsp 
+Gadget 0x403da0
+Stack change: 0x600
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x20aa
-Stack change: 0x9068
-Changed registers: rax rcx rsp 
+Gadget 0x405c5c
+Stack change: 0x2180
+Changed registers: x19 x20 x12 x21 x22 sp 
 Register dependencies:
-Memory Read: rax Value: 0x68
-Memory Read: rax Value: 0x68
-Var Read: rcx
+Var Read: x12
 
-Gadget 0x20ae
-Stack change: 0x9068
-Changed registers: rcx rsp 
+Gadget 0x405c60
+Stack change: 0x2180
+Changed registers: x12 x21 x22 sp 
 Register dependencies:
-Var Read: rcx
+Var Read: x12
 
-Gadget 0x20b0
-Stack change: 0x9068
-Changed registers: rsp 
+Gadget 0x405c64
+Stack change: 0x2180
+Changed registers: x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c68
+Stack change: 0x2180
+Changed registers: sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098e8
+Stack change: 0x2180
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098ec
+Stack change: 0x2180
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098f0
+Stack change: 0x2180
+Changed registers: x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x412714
+Stack change: 0x460
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x20
+
+Gadget 0x412718
+Stack change: 0x460
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x41271c
+Stack change: 0x460
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x412720
+Stack change: 0x460
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4128f4
+Stack change: 0x470
+Changed registers: x19 x20 x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128f8
+Stack change: 0x470
+Changed registers: x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128fc
+Stack change: 0x470
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x412900
+Stack change: 0x470
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4129a8
+Stack change: 0x1030
+Changed registers: x29 x30 x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129ac
+Stack change: 0x1030
+Changed registers: x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129b0
+Stack change: 0x1030
+Changed registers: x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x413234
+Stack change: 0x470
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x413238
+Stack change: 0x470
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x41323c
+Stack change: 0x470
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ecc
+Stack change: 0xb0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed0
+Stack change: 0xb0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed4
+Stack change: 0xb0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed8
+Stack change: 0xb0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4236e8
+Stack change: 0x250
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236ec
+Stack change: 0x250
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f0
+Stack change: 0x250
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f4
+Stack change: 0x250
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x423ee0
+Stack change: 0xc0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee4
+Stack change: 0xc0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee8
+Stack change: 0xc0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423eec
+Stack change: 0xc0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4249c4
+Stack change: 0x7c0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249c8
+Stack change: 0x7c0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249cc
+Stack change: 0x7c0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249d0
+Stack change: 0x7c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x425aa8
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x425aac
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x434d0c
+Stack change: 0x870
+Changed registers: x23 x24 x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d10
+Stack change: 0x870
+Changed registers: x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d14
+Stack change: 0x870
+Changed registers: x27 sp 
+Register dependencies:
+
+Gadget 0x434d18
+Stack change: 0x870
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x435dc0
+Stack change: 0x8a0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc4
+Stack change: 0x8a0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc8
+Stack change: 0x8a0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dcc
+Stack change: 0x8a0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43bfe4
+Stack change: 0x420
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfe8
+Stack change: 0x420
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfec
+Stack change: 0x420
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bff0
+Stack change: 0x420
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43ce34
+Stack change: 0x110
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce38
+Stack change: 0x110
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce3c
+Stack change: 0x110
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce40
+Stack change: 0x110
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43d72c
+Stack change: 0x110
+Changed registers: x27 x28 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d730
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d734
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43e850
+Stack change: 0x11233
+Changed registers: x29 x30 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e854
+Stack change: 0x11233
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e8f4
+Stack change: 0x11233
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x21
+Var Read: x12
+
+Gadget 0x43ea9c
+Stack change: 0x490
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa0
+Stack change: 0x490
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa4
+Stack change: 0x490
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa8
+Stack change: 0x490
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43f618
+Stack change: 0x2e0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f61c
+Stack change: 0x2e0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f620
+Stack change: 0x2e0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f624
+Stack change: 0x2e0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4422d0
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Memory Read: x0 Value: 0x7
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d4
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d8
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422dc
+Stack change: 0x10
+Changed registers: x1 sp 
+Register dependencies:
+
+Gadget 0x4472f4
+Stack change: 0x5f0
+Changed registers: x21 x22 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472f8
+Stack change: 0x5f0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472fc
+Stack change: 0x5f0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x447300
+Stack change: 0x5f0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4492dc
+Stack change: 0x8280
+Changed registers: x12 x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e0
+Stack change: 0x8280
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e4
+Stack change: 0x8280
+Changed registers: x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x44bf40
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf44
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf48
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf4c
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x450520
+Stack change: 0x520
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450524
+Stack change: 0x520
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450528
+Stack change: 0x520
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x45052c
+Stack change: 0x520
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x451ff4
+Stack change: 0x260
+Changed registers: x21 x22 x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ff8
+Stack change: 0x260
+Changed registers: x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ffc
+Stack change: 0x260
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x452000
+Stack change: 0x260
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45243c
+Stack change: 0x260
+Changed registers: x29 x30 x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452440
+Stack change: 0x260
+Changed registers: x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452848
+Stack change: 0x450
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0xffffffffffffffff New Value: 0x0
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0x0
+
+Gadget 0x45284c
+Stack change: 0x450
+Changed registers: x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452850
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452854
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4538c0
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Memory Write: x21 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Memory Write: x19 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4538c4
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538c8
+Stack change: 0x6d0
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538cc
+Stack change: 0x6d0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453b0c
+Stack change: 0x6c0
+Changed registers: x19 x20 x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b10
+Stack change: 0x6c0
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b14
+Stack change: 0x6c0
+Changed registers: x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b18
+Stack change: 0x6c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453c44
+Stack change: 0x6d0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c48
+Stack change: 0x6d0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c4c
+Stack change: 0x6d0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453ec0
+Stack change: 0xa70
+Changed registers: x29 x30 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec4
+Stack change: 0xa70
+Changed registers: x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec8
+Stack change: 0xa70
+Changed registers: x21 sp 
+Register dependencies:
+
+Gadget 0x453ecc
+Stack change: 0xa70
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453ef4
+Stack change: 0xa70
+Changed registers: x0 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x45400c
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454010
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454014
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454148
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x45414c
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454150
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454450
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454454
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454458
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45445c
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4570d4
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570d8
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570dc
+Stack change: 0x2f75a
+Changed registers: x29 x30 sp 
 Register dependencies:
 
 EOF
 RUN
 
-NAME=search rop gadgets given the detailed stack change (>=0x2000)
-FILE=bins/arm/crackme.arm32.bin
+NAME=search rop gadgets given the detailed stack change (>=0x1)
+FILE=bins/arm/elf/hello-linux-arm64
 CMDS=<<EOF
-/Rs ">=0x2000"
+/Rs ">=0x1"
 EOF
 EXPECT=<<EOF
-Gadget 0xd48
-Stack change: 0x20ef
-Changed registers: rsp 
+Gadget 0x401a1c
+Stack change: 0x4b0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0xd76
-Stack change: 0x794e
-Changed registers: rsp 
+Gadget 0x401a20
+Stack change: 0x4b0
+Changed registers: x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0xd86
-Stack change: 0x714e
-Changed registers: rsp 
+Gadget 0x401a24
+Stack change: 0x4b0
+Changed registers: x25 x26 sp 
 Register dependencies:
 
-Gadget 0x11ad
-Stack change: 0x80fd
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x7 New Value: 0x67
-Memory Write: rax Initial Value: 0x7 New Value: 0x67
-
-Gadget 0x11ae
-Stack change: 0x80fd
-Changed registers: rsp 
-Register dependencies:
-Memory Read: rcx Value: 0x45
-Memory Write: rcx Initial Value: 0x67 New Value: 0x67
-Memory Write: rax Initial Value: 0x67 New Value: 0x67
-
-Gadget 0x11b0
-Stack change: 0x80fd
-Changed registers: rsp 
+Gadget 0x401a28
+Stack change: 0x4b0
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x122a
-Stack change: 0x2d00
-Changed registers: rsp 
+Gadget 0x402438
+Stack change: 0x970
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1232
-Stack change: 0x3100
-Changed registers: rsp 
+Gadget 0x40243c
+Stack change: 0x970
+Changed registers: x25 x26 x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1934
-Stack change: 0x8170
-Changed registers: rsp 
+Gadget 0x402440
+Stack change: 0x970
+Changed registers: x27 x28 sp 
 Register dependencies:
 
-Gadget 0x1938
-Stack change: 0x9168
-Changed registers: rsp 
-Register dependencies:
-Memory Write: rsi Initial Value: 0xffffffffffffffff New Value: 0x40b
-
-Gadget 0x1939
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x402444
+Stack change: 0x970
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x1933
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d94
+Stack change: 0x600
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0x1935
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d98
+Stack change: 0x600
+Changed registers: x23 x24 x25 x26 sp 
 Register dependencies:
 
-Gadget 0x193a
-Stack change: 0x9168
-Changed registers: rsp 
+Gadget 0x403d9c
+Stack change: 0x600
+Changed registers: x25 x26 sp 
 Register dependencies:
 
-Gadget 0x1a84
-Stack change: 0x6008028
-Changed registers: rax rdx rsp rdi 
-Register dependencies:
-Var Read: rax
-Var Read: rdx
-Var Read: rdi
-Memory Write: rax Initial Value: 0xfffffff8 New Value: 0xffff0119
-
-Gadget 0x1c85
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b458
-Memory Write: rdi Initial Value: 0xffffffff New Value: 0xffffffff
-Memory Read: rsi Value: 0x409
-Memory Write: rsi Initial Value: 0x13 New Value: 0x28
-Memory Write: rax Initial Value: 0x13 New Value: 0x28
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c8c
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rsi Value: 0x409
-Memory Write: rsi Initial Value: 0x28 New Value: 0x13
-Memory Write: rax Initial Value: 0x28 New Value: 0x13
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c8f
-Stack change: 0x21ef
-Changed registers: rax rdx rsp 
-Register dependencies:
-Memory Read: rdi Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rax Value: 0x786b467
-Memory Read: rdi Value: 0x786b467
-
-Gadget 0x1c92
-Stack change: 0x21ef
-Changed registers: rsp 
+Gadget 0x403da0
+Stack change: 0x600
+Changed registers: sp 
 Register dependencies:
 
-Gadget 0x20aa
-Stack change: 0x9068
-Changed registers: rax rcx rsp 
+Gadget 0x405c5c
+Stack change: 0x2180
+Changed registers: x19 x20 x12 x21 x22 sp 
 Register dependencies:
-Memory Read: rax Value: 0x68
-Memory Read: rax Value: 0x68
-Var Read: rcx
+Var Read: x12
 
-Gadget 0x20ae
-Stack change: 0x9068
-Changed registers: rcx rsp 
+Gadget 0x405c60
+Stack change: 0x2180
+Changed registers: x12 x21 x22 sp 
 Register dependencies:
-Var Read: rcx
+Var Read: x12
 
-Gadget 0x20b0
-Stack change: 0x9068
-Changed registers: rsp 
+Gadget 0x405c64
+Stack change: 0x2180
+Changed registers: x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c68
+Stack change: 0x2180
+Changed registers: sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098e8
+Stack change: 0x2180
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098ec
+Stack change: 0x2180
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098f0
+Stack change: 0x2180
+Changed registers: x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x412714
+Stack change: 0x460
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x20
+
+Gadget 0x412718
+Stack change: 0x460
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x41271c
+Stack change: 0x460
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x412720
+Stack change: 0x460
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4128f4
+Stack change: 0x470
+Changed registers: x19 x20 x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128f8
+Stack change: 0x470
+Changed registers: x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128fc
+Stack change: 0x470
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x412900
+Stack change: 0x470
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4129a8
+Stack change: 0x1030
+Changed registers: x29 x30 x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129ac
+Stack change: 0x1030
+Changed registers: x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129b0
+Stack change: 0x1030
+Changed registers: x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x413234
+Stack change: 0x470
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x413238
+Stack change: 0x470
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x41323c
+Stack change: 0x470
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ecc
+Stack change: 0xb0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed0
+Stack change: 0xb0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed4
+Stack change: 0xb0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed8
+Stack change: 0xb0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4236e8
+Stack change: 0x250
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236ec
+Stack change: 0x250
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f0
+Stack change: 0x250
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f4
+Stack change: 0x250
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x423ee0
+Stack change: 0xc0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee4
+Stack change: 0xc0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee8
+Stack change: 0xc0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423eec
+Stack change: 0xc0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4249c4
+Stack change: 0x7c0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249c8
+Stack change: 0x7c0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249cc
+Stack change: 0x7c0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249d0
+Stack change: 0x7c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x425aa8
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x425aac
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x434d0c
+Stack change: 0x870
+Changed registers: x23 x24 x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d10
+Stack change: 0x870
+Changed registers: x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d14
+Stack change: 0x870
+Changed registers: x27 sp 
+Register dependencies:
+
+Gadget 0x434d18
+Stack change: 0x870
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x435dc0
+Stack change: 0x8a0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc4
+Stack change: 0x8a0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc8
+Stack change: 0x8a0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dcc
+Stack change: 0x8a0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43bfe4
+Stack change: 0x420
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfe8
+Stack change: 0x420
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfec
+Stack change: 0x420
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bff0
+Stack change: 0x420
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43ce34
+Stack change: 0x110
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce38
+Stack change: 0x110
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce3c
+Stack change: 0x110
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce40
+Stack change: 0x110
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43d72c
+Stack change: 0x110
+Changed registers: x27 x28 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d730
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d734
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43e850
+Stack change: 0x11233
+Changed registers: x29 x30 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e854
+Stack change: 0x11233
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e8f4
+Stack change: 0x11233
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x21
+Var Read: x12
+
+Gadget 0x43ea9c
+Stack change: 0x490
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa0
+Stack change: 0x490
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa4
+Stack change: 0x490
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa8
+Stack change: 0x490
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43f618
+Stack change: 0x2e0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f61c
+Stack change: 0x2e0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f620
+Stack change: 0x2e0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f624
+Stack change: 0x2e0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4422d0
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Memory Read: x0 Value: 0x7
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d4
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d8
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422dc
+Stack change: 0x10
+Changed registers: x1 sp 
+Register dependencies:
+
+Gadget 0x4472f4
+Stack change: 0x5f0
+Changed registers: x21 x22 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472f8
+Stack change: 0x5f0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472fc
+Stack change: 0x5f0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x447300
+Stack change: 0x5f0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4492dc
+Stack change: 0x8280
+Changed registers: x12 x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e0
+Stack change: 0x8280
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e4
+Stack change: 0x8280
+Changed registers: x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x44bf40
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf44
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf48
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf4c
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x450520
+Stack change: 0x520
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450524
+Stack change: 0x520
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450528
+Stack change: 0x520
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x45052c
+Stack change: 0x520
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x451ff4
+Stack change: 0x260
+Changed registers: x21 x22 x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ff8
+Stack change: 0x260
+Changed registers: x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ffc
+Stack change: 0x260
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x452000
+Stack change: 0x260
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45243c
+Stack change: 0x260
+Changed registers: x29 x30 x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452440
+Stack change: 0x260
+Changed registers: x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452848
+Stack change: 0x450
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0xffffffffffffffff New Value: 0x0
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0x0
+
+Gadget 0x45284c
+Stack change: 0x450
+Changed registers: x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452850
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452854
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4538c0
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Memory Write: x21 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Memory Write: x19 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4538c4
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538c8
+Stack change: 0x6d0
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538cc
+Stack change: 0x6d0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453b0c
+Stack change: 0x6c0
+Changed registers: x19 x20 x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b10
+Stack change: 0x6c0
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b14
+Stack change: 0x6c0
+Changed registers: x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b18
+Stack change: 0x6c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453c44
+Stack change: 0x6d0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c48
+Stack change: 0x6d0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c4c
+Stack change: 0x6d0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453ec0
+Stack change: 0xa70
+Changed registers: x29 x30 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec4
+Stack change: 0xa70
+Changed registers: x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec8
+Stack change: 0xa70
+Changed registers: x21 sp 
+Register dependencies:
+
+Gadget 0x453ecc
+Stack change: 0xa70
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453ef4
+Stack change: 0xa70
+Changed registers: x0 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x45400c
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454010
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454014
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454148
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x45414c
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454150
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454450
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454454
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454458
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45445c
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4570d4
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570d8
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570dc
+Stack change: 0x2f75a
+Changed registers: x29 x30 sp 
 Register dependencies:
 
 EOF
