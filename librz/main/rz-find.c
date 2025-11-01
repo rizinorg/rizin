@@ -173,7 +173,9 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		if (status == -1) {
 			RZ_LOG_ERROR("Failed to execute system command: %s\n", replaced);
 		}
-		free(replaced);
+		if (replaced && replaced != ro->sys_command) {
+        	free(replaced);
+    	}
 		return 1;
 	}
 	return 1;
