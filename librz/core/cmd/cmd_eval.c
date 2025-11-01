@@ -97,52 +97,34 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 }
 
 /**
- * \brief Rotate through available color themes
- * \param core The core instance
- * \param line The input line
- * \return The new theme name
+ * \brief Rotate and apply the next theme for `eco` autocompletion.
+ *
+ * This function is called when the user presses <TAB> after typing
+ * `eco `. It updates the input line buffer with the next theme name
+ * and applies the theme internally.
+ *
+ * \param core The Rizin core instance.
+ * 
+ * \return The name of the next theme, or NULL on error.
  */
-RZ_API const char *rz_core_autocomplete_rotate_theme(RzCore *core, RzLine *line) {
-	static int current_index = 0;
-	rz_return_val_if_fail(core && line, NULL);
-
+RZ_IPI char **rz_core_autocomplete_rotate_theme(RzCore *core) {
 	RzPVector *themes = rz_core_get_themes(core);
-	if (!themes || rz_pvector_empty(themes)) {
-		RZ_LOG_ERROR("No themes found\n");
+	if (!themes) {
 		return NULL;
 	}
-
-	int theme_count = rz_pvector_len(themes);
-	const char *theme_name = rz_pvector_at(themes, current_index);
+	size_t count = rz_pvector_len(themes);
+	char **theme_name = RZ_NEWS0(char *, count + 1);
 	if (!theme_name) {
 		rz_pvector_free(themes);
 		return NULL;
 	}
 
-	// Copy theme safely before freeing vector
-	char *safe_theme = rz_str_dup(theme_name);
-
-	const char *prefix = "eco ";
-	size_t prefix_len = strlen(prefix);
-	if (!rz_str_startswith(line->buffer.data, prefix)) {
-		rz_str_ncpy(line->buffer.data, prefix, sizeof(line->buffer.data) - 1);
+	size_t i = 0;
+	void **iter;
+	rz_pvector_foreach (themes, iter) {
+		theme_name[i++] = rz_str_dup(*iter);
 	}
-	size_t available = sizeof(line->buffer.data) - prefix_len - 1;
-	rz_str_ncpy(line->buffer.data + prefix_len, safe_theme, available);
-
-	line->buffer.length = strlen(line->buffer.data);
-	line->buffer.index = line->buffer.length;
-
-	// Apply the theme command immediately
-	char cmd[256];
-	snprintf(cmd, sizeof(cmd), "eco %s", safe_theme);
-	rz_core_cmd0(core, cmd);
-
-	current_index = (current_index + 1) % theme_count;
-
-	rz_pvector_free(themes);
-
-	return safe_theme;
+	return theme_name;
 }
 
 /**

@@ -532,46 +532,6 @@ static void autocmplt_cmd_arg_rznum(RzCore *core, RzLineNSCompletionResult *res,
 	autocmplt_cmd_arg_help_var(core, res, s, len);
 }
 
-// Initially made for just eco command , later can be broaden by switch
-static void autocmplt_cmd_arg_string(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	if (!core || !res) {
-		return;
-	}
-
-	RzCons *cons = core->cons;
-	if (!cons || !cons->line) {
-		return;
-	}
-
-	RzLineBuffer *buf = &cons->line->buffer;
-	if (!buf) {
-		return;
-	}
-
-	// Trigger only for "eco" command
-	if (rz_str_startswith(buf->data, "eco")) {
-		const char *next_theme = rz_core_autocomplete_rotate_theme(core, cons->line);
-		if (next_theme) {
-			const char *space_pos = strchr(buf->data, ' ');
-			size_t prefix_len = space_pos ? (space_pos - buf->data + 1) : 4;
-
-			res->start = prefix_len;
-			res->end = buf->length;
-			rz_line_ns_completion_result_add(res, next_theme);
-
-			char cmd[256];
-			snprintf(cmd, sizeof(cmd), "eco %s", next_theme);
-			rz_core_cmd0(core, cmd);
-
-			res->end_string = " "; // For cursor spacing !
-		}
-	} else {
-		// Default behavior for generic string args
-		// You could add other completions here if needed or You can broaden this check for other string args
-		return;
-	}
-}
-
 static void autocmplt_cmd_arg_choices(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len, const RzCmdDescArg *arg) {
 	char **oc, **c;
 	oc = c = arg->choices.choices_cb ? arg->choices.choices_cb(core) : (char **)arg->choices.choices;
@@ -737,9 +697,6 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	switch (arg_type) {
 	case RZ_CMD_ARG_TYPE_RZNUM:
 		autocmplt_cmd_arg_rznum(core, res, s, len);
-		break;
-	case RZ_CMD_ARG_TYPE_STRING:
-		autocmplt_cmd_arg_string(core, res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_ENV:
 		autocmplt_cmd_arg_env(res, s, len);
