@@ -251,3 +251,18 @@ ERROR: Macro 'foo2' expects 2 args, not 0
 ERROR: core: Error while executing command: ..(foo2)
 EOF
 RUN
+
+NAME=late quote substitution
+FILE=--
+CMDS=<<EOF
+$num=$2
+(echo_num; echo `$num`)
+.(echo_num)
+$num=$5
+.(echo_num)
+EOF
+EXPECT=<<EOF
+2
+5
+EOF
+RUN
