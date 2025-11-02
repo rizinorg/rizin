@@ -1488,18 +1488,18 @@ static bool parse_detail_search_arg(RzCore *core, const char *str, RopDetailSear
 	return true;
 }
 
-static bool match_detail_search(st64 stack_change, RopDetailSearchCmpOp op, st64 target) {
+static bool match_detail_search(st64 gadget_val, RopDetailSearchCmpOp op, st64 target) {
 	switch (op) {
 	case ROP_DETAIL_CMP_EQ:
-		return stack_change == target;
+		return gadget_val == target;
 	case ROP_DETAIL_CMP_GT:
-		return stack_change > target;
+		return gadget_val > target;
 	case ROP_DETAIL_CMP_GE:
-		return stack_change >= target;
+		return gadget_val >= target;
 	case ROP_DETAIL_CMP_LT:
-		return stack_change < target;
+		return gadget_val < target;
 	case ROP_DETAIL_CMP_LE:
-		return stack_change <= target;
+		return gadget_val <= target;
 	}
 	return false;
 }
