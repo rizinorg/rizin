@@ -577,7 +577,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.exec_command = opt.arg;
 			break;
 		case 'R':
-    		// ro.quiet = true;
+    		ro.quiet = true;
     		ro.sys_command = rz_str_dup(opt.arg);
 		    break;
 		case 's':
