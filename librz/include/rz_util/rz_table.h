@@ -55,8 +55,6 @@ typedef struct {
 
 typedef void (*RzTableSelector)(RzTableRow *acc, RzTableRow *new_row, int nth);
 
-struct rz_cons_printable_palette_t;
-
 /**
  * \brief Visual rendering options for \ref rz_table_visual_list
  */
