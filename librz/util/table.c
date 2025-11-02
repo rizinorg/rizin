@@ -654,8 +654,8 @@ RZ_API char *rz_table_tocsv(RzTable *t) {
 			item = *pitem;
 			RzTableColumn *col = rz_vector_index_ptr(t->cols, c);
 			if (col) {
-				if (strchr(col->name, ',')) {
-					rz_strbuf_appendf(sb, "%s\"%s\"", comma, col->name);
+				if (strchr(item, ',')) {
+					rz_strbuf_appendf(sb, "%s\"%s\"", comma, item);
 				} else {
 					rz_strbuf_appendf(sb, "%s%s", comma, item);
 				}
