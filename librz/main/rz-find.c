@@ -166,7 +166,6 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		if (!tmp) {
 			return 1;
 		}
-		// Now safely call rz_str_replace which will free tmp internally
 		char *replaced = rz_str_replace(tmp, "{}", ro->curfile, 0);
 		if (!replaced) {
 			replaced = rz_str_dup(ro->sys_command);
