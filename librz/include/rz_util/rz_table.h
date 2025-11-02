@@ -61,7 +61,7 @@ struct rz_cons_printable_palette_t;
  * \brief Visual rendering options for \ref rz_table_visual_list
  */
 typedef struct rz_table_visual_options_t {
-	bool unicode; ///< Use Unicode runes for lines/blocks when true
+	bool unicode; ///< Use Unicode characters for lines/blocks when true
 	bool color; ///< Enable ANSI colors for bars and permission strings
 	bool va; ///< Use virtual addresses when true; physical otherwise
 	struct rz_cons_printable_palette_t *pal; ///< Palette for colors; required if color is true
