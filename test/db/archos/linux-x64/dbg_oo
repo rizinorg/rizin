@@ -96,13 +96,36 @@ NAME=dm flags after ood
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-e log.level=4
 CMDS=<<EOF
+. scripts/map_clean.rz
 ood
 fl@F:maps~?
+.(fl_F_maps_clean)
 dm*~?
+.(dm_star_clean)
 EOF
 EXPECT=<<EOF
 9
+0x08048000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x
+0x08049000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw
+0x________ 16384 vvar_.r
+0x________ 8192 vdso_.r_x
+0x________ 4096 usr_lib32_ld_linux.so.2.r
+0x________ 143360 usr_lib32_ld_linux.so.2.r_x
+0x________ 57344 usr_lib32_ld_linux.so.2.r.________
+0x________ 12288 usr_lib32_ld_linux.so.2.rw
+0x________ 1_____ stack_.rw
 11
+fss+ maps
+f+ ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x 0x00001000 @ 0x08048000
+f+ ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw 0x00001000 @ 0x08049000
+f+ map.vvar_.r 0x00004000 @ 0x________
+f+ map.vdso_.r_x 0x00002000 @ 0x________
+f+ map.usr_lib32_ld_linux.so.2.r 0x00001000 @ 0x________
+f+ map.usr_lib32_ld_linux.so.2.r_x 0x00023000 @ 0x________
+f+ map.usr_lib32_ld_linux.so.2.r 0x0000e000 @ 0x________
+f+ map.usr_lib32_ld_linux.so.2.rw 0x00003000 @ 0x________
+f+ map.stack_.rw 0x0002____ @ 0x________
+fss-
 EOF
 RUN
 
