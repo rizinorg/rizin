@@ -162,7 +162,6 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		return 1;
 	}
 	if (ro->sys_command) {
-		// Duplicate the sys_command string to pass ownership to rz_str_replace
 		char *tmp = rz_str_dup(ro->sys_command);
 		if (!tmp) {
 			// Handle allocation failure 
