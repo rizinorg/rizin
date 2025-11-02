@@ -45,8 +45,6 @@ typedef struct {
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
 	ro->cur = 0;
-	free((void *)ro->sys_command);  // free the duplicated command string
-    ro->sys_command = NULL;
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -179,6 +177,9 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			}
 		}
 		int status = rz_sys_system(replaced);
+		if (status == -1) {
+			RZ_LOG_ERROR("Failed to execute command: %s\n", replaced);
+		}
 		if (replaced) {
 			free(replaced);
 		}
@@ -576,7 +577,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.exec_command = opt.arg;
 			break;
 		case 'R':
-    		ro.quiet = true;
+    		// ro.quiet = true;
     		ro.sys_command = rz_str_dup(opt.arg);
 		    break;
 		case 's':
@@ -684,6 +685,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	rz_list_free(ro.keywords);
 	if (ro.json) {
 		printf("]\n");
+	}
+	if (ro.sys_command) {
+    	free((void *)ro.sys_command);
+    	ro.sys_command = NULL;
 	}
 	return 0;
 }
