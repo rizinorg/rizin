@@ -45,6 +45,8 @@ typedef struct {
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
 	ro->cur = 0;
+	free((void *)ro->sys_command);  // free the duplicated command string
+    ro->sys_command = NULL;
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -162,20 +164,24 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		return 1;
 	}
 	if (ro->sys_command) {
-		// Replace {} in the command with the filename
-		char *replaced = rz_str_replace((char *)ro->sys_command, "{}", ro->curfile, 0);
+		// Duplicate the sys_command string to pass ownership to rz_str_replace
+		char *tmp = rz_str_dup(ro->sys_command);
+		if (!tmp) {
+			// Handle allocation failure 
+			return 1;
+		}
+		// Now safely call rz_str_replace which will free tmp internally
+		char *replaced = rz_str_replace(tmp, "{}", ro->curfile, 0);
 		if (!replaced) {
 			replaced = rz_str_dup(ro->sys_command);
+			if (!replaced) {
+				return 1;
+			}
 		}
-
-		RZ_LOG_INFO("Executing system command: %s\n", replaced);
 		int status = rz_sys_system(replaced);
-		if (status == -1) {
-			RZ_LOG_ERROR("Failed to execute system command: %s\n", replaced);
+		if (replaced) {
+			free(replaced);
 		}
-		if (replaced && replaced != ro->sys_command) {
-        	free(replaced);
-    	}
 		return 1;
 	}
 	return 1;
@@ -571,7 +577,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'R':
     		ro.quiet = true;
-    		ro.sys_command = opt.arg;
+    		ro.sys_command = rz_str_dup(opt.arg);
 		    break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
