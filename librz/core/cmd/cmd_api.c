@@ -1473,6 +1473,7 @@ static void fill_details_json(const RzCmdDescDetail *details, PJ *j) {
 			entry++;
 		}
 		pj_end(j);
+		pj_end(j);
 
 		details++;
 	}
@@ -1492,7 +1493,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	rz_return_val_if_fail(cmd && cd && j, false);
 	pj_ko(j, cd->name);
 	pj_ks(j, "cmd", cd->name);
-	const char *type;
+	const char *type = "unknown";
 	switch (cd->type) {
 #define CASE_CDTYPE(x, y) \
 	case (x): \
@@ -1506,7 +1507,6 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV_STATE, "argv_state");
 #undef CASE_CDTYPE
 	default:
-		type = "unknown";
 		break;
 	}
 	pj_ks(j, "type", type);
