@@ -177,9 +177,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		if (status == -1) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", replaced);
 		}
-		if (replaced) {
-			free(replaced);
-		}
+		free(replaced);
 		return 1;
 	}
 	return 1;
