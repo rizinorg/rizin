@@ -2,6 +2,7 @@
 (map_clean cmd; .(map_clean_i ${cmd} `di~exe[1] | sed 's,.*/rizin/test/bins/,,g;  s,/,\\2,g;  s/-/[-_]/g'`))
 (map_clean_i cmd bin; .echo ${cmd} | sed 's/[fe][0-9a-f]\{7\}/________/g;  s,[^[:space:]]*\(\([/_]\)rizin\2test\2bins\2${bin}\),...\1,g')
 
-(dm_clean; .(map_clean dm) | sed 's/1..\(K.*stack\)/1__\1/g')
+(dm_cmd_clean cmd; .(map_clean ${cmd}) | sed 's/1..\(K.*stack\)/1__\1/g')
+(dm_clean; .(dm_cmd_clean dm))
 (fl_F_maps_clean; .(map_clean "fl@F:maps") | sed 's/1[0-9]\{5\}\(.*stack\)/1_____\1/g')
 (dm_star_clean; .(map_clean dm*) | sed 's/\(stack.*2\)[0-9]\{4\}/\1____/g')
