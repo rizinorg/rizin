@@ -101,12 +101,12 @@ RZ_API bool rz_table_align(RzTable *t, int nth, int align);
 /**
  * \brief Render a visual list (bars) into an RzTable
  *
- * \param table Output table (columns are set internally)
- * \param list  Items to visualize (each entry is an RzListInfo with name/intervals/perms)
- * \param seek  Current seek address used to mark the cursor region
- * \param len   Cursor span length (0 to hide cursor line)
- * \param width Console width used to compute bar columns
- * \param opts  Rendering options (must be non-NULL)
+ * \param table Output table.
+ * \param list  Items to visualize (each entry is an RzListInfo with name/intervals/perms).
+ * \param seek  Current seek address used to mark the cursor region.
+ * \param len   Cursor span length (0 to hide cursor line).
+ * \param width Console width used to compute bar columns.
+ * \param opts  Rendering options.
  */
 RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RzTableVisualOptions *opts);
 RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t);
