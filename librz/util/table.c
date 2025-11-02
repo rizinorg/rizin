@@ -1286,14 +1286,16 @@ RZ_API void rz_listinfo_free(RzListInfo *info) {
 	free(info);
 }
 
-RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RzTableVisualOptions *opts) {
+RZ_API void rz_table_visual_list(RZ_NONNULL RzTable *table, RZ_NONNULL RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RZ_NONNULL RzTableVisualOptions *opts) {
+	rz_return_if_fail(table && list && opts);
+
 	ut64 mul, min = -1, max = -1;
 	RzListIter *iter;
 	RzListInfo *info;
-	RzCons *cons = (RzCons *)table->cons;
 	table->showHeader = false;
-	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *h_line = opts->unicode ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = opts->unicode ? UTF_BLOCK : "#";
+	bool colors = opts->color && opts->pal;
 	int j, i;
 	width -= 80;
 	if (width < 1) {
@@ -1313,24 +1315,55 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list
 	if (min != -1 && mul > 0) {
 		i = 0;
 		rz_list_foreach (list, iter, info) {
+			const char *bar_color = "";
+			const char *perm_color = "";
+			if (colors && info->perm != -1) {
+				if ((info->perm & RZ_PERM_W) && (info->perm & RZ_PERM_X)) {
+					bar_color = opts->pal->widget_sel;
+					perm_color = opts->pal->widget_sel;
+				} else if (info->perm & RZ_PERM_X) {
+					bar_color = opts->pal->ai_exec;
+					perm_color = opts->pal->ai_exec;
+				} else if (info->perm & RZ_PERM_W) {
+					bar_color = opts->pal->ai_write;
+					perm_color = opts->pal->ai_write;
+				} else if (info->perm & RZ_PERM_R) {
+					bar_color = opts->pal->ai_read;
+					perm_color = opts->pal->ai_read;
+				}
+			}
 			RzStrBuf *buf = rz_strbuf_new("");
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + j * mul;
 				ut64 npos = min + (j + 1) * mul;
-				const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
-					? block
-					: h_line;
-				rz_strbuf_append(buf, arg);
+				bool is_block = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos);
+				const char *arg = is_block ? block : h_line;
+				if (colors && is_block && bar_color && bar_color[0]) {
+					rz_strbuf_append(buf, bar_color);
+					rz_strbuf_append(buf, arg);
+					rz_strbuf_append(buf, Color_RESET);
+				} else {
+					rz_strbuf_append(buf, arg);
+				}
 			}
 			char *b = rz_strbuf_drain(buf);
 			char no[64];
+			char *perm_str = NULL;
+			if (info->perm != -1) {
+				const char *perm = rz_str_rwx_i(info->perm);
+				if (colors && perm_color && perm_color[0]) {
+					perm_str = rz_str_newf("%s%s%s", perm_color, perm, Color_RESET);
+				} else {
+					perm_str = rz_str_dup(perm);
+				}
+			}
 			if (opts->va) {
 				rz_table_add_rowf(table, "sxsxsss",
 					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
 					info->vitv.addr,
 					b,
 					rz_itv_end(info->vitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					perm_str ? perm_str : "",
 					(info->extra) ? info->extra : "",
 					(info->name) ? info->name : "");
 			} else {
@@ -1339,11 +1372,12 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list
 					info->pitv.addr,
 					b,
 					rz_itv_end(info->pitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					perm_str ? perm_str : "",
 					(info->extra) ? info->extra : "",
 					(info->name) ? info->name : "");
 			}
 			free(b);
+			free(perm_str);
 			i++;
 		}
 		RzStrBuf *buf = rz_strbuf_new("");

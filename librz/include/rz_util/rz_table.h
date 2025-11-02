@@ -106,7 +106,7 @@ RZ_API bool rz_table_align(RzTable *t, int nth, int align);
  * \param width Console width used to compute bar columns.
  * \param opts  Rendering options.
  */
-RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RzTableVisualOptions *opts);
+RZ_API void rz_table_visual_list(RZ_NONNULL RzTable *table, RZ_NONNULL RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, RZ_NONNULL RzTableVisualOptions *opts);
 RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t);
 RZ_API void rz_table_columns(RzTable *t, RzList /*<char *>*/ *cols); // const char *name, ...);
 #ifdef __cplusplus
