@@ -3386,6 +3386,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("bin.usextr", "true", &cb_usextr, "Use extract plugins when loading files");
 	SETCB("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETBPREF("bin.b64str", "false", "Try to debase64 the strings");
+	SETBPREF("bin.show.blocks", "true", "When true, appends the block type information to the string.");
 	SETCB("bin.at", "false", &cb_binat, "RzBin.cur depends on RzCore.offset");
 	SETBPREF("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB("bin.str.filter", "", &cb_strfilter);
