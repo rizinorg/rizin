@@ -1455,6 +1455,31 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	pj_end(j);
 }
 
+static void fill_details_json(const RzCmdDescDetail *details, PJ *j) {
+	const RzCmdDescDetailEntry *entry = NULL;
+	pj_ka(j, "details");
+	while (details && details->name) {
+		entry = details->entries;
+
+		pj_o(j);
+		pj_ks(j, "name", details->name);
+		pj_ka(j, "entries");
+		while (entry && entry->text) {
+			pj_o(j);
+			pj_ks(j, "text", rz_str_get(entry->text));
+			pj_ks(j, "comment", rz_str_get(entry->comment));
+			pj_ks(j, "arg_str", rz_str_get(entry->arg_str));
+			pj_end(j);
+			entry++;
+		}
+		pj_end(j);
+		pj_end(j);
+
+		details++;
+	}
+	pj_end(j);
+}
+
 /**
  * \brief Generates a JSON output of the given help message description
  *
@@ -1468,7 +1493,7 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	rz_return_val_if_fail(cmd && cd && j, false);
 	pj_ko(j, cd->name);
 	pj_ks(j, "cmd", cd->name);
-	const char *type;
+	const char *type = "unknown";
 	switch (cd->type) {
 #define CASE_CDTYPE(x, y) \
 	case (x): \
@@ -1482,7 +1507,6 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV_STATE, "argv_state");
 #undef CASE_CDTYPE
 	default:
-		type = "unknown";
 		break;
 	}
 	pj_ks(j, "type", type);
@@ -1496,8 +1520,9 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		free(args);
 	}
 	fill_args_json(cmd, cd, j);
-	pj_ks(j, "description", cd->help->description ? cd->help->description : "");
-	pj_ks(j, "summary", cd->help->summary ? cd->help->summary : "");
+	pj_ks(j, "description", rz_str_get(cd->help->description));
+	pj_ks(j, "summary", rz_str_get(cd->help->summary));
+	fill_details_json(cd->help->details, j);
 	pj_end(j);
 	return true;
 }

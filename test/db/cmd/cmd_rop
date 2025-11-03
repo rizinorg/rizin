@@ -2376,3 +2376,494 @@ Register dependencies:
 
 EOF
 RUN
+
+NAME=search rop gadgets given the detailed gadget size (=4)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "=4"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x00000934
+echo "================================"
+/R | grep -A 8 0x00000c10
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x00000934           7bb9d1e9  ldmib r1, {r0, r1, r3, r4, r5, r6, r8, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x0000093c           200182fa  blx 0xfe080dc4
+Gadget size: 4
+
+  0x00000950           8cf3002b  blhs 0x3d788
+Gadget size: 4
+
+================================
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00000c40           40f18380  addhi pc, r3, r0, asr 2
+Gadget size: 4
+
+  0x00000c44           4745c346  strbmi r4, [r3], r7, asr 10
+  0x00000c48           c0f0ab80  adchi pc, fp, r0, asr 1
+Gadget size: 8
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "<10"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x00000934
+echo "================================"
+/R | grep -A 8 0x00000c0c
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x00000934           7bb9d1e9  ldmib r1, {r0, r1, r3, r4, r5, r6, r8, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x0000093c           200182fa  blx 0xfe080dc4
+Gadget size: 4
+
+  0x00000950           8cf3002b  blhs 0x3d788
+Gadget size: 4
+
+================================
+  0x00000c0c           e7d10020  andhs sp, r0, r7, ror 3
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00000c40           40f18380  addhi pc, r3, r0, asr 2
+Gadget size: 4
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl "<=10"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x000010d8
+echo "================================"
+/R | grep -A 8 0x00001edc
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00001118           01025a60  subsvs r0, sl, r1, lsl 4
+  0x0000111c           00f05efb  blx 0x17bd126
+Gadget size: 8
+
+  0x0000111c           00f05efb  blx 0x17bd126
+================================
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 20
+
+  0x00001ed0           b1f90c00  strheq pc, [ip], -r1
+  0x00001ed4           08b902b0  andlt fp, r2, r8, lsl 18
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 16
+
+  0x00001ed4           08b902b0  andlt fp, r2, r8, lsl 18
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 12
+
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00001ee8           fef742fe  mcr2 p7, 2, pc, c2, c14, 7
+  0x00001eec           0199efe7  strb sb, [pc, r1, lsl 18]!
+  0x00001ef0           20b1054b  blmi 0x16e378
+Gadget size: 12
+
+  0x00001eec           0199efe7  strb sb, [pc, r1, lsl 18]!
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl ">10"
+echo "================================"
+/R | grep -A 8 0x000010cc
+echo "================================"
+/R | grep -A 8 0x000010d0
+echo "================================"
+/R | grep -A 8 0x000010d4
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x000010cc           204603b0  andlt r4, r3, r0, lsr 12
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+================================
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+================================
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+/Rl ">=10"
+echo "================================"
+/R | grep -A 8 0x000010cc
+echo "================================"
+/R | grep -A 8 0x000010d0
+echo "================================"
+/R | grep -A 8 0x000010d4
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x000010cc           204603b0  andlt r4, r3, r0, lsr 12
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+================================
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+================================
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+EOF
+RUN

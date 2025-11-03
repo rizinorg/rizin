@@ -1432,10 +1432,10 @@ RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_N
 	return rx_list;
 }
 
-static bool parse_detail_search_stack_change(RzCore *core, const char *str, RopStackCmpOp *op, st64 *value) {
+static bool parse_detail_search_arg(RzCore *core, const char *str, RopDetailSearchCmpOp *op, st64 *value) {
 
 	if (RZ_STR_ISEMPTY(str)) {
-		*op = ROP_STACK_CMP_EQ;
+		*op = ROP_DETAIL_CMP_EQ;
 		*value = 0;
 		return true;
 	}
@@ -1447,31 +1447,31 @@ static bool parse_detail_search_stack_change(RzCore *core, const char *str, RopS
 	}
 
 	if (*p == '\0') {
-		*op = ROP_STACK_CMP_EQ;
+		*op = ROP_DETAIL_CMP_EQ;
 		*value = 0;
 		return true;
 	}
 
 	if (rz_str_startswith(p, ">=")) {
-		*op = ROP_STACK_CMP_GE;
+		*op = ROP_DETAIL_CMP_GE;
 		p += 2;
 	} else if (rz_str_startswith(p, "<=")) {
-		*op = ROP_STACK_CMP_LE;
+		*op = ROP_DETAIL_CMP_LE;
 		p += 2;
 	} else if (rz_str_startswith(p, "==")) {
-		*op = ROP_STACK_CMP_EQ;
+		*op = ROP_DETAIL_CMP_EQ;
 		p += 2;
 	} else if (p[0] == '>') {
-		*op = ROP_STACK_CMP_GT;
+		*op = ROP_DETAIL_CMP_GT;
 		p++;
 	} else if (p[0] == '<') {
-		*op = ROP_STACK_CMP_LT;
+		*op = ROP_DETAIL_CMP_LT;
 		p++;
 	} else if (p[0] == '=') {
-		*op = ROP_STACK_CMP_EQ;
+		*op = ROP_DETAIL_CMP_EQ;
 		p++;
 	} else {
-		*op = ROP_STACK_CMP_EQ;
+		*op = ROP_DETAIL_CMP_EQ;
 	}
 
 	// skip possible spaces between operator and number
@@ -1488,18 +1488,18 @@ static bool parse_detail_search_stack_change(RzCore *core, const char *str, RopS
 	return true;
 }
 
-static bool match_stack_change(st64 stack_change, RopStackCmpOp op, st64 target) {
+static bool match_detail_search(st64 gadget_val, RopDetailSearchCmpOp op, st64 target) {
 	switch (op) {
-	case ROP_STACK_CMP_EQ:
-		return stack_change == target;
-	case ROP_STACK_CMP_GT:
-		return stack_change > target;
-	case ROP_STACK_CMP_GE:
-		return stack_change >= target;
-	case ROP_STACK_CMP_LT:
-		return stack_change < target;
-	case ROP_STACK_CMP_LE:
-		return stack_change <= target;
+	case ROP_DETAIL_CMP_EQ:
+		return gadget_val == target;
+	case ROP_DETAIL_CMP_GT:
+		return gadget_val > target;
+	case ROP_DETAIL_CMP_GE:
+		return gadget_val >= target;
+	case ROP_DETAIL_CMP_LT:
+		return gadget_val < target;
+	case ROP_DETAIL_CMP_LE:
+		return gadget_val <= target;
 	}
 	return false;
 }
@@ -1525,13 +1525,15 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 		if (!rop_gadget_info) {
 			goto fini;
 		}
-		if (context->detail_mask & RZ_ROP_DETAIL_SEARCH_STACK) {
-			RopStackCmpOp cmp_op;
+		if (context->detail_mask & (RZ_ROP_DETAIL_SEARCH_STACK | RZ_ROP_DETAIL_SEARCH_SIZE)) {
+			RopDetailSearchCmpOp cmp_op;
 			st64 target;
-			if (!parse_detail_search_stack_change(core, context->greparg, &cmp_op, &target)) {
+			// RZ_ROP_DETAIL_SEARCH_STACK -> stack_change, RZ_ROP_DETAIL_SEARCH_SIZE -> size
+			ut64 gadget_info = context->detail_mask & RZ_ROP_DETAIL_SEARCH_STACK ? rop_gadget_info->stack_change : rop_gadget_info->size;
+			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
 				goto fini;
 			}
-			if (!match_stack_change(rop_gadget_info->stack_change, cmp_op, target)) {
+			if (!match_detail_search(gadget_info, cmp_op, target)) {
 				goto fini;
 			}
 		}

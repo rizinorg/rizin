@@ -100,6 +100,12 @@ RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const
 	return status;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_rop_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_SIZE, state);
+	RzCmdStatus status = rz_core_rop_gadget_info(core, context);
+	return status;
+}
+
 static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	ut64 from = itv.addr, to = rz_itv_end(itv);
 	int size; // , sz = sizeof (buf);

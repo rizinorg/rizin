@@ -71,17 +71,14 @@ NAME=dbg.maps.count.after.map
 FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 CMDS=<<EOF
+. scripts/map_clean.rz
 dm~?
 db @ sym.imp.puts
 dc~?
 echo ----
 $dm=%b64- `dm | base64 -w 0`
-$dm~x86-helloworld-gcc~?
-$dm~/usr/lib32/libc.so.6~?
-$dm~unk~?
-$dm~[v~?
-$dm~/usr/lib32/ld-linux.so.2~?
-$dm~[stack~?
+$dm~?
+.(dm_cmd_clean $dm)
 echo ----
 dc
 EOF
@@ -89,12 +86,25 @@ EXPECT=<<EOF
 9
 0
 ----
-2
-5
-2
-2
-5
-1
+17
+0x08048000 - 0x08049000 * usr     4K s r-x .../rizin/test/bins/elf/analysis/x86-helloworld-gcc .../rizin/test/bins/elf/analysis/x86-helloworld-gcc ; ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x
+0x08049000 - 0x0804a000 - usr     4K s rw- .../rizin/test/bins/elf/analysis/x86-helloworld-gcc .../rizin/test/bins/elf/analysis/x86-helloworld-gcc ; ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw
+0x________ - 0x________ - usr   140K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr   1.5M s r-x /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr   532K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr     8K s r-- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr     4K s rw- /usr/lib32/libc.so.6 /usr/lib32/libc.so.6
+0x________ - 0x________ - usr    40K s rw- unk0 unk0
+0x________ - 0x________ - usr     8K s rw- unk1 unk1
+0x________ - 0x________ - usr    16K s r-- [vvar] [vvar] ; vvar_.r
+0x________ - 0x________ - usr     8K s r-x [vdso] [vdso] ; vdso_.r_x
+0x________ - 0x________ - usr     4K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r
+0x________ - 0x________ - usr   140K s r-x /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r_x
+0x________ - 0x________ - usr    56K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.r.________
+0x________ - 0x________ - usr     8K s r-- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2 ; usr_lib32_ld_linux.so.2.rw
+0x________ - 0x________ - usr     4K s rw- /usr/lib32/ld-linux.so.2 /usr/lib32/ld-linux.so.2
+0x________ - 0x________ - usr   1__K s rw- [stack] [stack] ; stack_.rw
+
 ----
 Hello world!
 EOF

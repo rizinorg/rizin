@@ -84,7 +84,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzCmdDesc *begin = NULL;
 
-	if (argc == 2) {
+	if (argc == 2 && RZ_STR_ISNOTEMPTY(argv[1])) {
 		begin = rz_cmd_get_desc(core->rcmd, argv[1]);
 		if (!begin) {
 			RZ_LOG_ERROR("Command '%s' does not exist.\n", argv[1]);
