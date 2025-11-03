@@ -89,11 +89,11 @@ extern char **environ;
 #include <VersionHelpers.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
-#ifdef _MSC_VER
+#if __WINDOWS__
 #include <psapi.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
-#endif /* _MSC_VER */
+#endif /* __WINDOWS__ */
 
 typedef BOOL(WINAPI *SetProcessMitigationPolicy_t)(
 	PROCESS_MITIGATION_POLICY mitigation_policy,

@@ -1062,7 +1062,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 RZ_API int rz_run_start(RzRunProfile *p) {
 	if (p->_execve) {
-		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
+		exit(rz_sys_execv(p->_program, (const char *const *)p->_args));
 	}
 #if __APPLE__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
@@ -1230,10 +1230,10 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				}
 			}
 			setsid();
-			exit(rz_sys_execv(p->_program, (char *const *)p->_args));
+			exit(rz_sys_execv(p->_program, (const char *const *)p->_args));
 #endif
 		}
-		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
+		exit(rz_sys_execv(p->_program, (const char *const *)p->_args));
 	}
 	if (p->_runlib) {
 		if (!p->_runlib_fcn) {

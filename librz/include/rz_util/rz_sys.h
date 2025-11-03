@@ -3,6 +3,9 @@
 
 #include <rz_types.h>
 #include <rz_list.h>
+#if __WINDOWS__
+#include <process.h>
+#endif
 
 #if __WINDOWS__
 #define RZ_SYS_DEVNULL "nul"
@@ -64,7 +67,8 @@ RZ_API int rz_sys_pipe_close(int fd);
 #if !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
 RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]);
 #else
-#define rz_sys_execv execv
+/* https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/execv-wexecv?view=msvc-170 */
+#define rz_sys_execv _execv
 #endif
 #if !HAVE_EXECVE || (__UNIX__ && HAVE_EXECVE && HAVE_PIPE && !HAVE_PIPE2)
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]);

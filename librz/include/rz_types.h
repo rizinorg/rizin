@@ -245,10 +245,12 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #ifdef RZ_BINDINGS
 #define RZ_API __attribute__((annotate("RZ_API")))
 #else
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define RZ_API __attribute__((visibility("default")))
-#elif defined(_MSC_VER)
+/* If we change the order, meson will create the incorrect *.dll.a file from *.dll
+   by ignoring all functions marked with RZ_API in MinGW. */
+#if __WINDOWS__
 #define RZ_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define RZ_API __attribute__((visibility("default")))
 #else
 #define RZ_API
 #endif

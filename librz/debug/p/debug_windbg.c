@@ -24,8 +24,8 @@
 #endif
 
 #define TIMEOUT                                500
-#define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, __VA_ARGS__)
-#define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, __VA_ARGS__)
+#define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, ##__VA_ARGS__)
+#define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, ##__VA_ARGS__)
 #define RELEASE(I) \
 	if (I) \
 		THISCALL(I, Release);

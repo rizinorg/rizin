@@ -14,7 +14,7 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_main);
 
-#if __WINDOWS__
+#if defined(__WINDOWS__) && defined(_UNICODE)
 #define MAIN_NAME                       wmain
 #define ARGV_TYPE                       wchar_t
 #define ARGV_TYPE_TO_UTF8(argc, argv)   rz_sys_utf8_argv_new(argc, argv)

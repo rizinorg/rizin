@@ -51,11 +51,6 @@ typedef struct _SYSTEM_HANDLE {
 	ACCESS_MASK GrantedAccess;
 } SYSTEM_HANDLE, *PSYSTEM_HANDLE;
 
-typedef struct _SYSTEM_HANDLE_INFORMATION {
-	ULONG HandleCount;
-	SYSTEM_HANDLE Handles[1];
-} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
-
 typedef enum _POOL_TYPE {
 	NonPagedPool,
 	PagedPool,
@@ -66,31 +61,6 @@ typedef enum _POOL_TYPE {
 	NonPagedPoolCacheAlignedMustS
 } POOL_TYPE,
 	*PPOOL_TYPE;
-
-typedef struct _OBJECT_TYPE_INFORMATION {
-	UNICODE_STRING Name;
-	ULONG TotalNumberOfObjects;
-	ULONG TotalNumberOfHandles;
-	ULONG TotalPagedPoolUsage;
-	ULONG TotalNonPagedPoolUsage;
-	ULONG TotalNamePoolUsage;
-	ULONG TotalHandleTableUsage;
-	ULONG HighWaterNumberOfObjects;
-	ULONG HighWaterNumberOfHandles;
-	ULONG HighWaterPagedPoolUsage;
-	ULONG HighWaterNonPagedPoolUsage;
-	ULONG HighWaterNamePoolUsage;
-	ULONG HighWaterHandleTableUsage;
-	ULONG InvalidAttributes;
-	GENERIC_MAPPING GenericMapping;
-	ULONG ValidAccess;
-	BOOLEAN SecurityRequired;
-	BOOLEAN MaintainHandleCount;
-	USHORT MaintainTypeList;
-	POOL_TYPE PoolType;
-	ULONG PagedPoolUsage;
-	ULONG NonPagedPoolUsage;
-} OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
 // thread list
 typedef struct {
@@ -114,24 +84,24 @@ typedef struct {
 } LIB_ITEM, *PLIB_ITEM;
 
 // Vista
-BOOL(WINAPI *w32_ProcessIdToSessionId)(DWORD, DWORD *);
-BOOL(WINAPI *w32_QueryFullProcessImageNameW)(HANDLE, DWORD, LPWSTR, PDWORD);
+extern BOOL(WINAPI *w32_ProcessIdToSessionId)(DWORD, DWORD *);
+extern BOOL(WINAPI *w32_QueryFullProcessImageNameW)(HANDLE, DWORD, LPWSTR, PDWORD);
 // Internal NT functions (winternl.h)
-NTSTATUS(WINAPI *w32_NtQuerySystemInformation)
+extern NTSTATUS(WINAPI *w32_NtQuerySystemInformation)
 (ULONG, PVOID, ULONG, PULONG);
-NTSTATUS(WINAPI *w32_NtQueryInformationThread)
+extern NTSTATUS(WINAPI *w32_NtQueryInformationThread)
 (HANDLE, ULONG, PVOID, ULONG, PULONG);
-NTSTATUS(WINAPI *w32_NtDuplicateObject)
+extern NTSTATUS(WINAPI *w32_NtDuplicateObject)
 (HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG);
-NTSTATUS(WINAPI *w32_NtQueryObject)
+extern NTSTATUS(WINAPI *w32_NtQueryObject)
 (HANDLE, ULONG, PVOID, ULONG, PULONG);
 // fpu access API (Windows 7)
-ut64(WINAPI *w32_GetEnabledXStateFeatures)();
-BOOL(WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
-BOOL(WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
-PVOID(WINAPI *w32_LocateXStateFeature)
+extern ut64(WINAPI *w32_GetEnabledXStateFeatures)();
+extern BOOL(WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
+extern BOOL(WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
+extern PVOID(WINAPI *w32_LocateXStateFeature)
 (PCONTEXT Context, DWORD, PDWORD);
-BOOL(WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
+extern BOOL(WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
 
 // APIs
 int w32_init(RzDebug *dbg);

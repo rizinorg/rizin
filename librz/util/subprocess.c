@@ -80,7 +80,7 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 static RzThreadLock *get_subprocess_lock(void) {
 	RzThreadLock *lock;
 	do {
-		lock = InterlockedCompareExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
+		lock = InterlockedCompareExchangePointer((void * volatile *)&subproc_mutex, INVALID_POINTER_VALUE, INVALID_POINTER_VALUE);
 	} while (!lock);
 	return lock;
 }
@@ -91,13 +91,13 @@ RZ_API bool rz_subprocess_init(void) {
 	if (ref == 1) {
 		lock = rz_th_lock_new(false);
 		if (!lock) {
-			InterlockedExchangePointer(&subproc_mutex, INVALID_POINTER_VALUE);
+			InterlockedExchangePointer((void * volatile *)&subproc_mutex, INVALID_POINTER_VALUE);
 			InterlockedDecrement(&refcount);
 			return false;
 		}
 		// Enter lock before making it available, so we are the first to run
 		rz_th_lock_enter(lock);
-		InterlockedExchangePointer(&subproc_mutex, lock);
+		InterlockedExchangePointer((void * volatile *)&subproc_mutex, lock);
 	} else {
 		// Spin until theres a lock available or lock initialization failed
 		lock = get_subprocess_lock();
@@ -146,10 +146,10 @@ RZ_API void rz_subprocess_fini(void) {
 			rz_warn_if_reached();
 			return;
 		}
-		lock = InterlockedExchangePointer(&subproc_mutex, NULL);
+		lock = InterlockedExchangePointer((void * volatile *)&subproc_mutex, NULL);
 	} while (!lock);
 	if (InterlockedDecrement(&refcount) > 0) {
-		InterlockedExchangePointer(&subproc_mutex, lock);
+		InterlockedExchangePointer((void * volatile *)&subproc_mutex, lock);
 		return;
 	}
 	SetEnvironmentVariableW(L"RZ_PIPE_PATH", NULL);

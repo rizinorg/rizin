@@ -15,7 +15,7 @@
 #include <rz_windows.h>
 #endif
 
-#ifdef _MSC_VER
+#if __WINDOWS__
 /**
  * \brief Get the system current time and the current time zone.
  *
