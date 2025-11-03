@@ -958,7 +958,6 @@ ec diff.unmatch red    | mismatch color
  [32m-b[0m[33m size [0m [0mSet block size
  [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
  [32m-E[0m[33m cmd [0m  [0mExecute command for each file found
- [32m-R[0m[33m cmd [0m  [0mExecute a system shell command for each match (use {} for filename)
  [32m-f[0m[33m from [0m [0mStart searching from address 'from'
  [32m-F[0m[33m file [0m [0mRead the contents of the file and use it as keyword
  [32m-h[0m       [0mShow this help
