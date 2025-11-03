@@ -168,10 +168,16 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 		char *replaced = rz_str_replace(tmp, "{}", ro->curfile, 0);
 		if (!replaced) {
+			free(tmp);
 			replaced = rz_str_dup(ro->sys_command);
 			if (!replaced) {
 				return 1;
 			}
+		}
+		else {
+			if (replaced != tmp) {
+            	free(tmp);
+        	}
 		}
 		int status = rz_sys_system(replaced);
 		if (status == -1) {
@@ -220,8 +226,8 @@ static int show_help(const char *argv0, int line) {
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
-		"-E",    "cmd",     "Execute command for each file found",
-		"-R",    "cmd",     "Execute a system shell command for each match (use {} for filename)",
+		"-R",    "cmd",     "Execute command for each file found",
+		"-E",    "cmd",     "Execute a system shell command for each match (use {} for filename)",
 		"-f",    "from",    "Start searching from address 'from'",
 		"-F",    "file",    "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
@@ -569,12 +575,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'E':
 			ro.quiet = true;
-			ro.exec_command = opt.arg;
-			break;
-		case 'R':
-    		ro.quiet = true;
     		ro.sys_command = rz_str_dup(opt.arg);
 		    break;
+		case 'R':
+    		ro.quiet = true;
+			ro.exec_command = opt.arg;
+			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
 			ro.hexstr = false;
