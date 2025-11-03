@@ -96,17 +96,6 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 	return strcmp(s1, s2);
 }
 
-/**
- * \brief Rotate and apply the next theme for `eco` autocompletion.
- *
- * This function is called when the user presses <TAB> after typing
- * `eco `. It updates the input line buffer with the next theme name
- * and applies the theme internally.
- *
- * \param core The Rizin core instance.
- * 
- * \return The name of the next theme, or NULL on error.
- */
 RZ_IPI char **rz_core_autocomplete_rotate_theme(RzCore *core) {
 	RzPVector *themes = rz_core_get_themes(core);
 	if (!themes) {
