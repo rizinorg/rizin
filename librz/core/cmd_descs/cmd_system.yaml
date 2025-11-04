@@ -19,9 +19,7 @@ commands:
         entries:
           - text: "!"
             arg_str: "ls"
-            comment:
-              Execute the 'ls' command via system(3). Note that 'ls' has different output if its stdout is piped via
-              '!!ls'.
+            comment: "Execute the 'ls' command via system(3)"
           - text: "!"
             arg_str: bash -c "echo $RZ_SIZE"
             comment:
@@ -43,4 +41,6 @@ commands:
         entries:
           - text: "!!"
             arg_str: "ls~txt"
-            comment: "Execute the 'ls' command via system(3) and grep for 'txt'"
+            comment:
+              Execute the 'ls' command via system(3) and grep for 'txt'. Note that 'ls' has different output if its
+              stdout is piped.
