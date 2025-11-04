@@ -33,8 +33,8 @@ echo
 EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
- - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping automatically forces piping 
-                                          ('!!').                                                                       
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
+                                          use of '!!' instead.                                                          
    │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 EOF
 RUN
@@ -71,7 +71,7 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
  - ! | Usage: !<command> [<args1> <args2> ...]   # Run command via system(3) with raw output. Greppi[0J[0m
-   ! |                                             automatically forces piping ('!!').              
+   ! |                                             '~' automatically forces use of '!!' instead.    
    ! | Examples:                                                                                    [?25h
 EOF
 RUN
