@@ -19,7 +19,9 @@ commands:
         entries:
           - text: "!"
             arg_str: "ls"
-            comment: "Execute the 'ls' command via system(3). Note that 'ls' has different output if its stdout is piped via '!!ls'."
+            comment:
+              Execute the 'ls' command via system(3). Note that 'ls' has different output if its stdout is piped via
+              '!!ls'.
           - text: "!"
             arg_str: "echo $RZ_SIZE"
             comment: "Execute the 'echo' command via system(3) and show the display file size"
