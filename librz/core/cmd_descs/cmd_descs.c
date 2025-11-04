@@ -975,7 +975,7 @@ static const RzCmdDescHelp escl__help = {
 };
 static const RzCmdDescDetailEntry system_Examples_detail_entries[] = {
 	{ .text = "!", .arg_str = "ls", .comment = "Execute the 'ls' command via system(3). Note that 'ls' has different output if its stdout is piped via '!!ls'." },
-	{ .text = "!", .arg_str = "echo $RZ_SIZE", .comment = "Execute the 'echo' command via system(3) and show the display file size" },
+	{ .text = "!", .arg_str = "bash -c \"echo $RZ_SIZE\"", .comment = "Execute the 'echo' command via system(3) and bash. It prints the content of the environment variable '$RZ_SIZE'." },
 	{ 0 },
 };
 static const RzCmdDescDetail system_details[] = {
