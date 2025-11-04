@@ -5,7 +5,7 @@ name: cmd_system
 commands:
   - name: "!"
     cname: system
-    summary: Run command via system(3) with raw output. Grepping automatically forces piping ('!!').
+    summary: Run command via system(3) with raw output. Grepping via '~' automatically forces use of '!!' instead.
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING

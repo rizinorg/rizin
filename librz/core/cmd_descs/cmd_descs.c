@@ -999,7 +999,7 @@ static const RzCmdDescArg system_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp system_help = {
-	.summary = "Run command via system(3) with raw output. Grepping automatically forces piping ('!!').",
+	.summary = "Run command via system(3) with raw output. Grepping via '~' automatically forces use of '!!' instead.",
 	.details = system_details,
 	.args = system_args,
 };
