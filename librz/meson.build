@@ -28,6 +28,7 @@ subdir('sign')
 subdir('egg')
 subdir('debug')
 subdir('core')
+subdir('study')
 
 subdir('main')
 
