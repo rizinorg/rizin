@@ -21,7 +21,7 @@ typedef enum {
 	/**
 	 * \brief Value abstraction into constant and bottom values.
 	 */
-	RZ_STUDY_ABSTRACTION_CONST,
+	RZ_STUDY_ABSTRACTION_CONST = 1 << 0,
 } RzStudyAbstraction;
 
 /**
@@ -73,6 +73,25 @@ typedef struct {
 typedef struct {
 	RzThreadQueue /*<RzStudyILQueueElement *>*/ *yield_queue;
 } RzStudyILQueue;
+
+typedef struct {
+	const char *name;
+	const char *author;
+	const char *version;
+	const char *desc;
+	const char *license;
+	RzStudyAbstraction supported_abstractions;
+	bool (*init)(void **plugin_data);
+	bool (*fini)(void *plugin_data);
+	// TODO: Configuration or initial setup of interpreter not yet implemented.
+	bool (*interpret)(
+		// TODO: The entry point could be in the reveive queue already.
+		// Saves one more parameter, keeps the IPI on point.
+		ut64 entry_point,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzStudyILQueueElement *>*/ *receive_il,
+		RZ_NONNULL RZ_BORROW RzPVector /*<RzStudyYieldQueue*>*/ *yield_queues);
+} RzStudyInterpreterPlugin;
 
 /**
  * \brief Performs abstract interpretation.

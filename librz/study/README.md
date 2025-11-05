@@ -10,5 +10,5 @@ Module implementing basic and advanced binary analysis.
 ```c
 .     // API implementation
 └── p // Plugin implementations
-    └── abstr_inter_proto // The prototype abstract interpreter for basic analysis.
+    └── interpreter_prototype // The prototype abstract interpreter for basic analysis.
 ```

@@ -13,7 +13,7 @@ study_plugins = {
 
 rz_study_sources = [
   'interpreter.c',
-  'p/study_abstr_int_proto.c',
+  'p/study_interpreter_prototype.c',
 ]
 
 rz_study_inc = [platform_inc]
