@@ -7,6 +7,9 @@
 
 #include <rz_study.h>
 
-RZ_API bool rz_study_abstract_interpretation(RzAnalysis *analysis, RzIO *io) {
+RZ_API bool rz_study_abstract_interpretation(
+	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
+	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzStudyILQueueElement *>*/ *receive_il,
+	RZ_NONNULL RZ_BORROW RzPVector /*<RzStudyYieldQueue *>*/ *yield_queues) {
 	return true;
 }
