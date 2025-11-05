@@ -36,6 +36,14 @@ New contributors must ensure their code changes are fully covered by tests
 
 Local testing is _not_ sufficient!
 
+Rizin has different kind of tests in the `test/` subdirectory. Notable ones are:
+- `test/db/asm/`: Assembly and disassembly tests.
+- `test/db/cmd/`: Command tests.
+- `test/unit/`: Unit tests for single functions and modules.
+- `test/integration/`: Integration tests of the API.
+
+To get more help about testing please see [test/README.md](test/README.md).
+
 To test your changes against the CI, you can open a PR as a
 [Draft](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/changing-the-stage-of-a-pull-request)
 and mark it "Ready for review" once it meets the requirement.
