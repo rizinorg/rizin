@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re> -->
 <!-- SPDX-License-Identifier: LGPL-3.0-only -->
 
-# RzStudy Module
+# RzInquiry Module
 
 Module implementing basic and advanced binary analysis.
 
