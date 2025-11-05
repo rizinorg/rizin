@@ -112,6 +112,7 @@ if get_option('enable_tests')
     'strbuf',
     'str_search',
     'subprocess',
+    'syscall',
     'table',
     'task',
     'threads',

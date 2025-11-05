@@ -2226,8 +2226,9 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 		RZ_LOG_ERROR("architecture '%s' is not yet supported!\n", core->analysis->cur->arch);
 		return 0;
 	}
-
-	num = rz_syscall_get_num(core->analysis->syscall, name);
+	if (!rz_syscall_get_num(core->analysis->syscall, name, &num)) {
+		return 0;
+	}
 
 	// bits check
 	switch (core->rasm->bits) {

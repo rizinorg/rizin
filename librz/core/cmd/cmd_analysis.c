@@ -1469,8 +1469,11 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_print_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_analysis_syscall_name_handler(RzCore *core, int argc, const char **argv) {
-	int num = rz_syscall_get_num(core->analysis->syscall, argv[1]);
-	if (num < 1) {
+	int num = 0;
+	if (!rz_syscall_get_num(core->analysis->syscall, argv[1], &num)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (num < 0) {
 		RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1484,7 +1487,7 @@ RZ_IPI RzCmdStatus rz_analysis_syscall_name_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_analysis_syscall_number_handler(RzCore *core, int argc, const char **argv) {
 	st64 num = rz_num_math(NULL, argv[1]);
-	if (num < 1) {
+	if (num < 0) {
 		RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1517,7 +1520,11 @@ static RzCmdStatus syscalls_dump(RzCore *core, int argc, const char **argv, bool
 	if (argc > 1) {
 		st64 n = rz_num_math(core->num, argv[1]);
 		if (n < 1) {
-			n = rz_syscall_get_num(core->analysis->syscall, argv[1]);
+			int num = 0;
+			if (!rz_syscall_get_num(core->analysis->syscall, argv[1], &num)) {
+				return RZ_CMD_STATUS_ERROR;
+			}
+			n = num;
 			if (n == -1) {
 				RZ_LOG_ERROR("Cannot resolve syscall: %s\n", argv[1]);
 				return RZ_CMD_STATUS_ERROR;

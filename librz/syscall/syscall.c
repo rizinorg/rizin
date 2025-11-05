@@ -6,7 +6,7 @@
 #include <rz_syscall.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <sdb.h>
 RZ_LIB_VERSION(rz_syscall);
 
 RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
@@ -377,16 +377,28 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 	return rz_syscall_item_new_from_string(ret, ret2);
 }
 
-RZ_API int rz_syscall_get_num(RzSyscall *s, const char *str) {
-	rz_return_val_if_fail(s && str, -1);
+/**
+ * \brief Retrieves the syscall number for a given syscall name.
+ *
+ * \param s Reference to RzSyscall instance containing the syscall database.
+ * \param str Syscall name whose number should be retrieved.
+ * \param num Reference where the resolved syscall number will be stored.
+ *
+ * \return True, if syscall is successfully fetched from the db, false otherwise.
+ */
+RZ_API bool rz_syscall_get_num(RZ_NONNULL RZ_BORROW RzSyscall *s, RZ_NONNULL const char *str, RZ_OUT RZ_NULLABLE int *num) {
+	rz_return_val_if_fail(s && str && num, false);
 	if (!s->db) {
 		return -1;
 	}
-	int sn = (int)sdb_array_get_num(s->db, str, 1);
-	if (sn == 0) {
-		return (int)sdb_array_get_num(s->db, str, 0);
+	const char *v = sdb_const_get(s->db, "_");
+	int idx = (v && atoi(v) >= 0) ? 1 : 0;
+	ut64 sn = 0;
+	if (!sdb_array_get_num(s->db, str, idx, &sn)) {
+		return false;
 	}
-	return sn;
+	*num = (int)sn;
+	return true;
 }
 
 RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {

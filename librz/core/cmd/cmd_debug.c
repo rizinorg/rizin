@@ -65,8 +65,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 			if (sig == -1) { // trace ALL syscalls
 				syscalls[i] = -1;
 			} else if (sig == 0) {
-				sig = rz_syscall_get_num(core->analysis->syscall, sysnumstr);
-				if (sig == -1) {
+				if (!rz_syscall_get_num(core->analysis->syscall, sysnumstr, &sig)) {
 					RZ_LOG_ERROR("core: Unknown syscall number\n");
 					free(str);
 					free(syscalls);

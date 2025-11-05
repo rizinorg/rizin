@@ -1090,42 +1090,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm s110 syscalls asl ascii
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=asn sd_evt_get
-EXPECT=<<EOF
-81
-EOF
-RUN
-
-NAME=arm s110 syscalls asl num
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=asr 0x51
-EXPECT=<<EOF
-sd_evt_get
-EOF
-RUN
-
-NAME=arm s110 syscalls asc num
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=asc 0x51
-EXPECT=<<EOF
-#define SYS_sd_evt_get 81
-EOF
-RUN
-
-NAME=arm s110 syscalls asca num
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=asca 0x51
-EXPECT=<<EOF
-.equ SYS_sd_evt_get 81
-EOF
-RUN
-
 NAME=Pre-indexed addressing mode
 FILE=malloc://0x200
 CMDS=<<EOF

@@ -935,7 +935,9 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				*sp = 0;
 				aa = rz_str_dup(p);
 				*sp = osp;
-				num = rz_syscall_get_num(a->syscall, aa + 5);
+				if (!rz_syscall_get_num(a->syscall, aa + 5, &num)) {
+					goto fail;
+				}
 				snprintf(val, sizeof(val), "%d", num);
 				lbuf = rz_str_replace(lbuf, aa, val, 1);
 				free(aa);

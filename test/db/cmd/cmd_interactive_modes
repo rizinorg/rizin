@@ -24,16 +24,18 @@ NAME=?** search
 FILE==
 CMDS=<<EOF
 e scr.interactive=true
+e scr.utf8=true
 e scr.columns=120
-e scr.rows=3
+e scr.rows=4
 e scr.color=0
 < \n; ?**
 echo
 EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
- - | !<command> [<args1> <args2> ...] # Runs given commands in system(3)                                                
-   | !!<command> [<args1> <args2> ...] # Runs a given commands in system(3) and pipes stdout to rizin                   [?25h
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
+                                          use of '!!' instead.                                                          
+   │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 EOF
 RUN
 
@@ -41,6 +43,7 @@ NAME=?**e search
 FILE==
 CMDS=<<EOF
 e scr.interactive=true
+e scr.utf8=true
 e scr.columns=120
 e scr.rows=3
 e scr.color=0
@@ -58,15 +61,17 @@ NAME=?*** search
 FILE==
 CMDS=<<EOF
 e scr.interactive=true
+e scr.utf8=true
 e scr.columns=100
-e scr.rows=3
+e scr.rows=4
 e scr.color=0
 < \n; ?***
 echo
 EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
- - ! | Usage: !<command> [<args1> <args2> ...]   # Runs given commands in system(3)                 
+ - ! | Usage: !<command> [<args1> <args2> ...]   # Run command via system(3) with raw output. Greppi[0J[0m
+   ! |                                             '~' automatically forces use of '!!' instead.    
    ! | Examples:                                                                                    [?25h
 EOF
 RUN
