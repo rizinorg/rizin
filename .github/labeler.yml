@@ -165,10 +165,10 @@ RzSocket:
   - any-glob-to-any-file:
     - librz/socket/**/*
 
-RzStudy:
+RzInquiry:
 - changed-files:
   - any-glob-to-any-file:
-    - librz/study/**/*
+    - librz/inquiry/**/*
 
 RzSyscall:
 - changed-files:

@@ -5,11 +5,11 @@
  * \file The API implementation for analysis interpreters.
  */
 
-#include <rz_study.h>
+#include <rz_inquiry.h>
 
-RZ_API bool rz_study_abstract_interpretation(
+RZ_API bool rz_inquiry_abstract_interpretation(
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzStudyILQueueElement *>*/ *receive_il,
-	RZ_NONNULL RZ_BORROW RzPVector /*<RzStudyYieldQueue *>*/ *yield_queues) {
+	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
+	RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue *>*/ *yield_queues) {
 	return true;
 }
