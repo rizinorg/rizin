@@ -26,6 +26,32 @@ try to keep the codebase consistent and clean.
 * Submit the Pull Request(PR) on Github.
 * When relevant, write a test in [test/](test).
 
+## Requirements for new contributors
+
+Due to the high number of AI-generated contributions,
+we raised the standard for new contributors.
+
+New contributors must ensure their code changes are fully covered by tests
+(excluding error-handling conditions) and that the CI is green.
+
+Local testing is _not_ sufficient!
+
+Rizin has different kind of tests in the `test/` subdirectory. Notable ones are:
+- `test/db/asm/`: Assembly and disassembly tests.
+- `test/db/cmd/`: Command tests.
+- `test/unit/`: Unit tests for single functions and modules.
+- `test/integration/`: Integration tests of the API.
+
+To get more help about testing please see [test/README.md](test/README.md).
+
+To test your changes against the CI, you can open a PR as a
+[Draft](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/changing-the-stage-of-a-pull-request)
+and mark it "Ready for review" once it meets the requirement.
+
+> [!IMPORTANT]
+> If this requirement is not met, we won't review the PR and will close it
+> if there are no visible attempts to meet it.
+
 ## Rebasing onto updated dev
 
 Every so often, your PR will lag behind `dev` and get conflicts.
