@@ -93,6 +93,24 @@ typedef struct {
 		RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues);
 } RzInquiryInterpreterPlugin;
 
+typedef struct rz_inquiry_plugin_t {
+	RzInquiryInterpreterPlugin *p_interpreter;
+	// RzInquiryAlgorithm *p_algorithm;
+} RzInquiryPlugin;
+
+typedef struct {
+	/**
+	 * \brief RzInquiry interpreter plugins. Indexed by name.
+	 */
+	HtSP /*<RzInquiryPlugin *>*/ *plugins;
+} RzInquiry;
+
+RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
+RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
+
+RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void);
+RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *a);
+
 /**
  * \brief Performs abstract interpretation.
  */

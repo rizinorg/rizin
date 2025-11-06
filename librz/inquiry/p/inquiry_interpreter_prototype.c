@@ -22,3 +22,14 @@ static RzInquiryInterpreterPlugin interpreter_prototype = {
 	.fini = NULL,
 	.interpret = interpret
 };
+
+RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
+	.p_interpreter = &interpreter_prototype,
+};
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_INTERPRETER,
+	.data = &interpreter_prototype
+};
+#endif
