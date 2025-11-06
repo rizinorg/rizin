@@ -238,6 +238,7 @@ FILE=--
 CMDS=<<EOF
 (help prog; !${prog} -h; echo)
 ..(help rizin  rz-asm  rz-ax  rz-bin  rz-diff  rz-find  rz-gg  rz-hash  rz-run  rz-sign)
+e scr.color.grep=true
 !!rz-test -h~:..-1
 EOF
 EXPECT=<<EOF
@@ -613,26 +614,26 @@ Examples:
   rz-sign -c new_signature.pat old_signature.sig
   rz-sign -o libc.sig libc.so.6
 
-Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]
- -h         Show this help
- -v         Show version information
- -q         Quiet mode
- -V         Be verbose
- -i         Interactive mode
- -y         Accept all interactive changes
- -n         Do nothing (don't run any test, just load/parse them)
- -L         Log mode (better printing for CI, logfiles, etc.)
- -F dir     Run fuzz tests (open and default analysis) on all files in the given dir
- -j threads How many threads to use for running tests concurrently (default is 8)
- -r rizin   Path to rizin executable (default is rizin)
- -m rz-asm  Path to rz-asm executable (default is rz-asm)
- -f file    File to use for JSON tests (default is bins/elf/crackme0x00b)
- -C dir     Chdir before running rz-test (default follows test pathname/cwd)
- -t seconds Timeout per test (default is 960 seconds)
- -o file    Output test run information in JSON format to file
- -e dir     Exclude a particular directory while testing (this option can appear many times)
- -s num     Number of expected successful tests
- -x num     Number of expected failed tests
+[36mUsage: [0mrz-test [-qvVnL] [-j threads] [test file/dir | @test-type]
+ [32m-h[0m         [0mShow this help
+ [32m-v[0m         [0mShow version information
+ [32m-q[0m         [0mQuiet mode
+ [32m-V[0m         [0mBe verbose
+ [32m-i[0m         [0mInteractive mode
+ [32m-y[0m         [0mAccept all interactive changes
+ [32m-n[0m         [0mDo nothing (don't run any test, just load/parse them)
+ [32m-L[0m         [0mLog mode (better printing for CI, logfiles, etc.)
+ [32m-F[0m[33m dir [0m    [0mRun fuzz tests (open and default analysis) on all files in the given dir
+ [32m-j[0m[33m threads [0m[0mHow many threads to use for running tests concurrently (default is 8)
+ [32m-r[0m[33m rizin [0m  [0mPath to rizin executable (default is rizin)
+ [32m-m[0m[33m rz-asm [0m [0mPath to rz-asm executable (default is rz-asm)
+ [32m-f[0m[33m file [0m   [0mFile to use for JSON tests (default is bins/elf/crackme0x00b)
+ [32m-C[0m[33m dir [0m    [0mChdir before running rz-test (default follows test pathname/cwd)
+ [32m-t[0m[33m seconds [0m[0mTimeout per test (default is 960 seconds)
+ [32m-o[0m[33m file [0m   [0mOutput test run information in JSON format to file
+ [32m-e[0m[33m dir [0m    [0mExclude a particular directory while testing (this option can appear many times)
+ [32m-s[0m[33m num [0m    [0mNumber of expected successful tests
+ [32m-x[0m[33m num [0m    [0mNumber of expected failed tests
 Supported test types: @json @unit @fuzz @cmds
 EOF
 RUN
