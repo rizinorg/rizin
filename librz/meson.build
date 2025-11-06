@@ -27,8 +27,8 @@ subdir('arch')
 subdir('sign')
 subdir('egg')
 subdir('debug')
-subdir('core')
 subdir('inquiry')
+subdir('core')
 
 subdir('main')
 

@@ -2,17 +2,18 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 inquiry_plugins_list = [
-  'abstr_int_proto',
+  'interpreter_prototype',
 ]
 
 inquiry_plugins = {
   'base_name': 'rz_inquiry',
-  'base_struct': 'Rzinquiry',
+  'base_struct': 'RzInquiryPlugin',
   'list': inquiry_plugins_list,
 }
 
 rz_inquiry_sources = [
   'interpreter.c',
+  'inquiry.c',
   'p/inquiry_interpreter_prototype.c',
 ]
 

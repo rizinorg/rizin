@@ -51,6 +51,7 @@ typedef enum {
 	RZ_LIB_TYPE_EGG, ///< rz_egg plugin
 	RZ_LIB_TYPE_DEMANGLER, ///< demanglers
 	RZ_LIB_TYPE_ARCH, ///< demanglers
+	RZ_LIB_TYPE_INTERPRETER, ///< Analysis interpreters
 	RZ_LIB_TYPE_UNKNOWN
 } RzLibType;
 
