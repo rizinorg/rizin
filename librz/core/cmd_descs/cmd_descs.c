@@ -4038,12 +4038,27 @@ static const RzCmdDescHelp analyze_everything_help = {
 	.args = analyze_everything_args,
 };
 
+static const RzCmdDescArg aaaa_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp aaaa_help = {
+	.summary = "Experimental analysis",
+	.args = aaaa_args,
+};
 static const RzCmdDescArg analyze_everything_experimental_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_everything_experimental_help = {
-	.summary = "Experimental analysis",
+	.summary = "Legacy experimental analysis",
 	.args = analyze_everything_experimental_args,
+};
+
+static const RzCmdDescArg analyze_interpreter_prototype_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analyze_interpreter_prototype_help = {
+	.summary = "Abstract Interpreter Prototype",
+	.args = analyze_interpreter_prototype_args,
 };
 
 static const RzCmdDescHelp aac_help = {
@@ -22995,8 +23010,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analyze_everything_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaa", rz_analyze_everything_handler, &analyze_everything_help);
 	rz_warn_if_fail(analyze_everything_cd);
 
-	RzCmdDesc *analyze_everything_experimental_cd = rz_cmd_desc_argv_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help);
-	rz_warn_if_fail(analyze_everything_experimental_cd);
+	RzCmdDesc *aaaa_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help, &aaaa_help);
+	rz_warn_if_fail(aaaa_cd);
+	RzCmdDesc *analyze_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aaaa_cd, "aaaaP", rz_analyze_interpreter_prototype_handler, &analyze_interpreter_prototype_help);
+	rz_warn_if_fail(analyze_interpreter_prototype_cd);
 
 	RzCmdDesc *aac_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aac", rz_analyze_all_function_calls_handler, &analyze_all_function_calls_help, &aac_help);
 	rz_warn_if_fail(aac_cd);

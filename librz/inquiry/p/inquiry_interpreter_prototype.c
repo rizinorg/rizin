@@ -8,7 +8,8 @@ bool interpret(
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
 	RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues) {
-  return true;
+	RZ_LOG_WARN("Hello from Protoype.\n");
+	return true;
 }
 
 static RzInquiryInterpreterPlugin interpreter_prototype = {

@@ -15,5 +15,6 @@ RZ_API bool rz_interpreter_run(
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
 	RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue *>*/ *yield_queues) {
+	RZ_LOG_WARN("Hello from rz_interpreter_run.\n");
 	return true;
 }
