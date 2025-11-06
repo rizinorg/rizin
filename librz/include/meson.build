@@ -29,6 +29,7 @@ include_files = [
   'rz_heap_glibc.h',
   'rz_heap_jemalloc.h',
   'rz_il.h',
+  'rz_inquiry.h',
   'rz_io.h',
   'rz_lang.h',
   'rz_lib.h',
@@ -143,6 +144,11 @@ rz_util_files = [
   'rz_util/ht_su.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
+
+rz_interpreter_files = [
+  'rz_inquiry/rz_interpreter.h',
+]
+install_headers(rz_interpreter_files, install_dir: join_paths(rizin_incdir, 'rz_interpreter'))
 
 rz_il_definitions_files = [
   'rz_il/definitions/bool.h',
