@@ -16,7 +16,15 @@ commands:
         args: []
       - name: aaaa
         summary: Experimental analysis
-        cname: analyze_everything_experimental
+        subcommands:
+          - name: aaaa
+            summary: Legacy experimental analysis
+            cname: analyze_everything_experimental
+            args: []
+          - name: aaaaP
+            summary: Abstract Interpreter Prototype
+            cname: analyze_interpreter_prototype
+            args: []
         args: []
       - name: aac
         summary: Analysis function calls commands
