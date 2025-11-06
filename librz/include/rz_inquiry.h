@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * \file The header file for the RzInquiry module provides the declarations
+ * for RzInquiry plugins. As well as access to broader analysis functions.
+ */
+
 #ifndef RZ_INQUIRY
 #define RZ_INQUIRY
 
@@ -16,7 +21,7 @@ typedef struct {
 	const char *version;
 	const char *desc;
 	const char *license;
-	RzInquiryAbstraction supported_abstractions;
+	RzInterpreterAbstraction supported_abstractions;
 	bool (*init)(void **plugin_data);
 	bool (*fini)(void *plugin_data);
 	// TODO: Configuration or initial setup of interpreter not yet implemented.
