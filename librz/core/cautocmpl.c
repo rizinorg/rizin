@@ -695,8 +695,8 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 
 	RzCmdArgType arg_type = arg->type;
 	switch (arg_type) {
-	case RZ_CMD_ARG_TYPE_RZNUM:
-		autocmplt_cmd_arg_rznum(core, res, s, len);
+	case RZ_CMD_ARG_TYPE_FILE:
+		autocmplt_cmd_arg_file(res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_ENV:
 		autocmplt_cmd_arg_env(res, s, len);
@@ -707,11 +707,11 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	case RZ_CMD_ARG_TYPE_FCN:
 		autocmplt_cmd_arg_fcn(core, res, s, len);
 		break;
-	case RZ_CMD_ARG_TYPE_FILE:
-		autocmplt_cmd_arg_file(res, s, len);
-		break;
 	case RZ_CMD_ARG_TYPE_MACRO:
 		autocmplt_cmd_arg_macro(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_RZNUM:
+		autocmplt_cmd_arg_rznum(core, res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_EVAL_KEY:
 		autocmplt_cmd_arg_eval_key(core, res, s, len);
