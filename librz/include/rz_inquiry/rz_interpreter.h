@@ -40,7 +40,6 @@ typedef enum {
 
 typedef void *RzInterpreterYield; ///< A yield of an interpreter. Type is implied by the queue.
 
-// TODO: Could be private
 /**
  * \brief A filter for abstract values to decide if they should be pushed into
  * the yield queue or not.

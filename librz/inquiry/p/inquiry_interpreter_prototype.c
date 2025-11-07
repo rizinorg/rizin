@@ -4,7 +4,6 @@
 #include <rz_inquiry.h>
 
 bool interpret(
-	ut64 entry_point,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
 	RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues) {

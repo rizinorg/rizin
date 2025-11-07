@@ -24,11 +24,7 @@ typedef struct {
 	RzInterpreterAbstraction supported_abstractions;
 	bool (*init)(void **plugin_data);
 	bool (*fini)(void *plugin_data);
-	// TODO: Configuration or initial setup of interpreter not yet implemented.
 	bool (*interpret)(
-		// TODO: The entry point could be in the reveive queue already.
-		// Saves one more parameter, keeps the IPI on point.
-		ut64 entry_point,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
 		RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues);
