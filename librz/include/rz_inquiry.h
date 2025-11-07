@@ -27,7 +27,7 @@ typedef struct {
 	bool (*interpret)(
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
-		RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues);
+		RZ_NONNULL RZ_BORROW RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues);
 } RzInquiryInterpreterPlugin;
 
 typedef struct rz_inquiry_plugin_t {
@@ -50,6 +50,8 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *a);
 
 RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type);
 RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr);
+
+RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const RzList /*<RzIOMap *>*/ *allowed_io_maps);
 
 #ifdef __cplusplus
 }

@@ -251,6 +251,7 @@ static const RzCmdDescArg input_msg_args[2];
 static const RzCmdDescArg input_conditional_args[2];
 static const RzCmdDescArg get_addr_references_args[2];
 static const RzCmdDescArg push_escaped_args[2];
+static const RzCmdDescArg inquiry_interpreter_prototype_args[2];
 static const RzCmdDescArg analysis_all_esil_args[2];
 static const RzCmdDescArg analyze_all_consecutive_functions_in_section_args[2];
 static const RzCmdDescArg analyze_xrefs_section_bytes_args[2];
@@ -4038,12 +4039,8 @@ static const RzCmdDescHelp analyze_everything_help = {
 	.args = analyze_everything_args,
 };
 
-static const RzCmdDescArg aaaa_args[] = {
-	{ 0 },
-};
 static const RzCmdDescHelp aaaa_help = {
 	.summary = "Experimental analysis",
-	.args = aaaa_args,
 };
 static const RzCmdDescArg analyze_everything_experimental_args[] = {
 	{ 0 },
@@ -4057,6 +4054,13 @@ static const RzCmdDescHelp aaaaI_help = {
 	.summary = "New RzInquiry analysis.",
 };
 static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
+	{
+		.name = "entry_points",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp inquiry_interpreter_prototype_help = {

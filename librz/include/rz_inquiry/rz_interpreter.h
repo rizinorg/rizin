@@ -15,6 +15,10 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
+#define RZ_INTERPRETER_IL_QUEUE_SIZE    128
+#define RZ_INTERPRETER_ADDR_QUEUE_SIZE  1024
+#define RZ_INTERPRETER_YIELD_QUEUE_SIZE 4096
+
 /**
  * \brief The abstractions this module supports.
  */
@@ -34,25 +38,33 @@ typedef struct {
 } RzInterpreterAbstrVal;
 
 typedef enum {
-	RZ_INTERPRETER_YIELD_KIND_ABSTR_VAL, ///< Yield object is an abstract value.
-	RZ_INTERPRETER_YIELD_KIND_CFG_EDGE, ///< Yield object a discovered CFG edge.
+	RZ_INTERPRETER_YIELD_KIND_XREF
 } RzInterpreterYieldKind;
 
-typedef void *RzInterpreterYield; ///< A yield of an interpreter. Type is implied by the queue.
+/**
+ * \brief A yield of an interpreter. Type is implied by the queue.
+ * Object is a union so the elements pushed over the queu are small.
+ */
+typedef union {
+	RzAnalysisXRef *abstr_const;
+} RzInterpreterYield;
 
 /**
  * \brief A filter for abstract values to decide if they should be pushed into
  * the yield queue or not.
  */
-typedef bool (*RzInterpreterYieldFilter)(RzInterpreterYieldKind kind, const RzInterpreterYield *yield);
+typedef bool (*RzInterpreterYieldFilter)(const void *element, const void *filter_data);
 
 /**
  * \brief A queue to push interpretation yields into.
  */
 typedef struct {
-	RzInterpreterAbstraction kind;
-	RzInterpreterYieldFilter *filter;
-	RzThreadQueue /*<RzInquiryYield>*/ *yield_queue;
+	RzInterpreterYieldKind kind;
+	const RzInterpreterYieldFilter *filter;
+	union {
+		RzList /*<RzIOMap *>*/ *io_boundaries;
+	} filter_data;
+	RzThreadQueue /*<RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 
 /**
@@ -70,16 +82,32 @@ typedef struct {
 	RzILOpEffect *il_effect;
 } RzInterpreterILQueueElement;
 
-typedef struct {
-	RzThreadQueue /*<RzInquiryILQueueElement *>*/ *yield_queue;
-} RzInterpreterILQueue;
-
 /**
- * \brief Performs abstract interpretation.
+ * \brief The set of required queues for an interpreter to run.
  */
-RZ_API bool rz_interpreter_run(
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
-	RZ_NONNULL RZ_BORROW RzPVector /*<RzInquiryYieldQueue*>*/ *yield_queues);
+typedef struct {
+	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
+	RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue; ///< The queue to receive the IL effects.
+	// TODO: We need to decide how to distirbute the yield.
+	RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
+	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
+} RzInterpreterQueueSet;
+
+RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzILOpEffect>*/ *q);
+RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
+RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
+
+RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
+	const RzInterpreterYieldFilter *filter,
+	RZ_OWN RZ_NULLABLE void *filter_data);
+
+RZ_API RZ_OWN RzInterpreterQueueSet *rz_interpreter_queue_set_new(
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue,
+	RZ_NONNULL RZ_OWN RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
+RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterQueueSet *qset);
+
+RZ_API bool rz_interpreter_run(RZ_OWN RZ_NONNULL RzInterpreterQueueSet *queue_set);
 
 #endif // RZ_INTERPRETER

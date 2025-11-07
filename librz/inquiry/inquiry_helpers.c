@@ -14,7 +14,7 @@
 RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type) {
 	switch (type) {
 	default:
-		false;
+		return false;
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 	case RZ_ANALYSIS_OP_TYPE_UJMP:
 	case RZ_ANALYSIS_OP_TYPE_RJMP:
@@ -68,7 +68,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 			rz_analysis_op_fini(&op);
 			break;
 		}
-		bb = rz_il_op_new_seq(bb, op.il_op);
+		bb = bb ? rz_il_op_new_seq(bb, op.il_op) : op.il_op;
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
 		changes_cf = rz_analysis_op_changes_control_flow(&op);
