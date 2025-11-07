@@ -342,8 +342,8 @@ RZ_IPI RzCmdStatus rz_analyze_simple_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const char **argv);
 // "aaaa"
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv);
-// "aaaaP"
-RZ_IPI RzCmdStatus rz_analyze_interpreter_prototype_handler(RzCore *core, int argc, const char **argv);
+// "aaaaIp"
+RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv);
 // "aac"
 RZ_IPI RzCmdStatus rz_analyze_all_function_calls_handler(RzCore *core, int argc, const char **argv);
 // "aaci"

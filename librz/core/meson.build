@@ -90,6 +90,7 @@ rz_core_sources = [
   'cmd/cmd_help.c',
   'cmd/cmd_history.c',
   'cmd/cmd_info.c',
+  'cmd/cmd_inquiry.c',
   'cmd/cmd_interactive.c',
   'cmd/cmd_interactive_panel.c',
   'cmd/cmd_interpret.c',
