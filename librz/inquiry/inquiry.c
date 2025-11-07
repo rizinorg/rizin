@@ -5,6 +5,9 @@
 #include <rz_inquiry.h>
 
 #include "rz_inquiry_plugins.h"
+#include "rz_list.h"
+#include "rz_types_base.h"
+#include "rz_util/rz_assert.h"
 
 RZ_LIB_VERSION(rz_inquiry);
 
@@ -41,5 +44,19 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 		return ht_sp_delete(inquiry->plugins, plugin->p_interpreter->name);
 	}
 	rz_warn_if_reached();
+	return false;
+}
+
+RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const RzList /*<RzIOMap *>*/ *allowed_io_maps) {
+	rz_return_val_if_fail(xref && allowed_io_maps, false);
+	const RzIOMap *map;
+	RzListIter *it;
+	rz_list_foreach (allowed_io_maps, it, map) {
+		ut64 start = map->itv.addr;
+		ut64 end = map->itv.addr + map->itv.size;
+		if (RZ_BETWEEN(start, xref->to, end)) {
+			return true;
+		}
+	}
 	return false;
 }
