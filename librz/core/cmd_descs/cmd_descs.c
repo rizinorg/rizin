@@ -4053,12 +4053,15 @@ static const RzCmdDescHelp analyze_everything_experimental_help = {
 	.args = analyze_everything_experimental_args,
 };
 
-static const RzCmdDescArg analyze_interpreter_prototype_args[] = {
+static const RzCmdDescHelp aaaaI_help = {
+	.summary = "New RzInquiry analysis.",
+};
+static const RzCmdDescArg inquiry_interpreter_prototype_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp analyze_interpreter_prototype_help = {
+static const RzCmdDescHelp inquiry_interpreter_prototype_help = {
 	.summary = "Abstract Interpreter Prototype",
-	.args = analyze_interpreter_prototype_args,
+	.args = inquiry_interpreter_prototype_args,
 };
 
 static const RzCmdDescHelp aac_help = {
@@ -23012,8 +23015,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aaaa_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aaaa", rz_analyze_everything_experimental_handler, &analyze_everything_experimental_help, &aaaa_help);
 	rz_warn_if_fail(aaaa_cd);
-	RzCmdDesc *analyze_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aaaa_cd, "aaaaP", rz_analyze_interpreter_prototype_handler, &analyze_interpreter_prototype_help);
-	rz_warn_if_fail(analyze_interpreter_prototype_cd);
+	RzCmdDesc *aaaaI_cd = rz_cmd_desc_group_new(core->rcmd, aaaa_cd, "aaaaI", NULL, NULL, &aaaaI_help);
+	rz_warn_if_fail(aaaaI_cd);
+	RzCmdDesc *inquiry_interpreter_prototype_cd = rz_cmd_desc_argv_new(core->rcmd, aaaaI_cd, "aaaaIp", rz_inquiry_interpreter_prototype_handler, &inquiry_interpreter_prototype_help);
+	rz_warn_if_fail(inquiry_interpreter_prototype_cd);
 
 	RzCmdDesc *aac_cd = rz_cmd_desc_group_new(core->rcmd, aa_cd, "aac", rz_analyze_all_function_calls_handler, &analyze_all_function_calls_help, &aac_help);
 	rz_warn_if_fail(aac_cd);

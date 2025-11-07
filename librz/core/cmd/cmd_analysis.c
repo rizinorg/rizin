@@ -4,7 +4,6 @@
 
 #include <rz_cmd.h>
 #include <rz_core.h>
-#include <rz_inquiry/rz_interpreter.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_graph_drawable.h>
@@ -5904,11 +5903,6 @@ RZ_IPI RzCmdStatus rz_analyze_everything_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_analyze_everything_experimental_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_EXPERIMENTAL);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_analyze_interpreter_prototype_handler(RzCore *core, int argc, const char **argv) {
-	rz_interpreter_run(NULL, NULL, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 

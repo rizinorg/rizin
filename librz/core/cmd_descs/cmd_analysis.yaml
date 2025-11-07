@@ -21,11 +21,17 @@ commands:
             summary: Legacy experimental analysis
             cname: analyze_everything_experimental
             args: []
-          - name: aaaaP
-            summary: Abstract Interpreter Prototype
-            cname: analyze_interpreter_prototype
-            args: []
-        args: []
+          - name: aaaaI
+            summary: New RzInquiry analysis.
+            subcommands:
+              - name: aaaaIp
+                summary: Abstract Interpreter Prototype
+                cname: inquiry_interpreter_prototype
+                args:
+                - name: entry_points
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_ARRAY
+                  optional: true
       - name: aac
         summary: Analysis function calls commands
         subcommands:

@@ -13,6 +13,7 @@ inquiry_plugins = {
 
 rz_inquiry_sources = [
   'inquiry.c',
+  'inquiry_helpers.c',
   'interpreter/interpreter.c',
   'p/inquiry_interpreter_prototype.c',
 ]
