@@ -262,7 +262,7 @@ So instead we use the macro below and test it against specific values.  */
    macros freely, and know that they will come into play for the
    version of gcc in which they are supported.  */
 
-#if (GCC_VERSION < 2007)
+#if (GCC_VERSION < 2007) && !defined(__clang__)
 #define __attribute__(x)
 #endif
 
