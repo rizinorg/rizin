@@ -9,7 +9,6 @@ skip_tags: true
 environment:
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
   VSVARSALLPATH2017: 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat'
-  VSVARSALLPATH2019: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat'
   VSVARSALLPATH2022: 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat'
 
   matrix:
@@ -41,7 +40,7 @@ environment:
     - builder: clang_cl_64_dyn
       PYTHON: 'C:\\Python38'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
       BUILD_DIR: build
       RUN_TESTS: true
       TEST_INCLUDE_HEADERS_CPP: false
@@ -81,7 +80,7 @@ build_script:
 
   - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson setup --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && %PYTHON%\Scripts\meson setup --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2022%" x64 && set CC=clang-cl && %PYTHON%\Scripts\meson setup --buildtype=release --prefix="%CD%\%DIST_FOLDER%" build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 for:
   # Run tests only conditionally
@@ -93,7 +92,7 @@ for:
       - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
       - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
       - if %builder% == vs2017_64_dyn ( call "%VSVARSALLPATH2017%" x64 )
-      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
+      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2022%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
       - echo %PATH%
       - where rizin
@@ -118,7 +117,7 @@ for:
       - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
       - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
       - if %builder% == vs2017_64_dyn ( call "%VSVARSALLPATH2017%" x64 )
-      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
+      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2022%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
       - echo %PATH%
       - where rizin
