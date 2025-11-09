@@ -360,7 +360,6 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 		if (!strncmp(filename, basename, strlen(basename))) {
 			char *tmpfilename = rz_file_path_join(basedir, filename);
 
-			// TODO: Only add if it's a directory
 			if (rz_file_is_directory(tmpfilename)) {
 				rz_line_ns_completion_result_add(res, tmpfilename);
 			}
