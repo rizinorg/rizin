@@ -42,15 +42,6 @@
 #define CONTEXT_ALL 1048607
 #endif
 
-typedef struct _SYSTEM_HANDLE {
-	ULONG ProcessId;
-	BYTE ObjectTypeNumber;
-	BYTE Flags;
-	USHORT Handle;
-	PVOID Object;
-	ACCESS_MASK GrantedAccess;
-} SYSTEM_HANDLE, *PSYSTEM_HANDLE;
-
 typedef enum _POOL_TYPE {
 	NonPagedPool,
 	PagedPool,
@@ -64,9 +55,19 @@ typedef enum _POOL_TYPE {
 
 /**
  * These definitions are not provided by Microsoft, but shipped in MinGW. (#include <winternl.h>)
- * \see https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryobject#remarks
+ * \see  https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntquerysysteminformation#remarks
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryobject#remarks
  */
 #if defined(_MSC_VER) && !defined(__MINGW32__)
+typedef struct _SYSTEM_HANDLE_ENTRY {
+	ULONG OwnerPid;
+	BYTE ObjectType;
+	BYTE HandleFlags;
+	USHORT HandleValue;
+	PVOID ObjectPointer;
+	ULONG AccessMask;
+} SYSTEM_HANDLE_ENTRY, *PSYSTEM_HANDLE_ENTRY;
+
 typedef struct _SYSTEM_HANDLE_INFORMATION {
 	ULONG Count;
 	SYSTEM_HANDLE_ENTRY Handle[1];
