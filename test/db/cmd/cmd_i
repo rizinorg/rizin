@@ -3745,10 +3745,13 @@ CMDS=<<EOF
 e str.escbslash=true
 iz~green
 iz~wall
+e bin.show.blocks=false
+iz~green
 EOF
 EXPECT=<<EOF
 0x00002248 0x00402248  57  118 .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
 0x000022c8 0x004022c8  33   68 .rodata utf16le is a wall with no embedded zeros\n
+0x00002248 0x00402248  57  118 .rodata utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n
 EOF
 RUN
 

@@ -1,0 +1,89 @@
+NAME=x86 openbsd syscalls asl ascii
+FILE==
+ARGS=-ax86 -b32 -easm.os=openbsd
+CMDS=asn read
+EXPECT=<<EOF
+3
+EOF
+RUN
+
+NAME=x86 openbsd syscalls asl ascii
+FILE==
+ARGS=-ax86 -b64 -easm.os=openbsd
+CMDS=asn accept
+EXPECT=<<EOF
+30
+EOF
+RUN
+
+NAME=x86 windows syscalls asl ascii
+FILE==
+ARGS=-ax86 -b32 -easm.os=windows
+CMDS=asn NtAllocateVirtualMemory
+EXPECT=<<EOF
+19
+EOF
+RUN
+
+NAME=x86 windows syscalls asl ascii
+FILE==
+ARGS=-ax86 -b64 -easm.os=windows
+CMDS=asn NtAllocateVirtualMemory
+EXPECT=<<EOF
+19
+EOF
+RUN
+
+NAME=x86 linux syscalls asl ascii
+FILE==
+ARGS=-ax86 -b64 -easm.os=linux
+CMDS=asn read
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=x86 linux syscalls asl ascii
+FILE==
+ARGS=-ax86 -b64 -easm.os=linux
+CMDS=asr 0
+EXPECT=<<EOF
+read
+EOF
+RUN
+
+NAME=arm s110 syscalls asl ascii
+FILE==
+ARGS=-aarm -b16 -easm.os=s110
+CMDS=asn sd_evt_get
+EXPECT=<<EOF
+81
+EOF
+RUN
+
+NAME=arm s110 syscalls asl num
+FILE==
+ARGS=-aarm -b16 -easm.os=s110
+CMDS=asr 0x51
+EXPECT=<<EOF
+sd_evt_get
+EOF
+RUN
+
+NAME=arm s110 syscalls asc num
+FILE==
+ARGS=-aarm -b16 -easm.os=s110
+CMDS=asc 0x51
+EXPECT=<<EOF
+#define SYS_sd_evt_get 81
+EOF
+RUN
+
+NAME=arm s110 syscalls asca num
+FILE==
+ARGS=-aarm -b16 -easm.os=s110
+CMDS=asca 0x51
+EXPECT=<<EOF
+.equ SYS_sd_evt_get 81
+EOF
+RUN

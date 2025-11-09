@@ -2735,7 +2735,8 @@ static void collect_string_xrefs_and_flags(RzCore *core, ut64 paddr, char **xref
 }
 
 static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector /*<RzBinString *>*/ *vec, bool print_xref) {
-	bool b64str = rz_config_get_i(core->config, "bin.b64str");
+	bool b64str = rz_config_get_b(core->config, "bin.b64str");
+	bool show_blocks = rz_config_get_b(core->config, "bin.show.blocks");
 	int va = (core->io->va || core->bin->is_debugger) ? VA_TRUE : VA_FALSE;
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 
@@ -2868,36 +2869,41 @@ static bool strings_print(RzCore *core, RzCmdStateOutput *state, const RzPVector
 				}
 			}
 
-			RzStrBuf *buf = rz_strbuf_new(str);
-			switch (string->type) {
-			case RZ_STRING_ENC_UTF8:
-			case RZ_STRING_ENC_MUTF8:
-			case RZ_STRING_ENC_UTF16LE:
-			case RZ_STRING_ENC_UTF32LE:
-				block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
-				if (block_list) {
-					if (block_list[0] == 0 && block_list[1] == -1) {
-						/* Don't show block list if
-						   just Basic Latin (0x00 - 0x7F) */
-						free(block_list);
-						break;
-					}
-					int *block_ptr = block_list;
-					rz_strbuf_append(buf, " blocks=");
-					for (; *block_ptr != -1; block_ptr++) {
-						if (block_ptr != block_list) {
-							rz_strbuf_append(buf, ",");
+			char *bufstr = NULL;
+			if (show_blocks) {
+				RzStrBuf *buf = rz_strbuf_new(str);
+				switch (string->type) {
+				case RZ_STRING_ENC_UTF8:
+				case RZ_STRING_ENC_MUTF8:
+				case RZ_STRING_ENC_UTF16LE:
+				case RZ_STRING_ENC_UTF32LE:
+					block_list = rz_utf_block_list((const ut8 *)string->string, -1, NULL);
+					if (block_list) {
+						if (block_list[0] == 0 && block_list[1] == -1) {
+							/* Don't show block list if
+							   just Basic Latin (0x00 - 0x7F) */
+							free(block_list);
+							break;
 						}
-						const char *name = rz_utf_block_name(*block_ptr);
-						rz_strbuf_appendf(buf, "%s", name ? name : "");
+						int *block_ptr = block_list;
+						rz_strbuf_append(buf, " blocks=");
+						for (; *block_ptr != -1; block_ptr++) {
+							if (block_ptr != block_list) {
+								rz_strbuf_append(buf, ",");
+							}
+							const char *name = rz_utf_block_name(*block_ptr);
+							rz_strbuf_appendf(buf, "%s", name ? name : "");
+						}
+						free(block_list);
 					}
-					free(block_list);
+					break;
+				default:
+					break;
 				}
-				break;
-			default:
-				break;
+				bufstr = rz_strbuf_drain(buf);
+			} else {
+				bufstr = rz_str_dup(str);
 			}
-			char *bufstr = rz_strbuf_drain(buf);
 			if (print_xref) {
 				rz_table_add_rowf(state->d.t, "XXsddssss", paddr, vaddr, flag_name_str,
 					(int)string->length, (int)string->size, section_name,

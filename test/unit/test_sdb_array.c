@@ -54,9 +54,31 @@ bool test_sdb_array_add_remove(void) {
 	mu_end;
 }
 
+bool test_sdb_array_get_num(void) {
+	Sdb *db = sdb_new(NULL, NULL, false);
+	ut64 num = 0;
+
+	sdb_array_push(db, "foo", "10");
+	sdb_array_push(db, "foo", "20");
+	sdb_array_push(db, "foo", "30");
+	mu_assert_true(sdb_array_get_num(db, "foo", 0, &num), "index 0");
+	mu_assert_eq(num, 30, "index 0 should be 30");
+
+	mu_assert_true(sdb_array_get_num(db, "foo", 1, &num), "index 1");
+	mu_assert_eq(num, 20, "index 1 should be 20");
+
+	mu_assert_false(sdb_array_get_num(db, "foo", 3, &num), "index out of range");
+
+	mu_assert_false(sdb_array_get_num(db, "cow", 0, &num), "missing key");
+
+	sdb_free(db);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_sdb_array_push_pop);
 	mu_run_test(test_sdb_array_add_remove);
+	mu_run_test(test_sdb_array_get_num);
 	return tests_passed != tests_run;
 }
 

@@ -395,7 +395,10 @@ repeat:
 			int idx = sdb_atoi(cmd + 2);
 			/* +[idx]key=n */
 			/* -[idx]key=n */
-			ut64 curnum = sdb_array_get_num(s, eb + 1, idx);
+			ut64 curnum = 0;
+			if (!sdb_array_get_num(s, eb + 1, idx, &curnum)) {
+				goto fail;
+			}
 			if (eq) {
 				/* +[idx]key=n  -->  key[idx] += n */
 				/* -[idx]key=n  -->  key[idx] -= n */

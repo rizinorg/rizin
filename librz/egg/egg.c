@@ -267,8 +267,12 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 }
 
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
+	int num = 0;
+	if (!rz_syscall_get_num(egg->syscall, arg, &num)) {
+		return;
+	}
 	RzSyscallItem *item = rz_syscall_get(egg->syscall,
-		rz_syscall_get_num(egg->syscall, arg), -1);
+		num, -1);
 	if (!strcmp(arg, "close")) {
 		// egg->remit->syscall_args ();
 	}

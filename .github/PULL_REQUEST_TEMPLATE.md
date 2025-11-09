@@ -17,6 +17,9 @@ If you have used AI tools to generate these code changes, please disclose softwa
 
 **Test plan**
 
+<!-- THIS IS A HARD REQUIREMENT FOR NEW CONTRIBUTORS! -->
+<!-- Please refer to CONTRIBUTING.md for more details. -->
+
 <!-- What steps should the reviewer take to test your pull request? Demonstrate the code is solid. Example: The exact commands you ran and their output, screenshots/videos. This is your time to re-check that everything works and that you covered all the edge cases -->
 
 ...

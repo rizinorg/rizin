@@ -971,11 +971,11 @@ static const RzCmdDescArg cmd_shell_pkill_args[2];
 static const RzCmdDescArg calculate_command_time_args[2];
 
 static const RzCmdDescHelp escl__help = {
-	.summary = "Run given commands as in system(3) or shows command history",
+	.summary = "Run command via system(3)",
 };
 static const RzCmdDescDetailEntry system_Examples_detail_entries[] = {
-	{ .text = "!", .arg_str = "ls", .comment = "executes the 'ls' command via system(3)" },
-	{ .text = "!", .arg_str = "echo $RZ_SIZE", .comment = "executes the 'echo' command via system(3) and shows the display file size" },
+	{ .text = "!", .arg_str = "ls", .comment = "Execute the 'ls' command via system(3)" },
+	{ .text = "!", .arg_str = "bash -c \"echo $RZ_SIZE\"", .comment = "Execute the 'echo' command via system(3) and bash. It prints the content of the environment variable '$RZ_SIZE'." },
 	{ 0 },
 };
 static const RzCmdDescDetail system_details[] = {
@@ -999,13 +999,13 @@ static const RzCmdDescArg system_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp system_help = {
-	.summary = "Runs given commands in system(3)",
+	.summary = "Run command via system(3) with raw output. Grepping via '~' automatically forces use of '!!' instead.",
 	.details = system_details,
 	.args = system_args,
 };
 
 static const RzCmdDescDetailEntry system_to_cons_Examples_detail_entries[] = {
-	{ .text = "!!", .arg_str = "ls~txt", .comment = "executes the 'ls' command via system(3) and grep for 'txt'" },
+	{ .text = "!!", .arg_str = "ls~txt", .comment = "Execute the 'ls' command via system(3) and grep for 'txt'. Note that 'ls' has different output if its stdout is piped." },
 	{ 0 },
 };
 static const RzCmdDescDetail system_to_cons_details[] = {
@@ -1029,7 +1029,7 @@ static const RzCmdDescArg system_to_cons_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp system_to_cons_help = {
-	.summary = "Runs a given commands in system(3) and pipes stdout to rizin",
+	.summary = "Run command via system(3) and pipe its stdout to rizin",
 	.details = system_to_cons_details,
 	.args = system_to_cons_args,
 };

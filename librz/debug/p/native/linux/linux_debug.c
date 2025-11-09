@@ -1461,7 +1461,10 @@ static int linux_map_thp(RzDebug *dbg, ut64 addr, int size) {
 		return false;
 	}
 
-	int num = rz_syscall_get_num(dbg->analysis->syscall, "madvise");
+	int num = 0;
+	if (!rz_syscall_get_num(dbg->analysis->syscall, "madvise", &num)) {
+		return false;
+	}
 
 	snprintf(code, sizeof(code),
 		"sc_madvise@syscall(%d);\n"
@@ -1514,7 +1517,9 @@ RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
 	} else {
 		sc_name = "mmap";
 	}
-	num = rz_syscall_get_num(dbg->analysis->syscall, sc_name);
+	if (!rz_syscall_get_num(dbg->analysis->syscall, sc_name, &num)) {
+		goto err_linux_map_alloc;
+	}
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS 0x20
 #endif
@@ -1566,7 +1571,10 @@ int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
 		"x64", "x86.as",
 		NULL
 	};
-	int num = rz_syscall_get_num(dbg->analysis->syscall, "munmap");
+	int num = 0;
+	if (!rz_syscall_get_num(dbg->analysis->syscall, "munmap", &num)) {
+		goto err_linux_map_dealloc;
+	}
 
 	snprintf(code, sizeof(code),
 		"sc_munmap@syscall(%d);\n"
@@ -1729,7 +1737,9 @@ int linux_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	char code[1024];
 	int num;
 
-	num = rz_syscall_get_num(dbg->analysis->syscall, "mprotect");
+	if (!rz_syscall_get_num(dbg->analysis->syscall, "mprotect", &num)) {
+		return false;
+	}
 	snprintf(code, sizeof(code),
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"

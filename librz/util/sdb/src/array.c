@@ -60,22 +60,34 @@ static inline int int_cmp(const void *a, const void *b) {
 	return 0;
 }
 
-RZ_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx) {
-	int i;
+/**
+ * \brief Retrieves a numeric value from an array entry stored in the Sdb database.
+ *
+ * \param s Reference to SDB instance.
+ * \param key Key whose value should be retrieved.
+ * \param idx Index of the value to retrieve from the array.
+ * \param out_number Reference where the resolved syscall will be stored.
+ *
+ * \return True, if syscall is successfully fetched, false otherwise.
+ */
+RZ_API bool sdb_array_get_num(RZ_NONNULL RZ_BORROW Sdb *s, RZ_NONNULL const char *key, int idx, RZ_OUT RZ_NONNULL ut64 *out_number) {
+	rz_return_val_if_fail(s && key && out_number, false);
 	const char *n, *str = sdb_const_get(s, key);
-	if (!str || !*str) {
-		return 0LL;
+	if (!str || !*str) { // key missing or empty
+		return false;
 	}
 	if (idx) {
+		int i;
 		for (i = 0; i < idx; i++) {
 			n = strchr(str, SDB_RS);
 			if (!n) {
-				return 0LL;
+				return false; // index out of range
 			}
 			str = n + 1;
 		}
 	}
-	return sdb_atoi(str);
+	*out_number = sdb_atoi(str);
+	return true;
 }
 
 RZ_API char *sdb_array_get(Sdb *s, const char *key, int idx) {
