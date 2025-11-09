@@ -262,7 +262,8 @@ So instead we use the macro below and test it against specific values.  */
    macros freely, and know that they will come into play for the
    version of gcc in which they are supported.  */
 
-#if (GCC_VERSION < 2007) && !defined(__clang__)
+/* clang-cl supports __attribute__ despite it being a drop-in for MSVC. */
+#if (GCC_VERSION < 2007) && !(defined(__clang__) && defined(_MSC_VER))
 #define __attribute__(x)
 #endif
 
