@@ -309,34 +309,19 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 }
 
 static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
-	char *input = rz_str_ndup(s, len);
-	if (!input) {
-		return;
+	char *dir_from_user = rz_str_ndup(s, len);
+
+	char *real = rz_path_realpath(dir_from_user);
+	if (real) {
+		free(dir_from_user);
+		dir_from_user = real;
 	}
 
-	if (RZ_STR_ISEMPTY(input)) {
-		free(input);
-		input = rz_str_dup(".");
-	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
-		const char *fmt = ".%s%s";
-#if __WINDOWS__
-		if (strchr(input, ':')) {
-			fmt = "%.0s%s";
-		}
-#endif
-		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, input);
-		free(input);
-		if (!tmp) {
-			return;
-		}
-		input = tmp;
-	}
+	char *expanded_path = rz_path_home_expand(dir_from_user);
+	free(dir_from_user);
 
-	char *einput = rz_path_home_expand(input);
-	free(input);
-
-	char *basedir = rz_file_dirname(einput);
-	const char *basename = rz_file_basename(einput + 1);
+	char *basedir = rz_file_dirname(expanded_path);
+	const char *basename = rz_file_basename(expanded_path + 1);
 
 #if __WINDOWS__
 	rz_str_replace_ch(basedir, '/', '\\', true);
@@ -345,19 +330,19 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 	RzList *l = rz_sys_dir(basedir);
 	if (!l) {
 		free(basedir);
-		free(einput);
+		free(expanded_path);
 		return;
 	}
 
 	RzListIter *iter;
 	char *filename;
 	rz_list_foreach (l, iter, filename) {
-		if (!strcmp(filename, ".") || !strcmp(filename, "..")) {
+		if (RZ_STR_EQ(filename, ".") || RZ_STR_EQ(filename, "..")) {
 			continue;
 		}
 
 		// Only autocomplete entries that start with the current input
-		if (!strncmp(filename, basename, strlen(basename))) {
+		if (rz_str_startswith_icase(filename, basename)) {
 			char *tmpfilename = rz_file_path_join(basedir, filename);
 
 			if (rz_file_is_directory(tmpfilename)) {
@@ -370,7 +355,7 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 
 	rz_list_free(l);
 	free(basedir);
-	free(einput);
+	free(expanded_path);
 }
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {

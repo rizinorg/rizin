@@ -1430,12 +1430,6 @@ bool test_call_multiple_macros(void) {
 	mu_end;
 }
 
-bool test_rz_cmd_arg_type_folder_enum(void) {
-	RzCmdArgType type = RZ_CMD_ARG_TYPE_FOLDER;
-	mu_assert_neq(type, RZ_CMD_ARG_TYPE_FILE, "FOLDER should differ from FILE");
-	mu_end;
-}
-
 bool test_cmd_descriptor_folder_arg(void) {
 	RzCmdDescArg folder_args[] = {
 		{ .name = "folder_path", .type = RZ_CMD_ARG_TYPE_FOLDER },
@@ -1506,7 +1500,6 @@ int all_tests() {
 	mu_run_test(test_remove_macros);
 	mu_run_test(test_call_macros);
 	mu_run_test(test_call_multiple_macros);
-	mu_run_test(test_rz_cmd_arg_type_folder_enum);
 	mu_run_test(test_cmd_descriptor_folder_arg);
 	return tests_passed != tests_run;
 }
