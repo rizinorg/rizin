@@ -1603,7 +1603,16 @@ RZ_API int rz_sys_pipe_close(int fd) {
 }
 #endif
 
-#if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
+#if __WINDOWS__
+/**
+ * This is a wrap function on Windows to suppress GCC warning when compiled using MinGW GCC.
+ * Microsoft ensures this function exist, so we donot perform a check.
+ */
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	intptr_t res = _execv(pathname, (const char *const *)argv);
+	return (int)res;
+}
+#elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();

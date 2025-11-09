@@ -64,15 +64,8 @@ RZ_API int rz_sys_pipe_close(int fd);
 #define rz_sys_pipe       pipe
 #define rz_sys_pipe_close close
 #endif
-#if !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
+#if __WINDOWS__ || !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
 RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]);
-#else
-#if _MSC_VER || __MINGW32__
-/* https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/execv-wexecv?view=msvc-170 */
-#define rz_sys_execv _execv
-#else
-#define rz_sys_execv execv
-#endif
 #endif
 #if !HAVE_EXECVE || (__UNIX__ && HAVE_EXECVE && HAVE_PIPE && !HAVE_PIPE2)
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]);
