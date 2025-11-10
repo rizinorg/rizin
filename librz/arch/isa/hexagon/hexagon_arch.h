@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
