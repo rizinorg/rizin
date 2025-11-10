@@ -993,6 +993,38 @@ RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op) {
 	}
 }
 
+/**
+ * \brief Checks if \p op changes the control flow.
+ * It checks op->type, op->eob for it. So any jump, call, trap, or illegal
+ * instruction.
+ * It also returns true for conditional instructions.
+ *
+ * \return True if \p op changes the control flow. False otherwise.
+ */
+RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, false);
+	if (rz_analysis_op_is_eob(op)) {
+		return true;
+	}
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_CRET:
+	case RZ_ANALYSIS_OP_TYPE_ILL:
+	case RZ_ANALYSIS_OP_TYPE_UNK:
+	case RZ_ANALYSIS_OP_TYPE_SWI:
+	case RZ_ANALYSIS_OP_TYPE_CSWI:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
+		return true;
+	default:
+		return false;
+	}
+}
+
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);
