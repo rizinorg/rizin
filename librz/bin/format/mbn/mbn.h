@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2025 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2025 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

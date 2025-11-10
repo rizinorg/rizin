@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
-// SPDX-FileCopyrightText: 2024-2025 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2024-2025 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
