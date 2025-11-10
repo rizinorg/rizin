@@ -100,7 +100,7 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
  * \brief Returns themes for autocompletion.
  *
  * \param core The RzCore struct to use
- * \return theme name of type char.
+ * \return Pointer to a NULL terminated array of theme names or NULL in case of failure.
  */
 RZ_IPI char **rz_core_autocomplete_rotate_theme(RzCore *core) {
 	RzPVector *themes = rz_core_get_themes(core);
