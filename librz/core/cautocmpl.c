@@ -347,15 +347,15 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 	}
 
 	RzListIter *iter;
-	char *filename;
-	rz_list_foreach (l, iter, filename) {
-		if (RZ_STR_EQ(filename, ".") || RZ_STR_EQ(filename, "..")) {
+	char *dir_name;
+	rz_list_foreach (l, iter, dir_name) {
+		if (RZ_STR_EQ(dir_name, ".") || RZ_STR_EQ(dir_name, "..")) {
 			continue;
 		}
 
 		// Only autocomplete entries that start with the current input
-		if (rz_str_startswith_icase(filename, basename)) {
-			char *tmpfilename = rz_file_path_join(basedir, filename);
+		if (rz_str_startswith_icase(dir_name, basename)) {
+			char *tmpfilename = rz_file_path_join(basedir, dir_name);
 
 			if (rz_file_is_directory(tmpfilename)) {
 				rz_line_ns_completion_result_add(res, tmpfilename);
