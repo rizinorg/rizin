@@ -311,10 +311,22 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *dir_from_user = rz_str_ndup(s, len);
 
-	char *real = rz_path_realpath(dir_from_user);
-	if (real) {
+	if (RZ_STR_ISEMPTY(dir_from_user)) {
 		free(dir_from_user);
-		dir_from_user = real;
+		dir_from_user = rz_str_dup(".");
+	} else if (!rz_file_is_abspath(dir_from_user) && !rz_str_startswith(dir_from_user, ".")) {
+		const char *fmt = ".%s%s";
+#if __WINDOWS__
+		if (strchr(input, ':')) {
+			fmt = "%.0s%s";
+		}
+#endif
+		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, dir_from_user);
+		free(dir_from_user);
+		if (!tmp) {
+			return;
+		}
+		dir_from_user = tmp;
 	}
 
 	char *expanded_path = rz_path_home_expand(dir_from_user);
