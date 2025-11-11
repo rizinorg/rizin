@@ -613,14 +613,14 @@ static bool test_rz_colorize_custom_hexagon_0(void) {
 	RzPrint *p = setup_print();
 	RzAsmOp *asmop = rz_asm_op_new();
 	RzAnalysisOp *anaop = rz_analysis_op_new();
-	// "?   if (P0.new) jump:nt 0x18
+	// "[   if (P0.new) jump:nt 0x18
 	ut8 buf[] = "\x08\xe8\x00\x5c";
 
 	rz_asm_disassemble(d, asmop, buf, sizeof(buf));
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x210\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[36mP0\x1b[0m\x1b[90m.new\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x210\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -651,7 +651,7 @@ static bool test_rz_colorize_custom_hexagon_1(void) {
 
 	RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop->asm_toks);
 
-	RzStrBuf *expected = rz_strbuf_new("\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
+	RzStrBuf *expected = rz_strbuf_new("\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[36mLR\x1b[0m\x1b[37m:\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[31mdealloc_return\x1b[0m\x1b[37m(\x1b[0m\x1b[36mFP\x1b[0m\x1b[37m)\x1b[0m\x1b[90m:raw\x1b[0m");
 	char err_msg[2048];
 	snprintf(err_msg, sizeof(err_msg), "Colors of \"%s\" are incorrect. Should be \"%s\"\n.", rz_strbuf_get(colored_asm), rz_strbuf_get(expected));
 	mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
@@ -678,14 +678,14 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
-	// ?   memd(R0++#0x8) = R19:18
+	// [   memd(R0++#0x8) = R19:18
 	// ┌   R7:6 = valignb(R13:12,R11:10,P2)
 	// │   P0 = cmp.gtu(R4,##0x1)
 	// │   R11:10 = memd(R1++#0x8)
 	// └   memd(R0++#0x8) = R7:6     ∎ endloop0
 	ut8 buf[] = "\x08\xd2\xc0\xab\x46\x8c\x0a\xc2\x20\x40\x84\x75\x2a\x40\xc1\x9b\x08\xc6\xc0\xab";
 	const char *expected_str[] = {
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
+		"\x1b[90m[\x1b[0m\x1b[37m   \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR0\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mR19:18\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR7:6\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mvalignb\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR13:12\x1b[0m\x1b[37m,\x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m,\x1b[0m\x1b[36mP2\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mP0\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mcmp\x1b[0m\x1b[37m.\x1b[0m\x1b[37mgtu\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR4\x1b[0m\x1b[37m,\x1b[0m\x1b[90m##\x1b[0m\x1b[33m0x1\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m│\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR11:10\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mmemd\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1\x1b[0m\x1b[37m++\x1b[0m\x1b[90m#\x1b[0m\x1b[33m0x8\x1b[0m\x1b[37m)\x1b[0m",
@@ -732,8 +732,8 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	// }
 	ut8 buf[] = "\x39\x40\xe0\x88\x12\xc1\x20\x5c\x42\x40\x99\x84\x04\xc0\x41\x89";
 	const char *expected_str[] = {
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
-		"\x1b[90m?\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x24\x1b[0m",
+		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR25\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_df2w\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR1:0\x1b[0m\x1b[37m)\x1b[0m\x1b[37m:\x1b[0m\x1b[37mchop\x1b[0m",
+		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[32mif\x1b[0m\x1b[37m \x1b[0m\x1b[37m(\x1b[0m\x1b[37m!\x1b[0m\x1b[36mP1\x1b[0m\x1b[37m)\x1b[0m\x1b[37m \x1b[0m\x1b[32mjump\x1b[0m\x1b[90m:nt\x1b[0m\x1b[37m \x1b[0m\x1b[33m0x24\x1b[0m",
 		"\x1b[90m┌\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR3:2\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[37mconvert_W2df\x1b[0m\x1b[37m(\x1b[0m\x1b[36mR25\x1b[0m\x1b[37m)\x1b[0m",
 		"\x1b[90m└\x1b[0m\x1b[37m   \x1b[0m\x1b[36mR4\x1b[0m\x1b[37m \x1b[0m\x1b[37m=\x1b[0m\x1b[37m \x1b[0m\x1b[36mP1\x1b[0m",
 
@@ -741,7 +741,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 
 	for (int i = 0; i < 0x10; i += 4) {
 		rz_asm_set_pc(d, i);
-		rz_asm_disassemble(d, &asmop, buf + i, 4);
+		rz_asm_disassemble(d, &asmop, buf + i, 0x10 - i);
 
 		colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		expected = rz_strbuf_new(expected_str[i / 4]);
