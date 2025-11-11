@@ -127,7 +127,7 @@ e analysis.arch=hexagon
 pi 4
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 /   immext(##0x1e417000)
 |   R3 = memw(GP+##0x1e417004)
 \   if (!cmp.eq(R3.new,R2)) jump:t 0x38
@@ -143,7 +143,7 @@ e analysis.arch=hexagon
 pi 5
 EOF
 EXPECT=<<EOF
-?   PKTCOUNT = LR:FP
+[   PKTCOUNT = LR:FP
 [   loop0(0x8,#0x10)
 [   nop
 /   nop
@@ -160,7 +160,7 @@ e analysis.arch=hexagon
 pi 13
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop0(0x8,#0x3)
 /   P0 = R13
 |   immext(##0x0)
@@ -185,7 +185,7 @@ e analysis.arch=hexagon
 pi 12
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop1(0x8,#0x3)
 /   P0 = R13
 |   immext(##0x0)
@@ -209,7 +209,7 @@ e analysis.arch=hexagon
 pi 7
 EOF
 EXPECT=<<EOF
-?   R5:4 = combine(#0x0,##0x28)
+[   R5:4 = combine(#0x0,##0x28)
 /   loop0(0x14,#0x4)
 |   P1 = cmp.gt(R1,##0x2)
 |   P2 = cmp.eq(R1,##0x1)
@@ -229,7 +229,7 @@ e analysis.arch=hexagon
 pi 46
 EOF
 EXPECT=<<EOF
-?   invalid
+[   invalid
 /   R0 = ##0x1
 |   R1 = and(R16,##0xff)
 |   R2 = and(R16,##0xff)
@@ -288,7 +288,7 @@ e plugins.hexagon.imm.hash=false
 pi 13
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop0(0x8,0x3)
 /   P0 = R13
 |   immext(0x0)
@@ -368,7 +368,7 @@ pd 8
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       R14 = and(R5,##0x20)
+|           0x00000000      [   R14 = and(R5,##0x20)
 |       ,=< 0x00000004      [   loop0(0x8,R15)
 |       |   ; CODE XREFS from fcn.00000000 @ 0x4, 0x18
 |      .`-> 0x00000008      /       R7:6 = valignb(R11:10,R13:12,P2)
@@ -391,10 +391,10 @@ pd 0xd
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       P1 = !cmp.eq(R2,##0x0)
-|           0x00000004      ?       P1 = !cmp.eq(R1,R0)
-|           0x00000008      ?       R14 = or(R1,R0)
-|           0x0000000c      ?       P0 = cmp.gtu(R2,##0x17)
+|           0x00000000      /       P1 = !cmp.eq(R2,##0x0)
+|           0x00000004      |       P1 = !cmp.eq(R1,R0)
+|           0x00000008      |       R14 = or(R1,R0)
+|           0x0000000c      \       P0 = cmp.gtu(R2,##0x17)
 |           0x00000010      /       R9 = lsr(R2,#0x3)
 |           0x00000014      |       if (!P1) jumpr:nt LR
 |           0x00000018      |       P3 = cmp.gtu(R2,##0x5f)
@@ -419,9 +419,9 @@ pd 0x12
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       immext(##0xc400)
-|           0x00000004      ?       R2 = memw(GP+##0xc420)
-|       ,=< 0x00000008      ?       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
+|           0x00000000      /       immext(##0xc400)
+|           0x00000004      |       R2 = memw(GP+##0xc420)
+|       ,=< 0x00000008      \       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
 |       |   0x0000000c      [   memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
 |       |   0x00000010      /       call 0xc60
 |       |   0x00000014      \       memw(R29+#0x0) = R0 ; memw(R29+#0x4) = R1
@@ -643,8 +643,8 @@ pd 4
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       immext(##0x1734a600)
-|       ,=< 0x00000004      ?       jump 0x1734a60c
+|           0x00000000      /       immext(##0x1734a600)
+|       ,=< 0x00000004      \       jump 0x1734a60c
 |       |   0x00000008      /       R2 = +mpyi(R0,##0x3c)
 |       |   0x0000000c      |       R16 = R0
 EOF
@@ -664,7 +664,7 @@ fs strings
 fl
 EOF
 EXPECT=<<EOF
-            0x00000000      ?       R1 = ##str.Where_is_Wally          ; 0xc ; "Where is Wally?"
+            0x00000000      [   R1 = ##str.Where_is_Wally              ; 0xc ; "Where is Wally?"
             0x00000004      [   memw(R17+#0x0) = ##str.There_is_Wally  ; 0x1c ; "There is Wally!"
 0x0000000c 16 str.Where_is_Wally
 0x0000001c 16 str.There_is_Wally
@@ -681,7 +681,7 @@ e plugins.hexagon.sdk=true
 pi 25
 EOF
 EXPECT=<<EOF
-?   nop
+{   nop }
 {   loop0(0x8,#0x3) }
 {   P0 = R13
     immext(##0x0)
@@ -1550,8 +1550,85 @@ CMDS=<<EOF
 pi 3
 EOF
 EXPECT=<<EOF
-?   allocframe(SP,#0x8):raw
+[   allocframe(SP,#0x8):raw
 [   R0 = add(FP,##-0x4)
 [   memw(R0+#0x0) = ##-0x1
 EOF
+RUN
+
+# Tests that an instruction at the border of an IOMap decodes the
+# IL op on the first try.
+NAME=hexagon first instruction at map border has to decode on first try.
+FILE=bins/elf/hexagon/hexagon_discover_recurse
+CMDS=<<EOF
+aoip
+pi 1
+EOF
+EXPECT=<<EOF
+0x8000040
+(seq
+  empty
+  (set jump_flag
+    false)
+  (set jump_target
+    (bv 32 0xffffffff))
+  (set u
+    (bv 32 0x8))
+  (set EA
+    (cast 32
+      false
+      (+
+        (var R29)
+        (bv 32 0xfffffff8))))
+  (storew 0
+    (var EA)
+    (cast 64
+      false
+      (^
+        (|
+          (<<
+            (cast 64
+              false
+              (var R31))
+            (bv 32 0x20)
+            false)
+          (cast 64
+            false
+            (var R30_tmp)))
+        (<<
+          (cast 64
+            false
+            (var C17))
+          (bv 32 0x20)
+          false))))
+  (set R30_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var EA))))
+  (set R29_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (cast 32
+          false
+          (-
+            (var EA)
+            (var u))))))
+  empty
+  (set R29
+    (var R29_tmp))
+  (set R30
+    (var R30_tmp))
+  (branch
+    (var jump_flag)
+    (jmp
+      (var jump_target))
+    (jmp
+      (bv 32 0x8000044))))
+[   allocframe(SP,#0x8):raw
+EOF
+EXPECT_ERR=
 RUN

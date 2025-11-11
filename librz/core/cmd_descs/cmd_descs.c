@@ -11885,9 +11885,9 @@ static const RzCmdDescHelp eco_help = {
 static const RzCmdDescArg cmd_eval_color_load_theme_args[] = {
 	{
 		.name = "theme",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
+		.choices.choices_cb = rz_core_autocomplete_rotate_theme,
 
 	},
 	{ 0 },

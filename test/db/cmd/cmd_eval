@@ -224,7 +224,7 @@ plugins.hexagon.reg.alias=true
 plugins.hexagon.sdk=false
 plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
 plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
-?   allocframe(SP,#0x8):raw
-?   allocframe(SP,0x8):raw
+[   allocframe(SP,#0x8):raw
+[   allocframe(SP,0x8):raw
 EOF
 RUN

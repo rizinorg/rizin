@@ -97,6 +97,32 @@ static int compare_strings(const char *s1, const char *s2, RZ_UNUSED void *user)
 }
 
 /**
+ * \brief Returns themes for autocompletion.
+ *
+ * \param core The RzCore struct to use
+ * \return Pointer to a NULL terminated array of theme names or NULL in case of failure.
+ */
+RZ_IPI RZ_OWN char **rz_core_autocomplete_rotate_theme(RzCore *core) {
+	RzPVector *themes = rz_core_get_themes(core);
+	if (!themes) {
+		return NULL;
+	}
+	size_t count = rz_pvector_len(themes);
+	char **theme_name = RZ_NEWS0(char *, count + 1);
+	if (!theme_name) {
+		rz_pvector_free(themes);
+		return NULL;
+	}
+
+	size_t i = 0;
+	void **iter;
+	rz_pvector_foreach (themes, iter) {
+		theme_name[i++] = rz_str_dup(*iter);
+	}
+	return theme_name;
+}
+
+/**
  * \brief Get names of available rizin themes.
  *
  * \param core The RzCore struct to use

@@ -283,7 +283,8 @@ commands:
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
             args:
               - name: theme
-                type: RZ_CMD_ARG_TYPE_STRING
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices_cb: rz_core_autocomplete_rotate_theme
                 optional: true
             modes:
               - RZ_OUTPUT_MODE_JSON

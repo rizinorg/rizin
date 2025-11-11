@@ -687,6 +687,30 @@ static bool test_autocmplt_choices_cb_arg(void) {
 	mu_end;
 }
 
+static bool test_autocmplt_eco_themes(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core should be created");
+
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	const char *s = "eco ";
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	mu_assert_notnull(r, "Autocomplete result should not be NULL");
+
+	size_t count = rz_pvector_len(&r->options);
+
+	mu_assert_true(count > 0, "There should be at least one theme");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "ayu", "First theme should be ayu or similar");
+
+	rz_line_ns_completion_result_free(r);
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_autocmplt_cmdid);
 	mu_run_test(test_autocmplt_newcommand);
@@ -703,6 +727,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_tmp_config);
 	mu_run_test(test_autocmplt_tmp_arch);
 	mu_run_test(test_autocmplt_choices_cb_arg);
+	mu_run_test(test_autocmplt_eco_themes);
 	return tests_passed != tests_run;
 }
 

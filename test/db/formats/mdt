@@ -359,7 +359,7 @@ EOF
 EXPECT=<<EOF
 ==== hexagon-hello-loop ====
 == .init
-?   allocframe(SP,#0x8):raw
+[   allocframe(SP,#0x8):raw
 [   memw(SP+##0x0) = R27
 [   R0.h = #0x0
 [   R0.l = #0xb760
