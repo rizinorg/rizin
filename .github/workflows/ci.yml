@@ -87,7 +87,7 @@ jobs:
             cflags: -DRZ_ASSERT_STDOUT=1
             allow_failure: false
           - name: macos-meson-clang-tests
-            os: macos-13
+            os: macos-15
             build_system: meson
             compiler: clang
             run_tests: true
@@ -599,7 +599,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-13
+    runs-on: macos-15
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
@@ -825,7 +825,7 @@ jobs:
     strategy:
       matrix:
         system:
-          - macos-13
+          - macos-15
     runs-on: ${{ matrix.system }}
     needs: [ build-osx-pkg ]
     steps:
