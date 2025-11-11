@@ -199,9 +199,13 @@ jobs:
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
         run: pip3 install --user meson ninja PyYAML
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
       - name: Install gcovr
         if: matrix.coverage && matrix.enabled
         run: pip3 install --user gcovr
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
       - name: Checkout rzpipe
         if: matrix.enabled
         uses: actions/checkout@v5
@@ -211,6 +215,8 @@ jobs:
       - name: Install test dependencies
         if: matrix.run_tests && matrix.enabled
         run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
       - name: Install Linux test dependencies
         if: matrix.run_tests && matrix.enabled && contains(matrix.os, 'macos') != true
         run: |
