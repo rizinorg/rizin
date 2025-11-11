@@ -355,13 +355,13 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 
 		// Only autocomplete entries that start with the current input
 		if (rz_str_startswith_icase(dir_name, basename)) {
-			char *tmpfilename = rz_file_path_join(basedir, dir_name);
+			char *tmpdirname = rz_file_path_join(basedir, dir_name);
 
-			if (rz_file_is_directory(tmpfilename)) {
-				rz_line_ns_completion_result_add(res, tmpfilename);
+			if (rz_file_is_directory(tmpdirname)) {
+				rz_line_ns_completion_result_add(res, tmpdirname);
 			}
 
-			free(tmpfilename);
+			free(tmpdirname);
 		}
 	}
 
