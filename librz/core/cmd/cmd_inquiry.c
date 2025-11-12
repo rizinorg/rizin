@@ -23,7 +23,7 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
 		if (!eff) {
 			rz_th_queue_free(il_queue);
-			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PRIx64 "\n", entry_point);
+			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", (ut64)entry_point);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
@@ -51,8 +51,9 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		rz_th_queue_free(il_queue);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
 	RzInterpreterYieldQueue *yield_queue = rz_interpreter_yield_queue_new(
-		RZ_INTERPRETER_YIELD_KIND_XREF,
+		yield_kind,
 		(RzInterpreterYieldFilter *)rz_inquiry_xref_interpreter_filter,
 		boundaries);
 	if (!yield_queue) {
@@ -60,22 +61,22 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		rz_th_queue_free(il_queue);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzPVector *yield_queues = rz_pvector_new((RzPVectorFree)rz_interpreter_yield_queue_free);
+	HtUP *yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
 	if (!yield_queue || !yield_queues) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
 		rz_interpreter_yield_queue_free(yield_queue);
-		rz_pvector_free(yield_queues);
+		ht_up_free(yield_queues);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_pvector_push(yield_queues, yield_queue);
+	ht_up_insert(yield_queues, yield_kind, yield_queue);
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 	RzInterpreterQueueSet *qset = rz_interpreter_queue_set_new(addr_queue, il_queue, yield_queues, is_running);
 	if (!qset) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
 		rz_interpreter_yield_queue_free(yield_queue);
-		rz_pvector_free(yield_queues);
+		ht_up_free(yield_queues);
 		rz_atomic_bool_free(is_running);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -93,7 +94,7 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			RZ_LOG_WARN("INQUIRY: Sleep over.\n");
 			continue;
 		}
-		RZ_LOG_WARN("INQUIRY: Received %" PRIx64 ".\n", (*addr));
+		RZ_LOG_WARN("INQUIRY: Received %" PFMT64x ".\n", (*addr));
 		RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 		free(addr);
 		if (!bb) {
