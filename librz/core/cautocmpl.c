@@ -317,7 +317,7 @@ static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *
 	} else if (!rz_file_is_abspath(dir_from_user) && !rz_str_startswith(dir_from_user, ".")) {
 		const char *fmt = ".%s%s";
 #if __WINDOWS__
-		if (strchr(input, ':')) {
+		if (strchr(dir_from_user, ':')) {
 			fmt = "%.0s%s";
 		}
 #endif
