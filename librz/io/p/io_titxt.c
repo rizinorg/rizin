@@ -23,7 +23,7 @@ typedef struct titxt_t {
 } TITxt;
 
 static void write_titxt_section(FILE *out, ut64 address, const ut8 *data, ut64 size) {
-	fprintf(out, "@%" PRIx64 "\n", address);
+	fprintf(out, "@%04" PFMT64x "\n", address);
 	for (ut64 i = 0; i < size; i++) {
 		bool new_line = i % 16 == 15;
 		bool last_byte = i == size - 1;
@@ -103,16 +103,6 @@ static ut64 __lseek(struct rz_io_t *io, RzIODesc *fd, ut64 offset, st32 whence) 
 
 static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, TITXT_PATH_PREFIX, TITXT_PATH_PREFIX_LEN));
-}
-
-static const char *skip_ws(const char *str) {
-	if (!str) {
-		return NULL;
-	}
-	while (*str == ' ' || *str == '\t') {
-		str++;
-	}
-	return str;
 }
 
 static const char *skip_ws_and_nl(const char *str) {
