@@ -1,0 +1,49 @@
+NAME=correct-empty.titxt
+FILE=titxt://bins/titxt/correct-empty.titxt
+CMDS=<<EOF
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=correct-1-section.titxt
+FILE=titxt://bins/titxt/correct-1-section.titxt
+CMDS=<<EOF
+s 0x1000
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001000  01ff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+
+NAME=correct-3-sections.titxt
+FILE=titxt://bins/titxt/correct-3-sections.titxt
+CMDS=<<EOF
+s 0xF0F0
+px 64
+s 0xFBF0
+px 64
+s 0xFFF0
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000f0f0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000f100  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0x0000f110  aabb ccdd eeff 0a0b 0c0d 0e0f 0011 2233  .............."3
+0x0000f120  1234 5678 ffff ffff ffff ffff ffff ffff  .4Vx............
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fbf0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000fc00  0123 4567 0800 dead beef ffff ffff ffff  .#Eg............
+0x0000fc10  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000fc20  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fff0  ffff ffff ffff ffff ffff ffff ffff f00f  ................
+EOF
+RUN
