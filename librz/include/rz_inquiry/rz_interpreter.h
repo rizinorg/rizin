@@ -27,18 +27,32 @@ typedef enum {
 	 * \brief Value abstraction into constant and bottom values.
 	 */
 	RZ_INTERPRETER_ABSTRACTION_CONST = 1 << 0,
+	/**
+	 * \brief Value abstraction into Heap[base, offset] and bottom values.
+	 */
+	RZ_INTERPRETER_ABSTRACTION_HEAP = 1 << 1,
+	/**
+	 * \brief Value abstraction into Stack[base, offset] and bottom values.
+	 */
+	RZ_INTERPRETER_ABSTRACTION_STACK = 1 << 2,
 } RzInterpreterAbstraction;
 
 /**
  * \brief An abitrary abstract value.
  */
 typedef struct {
-	RzInterpreterAbstraction kind;
+	RzInterpreterAbstraction kind; ///< The abstraction of the value.
 	void *abstr_data;
 } RzInterpreterAbstrVal;
 
+typedef struct {
+	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
+	HtSP *reg_map; ///< The register file. Currently a hashmap.
+	void *state;
+} RzInterpreterAbstrState;
+
 typedef enum {
-	RZ_INTERPRETER_YIELD_KIND_XREF
+	RZ_INTERPRETER_YIELD_KIND_XREF = 1 << 0,
 } RzInterpreterYieldKind;
 
 /**
@@ -89,7 +103,7 @@ typedef struct {
 	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distirbute the yield.
-	RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
+	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
 } RzInterpreterQueueSet;
 
@@ -104,7 +118,7 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterQueueSet *rz_interpreter_queue_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
 RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterQueueSet *qset);
 

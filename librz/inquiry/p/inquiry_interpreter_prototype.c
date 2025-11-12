@@ -3,11 +3,10 @@
 
 #include <rz_inquiry.h>
 
-bool interpret(
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
-	RZ_NONNULL RZ_BORROW RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues) {
-	RZ_LOG_WARN("Hello from Protoype.\n");
+bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
+	RZ_NONNULL RZ_BORROW RzILOpEffect *effect,
+	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues) {
+	RZ_LOG_WARN("Hello from Protoype eval.\n");
 	return true;
 }
 
@@ -18,9 +17,10 @@ static RzInquiryInterpreterPlugin interpreter_prototype = {
 	.desc = "A prototype interpreter for constant/bottom abstractions.",
 	.license = "LGPL-3.0-only",
 	.supported_abstractions = RZ_INTERPRETER_ABSTRACTION_CONST,
+	.supported_yields = RZ_INTERPRETER_YIELD_KIND_XREF,
 	.init = NULL,
 	.fini = NULL,
-	.interpret = interpret
+	.eval = eval
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {

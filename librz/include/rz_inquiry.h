@@ -21,13 +21,19 @@ typedef struct {
 	const char *version;
 	const char *desc;
 	const char *license;
+	/**
+	 * \brief Supported abstractions. Multiple flags can be set.
+	 */
 	RzInterpreterAbstraction supported_abstractions;
+	/**
+	 * \brief The yield type this interpreter generates.
+	 */
+	RzInterpreterYieldKind supported_yields;
 	bool (*init)(void **plugin_data);
 	bool (*fini)(void *plugin_data);
-	bool (*interpret)(
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<ut64>*/ *request_il,
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RzInquiryILQueueElement *>*/ *receive_il,
-		RZ_NONNULL RZ_BORROW RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues);
+	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
+		RZ_NONNULL RZ_BORROW RzILOpEffect *effect,
+		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues);
 } RzInquiryInterpreterPlugin;
 
 typedef struct rz_inquiry_plugin_t {

@@ -105,13 +105,13 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterQueueSet *rz_interpreter_queue_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN RzPVector /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag) {
 	RzInterpreterQueueSet *set = RZ_NEW0(RzInterpreterQueueSet);
 	if (!set) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
-		rz_pvector_free(yield_queues);
+		ht_up_free(yield_queues);
 		rz_atomic_bool_free(is_running_flag);
 		return NULL;
 	}
@@ -133,7 +133,7 @@ RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterQueueS
 		rz_th_queue_free(qset->il_queue);
 	}
 	if (qset->yield_queues) {
-		rz_pvector_free(qset->yield_queues);
+		ht_up_free(qset->yield_queues);
 	}
 	if (qset->is_running_flag) {
 		rz_atomic_bool_free(qset->is_running_flag);
