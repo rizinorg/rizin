@@ -220,7 +220,6 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 	}
 
 	if ((sb->len + l + 1) <= sizeof(sb->buf)) {
-		memset((char *)sb->buf + sb->len, 0, l);
 		memcpy(sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
 		RZ_FREE(sb->ptr);
@@ -230,8 +229,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
-			p = malloc(newlen);
-			memset(p, 0, newlen);
+			p = calloc(newlen, sizeof(char));
 			if (p && sb->len > 0) {
 				memcpy(p, sb->buf, sb->len);
 			}

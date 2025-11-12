@@ -680,7 +680,6 @@ static RzList /*<RzInterval *>*/ *assemble_search_window_list(RzList /*<RzIOMap 
 			window->addr = chunk_begin;
 			window->size = window_size;
 			rz_list_append(list, window);
-			RZ_FREE(map);
 		}
 	}
 	return list;
@@ -862,6 +861,11 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 		rz_list_append(search_in, map);
 	}
 	windows = assemble_search_window_list(search_in, opt);
+	RzIOMap *map;
+	RzListIter *iter;
+	rz_list_foreach (search_in, iter, map) {
+		RZ_FREE(map);
+	}
 	rz_list_free(search_in);
 
 	if (!windows) {
