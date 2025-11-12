@@ -11052,9 +11052,9 @@ static const RzCmdDescHelp dr_help = {
 };
 static const RzCmdDescArg debug_regs_args[] = {
 	{
-		.name = "filter",
-		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
 		.optional = true,
 
 	},
@@ -11062,7 +11062,7 @@ static const RzCmdDescArg debug_regs_args[] = {
 };
 static const RzCmdDescHelp debug_regs_help = {
 	.summary = "Show registers with their values, or assign one (`dr reg=value`)",
-	.args_str = " [<filter> [= <value>]]",
+	.args_str = " [<reg1> <reg2> ... [= <value>]]",
 	.args = debug_regs_args,
 };
 

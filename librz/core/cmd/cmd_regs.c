@@ -275,18 +275,48 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 }
 
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *filter = argc > 1 ? argv[1] : NULL;
+	// No arguments - show all registers
+	if (argc == 1) {
+		return show_regs_handler(core, reg, sync_cb, NULL, state);
+	}
 
-	// check if the argument is an assignment like reg=0x42
-	if (filter) {
+	// Check if first argument is an assignment
+	if (argc == 2) {
+		const char *filter = argv[1];
 		char *eq = strchr(filter, '=');
 		if (eq) {
 			return assign_reg(core, reg, sync_cb, filter, eq - filter);
 		}
+		// Single register - use original handler
+		return show_regs_handler(core, reg, sync_cb, filter, state);
 	}
 
-	// just show
-	return show_regs_handler(core, reg, sync_cb, filter, state);
+	// Multiple registers (argc > 2) - handle each one
+	// Sync all register types
+	sync_cb(core, RZ_REG_TYPE_GPR, true);
+
+	for (int i = 1; i < argc; i++) {
+		const char *regname = argv[i];
+
+		// Check if this is an assignment
+		char *eq = strchr(regname, '=');
+		if (eq) {
+			return assign_reg(core, reg, sync_cb, regname, eq - regname);
+		}
+
+		// Get the register
+		RzRegItem *item = rz_reg_get(reg, regname, RZ_REG_TYPE_ANY);
+		if (!item) {
+			RZ_LOG_ERROR("Cannot find register '%s'\n", regname);
+			continue;
+		}
+
+		// Get and print the value
+		ut64 value = rz_reg_get_value(reg, item);
+		rz_cons_printf("%s = 0x%016" PFMT64x "\n", regname, value);
+	}
+
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
