@@ -159,7 +159,7 @@ static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 	// Parse data bytes until next section or EOF marker
 	ut64 byte_count = 0;
 	ut8 local_buffer[4096];
-	ut8 local_buffer_size = 0;
+	ut64 local_buffer_size = 0;
 
 	while (*p) {
 		ut8 nibble1;
