@@ -60,6 +60,7 @@
 #include "rz_util/rz_range.h"
 #include "rz_util/rz_rbtree.h"
 #include "rz_util/rz_regex.h"
+#include "rz_util/rz_set.h"
 #include "rz_util/rz_signal.h"
 #include "rz_util/rz_spaces.h"
 #include "rz_util/rz_stack.h"
