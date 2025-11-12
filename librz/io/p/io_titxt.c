@@ -1,9 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Anton Angelov <anton.angelov@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/*
- * Rizin IO plugin for the Texas Instruments TI-TXT file format
- * https://manpages.org/srec_ti_txt/5
+/**
+ * \file io_titxt.c
+ * \brief Rizin IO plugin for the Texas Instruments TI-TXT file format
+ *
+ * The TI-TXT file consists of one or more sections. Each section starts with
+ * an @ marker followed by a hexadecimal address, data bytes (16 per line), and
+ * an EOF marker 'q'.
+ *
+ * Format specification: https://manpages.org/srec_ti_txt/5
  */
 
 #include <rz_io.h>
@@ -23,7 +29,14 @@ typedef struct titxt_t {
 } TITxt;
 
 static void write_titxt_section(FILE *out, ut64 address, const ut8 *data, ut64 size) {
-	fprintf(out, "@%04" PFMT64x "\n", address);
+	char address_str[17];
+
+	// Print section address
+	snprintf(address_str, sizeof(address_str), "@%04" PFMT64x "\n", address);
+	rz_str_case(address_str, true);
+	fprintf(out, "%s", address_str);
+
+	// Print section data
 	for (ut64 i = 0; i < size; i++) {
 		bool new_line = i % 16 == 15;
 		bool last_byte = i == size - 1;
@@ -105,43 +118,21 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, TITXT_PATH_PREFIX, TITXT_PATH_PREFIX_LEN));
 }
 
-static const char *skip_ws_and_nl(const char *str) {
-	if (!str) {
-		return NULL;
-	}
-	while (*str == ' ' || *str == '\n' || *str == '\r') {
-		str++;
-	}
-	return str;
-}
-
-static int parse_hex_digit(ut8 c) {
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	}
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-	if (c >= 'A' && c <= 'F') {
-		return c - 'A' + 10;
-	}
-	return -1;
-}
-
 static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 	const char *p = *str;
 
 	// Expect section prefix
 	if (*(p++) != TITXT_SECTION_PREFIX) {
+		RZ_LOG_ERROR("titxt:parse_section(): section prefix missing\n");
 		return false;
 	}
 
 	ut64 address = 0;
-	int digit = 0;
+	ut8 digit = 0;
 	ut8 digit_count = 0;
 
 	// Parse address (up to 64 bit address)
-	while (*p && (digit = parse_hex_digit(*p)) >= 0 && digit_count++ < 16) {
+	while (*p && (digit = rz_hex_digit_to_byte(*p)) != UT8_MAX && digit_count++ < 16) {
 		address = (address << 4) | (ut64)digit;
 		p++;
 	}
@@ -154,7 +145,7 @@ static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 	}
 
 	// Move past new line
-	p = skip_ws_and_nl(p);
+	p = rz_str_trim_head_ro(p);
 
 	// Parse data bytes until next section or EOF marker
 	ut64 byte_count = 0;
@@ -162,29 +153,28 @@ static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 	ut64 local_buffer_size = 0;
 
 	while (*p) {
-		ut8 nibble1;
-		ut8 nibble2;
+		ut8 data_byte = 0;
 
 		// Parse 2 nibbles
-		if ((nibble1 = parse_hex_digit(*(p++))) < 0 || (nibble2 = parse_hex_digit(*(p++))) < 0) {
+		if (rz_hex_to_byte(&data_byte, *(p++)) != 0 || rz_hex_to_byte(&data_byte, *(p++)) != 0) {
 			RZ_LOG_ERROR("titxt:parse_section(): invalid hex digit\n");
 			*str = p;
 			return false;
 		}
 
 		// Expect a whitespace or newline
-		if (*p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') {
+		if (!IS_WHITECHAR(*p)) {
 			RZ_LOG_ERROR("titxt:parse_section(): expected whitespace / newline after byte\n");
 			*str = p;
 			return false;
 		}
 
 		// Skip whitespaces
-		p = skip_ws_and_nl(p);
+		p = rz_str_trim_head_ro(p);
 		bool end_of_section = *p == TITXT_EOF_MARKER || *p == TITXT_SECTION_PREFIX;
 
 		// Write to local buffer
-		local_buffer[local_buffer_size++] = (nibble1 << 4) | nibble2;
+		local_buffer[local_buffer_size++] = data_byte;
 		byte_count++;
 
 		// Flush to RzBuffer if local buffer is full or we've reached end of section
@@ -231,11 +221,6 @@ static bool titxt_parse(RzBuffer *buf, char *str_base) {
 		return true;
 	}
 
-	// Otherwise the file needs to start with a section prefix
-	if (*str != TITXT_SECTION_PREFIX) {
-		return false;
-	}
-
 	// Find and parse each section
 	do {
 		// str should always point to a section prefix in a valid TI-TXT file
@@ -273,7 +258,6 @@ static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
 			return NULL;
 		}
 		if (!titxt_parse(ctx->buf, file_content)) {
-			RZ_LOG_ERROR("titxt: failed to parse file\n");
 			free(file_content);
 			rz_buf_free(ctx->buf);
 			free(ctx);
