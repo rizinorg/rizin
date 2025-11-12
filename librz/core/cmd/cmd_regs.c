@@ -280,29 +280,46 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 		return show_regs_handler(core, reg, sync_cb, NULL, state);
 	}
 
-	// Check if first argument is an assignment
-	if (argc == 2) {
-		const char *filter = argv[1];
-		char *eq = strchr(filter, '=');
-		if (eq) {
-			return assign_reg(core, reg, sync_cb, filter, eq - filter);
+	// Check if ANY argument contains an assignment
+	bool has_assignment = false;
+	for (int i = 1; i < argc; i++) {
+		if (strchr(argv[i], '=')) {
+			has_assignment = true;
+			break;
 		}
-		// Single register - use original handler
-		return show_regs_handler(core, reg, sync_cb, filter, state);
 	}
 
-	// Multiple registers (argc > 2) - handle each one
-	// Sync all register types
+	// If we have assignments, process all arguments as assignments
+	if (has_assignment) {
+		RzCmdStatus status = RZ_CMD_STATUS_OK;
+
+		for (int i = 1; i < argc; i++) {
+			char *eq = strchr(argv[i], '=');
+			if (!eq) {
+				RZ_LOG_ERROR("Expected assignment for '%s'\n", argv[i]);
+				status = RZ_CMD_STATUS_ERROR;
+				continue;
+			}
+
+			RzCmdStatus current = assign_reg(core, reg, sync_cb, argv[i], eq - argv[i]);
+			if (current != RZ_CMD_STATUS_OK) {
+				status = current;
+			}
+		}
+
+		return status;
+	}
+
+	// Single register - use original handler for backward compatibility
+	if (argc == 2) {
+		return show_regs_handler(core, reg, sync_cb, argv[1], state);
+	}
+
+	// Multiple registers - handle each one
 	sync_cb(core, RZ_REG_TYPE_GPR, true);
 
 	for (int i = 1; i < argc; i++) {
 		const char *regname = argv[i];
-
-		// Check if this is an assignment
-		char *eq = strchr(regname, '=');
-		if (eq) {
-			return assign_reg(core, reg, sync_cb, regname, eq - regname);
-		}
 
 		// Get the register
 		RzRegItem *item = rz_reg_get(reg, regname, RZ_REG_TYPE_ANY);
