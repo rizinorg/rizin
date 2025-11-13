@@ -223,12 +223,13 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 		memcpy(sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
 		RZ_FREE(sb->ptr);
+		sb->ptrlen = 0;
 	} else {
 		size_t newlen = sb->len + l + 128;
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
-			p = malloc(newlen);
+			p = calloc(newlen, sizeof(char));
 			if (p && sb->len > 0) {
 				memcpy(p, sb->buf, sb->len);
 			}
@@ -238,6 +239,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 			}
 			newlen *= 2;
 			p = realloc(sb->ptr, newlen);
+			memset((char *)p + sb->ptrlen, 0, newlen - sb->ptrlen);
 		} else {
 			allocated = false;
 		}
