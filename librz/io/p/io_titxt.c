@@ -6,8 +6,16 @@
  * \brief Rizin IO plugin for the Texas Instruments TI-TXT file format
  *
  * The TI-TXT file consists of one or more sections. Each section starts with
- * an @ marker followed by a hexadecimal address, data bytes (16 per line), and
- * an EOF marker 'q'.
+ * an '@' marker followed by a hexadecimal address and data bytes (16 per line).
+ * The file ends with an EOF marker 'q'.
+ *
+ * Example:
+ * 	@1000
+ * 	00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+ * 	10 11 13
+ * 	@2000
+ * 	FF FF
+ * 	q
  *
  * Format specification: https://manpages.org/srec_ti_txt/5
  */
