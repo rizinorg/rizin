@@ -728,6 +728,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 
 fini:
 	rz_regex_match_data_free(mdata);
+	RZ_FREE(mcontext);
 	return matches;
 }
 

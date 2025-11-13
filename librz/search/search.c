@@ -861,6 +861,11 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 		rz_list_append(search_in, map);
 	}
 	windows = assemble_search_window_list(search_in, opt);
+	RzIOMap *map;
+	RzListIter *iter;
+	rz_list_foreach (search_in, iter, map) {
+		RZ_FREE(map);
+	}
 	rz_list_free(search_in);
 
 	if (!windows) {
@@ -909,6 +914,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 	rz_list_free(windows);
 	rz_th_queue_free(hits);
 	rz_th_queue_free(intervals);
+	rz_atomic_bool_free(ctx.loop);
+	rz_th_lock_free(ctx.buffer_lock);
 
 	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
 	rz_list_sorted_uniq(results, (RzListComparator)rz_search_hit_cmp, NULL);
