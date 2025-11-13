@@ -316,6 +316,38 @@ RZ_API RZ_OWN RzPath *rz_path_new(void) {
 }
 
 /**
+ * \brief This function converts arbitrary user input into a safe, normalized path:
+ *  - Empty string ("") is converted to the current directory (".")
+ *  - Relative paths are prefixed with "./"
+ *  - Absolute paths are returned unchanged
+ *  - On Windows, drive-letter paths (e.g. "C:\\") are preserved
+ *
+ * \param usr_input The raw path string provided by the user. May be NULL or empty.
+ * \return A new normalized path string.
+ */
+RZ_API RZ_OWN char *rz_path_normalize_user_input(char *usr_input, size_t len) {
+	char *input = rz_str_dup(usr_input);
+	if (RZ_STR_ISEMPTY(input)) {
+		free(input);
+		input = rz_str_dup(".");
+	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
+		const char *fmt = ".%s%s";
+#if __WINDOWS__
+		if (strchr(dir_from_user, ':')) {
+			fmt = "%.0s%s";
+		}
+#endif
+		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, input);
+		free(input);
+		if (!tmp) {
+			return NULL;
+		}
+		input = tmp;
+	}
+	return input;
+}
+
+/**
  * \brief Deallocate memory that the RzPath* \p p is pointing to.
  * \param p RzPath* contains install prefix and mutex.
  */
