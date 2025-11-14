@@ -139,6 +139,7 @@ o--
 cat ./tmp/titxt-write-test.titxt
 rm ./tmp/titxt-write-test.titxt
 EOF
+REGEXP_FILTER_OUT=([^\r\n]+)
 EXPECT=<<EOF
 @0010
 68 65 6C 6C 6F
