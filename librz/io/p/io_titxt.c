@@ -140,13 +140,14 @@ static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 	ut8 digit_count = 0;
 
 	// Parse address (up to 64 bit address)
-	while (*p && (digit = rz_hex_digit_to_byte(*p)) != UT8_MAX && digit_count++ < 16) {
+	while (*p && (digit = rz_hex_digit_to_byte(*p)) != UT8_MAX && digit_count < 8) {
 		address = (address << 4) | (ut64)digit;
+		digit_count++;
 		p++;
 	}
 
 	// Validate address format
-	if (digit_count == 0 || digit_count > 16) {
+	if (digit_count == 0 || !IS_WHITECHAR(*p)) {
 		RZ_LOG_ERROR("titxt:parse_section(): invalid address format\n");
 		*str = p;
 		return false;

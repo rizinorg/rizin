@@ -54,8 +54,8 @@ CMDS=<<EOF
 px 4 @ 0x1000f0
 EOF
 EXPECT_ERR=<<EOF
-ERROR: titxt:parse_section(): invalid hex digit
-ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 7
+ERROR: titxt:parse_section(): invalid address format
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 6
 ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-invalid-address.titxt'
 EOF
 RUN
@@ -125,6 +125,22 @@ ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-only-data-bytes.titxt'
 EOF
 RUN
 
+NAME=titxt-incorrect-long-section-address
+FILE=--
+CMDS=<<EOF
+mkdir tmp
+echo "@0123456789abcdef0\n00\nq" >> ./tmp/titxt-incorrect-long-section-address.titxt
+o titxt://./tmp/titxt-incorrect-long-section-address.titxt
+o--
+rm ./tmp/titxt-incorrect-long-section-address.titxt
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): invalid address format
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 10
+ERROR: Cannot open file 'titxt://./tmp/titxt-incorrect-long-section-address.titxt'
+EOF
+RUN
+
 NAME=titxt-write
 FILE=--
 CMDS=<<EOF
@@ -134,7 +150,7 @@ o titxt://./tmp/titxt-write-test.titxt
 oo+
 r 0x10000
 w hello @ 0x10
-w test @ 0xF000
+w test-messages-more-than-16-bytes-- @ 0xF000
 o--
 cat ./tmp/titxt-write-test.titxt
 rm ./tmp/titxt-write-test.titxt
@@ -144,7 +160,9 @@ EXPECT=<<EOF
 @0010
 68 65 6C 6C 6F
 @F000
-74 65 73 74
+74 65 73 74 2D 6D 65 73 73 61 67 65 73 2D 6D 6F
+72 65 2D 74 68 61 6E 2D 31 36 2D 62 79 74 65 73
+2D 2D
 @FFFF
 FF
 q
