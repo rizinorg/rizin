@@ -333,7 +333,7 @@ RZ_API RZ_OWN char *rz_path_normalize_user_input(char *usr_input, size_t len) {
 	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
 		const char *fmt = ".%s%s";
 #if __WINDOWS__
-		if (strchr(dir_from_user, ':')) {
+		if (strchr(input, ':')) {
 			fmt = "%.0s%s";
 		}
 #endif
