@@ -363,3 +363,74 @@ rflags = 0x0000000000000202
 oeax = 0xffffffff
 EOF
 RUN
+
+NAME=dr multiple registers display
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+dr rax=0x1111
+dr rbx=0x2222
+dr rcx=0x3333
+dr rax rbx rcx
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000001111
+rbx = 0x0000000000002222
+rcx = 0x0000000000003333
+EOF
+RUN
+
+NAME=dr multiple assignments no spaces
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+dr rax=0xAAAA rbx=0xBBBB rcx=0xCCCC
+dr rax rbx rcx
+EOF
+EXPECT=<<EOF
+rax = 0x000000000000aaaa
+rbx = 0x000000000000bbbb
+rcx = 0x000000000000cccc
+EOF
+RUN
+
+NAME=dr assignment with spaces around equals
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+dr rax = 0x1234
+dr rax
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000001234
+EOF
+RUN
+
+NAME=dr mixed assignment and display
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+dr rax=0x1111
+dr rbx=0x2222
+dr rax=0xAAAA rbx
+EOF
+EXPECT=<<EOF
+rbx = 0x0000000000002222
+EOF
+RUN
+
+NAME=dr multiple assignments with various spacing
+FILE=bins/elf/sse2-add
+ARGS=-d
+CMDS=<<EOF
+dr rax=0x1111 rbx= 0x2222 rcx = 0x3333
+dr rax rbx rcx
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000001111
+rbx = 0x0000000000002222
+rcx = 0x0000000000003333
+EOF
+RUN
+
+
