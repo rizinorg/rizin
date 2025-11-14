@@ -208,15 +208,20 @@ static bool titxt_parse_section(const char **str, RzBuffer *buf) {
 }
 
 static void titxt_get_line_and_column(const char *str, size_t max_chars, int *line, int *column) {
+	const ut32 line_ending_len = strlen(RZ_LINE_ENDING);
 	*line = 1;
 	*column = 1;
 
-	while (*str && max_chars--) {
-		if (*(str++) == '\n') {
+	while (*str && max_chars) {
+		if (max_chars >= line_ending_len && strncmp(str, RZ_LINE_ENDING, line_ending_len) == 0) {
 			(*line)++;
 			*column = 1;
+			str += line_ending_len;
+			max_chars -= line_ending_len;
 		} else {
 			(*column)++;
+			str++;
+			max_chars--;
 		}
 	}
 }

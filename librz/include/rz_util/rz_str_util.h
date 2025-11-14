@@ -15,4 +15,10 @@
 #define IS_LOWER(c)      ((c) >= 'a' && (c) <= 'z')
 #define IS_ALPHANUM(c)   (IS_DIGIT(c) || IS_UPPER(c) || IS_LOWER(c))
 
+#if __WINDOWS__
+#define RZ_LINE_ENDING "\r\n"
+#else
+#define RZ_LINE_ENDING "\n"
+#endif
+
 #endif //  RZ_STR_UTIL_H
