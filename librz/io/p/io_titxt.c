@@ -72,7 +72,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 
 	/* Write to RzBuffer */
 	if (rz_buf_write_at(ctx->buf, io->off, buf, count) != count) {
-		RZ_LOG_ERROR("titxt:write(): cannot write %zu bytes into buffer\n", count);
+		RZ_LOG_ERROR("titxt:write(): cannot write %" PFMTSZu " bytes into buffer\n", count);
 		fclose(file_out);
 		return -1;
 	}
@@ -267,32 +267,33 @@ static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
 	TITxt *ctx = NULL;
 	char *file_content = NULL;
 
-	if (__plugin_open(io, pathname, 0)) {
-		file_content = rz_file_slurp(pathname + TITXT_PATH_PREFIX_LEN, NULL);
-		if (!file_content) {
-			return NULL;
-		}
-		ctx = RZ_NEW0(TITxt);
-		if (!ctx) {
-			free(file_content);
-			return NULL;
-		}
-		ctx->buf = rz_buf_new_sparse(io->Oxff);
-		if (!ctx->buf) {
-			free(file_content);
-			free(ctx);
-			return NULL;
-		}
-		if (!titxt_parse(ctx->buf, file_content)) {
-			free(file_content);
-			rz_buf_free(ctx->buf);
-			free(ctx);
-			return NULL;
-		}
-		free(file_content);
-		return rz_io_desc_new(io, &rz_io_plugin_titxt, pathname, rw, ctx);
+	if (!__plugin_open(io, pathname, 0)) {
+		return NULL;
 	}
-	return NULL;
+
+	file_content = rz_file_slurp(pathname + TITXT_PATH_PREFIX_LEN, NULL);
+	if (!file_content) {
+		return NULL;
+	}
+	ctx = RZ_NEW0(TITxt);
+	if (!ctx) {
+		free(file_content);
+		return NULL;
+	}
+	ctx->buf = rz_buf_new_sparse(io->Oxff);
+	if (!ctx->buf) {
+		free(file_content);
+		free(ctx);
+		return NULL;
+	}
+	if (!titxt_parse(ctx->buf, file_content)) {
+		free(file_content);
+		rz_buf_free(ctx->buf);
+		free(ctx);
+		return NULL;
+	}
+	free(file_content);
+	return rz_io_desc_new(io, &rz_io_plugin_titxt, pathname, rw, ctx);
 }
 
 static bool __resize(RzIO *io, RzIODesc *fd, ut64 size) {
