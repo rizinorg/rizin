@@ -82,26 +82,11 @@ typedef struct {
 } RzInterpreterYieldQueue;
 
 /**
- * \brief The IL effect scopes pushed over the IL queue.
- * The elements are always RzILOpEffects, but they can represent
- * more or less instructions.
- */
-typedef enum {
-	RZ_INTERPRETER_IL_QUEUE_ELEM_SCOPE_IPKT, ///< RzILOpEffect scope is one atomically execute instruction packet.
-	RZ_INTERPRETER_IL_QUEUE_ELEM_SCOPE_BB, ///< RzILOpEffect scope is one basic block (n instruction packets with a branch or termination at the end).
-} RzInterpreterILQueueElemScope;
-
-typedef struct {
-	RzInterpreterILQueueElemScope effect_scope;
-	RzILOpEffect *il_effect;
-} RzInterpreterILQueueElement;
-
-/**
  * \brief The set of required queues for an interpreter to run.
  */
 typedef struct {
 	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
-	RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue; ///< The queue to receive the IL effects.
+	RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
@@ -117,7 +102,7 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 
 RZ_API RZ_OWN RzInterpreterQueueSet *rz_interpreter_queue_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
 RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterQueueSet *qset);

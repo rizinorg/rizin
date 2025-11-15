@@ -32,7 +32,7 @@ typedef struct {
 	bool (*init)(void **plugin_data);
 	bool (*fini)(void *plugin_data);
 	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
-		RZ_NONNULL RZ_BORROW RzILOpEffect *effect,
+		RZ_NONNULL const RzILOpEffect *effect,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues);
 } RzInquiryInterpreterPlugin;
 

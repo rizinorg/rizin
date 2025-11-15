@@ -4,7 +4,7 @@
 #include <rz_inquiry.h>
 
 bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_BORROW RzILOpEffect *effect,
+	RZ_NONNULL const RzILOpEffect *effect,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues) {
 	RZ_LOG_WARN("Hello from Protoype eval.\n");
 	return true;
