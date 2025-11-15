@@ -153,12 +153,34 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	str[eq_pos] = 0;
+
+	// Split at '='
+	str[eq_pos] = '\0';
+	char *reg_name = str;
 	char *val = str + eq_pos + 1;
-	rz_str_trim(str);
+
+	// Trim whitespace (shouldn't be any, but just in case)
+	rz_str_trim(reg_name);
 	rz_str_trim(val);
+
+	// Check if register exists
+	RzRegItem *item = rz_reg_get(reg, reg_name, -1);
+	if (!item) {
+		RZ_LOG_ERROR("Unknown register '%s'\n", reg_name);
+		free(str);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// Parse the value
 	ut64 nval = rz_num_math(core->num, val);
-	bool ok = rz_core_reg_assign_sync(core, reg, sync_cb, str, nval);
+
+	// Assign the value and sync with the debugged process
+	bool ok = rz_core_reg_assign_sync(core, reg, sync_cb, reg_name, nval);
+
+	if (!ok) {
+		RZ_LOG_ERROR("Failed to assign value 0x%" PFMT64x " to register '%s'\n", nval, reg_name);
+	}
+
 	free(str);
 	return bool2status(ok);
 }
@@ -280,60 +302,129 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 		return show_regs_handler(core, reg, sync_cb, NULL, state);
 	}
 
-	// Check if ANY argument contains an assignment
-	bool has_assignment = false;
+	// Reconstruct the full command line from all arguments
+	RzStrBuf *cmd_buf = rz_strbuf_new("");
 	for (int i = 1; i < argc; i++) {
-		if (strchr(argv[i], '=')) {
-			has_assignment = true;
+		rz_strbuf_append(cmd_buf, argv[i]);
+		if (i < argc - 1) {
+			rz_strbuf_append(cmd_buf, " ");
+		}
+	}
+	char *full_cmd = rz_strbuf_drain(cmd_buf);
+
+	// Parse the command into tokens
+	// We need to handle: "reg=val", "reg = val", "reg= val", "reg =val"
+	RzList *tokens = rz_list_newf(free);
+	char *p = full_cmd;
+
+	while (*p) {
+		// Skip leading whitespace
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (*p == '\0') {
 			break;
+		}
+
+		// Check if this is an assignment or a display
+		// Look ahead to find if there's an '=' associated with this token
+		char *eq_pos = NULL;
+
+		// Scan to find '=' in the current token group
+		// Handle: "reg=val", "reg=", "reg ="
+		char *scan = p;
+		while (*scan && *scan != ' ' && *scan != '\t') {
+			if (*scan == '=') {
+				eq_pos = scan;
+				break;
+			}
+			scan++;
+		}
+
+		// If no '=' found yet and we hit whitespace, check if '=' follows
+		// This handles: "reg = val" and "reg =val"
+		if (!eq_pos && (*scan == ' ' || *scan == '\t')) {
+			char *ws_scan = scan;
+			while (*ws_scan == ' ' || *ws_scan == '\t') {
+				ws_scan++;
+			}
+			if (*ws_scan == '=') {
+				eq_pos = ws_scan;
+			}
+		}
+
+		if (eq_pos) {
+			// This is an assignment: build "reg=val" token
+			RzStrBuf *assignment = rz_strbuf_new("");
+
+			// Extract register name (everything before '=', trimming spaces)
+			char *reg_end = p;
+			while (reg_end < eq_pos && *reg_end != ' ' && *reg_end != '\t' && *reg_end != '=') {
+				reg_end++;
+			}
+			rz_strbuf_append_n(assignment, p, reg_end - p);
+
+			// Add '='
+			rz_strbuf_append(assignment, "=");
+
+			// Move to after '=' and skip whitespace
+			p = eq_pos + 1;
+			while (*p == ' ' || *p == '\t') {
+				p++;
+			}
+
+			// Extract value (everything until next whitespace or end)
+			char *val_start = p;
+			while (*p && *p != ' ' && *p != '\t') {
+				p++;
+			}
+
+			// Append value
+			rz_strbuf_append_n(assignment, val_start, p - val_start);
+
+			char *token = rz_strbuf_drain(assignment);
+			rz_list_append(tokens, token);
+		} else {
+			// This is a display token (register name only)
+			char *token_end = p;
+			while (*token_end && *token_end != ' ' && *token_end != '\t') {
+				token_end++;
+			}
+			char *token = rz_str_ndup(p, token_end - p);
+			rz_list_append(tokens, token);
+			p = token_end;
 		}
 	}
 
-	// If we have assignments, process all arguments as assignments
-	if (has_assignment) {
-		RzCmdStatus status = RZ_CMD_STATUS_OK;
+	free(full_cmd);
 
-		for (int i = 1; i < argc; i++) {
-			char *eq = strchr(argv[i], '=');
-			if (!eq) {
-				RZ_LOG_ERROR("Expected assignment for '%s'\n", argv[i]);
-				status = RZ_CMD_STATUS_ERROR;
-				continue;
+	// Process all tokens
+	// Assignments execute immediately, displays are accumulated and output respects the mode
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzListIter *iter;
+	char *token;
+
+	rz_list_foreach (tokens, iter, token) {
+		char *eq = strchr(token, '=');
+		if (eq) {
+			// This is an assignment: "register=value"
+			// Assignments don't produce output, they just modify the register
+			RzCmdStatus current = assign_reg(core, reg, sync_cb, token, eq - token);
+			if (current != RZ_CMD_STATUS_OK) {
+				status = current;
 			}
-
-			RzCmdStatus current = assign_reg(core, reg, sync_cb, argv[i], eq - argv[i]);
+		} else {
+			// This is a display: "register"
+			// Display respects the output mode (standard, JSON, table, etc.)
+			RzCmdStatus current = show_regs_handler(core, reg, sync_cb, token, state);
 			if (current != RZ_CMD_STATUS_OK) {
 				status = current;
 			}
 		}
-
-		return status;
 	}
 
-	// Single register - use original handler for backward compatibility
-	if (argc == 2) {
-		return show_regs_handler(core, reg, sync_cb, argv[1], state);
-	}
-
-	// Multiple registers - handle each one
-	sync_cb(core, RZ_REG_TYPE_GPR, true);
-
-	for (int i = 1; i < argc; i++) {
-		const char *regname = argv[i];
-
-		// Get the register
-		RzRegItem *item = rz_reg_get(reg, regname, RZ_REG_TYPE_ANY);
-		if (!item) {
-			RZ_LOG_ERROR("Cannot find register '%s'\n", regname);
-			continue;
-		}
-
-		// Get and print the value
-		ut64 value = rz_reg_get_value(reg, item);
-		rz_cons_printf("%s = 0x%016" PFMT64x "\n", regname, value);
-	}
-
-	return RZ_CMD_STATUS_OK;
+	rz_list_free(tokens);
+	return status;
 }
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {

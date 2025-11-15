@@ -1084,10 +1084,10 @@ commands:
             comment: Show all registers available
     subcommands:
       - name: dr
-        summary: Show registers with their values, or assign one (`dr reg=value`)
+        summary: Show registers with their values, or assign one or more (`dr reg=value`)
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         cname: debug_regs
-        args_str: " [<reg1> <reg2> ... [= <value>]]"
+        args_str: " [<reg1> [= <value>] <reg2> [= <value>] ...]"
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
@@ -1099,6 +1099,56 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
             flags: RZ_CMD_ARG_FLAG_ARRAY
             optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "dr"
+                arg_str: ""
+                comment: Show all registers with default selection
+              - text: "dr rax"
+                arg_str: ""
+                comment: Show value of rax register
+              - text: "dr rax rbx rcx"
+                arg_str: ""
+                comment: Show values of multiple registers
+              - text: "dr rax=0x1234"
+                arg_str: ""
+                comment: Assign 0x1234 to rax register
+              - text: "dr rax = 0x1234"
+                arg_str: ""
+                comment: Assign with spaces around equals (same as above)
+              - text: "dr rax=0x1111 rbx=0x2222"
+                arg_str: ""
+                comment: Assign values to multiple registers
+              - text: "dr rax=0x1111 rbx= 0x2222 rcx = 0x3333"
+                arg_str: ""
+                comment: Multiple assignments with various spacing styles
+              - text: "dr rax=0xAAAA rbx"
+                arg_str: ""
+                comment: Assign to rax, then display rbx
+              - text: "dr rax rbx=0x5555 rcx"
+                arg_str: ""
+                comment: Display rax, assign to rbx, display rcx
+              - text: "drj rax rbx"
+                arg_str: ""
+                comment: Show rax and rbx in JSON format
+          - name: Assignment and Display Behavior
+            entries:
+              - text: "Assignments"
+                arg_str: ""
+                comment: Register assignments execute immediately and don't produce output
+              - text: "Displays"
+                arg_str: ""
+                comment: Display operations respect output mode flags (-j, -t, etc.)
+              - text: "Order"
+                arg_str: ""
+                comment: Operations are processed left-to-right as specified
+              - text: "Spacing"
+                arg_str: ""
+                comment: Spaces around '=' are optional (reg=val, reg = val, reg= val, reg =val)
+              - text: "Validation"
+                arg_str: ""
+                comment: Invalid register names or values produce error messages
       - name: dr=
         summary: Show registers in columns
         type: RZ_CMD_DESC_TYPE_ARGV
@@ -1322,8 +1372,6 @@ commands:
         cname: debug_reg_roles
         details: [] # Explicitly empty to not show parent ones
         args: []
-  # ... to here
-  #####################################################
       - name: drx # this is under registers but debug-specific so should not be sync with cmd_analysis.yaml
         summary: Show hardware breakpoint registers
         details: []
@@ -1347,72 +1395,3 @@ commands:
             args:
               - name: number
                 type: RZ_CMD_ARG_TYPE_NUM
-  - name: dw
-    summary: Block prompt until <pid> dies
-    cname: cmd_debug_wait
-    args:
-      - name: pid
-        type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
-  - name: dW
-    summary: Windows process commands
-    subcommands:
-      - name: dW
-        summary: List process windows
-        cname: cmd_debug_windows_list
-        args: []
-      - name: dWi
-        summary: Identify window under cursor
-        cname: cmd_debug_window_identify
-        args: []
-  - name: dx
-    summary: Code injection commands
-    subcommands:
-      - name: dx
-        summary: Inject opcodes
-        cname: cmd_debug_inject_opcode
-        args:
-          - name: opcode
-            type: RZ_CMD_ARG_TYPE_STRING
-        details:
-          - name: Examples
-            entries:
-              - text: dx
-                arg_str: " 9090"
-                comment: Insert two 0x90 bytes (nop instruction on x86 platforms)
-      - name: dxa
-        summary: Assemble code and inject
-        cname: cmd_debug_inject_assembly
-        args:
-          - name: asm
-            type: RZ_CMD_ARG_TYPE_STRING
-        details:
-          - name: Examples
-            entries:
-              - text: dxa
-                arg_str: " mov eax,6; mov ebx,0; int 0x80"
-                comment: Assemble and insert 3 instructions
-      - name: dxe
-        summary: Compile RzEgg expression and inject
-        cname: cmd_debug_inject_egg
-        args:
-          - name: expression
-            type: RZ_CMD_ARG_TYPE_STRING
-      - name: dxr
-        summary: Inject opcodes and restore state
-        cname: cmd_debug_inject_opcode_restore
-        args:
-          - name: opcode
-            type: RZ_CMD_ARG_TYPE_STRING
-      - name: dxs
-        summary: Syscall injection
-        cname: cmd_debug_inject_syscall
-        args:
-          - name: syscall
-            type: RZ_CMD_ARG_TYPE_STRING
-        details:
-          - name: Examples
-            entries:
-              - text: dxs
-                arg_str: " write 1, 0x8048, 12"
-                comment: Inject the write() syscall with given arguments
