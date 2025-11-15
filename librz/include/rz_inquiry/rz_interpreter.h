@@ -81,6 +81,43 @@ typedef struct {
 	RzThreadQueue /*<RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 
+typedef struct {
+	const char *name;
+	const char *author;
+	const char *version;
+	const char *desc;
+	const char *license;
+	/**
+	 * \brief Supported abstractions. Multiple flags can be set.
+	 */
+	RzInterpreterAbstraction supported_abstractions;
+	/**
+	 * \brief The yield type this interpreter generates.
+	 */
+	RzInterpreterYieldKind supported_yields;
+	bool (*init)(void **plugin_data);
+	bool (*fini)(void *plugin_data);
+	/**
+	 * \brief Evaluates an effect with the mutable state.
+	 */
+	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
+		RZ_NONNULL const RzILOpEffect *effect,
+		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+		void *plugin_data);
+	/**
+	 * \brief Hashes the state.
+	 */
+	ut64 (*hash_state)(RZ_NONNULL const RzInterpreterAbstrState *state,
+		void *plugin_data);
+	/**
+	 * \brief Determines the next successor addresses from state.
+	 */
+	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
+		RZ_OUT ut64 *addr_arr,
+		size_t addr_array_size,
+		void *plugin_data);
+} RzInterpreterPlugin;
+
 /**
  * \brief The set of required queues for an interpreter to run.
  */
@@ -90,7 +127,8 @@ typedef struct {
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
-} RzInterpreterQueueSet;
+	RzInterpreterPlugin *plugin;
+} RzInterpreterSet;
 
 RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzILOpEffect>*/ *q);
 RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
@@ -100,13 +138,14 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 	const RzInterpreterYieldFilter *filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
-RZ_API RZ_OWN RzInterpreterQueueSet *rz_interpreter_queue_set_new(
+RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
+	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
-RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterQueueSet *qset);
+RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *qset);
 
-RZ_API bool rz_interpreter_run(RZ_OWN RZ_NONNULL RzInterpreterQueueSet *queue_set);
+RZ_API bool rz_interpreter_run(RZ_BORROW RZ_NONNULL RzInterpreterSet *queue_set);
 
 #endif // RZ_INTERPRETER
