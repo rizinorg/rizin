@@ -293,7 +293,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		ut64 *addr = rz_th_queue_pop(addr_queue, false);
 		if (!addr) {
 			// Some artifical lag for testing.
-			rz_sys_sleep(1);
+			rz_sys_usleep(rz_num_rand32(1000));
 			RZ_LOG_WARN("INQUIRY: Sleep over.\n");
 			continue;
 		}
