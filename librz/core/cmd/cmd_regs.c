@@ -159,7 +159,7 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 	char *reg_name = str;
 	char *val = str + eq_pos + 1;
 
-	// Trim whitespace (shouldn't be any, but just in case)
+	// Trim whitespace
 	rz_str_trim(reg_name);
 	rz_str_trim(val);
 
@@ -295,7 +295,6 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 	}
 	return RZ_CMD_STATUS_OK;
 }
-
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
 	// No arguments - show all registers
 	if (argc == 1) {
@@ -312,11 +311,12 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 	}
 	char *full_cmd = rz_strbuf_drain(cmd_buf);
 
-	// Parse the command into tokens
-	// We need to handle: "reg=val", "reg = val", "reg= val", "reg =val"
+	// Use regex to split on spaces, handling assignments as single tokens
+	// Pattern: Split on spaces, but keep "reg=value", "reg = value" as units
 	RzList *tokens = rz_list_newf(free);
-	char *p = full_cmd;
 
+	// Tokenize: split by whitespace while preserving assignment structure
+	char *p = full_cmd;
 	while (*p) {
 		// Skip leading whitespace
 		while (*p == ' ' || *p == '\t') {
@@ -326,66 +326,49 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 			break;
 		}
 
-		// Check if this is an assignment or a display
-		// Look ahead to find if there's an '=' associated with this token
-		char *eq_pos = NULL;
+		// Check if this token contains or leads to an assignment
+		char *token_start = p;
+		char *eq_pos = strchr(p, '=');
 
-		// Scan to find '=' in the current token group
-		// Handle: "reg=val", "reg=", "reg ="
-		char *scan = p;
-		while (*scan && *scan != ' ' && *scan != '\t') {
-			if (*scan == '=') {
-				eq_pos = scan;
-				break;
-			}
-			scan++;
-		}
-
-		// If no '=' found yet and we hit whitespace, check if '=' follows
-		// This handles: "reg = val" and "reg =val"
-		if (!eq_pos && (*scan == ' ' || *scan == '\t')) {
-			char *ws_scan = scan;
-			while (*ws_scan == ' ' || *ws_scan == '\t') {
-				ws_scan++;
-			}
-			if (*ws_scan == '=') {
-				eq_pos = ws_scan;
-			}
-		}
-
+		// If '=' is in the current token or after spaces, it's an assignment
 		if (eq_pos) {
-			// This is an assignment: build "reg=val" token
+			// Parse as: register = value (handling spaces)
 			RzStrBuf *assignment = rz_strbuf_new("");
 
-			// Extract register name (everything before '=', trimming spaces)
-			char *reg_end = p;
-			while (reg_end < eq_pos && *reg_end != ' ' && *reg_end != '\t' && *reg_end != '=') {
-				reg_end++;
+			// Get register name (up to '=' or space before '=')
+			while (p < eq_pos && *p != ' ' && *p != '\t') {
+				rz_strbuf_appendf(assignment, "%c", *p);
+				p++;
 			}
-			rz_strbuf_append_n(assignment, p, reg_end - p);
 
-			// Add '='
-			rz_strbuf_append(assignment, "=");
+			// Skip spaces before '='
+			while (p < eq_pos && (*p == ' ' || *p == '\t')) {
+				p++;
+			}
 
-			// Move to after '=' and skip whitespace
-			p = eq_pos + 1;
+			// Skip '='
+			if (*p == '=') {
+				p++;
+			}
+
+			// Skip spaces after '='
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
 
-			// Extract value (everything until next whitespace or end)
-			char *val_start = p;
+			// Append '=' to our token
+			rz_strbuf_append(assignment, "=");
+
+			// Get value (up to next space or end)
 			while (*p && *p != ' ' && *p != '\t') {
+				rz_strbuf_appendf(assignment, "%c", *p);
 				p++;
 			}
-
-			// Append value
-			rz_strbuf_append_n(assignment, val_start, p - val_start);
 
 			char *token = rz_strbuf_drain(assignment);
 			rz_list_append(tokens, token);
 		} else {
-			// This is a display token (register name only)
+			// Regular display token
 			char *token_end = p;
 			while (*token_end && *token_end != ' ' && *token_end != '\t') {
 				token_end++;
@@ -399,7 +382,6 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 	free(full_cmd);
 
 	// Process all tokens
-	// Assignments execute immediately, displays are accumulated and output respects the mode
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzListIter *iter;
 	char *token;
@@ -407,15 +389,13 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 	rz_list_foreach (tokens, iter, token) {
 		char *eq = strchr(token, '=');
 		if (eq) {
-			// This is an assignment: "register=value"
-			// Assignments don't produce output, they just modify the register
+			// Assignment: "register=value"
 			RzCmdStatus current = assign_reg(core, reg, sync_cb, token, eq - token);
 			if (current != RZ_CMD_STATUS_OK) {
 				status = current;
 			}
 		} else {
-			// This is a display: "register"
-			// Display respects the output mode (standard, JSON, table, etc.)
+			// Display: "register"
 			RzCmdStatus current = show_regs_handler(core, reg, sync_cb, token, state);
 			if (current != RZ_CMD_STATUS_OK) {
 				status = current;

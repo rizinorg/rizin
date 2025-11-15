@@ -71,6 +71,9 @@ static const RzCmdDescDetail cmd_debug_signal_option_details[2];
 static const RzCmdDescDetail debug_regs_details[3];
 static const RzCmdDescDetail debug_reg_cond_details[4];
 static const RzCmdDescDetail dr_details[2];
+static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
+static const RzCmdDescDetail cmd_debug_inject_assembly_details[2];
+static const RzCmdDescDetail cmd_debug_inject_syscall_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail cmd_eval_color_list_help_details[2];
 static const RzCmdDescDetail mark_describe_details[2];
@@ -541,6 +544,12 @@ static const RzCmdDescArg debug_reg_profile_open_args[2];
 static const RzCmdDescArg debug_reg_profile_gdb_args[2];
 static const RzCmdDescArg debug_drx_args[5];
 static const RzCmdDescArg debug_drx_unset_args[2];
+static const RzCmdDescArg cmd_debug_wait_args[2];
+static const RzCmdDescArg cmd_debug_inject_opcode_args[2];
+static const RzCmdDescArg cmd_debug_inject_assembly_args[2];
+static const RzCmdDescArg cmd_debug_inject_egg_args[2];
+static const RzCmdDescArg cmd_debug_inject_opcode_restore_args[2];
+static const RzCmdDescArg cmd_debug_inject_syscall_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -11480,6 +11489,139 @@ static const RzCmdDescArg debug_drx_unset_args[] = {
 static const RzCmdDescHelp debug_drx_unset_help = {
 	.summary = "Clear hardware breakpoint",
 	.args = debug_drx_unset_args,
+};
+
+static const RzCmdDescArg cmd_debug_wait_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_wait_help = {
+	.summary = "Block prompt until <pid> dies",
+	.args = cmd_debug_wait_args,
+};
+
+static const RzCmdDescHelp dW_help = {
+	.summary = "Windows process commands",
+};
+static const RzCmdDescArg cmd_debug_windows_list_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_windows_list_help = {
+	.summary = "List process windows",
+	.args = cmd_debug_windows_list_args,
+};
+
+static const RzCmdDescArg cmd_debug_window_identify_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_window_identify_help = {
+	.summary = "Identify window under cursor",
+	.args = cmd_debug_window_identify_args,
+};
+
+static const RzCmdDescHelp dx_help = {
+	.summary = "Code injection commands",
+};
+static const RzCmdDescDetailEntry cmd_debug_inject_opcode_Examples_detail_entries[] = {
+	{ .text = "dx", .arg_str = " 9090", .comment = "Insert two 0x90 bytes (nop instruction on x86 platforms)" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_inject_opcode_details[] = {
+	{ .name = "Examples", .entries = cmd_debug_inject_opcode_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_inject_opcode_args[] = {
+	{
+		.name = "opcode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_inject_opcode_help = {
+	.summary = "Inject opcodes",
+	.details = cmd_debug_inject_opcode_details,
+	.args = cmd_debug_inject_opcode_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_inject_assembly_Examples_detail_entries[] = {
+	{ .text = "dxa", .arg_str = " mov eax,6; mov ebx,0; int 0x80", .comment = "Assemble and insert 3 instructions" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_inject_assembly_details[] = {
+	{ .name = "Examples", .entries = cmd_debug_inject_assembly_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_inject_assembly_args[] = {
+	{
+		.name = "asm",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_inject_assembly_help = {
+	.summary = "Assemble code and inject",
+	.details = cmd_debug_inject_assembly_details,
+	.args = cmd_debug_inject_assembly_args,
+};
+
+static const RzCmdDescArg cmd_debug_inject_egg_args[] = {
+	{
+		.name = "expression",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_inject_egg_help = {
+	.summary = "Compile RzEgg expression and inject",
+	.args = cmd_debug_inject_egg_args,
+};
+
+static const RzCmdDescArg cmd_debug_inject_opcode_restore_args[] = {
+	{
+		.name = "opcode",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_inject_opcode_restore_help = {
+	.summary = "Inject opcodes and restore state",
+	.args = cmd_debug_inject_opcode_restore_args,
+};
+
+static const RzCmdDescDetailEntry cmd_debug_inject_syscall_Examples_detail_entries[] = {
+	{ .text = "dxs", .arg_str = " write 1, 0x8048, 12", .comment = "Inject the write() syscall with given arguments" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_debug_inject_syscall_details[] = {
+	{ .name = "Examples", .entries = cmd_debug_inject_syscall_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_debug_inject_syscall_args[] = {
+	{
+		.name = "syscall",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_inject_syscall_help = {
+	.summary = "Syscall injection",
+	.details = cmd_debug_inject_syscall_details,
+	.args = cmd_debug_inject_syscall_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -23383,6 +23525,28 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(drx_cd);
 	RzCmdDesc *debug_drx_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drx_cd, "drx-", rz_debug_drx_unset_handler, &debug_drx_unset_help);
 	rz_warn_if_fail(debug_drx_unset_cd);
+
+	RzCmdDesc *cmd_debug_wait_cd = rz_cmd_desc_argv_new(core->rcmd, d_cd, "dw", rz_cmd_debug_wait_handler, &cmd_debug_wait_help);
+	rz_warn_if_fail(cmd_debug_wait_cd);
+
+	RzCmdDesc *dW_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dW", rz_cmd_debug_windows_list_handler, &cmd_debug_windows_list_help, &dW_help);
+	rz_warn_if_fail(dW_cd);
+	RzCmdDesc *cmd_debug_window_identify_cd = rz_cmd_desc_argv_new(core->rcmd, dW_cd, "dWi", rz_cmd_debug_window_identify_handler, &cmd_debug_window_identify_help);
+	rz_warn_if_fail(cmd_debug_window_identify_cd);
+
+	RzCmdDesc *dx_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dx", rz_cmd_debug_inject_opcode_handler, &cmd_debug_inject_opcode_help, &dx_help);
+	rz_warn_if_fail(dx_cd);
+	RzCmdDesc *cmd_debug_inject_assembly_cd = rz_cmd_desc_argv_new(core->rcmd, dx_cd, "dxa", rz_cmd_debug_inject_assembly_handler, &cmd_debug_inject_assembly_help);
+	rz_warn_if_fail(cmd_debug_inject_assembly_cd);
+
+	RzCmdDesc *cmd_debug_inject_egg_cd = rz_cmd_desc_argv_new(core->rcmd, dx_cd, "dxe", rz_cmd_debug_inject_egg_handler, &cmd_debug_inject_egg_help);
+	rz_warn_if_fail(cmd_debug_inject_egg_cd);
+
+	RzCmdDesc *cmd_debug_inject_opcode_restore_cd = rz_cmd_desc_argv_new(core->rcmd, dx_cd, "dxr", rz_cmd_debug_inject_opcode_restore_handler, &cmd_debug_inject_opcode_restore_help);
+	rz_warn_if_fail(cmd_debug_inject_opcode_restore_cd);
+
+	RzCmdDesc *cmd_debug_inject_syscall_cd = rz_cmd_desc_argv_new(core->rcmd, dx_cd, "dxs", rz_cmd_debug_inject_syscall_handler, &cmd_debug_inject_syscall_help);
+	rz_warn_if_fail(cmd_debug_inject_syscall_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);

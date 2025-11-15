@@ -1453,6 +1453,22 @@ RZ_IPI RzCmdStatus rz_debug_reg_roles_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_debug_drx_handler(RzCore *core, int argc, const char **argv);
 // "drx-"
 RZ_IPI RzCmdStatus rz_debug_drx_unset_handler(RzCore *core, int argc, const char **argv);
+// "dw"
+RZ_IPI RzCmdStatus rz_cmd_debug_wait_handler(RzCore *core, int argc, const char **argv);
+// "dW"
+RZ_IPI RzCmdStatus rz_cmd_debug_windows_list_handler(RzCore *core, int argc, const char **argv);
+// "dWi"
+RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, const char **argv);
+// "dx"
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_opcode_handler(RzCore *core, int argc, const char **argv);
+// "dxa"
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_assembly_handler(RzCore *core, int argc, const char **argv);
+// "dxe"
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_egg_handler(RzCore *core, int argc, const char **argv);
+// "dxr"
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_opcode_restore_handler(RzCore *core, int argc, const char **argv);
+// "dxs"
+RZ_IPI RzCmdStatus rz_cmd_debug_inject_syscall_handler(RzCore *core, int argc, const char **argv);
 // "e"
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv);
 // "el"
