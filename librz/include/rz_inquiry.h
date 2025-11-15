@@ -15,29 +15,8 @@ extern "C" {
 
 #include <rz_inquiry/rz_interpreter.h>
 
-typedef struct {
-	const char *name;
-	const char *author;
-	const char *version;
-	const char *desc;
-	const char *license;
-	/**
-	 * \brief Supported abstractions. Multiple flags can be set.
-	 */
-	RzInterpreterAbstraction supported_abstractions;
-	/**
-	 * \brief The yield type this interpreter generates.
-	 */
-	RzInterpreterYieldKind supported_yields;
-	bool (*init)(void **plugin_data);
-	bool (*fini)(void *plugin_data);
-	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
-		RZ_NONNULL const RzILOpEffect *effect,
-		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues);
-} RzInquiryInterpreterPlugin;
-
 typedef struct rz_inquiry_plugin_t {
-	RzInquiryInterpreterPlugin *p_interpreter;
+	RzInterpreterPlugin *p_interpreter;
 	// RzInquiryAlgorithm *p_algorithm;
 } RzInquiryPlugin;
 

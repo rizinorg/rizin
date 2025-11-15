@@ -14,9 +14,9 @@ inquiry_plugins = {
 rz_inquiry_sources = [
   'inquiry.c',
   'inquiry_helpers.c',
-  'interpreter/interpreter.c',
-  'p/inquiry_interpreter_prototype.c',
 ]
+
+subdir('interpreter')
 
 rz_inquiry_inc = [platform_inc]
 
@@ -28,6 +28,7 @@ rz_inquiry = library('rz_inquiry', rz_inquiry_sources,
     rz_cons_dep,
     rz_hash_dep,
     rz_il_dep,
+    rz_interpreter_dep,
     rz_io_dep,
     rz_magic_dep,
     rz_search_dep,
@@ -56,6 +57,7 @@ modules += { 'rz_inquiry': {
       'rz_cons',
       'rz_hash',
       'rz_il',
+      'rz_interpreter',
       'rz_io',
       'rz_magic',
       'rz_search',

@@ -5,12 +5,13 @@
 
 bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzILOpEffect *effect,
-	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues) {
+	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	void *plugin_data) {
 	RZ_LOG_WARN("Hello from Protoype eval.\n");
 	return true;
 }
 
-static RzInquiryInterpreterPlugin interpreter_prototype = {
+static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
 	.version = "0.1p",
@@ -24,7 +25,7 @@ static RzInquiryInterpreterPlugin interpreter_prototype = {
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
-	.p_interpreter = &interpreter_prototype,
+	.p_interpreter = &rz_interpreter_plugin_prototype,
 };
 
 #ifndef RZ_PLUGIN_INCORE
