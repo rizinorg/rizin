@@ -150,6 +150,11 @@ static struct cEnv_t *rz_egg_Cfile_set_cEnv(RZ_BORROW RZ_NONNULL RzPath *sys_pat
 		use_clang = true;
 		cEnv->TEXT = "0.__TEXT.__text";
 	}
+        if (!strcmp(cEnv->TRIPLET, "windows-x86-32")) {
+                free(cEnv->TRIPLET);
+                cEnv->TRIPLET = rz_str_dup("windows-x86");
+        }
+
 
 	buffer = rz_str_newf("%s -fno-stack-protector -nostdinc -include '%s'/'%s'/sflib.h",
 		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
