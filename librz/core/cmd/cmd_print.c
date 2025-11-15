@@ -4060,6 +4060,22 @@ RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_print_pattern_debrujin_find_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		RZ_LOG_ERROR("Usage: ppd/<value>\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 value = rz_num_math(core->num, argv[1]);
+	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
+	int offset = rz_debruijn_offset(0, NULL, value, big_endian);
+	if (offset < 0) {
+		RZ_LOG_ERROR("Could not find value %" PFMT64x " in Debrujn sequence.\n", value);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_printf("%d\n", offset);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_pattern_oxff_handler(RzCore *core, int argc, const char **argv) {
 	st64 len = argc > 1 ? rz_num_math(core->num, argv[1]) : core->blocksize;
 	if (len < 1) {

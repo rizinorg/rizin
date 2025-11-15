@@ -121,6 +121,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ppd/ little endian
+FILE==
+CMDS=<<EOF
+e cfg.bigendian=false
+ppd/ 0x41574141
+EOF
+EXPECT=<<EOF
+64
+EOF
+RUN
+
+NAME=ppd/ big endian
+FILE==
+CMDS=<<EOF
+e cfg.bigendian=true
+ppd/ 0x41574141
+EOF
+EXPECT=<<EOF
+65
+EOF
+RUN
+
 NAME=p=r 0.73 0.06
 FILE=bins/elf/arm1.bin
 ARGS=-n
