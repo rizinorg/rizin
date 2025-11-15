@@ -819,7 +819,7 @@ static size_t strlen0(const char *s) {
 
 static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
 	rz_strbuf_append(sb, s);
-	return strlen(s);
+	return rz_str_len_utf8(s);
 }
 
 static void fill_modes_children_chars(RzStrBuf *sb, const RzCmdDesc *cd) {
