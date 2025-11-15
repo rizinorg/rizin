@@ -59,6 +59,8 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const RzList /*<RzIOMap *>*/ *allowed_io_maps);
 
+RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv);
+
 #ifdef __cplusplus
 }
 #endif

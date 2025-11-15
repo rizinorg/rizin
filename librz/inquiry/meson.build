@@ -24,6 +24,7 @@ rz_inquiry = library('rz_inquiry', rz_inquiry_sources,
   include_directories: rz_inquiry_inc,
   dependencies: [
     rz_arch_dep, # Legacy analysis module
+    rz_bin_dep,
     rz_cons_dep,
     rz_hash_dep,
     rz_il_dep,
@@ -51,6 +52,7 @@ modules += { 'rz_inquiry': {
     'target': rz_inquiry,
     'dependencies': [
       'rz_arch',
+      'rz_bin',
       'rz_cons',
       'rz_hash',
       'rz_il',

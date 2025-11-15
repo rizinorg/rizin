@@ -102,7 +102,7 @@ typedef struct {
 typedef struct {
 	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<RzInquiryILQueueElement *>*/ *il_queue; ///< The queue to receive the IL effects.
-	// TODO: We need to decide how to distirbute the yield.
+	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
 } RzInterpreterQueueSet;
