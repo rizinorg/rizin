@@ -296,12 +296,9 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 	return RZ_CMD_STATUS_OK;
 }
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
-	// No arguments - show all registers
 	if (argc == 1) {
 		return show_regs_handler(core, reg, sync_cb, NULL, state);
 	}
-
-	// Reconstruct the full command line from all arguments
 	RzStrBuf *cmd_buf = rz_strbuf_new("");
 	for (int i = 1; i < argc; i++) {
 		rz_strbuf_append(cmd_buf, argv[i]);
@@ -310,13 +307,9 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 		}
 	}
 	char *full_cmd = rz_strbuf_drain(cmd_buf);
-
-	// Use regex to split on spaces, handling assignments as single tokens
-	// Pattern: Split on spaces, but keep "reg=value", "reg = value" as units
 	RzList *tokens = rz_list_newf(free);
-
-	// Tokenize: split by whitespace while preserving assignment structure
 	char *p = full_cmd;
+
 	while (*p) {
 		// Skip leading whitespace
 		while (*p == ' ' || *p == '\t') {
@@ -325,50 +318,45 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 		if (*p == '\0') {
 			break;
 		}
-
-		// Check if this token contains or leads to an assignment
-		char *token_start = p;
-		char *eq_pos = strchr(p, '=');
-
-		// If '=' is in the current token or after spaces, it's an assignment
+		char *eq_pos = NULL;
+		char *scan = p;
+		while (*scan && *scan != ' ' && *scan != '\t') {
+			if (*scan == '=') {
+				eq_pos = scan;
+				break;
+			}
+			scan++;
+		}
+		if (!eq_pos && (*scan == ' ' || *scan == '\t')) {
+			char *ws_scan = scan;
+			while (*ws_scan == ' ' || *ws_scan == '\t') {
+				ws_scan++;
+			}
+			if (*ws_scan == '=') {
+				eq_pos = ws_scan;
+			}
+		}
 		if (eq_pos) {
-			// Parse as: register = value (handling spaces)
 			RzStrBuf *assignment = rz_strbuf_new("");
-
-			// Get register name (up to '=' or space before '=')
-			while (p < eq_pos && *p != ' ' && *p != '\t') {
-				rz_strbuf_appendf(assignment, "%c", *p);
-				p++;
+			char *reg_end = p;
+			while (reg_end < eq_pos && *reg_end != ' ' && *reg_end != '\t' && *reg_end != '=') {
+				reg_end++;
 			}
-
-			// Skip spaces before '='
-			while (p < eq_pos && (*p == ' ' || *p == '\t')) {
-				p++;
-			}
-
-			// Skip '='
-			if (*p == '=') {
-				p++;
-			}
-
-			// Skip spaces after '='
+			rz_strbuf_append_n(assignment, p, reg_end - p);
+			rz_strbuf_append(assignment, "=");
+			p = eq_pos + 1;
 			while (*p == ' ' || *p == '\t') {
 				p++;
 			}
-
-			// Append '=' to our token
-			rz_strbuf_append(assignment, "=");
-
-			// Get value (up to next space or end)
+			char *val_start = p;
 			while (*p && *p != ' ' && *p != '\t') {
-				rz_strbuf_appendf(assignment, "%c", *p);
 				p++;
 			}
+			rz_strbuf_append_n(assignment, val_start, p - val_start);
 
 			char *token = rz_strbuf_drain(assignment);
 			rz_list_append(tokens, token);
 		} else {
-			// Regular display token
 			char *token_end = p;
 			while (*token_end && *token_end != ' ' && *token_end != '\t') {
 				token_end++;
@@ -378,10 +366,7 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 			p = token_end;
 		}
 	}
-
 	free(full_cmd);
-
-	// Process all tokens
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzListIter *iter;
 	char *token;
@@ -389,13 +374,11 @@ RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_c
 	rz_list_foreach (tokens, iter, token) {
 		char *eq = strchr(token, '=');
 		if (eq) {
-			// Assignment: "register=value"
 			RzCmdStatus current = assign_reg(core, reg, sync_cb, token, eq - token);
 			if (current != RZ_CMD_STATUS_OK) {
 				status = current;
 			}
 		} else {
-			// Display: "register"
 			RzCmdStatus current = show_regs_handler(core, reg, sync_cb, token, state);
 			if (current != RZ_CMD_STATUS_OK) {
 				status = current;
