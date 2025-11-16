@@ -24,6 +24,10 @@
  */
 typedef enum {
 	/**
+	 * \brief An undefined abstracted value.
+	 */
+	RZ_INTERPRETER_ABSTRACTION_UNDEF = 0,
+	/**
 	 * \brief Value abstraction into constant and bottom values.
 	 */
 	RZ_INTERPRETER_ABSTRACTION_CONST = 1 << 0,
@@ -38,17 +42,17 @@ typedef enum {
 } RzInterpreterAbstraction;
 
 /**
- * \brief An abitrary abstract value.
+ * \brief An arbitrary abstract value.
  */
 typedef struct {
 	RzInterpreterAbstraction kind; ///< The abstraction of the value.
-	void *abstr_data;
+	void *abstr_data; ///< The abstract data. It is managed by individual interpreter.
 } RzInterpreterAbstrVal;
 
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
-	HtSP *reg_map; ///< The register file. Currently a hashmap.
-	void *state;
+	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_map; ///< The register file. Currently a hash map.
+	void *prop; ///< Optional state properties. Managed by indiviual interpreters.
 } RzInterpreterAbstrState;
 
 typedef enum {
@@ -57,7 +61,7 @@ typedef enum {
 
 /**
  * \brief A yield of an interpreter. Type is implied by the queue.
- * Object is a union so the elements pushed over the queu are small.
+ * Object is a union so the elements pushed over the queue are small.
  */
 typedef union {
 	RzAnalysisXRef *abstr_const;
@@ -98,6 +102,14 @@ typedef struct {
 	bool (*init)(void **plugin_data);
 	bool (*fini)(void *plugin_data);
 	/**
+	 * \brief Initializes the abstract state.
+	 */
+	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	/**
+	 * \brief Closes the abstract state and frees all its abstract data.
+	 */
+	bool (*fini_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
@@ -122,6 +134,7 @@ typedef struct {
  * \brief The set of required queues for an interpreter to run.
  */
 typedef struct {
+	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
 	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
@@ -134,12 +147,16 @@ RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzI
 RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 
+RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names);
+RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
+
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
 	const RzInterpreterYieldFilter *filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
+	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,

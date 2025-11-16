@@ -21,7 +21,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.supported_yields = RZ_INTERPRETER_YIELD_KIND_XREF,
 	.init = NULL,
 	.fini = NULL,
-	.eval = eval
+	.eval = eval,
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
