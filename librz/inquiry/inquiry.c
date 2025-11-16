@@ -5,7 +5,11 @@
 #include <rz_lib.h>
 #include <rz_inquiry.h>
 
+#include "rz_analysis.h"
+#include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
+#include "rz_reg.h"
+#include "rz_vector.h"
 #include <rz_list.h>
 #include <rz_types_base.h>
 #include <rz_util/rz_assert.h>
@@ -60,6 +64,31 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const
 		}
 	}
 	return false;
+}
+
+static RzPVector *get_reg_names(RzAnalysis *analysis) {
+	RzPVector *reg_names = rz_pvector_new(free);
+	if (analysis->cur->il_config) {
+		RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
+		if (config->reg_bindings) {
+			for (size_t i = 0; config->reg_bindings[i]; i++) {
+				rz_pvector_push(reg_names, rz_str_dup(config->reg_bindings[i]));
+			}
+			rz_analysis_il_config_free(config);
+			return reg_names;
+		}
+		rz_analysis_il_config_free(config);
+	}
+	const RzList *regs = rz_reg_get_list(analysis->reg, RZ_REG_TYPE_ANY);
+	if (!regs) {
+		return NULL;
+	}
+	RzRegItem *reg;
+	RzListIter *iter;
+	rz_list_foreach (regs, iter, reg) {
+		rz_pvector_push(reg_names, rz_str_dup(reg->name));
+	}
+	return reg_names;
 }
 
 /**
@@ -160,11 +189,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Create the running flag.
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 
+	// Initialize the abstract state with the architecture's registers.
+	RzPVector *reg_names = get_reg_names(core->analysis);
+	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(RZ_INTERPRETER_ABSTRACTION_CONST, reg_names);
+	rz_pvector_free(reg_names);
+
 	// Bundle all the queues into one object to pass it to the thread.
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
-	RzInterpreterSet *iset = rz_interpreter_set_new(rz_inquiry_plugin_interpreter_prototype.p_interpreter, addr_queue, il_queue, yield_queues, is_running);
+	RzInterpreterSet *iset = rz_interpreter_set_new(rz_inquiry_plugin_interpreter_prototype.p_interpreter, abstr_state, addr_queue, il_queue, yield_queues, is_running);
 	if (!iset) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);

@@ -8,7 +8,9 @@
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
+#include <rz_types.h>
 #include <rz_vector.h>
+#include <rz_util.h>
 
 RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzILOpEffect *>*/ *q) {
 	if (!q) {
@@ -94,6 +96,47 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 }
 
 /**
+ * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
+ * The register name list should always be given if the architecture has some.
+ */
+RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names) {
+	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
+	if (!state) {
+		return NULL;
+	}
+	state->kinds = kinds;
+	if (!reg_names) {
+		return state;
+	}
+	// Initialize the register file with uninitialized abstract values.
+	state->reg_map = ht_sp_new(HT_STR_DUP, NULL, free);
+	void **it;
+	rz_pvector_foreach (reg_names, it) {
+		const char *rname = *it;
+		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
+		if (!aval) {
+			ht_sp_free(state->reg_map);
+			free(state);
+			return NULL;
+		}
+
+		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
+		ht_sp_insert(state->reg_map, rname, aval);
+	}
+	return state;
+}
+
+RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state) {
+	if (!state) {
+		return;
+	}
+	if (state->reg_map) {
+		ht_sp_free(state->reg_map);
+	}
+	free(state);
+}
+
+/**
  * \brief Initializes a new RzInterpreterSet and returns it.
  * If it fails, all arguments are freed.
  *
@@ -104,18 +147,25 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
  */
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
+	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag) {
+	rz_return_val_if_fail(plugin && state && plugin && addr_queue && il_queue && yield_queues, NULL);
+
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
-	if (!set) {
+	if (!set || (state->kinds != (plugin->supported_abstractions & state->kinds))) {
+		if ((state->kinds != (plugin->supported_abstractions & state->kinds))) {
+			RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
+		}
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
 		ht_up_free(yield_queues);
 		rz_atomic_bool_free(is_running_flag);
 		return NULL;
 	}
+	set->state = state;
 	set->il_queue = il_queue;
 	set->addr_queue = addr_queue;
 	set->yield_queues = yield_queues;
@@ -126,6 +176,9 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *iset) {
 	if (!iset) {
 		return;
+	}
+	if (iset->state) {
+		rz_interpreter_abstr_state_free(iset->state);
 	}
 	if (iset->addr_queue) {
 		rz_th_queue_free(iset->addr_queue);
@@ -143,30 +196,30 @@ RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *i
 }
 
 /**
- * \brief Runs the interpretation with a single interpreter plugin.
+ * Main interpretation.
  */
-static bool perform_interpretation(RzInterpreterPlugin *plugin, RZ_BORROW RzInterpreterSet *iset) {
-	RzThreadQueue *il_queue = iset->il_queue;
-	RzThreadQueue *addr_queue = iset->addr_queue;
-
-	// The effect is owned by the cache. So it is constant.
-	const RzILOpEffect *effect = rz_th_queue_pop(il_queue, false);
-	RZ_LOG_WARN("INTERPRETER Instance: Got IL op: %p\n", effect);
-	if (effect) {
-		// No entry point given.
-		RZ_LOG_WARN("INTERPRETER Instance: No entry point.\n");
-		return false;
-	}
-	return true;
-}
-
-/**
- * Main thread of the interpretation.
- */
-RZ_API bool rz_interpreter_run(RZ_BORROW RzInterpreterSet *iset) {
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_BORROW RzInterpreterSet *iset) {
+	rz_return_val_if_fail(iset &&
+			iset->addr_queue &&
+			iset->il_queue &&
+			iset->yield_queues &&
+			iset->is_running_flag &&
+			iset->plugin &&
+			iset->plugin->init_state &&
+			iset->plugin->eval &&
+			iset->plugin->hash_state,
+		false);
 	RZ_LOG_WARN("INTERPRETER Main: Hello.\n");
-	// This can be the place to spawn multiple interpreters in threads.
-	bool result = perform_interpretation(iset->plugin, iset);
+
+	bool result = false;
+	void **plugin_data = NULL;
+	if (iset->plugin->init) {
+		iset->plugin->init(plugin_data);
+	}
+	rz_atomic_bool_set(iset->is_running_flag, true);
 	rz_atomic_bool_set(iset->is_running_flag, false);
+	if (iset->plugin->fini) {
+		iset->plugin->fini(plugin_data);
+	}
 	return result;
 }
