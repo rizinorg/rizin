@@ -306,7 +306,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	switch (rel->type) {
 	case R_ARM_NONE:
 		return reloc_convert_set(bin, rel, 0, "R_ARM_NONE");
-	//case R_ARM_ABS32: ADD_T(32, 0, T, "R_ARM_ABS32");
+	// case R_ARM_ABS32: ADD_T(32, 0, T, "R_ARM_ABS32");
 	case R_ARM_ABS32: ADD(32, 0, "R_ARM_ABS32");
 	case R_ARM_REL32: ADD_T(32, T, "R_ARM_REL32");
 	case R_ARM_ABS16: ADD(16, 0, "R_ARM_ABS16");
@@ -881,7 +881,7 @@ static RzBinReloc *reloc_convert_ppc64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 // MIPS64 has subtypes for relocs but we do not support it.
 #define ELF64_MIPS_R_TYPE3(i) (((i) >> 16) & 0xff)
 #define ELF64_MIPS_R_TYPE2(i) (((i) >> 8) & 0xff)
-#define ELF64_MIPS_R_TYPE(i)  ((i)&0xff)
+#define ELF64_MIPS_R_TYPE(i)  ((i) & 0xff)
 
 static RzBinReloc *reloc_convert_mips(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
