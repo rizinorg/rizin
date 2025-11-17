@@ -178,11 +178,3 @@ Escape sequences:
 | \xhh # Byte in hexadecimal
 | \nnn # Byte in octal (eg. \033 for the escape char)
 ```
-### De Bruijn helpers
-
-| Command | Description |
-| --- | --- |
-| `ppd <len>` | Print the default De Bruijn pattern (same data used by `wD`). |
-| `ppd/<value>` | Show the offset where `<value>` occurs in the default pattern, honoring `cfg.bigendian`. |
-| `wD <len>` | Write the pattern into the current map. |
-| `wD/<value>` | Print the offset where `<value>` occurs, respecting `cfg.bigendian`. |
