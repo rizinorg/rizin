@@ -240,7 +240,7 @@ CMDS=<<EOF
 ..(help rizin  rz-asm  rz-ax  rz-bin  rz-diff  rz-find  rz-gg  rz-hash  rz-run  rz-sign)
 e scr.color.grep=true
 !!rz-test -h~:..-1
-!!rz-test -h~:-1 | sed "s/[[:blank:]]*[^[:blank:]][^[:blank:]]*$//"
+!!rz-test -h~:-1 | grep -o ".*:"
 EOF
 EXPECT=<<EOF
 [36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
