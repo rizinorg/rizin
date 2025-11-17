@@ -32,3 +32,12 @@ aaa
 EOF
 EXPECT=
 RUN
+
+NAME=ELF: malformed verdef vd_next zero no hang
+FILE=bins/elf/analysis/elf_verdef_vd_next_zero
+CMDS=iI~machine
+EXPECT=<<EOF
+machine  AMD x86-64 architecture
+EOF
+TIMEOUT=5
+RUN
