@@ -38,17 +38,17 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
-                                        use of '!!' instead.                                                            
+                                     use of '!!' instead.                                                               
    │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
  - | !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
-                                        use of '!!' instead.                                                            
+                                     use of '!!' instead.                                                               
    | !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 EOF
 RUN
 
-NAME=...
+NAME=?** entire help string on match
 FILE=--
 CMDS=<<EOF
 e scr.interactive=true
@@ -62,9 +62,9 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
-                                        automatically forces use of '!!' instead.                   [0;0H0> f|                                                                                               [0;0H0> f|
- -                                      automatically Forces use oF '!!' instead.                   
-   │ $[alias[=cmd] [args...]] # List all deFined aliases / DeFine alias (see %$? For help on        [?25h
+                                     automatically forces use of '!!' instead.                      [0;0H0> f|                                                                                               [0;0H0> f|
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
+                                     automatically Forces use oF '!!' instead.                      [?25h
 EOF
 RUN
 

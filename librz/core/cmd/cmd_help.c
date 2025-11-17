@@ -130,6 +130,66 @@ exit_status:
 	return status;
 }
 
+static char *cons_hud_help_string(const char *s) {
+	if (!rz_cons_is_interactive()) {
+		eprintf("Hud mode requires scr.interactive=true.\n");
+		return NULL;
+	}
+	char *os, *track, *ret, *o = rz_str_dup(s);
+	if (!o) {
+		return NULL;
+	}
+	RzList *fl = rz_list_new();
+	int i;
+	if (!fl) {
+		free(o);
+		return NULL;
+	}
+	fl->free = free;
+	bool line_has_hash = false;
+	char *prev_null = NULL;
+	char *prev_os = NULL;
+	for (os = o, i = 0; o[i]; i++) {
+		if (o[i] == '#') {
+			line_has_hash = true;
+		}
+		if (o[i] == '\n') {
+			if (line_has_hash) {
+				line_has_hash = false;
+				o[i] = 0;
+				prev_null = &o[i];
+				if (*os) {
+					track = rz_str_dup(os);
+					if (!rz_list_append(fl, track)) {
+						free(track);
+						break;
+					}
+				}
+				prev_os = os;
+				os = o + i + 1;
+			} else {
+				o[i] = 0;
+				*prev_null = '\n';
+				prev_null = &o[i];
+				os = prev_os;
+				if (os && *os) {
+					rz_list_pop(fl);
+					track = rz_str_dup(os);
+					if (!rz_list_append(fl, track)) {
+						free(track);
+						break;
+					}
+				}
+				os = o + i + 1;
+			}
+		}
+	}
+	ret = rz_cons_hud(fl, NULL);
+	free(o);
+	rz_list_free(fl);
+	return ret;
+}
+
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
 	RzHelpSearch hs = {
@@ -145,7 +205,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 	// Get all summary descriptions of commands.
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_cmd_desc_summary, &hs);
 	// Run it in the hub.
-	free(rz_cons_hud_string(rz_strbuf_get(hs.sb)));
+	free(cons_hud_help_string(rz_strbuf_get(hs.sb)));
 
 	rz_strbuf_free(hs.sb);
 	return RZ_CMD_STATUS_OK;
