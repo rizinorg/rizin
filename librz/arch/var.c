@@ -1699,7 +1699,162 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 
 	char *sig = sig_from_debuginfo(analysis, fcn, fcn_name, fcn_name_pre, fcn_name_post);
 	if (RZ_STR_ISNOTEMPTY(sig)) {
-		return sig;
+		RzAnalysisFcnVarsCache *local_cache = reuse_cache;
+		bool free_cache = false;
+
+		if (!local_cache) {
+			local_cache = rz_analysis_fcn_vars_cache_from_fcn(analysis, fcn);
+			free_cache = true;
+			if (!local_cache) {
+				return sig;
+			}
+		}
+
+		// Collect register-based arguments
+		// Note: Register variables might not be marked as "is_arg" but they ARE arguments
+		// if they're in registers used for parameter passing
+		RzList *reg_args = rz_list_newf(NULL);
+		RzAnalysisVar *var;
+		RzListIter *iter;
+
+		if (local_cache->sorted_vars) {
+			rz_list_foreach (local_cache->sorted_vars, iter, var) {
+				// Check if it's a register variable
+				// Register arguments are those stored in registers (storage_type == 1)
+				// Even if is_arg returns false, if it's in a register and not a local var, it's likely an arg
+				if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG && var->storage.reg) {
+					// Check if it's in an argument register (common ones)
+					const char *reg = var->storage.reg;
+					if (reg && (!strcmp(reg, "rdi") || !strcmp(reg, "rsi") || !strcmp(reg, "rdx") || !strcmp(reg, "rcx") || !strcmp(reg, "r8") || !strcmp(reg, "r9") || !strcmp(reg, "edi") || !strcmp(reg, "esi") || !strcmp(reg, "edx") || !strcmp(reg, "ecx") || !strcmp(reg, "r8d") || !strcmp(reg, "r9d") ||
+							   // ARM registers
+							   !strcmp(reg, "r0") || !strcmp(reg, "r1") || !strcmp(reg, "r2") || !strcmp(reg, "r3") || !strcmp(reg, "x0") || !strcmp(reg, "x1") || !strcmp(reg, "x2") || !strcmp(reg, "x3") || !strcmp(reg, "x4") || !strcmp(reg, "x5") || !strcmp(reg, "x6") || !strcmp(reg, "x7"))) {
+						rz_list_append(reg_args, var);
+					}
+				}
+			}
+		}
+
+		// Fallback to fcn->vars
+		if (rz_list_empty(reg_args)) {
+			void **pvec_iter;
+			rz_pvector_foreach (&fcn->vars, pvec_iter) {
+				var = (RzAnalysisVar *)*pvec_iter;
+				if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG && var->storage.reg) {
+					const char *reg = var->storage.reg;
+					if (reg && (!strcmp(reg, "rdi") || !strcmp(reg, "rsi") || !strcmp(reg, "rdx") || !strcmp(reg, "rcx") || !strcmp(reg, "r8") || !strcmp(reg, "r9") || !strcmp(reg, "edi") || !strcmp(reg, "esi") || !strcmp(reg, "edx") || !strcmp(reg, "ecx") || !strcmp(reg, "r8d") || !strcmp(reg, "r9d") || !strcmp(reg, "r0") || !strcmp(reg, "r1") || !strcmp(reg, "r2") || !strcmp(reg, "r3") || !strcmp(reg, "x0") || !strcmp(reg, "x1") || !strcmp(reg, "x2") || !strcmp(reg, "x3") || !strcmp(reg, "x4") || !strcmp(reg, "x5") || !strcmp(reg, "x6") || !strcmp(reg, "x7"))) {
+						rz_list_append(reg_args, var);
+					}
+				}
+			}
+		}
+
+		// If no register args found, return original signature
+		if (rz_list_empty(reg_args)) {
+			rz_list_free(reg_args);
+			if (free_cache) {
+				rz_analysis_fcn_vars_cache_fini(local_cache);
+				free(local_cache);
+			}
+			return sig;
+		}
+
+		RzStrBuf *buf = rz_strbuf_new(NULL);
+		if (!buf) {
+			rz_list_free(reg_args);
+			if (free_cache) {
+				rz_analysis_fcn_vars_cache_fini(local_cache);
+				free(local_cache);
+			}
+			return sig;
+		}
+
+		char *paren_start = strchr(sig, '(');
+		if (!paren_start) {
+			rz_strbuf_free(buf);
+			rz_list_free(reg_args);
+			if (free_cache) {
+				rz_analysis_fcn_vars_cache_fini(local_cache);
+				free(local_cache);
+			}
+			return sig;
+		}
+
+		size_t prefix_len = paren_start - sig;
+		rz_strbuf_append_n(buf, sig, prefix_len);
+		rz_strbuf_append(buf, "(");
+
+		char *params_start = paren_start + 1;
+		char *params_end = strchr(params_start, ')');
+
+		RzList *debug_params = rz_list_newf(free);
+
+		if (params_end) {
+			char *params_str = rz_str_ndup(params_start, params_end - params_start);
+			RzList *tokens = rz_str_split_list(params_str, ",", 0);
+			char *token;
+			RzListIter *token_iter;
+
+			rz_list_foreach (tokens, token_iter, token) {
+				char *trimmed = rz_str_trim_dup(token);
+				if (RZ_STR_ISNOTEMPTY(trimmed)) {
+					rz_list_append(debug_params, trimmed);
+				} else {
+					free(trimmed);
+				}
+			}
+			rz_list_free(tokens);
+			free(params_str);
+		}
+
+		int param_idx = 0;
+		RzListIter *arg_iter;
+		RzAnalysisVar *arg_var;
+
+		rz_list_foreach (reg_args, arg_iter, arg_var) {
+			char *vartype = rz_type_as_string(analysis->typedb, arg_var->type);
+			if (!vartype) {
+				vartype = rz_str_dup("int");
+			}
+
+			const char *param_name = arg_var->name;
+
+			if (param_idx < rz_list_length(debug_params)) {
+				char *debug_param = (char *)rz_list_get_n(debug_params, param_idx);
+				if (debug_param) {
+					const char *last_space = rz_str_rchr(debug_param, NULL, ' ');
+					if (last_space && *(last_space + 1)) {
+						param_name = last_space + 1;
+						size_t type_len = last_space - debug_param;
+						free(vartype);
+						vartype = rz_str_ndup(debug_param, type_len);
+					}
+				}
+			}
+
+			size_t tmp_len = strlen(vartype);
+			const char *sp = tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ";
+
+			rz_strbuf_appendf(buf, "%s%s%s @ %s%s",
+				vartype, sp, param_name,
+				arg_var->storage.reg,
+				rz_list_iter_has_next(arg_iter) ? ", " : "");
+
+			free(vartype);
+			param_idx++;
+		}
+
+		rz_strbuf_append(buf, ");");
+
+		rz_list_free(debug_params);
+		rz_list_free(reg_args);
+		free(sig);
+
+		if (free_cache) {
+			rz_analysis_fcn_vars_cache_fini(local_cache);
+			free(local_cache);
+		}
+
+		return rz_strbuf_drain(buf);
 	}
 
 	RzStrBuf *buf = rz_strbuf_new(NULL);
@@ -1754,7 +1909,40 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				comma = false;
 			}
 			const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-			rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
+
+			// Find the corresponding variable to get storage location
+			RzAnalysisVar *arg_var = NULL;
+			RzListIter *vit;
+			RzAnalysisVar *v;
+			int arg_idx = 0;
+			rz_list_foreach (cache->arg_vars, vit, v) {
+				if (arg_idx == i) {
+					arg_var = v;
+					break;
+				}
+				arg_idx++;
+			}
+
+			// Format with register/stack info inline
+			if (arg_var) {
+				if (arg_var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
+					const char *reg_name = arg_var->storage.reg; // This is already the register name
+					rz_strbuf_appendf(buf, "%s%s%s @ %s%s", type_str, sp, name,
+						reg_name ? reg_name : "?", comma ? ", " : "");
+				} else if (arg_var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+					const RzStackAddr off = arg_var->storage.stack_off;
+					const char sign = off >= 0 ? '+' : '-';
+					rz_strbuf_appendf(buf, "%s%s%s @ stack %c 0x%x%s", type_str, sp, name,
+						sign, (unsigned int)RZ_ABS(off), comma ? ", " : "");
+				} else {
+					// Fallback: no location info
+					rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
+				}
+			} else {
+				// Fallback: no variable found
+				rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
+			}
+
 			free(type_str);
 		}
 		goto beach;
@@ -1766,9 +1954,24 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	rz_list_foreach (cache->arg_vars, iter, var) {
 		char *vartype = rz_type_as_string(analysis->typedb, var->type);
 		size_t tmp_len = strlen(vartype);
-		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
-			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-			var->name, rz_list_iter_has_next(iter) ? ", " : "");
+		const char *sp = tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ";
+
+		// Add register/stack location inline
+		if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
+			const char *reg_name = var->storage.reg; // This is already the register name
+			rz_strbuf_appendf(buf, "%s%s%s @ %s%s", vartype, sp, var->name,
+				reg_name ? reg_name : "?", rz_list_iter_has_next(iter) ? ", " : "");
+		} else if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+			const RzStackAddr off = var->storage.stack_off;
+			const char sign = off >= 0 ? '+' : '-';
+			rz_strbuf_appendf(buf, "%s%s%s @ stack %c 0x%x%s", vartype, sp, var->name,
+				sign, (unsigned int)RZ_ABS(off), rz_list_iter_has_next(iter) ? ", " : "");
+		} else {
+			// Fallback: old format without location
+			rz_strbuf_appendf(buf, "%s%s%s%s", vartype, sp, var->name,
+				rz_list_iter_has_next(iter) ? ", " : "");
+		}
+
 		free(vartype);
 	}
 
