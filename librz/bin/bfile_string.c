@@ -72,6 +72,7 @@ static RzBinString *to_bin_string(RzDetectedString *src) {
 	dst->vaddr = src->addr;
 
 	// variables has been transfered to RzBinString
+	free(src->byte_mem_map);
 	free(src);
 	return dst;
 }
