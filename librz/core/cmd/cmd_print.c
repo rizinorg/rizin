@@ -4061,10 +4061,6 @@ RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, con
 }
 
 RZ_IPI RzCmdStatus rz_print_pattern_debrujin_find_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 2) {
-		RZ_LOG_ERROR("Usage: ppd/<value>\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
 	ut64 value = rz_num_math(core->num, argv[1]);
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	int offset = rz_debruijn_offset(0, NULL, value, big_endian);
