@@ -255,18 +255,17 @@ static void autocmplt_reg(RzCore *core, RzLineNSCompletionResult *res, const cha
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
-	char *input = rz_str_ndup(s, len);
-	char *tmp;
+	char *dir_from_user = rz_str_ndup(s, len);
 
-	tmp = rz_path_normalize_user_input(input, len);
-	free(input);
-	input = tmp;
+	char *expanded_path = rz_path_normalize_nd_expand(dir_from_user, len);
+	free(dir_from_user);
 
-	char *einput = rz_path_home_expand(input);
-	free(input);
+	if (!expanded_path) {
+		return;
+	}
 
-	char *basedir = rz_file_dirname(einput);
-	const char *basename = rz_file_basename(einput + 1);
+	char *basedir = rz_file_dirname(expanded_path);
+	const char *basename = rz_file_basename(expanded_path + 1);
 #if __WINDOWS__
 	rz_str_replace_ch(basedir, '/', '\\', true);
 #endif
@@ -275,7 +274,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	RzListIter *iter;
 	char *filename;
 	rz_list_foreach (l, iter, filename) {
-		if (!strcmp(filename, ".") || !strcmp(filename, "..")) {
+		if (RZ_STR_EQ(filename, ".") || RZ_STR_EQ(filename, "..")) {
 			continue;
 		}
 		if (!strncmp(filename, basename, strlen(basename))) {
@@ -290,19 +289,18 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	}
 	rz_list_free(l);
 	free(basedir);
-	free(einput);
+	free(expanded_path);
 }
 
 static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *dir_from_user = rz_str_ndup(s, len);
-	char *tmp;
 
-	tmp = rz_path_normalize_user_input(dir_from_user, len);
+	char *expanded_path = rz_path_normalize_nd_expand(dir_from_user, len);
 	free(dir_from_user);
-	dir_from_user = tmp;
 
-	char *expanded_path = rz_path_home_expand(dir_from_user);
-	free(dir_from_user);
+	if (!expanded_path) {
+		return;
+	}
 
 	char *basedir = rz_file_dirname(expanded_path);
 	const char *basename = rz_file_basename(expanded_path + 1);

@@ -325,7 +325,7 @@ RZ_API RZ_OWN RzPath *rz_path_new(void) {
  * \param usr_input The raw path string provided by the user. May be NULL or empty.
  * \return A new normalized path string.
  */
-RZ_API RZ_OWN char *rz_path_normalize_user_input(char *usr_input, size_t len) {
+RZ_API RZ_OWN char *rz_path_normalize_nd_expand(char *usr_input, size_t len) {
 	char *input = rz_str_dup(usr_input);
 	if (RZ_STR_ISEMPTY(input)) {
 		free(input);
@@ -343,8 +343,11 @@ RZ_API RZ_OWN char *rz_path_normalize_user_input(char *usr_input, size_t len) {
 			return NULL;
 		}
 		input = tmp;
+		free(tmp);
 	}
-	return input;
+	char *exp_path = rz_path_home_expand(input);
+	free(input);
+	return exp_path;
 }
 
 /**

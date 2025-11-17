@@ -41,7 +41,7 @@ RZ_API RZ_OWN char *rz_path_home_config_rcdir(void);
 RZ_API RZ_OWN char *rz_path_home_config(void);
 RZ_API RZ_OWN char *rz_path_home_cache(void);
 RZ_API RZ_OWN char *rz_path_home_history(void);
-RZ_API RZ_OWN char *rz_path_normalize_user_input(char *usr_input, size_t len);
+RZ_API RZ_OWN char *rz_path_normalize_nd_expand(char *usr_input, size_t len);
 
 RZ_API RZ_OWN char *rz_path_home_expand(RZ_NULLABLE const char *path);
 
