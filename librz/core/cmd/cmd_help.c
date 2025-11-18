@@ -173,7 +173,7 @@ static char *cons_hud_help_string(const char *s) {
 				prev_null = &o[i];
 				os = prev_os;
 				if (os && *os) {
-					rz_list_pop(fl);
+					free(rz_list_pop(fl));
 					track = rz_str_dup(os);
 					if (!rz_list_append(fl, track)) {
 						free(track);
