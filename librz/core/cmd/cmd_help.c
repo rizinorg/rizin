@@ -154,9 +154,9 @@ static char *cons_hud_help_string(const char *s) {
 			line_has_hash = true;
 		}
 		if (o[i] == '\n') {
+			o[i] = 0;
 			if (line_has_hash) {
 				line_has_hash = false;
-				o[i] = 0;
 				prev_null = &o[i];
 				if (*os) {
 					track = rz_str_dup(os);
@@ -166,9 +166,7 @@ static char *cons_hud_help_string(const char *s) {
 					}
 				}
 				prev_os = os;
-				os = o + i + 1;
 			} else {
-				o[i] = 0;
 				*prev_null = '\n';
 				prev_null = &o[i];
 				os = prev_os;
@@ -180,8 +178,8 @@ static char *cons_hud_help_string(const char *s) {
 						break;
 					}
 				}
-				os = o + i + 1;
 			}
+			os = o + i + 1;
 		}
 	}
 	ret = rz_cons_hud(fl, NULL);
