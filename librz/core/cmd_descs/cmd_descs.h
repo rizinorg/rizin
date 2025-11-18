@@ -2121,6 +2121,8 @@ RZ_IPI RzCmdStatus rz_print_pattern8_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_print_pattern_latin_alphabet_handler(RzCore *core, int argc, const char **argv);
 // "ppd"
 RZ_IPI RzCmdStatus rz_print_pattern_debrujin_handler(RzCore *core, int argc, const char **argv);
+// "ppd/"
+RZ_IPI RzCmdStatus rz_print_pattern_debrujin_find_handler(RzCore *core, int argc, const char **argv);
 // "ppf"
 RZ_IPI RzCmdStatus rz_print_pattern_oxff_handler(RzCore *core, int argc, const char **argv);
 // "ppn"

@@ -880,6 +880,13 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: "ppd/"
+        summary: Return the offset where <value> appears in the default De Bruijn pattern
+        description: Honors cfg.bigendian to interpret <value> before searching through the ppd pattern
+        cname: print_pattern_debrujin_find
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: ppf
         summary: Print buffer filled with 0xFF
         cname: print_pattern_oxff
