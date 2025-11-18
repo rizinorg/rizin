@@ -22,7 +22,7 @@ EXPECT=<<EOF
 0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
 0x00001e00 0 imp.std::ios_base::Init::Init()
 0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char>>& std::operator<<<std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>>&, char const*)
 0x00001e18 0 imp.__cxa_atexit
 0x00001e1e 0 imp.exit
 EOF
@@ -143,7 +143,7 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=e asm.bytes=true; pd 1 @ 0x08048aac;
 EXPECT=<<EOF
-            0x08048aac      c7042460b004.  mov   dword [esp], obj.std::cerr ; sym..bss
+            0x08048aac      c7042460b004.  mov   dword [esp], obj.std::cerr ; obj._ZSt4cerr__GLIBCXX_3.4
                                                                        ; [0x804b060:4]=0
 EOF
 RUN
@@ -256,15 +256,15 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
+            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
+            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
 / sym.imp._Unwind_Resume();
 \           0x00000f10      jmp   dword [ebx+0x70]
 
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
+            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
+            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char__::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
 / sym.imp._Unwind_Resume();
 \           0x00000f10      jmp   dword [ebx+0x70]
 EOF
@@ -496,7 +496,7 @@ EXPECT=<<EOF
 0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
 0x00001e00 0 imp.std::ios_base::Init::Init()
 0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char> >& std::operator<< <std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*)
+0x00001e12 0 imp.std::basic_ostream<char, std::char_traits<char>>& std::operator<<<std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>>&, char const*)
 ====================
 0x00001d9a 0 unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)
 0x00001c4e 0 std::__verify_grouping(char const*, unsigned long, std::string const&)
@@ -506,7 +506,7 @@ EXPECT=<<EOF
 0x00001dfa 0 imp.std::ostream::operator<<(std::ostream& (*)(std::ostream&))
 0x00001e00 0 imp.std::ios_base::Init::Init()
 0x00001e06 0 imp.std::ios_base::Init::~Init()
-0x00001e12 0 imp.std::ostream& std::operator<< <std::char_traits<char> >(std::ostream&, char const*)
+0x00001e12 0 imp.std::ostream& std::operator<<<std::char_traits<char>>(std::ostream&, char const*)
 ====================
 0x00001d9a 0 __ZSt3minImERKT_S2_S2_
 0x00001ba0 0 __Z41__static_initialization_and_destruction_0ii
