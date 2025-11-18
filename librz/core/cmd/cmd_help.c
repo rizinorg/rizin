@@ -159,34 +159,35 @@ static char *cons_hud_help_string(const char *s) {
 		if (o[i] == '#') {
 			line_has_hash = true;
 		}
-		if (o[i] == '\n') {
-			o[i] = 0;
-			if (line_has_hash) {
-				line_has_hash = false;
-				prev_null = &o[i];
-				if (*os) {
-					track = rz_str_dup(os);
-					if (!rz_list_append(fl, track)) {
-						free(track);
-						break;
-					}
-				}
-				prev_os = os;
-			} else {
-				*prev_null = '\n';
-				prev_null = &o[i];
-				os = prev_os;
-				if (os && *os) {
-					free(rz_list_pop(fl));
-					track = rz_str_dup(os);
-					if (!rz_list_append(fl, track)) {
-						free(track);
-						break;
-					}
+		if (o[i] != '\n') {
+			continue;
+		}
+		o[i] = 0;
+		if (line_has_hash) {
+			line_has_hash = false;
+			prev_null = &o[i];
+			if (*os) {
+				track = rz_str_dup(os);
+				if (!rz_list_append(fl, track)) {
+					free(track);
+					break;
 				}
 			}
-			os = o + i + 1;
+			prev_os = os;
+		} else {
+			*prev_null = '\n';
+			prev_null = &o[i];
+			os = prev_os;
+			if (os && *os) {
+				free(rz_list_pop(fl));
+				track = rz_str_dup(os);
+				if (!rz_list_append(fl, track)) {
+					free(track);
+					break;
+				}
+			}
 		}
+		os = o + i + 1;
 	}
 	ret = rz_cons_hud(fl, NULL);
 	free(o);
