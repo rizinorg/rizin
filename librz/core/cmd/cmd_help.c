@@ -146,6 +146,12 @@ static char *cons_hud_help_string(const char *s) {
 		return NULL;
 	}
 	fl->free = free;
+
+	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
+	 * 1. Every command has a help string starting with '#'.
+	 * 2. The '#' is always on the first line.
+	 * It's probably better not to amalgamate the help strings in the first place, but this is a start.
+	 */
 	bool line_has_hash = false;
 	char *prev_null = NULL;
 	char *prev_os = NULL;
