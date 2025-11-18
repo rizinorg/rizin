@@ -132,7 +132,7 @@ exit_status:
 
 static char *cons_hud_help_string(const char *s) {
 	if (!rz_cons_is_interactive()) {
-		eprintf("Hud mode requires scr.interactive=true.\n");
+		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
 		return NULL;
 	}
 	char *os, *track, *ret, *o = rz_str_dup(s);
