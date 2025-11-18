@@ -174,10 +174,22 @@ static char *cons_hud_help_string(const char *s) {
 			}
 			prev_str_start = str_start;
 		} else {
+			if (!prev_null) {
+				RZ_LOG_ERROR("prev_null is NULL");
+				free(buf);
+				rz_list_free(fl);
+				return NULL;
+			}
 			*prev_null = '\n';
 			prev_null = &buf[i];
+			if (!prev_str_start) {
+				RZ_LOG_ERROR("prev_str_start is NULL");
+				free(buf);
+				rz_list_free(fl);
+				return NULL;
+			}
 			str_start = prev_str_start;
-			if (str_start && *str_start) {
+			if (*str_start) {
 				free(rz_list_pop(fl));
 				track = rz_str_dup(str_start);
 				if (!rz_list_append(fl, track)) {
