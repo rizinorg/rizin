@@ -135,14 +135,14 @@ static char *cons_hud_help_string(const char *s) {
 		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
 		return NULL;
 	}
-	char *os, *track, *ret, *o = rz_str_dup(s);
-	if (!o) {
+	char *str_start, *track, *ret, *buf = rz_str_dup(s);
+	if (!buf) {
 		return NULL;
 	}
 	RzList *fl = rz_list_newf(free);
 	int i;
 	if (!fl) {
-		free(o);
+		free(buf);
 		return NULL;
 	}
 
@@ -153,43 +153,43 @@ static char *cons_hud_help_string(const char *s) {
 	 */
 	bool line_has_hash = false;
 	char *prev_null = NULL;
-	char *prev_os = NULL;
-	for (os = o, i = 0; o[i]; i++) {
-		if (o[i] == '#') {
+	char *prev_str_start = NULL;
+	for (str_start = buf, i = 0; buf[i]; i++) {
+		if (buf[i] == '#') {
 			line_has_hash = true;
 		}
-		if (o[i] != '\n') {
+		if (buf[i] != '\n') {
 			continue;
 		}
-		o[i] = 0;
+		buf[i] = 0;
 		if (line_has_hash) {
 			line_has_hash = false;
-			prev_null = &o[i];
-			if (*os) {
-				track = rz_str_dup(os);
+			prev_null = &buf[i];
+			if (*str_start) {
+				track = rz_str_dup(str_start);
 				if (!rz_list_append(fl, track)) {
 					free(track);
 					break;
 				}
 			}
-			prev_os = os;
+			prev_str_start = str_start;
 		} else {
 			*prev_null = '\n';
-			prev_null = &o[i];
-			os = prev_os;
-			if (os && *os) {
+			prev_null = &buf[i];
+			str_start = prev_str_start;
+			if (str_start && *str_start) {
 				free(rz_list_pop(fl));
-				track = rz_str_dup(os);
+				track = rz_str_dup(str_start);
 				if (!rz_list_append(fl, track)) {
 					free(track);
 					break;
 				}
 			}
 		}
-		os = o + i + 1;
+		str_start = buf + i + 1;
 	}
 	ret = rz_cons_hud(fl, NULL);
-	free(o);
+	free(buf);
 	rz_list_free(fl);
 	return ret;
 }
