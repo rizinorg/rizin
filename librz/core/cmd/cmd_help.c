@@ -139,13 +139,12 @@ static char *cons_hud_help_string(const char *s) {
 	if (!o) {
 		return NULL;
 	}
-	RzList *fl = rz_list_new();
+	RzList *fl = rz_list_newf(free);
 	int i;
 	if (!fl) {
 		free(o);
 		return NULL;
 	}
-	fl->free = free;
 
 	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
 	 * 1. Every command has a help string starting with '#'.
