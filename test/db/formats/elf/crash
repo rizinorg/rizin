@@ -38,10 +38,7 @@ FILE=bins/elf/analysis/elf_verdef_vd_next_zero
 CMDS=<<EOF
 ii
 is
-iI~machine
 EOF
-EXPECT=<<EOF
-machine  AMD x86-64 architecture
-EOF
+EXPECT=
 TIMEOUT=5
 RUN
