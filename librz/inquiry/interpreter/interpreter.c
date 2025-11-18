@@ -5,6 +5,9 @@
  * \file The API implementation for all analysis interpreters.
  */
 
+#include "rz_util/ht_up.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_set.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -109,19 +112,19 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpre
 		return state;
 	}
 	// Initialize the register file with uninitialized abstract values.
-	state->reg_map = ht_sp_new(HT_STR_DUP, NULL, free);
+	state->reg_file = ht_sp_new(HT_STR_DUP, NULL, free);
 	void **it;
 	rz_pvector_foreach (reg_names, it) {
 		const char *rname = *it;
 		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
 		if (!aval) {
-			ht_sp_free(state->reg_map);
+			ht_sp_free(state->reg_file);
 			free(state);
 			return NULL;
 		}
 
 		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
-		ht_sp_insert(state->reg_map, rname, aval);
+		ht_sp_insert(state->reg_file, rname, aval);
 	}
 	return state;
 }
@@ -130,8 +133,8 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	if (!state) {
 		return;
 	}
-	if (state->reg_map) {
-		ht_sp_free(state->reg_map);
+	if (state->reg_file) {
+		ht_sp_free(state->reg_file);
 	}
 	free(state);
 }
@@ -209,17 +212,72 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_BORROW RzInterpreterSet *iset) {
 			iset->plugin->eval &&
 			iset->plugin->hash_state,
 		false);
-	RZ_LOG_WARN("INTERPRETER Main: Hello.\n");
+	bool success = false;
 
-	bool result = false;
-	void **plugin_data = NULL;
+	RZ_LOG_WARN("INTERPRETER Main: Hello.\n");
+	RzInterpreterPlugin *plugin = iset->plugin;
+
+	void **priv_ptr = NULL;
 	if (iset->plugin->init) {
-		iset->plugin->init(plugin_data);
+		iset->plugin->init(priv_ptr);
 	}
-	rz_atomic_bool_set(iset->is_running_flag, true);
+	void *plugin_data = priv_ptr ? *priv_ptr : NULL;
+
+	plugin->init_state(iset->state, plugin_data);
+
+	HtUP *state_map = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_abstr_state_free);
+
+
+	RzSetU *reachable_states = rz_set_u_new();
+	if (!reachable_states) {
+		rz_warn_if_reached();
+		goto error;
+	}
+	ut64 n_states = 0;
+	ut64 prev_n_states = 0;
+	while (true) {
+		const RzILOpEffect *eff = rz_th_queue_wait_pop(iset->il_queue, false);
+		if (!eff) {
+			rz_warn_if_reached();
+			goto error;
+		}
+
+		RzInterpreterAbstrState *state = ht_up_find(state_map, plugin->hash_state(state, plugin_data), NULL);
+		if (!state || !plugin->eval(state, eff, iset->yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("Interpreter failed to evaluate an effect or state was NULL. Abort.\n");
+			RZ_LOG_ERROR("n_states = %" PFMT64d ".\n", n_states);
+			goto error;
+		}
+
+		rz_set_u_add(reachable_states, plugin->hash_state(state, plugin_data));
+		n_states = rz_set_u_size(reachable_states);
+		bool reached_new_state = n_states > prev_n_states;
+		prev_n_states = n_states;
+
+		if (rz_th_queue_size(iset->il_queue) == 0) {
+			// No effect left to evaluate.
+			break;
+		}
+		if (reached_new_state) {
+			// Only new states are allowed to add to the request queue.
+			// Otherwise we might loop indefinitely.
+			size_t prev_addr_size = rz_th_queue_size(iset->addr_queue);
+			if (!plugin->successors(state, iset->addr_queue, plugin_data)) {
+				RZ_LOG_ERROR("Error during PC concretization. Abort.\n");
+				goto error;
+			}
+		}
+	}
+	// while true {
+	//    get new PCs
+	//    request effects
+	//    push effects
+	// }
+
+error:
 	rz_atomic_bool_set(iset->is_running_flag, false);
 	if (iset->plugin->fini) {
 		iset->plugin->fini(plugin_data);
 	}
-	return result;
+	return success;
 }

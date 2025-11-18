@@ -2,12 +2,50 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_inquiry.h>
+#include <rz_inquiry/rz_interpreter.h>
+#include <rz_th.h>
+#include <rz_util.h>
+
+typedef struct {
+	RzBitVector *concrete; ///< A concrete value. If NULL, it is considered bottom.
+} ProtoIntrprAbstrData;
 
 bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzILOpEffect *effect,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	void *plugin_data) {
 	RZ_LOG_WARN("Hello from Protoype eval.\n");
+	return true;
+}
+
+bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
+	RZ_NONNULL RZ_OUT RzThreadQueue /*<ut64 *>*/ *addr_queue,
+	void *plugin_data) {
+	rz_return_val_if_fail(state && addr_queue, false);
+
+	RzInterpreterAbstrVal *pc = state->pc;
+	if (!pc || pc->abstr_data) {
+		RZ_LOG_ERROR("No PC found.\n");
+		return false;
+	}
+	ProtoIntrprAbstrData *adata = pc->abstr_data;
+	if (!adata->concrete) {
+		// The PC is not a concrete value.
+		// This prototype can't estimate a reasonable concretization for it.
+		return true;
+	}
+	if (rz_bv_len(adata->concrete) > 64) {
+		RZ_LOG_WARN("PC has a length of more than 64 bits!\n");
+		return true;
+	}
+
+	ut64 *next_pc = RZ_NEW(ut64);
+	if (!next_pc) {
+		rz_warn_if_reached();
+		return false;
+	}
+	*next_pc = rz_bv_to_ut64(adata->concrete);
+	rz_th_queue_push(addr_queue, next_pc, true);
 	return true;
 }
 
@@ -22,6 +60,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.init = NULL,
 	.fini = NULL,
 	.eval = eval,
+	.successors = successors,
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {

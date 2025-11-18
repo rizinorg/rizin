@@ -51,8 +51,9 @@ typedef struct {
 
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
-	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_map; ///< The register file. Currently a hash map.
-	void *prop; ///< Optional state properties. Managed by indiviual interpreters.
+	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_file; ///< The register file. Currently a hash map.
+	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation, the PC is not part of the register file.
+	void *prop; ///< Optional state properties. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
 typedef enum {
@@ -123,10 +124,12 @@ typedef struct {
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
+	 *
+	 * \return Returns false in case of error. The interpretation must abort.
+	 * True otherwise.
 	 */
 	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
-		RZ_OUT ut64 *addr_arr,
-		size_t addr_array_size,
+		RZ_NONNULL RZ_OUT RzThreadQueue /*<ut64 *>*/ *addr_queue,
 		void *plugin_data);
 } RzInterpreterPlugin;
 
