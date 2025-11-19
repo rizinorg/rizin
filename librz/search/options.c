@@ -117,6 +117,7 @@ RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCan
 
 RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN RzSearchFindOpt *find_opts) {
 	rz_return_val_if_fail(opt, false);
+	rz_search_find_opt_free(opt->find_opts);
 	opt->find_opts = find_opts;
 	return true;
 }
