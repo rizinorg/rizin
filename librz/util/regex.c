@@ -728,7 +728,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 
 fini:
 	rz_regex_match_data_free(mdata);
-	RZ_FREE(mcontext);
+	pcre2_match_context_free_8(mcontext);
 	return matches;
 }
 
@@ -808,6 +808,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 
 fini:
 	rz_regex_match_data_free(mdata);
+	pcre2_match_context_free_16(mcontext);
 	return matches;
 }
 
@@ -887,6 +888,7 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 
 fini:
 	rz_regex_match_data_free(mdata);
+	pcre2_match_context_free_32(mcontext);
 	return matches;
 }
 
