@@ -130,6 +130,82 @@ exit_status:
 	return status;
 }
 
+static char *cons_hud_help_string(const char *s) {
+	if (!rz_cons_is_interactive()) {
+		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
+		return NULL;
+	}
+	char *str_start, *track, *ret, *buf = rz_str_dup(s);
+	if (!buf) {
+		return NULL;
+	}
+	RzList *fl = rz_list_newf(free);
+	int i;
+	if (!fl) {
+		free(buf);
+		return NULL;
+	}
+
+	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
+	 * 1. Every command has a help string starting with '#'.
+	 * 2. The '#' is always on the first line.
+	 * It's probably better not to amalgamate the help strings in the first place, but this is a start.
+	 */
+	bool line_has_hash = false;
+	char *prev_null = NULL;
+	char *prev_str_start = NULL;
+	for (str_start = buf, i = 0; buf[i]; i++) {
+		if (buf[i] == '#') {
+			line_has_hash = true;
+		}
+		if (buf[i] != '\n') {
+			continue;
+		}
+		buf[i] = 0;
+		if (line_has_hash) {
+			line_has_hash = false;
+			prev_null = &buf[i];
+			if (*str_start) {
+				track = rz_str_dup(str_start);
+				if (!rz_list_append(fl, track)) {
+					free(track);
+					break;
+				}
+			}
+			prev_str_start = str_start;
+		} else {
+			if (!prev_null) {
+				RZ_LOG_ERROR("prev_null is NULL");
+				free(buf);
+				rz_list_free(fl);
+				return NULL;
+			}
+			*prev_null = '\n';
+			prev_null = &buf[i];
+			if (!prev_str_start) {
+				RZ_LOG_ERROR("prev_str_start is NULL");
+				free(buf);
+				rz_list_free(fl);
+				return NULL;
+			}
+			str_start = prev_str_start;
+			if (*str_start) {
+				free(rz_list_pop(fl));
+				track = rz_str_dup(str_start);
+				if (!rz_list_append(fl, track)) {
+					free(track);
+					break;
+				}
+			}
+		}
+		str_start = buf + i + 1;
+	}
+	ret = rz_cons_hud(fl, NULL);
+	free(buf);
+	rz_list_free(fl);
+	return ret;
+}
+
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
 	RzHelpSearch hs = {
@@ -145,7 +221,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 	// Get all summary descriptions of commands.
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_cmd_desc_summary, &hs);
 	// Run it in the hub.
-	free(rz_cons_hud_string(rz_strbuf_get(hs.sb)));
+	free(cons_hud_help_string(rz_strbuf_get(hs.sb)));
 
 	rz_strbuf_free(hs.sb);
 	return RZ_CMD_STATUS_OK;

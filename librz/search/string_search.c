@@ -371,7 +371,7 @@ RZ_API RZ_OWN RzSearchCollection *rz_search_collection_strings(RZ_NULLABLE RZ_BO
 	}
 
 	ss->strings = rz_pvector_new((RzPVectorFree)rz_pvector_free);
-	ss->thread_ids = rz_th_queue_new(n_threads, NULL);
+	ss->thread_ids = rz_th_queue_new(n_threads, free);
 	if (!ss->strings || !ss->thread_ids) {
 		goto error;
 	}
