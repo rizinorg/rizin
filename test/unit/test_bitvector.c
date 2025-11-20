@@ -1164,6 +1164,114 @@ bool test_rz_bv_copy_nbits(void) {
 	rz_bv_free(too_small);
 	rz_bv_free(a);
 	rz_bv_free(b);
+
+	/// copy large src to large dst with aligned offsets
+	{
+		RzBitVector *a = rz_bv_new(128);
+		RzBitVector *b = rz_bv_new_from_ut64(128, 0x0);
+
+		rz_bv_set_all(a, true);
+
+		/// copy same offset at same byte
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 5, b, 5, 3);
+		mu_assert_eq(actual_copy, 3, "copy 3 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xe0", "copy large unaligned");
+
+		/// copy with front/end byte trailing bits, but no middle bytes
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 3, b, 3, 7);
+		mu_assert_eq(actual_copy, 7, "copy 7 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x3f8", "copy large aligned");
+
+		/// copy with front and end trailing bits and middle bytes
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 3, b, 3, 16);
+		mu_assert_eq(actual_copy, 16, "copy 16 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x7fff8", "copy large aligned");
+
+		/// copy without front/trailing bits
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 8, b, 8, 32);
+		mu_assert_eq(actual_copy, 32, "copy 32 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xffffffff00", "copy large aligned");
+
+		/// copy 1 bit
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 13, b, 13, 1);
+		mu_assert_eq(actual_copy, 1, "copy 1 bit");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x2000", "copy large aligned");
+
+		/// copy all except 1 bit
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 1, b, 1, 127);
+		mu_assert_eq(actual_copy, 127, "copy 127 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xfffffffffffffffffffffffffffffffe", "copy large aligned");
+
+		rz_bv_free(a);
+		rz_bv_free(b);
+	}
+
+	/// copy large src to large dst with unaligned offsets
+	{
+		RzBitVector *a = rz_bv_new(128);
+		RzBitVector *b = rz_bv_new(128);
+
+		rz_bv_set_all(a, true);
+
+		/// copy different offset but same byte
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 5, b, 2, 20);
+		mu_assert_eq(actual_copy, 20, "copy 20 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x3ffffc", "copy large unaligned");
+
+		/// copy different offset and different byte
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 10, b, 20, 10);
+		mu_assert_eq(actual_copy, 10, "copy 10 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x3ff00000", "copy large unaligned");
+
+		/// copy at bit boundary
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 48, b, 1, 22);
+		mu_assert_eq(actual_copy, 22, "copy 22 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x7ffffe", "copy large unaligned");
+
+		/// copy 1 bit
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 55, b, 13, 1);
+		mu_assert_eq(actual_copy, 1, "copy 1 bit");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0x2000", "copy large unaligned");
+
+		/// copy all except 1 bit
+		rz_bv_set_all(b, false);
+		actual_copy = rz_bv_copy_nbits(a, 0, b, 1, 127);
+		mu_assert_eq(actual_copy, 127, "copy 127 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xfffffffffffffffffffffffffffffffe", "copy large unaligned");
+
+		rz_bv_free(a);
+		rz_bv_free(b);
+	}
+
+	/// copy small src to small dst
+	{
+		RzBitVector *a = rz_bv_new_from_ut64(64, 0x67452301);
+		RzBitVector *b = rz_bv_new_from_ut64(64, 0x0);
+		RzBitVector *c = rz_bv_new_from_ut64(32, 0x0);
+
+		actual_copy = rz_bv_copy_nbits(a, 1, b, 2, 62);
+		mu_assert_eq(actual_copy, 62, "copy 62 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xce8a4600", "copy 62 bits small to small");
+
+		actual_copy = rz_bv_copy_nbits(a, 0, c, 31, 1);
+		mu_assert_eq(actual_copy, 1, "copy 1 bit");
+		mu_assert_streq_free(rz_bv_as_hex_string(c, false), "0x80000000", "copy 1 bit at boundary small to small");
+
+		rz_bv_free(a);
+		rz_bv_free(b);
+		rz_bv_free(c);
+	}
+
 	mu_end;
 }
 
