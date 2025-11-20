@@ -39,6 +39,11 @@ CMDS=<<EOF
 ii
 is
 EOF
-EXPECT=
+EXPECT=<<EOF
+nth vaddr bind type lib name 
+-----------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+EOF
 TIMEOUT=5
 RUN
