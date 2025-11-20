@@ -87,11 +87,12 @@
 #define HT_ENUM_DEFINED
 /**
  * Return codes for insert/update methods
- * code < 0 <--> code == HT_RC_ERROR
+ * code < 0 <--> code == HT_RC_ERROR || code == HT_RC_STILL_BORROWED
  * code >= 0 <--> code != HT_RC_ERROR
  * code > 0 <--> code == HT_RC_INSERTED || code == HT_RC_UPDATED
  */
 typedef enum {
+	HT_RC_STILL_BORROWED = -2, ///< Error Key/Value are borrowed to more than one user.
 	HT_RC_ERROR = -1, ///< Error (out of memory)
 	HT_RC_EXISTING = 0, ///< Existing KV prevented an insertion
 	HT_RC_INSERTED = 1, ///< New KV was inserted during insert/update operation
@@ -113,6 +114,7 @@ typedef struct Ht_(kv) {
 	VALUE_TYPE value;
 	ut32 key_len;
 	ut32 value_len;
+	size_t rc; ///< The reference count of this KeyValue. Only used if HT_(Options)->ref_counting is set.
 } HT_(Kv);
 
 typedef void (*HT_(FiniKv))(HT_(Kv) *kv, void *user);
@@ -153,6 +155,7 @@ typedef struct Ht_(options_t) {
 	void *finiKV_user; ///< RZ_NULLABLE. User data which is passed into finiKV.
 	size_t elem_size; ///< Size of each HtKv element (useful for subclassing like SdbKv).
 			  ///< Zero value means to use default size of HtKv.
+	bool ref_counting;
 } HT_(Options);
 
 /* Ht is the hashtable structure */
@@ -196,6 +199,8 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key);
 // Find the value corresponding to the matching key.
 RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
+RZ_API VALUE_TYPE Ht_(find_rc)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found, RZ_NULLABLE RZ_OUT size_t *ref_count);
+RZ_API bool Ht_(delete_rc)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key);
 // Iterates over all elements in the hashtable, calling the cb function on each Kv.
 // If the cb returns false, the iteration is stopped.
 // cb should not modify the hashtable.

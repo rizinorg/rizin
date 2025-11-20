@@ -53,6 +53,7 @@ static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	if (ht->opt.finiKV) {
 		ht->opt.finiKV(kv, ht->opt.finiKV_user);
 	}
+	kv->rc = 0;
 }
 
 static inline ut32 next_idx(ut32 idx) {
@@ -239,7 +240,9 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 
 	BUCKET_FOREACH(ht, bt, j, kvtmp) {
 		if (is_kv_equal(ht, key, key_len, kvtmp)) {
-			if (update) {
+			if (ht->opt.ref_counting && kvtmp->rc > 1) {
+				*code = HT_RC_STILL_BORROWED;
+			} else if (update) {
 				fini_kv_pair(ht, kvtmp);
 				*code = HT_RC_UPDATED;
 			} else {
@@ -286,6 +289,7 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
  * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
  *         returns HT_RC_EXISTING if key \p key already exists (only if \p update set to false);
  *         returns HT_RC_ERROR if out of memory.
+ *         returns HT_RC_STILL_BORROWED If key/value are still borrowed to more than one user.
  */
 RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
@@ -320,6 +324,7 @@ static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_T
 	kv_dst->key_len = key_len;
 	kv_dst->value = dupval(ht, value);
 	kv_dst->value_len = calcsize_val(ht, value);
+	kv_dst->rc = 0;
 	kv_dst = check_growing(ht, kv_dst);
 	if (out_kv) {
 		*out_kv = kv_dst;
@@ -351,6 +356,7 @@ RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  * \return Returns HT_RC_INSERTED if KV was inserted;
  *         returns HT_RC_EXISTING if key \p key already exists;
  *         returns HT_RC_ERROR if out of memory.
+ *         returns HT_RC_STILL_BORROWED If key/value are still borrowed to more than one user.
  */
 RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht, HT_RC_ERROR);
@@ -364,7 +370,7 @@ RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
  * \param key KV key; copy is made according to the options of \p ht
  * \param value KV value; copy is made according to the options of \p ht
  * \return Returns true if insertion/update took place;
- *         returns false if out of memory.
+ *         returns false if out of memory, or the hash table counts references and the value ref count is >1.
  */
 RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value) {
 	rz_return_val_if_fail(ht, false);
@@ -381,6 +387,7 @@ RZ_API bool Ht_(update)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TY
  *                    Pointers are valid until the next modification of the hash table.
  * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
  *         returns HT_RC_ERROR if out of memory.
+ *         returns HT_RC_STILL_BORROWED If key/value are still borrowed to more than one user.
  */
 RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht, HT_RC_ERROR);
@@ -389,15 +396,21 @@ RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
 
 /**
  * Update the key of an element that has \p old_key as key and replace it with \p new_key
+ * \param ht Hash table
+ * \param old_key The old key to update.
+ * \param new_key The new key to update old_key with.
+ * \return Returns true if update took place;
+ *         returns false If the hash table counts references and the key/value ref count is >1.
  */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
 	// First look for the value associated with old_key
 	bool found;
-	VALUE_TYPE value = Ht_(find)(ht, old_key, &found);
-	if (!found) {
+	HT_(Kv) *kv = Ht_(find_kv)(ht, old_key, &found);
+	if (!found || kv->rc > 1) {
 		return false;
 	}
+	VALUE_TYPE value = kv->value;
 
 	// Associate the existing value with new_key
 	bool inserted = insert_update(ht, new_key, value, false, NULL) > 0;
@@ -408,7 +421,6 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	// Remove the old_key kv, paying attention to not double free the value
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, old_key)];
 	const int old_key_len = calcsize_key(ht, old_key);
-	HT_(Kv) *kv;
 	ut32 j;
 
 	BUCKET_FOREACH(ht, bt, j, kv) {
@@ -438,6 +450,15 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
  * Returns the corresponding Kv entry from \p key.
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
+ *
+ * NOTE: This function does not increase the reference count on the value!
+ * Use find_rc() for this.
+ *
+ * \param ht The hash table to query.
+ * \param key The key to find the value for.
+ * \param found The optional bool to write the value result of the search into.
+ *
+ * \return The found value or HT_NULL_VALUE if no value was found.
  */
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	if (found) {
@@ -465,6 +486,14 @@ RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYP
  * Looks up the corresponding value from \p key.
  * If \p found is not NULL, it will be set to true if the entry was found,
  * false otherwise.
+ *
+ * NOTE: This function does not increase the reference count on the value!
+ *
+ * \param ht The hash table to query.
+ * \param key The key to find the value for.
+ * \param found The optional bool to write the value result of the search into.
+ *
+ * \return The found value or HT_NULL_VALUE if no value was found.
  */
 RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	HT_(Kv) *res = Ht_(find_kv)(ht, key, found);
@@ -472,9 +501,24 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 }
 
 /**
- * Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
+ * Looks up the corresponding value from \p key.
+ * If the value was found, it increases the reference count of it by one and
+ * writes it to \p ref_count if given.
+ * If \p found is not NULL, it will be set to true if the entry was found,
+ * false otherwise.
  */
-RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
+RZ_API VALUE_TYPE Ht_(find_rc)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found, RZ_NULLABLE RZ_OUT size_t *ref_count) {
+	HT_(Kv) *res = Ht_(find_kv)(ht, key, found);
+	if (res && ht->opt.ref_counting) {
+		res->rc++;
+		if (ref_count) {
+			*ref_count = res->rc;
+		}
+	}
+	return res ? res->value : HT_NULL_VALUE;
+}
+
+static bool Ht_(delete_internal)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, bool respect_rc) {
 	rz_return_val_if_fail(ht, false);
 	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
 	ut32 key_len = calcsize_key(ht, key);
@@ -483,6 +527,11 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 
 	BUCKET_FOREACH(ht, bt, j, kv) {
 		if (is_kv_equal(ht, key, key_len, kv)) {
+			if (respect_rc && kv->rc > 1) {
+				// Just drop reference and return.
+				kv->rc--;
+				return false;
+			}
 			fini_kv_pair(ht, kv);
 			void *src = next_kv(ht, kv);
 			memmove(kv, src, (bt->count - j - 1) * ht->opt.elem_size);
@@ -492,6 +541,36 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 		}
 	}
 	return false;
+}
+
+/**
+ * Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
+ *
+ * NOTE: If the hash table has reference counting enabled, this function ignores it.
+ * It will always delete existing values.
+ */
+RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
+	rz_return_val_if_fail(ht, false);
+	return Ht_(delete_internal)(ht, key, false);
+}
+
+/**
+ * Deletes an entry from the hash table \p ht with key \p key.
+ * Values with a reference count > 1 will not be deleted.
+ * Instead their reference count is decremented by one.
+ *
+ * If the hash table has reference counting not enabled, this function behaves
+ * like its delete() equivalent.
+ *
+ * \param ht The hash table to delete the value in.
+ * \param key The key to delete the value for.
+ *
+ * \return true If the value was deleted.
+ * \return false If the value's reference was decremented, no value existed or an error occurred.
+ */
+RZ_API bool Ht_(delete_rc)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
+	rz_return_val_if_fail(ht, false);
+	return Ht_(delete_internal)(ht, key, ht->opt.ref_counting);
 }
 
 /**

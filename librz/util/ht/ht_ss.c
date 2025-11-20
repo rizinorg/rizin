@@ -40,6 +40,7 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
 		.finiKV = key_opt == HT_STR_CONST ? fini_kv_val : fini_kv,
 		.finiKV_user = val_opt == HT_STR_CONST ? NULL : (HT_(FreeValue))free,
 		.elem_size = 0,
+		.ref_counting = false,
 	};
 	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
 }

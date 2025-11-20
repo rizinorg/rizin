@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: MIT
 
+#include "binrz/rz-test/rz_test.h"
 #include "minunit.h"
 #include <sdb.h>
 #include <rz_util/rz_iterator.h>
@@ -839,6 +840,88 @@ bool test_set_s(void) {
 	mu_end;
 }
 
+bool test_reference_counting(void) {
+	HtUP *ht = ht_up_new_rc(NULL, NULL);
+	const char *r;
+	HtUPKv *kv;
+	bool res;
+	bool found;
+	HtRetCode return_code;
+	size_t rc;
+
+	res = ht_up_insert(ht, 0x0, "value1");
+	mu_assert("Failed to insert", res);
+
+	// This doesn't increase the reference count.
+	r = ht_up_find(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "value1", "value1 should be retrieved");
+	// This doesn't increase the reference count.
+	kv = ht_up_find_kv(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(kv->value, "value1", "value1 should be retrieved");
+	mu_assert_eq(kv->rc, 0, "Reference count should still be 0");
+
+	// Get the value two times (two references).
+	r = ht_up_find_rc(ht, 0x0, &found, &rc);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "value1", "value1 should be retrieved.");
+	mu_assert_eq(rc, 1, "Reference count was not incremented.");
+
+	r = ht_up_find_rc(ht, 0x0, &found, &rc);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "value1", "value1 should be retrieved.");
+	mu_assert_eq(rc, 2, "Reference count was not incremented.");
+
+	// Attempt to delete or update the value,
+	// it should all fail because the ref count is >1.
+	res = ht_up_update(ht, 0x0, "DummyValue0");
+	mu_assert_false(res, "Value with more than one reference was updated.");
+	return_code = ht_up_update_ex(ht, 0x0, "DummyValue1", NULL);
+	mu_assert_eq(return_code, HT_RC_STILL_BORROWED, "Value with more than one reference was updated.");
+	return_code = ht_up_insert_ex(ht, 0x0, "DummyValue2", NULL);
+	mu_assert_eq(return_code, HT_RC_STILL_BORROWED, "Value with more than one reference was replaced.");
+	res = ht_up_update_key(ht, 0x0, 0x10);
+	mu_assert_false(res, "Key with more than one reference was updated.");
+
+	// Now reduce the reference count to 1 again.
+	res = ht_up_delete_rc(ht, 0x0);
+	mu_assert_false(res, "Value with more than one reference was deleted.");
+	kv = ht_up_find_kv(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(kv->value, "value1", "value1 should be retrieved");
+	mu_assert_eq(kv->rc, 1, "Reference count should still be 1");
+
+	// Attempt to delete or update the value.
+	// Because the reference count is 1 this is legal again.
+	res = ht_up_update(ht, 0x0, "DummyValue0");
+	mu_assert_true(res, "Value with more than one reference was updated.");
+	r = ht_up_find(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "DummyValue0", "value1 should be retrieved");
+
+	return_code = ht_up_update_ex(ht, 0x0, "DummyValue1", NULL);
+	mu_assert_eq(return_code, HT_RC_UPDATED, "Value was not updated.");
+	r = ht_up_find(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "DummyValue1", "DummyValue1 should be retrieved");
+
+	return_code = ht_up_insert_ex(ht, 0x0, "DummyValue2", NULL);
+	mu_assert_eq(return_code, HT_RC_EXISTING, "Value was not updated.");
+	r = ht_up_find(ht, 0x0, &found);
+	mu_assert("found should be true", found);
+	mu_assert_streq(r, "DummyValue1", "DummyValue2 should be retrieved");
+
+	res = ht_up_update_key(ht, 0x0, 0x10);
+	mu_assert_true(res, "Key was not updated.");
+
+	res = ht_up_delete_rc(ht, 0x10);
+	mu_assert_true(res, "Value was not deleted.");
+
+	ht_up_free(ht);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
@@ -863,6 +946,7 @@ int all_tests() {
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_iter);
 	mu_run_test(test_ht_ss_iter);
+	mu_run_test(test_reference_counting);
 	mu_run_test(test_set_u);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;

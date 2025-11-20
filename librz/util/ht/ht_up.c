@@ -14,7 +14,7 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
 	}
 }
 
-static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue) valfree) {
+static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue) valfree, bool rc) {
 	opt->cmp = NULL;
 	opt->hashfn = NULL;
 	opt->dupkey = NULL;
@@ -24,6 +24,7 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
 	opt->finiKV = fini_kv_val;
 	opt->finiKV_user = (void *)valfree;
 	opt->elem_size = 0;
+	opt->ref_counting = rc;
 }
 
 /**
@@ -35,7 +36,21 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
-	init_options(&opt, valdup, valfree);
+	init_options(&opt, valdup, valfree, false);
+	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+}
+
+/**
+ * \brief Create a new reference counting hash table that has ut64 as key and void* as value.
+ *
+ * \param valdup Function to make a copy of a value when inserting.
+ *        If NULL simple assignment operator is used for copy.
+ * \param valfree Function to releasing a stored value.
+ *        If NULL data is not freed.
+ */
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new_rc)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
+	HT_(Options) opt;
+	init_options(&opt, valdup, valfree, true);
 	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
 }
 
@@ -49,6 +64,6 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABL
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_size)(ut32 initial_size, RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
-	init_options(&opt, valdup, valfree);
+	init_options(&opt, valdup, valfree, false);
 	return Ht_(new_opt_size)(&opt, initial_size);
 }

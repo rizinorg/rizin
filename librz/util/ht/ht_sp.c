@@ -41,6 +41,7 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, RZ_NULLABLE HT_(DupValu
 		.finiKV = key_opt == HT_STR_CONST ? fini_kv_val : fini_kv,
 		.finiKV_user = (void *)free_val,
 		.elem_size = 0,
+		.ref_counting = false,
 	};
 	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
 }
