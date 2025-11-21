@@ -25,9 +25,6 @@ RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutpu
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("%s\n", s->name);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("%s %s\n", spaces->name, s->name);
-			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("%5d %c %s\n", count,
 				(!cur || cur == s) ? '*' : '.', s->name);
@@ -38,9 +35,6 @@ RZ_IPI void rz_core_spaces_print(RzCore *core, RzSpaces *spaces, RzCmdStateOutpu
 		}
 	}
 	rz_cmd_state_output_array_end(state);
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN && rz_spaces_current(spaces)) {
-		rz_cons_printf("%s %s # current\n", spaces->name, rz_spaces_current_name(spaces));
-	}
 }
 
 static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
@@ -153,7 +147,6 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 			}
 			pj_end(pj);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
 		default:
 			switch (d->type) {
 			case RZ_META_TYPE_COMMENT: {
@@ -162,106 +155,57 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				if (!s) {
 					s = rz_str_dup(pstr);
 				}
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					if (!strcmp(type, "CCu")) {
-						rz_cons_printf("%s base64:%s @ 0x%08" PFMT64x "\n",
-							type, s, start);
-					} else {
-						rz_cons_printf("%s %s @ 0x%08" PFMT64x "\n",
-							type, pstr, start);
-					}
+				if (!strcmp(type, "CCu")) {
+					char *mys = rz_str_escape(pstr);
+					rz_cons_printf("0x%08" PFMT64x " %s \"%s\"\n",
+						start, type, mys);
+					free(mys);
 				} else {
-					if (!strcmp(type, "CCu")) {
-						char *mys = rz_str_escape(pstr);
-						rz_cons_printf("0x%08" PFMT64x " %s \"%s\"\n",
-							start, type, mys);
-						free(mys);
-					} else {
-						rz_cons_printf("0x%08" PFMT64x " %s \"%s\"\n",
-							start, type, pstr);
-					}
+					rz_cons_printf("0x%08" PFMT64x " %s \"%s\"\n",
+						start, type, pstr);
 				}
 				free(s);
 			} break;
 			case RZ_META_TYPE_STRING:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					char cmd[] = "Cs#";
-					switch (d->subtype) {
-					case RZ_STRING_ENC_8BIT:
-					case RZ_STRING_ENC_UTF8:
-						cmd[2] = d->subtype;
-						break;
-					case RZ_STRING_ENC_UTF16LE:
-					case RZ_STRING_ENC_UTF16BE:
-						cmd[2] = 'w';
-						break;
-					case RZ_STRING_ENC_UTF32LE:
-					case RZ_STRING_ENC_UTF32BE:
-						cmd[2] = 'W';
-						break;
-					default:
-						cmd[2] = 0;
-					}
-					rz_cons_printf("%s %" PFMT64u " @ 0x%08" PFMT64x " # %s\n",
-						cmd, size, start, pstr);
+				const char *enc;
+				if (d->subtype == RZ_STRING_ENC_8BIT) {
+					enc = rz_str_is_ascii(d->str) ? "ascii" : "8bit";
 				} else {
-					const char *enc;
-					if (d->subtype == RZ_STRING_ENC_8BIT) {
-						enc = rz_str_is_ascii(d->str) ? "ascii" : "8bit";
-					} else {
-						enc = rz_str_enc_as_string(d->subtype);
-					}
-					if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
-						rz_cons_printf("0x%08" PFMT64x " %s[%" PFMT64u "] \"%s\"\n",
-							start, enc, size, pstr);
-					} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
-						rz_cons_printf("%s[%" PFMT64u "] \"%s\"\n",
-							enc, size, pstr);
-					} else {
-						rz_cons_printf("\"%s\"\n", pstr);
-					}
+					enc = rz_str_enc_as_string(d->subtype);
+				}
+				if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
+					rz_cons_printf("0x%08" PFMT64x " %s[%" PFMT64u "] \"%s\"\n",
+						start, enc, size, pstr);
+				} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
+					rz_cons_printf("%s[%" PFMT64u "] \"%s\"\n",
+						enc, size, pstr);
+				} else {
+					rz_cons_printf("\"%s\"\n", pstr);
 				}
 				break;
 			case RZ_META_TYPE_HIDE:
 			case RZ_META_TYPE_DATA:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					rz_cons_printf("%s %" PFMT64u " @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type),
-						size, start);
+				if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
+					const char *dtype = d->type == RZ_META_TYPE_HIDE ? "hidden" : "data";
+					rz_cons_printf("0x%08" PFMT64x " %s %s %" PFMT64u "\n",
+						start, dtype,
+						rz_meta_type_to_string(d->type), size);
 				} else {
-					if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
-						const char *dtype = d->type == RZ_META_TYPE_HIDE ? "hidden" : "data";
-						rz_cons_printf("0x%08" PFMT64x " %s %s %" PFMT64u "\n",
-							start, dtype,
-							rz_meta_type_to_string(d->type), size);
-					} else {
-						rz_cons_printf("%" PFMT64u "\n", size);
-					}
+					rz_cons_printf("%" PFMT64u "\n", size);
 				}
 				break;
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_FORMAT:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					rz_cons_printf("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type),
-						size, pstr, start);
+				if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
+					const char *dtype = d->type == RZ_META_TYPE_MAGIC ? "magic" : "format";
+					rz_cons_printf("0x%08" PFMT64x " %s %" PFMT64u " %s\n",
+						start, dtype, size, pstr);
 				} else {
-					if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
-						const char *dtype = d->type == RZ_META_TYPE_MAGIC ? "magic" : "format";
-						rz_cons_printf("0x%08" PFMT64x " %s %" PFMT64u " %s\n",
-							start, dtype, size, pstr);
-					} else {
-						rz_cons_printf("%" PFMT64u " %s\n", size, pstr);
-					}
+					rz_cons_printf("%" PFMT64u " %s\n", size, pstr);
 				}
 				break;
 			case RZ_META_TYPE_VARTYPE:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					rz_cons_printf("%s %s @ 0x%08" PFMT64x "\n",
-						rz_meta_type_to_string(d->type), pstr, start);
-				} else {
-					rz_cons_printf("0x%08" PFMT64x " %s\n", start, pstr);
-				}
+				rz_cons_printf("0x%08" PFMT64x " %s\n", start, pstr);
 				break;
 			case RZ_META_TYPE_HIGHLIGHT: {
 				ut8 r = 0, g = 0, b = 0, A = 0;
@@ -272,16 +216,10 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				// TODO: d->size
 			} break;
 			default:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
-					rz_cons_printf("%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
-						rz_meta_type_to_string(d->type),
-						size, start, pstr);
-				} else {
-					// TODO: use b64 here
-					rz_cons_printf("0x%08" PFMT64x " array[%" PFMT64u "] %s %s\n",
-						start, size,
-						rz_meta_type_to_string(d->type), pstr);
-				}
+				// TODO: use b64 here
+				rz_cons_printf("0x%08" PFMT64x " array[%" PFMT64u "] %s %s\n",
+					start, size,
+					rz_meta_type_to_string(d->type), pstr);
 				break;
 			}
 			break;

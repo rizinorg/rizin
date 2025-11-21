@@ -503,8 +503,7 @@ static void rz_cons_pal_show_rgb(void) {
 }
 
 RZ_API void rz_cons_pal_show(void) {
-	int i;
-	for (i = 0; colors[i].name; i++) {
+	for (size_t i = 0; colors[i].name; i++) {
 		rz_cons_printf("%s%s__" Color_RESET " %s\n",
 			colors[i].code,
 			colors[i].bgcode,
@@ -524,88 +523,61 @@ RZ_API void rz_cons_pal_show(void) {
 	}
 }
 
-typedef struct {
-	int val;
-	const char *str;
-} RAttrStr;
+/**
+ * \brief Returns the palette as a json
+ *
+ * \param pj  The JSON structure to write to.
+ */
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(pj);
 
-RZ_API void rz_cons_pal_list(int rad, const char *arg) {
-	char *name, **color;
-	const char *hasnext;
-	int i;
-	if (rad == 'j') {
-		rz_cons_print("{");
+	pj_o(pj); // {
+
+	for (size_t i = 0; keys[i].name; i++) {
+		RzColor *color = RZCOLOR_AT(i);
+
+		pj_ka(pj, keys[i].name); // name: [
+		pj_n(pj, color->r);
+		pj_n(pj, color->g);
+		pj_n(pj, color->b);
+		pj_end(pj); // ]
 	}
-	for (i = 0; keys[i].name; i++) {
-		RzColor *rcolor = RZCOLOR_AT(i);
+
+	pj_end(pj); // }
+}
+
+/**
+ * \brief Prints the palette as a css string
+ *
+ * \param name_prefix The name prefix to apply.
+ */
+RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
+	name_prefix = rz_str_trim_head_ro(name_prefix);
+	if (!name_prefix) {
+		name_prefix = "";
+	}
+
+	for (size_t i = 0; keys[i].name; i++) {
+		RzColor *color = RZCOLOR_AT(i);
+
+		char *name = rz_str_dup(keys[i].name);
+		rz_str_replace_char(name, '.', '_');
+
+		rz_cons_printf(".%s%s { color: rgb(%d, %d, %d); }\n",
+			name_prefix, name, color->r, color->g, color->b);
+
+		free(name);
+	}
+}
+
+/**
+ * \brief Prints the palette visually on the console output
+ */
+RZ_API void rz_cons_pal_list_visual(void) {
+	char **color;
+	for (size_t i = 0; keys[i].name; i++) {
 		color = COLOR_AT(i);
-		switch (rad) {
-		case 'j':
-			hasnext = (keys[i + 1].name) ? "," : "";
-			rz_cons_printf("\"%s\":[%d,%d,%d]%s",
-				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
-			break;
-		case 'c': {
-			const char *prefix = rz_str_trim_head_ro(arg);
-			if (!prefix) {
-				prefix = "";
-			}
-			hasnext = (keys[i + 1].name) ? "\n" : "";
-			// TODO Need to replace the '.' char because this is not valid CSS
-			char *name = rz_str_dup(keys[i].name);
-			int j, len = strlen(name);
-			for (j = 0; j < len; j++) {
-				if (name[j] == '.') {
-					name[j] = '_';
-				}
-			}
-			rz_cons_printf(".%s%s { color: rgb(%d, %d, %d); }%s",
-				prefix, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
-			free(name);
-		} break;
-		case 'h':
-			name = rz_str_dup(keys[i].name);
-			rz_str_replace_char(name, '.', '_');
-			rz_cons_printf(".%s { color:#%02x%02x%02x }\n",
-				name, rcolor->r, rcolor->g, rcolor->b);
-			free(name);
-			break;
-		case '*':
-		case 'r':
-		case 1:
-			rz_cons_printf("ec %s rgb:%02x%02x%02x",
-				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
-			if (rcolor->a == ALPHA_FGBG) {
-				rz_cons_printf(" rgb:%02x%02x%02x",
-					rcolor->r2, rcolor->g2, rcolor->b2);
-			}
-			if (rcolor->attr) {
-				const RAttrStr attrs[] = {
-					{ RZ_CONS_ATTR_BOLD, "bold" },
-					{ RZ_CONS_ATTR_DIM, "dim" },
-					{ RZ_CONS_ATTR_ITALIC, "italic" },
-					{ RZ_CONS_ATTR_UNDERLINE, "underline" },
-					{ RZ_CONS_ATTR_BLINK, "blink" }
-				};
-				int j;
-				if (rcolor->a != ALPHA_FGBG) {
-					rz_cons_strcat(" .");
-				}
-				for (j = 0; j < RZ_ARRAY_SIZE(attrs); j++) {
-					if (rcolor->attr & attrs[j].val) {
-						rz_cons_printf(" %s", attrs[j].str);
-					}
-				}
-			}
-			rz_cons_newline();
-			break;
-		default:
-			rz_cons_printf(" %s##" Color_RESET "  %s\n", *color,
-				keys[i].name);
-		}
-	}
-	if (rad == 'j') {
-		rz_cons_print("}\n");
+		rz_cons_printf(" %s##" Color_RESET "  %s\n", *color, keys[i].name);
 	}
 }
 

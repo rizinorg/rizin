@@ -215,13 +215,6 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: pc*
-        summary: Generate a rizin commands for writing the byte array.
-        cname: cmd_print_byte_array_rizin
-        args:
-          - name: len
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
   - name: pD
     summary: Disassemble N bytes (can be negative)
     cname: cmd_disassembly_n_bytes
@@ -470,7 +463,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_QUIET
         args:
           - name: format
@@ -504,7 +496,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_QUIET
         args:
           - name: formatname
@@ -722,7 +713,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_TABLE
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
@@ -1197,7 +1187,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1209,7 +1198,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1221,7 +1209,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1233,7 +1220,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1245,7 +1231,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: repeat
             type: RZ_CMD_ARG_TYPE_NUM
@@ -1437,7 +1422,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1451,7 +1435,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1465,7 +1448,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1479,7 +1461,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM
@@ -1493,7 +1474,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_TABLE
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: len
                 type: RZ_CMD_ARG_TYPE_RZNUM

@@ -43,13 +43,6 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 			free(ccexpr);
 		}
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		rz_list_foreach (list, iter, cc) {
-			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			rz_cons_printf("tcc \"%s\"\n", ccexpr);
-			free(ccexpr);
-		}
-	} break;
 	case RZ_OUTPUT_MODE_SDB:
 		rz_core_kuery_print(core, "analysis/cc/*");
 		break;
@@ -602,9 +595,6 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		rz_cons_printf("%s", pj_string(pj));
 		pj_free(pj);
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("pfn \"%s\" \"%s\"\n", name, fmt);
-		break;
 	case RZ_OUTPUT_MODE_LONG:
 		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
 		break;
@@ -625,7 +615,7 @@ RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (structlist, it, btype) {
-		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_STANDARD);
 	}
 	rz_list_free(structlist);
 }
@@ -636,7 +626,7 @@ RZ_IPI void rz_core_types_union_print_format_all(RzCore *core) {
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (unionlist, it, btype) {
-		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_STANDARD);
 	}
 	rz_list_free(unionlist);
 }
@@ -937,17 +927,6 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
 			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
 			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
-		}
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_list_foreach (types, it, btype) {
-			char *fmt = rz_type_format(core->analysis->typedb, btype->name);
-			if (RZ_STR_ISNOTEMPTY(fmt)) {
-				rz_cons_printf("pfn \"%s\" \"%s\"\n", btype->name, fmt);
-			} else {
-				RZ_LOG_WARN("core: '%s' type has empty format\n", btype->name);
-			}
-			free(fmt);
 		}
 		break;
 	default:

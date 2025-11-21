@@ -263,15 +263,6 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			}
 			rz_cons_printf("0x%" PFMT64x " %s%s\n", undo->offset, name ? name : "", comment);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			if (undo->is_current) {
-				rz_cons_printf("# Current seek @ 0x%" PFMT64x "\n", undo->offset);
-			} else if (current_met) {
-				rz_cons_printf("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx - 1), undo->offset);
-			} else {
-				rz_cons_printf("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx + 1), undo->offset);
-			}
-			break;
 		default:
 			rz_warn_if_reached();
 			break;

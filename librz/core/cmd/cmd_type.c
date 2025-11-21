@@ -573,11 +573,7 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 			}
 		}
 	} else {
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_core_types_struct_print_format_all(core);
-		} else {
-			rz_core_types_struct_print_all(core, mode);
-		}
+		rz_core_types_struct_print_all(core, mode);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -697,11 +693,7 @@ RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char
 			}
 		}
 	} else {
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_core_types_union_print_format_all(core);
-		} else {
-			rz_core_types_union_print_all(core, mode);
-		}
+		rz_core_types_union_print_all(core, mode);
 	}
 	return RZ_CMD_STATUS_OK;
 }
