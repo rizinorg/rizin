@@ -201,23 +201,7 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 }
 
 /**
- * \brief Optimized version of rz_bv_copy_nbits() for small bitvectors (64 or less bits)
- */
-static ut32 rz_bv_copy_nbits_small(const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
-	// Sanity check performed by caller
-	if (nbit == 64) {
-		dst->bits.small_u = src->bits.small_u;
-	} else {
-		ut64 mask = ((1ull) << nbit) - 1;
-		dst->bits.small_u &= ~(mask << dst_start_pos);
-		dst->bits.small_u |= ((src->bits.small_u >> src_start_pos) & mask) << dst_start_pos;
-	}
-
-	return nbit;
-}
-
-/**
- * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with aligned bit positions
+ * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with bit positions aligned to BV_ELEM_SIZE
  */
 static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
@@ -230,9 +214,7 @@ static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_star
 
 	// Handle starting bits
 	if (start_bits > 0) {
-		ut8 mask = ((1u << start_bits) - 1) << src_offset;
-		dst->bits.large_a[dst_byte] &= ~mask;
-		dst->bits.large_a[dst_byte] |= src->bits.large_a[src_byte] & mask;
+		dst->bits.large_a[dst_byte] = rz_bits_copy_ut8(src->bits.large_a[src_byte], src_offset, dst->bits.large_a[dst_byte], src_offset, start_bits);
 		src_byte++;
 		dst_byte++;
 	}
@@ -252,9 +234,7 @@ static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_star
 
 	// Handle trailing bits
 	if (trailing_bits > 0) {
-		ut8 mask = (1u << trailing_bits) - 1;
-		dst->bits.large_a[dst_byte] &= ~mask;
-		dst->bits.large_a[dst_byte] |= (src->bits.large_a[src_byte] & mask);
+		dst->bits.large_a[dst_byte] = rz_bits_copy_ut8(src->bits.large_a[src_byte], 0, dst->bits.large_a[dst_byte], 0, trailing_bits);
 	}
 
 	return nbit;
@@ -284,9 +264,7 @@ static ut32 rz_bv_copy_nbits_large_nonaligned(const RzBitVector *src, ut32 src_s
 		}
 
 		// Extract bits from the buffer
-		ut8 mask = (1u << bits_to_write) - 1;
-		ut8 extracted_bits = (buffer >> src_offset) & mask;
-		dst->bits.large_a[dst_byte_index] = (dst->bits.large_a[dst_byte_index] & ~(mask << dst_offset)) | (extracted_bits << dst_offset);
+		dst->bits.large_a[dst_byte_index] = rz_bits_copy_ut64(buffer, src_offset, dst->bits.large_a[dst_byte_index], dst_offset, bits_to_write);
 
 		// Move positions
 		src_start_pos += bits_to_write;
@@ -319,7 +297,8 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 
 	if (src->len <= 64 && dst->len <= 64) {
 		// Both src and dst are smaller than 64 bits
-		return rz_bv_copy_nbits_small(src, src_start_pos, dst, dst_start_pos, nbit);
+		dst->bits.small_u = rz_bits_copy_ut64(src->bits.small_u, src_start_pos, dst->bits.small_u, dst_start_pos, nbit);
+		return nbit;
 	} else if (src->len > 64 && dst->len > 64) {
 		// Both src and dst are larger than 64 bits
 		if (src_start_pos % BV_ELEM_SIZE == dst_start_pos % BV_ELEM_SIZE) {

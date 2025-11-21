@@ -59,10 +59,19 @@ bool test_rz_bits_spread(void) {
 	mu_end;
 }
 
+bool test_rz_bits_copy(void) {
+	mu_assert_eq(rz_bits_copy_ut64(0x1122334455667788, 24, 0x8877665544332211, 8, 16), 0x8877665544445511, "Incorrect bit copy");
+	mu_assert_eq(rz_bits_copy_ut64(0x1122334455667788, 0, 0x0, 1, 63), 0x22446688aaccef10, "Incorrect bit copy");
+	mu_assert_eq(rz_bits_copy_ut64(0x1122334455667788, 0, 0x8877665544332211, 0, 64), 0x1122334455667788, "Incorrect bit copy");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bits_count);
 	mu_run_test(test_rz_bits_spread);
 	mu_run_test(test_rz_bits_trailing_zero);
+	mu_run_test(test_rz_bits_copy);
 
 	return tests_passed != tests_run;
 }

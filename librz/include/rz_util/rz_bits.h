@@ -125,6 +125,36 @@ static inline int rz_bits_leading_zeros(ut64 x) {
 }
 
 /**
+ * \brief Copies a bit range from \p src to \p dst at specified positions
+ * \param src 64-bit unsigned integer to copy bits from
+ * \param src_pos bit position related to \p src
+ * \param dst 64-bit unsigned integer to copy bits to
+ * \param dst_pos bit position related to \p dst
+ * \param size number of bits to copy (needs to be <= 64)
+ * \return a new 64-bit unsigned integer with the specified bit range replaced
+ */
+static inline ut64 rz_bits_copy_ut64(ut64 src, ut8 src_pos, ut64 dst, ut8 dst_pos, ut8 size) {
+	if (size >= 64) {
+		return src;
+	} else {
+		ut64 mask = ((1ull) << size) - 1;
+		return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
+	}
+}
+
+/**
+ * \brief Similar to rz_bits_copy_ut64() but for 8-bit unsigned integers
+ */
+static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, ut8 size) {
+	if (size >= 8) {
+		return src;
+	} else {
+		ut8 mask = ((1u) << size) - 1;
+		return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
+	}
+}
+
+/**
  * \brief Sign-extends a value from a specified bit-width to full width of type.
  *
  * This macro defines an inline function that performs sign extension on an
