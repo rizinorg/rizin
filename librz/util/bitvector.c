@@ -216,9 +216,13 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
  */
 static ut32 rz_bv_copy_nbits_small(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
-	ut64 mask = (1ull << nbit) - 1;
-	dst->bits.small_u &= ~(mask << dst_start_pos);
-	dst->bits.small_u |= ((src->bits.small_u >> src_start_pos) & mask) << dst_start_pos;
+	if (nbit == 64) {
+		dst->bits.small_u = src->bits.small_u;
+	} else {
+		ut64 mask = ((1ull) << nbit) - 1;
+		dst->bits.small_u &= ~(mask << dst_start_pos);
+		dst->bits.small_u |= ((src->bits.small_u >> src_start_pos) & mask) << dst_start_pos;
+	}
 
 	return nbit;
 }
@@ -241,7 +245,7 @@ static ut32 rz_bv_copy_nbits_small(RZ_NONNULL const RzBitVector *src, ut32 src_s
 static ut32 rz_bv_copy_nbits_large_aligned(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut8 src_offset = src_start_pos % BV_ELEM_SIZE;
-	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
+	ut8 start_bits = RZ_MIN(BV_ELEM_SIZE - dst_start_pos % BV_ELEM_SIZE, nbit);
 	ut8 trailing_bits = RZ_MIN((src_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
 	ut32 middle_bytes = (nbit - start_bits) / BV_ELEM_SIZE;
 	ut32 src_byte = src_start_pos / BV_ELEM_SIZE;
@@ -314,9 +318,9 @@ static ut32 rz_bv_copy_nbits_large_nonaligned(RZ_NONNULL const RzBitVector *src,
 		}
 
 		// Extract bits from the buffer
-		ut8 extracted_bits = (buffer >> src_offset) & ((1u << bits_to_write) - 1);
-		ut8 mask = ((1u << bits_to_write) - 1) << dst_offset;
-		dst->bits.large_a[dst_byte_index] = (dst->bits.large_a[dst_byte_index] & ~mask) | (extracted_bits << dst_offset);
+		ut8 mask = (1u << bits_to_write) - 1;
+		ut8 extracted_bits = (buffer >> src_offset) & mask;
+		dst->bits.large_a[dst_byte_index] = (dst->bits.large_a[dst_byte_index] & ~(mask << dst_offset)) | (extracted_bits << dst_offset);
 
 		// Move positions
 		src_start_pos += bits_to_write;
