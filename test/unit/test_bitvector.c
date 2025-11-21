@@ -1255,6 +1255,12 @@ bool test_rz_bv_copy_nbits(void) {
 		mu_assert_eq(actual_copy, 127, "copy 127 bits");
 		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xfffffffffffffffffffffffffffffffe", "copy large unaligned");
 
+		/// Copy bits within the same bitvector
+		rz_bv_set_from_ut64(b, 0xAAAABBBBCCCCDDDD);
+		actual_copy = rz_bv_copy_nbits(b, 0, b, 2, 30);
+		mu_assert_eq(actual_copy, 30, "copy 30 bits");
+		mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xaaaabbbb33337775", "copy large aligned");
+
 		rz_bv_free(a);
 		rz_bv_free(b);
 	}
