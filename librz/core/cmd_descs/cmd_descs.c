@@ -739,6 +739,7 @@ static const RzCmdDescArg print_pattern4_args[2];
 static const RzCmdDescArg print_pattern8_args[2];
 static const RzCmdDescArg print_pattern_latin_alphabet_args[2];
 static const RzCmdDescArg print_pattern_debrujin_args[2];
+static const RzCmdDescArg print_pattern_debrujin_find_args[2];
 static const RzCmdDescArg print_pattern_oxff_args[2];
 static const RzCmdDescArg print_pattern_num_args[2];
 static const RzCmdDescArg print_key_randomart_args[2];
@@ -16132,6 +16133,21 @@ static const RzCmdDescHelp print_pattern_debrujin_help = {
 	.args = print_pattern_debrujin_args,
 };
 
+static const RzCmdDescArg print_pattern_debrujin_find_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_pattern_debrujin_find_help = {
+	.summary = "Return the offset where <value> appears in the default De Bruijn pattern",
+	.description = "Honors cfg.bigendian to interpret <value> before searching through the ppd pattern",
+	.args = print_pattern_debrujin_find_args,
+};
+
 static const RzCmdDescArg print_pattern_oxff_args[] = {
 	{
 		.name = "len",
@@ -24490,6 +24506,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_pattern_debrujin_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppd", rz_print_pattern_debrujin_handler, &print_pattern_debrujin_help);
 	rz_warn_if_fail(print_pattern_debrujin_cd);
+
+	RzCmdDesc *print_pattern_debrujin_find_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppd/", rz_print_pattern_debrujin_find_handler, &print_pattern_debrujin_find_help);
+	rz_warn_if_fail(print_pattern_debrujin_find_cd);
 
 	RzCmdDesc *print_pattern_oxff_cd = rz_cmd_desc_argv_new(core->rcmd, pp_cd, "ppf", rz_print_pattern_oxff_handler, &print_pattern_oxff_help);
 	rz_warn_if_fail(print_pattern_oxff_cd);

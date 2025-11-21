@@ -130,6 +130,28 @@ exit_status:
 	return status;
 }
 
+static char *cons_hud_help_string(const char *s) {
+	if (!rz_cons_is_interactive()) {
+		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
+		return NULL;
+	}
+	char *buf = rz_str_dup(s);
+	if (!buf) {
+		return NULL;
+	}
+
+	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
+	 * 1. Every command has a help string starting with '#'.
+	 * 2. The '#' is always on the first line.
+	 * It's probably better not to amalgamate the help strings in the first place, but this is a start.
+	 */
+	RzList *help_strings = rz_str_split_list_regex(buf, "\\n(?=[^\\n]+\\#)", 0);
+	char *ret = rz_cons_hud(help_strings, NULL);
+	free(buf);
+	rz_list_free(help_strings);
+	return ret;
+}
+
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
 	RzHelpSearch hs = {
@@ -145,7 +167,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 	// Get all summary descriptions of commands.
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_cmd_desc_summary, &hs);
 	// Run it in the hub.
-	free(rz_cons_hud_string(rz_strbuf_get(hs.sb)));
+	free(cons_hud_help_string(rz_strbuf_get(hs.sb)));
 
 	rz_strbuf_free(hs.sb);
 	return RZ_CMD_STATUS_OK;
