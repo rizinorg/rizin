@@ -6,8 +6,10 @@
  */
 
 #include "rz_util/ht_up.h"
-#include "rz_util/rz_assert.h"
+#include "rz_util/rz_iterator.h"
 #include "rz_util/rz_set.h"
+#include "rz_util/rz_th_ht.h"
+#include "subprojects/rzheap/rz_jemalloc/internal/jemalloc_internal.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -111,6 +113,10 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpre
 	if (!reg_names) {
 		return state;
 	}
+	state->pc = RZ_NEW0(RzInterpreterAbstrVal);
+	if (!state->pc) {
+		return NULL;
+	}
 	// Initialize the register file with uninitialized abstract values.
 	state->reg_file = ht_sp_new(HT_STR_DUP, NULL, free);
 	void **it;
@@ -198,11 +204,17 @@ RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *i
 	free(iset);
 }
 
+typedef struct {
+	ut64 addr;
+	ut64 in_state_hash;
+} SuccessorState;
+
 /**
  * Main interpretation.
  */
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_BORROW RzInterpreterSet *iset) {
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	rz_return_val_if_fail(iset &&
+			iset->state &&
 			iset->addr_queue &&
 			iset->il_queue &&
 			iset->yield_queues &&
@@ -223,61 +235,130 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_BORROW RzInterpreterSet *iset) {
 	}
 	void *plugin_data = priv_ptr ? *priv_ptr : NULL;
 
-	plugin->init_state(iset->state, plugin_data);
+	//
+	// Start interpretation
+	//
 
-	HtUP *state_map = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_abstr_state_free);
+	// Cache of the currently used states.
+	HtUP *state_cache = NULL;
+	// A vector for the plugin to push the determined successors into.
+	RzVector *tmp_succ_addr = NULL;
+	// The set of reachable states.
+	RzSetU *reachable_states = NULL;
+	// The successor states to evaluate.
+	// This vector must have the same order as the elements pushed into addr_queue.
+	RzVector *succ_states = NULL;
 
-
-	RzSetU *reachable_states = rz_set_u_new();
-	if (!reachable_states) {
-		rz_warn_if_reached();
-		goto error;
+	if (!plugin->init_state(iset->state, plugin_data)) {
+		goto pre_loop_error;
 	}
-	ut64 n_states = 0;
-	ut64 prev_n_states = 0;
+	RzInterpreterAbstrState *in_state = iset->state;
+	ut64 in_hash = plugin->hash_state(in_state, plugin_data);
+	RzInterpreterAbstrState *out_state = NULL;
+	ut64 out_hash = 0;
+
+	const RzILOpEffect *eff = rz_th_queue_pop(iset->il_queue, false);
+	state_cache = ht_up_new_rc(NULL, NULL);
+	tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
+	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
+	reachable_states = rz_set_u_new();
+	if (!state_cache || !tmp_succ_addr || !succ_states || !eff || !reachable_states) {
+		goto pre_loop_error;
+	}
+
 	while (true) {
-		const RzILOpEffect *eff = rz_th_queue_wait_pop(iset->il_queue, false);
-		if (!eff) {
-			rz_warn_if_reached();
-			goto error;
+		// Evaluate the effect on the input state.
+		if (!plugin->eval(in_state, eff, iset->yield_queues, plugin_data)) {
+			goto loop_error;
 		}
+		// Decrease the reference count to the input state by one.
+		ht_up_delete_rc(state_cache, in_hash);
+		// The input state was (almost always) manipulated by eval(). Rename to clarify.
+		out_state = in_state;
+		out_hash = plugin->hash_state(out_state, plugin_data);
 
-		RzInterpreterAbstrState *state = ht_up_find(state_map, plugin->hash_state(state, plugin_data), NULL);
-		if (!state || !plugin->eval(state, eff, iset->yield_queues, plugin_data)) {
-			RZ_LOG_ERROR("Interpreter failed to evaluate an effect or state was NULL. Abort.\n");
-			RZ_LOG_ERROR("n_states = %" PFMT64d ".\n", n_states);
-			goto error;
-		}
+		// Add out_state hash to the reachable states and
+		// set a flag if it was a new state.
+		size_t psize = rz_set_u_size(reachable_states);
+		rz_set_u_add(reachable_states, out_hash);
+		bool new_state_reached = psize < rz_set_u_size(reachable_states);
 
-		rz_set_u_add(reachable_states, plugin->hash_state(state, plugin_data));
-		n_states = rz_set_u_size(reachable_states);
-		bool reached_new_state = n_states > prev_n_states;
-		prev_n_states = n_states;
-
-		if (rz_th_queue_size(iset->il_queue) == 0) {
-			// No effect left to evaluate.
-			break;
-		}
-		if (reached_new_state) {
-			// Only new states are allowed to add to the request queue.
-			// Otherwise we might loop indefinitely.
-			size_t prev_addr_size = rz_th_queue_size(iset->addr_queue);
-			if (!plugin->successors(state, iset->addr_queue, plugin_data)) {
-				RZ_LOG_ERROR("Error during PC concretization. Abort.\n");
-				goto error;
+		// Determine the successor effects to evaluate.
+		// Only newly reached states are allowed to add successors.
+		if (new_state_reached) {
+			// Determine successors and increase the reference counts for the current out state.
+			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
+				goto loop_error;
+			}
+			if (rz_vector_len(tmp_succ_addr) > 0) {
+				// The output state was new and there are successors from it.
+				// Add it to the cache and increase the reference count of it to the number
+				// of successors which have it as an input state.
+				ht_up_insert(state_cache, out_hash, out_state);
+				ht_up_inc_rc(state_cache, out_hash, rz_vector_len(tmp_succ_addr));
+			}
+			// Request the successor effects over the queue.
+			while (!rz_vector_empty(tmp_succ_addr)) {
+				ut64 *addr = RZ_NEW(ut64);
+				rz_vector_pop_front(tmp_succ_addr, addr);
+				SuccessorState ss = { .addr = *addr, .in_state_hash = out_hash };
+				// The successors are pushed in the same order into the succ_states
+				// vector, as they are requested over the addr_queue.
+				rz_vector_push(succ_states, &ss);
+				rz_th_queue_push(iset->addr_queue, addr, true);
 			}
 		}
-	}
-	// while true {
-	//    get new PCs
-	//    request effects
-	//    push effects
-	// }
+		if (ht_up_get_rc(state_cache, out_hash) == 0) {
+			// There are no references to the current out_state.
+			// Free it for resources.
+			bool found;
+			RzInterpreterAbstrState *tmp = ht_up_find(state_cache, out_hash, &found);
+			if (found) {
+				plugin->fini_state(tmp, plugin_data);
+				rz_interpreter_abstr_state_free(tmp);
+			}
+			ht_up_delete(state_cache, out_hash);
+		}
 
-error:
-	rz_atomic_bool_set(iset->is_running_flag, false);
+		if (ht_up_size(state_cache) == 0) {
+			// No state in the cache left.
+			// This means we can stop interpreting.
+			// Note, that we can't use the queues as cancel condition because they
+			// are asynchronous and checking them would introduces race conditions.
+			break;
+		}
+
+		// Set effect and state for next evaluation.
+		SuccessorState next = { 0 };
+		rz_vector_pop_front(succ_states, &next);
+		in_hash = next.in_state_hash;
+		in_state = ht_up_find(state_cache, in_hash, NULL);
+		if (plugin->clone_state && ht_up_get_rc(state_cache, in_hash) > 1) {
+			// There is more than one effect using this state as input.
+			// All except one need a clone of it for evaluation because
+			// they perform different changes on it.
+			in_state = plugin->clone_state(in_state, plugin_data);
+		} else if (ht_up_get_rc(state_cache, in_hash) > 1) {
+			RZ_LOG_ERROR("If the plugin can produce multiple successors for a single state, "
+			             "it must implement the clone_state() callback.\n");
+			rz_warn_if_reached();
+			break;
+		}
+		eff = rz_th_queue_wait_pop(iset->il_queue, false);
+	}
+
+loop_error:
+	ht_up_free(state_cache);
+	rz_vector_free(tmp_succ_addr);
+	rz_vector_free(succ_states);
+	rz_set_u_free(reachable_states);
 	if (iset->plugin->fini) {
 		iset->plugin->fini(plugin_data);
 	}
+	rz_atomic_bool_set(iset->is_running_flag, false);
 	return success;
+
+pre_loop_error:
+	iset->plugin->fini_state(iset->state, plugin_data);
+	goto loop_error;
 }

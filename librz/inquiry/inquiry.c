@@ -238,7 +238,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Wait for thread to finish before cleaning.
 	rz_th_wait(iterpr_th);
 	rz_th_free(iterpr_th);
-	rz_interpreter_queue_set_free(iset);
 	// Empty pseudo-cache.
 	rz_pvector_free(il_cache);
 

@@ -52,7 +52,7 @@ typedef struct {
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
 	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_file; ///< The register file. Currently a hash map.
-	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation, the PC is not part of the register file.
+	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	void *prop; ///< Optional state properties. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
@@ -111,16 +111,20 @@ typedef struct {
 	 */
 	bool (*fini_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
 	/**
-	 * \brief Evaluates an effect with the mutable state.
+	 * \brief Clones the abstract state.
 	 */
-	bool (*eval)(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
-		RZ_NONNULL const RzILOpEffect *effect,
-		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-		void *plugin_data);
+	RZ_OWN RzInterpreterAbstrState *(*clone_state)(const RzInterpreterAbstrState *state, void *plugin_data);
 	/**
 	 * \brief Hashes the state.
 	 */
 	ut64 (*hash_state)(RZ_NONNULL const RzInterpreterAbstrState *state,
+		void *plugin_data);
+	/**
+	 * \brief Evaluates an effect with the mutable state.
+	 */
+	bool (*eval)(RZ_NONNULL const RzInterpreterAbstrState *state,
+		RZ_NONNULL const RzILOpEffect *effect,
+		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
@@ -129,7 +133,7 @@ typedef struct {
 	 * True otherwise.
 	 */
 	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
-		RZ_NONNULL RZ_OUT RzThreadQueue /*<ut64 *>*/ *addr_queue,
+		RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
 		void *plugin_data);
 } RzInterpreterPlugin;
 
@@ -166,6 +170,6 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
 RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *qset);
 
-RZ_API bool rz_interpreter_run(RZ_BORROW RZ_NONNULL RzInterpreterSet *queue_set);
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *queue_set);
 
 #endif // RZ_INTERPRETER
