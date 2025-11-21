@@ -341,6 +341,7 @@ static bool test_autocmplt_arg_folder(void) {
 	mu_assert_true(found_folder_1, "test_folder_1 should be in completions");
 	mu_assert_true(found_folder_2, "test_folder_2 should be in completions");
 	mu_assert_eq(found_files, 0, "NO files should be in folder type completions");
+	rz_line_ns_completion_result_free(r);
 
 	rz_file_rm("test_file_1");
 	rz_file_rm("test_file_2");
