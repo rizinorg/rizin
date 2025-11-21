@@ -166,7 +166,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				}
 				free(s);
 			} break;
-			case RZ_META_TYPE_STRING:
+			case RZ_META_TYPE_STRING: {
 				const char *enc;
 				if (d->subtype == RZ_STRING_ENC_8BIT) {
 					enc = rz_str_is_ascii(d->str) ? "ascii" : "8bit";
@@ -182,7 +182,7 @@ RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, 
 				} else {
 					rz_cons_printf("\"%s\"\n", pstr);
 				}
-				break;
+			} break;
 			case RZ_META_TYPE_HIDE:
 			case RZ_META_TYPE_DATA:
 				if (show_full || mode == RZ_OUTPUT_MODE_LONG) {
