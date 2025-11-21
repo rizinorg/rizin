@@ -38,6 +38,7 @@ FILE=bins/elf/analysis/elf_verdef_vd_next_zero
 CMDS=<<EOF
 ii
 is
+iV
 EOF
 EXPECT=<<EOF
 nth vaddr bind type lib name 
