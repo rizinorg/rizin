@@ -10,7 +10,7 @@ typedef struct {
 	RzBitVector *concrete; ///< A concrete value. If NULL, it is considered bottom.
 } ProtoIntrprAbstrData;
 
-bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
+bool eval(RZ_NONNULL const RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzILOpEffect *effect,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	void *plugin_data) {
@@ -19,9 +19,9 @@ bool eval(RZ_NONNULL RZ_BORROW RzInterpreterAbstrState *state,
 }
 
 bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OUT RzThreadQueue /*<ut64 *>*/ *addr_queue,
+	RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
 	void *plugin_data) {
-	rz_return_val_if_fail(state && addr_queue, false);
+	rz_return_val_if_fail(state && successors, false);
 
 	RzInterpreterAbstrVal *pc = state->pc;
 	if (!pc || pc->abstr_data) {
@@ -39,13 +39,8 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 		return true;
 	}
 
-	ut64 *next_pc = RZ_NEW(ut64);
-	if (!next_pc) {
-		rz_warn_if_reached();
-		return false;
-	}
-	*next_pc = rz_bv_to_ut64(adata->concrete);
-	rz_th_queue_push(addr_queue, next_pc, true);
+	ut64 next_pc = rz_bv_to_ut64(adata->concrete);
+	rz_vector_push(successors, &next_pc);
 	return true;
 }
 
