@@ -20,7 +20,8 @@ static RzCmdDescHelp xd_help = {
 };
 
 static RzCmdDescArg xr_args[] = {
-	{ .name = "D1", .type = RZ_CMD_ARG_TYPE_FOLDER }
+	{ .name = "D1", .type = RZ_CMD_ARG_TYPE_FOLDER },
+	{ 0 },
 };
 
 static RzCmdDescHelp xr_help = {
