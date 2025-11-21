@@ -13382,9 +13382,6 @@ static const RzCmdDescHelp cmd_info_binary_help = {
 	.args = cmd_info_binary_args,
 };
 
-static const RzCmdDescHelp ik_help = {
-	.summary = "Query key-value database from RzBinObject",
-};
 static const RzCmdDescDetailEntry cmd_info_query_Examples_detail_entries[] = {
 	{ .text = "ik", .arg_str = NULL, .comment = "Show all key value pairs in the root namespace (same as 'ik *')." },
 	{ .text = "ik", .arg_str = " **", .comment = "Show all namespaces under root" },
@@ -23888,9 +23885,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_binary_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_binary_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *ik_cd = rz_cmd_desc_group_new(core->rcmd, i_cd, "ik", rz_cmd_info_query_handler, &cmd_info_query_help, &ik_help);
-	rz_warn_if_fail(ik_cd);
-	RzCmdDesc *cmd_info_query_cd = rz_cmd_desc_argv_new(core->rcmd, ik_cd, "ik", rz_cmd_info_query_handler, &cmd_info_query_help);
+	RzCmdDesc *cmd_info_query_cd = rz_cmd_desc_argv_new(core->rcmd, i_cd, "ik", rz_cmd_info_query_handler, &cmd_info_query_help);
 	rz_warn_if_fail(cmd_info_query_cd);
 
 	RzCmdDesc *cmd_info_libs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "il", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_libs_handler, &cmd_info_libs_help);
