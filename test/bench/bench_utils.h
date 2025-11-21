@@ -7,17 +7,21 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
+
+/**
+ * \brief Description of the state of a micro benchmark
+ */
 typedef struct rz_bench_ctx_t {
-	const char *name;
-	ut64 iterations;
-	ut64 start_time;
-	ut64 total_time;
+	const char *name; ///< name of a micro benchmark
+	ut64 iterations; ///< number of iterations
+	ut64 start_time; ///< start time of the benchmark in microseconds
+	ut64 total_time; ///< total elapsed time of the benchmark in microseconds
 } RzBenchCtx;
 
 RZ_API void rz_bench_init(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL const char *name, ut64 iterations);
 RZ_API void rz_bench_start(RZ_NONNULL RzBenchCtx *ctx);
 RZ_API void rz_bench_end(RZ_NONNULL RzBenchCtx *ctx);
-RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RzTable *t);
+RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 
 /**
  * \brief Run a benchmark with the given code block

@@ -34,8 +34,8 @@ RZ_API void rz_bench_end(RZ_NONNULL RzBenchCtx *ctx) {
 /**
  * \brief Print benchmark results
  */
-RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RzTable *t) {
-	rz_return_if_fail(ctx);
+RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t) {
+	rz_return_if_fail(ctx && t);
 
 	double total_ms = ctx->total_time / 1000.0;
 	double avg_us = ctx->iterations != 0 ? (double)ctx->total_time / ctx->iterations : 0;
