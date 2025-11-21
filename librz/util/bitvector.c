@@ -202,19 +202,8 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for small bitvectors (64 or less bits)
- *
- * Copies `nbit` bits from `src_start_pos` to `dst_start_pos` using bitwise operations.
- * This function is intended for bitvectors that fit within 64 bits and performs the copy
- * in a single operation rather than bit-by-bit.
- *
- * \param src RzBitVector, data source (must be 64 or less bits)
- * \param src_start_pos ut32, start position in source bitvector of copy
- * \param dst RzBitVector, destination of copy (must be 64 or less bits)
- * \param dst_start_pos ut32, start position in destination bitvector
- * \param nbit ut32, control the size of copy (in bits)
- * \return copied_size ut32, Actual copied size
  */
-static ut32 rz_bv_copy_nbits_small(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_small(const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	if (nbit == 64) {
 		dst->bits.small_u = src->bits.small_u;
@@ -229,23 +218,11 @@ static ut32 rz_bv_copy_nbits_small(RZ_NONNULL const RzBitVector *src, ut32 src_s
 
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with aligned bit positions
- *
- * Copies `nbit` bits from `src_start_pos` to `dst_start_pos` where both positions are expected to
- * have the same bit offset within their respective bytes (not neccessarily aligned on byte boundary).
- * The function uses `memmove()`/`memcpy()` for the bulk of the data, only handling unaligned
- * start and end bits individually.
- *
- * \param src RzBitVector, data source (must be more than 64 bits)
- * \param src_start_pos ut32, start position in source bitvector of copy
- * \param dst RzBitVector, destination of copy (must be more than 64 bits)
- * \param dst_start_pos ut32, start position in destination bitvector
- * \param nbit ut32, control the size of copy (in bits)
- * \return copied_size ut32, Actual copied size
  */
-static ut32 rz_bv_copy_nbits_large_aligned(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut8 src_offset = src_start_pos % BV_ELEM_SIZE;
-	ut8 start_bits = RZ_MIN(BV_ELEM_SIZE - dst_start_pos % BV_ELEM_SIZE, nbit);
+	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
 	ut8 trailing_bits = RZ_MIN((src_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
 	ut32 middle_bytes = (nbit - start_bits) / BV_ELEM_SIZE;
 	ut32 src_byte = src_start_pos / BV_ELEM_SIZE;
@@ -285,19 +262,8 @@ static ut32 rz_bv_copy_nbits_large_aligned(RZ_NONNULL const RzBitVector *src, ut
 
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with unaligned bit positions
- *
- * Copies `nbit` bits from `src_start_pos` to `dst_start_pos` when the positions have different bit offsets
- * within their respective bytes. The function processes bits byte-by-byte, extracting and inserting
- * partial bytes as needed to handle the misalignment.
- *
- * \param src RzBitVector, data source (must be more than 64 bits)
- * \param src_start_pos ut32, start position in source bitvector
- * \param dst RzBitVector, destination of copy (must be more than 64 bits)
- * \param dst_start_pos ut32, start position in destination bitvector
- * \param nbit ut32, control the size of copy (in bits)
- * \return copied_size ut32, Actual copied size
  */
-static ut32 rz_bv_copy_nbits_large_nonaligned(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_large_nonaligned(const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut64 bits_remaining = nbit;
 
