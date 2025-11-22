@@ -86,7 +86,7 @@ static RzCore *fake_core_new(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzCoreFile *cf = rz_core_file_open(core, "bins/elf/hello_world", RZ_PERM_R, 0);
 	mu_assert_notnull(cf, "file should be opened");
-	rz_core_bin_load(core, "bins/elf/hello_world", 0);
+	rz_core_bin_load(core, "bins/elf/hello_world", 0);  
 	old_rcmd = core->rcmd;
 	RzCmd *cmd = rz_core_cmd_new(core, true);
 	mu_assert_notnull(cmd, "cmd should be created");
