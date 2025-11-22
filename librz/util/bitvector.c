@@ -306,15 +306,15 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 		} else {
 			if (src->bits.large_a != dst->bits.large_a) {
 				return rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, dst, dst_start_pos, nbit);
-			} else {
-				// Use a temporary bitvector for same-vector copies
-				RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
-				rz_bv_copy(dst, temp);
-				ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
-				rz_bv_copy(temp, dst);
-				rz_bv_free(temp);
-				return bits_copied;
 			}
+
+			// Use a temporary bitvector for same-vector copies
+			RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
+			rz_bv_copy(dst, temp);
+			ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
+			rz_bv_copy(temp, dst);
+			rz_bv_free(temp);
+			return bits_copied;
 		}
 	} else {
 		// Only one of the bitvectors is large

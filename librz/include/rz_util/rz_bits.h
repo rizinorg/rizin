@@ -136,10 +136,10 @@ static inline int rz_bits_leading_zeros(ut64 x) {
 static inline ut64 rz_bits_copy_ut64(ut64 src, ut8 src_pos, ut64 dst, ut8 dst_pos, ut8 size) {
 	if (size >= 64) {
 		return src;
-	} else {
-		ut64 mask = ((1ull) << size) - 1;
-		return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
 	}
+
+	ut64 mask = ((1ull) << size) - 1;
+	return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
 }
 
 /**
@@ -148,10 +148,10 @@ static inline ut64 rz_bits_copy_ut64(ut64 src, ut8 src_pos, ut64 dst, ut8 dst_po
 static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, ut8 size) {
 	if (size >= 8) {
 		return src;
-	} else {
-		ut8 mask = ((1u) << size) - 1;
-		return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
 	}
+
+	ut8 mask = ((1u) << size) - 1;
+	return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
 }
 
 /**
