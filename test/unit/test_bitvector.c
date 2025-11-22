@@ -196,11 +196,11 @@ bool test_rz_bv_logic(void) {
 	rz_bv_set(y, 7, true);
 
 	// and : 0000 0001
-	and= rz_bv_new(8);
+	and = rz_bv_new(8);
 	rz_bv_set(and, 0, true);
 
 	// xor : 1111 1100
-	xor= rz_bv_new(8);
+	xor = rz_bv_new(8);
 	rz_bv_toggle_all(xor);
 	rz_bv_set(xor, 0, false);
 	rz_bv_set(xor, 1, false);
@@ -211,7 +211,7 @@ bool test_rz_bv_logic(void) {
 	rz_bv_set(or, 1, false);
 
 	// not of x : 1010 1010
-	not= rz_bv_new(8);
+	not = rz_bv_new(8);
 	rz_bv_set(not, 1, true);
 	rz_bv_set(not, 3, true);
 	rz_bv_set(not, 5, true);

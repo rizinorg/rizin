@@ -139,7 +139,7 @@ static RzILOpEffect *mips_il_align(const csh *handle, const cs_insn *insn, const
 	RzILOpPure *bp_8 = UN(32, IMM(3) << 3); // bp * 8
 	RzILOpPure *gprlen_bp_8 = UN(32, IMM(3) << 3); // gprlen - (bp * 8)
 
-	RzILOpPure * or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
+	RzILOpPure *or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
 	if (gprlen > 32) {
 		or = SIGNED(gprlen, or);
 	}
@@ -157,7 +157,7 @@ static RzILOpEffect *mips_il_dalign(const csh *handle, const cs_insn *insn, cons
 	RzILOpPure *bp_8 = UN(gprlen, IMM(3) << 3); // bp * 8
 	RzILOpPure *gprlen_bp_8 = UN(gprlen, IMM(3) << 3); // gprlen - (bp * 8)
 
-	RzILOpPure * or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
+	RzILOpPure *or = LOGOR(SHIFTL0(rt, bp_8), SHIFTR0(rs, gprlen_bp_8));
 	return SETG(rd, or);
 }
 
