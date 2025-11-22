@@ -256,6 +256,15 @@ bool test_rz_str_split_list(void) {
 	mu_assert_streq(rz_list_get_n(l3, 2), "And", "third item");
 	mu_assert_streq(rz_list_get_n(l3, 3), "Everyone", "fourth item");
 	rz_list_free(l3);
+
+	char s4[] = "Hello  World\tAnd \t Everyoneaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	RzList *l4 = rz_str_split_list_regex(s4, "\\s+", 0);
+	mu_assert_eq(rz_list_length(l4), 4, "string has been split in 4 items");
+	mu_assert_streq(rz_list_get_n(l4, 0), "Hello", "first item");
+	mu_assert_streq(rz_list_get_n(l4, 1), "World", "second item");
+	mu_assert_streq(rz_list_get_n(l4, 2), "And", "third item");
+	mu_assert_streq(rz_list_get_n(l4, 3), "Everyoneaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "fourth item");
+	rz_list_free(l4);
 	mu_end;
 }
 
