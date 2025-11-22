@@ -1256,6 +1256,9 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 		}
 
 		if (!verdef_entry.vd_cnt || verdef_entry.vd_ndx != (versym & VERSYM_VERSION)) {
+			if (!verdef_entry.vd_next) {
+				break;
+			}
 			verdef_entry_offset += verdef_entry.vd_next;
 			continue;
 		}
