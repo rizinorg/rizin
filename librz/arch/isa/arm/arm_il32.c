@@ -132,9 +132,11 @@ static bool is_vec_signed(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I16:
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F16:
 	case ARM_VECTORDATA_F32:
 	case ARM_VECTORDATA_F64:
+#endif
 		return true;
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_U16:
@@ -209,21 +211,31 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_U32:
 	case ARM_VECTORDATA_S32:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F32:
+#endif
+#if CS_VERSION_MAJOR > 5
 	case ARM_VECTORDATA_P16: // 16x16 over 32 bits
+#endif
 		return 32;
 	case ARM_VECTORDATA_I8:
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_S8:
 		return 8;
 	case ARM_VECTORDATA_I16:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F16:
+#endif
 	case ARM_VECTORDATA_S16:
 	case ARM_VECTORDATA_U16:
+#if CS_VERSION_MAJOR > 5
 	case ARM_VECTORDATA_P8: // 8x8 over 16 bits
+#endif
 		return 16;
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F64:
+#endif
 	case ARM_VECTORDATA_U64:
 	case ARM_VECTORDATA_S64:
 		return 64;
