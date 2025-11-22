@@ -35,7 +35,7 @@ extern "C" {
 
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
-#define RZ_INOUT /* parameter is read and written */
+#define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 
 #ifdef RZ_BINDINGS
 #define RZ_OWN    __attribute__((annotate("RZ_OWN")))
