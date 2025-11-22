@@ -126,9 +126,9 @@ RZ_API void rz_str_trim_head(RZ_NONNULL RZ_INOUT char *str) {
  * The string is changed in place.
  *
  * \param str The string to trim.
- * \return The edited string.
+ * \return The `str` pointer.
  */
-RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
+RZ_API RZ_INOUT char *rz_str_trim_tail(RZ_NONNULL RZ_INOUT char *str) {
 	rz_return_val_if_fail(str, NULL);
 	size_t length = strlen(str);
 	while (length-- > 0) {

@@ -376,7 +376,7 @@ In Rizin code, there are some conventions to help developers use pointers more s
 ```c
 #define RZ_IN        /* do not use, implicit */
 #define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written */
+#define RZ_INOUT     /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 #define RZ_OWN       /* pointer ownership is transferred */
 #define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
 #define RZ_NONNULL   /* pointer cannot be null */
