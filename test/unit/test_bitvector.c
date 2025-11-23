@@ -1164,6 +1164,177 @@ bool test_rz_bv_copy_nbits(void) {
 	rz_bv_free(too_small);
 	rz_bv_free(a);
 	rz_bv_free(b);
+
+	mu_end;
+}
+
+/**
+ * \brief Reference implementation of rz_bv_copy_nbits() to test against
+ */
+static ut32 rz_bv_copy_nbits_ref(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+	rz_return_val_if_fail(src && dst, 0);
+	ut32 max_nbit = RZ_MIN((src->len - src_start_pos), (dst->len - dst_start_pos));
+
+	// prevent overflow
+	if (max_nbit < nbit) {
+		return 0;
+	}
+
+	for (ut32 i = 0; i < nbit; ++i) {
+		rz_bv_set(dst, dst_start_pos + i, rz_bv_get(src, src_start_pos + i));
+	}
+
+	return nbit;
+}
+
+/**
+ * \brief Performs rz_bv_copy_nbits() with actual and reference implementation and compares results
+ */
+static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut32 src_pos, RzBitVector *dst, ut32 dst_pos, ut32 nbit) {
+	RzBitVector *src_copy = rz_bv_new(rz_bv_len(src));
+	RzBitVector *dst_copy = rz_bv_new(rz_bv_len(dst));
+	RzBitVector *dst_copy_ref = rz_bv_new(rz_bv_len(dst));
+	const char *error = NULL;
+
+	rz_bv_copy(src, src_copy);
+	rz_bv_copy(dst, dst_copy);
+	rz_bv_copy(dst, dst_copy_ref);
+
+	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
+		error = "rz_bv_copy_nbits() incorrect return";
+		goto finally;
+	}
+
+	if (rz_bv_copy_nbits_ref(src_copy, src_pos, dst_copy_ref, dst_pos, nbit) != nbit) {
+		error = "rz_bv_copy_nbits_ref() incorrect result";
+		goto finally;
+	}
+
+	if (rz_bv_cmp(dst_copy, dst_copy_ref)) {
+		error = "rz_bv_copy_nbits() result differs from reference";
+		goto finally;
+	}
+
+	// Test with inverted src/dst for extra certainty
+	rz_bv_copy(dst, dst_copy);
+	rz_bv_toggle_all(src_copy);
+	rz_bv_toggle_all(dst_copy);
+
+	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
+		error = "rz_bv_copy_nbits() incorrect result";
+		goto finally;
+	}
+
+	rz_bv_toggle_all(dst_copy);
+
+	if (rz_bv_cmp(dst_copy, dst_copy_ref)) {
+		error = "rz_bv_copy_nbits() result differs from reference";
+		goto finally;
+	}
+
+finally:
+	rz_bv_free(src_copy);
+	rz_bv_free(dst_copy);
+	rz_bv_free(dst_copy_ref);
+	return error;
+}
+
+bool test_rz_bv_copy_nbits_small(void) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x67452301);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x0);
+	const char *error;
+
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 2, 62);
+	mu_assert_null(error, error);
+
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 63, 1);
+	mu_assert_null(error, error);
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_large_aligned(void) {
+	RzBitVector *a = rz_bv_new(128);
+	RzBitVector *b = rz_bv_new_from_ut64(128, 0x0);
+	const char *error;
+
+	rz_bv_set_all(a, true);
+
+	/// copy same offset at same byte
+	error = test_rz_bv_copy_nbits_against_ref(a, 5, b, 5, 3);
+	mu_assert_null(error, error);
+
+	/// copy with front/end byte trailing bits, but no middle bytes
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 3, 7);
+	mu_assert_null(error, error);
+
+	/// copy with front and end trailing bits and middle bytes
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 3, 16);
+	mu_assert_null(error, error);
+
+	/// copy without front/trailing bits
+	error = test_rz_bv_copy_nbits_against_ref(a, 8, b, 8, 32);
+	mu_assert_null(error, error);
+
+	/// copy 1 bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 13, b, 13, 1);
+	mu_assert_null(error, error);
+
+	/// copy all except 1 bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 1, 127);
+	mu_assert_null(error, error);
+
+	/// Copy bits within the same bitvector
+	rz_bv_set_from_ut64(b, 0xAAAABBBBCCCCDDDD);
+	ut32 actual_copy = rz_bv_copy_nbits(b, 8, b, 16, 32);
+	mu_assert_eq(actual_copy, 32, "copy 32 bits");
+	mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xaaaabbccccdddddd", "copy large aligned");
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_large_unaligned(void) {
+	RzBitVector *a = rz_bv_new(128);
+	RzBitVector *b = rz_bv_new(128);
+	const char *error;
+
+	rz_bv_set_all(a, true);
+
+	/// copy different offset but same byte
+	error = test_rz_bv_copy_nbits_against_ref(a, 5, b, 2, 20);
+	mu_assert_null(error, error);
+
+	/// copy different offset and different byte
+	error = test_rz_bv_copy_nbits_against_ref(a, 10, b, 20, 10);
+	mu_assert_null(error, error);
+
+	/// copy at bit boundary
+	error = test_rz_bv_copy_nbits_against_ref(a, 48, b, 1, 22);
+	mu_assert_null(error, error);
+
+	/// copy 1 bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 55, b, 13, 1);
+	mu_assert_null(error, error);
+
+	/// copy all except 1 bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 127);
+	mu_assert_null(error, error);
+
+	/// Copy bits within the same bitvector
+	rz_bv_set_from_ut64(b, 0xAAAABBBBCCCCDDDD);
+	ut32 actual_copy = rz_bv_copy_nbits(b, 0, b, 2, 30);
+	mu_assert_eq(actual_copy, 30, "copy 30 bits");
+	mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xaaaabbbb33337775", "copy large aligned");
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+
 	mu_end;
 }
 
@@ -1284,6 +1455,9 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_set_operations);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
+	mu_run_test(test_rz_bv_copy_nbits_small);
+	mu_run_test(test_rz_bv_copy_nbits_large_aligned);
+	mu_run_test(test_rz_bv_copy_nbits_large_unaligned);
 	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;
