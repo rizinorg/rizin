@@ -299,30 +299,32 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 		// Both src and dst are smaller than 64 bits
 		dst->bits.small_u = rz_bits_copy_ut64(src->bits.small_u, src_start_pos, dst->bits.small_u, dst_start_pos, nbit);
 		return nbit;
-	} else if (src->len > 64 && dst->len > 64) {
+	}
+
+	if (src->len > 64 && dst->len > 64) {
 		// Both src and dst are larger than 64 bits
 		if (src_start_pos % BV_ELEM_SIZE == dst_start_pos % BV_ELEM_SIZE) {
 			return rz_bv_copy_nbits_large_aligned(src, src_start_pos, dst, dst_start_pos, nbit);
-		} else {
-			if (src->bits.large_a != dst->bits.large_a) {
-				return rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, dst, dst_start_pos, nbit);
-			}
+		}
 
-			// Use a temporary bitvector for same-vector copies
-			RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
-			rz_bv_copy(dst, temp);
-			ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
-			rz_bv_copy(temp, dst);
-			rz_bv_free(temp);
-			return bits_copied;
+		if (src->bits.large_a != dst->bits.large_a) {
+			return rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, dst, dst_start_pos, nbit);
 		}
-	} else {
-		// Only one of the bitvectors is large
-		// TODO: add specialized functions for large to small and small to large bit copy
-		for (ut32 i = 0; i < nbit; ++i) {
-			bool c = rz_bv_get(src, src_start_pos + i);
-			rz_bv_set(dst, dst_start_pos + i, c);
-		}
+
+		// Use a temporary bitvector for same-vector copies
+		RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
+		rz_bv_copy(dst, temp);
+		ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
+		rz_bv_copy(temp, dst);
+		rz_bv_free(temp);
+		return bits_copied;
+	}
+
+	// Only one of the bitvectors is large
+	// TODO: add specialized functions for large to small and small to large bit copy
+	for (ut32 i = 0; i < nbit; ++i) {
+		bool c = rz_bv_get(src, src_start_pos + i);
+		rz_bv_set(dst, dst_start_pos + i, c);
 	}
 
 	return nbit;
