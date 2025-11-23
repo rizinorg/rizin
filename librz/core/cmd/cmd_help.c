@@ -32,6 +32,9 @@ static bool help_search_interactive_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc
 	rz_return_val_if_fail(cd, false);
 	RzList *brief_lines = (RzList *)user;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return false;
+	}
 	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb);
 	rz_list_append(brief_lines, rz_str_trim_tail(rz_strbuf_drain(sb)));
 	return true;
