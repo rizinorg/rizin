@@ -28,6 +28,18 @@ static bool help_search_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *
 	return true;
 }
 
+static bool help_search_interactive_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
+	rz_return_val_if_fail(cd, false);
+	RzList *brief_lines = (RzList *)user;
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return false;
+	}
+	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb);
+	rz_list_append(brief_lines, rz_str_trim_tail(rz_strbuf_drain(sb)));
+	return true;
+}
+
 static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
 	rz_return_val_if_fail(cd, false);
 	RzHelpSearch *hs = (RzHelpSearch *)user;
@@ -130,46 +142,18 @@ exit_status:
 	return status;
 }
 
-static char *cons_hud_help_string(const char *s) {
-	if (!rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
-		return NULL;
-	}
-	char *buf = rz_str_dup(s);
-	if (!buf) {
-		return NULL;
-	}
-
-	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
-	 * 1. Every command has a help string starting with '#'.
-	 * 2. The '#' is always on the first line.
-	 * It's probably better not to amalgamate the help strings in the first place, but this is a start.
-	 */
-	RzList *help_strings = rz_str_split_list_regex(buf, "\\n(?=[^\\n]+\\#)", 0);
-	char *ret = rz_cons_hud(help_strings, NULL);
-	free(buf);
-	rz_list_free(help_strings);
-	return ret;
-}
-
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
-	RzHelpSearch hs = {
-		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
-		.pj = NULL,
-		.sb = NULL,
-		.detail_lines = NULL,
-	};
-	hs.sb = rz_strbuf_new("");
-	if (!hs.sb) {
+	RzList *brief_lines = rz_list_newf(free);
+	if (!brief_lines) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// Get all summary descriptions of commands.
-	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_cmd_desc_summary, &hs);
+	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_interactive_cmd_desc_summary, brief_lines);
 	// Run it in the hub.
-	free(cons_hud_help_string(rz_strbuf_get(hs.sb)));
+	free(rz_cons_hud(brief_lines, NULL));
 
-	rz_strbuf_free(hs.sb);
+	rz_list_free(brief_lines);
 	return RZ_CMD_STATUS_OK;
 }
 
