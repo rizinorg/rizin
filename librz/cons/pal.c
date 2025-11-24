@@ -536,11 +536,28 @@ RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj) {
 	for (size_t i = 0; keys[i].name; i++) {
 		RzColor *color = RZCOLOR_AT(i);
 
-		pj_ka(pj, keys[i].name); // name: [
+		pj_ko(pj, keys[i].name); // name: {
+		pj_ka(pj, "rgb"); // rgb: [
 		pj_n(pj, color->r);
 		pj_n(pj, color->g);
 		pj_n(pj, color->b);
 		pj_end(pj); // ]
+		if (color->attr & RZ_CONS_ATTR_BOLD) {
+			pj_kb(pj, "bold", true);
+		}
+		if (color->attr & RZ_CONS_ATTR_DIM) {
+			pj_kb(pj, "dim", true);
+		}
+		if (color->attr & RZ_CONS_ATTR_ITALIC) {
+			pj_kb(pj, "italic", true);
+		}
+		if (color->attr & RZ_CONS_ATTR_UNDERLINE) {
+			pj_kb(pj, "underline", true);
+		}
+		if (color->attr & RZ_CONS_ATTR_BLINK) {
+			pj_kb(pj, "blink", true);
+		}
+		pj_end(pj); // }
 	}
 
 	pj_end(pj); // }
@@ -564,9 +581,24 @@ RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
 		char *name = rz_str_dup(keys[i].name);
 		rz_str_replace_char(name, '.', '_');
 
-		rz_cons_printf(".%s%s { color: rgb(%d, %d, %d); }\n",
-			name_prefix, name, color->r, color->g, color->b);
+		rz_cons_printf(".%s%s { color: rgb(%u, %u, %u);",
+			name_prefix, name, (ut32)color->r, (ut32)color->g, (ut32)color->b);
 
+		// blink is deprecated for css, requires animation.
+		if (color->attr & RZ_CONS_ATTR_BOLD) {
+			rz_cons_print(" font-weight: bold;");
+		}
+		if (color->attr & RZ_CONS_ATTR_DIM) {
+			rz_cons_print(" filter: brightness(50%);");
+		}
+		if (color->attr & RZ_CONS_ATTR_ITALIC) {
+			rz_cons_print(" font-style: italic;");
+		}
+		if (color->attr & RZ_CONS_ATTR_UNDERLINE) {
+			rz_cons_print(" text-decoration: underline;");
+		}
+
+		rz_cons_printf(" }\n");
 		free(name);
 	}
 }
@@ -575,10 +607,25 @@ RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
  * \brief Prints the palette visually on the console output
  */
 RZ_API void rz_cons_pal_list_visual(void) {
-	char **color;
 	for (size_t i = 0; keys[i].name; i++) {
-		color = COLOR_AT(i);
-		rz_cons_printf(" %s##" Color_RESET "  %s\n", *color, keys[i].name);
+		RzColor *color = RZCOLOR_AT(i);
+		rz_cons_printf(" r:%-3u g:%-3u b:%-3u  %s", (ut32)color->r, (ut32)color->g, (ut32)color->b, keys[i].name);
+		if (color->attr & RZ_CONS_ATTR_BOLD) {
+			rz_cons_print(" bold");
+		}
+		if (color->attr & RZ_CONS_ATTR_DIM) {
+			rz_cons_print(" dim");
+		}
+		if (color->attr & RZ_CONS_ATTR_ITALIC) {
+			rz_cons_print(" italic");
+		}
+		if (color->attr & RZ_CONS_ATTR_UNDERLINE) {
+			rz_cons_print(" underline");
+		}
+		if (color->attr & RZ_CONS_ATTR_BLINK) {
+			rz_cons_print(" blink");
+		}
+		rz_cons_printf("\n");
 	}
 }
 

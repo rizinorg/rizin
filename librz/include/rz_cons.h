@@ -168,11 +168,15 @@ enum {
 };
 #endif
 
-enum { ALPHA_RESET = 0x00,
+enum {
+	ALPHA_RESET = 0x00,
 	ALPHA_FG = 0x01,
 	ALPHA_BG = 0x02,
-	ALPHA_FGBG = 0x03 };
-enum { RZ_CONS_ATTR_BOLD = 1u << 1,
+	ALPHA_FGBG = 0x03
+};
+
+enum {
+	RZ_CONS_ATTR_BOLD = 1u << 1,
 	RZ_CONS_ATTR_DIM = 1u << 2,
 	RZ_CONS_ATTR_ITALIC = 1u << 3,
 	RZ_CONS_ATTR_UNDERLINE = 1u << 4,
