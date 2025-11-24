@@ -99,11 +99,12 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
  * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
  * The register name list should always be given if the architecture has some.
  */
-RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names) {
+RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names, ut64 nop_pc_increment) {
 	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
 	if (!state) {
 		return NULL;
 	}
+	state->nop_pc_inc = nop_pc_increment;
 	state->kinds = kinds;
 	if (!reg_names) {
 		return state;

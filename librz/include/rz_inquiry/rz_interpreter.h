@@ -53,6 +53,14 @@ typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
 	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_file; ///< The register file. Currently a hash map.
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
+	/**
+	 * \brief The number by which the PC is incremented for a NOP instruction.
+	 * Usually this is simply the instruction width. But it can be 0
+	 * if the architecture doesn't have a fixed increment (e.g. VLIW processors).
+	 * If 0 the RzArch plugin is expected to always return an effect with a
+	 * (conditional) JUMP at the end of each effect.
+	 */
+	ut64 nop_pc_inc;
 	void *prop; ///< Optional state properties. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
@@ -122,7 +130,7 @@ typedef struct {
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
-	bool (*eval)(RZ_NONNULL const RzInterpreterAbstrState *state,
+	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
 		RZ_NONNULL const RzILOpEffect *effect,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 		void *plugin_data);
@@ -154,7 +162,7 @@ RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzI
 RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 
-RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names);
+RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names, ut64 nop_pc_increment);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
