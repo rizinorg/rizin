@@ -14,6 +14,7 @@ interpreter_plugins = {
 rz_interpreter_sources = [
   'interpreter.c',
   'p/interpreter_prototype.c',
+  'prototype/eval.c',
 ]
 
 rz_interpreter_inc = [platform_inc]

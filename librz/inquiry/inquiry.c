@@ -66,6 +66,16 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const
 	return false;
 }
 
+static ut64 get_nop_pc_increment(RzAnalysis *analysis) {
+	if (RZ_STR_EQ(analysis->cur->arch, "hexagon")) {
+		// Hexagon has variable instruction lengths.
+		// It manages the JUMPs to the next packets on its own.
+		// So it always has a JUMP effect at the end of the effect.
+		return 0;
+	}
+	return analysis->cur->bits / 8;
+}
+
 static RzPVector *get_reg_names(RzAnalysis *analysis) {
 	RzPVector *reg_names = rz_pvector_new(free);
 	if (analysis->cur->il_config) {
@@ -191,7 +201,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 
 	// Initialize the abstract state with the architecture's registers.
 	RzPVector *reg_names = get_reg_names(core->analysis);
-	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(RZ_INTERPRETER_ABSTRACTION_CONST, reg_names);
+	ut64 nop_pc_increment = get_nop_pc_increment(core->analysis);
+	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(RZ_INTERPRETER_ABSTRACTION_CONST, reg_names, nop_pc_increment);
 	rz_pvector_free(reg_names);
 
 	// Bundle all the queues into one object to pass it to the thread.
