@@ -5,11 +5,6 @@
  * \file The API implementation for all analysis interpreters.
  */
 
-#include "rz_util/ht_up.h"
-#include "rz_util/rz_iterator.h"
-#include "rz_util/rz_set.h"
-#include "rz_util/rz_th_ht.h"
-#include "subprojects/rzheap/rz_jemalloc/internal/jemalloc_internal.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
