@@ -77,6 +77,30 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	return true;
 }
 
+/**
+ * \brief This hash function is just an example implementation.
+ * It is likely not sufficient to prevent collisions.
+ * It is also slow.
+ */
+static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *plugin_data) {
+	ut64 hash = 0;
+	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
+	if (ad->concrete) {
+		hash ^= rz_bv_to_ut64(ad->concrete);
+	}
+	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzInterpreterAbstrVal **v;
+	rz_iterator_foreach(it, v) {
+		RzInterpreterAbstrVal *av = *v;
+		ProtoIntrprAbstrData *ad = av->abstr_data;
+		if (ad->concrete) {
+			hash ^= rz_bv_to_ut64(ad->concrete);
+		}
+	}
+	rz_iterator_free(it);
+	return hash;
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -91,6 +115,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.successors = successors,
 	.init_state = init_state,
 	.fini_state = fini_state,
+	.hash_state = hash_state,
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
