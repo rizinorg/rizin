@@ -3359,7 +3359,7 @@ static const RzCmdDescArg calculate_string_length_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp calculate_string_length_help = {
-	.summary = "Calculate length of string <str>. Quite mode stores value in `$?` register.",
+	.summary = "Calculate length of string <str>. Quiet mode stores value in `$?` register.",
 	.args = calculate_string_length_args,
 };
 
