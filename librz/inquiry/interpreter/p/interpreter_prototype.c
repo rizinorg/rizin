@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_iterator.h"
 #include <rz_inquiry.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -44,6 +45,38 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 	return true;
 }
 
+static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
+	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzInterpreterAbstrVal **v;
+	rz_iterator_foreach(it, v) {
+		RzInterpreterAbstrVal *av = *v;
+		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+	}
+	rz_iterator_free(it);
+	return true;
+}
+
+static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
+	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
+	if (ad->concrete) {
+		rz_bv_free(ad->concrete);
+	}
+	free(ad);
+	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzInterpreterAbstrVal **v;
+	rz_iterator_foreach(it, v) {
+		RzInterpreterAbstrVal *av = *v;
+		ProtoIntrprAbstrData *ad = av->abstr_data;
+		if (ad->concrete) {
+			rz_bv_free(ad->concrete);
+		}
+		free(ad);
+	}
+	rz_iterator_free(it);
+	return true;
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -56,6 +89,8 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.fini = NULL,
 	.eval = eval,
 	.successors = successors,
+	.init_state = init_state,
+	.fini_state = fini_state,
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
