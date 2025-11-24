@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_iterator.h"
 #include <rz_inquiry.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -116,6 +115,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.init_state = init_state,
 	.fini_state = fini_state,
 	.hash_state = hash_state,
+	.clone_state = NULL,
 };
 
 RZ_API RzInquiryPlugin rz_inquiry_plugin_interpreter_prototype = {
