@@ -697,123 +697,108 @@ class std::type_info {
 EOF
 RUN
 
-NAME=ic*
+NAME=ic
 FILE=bins/elf/libmagic.so
-CMDS=ic*
+CMDS=ic;icf;icm
 EXPECT=<<EOF
-fs classes
-f class.public.SystemClassLoaderInjector @ 0x699c
-f method.SystemClassLoaderInjector.findBaseDexClassloader__JNIEnv____jobject @ 0x699c
-f method.SystemClassLoaderInjector.getField__JNIEnv____jobject____jobject____jstring @ 0x6a2c
-f method.SystemClassLoaderInjector.getPathList__JNIEnv____jobject @ 0x6abc
-f method.SystemClassLoaderInjector.getDexElements__JNIEnv____jobject @ 0x6af4
-f method.SystemClassLoaderInjector.setField__JNIEnv____jobject____jobject____jstring____jobject @ 0x6b1c
-f method.SystemClassLoaderInjector.combineArray__JNIEnv____jobject____jobject @ 0x6bb0
-f method.SystemClassLoaderInjector.injectAboveEqualApiLevel14__JNIEnv____jobject____jstring____jstring @ 0x6d00
-f method.SystemClassLoaderInjector.appendArray__JNIEnv____jobject____jobject @ 0x6e5c
-f method.SystemClassLoaderInjector.injectInAliyunOs__JNIEnv____jobject____jstring____jstring @ 0x6f68
-f method.SystemClassLoaderInjector.injectBelowApiLevel14__JNIEnv____jobject____jstring____jstring @ 0x720c
-f method.SystemClassLoaderInjector.inject__JNIEnv____jobject____jstring____jstring @ 0x74f8
-td "struct SystemClassLoaderInjector {};"
-f class.public._JNIEnv @ 0x6060
-f method._JNIEnv.FindClass_char_const @ 0x6060
-f method._JNIEnv.DeleteLocalRef__jobject @ 0x606a
-f method._JNIEnv.NewObject__jclass____jmethodID___... @ 0x6074
-f method._JNIEnv.GetObjectClass__jobject @ 0x608e
-f method._JNIEnv.GetMethodID__jclass___char_const___char_const @ 0x6098
-f method._JNIEnv.CallObjectMethod__jobject____jmethodID___... @ 0x60a4
-f method._JNIEnv.CallVoidMethod__jobject____jmethodID___... @ 0x60c0
-f method._JNIEnv.GetStaticMethodID__jclass___char_const___char_const @ 0x60dc
-f method._JNIEnv.CallStaticObjectMethod__jclass____jmethodID___... @ 0x60ea
-f method._JNIEnv.CallStaticIntMethod__jclass____jmethodID___... @ 0x695e
-f method._JNIEnv.CallStaticVoidMethod__jclass____jmethodID___... @ 0x697c
-td "struct _JNIEnv {};"
-f class.public.__cxxabiv1 @ 0x943c
-f field.__cxxabiv1.__unexpected_handler @ 0x0001601c
-f field.__cxxabiv1.__terminate_handler @ 0x00016020
-f method.__cxxabiv1.__terminate_void @ 0x943c
-f method.__cxxabiv1.__unexpected_void @ 0x9488
-td "struct __cxxabiv1 { void* __unexpected_handler; void* __terminate_handler;};"
-f class.public.__cxxabiv1::__class_type_info @ 0x9868
-f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const @ 0x9868
-f method.__cxxabiv1::__class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const @ 0x98c4
-f method.__cxxabiv1::__class_type_info.___class_type_info @ 0x98d8
-f method.__cxxabiv1::__class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const @ 0x991c
-f method.__cxxabiv1::__class_type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9948
-f method.__cxxabiv1::__class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const @ 0x998c
-td "struct __cxxabiv1::__class_type_info {};"
-f class.public.__cxxabiv1::__forced_unwind @ 0x88c4
-f method.__cxxabiv1::__forced_unwind.___forced_unwind @ 0x88c4
-td "struct __cxxabiv1::__forced_unwind {};"
-f class.public.__cxxabiv1::__foreign_exception @ 0x88dc
-f method.__cxxabiv1::__foreign_exception.___foreign_exception @ 0x88dc
-td "struct __cxxabiv1::__foreign_exception {};"
-f class.public.__cxxabiv1::__fundamental_type_info @ 0x94e4
-f method.__cxxabiv1::__fundamental_type_info.___fundamental_type_info @ 0x94e4
-td "struct __cxxabiv1::__fundamental_type_info {};"
-f class.public.__cxxabiv1::__pbase_type_info @ 0x9dd0
-f method.__cxxabiv1::__pbase_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const @ 0x9dd0
-f method.__cxxabiv1::__pbase_type_info.___pbase_type_info @ 0x9df0
-f method.__cxxabiv1::__pbase_type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9e34
-td "struct __cxxabiv1::__pbase_type_info {};"
-f class.public.__cxxabiv1::__pointer_type_info @ 0x9528
-f method.__cxxabiv1::__pointer_type_info.__is_pointer_p___const @ 0x9528
-f method.__cxxabiv1::__pointer_type_info.___pointer_type_info @ 0x9530
-f method.__cxxabiv1::__pointer_type_info.__pointer_catch___cxxabiv1::__pbase_type_info_const___void____unsigned_int__const @ 0x9574
-td "struct __cxxabiv1::__pointer_type_info {};"
-f class.public.__cxxabiv1::__si_class_type_info @ 0x95f4
-f method.__cxxabiv1::__si_class_type_info.___si_class_type_info @ 0x95f4
-f method.__cxxabiv1::__si_class_type_info.__do_find_public_src_int__void_const_____cxxabiv1::__class_type_info_const___void_const___const @ 0x9638
-f method.__cxxabiv1::__si_class_type_info.__do_dyncast_int____cxxabiv1::__class_type_info::__sub_kind____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__dyncast_result___const @ 0x969c
-f method.__cxxabiv1::__si_class_type_info.__do_upcast___cxxabiv1::__class_type_info_const___void_const_____cxxabiv1::__class_type_info::__upcast_result___const @ 0x977c
-td "struct __cxxabiv1::__si_class_type_info {};"
-f class.public.__eh_globals_init @ 0x8984
-f method.__eh_globals_init.___eh_globals_init @ 0x8984
-td "struct __eh_globals_init {};"
-f class.public.__gnu_cxx @ 0x9ec4
-f method.__gnu_cxx.__verbose_terminate_handler @ 0x9ec4
-f method.__gnu_cxx.__throw_concurrence_lock_error @ 0x12780
-f method.__gnu_cxx.__throw_concurrence_unlock_error @ 0x127c8
-td "struct __gnu_cxx {};"
-f class.public.__gnu_cxx::__concurrence_lock_error @ 0x126b0
-f method.__gnu_cxx::__concurrence_lock_error.what___const @ 0x126b0
-f method.__gnu_cxx::__concurrence_lock_error.___concurrence_lock_error @ 0x126f8
-td "struct __gnu_cxx::__concurrence_lock_error {};"
-f class.public.__gnu_cxx::__concurrence_unlock_error @ 0x126c0
-f method.__gnu_cxx::__concurrence_unlock_error.what___const @ 0x126c0
-f method.__gnu_cxx::__concurrence_unlock_error.___concurrence_unlock_error @ 0x126d0
-td "struct __gnu_cxx::__concurrence_unlock_error {};"
-f class.public.std @ 0x886c
-f method.std.uncaught_exception @ 0x886c
-f method.std.terminate @ 0x9470
-f method.std.unexpected @ 0x9494
-f method.std.set_terminate_void @ 0x94ac
-f method.std.set_unexpected_void @ 0x94c8
-td "struct std {};"
-f class.public.std::bad_cast @ 0x12bc8
-f method.std::bad_cast.what___const @ 0x12bc8
-f method.std::bad_cast._bad_cast @ 0x12bd8
-td "struct std::bad_cast {};"
-f class.public.std::bad_exception @ 0x889c
-f method.std::bad_exception._bad_exception @ 0x889c
-f method.std::bad_exception.what___const @ 0x8904
-td "struct std::bad_exception {};"
-f class.public.std::bad_typeid @ 0x12c1c
-f method.std::bad_typeid.what___const @ 0x12c1c
-f method.std::bad_typeid._bad_typeid @ 0x12c2c
-td "struct std::bad_typeid {};"
-f class.public.std::exception @ 0x8884
-f method.std::exception._exception @ 0x8884
-f method.std::exception.what___const @ 0x88f4
-td "struct std::exception {};"
-f class.public.std::type_info @ 0x97bc
-f method.std::type_info._type_info @ 0x97bc
-f method.std::type_info.__is_pointer_p___const @ 0x97d4
-f method.std::type_info.__is_function_p___const @ 0x97dc
-f method.std::type_info.__do_upcast___cxxabiv1::__class_type_info_const___void____const @ 0x97e4
-f method.std::type_info.operator___std::type_info_const___const @ 0x9808
-f method.std::type_info.__do_catch_std::type_info_const___void____unsigned_int__const @ 0x9854
-td "struct std::type_info {};"
+   address        min        max name                                  super 
+-----------------------------------------------------------------------------
+---------- 0x0000699c 0x000074f8 SystemClassLoaderInjector             
+---------- 0x00006060 0x0000697c _JNIEnv                               
+---------- 0x0000943c 0x00009488 __cxxabiv1                            
+---------- 0x00009868 0x0000998c __cxxabiv1::__class_type_info         
+---------- 0x000088c4 0x000088c4 __cxxabiv1::__forced_unwind           
+---------- 0x000088dc 0x000088dc __cxxabiv1::__foreign_exception       
+---------- 0x000094e4 0x000094e4 __cxxabiv1::__fundamental_type_info   
+---------- 0x00009dd0 0x00009e34 __cxxabiv1::__pbase_type_info         
+---------- 0x00009528 0x00009574 __cxxabiv1::__pointer_type_info       
+---------- 0x000095f4 0x0000977c __cxxabiv1::__si_class_type_info      
+---------- 0x00008984 0x00008984 __eh_globals_init                     
+---------- 0x00009ec4 0x000127c8 __gnu_cxx                             
+---------- 0x000126b0 0x000126f8 __gnu_cxx::__concurrence_lock_error   
+---------- 0x000126c0 0x000126d0 __gnu_cxx::__concurrence_unlock_error 
+---------- 0x0000886c 0x000094c8 std                                   
+---------- 0x00012bc8 0x00012bd8 std::bad_cast                         
+---------- 0x0000889c 0x00008904 std::bad_exception                    
+---------- 0x00012c1c 0x00012c2c std::bad_typeid                       
+---------- 0x00008884 0x000088f4 std::exception                        
+---------- 0x000097bc 0x00009854 std::type_info                        
+   address index class      flags name                 type 
+------------------------------------------------------------
+0x0001601c     0 __cxxabiv1       __unexpected_handler 
+0x00016020     1 __cxxabiv1       __terminate_handler  
+   address index class                                 flags name                                                                                                                                                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x0000699c     0 SystemClassLoaderInjector                   findBaseDexClassloader(_JNIEnv*, _jobject*)
+0x00006a2c     1 SystemClassLoaderInjector                   getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
+0x00006abc     2 SystemClassLoaderInjector                   getPathList(_JNIEnv*, _jobject*)
+0x00006af4     3 SystemClassLoaderInjector                   getDexElements(_JNIEnv*, _jobject*)
+0x00006b1c     4 SystemClassLoaderInjector                   setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
+0x00006bb0     5 SystemClassLoaderInjector                   combineArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006d00     6 SystemClassLoaderInjector                   injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006e5c     7 SystemClassLoaderInjector                   appendArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006f68     8 SystemClassLoaderInjector                   injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000720c     9 SystemClassLoaderInjector                   injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x000074f8    10 SystemClassLoaderInjector                   inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006060    11 _JNIEnv                                     FindClass(char const*)
+0x0000606a    12 _JNIEnv                                     DeleteLocalRef(_jobject*)
+0x00006074    13 _JNIEnv                                     NewObject(_jclass*, _jmethodID*, ...)
+0x0000608e    14 _JNIEnv                                     GetObjectClass(_jobject*)
+0x00006098    15 _JNIEnv                                     GetMethodID(_jclass*, char const*, char const*)
+0x000060a4    16 _JNIEnv                                     CallObjectMethod(_jobject*, _jmethodID*, ...)
+0x000060c0    17 _JNIEnv                                     CallVoidMethod(_jobject*, _jmethodID*, ...)
+0x000060dc    18 _JNIEnv                                     GetStaticMethodID(_jclass*, char const*, char const*)
+0x000060ea    19 _JNIEnv                                     CallStaticObjectMethod(_jclass*, _jmethodID*, ...)
+0x0000695e    20 _JNIEnv                                     CallStaticIntMethod(_jclass*, _jmethodID*, ...)
+0x0000697c    21 _JNIEnv                                     CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
+0x0000943c    22 __cxxabiv1                                  __terminate(void (*)())
+0x00009488    23 __cxxabiv1                                  __unexpected(void (*)())
+0x00009868    24 __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x000098c4    25 __cxxabiv1::__class_type_info               __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x000098d8    26 __cxxabiv1::__class_type_info               ~__class_type_info()
+0x0000991c    27 __cxxabiv1::__class_type_info               __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x00009948    28 __cxxabiv1::__class_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
+0x0000998c    29 __cxxabiv1::__class_type_info               __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x000088c4    30 __cxxabiv1::__forced_unwind                 ~__forced_unwind()
+0x000088dc    31 __cxxabiv1::__foreign_exception             ~__foreign_exception()
+0x000094e4    32 __cxxabiv1::__fundamental_type_info         ~__fundamental_type_info()
+0x00009dd0    33 __cxxabiv1::__pbase_type_info               __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x00009df0    34 __cxxabiv1::__pbase_type_info               ~__pbase_type_info()
+0x00009e34    35 __cxxabiv1::__pbase_type_info               __do_catch(std::type_info const*, void**, unsigned int) const
+0x00009528    36 __cxxabiv1::__pointer_type_info             __is_pointer_p() const
+0x00009530    37 __cxxabiv1::__pointer_type_info             ~__pointer_type_info()
+0x00009574    38 __cxxabiv1::__pointer_type_info             __pointer_catch(__cxxabiv1::__pbase_type_info const*, void**, unsigned int) const
+0x000095f4    39 __cxxabiv1::__si_class_type_info            ~__si_class_type_info()
+0x00009638    40 __cxxabiv1::__si_class_type_info            __do_find_public_src(int, void const*, __cxxabiv1::__class_type_info const*, void const*) const
+0x0000969c    41 __cxxabiv1::__si_class_type_info            __do_dyncast(int, __cxxabiv1::__class_type_info::__sub_kind, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__dyncast_result&) const
+0x0000977c    42 __cxxabiv1::__si_class_type_info            __do_upcast(__cxxabiv1::__class_type_info const*, void const*, __cxxabiv1::__class_type_info::__upcast_result&) const
+0x00008984    43 __eh_globals_init                           ~__eh_globals_init()
+0x00009ec4    44 __gnu_cxx                                   __verbose_terminate_handler()
+0x00012780    45 __gnu_cxx                                   __throw_concurrence_lock_error()
+0x000127c8    46 __gnu_cxx                                   __throw_concurrence_unlock_error()
+0x000126b0    47 __gnu_cxx::__concurrence_lock_error         what() const
+0x000126f8    48 __gnu_cxx::__concurrence_lock_error         ~__concurrence_lock_error()
+0x000126c0    49 __gnu_cxx::__concurrence_unlock_error       what() const
+0x000126d0    50 __gnu_cxx::__concurrence_unlock_error       ~__concurrence_unlock_error()
+0x0000886c    51 std                                         uncaught_exception()
+0x00009470    52 std                                         terminate()
+0x00009494    53 std                                         unexpected()
+0x000094ac    54 std                                         set_terminate(void (*)())
+0x000094c8    55 std                                         set_unexpected(void (*)())
+0x00012bc8    56 std::bad_cast                               what() const
+0x00012bd8    57 std::bad_cast                               ~bad_cast()
+0x0000889c    58 std::bad_exception                          ~bad_exception()
+0x00008904    59 std::bad_exception                          what() const
+0x00012c1c    60 std::bad_typeid                             what() const
+0x00012c2c    61 std::bad_typeid                             ~bad_typeid()
+0x00008884    62 std::exception                              ~exception()
+0x000088f4    63 std::exception                              what() const
+0x000097bc    64 std::type_info                              ~type_info()
+0x000097d4    65 std::type_info                              __is_pointer_p() const
+0x000097dc    66 std::type_info                              __is_function_p() const
+0x000097e4    67 std::type_info                              __do_upcast(__cxxabiv1::__class_type_info const*, void**) const
+0x00009808    68 std::type_info                              operator==(std::type_info const&) const
+0x00009854    69 std::type_info                              __do_catch(std::type_info const*, void**, unsigned int) const
 EOF
 RUN
 
@@ -3936,13 +3921,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ik*
+NAME=ik
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-ik*~?elf_header
+ik~elf_header
 EOF
 EXPECT=<<EOF
-3
+elf_header.format=?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
+elf_header.intrp=/lib/ld-linux.so.2
+elf_header.intrp_addr=0x134
+elf_header.intrp_size=0x13
+elf_header.offset=0
+elf_header.size=0x34
 EOF
 RUN
 

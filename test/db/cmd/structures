@@ -3,24 +3,24 @@ FILE=bins/elf/analysis/main_structure
 CMDS=<<EOF
 aaa
 s main
-afvs*
+afvs
 echo ---
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_118h
 afvt s1 "struct S1"
-afvs*
+afvs
 EOF
 EXPECT=<<EOF
-afvs -296 var_128h char ** @ 0x4004a6
-afvs -284 var_11ch int @ 0x4004a6
-afvs -280 var_118h int64_t @ 0x4004a6
-afvs -276 var_114h int64_t @ 0x4004a6
-afvs -272 var_110h int64_t @ 0x4004a6
-afvs -12 var_ch int64_t @ 0x4004a6
+var char **var_128h @ stack - 0x128
+var int var_11ch @ stack - 0x11c
+var int64_t var_118h @ stack - 0x118
+var int64_t var_114h @ stack - 0x114
+var int64_t var_110h @ stack - 0x110
+var int64_t var_ch @ stack - 0xc
 ---
-afvs -296 var_128h char ** @ 0x4004a6
-afvs -284 var_11ch int @ 0x4004a6
-afvs -280 s1 struct S1 @ 0x4004a6
+var char **var_128h @ stack - 0x128
+var int var_11ch @ stack - 0x11c
+var struct S1 s1 @ stack - 0x118
 EOF
 RUN
 

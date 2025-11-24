@@ -70,9 +70,9 @@ RUN
 
 NAME=Cf 1 n2
 FILE==
-CMDS=Cf 1 n2;C*
+CMDS=Cf 1 n2;C
 EXPECT=<<EOF
-Cf 1 n2 @ 0x00000000
+0x00000000 format 1 n2
 EOF
 RUN
 
@@ -533,47 +533,28 @@ wx 14000000641620000000 @ 0x30
 pfn troll "iw*? integer word (troll)Bah"
 pfn plop "i?w first (troll)Boh bwa"
 pfn gobelin "ww? blah meh (plop)Buh"
-pf.* gobelin
+pf. gobelin
 EOF
 EXPECT=<<EOF
-f blah @ 0x00000000
-fL 2 @ 0x00000000
-Cd 2 @ 0x00000000
-f meh @ 0x00000002
-fL 2 @ 0x00000002
-Cd 2 @ 0x00000002
-f plop.Buh_first @ 0x00000004
-fL 4 @ 0x00000004
-Cd 4 @ 0x00000004
-f troll.Boh_integer @ 0x00000008
-fL 4 @ 0x00000008
-Cd 4 @ 0x00000008
-f word @ 0x0000000c
-fL 2 @ 0x0000000c
-Cd 2 @ 0x0000000c
-f troll.Bah_integer @ 0x00000030
-fL 4 @ 0x00000030
-Cd 4 @ 0x00000030
-f word @ 0x00000034
-fL 2 @ 0x00000034
-Cd 2 @ 0x00000034
-f troll.Bah_integer @ 0x00000020
-fL 4 @ 0x00000020
-Cd 4 @ 0x00000020
-f word @ 0x00000024
-fL 2 @ 0x00000024
-Cd 2 @ 0x00000024
-fL 4 @ 0x00000020
-Cd 4 @ 0x00000020
-fL 4 @ 0x00000030
-Cd 4 @ 0x00000030
-fL 10 @ 0x00000008
-Cd 10 @ 0x00000008
-f bwa @ 0x00000012
-fL 2 @ 0x00000012
-Cd 2 @ 0x00000012
-fL 16 @ 0x00000004
-Cd 16 @ 0x00000004
+ blah : 0x00000000 = 0x1234
+  meh : 0x00000002 = 0x6789
+  Buh : 
+                struct<plop>
+       first : 0x00000004 = 666
+         Boh : 
+                      struct<troll>
+                 integer : 0x00000008 = 4000
+                    word : 0x0000000c = 0x002a
+                     Bah : (*0x30)
+                            struct<troll>
+                         integer : 0x00000030 = 20
+                            word : 0x00000034 = 0x1664
+                             Bah : (*0x20)
+                                  struct<troll>
+                                 integer : 0x00000020 = 1664
+                                    word : 0x00000024 = 0x4000
+                                     Bah : (*0x0) NULL
+         bwa : 0x00000012 = 0x4214
 EOF
 RUN
 
