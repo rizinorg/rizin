@@ -552,9 +552,10 @@ RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj) {
  * \param name_prefix The name prefix to apply.
  */
 RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
-	name_prefix = rz_str_trim_head_ro(name_prefix);
-	if (!name_prefix) {
+	if (RZ_STR_ISEMPTY(name_prefix)) {
 		name_prefix = "";
+	} else {
+		name_prefix = rz_str_trim_head_ro(name_prefix);
 	}
 
 	for (size_t i = 0; keys[i].name; i++) {
