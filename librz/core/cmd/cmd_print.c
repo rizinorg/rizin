@@ -2708,6 +2708,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_oct_handler(RzCore *core, int argc, const ch
 		return result; \
 	}
 
+CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_rizin_handler, RZ_LANG_BYTE_ARRAY_RIZIN);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_asm_handler, RZ_LANG_BYTE_ARRAY_ASM);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_bash_handler, RZ_LANG_BYTE_ARRAY_BASH);
 CMD_PRINT_BYTE_ARRAY_HANDLER_NORMAL(rz_cmd_print_byte_array_c_cpp_bytes_handler, RZ_LANG_BYTE_ARRAY_C_CPP_BYTES);

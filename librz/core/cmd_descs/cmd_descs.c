@@ -698,6 +698,7 @@ static const RzCmdDescArg cmd_print_byte_array_python_args[2];
 static const RzCmdDescArg cmd_print_byte_array_rust_args[2];
 static const RzCmdDescArg cmd_print_byte_array_swift_args[2];
 static const RzCmdDescArg cmd_print_byte_array_yara_args[2];
+static const RzCmdDescArg cmd_print_byte_array_rizin_args[2];
 static const RzCmdDescArg cmd_disassembly_n_bytes_args[2];
 static const RzCmdDescArg print_columns_disassembly_args[2];
 static const RzCmdDescArg print_columns_debug_args[2];
@@ -15185,6 +15186,21 @@ static const RzCmdDescHelp cmd_print_byte_array_yara_help = {
 	.args = cmd_print_byte_array_yara_args,
 };
 
+static const RzCmdDescArg cmd_print_byte_array_rizin_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_byte_array_rizin_help = {
+	.summary = "Generate a rizin commands for writing the byte array.",
+	.args = cmd_print_byte_array_rizin_args,
+};
+
 static const RzCmdDescArg cmd_disassembly_n_bytes_args[] = {
 	{
 		.name = "n_bytes",
@@ -24281,6 +24297,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_byte_array_yara_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pcy", rz_cmd_print_byte_array_yara_handler, &cmd_print_byte_array_yara_help);
 	rz_warn_if_fail(cmd_print_byte_array_yara_cd);
+
+	RzCmdDesc *cmd_print_byte_array_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_byte_array_cd, "pc*", rz_cmd_print_byte_array_rizin_handler, &cmd_print_byte_array_rizin_help);
+	rz_warn_if_fail(cmd_print_byte_array_rizin_cd);
 
 	RzCmdDesc *cmd_disassembly_n_bytes_cd = rz_cmd_desc_argv_state_new(core->rcmd, cmd_print_cd, "pD", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_disassembly_n_bytes_handler, &cmd_disassembly_n_bytes_help);
 	rz_warn_if_fail(cmd_disassembly_n_bytes_cd);

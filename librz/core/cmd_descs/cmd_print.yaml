@@ -215,6 +215,13 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: pc*
+        summary: Generate a rizin commands for writing the byte array.
+        cname: cmd_print_byte_array_rizin
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: pD
     summary: Disassemble N bytes (can be negative)
     cname: cmd_disassembly_n_bytes

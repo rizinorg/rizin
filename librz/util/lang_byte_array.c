@@ -6,6 +6,20 @@
 #define RZ_LANG_BYTE_ARRAY_TRUNK_SIZE     16
 #define RZ_LANG_BYTE_ARRAY_TRUNK_SIZE_STR "16"
 
+static void lang_byte_array_rizin(RzStrBuf *sb, const ut8 *buffer, size_t size) {
+	size_t pos = 0;
+	rz_strbuf_append(sb, "wx ");
+	for (pos = 0; pos < size; pos++) {
+		if (pos > 0 && !(pos % RZ_LANG_BYTE_ARRAY_TRUNK_SIZE)) {
+			rz_strbuf_append(sb, " ; sd +" RZ_LANG_BYTE_ARRAY_TRUNK_SIZE_STR "\nwx ");
+		}
+		rz_strbuf_appendf(sb, "%02x", buffer[pos]);
+	}
+	if (pos > RZ_LANG_BYTE_ARRAY_TRUNK_SIZE) {
+		rz_strbuf_appendf(sb, " ; sd -%" PFMTSZd, pos);
+	}
+}
+
 static void lang_byte_array_bash(RzStrBuf *sb, const ut8 *buffer, size_t size) {
 	bool append = false;
 	rz_strbuf_append(sb, "printf \"");
@@ -220,6 +234,9 @@ RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size
 	}
 
 	switch (type) {
+	case RZ_LANG_BYTE_ARRAY_RIZIN:
+		lang_byte_array_rizin(&sb, buffer, size);
+		break;
 	case RZ_LANG_BYTE_ARRAY_ASM:
 		lang_byte_array_asm(&sb, buffer, size);
 		break;
