@@ -29,10 +29,18 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		pc->bv = new_pc;
 		break;
 	}
+	case RZ_IL_OP_SEQ: {
+		const RzILOpEffect *next = effect->op.seq.x;
+		while (next) {
+			if (!interpreter_prototype_eval_effect(state, next, yield_queues, plugin_data)) {
+				goto error;
+			}
+			next = effect->op.seq.y;
+		}
+	}
 	case RZ_IL_OP_SET:
 	case RZ_IL_OP_BRANCH:
 	case RZ_IL_OP_JMP:
-	case RZ_IL_OP_SEQ:
 		// Essential for basic functioning.
 		// TODO
 	case RZ_IL_OP_STORE:
