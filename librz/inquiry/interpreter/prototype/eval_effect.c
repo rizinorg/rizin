@@ -28,15 +28,20 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		rz_bv_free(pc->bv);
 		pc->bv = new_pc;
 		break;
+	}
+	case RZ_IL_OP_SET:
+	case RZ_IL_OP_BRANCH:
+	case RZ_IL_OP_JMP:
+	case RZ_IL_OP_SEQ:
+		// Essential for basic functioning.
+		// TODO
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW:
-	case RZ_IL_OP_SET:
-	case RZ_IL_OP_JMP:
 	case RZ_IL_OP_GOTO:
-	case RZ_IL_OP_SEQ:
 	case RZ_IL_OP_BLK:
 	case RZ_IL_OP_REPEAT:
-	case RZ_IL_OP_BRANCH:
+		// Ignore for now.
+		break;
 	}
 	return true;
 error:

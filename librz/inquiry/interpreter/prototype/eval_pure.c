@@ -19,11 +19,14 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LET:
 	case RZ_IL_OP_B0:
 	case RZ_IL_OP_B1:
+	case RZ_IL_OP_BITV:
+	case RZ_IL_OP_CAST:
+	case RZ_IL_OP_APPEND:
+		// TODO
 	case RZ_IL_OP_INV:
 	case RZ_IL_OP_AND:
 	case RZ_IL_OP_OR:
 	case RZ_IL_OP_XOR:
-	case RZ_IL_OP_BITV:
 	case RZ_IL_OP_MSB:
 	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_IS_ZERO:
@@ -31,11 +34,6 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LOGNOT:
 	case RZ_IL_OP_ADD:
 	case RZ_IL_OP_SUB:
-	case RZ_IL_OP_MUL:
-	case RZ_IL_OP_DIV:
-	case RZ_IL_OP_SDIV:
-	case RZ_IL_OP_MOD:
-	case RZ_IL_OP_SMOD:
 	case RZ_IL_OP_LOGAND:
 	case RZ_IL_OP_LOGOR:
 	case RZ_IL_OP_LOGXOR:
@@ -44,8 +42,12 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_EQ:
 	case RZ_IL_OP_SLE:
 	case RZ_IL_OP_ULE:
-	case RZ_IL_OP_CAST:
-	case RZ_IL_OP_APPEND:
+		// TODO
+	case RZ_IL_OP_MUL:
+	case RZ_IL_OP_DIV:
+	case RZ_IL_OP_SDIV:
+	case RZ_IL_OP_MOD:
+	case RZ_IL_OP_SMOD:
 	case RZ_IL_OP_FLOAT:
 	case RZ_IL_OP_FBITS:
 	case RZ_IL_OP_IS_FINITE:
@@ -83,7 +85,14 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LOAD:
 	case RZ_IL_OP_LOADW:
 		// Not implemented.
-		break;
+		goto map_to_bottom;
 	}
+
+	// TODO: Check filter if the values should be reported/pushed into the yield queue.
+
+	return true;
+
+map_to_bottom:
+	out->is_concrete = false;
 	return true;
 }
