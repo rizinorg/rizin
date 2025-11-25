@@ -284,7 +284,7 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
   - name: "%l"
-    summary: Calculate length of string <str>. Quite mode stores value in `$?` register.
+    summary: Calculate length of string <str>. Quiet mode stores value in `$?` register.
     cname: calculate_string_length
     args:
       - name: str

@@ -212,7 +212,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"-H",       "",             "Hexadecimal visual mode",
 		"-h",       "",             "Show this help",
 		"-j",       "",             "JSON output",
-		"-q",       "",             "Quite output",
+		"-q",       "",             "Quiet output",
 		"-V",       "",             "Show version information",
 		"-v",       "",             "Be more verbose (stderr output)",
 		"-e",       "k=v",          "Set an evaluable config variable",
