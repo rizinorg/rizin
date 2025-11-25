@@ -8,6 +8,8 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	void *plugin_data) {
+	RzILOpPure out_pure_I = { 0 };
+
 	switch (effect->code) {
 	default:
 	case RZ_IL_OP_EMPTY:

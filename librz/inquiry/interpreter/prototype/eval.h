@@ -28,5 +28,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	void *plugin_data);
+RZ_IPI bool interpreter_prototype_eval_pure(
+	RzInterpreterAbstrState *state,
+	const RzILOpPure *pure,
+	RZ_OUT ProtoIntrprAbstrData *out,
+	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	void *plugin_data);
 
 #endif // PROTOYPE_EVAL_H
