@@ -24,6 +24,21 @@ typedef struct {
 	RzBitVector *bv;
 } ProtoIntrprAbstrData;
 
+/**
+ * \brief Up to 64bit-bitvector.
+ */
+#define STACK_ABSTR_DATA_SMALL_BV(name, bit_len) \
+	RzBitVector _##name##_bv = { .len = bit_len, ._elem_len = bit_len / 8, .bits.small_u = 0 }; \
+	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv };
+
+/**
+ * \brief Larger than 64bit-bitvector.
+ */
+#define STACK_ABSTR_DATA_LARGE_BV(name, bit_len) \
+	ut8 _##name##_bv_buf[bit_len / 8] = { 0 }; \
+	RzBitVector _##name##_bv = { .len = bit_len, ._elem_len = bit_len / 8, .bits.large_a = _##name##_bv_buf }; \
+	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv };
+
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
