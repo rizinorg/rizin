@@ -76,6 +76,7 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNU
 	rz_return_val_if_fail(name && exp && body, NULL);
 	RzILOpPure *ret;
 	rz_il_op_new_3(Pure, RZ_IL_OP_LET, RzILOpArgsLet, let, name, exp, body);
+	ret->op.let.hash = rz_str_djb2_hash(name);
 	return ret;
 }
 
@@ -578,6 +579,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_l
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOpEffect *ret;
 	rz_il_op_new_3(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, is_local, x);
+	ret->op.set.hash = rz_str_djb2_hash(v);
 	return ret;
 }
 
@@ -1090,6 +1092,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	switch (op->code) {
 	case RZ_IL_OP_VAR:
 		r->op.var.v = op->op.var.v;
+		r->op.var.hash = op->op.var.hash;
 		r->op.var.kind = op->op.var.kind;
 		break;
 	case RZ_IL_OP_ITE:
@@ -1097,6 +1100,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_LET:
 		r->op.let.name = op->op.let.name;
+		r->op.let.hash = op->op.let.hash;
 		DUP_OP2(let, exp, body);
 		break;
 	case RZ_IL_OP_B0:

@@ -167,6 +167,7 @@ typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< DJB2 hash of variable name
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -178,6 +179,7 @@ typedef struct rz_il_op_args_set_t {
  */
 typedef struct rz_il_op_args_let_t {
 	const char *name; ///< name of variable
+	ut64 hash; ///< DJB2 hash of variable name
 	RzILOpPure *exp; ///< value/expression to bind the variable to
 	RzILOpPure *body; ///< body in which the variable will be bound and that produces the result
 } RzILOpArgsLet;
@@ -260,6 +262,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< The DJB2 hash of the name.
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
