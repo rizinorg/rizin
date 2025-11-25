@@ -114,20 +114,27 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpre
 		return NULL;
 	}
 	// Initialize the register file with uninitialized abstract values.
-	state->reg_file = ht_sp_new(HT_STR_DUP, NULL, free);
+	state->globals = ht_up_new(NULL, free);
 	void **it;
 	rz_pvector_foreach (reg_names, it) {
 		const char *rname = *it;
 		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
 		if (!aval) {
-			ht_sp_free(state->reg_file);
+			ht_up_free(state->globals);
 			free(state);
 			return NULL;
 		}
 
 		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
-		ht_sp_insert(state->reg_file, rname, aval);
+		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
+		if (!ht_up_insert(state->globals, djb2_reg_hash, aval)) {
+			RZ_LOG_ERROR("Failed to add %s to the global variable map. "
+				     "DJB2 hash collision of the register name. DJB2 hash = 0x%" PFMT64x "\n",
+				rname, djb2_reg_hash);
+			return NULL;
+		}
 	}
+	state->locals = ht_up_new(NULL, NULL);
 	return state;
 }
 
@@ -135,8 +142,11 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	if (!state) {
 		return;
 	}
-	if (state->reg_file) {
-		ht_sp_free(state->reg_file);
+	if (state->globals) {
+		ht_up_free(state->globals);
+	}
+	if (state->locals) {
+		ht_up_free(state->locals);
 	}
 	free(state);
 }
