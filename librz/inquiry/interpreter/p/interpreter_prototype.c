@@ -12,7 +12,9 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzILOpEffect *effect,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	void *plugin_data) {
-	return interpreter_prototype_eval_effect(state, effect, yield_queues, plugin_data);
+	bool result = interpreter_prototype_eval_effect(state, effect, yield_queues, plugin_data);
+	// TODO: Clean up local variables.
+	return result;
 }
 
 bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,

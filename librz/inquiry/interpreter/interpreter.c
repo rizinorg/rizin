@@ -346,7 +346,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			in_state = plugin->clone_state(in_state, plugin_data);
 		} else if (ht_up_get_rc(state_cache, in_hash) > 1) {
 			RZ_LOG_ERROR("If the plugin can produce multiple successors for a single state, "
-			             "it must implement the clone_state() callback.\n");
+				     "it must implement the clone_state() callback.\n");
 			rz_warn_if_reached();
 			break;
 		}

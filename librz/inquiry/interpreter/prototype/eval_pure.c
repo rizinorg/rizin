@@ -5,6 +5,9 @@
 #include "rz_il/rz_il_opcodes.h"
 #include "rz_util/rz_bitvector.h"
 
+/**
+ * \brief Evaluate a pure.
+ */
 RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpreterAbstrState *state,
 	const RzILOpPure *pure,
