@@ -465,7 +465,7 @@ Environment:
  [32m-H[0m      [0mHexadecimal visual mode
  [32m-h[0m      [0mShow this help
  [32m-j[0m      [0mJSON output
- [32m-q[0m      [0mQuite output
+ [32m-q[0m      [0mQuiet output
  [32m-V[0m      [0mShow version information
  [32m-v[0m      [0mBe more verbose (stderr output)
  [32m-e[0m[33m k=v [0m [0mSet an evaluable config variable
