@@ -51,7 +51,8 @@ typedef struct {
 
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
-	HtSP /*<char *: RzInterpreterAbstrVal *>*/ *reg_file; ///< The register file. Currently a hash map.
+	HtUP /*<RzInterpreterAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
+	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	/**
 	 * \brief The number by which the PC is incremented for a NOP instruction.

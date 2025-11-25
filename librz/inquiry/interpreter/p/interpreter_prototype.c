@@ -43,7 +43,7 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 
 static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
@@ -59,8 +59,19 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 		rz_bv_free(ad->bv);
 	}
 	free(ad);
-	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
+	rz_iterator_foreach(it, v) {
+		RzInterpreterAbstrVal *av = *v;
+		ProtoIntrprAbstrData *ad = av->abstr_data;
+		if (ad->bv) {
+			rz_bv_free(ad->bv);
+		}
+		free(ad);
+	}
+	rz_iterator_free(it);
+
+	it = ht_up_as_iter(state->locals);
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
@@ -84,7 +95,7 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 	if (ad->bv) {
 		hash ^= rz_bv_to_ut64(ad->bv);
 	}
-	RzIterator *it = ht_sp_as_iter(state->reg_file);
+	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
