@@ -4,6 +4,8 @@
 #ifndef PROTOYPE_EVAL_H
 #define PROTOYPE_EVAL_H
 
+#include "rz_types.h"
+#include "rz_util/rz_bitvector.h"
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_il/rz_il_opcodes.h>
 
@@ -25,19 +27,27 @@ typedef struct {
 } ProtoIntrprAbstrData;
 
 /**
- * \brief Up to 64bit-bitvector.
+ * \brief Initializes an AbstractData object on the stack.
+ * The bit vector in it is for now hard coded to 0x2000 bytes.
+ * TODO: This won't matter anymore, when in-place casting
+ * and appending of bit vectors is implemented.
  */
-#define STACK_ABSTR_DATA_SMALL_BV(name, bit_len) \
-	RzBitVector _##name##_bv = { .len = bit_len, ._elem_len = bit_len / 8, .bits.small_u = 0 }; \
-	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv };
+#define STACK_ABSTR_DATA_OUT(name) \
+	ut8 _##name##_bv_large_buf[0x2000 / 8] = { 0 }; \
+	RzBitVector _##name##_bv_large = { .len = 0x2000, ._elem_len = 0x2000 / 8, .bits.large_a = _##name##_bv_large_buf }; \
+	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv_large };
 
 /**
- * \brief Larger than 64bit-bitvector.
+ * \brief Creates abstract data on the heap with the given bit vector.
  */
-#define STACK_ABSTR_DATA_LARGE_BV(name, bit_len) \
-	ut8 _##name##_bv_buf[bit_len / 8] = { 0 }; \
-	RzBitVector _##name##_bv = { .len = bit_len, ._elem_len = bit_len / 8, .bits.large_a = _##name##_bv_buf }; \
-	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv };
+static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) {
+	ProtoIntrprAbstrData *ad = RZ_NEW(ProtoIntrprAbstrData);
+	ad->is_concrete = true;
+	ad->bv = rz_bv_dup(bv);
+	return ad;
+}
+
+void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src);
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
