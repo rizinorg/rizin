@@ -14,18 +14,19 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	default:
 	case RZ_IL_OP_EMPTY:
 		break;
-	case RZ_IL_OP_NOP:
-		if (AD(state->pc)->is_concrete) {
+	case RZ_IL_OP_NOP: {
+		ProtoIntrprAbstrData *pc = AD(state->pc);
+		if (pc->is_concrete) {
 			// The PC is no longer a concrete value.
 			// This plugin has no addition for it defined.
 			break;
 		}
-		RzBitVector *new_pc = rz_bv_add(AD(state->pc)->bv, rz_bv_new(state->nop_pc_inc), NULL);
-		if (!AD(state->pc)->bv) {
+		RzBitVector *new_pc = rz_bv_add(pc->bv, rz_bv_new(state->nop_pc_inc), NULL);
+		if (!pc->bv) {
 			goto error;
 		}
-		rz_bv_free(AD(state->pc)->bv);
-		AD(state->pc)->bv = new_pc;
+		rz_bv_free(pc->bv);
+		pc->bv = new_pc;
 		break;
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW:
