@@ -75,10 +75,67 @@ bool test_path_prefix(void) {
 	mu_end;
 }
 
+bool test_path_normalize_expand(void) {
+	char *out;
+
+	out = rz_path_normalize_expand("", strlen(""));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, ".", "empty input should normalize to '.'");
+	free(out);
+
+	out = rz_path_normalize_expand("foo/bar", strlen("foo/bar"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "./foo/bar", "relative path should be prefixed with './'");
+	free(out);
+
+#ifdef __WINDOWS__
+	out = rz_path_normalize_expand("C:\\Users\\Test", strlen("C:\\Users\\Test"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "C:\\Users\\Test", "Windows absolute path should be unchanged");
+	free(out);
+#endif
+
+	char *abs = rz_str_newf("%s%s", RZ_SYS_DIR, "absdir");
+	char *expected = strdup(abs);
+
+	out = rz_path_normalize_expand(abs, strlen(abs));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, expected, "absolute path should be unchanged");
+
+	free(out);
+	free(expected);
+	free(abs);
+
+	out = rz_path_normalize_expand("/home/user/.././etc", strlen("/home/user/.././etc"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "/home/user/.././etc", "should preserve .. and . in absolute path");
+	free(out);
+
+#ifdef __WINDOWS__
+	out = rz_path_normalize_expand("C:\\Users\\Test\\..\\Desktop", strlen("C:\\Users\\Test\\..\\Desktop"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "C:\\Users\\Test\\..\\Desktop", "should preserve .. in the absolute path");
+	free(out);
+#endif
+
+	out = rz_path_normalize_expand("/home/user/./doc/././", strlen("/home/user/./doc/././"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "/home/user/./doc/././", "should preserve . in absolute path");
+	free(out);
+
+	out = rz_path_normalize_expand(".hidden_dir", strlen(".hidden_dir"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, ".hidden_dir", "should preserve dotfile/dir");
+	free(out);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
 	mu_run_test(test_path_prefix);
+	mu_run_test(test_path_normalize_expand);
 	return tests_passed != tests_run;
 }
 

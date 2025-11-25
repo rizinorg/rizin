@@ -257,7 +257,7 @@ static void autocmplt_reg(RzCore *core, RzLineNSCompletionResult *res, const cha
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *dir_from_user = rz_str_ndup(s, len);
 
-	char *expanded_path = rz_path_normalize_expand(dir_from_user);
+	char *expanded_path = rz_path_normalize_expand(dir_from_user, len);
 	free(dir_from_user);
 
 	if (!expanded_path) {
@@ -295,7 +295,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *dir_from_user = rz_str_ndup(s, len);
 
-	char *expanded_path = rz_path_normalize_expand(dir_from_user);
+	char *expanded_path = rz_path_normalize_expand(dir_from_user, len);
 	free(dir_from_user);
 
 	if (!expanded_path) {

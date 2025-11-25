@@ -323,10 +323,11 @@ RZ_API RZ_OWN RzPath *rz_path_new(void) {
  *  - On Windows, drive-letter paths (e.g. "C:\\") are preserved
  *
  * \param usr_input The raw path string provided by the user. May be NULL or empty.
+ * \param len The lenth of the user input path , it may be a partial or a full path , will be null if path is empty.
  * \return A new normalized path string.
  */
-RZ_API RZ_OWN char *rz_path_normalize_expand(char *usr_input) {
-	char *input = rz_str_dup(usr_input);
+RZ_API RZ_OWN char *rz_path_normalize_expand(char *usr_input, size_t len) {
+	char *input = rz_str_ndup(usr_input, len);
 	if (RZ_STR_ISEMPTY(input)) {
 		free(input);
 		input = rz_str_dup(".");
@@ -343,7 +344,6 @@ RZ_API RZ_OWN char *rz_path_normalize_expand(char *usr_input) {
 			return NULL;
 		}
 		input = tmp;
-		free(tmp);
 	}
 	char *exp_path = rz_path_home_expand(input);
 	free(input);
