@@ -49,12 +49,12 @@ If you are using `meson test`, you should consider using the `--print-errorlogs`
 
 ## Benchmarks
 
-In order to be able to run the benchmarks the `-Denable_benchmarks=true` switch needs to be specified
-when setting the build directory (e.g. `meson setup build -Denable_benchmarks=true`).
+In order to be able to run the benchmarks, the `-Denable_benchmarks=true` switch needs to be specified
+when setting up the build directory (e.g. `meson setup build -Denable_benchmarks=true`).
 
-Afterwards, to run the benchmarks, use `ninja -C build test --benchmark`
-(or `meson test -C build --benchmark`) from the top directory (replace `build` with the name
-of the directory you used to build Rizin).
+Afterwards use `ninja -C build test --benchmark` (or `meson test -C build --benchmark`)
+to run the benchmarks from the top directory (replace `build` with the name of the directory
+you used to build Rizin).
 
 Running a specific set of benchmarks (e.g. `bitvector`) can be done with `ninja -C build test bitvector --benchmark`.
 
