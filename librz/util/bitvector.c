@@ -621,6 +621,7 @@ RZ_API bool rz_bv_toggle_all(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, false);
 	if (bv->len <= 64) {
 		bv->bits.small_u = ~(bv->bits.small_u);
+		return true;
 	}
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
