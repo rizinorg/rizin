@@ -243,7 +243,7 @@ static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_star
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a large bitvector to a small one
  */
-RZ_API ut32 rz_bv_copy_nbits_large_to_small(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_large_to_small(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	ut64 buffer = 0;
 	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - src_start_pos) % BV_ELEM_SIZE, nbit);
 	ut32 byte_index = (src_start_pos + start_bits) / BV_ELEM_SIZE;
@@ -284,7 +284,7 @@ RZ_API ut32 rz_bv_copy_nbits_large_to_small(RZ_NONNULL const RzBitVector *src, u
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a small bitvector to a large one
  */
-RZ_API ut32 rz_bv_copy_nbits_small_to_large(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_small_to_large(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	ut64 byte_index = dst_start_pos / BV_ELEM_SIZE;
 	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
 	ut8 trailing_bits = RZ_MIN((dst_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
@@ -412,8 +412,8 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 		return bits_copied;
 	}
 
-	// Large to small copy
 	if (src->len > 64) {
+		// Large to small copy
 		return rz_bv_copy_nbits_large_to_small(src, src_start_pos, dst, dst_start_pos, nbit);
 	}
 
