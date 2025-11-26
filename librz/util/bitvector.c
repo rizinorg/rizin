@@ -335,7 +335,7 @@ RZ_API ut32 rz_bv_copy_nbits_small_to_large(RZ_NONNULL const RzBitVector *src, u
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with unaligned bit positions
  */
-static ut32 rz_bv_copy_nbits_large_nonaligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut64 bits_remaining = nbit;
 
@@ -400,13 +400,13 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 		}
 
 		if (src->bits.large_a != dst->bits.large_a) {
-			return rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, dst, dst_start_pos, nbit);
+			return rz_bv_copy_nbits_large_unaligned(src, src_start_pos, dst, dst_start_pos, nbit);
 		}
 
 		// Use a temporary bitvector for same-vector copies
 		RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
 		rz_bv_copy(dst, temp);
-		ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
+		ut32 bits_copied = rz_bv_copy_nbits_large_unaligned(src, src_start_pos, temp, dst_start_pos, nbit);
 		rz_bv_copy(temp, dst);
 		rz_bv_free(temp);
 		return bits_copied;
