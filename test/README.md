@@ -9,6 +9,7 @@ Rizin uses both regression and unit tests.
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
  * bins/:        Sample binaries (fetched from the [external repository](https://github.com/rizinorg/rizin-testbins))
+ * bench/:       Benchmarks
 
 # Requirements
 
@@ -45,6 +46,17 @@ from the top directory (replace `build` with the name of the directory you used
 to build Rizin).
 You can run one specific testcase category (e.g. the whole `test_bin.c` file) using `meson test -C build bin`.
 If you are using `meson test`, you should consider using the `--print-errorlogs` flag.
+
+## Benchmarks
+
+In order to be able to run the benchmarks the `-Denable_benchmarks=true` switch needs to be specified
+when setting the build directory (e.g. `meson setup build -Denable_benchmarks=true`).
+
+Afterwards, to run the benchmarks, use `ninja -C build test --benchmark`
+(or `meson test -C build --benchmark`) from the top directory (replace `build` with the name
+of the directory you used to build Rizin).
+
+Running a specific set of benchmarks (e.g. `bitvector`) can be done with `ninja -C build test bitvector --benchmark`.
 
 # Failure Levels
 
