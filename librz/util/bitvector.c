@@ -251,20 +251,28 @@ static ut32 rz_bv_copy_nbits_large_to_small(const RzBitVector *src, ut32 src_sta
 	switch ((nbit - start_bits + 7) / BV_ELEM_SIZE) {
 	case 8:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 7]) << (BV_ELEM_SIZE * 7);
+		// fallthrough
 	case 7:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 6]) << (BV_ELEM_SIZE * 6);
+		// fallthrough
 	case 6:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 5]) << (BV_ELEM_SIZE * 5);
+		// fallthrough
 	case 5:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 4]) << (BV_ELEM_SIZE * 4);
+		// fallthrough
 	case 4:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 3]) << (BV_ELEM_SIZE * 3);
+		// fallthrough
 	case 3:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 2]) << (BV_ELEM_SIZE * 2);
+		// fallthrough
 	case 2:
 		buffer |= ((ut64)src->bits.large_a[byte_index + 1]) << (BV_ELEM_SIZE);
+		// fallthrough
 	case 1:
 		buffer |= ((ut64)src->bits.large_a[byte_index]);
+		// fallthrough
 	case 0:
 		break;
 	default:
@@ -308,20 +316,28 @@ static ut32 rz_bv_copy_nbits_small_to_large(const RzBitVector *src, ut32 src_sta
 	switch (middle_bits / BV_ELEM_SIZE) {
 	case 8:
 		dst->bits.large_a[byte_index + 7] = (buffer >> BV_ELEM_SIZE * 7) & UT8_MAX;
+		// fallthrough
 	case 7:
 		dst->bits.large_a[byte_index + 6] = (buffer >> BV_ELEM_SIZE * 6) & UT8_MAX;
+		// fallthrough
 	case 6:
 		dst->bits.large_a[byte_index + 5] = (buffer >> BV_ELEM_SIZE * 5) & UT8_MAX;
+		// fallthrough
 	case 5:
 		dst->bits.large_a[byte_index + 4] = (buffer >> BV_ELEM_SIZE * 4) & UT8_MAX;
+		// fallthrough
 	case 4:
 		dst->bits.large_a[byte_index + 3] = (buffer >> BV_ELEM_SIZE * 3) & UT8_MAX;
+		// fallthrough
 	case 3:
 		dst->bits.large_a[byte_index + 2] = (buffer >> BV_ELEM_SIZE * 2) & UT8_MAX;
+		// fallthrough
 	case 2:
 		dst->bits.large_a[byte_index + 1] = (buffer >> BV_ELEM_SIZE) & UT8_MAX;
+		// fallthrough
 	case 1:
 		dst->bits.large_a[byte_index] = buffer & UT8_MAX;
+		// fallthrough
 	case 0:
 		break;
 	default:
