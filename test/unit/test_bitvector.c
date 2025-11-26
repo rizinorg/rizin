@@ -1201,12 +1201,12 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_copy(dst, dst_copy_ref);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect return";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
 	if (rz_bv_copy_nbits_ref(src_copy, src_pos, dst_copy_ref, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits_ref() incorrect result";
+		error = "rz_bv_copy_nbits_ref() incorrect number of bits copied";
 		goto finally;
 	}
 
@@ -1221,7 +1221,7 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_toggle_all(dst_copy);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect result";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
