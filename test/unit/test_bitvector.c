@@ -1359,9 +1359,11 @@ bool test_rz_bv_copy_nbits_large_to_small(void) {
 	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
 	mu_assert_null(error, error);
 
-	/// copy all
-	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 0, 64);
-	mu_assert_null(error, error);
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, size - 1, b, 0, size);
+		mu_assert_null(error, error);
+	}
 
 	rz_bv_free(a);
 	rz_bv_free(b);
@@ -1389,9 +1391,11 @@ bool test_rz_bv_copy_nbits_small_to_large(void) {
 	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
 	mu_assert_null(error, error);
 
-	/// copy all
-	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 0, 64);
-	mu_assert_null(error, error);
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, 0, b, size - 1, size);
+		mu_assert_null(error, error);
+	}
 
 	rz_bv_free(a);
 	rz_bv_free(b);
