@@ -14,6 +14,8 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	void *plugin_data) {
 	bool result = interpreter_prototype_eval_effect(state, effect, yield_queues, plugin_data);
 	// TODO: Clean up local variables.
+	// Or maybe not? Just costs performance. And the uplifted instructions should
+	// always set it before, otherwise the tests don't pass.
 	return result;
 }
 
