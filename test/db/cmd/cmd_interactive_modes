@@ -68,6 +68,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=?** wrapping
+FILE=--
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=100
+e scr.rows=5
+e scr.color=0
+< q\n; ?**
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
+ - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
+                                     automatically forces use of '!!' instead.                      
+   │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin     
+   │ #!<interpreter-name> [<arg1> <arg2> ...] # Run interpreter                                     [0;0H0> q|                                                                                               [0;0H0> q|
+ - │ %l <str>             # Calculate length of string <str>. Quiet mode stores value in `$?` regist[0J[0m
+   │ %lQ <str>            # Calculate length of string <str>. Quiet mode stores value in `$?` regist[0J[0m
+                         (Quiet mode)                                                               
+   │ %s <start> <stop> <step> # Generate seQuence of numbers from <start> to <stop> with <step>     [?25h
+EOF
+RUN
+
 NAME=?**e search
 FILE==
 CMDS=<<EOF
