@@ -23,12 +23,12 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 	rz_return_val_if_fail(state && successors, false);
 
 	RzInterpreterAbstrVal *pc = state->pc;
-	if (!pc || pc->abstr_data) {
+	if (!pc || !pc->abstr_data) {
 		RZ_LOG_ERROR("No PC found.\n");
 		return false;
 	}
 	ProtoIntrprAbstrData *adata = pc->abstr_data;
-	if (adata->is_concrete) {
+	if (!adata->is_concrete) {
 		// The PC is not a concrete value.
 		// This prototype can't estimate a reasonable concretization for it.
 		return true;
