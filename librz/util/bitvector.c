@@ -887,12 +887,46 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
 }
 
 /**
+ * Result of x = (x + y) mod 2^length
+ * Both operands must have the same length.
+ * \param x The input and output operand of the addition.
+ * \param y RzBitVector, Operand
+ * \param carry bool*, bool pointer to where to save the carry value.
+ * \return The pointer to the \p x ir NULL in case of failure.
+ */
+RZ_API RzBitVector *rz_bv_add_inplace(
+	RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x,
+	RZ_NONNULL RzBitVector *y,
+	RZ_NULLABLE bool *carry) {
+	rz_return_val_if_fail(x && y, NULL);
+
+	if (x->len != y->len) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	bool a = false, b = false, _carry = false;
+
+	for (ut32 pos = 0; pos < x->len; ++pos) {
+		a = rz_bv_get(x, pos);
+		b = rz_bv_get(y, pos);
+		rz_bv_set(x, pos, a ^ b ^ _carry);
+		_carry = ((a & b) | (a & _carry)) | (b & _carry);
+	}
+	if (carry) {
+		*carry = _carry;
+	}
+
+	return x;
+}
+
+/**
  * Result of (x + y) mod 2^length
  * Both operands must have the same length.
  * \param x RzBitVector, Operand
  * \param y RzBitVector, Operand
  * \param carry bool*, bool pointer to where to save the carry value.
- * \return ret RzBitVector, point to the new bitvector
+ * \return Pointer to the new bitvector or NULL in case of failure.
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry) {
 	rz_return_val_if_fail(x && y, NULL);
@@ -902,20 +936,8 @@ RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 		return NULL;
 	}
 
-	bool a = false, b = false, _carry = false;
-	RzBitVector *ret = rz_bv_new(x->len);
-
-	for (ut32 pos = 0; pos < x->len; ++pos) {
-		a = rz_bv_get(x, pos);
-		b = rz_bv_get(y, pos);
-		rz_bv_set(ret, pos, a ^ b ^ _carry);
-		_carry = ((a & b) | (a & _carry)) | (b & _carry);
-	}
-	if (carry) {
-		*carry = _carry;
-	}
-
-	return ret;
+	RzBitVector *ret = rz_bv_dup(x);
+	return rz_bv_add_inplace(ret, y, carry);
 }
 
 /**

@@ -70,6 +70,8 @@ RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 
+RZ_API RzBitVector *rz_bv_add_inplace(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
+
 RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
