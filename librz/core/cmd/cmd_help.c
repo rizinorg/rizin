@@ -23,7 +23,7 @@ static bool help_search_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *
 	if (hs->pj) {
 		rz_cmd_get_help_json(cmd, cd, hs->pj);
 	} else {
-		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
+		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb, 0);
 	}
 	return true;
 }
@@ -35,7 +35,7 @@ static bool help_search_interactive_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc
 	if (!sb) {
 		return false;
 	}
-	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb);
+	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb, 3);
 	rz_list_append(brief_lines, rz_str_trim_tail(rz_strbuf_drain(sb)));
 	return true;
 }
