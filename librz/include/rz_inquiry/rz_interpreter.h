@@ -62,7 +62,7 @@ typedef struct {
 	 * (conditional) JUMP at the end of each effect.
 	 */
 	ut64 nop_pc_inc;
-	void *prop; ///< Optional state properties. Managed by individual interpreters.
+	void *ext; ///< Optional state extensions. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
 typedef enum {
