@@ -52,10 +52,17 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		copy_abstr_data(av->abstr_data, &eval_out);
 		break;
 	}
+	case RZ_IL_OP_JMP: {
+		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, plugin_data)) {
+			goto error;
+		}
+		copy_abstr_data(state->pc->abstr_data, &eval_out);
+		break;
+	}
 	case RZ_IL_OP_BRANCH:
-	case RZ_IL_OP_JMP:
-		// Essential for basic functioning.
 		// TODO
+		// If the condition is bottom, both branch targets (if concrete) should
+		// be returned as possible successor.
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW:
 	case RZ_IL_OP_GOTO:
