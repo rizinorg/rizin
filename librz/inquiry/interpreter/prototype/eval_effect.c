@@ -22,12 +22,9 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			// This plugin has no addition for it defined.
 			break;
 		}
-		RzBitVector *new_pc = rz_bv_add(pc->bv, rz_bv_new(state->nop_pc_inc), NULL);
-		if (!pc->bv) {
+		if (!rz_bv_add_inplace(pc->bv, rz_bv_new(state->nop_pc_inc), NULL)) {
 			goto error;
 		}
-		rz_bv_free(pc->bv);
-		pc->bv = new_pc;
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
