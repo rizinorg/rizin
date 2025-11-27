@@ -515,7 +515,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color);
 RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
-RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb);
+RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb, int gutter_size);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
 	if (v == -2) {

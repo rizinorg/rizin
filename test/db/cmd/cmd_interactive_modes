@@ -38,12 +38,12 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
-                                     use of '!!' instead.                                                               
+                                        use of '!!' instead.                                                            
    │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 
 [?25l[0m[2J[0;0H0> |                                                                                                                   [0m[2J[0;0H0> |
  - | !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' automatically forces
-                                     use of '!!' instead.                                                               
+                                        use of '!!' instead.                                                            
    | !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin                         [?25h
 EOF
 RUN
@@ -62,9 +62,9 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
-                                     automatically forces use of '!!' instead.                      [0;0H0> f|                                                                                               [0;0H0> f|
+                                        automatically forces use of '!!' instead.                   [0;0H0> f|                                                                                               [0;0H0> f|
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
-                                     automatically Forces use oF '!!' instead.                      [?25h
+                                        automatically Forces use oF '!!' instead.                   [?25h
 EOF
 RUN
 
@@ -82,13 +82,13 @@ EOF
 EXPECT=<<EOF
 [?25l[0m[2J[0;0H0> |                                                                                               [0m[2J[0;0H0> |
  - │ !<command> [<args1> <args2> ...] # Run command via system(3) with raw output. Grepping via '~' 
-                                     automatically forces use of '!!' instead.                      
+                                        automatically forces use of '!!' instead.                   
    │ !!<command> [<args1> <args2> ...] # Run command via system(3) and pipe its stdout to rizin     
    │ #!<interpreter-name> [<arg1> <arg2> ...] # Run interpreter                                     [0;0H0> q|                                                                                               [0;0H0> q|
- - │ %l <str>             # Calculate length of string <str>. Quiet mode stores value in `$?` regist[0J[0m
-   │ %lQ <str>            # Calculate length of string <str>. Quiet mode stores value in `$?` regist[0J[0m
-                         (Quiet mode)                                                               
-   │ %s <start> <stop> <step> # Generate seQuence of numbers from <start> to <stop> with <step>     [?25h
+ - │ %l <str>             # Calculate length of string <str>. Quiet mode stores value in `$?`       
+                            register.                                                               
+   │ %lQ <str>            # Calculate length of string <str>. Quiet mode stores value in `$?`       
+                            register. (Quiet mode)                                                  [?25h
 EOF
 RUN
 
