@@ -53,6 +53,7 @@ typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
+	HtUP /*<RzInterpreterAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	/**
 	 * \brief The number by which the PC is incremented for a NOP instruction.

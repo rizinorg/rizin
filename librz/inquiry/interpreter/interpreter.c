@@ -135,6 +135,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpre
 		}
 	}
 	state->locals = ht_up_new(NULL, NULL);
+	state->lets = ht_up_new(NULL, NULL);
 	return state;
 }
 
@@ -147,6 +148,9 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	}
 	if (state->locals) {
 		ht_up_free(state->locals);
+	}
+	if (state->lets) {
+		ht_up_free(state->lets);
 	}
 	free(state);
 }
