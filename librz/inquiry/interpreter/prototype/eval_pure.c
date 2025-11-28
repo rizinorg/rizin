@@ -40,7 +40,29 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		// It is simply overwritten next time.
 		break;
 	}
-	case RZ_IL_OP_ITE:
+	case RZ_IL_OP_ITE: {
+		if (!interpreter_prototype_eval_pure(state, pure->op.ite.condition, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: ITE condition failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			// Can't decide which pure to evaluate.
+			goto map_to_bottom;
+		}
+
+		if (abstr_is_true(state, out)) {
+			if (!interpreter_prototype_eval_pure(state, pure->op.ite.x, out, yield_queues, plugin_data)) {
+				RZ_LOG_ERROR("prototype: ITE x failed to evaluate.\n");
+				goto map_to_bottom;
+			}
+		} else {
+			if (!interpreter_prototype_eval_pure(state, pure->op.ite.y, out, yield_queues, plugin_data)) {
+				RZ_LOG_ERROR("prototype: ITE y failed to evaluate.\n");
+				goto map_to_bottom;
+			}
+		}
+		break;
+	}
 	case RZ_IL_OP_B0:
 	case RZ_IL_OP_B1:
 	case RZ_IL_OP_BITV:
