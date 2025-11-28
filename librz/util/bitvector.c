@@ -132,7 +132,7 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool p
 	}
 
 	const char *hex = "0123456789abcdef";
-	size_t str_len = (bv->_elem_len << 1) + 3; // 0x + \0
+	size_t str_len = (NELEM(bv->len, BV_ELEM_SIZE) << 1) + 3; // 0x + \0
 	char *str = (char *)malloc(str_len);
 	if (!str) {
 		return NULL;
@@ -141,15 +141,16 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool p
 	str[0] = '0';
 	str[1] = 'x';
 	ut32 j = 2;
-	for (ut32 i = 0; i < bv->_elem_len; i++) {
-		ut8 b8 = bv->bits.large_a[bv->_elem_len - i - 1];
+	ut32 n_elem = NELEM(bv->len, BV_ELEM_SIZE);
+	for (ut32 i = 0; i < n_elem; i++) {
+		ut8 b8 = bv->bits.large_a[n_elem - i - 1];
 		ut8 high = b8 >> 4;
 		ut8 low = b8 & 15;
 		if (pad || high) {
 			str[j++] = hex[high];
 			pad = true; // pad means "print all" from now on
 		}
-		if (pad || low || i == bv->_elem_len - 1) {
+		if (pad || low || i == n_elem - 1) {
 			str[j++] = hex[low];
 			pad = true; // pad means "print all" from now on
 		}
@@ -625,7 +626,7 @@ RZ_API bool rz_bv_toggle_all(RZ_NONNULL RzBitVector *bv) {
 	}
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
-	for (ut32 i = 0; i < bv->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(bv->len, BV_ELEM_SIZE); ++i) {
 		bv->bits.large_a[i] = ~(bv->bits.large_a[i]);
 	}
 	return true;
@@ -769,7 +770,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 		return ret;
 	}
 
-	for (ut32 i = 0; i < ret->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
 		ret->bits.large_a[i] = x->bits.large_a[i] & y->bits.large_a[i];
 	}
 	return ret;
@@ -797,7 +798,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitV
 		return ret;
 	}
 
-	for (ut32 i = 0; i < ret->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
 		ret->bits.large_a[i] = x->bits.large_a[i] | y->bits.large_a[i];
 	}
 	return ret;
@@ -825,7 +826,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 		return ret;
 	}
 
-	for (ut32 i = 0; i < ret->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
 		ret->bits.large_a[i] = x->bits.large_a[i] ^ y->bits.large_a[i];
 	}
 	return ret;
@@ -852,7 +853,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 		rz_bv_free(ret);
 		rz_return_val_if_reached(NULL);
 	}
-	for (ut32 i = 0; i < bv->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
 		ret->bits.large_a[i] = ~bv->bits.large_a[i];
 	}
 	return ret;
@@ -1258,7 +1259,7 @@ RZ_API bool rz_bv_is_zero_vector(RZ_NONNULL const RzBitVector *x) {
 
 	rz_return_val_if_fail(x->bits.large_a, false);
 
-	for (ut32 i = 0; i < x->_elem_len; ++i) {
+	for (ut32 i = 0; i < NELEM(x->len, BV_ELEM_SIZE); ++i) {
 		if (x->bits.large_a[i] != 0) {
 			return false;
 		}
@@ -1606,7 +1607,7 @@ RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x) {
 		return h;
 	}
 
-	ut32 size = (x->len > 64) ? x->_elem_len : sizeof(x->bits.small_u);
+	ut32 size = (x->len > 64) ? NELEM(x->len, BV_ELEM_SIZE) : sizeof(x->bits.small_u);
 	ut8 *bits = (x->len > 64) ? x->bits.large_a : (ut8 *)&x->bits.small_u;
 	if (!size || !bits) {
 		return h;

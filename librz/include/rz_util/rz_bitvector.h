@@ -17,11 +17,16 @@ extern "C" {
  *  Ref : https://web.cs.dal.ca/~jamie/UWO/BitVectors/README.html
  */
 typedef struct bitvector_t {
-	union {
+	struct {
 		ut8 *large_a; ///< little endian array of bytes for bitvectors > 64 bits whose size is defined in _elem_len
 		ut64 small_u; ///< value of the bitvector when the size is <= 64 bits
 	} bits;
-	ut32 _elem_len; ///< length of ut8 array (bits.large_a) -- real / physical
+	/**
+	 * \brief length of ut8 array (bits.large_a) -- real / physical
+	 * NOTE: It is possible that a bits.large_a is larger than required for the
+	 * bit vector length.
+	 */
+	ut32 _elem_len;
 	ut32 len; ///< number of bits -- virtual / logical
 } RzBitVector;
 
