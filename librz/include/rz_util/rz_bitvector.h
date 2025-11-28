@@ -40,6 +40,9 @@ RZ_API ut32 rz_bv_copy_nbits(
 	RZ_NONNULL const RzBitVector *src, ut32 src_start_pos,
 	RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos,
 	ut32 nbit);
+RZ_API ut32 rz_bv_copy_nbits_inplace(
+	RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 src_start_pos,
+	ut32 dst_start_pos, ut32 nbit);
 RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv);
 RZ_API void rz_bv_free(RZ_NULLABLE RzBitVector *bv);
 // read and write to a bit

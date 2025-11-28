@@ -1213,6 +1213,57 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_end;
 }
 
+bool test_rz_bv_copy_nbits_inplace(void) {
+	const ut8 array_128[128] = {
+		0x00,
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x09,
+		0x0a,
+		0x0b,
+		0x0c,
+		0x0d,
+		0x0e,
+		0x0f,
+	};
+
+	const char *large_exp_1 = "0x0e0f02030405060708090a0b0c0d0e0f";
+	const char *large_exp_2 = "0x0e0f02030405060708090a0b0c0d0e1f";
+
+	RzBitVector *small_20 = rz_bv_new_from_ut64(20, 0x01234);
+	RzBitVector *large_128 = rz_bv_new_from_bytes_be(array_128, 0, 128);
+
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 5, 1, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 21), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 1, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 1, 0, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+
+	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 0, 112, 16), 16, "wrong num bits copied");
+	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_1, "copy to limits aligned");
+	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 1, 2, 7), 7, "wrong num bits copied");
+	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_2, "copy overlap unaligned");
+
+	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 0, 120, 16), 0, "wrong num bits copied");
+
+	rz_bv_free(small_20);
+	rz_bv_free(large_128);
+	mu_end;
+}
+
 /**
  * \brief Reference implementation of rz_bv_copy_nbits() to test against
  */
@@ -1570,6 +1621,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_copy_nbits_large_unaligned);
 	mu_run_test(test_rz_bv_copy_nbits_small_to_large);
 	mu_run_test(test_rz_bv_copy_nbits_large_to_small);
+	mu_run_test(test_rz_bv_copy_nbits_inplace);
 	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;
