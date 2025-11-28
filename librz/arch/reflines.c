@@ -71,15 +71,22 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
 	free(rl);
 }
 
-/* returns a list of RzAnalysisRefline for the code present in the buffer buf, of
- * length len. A RzAnalysisRefline exists from address A to address B if a jmp,
+/**
+ * Returns a vector of RzAnalysisRefline for the code present in the buffer \p buf, of
+ * length \p len. A RzAnalysisRefline exists from address A to address B if a jmp,
  * conditional jmp or call instruction exists at address A and it targets
  * address B.
  *
- * nlines - max number of lines of code to consider
- * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
- * linescall - true if you want to display call lines */
-RZ_API RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+ * \param analysis RzAnalysis instance
+ * \param addr address associated with the first opcode of \p buf
+ * \param buf opcode buffer to search in
+ * \param len opcode buffer size
+ * \param nlines max number of lines of code to consider
+ * \param linesout true if you want to display lines that go outside of the scope [addr;addr+len)
+ * \param linescall true if you want to display call lines
+ * \return vector of RzAnalysisRefline
+ */
+RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	rz_return_val_if_fail(analysis && buf, NULL);
 
 	RzPVector *result;
@@ -268,16 +275,24 @@ list_err:
 	return NULL;
 }
 
-RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
-	// todo: annotations
-	// todo: rz_return_val_if_fail	
-	if (a && reflines) {
-		void **iter;
-		rz_pvector_foreach (reflines, iter) {
-			RzAnalysisRefline *ref = *iter;
-			if ((ref->to > addr) && (ref->to < addr + len)) {
-				return true;
-			}
+/**
+ * Given a RzAnalysisRefline vector, this function check whether any refline's destination address falls inside
+ * the range [ \p addr .. \p addr + \p len ].
+ *
+ * \param a RzAnalysis instance (currently not used)
+ * \param reflines vector of reflines
+ * \param addr range start address
+ * \param len range size
+ * \return true in case any refline's "to" address is in range, false otherwise
+ */
+RZ_API int rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *a, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
+	rz_return_val_if_fail(a && reflines, false);
+
+	void **iter;
+	rz_pvector_foreach (reflines, iter) {
+		RzAnalysisRefline *ref = *iter;
+		if ((ref->to > addr) && (ref->to < addr + len)) {
+			return true;
 		}
 	}
 	return false;
