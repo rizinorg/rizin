@@ -17,12 +17,36 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 
 	switch (pure->code) {
 	default:
-	case RZ_IL_OP_VAR:
+	case RZ_IL_OP_VAR: {
+		ut64 vhash = pure->op.var.hash;
+		HtUP *ht_vals;
+		switch (pure->op.var.kind) {
+		case RZ_IL_VAR_KIND_GLOBAL:
+			ht_vals = state->globals;
+			break;
+		case RZ_IL_VAR_KIND_LOCAL:
+			ht_vals = state->locals;
+			break;
+		case RZ_IL_VAR_KIND_LOCAL_PURE:
+			ht_vals = state->lets;
+			break;
+		}
+		RzInterpreterAbstrVal *av = ht_up_find(ht_vals, vhash, NULL);
+		if (!av) {
+			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
+				rz_il_var_kind_name(pure->op.var.kind),
+				pure->op.var.v);
+			goto map_to_bottom;
+		}
+		copy_abstr_data(out, av->abstr_data);
+		break;
+	}
 	case RZ_IL_OP_ITE:
 	case RZ_IL_OP_LET:
 	case RZ_IL_OP_B0:
 	case RZ_IL_OP_B1:
 	case RZ_IL_OP_BITV:
+		// TODO
 	case RZ_IL_OP_CAST:
 	case RZ_IL_OP_APPEND:
 		// TODO
