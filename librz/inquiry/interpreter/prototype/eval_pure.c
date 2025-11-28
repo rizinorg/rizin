@@ -64,7 +64,14 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_B0:
+		rz_bv_set_all(out->bv, false);
+		out->is_concrete = true;
+		break;
 	case RZ_IL_OP_B1:
+		rz_bv_set_all(out->bv, false);
+		rz_bv_set(out->bv, 0, true);
+		out->is_concrete = true;
+		break;
 	case RZ_IL_OP_BITV:
 		// TODO
 	case RZ_IL_OP_CAST:
