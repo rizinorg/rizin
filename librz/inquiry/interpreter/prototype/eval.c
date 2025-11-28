@@ -65,3 +65,16 @@ bool read_var_from_state(RzInterpreterAbstrState *state,
 	copy_abstr_data(data, av->abstr_data);
 	return true;
 }
+
+// Returns true if the bit vector in \p data is not zero. If it is zero or
+// the abstract data is not concrete it returns false.
+//
+// TODO: The assumption that true != 0 is invalid.
+// It depends on the architecture and must be decided by the RzArch plugin.
+// State is passed due to this here as well. To make later refactoring easier.
+bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data) {
+	if (!data->is_concrete) {
+		return false;
+	}
+	return rz_bv_is_zero_vector(data->bv);
+}

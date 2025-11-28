@@ -50,6 +50,7 @@ static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src);
 void write_var_to_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
 bool read_var_from_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
+bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data);
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
