@@ -63,9 +63,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			break;
 		}
 
-		// TODO: The assumption that 0 == false is invalid.
-		// It depends on the architecture and must be decided by the RzArch plugin.
-		if (rz_bv_is_zero_vector(eval_out.bv)) {
+		if (abstr_is_true(state, &eval_out)) {
 			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, plugin_data)) {
 				goto error;
 			}
