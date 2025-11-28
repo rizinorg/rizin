@@ -41,8 +41,30 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		copy_abstr_data(out, av->abstr_data);
 		break;
 	}
+	case RZ_IL_OP_LET: {
+		ut64 vhash = pure->op.let.hash;
+		if (!interpreter_prototype_eval_pure(state, pure->op.let.exp, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: LET expression failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		RzInterpreterAbstrVal *av = ht_up_find(state->lets, vhash, NULL);
+		if (!av) {
+			av = RZ_NEW(RzInterpreterAbstrVal);
+			av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
+			av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+			ht_up_insert(state->lets, vhash, av);
+		}
+		copy_abstr_data(av->abstr_data, out);
+		// Evaluate body
+		if (!interpreter_prototype_eval_pure(state, pure->op.let.body, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: LET body failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		// No need to free the LET variable.
+		// It is simply overwritten next time.
+		break;
+	}
 	case RZ_IL_OP_ITE:
-	case RZ_IL_OP_LET:
 	case RZ_IL_OP_B0:
 	case RZ_IL_OP_B1:
 	case RZ_IL_OP_BITV:
