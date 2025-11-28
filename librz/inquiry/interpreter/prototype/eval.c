@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
-#include "rz_util/rz_bitvector.h"
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src) {
 	// TODO: For performance it should really just copy the data between bit vectors

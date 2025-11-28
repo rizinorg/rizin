@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
-#include "rz_il/rz_il_opcodes.h"
-#include "rz_util/rz_bitvector.h"
 
 /**
  * \brief Evaluate a pure.
