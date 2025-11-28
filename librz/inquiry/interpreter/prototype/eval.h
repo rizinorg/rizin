@@ -4,10 +4,10 @@
 #ifndef PROTOYPE_EVAL_H
 #define PROTOYPE_EVAL_H
 
-#include "rz_types.h"
-#include "rz_util/rz_bitvector.h"
-#include <rz_inquiry/rz_interpreter.h>
+#include <rz_types.h>
+#include <rz_util/rz_bitvector.h>
 #include <rz_il/rz_il_opcodes.h>
+#include <rz_inquiry/rz_interpreter.h>
 
 /**
  * \brief Abstract data getter from the RzInterpreterAbstrVal
