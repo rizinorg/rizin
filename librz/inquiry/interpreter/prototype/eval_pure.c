@@ -18,27 +18,12 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
-		ut64 vhash = pure->op.var.hash;
-		HtUP *ht_vals;
-		switch (pure->op.var.kind) {
-		case RZ_IL_VAR_KIND_GLOBAL:
-			ht_vals = state->globals;
-			break;
-		case RZ_IL_VAR_KIND_LOCAL:
-			ht_vals = state->locals;
-			break;
-		case RZ_IL_VAR_KIND_LOCAL_PURE:
-			ht_vals = state->lets;
-			break;
-		}
-		RzInterpreterAbstrVal *av = ht_up_find(ht_vals, vhash, NULL);
-		if (!av) {
+		if (!read_var_from_state(state, pure->op.var.kind, pure->op.var.hash, out)) {
 			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
 				rz_il_var_kind_name(pure->op.var.kind),
 				pure->op.var.v);
 			goto map_to_bottom;
 		}
-		copy_abstr_data(out, av->abstr_data);
 		break;
 	}
 	case RZ_IL_OP_LET: {
@@ -47,14 +32,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			RZ_LOG_ERROR("prototype: LET expression failed to evaluate.\n");
 			goto map_to_bottom;
 		}
-		RzInterpreterAbstrVal *av = ht_up_find(state->lets, vhash, NULL);
-		if (!av) {
-			av = RZ_NEW(RzInterpreterAbstrVal);
-			av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
-			av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-			ht_up_insert(state->lets, vhash, av);
-		}
-		copy_abstr_data(av->abstr_data, out);
+		write_var_to_state(state, RZ_IL_VAR_KIND_LOCAL_PURE, vhash, out);
 		// Evaluate body
 		if (!interpreter_prototype_eval_pure(state, pure->op.let.body, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: LET body failed to evaluate.\n");
