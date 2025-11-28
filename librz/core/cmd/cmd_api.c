@@ -77,7 +77,6 @@ static const struct argv_modes_t {
 } argv_modes[] = {
 	{ "", "", RZ_OUTPUT_MODE_STANDARD },
 	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
-	{ "*", " (rizin mode)", RZ_OUTPUT_MODE_RIZIN },
 	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
 	{ "Q", " (quietest mode)", RZ_OUTPUT_MODE_QUIETEST },
 	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },

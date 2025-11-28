@@ -68,8 +68,6 @@ static RzOutputMode rad2outputmode(int rad) {
 		return RZ_OUTPUT_MODE_QUIET;
 	case RZ_MODE_SIMPLEST:
 		return RZ_OUTPUT_MODE_QUIETEST;
-	case RZ_MODE_RIZINCMD:
-		return RZ_OUTPUT_MODE_RIZIN;
 	case RZ_MODE_PRINT:
 	default:
 		return RZ_OUTPUT_MODE_STANDARD;
@@ -940,7 +938,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			break;
 		case 'o': output = opt.arg; break;
 		case 'p': core.io->va = false; break;
-		case 'r': out_mode = RZ_MODE_RIZINCMD; break;
 		case 'v': {
 			size_t print_val = rz_main_version_print(core.sys_path, "rz-bin");
 			rz_core_fini(&core);
@@ -1239,7 +1236,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (query) {
 		if (out_mode) {
-			rz_core_bin_export_info(&core, RZ_MODE_RIZINCMD);
+			rz_core_bin_export_info(&core, RZ_MODE_PRINT);
 			rz_cons_flush();
 		} else {
 			if (!strcmp(query, "-")) {

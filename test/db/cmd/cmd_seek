@@ -92,7 +92,7 @@ s $$
 s $$
 s $$
 s $$
-sh*~?
+sh~?
 EOF
 EXPECT=<<EOF
 1
@@ -124,30 +124,30 @@ FILE==
 CMDS=<<EOF
 s 0x100
 s
-sh*
+sh
 echo
 s 0x200
 s
-sh*
+sh
 echo
 s 0x300 @e:cfg.seek.silent=true
 s
-sh*
+sh
 EOF
 EXPECT=<<EOF
 0x100
-f undo_0 @ 0x0
-# Current seek @ 0x100
+0x0 
+0x100  # current seek
 
 0x200
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-# Current seek @ 0x200
+0x0 
+0x100 
+0x200  # current seek
 
 0x300
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-# Current seek @ 0x300
+0x0 
+0x100 
+0x300  # current seek
 EOF
 RUN
 
@@ -160,30 +160,30 @@ ar eax=0x200
 ar ebx=0x300
 s 0x100
 s
-sh*
+sh
 echo
 sr eax
 s
-sh*
+sh
 echo
 sr ebx @e:cfg.seek.silent=true
 s
-sh*
+sh
 EOF
 EXPECT=<<EOF
 0x100
-f undo_0 @ 0x0
-# Current seek @ 0x100
+0x0 oeax
+0x100 oeax+256 # current seek
 
 0x200
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-# Current seek @ 0x200
+0x0 oeax
+0x100 oeax+256
+0x200 eax # current seek
 
 0x300
-f undo_1 @ 0x0
-f undo_0 @ 0x100
-# Current seek @ 0x300
+0x0 oeax
+0x100 oeax+256
+0x300 ebx # current seek
 EOF
 RUN
 

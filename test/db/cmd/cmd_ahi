@@ -244,17 +244,17 @@ mov eax, 'AAAA'
 EOF
 RUN
 
-NAME=ahl*
+NAME=ahl
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 4883e4f0
 ahi 10 @ 0x00404879
-ahl*
+ahl
 EOF
 EXPECT=<<EOF
-ahi 10 @ 0x404879
+ 0x00404879 => immbase=10
 EOF
 RUN
 

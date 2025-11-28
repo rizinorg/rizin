@@ -245,10 +245,6 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 			format_reg_value(reg, item, buf, sizeof(buf));
 			rz_cons_printf("%s\n", buf);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			format_reg_value(reg, item, buf, sizeof(buf));
-			rz_cons_printf("ar %s = %s\n", item->name, buf);
-			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_table_add_rowf(state->d.t, "ssXxs",
 				rz_str_get(get_reg_role_name(reg, item)),

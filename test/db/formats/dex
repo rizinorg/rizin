@@ -134,14 +134,6 @@ public
 EOF
 RUN
 
-NAME=DEX Hello.dex method flags (r2 commands) (ic*)
-FILE=bins/dex/Hello.dex
-CMDS=ic*~main
-EXPECT=<<EOF
-f method.public.static.Hello.void_main_String @ 0x1000001c0
-EOF
-RUN
-
 NAME=DEX HelloWorld.dex symbols, fields and statics (isq command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=isq

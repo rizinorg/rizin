@@ -12,7 +12,6 @@ commands:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_LONG
-      - RZ_OUTPUT_MODE_RIZIN
     args:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -77,7 +76,6 @@ commands:
     summary: List all elements of struct malloc_state
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
     args:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM

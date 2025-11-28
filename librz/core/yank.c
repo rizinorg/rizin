@@ -244,10 +244,6 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, RzCmdStateOutput *state) {
 		pj_end(pj);
 		break;
 	}
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("wx %s", str);
-		rz_cons_newline();
-		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("0x%08" PFMT64x " %" PFMT64d " ",
 			core->yank_addr + pos,

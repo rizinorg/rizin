@@ -85,7 +85,7 @@ at 0x42
 EOF
 RUN
 
-NAME=ahl*
+NAME=ahl
 FILE==
 CMDS=<<EOF
 s 0x1337
@@ -106,44 +106,18 @@ aho call
 
 ahi 0x4321 @ 0x0815
 echo all:
-ahl*
+ahl
 echo --
 echo at 0x1337:
-ahl.* @ 0x1337
+ahl. @ 0x1337
 EOF
 EXPECT=<<EOF
 all:
-ahi 17185 @ 0x815
-aha ppc @ 0x1337
-ahb 16 @ 0x1337
-ahc 0x804804 @ 0x1337
-ahe 3,eax,+= @ 0x1337
-ahf 0x12345 @ 0x1337
-ahF 0x10 @ 0x1337
-ahh @ 0x1337
-ahi 10 @ 0x1337
-ahd foo a0,33 @ 0x1337
-ahp 0xc0ff33 @ 0x1337
-ahr 0x2a @ 0x1337
-ahs 0x4 @ 0x1337
-ahS jz @ 0x1337
-aho call @ 0x1337
+ 0x00000815 => immbase=17185
+ 0x00001337 => arch='ppc' bits=16 jump=0x00804804 esil='3,eax,+=' fail=0x00012345 stackframe=0x10 high=true immbase=10 opcode='foo a0,33' ptr=0xc0ff33 ret=0x0000002a size=4 syntax='jz' type='call'
 --
 at 0x1337:
-aha ppc @ 0x1337
-ahb 16 @ 0x1337
-ahc 0x804804 @ 0x1337
-ahe 3,eax,+= @ 0x1337
-ahf 0x12345 @ 0x1337
-ahF 0x10 @ 0x1337
-ahh @ 0x1337
-ahi 10 @ 0x1337
-ahd foo a0,33 @ 0x1337
-ahp 0xc0ff33 @ 0x1337
-ahr 0x2a @ 0x1337
-ahs 0x4 @ 0x1337
-ahS jz @ 0x1337
-aho call @ 0x1337
+ 0x00001337 => arch='ppc' bits=16 jump=0x00804804 esil='3,eax,+=' fail=0x00012345 stackframe=0x10 high=true immbase=10 opcode='foo a0,33' ptr=0xc0ff33 ret=0x0000002a size=4 syntax='jz' type='call'
 EOF
 RUN
 
@@ -215,8 +189,6 @@ echo -- all
 ahl
 echo -- all json
 ahlj
-echo -- all cmd
-ahl*
 echo -- before hints
 ahl. @ 0
 echo -- at first
@@ -234,9 +206,6 @@ EXPECT=<<EOF
  0x00000084 => arch=RESET
 -- all json
 [{"addr":66,"arch":"arm"},{"addr":132,"arch":null}]
--- all cmd
-aha arm @ 0x42
-aha 0 @ 0x84
 -- before hints
 -- at first
  0x00000042 => arch='arm'
@@ -258,8 +227,6 @@ echo -- all
 ahl
 echo -- all json
 ahlj
-echo -- all cmd
-ahl*
 echo -- before hints
 ahl. @ 0
 echo -- at first
@@ -277,9 +244,6 @@ EXPECT=<<EOF
  0x00000084 => bits=RESET
 -- all json
 [{"addr":66,"bits":16},{"addr":132,"bits":0}]
--- all cmd
-ahb 16 @ 0x42
-ahb 0 @ 0x84
 -- before hints
 -- at first
  0x00000042 => bits=16
