@@ -41,15 +41,10 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!interpreter_prototype_eval_pure(state, effect->op.set.x, &eval_out, yield_queues, plugin_data)) {
 			goto error;
 		}
-		HtUP *ht_vals = effect->op.set.is_local ? state->locals : state->globals;
-		RzInterpreterAbstrVal *av = ht_up_find(ht_vals, vhash, NULL);
-		if (!av) {
-			av = RZ_NEW(RzInterpreterAbstrVal);
-			av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
-			av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-			ht_up_insert(ht_vals, vhash, av);
-		}
-		copy_abstr_data(av->abstr_data, &eval_out);
+		write_var_to_state(state,
+			effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL,
+			vhash,
+			&eval_out);
 		break;
 	}
 	case RZ_IL_OP_JMP: {
