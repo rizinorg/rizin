@@ -215,7 +215,12 @@ static void add_entry_offset(ELFOBJ *bin, RzPVector /*<RzBinAddr *>*/ *result) {
 	tmp->hpaddr = E_ENTRYPOINT_OFFSET;
 	tmp->hvaddr = bin->baddr + tmp->hpaddr;
 
-	if (tmp->vaddr != (ut64)bin->ehdr.e_entry && Elf_(rz_bin_elf_is_executable)(bin)) {
+	ut64 e_entry = (ut64)bin->ehdr.e_entry;
+	if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(e_entry)) {
+		Elf_(rz_bin_elf_fix_arm_thumb_addr)(&e_entry);
+	}
+
+	if (tmp->vaddr != e_entry && Elf_(rz_bin_elf_is_executable)(bin)) {
 		RZ_LOG_ERROR("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", tmp->vaddr);
 	}
 
