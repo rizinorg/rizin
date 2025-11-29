@@ -63,15 +63,15 @@ FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
-dm*~hello~[0-2]
+dmt:name/cols/perms/size~hello
 EOF
 EXPECT=<<EOF
 4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r
 4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r_x
 4096 home_build_rizin_testbins_elf_hello_freebsd_x64.rwx
-f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.r 0x00001000
-f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.r_x 0x00001000
-f+ map.home_build_rizin_testbins_elf_hello_freebsd_x64.rwx 0x00001000
+/home/build/rizin-testbins/elf/hello-freebsd-x64 r--   4K
+/home/build/rizin-testbins/elf/hello-freebsd-x64 r-x   4K
+/home/build/rizin-testbins/elf/hello-freebsd-x64 rwx   4K
 EOF
 RUN
 
