@@ -345,7 +345,13 @@ RZ_API RZ_OWN char *rz_path_normalize_expand(char *usr_input, size_t len) {
 		}
 		input = tmp;
 	}
+
 	char *exp_path = rz_path_home_expand(input);
+
+#if __WINDOWS__
+	rz_str_replace_ch(exp_path, '/', '\\', true);
+#endif
+
 	free(input);
 	return exp_path;
 }

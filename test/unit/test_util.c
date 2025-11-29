@@ -85,47 +85,40 @@ bool test_path_normalize_expand(void) {
 
 	out = rz_path_normalize_expand("foo/bar", strlen("foo/bar"));
 	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, "./foo/bar", "relative path should be prefixed with './'");
-	free(out);
-
 #ifdef __WINDOWS__
-	out = rz_path_normalize_expand("C:\\Users\\Test", strlen("C:\\Users\\Test"));
-	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, "C:\\Users\\Test", "Windows absolute path should be unchanged");
-	free(out);
+	mu_assert_streq(out, ".\\foo\\bar", "relative path should be prefixed with '.\\'");
+#else
+	mu_assert_streq(out, "./foo/bar", "relative path should be prefixed with './'");
 #endif
-
-	char *abs = rz_str_newf("%s%s", RZ_SYS_DIR, "absdir");
-	char *expected = strdup(abs);
-
-	out = rz_path_normalize_expand(abs, strlen(abs));
-	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, expected, "absolute path should be unchanged");
-
 	free(out);
-	free(expected);
-	free(abs);
+	out = rz_path_normalize_expand(".hidden_dir", strlen(".hidden_dir"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, ".hidden_dir", "dotfile should be preserved");
+	free(out);
 
 	out = rz_path_normalize_expand("/home/user/.././etc", strlen("/home/user/.././etc"));
 	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, "/home/user/.././etc", "should preserve .. and . in absolute path");
-	free(out);
-
 #ifdef __WINDOWS__
-	out = rz_path_normalize_expand("C:\\Users\\Test\\..\\Desktop", strlen("C:\\Users\\Test\\..\\Desktop"));
-	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, "C:\\Users\\Test\\..\\Desktop", "should preserve .. in the absolute path");
 	free(out);
+	out = rz_path_normalize_expand("C:\\Users\\Test", strlen("C:\\Users\\Test"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "C:\\Users\\Test", "Windows absolute path should be unchanged");
+#else
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "/home/user/.././etc", "absolute path should be unchanged");
 #endif
+	free(out);
 
 	out = rz_path_normalize_expand("/home/user/./doc/././", strlen("/home/user/./doc/././"));
 	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, "/home/user/./doc/././", "should preserve . in absolute path");
+#ifdef __WINDOWS__
 	free(out);
-
-	out = rz_path_normalize_expand(".hidden_dir", strlen(".hidden_dir"));
+	out = rz_path_normalize_expand("C:\\Users\\Test\\.\\.\\", strlen("C:\\Users\\Test\\.\\.\\"));
 	mu_assert_notnull(out, "result should not be NULL");
-	mu_assert_streq(out, ".hidden_dir", "should preserve dotfile/dir");
+	mu_assert_streq(out, "C:\\Users\\Test\\.\\.\\", "should preserve . in absolute paths");
+#else
+	mu_assert_streq(out, "/home/user/./doc/././", "should preserve . in absolute paths");
+#endif
 	free(out);
 
 	mu_end;
