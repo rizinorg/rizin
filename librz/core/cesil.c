@@ -354,9 +354,6 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("%s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("de %s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
-			break;
 		default:
 			rz_warn_if_reached();
 			break;

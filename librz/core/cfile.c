@@ -1406,8 +1406,6 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	RzCoreFile *f;
 	RzIODesc *desc;
 	ut64 from;
-	RzListIter *it;
-	RzBinFile *bf;
 	RzListIter *iter;
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -1436,23 +1434,6 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 			pj_end(pj);
 			break;
 		}
-		case RZ_OUTPUT_MODE_RIZIN:
-			// TODO: use a getter
-			{
-				bool fileHaveBin = false;
-				char *absfile = rz_file_abspath(desc->uri);
-				rz_list_foreach (core->bin->binfiles, it, bf) {
-					if (bf->fd == f->fd) {
-						rz_cons_printf("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
-						fileHaveBin = true;
-					}
-				}
-				if (!fileHaveBin && !strstr(absfile, "://")) {
-					rz_cons_printf("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
-				}
-				free(absfile);
-			}
-			break;
 		default: {
 			ut64 sz = rz_io_desc_size(desc);
 			const char *fmt;

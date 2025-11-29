@@ -186,6 +186,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rizin load arm elf with thumb entry
+FILE==
+CMDS=!rizin -qq bins/arm/elf/hello_world-linaro-201902
+EXPECT=
+EXPECT_ERR=
+RUN
+
 NAME=prompt settings
 FILE==
 CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n" ./bins/elf/hello_world

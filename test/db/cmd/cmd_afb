@@ -65,7 +65,7 @@ afbi
 afbil
 afbij~{}
 afbj~{}
-afb*
+afb
 afbr
 EOF
 EXPECT=<<EOF
@@ -122,10 +122,9 @@ traced: true
     "traced": true
   }
 ]
-fs blocks
-f bb.007aa @ 0x000007aa
-f bb.00806 @ 0x00000806
-f bb.00844 @ 0x00000844
+0x000007aa 0x00000806 00:0000 92 j 0x00000844 f 0x00000806
+0x00000806 0x00000844 00:0000 62 j 0x00000844
+0x00000844 0x00000847 00:0000 3
 0x00000846
 EOF
 RUN

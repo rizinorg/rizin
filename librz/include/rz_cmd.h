@@ -85,15 +85,14 @@ typedef enum rz_cmd_escape_t {
 typedef enum {
 	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
 	RZ_OUTPUT_MODE_JSON = 1 << 1,
-	RZ_OUTPUT_MODE_RIZIN = 1 << 2,
-	RZ_OUTPUT_MODE_QUIET = 1 << 3,
-	RZ_OUTPUT_MODE_SDB = 1 << 4,
-	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
-	RZ_OUTPUT_MODE_TABLE = 1 << 7,
-	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
-	RZ_OUTPUT_MODE_GRAPH = 1 << 9,
-	RZ_OUTPUT_MODE_STR_BUF = 1 << 10,
+	RZ_OUTPUT_MODE_QUIET = 1 << 2,
+	RZ_OUTPUT_MODE_SDB = 1 << 3,
+	RZ_OUTPUT_MODE_LONG = 1 << 4,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 5,
+	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+	RZ_OUTPUT_MODE_QUIETEST = 1 << 7,
+	RZ_OUTPUT_MODE_GRAPH = 1 << 8,
+	RZ_OUTPUT_MODE_STR_BUF = 1 << 9,
 } RzOutputMode;
 
 /**
@@ -516,7 +515,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color);
 RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
-RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb);
+RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb, int gutter_size);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
 	if (v == -2) {

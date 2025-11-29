@@ -175,13 +175,15 @@ m direct1 1 verbatim @ 0
 m direct2 21 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
 m indirect 40 @ 32
 mC indirect base64:d29ya3MgdG9v
-ml*
+mlt
 mlj
 EOF
 EXPECT=<<EOF
-[0x00000000 - 0x00000001] direct1 1 base64:dmVyYmF0aW0=
-[0x00000010 - 0x00000015] direct2 5 base64:ImJhc2U2NCBhcm1vcmVkIg==
-[0x00000020 - 0x00000028] indirect 8 base64:d29ya3MgdG9v
+      from         to name     realname 
+----------------------------------------
+0x00000000 0x00000001 direct1  direct1
+0x00000010 0x00000015 direct2  direct2
+0x00000020 0x00000028 indirect indirect
 [{"from":0,"to":1,"name":"direct1","realname":"direct1","size":1,"comment":"verbatim"},{"from":16,"to":21,"name":"direct2","realname":"direct2","size":5,"comment":"\"base64 armored\""},{"from":32,"to":40,"name":"indirect","realname":"indirect","size":8,"comment":"works too"}]
 EOF
 RUN
