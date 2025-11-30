@@ -1107,7 +1107,6 @@ bool test_rz_bv_set_range_large(void) {
 
 	rz_bv_free(bv);
 	mu_end;
-
 }
 
 static bool test_rz_bv_set_to_bytes_le(void) {
