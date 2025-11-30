@@ -916,12 +916,12 @@ static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool u
 }
 
 static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns, bool use_color) {
-	int rows, cols;
+	int cols;
 	bool is_interactive = false;
 	const char *help_color = "";
 	if (cmd->has_cons) {
 		RzCons *cons = rz_cons_singleton();
-		cols = rz_cons_get_size(&rows);
+		cols = rz_cons_get_size(NULL);
 		is_interactive = rz_cons_is_interactive();
 		help_color = use_color ? cons->context->pal.help : "";
 	}
