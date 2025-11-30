@@ -1064,6 +1064,52 @@ bool test_rz_bv_set_operations(void) {
 	mu_end;
 }
 
+bool test_rz_bv_set_range_large(void) {
+	RzBitVector *bv = rz_bv_new(128);
+
+	// Expect failure on inverted range
+	mu_assert_false(rz_bv_set_range(bv, 20, 10, true), "expected failure for inverse range");
+
+	// Bitrange with unalign prefix bits
+	mu_assert_true(rz_bv_set_range(bv, 5, 7, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xe0", "range set 5~7 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 7, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~7 to 0");
+
+	// Bitrange with unalign prefix and suffix bits
+	mu_assert_true(rz_bv_set_range(bv, 5, 8, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1e0", "range set 5~8 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 8, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~8 to 0");
+
+	// Only suffix bit
+	mu_assert_true(rz_bv_set_range(bv, 8, 8, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x100", "range set 8~8 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 8, 8, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 8~8 to 0");
+
+	// Bitrange with unaligned prefix, suffix bits and aligned middle bytes
+	mu_assert_true(rz_bv_set_range(bv, 5, 24, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1ffffe0", "range set 5~24 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 24, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~24 to 0");
+
+	// Aligned
+	mu_assert_true(rz_bv_set_range(bv, 16, 31, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffff0000", "range set 16~31 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 16, 31, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 16~31 to 0");
+
+	rz_bv_free(bv);
+	mu_end;
+
+}
+
 static bool test_rz_bv_set_to_bytes_le(void) {
 	{
 		ut8 buf8[8] = { 0 };
@@ -1517,6 +1563,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_mod);
 	mu_run_test(test_rz_bv_len_bytes);
 	mu_run_test(test_rz_bv_set_operations);
+	mu_run_test(test_rz_bv_set_range_large);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
 	mu_run_test(test_rz_bv_copy_nbits_small);

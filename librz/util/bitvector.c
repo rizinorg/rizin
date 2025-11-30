@@ -1689,8 +1689,38 @@ RZ_API bool rz_bv_set_range(RZ_NONNULL RzBitVector *bv, ut32 pos_start, ut32 pos
 		return false;
 	}
 
-	for (ut32 i = pos_start; i <= pos_end; ++i) {
-		rz_bv_set(bv, i, b);
+	if (pos_start > pos_end) {
+		return false;
+	}
+
+	ut32 nbit = pos_end - pos_start + 1;
+
+	if (bv->len <= 64) {
+		// Handle small bitvector
+		ut64 value = b ? UT64_MAX : 0;
+		bv->bits.small_u = rz_bits_copy_ut64(value, 0, bv->bits.small_u, pos_start, nbit);
+		return true;
+	}
+
+	// Large bitvector
+	ut8 value = b ? UT8_MAX : 0;
+	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - pos_start) % BV_ELEM_SIZE, nbit);
+	ut8 trailing_bits = RZ_MIN((pos_start + nbit) % BV_ELEM_SIZE, nbit - start_bits);
+	ut64 middle_bytes = (nbit - start_bits - trailing_bits) / BV_ELEM_SIZE;
+	ut64 byte_index = pos_start / BV_ELEM_SIZE;
+
+	if (start_bits > 0) {
+		bv->bits.large_a[byte_index] = rz_bits_copy_ut8(value, 0, bv->bits.large_a[byte_index], pos_start % BV_ELEM_SIZE, start_bits);
+		byte_index++;
+	}
+
+	if (middle_bytes > 0) {
+		memset(&bv->bits.large_a[byte_index], value, middle_bytes);
+		byte_index += middle_bytes;
+	}
+
+	if (trailing_bits > 0) {
+		bv->bits.large_a[byte_index] = rz_bits_copy_ut8(value, 0, bv->bits.large_a[byte_index], 0, trailing_bits);
 	}
 
 	return true;
