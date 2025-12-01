@@ -30,6 +30,21 @@ ut8 reverse_lt_8bits(ut8 x, ut8 w) {
 }
 
 /**
+ * \brief Resize or allocate bv->large_a to \p new_size bytes.
+ */
+static void resize_large_a(RzBitVector *bv, size_t n_bytes) {
+	if (bv->stack_alloc) {
+		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		bv->stack_alloc = false;
+	} else if (!bv->bits.large_a) {
+		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+	} else {
+		bv->bits.large_a = realloc(bv->bits.large_a, n_bytes);
+	}
+	bv->_elem_len = n_bytes;
+}
+
+/**
  * \brief Initialize a RzBitVector structure
  * \param bv Pointer to a uninitialized RzBitVector instance
  * \param length int, the length of bitvector
@@ -57,7 +72,7 @@ RZ_API bool rz_bv_init(RZ_NONNULL RzBitVector *bv, ut32 length) {
  */
 RZ_API void rz_bv_fini(RZ_NONNULL RzBitVector *bv) {
 	rz_return_if_fail(bv);
-	if (bv->len > 64) {
+	if (bv->bits.large_a && !bv->stack_alloc) {
 		free(bv->bits.large_a);
 	}
 	memset(bv, 0, sizeof(RzBitVector));
@@ -1823,6 +1838,41 @@ RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist) {
 	rz_return_val_if_fail(bv, false);
 	bool msb = rz_bv_msb(bv);
 	return rz_bv_rshift_fill(bv, dist, msb);
+}
+
+/**
+ * cast bv to sort (to_size), fill with fill_bit. fill_bit has no effect if it's a narrowing cast
+ * If m = size s - size (sort b) > 0 then m bits b are pre-pended to the most significant part of the vector.
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size new bit vector length.
+ * \param fill_bit specify filling bit if extend.
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit) {
+	rz_return_val_if_fail(bv, false);
+	if (to_size == bv->len) {
+		return true;
+	}
+	if (bv->len <= 64 && to_size <= 64) {
+		rz_bv_set_range(bv, to_size, bv->len - 1, fill_bit);
+		bv->len = to_size;
+		return true;
+	}
+	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
+		// The bit vector needs a larger buffer.
+		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
+	}
+	if (bv->len <= 64) {
+		// This was a small bit vector and now is a large one.
+		// Copy bits to the buffer.
+		rz_bv_copy_nbits_small_to_large(bv, 0, bv, 0, bv->len);
+	} else {
+		rz_bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size);
+	}
+	size_t old_len = bv->len;
+	bv->len = to_size;
+	rz_bv_set_range(bv, old_len, to_size - 1, fill_bit);
+	return true;
 }
 
 /**

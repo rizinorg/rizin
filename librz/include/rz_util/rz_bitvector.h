@@ -22,6 +22,11 @@ typedef struct bitvector_t {
 		ut64 small_u; ///< value of the bitvector when the size is <= 64 bits
 	} bits;
 	/**
+	 * \brief This flag is set if the bit vector is allocated on the stack.
+	 * This means large_a must not be reallocated or freed.
+	 */
+	bool stack_alloc;
+	/**
 	 * \brief length of ut8 array (bits.large_a) -- real / physical
 	 * NOTE: It is possible that a bits.large_a is larger than required for the
 	 * bit vector length.
