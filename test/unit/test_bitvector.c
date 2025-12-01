@@ -1314,6 +1314,80 @@ bool test_rz_bv_copy_nbits_inplace(void) {
 	mu_end;
 }
 
+bool test_rz_bv_cast_inplace(void) {
+	const ut8 array_128[128] = {
+		0x00,
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x09,
+		0x0a,
+		0x0b,
+		0x0c,
+		0x0d,
+		0x0e,
+		0x0f,
+	};
+
+	RzBitVector *small = rz_bv_new_from_ut64(20, 0x01234);
+	RzBitVector *large = rz_bv_new_from_bytes_be(array_128, 0, 128);
+
+	mu_assert_true(rz_bv_cast_inplace(small, 5, false), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_eq(small->len, 5, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 64, false), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_eq(small->len, 64, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 65, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x10000000000000014", "small to large cast failed");
+	mu_assert_eq(small->len, 65, "New size is off");
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	// Cast down again
+	mu_assert_true(rz_bv_cast_inplace(small, 17, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, true), "0x00014", "small to large cast failed");
+	mu_assert_eq(small->len, 17, "New size is off");
+	// buffer is not freed
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 66, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, true), "0x03fffffffffffe0014", "small to large cast failed");
+	mu_assert_eq(small->len, 66, "New size is off");
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(large, 32, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(large), 0x0c0d0e0f, "Mismatch after cast");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, true), "0x0c0d0e0f", "small to large cast failed");
+	mu_assert_eq(large->len, 32, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 16, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(large, 256, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff0c0d0e0f", "small to large cast failed");
+	mu_assert_eq(large->len, 256, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
+
+	rz_bv_free(small);
+	rz_bv_free(large);
+	mu_end;
+}
+
 /**
  * \brief Reference implementation of rz_bv_copy_nbits() to test against
  */
@@ -1673,6 +1747,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_copy_nbits_small_to_large);
 	mu_run_test(test_rz_bv_copy_nbits_large_to_small);
 	mu_run_test(test_rz_bv_copy_nbits_inplace);
+	mu_run_test(test_rz_bv_cast_inplace);
 	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;
