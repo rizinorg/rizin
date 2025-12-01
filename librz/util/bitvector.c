@@ -388,21 +388,7 @@ RZ_API ut32 rz_bv_copy_nbits_inplace(
 	RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 src_start_pos,
 	ut32 dst_start_pos, ut32 nbit) {
 	rz_return_val_if_fail(bv, 0);
-	ut32 max_nbit = RZ_MIN((bv->len - src_start_pos),
-		(bv->len - dst_start_pos));
-
-	// prevent overflow
-	if (max_nbit < nbit) {
-		return 0;
-	}
-	if (bv->len <= 64) {
-		 bv->bits.small_u = rz_bits_copy_ut64(bv->bits.small_u, src_start_pos, bv->bits.small_u, dst_start_pos, nbit);
-		 return nbit;
-	}
-	if (src_start_pos % BV_ELEM_SIZE == dst_start_pos % BV_ELEM_SIZE) {
-		return rz_bv_copy_nbits_large_aligned(bv, src_start_pos, bv, dst_start_pos, nbit);
-	}
-	return rz_bv_copy_nbits_large_nonaligned(bv, src_start_pos, bv, dst_start_pos, nbit);
+	return rz_bv_copy_nbits(bv, src_start_pos, bv, dst_start_pos, nbit);
 }
 
 /**
