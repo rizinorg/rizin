@@ -72,9 +72,27 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_set(out->bv, 0, true);
 		out->is_concrete = true;
 		break;
+	case RZ_IL_OP_CAST: {
+		if (!interpreter_prototype_eval_pure(state, pure->op.cast.val, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: CAST val failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			break;
+		}
+		STACK_ABSTR_DATA_OUT(fill_bit);
+		if (!interpreter_prototype_eval_pure(state, pure->op.cast.fill, &fill_bit, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: CAST fill failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!fill_bit.is_concrete) {
+			break;
+		}
+		rz_bv_cast_inplace(out->bv, pure->op.cast.length, abstr_is_true(state, &fill_bit));
+		break;
+	}
 	case RZ_IL_OP_BITV:
 		// TODO
-	case RZ_IL_OP_CAST:
 	case RZ_IL_OP_APPEND:
 		// TODO
 	case RZ_IL_OP_INV:
