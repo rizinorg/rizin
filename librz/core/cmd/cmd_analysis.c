@@ -566,7 +566,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		}
 		PRINTF_LN("family", "%s\n", rz_analysis_op_family_to_string(op->family));
 		PRINTF_LN_STR("stackop", op->stackop != RZ_ANALYSIS_STACK_NULL ? rz_analysis_stackop_tostring(op->stackop) : NULL);
-		PRINTF_LN_NOT("stackptr", "%" PFMT64u "\n", op->stackptr, 0);
+		PRINTF_LN_NOT("stackptr", "%" PFMT64d "\n", op->stackptr, 0);
 	}
 	rz_iterator_free(iter);
 }
