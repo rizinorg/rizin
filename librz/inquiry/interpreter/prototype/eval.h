@@ -28,13 +28,14 @@ typedef struct {
 
 /**
  * \brief Initializes an AbstractData object on the stack.
- * The bit vector in it is for now hard coded to 0x2000 bytes.
- * TODO: This won't matter anymore, when in-place casting
- * and appending of bit vectors is implemented.
+ * The bitvector pre-allocates 0x1000 bytes on the stack for large bit vectors
+ * (0x1000 * 8 = 32768 bits).
+ * Any value larger than these bits will be stored in heap allocated memory.
+ * Because of this the bit vector should always be passed to rz_bv_fini() after usage.
  */
 #define STACK_ABSTR_DATA_OUT(name) \
-	ut8 _##name##_bv_large_buf[0x2000 / 8] = { 0 }; \
-	RzBitVector _##name##_bv_large = { .len = 0x2000, ._elem_len = 0x2000 / 8, .bits.large_a = _##name##_bv_large_buf }; \
+	ut8 _##name##_bv_large_buf[0x1000] = { 0 }; \
+	RzBitVector _##name##_bv_large = { .len = 0x1000, ._elem_len = 0x1000, .bits.large_a = _##name##_bv_large_buf, .stack_alloc = true }; \
 	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv_large };
 
 /**
