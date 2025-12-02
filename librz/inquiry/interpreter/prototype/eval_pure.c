@@ -212,9 +212,40 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
-	case RZ_IL_OP_MSB:
-	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_IS_ZERO:
+	case RZ_IL_OP_LSB:
+	case RZ_IL_OP_MSB: {
+		bool (*truth_test)(const RzBitVector *bv);
+		RzILOpBitVector *bv;
+		switch (pure->code) {
+		default:
+			rz_warn_if_reached();
+			goto map_to_bottom;
+		case RZ_IL_OP_IS_ZERO:
+			bv = pure->op.is_zero.bv;
+			truth_test = rz_bv_is_zero_vector;
+			break;
+		case RZ_IL_OP_LSB:
+			bv = pure->op.lsb.bv;
+			truth_test = rz_bv_lsb;
+			break;
+		case RZ_IL_OP_MSB:
+			bv = pure->op.msb.bv;
+			truth_test = rz_bv_msb;
+			break;
+		}
+		if (!interpreter_prototype_eval_pure(state, bv, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: MSB bv failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		rz_bv_cast_inplace(out->bv, 1, false);
+		// TODO: Truth bit.
+		rz_bv_set(out->bv, 0, truth_test(out->bv));
+		break;
+	}
 	case RZ_IL_OP_NEG:
 	case RZ_IL_OP_ADD:
 	case RZ_IL_OP_SUB:
