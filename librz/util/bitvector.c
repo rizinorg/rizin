@@ -934,6 +934,29 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 	return ret;
 }
 
+RZ_API bool rz_bv_complement_2_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, false);
+
+	// from right side to left, find the 1st 1 bit
+	// flip/toggle every bit before it
+
+	// TODO: Performance
+	ut32 i;
+	for (i = 0; i < bv->len; ++i) {
+		if (rz_bv_get(bv, i) == true) {
+			break;
+		}
+	}
+
+	// assert bv[i] == true now
+	i += 1;
+	for (; i < bv->len; ++i) {
+		rz_bv_toggle(bv, i);
+	}
+
+	return true;
+}
+
 /**
  * Get the 2's complement of bv
  * \param bv RzBitVector, operand
@@ -945,20 +968,10 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
 	// from right side to left, find the 1st 1 bit
 	// flip/toggle every bit before it
 	RzBitVector *ret = rz_bv_dup(bv);
-
-	ut32 i;
-	for (i = 0; i < bv->len; ++i) {
-		if (rz_bv_get(bv, i) == true) {
-			break;
-		}
+	if (!rz_bv_complement_2_inplace(ret)) {
+		rz_bv_free(ret);
+		return false;
 	}
-
-	// assert bv[i] == true now
-	i += 1;
-	for (; i < bv->len; ++i) {
-		rz_bv_toggle(ret, i);
-	}
-
 	return ret;
 }
 
