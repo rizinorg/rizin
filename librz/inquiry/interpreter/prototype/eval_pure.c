@@ -96,8 +96,30 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_copy(out->bv, pure->op.bitv.value);
 		out->is_concrete = true;
 		break;
-	case RZ_IL_OP_APPEND:
-		// TODO
+	case RZ_IL_OP_APPEND: {
+		STACK_ABSTR_DATA_OUT(high);
+		if (!interpreter_prototype_eval_pure(state, pure->op.append.high, &high, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: APPEND high failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!high.is_concrete) {
+			rz_bv_fini(high.bv);
+			goto map_to_bottom;
+		}
+		if (!interpreter_prototype_eval_pure(state, pure->op.append.low, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: APPEND low failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			rz_bv_fini(high.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_cast_inplace(out->bv, rz_bv_len(out->bv) + rz_bv_len(high.bv), false);
+		rz_bv_copy_nbits(high.bv, 0, out->bv, rz_bv_len(out->bv), rz_bv_len(high.bv));
+		out->is_concrete = true;
+		rz_bv_fini(high.bv);
+		break;
+	}
 	case RZ_IL_OP_INV:
 	case RZ_IL_OP_AND:
 	case RZ_IL_OP_OR:
