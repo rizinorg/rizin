@@ -879,11 +879,10 @@ RZ_API bool rz_bv_complement_1_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
 RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
-	RzBitVector *ret = rz_bv_new(bv->len);
+	RzBitVector *ret = rz_bv_dup(bv);
 	if (!ret) {
 		return NULL;
 	}
-	rz_bv_copy(bv, ret);
 	if (!rz_bv_complement_1_inplace(ret)) {
 		rz_bv_free(ret);
 	}
