@@ -127,6 +127,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(high.bv);
 		break;
 	}
+	case RZ_IL_OP_LOGNOT:
 	case RZ_IL_OP_INV:
 		if (!interpreter_prototype_eval_pure(state, pure->op.boolinv.x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
@@ -136,6 +137,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_not_inplace(out->bv);
 		}
 		break;
+	case RZ_IL_OP_LOGAND:
 	case RZ_IL_OP_AND: {
 		if (!interpreter_prototype_eval_pure(state, pure->op.booland.x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
@@ -160,6 +162,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
+	case RZ_IL_OP_LOGOR:
 	case RZ_IL_OP_OR: {
 		if (!interpreter_prototype_eval_pure(state, pure->op.boolor.x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
@@ -184,6 +187,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
+	case RZ_IL_OP_LOGXOR:
 	case RZ_IL_OP_XOR: {
 		if (!interpreter_prototype_eval_pure(state, pure->op.boolxor.x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
@@ -212,12 +216,8 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_IS_ZERO:
 	case RZ_IL_OP_NEG:
-	case RZ_IL_OP_LOGNOT:
 	case RZ_IL_OP_ADD:
 	case RZ_IL_OP_SUB:
-	case RZ_IL_OP_LOGAND:
-	case RZ_IL_OP_LOGOR:
-	case RZ_IL_OP_LOGXOR:
 	case RZ_IL_OP_SHIFTR:
 	case RZ_IL_OP_SHIFTL:
 	case RZ_IL_OP_EQ:
