@@ -82,7 +82,9 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		// Ignore for now.
 		break;
 	}
+	rz_bv_fini(eval_out.bv);
 	return true;
 error:
+	rz_bv_fini(eval_out.bv);
 	return false;
 }
