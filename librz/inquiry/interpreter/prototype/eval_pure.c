@@ -254,7 +254,16 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_set(out->bv, 0, truth_test(out->bv));
 		break;
 	}
-	case RZ_IL_OP_NEG:
+	case RZ_IL_OP_NEG: {
+		if (!interpreter_prototype_eval_pure(state, pure->op.neg.bv, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: NEG bv failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (out->is_concrete) {
+			rz_bv_neg_inplace(out->bv);
+		}
+		break;
+	}
 	case RZ_IL_OP_ADD:
 	case RZ_IL_OP_SUB:
 	case RZ_IL_OP_SHIFTR:
