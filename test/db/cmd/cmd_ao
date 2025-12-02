@@ -143,3 +143,34 @@ vmovapd         move aligned packed double-precision floating-point values
 vmovaps         move aligned packed single-precision floating-point values
 EOF
 RUN
+
+NAME=ao stackptr neg
+FILE==
+CMDS=<<EOF
+e asm.arch=6502
+wx 60
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: rts
+disasm: rts
+pseudo: return
+mnemonic: rts
+description: return from subroutine
+mask: ff
+prefix: 0
+id: 96
+bytes: 60
+refptr: 0
+size: 1
+sign: false
+type: ret
+cycles: 6
+esil: 0x101,sp,+,[2],pc,=,pc,++=,2,sp,+=
+rzil: (seq (set sp (+ (var sp) (bv 8 0x1))) (set pcl (load 0 (append (bv 8 0x1) (var sp)))) (set sp (+ (var sp) (bv 8 0x1))) (set pch (load 0 (append (bv 8 0x1) (var sp)))) (jmp (+ (append (var pch) (var pcl)) (bv 16 0x1))))
+family: cpu
+stackop: inc
+stackptr: -2
+EOF
+RUN
