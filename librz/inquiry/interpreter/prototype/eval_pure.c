@@ -114,6 +114,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		if (!interpreter_prototype_eval_pure(state, pure->op.append.low, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: APPEND low failed to evaluate.\n");
+			rz_bv_fini(high.bv);
 			goto map_to_bottom;
 		}
 		if (!out->is_concrete) {
