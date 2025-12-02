@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
+#include <rz_util/rz_bitvector.h>
 
 /**
  * \brief Evaluate a pure.
@@ -64,11 +65,16 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_B0:
-		rz_bv_set_all(out->bv, false);
+		if (rz_bv_len(out->bv) != 1) {
+			rz_bv_cast_inplace(out->bv, 1, false);
+		}
+		rz_bv_set(out->bv, 0, false);
 		out->is_concrete = true;
 		break;
 	case RZ_IL_OP_B1:
-		rz_bv_set_all(out->bv, false);
+		if (rz_bv_len(out->bv) != 1) {
+			rz_bv_cast_inplace(out->bv, 1, false);
+		}
 		rz_bv_set(out->bv, 0, true);
 		out->is_concrete = true;
 		break;
