@@ -136,7 +136,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_not_inplace(out->bv);
 		}
 		break;
-	case RZ_IL_OP_AND:
+	case RZ_IL_OP_AND: {
 		if (!interpreter_prototype_eval_pure(state, pure->op.booland.x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
 			goto map_to_bottom;
@@ -159,7 +159,31 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		rz_bv_fini(y.bv);
 		break;
-	case RZ_IL_OP_OR:
+	}
+	case RZ_IL_OP_OR: {
+		if (!interpreter_prototype_eval_pure(state, pure->op.boolor.x, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, pure->op.boolor.y, &y, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: OR y failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_or_inplace(out->bv, y.bv)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_XOR:
 	case RZ_IL_OP_MSB:
 	case RZ_IL_OP_LSB:
