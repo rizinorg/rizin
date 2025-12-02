@@ -854,6 +854,23 @@ RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 	return ret;
 }
 
+RZ_API bool rz_bv_complement_1_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
+	rz_return_val_if_fail(bv, false);
+	if (bv->len <= 64) {
+		bv->bits.small_u = ~bv->bits.small_u;
+		bv->bits.small_u &= UT64_MAX >> (64 - bv->len);
+		return true;
+	}
+
+	if (!(bv->bits.large_a && bv->bits.large_a)) {
+		rz_return_val_if_reached(false);
+	}
+	for (ut32 i = 0; i < NELEM(bv->len, BV_ELEM_SIZE); ++i) {
+		bv->bits.large_a[i] = ~bv->bits.large_a[i];
+	}
+	return true;
+}
+
 /**
  * Get the 1's complement of bv
  * \param bv RzBitVector, operand
@@ -865,18 +882,10 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 	RzBitVector *ret = rz_bv_new(bv->len);
 	if (!ret) {
 		return NULL;
-	} else if (ret->len <= 64) {
-		ret->bits.small_u = ~bv->bits.small_u;
-		ret->bits.small_u &= UT64_MAX >> (64 - ret->len);
-		return ret;
 	}
-
-	if (!(ret->bits.large_a && bv->bits.large_a)) {
+	rz_bv_copy(bv, ret);
+	if (!rz_bv_complement_1_inplace(ret)) {
 		rz_bv_free(ret);
-		rz_return_val_if_reached(NULL);
-	}
-	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
-		ret->bits.large_a[i] = ~bv->bits.large_a[i];
 	}
 	return ret;
 }

@@ -176,6 +176,27 @@ bool test_rz_bv_init_signed(void) {
 	mu_end;
 }
 
+bool test_rz_bv_logic_large(void) {
+	RzBitVector *x;
+	RzBitVector *result;
+	const ut8 array_128[128] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+	};
+
+	// Expected
+	const char *not = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f0";
+
+	x = rz_bv_new_from_bytes_be(array_128, 0, 128);
+
+	result = rz_bv_not(x);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, false), not, "not result off");
+	rz_bv_free(result);
+
+
+	rz_bv_free(x);
+	mu_end;
+}
+
 bool test_rz_bv_logic(void) {
 	RzBitVector *x, *y;
 	RzBitVector *result;
@@ -1602,6 +1623,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_cast);
 	mu_run_test(test_rz_bv_operation);
 	mu_run_test(test_rz_bv_logic);
+	mu_run_test(test_rz_bv_logic_large);
 	mu_run_test(test_rz_bv_algorithm32);
 	mu_run_test(test_rz_bv_algorithm128);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
