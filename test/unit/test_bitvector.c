@@ -177,23 +177,32 @@ bool test_rz_bv_init_signed(void) {
 }
 
 bool test_rz_bv_logic_large(void) {
-	RzBitVector *x;
+	RzBitVector *x, *y;
 	RzBitVector *result;
 	const ut8 array_128[128] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 	};
+	const ut8 array_128_01[128] = {
+		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+	};
 
 	// Expected
 	const char *not = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f0";
+	const char *and = "0x00010001000100010001000100010001";
 
 	x = rz_bv_new_from_bytes_be(array_128, 0, 128);
+	y = rz_bv_new_from_bytes_be(array_128_01, 0, 128);
 
 	result = rz_bv_not(x);
 	mu_assert_streq_free(rz_bv_as_hex_string(result, false), not, "not result off");
 	rz_bv_free(result);
 
+	result = rz_bv_and(x, y);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), and, "and result off");
+	rz_bv_free(result);
 
 	rz_bv_free(x);
+	rz_bv_free(y);
 	mu_end;
 }
 
