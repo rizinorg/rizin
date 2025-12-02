@@ -190,9 +190,10 @@ bool test_rz_bv_logic_large(void) {
 	};
 
 	// Expected
-	const char *not = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f0";
-	const char *and = "0x00010001000100010001000100010001";
-	const char *or = "0x101112131415161718191a1b1c1d1e1f";
+	const char *not = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f0"; // ~x
+	const char *and = "0x00010001000100010001000100010001"; // x & y
+	const char *or = "0x101112131415161718191a1b1c1d1e1f"; // x | z
+	const char *xor = "0x010003020504070609080b0a0d0c0f0e"; // x ^ y
 
 	x = rz_bv_new_from_bytes_be(array_128, 0, 128);
 	y = rz_bv_new_from_bytes_be(array_128_01, 0, 128);
@@ -208,6 +209,10 @@ bool test_rz_bv_logic_large(void) {
 
 	result = rz_bv_or(x, z);
 	mu_assert_streq_free(rz_bv_as_hex_string(result, true), or, "or result off");
+	rz_bv_free(result);
+
+	result = rz_bv_xor(x, y);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), xor, "xor result off");
 	rz_bv_free(result);
 
 	rz_bv_free(x);

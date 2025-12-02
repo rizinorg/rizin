@@ -856,6 +856,24 @@ RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitV
 	return ret;
 }
 
+RZ_API bool rz_bv_xor_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	if (x->len != y->len) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	if (x->len <= 64) {
+		x->bits.small_u = x->bits.small_u ^ y->bits.small_u;
+		return true;
+	}
+
+	for (ut32 i = 0; i < NELEM(x->len, BV_ELEM_SIZE); ++i) {
+		x->bits.large_a[i] = x->bits.large_a[i] ^ y->bits.large_a[i];
+	}
+	return true;
+}
+
 /**
  * Result of x XOR y (`xor` operation to every bits)
  * Both operands must have the same length.
@@ -870,16 +888,13 @@ RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 		return NULL;
 	}
 
-	RzBitVector *ret = rz_bv_new(x->len);
+	RzBitVector *ret = rz_bv_dup(x);
 	if (!ret) {
 		return NULL;
-	} else if (x->len <= 64) {
-		ret->bits.small_u = x->bits.small_u ^ y->bits.small_u;
-		return ret;
 	}
-
-	for (ut32 i = 0; i < NELEM(ret->len, BV_ELEM_SIZE); ++i) {
-		ret->bits.large_a[i] = x->bits.large_a[i] ^ y->bits.large_a[i];
+	if (!rz_bv_xor_inplace(ret, y)) {
+		rz_bv_free(ret);
+		return NULL;
 	}
 	return ret;
 }
