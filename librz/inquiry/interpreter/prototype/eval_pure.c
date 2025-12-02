@@ -184,7 +184,30 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
-	case RZ_IL_OP_XOR:
+	case RZ_IL_OP_XOR: {
+		if (!interpreter_prototype_eval_pure(state, pure->op.boolxor.x, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, pure->op.boolxor.y, &y, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: XOR y failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_xor_inplace(out->bv, y.bv)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_MSB:
 	case RZ_IL_OP_LSB:
 	case RZ_IL_OP_IS_ZERO:
