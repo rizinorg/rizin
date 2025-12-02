@@ -1307,7 +1307,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
  * \param bv RzBitVector, operand
  * \return b bit, bool value of MSB
  */
-RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv) {
+RZ_API bool rz_bv_msb(RZ_NONNULL const RzBitVector *bv) {
 	return rz_bv_get(bv, bv->len - 1);
 }
 
@@ -1316,7 +1316,7 @@ RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv) {
  * \param bv RzBitVector, operand
  * \return b bit, bool value of LSB
  */
-RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv) {
+RZ_API bool rz_bv_lsb(RZ_NONNULL const RzBitVector *bv) {
 	return rz_bv_get(bv, 0);
 }
 
