@@ -69,6 +69,7 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_and_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_or_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 #define rz_bv_neg         rz_bv_complement_2
 #define rz_bv_not         rz_bv_complement_1
