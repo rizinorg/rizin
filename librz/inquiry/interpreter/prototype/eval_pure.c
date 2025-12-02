@@ -121,6 +121,14 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_INV:
+		if (!interpreter_prototype_eval_pure(state, pure->op.boolinv.x, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (out->is_concrete) {
+			rz_bv_not_inplace(out->bv);
+		}
+		break;
 	case RZ_IL_OP_AND:
 	case RZ_IL_OP_OR:
 	case RZ_IL_OP_XOR:
