@@ -128,8 +128,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		break;
 	}
 	case RZ_IL_OP_LOGNOT:
-	case RZ_IL_OP_INV:
-		if (!interpreter_prototype_eval_pure(state, pure->op.boolinv.x, out, yield_queues, plugin_data)) {
+	case RZ_IL_OP_INV: {
+		RzILOpPure *x = pure->code == RZ_IL_OP_INV ? pure->op.boolinv.x : pure->op.lognot.bv;
+		if (!interpreter_prototype_eval_pure(state, x, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: INV x failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -137,9 +138,12 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_not_inplace(out->bv);
 		}
 		break;
+	}
 	case RZ_IL_OP_LOGAND:
 	case RZ_IL_OP_AND: {
-		if (!interpreter_prototype_eval_pure(state, pure->op.booland.x, out, yield_queues, plugin_data)) {
+		RzILOpPure *px = pure->code == RZ_IL_OP_AND ? pure->op.booland.x : pure->op.logand.x;
+		RzILOpPure *py = pure->code == RZ_IL_OP_AND ? pure->op.booland.y : pure->op.logand.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: AND x failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -147,7 +151,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_bottom;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(state, pure->op.booland.y, &y, yield_queues, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: AND y failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -164,7 +168,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	}
 	case RZ_IL_OP_LOGOR:
 	case RZ_IL_OP_OR: {
-		if (!interpreter_prototype_eval_pure(state, pure->op.boolor.x, out, yield_queues, plugin_data)) {
+		RzILOpPure *px = pure->code == RZ_IL_OP_OR ? pure->op.boolor.x : pure->op.logor.x;
+		RzILOpPure *py = pure->code == RZ_IL_OP_OR ? pure->op.boolor.y : pure->op.logor.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: OR x failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -172,7 +178,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_bottom;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(state, pure->op.boolor.y, &y, yield_queues, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: OR y failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -189,7 +195,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	}
 	case RZ_IL_OP_LOGXOR:
 	case RZ_IL_OP_XOR: {
-		if (!interpreter_prototype_eval_pure(state, pure->op.boolxor.x, out, yield_queues, plugin_data)) {
+		RzILOpPure *px = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.x : pure->op.logxor.x;
+		RzILOpPure *py = pure->code == RZ_IL_OP_XOR ? pure->op.boolxor.y : pure->op.logxor.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: XOR x failed to evaluate.\n");
 			goto map_to_bottom;
 		}
@@ -197,7 +205,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			goto map_to_bottom;
 		}
 		STACK_ABSTR_DATA_OUT(y);
-		if (!interpreter_prototype_eval_pure(state, pure->op.boolxor.y, &y, yield_queues, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
 			RZ_LOG_ERROR("prototype: XOR y failed to evaluate.\n");
 			goto map_to_bottom;
 		}
