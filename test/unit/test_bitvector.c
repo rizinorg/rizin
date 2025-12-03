@@ -1201,12 +1201,12 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_copy(dst, dst_copy_ref);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect return";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
 	if (rz_bv_copy_nbits_ref(src_copy, src_pos, dst_copy_ref, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits_ref() incorrect result";
+		error = "rz_bv_copy_nbits_ref() incorrect number of bits copied";
 		goto finally;
 	}
 
@@ -1221,7 +1221,7 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_toggle_all(dst_copy);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect result";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
@@ -1335,6 +1335,70 @@ bool test_rz_bv_copy_nbits_large_unaligned(void) {
 	rz_bv_free(a);
 	rz_bv_free(b);
 
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_large_to_small(void) {
+	RzBitVector *a = rz_bv_new_from_ut64(128, 0x67452301);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x0);
+	const char *error;
+
+	/// copy aligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 8, b, 8, 16);
+	mu_assert_null(error, error);
+
+	/// copy unaligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 0, 31);
+	mu_assert_null(error, error);
+
+	/// copy 1 unaligned bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 5, 1);
+	mu_assert_null(error, error);
+
+	/// copy unaligned with dst start_bits > 0
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
+	mu_assert_null(error, error);
+
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, size - 1, b, 0, size);
+		mu_assert_null(error, error);
+	}
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_small_to_large(void) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x67452301);
+	RzBitVector *b = rz_bv_new_from_ut64(128, 0x0);
+	const char *error;
+
+	/// copy aligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 8, b, 8, 16);
+	mu_assert_null(error, error);
+
+	/// copy unaligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 0, 31);
+	mu_assert_null(error, error);
+
+	/// copy 1 unaligned bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 5, 1);
+	mu_assert_null(error, error);
+
+	/// copy unaligned with dst start_bits > 0
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
+	mu_assert_null(error, error);
+
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, 0, b, size - 1, size);
+		mu_assert_null(error, error);
+	}
+
+	rz_bv_free(a);
+	rz_bv_free(b);
 	mu_end;
 }
 
@@ -1458,6 +1522,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_copy_nbits_small);
 	mu_run_test(test_rz_bv_copy_nbits_large_aligned);
 	mu_run_test(test_rz_bv_copy_nbits_large_unaligned);
+	mu_run_test(test_rz_bv_copy_nbits_small_to_large);
+	mu_run_test(test_rz_bv_copy_nbits_large_to_small);
 	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;

@@ -241,9 +241,117 @@ static ut32 rz_bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_star
 }
 
 /**
+ * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a large bitvector to a small one
+ */
+static ut32 rz_bv_copy_nbits_large_to_small(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+	ut64 buffer = 0;
+	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - src_start_pos) % BV_ELEM_SIZE, nbit);
+	ut32 byte_index = (src_start_pos + start_bits) / BV_ELEM_SIZE;
+
+	switch ((nbit - start_bits + 7) / BV_ELEM_SIZE) {
+	case 8:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 7]) << (BV_ELEM_SIZE * 7);
+		// fallthrough
+	case 7:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 6]) << (BV_ELEM_SIZE * 6);
+		// fallthrough
+	case 6:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 5]) << (BV_ELEM_SIZE * 5);
+		// fallthrough
+	case 5:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 4]) << (BV_ELEM_SIZE * 4);
+		// fallthrough
+	case 4:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 3]) << (BV_ELEM_SIZE * 3);
+		// fallthrough
+	case 3:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 2]) << (BV_ELEM_SIZE * 2);
+		// fallthrough
+	case 2:
+		buffer |= ((ut64)src->bits.large_a[byte_index + 1]) << (BV_ELEM_SIZE);
+		// fallthrough
+	case 1:
+		buffer |= ((ut64)src->bits.large_a[byte_index]);
+		// fallthrough
+	case 0:
+		break;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+
+	if (start_bits > 0) {
+		// Handle start bits
+		buffer = rz_bits_copy_ut64(src->bits.large_a[src_start_pos / BV_ELEM_SIZE], (src_start_pos % BV_ELEM_SIZE), buffer << start_bits, 0, start_bits);
+	}
+
+	dst->bits.small_u = rz_bits_copy_ut64(buffer, 0, dst->bits.small_u, dst_start_pos, nbit);
+	return nbit;
+}
+
+/**
+ * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a small bitvector to a large one
+ */
+static ut32 rz_bv_copy_nbits_small_to_large(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+	ut64 byte_index = dst_start_pos / BV_ELEM_SIZE;
+	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
+	ut8 trailing_bits = RZ_MIN((dst_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
+	ut8 middle_bits = nbit - start_bits - trailing_bits;
+	ut64 buffer = src->bits.small_u >> src_start_pos;
+
+	// Handle unaligned start bits
+	if (start_bits > 0) {
+		dst->bits.large_a[byte_index] = rz_bits_copy_ut8(buffer, 0, dst->bits.large_a[byte_index], dst_start_pos % BV_ELEM_SIZE, start_bits);
+		byte_index++;
+		buffer >>= start_bits;
+	}
+
+	// Handle unaligned trailing bits
+	if (trailing_bits > 0) {
+		ut64 trailing_byte_index = (dst_start_pos + nbit) / BV_ELEM_SIZE;
+		dst->bits.large_a[trailing_byte_index] = rz_bits_copy_ut8(buffer >> middle_bits, 0, dst->bits.large_a[trailing_byte_index], 0, trailing_bits);
+	}
+
+	// Handle middle bytes
+	switch (middle_bits / BV_ELEM_SIZE) {
+	case 8:
+		dst->bits.large_a[byte_index + 7] = (buffer >> BV_ELEM_SIZE * 7) & UT8_MAX;
+		// fallthrough
+	case 7:
+		dst->bits.large_a[byte_index + 6] = (buffer >> BV_ELEM_SIZE * 6) & UT8_MAX;
+		// fallthrough
+	case 6:
+		dst->bits.large_a[byte_index + 5] = (buffer >> BV_ELEM_SIZE * 5) & UT8_MAX;
+		// fallthrough
+	case 5:
+		dst->bits.large_a[byte_index + 4] = (buffer >> BV_ELEM_SIZE * 4) & UT8_MAX;
+		// fallthrough
+	case 4:
+		dst->bits.large_a[byte_index + 3] = (buffer >> BV_ELEM_SIZE * 3) & UT8_MAX;
+		// fallthrough
+	case 3:
+		dst->bits.large_a[byte_index + 2] = (buffer >> BV_ELEM_SIZE * 2) & UT8_MAX;
+		// fallthrough
+	case 2:
+		dst->bits.large_a[byte_index + 1] = (buffer >> BV_ELEM_SIZE) & UT8_MAX;
+		// fallthrough
+	case 1:
+		dst->bits.large_a[byte_index] = buffer & UT8_MAX;
+		// fallthrough
+	case 0:
+		break;
+	default:
+		rz_warn_if_reached();
+		return 0;
+	}
+
+	return nbit;
+}
+
+/**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with unaligned bit positions
  */
-static ut32 rz_bv_copy_nbits_large_nonaligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut64 bits_remaining = nbit;
 
@@ -308,26 +416,25 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 		}
 
 		if (src->bits.large_a != dst->bits.large_a) {
-			return rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, dst, dst_start_pos, nbit);
+			return rz_bv_copy_nbits_large_unaligned(src, src_start_pos, dst, dst_start_pos, nbit);
 		}
 
 		// Use a temporary bitvector for same-vector copies
 		RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
 		rz_bv_copy(dst, temp);
-		ut32 bits_copied = rz_bv_copy_nbits_large_nonaligned(src, src_start_pos, temp, dst_start_pos, nbit);
+		ut32 bits_copied = rz_bv_copy_nbits_large_unaligned(src, src_start_pos, temp, dst_start_pos, nbit);
 		rz_bv_copy(temp, dst);
 		rz_bv_free(temp);
 		return bits_copied;
 	}
 
-	// Only one of the bitvectors is large
-	// TODO: add specialized functions for large to small and small to large bit copy
-	for (ut32 i = 0; i < nbit; ++i) {
-		bool c = rz_bv_get(src, src_start_pos + i);
-		rz_bv_set(dst, dst_start_pos + i, c);
+	if (src->len > 64) {
+		// Large to small copy
+		return rz_bv_copy_nbits_large_to_small(src, src_start_pos, dst, dst_start_pos, nbit);
 	}
 
-	return nbit;
+	// Small to large
+	return rz_bv_copy_nbits_small_to_large(src, src_start_pos, dst, dst_start_pos, nbit);
 }
 
 /**
@@ -514,6 +621,7 @@ RZ_API bool rz_bv_toggle_all(RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, false);
 	if (bv->len <= 64) {
 		bv->bits.small_u = ~(bv->bits.small_u);
+		return true;
 	}
 
 	rz_return_val_if_fail(bv->bits.large_a, false);
