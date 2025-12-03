@@ -39,17 +39,6 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%s : %s\n", var->name, var->comment);
 		break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		char *b64 = sdb_encode((const ut8 *)var->comment, strlen(var->comment));
-		if (!b64) {
-			return;
-		}
-		rz_cons_printf("\"Cv%c %s base64:%s @ 0x%08" PFMT64x "\"\n",
-			var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG ? 'r' : 's',
-			var->name, b64, var->fcn->addr);
-		free(b64);
-		break;
-	}
 	default:
 		rz_warn_if_reached();
 		break;

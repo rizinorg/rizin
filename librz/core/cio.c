@@ -844,18 +844,6 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 			pj_kb(state->d.pj, "written", c->written);
 			pj_end(state->d.pj);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
-			rz_cons_printf(" # replaces: ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
-			}
-			rz_cons_printf("\n");
-			break;
 		default:
 			rz_warn_if_reached();
 			break;
@@ -873,9 +861,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 	RzListIter *iter;
 	RzIOCache *c;
 
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("e io.va = false\n");
-	}
 	rz_list_foreach (caches, iter, c) {
 		const int cacheSize = rz_itv_size(c->itv);
 		int i;
@@ -892,13 +877,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 				rz_cons_printf("%02x", c->data[i]);
 			}
 			rz_cons_printf("\n");
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx %02x", c->data[0]);
-			for (i = 1; i < cacheSize; i++) {
-				rz_cons_printf("%02x", c->data[i]);
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
 			break;
 		default:
 			rz_warn_if_reached();

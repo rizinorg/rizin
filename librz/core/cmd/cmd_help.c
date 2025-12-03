@@ -23,8 +23,20 @@ static bool help_search_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *
 	if (hs->pj) {
 		rz_cmd_get_help_json(cmd, cd, hs->pj);
 	} else {
-		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
+		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb, 0);
 	}
+	return true;
+}
+
+static bool help_search_interactive_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
+	rz_return_val_if_fail(cd, false);
+	RzList *brief_lines = (RzList *)user;
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (!sb) {
+		return false;
+	}
+	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb, 3);
+	rz_list_append(brief_lines, rz_str_trim_tail(rz_strbuf_drain(sb)));
 	return true;
 }
 
@@ -45,17 +57,37 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		return false;
 	}
 
-	char *detailed_help = rz_cmd_get_help(cmd, pa, hs->color);
-	if (!detailed_help) {
-		rz_cmd_parsed_args_free(pa);
-		return false;
-	}
-	RzList *help_lines = rz_str_split_list_regex(detailed_help, "\\n+", 0);
+	bool ret = true;
+	char *line_prefix = NULL;
+	char *detailed_help = NULL;
+	RzList *help_lines = NULL;
 
-	char *line_prefix = rz_str_newf("%s | ", cd->name);
-	if (!help_lines || !line_prefix) {
+	line_prefix = rz_str_newf("%s | ", cd->name);
+	if (!line_prefix) {
 		goto error;
 	}
+
+	int old_force_columns = 0;
+	RzCons *cons = NULL;
+	if (cmd->has_cons) {
+		cons = rz_cons_singleton();
+		old_force_columns = cons->force_columns;
+		int cons_cols = rz_cons_get_size(NULL);
+		cons->force_columns = cons_cols - (3 + strlen(line_prefix));
+	}
+	detailed_help = rz_cmd_get_help(cmd, pa, hs->color);
+	if (cmd->has_cons) {
+		cons->force_columns = old_force_columns;
+	}
+	if (!detailed_help) {
+		goto error;
+	}
+
+	help_lines = rz_str_split_list_regex(detailed_help, "\\n+", 0);
+	if (!help_lines) {
+		goto error;
+	}
+
 	while (!rz_list_empty(help_lines)) {
 		char *line = (char *)rz_list_pop_head(help_lines);
 		char *prefixed_line = rz_str_newf("%s%s", line_prefix, line);
@@ -65,18 +97,16 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		rz_list_push(hs->detail_lines, prefixed_line);
 	}
 
-	free(detailed_help);
+beach:
 	rz_list_free(help_lines);
-	rz_cmd_parsed_args_free(pa);
+	free(detailed_help);
 	free(line_prefix);
-	return true;
+	rz_cmd_parsed_args_free(pa);
+	return ret;
 
 error:
-	free(detailed_help);
-	free(help_lines);
-	free(line_prefix);
-	rz_cmd_parsed_args_free(pa);
-	return false;
+	ret = false;
+	goto beach;
 }
 
 // "?*"
@@ -130,46 +160,18 @@ exit_status:
 	return status;
 }
 
-static char *cons_hud_help_string(const char *s) {
-	if (!rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("Hud mode requires scr.interactive=true.\n");
-		return NULL;
-	}
-	char *buf = rz_str_dup(s);
-	if (!buf) {
-		return NULL;
-	}
-
-	/* Reconstruct a help string list from the given string amalgamation `s`, assuming that
-	 * 1. Every command has a help string starting with '#'.
-	 * 2. The '#' is always on the first line.
-	 * It's probably better not to amalgamate the help strings in the first place, but this is a start.
-	 */
-	RzList *help_strings = rz_str_split_list_regex(buf, "\\n(?=[^\\n]+\\#)", 0);
-	char *ret = rz_cons_hud(help_strings, NULL);
-	free(buf);
-	rz_list_free(help_strings);
-	return ret;
-}
-
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
-	RzHelpSearch hs = {
-		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
-		.pj = NULL,
-		.sb = NULL,
-		.detail_lines = NULL,
-	};
-	hs.sb = rz_strbuf_new("");
-	if (!hs.sb) {
+	RzList *brief_lines = rz_list_newf(free);
+	if (!brief_lines) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// Get all summary descriptions of commands.
-	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_cmd_desc_summary, &hs);
+	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_interactive_cmd_desc_summary, brief_lines);
 	// Run it in the hub.
-	free(cons_hud_help_string(rz_strbuf_get(hs.sb)));
+	free(rz_cons_hud(brief_lines, NULL));
 
-	rz_strbuf_free(hs.sb);
+	rz_list_free(brief_lines);
 	return RZ_CMD_STATUS_OK;
 }
 

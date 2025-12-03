@@ -213,7 +213,7 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	case R_386_TLS_DESC: UNHANDL("R_386_TLS_DESC");
 	case R_386_GOT32X: UNHANDL("R_386_GOT32X");
 
-	// FIXME: Quite a few relocatons missing here.
+	// FIXME: Quite a few relocations missing here.
 	default: UNSUPP("X86_32");
 	}
 }
@@ -266,7 +266,7 @@ static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case R_X86_64_GOTPCRELX: UNHANDL("R_X86_64_GOTPCRELX");
 	case R_X86_64_REX_GOTPCRELX: UNHANDL("R_X86_64_REX_GOTPCRELX");
 
-	// FIXME: Quite a few relocatons missing here.
+	// FIXME: Quite a few relocations missing here.
 	default: UNSUPP("X86_64");
 	}
 }
@@ -402,7 +402,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_ARM_RPC24: UNHANDL("R_ARM_RPC24");
 	case R_ARM_RBASE: UNHANDL("R_ARM_RBASE");
 
-	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+	// FIXME: Quite a few relocations missing here. It's incorrect to place them all under "reg relocations".
 	default: ADD(32, GOT, "ARM REG RELOC");
 	}
 }
@@ -467,7 +467,7 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case R_RISCV_SET32: UNHANDL("R_RISCV_SET32");
 	case R_RISCV_32_PCREL: UNHANDL("R_RISCV_32_PCREL");
 	case R_RISCV_IRELATIVE: UNHANDL("R_RISCV_IRELATIVE");
-	// FIXME: Quite a few relocatons missing here. It's incorrect to place them all under "reg relocations".
+	// FIXME: Quite a few relocations missing here. It's incorrect to place them all under "reg relocations".
 	default: ADD(64, GOT, "RISC-V REG RELOC");
 	}
 }
@@ -717,7 +717,7 @@ static RzBinReloc *reloc_convert_ppc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	case R_PPC_REL16_HI: UNHANDL("R_PPC_REL16_HI");
 	case R_PPC_REL16_HA: UNHANDL("R_PPC_REL16_HA");
 	case R_PPC_TOC16: UNHANDL("R_PPC_TOC16");
-	// FIXME: Quite a few relocatons missing here.
+	// FIXME: Quite a few relocations missing here.
 	default: UNSUPP("PPC");
 	}
 }
@@ -1044,7 +1044,7 @@ static RzBinReloc *reloc_convert_rx(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	case R_RX_DIR24S_PCREL: ADD(24, -P, "RX_DIR24S_PCREL");
 	case R_RX_DIR32: SET(32, "RX_DIR32");
 
-	// FIXME: Quite a few relocatons missing here.
+	// FIXME: Quite a few relocations missing here.
 	default: UNSUPP("RX");
 	}
 }
@@ -1064,7 +1064,7 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	case R_ALPHA_GLOB_DAT: ADD(32, 0, "R_ALPHA_GLOB_DAT");
 	case R_ALPHA_JMP_SLOT: ADD(32, 0, "R_ALPHA_JMP_SLOT");
 
-	// FIXME: Quite a few relocatons missing here.
+	// FIXME: Quite a few relocations missing here.
 	default: UNSUPP("ALPHA");
 	}
 }

@@ -576,19 +576,7 @@ static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm
 		if (!(addr >= map->addr && addr < map->addr_end)) {
 			continue;
 		}
-		if (mode == RZ_OUTPUT_MODE_STANDARD) {
-			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
-		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			/* Escape backslashes (e.g. for Windows). */
-			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = rz_str_dup(map->name);
-			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
-				filtered_name, map->addr);
-			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
-			free(escaped_path);
-			free(filtered_name);
-		}
+		rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
 	}
 	rz_list_free(list);
 }
@@ -612,16 +600,6 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 			pj_ks(pj, "file", map->file);
 			pj_ks(pj, "name", map->name);
 			pj_end(pj);
-		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			/* Escape backslashes (e.g. for Windows). */
-			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = rz_str_dup(map->name);
-			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
-				filtered_name, map->addr);
-			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
-			free(escaped_path);
-			free(filtered_name);
 		}
 	}
 	rz_cmd_state_output_array_end(state);
@@ -947,11 +925,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr;
-	const char *libname = NULL, *sectname = NULL, *mode = "";
+	const char *libname = NULL, *sectname = NULL;
 	ut64 baddr = 0LL;
-	if (m == RZ_OUTPUT_MODE_RIZIN) {
-		mode = "-r ";
-	}
 	addr = UT64_MAX;
 	if (argc == 3) {
 		sectname = argv[2];
@@ -981,10 +956,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 			/* TODO: do not spawn. use RzBin API */
 			if (sectname) {
 				char *sect = rz_str_escape(sectname);
-				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
+				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin -B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, baddr, filesc, sect);
 				free(sect);
 			} else {
-				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
+				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin -B 0x%08" PFMT64x " -S \"%s\"", name, baddr, filesc);
 			}
 			free(filesc);
 			rz_cons_println(res);
@@ -997,6 +972,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 	}
 	return RZ_CMD_STATUS_OK;
 }
+
 // dml
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
@@ -1696,13 +1672,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
 				rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			if (b->module_name) {
-				rz_cons_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
-			} else {
-				rz_cons_printf("db @ 0x%08" PFMT64x "\n", b->addr);
-			}
-			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kN(pj, "addr", b->addr);
@@ -2015,10 +1984,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzOutputMode mode = state->mode;
-	if (mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_list_reverse(list);
-		rz_cons_printf("f-bt.*\n");
-	}
 
 	int i = 0;
 	RzListIter *iter;
@@ -2034,12 +1999,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??",
 				bt->flagdesc ? "  " : "", rz_str_get(bt->flagdesc),
 				bt->flagdesc2 ? " " : "", rz_str_get(bt->flagdesc2));
-			break;
-		}
-		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("f bt.frame%d @ 0x%08" PFMT64x "\n", i, bt->frame->addr);
-			rz_cons_printf("f bt.frame%d.stack %d @ 0x%08" PFMT64x "\n", i, bt->frame->size, bt->frame->sp);
-			i++;
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
@@ -2681,20 +2640,6 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 		if (stop != -1) {
 			rz_cons_printf("stopreason=%d\n", stop);
 		}
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		if (!rdi) {
-			break;
-		}
-		rz_cons_printf("f dbg.signal @ %d\n", core->dbg->reason.signum);
-		rz_cons_printf("f dbg.sigpid @ %d\n", core->dbg->reason.tid);
-		rz_cons_printf("f dbg.inbp @ %d\n", core->dbg->reason.bp_addr ? 1 : 0);
-		rz_cons_printf("f dbg.sigaddr @ 0x%" PFMT64x "\n", core->dbg->reason.addr);
-		rz_cons_printf("f dbg.baddr @ 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
-		rz_cons_printf("f dbg.pid @ %d\n", rdi->pid);
-		rz_cons_printf("f dbg.tid @ %d\n", rdi->tid);
-		rz_cons_printf("f dbg.uid @ %d\n", rdi->uid);
-		rz_cons_printf("f dbg.gid @ %d\n", rdi->gid);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);

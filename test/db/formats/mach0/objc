@@ -69,14 +69,6 @@ class
 EOF
 RUN
 
-NAME=objc method flags (ic*)
-FILE=bins/mach0/TestMethods
-CMDS=ic*~thisIsAClassMethod
-EXPECT=<<EOF
-f method.class.ViewController.thisIsAClassMethod @ 0x1000067bc
-EOF
-RUN
-
 NAME=objc categories (mangled)
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF

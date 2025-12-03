@@ -566,7 +566,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		}
 		PRINTF_LN("family", "%s\n", rz_analysis_op_family_to_string(op->family));
 		PRINTF_LN_STR("stackop", op->stackop != RZ_ANALYSIS_STACK_NULL ? rz_analysis_stackop_tostring(op->stackop) : NULL);
-		PRINTF_LN_NOT("stackptr", "%" PFMT64u "\n", op->stackptr, 0);
+		PRINTF_LN_NOT("stackptr", "%" PFMT64d "\n", op->stackptr, 0);
 	}
 	rz_iterator_free(iter);
 }
@@ -2210,24 +2210,6 @@ static void var_show(
 	char *loc_string = var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF ? rz_bin_dwarf_location_to_string(var->origin.dw_var->location, &dump_opt)
 									    : NULL;
 	switch (ctx->out->mode) {
-	case RZ_OUTPUT_MODE_RIZIN: {
-		// we can't express all type info here :(
-		switch (var->storage.type) {
-		case RZ_ANALYSIS_VAR_STORAGE_REG:
-			rz_cons_printf("afvr %s %s %s @ 0x%" PFMT64x "\n",
-				var->storage.reg, var->name, var_type_string, fcn->addr);
-			break;
-		case RZ_ANALYSIS_VAR_STORAGE_STACK:
-			rz_cons_printf("afvs %" PFMT64d " %s %s @ 0x%" PFMT64x "\n",
-				var->storage.stack_off, var->name, var_type_string,
-				fcn->addr);
-			break;
-		default:
-			rz_warn_if_reached();
-			break;
-		}
-		break;
-	}
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(ctx->out->d.pj);
 		pj_ks(ctx->out->d.pj, "name", var->name);
@@ -2339,7 +2321,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 	}
 
 	switch (state->mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_LONG:
 	case RZ_OUTPUT_MODE_TABLE:
@@ -2822,30 +2803,6 @@ static void xrefs_list_print(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list) 
 	}
 }
 
-static const char *xref_type2cmd(RzAnalysisXRefType type) {
-	switch (type) {
-	case RZ_ANALYSIS_XREF_TYPE_CODE:
-		return "axc";
-	case RZ_ANALYSIS_XREF_TYPE_CALL:
-		return "axC";
-	case RZ_ANALYSIS_XREF_TYPE_DATA:
-		return "axd";
-	case RZ_ANALYSIS_XREF_TYPE_STRING:
-		return "axs";
-	case RZ_ANALYSIS_XREF_TYPE_NULL:
-		return "ax";
-	}
-	return "ax";
-}
-
-static void xref_list_print_as_cmd(RZ_UNUSED RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list) {
-	RzListIter *iter;
-	RzAnalysisXRef *xref;
-	rz_list_foreach (list, iter, xref) {
-		rz_cons_printf("%s 0x%" PFMT64x " @ 0x%" PFMT64x "\n", xref_type2cmd(xref->type), xref->to, xref->from);
-	}
-}
-
 static void xrefs_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list, RzCmdStateOutput *state) {
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
@@ -2860,9 +2817,6 @@ static void xrefs_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *list
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		xref_list_print_to_json(core, list, state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		xref_list_print_as_cmd(core, list);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -2909,9 +2863,6 @@ static void xrefs_to_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *l
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		xref_list_print_to_json(core, list, state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		xref_list_print_as_cmd(core, list);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -2975,9 +2926,6 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		xref_list_print_to_json(core, list, state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		xref_list_print_as_cmd(core, list);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -3065,7 +3013,6 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	bool is_json = mode == RZ_OUTPUT_MODE_JSON;
-	bool is_rz = mode == RZ_OUTPUT_MODE_RIZIN;
 	int spaces = (level + 1) * 2;
 	if (spaces > sizeof(pre) - 4) {
 		spaces = sizeof(pre) - 4;
@@ -3078,9 +3025,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 	if (!rz_list_empty(xrefs)) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in_bounds(core->analysis, addr, -1);
 		if (fcn) {
-			if (is_rz) {
-				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
-			} else if (is_json) {
+			if (is_json) {
 				xrefs_graph_fcn_start_json(pj, fcn, addr);
 				open_object = true;
 			} else {
@@ -3088,9 +3033,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 					pre + 2, addr, fcn->addr, fcn->name);
 			}
 		} else {
-			if (is_rz) {
-				rz_cons_printf("age 0x%08" PFMT64x "\n", addr);
-			} else if (is_json) {
+			if (is_json) {
 				char taddr[64];
 				pj_o(pj);
 				pj_k(pj, sdb_itoa(addr, taddr, 10));
@@ -3106,10 +3049,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 	rz_list_foreach (xrefs, iter, xref) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in_bounds(core->analysis, xref->from, -1);
 		if (fcn) {
-			if (is_rz) {
-				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
-				rz_cons_printf("age 0x%08" PFMT64x " 0x%08" PFMT64x "\n", fcn->addr, addr);
-			} else if (is_json) {
+			if (is_json) {
 				xrefs_graph_fcn_start_json(pj, fcn, xref->from);
 			} else {
 				rz_cons_printf("%s0x%08" PFMT64x " fcn 0x%08" PFMT64x " %s\n", pre, xref->from, fcn->addr, fcn->name);
@@ -3123,10 +3063,7 @@ static void xrefs_graph(RzCore *core, ut64 addr, int level, HtUU *ht, RzOutputMo
 				pj_end(pj);
 			}
 		} else {
-			if (is_rz) {
-				rz_cons_printf("agn 0x%08" PFMT64x " ???\n", xref->from);
-				rz_cons_printf("age 0x%08" PFMT64x " 0x%08" PFMT64x "\n", xref->from, addr);
-			} else if (is_json) {
+			if (is_json) {
 				char taddr[64];
 				pj_o(pj);
 				pj_k(pj, sdb_itoa(xref->from, taddr, 10));
@@ -3281,65 +3218,6 @@ static void function_list_print_quiet(RZ_UNUSED RzCore *core, RzList /*<RzAnalys
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (list, it, fcn) {
 		rz_cons_printf("0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
-	}
-}
-
-static char function_type_to_char(RzAnalysisFunction *fcn) {
-	switch (fcn->type) {
-	case RZ_ANALYSIS_FCN_TYPE_LOC:
-		return 'l';
-	case RZ_ANALYSIS_FCN_TYPE_SYM:
-		return 's';
-	case RZ_ANALYSIS_FCN_TYPE_IMP:
-		return 'i';
-	default:
-		break;
-	}
-	return 'f';
-}
-
-static void fcn_list_bbs(RzAnalysisFunction *fcn) {
-	RzAnalysisBlock *bbi;
-	void **iter;
-
-	rz_pvector_foreach (fcn->bbs, iter) {
-		bbi = (RzAnalysisBlock *)*iter;
-		rz_cons_printf("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT64u " ",
-			fcn->addr, bbi->addr, bbi->size);
-		rz_cons_printf("0x%08" PFMT64x " ", bbi->jump);
-		rz_cons_printf("0x%08" PFMT64x, bbi->fail);
-		rz_cons_printf("\n");
-	}
-}
-
-static void function_list_print_as_cmd(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list, RzCmdStateOutput *state) {
-	RzListIter *it;
-	RzAnalysisFunction *fcn;
-	rz_list_foreach (list, it, fcn) {
-		const char *defaultCC = rz_analysis_cc_default(core->analysis);
-		rz_cons_printf("\"f %s %" PFMT64u " @ 0x%08" PFMT64x "\"\n", fcn->name, rz_analysis_function_linear_size(fcn), fcn->addr);
-		rz_cons_printf("\"af+ %s %c @ 0x%08" PFMT64x "\"\n",
-			fcn->name, // rz_analysis_fcn_size (fcn), fcn->name,
-			function_type_to_char(fcn),
-			fcn->addr);
-		// FIXME: this command prints something annoying. Does it have important side-effects?
-		fcn_list_bbs(fcn);
-		if (fcn->bits != 0) {
-			rz_cons_printf("afB %d @ 0x%08" PFMT64x "\n", fcn->bits, fcn->addr);
-		}
-		// FIXME command injection vuln here
-		if (fcn->cc || defaultCC) {
-			rz_cons_printf("afc %s @ 0x%08" PFMT64x "\n", fcn->cc ? fcn->cc : defaultCC, fcn->addr);
-		}
-		/* show variables  and arguments */
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_STACK, state);
-		core_analysis_var_list_show(core, fcn, RZ_ANALYSIS_VAR_STORAGE_REG, state);
-		/* Show references */
-		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-		xref_list_print_as_cmd(core, xrefs);
-		rz_list_free(xrefs);
-		/*Saving Function stack frame*/
-		rz_cons_printf("afS %d @ 0x%" PFMT64x "\n", fcn->maxstack, fcn->addr);
 	}
 }
 
@@ -3502,9 +3380,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, con
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
 		function_list_print_quiet(core, list);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		function_list_print_as_cmd(core, list, state);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		function_list_print_to_json(core, list, state);
@@ -3784,9 +3659,6 @@ RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, con
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		fcn_list_print_info(core, list, state);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		function_list_print_as_cmd(core, list, state);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		function_list_print_to_json(core, list, state);
@@ -4834,58 +4706,17 @@ static void analysis_class_list_print_to_json(RzAnalysis *analysis, PJ *pj) {
 	return;
 }
 
-static void analysis_class_print_as_cmd(RzAnalysis *analysis, const char *class_name) {
-	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
-	if (bases) {
-		RzAnalysisBaseClass *base;
-		rz_vector_foreach (bases, base) {
-			rz_cons_printf("acb %s %s %" PFMT64u "\n", class_name, base->class_name, base->offset);
-		}
-		rz_vector_free(bases);
-	}
-
-	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
-	if (vtables) {
-		RzAnalysisVTable *vtable;
-		rz_vector_foreach (vtables, vtable) {
-			rz_cons_printf("acv %s 0x%" PFMT64x " %" PFMT64u "\n", class_name, vtable->addr, vtable->offset);
-		}
-		rz_vector_free(vtables);
-	}
-
-	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
-	if (methods) {
-		RzAnalysisMethod *meth;
-		rz_vector_foreach (methods, meth) {
-			rz_cons_printf("acm %s %s 0x%" PFMT64x " %" PFMT64d "\n", class_name, meth->name, meth->addr, meth->vtable_offset);
-		}
-		rz_vector_free(methods);
-	}
-}
-
 RZ_IPI RzCmdStatus rz_analysis_class_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		analysis_class_list_print_to_json(core->analysis, state->d.pj);
 		return RZ_CMD_STATUS_OK;
 	}
 
-	RzPVector *classes = rz_analysis_class_get_all(core->analysis, state->mode != RZ_OUTPUT_MODE_RIZIN);
+	RzPVector *classes = rz_analysis_class_get_all(core->analysis, true);
 	void **iter;
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_pvector_foreach (classes, iter) {
-			SdbKv *kv = *iter;
-			// need to create all classes first, so they can be referenced
-			rz_cons_printf("ac %s\n", sdbkv_key(kv));
-		}
-		rz_pvector_foreach (classes, iter) {
-			SdbKv *kv = *iter;
-			analysis_class_print_as_cmd(core->analysis, sdbkv_key(kv));
-		}
-	} else {
-		rz_pvector_foreach (classes, iter) {
-			SdbKv *kv = *iter;
-			analysis_class_print(core->analysis, sdbkv_key(kv), state->mode == RZ_OUTPUT_MODE_LONG);
-		}
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
+		analysis_class_print(core->analysis, sdbkv_key(kv), state->mode == RZ_OUTPUT_MODE_LONG);
 	}
 	rz_pvector_free(classes);
 	return RZ_CMD_STATUS_OK;

@@ -27,7 +27,6 @@ extern "C" {
 
 // TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
 #define RZ_MODE_PRINT    0x000
-#define RZ_MODE_RIZINCMD 0x001
 #define RZ_MODE_SET      0x002
 #define RZ_MODE_SIMPLE   0x004
 #define RZ_MODE_JSON     0x008
@@ -35,7 +34,7 @@ extern "C" {
 
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
-#define RZ_INOUT /* parameter is read and written */
+#define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 
 #ifdef RZ_BINDINGS
 #define RZ_OWN    __attribute__((annotate("RZ_OWN")))

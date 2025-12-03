@@ -32,3 +32,19 @@ aaa
 EOF
 EXPECT=
 RUN
+
+NAME=ELF: malformed verdef vd_next zero no hang
+FILE=bins/elf/analysis/elf_verdef_vd_next_zero
+CMDS=<<EOF
+ii
+is
+iV
+EOF
+EXPECT=<<EOF
+nth vaddr bind type lib name 
+-----------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+EOF
+TIMEOUT=5
+RUN

@@ -77,7 +77,6 @@ static const struct argv_modes_t {
 } argv_modes[] = {
 	{ "", "", RZ_OUTPUT_MODE_STANDARD },
 	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
-	{ "*", " (rizin mode)", RZ_OUTPUT_MODE_RIZIN },
 	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
 	{ "Q", " (quietest mode)", RZ_OUTPUT_MODE_QUIETEST },
 	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
@@ -917,12 +916,12 @@ static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool u
 }
 
 static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns, bool use_color) {
-	int rows, cols;
+	int cols;
 	bool is_interactive = false;
 	const char *help_color = "";
 	if (cmd->has_cons) {
 		RzCons *cons = rz_cons_singleton();
-		cols = rz_cons_get_size(&rows);
+		cols = rz_cons_get_size(NULL);
 		is_interactive = rz_cons_is_interactive();
 		help_color = use_color ? cons->context->pal.help : "";
 	}
@@ -1090,7 +1089,10 @@ static void update_minmax_len(RzCmdDesc *cd, size_t *max_len, size_t *min_len, b
 	*min_len = val < *min_len ? val : *min_len;
 }
 
-static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, const char *name, const char *summary, const char *vertical_line, bool show_children, size_t max_len, bool use_color) {
+static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, const char *name,
+	const char *summary, const char *vertical_line, bool show_children, size_t max_len,
+	bool use_color, int gutter_size) {
+
 	size_t str_len = calc_padding_len(cd, name, show_children);
 	int padding = str_len < max_len ? max_len - str_len : 0;
 	const char *pal_args_color = "",
@@ -1108,7 +1110,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 		pal_reset = cons->context->pal.reset;
 	}
 
-	size_t columns = 0;
+	size_t columns = gutter_size;
 	columns += strbuf_append_calc(sb, vertical_line);
 	rz_strbuf_append(sb, pal_input_color);
 	columns += strbuf_append_calc(sb, name);
@@ -1131,7 +1133,8 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 }
 
 static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, const char *vertical_line, bool use_color) {
-	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", vertical_line, true, max_len, use_color);
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", vertical_line,
+		true, max_len, use_color, 0);
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
@@ -1207,7 +1210,8 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
 			char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
 			char *summary = rz_str_newf("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
-			do_print_child_help(cmd, sb, cd, name, summary, vertical_line, false, max_len, use_color);
+			do_print_child_help(cmd, sb, cd, name, summary, vertical_line, false, max_len,
+				use_color, 0);
 			free(name);
 			free(summary);
 		}
@@ -1534,16 +1538,19 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
  * \param cd reference to RzCmdDesc
  * \param use_color output strings with color codes.
  * \param sb reference to RzStrBuf
+ * \param gutter_size gutter size in chars
  *
  * \return returns false if an invalid argument was given, otherwise true.
  */
-RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb) {
+RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb,
+	int gutter_size) {
 	rz_return_val_if_fail(cmd && cd && sb, false);
 
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT " " : "| ";
 
-	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, vertical_line, false, MAX_RIGHT_ALIGHNMENT, use_color);
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary, vertical_line, false,
+		MAX_RIGHT_ALIGHNMENT, use_color, gutter_size);
 	return true;
 }
 
