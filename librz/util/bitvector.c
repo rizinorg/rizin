@@ -1962,9 +1962,9 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 	if (bv->len <= 64) {
 		// This was a small bit vector and now is a large one.
 		// Copy bits to the buffer.
-		rz_bv_copy_nbits_small_to_large(bv, 0, bv, 0, bv->len);
+		bv_copy_nbits_small_to_large(bv, 0, bv, 0, bv->len);
 	} else {
-		rz_bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size);
+		bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size);
 	}
 	size_t old_len = bv->len;
 	bv->len = to_size;
