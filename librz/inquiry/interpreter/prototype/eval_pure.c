@@ -316,8 +316,48 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
-	case RZ_IL_OP_SHIFTR:
 	case RZ_IL_OP_SHIFTL:
+	case RZ_IL_OP_SHIFTR: {
+		RzILOpPure *px = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.x : pure->op.shiftl.x;
+		RzILOpPure *py = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.y : pure->op.shiftl.y;
+		RzILOpPure *pfill_bit = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.fill_bit : pure->op.shiftl.fill_bit;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: SHIFT(L/R) x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: SHIFT(L/R) y failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(fill_bit);
+		if (!interpreter_prototype_eval_pure(state, pfill_bit, &fill_bit, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: SHIFT(L/R) fill_bit failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!fill_bit.is_concrete) {
+			rz_bv_fini(fill_bit.bv);
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		bool (*shift)(RzBitVector *bv, ut32 size, bool fill_bit);
+		shift = pure->code == RZ_IL_OP_SHIFTR ? rz_bv_rshift_fill : rz_bv_lshift_fill;
+		if (!shift(out->bv, rz_bv_to_ut64(y.bv), abstr_is_true(state, &fill_bit))) {
+			rz_bv_fini(fill_bit.bv);
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(fill_bit.bv);
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_EQ:
 	case RZ_IL_OP_SLE:
 	case RZ_IL_OP_ULE:
