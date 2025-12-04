@@ -358,10 +358,54 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
-	case RZ_IL_OP_EQ:
 	case RZ_IL_OP_SLE:
 	case RZ_IL_OP_ULE:
-		// TODO
+	case RZ_IL_OP_EQ: {
+		bool (*cmp)(RzBitVector *x, RzBitVector *y);
+		RzILOpPure *px;
+		RzILOpPure *py;
+		switch (pure->code) {
+		default:
+			goto map_to_bottom;
+		case RZ_IL_OP_SLE:
+			px = pure->op.sle.x;
+			py = pure->op.sle.y;
+			cmp = rz_bv_sle;
+			break;
+		case RZ_IL_OP_ULE:
+			px = pure->op.ule.x;
+			py = pure->op.ule.y;
+			cmp = rz_bv_ule;
+			break;
+		case RZ_IL_OP_EQ:
+			px = pure->op.eq.x;
+			py = pure->op.eq.y;
+			cmp = rz_bv_eq;
+			break;
+		}
+
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: CMP x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: CMP y failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		bool cmp_is_true = cmp(out->bv, y.bv);
+		rz_bv_cast_inplace(out->bv, 1, false);
+		rz_bv_set(out->bv, 0, cmp_is_true);
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_MUL:
 	case RZ_IL_OP_DIV:
 	case RZ_IL_OP_SDIV:
