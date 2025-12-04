@@ -981,17 +981,17 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
  * \param x The input and output operand of the addition.
  * \param y RzBitVector, Operand
  * \param carry bool*, bool pointer to where to save the carry value.
- * \return The pointer to the \p x ir NULL in case of failure.
+ * \return True for success, false otherwise.
  */
-RZ_API RzBitVector *rz_bv_add_inplace(
+RZ_API bool rz_bv_add_inplace(
 	RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x,
 	RZ_NONNULL RzBitVector *y,
 	RZ_NULLABLE bool *carry) {
-	rz_return_val_if_fail(x && y, NULL);
+	rz_return_val_if_fail(x && y, false);
 
 	if (x->len != y->len) {
 		rz_warn_if_reached();
-		return NULL;
+		return false;
 	}
 
 	bool a = false, b = false, _carry = false;
@@ -1006,7 +1006,7 @@ RZ_API RzBitVector *rz_bv_add_inplace(
 		*carry = _carry;
 	}
 
-	return x;
+	return true;
 }
 
 /**
@@ -1026,7 +1026,28 @@ RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 	}
 
 	RzBitVector *ret = rz_bv_dup(x);
-	return rz_bv_add_inplace(ret, y, carry);
+	if (!rz_bv_add_inplace(ret, y, carry)) {
+		rz_bv_free(ret);
+		return NULL;
+	}
+	return ret;
+}
+
+/**
+ * \brief
+ * NOTE:
+ * y = -y;
+ * x += y;
+ */
+RZ_API bool rz_bv_sub_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_INOUT RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow) {
+	rz_return_val_if_fail(x && y, false);
+	if (!rz_bv_neg_inplace(y)) {
+		return false;
+	}
+	if (!rz_bv_add_inplace(x, y, borrow)) {
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -1039,13 +1060,23 @@ RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow) {
 	rz_return_val_if_fail(x && y, NULL);
+	if (x->len != y->len) {
+		return NULL;
+	}
 
-	RzBitVector *ret;
-	RzBitVector *neg_y;
-
-	neg_y = rz_bv_neg(y);
-	ret = rz_bv_add(x, neg_y, borrow);
-	rz_bv_free(neg_y);
+	RzBitVector *y_cpy = rz_bv_dup(y);
+	RzBitVector *ret = rz_bv_dup(x);
+	if (!ret || !y_cpy) {
+		rz_bv_free(y_cpy);
+		rz_bv_free(ret);
+		return NULL;
+	}
+	if (!rz_bv_sub_inplace(ret, y_cpy, borrow)) {
+		rz_bv_free(y_cpy);
+		rz_bv_free(ret);
+		return NULL;
+	}
+	rz_bv_free(y_cpy);
 	return ret;
 }
 
