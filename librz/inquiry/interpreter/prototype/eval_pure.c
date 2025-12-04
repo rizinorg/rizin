@@ -264,7 +264,32 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		break;
 	}
-	case RZ_IL_OP_ADD:
+	case RZ_IL_OP_ADD: {
+		RzILOpPure *px = pure->op.add.x;
+		RzILOpPure *py = pure->op.add.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: ADD x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, plugin_data)) {
+			RZ_LOG_ERROR("prototype: ADD y failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_add_inplace(out->bv, y.bv, NULL)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_SUB:
 	case RZ_IL_OP_SHIFTR:
 	case RZ_IL_OP_SHIFTL:
