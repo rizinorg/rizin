@@ -18,6 +18,14 @@ def get_changed_lines(
     """
     changed: Dict[Path, List[Tuple[int, int]]] = {}
 
+    try:
+        subprocess.check_call(["git", "rev-parse", "--verify", f"{base_ref}"])
+        subprocess.check_call(["git", "rev-parse", "--verify", f"{head_ref}"])
+    except subprocess.CalledProcessError:
+        # References were malformed.
+        print(f"One or both references are invalid: {base_ref} and {head_ref}")
+        sys.exit(1)
+
     # --unified=0  gives hunks like “@@ -L,C +L,C @@”  (we care about the + side)
     cmd = ["git", "diff", "--unified=0", f"{base_ref}..{head_ref}"]
     out = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
