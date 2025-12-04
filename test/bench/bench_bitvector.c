@@ -113,7 +113,7 @@ int main(RzTable *t_out) {
 	bench_bv_set_range_100_bit(t);
 
 	// Print results
-	const char *out = rz_table_tostring(t);
+	char *out = rz_table_tostring(t);
 	printf("%s\n", out);
 
 	free(out);
