@@ -1143,7 +1143,7 @@ static void ds_begin_line(RzDisasmState *ds) {
 			void **iter;
 			// XXX Probably expensive
 			rz_pvector_foreach (ds->core->analysis->reflines, iter) {
-				RzAnalysisRefline *ref = iter;
+				RzAnalysisRefline *ref = *iter;
 				if (ref->from == ds->vat) {
 					pj_kn(ds->pj, "arrow", ref->to);
 					break;
