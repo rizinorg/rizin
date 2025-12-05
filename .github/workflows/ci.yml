@@ -120,6 +120,8 @@ jobs:
             run_tests: true
             enabled: ${{ (needs.changes.outputs.edited == 'true' && github.event_name == 'pull_request') }}
             timeout: 120
+            # The existing leaks in Rizin will make the tests fail otherwise
+            # before it runs the script to check for new leaks.
             allow_failure: true
           - name: linux-gcc-tests-portable
             os: ubuntu-24.04
