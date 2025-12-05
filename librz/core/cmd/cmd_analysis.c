@@ -3361,7 +3361,7 @@ static RzList /*<RzAnalysisFunction *>*/ *functions_sorted_by_addr(RzAnalysis *a
 	return sorted;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzList *list = functions_sorted_by_addr(core->analysis);
 	if (!list) {
