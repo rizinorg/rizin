@@ -396,17 +396,7 @@ static const char *getName(RzCore *core, ut64 addr) {
 }
 
 static char *getNameDelta(RzCore *core, ut64 addr) {
-	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
-	if (item) {
-		if (item->offset != addr) {
-			const char *name = core->flags->realnames
-				? item->realname
-				: item->name;
-			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
-		}
-		return rz_str_dup(item->name);
-	}
-	return NULL;
+	return rz_core_addr_get_flag_offset(core, addr);
 }
 
 static void archbits(RzCore *core, ut64 addr) {
@@ -1952,13 +1942,10 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 		rz_strbuf_append(sb, ":");
 	}
 	if (rz_config_get_b(core->config, "scr.prompt.flag")) {
-		const RzFlagItem *f = rz_flag_get_at(core->flags, core->offset, true);
-		if (f) {
-			if (f->offset < core->offset) {
-				rz_strbuf_appendf(sb, "%s + %" PFMT64u, f->name, core->offset - f->offset);
-			} else {
-				rz_strbuf_appendf(sb, "%s", f->name);
-			}
+		char *flag_desc = rz_core_addr_get_flag_offset(core, core->offset);
+		if (flag_desc) {
+			rz_strbuf_append(sb, flag_desc);
+			free(flag_desc);
 			if (rz_config_get_b(core->config, "scr.prompt.flag.only")) {
 				return true;
 			}

@@ -435,7 +435,6 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		const char *a, *b;
 		char *fn;
 		RzPrint *p = core->print;
-		RzFlagItem *f;
 		ut64 v = rz_read_ble(buffer + i, p->big_endian, size * 8);
 		if (p->colorfor) {
 			a = p->colorfor(p->user, v, true);
@@ -447,18 +446,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		} else {
 			a = b = "";
 		}
-		f = rz_flag_get_at(core->flags, v, true);
-		fn = NULL;
-		if (f) {
-			st64 delta = (st64)(v - f->offset);
-			if (delta >= 0 && delta < 8192) {
-				if (v == f->offset) {
-					fn = rz_str_dup(f->name);
-				} else {
-					fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-				}
-			}
-		}
+		fn = rz_core_addr_get_flag_offset(core, v);
 		char *vstr = ut64_to_hex(v, size * 2);
 		if (vstr) {
 			if (hex_offset) {
