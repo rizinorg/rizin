@@ -3361,7 +3361,7 @@ static RzList /*<RzAnalysisFunction *>*/ *functions_sorted_by_addr(RzAnalysis *a
 	return sorted;
 }
 
-RZ_API RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzList *list = functions_sorted_by_addr(core->analysis);
 	if (!list) {
@@ -3654,11 +3654,9 @@ static void fcn_list_print_info(RzCore *core, RzList /*<RzAnalysisFunction *>*/ 
 	}
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
-	printf("\nthe state of output is -> %d\n", state->mode);
-	fflush(stdout);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		fcn_list_print_info(core, list, state);
@@ -3668,6 +3666,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, con
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		function_list_print_to_table(core, list, state->d.t, false);
+		break;
 	default:
 		rz_warn_if_reached();
 		res = RZ_CMD_STATUS_WRONG_ARGS;

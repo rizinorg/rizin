@@ -61,7 +61,7 @@ bool test_analysis_function_table_mode(void) {
 	memset(&state, 0, sizeof(state));
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdStatus st = rz_analysis_function_list_handler(core, 0, NULL, &state);
+	RzCmdStatus st = rz_analysis_function_info_handler(core, 0, NULL, &state);
 	mu_assert_eq(st, RZ_CMD_STATUS_OK, "afit handler should succeed");
 
 	mu_assert_notnull(state.d.t, "table should exist");
