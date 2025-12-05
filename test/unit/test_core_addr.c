@@ -14,6 +14,8 @@ bool test_rz_core_addr_describe_options_new(void) {
 	mu_assert_false(opts->show_color, "show_color should default to false");
 	mu_assert_false(opts->show_source_info, "show_source_info should default to false");
 	mu_assert_false(opts->use_realnames, "use_realnames should default to false");
+	mu_assert_eq(opts->max_flag_delta, 0, "max_flag_delta should default to 0 (unlimited)");
+	mu_assert_false(opts->use_spaces_around_delta, "use_spaces_around_delta should default to false");
 	rz_core_addr_describe_options_free(opts);
 	mu_end;
 }
@@ -190,6 +192,58 @@ bool test_rz_core_addr_describe_pj(void) {
 	mu_end;
 }
 
+bool test_rz_core_addr_max_flag_delta(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core should be allocated");
+
+	// Add a flag far away from test address
+	rz_flag_set(core->flags, "sym.distant", 0x1000, 10);
+
+	// Test with unlimited delta (0) - should find the flag
+	RzAddrDescribeOptions opts_unlimited = {
+		.show_offset = true,
+		.show_flag = true,
+		.max_flag_delta = 0 // unlimited
+	};
+	RzAddrDescription *desc = rz_core_addr_describe(core, 0x10000, &opts_unlimited);
+	mu_assert_notnull(desc, "description should be allocated");
+	mu_assert_notnull(desc->flag_name, "flag_name should be set with unlimited delta");
+	mu_assert_streq(desc->flag_name, "sym.distant", "flag_name should match");
+	rz_core_addr_description_free(desc);
+
+	// Test with default 8192 limit (-1) - should NOT find the flag (delta too large)
+	RzAddrDescribeOptions opts_default = {
+		.show_offset = true,
+		.show_flag = true,
+		.max_flag_delta = -1 // default 8192 limit
+	};
+	desc = rz_core_addr_describe(core, 0x10000, &opts_default);
+	mu_assert_notnull(desc, "description should be allocated");
+	mu_assert_null(desc->flag_name, "flag_name should be NULL with 8192 limit (delta too large)");
+	rz_core_addr_description_free(desc);
+
+	// Test with small delta within limit - should find the flag
+	desc = rz_core_addr_describe(core, 0x1100, &opts_default);
+	mu_assert_notnull(desc, "description should be allocated");
+	mu_assert_notnull(desc->flag_name, "flag_name should be set (delta within 8192)");
+	mu_assert_eq(desc->flag_delta, 0x100, "flag_delta should be 0x100");
+	rz_core_addr_description_free(desc);
+
+	// Test with custom limit
+	RzAddrDescribeOptions opts_custom = {
+		.show_offset = true,
+		.show_flag = true,
+		.max_flag_delta = 100 // small custom limit
+	};
+	desc = rz_core_addr_describe(core, 0x1100, &opts_custom);
+	mu_assert_notnull(desc, "description should be allocated");
+	mu_assert_null(desc->flag_name, "flag_name should be NULL with 100 limit (delta 0x100 > 100)");
+	rz_core_addr_description_free(desc);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_core_addr_describe_options_new);
 	mu_run_test(test_rz_core_addr_describe_basic);
@@ -197,6 +251,7 @@ bool all_tests() {
 	mu_run_test(test_rz_core_addr_get_name_delta);
 	mu_run_test(test_rz_core_addr_with_function);
 	mu_run_test(test_rz_core_addr_describe_pj);
+	mu_run_test(test_rz_core_addr_max_flag_delta);
 	return tests_passed != tests_run;
 }
 

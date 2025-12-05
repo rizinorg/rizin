@@ -37,6 +37,8 @@ RZ_API RZ_OWN RzAddrDescribeOptions *rz_core_addr_describe_options_new(void) {
 	opts->show_color = false;
 	opts->show_source_info = false;
 	opts->use_realnames = false;
+	opts->max_flag_delta = 0; // 0 = unlimited (new behavior); use -1 for legacy 8192 limit
+	opts->use_spaces_around_delta = false; // No spaces by default (compact format)
 	return opts;
 }
 
@@ -81,11 +83,28 @@ static void addr_describe_from_flags(RzCore *core, RzAddrDescription *desc, ut64
 		return;
 	}
 
+	st64 delta = (st64)(addr - fi->offset);
+
+	// Check max_flag_delta limit if set
+	// max_flag_delta < 0: use default 8192 limit
+	// max_flag_delta == 0: unlimited
+	// max_flag_delta > 0: use that value as limit
+	if (opts->max_flag_delta < 0) {
+		// Default limit for backward compatibility
+		if (delta < 0 || delta >= 8192) {
+			return;
+		}
+	} else if (opts->max_flag_delta > 0) {
+		if (delta < 0 || delta >= opts->max_flag_delta) {
+			return;
+		}
+	}
+
 	const char *name = (opts->use_realnames && fi->realname) ? fi->realname : fi->name;
 
 	desc->flag_name = rz_str_dup(name);
 	desc->flag_offset = fi->offset;
-	desc->flag_delta = (st64)(addr - fi->offset);
+	desc->flag_delta = delta;
 }
 
 /**
@@ -250,17 +269,19 @@ RZ_API RZ_OWN char *rz_core_addr_description_to_string(RZ_NONNULL const RzAddrDe
 	}
 
 	if (has_name && name) {
+		const char *plus_fmt = opts->use_spaces_around_delta ? " + " : "+";
+		const char *minus_fmt = opts->use_spaces_around_delta ? " - " : "-";
 		if (delta > 0) {
 			if (opts->use_decimal) {
-				rz_strbuf_appendf(&sb, "%s+%" PFMT64d, name, delta);
+				rz_strbuf_appendf(&sb, "%s%s%" PFMT64d, name, plus_fmt, delta);
 			} else {
-				rz_strbuf_appendf(&sb, "%s+0x%" PFMT64x, name, (ut64)delta);
+				rz_strbuf_appendf(&sb, "%s%s0x%" PFMT64x, name, plus_fmt, (ut64)delta);
 			}
 		} else if (delta < 0) {
 			if (opts->use_decimal) {
-				rz_strbuf_appendf(&sb, "%s%" PFMT64d, name, delta);
+				rz_strbuf_appendf(&sb, "%s%s%" PFMT64d, name, minus_fmt, -delta);
 			} else {
-				rz_strbuf_appendf(&sb, "%s-0x%" PFMT64x, name, (ut64)(-delta));
+				rz_strbuf_appendf(&sb, "%s%s0x%" PFMT64x, name, minus_fmt, (ut64)(-delta));
 			}
 		} else {
 			rz_strbuf_append(&sb, name);
@@ -600,7 +621,44 @@ RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 a
 		.use_decimal = true,
 		.show_color = false,
 		.show_source_info = false,
-		.use_realnames = false
+		.use_realnames = false,
+		.max_flag_delta = -1 // Use default 8192 limit for backward compatibility
+	};
+
+	RzAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
+	if (!desc || !desc->flag_name) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
+
+	char *result = rz_core_addr_description_to_string(desc, &opts);
+	rz_core_addr_description_free(desc);
+	return result;
+}
+
+/**
+ * \brief Get flag-relative offset string for an address with spaces around delta
+ *
+ * Returns a string like "sym.func + 0x10" if a flag exists at or before the address,
+ * or NULL if not. Uses spaces around +/- for readability (used for prompts).
+ *
+ * \param core The RzCore instance
+ * \param addr The address to describe
+ * \return Newly allocated string or NULL. Caller must free.
+ */
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, NULL);
+
+	RzAddrDescribeOptions opts = {
+		.show_offset = false,
+		.prefer_function = false,
+		.show_flag = true,
+		.use_decimal = true,
+		.show_color = false,
+		.show_source_info = false,
+		.use_realnames = false,
+		.max_flag_delta = 0, // No limit for prompt - show all flags
+		.use_spaces_around_delta = true // Use spaces for prompt display
 	};
 
 	RzAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
