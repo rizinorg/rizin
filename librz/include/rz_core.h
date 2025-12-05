@@ -215,6 +215,8 @@ typedef struct rz_addr_describe_options_t {
 	bool show_color; ///< Include color codes in the output
 	bool show_source_info; ///< Include source file/line information
 	bool use_realnames; ///< Use realnames for flags instead of names
+	st64 max_flag_delta; ///< Maximum delta from flag offset to show (0 = unlimited, negative = use default 8192)
+	bool use_spaces_around_delta; ///< Use spaces around +/- in delta format (e.g., "sym + 10" vs "sym+10")
 } RzAddrDescribeOptions;
 
 /**
@@ -684,6 +686,8 @@ RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr, boo
 RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut64 addr);
 /** \brief Get flag-relative offset string (e.g., "sym.func+0x10") */
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 addr);
+/** \brief Get flag-relative offset string with spaces for prompts (e.g., "sym.func + 0x10") */
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core, ut64 addr);
 
 /** @} */ // end of caddr group
 
