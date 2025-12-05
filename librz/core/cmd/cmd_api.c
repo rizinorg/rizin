@@ -109,7 +109,7 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
-static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size);
 
 static int cd_sort(const void *a, const void *b, void *user) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
@@ -1006,7 +1006,7 @@ static size_t fill_args(RzStrBuf *sb, const RzCmdDesc *cd) {
 	return len;
 }
 
-static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
+static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color, int gutter_size) {
 	const char *pal_label_color = "",
 		   *pal_args_color = "",
 		   *pal_input_color = "",
@@ -1022,7 +1022,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 		pal_reset = cons->context->pal.reset;
 	}
 
-	size_t columns = 0;
+	size_t columns = gutter_size;
 	rz_strbuf_append(sb, pal_label_color);
 	columns += strbuf_append_calc(sb, "Usage: ");
 	rz_strbuf_append(sb, pal_reset);
@@ -1132,17 +1132,18 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 	rz_strbuf_appendf(sb, "%s\n", pal_reset);
 }
 
-static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, const char *vertical_line, bool use_color) {
+static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, const char *vertical_line,
+	bool use_color, int gutter_size) {
 	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", vertical_line,
-		true, max_len, use_color, 0);
+		true, max_len, use_color, gutter_size);
 }
 
-static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutter_size) {
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	bool scr_curvy = scr_utf8 && core_config_get_b(cmd->core, "scr.utf8.curvy");
 
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	fill_usage_strbuf(cmd, sb, cd, use_color);
+	fill_usage_strbuf(cmd, sb, cd, use_color, gutter_size);
 
 	void **it_cd;
 	size_t idx = 0;
@@ -1162,10 +1163,10 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	rz_cmd_desc_children_foreach_idx(cd, it_cd, idx) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
 		const char *vertical_line = get_vertical_line(idx, n_descs, scr_curvy, scr_utf8);
-		print_child_help(cmd, sb, child, max_len, vertical_line, use_color);
+		print_child_help(cmd, sb, child, max_len, vertical_line, use_color, gutter_size);
 	}
 
-	bool details_filled = fill_details(cmd, cd, sb, use_color);
+	bool details_filled = fill_details(cmd, cd, sb, use_color, gutter_size);
 	if (!details_filled &&
 		cd->type == RZ_CMD_DESC_TYPE_GROUP &&
 		cd->d.group_data.exec_cd &&
@@ -1194,7 +1195,8 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain(sb);
 }
 
-static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
+static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color,
+	int gutter_size) {
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	const char *vertical_line = scr_utf8 ? RUNE_LINE_VERT " " : "| ";
 
@@ -1211,7 +1213,7 @@ static void fill_argv_modes_help_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd,
 			char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
 			char *summary = rz_str_newf("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
 			do_print_child_help(cmd, sb, cd, name, summary, vertical_line, false, max_len,
-				use_color, 0);
+				use_color, gutter_size);
 			free(name);
 			free(summary);
 		}
@@ -1239,7 +1241,9 @@ static RzCmdDescDetail *get_cd_details_cb(RzCmd *cmd, RzCmdDesc *cd) {
 	return NULL;
 }
 
-static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrBuf *sb, bool use_color) {
+static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrBuf *sb, bool use_color,
+	int gutter_size) {
+
 	const char *pal_help_color = "",
 		   *pal_input_color = "",
 		   *pal_label_color = "",
@@ -1284,7 +1288,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 				pal_args_color, arg_str,
 				padding, "",
 				pal_help_color);
-			size_t columns = strlen("| ") + strlen(entry_it->text) +
+			size_t columns = gutter_size + strlen("| ") + strlen(entry_it->text) +
 				strlen(" ") + strlen(arg_str) + padding;
 			fill_wrapped_comment(cmd, sb, entry_it->comment, columns, use_color);
 			rz_strbuf_appendf(sb, "%s\n", pal_reset);
@@ -1294,31 +1298,31 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 	}
 }
 
-static bool fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+static bool fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
 	const RzCmdDescDetail *detail_it = get_cd_details(cd);
 	if (!detail_it) {
 		return false;
 	}
-	fill_details_do(cmd, detail_it, sb, use_color);
+	fill_details_do(cmd, detail_it, sb, use_color, gutter_size);
 	return true;
 }
 
-static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
+static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
 	RzCmdDescDetail *detail_it = get_cd_details_cb(cmd, cd);
 	if (!detail_it) {
 		return false;
 	}
-	fill_details_do(cmd, detail_it, sb, use_color);
+	fill_details_do(cmd, detail_it, sb, use_color, gutter_size);
 	rz_cmd_desc_details_free(detail_it);
 	return true;
 }
 
-static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	return (int)fill_details_static(cmd, cd, sb, use_color) |
-		(int)fill_details_cb(cmd, cd, sb, use_color);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
+	return (int)fill_details_static(cmd, cd, sb, use_color, gutter_size) |
+		(int)fill_details_cb(cmd, cd, sb, use_color, gutter_size);
 }
 
-static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
+static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color, int gutter_size) {
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	const char *pal_reset = "";
 	if (cmd->has_cons && use_color) {
@@ -1326,10 +1330,10 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 		pal_reset = cons->context->pal.reset;
 	}
 
-	fill_usage_strbuf(cmd, sb, cd, use_color);
+	fill_usage_strbuf(cmd, sb, cd, use_color, gutter_size);
 
 	if (cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE) {
-		fill_argv_modes_help_strbuf(cmd, sb, cd, use_color);
+		fill_argv_modes_help_strbuf(cmd, sb, cd, use_color, gutter_size);
 	}
 
 	switch (detail) {
@@ -1340,7 +1344,7 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 			fill_colored_args(cmd, sb, cd->help->description, use_color, pal_reset);
 			rz_strbuf_append(sb, "\n");
 		}
-		fill_details(cmd, cd, sb, use_color);
+		fill_details(cmd, cd, sb, use_color, gutter_size);
 		break;
 	default:
 		rz_strbuf_free(sb);
@@ -1349,31 +1353,34 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 	return rz_strbuf_drain(sb);
 }
 
-static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutter_size) {
 	// abuse detail=2 of the argv help as they show essentially the same info
-	return argv_get_help(cmd, cd, 2, use_color);
+	return argv_get_help(cmd, cd, 2, use_color, gutter_size);
 }
 
-static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color, size_t detail) {
+static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color,
+	size_t detail, int gutter_size) {
+
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (cd->d.group_data.exec_cd && (detail > 1 || (detail == 1 && strcmp(cmdid, cd->name)))) {
-			return get_help(cmd, cd->d.group_data.exec_cd, cmdid, args, use_color, detail);
+			return get_help(cmd, cd->d.group_data.exec_cd, cmdid, args, use_color, detail,
+				gutter_size);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
-			return group_get_help(cmd, cd, use_color);
+			return group_get_help(cmd, cd, use_color, gutter_size);
 		}
-		return argv_get_help(cmd, cd, detail, use_color);
+		return argv_get_help(cmd, cd, detail, use_color, gutter_size);
 	case RZ_CMD_DESC_TYPE_ARGV:
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
-		return argv_get_help(cmd, cd, detail, use_color);
+		return argv_get_help(cmd, cd, detail, use_color, gutter_size);
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
 			return NULL;
 		}
-		return fake_get_help(cmd, cd, use_color);
+		return fake_get_help(cmd, cd, use_color, gutter_size);
 	case RZ_CMD_DESC_TYPE_INNER:
 		rz_warn_if_reached();
 		return NULL;
@@ -1560,10 +1567,13 @@ RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_col
  * \param cmd reference to RzCmd
  * \param args reference to RzCmdParsedArgs
  * \param use_color output strings with color codes.
+ * \param gutter_size gutter size in chars
  *
  * \return returns NULL if invalid args are given, otherwise returns help message of the given args.
  */
-RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color) {
+RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color,
+	int gutter_size) {
+
 	char *cmdid = rz_str_dup(rz_cmd_parsed_args_cmd(args));
 	if (!cmdid) {
 		return NULL;
@@ -1587,7 +1597,7 @@ RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedA
 		goto err;
 	}
 
-	res = get_help(cmd, cd, cmdid, args, use_color, detail);
+	res = get_help(cmd, cd, cmdid, args, use_color, detail, gutter_size);
 err:
 	free(cmdid);
 	return res;

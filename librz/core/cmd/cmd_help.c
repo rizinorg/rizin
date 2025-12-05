@@ -57,6 +57,7 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		return false;
 	}
 
+	const int hud_gutter_size = 3;
 	bool ret = true;
 	char *line_prefix = NULL;
 	char *detailed_help = NULL;
@@ -67,18 +68,7 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		goto error;
 	}
 
-	int old_force_columns = 0;
-	RzCons *cons = NULL;
-	if (cmd->has_cons) {
-		cons = rz_cons_singleton();
-		old_force_columns = cons->force_columns;
-		int cons_cols = rz_cons_get_size(NULL);
-		cons->force_columns = cons_cols - (3 + strlen(line_prefix));
-	}
-	detailed_help = rz_cmd_get_help(cmd, pa, hs->color);
-	if (cmd->has_cons) {
-		cons->force_columns = old_force_columns;
-	}
+	detailed_help = rz_cmd_get_help(cmd, pa, hs->color, hud_gutter_size + strlen(line_prefix));
 	if (!detailed_help) {
 		goto error;
 	}
@@ -90,7 +80,21 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 
 	while (!rz_list_empty(help_lines)) {
 		char *line = (char *)rz_list_pop_head(help_lines);
-		char *prefixed_line = rz_str_newf("%s%s", line_prefix, line);
+		char *prefixed_line = NULL;
+		if (*line == ' ') {
+			prefixed_line = strdup(line);
+			if (strlen(prefixed_line) >= hud_gutter_size) {
+				// Currently, every line is handled separately by the hud, and this results
+				// in a hud gutter being attached to every line and increasing its length.
+				// However, wrapped lines already take the hud gutter into account and so
+				// they need to be moved backwards.
+				memmove(prefixed_line, prefixed_line + hud_gutter_size,
+					strlen(prefixed_line + hud_gutter_size) + 1);
+			}
+			memcpy(prefixed_line, line_prefix, strlen(line_prefix));
+		} else {
+			prefixed_line = rz_str_newf("%s%s", line_prefix, line);
+		}
 		if (!prefixed_line) {
 			goto error;
 		}
