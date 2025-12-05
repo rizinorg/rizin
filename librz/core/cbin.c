@@ -3854,6 +3854,55 @@ static void classdump_java(RzBinClass *c) {
 	rz_cons_printf("}\n\n");
 }
 
+RZ_API bool rz_core_bin_class_apply_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(core && bf, false);
+
+	const RzPVector *cs = rz_bin_object_get_classes(bf->o);
+	if (!cs) {
+		return false;
+	}
+
+	RzBinClass *c;
+	void **iter;
+	RzListIter *iter2;
+	RzBinClassField *f;
+
+	// Apply classes to type database
+	rz_pvector_foreach (cs, iter) {
+		c = *iter;
+		if (!c->name) {
+			continue;
+		}
+
+		// Only handle C/C++/ObjC classes
+		if (!(bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX || bf->o->lang == RZ_BIN_LANGUAGE_OBJC)) {
+			continue;
+		}
+
+		// Build struct definition
+		RzStrBuf *sb = rz_strbuf_new("");
+		rz_strbuf_appendf(sb, "struct %s {", c->name);
+
+		rz_list_foreach (c->fields, iter2, f) {
+			char *n = objc_name_toc(f->name);
+			char *t = objc_type_toc(f->type);
+			rz_strbuf_appendf(sb, " %s %s;", t, n);
+			free(t);
+			free(n);
+		}
+
+		rz_strbuf_append(sb, "};");
+
+		// Apply type definition using td command
+		char *cmd = rz_str_newf("td \"%s\"", rz_strbuf_get(sb));
+		rz_core_cmd0(core, cmd);
+		free(cmd);
+		rz_strbuf_free(sb);
+	}
+
+	return true;
+}
+
 RZ_API bool rz_core_bin_class_as_source_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, const char *class_name) {
 	rz_return_val_if_fail(core && bf, false);
 

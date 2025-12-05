@@ -484,6 +484,12 @@ commands:
         summary: Remove all named formats
         cname: cmd_print_format_delete_all
         args: []
+      - name: pfa
+        summary: Apply format string at current offset (create flags)
+        cname: cmd_print_format_apply
+        args:
+          - name: format
+            type: RZ_CMD_ARG_TYPE_STRING
       - name: pfc
         summary: Show data using given format string with C syntax
         cname: cmd_print_format_c

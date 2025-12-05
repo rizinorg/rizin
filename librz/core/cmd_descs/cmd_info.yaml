@@ -46,6 +46,10 @@ commands:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_QUIETEST
         args: []
+      - name: ica
+        summary: Apply classes to type database (replacement for .ic*)
+        cname: cmd_info_class_apply
+        args: []
       - name: icc
         summary: Prints class, fields and methods as source code
         cname: cmd_info_class_as_source

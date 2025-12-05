@@ -6251,6 +6251,18 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, con
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_format_apply_handler(RzCore *core, int argc, const char **argv) {
+	int mode = RZ_PRINT_SEEFLAGS | RZ_PRINT_MUSTSEE | RZ_PRINT_ISFIELD;
+	char *format = rz_core_print_format(core, argv[1], mode, core->offset);
+	if (!format) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// Execute the generated commands
+	rz_core_cmd0(core, format);
+	free(format);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_print_format_c_handler(RzCore *core, int argc, const char **argv) {
 	int mode = RZ_PRINT_STRUCT;
 	return print_format(core, argv[1], mode, NULL);
