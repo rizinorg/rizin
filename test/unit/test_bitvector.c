@@ -1715,6 +1715,22 @@ bool test_rz_bv_extra_operations(void) {
 	mu_end;
 }
 
+bool test_rz_bv_hash(void) {
+	RzBitVector *bv_small_1 = rz_bv_new_from_ut64(32, 1);
+	RzBitVector *bv_small_2 = rz_bv_new_from_ut64(32, 1);
+	RzBitVector *bv_large_1 = rz_bv_new_from_ut64(128, 2);
+	RzBitVector *bv_large_2 = rz_bv_new_from_ut64(128, 2);
+	mu_assert_eq(rz_bv_hash(bv_small_1), rz_bv_hash(bv_small_2), "Non repeatable hashing small");
+	mu_assert_eq(rz_bv_hash(bv_large_1), rz_bv_hash(bv_large_2), "Non repeatable hashing large");
+	mu_assert_neq(rz_bv_hash(bv_small_1), rz_bv_hash(bv_large_1), "Size doesn't affect hash but should");
+	mu_assert_neq(rz_bv_hash(bv_small_2), rz_bv_hash(bv_large_2), "Size doesn't affect hash but should");
+	rz_bv_free(bv_small_1);
+	rz_bv_free(bv_small_2);
+	rz_bv_free(bv_large_1);
+	rz_bv_free(bv_large_2);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -1749,6 +1765,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_copy_nbits_inplace);
 	mu_run_test(test_rz_bv_cast_inplace);
 	mu_run_test(test_rz_bv_extra_operations);
+	mu_run_test(test_rz_bv_hash);
 
 	return tests_passed != tests_run;
 }
