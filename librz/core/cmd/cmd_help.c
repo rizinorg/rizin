@@ -83,14 +83,13 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		char *prefixed_line = NULL;
 		if (*line == ' ') {
 			prefixed_line = strdup(line);
-			size_t prefixed_line_len = strlen(prefixed_line) + 1;
-			if (prefixed_line_len >= hud_gutter_size) {
+			if (strlen(prefixed_line) >= hud_gutter_size) {
 				// Currently, every line is handled separately by the hud, and this results
 				// in a hud gutter being attached to every line and increasing its length.
 				// However, wrapped lines already take the hud gutter into account and so
 				// they need to be moved backwards.
 				memmove(prefixed_line, prefixed_line + hud_gutter_size,
-					prefixed_line_len - hud_gutter_size);
+					strlen(prefixed_line + hud_gutter_size) + 1);
 			}
 			memcpy(prefixed_line, line_prefix, strlen(line_prefix));
 		} else {
