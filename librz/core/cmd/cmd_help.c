@@ -83,6 +83,9 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		char *prefixed_line = NULL;
 		if (*line == ' ') {
 			prefixed_line = strdup(line);
+			if (!prefixed_line) {
+				goto error;
+			}
 			if (strlen(prefixed_line) >= hud_gutter_size) {
 				// Currently, every line is handled separately by the hud, and this results
 				// in a hud gutter being attached to every line and increasing its length.
@@ -94,9 +97,9 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 			memcpy(prefixed_line, line_prefix, strlen(line_prefix));
 		} else {
 			prefixed_line = rz_str_newf("%s%s", line_prefix, line);
-		}
-		if (!prefixed_line) {
-			goto error;
+			if (!prefixed_line) {
+				goto error;
+			}
 		}
 		rz_list_push(hs->detail_lines, prefixed_line);
 	}
