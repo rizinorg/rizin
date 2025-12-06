@@ -60,6 +60,7 @@ jobs:
             linux-meson-gcc-tests,
             macos-meson-clang-tests,
             linux-gcc-tests-asan,
+            linux-gcc-tests-lsan,
             linux-clang-tests-asan,
             linux-gcc-tests-codecov,
             capstone-v4,
@@ -107,6 +108,21 @@ jobs:
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 120
             allow_failure: false
+          - name: linux-gcc-tests-lsan
+            os: ubuntu-24.04
+            build_system: meson
+            compiler: gcc
+            cflags: "-DASAN=1 -DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
+            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
+            asan: true
+            lsan_options: log_path=/tmp/lsan_logs/log
+            continue-on-error: false
+            run_tests: true
+            enabled: ${{ (needs.changes.outputs.edited == 'true' && github.event_name == 'pull_request') }}
+            timeout: 120
+            # The existing leaks in Rizin will make the tests fail otherwise
+            # before it runs the script to check for new leaks.
+            allow_failure: true
           - name: linux-gcc-tests-portable
             os: ubuntu-24.04
             build_system: meson
@@ -277,6 +293,7 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
+          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Checkout our Testsuite Binaries
         if: matrix.enabled
@@ -288,10 +305,13 @@ jobs:
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
         uses: actions/checkout@v6
         with:
+          # Required for comparing the current branch to dev.
+          fetch-depth: 2
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
       - name: Run integration tests and rz-test
         if: matrix.run_tests && matrix.enabled
+        continue-on-error: ${{ matrix.allow_failure }}
         run: |
           # Running the test suite
           export PATH=${HOME}/bin:$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
@@ -317,9 +337,11 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
+          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
       - name: Run fuzz tests
         if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz') || matrix.coverage)
+        continue-on-error: ${{ matrix.allow_failure }}
         run: |
           export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
           export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
@@ -337,7 +359,12 @@ jobs:
         env:
           ASAN: ${{ matrix.asan }}
           ASAN_OPTIONS: ${{ matrix.asan_options }}
+          LSAN_OPTIONS: ${{ matrix.lsan_options }}
           CC: ${{ matrix.compiler }}
+      - name: Check for new leaks
+        if: matrix.lsan_options != '' && matrix.enabled
+        run: |
+          ./sys/lsan_check.py ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} /tmp/lsan_logs/*
       - name: Generate coverage data
         if: matrix.coverage && matrix.enabled
         run: |
