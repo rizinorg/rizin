@@ -8,7 +8,6 @@
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_graph_drawable.h>
 #include <rz_util/rz_log.h>
-#include <rz_analysis.h>
 
 #include "../core_private.h"
 
@@ -3654,7 +3653,7 @@ static void fcn_list_print_info(RzCore *core, RzList /*<RzAnalysisFunction *>*/ 
 	}
 }
 
-RZ_API RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	switch (state->mode) {

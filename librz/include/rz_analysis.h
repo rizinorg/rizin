@@ -2310,8 +2310,6 @@ RZ_API void rz_analysis_devirtualize(RzAnalysis *analysis, RzCppVariableBook *va
 RZ_API void rz_analysis_virtual_xrefs_print(RzAnalysis *analysis, const char *vfunc);
 RZ_API void rz_analysis_virtual_xrefs_print_table(RzAnalysis *analysis, const char *vfunc, RzTable *table);
 
-RZ_API RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-
 /* classes */
 typedef enum {
 	RZ_ANALYSIS_CLASS_METHOD_DEFAULT = 0,

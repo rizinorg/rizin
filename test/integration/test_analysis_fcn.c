@@ -46,31 +46,6 @@ static bool test_analysis_fcn_large() {
 	mu_end;
 }
 
-bool test_analysis_function_table_mode(void) {
-	RzCore *core = rz_core_new();
-	mu_assert_notnull(core, "core should not be null");
-
-	const char *path = "bins/elf/hello_world";
-
-	RzCoreFile *cf = rz_core_file_open(core, path, RZ_PERM_R, 0);
-	mu_assert_notnull(cf, "file should be opened");
-
-	mu_assert_eq(rz_core_bin_load(core, path, UT64_MAX), 1, "binary should load");
-
-	RzCmdStateOutput state;
-	memset(&state, 0, sizeof(state));
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE);
-
-	RzCmdStatus st = rz_analysis_function_info_handler(core, 0, NULL, &state);
-	mu_assert_eq(st, RZ_CMD_STATUS_OK, "afit handler should succeed");
-
-	mu_assert_notnull(state.d.t, "table should exist");
-
-	rz_cmd_state_output_fini(&state);
-	rz_core_free(core);
-	return true;
-}
-
 bool all_tests() {
 	mu_run_test(test_analysis_fcn_large);
 	mu_run_test(test_analysis_function_table_mode);
