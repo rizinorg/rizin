@@ -2296,7 +2296,7 @@ static const RzCmdDescDetailEntry cmd_search_value_Usage_space_example_detail_en
 	{ .text = "/v 4be 512", .arg_str = NULL, .comment = "Search 512 represented in 4 bytes big endian order." },
 	{ .text = "/v 8le \"[0x80000000,0x80001000]\"", .arg_str = NULL, .comment = "Search values in the closed range '[0x80000000,0x80001000]' represented in 8 bytes little endian order." },
 	{ .text = "/v 2a \"(0x1000,0xff0)\"", .arg_str = NULL, .comment = "Search values in the open range '(0x1000,0xff0)' represented in 2 bytes order of cfg.bigendian." },
-	{ .text = "/v 1 \"[0x20,0x10)\", 0xff, \"[0xf0,0xff]\"", .arg_str = NULL, .comment = "Search values in the right open range '[0x20,0x10)', value '0x55' and closed range values '[0xf0,0xff]' represented in 1 byte." },
+	{ .text = "/v 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\"", .arg_str = NULL, .comment = "Search values in the right open range '[0x20,0x10)', value '0x55' and closed range values '[0xf0,0xff]' represented in 1 byte." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_value_details[] = {
