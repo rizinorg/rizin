@@ -6,9 +6,12 @@
 #include <rz_inquiry.h>
 
 #include "rz_analysis.h"
+#include "rz_config.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
+#include "rz_io.h"
 #include "rz_reg.h"
+#include "rz_th.h"
 #include "rz_vector.h"
 #include <rz_list.h>
 #include <rz_types_base.h>
@@ -118,6 +121,18 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		return false;
 	}
 
+	// Setup the IO queues. Each interpreter instance needs it's own queue at
+	// for writing IO. Because the writing is done on the IO cache, and each
+	// instance needs its own cache.
+	RzThreadQueue *io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	RzThreadQueue *io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	if (!io_request_q || io_result_q) {
+		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
+		return false;
+	}
+
 	// Add the Effect for each entry point.
 	RzILOpEffect *eff = NULL;
 	if (argc == 1) {
@@ -125,6 +140,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
 		if (!eff) {
 			rz_th_queue_free(il_queue);
+			rz_th_queue_free(io_request_q);
+			rz_th_queue_free(io_result_q);
 			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", (ut64)entry_point);
 			return false;
 		}
@@ -137,6 +154,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
 			if (!eff) {
 				rz_th_queue_free(il_queue);
+				rz_th_queue_free(io_request_q);
+				rz_th_queue_free(io_result_q);
 				return false;
 			}
 		}
@@ -150,6 +169,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzThreadQueue *addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, (RzListFree)rz_interpreter_addr_queue_free);
 	if (!addr_queue) {
 		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
 		rz_pvector_free(il_cache);
 		return false;
 	}
@@ -163,6 +184,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	if (!boundaries) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
 		rz_pvector_free(il_cache);
 		return false;
 	}
@@ -178,6 +201,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	if (!yield_queue) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
 		rz_pvector_free(il_cache);
 		return false;
 	}
@@ -190,6 +215,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	if (!yield_queue || !yield_queues) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
 		rz_pvector_free(il_cache);
 		rz_interpreter_yield_queue_free(yield_queue);
 		ht_up_free(yield_queues);
@@ -209,10 +236,20 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
-	RzInterpreterSet *iset = rz_interpreter_set_new(rz_inquiry_plugin_interpreter_prototype.p_interpreter, abstr_state, addr_queue, il_queue, yield_queues, is_running);
+	RzInterpreterSet *iset = rz_interpreter_set_new(
+		rz_inquiry_plugin_interpreter_prototype.p_interpreter,
+		abstr_state,
+		addr_queue,
+		il_queue,
+		yield_queues,
+		io_request_q,
+		io_result_q,
+		is_running);
 	if (!iset) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
 		rz_pvector_free(il_cache);
 		rz_interpreter_yield_queue_free(yield_queue);
 		ht_up_free(yield_queues);
@@ -225,27 +262,65 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Waiting for new Effects to be requested and sending them.
 	RZ_LOG_WARN("INQUIRY: Start main interpretation thread.\n");
 	RzThread *iterpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	RZ_LOG_WARN("INQUIRY: Enforce enabling IO cache.\n");
+	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
+	rz_config_set(core->config, "io.cache", "true");
 	RZ_LOG_WARN("INQUIRY: Start IL providing loop.\n");
+
+	// Poor man's shared memory.
+	RzInterpreterIOResult _io_res = { 0 };
+	RzInterpreterIOResult *io_res = &_io_res;
+
 	while (rz_atomic_bool_get(is_running)) {
 		ut64 *addr = rz_th_queue_pop(addr_queue, false);
-		if (!addr) {
-			// Some artificial lag for testing.
-			rz_sys_usleep(rz_num_rand32(1000));
-			RZ_LOG_WARN("INQUIRY: Sleep over.\n");
+		if (addr) {
+			// This if() emulates the IL cache.
+			RZ_LOG_WARN("INQUIRY: Received IL request: %" PFMT64x ".\n", (*addr));
+			RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
+			if (!bb) {
+				// Stop interpreter.
+				rz_atomic_bool_set(is_running, false);
+				continue;
+			}
+			RZ_LOG_WARN("INQUIRY: Send IL result: %p.\n", bb);
+			rz_pvector_push(il_cache, bb);
+			// TODO: Free unused if too big.
+			rz_th_queue_push(il_queue, bb, true);
+		}
+
+		// This emulates the IO handler for a single(!) interpreter instances.
+		// In the future we should have only one IO handler
+		// but this requires that it can handle multiple IO write caches
+		// (one for each interpreter instance).
+		// Because this is not implemented there is only one interpreter thread for now.
+		RzInterpreterIORequest *io_req = rz_th_queue_pop(io_request_q, false);
+		if (!io_req) {
 			continue;
 		}
-		RZ_LOG_WARN("INQUIRY: Received %" PFMT64x ".\n", (*addr));
-		RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
-		free(addr);
-		if (!bb) {
-			// Stop interpreter.
-			rz_atomic_bool_set(is_running, false);
-			continue;
+
+		RZ_LOG_WARN("INQUIRY: Received IO %s request: %" PFMT64x ".\n",
+			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+			io_req->addr);
+		if (io_req->type == RZ_INTERPRETER_IO_READ) {
+			// TODO: Don't allocate here if not necessary.
+			ut8 *buf = RZ_NEWS0(ut8, io_req->n_bytes);
+			int n_read = rz_io_nread_at(core->io, io_req->addr, buf, io_req->n_bytes);
+			io_res->req_ok = n_read >= 0;
+			if (io_res->req_ok) {
+				io_res->read.data = buf;
+				io_res->read.n_bytes = n_read;
+			}
+		} else {
+			io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
 		}
-		RZ_LOG_WARN("INQUIRY: Send %p.\n", bb);
-		rz_pvector_push(il_cache, bb);
-		rz_th_queue_push(il_queue, bb, true);
+		RZ_LOG_WARN("INQUIRY: Sent IO %s result. Success = %s.\n",
+			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+			io_res->req_ok ? "true" : "false");
+		rz_th_queue_push(io_result_q, io_res, true);
 	}
+
+	rz_config_set(core->config, "io.cache", io_cache_opt);
+
 	// Wait for thread to finish before cleaning.
 	rz_th_wait(iterpr_th);
 	rz_th_free(iterpr_th);
