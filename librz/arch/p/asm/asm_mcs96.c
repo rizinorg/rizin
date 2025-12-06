@@ -271,7 +271,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_mcs96 = {
 	.name = "mcs96",
 	.desc = "Intel MCS-96 disassembler",
-	.cpus = "8086,80186,80286",
+	.cpus = "8096,80196,80296",
 	.arch = "mcs96",
 	.license = "LGPL3",
 	.author = "condret",
