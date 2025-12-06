@@ -15,6 +15,10 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
+/**
+ * \brief Only one IO request at a time is possible (currently).
+ */
+#define RZ_INTERPRETER_IO_QUEUE_SIZE    1
 #define RZ_INTERPRETER_IL_QUEUE_SIZE    128
 #define RZ_INTERPRETER_ADDR_QUEUE_SIZE  1024
 #define RZ_INTERPRETER_YIELD_QUEUE_SIZE 4096
@@ -135,6 +139,8 @@ typedef struct {
 	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
 		RZ_NONNULL const RzILOpEffect *effect,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
@@ -147,15 +153,40 @@ typedef struct {
 		void *plugin_data);
 } RzInterpreterPlugin;
 
+typedef enum {
+	RZ_INTERPRETER_IO_READ,
+	RZ_INTERPRETER_IO_WRITE,
+} RzInterpreterIOReqType;
+
+typedef struct {
+	RzInterpreterIOReqType type;
+	ut64 addr; ///< The address to read/write.
+	size_t n_bytes; ///< The number of bytes to read/write.
+	const ut8 *data; ///< The data to write.
+} RzInterpreterIORequest;
+
+typedef struct {
+	const ut8 *data; ///< The data read. NULL in case of failed read.
+	ut64 n_bytes; ///< The number of bytes to read.
+} RzInterpreterIOResR;
+
+typedef struct {
+	RzInterpreterIOReqType type;
+	bool req_ok; ///< Set to true if IO request succeeded.
+	RzInterpreterIOResR read;
+} RzInterpreterIOResult;
+
 /**
  * \brief The set of required queues for an interpreter to run.
  */
 typedef struct {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
-	RzThreadQueue /*<ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
+	RzThreadQueue /*<const ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
+	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
+	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
@@ -174,9 +205,11 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64 *>*/ *addr_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const ut64 *>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIORequest *>*/ *io_request,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
 RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *qset);
 

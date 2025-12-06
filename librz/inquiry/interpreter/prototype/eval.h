@@ -27,15 +27,19 @@ typedef struct {
 } ProtoIntrprAbstrData;
 
 /**
+ * \brief In bytes
+ */
+#define BV_STACK_MAX_SIZE 0x1000
+
+/**
  * \brief Initializes an AbstractData object on the stack.
- * The bitvector pre-allocates 0x1000 bytes on the stack for large bit vectors
- * (0x1000 * 8 = 32768 bits).
+ * The bitvector pre-allocates BV_STACK_MAX_SIZE bytes on the stack for large bit vectors.
  * Any value larger than these bits will be stored in heap allocated memory.
  * Because of this the bit vector should always be passed to rz_bv_fini() after usage.
  */
 #define STACK_ABSTR_DATA_OUT(name) \
-	ut8 _##name##_bv_large_buf[0x1000] = { 0 }; \
-	RzBitVector _##name##_bv_large = { .len = 0x1000, ._elem_len = 0x1000, .bits.large_a = _##name##_bv_large_buf, .stack_alloc = true }; \
+	ut8 _##name##_bv_large_buf[BV_STACK_MAX_SIZE] = { 0 }; \
+	RzBitVector _##name##_bv_large = { .len = BV_STACK_MAX_SIZE, ._elem_len = BV_STACK_MAX_SIZE, .bits.large_a = _##name##_bv_large_buf, .stack_alloc = true }; \
 	ProtoIntrprAbstrData name = { .is_concrete = false, .bv = &_##name##_bv_large };
 
 /**
@@ -52,6 +56,19 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 void write_var_to_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
 bool read_var_from_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
 bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data);
+bool store_abstr_data(
+	RzInterpreterAbstrState *state,
+	ut64 addr,
+	const ProtoIntrprAbstrData *src,
+	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);
+bool load_abstr_data(
+	RzInterpreterAbstrState *state,
+	ut64 addr,
+	size_t size,
+	RZ_OUT ProtoIntrprAbstrData *out,
+	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,

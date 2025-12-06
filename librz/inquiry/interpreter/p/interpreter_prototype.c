@@ -11,6 +11,8 @@
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzILOpEffect *effect,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	bool result = interpreter_prototype_eval_effect(state, effect, yield_queues, plugin_data);
 	// TODO: Clean up local variables.
@@ -54,6 +56,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 	}
 	rz_iterator_free(it);
+	state->ext = RZ_NEW0(RzInterpreterIORequest);
 	return true;
 }
 

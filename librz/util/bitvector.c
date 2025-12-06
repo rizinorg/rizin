@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_types.h"
 #include "rz_util.h"
+#include "rz_util/rz_assert.h"
 #include <stdlib.h>
 #include <stdio.h>
 

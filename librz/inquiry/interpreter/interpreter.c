@@ -167,11 +167,13 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<ut64>*/ *addr_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const ut64>*/ *addr_queue,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag) {
-	rz_return_val_if_fail(plugin && state && plugin && addr_queue && il_queue && yield_queues, NULL);
+	rz_return_val_if_fail(plugin && state && plugin && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
 	if (!set || (state->kinds != (plugin->supported_abstractions & state->kinds))) {
@@ -188,6 +190,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->il_queue = il_queue;
 	set->addr_queue = addr_queue;
 	set->yield_queues = yield_queues;
+	set->io_request = io_request;
+	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
 	return set;
 }
@@ -275,10 +279,12 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	if (!state_cache || !tmp_succ_addr || !succ_states || !eff || !reachable_states) {
 		goto pre_loop_error;
 	}
+	ut64 _addr = 0;
+	ut64 *addr = &_addr;
 
 	while (true) {
 		// Evaluate the effect on the input state.
-		if (!plugin->eval(in_state, eff, iset->yield_queues, plugin_data)) {
+		if (!plugin->eval(in_state, eff, iset->yield_queues, plugin_data, iset->io_request, iset->io_result)) {
 			goto loop_error;
 		}
 		// Decrease the reference count to the input state by one.
@@ -309,7 +315,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			}
 			// Request the successor effects over the queue.
 			while (!rz_vector_empty(tmp_succ_addr)) {
-				ut64 *addr = RZ_NEW(ut64);
 				rz_vector_pop_front(tmp_succ_addr, addr);
 				SuccessorState ss = { .addr = *addr, .in_state_hash = out_hash };
 				// The successors are pushed in the same order into the succ_states

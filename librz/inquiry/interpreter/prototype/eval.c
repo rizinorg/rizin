@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
+#include "rz_inquiry/rz_interpreter.h"
+#include "rz_th.h"
+#include "rz_types.h"
+#include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src) {
@@ -74,4 +78,65 @@ bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrD
 		return false;
 	}
 	return rz_bv_is_zero_vector(data->bv);
+}
+
+bool store_abstr_data(
+	RzInterpreterAbstrState *state,
+	ut64 addr,
+	const ProtoIntrprAbstrData *src,
+	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
+	if (!src->is_concrete) {
+		// Really don't write?
+		return true;
+	}
+	ut8 *buf;
+	ut8 buf_stack[BV_STACK_MAX_SIZE] = { 0 };
+	if (rz_bv_len(src->bv) > BV_STACK_MAX_SIZE * 8) {
+		buf = RZ_NEWS(ut8, rz_bv_len_bytes(src->bv));
+	} else {
+		buf = buf_stack;
+	}
+	rz_bv_set_to_bytes_be(src->bv, buf);
+	RzInterpreterIORequest *io_req = state->ext;
+	io_req->type = RZ_INTERPRETER_IO_WRITE;
+	io_req->addr = addr;
+	io_req->data = buf;
+
+	RZ_LOG_WARN("Prototype: Send store request");
+	rz_th_queue_push(io_request, io_req, true);
+	// Wait for write being done.
+	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
+	if (rz_bv_len(src->bv) > BV_STACK_MAX_SIZE * 8) {
+		free(buf);
+	}
+	return io_res->req_ok;
+}
+
+bool load_abstr_data(
+	RzInterpreterAbstrState *state,
+	ut64 addr,
+	size_t size,
+	RZ_OUT ProtoIntrprAbstrData *out,
+	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
+	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
+	RzInterpreterIORequest *io_req = state->ext;
+	io_req->type = RZ_INTERPRETER_IO_READ;
+	io_req->addr = addr;
+	io_req->n_bytes = size;
+	RZ_LOG_WARN("Prototype: Send load request");
+	rz_th_queue_push(io_request, io_req, true);
+	// Wait for load being done.
+	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
+	if (!io_res->req_ok) {
+		return false;
+	}
+	if (io_res->read.n_bytes != size) {
+		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes.");
+		return false;
+	}
+	out->is_concrete = true;
+	rz_bv_cast_inplace(out->bv, size, 0);
+	rz_bv_set_from_bytes_be(out->bv, io_res->read.data, 0, io_res->read.n_bytes);
+	return false;
 }
