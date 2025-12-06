@@ -77,7 +77,36 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	}
 	case RZ_IL_OP_STORE:
-	case RZ_IL_OP_STOREW:
+	case RZ_IL_OP_STOREW: {
+		STACK_ABSTR_DATA_OUT(tmp);
+		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
+		if (!interpreter_prototype_eval_pure(state, key, &tmp, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			rz_bv_fini(tmp.bv);
+			goto error;
+		}
+		if (!tmp.is_concrete) {
+			rz_bv_fini(tmp.bv);
+			break;
+		}
+		ut64 addr = rz_bv_to_ut64(tmp.bv);
+		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
+		if (!interpreter_prototype_eval_pure(state, pval, &tmp, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			rz_bv_fini(tmp.bv);
+			goto error;
+		}
+		if (!tmp.is_concrete) {
+			rz_bv_fini(tmp.bv);
+			break;
+		}
+		if (!store_abstr_data(state, addr, &tmp, io_request, io_result)) {
+			rz_bv_fini(tmp.bv);
+			goto error;
+		}
+		rz_bv_fini(tmp.bv);
+		break;
+	}
 	case RZ_IL_OP_GOTO:
 	case RZ_IL_OP_BLK:
 	case RZ_IL_OP_REPEAT:
