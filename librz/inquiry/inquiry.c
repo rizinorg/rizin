@@ -79,6 +79,14 @@ static ut64 get_nop_pc_increment(RzAnalysis *analysis) {
 	return analysis->cur->bits / 8;
 }
 
+static ut64 get_mem_addr_bits(RzAnalysis *analysis) {
+	if (analysis->cur->il_config) {
+		const RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
+		return config->mem_key_size;
+	}
+	return analysis->cur->bits;
+}
+
 static RzPVector *get_reg_names(RzAnalysis *analysis) {
 	RzPVector *reg_names = rz_pvector_new(free);
 	if (analysis->cur->il_config) {
@@ -227,9 +235,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 
 	// Initialize the abstract state with the architecture's registers.
+	size_t addr_bits = get_mem_addr_bits(core->analysis);
 	RzPVector *reg_names = get_reg_names(core->analysis);
 	ut64 nop_pc_increment = get_nop_pc_increment(core->analysis);
-	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(RZ_INTERPRETER_ABSTRACTION_CONST, reg_names, nop_pc_increment);
+	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(
+		RZ_INTERPRETER_ABSTRACTION_CONST,
+		reg_names,
+		nop_pc_increment,
+		addr_bits);
 	rz_pvector_free(reg_names);
 
 	// Bundle all the queues into one object to pass it to the thread.

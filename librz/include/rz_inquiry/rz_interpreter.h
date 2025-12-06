@@ -67,6 +67,7 @@ typedef struct {
 	 * (conditional) JUMP at the end of each effect.
 	 */
 	ut64 nop_pc_inc;
+	size_t addr_bits; ///< Number of bits of a memory address.
 	void *ext; ///< Optional state extensions. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
@@ -195,7 +196,11 @@ RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzI
 RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 
-RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(RzInterpreterAbstraction kinds, RZ_NULLABLE const RzPVector *reg_names, ut64 nop_pc_increment);
+RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
+	RzInterpreterAbstraction kinds,
+	RZ_NULLABLE const RzPVector *reg_names,
+	ut64 nop_pc_increment,
+	size_t addr_bits);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
