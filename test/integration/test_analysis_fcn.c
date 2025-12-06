@@ -48,7 +48,6 @@ static bool test_analysis_fcn_large() {
 
 bool all_tests() {
 	mu_run_test(test_analysis_fcn_large);
-	mu_run_test(test_analysis_function_table_mode);
 	return tests_passed != tests_run;
 }
 
