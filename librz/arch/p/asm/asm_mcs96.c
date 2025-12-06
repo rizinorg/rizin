@@ -132,39 +132,29 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = mcs96_len(a, isa_bit, buf, len, asm_buf);
 
 	if (op->size > 0) {
-		
-
 		if (buf[0] == 0x0d && isa_bit == MCS96_80296) {  // SHLL/MVAC/MSAC
 			ut8 lreg_bits = buf[2] & 0b11;
-
 			// lreg.1 lreg.0 Execute
 			// 0      0      SHLL
 			// 0      1      MVAC
 			// 1      0      Reserved
 			// 1      1      MSAC
-
 			const char *mnemonic = (lreg_bits == 0b00) ? "shll" :
 								(lreg_bits == 0b01) ? "mvac" :
 								(lreg_bits == 0b11) ? "msac" : "invalid";
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
 
-
 		if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[op->size - 1] == 0x04) {  // AND/RPT/RPTxxx/RPTI/RPTIxxx
 			// RPT waop
 			// (010000aa) (waop) (00) (04)
-
 			// RPTxxx
 			// (010000aa) (waop) (10 - 1F) (04)
-
 			// RPTI
 			// (010000aa) (waop) (20) (04)
-
 			// RPTIxxx
 			// (010000aa) (waop) (30 - 3F) (04)
-
 			const char *mnemonic;
-			
 			switch (buf[op->size - 2]) {
 				case 0x00:
 					mnemonic = "rpt";
@@ -272,7 +262,6 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 					mnemonic = "and";
 					break;
 			}
-
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
 	}
