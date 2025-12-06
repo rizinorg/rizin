@@ -2,10 +2,15 @@
 // SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// Source:
-// https://www.njohnson.co.uk/pdf/Roland/Using8096.pdf
-// https://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
-// https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up 
+/**
+ * \file mcs96.h
+ * \brief 
+ * Intel MCS-96 microcontroller family instruction set architecture definitions
+ * References:
+ * https://www.njohnson.co.uk/pdf/Roland/Using8096.pdf
+ * https://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
+ * https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up 
+ */
 
 #include <rz_util.h>
 #include <rz_types.h>
