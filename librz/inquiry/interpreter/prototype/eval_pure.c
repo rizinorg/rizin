@@ -408,6 +408,23 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
+	case RZ_IL_OP_LOADW:
+	case RZ_IL_OP_LOAD: {
+		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
+		if (!interpreter_prototype_eval_pure(state, key, out, yield_queues, plugin_data, io_request, io_result)) {
+			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			goto map_to_bottom;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		ut64 addr = rz_bv_to_ut64(out->bv);
+		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->addr_bits : pure->op.loadw.n_bits;
+		if (!load_abstr_data(state, addr, addr_bits, out, io_request, io_result)) {
+			goto map_to_bottom;
+		}
+		break;
+	}
 	case RZ_IL_OP_MUL:
 	case RZ_IL_OP_DIV:
 	case RZ_IL_OP_SDIV:
@@ -447,8 +464,6 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_FPOWN:
 	case RZ_IL_OP_FCOMPOUND:
 	case RZ_IL_OP_FEXCEPT:
-	case RZ_IL_OP_LOAD:
-	case RZ_IL_OP_LOADW:
 		// Not implemented.
 		goto map_to_bottom;
 	}
