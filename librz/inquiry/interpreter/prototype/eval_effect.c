@@ -30,7 +30,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	case RZ_IL_OP_SEQ: {
 		const RzILOpEffect *next = effect->op.seq.x;
 		while (next) {
-			if (!interpreter_prototype_eval_effect(state, next, yield_queues, plugin_data, io_request, io_result)) {
+			if (!interpreter_prototype_eval_effect(state, next, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 			next = effect->op.seq.y;
@@ -39,7 +39,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	}
 	case RZ_IL_OP_SET: {
 		ut64 vhash = effect->op.set.hash;
-		if (!interpreter_prototype_eval_pure(state, effect->op.set.x, &eval_out, yield_queues, plugin_data, io_request, io_result)) {
+		if (!interpreter_prototype_eval_pure(state, effect->op.set.x, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
 		write_var_to_state(state,
@@ -49,14 +49,14 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	}
 	case RZ_IL_OP_JMP: {
-		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, plugin_data, io_request, io_result)) {
+		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
-		if (!interpreter_prototype_eval_pure(state, effect->op.branch.condition, &eval_out, yield_queues, plugin_data, io_request, io_result)) {
+		if (!interpreter_prototype_eval_pure(state, effect->op.branch.condition, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
@@ -66,11 +66,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 
 		if (abstr_is_true(state, &eval_out)) {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, plugin_data, io_request, io_result)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		} else {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, plugin_data, io_request, io_result)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		}
