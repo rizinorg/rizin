@@ -674,7 +674,6 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core, ut64 addr);
 
-
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state);
 
