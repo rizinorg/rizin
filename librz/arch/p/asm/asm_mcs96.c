@@ -133,15 +133,15 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	if (op->size > 0) {
 		if (buf[0] == 0x0d && isa_bit == MCS96_80296) {  // SHLL/MVAC/MSAC
-			ut8 lreg_bits = buf[2] & 0b11;
+			ut8 lreg_bits = buf[2] & 0x3;
 			// lreg.1 lreg.0 Execute
 			// 0      0      SHLL
 			// 0      1      MVAC
 			// 1      0      Reserved
 			// 1      1      MSAC
-			const char *mnemonic = (lreg_bits == 0b00) ? "shll" :
-								(lreg_bits == 0b01) ? "mvac" :
-								(lreg_bits == 0b11) ? "msac" : "invalid";
+			const char *mnemonic = (lreg_bits == 0x0) ? "shll" :
+								(lreg_bits == 0x1) ? "mvac" :
+								(lreg_bits == 0x3) ? "msac" : "invalid";
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
 
