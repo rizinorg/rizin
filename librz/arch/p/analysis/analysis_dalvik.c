@@ -46,6 +46,102 @@ static const char *getCondz(ut8 cond) {
 	return "";
 }
 
+static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
+	ut8 payload_header[8];
+	if (!analysis->read_at || !analysis->read_at(analysis, payload_addr, payload_header, 8)) {
+		return NULL;
+	}
+
+	if (rz_read_at_le16(payload_header, 0) != 0x100) {
+		return NULL;
+	}
+
+	ut16 size = rz_read_at_le16(payload_header, 2);
+	ut32 first_key = rz_read_at_le32(payload_header, 4);
+	ut32 last_key = first_key + size - 1;
+	ut8 *table;
+
+	if (size == 0 || !(table = rz_mem_alloc(size * 4))) {
+		return NULL;
+	}
+
+	if (!analysis->read_at(analysis, payload_addr + 8, table, size * 4)) {
+		rz_mem_free(table);
+		return NULL;
+	}
+
+	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, 0);
+
+	if (!result) {
+		rz_mem_free(table);
+		return NULL;
+	}
+
+	for (ut16 i = 0; i < size; i++) {
+		ut32 target = rz_read_at_le32(table, i * 4);
+		if (!rz_analysis_switch_op_add_case(result, addr, first_key + i, addr + target * 2)) {
+			goto error;
+		}
+	}
+
+	rz_mem_free(table);
+	return result;
+
+error:
+	rz_analysis_switch_op_free(result);
+	rz_mem_free(table);
+	return NULL;
+}
+
+static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
+	ut8 payload_header[4];
+	if (!analysis->read_at || !analysis->read_at(analysis, payload_addr, payload_header, 4)) {
+		return NULL;
+	}
+
+	if (rz_read_at_le16(payload_header, 0) != 0x200) {
+		return NULL;
+	}
+
+	ut16 size = rz_read_at_le16(payload_header, 2);
+	ut8 *table;
+
+	if (size == 0 || !(table = rz_mem_alloc(size * 8))) {
+		return NULL;
+	}
+
+	if (!analysis->read_at(analysis, payload_addr + 4, table, size * 8)) {
+		rz_mem_free(table);
+		return NULL;
+	}
+
+	ut32 first_key = rz_read_at_le32(table, 0);
+	ut32 last_key = rz_read_at_le32(table, size * 4 - 4);
+	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, 0);
+
+	if (!result) {
+		rz_mem_free(table);
+		return NULL;
+	}
+
+	for (ut16 i = 0; i < size; i++) {
+		ut32 key = rz_read_at_le32(table, i * 4);
+		ut32 target = rz_read_at_le32(table, (size + i) * 4);
+
+		if (!rz_analysis_switch_op_add_case(result, addr, key, addr + target * 2)) {
+			goto error;
+		}
+	}
+
+	rz_mem_free(table);
+	return result;
+
+error:
+	rz_analysis_switch_op_free(result);
+	rz_mem_free(table);
+	return NULL;
+}
+
 static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz > len) {
@@ -440,8 +536,12 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			}
 		}
 		break;
-	case 0x2c:
 	case 0x2b:
+		op->switch_op = parse_packed_switch_payload(analysis, addr, addr + 2 * rz_read_at_le32(data, 2));
+		op->type = RZ_ANALYSIS_OP_TYPE_SWITCH;
+		break;
+	case 0x2c:
+		op->switch_op = parse_sparse_switch_payload(analysis, addr, addr + 2 * rz_read_at_le32(data, 2));
 		op->type = RZ_ANALYSIS_OP_TYPE_SWITCH;
 		break;
 	case 0x3e: // glitch 0 width instruction .. invalid instruction
