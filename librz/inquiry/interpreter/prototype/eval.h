@@ -52,6 +52,13 @@ static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) 
 	return ad;
 }
 
+static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
+	ProtoIntrprAbstrData *ad = RZ_NEW(ProtoIntrprAbstrData);
+	ad->is_concrete = false;
+	ad->bv = rz_bv_new(BV_STACK_MAX_SIZE);
+	return ad;
+}
+
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src);
 void write_var_to_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
 bool read_var_from_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
