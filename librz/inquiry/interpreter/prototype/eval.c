@@ -34,7 +34,7 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 	if (!av) {
 		av = RZ_NEW(RzInterpreterAbstrVal);
 		av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
-		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+		av->abstr_data = adata_new();
 		ht_up_insert(ht_vals, var_id, av);
 	}
 	copy_abstr_data(av->abstr_data, data);
