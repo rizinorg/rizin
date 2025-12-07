@@ -240,7 +240,7 @@ typedef struct {
  * Main interpretation.
  */
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
-	rz_return_val_if_fail(iset &&
+	rz_goto_if_fail(iset &&
 			iset->state &&
 			iset->addr_queue &&
 			iset->il_queue &&
@@ -250,7 +250,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			iset->plugin->init_state &&
 			iset->plugin->eval &&
 			iset->plugin->hash_state,
-		false);
+		entry_assert_error);
 	bool success = false;
 
 	RZ_LOG_WARN("INTERPRETER Main: Hello.\n");
@@ -298,7 +298,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	while (true) {
 		// Evaluate the effect on the input state.
 		if (!plugin->eval(in_state, eff, iset->yield_queues, plugin_data, iset->io_request, iset->io_result)) {
-			goto loop_error;
+			goto in_loop_error;
 		}
 		// Decrease the reference count to the input state by one.
 		ht_up_delete_rc(state_cache, in_hash);
@@ -317,7 +317,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		if (new_state_reached) {
 			// Determine successors and increase the reference counts for the current out state.
 			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
-				goto loop_error;
+				goto in_loop_error;
 			}
 			if (rz_vector_len(tmp_succ_addr) > 0) {
 				// The output state was new and there are successors from it.
@@ -375,7 +375,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		eff = rz_th_queue_wait_pop(iset->il_queue, false);
 	}
 
-loop_error:
+loop_cleanup:
 	ht_up_free(state_cache);
 	rz_vector_free(tmp_succ_addr);
 	rz_vector_free(succ_states);
@@ -386,7 +386,16 @@ loop_error:
 	rz_atomic_bool_set(iset->is_running_flag, false);
 	return success;
 
+in_loop_error:
+	success = false;
+	goto loop_cleanup;
+
 pre_loop_error:
+	success = false;
 	iset->plugin->fini_state(iset->state, plugin_data);
-	goto loop_error;
+	goto loop_cleanup;
+
+entry_assert_error:
+	rz_atomic_bool_set(iset->is_running_flag, false);
+	return false;
 }
