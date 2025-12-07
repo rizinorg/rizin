@@ -678,7 +678,9 @@ RZ_API RZ_OWN RzAddrDescription *rz_core_addr_describe_with_function(RZ_NONNULL 
 RZ_API RZ_OWN RzAddrDescription *rz_core_addr_describe_with_source(RZ_NONNULL RzCore *core, ut64 addr);
 /** \brief Format an address for display in disassembly */
 RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzAddrDescribeOptions *opts);
-/** \brief Add address description to a JSON object */
+/** \brief Convert an address description to JSON format */
+RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzAddrDescription *desc, RZ_NULLABLE const RzAddrDescribeOptions *opts);
+/** \brief Add address description to a JSON object (convenience wrapper) */
 RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzAddrDescribeOptions *opts);
 /** \brief Get relative offset info (name and delta) for asm.reloff functionality */
 RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr, bool prefer_function, bool use_flags, RZ_OUT RZ_NULLABLE char **out_name, RZ_OUT RZ_NULLABLE st64 *out_delta);
