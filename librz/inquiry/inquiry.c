@@ -271,6 +271,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzInterpreterIOResult *io_res = &_io_res;
 
 	while (rz_atomic_bool_get(is_running)) {
+		if (rz_th_terminated(interpr_th)) {
+			rz_atomic_bool_set(is_running, false);
+			return_code = rz_th_get_retv(interpr_th);
+			break;
+		}
 		ut64 *addr = rz_th_queue_pop(addr_queue, false);
 		if (addr) {
 			// This if() emulates the IL cache.
