@@ -5,7 +5,7 @@
 #include "minunit.h"
 
 bool test_rz_core_addr_describe_options_new(void) {
-	RzAddrDescribeOptions *opts = rz_core_addr_describe_options_new();
+	RzCoreAddrDescribeOptions *opts = rz_core_addr_describe_options_new();
 	mu_assert_notnull(opts, "options should be allocated");
 	mu_assert_true(opts->show_offset, "show_offset should default to true");
 	mu_assert_true(opts->prefer_function, "prefer_function should default to true");
@@ -28,7 +28,7 @@ bool test_rz_core_addr_describe_basic(void) {
 	rz_flag_set(core->flags, "sym.main", 0x1000, 10);
 
 	// Test basic description
-	RzAddrDescription *desc = rz_core_addr_describe(core, 0x1000, NULL);
+	RzCoreAddrDescription *desc = rz_core_addr_describe(core, 0x1000, NULL);
 	mu_assert_notnull(desc, "description should be allocated");
 	mu_assert_eq(desc->addr, 0x1000, "addr should match");
 	mu_assert_notnull(desc->flag_name, "flag_name should be set");
@@ -57,7 +57,7 @@ bool test_rz_core_addr_describe_basic(void) {
 }
 
 bool test_rz_core_addr_description_to_string(void) {
-	RzAddrDescription desc = {
+	RzCoreAddrDescription desc = {
 		.addr = 0x1005,
 		.flag_name = "sym.main",
 		.flag_offset = 0x1000,
@@ -65,7 +65,7 @@ bool test_rz_core_addr_description_to_string(void) {
 	};
 
 	// Test hex format
-	RzAddrDescribeOptions opts = {
+	RzCoreAddrDescribeOptions opts = {
 		.show_offset = true,
 		.prefer_function = false,
 		.show_flag = true,
@@ -95,7 +95,7 @@ bool test_rz_core_addr_description_to_string(void) {
 	free(str);
 
 	// Test with no name
-	RzAddrDescription desc2 = {
+	RzCoreAddrDescription desc2 = {
 		.addr = 0x2000,
 		.flag_name = NULL
 	};
@@ -148,7 +148,7 @@ bool test_rz_core_addr_with_function(void) {
 
 	// Test function preference - test at function start address
 	// (rz_analysis_get_fcn_in requires basic blocks, so use rz_analysis_get_function_at)
-	RzAddrDescribeOptions opts = {
+	RzCoreAddrDescribeOptions opts = {
 		.show_offset = true,
 		.prefer_function = true,
 		.show_flag = true,
@@ -158,7 +158,7 @@ bool test_rz_core_addr_with_function(void) {
 		.use_realnames = false
 	};
 
-	RzAddrDescription *desc = rz_core_addr_describe(core, 0x1000, &opts);
+	RzCoreAddrDescription *desc = rz_core_addr_describe(core, 0x1000, &opts);
 	mu_assert_notnull(desc, "description should be allocated");
 	mu_assert_notnull(desc->fcn_name, "fcn_name should be set");
 	mu_assert_streq(desc->fcn_name, "main", "fcn_name should match");
@@ -200,19 +200,19 @@ bool test_rz_core_addr_max_flag_delta(void) {
 	rz_flag_set(core->flags, "sym.distant", 0x1000, 10);
 
 	// Test with unlimited delta (0) - should find the flag
-	RzAddrDescribeOptions opts_unlimited = {
+	RzCoreAddrDescribeOptions opts_unlimited = {
 		.show_offset = true,
 		.show_flag = true,
 		.max_flag_delta = 0 // unlimited
 	};
-	RzAddrDescription *desc = rz_core_addr_describe(core, 0x10000, &opts_unlimited);
+	RzCoreAddrDescription *desc = rz_core_addr_describe(core, 0x10000, &opts_unlimited);
 	mu_assert_notnull(desc, "description should be allocated");
 	mu_assert_notnull(desc->flag_name, "flag_name should be set with unlimited delta");
 	mu_assert_streq(desc->flag_name, "sym.distant", "flag_name should match");
 	rz_core_addr_description_free(desc);
 
 	// Test with default 8192 limit (-1) - should NOT find the flag (delta too large)
-	RzAddrDescribeOptions opts_default = {
+	RzCoreAddrDescribeOptions opts_default = {
 		.show_offset = true,
 		.show_flag = true,
 		.max_flag_delta = -1 // default 8192 limit
@@ -230,7 +230,7 @@ bool test_rz_core_addr_max_flag_delta(void) {
 	rz_core_addr_description_free(desc);
 
 	// Test with custom limit
-	RzAddrDescribeOptions opts_custom = {
+	RzCoreAddrDescribeOptions opts_custom = {
 		.show_offset = true,
 		.show_flag = true,
 		.max_flag_delta = 100 // small custom limit
