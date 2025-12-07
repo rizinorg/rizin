@@ -381,6 +381,7 @@ loop_cleanup:
 	rz_vector_free(tmp_succ_addr);
 	rz_vector_free(succ_states);
 	rz_set_u_free(reachable_states);
+	iset->plugin->fini_state(iset->state, plugin_data);
 	if (iset->plugin->fini) {
 		iset->plugin->fini(plugin_data);
 	}
@@ -393,7 +394,6 @@ in_loop_error:
 
 pre_loop_error:
 	success = false;
-	iset->plugin->fini_state(iset->state, plugin_data);
 	goto loop_cleanup;
 
 entry_assert_error:
