@@ -640,7 +640,7 @@ commands:
             - text: "/v 2a \"(0x1000,0xff0)\""
               comment: "Search values in the open range '(0x1000,0xff0)' represented
                 in 2 bytes order of cfg.bigendian."
-            - text: "/v 1 \"[0x20,0x10)\", 0xff, \"[0xf0,0xff]\""
+            - text: "/v 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\""
               comment: "Search values in the right open range '[0x20,0x10)', value '0x55'
                 and closed range values '[0xf0,0xff]' represented in 1 byte."
     - name: "/v1"
