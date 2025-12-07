@@ -105,6 +105,10 @@ RZ_API void rz_analysis_il_config_free(RzAnalysisILConfig *cfg) {
 	if (!cfg) {
 		return;
 	}
+	if (cfg->init_state) {
+		rz_analysis_il_init_state_free(cfg->init_state);
+		free(cfg->init_state);
+	}
 	rz_pvector_fini(&cfg->labels);
 	free(cfg);
 }
