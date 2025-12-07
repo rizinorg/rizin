@@ -202,6 +202,24 @@ RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count);
 RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2);
 RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
 
+/**
+ * \brief Sort the given text.
+ * \param input Non-NULL, non-empty string to sort.
+ * \return Newly allocated sorted string, or NULL on empty input or failure.
+ *
+ * Takes the input text and returns its sorted form.
+ */
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NONNULL const char *input);
+
+/**
+ * \brief Produce the unique filtered form of the input.
+ * \param input Non-NULL, non-empty string to process.
+ * \return Newly allocated string containing the uniq output, or NULL on empty input or failure.
+ *
+ * Takes the input text and returns its unique filtered result.
+ */
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NONNULL const char *input);
+
 #ifdef __cplusplus
 }
 #endif

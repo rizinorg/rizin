@@ -2,7 +2,11 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_file.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_sys.h>
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
@@ -635,7 +639,32 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
+// Piping commands and fallbacks can be added here.
+static PipeFallbacks fallbacks[] = {
+	{ "uniq", rz_syscmd_uniq_pipe },
+	{ "sort", rz_syscmd_sort_pipe },
+	{ NULL, NULL }
+};
+
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
+	/* Check if uniq and sort is in path,
+	   if not found, then rz implementaion is used. */
+
+	for (int i = 0; fallbacks[i].command != NULL; i++) {
+		if (RZ_STR_EQ(argv[0], fallbacks[i].command)) {
+			char *path = rz_file_path(argv[0]);
+			if (!path) {
+				return NULL;
+			}
+
+			if (RZ_STR_EQ(path, argv[0])) {
+				free(path);
+				return fallbacks[i].fallback_fn((const char *)input);
+			}
+			free(path);
+		}
+	}
+
 	char *output = NULL;
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");

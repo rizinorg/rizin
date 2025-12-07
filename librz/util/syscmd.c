@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_str.h"
 #include <rz_core.h>
 #include <errno.h>
 
@@ -37,6 +38,37 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 		eprintf("Usage: sort [file]\n");
 	}
 	return NULL;
+}
+
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NONNULL const char *input) {
+	/* Duplicate of  rz_syscmd_sort, instead of
+	   reading file, input is directly given.   */
+
+	rz_return_val_if_fail(input, NULL);
+
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	RzList *list = NULL;
+
+	char *data = rz_str_dup(input);
+	if (RZ_STR_ISEMPTY(data)) {
+		return NULL;
+	}
+
+	list = rz_str_split_list(data, "\n", 0);
+	if (!list) {
+		return NULL;
+	}
+
+	rz_list_sort(list, cmpstr, NULL);
+	rz_list_del_n(list, 0);
+	char *return_data = rz_list_to_str(list, '\n');
+
+	rz_list_free(list);
+	free(data);
+	return return_data;
 }
 
 RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count) {
@@ -120,6 +152,42 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 		eprintf("Usage: uniq [file]\n");
 	}
 	return NULL;
+}
+
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NONNULL const char *input) {
+	/* Duplicate of  rz_syscmd_uniq, instead of
+	   reading file, input is directly given.   */
+
+	rz_return_val_if_fail(input, NULL);
+
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	RzList *list = NULL;
+	char *data = rz_str_dup(input);
+
+	if (RZ_STR_ISEMPTY(data)) {
+		return NULL;
+	}
+
+	list = rz_str_split_list(data, "\n", 0);
+	if (!list) {
+		return NULL;
+	}
+
+	RzList *uniq_list = rz_list_uniq(list, cmpstr, NULL);
+	if (!uniq_list) {
+		return NULL;
+	}
+	rz_list_del_n(uniq_list, rz_list_length(uniq_list) - 1);
+
+	char *return_data = rz_list_to_str(uniq_list, '\n');
+
+	rz_list_free(uniq_list);
+	rz_list_free(list);
+	free(data);
+	return return_data;
 }
 
 RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2) {
