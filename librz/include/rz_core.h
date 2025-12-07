@@ -655,7 +655,6 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
  * free(desc);
  * \endcode
  *
- * @{
  */
 
 /** \brief Create a new RzAddrDescribeOptions with default values */
