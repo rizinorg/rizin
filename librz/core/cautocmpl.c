@@ -254,15 +254,11 @@ static void autocmplt_reg(RzCore *core, RzLineNSCompletionResult *res, const cha
 	}
 }
 
-static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
-	char *dir_from_user = rz_str_ndup(s, len);
+static void autocmplt_file_folder_entries_cb(RzLineNSCompletionResult *res, const char *s, size_t len, RzCmdArgType arg_type) {
+	char *path_from_user = rz_str_ndup(s, len);
 
-	char *expanded_path = rz_path_normalize_expand(dir_from_user, len);
-	free(dir_from_user);
-
-	if (!expanded_path) {
-		return;
-	}
+	char *expanded_path = rz_path_normalize_expand(path_from_user, len);
+	free(path_from_user);
 
 	char *basedir = rz_file_dirname(expanded_path);
 	const char *basename = rz_file_basename(expanded_path + 1);
@@ -272,72 +268,40 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 
 	RzList *l = rz_sys_dir(basedir);
 	RzListIter *iter;
-	char *filename;
-	rz_list_foreach (l, iter, filename) {
-		if (RZ_STR_EQ(filename, ".") || RZ_STR_EQ(filename, "..")) {
+	char *file_or_folder_name;
+	rz_list_foreach (l, iter, file_or_folder_name) {
+		if (RZ_STR_EQ(file_or_folder_name, ".") || RZ_STR_EQ(file_or_folder_name, "..")) {
 			continue;
 		}
-		if (!strncmp(filename, basename, strlen(basename))) {
-			// TODO: only show/autocomplete the last part of the path, not the whole path
-			char *tmpfilename = rz_file_path_join(basedir, filename);
-			if (rz_file_is_directory(tmpfilename)) {
-				res->end_string = RZ_SYS_DIR;
+		char *tmp_filename_foldername = rz_file_path_join(basedir, file_or_folder_name);
+		if (arg_type == RZ_CMD_ARG_TYPE_FILE) {
+			if (!strncmp(file_or_folder_name, basename, strlen(basename))) {
+				if (rz_file_is_directory(tmp_filename_foldername)) {
+					res->end_string = RZ_SYS_DIR;
+				}
+				rz_line_ns_completion_result_add(res, tmp_filename_foldername);
 			}
-			rz_line_ns_completion_result_add(res, tmpfilename);
-			free(tmpfilename);
+		} else if (arg_type == RZ_CMD_ARG_TYPE_FOLDER) {
+			if (rz_str_startswith_icase(file_or_folder_name, basename)) {
+
+				if (rz_file_is_directory(tmp_filename_foldername)) {
+					rz_line_ns_completion_result_add(res, tmp_filename_foldername);
+				}
+			}
 		}
+		free(tmp_filename_foldername);
 	}
 	rz_list_free(l);
 	free(basedir);
 	free(expanded_path);
 }
 
+static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
+	autocmplt_file_folder_entries_cb(res, s, len, RZ_CMD_ARG_TYPE_FILE);
+}
+
 static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
-	char *dir_from_user = rz_str_ndup(s, len);
-
-	char *expanded_path = rz_path_normalize_expand(dir_from_user, len);
-	free(dir_from_user);
-
-	if (!expanded_path) {
-		return;
-	}
-
-	char *basedir = rz_file_dirname(expanded_path);
-	const char *basename = rz_file_basename(expanded_path + 1);
-
-#if __WINDOWS__
-	rz_str_replace_ch(basedir, '/', '\\', true);
-#endif
-
-	RzList *l = rz_sys_dir(basedir);
-	if (!l) {
-		free(basedir);
-		free(expanded_path);
-		return;
-	}
-
-	RzListIter *iter;
-	char *dir_name;
-	rz_list_foreach (l, iter, dir_name) {
-		if (RZ_STR_EQ(dir_name, ".") || RZ_STR_EQ(dir_name, "..")) {
-			continue;
-		}
-
-		// Only autocomplete entries that start with the current input
-		if (rz_str_startswith_icase(dir_name, basename)) {
-			char *tmpdirname = rz_file_path_join(basedir, dir_name);
-
-			if (rz_file_is_directory(tmpdirname)) {
-				rz_line_ns_completion_result_add(res, tmpdirname);
-			}
-
-			free(tmpdirname);
-		}
-	}
-
-	rz_list_free(l);
-	free(basedir);
-	free(expanded_path);
+	autocmplt_file_folder_entries_cb(res, s, len, RZ_CMD_ARG_TYPE_FOLDER);
 }
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {
