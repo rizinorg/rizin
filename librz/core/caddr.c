@@ -70,17 +70,23 @@ RZ_API void rz_core_addr_description_free(RZ_NULLABLE RzAddrDescription *desc) {
  *
  * Helper function to find a flag at or near the given address
  * and compute the delta.
+ *
+ * \param core The RzCore instance
+ * \param desc The description structure to populate
+ * \param addr The address to describe
+ * \param opts Options controlling behavior
+ * \return true on success (including when no flag found), false on error (e.g., memory allocation failure)
  */
-static void addr_describe_from_flags(RzCore *core, RzAddrDescription *desc, ut64 addr, const RzAddrDescribeOptions *opts) {
-	rz_return_if_fail(core && desc && opts);
+static bool addr_describe_from_flags(RZ_NONNULL RzCore *core, RZ_NONNULL RzAddrDescription *desc, ut64 addr, RZ_NONNULL const RzAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(core && desc && opts, false);
 
 	if (!opts->show_flag) {
-		return;
+		return true; // Not requested, not an error
 	}
 
 	RzFlagItem *fi = rz_flag_get_at(core->flags, addr, true);
 	if (!fi) {
-		return;
+		return true; // No flag found, not an error
 	}
 
 	st64 delta = (st64)(addr - fi->offset);
@@ -92,19 +98,26 @@ static void addr_describe_from_flags(RzCore *core, RzAddrDescription *desc, ut64
 	if (opts->max_flag_delta < 0) {
 		// Default limit for backward compatibility
 		if (delta < 0 || delta >= 8192) {
-			return;
+			return true; // Outside delta limit, not an error
 		}
 	} else if (opts->max_flag_delta > 0) {
 		if (delta < 0 || delta >= opts->max_flag_delta) {
-			return;
+			return true; // Outside delta limit, not an error
 		}
 	}
 
 	const char *name = (opts->use_realnames && fi->realname) ? fi->realname : fi->name;
+	if (RZ_STR_ISEMPTY(name)) {
+		return true; // Empty name, not an error
+	}
 
 	desc->flag_name = rz_str_dup(name);
+	if (!desc->flag_name) {
+		return false; // Memory allocation failed - this IS an error
+	}
 	desc->flag_offset = fi->offset;
 	desc->flag_delta = delta;
+	return true;
 }
 
 /**
@@ -112,12 +125,18 @@ static void addr_describe_from_flags(RzCore *core, RzAddrDescription *desc, ut64
  *
  * Helper function to find a function containing the address
  * and compute the delta from the function start.
+ *
+ * \param core The RzCore instance
+ * \param desc The description structure to populate
+ * \param addr The address to describe
+ * \param opts Options controlling behavior
+ * \return true on success (including when no function found), false on error (e.g., memory allocation failure)
  */
-static void addr_describe_from_function(RzCore *core, RzAddrDescription *desc, ut64 addr, const RzAddrDescribeOptions *opts) {
-	rz_return_if_fail(core && desc && opts);
+static bool addr_describe_from_function(RZ_NONNULL RzCore *core, RZ_NONNULL RzAddrDescription *desc, ut64 addr, RZ_NONNULL const RzAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(core && desc && opts, false);
 
 	if (!opts->prefer_function) {
-		return;
+		return true; // Not requested, not an error
 	}
 
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
@@ -127,12 +146,20 @@ static void addr_describe_from_function(RzCore *core, RzAddrDescription *desc, u
 	}
 
 	if (!fcn) {
-		return;
+		return true; // No function found, not an error
+	}
+
+	if (RZ_STR_ISEMPTY(fcn->name)) {
+		return true; // Empty name, not an error
 	}
 
 	desc->fcn_name = rz_str_dup(fcn->name);
+	if (!desc->fcn_name) {
+		return false; // Memory allocation failed - this IS an error
+	}
 	desc->fcn_addr = fcn->addr;
 	desc->fcn_delta = (st64)(addr - fcn->addr);
+	return true;
 }
 
 /**
@@ -140,34 +167,44 @@ static void addr_describe_from_function(RzCore *core, RzAddrDescription *desc, u
  *
  * Helper function to retrieve source file and line number
  * from debug information if available.
+ *
+ * \param core The RzCore instance
+ * \param desc The description structure to populate
+ * \param addr The address to describe
+ * \param opts Options controlling behavior
+ * \return true on success (including when no source info found), false on error (e.g., memory allocation failure)
  */
-static void addr_describe_from_source(RzCore *core, RzAddrDescription *desc, ut64 addr, const RzAddrDescribeOptions *opts) {
-	rz_return_if_fail(core && desc && opts);
+static bool addr_describe_from_source(RZ_NONNULL RzCore *core, RZ_NONNULL RzAddrDescription *desc, ut64 addr, RZ_NONNULL const RzAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(core && desc && opts, false);
 
 	if (!opts->show_source_info) {
-		return;
+		return true; // Not requested, not an error
 	}
 
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o) {
-		return;
+		return true; // No bin file, not an error
 	}
 
 	RzBinSourceLineInfo *lines = bf->o->lines;
 	if (!lines) {
-		return;
+		return true; // No line info available, not an error
 	}
 
 	const RzBinSourceLineSample *sample = rz_bin_source_line_info_get_first_at(lines, addr);
 	if (!sample || rz_bin_source_line_sample_is_closing(sample)) {
-		return;
+		return true; // No sample found, not an error
 	}
 
 	if (sample->file) {
 		desc->source_file = rz_str_dup(sample->file);
+		if (!desc->source_file) {
+			return false; // Memory allocation failed - this IS an error
+		}
 	}
 	desc->source_line = sample->line;
 	desc->source_column = sample->column;
+	return true;
 }
 
 /**
@@ -207,13 +244,25 @@ RZ_API RZ_OWN RzAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *core, 
 	desc->addr = addr;
 
 	// Get function information first (higher priority)
-	addr_describe_from_function(core, desc, addr, opts);
+	// Returns false only on memory allocation failure
+	if (!addr_describe_from_function(core, desc, addr, opts)) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
 
 	// Get flag information
-	addr_describe_from_flags(core, desc, addr, opts);
+	// Returns false only on memory allocation failure
+	if (!addr_describe_from_flags(core, desc, addr, opts)) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
 
 	// Get source line information if requested
-	addr_describe_from_source(core, desc, addr, opts);
+	// Returns false only on memory allocation failure
+	if (!addr_describe_from_source(core, desc, addr, opts)) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
 
 	return desc;
 }
@@ -258,11 +307,11 @@ RZ_API RZ_OWN char *rz_core_addr_description_to_string(RZ_NONNULL const RzAddrDe
 	bool has_name = false;
 
 	// Priority: function > flag > plain address
-	if (opts->prefer_function && desc->fcn_name) {
+	if (opts->prefer_function && !RZ_STR_ISEMPTY(desc->fcn_name)) {
 		name = desc->fcn_name;
 		delta = desc->fcn_delta;
 		has_name = true;
-	} else if (opts->show_flag && desc->flag_name) {
+	} else if (opts->show_flag && !RZ_STR_ISEMPTY(desc->flag_name)) {
 		name = desc->flag_name;
 		delta = desc->flag_delta;
 		has_name = true;
@@ -444,43 +493,34 @@ RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NONNULL RzCore *core, ut6
 }
 
 /**
- * \brief Get a detailed address description for JSON output
+ * \brief Convert an address description to JSON format
  *
- * Creates a PJ object with detailed address information suitable
- * for JSON output in commands.
+ * Translates the given RzAddrDescription into a JSON object and appends
+ * it to the provided PJ instance.
  *
- * \param core The RzCore instance
  * \param pj The PrettyJSON instance to append to
- * \param addr The address to describe
- * \param opts Options controlling what information to include
+ * \param desc The address description to convert
+ * \param opts Options controlling what information to include in the output
  */
-RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzAddrDescribeOptions *opts) {
-	rz_return_if_fail(core && pj);
-
-	RzAddrDescription *desc = rz_core_addr_describe(core, addr, opts);
-	if (!desc) {
-		pj_o(pj);
-		pj_kn(pj, "addr", addr);
-		pj_end(pj);
-		return;
-	}
+RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzAddrDescription *desc, RZ_NULLABLE const RzAddrDescribeOptions *opts) {
+	rz_return_if_fail(pj && desc);
 
 	pj_o(pj);
 	pj_kn(pj, "addr", desc->addr);
 
-	if (desc->fcn_name) {
+	if (!RZ_STR_ISEMPTY(desc->fcn_name)) {
 		pj_ks(pj, "fcn_name", desc->fcn_name);
 		pj_kn(pj, "fcn_addr", desc->fcn_addr);
 		pj_kN(pj, "fcn_delta", desc->fcn_delta);
 	}
 
-	if (desc->flag_name) {
+	if (!RZ_STR_ISEMPTY(desc->flag_name)) {
 		pj_ks(pj, "flag_name", desc->flag_name);
 		pj_kn(pj, "flag_offset", desc->flag_offset);
 		pj_kN(pj, "flag_delta", desc->flag_delta);
 	}
 
-	if (desc->source_file) {
+	if (!RZ_STR_ISEMPTY(desc->source_file)) {
 		pj_ks(pj, "source_file", desc->source_file);
 		if (desc->source_line > 0) {
 			pj_ki(pj, "source_line", desc->source_line);
@@ -498,9 +538,33 @@ RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj,
 	}
 
 	pj_end(pj);
-	rz_core_addr_description_free(desc);
 }
 
+/**
+ * \brief Get a detailed address description for JSON output
+ *
+ * Convenience function that describes an address and outputs it as JSON.
+ * This combines rz_core_addr_describe() and rz_core_addr_description_to_pj().
+ *
+ * \param core The RzCore instance
+ * \param pj The PrettyJSON instance to append to
+ * \param addr The address to describe
+ * \param opts Options controlling what information to include
+ */
+RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzAddrDescribeOptions *opts) {
+	rz_return_if_fail(core && pj);
+
+	RzAddrDescription *desc = rz_core_addr_describe(core, addr, opts);
+	if (!desc) {
+		pj_o(pj);
+		pj_kn(pj, "addr", addr);
+		pj_end(pj);
+		return;
+	}
+
+	rz_core_addr_description_to_pj(pj, desc, opts);
+	rz_core_addr_description_free(desc);
+}
 /**
  * \brief Get relative offset info for an address (for asm.reloff functionality)
  *
