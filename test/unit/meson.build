@@ -113,7 +113,6 @@ if get_option('enable_tests')
     'str_search',
     'subprocess',
     'syscall',
-    'syscmd_pipe',
     'table',
     'task',
     'threads',
