@@ -208,18 +208,11 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag) {
-	rz_return_val_if_fail(plugin && state && plugin && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag, NULL);
+	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
-	if (!set || (state->kinds != (plugin->supported_abstractions & state->kinds))) {
-		if ((state->kinds != (plugin->supported_abstractions & state->kinds))) {
-			RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
-		}
-		rz_th_queue_free(addr_queue);
-		rz_th_queue_free(il_queue);
-		ht_up_free(yield_queues);
-		rz_atomic_bool_free(is_running_flag);
-		return NULL;
+	if (!set) {
+		return false;
 	}
 	set->state = state;
 	set->il_queue = il_queue;
@@ -228,6 +221,11 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->io_request = io_request;
 	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
+	if (state->kinds != (plugin->supported_abstractions & state->kinds)) {
+		RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
+		rz_interpreter_set_free(set);
+		return NULL;
+	}
 	return set;
 }
 
