@@ -81,8 +81,10 @@ static ut64 get_nop_pc_increment(RzAnalysis *analysis) {
 
 static ut64 get_mem_addr_bits(RzAnalysis *analysis) {
 	if (analysis->cur->il_config) {
-		const RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
-		return config->mem_key_size;
+		RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
+		size_t key_size = config->mem_key_size;
+		rz_analysis_il_config_free(config);
+		return key_size;
 	}
 	return analysis->cur->bits;
 }
@@ -117,41 +119,53 @@ static RzPVector *get_reg_names(RzAnalysis *analysis) {
  * Usually these tasks will be split between different caches and yield consumers.
  */
 RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
+	// All the things we need
+	bool return_code = true;
+	RzThreadQueue *io_request_q = NULL;
+	RzThreadQueue *io_result_q = NULL;
+	RzILOpEffect *eff = NULL;
+	RzThreadQueue *addr_queue = NULL;
+	RzList *boundaries = NULL;
+	RzInterpreterYieldQueue *yield_queue = NULL;
+	HtUP *yield_queues = NULL;
+	RzAtomicBool *is_running = rz_atomic_bool_new(true);
+	RzInterpreterAbstrState *abstr_state = NULL;
+	RzInterpreterSet *iset = NULL;
+	RzPVector *il_cache = NULL;
+	RzThreadQueue *il_queue = NULL;
+
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
 	// of the pointers.
-	RzPVector *il_cache = rz_pvector_new((RzPVectorFree)rz_il_op_effect_free);
+	il_cache = rz_pvector_new((RzPVectorFree)rz_il_op_effect_free);
 	// The queue to pass the Effects to the interpreter.
 	// This is only one queue for the prototype.
 	// In practice it would be one for each interpreter.
-	RzThreadQueue *il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
+	il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
 	if (!il_queue) {
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Setup the IO queues. Each interpreter instance needs it's own queue at
 	// for writing IO. Because the writing is done on the IO cache, and each
 	// instance needs its own cache.
-	RzThreadQueue *io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	RzThreadQueue *io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	if (!io_request_q || io_result_q) {
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		return false;
+	io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	if (!io_request_q || !io_result_q) {
+			return_code = false;
+			goto error_free;
 	}
 
 	// Add the Effect for each entry point.
-	RzILOpEffect *eff = NULL;
+	eff = NULL;
 	if (argc == 1) {
 		ut64 entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
 		eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
 		if (!eff) {
-			rz_th_queue_free(il_queue);
-			rz_th_queue_free(io_request_q);
-			rz_th_queue_free(io_result_q);
 			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", (ut64)entry_point);
-			return false;
+			return_code = false;
+			goto error_free;
 		}
 		rz_th_queue_push(il_queue, eff, true);
 		rz_pvector_push(il_cache, eff);
@@ -161,10 +175,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			ut64 entry_point = rz_num_get(core->num, argv[i]);
 			eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
 			if (!eff) {
-				rz_th_queue_free(il_queue);
-				rz_th_queue_free(io_request_q);
-				rz_th_queue_free(io_result_q);
-				return false;
+				return_code = false;
+				goto error_free;
 			}
 		}
 		rz_th_queue_push(il_queue, eff, true);
@@ -174,13 +186,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// The address queue. It is the queue the interpreter can request new Effects.
 	// Of course, currently there is only a single one for the prototype.
 	// In practice there would be one for each interpreter instance.
-	RzThreadQueue *addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, (RzListFree)rz_interpreter_addr_queue_free);
+	addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, (RzListFree)rz_interpreter_addr_queue_free);
 	if (!addr_queue) {
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		rz_pvector_free(il_cache);
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Here we build the filter for the yield queue.
@@ -188,57 +197,41 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// So the filter checks the generated xrefs, if they are within the IO map
 	// boundaries.
 	RzInterval iv = { .addr = 0, .size = UT64_MAX };
-	RzList *boundaries = rz_io_get_boundaries_all_io_maps(core->io, iv);
+	boundaries = rz_io_get_boundaries_all_io_maps(core->io, iv);
 	if (!boundaries) {
-		rz_th_queue_free(addr_queue);
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		rz_pvector_free(il_cache);
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Now create a set of yield queue(s).
 	// These yield queues can be shared between different interpreters.
 	// So we have one yield queue for each yield type.
 	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
-	RzInterpreterYieldQueue *yield_queue = rz_interpreter_yield_queue_new(
+	yield_queue = rz_interpreter_yield_queue_new(
 		yield_kind,
 		(RzInterpreterYieldFilter *)rz_inquiry_xref_interpreter_filter,
 		boundaries);
 	if (!yield_queue) {
-		rz_th_queue_free(addr_queue);
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		rz_pvector_free(il_cache);
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Multiple yield queues can be used by a single interpreter.
 	// E.g. if the interpreter has a complex abstract memory model
 	// for stack, heap and constant values.
 	// Then it can produce three kind of yields.
-	HtUP *yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
+	yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
 	if (!yield_queue || !yield_queues) {
-		rz_th_queue_free(addr_queue);
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		rz_pvector_free(il_cache);
-		rz_interpreter_yield_queue_free(yield_queue);
-		ht_up_free(yield_queues);
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 	ht_up_insert(yield_queues, yield_kind, yield_queue);
-	// Create the running flag.
-	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 
 	// Initialize the abstract state with the architecture's registers.
 	size_t addr_bits = get_mem_addr_bits(core->analysis);
 	RzPVector *reg_names = get_reg_names(core->analysis);
 	ut64 nop_pc_increment = get_nop_pc_increment(core->analysis);
-	RzInterpreterAbstrState *abstr_state = rz_interpreter_abstr_state_new(
+	abstr_state = rz_interpreter_abstr_state_new(
 		RZ_INTERPRETER_ABSTRACTION_CONST,
 		reg_names,
 		nop_pc_increment,
@@ -249,7 +242,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
-	RzInterpreterSet *iset = rz_interpreter_set_new(
+	iset = rz_interpreter_set_new(
 		rz_inquiry_plugin_interpreter_prototype.p_interpreter,
 		abstr_state,
 		addr_queue,
@@ -259,22 +252,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		io_result_q,
 		is_running);
 	if (!iset) {
-		rz_th_queue_free(addr_queue);
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
-		rz_pvector_free(il_cache);
-		rz_interpreter_yield_queue_free(yield_queue);
-		ht_up_free(yield_queues);
-		rz_atomic_bool_free(is_running);
-		return false;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Dispatch prototype interpreter into a thread.
 	// This part plays the role of the cache now.
 	// Waiting for new Effects to be requested and sending them.
 	RZ_LOG_WARN("INQUIRY: Start main interpretation thread.\n");
-	RzThread *iterpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 	RZ_LOG_WARN("INQUIRY: Enforce enabling IO cache.\n");
 	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
 	rz_config_set(core->config, "io.cache", "true");
@@ -335,10 +321,24 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 	// Wait for thread to finish before cleaning.
-	rz_th_wait(iterpr_th);
-	rz_th_free(iterpr_th);
-	// Empty pseudo-cache.
+	rz_th_wait(interpr_th);
+	rz_th_free(interpr_th);
+
+error_free:
+	if (!iset) {
+		rz_th_queue_free(addr_queue);
+		rz_th_queue_free(il_queue);
+		rz_th_queue_free(io_request_q);
+		rz_th_queue_free(io_result_q);
+		// yield_queues frees each individual queue as well.
+		ht_up_free(yield_queues);
+		rz_atomic_bool_free(is_running);
+		rz_interpreter_abstr_state_free(abstr_state);
+	} else {
+		// Ownership was passed to iset
+		rz_interpreter_set_free(iset);
+	}
 	rz_pvector_free(il_cache);
 
-	return true;
+	return return_code;
 }
