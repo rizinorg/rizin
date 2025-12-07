@@ -214,6 +214,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	if (!set) {
 		return false;
 	}
+	set->plugin = plugin;
 	set->state = state;
 	set->il_queue = il_queue;
 	set->addr_queue = addr_queue;
@@ -245,8 +246,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			iset->yield_queues &&
 			iset->is_running_flag &&
 			iset->plugin &&
-			iset->plugin->init_state &&
 			iset->plugin->eval &&
+			iset->plugin->successors &&
+			iset->plugin->init_state &&
+			iset->plugin->fini_state &&
 			iset->plugin->hash_state,
 		entry_assert_error);
 	bool success = false;
