@@ -1797,7 +1797,7 @@ static const RzCmdDescHelp cmd_search_collision_help = {
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
-	{ .text = "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512", .arg_str = NULL, .comment = "MD5 hash search within blocks of 512 bytes." },
+	{ .text = "/ch", .arg_str = " md5 0bc8f8c426b74ffaedac8330a7464014 512", .comment = "MD5 hash search within blocks of 512 bytes." },
 	{ 0 },
 };
 
@@ -1837,7 +1837,7 @@ static const RzCmdDescHelp cmd_search_hash_block_help = {
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_entropy_Usage_space_example_detail_entries[] = {
-	{ .text = "/ce 2.5 7.4 512", .arg_str = NULL, .comment = "Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max)." },
+	{ .text = "/ce", .arg_str = " 2.5 7.4 512", .comment = "Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max)." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_hash_entropy_details[] = {
@@ -1871,7 +1871,7 @@ static const RzCmdDescHelp cmd_search_hash_entropy_help = {
 };
 
 static const RzCmdDescDetailEntry cmd_search_hash_entropy_fractional_Usage_space_example_detail_entries[] = {
-	{ .text = "/cef 0.3 0.8 512", .arg_str = NULL, .comment = "Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max)." },
+	{ .text = "/cef", .arg_str = " 0.3 0.8 512", .comment = "Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max)." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[] = {
@@ -2293,10 +2293,10 @@ static const RzCmdDescDetailEntry cmd_search_value_Arguments_detail_entries[] = 
 };
 
 static const RzCmdDescDetailEntry cmd_search_value_Usage_space_example_detail_entries[] = {
-	{ .text = "/v 4be 512", .arg_str = NULL, .comment = "Search 512 represented in 4 bytes big endian order." },
-	{ .text = "/v 8le \"[0x80000000,0x80001000]\"", .arg_str = NULL, .comment = "Search values in the closed range '[0x80000000,0x80001000]' represented in 8 bytes little endian order." },
-	{ .text = "/v 2a \"(0x1000,0xff0)\"", .arg_str = NULL, .comment = "Search values in the open range '(0x1000,0xff0)' represented in 2 bytes order of cfg.bigendian." },
-	{ .text = "/v 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\"", .arg_str = NULL, .comment = "Search values in the right open range '[0x20,0x10)', value '0x55' and closed range values '[0xf0,0xff]' represented in 1 byte." },
+	{ .text = "/v", .arg_str = " 4be 512", .comment = "Search 512 represented in 4 bytes big endian order." },
+	{ .text = "/v", .arg_str = " 8le \"[0x80000000,0x80001000]\"", .comment = "Search values in the closed range '[0x80000000,0x80001000]' represented in 8 bytes little endian order." },
+	{ .text = "/v", .arg_str = " 2a \"(0x1000,0xff0)\"", .comment = "Search values in the open range '(0x1000,0xff0)' represented in 2 bytes order of cfg.bigendian." },
+	{ .text = "/v", .arg_str = " 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\"", .comment = "Search values in the right open range '[0x20,0x10)', value '0x55' and closed range values '[0xf0,0xff]' represented in 1 byte." },
 	{ 0 },
 };
 static const RzCmdDescDetail cmd_search_value_details[] = {
@@ -2533,10 +2533,10 @@ static const RzCmdDescDetailEntry slash_z_Regex_space_Flags_detail_entries[] = {
 };
 
 static const RzCmdDescDetailEntry slash_z_Examples_detail_entries[] = {
-	{ .text = "/z (ABC*)", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)\"." },
-	{ .text = "/z (ABC*)D li", .arg_str = NULL, .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
-	{ .text = "/z \\\\d\\\\sC*\\\\w ri", .arg_str = NULL, .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
-	{ .text = "/z \"и.{3}м\" ei", .arg_str = NULL, .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
+	{ .text = "/z", .arg_str = " (ABC*)", .comment = "Search the exact string \"(ABC*)\"." },
+	{ .text = "/z", .arg_str = " (ABC*)D li", .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
+	{ .text = "/z", .arg_str = " \\\\d\\\\sC*\\\\w ri", .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
+	{ .text = "/z", .arg_str = " \"и.{3}м\" ei", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {
