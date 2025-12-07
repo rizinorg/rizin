@@ -243,7 +243,8 @@ commands:
       details:
         - name: Usage example
           entries:
-            - text: "/ch md5 0bc8f8c426b74ffaedac8330a7464014 512"
+            - text: "/ch"
+              arg_str: " md5 0bc8f8c426b74ffaedac8330a7464014 512"
               comment: "MD5 hash search within blocks of 512 bytes."
         - name: Tip
           entries:
@@ -272,7 +273,8 @@ commands:
       details:
         - name: Usage example
           entries:
-            - text: /ce 2.5 7.4 512
+            - text: "/ce"
+              arg_str: " 2.5 7.4 512"
               comment: "Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max)."
     - name: "/cef"
       summary: "Search for blocks above an fractional entropy level."
@@ -295,7 +297,8 @@ commands:
       details:
         - name: Usage example
           entries:
-            - text: /cef 0.3 0.8 512
+            - text: "/cef"
+              arg_str: " 0.3 0.8 512"
               comment: "Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max)."
     - name: "/cm"
       summary: Search cryptographic material.
@@ -632,15 +635,19 @@ commands:
                 Can be single values or range descriptions. Must be wrapped in '\"'."
         - name: Usage example
           entries:
-            - text: "/v 4be 512"
+            - text: "/v"
+              arg_str: " 4be 512"
               comment: "Search 512 represented in 4 bytes big endian order."
-            - text: "/v 8le \"[0x80000000,0x80001000]\""
+            - text: "/v"
+              arg_str: " 8le \"[0x80000000,0x80001000]\""
               comment: "Search values in the closed range '[0x80000000,0x80001000]'
                 represented in 8 bytes little endian order."
-            - text: "/v 2a \"(0x1000,0xff0)\""
+            - text: "/v"
+              arg_str: " 2a \"(0x1000,0xff0)\""
               comment: "Search values in the open range '(0x1000,0xff0)' represented
                 in 2 bytes order of cfg.bigendian."
-            - text: "/v 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\""
+            - text: "/v"
+              arg_str: " 1 \"[0x20,0x10)\", 0x55, \"[0xf0,0xff]\""
               comment: "Search values in the right open range '[0x20,0x10)', value '0x55'
                 and closed range values '[0xf0,0xff]' represented in 1 byte."
     - name: "/v1"
@@ -844,13 +851,17 @@ commands:
           comment: "Dot matches any one character, without exception (equivalent flag: PCRE2_DOTALL)"
     - name: "Examples"
       entries:
-        - text: "/z (ABC*)"
+        - text: "/z"
+          arg_str: " (ABC*)"
           comment: "Search the exact string \"(ABC*)\"."
-        - text: "/z (ABC*)D li"
+        - text: "/z"
+          arg_str: " (ABC*)D li"
           comment: "Search the exact string \"(ABC*)D\" but case insensitive."
-        - text: "/z \\\\d\\\\sC*\\\\w ri"
+        - text: "/z"
+          arg_str: " \\\\d\\\\sC*\\\\w ri"
           comment: "Search the regular expression \"\\d\\sC*\\w\" but case insensitive."
-        - text: "/z \"и.{3}м\" ei"
+        - text: "/z"
+          arg_str: " \"и.{3}м\" ei"
           comment: "Search the extended regular expression \"и.{3}м\" but case insensitive."
     subcommands:
     - name: "/z"
