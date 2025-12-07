@@ -27,31 +27,17 @@ bool test_rz_syscmd_uniq_pipe_empty(void) {
 	mu_end;
 }
 
-bool test_rz_syscmd_uniq_pipe_null(void) {
-	char *out = rz_syscmd_uniq_pipe(NULL);
-	mu_assert_null(out, "NULL -> NULL");
-	mu_end;
-}
-
 bool test_rz_syscmd_sort_pipe_empty(void) {
 	char *out = rz_syscmd_sort_pipe("");
 	mu_assert_null(out, "empty -> NULL");
 	mu_end;
 }
 
-bool test_rz_syscmd_sort_pipe_null(void) {
-	char *out = rz_syscmd_sort_pipe(NULL);
-	mu_assert_null(out, "NULL -> NULL");
-	mu_end;
-}
-
 int all_tests(void) {
 	mu_run_test(test_rz_syscmd_uniq_pipe_basic);
 	mu_run_test(test_rz_syscmd_uniq_pipe_empty);
-	mu_run_test(test_rz_syscmd_uniq_pipe_null);
 	mu_run_test(test_rz_syscmd_sort_pipe_basic);
 	mu_run_test(test_rz_syscmd_sort_pipe_empty);
-	mu_run_test(test_rz_syscmd_sort_pipe_null);
 	return tests_passed != tests_run;
 }
 

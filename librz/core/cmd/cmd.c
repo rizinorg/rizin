@@ -10,6 +10,7 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
+#include <rz_types.h>
 #include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
@@ -642,26 +643,14 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 // Piping commands and fallbacks can be added here.
 static PipeFallbacks fallbacks[] = {
 	{ "uniq", rz_syscmd_uniq_pipe },
-	{ "sort", rz_syscmd_sort_pipe },
-	{ NULL, NULL }
+	{ "sort", rz_syscmd_sort_pipe }
 };
 
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
-	/* Check if uniq and sort is in path,
-	   if not found, then rz implementaion is used. */
 
-	for (int i = 0; fallbacks[i].command != NULL; i++) {
+	for (size_t i = 0; RZ_ARRAY_SIZE(fallbacks); i++) {
 		if (RZ_STR_EQ(argv[0], fallbacks[i].command)) {
-			char *path = rz_file_path(argv[0]);
-			if (!path) {
-				return NULL;
-			}
-
-			if (RZ_STR_EQ(path, argv[0])) {
-				free(path);
-				return fallbacks[i].fallback_fn((const char *)input);
-			}
-			free(path);
+			return fallbacks[i].fallback_fn((const char *)input);
 		}
 	}
 
