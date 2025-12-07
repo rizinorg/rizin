@@ -216,7 +216,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
-RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *qset);
+RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *queue_set);
 

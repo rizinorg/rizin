@@ -156,7 +156,38 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	if (state->lets) {
 		ht_up_free(state->lets);
 	}
+	if (state->pc) {
+		free(state->pc);
+	}
 	free(state);
+}
+
+RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
+	if (!iset) {
+		return;
+	}
+	if (iset->addr_queue) {
+		rz_th_queue_free(iset->addr_queue);
+	}
+	if (iset->il_queue) {
+		rz_th_queue_free(iset->il_queue);
+	}
+	if (iset->io_request) {
+		rz_th_queue_free(iset->io_request);
+	}
+	if (iset->io_result) {
+		rz_th_queue_free(iset->io_result);
+	}
+	if (iset->is_running_flag) {
+		rz_atomic_bool_free(iset->is_running_flag);
+	}
+	if (iset->state) {
+		rz_interpreter_abstr_state_free(iset->state);
+	}
+	if (iset->yield_queues) {
+		ht_up_free(iset->yield_queues);
+	}
+	free(iset);
 }
 
 /**
@@ -198,28 +229,6 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
 	return set;
-}
-
-RZ_API void rz_interpreter_queue_set_free(RZ_NULLABLE RZ_OWN RzInterpreterSet *iset) {
-	if (!iset) {
-		return;
-	}
-	if (iset->state) {
-		rz_interpreter_abstr_state_free(iset->state);
-	}
-	if (iset->addr_queue) {
-		rz_th_queue_free(iset->addr_queue);
-	}
-	if (iset->il_queue) {
-		rz_th_queue_free(iset->il_queue);
-	}
-	if (iset->yield_queues) {
-		ht_up_free(iset->yield_queues);
-	}
-	if (iset->is_running_flag) {
-		rz_atomic_bool_free(iset->is_running_flag);
-	}
-	free(iset);
 }
 
 typedef struct {
