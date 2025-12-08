@@ -75,6 +75,13 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		goto where; \
 	} while (0)
 
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		if (!(expr)) { \
+			goto where; \
+		} \
+	} while (0)
+
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
 
 #if RZ_CHECKS_LEVEL == 1
@@ -135,6 +142,14 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		goto where; \
 	} while (0)
 
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			goto where; \
+		} \
+	} while (0)
+
 #else // RZ_CHECKS_LEVEL
 
 #include <assert.h>
@@ -158,6 +173,12 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_goto_if_reached(where) \
 	do { \
 		assert(false); \
+		goto where; \
+	} while (0)
+
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		assert(expr); \
 		goto where; \
 	} while (0)
 

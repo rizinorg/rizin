@@ -1370,7 +1370,7 @@ typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
-typedef RzAnalysisILConfig *(*RzAnalysisILConfigCB)(RzAnalysis *analysis);
+typedef RZ_OWN RzAnalysisILConfig *(*RzAnalysisILConfigCB)(RzAnalysis *analysis);
 
 typedef struct rz_analysis_plugin_t {
 	const char *name;
