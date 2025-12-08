@@ -249,6 +249,35 @@ RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue) {
 }
 
 /**
+ * \brief Returns the thread condition of the \p queue.
+ * In combination with rz_th_cond_signal() this can be used to unblock
+ * a waiting consumer.
+ *
+ * Example:
+ *   Consumer:
+ *   ```
+ *   // Waits to get element.
+ *   void *v = rz_th_queue_wait_pop(queue);
+ *   // After signal was sent and thread returned from rz_th_queue_wait_pop()
+ *   assert(v == NULL);
+ *   ```
+ *
+ *   Supplier:
+ *   ```
+ *   // Signals all threads waiting in the queue to return.
+ *   rz_th_cond_signal_all(rz_th_queue_get_cond(queue));
+ *   ```
+ *
+ * \param queue The queue to get the condition from.
+ *
+ * \return The condition or NULL in case of failure.
+ */
+RZ_API RZ_BORROW RzThreadCond *rz_th_queue_get_cond(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, NULL);
+	return queue->cond;
+}
+
+/**
  * \brief  Removes all elements from the queue, but does not awaits when empty.
  *
  * \param  queue The RzThreadQueue to pop from

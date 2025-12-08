@@ -49,6 +49,11 @@ void *thread_queue_push_timed(RzThreadQueue *queue) {
 	return rz_th_queue_push(queue, queue, true) ? queue : NULL;
 }
 
+void thread_cond_unblock_timed(RzThreadCond *cond) {
+	rz_sys_sleep(2);
+	rz_th_cond_signal_all(cond);
+}
+
 bool test_thread_queue(void) {
 	// test limited queue
 	void *head = (void *)"aaaaaa";
@@ -93,6 +98,22 @@ bool test_thread_queue(void) {
 	mu_assert_ptreq(tail, queue, "rz_th_queue_wait_pop(queue, true) is queue");
 	mu_assert_true(diff >= 1500000, "queue did wait for value.");
 	mu_assert_ptreq(rz_th_get_retv(th), queue, "verify it returned queue");
+	rz_th_free(th);
+	rz_th_queue_free(queue);
+
+	mu_end;
+}
+
+bool test_thread_queue_unblock(void) {
+	RzThreadQueue *queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	RzThread *th = rz_th_new((RzThreadFunction)thread_cond_unblock_timed, rz_th_queue_get_cond(queue));
+	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, queue) null check");
+	ut64 start = rz_time_now();
+	void *tail = rz_th_queue_wait_pop(queue, true);
+	ut64 diff = rz_time_now() - start;
+	rz_th_wait(th);
+	mu_assert_null(tail, "rz_th_queue_wait_pop is NULL");
+	mu_assert_true(diff >= 1500000, "queue did wait for unblocking.");
 	rz_th_free(th);
 	rz_th_queue_free(queue);
 
@@ -246,6 +267,7 @@ int all_tests() {
 	mu_run_test(test_thread_limit);
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
+	mu_run_test(test_thread_queue_unblock);
 	mu_run_test(test_thread_ht);
 	mu_run_test(test_thread_iterator_list);
 	mu_run_test(test_thread_iterator_pvec);
