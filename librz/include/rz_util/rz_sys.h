@@ -209,7 +209,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
  *
  * Takes the input text and returns its sorted form.
  */
-RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NONNULL const char *input);
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input);
 
 /**
  * \brief Produce the unique filtered form of the input.
@@ -218,7 +218,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NONNULL const char *input);
  *
  * Takes the input text and returns its unique filtered result.
  */
-RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NONNULL const char *input);
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input);
 
 #ifdef __cplusplus
 }

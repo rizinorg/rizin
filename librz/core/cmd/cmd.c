@@ -640,17 +640,17 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
-// Piping commands and fallbacks can be added here.
-static PipeFallbacks fallbacks[] = {
+// Piping commands and fallbacks.
+static PipeFallbacks internal_commands[] = {
 	{ "uniq", rz_syscmd_uniq_pipe },
 	{ "sort", rz_syscmd_sort_pipe }
 };
 
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
 
-	for (size_t i = 0; RZ_ARRAY_SIZE(fallbacks); i++) {
-		if (RZ_STR_EQ(argv[0], fallbacks[i].command)) {
-			return fallbacks[i].fallback_fn((const char *)input);
+	for (size_t i = 0; RZ_ARRAY_SIZE(internal_commands); i++) {
+		if (RZ_STR_EQ(argv[0], internal_commands[i].command)) {
+			return internal_commands[i].fallback_fn((const char *)input);
 		}
 	}
 
