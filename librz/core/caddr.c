@@ -21,11 +21,11 @@
 #include <rz_util/rz_assert.h>
 
 /**
- * \brief Create a new RzCoreAddrDescribeOptions with default values
+ * \brief Create a new RzCoreAddrOptions with default values
  * \return Pointer to newly allocated options structure, NULL on failure
  */
-RZ_API RZ_OWN RzCoreAddrDescribeOptions *rz_core_addr_describe_options_new(void) {
-	RzCoreAddrDescribeOptions *opts = RZ_NEW0(RzCoreAddrDescribeOptions);
+RZ_API RZ_OWN RzCoreAddrOptions *rz_core_addr_options_new(void) {
+	RzCoreAddrOptions *opts = RZ_NEW0(RzCoreAddrOptions);
 	if (!opts) {
 		return NULL;
 	}
@@ -43,18 +43,18 @@ RZ_API RZ_OWN RzCoreAddrDescribeOptions *rz_core_addr_describe_options_new(void)
 }
 
 /**
- * \brief Free an RzCoreAddrDescribeOptions structure
+ * \brief Free an RzCoreAddrOptions structure
  * \param opts The options to free
  */
-RZ_API void rz_core_addr_describe_options_free(RZ_NULLABLE RzCoreAddrDescribeOptions *opts) {
+RZ_API void rz_core_addr_options_free(RZ_NULLABLE RzCoreAddrOptions *opts) {
 	free(opts);
 }
 
 /**
- * \brief Free an RzCoreAddrDescription structure
+ * \brief Free an RzCoreAddr structure
  * \param desc The description to free
  */
-RZ_API void rz_core_addr_description_free(RZ_NULLABLE RzCoreAddrDescription *desc) {
+RZ_API void rz_core_addr_free(RZ_NULLABLE RzCoreAddr *desc) {
 	if (!desc) {
 		return;
 	}
@@ -77,7 +77,7 @@ RZ_API void rz_core_addr_description_free(RZ_NULLABLE RzCoreAddrDescription *des
  * \param opts Options controlling behavior
  * \return true on success (including when no flag found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_flags(RZ_NULLABLE RzFlag *flags, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+static bool addr_describe_from_flags(RZ_NULLABLE RzFlag *flags, RZ_NONNULL RzCoreAddr *desc, ut64 addr, RZ_NONNULL const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(desc && opts, false);
 
 	if (!opts->show_flag || !flags) {
@@ -132,7 +132,7 @@ static bool addr_describe_from_flags(RZ_NULLABLE RzFlag *flags, RZ_NONNULL RzCor
  * \param opts Options controlling behavior
  * \return true on success (including when no function found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_function(RZ_NULLABLE RzAnalysis *analysis, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+static bool addr_describe_from_function(RZ_NULLABLE RzAnalysis *analysis, RZ_NONNULL RzCoreAddr *desc, ut64 addr, RZ_NONNULL const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(desc && opts, false);
 
 	if (!opts->prefer_function || !analysis) {
@@ -174,7 +174,7 @@ static bool addr_describe_from_function(RZ_NULLABLE RzAnalysis *analysis, RZ_NON
  * \param opts Options controlling behavior
  * \return true on success (including when no source info found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_source(RZ_NULLABLE RzBinFile *bf, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+static bool addr_describe_from_source(RZ_NULLABLE RzBinFile *bf, RZ_NONNULL RzCoreAddr *desc, ut64 addr, RZ_NONNULL const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(desc && opts, false);
 
 	if (!opts->show_source_info) {
@@ -216,12 +216,12 @@ static bool addr_describe_from_source(RZ_NULLABLE RzBinFile *bf, RZ_NONNULL RzCo
  * \param core The RzCore instance
  * \param addr The address to describe
  * \param opts Options controlling what information to include
- * \return Pointer to RzCoreAddrDescription, or NULL on failure. Caller must free with rz_core_addr_description_free()
+ * \return Pointer to RzCoreAddr, or NULL on failure. Caller must free with rz_core_addr_free()
  */
-RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzCoreAddrDescribeOptions default_opts = {
+	RzCoreAddrOptions default_opts = {
 		.show_offset = true,
 		.prefer_function = true,
 		.show_flag = true,
@@ -235,7 +235,7 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *co
 		opts = &default_opts;
 	}
 
-	RzCoreAddrDescription *desc = RZ_NEW0(RzCoreAddrDescription);
+	RzCoreAddr *desc = RZ_NEW0(RzCoreAddr);
 	if (!desc) {
 		return NULL;
 	}
@@ -245,21 +245,21 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *co
 	// Get function information first (higher priority)
 	// Returns false only on memory allocation failure
 	if (!addr_describe_from_function(core->analysis, desc, addr, opts)) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
 	// Get flag information
 	// Returns false only on memory allocation failure
 	if (!addr_describe_from_flags(core->flags, desc, addr, opts)) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
 	// Get source line information if requested
 	// Returns false only on memory allocation failure
 	if (!addr_describe_from_source(rz_bin_cur(core->bin), desc, addr, opts)) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
@@ -281,10 +281,10 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *co
  * \param opts Options controlling the output format
  * \return Newly allocated formatted string, or NULL on failure. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_description_to_string(RZ_NONNULL const RzCoreAddrDescription *desc, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
+RZ_API RZ_OWN char *rz_core_addr_to_string(RZ_NONNULL const RzCoreAddr *desc, RZ_NULLABLE const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(desc, NULL);
 
-	RzCoreAddrDescribeOptions default_opts = {
+	RzCoreAddrOptions default_opts = {
 		.show_offset = true,
 		.prefer_function = true,
 		.show_flag = true,
@@ -361,23 +361,23 @@ RZ_API RZ_OWN char *rz_core_addr_description_to_string(RZ_NONNULL const RzCoreAd
  * \brief Convenience function to get a name+offset string for an address
  *
  * This is a simplified wrapper that combines rz_core_addr_describe() and
- * rz_core_addr_description_to_string() for common use cases.
+ * rz_core_addr_to_string() for common use cases.
  *
  * \param core The RzCore instance
  * \param addr The address to describe
  * \param opts Options controlling the output format (NULL for defaults)
  * \return Newly allocated string, or NULL on failure. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_describe_string(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
+RZ_API RZ_OWN char *rz_core_addr_describe_string(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, opts);
+	RzCoreAddr *desc = rz_core_addr_describe(core, addr, opts);
 	if (!desc) {
 		return NULL;
 	}
 
-	char *result = rz_core_addr_description_to_string(desc, opts);
-	rz_core_addr_description_free(desc);
+	char *result = rz_core_addr_to_string(desc, opts);
+	rz_core_addr_free(desc);
 	return result;
 }
 
@@ -403,12 +403,12 @@ RZ_API RZ_OWN char *rz_core_addr_get_name_delta(RZ_NONNULL RzCore *core, ut64 ad
  *
  * \param core The RzCore instance
  * \param addr The address to describe
- * \return Pointer to RzCoreAddrDescription, or NULL on failure. Caller must free.
+ * \return Pointer to RzCoreAddr, or NULL on failure. Caller must free.
  */
-RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_function(RZ_NONNULL RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe_with_function(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = true,
 		.prefer_function = true,
 		.show_flag = true,
@@ -428,12 +428,12 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_function(RZ_NONN
  *
  * \param core The RzCore instance
  * \param addr The address to describe
- * \return Pointer to RzCoreAddrDescription, or NULL on failure. Caller must free.
+ * \return Pointer to RzCoreAddr, or NULL on failure. Caller must free.
  */
-RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_source(RZ_NONNULL RzCore *core, ut64 addr) {
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe_with_source(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = true,
 		.prefer_function = true,
 		.show_flag = true,
@@ -458,8 +458,8 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_source(RZ_NONNUL
  * \param opts Display options
  * \return Newly allocated formatted string. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
-	RzCoreAddrDescribeOptions default_opts = {
+RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts) {
+	RzCoreAddrOptions default_opts = {
 		.show_offset = true,
 		.prefer_function = false,
 		.show_flag = false,
@@ -492,14 +492,14 @@ RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, 
 /**
  * \brief Convert an address description to JSON format
  *
- * Translates the given RzCoreAddrDescription into a JSON object and appends
+ * Translates the given RzCoreAddr into a JSON object and appends
  * it to the provided PJ instance.
  *
  * \param pj The PrettyJSON instance to append to
  * \param desc The address description to convert
  * \param opts Options controlling what information to include in the output
  */
-RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzCoreAddrDescription *desc, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
+RZ_API void rz_core_addr_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzCoreAddr *desc, RZ_NULLABLE const RzCoreAddrOptions *opts) {
 	rz_return_if_fail(pj && desc);
 
 	pj_o(pj);
@@ -528,7 +528,7 @@ RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const R
 	}
 
 	// Generate a combined name+delta string
-	char *name_delta = rz_core_addr_description_to_string(desc, opts);
+	char *name_delta = rz_core_addr_to_string(desc, opts);
 	if (name_delta) {
 		pj_ks(pj, "name_delta", name_delta);
 		free(name_delta);
@@ -541,17 +541,17 @@ RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const R
  * \brief Get a detailed address description for JSON output
  *
  * Convenience function that describes an address and outputs it as JSON.
- * This combines rz_core_addr_describe() and rz_core_addr_description_to_pj().
+ * This combines rz_core_addr_describe() and rz_core_addr_to_pj().
  *
  * \param core The RzCore instance
  * \param pj The PrettyJSON instance to append to
  * \param addr The address to describe
  * \param opts Options controlling what information to include
  */
-RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
+RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts) {
 	rz_return_if_fail(core && pj);
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, opts);
+	RzCoreAddr *desc = rz_core_addr_describe(core, addr, opts);
 	if (!desc) {
 		pj_o(pj);
 		pj_kn(pj, "addr", addr);
@@ -559,8 +559,8 @@ RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj,
 		return;
 	}
 
-	rz_core_addr_description_to_pj(pj, desc, opts);
-	rz_core_addr_description_free(desc);
+	rz_core_addr_to_pj(pj, desc, opts);
+	rz_core_addr_free(desc);
 }
 /**
  * \brief Get relative offset info for an address (for asm.reloff functionality)
@@ -588,7 +588,7 @@ RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr,
 		*out_delta = 0;
 	}
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = false,
 		.prefer_function = prefer_function,
 		.show_flag = use_flags,
@@ -598,7 +598,7 @@ RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr,
 		.use_realnames = false
 	};
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
+	RzCoreAddr *desc = rz_core_addr_describe(core, addr, &opts);
 	if (!desc) {
 		return false;
 	}
@@ -624,7 +624,7 @@ RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr,
 		found = true;
 	}
 
-	rz_core_addr_description_free(desc);
+	rz_core_addr_free(desc);
 	return found;
 }
 
@@ -641,7 +641,7 @@ RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr,
 RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, NULL);
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = false,
 		.prefer_function = true,
 		.show_flag = false,
@@ -651,14 +651,14 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
 		.use_realnames = false
 	};
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
+	RzCoreAddr *desc = rz_core_addr_describe(core, addr, &opts);
 	if (!desc || !desc->fcn_name) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
-	char *result = rz_core_addr_description_to_string(desc, &opts);
-	rz_core_addr_description_free(desc);
+	char *result = rz_core_addr_to_string(desc, &opts);
+	rz_core_addr_free(desc);
 	return result;
 }
 
@@ -673,10 +673,10 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
  * \param opts Options controlling the output format
  * \return Newly allocated string or NULL. Caller must free.
  */
-static RZ_OWN char *addr_get_flag_offset_internal(RZ_NONNULL RzFlag *flags, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+static RZ_OWN char *addr_get_flag_offset_internal(RZ_NONNULL RzFlag *flags, ut64 addr, RZ_NONNULL const RzCoreAddrOptions *opts) {
 	rz_return_val_if_fail(flags && opts, NULL);
 
-	RzCoreAddrDescription *desc = RZ_NEW0(RzCoreAddrDescription);
+	RzCoreAddr *desc = RZ_NEW0(RzCoreAddr);
 	if (!desc) {
 		return NULL;
 	}
@@ -684,17 +684,17 @@ static RZ_OWN char *addr_get_flag_offset_internal(RZ_NONNULL RzFlag *flags, ut64
 	desc->addr = addr;
 
 	if (!addr_describe_from_flags(flags, desc, addr, opts)) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
 	if (!desc->flag_name) {
-		rz_core_addr_description_free(desc);
+		rz_core_addr_free(desc);
 		return NULL;
 	}
 
-	char *result = rz_core_addr_description_to_string(desc, opts);
-	rz_core_addr_description_free(desc);
+	char *result = rz_core_addr_to_string(desc, opts);
+	rz_core_addr_free(desc);
 	return result;
 }
 
@@ -711,7 +711,7 @@ static RZ_OWN char *addr_get_flag_offset_internal(RZ_NONNULL RzFlag *flags, ut64
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr) {
 	rz_return_val_if_fail(flags, NULL);
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = false,
 		.prefer_function = false,
 		.show_flag = true,
@@ -738,7 +738,7 @@ RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 
 RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr) {
 	rz_return_val_if_fail(flags, NULL);
 
-	RzCoreAddrDescribeOptions opts = {
+	RzCoreAddrOptions opts = {
 		.show_offset = false,
 		.prefer_function = false,
 		.show_flag = true,
