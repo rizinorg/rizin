@@ -138,8 +138,8 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 			return NULL;
 		}
 	}
-	state->locals = ht_up_new(NULL, NULL);
-	state->lets = ht_up_new(NULL, NULL);
+	state->locals = ht_up_new(NULL, free);
+	state->lets = ht_up_new(NULL, free);
 	return state;
 }
 

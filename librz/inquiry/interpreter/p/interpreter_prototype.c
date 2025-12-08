@@ -88,6 +88,17 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 		free(ad);
 	}
 	rz_iterator_free(it);
+
+	it = ht_up_as_iter(state->lets);
+	rz_iterator_foreach(it, v) {
+		RzInterpreterAbstrVal *av = *v;
+		ProtoIntrprAbstrData *ad = av->abstr_data;
+		if (ad->bv) {
+			rz_bv_free(ad->bv);
+		}
+		free(ad);
+	}
+	rz_iterator_free(it);
 	free(state->ext);
 	return true;
 }
