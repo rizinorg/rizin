@@ -1,5 +1,5 @@
 NAME=uniq pipelining
-FILE=--
+FILE==
 CMDS=<<EOF
 echo "a\na\nb" | uniq
 EOF
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=sort pipelining
-FILE=--
+FILE==
 CMDS=<<EOF
 echo "3\n2\n1" | sort
 EOF
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=uniq, sort pipelining
-FILE=--
+FILE==
 CMDS=<<EOF
 echo "3\n3\n2\n2\n1" | sort | uniq
 EOF
