@@ -120,7 +120,7 @@ typedef struct {
 	/**
 	 * \brief Initializes the abstract state.
 	 */
-	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data);
 	/**
 	 * \brief Closes the abstract state and frees all its abstract data.
 	 */
@@ -189,6 +189,11 @@ typedef struct {
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
+	/**
+	 * \brief The entry points for the interpreters.
+	 * Each address has its lifted IL op in the il_queue at the same index.
+	 */
+	RzVector /*<ut64>*/ *entry_points;
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
 
@@ -215,7 +220,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
-	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag);
+	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
+	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *queue_set);

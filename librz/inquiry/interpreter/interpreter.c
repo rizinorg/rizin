@@ -140,6 +140,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	}
 	state->locals = ht_up_new(NULL, free);
 	state->lets = ht_up_new(NULL, free);
+	state->addr_bits = addr_bits;
 	return state;
 }
 
@@ -187,6 +188,9 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->yield_queues) {
 		ht_up_free(iset->yield_queues);
 	}
+	if (iset->entry_points) {
+		rz_vector_free(iset->entry_points);
+	}
 	free(iset);
 }
 
@@ -207,7 +211,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
-	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag) {
+	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
+	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points) {
 	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
@@ -222,6 +227,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->io_request = io_request;
 	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
+	set->entry_points = entry_points;
 	if (state->kinds != (plugin->supported_abstractions & state->kinds)) {
 		RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
 		rz_interpreter_set_free(set);
@@ -277,7 +283,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// This vector must have the same order as the elements pushed into addr_queue.
 	RzVector *succ_states = NULL;
 
-	if (!plugin->init_state(iset->state, plugin_data)) {
+	ut64 entry_point;
+	rz_vector_pop_front(iset->entry_points, &entry_point);
+	if (!plugin->init_state(iset->state, entry_point, plugin_data)) {
 		goto pre_loop_error;
 	}
 	RzInterpreterAbstrState *in_state = iset->state;
@@ -286,6 +294,14 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	ut64 out_hash = 0;
 
 	const RzILOpEffect *eff = rz_th_queue_pop(iset->il_queue, false);
+	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
+	// For now let's just drop them.
+	RzList *additional_entries = rz_th_queue_pop_all(iset->il_queue);
+	if (rz_list_length(additional_entries) > 0) {
+		RZ_LOG_WARN("More than one entry point is not yet supported by the prototype.\n");
+	}
+	rz_list_free(additional_entries);
+
 	state_cache = ht_up_new_rc(NULL, NULL);
 	tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
 	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
