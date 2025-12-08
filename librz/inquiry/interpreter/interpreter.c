@@ -353,17 +353,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 				rz_th_queue_push(iset->addr_queue, addr, true);
 			}
 		}
-		if (ht_up_get_rc(state_cache, out_hash) == 0) {
-			// There are no references to the current out_state.
-			// Free it for resources.
-			bool found;
-			RzInterpreterAbstrState *tmp = ht_up_find(state_cache, out_hash, &found);
-			if (found) {
-				plugin->fini_state(tmp, plugin_data);
-				rz_interpreter_abstr_state_free(tmp);
-			}
-			ht_up_delete(state_cache, out_hash);
-		}
 
 		if (ht_up_size(state_cache) == 0) {
 			// No state in the cache left.
