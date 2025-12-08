@@ -653,6 +653,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_TABLE
             args: []
           - name: afii
             summary: Show/add/delete imports used in function in current seek
