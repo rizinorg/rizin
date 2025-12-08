@@ -101,7 +101,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	}
 	case RZ_IL_OP_BITV:
 		rz_bv_cast_inplace(out->bv, rz_bv_len(pure->op.bitv.value), false);
-		rz_bv_copy(out->bv, pure->op.bitv.value);
+		rz_bv_copy(pure->op.bitv.value, out->bv);
 		out->is_concrete = true;
 		break;
 	case RZ_IL_OP_APPEND: {
