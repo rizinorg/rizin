@@ -201,7 +201,7 @@ typedef struct {
 } RzCoreGadget;
 
 /**
- * \brief Options for controlling address description output
+ * \brief Options for controlling address description output.
  *
  * This structure contains flags that control how addresses are described
  * and formatted. It can be passed to rz_core_addr_describe() and related
