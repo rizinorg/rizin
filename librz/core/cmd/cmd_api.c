@@ -816,6 +816,10 @@ static size_t strlen0(const char *s) {
 	return s ? strlen(s) : 0;
 }
 
+static size_t utf8strlen0(const char *s) {
+	return s ? rz_str_len_utf8(s) : 0;
+}
+
 static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
 	rz_strbuf_append(sb, s);
 	return rz_str_len_utf8(s);
@@ -1280,7 +1284,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 
 		entry_it = detail_it->entries;
 		while (entry_it && entry_it->text) {
-			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
+			size_t len = strlen(entry_it->text) + utf8strlen0(entry_it->arg_str);
 			int padding = len < max_len ? max_len - len : 0;
 			const char *arg_str = entry_it->arg_str ? entry_it->arg_str : "";
 			rz_strbuf_appendf(sb, "| %s%s%s%s %*s%s",

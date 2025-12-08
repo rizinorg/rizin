@@ -297,6 +297,6 @@ CMDS=/z??~:-3..
 EXPECT=<<EOF
 | /z (ABC*)D li     # Search the exact string "(ABC*)D" but case insensitive.
 | /z \\d\\sC*\\w ri # Search the regular expression "\d\sC*\w" but case insensitive.
-| /z "и.{3}м" ei  # Search the extended regular expression "и.{3}м" but case insensitive.
+| /z "и.{3}м" ei    # Search the extended regular expression "и.{3}м" but case insensitive.
 EOF
 RUN
