@@ -133,6 +133,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzInterpreterSet *iset = NULL;
 	RzPVector *il_cache = NULL;
 	RzThreadQueue *il_queue = NULL;
+	RzVector *entry_points = NULL;
 
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
@@ -158,6 +159,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	}
 
 	// Add the Effect for each entry point.
+	entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
 	eff = NULL;
 	if (argc == 1) {
 		ut64 entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
@@ -167,6 +169,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			return_code = false;
 			goto error_free;
 		}
+		rz_vector_push(entry_points, &entry_point);
 		rz_th_queue_push(il_queue, eff, true);
 		rz_pvector_push(il_cache, eff);
 	} else {
@@ -178,6 +181,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 				return_code = false;
 				goto error_free;
 			}
+			rz_vector_push(entry_points, &entry_point);
 		}
 		rz_th_queue_push(il_queue, eff, true);
 		rz_pvector_push(il_cache, eff);
@@ -250,7 +254,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		yield_queues,
 		io_request_q,
 		io_result_q,
-		is_running);
+		is_running,
+		entry_points);
 	if (!iset) {
 		return_code = false;
 		goto error_free;
@@ -341,6 +346,7 @@ error_free:
 		ht_up_free(yield_queues);
 		rz_atomic_bool_free(is_running);
 		rz_interpreter_abstr_state_free(abstr_state);
+		rz_vector_free(entry_points);
 	} else {
 		// Ownership was passed to iset
 		rz_interpreter_set_free(iset);
