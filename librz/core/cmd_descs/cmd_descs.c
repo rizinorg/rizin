@@ -22096,7 +22096,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_list_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl=", rz_analysis_function_list_ascii_handler, &analysis_function_list_ascii_help);
 	rz_warn_if_fail(analysis_function_list_ascii_cd);
 
-	RzCmdDesc *afi_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_info_handler, &analysis_function_info_help, &afi_help);
+	RzCmdDesc *afi_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_info_handler, &analysis_function_info_help, &afi_help);
 	rz_warn_if_fail(afi_cd);
 	RzCmdDesc *afii_cd = rz_cmd_desc_group_new(core->rcmd, afi_cd, "afii", rz_analysis_function_import_list_handler, &analysis_function_import_list_help, &afii_help);
 	rz_warn_if_fail(afii_cd);
