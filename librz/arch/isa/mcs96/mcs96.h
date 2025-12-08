@@ -4,12 +4,12 @@
 
 /**
  * \file mcs96.h
- * \brief 
+ * \brief
  * Intel MCS-96 microcontroller family instruction set architecture definitions
  * References:
  * https://www.njohnson.co.uk/pdf/Roland/Using8096.pdf
  * https://datasheets.chipdb.org/Intel/MCS96/MANUALS/27231703.PDF
- * https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up 
+ * https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up
  */
 
 #include <rz_util.h>
@@ -26,7 +26,7 @@ typedef struct mcs96_op_t {
 #define MCS96_3B 0x4
 #define MCS96_4B 0x8
 #define MCS96_5B 0x10
-#define MCS96_6B 0x20 
+#define MCS96_6B 0x20
 
 #define MCS96_3B_OR_4B 0x40
 #define MCS96_4B_OR_5B 0x80
@@ -42,10 +42,9 @@ typedef struct mcs96_op_t {
 
 #define MCS96_FE 0x8000 // 0xfe extension
 
-#define MCS96_8096 0x1   // supported on 8096
-#define MCS96_80196 0x2  // supported on 80196
-#define MCS96_80296 0x4  // supported on 80296
-
+#define MCS96_8096  0x1 // supported on 8096
+#define MCS96_80196 0x2 // supported on 80196
+#define MCS96_80296 0x4 // supported on 80296
 
 static Mcs96Op mcs96_op[] = {
 	{ "skip", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 },
@@ -303,8 +302,8 @@ static Mcs96Op mcs96_op[] = {
 	{ "ei", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 },
 	{ "clrvt", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 },
 	{ "nop", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 },
-	{ "invalid", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 }, // 0xfe is the opcode for signed and unsigned operation on 8096 / 80196 
-	{ "rst", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 } 
+	{ "invalid", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 }, // 0xfe is the opcode for signed and unsigned operation on 8096 / 80196
+	{ "rst", MCS96_1B, MCS96_8096 | MCS96_80196 | MCS96_80296 }
 };
 
 static const char *mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };

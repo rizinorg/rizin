@@ -118,9 +118,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 
-	RzStrBuf* asm_buf = &op->buf_asm;
+	RzStrBuf *asm_buf = &op->buf_asm;
 
-	ut32 isa_bit = MCS96_8096;  // default
+	ut32 isa_bit = MCS96_8096; // default
 	if (a->cpu && *a->cpu) {
 		if (strstr(a->cpu, "80296")) {
 			isa_bit = MCS96_80296;
@@ -132,7 +132,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
 
 	if (op->size > 0) {
-		if (buf[0] == 0x0d && isa_bit == MCS96_80296) {  // SHLL/MVAC/MSAC
+		if (buf[0] == 0x0d && isa_bit == MCS96_80296) { // SHLL/MVAC/MSAC
 			ut8 lreg_bits = buf[2] & 0x3;
 			// lreg.1 lreg.0 Execute
 			// 0      0      SHLL
@@ -157,7 +157,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
 
-		if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[op->size - 1] == 0x04) {  // AND/RPT/RPTxxx/RPTI/RPTIxxx
+		if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[op->size - 1] == 0x04) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
 			// RPT waop
 			// (010000aa) (waop) (00) (04)
 			// RPTxxx
@@ -168,111 +168,111 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			// (010000aa) (waop) (30 - 3F) (04)
 			const char *mnemonic;
 			switch (buf[op->size - 2]) {
-				case 0x00:
-					mnemonic = "rpt";
-					break;
-				case 0x10: 
-					mnemonic = "rptnst";
-					break;
-				case 0x11: 
-					mnemonic = "rptnh";
-					break;
-				case 0x12: 
-					mnemonic = "rptgt";
-					break;
-				case 0x13: 
-					mnemonic = "rptnc";
-					break;
-				case 0x14: 
-					mnemonic = "rptnvt";
-					break;
-				case 0x15: 
-					mnemonic = "rptnv";
-					break;
-				case 0x16: 
-					mnemonic = "rptge";
-					break;
-				case 0x17: 
-					mnemonic = "rptne";
-					break;
-				case 0x18: 
-					mnemonic = "rptst";
-					break;
-				case 0x19: 
-					mnemonic = "rpth";
-					break;
-				case 0x1a: 
-					mnemonic = "rptle";
-					break;
-				case 0x1b: 
-					mnemonic = "rptc";
-					break;
-				case 0x1c: 
-					mnemonic = "rptvt";
-					break;
-				case 0x1d: 
-					mnemonic = "rptv";
-					break;
-				case 0x1e: 
-					mnemonic = "rptlt";
-					break;
-				case 0x1f: 
-					mnemonic = "rpte";
-					break;
-				case 0x20:
-					mnemonic = "rpti";
-					break;
-				case 0x30:
-					mnemonic = "rptinst";
-					break;
-				case 0x31:
-					mnemonic = "rptinh";
-					break;
-				case 0x32:
-					mnemonic = "rptigt";
-					break;
-				case 0x33:
-					mnemonic = "rptinc";
-					break;
-				case 0x34:
-					mnemonic = "rptinvt";
-					break;
-				case 0x35:
-					mnemonic = "rptinv";
-					break;
-				case 0x36:
-					mnemonic = "rptige";
-					break;
-				case 0x37:
-					mnemonic = "rptine";
-					break;
-				case 0x38:
-					mnemonic = "rptist";
-					break;
-				case 0x39:
-					mnemonic = "rptih";
-					break;
-				case 0x3a:
-					mnemonic = "rptile";
-					break;
-				case 0x3b:
-					mnemonic = "rptic";
-					break;
-				case 0x3c:
-					mnemonic = "rptivt";
-					break;
-				case 0x3d:
-					mnemonic = "rptiv";
-					break;
-				case 0x3e:
-					mnemonic = "rptilt";
-					break;
-				case 0x3f:
-					mnemonic = "rptie";
-					break;
-				default:
-					mnemonic = "and";
-					break;
+			case 0x00:
+				mnemonic = "rpt";
+				break;
+			case 0x10:
+				mnemonic = "rptnst";
+				break;
+			case 0x11:
+				mnemonic = "rptnh";
+				break;
+			case 0x12:
+				mnemonic = "rptgt";
+				break;
+			case 0x13:
+				mnemonic = "rptnc";
+				break;
+			case 0x14:
+				mnemonic = "rptnvt";
+				break;
+			case 0x15:
+				mnemonic = "rptnv";
+				break;
+			case 0x16:
+				mnemonic = "rptge";
+				break;
+			case 0x17:
+				mnemonic = "rptne";
+				break;
+			case 0x18:
+				mnemonic = "rptst";
+				break;
+			case 0x19:
+				mnemonic = "rpth";
+				break;
+			case 0x1a:
+				mnemonic = "rptle";
+				break;
+			case 0x1b:
+				mnemonic = "rptc";
+				break;
+			case 0x1c:
+				mnemonic = "rptvt";
+				break;
+			case 0x1d:
+				mnemonic = "rptv";
+				break;
+			case 0x1e:
+				mnemonic = "rptlt";
+				break;
+			case 0x1f:
+				mnemonic = "rpte";
+				break;
+			case 0x20:
+				mnemonic = "rpti";
+				break;
+			case 0x30:
+				mnemonic = "rptinst";
+				break;
+			case 0x31:
+				mnemonic = "rptinh";
+				break;
+			case 0x32:
+				mnemonic = "rptigt";
+				break;
+			case 0x33:
+				mnemonic = "rptinc";
+				break;
+			case 0x34:
+				mnemonic = "rptinvt";
+				break;
+			case 0x35:
+				mnemonic = "rptinv";
+				break;
+			case 0x36:
+				mnemonic = "rptige";
+				break;
+			case 0x37:
+				mnemonic = "rptine";
+				break;
+			case 0x38:
+				mnemonic = "rptist";
+				break;
+			case 0x39:
+				mnemonic = "rptih";
+				break;
+			case 0x3a:
+				mnemonic = "rptile";
+				break;
+			case 0x3b:
+				mnemonic = "rptic";
+				break;
+			case 0x3c:
+				mnemonic = "rptivt";
+				break;
+			case 0x3d:
+				mnemonic = "rptiv";
+				break;
+			case 0x3e:
+				mnemonic = "rptilt";
+				break;
+			case 0x3f:
+				mnemonic = "rptie";
+				break;
+			default:
+				mnemonic = "and";
+				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
