@@ -812,10 +812,6 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 	return call_cd(cmd, cd, args);
 }
 
-static size_t strlen0(const char *s) {
-	return s ? strlen(s) : 0;
-}
-
 static size_t utf8strlen0(const char *s) {
 	return s ? rz_str_len_utf8(s) : 0;
 }
@@ -1076,7 +1072,7 @@ static size_t calc_padding_len(const RzCmdDesc *cd, const char *name, bool show_
 		rz_strbuf_fini(&sb);
 	}
 	if (cd->help->args_str) {
-		args_len = strlen0(cd->help->args_str);
+		args_len = utf8strlen0(cd->help->args_str);
 	} else {
 		RzStrBuf sb;
 		rz_strbuf_init(&sb);
@@ -1269,7 +1265,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 		const RzCmdDescDetailEntry *entry_it = detail_it->entries;
 		size_t max_len = 0, min_len = SIZE_MAX;
 		while (entry_it && entry_it->text) {
-			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
+			size_t len = strlen(entry_it->text) + utf8strlen0(entry_it->arg_str);
 			if (max_len < len) {
 				max_len = len;
 			}
