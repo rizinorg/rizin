@@ -139,9 +139,21 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			// 0      1      MVAC
 			// 1      0      Reserved
 			// 1      1      MSAC
-			const char *mnemonic = (lreg_bits == 0x0) ? "shll" :
-								(lreg_bits == 0x1) ? "mvac" :
-								(lreg_bits == 0x3) ? "msac" : "invalid";
+			const char *mnemonic;
+			switch (lreg_bits) {
+			case 0x0:
+				mnemonic = "shll";
+				break;
+			case 0x1:
+				mnemonic = "mvac";
+				break;
+			case 0x3:
+				mnemonic = "msac";
+				break;
+			default:
+				mnemonic = "invalid";
+				break;
+			}
 			rz_strbuf_set(asm_buf, mnemonic);
 		}
 
