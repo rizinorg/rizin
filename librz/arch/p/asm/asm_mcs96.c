@@ -8,7 +8,7 @@
 #include <rz_lib.h>
 #include "mcs96/mcs96.h"
 
-static int mcs96_len(RzAsm *a, ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
+static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 	if (!(mcs96_op[buf[0]].isa & isa_bit)) {
 		rz_strbuf_set(asm_buf, "invalid");
 		return 1;
@@ -129,7 +129,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	op->size = mcs96_len(a, isa_bit, buf, len, asm_buf);
+	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
 
 	if (op->size > 0) {
 		if (buf[0] == 0x0d && isa_bit == MCS96_80296) {  // SHLL/MVAC/MSAC
