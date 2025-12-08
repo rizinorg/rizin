@@ -168,11 +168,15 @@ enum {
 };
 #endif
 
-enum { ALPHA_RESET = 0x00,
+enum {
+	ALPHA_RESET = 0x00,
 	ALPHA_FG = 0x01,
 	ALPHA_BG = 0x02,
-	ALPHA_FGBG = 0x03 };
-enum { RZ_CONS_ATTR_BOLD = 1u << 1,
+	ALPHA_FGBG = 0x03
+};
+
+enum {
+	RZ_CONS_ATTR_BOLD = 1u << 1,
 	RZ_CONS_ATTR_DIM = 1u << 2,
 	RZ_CONS_ATTR_ITALIC = 1u << 3,
 	RZ_CONS_ATTR_UNDERLINE = 1u << 4,
@@ -1004,7 +1008,9 @@ RZ_API const char *rz_cons_pal_get_name(int index);
 RZ_API int rz_cons_pal_len(void);
 RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-RZ_API void rz_cons_pal_list(int rad, const char *arg);
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj);
+RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix);
+RZ_API void rz_cons_pal_list_visual(void);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);

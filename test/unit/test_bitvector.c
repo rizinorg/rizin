@@ -1064,6 +1064,51 @@ bool test_rz_bv_set_operations(void) {
 	mu_end;
 }
 
+bool test_rz_bv_set_range_large(void) {
+	RzBitVector *bv = rz_bv_new(128);
+
+	// Expect failure on inverted range
+	mu_assert_false(rz_bv_set_range(bv, 20, 10, true), "expected failure for inverse range");
+
+	// Bitrange with unalign prefix bits
+	mu_assert_true(rz_bv_set_range(bv, 5, 7, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xe0", "range set 5~7 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 7, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~7 to 0");
+
+	// Bitrange with unalign prefix and suffix bits
+	mu_assert_true(rz_bv_set_range(bv, 5, 8, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1e0", "range set 5~8 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 8, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~8 to 0");
+
+	// Only suffix bit
+	mu_assert_true(rz_bv_set_range(bv, 8, 8, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x100", "range set 8~8 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 8, 8, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 8~8 to 0");
+
+	// Bitrange with unaligned prefix, suffix bits and aligned middle bytes
+	mu_assert_true(rz_bv_set_range(bv, 5, 24, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x1ffffe0", "range set 5~24 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 5, 24, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 5~24 to 0");
+
+	// Aligned
+	mu_assert_true(rz_bv_set_range(bv, 16, 31, true), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0xffff0000", "range set 16~31 to 1");
+
+	mu_assert_true(rz_bv_set_range(bv, 16, 31, false), "expect rz_bv_set_range() success");
+	mu_assert_streq_free(rz_bv_as_hex_string(bv, false), "0x0", "range set 16~31 to 0");
+
+	rz_bv_free(bv);
+	mu_end;
+}
+
 static bool test_rz_bv_set_to_bytes_le(void) {
 	{
 		ut8 buf8[8] = { 0 };
@@ -1201,12 +1246,12 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_copy(dst, dst_copy_ref);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect return";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
 	if (rz_bv_copy_nbits_ref(src_copy, src_pos, dst_copy_ref, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits_ref() incorrect result";
+		error = "rz_bv_copy_nbits_ref() incorrect number of bits copied";
 		goto finally;
 	}
 
@@ -1221,7 +1266,7 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	rz_bv_toggle_all(dst_copy);
 
 	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
-		error = "rz_bv_copy_nbits() incorrect result";
+		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
@@ -1335,6 +1380,70 @@ bool test_rz_bv_copy_nbits_large_unaligned(void) {
 	rz_bv_free(a);
 	rz_bv_free(b);
 
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_large_to_small(void) {
+	RzBitVector *a = rz_bv_new_from_ut64(128, 0x67452301);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x0);
+	const char *error;
+
+	/// copy aligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 8, b, 8, 16);
+	mu_assert_null(error, error);
+
+	/// copy unaligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 0, 31);
+	mu_assert_null(error, error);
+
+	/// copy 1 unaligned bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 5, 1);
+	mu_assert_null(error, error);
+
+	/// copy unaligned with dst start_bits > 0
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
+	mu_assert_null(error, error);
+
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, size - 1, b, 0, size);
+		mu_assert_null(error, error);
+	}
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+	mu_end;
+}
+
+bool test_rz_bv_copy_nbits_small_to_large(void) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x67452301);
+	RzBitVector *b = rz_bv_new_from_ut64(128, 0x0);
+	const char *error;
+
+	/// copy aligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 8, b, 8, 16);
+	mu_assert_null(error, error);
+
+	/// copy unaligned
+	error = test_rz_bv_copy_nbits_against_ref(a, 1, b, 0, 31);
+	mu_assert_null(error, error);
+
+	/// copy 1 unaligned bit
+	error = test_rz_bv_copy_nbits_against_ref(a, 3, b, 5, 1);
+	mu_assert_null(error, error);
+
+	/// copy unaligned with dst start_bits > 0
+	error = test_rz_bv_copy_nbits_against_ref(a, 0, b, 1, 31);
+	mu_assert_null(error, error);
+
+	/// copy different bit sizes from 8 to 64 bits
+	for (ut8 size = 8; size <= 64; size += 8) {
+		error = test_rz_bv_copy_nbits_against_ref(a, 0, b, size - 1, size);
+		mu_assert_null(error, error);
+	}
+
+	rz_bv_free(a);
+	rz_bv_free(b);
 	mu_end;
 }
 
@@ -1453,11 +1562,14 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_mod);
 	mu_run_test(test_rz_bv_len_bytes);
 	mu_run_test(test_rz_bv_set_operations);
+	mu_run_test(test_rz_bv_set_range_large);
 	mu_run_test(test_rz_bv_set_to_bytes_le);
 	mu_run_test(test_rz_bv_copy_nbits);
 	mu_run_test(test_rz_bv_copy_nbits_small);
 	mu_run_test(test_rz_bv_copy_nbits_large_aligned);
 	mu_run_test(test_rz_bv_copy_nbits_large_unaligned);
+	mu_run_test(test_rz_bv_copy_nbits_small_to_large);
+	mu_run_test(test_rz_bv_copy_nbits_large_to_small);
 	mu_run_test(test_rz_bv_extra_operations);
 
 	return tests_passed != tests_run;

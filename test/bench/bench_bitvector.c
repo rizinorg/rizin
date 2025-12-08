@@ -79,6 +79,26 @@ static void bench_bv_copy_large_to_small_60_bit(RzTable *t_out) {
 	rz_bv_free(dst);
 }
 
+static void bench_bv_set_range_60_bit(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new(64);
+
+	RZ_BENCH_RUN("rz_bv_set_range (60 bit)", t_out, 1000000, {
+		rz_bv_set_range(a, 1, 60, true);
+	});
+
+	rz_bv_free(a);
+}
+
+static void bench_bv_set_range_100_bit(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new(128);
+
+	RZ_BENCH_RUN("rz_bv_set_range (100 bit)", t_out, 1000000, {
+		rz_bv_set_range(a, 1, 100, true);
+	});
+
+	rz_bv_free(a);
+}
+
 int main(RzTable *t_out) {
 	RzTable *t = rz_table_new();
 	rz_table_set_columnsf(t, "snnnn", "Benchmark", "Iterations", "Total time [ms]", "Average time [us/op]", "Throughput [ops/sec]");
@@ -89,6 +109,8 @@ int main(RzTable *t_out) {
 	bench_bv_copy_large_100_bit_unaligned(t);
 	bench_bv_copy_large_to_small_60_bit(t);
 	bench_bv_copy_small_to_large_60_bit(t);
+	bench_bv_set_range_60_bit(t);
+	bench_bv_set_range_100_bit(t);
 
 	// Print results
 	const char *out = rz_table_tostring(t);

@@ -55,12 +55,12 @@ Hello World
 EOF
 RUN
 
-NAME=(*~?
+NAME=(~?
 FILE==
 CMDS=<<EOF
 (foo;bar)
 (bar;cow)
-(*~?
+(~?
 EOF
 EXPECT=<<EOF
 2

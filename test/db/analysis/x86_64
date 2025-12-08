@@ -100,63 +100,40 @@ FILE=bins/mach0/FMS.uu
 CMDS=<<EOF
 s sym._checkinput
 af
-afi*
+afi
 EOF
 EXPECT=<<EOF
-"f sym._checkinput 288 @ 0x100000da0"
-"af+ sym._checkinput f @ 0x100000da0"
-afb+ 0x100000da0 0x100000da0 22 0x100000db6 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e99 5 0x100000e9e 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e9e 24 0x100000db6 0x100000eb6
-afb+ 0x100000da0 0x100000db6 26 0x100000e99 0x100000dd0
-afb+ 0x100000da0 0x100000eb6 4 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000dd0 20 0xffffffffffffffff 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000eba 6 0xffffffffffffffff 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e54 16 0x100000e82 0x100000e64
-afb+ 0x100000da0 0x100000e82 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e64 16 0x100000e82 0x100000e74
-afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e2a 16 0x100000e46 0x100000e3a
-afb+ 0x100000da0 0x100000e46 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e3a 12 0x100000e4f 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e4f 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e00 16 0x100000e1c 0x100000e10
-afb+ 0x100000da0 0x100000e1c 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e10 12 0x100000e25 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e25 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000de4 16 0x100000dfb 0x100000df4
-afb+ 0x100000da0 0x100000dfb 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000df4 7 0x100000dfb 0xffffffffffffffff
-afB 64 @ 0x100000da0
-afc amd64 @ 0x100000da0
-afvs -48 var_30h int64_t @ 0x100000da0
-afvs -40 var_28h int64_t @ 0x100000da0
-afvs -32 var_20h int64_t @ 0x100000da0
-afvs -28 var_1ch int64_t @ 0x100000da0
-afvs -24 var_18h int64_t @ 0x100000da0
-afvs -9 var_9h int64_t @ 0x100000da0
-afvr rdi arg1 int64_t @ 0x100000da0
-axd 0x100000ec0 @ 0x100000dd0
-axc 0x100000de4 @ 0x100000de2
-axc 0x100000e00 @ 0x100000de2
-axc 0x100000e2a @ 0x100000de2
-axc 0x100000e54 @ 0x100000de2
-axc 0x100000e90 @ 0x100000de2
-axc 0x100000e99 @ 0x100000dfb
-axc 0x100000e25 @ 0x100000e17
-axc 0x100000eba @ 0x100000e20
-axc 0x100000e99 @ 0x100000e25
-axc 0x100000e4f @ 0x100000e41
-axc 0x100000eba @ 0x100000e4a
-axc 0x100000e99 @ 0x100000e4f
-axc 0x100000e8b @ 0x100000e7d
-axc 0x100000eba @ 0x100000e86
-axc 0x100000e99 @ 0x100000e8b
-axc 0x100000eba @ 0x100000e94
-axc 0x100000e9e @ 0x100000e99
-afS 8 @ 0x100000da0
+offset: 0x100000da0
+name: sym._checkinput
+size: 288
+is-pure: false
+realsz: 288
+stackframe: 8
+call-convention: amd64
+cyclomatic-cost: 91
+cyclomatic-complexity: 17
+loops: 1
+bits: 64
+type: fcn
+num-bbs: 24
+edges: 29
+end-bbs: 2
+call-refs: 0x100000de4 J 0x100000e00 J 0x100000e2a J 0x100000e54 J 0x100000e90 J 0x100000e99 J 0x100000e25 J 0x100000eba J 0x100000e99 J 0x100000e4f J 0x100000eba J 0x100000e99 J 0x100000e8b J 0x100000eba J 0x100000e99 J 0x100000eba J 0x100000e9e J
+data-refs: 0x100000ec0
+code-xrefs: 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000dfb J 0x100000e17 J 0x100000e20 J 0x100000e25 J 0x100000e41 J 0x100000e4a J 0x100000e4f J 0x100000e7d J 0x100000e86 J 0x100000e8b J 0x100000e94 J 0x100000e99 J
+noreturn: false
+in-degree: 17
+out-degree: 0
+data-xrefs:
+locals: 6
+args: 1
+arg int64_t arg1 @ rdi
+var int64_t var_30h @ stack - 0x30
+var int64_t var_28h @ stack - 0x28
+var int64_t var_20h @ stack - 0x20
+var int64_t var_1ch @ stack - 0x1c
+var int64_t var_18h @ stack - 0x18
+var int64_t var_9h @ stack - 0x9
 EOF
 RUN
 
@@ -1657,31 +1634,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvs* & afvn
-FILE=bins/efi/bootia32.efi
-CMDS=<<EOF
-af
-afvn ImageHandle arg_4h
-afvn SystemTable arg_8h
-afvs*~?ImageHandle
-afvs*~?SystemTable
-EOF
-EXPECT=<<EOF
-1
-1
-EOF
-RUN
-
 NAME=afvs idx... & afvn
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 td "typedef void * EFI_HANDLE;"
 af
 afvs -0x10 ImageHandle EFI_HANDLE @ 0x10002d8d
-afvs*~ImageHandle
+afvs~ImageHandle
 EOF
 EXPECT=<<EOF
-afvs -16 ImageHandle EFI_HANDLE @ 0x10002d8d
+var EFI_HANDLE ImageHandle @ stack - 0x10
 EOF
 RUN
 
@@ -1732,8 +1694,8 @@ FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 af
 afvr esi myreg int @ 0x10002d8d
-afvr*~?myreg
-afvr*~?int
+afvr~?myreg
+afvr~?int
 EOF
 EXPECT=<<EOF
 1

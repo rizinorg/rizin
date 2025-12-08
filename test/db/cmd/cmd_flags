@@ -502,16 +502,15 @@ f direct1 1 verbatim @ 0
 f direct2 1 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
 f indirect @ 32
 fC indirect base64:d29ya3MgdG9v
-fl*
+flt
 flj
 EOF
 EXPECT=<<EOF
-fs *
-f direct1 1 0x00000000 base64:dmVyYmF0aW0=
-fs *
-f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
-fs *
-f indirect 1 0x00000020 base64:d29ya3MgdG9v
+      addr size space name     realname 
+----------------------------------------
+0x00000000    1       direct1  direct1
+0x00000010    1       direct2  direct2
+0x00000020    1       indirect indirect
 [{"name":"direct1","realname":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","realname":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","realname":"indirect","size":1,"offset":32,"comment":"works too"}]
 EOF
 RUN

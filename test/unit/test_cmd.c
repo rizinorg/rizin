@@ -159,13 +159,13 @@ bool test_cmd_descriptor_group(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "afjb"), "nothing should be found for non-existing cmd");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("a??");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, "Usage: a   # a exec help\n", "detailed help for a is a_exec_help");
 	rz_cmd_parsed_args_free(pa);
 	free(h);
 
 	pa = rz_cmd_parsed_args_newcmd("a?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	const char *exp_h = "Usage: a[b]   # a group help\n"
 			    "| a  # a exec help\n"
 			    "| ab # ab help\n";
@@ -350,7 +350,7 @@ bool test_cmd_help(void) {
 				 "| pd <num>                 # pd summary\n"
 				 "| px <verylongarg_str_num> # px summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p?");
 	free(h);
@@ -363,14 +363,14 @@ bool test_cmd_help(void) {
 				       "Examples:\n"
 				       "| pd 10 # print 10 disassembled instructions\n";
 	a = rz_cmd_parsed_args_newcmd("pd??");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, pd_long_help_exp, "wrong help for pd??");
 	free(h);
 	rz_cmd_parsed_args_free(a);
 
 	a = rz_cmd_parsed_args_newcmd("pd?");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, pd_long_help_exp, "wrong help for pd?");
 	free(h);
@@ -415,7 +415,7 @@ bool test_cmd_group_help(void) {
 				 "| p        # p summary\n"
 				 "| pd <num> # pd summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p?");
 	free(h);
@@ -460,7 +460,7 @@ bool test_cmd_group_exec_help(void) {
 				       "| p        # p summary\n"
 				       "| pd <num> # pd summary\n";
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_newcmd("p?");
-	char *h = rz_cmd_get_help(cmd, a, false);
+	char *h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_group_help_exp, "wrong help for p?");
 	free(h);
@@ -470,7 +470,7 @@ bool test_cmd_group_exec_help(void) {
 				 "\n"
 				 "This is p-command description\n";
 	a = rz_cmd_parsed_args_newcmd("p??");
-	h = rz_cmd_get_help(cmd, a, false);
+	h = rz_cmd_get_help(cmd, a, false, 0);
 	mu_assert_notnull(h, "help is not null");
 	mu_assert_streq(h, p_help_exp, "wrong help for p??");
 	free(h);
@@ -480,10 +480,10 @@ bool test_cmd_group_exec_help(void) {
 				  "\n"
 				  "pd long description\n";
 	a = rz_cmd_parsed_args_newcmd("pd?");
-	char *h1 = rz_cmd_get_help(cmd, a, false);
+	char *h1 = rz_cmd_get_help(cmd, a, false, 0);
 	rz_cmd_parsed_args_free(a);
 	a = rz_cmd_parsed_args_newcmd("pd??");
-	char *h2 = rz_cmd_get_help(cmd, a, false);
+	char *h2 = rz_cmd_get_help(cmd, a, false, 0);
 	rz_cmd_parsed_args_free(a);
 	mu_assert_streq(h1, h2, "pd? should be the same as pd?? because it is a terminal command");
 	mu_assert_streq(h1, pd_help_exp, "pd?/pd?? should print full help");
@@ -540,7 +540,7 @@ bool test_cmd_args(void) {
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "x"), x_cd, "x is found");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("x??");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, "Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n", "arguments are considered");
 	rz_cmd_parsed_args_free(pa);
 	free(h);
@@ -570,7 +570,7 @@ bool test_cmd_argv_modes(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "z*"), "z* was not defined");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqJ] # z summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
@@ -583,13 +583,13 @@ bool test_cmd_argv_modes(void) {
 		"| zq      # z summary (quiet mode)\n"
 		"| zJ      # z summary (verbose JSON mode)\n";
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z??");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
@@ -625,7 +625,7 @@ bool test_cmd_argv_state(void) {
 	mu_assert_null(rz_cmd_get_desc(cmd, "z*"), "z* was not defined");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqJ] # group summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
@@ -633,7 +633,7 @@ bool test_cmd_argv_state(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	exp_h = "Usage: z[jqJ]   # group summary\n"
 		"| z[jqJ] # z summary\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
@@ -673,7 +673,7 @@ bool test_cmd_group_argv_modes(void) {
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "zd"), zd_cd, "zd is handled by zd");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr][|>pipe] ; ...\n"
 		      "| z[jqd] # z group summary\n";
 	mu_assert_streq(h, exp_h, "zd is considered in the help");
@@ -681,7 +681,7 @@ bool test_cmd_group_argv_modes(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_newcmd("z?");
-	h = rz_cmd_get_help(cmd, pa, false);
+	h = rz_cmd_get_help(cmd, pa, false, 0);
 	exp_h = "Usage: z[jqd]   # z group summary\n"
 		"| z[jq] # z summary\n"
 		"| zd    # fake help\n";
@@ -965,7 +965,7 @@ bool test_parent_details(void) {
 	rz_cmd_desc_argv_new(cmd, z_cd, "zx", x_array_handler, &zx_help);
 
 	RzCmdParsedArgs *args = rz_cmd_parsed_args_new("zx??", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, args, false);
+	char *h = rz_cmd_get_help(cmd, args, false, 0);
 	mu_assert_strcontains(h, "Examples", "zx help should include examples from parent z");
 	mu_assert_strcontains(h, "comment", "zx help should include examples from parent z");
 	free(h);
@@ -1239,7 +1239,7 @@ bool test_default_mode(void) {
 	rz_cmd_parsed_args_free(pa);
 
 	pa = rz_cmd_parsed_args_new("x?", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_strcontains(h, "x[jqJ]   # x summary (JSON mode)", "x help should contain the default=json mode");
 	mu_assert_strcontains(h, "xj      # x summary (JSON mode)", "x help should contain the json mode");
 	mu_assert_strcontains(h, "xq      # x summary (quiet mode)", "x help should contain the quiet mode");
@@ -1276,7 +1276,7 @@ bool test_details_cb(void) {
 	rz_cmd_desc_argv_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_new("z?", 0, NULL);
-	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
 	mu_assert_strcontains(h, "# dynamically generated detail", "z help should contain result of the details_cb");
 	mu_assert_strcontains(h, "Examples 2", "z help should contain result of the details_cb 2");
 	free(h);

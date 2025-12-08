@@ -168,7 +168,7 @@ RZ_API RZ_BORROW RzILVal *rz_il_var_set_get_value(RzILVarSet *vs, const char *na
 /**
  * Get a readable string representation of \p kind
  */
-const char *rz_il_var_kind_name(RzILVarKind kind) {
+RZ_API const char *rz_il_var_kind_name(RzILVarKind kind) {
 	switch (kind) {
 	case RZ_IL_VAR_KIND_GLOBAL:
 		return "global";

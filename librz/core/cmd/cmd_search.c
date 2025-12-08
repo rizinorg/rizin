@@ -828,9 +828,6 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	case 'j':
 		param->outmode = RZ_MODE_JSON;
 		break;
-	case '*':
-		param->outmode = RZ_MODE_RIZINCMD;
-		break;
 	default:
 		break;
 	}
@@ -878,10 +875,6 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					pj_ki(param->pj, "len", hit->len);
 					pj_ks(param->pj, "code", hit->code);
 					pj_end(param->pj);
-					break;
-				case RZ_MODE_RIZINCMD:
-					rz_cons_printf("f %s%d_%i @ 0x%08" PFMT64x "\n",
-						param->hit_prefix, kwidx, count, hit->addr);
 					break;
 				default:
 					if (filter) {

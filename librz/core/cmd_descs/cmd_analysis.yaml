@@ -176,7 +176,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
   - name: ad
     summary: Analyze data
@@ -278,7 +277,6 @@ commands:
             cname: analysis_function_blocks_list
             modes:
               - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
@@ -338,7 +336,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
               - RZ_OUTPUT_MODE_TABLE
@@ -425,7 +422,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_TABLE
               - RZ_OUTPUT_MODE_LONG
             args: []
@@ -527,7 +523,6 @@ commands:
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
                   - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: delta
@@ -573,7 +568,6 @@ commands:
                 summary: List register-based arguments and locals / Define a new one
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
-                  - RZ_OUTPUT_MODE_RIZIN
                   - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: reg
@@ -622,7 +616,6 @@ commands:
               - RZ_OUTPUT_MODE_LONG
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_TABLE
             args: []
           - name: afl.
@@ -660,7 +653,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_TABLE
             args: []
           - name: afii
             summary: Show/add/delete imports used in function in current seek
@@ -759,7 +752,6 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_SDB
             args: []
@@ -1264,7 +1256,6 @@ commands:
         args_str: " [<filter> [= <value>]]"
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
@@ -1325,7 +1316,6 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
@@ -1538,7 +1528,6 @@ commands:
         cname: analysis_list_vtables
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: avD
@@ -1618,7 +1607,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
               - RZ_OUTPUT_MODE_QUIET
-              - RZ_OUTPUT_MODE_RIZIN
             args:
               - name: name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
@@ -1701,7 +1689,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: axt
         summary: List xrefs to current seek
@@ -1711,7 +1698,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: axf
         summary: List xrefs from current seek
@@ -1721,7 +1707,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: axtg
         summary: Display commands to generate graphs according to xrefs
@@ -1753,7 +1738,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
   - name: ah
     summary: Analysis hints
@@ -1765,7 +1749,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: ahl.
         summary: List analysis hints at current seek
@@ -1774,7 +1757,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: ah-
         summary: Delete analysis hints in region starting from current seek
@@ -2091,7 +2073,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: aci
         summary: Show information of class
@@ -2340,7 +2321,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
         args: []
       - name: abl
         summary: List all basic blocks
@@ -2350,7 +2330,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_QUIET
         args: []
