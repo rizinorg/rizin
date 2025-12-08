@@ -446,7 +446,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		} else {
 			a = b = "";
 		}
-		fn = rz_core_addr_get_flag_offset(core, v);
+		fn = rz_core_addr_get_flag_offset(core->flags, v);
 		char *vstr = ut64_to_hex(v, size * 2);
 		if (vstr) {
 			if (hex_offset) {

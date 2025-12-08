@@ -232,7 +232,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_start(state);
 	bool current_met = false;
 	rz_list_foreach (list, iter, undo) {
-		char *name = rz_core_addr_get_flag_offset(core, undo->offset);
+		char *name = rz_core_addr_get_flag_offset(core->flags, undo->offset);
 		current_met |= undo->is_current;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:

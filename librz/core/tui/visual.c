@@ -1038,7 +1038,7 @@ static void setprintmode(RzCore *core, int n) {
 
 static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
 	ut64 off = csi->offset;
-	char *command = rz_core_addr_get_flag_offset(core, off);
+	char *command = rz_core_addr_get_flag_offset(core->flags, off);
 	if (!command) {
 		command = rz_str_newf("0x%" PFMT64x, off);
 	}
@@ -3202,7 +3202,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled ? core->print->cur : 0);
-		char *name_delta = rz_core_addr_get_flag_offset(core, addr);
+		char *name_delta = rz_core_addr_get_flag_offset(core->flags, addr);
 		if (name_delta) {
 			snprintf(pos, sizeof(pos), "@ %s", name_delta);
 			free(name_delta);

@@ -71,20 +71,20 @@ RZ_API void rz_core_addr_description_free(RZ_NULLABLE RzCoreAddrDescription *des
  * Helper function to find a flag at or near the given address
  * and compute the delta.
  *
- * \param core The RzCore instance
+ * \param flags The RzFlag instance
  * \param desc The description structure to populate
  * \param addr The address to describe
  * \param opts Options controlling behavior
  * \return true on success (including when no flag found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_flags(RZ_NONNULL RzCore *core, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
-	rz_return_val_if_fail(core && desc && opts, false);
+static bool addr_describe_from_flags(RZ_NULLABLE RzFlag *flags, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(desc && opts, false);
 
-	if (!opts->show_flag) {
-		return true; // Not requested, not an error
+	if (!opts->show_flag || !flags) {
+		return true; // Not requested or no flags, not an error
 	}
 
-	RzFlagItem *fi = rz_flag_get_at(core->flags, addr, true);
+	RzFlagItem *fi = rz_flag_get_at(flags, addr, true);
 	if (!fi) {
 		return true; // No flag found, not an error
 	}
@@ -126,23 +126,23 @@ static bool addr_describe_from_flags(RZ_NONNULL RzCore *core, RZ_NONNULL RzCoreA
  * Helper function to find a function containing the address
  * and compute the delta from the function start.
  *
- * \param core The RzCore instance
+ * \param analysis The RzAnalysis instance
  * \param desc The description structure to populate
  * \param addr The address to describe
  * \param opts Options controlling behavior
  * \return true on success (including when no function found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_function(RZ_NONNULL RzCore *core, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
-	rz_return_val_if_fail(core && desc && opts, false);
+static bool addr_describe_from_function(RZ_NULLABLE RzAnalysis *analysis, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(desc && opts, false);
 
-	if (!opts->prefer_function) {
-		return true; // Not requested, not an error
+	if (!opts->prefer_function || !analysis) {
+		return true; // Not requested or no analysis, not an error
 	}
 
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, addr, 0);
 	if (!fcn) {
 		// Try to get function at address
-		fcn = rz_analysis_get_function_at(core->analysis, addr);
+		fcn = rz_analysis_get_function_at(analysis, addr);
 	}
 
 	if (!fcn) {
@@ -168,20 +168,19 @@ static bool addr_describe_from_function(RZ_NONNULL RzCore *core, RZ_NONNULL RzCo
  * Helper function to retrieve source file and line number
  * from debug information if available.
  *
- * \param core The RzCore instance
+ * \param bf The RzBinFile instance
  * \param desc The description structure to populate
  * \param addr The address to describe
  * \param opts Options controlling behavior
  * \return true on success (including when no source info found), false on error (e.g., memory allocation failure)
  */
-static bool addr_describe_from_source(RZ_NONNULL RzCore *core, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
-	rz_return_val_if_fail(core && desc && opts, false);
+static bool addr_describe_from_source(RZ_NULLABLE RzBinFile *bf, RZ_NONNULL RzCoreAddrDescription *desc, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(desc && opts, false);
 
 	if (!opts->show_source_info) {
 		return true; // Not requested, not an error
 	}
 
-	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o) {
 		return true; // No bin file, not an error
 	}
@@ -245,21 +244,21 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe(RZ_NONNULL RzCore *co
 
 	// Get function information first (higher priority)
 	// Returns false only on memory allocation failure
-	if (!addr_describe_from_function(core, desc, addr, opts)) {
+	if (!addr_describe_from_function(core->analysis, desc, addr, opts)) {
 		rz_core_addr_description_free(desc);
 		return NULL;
 	}
 
 	// Get flag information
 	// Returns false only on memory allocation failure
-	if (!addr_describe_from_flags(core, desc, addr, opts)) {
+	if (!addr_describe_from_flags(core->flags, desc, addr, opts)) {
 		rz_core_addr_description_free(desc);
 		return NULL;
 	}
 
 	// Get source line information if requested
 	// Returns false only on memory allocation failure
-	if (!addr_describe_from_source(core, desc, addr, opts)) {
+	if (!addr_describe_from_source(rz_bin_cur(core->bin), desc, addr, opts)) {
 		rz_core_addr_description_free(desc);
 		return NULL;
 	}
@@ -454,14 +453,12 @@ RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_source(RZ_NONNUL
  * supporting relative offsets (asm.reloff), segmented addresses, and
  * decimal/hex formatting.
  *
- * \param core The RzCore instance
+ * \param print The RzPrint instance (may be NULL)
  * \param addr The address to format
  * \param opts Display options
  * \return Newly allocated formatted string. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
-	rz_return_val_if_fail(core, NULL);
-
+RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts) {
 	RzCoreAddrDescribeOptions default_opts = {
 		.show_offset = true,
 		.prefer_function = false,
@@ -482,7 +479,7 @@ RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NONNULL RzCore *core, ut6
 	if (opts->use_decimal) {
 		rz_strbuf_appendf(&sb, "%" PFMT64u, addr);
 	} else {
-		if (core->print && core->print->wide_offsets) {
+		if (print && print->wide_offsets) {
 			rz_strbuf_appendf(&sb, "0x%016" PFMT64x, addr);
 		} else {
 			rz_strbuf_appendf(&sb, "0x%08" PFMT64x, addr);
@@ -666,17 +663,53 @@ RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut
 }
 
 /**
+ * \brief Internal helper to get flag-relative offset string
+ *
+ * Returns a string like "sym.func+0x10" if a flag exists at or before the address,
+ * or NULL if not.
+ *
+ * \param flags The RzFlag instance
+ * \param addr The address to describe
+ * \param opts Options controlling the output format
+ * \return Newly allocated string or NULL. Caller must free.
+ */
+static RZ_OWN char *addr_get_flag_offset_internal(RZ_NONNULL RzFlag *flags, ut64 addr, RZ_NONNULL const RzCoreAddrDescribeOptions *opts) {
+	rz_return_val_if_fail(flags && opts, NULL);
+
+	RzCoreAddrDescription *desc = RZ_NEW0(RzCoreAddrDescription);
+	if (!desc) {
+		return NULL;
+	}
+
+	desc->addr = addr;
+
+	if (!addr_describe_from_flags(flags, desc, addr, opts)) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
+
+	if (!desc->flag_name) {
+		rz_core_addr_description_free(desc);
+		return NULL;
+	}
+
+	char *result = rz_core_addr_description_to_string(desc, opts);
+	rz_core_addr_description_free(desc);
+	return result;
+}
+
+/**
  * \brief Get flag-relative offset string for an address
  *
  * Returns a string like "sym.func+0x10" if a flag exists at or before the address,
  * or NULL if not.
  *
- * \param core The RzCore instance
+ * \param flags The RzFlag instance
  * \param addr The address to describe
  * \return Newly allocated string or NULL. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 addr) {
-	rz_return_val_if_fail(core, NULL);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr) {
+	rz_return_val_if_fail(flags, NULL);
 
 	RzCoreAddrDescribeOptions opts = {
 		.show_offset = false,
@@ -689,15 +722,7 @@ RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 a
 		.max_flag_delta = -1 // Use default 8192 limit for backward compatibility
 	};
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
-	if (!desc || !desc->flag_name) {
-		rz_core_addr_description_free(desc);
-		return NULL;
-	}
-
-	char *result = rz_core_addr_description_to_string(desc, &opts);
-	rz_core_addr_description_free(desc);
-	return result;
+	return addr_get_flag_offset_internal(flags, addr, &opts);
 }
 
 /**
@@ -706,12 +731,12 @@ RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 a
  * Returns a string like "sym.func + 0x10" if a flag exists at or before the address,
  * or NULL if not. Uses spaces around +/- for readability (used for prompts).
  *
- * \param core The RzCore instance
+ * \param flags The RzFlag instance
  * \param addr The address to describe
  * \return Newly allocated string or NULL. Caller must free.
  */
-RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core, ut64 addr) {
-	rz_return_val_if_fail(core, NULL);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr) {
+	rz_return_val_if_fail(flags, NULL);
 
 	RzCoreAddrDescribeOptions opts = {
 		.show_offset = false,
@@ -725,13 +750,5 @@ RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core,
 		.use_spaces_around_delta = true // Use spaces for prompt display
 	};
 
-	RzCoreAddrDescription *desc = rz_core_addr_describe(core, addr, &opts);
-	if (!desc || !desc->flag_name) {
-		rz_core_addr_description_free(desc);
-		return NULL;
-	}
-
-	char *result = rz_core_addr_description_to_string(desc, &opts);
-	rz_core_addr_description_free(desc);
-	return result;
+	return addr_get_flag_offset_internal(flags, addr, &opts);
 }

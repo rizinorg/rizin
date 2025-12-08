@@ -666,13 +666,13 @@ RZ_API RZ_OWN char *rz_core_addr_describe_string(RZ_NONNULL RzCore *core, ut64 a
 RZ_API RZ_OWN char *rz_core_addr_get_name_delta(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_function(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzCoreAddrDescription *rz_core_addr_describe_with_source(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts);
+RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts);
 RZ_API void rz_core_addr_description_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzCoreAddrDescription *desc, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts);
 RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzCoreAddrDescribeOptions *opts);
 RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr, bool prefer_function, bool use_flags, RZ_OUT RZ_NULLABLE char **out_name, RZ_OUT RZ_NULLABLE st64 *out_delta);
 RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr);
 
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state);

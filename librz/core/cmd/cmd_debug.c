@@ -1066,7 +1066,7 @@ static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 		rz_reg_setv(r, bp, s);
 		rz_reg_setv(r, sp, b);
 		//////////
-		char *flagdesc = rz_core_addr_get_flag_offset(core, f->addr);
+		char *flagdesc = rz_core_addr_get_flag_offset(core->flags, f->addr);
 		//////////
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
@@ -1210,7 +1210,7 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	}
 	char *name = NULL;
 	if (_core) {
-		name = rz_core_addr_get_flag_offset(_core, tn->addr);
+		name = rz_core_addr_get_flag_offset(_core->flags, tn->addr);
 	}
 	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name ? name : "");
 	free(name);

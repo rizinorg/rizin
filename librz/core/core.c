@@ -396,7 +396,7 @@ static const char *getName(RzCore *core, ut64 addr) {
 }
 
 static char *getNameDelta(RzCore *core, ut64 addr) {
-	return rz_core_addr_get_flag_offset(core, addr);
+	return rz_core_addr_get_flag_offset(core->flags, addr);
 }
 
 static void archbits(RzCore *core, ut64 addr) {
@@ -1942,7 +1942,7 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 		rz_strbuf_append(sb, ":");
 	}
 	if (rz_config_get_b(core->config, "scr.prompt.flag")) {
-		char *flag_desc = rz_core_addr_get_flag_offset_prompt(core, core->offset);
+		char *flag_desc = rz_core_addr_get_flag_offset_prompt(core->flags, core->offset);
 		if (flag_desc) {
 			rz_strbuf_append(sb, flag_desc);
 			free(flag_desc);
