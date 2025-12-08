@@ -46,6 +46,7 @@ typedef struct rz_atomic_bool_t RzAtomicBool;
 RZ_API RZ_OWN RzThread *rz_th_new(RZ_NONNULL RzThreadFunction function, RZ_NULLABLE void *user);
 RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th);
 RZ_API RZ_OWN void *rz_th_get_retv(RZ_NONNULL RzThread *th);
+RZ_API bool rz_th_terminated(const RZ_NONNULL RzThread *th);
 RZ_API bool rz_th_wait(RZ_NONNULL RzThread *th);
 RZ_API void rz_th_free(RZ_NULLABLE RzThread *th);
 RZ_API bool rz_th_set_name(RZ_NONNULL RzThread *th, RZ_NONNULL const char *name);

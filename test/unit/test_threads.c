@@ -83,11 +83,13 @@ bool test_thread_queue(void) {
 	// test queue
 	queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	RzThread *th = rz_th_new((RzThreadFunction)thread_queue_push_timed, queue);
+	mu_assert_false(rz_th_terminated(th), "Thread should still sleep and count as running.");
 	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, queue) null check");
 	ut64 start = rz_time_now();
 	tail = rz_th_queue_wait_pop(queue, true);
 	ut64 diff = rz_time_now() - start;
 	rz_th_wait(th);
+	mu_assert_true(rz_th_terminated(th), "Thread should count as terminated.");
 	mu_assert_ptreq(tail, queue, "rz_th_queue_wait_pop(queue, true) is queue");
 	mu_assert_true(diff >= 1500000, "queue did wait for value.");
 	mu_assert_ptreq(rz_th_get_retv(th), queue, "verify it returned queue");

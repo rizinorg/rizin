@@ -18,7 +18,9 @@ static RZ_TH_RET_T thread_main_function(void *_th) {
 #endif
 #endif
 	RzThread *th = (RzThread *)_th;
+	th->terminated = false;
 	th->retv = th->function(th->user);
+	th->terminated = true;
 	return (RZ_TH_RET_T)0;
 }
 
@@ -275,6 +277,18 @@ RZ_API RZ_OWN void *rz_th_get_user(RZ_NONNULL RzThread *th) {
 RZ_API RZ_OWN void *rz_th_get_retv(RZ_NONNULL RzThread *th) {
 	rz_return_val_if_fail(th, NULL);
 	return th->retv;
+}
+
+/**
+ * \brief Checks if a thread returned. This function is non-blocking.
+ *
+ * \param th The thread to check.
+ *
+ * \return True if the thread terminated. False otherwise,
+ */
+RZ_API bool rz_th_terminated(const RZ_NONNULL RzThread *th) {
+	rz_return_val_if_fail(th, false);
+	return th->terminated;
 }
 
 /**
