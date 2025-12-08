@@ -66,6 +66,7 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v, RzILVarKind
 	rz_return_val_if_fail(v, NULL);
 	RzILOpPure *ret;
 	rz_il_op_new_2(Pure, RZ_IL_OP_VAR, RzILOpArgsVar, var, v, kind);
+	ret->op.var.hash = rz_str_djb2_hash(v);
 	return ret;
 }
 
