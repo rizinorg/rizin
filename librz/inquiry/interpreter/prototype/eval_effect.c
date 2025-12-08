@@ -28,12 +28,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
-		const RzILOpEffect *next = effect->op.seq.x;
-		while (next) {
-			if (!interpreter_prototype_eval_effect(state, next, yield_queues, io_request, io_result, plugin_data)) {
-				goto error;
-			}
-			next = effect->op.seq.y;
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, yield_queues, io_request, io_result, plugin_data)) {
+			goto error;
+		}
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, yield_queues, io_request, io_result, plugin_data)) {
+			goto error;
 		}
 		break;
 	}
