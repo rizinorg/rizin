@@ -32,6 +32,9 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av) {
+		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
+			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
+		}
 		av = RZ_NEW(RzInterpreterAbstrVal);
 		av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
 		av->abstr_data = adata_new();
