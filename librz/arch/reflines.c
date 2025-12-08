@@ -285,13 +285,13 @@ list_err:
  * \param len Range size.
  * \return true in case any refline's "to" address is in range, false otherwise.
  */
-RZ_API int rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *a, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
+RZ_API bool rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *a, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
 	rz_return_val_if_fail(a && reflines, false);
 
 	void **iter;
 	rz_pvector_foreach (reflines, iter) {
 		RzAnalysisRefline *ref = *iter;
-		if ((ref->to > addr) && (ref->to < addr + len)) {
+		if (RZ_BETWEEN_EXCL(ref->to, addr, addr + len)) {
 			return true;
 		}
 	}

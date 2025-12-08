@@ -2040,7 +2040,7 @@ RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *anal
 
 /* reflines.c */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-RZ_API int rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len);
+RZ_API bool rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
 RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind);
