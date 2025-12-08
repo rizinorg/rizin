@@ -374,6 +374,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			break;
 		}
 		eff = rz_th_queue_wait_pop(iset->il_queue, false);
+		if (!eff) {
+			// Some error occurred lifting this basic block. Abort execution.
+			goto in_loop_error;
+		}
 	}
 
 loop_cleanup:

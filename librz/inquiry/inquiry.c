@@ -283,7 +283,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 			if (!bb) {
 				RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
-				// Stop interpreter.
+				// Signal interpreter the lifting failed.
+				rz_th_cond_signal_all(rz_th_queue_get_cond(iset->il_queue));
 				rz_atomic_bool_set(is_running, false);
 				continue;
 			}
