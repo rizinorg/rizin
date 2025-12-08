@@ -279,11 +279,11 @@ list_err:
  * Given a RzAnalysisRefline vector, this function check whether any refline's destination address falls inside
  * the range [ \p addr .. \p addr + \p len ].
  *
- * \param a RzAnalysis instance (currently not used)
- * \param reflines vector of reflines
- * \param addr range start address
- * \param len range size
- * \return true in case any refline's "to" address is in range, false otherwise
+ * \param a RzAnalysis instance (currently not used).
+ * \param reflines Vector of reflines.
+ * \param addr Range start address.
+ * \param len Range size.
+ * \return true in case any refline's "to" address is in range, false otherwise.
  */
 RZ_API int rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *a, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
 	rz_return_val_if_fail(a && reflines, false);
