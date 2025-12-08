@@ -648,7 +648,7 @@ static PipeFallbacks internal_commands[] = {
 
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
 
-	for (size_t i = 0; RZ_ARRAY_SIZE(internal_commands); i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(internal_commands); i++) {
 		if (RZ_STR_EQ(argv[0], internal_commands[i].command)) {
 			return internal_commands[i].fallback_fn((const char *)input);
 		}
