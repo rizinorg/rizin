@@ -282,6 +282,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			RZ_LOG_WARN("INQUIRY: Received IL request: %" PFMT64x ".\n", (*addr));
 			RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 			if (!bb) {
+				RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 				// Stop interpreter.
 				rz_atomic_bool_set(is_running, false);
 				continue;
