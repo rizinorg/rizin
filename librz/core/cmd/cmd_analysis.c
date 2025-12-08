@@ -3663,6 +3663,9 @@ RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, con
 	case RZ_OUTPUT_MODE_JSON:
 		function_list_print_to_json(core, list, state);
 		break;
+	case RZ_OUTPUT_MODE_TABLE:
+		function_list_print_to_table(core, list, state->d.t, false);
+		break;
 	default:
 		rz_warn_if_reached();
 		res = RZ_CMD_STATUS_WRONG_ARGS;
