@@ -205,20 +205,22 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
 /**
  * \brief Sort the given text.
  * \param input Non-NULL, non-empty string to sort.
+ * \param length Length of the command result string.
  * \return Newly allocated sorted string, or NULL on empty input or failure.
  *
  * Takes the input text and returns its sorted form.
  */
-RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input);
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *length);
 
 /**
  * \brief Produce the unique filtered form of the input.
  * \param input Non-NULL, non-empty string to process.
+ * \param length Length of the command result string.
  * \return Newly allocated string containing the uniq output, or NULL on empty input or failure.
  *
  * Takes the input text and returns its unique filtered result.
  */
-RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input);
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *length);
 
 #ifdef __cplusplus
 }

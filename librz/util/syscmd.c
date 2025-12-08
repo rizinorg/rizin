@@ -5,6 +5,7 @@
 #include "rz_util/rz_str.h"
 #include <rz_core.h>
 #include <errno.h>
+#include <string.h>
 
 static int cmpstr(const void *_a, const void *_b, void *user) {
 	const char *a = _a, *b = _b;
@@ -41,7 +42,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 	return NULL;
 }
 
-RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input) {
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *length) {
 	/* Duplicate of  rz_syscmd_sort, instead of
 	   reading file, input is directly given.   */
 
@@ -68,6 +69,8 @@ RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input) {
 
 	rz_list_free(list);
 	free(data);
+
+	*length = strlen((const char *)return_data);
 	return return_data;
 }
 
@@ -154,7 +157,7 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 	return NULL;
 }
 
-RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input) {
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *length) {
 	/* Duplicate of  rz_syscmd_uniq, instead of
 	   reading file, input is directly given.   */
 
@@ -188,6 +191,8 @@ RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input) {
 	rz_list_free(uniq_list);
 	rz_list_free(list);
 	free(data);
+
+	*length = strlen((const char *)return_data);
 	return return_data;
 }
 
