@@ -65,7 +65,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 
 		if (abstr_is_true(state, &eval_out)) {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		} else {
