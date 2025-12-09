@@ -7,18 +7,24 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 #include "mcs96/mcs96.h"
+#include "rz_analysis.h"
+#include "rz_util/rz_pj.h"
 
+/**
+ * @brief computes the length of an instruction.
+ * @return int the length of the instruction. returns -1 when invalid.
+ */
 static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
-	if (!(mcs96_op[buf[0]].isa & isa_bit)) {
+	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
 		rz_strbuf_set(asm_buf, "invalid");
-		return 1;
+		return -1;
 	}
 
 	int ret = 1;
 	if (buf[0] == 0xfe) {
 		if (isa_bit == MCS96_80296) {
 			rz_strbuf_set(asm_buf, "invalid");
-			return 1;
+			return -1;
 		}
 
 		if (len < 2) {
@@ -55,14 +61,7 @@ static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 			if (mcs96_op[buf[1]].type & MCS96_2B) {
 				ret = 3;
 			}
-			if (ret <= len) {
-				const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
-				rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
-				if ((mcs96_op[buf[1]].type & (MCS96_FMT_2OP | MCS96_REG_8)) == (MCS96_FMT_2OP | MCS96_REG_8) &&
-					buf[2] > 0x19 && buf[3] > 0x19) {
-					rz_strbuf_appendf(asm_buf, " rb%02x, rb%02x", buf[2] - 0x1a, buf[3] - 0x1a);
-				}
-			} else {
+			if (ret > len) {
 				ret = 0;
 			}
 			return ret;
@@ -101,37 +100,14 @@ static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 	if (mcs96_op[buf[0]].type & MCS96_2B) {
 		ret = 2;
 	}
-	if (ret <= len) {
-		rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
-		if ((mcs96_op[buf[0]].type & (MCS96_FMT_2OP | MCS96_REG_8)) == (MCS96_FMT_2OP | MCS96_REG_8) &&
-			buf[1] > 0x19 && buf[2] > 0x19) {
-			rz_strbuf_appendf(asm_buf, " rb%02x, rb%02x", buf[1] - 0x1a, buf[2] - 0x1a);
-		}
-	} else {
+	if (ret > len) {
 		ret = 0;
 	}
 	return ret;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
-		return -1;
-	}
-
-	RzStrBuf *asm_buf = &op->buf_asm;
-
-	ut32 isa_bit = MCS96_8096; // default
-	if (a->cpu && *a->cpu) {
-		if (strstr(a->cpu, "80296")) {
-			isa_bit = MCS96_80296;
-		} else if (strstr(a->cpu, "80196")) {
-			isa_bit = MCS96_80196;
-		}
-	}
-
-	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
-
-	if (op->size > 0) {
+static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
+	if (size > 0) {
 		if (buf[0] == 0x0d && isa_bit == MCS96_80296) { // SHLL/MVAC/MSAC
 			ut8 lreg_bits = buf[2] & 0x3;
 			// lreg.1 lreg.0 Execute
@@ -155,9 +131,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
-		}
-
-		if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[op->size - 1] == 0x04) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
+		} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
 			// RPT waop
 			// (010000aa) (waop) (00) (04)
 			// RPTxxx
@@ -167,7 +141,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			// RPTIxxx
 			// (010000aa) (waop) (30 - 3F) (04)
 			const char *mnemonic;
-			switch (buf[op->size - 2]) {
+			switch (buf[size - 2]) {
 			case 0x00:
 				mnemonic = "rpt";
 				break;
@@ -275,8 +249,117 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
+		} else if (mcs96_op[buf[1]].type & MCS96_FE) {
+			const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
+			rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
+		} else {
+			rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
 		}
 	}
+}
+
+/**
+ * Extract 11-bit signed displacement from sjmp/scall instruction.
+ * Format: (instr|xxx)(disp-low)
+ *
+ * \param opcode First byte of the instruction, containing upper 3 bits of the displacement
+ * \param disp_low Second byte of the instruction, containing lower 8 bits of the displacement
+ * \return Sign-extended 16-bit displacement (-1024 to +1023)
+ */
+static st16 extract_disp11(ut8 opcode, ut8 disp_low) {
+	st16 upper3bits = (st16)(opcode & 0x07); // 0b00000111
+	st16 disp = (upper3bits << 8) | disp_low;
+
+	// Sign-extend from 11 bits to 16 bits
+	if (disp & 0x400) { // Check if bit 10 (sign bit) is set
+		disp |= 0xF800; // Set bits 15-11 to extend the sign
+	}
+
+	return disp;
+}
+
+static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
+
+	if (size < 1) {
+		return;
+	}
+
+	ut8 opcode = buf[0];
+	ut32 instr_fmt = mcs96_op[opcode].type;
+
+	if (instr_fmt & MCS96_FMT_OPC_BYTEOPR && size == 2) {
+		ut8 operand = buf[1];
+		rz_strbuf_appendf(asm_buf, " 0x%02x", operand);
+	} else if (instr_fmt & MCS96_FMT_2_BYTE_NOP && size == 2) {
+		return; // do nothing
+	} else if (instr_fmt & MCS96_FMT_OPC_IMM11 && size == 2) {
+		st16 imm11 = extract_disp11(opcode, buf[1]);
+		rz_strbuf_appendf(asm_buf, " 0x%04x", (ut16)imm11);
+	} else if (instr_fmt & MCS96_FMT_OPC_BYTEOPR_X2 && size == 3) {
+		ut8 opr0 = buf[2];
+		ut8 opr1 = buf[1];
+		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", opr0, opr1);
+	} else if (instr_fmt & MCS96_FMT_OPC_IMM16 && size == 3) {
+		st16 imm = (st16)rz_read_le16(buf + 1);
+		rz_strbuf_appendf(asm_buf, " 0x%04x", imm);
+	} else if (instr_fmt & MCS96_FMT_TIJMP && size == 3) {
+		ut8 index = buf[1];
+		ut8 mask = buf[2];
+		ut8 tbase = buf[3];
+		rz_strbuf_appendf(asm_buf, "%0x02x %d[0x%02x]", tbase, index, mask);
+	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
+		st16 imm11 = extract_disp11(opcode, buf[2]);
+		ut8 reg = buf[0];
+		rz_strbuf_appendf(asm_buf, "0x%02x 0x%04x]", reg, imm11);
+	} else if (instr_fmt & MCS96_FMT_OPC_IMM24 && size == 4) {
+		ut32 imm = (ut32)rz_read_le24(buf + 1);
+		rz_strbuf_appendf(asm_buf, " 0x%06x", (ut32)imm);
+	} else if (instr_fmt & MCS96_FMT_OPC_INDEX) {
+		ut8 reg = buf[1] & 0xFE; // erase lsb
+		if (size == 3) {
+			ut8 offset = buf[2];
+			rz_strbuf_appendf(asm_buf, " %d[0x%02x]", offset, reg);
+		} else if (size == 4) {
+			ut16 offset = rz_read_le16(buf + 2);
+			rz_strbuf_appendf(asm_buf, " %d[0x%04x]", offset, reg);
+		}
+	} else if (instr_fmt & MCS96_FMT_EXTENDED_INDEXED && size == 6) {
+		ut8 dst = buf[5];
+		ut8 base = buf[1];
+		st32 offset = (st32)rz_read_le24(buf + 2);
+		rz_strbuf_appendf(asm_buf, "0x%02x %d[0x%02x]", dst, offset, base);
+	}
+
+	else if (instr_fmt & MCS96_FMT_2OP) {
+		// TODO:
+
+	} else if (instr_fmt & MCS96_FMT_3OP) {
+		// TODO:
+	}
+}
+
+static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
+		return -1;
+	}
+
+	RzStrBuf *asm_buf = &op->buf_asm;
+
+	ut32 isa_bit = MCS96_8096; // default
+	if (a->cpu && *a->cpu) {
+		if (strstr(a->cpu, "80296")) {
+			isa_bit = MCS96_80296;
+		} else if (strstr(a->cpu, "80196")) {
+			isa_bit = MCS96_80196;
+		}
+	}
+
+	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
+
+	decode_mnemonic(asm_buf, buf, op->size, isa_bit);
+
+	decode_operands(asm_buf, buf, op->size, isa_bit);
+
 	return op->size;
 }
 
