@@ -314,7 +314,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 	while (true) {
 		// Evaluate the effect on the input state.
-		if (!plugin->eval(in_state, eff, iset->yield_queues, plugin_data, iset->io_request, iset->io_result)) {
+		if (!plugin->eval(in_state, eff, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
 			goto in_loop_error;
 		}
 		// Decrease the reference count to the input state by one.
