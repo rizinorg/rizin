@@ -118,10 +118,10 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
  * It is also slow.
  */
 static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *plugin_data) {
-	ut64 hash = 0;
+	ut64 h = 5381;
 	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
 	if (ad->bv) {
-		hash ^= rz_bv_to_ut64(ad->bv);
+		h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
 	}
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
@@ -129,11 +129,11 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 		RzInterpreterAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
 		if (ad->bv) {
-			hash ^= rz_bv_to_ut64(ad->bv);
+			h = (h ^ (h << 5)) ^ rz_bv_to_ut64(ad->bv);
 		}
 	}
 	rz_iterator_free(it);
-	return hash;
+	return h;
 }
 
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
