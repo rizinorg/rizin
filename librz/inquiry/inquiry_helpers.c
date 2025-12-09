@@ -52,19 +52,17 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 	rz_analysis_op_init(&op);
 	// Estimate a reasonable number of bytes to read.
 	int max_read_size = (analysis->cur->bits / 8) * 16;
-	int actual_size = max_read_size;
-	ut8 *buf = RZ_NEWS0(ut8, actual_size);
-	if (!actual_size || !buf) {
+	ut8 *buf = RZ_NEWS0(ut8, max_read_size);
+	if (!max_read_size || !buf) {
 		goto fail;
 	}
 	bool changes_cf = true;
 	do {
-		actual_size = rz_io_nread_at(io, addr, buf, max_read_size);
-		if (actual_size < 0) {
+		if (!rz_io_read_at_mapped(io, addr, buf, max_read_size)) {
 			RZ_LOG_WARN("inquiry: Failed to read memory for IL basic block generation.\n");
 			goto fail;
 		}
-		if (rz_analysis_op(analysis, &op, addr, buf, actual_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0 || !op.il_op) {
+		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0 || !op.il_op) {
 			rz_analysis_op_fini(&op);
 			break;
 		}
