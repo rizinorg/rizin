@@ -284,7 +284,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		ut64 *addr = rz_th_queue_pop(addr_queue, false);
 		if (addr) {
 			// This if() emulates the IL cache.
-			RZ_LOG_WARN("INQUIRY: Received IL request: %" PFMT64x ".\n", (*addr));
+			RZ_LOG_WARN("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
 			RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 			if (!bb) {
 				RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
@@ -309,7 +309,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			continue;
 		}
 
-		RZ_LOG_WARN("INQUIRY: Received IO %s request: %" PFMT64x ".\n",
+		RZ_LOG_WARN("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
 			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 			io_req->addr);
 		if (io_req->type == RZ_INTERPRETER_IO_READ) {
@@ -329,6 +329,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			io_res->req_ok ? "true" : "false");
 		rz_th_queue_push(io_result_q, io_res, true);
 	}
+	RZ_LOG_WARN("INQUIRY: Done\n");
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
