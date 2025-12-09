@@ -9,6 +9,7 @@
 #include <rz_util/rz_bitvector.h>
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src) {
+	rz_return_if_fail(dst->bv && src->bv);
 	rz_bv_cast_inplace(dst->bv, rz_bv_len(src->bv), false);
 	rz_bv_copy(src->bv, dst->bv);
 	dst->is_concrete = src->is_concrete;
