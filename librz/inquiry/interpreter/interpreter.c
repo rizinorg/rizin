@@ -354,11 +354,12 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			}
 		}
 
-		if (ht_up_size(state_cache) == 0) {
-			// No state in the cache left.
+		if (ht_up_get_rc(state_cache, in_hash) == 0) {
+			// No reference to the current in_state.
 			// This means we can stop interpreting.
 			// Note, that we can't use the queues as cancel condition because they
 			// are asynchronous and checking them would introduces race conditions.
+			// TODO: This doesn't work if the interpreter can produce multiple out states.
 			break;
 		}
 
