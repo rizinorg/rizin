@@ -2131,7 +2131,7 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	const bool o_cmtright = rz_config_get_i(core->config, "graph.cmtright");
 	const bool o_bytes = rz_config_get_i(core->config, "graph.bytes");
 	const bool o_flags_in_bytes = rz_config_get_i(core->config, "asm.flags.inbytes");
-	const bool o_graph_offset = rz_config_get_i(core->config, "graph.offset");
+	const bool o_asm_offset = rz_config_get_i(core->config, "asm.offset");
 	int o_cursor = core->print->cur_enabled;
 	if (opts & BODY_COMMENTS) {
 		rz_core_visual_toggle_decompiler_disasm(core, true, false);
@@ -2159,11 +2159,8 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	rz_config_set_i(core->config, "asm.bb.middle", false);
 	core->print->cur_enabled = false;
 
-	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset) {
-		rz_config_set_i(core->config, "asm.offset", true);
-	} else {
-		rz_config_set_i(core->config, "asm.offset", false);
-	}
+	rz_config_set_i(core->config, "asm.offset",
+		(opts & BODY_OFFSETS) || (opts & BODY_SUMMARY) || o_asm_offset);
 
 	bool html = rz_config_get_i(core->config, "scr.html");
 	rz_config_set_i(core->config, "scr.html", 0);

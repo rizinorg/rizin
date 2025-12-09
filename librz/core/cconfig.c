@@ -3687,7 +3687,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
 	SETI("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
-	SETBPREF("graph.offset", "false", "Show offsets in graphs");
 	SETBPREF("graph.bytes", "false", "Show opcode bytes in graphs");
 	SETI("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
