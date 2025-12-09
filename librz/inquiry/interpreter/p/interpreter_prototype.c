@@ -60,6 +60,9 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		// TODO: Really a good idea to be so liberal?
 		// Or should the length of the globals be enforced?
 		AD(av->abstr_data)->bv = rz_bv_new(state->addr_bits);
+		// TODO: This is debatable. It depends on the ABI what the default values are.
+		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
+		AD(av->abstr_data)->is_concrete = true;
 	}
 	rz_iterator_free(it);
 	state->ext = RZ_NEW0(RzInterpreterIORequest);
