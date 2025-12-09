@@ -212,8 +212,9 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 	}
 
 	rz_return_val_if_fail(src->bits.large_a && dst->bits.large_a, 0);
-	memcpy(dst->bits.large_a, src->bits.large_a, dst->_elem_len);
-	return dst->_elem_len;
+	size_t n = RZ_MIN(dst->_elem_len, src->_elem_len);
+	memcpy(dst->bits.large_a, src->bits.large_a, n);
+	return n;
 }
 
 /**
