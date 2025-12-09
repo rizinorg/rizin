@@ -65,6 +65,12 @@ size: 2
 sign: false
 type: cjmp
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r11"
+    - type: "imm"
+      value: 2
 jump: 0x0004035c
 fail: 0x0004035a
 cond: al

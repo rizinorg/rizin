@@ -230,7 +230,11 @@ EXPECT=<<EOF
 ldr ip, [0x00000028]
 ldr ip, [sl, ip]
 load
+type:
+type:
 load
+type:
+type:
 EOF
 RUN
 
@@ -348,7 +352,11 @@ EXPECT=<<EOF
 ldr ip, [0x00000028]
 ldr ip, [sl, ip]
 load
+type:
+type:
 load
+type:
+type:
 EOF
 RUN
 
@@ -920,6 +928,15 @@ type: push
 cycles: 1
 esil: r3,sp,-8,+,=[4],lr,sp,-4,+,=[4],-8,sp,+=,
 rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
+opex:
+  operands:
+    - type: "reg"
+      value: "sp"
+    - type: "reg"
+      value: "r3"
+    - type: "reg"
+      value: "lr"
+  writeback: true
 direction: write
 family: cpu
 stackop: inc
@@ -942,6 +959,14 @@ type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 rzil: (set r7 (+ (var sp) (bv 32 0x0)))
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "reg"
+      value: "sp"
+    - type: "imm"
+      value: 0
 family: cpu
 EOF
 RUN

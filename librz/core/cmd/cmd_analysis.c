@@ -413,7 +413,6 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		}
 		RzAnalysisOp *op = ab->op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
-		const char *opexstr = RZ_STRBUF_SAFEGET(&op->opex);
 		RzAnalysisHint *hint = ab->hint;
 
 		pj_o(pj);
@@ -438,9 +437,19 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 		pj_kb(pj, "sign", op->sign);
 		pj_kn(pj, "prefix", op->prefix);
 		pj_ki(pj, "id", op->id);
-		if (RZ_STR_ISNOTEMPTY(opexstr)) {
-			pj_k(pj, "opex");
-			pj_j(pj, opexstr);
+		if (op->opex) {
+			// this is a partial hack since PJ does not allow to join objects.
+			char *opex_json = rz_structured_data_to_json(op->opex);
+			if (RZ_STR_ISNOTEMPTY(opex_json)) {
+				size_t len = strlen(opex_json);
+				if (len > 1) {
+					// remove the last }
+					opex_json[len - 1] = 0;
+					// skip first {
+					pj_j(pj, opex_json + 1);
+				}
+			}
+			free(opex_json);
 		}
 		PJ_KN(pj, "addr", op->addr);
 		PJ_KS(pj, "bytes", ab->bytes);
@@ -548,6 +557,13 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 			rz_il_op_effect_stringify(op->il_op, sbil, false);
 			PRINTF_LN_STR("rzil", rz_strbuf_get(sbil));
 			rz_strbuf_free(sbil);
+		}
+		if (op->opex) {
+			char *opex_yaml = rz_structured_data_to_yaml(op->opex);
+			if (RZ_STR_ISNOTEMPTY(opex_yaml)) {
+				rz_cons_print(opex_yaml);
+			}
+			free(opex_yaml);
 		}
 		PRINTF_LN_NOT("jump", "0x%08" PFMT64x "\n", op->jump, UT64_MAX);
 		if (op->direction != 0) {

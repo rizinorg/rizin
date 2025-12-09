@@ -180,7 +180,7 @@ static void decode_operands(RzAsmOp *op, const char *mnemonic, const ut8 *buf, i
 }
 
 static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
-	if (size <= 0) {
+	if (size < 1) {
 		return "invalid";
 	}
 
@@ -290,27 +290,18 @@ static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
 	}
 }
 
-static bool init(void **u) {
-	if (!u) {
+static bool mcs96_init(void **u) {
+	Mcs96Context *ctx = RZ_NEW0(Mcs96Context);
+	if (!ctx) {
 		return false;
-	}
-	Mcs96Context *ctx = NULL;
-	if (*u) {
-		rz_mem_memzero(*u, sizeof(Mcs96Context));
-		ctx = *u;
-	} else {
-		ctx = RZ_NEW0(Mcs96Context);
-		if (!ctx) {
-			return false;
-		}
-		*u = ctx;
 	}
 	ctx->token_patterns = get_token_patterns();
 	rz_asm_compile_token_patterns(ctx->token_patterns);
+	*u = ctx;
 	return true;
 }
 
-static bool fini(void *u) {
+static bool mcs96_fini(void *u) {
 	if (!u) {
 		return true;
 	}
@@ -320,7 +311,7 @@ static bool fini(void *u) {
 	return true;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int mcs96_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}
@@ -356,7 +347,7 @@ RzAsmPlugin rz_asm_plugin_mcs96 = {
 	.author = "condret",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
-	.init = &init,
-	.fini = &fini,
-	.disassemble = &disassemble
+	.init = &mcs96_init,
+	.fini = &mcs96_fini,
+	.disassemble = &mcs96_disassemble
 };

@@ -858,12 +858,12 @@ CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
 e analysis.arch=x86
-ao~?
+ao~esil
 ahe test
 ao~esil
 EOF
 EXPECT=<<EOF
-18
+esil: al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=
 esil: test
 EOF
 RUN
@@ -2418,10 +2418,10 @@ EXPECT=<<EOF
     "opex": {
       "operands": [
         {
-          "size": 8,
-          "rw": 1,
           "type": "reg",
-          "value": "eflags"
+          "value": "eflags",
+          "read": true,
+          "nbits": 64
         }
       ]
     },
@@ -3339,6 +3339,12 @@ type: rpush
 cycles: 1
 esil: rbp,8,rsp,-,=[8],8,rsp,-=
 rzil: (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rbp))) (set rsp (var final)))
+opex:
+  operands:
+    - type: "reg"
+      value: "rbp"
+      read: true
+      nbits: 64
 family: cpu
 stackop: inc
 stackptr: 8
