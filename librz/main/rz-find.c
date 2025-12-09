@@ -523,7 +523,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		n = atoi(log_level);
 		free(log_level);
 	}
-	if (n >= 0 && n <= 5) {
+	if (n >= 0 && n < RZ_LOGLVL_SIZE) {
 		rz_log_set_level((RzLogLevel)n);
 	}
 
