@@ -133,6 +133,7 @@ bool load_abstr_data(
 	// Wait for load being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
 	if (!io_res->req_ok) {
+		RZ_LOG_WARN("Prototype: IO read failed.");
 		return false;
 	}
 	if (io_res->read.n_bytes != size) {
@@ -142,5 +143,5 @@ bool load_abstr_data(
 	out->is_concrete = true;
 	rz_bv_cast_inplace(out->bv, size, 0);
 	rz_bv_set_from_bytes_be(out->bv, io_res->read.data, 0, io_res->read.n_bytes);
-	return false;
+	return true;
 }
