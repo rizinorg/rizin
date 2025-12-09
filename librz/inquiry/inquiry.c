@@ -70,12 +70,6 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const
 }
 
 static ut64 get_nop_pc_increment(RzAnalysis *analysis) {
-	if (RZ_STR_EQ(analysis->cur->arch, "hexagon")) {
-		// Hexagon has variable instruction lengths.
-		// It manages the JUMPs to the next packets on its own.
-		// So it always has a JUMP effect at the end of the effect.
-		return 0;
-	}
 	return analysis->cur->bits / 8;
 }
 
