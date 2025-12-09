@@ -22,7 +22,10 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			// This plugin has no addition for it defined.
 			break;
 		}
-		if (!rz_bv_add_inplace(pc->bv, rz_bv_new_from_ut64(rz_bv_len(pc->bv), state->nop_pc_inc), NULL)) {
+		STACK_ABSTR_DATA_OUT(inc);
+		rz_bv_set_from_ut64(inc.bv, state->nop_pc_inc);
+		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
+		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
 			goto error;
 		}
 		break;
