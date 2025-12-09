@@ -17,7 +17,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	case RZ_IL_OP_NOP: {
 		ProtoIntrprAbstrData *pc = AD(state->pc);
-		if (pc->is_concrete) {
+		if (!pc->is_concrete) {
 			// The PC is no longer a concrete value.
 			// This plugin has no addition for it defined.
 			break;
