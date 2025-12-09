@@ -62,14 +62,24 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 			RZ_LOG_WARN("inquiry: Failed to read memory for IL basic block generation.\n");
 			goto fail;
 		}
-		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0 || !op.il_op) {
+		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
+			RZ_LOG_ERROR("Failed to decode IL op\n");
 			rz_analysis_op_fini(&op);
 			break;
 		}
+		bool lifted = true;
+		if (!op.il_op) {
+			// Not lifted. Map to NOP
+			lifted = false;
+			op.il_op = rz_il_op_new_nop();
+		}
+		
 		bb = bb ? rz_il_op_new_seq(bb, op.il_op) : op.il_op;
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
-		changes_cf = rz_analysis_op_changes_control_flow(&op);
+		if (lifted) {
+			changes_cf = rz_analysis_op_changes_control_flow(&op);
+		}
 		rz_analysis_op_fini(&op);
 		addr += op.size;
 		rz_mem_memzero(buf, max_read_size);
