@@ -107,7 +107,7 @@ bool store_abstr_data(
 	io_req->addr = addr;
 	io_req->data = buf;
 
-	RZ_LOG_WARN("Prototype: Send store request");
+	RZ_LOG_WARN("Prototype: Send store request\n");
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for write being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
@@ -128,7 +128,7 @@ bool load_abstr_data(
 	io_req->type = RZ_INTERPRETER_IO_READ;
 	io_req->addr = addr;
 	io_req->n_bytes = size;
-	RZ_LOG_WARN("Prototype: Send load request");
+	RZ_LOG_WARN("Prototype: Send load request\n");
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for load being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
