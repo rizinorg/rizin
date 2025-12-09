@@ -96,7 +96,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 	cs = bin->dos_header->cs;
 	ut64 cs_laddr = rz_bin_mz_va_to_la(cs, 0);
 	if (cs_laddr > 0 && cs_laddr < bin->load_module_size) {
-		RzBinSection c;
+		RzBinSection c = { 0 };
 		c.vaddr = cs_laddr;
 		if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
 			section = rz_bin_mz_init_section(bin, cs_laddr);
