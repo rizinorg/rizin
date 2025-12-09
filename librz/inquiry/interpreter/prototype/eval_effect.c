@@ -16,13 +16,13 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	case RZ_IL_OP_EMPTY:
 		break;
 	case RZ_IL_OP_NOP: {
-		ProtoIntrprAbstrData *pc = AD(state->pc);
+		ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
 		if (!pc->is_concrete) {
 			// The PC is no longer a concrete value.
 			// This plugin has no addition for it defined.
 			break;
 		}
-		if (!rz_bv_add_inplace(pc->bv, rz_bv_new(state->nop_pc_inc), NULL)) {
+		if (!rz_bv_add_inplace(pc->bv, rz_bv_new_from_ut64(rz_bv_len(pc->bv), state->nop_pc_inc), NULL)) {
 			goto error;
 		}
 		break;
