@@ -55,6 +55,11 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
 		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
+		// Length doesn't matter here. When written the destination is always
+		// set to the length of the length of the src.
+		// TODO: Really a good idea to be so liberal?
+		// Or should the length of the globals be enforced?
+		AD(av->abstr_data)->bv = rz_bv_new(state->addr_bits);
 	}
 	rz_iterator_free(it);
 	state->ext = RZ_NEW0(RzInterpreterIORequest);
