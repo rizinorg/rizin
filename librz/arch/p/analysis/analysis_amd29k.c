@@ -115,31 +115,31 @@ static char *amd29k_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	ks13    .32 744 0\n" // Operating System Static Register
 		"gpr	ks14    .32 752 0\n" // Operating System Static Register
 		"gpr	ks15    .32 760 0\n" // Operating System Static Register
-		"gpr	gr96    .32 768 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr97    .32 776 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr98    .32 784 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr99    .32 792 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr100   .32 800 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr101   .32 808 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr102   .32 816 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr103   .32 824 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr104   .32 832 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr105   .32 840 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr106   .32 848 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr107   .32 856 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr108   .32 864 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr109   .32 872 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr110   .32 880 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr111   .32 888 0\n" // Compiler Temporary Registers and Function Return Values
-		"gpr	gr112   .32 896 0\n" // Reserved for developers
-		"gpr	gr113   .32 904 0\n" // Reserved for developers
-		"gpr	gr114   .32 912 0\n" // Reserved for developers
-		"gpr	gr115   .32 920 0\n" // Reserved for developers
-		"gpr	gr116   .32 928 0\n" // Compiler Temporary register
-		"gpr	gr117   .32 936 0\n" // Compiler Temporary register
-		"gpr	gr118   .32 944 0\n" // Compiler Temporary register
-		"gpr	gr119   .32 952 0\n" // Compiler Temporary register
-		"gpr	gr120   .32 960 0\n" // Compiler Temporary register
+		"gpr	v0      .32 768 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v1      .32 776 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v2      .32 784 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v3      .32 792 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v4      .32 800 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v5      .32 808 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v6      .32 816 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v7      .32 824 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v8      .32 832 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v9      .32 840 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v10     .32 848 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v11     .32 856 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v12     .32 864 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v13     .32 872 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v14     .32 880 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	v15     .32 888 0\n" // Compiler Temporary Registers and Function Return Values
+		"gpr	r1      .32 896 0\n" // Reserved for developers
+		"gpr	r2      .32 904 0\n" // Reserved for developers
+		"gpr	r3      .32 912 0\n" // Reserved for developers
+		"gpr	r4      .32 920 0\n" // Reserved for developers
+		"gpr	x0      .32 928 0\n" // Compiler Temporary register
+		"gpr	x1      .32 936 0\n" // Compiler Temporary register
+		"gpr	x2      .32 944 0\n" // Compiler Temporary register
+		"gpr	x3      .32 952 0\n" // Compiler Temporary register
+		"gpr	x4      .32 960 0\n" // Compiler Temporary register
 		"gpr	tav     .32 968 0\n" // Trap Argument Vector
 		"gpr	tpc     .32 976 0\n" // Trap Return Pointer
 		"gpr	lrp     .32 984 0\n" // Large Return Pointer
@@ -150,22 +150,22 @@ static char *amd29k_get_reg_profile(RzAnalysis *analysis) {
 		// Local Register Cache
 		"gpr	lr0     .32 1024 0\n"
 		"gpr	lr1     .32 1032 0\n"
-		"gpr	lr2     .32 1040 0\n"
-		"gpr	lr3     .32 1048 0\n"
-		"gpr	lr4     .32 1056 0\n"
-		"gpr	lr5     .32 1064 0\n"
-		"gpr	lr6     .32 1072 0\n"
-		"gpr	lr7     .32 1080 0\n"
-		"gpr	lr8     .32 1088 0\n"
-		"gpr	lr9     .32 1096 0\n"
-		"gpr	lr10    .32 1104 0\n"
-		"gpr	lr11    .32 1112 0\n"
-		"gpr	lr12    .32 1120 0\n"
-		"gpr	lr13    .32 1128 0\n"
-		"gpr	lr14    .32 1136 0\n"
-		"gpr	lr15    .32 1144 0\n"
-		"gpr	lr16    .32 1152 0\n"
-		"gpr	lr17    .32 1160 0\n"
+		"gpr	p0      .32 1040 0\n" // Parameter Register
+		"gpr	p1      .32 1048 0\n" // Parameter Register
+		"gpr	p2      .32 1056 0\n" // Parameter Register
+		"gpr	p3      .32 1064 0\n" // Parameter Register
+		"gpr	p4      .32 1072 0\n" // Parameter Register
+		"gpr	p5      .32 1080 0\n" // Parameter Register
+		"gpr	p6      .32 1088 0\n" // Parameter Register
+		"gpr	p7      .32 1096 0\n" // Parameter Register
+		"gpr	p8      .32 1104 0\n" // Parameter Register
+		"gpr	p9      .32 1112 0\n" // Parameter Register
+		"gpr	p10     .32 1120 0\n" // Parameter Register
+		"gpr	p11     .32 1128 0\n" // Parameter Register
+		"gpr	p12     .32 1136 0\n" // Parameter Register
+		"gpr	p13     .32 1144 0\n" // Parameter Register
+		"gpr	p14     .32 1152 0\n" // Parameter Register
+		"gpr	p15     .32 1160 0\n" // Parameter Register
 		"gpr	lr18    .32 1168 0\n"
 		"gpr	lr19    .32 1176 0\n"
 		"gpr	lr20    .32 1184 0\n"
@@ -244,22 +244,22 @@ static char *amd29k_get_reg_profile(RzAnalysis *analysis) {
 		"gpr	lr93    .32 1768 0\n"
 		"gpr	lr94    .32 1776 0\n"
 		"gpr	lr95    .32 1784 0\n"
-		"gpr	lr96    .32 1792 0\n"
-		"gpr	lr97    .32 1800 0\n"
-		"gpr	lr98    .32 1808 0\n"
-		"gpr	lr99    .32 1816 0\n"
-		"gpr	lr100   .32 1824 0\n"
-		"gpr	lr101   .32 1832 0\n"
-		"gpr	lr102   .32 1840 0\n"
-		"gpr	lr103   .32 1848 0\n"
-		"gpr	lr104   .32 1856 0\n"
-		"gpr	lr105   .32 1864 0\n"
-		"gpr	lr106   .32 1872 0\n"
-		"gpr	lr107   .32 1880 0\n"
-		"gpr	lr108   .32 1888 0\n"
-		"gpr	lr109   .32 1896 0\n"
-		"gpr	lr110   .32 1904 0\n"
-		"gpr	lr111   .32 1912 0\n"
+		"gpr	v0      .32 1792 0\n"
+		"gpr	v1      .32 1800 0\n"
+		"gpr	v2      .32 1808 0\n"
+		"gpr	v3      .32 1816 0\n"
+		"gpr	v4      .32 1824 0\n"
+		"gpr	v5      .32 1832 0\n"
+		"gpr	v6      .32 1840 0\n"
+		"gpr	v7      .32 1848 0\n"
+		"gpr	v8      .32 1856 0\n"
+		"gpr	v9      .32 1864 0\n"
+		"gpr	v10     .32 1872 0\n"
+		"gpr	v11     .32 1880 0\n"
+		"gpr	v12     .32 1888 0\n"
+		"gpr	v13     .32 1896 0\n"
+		"gpr	v14     .32 1904 0\n"
+		"gpr	v15     .32 1912 0\n"
 		"gpr	lr112   .32 1920 0\n"
 		"gpr	lr113   .32 1928 0\n"
 		"gpr	lr114   .32 1936 0\n"
@@ -310,11 +310,11 @@ static int amd29k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 		op->type = instruction.op_type;
 		switch (op->type) {
 		case RZ_ANALYSIS_OP_TYPE_JMP:
-			op->jump = amd29k_instr_jump(addr, &instruction);
+			op->jump = amd29k_instr_jump(&instruction, addr);
 			op->delay = 1;
 			break;
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
-			op->jump = amd29k_instr_jump(addr, &instruction);
+			op->jump = amd29k_instr_jump(&instruction, addr);
 			op->fail = addr + 4;
 			op->delay = 1;
 			break;

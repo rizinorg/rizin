@@ -26,7 +26,7 @@ bool amd29k_instr_decode(const ut8 *buffer, const ut32 buffer_size, amd29k_instr
 void amd29k_instr_print(char *string, int string_size, ut64 address, amd29k_instr_t *instruction);
 
 bool amd29k_instr_is_ret(amd29k_instr_t *instruction);
-ut64 amd29k_instr_jump(ut64 address, amd29k_instr_t *instruction);
+ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address);
 
 #ifdef __cplusplus
 }

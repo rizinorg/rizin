@@ -16,6 +16,8 @@
 #define AMD29K_SET_INVALID(x, i) ((x)->type[(i)] = AMD29K_TYPE_UNK)
 #define AMD29K_HAS_BIT(x)        (((x)[0] & 1))
 
+#define AMD29K_REG_LR0 128
+
 // clang-format off
 static const char *amd29k_reg_names[] = {
 // global registers
@@ -31,14 +33,14 @@ static const char *amd29k_reg_names[] = {
 	  "kt4",   "kt5",   "kt6",   "kt7",   "kt8",   "kt9",  "kt10",  "kt11",
 	  "ks0",   "ks1",   "ks2",   "ks3",   "ks4",   "ks5",   "ks6",   "ks7",
 	  "ks8",   "ks9",  "ks10",  "ks11",  "ks12",  "ks13",  "ks14",  "ks15",
-	 "gr96",  "gr97",  "gr98",  "gr99", "gr100", "gr101", "gr102", "gr103",
-	"gr104", "gr105", "gr106", "gr107", "gr108", "gr109", "gr110", "gr111",
-	"gr112", "gr113", "gr114", "gr115", "gr116", "gr117", "gr118", "gr119",
-	"gr120",   "tav",   "tpc",   "lrp",   "slp",   "msp",   "rab",   "rfb",
+	   "v0",    "v1",    "v2",    "v3",    "v4",    "v5",    "v6",    "v7",
+	   "v8",    "v9",   "v10",   "v11",   "v12",   "v13",   "v14",   "v15",
+	   "r1",    "r2",    "r3",    "r4",    "x0",    "x1",    "x2",    "x3",
+   	   "x4",   "tav",   "tpc",   "lrp",   "slp",   "msp",   "rab",   "rfb",
 // local registers
-	  "lr0",   "lr1",   "lr2",   "lr3",   "lr4",   "lr5",   "lr6",   "lr7",
-	  "lr8",   "lr9",  "lr10",  "lr11",  "lr12",  "lr13",  "lr14",  "lr15",
-	 "lr16",  "lr17",  "lr18",  "lr19",  "lr20",  "lr21",  "lr22",  "lr23",
+	  "lr0",   "lr1",    "p0",    "p1",    "p2",    "p3",    "p4",    "p5",
+	   "p6",    "p7",    "p8",    "p9",   "p10",   "p11",   "p12",   "p13",
+	  "p14",   "p15",  "lr18",  "lr19",  "lr20",  "lr21",  "lr22",  "lr23",
 	 "lr24",  "lr25",  "lr26",  "lr27",  "lr28",  "lr29",  "lr30",  "lr31",
 	 "lr32",  "lr33",  "lr34",  "lr35",  "lr36",  "lr37",  "lr38",  "lr39",
 	 "lr40",  "lr41",  "lr42",  "lr43",  "lr44",  "lr45",  "lr46",  "lr47",
@@ -106,11 +108,7 @@ static void decode_ra_i16_sh2(amd29k_instr_t *instruction, const ut8 *buffer) {
 		word = (int)(0xfffc0000 | word);
 	}
 	AMD29K_SET_VALUE(instruction, 0, buffer[2], AMD29K_TYPE_REG);
-	if (AMD29K_HAS_BIT(buffer)) {
-		AMD29K_SET_VALUE(instruction, 1, word, AMD29K_TYPE_IMM);
-	} else {
-		AMD29K_SET_VALUE(instruction, 1, (ut32)word, AMD29K_TYPE_JMP);
-	}
+	AMD29K_SET_VALUE(instruction, 1, (ut32)word, AMD29K_TYPE_JMP);
 	AMD29K_SET_INVALID(instruction, 2);
 	AMD29K_SET_INVALID(instruction, 3);
 	AMD29K_SET_INVALID(instruction, 4);
@@ -122,7 +120,7 @@ static void decode_imm16_sh2(amd29k_instr_t *instruction, const ut8 *buffer) {
 	if (word & 0x20000) {
 		word = (int)(0xfffc0000 | word);
 	}
-	AMD29K_SET_VALUE(instruction, 0, word, AMD29K_HAS_BIT(buffer) ? AMD29K_TYPE_JMP : AMD29K_TYPE_IMM);
+	AMD29K_SET_VALUE(instruction, 0, word, AMD29K_TYPE_JMP);
 	AMD29K_SET_INVALID(instruction, 1);
 	AMD29K_SET_INVALID(instruction, 2);
 	AMD29K_SET_INVALID(instruction, 3);
@@ -503,13 +501,17 @@ static const char *amd29k_get_regname(int reg) {
 }
 
 bool amd29k_instr_is_ret(amd29k_instr_t *instruction) {
-	if (instruction && !strcmp(instruction->mnemonic, "calli") && instruction->operands[0] == 128 && instruction->operands[1] == 128) {
-		return true;
+	if (!instruction) {
+		return false;
+	} else if (!strcmp(instruction->mnemonic, "calli")) {
+		return AMD29K_GET_VALUE(instruction, 0) == AMD29K_REG_LR0;
+	} else if (!strcmp(instruction->mnemonic, "jmpi")) {
+		return AMD29K_GET_VALUE(instruction, 0) == AMD29K_REG_LR0;
 	}
 	return false;
 }
 
-ut64 amd29k_instr_jump(ut64 address, amd29k_instr_t *instruction) {
+ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address) {
 	if (!instruction) {
 		return UT64_MAX;
 	}
