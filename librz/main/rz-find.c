@@ -515,6 +515,15 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	int c;
 	const char *file = NULL;
 
+	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
+	if (log_level) {
+		int n = atoi(log_level);
+		if (n >= 0 && n <= 5) {
+			rz_log_set_level((RzLogLevel)n);
+		}
+		free(log_level);
+	}
+
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
