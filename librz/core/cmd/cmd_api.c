@@ -1289,7 +1289,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 				padding, "",
 				pal_help_color);
 			size_t columns = gutter_size + strlen("| ") + strlen(entry_it->text) +
-				strlen(" ") + strlen(arg_str) + padding;
+				strlen(" ") + rz_str_len_utf8(arg_str) + padding;
 			fill_wrapped_comment(cmd, sb, entry_it->comment, columns, use_color);
 			rz_strbuf_appendf(sb, "%s\n", pal_reset);
 			entry_it++;
