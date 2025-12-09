@@ -778,7 +778,7 @@ RZ_API bool rz_bv_and_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzB
 	}
 
 	if (x->len <= 64) {
-		x->bits.small_u &= x->bits.small_u & y->bits.small_u;
+		x->bits.small_u &= y->bits.small_u;
 		return true;
 	}
 
