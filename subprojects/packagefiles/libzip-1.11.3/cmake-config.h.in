@@ -61,6 +61,7 @@
 #mesondefine HAVE_SYS_NDIR_H
 #mesondefine WORDS_BIGENDIAN
 #mesondefine HAVE_SHARED
+#mesondefine ENABLE_FDOPEN
 /* END DEFINES */
 #define PACKAGE "@CMAKE_PROJECT_NAME@"
 #define VERSION "@CMAKE_PROJECT_VERSION@"
