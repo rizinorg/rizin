@@ -2159,7 +2159,7 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	rz_config_set_i(core->config, "asm.bb.middle", false);
 	core->print->cur_enabled = false;
 
-	rz_config_set_i(core->config, "asm.offset",
+	rz_config_set_b(core->config, "asm.offset",
 		(opts & BODY_OFFSETS) || (opts & BODY_SUMMARY) || o_asm_offset);
 
 	bool html = rz_config_get_i(core->config, "scr.html");
