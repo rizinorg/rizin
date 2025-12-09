@@ -94,7 +94,7 @@ typedef enum {
 	RZ_OUTPUT_MODE_STR_BUF = 1 << 9,
 } RzOutputMode;
 
-typedef char *(*pipe_fn)(const char *, int *);
+RZ_OWN RZ_OUT typedef char *(*pipe_fn)(const char *, int *);
 /**
  * \brief List of fallback pipe handlers for specific commands.
  *

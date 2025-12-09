@@ -43,9 +43,9 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 
 /**
  * \brief Sort the given piped text.
- * \param input Non-NULL, non-empty piped text to sort.
+ * \param input piped text to sort.
  * \param length Length of the command result string.
- * \return Newly allocated sorted string, or NULL on empty input or failure.
+ * \return Newly allocated sorted string.
  *
  * Takes the input text and returns its sorted form (for shell).
  */
@@ -62,8 +62,8 @@ RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *leng
 
 /**
  * \brief Sort the given text.
- * \param input Non-NULL, non-empty text to sort.
- * \return Newly allocated sorted string, or NULL on empty input or failure.
+ * \param input text to sort.
+ * \return Newly allocated sorted string.
  *
  * Takes the input text and returns its sorted form.
  */
@@ -176,9 +176,9 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 
 /**
  * \brief Produce the unique filtered form of the piped input.
- * \param input Non-NULL, non-empty piped string to process.
+ * \param input piped string to process.
  * \param length Length of the command result string.
- * \return Newly allocated string containing the uniq output, or NULL on empty input or failure.
+ * \return Newly allocated string containing the uniq output.
  *
  * Takes the input text and returns its unique filtered result.
  */
@@ -195,8 +195,8 @@ RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *leng
 
 /**
  * \brief Produce the unique filtered form of the input.
- * \param input Non-NULL, non-empty string to process.
- * \return Newly allocated string containing the uniq output, or NULL on empty input or failure.
+ * \param input string to process.
+ * \return Newly allocated string containing the uniq output.
  *
  * Takes the input text and returns its unique filtered result.
  */
