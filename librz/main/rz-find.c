@@ -517,7 +517,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	int c;
 	const char *file = NULL;
 
-	int n = RZ_LOGLVL_ERROR;
+	int n = RZ_DEFAULT_LOGLVL;
 	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
 	if (RZ_STR_ISNOTEMPTY(log_level)) {
 		n = atoi(log_level);
