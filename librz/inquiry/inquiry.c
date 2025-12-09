@@ -19,6 +19,8 @@
 
 RZ_LIB_VERSION(rz_inquiry);
 
+#define MAX_IO_DATA_READ 0x1000
+
 static RzInquiryPlugin *inquiry_static_plugins[] = { RZ_INQUIRY_STATIC_PLUGINS };
 
 RZ_API const size_t rz_inquiry_get_n_plugins() {
@@ -268,6 +270,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Poor man's shared memory.
 	RzInterpreterIOResult _io_res = { 0 };
 	RzInterpreterIOResult *io_res = &_io_res;
+	ut8 io_res_buf[MAX_IO_DATA_READ] = { 0 };
+	io_res->read.data = io_res_buf;
 
 	while (rz_atomic_bool_get(is_running)) {
 		if (rz_th_terminated(interpr_th)) {
@@ -307,14 +311,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 			io_req->addr);
 		if (io_req->type == RZ_INTERPRETER_IO_READ) {
-			// TODO: Don't allocate here if not necessary.
-			ut8 *buf = RZ_NEWS0(ut8, io_req->n_bytes);
-			int n_read = rz_io_nread_at(core->io, io_req->addr, buf, io_req->n_bytes);
-			io_res->req_ok = n_read >= 0;
-			if (io_res->req_ok) {
-				io_res->read.data = buf;
-				io_res->read.n_bytes = n_read;
+			if (io_req->n_bytes > MAX_IO_DATA_READ) {
+				RZ_LOG_ERROR("Plugin tried to read more than 0x%" PFMT32x " bytes.\n"
+				             "This is more than configured. It will only read MAX_IO_DATA_READ bytes.\nPlease set MAX_IO_DATA_READ to a larger value and rebuild Rizin.\n", MAX_IO_DATA_READ);
 			}
+			// Cast to ut8* here. The constant is only there so interpreter plugins don't free it by accident.
+			int n_read = rz_io_nread_at(core->io, io_req->addr, (ut8 *) io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
+			io_res->req_ok = n_read >= 0;
+			io_res->read.n_bytes = n_read;
 		} else {
 			io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
 		}
