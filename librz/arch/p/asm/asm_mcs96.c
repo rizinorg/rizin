@@ -10,6 +10,13 @@
 #include "rz_analysis.h"
 #include "rz_util/rz_pj.h"
 
+typedef enum {
+	MCS96_ADDRESSING_REG_DIRECT = 0, // 2 reg
+	MCS96_ADDRESSING_IMMEDIATE = 1, // 1 reg + 1 imm
+	MCS96_ADDRESSING_INDIRECT = 2, //
+	MCS96_ADDRESSING_INDEXED = 3,
+} MCS96_ADDRESSING_MODE;
+
 /**
  * @brief computes the length of an instruction.
  * @return int the length of the instruction. returns -1 when invalid.
@@ -328,13 +335,83 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		ut8 base = buf[1];
 		st32 offset = (st32)rz_read_le24(buf + 2);
 		rz_strbuf_appendf(asm_buf, "0x%02x %d[0x%02x]", dst, offset, base);
-	}
-
-	else if (instr_fmt & MCS96_FMT_2OP) {
-		// TODO:
-
+	} else if (instr_fmt & MCS96_FMT_2OP) {
+		ut8 src_reg;
+		ut16 src_imm16;
+		ut8 dst;
+		switch (opcode & 0x3) {
+		case MCS96_ADDRESSING_REG_DIRECT:
+			dst = buf[2];
+			src_reg = buf[1];
+			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_reg);
+			break;
+		case MCS96_ADDRESSING_IMMEDIATE:
+			dst = buf[3];
+			src_imm16 = rz_read_le16(buf + 1);
+			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", dst, src_imm16);
+			break;
+		case MCS96_ADDRESSING_INDIRECT:
+			dst = buf[2];
+			src_reg = buf[1];
+			rz_strbuf_appendf(asm_buf, " 0x%02x [0x%02x]", dst, src_reg);
+			break;
+		case MCS96_ADDRESSING_INDEXED:
+			if (size == 4) {
+				dst = buf[3];
+				ut8 offset = buf[2];
+				ut8 base = buf[1] & 0xFE; // erase lsb
+				rz_strbuf_appendf(asm_buf, " 0x%02x %d[0x%02x]", dst, offset, base);
+			} else if (size == 5) {
+				dst = buf[4];
+				ut16 offset = rz_read_le16(buf + 2);
+				ut8 base = buf[1] & 0xFE; // erase lsb
+				rz_strbuf_appendf(asm_buf, " 0x%02x x%d[0x%04x]", dst, offset, base);
+			}
+			break;
+		default:
+			break;
+		}
 	} else if (instr_fmt & MCS96_FMT_3OP) {
-		// TODO:
+		switch (opcode & 0x3) {
+			ut8 src0_reg;
+			ut16 src_imm16;
+			ut8 src1_reg;
+			ut8 dst;
+		case MCS96_ADDRESSING_REG_DIRECT:
+			dst = buf[3];
+			src0_reg = buf[2];
+			src1_reg = buf[1];
+			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src1_reg);
+			break;
+		case MCS96_ADDRESSING_IMMEDIATE:
+			dst = buf[4];
+			src0_reg = buf[3];
+			src_imm16 = rz_read_le16(buf + 1);
+			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x", dst, src0_reg, src_imm16);
+			break;
+		case MCS96_ADDRESSING_INDIRECT:
+			dst = buf[3];
+			src0_reg = buf[2];
+			src1_reg = buf[1];
+			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x [0x%02x]", dst, src0_reg, src1_reg);
+		case MCS96_ADDRESSING_INDEXED:
+			if (size == 5) {
+				dst = buf[4];
+				src1_reg = buf[3];
+				ut8 offset = buf[2];
+				ut8 base = buf[1] & 0xFE; // erase lsb
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x %d[0x%02x]", dst, src1_reg, offset, base);
+			} else if (size == 6) {
+				dst = buf[5];
+				src1_reg = buf[4];
+				ut16 offset = rz_read_le16(buf + 2);
+				ut8 base = buf[1] & 0xFE; // erase lsb
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x x%d[0x%04x]", dst, src1_reg, offset, base);
+			}
+			break;
+		default:
+			break;
+		}
 	}
 }
 
