@@ -50,7 +50,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		if (!out->is_concrete) {
 			// Can't decide which pure to evaluate.
-			return false;
+			goto map_to_bottom;
 		}
 
 		if (abstr_is_true(state, out)) {
