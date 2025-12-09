@@ -81,7 +81,7 @@ bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrD
 	if (!data->is_concrete) {
 		return false;
 	}
-	return rz_bv_is_zero_vector(data->bv);
+	return !rz_bv_is_zero_vector(data->bv);
 }
 
 bool store_abstr_data(
