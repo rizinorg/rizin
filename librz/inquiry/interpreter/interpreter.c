@@ -52,20 +52,16 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 	if (yield_queue->yield_queue) {
 		rz_th_queue_free(yield_queue->yield_queue);
 	}
-	switch (yield_queue->kind) {
-	default:
-		break;
-	case RZ_INTERPRETER_YIELD_KIND_XREF:
-		// Free the RzIOMap list.
-		rz_list_free(yield_queue->filter_data.io_boundaries);
-		break;
+	if (yield_queue->filter_data) {
+		rz_list_free(yield_queue->filter_data->io_boundaries);
 	}
+	free(yield_queue->filter_data);
 	free(yield_queue);
 }
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
 	const RzInterpreterYieldFilter *filter,
-	RZ_OWN RZ_NULLABLE void *filter_data) {
+	RZ_OWN RZ_NULLABLE void *filter_data_io_boundaries) {
 	RzInterpreterYieldQueue *yield_queue = RZ_NEW0(RzInterpreterYieldQueue);
 	if (!yield_queue) {
 		return NULL;
@@ -83,14 +79,9 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 	yield_queue->kind = kind;
 	yield_queue->yield_queue = queue;
 	yield_queue->filter = filter;
-	// TODO Doesn't look good. Void pointers are not nice.
-	switch (kind) {
-	default:
-		rz_return_val_if_fail(!filter_data, NULL);
-		break;
-	case RZ_INTERPRETER_YIELD_KIND_XREF:
-		yield_queue->filter_data.io_boundaries = filter_data;
-		break;
+	yield_queue->filter_data = RZ_NEW0(RzInterpreterYieldFilterData);
+	if (filter_data_io_boundaries) {
+		yield_queue->filter_data->io_boundaries = filter_data_io_boundaries;
 	}
 	return yield_queue;
 }

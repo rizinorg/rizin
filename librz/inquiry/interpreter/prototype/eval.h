@@ -92,4 +92,6 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data);
 
+bool report_xref_yield(HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type);
+
 #endif // PROTOYPE_EVAL_H

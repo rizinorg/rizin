@@ -89,15 +89,17 @@ typedef union {
  */
 typedef bool (*RzInterpreterYieldFilter)(const void *element, const void *filter_data);
 
+typedef struct {
+	RzList /*<RzIOMap *>*/ *io_boundaries;
+} RzInterpreterYieldFilterData;
+
 /**
  * \brief A queue to push interpretation yields into.
  */
 typedef struct {
 	RzInterpreterYieldKind kind;
-	const RzInterpreterYieldFilter *filter;
-	union {
-		RzList /*<RzIOMap *>*/ *io_boundaries;
-	} filter_data;
+	const RzInterpreterYieldFilter filter;
+	RzInterpreterYieldFilterData *filter_data;
 	RzThreadQueue /*<RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 

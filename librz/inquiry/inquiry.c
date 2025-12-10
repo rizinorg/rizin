@@ -12,6 +12,7 @@
 #include "rz_io.h"
 #include "rz_reg.h"
 #include "rz_th.h"
+#include "rz_util/rz_bitvector.h"
 #include "rz_vector.h"
 #include <rz_list.h>
 #include <rz_types_base.h>
@@ -57,14 +58,14 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 	return false;
 }
 
-RZ_API bool rz_inquiry_xref_interpreter_filter(const RzAnalysisXRef *xref, const RzList /*<RzIOMap *>*/ *allowed_io_maps) {
-	rz_return_val_if_fail(xref && allowed_io_maps, false);
+RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzList /*<RzIOMap *>*/ *allowed_io_maps) {
+	rz_return_val_if_fail(xref_to_addr && allowed_io_maps, false);
 	const RzIOMap *map;
 	RzListIter *it;
 	rz_list_foreach (allowed_io_maps, it, map) {
 		ut64 start = map->itv.addr;
 		ut64 end = map->itv.addr + map->itv.size;
-		if (RZ_BETWEEN(start, xref->to, end)) {
+		if (RZ_BETWEEN(start, *xref_to_addr, end)) {
 			return true;
 		}
 	}

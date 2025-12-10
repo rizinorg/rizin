@@ -418,6 +418,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		if (!out->is_concrete) {
 			goto map_to_bottom;
 		}
+		report_xref_yield(yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), out, RZ_ANALYSIS_XREF_TYPE_DATA);
 		ut64 addr = rz_bv_to_ut64(out->bv);
 		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->addr_bits : pure->op.loadw.n_bits;
 		if (!load_abstr_data(state, addr, addr_bits, out, io_request, io_result)) {
@@ -467,9 +468,6 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		// Not implemented.
 		goto map_to_bottom;
 	}
-
-	// TODO: Check filter if the values should be reported/pushed into the yield queue.
-
 	return true;
 
 map_to_bottom:

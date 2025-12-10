@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
+#include "rz_analysis.h"
+#include "rz_util/rz_bitvector.h"
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
@@ -54,7 +56,14 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
+		// Setting the PC to a bottom value is allowed here!
+		// The successor function will handle this case.
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
+		if (eval_out.is_concrete) {
+			// NOTE: This prototype can't classify into call or jump.
+			// Everything is just a jump for it at this point.
+			report_xref_yield(yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
+		}
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
@@ -80,33 +89,34 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	}
 	case RZ_IL_OP_STORE:
 	case RZ_IL_OP_STOREW: {
-		STACK_ABSTR_DATA_OUT(tmp);
+		STACK_ABSTR_DATA_OUT(st_addr);
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
-		if (!interpreter_prototype_eval_pure(state, key, &tmp, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(state, key, &st_addr, yield_queues, io_request, io_result, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
-			rz_bv_fini(tmp.bv);
+			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
-		if (!tmp.is_concrete) {
-			rz_bv_fini(tmp.bv);
+		if (!st_addr.is_concrete) {
+			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		ut64 addr = rz_bv_to_ut64(tmp.bv);
+		ut64 addr = rz_bv_to_ut64(st_addr.bv);
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
-		if (!interpreter_prototype_eval_pure(state, pval, &tmp, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(state, pval, &st_addr, yield_queues, io_request, io_result, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
-			rz_bv_fini(tmp.bv);
+			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
-		if (!tmp.is_concrete) {
-			rz_bv_fini(tmp.bv);
+		if (!st_addr.is_concrete) {
+			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		if (!store_abstr_data(state, addr, &tmp, io_request, io_result)) {
-			rz_bv_fini(tmp.bv);
+		report_xref_yield(yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
+		if (!store_abstr_data(state, addr, &st_addr, io_request, io_result)) {
+			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
-		rz_bv_fini(tmp.bv);
+		rz_bv_fini(st_addr.bv);
 		break;
 	}
 	case RZ_IL_OP_GOTO:
