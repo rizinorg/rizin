@@ -8,7 +8,7 @@
 #include "avr/avr_esil.h"
 #include "avr/avr_il.h"
 
-static void set_invalid_op(RzAnalysisOp *op, ut64 addr) {
+static void set_invalid_op(RzAnalysisOp *op, ut64 addr, RzAnalysisOpMask mask) {
 	// Unknown or invalid instruction.
 	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -16,8 +16,10 @@ static void set_invalid_op(RzAnalysisOp *op, ut64 addr) {
 	op->nopcode = 1;
 	op->cycles = 1;
 	op->size = 2;
-	// set an esil trap to prevent the execution of it
-	rz_strbuf_set(&op->esil, "1,$");
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		// set an esil trap to prevent the execution of it
+		rz_strbuf_set(&op->esil, "1,$");
+	}
 }
 
 static void handle_skip_next_instruction(RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, bool big_endian, AVROp *aop) {
@@ -35,25 +37,32 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	AVROp aop = { 0 };
 	AVROp next_op = { 0 };
 
-	set_invalid_op(op, addr);
+	set_invalid_op(op, addr, mask);
 
 	RzStrBuf *sb = rz_strbuf_new("invalid");
 	if (len < 2 || avr_disassembler(buf, len, addr, analysis->big_endian, &aop, sb) < 1) {
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = rz_strbuf_drain(sb);
+		} else {
+			RZ_FREE_CUSTOM(sb, rz_strbuf_free);
+		}
+		op->eob = true;
+		return -1;
+	}
+
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		op->mnemonic = rz_strbuf_drain(sb);
-		op->eob = true;
-		return -1;
+		if (!op->mnemonic) {
+			return -1;
+		} else if (!strcmp(op->mnemonic, "invalid")) {
+			op->nopcode = true;
+			op->eob = true;
+			return -1;
+		}
+	} else {
+		RZ_FREE_CUSTOM(sb, rz_strbuf_free);
 	}
-
-	op->mnemonic = rz_strbuf_drain(sb);
 	op->size = aop.size;
-
-	if (!op->mnemonic) {
-		return -1;
-	} else if (!strcmp(op->mnemonic, "invalid")) {
-		op->nopcode = true;
-		op->eob = true;
-		return -1;
-	}
 
 	op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
@@ -231,10 +240,14 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	}
 
 	// set RzIL
-	rz_avr_il_opcode(analysis, op, addr, &aop, &next_op);
+	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		rz_avr_il_opcode(analysis, op, addr, &aop, &next_op);
+	}
 
 	// process opcode
-	rz_avr_esil_opcode(analysis, op, addr, buf, len);
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+		rz_avr_esil_opcode(analysis, op, addr, buf, len);
+	}
 
 	return op->size;
 }
