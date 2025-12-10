@@ -196,8 +196,12 @@ static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
 		rz_search_hit_detail_get_unsigned(hit->detail, &length);
 		bfs->length = length;
 		bfs->size = hit->size;
-		bfs->paddr = hit->address + bf->o->boffset;
-		bfs->vaddr = rz_bin_object_p2v(bf->o, bfs->paddr);
+		bfs->paddr = hit->address;
+		if (bf->o) {
+			// only available when rzbin is used.
+			bfs->paddr += bf->o->boffset;
+			bfs->vaddr = rz_bin_object_p2v(bf->o, bfs->paddr);
+		}
 		bfs->type = opt->string_encoding;
 		rz_pvector_push(bin_strings, bfs);
 	}
