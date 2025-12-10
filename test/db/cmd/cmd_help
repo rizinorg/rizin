@@ -295,14 +295,15 @@ NAME=utf8 cmd args
 FILE=--
 CMDS=<<EOF
 e scr.interactive=1
-e scr.columns=80
-/z??~:-5..
+e scr.columns=60
+/z??~:-6..
 EOF
 EXPECT=<<EOF
-| /z (ABC*)D li     # Search the exact string "(ABC*)D" but case insensitive.
-| /z \\d\\sC*\\w ri # Search the regular expression "\d\sC*\w" but case
-                      insensitive.
-| /z "и.{3}м" ei    # Search the extended regular expression "и.{3}м" but case
-                      insensitive.
+| /z (ABC*)D li     # Search the exact string "(ABC*)D" but
+                      case insensitive.
+| /z \\d\\sC*\\w ri # Search the regular expression
+                      "\d\sC*\w" but case insensitive.
+| /z "и.{3}м" ei    # Search the extended regular expression
+                      "и.{3}м" but case insensitive.
 EOF
 RUN
