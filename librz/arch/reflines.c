@@ -36,7 +36,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *re
 	return re;
 }
 
-static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RzPVector /*<RzAnalysisRefline *>*/ *vector, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RzAnalysisRefline *item = RZ_NEW0(RzAnalysisRefline);
 	if (!item) {
@@ -48,7 +48,7 @@ static bool add_refline(RzList /*<RzAnalysisRefline *>*/ *list, RzList /*<Reflin
 	item->level = -1;
 	item->direction = (to > addr) ? 1 : -1;
 	*idx += 1;
-	rz_list_append(list, item);
+	rz_pvector_push(vector, item);
 
 	re1 = refline_end_new(item->from, true, item);
 	if (!re1) {
@@ -71,16 +71,26 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
 	free(rl);
 }
 
-/* returns a list of RzAnalysisRefline for the code present in the buffer buf, of
- * length len. A RzAnalysisRefline exists from address A to address B if a jmp,
+/**
+ * Returns a vector of RzAnalysisRefline for the code present in the buffer \p buf, of
+ * length \p len. A RzAnalysisRefline exists from address A to address B if a jmp,
  * conditional jmp or call instruction exists at address A and it targets
  * address B.
  *
- * nlines - max number of lines of code to consider
- * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
- * linescall - true if you want to display call lines */
-RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
-	RzList *list, *sten;
+ * \param analysis RzAnalysis instance
+ * \param addr address associated with the first opcode of \p buf
+ * \param buf opcode buffer to search in
+ * \param len opcode buffer size
+ * \param nlines max number of lines of code to consider
+ * \param linesout true if you want to display lines that go outside of the scope [addr;addr+len)
+ * \param linescall true if you want to display call lines
+ * \return vector of RzAnalysisRefline
+ */
+RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+	rz_return_val_if_fail(analysis && buf, NULL);
+
+	RzPVector *result;
+	RzList *sten;
 	RzListIter *iter;
 	RzAnalysisOp op = { 0 };
 	struct refline_end *el;
@@ -102,8 +112,8 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 	 *        refline, we free that level.
 	 */
 
-	list = rz_list_newf(free);
-	if (!list) {
+	result = rz_pvector_new((RzPVectorFree)free);
+	if (!result) {
 		return NULL;
 	}
 	sten = rz_list_newf((RzListFree)free);
@@ -181,13 +191,13 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!add_refline(list, sten, addr, op.jump, &count)) {
+			if (!add_refline(result, sten, addr, op.jump, &count)) {
 				rz_analysis_op_fini(&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!add_refline(list, sten, addr, op.fail, &count)) {
+				if (!add_refline(result, sten, addr, op.fail, &count)) {
 					rz_analysis_op_fini(&op);
 					goto sten_err;
 				}
@@ -205,7 +215,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!add_refline(list, sten, op.switch_op->addr, caseop->jump, &count)) {
+				if (!add_refline(result, sten, op.switch_op->addr, caseop->jump, &count)) {
 					rz_analysis_op_fini(&op);
 					goto sten_err;
 				}
@@ -219,7 +229,7 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 	rz_analysis_op_fini(&op);
 	rz_cons_break_pop();
 
-	free_levels = RZ_NEWS0(ut8, rz_list_length(list) + 1);
+	free_levels = RZ_NEWS0(ut8, rz_pvector_len(result) + 1);
 	if (!free_levels) {
 		goto sten_err;
 	}
@@ -255,24 +265,34 @@ RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *an
 	 * increasing. */
 	free(free_levels);
 	rz_list_free(sten);
-	return list;
+	return result;
 
 sten_err:
 list_err:
 	rz_cons_break_pop();
 	rz_list_free(sten);
-	rz_list_free(list);
+	rz_pvector_free(result);
 	return NULL;
 }
 
-RZ_API int rz_analysis_reflines_middle(RzAnalysis *a, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len) {
-	if (a && list) {
-		RzAnalysisRefline *ref;
-		RzListIter *iter;
-		rz_list_foreach (list, iter, ref) {
-			if ((ref->to > addr) && (ref->to < addr + len)) {
-				return true;
-			}
+/**
+ * Given a RzAnalysisRefline vector, this function check whether any refline's destination address falls inside
+ * the range [ \p addr .. \p addr + \p len ].
+ *
+ * \param a RzAnalysis instance (currently not used).
+ * \param reflines Vector of reflines.
+ * \param addr Range start address.
+ * \param len Range size.
+ * \return true in case any refline's "to" address is in range, false otherwise.
+ */
+RZ_API bool rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *a, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len) {
+	rz_return_val_if_fail(a && reflines, false);
+
+	void **iter;
+	rz_pvector_foreach (reflines, iter) {
+		RzAnalysisRefline *ref = *iter;
+		if (RZ_BETWEEN_EXCL(ref->to, addr, addr + len)) {
+			return true;
 		}
 	}
 	return false;
@@ -351,6 +371,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	RzBuffer *b;
 	RzBuffer *c;
 	RzListIter *iter;
+	void **refline_iter;
 	RzAnalysisRefline *ref;
 	int l;
 	bool wide = opts & RZ_ANALYSIS_REFLINE_TYPE_WIDE;
@@ -366,7 +387,8 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	if (!lvls) {
 		return NULL;
 	}
-	rz_list_foreach (analysis->reflines, iter, ref) {
+	rz_pvector_foreach (analysis->reflines, refline_iter) {
+		ref = *refline_iter;
 		if (core->cons && core->cons->context->breaked) {
 			rz_list_free(lvls);
 			return NULL;

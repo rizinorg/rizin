@@ -180,6 +180,19 @@ static void alpha_opex(RzAsmAlphaContext *ctx, RzStrBuf *ptr) {
 	pj_free(pj);
 }
 
+static ut64 alpha_calc_64bit_jump(ut64 base, RzAsmAlphaContext *ctx, int idx) {
+	ut64 hi32 = base & UT64_32U;
+	ut64 jump = alpha_op_as_imm(ctx, idx);
+	if (!hi32) {
+		// does not need any fix since upper 32 bits are zero
+		return jump;
+	}
+
+	// keep only the lower 32 bits.
+	jump &= UT32_MAX;
+	return hi32 | jump;
+}
+
 static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	switch (ctx->insn->id) {
 	default: {
@@ -195,16 +208,16 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case Alpha_INS_BLT:
 	case Alpha_INS_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 1);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 1);
 		op->fail = op->addr + op->size;
 		break;
 	case Alpha_INS_BR:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 0);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		break;
 	case Alpha_INS_BSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 0);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		op->fail = op->addr + op->size;
 		break;
 	case Alpha_INS_RET:

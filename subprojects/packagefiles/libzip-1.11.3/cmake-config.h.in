@@ -5,6 +5,7 @@
 #endif
 /* BEGIN DEFINES */
 // clang-format off
+#mesondefine ENABLE_FDOPEN
 #mesondefine HAVE___PROGNAME
 #mesondefine HAVE__CLOSE
 #mesondefine HAVE__DUP
