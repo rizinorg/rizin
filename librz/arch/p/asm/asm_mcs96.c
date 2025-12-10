@@ -308,16 +308,16 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", opr0, opr1);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM16 && size == 3) {
 		st16 imm = (st16)rz_read_le16(buf + 1);
-		rz_strbuf_appendf(asm_buf, " 0x%04x", imm);
-	} else if (instr_fmt & MCS96_FMT_TIJMP && size == 3) {
+		rz_strbuf_appendf(asm_buf, " 0x%04x", (ut16)imm);
+	} else if (instr_fmt & MCS96_FMT_TIJMP && size == 4) {
 		ut8 index = buf[1];
 		ut8 mask = buf[2];
 		ut8 tbase = buf[3];
-		rz_strbuf_appendf(asm_buf, "%0x02x %d[0x%02x]", tbase, index, mask);
+		rz_strbuf_appendf(asm_buf, "%0x02x 0x%02x[0x%02x]", tbase, index, mask);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
 		st16 imm11 = extract_disp11(opcode, buf[2]);
-		ut8 reg = buf[0];
-		rz_strbuf_appendf(asm_buf, "0x%02x 0x%04x]", reg, imm11);
+		ut8 reg = buf[1];
+		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", reg, (ut16)imm11);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM24 && size == 4) {
 		ut32 imm = (ut32)rz_read_le24(buf + 1);
 		rz_strbuf_appendf(asm_buf, " 0x%06x", (ut32)imm);
@@ -325,92 +325,82 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		ut8 reg = buf[1] & 0xFE; // erase lsb
 		if (size == 3) {
 			ut8 offset = buf[2];
-			rz_strbuf_appendf(asm_buf, " %d[0x%02x]", offset, reg);
+			rz_strbuf_appendf(asm_buf, " 0x%02x[0x%02x]", offset, reg);
 		} else if (size == 4) {
 			ut16 offset = rz_read_le16(buf + 2);
-			rz_strbuf_appendf(asm_buf, " %d[0x%04x]", offset, reg);
+			rz_strbuf_appendf(asm_buf, " 0x%04x[0x%02x]", offset, reg);
 		}
 	} else if (instr_fmt & MCS96_FMT_EXTENDED_INDEXED && size == 6) {
 		ut8 dst = buf[5];
 		ut8 base = buf[1];
 		st32 offset = (st32)rz_read_le24(buf + 2);
-		rz_strbuf_appendf(asm_buf, "0x%02x %d[0x%02x]", dst, offset, base);
+		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%06x[0x%02x]", dst, (ut32)offset, base);
 	} else if (instr_fmt & MCS96_FMT_2OP) {
-		ut8 src_reg;
-		ut16 src_imm16;
-		ut8 dst;
-		switch (opcode & 0x3) {
-		case MCS96_ADDRESSING_REG_DIRECT:
-			dst = buf[2];
-			src_reg = buf[1];
+		ut8 address_mode = opcode & 0x3;
+		if (address_mode == MCS96_ADDRESSING_REG_DIRECT && size == 3) {
+			ut8 dst = buf[2];
+			ut8 src_reg = buf[1];
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_reg);
-			break;
-		case MCS96_ADDRESSING_IMMEDIATE:
-			dst = buf[3];
-			src_imm16 = rz_read_le16(buf + 1);
+		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE && size == 4) {
+			ut8 dst = buf[3];
+			ut16 src_imm16 = rz_read_le16(buf + 1);
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", dst, src_imm16);
-			break;
-		case MCS96_ADDRESSING_INDIRECT:
-			dst = buf[2];
-			src_reg = buf[1];
+		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 3) {
+			ut8 dst = buf[2];
+			boolt autoincrement = buf[1] & 0x1;
+			ut8 src_reg = buf[1] & 0xFE;
 			rz_strbuf_appendf(asm_buf, " 0x%02x [0x%02x]", dst, src_reg);
-			break;
-		case MCS96_ADDRESSING_INDEXED:
+			if (autoincrement) {
+				rz_strbuf_appendf(asm_buf, "+");
+			}
+		} else if (address_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 4) {
-				dst = buf[3];
+				ut8 dst = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x %d[0x%02x]", dst, offset, base);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x[0x%02x]", dst, offset, base);
 			} else if (size == 5) {
-				dst = buf[4];
+				ut8 dst = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x x%d[0x%04x]", dst, offset, base);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x[0x%02x]", dst, offset, base);
 			}
-			break;
-		default:
-			break;
 		}
 	} else if (instr_fmt & MCS96_FMT_3OP) {
-		switch (opcode & 0x3) {
-			ut8 src0_reg;
-			ut16 src_imm16;
-			ut8 src1_reg;
-			ut8 dst;
-		case MCS96_ADDRESSING_REG_DIRECT:
-			dst = buf[3];
-			src0_reg = buf[2];
-			src1_reg = buf[1];
+		ut8 address_mode = opcode & 0x3;
+		if (address_mode == MCS96_ADDRESSING_REG_DIRECT && size == 4) {
+			ut8 dst = buf[3];
+			ut8 src0_reg = buf[2];
+			ut8 src1_reg = buf[1];
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src1_reg);
-			break;
-		case MCS96_ADDRESSING_IMMEDIATE:
-			dst = buf[4];
-			src0_reg = buf[3];
-			src_imm16 = rz_read_le16(buf + 1);
+		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE && size == 5) {
+			ut8 dst = buf[4];
+			ut8 src0_reg = buf[3];
+			ut16 src_imm16 = rz_read_le16(buf + 1);
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x", dst, src0_reg, src_imm16);
-			break;
-		case MCS96_ADDRESSING_INDIRECT:
-			dst = buf[3];
-			src0_reg = buf[2];
-			src1_reg = buf[1];
+		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 4) {
+			ut8 dst = buf[3];
+			ut8 src0_reg = buf[2];
+			ut8 src1_reg = buf[1];
+			boolt autoincrement = buf[1] & 0x1;
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x [0x%02x]", dst, src0_reg, src1_reg);
-		case MCS96_ADDRESSING_INDEXED:
+			if (autoincrement) {
+				rz_strbuf_appendf(asm_buf, "+");
+			}
+		} else if (address_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 5) {
-				dst = buf[4];
-				src1_reg = buf[3];
+				ut8 dst = buf[4];
+				ut8 src1_reg = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x %d[0x%02x]", dst, src1_reg, offset, base);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x[0x%02x]", dst, src1_reg, offset, base);
 			} else if (size == 6) {
-				dst = buf[5];
-				src1_reg = buf[4];
+				ut8 dst = buf[5];
+				ut8 src1_reg = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x x%d[0x%04x]", dst, src1_reg, offset, base);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x[0x%02x]", dst, src1_reg, offset, base);
 			}
-			break;
-		default:
-			break;
 		}
 	}
 }
@@ -432,11 +422,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
-
 	decode_mnemonic(asm_buf, buf, op->size, isa_bit);
-
 	decode_operands(asm_buf, buf, op->size, isa_bit);
-
 	return op->size;
 }
 
