@@ -291,6 +291,12 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		return;
 	}
 
+	// Skip operand decoding for invalid instructions
+	const char *str = rz_strbuf_get(asm_buf);
+	if (str && strcmp(str, "invalid") == 0) {
+		return;
+	}
+
 	ut8 opcode = buf[0];
 	ut32 instr_fmt = mcs96_op[opcode].type;
 
