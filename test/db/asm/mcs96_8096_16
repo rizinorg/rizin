@@ -1,224 +1,224 @@
-d "skip" 00
-d "clr" 0101
-d "not" 0201
-d "neg" 0301
-d "dec" 0511
-d "ext" 0601
-d "inc" 0701
-d "shr" 080102
-d "shl" 090102
-d "shra" 0a0102 
-d "shrl" 0c0102
-d "shll" 0d0102
-d "shral" 0e0102
-d "norml" 0f0102
+d "skip" 0001
+d "clr 0x01" 0101
+d "not 0x01" 0201
+d "neg 0x01" 0301
+d "dec 0x01" 0501
+d "ext 0x01" 0601
+d "inc 0x01" 0701
+d "shr 0x02 0x01" 080102
+d "shl 0x02 0x01" 090102
+d "shra 0x02 0x01" 0a0102 
+d "shrl 0x02 0x01" 0c0102
+d "shll 0x02 0x01" 0d0102
+d "shral 0x02 0x01" 0e0102
+d "norml 0x02 0x01" 0f0102
 d "invalid" 10
-d "clrb" 1101
-d "notb" 1201
-d "negb" 1301
-d "decb" 1501
-d "extb" 1601
-d "incb" 1701
-d "shrb" 180102
-d "shlb" 190102
-d "shrab" 1a0102
-d "est" 1c0102
-d "est" 1d0102030405
-d "estb" 1e0102
-d "estb" 1f0102030405
-d "sjmp" 2001
-d "sjmp" 2101
-d "sjmp" 2201
-d "sjmp" 2301
-d "sjmp" 2401
-d "sjmp" 2501
-d "sjmp" 2601
-d "sjmp" 2701
-d "scall" 2801
-d "scall" 2901
-d "scall" 2a01
-d "scall" 2b01
-d "scall" 2c01
-d "scall" 2d01
-d "scall" 2e01
-d "scall" 2f01
-d "jbc" 300102
-d "jbc" 310102
-d "jbc" 320102
-d "jbc" 330102
-d "jbc" 340102
-d "jbc" 350102
-d "jbc" 360102
-d "jbc" 370102
-d "jbs" 380102
-d "jbs" 390102
-d "jbs" 3a0102
-d "jbs" 3b0102
-d "jbs" 3c0102
-d "jbs" 3d0102
-d "jbs" 3e0102
-d "jbs" 3f0102
-d "and" 40010203
-d "and" 4101020304
-d "and" 42010203
-d "and" 430102030405
-d "add" 44010203
-d "add" 4501020304
-d "add" 46010203
-d "add" 470102030405
-d "sub" 48010203
-d "sub" 4901020304
-d "sub" 4a010203
-d "sub" 4b0102030405
-d "mulu" 4c010203
-d "mulu" 4d01020304
-d "mulu" 4e010203
-d "mulu" 4f0102030405
-d "andb" 50010203
+d "clrb 0x01" 1101
+d "notb 0x01" 1201
+d "negb 0x01" 1301
+d "decb 0x01" 1501
+d "extb 0x01" 1601
+d "incb 0x01" 1701
+d "shrb 0x02 0x01" 180102
+d "shlb 0x02 0x01" 190102
+d "shrab 0x02 0x01" 1a0102
+d "est 0x02 0x01" 1c0102
+d "est 0x05 0x040302[0x01]" 1d0102030405
+d "estb 0x02 0x01" 1e0102
+d "estb 0x05 0x040302[0x01]" 1f0102030405
+d "sjmp 0x0001" 2001
+d "sjmp 0x0101" 2101
+d "sjmp 0x0201" 2201
+d "sjmp 0x0301" 2301
+d "sjmp 0xfc01" 2401
+d "sjmp 0xfd01" 2501
+d "sjmp 0xfe01" 2601
+d "sjmp 0xff01" 2701
+d "scall 0x0001" 2801
+d "scall 0x0101" 2901
+d "scall 0x0201" 2a01
+d "scall 0x0301" 2b01
+d "scall 0xfc01" 2c01
+d "scall 0xfd01" 2d01
+d "scall 0xfe01" 2e01
+d "scall 0xff01" 2f01
+d "jbc 0x01 0x0002" 300102
+d "jbc 0x01 0x0102" 310102
+d "jbc 0x01 0x0202" 320102
+d "jbc 0x01 0x0302" 330102
+d "jbc 0x01 0xfc02" 340102
+d "jbc 0x01 0xfd02" 350102
+d "jbc 0x01 0xfe02" 360102
+d "jbc 0x01 0xff02" 370102
+d "jbs 0x01 0x0002" 380102
+d "jbs 0x01 0x0102" 390102
+d "jbs 0x01 0x0202" 3a0102
+d "jbs 0x01 0x0302" 3b0102
+d "jbs 0x01 0xfc02" 3c0102
+d "jbs 0x01 0xfd02" 3d0102
+d "jbs 0x01 0xfe02" 3e0102
+d "jbs 0x01 0xff02" 3f0102
+d "and 0x03 0x02 0x01" 40010203
+d "and 0x04 0x03 0x0201" 4101020304
+d "and 0x03 0x02 [0x01]+" 42010203
+d "and 0x05 0x04 0x0302[0x00]" 430102030405
+d "add 0x03 0x02 0x01" 44010203
+d "add 0x04 0x03 0x0201" 4501020304
+d "add 0x03 0x02 [0x01]+" 46010203
+d "add 0x05 0x04 0x0302[0x00]" 470102030405
+d "sub 0x03 0x02 0x01" 48010203
+d "sub 0x04 0x03 0x0201" 4901020304
+d "sub 0x03 0x02 [0x01]+" 4a010203
+d "sub 0x05 0x04 0x0302[0x00]" 4b0102030405
+d "mulu 0x03 0x02 0x01" 4c010203
+d "mulu 0x04 0x03 0x0201" 4d01020304
+d "mulu 0x03 0x02 [0x01]+" 4e010203
+d "mulu 0x05 0x04 0x0302[0x00]" 4f0102030405
+d "andb 0x03 0x02 0x01" 50010203
 d "andb" 51010203
-d "andb" 52010203
-d "andb" 530102030405
+d "andb 0x03 0x02 [0x01]+" 52010203
+d "andb 0x05 0x04 0x0302[0x00]" 530102030405
 d "addb" 55010203
-d "addb" 56010203
-d "addb" 570102030405
-d "subb" 58010203
+d "addb 0x03 0x02 [0x01]+" 56010203
+d "addb 0x05 0x04 0x0302[0x00]" 570102030405
+d "subb 0x03 0x02 0x01" 58010203
 d "subb" 59010203
-d "subb" 5a010203
-d "subb" 5b0102030405
-d "mulub" 5c010203
+d "subb 0x03 0x02 [0x01]+" 5a010203
+d "subb 0x05 0x04 0x0302[0x00]" 5b0102030405
+d "mulub 0x03 0x02 0x01" 5c010203
 d "mulub" 5d010203
-d "mulub" 5e010203
-d "mulub" 5f0102030405
-d "and" 600102
-d "and" 61010203
-d "and" 620102
-d "and" 6301020304
-d "add" 640102
-d "add" 65010203
-d "add" 660102
-d "add" 6701020304
-d "sub" 680102
-d "sub" 69010203
-d "sub" 6a0102
-d "sub" 6b01020304
-d "mulu" 6c0102
-d "mulu" 6d010203
-d "mulu" 6e0102
-d "mulu" 6f01020304
-d "andb" 700102
+d "mulub 0x03 0x02 [0x01]+" 5e010203
+d "mulub 0x05 0x04 0x0302[0x00]" 5f0102030405
+d "and 0x02 0x01" 600102
+d "and 0x03 0x0201" 61010203
+d "and 0x02 [0x00]+" 620102
+d "and 0x04 0x0302[0x00]" 6301020304
+d "add 0x02 0x01" 640102
+d "add 0x03 0x0201" 65010203
+d "add 0x02 [0x00]+" 660102
+d "add 0x04 0x0302[0x00]" 6701020304
+d "sub 0x02 0x01" 680102
+d "sub 0x03 0x0201" 69010203
+d "sub 0x02 [0x00]+" 6a0102
+d "sub 0x04 0x0302[0x00]" 6b01020304
+d "mulu 0x02 0x01" 6c0102
+d "mulu 0x03 0x0201" 6d010203
+d "mulu 0x02 [0x00]+" 6e0102
+d "mulu 0x04 0x0302[0x00]" 6f01020304
+d "andb 0x02 0x01" 700102
 d "andb" 710102
-d "andb" 720102
-d "andb" 7301020304
-d "addb" 740102
+d "andb 0x02 [0x00]+" 720102
+d "andb 0x04 0x0302[0x00]" 7301020304
+d "addb 0x02 0x01" 740102
 d "addb" 750102
-d "addb" 760102
-d "addb" 7701020304
-d "subb" 780102
+d "addb 0x02 [0x00]+" 760102
+d "addb 0x04 0x0302[0x00]" 7701020304
+d "subb 0x02 0x01" 780102
 d "subb" 790102
-d "subb" 7a0102
-d "subb" 7b01020304
-d "mulub" 7c0102
+d "subb 0x02 [0x00]+" 7a0102
+d "subb 0x04 0x0302[0x00]" 7b01020304
+d "mulub 0x02 0x01" 7c0102
 d "mulub" 7d0102
-d "mulub" 7e0102
-d "mulub" 7f01020304
-d "or" 800102
-d "or" 81010203
-d "or" 820102
-d "or" 8301020304
-d "xor" 840102
-d "xor" 85010203
-d "xor" 860102
-d "xor" 8701020304
-d "cmp" 880102
-d "cmp" 89010203
-d "cmp" 8a0102
-d "cmp" 8b01020304
-d "divu" 8c0102
-d "divu" 8d010203
-d "divu" 8e0102
-d "divu" 8f01020304
-d "orb" 900102
+d "mulub 0x02 [0x00]+" 7e0102
+d "mulub 0x04 0x0302[0x00]" 7f01020304
+d "or 0x02 0x01" 800102
+d "or 0x03 0x0201" 81010203
+d "or 0x02 [0x00]+" 820102
+d "or 0x04 0x0302[0x00]" 8301020304
+d "xor 0x02 0x01" 840102
+d "xor 0x03 0x0201" 85010203
+d "xor 0x02 [0x00]+" 860102
+d "xor 0x04 0x0302[0x00]" 8701020304
+d "cmp 0x02 0x01" 880102
+d "cmp 0x03 0x0201" 89010203
+d "cmp 0x02 [0x00]+" 8a0102
+d "cmp 0x04 0x0302[0x00]" 8b01020304
+d "divu 0x02 0x01" 8c0102
+d "divu 0x03 0x0201" 8d010203
+d "divu 0x02 [0x00]+" 8e0102
+d "divu 0x04 0x0302[0x00]" 8f01020304
+d "orb 0x02 0x01" 900102
 d "orb" 910102
-d "orb" 920102
-d "orb" 9301020304
-d "xorb" 940102
+d "orb 0x02 [0x00]+" 920102
+d "orb 0x04 0x0302[0x00]" 9301020304
+d "xorb 0x02 0x01" 940102
 d "xorb" 950102
-d "xorb" 960102
-d "xorb" 9701020304
-d "cmpb" 980102
+d "xorb 0x02 [0x00]+" 960102
+d "xorb 0x04 0x0302[0x00]" 9701020304
+d "cmpb 0x02 0x01" 980102
 d "cmpb" 990102
-d "cmpb" 9a0102
-d "cmpb" 9b01020304
-d "divub" 9c0102
+d "cmpb 0x02 [0x00]+" 9a0102
+d "cmpb 0x04 0x0302[0x00]" 9b01020304
+d "divub 0x02 0x01" 9c0102
 d "divub" 9d0102
-d "divub" 9e0102
-d "divub" 9f01020304
-d "ld" a00102
-d "ld" a1010203
-d "ld" a20102
-d "ld" a301020304
-d "addc" a40102
-d "addc" a5010203
-d "addc" a60102
-d "addc" a701020304
-d "subc" a80102
-d "subc" a9010203
-d "subc" aa0102
-d "subc" ab01020304
-d "ldbze" ac0102
+d "divub 0x02 [0x00]+" 9e0102
+d "divub 0x04 0x0302[0x00]" 9f01020304
+d "ld 0x02 0x01" a00102
+d "ld 0x03 0x0201" a1010203
+d "ld 0x02 [0x00]+" a20102
+d "ld 0x04 0x0302[0x00]" a301020304
+d "addc 0x02 0x01" a40102
+d "addc 0x03 0x0201" a5010203
+d "addc 0x02 [0x00]+" a60102
+d "addc 0x04 0x0302[0x00]" a701020304
+d "subc 0x02 0x01" a80102
+d "subc 0x03 0x0201" a9010203
+d "subc 0x02 [0x00]+" aa0102
+d "subc 0x04 0x0302[0x00]" ab01020304
+d "ldbze 0x02 0x01" ac0102
 d "ldbze" ad0102
-d "ldbze" ae0102
-d "ldbze" af01020304
-d "ldb" b00102
+d "ldbze 0x02 [0x00]+" ae0102
+d "ldbze 0x04 0x0302[0x00]" af01020304
+d "ldb 0x02 0x01" b00102
 d "ldb" b10102
-d "ldb" b20102
-d "ldb" b301020304
-d "addcb" b40102
+d "ldb 0x02 [0x00]+" b20102
+d "ldb 0x04 0x0302[0x00]" b301020304
+d "addcb 0x02 0x01" b40102
 d "addcb" b50102
-d "addcb" b60102
-d "addcb" b701020304
-d "subcb" b80102
+d "addcb 0x02 [0x00]+" b60102
+d "addcb 0x04 0x0302[0x00]" b701020304
+d "subcb 0x02 0x01" b80102
 d "subcb" b90102
-d "subcb" ba0102
-d "subcb" bb01020304
-d "ldbse" bc0102
+d "subcb 0x02 [0x00]+" ba0102
+d "subcb 0x04 0x0302[0x00]" bb01020304
+d "ldbse 0x02 0x01" bc0102
 d "ldbse" bd0102
-d "ldbse" be0102
-d "ldbse" bf01020304
-d "st" c00102
-d "st" c20102
-d "st" c301020304
-d "stb" c40102
-d "stb" c60102
-d "stb" c701020304
-d "push" c811
-d "push" c90102
-d "push" ca01
-d "push" cb010203
-d "pop" cc01
-d "pop" ce01
-d "pop" cf010203
-d "jnst" d001
-d "jnh" d101
-d "jgt" d201
-d "jnc" d301
-d "jnvt" d401
-d "jnv" d501
-d "jge" d601
-d "jne" d701
-d "jst" d801
-d "jh" d901
-d "jle" da01
-d "jc" db01
-d "jvt" dc01
-d "jv" dd01
-d "jlt" de01
-d "je" df01
-d "djnz" e00102
-d "br" e301
-d "ljmp" e70102
+d "ldbse 0x02 [0x00]+" be0102
+d "ldbse 0x04 0x0302[0x00]" bf01020304
+d "st 0x02 0x01" c00102
+d "st 0x02 [0x00]+" c20102
+d "st 0x04 0x0302[0x00]" c301020304
+d "stb 0x02 0x01" c40102
+d "stb 0x02 [0x00]+" c60102
+d "stb 0x04 0x0302[0x00]" c701020304
+d "push 0x11" c811
+d "push 0x0201" c90102
+d "push 0x01" ca01
+d "push 0x0302[0x00]" cb010203
+d "pop 0x01" cc01
+d "pop 0x01" ce01
+d "pop 0x0302[0x00]" cf010203
+d "jnst 0x01" d001
+d "jnh 0x01" d101
+d "jgt 0x01" d201
+d "jnc 0x01" d301
+d "jnvt 0x01" d401
+d "jnv 0x01" d501
+d "jge 0x01" d601
+d "jne 0x01" d701
+d "jst 0x01" d801
+d "jh 0x01" d901
+d "jle 0x01" da01
+d "jc 0x01" db01
+d "jvt 0x01" dc01
+d "jv 0x01" dd01
+d "jlt 0x01" de01
+d "je 0x01" df01
+d "djnz 0x02 0x01" e00102
+d "br 0x01" e301
+d "ljmp 0x0201" e70102
 d "invalid" ee
-d "lcall" ef0102
+d "lcall 0x0201" ef0102
 d "ret" f0
 d "pushf" f2
 d "popf" f3
@@ -229,5 +229,4 @@ d "di" fa
 d "ei" fb
 d "clrvt" fc
 d "nop" fd
-
 d "rst" ff

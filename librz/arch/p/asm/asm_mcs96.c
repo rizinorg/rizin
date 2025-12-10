@@ -341,10 +341,16 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 			ut8 dst = buf[2];
 			ut8 src_reg = buf[1];
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_reg);
-		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE && size == 4) {
-			ut8 dst = buf[3];
-			ut16 src_imm16 = rz_read_le16(buf + 1);
-			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", dst, src_imm16);
+		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE) {
+			if (size == 3) {
+				ut8 dst = buf[2];
+				ut8 src_imm8 = buf[1];
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_imm8);
+			} else if (size == 4) {
+				ut8 dst = buf[3];
+				ut16 src_imm16 = rz_read_le16(buf + 1);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", dst, src_imm16);
+			}
 		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 3) {
 			ut8 dst = buf[2];
 			boolt autoincrement = buf[1] & 0x1;
@@ -373,15 +379,22 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 			ut8 src0_reg = buf[2];
 			ut8 src1_reg = buf[1];
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src1_reg);
-		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE && size == 5) {
-			ut8 dst = buf[4];
-			ut8 src0_reg = buf[3];
-			ut16 src_imm16 = rz_read_le16(buf + 1);
-			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x", dst, src0_reg, src_imm16);
+		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE) {
+			if (size == 4) {
+				ut8 dst = buf[3];
+				ut8 src0_reg = buf[2];
+				ut8 src_imm8 = buf[1];
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src_imm8);
+			} else if (size == 5) {
+				ut8 dst = buf[4];
+				ut8 src0_reg = buf[3];
+				ut16 src_imm16 = rz_read_le16(buf + 1);
+				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x", dst, src0_reg, src_imm16);
+			}
 		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 4) {
 			ut8 dst = buf[3];
 			ut8 src0_reg = buf[2];
-			ut8 src1_reg = buf[1];
+			ut8 src1_reg = buf[1] & 0xFE;
 			boolt autoincrement = buf[1] & 0x1;
 			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x [0x%02x]", dst, src0_reg, src1_reg);
 			if (autoincrement) {
