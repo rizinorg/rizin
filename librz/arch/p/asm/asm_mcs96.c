@@ -323,7 +323,7 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		ut8 index = buf[1];
 		ut8 mask = buf[2];
 		ut8 tbase = buf[3];
-		rz_strbuf_appendf(asm_buf, "0x%02x 0x%02x[0x%02x]", tbase, index, mask);
+		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x[0x%02x]", tbase, index, mask);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
 		st16 imm11 = extract_disp11(opcode, buf[2]);
 		ut8 reg = buf[1];
