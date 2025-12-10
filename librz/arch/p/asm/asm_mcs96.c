@@ -22,6 +22,10 @@ typedef enum {
  * @return int the length of the instruction. returns -1 when invalid.
  */
 static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
+	if (len < 1) {
+		return 0;
+	}
+
 	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
 		rz_strbuf_set(asm_buf, "invalid");
 		return -1;
@@ -115,7 +119,7 @@ static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 
 static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
 	if (size > 0) {
-		if (buf[0] == 0x0d && isa_bit == MCS96_80296) { // SHLL/MVAC/MSAC
+		if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
 			ut8 lreg_bits = buf[2] & 0x3;
 			// lreg.1 lreg.0 Execute
 			// 0      0      SHLL
@@ -138,7 +142,7 @@ static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
-		} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
+		} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
 			// RPT waop
 			// (010000aa) (waop) (00) (04)
 			// RPTxxx
@@ -256,7 +260,7 @@ static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
-		} else if (mcs96_op[buf[1]].type & MCS96_FE) {
+		} else if (mcs96_op[buf[1]].type & MCS96_FE & size > 2) {
 			const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
 			rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
 		} else {
@@ -319,7 +323,7 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		ut8 index = buf[1];
 		ut8 mask = buf[2];
 		ut8 tbase = buf[3];
-		rz_strbuf_appendf(asm_buf, "%0x02x 0x%02x[0x%02x]", tbase, index, mask);
+		rz_strbuf_appendf(asm_buf, "0x%02x 0x%02x[0x%02x]", tbase, index, mask);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
 		st16 imm11 = extract_disp11(opcode, buf[2]);
 		ut8 reg = buf[1];
@@ -327,7 +331,7 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM24 && size == 4) {
 		ut32 imm = (ut32)rz_read_le24(buf + 1);
 		rz_strbuf_appendf(asm_buf, " 0x%06x", (ut32)imm);
-	} else if (instr_fmt & MCS96_FMT_OPC_INDEX) {
+	} else if (instr_fmt & MCS96_FMT_OPC_INDEX && size >= 1) {
 		ut8 reg = buf[1] & 0xFE; // erase lsb
 		if (size == 3) {
 			ut8 offset = buf[2];
