@@ -529,34 +529,34 @@ ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address) {
 	return UT64_MAX;
 }
 
-void amd29k_instr_print(char *string, int string_size, ut64 address, amd29k_instr_t *instruction) {
-	if (!string || string_size < 0 || !instruction) {
+void amd29k_instr_print(amd29k_instr_t *instruction, ut64 address, RzStrBuf *sb) {
+	if (!instruction || !sb) {
 		return;
 	}
 
-	int current = snprintf(string, string_size, "%s", instruction->mnemonic);
+	rz_strbuf_set(sb, instruction->mnemonic);
 	for (size_t i = 0; i < AMD29K_MAX_OPERANDS; ++i) {
 		int type = AMD29K_GET_TYPE(instruction, i);
 		int value = AMD29K_GET_VALUE(instruction, i);
-		int leftovers = string_size - current;
+
 		switch (type) {
 		case AMD29K_TYPE_REG: {
 			const char *reg0 = amd29k_get_regname(value);
-			current += snprintf(string + current, leftovers, " %s", reg0);
+			rz_strbuf_appendf(sb, " %s", reg0);
 			break;
 		}
 		case AMD29K_TYPE_IMM: {
 			if (value >= 0) {
-				current += snprintf(string + current, leftovers, " 0x%x", value);
+				rz_strbuf_appendf(sb, " 0x%x", value);
 			} else {
 				value = 0 - value;
-				current += snprintf(string + current, leftovers, " -0x%x", value);
+				rz_strbuf_appendf(sb, " -0x%x", value);
 			}
 			break;
 		}
 		case AMD29K_TYPE_JMP: {
 			ut64 jump = address + value;
-			current += snprintf(string + current, leftovers, " 0x%" PFMT64x, jump);
+			rz_strbuf_appendf(sb, " 0x%" PFMT64x, jump);
 			break;
 		}
 		default:

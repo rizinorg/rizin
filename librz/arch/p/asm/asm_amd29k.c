@@ -12,23 +12,28 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !op || !buf || len < 4) {
 		return -1;
 	}
-	char buf_asm[64];
-	ut64 offset = a->pc;
-	amd29k_instr_t instruction = { 0 };
 	op->size = 4;
 
+	RzStrBuf sb = { 0 };
+	ut64 offset = a->pc;
 	ut32 cpu_id = AMD29K_29000;
+	amd29k_instr_t instruction = { 0 };
+
 	if (RZ_STR_EQ(a->cpu, "29050")) {
 		cpu_id = AMD29K_29050;
 	}
 
-	if (amd29k_instr_decode(buf, len, &instruction, cpu_id)) {
-		amd29k_instr_print(buf_asm, sizeof(buf_asm), offset, &instruction);
-		rz_asm_op_set_asm(op, buf_asm);
-		return 4;
+	if (!amd29k_instr_decode(buf, len, &instruction, cpu_id)) {
+		rz_asm_op_set_asm(op, "invalid");
+		return -1;
 	}
-	rz_asm_op_set_asm(op, "invalid");
-	return -1;
+
+	rz_strbuf_init(&sb);
+	amd29k_instr_print(&instruction, offset, &sb);
+	rz_asm_op_set_asm(op, rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+
+	return op->size;
 }
 
 RzAsmPlugin rz_asm_plugin_amd29k = {

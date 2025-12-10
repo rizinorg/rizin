@@ -23,7 +23,7 @@ typedef struct amd29k_instr_s {
 } amd29k_instr_t;
 
 bool amd29k_instr_decode(const ut8 *buffer, const ut32 buffer_size, amd29k_instr_t *instruction, const ut32 cpu_id);
-void amd29k_instr_print(char *string, int string_size, ut64 address, amd29k_instr_t *instruction);
+void amd29k_instr_print(amd29k_instr_t *instruction, ut64 address, RzStrBuf *sb);
 
 bool amd29k_instr_is_ret(amd29k_instr_t *instruction);
 ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address);
