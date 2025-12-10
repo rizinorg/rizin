@@ -1430,6 +1430,32 @@ bool test_call_multiple_macros(void) {
 	mu_end;
 }
 
+bool test_cmd_descriptor_folder_arg(void) {
+	RzCmdDescArg folder_args[] = {
+		{ .name = "folder_path", .type = RZ_CMD_ARG_TYPE_FOLDER },
+		{ 0 }
+	};
+
+	RzCmdDescHelp folder_help = {
+		.summary = "test folder argument",
+		.args = folder_args
+	};
+
+	RzCmd *cmd = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+
+	RzCmdDesc *cd = rz_cmd_desc_argv_new(cmd, root, "testfolder",
+		NULL, &folder_help);
+
+	mu_assert_notnull(cd, "folder command created");
+
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg(cd, 0);
+	mu_assert_eq(arg->type, RZ_CMD_ARG_TYPE_FOLDER, "type is FOLDER");
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	rz_cons_new();
 	mu_run_test(test_parsed_args_noargs);
@@ -1474,6 +1500,7 @@ int all_tests() {
 	mu_run_test(test_remove_macros);
 	mu_run_test(test_call_macros);
 	mu_run_test(test_call_multiple_macros);
+	mu_run_test(test_cmd_descriptor_folder_arg);
 	return tests_passed != tests_run;
 }
 
