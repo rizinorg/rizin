@@ -32,6 +32,7 @@ typedef struct rz_testfile_counts_t {
 	ut64 xx;
 	ut64 br;
 	ut64 fx;
+	ut64 total_elapsed;
 } RzTestFileCounts;
 
 typedef struct rz_test_state_t {
@@ -603,6 +604,18 @@ beach:
 	return ret;
 }
 
+// elapsed is in microsecs
+static char *readable_elapsed_time(ut64 elapsed) {
+	elapsed /= 1000;
+	ut32 millisecs = elapsed % 1000;
+	elapsed /= 1000;
+	ut32 secs = elapsed % 1000;
+	elapsed /= 1000;
+	ut32 mins = elapsed % 1000;
+
+	return rz_str_newf("%03um%03us%03ums", mins, secs, millisecs);
+}
+
 static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	rz_return_if_fail(pj && result);
 	pj_o(pj);
@@ -628,23 +641,26 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 		pj_ks(pj, "file", test->fuzz_test->file);
 		break;
 	}
-	pj_k(pj, "result");
 	switch (result->result) {
 	case RZ_TEST_RESULT_OK:
-		pj_s(pj, "ok");
+		pj_ks(pj, "result", "ok");
 		break;
 	case RZ_TEST_RESULT_FAILED:
-		pj_s(pj, "failed");
+		pj_ks(pj, "result", "failed");
 		break;
 	case RZ_TEST_RESULT_BROKEN:
-		pj_s(pj, "broken");
+		pj_ks(pj, "result", "broken");
 		break;
 	case RZ_TEST_RESULT_FIXED:
-		pj_s(pj, "fixed");
+		pj_ks(pj, "result", "fixed");
 		break;
 	}
+	pj_ks(pj, "path", rz_str_get(result->test->path));
 	pj_kb(pj, "run_failed", result->run_failed);
 	pj_kn(pj, "time_elapsed", result->time_elapsed);
+	char *time_human = readable_elapsed_time(result->time_elapsed);
+	pj_ks(pj, "time_elapsed_human", time_human);
+	free(time_human);
 	pj_kb(pj, "timeout", result->timeout);
 	pj_end(pj);
 }
@@ -695,6 +711,7 @@ static void *worker_th(RzTestState *state) {
 					counts->fx++;
 					break;
 				}
+				counts->total_elapsed += result->time_elapsed;
 				counts->tests_left--;
 				if (!counts->tests_left) {
 					rz_pvector_push(&state->completed_paths, (void *)test->path);
@@ -868,8 +885,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 static void print_new_results(RzTestState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)rz_pvector_len(&state->results);
-	ut64 i;
-	for (i = prev_completed; i < completed; i++) {
+	for (ut64 i = prev_completed; i < completed; i++) {
 		RzTestResultInfo *result = rz_pvector_at(&state->results, (size_t)i);
 		if (state->test_results) {
 			test_result_to_json(state->test_results, result);
@@ -900,24 +916,12 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 			printf(Color_CYAN " TIMEOUT" Color_RESET);
 		}
 		// time_elapsed is in microsecs
-		ut64 elapsed = result->time_elapsed;
-		const char *unit = NULL;
-		if (elapsed < 1000) {
-			unit = "usec";
-		} else if (elapsed < 1000000) {
-			elapsed /= 1000;
-			unit = "ms";
-		} else if (elapsed < 1000000000) {
-			elapsed /= 1000000;
-			unit = "secs";
-		} else {
-			elapsed /= 1000000000;
-			unit = "mins";
-		}
-		printf(Color_BLUE "%4" PFMT64u " %-4s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, unit, result->test->path, name);
+		char *elapsed = readable_elapsed_time(result->time_elapsed);
+		printf(Color_BLUE " %s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, result->test->path, name);
 		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
+		free(elapsed);
 		free(name);
 	}
 }
@@ -956,15 +960,20 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		if (!name) {
 			name = "unknown path. something is very wrong.";
 		}
-		printf("[**] %50s ", name);
 		if (state->path_left) {
+			char *total_elapsed = NULL;
 			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
 			if (counts) {
 				state->ok_count += counts->ok;
 				state->xx_count += counts->xx;
 				state->br_count += counts->br;
 				state->fx_count += counts->fx;
+				total_elapsed = readable_elapsed_time(counts->total_elapsed);
 			}
+			printf("%s [**] %-60s ", rz_str_get(total_elapsed), name);
+			free(total_elapsed);
+		} else {
+			printf("[**] %-60s ", name);
 		}
 		print_state_counts(state);
 		printf("\n");
