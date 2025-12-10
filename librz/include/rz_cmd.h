@@ -95,6 +95,18 @@ typedef enum {
 	RZ_OUTPUT_MODE_STR_BUF = 1 << 9,
 } RzOutputMode;
 
+RZ_OWN RZ_OUT typedef char *(*pipe_fn)(const char *, int *);
+/**
+ * \brief List of fallback pipe handlers for specific commands.
+ *
+ * Each entry maps a command name to the internal implementation used
+ * when no external binary is available in the system PATH.
+ */
+typedef struct pipe_fallbacks {
+	const char *command;
+	pipe_fn fallback_fn;
+} PipeFallbacks;
+
 /**
  * \brief Represent the output state of a command handler.
  *
