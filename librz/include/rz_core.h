@@ -200,6 +200,49 @@ typedef struct {
 	char *cmd;
 } RzCoreGadget;
 
+/**
+ * \brief Options for controlling address description output.
+ *
+ * This structure contains flags that control how addresses are described
+ * and formatted. It can be passed to rz_core_addr_describe() and related
+ * functions to customize the output.
+ */
+typedef struct rz_core_addr_options_t {
+	bool show_offset; ///< Show the address offset if no name is found
+	bool prefer_function; ///< Prefer function names over flag names
+	bool show_flag; ///< Include flag names in the description
+	bool use_decimal; ///< Use decimal instead of hexadecimal for offsets
+	bool show_color; ///< Include color codes in the output
+	bool show_source_info; ///< Include source file/line information
+	bool use_realnames; ///< Use realnames for flags instead of names
+	st64 max_flag_delta; ///< Maximum delta from flag offset to show (0 = unlimited, negative = use default 8192)
+	bool use_spaces_around_delta; ///< Use spaces around +/- in delta format (e.g., "sym + 10" vs "sym+10")
+} RzCoreAddrOptions;
+
+/**
+ * \brief Description of an address with human-readable information
+ *
+ * This structure contains comprehensive information about an address,
+ * including its relation to functions, flags, and source code.
+ */
+typedef struct rz_core_addr_t {
+	ut64 addr; ///< The address being described
+
+	char *name; ///< Combined name (deprecated, use fcn_name or flag_name)
+
+	char *fcn_name; ///< Name of the function containing the address
+	ut64 fcn_addr; ///< Address of the function
+	st64 fcn_delta; ///< Delta from function start (addr - fcn_addr)
+
+	char *flag_name; ///< Name of the flag at or before the address
+	ut64 flag_offset; ///< Offset of the flag
+	st64 flag_delta; ///< Delta from flag (addr - flag_offset)
+
+	char *source_file; ///< Source file name (if debug info available)
+	ut32 source_line; ///< Source line number (0 if unknown)
+	ut32 source_column; ///< Source column number (0 if unknown)
+} RzCoreAddr;
+
 typedef struct rz_core_task_t RzCoreTask;
 
 /**
@@ -594,6 +637,42 @@ RZ_API void rz_backtrace_free(RZ_NULLABLE RzBacktrace *bt);
 RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, RZ_OUT RzCmdStateOutput *state);
 RZ_API void rz_core_debug_map_update_flags(RzCore *core);
 RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *state);
+
+/**
+ * \defgroup caddr Address Description API
+ * \brief Unified API for describing addresses in human-readable formats
+ *
+ * This API provides functions to generate human-readable descriptions of memory
+ * addresses, combining information from flags, functions, and debug symbols.
+ * It supports various output formats including name+offset notation (e.g., "main+0x10"),
+ * source file information, and JSON output.
+ *
+ * Example usage:
+ * \code
+ * char *desc = rz_core_addr_get_name_delta(core, 0x401010);
+ * // Returns "main+16" or "0x401010" if no symbol found
+ * rz_cons_printf("Address: %s\n", desc);
+ * free(desc);
+ * \endcode
+ *
+ */
+
+RZ_API RZ_OWN RzCoreAddrOptions *rz_core_addr_options_new(void);
+RZ_API void rz_core_addr_options_free(RZ_NULLABLE RzCoreAddrOptions *opts);
+RZ_API void rz_core_addr_free(RZ_NULLABLE RzCoreAddr *desc);
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API RZ_OWN char *rz_core_addr_to_string(RZ_NONNULL const RzCoreAddr *desc, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API RZ_OWN char *rz_core_addr_describe_string(RZ_NONNULL RzCore *core, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API RZ_OWN char *rz_core_addr_get_name_delta(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe_with_function(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzCoreAddr *rz_core_addr_describe_with_source(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN char *rz_core_addr_format_for_display(RZ_NULLABLE RzPrint *print, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API void rz_core_addr_to_pj(RZ_NONNULL PJ *pj, RZ_NONNULL const RzCoreAddr *desc, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj, ut64 addr, RZ_NULLABLE const RzCoreAddrOptions *opts);
+RZ_API bool rz_core_addr_get_reloff_info(RZ_NONNULL RzCore *core, ut64 addr, bool prefer_function, bool use_flags, RZ_OUT RZ_NULLABLE char **out_name, RZ_OUT RZ_NULLABLE st64 *out_delta);
+RZ_API RZ_OWN char *rz_core_addr_get_function_offset(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset(RZ_NONNULL RzFlag *flags, ut64 addr);
+RZ_API RZ_OWN char *rz_core_addr_get_flag_offset_prompt(RZ_NONNULL RzFlag *flags, ut64 addr);
 
 /* chash.c */
 RZ_API RzCmdStatus rz_core_hash_plugins_print(RZ_NONNULL RZ_BORROW RzHash *hash, RZ_OUT RzCmdStateOutput *state);
