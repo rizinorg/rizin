@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -514,6 +516,16 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 	int c;
 	const char *file = NULL;
+
+	int n = RZ_DEFAULT_LOGLVL;
+	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
+	if (RZ_STR_ISNOTEMPTY(log_level)) {
+		n = atoi(log_level);
+		free(log_level);
+	}
+	if (n >= 0 && n < RZ_LOGLVL_SIZE) {
+		rz_log_set_level((RzLogLevel)n);
+	}
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
