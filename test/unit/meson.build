@@ -40,6 +40,7 @@ if get_option('enable_tests')
     'config',
     'cons',
     'contrbtree',
+    'core_addr',
     'core_analysis_stats',
     'core_bin',
     'core_cmd',

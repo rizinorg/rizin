@@ -1066,34 +1066,15 @@ static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 		rz_reg_setv(r, bp, s);
 		rz_reg_setv(r, sp, b);
 		//////////
-		char flagdesc[1024], flagdesc2[1024];
-		RzFlagItem *fi = rz_flag_get_at(core->flags, f->addr, true);
-		flagdesc[0] = flagdesc2[0] = 0;
-		if (fi) {
-			if (fi->offset != f->addr) {
-				int delta = (int)(f->addr - fi->offset);
-				if (delta > 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s+%d", fi->name, delta);
-				} else if (delta < 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s%d", fi->name, delta);
-				} else {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s", fi->name);
-				}
-			} else {
-				snprintf(flagdesc, sizeof(flagdesc),
-					"%s", fi->name);
-			}
-		}
+		char *flagdesc = rz_core_addr_get_flag_offset(core->flags, f->addr);
 		//////////
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
 		rz_cons_printf("%d  0x%08" PFMT64x " sp: 0x%08" PFMT64x " %-5d"
-			       "[%s]  %s %s\n",
+			       "[%s]  %s\n",
 			n, f->addr, f->sp, (int)f->size,
-			fcn ? fcn->name : "??", flagdesc, flagdesc2);
+			fcn ? fcn->name : "??", flagdesc ? flagdesc : "");
+		free(flagdesc);
 		rz_cons_push();
 		char *res = rz_core_analysis_all_vars_display(core, fcn, true);
 		rz_cons_pop();
@@ -1220,7 +1201,6 @@ static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 
 static RzCore *_core = NULL;
 
 static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
-	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
 	if (!tn)
@@ -1228,13 +1208,12 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	for (i = 0; i < n->depth - 1; i++) {
 		rz_cons_printf("  ");
 	}
+	char *name = NULL;
 	if (_core) {
-		RzFlagItem *f = rz_flag_get_at(_core->flags, tn->addr, true);
-		if (f) {
-			name = f->name;
-		}
+		name = rz_core_addr_get_flag_offset(_core->flags, tn->addr);
 	}
-	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name);
+	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name ? name : "");
+	free(name);
 }
 
 static void trace_traverse(RTree *t) {

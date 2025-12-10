@@ -128,10 +128,11 @@ typedef struct _utX {
 #define UT32_LO(x) ((ut32)((x) & UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x)) >> 32) & UT32_MAX)
 
-#define RZ_BETWEEN(x, y, z) (((y) >= (x)) && ((y) <= (z)))
-#define RZ_ROUND(x, y)      ((x) % (y)) ? (x) + ((y) - ((x) % (y))) : (x)
-#define RZ_DIM(x, y, z)     (((x) < (y)) ? (y) : ((x) > (z)) ? (z) \
-							     : (x))
+#define RZ_BETWEEN(x, y, z)      (((y) >= (x)) && ((y) <= (z)))
+#define RZ_BETWEEN_EXCL(x, y, z) (((y) >= (x)) && ((y) < (z)))
+#define RZ_ROUND(x, y)           ((x) % (y)) ? (x) + ((y) - ((x) % (y))) : (x)
+#define RZ_DIM(x, y, z)          (((x) < (y)) ? (y) : ((x) > (z)) ? (z) \
+								  : (x))
 #ifndef RZ_MAX_DEFINED
 #define RZ_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define RZ_MAX_DEFINED
