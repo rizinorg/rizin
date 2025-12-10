@@ -2152,18 +2152,6 @@ DEFINE_RZ_READ_OFFSET_BLE(32)
 DEFINE_RZ_READ_OFFSET_BLE(64)
 DEFINE_RZ_READ_OFFSET_BLE(128)
 
-#define rz_read_le8_offset(b, offset) rz_read_le8_offset(b, offset)
-
-#define rz_read_le16_offset(b, offset)  rz_read_le16_offset(b, offset)
-#define rz_read_le32_offset(b, offset)  rz_read_le32_offset(b, offset)
-#define rz_read_le64_offset(b, offset)  rz_read_le64_offset(b, offset)
-#define rz_read_le128_offset(b, offset) rz_read_le128_offset(b, offset)
-
-#define rz_read_be16_offset(b, offset)  rz_read_be16_offset(b, offset)
-#define rz_read_be32_offset(b, offset)  rz_read_be32_offset(b, offset)
-#define rz_read_be64_offset(b, offset)  rz_read_be64_offset(b, offset)
-#define rz_read_be128_offset(b, offset) rz_read_be128_offset(b, offset)
-
 #define rz_read8_offset(b, offset) rz_read_le8_offset(b, offset)
 
 #ifdef __cplusplus
