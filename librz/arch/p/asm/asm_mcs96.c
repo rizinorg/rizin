@@ -260,7 +260,7 @@ static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 				break;
 			}
 			rz_strbuf_set(asm_buf, mnemonic);
-		} else if (mcs96_op[buf[1]].type & MCS96_FE & size > 2) {
+		} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
 			const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
 			rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
 		} else {
