@@ -2,11 +2,33 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
+#include "rz_analysis.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_th.h"
 #include "rz_types.h"
 #include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
+
+bool report_xref_yield(HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type) {
+	RzInterpreterYieldQueue *queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+	if (!queue) {
+		rz_warn_if_reached();
+		return false;
+	}
+	if (!to->is_concrete || rz_bv_len(to->bv) > 64) {
+		// Isn't reported
+		return true;
+	}
+	ut64 to_addr = rz_bv_to_ut64(to->bv);
+	if (queue->filter(&to_addr, queue->filter_data)) {
+		RzAnalysisXRef *xref = RZ_NEW0(RzAnalysisXRef);
+		xref->from = from;
+		xref->to = to_addr;
+		xref->type = type;
+		rz_th_queue_push(queue->yield_queue, xref, true);
+	}
+	return true;
+}
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src) {
 	rz_return_if_fail(dst->bv && src->bv);
