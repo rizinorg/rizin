@@ -38,6 +38,7 @@ typedef struct rz_testfile_counts_t {
 typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
+	bool no_diffing; // disable diffing unless the tests fails.
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -72,6 +73,7 @@ static int help(bool verbose) {
 			"-v",           "",               "Show version information",
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
+			"-N",           "",               "Disable diffing unless the test fails.",
 			"-i",           "",               "Interactive mode",
 			"-y",           "",               "Accept all interactive changes",
 			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
@@ -163,6 +165,7 @@ static bool log_mode = false;
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	bool no_diffing = false;
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
@@ -204,7 +207,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:y");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -232,6 +235,9 @@ int rz_test_main(int argc, const char **argv) {
 			goto beach;
 		case 'V':
 			verbose = true;
+			break;
+		case 'N':
+			no_diffing = true;
 			break;
 		case 'i':
 			interactive = true;
@@ -348,6 +354,7 @@ int rz_test_main(int argc, const char **argv) {
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
+	state.no_diffing = no_diffing;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
 		ret = -1;
@@ -918,7 +925,7 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 		// time_elapsed is in microsecs
 		char *elapsed = readable_elapsed_time(result->time_elapsed);
 		printf(Color_BLUE " %s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, result->test->path, name);
-		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
+		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && !state->no_diffing && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
 		free(elapsed);
