@@ -2114,9 +2114,15 @@ static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
 }
 
 #define DEFINE_RZ_READ_OFFSET_BLE(size) \
-	static inline ut##size rz_read_ble##size##_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset, bool big_endian) { \
+	static inline ut##size rz_read_be##size##_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) { \
 		const ut8 *s = (const ut8 *)src + *offset; \
-		ut##size ret = rz_read_ble##size(s, big_endian); \
+		ut##size ret = rz_read_be##size(s); \
+		*offset += sizeof(ret); \
+		return ret; \
+	} \
+	static inline ut##size rz_read_le##size##_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) { \
+		const ut8 *s = (const ut8 *)src + *offset; \
+		ut##size ret = rz_read_le##size(s); \
 		*offset += sizeof(ret); \
 		return ret; \
 	}
@@ -2128,17 +2134,16 @@ static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
  * \return Return the value of the operation.
  * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
-static inline ut8 rz_read_ble8_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) {
-	ut8 ret = rz_read_at_ble8(src, *offset);
+static inline ut8 rz_read_le8_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) {
+	ut8 ret = rz_read_at_le8(src, *offset);
 	*offset += sizeof(ret);
 	return ret;
 }
 
 /**
- * \brief Read a big endian or little endian (ut16, ut32, ut64) at the specified offset in the buffer and shifts the offset.
+ * \brief Read a big endian or little endian (ut16, ut32, ut64, ut128) at the specified offset in the buffer and shifts the offset.
  * \param src The pointer from which the value is read.
  * \param offset The pointer to offset at which the value is read.
- * \param big_endian ...
  * \return Return the value of the operation.
  * \attention If \p src is \c NULL then \c UT16_MAX is returned.
  */
@@ -2147,17 +2152,17 @@ DEFINE_RZ_READ_OFFSET_BLE(32)
 DEFINE_RZ_READ_OFFSET_BLE(64)
 DEFINE_RZ_READ_OFFSET_BLE(128)
 
-#define rz_read_le8_offset(b, offset) rz_read_ble8_offset(b, offset)
+#define rz_read_le8_offset(b, offset) rz_read_le8_offset(b, offset)
 
-#define rz_read_le16_offset(b, offset)  rz_read_ble16_offset(b, offset, false)
-#define rz_read_le32_offset(b, offset)  rz_read_ble32_offset(b, offset, false)
-#define rz_read_le64_offset(b, offset)  rz_read_ble64_offset(b, offset, false)
-#define rz_read_le128_offset(b, offset) rz_read_ble128_offset(b, offset, false)
+#define rz_read_le16_offset(b, offset)  rz_read_le16_offset(b, offset)
+#define rz_read_le32_offset(b, offset)  rz_read_le32_offset(b, offset)
+#define rz_read_le64_offset(b, offset)  rz_read_le64_offset(b, offset)
+#define rz_read_le128_offset(b, offset) rz_read_le128_offset(b, offset)
 
-#define rz_read_be16_offset(b, offset)  rz_read_ble16_offset(b, offset, true)
-#define rz_read_be32_offset(b, offset)  rz_read_ble32_offset(b, offset, true)
-#define rz_read_be64_offset(b, offset)  rz_read_ble64_offset(b, offset, true)
-#define rz_read_be128_offset(b, offset) rz_read_ble128_offset(b, offset, true)
+#define rz_read_be16_offset(b, offset)  rz_read_be16_offset(b, offset)
+#define rz_read_be32_offset(b, offset)  rz_read_be32_offset(b, offset)
+#define rz_read_be64_offset(b, offset)  rz_read_be64_offset(b, offset)
+#define rz_read_be128_offset(b, offset) rz_read_be128_offset(b, offset)
 
 #define rz_read8_offset(b, offset) rz_read_le8_offset(b, offset)
 
