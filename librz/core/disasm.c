@@ -789,7 +789,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 
 static void ds_reflines_fini(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
-	rz_list_free(analysis->reflines);
+	rz_pvector_free(analysis->reflines);
 	analysis->reflines = NULL;
 	RZ_FREE(ds->refline);
 	RZ_FREE(ds->refline2);
@@ -807,7 +807,7 @@ static void ds_reflines_init(RzDisasmState *ds) {
 			ds->addr, ds->buf, ds->len, ds->nlines,
 			ds->linesout, ds->show_lines_call);
 	} else {
-		rz_list_free(analysis->reflines);
+		rz_pvector_free(analysis->reflines);
 		analysis->reflines = NULL;
 	}
 }
@@ -1119,9 +1119,9 @@ static RzAnalysisDisasmText *ds_disasm_text(RzDisasmState *ds, RzAnalysisDisasmT
 	t->arrow = UT64_MAX;
 	t->text = text;
 	if (ds->core->analysis->reflines) {
-		RzAnalysisRefline *ref;
-		RzListIter *iter;
-		rz_list_foreach (ds->core->analysis->reflines, iter, ref) {
+		void **iter;
+		rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+			RzAnalysisRefline *ref = *iter;
 			if (ref->from == ds->vat) {
 				t->arrow = ref->to;
 				break;
@@ -1140,10 +1140,10 @@ static void ds_begin_line(RzDisasmState *ds) {
 		pj_o(ds->pj);
 		pj_kn(ds->pj, "offset", ds->vat);
 		if (ds->core->analysis->reflines) {
-			RzAnalysisRefline *ref;
-			RzListIter *iter;
+			void **iter;
 			// XXX Probably expensive
-			rz_list_foreach (ds->core->analysis->reflines, iter, ref) {
+			rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+				RzAnalysisRefline *ref = *iter;
 				if (ref->from == ds->vat) {
 					pj_kn(ds->pj, "arrow", ref->to);
 					break;
