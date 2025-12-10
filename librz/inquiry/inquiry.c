@@ -151,8 +151,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
 	io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
 	if (!io_request_q || !io_result_q) {
-			return_code = false;
-			goto error_free;
+		return_code = false;
+		goto error_free;
 	}
 
 	// Add the Effect for each entry point.
@@ -259,10 +259,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	}
 
 	// Dispatch prototype interpreter into a thread.
-	// This part plays the role of the cache now.
-	// Waiting for new Effects to be requested and sending them.
 	RZ_LOG_WARN("INQUIRY: Start main interpretation thread.\n");
 	RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+
+	// From here on, the code plays the role of the cache, IO handler,
+	// and yield consumer.
+	// - Waiting for new Effects to be requested and sending them.
+	// - Handling IO requests.
+	// - Receiving and adding the found xrefs to RzAnalysis.
+	// In the final implementation each of those roles would be split into
+	// two or more separated modules running in parallel.
 	RZ_LOG_WARN("INQUIRY: Enforce enabling IO cache.\n");
 	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
 	rz_config_set(core->config, "io.cache", "true");
@@ -280,53 +286,65 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			return_code = rz_th_get_retv(interpr_th);
 			break;
 		}
-		ut64 *addr = rz_th_queue_pop(addr_queue, false);
-		if (addr) {
-			// This if() emulates the IL cache.
-			RZ_LOG_WARN("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-			RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
-			if (!bb) {
-				RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
-				// Signal interpreter the lifting failed.
-				rz_th_cond_signal_all(rz_th_queue_get_cond(iset->il_queue));
-				rz_atomic_bool_set(is_running, false);
+
+		// This block mimics the IL cache.
+		{
+			ut64 *addr = rz_th_queue_pop(addr_queue, false);
+			if (addr) {
+				RZ_LOG_WARN("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
+				RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
+				if (!bb) {
+					RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
+					// Signal interpreter the lifting failed.
+					rz_th_cond_signal_all(rz_th_queue_get_cond(iset->il_queue));
+					rz_atomic_bool_set(is_running, false);
+					continue;
+				}
+				RZ_LOG_WARN("INQUIRY: Send IL result: %p.\n", bb);
+				rz_pvector_push(il_cache, bb);
+				// TODO: Free unused if too big.
+				rz_th_queue_push(il_queue, bb, true);
+			}
+		}
+
+		// This plays the IO handler for a single(!) interpreter instances.
+		// In the future we should have only one IO handler for multiple interpreters.
+		// But this requires multiple IO write caches
+		// (one for each interpreter instance).
+		// Because this is not yet implemented, there is only one interpreter thread for now.
+		{
+			RzInterpreterIORequest *io_req = rz_th_queue_pop(io_request_q, false);
+			if (!io_req) {
 				continue;
 			}
-			RZ_LOG_WARN("INQUIRY: Send IL result: %p.\n", bb);
-			rz_pvector_push(il_cache, bb);
-			// TODO: Free unused if too big.
-			rz_th_queue_push(il_queue, bb, true);
-		}
 
-		// This emulates the IO handler for a single(!) interpreter instances.
-		// In the future we should have only one IO handler
-		// but this requires that it can handle multiple IO write caches
-		// (one for each interpreter instance).
-		// Because this is not implemented there is only one interpreter thread for now.
-		RzInterpreterIORequest *io_req = rz_th_queue_pop(io_request_q, false);
-		if (!io_req) {
-			continue;
-		}
-
-		RZ_LOG_WARN("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
-			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
-			io_req->addr);
-		if (io_req->type == RZ_INTERPRETER_IO_READ) {
-			if (io_req->n_bytes > MAX_IO_DATA_READ) {
-				RZ_LOG_ERROR("Plugin tried to read more than 0x%" PFMT32x " bytes.\n"
-				             "This is more than configured. It will only read MAX_IO_DATA_READ bytes.\nPlease set MAX_IO_DATA_READ to a larger value and rebuild Rizin.\n", MAX_IO_DATA_READ);
+			RZ_LOG_WARN("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
+				io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+				io_req->addr);
+			if (io_req->type == RZ_INTERPRETER_IO_READ) {
+				if (io_req->n_bytes > MAX_IO_DATA_READ) {
+					RZ_LOG_ERROR("Plugin tried to read more than 0x%" PFMT32x " bytes.\n"
+						     "This is more than configured. It will only read MAX_IO_DATA_READ bytes.\nPlease set MAX_IO_DATA_READ to a larger value and rebuild Rizin.\n",
+						MAX_IO_DATA_READ);
+				}
+				// Cast to ut8* here. The constant is only there so interpreter plugins don't free it by accident.
+				int n_read = rz_io_nread_at(core->io, io_req->addr, (ut8 *)io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
+				io_res->req_ok = n_read >= 0;
+				io_res->read.n_bytes = n_read;
+			} else {
+				io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
 			}
-			// Cast to ut8* here. The constant is only there so interpreter plugins don't free it by accident.
-			int n_read = rz_io_nread_at(core->io, io_req->addr, (ut8 *) io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
-			io_res->req_ok = n_read >= 0;
-			io_res->read.n_bytes = n_read;
-		} else {
-			io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
+			RZ_LOG_WARN("INQUIRY: Sent IO %s result. Success = %s.\n",
+				io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+				io_res->req_ok ? "true" : "false");
+			rz_th_queue_push(io_result_q, io_res, true);
 		}
-		RZ_LOG_WARN("INQUIRY: Sent IO %s result. Success = %s.\n",
-			io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
-			io_res->req_ok ? "true" : "false");
-		rz_th_queue_push(io_result_q, io_res, true);
+
+		// This part plays the role of a yield consumer.
+		// In our prototype it inly receives xrefs and stores them in RzAnalysis.
+		{
+			
+		}
 	}
 	RZ_LOG_WARN("INQUIRY: Done\n");
 
