@@ -30,9 +30,9 @@ RzBinAddr *rz_bin_mz_get_entrypoint(const struct rz_bin_mz_obj_t *bin) {
 		ut64 paddr = rz_bin_mz_la_to_pa(bin, la);
 		if (paddr >= bin->size) {
 			RZ_LOG_ERROR("The entry point is outside the file size\n");
-		return NULL;
-	}
-		RZ_LOG_WARN("The entry point (0x%llx) is outside the load module size (0x%x)\n", 
+			return NULL;
+		}
+		RZ_LOG_WARN("The entry point (0x%llx) is outside the load module size (0x%x)\n",
 			(unsigned long long)la, bin->load_module_size);
 	}
 	
@@ -91,7 +91,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		goto err_out;
 	}
 	rz_pvector_push(seg_vec, section);
-	
+
 	/* Add code segment from CS register if it's different from 0 */
 	cs = bin->dos_header->cs;
 	ut64 cs_laddr = rz_bin_mz_va_to_la(cs, 0);
@@ -106,7 +106,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 			rz_pvector_push(seg_vec, section);
 		}
 	}
-	
+
 	rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 
 	relocs = bin->relocation_entries;
@@ -156,12 +156,12 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		c.vaddr = ss_laddr;
 		if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
 			section = rz_bin_mz_init_section(bin, ss_laddr);
-		if (!section) {
-			goto err_out;
+			if (!section) {
+				goto err_out;
+			}
+			rz_pvector_push(seg_vec, section);
+			rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 		}
-		rz_pvector_push(seg_vec, section);
-		rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
-	}
 	}
 
 	/* Fixup sizes and addresses, set name, permissions and set add flag */
@@ -202,11 +202,11 @@ err_out:
 
 struct rz_bin_mz_reloc_t *rz_bin_mz_get_relocs(const struct rz_bin_mz_obj_t *bin) {
 	int i, j;
-	
+
 	if (!bin || !bin->dos_header) {
 		return NULL;
 	}
-	
+
 	const int num_relocs = bin->dos_header->num_relocs;
 	const MZ_image_relocation_entry *const rel_entry = bin->relocation_entries;
 
@@ -301,13 +301,13 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		dos_file_size = bin->size;
 		bin->dos_file_size = dos_file_size;
 	}
-	
+
 	int header_size = mz->header_paragraphs << 4;
 	if (header_size > dos_file_size) {
 		RZ_LOG_ERROR("Header size (0x%x) exceeds DOS file size (0x%x)\n", header_size, dos_file_size);
 		return false;
 	}
-	
+
 	bin->load_module_size = dos_file_size - header_size;
 	relocations_size = mz->num_relocs * sizeof(MZ_image_relocation_entry);
 	if (mz->reloc_table_offset > 0 && (mz->reloc_table_offset + relocations_size) > bin->size) {
@@ -370,7 +370,7 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 			RZ_LOG_WARN("Failed to read relocation entry %d, using %d relocations\n", i, i);
 			mz->num_relocs = i;
 			if (i == 0) {
-			RZ_FREE(bin->relocation_entries);
+				RZ_FREE(bin->relocation_entries);
 			}
 			break;
 		}
