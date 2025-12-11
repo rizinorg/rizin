@@ -112,7 +112,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 	relocs = bin->relocation_entries;
 	num_relocs = relocs ? bin->dos_header->num_relocs : 0;
 	for (i = 0; i < num_relocs; i++) {
-		RzBinSection c;
+		RzBinSection c = { 0 };
 		ut64 laddr, paddr, section_laddr;
 		ut16 curr_seg;
 
@@ -162,6 +162,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 			rz_pvector_push(seg_vec, section);
 			rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 		}
+	}
 	}
 
 	/* Fixup sizes and addresses, set name, permissions and set add flag */
