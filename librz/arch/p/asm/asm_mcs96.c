@@ -118,154 +118,156 @@ static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 }
 
 static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
-	if (size > 0) {
-		if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
-			ut8 lreg_bits = buf[2] & 0x3;
-			// lreg.1 lreg.0 Execute
-			// 0      0      SHLL
-			// 0      1      MVAC
-			// 1      0      Reserved
-			// 1      1      MSAC
-			const char *mnemonic;
-			switch (lreg_bits) {
-			case 0x0:
-				mnemonic = "shll";
-				break;
-			case 0x1:
-				mnemonic = "mvac";
-				break;
-			case 0x3:
-				mnemonic = "msac";
-				break;
-			default:
-				mnemonic = "invalid";
-				break;
-			}
-			rz_strbuf_set(asm_buf, mnemonic);
-		} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
-			// RPT waop
-			// (010000aa) (waop) (00) (04)
-			// RPTxxx
-			// (010000aa) (waop) (10 - 1F) (04)
-			// RPTI
-			// (010000aa) (waop) (20) (04)
-			// RPTIxxx
-			// (010000aa) (waop) (30 - 3F) (04)
-			const char *mnemonic;
-			switch (buf[size - 2]) {
-			case 0x00:
-				mnemonic = "rpt";
-				break;
-			case 0x10:
-				mnemonic = "rptnst";
-				break;
-			case 0x11:
-				mnemonic = "rptnh";
-				break;
-			case 0x12:
-				mnemonic = "rptgt";
-				break;
-			case 0x13:
-				mnemonic = "rptnc";
-				break;
-			case 0x14:
-				mnemonic = "rptnvt";
-				break;
-			case 0x15:
-				mnemonic = "rptnv";
-				break;
-			case 0x16:
-				mnemonic = "rptge";
-				break;
-			case 0x17:
-				mnemonic = "rptne";
-				break;
-			case 0x18:
-				mnemonic = "rptst";
-				break;
-			case 0x19:
-				mnemonic = "rpth";
-				break;
-			case 0x1a:
-				mnemonic = "rptle";
-				break;
-			case 0x1b:
-				mnemonic = "rptc";
-				break;
-			case 0x1c:
-				mnemonic = "rptvt";
-				break;
-			case 0x1d:
-				mnemonic = "rptv";
-				break;
-			case 0x1e:
-				mnemonic = "rptlt";
-				break;
-			case 0x1f:
-				mnemonic = "rpte";
-				break;
-			case 0x20:
-				mnemonic = "rpti";
-				break;
-			case 0x30:
-				mnemonic = "rptinst";
-				break;
-			case 0x31:
-				mnemonic = "rptinh";
-				break;
-			case 0x32:
-				mnemonic = "rptigt";
-				break;
-			case 0x33:
-				mnemonic = "rptinc";
-				break;
-			case 0x34:
-				mnemonic = "rptinvt";
-				break;
-			case 0x35:
-				mnemonic = "rptinv";
-				break;
-			case 0x36:
-				mnemonic = "rptige";
-				break;
-			case 0x37:
-				mnemonic = "rptine";
-				break;
-			case 0x38:
-				mnemonic = "rptist";
-				break;
-			case 0x39:
-				mnemonic = "rptih";
-				break;
-			case 0x3a:
-				mnemonic = "rptile";
-				break;
-			case 0x3b:
-				mnemonic = "rptic";
-				break;
-			case 0x3c:
-				mnemonic = "rptivt";
-				break;
-			case 0x3d:
-				mnemonic = "rptiv";
-				break;
-			case 0x3e:
-				mnemonic = "rptilt";
-				break;
-			case 0x3f:
-				mnemonic = "rptie";
-				break;
-			default:
-				mnemonic = "and";
-				break;
-			}
-			rz_strbuf_set(asm_buf, mnemonic);
-		} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
-			const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
-			rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
-		} else {
-			rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
+	if (size <= 0) {
+		return;
+	}
+
+	if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
+		ut8 lreg_bits = buf[2] & 0x3;
+		// lreg.1 lreg.0 Execute
+		// 0      0      SHLL
+		// 0      1      MVAC
+		// 1      0      Reserved
+		// 1      1      MSAC
+		const char *mnemonic;
+		switch (lreg_bits) {
+		case 0x0:
+			mnemonic = "shll";
+			break;
+		case 0x1:
+			mnemonic = "mvac";
+			break;
+		case 0x3:
+			mnemonic = "msac";
+			break;
+		default:
+			mnemonic = "invalid";
+			break;
 		}
+		rz_strbuf_set(asm_buf, mnemonic);
+	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
+		// RPT waop
+		// (010000aa) (waop) (00) (04)
+		// RPTxxx
+		// (010000aa) (waop) (10 - 1F) (04)
+		// RPTI
+		// (010000aa) (waop) (20) (04)
+		// RPTIxxx
+		// (010000aa) (waop) (30 - 3F) (04)
+		const char *mnemonic;
+		switch (buf[size - 2]) {
+		case 0x00:
+			mnemonic = "rpt";
+			break;
+		case 0x10:
+			mnemonic = "rptnst";
+			break;
+		case 0x11:
+			mnemonic = "rptnh";
+			break;
+		case 0x12:
+			mnemonic = "rptgt";
+			break;
+		case 0x13:
+			mnemonic = "rptnc";
+			break;
+		case 0x14:
+			mnemonic = "rptnvt";
+			break;
+		case 0x15:
+			mnemonic = "rptnv";
+			break;
+		case 0x16:
+			mnemonic = "rptge";
+			break;
+		case 0x17:
+			mnemonic = "rptne";
+			break;
+		case 0x18:
+			mnemonic = "rptst";
+			break;
+		case 0x19:
+			mnemonic = "rpth";
+			break;
+		case 0x1a:
+			mnemonic = "rptle";
+			break;
+		case 0x1b:
+			mnemonic = "rptc";
+			break;
+		case 0x1c:
+			mnemonic = "rptvt";
+			break;
+		case 0x1d:
+			mnemonic = "rptv";
+			break;
+		case 0x1e:
+			mnemonic = "rptlt";
+			break;
+		case 0x1f:
+			mnemonic = "rpte";
+			break;
+		case 0x20:
+			mnemonic = "rpti";
+			break;
+		case 0x30:
+			mnemonic = "rptinst";
+			break;
+		case 0x31:
+			mnemonic = "rptinh";
+			break;
+		case 0x32:
+			mnemonic = "rptigt";
+			break;
+		case 0x33:
+			mnemonic = "rptinc";
+			break;
+		case 0x34:
+			mnemonic = "rptinvt";
+			break;
+		case 0x35:
+			mnemonic = "rptinv";
+			break;
+		case 0x36:
+			mnemonic = "rptige";
+			break;
+		case 0x37:
+			mnemonic = "rptine";
+			break;
+		case 0x38:
+			mnemonic = "rptist";
+			break;
+		case 0x39:
+			mnemonic = "rptih";
+			break;
+		case 0x3a:
+			mnemonic = "rptile";
+			break;
+		case 0x3b:
+			mnemonic = "rptic";
+			break;
+		case 0x3c:
+			mnemonic = "rptivt";
+			break;
+		case 0x3d:
+			mnemonic = "rptiv";
+			break;
+		case 0x3e:
+			mnemonic = "rptilt";
+			break;
+		case 0x3f:
+			mnemonic = "rptie";
+			break;
+		default:
+			mnemonic = "and";
+			break;
+		}
+		rz_strbuf_set(asm_buf, mnemonic);
+	} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
+		const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
+		rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
+	} else {
+		rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
 	}
 }
 
