@@ -8,7 +8,6 @@ packages:
 environment:
     CXX: clang++
     CC: clang
-    LANG: en_US.UTF-8
 sources:
     - https://github.com/rizinorg/rizin
     - https://github.com/rizinorg/rizin-testbins
