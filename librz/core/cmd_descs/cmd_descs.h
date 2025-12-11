@@ -725,6 +725,8 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_set_s_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_analysis_xrefs_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "axt"
 RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "axtl"
+RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_verbose_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "axf"
 RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "axtg"
