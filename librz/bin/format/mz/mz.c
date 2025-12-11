@@ -160,7 +160,6 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 				goto err_out;
 			}
 			rz_pvector_push(seg_vec, section);
-			rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 		}
 	}
 	}
