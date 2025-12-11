@@ -14,7 +14,6 @@ EOF
 RUN
 
 NAME=asm.assembler
-BROKEN=1
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

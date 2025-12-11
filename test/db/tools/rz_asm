@@ -49,7 +49,6 @@ EOF
 RUN
 
 NAME=rz-asm arm/thumb branch errors
-BROKEN=1 # Only on Windows
 FILE==
 CMDS=<<EOF
 !rz-asm -a arm -b 16 'b.n 8'
@@ -405,13 +404,6 @@ esil:     0,0xFF,|,DUP,!,SWAP,&,r0,SWAP,cpsr,&,|,cpsr,=
 stackptr: 0
 
 EOF
-RUN
-
-NAME=rz-asm -k
-BROKEN=1
-FILE==
-CMDS=!rz-asm -k darwin 0x90
-EXPECT=
 RUN
 
 NAME=rz-asm -a x86 -b 64 -E 0x55
