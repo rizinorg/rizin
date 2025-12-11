@@ -2660,28 +2660,20 @@ static void ds_print_lines_left(RzDisasmState *ds) {
 		free(sect);
 	}
 	if (ds->show_symbols) {
-		const char *name = "";
-		int delta = 0;
-		if (ds->fcn) {
-			ds->lastflagitem.offset = ds->fcn->addr;
-			ds->lastflagitem.name = ds->fcn->name;
-			ds->lastflag = &ds->lastflagitem;
-		} else {
-			RzFlagItem *fi = rz_flag_get_at(core->flags, ds->at, !ds->lastflag);
-			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				ds->lastflagitem.offset = fi->offset;
-				ds->lastflagitem.name = fi->name;
-				ds->lastflag = &ds->lastflagitem;
-			}
-		}
-		if (ds->lastflag && ds->lastflag->name) {
-			name = ds->lastflag->name;
-			delta = ds->at - ds->lastflag->offset;
-		}
-		{
-			char *str = rz_str_newf("%s + %-4d", name, delta);
+		// Use unified API approach for getting name+delta
+		char *name = NULL;
+		st64 delta = 0;
+		bool found = rz_core_addr_get_reloff_info(core, ds->at,
+			true, // prefer_function
+			true, // use_flags
+			&name, &delta);
+		if (found && name) {
+			char *str = rz_str_newf("%s + %-4" PFMT64d, name, delta);
 			printCol(ds, str, ds->show_symbols_col, COLOR(ds, num));
 			free(str);
+			free(name);
+		} else {
+			printCol(ds, " + 0   ", ds->show_symbols_col, COLOR(ds, num));
 		}
 	}
 	if (ds->line) {
@@ -2774,15 +2766,15 @@ static void ds_print_offset(RzDisasmState *ds) {
 	rz_print_set_screenbounds(core->print, at);
 	if (ds->show_offset) {
 		const char *label = NULL;
-		RzFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
 		unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
+			// Get function at this address (unified API approach)
 			RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, at);
 			if (!f) {
-				f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_NULL); // rz_analysis_get_fcn_in (core->analysis, at, RZ_ANALYSIS_FCN_TYPE_NULL);
+				f = rz_analysis_get_fcn_in(core->analysis, at, RZ_ANALYSIS_FCN_TYPE_NULL);
 			}
 			if (f) {
 				delta = at - f->addr;
@@ -2790,25 +2782,17 @@ static void ds_print_offset(RzDisasmState *ds) {
 				ds->lastflagitem.offset = f->addr;
 				ds->lastflag = &ds->lastflagitem;
 				label = f->name;
-			} else {
-				if (ds->show_reloff_flags) {
-					/* XXX: this is wrong if starting to disasm after a flag */
-					fi = rz_flag_get_i(core->flags, at);
-					if (fi) {
-						ds->lastflag = fi;
-					}
-					if (ds->lastflag) {
-						if (ds->lastflag->offset == at) {
-							delta = 0;
-						} else {
-							delta = at - ds->lastflag->offset;
-						}
-					} else {
-						delta = at - core->offset;
-					}
-					if (ds->lastflag) {
-						label = ds->lastflag->name;
-					}
+			} else if (ds->show_reloff_flags) {
+				// Fall back to flags using unified API approach
+				RzFlagItem *fi = rz_flag_get_at(core->flags, at, true);
+				if (fi) {
+					ds->lastflag = fi;
+				}
+				if (ds->lastflag) {
+					delta = at - ds->lastflag->offset;
+					label = ds->lastflag->name;
+				} else {
+					delta = at - core->offset;
 				}
 			}
 			if (!ds->lastflag) {
@@ -3436,10 +3420,10 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		}
 		if (delta > 0) {
 			ds_begin_comment(ds);
-			ds_comment(ds, true, "; %s+0x%x", f->name, delta);
+			ds_comment(ds, true, "; %s+0x%" PFMT64x, f->name, (ut64)delta);
 		} else if (delta < 0) {
 			ds_begin_comment(ds);
-			ds_comment(ds, true, "; %s-0x%x", f->name, -delta);
+			ds_comment(ds, true, "; %s-0x%" PFMT64x, f->name, (ut64)(-delta));
 		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr, f->name))) {
 			RzFlagItem *flag_sym;
 			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {

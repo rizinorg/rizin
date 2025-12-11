@@ -915,7 +915,6 @@ RUN
 
 NAME=tp blocksize
 FILE==
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 wx 790a790a790a790a790a790a790a790a790a

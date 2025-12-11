@@ -75,10 +75,60 @@ bool test_path_prefix(void) {
 	mu_end;
 }
 
+bool test_path_normalize_expand(void) {
+	char *out;
+
+	out = rz_path_normalize_expand("", strlen(""));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, ".", "empty input should normalize to '.'");
+	free(out);
+
+	out = rz_path_normalize_expand("foo/bar", strlen("foo/bar"));
+	mu_assert_notnull(out, "result should not be NULL");
+#ifdef __WINDOWS__
+	mu_assert_streq(out, ".\\foo\\bar", "relative path should be prefixed with '.\\'");
+#else
+	mu_assert_streq(out, "./foo/bar", "relative path should be prefixed with './'");
+#endif
+	free(out);
+	out = rz_path_normalize_expand(".hidden_dir", strlen(".hidden_dir"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, ".hidden_dir", "dotfile should be preserved");
+	free(out);
+
+	out = rz_path_normalize_expand("/home/user/.././etc", strlen("/home/user/.././etc"));
+	mu_assert_notnull(out, "result should not be NULL");
+#ifdef __WINDOWS__
+	free(out);
+	out = rz_path_normalize_expand("C:\\Users\\Test", strlen("C:\\Users\\Test"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "C:\\Users\\Test", "Windows absolute path should be unchanged");
+#else
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "/home/user/.././etc", "absolute path should be unchanged");
+#endif
+	free(out);
+
+	out = rz_path_normalize_expand("/home/user/./doc/././", strlen("/home/user/./doc/././"));
+	mu_assert_notnull(out, "result should not be NULL");
+#ifdef __WINDOWS__
+	free(out);
+	out = rz_path_normalize_expand("C:\\Users\\Test\\.\\.\\", strlen("C:\\Users\\Test\\.\\.\\"));
+	mu_assert_notnull(out, "result should not be NULL");
+	mu_assert_streq(out, "C:\\Users\\Test\\.\\.\\", "should preserve . in absolute paths");
+#else
+	mu_assert_streq(out, "/home/user/./doc/././", "should preserve . in absolute paths");
+#endif
+	free(out);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
 	mu_run_test(test_path_prefix);
+	mu_run_test(test_path_normalize_expand);
 	return tests_passed != tests_run;
 }
 
