@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_types.h"
+#include "rz_util/rz_sys.h"
+#include <rz_util/rz_str.h>
 #include <rz_core.h>
 #include <errno.h>
+#include <string.h>
 
 static int cmpstr(const void *_a, const void *_b, void *user) {
 	const char *a = _a, *b = _b;
@@ -13,7 +17,7 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 	rz_return_val_if_fail(file, NULL);
 
 	const char *p = NULL;
-	RzList *list = NULL;
+	char *sorted_str = NULL;
 	if ((p = strchr(file, ' '))) {
 		p = p + 1;
 	} else {
@@ -26,17 +30,68 @@ RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file) {
 		if (!data) {
 			eprintf("No such file or directory\n");
 		} else {
-			list = rz_str_split_list(data, "\n", 0);
-			rz_list_sort(list, cmpstr, NULL);
-			data = rz_list_to_str(list, '\n');
-			rz_list_free(list);
+			sorted_str = rz_syscmd_sort_str(data);
 		}
+		free(data);
 		free(filename);
-		return data;
+		return sorted_str;
 	} else {
 		eprintf("Usage: sort [file]\n");
 	}
 	return NULL;
+}
+
+/**
+ * \brief Sort the given piped text.
+ * \param input piped text to sort.
+ * \param length Length of the command result string.
+ * \return Newly allocated sorted string.
+ *
+ * Takes the input text and returns its sorted form (for shell).
+ */
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *length) {
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	char *sorted_str = rz_syscmd_sort_str(input);
+	*length = strlen((const char *)sorted_str);
+
+	return sorted_str;
+}
+
+/**
+ * \brief Sort the given text.
+ * \param input text to sort.
+ * \return Newly allocated sorted string.
+ *
+ * Takes the input text and returns its sorted form.
+ */
+RZ_API RZ_OWN char *rz_syscmd_sort_str(RZ_NONNULL const char *input) {
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	RzList *list = NULL;
+
+	char *data = rz_str_dup(input);
+	if (!data) {
+		return NULL;
+	}
+
+	list = rz_str_split_list(data, "\n", 0);
+	if (!list) {
+		free(data);
+		return NULL;
+	}
+
+	rz_list_sort(list, cmpstr, NULL);
+	rz_list_del_n(list, 0);
+	char *sorted_str = rz_list_to_str(list, '\n');
+
+	rz_list_free(list);
+	free(data);
+	return sorted_str;
 }
 
 RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count) {
@@ -93,7 +148,7 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 	rz_return_val_if_fail(file, NULL);
 
 	const char *p = NULL;
-	RzList *list = NULL;
+	char *uniq_str = NULL;
 	if (file) {
 		if ((p = strchr(file, ' '))) {
 			p = p + 1;
@@ -108,18 +163,73 @@ RZ_API RZ_OWN char *rz_syscmd_uniq(RZ_NONNULL const char *file) {
 		if (!data) {
 			eprintf("No such file or directory\n");
 		} else {
-			list = rz_str_split_list(data, "\n", 0);
-			RzList *uniq_list = rz_list_uniq(list, cmpstr, NULL);
-			data = rz_list_to_str(uniq_list, '\n');
-			rz_list_free(uniq_list);
-			rz_list_free(list);
+			uniq_str = rz_syscmd_uniq_str(data);
 		}
+		free(data);
 		free(filename);
-		return data;
+		return uniq_str;
 	} else {
 		eprintf("Usage: uniq [file]\n");
 	}
 	return NULL;
+}
+
+/**
+ * \brief Produce the unique filtered form of the piped input.
+ * \param input piped string to process.
+ * \param length Length of the command result string.
+ * \return Newly allocated string containing the uniq output.
+ *
+ * Takes the input text and returns its unique filtered result.
+ */
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *length) {
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	char *return_data = rz_syscmd_uniq_str(input);
+
+	*length = strlen((const char *)return_data);
+	return return_data;
+}
+
+/**
+ * \brief Produce the unique filtered form of the input.
+ * \param input string to process.
+ * \return Newly allocated string containing the uniq output.
+ *
+ * Takes the input text and returns its unique filtered result.
+ */
+RZ_API RZ_OWN char *rz_syscmd_uniq_str(RZ_NONNULL const char *input) {
+	if (RZ_STR_ISEMPTY(input)) {
+		return NULL;
+	}
+
+	RzList *list = NULL;
+	char *data = rz_str_dup(input);
+	if (!data) {
+		return NULL;
+	}
+
+	list = rz_str_split_list(data, "\n", 0);
+	if (!list) {
+		free(data);
+		return NULL;
+	}
+
+	RzList *uniq_list = rz_list_uniq(list, cmpstr, NULL);
+	if (!uniq_list) {
+		rz_list_free(list);
+		free(data);
+		return NULL;
+	}
+	rz_list_del_n(uniq_list, rz_list_length(uniq_list) - 1);
+	char *return_str = rz_list_to_str(uniq_list, '\n');
+
+	rz_list_free(uniq_list);
+	rz_list_free(list);
+	free(data);
+	return return_str;
 }
 
 RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2) {

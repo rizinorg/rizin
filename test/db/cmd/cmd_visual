@@ -204,6 +204,7 @@ CMDS=<<EOF
 e scr.interactive=true
 e scr.columns=80
 e scr.rows=12
+e asm.offset=false
 aF
 < qq; VV
 echo

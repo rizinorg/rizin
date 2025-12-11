@@ -19,6 +19,16 @@ static RzCmdDescHelp xd_help = {
 	.args = xd_args,
 };
 
+static RzCmdDescArg xr_args[] = {
+	{ .name = "D1", .type = RZ_CMD_ARG_TYPE_FOLDER },
+	{ 0 },
+};
+
+static RzCmdDescHelp xr_help = {
+	.summary = "xr summary",
+	.args = xr_args,
+};
+
 static RzCmdDescArg xe_args[] = {
 	{ .name = "f1", .type = RZ_CMD_ARG_TYPE_STRING },
 	{ 0 },
@@ -86,6 +96,8 @@ static RzCore *fake_core_new(void) {
 	mu_assert_notnull(x, "x");
 	RzCmdDesc *xd = rz_cmd_desc_argv_new(cmd, x, "xd", x_handler, &xd_help);
 	mu_assert_notnull(xd, "xd");
+	RzCmdDesc *xr = rz_cmd_desc_argv_new(cmd, x, "xr", x_handler, &xr_help);
+	mu_assert_notnull(xr, "xr");
 	RzCmdDesc *xe = rz_cmd_desc_argv_new(cmd, x, "xe", x_handler, &xe_help);
 	mu_assert_notnull(xe, "xe");
 	RzCmdDesc *p = rz_cmd_desc_argv_new(cmd, root, "p", x_handler, &p_help);
@@ -132,9 +144,10 @@ static bool test_autocmplt_cmdid(void) {
 
 	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
 	mu_assert_eq(r->end, 1, "should autocomplete ending at 1");
-	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 commands starting with `x`");
+	mu_assert_eq(rz_pvector_len(&r->options), 3, "there are 3 commands starting with `x`");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "xe", "one is xe");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "xr", "one is xr");
+	mu_assert_streq(rz_pvector_at(&r->options, 2), "xe", "one is xe");
 	rz_line_ns_completion_result_free(r);
 
 	strcpy(buf->data, "p @@c:x");
@@ -145,9 +158,10 @@ static bool test_autocmplt_cmdid(void) {
 	mu_assert_notnull(r, "r should be returned");
 	mu_assert_eq(r->start, buf->length - 1, "start is ok");
 	mu_assert_eq(r->end, buf->length, "end is ok");
-	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 commands starting with `x`");
+	mu_assert_eq(rz_pvector_len(&r->options), 3, "there are 3 commands starting with `x`");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "xe", "one is xe");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "xr", "one is xr");
+	mu_assert_streq(rz_pvector_at(&r->options, 2), "xe", "one is xe");
 	rz_line_ns_completion_result_free(r);
 
 	fake_core_free(core);
@@ -167,12 +181,13 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_notnull(r, "result should be there");
 	mu_assert_eq(r->start, buf->length, "start should be ok");
 	mu_assert_eq(r->end, buf->length, "end should be ok");
-	mu_assert_eq(rz_pvector_len(&r->options), 5, "there are 4 commands available");
+	mu_assert_eq(rz_pvector_len(&r->options), 6, "there are 4 commands available");
 	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
 	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
 	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
-	mu_assert_streq(rz_pvector_at(&r->options, 4), "z", "one is z");
+	mu_assert_streq(rz_pvector_at(&r->options, 3), "xr", "one is xr");
+	mu_assert_streq(rz_pvector_at(&r->options, 4), "xe", "one is xe");
+	mu_assert_streq(rz_pvector_at(&r->options, 5), "z", "one is z");
 	rz_line_ns_completion_result_free(r);
 
 	fake_core_free(core);
@@ -277,6 +292,63 @@ static bool test_autocmplt_newarg(void) {
 	rz_file_rm("file1");
 	rz_file_rm("file2");
 	rz_file_rm("newarg_test");
+	rz_sys_chdir(cwd);
+	free(cwd);
+
+	fake_core_free(core);
+	mu_end;
+}
+
+static bool test_autocmplt_arg_folder(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_notnull(core, "core should be created");
+	RzLineBuffer *buf = &core->cons->line->buffer;
+
+	char *cwd = rz_sys_getdir();
+	rz_sys_mkdir("New_test_folder");
+	rz_sys_chdir("New_test_folder");
+	rz_sys_mkdir("test_folder_1");
+	rz_sys_mkdir("test_folder_2");
+	mu_assert_true(rz_file_touch("test_file_1"), "create test_file_1");
+	mu_assert_true(rz_file_touch("test_file_2"), "create test_file_2");
+
+	const char *s = "xr ";
+
+	strcpy(buf->data, s);
+	buf->length = strlen(s);
+	buf->index = buf->length;
+
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+	mu_assert_notnull(r, "completion result should not be null for command");
+	mu_assert_eq(r->start, buf->length, "should autocomplete starting from position");
+	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
+
+	size_t found_folder_1 = 0, found_folder_2 = 0, found_files = 0;
+	void **it;
+	rz_pvector_foreach (&r->options, it) {
+		const char *f = *(const char **)it;
+
+		if (rz_file_is_directory(f)) {
+			if (rz_str_strchr(f, "test_folder_1"))
+				found_folder_1 = 1;
+			if (rz_str_strchr(f, "test_folder_2"))
+				found_folder_2 = 1;
+		} else {
+			found_files++;
+		}
+	}
+
+	mu_assert_true(found_folder_1, "test_folder_1 should be in completions");
+	mu_assert_true(found_folder_2, "test_folder_2 should be in completions");
+	mu_assert_eq(found_files, 0, "NO files should be in folder type completions");
+	rz_line_ns_completion_result_free(r);
+
+	rz_file_rm("test_file_1");
+	rz_file_rm("test_file_2");
+	rz_file_rm("test_folder_1");
+	rz_file_rm("test_folder_2");
+	rz_file_rm("New_test_folder");
 	rz_sys_chdir(cwd);
 	free(cwd);
 
@@ -717,6 +789,7 @@ bool all_tests() {
 	mu_run_test(test_autocmplt_argid);
 	mu_run_test(test_autocmplt_quotedarg);
 	mu_run_test(test_autocmplt_newarg);
+	mu_run_test(test_autocmplt_arg_folder);
 	mu_run_test(test_autocmplt_fcn);
 	mu_run_test(test_autocmplt_eval);
 	mu_run_test(test_autocmplt_seek);

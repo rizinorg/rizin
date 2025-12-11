@@ -16,6 +16,7 @@ rz_core_sources = [
   'analysis_objc.c',
   'analysis_tp.c',
   'basefind.c',
+  'caddr.c',
   'cagraph.c',
   'cgraph.c',
   'canalysis.c',

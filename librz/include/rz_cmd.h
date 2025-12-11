@@ -53,6 +53,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
 	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
 	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
+	RZ_CMD_ARG_TYPE_FOLDER, ///< Argument is a directory or path
 } RzCmdArgType;
 
 /**
@@ -93,6 +94,18 @@ typedef enum {
 	RZ_OUTPUT_MODE_GRAPH = 1 << 8,
 	RZ_OUTPUT_MODE_STR_BUF = 1 << 9,
 } RzOutputMode;
+
+RZ_OWN RZ_OUT typedef char *(*pipe_fn)(const char *, int *);
+/**
+ * \brief List of fallback pipe handlers for specific commands.
+ *
+ * Each entry maps a command name to the internal implementation used
+ * when no external binary is available in the system PATH.
+ */
+typedef struct pipe_fallbacks {
+	const char *command;
+	pipe_fn fallback_fn;
+} PipeFallbacks;
 
 /**
  * \brief Represent the output state of a command handler.
