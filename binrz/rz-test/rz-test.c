@@ -616,11 +616,13 @@ static char *readable_elapsed_time(ut64 elapsed) {
 	elapsed /= 1000;
 	ut32 millisecs = elapsed % 1000;
 	elapsed /= 1000;
-	ut32 secs = elapsed % 1000;
-	elapsed /= 1000;
-	ut32 mins = elapsed % 1000;
+	ut32 secs = elapsed % 60;
+	elapsed /= 60;
+	ut32 mins = elapsed % 60;
+	elapsed /= 60;
+	ut32 hours = elapsed % 60;
 
-	return rz_str_newf("%03um%03us%03ums", mins, secs, millisecs);
+	return rz_str_newf("%02uh%02um%02us%03ums", hours, mins, secs, millisecs);
 }
 
 static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
