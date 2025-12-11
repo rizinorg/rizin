@@ -21,20 +21,18 @@ typedef enum {
  * @brief computes the length of an instruction.
  * @return int the length of the instruction. returns -1 when invalid.
  */
-static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
+static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
 	if (len < 1) {
 		return 0;
 	}
 
 	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
-		rz_strbuf_set(asm_buf, "invalid");
 		return -1;
 	}
 
 	int ret = 1;
 	if (buf[0] == 0xfe) {
 		if (isa_bit == MCS96_80296) {
-			rz_strbuf_set(asm_buf, "invalid");
 			return -1;
 		}
 
@@ -117,9 +115,9 @@ static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len, RzStrBuf *asm_buf) {
 	return ret;
 }
 
-static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
+static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
 	if (size <= 0) {
-		return;
+		return "invalid";
 	}
 
 	if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
@@ -129,22 +127,16 @@ static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		// 0      1      MVAC
 		// 1      0      Reserved
 		// 1      1      MSAC
-		const char *mnemonic;
 		switch (lreg_bits) {
 		case 0x0:
-			mnemonic = "shll";
-			break;
+			return "shll";
 		case 0x1:
-			mnemonic = "mvac";
-			break;
+			return "mvac";
 		case 0x3:
-			mnemonic = "msac";
-			break;
+			return "msac";
 		default:
-			mnemonic = "invalid";
-			break;
+			return "invalid";
 		}
-		rz_strbuf_set(asm_buf, mnemonic);
 	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
 		// RPT waop
 		// (010000aa) (waop) (00) (04)
@@ -154,120 +146,83 @@ static void decode_mnemonic(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 		// (010000aa) (waop) (20) (04)
 		// RPTIxxx
 		// (010000aa) (waop) (30 - 3F) (04)
-		const char *mnemonic;
 		switch (buf[size - 2]) {
 		case 0x00:
-			mnemonic = "rpt";
-			break;
+			return "rpt";
 		case 0x10:
-			mnemonic = "rptnst";
-			break;
+			return "rptnst";
 		case 0x11:
-			mnemonic = "rptnh";
-			break;
+			return "rptnh";
 		case 0x12:
-			mnemonic = "rptgt";
-			break;
+			return "rptgt";
 		case 0x13:
-			mnemonic = "rptnc";
-			break;
+			return "rptnc";
 		case 0x14:
-			mnemonic = "rptnvt";
-			break;
+			return "rptnvt";
 		case 0x15:
-			mnemonic = "rptnv";
-			break;
+			return "rptnv";
 		case 0x16:
-			mnemonic = "rptge";
-			break;
+			return "rptge";
 		case 0x17:
-			mnemonic = "rptne";
-			break;
+			return "rptne";
 		case 0x18:
-			mnemonic = "rptst";
-			break;
+			return "rptst";
 		case 0x19:
-			mnemonic = "rpth";
-			break;
+			return "rpth";
 		case 0x1a:
-			mnemonic = "rptle";
-			break;
+			return "rptle";
 		case 0x1b:
-			mnemonic = "rptc";
-			break;
+			return "rptc";
 		case 0x1c:
-			mnemonic = "rptvt";
-			break;
+			return "rptvt";
 		case 0x1d:
-			mnemonic = "rptv";
-			break;
+			return "rptv";
 		case 0x1e:
-			mnemonic = "rptlt";
-			break;
+			return "rptlt";
 		case 0x1f:
-			mnemonic = "rpte";
-			break;
+			return "rpte";
 		case 0x20:
-			mnemonic = "rpti";
-			break;
+			return "rpti";
 		case 0x30:
-			mnemonic = "rptinst";
-			break;
+			return "rptinst";
 		case 0x31:
-			mnemonic = "rptinh";
-			break;
+			return "rptinh";
 		case 0x32:
-			mnemonic = "rptigt";
-			break;
+			return "rptigt";
 		case 0x33:
-			mnemonic = "rptinc";
-			break;
+			return "rptinc";
 		case 0x34:
-			mnemonic = "rptinvt";
-			break;
+			return "rptinvt";
 		case 0x35:
-			mnemonic = "rptinv";
-			break;
+			return "rptinv";
 		case 0x36:
-			mnemonic = "rptige";
-			break;
+			return "rptige";
 		case 0x37:
-			mnemonic = "rptine";
-			break;
+			return "rptine";
 		case 0x38:
-			mnemonic = "rptist";
-			break;
+			return "rptist";
 		case 0x39:
-			mnemonic = "rptih";
-			break;
+			return "rptih";
 		case 0x3a:
-			mnemonic = "rptile";
-			break;
+			return "rptile";
 		case 0x3b:
-			mnemonic = "rptic";
-			break;
+			return "rptic";
 		case 0x3c:
-			mnemonic = "rptivt";
-			break;
+			return "rptivt";
 		case 0x3d:
-			mnemonic = "rptiv";
-			break;
+			return "rptiv";
 		case 0x3e:
-			mnemonic = "rptilt";
-			break;
+			return "rptilt";
 		case 0x3f:
-			mnemonic = "rptie";
-			break;
+			return "rptie";
 		default:
-			mnemonic = "and";
-			break;
+			return "and";
 		}
-		rz_strbuf_set(asm_buf, mnemonic);
 	} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
 		const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
-		rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
+		return mcs96_fe_op[fe_idx];
 	} else {
-		rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
+		return mcs96_op[buf[0]].ins;
 	}
 }
 
@@ -291,15 +246,14 @@ static st16 extract_disp11(ut8 opcode, ut8 disp_low) {
 	return disp;
 }
 
-static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 isa_bit) {
-
+static void decode_operands(RzAsmOp *op, const char *mnemonic, const ut8 *buf, int size, ut32 isa_bit) {
 	if (size < 1) {
 		return;
 	}
 
 	// Skip operand decoding for invalid instructions
-	const char *str = rz_strbuf_get(asm_buf);
-	if (str && strcmp(str, "invalid") == 0) {
+	if (strcmp(mnemonic, "invalid") == 0) {
+		rz_asm_op_set_asm(op, "invalid");
 		return;
 	}
 
@@ -308,80 +262,81 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 
 	if (instr_fmt & MCS96_FMT_OPC_BYTEOPR && size == 2) {
 		ut8 operand = buf[1];
-		rz_strbuf_appendf(asm_buf, " 0x%02x", operand);
+		rz_asm_op_setf_asm(op, "%s 0x%02x", mnemonic, operand);
 	} else if (instr_fmt & MCS96_FMT_2_BYTE_NOP && size == 2) {
-		return; // do nothing
+		rz_asm_op_set_asm(op, mnemonic);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11 && size == 2) {
 		st16 imm11 = extract_disp11(opcode, buf[1]);
-		rz_strbuf_appendf(asm_buf, " 0x%04x", (ut16)imm11);
+		rz_asm_op_setf_asm(op, "%s 0x%04x", mnemonic, (ut16)imm11);
 	} else if (instr_fmt & MCS96_FMT_OPC_BYTEOPR_X2 && size == 3) {
 		ut8 opr0 = buf[2];
 		ut8 opr1 = buf[1];
-		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", opr0, opr1);
+		rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x", mnemonic, opr0, opr1);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM16 && size == 3) {
 		st16 imm = (st16)rz_read_le16(buf + 1);
-		rz_strbuf_appendf(asm_buf, " 0x%04x", (ut16)imm);
+		rz_asm_op_setf_asm(op, "%s 0x%04x", mnemonic, (ut16)imm);
 	} else if (instr_fmt & MCS96_FMT_TIJMP && size == 4) {
 		ut8 index = buf[1];
 		ut8 mask = buf[2];
 		ut8 tbase = buf[3];
-		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x[0x%02x]", tbase, index, mask);
+		rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x[0x%02x]", mnemonic, tbase, index, mask);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
 		st16 imm11 = extract_disp11(opcode, buf[2]);
 		ut8 reg = buf[1];
-		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", reg, (ut16)imm11);
+		rz_asm_op_setf_asm(op, "%s 0x%02x 0x%04x", mnemonic, reg, (ut16)imm11);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM24 && size == 4) {
 		ut32 imm = (ut32)rz_read_le24(buf + 1);
-		rz_strbuf_appendf(asm_buf, " 0x%06x", (ut32)imm);
+		rz_asm_op_setf_asm(op, "%s 0x%06x", mnemonic, (ut32)imm);
 	} else if (instr_fmt & MCS96_FMT_OPC_INDEX && size >= 1) {
 		ut8 reg = buf[1] & 0xFE; // erase lsb
 		if (size == 3) {
 			ut8 offset = buf[2];
-			rz_strbuf_appendf(asm_buf, " 0x%02x[0x%02x]", offset, reg);
+			rz_asm_op_setf_asm(op, "%s 0x%02x[0x%02x]", mnemonic, offset, reg);
 		} else if (size == 4) {
 			ut16 offset = rz_read_le16(buf + 2);
-			rz_strbuf_appendf(asm_buf, " 0x%04x[0x%02x]", offset, reg);
+			rz_asm_op_setf_asm(op, "%s 0x%04x[0x%02x]", mnemonic, offset, reg);
 		}
 	} else if (instr_fmt & MCS96_FMT_EXTENDED_INDEXED && size == 6) {
 		ut8 dst = buf[5];
 		ut8 base = buf[1];
 		st32 offset = (st32)rz_read_le24(buf + 2);
-		rz_strbuf_appendf(asm_buf, " 0x%02x 0x%06x[0x%02x]", dst, (ut32)offset, base);
+		rz_asm_op_setf_asm(op, "%s 0x%02x 0x%06x[0x%02x]", mnemonic, dst, (ut32)offset, base);
 	} else if (instr_fmt & MCS96_FMT_2OP) {
 		ut8 address_mode = opcode & 0x3;
 		if (address_mode == MCS96_ADDRESSING_REG_DIRECT && size == 3) {
 			ut8 dst = buf[2];
 			ut8 src_reg = buf[1];
-			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_reg);
+			rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x", mnemonic, dst, src_reg);
 		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE) {
 			if (size == 3) {
 				ut8 dst = buf[2];
 				ut8 src_imm8 = buf[1];
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x", dst, src_imm8);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x", mnemonic, dst, src_imm8);
 			} else if (size == 4) {
 				ut8 dst = buf[3];
 				ut16 src_imm16 = rz_read_le16(buf + 1);
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x", dst, src_imm16);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%04x", mnemonic, dst, src_imm16);
 			}
 		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 3) {
 			ut8 dst = buf[2];
 			boolt autoincrement = buf[1] & 0x1;
 			ut8 src_reg = buf[1] & 0xFE;
-			rz_strbuf_appendf(asm_buf, " 0x%02x [0x%02x]", dst, src_reg);
 			if (autoincrement) {
-				rz_strbuf_appendf(asm_buf, "+");
+				rz_asm_op_setf_asm(op, "%s 0x%02x [0x%02x]+", mnemonic, dst, src_reg);
+			} else {
+				rz_asm_op_setf_asm(op, "%s 0x%02x [0x%02x]", mnemonic, dst, src_reg);
 			}
 		} else if (address_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 4) {
 				ut8 dst = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x[0x%02x]", dst, offset, base);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x[0x%02x]", mnemonic, dst, offset, base);
 			} else if (size == 5) {
 				ut8 dst = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%04x[0x%02x]", dst, offset, base);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%04x[0x%02x]", mnemonic, dst, offset, base);
 			}
 		}
 	} else if (instr_fmt & MCS96_FMT_3OP) {
@@ -390,27 +345,28 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 			ut8 dst = buf[3];
 			ut8 src0_reg = buf[2];
 			ut8 src1_reg = buf[1];
-			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src1_reg);
+			rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x 0x%02x", mnemonic, dst, src0_reg, src1_reg);
 		} else if (address_mode == MCS96_ADDRESSING_IMMEDIATE) {
 			if (size == 4) {
 				ut8 dst = buf[3];
 				ut8 src0_reg = buf[2];
 				ut8 src_imm8 = buf[1];
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x", dst, src0_reg, src_imm8);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x 0x%02x", mnemonic, dst, src0_reg, src_imm8);
 			} else if (size == 5) {
 				ut8 dst = buf[4];
 				ut8 src0_reg = buf[3];
 				ut16 src_imm16 = rz_read_le16(buf + 1);
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x", dst, src0_reg, src_imm16);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x 0x%04x", mnemonic, dst, src0_reg, src_imm16);
 			}
 		} else if (address_mode == MCS96_ADDRESSING_INDIRECT && size == 4) {
 			ut8 dst = buf[3];
 			ut8 src0_reg = buf[2];
 			ut8 src1_reg = buf[1] & 0xFE;
 			boolt autoincrement = buf[1] & 0x1;
-			rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x [0x%02x]", dst, src0_reg, src1_reg);
 			if (autoincrement) {
-				rz_strbuf_appendf(asm_buf, "+");
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x [0x%02x]+", mnemonic, dst, src0_reg, src1_reg);
+			} else {
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x [0x%02x]", mnemonic, dst, src0_reg, src1_reg);
 			}
 		} else if (address_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 5) {
@@ -418,15 +374,17 @@ static void decode_operands(RzStrBuf *asm_buf, const ut8 *buf, int size, ut32 is
 				ut8 src1_reg = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%02x[0x%02x]", dst, src1_reg, offset, base);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x 0x%02x[0x%02x]", mnemonic, dst, src1_reg, offset, base);
 			} else if (size == 6) {
 				ut8 dst = buf[5];
 				ut8 src1_reg = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				rz_strbuf_appendf(asm_buf, " 0x%02x 0x%02x 0x%04x[0x%02x]", dst, src1_reg, offset, base);
+				rz_asm_op_setf_asm(op, "%s 0x%02x 0x%02x 0x%04x[0x%02x]", mnemonic, dst, src1_reg, offset, base);
 			}
 		}
+	} else {
+		rz_asm_op_set_asm(op, mnemonic);
 	}
 }
 
@@ -434,8 +392,6 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}
-
-	RzStrBuf *asm_buf = &op->buf_asm;
 
 	ut32 isa_bit = MCS96_8096; // default
 	if (a->cpu && *a->cpu) {
@@ -446,9 +402,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	op->size = mcs96_len(isa_bit, buf, len, asm_buf);
-	decode_mnemonic(asm_buf, buf, op->size, isa_bit);
-	decode_operands(asm_buf, buf, op->size, isa_bit);
+	op->size = mcs96_len(isa_bit, buf, len);
+	const char *mnemonic = decode_mnemonic(buf, op->size, isa_bit);
+	decode_operands(op, mnemonic, buf, op->size, isa_bit);
 	return op->size;
 }
 
