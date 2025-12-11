@@ -60,7 +60,7 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 }
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
-	const RzInterpreterYieldFilter *filter,
+	RzInterpreterYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data_io_boundaries) {
 	RzInterpreterYieldQueue *yield_queue = RZ_NEW0(RzInterpreterYieldQueue);
 	if (!yield_queue) {

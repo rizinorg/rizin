@@ -12,7 +12,6 @@
 #include "rz_io.h"
 #include "rz_reg.h"
 #include "rz_th.h"
-#include "rz_util/rz_bitvector.h"
 #include "rz_vector.h"
 #include <rz_list.h>
 #include <rz_types_base.h>
@@ -210,7 +209,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
 	yield_queue = rz_interpreter_yield_queue_new(
 		yield_kind,
-		(RzInterpreterYieldFilter *)rz_inquiry_xref_interpreter_filter,
+		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
 		boundaries);
 	if (!yield_queue) {
 		return_code = false;
@@ -343,7 +342,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		// This part plays the role of a yield consumer.
 		// In our prototype it inly receives xrefs and stores them in RzAnalysis.
 		{
-			
+			RzThreadQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, false);
+			RzAnalysisXRef *xref = rz_th_queue_pop(q, false);
+			if (!xref) {
+				continue;
+			}
+			// TODO: Currently we can't classify calls as such.
+			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
 		}
 	}
 	RZ_LOG_WARN("INQUIRY: Done\n");
