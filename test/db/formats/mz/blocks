@@ -39,7 +39,6 @@ EOF
 RUN
 
 NAME=MZ: blocks.exe segments
-BROKEN=1
 FILE=bins/mz/blocks.exe
 CMDS=iS*
 EXPECT=<<EOF

@@ -92,25 +92,27 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 	}
 	rz_pvector_push(seg_vec, section);
 
-	/* Add code segment from CS register if it's different from 0 */
-	cs = bin->dos_header->cs;
-	ut64 cs_laddr = rz_bin_mz_va_to_la(cs, 0);
-	if (cs_laddr > 0 && cs_laddr < bin->load_module_size) {
-		RzBinSection c = { 0 };
-		c.vaddr = cs_laddr;
-		if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
-			section = rz_bin_mz_init_section(bin, cs_laddr);
-			if (!section) {
-				goto err_out;
+	relocs = bin->relocation_entries;
+	num_relocs = relocs ? bin->dos_header->num_relocs : 0;
+
+	/* Add code segment from CS register if there are no relocations */
+	if (num_relocs == 0) {
+		cs = bin->dos_header->cs;
+		ut64 cs_laddr = rz_bin_mz_va_to_la(cs, 0);
+		if (cs_laddr > 0 && cs_laddr < bin->load_module_size) {
+			RzBinSection c = { 0 };
+			c.vaddr = cs_laddr;
+			if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
+				section = rz_bin_mz_init_section(bin, cs_laddr);
+				if (!section) {
+					goto err_out;
+				}
+				rz_pvector_push(seg_vec, section);
 			}
-			rz_pvector_push(seg_vec, section);
 		}
 	}
 
 	rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
-
-	relocs = bin->relocation_entries;
-	num_relocs = relocs ? bin->dos_header->num_relocs : 0;
 	for (i = 0; i < num_relocs; i++) {
 		RzBinSection c = { 0 };
 		ut64 laddr, paddr, section_laddr;
@@ -148,18 +150,20 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		rz_pvector_sort(seg_vec, (RzPVectorComparator)cmp_sections, NULL);
 	}
 
-	/* Add address of stack segment if it's inside the load module. */
-	ss = bin->dos_header->ss;
-	ut64 ss_laddr = rz_bin_mz_va_to_la(ss, 0);
-	if (ss_laddr < bin->load_module_size) {
-		RzBinSection c = { 0 };
-		c.vaddr = ss_laddr;
-		if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
-			section = rz_bin_mz_init_section(bin, ss_laddr);
-			if (!section) {
-				goto err_out;
+	/* Add address of stack segment if there are no relocations and it's inside the load module. */
+	if (num_relocs == 0) {
+		ss = bin->dos_header->ss;
+		ut64 ss_laddr = rz_bin_mz_va_to_la(ss, 0);
+		if (ss_laddr > 0 && ss_laddr < bin->load_module_size) {
+			RzBinSection c = { 0 };
+			c.vaddr = ss_laddr;
+			if (!rz_pvector_find(seg_vec, &c, (RzPVectorComparator)cmp_sections, NULL)) {
+				section = rz_bin_mz_init_section(bin, ss_laddr);
+				if (!section) {
+					goto err_out;
+				}
+				rz_pvector_push(seg_vec, section);
 			}
-			rz_pvector_push(seg_vec, section);
 		}
 	}
 	}

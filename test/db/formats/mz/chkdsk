@@ -22,7 +22,6 @@ EOF
 RUN
 
 NAME=MZ: chkdsk.exe segments
-BROKEN=1
 FILE=bins/mz/chkdsk.exe
 CMDS=iS*
 EXPECT=<<EOF
