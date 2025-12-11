@@ -442,7 +442,10 @@ int rz_test_main(int argc, const char **argv) {
 	if (!rz_pvector_empty(except_dir)) {
 		void **it;
 		rz_pvector_foreach (except_dir, it) {
-			const char *p = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			char *dir_abs_path = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			if (log_mode || verbose) {
+				printf("Removing tests in dir: %s\n", dir_abs_path);
+			}
 			for (ut32 i = 0; i < rz_pvector_len(&state.db->tests); i++) {
 				RzTest *test = rz_pvector_at(&state.db->tests, i);
 				if (rz_file_is_abspath(test->path)) {
@@ -450,13 +453,18 @@ int rz_test_main(int argc, const char **argv) {
 				} else {
 					tp = rz_file_abspath_rel(cwd, test->path);
 				}
-				if (rz_str_startswith(tp, p)) {
+				if (rz_str_startswith(tp, dir_abs_path)) {
+					if (log_mode || verbose) {
+						char *name = rz_test_test_name(test);
+						printf("Removed test %s: %s\n", test->path, name);
+						free(name);
+					}
 					rz_test_test_free(test);
 					rz_pvector_remove_at(&state.db->tests, i--);
 				}
 				RZ_FREE(tp);
 			}
-			RZ_FREE(p);
+			RZ_FREE(dir_abs_path);
 		}
 	}
 
@@ -616,11 +624,13 @@ static char *readable_elapsed_time(ut64 elapsed) {
 	elapsed /= 1000;
 	ut32 millisecs = elapsed % 1000;
 	elapsed /= 1000;
-	ut32 secs = elapsed % 1000;
-	elapsed /= 1000;
-	ut32 mins = elapsed % 1000;
+	ut32 secs = elapsed % 60;
+	elapsed /= 60;
+	ut32 mins = elapsed % 60;
+	elapsed /= 60;
+	ut32 hours = elapsed % 60;
 
-	return rz_str_newf("%03um%03us%03ums", mins, secs, millisecs);
+	return rz_str_newf("%02uh%02um%02us%03ums", hours, mins, secs, millisecs);
 }
 
 static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
@@ -934,7 +944,7 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 }
 
 static void print_state_counts(RzTestState *state) {
-	printf("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " FX",
+	printf("%8" PFMT64u " OK  %5" PFMT64u " BR %8" PFMT64u " XX %5" PFMT64u " FX",
 		state->ok_count, state->br_count, state->xx_count, state->fx_count);
 }
 

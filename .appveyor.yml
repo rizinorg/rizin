@@ -106,7 +106,7 @@ for:
       - cd ..
       - "%PYTHON%\\Scripts\\meson test -C build -t 10 --print-errorlogs"
       - cd test
-      - rz-test -o results.json -L db
+      - rz-test -o results.json -e db\esil -L db
       - cd ..
 
   # Include header files from C++
