@@ -17,6 +17,33 @@ typedef enum {
 	MCS96_ADDRESSING_INDEXED = 3,
 } MCS96_ADDRESSING_MODE;
 
+typedef struct {
+	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
+} Mcs96Context;
+
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = strdup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
+
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
+	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
+	if (!pvec) {
+		return NULL;
+	}
+
+	TOKEN(META, "(\\[|\\])");
+	TOKEN(OPERATOR, "(\\+)");
+	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
+	TOKEN(MNEMONIC, "([[:alpha:]]+)");
+	TOKEN(SEPARATOR, "([[:blank:]]+)");
+
+	return pvec;
+}
+
 /**
  * @brief computes the length of an instruction.
  * @return int the length of the instruction. returns -1 when invalid.
@@ -388,10 +415,45 @@ static void decode_operands(RzAsmOp *op, const char *mnemonic, const ut8 *buf, i
 	}
 }
 
+static bool init(void **u) {
+	if (!u) {
+		return false;
+	}
+	Mcs96Context *ctx = NULL;
+	if (*u) {
+		rz_mem_memzero(*u, sizeof(Mcs96Context));
+		ctx = *u;
+	} else {
+		ctx = RZ_NEW0(Mcs96Context);
+		if (!ctx) {
+			return false;
+		}
+		*u = ctx;
+	}
+	ctx->token_patterns = get_token_patterns();
+	rz_asm_compile_token_patterns(ctx->token_patterns);
+	return true;
+}
+
+static bool fini(void *u) {
+	if (!u) {
+		return true;
+	}
+	Mcs96Context *ctx = u;
+	rz_pvector_free(ctx->token_patterns);
+	free(u);
+	return true;
+}
+
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}
+
+	if (!a->plugin_data) {
+		return -1;
+	}
+	Mcs96Context *ctx = a->plugin_data;
 
 	ut32 isa_bit = MCS96_8096; // default
 	if (a->cpu && *a->cpu) {
@@ -405,6 +467,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = mcs96_len(isa_bit, buf, len);
 	const char *mnemonic = decode_mnemonic(buf, op->size, isa_bit);
 	decode_operands(op, mnemonic, buf, op->size, isa_bit);
+
+	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, ctx->token_patterns);
 	return op->size;
 }
 
@@ -417,5 +481,7 @@ RzAsmPlugin rz_asm_plugin_mcs96 = {
 	.author = "condret",
 	.bits = 16,
 	.endian = RZ_SYS_ENDIAN_NONE,
+	.init = &init,
+	.fini = &fini,
 	.disassemble = &disassemble
 };
