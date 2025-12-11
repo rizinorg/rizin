@@ -944,7 +944,7 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 }
 
 static void print_state_counts(RzTestState *state) {
-	printf("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " FX",
+	printf("%8" PFMT64u " OK  %5" PFMT64u " BR %8" PFMT64u " XX %5" PFMT64u " FX",
 		state->ok_count, state->br_count, state->xx_count, state->fx_count);
 }
 
