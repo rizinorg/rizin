@@ -2899,19 +2899,17 @@ static void display_xref_list_handler(RzCore *core, int argc, const char **argv,
 	rz_list_free(xref_list);
 }
 
-RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_verbose_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	int n_instrs = -6;
-	int n_bytes = 64;
-	display_xref_list_handler(core, argc, argv, n_bytes, n_instrs, state);
-	return status;
-}
-
 RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
-	xrefs_to_list_handler(core, list, state);
-	rz_list_free(list);
+	if (state->mode == RZ_OUTPUT_MODE_LONG) {
+		int n_instrs = -6;
+		int n_bytes = 64;
+		display_xref_list_handler(core, argc, argv, n_bytes, n_instrs, state);
+	} else {
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
+		xrefs_to_list_handler(core, list, state);
+		rz_list_free(list);
+	}
 	return status;
 }
 

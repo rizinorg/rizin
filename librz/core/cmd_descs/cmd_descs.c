@@ -6473,23 +6473,12 @@ static const RzCmdDescHelp analysis_xrefs_list_help = {
 	.args = analysis_xrefs_list_args,
 };
 
-static const RzCmdDescHelp axt_help = {
-	.summary = "List xrefs to current seek",
-};
 static const RzCmdDescArg analysis_xrefs_to_list_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_xrefs_to_list_help = {
-	.summary = "Basic list of xrefs to current seek",
+	.summary = "List xrefs to current seek",
 	.args = analysis_xrefs_to_list_args,
-};
-
-static const RzCmdDescArg analysis_xrefs_to_list_verbose_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp analysis_xrefs_to_list_verbose_help = {
-	.summary = "List xrefs to current seek with verbose varient",
-	.args = analysis_xrefs_to_list_verbose_args,
 };
 
 static const RzCmdDescArg analysis_xrefs_from_list_args[] = {
@@ -22454,10 +22443,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_xrefs_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_list_handler, &analysis_xrefs_list_help);
 	rz_warn_if_fail(analysis_xrefs_list_cd);
 
-	RzCmdDesc *axt_cd = rz_cmd_desc_group_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help, &axt_help);
-	rz_warn_if_fail(axt_cd);
-	RzCmdDesc *analysis_xrefs_to_list_verbose_cd = rz_cmd_desc_argv_state_new(core->rcmd, axt_cd, "axtl", RZ_OUTPUT_MODE_LONG, rz_analysis_xrefs_to_list_verbose_handler, &analysis_xrefs_to_list_verbose_help);
-	rz_warn_if_fail(analysis_xrefs_to_list_verbose_cd);
+	RzCmdDesc *analysis_xrefs_to_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help);
+	rz_warn_if_fail(analysis_xrefs_to_list_cd);
 
 	RzCmdDesc *analysis_xrefs_from_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_from_list_handler, &analysis_xrefs_from_list_help);
 	rz_warn_if_fail(analysis_xrefs_from_list_cd);
