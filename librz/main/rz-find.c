@@ -28,7 +28,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
-	bool verbose; /**< print each file before scanning it */
+	bool verbose; ///< print each file before scanning it 
 	int mode;
 	int align;
 	ut8 *buf;
