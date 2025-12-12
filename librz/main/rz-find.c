@@ -28,7 +28,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
-	bool verbose; /**< Print Each Line before Scanning it */
+	bool verbose; /**< print each file before scanning it */
 	int mode;
 	int align;
 	ut8 *buf;
@@ -240,6 +240,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	ro->buf = NULL;
 	char *efile = rz_str_escape_sh(file);
+
+	if (ro->verbose) {
+		eprintf("Scanning: %s\n", file);
+	}
 
 	if (ro->identify) {
 		char *cmd = rz_str_newf("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
@@ -495,10 +499,6 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file) {
-
-	if (ro->verbose) {
-		eprintf("Scanning: %s\n", file);
-	}
 
 	if (!strcmp(file, "-")) {
 		int sz = 0;
