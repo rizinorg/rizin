@@ -16,16 +16,7 @@
 #include <rz_lib.h>
 #include <rz_io.h>
 #include <rz_bin.h>
-/**
- * \brief Options used by the rz-find command.
- *
- * This structure contains all configuration flags and parameters that
- * control how rz-find performs searches, prints results, handles I/O,
- * and processes files.
- *
- * The newly added field `verbose` enables printing each file being scanned
- * before processing it, useful for debugging or inspecting search progress.
- */
+
 typedef struct {
 	bool showstr;
 	bool rad;
@@ -37,7 +28,7 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
-	bool verbose; /* Print each file before scanning it */
+	bool verbose; /**< Print Each Line before Scanning it */
 	int mode;
 	int align;
 	ut8 *buf;
@@ -504,6 +495,11 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file) {
+
+	if (ro->verbose) {
+		eprintf("Scanning: %s\n", file);
+	}
+
 	if (!strcmp(file, "-")) {
 		int sz = 0;
 		ut8 *buf = (ut8 *)rz_stdin_slurp(&sz);
@@ -635,8 +631,8 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.quiet = true;
 			break;
 		case 'V':
-             ro.verbose = true;
-             break;
+			ro.verbose = true;
+			break;
 		case 'v': {
 			RzPath *sys_path = rz_path_new();
 			if (!sys_path) {
@@ -670,11 +666,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
-
-		if (ro.verbose) {
-            eprintf("Scanning: %s\n", file);
-        }       
-
 
 		if (RZ_STR_ISEMPTY(file)) {
 			eprintf("Cannot open empty path\n");
