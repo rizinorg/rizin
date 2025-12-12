@@ -22456,7 +22456,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *axt_cd = rz_cmd_desc_group_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help, &axt_help);
 	rz_warn_if_fail(axt_cd);
-	RzCmdDesc *analysis_xrefs_to_list_verbose_cd = rz_cmd_desc_argv_state_new(core->rcmd, axt_cd, "axtl", RZ_OUTPUT_MODE_STANDARD, rz_analysis_xrefs_to_list_verbose_handler, &analysis_xrefs_to_list_verbose_help);
+	RzCmdDesc *analysis_xrefs_to_list_verbose_cd = rz_cmd_desc_argv_state_new(core->rcmd, axt_cd, "axtl", RZ_OUTPUT_MODE_LONG, rz_analysis_xrefs_to_list_verbose_handler, &analysis_xrefs_to_list_verbose_help);
 	rz_warn_if_fail(analysis_xrefs_to_list_verbose_cd);
 
 	RzCmdDesc *analysis_xrefs_from_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_from_list_handler, &analysis_xrefs_from_list_help);
