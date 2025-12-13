@@ -6596,6 +6596,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 		rz_strbuf_free(bw_str);
 		rz_asm_parse_param_free(param);
+		rz_asm_op_fini(&asmop);
 		return colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 	} else {
 		buf_asm = rz_str_dup(str);
