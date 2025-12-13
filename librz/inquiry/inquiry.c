@@ -352,6 +352,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			}
 			// TODO: Currently we can't classify calls as such.
 			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
+			RZ_LOG_WARN("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type))
 		}
 	}
 	RZ_LOG_WARN("INQUIRY: Done\n");
