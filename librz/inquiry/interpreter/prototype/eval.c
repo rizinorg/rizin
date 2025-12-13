@@ -178,7 +178,8 @@ bool load_abstr_data(
 		return false;
 	}
 	if (io_res->read.n_bytes != size) {
-		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes.\n");
+		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
+		            " Received: 0x%" PFMT64x "\n", size, io_res->read.n_bytes);
 		return false;
 	}
 	out->is_concrete = true;
