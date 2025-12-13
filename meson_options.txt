@@ -47,3 +47,4 @@ option('enable_tests', type: 'boolean', value: true, description: 'Build unit te
 option('enable_benchmarks', type: 'boolean', value: false, description: 'Build micro-benchmarks in test/bench')
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz-test executable for regression testing')
 option('regenerate_cmds', type: 'feature', value: 'auto', description: 'Regenerate the cmd_descs.[ch] files (requires PyYAML)')
+option('enable_examples', type: 'boolean', value: false, description: 'Build examples')
