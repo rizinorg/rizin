@@ -122,16 +122,18 @@ bool store_abstr_data(
 		// Really don't write?
 		return true;
 	}
+	ProtoInterprSharedObjects *sobj = state->ext;
+	RzInterpreterIORequest *io_req = &sobj->io_req;
+	io_req->n_bytes = rz_bv_len_bytes(src->bv);
+
 	ut8 *buf;
 	ut8 buf_stack[BV_STACK_MAX_SIZE] = { 0 };
-	if (rz_bv_len(src->bv) > BV_STACK_MAX_SIZE * 8) {
-		buf = RZ_NEWS(ut8, rz_bv_len_bytes(src->bv));
+	if (io_req->n_bytes > BV_STACK_MAX_SIZE) {
+		buf = RZ_NEWS(ut8, io_req->n_bytes);
 	} else {
 		buf = buf_stack;
 	}
 	rz_bv_set_to_bytes_be(src->bv, buf);
-	ProtoInterprSharedObjects *sobj = state->ext;
-	RzInterpreterIORequest *io_req = &sobj->io_req;
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr;
 	io_req->data = buf;
@@ -140,12 +142,13 @@ bool store_abstr_data(
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for write being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
+	if (io_req->n_bytes > BV_STACK_MAX_SIZE) {
+		free(buf);
+	}
+
 	if (!io_res) {
 		// Abort of interpretation.
 		return false;
-	}
-	if (rz_bv_len(src->bv) > BV_STACK_MAX_SIZE * 8) {
-		free(buf);
 	}
 	return io_res->req_ok;
 }
