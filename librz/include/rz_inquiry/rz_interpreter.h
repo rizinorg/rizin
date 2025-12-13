@@ -154,6 +154,12 @@ typedef struct {
 	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
 		RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
 		void *plugin_data);
+	/**
+	 * \brief Set the abstract PC to the given address.
+	 */
+	bool (*set_pc)(RZ_NONNULL RzInterpreterAbstrState *state,
+		ut64 pc,
+		void *plugin_data);
 } RzInterpreterPlugin;
 
 typedef enum {

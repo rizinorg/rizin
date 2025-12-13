@@ -14,6 +14,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
+	RZ_LOG_WARN("Eval PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
 	bool result = interpreter_prototype_eval_effect(state, effect, yield_queues, io_request, io_result, plugin_data);
 	// TODO: Clean up local variables.
 	// Or maybe not? Just costs performance. And the uplifted instructions should
@@ -136,6 +137,13 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 	return h;
 }
 
+static bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+	void *plugin_data) {
+	rz_return_val_if_fail(state, false);
+	AD(state->pc->abstr_data)->is_concrete = true;
+	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -151,6 +159,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.init_state = init_state,
 	.fini_state = fini_state,
 	.hash_state = hash_state,
+	.set_pc = set_pc,
 	.clone_state = NULL,
 };
 

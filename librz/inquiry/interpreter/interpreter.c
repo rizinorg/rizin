@@ -314,8 +314,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		rz_vector_pop_front(succ_states, &next);
 		in_hash = next.in_state_hash;
 		eff = rz_th_queue_wait_pop(iset->il_queue, false);
-		if (!eff) {
-			// Some error occurred lifting this basic block. Abort execution.
+		if (!eff || !plugin->set_pc(in_state, next.addr, plugin_data)) {
+			// Some error occurred lifting this basic block. Or updating the PC.
+			// Abort execution.
 			goto in_loop_error;
 		}
 	}
