@@ -27,6 +27,10 @@ bool report_xref_yield(RzInterpreterAbstrState *state, HtUP /*<RzInterpreterYiel
 		xref->from = from;
 		xref->to = to_addr;
 		xref->type = type;
+		// TODO: Possible race condition here, if the interpreter pushes a new xref
+		// before the previous one was handled.
+		// But this is fine for the prototype. Real implementation needs some kind
+		// of shared memory anyways.
 		rz_th_queue_push(queue->yield_queue, xref, true);
 	}
 	return true;
@@ -171,7 +175,7 @@ bool load_abstr_data(
 		return false;
 	}
 	if (io_res->read.n_bytes != size) {
-		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes.");
+		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes.\n");
 		return false;
 	}
 	out->is_concrete = true;
