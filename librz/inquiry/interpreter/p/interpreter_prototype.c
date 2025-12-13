@@ -9,13 +9,13 @@
 #include "../prototype/eval.h"
 
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
-	RZ_NONNULL const RzILOpEffect *effect,
+	RZ_NONNULL const RzInterpreterILOp *il_op,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	RZ_LOG_WARN("Eval PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
-	bool result = interpreter_prototype_eval_effect(state, effect, yield_queues, io_request, io_result, plugin_data);
+	bool result = interpreter_prototype_eval_effect(state, il_op->effect, il_op->asm_op_size, yield_queues, io_request, io_result, plugin_data);
 	// TODO: Clean up local variables.
 	// Or maybe not? Just costs performance. And the uplifted instructions should
 	// always set it before, otherwise the tests don't pass.

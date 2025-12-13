@@ -72,10 +72,6 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 	return false;
 }
 
-static ut64 get_nop_pc_increment(RzAnalysis *analysis) {
-	return analysis->cur->bits / 8;
-}
-
 static ut64 get_mem_addr_bits(RzAnalysis *analysis) {
 	if (analysis->cur->il_config) {
 		RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
@@ -120,7 +116,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	bool return_code = true;
 	RzThreadQueue *io_request_q = NULL;
 	RzThreadQueue *io_result_q = NULL;
-	RzILOpEffect *eff = NULL;
+	RzInterpreterILOp *il_op = NULL;
 	RzThreadQueue *addr_queue = NULL;
 	RzList *boundaries = NULL;
 	RzInterpreterYieldQueue *yield_queue = NULL;
@@ -138,7 +134,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
 	// of the pointers.
-	il_cache = rz_pvector_new((RzPVectorFree)rz_il_op_effect_free);
+	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_op_free);
 	// The queue to pass the Effects to the interpreter.
 	// This is only one queue for the prototype.
 	// In practice it would be one for each interpreter.
@@ -160,31 +156,31 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 
 	// Add the Effect for each entry point.
 	entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
-	eff = NULL;
+	il_op = NULL;
 	if (argc == 1) {
 		ut64 entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
-		eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
-		if (!eff) {
+		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
+		if (!il_op) {
 			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", (ut64)entry_point);
 			return_code = false;
 			goto error_free;
 		}
 		rz_vector_push(entry_points, &entry_point);
-		rz_th_queue_push(il_queue, eff, true);
-		rz_pvector_push(il_cache, eff);
+		rz_th_queue_push(il_queue, il_op, true);
+		rz_pvector_push(il_cache, il_op);
 	} else {
 		// Add all entry points given as arguments.
 		for (size_t i = 1; i < argc; i++) {
 			ut64 entry_point = rz_num_get(core->num, argv[i]);
-			eff = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
-			if (!eff) {
+			il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
+			if (!il_op) {
 				return_code = false;
 				goto error_free;
 			}
 			rz_vector_push(entry_points, &entry_point);
 		}
-		rz_th_queue_push(il_queue, eff, true);
-		rz_pvector_push(il_cache, eff);
+		rz_th_queue_push(il_queue, il_op, true);
+		rz_pvector_push(il_cache, il_op);
 	}
 
 	// The address queue. It is the queue the interpreter can request new Effects.
@@ -234,11 +230,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Initialize the abstract state with the architecture's registers.
 	size_t addr_bits = get_mem_addr_bits(core->analysis);
 	RzPVector *reg_names = get_reg_names(core->analysis);
-	ut64 nop_pc_increment = get_nop_pc_increment(core->analysis);
 	abstr_state = rz_interpreter_abstr_state_new(
 		RZ_INTERPRETER_ABSTRACTION_CONST,
 		reg_names,
-		nop_pc_increment,
 		addr_bits);
 	rz_pvector_free(reg_names);
 
@@ -294,7 +288,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			ut64 *addr = rz_th_queue_pop(addr_queue, false);
 			if (addr) {
 				RZ_LOG_WARN("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-				RzILOpEffect *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
+				RzInterpreterILOp *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 				if (!bb) {
 					RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 					// Signal interpreter the lifting failed.

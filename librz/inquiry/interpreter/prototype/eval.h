@@ -85,6 +85,7 @@ bool load_abstr_data(
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
+	size_t nop_pc_inc,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,

@@ -59,14 +59,6 @@ typedef struct {
 	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
-	/**
-	 * \brief The number by which the PC is incremented for a NOP instruction.
-	 * Usually this is simply the instruction width. But it can be 0
-	 * if the architecture doesn't have a fixed increment (e.g. VLIW processors).
-	 * If 0 the RzArch plugin is expected to always return an effect with a
-	 * (conditional) JUMP at the end of each effect.
-	 */
-	ut64 nop_pc_inc;
 	size_t addr_bits; ///< Number of bits of a memory address.
 	void *ext; ///< Optional state extensions. Managed by individual interpreters.
 } RzInterpreterAbstrState;
@@ -102,6 +94,11 @@ typedef struct {
 	RzInterpreterYieldFilterData *filter_data;
 	RzThreadQueue /*<const RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
+
+typedef struct {
+	RzILOpEffect *effect; ///< The effect to evaluate.
+	size_t asm_op_size; ///< The size of the instruction packet. Used to increment the PC if no JMP occurred.
+} RzInterpreterILOp;
 
 typedef struct {
 	const char *name;
@@ -140,7 +137,7 @@ typedef struct {
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
-		RZ_NONNULL const RzILOpEffect *effect,
+		RZ_NONNULL const RzInterpreterILOp *il_op,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
@@ -191,7 +188,7 @@ typedef struct {
 typedef struct {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
 	RzThreadQueue /*<const ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
-	RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue; ///< The queue to receive the IL effects.
+	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
@@ -205,12 +202,13 @@ typedef struct {
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
 
+RZ_API void rz_interpreter_il_op_free(RZ_NULLABLE RZ_OWN RzInterpreterILOp *il_op);
+
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	RzInterpreterAbstraction kinds,
 	RZ_NULLABLE const RzPVector *reg_names,
-	ut64 nop_pc_increment,
 	size_t addr_bits);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
