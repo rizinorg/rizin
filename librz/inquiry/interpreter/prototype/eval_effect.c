@@ -7,6 +7,7 @@
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
+	size_t nop_pc_inc,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
@@ -25,7 +26,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			break;
 		}
 		STACK_ABSTR_DATA_OUT(inc);
-		rz_bv_set_from_ut64(inc.bv, state->nop_pc_inc);
+		rz_bv_set_from_ut64(inc.bv, nop_pc_inc);
 		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
 		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
 			goto error;
@@ -33,10 +34,10 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
 		break;
@@ -77,11 +78,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 
 		if (abstr_is_true(state, &eval_out)) {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		} else {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		}

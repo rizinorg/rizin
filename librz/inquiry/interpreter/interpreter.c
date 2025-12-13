@@ -12,6 +12,16 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
+RZ_API void rz_interpreter_il_op_free(RZ_NULLABLE RZ_OWN RzInterpreterILOp *il_op) {
+	if (!il_op) {
+		return;
+	}
+	if (il_op->effect) {
+		rz_il_op_effect_free(il_op->effect);
+	}
+	free(il_op);
+}
+
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue) {
 	if (!yield_queue) {
 		return;
@@ -60,13 +70,11 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	RzInterpreterAbstraction kinds,
 	RZ_NULLABLE const RzPVector *reg_names,
-	ut64 nop_pc_increment,
 	size_t addr_bits) {
 	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
 	if (!state) {
 		return NULL;
 	}
-	state->nop_pc_inc = nop_pc_increment;
 	state->kinds = kinds;
 	if (!reg_names) {
 		return state;
@@ -249,7 +257,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
-	const RzILOpEffect *eff = rz_th_queue_pop(iset->il_queue, false);
+	const RzInterpreterILOp *il_op = rz_th_queue_pop(iset->il_queue, false);
 	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
 	// For now let's just drop them.
 	RzList *additional_entries = rz_th_queue_pop_all(iset->il_queue);
@@ -261,7 +269,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
 	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	reachable_states = rz_set_u_new();
-	if (!tmp_succ_addr || !succ_states || !eff || !reachable_states) {
+	if (!tmp_succ_addr || !succ_states || !il_op || !reachable_states) {
 		goto pre_loop_error;
 	}
 	ut64 _addr = 0;
@@ -269,7 +277,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 	while (rz_atomic_bool_get(iset->is_running_flag)) {
 		// Evaluate the effect on the input state.
-		if (!plugin->eval(in_state, eff, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
+		if (!plugin->eval(in_state, il_op, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
 			goto in_loop_error;
 		}
 		// The input state was (almost always) manipulated by eval(). Rename to clarify.
@@ -313,8 +321,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		SuccessorState next = { 0 };
 		rz_vector_pop_front(succ_states, &next);
 		in_hash = next.in_state_hash;
-		eff = rz_th_queue_wait_pop(iset->il_queue, false);
-		if (!eff || !plugin->set_pc(in_state, next.addr, plugin_data)) {
+		il_op = rz_th_queue_wait_pop(iset->il_queue, false);
+		if (!il_op || !plugin->set_pc(in_state, next.addr, plugin_data)) {
 			// Some error occurred lifting this basic block. Or updating the PC.
 			// Abort execution.
 			goto in_loop_error;

@@ -34,7 +34,7 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void);
 RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *a);
 
 RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type);
-RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr);
+RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr);
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzList /*<RzIOMap *>*/ *allowed_io_maps);
 

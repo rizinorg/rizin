@@ -5,6 +5,7 @@
  * \file Helper functions for the new analysis. Some of them not yet temporarily.
  */
 
+#include <rz_inquiry/rz_interpreter.h>
 #include <rz_analysis.h>
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_io.h>
@@ -45,8 +46,9 @@ RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type) {
 	}
 }
 
-RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
+RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
 	rz_return_val_if_fail(analysis && analysis->cur && io, NULL);
+	size_t size_bb = 0;
 	RzILOpEffect *bb = NULL;
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
@@ -64,8 +66,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 		}
 		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
 			RZ_LOG_ERROR("Failed to decode IL op\n");
-			rz_analysis_op_fini(&op);
-			break;
+			goto fail;
 		}
 		bool lifted = true;
 		if (!op.il_op) {
@@ -75,6 +76,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 		}
 		
 		bb = bb ? rz_il_op_new_seq(bb, op.il_op) : op.il_op;
+		size_bb += op.size;
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
 		if (lifted) {
@@ -86,7 +88,13 @@ RZ_API RZ_OWN RzILOpEffect *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis
 	} while (!changes_cf);
 
 	free(buf);
-	return bb;
+	RzInterpreterILOp *il_op = RZ_NEW(RzInterpreterILOp);
+	if (!il_op) {
+		goto fail;
+	}
+	il_op->asm_op_size = size_bb;
+	il_op->effect = bb;
+	return il_op;
 
 fail:
 	free(buf);
