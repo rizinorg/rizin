@@ -471,7 +471,7 @@ static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBuffer *buf, RzB
 	}
 	return;
 error:
-	RZ_FREE(property);
+	rz_bin_class_field_free(property);
 	RZ_FREE(name);
 	return;
 }

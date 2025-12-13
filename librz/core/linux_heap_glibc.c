@@ -1181,7 +1181,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted\n");
 			free(cnk);
-			free(g);
+			rz_agraph_free(g);
 			return -1;
 		}
 
