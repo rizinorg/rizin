@@ -422,7 +422,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		ut64 addr = rz_bv_to_ut64(out->bv);
 		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->addr_bits : pure->op.loadw.n_bits;
 		if (!load_abstr_data(state, addr, addr_bits, out, io_request, io_result)) {
-			goto map_to_bottom;
+			return false;
 		}
 		break;
 	}
