@@ -100,7 +100,7 @@ typedef struct {
 	RzInterpreterYieldKind kind;
 	RzInterpreterYieldFilter filter;
 	RzInterpreterYieldFilterData *filter_data;
-	RzThreadQueue /*<RzInterpreterYield>*/ *yield_queue;
+	RzThreadQueue /*<const RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 
 typedef struct {
@@ -199,8 +199,6 @@ typedef struct {
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
 
-RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzILOpEffect>*/ *q);
-RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64>*/ *q);
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(

@@ -4,6 +4,7 @@
 #ifndef PROTOYPE_EVAL_H
 #define PROTOYPE_EVAL_H
 
+#include "rz_analysis.h"
 #include <rz_types.h>
 #include <rz_util/rz_bitvector.h>
 #include <rz_il/rz_il_opcodes.h>
@@ -25,6 +26,11 @@ typedef struct {
 	 */
 	RzBitVector *bv;
 } ProtoIntrprAbstrData;
+
+typedef struct {
+	 RzInterpreterIORequest io_req;
+	 RzAnalysisXRef xref;
+} ProtoInterprSharedObjects;
 
 /**
  * \brief In bytes
@@ -92,6 +98,11 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data);
 
-bool report_xref_yield(HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type);
+bool report_xref_yield(
+	RzInterpreterAbstrState *state,
+	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	ut64 from,
+	const ProtoIntrprAbstrData *to,
+	RzAnalysisXRefType type);
 
 #endif // PROTOYPE_EVAL_H

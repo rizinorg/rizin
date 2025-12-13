@@ -12,39 +12,6 @@
 #include <rz_vector.h>
 #include <rz_util.h>
 
-RZ_API void rz_interpreter_il_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzILOpEffect *>*/ *q) {
-	if (!q) {
-		return;
-	}
-	RzILOpEffect *eff = rz_th_queue_pop(q, false);
-	while (eff) {
-		rz_il_op_effect_free(eff);
-		eff = rz_th_queue_pop(q, false);
-	}
-}
-
-RZ_API void rz_interpreter_addr_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<ut64 *>*/ *q) {
-	if (!q) {
-		return;
-	}
-	ut64 *addr = rz_th_queue_pop(q, false);
-	while (addr) {
-		free(addr);
-		addr = rz_th_queue_pop(q, false);
-	}
-}
-
-static void const_yield_queue_free(RZ_OWN RZ_NULLABLE RzThreadQueue /*<RzInterpreterYield *>*/ *q) {
-	if (!q) {
-		return;
-	}
-	RzInterpreterYield *yield = rz_th_queue_pop(q, false);
-	while (yield) {
-		free(yield->abstr_const);
-		yield = rz_th_queue_pop(q, false);
-	}
-}
-
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue) {
 	if (!yield_queue) {
 		return;
@@ -52,7 +19,7 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 	if (yield_queue->yield_queue) {
 		rz_th_queue_free(yield_queue->yield_queue);
 	}
-	if (yield_queue->filter_data) {
+	if (yield_queue->filter_data && yield_queue->filter_data->io_boundaries) {
 		rz_list_free(yield_queue->filter_data->io_boundaries);
 	}
 	free(yield_queue->filter_data);
@@ -69,7 +36,7 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 	RzThreadQueue *queue = NULL;
 	switch (kind) {
 	case RZ_INTERPRETER_YIELD_KIND_XREF:
-		queue = rz_th_queue_new(RZ_INTERPRETER_YIELD_QUEUE_SIZE, (RzListFree)const_yield_queue_free);
+		queue = rz_th_queue_new(RZ_INTERPRETER_YIELD_QUEUE_SIZE, NULL);
 		break;
 	}
 	if (!queue) {
@@ -300,7 +267,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	ut64 _addr = 0;
 	ut64 *addr = &_addr;
 
-	while (true) {
+	while (rz_atomic_bool_get(iset->is_running_flag)) {
 		// Evaluate the effect on the input state.
 		if (!plugin->eval(in_state, eff, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
 			goto in_loop_error;

@@ -9,7 +9,7 @@
 #include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
 
-bool report_xref_yield(HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type) {
+bool report_xref_yield(RzInterpreterAbstrState *state, HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type) {
 	RzInterpreterYieldQueue *queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 	if (!queue) {
 		rz_warn_if_reached();
@@ -19,9 +19,11 @@ bool report_xref_yield(HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 
 		// Isn't reported
 		return true;
 	}
+	ProtoInterprSharedObjects *sobj = state->ext;
+
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
-	if (queue->filter(&to_addr, queue->filter_data)) {
-		RzAnalysisXRef *xref = RZ_NEW0(RzAnalysisXRef);
+	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
+		RzAnalysisXRef *xref = &sobj->xref;
 		xref->from = from;
 		xref->to = to_addr;
 		xref->type = type;
@@ -124,7 +126,8 @@ bool store_abstr_data(
 		buf = buf_stack;
 	}
 	rz_bv_set_to_bytes_be(src->bv, buf);
-	RzInterpreterIORequest *io_req = state->ext;
+	ProtoInterprSharedObjects *sobj = state->ext;
+	RzInterpreterIORequest *io_req = &sobj->io_req;
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr;
 	io_req->data = buf;
@@ -133,6 +136,10 @@ bool store_abstr_data(
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for write being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
+	if (!io_res) {
+		// Abort of interpretation.
+		return false;
+	}
 	if (rz_bv_len(src->bv) > BV_STACK_MAX_SIZE * 8) {
 		free(buf);
 	}
@@ -146,7 +153,8 @@ bool load_abstr_data(
 	RZ_OUT ProtoIntrprAbstrData *out,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
-	RzInterpreterIORequest *io_req = state->ext;
+	ProtoInterprSharedObjects *sobj = state->ext;
+	RzInterpreterIORequest *io_req = &sobj->io_req;
 	io_req->type = RZ_INTERPRETER_IO_READ;
 	io_req->addr = addr;
 	io_req->n_bytes = size;
@@ -154,6 +162,10 @@ bool load_abstr_data(
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for load being done.
 	RzInterpreterIOResult *io_res = rz_th_queue_wait_pop(io_result, false);
+	if (!io_res) {
+		// Abort of interpretation.
+		return false;
+	}
 	if (!io_res->req_ok) {
 		RZ_LOG_WARN("Prototype: IO read failed.");
 		return false;
