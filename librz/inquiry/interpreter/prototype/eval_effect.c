@@ -62,7 +62,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (eval_out.is_concrete) {
 			// NOTE: This prototype can't classify into call or jump.
 			// Everything is just a jump for it at this point.
-			report_xref_yield(yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
+			report_xref_yield(state, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
 		}
 		break;
 	}
@@ -111,7 +111,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		report_xref_yield(yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
+		report_xref_yield(state, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
 		if (!store_abstr_data(state, addr, &st_addr, io_request, io_result)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;

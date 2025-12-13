@@ -65,7 +65,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		AD(av->abstr_data)->is_concrete = true;
 	}
 	rz_iterator_free(it);
-	state->ext = RZ_NEW0(RzInterpreterIORequest);
+	state->ext = RZ_NEW0(ProtoInterprSharedObjects);
 	return true;
 }
 

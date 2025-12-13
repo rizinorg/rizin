@@ -7,6 +7,7 @@
 
 #include "rz_analysis.h"
 #include "rz_config.h"
+#include "rz_cons.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
 #include "rz_io.h"
@@ -130,6 +131,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzPVector *il_cache = NULL;
 	RzThreadQueue *il_queue = NULL;
 	RzVector *entry_points = NULL;
+	RzThread *interpr_th = NULL;
+
+	rz_cons_push();
 
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
@@ -186,7 +190,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// The address queue. It is the queue the interpreter can request new Effects.
 	// Of course, currently there is only a single one for the prototype.
 	// In practice there would be one for each interpreter instance.
-	addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, (RzListFree)rz_interpreter_addr_queue_free);
+	addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, NULL);
 	if (!addr_queue) {
 		return_code = false;
 		goto error_free;
@@ -259,7 +263,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 
 	// Dispatch prototype interpreter into a thread.
 	RZ_LOG_WARN("INQUIRY: Start main interpretation thread.\n");
-	RzThread *interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
 	// From here on, the code plays the role of the cache, IO handler,
 	// and yield consumer.
@@ -280,9 +284,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	io_res->read.data = io_res_buf;
 
 	while (rz_atomic_bool_get(is_running)) {
-		if (rz_th_terminated(interpr_th)) {
+		if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
 			rz_atomic_bool_set(is_running, false);
-			return_code = rz_th_get_retv(interpr_th);
 			break;
 		}
 
@@ -342,8 +345,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		// This part plays the role of a yield consumer.
 		// In our prototype it inly receives xrefs and stores them in RzAnalysis.
 		{
-			RzThreadQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, false);
-			RzAnalysisXRef *xref = rz_th_queue_pop(q, false);
+			RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+			RzAnalysisXRef *xref = rz_th_queue_pop(q->yield_queue, false);
 			if (!xref) {
 				continue;
 			}
@@ -356,10 +359,17 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 	// Wait for thread to finish before cleaning.
-	rz_th_wait(interpr_th);
-	rz_th_free(interpr_th);
-
 error_free:
+	RZ_LOG_WARN("INQUIRY: Close queues\n");
+	rz_th_cond_signal_all(rz_th_queue_get_cond(iset->il_queue));
+	rz_th_cond_signal_all(rz_th_queue_get_cond(iset->io_result));
+	if (interpr_th){
+		RZ_LOG_WARN("INQUIRY: Wait for join\n");
+		rz_th_wait(interpr_th);
+		return_code = rz_th_get_retv(interpr_th);
+		rz_th_free(interpr_th);
+	}
+
 	if (!iset) {
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
@@ -376,5 +386,6 @@ error_free:
 	}
 	rz_pvector_free(il_cache);
 
+	rz_cons_pop();
 	return return_code;
 }
