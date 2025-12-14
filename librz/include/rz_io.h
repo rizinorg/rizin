@@ -404,7 +404,12 @@ RZ_API void rz_io_cache_init(RzIO *io);
 RZ_API void rz_io_cache_fini(RzIO *io);
 RZ_API void rz_io_cache_reset(RzIO *io, int set);
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
-RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_API bool rz_io_cache_read(
+	RZ_BORROW RZ_NONNULL RzIO *io,
+	ut64 addr,
+	RZ_OUT RZ_NONNULL ut8 *buf,
+	size_t len,
+	RZ_OUT RZ_NULLABLE size_t *copied);
 
 /* io/p_cache.c */
 RZ_API bool rz_io_desc_cache_init(RzIODesc *desc);
