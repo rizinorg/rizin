@@ -10,13 +10,6 @@
 #include "rz_analysis.h"
 #include "rz_util/rz_pj.h"
 
-typedef enum {
-	MCS96_ADDRESSING_REG_DIRECT = 0, // 2 reg
-	MCS96_ADDRESSING_IMMEDIATE = 1, // 1 reg + 1 imm
-	MCS96_ADDRESSING_INDIRECT = 2, //
-	MCS96_ADDRESSING_INDEXED = 3,
-} MCS96_ADDRESSING_MODE;
-
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 } Mcs96Context;
@@ -42,235 +35,6 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	TOKEN(SEPARATOR, "([[:blank:]]+)");
 
 	return pvec;
-}
-
-/**
- * @brief computes the length of an instruction.
- * @return int the length of the instruction. returns -1 when invalid.
- */
-static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
-	if (len < 1) {
-		return 0;
-	}
-
-	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
-		return -1;
-	}
-
-	int ret = 1;
-	if (buf[0] == 0xfe) {
-		if (isa_bit == MCS96_80296) {
-			return -1;
-		}
-
-		if (len < 2) {
-			return 0;
-		}
-		if (mcs96_op[buf[1]].type & MCS96_FE) {
-			if (mcs96_op[buf[1]].type & MCS96_5B_OR_6B) {
-				if (len < 3) {
-					return 0;
-				}
-				ret = 6 + (buf[2] & 0x1);
-			}
-			if (mcs96_op[buf[1]].type & MCS96_4B_OR_5B) {
-				if (len < 3) {
-					return 0;
-				}
-				ret = 5 + (buf[2] & 0x1);
-			}
-			if (mcs96_op[buf[1]].type & MCS96_3B_OR_4B) {
-				if (len < 3) {
-					return 0;
-				}
-				ret = 4 + (buf[1] & 0x1);
-			}
-			if (mcs96_op[buf[1]].type & MCS96_5B) {
-				ret = 6;
-			}
-			if (mcs96_op[buf[1]].type & MCS96_4B) {
-				ret = 5;
-			}
-			if (mcs96_op[buf[1]].type & MCS96_3B) {
-				ret = 4;
-			}
-			if (mcs96_op[buf[1]].type & MCS96_2B) {
-				ret = 3;
-			}
-			if (ret > len) {
-				ret = 0;
-			}
-			return ret;
-		}
-	}
-	if (mcs96_op[buf[0]].type & MCS96_5B_OR_6B) {
-		if (len < 2) {
-			return 0;
-		}
-		ret = 5 + (buf[1] & 0x1);
-	}
-	if (mcs96_op[buf[0]].type & MCS96_4B_OR_5B) {
-		if (len < 2) {
-			return 0;
-		}
-		ret = 4 + (buf[1] & 0x1);
-	}
-	if (mcs96_op[buf[0]].type & MCS96_3B_OR_4B) {
-		if (len < 2) {
-			return 0;
-		}
-		ret = 3 + (buf[1] & 0x1);
-	}
-	if (mcs96_op[buf[0]].type & MCS96_6B) {
-		ret = 6;
-	}
-	if (mcs96_op[buf[0]].type & MCS96_5B) {
-		ret = 5;
-	}
-	if (mcs96_op[buf[0]].type & MCS96_4B) {
-		ret = 4;
-	}
-	if (mcs96_op[buf[0]].type & MCS96_3B) {
-		ret = 3;
-	}
-	if (mcs96_op[buf[0]].type & MCS96_2B) {
-		ret = 2;
-	}
-	if (ret > len) {
-		ret = 0;
-	}
-	return ret;
-}
-
-static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
-	if (size <= 0) {
-		return "invalid";
-	}
-
-	if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
-		ut8 lreg_bits = buf[2] & 0x3;
-		// lreg.1 lreg.0 Execute
-		// 0      0      SHLL
-		// 0      1      MVAC
-		// 1      0      Reserved
-		// 1      1      MSAC
-		switch (lreg_bits) {
-		case 0x0:
-			return "shll";
-		case 0x1:
-			return "mvac";
-		case 0x3:
-			return "msac";
-		default:
-			return "invalid";
-		}
-	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
-		// RPT waop
-		// (010000aa) (waop) (00) (04)
-		// RPTxxx
-		// (010000aa) (waop) (10 - 1F) (04)
-		// RPTI
-		// (010000aa) (waop) (20) (04)
-		// RPTIxxx
-		// (010000aa) (waop) (30 - 3F) (04)
-		switch (buf[size - 2]) {
-		case 0x00:
-			return "rpt";
-		case 0x10:
-			return "rptnst";
-		case 0x11:
-			return "rptnh";
-		case 0x12:
-			return "rptgt";
-		case 0x13:
-			return "rptnc";
-		case 0x14:
-			return "rptnvt";
-		case 0x15:
-			return "rptnv";
-		case 0x16:
-			return "rptge";
-		case 0x17:
-			return "rptne";
-		case 0x18:
-			return "rptst";
-		case 0x19:
-			return "rpth";
-		case 0x1a:
-			return "rptle";
-		case 0x1b:
-			return "rptc";
-		case 0x1c:
-			return "rptvt";
-		case 0x1d:
-			return "rptv";
-		case 0x1e:
-			return "rptlt";
-		case 0x1f:
-			return "rpte";
-		case 0x20:
-			return "rpti";
-		case 0x30:
-			return "rptinst";
-		case 0x31:
-			return "rptinh";
-		case 0x32:
-			return "rptigt";
-		case 0x33:
-			return "rptinc";
-		case 0x34:
-			return "rptinvt";
-		case 0x35:
-			return "rptinv";
-		case 0x36:
-			return "rptige";
-		case 0x37:
-			return "rptine";
-		case 0x38:
-			return "rptist";
-		case 0x39:
-			return "rptih";
-		case 0x3a:
-			return "rptile";
-		case 0x3b:
-			return "rptic";
-		case 0x3c:
-			return "rptivt";
-		case 0x3d:
-			return "rptiv";
-		case 0x3e:
-			return "rptilt";
-		case 0x3f:
-			return "rptie";
-		default:
-			return "and";
-		}
-	} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
-		const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
-		return mcs96_fe_op[fe_idx];
-	} else {
-		return mcs96_op[buf[0]].ins;
-	}
-}
-
-/**
- * Extract 11-bit signed displacement from sjmp/scall instruction.
- * Format: (instr|xxx)(disp-low)
- *
- * \param opcode First byte of the instruction, containing upper 3 bits of the displacement
- * \param disp_low Second byte of the instruction, containing lower 8 bits of the displacement
- * \return Sign-extended 16-bit displacement (-1024 to +1023)
- */
-static st16 extract_disp11(ut8 opcode, ut8 disp_low) {
-	st16 upper3bits = (st16)(opcode & 0x07); // 0b00000111
-	st16 disp = (upper3bits << 8) | disp_low;
-
-	// Sign-extend from 11 bits to 16 bits
-	if (disp & 0x400) { // Check if bit 10 (sign bit) is set
-		disp |= 0xF800; // Set bits 15-11 to extend the sign
-	}
-
-	return disp;
 }
 
 static void decode_operands(RzAsmOp *op, const char *mnemonic, const ut8 *buf, int size, ut32 isa_bit) {
@@ -415,6 +179,117 @@ static void decode_operands(RzAsmOp *op, const char *mnemonic, const ut8 *buf, i
 	}
 }
 
+static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
+	if (size <= 0) {
+		return "invalid";
+	}
+
+	if (buf[0] == 0x0d && isa_bit == MCS96_80296 && size == 3) { // SHLL/MVAC/MSAC
+		ut8 lreg_bits = buf[2] & 0x3;
+		// lreg.1 lreg.0 Execute
+		// 0      0      SHLL
+		// 0      1      MVAC
+		// 1      0      Reserved
+		// 1      1      MSAC
+		switch (lreg_bits) {
+		case 0x0:
+			return "shll";
+		case 0x1:
+			return "mvac";
+		case 0x3:
+			return "msac";
+		default:
+			return "invalid";
+		}
+	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
+		// RPT waop
+		// (010000aa) (waop) (00) (04)
+		// RPTxxx
+		// (010000aa) (waop) (10 - 1F) (04)
+		// RPTI
+		// (010000aa) (waop) (20) (04)
+		// RPTIxxx
+		// (010000aa) (waop) (30 - 3F) (04)
+		switch (buf[size - 2]) {
+		case 0x00:
+			return "rpt";
+		case 0x10:
+			return "rptnst";
+		case 0x11:
+			return "rptnh";
+		case 0x12:
+			return "rptgt";
+		case 0x13:
+			return "rptnc";
+		case 0x14:
+			return "rptnvt";
+		case 0x15:
+			return "rptnv";
+		case 0x16:
+			return "rptge";
+		case 0x17:
+			return "rptne";
+		case 0x18:
+			return "rptst";
+		case 0x19:
+			return "rpth";
+		case 0x1a:
+			return "rptle";
+		case 0x1b:
+			return "rptc";
+		case 0x1c:
+			return "rptvt";
+		case 0x1d:
+			return "rptv";
+		case 0x1e:
+			return "rptlt";
+		case 0x1f:
+			return "rpte";
+		case 0x20:
+			return "rpti";
+		case 0x30:
+			return "rptinst";
+		case 0x31:
+			return "rptinh";
+		case 0x32:
+			return "rptigt";
+		case 0x33:
+			return "rptinc";
+		case 0x34:
+			return "rptinvt";
+		case 0x35:
+			return "rptinv";
+		case 0x36:
+			return "rptige";
+		case 0x37:
+			return "rptine";
+		case 0x38:
+			return "rptist";
+		case 0x39:
+			return "rptih";
+		case 0x3a:
+			return "rptile";
+		case 0x3b:
+			return "rptic";
+		case 0x3c:
+			return "rptivt";
+		case 0x3d:
+			return "rptiv";
+		case 0x3e:
+			return "rptilt";
+		case 0x3f:
+			return "rptie";
+		default:
+			return "and";
+		}
+	} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
+		const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
+		return mcs96_fe_op[fe_idx];
+	} else {
+		return mcs96_op[buf[0]].ins;
+	}
+}
+
 static bool init(void **u) {
 	if (!u) {
 		return false;
@@ -480,7 +355,7 @@ RzAsmPlugin rz_asm_plugin_mcs96 = {
 	.license = "LGPL3",
 	.author = "condret",
 	.bits = 16,
-	.endian = RZ_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.init = &init,
 	.fini = &fini,
 	.disassemble = &disassemble
