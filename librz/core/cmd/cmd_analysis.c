@@ -2885,7 +2885,8 @@ static bool display_xref_list_handler(RzCore *core, int argc, const char **argv,
 		rz_cons_printf(";––––––––––––––––––––––––––––––––––––––––––\n");
 
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
-		rz_analysis_function_signature_handler(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
+		char *fnc_sig = rz_analysis_function_get_signature(fcn);
+		rz_cons_println(fnc_sig);
 		rz_cons_printf("; Xref from: %s @ 0x%08" PFMT64x "\n", fcn ? fcn->name : "(unknown)", xref->from);
 		ut64 offset = rz_core_backward_offset(core, xref->from, &context_bytes, &context_instrs);
 		ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
@@ -2895,6 +2896,7 @@ static bool display_xref_list_handler(RzCore *core, int argc, const char **argv,
 		}
 		if (!rz_io_read_at_mapped(core->io, offset, buf, context_bytes + 1)) {
 			RZ_LOG_ERROR("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " for disassembly.\n", (ut64)(n_bytes + 1), offset);
+			free(buf);
 			return false;
 		}
 		rz_core_print_disasm(core, offset, buf, context_bytes, context_instrs, state, &disasm_options);
