@@ -61,6 +61,7 @@ RzAsmPlugin rz_asm_plugin_xcore_cs = {
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "xcore",
+	.cpus = "",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = &xcore_asm_init,

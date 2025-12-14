@@ -369,6 +369,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_U16_U8CORE, "u16_u8core" },
 	{ EM_TACHYUM, "tachyum" },
 	{ EM_56800EF, "56800ef" },
+	{ EM_XCORE, "xcore" },
 };
 
 static const struct ver_flags_translation ver_flags_translation_table[] = {

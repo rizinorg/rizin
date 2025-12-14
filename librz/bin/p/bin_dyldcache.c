@@ -47,6 +47,7 @@ static struct MACH0_(obj_t) * bin_to_mach0(RzBinFile *bf, RzDyldBinImage *bin) {
 
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf)(buf, &opts);
 	if (!mach0) {
+		rz_buf_free(buf);
 		return NULL;
 	}
 
