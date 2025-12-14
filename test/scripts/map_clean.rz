@@ -5,4 +5,3 @@
 (dm_cmd_clean cmd; .(map_clean ${cmd}) | sed 's/1..\(K.*stack\)/1__\1/g')
 (dm_clean; .(dm_cmd_clean dm))
 (fl_F_maps_clean; .(map_clean "fl@F:maps") | sed 's/1[0-9]\{5\}\(.*stack\)/1_____\1/g')
-(dm_star_clean; .(map_clean dm*) | sed 's/\(stack.*2\)[0-9]\{4\}/\1____/g')

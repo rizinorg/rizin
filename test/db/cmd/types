@@ -915,7 +915,6 @@ RUN
 
 NAME=tp blocksize
 FILE==
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 wx 790a790a790a790a790a790a790a790a790a
@@ -2261,12 +2260,10 @@ NAME=td union
 FILE==
 CMDS=<<EOF
 td "union foo {int a;char b;}"
-t* foo
 tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pfn "foo" "0dc a b"
 pf "0dc a b"
 pf "0dc a b"
 EOF

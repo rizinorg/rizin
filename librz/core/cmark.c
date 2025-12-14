@@ -61,30 +61,6 @@ static bool print_mark_range_name(RzMarkItem *bm, void *user) {
 	return true;
 }
 
-static bool print_mark_rizin(RzMarkItem *bm, void *user) {
-	struct print_mark_t *u = (struct print_mark_t *)user;
-	if (u->in_range &&
-		!(RZ_BETWEEN(u->range_from, bm->from, u->range_to) || RZ_BETWEEN(u->range_from, bm->to, u->range_to) ||
-			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
-		return true;
-	}
-	char *comment_b64 = NULL, *tmp = NULL;
-	if (RZ_STR_ISNOTEMPTY(bm->comment)) {
-		comment_b64 = rz_base64_encode_dyn((const ut8 *)bm->comment, strlen(bm->comment));
-		// prefix the armored string with "base64:"
-		if (comment_b64) {
-			tmp = rz_str_newf("base64:%s", comment_b64);
-			free(comment_b64);
-			comment_b64 = tmp;
-		}
-	}
-	ut64 size = (bm->to >= bm->from) ? (bm->to - bm->from) : 0;
-	rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s %" PFMT64u " %s\n",
-		bm->from, bm->to, bm->name, size, rz_str_get_null(comment_b64));
-
-	return true;
-}
-
 static bool print_mark_table(RzMarkItem *bm, void *user) {
 	struct print_mark_t *u = (struct print_mark_t *)user;
 	if (u->in_range &&
@@ -121,9 +97,6 @@ static void mark_print(RzMark *b, RzCmdStateOutput *state,
 		pj_a(state->d.pj);
 		rz_mark_foreach(b, print_mark_json, &u);
 		pj_end(state->d.pj);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_mark_foreach(b, print_mark_rizin, &u);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		u.tbl = state->d.t;

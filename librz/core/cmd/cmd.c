@@ -2,10 +2,15 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_file.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_sys.h>
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
+#include <rz_types.h>
 #include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
@@ -635,7 +640,20 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus handle_ts_stmt_tmpseek(struct tsr2cmd_state *state, TSNode node);
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log);
 
+// Piping commands and fallbacks.
+static PipeFallbacks internal_commands[] = {
+	{ "uniq", rz_syscmd_uniq_pipe },
+	{ "sort", rz_syscmd_sort_pipe }
+};
+
 static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *input, int input_len, int *length) {
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(internal_commands); i++) {
+		if (RZ_STR_EQ(argv[0], internal_commands[i].command)) {
+			return internal_commands[i].fallback_fn((const char *)input, length);
+		}
+	}
+
 	char *output = NULL;
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
@@ -1082,7 +1100,7 @@ static void get_help_wrong_cmd(RzCore *core, const char *cmdname) {
 		goto cmdname_err;
 	}
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color);
+	char *help_msg = rz_cmd_get_help(core->rcmd, help_pra, use_color, 0);
 	if (!help_msg) {
 		goto help_pra_err;
 	}
@@ -1412,7 +1430,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	// let's try first with the new auto-generated help, if
 	// something fails fallback to old behaviour
 	bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color);
+	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color, 0);
 	if (help_msg) {
 		rz_cons_printf("%s", help_msg);
 		free(help_msg);

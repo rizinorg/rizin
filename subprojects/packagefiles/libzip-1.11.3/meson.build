@@ -82,6 +82,14 @@ foreach fcn : underscore_functions
     conf_data.set10('HAVE__@0@'.format(fcn.to_upper()), true)
   endif
 endforeach
+
+# Enable fdopen support if fdopen or _fdopen is available
+# This is needed for zip_fdopen.c to compile without unused variable warnings
+# Check for fdopen (POSIX/Linux/macOS) or _fdopen (Windows)
+if cc.has_function('fdopen') or cc.has_function('fdopen', prefix: '#include <stdio.h>') or cc.has_function('_fdopen') or cc.has_function('_fdopen', prefix: '#include <stdio.h>')
+  conf_data.set10('ENABLE_FDOPEN', true)
+endif
+
 foreach hdr : headers
   if cc.has_header(hdr)
     conf_data.set10('HAVE_@0@'.format(hdr.underscorify().to_upper()), true)

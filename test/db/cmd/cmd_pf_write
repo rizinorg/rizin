@@ -52,7 +52,7 @@ BROKEN=1
 CMDS=<<EOF
 pfn foo "[3]x foo"
 .pf foo.foo 1
-.pf* .foo
+.pf .foo
 e asm.lines=0
 pd 1
 EOF
@@ -67,16 +67,12 @@ CMDS=<<EOF
 pfn foo "xxd foo bar cow"
 w hello happy world
 e asm.lines=0
-.pf* .foo
-pd 3
+pf. foo
 EOF
 EXPECT=<<EOF
-;-- foo:
-0x00000000      .dword 0x6c6c6568
-;-- bar:
-0x00000004      .dword 0x6168206f
-;-- cow:
-0x00000008      .dword 0x20797070
+ foo : 0x00000000 = 0x6c6c6568
+ bar : 0x00000004 = 0x6168206f
+ cow : 0x00000008 = 544829552
 EOF
 RUN
 

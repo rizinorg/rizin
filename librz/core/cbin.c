@@ -29,7 +29,6 @@
 #define IS_MODE_SIMPLE(mode)   ((mode) & RZ_MODE_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) ((mode) & RZ_MODE_SIMPLEST)
 #define IS_MODE_JSON(mode)     ((mode) & RZ_MODE_JSON)
-#define IS_MODE_RZCMD(mode)    ((mode) & RZ_MODE_RIZINCMD)
 #define IS_MODE_NORMAL(mode)   (!(mode))
 
 // dup from cmd_info
@@ -90,9 +89,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	if (!db) {
 		return;
 	}
-	if (IS_MODE_RZCMD(mode)) {
-		rz_cons_printf("fs format\n");
-	} else if (IS_MODE_SET(mode)) {
+	if (IS_MODE_SET(mode)) {
 		rz_flag_space_push(core->flags, "format");
 	}
 	// iterate over all keys
@@ -106,9 +103,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		if ((flagname = strstr(dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;
-			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("f %s @ %s\n", flagname, v);
-			} else if (IS_MODE_SET(mode)) {
+			if (IS_MODE_SET(mode)) {
 				ut64 nv = rz_num_math(core->num, v);
 				rz_flag_set(core->flags, flagname, nv, 0);
 			}
@@ -116,9 +111,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			offset = rz_str_dup(v);
 		}
 		if (strstr(dup, ".cparse")) {
-			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("td \"%s\"\n", v);
-			} else if (IS_MODE_SET(mode)) {
+			if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
 				RzTypeDB *typedb = core->analysis->typedb;
@@ -144,9 +137,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				offset = rz_str_dup("0");
 			}
 			flagname = dup;
-			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("pf.%s %s\n", flagname, v);
-			} else if (IS_MODE_SET(mode)) {
+			if (IS_MODE_SET(mode)) {
 				rz_type_db_format_set(core->analysis->typedb, flagname, v);
 			}
 		}
@@ -167,23 +158,19 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			char *offset_key = rz_str_newf("%s.offset", flagname);
 			const char *off = sdb_const_get(db, offset_key);
 			free(offset_key);
-			if (off) {
-				if (IS_MODE_RZCMD(mode)) {
-					rz_cons_printf("Cf %d %s @ %s\n", fmtsize, v, off);
-				} else if (IS_MODE_SET(mode)) {
-					ut64 addr = rz_num_get(NULL, off);
-					ut8 *buf = malloc(fmtsize);
-					if (buf) {
-						rz_io_read_at(core->io, addr, buf, fmtsize);
-						char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
-							fmtsize, v, 0, NULL, NULL);
-						free(buf);
-						if (!format) {
-							RZ_LOG_WARN("core: cannot register invalid format (%s)\n", v);
-						} else {
-							rz_cons_print(format);
-							free(format);
-						}
+			if (off && IS_MODE_SET(mode)) {
+				ut64 addr = rz_num_get(NULL, off);
+				ut8 *buf = malloc(fmtsize);
+				if (buf) {
+					rz_io_read_at(core->io, addr, buf, fmtsize);
+					char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
+						fmtsize, v, 0, NULL, NULL);
+					free(buf);
+					if (!format) {
+						RZ_LOG_WARN("core: cannot register invalid format (%s)\n", v);
+					} else {
+						rz_cons_print(format);
+						free(format);
 					}
 				}
 			}
@@ -191,9 +178,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		if ((flagname = strstr(dup, ".size"))) {
 			*flagname = 0;
 			flagname = dup;
-			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("fL %s %s\n", flagname, v);
-			} else if (IS_MODE_SET(mode)) {
+			if (IS_MODE_SET(mode)) {
 				RzFlagItem *fi = rz_flag_get(core->flags, flagname);
 				if (fi) {
 					fi->size = rz_num_math(core->num, v);
@@ -396,7 +381,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_CLASSES) {
-		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_RIZIN)) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST)) {
 			wrap_mode("classes", RZ_OUTPUT_MODE_TABLE, rz_core_bin_classes_print(core, bf, st));
 		}
 	}
@@ -456,12 +441,12 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_SIZE) {
-		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN)) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON)) {
 			wrap_mode("size", RZ_OUTPUT_MODE_STANDARD, rz_core_bin_size_print(core, bf, st));
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_PDB) {
-		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN)) {
+		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON)) {
 			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
 			RzPdb *pdb = rz_core_pdb_load_info(core, core->bin->file);
 			if (!pdb) {
@@ -489,8 +474,8 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_TRYCATCH) {
-		if (state->mode & RZ_OUTPUT_MODE_RIZIN) {
-			wrap_mode("trycatch", RZ_OUTPUT_MODE_RIZIN, rz_core_bin_trycatch_print(core, bf, st));
+		if (state->mode & (RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON)) {
+			wrap_mode("trycatch", RZ_OUTPUT_MODE_TABLE, rz_core_bin_trycatch_print(core, bf, st));
 		}
 	}
 	if (mask & RZ_CORE_BIN_ACC_SECTIONS_MAPPING) {
@@ -3869,58 +3854,6 @@ static void classdump_java(RzBinClass *c) {
 	rz_cons_printf("}\n\n");
 }
 
-static void bin_class_print_rizin(RzCore *r, RzBinClass *c, ut64 at_min) {
-	RzListIter *iter2;
-	RzBinFile *bf = rz_bin_cur(r->bin);
-	RzBinClassField *f;
-	RzBinSymbol *sym;
-
-	// class
-	char *fn = rz_core_bin_class_build_flag_name(c);
-	if (fn) {
-		rz_cons_printf("f %s @ 0x%" PFMT64x "\n", fn, at_min);
-		free(fn);
-	}
-
-	// super class
-	fn = rz_core_bin_super_build_flag_name(c);
-	if (fn) {
-		rz_cons_printf("f %s @ 0x%" PFMT64x "\n", fn, c->addr);
-		free(fn);
-	}
-
-	// class fields
-	rz_list_foreach (c->fields, iter2, f) {
-		char *fn = rz_core_bin_field_build_flag_name(c, f);
-		if (fn) {
-			rz_cons_printf("f %s @ 0x%08" PFMT64x "\n", fn, f->vaddr);
-			free(fn);
-		}
-	}
-
-	// class methods
-	rz_list_foreach (c->methods, iter2, sym) {
-		char *fn = rz_core_bin_method_build_flag_name(c, sym);
-		if (fn) {
-			rz_cons_printf("f %s @ 0x%" PFMT64x "\n", fn, sym->vaddr);
-			free(fn);
-		}
-	}
-
-	// C struct
-	if (bf->o->lang == RZ_BIN_LANGUAGE_C || bf->o->lang == RZ_BIN_LANGUAGE_CXX || bf->o->lang == RZ_BIN_LANGUAGE_OBJC) {
-		rz_cons_printf("td \"struct %s {", c->name);
-		rz_list_foreach (c->fields, iter2, f) {
-			char *n = objc_name_toc(f->name);
-			char *t = objc_type_toc(f->type);
-			rz_cons_printf(" %s %s;", t, n);
-			free(t);
-			free(n);
-		}
-		rz_cons_printf("};\"\n");
-	}
-}
-
 RZ_API bool rz_core_bin_class_as_source_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, const char *class_name) {
 	rz_return_val_if_fail(core && bf, false);
 
@@ -4109,10 +4042,6 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "XXXss", "address", "min", "max", "name", "super", NULL);
 
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_println("fs classes");
-	}
-
 	rz_pvector_foreach (cs, iter) {
 		c = *iter;
 		ut64 at_min = UT64_MAX;
@@ -4176,9 +4105,6 @@ RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			}
 			pj_end(state->d.pj);
 			pj_end(state->d.pj);
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			bin_class_print_rizin(core, c, at_min);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_table_add_rowf(state->d.t, "XXXss", c->addr, at_min, at_max, c->name, c->super);
@@ -4308,27 +4234,6 @@ RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNUL
 	rz_cons_printf("%s\n", output);
 	free(output);
 
-	return true;
-}
-
-static int bin_trycatch(RzCore *core, PJ *pj, int mode) {
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	void **iter;
-	RzBinTrycatch *tc;
-	RzPVector *trycatch = rz_bin_file_get_trycatch(bf);
-	int idx = 0;
-	// FIXME: json mode
-	rz_pvector_foreach (trycatch, iter) {
-		tc = *iter;
-		rz_cons_printf("f+ try.%d.%" PFMT64x ".from @ 0x%08" PFMT64x "\n", idx, tc->source, tc->from);
-		rz_cons_printf("f+ try.%d.%" PFMT64x ".to @ 0x%08" PFMT64x "\n", idx, tc->source, tc->to);
-		rz_cons_printf("f+ try.%d.%" PFMT64x ".catch @ 0x%08" PFMT64x "\n", idx, tc->source, tc->handler);
-		if (tc->filter) {
-			rz_cons_printf("f+ try.%d.%" PFMT64x ".filter @ 0x%08" PFMT64x "\n", idx, tc->source, tc->filter);
-		}
-		idx++;
-	}
-	rz_pvector_free(trycatch);
 	return true;
 }
 
@@ -5329,15 +5234,37 @@ RZ_API bool rz_core_bin_versions_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin
 RZ_API bool rz_core_bin_trycatch_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
-	// TODO: add rz_bin_object_get_trycatch and switch to table + json output
-	switch (state->mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		bin_trycatch(core, NULL, RZ_MODE_PRINT);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
+	rz_cmd_state_output_set_columnsf(state, "XXXXX", "source", "from", "to", "handler", "filter");
+	rz_cmd_state_output_array_start(state);
+
+	void **iter;
+	RzBinTrycatch *tc;
+	RzPVector *trycatch = rz_bin_file_get_trycatch(bf);
+
+	rz_pvector_foreach (trycatch, iter) {
+		tc = *iter;
+		switch (state->mode) {
+		case RZ_OUTPUT_MODE_TABLE:
+			rz_table_add_rowf(state->d.t, "XXXXX", tc->source, tc->from, tc->to, tc->handler, tc->filter);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "source", tc->source);
+			pj_kn(state->d.pj, "from", tc->from);
+			pj_kn(state->d.pj, "to", tc->to);
+			pj_kn(state->d.pj, "handler", tc->handler);
+			pj_kn(state->d.pj, "filter", tc->filter);
+			pj_end(state->d.pj);
+			break;
+		default:
+			rz_warn_if_reached();
+			break;
+		}
 	}
+
+	rz_pvector_free(trycatch);
+
+	rz_cmd_state_output_array_end(state);
 	return true;
 }
 
@@ -5382,9 +5309,6 @@ RZ_API bool rz_core_bin_size_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_n(state->d.pj, size);
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("f bin_size @ %" PFMT64u "\n", size);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("%" PFMT64u "\n", size);

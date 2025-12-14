@@ -2,212 +2,212 @@ NAME=t/undoredo
 FILE=malloc://1024
 CMDS=<<EOF
 echo No seeks.
-sh* ; %v $$
+sh ; %v $$
 echo
 
 echo But try undo/redo.
 shu
 shr
-sh*
+sh
 shr
 shr
 shu
 shu
 shu
 shr
-sh*
+sh
 echo
 
 echo First seeks.
-s 0x10 ; sh* ; %v $$
-s 0x20 ; sh* ; %v $$
-s 0x30 ; sh* ; %v $$
-s 0x40 ; sh* ; %v $$
+s 0x10 ; sh ; %v $$
+s 0x20 ; sh ; %v $$
+s 0x30 ; sh ; %v $$
+s 0x40 ; sh ; %v $$
 echo
 
 echo Undo all seeks (and some more).
-shu ; sh* ; %v $$ ; echo
-shu ; sh* ; %v $$ ; echo
-shu ; sh* ; %v $$ ; echo
-shu ; sh* ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
 # Test if more undos break something.
-shu ; sh* ; %v $$ ; echo
-shu ; sh* ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
+shu ; sh ; %v $$ ; echo
 
 echo Then redo them (and some more).
-shr ; sh* ; %v $$ ; echo
-shr ; sh* ; %v $$ ; echo
-shr ; sh* ; %v $$ ; echo
-shr ; sh* ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
 # Test if more undos break something.
-shr ; sh* ; %v $$ ; echo
-shr ; sh* ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
+shr ; sh ; %v $$ ; echo
 
 echo Undo some seeks and then seek somewhere else.
 shu ; shu
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 s 0x50
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 # Redo now does nothing.
 shr ; shr ; shr
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 
 echo Undo all seeks again and perform a single seek with undo/redo.
 shu ; shu ; shu
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 s 0x100
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 shu ; shr
-sh* ; %v $$ ; echo
+sh ; %v $$ ; echo
 EOF
 EXPECT=<<EOF
 No seeks.
-# Current seek @ 0x0
+0x0  # current seek
 0x0
 
 But try undo/redo.
-# Current seek @ 0x0
-# Current seek @ 0x0
+0x0  # current seek
+0x0  # current seek
 
 First seeks.
-f undo_0 @ 0x0
-# Current seek @ 0x10
+0x0 
+0x10  # current seek
 0x10
-f undo_1 @ 0x0
-f undo_0 @ 0x10
-# Current seek @ 0x20
+0x0 
+0x10 
+0x20  # current seek
 0x20
-f undo_2 @ 0x0
-f undo_1 @ 0x10
-f undo_0 @ 0x20
-# Current seek @ 0x30
+0x0 
+0x10 
+0x20 
+0x30  # current seek
 0x30
-f undo_3 @ 0x0
-f undo_2 @ 0x10
-f undo_1 @ 0x20
-f undo_0 @ 0x30
-# Current seek @ 0x40
+0x0 
+0x10 
+0x20 
+0x30 
+0x40  # current seek
 0x40
 
 Undo all seeks (and some more).
-f undo_2 @ 0x0
-f undo_1 @ 0x10
-f undo_0 @ 0x20
-# Current seek @ 0x30
-f redo_0 @ 0x40
+0x0 
+0x10 
+0x20 
+0x30  # current seek
+0x40  # redo
 0x30
 
-f undo_1 @ 0x0
-f undo_0 @ 0x10
-# Current seek @ 0x20
-f redo_0 @ 0x30
-f redo_1 @ 0x40
+0x0 
+0x10 
+0x20  # current seek
+0x30  # redo
+0x40  # redo
 0x20
 
-f undo_0 @ 0x0
-# Current seek @ 0x10
-f redo_0 @ 0x20
-f redo_1 @ 0x30
-f redo_2 @ 0x40
+0x0 
+0x10  # current seek
+0x20  # redo
+0x30  # redo
+0x40  # redo
 0x10
 
-# Current seek @ 0x0
-f redo_0 @ 0x10
-f redo_1 @ 0x20
-f redo_2 @ 0x30
-f redo_3 @ 0x40
+0x0  # current seek
+0x10  # redo
+0x20  # redo
+0x30  # redo
+0x40  # redo
 0x0
 
-# Current seek @ 0x0
-f redo_0 @ 0x10
-f redo_1 @ 0x20
-f redo_2 @ 0x30
-f redo_3 @ 0x40
+0x0  # current seek
+0x10  # redo
+0x20  # redo
+0x30  # redo
+0x40  # redo
 0x0
 
-# Current seek @ 0x0
-f redo_0 @ 0x10
-f redo_1 @ 0x20
-f redo_2 @ 0x30
-f redo_3 @ 0x40
+0x0  # current seek
+0x10  # redo
+0x20  # redo
+0x30  # redo
+0x40  # redo
 0x0
 
 Then redo them (and some more).
-f undo_0 @ 0x0
-# Current seek @ 0x10
-f redo_0 @ 0x20
-f redo_1 @ 0x30
-f redo_2 @ 0x40
+0x0 
+0x10  # current seek
+0x20  # redo
+0x30  # redo
+0x40  # redo
 0x10
 
-f undo_1 @ 0x0
-f undo_0 @ 0x10
-# Current seek @ 0x20
-f redo_0 @ 0x30
-f redo_1 @ 0x40
+0x0 
+0x10 
+0x20  # current seek
+0x30  # redo
+0x40  # redo
 0x20
 
-f undo_2 @ 0x0
-f undo_1 @ 0x10
-f undo_0 @ 0x20
-# Current seek @ 0x30
-f redo_0 @ 0x40
+0x0 
+0x10 
+0x20 
+0x30  # current seek
+0x40  # redo
 0x30
 
-f undo_3 @ 0x0
-f undo_2 @ 0x10
-f undo_1 @ 0x20
-f undo_0 @ 0x30
-# Current seek @ 0x40
+0x0 
+0x10 
+0x20 
+0x30 
+0x40  # current seek
 0x40
 
-f undo_3 @ 0x0
-f undo_2 @ 0x10
-f undo_1 @ 0x20
-f undo_0 @ 0x30
-# Current seek @ 0x40
+0x0 
+0x10 
+0x20 
+0x30 
+0x40  # current seek
 0x40
 
-f undo_3 @ 0x0
-f undo_2 @ 0x10
-f undo_1 @ 0x20
-f undo_0 @ 0x30
-# Current seek @ 0x40
+0x0 
+0x10 
+0x20 
+0x30 
+0x40  # current seek
 0x40
 
 Undo some seeks and then seek somewhere else.
-f undo_1 @ 0x0
-f undo_0 @ 0x10
-# Current seek @ 0x20
-f redo_0 @ 0x30
-f redo_1 @ 0x40
+0x0 
+0x10 
+0x20  # current seek
+0x30  # redo
+0x40  # redo
 0x20
 
-f undo_2 @ 0x0
-f undo_1 @ 0x10
-f undo_0 @ 0x20
-# Current seek @ 0x50
+0x0 
+0x10 
+0x20 
+0x50  # current seek
 0x50
 
-f undo_2 @ 0x0
-f undo_1 @ 0x10
-f undo_0 @ 0x20
-# Current seek @ 0x50
+0x0 
+0x10 
+0x20 
+0x50  # current seek
 0x50
 
 Undo all seeks again and perform a single seek with undo/redo.
-# Current seek @ 0x0
-f redo_0 @ 0x10
-f redo_1 @ 0x20
-f redo_2 @ 0x50
+0x0  # current seek
+0x10  # redo
+0x20  # redo
+0x50  # redo
 0x0
 
-f undo_0 @ 0x0
-# Current seek @ 0x100
+0x0 
+0x100  # current seek
 0x100
 
-f undo_0 @ 0x0
-# Current seek @ 0x100
+0x0 
+0x100  # current seek
 0x100
 
 EOF
@@ -291,15 +291,15 @@ s 0x0
 s 0x0
 s 0x01
 s 0x02
-sh*~:-6..
+sh~:-6..
 EOF
 EXPECT=<<EOF
 [{"offset":0,"cursor":0,"current":false},{"offset":1,"cursor":0,"current":false},{"offset":2,"cursor":0,"current":true}]
-f undo_4 @ 0x3c
-f undo_3 @ 0x3d
-f undo_2 @ 0x3e
-f undo_1 @ 0x0
-f undo_0 @ 0x1
-# Current seek @ 0x2
+0x3c 
+0x3d 
+0x3e 
+0x0 
+0x1 
+0x2  # current seek
 EOF
 RUN

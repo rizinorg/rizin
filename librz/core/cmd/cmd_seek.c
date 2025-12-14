@@ -232,16 +232,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_start(state);
 	bool current_met = false;
 	rz_list_foreach (list, iter, undo) {
-		RzFlagItem *f = rz_flag_get_at(core->flags, undo->offset, true);
-		const char *comment;
-		char *name = NULL;
-		if (f) {
-			if (f->offset != undo->offset) {
-				name = rz_str_newf("%s+%" PFMT64d, f->name, undo->offset - f->offset);
-			} else {
-				name = rz_str_dup(f->name);
-			}
-		}
+		char *name = rz_core_addr_get_flag_offset(core->flags, undo->offset);
 		current_met |= undo->is_current;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
@@ -254,8 +245,8 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			pj_kb(pj, "current", undo->is_current);
 			pj_end(pj);
 			break;
-		case RZ_OUTPUT_MODE_STANDARD:
-			comment = "";
+		case RZ_OUTPUT_MODE_STANDARD: {
+			const char *comment = "";
 			if (undo->is_current) {
 				comment = " # current seek";
 			} else if (current_met) {
@@ -263,15 +254,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			}
 			rz_cons_printf("0x%" PFMT64x " %s%s\n", undo->offset, name ? name : "", comment);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			if (undo->is_current) {
-				rz_cons_printf("# Current seek @ 0x%" PFMT64x "\n", undo->offset);
-			} else if (current_met) {
-				rz_cons_printf("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx - 1), undo->offset);
-			} else {
-				rz_cons_printf("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx + 1), undo->offset);
-			}
-			break;
+		}
 		default:
 			rz_warn_if_reached();
 			break;

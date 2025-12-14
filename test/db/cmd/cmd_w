@@ -121,7 +121,6 @@ wx 010203
 wc
 wx 555555 @ 2
 wc
-wc*
 wci
 wc
 EOF
@@ -129,8 +128,6 @@ EXPECT=<<EOF
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (not written)
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (not written)
 idx=1 addr=0x00000002 size=3 030000 -> 555555 (not written)
-wx 010203 @ 0x00000000 # replaces: 000000
-wx 555555 @ 0x00000002 # replaces: 030000
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (written)
 idx=1 addr=0x00000002 size=3 030000 -> 555555 (written)
 EOF

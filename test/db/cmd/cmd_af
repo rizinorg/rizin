@@ -411,6 +411,19 @@ var int i @ LOCLIST
 EOF
 RUN
 
+NAME=afit table mode output
+FILE=bins/v850/hello-v850e
+CMDS=<<EOF
+aaa
+afit @ dbg.__call_exitprocs
+EOF
+EXPECT=<<EOF
+      addr name                 size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+-----------------------------------------------------------------------------------------
+0x00101e6c dbg.__call_exitprocs  170       1         0     0   20    36 18    0 false
+EOF
+RUN
+
 NAME=duplicate af+
 FILE==
 CMDS=<<EOF

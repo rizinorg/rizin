@@ -340,7 +340,6 @@ RUN
 
 NAME=escaped chars 2
 FILE==
-BROKEN=1
 CMDS=echo Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World

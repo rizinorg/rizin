@@ -132,9 +132,6 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *name, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
-	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {
-		rz_cons_printf("agn root\n");
-	}
 	if (rz_flag_get(core->flags, name)) {
 		return;
 	}
@@ -144,15 +141,10 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 		if (!strcmp(fn, name)) {
 			continue;
 		}
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("agn %s %s\n", fn, fn + name_len);
-			rz_cons_printf("age %s %s\n", RZ_STR_ISNOTEMPTY(name) ? name : "root", fn);
-		} else {
-			char *pad = rz_str_pad(' ', name_len);
-			rz_cons_printf("%s %s\n", pad, fn + name_len);
-			free(pad);
-		}
-		// rz_cons_printf (".fg %s\n", fn);
+		char *pad = rz_str_pad(' ', name_len);
+		rz_cons_printf("%s %s\n", pad, fn + name_len);
+		free(pad);
+
 		__printRecursive(core, flags, fn, mode, depth + 1);
 	}
 	rz_list_free(children);

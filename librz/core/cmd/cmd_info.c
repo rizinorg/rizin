@@ -147,16 +147,6 @@ RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_show_header_info_handler(RzCore *core, int argc, const char **argv) {
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	if (!obj || !obj->kv) {
-		RZ_LOG_ERROR("No object file loaded to query.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
-	return RZ_CMD_STATUS_OK;
-}
-
 #define GET_CHECK_CUR_BINFILE(core) \
 	RzBinFile *bf = rz_bin_cur(core->bin); \
 	if (!bf) { \

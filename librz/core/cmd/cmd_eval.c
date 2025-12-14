@@ -259,7 +259,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc == 3) {
 		if (!rz_cons_pal_set(argv[1], argv[2])) {
 			return RZ_CMD_STATUS_ERROR;
@@ -273,15 +273,13 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 		eprintf("(%s)(%sCOLOR" Color_RESET ")\n", argv[1], color);
 		return RZ_CMD_STATUS_OK;
 	}
-	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_pal_list(1, NULL);
-		break;
+
+	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_cons_pal_list('j', NULL);
+		rz_cons_pal_list_as_json(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_pal_list(0, NULL);
+		rz_cons_pal_list_visual();
 		break;
 	default:
 		return RZ_CMD_STATUS_ERROR;
@@ -290,7 +288,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_pal_list('c', argv[1]);
+	rz_cons_pal_list_as_css(argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

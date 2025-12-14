@@ -1,80 +1,15 @@
-NAME=ec* fgbg
+NAME=ec fgbg
 FILE==
 CMDS=<<EOF
 eco sepia
-ec*
+ecj
+ecc~gui_background
+ecc foo_~gui_background
 EOF
 EXPECT=<<EOF
-ec comment rgb:f0d090
-ec usrcmt rgb:f0f0f0
-ec args rgb:b0b070
-ec fname rgb:b0b070
-ec floc rgb:00ffff
-ec fline rgb:c0a060
-ec flag rgb:f0f0d0
-ec label rgb:708080
-ec help rgb:a0b070
-ec flow rgb:c0a060
-ec flow2 rgb:f0e0c0
-ec prompt rgb:906000
-ec offset rgb:906000
-ec input rgb:c0a060
-ec invalid rgb:c06040
-ec other rgb:b0a060
-ec b0x00 rgb:403010
-ec b0x7f rgb:f0d090
-ec b0xff rgb:906000
-ec math rgb:d0b070
-ec bin rgb:f0e0c0
-ec btext rgb:f0e0c0
-ec push rgb:d0b070
-ec pop rgb:b0b070
-ec crypto rgb:0000ff
-ec jmp rgb:f0e0c0
-ec cjmp rgb:f0e0c0
-ec call rgb:ffffff
-ec nop rgb:708080
-ec ret rgb:a0b070
-ec trap rgb:403010
-ec ucall rgb:ffffff
-ec ujmp rgb:f0e0c0
-ec swi rgb:b0b070
-ec cmp rgb:c0a060
-ec reg rgb:c0a060
-ec creg rgb:906000
-ec num rgb:906000
-ec mov rgb:d0b070
-ec func_var rgb:f0d090
-ec func_var_type rgb:805000
-ec func_var_addr rgb:906000
-ec widget_bg rgb:d0b070 rgb:000000
-ec widget_sel rgb:000000 rgb:f0e0c0
-ec meta rgb:767676
-ec ai.read rgb:c0b070
-ec ai.write rgb:c0a060
-ec ai.exec rgb:d0b070
-ec ai.seq rgb:906000
-ec ai.ascii rgb:f0e0c0
-ec graph.box rgb:403010
-ec graph.box2 rgb:c0a060
-ec graph.box3 rgb:c0a060
-ec graph.box4 rgb:c0a060
-ec graph.true rgb:f0d090
-ec graph.false rgb:403010
-ec graph.ujump rgb:f0d090
-ec graph.current rgb:0000ff
-ec graph.traced rgb:0000ff
-ec diff.unknown rgb:881798
-ec diff.new rgb:c50f1f
-ec diff.match rgb:767676
-ec diff.unmatch rgb:c19c00
-ec gui.cflow rgb:ffff00
-ec gui.dataoffset rgb:ffff00
-ec gui.background rgb:000000
-ec gui.alt_background rgb:ffffff
-ec gui.border rgb:000000
-ec wordhl rgb:ff0000
-ec linehl rgb:201000
+{"comment":{"rgb":[240,208,144]},"usrcmt":{"rgb":[240,240,240]},"args":{"rgb":[176,176,112]},"fname":{"rgb":[176,176,112]},"floc":{"rgb":[0,255,255]},"fline":{"rgb":[192,160,96]},"flag":{"rgb":[240,240,208]},"label":{"rgb":[112,128,128]},"help":{"rgb":[160,176,112]},"flow":{"rgb":[192,160,96]},"flow2":{"rgb":[240,224,192]},"prompt":{"rgb":[144,96,0]},"offset":{"rgb":[144,96,0]},"input":{"rgb":[192,160,96]},"invalid":{"rgb":[192,96,64]},"other":{"rgb":[176,160,96]},"b0x00":{"rgb":[64,48,16]},"b0x7f":{"rgb":[240,208,144]},"b0xff":{"rgb":[144,96,0]},"math":{"rgb":[208,176,112]},"bin":{"rgb":[240,224,192]},"btext":{"rgb":[240,224,192]},"push":{"rgb":[208,176,112]},"pop":{"rgb":[176,176,112]},"crypto":{"rgb":[0,0,255]},"jmp":{"rgb":[240,224,192]},"cjmp":{"rgb":[240,224,192]},"call":{"rgb":[255,255,255]},"nop":{"rgb":[112,128,128]},"ret":{"rgb":[160,176,112]},"trap":{"rgb":[64,48,16]},"ucall":{"rgb":[255,255,255]},"ujmp":{"rgb":[240,224,192]},"swi":{"rgb":[176,176,112]},"cmp":{"rgb":[192,160,96]},"reg":{"rgb":[192,160,96]},"creg":{"rgb":[144,96,0]},"num":{"rgb":[144,96,0]},"mov":{"rgb":[208,176,112]},"func_var":{"rgb":[240,208,144]},"func_var_type":{"rgb":[128,80,0]},"func_var_addr":{"rgb":[144,96,0]},"widget_bg":{"rgb":[208,176,112]},"widget_sel":{"rgb":[0,0,0]},"meta":{"rgb":[118,118,118]},"ai.read":{"rgb":[192,176,112]},"ai.write":{"rgb":[192,160,96]},"ai.exec":{"rgb":[208,176,112]},"ai.seq":{"rgb":[144,96,0]},"ai.ascii":{"rgb":[240,224,192]},"graph.box":{"rgb":[64,48,16]},"graph.box2":{"rgb":[192,160,96]},"graph.box3":{"rgb":[192,160,96]},"graph.box4":{"rgb":[192,160,96]},"graph.true":{"rgb":[240,208,144]},"graph.false":{"rgb":[64,48,16]},"graph.ujump":{"rgb":[240,208,144]},"graph.current":{"rgb":[0,0,255]},"graph.traced":{"rgb":[0,0,255]},"diff.unknown":{"rgb":[136,23,152]},"diff.new":{"rgb":[197,15,31]},"diff.match":{"rgb":[118,118,118]},"diff.unmatch":{"rgb":[193,156,0]},"gui.cflow":{"rgb":[255,255,0]},"gui.dataoffset":{"rgb":[255,255,0]},"gui.background":{"rgb":[0,0,0]},"gui.alt_background":{"rgb":[255,255,255]},"gui.border":{"rgb":[0,0,0]},"wordhl":{"rgb":[255,0,0]},"linehl":{"rgb":[32,16,0]}}
+.gui_background { color: rgb(0, 0, 0); }
+.foo_gui_background { color: rgb(0, 0, 0); }
 EOF
 RUN
 
@@ -82,7 +17,6 @@ NAME=ansicon ecs
 FILE==
 CMDS=<<EOF
 e scr.color=1
-e scr.ansicon=true
 ecs
 EOF
 EXPECT=<<EOF
@@ -112,173 +46,173 @@ FILE==
 CMDS=<<EOF
 e scr.color=1
 ecd
-ec
+ecl
 echo
 eco bright
-ec
+ecl
 EOF
 EXPECT=<<EOF
- [31m##[0m  comment
- [37m##[0m  usrcmt
- [33m##[0m  args
- [31m##[0m  fname
- [36m##[0m  floc
- [36m##[0m  fline
- [36m##[0m  flag
- [36m##[0m  label
- [32m##[0m  help
- [36m##[0m  flow
- [34m##[0m  flow2
- [33m##[0m  prompt
- [32m##[0m  offset
- [37m##[0m  input
- [1;91m##[0m  invalid
- [37m##[0m  other
- [32m##[0m  b0x00
- [36m##[0m  b0x7f
- [31m##[0m  b0xff
- [33m##[0m  math
- [36m##[0m  bin
- [33m##[0m  btext
- [35m##[0m  push
- [1;95m##[0m  pop
- [44m##[0m  crypto
- [32m##[0m  jmp
- [32m##[0m  cjmp
- [1;92m##[0m  call
- [34m##[0m  nop
- [31m##[0m  ret
- [1;91m##[0m  trap
- [32m##[0m  ucall
- [32m##[0m  ujmp
- [35m##[0m  swi
- [36m##[0m  cmp
- [36m##[0m  reg
- [36m##[0m  creg
- [33m##[0m  num
- [37m##[0m  mov
- [37m##[0m  func_var
- [34m##[0m  func_var_type
- [36m##[0m  func_var_addr
- [40m##[0m  widget_bg
- [41m##[0m  widget_sel
- [90m##[0m  meta
- [32m##[0m  ai.read
- [34m##[0m  ai.write
- [31m##[0m  ai.exec
- [35m##[0m  ai.seq
- [33m##[0m  ai.ascii
- [0m##[0m  graph.box
- [34m##[0m  graph.box2
- [35m##[0m  graph.box3
- [90m##[0m  graph.box4
- [32m##[0m  graph.true
- [31m##[0m  graph.false
- [34m##[0m  graph.ujump
- [34m##[0m  graph.current
- [33m##[0m  graph.traced
- [35m##[0m  diff.unknown
- [31m##[0m  diff.new
- [90m##[0m  diff.match
- [33m##[0m  diff.unmatch
- [33m##[0m  gui.cflow
- [33m##[0m  gui.dataoffset
- [30m##[0m  gui.background
- [37m##[0m  gui.alt_background
- [30m##[0m  gui.border
- [41m##[0m  wordhl
- [44m##[0m  linehl
+ [31m##[0m comment             Color for code comments
+ [37m##[0m usrcmt              Color for user comments
+ [33m##[0m args                Color for function arguments
+ [31m##[0m fname               Color for function names
+ [36m##[0m floc                Color for function locations
+ [36m##[0m fline               Color for function lines
+ [36m##[0m flag                Color for flags
+ [36m##[0m label               Color for labels
+ [32m##[0m help                Color for help messages
+ [36m##[0m flow                Color for control flow
+ [34m##[0m flow2               Color for control flow (alternative)
+ [33m##[0m prompt              Color for prompt
+ [32m##[0m offset              Color for offsets
+ [37m##[0m input               Color for user input
+ [1;91m##[0m invalid             Color for invalid instructions
+ [37m##[0m other               Color for other elements
+ [32m##[0m b0x00               Color for null bytes (0x00)
+ [36m##[0m b0x7f               Color for 0x7f bytes
+ [31m##[0m b0xff               Color for 0xff bytes
+ [33m##[0m math                Color for math operations
+ [36m##[0m bin                 Color for binary information
+ [33m##[0m btext               Color for text in binary
+ [35m##[0m push                Color for push instructions
+ [1;95m##[0m pop                 Color for pop instructions
+ [44m##[0m crypto              Color for crypto instructions
+ [32m##[0m jmp                 Color for jump instructions
+ [32m##[0m cjmp                Color for conditional jumps
+ [1;92m##[0m call                Color for call instructions
+ [34m##[0m nop                 Color for nop instructions
+ [31m##[0m ret                 Color for return instructions
+ [1;91m##[0m trap                Color for trap/interrupt instructions
+ [32m##[0m ucall               Color for unknown calls
+ [32m##[0m ujmp                Color for unknown jumps
+ [35m##[0m swi                 Color for software interrupts
+ [36m##[0m cmp                 Color for compare instructions
+ [36m##[0m reg                 Color for registers
+ [36m##[0m creg                Color for changed registers
+ [33m##[0m num                 Color for numbers
+ [37m##[0m mov                 Color for move instructions
+ [37m##[0m func_var            Color for function variables
+ [34m##[0m func_var_type       Color for function variable types
+ [36m##[0m func_var_addr       Color for function variable addresses
+ [40m##[0m widget_bg           Color for widget background
+ [41m##[0m widget_sel          Color for selected widget
+ [90m##[0m meta                Color for metadata
+ [32m##[0m ai.read             Color for memory read access
+ [34m##[0m ai.write            Color for memory write access
+ [31m##[0m ai.exec             Color for executable memory
+ [35m##[0m ai.seq              Color for sequential memory
+ [33m##[0m ai.ascii            Color for ASCII in memory
+ [0m##[0m graph.box           Color for graph box
+ [34m##[0m graph.box2          Color for graph box (alternative 2)
+ [35m##[0m graph.box3          Color for graph box (alternative 3)
+ [90m##[0m graph.box4          Color for graph box (alternative 4)
+ [32m##[0m graph.true          Color for true branch in graph
+ [31m##[0m graph.false         Color for false branch in graph
+ [34m##[0m graph.ujump         Color for unknown jump in graph
+ [34m##[0m graph.current       Color for current node in graph
+ [33m##[0m graph.traced        Color for traced node in graph
+ [35m##[0m diff.unknown        Color for unknown diff
+ [31m##[0m diff.new            Color for new diff
+ [90m##[0m diff.match          Color for matched diff
+ [33m##[0m diff.unmatch        Color for unmatched diff
+ [33m##[0m gui.cflow           Color for GUI control flow
+ [33m##[0m gui.dataoffset      Color for GUI data offset
+ [30m##[0m gui.background      Color for GUI background
+ [37m##[0m gui.alt_background  Color for GUI alternate background
+ [30m##[0m gui.border          Color for GUI border
+ [41m##[0m wordhl              Color for highlighted word
+ [44m##[0m linehl              Color for highlighted line
 
- [91m##[0m  comment
- [97m##[0m  usrcmt
- [93m##[0m  args
- [91m##[0m  fname
- [96m##[0m  floc
- [96m##[0m  fline
- [96m##[0m  flag
- [96m##[0m  label
- [92m##[0m  help
- [96m##[0m  flow
- [94m##[0m  flow2
- [93m##[0m  prompt
- [92m##[0m  offset
- [97m##[0m  input
- [1;91m##[0m  invalid
- [97m##[0m  other
- [92m##[0m  b0x00
- [96m##[0m  b0x7f
- [91m##[0m  b0xff
- [93m##[0m  math
- [96m##[0m  bin
- [93m##[0m  btext
- [95m##[0m  push
- [1;95m##[0m  pop
- [103m##[0m  crypto
- [92m##[0m  jmp
- [92m##[0m  cjmp
- [1;92m##[0m  call
- [94m##[0m  nop
- [91m##[0m  ret
- [1;91m##[0m  trap
- [92m##[0m  ucall
- [92m##[0m  ujmp
- [95m##[0m  swi
- [96m##[0m  cmp
- [96m##[0m  reg
- [96m##[0m  creg
- [93m##[0m  num
- [97m##[0m  mov
- [97m##[0m  func_var
- [93m##[0m  func_var_type
- [96m##[0m  func_var_addr
- [40m##[0m  widget_bg
- [101m##[0m  widget_sel
- [90m##[0m  meta
- [92m##[0m  ai.read
- [94m##[0m  ai.write
- [91m##[0m  ai.exec
- [95m##[0m  ai.seq
- [93m##[0m  ai.ascii
- [94m##[0m  graph.box
- [92m##[0m  graph.box2
- [95m##[0m  graph.box3
- [90m##[0m  graph.box4
- [92m##[0m  graph.true
- [91m##[0m  graph.false
- [94m##[0m  graph.ujump
- [94m##[0m  graph.current
- [93m##[0m  graph.traced
- [35m##[0m  diff.unknown
- [31m##[0m  diff.new
- [90m##[0m  diff.match
- [33m##[0m  diff.unmatch
- [93m##[0m  gui.cflow
- [93m##[0m  gui.dataoffset
- [30m##[0m  gui.background
- [97m##[0m  gui.alt_background
- [30m##[0m  gui.border
- [101m##[0m  wordhl
- [44m##[0m  linehl
+ [91m##[0m comment             Color for code comments
+ [97m##[0m usrcmt              Color for user comments
+ [93m##[0m args                Color for function arguments
+ [91m##[0m fname               Color for function names
+ [96m##[0m floc                Color for function locations
+ [96m##[0m fline               Color for function lines
+ [96m##[0m flag                Color for flags
+ [96m##[0m label               Color for labels
+ [92m##[0m help                Color for help messages
+ [96m##[0m flow                Color for control flow
+ [94m##[0m flow2               Color for control flow (alternative)
+ [93m##[0m prompt              Color for prompt
+ [92m##[0m offset              Color for offsets
+ [97m##[0m input               Color for user input
+ [1;91m##[0m invalid             Color for invalid instructions
+ [97m##[0m other               Color for other elements
+ [92m##[0m b0x00               Color for null bytes (0x00)
+ [96m##[0m b0x7f               Color for 0x7f bytes
+ [91m##[0m b0xff               Color for 0xff bytes
+ [93m##[0m math                Color for math operations
+ [96m##[0m bin                 Color for binary information
+ [93m##[0m btext               Color for text in binary
+ [95m##[0m push                Color for push instructions
+ [1;95m##[0m pop                 Color for pop instructions
+ [103m##[0m crypto              Color for crypto instructions
+ [92m##[0m jmp                 Color for jump instructions
+ [92m##[0m cjmp                Color for conditional jumps
+ [1;92m##[0m call                Color for call instructions
+ [94m##[0m nop                 Color for nop instructions
+ [91m##[0m ret                 Color for return instructions
+ [1;91m##[0m trap                Color for trap/interrupt instructions
+ [92m##[0m ucall               Color for unknown calls
+ [92m##[0m ujmp                Color for unknown jumps
+ [95m##[0m swi                 Color for software interrupts
+ [96m##[0m cmp                 Color for compare instructions
+ [96m##[0m reg                 Color for registers
+ [96m##[0m creg                Color for changed registers
+ [93m##[0m num                 Color for numbers
+ [97m##[0m mov                 Color for move instructions
+ [97m##[0m func_var            Color for function variables
+ [93m##[0m func_var_type       Color for function variable types
+ [96m##[0m func_var_addr       Color for function variable addresses
+ [40m##[0m widget_bg           Color for widget background
+ [101m##[0m widget_sel          Color for selected widget
+ [90m##[0m meta                Color for metadata
+ [92m##[0m ai.read             Color for memory read access
+ [94m##[0m ai.write            Color for memory write access
+ [91m##[0m ai.exec             Color for executable memory
+ [95m##[0m ai.seq              Color for sequential memory
+ [93m##[0m ai.ascii            Color for ASCII in memory
+ [94m##[0m graph.box           Color for graph box
+ [92m##[0m graph.box2          Color for graph box (alternative 2)
+ [95m##[0m graph.box3          Color for graph box (alternative 3)
+ [90m##[0m graph.box4          Color for graph box (alternative 4)
+ [92m##[0m graph.true          Color for true branch in graph
+ [91m##[0m graph.false         Color for false branch in graph
+ [94m##[0m graph.ujump         Color for unknown jump in graph
+ [94m##[0m graph.current       Color for current node in graph
+ [93m##[0m graph.traced        Color for traced node in graph
+ [35m##[0m diff.unknown        Color for unknown diff
+ [31m##[0m diff.new            Color for new diff
+ [90m##[0m diff.match          Color for matched diff
+ [33m##[0m diff.unmatch        Color for unmatched diff
+ [93m##[0m gui.cflow           Color for GUI control flow
+ [93m##[0m gui.dataoffset      Color for GUI data offset
+ [30m##[0m gui.background      Color for GUI background
+ [97m##[0m gui.alt_background  Color for GUI alternate background
+ [30m##[0m gui.border          Color for GUI border
+ [101m##[0m wordhl              Color for highlighted word
+ [44m##[0m linehl              Color for highlighted line
 EOF
 RUN
 
-NAME=ec* and attributes
+NAME=ecc and attributes
 FILE==
 CMDS=<<EOF
 eco bright
-ec*~pop
+ec~pop
 eco white2
-ec*~bin
-ec*~cjmp
-ec*~comment
-ec*~fname
+ec~bin
+ec~cjmp
+ecc~comment
+ecc~fname
 EOF
 EXPECT=<<EOF
-ec pop rgb:ff00ff . bold
-ec bin rgb:4f1900 . bold
-ec cjmp rgb:376b4c . bold underline
-ec comment rgb:001296 . italic
-ec fname rgb:8d0004 . bold italic
+ r:255 g:0   b:255  pop bold
+ r:79  g:25  b:0    bin bold
+ r:55  g:107 b:76   cjmp bold underline
+.comment { color: rgb(0, 18, 150); font-style: italic; }
+.fname { color: rgb(141, 0, 4); font-weight: bold; font-style: italic; }
 EOF
 RUN
 

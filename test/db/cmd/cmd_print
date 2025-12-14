@@ -13,56 +13,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p= 0xff 0x00
-FILE==
-BROKEN=1
-CMDS=<<EOF
-b 2
-wx 0xff
-p= 2@0
-EOF
-EXPECT=<<EOF
-         ___________________________________________________
-00 00ff | __________________________________________________|
-01 0000 ||
-EOF
-RUN
-
-NAME=p= 0xff 0x00
+NAME=p= various tests with malloc:// 
 FILE==
 CMDS=<<EOF
+e zoom.in=block
+p=p" 1 " 1 EN
+echo -------
 b 2
 wx 0xff
 e zoom.in=block
 p= 2 2@ 0
 EOF
 EXPECT=<<EOF
+0x00000000 000 0000 |#
+-------
 0x00000000 000 00ff |###################################################
 0x00000001 001 0000 |#
-EOF
-RUN
-
-NAME=p= - crash
-FILE==
-CMDS=<<EOF
-e zoom.in=block
-p=p" 1 " 1 EN
-EOF
-EXPECT=<<EOF
-0x00000000 000 0000 |#
-EOF
-RUN
-
-NAME=p=d
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=p=d @!10 @ 0
-EXPECT=<<EOF
-min:              0  0x0
-max:              127  0x7f
-unique (count):   6  0x6
-range (max-min):  127  0x7f
-size (of block):  10  0xa
 EOF
 RUN
 
@@ -78,46 +44,128 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=e 5 0x100
+NAME=p= tests
 FILE=bins/elf/arm1.bin
 ARGS=-n
 CMDS=<<EOF
+p=d @!10 @ 0
+echo -------
+p=r
+echo -------
+p=r 0.73 0.06
+echo -------
+p=rj 0.73 0.06
+echo -------
+p=rq 0.73 0.06
+echo -------
+p=rl 0.73 0.06
+echo -------
+p=rt 0.73 0.06
+echo -------
+p=p 5@ 0
+echo -------
 e zoom.in=block
 p=e 5 0x100
+echo -------
+e zoom.in=block
+p=e 5 0x100 1
+echo -------
+e zoom.in=block
+p=p 5 0x100
+echo -------
+e zoom.in=block
+p=p 5 0x100 1
 EOF
 EXPECT=<<EOF
+min:              0  0x0
+max:              127  0x7f
+unique (count):   6  0x6
+range (max-min):  127  0x7f
+size (of block):  10  0xa
+-------
+0x00000000 Falling entropy edge
+-------
+0x00010a00 Rising entropy edge
+0x00017200 Rising entropy edge
+0x00017f00 Rising entropy edge
+0x0004a800 Rising entropy edge
+0x0005f000 Rising entropy edge
+0x00063d00 Falling entropy edge
+0x00064000 Falling entropy edge
+0x0006cd00 Falling entropy edge
+0x00070200 Rising entropy edge
+0x00073200 Falling entropy edge
+0x00074300 Falling entropy edge
+-------
+[{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.730819},{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.730736},{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.733761},{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.730632},{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.757028},{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.042506},{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.058047},{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.760109},{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.024685}]
+-------
+0x00010a00
+0x00017200
+0x00017f00
+0x0004a800
+0x0005f000
+0x00063d00
+0x00064000
+0x0006cd00
+0x00070200
+0x00073200
+0x00074300
+-------
+0x00010a00 10a Rising entropy edge (0.730819)
+0x00017200 172 Rising entropy edge (0.730736)
+0x00017f00 17f Rising entropy edge (0.733761)
+0x0004a800 4a8 Rising entropy edge (0.730632)
+0x0005f000 5f0 Rising entropy edge (0.757028)
+0x00063d00 63d Falling entropy edge (0.042506)
+0x00064000 640 Falling entropy edge (0.000000)
+0x0006cd00 6cd Falling entropy edge (0.058047)
+0x00070200 702 Rising entropy edge (0.760109)
+0x00073200 732 Falling entropy edge (0.000000)
+0x00074300 743 Falling entropy edge (0.024685)
+-------
+   addr index edge_type            entropy_value 
+-------------------------------------------------
+0x10a00   266 rising entropy edge       0.730819
+0x17200   370 rising entropy edge       0.730736
+0x17f00   383 rising entropy edge       0.733761
+0x4a800  1192 rising entropy edge       0.730632
+0x5f000  1520 rising entropy edge       0.757028
+0x63d00  1597 falling entropy edge      0.042506
+0x64000  1600 falling entropy edge      0.000000
+0x6cd00  1741 falling entropy edge      0.058047
+0x70200  1794 rising entropy edge       0.760109
+0x73200  1842 falling entropy edge      0.000000
+0x74300  1859 falling entropy edge      0.024685
+-------
+0x00000000 000 0032 |##########
+0x0001bec1 001 0031 |#
+0x00037d82 002 0035 |###
+0x00053c43 003 0040 |###########
+0x0006fb04 004 0076 |########################
+-------
 0x00000000 000 007f |#########################
 0x00000033 001 006b |###
 0x00000066 002 007a |#########################
 0x00000099 003 006a |#####################
 0x000000cc 004 005f |###################
-EOF
-RUN
-
-NAME=p=e 5 0x100 1
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in=block
-p=e 5 0x100 1
-EOF
-EXPECT=<<EOF
+-------
 0x00000000 000 006b |###
 0x00000033 001 007a |#########################
 0x00000066 002 006a |#####################
 0x00000099 003 005f |###################
 0x000000cc 004 0059 |##################
-EOF
-RUN
-
-NAME=p=r
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=r
-EOF
-EXPECT=<<EOF
-0x00000000 Falling entropy edge
+-------
+0x00000000 000 0032 |#########
+0x00000033 001 0019 |#
+0x00000066 002 001e |#
+0x00000099 003 001e |##
+0x000000cc 004 0028 |########
+-------
+0x00000000 000 0019 |#
+0x00000033 001 001e |#
+0x00000066 002 001e |##
+0x00000099 003 0028 |#######
+0x000000cc 004 001e |######
 EOF
 RUN
 
@@ -132,148 +180,6 @@ EOF
 EXPECT=<<EOF
 64
 65
-EOF
-RUN
-
-NAME=p=r 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=r 0.73 0.06
-EOF
-EXPECT=<<EOF
-0x00010a00 Rising entropy edge
-0x00017200 Rising entropy edge
-0x00017f00 Rising entropy edge
-0x0004a800 Rising entropy edge
-0x0005f000 Rising entropy edge
-0x00063d00 Falling entropy edge
-0x00064000 Falling entropy edge
-0x0006cd00 Falling entropy edge
-0x00070200 Rising entropy edge
-0x00073200 Falling entropy edge
-0x00074300 Falling entropy edge
-EOF
-RUN
-
-NAME=p=rj 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rj 0.73 0.06
-EOF
-EXPECT=<<EOF
-[{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.730819},{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.730736},{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.733761},{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.730632},{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.757028},{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.042506},{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.058047},{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.760109},{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.024685}]
-EOF
-RUN
-
-NAME=p=rq 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rq 0.73 0.06
-EOF
-EXPECT=<<EOF
-0x00010a00
-0x00017200
-0x00017f00
-0x0004a800
-0x0005f000
-0x00063d00
-0x00064000
-0x0006cd00
-0x00070200
-0x00073200
-0x00074300
-EOF
-RUN
-
-NAME=p=rl 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rl 0.73 0.06
-EOF
-EXPECT=<<EOF
-0x00010a00 10a Rising entropy edge (0.730819)
-0x00017200 172 Rising entropy edge (0.730736)
-0x00017f00 17f Rising entropy edge (0.733761)
-0x0004a800 4a8 Rising entropy edge (0.730632)
-0x0005f000 5f0 Rising entropy edge (0.757028)
-0x00063d00 63d Falling entropy edge (0.042506)
-0x00064000 640 Falling entropy edge (0.000000)
-0x0006cd00 6cd Falling entropy edge (0.058047)
-0x00070200 702 Rising entropy edge (0.760109)
-0x00073200 732 Falling entropy edge (0.000000)
-0x00074300 743 Falling entropy edge (0.024685)
-EOF
-RUN
-
-NAME=p=rt 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rt 0.73 0.06
-EOF
-EXPECT=<<EOF
-   addr index edge_type            entropy_value 
--------------------------------------------------
-0x10a00   266 rising entropy edge       0.730819
-0x17200   370 rising entropy edge       0.730736
-0x17f00   383 rising entropy edge       0.733761
-0x4a800  1192 rising entropy edge       0.730632
-0x5f000  1520 rising entropy edge       0.757028
-0x63d00  1597 falling entropy edge      0.042506
-0x64000  1600 falling entropy edge      0.000000
-0x6cd00  1741 falling entropy edge      0.058047
-0x70200  1794 rising entropy edge       0.760109
-0x73200  1842 falling entropy edge      0.000000
-0x74300  1859 falling entropy edge      0.024685
-EOF
-RUN
-
-NAME=p=p 5
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=p=p 5@ 0
-EXPECT=<<EOF
-0x00000000 000 0032 |##########
-0x0001bec1 001 0031 |#
-0x00037d82 002 0035 |###
-0x00053c43 003 0040 |###########
-0x0006fb04 004 0076 |########################
-EOF
-RUN
-
-NAME=p=p 5 0x100
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in=block
-p=p 5 0x100
-EOF
-EXPECT=<<EOF
-0x00000000 000 0032 |#########
-0x00000033 001 0019 |#
-0x00000066 002 001e |#
-0x00000099 003 001e |##
-0x000000cc 004 0028 |########
-EOF
-RUN
-
-NAME=p=p 5 0x100 1
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in=block
-p=p 5 0x100 1
-EOF
-EXPECT=<<EOF
-0x00000000 000 0019 |#
-0x00000033 001 001e |#
-0x00000066 002 001e |##
-0x00000099 003 0028 |#######
-0x000000cc 004 001e |######
 EOF
 RUN
 
@@ -337,21 +243,12 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 pi -5 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-pop rbp
-jmp sym.register_tm_clones
-push rbp
-mov rbp, rsp
-mov edi, str.Hello_World
-EOF
-RUN
-
-NAME=pi -5 @ 0x0040050f (analysis)
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
+echo -------
+pdj -3 @ 0x0040050f
+echo -------
+s 0x0040050f
+pi -5
+echo -------
 aaa
 pi -5 @ 0x0040050f
 EOF
@@ -361,30 +258,15 @@ jmp sym.register_tm_clones
 push rbp
 mov rbp, rsp
 mov edi, str.Hello_World
-EOF
-RUN
-
-NAME=pdj -5 @ 0x0040050f
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-pdj -3 @ 0x0040050f
-EOF
-EXPECT=<<EOF
+-------
 [{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-EOF
-RUN
-
-NAME=pi -5
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-s 0x0040050f
-pi -5
-EOF
-EXPECT=<<EOF
+-------
+pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+-------
 pop rbp
 jmp sym.register_tm_clones
 push rbp
@@ -645,22 +527,13 @@ e asm.arch=x86
 e asm.bits=64
 p8 1 @b:32
 e asm.bits
-EOF
-EXPECT=<<EOF
-00
-64
-EOF
-RUN
-
-NAME=tmpbits
-FILE==
-CMDS=<<EOF
-e asm.arch=x86
 e asm.bits=32
 p8 1 @b:64
 e asm.bits
 EOF
 EXPECT=<<EOF
+00
+64
 00
 32
 EOF
@@ -675,23 +548,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m lzma
+NAME=pm lzma
 FILE=bins/other/hello-world.lzma
 CMDS=<<EOF
 pm
-EOF
-EXPECT=<<EOF
-0x00000000 LZMA BE compressed data dictionary size: 32768 bytes,
-EOF
-EXPECT_ERR=
-RUN
-
-NAME=/pmj lzma
-FILE=bins/other/hello-world.lzma
-CMDS=<<EOF
 pmj
 EOF
 EXPECT=<<EOF
+0x00000000 LZMA BE compressed data dictionary size: 32768 bytes,
 [{"address":0,"magic":"LZMA BE compressed data dictionary size: 32768 bytes,"}]
 EOF
 EXPECT_ERR=
@@ -708,17 +572,12 @@ RUN
 NAME=pm elf/main
 FILE=bins/elf/analysis/main
 ARGS=-n
-CMDS=pm
+CMDS=<<EOF
+pm
+pmj
+EOF
 EXPECT=<<EOF
 0x00000000 ELF 64-bit LSB executable, x86-64, version 1
-EOF
-RUN
-
-NAME=pmj elf/main
-FILE=bins/elf/analysis/main
-ARGS=-n
-CMDS=pmj
-EXPECT=<<EOF
 [{"address":0,"magic":"ELF 64-bit LSB executable, x86-64, version 1"}]
 EOF
 RUN
@@ -774,11 +633,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pib from beginning of bb
+NAME=pib from beginning of bb & inside bb
 FILE=bins/elf/analysis/x64-loop
 CMDS=<<EOF
 s main
 af
+pib
+echo -------
+so 2
 pib
 EOF
 EXPECT=<<EOF
@@ -789,18 +651,7 @@ mov dword [var_1ch], edi
 mov qword [var_28h], rsi
 mov dword [var_ch], 0x00
 jmp 0x400523
-EOF
-RUN
-
-NAME=pib inside bb
-FILE=bins/elf/analysis/x64-loop
-CMDS=<<EOF
-s main
-af
-so 2
-pib
-EOF
-EXPECT=<<EOF
+-------
 sub rsp, 0x20
 mov dword [var_1ch], edi
 mov qword [var_28h], rsi
@@ -832,28 +683,17 @@ nop
 EOF
 RUN
 
-NAME=psW 32 utf32le
+NAME=psW 32 utf32le & psM 32 utf32be
 FILE=bins/elf/crackme0x00b
-CMDS=psW @ obj.pass.1964
+CMDS=<<EOF
+psW @ obj.pass.1964
+echo --------
+psM @ 0x0804a03d
+EOF
 EXPECT=<<EOF
 w0wgreat
-EOF
-RUN
-
-NAME=psM 32 utf32be
-FILE=bins/elf/crackme0x00b
-CMDS=psM @ 0x0804a03d
-EXPECT=<<EOF
+--------
 w0wgreat
-EOF
-RUN
-
-NAME=ps leading zeros
-BROKEN=1
-FILE=bins/elf/crackme0x00b
-CMDS=ps @ 0x0804a03e
-EXPECT=<<EOF
-w
 EOF
 RUN
 

@@ -1908,11 +1908,6 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("%s=%s\n", node->name, node->value);
 		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		es = rz_cmd_escape_arg(node->value, RZ_CMD_ESCAPE_ONE_ARG);
-		rz_cons_printf("e %s=%s\n", node->name, es);
-		free(es);
-		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
 		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
 		char color_str[32], reset_str[32];
@@ -3692,7 +3687,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
 	SETI("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
-	SETBPREF("graph.offset", "false", "Show offsets in graphs");
 	SETBPREF("graph.bytes", "false", "Show opcode bytes in graphs");
 	SETI("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");

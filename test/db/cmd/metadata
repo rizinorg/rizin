@@ -1,11 +1,11 @@
 NAME=CC-*
 FILE=bins/mach0/FileDP
 CMDS=<<EOF
-C*~?
+C~?
 CCl~?
 CC-*
 CCl~?
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 43
@@ -38,10 +38,10 @@ FILE=malloc://1024
 CMDS=<<EOF
 w hello world
 Cs @ $$
-C*~[1]
+C~[1]
 EOF
 EXPECT=<<EOF
-12
+ascii[12]
 EOF
 RUN
 
@@ -50,10 +50,10 @@ FILE=malloc://1024
 CMDS=<<EOF
 w hello world
 Cs 5
-C*~[1]
+C~[1]
 EOF
 EXPECT=<<EOF
-5
+ascii[5]
 EOF
 RUN
 
@@ -125,7 +125,7 @@ FILE=malloc://128
 CMDS=<<EOF
 w hello
 Cs 6
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 1
@@ -156,9 +156,9 @@ CMDS=<<EOF
 e scr.color=false
 wx 554889e54883c768
 Ch 2@ 0x100
-C*~?
+C~?
 Ch-@ 0x100
-C*~?
+C~?
 EOF
 EXPECT=<<EOF
 1
@@ -307,20 +307,6 @@ Cml
 echo ----
 C
 echo ----
-Csl*
-echo ----
-Cdl*
-echo ----
-Chl*
-echo ----
-Cfl*
-echo ----
-CCl*
-echo ----
-Cml*
-echo ----
-C*
-echo ----
 Cslj
 echo ----
 Cdlj
@@ -354,25 +340,6 @@ EXPECT=<<EOF
 0x00000200 hidden Ch 2
 0x00000300 format 4 x
 0x00000380 magic 8 wwww
-----
-Csb 12 @ 0x00000000 # hello world
-----
-Cd 3 @ 0x00000100
-----
-Ch 2 @ 0x00000200
-----
-Cf 4 x @ 0x00000300
-----
-CCu base64:SGVsbG8h @ 0x00000000
-----
-Cm 8 wwww @ 0x00000380
-----
-Csb 12 @ 0x00000000 # hello world
-CCu base64:SGVsbG8h @ 0x00000000
-Cd 3 @ 0x00000100
-Ch 2 @ 0x00000200
-Cf 4 x @ 0x00000300
-Cm 8 wwww @ 0x00000380
 ----
 [{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"ascii","ascii":true}]
 ----
@@ -423,14 +390,14 @@ CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
 Csb
-Csl*~`spad`
+Csl~`spad`
 Cs.q
 Cs.
 Cs.l
 pd 1
 Cs-
 Csw
-Csl*~`spad`
+Csl~`spad`
 Cs.q
 Cs.
 Cs.l
@@ -444,13 +411,13 @@ Cs.l
 Cs.l @ 0x14001601c  # should print nothing
 EOF
 EXPECT=<<EOF
-Csb 2 @ 0x140016018 # \t
+0x140016018 ascii[2] "\t"
 "\t"
 ascii[2] "\t"
 0x140016018 ascii[2] "\t"
             ;-- str.wide_esc:___0m:
             0x140016018     .string "\t" ; len=2
-Csw 38 @ 0x140016018 # \twide\\esc: \e[0m¡\r\n
+0x140016018 utf16le[38] "\twide\\esc: \e[0m¡\r\n"
 "\twide\\esc: \e[0m¡\r\n"
 utf16le[38] "\twide\\esc: \e[0m¡\r\n"
 0x140016018 utf16le[38] "\twide\\esc: \e[0m¡\r\n"
@@ -491,26 +458,26 @@ ARGS=-e search.str.check_ascii_freq=false
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
-Csl*~`spad`
+Csl~`spad`
 Cs.q
 Cs.
 Cs.l
 pd 1
 Cs8
-Csl*~`spad`
+Csl~`spad`
 Cs.q
 Cs.
 Cs.l
 pd 1
 EOF
 EXPECT=<<EOF
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
             ;-- str.utf8___u00a2_u20ac_U00010348_in_yellow:__33m_____________0m:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n" ; len=61
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n
+0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
 0x004021ff utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m ¢€𐍈 \e[0m\n"
@@ -650,18 +617,18 @@ FILE==
 CMDS=<<EOF
 s 0x100
 Cd 4 1
-C*~Cd
+C~Cd
 echo --1--
 Cd 4 1
 Cd-
-C*~Cd
+C~Cd
 echo --2--
 Cd 4 1
 C-
-C*~Cd
+C~Cd
 EOF
 EXPECT=<<EOF
-Cd 4 @ 0x00000100
+0x00000100 data Cd 4
 --1--
 --2--
 EOF

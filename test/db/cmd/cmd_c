@@ -1253,10 +1253,13 @@ cw 8 'pd 2' @ 0x5ae0
 cw 8 'pd 2' @ 0x5ae0
 cw 8 'pd 2' @ 0x5ae0
 cw 8 'pd 2' @ 0x5ae0
-cwl*
+cwl
 EOF
 EXPECT=<<EOF
-cw 8 'pd 2' @  0x00005ae0
+0x00005ae0
+            ;-- entry0:
+            0x00005ae0      endbr64
+            0x00005ae4      xor   ebp, ebp
 EOF
 RUN
 

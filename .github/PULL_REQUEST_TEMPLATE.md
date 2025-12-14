@@ -1,8 +1,8 @@
  <!-- Filling this template is mandatory -->
 
 **Your checklist for this pull request**
-- [ ] I've read the [guidelines for contributing](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md) to this repository.
-- [ ] I made sure to follow the project's [coding style](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md#code-style).
+- [ ] I've read the [guidelines for contributing](https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md) to this repository.
+- [ ] I made sure to follow the project's [coding style](https://github.com/rizinorg/rizin/blob/dev/DEVELOPERS.md#code-style).
 - [ ] I've documented every `RZ_API` function and struct this PR changes.
 - [ ] I've added tests that prove my changes are effective (required for changes to `RZ_API`).
 - [ ] I've updated the [Rizin book](https://github.com/rizinorg/book) with the relevant information (if needed).

@@ -23,7 +23,7 @@ static bool help_search_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc *cd, void *
 	if (hs->pj) {
 		rz_cmd_get_help_json(cmd, cd, hs->pj);
 	} else {
-		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
+		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb, 0);
 	}
 	return true;
 }
@@ -35,7 +35,7 @@ static bool help_search_interactive_cmd_desc_summary(RzCmd *cmd, const RzCmdDesc
 	if (!sb) {
 		return false;
 	}
-	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb);
+	rz_cmd_get_help_strbuf(cmd, cd, cmd->core->print->flags & RZ_PRINT_FLAGS_COLOR, sb, 3);
 	rz_list_append(brief_lines, rz_str_trim_tail(rz_strbuf_drain(sb)));
 	return true;
 }
@@ -57,38 +57,64 @@ static bool help_search_cmd_desc_details(RzCmd *cmd, const RzCmdDesc *cd, void *
 		return false;
 	}
 
-	char *detailed_help = rz_cmd_get_help(cmd, pa, hs->color);
-	if (!detailed_help) {
-		rz_cmd_parsed_args_free(pa);
-		return false;
-	}
-	RzList *help_lines = rz_str_split_list_regex(detailed_help, "\\n+", 0);
+	const int hud_gutter_size = 3;
+	bool ret = true;
+	char *line_prefix = NULL;
+	char *detailed_help = NULL;
+	RzList *help_lines = NULL;
 
-	char *line_prefix = rz_str_newf("%s | ", cd->name);
-	if (!help_lines || !line_prefix) {
+	line_prefix = rz_str_newf("%s | ", cd->name);
+	if (!line_prefix) {
 		goto error;
 	}
+
+	detailed_help = rz_cmd_get_help(cmd, pa, hs->color, hud_gutter_size + strlen(line_prefix));
+	if (!detailed_help) {
+		goto error;
+	}
+
+	help_lines = rz_str_split_list_regex(detailed_help, "\\n+", 0);
+	if (!help_lines) {
+		goto error;
+	}
+
 	while (!rz_list_empty(help_lines)) {
 		char *line = (char *)rz_list_pop_head(help_lines);
-		char *prefixed_line = rz_str_newf("%s%s", line_prefix, line);
-		if (!prefixed_line) {
-			goto error;
+		char *prefixed_line = NULL;
+		if (*line == ' ') {
+			prefixed_line = strdup(line);
+			if (!prefixed_line) {
+				goto error;
+			}
+			size_t prefixed_line_len = strlen(prefixed_line);
+			if (prefixed_line_len >= hud_gutter_size) {
+				// Currently, every line is handled separately by the hud, and this results
+				// in a hud gutter being attached to every line and increasing its length.
+				// However, wrapped lines already take the hud gutter into account and so
+				// they need to be moved backwards.
+				memmove(prefixed_line, prefixed_line + hud_gutter_size,
+					prefixed_line_len - hud_gutter_size + 1);
+			}
+			memcpy(prefixed_line, line_prefix, strlen(line_prefix));
+		} else {
+			prefixed_line = rz_str_newf("%s%s", line_prefix, line);
+			if (!prefixed_line) {
+				goto error;
+			}
 		}
 		rz_list_push(hs->detail_lines, prefixed_line);
 	}
 
-	free(detailed_help);
+beach:
 	rz_list_free(help_lines);
-	rz_cmd_parsed_args_free(pa);
+	free(detailed_help);
 	free(line_prefix);
-	return true;
+	rz_cmd_parsed_args_free(pa);
+	return ret;
 
 error:
-	free(detailed_help);
-	free(help_lines);
-	free(line_prefix);
-	rz_cmd_parsed_args_free(pa);
-	return false;
+	ret = false;
+	goto beach;
 }
 
 // "?*"

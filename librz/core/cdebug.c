@@ -552,16 +552,9 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 	rz_cmd_state_output_set_columnsf(state, "xxssbsss",
 		"begin", "end", "type", "size",
 		"user", "perms", "file", "name");
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_print("fss+ " RZ_FLAGS_FS_DEBUG_MAPS "\n");
-	}
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RzList *maps = rz_debug_map_list(dbg, (bool)i);
 		if (!maps) {
-			continue;
-		}
-		if (state->mode == RZ_OUTPUT_MODE_RIZIN) { // "dm*"
-			apply_maps_as_flags(core, maps, true);
 			continue;
 		}
 		rz_list_foreach (maps, iter, map) {
@@ -581,9 +574,6 @@ RZ_API void rz_core_debug_map_print(RzCore *core, ut64 addr, RzCmdStateOutput *s
 				break;
 			}
 		}
-	}
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_print("fss-\n");
 	}
 	rz_cmd_state_output_array_end(state);
 }
@@ -754,9 +744,6 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("dt+ 0x%" PFMT64x " %d\n", trace->addr, trace->times);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 		default:
@@ -971,33 +958,22 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
 	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
-			if (delta > 0) {
-				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
-			} else if (delta < 0) {
-				*flagdesc = rz_str_newf("%s%d", f->name, delta);
-			} else {
-				*flagdesc = rz_str_newf("%s", f->name);
-			}
+		// Use unified API format: name+delta (decimal)
+		st64 delta = (st64)(frame->addr - f->offset);
+		if (delta != 0) {
+			*flagdesc = rz_str_newf("%s%+" PFMT64d, f->name, delta);
 		} else {
-			*flagdesc = rz_str_newf("%s", f->name);
+			*flagdesc = rz_str_dup(f->name);
 		}
 		if (!strchr(f->name, '.')) {
 			f2 = rz_flag_get_at(core->flags, frame->addr - 1, true);
 		}
 		if (f2 && f2 != f) {
-			if (f2->offset != addr) {
-				int delta = (int)(frame->addr - 1 - f2->offset);
-				if (delta > 0) {
-					*flagdesc2 = rz_str_newf("%s+%d", f2->name, delta + 1);
-				} else if (delta < 0) {
-					*flagdesc2 = rz_str_newf("%s%d", f2->name, delta + 1);
-				} else {
-					*flagdesc2 = rz_str_newf("%s+1", f2->name);
-				}
+			st64 delta2 = (st64)(frame->addr - f2->offset);
+			if (delta2 != 0) {
+				*flagdesc2 = rz_str_newf("%s%+" PFMT64d, f2->name, delta2);
 			} else {
-				*flagdesc2 = rz_str_newf("%s", f2->name);
+				*flagdesc2 = rz_str_dup(f2->name);
 			}
 		}
 	}
@@ -1154,7 +1130,6 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 	}
 	RzListIter *iter;
 	RzDebugPid *p;
-	RzAnalysisFunction *fcn = NULL;
 	RzDebugMap *map = NULL;
 	RzStrBuf *path = NULL;
 	char status[2];
@@ -1171,26 +1146,11 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 
 			rz_strbuf_appendf(path, " (0x%" PFMT64x ")", p->pc);
 
-			fcn = rz_analysis_get_fcn_in(dbg->analysis, p->pc, 0);
-			if (fcn) {
-				if (p->pc == fcn->addr) {
-					rz_strbuf_appendf(path, " at %s", fcn->name);
-				} else {
-					st64 delta = p->pc - fcn->addr;
-					char sign = delta >= 0 ? '+' : '-';
-					rz_strbuf_appendf(path, " in %s%c%" PFMT64u, fcn->name, sign, RZ_ABS(delta));
-				}
-			} else {
-				const char *flag_name = dbg->corebind.getName(dbg->corebind.core, p->pc);
-				if (flag_name) {
-					rz_strbuf_appendf(path, " at %s", flag_name);
-				} else {
-					char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
-					if (name_delta) {
-						rz_strbuf_appendf(path, " in %s", name_delta);
-						free(name_delta);
-					}
-				}
+			char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
+			if (name_delta) {
+				bool has_delta = strchr(name_delta, '+') || strchr(name_delta, '-');
+				rz_strbuf_appendf(path, " %s %s", has_delta ? "in" : "at", name_delta);
+				free(name_delta);
 			}
 		}
 		rz_strf(status, "%c", p->status);

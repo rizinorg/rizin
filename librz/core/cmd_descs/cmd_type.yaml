@@ -8,7 +8,6 @@ commands:
     summary: List all types / Show type information
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_LONG
     args:
@@ -55,7 +54,6 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
               - RZ_OUTPUT_MODE_SDB
-              - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
             args:
               - name: type

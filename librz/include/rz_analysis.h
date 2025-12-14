@@ -524,7 +524,7 @@ typedef struct rz_analysis_t {
 	Sdb *sdb_classes_attrs;
 	RzAnalysisCallbacks cb;
 	RzAnalysisOptions opt;
-	RzList /*<RzAnalysisRefline *>*/ *reflines;
+	RzPVector /*<RzAnalysisRefline *>*/ *reflines;
 	// RzList *noreturn;
 	RzListComparator columnSort;
 	bool (*log)(struct rz_analysis_t *analysis, const char *msg);
@@ -1370,7 +1370,7 @@ typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
-typedef RzAnalysisILConfig *(*RzAnalysisILConfigCB)(RzAnalysis *analysis);
+typedef RZ_OWN RzAnalysisILConfig *(*RzAnalysisILConfigCB)(RzAnalysis *analysis);
 
 typedef struct rz_analysis_plugin_t {
 	const char *name;
@@ -2039,9 +2039,8 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
 
 /* reflines.c */
-RZ_API RzList /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RzAnalysis *analysis,
-	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-RZ_API int rz_analysis_reflines_middle(RzAnalysis *analysis, RzList /*<RzAnalysisRefline *>*/ *list, ut64 addr, int len);
+RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
+RZ_API bool rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);
 RZ_API RZ_OWN RzList /*<RzAnalysisVar *>*/ *rz_analysis_var_list(RZ_NONNULL RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind);
