@@ -491,6 +491,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_FPOWN:
 	case RZ_IL_OP_FCOMPOUND:
 	case RZ_IL_OP_FEXCEPT:
+		printf("\nUnhandled op\n");
 		// Not implemented.
 		goto map_to_bottom;
 	}
