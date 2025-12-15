@@ -28,9 +28,14 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		STACK_ABSTR_DATA_OUT(inc);
 		rz_bv_set_from_ut64(inc.bv, nop_pc_inc);
 		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
+		ut64 old_pc = rz_bv_to_ut64(pc->bv);
 		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
 			goto error;
 		}
+		RZ_LOG_WARN("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		            old_pc,
+		            rz_bv_to_ut64(pc->bv),
+		            pc->is_concrete ? "Concrete" : "Abstract");
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
@@ -60,6 +65,10 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!eval_out.is_concrete) {
 			RZ_LOG_WARN("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
 		}
+		RZ_LOG_WARN("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		            rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
+								rz_bv_to_ut64(eval_out.bv),
+		            eval_out.is_concrete ? "Concrete" : "Abstract");
 		// Setting the PC to a bottom value is allowed here!
 		// The successor function will handle this case.
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
