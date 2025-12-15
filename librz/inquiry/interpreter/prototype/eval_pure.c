@@ -245,15 +245,16 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			break;
 		}
 		if (!interpreter_prototype_eval_pure(state, bv, out, yield_queues, io_request, io_result, plugin_data)) {
-			RZ_LOG_ERROR("prototype: MSB bv failed to evaluate.\n");
+			RZ_LOG_ERROR("prototype: MSB/LSB/IS_ZERO bv failed to evaluate.\n");
 			return false;
 		}
 		if (!out->is_concrete) {
 			goto map_to_bottom;
 		}
+		bool truth = truth_test(out->bv);
 		rz_bv_cast_inplace(out->bv, 1, false);
 		// TODO: Truth bit.
-		rz_bv_set(out->bv, 0, truth_test(out->bv));
+		rz_bv_set(out->bv, 0, truth);
 		break;
 	}
 	case RZ_IL_OP_NEG: {
