@@ -51,6 +51,7 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 	AD(state->pc->abstr_data)->bv = rz_bv_new_from_ut64(state->addr_bits, entry_point);
+	AD(state->pc->abstr_data)->is_concrete = true;
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
 	rz_iterator_foreach(it, v) {
