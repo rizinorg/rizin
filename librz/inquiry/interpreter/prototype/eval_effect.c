@@ -57,6 +57,9 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
+		if (!eval_out.is_concrete) {
+			RZ_LOG_WARN("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
+		}
 		// Setting the PC to a bottom value is allowed here!
 		// The successor function will handle this case.
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
