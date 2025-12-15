@@ -12,6 +12,9 @@
  * https://archive.org/details/manualzilla-id-5702485/page/n469/mode/2up
  */
 
+#ifndef MCS96_H
+#define MCS96_H
+
 #include <rz_util.h>
 #include <rz_types.h>
 
@@ -327,5 +330,407 @@ static Mcs96Op mcs96_op[] = {
 	{ "rst", MCS96_1B, MCS96_SUPPORT_SINCE_8096 }
 };
 
+typedef enum {
+	MCS96_SKIP_00,
+	MCS96_CLR_01,
+	MCS96_NOT_02,
+	MCS96_NEG_03,
+	MCS96_XCH_04,
+	MCS96_DEC_05,
+	MCS96_EXT_06,
+	MCS96_INC_07,
+	MCS96_SHR_08,
+	MCS96_SHL_09,
+	MCS96_SHRA_0A,
+	MCS96_XCH_0B,
+	MCS96_SHRL_0C,
+	MCS96_SHLL_0D,
+	MCS96_SHRAL_0E,
+	MCS96_NORML_0F,
+	MCS96_INVALID_10,
+	MCS96_CLRB_11,
+	MCS96_NOTB_12,
+	MCS96_NEGB_13,
+	MCS96_XCHB_14,
+	MCS96_DECB_15,
+	MCS96_EXTB_16,
+	MCS96_INCB_17,
+	MCS96_SHRB_18,
+	MCS96_SHLB_19,
+	MCS96_SHRAB_1A,
+	MCS96_XCHB_1B,
+	MCS96_EST_1C,
+	MCS96_EST_1D,
+	MCS96_ESTB_1E,
+	MCS96_ESTB_1F,
+	MCS96_SJMP_20,
+	MCS96_SJMP_21,
+	MCS96_SJMP_22,
+	MCS96_SJMP_23,
+	MCS96_SJMP_24,
+	MCS96_SJMP_25,
+	MCS96_SJMP_26,
+	MCS96_SJMP_27,
+	MCS96_SCALL_28,
+	MCS96_SCALL_29,
+	MCS96_SCALL_2A,
+	MCS96_SCALL_2B,
+	MCS96_SCALL_2C,
+	MCS96_SCALL_2D,
+	MCS96_SCALL_2E,
+	MCS96_SCALL_2F,
+	MCS96_JBC_30,
+	MCS96_JBC_31,
+	MCS96_JBC_32,
+	MCS96_JBC_33,
+	MCS96_JBC_34,
+	MCS96_JBC_35,
+	MCS96_JBC_36,
+	MCS96_JBC_37,
+	MCS96_JBS_38,
+	MCS96_JBS_39,
+	MCS96_JBS_3A,
+	MCS96_JBS_3B,
+	MCS96_JBS_3C,
+	MCS96_JBS_3D,
+	MCS96_JBS_3E,
+	MCS96_JBS_3F,
+	MCS96_AND_40,
+	MCS96_AND_41,
+	MCS96_AND_42,
+	MCS96_AND_43,
+	MCS96_ADD_44,
+	MCS96_ADD_45,
+	MCS96_ADD_46,
+	MCS96_ADD_47,
+	MCS96_SUB_48,
+	MCS96_SUB_49,
+	MCS96_SUB_4A,
+	MCS96_SUB_4B,
+	MCS96_MULU_4C,
+	MCS96_MULU_4D,
+	MCS96_MULU_4E,
+	MCS96_MULU_4F,
+	MCS96_ANDB_50,
+	MCS96_ANDB_51,
+	MCS96_ANDB_52,
+	MCS96_ANDB_53,
+	MCS96_ADDB_54,
+	MCS96_ADDB_55,
+	MCS96_ADDB_56,
+	MCS96_ADDB_57,
+	MCS96_SUBB_58,
+	MCS96_SUBB_59,
+	MCS96_SUBB_5A,
+	MCS96_SUBB_5B,
+	MCS96_MULUB_5C,
+	MCS96_MULUB_5D,
+	MCS96_MULUB_5E,
+	MCS96_MULUB_5F,
+	MCS96_AND_60,
+	MCS96_AND_61,
+	MCS96_AND_62,
+	MCS96_AND_63,
+	MCS96_ADD_64,
+	MCS96_ADD_65,
+	MCS96_ADD_66,
+	MCS96_ADD_67,
+	MCS96_SUB_68,
+	MCS96_SUB_69,
+	MCS96_SUB_6A,
+	MCS96_SUB_6B,
+	MCS96_MULU_6C,
+	MCS96_MULU_6D,
+	MCS96_MULU_6E,
+	MCS96_MULU_6F,
+	MCS96_ANDB_70,
+	MCS96_ANDB_71,
+	MCS96_ANDB_72,
+	MCS96_ANDB_73,
+	MCS96_ADDB_74,
+	MCS96_ADDB_75,
+	MCS96_ADDB_76,
+	MCS96_ADDB_77,
+	MCS96_SUBB_78,
+	MCS96_SUBB_79,
+	MCS96_SUBB_7A,
+	MCS96_SUBB_7B,
+	MCS96_MULUB_7C,
+	MCS96_MULUB_7D,
+	MCS96_MULUB_7E,
+	MCS96_MULUB_7F,
+	MCS96_OR_80,
+	MCS96_OR_81,
+	MCS96_OR_82,
+	MCS96_OR_83,
+	MCS96_XOR_84,
+	MCS96_XOR_85,
+	MCS96_XOR_86,
+	MCS96_XOR_87,
+	MCS96_CMP_88,
+	MCS96_CMP_89,
+	MCS96_CMP_8A,
+	MCS96_CMP_8B,
+	MCS96_DIVU_8C,
+	MCS96_DIVU_8D,
+	MCS96_DIVU_8E,
+	MCS96_DIVU_8F,
+	MCS96_ORB_90,
+	MCS96_ORB_91,
+	MCS96_ORB_92,
+	MCS96_ORB_93,
+	MCS96_XORB_94,
+	MCS96_XORB_95,
+	MCS96_XORB_96,
+	MCS96_XORB_97,
+	MCS96_CMPB_98,
+	MCS96_CMPB_99,
+	MCS96_CMPB_9A,
+	MCS96_CMPB_9B,
+	MCS96_DIVUB_9C,
+	MCS96_DIVUB_9D,
+	MCS96_DIVUB_9E,
+	MCS96_DIVUB_9F,
+	MCS96_LD_A0,
+	MCS96_LD_A1,
+	MCS96_LD_A2,
+	MCS96_LD_A3,
+	MCS96_ADDC_A4,
+	MCS96_ADDC_A5,
+	MCS96_ADDC_A6,
+	MCS96_ADDC_A7,
+	MCS96_SUBC_A8,
+	MCS96_SUBC_A9,
+	MCS96_SUBC_AA,
+	MCS96_SUBC_AB,
+	MCS96_LDBZE_AC,
+	MCS96_LDBZE_AD,
+	MCS96_LDBZE_AE,
+	MCS96_LDBZE_AF,
+	MCS96_LDB_B0,
+	MCS96_LDB_B1,
+	MCS96_LDB_B2,
+	MCS96_LDB_B3,
+	MCS96_ADDCB_B4,
+	MCS96_ADDCB_B5,
+	MCS96_ADDCB_B6,
+	MCS96_ADDCB_B7,
+	MCS96_SUBCB_B8,
+	MCS96_SUBCB_B9,
+	MCS96_SUBCB_BA,
+	MCS96_SUBCB_BB,
+	MCS96_LDBSE_BC,
+	MCS96_LDBSE_BD,
+	MCS96_LDBSE_BE,
+	MCS96_LDBSE_BF,
+	MCS96_ST_C0,
+	MCS96_BMOV_C1,
+	MCS96_ST_C2,
+	MCS96_ST_C3,
+	MCS96_STB_C4,
+	MCS96_CMPL_C5,
+	MCS96_STB_C6,
+	MCS96_STB_C7,
+	MCS96_PUSH_C8,
+	MCS96_PUSH_C9,
+	MCS96_PUSH_CA,
+	MCS96_PUSH_CB,
+	MCS96_POP_CC,
+	MCS96_BMOVI_CD,
+	MCS96_POP_CE,
+	MCS96_POP_CF,
+	MCS96_JNST_D0,
+	MCS96_JNH_D1,
+	MCS96_JGT_D2,
+	MCS96_JNC_D3,
+	MCS96_JNVT_D4,
+	MCS96_JNV_D5,
+	MCS96_JGE_D6,
+	MCS96_JNE_D7,
+	MCS96_JST_D8,
+	MCS96_JH_D9,
+	MCS96_JLE_DA,
+	MCS96_JC_DB,
+	MCS96_JVT_DC,
+	MCS96_JV_DD,
+	MCS96_JLT_DE,
+	MCS96_JE_DF,
+	MCS96_DJNZ_E0,
+	MCS96_DJNZW_E1,
+	MCS96_TIJMP_E2,
+	MCS96_BR_E3,
+	MCS96_EBMOVI_E4,
+	MCS96_RETI_E5,
+	MCS96_EJMP_E6,
+	MCS96_LJMP_E7,
+	MCS96_ELD_E8,
+	MCS96_ELD_E9,
+	MCS96_ELDB_EA,
+	MCS96_ELDB_EB,
+	MCS96_DPTS_EC,
+	MCS96_EPTS_ED,
+	MCS96_INVALID_EE,
+	MCS96_LCALL_EF,
+	MCS96_RET_F0,
+	MCS96_ECALL_F1,
+	MCS96_PUSHF_F2,
+	MCS96_POPF_F3,
+	MCS96_PUSHA_F4,
+	MCS96_POPA_F5,
+	MCS96_IDLPD_F6,
+	MCS96_TRAP_F7,
+	MCS96_CLRC_F8,
+	MCS96_SETC_F9,
+	MCS96_DI_FA,
+	MCS96_EI_FB,
+	MCS96_CLRVT_FC,
+	MCS96_NOP_FD,
+	MCS96_MUL_DIV_FE,
+	MCS96_RST_FF,
+} Mcs96Instructions;
+
 static const char *mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };
 // in theory these invalids can never happen
+
+typedef enum {
+	MCS96_ADDRESSING_REG_DIRECT = 0,
+	MCS96_ADDRESSING_IMMEDIATE = 1,
+	MCS96_ADDRESSING_INDIRECT = 2,
+	MCS96_ADDRESSING_INDEXED = 3,
+} Mcs96AddressingMode;
+
+static inline ut32 compute_fe_index(ut8 byte) {
+	return ((byte & 0x70) >> 4) ^ 0x4;
+}
+
+/**
+ * \brief computes the length of an instruction.
+ * \return int the length of the instruction. returns -1 when invalid.
+ */
+static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
+	if (len < 1) {
+		return 0;
+	}
+
+	if (!(mcs96_op[buf[0]].isa & isa_bit)) { // unsupported instruction
+		return -1;
+	}
+
+	int ret = 1;
+	if (buf[0] == 0xfe) {
+		if (isa_bit == MCS96_80296) {
+			return -1;
+		}
+
+		if (len < 2) {
+			return 0;
+		}
+		if (mcs96_op[buf[1]].type & MCS96_FE) {
+			if (mcs96_op[buf[1]].type & MCS96_5B_OR_6B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 6 + (buf[2] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_4B_OR_5B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 5 + (buf[2] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_3B_OR_4B) {
+				if (len < 3) {
+					return 0;
+				}
+				ret = 4 + (buf[1] & 0x1);
+			}
+			if (mcs96_op[buf[1]].type & MCS96_5B) {
+				ret = 6;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_4B) {
+				ret = 5;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_3B) {
+				ret = 4;
+			}
+			if (mcs96_op[buf[1]].type & MCS96_2B) {
+				ret = 3;
+			}
+			if (ret > len) {
+				ret = 0;
+			}
+			return ret;
+		}
+	}
+	if (mcs96_op[buf[0]].type & MCS96_5B_OR_6B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 5 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_4B_OR_5B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 4 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_3B_OR_4B) {
+		if (len < 2) {
+			return 0;
+		}
+		ret = 3 + (buf[1] & 0x1);
+	}
+	if (mcs96_op[buf[0]].type & MCS96_6B) {
+		ret = 6;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_5B) {
+		ret = 5;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_4B) {
+		ret = 4;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_3B) {
+		ret = 3;
+	}
+	if (mcs96_op[buf[0]].type & MCS96_2B) {
+		ret = 2;
+	}
+	if (ret > len) {
+		ret = 0;
+	}
+	return ret;
+}
+
+/**
+ * Extract addressing mode from MCS-96 instruction opcode.
+ * The lower 2 bits (aa) encode the addressing mode for many instructions.
+ * Format: (xxxxxxaa)
+ *
+ * \param opcode The instruction opcode byte
+ * \return Addressing mode (0-3)
+ */
+static inline Mcs96AddressingMode extract_addressing_mode(ut8 opcode) {
+	return (Mcs96AddressingMode)(opcode & 0x03);
+}
+
+/**
+ * Extract 11-bit signed displacement from sjmp/scall instruction.
+ * Format: (instr|xxx)(disp-low)
+ *
+ * \param opcode First byte of the instruction, containing upper 3 bits of the displacement
+ * \param disp_low Second byte of the instruction, containing lower 8 bits of the displacement
+ * \return Sign-extended 16-bit displacement (-1024 to +1023)
+ */
+static inline st16 extract_disp11(ut8 opcode, ut8 disp_low) {
+	st16 upper3bits = (st16)(opcode & 0x07); // 0b00000111
+	st16 disp = (upper3bits << 8) | disp_low;
+
+	// Sign-extend from 11 bits to 16 bits
+	if (disp & 0x400) { // Check if bit 10 (sign bit) is set
+		disp |= 0xF800; // Set bits 15-11 to extend the sign
+	}
+
+	return disp;
+}
+
+#endif /* MCS96_H */
