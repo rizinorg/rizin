@@ -46,10 +46,9 @@ RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type) {
 	}
 }
 
-RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
+RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
 	rz_return_val_if_fail(analysis && analysis->cur && io, NULL);
-	size_t size_bb = 0;
-	RzILOpEffect *bb = NULL;
+	RzInterpreterILBB *il_bb = NULL;
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
 	// Estimate a reasonable number of bytes to read.
@@ -58,13 +57,17 @@ RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 	if (!max_read_size || !buf) {
 		goto fail;
 	}
+	il_bb = rz_pvector_new((RzPVectorFree)rz_interpreter_insn_pkt_free);
+	if (!il_bb) {
+		goto fail;
+	}
 	bool changes_cf = true;
 	do {
 		if (!rz_io_read_at_mapped(io, addr, buf, max_read_size)) {
 			RZ_LOG_WARN("inquiry: Failed to read memory for IL basic block generation.\n");
 			goto fail;
 		}
-		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
+		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_INSN_PKT) <= 0) {
 			RZ_LOG_ERROR("Failed to decode IL op\n");
 			goto fail;
 		}
@@ -74,9 +77,10 @@ RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 			lifted = false;
 			op.il_op = rz_il_op_new_nop();
 		}
-		
-		bb = bb ? rz_il_op_new_seq(bb, op.il_op) : op.il_op;
-		size_bb += op.size;
+		RzInterpreterInsnPkt *pkt = RZ_NEW0(RzInterpreterInsnPkt);
+		pkt->effect = op.il_op;
+		pkt->insn_pkt_size = op.size;
+		rz_pvector_push(il_bb, pkt);
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
 		if (lifted) {
@@ -88,17 +92,11 @@ RZ_API RZ_OWN RzInterpreterILOp *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 	} while (!changes_cf);
 
 	free(buf);
-	RzInterpreterILOp *il_op = RZ_NEW(RzInterpreterILOp);
-	if (!il_op) {
-		goto fail;
-	}
-	il_op->asm_op_size = size_bb;
-	il_op->effect = bb;
-	return il_op;
+	return il_bb;
 
 fail:
 	free(buf);
 	rz_analysis_op_fini(&op);
-	rz_il_op_effect_free(bb);
+	rz_pvector_free(il_bb);
 	return NULL;
 }

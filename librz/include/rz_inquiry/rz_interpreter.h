@@ -95,10 +95,12 @@ typedef struct {
 	RzThreadQueue /*<const RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 
+typedef RzPVector RzInterpreterILBB;
+
 typedef struct {
-	RzILOpEffect *effect; ///< The effect to evaluate.
-	size_t asm_op_size; ///< The size of the instruction packet. Used to increment the PC if no JMP occurred.
-} RzInterpreterILOp;
+	RzILOpEffect *effect; ///< Vector with all instruction packets of a basic block.
+	size_t insn_pkt_size; ///< The size of the instruction packet. Used to increment the PC if no JMP occurred.
+} RzInterpreterInsnPkt;
 
 typedef struct {
 	const char *name;
@@ -137,7 +139,7 @@ typedef struct {
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
-		RZ_NONNULL const RzInterpreterILOp *il_op,
+		RZ_NONNULL const RzInterpreterILBB *il_op,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
@@ -202,7 +204,8 @@ typedef struct {
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
 
-RZ_API void rz_interpreter_il_op_free(RZ_NULLABLE RZ_OWN RzInterpreterILOp *il_op);
+RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_op);
+RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
 
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
 

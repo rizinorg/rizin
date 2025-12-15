@@ -116,7 +116,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	bool return_code = true;
 	RzThreadQueue *io_request_q = NULL;
 	RzThreadQueue *io_result_q = NULL;
-	RzInterpreterILOp *il_op = NULL;
+	RzInterpreterILBB *il_op = NULL;
 	RzThreadQueue *addr_queue = NULL;
 	RzList *boundaries = NULL;
 	RzInterpreterYieldQueue *yield_queue = NULL;
@@ -134,7 +134,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
 	// of the pointers.
-	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_op_free);
+	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
 	// The queue to pass the Effects to the interpreter.
 	// This is only one queue for the prototype.
 	// In practice it would be one for each interpreter.
@@ -287,8 +287,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		{
 			ut64 *addr = rz_th_queue_pop(addr_queue, false);
 			if (addr) {
-				RZ_LOG_WARN("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-				RzInterpreterILOp *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
+				printf("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
+				RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 				if (!bb) {
 					RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 					// Signal interpreter the lifting failed.

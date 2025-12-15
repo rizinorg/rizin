@@ -9,17 +9,27 @@
 #include "../prototype/eval.h"
 
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
-	RZ_NONNULL const RzInterpreterILOp *il_op,
+	RZ_NONNULL const RzInterpreterILBB *il_op,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
-	RZ_LOG_WARN("Eval PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
-	bool result = interpreter_prototype_eval_effect(state, il_op->effect, il_op->asm_op_size, yield_queues, io_request, io_result, plugin_data);
+	void **it;
+	rz_pvector_foreach(il_op, it) {
+		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
+		printf("Eval PC = 0x%" PFMT64x "\n", pc);
+		RzInterpreterInsnPkt *pkt = *it;
+		if (!interpreter_prototype_eval_effect(state, pkt->effect, pkt->insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+			return false;
+		}
+		if (pc == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv)) {
+			set_pc(state, pc + pkt->insn_pkt_size, plugin_data);
+		}
+	}
 	// TODO: Clean up local variables.
 	// Or maybe not? Just costs performance. And the uplifted instructions should
 	// always set it before, otherwise the tests don't pass.
-	return result;
+	return true;
 }
 
 bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
