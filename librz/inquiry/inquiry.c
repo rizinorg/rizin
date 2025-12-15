@@ -323,10 +323,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 						     "This is more than configured. It will only read MAX_IO_DATA_READ bytes.\nPlease set MAX_IO_DATA_READ to a larger value and rebuild Rizin.\n",
 						MAX_IO_DATA_READ);
 				}
-				// Cast to ut8* here. The constant is only there so interpreter plugins don't free it by accident.
-				int n_read = rz_io_nread_at(core->io, io_req->addr, (ut8 *)io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
-				io_res->req_ok = n_read >= 0;
-				io_res->read.n_bytes = n_read;
+				// Cast to constant ut8* here. The constant is only there so interpreter plugins don't free it by accident.
+				(void)rz_io_read_at_mapped(core->io, io_req->addr, (ut8 *)io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
+				// The IO API doesn't have a function which can:
+				// - read beyond mapped regions and from cached data.
+				// - return the total number of bytes it read.
+				//
+				// So for this prototype we just have to assume it always succeeds :(
+				io_res->req_ok = true;
+				io_res->read.n_bytes = io_req->n_bytes;
 			} else {
 				io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
 			}
