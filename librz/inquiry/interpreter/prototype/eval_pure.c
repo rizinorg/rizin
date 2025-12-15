@@ -427,7 +427,32 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		break;
 	}
-	case RZ_IL_OP_MUL:
+	case RZ_IL_OP_MUL: {
+		RzILOpPure *px = pure->op.mul.x;
+		RzILOpPure *py = pure->op.mul.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: MUL x failed to evaluate.\n");
+			return false;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: MUL y failed to evaluate.\n");
+			return false;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_mul_inplace(out->bv, y.bv)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_DIV:
 	case RZ_IL_OP_SDIV:
 	case RZ_IL_OP_MOD:
