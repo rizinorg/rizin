@@ -468,7 +468,7 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		op->eob = true;
 		break;
 	case MCS96_AND_40:
-		if (buf[size - 1] == 0x04 && size == 4) { // RPT/RPTxxx/RPTI/RPTIxxx
+		if (size == 4 && buf[size - 1] == 0x04) { // RPT/RPTxxx/RPTI/RPTIxxx
 			op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;

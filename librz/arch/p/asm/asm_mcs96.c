@@ -201,7 +201,7 @@ static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
 		default:
 			return "invalid";
 		}
-	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && buf[size - 1] == 0x04 && size == 4) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
+	} else if (buf[0] == 0x40 && isa_bit == MCS96_80296 && size == 4 && buf[size - 1] == 0x04) { // AND/RPT/RPTxxx/RPTI/RPTIxxx
 		// RPT waop
 		// (010000aa) (waop) (00) (04)
 		// RPTxxx
@@ -282,7 +282,7 @@ static const char *decode_mnemonic(const ut8 *buf, int size, ut32 isa_bit) {
 		default:
 			return "and";
 		}
-	} else if (mcs96_op[buf[1]].type & MCS96_FE && size > 2) {
+	} else if (size > 2 && mcs96_op[buf[1]].type & MCS96_FE) {
 		const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
 		return mcs96_fe_op[fe_idx];
 	} else {
