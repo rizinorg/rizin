@@ -137,13 +137,6 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 	return h;
 }
 
-static bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
-	void *plugin_data) {
-	rz_return_val_if_fail(state, false);
-	AD(state->pc->abstr_data)->is_concrete = true;
-	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
-}
-
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",

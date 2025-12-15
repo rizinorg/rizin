@@ -133,6 +133,9 @@ bool store_abstr_data(
 	} else {
 		buf = buf_stack;
 	}
+	char *bytes = rz_bv_as_hex_string(src->bv, true);
+	RZ_LOG_WARN("Prototype: STORE @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
+	free(bytes);
 	rz_bv_set_to_bytes_be(src->bv, buf);
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr;
@@ -185,5 +188,18 @@ bool load_abstr_data(
 	out->is_concrete = true;
 	rz_bv_cast_inplace(out->bv, size, 0);
 	rz_bv_set_from_bytes_be(out->bv, io_res->read.data, 0, io_res->read.n_bytes);
+	char *bytes = rz_bv_as_hex_string(out->bv, true);
+	RZ_LOG_WARN("Prototype: READ @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
+	free(bytes);
 	return true;
+}
+
+bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+	void *plugin_data) {
+	rz_return_val_if_fail(state, false);
+	AD(state->pc->abstr_data)->is_concrete = true;
+	RZ_LOG_WARN("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "(Concrete)\n",
+	            rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
+	            pc);
+	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
 }

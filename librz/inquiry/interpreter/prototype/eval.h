@@ -106,4 +106,7 @@ bool report_xref_yield(
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
+bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
+	void *plugin_data);
+
 #endif // PROTOYPE_EVAL_H
