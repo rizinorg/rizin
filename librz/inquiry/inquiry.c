@@ -256,7 +256,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	}
 
 	// Dispatch prototype interpreter into a thread.
-	RZ_LOG_WARN("INQUIRY: Start main interpretation thread.\n");
+	printf("INQUIRY: Start main interpretation thread.\n");
 	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
 	// From here on, the code plays the role of the cache, IO handler,
@@ -266,10 +266,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// - Receiving and adding the found xrefs to RzAnalysis.
 	// In the final implementation each of those roles would be split into
 	// two or more separated modules running in parallel.
-	RZ_LOG_WARN("INQUIRY: Enforce enabling IO cache.\n");
+	printf("INQUIRY: Enforce enabling IO cache.\n");
 	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
 	rz_config_set(core->config, "io.cache", "true");
-	RZ_LOG_WARN("INQUIRY: Start IL providing loop.\n");
+	printf("INQUIRY: Start IL providing loop.\n");
 
 	// Poor man's shared memory.
 	RzInterpreterIOResult _io_res = { 0 };
@@ -296,7 +296,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 					rz_atomic_bool_set(is_running, false);
 					continue;
 				}
-				RZ_LOG_WARN("INQUIRY: Send IL result: %p.\n", bb);
+				printf("INQUIRY: Send IL result: %p.\n", bb);
 				rz_pvector_push(il_cache, bb);
 				// TODO: Free unused if too big.
 				rz_th_queue_push(il_queue, bb, true);
@@ -314,7 +314,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 				continue;
 			}
 
-			RZ_LOG_WARN("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
+			printf("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
 				io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 				io_req->addr);
 			if (io_req->type == RZ_INTERPRETER_IO_READ) {
@@ -335,7 +335,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			} else {
 				io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
 			}
-			RZ_LOG_WARN("INQUIRY: Sent IO %s result. Success = %s.\n",
+			printf("INQUIRY: Sent IO %s result. Success = %s.\n",
 				io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 				io_res->req_ok ? "true" : "false");
 			rz_th_queue_push(io_result_q, io_res, true);
@@ -351,20 +351,20 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 			}
 			// TODO: Currently we can't classify calls as such.
 			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
-			RZ_LOG_WARN("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type))
+			printf("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
 		}
 	}
-	RZ_LOG_WARN("INQUIRY: Done\n");
+	printf("INQUIRY: Done\n");
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 	// Wait for thread to finish before cleaning.
 error_free:
-	RZ_LOG_WARN("INQUIRY: Close queues\n");
+	printf("INQUIRY: Close queues\n");
 	rz_th_cond_signal_all(rz_th_queue_get_cond(iset->il_queue));
 	rz_th_cond_signal_all(rz_th_queue_get_cond(iset->io_result));
 	if (interpr_th){
-		RZ_LOG_WARN("INQUIRY: Wait for join\n");
+		printf("INQUIRY: Wait for join\n");
 		rz_th_wait(interpr_th);
 		return_code = rz_th_get_retv(interpr_th);
 		rz_th_free(interpr_th);

@@ -233,7 +233,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		entry_assert_error);
 	bool success = false;
 
-	RZ_LOG_WARN("INTERPRETER Main: Hello.\n");
+	printf("INTERPRETER Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
 
 	void **priv_ptr = NULL;
