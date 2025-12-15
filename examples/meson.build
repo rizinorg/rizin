@@ -4,4 +4,10 @@ if get_option('enable_examples')
     dependencies: [rz_hash_dep],
     install: false
   )
+
+  executable('linux_x64', 'api/syscall/linux_x64.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_syscall_dep, rz_util_dep],
+    install: false
+  )
 endif
