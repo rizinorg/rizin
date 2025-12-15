@@ -813,12 +813,12 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 }
 
 static size_t utf8strlen0(const char *s) {
-	return s ? rz_str_len_utf8(s) : 0;
+	return s ? rz_str_utf8_cols(s) : 0;
 }
 
 static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
 	rz_strbuf_append(sb, s);
-	return rz_str_len_utf8(s);
+	return rz_str_utf8_cols(s);
 }
 
 static void fill_modes_children_chars(RzStrBuf *sb, const RzCmdDesc *cd) {
@@ -1289,7 +1289,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 				padding, "",
 				pal_help_color);
 			size_t columns = gutter_size + strlen("| ") + strlen(entry_it->text) +
-				strlen(" ") + rz_str_len_utf8(arg_str) + padding;
+				strlen(" ") + rz_str_utf8_cols(arg_str) + padding;
 			fill_wrapped_comment(cmd, sb, entry_it->comment, columns, use_color);
 			rz_strbuf_appendf(sb, "%s\n", pal_reset);
 			entry_it++;

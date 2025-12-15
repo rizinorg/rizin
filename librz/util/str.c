@@ -2809,7 +2809,7 @@ RZ_API size_t rz_str_len_utf8char(const char *s, int left) {
 	return i;
 }
 
-RZ_API size_t rz_str_len_utf8(const char *s) {
+RZ_API size_t rz_str_utf8_cols(const char *s) {
 	size_t i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {
 		if ((s[i] & 0xc0) != 0x80) {
