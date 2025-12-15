@@ -8,7 +8,6 @@
 #include <rz_analysis.h>
 #include <rz_util/rz_pj.h>
 #include "mcs96/mcs96.h"
-// #include "p/asm/asm_mcs96.c"
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {

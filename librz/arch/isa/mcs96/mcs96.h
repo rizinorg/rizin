@@ -604,10 +604,10 @@ static inline ut32 compute_fe_index(ut8 byte) {
 }
 
 /**
- * @brief computes the length of an instruction.
- * @return int the length of the instruction. returns -1 when invalid.
+ * \brief computes the length of an instruction.
+ * \return int the length of the instruction. returns -1 when invalid.
  */
-int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
+static int mcs96_len(ut32 isa_bit, const ut8 *buf, int len) {
 	if (len < 1) {
 		return 0;
 	}
