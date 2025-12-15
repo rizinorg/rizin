@@ -35,6 +35,10 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = hex_get_il_op(addr, rev.pkt_fully_decoded, rev.state);
 	}
+	HexPkt *p = hex_get_pkt(rev.state, addr);
+	if (p && (mask & RZ_ANALYSIS_OP_MASK_INSN_PKT)) {
+		op->size = rz_list_length(p->bin) * HEX_INSN_SIZE;
+	}
 
 	return op->size;
 }
