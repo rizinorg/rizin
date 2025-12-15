@@ -83,10 +83,11 @@ RZ_API bool rz_bv_complement_2_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv);
 
 // Module 2 arithmetic operations
 RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
-RZ_API bool rz_bv_add_inplace(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
+RZ_API bool rz_bv_add_inplace(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, const RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
 RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow);
 RZ_API bool rz_bv_sub_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_INOUT RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow);
 RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_mul_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);

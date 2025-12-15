@@ -986,7 +986,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
  */
 RZ_API bool rz_bv_add_inplace(
 	RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x,
-	RZ_NONNULL RzBitVector *y,
+	const RZ_NONNULL RzBitVector *y,
 	RZ_NULLABLE bool *carry) {
 	rz_return_val_if_fail(x && y, false);
 
@@ -1082,6 +1082,34 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 }
 
 /**
+ * Result of x = (x * y) mod 2^length
+ * \param x RzBitVector, Operand
+ * \param y RzBitVector, Operand
+ * \return True for success, false in case of failure.
+ */
+RZ_API bool rz_bv_mul_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y, false);
+	RzBitVector dup;
+	rz_bv_init(&dup, x->len);
+	rz_bv_copy(x, &dup);
+	rz_bv_set_all(x, false);
+
+	bool cur_bit = false;
+	for (ut32 i = 0; i < y->len; ++i) {
+		cur_bit = rz_bv_get(y, i);
+		if (cur_bit) {
+			if (!rz_bv_add_inplace(x, &dup, NULL)) {
+				rz_bv_fini(&dup);
+				return false;
+			}
+		}
+		rz_bv_lshift(&dup, 1);
+	}
+	rz_bv_fini(&dup);
+	return true;
+}
+
+/**
  * Result of (x * y) mod 2^length
  * Both operands must have the same length.
  * \param x RzBitVector, Operand
@@ -1091,35 +1119,19 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, NULL);
 
-	RzBitVector dump;
-	bool cur_bit = false;
-
 	if (x->len != y->len) {
 		rz_warn_if_reached();
 		return NULL;
 	}
 
-	if (!rz_bv_init(&dump, x->len)) {
+	RzBitVector *result = rz_bv_dup(x);
+	if (!result) {
 		return NULL;
 	}
-	RzBitVector *result = rz_bv_new(x->len);
-	if (!result) {
-		goto exit;
+	if (!rz_bv_mul_inplace(result, y)) {
+		rz_bv_free(result);
+		return NULL;
 	}
-	rz_bv_copy(x, &dump);
-
-	for (ut32 i = 0; i < y->len; ++i) {
-		cur_bit = rz_bv_get(y, i);
-		if (cur_bit) {
-			RzBitVector *tmp = rz_bv_add(result, &dump, NULL);
-			rz_bv_free(result);
-			result = tmp;
-		}
-		rz_bv_lshift(&dump, 1);
-	}
-
-exit:
-	rz_bv_fini(&dump);
 	return result;
 }
 
