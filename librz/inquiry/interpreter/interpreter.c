@@ -298,6 +298,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
 				goto in_loop_error;
 			}
+			// It is possible that the successor function doesn't add successors.
+			// E.g. because the PC is an abstract value.
+			// In this case the state counts as invalid.
+			new_state_reached = !rz_vector_empty(tmp_succ_addr);
 			// Request the successor effects over the queue.
 			while (!rz_vector_empty(tmp_succ_addr)) {
 				rz_vector_pop_front(tmp_succ_addr, addr);
