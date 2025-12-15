@@ -2867,3 +2867,15 @@ Gadget size: 8
 
 EOF
 RUN
+
+NAME=/Rk invalid constraint returns error
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Rk invalidconstraint
+EOF
+EXPECT=<<EOF
+EOF
+RUN
