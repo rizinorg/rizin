@@ -640,7 +640,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		}
 		case 'V':
 			ro.verbose = true;
-			ro.quiet = false;
 			break;
 		case 'h':
 			return show_help(argv[0], 0);
