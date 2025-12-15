@@ -10,4 +10,14 @@ if get_option('enable_examples')
     dependencies: [rz_syscall_dep, rz_util_dep],
     install: false
   )
+  executable('sign_create_example', 'api/sign/sign_create_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_sign_dep, rz_util_dep],
+    install: false
+  )
+  executable('sign_match_example', 'api/sign/sign_match_example.c',
+    include_directories: [platform_inc],
+    dependencies: [rz_sign_dep, rz_util_dep],
+    install: false
+  )
 endif
