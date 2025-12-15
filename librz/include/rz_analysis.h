@@ -357,7 +357,8 @@ typedef enum {
 	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), // It fills RzAnalysisop->opex info
 	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
 	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
-	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
+	RZ_ANALYSIS_OP_MASK_INSN_PKT = (1 << 6), // Set op.size to the size of the instruction packet, not the single instruction.
+	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_INSN_PKT
 } RzAnalysisOpMask;
 
 typedef enum {
