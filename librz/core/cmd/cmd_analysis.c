@@ -2892,10 +2892,12 @@ static bool display_xref_list_handler(RzCore *core, int argc, const char **argv,
 		ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
 		if (!buf) {
 			RZ_LOG_ERROR("Failed to allocate memory\n");
+			rz_list_free(xref_list);
 			return false;
 		}
 		if (!rz_io_read_at_mapped(core->io, offset, buf, context_bytes + 1)) {
 			RZ_LOG_ERROR("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " for disassembly.\n", (ut64)(n_bytes + 1), offset);
+			rz_list_free(xref_list);
 			free(buf);
 			return false;
 		}
