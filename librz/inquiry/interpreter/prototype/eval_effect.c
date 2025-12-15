@@ -7,7 +7,7 @@
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
-	size_t nop_pc_inc,
+	size_t insn_pkt_size,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
@@ -26,23 +26,23 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			break;
 		}
 		STACK_ABSTR_DATA_OUT(inc);
-		rz_bv_set_from_ut64(inc.bv, nop_pc_inc);
+		rz_bv_set_from_ut64(inc.bv, insn_pkt_size);
 		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
 		ut64 old_pc = rz_bv_to_ut64(pc->bv);
 		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
 			goto error;
 		}
-		RZ_LOG_WARN("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		printf("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 		            old_pc,
 		            rz_bv_to_ut64(pc->bv),
 		            pc->is_concrete ? "Concrete" : "Abstract");
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
 		break;
@@ -63,20 +63,20 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
-			RZ_LOG_WARN("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
+			printf("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
 		}
-		RZ_LOG_WARN("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		printf("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 		            rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
 								rz_bv_to_ut64(eval_out.bv),
 		            eval_out.is_concrete ? "Concrete" : "Abstract");
 		// Setting the PC to a bottom value is allowed here!
 		// The successor function will handle this case.
-		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		if (eval_out.is_concrete) {
 			// NOTE: This prototype can't classify into call or jump.
 			// Everything is just a jump for it at this point.
 			report_xref_yield(state, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
 		}
+		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
@@ -90,11 +90,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 
 		if (abstr_is_true(state, &eval_out)) {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		} else {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, nop_pc_inc, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 				goto error;
 			}
 		}
