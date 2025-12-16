@@ -37,13 +37,13 @@ typedef struct gns1_obj {
 } Gns1Obj;
 
 // functions
-bool gns1_check_buffer(RzBuffer *b);
-bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
-void gns1_destroy(RzBinFile *bf);
-RzBinInfo *gns1_info(RzBinFile *bf);
-ut64 gns1_baddr(RzBinFile *bf);
-RzPVector *gns1_entries(RzBinFile *bf);
-RzPVector *gns1_sections(RzBinFile *bf);
-RzStructuredData *gns1_structure(RzBinFile *bf);
+RZ_API bool gns1_check_buffer(RzBuffer *b);
+RZ_API bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
+RZ_API void gns1_destroy(RzBinFile *bf);
+RZ_API RzBinInfo *gns1_info(RzBinFile *bf);
+RZ_API ut64 gns1_baddr(RzBinFile *bf);
+RZ_API RzPVector *gns1_entries(RzBinFile *bf);
+RZ_API RzPVector *gns1_sections(RzBinFile *bf);
+RZ_API RzStructuredData *gns1_structure(RzBinFile *bf);
 
 #endif
