@@ -20,7 +20,7 @@ static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry
 }
 
 // heuristic: dword at 0xC >= 0x64 and dword at offset-4 == 0
-RZ_API bool gns1_check_buffer(RzBuffer *b) {
+RZ_IPI bool gns1_check_buffer(RzBuffer *b) {
 	rz_return_val_if_fail(b, false);
 
 	ut64 buf_size = rz_buf_size(b);
@@ -59,7 +59,7 @@ RZ_API bool gns1_check_buffer(RzBuffer *b) {
 }
 
 // load and parse GNS1 segment table from buffer.
-RZ_API bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && b, false);
 
 	Gns1Obj *gns1 = RZ_NEW0(Gns1Obj);
@@ -125,7 +125,7 @@ RZ_API bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 }
 
 // free GNS1 object resources
-RZ_API void gns1_destroy(RzBinFile *bf) {
+RZ_IPI void gns1_destroy(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
@@ -136,12 +136,12 @@ RZ_API void gns1_destroy(RzBinFile *bf) {
 }
 
 // get base address for GNS1 binary.
-RZ_API ut64 gns1_baddr(RzBinFile *bf) {
+RZ_IPI ut64 gns1_baddr(RzBinFile *bf) {
 	return GNS1_INTERNAL_BASE;
 }
 
 // get entry points from GNS1 file
-RZ_API RzPVector *gns1_entries(RzBinFile *bf) {
+RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Gns1Obj *gns1 = bf->o->bin_obj;
@@ -175,7 +175,7 @@ RZ_API RzPVector *gns1_entries(RzBinFile *bf) {
 }
 
 // create sections from GNS1 segments.
-RZ_API RzPVector *gns1_sections(RzBinFile *bf) {
+RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Gns1Obj *gns1 = bf->o->bin_obj;
@@ -233,7 +233,7 @@ RZ_API RzPVector *gns1_sections(RzBinFile *bf) {
 }
 
 // get Binary Information
-RZ_API RzBinInfo *gns1_info(RzBinFile *bf) {
+RZ_IPI RzBinInfo *gns1_info(RzBinFile *bf) {
 	RzBinInfo *info = RZ_NEW0(RzBinInfo);
 	if (!info) {
 		return NULL;
@@ -255,7 +255,7 @@ RZ_API RzBinInfo *gns1_info(RzBinFile *bf) {
 }
 
 // structured data about the GNS1 segment table
-RZ_API RzStructuredData *gns1_structure(RzBinFile *bf) {
+RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	Gns1Obj *gns1 = bf->o->bin_obj;

@@ -31,19 +31,19 @@ typedef struct gns1_segment_entry {
 
 //  parses the GNS1 file structure.
 typedef struct gns1_obj {
-	RzVector *segments; ///< Vector of Gns1SegmentEntry
+	RzVector /*<Gns1SegmentEntry>*/ *segments; ///< Vector of Gns1SegmentEntry
 	ut32 num_segments; ///< Number of segments in the file
 	RzBuffer *buf; ///< Buffer containing the file data
 } Gns1Obj;
 
 // functions
-RZ_API bool gns1_check_buffer(RzBuffer *b);
-RZ_API bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
-RZ_API void gns1_destroy(RzBinFile *bf);
-RZ_API RzBinInfo *gns1_info(RzBinFile *bf);
-RZ_API ut64 gns1_baddr(RzBinFile *bf);
-RZ_API RzPVector *gns1_entries(RzBinFile *bf);
-RZ_API RzPVector *gns1_sections(RzBinFile *bf);
-RZ_API RzStructuredData *gns1_structure(RzBinFile *bf);
+RZ_IPI bool gns1_check_buffer(RzBuffer *b);
+RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
+RZ_IPI void gns1_destroy(RzBinFile *bf);
+RZ_IPI RzBinInfo *gns1_info(RzBinFile *bf);
+RZ_IPI ut64 gns1_baddr(RzBinFile *bf);
+RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf);
+RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf);
+RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf);
 
 #endif
