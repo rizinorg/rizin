@@ -9,7 +9,7 @@
 #include <rz_util/rz_pj.h>
 #include "mcs96/mcs96.h"
 
-static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+static int mcs96_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 1;
@@ -26,20 +26,20 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *mcs96_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
-		"=PC pc\n"
-		"=SP sp\n"
-		"=SR psw\n"
-		"=A0	garbage\n"
-		"=A1	garbage\n"
-		"=A2	garbage\n"
-		"gpr pc  .16  0   0\n" // Program counter
-		"gpr sp  .16  2   0\n" // Stack pointer
-		"gpr psw .16  4   0\n" // Processor status word
-		"gpr garbage  .16  6   0\n"
-		"gpr garbage  .16  8   0\n"
-		"gpr garbage  .16  10  0\n";
+		"=PC   pc\n"
+		"=SP   sp\n"
+		"=SR   psw\n"
+		"=A0   garbage\n"
+		"=A1   garbage\n"
+		"=A2   garbage\n"
+		"gpr   pc       .16  0   0\n" // Program counter
+		"gpr   sp       .16  2   0\n" // Stack pointer
+		"gpr   psw      .16  4   0\n" // Processor status word
+		"gpr   garbage  .16  6   0\n"
+		"gpr   garbage  .16  8   0\n"
+		"gpr   garbage  .16  10  0\n";
 	return rz_str_dup(p);
 }
 
@@ -58,44 +58,47 @@ static inline void analyze_shift_count(RzAnalysisOp *op, ut8 byte) {
 	}
 }
 
-static void opex_add_reg(PJ *pj, ut8 reg) {
-	pj_o(pj);
-	pj_ks(pj, "type", "reg");
-	pj_kn(pj, "value", reg);
-	pj_end(pj);
+static void opex_add_reg(RzStructuredData *operands, ut64 reg) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "reg");
+	rz_structured_data_map_add_unsigned(operand, "value", reg, false);
 }
 
-static void opex_add_imm(PJ *pj, st64 imm) {
-	pj_o(pj);
-	pj_ks(pj, "type", "imm");
-	pj_kn(pj, "value", imm);
-	pj_end(pj);
+static void opex_add_imm(RzStructuredData *operands, st64 imm) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "imm");
+	rz_structured_data_map_add_signed(operand, "value", imm);
 }
 
-static void opex_add_mem(PJ *pj, ut8 base, st64 offset, bool autoincrement) {
-	pj_o(pj);
-	pj_ks(pj, "type", "mem");
-	pj_kn(pj, "base", base);
-	if (offset != 0) {
-		pj_kn(pj, "disp", offset);
+static void opex_add_mem(RzStructuredData *operands, ut64 base, st64 disp, bool autoincrement) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "mem");
+	rz_structured_data_map_add_unsigned(operand, "value", base, false);
+	if (disp) {
+		rz_structured_data_map_add_signed(operand, "disp", disp);
 	}
 	if (autoincrement) {
-		pj_kb(pj, "autoincrement", true);
+		rz_structured_data_map_add_boolean(operand, "autoincrement", true);
 	}
-	pj_end(pj);
 }
 
-static void mcs96_opex(RzStrBuf *opex, const ut8 *buf, int size, ut32 isa_bit) {
+static RzStructuredData *mcs96_opex(const ut8 *buf, const int size, ut32 isa_bit) {
 	if (size < 1) {
-		return;
+		return NULL;
 	}
 
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 
 	ut8 opcode = buf[0];
 	ut32 instr_fmt = mcs96_op[opcode].type;
@@ -103,87 +106,87 @@ static void mcs96_opex(RzStrBuf *opex, const ut8 *buf, int size, ut32 isa_bit) {
 
 	if (instr_fmt & MCS96_FMT_OPC_BYTEOPR && size == 2) {
 		ut8 operand = buf[1];
-		opex_add_reg(pj, operand);
+		opex_add_reg(operands, operand);
 	} else if (instr_fmt & MCS96_FMT_2_BYTE_NOP && size == 2) {
 		// No operands
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11 && size == 2) {
 		st16 imm11 = extract_disp11(opcode, buf[1]);
-		opex_add_imm(pj, imm11);
+		opex_add_imm(operands, imm11);
 	} else if (instr_fmt & MCS96_FMT_OPC_BYTEOPR_X2 && size == 3) {
 		ut8 opr0 = buf[2];
 		ut8 opr1 = buf[1];
-		opex_add_reg(pj, opr0);
-		opex_add_reg(pj, opr1);
+		opex_add_reg(operands, opr0);
+		opex_add_reg(operands, opr1);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM16 && size == 3) {
 		st16 imm = (st16)rz_read_le16(buf + 1);
-		opex_add_imm(pj, imm);
+		opex_add_imm(operands, imm);
 	} else if (instr_fmt & MCS96_FMT_TIJMP && size == 4) {
 		ut8 index = buf[1];
 		ut8 mask = buf[2];
 		ut8 tbase = buf[3];
-		opex_add_reg(pj, tbase);
-		opex_add_reg(pj, index);
-		opex_add_imm(pj, mask);
+		opex_add_reg(operands, tbase);
+		opex_add_reg(operands, index);
+		opex_add_imm(operands, mask);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM11_BYTEOPR && size == 3) {
 		st16 imm11 = extract_disp11(opcode, buf[2]);
 		ut8 reg = buf[1];
-		opex_add_reg(pj, reg);
-		opex_add_imm(pj, imm11);
+		opex_add_reg(operands, reg);
+		opex_add_imm(operands, imm11);
 	} else if (instr_fmt & MCS96_FMT_OPC_IMM24 && size == 4) {
 		ut32 imm = (ut32)rz_read_le24(buf + 1);
-		opex_add_imm(pj, imm);
+		opex_add_imm(operands, imm);
 	} else if (instr_fmt & MCS96_FMT_OPC_INDEX && size >= 1) {
 		ut8 reg = buf[1] & 0xFE; // erase lsb
 		if (size == 3) {
 			ut8 offset = buf[2];
-			opex_add_mem(pj, reg, offset, false);
+			opex_add_mem(operands, reg, offset, false);
 		} else if (size == 4) {
 			ut16 offset = rz_read_le16(buf + 2);
-			opex_add_mem(pj, reg, offset, false);
+			opex_add_mem(operands, reg, offset, false);
 		}
 	} else if (instr_fmt & MCS96_FMT_EXTENDED_INDEXED && size == 6) {
 		ut8 dst = buf[5];
 		ut8 base = buf[1];
 		st32 offset = (st32)rz_read_le24(buf + 2);
-		opex_add_reg(pj, dst);
-		opex_add_mem(pj, base, offset, false);
+		opex_add_reg(operands, dst);
+		opex_add_mem(operands, base, offset, false);
 	} else if (instr_fmt & MCS96_FMT_2OP) {
 		if (addr_mode == MCS96_ADDRESSING_REG_DIRECT && size == 3) {
 			ut8 dst = buf[2];
 			ut8 src_reg = buf[1];
-			opex_add_reg(pj, dst);
-			opex_add_reg(pj, src_reg);
+			opex_add_reg(operands, dst);
+			opex_add_reg(operands, src_reg);
 		} else if (addr_mode == MCS96_ADDRESSING_IMMEDIATE) {
 			if (size == 3) {
 				ut8 dst = buf[2];
 				ut8 src_imm8 = buf[1];
-				opex_add_reg(pj, dst);
-				opex_add_imm(pj, src_imm8);
+				opex_add_reg(operands, dst);
+				opex_add_imm(operands, src_imm8);
 			} else if (size == 4) {
 				ut8 dst = buf[3];
 				ut16 src_imm16 = rz_read_le16(buf + 1);
-				opex_add_reg(pj, dst);
-				opex_add_imm(pj, src_imm16);
+				opex_add_reg(operands, dst);
+				opex_add_imm(operands, src_imm16);
 			}
 		} else if (addr_mode == MCS96_ADDRESSING_INDIRECT && size == 3) {
 			ut8 dst = buf[2];
 			bool autoincrement = buf[1] & 0x1;
 			ut8 src_reg = buf[1] & 0xFE;
-			opex_add_reg(pj, dst);
-			opex_add_mem(pj, src_reg, 0, autoincrement);
+			opex_add_reg(operands, dst);
+			opex_add_mem(operands, src_reg, 0, autoincrement);
 		} else if (addr_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 4) {
 				ut8 dst = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				opex_add_reg(pj, dst);
-				opex_add_mem(pj, base, offset, false);
+				opex_add_reg(operands, dst);
+				opex_add_mem(operands, base, offset, false);
 			} else if (size == 5) {
 				ut8 dst = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				opex_add_reg(pj, dst);
-				opex_add_mem(pj, base, offset, false);
+				opex_add_reg(operands, dst);
+				opex_add_mem(operands, base, offset, false);
 			}
 		}
 	} else if (instr_fmt & MCS96_FMT_3OP) {
@@ -191,62 +194,58 @@ static void mcs96_opex(RzStrBuf *opex, const ut8 *buf, int size, ut32 isa_bit) {
 			ut8 dst = buf[3];
 			ut8 src0_reg = buf[2];
 			ut8 src1_reg = buf[1];
-			opex_add_reg(pj, dst);
-			opex_add_reg(pj, src0_reg);
-			opex_add_reg(pj, src1_reg);
+			opex_add_reg(operands, dst);
+			opex_add_reg(operands, src0_reg);
+			opex_add_reg(operands, src1_reg);
 		} else if (addr_mode == MCS96_ADDRESSING_IMMEDIATE) {
 			if (size == 4) {
 				ut8 dst = buf[3];
 				ut8 src0_reg = buf[2];
 				ut8 src_imm8 = buf[1];
-				opex_add_reg(pj, dst);
-				opex_add_reg(pj, src0_reg);
-				opex_add_imm(pj, src_imm8);
+				opex_add_reg(operands, dst);
+				opex_add_reg(operands, src0_reg);
+				opex_add_imm(operands, src_imm8);
 			} else if (size == 5) {
 				ut8 dst = buf[4];
 				ut8 src0_reg = buf[3];
 				ut16 src_imm16 = rz_read_le16(buf + 1);
-				opex_add_reg(pj, dst);
-				opex_add_reg(pj, src0_reg);
-				opex_add_imm(pj, src_imm16);
+				opex_add_reg(operands, dst);
+				opex_add_reg(operands, src0_reg);
+				opex_add_imm(operands, src_imm16);
 			}
 		} else if (addr_mode == MCS96_ADDRESSING_INDIRECT && size == 4) {
 			ut8 dst = buf[3];
 			ut8 src0_reg = buf[2];
 			ut8 src1_reg = buf[1] & 0xFE;
 			bool autoincrement = buf[1] & 0x1;
-			opex_add_reg(pj, dst);
-			opex_add_reg(pj, src0_reg);
-			opex_add_mem(pj, src1_reg, 0, autoincrement);
+			opex_add_reg(operands, dst);
+			opex_add_reg(operands, src0_reg);
+			opex_add_mem(operands, src1_reg, 0, autoincrement);
 		} else if (addr_mode == MCS96_ADDRESSING_INDEXED) {
 			if (size == 5) {
 				ut8 dst = buf[4];
 				ut8 src1_reg = buf[3];
 				ut8 offset = buf[2];
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				opex_add_reg(pj, dst);
-				opex_add_reg(pj, src1_reg);
-				opex_add_mem(pj, base, offset, false);
+				opex_add_reg(operands, dst);
+				opex_add_reg(operands, src1_reg);
+				opex_add_mem(operands, base, offset, false);
 			} else if (size == 6) {
 				ut8 dst = buf[5];
 				ut8 src1_reg = buf[4];
 				ut16 offset = rz_read_le16(buf + 2);
 				ut8 base = buf[1] & 0xFE; // erase lsb
-				opex_add_reg(pj, dst);
-				opex_add_reg(pj, src1_reg);
-				opex_add_mem(pj, base, offset, false);
+				opex_add_reg(operands, dst);
+				opex_add_reg(operands, src1_reg);
+				opex_add_mem(operands, base, offset, false);
 			}
 		}
 	}
 
-	pj_end(pj); // operands array
-	pj_end(pj); // root object
-	rz_strbuf_init(opex);
-	rz_strbuf_append(opex, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
-static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int mcs96_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	// Determine CPU variant from analysis->cpu
 	ut32 isa_bit = MCS96_8096; // default
 	if (analysis->cpu && *analysis->cpu) {
@@ -1078,8 +1077,13 @@ static int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		break;
 	}
 
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		const char *mnemonic = decode_mnemonic(buf, op->size, isa_bit);
+		op->mnemonic = rz_str_dup(mnemonic);
+	}
+
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		mcs96_opex(&op->opex, buf, size, isa_bit);
+		op->opex = mcs96_opex(buf, size, isa_bit);
 	}
 
 	return op->size;
@@ -1092,7 +1096,7 @@ RzAnalysisPlugin rz_analysis_plugin_mcs96 = {
 	.arch = "mcs96",
 	.author = "bubblepipe",
 	.bits = 16,
-	.archinfo = archinfo,
-	.get_reg_profile = get_reg_profile,
-	.op = analyze_op,
+	.archinfo = mcs96_archinfo,
+	.get_reg_profile = mcs96_get_reg_profile,
+	.op = mcs96_analyze_op,
 };

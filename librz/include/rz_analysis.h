@@ -941,7 +941,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisValue *dst;
 	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
 	RzStrBuf esil;
-	RzStrBuf opex;
+	RzStructuredData *opex;
 	RzAnalysisLiftedILOp il_op;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/

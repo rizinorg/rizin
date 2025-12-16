@@ -46,6 +46,12 @@ size: 4
 sign: false
 type: cjmp
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "$2"
+    - type: "imm"
+      value: 536982352
 jump: 0x12001b350
 fail: 0x12001b340
 cond: al

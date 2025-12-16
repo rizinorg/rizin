@@ -16,7 +16,9 @@ echo --
 EOF
 EXPECT=<<EOF
 rcall
+type:
 call
+type:
 0x00000000 4 bl 0x4e3f84
 --
 --
@@ -113,6 +115,14 @@ size: 4
 sign: false
 type: mov
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x8"
+    - type: "reg"
+      value: "sp"
+    - type: "reg"
+      value: "x8"
 family: sec
 --
 address: 0x100007f14
@@ -129,6 +139,16 @@ size: 4
 sign: false
 type: add
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x9"
+    - type: "reg"
+      value: "x8"
+    - type: "imm"
+      value: 32
+    - type: "imm"
+      value: 0
 family: sec
 EOF
 RUN
@@ -159,6 +179,16 @@ size: 4
 sign: false
 type: add
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x12"
+    - type: "reg"
+      value: "x8"
+    - type: "imm"
+      value: 512
+    - type: "imm"
+      value: 2
 family: sec
 ---
 address: 0x4
@@ -175,6 +205,16 @@ size: 4
 sign: false
 type: add
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x9"
+    - type: "reg"
+      value: "x8"
+    - type: "imm"
+      value: 32
+    - type: "imm"
+      value: 0
 family: sec
 ---
 address: 0x8
@@ -191,6 +231,14 @@ size: 4
 sign: false
 type: mov
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x8"
+    - type: "reg"
+      value: "sp"
+    - type: "reg"
+      value: "x8"
 family: sec
 EOF
 RUN

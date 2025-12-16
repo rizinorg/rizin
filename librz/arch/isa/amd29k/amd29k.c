@@ -529,6 +529,63 @@ ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address) {
 	return UT64_MAX;
 }
 
+static void amd29k_opex_add_reg(RzStructuredData *operands, int reg) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "reg");
+	rz_structured_data_map_add_string(operand, "value", amd29k_get_regname(reg));
+}
+
+static void amd29k_opex_add_signed(RzStructuredData *operands, st64 imm) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "imm");
+	rz_structured_data_map_add_signed(operand, "value", imm);
+}
+
+static void amd29k_opex_add_unsigned(RzStructuredData *operands, ut64 imm) {
+	RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+	rz_structured_data_map_add_string(operand, "type", "imm");
+	rz_structured_data_map_add_unsigned(operand, "value", imm, false);
+}
+
+RzStructuredData *amd29k_instr_opex(amd29k_instr_t *instruction, ut64 address) {
+	if (!instruction) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
+	for (size_t i = 0; i < AMD29K_MAX_OPERANDS; ++i) {
+		int type = AMD29K_GET_TYPE(instruction, i);
+		int value = AMD29K_GET_VALUE(instruction, i);
+
+		switch (type) {
+		case AMD29K_TYPE_REG:
+			amd29k_opex_add_reg(operands, value);
+			break;
+		case AMD29K_TYPE_IMM:
+			amd29k_opex_add_signed(operands, value);
+			break;
+		case AMD29K_TYPE_JMP:
+			amd29k_opex_add_unsigned(operands, address + value);
+			break;
+		default:
+			return root;
+		}
+	}
+
+	return root;
+}
+
 void amd29k_instr_print(amd29k_instr_t *instruction, ut64 address, RzStrBuf *sb) {
 	if (!instruction || !sb) {
 		return;

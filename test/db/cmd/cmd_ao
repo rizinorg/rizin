@@ -27,6 +27,21 @@ type: mov
 cycles: 1
 esil: 0,0xc,rbp,-,=[4]
 rzil: (storew 0 (+ (var rbp) (bv 64 0xfffffffffffffff4)) (bv 32 0x0))
+opex:
+  operands:
+    - type: "mem"
+      segment: "ss"
+      base: "rbp"
+      scale: 0
+      disp: -12
+      write: true
+      nbits: 32
+    - type: "imm"
+      value: 0
+      read: true
+      nbits: 32
+  modrm: true
+  disp: -12
 direction: write
 family: cpu
 stackop: set
@@ -67,19 +82,19 @@ stackptr: 8
     "opex": {
       "operands": [
         {
-          "size": 4,
-          "rw": 2,
           "type": "mem",
           "segment": "ss",
           "base": "rbp",
           "scale": 0,
-          "disp": -12
+          "disp": -12,
+          "write": true,
+          "nbits": 32
         },
         {
-          "size": 4,
-          "rw": 1,
           "type": "imm",
-          "value": 0
+          "value": 0,
+          "read": true,
+          "nbits": 32
         }
       ],
       "modrm": true,

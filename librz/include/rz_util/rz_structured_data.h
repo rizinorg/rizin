@@ -5,6 +5,7 @@
 #define RZ_STRUCTURED_DATA_H
 
 #include <rz_util/rz_strbuf.h>
+#include <rz_util/rz_pj.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +18,7 @@ typedef enum rz_structured_data_block_t {
 
 typedef struct rz_structured_data_t RzStructuredData;
 
-typedef void (*RzStructuredDataIteratorNew)(RZ_NULLABLE void *user, RzStructuredDataBlock block);
+typedef void (*RzStructuredDataIteratorNew)(RZ_NULLABLE void *user, RzStructuredDataBlock block, size_t n_elems);
 typedef void (*RzStructuredDataIteratorEnd)(RZ_NULLABLE void *user);
 typedef void (*RzStructuredDataIteratorKey)(RZ_NULLABLE void *user, RZ_NONNULL const char *key);
 typedef void (*RzStructuredDataIteratorValueUnsigned)(RZ_NULLABLE void *user, ut64 n, bool hex);

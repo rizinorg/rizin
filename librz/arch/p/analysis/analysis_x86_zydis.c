@@ -39,11 +39,10 @@
 #define ARG1_AR   1
 #define ARG2_AR   2
 
-#define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
-#define INSOP(n)                 zydx->zydeop[n]
-#define INSOPS                   zydx->zydecode->operand_count_visible
-#define ISIMM(n)                 zydx->zydeop[n].type == X86_OP_IMM
-#define ISMEM(n)                 zydx->zydeop[n].type == X86_OP_MEM
+#define INSOP(n) zydx->zydeop[n]
+#define INSOPS   zydx->zydecode->operand_count_visible
+#define ISIMM(n) zydx->zydeop[n].type == X86_OP_IMM
+#define ISMEM(n) zydx->zydeop[n].type == X86_OP_MEM
 
 typedef struct zydis_x86_context_t {
 	char buf[AR_DIM][BUF_SZ];
@@ -106,76 +105,90 @@ static void hidden_op(const X86ZYDISContext *zydx, int mode) {
 	}
 }
 
-static void opex(RzStrBuf *buf, const X86ZYDISContext *zydx, int mode, int bitness) {
+static RzStructuredData *x86_opex(const X86ZYDISContext *zydx, int mode, int bitness) {
 	ZydisDecodedInstruction *zydecode = zydx->zydecode;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	pj_o(pj);
 	if (zydecode->operand_count_visible == 0) {
 		hidden_op(zydx, mode);
 	}
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	for (size_t i = 0; i < zydecode->operand_count_visible; i++) {
 		ZydisDecodedOperand *op = &INSOP(i);
-		pj_o(pj);
-		pj_ki(pj, "size", op->size);
-		pj_ki(pj, "rw", op->actions);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case X86_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", ZydisRegisterGetString(op->reg.value));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", ZydisRegisterGetString(op->reg.value));
 			break;
 		case X86_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", get_imm_reg_value(op, zydx->addr, zydx->zydecode->length, bitness));
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", get_imm_reg_value(op, zydx->addr, zydx->zydecode->length, bitness));
 			break;
 		case X86_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.segment != X86_REG_NONE) {
-				pj_ks(pj, "segment", ZydisRegisterGetString(op->mem.segment));
+				rz_structured_data_map_add_string(operand, "segment", ZydisRegisterGetString(op->mem.segment));
 			}
 			if (op->mem.base != X86_REG_NONE) {
-				pj_ks(pj, "base", ZydisRegisterGetString(op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", ZydisRegisterGetString(op->mem.base));
 			}
 			if (op->mem.index != X86_REG_NONE) {
-				pj_ks(pj, "index", ZydisRegisterGetString(op->mem.index));
+				rz_structured_data_map_add_string(operand, "index", ZydisRegisterGetString(op->mem.index));
 			}
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_kN(pj, "disp", op->mem.disp.value);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp.value);
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj);
+		if (op->actions & ZYDIS_OPERAND_ACTION_READ) {
+			rz_structured_data_map_add_boolean(operand, "read", true);
+		}
+		if (op->actions & ZYDIS_OPERAND_ACTION_WRITE) {
+			rz_structured_data_map_add_boolean(operand, "write", true);
+		}
+		if (op->actions & ZYDIS_OPERAND_ACTION_CONDREAD) {
+			rz_structured_data_map_add_boolean(operand, "cond_read", true);
+		}
+		if (op->actions & ZYDIS_OPERAND_ACTION_CONDWRITE) {
+			rz_structured_data_map_add_boolean(operand, "cond_write", true);
+		}
+		rz_structured_data_map_add_unsigned(operand, "nbits", op->size * 8, false);
 	}
-	pj_end(pj);
+
 	if (zydecode->attributes & ZYDIS_ATTRIB_HAS_REX) {
-		pj_kb(pj, "rex", true);
+		rz_structured_data_map_add_boolean(opex, "rex", true);
 	}
 	if (zydecode->raw.modrm.mod != 0) {
-		pj_kb(pj, "modrm", true);
+		rz_structured_data_map_add_boolean(opex, "modrm", true);
 	}
 	if (zydecode->raw.sib.scale != 0 || zydecode->raw.sib.index != 0 || zydecode->raw.sib.offset != 0 || zydecode->raw.sib.base != 0) {
-		pj_ki(pj, "sib", zydecode->raw.sib.base + (zydecode->raw.sib.index * zydecode->raw.sib.scale) + zydecode->raw.sib.offset);
+		rz_structured_data_map_add_signed(opex, "sib", zydecode->raw.sib.base + (zydecode->raw.sib.index * zydecode->raw.sib.scale) + zydecode->raw.sib.offset);
 	}
 	if (zydecode->raw.disp.value != 0) {
-		pj_ki(pj, "disp", zydecode->raw.disp.value);
+		rz_structured_data_map_add_signed(opex, "disp", zydecode->raw.disp.value);
 	}
 	if (zydecode->raw.sib.index != X86_REG_NONE) {
-		pj_ki(pj, "sib_scale", zydecode->raw.sib.scale);
-		pj_ks(pj, "sib_index", ZydisRegisterGetString(zydecode->raw.sib.index));
+		rz_structured_data_map_add_signed(opex, "sib_scale", zydecode->raw.sib.scale);
+		rz_structured_data_map_add_string(opex, "sib_index", ZydisRegisterGetString(zydecode->raw.sib.index));
 	}
 	if (zydecode->raw.sib.base != X86_REG_NONE) {
-		pj_ks(pj, "sib_base", ZydisRegisterGetString(zydecode->raw.sib.base));
+		rz_structured_data_map_add_string(opex, "sib_base", ZydisRegisterGetString(zydecode->raw.sib.base));
 	}
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static bool is_xmm_reg(const ZydisDecodedOperand op) {
@@ -3251,7 +3264,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		anop_esil(a, op, buf, len, zydx);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, zydx, mode, a->bits);
+		op->opex = x86_opex(zydx, mode, a->bits);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval(a, op, mode, zydx);

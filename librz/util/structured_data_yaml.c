@@ -36,11 +36,13 @@ static char *builder_yaml_fini_printer(StructYamlPrinter *yaml) {
 	return rz_strbuf_drain_nofree(&yaml->sb);
 }
 
-static void builder_yaml_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block) {
+static void builder_yaml_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block, size_t n_elems) {
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
 
 	if (yaml->depth > 0) {
-		if (builder_yaml_is_array(yaml)) {
+		if (n_elems < 1) {
+			rz_strbuf_append(&yaml->sb, block == RZ_STRUCTURED_DATA_BLOCK_ARRAY ? " []\n" : " {}\n");
+		} else if (builder_yaml_is_array(yaml)) {
 			builder_yaml_add_padding(yaml);
 			rz_strbuf_append(&yaml->sb, "-");
 		} else {
