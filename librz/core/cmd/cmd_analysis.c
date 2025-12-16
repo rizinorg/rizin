@@ -2879,10 +2879,10 @@ static bool display_xref_list_handler(RzCore *core, int argc, const char **argv,
 	};
 	int context_bytes = n_bytes;
 	int context_instrs = n_instrs;
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	rz_list_foreach (xref_list, iter, xref) {
 		context_instrs = -6;
 		rz_cons_printf("\n");
-		bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 		if (utf8) {
 			rz_cons_printf(";––––––––––––––––––––––––––––––––––––––––––\n");
 		} else {
