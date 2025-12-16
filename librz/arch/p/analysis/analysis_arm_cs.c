@@ -551,6 +551,51 @@ static RzStructuredData *aarch64_opex(csh handle, cs_insn *insn) {
 			rz_structured_data_map_add_string(operand, "value", op->barrier - 1);
 			break;
 #else
+		case AARCH64_OP_SYSREG: {
+			rz_structured_data_map_add_string(operand, "type", "sysreg");
+			rz_structured_data_map_add_unsigned(operand, "sysreg", op->sysop.reg.sysreg, true);
+			rz_structured_data_map_add_unsigned(operand, "tlbi", op->sysop.reg.tlbi, true);
+			rz_structured_data_map_add_unsigned(operand, "ic", op->sysop.reg.ic, true);
+			break;
+		}
+		case AARCH64_OP_SYSIMM: {
+			rz_structured_data_map_add_string(operand, "type", "sysimm");
+			switch (op->sysop.imm.dbnxs) {
+			case AARCH64_DBNXS_ISHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "ishnxs");
+				break;
+			case AARCH64_DBNXS_NSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "nshnxs");
+				break;
+			case AARCH64_DBNXS_OSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "oshnxs");
+				break;
+			case AARCH64_DBNXS_SYNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "synxs");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "dbnxs", op->sysop.imm.dbnxs, true);
+				break;
+			}
+			switch (op->sysop.imm.exactfpimm) {
+			case AARCH64_EXACTFPIMM_HALF:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "half");
+				break;
+			case AARCH64_EXACTFPIMM_ONE:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "one");
+				break;
+			case AARCH64_EXACTFPIMM_TWO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "two");
+				break;
+			case AARCH64_EXACTFPIMM_ZERO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "zero");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "exactfpimm", op->sysop.imm.exactfpimm, true);
+				break;
+			}
+			break;
+		}
 		case AARCH64_OP_SYSALIAS:
 			switch (op->sysop.sub_type) {
 			default:
