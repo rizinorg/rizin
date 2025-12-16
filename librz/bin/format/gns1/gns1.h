@@ -24,16 +24,16 @@
  * Reference: https://github.com/nlitsme/AppleC4000/blob/master/loadgns.py
  */
 typedef struct gns1_segment_entry {
-	ut32 size;
-	ut32 paddr;
-	ut32 offset;
+	ut32 size; ///< Size of the segment in bytes
+	ut32 paddr; ///< Physical address of the segment
+	ut32 offset; ///< File offset of the segment data
 } Gns1SegmentEntry;
 
 //  parses the GNS1 file structure.
 typedef struct gns1_obj {
-	RzVector *segments;
-	ut32 num_segments;
-	RzBuffer *buf;
+	RzVector *segments; ///< Vector of Gns1SegmentEntry
+	ut32 num_segments; ///< Number of segments in the file
+	RzBuffer *buf; ///< Buffer containing the file data
 } Gns1Obj;
 
 // functions
