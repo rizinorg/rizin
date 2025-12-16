@@ -17,7 +17,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	void **it;
 	rz_pvector_foreach(il_op, it) {
 		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
-		printf("Eval PC = 0x%" PFMT64x "\n", pc);
+		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
 		RzInterpreterInsnPkt *pkt = *it;
 		if (!interpreter_prototype_eval_effect(state, pkt->effect, pkt->insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 			return false;

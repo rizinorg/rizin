@@ -237,7 +237,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		entry_assert_error);
 	bool success = false;
 
-	printf("INTERPRETER Main: Hello.\n");
+	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
 
 	void **priv_ptr = NULL;
@@ -294,7 +294,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// The input state was (almost always) manipulated by eval(). Rename to clarify.
 		out_state = in_state;
 		out_hash = plugin->hash_state(out_state, plugin_data);
-		printf("in_hash = 0x%llx, out_hash = 0x%llx\n", in_hash, out_hash);
+		RZ_LOG_DEBUG("in_hash = 0x%llx, out_hash = 0x%llx\n", in_hash, out_hash);
 
 		// Add out_state hash to the reachable states and
 		// set a flag if it was a new state.
