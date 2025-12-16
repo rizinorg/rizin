@@ -95,7 +95,7 @@ RZ_API int rz_str_bounds(const char *str, int *h);
 RZ_API char *rz_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 RZ_API char *rz_str_scale(const char *r, int w, int h);
 RZ_API bool rz_str_range_in(const char *r, ut64 addr);
-RZ_API size_t rz_str_len_utf8(const char *s);
+RZ_API size_t rz_str_utf8_cols(const char *s);
 RZ_API size_t rz_str_utf8_num_ucp(RZ_NONNULL const char *str);
 RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str);
 RZ_API size_t rz_str_len_utf8_ansi(const char *str);

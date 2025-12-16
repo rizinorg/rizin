@@ -53,59 +53,63 @@ static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k 
 	op->fail = make_64bits_address(addr + op->size);
 }
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_m68k *x = &insn->detail->m68k;
-	pj_ka(pj, "operands");
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_m68k_op *op = &x->operands[i];
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case M68K_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case M68K_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", (st64)op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", (st64)op->imm);
 			break;
 		case M68K_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "base_reg", cs_reg_name(handle, op->mem.base_reg));
+				rz_structured_data_map_add_string(operand, "base_reg", cs_reg_name(handle, op->mem.base_reg));
 			}
 			if (op->mem.index_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "index_reg", cs_reg_name(handle, op->mem.index_reg));
+				rz_structured_data_map_add_string(operand, "index_reg", cs_reg_name(handle, op->mem.index_reg));
 			}
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
+				rz_structured_data_map_add_string(operand, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
 			}
-			pj_kN(pj, "in_disp", op->mem.in_disp);
-			pj_kN(pj, "out_disp", op->mem.out_disp);
-			pj_ki(pj, "disp", op->mem.disp);
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_ki(pj, "bitfield", op->mem.bitfield);
-			pj_ki(pj, "width", op->mem.width);
-			pj_ki(pj, "offset", op->mem.offset);
-			pj_ki(pj, "index_size", op->mem.index_size);
+			rz_structured_data_map_add_signed(operand, "in_disp", op->mem.in_disp);
+			rz_structured_data_map_add_signed(operand, "out_disp", op->mem.out_disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "bitfield", op->mem.bitfield);
+			rz_structured_data_map_add_signed(operand, "width", op->mem.width);
+			rz_structured_data_map_add_signed(operand, "offset", op->mem.offset);
+			rz_structured_data_map_add_signed(operand, "index_size", op->mem.index_size);
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
@@ -238,7 +242,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, ctx->handle, insn);
+		op->opex = mk68_opex(ctx->handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:

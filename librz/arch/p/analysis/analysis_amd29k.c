@@ -339,6 +339,10 @@ static int amd29k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 		op->mnemonic = rz_str_dup(instruction.mnemonic);
 	}
 
+	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+		op->opex = amd29k_instr_opex(&instruction, addr);
+	}
+
 	return op->size;
 }
 

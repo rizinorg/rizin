@@ -484,10 +484,10 @@ EXPECT=<<EOF
     "opex": {
       "operands": [
         {
-          "size": 2,
-          "rw": 1,
           "type": "reg",
-          "value": "eflags"
+          "value": "eflags",
+          "read": true,
+          "nbits": 16
         }
       ]
     },
