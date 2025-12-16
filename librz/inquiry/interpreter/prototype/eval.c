@@ -136,7 +136,7 @@ bool store_abstr_data(
 	char *bytes = rz_bv_as_hex_string(src->bv, true);
 	printf("Prototype: STORE @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
 	free(bytes);
-	rz_bv_set_to_bytes_be(src->bv, buf);
+	rz_bv_set_to_bytes_ble(src->bv, buf, state->il_config->big_endian);
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr;
 	io_req->data = buf;
@@ -185,7 +185,7 @@ bool load_abstr_data(
 	}
 	out->is_concrete = true;
 	rz_bv_cast_inplace(out->bv, size, 0);
-	rz_bv_set_from_bytes_be(out->bv, io_res->read.data, 0, io_res->read.n_bytes);
+	rz_bv_set_from_bytes_ble(out->bv, io_res->read.data, 0, io_res->read.n_bytes, state->il_config->big_endian);
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
 	printf("Prototype: READ @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
 	free(bytes);

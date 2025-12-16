@@ -24,6 +24,7 @@ rz_interpreter_inc = [platform_inc]
 rz_interpreter = library('rz_interpreter', rz_interpreter_sources,
   include_directories: rz_interpreter_inc,
   dependencies: [
+    rz_arch_dep,
     rz_cons_dep,
     rz_hash_dep,
     rz_il_dep,
@@ -46,6 +47,7 @@ meson.override_dependency('rz_interpreter', rz_interpreter_dep)
 modules += { 'rz_interpreter': {
     'target': rz_interpreter,
     'dependencies': [
+      'rz_arch',
       'rz_cons',
       'rz_hash',
       'rz_il',

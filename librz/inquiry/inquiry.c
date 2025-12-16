@@ -72,16 +72,6 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 	return false;
 }
 
-static ut64 get_mem_addr_bits(RzAnalysis *analysis) {
-	if (analysis->cur->il_config) {
-		RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
-		size_t key_size = config->mem_key_size;
-		rz_analysis_il_config_free(config);
-		return key_size;
-	}
-	return analysis->cur->bits;
-}
-
 static RzPVector *get_reg_names(RzAnalysis *analysis) {
 	RzPVector *reg_names = rz_pvector_new(free);
 	if (analysis->cur->il_config) {
@@ -228,12 +218,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	ht_up_insert(yield_queues, yield_kind, yield_queue);
 
 	// Initialize the abstract state with the architecture's registers.
-	size_t addr_bits = get_mem_addr_bits(core->analysis);
+	if (!core->analysis->cur->il_config) {
+		RZ_LOG_ERROR("The RzArch plugin doesn't have il_config() implemented.\n");
+		goto error_free;
+	}
+	RzAnalysisILConfig *config = core->analysis->cur->il_config(core->analysis);
 	RzPVector *reg_names = get_reg_names(core->analysis);
 	abstr_state = rz_interpreter_abstr_state_new(
 		RZ_INTERPRETER_ABSTRACTION_CONST,
-		reg_names,
-		addr_bits);
+		config,
+		reg_names);
 	rz_pvector_free(reg_names);
 
 	// Bundle all the queues into one object to pass it to the thread.
