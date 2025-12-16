@@ -400,7 +400,7 @@ static int __strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableCo
 	int ll = rz_strbuf_length(sb);
 	int pad = 0;
 	int len = rz_str_len_utf8_ansi(str);
-	if (len < rz_str_len_utf8(str) && len < col->width) {
+	if (len < rz_str_utf8_cols(str) && len < col->width) {
 		pad = col->width - len;
 	}
 
@@ -518,7 +518,7 @@ static int __strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const c
 	int ll = rz_strbuf_length(sb);
 	char *pad = "";
 	int padlen = 0;
-	int len1 = rz_str_len_utf8(str);
+	int len1 = rz_str_utf8_cols(str);
 	int len2 = rz_str_len_utf8_ansi(str);
 	if (!nopad) {
 		if (len1 > len2) {

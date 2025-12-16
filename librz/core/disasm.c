@@ -5500,7 +5500,7 @@ toro:
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_RET) {
 				if (strchr(ds->line, '>')) {
-					memset(ds->line, ' ', rz_str_len_utf8(ds->line));
+					memset(ds->line, ' ', rz_str_utf8_cols(ds->line));
 				}
 				ds_begin_line(ds);
 				ds_print_pre(ds, true);
