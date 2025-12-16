@@ -32,7 +32,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!rz_bv_add_inplace(pc->bv, inc.bv, NULL)) {
 			goto error;
 		}
-		printf("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		RZ_LOG_DEBUG("Prototype: NOP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 		            old_pc,
 		            rz_bv_to_ut64(pc->bv),
 		            pc->is_concrete ? "Concrete" : "Abstract");
@@ -63,9 +63,9 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
-			printf("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
+			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
 		}
-		printf("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
+		RZ_LOG_DEBUG("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
 		            rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
 								rz_bv_to_ut64(eval_out.bv),
 		            eval_out.is_concrete ? "Concrete" : "Abstract");
