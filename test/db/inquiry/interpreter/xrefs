@@ -1,0 +1,103 @@
+NAME=Indirect call x86
+FILE=bins/rzil_analysis/interpreter/prototype/x86_icall_malloc
+CMDS=<<EOF
+# Supress output of aaaaIp wit grep for now.
+aaaaIp main
+pd 47 @ main
+axl
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            0x00401a70      push  rbp
+            0x00401a71      mov   rbp, rsp
+            0x00401a74      sub   rsp, 0x20
+            0x00401a78      mov   dword [rbp-0x04], 0x00
+            0x00401a7f      mov   qword [rbp-0x10], 0x00
+            0x00401a87      mov   qword [rbp-0x18], 0x00
+            ; CODE XREF from main @ +0x52
+        .-> 0x00401a8f      cmp   qword [rbp-0x18], 0x03
+       ,==< 0x00401a94      jnb   0x401ac4
+       |:   0x00401a96      mov   rcx, qword [rbp-0x18]
+       |:   0x00401a9a      mov   al, 0x00
+       |:   0x00401a9c      call  qword [rcx*8+obj.fcn_arr]            ; 0x4a80d0
+       |:   ; DATA XREF from main @ +0x2c
+       |:   0x00401aa3      mov   qword [rbp-0x20], rax                ; [0x4a9b50:8]=0
+       |:                                                              ; obj.z
+       |:   0x00401aa7      mov   rax, qword [rbp-0x20]
+       |:   0x00401aab      movzx eax, byte [rax]                      ; [0x4a9b50:1]=0
+       |:   0x00401aae      add   rax, qword [rbp-0x10]
+       |:   0x00401ab2      mov   qword [rbp-0x10], rax
+       |:   0x00401ab6      mov   rax, qword [rbp-0x18]
+       |:   0x00401aba      add   rax, 0x01
+       |:   0x00401abe      mov   qword [rbp-0x18], rax
+       |`=< 0x00401ac2      jmp   0x401a8f
+       |    ; CODE XREF from main @ +0x24
+       `--> 0x00401ac4      mov   rax, qword [rbp-0x10]
+            0x00401ac8      add   rsp, 0x20
+            0x00401acc      pop   rbp
+            0x00401acd      ret
+            0x00401ace      nop
+            ; CODE XREF from main @ +0x2c
+            ;-- function_0:
+            0x00401ad0      push  rbp
+            0x00401ad1      mov   rbp, rsp
+            0x00401ad4      call  sym.some_ptr
+            ; DATA XREF from sym.function_0 @ +0x4
+            ; CODE XREF from sym.some_ptr @ +0xf
+            0x00401ad9      pop   rbp
+            0x00401ada      ret
+            0x00401adb      nop   dword [rax+rax*1], eax
+            ; CODE XREF from sym.function_0 @ +0x4
+            ; CODE XREF from sym.function_1 @ +0x4
+            ; CODE XREF from sym.function_2 @ +0x4
+            ;-- some_ptr:
+            0x00401ae0      push  rbp
+            0x00401ae1      mov   rbp, rsp
+            0x00401ae4      mov   rax, obj.z                           ; 0x4a9b50
+            0x00401aee      pop   rbp
+            0x00401aef      ret
+            ; CODE XREF from main @ +0x2c
+            ;-- function_1:
+            0x00401af0      push  rbp
+            0x00401af1      mov   rbp, rsp
+            0x00401af4      call  sym.some_ptr
+            ; CODE XREF from sym.some_ptr @ +0xf
+            ; DATA XREF from sym.function_1 @ +0x4
+            0x00401af9      pop   rbp
+            0x00401afa      ret
+            0x00401afb      nop   dword [rax+rax*1], eax
+            ; CODE XREF from main @ +0x2c
+            ;-- function_2:
+            0x00401b00      push  rbp
+            0x00401b01      mov   rbp, rsp
+            0x00401b04      call  sym.some_ptr
+            ; CODE XREF from sym.some_ptr @ +0xf
+            ; DATA XREF from sym.function_2 @ +0x4
+            0x00401b09      pop   rbp
+            0x00401b0a      ret
+                                 main+36 0x401a94 ->      CODE -> 0x401ac4 main+84
+                                 main+44 0x401a9c ->      DATA -> 0x401aa3 main+51
+                                 main+44 0x401a9c ->      CODE -> 0x401ad0 sym.function_0
+                                 main+44 0x401a9c ->      CODE -> 0x401af0 sym.function_1
+                                 main+44 0x401a9c ->      CODE -> 0x401b00 sym.function_2
+                                 main+44 0x401a9c ->      DATA -> 0x4a80d0 obj.fcn_arr
+                                 main+44 0x401a9c ->      DATA -> 0x4a80d8 obj.fcn_arr+8
+                                 main+44 0x401a9c ->      DATA -> 0x4a80e0 obj.fcn_arr+16
+                                 main+51 0x401aa3 ->      DATA -> 0x4a9b50 obj.z
+                                 main+59 0x401aab ->      DATA -> 0x4a9b50 obj.z
+                                 main+82 0x401ac2 ->      CODE -> 0x401a8f main+31
+                        sym.function_0+4 0x401ad4 ->      DATA -> 0x401ad9 sym.function_0+9
+                        sym.function_0+4 0x401ad4 ->      CODE -> 0x401ae0 sym.some_ptr
+                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401ad9 sym.function_0+9
+                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401af9 sym.function_1+9
+                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401b09 sym.function_2+9
+                        sym.function_1+4 0x401af4 ->      CODE -> 0x401ae0 sym.some_ptr
+                        sym.function_1+4 0x401af4 ->      DATA -> 0x401af9 sym.function_1+9
+                        sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
+                        sym.function_2+4 0x401b04 ->      DATA -> 0x401b09 sym.function_2+9
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Failed to decode IL op
+ERROR: Failed to lift basic block at 0xffffffffffffff00
+EOF
+RUN
