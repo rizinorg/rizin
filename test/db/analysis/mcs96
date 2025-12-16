@@ -1,0 +1,92 @@
+NAME=mcs96 byte tests
+FILE=malloc://4096
+CMDS=<<EOF
+e asm.arch=mcs96
+e asm.cpu=8096
+ar
+echo ----
+wx 2010
+ao 1~type,jump
+echo ----
+wx f0
+ao 1~type,stackptr
+echo ----
+wx cc10
+ao 1~type,stackptr
+echo ----
+wx a0010203
+ao 1~type,ptr
+echo ----
+wx a1123412
+ao 1~type,val
+echo ----
+wx 65123401
+ao 1~type,val
+EOF
+EXPECT=<<EOF
+pc = 0x0000
+sp = 0x0000
+psw = 0x0000
+garbage = 0x0000
+garbage = 0x0000
+garbage = 0x0000
+----
+type: jmp
+jump: 0x00000012
+----
+type: ret
+stackptr: 2
+----
+type: pop
+stackptr: 2
+----
+ptr: 0x00000201
+refptr: 2
+type: load
+----
+val: 0x00003412
+type: load
+----
+val: 0x00003412
+type: add
+EOF
+RUN
+
+NAME=mcs96 fib.bin tests
+FILE=bins/mcs96/fib.bin
+ARGS=-m 0x2080
+CMDS=<<EOF
+e asm.arch=mcs96
+e asm.cpu=8096
+aaa
+pdf
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from fcn.00002080 @ 0x2098, 0x20a7
+/ fcn.00002080();
+|           0x00002080      push  0x1a                                 ; [0xa31a:2]=0xffff
+|           0x00002082      ld    0x1a 0x04[0x18]
+|           0x00002086      cmp   0x1a 0x0001
+|       ,=< 0x0000208a      jgt   0x05
+|       |   0x0000208c      ld    0x1c 0x1a                            ; [0x1c1a:2]=0xffff
+|      ,==< 0x0000208f      sjmp  0x0026
+|      |`-> 0x00002091      ld    0x1c 0x1a                            ; [0x1c1a:2]=0xffff
+|      |    0x00002094      dec   0x1c
+|      |    0x00002096      push  0x1c                                 ; [0x2f1c:2]=0xffff
+|      |    0x00002098      scall 0xffe6
+|      |    0x0000209a      add   0x18 0x0002
+|      |    0x0000209e      push  0x1c                                 ; [0x491c:2]=0xffff
+|      |    0x000020a0      sub   0x1c 0x1a 0x0002
+|      |    0x000020a5      push  0x1c                                 ; [0x2f1c:2]=0xffff
+|      |    0x000020a7      scall 0xffd7
+|      |    0x000020a9      add   0x18 0x0002
+|      |    0x000020ad      pop   0x1e
+|      |    0x000020af      add   0x1e 0x1c                            ; [0x1e1c:2]=0xffff
+|      |    0x000020b2      ld    0x1c 0x1e                            ; [0x1c1e:2]=0xffff
+|      |,=< 0x000020b5      sjmp  0x0000
+|      ||   ; CODE XREFS from fcn.00002080 @ 0x208f, 0x20b5
+|      ``-> 0x000020b7      pop   0x1a
+\           0x000020b9      ret
+EOF
+RUN
+
