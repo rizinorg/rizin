@@ -413,7 +413,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_LOAD: {
 		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
 		if (!interpreter_prototype_eval_pure(state, key, out, yield_queues, io_request, io_result, plugin_data)) {
-			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
+			RZ_LOG_ERROR("prototype: LOAD/LOADW key failed to evaluate.\n");
 			return false;
 		}
 		if (!out->is_concrete) {
@@ -421,7 +421,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		}
 		report_xref_yield(state, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), out, RZ_ANALYSIS_XREF_TYPE_DATA);
 		ut64 addr = rz_bv_to_ut64(out->bv);
-		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->addr_bits : pure->op.loadw.n_bits;
+		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->il_config->mem_key_size : pure->op.loadw.n_bits;
 		if (!load_abstr_data(state, addr, addr_bits, out, io_request, io_result)) {
 			goto map_to_bottom;
 		}

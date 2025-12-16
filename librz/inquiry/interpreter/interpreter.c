@@ -76,8 +76,9 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
  */
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	RzInterpreterAbstraction kinds,
-	RZ_NULLABLE const RzPVector *reg_names,
-	size_t addr_bits) {
+	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
+	RZ_NULLABLE const RzPVector *reg_names) {
+	rz_return_val_if_fail(il_config, NULL);
 	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
 	if (!state) {
 		return NULL;
@@ -113,7 +114,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	}
 	state->locals = ht_up_new(NULL, free);
 	state->lets = ht_up_new(NULL, free);
-	state->addr_bits = addr_bits;
+	state->il_config = il_config;
 	return state;
 }
 
@@ -132,6 +133,9 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	}
 	if (state->pc) {
 		free(state->pc);
+	}
+	if (state->il_config) {
+		rz_analysis_il_config_free(state->il_config);
 	}
 	free(state);
 }

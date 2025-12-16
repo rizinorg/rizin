@@ -59,7 +59,7 @@ typedef struct {
 	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
-	size_t addr_bits; ///< Number of bits of a memory address.
+	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	void *ext; ///< Optional state extensions. Managed by individual interpreters.
 } RzInterpreterAbstrState;
 
@@ -211,8 +211,8 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	RzInterpreterAbstraction kinds,
-	RZ_NULLABLE const RzPVector *reg_names,
-	size_t addr_bits);
+	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
+	RZ_NULLABLE const RzPVector *reg_names);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
