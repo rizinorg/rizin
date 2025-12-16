@@ -984,10 +984,19 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op) {
  */
 RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op) {
 	rz_return_val_if_fail(op, false);
-	if (rz_analysis_op_is_eob(op)) {
-		return true;
-	}
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_RCJMP:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_MCJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
 	case RZ_ANALYSIS_OP_TYPE_RCALL:
 	case RZ_ANALYSIS_OP_TYPE_ICALL:
 	case RZ_ANALYSIS_OP_TYPE_IRCALL:
@@ -997,9 +1006,11 @@ RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *o
 	case RZ_ANALYSIS_OP_TYPE_CRET:
 	case RZ_ANALYSIS_OP_TYPE_ILL:
 	case RZ_ANALYSIS_OP_TYPE_UNK:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
 	case RZ_ANALYSIS_OP_TYPE_SWI:
 	case RZ_ANALYSIS_OP_TYPE_CSWI:
-	case RZ_ANALYSIS_OP_TYPE_TRAP:
+	case RZ_ANALYSIS_OP_TYPE_LEAVE:
+	case RZ_ANALYSIS_OP_TYPE_SWITCH:
 		return true;
 	default:
 		return false;

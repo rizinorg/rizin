@@ -12,40 +12,6 @@
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 
-RZ_API bool rz_inquiry_op_type_is_eob(_RzAnalysisOpType type) {
-	switch (type) {
-	default:
-		return false;
-	case RZ_ANALYSIS_OP_TYPE_JMP:
-	case RZ_ANALYSIS_OP_TYPE_UJMP:
-	case RZ_ANALYSIS_OP_TYPE_RJMP:
-	case RZ_ANALYSIS_OP_TYPE_IJMP:
-	case RZ_ANALYSIS_OP_TYPE_IRJMP:
-	case RZ_ANALYSIS_OP_TYPE_CJMP:
-	case RZ_ANALYSIS_OP_TYPE_RCJMP:
-	case RZ_ANALYSIS_OP_TYPE_MJMP:
-	case RZ_ANALYSIS_OP_TYPE_MCJMP:
-	case RZ_ANALYSIS_OP_TYPE_UCJMP:
-	case RZ_ANALYSIS_OP_TYPE_CALL:
-	case RZ_ANALYSIS_OP_TYPE_UCALL:
-	case RZ_ANALYSIS_OP_TYPE_RCALL:
-	case RZ_ANALYSIS_OP_TYPE_ICALL:
-	case RZ_ANALYSIS_OP_TYPE_IRCALL:
-	case RZ_ANALYSIS_OP_TYPE_CCALL:
-	case RZ_ANALYSIS_OP_TYPE_UCCALL:
-	case RZ_ANALYSIS_OP_TYPE_RET:
-	case RZ_ANALYSIS_OP_TYPE_CRET:
-	case RZ_ANALYSIS_OP_TYPE_ILL:
-	case RZ_ANALYSIS_OP_TYPE_UNK:
-	case RZ_ANALYSIS_OP_TYPE_TRAP:
-	case RZ_ANALYSIS_OP_TYPE_SWI:
-	case RZ_ANALYSIS_OP_TYPE_CSWI:
-	case RZ_ANALYSIS_OP_TYPE_LEAVE:
-	case RZ_ANALYSIS_OP_TYPE_SWITCH:
-		return true;
-	}
-}
-
 RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
 	rz_return_val_if_fail(analysis && analysis->cur && io, NULL);
 	RzInterpreterILBB *il_bb = NULL;
