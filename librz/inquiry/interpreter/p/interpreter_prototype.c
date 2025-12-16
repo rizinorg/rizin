@@ -22,7 +22,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 		if (!interpreter_prototype_eval_effect(state, pkt->effect, pkt->insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
 			return false;
 		}
-		if (pc == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv)) {
+		if (pc == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv) && AD(state->pc->abstr_data)->is_concrete) {
 			set_pc(state, pc + pkt->insn_pkt_size, plugin_data);
 		}
 	}
