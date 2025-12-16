@@ -1674,6 +1674,14 @@ RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 	}
 }
 
+RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size, bool big_endian) {
+	if (big_endian) {
+		rz_bv_set_from_bytes_be(bv, buf, bit_offset, size);
+	} else {
+		rz_bv_set_from_bytes_le(bv, buf, bit_offset, size);
+	}
+}
+
 /**
  * \brief Set the buffer contents from the given bitvector's bits in little endian format.
  * \param bv  BitVector to use as source of the bits
@@ -1702,6 +1710,14 @@ RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
 			buf[i] = val & 0xff;
 		}
 		val >>= 8;
+	}
+}
+
+RZ_API void rz_bv_set_to_bytes_ble(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf, bool big_endian) {
+	if (big_endian) {
+		rz_bv_set_to_bytes_be(bv, buf);
+	} else {
+		rz_bv_set_to_bytes_le(bv, buf);
 	}
 }
 
