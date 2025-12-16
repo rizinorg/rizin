@@ -70,6 +70,25 @@ RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLo
 }
 
 /**
+ * \brief  The function shall block up to a given timeout on a condition variable and shall be called with RzThreadLock locked by the calling thread.
+ *
+ * \param  cond        The RzThreadCond to use for waiting the signal
+ * \param  lock        The RzThreadLock lock to use (the lock must be already taken by the thread)
+ * \param  timeout_ms  How many millisecs it needs to wait before it is ok to continue.
+ */
+RZ_API void rz_th_cond_timed_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock, size_t timeout_ms) {
+	rz_return_if_fail(cond);
+#if HAVE_PTHREAD
+	struct timespec timeout;
+	timeout.tv_sec = timeout_ms / 1000;
+	timeout.tv_nsec = (timeout_ms % 1000) * 1000000ull;
+	pthread_cond_timedwait(&cond->cond, &lock->lock, &timeout);
+#elif __WINDOWS__
+	SleepConditionVariableCS(&cond->cond, &lock->lock, timeout_ms);
+#endif
+}
+
+/**
  * \brief  Frees a RzThreadCond struct
  *
  * \param  cond  The RzThreadCond to free

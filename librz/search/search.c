@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2024-2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_list.h>
@@ -567,11 +567,13 @@ typedef struct search_ctx {
 static void print_intervals(RZ_NONNULL RzThreadQueue *intervals) {
 	rz_return_if_fail(intervals);
 
-	RzSearchInterval *search_interval = NULL;
-	while ((search_interval = rz_th_queue_pop(intervals, false))) {
+	void *data = NULL;
+	while (rz_th_queue_pop(intervals, false, &data) && data) {
+		RzSearchInterval *search_interval = (RzSearchInterval *)data;
 		RzInterval *itv = &search_interval->interval;
 		eprintf("[0x%" PFMT64x ", 0x%" PFMT64x "): %" PFMTSZu "\n", itv->addr, itv->addr + itv->size,
 			search_interval->n_hits);
+		data = NULL;
 	}
 }
 
@@ -788,6 +790,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	if (cancel_th) {
 		// stop & free cancel thread.
 		rz_atomic_bool_set(ctx.loop, false);
+		rz_th_queue_close_when_empty(intervals);
 		rz_th_wait(cancel_th);
 		rz_th_free(cancel_th);
 		rz_atomic_bool_free(ctx.loop);
