@@ -49,3 +49,36 @@ EXPECT=<<EOF
 6295544
 EOF
 RUN
+
+NAME=axtl
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+aa
+s 0x08048370
+axtl
+EOF
+EXPECT=<<EOF
+
+;------------------------------------------
+void entry.init0();
+; Xref from: entry.init0 @ 0x080483f2
+|       :   0x080483ec      xchg  ebp, eax
+|       :   0x080483ed      add   al, 0x08
+|       :   0x080483ef      call  eax
+|       :   0x080483f1      leave
+|       `=< 0x080483f2      jmp   sym.register_tm_clones
+            0x080483f7      nop
+
+;------------------------------------------
+void entry.init0();
+; Xref from: entry.init0 @ 0x080483f8
+|      `==< 0x080483f2      jmp   sym.register_tm_clones
+        :   0x080483f7      nop
+\       `=< 0x080483f8      jmp   sym.register_tm_clones
+            0x080483fd      nop
+            0x080483ff      nop
+            ; DATA XREF from entry0 @ 0x8048317
+/ int main(int argc, char **argv, char **envp);
+|           0x08048400      push  ebp
+EOF
+RUN
