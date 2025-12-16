@@ -535,7 +535,7 @@ static RzStructuredData *aarch64_opex(csh handle, cs_insn *insn) {
 				rz_structured_data_map_add_string(operand, "value", "daifclr");
 				break;
 			default:
-				rz_structured_data_map_add_string(operand, "value", op->pstate);
+				rz_structured_data_map_add_unsigned(operand, "value", op->pstate, true);
 			}
 			break;
 		case ARM64_OP_SYS:
@@ -544,11 +544,11 @@ static RzStructuredData *aarch64_opex(csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_PREFETCH:
 			rz_structured_data_map_add_string(operand, "type", "prefetch");
-			rz_structured_data_map_add_string(operand, "value", op->prefetch - 1);
+			rz_structured_data_map_add_unsigned(operand, "value", op->prefetch - 1, false);
 			break;
 		case ARM64_OP_BARRIER:
 			rz_structured_data_map_add_string(operand, "type", "prefetch");
-			rz_structured_data_map_add_string(operand, "value", op->barrier - 1);
+			rz_structured_data_map_add_unsigned(operand, "value", op->barrier - 1, false);
 			break;
 #else
 		case AARCH64_OP_SYSREG: {
