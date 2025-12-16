@@ -385,12 +385,36 @@ CMDS=<<EOF
 wx 01001104
 e asm.arch=mips
 e asm.bits=32
-e asm.arch=mips3
+e asm.cpu=mips3
 e asm.nbytes=4
-ao 1~type:[1]
+ao
 EOF
 EXPECT=<<EOF
-call
+address: 0x0
+opcode: bal 8
+disasm: bal 8
+pseudo: call 8
+mnemonic: bal
+description: branch and link
+mask: ff000000
+prefix: 0
+id: 225
+bytes: 01001104
+refptr: 0
+size: 4
+sign: false
+type: call
+cycles: 0
+esil: 0,1,8,<<<,1,&,==,$z,?{,pc,4,+,ra,=,,pc,=,}
+rzil: (seq (set ra (bv 64 0x8)) (jmp (bv 64 0x8)))
+opex:
+  operands:
+    - type: "imm"
+      value: 8
+jump: 0x00000008
+direction: exec
+delay: 1
+family: cpu
 EOF
 RUN
 
@@ -1274,6 +1298,14 @@ type: add
 cycles: 0
 esil: 30,0x80000000,t2,a0,^,&,>>,31,0x80000000,t2,a0,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,t2,a0,+,a0,=,}
 rzil: (set a0 (cast 32 (msb (+ (var t2) (var a0))) (+ (var t2) (var a0))))
+opex:
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "t2"
+    - type: "reg"
+      value: "a0"
 family: cpu
 ===============
 address: 0x0
@@ -1290,6 +1322,14 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "ac3"
+    - type: "reg"
+      value: "s3"
+    - type: "reg"
+      value: "s2"
 family: mmx
 ===============
 address: 0x0
@@ -1306,6 +1346,12 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "f10"
+    - type: "reg"
+      value: "f8"
 family: fpu
 ===============
 address: 0x0
@@ -1322,6 +1368,14 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "f10"
+    - type: "reg"
+      value: "f18"
+    - type: "reg"
+      value: "f7"
 family: fpu
 ===============
 address: 0x0
@@ -1338,6 +1392,14 @@ size: 4
 sign: false
 type: mul
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "ac3"
+    - type: "reg"
+      value: "s2"
+    - type: "reg"
+      value: "a3"
 family: mmx
 ===============
 address: 0x0
@@ -1354,6 +1416,14 @@ size: 4
 sign: false
 type: mul
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "ac3"
+    - type: "reg"
+      value: "s2"
+    - type: "reg"
+      value: "a3"
 family: mmx
 ===============
 address: 0x0
@@ -1370,6 +1440,14 @@ size: 4
 sign: false
 type: mul
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "w4"
+    - type: "reg"
+      value: "w10"
+    - type: "reg"
+      value: "w7"
 family: mmx
 ===============
 address: 0x0
@@ -1386,6 +1464,8 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands: []
 family: virt
 ===============
 address: 0x0
@@ -1403,6 +1483,13 @@ sign: false
 type: null
 cycles: 0
 rzil: (set a0 (cast 32 (msb (loadw 0 8 (+ (var t2) (bv 32 0x5)))) (loadw 0 8 (+ (var t2) (bv 32 0x5)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "mem"
+      base: "t2"
+      disp: 5
 family: virt
 ===============
 address: 0x0
@@ -1419,6 +1506,12 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "t2"
 family: thread
 ===============
 address: 0x0
@@ -1435,6 +1528,14 @@ size: 4
 sign: false
 type: null
 cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "t2"
+    - type: "reg"
+      value: "a0"
 family: crpt
 EOF
 RUN

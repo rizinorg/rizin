@@ -28,7 +28,11 @@ def get_changed_lines(
 
     # --unified=0  gives hunks like “@@ -L,C +L,C @@”  (we care about the + side)
     cmd = ["git", "diff", "--unified=0", f"{base_ref}..{head_ref}"]
-    out = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+    try:
+        out = subprocess.check_output(cmd, text=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Random failure: stderr: {e.stderr}\nstdout: {e.stdout}\n")
+        sys.exit(1)
     if not out:
         return None
 
@@ -95,6 +99,8 @@ def main() -> None:
     print("\nLEAK REPORT\n")
     print(f"Total leaks: {total_leaks}")
     print(f"New leaks: {len(leaks)}\n")
+
+    print("Note: The leaks can be false positives but are rarely.\n")
 
     indent = "  "
     if leaks:
