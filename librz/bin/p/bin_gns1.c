@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: 2025 Zapper9982
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "../format/gns1/gns1.h"
 
@@ -14,7 +15,9 @@ RzBinPlugin rz_bin_plugin_gns1 = {
 	.entries = &gns1_entries,
 	.sections = &gns1_sections,
 	.maps = &rz_bin_maps_of_file_sections,
-	.info = &gns1_info,	.bin_structure = &gns1_structure,};
+	.info = &gns1_info,
+	.bin_structure = &gns1_structure,
+};
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

@@ -1,16 +1,17 @@
+// SPDX-FileCopyrightText: 2025 Zapper9982
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /**
  * \file Implementation of Apple C4000 baseband firmware (GNS1.bin) parser.
- * 
+ *
  * Detection heuristic:
  * - Dword at offset 0xC (first chunk offset) must be >= 0x64
  * - Dword at offset 0x8 (should be 0, end of list marker in a valid table)
- * 
+ *
  * Reference: https://github.com/nlitsme/AppleC4000/blob/master/loadgns.py
  */
 #include "gns1.h"
 #include <rz_util/rz_str.h>
-
 
 static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry) {
 	return rz_buf_read_le32_offset(b, offset, &entry->size) &&
@@ -18,9 +19,8 @@ static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry
 		rz_buf_read_le32_offset(b, offset, &entry->offset);
 }
 
-
 // heuristic: dword at 0xC >= 0x64 and dword at offset-4 == 0
-bool gns1_check_buffer(RzBuffer *b){
+bool gns1_check_buffer(RzBuffer *b) {
 	rz_return_val_if_fail(b, false);
 
 	ut64 buf_size = rz_buf_size(b);
@@ -33,16 +33,16 @@ bool gns1_check_buffer(RzBuffer *b){
 	if (!gns1_read_segment(b, &offset, &first_entry)) {
 		return false;
 	}
-    // check 1 
+	// check 1
 	if (first_entry.offset < 0x64) {
 		return false;
 	}
-    // check 2 
+	// check 2
 	ut32 marker = 0;
 	if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
 		return false;
 	}
-    // sanity check 
+	// sanity check
 	if (first_entry.size == 0 || first_entry.size > buf_size) {
 		return false;
 	}
@@ -50,7 +50,7 @@ bool gns1_check_buffer(RzBuffer *b){
 	if (first_entry.offset >= buf_size) {
 		return false;
 	}
-    // overflow check 
+	// overflow check
 	if (first_entry.offset + first_entry.size > buf_size) {
 		return false;
 	}
@@ -82,7 +82,7 @@ bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	ut64 file_size = rz_buf_size(b);
 
 	while (gns1_read_segment(b, &offset, &entry)) {
-		// end of segment table check 
+		// end of segment table check
 		if (entry.size == 0 && entry.paddr == 0 && entry.offset == 0) {
 			break;
 		}
@@ -106,7 +106,7 @@ bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 		rz_vector_push(gns1->segments, &entry);
 		gns1->num_segments++;
 
-        // safety limit 
+		// safety limit
 		if (gns1->num_segments > 1000) {
 			RZ_LOG_ERROR("GNS1: too many segments, file may be corrupted\n");
 			break;
@@ -135,13 +135,12 @@ void gns1_destroy(RzBinFile *bf) {
 	free(gns1);
 }
 
-
 // get base address for GNS1 binary.
 ut64 gns1_baddr(RzBinFile *bf) {
 	return GNS1_INTERNAL_BASE;
 }
 
-// get entry points from GNS1 file 
+// get entry points from GNS1 file
 RzPVector *gns1_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
@@ -175,7 +174,6 @@ RzPVector *gns1_entries(RzBinFile *bf) {
 	return ret;
 }
 
-
 // create sections from GNS1 segments.
 RzPVector *gns1_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
@@ -188,7 +186,7 @@ RzPVector *gns1_sections(RzBinFile *bf) {
 
 	Gns1SegmentEntry *entry;
 	ut32 idx = 0;
-	rz_vector_foreach(gns1->segments, entry) {
+	rz_vector_foreach (gns1->segments, entry) {
 		RzBinSection *section = RZ_NEW0(RzBinSection);
 		if (!section) {
 			continue;
@@ -209,7 +207,7 @@ RzPVector *gns1_sections(RzBinFile *bf) {
 		}
 
 		if ((entry->paddr & 0xFFFFFF) == 0) {
-			section->perm = RZ_PERM_RX; 
+			section->perm = RZ_PERM_RX;
 		} else {
 			section->perm = RZ_PERM_RW;
 		}
@@ -281,7 +279,7 @@ RzStructuredData *gns1_structure(RzBinFile *bf) {
 
 	Gns1SegmentEntry *entry;
 	ut32 idx = 0;
-	rz_vector_foreach(gns1->segments, entry) {
+	rz_vector_foreach (gns1->segments, entry) {
 		RzStructuredData *seg = rz_structured_data_array_add_map(segments);
 		if (!seg) {
 			continue;
@@ -292,7 +290,7 @@ RzStructuredData *gns1_structure(RzBinFile *bf) {
 		rz_structured_data_map_add_unsigned(seg, "physical_addr", entry->paddr, true);
 		rz_structured_data_map_add_unsigned(seg, "file_offset", entry->offset, true);
 
-		// for core 
+		// for core
 		const char *core = "unknown";
 		if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
 			core = "core0";
@@ -301,11 +299,11 @@ RzStructuredData *gns1_structure(RzBinFile *bf) {
 		}
 		rz_structured_data_map_add_string(seg, "core", core);
 
-		// for type 
+		// for type
 		const char *type = (entry->paddr & 0xFFFFFF) == 0 ? "text" : "data";
 		rz_structured_data_map_add_string(seg, "type", type);
 
-		// calc rebase virtual addr 
+		// calc rebase virtual addr
 		ut32 core_base = entry->paddr & 0xFF000000;
 		ut64 vaddr;
 		if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
