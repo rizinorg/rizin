@@ -306,7 +306,7 @@ RZ_DEPRECATE RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len
 		? rz_io_vread_at_mapped(io, addr, buf, len)
 		: rz_io_pread_at(io, addr, buf, len) > 0;
 	if (io->cached & RZ_PERM_R) {
-		ret |= rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len, NULL);
 	}
 	return ret;
 }
@@ -335,7 +335,7 @@ RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNU
 		ret = rz_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & RZ_PERM_R) {
-		ret |= rz_io_cache_read(io, addr, buf, len);
+		ret |= rz_io_cache_read(io, addr, buf, len, NULL);
 	}
 	return ret;
 }
@@ -348,7 +348,11 @@ RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNU
  *
  * \param addr address to start reading at
  * \param len size of \p buf
- * \return the number of bytes read or -1 on error
+ * \return The number of bytes read or -1 on error
+ *
+ * NOTE: If IO cache is enabled this function might read beyond a memory map.
+ * If the cache holds data beyond but adjacent to the map, and addr + len covers
+ * it, the function might read this cached data.
  */
 RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len) {
 	int ret;
@@ -365,7 +369,11 @@ RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 
 		ret = rz_io_pread_at(io, addr, buf, len);
 	}
 	if (ret > 0 && io->cached & RZ_PERM_R) {
-		(void)rz_io_cache_read(io, addr, buf, len);
+		// rz_io_cache_read() reads over holes in its cache.
+		// Because of that, it can read beyond the mapped region.
+		// But cache read within boundaries is simply not possible with the
+		// current implementation.
+		rz_io_cache_read(io, addr, buf, ret, NULL);
 	}
 	return ret;
 }

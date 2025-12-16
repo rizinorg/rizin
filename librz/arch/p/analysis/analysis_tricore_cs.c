@@ -248,14 +248,13 @@ static char *tricore_reg_profile(RzAnalysis *_) {
 	return rz_str_dup(p);
 }
 
-static void tricore_opex(RzAsmTriCoreContext *ctx, RzStrBuf *sb);
+static RzStructuredData *tricore_opex(RzAsmTriCoreContext *ctx);
 
 static void tricore_fillvals(RzAsmTriCoreContext *ctx, RzAnalysis *a, RzAnalysisOp *op);
 
 static void tricore_op_set_type(RzAsmTriCoreContext *ctx, RzAnalysisOp *op);
 
-static int
-tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+static int tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (!(a && op && data && len > 0)) {
 		return 0;
 	}
@@ -289,7 +288,7 @@ tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,
 	op->addr = ctx->insn->address;
 	tricore_op_set_type(ctx, op);
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		tricore_opex(ctx, &op->opex);
+		op->opex = tricore_opex(ctx);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		tricore_fillvals(ctx, a, op);
@@ -1194,47 +1193,50 @@ static void tricore_fillvals(RzAsmTriCoreContext *ctx, RzAnalysis *a, RzAnalysis
 	}
 }
 
-static void tricore_opex(RzAsmTriCoreContext *ctx, RzStrBuf *sb) {
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *tricore_opex(RzAsmTriCoreContext *ctx) {
+	if (!ctx->insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_tricore *tc = &ctx->insn->detail->tricore;
 	for (st32 i = 0; i < tc->op_count; i++) {
 		cs_tricore_op *op = tc->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case TRICORE_OP_INVALID: {
-			pj_ks(pj, "type", "invalid");
+		case TRICORE_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(ctx->h, op->reg));
+			break;
+		case TRICORE_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
+			break;
+		case TRICORE_OP_MEM:
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			if (op->mem.base != TRICORE_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(ctx->h, op->mem.base));
+			}
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			break;
+		default:
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		case TRICORE_OP_REG: {
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(ctx->h, op->reg));
-			break;
-		}
-		case TRICORE_OP_IMM: {
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
-			break;
-		}
-		case TRICORE_OP_MEM: {
-			pj_ks(pj, "type", "mem");
-			pj_ks(pj, "base", cs_reg_name(ctx->h, op->mem.base));
-			pj_ki(pj, "disp", op->mem.disp);
-			break;
-		}
-		}
-		pj_end(pj);
 	}
-	pj_end(pj);
-	pj_end(pj);
 
-	rz_strbuf_init(sb);
-	rz_strbuf_append(sb, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int tricore_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
