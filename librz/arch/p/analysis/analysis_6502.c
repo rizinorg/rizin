@@ -441,58 +441,111 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;
 	switch (data[0]) {
 	/* KIL / JAM - Instructions that halt the CPU */
-	case 0x02: case 0x12: case 0x22: case 0x32:
-	case 0x42: case 0x52: case 0x62: case 0x72:
-	case 0x92: case 0xb2: case 0xd2: case 0xf2:
+	case 0x02:
+	case 0x12:
+	case 0x22:
+	case 0x32:
+	case 0x42:
+	case 0x52:
+	case 0x62:
+	case 0x72:
+	case 0x92:
+	case 0xb2:
+	case 0xd2:
+	case 0xf2:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		op->size = 1;
 		break;
 
 	/* SLO (Shift Left + ORA) */
-	case 0x03: case 0x07: case 0x0f: case 0x13:
-	case 0x17: case 0x1b: case 0x1f:
+	case 0x03:
+	case 0x07:
+	case 0x0f:
+	case 0x13:
+	case 0x17:
+	case 0x1b:
+	case 0x1f:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		break;
 
 	/* RLA (Rotate Left + AND) */
-	case 0x23: case 0x27: case 0x2f: case 0x33:
-	case 0x37: case 0x3b: case 0x3f:
+	case 0x23:
+	case 0x27:
+	case 0x2f:
+	case 0x33:
+	case 0x37:
+	case 0x3b:
+	case 0x3f:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		break;
 
 	/* SAX (Store A AND X) */
-	case 0x83: case 0x87: case 0x8f: case 0x97:
+	case 0x83:
+	case 0x87:
+	case 0x8f:
+	case 0x97:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		break;
 
 	/* LAX (Load Accumulator and X) */
-	case 0xa3: case 0xa7: case 0xaf: case 0xb3:
-	case 0xb7: case 0xbf:
+	case 0xa3:
+	case 0xa7:
+	case 0xaf:
+	case 0xb3:
+	case 0xb7:
+	case 0xbf:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		break;
 
 	/* DCP (Decrement + Compare) */
-	case 0xc3: case 0xc7: case 0xcf: case 0xd3:
-	case 0xd7: case 0xdb: case 0xdf:
+	case 0xc3:
+	case 0xc7:
+	case 0xcf:
+	case 0xd3:
+	case 0xd7:
+	case 0xdb:
+	case 0xdf:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
 		break;
 
 	/* Illegal NOPs - These perform a read but don't store results */
-	case 0x1a: case 0x3a: case 0x5a: case 0x7a: case 0xda: case 0xfa:
-	case 0x80: case 0x82: case 0x89: case 0xc2: case 0xe2:
-	case 0x04: case 0x44: case 0x64:
-	case 0x14: case 0x34: case 0x54: case 0x74: case 0xd4: case 0xf4:
-	case 0x0c: case 0x1c: case 0x3c: case 0x5c: case 0x7c: case 0xdc: case 0xfc:
+	case 0x1a:
+	case 0x3a:
+	case 0x5a:
+	case 0x7a:
+	case 0xda:
+	case 0xfa:
+	case 0x80:
+	case 0x82:
+	case 0x89:
+	case 0xc2:
+	case 0xe2:
+	case 0x04:
+	case 0x44:
+	case 0x64:
+	case 0x14:
+	case 0x34:
+	case 0x54:
+	case 0x74:
+	case 0xd4:
+	case 0xf4:
+	case 0x0c:
+	case 0x1c:
+	case 0x3c:
+	case 0x5c:
+	case 0x7c:
+	case 0xdc:
+	case 0xfc:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		if ((data[0] & 0x0f) == 0x0c || (data[0] & 0x0f) == 0x1c) {
 			op->size = 3;
 		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a ||
-					data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
+			data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
 			op->size = 1;
 		} else {
 			op->size = 2;
