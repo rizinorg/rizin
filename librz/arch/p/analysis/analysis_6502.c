@@ -444,12 +444,12 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x02: case 0x12: case 0x22: case 0x32:
 	case 0x42: case 0x52: case 0x62: case 0x72:
 	case 0x92: case 0xb2: case 0xd2: case 0xf2:
-		op->type = RZ_ANALYSIS_OP_TYPE_TRAP; 
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		op->size = 1;
 		break;
 
 	/* SLO (Shift Left + ORA) */
-	case 0x03: case 0x07: case 0x0f: case 0x13: 
+	case 0x03: case 0x07: case 0x0f: case 0x13:
 	case 0x17: case 0x1b: case 0x1f:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
@@ -469,7 +469,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 
 	/* LAX (Load Accumulator and X) */
-	case 0xa3: case 0xa7: case 0xaf: case 0xb3: 
+	case 0xa3: case 0xa7: case 0xaf: case 0xb3:
 	case 0xb7: case 0xbf:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
@@ -491,8 +491,8 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		if ((data[0] & 0x0f) == 0x0c || (data[0] & 0x0f) == 0x1c) {
 			op->size = 3;
-		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a || 
-				   data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
+		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a ||
+					data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
 			op->size = 1;
 		} else {
 			op->size = 2;
@@ -598,11 +598,10 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x1d: // ora $ffff,x
 	case 0x19: // ora $ffff,y
 	case 0x01: // ora ($ff,x)
-	case 0x11: { // ora ($ff),y
+	case 0x11:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
-		bool is_immediate = data[0] == 0x09;
-		if (is_immediate) { // immediate mode
+		if (data[0] == 0x09) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,|=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],a,|=", addrbuf);
@@ -612,7 +611,6 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			op->il_op = _6502_il_op_ora(il_addr_ptr);
 		}
 		break;
-	}
 	// AND
 	case 0x29: // and #$ff
 	case 0x25: // and $ff
