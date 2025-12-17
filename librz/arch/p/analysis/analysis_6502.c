@@ -545,7 +545,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		if ((data[0] & 0x0f) == 0x0c || (data[0] & 0x0f) == 0x1c) {
 			op->size = 3;
 		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a ||
-			data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
+					data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
 			op->size = 1;
 		} else {
 			op->size = 2;
