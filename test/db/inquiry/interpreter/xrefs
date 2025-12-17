@@ -1,5 +1,5 @@
 NAME=Indirect call x86
-FILE=bins/rzil_analysis/interpreter/prototype/x86_icall_malloc
+FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
 # Supress output of aaaaIp wit grep for now.
 aaaaIp main
