@@ -268,7 +268,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
-	const RzInterpreterILBB *il_bb = rz_th_queue_pop(iset->il_queue, false);
+	const RzInterpreterILBB *il_bb = NULL;
+	if (!rz_th_queue_pop_wait(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+		goto pre_loop_error;
+	}
 	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
 	// For now let's just drop them.
 	RzList *additional_entries = rz_th_queue_pop_all(iset->il_queue);
@@ -336,8 +339,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		SuccessorState next = { 0 };
 		rz_vector_pop_front(succ_states, &next);
 		in_hash = next.in_state_hash;
-		il_bb = rz_th_queue_wait_pop(iset->il_queue, false);
-		if (!il_bb || !plugin->set_pc(in_state, next.addr, plugin_data)) {
+		if (!rz_th_queue_pop_wait(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+			goto in_loop_error;
+		}
+		if (!plugin->set_pc(in_state, next.addr, plugin_data)) {
 			// Some error occurred lifting this basic block. Or updating the PC.
 			// Abort execution.
 			goto in_loop_error;
