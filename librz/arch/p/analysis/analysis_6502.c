@@ -6,9 +6,9 @@
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
- *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ * http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  * and:
- *	http://vice-emu.sourceforge.net/
+ * http://vice-emu.sourceforge.net/
  */
 
 #include <string.h>
@@ -407,7 +407,6 @@ static void _6502_analysis_esil_flags(RzAnalysisOp *op, ut8 data0) {
 		enabled = 0;
 		flag = 'V';
 		break;
-		break;
 	}
 	rz_strbuf_setf(&op->esil, "%d,%c,=", enabled, flag);
 }
@@ -441,115 +440,63 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	_6502ILAddr il_addr = { 0 };
 	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;
 	switch (data[0]) {
-	case 0x02:
-	case 0x03:
-	case 0x04:
-	case 0x07:
-	case 0x0b:
-	case 0x0c:
-	case 0x0f:
-	case 0x12:
-	case 0x13:
-	case 0x14:
-	case 0x17:
-	case 0x1a:
-	case 0x1b:
-	case 0x1c:
-	case 0x1f:
-	case 0x22:
-	case 0x23:
-	case 0x27:
-	case 0x2b:
-	case 0x2f:
-	case 0x32:
-	case 0x33:
-	case 0x34:
-	case 0x37:
-	case 0x3a:
-	case 0x3b:
-	case 0x3c:
-	case 0x3f:
-	case 0x42:
-	case 0x43:
-	case 0x44:
-	case 0x47:
-	case 0x4b:
-	case 0x4f:
-	case 0x52:
-	case 0x53:
-	case 0x54:
-	case 0x57:
-	case 0x5a:
-	case 0x5b:
-	case 0x5c:
-	case 0x5f:
-	case 0x62:
-	case 0x63:
-	case 0x64:
-	case 0x67:
-	case 0x6b:
-	case 0x6f:
-	case 0x72:
-	case 0x73:
-	case 0x74:
-	case 0x77:
-	case 0x7a:
-	case 0x7b:
-	case 0x7c:
-	case 0x7f:
-	case 0x80:
-	case 0x82:
-	case 0x83:
-	case 0x87:
-	case 0x89:
-	case 0x8b:
-	case 0x8f:
-	case 0x92:
-	case 0x93:
-	case 0x97:
-	case 0x9b:
-	case 0x9c:
-	case 0x9e:
-	case 0x9f:
-	case 0xa3:
-	case 0xa7:
-	case 0xab:
-	case 0xaf:
-	case 0xb2:
-	case 0xb3:
-	case 0xb7:
-	case 0xbb:
-	case 0xbf:
-	case 0xc2:
-	case 0xc3:
-	case 0xc7:
-	case 0xcb:
-	case 0xcf:
-	case 0xd2:
-	case 0xd3:
-	case 0xd4:
-	case 0xd7:
-	case 0xda:
-	case 0xdb:
-	case 0xdc:
-	case 0xdf:
-	case 0xe2:
-	case 0xe3:
-	case 0xe7:
-	case 0xeb:
-	case 0xef:
-	case 0xf2:
-	case 0xf3:
-	case 0xf4:
-	case 0xf7:
-	case 0xfa:
-	case 0xfb:
-	case 0xfc:
-	case 0xff:
-		// undocumented or not-implemented opcodes for 6502.
-		// some of them might be implemented in 65816
+	/* KIL / JAM - Instructions that halt the CPU */
+	case 0x02: case 0x12: case 0x22: case 0x32:
+	case 0x42: case 0x52: case 0x62: case 0x72:
+	case 0x92: case 0xb2: case 0xd2: case 0xf2:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP; 
 		op->size = 1;
-		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		break;
+
+	/* SLO (Shift Left + ORA) */
+	case 0x03: case 0x07: case 0x0f: case 0x13: 
+	case 0x17: case 0x1b: case 0x1f:
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
+		break;
+
+	/* RLA (Rotate Left + AND) */
+	case 0x23: case 0x27: case 0x2f: case 0x33:
+	case 0x37: case 0x3b: case 0x3f:
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
+		break;
+
+	/* SAX (Store A AND X) */
+	case 0x83: case 0x87: case 0x8f: case 0x97:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
+		break;
+
+	/* LAX (Load Accumulator and X) */
+	case 0xa3: case 0xa7: case 0xaf: case 0xb3: 
+	case 0xb7: case 0xbf:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
+		break;
+
+	/* DCP (Decrement + Compare) */
+	case 0xc3: case 0xc7: case 0xcf: case 0xd3:
+	case 0xd7: case 0xdb: case 0xdf:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
+		break;
+
+	/* Illegal NOPs - These perform a read but don't store results */
+	case 0x1a: case 0x3a: case 0x5a: case 0x7a: case 0xda: case 0xfa:
+	case 0x80: case 0x82: case 0x89: case 0xc2: case 0xe2:
+	case 0x04: case 0x44: case 0x64:
+	case 0x14: case 0x34: case 0x54: case 0x74: case 0xd4: case 0xf4:
+	case 0x0c: case 0x1c: case 0x3c: case 0x5c: case 0x7c: case 0xdc: case 0xfc:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		if ((data[0] & 0x0f) == 0x0c || (data[0] & 0x0f) == 0x1c) {
+			op->size = 3;
+		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a || 
+				   data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
+			op->size = 1;
+		} else {
+			op->size = 2;
+		}
 		break;
 
 	// BRK
@@ -873,7 +820,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	// CPY
 	case 0xc0: // cpy #$ff
 	case 0xc4: // cpy $ff
-	case 0xcc: // cpy $ffff
+	case 0xcc: // cpx $ffff
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		_6502_analysis_esil_get_addr_pattern3(op, data, len, addrbuf, buffsize, NULL, il_addr_ptr);
 		if (data[0] == 0xc0) { // immediate mode
@@ -1102,7 +1049,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 	// PLP,PLA
 	case 0x28: // plp
-	case 0x68: // plp
+	case 0x68: // pla
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		op->cycles = 4;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -1157,26 +1104,26 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	char *p =
-		"=PC	pc\n"
-		"=SP	sp\n"
-		"=A0	y\n"
-		"=A1	y\n"
-		"gpr	a	.8	0	0\n"
-		"gpr	x	.8	1	0\n"
-		"gpr	y	.8	2	0\n"
+		"=PC    pc\n"
+		"=SP    sp\n"
+		"=A0    y\n"
+		"=A1    y\n"
+		"gpr    a   .8  0   0\n"
+		"gpr    x   .8  1   0\n"
+		"gpr    y   .8  2   0\n"
 
-		"gpr	flags	.8	3	0\n"
-		"gpr	C	.1	.24	0\n"
-		"gpr	Z	.1	.25	0\n"
-		"gpr	I	.1	.26	0\n"
-		"gpr	D	.1	.27	0\n"
+		"gpr    flags   .8  3   0\n"
+		"gpr    C   .1  .24 0\n"
+		"gpr    Z   .1  .25 0\n"
+		"gpr    I   .1  .26 0\n"
+		"gpr    D   .1  .27 0\n"
 		// bit 4 (.28) is NOT a real flag.
-		// "gpr	B	.1	.28	0\n"
+		// "gpr B   .1  .28 0\n"
 		// bit 5 (.29) is not used
-		"gpr	V	.1	.30	0\n"
-		"gpr	N	.1	.31	0\n"
-		"gpr	sp	.8	4	0\n"
-		"gpr	pc	.16	5	0\n";
+		"gpr    V   .1  .30 0\n"
+		"gpr    N   .1  .31 0\n"
+		"gpr    sp  .8  4   0\n"
+		"gpr    pc  .16 5   0\n";
 	return rz_str_dup(p);
 }
 
