@@ -6,9 +6,9 @@
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
- * http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  * and:
- * http://vice-emu.sourceforge.net/
+ *	http://vice-emu.sourceforge.net/
  */
 
 #include <string.h>
@@ -675,8 +675,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x31: // and ($ff),y
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		_6502_analysis_esil_get_addr_pattern1(op, data, len, addrbuf, buffsize, il_addr_ptr);
-		bool is_immediate = data[0] == 0x29;
-		if (is_immediate) { // immediate mode
+		if (data[0] == 0x29) { // immediate mode
 			rz_strbuf_setf(&op->esil, "%s,a,&=", addrbuf);
 		} else {
 			rz_strbuf_setf(&op->esil, "%s,[1],a,&=", addrbuf);
