@@ -2821,7 +2821,7 @@ RZ_API size_t rz_str_utf8_cols(const char *s) {
 	size_t i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {
 		if ((s[i] & 0xc0) != 0x80) {
-			// TODO Zero-width chars
+			// TODO Zero-width chars; human emoji
 			j++;
 			if (rz_str_char_fullwidth(s + i, 4)) {
 				fullwidths++;
