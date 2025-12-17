@@ -21,6 +21,9 @@ EXPECT=<<EOF
        |:   0x00401a9a      mov   al, 0x00
        |:   0x00401a9c      call  qword [rcx*8+obj.fcn_arr]            ; 0x4a80d0
        |:   ; DATA XREF from main @ +0x2c
+       |:   ; CODE XREF from sym.function_0 @ +0xa
+       |:   ; CODE XREF from sym.function_1 @ +0xa
+       |:   ; CODE XREF from sym.function_2 @ +0xa
        |:   0x00401aa3      mov   qword [rbp-0x20], rax                ; [0x4a9b50:8]=0
        |:                                                              ; obj.z
        |:   0x00401aa7      mov   rax, qword [rbp-0x20]
@@ -88,13 +91,16 @@ EXPECT=<<EOF
                                  main+82 0x401ac2 ->      CODE -> 0x401a8f main+31
                         sym.function_0+4 0x401ad4 ->      DATA -> 0x401ad9 sym.function_0+9
                         sym.function_0+4 0x401ad4 ->      CODE -> 0x401ae0 sym.some_ptr
+                       sym.function_0+10 0x401ada ->      CODE -> 0x401aa3 main+51
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401ad9 sym.function_0+9
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401af9 sym.function_1+9
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401b09 sym.function_2+9
                         sym.function_1+4 0x401af4 ->      CODE -> 0x401ae0 sym.some_ptr
                         sym.function_1+4 0x401af4 ->      DATA -> 0x401af9 sym.function_1+9
+                       sym.function_1+10 0x401afa ->      CODE -> 0x401aa3 main+51
                         sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
                         sym.function_2+4 0x401b04 ->      DATA -> 0x401b09 sym.function_2+9
+                       sym.function_2+10 0x401b0a ->      CODE -> 0x401aa3 main+51
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Failed to decode IL op
