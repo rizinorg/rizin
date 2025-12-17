@@ -445,7 +445,6 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x03:
 	case 0x04:
 	case 0x07:
-	case 0x0b:
 	case 0x0c:
 	case 0x0f:
 	case 0x12:
@@ -459,7 +458,6 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x22:
 	case 0x23:
 	case 0x27:
-	case 0x2b:
 	case 0x2f:
 	case 0x32:
 	case 0x33:
@@ -687,6 +685,25 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 			op->il_op = _6502_il_op_and(il_addr_ptr);
 		}
+		break;
+	// ANC (Undocumented)
+	case 0x0b: // anc #$ff
+	case 0x2b: // anc #$ff
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+
+		// 1. Fetch immediate value manually
+		ut8 imm = (len > 1) ? data[1] : 0;
+
+		// 2. ESIL: Perform AND (A = A & imm)
+		// "0xNN,a,&=" means: Push Imm, Push A, Bitwise AND, Store in A
+		rz_strbuf_setf(&op->esil, "0x%02x,a,&=", imm);
+
+		// 3. Update N (Negative) and Z (Zero) flags normally
+		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
+
+		// 4. Update C (Carry) to equal Bit 7 of the result (Negative flag)
+		// "7,$s" retrieves the Sign flag (N). "C,:=" assigns it to Carry.
+		rz_strbuf_append(&op->esil, ",7,$s,C,:=");
 		break;
 	// EOR
 	case 0x49: // eor #$ff
