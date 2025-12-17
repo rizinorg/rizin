@@ -103,7 +103,7 @@ EXPECT=<<EOF
                        sym.function_2+10 0x401b0a ->      CODE -> 0x401aa3 main+51
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Failed to decode IL op
+WARNING: inquiry: Failed to read memory for IL basic block generation at 0xffffffffffffff00 size: 224.
 ERROR: Failed to lift basic block at 0xffffffffffffff00
 EOF
 RUN
