@@ -2898,11 +2898,10 @@ static bool display_xref_list_handler(RzCore *core, int argc, const char **argv,
 	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	rz_list_foreach (xref_list, iter, xref) {
 		context_instrs = -6;
-		rz_cons_printf("\n");
 		if (utf8) {
-			rz_cons_printf(";––––––––––––––––––––––––––––––––––––––––––\n");
+			rz_cons_print(";––––––––––––––––––––––––––––––––––––––––––\n");
 		} else {
-			rz_cons_printf(";------------------------------------------\n");
+			rz_cons_print(";------------------------------------------\n");
 		}
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
 		char *fnc_sig = rz_analysis_function_get_signature(fcn);
