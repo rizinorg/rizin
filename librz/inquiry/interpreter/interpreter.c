@@ -75,6 +75,7 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
  * The register name list should always be given if the architecture has some.
  */
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
+	const char *arch_name,
 	RzInterpreterAbstraction kinds,
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
 	RZ_NULLABLE const RzPVector *reg_names) {
@@ -83,6 +84,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	if (!state) {
 		return NULL;
 	}
+	state->arch_name = arch_name;
 	state->kinds = kinds;
 	if (!reg_names) {
 		return state;

@@ -19,6 +19,18 @@ bool report_xref_yield(RzInterpreterAbstrState *state, HtUP /*<RzInterpreterYiel
 		// Isn't reported
 		return true;
 	}
+	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
+	    RZ_STR_EQ(state->arch_name, "hexagon") &&
+			from + 4 == rz_bv_to_ut64(to->bv)) {
+		// Ugly work around.
+		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
+		// end of each and every instruction packet.
+		// This is necessary because the RzIL VM would otherwise just add 4 to the PC,
+		// which is too little for a packet with 2+ instructions.
+		// We don't want to report the code references to the next instruction
+		// packet. So skip them here.
+		return true;
+	}
 	ProtoInterprSharedObjects *sobj = state->ext;
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);

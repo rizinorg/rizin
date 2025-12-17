@@ -225,6 +225,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzAnalysisILConfig *config = core->analysis->cur->il_config(core->analysis);
 	RzPVector *reg_names = get_reg_names(core->analysis);
 	abstr_state = rz_interpreter_abstr_state_new(
+		core->analysis->cur->arch,
 		RZ_INTERPRETER_ABSTRACTION_CONST,
 		config,
 		reg_names);
