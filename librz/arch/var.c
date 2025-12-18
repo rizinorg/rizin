@@ -1826,9 +1826,7 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 			}
 		}
 	}
-	if (!rz_type_func_save(analysis->typedb, callable)) {
-		rz_type_callable_free(callable);
-	}
+	rz_type_func_save(analysis->typedb, callable);
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }
 
