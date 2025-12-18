@@ -958,33 +958,22 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr,
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
 	if (f) {
-		if (f->offset != addr) {
-			int delta = (int)(frame->addr - f->offset);
-			if (delta > 0) {
-				*flagdesc = rz_str_newf("%s+%d", f->name, delta);
-			} else if (delta < 0) {
-				*flagdesc = rz_str_newf("%s%d", f->name, delta);
-			} else {
-				*flagdesc = rz_str_newf("%s", f->name);
-			}
+		// Use unified API format: name+delta (decimal)
+		st64 delta = (st64)(frame->addr - f->offset);
+		if (delta != 0) {
+			*flagdesc = rz_str_newf("%s%+" PFMT64d, f->name, delta);
 		} else {
-			*flagdesc = rz_str_newf("%s", f->name);
+			*flagdesc = rz_str_dup(f->name);
 		}
 		if (!strchr(f->name, '.')) {
 			f2 = rz_flag_get_at(core->flags, frame->addr - 1, true);
 		}
 		if (f2 && f2 != f) {
-			if (f2->offset != addr) {
-				int delta = (int)(frame->addr - 1 - f2->offset);
-				if (delta > 0) {
-					*flagdesc2 = rz_str_newf("%s+%d", f2->name, delta + 1);
-				} else if (delta < 0) {
-					*flagdesc2 = rz_str_newf("%s%d", f2->name, delta + 1);
-				} else {
-					*flagdesc2 = rz_str_newf("%s+1", f2->name);
-				}
+			st64 delta2 = (st64)(frame->addr - f2->offset);
+			if (delta2 != 0) {
+				*flagdesc2 = rz_str_newf("%s%+" PFMT64d, f2->name, delta2);
 			} else {
-				*flagdesc2 = rz_str_newf("%s", f2->name);
+				*flagdesc2 = rz_str_dup(f2->name);
 			}
 		}
 	}
@@ -1141,7 +1130,6 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 	}
 	RzListIter *iter;
 	RzDebugPid *p;
-	RzAnalysisFunction *fcn = NULL;
 	RzDebugMap *map = NULL;
 	RzStrBuf *path = NULL;
 	char status[2];
@@ -1158,26 +1146,11 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 
 			rz_strbuf_appendf(path, " (0x%" PFMT64x ")", p->pc);
 
-			fcn = rz_analysis_get_fcn_in(dbg->analysis, p->pc, 0);
-			if (fcn) {
-				if (p->pc == fcn->addr) {
-					rz_strbuf_appendf(path, " at %s", fcn->name);
-				} else {
-					st64 delta = p->pc - fcn->addr;
-					char sign = delta >= 0 ? '+' : '-';
-					rz_strbuf_appendf(path, " in %s%c%" PFMT64u, fcn->name, sign, RZ_ABS(delta));
-				}
-			} else {
-				const char *flag_name = dbg->corebind.getName(dbg->corebind.core, p->pc);
-				if (flag_name) {
-					rz_strbuf_appendf(path, " at %s", flag_name);
-				} else {
-					char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
-					if (name_delta) {
-						rz_strbuf_appendf(path, " in %s", name_delta);
-						free(name_delta);
-					}
-				}
+			char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
+			if (name_delta) {
+				bool has_delta = strchr(name_delta, '+') || strchr(name_delta, '-');
+				rz_strbuf_appendf(path, " %s %s", has_delta ? "in" : "at", name_delta);
+				free(name_delta);
 			}
 		}
 		rz_strf(status, "%c", p->status);

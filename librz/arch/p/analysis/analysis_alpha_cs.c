@@ -140,44 +140,56 @@ static void alpha_fillval(RzAsmAlphaContext *ctx, RzAnalysis *a, RzAnalysisOp *o
 	}
 }
 
-static void alpha_opex(RzAsmAlphaContext *ctx, RzStrBuf *ptr) {
+static RzStructuredData *alpha_opex(RzAsmAlphaContext *ctx) {
 	if (!ctx->insn->detail) {
-		return;
+		return NULL;
 	}
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_alpha *al = &ctx->insn->detail->alpha;
 	for (st32 i = 0; i < al->op_count; i++) {
 		cs_alpha_op *op = al->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case ALPHA_OP_INVALID: {
-			pj_ks(pj, "type", "invalid");
+		default:
+			rz_structured_data_map_add_string(operand, "type", "invalid");
+			break;
+		case ALPHA_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(ctx->h, op->reg));
+			break;
+		case ALPHA_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		}
-		case ALPHA_OP_REG: {
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(ctx->h, op->reg));
-			break;
-		}
-		case ALPHA_OP_IMM: {
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
-			break;
-		}
-		}
-		pj_end(pj);
 	}
-	pj_end(pj);
-	pj_end(pj);
 
-	rz_strbuf_init(ptr);
-	rz_strbuf_append(ptr, pj_string(pj));
-	pj_free(pj);
+	return root;
+}
+
+static ut64 alpha_calc_64bit_jump(ut64 base, RzAsmAlphaContext *ctx, int idx) {
+	ut64 hi32 = base & UT64_32U;
+	ut64 jump = alpha_op_as_imm(ctx, idx);
+	if (!hi32) {
+		// does not need any fix since upper 32 bits are zero
+		return jump;
+	}
+
+	// keep only the lower 32 bits.
+	jump &= UT32_MAX;
+	return hi32 | jump;
 }
 
 static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
@@ -195,16 +207,16 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case Alpha_INS_BLT:
 	case Alpha_INS_BNE:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 1);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 1);
 		op->fail = op->addr + op->size;
 		break;
 	case Alpha_INS_BR:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 0);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		break;
 	case Alpha_INS_BSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = (ut32)alpha_op_as_imm(ctx, 0);
+		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
 		op->fail = op->addr + op->size;
 		break;
 	case Alpha_INS_RET:
@@ -412,7 +424,7 @@ static int rz_analysis_alpha_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, cons
 	alpha_op_set_type(ctx, op);
 
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		alpha_opex(ctx, &op->opex);
+		op->opex = alpha_opex(ctx);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		alpha_fillval(ctx, a, op);

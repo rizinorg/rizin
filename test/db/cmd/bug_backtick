@@ -1,13 +1,15 @@
 NAME=t/bug_backtick
-FILE==
-BROKEN=1
+FILE=
 CMDS=p8 3`~`
 EXPECT=
+REGEXP_FILTER_ERR=Error while parsing command: .+
+EXPECT_ERR=Error while parsing command: `p8 3`~``
 RUN
 
 NAME=Invalid offset due invalid command
-FILE==
-BROKEN=1
+FILE=
 CMDS=fd @ `entry1`
 EXPECT=
+REGEXP_FILTER_ERR=Command '.+' does not exist.
+EXPECT_ERR=Command 'entry1' does not exist.
 RUN

@@ -201,6 +201,10 @@ RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count);
 RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count);
 RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2);
 RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *length);
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *length);
+RZ_API RZ_OWN char *rz_syscmd_sort_str(RZ_NONNULL const char *input);
+RZ_API RZ_OWN char *rz_syscmd_uniq_str(RZ_NONNULL const char *input);
 
 #ifdef __cplusplus
 }

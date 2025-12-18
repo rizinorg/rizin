@@ -1101,7 +1101,7 @@ RZ_API void rz_cons_visual_flush(void) {
 }
 
 static int real_strlen(const char *ptr, int len) {
-	int utf8len = rz_str_len_utf8(ptr);
+	int utf8len = rz_str_utf8_cols(ptr);
 	int ansilen = rz_str_ansi_len(ptr);
 	int diff = len - utf8len;
 	if (diff > 0) {

@@ -35,7 +35,7 @@ _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
 _dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
-_d___ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
+_dA__ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
 adAeI 16 32 64   mips        BSD     MIPS Capstone-based disassembler
 _dA_I 16         msp430      LGPL3   Texas Instruments MSP430 disassembler
 adA__ 16 32 64   null        MIT     NULL (empty) disassembler (by pancake) v1.0.0

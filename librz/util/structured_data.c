@@ -474,7 +474,8 @@ static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzS
 
 static void structured_data_iterate_over_map(StructuredDataIterOver *sdio, const RzStructuredData *sd) {
 	void **pit = NULL;
-	sdio->fit->new_struct(sdio->user, RZ_STRUCTURED_DATA_BLOCK_MAP);
+	size_t n_keys = rz_pvector_len(sd->v_array);
+	sdio->fit->new_struct(sdio->user, RZ_STRUCTURED_DATA_BLOCK_MAP, n_keys);
 	rz_pvector_foreach (sd->v_array, pit) {
 		const char *key = *pit;
 		const RzStructuredData *elem = (const RzStructuredData *)ht_sp_find(sd->v_map, key, NULL);
@@ -486,7 +487,8 @@ static void structured_data_iterate_over_map(StructuredDataIterOver *sdio, const
 
 static void structured_data_iterate_over_array(StructuredDataIterOver *sdio, const RzStructuredData *sd) {
 	void **pit = NULL;
-	sdio->fit->new_struct(sdio->user, RZ_STRUCTURED_DATA_BLOCK_ARRAY);
+	size_t array_len = rz_pvector_len(sd->v_array);
+	sdio->fit->new_struct(sdio->user, RZ_STRUCTURED_DATA_BLOCK_ARRAY, array_len);
 	rz_pvector_foreach (sd->v_array, pit) {
 		const RzStructuredData *elem = (const RzStructuredData *)*pit;
 		structured_data_iterate_over(sdio, elem);

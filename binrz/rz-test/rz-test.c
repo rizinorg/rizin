@@ -32,11 +32,13 @@ typedef struct rz_testfile_counts_t {
 	ut64 xx;
 	ut64 br;
 	ut64 fx;
+	ut64 total_elapsed;
 } RzTestFileCounts;
 
 typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
+	bool no_diffing; // disable diffing unless the tests fails.
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -71,6 +73,7 @@ static int help(bool verbose) {
 			"-v",           "",               "Show version information",
 			"-q",           "",               "Quiet mode",
 			"-V",           "",               "Be verbose",
+			"-N",           "",               "Disable diffing unless the test fails.",
 			"-i",           "",               "Interactive mode",
 			"-y",           "",               "Accept all interactive changes",
 			"-n",           "",               "Do nothing (don't run any test, just load/parse them)",
@@ -162,6 +165,7 @@ static bool log_mode = false;
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
+	bool no_diffing = false;
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
@@ -203,7 +207,7 @@ int rz_test_main(int argc, const char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:e:s:x:y");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -231,6 +235,9 @@ int rz_test_main(int argc, const char **argv) {
 			goto beach;
 		case 'V':
 			verbose = true;
+			break;
+		case 'N':
+			no_diffing = true;
 			break;
 		case 'i':
 			interactive = true;
@@ -347,6 +354,7 @@ int rz_test_main(int argc, const char **argv) {
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
+	state.no_diffing = no_diffing;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
 		ret = -1;
@@ -434,7 +442,10 @@ int rz_test_main(int argc, const char **argv) {
 	if (!rz_pvector_empty(except_dir)) {
 		void **it;
 		rz_pvector_foreach (except_dir, it) {
-			const char *p = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			char *dir_abs_path = rz_file_abspath_rel(cwd, (char *)*it), *tp;
+			if (log_mode || verbose) {
+				printf("Removing tests in dir: %s\n", dir_abs_path);
+			}
 			for (ut32 i = 0; i < rz_pvector_len(&state.db->tests); i++) {
 				RzTest *test = rz_pvector_at(&state.db->tests, i);
 				if (rz_file_is_abspath(test->path)) {
@@ -442,13 +453,18 @@ int rz_test_main(int argc, const char **argv) {
 				} else {
 					tp = rz_file_abspath_rel(cwd, test->path);
 				}
-				if (rz_str_startswith(tp, p)) {
+				if (rz_str_startswith(tp, dir_abs_path)) {
+					if (log_mode || verbose) {
+						char *name = rz_test_test_name(test);
+						printf("Removed test %s: %s\n", test->path, name);
+						free(name);
+					}
 					rz_test_test_free(test);
 					rz_pvector_remove_at(&state.db->tests, i--);
 				}
 				RZ_FREE(tp);
 			}
-			RZ_FREE(p);
+			RZ_FREE(dir_abs_path);
 		}
 	}
 
@@ -603,6 +619,20 @@ beach:
 	return ret;
 }
 
+// elapsed is in microsecs
+static char *readable_elapsed_time(ut64 elapsed) {
+	elapsed /= 1000;
+	ut32 millisecs = elapsed % 1000;
+	elapsed /= 1000;
+	ut32 secs = elapsed % 60;
+	elapsed /= 60;
+	ut32 mins = elapsed % 60;
+	elapsed /= 60;
+	ut32 hours = elapsed % 60;
+
+	return rz_str_newf("%02uh%02um%02us%03ums", hours, mins, secs, millisecs);
+}
+
 static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	rz_return_if_fail(pj && result);
 	pj_o(pj);
@@ -628,23 +658,26 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 		pj_ks(pj, "file", test->fuzz_test->file);
 		break;
 	}
-	pj_k(pj, "result");
 	switch (result->result) {
 	case RZ_TEST_RESULT_OK:
-		pj_s(pj, "ok");
+		pj_ks(pj, "result", "ok");
 		break;
 	case RZ_TEST_RESULT_FAILED:
-		pj_s(pj, "failed");
+		pj_ks(pj, "result", "failed");
 		break;
 	case RZ_TEST_RESULT_BROKEN:
-		pj_s(pj, "broken");
+		pj_ks(pj, "result", "broken");
 		break;
 	case RZ_TEST_RESULT_FIXED:
-		pj_s(pj, "fixed");
+		pj_ks(pj, "result", "fixed");
 		break;
 	}
+	pj_ks(pj, "path", rz_str_get(result->test->path));
 	pj_kb(pj, "run_failed", result->run_failed);
 	pj_kn(pj, "time_elapsed", result->time_elapsed);
+	char *time_human = readable_elapsed_time(result->time_elapsed);
+	pj_ks(pj, "time_elapsed_human", time_human);
+	free(time_human);
 	pj_kb(pj, "timeout", result->timeout);
 	pj_end(pj);
 }
@@ -695,6 +728,7 @@ static void *worker_th(RzTestState *state) {
 					counts->fx++;
 					break;
 				}
+				counts->total_elapsed += result->time_elapsed;
 				counts->tests_left--;
 				if (!counts->tests_left) {
 					rz_pvector_push(&state->completed_paths, (void *)test->path);
@@ -868,8 +902,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 static void print_new_results(RzTestState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)rz_pvector_len(&state->results);
-	ut64 i;
-	for (i = prev_completed; i < completed; i++) {
+	for (ut64 i = prev_completed; i < completed; i++) {
 		RzTestResultInfo *result = rz_pvector_at(&state->results, (size_t)i);
 		if (state->test_results) {
 			test_result_to_json(state->test_results, result);
@@ -900,30 +933,18 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 			printf(Color_CYAN " TIMEOUT" Color_RESET);
 		}
 		// time_elapsed is in microsecs
-		ut64 elapsed = result->time_elapsed;
-		const char *unit = NULL;
-		if (elapsed < 1000) {
-			unit = "usec";
-		} else if (elapsed < 1000000) {
-			elapsed /= 1000;
-			unit = "ms";
-		} else if (elapsed < 1000000000) {
-			elapsed /= 1000000;
-			unit = "secs";
-		} else {
-			elapsed /= 1000000000;
-			unit = "mins";
-		}
-		printf(Color_BLUE "%4" PFMT64u " %-4s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, unit, result->test->path, name);
-		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
+		char *elapsed = readable_elapsed_time(result->time_elapsed);
+		printf(Color_BLUE " %s" Color_RESET " %s " Color_YELLOW "%s" Color_RESET "\n", elapsed, result->test->path, name);
+		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && !state->no_diffing && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff(&state->run_config, result);
 		}
+		free(elapsed);
 		free(name);
 	}
 }
 
 static void print_state_counts(RzTestState *state) {
-	printf("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " FX",
+	printf("%8" PFMT64u " OK  %5" PFMT64u " BR %8" PFMT64u " XX %5" PFMT64u " FX",
 		state->ok_count, state->br_count, state->xx_count, state->fx_count);
 }
 
@@ -956,15 +977,20 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		if (!name) {
 			name = "unknown path. something is very wrong.";
 		}
-		printf("[**] %50s ", name);
 		if (state->path_left) {
+			char *total_elapsed = NULL;
 			RzTestFileCounts *counts = ht_sp_find(state->path_left, name, NULL);
 			if (counts) {
 				state->ok_count += counts->ok;
 				state->xx_count += counts->xx;
 				state->br_count += counts->br;
 				state->fx_count += counts->fx;
+				total_elapsed = readable_elapsed_time(counts->total_elapsed);
 			}
+			printf("%s [**] %-60s ", rz_str_get(total_elapsed), name);
+			free(total_elapsed);
+		} else {
+			printf("[**] %-60s ", name);
 		}
 		print_state_counts(state);
 		printf("\n");

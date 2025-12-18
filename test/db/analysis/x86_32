@@ -3225,16 +3225,17 @@ EXPECT=<<EOF
     "opex": {
       "operands": [
         {
-          "size": 4,
-          "rw": 3,
           "type": "reg",
-          "value": "eax"
+          "value": "eax",
+          "read": true,
+          "write": true,
+          "nbits": 32
         },
         {
-          "size": 4,
-          "rw": 1,
           "type": "reg",
-          "value": "eax"
+          "value": "eax",
+          "read": true,
+          "nbits": 32
         }
       ],
       "modrm": true
@@ -3702,10 +3703,10 @@ EXPECT=<<EOF
     "opex": {
       "operands": [
         {
-          "size": 4,
-          "rw": 1,
           "type": "reg",
-          "value": "eflags"
+          "value": "eflags",
+          "read": true,
+          "nbits": 32
         }
       ]
     },
@@ -3937,7 +3938,7 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-17
+19
 address: 0x0
 opcode: nop
 disasm: nop
@@ -3954,6 +3955,8 @@ type: nop
 cycles: 1
 esil: ,
 rzil: nop
+opex:
+  operands: []
 family: cpu
 90
 EOF

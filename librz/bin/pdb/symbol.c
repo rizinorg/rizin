@@ -167,6 +167,7 @@ RZ_IPI bool PDBSymbolIter_next(PDBSymbolIter *iter, PDBSymbol *symbol) {
 			if (!symbol->data) {
 				goto loop_continue;
 			}
+			rz_buf_free(b);
 			return true;
 		}
 	loop_continue:

@@ -789,7 +789,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 
 static void ds_reflines_fini(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
-	rz_list_free(analysis->reflines);
+	rz_pvector_free(analysis->reflines);
 	analysis->reflines = NULL;
 	RZ_FREE(ds->refline);
 	RZ_FREE(ds->refline2);
@@ -807,7 +807,7 @@ static void ds_reflines_init(RzDisasmState *ds) {
 			ds->addr, ds->buf, ds->len, ds->nlines,
 			ds->linesout, ds->show_lines_call);
 	} else {
-		rz_list_free(analysis->reflines);
+		rz_pvector_free(analysis->reflines);
 		analysis->reflines = NULL;
 	}
 }
@@ -1119,9 +1119,9 @@ static RzAnalysisDisasmText *ds_disasm_text(RzDisasmState *ds, RzAnalysisDisasmT
 	t->arrow = UT64_MAX;
 	t->text = text;
 	if (ds->core->analysis->reflines) {
-		RzAnalysisRefline *ref;
-		RzListIter *iter;
-		rz_list_foreach (ds->core->analysis->reflines, iter, ref) {
+		void **iter;
+		rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+			RzAnalysisRefline *ref = *iter;
 			if (ref->from == ds->vat) {
 				t->arrow = ref->to;
 				break;
@@ -1140,10 +1140,10 @@ static void ds_begin_line(RzDisasmState *ds) {
 		pj_o(ds->pj);
 		pj_kn(ds->pj, "offset", ds->vat);
 		if (ds->core->analysis->reflines) {
-			RzAnalysisRefline *ref;
-			RzListIter *iter;
+			void **iter;
 			// XXX Probably expensive
-			rz_list_foreach (ds->core->analysis->reflines, iter, ref) {
+			rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+				RzAnalysisRefline *ref = *iter;
 				if (ref->from == ds->vat) {
 					pj_kn(ds->pj, "arrow", ref->to);
 					break;
@@ -2660,28 +2660,20 @@ static void ds_print_lines_left(RzDisasmState *ds) {
 		free(sect);
 	}
 	if (ds->show_symbols) {
-		const char *name = "";
-		int delta = 0;
-		if (ds->fcn) {
-			ds->lastflagitem.offset = ds->fcn->addr;
-			ds->lastflagitem.name = ds->fcn->name;
-			ds->lastflag = &ds->lastflagitem;
-		} else {
-			RzFlagItem *fi = rz_flag_get_at(core->flags, ds->at, !ds->lastflag);
-			if (fi) { // && (!ds->lastflag || fi->offset != ds->at))
-				ds->lastflagitem.offset = fi->offset;
-				ds->lastflagitem.name = fi->name;
-				ds->lastflag = &ds->lastflagitem;
-			}
-		}
-		if (ds->lastflag && ds->lastflag->name) {
-			name = ds->lastflag->name;
-			delta = ds->at - ds->lastflag->offset;
-		}
-		{
-			char *str = rz_str_newf("%s + %-4d", name, delta);
+		// Use unified API approach for getting name+delta
+		char *name = NULL;
+		st64 delta = 0;
+		bool found = rz_core_addr_get_reloff_info(core, ds->at,
+			true, // prefer_function
+			true, // use_flags
+			&name, &delta);
+		if (found && name) {
+			char *str = rz_str_newf("%s + %-4" PFMT64d, name, delta);
 			printCol(ds, str, ds->show_symbols_col, COLOR(ds, num));
 			free(str);
+			free(name);
+		} else {
+			printCol(ds, " + 0   ", ds->show_symbols_col, COLOR(ds, num));
 		}
 	}
 	if (ds->line) {
@@ -2774,15 +2766,15 @@ static void ds_print_offset(RzDisasmState *ds) {
 	rz_print_set_screenbounds(core->print, at);
 	if (ds->show_offset) {
 		const char *label = NULL;
-		RzFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
 		unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
+			// Get function at this address (unified API approach)
 			RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, at);
 			if (!f) {
-				f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_NULL); // rz_analysis_get_fcn_in (core->analysis, at, RZ_ANALYSIS_FCN_TYPE_NULL);
+				f = rz_analysis_get_fcn_in(core->analysis, at, RZ_ANALYSIS_FCN_TYPE_NULL);
 			}
 			if (f) {
 				delta = at - f->addr;
@@ -2790,25 +2782,17 @@ static void ds_print_offset(RzDisasmState *ds) {
 				ds->lastflagitem.offset = f->addr;
 				ds->lastflag = &ds->lastflagitem;
 				label = f->name;
-			} else {
-				if (ds->show_reloff_flags) {
-					/* XXX: this is wrong if starting to disasm after a flag */
-					fi = rz_flag_get_i(core->flags, at);
-					if (fi) {
-						ds->lastflag = fi;
-					}
-					if (ds->lastflag) {
-						if (ds->lastflag->offset == at) {
-							delta = 0;
-						} else {
-							delta = at - ds->lastflag->offset;
-						}
-					} else {
-						delta = at - core->offset;
-					}
-					if (ds->lastflag) {
-						label = ds->lastflag->name;
-					}
+			} else if (ds->show_reloff_flags) {
+				// Fall back to flags using unified API approach
+				RzFlagItem *fi = rz_flag_get_at(core->flags, at, true);
+				if (fi) {
+					ds->lastflag = fi;
+				}
+				if (ds->lastflag) {
+					delta = at - ds->lastflag->offset;
+					label = ds->lastflag->name;
+				} else {
+					delta = at - core->offset;
 				}
 			}
 			if (!ds->lastflag) {
@@ -3436,10 +3420,10 @@ static void ds_print_fcn_name(RzDisasmState *ds) {
 		}
 		if (delta > 0) {
 			ds_begin_comment(ds);
-			ds_comment(ds, true, "; %s+0x%x", f->name, delta);
+			ds_comment(ds, true, "; %s+0x%" PFMT64x, f->name, (ut64)delta);
 		} else if (delta < 0) {
 			ds_begin_comment(ds);
-			ds_comment(ds, true, "; %s-0x%x", f->name, -delta);
+			ds_comment(ds, true, "; %s-0x%" PFMT64x, f->name, (ut64)(-delta));
 		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames)) && (!ds->opstr || !strstr(ds->opstr, f->name))) {
 			RzFlagItem *flag_sym;
 			if (ds->core->vmode && (flag_sym = rz_flag_get_by_spaces(ds->core->flags, ds->analysis_op.jump, RZ_FLAGS_FS_SYMBOLS, NULL)) && flag_sym->demangled) {
@@ -5516,7 +5500,7 @@ toro:
 		if (ds->line) {
 			if (ds->show_lines_ret && ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_RET) {
 				if (strchr(ds->line, '>')) {
-					memset(ds->line, ' ', rz_str_len_utf8(ds->line));
+					memset(ds->line, ' ', rz_str_utf8_cols(ds->line));
 				}
 				ds_begin_line(ds);
 				ds_print_pre(ds, true);
@@ -6612,6 +6596,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 		rz_strbuf_free(bw_str);
 		rz_asm_parse_param_free(param);
+		rz_asm_op_fini(&asmop);
 		return colored_asm ? rz_strbuf_drain(colored_asm) : NULL;
 	} else {
 		buf_asm = rz_str_dup(str);

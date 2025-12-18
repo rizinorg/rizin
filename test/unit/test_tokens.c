@@ -93,6 +93,15 @@ static RzAsm *setup_tms_asm(const char *cpu) {
 	return a;
 }
 
+static RzAsm *setup_mcs96_asm(const char *cpu) {
+	RzAsm *a = rz_asm_new();
+	rz_asm_setup(a, "mcs96", 16, false);
+	if (cpu) {
+		rz_asm_set_cpu(a, cpu);
+	}
+	return a;
+}
+
 static bool test_rz_tokenize_generic_0_no_reg_profile(void) {
 	RzStrBuf *asm_str = rz_strbuf_new("mov al, 0x11");
 	RzAsmToken tokens[6] = {
@@ -806,6 +815,121 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 	mu_end;
 }
 
+static bool test_rz_tokenize_custom_mcs96_0(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+
+	// "add 0x03 0x02 0x01"
+	const ut8 buf[] = "\x44\x01\x02\x03";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x03 }, // 0x03
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x02
+		{ .start = 13, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 14, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x01 } // 0x01
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_rz_tokenize_custom_mcs96_1(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+
+	// "add 0x02 [0x00]" - indirect addressing with brackets
+	const ut8 buf[] = "\x66\x00\x02";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x02
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // [
+		{ .start = 10, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x00 }, // 0x00
+		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 } // ]
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 7, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_rz_tokenize_custom_mcs96_2(void) {
+	RzAsm *a = setup_mcs96_asm(NULL);
+
+	// "add 0x02 [0x00]+" - indirect addressing with brackets
+	const ut8 buf[] = "\x66\x01\x02";
+	RzAsmToken tokens[] = {
+		{ .start = 0, .len = 3, .type = RZ_ASM_TOKEN_MNEMONIC, .val.number = 0 }, // add
+		{ .start = 3, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 4, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x03 }, // 0x02
+		{ .start = 8, .len = 1, .type = RZ_ASM_TOKEN_SEPARATOR, .val.number = 0 }, // \s
+		{ .start = 9, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // [
+		{ .start = 10, .len = 4, .type = RZ_ASM_TOKEN_NUMBER, .val.number = 0x02 }, // 0x00
+		{ .start = 14, .len = 1, .type = RZ_ASM_TOKEN_META, .val.number = 0 }, // ]
+		{ .start = 15, .len = 1, .type = RZ_ASM_TOKEN_OPERATOR, .val.number = 0 } // +
+	};
+
+	RzAsmOp *op = RZ_NEW0(RzAsmOp);
+	a->cur->disassemble(a, op, buf, sizeof(buf));
+	if (!op->asm_toks) {
+		mu_fail("NULL check failed.\n");
+	}
+	mu_assert_eq(rz_pvector_len(op->asm_toks->tokens), 8, "Number of generated tokens.");
+
+	int i = 0;
+	void **it;
+	rz_pvector_foreach (op->asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		mu_assert_eq(tok->start, tokens[i].start, "Token start");
+		mu_assert_eq(tok->len, tokens[i].len, "Token length");
+		mu_assert_eq(tok->type, tokens[i].type, "Token type");
+		++i;
+	}
+
+	rz_asm_op_fini(op);
+	free(op);
+	rz_asm_free(a);
+	mu_end;
+}
+
 static int all_tests() {
 	mu_run_test(test_rz_tokenize_generic_0_no_reg_profile);
 	mu_run_test(test_rz_tokenize_generic_0);
@@ -827,6 +951,9 @@ static int all_tests() {
 	mu_run_test(test_rz_tokenize_custom_bf_0);
 	mu_run_test(test_rz_tokenize_custom_hexagon_issues_tilde);
 	mu_run_test(test_rz_tokenize_custom_hexagon_issues_long_reg);
+	mu_run_test(test_rz_tokenize_custom_mcs96_0);
+	mu_run_test(test_rz_tokenize_custom_mcs96_1);
+	mu_run_test(test_rz_tokenize_custom_mcs96_2);
 
 	return tests_passed != tests_run;
 }

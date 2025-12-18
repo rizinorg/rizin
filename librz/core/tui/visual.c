@@ -1038,11 +1038,8 @@ static void setprintmode(RzCore *core, int n) {
 
 static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
 	ut64 off = csi->offset;
-	RzFlagItem *f = rz_flag_get_at(core->flags, off, false);
-	char *command = NULL;
-	if (f && f->offset == off && f->offset > 0) {
-		command = rz_str_newf("%s", f->name);
-	} else {
+	char *command = rz_core_addr_get_flag_offset(core->flags, off);
+	if (!command) {
 		command = rz_str_newf("0x%" PFMT64x, off);
 	}
 	if (!command) {
@@ -1236,17 +1233,9 @@ repeat:
 				if (idx == skip) {
 					cur_ref_addr = xaddr1;
 				}
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, xaddr1, RZ_ANALYSIS_FCN_TYPE_NULL);
-				char *name;
-				if (fun) {
-					name = rz_str_dup(fun->name);
-				} else {
-					RzFlagItem *f = rz_flag_get_at(core->flags, xaddr1, true);
-					if (f) {
-						name = rz_str_newf("%s + %" PFMT64d, f->name, xaddr1 - f->offset);
-					} else {
-						name = rz_str_dup("unk");
-					}
+				char *name = rz_core_addr_get_name_delta(core, xaddr1);
+				if (!name) {
+					name = rz_str_dup("unk");
 				}
 				if (w > 45) {
 					if (strlen(name) > w - 45) {
@@ -3142,7 +3131,6 @@ static void visual_flagzone(RzCore *core) {
 }
 
 RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
-	bool showDelta = rz_config_get_b(core->config, "scr.slow");
 	const char *BEGIN = core->cons->context->pal.prompt;
 	const char *filename;
 	char pos[512], bar[512], pcs[32];
@@ -3214,36 +3202,12 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (core->print->cur_enabled ? core->print->cur : 0);
-		/* TODO: we need a helper into rz_flags to do that */
-		RzFlagItem *f = NULL;
-		if (rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS)) {
-			f = rz_flag_get_at(core->flags, addr, showDelta);
-			rz_flag_space_pop(core->flags);
-		}
-		if (!f) {
-			f = rz_flag_get_at(core->flags, addr, showDelta);
-		}
-		if (f) {
-			if (f->offset == addr || !f->offset) {
-				snprintf(pos, sizeof(pos), "@ %s", f->name);
-			} else {
-				snprintf(pos, sizeof(pos), "@ %s+%d # 0x%" PFMT64x,
-					f->name, (int)(addr - f->offset), addr);
-			}
+		char *name_delta = rz_core_addr_get_flag_offset(core->flags, addr);
+		if (name_delta) {
+			snprintf(pos, sizeof(pos), "@ %s", name_delta);
+			free(name_delta);
 		} else {
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				int delta = addr - fcn->addr;
-				if (delta > 0) {
-					snprintf(pos, sizeof(pos), "@ %s+%d", fcn->name, delta);
-				} else if (delta < 0) {
-					snprintf(pos, sizeof(pos), "@ %s%d", fcn->name, delta);
-				} else {
-					snprintf(pos, sizeof(pos), "@ %s", fcn->name);
-				}
-			} else {
-				pos[0] = 0;
-			}
+			pos[0] = 0;
 		}
 	}
 

@@ -805,6 +805,8 @@ if cli_enabled
 endif
 
 subdir('test')
+subdir('examples')
+
 
 install_data(
   'doc/fortunes.fun',

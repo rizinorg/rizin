@@ -263,3 +263,63 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=rz-find -V verbose flag single file
+FILE==
+CMDS=!rz-find -V -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+Scanning: bins/elf/ioli/crackme0x00
+File: bins/elf/ioli/crackme0x00
+0x58f
+EOF
+RUN
+
+NAME=rz-find -V verbose flag with no match
+FILE==
+CMDS=!rz-find -V -s NOTFOUND bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+Scanning: bins/elf/ioli/crackme0x00
+EOF
+RUN
+
+NAME=rz-find -V verbose flag multiple files
+FILE==
+CMDS=!rz-find -V -s README bins/arm/README bins/arm/README | head -3
+EXPECT=<<EOF
+Scanning: bins/arm/README
+File: bins/arm/README
+0x0
+EOF
+RUN
+
+NAME=rz-find -V verbose shows all files in directory
+FILE==
+CMDS=!rz-find -V -q -s README bins/arm | grep -c "Scanning:"
+EXPECT=<<EOF
+9
+EOF
+RUN
+
+NAME=rz-find -V with -q still shows scanning
+FILE==
+CMDS=!rz-find -V -q -s 250382 bins/elf/ioli/crackme0x00 | head -1
+EXPECT=<<EOF
+Scanning: bins/elf/ioli/crackme0x00
+EOF
+RUN
+
+NAME=rz-find -V overrides auto-quiet for single file
+FILE==
+CMDS=!rz-find -V -s 250382 bins/elf/ioli/crackme0x00 | grep -c "File:"
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rz-find without -V no scanning output
+FILE==
+CMDS=!rz-find -s 250382 bins/elf/ioli/crackme0x00 | grep -c "Scanning:"
+EXPECT=<<EOF
+0
+EOF
+RUN

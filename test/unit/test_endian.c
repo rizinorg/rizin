@@ -477,6 +477,64 @@ bool test_me(void) {
 	mu_end;
 }
 
+// clang-format off
+const ut8 blu64[32] = {
+	0x36, 0xed, 0x17, 0x95, 0x30, 0xab, 0x89, 0x40,
+	0x63, 0xde, 0x71, 0x59, 0x03, 0xba, 0x98, 0x04,
+	0x36, 0xed, 0x17, 0x95, 0x30, 0xab, 0x89, 0x40,
+	0x63, 0xde, 0x71, 0x59, 0x03, 0xba, 0x98, 0x04,
+};
+// clang-format on
+#define check_offset(endianness, size, offset, prev_offset, expected) \
+	ut##size val##size = rz_read_##endianness##size##_offset(blu64, &offset); \
+	mu_assert_eq_fmt(val##size, expected, "wrong value of read " #endianness #size, "0x%04llx"); \
+	prev_offset += sizeof(val##size); \
+	mu_assert_eq(offset, prev_offset, "wrong offset after read " #endianness #size);
+
+#define check_offset128(endianness, offset, prev_offset, expected) \
+	ut128 val128 = rz_read_##endianness##128_offset(blu64, &offset); \
+	mu_assert_eq_fmt(val128.High, expected.High, "wrong High value of read " #endianness "128", "0x%04llx"); \
+	mu_assert_eq_fmt(val128.Low, expected.Low, "wrong Low value of read " #endianness "128", "0x%04llx"); \
+	prev_offset += sizeof(val128); \
+	mu_assert_eq(offset, prev_offset, "wrong offset after read " #endianness "128");
+
+bool test_rz_read_offset_le() {
+	const ut16 u16 = 0x9517;
+	const ut32 u32 = 0x4089ab30;
+	const ut64 u64 = 0x0498ba035971de63;
+	const ut128 u128 = {
+		.High = 0x360498ba035971de,
+		.Low = 0x634089ab309517ed
+	};
+
+	size_t offset = 1, prev_offset = 1;
+	check_offset(le, 8, offset, prev_offset, blu64[prev_offset]);
+	check_offset(le, 16, offset, prev_offset, u16);
+	check_offset(le, 32, offset, prev_offset, u32);
+	check_offset(le, 64, offset, prev_offset, u64);
+	offset = prev_offset = 1;
+	check_offset128(le, offset, prev_offset, u128);
+	mu_end;
+}
+
+bool test_rz_read_offset_be() {
+	const ut16 u16 = 0x1795;
+	const ut32 u32 = 0x30ab8940;
+	const ut64 u64 = 0x63de715903ba9804;
+	const ut128 u128 = {
+		.High = 0xed179530ab894063,
+		.Low = 0xde715903ba980436
+	};
+
+	size_t offset = 1, prev_offset = 1;
+	check_offset(le, 8, offset, prev_offset, blu64[prev_offset]);
+	check_offset(be, 16, offset, prev_offset, u16);
+	check_offset(be, 32, offset, prev_offset, u32);
+	check_offset(be, 64, offset, prev_offset, u64);
+	offset = prev_offset = 1;
+	check_offset128(be, offset, prev_offset, u128);
+	mu_end;
+}
 int all_tests() {
 	/* big-endian read tests */
 	mu_run_test(test_rz_read_be128);
@@ -523,6 +581,10 @@ int all_tests() {
 	mu_run_test(test_be);
 	mu_run_test(test_le);
 	mu_run_test(test_me);
+
+	mu_run_test(test_rz_read_offset_le);
+	mu_run_test(test_rz_read_offset_be);
+
 	return tests_passed != tests_run;
 }
 
