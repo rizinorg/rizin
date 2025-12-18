@@ -259,3 +259,222 @@ EXPECT=<<EOF
 0x00000080 CCu "DMA page registers (0080-008F)"
 EOF
 RUN
+
+NAME=GNS1: file type detection
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  firmware
+EOF
+RUN
+
+NAME=GNS1: architecture detection
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~arch
+EXPECT=<<EOF
+arch     arc
+EOF
+RUN
+
+NAME=GNS1: CPU detection
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~cpu
+EXPECT=<<EOF
+cpu      ARC700
+EOF
+RUN
+
+NAME=GNS1: base address
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~baddr
+EXPECT=<<EOF
+baddr    0x10000000
+EOF
+RUN
+
+NAME=GNS1: bits
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~bits
+EXPECT=<<EOF
+bits     32
+EOF
+RUN
+
+NAME=GNS1: endianness
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~endian
+EXPECT=<<EOF
+endian   LE
+EOF
+RUN
+
+NAME=GNS1: machine
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~machine
+EXPECT=<<EOF
+machine  Apple C4000 Baseband
+EOF
+RUN
+
+NAME=GNS1: OS type
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~^os
+EXPECT=<<EOF
+os       firmware
+EOF
+RUN
+
+NAME=GNS1: virtual addressing
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~^va
+EXPECT=<<EOF
+va       true
+EOF
+RUN
+
+NAME=GNS1: entry points
+FILE=bins/firmware/gns1_test.bin
+CMDS=ie~program
+EXPECT=<<EOF
+0x10000000 0x00000064 ---------- ---------- program
+EOF
+RUN
+
+NAME=GNS1: entry point address
+FILE=bins/firmware/gns1_test.bin
+CMDS=ie~0x10000000
+EXPECT=<<EOF
+0x10000000 0x00000064 ---------- ---------- program
+EOF
+RUN
+
+NAME=GNS1: sections count
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core?
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=GNS1: all sections listed
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core
+EXPECT=<<EOF
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x core0_text_0      
+0x00000074  0x8 0x10001000   0x8   0x0 -rw- core0_data_1      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x core1_text_2      
+0x0000008c  0x8 0x10001000   0x8   0x0 -rw- core1_data_3      
+EOF
+RUN
+
+NAME=GNS1: text sections are executable
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core0_text
+EXPECT=<<EOF
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x core0_text_0      
+EOF
+RUN
+
+NAME=GNS1: data sections are writable
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core0_data
+EXPECT=<<EOF
+0x00000074  0x8 0x10001000   0x8   0x0 -rw- core0_data_1      
+EOF
+RUN
+
+NAME=GNS1: core1 text section
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core1_text
+EXPECT=<<EOF
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x core1_text_2      
+EOF
+RUN
+
+NAME=GNS1: core1 data section
+FILE=bins/firmware/gns1_test.bin
+CMDS=iS~core1_data
+EXPECT=<<EOF
+0x0000008c  0x8 0x10001000   0x8   0x0 -rw- core1_data_3      
+EOF
+RUN
+
+NAME=GNS1: address rebasing verification
+FILE=bins/firmware/gns1_test.bin
+CMDS=<<EOF
+iS~0x12
+iS~0x15
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=GNS1: structured data available
+FILE=bins/firmware/gns1_test.bin
+CMDS=iH~num_segments
+EXPECT=<<EOF
+num_segments: 4
+EOF
+RUN
+
+NAME=GNS1: core base addresses in structured data
+FILE=bins/firmware/gns1_test.bin
+CMDS=iH~base
+EXPECT=<<EOF
+core0_base: 0x12000000
+core1_base: 0x15000000
+internal_base: 0x10000000
+EOF
+RUN
+
+NAME=GNS1: reject file too small
+FILE=bins/firmware/gns1_invalid_small.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject invalid offset
+FILE=bins/firmware/gns1_invalid_offset.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject segment overflow
+FILE=bins/firmware/gns1_invalid_overflow.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: binary size
+FILE=bins/firmware/gns1_test.bin
+CMDS=iI~binsz
+EXPECT=<<EOF
+binsz    0x00000094
+EOF
+RUN
+
+NAME=GNS1: disassemble text section
+FILE=bins/firmware/gns1_test.bin
+CMDS=pd 1 @ 0x10000000
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.core0_text_0:
+            ;-- section.core1_text_2:
+        ,=< 0x10000000      bge.jd 0x0ff25134                          ; [02] -r-x section size 16 named core1_text_2
+EOF
+RUN
+
+NAME=GNS1: data section contains patterns
+FILE=bins/firmware/gns1_test.bin
+CMDS=px 8 @ section.core0_data_1
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x10001000  7856 3412 00ef cdab                      xV4.....
+EOF
+RUN
