@@ -1643,6 +1643,7 @@ static bool function_from_die(
 		fcn->prefer_name, fcn->low_pc, die->offset);
 	if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable)) {
 		RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
+		rz_type_callable_free(callable);
 		goto cleanup;
 	}
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn)) {
