@@ -853,6 +853,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 
 // Printing/Export
+RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code);
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
 
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name);
