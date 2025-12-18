@@ -265,6 +265,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 		rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
 		const char *value_str = rz_il_op_pure_code_stringify(*op);
 		rop_constraint->args[OP] = rz_str_dup(value_str);
+		rz_list_free(args);
 		return true;
 	}
 
@@ -283,10 +284,12 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 		const char *op_str = rz_il_op_pure_code_stringify(*op);
 		rop_constraint->args[OP] = rz_str_dup(op_str);
 		rop_constraint->args[SRC_REG_SECOND] = strdup(dst_reg1);
+		rz_list_free(args);
 		return true;
 	}
 
 	if (!inc_dec) {
+		rz_list_free(args);
 		return false;
 	}
 	const_value = 1;
@@ -305,6 +308,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 	rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
 	const char *value_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(value_str);
+	rz_list_free(args);
 	return true;
 }
 
@@ -396,6 +400,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 	if (!parse_constant(str, &idx, &const_value)) {
 		free(dst_reg);
 		free(src_reg);
+		rz_list_free(args);
 		goto compound;
 	}
 
@@ -422,6 +427,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 	rop_constraint->args[SRC_CONST] = rz_str_dup(op_str);
 	const char *value_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(value_str);
+	rz_list_free(args);
 	return true;
 
 compound:
@@ -518,6 +524,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 	if (!dst_reg2) {
 		free(dst_reg);
 		free(src_reg1);
+		rz_list_free(args);
 		goto compound;
 	}
 
@@ -544,6 +551,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 	const char *op_str = rz_il_op_pure_code_stringify(*op);
 	rop_constraint->args[OP] = rz_str_dup(op_str);
 	rop_constraint->args[SRC_REG_SECOND] = dst_reg2;
+	rz_list_free(args);
 	return true;
 
 compound:
