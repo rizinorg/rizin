@@ -80,7 +80,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 	if (!input) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, true, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, input, true, (state->mode == RZ_OUTPUT_MODE_LONG) ? (RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_PRINT_DETAIL) : RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_rop_search(core, context);
 	rz_core_rop_search_context_free(context);
 	return status;
