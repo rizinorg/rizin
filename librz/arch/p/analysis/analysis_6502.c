@@ -542,13 +542,16 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0xdc:
 	case 0xfc:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		if ((data[0] & 0x0f) == 0x0c || (data[0] & 0x0f) == 0x1c) {
-			op->size = 3;
-		} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a ||
-					data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
-			op->size = 1;
-		} else {
-			op->size = 2;
+		// Replaced the old if-statement with this correct logic:
+	if ((data[0] & 0x0f) == 0x0c || data[0] == 0x1c || data[0] == 0x3c || 
+	    data[0] == 0x5c || data[0] == 0x7c || data[0] == 0xdc || data[0] == 0xfc) {
+		op->size = 3;
+	} else if (data[0] == 0x1a || data[0] == 0x3a || data[0] == 0x5a || 
+	           data[0] == 0x7a || data[0] == 0xda || data[0] == 0xfa) {
+		op->size = 1;
+	} else {
+		op->size = 2;
+	}
 		}
 		break;
 
