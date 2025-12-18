@@ -280,12 +280,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 
 		// This block mimics the IL cache.
 		{
-			ut64 *addr = NULL;
-			if (!rz_th_queue_pop(addr_queue, false, (void **)&addr)) {
-				rz_warn_if_reached();
-				break;
-			}
-			if (addr) {
+			if (!rz_th_queue_is_empty(addr_queue)) {
+				ut64 *addr = NULL;
+				if (!rz_th_queue_pop(addr_queue, false, (void **)&addr) || !addr) {
+					rz_warn_if_reached();
+					break;
+				}
 				RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
 				RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
 				if (!bb) {
@@ -308,12 +308,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		// (one for each interpreter instance).
 		// Because this is not yet implemented, there is only one interpreter thread for now.
 		{
-			RzInterpreterIORequest *io_req = NULL;
-			if (!rz_th_queue_pop(io_request_q, false, (void **)&io_req)) {
-				rz_atomic_bool_set(is_running, false);
-				break;
-			}
-			if (io_req) {
+			if (!rz_th_queue_is_empty(io_request_q)) {
+				RzInterpreterIORequest *io_req = NULL;
+				if (!rz_th_queue_pop(io_request_q, false, (void **)&io_req) || !io_req) {
+					rz_atomic_bool_set(is_running, false);
+					break;
+				}
 				RZ_LOG_DEBUG("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
 					io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 					io_req->addr);
@@ -346,12 +346,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		// In our prototype it inly receives xrefs and stores them in RzAnalysis.
 		{
 			RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
-			RzAnalysisXRef *xref = NULL;
-			if (!rz_th_queue_pop(q->yield_queue, false, (void **)&xref)) {
-				rz_atomic_bool_set(is_running, false);
-				break;
-			}
-			if (xref) {
+			if (!rz_th_queue_is_empty(q->yield_queue)) {
+				RzAnalysisXRef *xref = NULL;
+				if (!rz_th_queue_pop(q->yield_queue, false, (void **)&xref) || !xref) {
+					rz_atomic_bool_set(is_running, false);
+					break;
+				}
 				// TODO: Currently we can't classify calls as such.
 				rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
 				RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));

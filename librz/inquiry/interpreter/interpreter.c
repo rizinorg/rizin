@@ -271,7 +271,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	ut64 out_hash = 0;
 
 	const RzInterpreterILBB *il_bb = NULL;
-	if (!rz_th_queue_pop_wait(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 		goto pre_loop_error;
 	}
 	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
@@ -341,7 +341,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		SuccessorState next = { 0 };
 		rz_vector_pop_front(succ_states, &next);
 		in_hash = next.in_state_hash;
-		if (!rz_th_queue_pop_wait(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 			goto in_loop_error;
 		}
 		if (!plugin->set_pc(in_state, next.addr, plugin_data)) {

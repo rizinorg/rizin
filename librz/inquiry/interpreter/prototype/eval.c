@@ -156,7 +156,7 @@ bool store_abstr_data(
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for write being done.
 	RzInterpreterIOResult *io_res = NULL;
-	rz_th_queue_pop_wait(io_result, false, (void **)&io_res);
+	rz_th_queue_pop(io_result, false, (void **)&io_res);
 	if (io_req->n_bytes > BV_STACK_MAX_SIZE) {
 		free(buf);
 	}
@@ -178,7 +178,7 @@ bool load_abstr_data(
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for load being done.
 	RzInterpreterIOResult *io_res = NULL;
-	if (!rz_th_queue_pop_wait(io_result, false, (void **)&io_res) || !io_res) {
+	if (!rz_th_queue_pop(io_result, false, (void **)&io_res) || !io_res) {
 		return false;
 	}
 	if (!io_res->req_ok) {
