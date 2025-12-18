@@ -21,6 +21,7 @@ typedef struct {
 	bool identify;
 	bool import; /* search within import table */
 	bool symbol; /* search within symbol table */
+	bool verbose;
 	bool quiet;
 	bool hexstr;
 	bool widestr;
@@ -191,7 +192,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 
 static int show_help(const char *argv0, int line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("%s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
+	printf("%s [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -521,7 +522,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	const char *file = NULL;
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvV Z");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -616,6 +617,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'q':
 			ro.quiet = true;
 			break;
+		case 'V':
+			ro.verbose = true;
+			break;
 		case 'v': {
 			RzPath *sys_path = rz_path_new();
 			if (!sys_path) {
@@ -640,9 +644,13 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	if (opt.ind == argc) {
 		return show_help(argv[0], 1);
 	}
-	/* Enable quiet mode if searching just a single file */
-	if (opt.ind + 1 == argc && RZ_STR_ISNOTEMPTY(argv[opt.ind]) && !rz_file_is_directory(argv[opt.ind])) {
-		ro.quiet = true;
+	// Multi-path Quiet logic
+	int num_paths = argc - opt.ind;
+	if (num_paths == 1 && !ro.quiet) {
+		const char *single_path = argv[opt.ind];
+		if (!rz_file_is_directory(single_path)) {
+			ro.quiet = true;
+		}
 	}
 	if (ro.json) {
 		printf("[");
