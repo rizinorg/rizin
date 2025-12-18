@@ -153,12 +153,34 @@ static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	str[eq_pos] = 0;
+
+	// Split at '='
+	str[eq_pos] = '\0';
+	char *reg_name = str;
 	char *val = str + eq_pos + 1;
-	rz_str_trim(str);
+
+	// Trim whitespace
+	rz_str_trim(reg_name);
 	rz_str_trim(val);
+
+	// Check if register exists
+	RzRegItem *item = rz_reg_get(reg, reg_name, -1);
+	if (!item) {
+		RZ_LOG_ERROR("Unknown register '%s'\n", reg_name);
+		free(str);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	// Parse the value
 	ut64 nval = rz_num_math(core->num, val);
-	bool ok = rz_core_reg_assign_sync(core, reg, sync_cb, str, nval);
+
+	// Assign the value and sync with the debugged process
+	bool ok = rz_core_reg_assign_sync(core, reg, sync_cb, reg_name, nval);
+
+	if (!ok) {
+		RZ_LOG_ERROR("Failed to assign value 0x%" PFMT64x " to register '%s'\n", nval, reg_name);
+	}
+
 	free(str);
 	return bool2status(ok);
 }
@@ -269,20 +291,99 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 	}
 	return RZ_CMD_STATUS_OK;
 }
-
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *filter = argc > 1 ? argv[1] : NULL;
+	if (argc == 1) {
+		return show_regs_handler(core, reg, sync_cb, NULL, state);
+	}
+	RzStrBuf *cmd_buf = rz_strbuf_new("");
+	for (int i = 1; i < argc; i++) {
+		rz_strbuf_append(cmd_buf, argv[i]);
+		if (i < argc - 1) {
+			rz_strbuf_append(cmd_buf, " ");
+		}
+	}
+	char *full_cmd = rz_strbuf_drain(cmd_buf);
+	RzList *tokens = rz_list_newf(free);
+	char *p = full_cmd;
 
-	// check if the argument is an assignment like reg=0x42
-	if (filter) {
-		char *eq = strchr(filter, '=');
+	while (*p) {
+		// Skip leading whitespace
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (*p == '\0') {
+			break;
+		}
+		char *eq_pos = NULL;
+		char *scan = p;
+		while (*scan && *scan != ' ' && *scan != '\t') {
+			if (*scan == '=') {
+				eq_pos = scan;
+				break;
+			}
+			scan++;
+		}
+		if (!eq_pos && (*scan == ' ' || *scan == '\t')) {
+			char *ws_scan = scan;
+			while (*ws_scan == ' ' || *ws_scan == '\t') {
+				ws_scan++;
+			}
+			if (*ws_scan == '=') {
+				eq_pos = ws_scan;
+			}
+		}
+		if (eq_pos) {
+			RzStrBuf *assignment = rz_strbuf_new("");
+			char *reg_end = p;
+			while (reg_end < eq_pos && *reg_end != ' ' && *reg_end != '\t' && *reg_end != '=') {
+				reg_end++;
+			}
+			rz_strbuf_append_n(assignment, p, reg_end - p);
+			rz_strbuf_append(assignment, "=");
+			p = eq_pos + 1;
+			while (*p == ' ' || *p == '\t') {
+				p++;
+			}
+			char *val_start = p;
+			while (*p && *p != ' ' && *p != '\t') {
+				p++;
+			}
+			rz_strbuf_append_n(assignment, val_start, p - val_start);
+
+			char *token = rz_strbuf_drain(assignment);
+			rz_list_append(tokens, token);
+		} else {
+			char *token_end = p;
+			while (*token_end && *token_end != ' ' && *token_end != '\t') {
+				token_end++;
+			}
+			char *token = rz_str_ndup(p, token_end - p);
+			rz_list_append(tokens, token);
+			p = token_end;
+		}
+	}
+	free(full_cmd);
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzListIter *iter;
+	char *token;
+
+	rz_list_foreach (tokens, iter, token) {
+		char *eq = strchr(token, '=');
 		if (eq) {
-			return assign_reg(core, reg, sync_cb, filter, eq - filter);
+			RzCmdStatus current = assign_reg(core, reg, sync_cb, token, eq - token);
+			if (current != RZ_CMD_STATUS_OK) {
+				status = current;
+			}
+		} else {
+			RzCmdStatus current = show_regs_handler(core, reg, sync_cb, token, state);
+			if (current != RZ_CMD_STATUS_OK) {
+				status = current;
+			}
 		}
 	}
 
-	// just show
-	return show_regs_handler(core, reg, sync_cb, filter, state);
+	rz_list_free(tokens);
+	return status;
 }
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {

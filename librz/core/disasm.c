@@ -1822,6 +1822,22 @@ static void ds_show_fn_vars_lines(
 	RzAnalysisVar *var;
 	RzListIter *iter;
 	rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+		// Skip arguments when signature is shown
+		if (ds->show_fcnsig && rz_analysis_var_is_arg(var)) {
+			continue;
+		}
+
+		// Also skip register-based variables in argument registers when signature is shown
+		if (ds->show_fcnsig && var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG && var->storage.reg) {
+			const char *reg = var->storage.reg;
+			// Check if it's an argument-passing register
+			if (reg && (!strcmp(reg, "rdi") || !strcmp(reg, "rsi") || !strcmp(reg, "rdx") || !strcmp(reg, "rcx") || !strcmp(reg, "r8") || !strcmp(reg, "r9") || !strcmp(reg, "edi") || !strcmp(reg, "esi") || !strcmp(reg, "edx") || !strcmp(reg, "ecx") || !strcmp(reg, "r8d") || !strcmp(reg, "r9d") ||
+					   // ARM registers
+					   !strcmp(reg, "r0") || !strcmp(reg, "r1") || !strcmp(reg, "r2") || !strcmp(reg, "r3") || !strcmp(reg, "x0") || !strcmp(reg, "x1") || !strcmp(reg, "x2") || !strcmp(reg, "x3") || !strcmp(reg, "x4") || !strcmp(reg, "x5") || !strcmp(reg, "x6") || !strcmp(reg, "x7"))) {
+				continue;
+			}
+		}
+
 		// fold same-typed variables
 		ut32 iter_mov = fold_variables(ds->core, ds, iter);
 		if (iter_mov > 0) {

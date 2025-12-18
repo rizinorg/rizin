@@ -68,6 +68,7 @@ static const RzCmdDescDetail cmd_debug_add_cond_bp_details[2];
 static const RzCmdDescDetail cmd_debug_add_watchpoint_details[3];
 static const RzCmdDescDetail cmd_debug_esil_add_details[2];
 static const RzCmdDescDetail cmd_debug_signal_option_details[2];
+static const RzCmdDescDetail debug_regs_details[3];
 static const RzCmdDescDetail debug_reg_cond_details[4];
 static const RzCmdDescDetail dr_details[2];
 static const RzCmdDescDetail cmd_debug_inject_opcode_details[2];
@@ -972,7 +973,7 @@ static const RzCmdDescArg cmd_shell_pkill_args[2];
 static const RzCmdDescArg calculate_command_time_args[2];
 
 static const RzCmdDescHelp escl__help = {
-	.summary = "Run command via system(3)",
+	.summary = "Run given commands as in system(3) or shows command history",
 };
 static const RzCmdDescDetailEntry system_Examples_detail_entries[] = {
 	{ .text = "!", .arg_str = "ls", .comment = "Execute the 'ls' command via system(3)" },
@@ -11051,19 +11052,47 @@ static const RzCmdDescHelp dr_help = {
 	.summary = "CPU Registers",
 	.details = dr_details,
 };
+static const RzCmdDescDetailEntry debug_regs_Examples_detail_entries[] = {
+	{ .text = "dr", .arg_str = "", .comment = "Show all registers with default selection" },
+	{ .text = "dr rax", .arg_str = "", .comment = "Show value of rax register" },
+	{ .text = "dr rax rbx rcx", .arg_str = "", .comment = "Show values of multiple registers" },
+	{ .text = "dr rax=0x1234", .arg_str = "", .comment = "Assign 0x1234 to rax register" },
+	{ .text = "dr rax = 0x1234", .arg_str = "", .comment = "Assign with spaces around equals (same as above)" },
+	{ .text = "dr rax=0x1111 rbx=0x2222", .arg_str = "", .comment = "Assign values to multiple registers" },
+	{ .text = "dr rax=0x1111 rbx= 0x2222 rcx = 0x3333", .arg_str = "", .comment = "Multiple assignments with various spacing styles" },
+	{ .text = "dr rax=0xAAAA rbx", .arg_str = "", .comment = "Assign to rax, then display rbx" },
+	{ .text = "dr rax rbx=0x5555 rcx", .arg_str = "", .comment = "Display rax, assign to rbx, display rcx" },
+	{ .text = "drj rax rbx", .arg_str = "", .comment = "Show rax and rbx in JSON format" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry debug_regs_Assignment_space_and_space_Display_space_Behavior_detail_entries[] = {
+	{ .text = "Assignments", .arg_str = "", .comment = "Register assignments execute immediately and don't produce output" },
+	{ .text = "Displays", .arg_str = "", .comment = "Display operations respect output mode flags (-j, -t, etc.)" },
+	{ .text = "Order", .arg_str = "", .comment = "Operations are processed left-to-right as specified" },
+	{ .text = "Spacing", .arg_str = "", .comment = "Spaces around '=' are optional (reg=val, reg = val, reg= val, reg =val)" },
+	{ .text = "Validation", .arg_str = "", .comment = "Invalid register names or values produce error messages" },
+	{ 0 },
+};
+static const RzCmdDescDetail debug_regs_details[] = {
+	{ .name = "Examples", .entries = debug_regs_Examples_detail_entries },
+	{ .name = "Assignment and Display Behavior", .entries = debug_regs_Assignment_space_and_space_Display_space_Behavior_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg debug_regs_args[] = {
 	{
-		.name = "filter",
-		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.name = "registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp debug_regs_help = {
-	.summary = "Show registers with their values, or assign one (`dr reg=value`)",
-	.args_str = " [<filter> [= <value>]]",
+	.summary = "Show registers with their values, or assign one or more (`dr reg=value`)",
+	.args_str = " [<reg1> [= <value>] <reg2> [= <value>] ...]",
+	.details = debug_regs_details,
 	.args = debug_regs_args,
 };
 
