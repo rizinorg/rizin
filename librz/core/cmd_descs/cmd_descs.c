@@ -22443,7 +22443,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_xrefs_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_list_handler, &analysis_xrefs_list_help);
 	rz_warn_if_fail(analysis_xrefs_list_cd);
 
-	RzCmdDesc *analysis_xrefs_to_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help);
+	RzCmdDesc *analysis_xrefs_to_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG, rz_analysis_xrefs_to_list_handler, &analysis_xrefs_to_list_help);
 	rz_warn_if_fail(analysis_xrefs_to_list_cd);
 
 	RzCmdDesc *analysis_xrefs_from_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, ax_cd, "axf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_analysis_xrefs_from_list_handler, &analysis_xrefs_from_list_help);
