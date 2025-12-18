@@ -1316,7 +1316,6 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		if (p->last_instr_present && addr_at_io_map_border) {
 			make_packet_valid(state, p);
 		}
-		rz_reverse->pkt_fully_decoded = p->is_valid;
 	}
 
 	copy_asm_ana_ops(state, rz_reverse, hic);
