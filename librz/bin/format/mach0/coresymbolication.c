@@ -134,6 +134,7 @@ RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuff
 	ut8 *b = NULL;
 	RzCoreSymCacheElementHdr *hdr = rz_coresym_cache_element_header_new(buf, off, bits);
 	if (!hdr) {
+		free(file_name);
 		return NULL;
 	}
 	if (hdr->version != 1) {

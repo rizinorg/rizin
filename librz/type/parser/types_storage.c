@@ -838,6 +838,7 @@ bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *
 	rz_pvector_foreach (callable->args, it) {
 		RzCallableArg *arg = *it;
 		if (!strcmp(arg->name, name)) {
+			rz_type_free(type);
 			return false;
 		}
 	}

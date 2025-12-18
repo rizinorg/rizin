@@ -14,6 +14,7 @@ RZ_API RZ_OWN RzTypePath *rz_type_path_new(RZ_BORROW RZ_NONNULL RzType *type, RZ
 	rz_return_val_if_fail(type && path, NULL);
 	RzTypePath *tpath = RZ_NEW0(RzTypePath);
 	if (!tpath) {
+		free(path);
 		return NULL;
 	}
 	tpath->typ = type;

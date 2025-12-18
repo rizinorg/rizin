@@ -177,6 +177,7 @@ RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable) {
 	rz_return_val_if_fail(callable, NULL);
 	RzType *newtype = RZ_NEW0(RzType);
 	if (!newtype) {
+		rz_type_callable_free(callable);
 		return NULL;
 	}
 	newtype->kind = RZ_TYPE_KIND_CALLABLE;
