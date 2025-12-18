@@ -9,7 +9,13 @@
 #include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
 
-bool report_xref_yield(RzInterpreterAbstrState *state, HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues, ut64 from, const ProtoIntrprAbstrData *to, RzAnalysisXRefType type) {
+bool report_xref_yield(
+	RzInterpreterAbstrState *state,
+	size_t insn_pkt_size,
+	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	ut64 from,
+	const ProtoIntrprAbstrData *to,
+	RzAnalysisXRefType type) {
 	RzInterpreterYieldQueue *queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 	if (!queue) {
 		rz_warn_if_reached();
@@ -20,8 +26,8 @@ bool report_xref_yield(RzInterpreterAbstrState *state, HtUP /*<RzInterpreterYiel
 		return true;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-	    RZ_STR_EQ(state->arch_name, "hexagon") &&
-			from + 4 == rz_bv_to_ut64(to->bv)) {
+		RZ_STR_EQ(state->arch_name, "hexagon") &&
+		from + insn_pkt_size == rz_bv_to_ut64(to->bv)) {
 		// Ugly work around.
 		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
 		// end of each and every instruction packet.
@@ -145,13 +151,13 @@ bool store_abstr_data(
 	} else {
 		buf = buf_stack;
 	}
-	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("Prototype: STORE @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
-	free(bytes);
 	rz_bv_set_to_bytes_ble(src->bv, buf, state->il_config->big_endian);
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr;
 	io_req->data = buf;
+	char *bytes = rz_bv_as_hex_string(src->bv, true);
+	RZ_LOG_DEBUG("Prototype: STORE @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
+	free(bytes);
 
 	rz_th_queue_push(io_request, io_req, true);
 	// Wait for write being done.
@@ -187,7 +193,8 @@ bool load_abstr_data(
 	}
 	if (io_res->read.n_bytes != size) {
 		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
-		            " Received: 0x%" PFMT64x "\n", size, io_res->read.n_bytes);
+			    " Received: 0x%" PFMT64x "\n",
+			size, io_res->read.n_bytes);
 		return false;
 	}
 	out->is_concrete = true;
@@ -204,7 +211,7 @@ bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	rz_return_val_if_fail(state, false);
 	AD(state->pc->abstr_data)->is_concrete = true;
 	RZ_LOG_DEBUG("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "(Concrete)\n",
-	            rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
-	            pc);
+		rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
+		pc);
 	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
 }

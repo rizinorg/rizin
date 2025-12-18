@@ -101,6 +101,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 
 bool report_xref_yield(
 	RzInterpreterAbstrState *state,
+	size_t insn_pkt_size,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
