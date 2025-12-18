@@ -2886,11 +2886,67 @@ static void xrefs_to_list_handler(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *l
 	}
 }
 
+static bool display_xref_list_handler(RzCore *core, int argc, const char **argv, int n_bytes, int n_instrs, RzCmdStateOutput *state) {
+	RzAnalysisXRef *xref;
+	RzList *xref_list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
+	RzListIter *iter;
+	RzCoreDisasmOptions disasm_options = {
+		.cbytes = false,
+	};
+	int context_bytes = n_bytes;
+	int context_instrs = n_instrs;
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
+	rz_list_foreach (xref_list, iter, xref) {
+		context_instrs = -6;
+		if (utf8) {
+			rz_cons_print(";––––––––––––––––––––––––––––––––––––––––––\n");
+		} else {
+			rz_cons_print(";------------------------------------------\n");
+		}
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
+		char *fnc_sig = rz_analysis_function_get_signature(fcn);
+		if (fnc_sig) {
+			rz_cons_println(fnc_sig);
+		} else {
+			rz_cons_println("(UNKNOWN)");
+		}
+		rz_cons_printf("; Xref from: %s @ 0x%08" PFMT64x "\n", fcn ? fcn->name : "(unknown)", xref->from);
+		ut64 offset = rz_core_backward_offset(core, xref->from, &context_bytes, &context_instrs);
+		ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
+		if (!buf) {
+			RZ_LOG_ERROR("Failed to allocate memory\n");
+			rz_list_free(xref_list);
+			free(fnc_sig);
+			return false;
+		}
+		if (!rz_io_read_at_mapped(core->io, offset, buf, context_bytes + 1)) {
+			RZ_LOG_ERROR("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " for disassembly.\n", (ut64)(n_bytes + 1), offset);
+			rz_list_free(xref_list);
+			free(fnc_sig);
+			free(buf);
+			return false;
+		}
+		rz_core_print_disasm(core, offset, buf, context_bytes, context_instrs, state, &disasm_options);
+		free(fnc_sig);
+		free(buf);
+	}
+	rz_list_free(xref_list);
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
-	xrefs_to_list_handler(core, list, state);
-	rz_list_free(list);
+	if (state->mode == RZ_OUTPUT_MODE_LONG) {
+		int n_instrs = -6;
+		int n_bytes = 64;
+		if (!display_xref_list_handler(core, argc, argv, n_bytes, n_instrs, state)) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, core->offset);
+		xrefs_to_list_handler(core, list, state);
+		rz_list_free(list);
+	}
 	return status;
 }
 
