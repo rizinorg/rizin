@@ -280,9 +280,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 
 		// This block mimics the IL cache.
 		{
-			if (!rz_th_queue_is_empty(addr_queue)) {
+			if (!rz_th_queue_is_empty(iset->addr_queue)) {
 				ut64 *addr = NULL;
-				if (!rz_th_queue_pop(addr_queue, false, (void **)&addr) || !addr) {
+				if (!rz_th_queue_pop(iset->addr_queue, false, (void **)&addr) || !addr) {
 					rz_warn_if_reached();
 					break;
 				}
