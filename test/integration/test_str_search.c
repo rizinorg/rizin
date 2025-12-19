@@ -121,6 +121,8 @@ int test_rz_str_search_single_simple(void) {
 		free(hit_str);
 	}
 
+	rz_search_collection_free(collection);
+	rz_list_free(hits);
 	mu_end;
 }
 
@@ -280,6 +282,7 @@ int test_rz_str_search_multiple_enc(void) {
 	mu_assert_eq(hit->size, 10, "Incorrect size");
 
 	rz_list_free(hits);
+	rz_search_collection_free(collection);
 	mu_end;
 }
 
