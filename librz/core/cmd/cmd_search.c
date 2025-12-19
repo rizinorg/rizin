@@ -1935,6 +1935,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
+	rz_search_bytes_pattern_free(pattern);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();

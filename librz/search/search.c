@@ -957,6 +957,7 @@ RZ_IPI int rz_search_hit_cmp(RZ_NULLABLE RzSearchHit *a, RZ_NULLABLE RzSearchHit
 RZ_IPI RZ_OWN RzSearchHit *rz_search_hit_new(RZ_NULLABLE const char *hit_desc, ut64 address, size_t size, RZ_NULLABLE RZ_OWN RzSearchHitDetail *hit_detail) {
 	RzSearchHit *hit = RZ_NEW0(RzSearchHit);
 	if (!hit) {
+		rz_search_hit_detail_free(hit_detail);
 		return NULL;
 	}
 	hit->hit_desc = rz_str_dup(hit_desc);
