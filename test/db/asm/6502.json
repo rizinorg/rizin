@@ -1,0 +1,18 @@
+[
+  {
+    "bytes": "02",
+    "disasm": "kil"
+  },
+  {
+    "bytes": "033412",
+    "disasm": "slo $1234"
+  },
+  {
+    "bytes": "af3412",
+    "disasm": "lax $1234"
+  },
+  {
+    "bytes": "1a",
+    "disasm": "nop"
+  }
+]
