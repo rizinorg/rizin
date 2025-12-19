@@ -14,23 +14,24 @@
 #include <rz_util/rz_str.h>
 
 static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry) {
-		bool ok = rz_buf_read_le32_offset(b, offset, &entry->size) &&
-			rz_buf_read_le32_offset(b, offset, &entry->paddr) &&
-			rz_buf_read_le32_offset(b, offset, &entry->offset);
-		if (!ok) return false;
+	bool ok = rz_buf_read_le32_offset(b, offset, &entry->size) &&
+		rz_buf_read_le32_offset(b, offset, &entry->paddr) &&
+		rz_buf_read_le32_offset(b, offset, &entry->offset);
+	if (!ok)
+		return false;
 
-		// Set type
-		entry->type = (entry->paddr & GNS1_ADDRMASK) == 0 ? GNS1_SEG_TEXT : GNS1_SEG_DATA;
+	// Set type
+	entry->type = (entry->paddr & GNS1_ADDRMASK) == 0 ? GNS1_SEG_TEXT : GNS1_SEG_DATA;
 
-		// Set region (named region_a/region_b to avoid speculation about meaning)
-		if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
-			entry->region = GNS1_REGION_A;
-		} else if (entry->paddr >= GNS1_CORE2_BASE) {
-			entry->region = GNS1_REGION_B;
-		} else {
-			entry->region = GNS1_REGION_UNKNOWN;
-		}
-		return true;
+	// Set region (named region_a/region_b to avoid speculation about meaning)
+	if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
+		entry->region = GNS1_REGION_A;
+	} else if (entry->paddr >= GNS1_CORE2_BASE) {
+		entry->region = GNS1_REGION_B;
+	} else {
+		entry->region = GNS1_REGION_UNKNOWN;
+	}
+	return true;
 }
 
 static inline ut64 gns1_translate_vaddr(ut32 paddr) {
@@ -43,41 +44,41 @@ static inline ut64 gns1_translate_vaddr(ut32 paddr) {
 
 // heuristic: dword at 0xC >= 0x64 and dword at offset-4 == 0
 RZ_IPI bool gns1_check_buffer(RzBuffer *b) {
-		rz_return_val_if_fail(b, false);
+	rz_return_val_if_fail(b, false);
 
-		ut64 buf_size = rz_buf_size(b);
-		// Check minimum file size for a valid GNS1 binary
-		if (buf_size < GNS1_MIN_FILE_SIZE) {
-			return false;
-		}
+	ut64 buf_size = rz_buf_size(b);
+	// Check minimum file size for a valid GNS1 binary
+	if (buf_size < GNS1_MIN_FILE_SIZE) {
+		return false;
+	}
 
-		ut64 offset = 0;
-		Gns1SegmentEntry first_entry;
-		// Parse the first segment entry from the segment table
-		if (!gns1_read_segment(b, &offset, &first_entry)) {
-			return false;
-		}
+	ut64 offset = 0;
+	Gns1SegmentEntry first_entry;
+	// Parse the first segment entry from the segment table
+	if (!gns1_read_segment(b, &offset, &first_entry)) {
+		return false;
+	}
 
-		// Validate segment size is nonzero and does not exceed file size
-		if (first_entry.size == 0 || first_entry.size > buf_size) {
-			return false;
-		}
-		// Validate segment offset is within file and at least 0x64 (per format spec)
-		if (first_entry.offset < 0x64 || first_entry.offset >= buf_size) {
-			return false;
-		}
-		// Validate segment does not overflow file bounds
-		if (first_entry.offset + first_entry.size > buf_size) {
-			return false;
-		}
+	// Validate segment size is nonzero and does not exceed file size
+	if (first_entry.size == 0 || first_entry.size > buf_size) {
+		return false;
+	}
+	// Validate segment offset is within file and at least 0x64 (per format spec)
+	if (first_entry.offset < 0x64 || first_entry.offset >= buf_size) {
+		return false;
+	}
+	// Validate segment does not overflow file bounds
+	if (first_entry.offset + first_entry.size > buf_size) {
+		return false;
+	}
 
-		// Check for required zero marker before segment data (end-of-table marker)
-		ut32 marker = 0;
-		if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
-			return false;
-		}
+	// Check for required zero marker before segment data (end-of-table marker)
+	ut32 marker = 0;
+	if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
+		return false;
+	}
 
-		return true;
+	return true;
 }
 
 // load and parse GNS1 segment table from buffer.
@@ -238,8 +239,8 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 		section->size = entry->size;
 		section->vsize = entry->size;
 
-			// rebase to internal base
-			section->vaddr = gns1_translate_vaddr(entry->paddr);
+		// rebase to internal base
+		section->vaddr = gns1_translate_vaddr(entry->paddr);
 
 		if ((entry->paddr & 0xFFFFFF) == 0) {
 			section->perm = RZ_PERM_RX;
@@ -247,15 +248,15 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 			section->perm = RZ_PERM_RW;
 		}
 
-			// use enum for type and region (region_a/region_b for user-facing names)
-			const char *seg_type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
-			const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : NULL);
-			free(section->name);
-			if (region) {
-				section->name = rz_str_newf("%s_%s_%u", region, seg_type, idx);
-			} else {
-				section->name = rz_str_newf("%s_%u", seg_type, idx);
-			}
+		// use enum for type and region (region_a/region_b for user-facing names)
+		const char *seg_type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
+		const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : NULL);
+		free(section->name);
+		if (region) {
+			section->name = rz_str_newf("%s_%s_%u", region, seg_type, idx);
+		} else {
+			section->name = rz_str_newf("%s_%u", seg_type, idx);
+		}
 
 		rz_pvector_push(ret, section);
 		idx++;
@@ -321,16 +322,16 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 		rz_structured_data_map_add_unsigned(seg, "physical_addr", entry->paddr, true);
 		rz_structured_data_map_add_unsigned(seg, "file_offset", entry->offset, true);
 
-			// for region (user-facing: region_a/region_b)
-			const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : "unknown");
-			rz_structured_data_map_add_string(seg, "region", region);
+		// for region (user-facing: region_a/region_b)
+		const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : "unknown");
+		rz_structured_data_map_add_string(seg, "region", region);
 
-			// for type
-			const char *type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
-			rz_structured_data_map_add_string(seg, "type", type);
+		// for type
+		const char *type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
+		rz_structured_data_map_add_string(seg, "type", type);
 
-			// calc rebase virtual addr
-			rz_structured_data_map_add_unsigned(seg, "virtual_addr", gns1_translate_vaddr(entry->paddr), true);
+		// calc rebase virtual addr
+		rz_structured_data_map_add_unsigned(seg, "virtual_addr", gns1_translate_vaddr(entry->paddr), true);
 		idx++;
 	}
 

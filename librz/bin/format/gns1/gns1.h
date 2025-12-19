@@ -18,7 +18,6 @@
 #define GNS1_INTERNAL_BASE      0x10000000
 #define GNS1_ADDRMASK           0xFFFFFF
 
-
 /**
  * \brief A GNS1 segment entry (12 bytes).
  *
@@ -34,8 +33,8 @@ typedef enum {
 
 typedef enum {
 	GNS1_REGION_UNKNOWN,
-	GNS1_REGION_A,   // region_a (was core0)
-	GNS1_REGION_B    // region_b (was core1)
+	GNS1_REGION_A, // region_a (was core0)
+	GNS1_REGION_B // region_b (was core1)
 } Gns1Region;
 
 typedef struct gns1_segment_entry {
