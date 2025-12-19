@@ -44,7 +44,7 @@ static void __table_adjust(RzTable *t) {
 	int length = 0;
 	if (t->showHeader) {
 		rz_vector_foreach (t->cols, col) {
-			int length = rz_str_len_utf8_ansi(col->name) + 1;
+			int length = rz_str_utf8_ansi_cols(col->name) + 1;
 			col->width = length;
 		}
 	}
@@ -54,7 +54,7 @@ static void __table_adjust(RzTable *t) {
 		int ncol = 0;
 		rz_pvector_foreach (row->items, pitem) {
 			item = *pitem;
-			length = rz_str_len_utf8_ansi(item) + 1;
+			length = rz_str_utf8_ansi_cols(item) + 1;
 			col = rz_vector_index_ptr(t->cols, ncol);
 			if (col) {
 				col->width = RZ_MAX(col->width, length);
@@ -145,7 +145,7 @@ RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char 
 		c->name = rz_str_dup(name);
 		c->maxWidth = maxWidth;
 		c->type = type;
-		int itemLength = rz_str_len_utf8_ansi(name) + 1;
+		int itemLength = rz_str_utf8_ansi_cols(name) + 1;
 		c->width = itemLength;
 		c->total = -1;
 		if (c->type == &rz_table_type_number) {
@@ -163,7 +163,7 @@ RZ_API RzTableRow *rz_table_row_new(RzPVector /*<char *>*/ *items) {
 }
 
 static bool __addRow(RzTable *t, RzPVector /*<char *>*/ *items, const char *arg, int col) {
-	int itemLength = rz_str_len_utf8_ansi(arg);
+	int itemLength = rz_str_utf8_ansi_cols(arg);
 	RzTableColumn *c = rz_vector_index_ptr(t->cols, col);
 	if (c) {
 		char *str = rz_str_dup(arg);
@@ -399,7 +399,7 @@ static int __strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableCo
 	const char *v_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length(sb);
 	int pad = 0;
-	int len = rz_str_len_utf8_ansi(str);
+	int len = rz_str_utf8_ansi_cols(str);
 	if (len < rz_str_utf8_cols(str) && len < col->width) {
 		pad = col->width - len;
 	}
@@ -474,7 +474,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	rz_vector_foreach (t->cols, col) {
 		__strbuf_append_col_aligned_fancy(t, sb, col, col->name);
 	}
-	int len = rz_str_len_utf8_ansi(rz_strbuf_get(sb)) - 1;
+	int len = rz_str_utf8_ansi_cols(rz_strbuf_get(sb)) - 1;
 	int maxlen = len;
 	char *h_line_str = rz_str_repeat(h_line, maxlen);
 	{
@@ -519,7 +519,7 @@ static int __strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const c
 	char *pad = "";
 	int padlen = 0;
 	int len1 = rz_str_utf8_cols(str);
-	int len2 = rz_str_len_utf8_ansi(str);
+	int len2 = rz_str_utf8_ansi_cols(str);
 	if (!nopad) {
 		if (len1 > len2) {
 			if (len2 < col->width) {
@@ -588,7 +588,7 @@ RZ_API char *rz_table_tosimplestring(RzTable *t) {
 			int ll = __strbuf_append_col_aligned(sb, col, col->name, false);
 			maxlen = RZ_MAX(maxlen, ll);
 		}
-		int len = rz_str_len_utf8_ansi(rz_strbuf_get(sb));
+		int len = rz_str_utf8_ansi_cols(rz_strbuf_get(sb));
 		char *l = rz_str_repeat(h_line, RZ_MAX(maxlen, len));
 		if (l) {
 			rz_strbuf_appendf(sb, "\n%s\n", l);

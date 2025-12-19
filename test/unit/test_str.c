@@ -383,30 +383,30 @@ bool test_rz_str_ansi_len(void) {
 	mu_end;
 }
 
-bool test_rz_str_len_utf8_ansi(void) {
+bool test_rz_str_utf8_ansi_cols(void) {
 	int len;
 
-	len = rz_str_len_utf8_ansi("rizin");
+	len = rz_str_utf8_ansi_cols("rizin");
 	mu_assert_eq(len, 5, "len(ascii only)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[38;2;208;80;0madare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[38;2;208;80;0madare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with m)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[0Jadare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[0Jadare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with J)");
 
-	len = rz_str_len_utf8_ansi("r\x1b[42;42Hadare2");
+	len = rz_str_utf8_ansi_cols("r\x1b[42;42Hadare2");
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with H)");
 
-	len = rz_str_len_utf8_ansi("r\xc3\xa4"
+	len = rz_str_utf8_ansi_cols("r\xc3\xa4"
 				   "dare2");
 	mu_assert_eq(len, 7, "len(ascii + 2 byte utf-8 counted as 1 char)");
 
-	len = rz_str_len_utf8_ansi("radar\xe2\x82\xac"
+	len = rz_str_utf8_ansi_cols("radar\xe2\x82\xac"
 				   "2");
 	mu_assert_eq(len, 7, "len(ascii + 3 byte utf-8 counted as 1 char)");
 
-	len = rz_str_len_utf8_ansi("radar\xf0\x9d\x84\x9e"
+	len = rz_str_utf8_ansi_cols("radar\xf0\x9d\x84\x9e"
 				   "2");
 	mu_assert_eq(len, 7, "len(ascii + 4 byte utf-8 counted as 1 char)");
 
@@ -1032,7 +1032,7 @@ bool all_tests() {
 	mu_run_test(test_rz_sub_str_rchr);
 	mu_run_test(test_rz_str_rchr);
 	mu_run_test(test_rz_str_ansi_len);
-	mu_run_test(test_rz_str_len_utf8_ansi);
+	mu_run_test(test_rz_str_utf8_ansi_cols);
 	mu_run_test(test_rz_str_utf8_charsize);
 	mu_run_test(test_rz_str_utf8_charsize_prev);
 	mu_run_test(test_rz_str_sanitize_sdb_key);

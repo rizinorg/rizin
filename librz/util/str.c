@@ -2881,7 +2881,7 @@ RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
 	return byte_cnt + 2; // NUL terminator
 }
 
-RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
+RZ_API size_t rz_str_utf8_ansi_cols(const char *str) {
 	int i = 0, len = 0, fullwidths = 0;
 	while (str[i]) {
 		char ch = str[i];
