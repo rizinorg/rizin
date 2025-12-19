@@ -400,6 +400,14 @@ static ut32 bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start
 	return nbit;
 }
 
+/**
+ * Copy n bits from start position of source to start position of dest, return num of copied bits
+ * \param bv Bitvector to copy bits inside.
+ * \param src_start_pos ut32, start position in source bitvector of copy
+ * \param dst_start_pos ut32, start position in destination bitvector
+ * \param nbit ut32, control the size of copy (in bits)
+ * \return copied_size ut32, Actual copied size
+ */
 RZ_API ut32 rz_bv_copy_nbits_inplace(
 	RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 src_start_pos,
 	ut32 dst_start_pos, ut32 nbit) {
@@ -771,7 +779,14 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 	return true;
 }
 
-RZ_API bool rz_bv_and_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+/**
+ * Result of x &= y (`and` operation to every bits)
+ * Both operands must have the same length.
+ * \param x RzBitVector, operand
+ * \param y RzBitVector, operand
+ * \return True for success, false otherwise.
+ */
+RZ_API bool rz_bv_and_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
 	if (x->len != y->len) {
 		rz_warn_if_reached();
@@ -814,7 +829,14 @@ RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 	return ret;
 }
 
-RZ_API bool rz_bv_or_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+/**
+ * Result of x |= y (`or` operation to every bits)
+ * Both operands must have the same length.
+ * \param x RzBitVector, operand
+ * \param y RzBitVector, operand
+ * \return True for success, false otherwise.
+ */
+RZ_API bool rz_bv_or_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
 	if (x->len != y->len) {
 		rz_warn_if_reached();
@@ -857,7 +879,14 @@ RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitV
 	return ret;
 }
 
-RZ_API bool rz_bv_xor_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+/**
+ * Result of x XOR y (`xor` operation to every bits)
+ * Both operands must have the same length.
+ * \param x RzBitVector, operand
+ * \param y RzBitVector, operand
+ * \return ret RzBitVector, a new bitvector, which is the result of XOR
+ */
+RZ_API bool rz_bv_xor_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y) {
 	rz_return_val_if_fail(x && y, false);
 	if (x->len != y->len) {
 		rz_warn_if_reached();
@@ -900,6 +929,11 @@ RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 	return ret;
 }
 
+/**
+ * Get the 1's complement of bv
+ * \param bv RzBitVector, operand
+ * \return True for success, false otherwise.
+ */
 RZ_API bool rz_bv_complement_1_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, false);
 	if (bv->len <= 64) {
@@ -935,6 +969,11 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv) {
 	return ret;
 }
 
+/**
+ * Get the 2's complement of bv.
+ * \param bv RzBitVector, operand
+ * \return True for succcess, false otherwise.
+ */
 RZ_API bool rz_bv_complement_2_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, false);
 
@@ -1035,10 +1074,15 @@ RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 }
 
 /**
- * \brief
- * NOTE:
- * y = -y;
- * x += y;
+ * Result of y = -y ; x = (x + y) mod 2^length
+ * Both operands must have the same length.
+ *
+ * Note: Operand y is also changed!
+ *
+ * \param x RzBitVector, Operand
+ * \param y RzBitVector, Operand
+ * \param borrow bool*, bool pointer to where to save the borrow value.
+ * \return True in case of succcess, false otherwise.
  */
 RZ_API bool rz_bv_sub_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_INOUT RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow) {
 	rz_return_val_if_fail(x && y, false);
