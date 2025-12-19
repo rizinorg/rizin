@@ -1920,6 +1920,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 		goto error;
 	}
 	hits = rz_core_search_bytes(core, search_opts, pattern);
+	pattern = NULL; // Ownership transferred to rz_core_search_bytes()
 	if (!hits) {
 		RZ_LOG_ERROR("Failed to perform search.\n");
 		goto error;
@@ -1930,6 +1931,9 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
+	if (pattern) {
+		rz_search_bytes_pattern_free(pattern);
+	}
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
