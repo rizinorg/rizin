@@ -2897,7 +2897,7 @@ RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
  *         escape sequences.
  */
 RZ_API size_t rz_str_utf8_ansi_cols(const char *str) {
-	int i = 0, len = 0, fullwidths = 0;
+	int i = 0, cols = 0, fullwidths = 0;
 	while (str[i]) {
 		char ch = str[i];
 		size_t chlen = __str_ansi_length(str + i);
@@ -2905,14 +2905,14 @@ RZ_API size_t rz_str_utf8_ansi_cols(const char *str) {
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
 			// TODO Zero-width chars; human emoji
-			len++;
+			cols++;
 			if (rz_str_char_fullwidth(str + i, chlen)) {
 				fullwidths++;
 			}
 		}
 		i++;
 	}
-	return len + fullwidths;
+	return cols + fullwidths;
 }
 
 // XXX must find across the ansi tags, as well as support utf8
