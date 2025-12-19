@@ -215,6 +215,20 @@ static RzILOpEffect *_6502_il_op_and(_6502ILAddr *addr) {
 }
 
 /**
+ * anc (undocumented)
+ * Operation: A = A & imm
+ * Flags: N, Z, and C = Bit 7 of result
+ */
+static RzILOpEffect *_6502_il_op_anc(_6502ILAddr *addr) {
+	RzILOpBitVector *v = do_load(addr);
+	return SEQ3(
+		SETG("a", LOGAND(VARG("a"), v)), // A = A & val
+		update_flags_nz(VARG("a")),      // Update N and Z
+		SETG("C", MSB(VARG("a")))        // Update C with Bit 7 (MSB) of A
+	);
+}
+
+/**
  * ora
  */
 static RzILOpEffect *_6502_il_op_ora(_6502ILAddr *addr) {

@@ -445,7 +445,6 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x03:
 	case 0x04:
 	case 0x07:
-	case 0x0b:
 	case 0x0c:
 	case 0x0f:
 	case 0x12:
@@ -459,7 +458,6 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x22:
 	case 0x23:
 	case 0x27:
-	case 0x2b:
 	case 0x2f:
 	case 0x32:
 	case 0x33:
@@ -686,6 +684,24 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		_6502_analysis_esil_update_flags(op, _6502_FLAGS_NZ);
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 			op->il_op = _6502_il_op_and(il_addr_ptr);
+		}
+		break;
+
+	// ANC (Undocumented)
+	case 0x0b: // anc #$ff
+	case 0x2b: // anc #$ff
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+
+		// 1. Fetch immediate value
+		ut8 imm = (len > 1) ? data[1] : 0;
+
+		// 2. RzIL Implementation
+		// We DO NOT generate an ESIL string here. We use the RzIL API.
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			// Setup the immediate value helper
+			_6502_il_immediate(il_addr_ptr, imm);
+			// Call the new ANC helper function you added to 6502_il.inc
+			op->il_op = _6502_il_op_anc(il_addr_ptr);
 		}
 		break;
 	// EOR
