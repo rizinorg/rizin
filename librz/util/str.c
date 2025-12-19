@@ -2814,6 +2814,9 @@ RZ_API size_t rz_str_len_utf8char(const char *s, int left) {
  * A normal (halfwidth) character like 'A' will occupy 1 column, a fullwidth
  * character like U+2329 (〈) will occupy 2 columns.
  *
+ * This function does *not* skip over ANSI escape sequences. For that, see
+ * rz_str_utf8_ansi_cols().
+ *
  * \param s A UTF-8 string.
  * \return The number of console columns for `s`.
  */
@@ -2881,22 +2884,35 @@ RZ_API size_t rz_str_utf8_get_width_utf16(RZ_NONNULL const char *str) {
 	return byte_cnt + 2; // NUL terminator
 }
 
-RZ_API size_t rz_str_len_utf8_ansi(const char *str) {
-	int i = 0, len = 0, fullwidths = 0;
+/**
+ * \brief Returns the number of console columns that a UTF-8 string will occupy,
+ * skipping over some ANSI escape sequences in the string.
+ *
+ * A normal (halfwidth) character like 'A' will occupy 1 column, a fullwidth
+ * character like U+2329 (〈) will occupy 2 columns. The ANSI escape sequences
+ * skipped over is defined by __str_ansi_length().
+ *
+ * \param s A UTF-8 string.
+ * \return The number of console columns for `s`, skipping over some ANSI
+ *         escape sequences.
+ */
+RZ_API size_t rz_str_utf8_ansi_cols(const char *str) {
+	int i = 0, cols = 0, fullwidths = 0;
 	while (str[i]) {
 		char ch = str[i];
 		size_t chlen = __str_ansi_length(str + i);
 		if (chlen > 1) {
 			i += chlen - 1;
 		} else if ((ch & 0xc0) != 0x80) { // utf8
-			len++;
+			// TODO Zero-width chars; human emoji
+			cols++;
 			if (rz_str_char_fullwidth(str + i, chlen)) {
 				fullwidths++;
 			}
 		}
 		i++;
 	}
-	return len + fullwidths;
+	return cols + fullwidths;
 }
 
 // XXX must find across the ansi tags, as well as support utf8

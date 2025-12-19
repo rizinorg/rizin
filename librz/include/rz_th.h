@@ -69,6 +69,7 @@ RZ_API RZ_OWN RzThreadCond *rz_th_cond_new(void);
 RZ_API void rz_th_cond_signal(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_signal_all(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock);
+RZ_API void rz_th_cond_timed_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock, size_t timeout_ms);
 RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API RzThreadNCores rz_th_physical_core_number();
@@ -86,12 +87,14 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree);
 RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue);
 RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *user, bool tail);
-RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
-RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail);
+RZ_API bool rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail, RZ_NONNULL RZ_OUT void **data);
 RZ_API RZ_OWN RzList /*<void *>*/ *rz_th_queue_pop_all(RZ_NONNULL RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue);
 RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue);
+RZ_API void rz_th_queue_close_when_empty(RZ_NONNULL RzThreadQueue *queue);
+RZ_API void rz_th_queue_close(RZ_NONNULL RzThreadQueue *queue);
+RZ_API bool rz_th_queue_is_closed(RZ_NONNULL RzThreadQueue *queue);
 
 RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
 RZ_API void rz_atomic_bool_free(RZ_NULLABLE RzAtomicBool *tbool);
