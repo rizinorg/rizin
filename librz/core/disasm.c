@@ -3652,7 +3652,7 @@ static void ds_align_comment(RzDisasmState *ds) {
 		return;
 	}
 	ll += ds->buf_line_begin;
-	int cells = rz_str_len_utf8_ansi(ll);
+	int cells = rz_str_utf8_ansi_cols(ll);
 	int cols = ds->interactive ? ds->core->cons->columns : 1024;
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
