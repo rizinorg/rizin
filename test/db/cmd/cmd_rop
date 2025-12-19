@@ -2877,8 +2877,12 @@ e asm.bits=32
 /Rk eax=1
 /Rk ecx=0
 /Rk eax=1,ecx=0
-echo "Expected no results"
+echo "Expected no results for eax=0"
 /Rk eax=0
+echo "Testing MOV_OP_CONST"
+/Rk eax+=1
+echo "Testing MOV_OP_REG"
+/Rk eax=ebx+ecx
 /Rk invalidconstraint
 EOF
 EXPECT=<<EOF
@@ -2939,6 +2943,8 @@ Gadget size: 15
   0x000000c2                 c3  ret
 Gadget size: 13
 
-Expected no results
+Expected no results for eax=0
+Testing MOV_OP_CONST
+Testing MOV_OP_REG
 EOF
 RUN

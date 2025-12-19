@@ -1537,7 +1537,8 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 	}
 	case MOV_OP_CONST: {
 		const char *src_reg = constraint->args[SRC_REG];
-		if (!src_reg) {
+		const char *src_const = constraint->args[SRC_CONST];
+		if (!src_reg || !src_const) {
 			return false;
 		}
 		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
