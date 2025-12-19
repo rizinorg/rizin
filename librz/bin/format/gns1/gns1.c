@@ -14,48 +14,66 @@
 #include <rz_util/rz_str.h>
 
 static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry) {
-	return rz_buf_read_le32_offset(b, offset, &entry->size) &&
-		rz_buf_read_le32_offset(b, offset, &entry->paddr) &&
-		rz_buf_read_le32_offset(b, offset, &entry->offset);
+		bool ok = rz_buf_read_le32_offset(b, offset, &entry->size) &&
+			rz_buf_read_le32_offset(b, offset, &entry->paddr) &&
+			rz_buf_read_le32_offset(b, offset, &entry->offset);
+		if (!ok) return false;
+
+		// Set type
+		entry->type = (entry->paddr & GNS1_ADDRMASK) == 0 ? GNS1_SEG_TEXT : GNS1_SEG_DATA;
+
+		// Set region (named region_a/region_b to avoid speculation about meaning)
+		if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
+			entry->region = GNS1_REGION_A;
+		} else if (entry->paddr >= GNS1_CORE2_BASE) {
+			entry->region = GNS1_REGION_B;
+		} else {
+			entry->region = GNS1_REGION_UNKNOWN;
+		}
+		return true;
+}
+
+static inline ut64 gns1_translate_vaddr(ut32 paddr) {
+	ut32 core_base = paddr & 0xFF000000;
+	if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
+		return GNS1_INTERNAL_BASE + (paddr & GNS1_ADDRMASK);
+	}
+	return paddr;
 }
 
 // heuristic: dword at 0xC >= 0x64 and dword at offset-4 == 0
 RZ_IPI bool gns1_check_buffer(RzBuffer *b) {
-	rz_return_val_if_fail(b, false);
+		rz_return_val_if_fail(b, false);
 
-	ut64 buf_size = rz_buf_size(b);
-	if (buf_size < GNS1_MIN_FILE_SIZE) {
-		return false;
-	}
+		ut64 buf_size = rz_buf_size(b);
+		if (buf_size < GNS1_MIN_FILE_SIZE) {
+			return false;
+		}
 
-	ut64 offset = 0;
-	Gns1SegmentEntry first_entry;
-	if (!gns1_read_segment(b, &offset, &first_entry)) {
-		return false;
-	}
-	// check 1
-	if (first_entry.offset < 0x64) {
-		return false;
-	}
-	// check 2
-	ut32 marker = 0;
-	if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
-		return false;
-	}
-	// sanity check
-	if (first_entry.size == 0 || first_entry.size > buf_size) {
-		return false;
-	}
+		ut64 offset = 0;
+		Gns1SegmentEntry first_entry;
+		if (!gns1_read_segment(b, &offset, &first_entry)) {
+			return false;
+		}
 
-	if (first_entry.offset >= buf_size) {
-		return false;
-	}
-	// overflow check
-	if (first_entry.offset + first_entry.size > buf_size) {
-		return false;
-	}
+		// Check size and offset validity before using them
+		if (first_entry.size == 0 || first_entry.size > buf_size) {
+			return false;
+		}
+		if (first_entry.offset < 0x64 || first_entry.offset >= buf_size) {
+			return false;
+		}
+		if (first_entry.offset + first_entry.size > buf_size) {
+			return false;
+		}
 
-	return true;
+		// Only after all checks, read the marker
+		ut32 marker = 0;
+		if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
+			return false;
+		}
+
+		return true;
 }
 
 // load and parse GNS1 segment table from buffer.
@@ -68,7 +86,6 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 		return false;
 	}
 
-	gns1->buf = b;
 	gns1->segments = rz_vector_new(sizeof(Gns1SegmentEntry), NULL, NULL);
 	if (!gns1->segments) {
 		free(gns1);
@@ -82,8 +99,8 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 	ut64 file_size = rz_buf_size(b);
 
 	while (gns1_read_segment(b, &offset, &entry)) {
-		// end of segment table check
-		if (entry.size == 0 && entry.paddr == 0 && entry.offset == 0) {
+		// end of segment table check (only size==0 is required, per reference loader)
+		if (entry.size == 0) {
 			break;
 		}
 
@@ -146,7 +163,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 
 	Gns1Obj *gns1 = bf->o->bin_obj;
 	if (gns1->num_segments == 0) {
-		return NULL;
+		return rz_pvector_new(free);
 	}
 
 	RzPVector *ret = rz_pvector_new(free);
@@ -154,19 +171,37 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 		return NULL;
 	}
 
-	// use first segment as entry point
-	Gns1SegmentEntry *first = rz_vector_index_ptr(gns1->segments, 0);
-	if (first) {
+	Gns1SegmentEntry *region_a_text = NULL;
+	Gns1SegmentEntry *region_b_text = NULL;
+
+	Gns1SegmentEntry *entry;
+	rz_vector_foreach (gns1->segments, entry) {
+		if (entry->type == GNS1_SEG_TEXT) {
+			if (entry->region == GNS1_REGION_A) {
+				if (!region_a_text || entry->paddr < region_a_text->paddr) {
+					region_a_text = entry;
+				}
+			} else if (entry->region == GNS1_REGION_B) {
+				if (!region_b_text || entry->paddr < region_b_text->paddr) {
+					region_b_text = entry;
+				}
+			}
+		}
+	}
+
+	if (region_a_text) {
 		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 		if (entry) {
-			entry->paddr = first->offset;
-			// rebase address to INTERNAL_BASE like IDA does
-			ut32 core_base = first->paddr & 0xFF000000;
-			if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
-				entry->vaddr = GNS1_INTERNAL_BASE + (first->paddr & 0xFFFFFF);
-			} else {
-				entry->vaddr = first->paddr;
-			}
+			entry->paddr = region_a_text->offset;
+			entry->vaddr = gns1_translate_vaddr(region_a_text->paddr);
+			rz_pvector_push(ret, entry);
+		}
+	}
+	if (region_b_text) {
+		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
+		if (entry) {
+			entry->paddr = region_b_text->offset;
+			entry->vaddr = gns1_translate_vaddr(region_b_text->paddr);
 			rz_pvector_push(ret, entry);
 		}
 	}
@@ -197,14 +232,8 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 		section->size = entry->size;
 		section->vsize = entry->size;
 
-		// rebase to internal base
-		ut32 core_base = entry->paddr & 0xFF000000;
-		if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
-			// map both cores to internal base: core0 0x12xxxxxx -> 0x10xxxxxx, core1 0x15xxxxxx -> 0x10xxxxxx
-			section->vaddr = GNS1_INTERNAL_BASE + (entry->paddr & 0xFFFFFF);
-		} else {
-			section->vaddr = entry->paddr;
-		}
+			// rebase to internal base
+			section->vaddr = gns1_translate_vaddr(entry->paddr);
 
 		if ((entry->paddr & 0xFFFFFF) == 0) {
 			section->perm = RZ_PERM_RX;
@@ -212,18 +241,15 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 			section->perm = RZ_PERM_RW;
 		}
 
-		// determine core and type based on address range
-		const char *seg_type = (entry->paddr & 0xFFFFFF) == 0 ? "text" : "data";
-		if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
+			// use enum for type and region (region_a/region_b for user-facing names)
+			const char *seg_type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
+			const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : NULL);
 			free(section->name);
-			section->name = rz_str_newf("core0_%s_%u", seg_type, idx);
-		} else if (entry->paddr >= GNS1_CORE2_BASE) {
-			free(section->name);
-			section->name = rz_str_newf("core1_%s_%u", seg_type, idx);
-		} else {
-			free(section->name);
-			section->name = rz_str_newf("%s_%u", seg_type, idx);
-		}
+			if (region) {
+				section->name = rz_str_newf("%s_%s_%u", region, seg_type, idx);
+			} else {
+				section->name = rz_str_newf("%s_%u", seg_type, idx);
+			}
 
 		rz_pvector_push(ret, section);
 		idx++;
@@ -242,7 +268,6 @@ RZ_IPI RzBinInfo *gns1_info(RzBinFile *bf) {
 	info->file = bf->file ? rz_str_dup(bf->file) : NULL;
 	info->type = rz_str_dup("GNS1");
 	info->machine = rz_str_dup("Apple C4000 Baseband");
-	info->os = rz_str_dup("firmware");
 	info->arch = rz_str_dup("arc");
 	info->rclass = rz_str_dup("firmware");
 	info->subsystem = rz_str_dup("baseband");
@@ -266,8 +291,8 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 
 	// header information
 	rz_structured_data_map_add_unsigned(info, "num_segments", gns1->num_segments, false);
-	rz_structured_data_map_add_unsigned(info, "core0_base", GNS1_CORE1_BASE, true);
-	rz_structured_data_map_add_unsigned(info, "core1_base", GNS1_CORE2_BASE, true);
+	rz_structured_data_map_add_unsigned(info, "region_a_base", GNS1_CORE1_BASE, true);
+	rz_structured_data_map_add_unsigned(info, "region_b_base", GNS1_CORE2_BASE, true);
 	rz_structured_data_map_add_unsigned(info, "internal_base", GNS1_INTERNAL_BASE, true);
 
 	//  segment table
@@ -290,28 +315,16 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 		rz_structured_data_map_add_unsigned(seg, "physical_addr", entry->paddr, true);
 		rz_structured_data_map_add_unsigned(seg, "file_offset", entry->offset, true);
 
-		// for core
-		const char *core = "unknown";
-		if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
-			core = "core0";
-		} else if (entry->paddr >= GNS1_CORE2_BASE) {
-			core = "core1";
-		}
-		rz_structured_data_map_add_string(seg, "core", core);
+			// for region (user-facing: region_a/region_b)
+			const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : "unknown");
+			rz_structured_data_map_add_string(seg, "region", region);
 
-		// for type
-		const char *type = (entry->paddr & 0xFFFFFF) == 0 ? "text" : "data";
-		rz_structured_data_map_add_string(seg, "type", type);
+			// for type
+			const char *type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
+			rz_structured_data_map_add_string(seg, "type", type);
 
-		// calc rebase virtual addr
-		ut32 core_base = entry->paddr & 0xFF000000;
-		ut64 vaddr;
-		if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
-			vaddr = GNS1_INTERNAL_BASE + (entry->paddr & 0xFFFFFF);
-		} else {
-			vaddr = entry->paddr;
-		}
-		rz_structured_data_map_add_unsigned(seg, "virtual_addr", vaddr, true);
+			// calc rebase virtual addr
+			rz_structured_data_map_add_unsigned(seg, "virtual_addr", gns1_translate_vaddr(entry->paddr), true);
 		idx++;
 	}
 

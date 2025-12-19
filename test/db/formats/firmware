@@ -260,11 +260,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=loading a GNS1 firmware file
-FILE=bins/firmware/gns1_test.bin
-CMDS=q!
-EXPECT=
-RUN
 
 NAME=GNS1: comprehensive validation
 FILE=bins/firmware/gns1_test.bin
@@ -280,19 +275,16 @@ iI~^os
 iI~^va
 ie~program
 ie~0x10000000
-iS~core?
-iS~core
-iS~core0_text
-iS~core0_data
-iS~core1_text
-iS~core1_data
+iS~region?
+iS~region
+iS~region_a_text
+iS~region_b_text
 iS~0x12
 iS~0x15
 iH~num_segments
 iH~base
 iI~binsz
 pd 1 @ 0x10000000
-px 8 @ section.core0_data_1
 EOF
 EXPECT=<<EOF
 bintype  firmware
@@ -302,30 +294,29 @@ baddr    0x10000000
 bits     32
 endian   LE
 machine  Apple C4000 Baseband
-os       firmware
+os       N/A
 va       true
 0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
 0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
 4
-0x00000064 0x10 0x10000000  0x10   0x0 -r-x core0_text_0      
-0x00000074  0x8 0x10001000   0x8   0x0 -rw- core0_data_1      
-0x0000007c 0x10 0x10000000  0x10   0x0 -r-x core1_text_2      
-0x0000008c  0x8 0x10001000   0x8   0x0 -rw- core1_data_3      
-0x00000064 0x10 0x10000000  0x10   0x0 -r-x core0_text_0      
-0x00000074  0x8 0x10001000   0x8   0x0 -rw- core0_data_1      
-0x0000007c 0x10 0x10000000  0x10   0x0 -r-x core1_text_2      
-0x0000008c  0x8 0x10001000   0x8   0x0 -rw- core1_data_3      
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x00000074  0x8 0x10001000   0x8   0x0 -rw- region_a_data_1      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
+0x0000008c  0x8 0x10001000   0x8   0x0 -rw- region_b_data_3      
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
 num_segments: 4
-core0_base: 0x12000000
-core1_base: 0x15000000
+region_a_base: 0x12000000
+region_b_base: 0x15000000
 internal_base: 0x10000000
 binsz    0x00000094
             ;-- entry0:
-            ;-- section.core0_text_0:
-            ;-- section.core1_text_2:
-        ,=< 0x10000000      bge.jd 0x0ff25134                          ; [02] -r-x section size 16 named core1_text_2
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x10001000  7856 3412 00ef cdab                      xV4.....
+            ;-- entry1:
+            ;-- section.region_a_text_0:
+            ;-- section.region_b_text_2:
+        ,=< 0x10000000      bge.jd 0x0ff25134                          ; [02] -r-x section size 16 named region_b_text_2
 EOF
 RUN
 

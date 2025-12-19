@@ -1,3 +1,5 @@
+
+
 // SPDX-FileCopyrightText: 2025 Zapper9982
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -11,9 +13,11 @@
 
 #define GNS1_SEGMENT_ENTRY_SIZE 12
 #define GNS1_MIN_FILE_SIZE      64
-#define GNS1_CORE1_BASE         0x12000000
-#define GNS1_CORE2_BASE         0x15000000
+#define GNS1_CORE1_BASE         0x12000000 // region_a base
+#define GNS1_CORE2_BASE         0x15000000 // region_b base
 #define GNS1_INTERNAL_BASE      0x10000000
+#define GNS1_ADDRMASK           0xFFFFFF
+
 
 /**
  * \brief A GNS1 segment entry (12 bytes).
@@ -23,17 +27,29 @@
  *
  * Reference: https://github.com/nlitsme/AppleC4000/blob/master/loadgns.py
  */
+typedef enum {
+	GNS1_SEG_TEXT,
+	GNS1_SEG_DATA
+} Gns1SegType;
+
+typedef enum {
+	GNS1_REGION_UNKNOWN,
+	GNS1_REGION_A,   // region_a (was core0)
+	GNS1_REGION_B    // region_b (was core1)
+} Gns1Region;
+
 typedef struct gns1_segment_entry {
 	ut32 size; ///< Size of the segment in bytes
 	ut32 paddr; ///< Physical address of the segment
 	ut32 offset; ///< File offset of the segment data
+	Gns1SegType type; ///< Segment type (text/data)
+	Gns1Region region; ///< Region (region_a/region_b)
 } Gns1SegmentEntry;
 
 //  parses the GNS1 file structure.
 typedef struct gns1_obj {
 	RzVector /*<Gns1SegmentEntry>*/ *segments; ///< Vector of Gns1SegmentEntry
 	ut32 num_segments; ///< Number of segments in the file
-	RzBuffer *buf; ///< Buffer containing the file data
 } Gns1Obj;
 
 // functions
