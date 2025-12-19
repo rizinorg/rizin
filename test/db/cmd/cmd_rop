@@ -2939,5 +2939,6 @@ Gadget size: 15
   0x000000c2                 c3  ret
 Gadget size: 13
 
+Expected no results
 EOF
 RUN
