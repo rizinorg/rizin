@@ -129,12 +129,11 @@ static char *str_ndup_safe(const ut8 *b, const ut8 *str, ut64 len, const ut8 *en
 	return NULL;
 }
 
-RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf, ut64 off, int bits, RZ_OWN char *file_name) {
+RZ_API RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf, ut64 off, int bits, RZ_BORROW char *file_name) {
 	RzCoreSymCacheElement *result = NULL;
 	ut8 *b = NULL;
 	RzCoreSymCacheElementHdr *hdr = rz_coresym_cache_element_header_new(buf, off, bits);
 	if (!hdr) {
-		free(file_name);
 		return NULL;
 	}
 	if (hdr->version != 1) {

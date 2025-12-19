@@ -186,28 +186,24 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_OWN char *file_name) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_BORROW char *file_name) {
 	D eprintf("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
-		free(file_name);
 		return NULL;
 	}
 	size -= off;
 	if (!size) {
-		free(file_name);
 		return NULL;
 	}
 	ut8 *b = malloc(size);
 	if (!b) {
-		free(file_name);
 		return NULL;
 	}
 	int available = rz_buf_read_at(buf, off, b, size);
 	if (available != size) {
 		RZ_LOG_ERROR("bin: symbols: cannot read at 0x%08x\n", off);
 		free(b);
-		free(file_name);
 		return NULL;
 	}
 	// after the list of sections, there's a bunch of unknown
@@ -245,7 +241,6 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		if (available != size) {
 			RZ_LOG_WARN("bin: symbols: rz_buf_read_at failed\n");
 			free(b);
-			free(file_name);
 			return NULL;
 		}
 		if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
