@@ -1535,9 +1535,22 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 		}
 		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
 	}
-	case MOV_OP_CONST:
-	case MOV_OP_REG:
-		return true;
+	case MOV_OP_CONST: {
+		const char *src_reg = constraint->args[SRC_REG];
+		if (!src_reg) {
+			return false;
+		}
+		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
+	}
+	case MOV_OP_REG: {
+		const char *src_reg = constraint->args[SRC_REG];
+		const char *src_reg_second = constraint->args[SRC_REG_SECOND];
+		if (!src_reg || !src_reg_second) {
+			return false;
+		}
+		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg) &&
+			rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg_second);
+	}
 	default:
 		return false;
 	}
