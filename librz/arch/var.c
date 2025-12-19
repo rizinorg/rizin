@@ -429,7 +429,6 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_add_var(
 	RzAnalysisFunction *fcn, RZ_OWN RzAnalysisVar *var) {
 	rz_return_val_if_fail(fcn && var && var->name && var->type, NULL);
 	if (!var_clean(var)) {
-		rz_analysis_var_free(var);
 		return NULL;
 	}
 	rz_pvector_push(&fcn->vars, var);
