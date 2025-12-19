@@ -98,6 +98,7 @@ static int reloc_target_cmp(const void *a, const void *b, void *user) {
 RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
+		rz_pvector_free(relocs);
 		return NULL;
 	}
 	RzPVector sorter;

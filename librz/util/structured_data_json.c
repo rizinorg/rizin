@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static void builder_json_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block) {
+static void builder_json_new_struct(RZ_NULLABLE void *user, RzStructuredDataBlock block, size_t n_elems) {
 	switch (block) {
 	case RZ_STRUCTURED_DATA_BLOCK_MAP:
 		pj_o((PJ *)user);

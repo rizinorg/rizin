@@ -1,0 +1,423 @@
+NAME=mcs96 byte tests
+FILE=malloc://4096
+CMDS=<<EOF
+e asm.arch=mcs96
+e asm.cpu=8096
+ar
+echo ----
+wx 2010
+ao
+aoj~{}
+echo ----
+wx f0
+ao
+aoj~{}
+echo ----
+wx cc10
+ao
+aoj~{}
+echo ----
+wx a0010203
+ao
+echo ----
+wx a1123412
+ao
+aoj~{}
+echo ----
+wx 65123401
+ao
+aoj~{}
+echo ----
+wx a318041a
+ao
+aoj~{}
+EOF
+EXPECT=<<EOF
+pc = 0x0000
+sp = 0x0000
+psw = 0x0000
+garbage = 0x0000
+garbage = 0x0000
+garbage = 0x0000
+----
+address: 0x0
+opcode: sjmp 0x0010
+disasm: sjmp 0x0010
+mnemonic: sjmp
+mask: ff00
+prefix: 0
+id: 32
+bytes: 2010
+val: 0x00000010
+refptr: 0
+size: 2
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 16
+jump: 0x00000012
+family: cpu
+[
+  {
+    "opcode": "sjmp 0x0010",
+    "disasm": "sjmp 0x0010",
+    "mnemonic": "sjmp",
+    "mask": "ff00",
+    "jump": 18,
+    "sign": false,
+    "prefix": 0,
+    "id": 32,
+    "opex": {
+      "operands": [
+        {
+          "type": "imm",
+          "value": 16
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "2010",
+    "val": 16,
+    "size": 2,
+    "type": "jmp",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+----
+address: 0x0
+opcode: ret
+disasm: ret
+mnemonic: ret
+mask: ff
+prefix: 0
+id: 240
+bytes: f0
+refptr: 0
+size: 1
+sign: false
+type: ret
+cycles: 0
+opex:
+  operands: []
+family: cpu
+stackptr: 2
+[
+  {
+    "opcode": "ret",
+    "disasm": "ret",
+    "mnemonic": "ret",
+    "mask": "ff",
+    "sign": false,
+    "prefix": 0,
+    "id": 240,
+    "opex": {
+      "operands": [
+        
+      ]
+    },
+    "addr": 0,
+    "bytes": "f0",
+    "size": 1,
+    "type": "ret",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 2,
+    "family": "cpu"
+  }
+]
+----
+address: 0x0
+opcode: pop 0x10
+disasm: pop 0x10
+mnemonic: pop
+mask: ffff
+prefix: 0
+id: 204
+bytes: cc10
+refptr: 0
+size: 2
+sign: false
+type: pop
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: 16
+family: cpu
+stackptr: 2
+[
+  {
+    "opcode": "pop 0x10",
+    "disasm": "pop 0x10",
+    "mnemonic": "pop",
+    "mask": "ffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 204,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": 16
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "cc10",
+    "size": 2,
+    "type": "pop",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 2,
+    "family": "cpu"
+  }
+]
+----
+address: 0x0
+opcode: ld 0x02 0x01
+disasm: ld 0x02 0x01
+mnemonic: ld
+mask: ff0000
+prefix: 0
+id: 160
+bytes: a00102
+ptr: 0x00000201
+refptr: 2
+size: 3
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: 2
+    - type: "reg"
+      value: 1
+family: cpu
+----
+address: 0x0
+opcode: ld 0x12 0x3412
+disasm: ld 0x12 0x3412
+mnemonic: ld
+mask: ffffffff
+prefix: 0
+id: 161
+bytes: a1123412
+val: 0x00003412
+refptr: 0
+size: 4
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: 18
+    - type: "imm"
+      value: 13330
+family: cpu
+[
+  {
+    "opcode": "ld 0x12 0x3412",
+    "disasm": "ld 0x12 0x3412",
+    "mnemonic": "ld",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 161,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": 18
+        },
+        {
+          "type": "imm",
+          "value": 13330
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a1123412",
+    "val": 13330,
+    "size": 4,
+    "type": "load",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+----
+address: 0x0
+opcode: add 0x01 0x3412
+disasm: add 0x01 0x3412
+mnemonic: add
+mask: ffffffff
+prefix: 0
+id: 101
+bytes: 65123401
+val: 0x00003412
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: 1
+    - type: "imm"
+      value: 13330
+family: cpu
+[
+  {
+    "opcode": "add 0x01 0x3412",
+    "disasm": "add 0x01 0x3412",
+    "mnemonic": "add",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 101,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": 1
+        },
+        {
+          "type": "imm",
+          "value": 13330
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "65123401",
+    "val": 13330,
+    "size": 4,
+    "type": "add",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+----
+address: 0x0
+opcode: ld 0x1a 0x04[0x18]
+disasm: ld 0x1a 0x04[0x18]
+mnemonic: ld
+mask: ffffffff
+prefix: 0
+id: 163
+bytes: a318041a
+refptr: 0
+size: 4
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: 26
+    - type: "mem"
+      value: 24
+      disp: 4
+family: cpu
+[
+  {
+    "opcode": "ld 0x1a 0x04[0x18]",
+    "disasm": "ld 0x1a 0x04[0x18]",
+    "mnemonic": "ld",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 163,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": 26
+        },
+        {
+          "type": "mem",
+          "value": 24,
+          "disp": 4
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "a318041a",
+    "size": 4,
+    "type": "load",
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+RUN
+
+NAME=mcs96 fib.bin tests
+FILE=bins/mcs96/fib.bin
+ARGS=-m 0x2080
+CMDS=<<EOF
+e asm.arch=mcs96
+e asm.cpu=8096
+aaa
+pdf
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from fcn.00002080 @ 0x2098, 0x20a7
+/ fcn.00002080();
+|           0x00002080      push  0x1a                                 ; [0xa31a:2]=0xffff
+|           0x00002082      ld    0x1a 0x04[0x18]
+|           0x00002086      cmp   0x1a 0x0001
+|       ,=< 0x0000208a      jgt   0x05
+|       |   0x0000208c      ld    0x1c 0x1a                            ; [0x1c1a:2]=0xffff
+|      ,==< 0x0000208f      sjmp  0x0026
+|      |`-> 0x00002091      ld    0x1c 0x1a                            ; [0x1c1a:2]=0xffff
+|      |    0x00002094      dec   0x1c
+|      |    0x00002096      push  0x1c                                 ; [0x2f1c:2]=0xffff
+|      |    0x00002098      scall 0xffe6
+|      |    0x0000209a      add   0x18 0x0002
+|      |    0x0000209e      push  0x1c                                 ; [0x491c:2]=0xffff
+|      |    0x000020a0      sub   0x1c 0x1a 0x0002
+|      |    0x000020a5      push  0x1c                                 ; [0x2f1c:2]=0xffff
+|      |    0x000020a7      scall 0xffd7
+|      |    0x000020a9      add   0x18 0x0002
+|      |    0x000020ad      pop   0x1e
+|      |    0x000020af      add   0x1e 0x1c                            ; [0x1e1c:2]=0xffff
+|      |    0x000020b2      ld    0x1c 0x1e                            ; [0x1c1e:2]=0xffff
+|      |,=< 0x000020b5      sjmp  0x0000
+|      ||   ; CODE XREFS from fcn.00002080 @ 0x208f, 0x20b5
+|      ``-> 0x000020b7      pop   0x1a
+\           0x000020b9      ret
+EOF
+RUN
+

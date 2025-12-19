@@ -49,3 +49,50 @@ EXPECT=<<EOF
 6295544
 EOF
 RUN
+
+NAME=axtl
+FILE=bins/elf/vim
+CMDS=<<EOF
+aaa
+axtl @ sym.mf_write
+EOF
+EXPECT=<<EOF
+;------------------------------------------
+void sym.mf_release(unsigned long long arg1, int64_t arg2, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h, int64_t arg_10h);
+; Xref from: sym.mf_release @ 0x00219836
+|       :   0x00219830      mov   rsi, rbx                             ; int64_t arg2
+|       :   0x00219833      mov   rdi, rbp                             ; int64_t arg1
+|       :   0x00219836      call  sym.mf_write
+|       :   0x0021983b      test  eax, eax
+|       `=< 0x0021983d      jz    0x2197b0
+|           0x00219843      mov   rax, qword [rbx+0x18]
+;------------------------------------------
+void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, int64_t arg_490h);
+; Xref from: sym.mf_sync @ 0x0021a454
+|           ; CODE XREF from sym.mf_sync @ 0x21a5c3
+|           0x0021a44e      mov   rsi, rbx                             ; int64_t arg2
+|           0x0021a451      mov   rdi, rbp                             ; int64_t arg1
+|           0x0021a454      call  sym.mf_write
+|           0x0021a459      test  eax, eax
+|       ,=< 0x0021a45b      jnz   0x21a469
+|       |   0x0021a45d      test  r13d, r13d
+;------------------------------------------
+void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, int64_t arg_490h);
+; Xref from: sym.mf_sync @ 0x0021a59d
+|           0x0021a597      mov   rdi, rbp                             ; int64_t arg1
+|           0x0021a59a      xor   r13d, r13d
+|           0x0021a59d      call  sym.mf_write
+|           0x0021a5a2      test  eax, eax
+|           0x0021a5a4      setnz r13b
+|           0x0021a5a8      test  r14d, r14d
+;------------------------------------------
+void sym.mf_release_all(int64_t arg_10h, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h);
+; Xref from: sym.mf_release_all @ 0x0021a756
+|       :   0x0021a750      mov   rsi, rbx                             ; int64_t arg2
+|       :   0x0021a753      mov   rdi, rbp                             ; int64_t arg1
+|       :   0x0021a756      call  sym.mf_write
+|       :   0x0021a75b      test  eax, eax
+|       `=< 0x0021a75d      jz    0x21a726
+|           0x0021a75f      mov   rax, qword [rbx+0x18]
+EOF
+RUN

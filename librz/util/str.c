@@ -2809,10 +2809,19 @@ RZ_API size_t rz_str_len_utf8char(const char *s, int left) {
 	return i;
 }
 
-RZ_API size_t rz_str_len_utf8(const char *s) {
+/**
+ * \brief Returns the number of console columns that a UTF-8 string will occupy.
+ * A normal (halfwidth) character like 'A' will occupy 1 column, a fullwidth
+ * character like U+2329 (〈) will occupy 2 columns.
+ *
+ * \param s A UTF-8 string.
+ * \return The number of console columns for `s`.
+ */
+RZ_API size_t rz_str_utf8_cols(const char *s) {
 	size_t i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {
 		if ((s[i] & 0xc0) != 0x80) {
+			// TODO Zero-width chars; human emoji
 			j++;
 			if (rz_str_char_fullwidth(s + i, 4)) {
 				fullwidths++;

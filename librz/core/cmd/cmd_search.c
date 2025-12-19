@@ -1940,21 +1940,30 @@ error:
 	return RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus value_range_search(RzCore *core, RZ_OWN RzVector /*<RzSearchValueRange>*/ *ranges, RzCmdStateOutput *state) {
+static RzCmdStatus byte_pattern_search(RzCore *core,
+	RZ_OWN RzSearchBytesPattern *pattern,
+	RzCmdStateOutput *state)
+{
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 
 	CMD_SEARCH_BEGIN();
 
-	bool progress = !rz_str_is_false(rz_config_get(core->config, "search.show_progress"));
-	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
-		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+	if (!pattern) {
+		RZ_LOG_ERROR("Failed to parse given pattern.\n");
 		goto error;
 	}
-	hits = rz_core_search_values(core, search_opts, ranges);
+	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		rz_search_bytes_pattern_free(pattern);
+		goto error;
+	}
+	hits = rz_core_search_bytes(core, search_opts, pattern);
 	if (!hits) {
 		RZ_LOG_ERROR("Failed to perform search.\n");
 		goto error;
@@ -1970,6 +1979,7 @@ error:
 	CMD_SEARCH_END();
 	return RZ_CMD_STATUS_ERROR;
 }
+
 
 // "/+"
 RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

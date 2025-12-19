@@ -128,15 +128,51 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, size_t len) {
 	return true;
 }
 
-RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
+/**
+ * \brief Reads from the IO memory cache.
+ *
+ * Note: This function skips over wholes in the cache while reading.
+ * Example:
+ *
+ * ```
+ * // Write two times 5 bytes. Creates two caches with a hole in between 5-9.
+ * rz_io_cache_write(io, 0, (ut8 *)"AAAAA", 5);
+ * rz_io_cache_write(io, 10, (ut8 *)"BBBBB", 5);
+ *
+ * size_t copied = 0;
+ * ut8 buf[15] = { 0 };
+ * // It reads only 10 bytes, skipping the hole.
+ * assert(rz_io_cache_read(io, 0, buf, 15, &copied));
+ * assert(copied == 10);
+ * assert(memcmp(buf, "AAAAA\0\0\0\0\0BBBBB") == 0);
+ * ```
+ *
+ * \param io The IO instance to read from.
+ * \param addr The address to read from.
+ * \param buf The buffer with a size of at least \p len bytes to store the data.
+ * \param len Number of bytes to read starting at \p addr.
+ * \param copied If not NULL, the number of copied bytes are written into it.
+ *
+ * \return True if copy succeeded (also in case of 0 bytes copied). False in case of error.
+ */
+RZ_API bool rz_io_cache_read(RZ_BORROW RZ_NONNULL RzIO *io,
+	ut64 addr,
+	RZ_OUT RZ_NONNULL ut8 *buf,
+	size_t len,
+	RZ_OUT RZ_NULLABLE size_t *copied) {
 	rz_return_val_if_fail(io && buf, false);
 	RzSkyline *skyline = &io->cache_skyline;
 	if (!len) {
 		return true;
 	}
+	if (copied) {
+		*copied = 0;
+	}
 	if (UT64_ADD_OVFCHK(addr, len)) {
-		const ut64 first_len = UT64_MAX - addr;
-		rz_io_cache_read(io, 0, buf + first_len, len - first_len);
+		ut64 first_len = UT64_MAX - addr;
+		if (!rz_io_cache_read(io, 0, buf + first_len, len - first_len, copied)) {
+			return false;
+		}
 		len = first_len;
 	}
 	const RzSkylineItem *iter = rz_skyline_get_item_intersect(skyline, addr, len);
@@ -144,7 +180,6 @@ RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 		return false;
 	}
 	const RzSkylineItem *last = (RzSkylineItem *)skyline->v.a + skyline->v.len;
-	bool covered = false;
 	while (iter != last) {
 		const ut64 begin = rz_itv_begin(iter->itv);
 		const st64 addr_offset = begin - addr;
@@ -159,11 +194,13 @@ RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
 		const ut64 cache_offset = begin - rz_itv_begin(cache->itv) + cache_shift;
 		const ut64 read = RZ_MIN(left, rz_itv_size(iter->itv) - cache_shift);
 		memcpy(buf + buf_offset, cache->data + cache_offset, read);
-		covered = true;
+		if (copied) {
+			*copied += read;
+		}
 		if (left - read <= 0) {
 			break;
 		}
 		iter++;
 	}
-	return covered;
+	return true;
 }

@@ -442,7 +442,7 @@ static RzDetectedString *setup_str_regex(const char *re_pattern, RzRegexFlags cf
 	if (!ds) {
 		RZ_LOG_ERROR("Failed allocate memory for RzDetectedString\n");
 		free(re_pattern_clone);
-		rz_regex_free(re);
+		rz_regex_free_multi(re);
 		return NULL;
 	}
 	ds->string = re_pattern_clone;

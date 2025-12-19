@@ -201,86 +201,95 @@ static bool cc_holds_cond(arm64_cc cc) {
 #endif
 }
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *arm_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_arm *x = &insn->detail->arm;
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_arm_op *op = x->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case ARM_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case ARM_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base != ARM_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
 			if (op->mem.index != ARM_REG_INVALID) {
-				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
+				rz_structured_data_map_add_string(operand, "index", cs_reg_name(handle, op->mem.index));
 			}
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_ki(pj, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
 		case ARM_OP_FP:
-			pj_ks(pj, "type", "fp");
-			pj_kd(pj, "value", op->fp);
+			rz_structured_data_map_add_string(operand, "type", "fp");
+			rz_structured_data_map_add_double(operand, "value", op->fp);
 			break;
 		case ARM_OP_CIMM:
-			pj_ks(pj, "type", "cimm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "cimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_PIMM:
-			pj_ks(pj, "type", "pimm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "pimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_SETEND:
-			pj_ks(pj, "type", "setend");
+			rz_structured_data_map_add_string(operand, "type", "setend");
 			switch (op->setend) {
 			case ARM_SETEND_BE:
-				pj_ks(pj, "value", "be");
+				rz_structured_data_map_add_string(operand, "value", "be");
 				break;
 			case ARM_SETEND_LE:
-				pj_ks(pj, "value", "le");
+				rz_structured_data_map_add_string(operand, "value", "le");
 				break;
 			default:
-				pj_ks(pj, "value", "invalid");
+				rz_structured_data_map_add_string(operand, "value", "invalid");
 				break;
 			}
 			break;
 		case ARM_OP_SYSREG: {
-			pj_ks(pj, "type", "sysreg");
+			rz_structured_data_map_add_string(operand, "type", "sysreg");
 			const char *reg = cs_reg_name(handle, op->reg);
 			if (reg) {
-				pj_ks(pj, "value", reg);
+				rz_structured_data_map_add_string(operand, "value", reg);
 			}
 			break;
 		}
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM_SFT_INVALID) {
-			pj_ko(pj, "shift");
+			RzStructuredData *shift = rz_structured_data_map_add_map(operand, "shift");
 			switch (op->shift.type) {
 			case ARM_SFT_ASR:
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSR:
 			case ARM_SFT_ROR:
 			case ARM_SFT_RRX:
-				pj_ks(pj, "type", shift_type_name(op->shift.type));
-				pj_kn(pj, "value", (ut64)op->shift.value);
+				rz_structured_data_map_add_string(shift, "type", shift_type_name(op->shift.type));
+				rz_structured_data_map_add_unsigned(shift, "value", (ut64)op->shift.value, false);
 				break;
 			case ARM_SFT_ASR_REG:
 			case ARM_SFT_LSL_REG:
@@ -289,65 +298,59 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #if CS_NEXT_VERSION < 6
 			case ARM_SFT_RRX_REG:
 #endif
-				pj_ks(pj, "type", shift_type_name(op->shift.type));
-				pj_ks(pj, "value", cs_reg_name(handle, op->shift.value));
+				rz_structured_data_map_add_string(shift, "type", shift_type_name(op->shift.type));
+				rz_structured_data_map_add_string(shift, "value", cs_reg_name(handle, op->shift.value));
 				break;
 			default:
 				break;
 			}
-			pj_end(pj); /* o shift */
 		}
 		if (op->vector_index != -1) {
-			pj_ki(pj, "vector_index", op->vector_index);
+			rz_structured_data_map_add_signed(operand, "vector_index", op->vector_index);
 		}
 		if (op->subtracted) {
-			pj_kb(pj, "subtracted", true);
+			rz_structured_data_map_add_boolean(operand, "subtracted", true);
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
 	if (x->usermode) {
-		pj_kb(pj, "usermode", true);
+		rz_structured_data_map_add_boolean(opex, "usermode", true);
 	}
 	if (x->update_flags) {
-		pj_kb(pj, "update_flags", true);
+		rz_structured_data_map_add_boolean(opex, "update_flags", true);
 	}
 #if CS_NEXT_VERSION >= 6
 	if (insn->detail->writeback) {
 #else
 	if (x->writeback) {
 #endif
-		pj_kb(pj, "writeback", true);
+		rz_structured_data_map_add_boolean(opex, "writeback", true);
 	}
 	if (x->vector_size) {
-		pj_ki(pj, "vector_size", x->vector_size);
+		rz_structured_data_map_add_signed(opex, "vector_size", x->vector_size);
 	}
 	if (x->vector_data != ARM_VECTORDATA_INVALID) {
-		pj_ks(pj, "vector_data", vector_data_type_name(x->vector_data));
+		rz_structured_data_map_add_string(opex, "vector_data", vector_data_type_name(x->vector_data));
 	}
 	if (x->cps_mode != ARM_CPSMODE_INVALID) {
-		pj_ki(pj, "cps_mode", x->cps_mode);
+		rz_structured_data_map_add_signed(opex, "cps_mode", x->cps_mode);
 	}
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
-		pj_ki(pj, "cps_flag", x->cps_flag);
+		rz_structured_data_map_add_signed(opex, "cps_flag", x->cps_flag);
 	}
 #if CS_NEXT_VERSION >= 6
 	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
-		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", ARMCondCodeToString(x->cc));
 	}
 #else
 	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
-		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", ARMCondCodeToString(x->cc));
 	}
 #endif
 	if (x->mem_barrier != ARM_MB_RESERVED_0) {
-		pj_ki(pj, "mem_barrier", x->mem_barrier - 1);
+		rz_structured_data_map_add_signed(opex, "mem_barrier", x->mem_barrier - 1);
 	}
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static const char *cc_name64(arm64_cc cc) {
@@ -462,187 +465,235 @@ static const char *vess_name(arm64_vess vess) {
 }
 #endif
 
-static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *aarch64_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_arm64 *x = &insn->detail->arm64;
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_arm64_op *op = x->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case ARM64_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case ARM64_OP_REG_MRS:
-			pj_ks(pj, "type", "reg_mrs");
+			rz_structured_data_map_add_string(operand, "type", "reg_mrs");
 			// TODO value
 			break;
 		case ARM64_OP_REG_MSR:
-			pj_ks(pj, "type", "reg_msr");
+			rz_structured_data_map_add_string(operand, "type", "reg_msr");
 			// TODO value
 			break;
 		case ARM64_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM64_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base != ARM64_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
 			if (op->mem.index != ARM64_REG_INVALID) {
-				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
+				rz_structured_data_map_add_string(operand, "index", cs_reg_name(handle, op->mem.index));
 			}
-			pj_ki(pj, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
 		case ARM64_OP_FP:
-			pj_ks(pj, "type", "fp");
-			pj_kd(pj, "value", op->fp);
+			rz_structured_data_map_add_string(operand, "type", "fp");
+			rz_structured_data_map_add_double(operand, "value", op->fp);
 			break;
 		case ARM64_OP_CIMM:
-			pj_ks(pj, "type", "cimm");
-			pj_kN(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "cimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 #if CS_NEXT_VERSION < 6
 		case ARM64_OP_PSTATE:
-			pj_ks(pj, "type", "pstate");
+			rz_structured_data_map_add_string(operand, "type", "pstate");
 			switch (op->pstate) {
 			case ARM64_PSTATE_SPSEL:
-				pj_ks(pj, "value", "spsel");
+				rz_structured_data_map_add_string(operand, "value", "spsel");
 				break;
 			case ARM64_PSTATE_DAIFSET:
-				pj_ks(pj, "value", "daifset");
+				rz_structured_data_map_add_string(operand, "value", "daifset");
 				break;
 			case ARM64_PSTATE_DAIFCLR:
-				pj_ks(pj, "value", "daifclr");
+				rz_structured_data_map_add_string(operand, "value", "daifclr");
 				break;
 			default:
-				pj_ki(pj, "value", op->pstate);
+				rz_structured_data_map_add_unsigned(operand, "value", op->pstate, true);
 			}
 			break;
 		case ARM64_OP_SYS:
-			pj_ks(pj, "type", "sys");
-			pj_kn(pj, "value", (ut64)op->sys);
+			rz_structured_data_map_add_string(operand, "type", "sys");
+			rz_structured_data_map_add_unsigned(operand, "value", (ut64)op->sys, false);
 			break;
 		case ARM64_OP_PREFETCH:
-			pj_ks(pj, "type", "prefetch");
-			pj_ki(pj, "value", op->prefetch - 1);
+			rz_structured_data_map_add_string(operand, "type", "prefetch");
+			rz_structured_data_map_add_unsigned(operand, "value", op->prefetch - 1, false);
 			break;
 		case ARM64_OP_BARRIER:
-			pj_ks(pj, "type", "prefetch");
-			pj_ki(pj, "value", op->barrier - 1);
+			rz_structured_data_map_add_string(operand, "type", "prefetch");
+			rz_structured_data_map_add_unsigned(operand, "value", op->barrier - 1, false);
 			break;
 #else
+		case AARCH64_OP_SYSREG: {
+			rz_structured_data_map_add_string(operand, "type", "sysreg");
+			rz_structured_data_map_add_unsigned(operand, "sysreg", op->sysop.reg.sysreg, true);
+			rz_structured_data_map_add_unsigned(operand, "tlbi", op->sysop.reg.tlbi, true);
+			rz_structured_data_map_add_unsigned(operand, "ic", op->sysop.reg.ic, true);
+			break;
+		}
+		case AARCH64_OP_SYSIMM: {
+			rz_structured_data_map_add_string(operand, "type", "sysimm");
+			switch (op->sysop.imm.dbnxs) {
+			case AARCH64_DBNXS_ISHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "ishnxs");
+				break;
+			case AARCH64_DBNXS_NSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "nshnxs");
+				break;
+			case AARCH64_DBNXS_OSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "oshnxs");
+				break;
+			case AARCH64_DBNXS_SYNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "synxs");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "dbnxs", op->sysop.imm.dbnxs, true);
+				break;
+			}
+			switch (op->sysop.imm.exactfpimm) {
+			case AARCH64_EXACTFPIMM_HALF:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "half");
+				break;
+			case AARCH64_EXACTFPIMM_ONE:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "one");
+				break;
+			case AARCH64_EXACTFPIMM_TWO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "two");
+				break;
+			case AARCH64_EXACTFPIMM_ZERO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "zero");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "exactfpimm", op->sysop.imm.exactfpimm, true);
+				break;
+			}
+			break;
+		}
 		case AARCH64_OP_SYSALIAS:
 			switch (op->sysop.sub_type) {
 			default:
-				pj_ks(pj, "type", "sys");
-				pj_kn(pj, "value", op->sysop.alias.raw_val);
+				rz_structured_data_map_add_string(operand, "type", "sys");
+				rz_structured_data_map_add_unsigned(operand, "value", op->sysop.alias.raw_val, false);
 				break;
 			case AARCH64_OP_PSTATEIMM0_1:
-				pj_ks(pj, "type", "pstate");
-				pj_ki(pj, "value", op->sysop.alias.pstateimm0_1);
+				rz_structured_data_map_add_string(operand, "type", "pstate");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.pstateimm0_1);
 				break;
 			case AARCH64_OP_PSTATEIMM0_15:
-				pj_ks(pj, "type", "pstate");
+				rz_structured_data_map_add_string(operand, "type", "pstate");
 				switch (op->sysop.alias.pstateimm0_15) {
 				case AARCH64_PSTATEIMM0_15_SPSEL:
-					pj_ks(pj, "value", "spsel");
+					rz_structured_data_map_add_string(operand, "value", "spsel");
 					break;
 				case AARCH64_PSTATEIMM0_15_DAIFSET:
-					pj_ks(pj, "value", "daifset");
+					rz_structured_data_map_add_string(operand, "value", "daifset");
 					break;
 				case AARCH64_PSTATEIMM0_15_DAIFCLR:
-					pj_ks(pj, "value", "daifclr");
+					rz_structured_data_map_add_string(operand, "value", "daifclr");
 					break;
 				default:
-					pj_ki(pj, "value", op->sysop.alias.pstateimm0_15);
+					rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.pstateimm0_15);
 				}
 				break;
 			case AARCH64_OP_PRFM:
-				pj_ks(pj, "type", "prefetch");
-				pj_ki(pj, "value", op->sysop.alias.prfm);
+				rz_structured_data_map_add_string(operand, "type", "prefetch");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.prfm);
 				break;
 			case AARCH64_OP_DB:
-				pj_ks(pj, "type", "prefetch");
-				pj_ki(pj, "value", op->sysop.alias.db);
+				rz_structured_data_map_add_string(operand, "type", "prefetch");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.db);
 				break;
 			}
 			break;
 #endif
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM64_SFT_INVALID) {
-			pj_ko(pj, "shift");
+			RzStructuredData *shift = rz_structured_data_map_add_map(operand, "shift");
 			switch (op->shift.type) {
 			case ARM64_SFT_LSL:
-				pj_ks(pj, "type", "lsl");
+				rz_structured_data_map_add_string(shift, "type", "lsl");
 				break;
 			case ARM64_SFT_MSL:
-				pj_ks(pj, "type", "msl");
+				rz_structured_data_map_add_string(shift, "type", "msl");
 				break;
 			case ARM64_SFT_LSR:
-				pj_ks(pj, "type", "lsr");
+				rz_structured_data_map_add_string(shift, "type", "lsr");
 				break;
 			case ARM64_SFT_ASR:
-				pj_ks(pj, "type", "asr");
+				rz_structured_data_map_add_string(shift, "type", "asr");
 				break;
 			case ARM64_SFT_ROR:
-				pj_ks(pj, "type", "ror");
+				rz_structured_data_map_add_string(shift, "type", "ror");
 				break;
 			default:
 				break;
 			}
-			pj_kn(pj, "value", (ut64)op->shift.value);
-			pj_end(pj);
+			rz_structured_data_map_add_unsigned(shift, "value", (ut64)op->shift.value, false);
 		}
 		if (op->ext != ARM64_EXT_INVALID) {
-			pj_ks(pj, "ext", extender_name(op->ext));
+			rz_structured_data_map_add_string(operand, "ext", extender_name(op->ext));
 		}
 		if (op->vector_index != -1) {
-			pj_ki(pj, "vector_index", op->vector_index);
+			rz_structured_data_map_add_signed(operand, "vector_index", op->vector_index);
 		}
 #if CS_NEXT_VERSION < 6
 		if (op->vas != ARM64_VAS_INVALID) {
 #else
 		if (op->vas != AARCH64LAYOUT_INVALID) {
 #endif
-			pj_ks(pj, "vas", vas_name(op->vas));
+			rz_structured_data_map_add_string(operand, "vas", vas_name(op->vas));
 		}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
-			pj_ks(pj, "vess", vess_name(op->vess));
+			rz_structured_data_map_add_string(operand, "vess", vess_name(op->vess));
 		}
 #endif
-		pj_end(pj);
 	}
-	pj_end(pj);
 	if (x->update_flags) {
-		pj_kb(pj, "update_flags", true);
+		rz_structured_data_map_add_boolean(opex, "update_flags", true);
 	}
 #if CS_NEXT_VERSION < 6
 	if (x->writeback) {
 #else
 	if (insn->detail->writeback) {
 #endif
-		pj_kb(pj, "writeback", true);
+		rz_structured_data_map_add_boolean(opex, "writeback", true);
 	}
 	if (cc_holds_cond(x->cc)) {
-		pj_ks(pj, "cc", cc_name64(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", cc_name64(x->cc));
 	}
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int cond_cs2rz_32(int cc) {
@@ -2139,7 +2190,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		if (a->bits == 64) {
 			anop64(ctx, op, insn);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex64(&op->opex, ctx->handle, insn);
+				op->opex = aarch64_opex(ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_64_esil(a, op, addr, buf, len, &ctx->handle, insn);
@@ -2150,7 +2201,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		} else {
 			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex(&op->opex, ctx->handle, insn);
+				op->opex = arm_opex(ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_32_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
