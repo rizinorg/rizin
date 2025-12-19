@@ -181,7 +181,6 @@ static bool load_elf_obj_data(RZ_OUT RzBinMdtPart *part, RZ_OWN RzBinElfSegment 
 	elf = Elf32_rz_bin_elf_new_buf(vfile->buf, &obj_opts);
 	if (!elf) {
 		RZ_LOG_ERROR("Failed to load segment '%s' as ELF.\n", part->name);
-		free(segment);
 		rz_buf_free(vfile->buf);
 		rz_bin_map_free(map);
 		free(vfile);

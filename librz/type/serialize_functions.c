@@ -84,7 +84,6 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		RzCallableArg *arg = rz_type_callable_arg_new(typedb, argument_name, ttype);
 		if (!arg) {
 			free(values);
-			rz_type_free(ttype);
 			goto error;
 		}
 		free(values);
