@@ -5184,6 +5184,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 		hist->h = h;
 		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
 		rz_cons_canvas_write(hist->can, str->ptr);
+		rz_strbuf_free(str);
 		rz_cons_canvas_print_region(hist->can);
 		rz_cons_newline();
 		rz_cons_visual_flush();

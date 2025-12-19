@@ -132,11 +132,15 @@ static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
 	char *wildcard = rz_regex_create_wildcard_pattern(opt->min_length, 0);
 	if (!wildcard) {
 		RZ_LOG_ERROR("bin_file_strings: Failed to create wildcard pattern!\n");
+		rz_search_collection_free(collection);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	if (!rz_search_collection_string_add(collection, wildcard, RZ_REGEX_EXTENDED, match_alignment, opt->string_encoding)) {
 		RZ_LOG_ERROR("bin_file_strings: Failed to add wildcard pattern!\n");
+		free(wildcard);
 		rz_search_collection_free(collection);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	free(wildcard);

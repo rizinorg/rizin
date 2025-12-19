@@ -17,6 +17,7 @@
 		mu_assert_notnull(node, "node is not null (" #name ")"); \
 		mu_assert_eq(rz_list_length(node->child_list), n_childs, "node contains one child (" #name ")"); \
 		rz_sign_flirt_node_free(node); \
+		rz_buf_free(buffer); \
 		mu_end; \
 	}
 
