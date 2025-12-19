@@ -46,28 +46,32 @@ RZ_IPI bool gns1_check_buffer(RzBuffer *b) {
 		rz_return_val_if_fail(b, false);
 
 		ut64 buf_size = rz_buf_size(b);
+		// Check minimum file size for a valid GNS1 binary
 		if (buf_size < GNS1_MIN_FILE_SIZE) {
 			return false;
 		}
 
 		ut64 offset = 0;
 		Gns1SegmentEntry first_entry;
+		// Parse the first segment entry from the segment table
 		if (!gns1_read_segment(b, &offset, &first_entry)) {
 			return false;
 		}
 
-		// Check size and offset validity before using them
+		// Validate segment size is nonzero and does not exceed file size
 		if (first_entry.size == 0 || first_entry.size > buf_size) {
 			return false;
 		}
+		// Validate segment offset is within file and at least 0x64 (per format spec)
 		if (first_entry.offset < 0x64 || first_entry.offset >= buf_size) {
 			return false;
 		}
+		// Validate segment does not overflow file bounds
 		if (first_entry.offset + first_entry.size > buf_size) {
 			return false;
 		}
 
-		// Only after all checks, read the marker
+		// Check for required zero marker before segment data (end-of-table marker)
 		ut32 marker = 0;
 		if (!rz_buf_read_le32_at(b, first_entry.offset - 4, &marker) || marker != 0) {
 			return false;
@@ -81,7 +85,7 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 	rz_return_val_if_fail(bf && obj && b, false);
 
 	Gns1Obj *gns1 = RZ_NEW0(Gns1Obj);
-	// base condition checks
+	// Check allocation for GNS1 object
 	if (!gns1) {
 		return false;
 	}
@@ -92,26 +96,27 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 		return false;
 	}
 
-	// parse segment table
+	// Parse segment table entries from buffer
 	ut64 offset = 0;
 	Gns1SegmentEntry entry;
 	int consecutive_invalid = 0;
 	ut64 file_size = rz_buf_size(b);
 
 	while (gns1_read_segment(b, &offset, &entry)) {
-		// end of segment table check (only size==0 is required, per reference loader)
+		// End of segment table: size==0 marks end (per reference loader)
 		if (entry.size == 0) {
 			break;
 		}
 
-		// skipping zero size segments
+		// Skip segments with zero size (redundant, but defensive)
 		if (entry.size == 0) {
 			break;
 		}
 
-		// skip if too many invalid segments
+		// Validate segment offset and size are within file bounds
 		if (entry.offset >= file_size || entry.offset + entry.size > file_size) {
 			consecutive_invalid++;
+			// If 3 consecutive invalid segments, stop parsing (prevents infinite loop)
 			if (consecutive_invalid >= 3) {
 				break;
 			}
@@ -123,13 +128,14 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 		rz_vector_push(gns1->segments, &entry);
 		gns1->num_segments++;
 
-		// safety limit
+		// Safety limit: avoid excessive segment count (possible corruption)
 		if (gns1->num_segments > 1000) {
 			RZ_LOG_ERROR("GNS1: too many segments, file may be corrupted\n");
 			break;
 		}
 	}
 
+	// Fail if no valid segments were found
 	if (gns1->num_segments == 0) {
 		RZ_LOG_ERROR("GNS1: no valid segments found\n");
 		rz_vector_free(gns1->segments);
