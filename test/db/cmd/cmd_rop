@@ -2877,6 +2877,7 @@ e asm.bits=32
 /Rk eax=1
 /Rk ecx=0
 /Rk eax=1,ecx=0
+echo "Expected no results"
 /Rk eax=0
 /Rk invalidconstraint
 EOF
