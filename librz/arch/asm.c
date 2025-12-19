@@ -1346,6 +1346,7 @@ RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) 
 		spp_eval(lbuf, &out);
 		free(lbuf);
 		lbuf = rz_str_dup(rz_strbuf_get(out.cout));
+		rz_strbuf_free(out.cout);
 	}
 	acode = rz_asm_massemble(a, lbuf);
 	free(lbuf);
