@@ -321,6 +321,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			// Request the successor effects over the queue.
 			while (!rz_vector_empty(tmp_succ_addr)) {
 				rz_vector_pop_front(tmp_succ_addr, addr);
+				if (*addr == UT64_MAX || *addr == 0) {
+					// Obviously wrong address.
+					goto loop_cleanup;
+				}
 				SuccessorState ss = { .addr = *addr, .in_state_hash = out_hash };
 				// The successors are pushed in the same order into the succ_states
 				// vector, as they are requested over the addr_queue.
