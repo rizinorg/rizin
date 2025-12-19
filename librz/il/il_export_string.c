@@ -1119,6 +1119,40 @@ RZ_API void rz_il_event_stringify(RZ_NONNULL const RzILEvent *evt, RZ_NONNULL Rz
  * Get a readable representation of \p code
  * \return constant string, must not be freed
  */
+RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code) {
+	switch (code) {
+	case RZ_IL_OP_STORE:
+		return "store";
+	case RZ_IL_OP_STOREW:
+		return "storew";
+	case RZ_IL_OP_EMPTY:
+		return "empty";
+	case RZ_IL_OP_NOP:
+		return "nop";
+	case RZ_IL_OP_SET:
+		return "set";
+	case RZ_IL_OP_JMP:
+		return "jmp";
+	case RZ_IL_OP_GOTO:
+		return "goto";
+	case RZ_IL_OP_SEQ:
+		return "seq";
+	case RZ_IL_OP_BLK:
+		return "blk";
+	case RZ_IL_OP_REPEAT:
+		return "repeat";
+	case RZ_IL_OP_BRANCH:
+		return "branch";
+	case RZ_IL_OP_EFFECT_MAX:
+		break;
+	}
+	return "invalid";
+}
+
+/**
+ * Get a readable representation of \p code
+ * \return constant string, must not be freed
+ */
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code) {
 	switch (code) {
 	case RZ_IL_OP_VAR:
