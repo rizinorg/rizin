@@ -804,7 +804,11 @@ static HexInsnContainer *hex_add_to_stale_pkt(HexState *state, const HexInsnCont
 	return hic;
 }
 
-#if RZ_BUILD_DEBUG
+// This code is rather useful to analyze bugs in the instruction cache.
+// It is out-commented because it spams performance meassurements and debug logs.
+// Once the Hexagon plugin is refactored, it can be removed because hopefully
+// the cache is no longer necessary.
+#if 0
 static char desc_letter_hic(const HexInsnContainer *hic) {
 	char desc = ' ';
 	if (!hic) {
@@ -821,7 +825,7 @@ static char desc_letter_hic(const HexInsnContainer *hic) {
 #endif
 
 static void print_state_pkt(const HexState *state, st32 index, HexBufferAction action, const HexInsnContainer *new_hic) {
-#if RZ_BUILD_DEBUG
+#if 0
 	ut32 oldest = 7;
 	ut32 newest = 0;
 	ut64 min_time = 0xffffffffffffffff;
