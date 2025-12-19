@@ -399,15 +399,15 @@ bool test_rz_str_utf8_ansi_cols(void) {
 	mu_assert_eq(len, 7, "len(ascii + ansi ending with H)");
 
 	len = rz_str_utf8_ansi_cols("r\xc3\xa4"
-				   "dare2");
+				    "dare2");
 	mu_assert_eq(len, 7, "len(ascii + 2 byte utf-8 counted as 1 char)");
 
 	len = rz_str_utf8_ansi_cols("radar\xe2\x82\xac"
-				   "2");
+				    "2");
 	mu_assert_eq(len, 7, "len(ascii + 3 byte utf-8 counted as 1 char)");
 
 	len = rz_str_utf8_ansi_cols("radar\xf0\x9d\x84\x9e"
-				   "2");
+				    "2");
 	mu_assert_eq(len, 7, "len(ascii + 4 byte utf-8 counted as 1 char)");
 
 	mu_end;
