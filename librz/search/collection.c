@@ -5,12 +5,12 @@
 #include <rz_search.h>
 #include "search_internal.h"
 
-static RZ_OWN RzSearchCollection *rz_search_collection_new(RzSearchSpace space, RZ_NONNULL void *find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_OWN RZ_NULLABLE void *user) {
+static RZ_OWN RzSearchCollection *rz_search_collection_new(RzSearchSpace space, RZ_NONNULL void *find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(find && is_empty, NULL);
 	RzSearchCollection *sc = RZ_NEW0(RzSearchCollection);
 	if (!sc) {
-		if (free && user) {
-			free(user);
+		if (free_user && user) {
+			free_user(user);
 		}
 		RZ_LOG_ERROR("search: failed to allocate RzSearchCollection\n");
 		return NULL;
@@ -18,7 +18,7 @@ static RZ_OWN RzSearchCollection *rz_search_collection_new(RzSearchSpace space, 
 	sc->space = space;
 	sc->find = find;
 	sc->is_empty = is_empty;
-	sc->free = free;
+	sc->free = free_user;
 	sc->user = user;
 	return sc;
 }
@@ -33,9 +33,9 @@ static RZ_OWN RzSearchCollection *rz_search_collection_new(RzSearchSpace space, 
  *
  * \return     On success returns a valid pointer, otherwise NULL.
  */
-RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNULL RzSearchFindGraphCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_OWN RZ_NULLABLE void *user) {
+RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNULL RzSearchFindGraphCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(find && is_empty, NULL);
-	return rz_search_collection_new(RZ_SEARCH_SPACE_GRAPH, find, is_empty, free, user);
+	return rz_search_collection_new(RZ_SEARCH_SPACE_GRAPH, find, is_empty, free_user, user);
 }
 
 /**
@@ -48,9 +48,9 @@ RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNUL
  *
  * \return     On success returns a valid pointer, otherwise NULL.
  */
-RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_bytes_space(RZ_NONNULL RzSearchFindBytesCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free, RZ_OWN RZ_NULLABLE void *user) {
+RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_bytes_space(RZ_NONNULL RzSearchFindBytesCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(find && is_empty, NULL);
-	return rz_search_collection_new(RZ_SEARCH_SPACE_BYTES, find, is_empty, free, user);
+	return rz_search_collection_new(RZ_SEARCH_SPACE_BYTES, find, is_empty, free_user, user);
 }
 
 /**
