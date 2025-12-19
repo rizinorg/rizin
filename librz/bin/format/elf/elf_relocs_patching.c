@@ -974,6 +974,10 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		val = PG_OFFSET(fs->S + fs->A) >> 3;
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
 		break;
+	case R_AARCH64_TLSDESC:
+		// R_AARCH64_TLSDESC is a relocation type handled by the
+		// dynamic linker. We intentionally do not handle do anything.
+		break;
 	default:
 		UNHANDL_DEF("AArch64", rel->type);
 		return;
