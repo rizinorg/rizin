@@ -149,3 +149,7 @@ d "tsx" ba 0x0 (seq (set x (var sp)) (set Z (is_zero (var x))) (set N (msb (var 
 d "txa" 8a 0x0 (seq (set a (var x)) (set Z (is_zero (var a))) (set N (msb (var a))))
 d "txs" 9a 0x0 (set sp (var x))
 d "tya" 98 0x0 (seq (set a (var y)) (set Z (is_zero (var a))) (set N (msb (var a))))
+d "kil" 02 0x0 trap
+d "slo 0x1234" 033412 0x0 (seq (set tmp (load 0 (bv 16 0x1234))) (set C (msb (var tmp))) (set tmp (<< (var tmp) (bv 3 0x1) false)) (store 0 (bv 16 0x1234) (var tmp)) (set a (| (var a) (var tmp))) (set Z (is_zero (var a))) (set N (msb (var a))))
+d "lax 0x1234" af3412 0x0 (seq (set tmp (load 0 (bv 16 0x1234))) (set a (var tmp)) (set x (var tmp)) (set Z (is_zero (var a))) (set N (msb (var a))))
+d "nop" 1a 0x0 nop
