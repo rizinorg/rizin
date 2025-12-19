@@ -403,9 +403,10 @@ RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, Rz
 	CB_ADDR(block->jump);
 	CB_ADDR(block->fail);
 	if (block->switch_op && block->switch_op->cases) {
-		RzListIter *iter;
 		RzAnalysisCaseOp *caseop;
-		rz_list_foreach (block->switch_op->cases, iter, caseop) {
+		void **iter;
+		rz_pvector_foreach (block->switch_op->cases, iter) {
+			caseop = *iter;
 			CB_ADDR(caseop->jump);
 		}
 	}
@@ -494,7 +495,8 @@ beach:
 
 typedef struct {
 	RzAnalysisBlock *bb;
-	RzListIter /*<RzAnalysisCaseOp *>*/ *switch_it;
+	RzAnalysisCaseOp *switch_it;
+	int switch_index;
 } RecurseDepthFirstCtx;
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
@@ -524,21 +526,22 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->fail);
 		} else {
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
+				cur_ctx->switch_it = rz_pvector_head(cur_bb->switch_op->cases);
+				cur_ctx->switch_index = 0;
 			} else if (cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+				cur_ctx->switch_index++;
+				cur_ctx->switch_it = rz_pvector_at(cur_bb->switch_op->cases, cur_ctx->switch_index);
 			}
 			if (cur_ctx->switch_it) {
-				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
-				while (ht_up_find_kv(visited, cop->jump, NULL)) {
-					cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+				while (ht_up_find_kv(visited, cur_ctx->switch_it->jump, NULL)) {
+					cur_ctx->switch_index++;
+					cur_ctx->switch_it = rz_pvector_at(cur_bb->switch_op->cases, cur_ctx->switch_index);
 					if (!cur_ctx->switch_it) {
-						cop = NULL;
 						break;
 					}
-					cop = rz_list_iter_get_data(cur_ctx->switch_it);
 				}
-				cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
+				cur_bb = cur_ctx->switch_it ? rz_analysis_get_block_at(analysis, cur_ctx->switch_it->jump) : NULL;
+
 			} else {
 				cur_bb = NULL;
 			}

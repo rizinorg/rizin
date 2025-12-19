@@ -1653,17 +1653,16 @@ static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 			print_color_node(core, bbi);
 		}
 		if (bbi->switch_op) {
-			RzAnalysisCaseOp *caseop;
-			RzListIter *iter2;
-
 			if (bbi->fail != UT64_MAX) {
 				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
 					bbi->addr, bbi->fail);
 				print_color_node(core, bbi);
 			}
-			rz_list_foreach (bbi->switch_op->cases, iter2, caseop) {
+			void **iter2;
+			rz_pvector_foreach (bbi->switch_op->cases, iter2) {
+				RzAnalysisCaseOp *case_op = *iter2;
 				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"" PAL_FAIL "\"];\n",
-					caseop->addr, caseop->jump);
+					case_op->addr, case_op->jump);
 				print_color_node(core, bbi);
 			}
 		}
@@ -1698,13 +1697,13 @@ static void graph_basic_block_json(const char *name, RzAnalysisBlock *bbi, PJ *p
 		return;
 	}
 
-	RzAnalysisCaseOp *caseop;
-	RzListIter *iter;
+	void **iter;
 	pj_ka(pj, "switch"); // [ -- "switch" begin
-	rz_list_foreach (bbi->switch_op->cases, iter, caseop) {
+	rz_pvector_foreach (bbi->switch_op->cases, iter) {
+		RzAnalysisCaseOp *case_op = *iter;
 		pj_o(pj); // { -- caseop object begin
-		pj_kn(pj, "address", caseop->addr);
-		pj_kn(pj, "jump", caseop->jump);
+		pj_kn(pj, "address", case_op->addr);
+		pj_kn(pj, "jump", case_op->jump);
 		pj_end(pj); // } -- caseop object end
 	}
 	pj_end(pj); // ] -- "switch" end
