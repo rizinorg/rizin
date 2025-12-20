@@ -1904,6 +1904,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 
@@ -1917,6 +1918,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 	hits = rz_core_search_bytes(core, search_opts, pattern);
@@ -1930,7 +1932,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
-	rz_search_bytes_pattern_free(pattern);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
