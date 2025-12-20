@@ -699,6 +699,14 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
         args: []
+      - name: pF8
+        summary: Decode PKCS#8 private keys from current block
+        cname: cmd_print_pkcs8_pkey
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: pFA
         summary: Decode Android Binary XML from current block
         cname: cmd_print_axml

@@ -1880,21 +1880,32 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	ut32 max_threads = rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"));
 	ut32 max_hits = rz_config_get_i(core->config, "search.maxhits");
+	ut32 search_chunk = rz_config_get_i(core->config, "search.chunk");
 	const char *show_progress = rz_config_get(core->config, "search.show_progress");
 	if (!(rz_search_opt_set_max_threads(search_opts, max_threads) &&
 		    rz_search_opt_set_max_hits(search_opts, max_hits) &&
 		    rz_search_opt_set_show_progress_from_str(search_opts, show_progress))) {
 		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
+		return NULL;
+	}
+
+	if (search_chunk && !rz_search_opt_set_chunk_size(search_opts, search_chunk)) {
+		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 
 	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
 	if (!fopts) {
 		RZ_LOG_ERROR("Failed init find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
 		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
+		rz_search_find_opt_free(fopts);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	return search_opts;
@@ -2086,7 +2097,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, con
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
-// "/ca"
+// "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
 	if (argc < 2 || RZ_STR_ISEMPTY(argv[1])) {

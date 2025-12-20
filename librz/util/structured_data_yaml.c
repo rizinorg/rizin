@@ -128,9 +128,40 @@ static void builder_yaml_val_bool(RZ_NULLABLE void *user, bool b) {
 	yaml->first = false;
 }
 
-static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const char *s) {
-	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
+static bool builder_yaml_val_string_is_multiline(const char *s) {
+	const char *current = strchr(s, '\n');
+	if (!current || !current[1]) {
+		// there is no new line or is at the end of the line.
+		return false;
+	}
+	return rz_str_trim_head_ro(current) != NULL;
+}
 
+static void builder_yaml_val_string_multiline(StructYamlPrinter *yaml, const char *s) {
+	if (builder_yaml_is_array(yaml)) {
+		builder_yaml_add_padding(yaml);
+		rz_strbuf_append(&yaml->sb, "- |\n");
+	} else {
+		rz_strbuf_append(&yaml->sb, " |\n");
+	}
+
+	do {
+		builder_yaml_add_padding(yaml);
+		rz_strbuf_append(&yaml->sb, "  ");
+		const char *newline = strchr(s, '\n');
+		if (!newline) {
+			rz_strbuf_appendf(&yaml->sb, "%s\n", s);
+			break;
+		}
+		// we append also the newline.
+		newline++;
+		rz_strbuf_append_n(&yaml->sb, s, newline - s);
+		s = newline;
+	} while (*s);
+	yaml->first = false;
+}
+
+static void builder_yaml_val_string_singleline(StructYamlPrinter *yaml, const char *s) {
 	char *escaped = rz_str_escape_utf8_for_json(s, -1);
 
 	if (builder_yaml_is_array(yaml)) {
@@ -142,6 +173,16 @@ static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	yaml->first = false;
 
 	free(escaped);
+}
+
+static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const char *s) {
+	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
+
+	if (builder_yaml_val_string_is_multiline(s)) {
+		builder_yaml_val_string_multiline(yaml, s);
+	} else {
+		builder_yaml_val_string_singleline(yaml, s);
+	}
 }
 
 static const RzStructuredDataIterator builder_yaml_iterator = {

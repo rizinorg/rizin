@@ -15821,6 +15821,14 @@ static const RzCmdDescHelp cmd_print_x509_help = {
 	.args = cmd_print_x509_args,
 };
 
+static const RzCmdDescArg cmd_print_pkcs8_pkey_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_pkcs8_pkey_help = {
+	.summary = "Decode PKCS#8 private keys from current block",
+	.args = cmd_print_pkcs8_pkey_args,
+};
+
 static const RzCmdDescArg cmd_print_axml_args[] = {
 	{ 0 },
 };
@@ -24422,6 +24430,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_x509_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_x509_handler, &cmd_print_x509_help);
 	rz_warn_if_fail(cmd_print_x509_cd);
+
+	RzCmdDesc *cmd_print_pkcs8_pkey_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pF8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_pkcs8_pkey_handler, &cmd_print_pkcs8_pkey_help);
+	rz_warn_if_fail(cmd_print_pkcs8_pkey_cd);
 
 	RzCmdDesc *cmd_print_axml_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFA", rz_cmd_print_axml_handler, &cmd_print_axml_help);
 	rz_warn_if_fail(cmd_print_axml_cd);

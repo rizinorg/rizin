@@ -289,7 +289,6 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *size) {
 	} else if (b->type == RZ_BUFFER_MMAP) {
 		return buf_mmap_get_whole_buf(b, size);
 	} else {
-
 		rz_return_val_if_fail(b && size && b->methods, NULL);
 		if (b->methods->get_whole_buf) {
 			return b->methods->get_whole_buf(b, size);
