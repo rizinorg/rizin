@@ -6,6 +6,7 @@
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_th.h"
 #include "rz_types.h"
+#include "rz_util/rz_assert.h"
 #include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
 
@@ -132,7 +133,8 @@ bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrD
 
 bool store_abstr_data(
 	RzInterpreterAbstrState *state,
-	ut64 addr,
+	RzILMemIndex mem_idx,
+	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
@@ -140,68 +142,58 @@ bool store_abstr_data(
 		// Really don't write?
 		return true;
 	}
-	ProtoInterprSharedObjects *sobj = state->ext;
-	RzInterpreterIORequest *io_req = &sobj->io_req;
-	io_req->n_bytes = rz_bv_len_bytes(src->bv);
+	RzInterpreterIORequest io_req = { 0 };
+	io_req.n_bits = rz_bv_len(src->bv);
+	io_req.mem_idx = mem_idx;
+	io_req.big_endian = state->il_config->big_endian;
 
-	ut8 *buf;
-	ut8 buf_stack[BV_STACK_MAX_SIZE] = { 0 };
-	if (io_req->n_bytes > BV_STACK_MAX_SIZE) {
-		buf = RZ_NEWS(ut8, io_req->n_bytes);
-	} else {
-		buf = buf_stack;
-	}
-	rz_bv_set_to_bytes_ble(src->bv, buf, state->il_config->big_endian);
-	io_req->type = RZ_INTERPRETER_IO_WRITE;
-	io_req->addr = addr;
-	io_req->data = buf;
+	io_req.type = RZ_INTERPRETER_IO_WRITE;
+	io_req.addr = addr->bv;
+	io_req.st_data = src->bv;
+
 	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("Prototype: STORE @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
+	RZ_LOG_DEBUG("Prototype: STORE @ 0x%" PFMT64x " : %s\n", rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 
-	rz_th_queue_push(io_request, io_req, true);
+	rz_th_queue_push(io_request, &io_req, true);
 	// Wait for write being done.
 	RzInterpreterIOResult *io_res = NULL;
 	rz_th_queue_pop(io_result, false, (void **)&io_res);
-	if (io_req->n_bytes > BV_STACK_MAX_SIZE) {
-		free(buf);
-	}
 	return io_res ? io_res->req_ok : false;
 }
 
 bool load_abstr_data(
 	RzInterpreterAbstrState *state,
-	ut64 addr,
-	size_t size,
+	RzILMemIndex mem_idx,
+	const ProtoIntrprAbstrData *addr,
+	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
-	ProtoInterprSharedObjects *sobj = state->ext;
-	RzInterpreterIORequest *io_req = &sobj->io_req;
-	io_req->type = RZ_INTERPRETER_IO_READ;
-	io_req->addr = addr;
-	io_req->n_bytes = size;
-	rz_th_queue_push(io_request, io_req, true);
+	RzInterpreterIORequest io_req = { 0 };
+	rz_bv_cast_inplace(out->bv, n_bits, 0);
+	io_req.type = RZ_INTERPRETER_IO_READ;
+	io_req.addr = addr->bv;
+	io_req.ld_data = out->bv;
+	io_req.mem_idx = mem_idx;
+	io_req.n_bits = n_bits;
+	io_req.big_endian = state->il_config->big_endian;
+	rz_th_queue_push(io_request, &io_req, true);
 	// Wait for load being done.
 	RzInterpreterIOResult *io_res = NULL;
 	if (!rz_th_queue_pop(io_result, false, (void **)&io_res) || !io_res) {
 		return false;
 	}
 	if (!io_res->req_ok) {
-		RZ_LOG_WARN("Prototype: IO read failed.");
-		return false;
-	}
-	if (io_res->read.n_bytes != size) {
 		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
-			    " Received: 0x%" PFMT64x "\n",
-			size, io_res->read.n_bytes);
+			    " Received: 0x%" PFMT32x " bits.\n",
+			n_bits, rz_bv_len(out->bv));
 		return false;
 	}
 	out->is_concrete = true;
-	rz_bv_cast_inplace(out->bv, size, 0);
-	rz_bv_set_from_bytes_ble(out->bv, io_res->read.data, 0, io_res->read.n_bytes, state->il_config->big_endian);
+
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
-	RZ_LOG_DEBUG("Prototype: READ @ 0x%" PFMT64x " : %s\n", io_req->addr, bytes);
+	RZ_LOG_DEBUG("Prototype: READ @ 0x%" PFMT64x " : %s\n", rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 	return true;
 }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "eval.h"
+#include "rz_util/rz_assert.h"
 #include <rz_util/rz_bitvector.h>
 
 /**
@@ -411,20 +412,35 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	}
 	case RZ_IL_OP_LOADW:
 	case RZ_IL_OP_LOAD: {
+		STACK_ABSTR_DATA_OUT(ld_addr);
 		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
-		if (!interpreter_prototype_eval_pure(state, key, out, yield_queues, io_request, io_result, plugin_data)) {
+		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? 0 : pure->op.loadw.mem;
+		if (!interpreter_prototype_eval_pure(state, key, &ld_addr, yield_queues, io_request, io_result, plugin_data)) {
 			RZ_LOG_ERROR("prototype: LOAD/LOADW key failed to evaluate.\n");
+			rz_bv_fini(ld_addr.bv);
 			return false;
 		}
-		if (!out->is_concrete) {
+		if (!ld_addr.is_concrete) {
+			rz_bv_fini(ld_addr.bv);
 			goto map_to_bottom;
 		}
-		report_xref_yield(state, 0, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), out, RZ_ANALYSIS_XREF_TYPE_DATA);
-		ut64 addr = rz_bv_to_ut64(out->bv);
-		size_t addr_bits = pure->code == RZ_IL_OP_LOAD ? state->il_config->mem_key_size : pure->op.loadw.n_bits;
-		if (!load_abstr_data(state, addr, addr_bits, out, io_request, io_result)) {
+		if (rz_bv_len(ld_addr.bv) == 64) {
+			// TODO: Remove normalization.
+			// Unset bit 63 is required, because the RzBuffer API only supports
+			// st64 addresses.
+			RzBitVector mask = { 0 };
+			rz_bv_init(&mask, 64);
+			rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
+			rz_bv_and_inplace(ld_addr.bv, &mask);
+		}
+
+		report_xref_yield(state, 0, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &ld_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
+		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? state->il_config->mem_key_size : pure->op.loadw.n_bits;
+		if (!load_abstr_data(state, mem_idx, &ld_addr, n_bits, out, io_request, io_result)) {
+			rz_bv_fini(ld_addr.bv);
 			goto map_to_bottom;
 		}
+		rz_bv_fini(ld_addr.bv);
 		break;
 	}
 	case RZ_IL_OP_MUL: {

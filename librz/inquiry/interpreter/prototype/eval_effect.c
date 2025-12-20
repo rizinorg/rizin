@@ -104,6 +104,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	case RZ_IL_OP_STOREW: {
 		STACK_ABSTR_DATA_OUT(st_addr);
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
+		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
 		if (!interpreter_prototype_eval_pure(state, key, &st_addr, yield_queues, io_request, io_result, plugin_data)) {
 			RZ_LOG_ERROR("prototype: STORE/STOREW key failed to evaluate.\n");
 			rz_bv_fini(st_addr.bv);
@@ -113,6 +114,16 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
+		if (rz_bv_len(st_addr.bv) == 64) {
+			// TODO: Remove normalization.
+			// Unset bit 63 is required, because the RzBuffer API only supports
+			// st64 addresses.
+			RzBitVector mask = { 0 };
+			rz_bv_init(&mask, 64);
+			rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
+			rz_bv_and_inplace(st_addr.bv, &mask);
+		}
+
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
 		if (!interpreter_prototype_eval_pure(state, pval, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
@@ -124,8 +135,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			break;
 		}
 		report_xref_yield(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
-		ut64 addr = rz_bv_to_ut64(st_addr.bv);
-		if (!store_abstr_data(state, addr, &eval_out, io_request, io_result)) {
+		if (!store_abstr_data(state, mem_idx, &st_addr, &eval_out, io_request, io_result)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;
 		}
