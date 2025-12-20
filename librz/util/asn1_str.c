@@ -282,6 +282,8 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bytes(RZ_NULLABLE const ut8 *buffe
 		}
 	}
 	str[size - 1] = '\0';
+	str = rz_str_trim_tail(str);
+
 	RzASN1String *asn1str = rz_asn1_string_parse(str, true, size);
 	if (!asn1str) {
 		free(str);

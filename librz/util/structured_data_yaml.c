@@ -42,14 +42,16 @@ static void builder_yaml_new_struct(RZ_NULLABLE void *user, RzStructuredDataBloc
 	if (yaml->depth > 0) {
 		if (n_elems < 1) {
 			rz_strbuf_append(&yaml->sb, block == RZ_STRUCTURED_DATA_BLOCK_ARRAY ? " []\n" : " {}\n");
+			yaml->first = false;
 		} else if (builder_yaml_is_array(yaml)) {
 			builder_yaml_add_padding(yaml);
 			rz_strbuf_append(&yaml->sb, "-");
+			yaml->first = true;
 		} else {
 			rz_strbuf_append(&yaml->sb, "\n");
+			yaml->first = true;
 		}
 	}
-	yaml->first = true;
 	yaml->depth++;
 	yaml->stack[yaml->depth - 1] = (ut8)block;
 }

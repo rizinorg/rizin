@@ -666,11 +666,22 @@ commands:
     subcommands:
       - name: pFa
         summary: Decode ASN.1 from current block
-        cname: cmd_print_asn1
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_QUIET
-        args: []
+        subcommands:
+        - name: pFa
+          summary: Decode ASN.1 from current block as dump
+          cname: cmd_print_asn1
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+          args: []
+        - name: pFas
+          summary: Decode ASN.1 from current block as structure
+          cname: cmd_print_asn1_structure
+          type: RZ_CMD_DESC_TYPE_ARGV_STATE
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+            - RZ_OUTPUT_MODE_JSON
+            - RZ_OUTPUT_MODE_QUIET
+          args: []
       - name: pFb
         summary: Decode raw protobuf from current block
         cname: cmd_print_protobuf

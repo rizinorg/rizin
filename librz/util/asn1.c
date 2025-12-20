@@ -207,18 +207,12 @@ RZ_API RZ_OWN RzASN1Binary *rz_asn1_binary_parse(RZ_NULLABLE const ut8 *buffer, 
 	return bin;
 }
 
-static void asn1_print_hex(RzASN1Object *object, char *buffer, ut32 size, ut32 depth, bool structured) {
+static void asn1_print_hex(RzASN1Object *object, char *buffer, ut32 size, ut32 depth) {
 	if (!object || !object->sector) {
 		return;
 	}
 	char *p = buffer;
 	char *end = buffer + size;
-	if (depth > 0 && !structured) {
-		char *pad = rz_str_pad(' ', (depth * 2) - 2);
-		snprintf(p, end - p, "%s", pad);
-		p += strlen(pad);
-		free(pad);
-	}
 	for (ut32 i = 0; i < object->length && p < end; i++) {
 		snprintf(p, end - p, "%02x", object->sector[i]);
 		p += 2;
@@ -229,49 +223,16 @@ static void asn1_print_hex(RzASN1Object *object, char *buffer, ut32 size, ut32 d
 	}
 }
 
-static void asn1_print_padded(RzStrBuf *sb, RzASN1Object *object, int depth, const char *k, const char *v) {
-	if (object->form && !*v) {
-		return;
-	}
-	switch (object->tag) {
-	case RZ_ASN1_TAG_NULL:
-	case RZ_ASN1_TAG_EOC:
-		break;
-	case RZ_ASN1_TAG_INTEGER:
-	case RZ_ASN1_TAG_REAL:
-		if (*rz_str_trim_head_ro(v)) {
-			char *pad = rz_str_pad(' ', (depth * 2) - 2);
-			rz_strbuf_appendf(sb, "%s%s\n%s%s\n", pad, k, pad, v);
-			free(pad);
-		}
-		break;
-	case RZ_ASN1_TAG_BITSTRING:
-	default:
-		if (*rz_str_trim_head_ro(v)) {
-			char *pad = rz_str_pad(' ', (depth * 2) - 2);
-			rz_strbuf_appendf(sb, "%s%s\n", pad, v);
-			free(pad);
-		}
-		break;
-	}
-}
-
-static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth, bool structured) {
+static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth) {
 	const char *pad = NULL;
+	ut32 i = 0, j = 0;
 	char *allocated = NULL;
-	ut32 i, j;
 	char readable[20] = { 0 };
 	if (!object || !object->sector || object->length < 1) {
 		return NULL;
 	}
 	RzStrBuf *sb = rz_strbuf_new("");
-	if (structured) {
-		pad = "                                        : ";
-	} else {
-		pad = allocated = rz_str_pad(' ', depth * 2);
-		rz_strbuf_appendf(sb, "  ");
-	}
-
+	pad = "                                        : ";
 	for (i = 0, j = 0; i < object->length; i++, j++) {
 		ut8 c = object->sector[i];
 		if (i > 0 && (i % 16) == 0) {
@@ -292,22 +253,12 @@ static RzASN1String *asn1_print_hexdump_padded(RzASN1Object *object, ut32 depth,
 	char *text = rz_strbuf_drain(sb);
 	RzASN1String *asn1str = rz_asn1_string_parse(text, true, strlen(text) + 1);
 	if (!asn1str) {
-		/* no memory left.. */
 		free(text);
 	}
 	return asn1str;
 }
 
-/**
- * \brief      Converts an the ASN1 structure to a human readable string
- *
- * \param      object      The ASN1 object
- * \param[in]  depth       The padding depth
- * \param[in]  structured  Indicates if to print its structures or not
- * \param      sb          The RzStrBuf to write to
- */
-RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool structured, RZ_NONNULL RzStrBuf *sb) {
-	rz_return_if_fail(sb);
+static void asn1_to_strbuf(RzASN1Object *object, ut32 depth, RzStrBuf *sb) {
 	if (!object) {
 		return;
 	}
@@ -332,35 +283,25 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
 		case RZ_ASN1_TAG_INTEGER:
 			name = "INTEGER";
 			if (object->length < 16) {
-				asn1_print_hex(object, temp_name, sizeof(temp_name), depth, structured);
+				asn1_print_hex(object, temp_name, sizeof(temp_name), depth);
 				string = temp_name;
 			} else {
-				asn1str = asn1_print_hexdump_padded(object, depth, structured);
+				asn1str = asn1_print_hexdump_padded(object, depth);
 			}
 			break;
 		case RZ_ASN1_TAG_BITSTRING:
 			name = "BIT_STRING";
 			if (!object->list.objects) {
 				if (object->length < 16) {
-					asn1_print_hex(object, temp_name, sizeof(temp_name), depth, structured);
+					asn1_print_hex(object, temp_name, sizeof(temp_name), depth);
 					string = temp_name;
 				} else {
-					asn1str = asn1_print_hexdump_padded(object, depth, structured);
+					asn1str = asn1_print_hexdump_padded(object, depth);
 				}
 			}
 			break;
 		case RZ_ASN1_TAG_OCTETSTRING:
 			name = "OCTET_STRING";
-			if (rz_str_is_printable_limited((const char *)object->sector, object->length)) {
-				asn1str = rz_asn1_stringify_string(object->sector, object->length);
-			} else if (!object->list.objects) {
-				if (object->length < 16) {
-					asn1_print_hex(object, temp_name, sizeof(temp_name), depth, structured);
-					string = temp_name;
-				} else {
-					asn1str = asn1_print_hexdump_padded(object, depth, structured);
-				}
-			}
 			break;
 		case RZ_ASN1_TAG_NULL:
 			name = "NULL";
@@ -377,7 +318,7 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
 			break;
 		case RZ_ASN1_TAG_REAL:
 			name = "REAL";
-			asn1str = asn1_print_hexdump_padded(object, depth, structured);
+			asn1str = asn1_print_hexdump_padded(object, depth);
 			break;
 		case RZ_ASN1_TAG_ENUMERATED:
 			name = "ENUMERATED";
@@ -443,45 +384,42 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
 			asn1str = rz_asn1_stringify_string(object->sector, object->length);
 			break;
 		default:
-			snprintf(temp_name, sizeof(temp_name), "Universal_%u", object->tag);
+			rz_strf(temp_name, "Universal_%u", object->tag);
 			name = temp_name;
 			break;
 		}
 		break;
 	case RZ_ASN1_CLASS_APPLICATION:
-		snprintf(temp_name, sizeof(temp_name), "Application_%u", object->tag);
+		rz_strf(temp_name, "Application_%u", object->tag);
 		name = temp_name;
 		break;
 	case RZ_ASN1_CLASS_CONTEXT:
-		snprintf(temp_name, sizeof(temp_name), "Context [%u]", object->tag); // Context
+		rz_strf(temp_name, "Context [%u]", object->tag); // Context
 		name = temp_name;
 		break;
 	case RZ_ASN1_CLASS_PRIVATE:
-		snprintf(temp_name, sizeof(temp_name), "Private_%u", object->tag);
+		rz_strf(temp_name, "Private_%u", object->tag);
 		name = temp_name;
 		break;
+	}
+	if (!object->list.objects && !asn1str && RZ_STR_ISEMPTY(string)) {
+		if (rz_str_is_printable_limited((const char *)object->sector, object->length)) {
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+		} else {
+			asn1str = asn1_print_hexdump_padded(object, depth);
+		}
 	}
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	if (structured) {
-		rz_strbuf_appendf(sb, "%4" PFMT64d "  ", object->offset);
-		rz_strbuf_appendf(sb, "%4u:%2d: %s %-20s: %s\n", object->length,
-			depth, object->form ? "cons" : "prim", name, string);
-		rz_asn1_string_free(asn1str);
-		if (object->list.objects) {
-			for (ut32 i = 0; i < object->list.length; i++) {
-				rz_asn1_to_strbuf(object->list.objects[i], depth + 1, structured, sb);
-			}
-		}
-	} else {
-		asn1_print_padded(sb, object, depth, name, string);
-		rz_asn1_string_free(asn1str);
-		if (object->list.objects) {
-			for (ut32 i = 0; i < object->list.length; i++) {
-				RzASN1Object *obj = object->list.objects[i];
-				rz_asn1_to_strbuf(obj, depth + 1, structured, sb);
-			}
+
+	rz_strbuf_appendf(sb, "%4" PFMT64d "  ", object->offset);
+	rz_strbuf_appendf(sb, "%4u:%2d: %s %-20s: %s\n", object->length,
+		depth, object->form ? "cons" : "prim", name, string);
+	rz_asn1_string_free(asn1str);
+	if (object->list.objects) {
+		for (ut32 i = 0; i < object->list.length; i++) {
+			asn1_to_strbuf(object->list.objects[i], depth + 1, sb);
 		}
 	}
 }
@@ -490,12 +428,10 @@ RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool
  * \brief      Converts an the ASN1 structure to a human readable string
  *
  * \param      object      The ASN1 object
- * \param[in]  depth       The padding depth
- * \param[in]  structured  Indicates if to print its structures or not
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_asn1_to_string(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool structured) {
+RZ_API RZ_OWN char *rz_asn1_to_string(RZ_NULLABLE RzASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
@@ -503,8 +439,197 @@ RZ_API RZ_OWN char *rz_asn1_to_string(RZ_NULLABLE RzASN1Object *object, ut32 dep
 	if (!sb) {
 		return NULL;
 	}
-	rz_asn1_to_strbuf(object, depth, structured, sb);
+	asn1_to_strbuf(object, 0, sb);
 	return rz_strbuf_drain(sb);
+}
+
+static void asn1_to_structure(RzASN1Object *object, RzStructuredData *parent, bool simplified) {
+	if (!object || !parent) {
+		return;
+	}
+
+	// this shall not be freed. it's a pointer into the buffer.
+	RzASN1String *asn1str = NULL;
+	char temp_name[4096] = { 0 };
+	const char *name = "";
+	const char *string = "";
+
+	switch (object->klass) {
+	case RZ_ASN1_CLASS_UNIVERSAL: // universal
+		switch (object->tag) {
+		case RZ_ASN1_TAG_EOC:
+			name = "EOC";
+			break;
+		case RZ_ASN1_TAG_BOOLEAN:
+			name = "BOOLEAN";
+			if (object->sector) {
+				string = (object->sector[0] != 0) ? "true" : "false";
+			}
+			break;
+		case RZ_ASN1_TAG_INTEGER:
+			name = "INTEGER";
+			if (object->length < 20) {
+				asn1str = rz_asn1_stringify_integer(object->sector, object->length);
+			} else {
+				asn1str = rz_asn1_stringify_bytes(object->sector, object->length);
+			}
+			break;
+		case RZ_ASN1_TAG_BITSTRING:
+			name = "BIT_STRING";
+			if (!object->list.objects) {
+				if (object->length < 20) {
+					asn1str = rz_asn1_stringify_bits(object->sector, object->length);
+				} else {
+					asn1str = rz_asn1_stringify_bytes(object->sector, object->length);
+				}
+			}
+			break;
+		case RZ_ASN1_TAG_OCTETSTRING:
+			name = "OCTET_STRING";
+			break;
+		case RZ_ASN1_TAG_NULL:
+			name = "NULL";
+			break;
+		case RZ_ASN1_TAG_OID:
+			name = "OBJECT_IDENTIFIER";
+			asn1str = rz_asn1_stringify_oid(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_OBJDESCRIPTOR:
+			name = "OBJECT_DESCRIPTOR";
+			break;
+		case RZ_ASN1_TAG_EXTERNAL:
+			name = "EXTERNAL";
+			break;
+		case RZ_ASN1_TAG_REAL:
+			name = "REAL";
+			asn1str = rz_asn1_stringify_bytes(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_ENUMERATED:
+			name = "ENUMERATED";
+			break;
+		case RZ_ASN1_TAG_EMBEDDED_PDV:
+			name = "EMBEDDED_PDV";
+			break;
+		case RZ_ASN1_TAG_UTF8STRING:
+			name = "UTF8String";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_SEQUENCE:
+			name = "SEQUENCE";
+			break;
+		case RZ_ASN1_TAG_SET:
+			name = "SET";
+			break;
+		case RZ_ASN1_TAG_NUMERICSTRING:
+			name = "NumericString";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_PRINTABLESTRING:
+			name = "PrintableString"; // ASCII subset
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_T61STRING:
+			name = "TeletexString"; // aka T61String
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_VIDEOTEXSTRING:
+			name = "VideotexString";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_IA5STRING:
+			name = "IA5String"; // ASCII
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_UTCTIME:
+			name = "UTCTime";
+			asn1str = rz_asn1_stringify_utctime(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_GENERALIZEDTIME:
+			name = "GeneralizedTime";
+			asn1str = rz_asn1_stringify_time(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_GRAPHICSTRING:
+			name = "GraphicString";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_VISIBLESTRING:
+			name = "VisibleString"; // ASCII subset
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_GENERALSTRING:
+			name = "GeneralString";
+			break;
+		case RZ_ASN1_TAG_UNIVERSALSTRING:
+			name = "UniversalString";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		case RZ_ASN1_TAG_BMPSTRING:
+			name = "BMPString";
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+			break;
+		default:
+			rz_strf(temp_name, "Universal_%u", object->tag);
+			name = temp_name;
+			break;
+		}
+		break;
+	case RZ_ASN1_CLASS_APPLICATION:
+		rz_strf(temp_name, "Application_%u", object->tag);
+		name = temp_name;
+		break;
+	case RZ_ASN1_CLASS_CONTEXT:
+		rz_strf(temp_name, "Context [%u]", object->tag); // Context
+		name = temp_name;
+		break;
+	case RZ_ASN1_CLASS_PRIVATE:
+		rz_strf(temp_name, "Private_%u", object->tag);
+		name = temp_name;
+		break;
+	}
+	if (!object->list.objects && !asn1str && RZ_STR_ISEMPTY(string)) {
+		if (rz_str_is_printable_limited((const char *)object->sector, object->length)) {
+			asn1str = rz_asn1_stringify_string(object->sector, object->length);
+		} else {
+			asn1str = rz_asn1_stringify_bytes(object->sector, object->length);
+		}
+	}
+	if (asn1str) {
+		string = asn1str->string;
+	}
+
+	if (!simplified) {
+		rz_structured_data_map_add_unsigned(parent, "offset", object->offset, true);
+		rz_structured_data_map_add_unsigned(parent, "length", object->length, false);
+		rz_structured_data_map_add_string(parent, "form", object->form ? "cons" : "prim");
+	}
+	rz_structured_data_map_add_string(parent, "type", name);
+
+	if (!object->list.objects) {
+		if (RZ_STR_ISNOTEMPTY(string)) {
+			rz_structured_data_map_add_string(parent, "value", string);
+		}
+		rz_asn1_string_free(asn1str);
+		return;
+	}
+	rz_asn1_string_free(asn1str);
+
+	RzStructuredData *children = rz_structured_data_map_add_array(parent, "value");
+	for (ut32 i = 0; i < object->list.length; i++) {
+		RzStructuredData *child = rz_structured_data_array_add_map(children);
+		asn1_to_structure(object->list.objects[i], child, simplified);
+	}
+}
+
+RZ_API RZ_OWN RzStructuredData *rz_asn1_to_structure(RZ_NULLABLE RzASN1Object *object, bool simplified) {
+	if (!object) {
+		return NULL;
+	}
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+	asn1_to_structure(object, root, simplified);
+	return root;
 }
 
 /**

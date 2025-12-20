@@ -275,6 +275,7 @@ PrivateKeyInfo:
     a3 10 b1 42 7e 8c 17 8b 2f 83 9c af 90 9b 0c a8 ...B~.../.......
     f6 55 10 d1 f4 33 af d2 ce 6e 69 00 63 1a 0e 0b .U...3...ni.c...
     f4 38 85 7c 56 d3 c7 97 8e 8b c9                .8.|V......
+
 {
   "PrivateKeyInfo": {
     "privateKeyAlgorithm": {
@@ -297,37 +298,91 @@ EXPECT=<<EOF
 offset       size flag       detail 
 ------------------------------------
   0x2f 0x0000034d hit.x509.0 
-TBSCertificate:
-  Version: v3
-  Serial Number:
-    53:2a:e3:b1:e9:ef:4e:87:2a:ea:c3:5b:32:8f:7d:95:71:16:bd:39
-  Signature Algorithm:
-    sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-  Issuer:
-    countryName (2.5.4.6): ZA
-    stateOrProvinceName (2.5.4.8): Some-State
-    organizationName (2.5.4.10): Radare2
-  Validity:
-    Not Before: 27/11/2019 18:09:20 GMT
-    Not After: 26/11/2020 18:09:20 GMT
-  Subject:
-    countryName (2.5.4.6): ZA
-    stateOrProvinceName (2.5.4.8): Some-State
-    organizationName (2.5.4.10): Radare2
-  Subject Public Key Info:
-    Algorithm: rsaEncryption (1.2.840.113549.1.1.1)
-    Module: 01:00:01
-    Exponent: 256 bytes
-  Extensions:
-    subjectKeyIdentifier (2.5.29.14): 
-    22 bytes
-    authorityKeyIdentifier (2.5.29.35): 
-    24 bytes
-    basicConstraints (2.5.29.19): critical
-    5 bytes
-Algorithm:
-  sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-Signature: 256 bytes
+tbsCertificate:
+  version: 3
+  serialNumber: "53:2a:e3:b1:e9:ef:4e:87:2a:ea:c3:5b:32:8f:7d:95:71:16:bd:39"
+  signature:
+    algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+  issuer:
+    - oid: "countryName (2.5.4.6)"
+      value: "ZA"
+    - oid: "stateOrProvinceName (2.5.4.8)"
+      value: "Some-State"
+    - oid: "organizationName (2.5.4.10)"
+      value: "Radare2"
+  validity:
+    notBefore: "27/11/2019 18:09:20 GMT"
+    notAfter: "26/11/2020 18:09:20 GMT"
+  subject:
+    - oid: "countryName (2.5.4.6)"
+      value: "ZA"
+    - oid: "stateOrProvinceName (2.5.4.8)"
+      value: "Some-State"
+    - oid: "organizationName (2.5.4.10)"
+      value: "Radare2"
+  subjectPublicKeyInfo:
+    algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+    subjectPublicKey:
+      exponent: |
+        00 d3 ef ec 08 5a 38 90 10 80 e6 9e 2a 6e 36 ab .....Z8.....*n6.
+        f3 a4 d1 e8 17 55 60 30 40 40 55 44 80 3d c0 c2 .....U`0@@UD.=..
+        f1 31 2c a4 f5 25 ef 4e f5 68 de a1 15 31 7d 72 .1,..%.N.h...1}r
+        0d 40 e9 2c f3 a6 56 2c 2a f9 a9 bf 4c 8a 64 0f .@.,..V,*...L.d.
+        05 55 67 4a 93 3d 5a d6 0f 44 69 0b c7 24 78 0a .UgJ.=Z..Di..$x.
+        e4 c3 4a 83 ec 65 81 11 1d a7 18 d0 28 05 ea c2 ..J..e......(...
+        f3 b6 34 d6 90 7b a8 28 fe 3c a6 7f 7c a7 1a 1e ..4..{.(.<..|...
+        99 90 84 c2 97 9e b9 4f 59 a9 5b 9a 3c f9 15 77 .......OY.[.<..w
+        84 19 b2 19 6f c8 f6 4c bc 2d 8b 0b e3 3c 59 a6 ....o..L.-...<Y.
+        0f 15 0d 08 95 ce 82 8f df e4 58 3d 34 35 62 6c ..........X=45bl
+        71 8d 26 40 39 4e 4d b0 3c 0b f2 42 e4 b8 92 23 q.&@9NM.<..B...#
+        f4 33 63 bf ee 18 d2 b8 c7 de dd a6 27 cb 7c 01 .3c.........'.|.
+        68 a8 56 f7 f7 d8 69 7b 4a 65 7d 19 f1 ce 21 97 h.V...i{Je}...!.
+        3b df a3 21 84 9b fa e8 8c 51 0d 8c 23 06 f6 b8 ;..!.....Q..#...
+        6e 37 60 9d b7 ba 43 59 c8 af 51 f4 5f d3 39 82 n7`...CY..Q._.9.
+        4f e3 92 46 67 e0 20 24 1a 72 fd ca dd 32 ba 8f O..Fg. $.r...2..
+      module: "01:00:01"
+  extensions:
+    - extnID: "subjectKeyIdentifier (2.5.29.14)"
+      extnValue:
+        type: "OCTET_STRING"
+        value: |
+          ee 47 24 5c f5 07 df c6 28 ef 02 2b f3 b5 88 a8 .G$\....(..+....
+          d5 cd 9f a8                                     ....
+    - extnID: "authorityKeyIdentifier (2.5.29.35)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "Context [0]"
+            value: |
+              ee 47 24 5c f5 07 df c6 28 ef 02 2b f3 b5 88 a8 .G$\....(..+....
+              d5 cd 9f a8                                     ....
+    - extnID: "basicConstraints (2.5.29.19)"
+      critical: true
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "BOOLEAN"
+            value: "true"
+algorithmIdentifier:
+  algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+signature: |
+  c0 a9 ff 81 60 9b d3 c3 ed 45 3e 9b 8c 8a dd 91 ....`....E>.....
+  9d e8 72 62 a8 30 ed 01 54 96 20 76 54 e2 9f 01 ..rb.0..T. vT...
+  9f 05 e0 7b 84 7e 50 26 c6 4d fa 0d b4 de c1 5c ...{.~P&.M.....\
+  62 d3 5f 75 e6 71 ce 39 94 c7 d9 38 0b 69 d0 12 b._u.q.9...8.i..
+  ab 16 b8 b8 cb e1 57 83 e3 04 3b 36 c9 eb 92 89 ......W...;6....
+  f4 ed 27 69 f3 5a ee b0 10 03 c0 92 47 39 7e 7e ..'i.Z......G9~~
+  71 21 a0 d6 6a 70 30 26 0c e3 df ac f3 bc 59 f9 q!..jp0&......Y.
+  18 c7 8e 93 b8 18 45 ba 4f e8 04 4f 5f 92 6e 79 ......E.O..O_.ny
+  56 1a 08 cd 04 28 a5 db 14 32 39 a6 3a ed 63 25 V....(...29.:.c%
+  f3 e0 df 45 ee 5b 30 dd 11 4f ad aa 46 06 6b 6e ...E.[0..O..F.kn
+  05 17 a5 9b 26 d6 11 81 c6 8c 7e ec ad 99 2b f2 ....&.....~...+.
+  00 c9 e1 20 ad 4c 27 27 e9 b4 1d a7 c9 4c 52 17 ... .L''.....LR.
+  3b 6a 1b 4c 5d 59 55 46 8a b5 46 f2 30 10 56 25 ;j.L]YUF..F.0.V%
+  8b 62 ae 40 65 ba 0f ae 5f 17 eb 72 d6 c2 de a2 .b.@e..._..r....
+  8e d2 8f a5 06 a9 54 d3 9e 02 47 9a c9 6b c3 38 ......T...G..k.8
+  aa 79 14 35 74 de 3a 7a 59 05 dc d0 69 57 88 93 .y.5t.:zY...iW..
+
 EOF
 RUN
 
@@ -470,6 +525,7 @@ PrivateKeyInfo:
     41 5f 4e bc d7 29 67 ad 2e e3 e1 cd b4 d7 dc 59 A_N..)g........Y
     cf 70 66 75 67 16 7d ec 57 3c f7 28 db 27 30 eb .pfug.}.W<.(.'0.
     5b df b0 8b df 79 d8 3c c1 17 95 dd 22 f5 c9 bc [....y.<...."...
+
 rsaEncryption
 PrivateKeyInfo:
   privateKeyAlgorithm:
@@ -512,6 +568,7 @@ PrivateKeyInfo:
     60 45 ff 8b f9 ed 3e c3 43 08 d8 b4 5f b4 69 6a `E....>.C..._.ij
     27 7c 0b f8 78 84 40 a2 b3 7b 63 47 40 2d 5b 13 '|..x.@..{cG@-[.
     9e 76 fd aa 86 1e c5 cb 39 13 98 c3 58 dc ce 5c .v......9...X..\
+
 secp256k1
 PrivateKeyInfo:
   privateKeyAlgorithm:
@@ -525,6 +582,7 @@ PrivateKeyInfo:
     cd 39 8c 9e e6 dc 8e 2b 66 35 60 d2 5c a6 5a ff .9.....+f5`.\.Z.
     bf ec 80 3b 7c 37 3a 2c 65 44 c8 e8 df df f6 fe ...;|7:,eD......
     ed 99 8a ce 1e 99 b7 a4 d7 0f                   .........
+
 secp384r1
 PrivateKeyInfo:
   privateKeyAlgorithm:
@@ -541,6 +599,7 @@ PrivateKeyInfo:
     6e 6e ee a7 a0 db 33 c5 52 62 0b a8 8e b8 47 ec nn....3.Rb....G.
     d1 a5 44 47 30 2c 22 3b 57 1f a1 7c 96 9b d4 23 ..DG0,";W..|...#
     ba 00 38 01 36 60 74                            ..8.6`
+
 ml-dsa-87
 PrivateKeyInfo:
   privateKeyAlgorithm:
@@ -850,6 +909,7 @@ PrivateKeyInfo:
     1f af c9 c3 10 61 c2 4e 8c d0 2a 54 23 91 65 02 .....a.N..*T#.e.
     8c e4 84 84 e7 93 23 9c 79 b0 2a a1 23 3a 64 3a ......#.y.*.#:d:
     c6 88 2e 41 c3 56 f1 71 19 de 1a 7e 4d 23 6b e6 ...A.V.q...~M#k.
+
 secp521r1
 PrivateKeyInfo:
   privateKeyAlgorithm:
@@ -870,5 +930,6 @@ PrivateKeyInfo:
     8a 8e f9 73 15 15 50 ed b9 f0 74 9a d1 3d 00 ac ...s..P...t..=..
     73 ef f3 e8 e7 f8 f1 38 72 20 8d f4 ff 1c 71 62 s......8r ....qb
     75 e5 b6                                        u.
+
 EOF
 RUN
