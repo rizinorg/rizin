@@ -31,25 +31,25 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 
 #ifdef RZ_API
 
-#define rz_list_foreach(list, it, pos) \
+#define rz_list_foreach(list, it, var) \
 	if (list) \
-		for (it = list->head; it && (pos = it->val, 1); it = it->next)
-#define rz_list_foreach_enum(list, it, pos, i) \
+		for (it = list->head; it && (var = it->val, 1); it = it->next)
+#define rz_list_foreach_enum(list, it, var, i) \
 	if (list) \
-		for (it = list->head, i = 0; it && (pos = it->val, 1); it = it->next, ++i)
-#define rz_list_foreach_iter(iter, it, pos) \
-	for (it = iter; it && (pos = it->val, 1); it = it->next)
+		for (it = list->head, i = 0; it && (var = it->val, 1); it = it->next, ++i)
+#define rz_list_foreach_iter(iter, it, var) \
+	for (it = iter; it && (var = it->val, 1); it = it->next)
 /* Safe when calling rz_list_delete() while iterating over the list. */
-#define rz_list_foreach_safe(list, it, tmp, pos) \
+#define rz_list_foreach_safe(list, it, tmp, var) \
 	if (list) \
-		for (it = list->head; it && (pos = it->val, tmp = it->next, 1); it = tmp)
-#define rz_list_foreach_iter_safe(iter, it, tmp, pos) \
-	for (it = iter; it && (pos = it->val, tmp = it->next, 1); it = tmp)
-#define rz_list_foreach_prev(list, it, pos) \
+		for (it = list->head; it && (var = it->val, tmp = it->next, 1); it = tmp)
+#define rz_list_foreach_iter_safe(iter, it, tmp, var) \
+	for (it = iter; it && (var = it->val, tmp = it->next, 1); it = tmp)
+#define rz_list_foreach_prev(list, it, var) \
 	if (list) \
-		for (it = list->tail; it && (pos = it->val, 1); it = it->prev)
-#define rz_list_foreach_prev_safe(list, it, tmp, pos) \
-	for (it = list->tail; it && (pos = it->val, tmp = it->prev, 1); it = tmp)
+		for (it = list->tail; it && (var = it->val, 1); it = it->prev)
+#define rz_list_foreach_prev_safe(list, it, tmp, var) \
+	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
 #define rz_list_empty(x) (!(x) || !(x)->length)
 #define rz_list_head(x)  ((x) ? (x)->head : NULL)
