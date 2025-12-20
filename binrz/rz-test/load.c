@@ -283,7 +283,7 @@ static bool parse_asm_path(const char *path, RzStrConstPool *strpool, const char
 	// arm_32
 	// arm_cortex_32
 
-	char *arch = rz_list_last(file_tokens);
+	char *arch = rz_list_last_val(file_tokens);
 	if (!*arch) {
 		rz_list_free(file_tokens);
 		return false;

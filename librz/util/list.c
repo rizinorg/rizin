@@ -109,7 +109,7 @@ RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
  * \brief Returns the last element of the list.
  *
  **/
-RZ_API RZ_BORROW void *rz_list_last(RZ_NONNULL const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->tail ? list->tail->val : NULL;
 }

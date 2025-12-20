@@ -755,7 +755,7 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_
 		opcode_set(op, op->type, RZ_MAX(op->a_beg, op->a_end - n_groups), op->a_end, RZ_MAX(op->b_beg, op->b_end - n_groups), op->b_end);
 	}
 
-	op = rz_list_last(opcodes);
+	op = rz_list_last_val(opcodes);
 	if (op->type == RZ_DIFF_OP_EQUAL) {
 		opcode_set(op, op->type, op->a_beg, RZ_MIN(op->a_end, op->a_beg + n_groups), op->b_beg, RZ_MIN(op->b_end, op->b_beg + n_groups));
 	}

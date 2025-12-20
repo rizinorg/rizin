@@ -809,7 +809,7 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 }
 
 static void *last_library(void) {
-	return lib_list ? rz_list_last(lib_list) : NULL;
+	return lib_list ? rz_list_last_val(lib_list) : NULL;
 }
 
 static bool breaked = false;

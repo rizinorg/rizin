@@ -124,7 +124,7 @@ static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit,
 		rz_asm_op_free(asmop);
 		return false;
 	}
-	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
+	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last_val(hitlist))->addr;
 	if (addr_last != hit->addr) {
 		*asmop_str = rz_str_append(*asmop_str, "; ");
 	}
@@ -1252,7 +1252,7 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	if (!core->analysis->ht_rop_semantics) {
 		core->analysis->ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_rop_gadget_info_free);
 	}
-	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last(hitlist);
+	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last_val(hitlist);
 	if (!is_ret_gadget(core, hit_last, crop)) {
 		return rop_gadget_info;
 	}

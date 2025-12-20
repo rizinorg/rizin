@@ -1242,7 +1242,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				}
 			}
 			if (!bbit) {
-				RzListIter *cop_it = rz_list_last(ctx->switch_path);
+				RzListIter *cop_it = rz_list_last_val(ctx->switch_path);
 				RzAnalysisBlock *prev_bb = NULL;
 				do {
 					rz_reg_arena_pop(ctx->fcn->analysis->reg);
@@ -1266,7 +1266,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 					}
 					if (cop_it && !rz_list_iter_has_next(cop_it)) {
 						rz_list_pop(ctx->switch_path);
-						cop_it = rz_list_last(ctx->switch_path);
+						cop_it = rz_list_last_val(ctx->switch_path);
 					}
 				} while (!bbit && !rz_list_empty(ctx->path));
 			}

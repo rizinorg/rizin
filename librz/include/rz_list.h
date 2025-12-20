@@ -80,7 +80,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL
 RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
 RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_last(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);

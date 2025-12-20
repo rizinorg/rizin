@@ -289,7 +289,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 		if (rz_str_strchr(line, "#")) {
 			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
-			char *raw_comment = rz_str_dup(rz_list_last(line_and_cmt));
+			char *raw_comment = rz_str_dup(rz_list_last_val(line_and_cmt));
 			if (!raw_comment) {
 				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
 				continue;
