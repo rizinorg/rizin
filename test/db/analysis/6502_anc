@@ -1,0 +1,13 @@
+NAME=6502 ANC opcode analysis
+FILE=-
+# 0x0b = anc #0x10, 0x10 is the immediate value
+INPUT=0b10
+ARCH=6502
+BITS=8
+CMDS=aa; pdf
+EXPECT=
+[0x00000000]> aa; pdf
+            ;-- section..data:
+/ (fcn) fcn.00000000 2
+|   0x00000000      0b10           anc #0x10
+\   0x00000002      0000           brk
