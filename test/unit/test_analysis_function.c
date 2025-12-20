@@ -440,7 +440,7 @@ bool test_noreturn_functions_list() {
 
 	RzList *noret = rz_analysis_noreturn_functions(analysis);
 	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
-	mu_assert_streq(rz_list_first(noret), "0x800800", "Addr");
+	mu_assert_streq(rz_list_first_val(noret), "0x800800", "Addr");
 	rz_list_free(noret);
 
 	rz_analysis_noreturn_drop(analysis, "0x800800");
@@ -448,7 +448,7 @@ bool test_noreturn_functions_list() {
 
 	noret = rz_analysis_noreturn_functions(analysis);
 	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
-	mu_assert_streq(rz_list_first(noret), "0xdeadbeeff000bad1", "Long addr");
+	mu_assert_streq(rz_list_first_val(noret), "0xdeadbeeff000bad1", "Long addr");
 	rz_list_free(noret);
 
 	rz_analysis_noreturn_drop(analysis, "0xdeadbeeff000bad1");
@@ -456,7 +456,7 @@ bool test_noreturn_functions_list() {
 
 	noret = rz_analysis_noreturn_functions(analysis);
 	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
-	mu_assert_streq(rz_list_first(noret), "foobar", "Name");
+	mu_assert_streq(rz_list_first_val(noret), "foobar", "Name");
 	rz_list_free(noret);
 
 	rz_analysis_noreturn_drop(analysis, "foobar");

@@ -750,7 +750,7 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_
 		}
 	}
 
-	op = rz_list_first(opcodes);
+	op = rz_list_first_val(opcodes);
 	if (op->type == RZ_DIFF_OP_EQUAL) {
 		opcode_set(op, op->type, RZ_MAX(op->a_beg, op->a_end - n_groups), op->a_end, RZ_MAX(op->b_beg, op->b_end - n_groups), op->b_end);
 	}
@@ -808,7 +808,7 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_opcodes_grouped_new(RZ_
 		}
 	}
 
-	op = rz_list_first(opcodes);
+	op = rz_list_first_val(opcodes);
 	if (!(rz_list_length(opcodes) == 1 && op->type == RZ_DIFF_OP_EQUAL)) {
 		if (!rz_list_append(groups, group)) {
 			RZ_LOG_ERROR("rz_diff_opcodes_grouped_new: cannot append group into groups\n");

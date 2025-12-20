@@ -405,7 +405,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	RzAnalysisFunction *our_fcn = ctx->fcn;
 	rz_analysis_block_ref(block);
 	while (!rz_list_empty(block->fcns)) {
-		RzAnalysisFunction *other_fcn = rz_list_first(block->fcns);
+		RzAnalysisFunction *other_fcn = rz_list_first_val(block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
@@ -1722,7 +1722,7 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analy
 				}
 			}
 		} else {
-			ret = rz_list_first(list);
+			ret = rz_list_first_val(list);
 		}
 	}
 	rz_list_free(list);

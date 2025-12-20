@@ -100,7 +100,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
  * \brief Returns the first element of the list
  *
  **/
-RZ_API RZ_BORROW void *rz_list_first(RZ_NONNULL const RzList *list) {
+RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
 	rz_return_val_if_fail(list, NULL);
 	return list->head ? list->head->val : NULL;
 }

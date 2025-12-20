@@ -1230,7 +1230,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			rz_reg_arena_push(ctx->fcn->analysis->reg);
 			RzListIter *bbit = NULL;
 			if (bb->switch_op) {
-				RzAnalysisCaseOp *cop = rz_list_first(bb->switch_op->cases);
+				RzAnalysisCaseOp *cop = rz_list_first_val(bb->switch_op->cases);
 				bbit = rz_list_find(ctx->bbl, &cop->jump, (RzListComparator)find_bb, NULL);
 				if (bbit) {
 					rz_list_push(ctx->switch_path, bb->switch_op->cases->head);

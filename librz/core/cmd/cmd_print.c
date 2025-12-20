@@ -1975,7 +1975,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	detected = rz_list_first(found);
+	detected = rz_list_first_val(found);
 	if (detected) {
 		rz_cons_memcat(detected->string, detected->size);
 		rz_cons_newline();
@@ -4896,7 +4896,7 @@ static CoreBlockRange *calculate_blocks_range(RzCore *core, ut64 from, ut64 to, 
 			free(brange);
 			return NULL;
 		}
-		RzIOMap *map = rz_list_first(boundaries);
+		RzIOMap *map = rz_list_first_val(boundaries);
 		if (map) {
 			brange->from = map->itv.addr;
 			RzIOMap *m;

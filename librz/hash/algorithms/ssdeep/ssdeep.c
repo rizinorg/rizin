@@ -417,11 +417,11 @@ double rz_ssdeep_compare(const char *hash_a, const char *hash_b) {
 		goto end;
 	}
 
-	block_a = strtol(rz_list_first(token_a), NULL, 10);
+	block_a = strtol(rz_list_first_val(token_a), NULL, 10);
 	digest_a0 = remove_triplets(rz_list_get_n(token_a, 1));
 	digest_a1 = remove_triplets(rz_list_last(token_a));
 
-	block_b = strtol(rz_list_first(token_b), NULL, 10);
+	block_b = strtol(rz_list_first_val(token_b), NULL, 10);
 	digest_b0 = remove_triplets(rz_list_get_n(token_b, 1));
 	digest_b1 = remove_triplets(rz_list_last(token_b));
 

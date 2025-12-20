@@ -954,7 +954,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				break;
 			}
 			if (param->outmode != RZ_MODE_JSON) {
-				RzSearchKeyword *kw = rz_list_first(core->search->kws);
+				RzSearchKeyword *kw = rz_list_first_val(core->search->kws);
 				eprintf("Searching");
 				if (!param->regex_search) {
 					int lenstr = kw ? kw->keyword_length : 0;

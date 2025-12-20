@@ -299,7 +299,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
 				continue;
 			}
-			toks = rz_str_split_duplist_n_regex(rz_list_first(line_and_cmt), "\\s+", 0, true);
+			toks = rz_str_split_duplist_n_regex(rz_list_first_val(line_and_cmt), "\\s+", 0, true);
 			rz_list_append(toks, comment);
 			rz_list_free(line_and_cmt);
 		} else {

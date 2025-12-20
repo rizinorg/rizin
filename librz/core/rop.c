@@ -975,7 +975,7 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 		return false;
 	}
 	rz_cmd_state_output_set_columnsf(state, "XXs", "addr", "bytes", "disasm");
-	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first_val(hitlist);
 	if (!hit) {
 		return false;
 	}
@@ -1256,7 +1256,7 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	if (!is_ret_gadget(core, hit_last, crop)) {
 		return rop_gadget_info;
 	}
-	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first_val(hitlist))->addr;
 	rop_gadget_info = ht_up_find(core->analysis->ht_rop_semantics, addr_start, NULL);
 	if (rop_gadget_info) {
 		return rop_gadget_info;
