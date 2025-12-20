@@ -2,7 +2,7 @@ NAME=Indirect call x86
 FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
 aaaaIp main
-pd 47 @ main
+pd 48 @ main
 axl
 EOF
 EXPECT=<<EOF
@@ -11,33 +11,34 @@ EXPECT=<<EOF
             0x00401a71      mov   rbp, rsp
             0x00401a74      sub   rsp, 0x20
             0x00401a78      mov   dword [rbp-0x04], 0x00
-            0x00401a7f      mov   qword [rbp-0x10], 0x00
-            0x00401a87      mov   qword [rbp-0x18], 0x00
-            ; CODE XREF from main @ +0x52
-        .-> 0x00401a8f      cmp   qword [rbp-0x18], 0x03
-       ,==< 0x00401a94      jnb   0x401ac4
-       |:   0x00401a96      mov   rcx, qword [rbp-0x18]
-       |:   0x00401a9a      mov   al, 0x00
-       |:   0x00401a9c      call  qword [rcx*8+obj.fcn_arr]            ; 0x4a80d0
+            0x00401a7f      mov   dword [rbp-0x08], 0x00
+            0x00401a86      mov   dword [rbp-0x0c], 0x00
+            ; CODE XREF from main @ +0x4b
+        .-> 0x00401a8d      cmp   dword [rbp-0x0c], 0x03
+       ,==< 0x00401a91      jnb   0x401abd
+       |:   0x00401a93      mov   eax, dword [rbp-0x0c]
+       |:   0x00401a96      mov   ecx, eax
+       |:   0x00401a98      mov   al, 0x00
+       |:   0x00401a9a      call  qword [rcx*8+obj.fcn_arr]            ; 0x4a80d0
        |:   ; CODE XREF from sym.function_0 @ +0xa
        |:   ; CODE XREF from sym.function_1 @ +0xa
        |:   ; CODE XREF from sym.function_2 @ +0xa
-       |:   0x00401aa3      mov   qword [rbp-0x20], rax
-       |:   0x00401aa7      mov   rax, qword [rbp-0x20]
-       |:   0x00401aab      movzx eax, byte [rax]                      ; [0x4a9b50:1]=0
-       |:   0x00401aae      add   rax, qword [rbp-0x10]
-       |:   0x00401ab2      mov   qword [rbp-0x10], rax
-       |:   0x00401ab6      mov   rax, qword [rbp-0x18]
-       |:   0x00401aba      add   rax, 0x01
-       |:   0x00401abe      mov   qword [rbp-0x18], rax
-       |`=< 0x00401ac2      jmp   0x401a8f
-       |    ; CODE XREF from main @ +0x24
-       `--> 0x00401ac4      mov   rax, qword [rbp-0x10]
-            0x00401ac8      add   rsp, 0x20
-            0x00401acc      pop   rbp
-            0x00401acd      ret
-            0x00401ace      nop
-            ; CODE XREF from main @ +0x2c
+       |:   0x00401aa1      mov   qword [rbp-0x18], rax
+       |:   0x00401aa5      mov   rax, qword [rbp-0x18]
+       |:   0x00401aa9      movzx eax, byte [rax]                      ; [0x4a9b50:1]=0
+       |:   0x00401aac      add   eax, dword [rbp-0x08]
+       |:   0x00401aaf      mov   dword [rbp-0x08], eax
+       |:   0x00401ab2      mov   eax, dword [rbp-0x0c]
+       |:   0x00401ab5      add   eax, 0x01
+       |:   0x00401ab8      mov   dword [rbp-0x0c], eax
+       |`=< 0x00401abb      jmp   0x401a8d
+       |    ; CODE XREF from main @ +0x21
+       `--> 0x00401abd      mov   eax, dword [rbp-0x08]
+            0x00401ac0      add   rsp, 0x20
+            0x00401ac4      pop   rbp
+            0x00401ac5      ret
+            0x00401ac6      nop   word [rax+rax*1], ax
+            ; CODE XREF from main @ +0x2a
             ;-- function_0:
             0x00401ad0      push  rbp
             0x00401ad1      mov   rbp, rsp
@@ -55,7 +56,7 @@ EXPECT=<<EOF
             0x00401ae4      mov   rax, obj.z                           ; 0x4a9b50
             0x00401aee      pop   rbp
             0x00401aef      ret
-            ; CODE XREF from main @ +0x2c
+            ; CODE XREF from main @ +0x2a
             ;-- function_1:
             0x00401af0      push  rbp
             0x00401af1      mov   rbp, rsp
@@ -64,7 +65,7 @@ EXPECT=<<EOF
             0x00401af9      pop   rbp
             0x00401afa      ret
             0x00401afb      nop   dword [rax+rax*1], eax
-            ; CODE XREF from main @ +0x2c
+            ; CODE XREF from main @ +0x2a
             ;-- function_2:
             0x00401b00      push  rbp
             0x00401b01      mov   rbp, rsp
@@ -72,29 +73,26 @@ EXPECT=<<EOF
             ; CODE XREF from sym.some_ptr @ +0xf
             0x00401b09      pop   rbp
             0x00401b0a      ret
-                                 main+36 0x401a94 ->      CODE -> 0x401ac4 main+84
-                                 main+44 0x401a9c ->      CODE -> 0x401ad0 sym.function_0
-                                 main+44 0x401a9c ->      CODE -> 0x401af0 sym.function_1
-                                 main+44 0x401a9c ->      CODE -> 0x401b00 sym.function_2
-                                 main+44 0x401a9c ->      DATA -> 0x4a80d0 obj.fcn_arr
-                                 main+44 0x401a9c ->      DATA -> 0x4a80d8 obj.fcn_arr+8
-                                 main+44 0x401a9c ->      DATA -> 0x4a80e0 obj.fcn_arr+16
-                                 main+59 0x401aab ->      DATA -> 0x4a9b50 obj.z
-                                 main+82 0x401ac2 ->      CODE -> 0x401a8f main+31
+                                 main+33 0x401a91 ->      CODE -> 0x401abd main+77
+                                 main+42 0x401a9a ->      CODE -> 0x401ad0 sym.function_0
+                                 main+42 0x401a9a ->      CODE -> 0x401af0 sym.function_1
+                                 main+42 0x401a9a ->      CODE -> 0x401b00 sym.function_2
+                                 main+42 0x401a9a ->      DATA -> 0x4a80d0 obj.fcn_arr
+                                 main+42 0x401a9a ->      DATA -> 0x4a80d8 obj.fcn_arr+8
+                                 main+42 0x401a9a ->      DATA -> 0x4a80e0 obj.fcn_arr+16
+                                 main+57 0x401aa9 ->      DATA -> 0x4a9b50 obj.z
+                                 main+75 0x401abb ->      CODE -> 0x401a8d main+29
                         sym.function_0+4 0x401ad4 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_0+10 0x401ada ->      CODE -> 0x401aa3 main+51
+                       sym.function_0+10 0x401ada ->      CODE -> 0x401aa1 main+49
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401ad9 sym.function_0+9
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401af9 sym.function_1+9
                          sym.some_ptr+15 0x401aef ->      CODE -> 0x401b09 sym.function_2+9
                         sym.function_1+4 0x401af4 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_1+10 0x401afa ->      CODE -> 0x401aa3 main+51
+                       sym.function_1+10 0x401afa ->      CODE -> 0x401aa1 main+49
                         sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_2+10 0x401b0a ->      CODE -> 0x401aa3 main+51
+                       sym.function_2+10 0x401b0a ->      CODE -> 0x401aa1 main+49
 EOF
-EXPECT_ERR=<<EOF
-WARNING: inquiry: Failed to read memory for IL basic block generation at 0xffffffffffffff00 size: 224.
-ERROR: Failed to lift basic block at 0xffffffffffffff00
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=Indirect call hexagon
@@ -218,8 +216,6 @@ WARNING: Skip adding map 'fmap..note.llvm.cgmdinfo' to boundaries, because it is
 WARNING: Skip adding map 'fmap..hexagon.attributes' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..llvm_addrsig' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
-WARNING: inquiry: Failed to read memory for IL basic block generation at 0x0 size: 64.
-ERROR: Failed to lift basic block at 0x0
 ERROR: Failed to read chunk of size 0x101 at 0x8000040 for disassembly.
 EOF
 RUN

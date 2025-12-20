@@ -28,8 +28,7 @@ typedef struct {
 } ProtoIntrprAbstrData;
 
 typedef struct {
-	 RzInterpreterIORequest io_req;
-	 RzAnalysisXRef xref;
+	RzAnalysisXRef xref;
 } ProtoInterprSharedObjects;
 
 /**
@@ -71,14 +70,16 @@ bool read_var_from_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 
 bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data);
 bool store_abstr_data(
 	RzInterpreterAbstrState *state,
-	ut64 addr,
+	RzILMemIndex mem_idx,
+	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);
 bool load_abstr_data(
 	RzInterpreterAbstrState *state,
-	ut64 addr,
-	size_t size,
+	RzILMemIndex mem_idx,
+	const ProtoIntrprAbstrData *addr,
+	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);

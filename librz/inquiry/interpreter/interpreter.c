@@ -5,6 +5,7 @@
  * \file The API implementation for all analysis interpreters.
  */
 
+#include "rz_cons.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -78,26 +79,22 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
 	RzInterpreterAbstraction kinds,
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
-	RZ_NULLABLE const RzPVector *reg_names) {
-	rz_return_val_if_fail(il_config, NULL);
+	RZ_NULLABLE const RzILRegBinding *reg_bindings) {
+	rz_return_val_if_fail(il_config && reg_bindings, NULL);
 	RzInterpreterAbstrState *state = RZ_NEW0(RzInterpreterAbstrState);
 	if (!state) {
 		return NULL;
 	}
 	state->arch_name = arch_name;
 	state->kinds = kinds;
-	if (!reg_names) {
-		return state;
-	}
 	state->pc = RZ_NEW0(RzInterpreterAbstrVal);
 	if (!state->pc) {
 		return NULL;
 	}
 	// Initialize the register file with uninitialized abstract values.
 	state->globals = ht_up_new(NULL, free);
-	void **it;
-	rz_pvector_foreach (reg_names, it) {
-		const char *rname = *it;
+	for (size_t i = 0; i < reg_bindings->regs_count; i++) {
+		const char *rname = reg_bindings->regs[i].name;
 		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
 		if (!aval) {
 			ht_up_free(state->globals);

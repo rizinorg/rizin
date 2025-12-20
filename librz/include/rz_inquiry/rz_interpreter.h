@@ -9,6 +9,7 @@
 #ifndef RZ_INTERPRETER
 #define RZ_INTERPRETER
 
+#include "rz_util/rz_bitvector.h"
 #include <rz_arch.h>
 #include <rz_io.h>
 #include <rz_th.h>
@@ -169,20 +170,16 @@ typedef enum {
 
 typedef struct {
 	RzInterpreterIOReqType type;
-	ut64 addr; ///< The address to read/write.
-	size_t n_bytes; ///< The number of bytes to read/write.
-	const ut8 *data; ///< The data to write.
+	size_t mem_idx; ///< The memory space to read/write.
+	bool big_endian; ///< Set if the data is big endian ordered.
+	const RzBitVector *addr; ///< The address to read/write.
+	const RzBitVector *st_data; ///< The data to store.
+	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
+	size_t n_bits; ///< The number of bits to read/write.
 } RzInterpreterIORequest;
 
 typedef struct {
-	const ut8 *data; ///< The data read. NULL in case of failed read.
-	ut64 n_bytes; ///< The number of bytes to read.
-} RzInterpreterIOResR;
-
-typedef struct {
-	RzInterpreterIOReqType type;
 	bool req_ok; ///< Set to true if IO request succeeded.
-	RzInterpreterIOResR read;
 } RzInterpreterIOResult;
 
 /**
@@ -214,7 +211,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
 	RzInterpreterAbstraction kinds,
 	RZ_OWN RZ_NONNULL RzAnalysisILConfig *il_config,
-	RZ_NULLABLE const RzPVector *reg_names);
+	RZ_NULLABLE const RzILRegBinding *reg_bindings);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,

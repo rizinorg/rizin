@@ -8,19 +8,21 @@
 #include "rz_analysis.h"
 #include "rz_config.h"
 #include "rz_cons.h"
+#include "rz_il/definitions/mem.h"
+#include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
 #include "rz_io.h"
-#include "rz_reg.h"
 #include "rz_th.h"
+#include "rz_util/rz_bitvector.h"
+#include "rz_util/rz_buf.h"
 #include "rz_vector.h"
+#include <rz_il.h>
 #include <rz_list.h>
 #include <rz_types_base.h>
 #include <rz_util/rz_assert.h>
 
 RZ_LIB_VERSION(rz_inquiry);
-
-#define MAX_IO_DATA_READ 0x1000
 
 static RzInquiryPlugin *inquiry_static_plugins[] = { RZ_INQUIRY_STATIC_PLUGINS };
 
@@ -72,29 +74,30 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 	return false;
 }
 
-static RzPVector *get_reg_names(RzAnalysis *analysis) {
-	RzPVector *reg_names = rz_pvector_new(free);
-	if (analysis->cur->il_config) {
-		RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
-		if (config->reg_bindings) {
-			for (size_t i = 0; config->reg_bindings[i]; i++) {
-				rz_pvector_push(reg_names, rz_str_dup(config->reg_bindings[i]));
-			}
-			rz_analysis_il_config_free(config);
-			return reg_names;
-		}
-		rz_analysis_il_config_free(config);
+static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
+	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
+		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+		rz_bv_to_ut64(io_req->addr));
+	io_res->req_ok = false;
+	RzILMemIndex mem_idx = io_req->mem_idx;
+	if (rz_pvector_empty(il_mems) || rz_pvector_len(il_mems) <= mem_idx) {
+		rz_warn_if_reached();
+		return;
 	}
-	const RzList *regs = rz_reg_get_list(analysis->reg, RZ_REG_TYPE_ANY);
-	if (!regs) {
-		return NULL;
+	if (rz_bv_len(io_req->addr) == 64 && rz_bv_msb(io_req->addr)) {
+		RZ_LOG_ERROR("Due to the Unix seek() implementation, addresses with the "
+			     "63 bit set can't be addresses.\n");
+		return;
 	}
-	RzRegItem *reg;
-	RzListIter *iter;
-	rz_list_foreach (regs, iter, reg) {
-		rz_pvector_push(reg_names, rz_str_dup(reg->name));
+	RzILMem *mem = rz_pvector_at(il_mems, mem_idx);
+	if (io_req->type == RZ_INTERPRETER_IO_READ) {
+		io_res->req_ok = rz_il_mem_loadw_into(mem, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
+	} else {
+		io_res->req_ok = rz_il_mem_storew(mem, io_req->addr, io_req->st_data, io_req->big_endian);
 	}
-	return reg_names;
+	RZ_LOG_DEBUG("INQUIRY: Sent IO %s result. Success = %s.\n",
+		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+		rz_str_bool(io_res->req_ok));
 }
 
 /**
@@ -118,6 +121,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzThreadQueue *il_queue = NULL;
 	RzVector *entry_points = NULL;
 	RzThread *interpr_th = NULL;
+	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
+	RzAnalysisILVM *analysis_vm = NULL;
 
 	rz_cons_push();
 
@@ -220,16 +225,36 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Initialize the abstract state with the architecture's registers.
 	if (!core->analysis->cur->il_config) {
 		RZ_LOG_ERROR("The RzArch plugin doesn't have il_config() implemented.\n");
+		return_code = false;
 		goto error_free;
 	}
-	RzAnalysisILConfig *config = core->analysis->cur->il_config(core->analysis);
-	RzPVector *reg_names = get_reg_names(core->analysis);
-	abstr_state = rz_interpreter_abstr_state_new(
-		core->analysis->cur->arch,
-		RZ_INTERPRETER_ABSTRACTION_CONST,
-		config,
-		reg_names);
-	rz_pvector_free(reg_names);
+
+	// Perform the RzAnalysisILVM and abstract state setup procedure.
+	// This prototype won't use the RzAnalysisILVM directly but its components.
+	// That is because the prototypes doesn't handle the VM tasks (track PC, handle IO)
+	// in one VM object, but in separated modules.
+	// So analysis_vm->vm->vm_memorys is used for handling IO requests and 
+	// analysis_vm->reg_binding is used for the abstract state setup.
+	//
+	// TODO: Is it a good idea to separate these tasks into different modules?
+	// It allows the IO handler to buffer reads in r-- sections for multiple interpreters.
+	// Possibly allows to optimize the IO access, because there is only module accessing it (not every interpreter).
+	// But is there any other advantage?
+	{
+		analysis_vm = rz_analysis_il_vm_new(core->analysis, core->analysis->reg);
+		if (!analysis_vm) {
+			RZ_LOG_ERROR("Failed during RzAnalysisILVM setup.\n");
+			return_code = false;
+			goto error_free;
+		}
+
+		RzAnalysisILConfig *config = core->analysis->cur->il_config(core->analysis);
+		abstr_state = rz_interpreter_abstr_state_new(
+			core->analysis->cur->arch,
+			RZ_INTERPRETER_ABSTRACTION_CONST,
+			config,
+			analysis_vm->reg_binding);
+	}
 
 	// Bundle all the queues into one object to pass it to the thread.
 	// Later we would pass a unique iset to each interpreter with
@@ -247,6 +272,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		entry_points);
 	if (!iset) {
 		return_code = false;
+		rz_warn_if_reached();
 		goto error_free;
 	}
 
@@ -269,8 +295,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Poor man's shared memory.
 	RzInterpreterIOResult _io_res = { 0 };
 	RzInterpreterIOResult *io_res = &_io_res;
-	ut8 io_res_buf[MAX_IO_DATA_READ] = { 0 };
-	io_res->read.data = io_res_buf;
 
 	while (rz_atomic_bool_get(is_running)) {
 		if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
@@ -312,32 +336,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 				RzInterpreterIORequest *io_req = NULL;
 				if (!rz_th_queue_pop(io_request_q, false, (void **)&io_req) || !io_req) {
 					rz_atomic_bool_set(is_running, false);
+					rz_warn_if_reached();
 					break;
 				}
-				RZ_LOG_DEBUG("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
-					io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
-					io_req->addr);
-				if (io_req->type == RZ_INTERPRETER_IO_READ) {
-					if (io_req->n_bytes > MAX_IO_DATA_READ) {
-						RZ_LOG_ERROR("Plugin tried to read more than 0x%" PFMT32x " bytes.\n"
-							     "This is more than configured. It will only read MAX_IO_DATA_READ bytes.\nPlease set MAX_IO_DATA_READ to a larger value and rebuild Rizin.\n",
-							MAX_IO_DATA_READ);
-					}
-					// Cast to constant ut8* here. The constant is only there so interpreter plugins don't free it by accident.
-					(void)rz_io_read_at_mapped(core->io, io_req->addr, (ut8 *)io_res->read.data, io_req->n_bytes > MAX_IO_DATA_READ ? MAX_IO_DATA_READ : io_req->n_bytes);
-					// The IO API doesn't have a function which can:
-					// - read beyond mapped regions and from cached data.
-					// - return the total number of bytes it read.
-					//
-					// So for this prototype we just have to assume it always succeeds :(
-					io_res->req_ok = true;
-					io_res->read.n_bytes = io_req->n_bytes;
-				} else {
-					io_res->req_ok = rz_io_write_at(core->io, io_req->addr, io_req->data, io_req->n_bytes);
-				}
-				RZ_LOG_DEBUG("INQUIRY: Sent IO %s result. Success = %s.\n",
-					io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
-					io_res->req_ok ? "true" : "false");
+				handle_io_request(core, &analysis_vm->vm->vm_memory, io_req, io_res);
 				rz_th_queue_push(io_result_q, io_res, true);
 			}
 		}
@@ -365,6 +367,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	// Wait for thread to finish before cleaning.
 error_free:
 	RZ_LOG_DEBUG("INQUIRY: Close queues\n");
+	rz_buf_free(io_buf);
+	rz_analysis_il_vm_free(analysis_vm);
 	rz_th_queue_close(il_queue);
 	rz_th_queue_close(io_request_q);
 	rz_th_queue_close(io_result_q);
