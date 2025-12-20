@@ -1880,21 +1880,32 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	ut32 max_threads = rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"));
 	ut32 max_hits = rz_config_get_i(core->config, "search.maxhits");
+	ut32 search_chunk = rz_config_get_i(core->config, "search.chunk");
 	const char *show_progress = rz_config_get(core->config, "search.show_progress");
 	if (!(rz_search_opt_set_max_threads(search_opts, max_threads) &&
 		    rz_search_opt_set_max_hits(search_opts, max_hits) &&
 		    rz_search_opt_set_show_progress_from_str(search_opts, show_progress))) {
 		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
+		return NULL;
+	}
+
+	if (search_chunk && !rz_search_opt_set_chunk_size(search_opts, search_chunk)) {
+		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 
 	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
 	if (!fopts) {
 		RZ_LOG_ERROR("Failed init find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
 		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
+		rz_search_find_opt_free(fopts);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	return search_opts;
@@ -1904,6 +1915,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 
@@ -1917,6 +1929,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 	hits = rz_core_search_bytes(core, search_opts, pattern);
@@ -1930,7 +1943,6 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
-	rz_search_bytes_pattern_free(pattern);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
@@ -2085,7 +2097,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, con
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
-// "/ca"
+// "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
 	if (argc < 2 || RZ_STR_ISEMPTY(argv[1])) {

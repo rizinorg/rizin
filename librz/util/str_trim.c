@@ -93,7 +93,7 @@ RZ_API const char *rz_str_trim_head_ro(RZ_NONNULL const char *str) {
 	return str;
 }
 
-/* \brief Returns a pointer to the first non-whitespace character of \p str
+/* \brief Returns a pointer to the first whitespace character of \p str
  *
  * It considers only space and TAB as the whitespace
  */
