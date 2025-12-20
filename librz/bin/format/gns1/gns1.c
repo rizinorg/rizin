@@ -109,7 +109,6 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 			break;
 		}
 
-
 		// Validate segment offset and size are within file bounds
 		if (entry.offset >= file_size || entry.offset + entry.size > file_size) {
 			consecutive_invalid++;
