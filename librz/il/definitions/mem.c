@@ -9,8 +9,13 @@
 
 /**
  * Create a memory for accessing the given buffer.
+ *
+ * \param buf The buffer of the memory.
+ * \param key_len The number of bits a memory key requires.
+ *
+ * \return The new RzILMem object, or NULL in case of failure.
  */
-RZ_API RzILMem *rz_il_mem_new(RzBuffer *buf, ut32 key_len) {
+RZ_API RZ_OWN RzILMem *rz_il_mem_new(RZ_NONNULL RZ_BORROW RzBuffer *buf, ut32 key_len) {
 	rz_return_val_if_fail(buf && key_len, NULL);
 	if (key_len > KEY_LEN_MAX) {
 		// no assertion because it's not stricly a programming error to call this
@@ -21,6 +26,8 @@ RZ_API RzILMem *rz_il_mem_new(RzBuffer *buf, ut32 key_len) {
 	if (!ret) {
 		return NULL;
 	}
+	// Increment reference count to ensure it is not freed by the owner while
+	// this object still uses it.
 	rz_buf_ref(buf);
 	ret->buf = buf;
 	ret->key_len = key_len;
@@ -35,6 +42,9 @@ RZ_API void rz_il_mem_free(RzILMem *mem) {
 	if (!mem) {
 		return;
 	}
+	// The buffer is not owned. But the reference was incremented.
+	// So if there is still another owner using it, this call will
+	// only decrement the reference count and return.
 	rz_buf_free(mem->buf);
 	free(mem);
 }
