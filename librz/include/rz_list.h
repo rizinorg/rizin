@@ -13,7 +13,7 @@ typedef void (*RzListFree)(void *ptr);
 typedef struct rz_list_iter_t RzListIter;
 
 struct rz_list_iter_t {
-	void *elem;
+	void *val;
 	RzListIter *next;
 	RzListIter *prev;
 };
@@ -33,30 +33,30 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 
 #define rz_list_foreach(list, it, pos) \
 	if (list) \
-		for (it = list->head; it && (pos = it->elem, 1); it = it->next)
+		for (it = list->head; it && (pos = it->val, 1); it = it->next)
 #define rz_list_foreach_enum(list, it, pos, i) \
 	if (list) \
-		for (it = list->head, i = 0; it && (pos = it->elem, 1); it = it->next, ++i)
+		for (it = list->head, i = 0; it && (pos = it->val, 1); it = it->next, ++i)
 #define rz_list_foreach_iter(iter, it, pos) \
-	for (it = iter; it && (pos = it->elem, 1); it = it->next)
+	for (it = iter; it && (pos = it->val, 1); it = it->next)
 /* Safe when calling rz_list_delete() while iterating over the list. */
 #define rz_list_foreach_safe(list, it, tmp, pos) \
 	if (list) \
-		for (it = list->head; it && (pos = it->elem, tmp = it->next, 1); it = tmp)
+		for (it = list->head; it && (pos = it->val, tmp = it->next, 1); it = tmp)
 #define rz_list_foreach_iter_safe(iter, it, tmp, pos) \
-	for (it = iter; it && (pos = it->elem, tmp = it->next, 1); it = tmp)
+	for (it = iter; it && (pos = it->val, tmp = it->next, 1); it = tmp)
 #define rz_list_foreach_prev(list, it, pos) \
 	if (list) \
-		for (it = list->tail; it && (pos = it->elem, 1); it = it->prev)
+		for (it = list->tail; it && (pos = it->val, 1); it = it->prev)
 #define rz_list_foreach_prev_safe(list, it, tmp, pos) \
-	for (it = list->tail; it && (pos = it->elem, tmp = it->prev, 1); it = tmp)
+	for (it = list->tail; it && (pos = it->val, tmp = it->prev, 1); it = tmp)
 
 #define rz_list_empty(x) (!(x) || !(x)->length)
 #define rz_list_head(x)  ((x) ? (x)->head : NULL)
 #define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
 
 #define rz_list_iter_get(x) \
-	x->elem; \
+	x->val; \
 	x = x->next
 #define rz_list_iter_next(x)     (x ? 1 : 0)
 #define rz_list_iter_cur(x)      x->prev

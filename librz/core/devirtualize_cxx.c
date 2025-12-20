@@ -86,7 +86,7 @@ static RzList /*<RzAnalysisFunction *>*/ *list_new_fcns(RzCore *core) {
 	rz_list_foreach (list, it, fcn) {
 		char *res = strstr(fcn->name, "sym.imp.operator_new");
 		if (res != NULL) {
-			rz_list_push(ret_list, it->elem);
+			rz_list_push(ret_list, it->val);
 		}
 	}
 	return ret_list;
