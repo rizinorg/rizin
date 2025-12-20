@@ -237,8 +237,8 @@ static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) 
 	} else if (a->crc_length != b->crc_length) {
 		return a->crc_length - b->crc_length;
 	}
-	const RzFlirtFunction *af = rz_list_first(a->public_functions);
-	const RzFlirtFunction *bf = rz_list_first(b->public_functions);
+	const RzFlirtFunction *af = rz_list_first_val(a->public_functions);
+	const RzFlirtFunction *bf = rz_list_first_val(b->public_functions);
 	return strcmp(af->name, bf->name);
 }
 

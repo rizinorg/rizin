@@ -104,7 +104,7 @@ static RzAnalysisFunction *analysis_get_function_in(RzAnalysis *analysis, ut64 o
 			offset);
 		goto exit;
 	}
-	fcn = rz_list_first(list);
+	fcn = rz_list_first_val(list);
 	if (!fcn) {
 		rz_warn_if_reached();
 	}
@@ -1772,7 +1772,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int arg
 		RZ_LOG_ERROR("core: Cannot find basic block\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisFunction *fcn = rz_list_first(b->fcns);
+	RzAnalysisFunction *fcn = rz_list_first_val(b->fcns);
 	rz_analysis_function_remove_block(fcn, b);
 	return RZ_CMD_STATUS_OK;
 }
@@ -1796,7 +1796,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int ar
 		rz_list_free(blocks);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_block_add_switch_case(rz_list_first(blocks), switch_addr, 0, case_addr);
+	rz_analysis_block_add_switch_case(rz_list_first_val(blocks), switch_addr, 0, case_addr);
 	rz_list_free(blocks);
 	return RZ_CMD_STATUS_OK;
 }
@@ -1809,7 +1809,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_switch_type_handler(RzCore *core,
 		rz_list_free(blocks);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisBlock *b = rz_list_first(blocks);
+	RzAnalysisBlock *b = rz_list_first_val(blocks);
 	if (!b->switch_op) {
 		RZ_LOG_ERROR("Block does not have a switch case\n");
 		return RZ_CMD_STATUS_INVALID;
@@ -4220,12 +4220,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_analyze_jmptable_handler(RzCore *core, i
 	if (!blocks) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzAnalysisBlock *block = rz_list_first(blocks);
+	RzAnalysisBlock *block = rz_list_first_val(blocks);
 	if (block && !rz_list_empty(block->fcns)) {
 		ut64 table = rz_num_math(core->num, argv[1]);
 		ut64 elements = rz_num_math(core->num, argv[2]);
 		RzStackAddr sp = rz_analysis_block_get_sp_at(block, core->offset);
-		rz_analysis_jmptbl(core->analysis, rz_list_first(block->fcns), block, core->offset, table, elements, UT64_MAX, sp);
+		rz_analysis_jmptbl(core->analysis, rz_list_first_val(block->fcns), block, core->offset, table, elements, UT64_MAX, sp);
 	} else {
 		RZ_LOG_ERROR("No function defined here\n");
 	}

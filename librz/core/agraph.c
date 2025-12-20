@@ -1722,7 +1722,7 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 		}
 		tmp = v;
 		while (tmp->is_dummy) {
-			tmp = (RzANode *)(((RzGraphNode *)rz_list_first(tmp->gnode->out_nodes))->data);
+			tmp = (RzANode *)(((RzGraphNode *)rz_list_first_val(tmp->gnode->out_nodes))->data);
 		}
 		if (tmp->gnode->idx == from->gnode->idx) {
 			break;
@@ -1733,7 +1733,7 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 		tmp = v;
 		while (tmp->gnode->idx != from->gnode->idx) {
 			v = tmp;
-			tmp = (RzANode *)(((RzGraphNode *)rz_list_first(v->gnode->out_nodes))->data);
+			tmp = (RzANode *)(((RzGraphNode *)rz_list_first_val(v->gnode->out_nodes))->data);
 
 			i = 0;
 			while (v->gnode->idx != g->layers[v->layer].nodes[i]->idx) {
@@ -1760,7 +1760,7 @@ static int get_edge_number(const RzAGraph *g, RzANode *src, RzANode *dst, bool o
 	RzANode *v;
 
 	if (outgoing && src->is_dummy) {
-		RzANode *in = (RzANode *)(((RzGraphNode *)rz_list_first((src->gnode)->in_nodes))->data);
+		RzANode *in = (RzANode *)(((RzGraphNode *)rz_list_first_val((src->gnode)->in_nodes))->data);
 		cur_nth = get_edge_number(g, in, src, outgoing);
 	} else {
 		const RzList *neighbours = outgoing
@@ -2947,9 +2947,9 @@ static void agraph_print_edges(RzAGraph *g) {
 
 			bool parent_many = false;
 			if (a->is_dummy) {
-				RzANode *in = (RzANode *)(((RzGraphNode *)rz_list_first(ga->in_nodes))->data);
+				RzANode *in = (RzANode *)(((RzGraphNode *)rz_list_first_val(ga->in_nodes))->data);
 				while (in && in->is_dummy) {
-					in = (RzANode *)(((RzGraphNode *)rz_list_first((in->gnode)->in_nodes))->data);
+					in = (RzANode *)(((RzGraphNode *)rz_list_first_val((in->gnode)->in_nodes))->data);
 				}
 				if (in && in->gnode) {
 					parent_many = rz_list_length(in->gnode->out_nodes) > 2;
@@ -3867,7 +3867,7 @@ RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user) {
 
 RZ_API RzANode *rz_agraph_get_first_node(const RzAGraph *g) {
 	const RzList *l = rz_graph_get_nodes(g->graph);
-	RzGraphNode *rgn = rz_list_first(l);
+	RzGraphNode *rgn = rz_list_first_val(l);
 	return get_anode(rgn);
 }
 

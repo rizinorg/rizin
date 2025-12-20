@@ -50,11 +50,11 @@ int main(int argc, char **argv) {
 
 	// Verify structure
 	if (node->child_list && rz_list_length(node->child_list) > 0) {
-		RzFlirtNode *child = rz_list_first(node->child_list);
+		RzFlirtNode *child = rz_list_first_val(node->child_list);
 		if (child && child->module_list && rz_list_length(child->module_list) > 0) {
-			RzFlirtModule *module = rz_list_first(child->module_list);
+			RzFlirtModule *module = rz_list_first_val(child->module_list);
 			if (module && module->public_functions && rz_list_length(module->public_functions) > 0) {
-				RzFlirtFunction *func = rz_list_first(module->public_functions);
+				RzFlirtFunction *func = rz_list_first_val(module->public_functions);
 				printf("\nFirst function in signature:\n");
 				printf("  Name: %s\n", func->name);
 				printf("  Offset: 0x%04x\n", func->offset);
