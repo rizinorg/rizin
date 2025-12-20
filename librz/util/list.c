@@ -97,7 +97,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
 }
 
 /**
- * \brief Returns the first element of the list
+ * \brief Returns the value stored in the first node of the list.
  *
  **/
 RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
