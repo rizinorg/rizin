@@ -1,16 +1,19 @@
-<img width="150" height="150" align="left" style="float: left; margin: 0 10px 0 0;" alt="Rizin logo" src="https://raw.githubusercontent.com/rizinorg/rizin/dev/doc/img/rizin.svg?sanitize=true">
+<img width="140" height="140" align="left"
+style="float:left; margin:0 16px 0 0;"
+alt="Rizin logo"
+src="https://raw.githubusercontent.com/rizinorg/rizin/dev/doc/img/rizin.svg?sanitize=true">
 
 # Rizin
+### A modern reverse-engineering framework 🧠🔍
 
-Rizin is a reverse engineering framework, born as a fork of the radare2, with 
-a focus on usability, features and cleanliness.
+**Rizin** is an open-source reverse-engineering framework, born as a fork of radare2,
+with a strong focus on **usability**, **clean design**, and **maintainability**.
 
-Rizin is portable and it can be used to analyze binaries, disassemble code,
-debug programs, as a forensic tool, as a scriptable command-line hexadecimal
-editor able to open disk files, and much more!
+It can be used to analyze binaries, disassemble code, debug programs,
+perform forensic analysis, and work as a scriptable command-line
+hexadecimal editor.
 
-To learn more on Rizin you may want to read the
-[official Rizin book](https://book.rizin.re).
+📖 **Learn more:** [Official Rizin Book](https://book.rizin.re)
 
 # How to install
 
@@ -49,14 +52,14 @@ Please have a look at [BUILDING.md][] for more information about building Rizin.
 
 # Contributing
 
-We very much welcome any kind of contributions, from typos, to documentation, to
-refactoring, up to completely new features you may think of. Before
-contributing, we would like you to read the file [CONTRIBUTING.md][], so that we
-can all be on the same page.
+We welcome contributions of all kinds — from typo fixes and documentation improvements to refactoring and entirely new features.
+Before contributing, please read [CONTRIBUTING.md][] to ensure we’re all aligned.
 
 ## Tests
 
-Look at [test/README.md][].
+Details on how to run the test suite and add new tests are available in  
+[test/README.md][].
+
 
 # Supported features
 
@@ -68,60 +71,76 @@ GNU/Darwin, GNU/Hurd.
 
 ## Supported Architectures
 
-i386, x86-64, ARM/ARM64, RISC-V, PowerPC, MIPS, AVR, SPARC, System Z (S390),
-SuperH, m68k, m680x, XAP, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300,
-Renesas (V810, V850, RL78), CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
-Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, TMS320 (c54x, c55x, c55+, c64x), Hexagon, DCPU16, LANAI,
-MCORE, mcs96, RSP, C-SKY(MCore), VAX, AMD Am29000.
+**Native architectures**
 
-There is also support for the following bytecode formats:
+i386, x86-64, ARM / ARM64, RISC-V, PowerPC, MIPS, AVR, SPARC, System Z (S390),  
+SuperH, m68k, m680x, XAP, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300,  
+Renesas (V810, V850, RL78), CRIS, PIC, LM32, 8051, 6502, i4004, i8080,  
+Propeller, Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430,  
+Xtensa, NIOS II, TMS320 (c54x, c55x, c55+, c64x), Hexagon, DCPU16, LANAI,  
+MCORE, mcs96, RSP, C-SKY (MCore), VAX, AMD Am29000.
 
-Dalvik, EBC, Java, Lua, Python, WebAssembly, Brainfuck, Malbolge
+**Bytecode architectures**
+
+Dalvik, EBC, Java, Lua, Python, WebAssembly, Brainfuck, Malbolge.
+
 
 ## Supported File Formats
 
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, NE, LE, LX, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC, ELF, Java class, Android boot image, Plan9 executable,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump), DMP (Windows pagedump),
-WASM (WebAssembly binary), Commodore VICE emulator, QNX,
-Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
+ELF, Mach-O, Fat Mach-O, PE, PE+, MZ, COFF, OMF, NE, LE, LX, TE, XBE, BIOS / UEFI,  
+Dyldcache, DEX, ART, CGC, Java class files, Android boot images,  
+Plan 9 executables, ZIMG, MBN / SBL bootloaders, ELF core dumps,  
+MDMP (Windows minidump), DMP (Windows pagedump),  
+WASM (WebAssembly binaries), Commodore VICE emulator formats, QNX,  
+Game Boy (Advance), Nintendo DS ROMs, Nintendo 3DS FIRMs.
 
 ## Tools
 
-Apart from the main tool `rizin`, there are also other tools tailored for specific purposes and 
-useful for shell scripting or as separate standalone tools:
+In addition to the main `rizin` shell, the project provides several specialized
+tools designed for scripting, automation, and standalone use:
 
-- `rz-bin` - provides all kind of information about binary formats
-- `rz-asm` - a command-line assembler and disassemblers
-- `rz-diff` - a tool to compare two binaries as raw data or analyzed executables
-- `rz-hash` - allows to calculate different hashes or even encrypt data
-- `rz-gg` - a small "eggs" code generator useful for exploitation purposes
-- `rz-find` - binary analog of `find` tool, allowing to search patterns and bit masks
-- `rz-sign` - tool to create, convert and parse FLIRT signatures
-- `rz-ax` - a calculator and number format converter
-- `rz-run` - a tool that allows to specify running environment and arguments for debugged file
+- **`rz-bin`** — inspect and extract information from binary formats
+- **`rz-asm`** — command-line assembler and disassembler
+- **`rz-diff`** — compare binaries as raw data or analyzed executables
+- **`rz-hash`** — calculate hashes and perform basic cryptographic operations
+- **`rz-gg`** — lightweight shellcode (“eggs”) generator for exploitation
+- **`rz-find`** — binary equivalent of the `find` tool for pattern and mask searching
+- **`rz-sign`** — create, convert, and parse FLIRT signatures
+- **`rz-ax`** — calculator and number format conversion utility
+- **`rz-run`** — configure and control the runtime environment of debugged programs
+
 
 ## Scripting
 
-We provide a way to interact with Rizin from Python, Haskell, OCaml,
-Ruby, Rust, and Go languages through [rzpipe](https://github.com/rizinorg/rz-pipe).
-Other languages although not currently supported could be easily added.
+Rizin can be scripted and controlled via **rzpipe**, with bindings available for:
 
-# Community
+**Python • Haskell • OCaml • Ruby • Rust • Go**
 
-Our website and blog: [https://www.rizin.re/](https://www.rizin.re/)
+👉 https://github.com/rizinorg/rz-pipe
 
-Join our [Mattermost](https://im.rizin.re) community to discuss Rizin, its
-development, and general topics related to the project.
+Additional language bindings can be added with minimal effort.
 
-We also provide the following partial bridges to other messaging platforms:
-- [Telegram](https://t.me/rizinorg)
-- IRC: [irc.libera.chat:6697 with TLS support](ircs://irc.libera.chat:6697)
-  - Community - [#rizin](https://web.libera.chat/#rizin)
-  - Developers - [#rizindev](https://web.libera.chat/#rizindev)
+---
 
-[CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md
-[test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md
-[BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md
+## 🌍 Community
+
+Stay connected with the Rizin community and development:
+
+🌐 **Website & Blog**  
+https://www.rizin.re/
+
+💬 **Mattermost**  
+Join discussions about Rizin, development, and reverse engineering:  
+https://im.rizin.re
+
+🔗 **Other Platforms**
+- **Telegram**: https://t.me/rizinorg
+- **IRC (Libera, TLS)**: ircs://irc.libera.chat:6697  
+  - [#rizin](https://web.libera.chat/#rizin) — community  
+  - [#rizindev](https://web.libera.chat/#rizindev) — developers
+---
+
+[CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md  
+[test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md  
+[BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md  
 [DEVELOPERS.md]: https://github.com/rizinorg/rizin/blob/dev/DEVELOPERS.md
