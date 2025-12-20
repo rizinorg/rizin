@@ -106,7 +106,7 @@ RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
 }
 
 /**
- * \brief Returns the last element of the list.
+ * \brief Returns the value stored in the last node of the list.
  *
  **/
 RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list) {
