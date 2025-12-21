@@ -462,6 +462,7 @@ static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN R
 	ut32 repeat_times = dreg_width / val_width;
 	if (dreg_width % val_width != 0) {
 		rz_warn_if_reached();
+		rz_il_op_pure_free(val);
 		return NULL;
 	}
 
