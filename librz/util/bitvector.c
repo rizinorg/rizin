@@ -402,21 +402,8 @@ static ut32 bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start
 
 /**
  * Copy n bits from start position of source to start position of dest, return num of copied bits
- * \param bv Bitvector to copy bits inside.
- * \param src_start_pos ut32, start position in source bitvector of copy
- * \param dst_start_pos ut32, start position in destination bitvector
- * \param nbit ut32, control the size of copy (in bits)
- * \return copied_size ut32, Actual copied size
- */
-RZ_API ut32 rz_bv_copy_nbits_inplace(
-	RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 src_start_pos,
-	ut32 dst_start_pos, ut32 nbit) {
-	rz_return_val_if_fail(bv, 0);
-	return rz_bv_copy_nbits(bv, src_start_pos, bv, dst_start_pos, nbit);
-}
-
-/**
- * Copy n bits from start position of source to start position of dest, return num of copied bits
+ * NOTE: src and dst can be the same bit vector pointer.
+ *
  * \param src RzBitVector, data source
  * \param src_start_pos ut32, start position in source bitvector of copy
  * \param dst RzBitVector, destination of copy

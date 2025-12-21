@@ -1289,25 +1289,25 @@ bool test_rz_bv_copy_nbits_inplace(void) {
 	RzBitVector *small_20 = rz_bv_new_from_ut64(20, 0x01234);
 	RzBitVector *large_128 = rz_bv_new_from_bytes_be(array_128, 0, 128);
 
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 5, 1, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 5, small_20, 1, 7), 7, "wrong num bits copied");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 21), 0, "copy overflow");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 21), 0, "copy overflow");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 1, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 1, 20), 0, "copy overflow");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 1, 0, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 1, small_20, 0, 20), 0, "copy overflow");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(small_20, 0, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 
-	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 0, 112, 16), 16, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 112, 16), 16, "wrong num bits copied");
 	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_1, "copy to limits aligned");
-	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 1, 2, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 1, large_128, 2, 7), 7, "wrong num bits copied");
 	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_2, "copy overlap unaligned");
 
-	mu_assert_eq(rz_bv_copy_nbits_inplace(large_128, 0, 120, 16), 0, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 120, 16), 0, "wrong num bits copied");
 
 	rz_bv_free(small_20);
 	rz_bv_free(large_128);
