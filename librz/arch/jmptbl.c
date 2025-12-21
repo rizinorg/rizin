@@ -468,7 +468,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmp_ptr, params->sp);
 	}
 
-	if (table_size <= 1) {
+	if (table_size == 0) {
 		return false;
 	}
 
