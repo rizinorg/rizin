@@ -167,21 +167,17 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_time(RZ_NULLABLE const ut8 *buffer
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bits(RZ_NULLABLE const ut8 *buffer, ut32 length) {
-	ut32 i, j, k;
-	ut64 size;
-	ut8 c;
-	char *str;
-	if (!buffer || !length) {
+	if (!buffer || length < 1 || buffer[0] > length) {
 		return NULL;
 	}
-	size = 1 + ((length - 1) * 8) - buffer[0];
-	str = (char *)malloc(size);
+	ut64 size = 1 + ((length - 1) * 8) - buffer[0];
+	char *str = (char *)malloc(size);
 	if (!str) {
 		return NULL;
 	}
-	for (i = 1, j = 0; i < length && j < size; i++) {
-		c = buffer[i];
-		for (k = 0; k < 8 && j < size; k++, j++) {
+	for (ut32 i = 1, j = 0; i < length && j < size; i++) {
+		ut8 c = buffer[i];
+		for (ut32 k = 0; k < 8 && j < size; k++, j++) {
 			str[size - j - 1] = c & 0x80 ? '1' : '0';
 			c <<= 1;
 		}
@@ -471,11 +467,11 @@ RZ_API RzASN1String *asn1_stringify_sector(RzASN1Object *object) {
 			return rz_asn1_stringify_bytes(object->sector, object->length);
 		}
 	case RZ_ASN1_TAG_BITSTRING:
-		// if (object->length < 8) {
-		return rz_asn1_stringify_bits(object->sector, object->length);
-		//} else {
-		//	return asn1_stringify_bytes (object->sector, object->length);
-		//}
+		if (object->length > 0 && object->length < 20) {
+			return rz_asn1_stringify_bits(object->sector, object->length);
+		} else {
+			return rz_asn1_stringify_bytes(object->sector, object->length);
+		}
 	case RZ_ASN1_TAG_OCTETSTRING:
 		return rz_asn1_stringify_bytes(object->sector, object->length);
 	case RZ_ASN1_TAG_NULL:

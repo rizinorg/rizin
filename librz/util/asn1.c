@@ -477,7 +477,7 @@ static void asn1_to_structure(RzASN1Object *object, RzStructuredData *parent, bo
 		case RZ_ASN1_TAG_BITSTRING:
 			name = "BIT_STRING";
 			if (!object->list.objects) {
-				if (object->length < 20) {
+				if (object->length > 0 && object->length < 20) {
 					asn1str = rz_asn1_stringify_bits(object->sector, object->length);
 				} else {
 					asn1str = rz_asn1_stringify_bytes(object->sector, object->length);
