@@ -1,3 +1,19 @@
+NAME=pyc load version314
+FILE=bins/pyc/pyc314.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.14.0 VM (rev ac991beb29b1783316c4016c99468c008568d08a)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
 NAME=pyc load version313
 FILE=bins/pyc/pyc313.pyc
 CMDS=<<EOF

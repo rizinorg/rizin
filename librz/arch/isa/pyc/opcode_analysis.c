@@ -1025,6 +1025,98 @@ static inline void analysis_FORMAT_WITH_SPEC(RzAnalysisOp *op, pyc_opcode_object
 	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
 }
 
+static inline void analysis_POP_ITER(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_INSTRUMENTED_POP_ITER(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+}
+
+static inline void analysis_LOAD_SPECIAL(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_LOAD_SMALL_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_LOAD_FAST_BORROW(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_LOAD_FAST_BORROW_LOAD_FAST_BORROW(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
+}
+
+static inline void analysis_LOAD_COMMON_CONSTANT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_push(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BUILD_INTERPOLATION(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, oparg+1);
+}
+
+static inline void analysis_BUILD_TEMPLATE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_ADD_FLOAT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_ADD, 1);
+}
+
+static inline void analysis_BINARY_OP_ADD_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_ADD, 1);
+}
+
+static inline void analysis_BINARY_OP_ADD_UNICODE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_ADD, 1);
+}
+
+static inline void analysis_BINARY_OP_EXTEND(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_MULTIPLY_FLOAT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_MUL, 1);
+}
+
+static inline void analysis_BINARY_OP_MULTIPLY_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_MUL, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_DICT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_GETITEM(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 2);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_LIST_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_LIST_SLICE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_STR_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBSCR_TUPLE_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBTRACT_FLOAT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_SUB, 1);
+}
+
+static inline void analysis_BINARY_OP_SUBTRACT_INT(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_SUB, 1);
+}
+
 static op_analysis_func op_analysis[] = {
 	{ "BEFORE_ASYNC_WITH", analysis_BEFORE_ASYNC_WITH },
 	{ "BEGIN_FINALLY", analysis_BEGIN_FINALLY },
@@ -1241,6 +1333,29 @@ static op_analysis_func op_analysis[] = {
 	{ "CONVERT_VALUE", analysis_CONVERT_VALUE },
 	{ "FORMAT_SIMPLE", analysis_FORMAT_SIMPLE },
 	{ "FORMAT_WITH_SPEC", analysis_FORMAT_WITH_SPEC },
+	{ "POP_ITER", analysis_POP_ITER },
+	{ "INSTRUMENTED_POP_ITER", analysis_INSTRUMENTED_POP_ITER },
+	{ "LOAD_SPECIAL", analysis_LOAD_SPECIAL },
+	{ "LOAD_SMALL_INT", analysis_LOAD_SMALL_INT },
+	{ "LOAD_FAST_BORROW", analysis_LOAD_FAST_BORROW },
+	{ "LOAD_FAST_BORROW_LOAD_FAST_BORROW", analysis_LOAD_FAST_BORROW_LOAD_FAST_BORROW },
+	{ "LOAD_COMMON_CONSTANT", analysis_LOAD_COMMON_CONSTANT },
+	{ "BUILD_INTERPOLATION", analysis_BUILD_INTERPOLATION },
+	{ "BUILD_TEMPLATE", analysis_BUILD_TEMPLATE },
+	{ "BINARY_OP_ADD_FLOAT", analysis_BINARY_OP_ADD_FLOAT },
+	{ "BINARY_OP_ADD_INT", analysis_BINARY_OP_ADD_INT },
+	{ "BINARY_OP_ADD_UNICODE", analysis_BINARY_OP_ADD_UNICODE },
+	{ "BINARY_OP_EXTEND", analysis_BINARY_OP_EXTEND },
+	{ "BINARY_OP_MULTIPLY_FLOAT", analysis_BINARY_OP_MULTIPLY_FLOAT },
+	{ "BINARY_OP_MULTIPLY_INT", analysis_BINARY_OP_MULTIPLY_INT },
+	{ "BINARY_OP_SUBSCR_DICT", analysis_BINARY_OP_SUBSCR_DICT },
+	{ "BINARY_OP_SUBSCR_GETITEM", analysis_BINARY_OP_SUBSCR_GETITEM },
+	{ "BINARY_OP_SUBSCR_LIST_INT", analysis_BINARY_OP_SUBSCR_LIST_INT },
+	{ "BINARY_OP_SUBSCR_LIST_SLICE", analysis_BINARY_OP_SUBSCR_LIST_SLICE },
+	{ "BINARY_OP_SUBSCR_STR_INT", analysis_BINARY_OP_SUBSCR_STR_INT },
+	{ "BINARY_OP_SUBSCR_TUPLE_INT", analysis_BINARY_OP_SUBSCR_TUPLE_INT },
+	{ "BINARY_OP_SUBTRACT_FLOAT", analysis_BINARY_OP_SUBTRACT_FLOAT },
+	{ "BINARY_OP_SUBTRACT_INT", analysis_BINARY_OP_SUBTRACT_INT },
 };
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
