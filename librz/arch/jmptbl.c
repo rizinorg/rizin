@@ -433,6 +433,54 @@ RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *anal
 }
 
 /**
+ * \brief Marks for analysis an ARM/Thumb-1 specific jump table (GCC's `__gnu_thumb1_case_uqi` format)
+ *
+ * This function works similarly to `rz_analysis_walkthrough_jmptbl`, but handles the compact
+ * byte-offset format used by the GCC's `__gnu_thumb1_case_uqi` helper function for size-optimized
+ * switch statements
+ *
+ * \param analysis Pointer to RzAnalysis instance
+ * \param fcn Pointer to RzAnalysisFunction to add the new cases
+ * \param block Pointer to RzAnalysisBlock that originates the switch table
+ * \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
+ */
+RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
+	rz_return_val_if_fail(analysis && analysis->read_at && fcn && block && params, false);
+	ut8 table_size = 0;
+
+	if (params->table_count == 0) {
+		params->table_count = analysis->opt.jmptbl_maxcount;
+	}
+
+	for (table_size = 0; table_size < params->table_count; table_size++) {
+		ut8 offs;
+
+		if (!analysis->read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
+			return false;
+		}
+
+		if (offs == 0) {
+			break;
+		}
+
+		ut64 jmp_ptr = params->jmptbl_loc + offs * 2;
+		apply_case(analysis, block, params->jmp_address, params->entry_size, jmp_ptr, table_size, params->jmptbl_loc + table_size);
+		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmp_ptr, params->sp);
+	}
+
+	if (table_size <= 1) {
+		return false;
+	}
+
+	if (params->default_case == 0 || params->default_case == UT32_MAX) {
+		params->default_case = UT64_MAX;
+	}
+
+	apply_switch(analysis, params->jmp_address, params->jmptbl_loc, table_size, params->default_case);
+	return true;
+}
+
+/**
  * \brief Gets some necessary information about a jump table to perform analysis on
  *
  * Gets amount of cases inside a jump table, the default case address and the case shift amount
