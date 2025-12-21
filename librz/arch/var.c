@@ -1821,8 +1821,6 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 			RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned);
 			if (arg) {
 				rz_type_callable_arg_add(callable, arg);
-			} else {
-				rz_type_free(cloned);
 			}
 		}
 	}
