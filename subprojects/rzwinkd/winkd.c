@@ -140,7 +140,7 @@ bool winkd_set_target(RZ_BORROW RZ_NONNULL WindCtx *ctx, ut32 pid, ut32 tid) {
 				}
 			}
 		} else {
-			t = rz_list_first(l);
+			t = rz_list_first_val(l);
 			if (t) {
 				ctx->target_thread = *t;
 				found = true;

@@ -1161,7 +1161,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 	}
 
 	rz_list_free(list_fds);
-	return rz_list_first(r->files);
+	return rz_list_first_val(r->files);
 }
 
 /**
@@ -1526,7 +1526,7 @@ RZ_API bool rz_core_file_close_fd(RzCore *core, int fd) {
 	RzListIter *iter;
 	if (fd == -1) {
 		while (!rz_list_empty(core->files)) {
-			rz_core_file_close(rz_list_first(core->files));
+			rz_core_file_close(rz_list_first_val(core->files));
 		}
 		return true;
 	}

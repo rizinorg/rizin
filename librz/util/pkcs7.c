@@ -661,7 +661,7 @@ RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS 
 	rz_return_val_if_fail(cms, NULL);
 
 	RzASN1String *type = cms->signedData.contentInfo.contentType;
-	if (type && strcmp(type->string, "spcIndirectDataContext")) {
+	if (type && !rz_str_startswith(type->string, "spcIndirectDataContext")) {
 		return NULL;
 	}
 

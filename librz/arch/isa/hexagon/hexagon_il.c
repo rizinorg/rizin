@@ -347,7 +347,7 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
  * If false, the behavior is as documented above.
  * \return RzILOpEffect* Sequence of operations to emulate the packet.
  */
-RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op, RZ_NONNULL HexState *state) {
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, bool get_pkt_op, RZ_NONNULL HexState *state) {
 	rz_return_val_if_fail(state, NULL);
 	HexPkt *p = hex_get_pkt(state, addr);
 	if (!p) {
@@ -365,6 +365,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op
 		// Assume that the instruction at the address the VM was initialized is the first instruction.
 		// Also make it valid if a jump let to this packet.
 		p->is_valid = true;
+		get_pkt_op = true;
 		hic->pkt_info.first_insn = true;
 		state->just_init = false;
 		state->might_have_jumped = false;

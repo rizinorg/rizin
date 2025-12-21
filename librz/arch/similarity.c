@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -305,6 +305,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 		}
 	}
 
+	rz_th_queue_close_when_empty(shared.queue);
 	rz_th_pool_wait(pool);
 
 	if (!rz_atomic_bool_get(shared.loop)) {
@@ -362,6 +363,15 @@ RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *res
 	free(result);
 }
 
+static void *shared_queue_pop(SharedContext *shared) {
+	void *data = NULL;
+	if (!rz_atomic_bool_get(shared->loop) ||
+		!rz_th_queue_pop(shared->queue, false, &data)) {
+		return NULL;
+	}
+	return data;
+}
+
 static void *analysis_match_basic_blocks(SharedContext *shared) {
 	double max_similarity = 0.0, calc_similarity = 0.0;
 	const RzListIter *iter = NULL;
@@ -370,7 +380,7 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while (rz_atomic_bool_get(shared->loop) && (bb_a = rz_th_queue_pop(shared->queue, false))) {
+	while ((bb_a = shared_queue_pop(shared))) {
 		if (!shared_context_alloc_a(shared, bb_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (A)\n", bb_a->addr);
 			rz_th_queue_push(shared->unmatch, bb_a, true);
@@ -468,7 +478,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while (rz_atomic_bool_get(shared->loop) && (fcn_a = rz_th_queue_pop(shared->queue, false))) {
+	while ((fcn_a = shared_queue_pop(shared))) {
 		if (!shared_context_alloc_a(shared, fcn_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
 			rz_th_queue_push(shared->unmatch, fcn_a, true);
@@ -519,13 +529,13 @@ static void *analysis_match_one_function(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	fcn_b = rz_list_first(shared->list_b);
+	fcn_b = rz_list_first_val(shared->list_b);
 	if (!shared_context_alloc_a(shared, fcn_b, &buf_b, &size_b)) {
 		RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (B)\n", fcn_b->name);
 		return NULL;
 	}
 
-	while (rz_atomic_bool_get(shared->loop) && (fcn_a = rz_th_queue_pop(shared->queue, false))) {
+	while ((fcn_a = shared_queue_pop(shared))) {
 		if (!shared_context_alloc_b(shared, fcn_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
 			free(buf_b);

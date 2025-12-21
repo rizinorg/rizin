@@ -13,7 +13,7 @@ typedef void (*RzListFree)(void *ptr);
 typedef struct rz_list_iter_t RzListIter;
 
 struct rz_list_iter_t {
-	void *elem;
+	void *val;
 	RzListIter *next;
 	RzListIter *prev;
 };
@@ -31,32 +31,32 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 
 #ifdef RZ_API
 
-#define rz_list_foreach(list, it, pos) \
+#define rz_list_foreach(list, it, var) \
 	if (list) \
-		for (it = list->head; it && (pos = it->elem, 1); it = it->next)
-#define rz_list_foreach_enum(list, it, pos, i) \
+		for (it = list->head; it && (var = it->val, 1); it = it->next)
+#define rz_list_foreach_enum(list, it, var, i) \
 	if (list) \
-		for (it = list->head, i = 0; it && (pos = it->elem, 1); it = it->next, ++i)
-#define rz_list_foreach_iter(iter, it, pos) \
-	for (it = iter; it && (pos = it->elem, 1); it = it->next)
+		for (it = list->head, i = 0; it && (var = it->val, 1); it = it->next, ++i)
+#define rz_list_foreach_iter(iter, it, var) \
+	for (it = iter; it && (var = it->val, 1); it = it->next)
 /* Safe when calling rz_list_delete() while iterating over the list. */
-#define rz_list_foreach_safe(list, it, tmp, pos) \
+#define rz_list_foreach_safe(list, it, tmp, var) \
 	if (list) \
-		for (it = list->head; it && (pos = it->elem, tmp = it->next, 1); it = tmp)
-#define rz_list_foreach_iter_safe(iter, it, tmp, pos) \
-	for (it = iter; it && (pos = it->elem, tmp = it->next, 1); it = tmp)
-#define rz_list_foreach_prev(list, it, pos) \
+		for (it = list->head; it && (var = it->val, tmp = it->next, 1); it = tmp)
+#define rz_list_foreach_iter_safe(iter, it, tmp, var) \
+	for (it = iter; it && (var = it->val, tmp = it->next, 1); it = tmp)
+#define rz_list_foreach_prev(list, it, var) \
 	if (list) \
-		for (it = list->tail; it && (pos = it->elem, 1); it = it->prev)
-#define rz_list_foreach_prev_safe(list, it, tmp, pos) \
-	for (it = list->tail; it && (pos = it->elem, tmp = it->prev, 1); it = tmp)
+		for (it = list->tail; it && (var = it->val, 1); it = it->prev)
+#define rz_list_foreach_prev_safe(list, it, tmp, var) \
+	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
 #define rz_list_empty(x) (!(x) || !(x)->length)
 #define rz_list_head(x)  ((x) ? (x)->head : NULL)
 #define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
 
 #define rz_list_iter_get(x) \
-	x->elem; \
+	x->val; \
 	x = x->next
 #define rz_list_iter_next(x)     (x ? 1 : 0)
 #define rz_list_iter_cur(x)      x->prev
@@ -79,8 +79,8 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data);
 RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
 RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_first(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_last(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list);
+RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);

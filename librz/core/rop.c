@@ -124,7 +124,7 @@ static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit,
 		rz_asm_op_free(asmop);
 		return false;
 	}
-	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last(hitlist))->addr;
+	const ut64 addr_last = ((RzCoreAsmHit *)rz_list_last_val(hitlist))->addr;
 	if (addr_last != hit->addr) {
 		*asmop_str = rz_str_append(*asmop_str, "; ");
 	}
@@ -975,7 +975,7 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 		return false;
 	}
 	rz_cmd_state_output_set_columnsf(state, "XXs", "addr", "bytes", "disasm");
-	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first(hitlist);
+	RzCoreAsmHit *hit = (RzCoreAsmHit *)rz_list_first_val(hitlist);
 	if (!hit) {
 		return false;
 	}
@@ -1252,11 +1252,11 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	if (!core->analysis->ht_rop_semantics) {
 		core->analysis->ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_rop_gadget_info_free);
 	}
-	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last(hitlist);
+	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last_val(hitlist);
 	if (!is_ret_gadget(core, hit_last, crop)) {
 		return rop_gadget_info;
 	}
-	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first(hitlist))->addr;
+	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first_val(hitlist))->addr;
 	rop_gadget_info = ht_up_find(core->analysis->ht_rop_semantics, addr_start, NULL);
 	if (rop_gadget_info) {
 		return rop_gadget_info;
