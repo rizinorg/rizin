@@ -15776,16 +15776,16 @@ static const RzCmdDescHelp cmd_print_format_write_help = {
 };
 
 static const RzCmdDescHelp pF_help = {
-	.summary = "Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
+	.summary = "Deserializes ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
 };
 static const RzCmdDescHelp pFa_help = {
-	.summary = "Decode ASN.1 from current block",
+	.summary = "Deserializes the ASN.1 DER structure from the current block",
 };
 static const RzCmdDescArg cmd_print_asn1_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_asn1_help = {
-	.summary = "Decode ASN.1 from current block as dump",
+	.summary = "Deserializes the ASN.1 DER structure from the current block as a hexdump.",
 	.args = cmd_print_asn1_args,
 };
 
@@ -15793,18 +15793,18 @@ static const RzCmdDescArg cmd_print_asn1_structure_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_asn1_structure_help = {
-	.summary = "Decode ASN.1 from current block as structure",
+	.summary = "Deserializes the ASN.1 DER structure from the current block as a structured data format.",
 	.args = cmd_print_asn1_structure_args,
 };
 
 static const RzCmdDescHelp cmd_print_protobuf_help = {
-	.summary = "Decode raw protobuf from current block",
+	.summary = "Deserializes raw protobuf from current block as a hexdump.",
 };
 static const RzCmdDescArg cmd_print_protobuf_standard_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_protobuf_standard_help = {
-	.summary = "Decode raw protobuf from current block",
+	.summary = "Deserializes raw protobuf from current block as a hexdump.",
 	.args = cmd_print_protobuf_standard_args,
 };
 
@@ -15812,7 +15812,7 @@ static const RzCmdDescArg cmd_print_protobuf_verbose_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_protobuf_verbose_help = {
-	.summary = "Decode raw protobuf from current block (verbose)",
+	.summary = "Deserializes raw protobuf from current block  as a hexdump(verbose).",
 	.args = cmd_print_protobuf_verbose_args,
 };
 
@@ -15820,7 +15820,7 @@ static const RzCmdDescArg cmd_print_pkcs7_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_pkcs7_help = {
-	.summary = "Decode PKCS7 from current block",
+	.summary = "Deserializes PKCS7 from current block as a structured data format.",
 	.args = cmd_print_pkcs7_args,
 };
 
@@ -15828,7 +15828,7 @@ static const RzCmdDescArg cmd_print_x509_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_x509_help = {
-	.summary = "Decode X.509 from current block",
+	.summary = "Deserializes X.509 from current block as a structured data format.",
 	.args = cmd_print_x509_args,
 };
 
@@ -15836,7 +15836,7 @@ static const RzCmdDescArg cmd_print_pkcs8_pkey_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_pkcs8_pkey_help = {
-	.summary = "Decode PKCS#8 private keys from current block",
+	.summary = "Deserializes PKCS#8 private keys from current block as a structured data format.",
 	.args = cmd_print_pkcs8_pkey_args,
 };
 
@@ -15844,7 +15844,7 @@ static const RzCmdDescArg cmd_print_axml_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_axml_help = {
-	.summary = "Decode Android Binary XML from current block",
+	.summary = "Deserializes Android Binary XML from current block as XML format.",
 	.args = cmd_print_axml_args,
 };
 
