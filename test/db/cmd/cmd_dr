@@ -24,3 +24,56 @@ rflags = 0x0000000000000000
 rflags = 0x0000000000000137
 EOF
 RUN
+
+NAME=dr multiple registers printing
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+ood
+dr eax ebx eip
+EOF
+EXPECT=<<EOF
+eax = 0x00000000
+ebx = 0x00000000
+eip = 0x08048060
+EOF
+RUN
+
+NAME=dr multiple registers assign
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+ood
+dr eax=0x64 ebx=0x16 eip=0x8
+dr eax ebx eip
+EOF
+EXPECT=<<EOF
+eax = 0x00000064
+ebx = 0x00000016
+eip = 0x00000008
+EOF
+RUN
+
+NAME=dr print all
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+ood
+dr esp=0xff8be600
+dr
+EOF
+EXPECT=<<EOF
+eax = 0x00000000
+ebx = 0x00000000
+ecx = 0x00000000
+edx = 0x00000000
+esi = 0x00000000
+edi = 0x00000000
+esp = 0xff8be600
+ebp = 0x00000000
+eip = 0x08048060
+xfs = 0x00000000
+xgs = 0x00000000
+xcs = 0x00000023
+xss = 0x0000002b
+rflags = 0x0000000000000200
+oeax = 0x0000000b
+EOF
+RUN
