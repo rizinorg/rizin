@@ -943,6 +943,109 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_end(pj);
 }
 
+static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
+	rz_return_if_fail(gadget_info && context);
+
+	ut64 addr = gadget_info->address;
+	int size = gadget_info->size;
+	ut8 *buf = RZ_NEWS0(ut8, size);
+	if (!buf) {
+		return;
+	}
+	if (rz_io_read_at(core->io, addr, buf, size) <= 0) {
+		free(buf);
+		return;
+	}
+	const int DISASM_WIDTH = 50;
+	rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
+	rz_cons_printf("%s--%s\n",rz_str_repeat("-", DISASM_WIDTH),rz_str_repeat("-", 40));
+	RzAsmOp asmop = { 0 };
+	int idx = 0;
+	int instr_count = 0;
+	bool use_color = core->print && (core->print->flags & RZ_PRINT_FLAGS_COLOR);
+	while (idx < size) {
+		rz_asm_set_pc(core->rasm, addr + idx);
+		int len = rz_asm_disassemble(core->rasm, &asmop, buf + idx, size - idx);
+		if (len < 1)
+			break;
+		char *hex = rz_hex_bin2strdup(buf + idx, len);
+		const char *opcode_str = rz_strbuf_get(&asmop.buf_asm);
+		if (!opcode_str) {
+			opcode_str = "";
+		}
+		if (use_color) {
+			rz_cons_printf(Color_CYAN);
+		}
+		rz_cons_printf("  0x%08" PFMT64x, addr + idx);
+		if (use_color) {
+			rz_cons_printf(Color_RESET);
+		}
+		rz_cons_printf("  %-8s  ", hex ? hex : "");
+		rz_cons_printf("%s", opcode_str);
+		int opcode_len = strlen(opcode_str);
+		int padding = (DISASM_WIDTH - 22) - opcode_len;
+		if (padding > 0) {
+			rz_cons_printf("%*s", padding, "");
+		}
+		rz_cons_print(" | ");
+		if (instr_count == 0) {
+			rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
+		} else if (instr_count == 1) {
+			rz_cons_printf("Modified regs: ");
+			if (gadget_info->modified_registers) {
+				void **it;
+				bool first = true;
+				rz_pvector_foreach (gadget_info->modified_registers, it) {
+					RzRopRegInfo *reg_info = (RzRopRegInfo *)*it;
+					if (reg_info && reg_info->name) {
+						if (!first)
+							rz_cons_printf(" ");
+						if (use_color) {
+							rz_cons_printf(Color_YELLOW);
+						}
+						rz_cons_printf("%s", reg_info->name);
+						if (use_color) {
+							rz_cons_printf(Color_RESET);
+						}
+						first = false;
+					}
+				}
+			}
+			rz_cons_newline();
+		} else if (instr_count == 2) {
+			rz_cons_printf("Dependencies:  ");
+			if (gadget_info->dependencies) {
+				RzListIter *iter;
+				RzRopRegInfo *dep_info;
+				bool first = true;
+				rz_list_foreach (gadget_info->dependencies, iter, dep_info) {
+					if (dep_info && dep_info->name) {
+						if (!first)
+							rz_cons_printf(" ");
+						if (use_color) {
+							rz_cons_printf(Color_GREEN);
+						}
+						rz_cons_printf("%s", dep_info->name);
+						if (use_color) {
+							rz_cons_printf(Color_RESET);
+						}
+						first = false;
+					}
+				}
+			}
+			rz_cons_newline();
+		} else {
+			rz_cons_newline();
+		}
+		free(hex);
+		idx += len;
+		instr_count++;
+	}
+	rz_asm_op_fini(&asmop);
+	free(buf);
+	rz_cons_newline();
+}
+
 static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
 	rz_return_if_fail(gadget_info && context);
 	if (!context->state) {
@@ -961,6 +1064,9 @@ static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gad
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_rop_gadget_print_standard_mode(core, gadget_info);
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_rop_gadget_print_long_mode(core, gadget_info, context);
 		break;
 	default:
 		rz_warn_if_reached();
