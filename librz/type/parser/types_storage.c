@@ -838,12 +838,14 @@ bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *
 	rz_pvector_foreach (callable->args, it) {
 		RzCallableArg *arg = *it;
 		if (!strcmp(arg->name, name)) {
+			rz_type_free(type);
 			return false;
 		}
 	}
 	// And only if there is no argument with the same name - proceed to insert it
 	RzCallableArg *arg = RZ_NEW0(RzCallableArg);
 	if (!arg) {
+		rz_type_free(type);
 		return false;
 	}
 	arg->name = rz_str_dup(name);

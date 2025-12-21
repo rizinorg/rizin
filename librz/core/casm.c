@@ -1011,7 +1011,7 @@ RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *instr_len, ut64 *start_addr
 		*instr_len = 0;
 	}
 	if (hits && rz_list_length(hits) > 0) {
-		hit = rz_list_first(hits);
+		hit = rz_list_first_val(hits);
 		if (start_addr) {
 			*start_addr = hit->addr;
 		}
