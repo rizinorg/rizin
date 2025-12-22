@@ -149,6 +149,10 @@ echo --
 dc
 dr pc
 dr x8
+echo --
+dc
+dr pc
+dr x8
 EOF
 REGEXP_FILTER_OUT=((x8\s=\s0x.*)|(pc\s=)|(f30)|(f44)|(f48))
 EXPECT=<<EOF
