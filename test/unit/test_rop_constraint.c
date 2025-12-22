@@ -57,6 +57,7 @@ bool test_parse_reg_to_const(void) {
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
 	rz_core_rop_constraint_free(rop_constraint);
 
+	rz_core_free(core);
 	mu_end;
 }
 
@@ -80,6 +81,7 @@ bool test_parse_reg_to_reg(void) {
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
 	rz_core_rop_constraint_free(rop_constraint);
 
+	rz_core_free(core);
 	mu_end;
 }
 
@@ -139,6 +141,7 @@ bool test_parse_reg_op_const(void) {
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "1", "Invalid constant value");
 	rz_core_rop_constraint_free(rop_constraint);
 
+	rz_core_free(core);
 	mu_end;
 }
 
@@ -174,6 +177,8 @@ bool test_parse_reg_op_reg(void) {
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ebx", "Invalid destination constant register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
 
+	rz_core_rop_constraint_free(rop_constraint);
+	rz_core_free(core);
 	mu_end;
 }
 

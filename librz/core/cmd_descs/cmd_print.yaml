@@ -662,29 +662,40 @@ commands:
           - text: "pf 'tt troll plop'"
             comment: "Print time stamps with labels 'troll' and 'plop'"
   - name: pF
-    summary: Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
+    summary: Deserializes ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats
     subcommands:
       - name: pFa
-        summary: Decode ASN.1 from current block
-        cname: cmd_print_asn1
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_QUIET
-        args: []
+        summary: Deserializes the ASN.1 DER structure from the current block
+        subcommands:
+        - name: pFa
+          summary: Deserializes the ASN.1 DER structure from the current block as a hexdump.
+          cname: cmd_print_asn1
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+          args: []
+        - name: pFas
+          summary: Deserializes the ASN.1 DER structure from the current block as a structured data format.
+          cname: cmd_print_asn1_structure
+          type: RZ_CMD_DESC_TYPE_ARGV_STATE
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+            - RZ_OUTPUT_MODE_JSON
+            - RZ_OUTPUT_MODE_QUIET
+          args: []
       - name: pFb
-        summary: Decode raw protobuf from current block
+        summary: Deserializes raw protobuf from current block as a hexdump.
         cname: cmd_print_protobuf
         subcommands:
           - name: pFb
-            summary: Decode raw protobuf from current block
+            summary: Deserializes raw protobuf from current block as a hexdump.
             cname: cmd_print_protobuf_standard
             args: []
           - name: pFbv
-            summary: Decode raw protobuf from current block (verbose)
+            summary: Deserializes raw protobuf from current block  as a hexdump(verbose).
             cname: cmd_print_protobuf_verbose
             args: []
       - name: pFp
-        summary: Decode PKCS7 from current block
+        summary: Deserializes PKCS7 from current block as a structured data format.
         cname: cmd_print_pkcs7
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -692,7 +703,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: pFx
-        summary: Decode X.509 from current block
+        summary: Deserializes X.509 from current block as a structured data format.
         cname: cmd_print_x509
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -700,7 +711,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: pF8
-        summary: Decode PKCS#8 private keys from current block
+        summary: Deserializes PKCS#8 private keys from current block as a structured data format.
         cname: cmd_print_pkcs8_pkey
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
@@ -708,7 +719,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: pFA
-        summary: Decode Android Binary XML from current block
+        summary: Deserializes Android Binary XML from current block as XML format.
         cname: cmd_print_axml
         args: []
   - name: ph
