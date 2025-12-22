@@ -123,7 +123,7 @@ CMDS=<<EOF
 db @ main + 66
 dc
 dr rax
-dr rax = 1337
+dr rax=1337
 dc
 EOF
 EXPECT=<<EOF
