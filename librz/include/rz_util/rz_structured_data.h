@@ -63,6 +63,7 @@ RZ_API bool rz_structured_data_array_add_boolean(RZ_NONNULL RzStructuredData *pa
 RZ_API bool rz_structured_data_array_add_string(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *v);
 
 RZ_API void rz_structured_data_iterate(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL const RzStructuredDataIterator *iterator, RZ_NULLABLE void *user);
+RZ_API void rz_structured_data_to_pj(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL PJ *pj);
 RZ_API RZ_OWN char *rz_structured_data_to_json(RZ_NONNULL const RzStructuredData *sd);
 RZ_API RZ_OWN char *rz_structured_data_to_yaml(RZ_NONNULL const RzStructuredData *sd);
 

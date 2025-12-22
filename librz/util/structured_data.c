@@ -554,6 +554,18 @@ RZ_API void rz_structured_data_iterate(RZ_NONNULL const RzStructuredData *sd, RZ
  * \brief      Iterates over a given RzStructuredData and generates a json string
  *
  * \param[in]  sd  The RzStructuredData to iterate over
+ * \param[in]  pj  The PJ to write into
+ */
+RZ_API void rz_structured_data_to_pj(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(sd && pj);
+
+	rz_structured_data_iterate(sd, &builder_json_iterator, pj);
+}
+
+/**
+ * \brief      Iterates over a given RzStructuredData and generates a json string
+ *
+ * \param[in]  sd  The RzStructuredData to iterate over
  */
 RZ_API RZ_OWN char *rz_structured_data_to_json(RZ_NONNULL const RzStructuredData *sd) {
 	rz_return_val_if_fail(sd, NULL);

@@ -119,15 +119,21 @@ static char *pe_signature(RzBinFile *bf, bool json) {
 		return NULL;
 	}
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
-	if (json) {
-		PJ *pj = pj_new();
-		if (!pj) {
-			return rz_str_dup("{}");
-		}
-		rz_pkcs7_cms_json(bin->cms, pj);
-		return pj_drain(pj);
+
+	RzStructuredData *pe_cms = rz_pkcs7_cms_to_structure(bin->cms);
+	if (!pe_cms) {
+		return rz_str_dup(json ? "{}" : "");
 	}
-	return rz_pkcs7_cms_to_string(bin->cms);
+
+	char *value = NULL;
+	if (json) {
+		value = rz_structured_data_to_json(pe_cms);
+	} else {
+		value = rz_structured_data_to_yaml(pe_cms);
+	}
+	rz_structured_data_free(pe_cms);
+
+	return value;
 }
 
 static RzPVector /*<RzBinField *>*/ *pe_fields(RzBinFile *bf) {
@@ -508,6 +514,16 @@ static RzStructuredData *pe_structure(RzBinFile *bf) {
 		}
 		rz_structured_data_map_add_unsigned(image, "VirtualAddress", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress, true);
 		rz_structured_data_map_add_unsigned(image, "Size", bin->nt_headers->optional_header.DataDirectory[i].Size, false);
+	}
+
+	if (bin->cms) {
+		RzStructuredData *pe_cms = rz_pkcs7_cms_to_structure(bin->cms);
+		rz_structured_data_map_add(pe32, "CryptographicMessageSyntax", pe_cms);
+	}
+
+	if (bin->spcinfo) {
+		RzStructuredData *pe_auth = rz_pkcs7_spcinfo_to_structure(bin->spcinfo);
+		rz_structured_data_map_add(pe32, "Authenticode", pe_auth);
 	}
 
 	return info;
