@@ -448,7 +448,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 	rz_return_val_if_fail(analysis && analysis->read_at && fcn && block && params, false);
 	ut8 table_size = 0;
 
-	if (params->table_count == 0) {
+	if (!params->table_count) {
 		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 
@@ -459,7 +459,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 			return false;
 		}
 
-		if (offs == 0) {
+		if (!offs) {
 			break;
 		}
 
@@ -468,11 +468,11 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmp_ptr, params->sp);
 	}
 
-	if (table_size == 0) {
+	if (!table_size) {
 		return false;
 	}
 
-	if (params->default_case == 0 || params->default_case == UT32_MAX) {
+	if (!params->default_case || params->default_case == UT32_MAX) {
 		params->default_case = UT64_MAX;
 	}
 
