@@ -394,7 +394,7 @@ NAME=dr print all
 FILE=bins/elf/analysis/bigswitch_x86_64
 CMDS=<<EOF
 ood
-dr rsp=0xff8be600 rip=0x000070b2e9a2f540
+dr rsp=0xff8be600 rip=0x000070b2e9a2f540 rflags=0x0000000000000200
 dr
 EOF
 EXPECT=<<EOF
