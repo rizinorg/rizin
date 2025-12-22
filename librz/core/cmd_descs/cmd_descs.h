@@ -2063,6 +2063,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_value_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_print_format_write_handler(RzCore *core, int argc, const char **argv);
 // "pFa"
 RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pFas"
+RZ_IPI RzCmdStatus rz_cmd_print_asn1_structure_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pFb"
 RZ_IPI RzCmdStatus rz_cmd_print_protobuf_standard_handler(RzCore *core, int argc, const char **argv);
 // "pFbv"

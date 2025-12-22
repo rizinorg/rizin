@@ -2,7 +2,7 @@
 #define RZ_X509_H
 
 #include <rz_util/rz_asn1.h>
-#include <rz_util/rz_pj.h>
+#include <rz_util/rz_structured_data.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +25,7 @@ typedef struct rz_x509_name_t {
 
 typedef struct rz_x509_algorithmidentifier_t {
 	RzASN1String *algorithm; // OBJECT IDENTIFIER
-	RzASN1String *parameters; // OPTIONAL
+	RzASN1Binary *parameters; // OPTIONAL
 } RzX509AlgorithmIdentifier;
 
 typedef struct rz_x509_authoritykeyidentifier_t {
@@ -90,14 +90,12 @@ typedef struct rz_x509_certificaterevocationlist {
 } RzX509CertificateRevocationList;
 
 RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RzASN1Object *object);
-RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RzX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad);
-RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509CertificateRevocationList *crl);
+RZ_API RZ_OWN RzStructuredData *rz_x509_crl_to_structure(RZ_NULLABLE RzX509CertificateRevocationList *crl);
 
 RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RzASN1Object *object);
 RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse2(RZ_NULLABLE const ut8 *buffer, ut32 length);
 RZ_API void rz_x509_certificate_free(RZ_NULLABLE RzX509Certificate *certificate);
-RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509Certificate *certificate);
-RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RzX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb);
+RZ_API RZ_OWN RzStructuredData *rz_x509_certificate_to_structure(RZ_NULLABLE RzX509Certificate *certificate);
 
 #ifdef __cplusplus
 }

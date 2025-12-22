@@ -4,7 +4,12 @@ CMDS=<<EOF
 w6d MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMTDkRTVCBSb290IENBIFgzMB4XDTE2MDMxNzE2NDA0NloXDTIxMDMxNzE2NDA0NlowSjELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUxldCdzIEVuY3J5cHQxIzAhBgNVBAMTGkxldCdzIEVuY3J5cHQgQXV0aG9yaXR5IFgzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnNMM8FrlLke3cl03g7NoYzDq1zUmGSXhvb418XCSL7e4S0EFq6meNQhY7LEqxGiHC6PjdeTm86dicbp5gWAf15Gan/PQeGdxyGkOlZHP/uaZ6WA8SMx+yk13EiSdRxta67nsHjcAHJyse6cF6s5K671B5TaYucv9bTyWaN8jKkKQDIZ0Z8h/pZq4UmEUEz9l6YKHy9v6Dlb2honzhT+Xhq+w3Brvaw2VFn3EK6BlspkENnWAa6xK8xuQSXgvopZPKiAlKQTGdMDQMc2PMTiVFrqoM7hD8bEfwzB/onkxEz0tNvjj/PIzark5McWvxI0NHWQWM6r6hCm21AvA2H3DkwIDAQABo4IBfTCCAXkwEgYDVR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwfwYIKwYBBQUHAQEEczBxMDIGCCsGAQUFBzABhiZodHRwOi8vaXNyZy50cnVzdGlkLm9jc3AuaWRlbnRydXN0LmNvbTA7BggrBgEFBQcwAoYvaHR0cDovL2FwcHMuaWRlbnRydXN0LmNvbS9yb290cy9kc3Ryb290Y2F4My5wN2MwHwYDVR0jBBgwFoAUxKexpHsscfrb4UuQdf/EFWCFiRAwVAYDVR0gBE0wSzAIBgZngQwBAgEwPwYLKwYBBAGC3xMBAQEwMDAuBggrBgEFBQcCARYiaHR0cDovL2Nwcy5yb290LXgxLmxldHNlbmNyeXB0Lm9yZzA8BgNVHR8ENTAzMDGgL6AthitodHRwOi8vY3JsLmlkZW50cnVzdC5jb20vRFNUUk9PVENBWDNDUkwuY3JsMB0GA1UdDgQWBBSoSmpjBH3duubRObemRWXv86jsoTANBgkqhkiG9w0BAQsFAAOCAQEA3TPXEfNjWDjdGBX7CVW+dla5cEilaUcne8IkCJLxWh9KEik3JHRRHGJouM2VcGfl96S8TihRzZvoroed6ti6WqEBmtzw3Wodatg+VyOeph4EYpr/1wXKtx8/wApIvJSwtmVi4MFU5aMqrSDE6ea73Mj2tcMyo5jMd6jmeWUHK8so/joWUoHOUgwuX4Po1QYz+3dszkDqMp4fklxBwXRsW10KXzPMTZ+sOPAveyxindmjkW8lGy+QsRlGPfZ+G6Z6h7mjem0Y+iWlkYcV4PIWL1iwBi8saCbGS5jN2p8M+X+Q7UNKEkROb3N6KOqkqm57TH2H3eDJAkSnh6/DNFu0Qg==
 b 0x1000
 pFa
-pFaq
+echo ---
+pFas
+echo ---
+pFasj
+echo ---
+pFasq
 EOF
 EXPECT=<<EOF
    0  1170: 0: cons SEQUENCE            : 
@@ -82,15 +87,16 @@ EXPECT=<<EOF
  571   113: 6: cons SEQUENCE            : 
  573    50: 7: cons SEQUENCE            : 
  575     8: 8: prim OBJECT_IDENTIFIER   : ocsp (1.3.6.1.5.5.7.48.1)
- 585    38: 8: prim Context [6]         : 
+ 585    38: 8: prim Context [6]         : http://isrg.trustid.ocsp.identrust.com
  625    59: 7: cons SEQUENCE            : 
  627     8: 8: prim OBJECT_IDENTIFIER   : caIssuers (1.3.6.1.5.5.7.48.2)
- 637    47: 8: prim Context [6]         : 
+ 637    47: 8: prim Context [6]         : http://apps.identrust.com/roots/dstrootcax3.p7c
  686    31: 4: cons SEQUENCE            : 
  688     3: 5: prim OBJECT_IDENTIFIER   : authorityKeyIdentifier (2.5.29.35)
  693    24: 5: prim OCTET_STRING        : 
  695    22: 6: cons SEQUENCE            : 
- 697    20: 7: prim Context [0]         : 
+ 697    20: 7: prim Context [0]         : c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 |....{,q...K.u...|
+                                        : 60 85 89 10                                     |`...            |
  719    84: 4: cons SEQUENCE            : 
  721     3: 5: prim OBJECT_IDENTIFIER   : certificatePolicies (2.5.29.32)
  726    77: 5: prim OCTET_STRING        : 
@@ -98,7 +104,7 @@ EXPECT=<<EOF
  730     8: 7: cons SEQUENCE            : 
  732     6: 8: prim OBJECT_IDENTIFIER   : domain-validated (2.23.140.1.2.1)
  740    63: 7: cons SEQUENCE            : 
- 742    11: 8: prim OBJECT_IDENTIFIER   : 1.3.6.1.4.1.44947.1.1.1
+ 742    11: 8: prim OBJECT_IDENTIFIER   : isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)
  755    48: 8: cons SEQUENCE            : 
  757    46: 9: cons SEQUENCE            : 
  759     8:10: prim OBJECT_IDENTIFIER   : cps (1.3.6.1.5.5.7.2.1)
@@ -110,7 +116,7 @@ EXPECT=<<EOF
  816    49: 7: cons SEQUENCE            : 
  818    47: 8: cons Context [0]         : 
  820    45: 9: cons Context [0]         : 
- 822    43:10: prim Context [6]         : 
+ 822    43:10: prim Context [6]         : http://crl.identrust.com/DSTROOTCAX3CRL.crl
  867    29: 4: cons SEQUENCE            : 
  869     3: 5: prim OBJECT_IDENTIFIER   : subjectKeyIdentifier (2.5.29.14)
  874    22: 5: prim OCTET_STRING        : 
@@ -119,67 +125,736 @@ EXPECT=<<EOF
  898    13: 1: cons SEQUENCE            : 
  900     9: 2: prim OBJECT_IDENTIFIER   : sha256WithRSAEncryption (1.2.840.113549.1.1.11)
  913   256: 1: prim BIT_STRING          : 
- 918    51: 2: prim Private_29          : 
-    INTEGER
-        02
-  INTEGER
-    0a 01 41 42 00 00 01 53 85 73 6a 0b 85 ec a7 08 |..AB...S.sj.....|
-    sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-        organizationName (2.5.4.10)
-        Digital Signature Trust Co.
-        commonName (2.5.4.3)
-        DST Root CA X3
-    17/03/2016 16:40:46 GMT
-    17/03/2021 16:40:46 GMT
-        countryName (2.5.4.6)
-        US
-        organizationName (2.5.4.10)
-        Let's Encrypt
-        commonName (2.5.4.3)
-        Let's Encrypt Authority X3
-      rsaEncryption (1.2.840.113549.1.1.1)
-        INTEGER
-          00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 |.....Z..G.r]7..h|
-          63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f |c0..5&.%...5.p./|
-          b7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 |..KA....5.X..*.h|
-          87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f |....u....bq.y.`.|
-          d7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe |......xgq.i.....|
-          e6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b |...`<H.~.Mw.$.G.|
-          5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a |Z....7....{....J|
-          eb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a |..A.6....m<.h.#*|
-          42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f |B...tg.....Ra..?|
-          65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 |e.......V.....?.|
-          86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 |......k...}.+.e.|
-          99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 |..6u.k.J...Ix/..|
-          4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 |O* %)..t..1..18.|
-          16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 |...3.C....0..y1.|
-          3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d |=-6....3j.91....|
-          0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 |..d.3...).....}.|
-          93                                              |.               |
-        INTEGER
-                010001
-        basicConstraints (2.5.29.19)
-        true
-            true
-            INTEGER
-                        00
-        keyUsage (2.5.29.15)
-        true
-                    0186
-        authorityInfoAccess (1.3.6.1.5.5.7.1.1)
-              ocsp (1.3.6.1.5.5.7.48.1)
-              caIssuers (1.3.6.1.5.5.7.48.2)
-        authorityKeyIdentifier (2.5.29.35)
-        certificatePolicies (2.5.29.32)
-              domain-validated (2.23.140.1.2.1)
-              1.3.6.1.4.1.44947.1.1.1
-                  cps (1.3.6.1.5.5.7.2.1)
-                  http://cps.root-x1.letsencrypt.org
-        cRLDistributionPoints (2.5.29.31)
-        subjectKeyIdentifier (2.5.29.14)
-            a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef |.Jjc.}....9..Ee.|
-            f3 a8 ec a1                                     |....            |
-  sha256WithRSAEncryption (1.2.840.113549.1.1.11)
+ 918    51: 2: prim Private_29          : d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 56 b9 |...cX8.....U.vV.|
+                                        : 70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f 4a 12 |pH.iG'{.$...Z.J.|
+                                        : 29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 f7 a4 |)7$tQ.bh...pg...|
+                                        : bc 4e 28                                        |.N(             |
+---
+offset: 0x0
+length: 1170
+form: "cons"
+type: "SEQUENCE"
+value:
+  - offset: 0x4
+    length: 890
+    form: "cons"
+    type: "SEQUENCE"
+    value:
+      - offset: 0x8
+        length: 3
+        form: "cons"
+        type: "Context [0]"
+        value:
+          - offset: 0xa
+            length: 1
+            form: "prim"
+            type: "INTEGER"
+            value: "02"
+      - offset: 0xd
+        length: 16
+        form: "prim"
+        type: "INTEGER"
+        value: "0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08"
+      - offset: 0x1f
+        length: 13
+        form: "cons"
+        type: "SEQUENCE"
+        value:
+          - offset: 0x21
+            length: 9
+            form: "prim"
+            type: "OBJECT_IDENTIFIER"
+            value: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+      - offset: 0x2e
+        length: 63
+        form: "cons"
+        type: "SEQUENCE"
+        value:
+          - offset: 0x30
+            length: 36
+            form: "cons"
+            type: "SET"
+            value:
+              - offset: 0x32
+                length: 34
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x34
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "organizationName (2.5.4.10)"
+                  - offset: 0x39
+                    length: 27
+                    form: "prim"
+                    type: "PrintableString"
+                    value: "Digital Signature Trust Co."
+          - offset: 0x56
+            length: 23
+            form: "cons"
+            type: "SET"
+            value:
+              - offset: 0x58
+                length: 21
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x5a
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "commonName (2.5.4.3)"
+                  - offset: 0x5f
+                    length: 14
+                    form: "prim"
+                    type: "PrintableString"
+                    value: "DST Root CA X3"
+      - offset: 0x6f
+        length: 30
+        form: "cons"
+        type: "SEQUENCE"
+        value:
+          - offset: 0x71
+            length: 13
+            form: "prim"
+            type: "UTCTime"
+            value: "17/03/2016 16:40:46 GMT"
+          - offset: 0x80
+            length: 13
+            form: "prim"
+            type: "UTCTime"
+            value: "17/03/2021 16:40:46 GMT"
+      - offset: 0x8f
+        length: 74
+        form: "cons"
+        type: "SEQUENCE"
+        value:
+          - offset: 0x91
+            length: 11
+            form: "cons"
+            type: "SET"
+            value:
+              - offset: 0x93
+                length: 9
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x95
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "countryName (2.5.4.6)"
+                  - offset: 0x9a
+                    length: 2
+                    form: "prim"
+                    type: "PrintableString"
+                    value: "US"
+          - offset: 0x9e
+            length: 22
+            form: "cons"
+            type: "SET"
+            value:
+              - offset: 0xa0
+                length: 20
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0xa2
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "organizationName (2.5.4.10)"
+                  - offset: 0xa7
+                    length: 13
+                    form: "prim"
+                    type: "PrintableString"
+                    value: "Let's Encrypt"
+          - offset: 0xb6
+            length: 35
+            form: "cons"
+            type: "SET"
+            value:
+              - offset: 0xb8
+                length: 33
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0xba
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "commonName (2.5.4.3)"
+                  - offset: 0xbf
+                    length: 26
+                    form: "prim"
+                    type: "PrintableString"
+                    value: "Let's Encrypt Authority X3"
+      - offset: 0xdb
+        length: 290
+        form: "cons"
+        type: "SEQUENCE"
+        value:
+          - offset: 0xdf
+            length: 13
+            form: "cons"
+            type: "SEQUENCE"
+            value:
+              - offset: 0xe1
+                length: 9
+                form: "prim"
+                type: "OBJECT_IDENTIFIER"
+                value: "rsaEncryption (1.2.840.113549.1.1.1)"
+          - offset: 0xee
+            length: 270
+            form: "prim"
+            type: "BIT_STRING"
+            value:
+              - offset: 0xf3
+                length: 266
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0xf7
+                    length: 257
+                    form: "prim"
+                    type: "INTEGER"
+                    value: |
+                      00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 .....Z..G.r]7..h
+                      63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f c0..5&.%...5.p./
+                      b7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 ..KA....5.X..*.h
+                      87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f ....u....bq.y.`.
+                      d7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe ......xgq.i.....
+                      e6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b ...`<H.~.Mw.$.G.
+                      5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a Z....7....{....J
+                      eb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a ..A.6....m<.h.#*
+                      42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f B...tg.....Ra..?
+                      65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 e.......V.....?.
+                      86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 ......k...}.+.e.
+                      99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 ..6u.k.J...Ix/..
+                      4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 O* %)..t..1..18.
+                      16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 ...3.C....0..y1.
+                      3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d =-6....3j.91....
+                      0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 ..d.3...).....}.
+                  - offset: 0x1fc
+                    length: 3
+                    form: "prim"
+                    type: "INTEGER"
+                    value: "01:00:01"
+      - offset: 0x201
+        length: 381
+        form: "cons"
+        type: "Context [3]"
+        value:
+          - offset: 0x205
+            length: 377
+            form: "cons"
+            type: "SEQUENCE"
+            value:
+              - offset: 0x209
+                length: 18
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x20b
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "basicConstraints (2.5.29.19)"
+                  - offset: 0x210
+                    length: 1
+                    form: "prim"
+                    type: "BOOLEAN"
+                    value: "true"
+                  - offset: 0x213
+                    length: 8
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x215
+                        length: 6
+                        form: "cons"
+                        type: "SEQUENCE"
+                        value:
+                          - offset: 0x217
+                            length: 1
+                            form: "prim"
+                            type: "BOOLEAN"
+                            value: "true"
+                          - offset: 0x21a
+                            length: 1
+                            form: "prim"
+                            type: "INTEGER"
+                            value: "00"
+              - offset: 0x21d
+                length: 14
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x21f
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "keyUsage (2.5.29.15)"
+                  - offset: 0x224
+                    length: 1
+                    form: "prim"
+                    type: "BOOLEAN"
+                    value: "true"
+                  - offset: 0x227
+                    length: 4
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x229
+                        length: 2
+                        form: "prim"
+                        type: "BIT_STRING"
+                        value: "0110000"
+              - offset: 0x22d
+                length: 127
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x22f
+                    length: 8
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "authorityInfoAccess (1.3.6.1.5.5.7.1.1)"
+                  - offset: 0x239
+                    length: 115
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x23b
+                        length: 113
+                        form: "cons"
+                        type: "SEQUENCE"
+                        value:
+                          - offset: 0x23d
+                            length: 50
+                            form: "cons"
+                            type: "SEQUENCE"
+                            value:
+                              - offset: 0x23f
+                                length: 8
+                                form: "prim"
+                                type: "OBJECT_IDENTIFIER"
+                                value: "ocsp (1.3.6.1.5.5.7.48.1)"
+                              - offset: 0x249
+                                length: 38
+                                form: "prim"
+                                type: "Context [6]"
+                                value: "http://isrg.trustid.ocsp.identrust.com"
+                          - offset: 0x271
+                            length: 59
+                            form: "cons"
+                            type: "SEQUENCE"
+                            value:
+                              - offset: 0x273
+                                length: 8
+                                form: "prim"
+                                type: "OBJECT_IDENTIFIER"
+                                value: "caIssuers (1.3.6.1.5.5.7.48.2)"
+                              - offset: 0x27d
+                                length: 47
+                                form: "prim"
+                                type: "Context [6]"
+                                value: "http://apps.identrust.com/roots/dstrootcax3.p7c"
+              - offset: 0x2ae
+                length: 31
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x2b0
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "authorityKeyIdentifier (2.5.29.35)"
+                  - offset: 0x2b5
+                    length: 24
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x2b7
+                        length: 22
+                        form: "cons"
+                        type: "SEQUENCE"
+                        value:
+                          - offset: 0x2b9
+                            length: 20
+                            form: "prim"
+                            type: "Context [0]"
+                            value: |
+                              c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 ....{,q...K.u...
+                              60 85 89 10                                     `...
+              - offset: 0x2cf
+                length: 84
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x2d1
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "certificatePolicies (2.5.29.32)"
+                  - offset: 0x2d6
+                    length: 77
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x2d8
+                        length: 75
+                        form: "cons"
+                        type: "SEQUENCE"
+                        value:
+                          - offset: 0x2da
+                            length: 8
+                            form: "cons"
+                            type: "SEQUENCE"
+                            value:
+                              - offset: 0x2dc
+                                length: 6
+                                form: "prim"
+                                type: "OBJECT_IDENTIFIER"
+                                value: "domain-validated (2.23.140.1.2.1)"
+                          - offset: 0x2e4
+                            length: 63
+                            form: "cons"
+                            type: "SEQUENCE"
+                            value:
+                              - offset: 0x2e6
+                                length: 11
+                                form: "prim"
+                                type: "OBJECT_IDENTIFIER"
+                                value: "isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)"
+                              - offset: 0x2f3
+                                length: 48
+                                form: "cons"
+                                type: "SEQUENCE"
+                                value:
+                                  - offset: 0x2f5
+                                    length: 46
+                                    form: "cons"
+                                    type: "SEQUENCE"
+                                    value:
+                                      - offset: 0x2f7
+                                        length: 8
+                                        form: "prim"
+                                        type: "OBJECT_IDENTIFIER"
+                                        value: "cps (1.3.6.1.5.5.7.2.1)"
+                                      - offset: 0x301
+                                        length: 34
+                                        form: "prim"
+                                        type: "IA5String"
+                                        value: "http://cps.root-x1.letsencrypt.org"
+              - offset: 0x325
+                length: 60
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x327
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "cRLDistributionPoints (2.5.29.31)"
+                  - offset: 0x32c
+                    length: 53
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x32e
+                        length: 51
+                        form: "cons"
+                        type: "SEQUENCE"
+                        value:
+                          - offset: 0x330
+                            length: 49
+                            form: "cons"
+                            type: "SEQUENCE"
+                            value:
+                              - offset: 0x332
+                                length: 47
+                                form: "cons"
+                                type: "Context [0]"
+                                value:
+                                  - offset: 0x334
+                                    length: 45
+                                    form: "cons"
+                                    type: "Context [0]"
+                                    value:
+                                      - offset: 0x336
+                                        length: 43
+                                        form: "prim"
+                                        type: "Context [6]"
+                                        value: "http://crl.identrust.com/DSTROOTCAX3CRL.crl"
+              - offset: 0x363
+                length: 29
+                form: "cons"
+                type: "SEQUENCE"
+                value:
+                  - offset: 0x365
+                    length: 3
+                    form: "prim"
+                    type: "OBJECT_IDENTIFIER"
+                    value: "subjectKeyIdentifier (2.5.29.14)"
+                  - offset: 0x36a
+                    length: 22
+                    form: "prim"
+                    type: "OCTET_STRING"
+                    value:
+                      - offset: 0x36c
+                        length: 20
+                        form: "prim"
+                        type: "OCTET_STRING"
+                        value: |
+                          a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef .Jjc.}....9..Ee.
+                          f3 a8 ec a1                                     ....
+  - offset: 0x382
+    length: 13
+    form: "cons"
+    type: "SEQUENCE"
+    value:
+      - offset: 0x384
+        length: 9
+        form: "prim"
+        type: "OBJECT_IDENTIFIER"
+        value: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+  - offset: 0x391
+    length: 256
+    form: "prim"
+    type: "BIT_STRING"
+    value:
+      - offset: 0x396
+        length: 51
+        form: "prim"
+        type: "Private_29"
+        value: |
+          d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 56 b9 ...cX8.....U.vV.
+          70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f 4a 12 pH.iG'{.$...Z.J.
+          29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 f7 a4 )7$tQ.bh...pg...
+          bc 4e 28                                        .N(
+
+---
+{"offset":0,"length":1170,"form":"cons","type":"SEQUENCE","value":[{"offset":4,"length":890,"form":"cons","type":"SEQUENCE","value":[{"offset":8,"length":3,"form":"cons","type":"Context [0]","value":[{"offset":10,"length":1,"form":"prim","type":"INTEGER","value":"02"}]},{"offset":13,"length":16,"form":"prim","type":"INTEGER","value":"0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08"},{"offset":31,"length":13,"form":"cons","type":"SEQUENCE","value":[{"offset":33,"length":9,"form":"prim","type":"OBJECT_IDENTIFIER","value":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"}]},{"offset":46,"length":63,"form":"cons","type":"SEQUENCE","value":[{"offset":48,"length":36,"form":"cons","type":"SET","value":[{"offset":50,"length":34,"form":"cons","type":"SEQUENCE","value":[{"offset":52,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"organizationName (2.5.4.10)"},{"offset":57,"length":27,"form":"prim","type":"PrintableString","value":"Digital Signature Trust Co."}]}]},{"offset":86,"length":23,"form":"cons","type":"SET","value":[{"offset":88,"length":21,"form":"cons","type":"SEQUENCE","value":[{"offset":90,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"commonName (2.5.4.3)"},{"offset":95,"length":14,"form":"prim","type":"PrintableString","value":"DST Root CA X3"}]}]}]},{"offset":111,"length":30,"form":"cons","type":"SEQUENCE","value":[{"offset":113,"length":13,"form":"prim","type":"UTCTime","value":"17/03/2016 16:40:46 GMT"},{"offset":128,"length":13,"form":"prim","type":"UTCTime","value":"17/03/2021 16:40:46 GMT"}]},{"offset":143,"length":74,"form":"cons","type":"SEQUENCE","value":[{"offset":145,"length":11,"form":"cons","type":"SET","value":[{"offset":147,"length":9,"form":"cons","type":"SEQUENCE","value":[{"offset":149,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"countryName (2.5.4.6)"},{"offset":154,"length":2,"form":"prim","type":"PrintableString","value":"US"}]}]},{"offset":158,"length":22,"form":"cons","type":"SET","value":[{"offset":160,"length":20,"form":"cons","type":"SEQUENCE","value":[{"offset":162,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"organizationName (2.5.4.10)"},{"offset":167,"length":13,"form":"prim","type":"PrintableString","value":"Let's Encrypt"}]}]},{"offset":182,"length":35,"form":"cons","type":"SET","value":[{"offset":184,"length":33,"form":"cons","type":"SEQUENCE","value":[{"offset":186,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"commonName (2.5.4.3)"},{"offset":191,"length":26,"form":"prim","type":"PrintableString","value":"Let's Encrypt Authority X3"}]}]}]},{"offset":219,"length":290,"form":"cons","type":"SEQUENCE","value":[{"offset":223,"length":13,"form":"cons","type":"SEQUENCE","value":[{"offset":225,"length":9,"form":"prim","type":"OBJECT_IDENTIFIER","value":"rsaEncryption (1.2.840.113549.1.1.1)"}]},{"offset":238,"length":270,"form":"prim","type":"BIT_STRING","value":[{"offset":243,"length":266,"form":"cons","type":"SEQUENCE","value":[{"offset":247,"length":257,"form":"prim","type":"INTEGER","value":"00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 .....Z..G.r]7..h\n63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f c0..5&.%...5.p./\nb7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 ..KA....5.X..*.h\n87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f ....u....bq.y.`.\nd7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe ......xgq.i.....\ne6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b ...`<H.~.Mw.$.G.\n5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a Z....7....{....J\neb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a ..A.6....m<.h.#*\n42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f B...tg.....Ra..?\n65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 e.......V.....?.\n86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 ......k...}.+.e.\n99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 ..6u.k.J...Ix/..\n4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 O* %)..t..1..18.\n16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 ...3.C....0..y1.\n3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d =-6....3j.91....\n0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 ..d.3...).....}."},{"offset":508,"length":3,"form":"prim","type":"INTEGER","value":"01:00:01"}]}]}]},{"offset":513,"length":381,"form":"cons","type":"Context [3]","value":[{"offset":517,"length":377,"form":"cons","type":"SEQUENCE","value":[{"offset":521,"length":18,"form":"cons","type":"SEQUENCE","value":[{"offset":523,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"basicConstraints (2.5.29.19)"},{"offset":528,"length":1,"form":"prim","type":"BOOLEAN","value":"true"},{"offset":531,"length":8,"form":"prim","type":"OCTET_STRING","value":[{"offset":533,"length":6,"form":"cons","type":"SEQUENCE","value":[{"offset":535,"length":1,"form":"prim","type":"BOOLEAN","value":"true"},{"offset":538,"length":1,"form":"prim","type":"INTEGER","value":"00"}]}]}]},{"offset":541,"length":14,"form":"cons","type":"SEQUENCE","value":[{"offset":543,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"keyUsage (2.5.29.15)"},{"offset":548,"length":1,"form":"prim","type":"BOOLEAN","value":"true"},{"offset":551,"length":4,"form":"prim","type":"OCTET_STRING","value":[{"offset":553,"length":2,"form":"prim","type":"BIT_STRING","value":"0110000"}]}]},{"offset":557,"length":127,"form":"cons","type":"SEQUENCE","value":[{"offset":559,"length":8,"form":"prim","type":"OBJECT_IDENTIFIER","value":"authorityInfoAccess (1.3.6.1.5.5.7.1.1)"},{"offset":569,"length":115,"form":"prim","type":"OCTET_STRING","value":[{"offset":571,"length":113,"form":"cons","type":"SEQUENCE","value":[{"offset":573,"length":50,"form":"cons","type":"SEQUENCE","value":[{"offset":575,"length":8,"form":"prim","type":"OBJECT_IDENTIFIER","value":"ocsp (1.3.6.1.5.5.7.48.1)"},{"offset":585,"length":38,"form":"prim","type":"Context [6]","value":"http://isrg.trustid.ocsp.identrust.com"}]},{"offset":625,"length":59,"form":"cons","type":"SEQUENCE","value":[{"offset":627,"length":8,"form":"prim","type":"OBJECT_IDENTIFIER","value":"caIssuers (1.3.6.1.5.5.7.48.2)"},{"offset":637,"length":47,"form":"prim","type":"Context [6]","value":"http://apps.identrust.com/roots/dstrootcax3.p7c"}]}]}]}]},{"offset":686,"length":31,"form":"cons","type":"SEQUENCE","value":[{"offset":688,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"authorityKeyIdentifier (2.5.29.35)"},{"offset":693,"length":24,"form":"prim","type":"OCTET_STRING","value":[{"offset":695,"length":22,"form":"cons","type":"SEQUENCE","value":[{"offset":697,"length":20,"form":"prim","type":"Context [0]","value":"c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 ....{,q...K.u...\n60 85 89 10                                     `..."}]}]}]},{"offset":719,"length":84,"form":"cons","type":"SEQUENCE","value":[{"offset":721,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"certificatePolicies (2.5.29.32)"},{"offset":726,"length":77,"form":"prim","type":"OCTET_STRING","value":[{"offset":728,"length":75,"form":"cons","type":"SEQUENCE","value":[{"offset":730,"length":8,"form":"cons","type":"SEQUENCE","value":[{"offset":732,"length":6,"form":"prim","type":"OBJECT_IDENTIFIER","value":"domain-validated (2.23.140.1.2.1)"}]},{"offset":740,"length":63,"form":"cons","type":"SEQUENCE","value":[{"offset":742,"length":11,"form":"prim","type":"OBJECT_IDENTIFIER","value":"isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)"},{"offset":755,"length":48,"form":"cons","type":"SEQUENCE","value":[{"offset":757,"length":46,"form":"cons","type":"SEQUENCE","value":[{"offset":759,"length":8,"form":"prim","type":"OBJECT_IDENTIFIER","value":"cps (1.3.6.1.5.5.7.2.1)"},{"offset":769,"length":34,"form":"prim","type":"IA5String","value":"http://cps.root-x1.letsencrypt.org"}]}]}]}]}]}]},{"offset":805,"length":60,"form":"cons","type":"SEQUENCE","value":[{"offset":807,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"cRLDistributionPoints (2.5.29.31)"},{"offset":812,"length":53,"form":"prim","type":"OCTET_STRING","value":[{"offset":814,"length":51,"form":"cons","type":"SEQUENCE","value":[{"offset":816,"length":49,"form":"cons","type":"SEQUENCE","value":[{"offset":818,"length":47,"form":"cons","type":"Context [0]","value":[{"offset":820,"length":45,"form":"cons","type":"Context [0]","value":[{"offset":822,"length":43,"form":"prim","type":"Context [6]","value":"http://crl.identrust.com/DSTROOTCAX3CRL.crl"}]}]}]}]}]}]},{"offset":867,"length":29,"form":"cons","type":"SEQUENCE","value":[{"offset":869,"length":3,"form":"prim","type":"OBJECT_IDENTIFIER","value":"subjectKeyIdentifier (2.5.29.14)"},{"offset":874,"length":22,"form":"prim","type":"OCTET_STRING","value":[{"offset":876,"length":20,"form":"prim","type":"OCTET_STRING","value":"a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef .Jjc.}....9..Ee.\nf3 a8 ec a1                                     ...."}]}]}]}]}]},{"offset":898,"length":13,"form":"cons","type":"SEQUENCE","value":[{"offset":900,"length":9,"form":"prim","type":"OBJECT_IDENTIFIER","value":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"}]},{"offset":913,"length":256,"form":"prim","type":"BIT_STRING","value":[{"offset":918,"length":51,"form":"prim","type":"Private_29","value":"d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 56 b9 ...cX8.....U.vV.\n70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f 4a 12 pH.iG'{.$...Z.J.\n29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 f7 a4 )7$tQ.bh...pg...\nbc 4e 28                                        .N("}]}]}
+---
+type: "SEQUENCE"
+value:
+  - type: "SEQUENCE"
+    value:
+      - type: "Context [0]"
+        value:
+          - type: "INTEGER"
+            value: "02"
+      - type: "INTEGER"
+        value: "0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08"
+      - type: "SEQUENCE"
+        value:
+          - type: "OBJECT_IDENTIFIER"
+            value: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+      - type: "SEQUENCE"
+        value:
+          - type: "SET"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "organizationName (2.5.4.10)"
+                  - type: "PrintableString"
+                    value: "Digital Signature Trust Co."
+          - type: "SET"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "commonName (2.5.4.3)"
+                  - type: "PrintableString"
+                    value: "DST Root CA X3"
+      - type: "SEQUENCE"
+        value:
+          - type: "UTCTime"
+            value: "17/03/2016 16:40:46 GMT"
+          - type: "UTCTime"
+            value: "17/03/2021 16:40:46 GMT"
+      - type: "SEQUENCE"
+        value:
+          - type: "SET"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "countryName (2.5.4.6)"
+                  - type: "PrintableString"
+                    value: "US"
+          - type: "SET"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "organizationName (2.5.4.10)"
+                  - type: "PrintableString"
+                    value: "Let's Encrypt"
+          - type: "SET"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "commonName (2.5.4.3)"
+                  - type: "PrintableString"
+                    value: "Let's Encrypt Authority X3"
+      - type: "SEQUENCE"
+        value:
+          - type: "SEQUENCE"
+            value:
+              - type: "OBJECT_IDENTIFIER"
+                value: "rsaEncryption (1.2.840.113549.1.1.1)"
+          - type: "BIT_STRING"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "INTEGER"
+                    value: |
+                      00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 .....Z..G.r]7..h
+                      63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f c0..5&.%...5.p./
+                      b7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 ..KA....5.X..*.h
+                      87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f ....u....bq.y.`.
+                      d7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe ......xgq.i.....
+                      e6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b ...`<H.~.Mw.$.G.
+                      5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a Z....7....{....J
+                      eb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a ..A.6....m<.h.#*
+                      42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f B...tg.....Ra..?
+                      65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 e.......V.....?.
+                      86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 ......k...}.+.e.
+                      99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 ..6u.k.J...Ix/..
+                      4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 O* %)..t..1..18.
+                      16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 ...3.C....0..y1.
+                      3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d =-6....3j.91....
+                      0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 ..d.3...).....}.
+                  - type: "INTEGER"
+                    value: "01:00:01"
+      - type: "Context [3]"
+        value:
+          - type: "SEQUENCE"
+            value:
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "basicConstraints (2.5.29.19)"
+                  - type: "BOOLEAN"
+                    value: "true"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "SEQUENCE"
+                        value:
+                          - type: "BOOLEAN"
+                            value: "true"
+                          - type: "INTEGER"
+                            value: "00"
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "keyUsage (2.5.29.15)"
+                  - type: "BOOLEAN"
+                    value: "true"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "BIT_STRING"
+                        value: "0110000"
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "authorityInfoAccess (1.3.6.1.5.5.7.1.1)"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "SEQUENCE"
+                        value:
+                          - type: "SEQUENCE"
+                            value:
+                              - type: "OBJECT_IDENTIFIER"
+                                value: "ocsp (1.3.6.1.5.5.7.48.1)"
+                              - type: "Context [6]"
+                                value: "http://isrg.trustid.ocsp.identrust.com"
+                          - type: "SEQUENCE"
+                            value:
+                              - type: "OBJECT_IDENTIFIER"
+                                value: "caIssuers (1.3.6.1.5.5.7.48.2)"
+                              - type: "Context [6]"
+                                value: "http://apps.identrust.com/roots/dstrootcax3.p7c"
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "authorityKeyIdentifier (2.5.29.35)"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "SEQUENCE"
+                        value:
+                          - type: "Context [0]"
+                            value: |
+                              c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 ....{,q...K.u...
+                              60 85 89 10                                     `...
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "certificatePolicies (2.5.29.32)"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "SEQUENCE"
+                        value:
+                          - type: "SEQUENCE"
+                            value:
+                              - type: "OBJECT_IDENTIFIER"
+                                value: "domain-validated (2.23.140.1.2.1)"
+                          - type: "SEQUENCE"
+                            value:
+                              - type: "OBJECT_IDENTIFIER"
+                                value: "isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)"
+                              - type: "SEQUENCE"
+                                value:
+                                  - type: "SEQUENCE"
+                                    value:
+                                      - type: "OBJECT_IDENTIFIER"
+                                        value: "cps (1.3.6.1.5.5.7.2.1)"
+                                      - type: "IA5String"
+                                        value: "http://cps.root-x1.letsencrypt.org"
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "cRLDistributionPoints (2.5.29.31)"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "SEQUENCE"
+                        value:
+                          - type: "SEQUENCE"
+                            value:
+                              - type: "Context [0]"
+                                value:
+                                  - type: "Context [0]"
+                                    value:
+                                      - type: "Context [6]"
+                                        value: "http://crl.identrust.com/DSTROOTCAX3CRL.crl"
+              - type: "SEQUENCE"
+                value:
+                  - type: "OBJECT_IDENTIFIER"
+                    value: "subjectKeyIdentifier (2.5.29.14)"
+                  - type: "OCTET_STRING"
+                    value:
+                      - type: "OCTET_STRING"
+                        value: |
+                          a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef .Jjc.}....9..Ee.
+                          f3 a8 ec a1                                     ....
+  - type: "SEQUENCE"
+    value:
+      - type: "OBJECT_IDENTIFIER"
+        value: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+  - type: "BIT_STRING"
+    value:
+      - type: "Private_29"
+        value: |
+          d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 56 b9 ...cX8.....U.vV.
+          70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f 4a 12 pH.iG'{.$...Z.J.
+          29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 f7 a4 )7$tQ.bh...pg...
+          bc 4e 28                                        .N(
+
 EOF
 RUN
 
@@ -191,44 +866,144 @@ b 0x1000
 pFx
 EOF
 EXPECT=<<EOF
-TBSCertificate:
-  Version: v3
-  Serial Number:
-    0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08
-  Signature Algorithm:
-    sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-  Issuer:
-    organizationName (2.5.4.10): Digital Signature Trust Co.
-    commonName (2.5.4.3): DST Root CA X3
-  Validity:
-    Not Before: 17/03/2016 16:40:46 GMT
-    Not After: 17/03/2021 16:40:46 GMT
-  Subject:
-    countryName (2.5.4.6): US
-    organizationName (2.5.4.10): Let's Encrypt
-    commonName (2.5.4.3): Let's Encrypt Authority X3
-  Subject Public Key Info:
-    Algorithm: rsaEncryption (1.2.840.113549.1.1.1)
-    Module: 01:00:01
-    Exponent: 256 bytes
-  Extensions:
-    basicConstraints (2.5.29.19): critical
-    8 bytes
-    keyUsage (2.5.29.15): critical
-    4 bytes
-    authorityInfoAccess (1.3.6.1.5.5.7.1.1): 
-    115 bytes
-    authorityKeyIdentifier (2.5.29.35): 
-    24 bytes
-    certificatePolicies (2.5.29.32): 
-    77 bytes
-    cRLDistributionPoints (2.5.29.31): 
-    53 bytes
-    subjectKeyIdentifier (2.5.29.14): 
-    22 bytes
-Algorithm:
-  sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-Signature: 256 bytes
+tbsCertificate:
+  version: 3
+  serialNumber: "0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08"
+  signature:
+    algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+  issuer:
+    - oid: "organizationName (2.5.4.10)"
+      value: "Digital Signature Trust Co."
+    - oid: "commonName (2.5.4.3)"
+      value: "DST Root CA X3"
+  validity:
+    notBefore: "17/03/2016 16:40:46 GMT"
+    notAfter: "17/03/2021 16:40:46 GMT"
+  subject:
+    - oid: "countryName (2.5.4.6)"
+      value: "US"
+    - oid: "organizationName (2.5.4.10)"
+      value: "Let's Encrypt"
+    - oid: "commonName (2.5.4.3)"
+      value: "Let's Encrypt Authority X3"
+  subjectPublicKeyInfo:
+    algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+    subjectPublicKey:
+      exponent: |
+        00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 .....Z..G.r]7..h
+        63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f c0..5&.%...5.p./
+        b7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 ..KA....5.X..*.h
+        87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f ....u....bq.y.`.
+        d7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe ......xgq.i.....
+        e6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b ...`<H.~.Mw.$.G.
+        5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a Z....7....{....J
+        eb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a ..A.6....m<.h.#*
+        42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f B...tg.....Ra..?
+        65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 e.......V.....?.
+        86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 ......k...}.+.e.
+        99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 ..6u.k.J...Ix/..
+        4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 O* %)..t..1..18.
+        16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 ...3.C....0..y1.
+        3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d =-6....3j.91....
+        0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 ..d.3...).....}.
+      module: "01:00:01"
+  extensions:
+    - extnID: "basicConstraints (2.5.29.19)"
+      critical: true
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "BOOLEAN"
+            value: "true"
+          - type: "INTEGER"
+            value: "00"
+    - extnID: "keyUsage (2.5.29.15)"
+      critical: true
+      extnValue:
+        type: "BIT_STRING"
+        value: "0110000"
+    - extnID: "authorityInfoAccess (1.3.6.1.5.5.7.1.1)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "SEQUENCE"
+            value:
+              - type: "OBJECT_IDENTIFIER"
+                value: "ocsp (1.3.6.1.5.5.7.48.1)"
+              - type: "Context [6]"
+                value: "http://isrg.trustid.ocsp.identrust.com"
+          - type: "SEQUENCE"
+            value:
+              - type: "OBJECT_IDENTIFIER"
+                value: "caIssuers (1.3.6.1.5.5.7.48.2)"
+              - type: "Context [6]"
+                value: "http://apps.identrust.com/roots/dstrootcax3.p7c"
+    - extnID: "authorityKeyIdentifier (2.5.29.35)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "Context [0]"
+            value: |
+              c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 ....{,q...K.u...
+              60 85 89 10                                     `...
+    - extnID: "certificatePolicies (2.5.29.32)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "SEQUENCE"
+            value:
+              - type: "OBJECT_IDENTIFIER"
+                value: "domain-validated (2.23.140.1.2.1)"
+          - type: "SEQUENCE"
+            value:
+              - type: "OBJECT_IDENTIFIER"
+                value: "isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)"
+              - type: "SEQUENCE"
+                value:
+                  - type: "SEQUENCE"
+                    value:
+                      - type: "OBJECT_IDENTIFIER"
+                        value: "cps (1.3.6.1.5.5.7.2.1)"
+                      - type: "IA5String"
+                        value: "http://cps.root-x1.letsencrypt.org"
+    - extnID: "cRLDistributionPoints (2.5.29.31)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "SEQUENCE"
+            value:
+              - type: "Context [0]"
+                value:
+                  - type: "Context [0]"
+                    value:
+                      - type: "Context [6]"
+                        value: "http://crl.identrust.com/DSTROOTCAX3CRL.crl"
+    - extnID: "subjectKeyIdentifier (2.5.29.14)"
+      extnValue:
+        type: "OCTET_STRING"
+        value: |
+          a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef .Jjc.}....9..Ee.
+          f3 a8 ec a1                                     ....
+algorithmIdentifier:
+  algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+signature: |
+  dd 33 d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 .3...cX8.....U.v
+  56 b9 70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f V.pH.iG'{.$...Z.
+  4a 12 29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 J.)7$tQ.bh...pg.
+  f7 a4 bc 4e 28 51 cd 9b e8 ae 87 9d ea d8 ba 5a ...N(Q.........Z
+  a1 01 9a dc f0 dd 6a 1d 6a d8 3e 57 23 9e a6 1e ......j.j.>W#...
+  04 62 9a ff d7 05 ca b7 1f 3f c0 0a 48 bc 94 b0 .b.......?..H...
+  b6 65 62 e0 c1 54 e5 a3 2a ad 20 c4 e9 e6 bb dc .eb..T..*. .....
+  c8 f6 b5 c3 32 a3 98 cc 77 a8 e6 79 65 07 2b cb ....2...w..ye.+.
+  28 fe 3a 16 52 81 ce 52 0c 2e 5f 83 e8 d5 06 33 (.:.R..R.._....3
+  fb 77 6c ce 40 ea 32 9e 1f 92 5c 41 c1 74 6c 5b .wl.@.2...\A.tl[
+  5d 0a 5f 33 cc 4d 9f ac 38 f0 2f 7b 2c 62 9d d9 ]._3.M..8./{,b..
+  a3 91 6f 25 1b 2f 90 b1 19 46 3d f6 7e 1b a6 7a ..o%./...F=.~..z
+  87 b9 a3 7a 6d 18 fa 25 a5 91 87 15 e0 f2 16 2f ...zm..%......./
+  58 b0 06 2f 2c 68 26 c6 4b 98 cd da 9f 0c f9 7f X../,h&.K.......
+  90 ed 43 4a 12 44 4e 6f 73 7a 28 ea a4 aa 6e 7b ..CJ.DNosz(...n{
+  4c 7d 87 dd e0 c9 02 44 a7 87 af c3 34 5b b4 42 L}.....D....4[.B
+
 EOF
 RUN
 
@@ -240,7 +1015,7 @@ b 0x1000
 pFxj
 EOF
 EXPECT=<<EOF
-{"TBSCertificate":{"Version":3,"SerialNumber":"0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08","SignatureAlgorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)","Issuer":{"organizationName (2.5.4.10)":"Digital Signature Trust Co.","commonName (2.5.4.3)":"DST Root CA X3"},"Validity":{"NotBefore":"17/03/2016 16:40:46 GMT","NotAfter":"17/03/2021 16:40:46 GMT"},"Subject":{"countryName (2.5.4.6)":"US","organizationName (2.5.4.10)":"Let's Encrypt","commonName (2.5.4.3)":"Let's Encrypt Authority X3"},"SubjectPublicKeyInfo":{"Algorithm":"rsaEncryption (1.2.840.113549.1.1.1)","Module":"01:00:01","Exponent":"00:9c:d3:0c:f0:5a:e5:2e:47:b7:72:5d:37:83:b3:68:63:30:ea:d7:35:26:19:25:e1:bd:be:35:f1:70:92:2f:b7:b8:4b:41:05:ab:a9:9e:35:08:58:ec:b1:2a:c4:68:87:0b:a3:e3:75:e4:e6:f3:a7:62:71:ba:79:81:60:1f:d7:91:9a:9f:f3:d0:78:67:71:c8:69:0e:95:91:cf:fe:e6:99:e9:60:3c:48:cc:7e:ca:4d:77:12:24:9d:47:1b:5a:eb:b9:ec:1e:37:00:1c:9c:ac:7b:a7:05:ea:ce:4a:eb:bd:41:e5:36:98:b9:cb:fd:6d:3c:96:68:df:23:2a:42:90:0c:86:74:67:c8:7f:a5:9a:b8:52:61:14:13:3f:65:e9:82:87:cb:db:fa:0e:56:f6:86:89:f3:85:3f:97:86:af:b0:dc:1a:ef:6b:0d:95:16:7d:c4:2b:a0:65:b2:99:04:36:75:80:6b:ac:4a:f3:1b:90:49:78:2f:a2:96:4f:2a:20:25:29:04:c6:74:c0:d0:31:cd:8f:31:38:95:16:ba:a8:33:b8:43:f1:b1:1f:c3:30:7f:a2:79:31:13:3d:2d:36:f8:e3:fc:f2:33:6a:b9:39:31:c5:af:c4:8d:0d:1d:64:16:33:aa:fa:84:29:b6:d4:0b:c0:d8:7d:c3:93"},"Extensions":[{"OID":"basicConstraints (2.5.29.19)","Critical":true,"Value":"30:06:01:01:ff:02:01:00"},{"OID":"keyUsage (2.5.29.15)","Critical":true,"Value":"03:02:01:86"},{"OID":"authorityInfoAccess (1.3.6.1.5.5.7.1.1)","Value":"30:71:30:32:06:08:2b:06:01:05:05:07:30:01:86:26:68:74:74:70:3a:2f:2f:69:73:72:67:2e:74:72:75:73:74:69:64:2e:6f:63:73:70:2e:69:64:65:6e:74:72:75:73:74:2e:63:6f:6d:30:3b:06:08:2b:06:01:05:05:07:30:02:86:2f:68:74:74:70:3a:2f:2f:61:70:70:73:2e:69:64:65:6e:74:72:75:73:74:2e:63:6f:6d:2f:72:6f:6f:74:73:2f:64:73:74:72:6f:6f:74:63:61:78:33:2e:70:37:63"},{"OID":"authorityKeyIdentifier (2.5.29.35)","Value":"30:16:80:14:c4:a7:b1:a4:7b:2c:71:fa:db:e1:4b:90:75:ff:c4:15:60:85:89:10"},{"OID":"certificatePolicies (2.5.29.32)","Value":"30:4b:30:08:06:06:67:81:0c:01:02:01:30:3f:06:0b:2b:06:01:04:01:82:df:13:01:01:01:30:30:30:2e:06:08:2b:06:01:05:05:07:02:01:16:22:68:74:74:70:3a:2f:2f:63:70:73:2e:72:6f:6f:74:2d:78:31:2e:6c:65:74:73:65:6e:63:72:79:70:74:2e:6f:72:67"},{"OID":"cRLDistributionPoints (2.5.29.31)","Value":"30:33:30:31:a0:2f:a0:2d:86:2b:68:74:74:70:3a:2f:2f:63:72:6c:2e:69:64:65:6e:74:72:75:73:74:2e:63:6f:6d:2f:44:53:54:52:4f:4f:54:43:41:58:33:43:52:4c:2e:63:72:6c"},{"OID":"subjectKeyIdentifier (2.5.29.14)","Value":"04:14:a8:4a:6a:63:04:7d:dd:ba:e6:d1:39:b7:a6:45:65:ef:f3:a8:ec:a1"}]},"Algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)","Signature":"dd:33:d7:11:f3:63:58:38:dd:18:15:fb:09:55:be:76:56:b9:70:48:a5:69:47:27:7b:c2:24:08:92:f1:5a:1f:4a:12:29:37:24:74:51:1c:62:68:b8:cd:95:70:67:e5:f7:a4:bc:4e:28:51:cd:9b:e8:ae:87:9d:ea:d8:ba:5a:a1:01:9a:dc:f0:dd:6a:1d:6a:d8:3e:57:23:9e:a6:1e:04:62:9a:ff:d7:05:ca:b7:1f:3f:c0:0a:48:bc:94:b0:b6:65:62:e0:c1:54:e5:a3:2a:ad:20:c4:e9:e6:bb:dc:c8:f6:b5:c3:32:a3:98:cc:77:a8:e6:79:65:07:2b:cb:28:fe:3a:16:52:81:ce:52:0c:2e:5f:83:e8:d5:06:33:fb:77:6c:ce:40:ea:32:9e:1f:92:5c:41:c1:74:6c:5b:5d:0a:5f:33:cc:4d:9f:ac:38:f0:2f:7b:2c:62:9d:d9:a3:91:6f:25:1b:2f:90:b1:19:46:3d:f6:7e:1b:a6:7a:87:b9:a3:7a:6d:18:fa:25:a5:91:87:15:e0:f2:16:2f:58:b0:06:2f:2c:68:26:c6:4b:98:cd:da:9f:0c:f9:7f:90:ed:43:4a:12:44:4e:6f:73:7a:28:ea:a4:aa:6e:7b:4c:7d:87:dd:e0:c9:02:44:a7:87:af:c3:34:5b:b4:42"}
+{"tbsCertificate":{"version":3,"serialNumber":"0a:01:41:42:00:00:01:53:85:73:6a:0b:85:ec:a7:08","signature":{"algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"},"issuer":[{"oid":"organizationName (2.5.4.10)","value":"Digital Signature Trust Co."},{"oid":"commonName (2.5.4.3)","value":"DST Root CA X3"}],"validity":{"notBefore":"17/03/2016 16:40:46 GMT","notAfter":"17/03/2021 16:40:46 GMT"},"subject":[{"oid":"countryName (2.5.4.6)","value":"US"},{"oid":"organizationName (2.5.4.10)","value":"Let's Encrypt"},{"oid":"commonName (2.5.4.3)","value":"Let's Encrypt Authority X3"}],"subjectPublicKeyInfo":{"algorithm":"rsaEncryption (1.2.840.113549.1.1.1)","subjectPublicKey":{"exponent":"00 9c d3 0c f0 5a e5 2e 47 b7 72 5d 37 83 b3 68 .....Z..G.r]7..h\n63 30 ea d7 35 26 19 25 e1 bd be 35 f1 70 92 2f c0..5&.%...5.p./\nb7 b8 4b 41 05 ab a9 9e 35 08 58 ec b1 2a c4 68 ..KA....5.X..*.h\n87 0b a3 e3 75 e4 e6 f3 a7 62 71 ba 79 81 60 1f ....u....bq.y.`.\nd7 91 9a 9f f3 d0 78 67 71 c8 69 0e 95 91 cf fe ......xgq.i.....\ne6 99 e9 60 3c 48 cc 7e ca 4d 77 12 24 9d 47 1b ...`<H.~.Mw.$.G.\n5a eb b9 ec 1e 37 00 1c 9c ac 7b a7 05 ea ce 4a Z....7....{....J\neb bd 41 e5 36 98 b9 cb fd 6d 3c 96 68 df 23 2a ..A.6....m<.h.#*\n42 90 0c 86 74 67 c8 7f a5 9a b8 52 61 14 13 3f B...tg.....Ra..?\n65 e9 82 87 cb db fa 0e 56 f6 86 89 f3 85 3f 97 e.......V.....?.\n86 af b0 dc 1a ef 6b 0d 95 16 7d c4 2b a0 65 b2 ......k...}.+.e.\n99 04 36 75 80 6b ac 4a f3 1b 90 49 78 2f a2 96 ..6u.k.J...Ix/..\n4f 2a 20 25 29 04 c6 74 c0 d0 31 cd 8f 31 38 95 O* %)..t..1..18.\n16 ba a8 33 b8 43 f1 b1 1f c3 30 7f a2 79 31 13 ...3.C....0..y1.\n3d 2d 36 f8 e3 fc f2 33 6a b9 39 31 c5 af c4 8d =-6....3j.91....\n0d 1d 64 16 33 aa fa 84 29 b6 d4 0b c0 d8 7d c3 ..d.3...).....}.","module":"01:00:01"}},"extensions":[{"extnID":"basicConstraints (2.5.29.19)","critical":true,"extnValue":{"type":"SEQUENCE","value":[{"type":"BOOLEAN","value":"true"},{"type":"INTEGER","value":"00"}]}},{"extnID":"keyUsage (2.5.29.15)","critical":true,"extnValue":{"type":"BIT_STRING","value":"0110000"}},{"extnID":"authorityInfoAccess (1.3.6.1.5.5.7.1.1)","extnValue":{"type":"SEQUENCE","value":[{"type":"SEQUENCE","value":[{"type":"OBJECT_IDENTIFIER","value":"ocsp (1.3.6.1.5.5.7.48.1)"},{"type":"Context [6]","value":"http://isrg.trustid.ocsp.identrust.com"}]},{"type":"SEQUENCE","value":[{"type":"OBJECT_IDENTIFIER","value":"caIssuers (1.3.6.1.5.5.7.48.2)"},{"type":"Context [6]","value":"http://apps.identrust.com/roots/dstrootcax3.p7c"}]}]}},{"extnID":"authorityKeyIdentifier (2.5.29.35)","extnValue":{"type":"SEQUENCE","value":[{"type":"Context [0]","value":"c4 a7 b1 a4 7b 2c 71 fa db e1 4b 90 75 ff c4 15 ....{,q...K.u...\n60 85 89 10                                     `..."}]}},{"extnID":"certificatePolicies (2.5.29.32)","extnValue":{"type":"SEQUENCE","value":[{"type":"SEQUENCE","value":[{"type":"OBJECT_IDENTIFIER","value":"domain-validated (2.23.140.1.2.1)"}]},{"type":"SEQUENCE","value":[{"type":"OBJECT_IDENTIFIER","value":"isrgDomainValidated (1.3.6.1.4.1.44947.1.1.1)"},{"type":"SEQUENCE","value":[{"type":"SEQUENCE","value":[{"type":"OBJECT_IDENTIFIER","value":"cps (1.3.6.1.5.5.7.2.1)"},{"type":"IA5String","value":"http://cps.root-x1.letsencrypt.org"}]}]}]}]}},{"extnID":"cRLDistributionPoints (2.5.29.31)","extnValue":{"type":"SEQUENCE","value":[{"type":"SEQUENCE","value":[{"type":"Context [0]","value":[{"type":"Context [0]","value":[{"type":"Context [6]","value":"http://crl.identrust.com/DSTROOTCAX3CRL.crl"}]}]}]}]}},{"extnID":"subjectKeyIdentifier (2.5.29.14)","extnValue":{"type":"OCTET_STRING","value":"a8 4a 6a 63 04 7d dd ba e6 d1 39 b7 a6 45 65 ef .Jjc.}....9..Ee.\nf3 a8 ec a1                                     ...."}}]},"algorithmIdentifier":{"algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"},"signature":"dd 33 d7 11 f3 63 58 38 dd 18 15 fb 09 55 be 76 .3...cX8.....U.v\n56 b9 70 48 a5 69 47 27 7b c2 24 08 92 f1 5a 1f V.pH.iG'{.$...Z.\n4a 12 29 37 24 74 51 1c 62 68 b8 cd 95 70 67 e5 J.)7$tQ.bh...pg.\nf7 a4 bc 4e 28 51 cd 9b e8 ae 87 9d ea d8 ba 5a ...N(Q.........Z\na1 01 9a dc f0 dd 6a 1d 6a d8 3e 57 23 9e a6 1e ......j.j.>W#...\n04 62 9a ff d7 05 ca b7 1f 3f c0 0a 48 bc 94 b0 .b.......?..H...\nb6 65 62 e0 c1 54 e5 a3 2a ad 20 c4 e9 e6 bb dc .eb..T..*. .....\nc8 f6 b5 c3 32 a3 98 cc 77 a8 e6 79 65 07 2b cb ....2...w..ye.+.\n28 fe 3a 16 52 81 ce 52 0c 2e 5f 83 e8 d5 06 33 (.:.R..R.._....3\nfb 77 6c ce 40 ea 32 9e 1f 92 5c 41 c1 74 6c 5b .wl.@.2...\\A.tl[\n5d 0a 5f 33 cc 4d 9f ac 38 f0 2f 7b 2c 62 9d d9 ]._3.M..8./{,b..\na3 91 6f 25 1b 2f 90 b1 19 46 3d f6 7e 1b a6 7a ..o%./...F=.~..z\n87 b9 a3 7a 6d 18 fa 25 a5 91 87 15 e0 f2 16 2f ...zm..%......./\n58 b0 06 2f 2c 68 26 c6 4b 98 cd da 9f 0c f9 7f X../,h&.K.......\n90 ed 43 4a 12 44 4e 6f 73 7a 28 ea a4 aa 6e 7b ..CJ.DNosz(...n{\n4c 7d 87 dd e0 c9 02 44 a7 87 af c3 34 5b b4 42 L}.....D....4[.B"}
 EOF
 RUN
 
@@ -252,54 +1027,90 @@ b 0x1000
 pFp
 EOF
 EXPECT=<<EOF
-signedData
-  Version: v1
-  Digest Algorithms:
-    sha1 (1.3.14.3.2.26)
-  Certificates: 1
-    TBSCertificate:
-      Version: v3
-      Serial Number:
-        69:b8:37:2d
-      Signature Algorithm:
-        sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-      Issuer:
-        organizationName (2.5.4.10): Acme Co
-        commonName (2.5.4.3): Eddard Stark
-      Validity:
-        Not Before: 06/05/2015 04:24:48 GMT
-        Not After: 06/05/2016 04:24:48 GMT
-      Subject:
-        organizationName (2.5.4.10): Acme Co
-        commonName (2.5.4.3): Jon Snow
-      Subject Public Key Info:
-        Algorithm: rsaEncryption (1.2.840.113549.1.1.1)
-        Module: 01:00:01
-        Exponent: 128 bytes
-      Extensions:
-        keyUsage (2.5.29.15): critical
-        4 bytes
-    Algorithm:
-      sha256WithRSAEncryption (1.2.840.113549.1.1.11)
-    Signature: 128 bytes
-  SignerInfos:
-    SignerInfo:
-      Version: v2
-      Issuer
-        organizationName (2.5.4.10): Acme Co
-        commonName (2.5.4.3): Eddard Stark
-      Serial Number:
-        69:b8:37:2d
-      Digest Algorithm:
-        sha1 (1.3.14.3.2.26)
-      Authenticated Attributes:
-        contentType (1.2.840.113549.1.9.3): 11 bytes
-        signingTime (1.2.840.113549.1.9.5): 19 bytes
-        messageDigest (1.2.840.113549.1.9.4): 22 bytes
-      Digest Encryption Algorithm
-        rsaEncryption (1.2.840.113549.1.1.1)
-      Encrypted Digest: 4 bytes
-      Unauthenticated Attributes:
+signedData:
+  version: 1
+  digestAlgorithms:
+    - algorithm: "sha1 (1.3.14.3.2.26)"
+  certificates:
+    - tbsCertificate:
+        version: 3
+        serialNumber: "69:b8:37:2d"
+        signature:
+          algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+        issuer:
+          - oid: "organizationName (2.5.4.10)"
+            value: "Acme Co"
+          - oid: "commonName (2.5.4.3)"
+            value: "Eddard Stark"
+        validity:
+          notBefore: "06/05/2015 04:24:48 GMT"
+          notAfter: "06/05/2016 04:24:48 GMT"
+        subject:
+          - oid: "organizationName (2.5.4.10)"
+            value: "Acme Co"
+          - oid: "commonName (2.5.4.3)"
+            value: "Jon Snow"
+        subjectPublicKeyInfo:
+          algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+          subjectPublicKey:
+            exponent: |
+              00 aa bf ad 4c 5e 26 64 fe 6b 33 09 57 a7 5c be ....L^&d.k3.W.\.
+              72 b4 6d 16 9b 8b 5c 5d 73 bc 16 62 60 c7 c8 bc r.m...\]s..b`...
+              01 f0 a3 5b 5a f0 4d 48 73 21 0f 27 58 c8 88 a3 ...[Z.MHs!.'X...
+              1c c1 bc de a3 a9 00 99 9c c8 25 10 93 7b 3a bd ..........%..{:.
+              8f 05 d4 b0 a6 d0 4e f7 1f 38 7f 47 9a 35 26 5c ......N..8.G.5&\
+              14 56 15 76 58 a1 0b 3f 39 a6 85 6b 8e 5d 78 79 .V.vX..?9..k.]xy
+              b0 11 e3 10 92 e4 96 12 d6 22 54 a2 99 5e d2 4e ........."T..^.N
+              b5 f9 4a 21 3d cc af 22 44 0e 28 88 b4 c9 1d c9 ..J!=.."D.(.....
+              b5                                              .
+            module: "01:00:01"
+        extensions:
+          - extnID: "keyUsage (2.5.29.15)"
+            critical: true
+            extnValue:
+              type: "BIT_STRING"
+              value: "a0                                              ."
+      algorithmIdentifier:
+        algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+      signature: |
+        ca d4 4c 1e 65 64 4b f9 fe d9 f8 9d 24 57 36 3c ..L.edK.....$W6<
+        cd 7a 6d 70 16 95 e0 b7 f9 c0 66 49 2c 95 54 82 .zmp......fI,.T.
+        9d f7 6e 92 cd a5 3d f2 69 d4 be f9 74 09 f9 cb ..n...=.i...t...
+        ed 5b 7c 00 0d 0c c1 49 33 1d bb 23 85 f1 97 fe .[|....I3..#....
+        2f b4 e3 8e b4 36 f8 5d 87 6c d6 ca 52 10 50 2a /....6.].l..R.P*
+        e7 71 4d fb fd 74 91 dd 29 b0 fe 9e 00 82 75 02 .qM..t..).....u.
+        58 90 8c b6 61 ec 6c a0 d1 b4 0b c9 d0 92 08 32 X...a.l........2
+        6b 16 5d fc 9e bd c4 35 71 ea 9b a2 dd 28 fc b0 k.]....5q....(..
+  signerInfos:
+    - version: 2
+      issuer:
+        - oid: "organizationName (2.5.4.10)"
+          value: "Acme Co"
+        - oid: "commonName (2.5.4.3)"
+          value: "Eddard Stark"
+      serialNumber: "69:b8:37:2d"
+      digestAlgorithm:
+        algorithm: "sha1 (1.3.14.3.2.26)"
+      authenticatedAttributes:
+        - contentType (1.2.840.113549.1.9.3): "06 09 2a 86 48 86 f7 0d 01 07 01                ..*.H......"
+        - signingTime (1.2.840.113549.1.9.5): |
+            17 11 31 35 30 35 30 36 30 30 32 34 34 38 2d 30 ..150506002448-0
+            34 30 30                                        400
+        - messageDigest (1.2.840.113549.1.9.4): |
+            04 14 6f 43 ee 07 13 87 dc df 2a 26 0d 27 59 60 ..oC......*&.'Y`
+            07 4c 93 87 8b 19                               .L....
+      digestEncryptionAlgorithm:
+        algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+      encryptedDigest: |
+        51 77 b0 60 d4 f4 fb 57 b7 2f d0 32 da 5c 15 ad Qw.`...W./.2.\..
+        f9 be f2 0e aa 65 90 00 86 6d f7 75 c0 b2 44 0e .....e...m.u..D.
+        9c 1a b8 3a 5a 17 88 bf 42 b7 bb 75 9b 8a 73 8d ...:Z...B..u..s.
+        19 b4 a3 d9 c3 91 b6 92 2d 97 bb 1c a0 12 1d d0 ........-.......
+        aa 8a 3a e8 49 c1 a5 23 c3 3e 6a 52 7c 76 b1 d2 ..:.I..#.>jR|v..
+        16 fe 99 22 39 cc 14 8c 08 7f 40 76 2e 4a 3a 9e ..."9.....@v.J:.
+        1f 7f ea 65 17 ab bb 5b 6c 81 da dc 67 75 25 45 ...e...[l...gu%E
+        62 ad ef d0 14 5b 66 81 15 cc 6d 76 24 f1 22 12 b....[f...mv$.".
+
 EOF
 RUN
 
@@ -311,7 +1122,264 @@ b 0x1000
 pFpj
 EOF
 EXPECT=<<EOF
-{"Version":1,"DigestAlgorithms":["sha1 (1.3.14.3.2.26)"],"Certificates":[{"TBSCertificate":{"Version":3,"SerialNumber":"69:b8:37:2d","SignatureAlgorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)","Issuer":{"organizationName (2.5.4.10)":"Acme Co","commonName (2.5.4.3)":"Eddard Stark"},"Validity":{"NotBefore":"06/05/2015 04:24:48 GMT","NotAfter":"06/05/2016 04:24:48 GMT"},"Subject":{"organizationName (2.5.4.10)":"Acme Co","commonName (2.5.4.3)":"Jon Snow"},"SubjectPublicKeyInfo":{"Algorithm":"rsaEncryption (1.2.840.113549.1.1.1)","Module":"01:00:01","Exponent":"00:aa:bf:ad:4c:5e:26:64:fe:6b:33:09:57:a7:5c:be:72:b4:6d:16:9b:8b:5c:5d:73:bc:16:62:60:c7:c8:bc:01:f0:a3:5b:5a:f0:4d:48:73:21:0f:27:58:c8:88:a3:1c:c1:bc:de:a3:a9:00:99:9c:c8:25:10:93:7b:3a:bd:8f:05:d4:b0:a6:d0:4e:f7:1f:38:7f:47:9a:35:26:5c:14:56:15:76:58:a1:0b:3f:39:a6:85:6b:8e:5d:78:79:b0:11:e3:10:92:e4:96:12:d6:22:54:a2:99:5e:d2:4e:b5:f9:4a:21:3d:cc:af:22:44:0e:28:88:b4:c9:1d:c9:b5"},"Extensions":[{"OID":"keyUsage (2.5.29.15)","Critical":true,"Value":"03:02:00:a0"}]},"Algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)","Signature":"ca:d4:4c:1e:65:64:4b:f9:fe:d9:f8:9d:24:57:36:3c:cd:7a:6d:70:16:95:e0:b7:f9:c0:66:49:2c:95:54:82:9d:f7:6e:92:cd:a5:3d:f2:69:d4:be:f9:74:09:f9:cb:ed:5b:7c:00:0d:0c:c1:49:33:1d:bb:23:85:f1:97:fe:2f:b4:e3:8e:b4:36:f8:5d:87:6c:d6:ca:52:10:50:2a:e7:71:4d:fb:fd:74:91:dd:29:b0:fe:9e:00:82:75:02:58:90:8c:b6:61:ec:6c:a0:d1:b4:0b:c9:d0:92:08:32:6b:16:5d:fc:9e:bd:c4:35:71:ea:9b:a2:dd:28:fc:b0"}],"CRL":[],"SignerInfos":[{"Version":2,"Issuer":{"organizationName (2.5.4.10)":"Acme Co","commonName (2.5.4.3)":"Eddard Stark"},"SerialNumber":"69:b8:37:2d","DigestAlgorithm":"sha1 (1.3.14.3.2.26)","AuthenticatedAttributes":[{"oid":"contentType (1.2.840.113549.1.9.3)","length":11},{"oid":"signingTime (1.2.840.113549.1.9.5)","length":19},{"oid":"messageDigest (1.2.840.113549.1.9.4)","length":22}],"DigestEncryptionAlgorithm":"rsaEncryption (1.2.840.113549.1.1.1)","EncryptedDigest":"51:77:b0:60:d4:f4:fb:57:b7:2f:d0:32:da:5c:15:ad:f9:be:f2:0e:aa:65:90:00:86:6d:f7:75:c0:b2:44:0e:9c:1a:b8:3a:5a:17:88:bf:42:b7:bb:75:9b:8a:73:8d:19:b4:a3:d9:c3:91:b6:92:2d:97:bb:1c:a0:12:1d:d0:aa:8a:3a:e8:49:c1:a5:23:c3:3e:6a:52:7c:76:b1:d2:16:fe:99:22:39:cc:14:8c:08:7f:40:76:2e:4a:3a:9e:1f:7f:ea:65:17:ab:bb:5b:6c:81:da:dc:67:75:25:45:62:ad:ef:d0:14:5b:66:81:15:cc:6d:76:24:f1:22:12","UnauthenticatedAttributes":[]}]}
+{"signedData":{"version":1,"digestAlgorithms":[{"algorithm":"sha1 (1.3.14.3.2.26)"}],"certificates":[{"tbsCertificate":{"version":3,"serialNumber":"69:b8:37:2d","signature":{"algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"},"issuer":[{"oid":"organizationName (2.5.4.10)","value":"Acme Co"},{"oid":"commonName (2.5.4.3)","value":"Eddard Stark"}],"validity":{"notBefore":"06/05/2015 04:24:48 GMT","notAfter":"06/05/2016 04:24:48 GMT"},"subject":[{"oid":"organizationName (2.5.4.10)","value":"Acme Co"},{"oid":"commonName (2.5.4.3)","value":"Jon Snow"}],"subjectPublicKeyInfo":{"algorithm":"rsaEncryption (1.2.840.113549.1.1.1)","subjectPublicKey":{"exponent":"00 aa bf ad 4c 5e 26 64 fe 6b 33 09 57 a7 5c be ....L^&d.k3.W.\\.\n72 b4 6d 16 9b 8b 5c 5d 73 bc 16 62 60 c7 c8 bc r.m...\\]s..b`...\n01 f0 a3 5b 5a f0 4d 48 73 21 0f 27 58 c8 88 a3 ...[Z.MHs!.'X...\n1c c1 bc de a3 a9 00 99 9c c8 25 10 93 7b 3a bd ..........%..{:.\n8f 05 d4 b0 a6 d0 4e f7 1f 38 7f 47 9a 35 26 5c ......N..8.G.5&\\\n14 56 15 76 58 a1 0b 3f 39 a6 85 6b 8e 5d 78 79 .V.vX..?9..k.]xy\nb0 11 e3 10 92 e4 96 12 d6 22 54 a2 99 5e d2 4e .........\"T..^.N\nb5 f9 4a 21 3d cc af 22 44 0e 28 88 b4 c9 1d c9 ..J!=..\"D.(.....\nb5                                              .","module":"01:00:01"}},"extensions":[{"extnID":"keyUsage (2.5.29.15)","critical":true,"extnValue":{"type":"BIT_STRING","value":"a0                                              ."}}]},"algorithmIdentifier":{"algorithm":"sha256WithRSAEncryption (1.2.840.113549.1.1.11)"},"signature":"ca d4 4c 1e 65 64 4b f9 fe d9 f8 9d 24 57 36 3c ..L.edK.....$W6<\ncd 7a 6d 70 16 95 e0 b7 f9 c0 66 49 2c 95 54 82 .zmp......fI,.T.\n9d f7 6e 92 cd a5 3d f2 69 d4 be f9 74 09 f9 cb ..n...=.i...t...\ned 5b 7c 00 0d 0c c1 49 33 1d bb 23 85 f1 97 fe .[|....I3..#....\n2f b4 e3 8e b4 36 f8 5d 87 6c d6 ca 52 10 50 2a /....6.].l..R.P*\ne7 71 4d fb fd 74 91 dd 29 b0 fe 9e 00 82 75 02 .qM..t..).....u.\n58 90 8c b6 61 ec 6c a0 d1 b4 0b c9 d0 92 08 32 X...a.l........2\n6b 16 5d fc 9e bd c4 35 71 ea 9b a2 dd 28 fc b0 k.]....5q....(.."}],"signerInfos":[{"version":2,"issuer":[{"oid":"organizationName (2.5.4.10)","value":"Acme Co"},{"oid":"commonName (2.5.4.3)","value":"Eddard Stark"}],"serialNumber":"69:b8:37:2d","digestAlgorithm":{"algorithm":"sha1 (1.3.14.3.2.26)"},"authenticatedAttributes":[{"contentType (1.2.840.113549.1.9.3)":"06 09 2a 86 48 86 f7 0d 01 07 01                ..*.H......"},{"signingTime (1.2.840.113549.1.9.5)":"17 11 31 35 30 35 30 36 30 30 32 34 34 38 2d 30 ..150506002448-0\n34 30 30                                        400"},{"messageDigest (1.2.840.113549.1.9.4)":"04 14 6f 43 ee 07 13 87 dc df 2a 26 0d 27 59 60 ..oC......*&.'Y`\n07 4c 93 87 8b 19                               .L...."}],"digestEncryptionAlgorithm":{"algorithm":"rsaEncryption (1.2.840.113549.1.1.1)"},"encryptedDigest":"51 77 b0 60 d4 f4 fb 57 b7 2f d0 32 da 5c 15 ad Qw.`...W./.2.\\..\nf9 be f2 0e aa 65 90 00 86 6d f7 75 c0 b2 44 0e .....e...m.u..D.\n9c 1a b8 3a 5a 17 88 bf 42 b7 bb 75 9b 8a 73 8d ...:Z...B..u..s.\n19 b4 a3 d9 c3 91 b6 92 2d 97 bb 1c a0 12 1d d0 ........-.......\naa 8a 3a e8 49 c1 a5 23 c3 3e 6a 52 7c 76 b1 d2 ..:.I..#.>jR|v..\n16 fe 99 22 39 cc 14 8c 08 7f 40 76 2e 4a 3a 9e ...\"9.....@v.J:.\n1f 7f ea 65 17 ab bb 5b 6c 81 da dc 67 75 25 45 ...e...[l...gu%E\n62 ad ef d0 14 5b 66 81 15 cc 6d 76 24 f1 22 12 b....[f...mv$.\"."}]}}
 EOF
 RUN
 
+
+NAME=CMS and Authenticode in PE
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pe32:
+  IMAGE_NT_HEADERS:
+    Signature: 0x4550
+  IMAGE_FILE_HEADERS:
+    Machine: 0x14c
+    NumberOfSections: 1
+    TimeDateStamp: 0
+    PointerToSymbolTable: 0x0
+    NumberOfSymbols: 0
+    SizeOfOptionalHeader: 224
+    Characteristics: 0x102
+  IMAGE_OPTIONAL_HEADERS:
+    Magic: 0x10b
+    MajorLinkerVersion: 3
+    MinorLinkerVersion: 0
+    SizeOfCode: 0
+    SizeOfInitializedData: 0
+    SizeOfUninitializedData: 0
+    AddressOfEntryPoint: 0x2a95
+    BaseOfCode: 0x0
+    BaseOfData: 0x0
+    ImageBase: 0x400000
+    SectionAlignment: 0x1000
+    FileAlignment: 0x200
+    MajorOperatingSystemVersion: 0x0
+    MinorOperatingSystemVersion: 0x0
+    MajorImageVersion: 0x0
+    MinorImageVersion: 0x0
+    MajorSubsystemVersion: 0x4
+    MinorSubsystemVersion: 0x0
+    Win32VersionValue: 0x0
+    SizeOfImage: 20480
+    SizeOfHeaders: 464
+    CheckSum: 0x8221
+    Subsystem: 0x3
+    DllCharacteristics: 0x0
+    SizeOfStackReserve: 0
+    SizeOfStackCommit: 0
+    SizeOfHeapReserve: 0
+    SizeOfHeapCommit: 0
+    LoaderFlags: 0x0
+    NumberOfRvaAndSizes: 16
+  RICH_FIELDS:
+    - Product: 18
+      Name: "Masm614"
+      Version: 8444
+      Times: 1
+    - Product: 19
+      Name: "Linker512"
+      Version: 8078
+      Times: 7
+  IMAGE_DIRECTORY_ENTRY_EXPORT:
+    VirtualAddress: 0x2dc0
+    Size: 304
+  IMAGE_DIRECTORY_ENTRY_IMPORT:
+    VirtualAddress: 0x2c40
+    Size: 65535
+  IMAGE_DIRECTORY_ENTRY_EXCEPTION:
+    VirtualAddress: 0x2f90
+    Size: 12
+  IMAGE_DIRECTORY_ENTRY_SECURITY:
+    VirtualAddress: 0x2200
+    Size: 2176
+  IMAGE_DIRECTORY_ENTRY_BASERELOC:
+    VirtualAddress: 0x2fb0
+    Size: 10
+  IMAGE_DIRECTORY_ENTRY_ARCHITECTURE:
+    VirtualAddress: 0x2da0
+    Size: 20
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
+    VirtualAddress: 0x2f20
+    Size: 64
+  IMAGE_DIRECTORY_ENTRY_IAT:
+    VirtualAddress: 0x2d30
+    Size: 48
+  IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
+    VirtualAddress: 0x0
+    Size: 65535
+  CryptographicMessageSyntax:
+    signedData:
+      version: 1
+      digestAlgorithms:
+        - algorithm: "sha1 (1.3.14.3.2.26)"
+      certificates:
+        - tbsCertificate:
+            version: 1
+            serialNumber: "01"
+            signature:
+              algorithm: "sha1WithRSAEncryption (1.2.840.113549.1.1.5)"
+            issuer:
+              - oid: "countryName (2.5.4.6)"
+                value: "AU"
+              - oid: "stateOrProvinceName (2.5.4.8)"
+                value: "Some-State"
+              - oid: "organizationName (2.5.4.10)"
+                value: "Internet Widgits Pty Ltd"
+            validity:
+              notBefore: "07/02/2011 09:10:26 GMT"
+              notAfter: "06/02/2013 09:10:26 GMT"
+            subject:
+              - oid: "countryName (2.5.4.6)"
+                value: "AU"
+              - oid: "stateOrProvinceName (2.5.4.8)"
+                value: "Some-State"
+              - oid: "organizationName (2.5.4.10)"
+                value: "Internet Widgits Pty Ltd"
+              - oid: "organizationalUnitName (2.5.4.11)"
+                value: "code signing"
+            subjectPublicKeyInfo:
+              algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+              subjectPublicKey:
+                exponent: |
+                  00 ce 9e d8 9d cd 48 46 75 e0 e1 e7 29 00 90 f5 ......HFu...)...
+                  3f 60 6c e2 6e 30 35 61 5b 71 19 99 15 17 08 8e ?`l.n05a[q......
+                  a5 90 77 dc a8 d2 b9 9a 2b 5c 43 4e f8 84 43 e8 ..w.....+\CN..C.
+                  cb 0a 6f dd 24 a9 dc bb 0a 9c 73 7d ff 68 18 8a ..o.$.....s}.h..
+                  22 be e5 24 cd 0a 72 08 a3 1d 57 0f 68 7f e2 67 "..$..r...W.h..g
+                  ec 71 17 bb e6 66 11 f3 8d f3 62 55 95 7b ff 57 .q...f....bU.{.W
+                  86 50 cf 70 6a 3b 5e 7d 14 4a 67 66 0f ac 77 8d .P.pj;^}.Jgf..w.
+                  64 22 7d 5b 88 c5 21 ee 20 d5 8b 1d 61 b9 18 7d d"}[..!. ...a..}
+                  00 4a e0 a0 67 9b ee 78 42 4c 4a ad 09 e1 ca 54 .J..g..xBLJ....T
+                  4f 46 4d b5 55 29 20 be d0 3b 56 20 a9 30 d5 c9 OFM.U) ..;V .0..
+                  3a 54 f2 b9 fb 86 4e d9 1f 56 d5 5d 7f 86 b6 a7 :T....N..V.]....
+                  bf 70 9f 16 d2 5f 2b fa a0 d9 b0 82 1c b4 40 84 .p..._+.......@.
+                  04 cc c1 3e c0 27 75 c4 d5 1a 32 15 53 06 7c 46 ...>.'u...2.S.|F
+                  df b5 4a ae 0b aa 02 00 f7 dd d6 7b 21 ee a2 a3 ..J........{!...
+                  1a ad fd fc 34 39 a8 46 1c 76 09 b7 85 97 4d 3c ....49.F.v....M<
+                  f1 12 69 4e 8d 99 9a 05 6a 79 e3 ed 73 47 1d 62 ..iN....jy..sG.b
+                  b3 7b 83 7a 82 d2 1f b9 36 a8 e5 41 2b 5c 2b a0 .{.z....6..A+\+.
+                  ab 2c 4f ab 2e ff 87 74 2d d0 24 b8 6b 9e 73 87 .,O....t-.$.k.s.
+                  e6 f2 6d 29 84 3e 5b a3 b2 47 c2 14 5d 1c 31 33 ..m).>[..G..].13
+                  65 6a 77 f5 96 19 cd f7 c5 41 9e 0b fb 38 93 58 ejw......A...8.X
+                  34 2a 9f 17 9f 01 75 73 bf b3 64 bf b6 b6 4c ac 4*....us..d...L.
+                  fc 10 28 e8 a6 ab bf 76 29 aa e9 89 1f 20 de b9 ..(....v).... ..
+                  b5 f5 9a 8f 45 8e 33 12 ee b6 02 51 a4 6a 86 b1 ....E.3....Q.j..
+                  1f 55 62 4c 2d 7f 54 42 9e f8 ea 96 81 53 40 92 .UbL-.TB.....S@.
+                  94 eb 64 a4 a2 f6 9e fc 29 80 f1 eb 00 c6 8c e1 ..d.....).......
+                  48 30 9d 12 cf 04 ef 58 94 43 ce 99 c6 0a 70 70 H0.....X.C....pp
+                  3c 9b 2f 58 a0 a4 a8 a4 18 ab ff 81 2c c9 3f 00 <./X........,.?.
+                  93 c1 6a 8a 9d 1d ce db 78 5b d2 be 52 f3 35 b2 ..j.....x[..R.5.
+                  55 79 39 11 2d 18 a9 83 6d f6 32 79 45 1c f2 98 Uy9.-...m.2yE...
+                  6d 70 69 86 e8 1c fa a4 60 9f 4e fd 10 7c 42 04 mpi.....`.N..|B.
+                  cd bb 58 d5 4a 53 d1 95 86 3b ab 0b 9d bc 4a 18 ..X.JS...;....J.
+                  8d 0b 79 76 59 4a 05 e8 b8 87 2d d5 3c 8b a3 01 ..yvYJ....-.<...
+                module: "01:00:01"
+            extensions: []
+          algorithmIdentifier:
+            algorithm: "sha1WithRSAEncryption (1.2.840.113549.1.1.5)"
+          signature: |
+            82 2c 26 eb 5a 3e 98 6c a1 23 74 be 76 ef fb 14 .,&.Z>.l.#t.v...
+            97 ba e3 74 56 db 84 8c 8d 1c 1c f7 a7 1d ce 69 ...tV..........i
+            2e 5b cd 72 f0 e4 ad 14 86 c1 80 6d 32 da 57 e5 .[.r.......m2.W.
+            55 97 9b 74 5c 90 4d ad 2f 31 d3 28 fb 98 01 68 U..t\.M./1.(...h
+            48 08 04 a9 83 c2 25 2f 30 88 2b ca 96 33 34 84 H.....%/0.+..34.
+            7a a5 34 59 26 2a 9a dd cf db e8 5d 86 ed f7 a4 z.4Y&*.....]....
+            2e 22 55 e3 a3 fc 97 0d 1e f1 46 22 2b df ff c6 ."U.......F"+...
+            12 b8 07 55 58 92 e5 79 60 78 83 42 a8 1d 1a ad ...UX..y`x.B....
+            4f a2 bb 9c b5 1b 0c 42 10 83 a3 eb b6 2b 5e 78 O......B.....+^x
+            6f b4 aa 60 01 00 8a 10 71 d6 6d c9 31 39 51 92 o..`....q.m.19Q.
+            a2 e1 3c 93 87 9f bc 26 87 5e ad c8 59 f9 91 7f ..<....&.^..Y...
+            54 50 62 48 5d b6 4b 4a 5c 6f b9 24 db 21 77 07 TPbH].KJ\o.$.!w.
+            cd da 5f 27 2c 93 70 f0 fe 5f f5 5c 0b 1a 62 22 .._',.p.._.\..b"
+            c4 f1 d8 ca a5 0c 4a d7 ad 98 97 bc f2 63 85 29 ......J......c.)
+            52 bf 37 d6 52 f0 11 1e 1d 30 f0 4d 0a f1 ca e0 R.7.R....0.M....
+            c2 35 f4 be 91 be 21 c4 7e e4 dc 23 b7 71 2d 29 .5....!.~..#.q-)
+            79 ce 9a b8 32 22 3c fd 95 af 51 c9 71 2b e3 e4 y...2"<...Q.q+..
+            fe ae fc b8 ef 13 70 90 22 8d 93 93 06 19 21 24 ......p.".....!$
+            5f 39 07 35 d5 35 0a 92 58 56 1a bc 2c ed d0 c9 _9.5.5..XV..,...
+            c7 c0 12 04 6e c2 48 1e 01 a2 7f 88 bf b0 5c 7f ....n.H.......\.
+            c0 49 cf 1d ff e6 23 0e ae 65 01 3c aa 11 44 80 .I....#..e.<..D.
+            be b0 2c 69 8d d3 8f e6 35 6c 4b 42 70 8b cb 52 ..,i....5lKBp..R
+            9e dc ee 46 ae 16 ca 7d 32 1c 0a 21 33 b5 06 08 ...F...}2..!3...
+            4a 4c d7 f8 f8 6c a8 ff 02 02 19 cc dc bf 2d 0b JL...l........-.
+            ac 5a a4 2d ff 84 2d db 0a 7c f0 c8 0e db 74 ca .Z.-..-..|....t.
+            d6 64 ba 88 36 86 4b 1e 9e eb 7a db f9 7e 60 54 .d..6.K...z..~`T
+            87 ad 19 4c a3 73 e3 fe 99 1c db de b1 d5 5f 3e ...L.s........_>
+            e7 d2 af db 22 1a 37 d5 04 4e 38 bf f1 f7 f9 55 ....".7..N8....U
+            8a c7 5d e0 71 64 18 48 76 3f ae 62 c4 2b e5 08 ..].qd.Hv?.b.+..
+            d4 44 cf a2 2b e2 bd d8 b2 3c 5f 3a 6a e7 f4 9a .D..+....<_:j...
+            ea 35 e9 74 87 36 d9 5a 72 9f 82 d0 45 5d 5e b0 .5.t.6.Zr...E]^.
+            3c 31 48 2d 4a 4c 39 82 5a 55 02 3e 4f 4d 32 6f <1H-JL9.ZU.>OM2o
+      signerInfos:
+        - version: 2
+          issuer:
+            - oid: "countryName (2.5.4.6)"
+              value: "AU"
+            - oid: "stateOrProvinceName (2.5.4.8)"
+              value: "Some-State"
+            - oid: "organizationName (2.5.4.10)"
+              value: "Internet Widgits Pty Ltd"
+          serialNumber: "01"
+          digestAlgorithm:
+            algorithm: "sha1 (1.3.14.3.2.26)"
+          authenticatedAttributes:
+            - spcSpOpusInfo (1.3.6.1.4.1.311.2.1.12): "30 00                                           0."
+            - contentType (1.2.840.113549.1.9.3): "06 0a 2b 06 01 04 01 82 37 02 01 04             ..+.....7..."
+            - messageDigest (1.2.840.113549.1.9.4): |
+                04 14 ee b1 b0 75 fa b0 92 4b 0b 17 82 e3 c6 34 .....u...K.....4
+                34 a2 99 45 88 db                               4..E..
+          digestEncryptionAlgorithm:
+            algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+          encryptedDigest: |
+            67 66 57 73 9b b5 97 71 8f 7d 7a 6d 75 be 7d 7b gfWs...q.}zmu.}{
+            65 af cd 92 b1 20 d7 fa 0a f9 ac 32 30 c9 c1 59 e.... .....20..Y
+            a2 18 64 ea ff 0e eb b0 25 68 41 db 29 63 ac d4 ..d.....%hA.)c..
+            3f 75 92 65 05 61 20 98 43 fa cd 00 f3 e7 45 89 ?u.e.a .C.....E.
+            50 cb ff dc c2 62 7b a8 97 c0 2f fb 7c 4c 1d f5 P....b{.../.|L..
+            d7 7a 33 90 0f 02 df fb 84 e0 b6 3f 2a 2d 63 0e .z3........?*-c.
+            34 04 0f 8c 3c 77 b6 f3 76 7c e1 8b eb ca 99 68 4...<w..v|.....h
+            6e 2d 57 1d a1 b5 fd be 03 e7 2e b3 fa 29 c6 b6 n-W..........)..
+            70 c4 38 1d 73 95 e0 a6 00 88 39 a6 49 2e aa 05 p.8.s.....9.I...
+            66 e6 7d 16 c9 e9 bc 41 cb a7 3f 6f 0d 8a ec 4b f.}....A..?o...K
+            e5 0f d2 b6 99 8c d1 78 56 d8 69 d8 61 d8 30 e9 .......xV.i.a.0.
+            86 c0 8f 57 d7 b3 e8 07 69 45 10 b9 3e 70 ad f9 ...W....iE..>p..
+            d6 18 37 f6 51 9a 2d 78 fe c3 fa cc 26 e1 50 9b ..7.Q.-x....&.P.
+            61 86 38 92 fd e5 f8 66 f0 16 3a 9a 8c 96 6e fb a.8....f..:...n.
+            64 89 0c ae 29 6b ac e1 f0 9c cc 7a c9 f5 e0 da d...)k.....z....
+            2c da 1e 94 fd ac 8e 11 00 3f fa 83 77 91 e2 16 ,........?..w...
+            bf a8 29 61 88 15 c7 1e 1b 03 1d d1 cb 28 ea f7 ..)a.........(..
+            77 78 b4 3a b7 3c e3 84 2d 5a 41 e2 ab c4 b3 9d wx.:.<..-ZA.....
+            37 ab 41 b9 a0 83 80 e8 34 64 71 46 49 61 b3 05 7.A.....4dqFIa..
+            82 c9 5f f7 3f 44 44 2b e0 d2 12 1d ac 6b d0 61 .._.?DD+.....k.a
+            74 52 fb 65 3e 1d 65 ca 79 d3 3a 30 b9 be e4 a6 tR.e>.e.y.:0....
+            da 2b b7 87 36 4a b6 79 f9 0d 70 35 20 0f 9e 51 .+..6J.y..p5 ..Q
+            72 e6 c5 36 6a e5 23 fd c0 27 26 bd 3b 10 b1 aa r..6j.#..'&.;...
+            1b 71 19 c5 aa 4e 82 01 39 b7 a6 4d 3a 10 39 0a .q...N..9..M:.9.
+            d6 d2 ea 3b 76 36 4e e9 e5 80 87 6c 66 30 6e ff ...;v6N....lf0n.
+            8d 6b 0a 6d 79 e1 e2 5d b0 f9 10 b5 7e 05 e8 a2 .k.my..]....~...
+            25 63 42 51 a3 de c9 e4 0a 17 ac 51 d5 d6 49 d2 %cBQ.......Q..I.
+            cc bc 55 2d c3 c8 f1 ae 6e 0e d8 be 73 b5 9b 87 ..U-....n...s...
+            f2 e5 58 1d 9c 6d fa f2 a4 cc e6 b5 7c d7 70 6e ..X..m......|.pn
+            19 92 00 47 1d 47 be 7d e8 3a 20 0d 46 33 f6 79 ...G.G.}.: .F3.y
+            85 2f cf 1f b7 28 2a 1b c2 59 07 4a 72 b4 35 2d ./...(*..Y.Jr.5-
+            a3 41 4d 64 4f 54 96 c7 64 0b b8 d8 a9 b1 d3 5a .AMdOT..d......Z
+  Authenticode:
+    spcAttribute:
+      type: "spcPEImageData (1.3.6.1.4.1.311.2.1.15)"
+      data: |
+        03 01 00 a0 20 a2 1e 80 1c 00 3c 00 3c 00 3c 00 .... .....<.<.<.
+        4f 00 62 00 73 00 6f 00 6c 00 65 00 74 00 65 00 O.b.s.o.l.e.t.e.
+        3e 00 3e 00 3e                                  >.>.>
+    messageDigest:
+      digestAlgorithm:
+        algorithm: "sha1 (1.3.14.3.2.26)"
+      digest: |
+        8e 29 f3 50 b6 eb 22 9f 16 23 cd de a9 ea d7 95 .).P.."..#......
+        e9 b8 2e 84                                     ....
+
+EOF
+RUN
