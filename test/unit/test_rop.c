@@ -141,36 +141,9 @@ bool test_rz_direct_solver() {
 	mu_end;
 }
 
-bool test_rop_rgl_output(void) {
-        RzCore *core = rz_core_new();
-        mu_assert_notnull(core, "core created");
-
-        /* Load a real binary */
-        mu_assert_true(
-                rz_core_file_open(core, "/bin/ls", 0, 0),
-                "binary loaded"
-        );
-        rz_core_bin_load(core, NULL, 0);
-
-        /* Run /Rgl (long mode for /Rg) */
-        char *out = rz_core_cmd_str(core, "/Rgl");
-        mu_assert_notnull(out, "command output exists");
-
-        /* Command should execute and return output (even if empty) */
-        mu_assert_true(
-                strlen(out) >= 0,
-                "command executed successfully"
-        );
-
-        free(out);
-        rz_core_free(core);
-        return true;
-}
-
 
 bool all_tests() {
 	mu_run_test(test_rz_direct_solver);
-	mu_run_test(test_rop_rgl_output);
 	return tests_passed != tests_run;
 }
 

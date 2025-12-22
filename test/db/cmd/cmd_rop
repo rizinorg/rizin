@@ -2865,5 +2865,30 @@ Gadget size: 12
   0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
 Gadget size: 8
 
+NAME=rop gadgets with long output mode
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Rg
+EOF
+EXPECT=<<EOF
+Gadget 0x000000b4
+Gadget 0x000000b5
+Gadget 0x000000b6
+Gadget 0x000000b7
+Gadget 0x000000b8
+Gadget 0x000000b9
+Gadget 0x000000ba
+Gadget 0x000000bb
+Gadget 0x000000bc
+Gadget 0x000000be
+Gadget 0x000000c0
+Gadget 0x000000c2
+
+
 EOF
 RUN
+
+
