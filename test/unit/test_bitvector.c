@@ -176,6 +176,56 @@ bool test_rz_bv_init_signed(void) {
 	mu_end;
 }
 
+bool test_rz_bv_logic_large(void) {
+	RzBitVector *x, *y, *z;
+	RzBitVector *result;
+	const ut8 array_128[128] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+	};
+	const ut8 array_128_01[128] = {
+		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+	};
+	const ut8 array_128_10[128] = {
+		0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10
+	};
+
+	// Expected
+	const char *not = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f0"; // ~x
+	const char *and = "0x00010001000100010001000100010001"; // x & y
+	const char *or = "0x101112131415161718191a1b1c1d1e1f"; // x | z
+	const char *xor = "0x010003020504070609080b0a0d0c0f0e"; // x ^ y
+	const char *neg = "0xfffefdfcfbfaf9f8f7f6f5f4f3f2f1f1"; // -x
+
+	x = rz_bv_new_from_bytes_be(array_128, 0, 128);
+	y = rz_bv_new_from_bytes_be(array_128_01, 0, 128);
+	z = rz_bv_new_from_bytes_be(array_128_10, 0, 128);
+
+	result = rz_bv_not(x);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, false), not, "not result off");
+	rz_bv_free(result);
+
+	result = rz_bv_and(x, y);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), and, "and result off");
+	rz_bv_free(result);
+
+	result = rz_bv_or(x, z);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), or, "or result off");
+	rz_bv_free(result);
+
+	result = rz_bv_xor(x, y);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), xor, "xor result off");
+	rz_bv_free(result);
+
+	result = rz_bv_neg(x);
+	mu_assert_streq_free(rz_bv_as_hex_string(result, true), neg, "neg result off");
+	rz_bv_free(result);
+
+	rz_bv_free(x);
+	rz_bv_free(y);
+	rz_bv_free(z);
+	mu_end;
+}
+
 bool test_rz_bv_logic(void) {
 	RzBitVector *x, *y;
 	RzBitVector *result;
@@ -1213,6 +1263,131 @@ bool test_rz_bv_copy_nbits(void) {
 	mu_end;
 }
 
+bool test_rz_bv_copy_nbits_inplace(void) {
+	const ut8 array_128[128] = {
+		0x00,
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x09,
+		0x0a,
+		0x0b,
+		0x0c,
+		0x0d,
+		0x0e,
+		0x0f,
+	};
+
+	const char *large_exp_1 = "0x0e0f02030405060708090a0b0c0d0e0f";
+	const char *large_exp_2 = "0x0e0f02030405060708090a0b0c0d0e1f";
+
+	RzBitVector *small_20 = rz_bv_new_from_ut64(20, 0x01234);
+	RzBitVector *large_128 = rz_bv_new_from_bytes_be(array_128, 0, 128);
+
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 5, small_20, 1, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 21), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 1, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 1, small_20, 0, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 112, 16), 16, "wrong num bits copied");
+	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_1, "copy to limits aligned");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 1, large_128, 2, 7), 7, "wrong num bits copied");
+	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_2, "copy overlap unaligned");
+
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 120, 16), 0, "wrong num bits copied");
+
+	rz_bv_free(small_20);
+	rz_bv_free(large_128);
+	mu_end;
+}
+
+bool test_rz_bv_cast_inplace(void) {
+	const ut8 array_128[128] = {
+		0x00,
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x09,
+		0x0a,
+		0x0b,
+		0x0c,
+		0x0d,
+		0x0e,
+		0x0f,
+	};
+
+	RzBitVector *small = rz_bv_new_from_ut64(20, 0x01234);
+	RzBitVector *large = rz_bv_new_from_bytes_be(array_128, 0, 128);
+
+	mu_assert_true(rz_bv_cast_inplace(small, 5, false), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_eq(small->len, 5, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 64, false), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_eq(small->len, 64, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 65, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x10000000000000014", "small to large cast failed");
+	mu_assert_eq(small->len, 65, "New size is off");
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	// Cast down again
+	mu_assert_true(rz_bv_cast_inplace(small, 17, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, true), "0x00014", "small to large cast failed");
+	mu_assert_eq(small->len, 17, "New size is off");
+	// buffer is not freed
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 66, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, true), "0x03fffffffffffe0014", "small to large cast failed");
+	mu_assert_eq(small->len, 66, "New size is off");
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(large, 32, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(large), 0x0c0d0e0f, "Mismatch after cast");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, true), "0x0c0d0e0f", "small to large cast failed");
+	mu_assert_eq(large->len, 32, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 16, "Buffer length wrong");
+
+	mu_assert_true(rz_bv_cast_inplace(large, 256, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff0c0d0e0f", "small to large cast failed");
+	mu_assert_eq(large->len, 256, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
+
+	rz_bv_free(small);
+	rz_bv_free(large);
+	mu_end;
+}
+
 /**
  * \brief Reference implementation of rz_bv_copy_nbits() to test against
  */
@@ -1540,6 +1715,22 @@ bool test_rz_bv_extra_operations(void) {
 	mu_end;
 }
 
+bool test_rz_bv_hash(void) {
+	RzBitVector *bv_small_1 = rz_bv_new_from_ut64(32, 1);
+	RzBitVector *bv_small_2 = rz_bv_new_from_ut64(32, 1);
+	RzBitVector *bv_large_1 = rz_bv_new_from_ut64(128, 2);
+	RzBitVector *bv_large_2 = rz_bv_new_from_ut64(128, 2);
+	mu_assert_eq(rz_bv_hash(bv_small_1), rz_bv_hash(bv_small_2), "Non repeatable hashing small");
+	mu_assert_eq(rz_bv_hash(bv_large_1), rz_bv_hash(bv_large_2), "Non repeatable hashing large");
+	mu_assert_neq(rz_bv_hash(bv_small_1), rz_bv_hash(bv_large_1), "Size doesn't affect hash but should");
+	mu_assert_neq(rz_bv_hash(bv_small_2), rz_bv_hash(bv_large_2), "Size doesn't affect hash but should");
+	rz_bv_free(bv_small_1);
+	rz_bv_free(bv_small_2);
+	rz_bv_free(bv_large_1);
+	rz_bv_free(bv_large_2);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bv_init32);
 	mu_run_test(test_rz_bv_init64);
@@ -1551,6 +1742,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_cast);
 	mu_run_test(test_rz_bv_operation);
 	mu_run_test(test_rz_bv_logic);
+	mu_run_test(test_rz_bv_logic_large);
 	mu_run_test(test_rz_bv_algorithm32);
 	mu_run_test(test_rz_bv_algorithm128);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
@@ -1570,7 +1762,10 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_copy_nbits_large_unaligned);
 	mu_run_test(test_rz_bv_copy_nbits_small_to_large);
 	mu_run_test(test_rz_bv_copy_nbits_large_to_small);
+	mu_run_test(test_rz_bv_copy_nbits_inplace);
+	mu_run_test(test_rz_bv_cast_inplace);
 	mu_run_test(test_rz_bv_extra_operations);
+	mu_run_test(test_rz_bv_hash);
 
 	return tests_passed != tests_run;
 }
