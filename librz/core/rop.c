@@ -944,31 +944,29 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 }
 
 static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
-	rz_return_if_fail(gadget_info && context);
+	rz_return_if_fail(core && core->analysis);
 
 	ut64 addr = gadget_info->address;
-	int size = gadget_info->size;
+	ut32 size = gadget_info->size;
 	ut8 *buf = RZ_NEWS0(ut8, size);
-	if (!buf) {
-		return;
-	}
-	if (rz_io_read_at(core->io, addr, buf, size) <= 0) {
+	if ((!buf || rz_io_read_at(core->io, addr, buf, size) < 1)) {
 		free(buf);
 		return;
 	}
-	int req_width = 50;
+	const int req_width = 50;
+	char *rep_str = rz_str_repeat("-", req_width);
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
-	rz_cons_printf("%s--%s\n", rz_str_repeat("-", req_width), rz_str_repeat("-", req_width));
-	RzAsmOp asmop = { 0 };
+	rz_cons_printf("%s--%s\n", rep_str, rep_str);
+	RzAsmOp asmop = RZ_EMPTY;
 	RzAnalysisOp aop = RZ_EMPTY;
-	int idx = 0;
 	int instr_count = 0;
-	while (idx < size) {
+	for (size_t idx = 0; idx < size;) {
 		rz_asm_set_pc(core->rasm, addr + idx);
 		int len = rz_asm_disassemble(core->rasm, &asmop, buf + idx, size - idx);
-		if (len < 1)
+		if (len < 1) {
 			break;
+		}
 		rz_analysis_op(core->analysis, &aop, addr + idx, buf + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
 		char *hex = rz_hex_bin2strdup(buf + idx, len);
 		const char *asm_str = rz_asm_op_get_asm(&asmop);
@@ -978,15 +976,15 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 			asm_str = colored_asm ? rz_strbuf_get(colored_asm) : asm_str;
 		}
 		const char *reset_color = colorize ? Color_RESET : "";
-		int asm_len_clean = rz_str_ansi_len(asm_str);
-		int visible_len = 22 + asm_len_clean;
+		size_t asm_len_clean = rz_str_ansi_len(asm_str);
+		size_t visible_len = 22 + asm_len_clean;
 		rz_cons_printf("  0x%08" PFMT64x "  %-8s  %s%s", addr + idx, hex ? hex : "", asm_str, reset_color);
 		int padding = req_width - visible_len;
 		if (padding > 0) {
 			rz_cons_printf("%*s", padding, "");
 		}
 		rz_cons_print(" | ");
-		if (instr_count == 0) {
+		if (instr_count < 1) {
 			rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 		} else if (instr_count == 1) {
 			rz_cons_printf("Modified regs: ");
@@ -995,12 +993,14 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 				bool first = true;
 				rz_pvector_foreach (gadget_info->modified_registers, it) {
 					RzRopRegInfo *reg_info = (RzRopRegInfo *)*it;
-					if (reg_info && reg_info->name) {
-						if (!first)
-							rz_cons_printf(" ");
-						rz_cons_printf("%s", reg_info->name);
-						first = false;
+					if (!reg_info || !reg_info->name) {
+						continue;
 					}
+					if (!first) {
+						rz_cons_printf(" ");
+					}
+					rz_cons_printf("%s", reg_info->name);
+					first = false;
 				}
 			}
 			rz_cons_newline();
@@ -1011,26 +1011,27 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 				RzRopRegInfo *dep_info;
 				bool first = true;
 				rz_list_foreach (gadget_info->dependencies, iter, dep_info) {
-					if (dep_info && dep_info->name) {
-						if (!first)
-							rz_cons_printf(" ");
-						rz_cons_printf("%s", dep_info->name);
-						first = false;
+					if (!dep_info || !dep_info->name) {
+						continue;
 					}
+					if (!first) {
+						rz_cons_printf(" ");
+					}
+					rz_cons_printf("%s", dep_info->name);
+					first = false;
 				}
 			}
 			rz_cons_newline();
 		} else {
 			rz_cons_newline();
 		}
-		if (colored_asm) {
-			rz_strbuf_free(colored_asm);
-		}
+		rz_strbuf_free(colored_asm);
 		free(hex);
 		rz_analysis_op_fini(&aop);
 		idx += len;
 		instr_count++;
 	}
+	free(rep_str);
 	rz_asm_op_fini(&asmop);
 	free(buf);
 	rz_cons_newline();
