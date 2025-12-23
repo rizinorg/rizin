@@ -3028,7 +3028,7 @@ enum {
 #define STO_AARCH64_VARIANT_PCS 0x80
 
 /* ARM relocs.  */
-
+/* Source: https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#relocation */
 #define R_ARM_NONE               0 /* No reloc */
 #define R_ARM_PC24               1 /* Deprecated PC relative 26 bit branch.  */
 #define R_ARM_ABS32              2 /* Direct 32 bit  */
