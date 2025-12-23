@@ -922,15 +922,6 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 				((val >> 1) & 0x07ff), // imm11
 			big_endian);
 		break;
-	// Arm and Data instructions
-	case R_ARM_PC24:
-	/* fall through */
-	case R_ARM_PLT32:
-    	val = fs->S + fs->A - fs->P;
-    	keep = rz_read_ble32(&buf[0], big_endian);
-    	keep = (keep & 0xFC000000) | ((val >> 2) & 0x03FFFFFE);
-    	rz_write_ble32(buf, keep, big_endian);
-    break;
 	case R_ARM_ABS32:
 		val = fs->S + fs->A;
 		rz_write_ble32(buf, val, big_endian);
@@ -939,7 +930,12 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		val = fs->S + fs->A - fs->P;
 		rz_write_ble32(buf, val, big_endian);
 		break;
+	case R_ARM_PC24:
+	/* fall through */
+	case R_ARM_PLT32:
+	/* fall through */
 	case R_ARM_CALL:
+	/* fall through */
 	case R_ARM_JUMP24:
 		val = fs->S + fs->A - fs->P;
 		keep = rz_read_ble32(&buf[0], big_endian);
