@@ -453,7 +453,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 	}
 
 	for (table_size = 0; table_size < params->table_count; table_size++) {
-		ut8 offs;
+		ut8 offs = 0;
 
 		if (!analysis->read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
 			return false;
