@@ -297,10 +297,10 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_UNK = 7, /* unknown opcode type */
 	RZ_ANALYSIS_OP_TYPE_NOP = 8, /* does nothing */
 	RZ_ANALYSIS_OP_TYPE_MOV = 9, /* register move */
-	RZ_ANALYSIS_OP_TYPE_CMOV = 9 | RZ_ANALYSIS_OP_TYPE_COND, /* conditional move */
+	RZ_ANALYSIS_OP_TYPE_CMOV = RZ_ANALYSIS_OP_TYPE_MOV | RZ_ANALYSIS_OP_TYPE_COND, /* conditional move */
 	RZ_ANALYSIS_OP_TYPE_TRAP = 10, /* it's a trap! */
 	RZ_ANALYSIS_OP_TYPE_SWI = 11, /* syscall, software interrupt */
-	RZ_ANALYSIS_OP_TYPE_CSWI = 11 | RZ_ANALYSIS_OP_TYPE_COND, /* syscall, software interrupt */
+	RZ_ANALYSIS_OP_TYPE_CSWI = RZ_ANALYSIS_OP_TYPE_SWI | RZ_ANALYSIS_OP_TYPE_COND, /* syscall, software interrupt */
 	RZ_ANALYSIS_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
 	RZ_ANALYSIS_OP_TYPE_RPUSH = RZ_ANALYSIS_OP_TYPE_UPUSH | RZ_ANALYSIS_OP_TYPE_REG, /* push register */
 	RZ_ANALYSIS_OP_TYPE_PUSH = 13, /* push value into stack */
