@@ -245,23 +245,20 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	if (!depth) {
 		return;
 	}
-	char *newpath = NULL;
 	switch (btype->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
 		ut64 memb_offset = 0;
 		rz_vector_foreach (&btype->struct_data.members, memb) {
 			if (memb_offset == offset) {
-				newpath = rz_str_newf("%s.%s", prefix, memb->name);
-				RzTypePath *tpath = rz_type_path_new(memb->type, newpath);
+				RzTypePath *tpath = rz_type_path_new(memb->type, rz_str_newf("%s.%s", prefix, memb->name));
 				if (tpath) {
 					rz_list_append(list, tpath);
 				}
-				free(newpath);
 			}
 			ut64 bytesz = rz_type_db_get_bitsize(typedb, memb->type) / 8;
 			if (memb_offset + bytesz > offset) {
-				newpath = rz_str_newf("%s.%s", prefix, memb->name);
+				char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
 				collect_type_paths(typedb, list, memb->type, newpath, offset - memb_offset, depth - 1);
 				free(newpath);
 				break;
@@ -273,7 +270,7 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 	case RZ_BASE_TYPE_KIND_UNION: {
 		RzTypeUnionMember *memb;
 		rz_vector_foreach (&btype->union_data.members, memb) {
-			newpath = rz_str_newf("%s.%s", prefix, memb->name);
+			char *newpath = rz_str_newf("%s.%s", prefix, memb->name);
 			if (offset == 0) {
 				RzTypePath *tpath = rz_type_path_new(memb->type, newpath);
 				if (tpath) {
@@ -281,7 +278,9 @@ static void collect_base_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath
 				}
 			}
 			collect_type_paths(typedb, list, memb->type, newpath, offset, depth - 1);
-			free(newpath);
+			if (offset != 0) {
+				free(newpath);
+			}
 		}
 		break;
 	}
@@ -332,7 +331,9 @@ static void collect_type_paths(const RzTypeDB *typedb, RzList /*<RzTypePath *>*/
 			}
 		}
 		collect_type_paths(typedb, list, type->array.type, newpath, idx_offset, depth - 1);
-		free(newpath);
+		if (idx_offset != 0) {
+			free(newpath);
+		}
 		break;
 	}
 	default:
