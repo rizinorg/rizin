@@ -929,7 +929,7 @@ RZ_API bool rz_bv_complement_1_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv) {
 		return true;
 	}
 
-	if (bv->bits.large_a) {
+	if (!bv->bits.large_a) {
 		rz_return_val_if_reached(false);
 	}
 	for (ut32 i = 0; i < NELEM(bv->len, BV_ELEM_SIZE); ++i) {
