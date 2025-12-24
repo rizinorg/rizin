@@ -64,7 +64,7 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 	void **iter;
 	RzBinSection *section;
 	MZ_image_relocation_entry *relocs;
-	int i, num_relocs, section_number;
+	int i, num_relocs;
 	ut16 ss;
 
 	if (!bin || !bin->dos_header) {
@@ -137,27 +137,20 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 	}
 
 	/* Fixup sizes and addresses, set name, permissions and set add flag */
-	section_number = 0;
-	rz_pvector_foreach (seg_vec, iter) {
+	ut64 index = 0;
+	rz_pvector_enumerate (seg_vec, iter, index) {
 		section = *iter;
-		section->name = rz_str_newf("seg_%03d", section_number);
-		if (section_number) {
+		section->name = rz_str_newf("seg_%03" PFMT64u, index);
+		if (index) {
 			// calculate current index in loop by subtracting base ptr
-			ut32 ptr_gap = iter - (void **)seg_vec->v.a;
-			ut32 cur_index = ptr_gap / sizeof(void **);
 			RzBinSection *p_section = NULL;
-			if (cur_index == 0) {
-				p_section = rz_pvector_tail(seg_vec);
-			} else {
-				p_section = rz_pvector_at(seg_vec, cur_index - 1);
-			}
+			p_section = rz_pvector_at(seg_vec, index - 1);
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
 		}
 		section->vsize = section->size;
 		section->paddr = rz_bin_mz_la_to_pa(bin, section->vaddr);
 		section->perm = rz_str_rwx("rwx");
-		section_number++;
 	}
 	section = rz_pvector_tail(seg_vec);
 	section->size = bin->load_module_size - section->vaddr;
