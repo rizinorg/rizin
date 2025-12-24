@@ -1054,7 +1054,7 @@ static inline void analysis_LOAD_COMMON_CONSTANT(RzAnalysisOp *op, pyc_opcode_ob
 }
 
 static inline void analysis_BUILD_INTERPOLATION(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
-	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, oparg+1);
+	analysis_pop(op, op_obj, oparg, RZ_ANALYSIS_OP_TYPE_UNK, oparg + 1);
 }
 
 static inline void analysis_BUILD_TEMPLATE(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {

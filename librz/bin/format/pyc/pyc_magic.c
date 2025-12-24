@@ -328,8 +328,8 @@ static struct pyc_version versions[] = {
 	{ 0x0a0d0e29, "v3.14.0b4", "334d6e6c572ce99fba2709a7a66ce172dec05d5c" },
 	{ 0x0a0d0e29, "v3.14.0rc1", "e77434a3443592ad1639a92d806e724660ec69eb" },
 	{ 0x0a0d0e2a, "v3.14.0rc2", "08c753ebdcc99134545c99bf70ee65842efd4f57" },
-	{ 0x0a0d0e2b, "v3.14.0rc3", "806b5de894d16e7660ecabd5aa001f2bbd8faa2a" },
 	{ 0x0a0d0e2b, "v3.14.0", "ac991beb29b1783316c4016c99468c008568d08a" },
+	{ 0x0a0d0e2b, "v3.14.0rc3", "806b5de894d16e7660ecabd5aa001f2bbd8faa2a" },
 	{ 0x0a0d0e2b, "v3.14.1", "be35a63d71708928cc83bd4a55103614b3e4bc83" },
 	{ 0x0a0d0e2b, "v3.14.2", "a1d0069daf8e85b25a0c3f96abc43182be6d429e" },
 };
