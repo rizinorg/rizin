@@ -2867,3 +2867,572 @@ Gadget size: 8
 
 EOF
 RUN
+
+NAME=/Rgl test
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+aaa
+/Rgl @ 0x804868f
+EOF
+EXPECT=<<EOF
+Gadget 0x8048275 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048275  6f        outsd                        | Stack change: 0x4
+  0x08048276  6e        outsb                        | Modified regs: edi esp
+  0x08048277  5f        pop edi                      | Dependencies:  esp esp
+  0x08048278  7374      jnb 0x80482ee                | 
+  0x0804827a  61        popad                        | 
+
+Gadget 0x8048276 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048276  6e        outsb                        | Stack change: 0x4
+  0x08048277  5f        pop edi                      | Modified regs: edi esp
+  0x08048278  7374      jnb 0x80482ee                | Dependencies:  esp esp
+  0x0804827a  61        popad                        | 
+
+Gadget 0x8048277 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048277  5f        pop edi                      | Stack change: 0x4
+  0x08048278  7374      jnb 0x80482ee                | Modified regs: edi esp
+  0x0804827a  61        popad                        | Dependencies:  esp esp
+
+Gadget 0x8048278 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048278  7374      jnb 0x80482ee                | Stack change: 0x0
+  0x0804827a  61        popad                        | Modified regs: 
+
+Gadget 0x804827a (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804827a  61        popad                        | Stack change: 0x0
+
+Gadget 0x8048292 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048292  7363      jnb 0x80482f7                | Stack change: 0x0
+  0x08048294  61        popad                        | Modified regs: 
+
+Gadget 0x80482b0 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b0  62635f    bound esp, qword [ebx+0x5f]  | Stack change: 0x0
+  0x080482b3  7374      jnb 0x8048329                | Modified regs: 
+  0x080482b5  61        popad                        | Dependencies:  ebx esp ebx
+
+Gadget 0x80482af (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482af  6962635f737461  imul esp, dword [edx+0x63], 0x6174735f | Stack change: 0x4
+  0x080482b6  7274      jb 0x804832c                 | Modified regs: esp edi
+  0x080482b8  5f        pop edi                      | Dependencies:  edx edx esp esp
+  0x080482b9  6d        insd                         | 
+  0x080482ba  61        popad                        | 
+
+Gadget 0x80482b4 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b4  7461      jz 0x8048317                 | Stack change: 0x4
+  0x080482b6  7274      jb 0x804832c                 | Modified regs: edi esp
+  0x080482b8  5f        pop edi                      | Dependencies:  esp esp
+  0x080482b9  6d        insd                         | 
+  0x080482ba  61        popad                        | 
+
+Gadget 0x80482b6 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b6  7274      jb 0x804832c                 | Stack change: 0x4
+  0x080482b8  5f        pop edi                      | Modified regs: edi esp
+  0x080482b9  6d        insd                         | Dependencies:  esp esp
+  0x080482ba  61        popad                        | 
+
+Gadget 0x80482b7 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b7  745f      jz 0x8048318                 | Stack change: 0x0
+  0x080482b9  6d        insd                         | Modified regs: 
+  0x080482ba  61        popad                        | Dependencies:  
+
+Gadget 0x80482b8 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b8  5f        pop edi                      | Stack change: 0x4
+  0x080482b9  6d        insd                         | Modified regs: edi esp
+  0x080482ba  61        popad                        | Dependencies:  esp esp
+
+Gadget 0x80482b9 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b9  6d        insd                         | Stack change: 0x0
+  0x080482ba  61        popad                        | Modified regs: 
+
+Gadget 0x8048349 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048349  0100      add dword [eax], eax         | Stack change: 0x0
+  0x0804834b  00e8      add al, ch                   | Modified regs: eax
+  0x0804834d  cf        iretd                        | Dependencies:  eax eax eax eax ecx
+
+Gadget 0x804834b (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834b  00e8      add al, ch                   | Stack change: 0x0
+  0x0804834d  cf        iretd                        | Modified regs: eax
+
+Gadget 0x804834d (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834d  cf        iretd                        | Stack change: 0x0
+
+Gadget 0x804834e (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834e  0200      add al, byte [eax]           | Stack change: 0x4
+  0x08048350  00c9      add cl, cl                   | Modified regs: eax ecx esp
+  0x08048352  c3        ret                          | Dependencies:  eax eax eax ecx esp esp
+
+Gadget 0x804834f (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834f  0000      add byte [eax], al           | Stack change: 0x8
+  0x08048351  c9        leave                        | Modified regs: esp ebp
+  0x08048352  c3        ret                          | Dependencies:  eax eax eax ebp esp esp esp esp
+
+Gadget 0x8048350 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048350  00c9      add cl, cl                   | Stack change: 0x4
+  0x08048352  c3        ret                          | Modified regs: ecx esp
+
+Gadget 0x8048351 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048351  c9        leave                        | Stack change: 0xffffffff00000008
+  0x08048352  c3        ret                          | Modified regs: esp ebp
+
+Gadget 0x8048352 (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048352  c3        ret                          | Stack change: 0x4
+
+Gadget 0x80483fa (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080483fa  0000      add byte [eax], al           | Stack change: 0x4
+  0x080483fc  005b81    add byte [ebx-0x7f], bl      | Modified regs: esp
+  0x080483ff  c3        ret                          | Dependencies:  eax eax eax ebx ebx ebx esp esp
+
+Gadget 0x80483fc (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080483fc  005b81    add byte [ebx-0x7f], bl      | Stack change: 0x4
+  0x080483ff  c3        ret                          | Modified regs: esp
+
+Gadget 0x804840a (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840a  ff85c07402ff  inc dword [ebp-0xfd8b40]     | Stack change: 0xffffffff00000008
+  0x08048410  d0585b    rcr byte [eax+0x5b], 0x01    | Modified regs: esp ebp
+  0x08048413  c9        leave                        | Dependencies:  ebp ebp eax eax ebp esp esp esp esp
+  0x08048414  c3        ret                          | 
+
+Gadget 0x804840c (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840c  c07402ffd0  shl byte [edx+eax*1-0x01], 0xd0 | Stack change: 0xffffffff00000010
+  0x08048411  58        pop eax                      | Modified regs: eax esp ebx ebp
+  0x08048412  5b        pop ebx                      | Dependencies:  eax edx eax edx esp esp esp esp ebp esp esp esp esp
+  0x08048413  c9        leave                        | 
+  0x08048414  c3        ret                          | 
+
+Gadget 0x804840e (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840e  02ff      add bh, bh                   | Stack change: 0xffffffff00000008
+  0x08048410  d0585b    rcr byte [eax+0x5b], 0x01    | Modified regs: ebx esp ebp
+  0x08048413  c9        leave                        | Dependencies:  ebx eax eax ebp esp esp esp esp
+  0x08048414  c3        ret                          | 
+
+Gadget 0x8048410 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048410  d0585b    rcr byte [eax+0x5b], 0x01    | Stack change: 0xffffffff00000008
+  0x08048413  c9        leave                        | Modified regs: esp ebp
+  0x08048414  c3        ret                          | Dependencies:  eax eax ebp esp esp esp esp
+
+Gadget 0x8048411 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048411  58        pop eax                      | Stack change: 0xffffffff00000010
+  0x08048412  5b        pop ebx                      | Modified regs: eax esp ebx ebp
+  0x08048413  c9        leave                        | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x08048414  c3        ret                          | 
+
+Gadget 0x8048412 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048412  5b        pop ebx                      | Stack change: 0xffffffff0000000c
+  0x08048413  c9        leave                        | Modified regs: ebx esp ebp
+  0x08048414  c3        ret                          | Dependencies:  esp esp ebp esp esp esp esp
+
+Gadget 0x8048441 (size 14 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048441  1085d275ebc6  adc byte [ebp-0x39148a2e], al | Stack change: 0x4
+  0x08048447  0524a00408  add eax, 0x804a024           | Modified regs: eax ecx esp
+  0x0804844c  01c9      add ecx, ecx                 | Dependencies:  ebp ebp eax eax ecx esp esp
+  0x0804844e  c3        ret                          | 
+
+Gadget 0x8048442 (size 13 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048442  85d2      test edx, edx                | Stack change: 0xffffffff00000008
+  0x08048444  75eb      jnz 0x8048431                | Modified regs: esp ebp
+  0x08048446  c60524a0040801  mov byte [0x804a024], 0x01   | Dependencies:  ebp esp esp esp esp
+  0x0804844d  c9        leave                        | 
+  0x0804844e  c3        ret                          | 
+
+Gadget 0x8048443 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048443  d275eb    shl byte [ebp-0x15], cl      | Stack change: 0xffffffff00000008
+  0x08048446  c60524a0040801  mov byte [0x804a024], 0x01   | Modified regs: esp ebp
+  0x0804844d  c9        leave                        | Dependencies:  ebp ebp ecx ebp esp esp esp esp
+  0x0804844e  c3        ret                          | 
+
+Gadget 0x8048444 (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048444  75eb      jnz 0x8048431                | Stack change: 0xffffffff00000008
+  0x08048446  c60524a0040801  mov byte [0x804a024], 0x01   | Modified regs: esp ebp
+  0x0804844d  c9        leave                        | Dependencies:  ebp esp esp esp esp
+  0x0804844e  c3        ret                          | 
+
+Gadget 0x8048446 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048446  c60524a0040801  mov byte [0x804a024], 0x01   | Stack change: 0xffffffff00000008
+  0x0804844d  c9        leave                        | Modified regs: esp ebp
+  0x0804844e  c3        ret                          | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x8048447 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048447  0524a00408  add eax, 0x804a024           | Stack change: 0x4
+  0x0804844c  01c9      add ecx, ecx                 | Modified regs: eax ecx esp
+  0x0804844e  c3        ret                          | Dependencies:  eax ecx esp esp
+
+Gadget 0x8048448 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048448  24a0      and al, 0xa0                 | Stack change: 0x4
+  0x0804844a  0408      add al, 0x08                 | Modified regs: eax ecx esp
+  0x0804844c  01c9      add ecx, ecx                 | Dependencies:  eax eax eax ecx esp esp
+  0x0804844e  c3        ret                          | 
+
+Gadget 0x8048449 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048449  a0040801c9  mov al, byte [0xc9010804]    | Stack change: 0x4
+  0x0804844e  c3        ret                          | Modified regs: eax esp
+
+Gadget 0x804844a (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844a  0408      add al, 0x08                 | Stack change: 0x4
+  0x0804844c  01c9      add ecx, ecx                 | Modified regs: eax ecx esp
+  0x0804844e  c3        ret                          | Dependencies:  eax ecx esp esp
+
+Gadget 0x804844b (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844b  0801      or byte [ecx], al            | Stack change: 0xffffffff00000008
+  0x0804844d  c9        leave                        | Modified regs: esp ebp
+  0x0804844e  c3        ret                          | Dependencies:  ecx ecx eax ebp esp esp esp esp
+
+Gadget 0x804844c (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844c  01c9      add ecx, ecx                 | Stack change: 0x4
+  0x0804844e  c3        ret                          | Modified regs: ecx esp
+
+Gadget 0x8048471 (size 17 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048471  7bfb      jnp 0x804846e                | Stack change: 0x4
+  0x08048473  f78db6000000008dbf00  test dword [ebp+0xb6], 0xbf8d00 | Modified regs: ecx esp
+  0x0804847d  0000      add byte [eax], al           | Dependencies:  ebp eax eax eax ecx esp esp
+  0x0804847f  00c9      add cl, cl                   | 
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048472 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048472  fb        sti                          | Stack change: 0x4
+  0x08048473  f78db6000000008dbf00  test dword [ebp+0xb6], 0xbf8d00 | Modified regs: ecx esp
+  0x0804847d  0000      add byte [eax], al           | Dependencies:  ebp eax eax eax ecx esp esp
+  0x0804847f  00c9      add cl, cl                   | 
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048473 (size 15 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048473  f78db6000000008dbf00  test dword [ebp+0xb6], 0xbf8d00 | Stack change: 0x4
+  0x0804847d  0000      add byte [eax], al           | Modified regs: ecx esp
+  0x0804847f  00c9      add cl, cl                   | Dependencies:  ebp eax eax eax ecx esp esp
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048474 (size 14 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048474  8db600000000  lea esi, dword [esi]         | Stack change: 0xffffffff00000008
+  0x0804847a  8dbf00000000  lea edi, dword [edi]         | Modified regs: esi edi esp ebp
+  0x08048480  c9        leave                        | Dependencies:  esi edi ebp esp esp esp esp
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048475 (size 13 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048475  b600      mov dh, 0x00                 | Stack change: 0x4
+  0x08048477  0000      add byte [eax], al           | Modified regs: edx ecx esp
+  0x08048479  008dbf000000  add byte [ebp+0xbf], cl      | Dependencies:  edx eax eax eax ebp ebp ecx ecx esp esp
+  0x0804847f  00c9      add cl, cl                   | 
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048476 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048476  0000      add byte [eax], al           | Stack change: 0xffffffff00000008
+  0x08048478  0000      add byte [eax], al           | Modified regs: edi esp ebp
+  0x0804847a  8dbf00000000  lea edi, dword [edi]         | Dependencies:  eax eax eax eax eax eax edi ebp esp esp esp esp
+  0x08048480  c9        leave                        | 
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048477 (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048477  0000      add byte [eax], al           | Stack change: 0x4
+  0x08048479  008dbf000000  add byte [ebp+0xbf], cl      | Modified regs: ecx esp
+  0x0804847f  00c9      add cl, cl                   | Dependencies:  eax eax eax ebp ebp ecx ecx esp esp
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048478 (size 10 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048478  0000      add byte [eax], al           | Stack change: 0xffffffff00000008
+  0x0804847a  8dbf00000000  lea edi, dword [edi]         | Modified regs: edi esp ebp
+  0x08048480  c9        leave                        | Dependencies:  eax eax eax edi ebp esp esp esp esp
+  0x08048481  c3        ret                          | 
+
+Gadget 0x8048479 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048479  008dbf000000  add byte [ebp+0xbf], cl      | Stack change: 0x4
+  0x0804847f  00c9      add cl, cl                   | Modified regs: ecx esp
+  0x08048481  c3        ret                          | Dependencies:  ebp ebp ecx ecx esp esp
+
+Gadget 0x804847a (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847a  8dbf00000000  lea edi, dword [edi]         | Stack change: 0xffffffff00000008
+  0x08048480  c9        leave                        | Modified regs: edi esp ebp
+  0x08048481  c3        ret                          | Dependencies:  edi ebp esp esp esp esp
+
+Gadget 0x804847b (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847b  bf00000000  mov edi, 0x00                | Stack change: 0xffffffff00000008
+  0x08048480  c9        leave                        | Modified regs: edi esp ebp
+  0x08048481  c3        ret                          | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x804847c (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847c  0000      add byte [eax], al           | Stack change: 0xffffffff00000008
+  0x0804847e  0000      add byte [eax], al           | Modified regs: esp ebp
+  0x08048480  c9        leave                        | Dependencies:  eax eax eax eax eax eax ebp esp esp esp esp
+  0x08048481  c3        ret                          | 
+
+Gadget 0x804847d (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847d  0000      add byte [eax], al           | Stack change: 0x4
+  0x0804847f  00c9      add cl, cl                   | Modified regs: ecx esp
+  0x08048481  c3        ret                          | Dependencies:  eax eax eax ecx esp esp
+
+Gadget 0x80484c5 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080484c5  ffc9      dec ecx                      | Stack change: 0x4
+  0x080484c7  c3        ret                          | Modified regs: ecx esp
+
+Gadget 0x8048595 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048595  b800000000  mov eax, 0x00                | Stack change: 0xffffffff00000008
+  0x0804859a  c9        leave                        | Modified regs: eax esp ebp
+  0x0804859b  c3        ret                          | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x80485a6 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485a6  f653e8    not byte [ebx-0x18]          | Stack change: 0x4
+  0x080485a9  6800000081  push 0x81000000              | Modified regs: esp
+  0x080485ae  c3        ret                          | Dependencies:  ebx ebx esp esp esp
+
+Gadget 0x80485a9 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485a9  6800000081  push 0x81000000              | Stack change: 0x4
+  0x080485ae  c3        ret                          | Modified regs: esp
+
+Gadget 0x80485fa (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fa  da83c41c5b5e  fiadd dword [ebx+0x5e5b1cc4] | Stack change: 0xffffffff0000000c
+  0x08048600  5f        pop edi                      | Modified regs: edi esp ebp
+  0x08048601  c9        leave                        | Dependencies:  esp esp ebp esp esp esp esp
+  0x08048602  c3        ret                          | 
+
+Gadget 0x80485fc (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fc  c41c5b    les ebx, fword [ebx+ebx*2]   | Stack change: 0x10
+  0x080485ff  5e        pop esi                      | Modified regs: ebx esi esp edi ebp
+  0x08048600  5f        pop edi                      | Dependencies:  ebx esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9        leave                        | 
+  0x08048602  c3        ret                          | 
+
+Gadget 0x80485fd (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fd  1c5b      sbb al, 0x5b                 | Stack change: 0xffffffff00000010
+  0x080485ff  5e        pop esi                      | Modified regs: eax esi esp edi ebp
+  0x08048600  5f        pop edi                      | Dependencies:  eax esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9        leave                        | 
+  0x08048602  c3        ret                          | 
+
+Gadget 0x80485fe (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fe  5b        pop ebx                      | Stack change: 0x14
+  0x080485ff  5e        pop esi                      | Modified regs: ebx esp esi edi ebp
+  0x08048600  5f        pop edi                      | Dependencies:  esp esp esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9        leave                        | 
+  0x08048602  c3        ret                          | 
+
+Gadget 0x80485ff (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485ff  5e        pop esi                      | Stack change: 0xffffffff00000010
+  0x08048600  5f        pop edi                      | Modified regs: esi esp edi ebp
+  0x08048601  c9        leave                        | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x08048602  c3        ret                          | 
+
+Gadget 0x8048600 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048600  5f        pop edi                      | Stack change: 0xc
+  0x08048601  c9        leave                        | Modified regs: edi esp ebp
+  0x08048602  c3        ret                          | Dependencies:  esp esp ebp esp esp esp esp
+
+Gadget 0x8048609 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048609  8dbc2700000000  lea edi, dword [edi]         | Stack change: 0xffffffff8100000d
+  0x08048610  55        push ebp                     | Modified regs: edi esp ebp
+  0x08048611  89e5      mov ebp, esp                 | Dependencies:  edi ebp esp esp ebp esp esp esp esp
+  0x08048613  c9        leave                        | 
+  0x08048614  c3        ret                          | 
+
+Gadget 0x804860a (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860a  bc27000000  mov esp, 0x27                | Stack change: 0x4
+  0x0804860f  005589    add byte [ebp-0x77], dl      | Modified regs: esp
+  0x08048612  e5c9      in eax, 0xc9                 | Dependencies:  ebp ebp edx esp esp
+  0x08048614  c3        ret                          | 
+
+Gadget 0x804860d (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860d  0000      add byte [eax], al           | Stack change: 0x4
+  0x0804860f  005589    add byte [ebp-0x77], dl      | Modified regs: esp
+  0x08048612  e5c9      in eax, 0xc9                 | Dependencies:  eax eax eax ebp ebp edx esp esp
+  0x08048614  c3        ret                          | 
+
+Gadget 0x804860e (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860e  0000      add byte [eax], al           | Stack change: 0xffffffff00000034
+  0x08048610  55        push ebp                     | Modified regs: esp ebp
+  0x08048611  89e5      mov ebp, esp                 | Dependencies:  eax eax eax ebp esp esp ebp esp esp esp esp
+  0x08048613  c9        leave                        | 
+  0x08048614  c3        ret                          | 
+
+Gadget 0x804860f (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860f  005589    add byte [ebp-0x77], dl      | Stack change: 0x4
+  0x08048612  e5c9      in eax, 0xc9                 | Modified regs: esp
+  0x08048614  c3        ret                          | Dependencies:  ebp ebp edx esp esp
+
+Gadget 0x8048610 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048610  55        push ebp                     | Stack change: 0xffffffff0000003c
+  0x08048611  89e5      mov ebp, esp                 | Modified regs: esp ebp
+  0x08048613  c9        leave                        | Dependencies:  ebp esp esp ebp esp esp esp esp
+  0x08048614  c3        ret                          | 
+
+Gadget 0x8048611 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048611  89e5      mov ebp, esp                 | Stack change: 0xffffffff00000044
+  0x08048613  c9        leave                        | Modified regs: ebp esp
+  0x08048614  c3        ret                          | Dependencies:  esp ebp esp esp esp esp
+
+Gadget 0x8048612 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048612  e5c9      in eax, 0xc9                 | Stack change: 0x4
+  0x08048614  c3        ret                          | Modified regs: esp
+
+Gadget 0x8048615 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048615  8b1c24    mov ebx, dword [esp]         | Stack change: 0x4
+  0x08048618  c3        ret                          | Modified regs: ebx esp
+
+Gadget 0x8048616 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048616  1c24      sbb al, 0x24                 | Stack change: 0x4
+  0x08048618  c3        ret                          | Modified regs: eax esp
+
+Gadget 0x8048639 (size 10 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048639  0383f8ff75f4  add eax, dword [ebx-0xb8a0008] | Stack change: 0x10
+  0x0804863f  58        pop eax                      | Modified regs: eax esp ebx ebp
+  0x08048640  5b        pop ebx                      | Dependencies:  ebx eax esp esp esp esp esp esp esp esp
+  0x08048641  5d        pop ebp                      | 
+  0x08048642  c3        ret                          | 
+
+Gadget 0x804863c (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863c  ff75f4    push dword [ebp-0x0c]        | Stack change: 0x10
+  0x0804863f  58        pop eax                      | Modified regs: esp eax ebx ebp
+  0x08048640  5b        pop ebx                      | Dependencies:  ebp esp esp esp esp esp esp esp esp esp
+  0x08048641  5d        pop ebp                      | 
+  0x08048642  c3        ret                          | 
+
+Gadget 0x804863d (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863d  75f4      jnz 0x8048633                | Stack change: 0x10
+  0x0804863f  58        pop eax                      | Modified regs: eax esp ebx ebp
+  0x08048640  5b        pop ebx                      | Dependencies:  esp esp esp esp esp esp esp esp
+  0x08048641  5d        pop ebp                      | 
+  0x08048642  c3        ret                          | 
+
+Gadget 0x804863f (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863f  58        pop eax                      | Stack change: 0x10
+  0x08048640  5b        pop ebx                      | Modified regs: eax esp ebx ebp
+  0x08048641  5d        pop ebp                      | Dependencies:  esp esp esp esp esp esp esp esp
+  0x08048642  c3        ret                          | 
+
+Gadget 0x8048640 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048640  5b        pop ebx                      | Stack change: 0xc
+  0x08048641  5d        pop ebp                      | Modified regs: ebx esp ebp
+  0x08048642  c3        ret                          | Dependencies:  esp esp esp esp esp esp
+
+Gadget 0x8048641 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048641  5d        pop ebp                      | Stack change: 0x8
+  0x08048642  c3        ret                          | Modified regs: ebp esp
+
+Gadget 0x804865a (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804865a  59        pop ecx                      | Stack change: 0xffffffff00000010
+  0x0804865b  5b        pop ebx                      | Modified regs: ecx esp ebx ebp
+  0x0804865c  c9        leave                        | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x0804865d  c3        ret                          | 
+
+Gadget 0x804866b (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804866b  50        push eax                     | Stack change: 0x0
+  0x0804866c  61        popad                        | Modified regs: esp
+
+Gadget 0x8048677 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048677  0a00      or al, byte [eax]            | Stack change: 0x0
+  0x08048679  50        push eax                     | Modified regs: eax esp
+  0x0804867a  61        popad                        | Dependencies:  eax eax eax eax esp
+
+Gadget 0x804868d (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804868d  00494f    add byte [ecx+0x4f], cl      | Stack change: 0xffffffffffffffff
+  0x08048690  4c        dec esp                      | Modified regs: esp ecx
+  0x08048691  49        dec ecx                      | Dependencies:  ecx ecx ecx esp ecx ebx ebx eax
+  0x08048692  204372    and byte [ebx+0x72], al      | 
+  0x08048695  61        popad                        | 
+
+Gadget 0x804868f (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804868f  4f        dec edi                      | Stack change: 0xffffffffffffffff
+  0x08048690  4c        dec esp                      | Modified regs: edi esp ecx
+  0x08048691  49        dec ecx                      | Dependencies:  edi esp ecx ebx ebx eax
+  0x08048692  204372    and byte [ebx+0x72], al      | 
+  0x08048695  61        popad                        | 
+
+Gadget 0x8048690 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048690  4c        dec esp                      | Stack change: 0xffffffffffffffff
+  0x08048691  49        dec ecx                      | Modified regs: esp ecx
+  0x08048692  204372    and byte [ebx+0x72], al      | Dependencies:  esp ecx ebx ebx eax
+  0x08048695  61        popad                        | 
+
+Gadget 0x8048691 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048691  49        dec ecx                      | Stack change: 0x0
+  0x08048692  204372    and byte [ebx+0x72], al      | Modified regs: ecx
+  0x08048695  61        popad                        | Dependencies:  ecx ebx ebx eax
+
+Gadget 0x8048692 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048692  204372    and byte [ebx+0x72], al      | Stack change: 0x0
+  0x08048695  61        popad                        | Modified regs: 
+
+EOF
+RUN
