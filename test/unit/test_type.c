@@ -1535,7 +1535,7 @@ bool test_path_by_offset_array(void) {
 	const char *types_dir = TEST_BUILD_TYPES_DIR;
 	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
 
-	// -- simple 
+	// -- simple
 
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, "int [5]", &error_msg);
