@@ -367,7 +367,6 @@ EXPECT=<<EOF
             0x0000002c      LOAD_CONST            Multiline strings can be written
 using three "s, and are often used
 as documentation.
-
             0x0000002e      STORE_NAME            __doc__
             0x00000030      NOP
             0x00000032      NOP
@@ -526,39 +525,39 @@ EXPECT=<<EOF
             0x00002cb0      CACHE
             0x00002cb2      CACHE
             0x00002cb4      CACHE
-        ┌─> 0x00002cb6      GET_ITER
-      ┌┌──< 0x00002cb8      FOR_ITER              30
-      └───> 0x00002cba      CACHE
-       │╎   0x00002cbc      STORE_FAST            power
-       │╎   0x00002cbe      LOAD_GLOBAL
-       │╎   0x00002cc0      CACHE
-       │╎   0x00002cc2      CACHE
-       │╎   0x00002cc4      CACHE
-       │╎   0x00002cc6      CACHE
-       │╎   0x00002cc8      LOAD_CONST            I wield the power of {pow}!
-       │╎   0x00002cca      LOAD_ATTR
-       │╎   0x00002ccc      CACHE
-       │╎   0x00002cce      CACHE
-       │╎   0x00002cd0      CACHE
-       │╎   0x00002cd2      CACHE
-       │╎   0x00002cd4      CACHE
-       │╎   0x00002cd6      CACHE
-       │╎   0x00002cd8      CACHE
-       │╎   0x00002cda      CACHE
-       │╎   0x00002cdc      CACHE
-       │╎   0x00002cde      LOAD_FAST_BORROW      power
-       │╎   0x00002ce0      LOAD_CONST            (pow)
-       │╎   0x00002ce2      CALL_KW
-       │╎   0x00002ce4      CACHE
-       │╎   0x00002ce6      CACHE
-       │╎   0x00002ce8      CACHE
-       │╎   0x00002cea      CALL                   1
-       │╎   0x00002cec      CACHE
-       │╎   0x00002cee      CACHE
-       │╎   0x00002cf0      CACHE
-       │╎   0x00002cf2      POP_TOP
-       │└─< 0x00002cf4      JUMP_BACKWARD         32
-       └──> 0x00002cf6      CACHE
+        .-> 0x00002cb6      GET_ITER
+      ,,==< 0x00002cb8      FOR_ITER              30
+      `---> 0x00002cba      CACHE
+       |:   0x00002cbc      STORE_FAST            power
+       |:   0x00002cbe      LOAD_GLOBAL
+       |:   0x00002cc0      CACHE
+       |:   0x00002cc2      CACHE
+       |:   0x00002cc4      CACHE
+       |:   0x00002cc6      CACHE
+       |:   0x00002cc8      LOAD_CONST            I wield the power of {pow}!
+       |:   0x00002cca      LOAD_ATTR
+       |:   0x00002ccc      CACHE
+       |:   0x00002cce      CACHE
+       |:   0x00002cd0      CACHE
+       |:   0x00002cd2      CACHE
+       |:   0x00002cd4      CACHE
+       |:   0x00002cd6      CACHE
+       |:   0x00002cd8      CACHE
+       |:   0x00002cda      CACHE
+       |:   0x00002cdc      CACHE
+       |:   0x00002cde      LOAD_FAST_BORROW      power
+       |:   0x00002ce0      LOAD_CONST            (pow)
+       |:   0x00002ce2      CALL_KW
+       |:   0x00002ce4      CACHE
+       |:   0x00002ce6      CACHE
+       |:   0x00002ce8      CACHE
+       |:   0x00002cea      CALL                   1
+       |:   0x00002cec      CACHE
+       |:   0x00002cee      CACHE
+       |:   0x00002cf0      CACHE
+       |:   0x00002cf2      POP_TOP
+       |`=< 0x00002cf4      JUMP_BACKWARD         32
+       `--> 0x00002cf6      CACHE
             0x00002cf8      END_FOR
             0x00002cfa      POP_ITER
             0x00002cfc      LOAD_CONST            None
