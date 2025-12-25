@@ -565,7 +565,6 @@ bool test_analysis_function_modify_cc() {
 	mu_assert_true(fn->has_changed, "has_changed should be true");
 
 	rz_analysis_free(analysis);
-	rz_analysis_function_free(fn);
 
 	mu_end;
 }
