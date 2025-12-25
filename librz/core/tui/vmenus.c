@@ -259,6 +259,16 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 	if (view->printMode == 1) { // px $r
 		addr += view->delta * 16;
 	}
+	const char *current_theme = rz_core_theme_get(core);
+	if (RZ_STR_NE(view->curtheme, current_theme)) {
+		RZ_FREE(view->output);
+		view->output_mode = -1;
+		view->output_addr = -1;
+	}
+	if (!view->curtheme || !current_theme || RZ_STR_NE(view->curtheme, current_theme)) {
+		free(view->curtheme);
+		view->curtheme = current_theme ? rz_str_dup(current_theme) : NULL;
+	}
 	if (view->output_mode != view->printMode || view->output_addr != addr) {
 		const char *cmd;
 		if (view->printMode > 0 && view->printMode < lastPrintMode) {
