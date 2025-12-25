@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -41,7 +41,7 @@ static inline bool is_oid_object(RzASN1Object *object) {
 		object->list.objects[0]->tag == RZ_ASN1_TAG_OID;
 }
 
-RZ_IPI bool rz_x509_algorithmidentifier_parse(RzX509AlgorithmIdentifier *ai, RzASN1Object *object) {
+RZ_IPI bool rz_x509_algorithmidentifier_parse(RZ_NONNULL RzX509AlgorithmIdentifier *ai, RZ_NONNULL RzASN1Object *object) {
 	rz_return_val_if_fail(ai && object, false);
 
 	if (object->list.length < 1 || !object->list.objects || !is_oid_object(object)) {
@@ -49,8 +49,11 @@ RZ_IPI bool rz_x509_algorithmidentifier_parse(RzX509AlgorithmIdentifier *ai, RzA
 	}
 
 	ai->algorithm = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
-	ai->parameters = NULL; // TODO
-	// ai->parameters = asn1_stringify_sector (object->list.objects[1]);
+	if (object->list.length < 2 || !object->list.objects[1]) {
+		return true;
+	}
+
+	ai->parameters = rz_asn1_binary_parse(object->list.objects[1]->sector, object->list.objects[1]->length);
 	return true;
 }
 
@@ -76,8 +79,7 @@ static bool x509_subjectpublickeyinfo_parse(RzX509SubjectPublicKeyInfo *spki, Rz
 	return true;
 }
 
-RZ_IPI bool rz_x509_name_parse(RzX509Name *name, RzASN1Object *object) {
-	ut32 i;
+RZ_IPI bool rz_x509_name_parse(RZ_NULLABLE RzX509Name *name, RZ_NULLABLE RzASN1Object *object) {
 	if (!name || !object || !object->list.length) {
 		return false;
 	}
@@ -94,7 +96,7 @@ RZ_IPI bool rz_x509_name_parse(RzX509Name *name, RzASN1Object *object) {
 			RZ_FREE(name->names);
 			return false;
 		}
-		for (i = 0; i < object->list.length; i++) {
+		for (ut32 i = 0; i < object->list.length; i++) {
 			RzASN1Object *o = object->list.objects[i];
 			if (o && o->klass == RZ_ASN1_CLASS_UNIVERSAL &&
 				o->tag == RZ_ASN1_TAG_SET &&
@@ -146,12 +148,11 @@ static void x509_extension_free(RzX509Extension *ex) {
 	}
 	rz_asn1_string_free(ex->extnID);
 	rz_asn1_binary_free(ex->extnValue);
-	// this is allocated dinamically so, i'll free
+	// this is allocated dynamically so, i'll free
 	free(ex);
 }
 
 static bool x509_extensions_parse(RzX509Extensions *ext, RzASN1Object *object) {
-	ut32 i;
 	if (!ext || !object || object->list.length != 1 || !object->list.objects[0]->length) {
 		return false;
 	}
@@ -161,7 +162,7 @@ static bool x509_extensions_parse(RzX509Extensions *ext, RzASN1Object *object) {
 		return false;
 	}
 	ext->length = object->list.length;
-	for (i = 0; i < object->list.length; i++) {
+	for (ut32 i = 0; i < object->list.length; i++) {
 		ext->extensions[i] = RZ_NEW0(RzX509Extension);
 		if (!x509_extension_parse(ext->extensions[i], object->list.objects[i])) {
 			x509_extension_free(ext->extensions[i]);
@@ -173,7 +174,6 @@ static bool x509_extensions_parse(RzX509Extensions *ext, RzASN1Object *object) {
 
 static bool x509_tbscertificate_parse(RzX509TBSCertificate *tbsc, RzASN1Object *object) {
 	RzASN1Object **elems;
-	ut32 i;
 	ut32 shift = 0;
 	if (!tbsc || !object || object->list.length < 6) {
 		return false;
@@ -205,20 +205,23 @@ static bool x509_tbscertificate_parse(RzX509TBSCertificate *tbsc, RzASN1Object *
 	rz_x509_validity_parse(&tbsc->validity, elems[shift + 3]);
 	rz_x509_name_parse(&tbsc->subject, elems[shift + 4]);
 	x509_subjectpublickeyinfo_parse(&tbsc->subjectPublicKeyInfo, elems[shift + 5]);
-	if (tbsc->version > 0) {
-		for (i = shift + 6; i < object->list.length; i++) {
-			if (!elems[i] || elems[i]->klass != RZ_ASN1_CLASS_CONTEXT) {
-				continue;
-			}
-			if (elems[i]->tag == 1) {
-				tbsc->issuerUniqueID = rz_asn1_binary_parse(elems[i]->sector, elems[i]->length);
-			}
-			if (elems[i]->tag == 2) {
-				tbsc->subjectUniqueID = rz_asn1_binary_parse(elems[i]->sector, elems[i]->length);
-			}
-			if (tbsc->version == 2 && elems[i]->tag == 3 && elems[i]->form == RZ_ASN1_FORM_CONSTRUCTED) {
-				x509_extensions_parse(&tbsc->extensions, elems[i]);
-			}
+
+	if (tbsc->version < 1) {
+		return true;
+	}
+
+	for (ut32 i = shift + 6; i < object->list.length; i++) {
+		if (!elems[i] || elems[i]->klass != RZ_ASN1_CLASS_CONTEXT) {
+			continue;
+		}
+		if (elems[i]->tag == 1) {
+			tbsc->issuerUniqueID = rz_asn1_binary_parse(elems[i]->sector, elems[i]->length);
+		}
+		if (elems[i]->tag == 2) {
+			tbsc->subjectUniqueID = rz_asn1_binary_parse(elems[i]->sector, elems[i]->length);
+		}
+		if (tbsc->version == 2 && elems[i]->tag == 3 && elems[i]->form == RZ_ASN1_FORM_CONSTRUCTED) {
+			x509_extensions_parse(&tbsc->extensions, elems[i]);
 		}
 	}
 	return true;
@@ -333,60 +336,57 @@ RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RzA
 	crl->lastUpdate = rz_asn1_stringify_utctime(elems[2]->sector, elems[2]->length);
 	crl->nextUpdate = rz_asn1_stringify_utctime(elems[3]->sector, elems[3]->length);
 	if (object->list.length > 4 && object->list.objects[4]) {
-		ut32 i;
 		crl->revokedCertificates = calloc(object->list.objects[4]->list.length, sizeof(RzX509CRLEntry *));
 		if (!crl->revokedCertificates) {
 			free(crl);
 			return NULL;
 		}
 		crl->length = object->list.objects[4]->list.length;
-		for (i = 0; i < object->list.objects[4]->list.length; i++) {
+		for (ut32 i = 0; i < object->list.objects[4]->list.length; i++) {
 			crl->revokedCertificates[i] = x509_crlentry_parse(object->list.objects[4]->list.objects[i]);
 		}
 	}
 	return crl;
 }
 
-RZ_IPI void rz_x509_algorithmidentifier_fini(RzX509AlgorithmIdentifier *ai) {
-	if (ai) {
-		// no need to free ai, since this functions is used internally
-		rz_asn1_string_free(ai->algorithm);
-		rz_asn1_string_free(ai->parameters);
+RZ_IPI void rz_x509_algorithmidentifier_fini(RZ_NULLABLE RzX509AlgorithmIdentifier *ai) {
+	if (!ai) {
+		return;
 	}
+	// no need to free ai, since this functions is used internally
+	rz_asn1_string_free(ai->algorithm);
+	rz_asn1_binary_free(ai->parameters);
 }
 
 static void x509_validity_fini(RzX509Validity *validity) {
 	if (!validity) {
 		return;
 	}
-	// not freeing validity since it's not allocated dinamically
+	// not freeing validity since it's not allocated dynamically
 	rz_asn1_string_free(validity->notAfter);
 	rz_asn1_string_free(validity->notBefore);
 }
 
-RZ_IPI void rz_x509_name_fini(RzX509Name *name) {
-	ut32 i;
-	if (!name) {
+RZ_IPI void rz_x509_name_fini(RZ_NULLABLE RzX509Name *name) {
+	// not freeing name since it's not allocated dynamically
+	if (!name || !name->names) {
 		return;
 	}
-	if (name->names) {
-		for (i = 0; i < name->length; i++) {
-			rz_asn1_string_free(name->oids[i]);
-			rz_asn1_string_free(name->names[i]);
-		}
-		RZ_FREE(name->names);
-		RZ_FREE(name->oids);
+
+	for (ut32 i = 0; i < name->length; i++) {
+		rz_asn1_string_free(name->oids[i]);
+		rz_asn1_string_free(name->names[i]);
 	}
-	// not freeing name since it's not allocated dinamically
+	RZ_FREE(name->names);
+	RZ_FREE(name->oids);
 }
 
 static void x509_extensions_fini(RzX509Extensions *ex) {
-	ut32 i;
 	if (!ex) {
 		return;
 	}
 	if (ex->extensions) {
-		for (i = 0; i < ex->length; i++) {
+		for (ut32 i = 0; i < ex->length; i++) {
 			x509_extension_free(ex->extensions[i]);
 		}
 		free(ex->extensions);
@@ -446,8 +446,7 @@ static void x509_crlentry_free(RzX509CRLEntry *entry) {
 	free(entry);
 }
 
-RZ_IPI void rz_x509_crl_free(RzX509CertificateRevocationList *crl) {
-	ut32 i;
+RZ_IPI void rz_x509_crl_free(RZ_NULLABLE RzX509CertificateRevocationList *crl) {
 	if (!crl) {
 		return;
 	}
@@ -456,7 +455,7 @@ RZ_IPI void rz_x509_crl_free(RzX509CertificateRevocationList *crl) {
 	rz_asn1_string_free(crl->nextUpdate);
 	rz_asn1_string_free(crl->lastUpdate);
 	if (crl->revokedCertificates) {
-		for (i = 0; i < crl->length; i++) {
+		for (ut32 i = 0; i < crl->length; i++) {
 			x509_crlentry_free(crl->revokedCertificates[i]);
 			crl->revokedCertificates[i] = NULL;
 		}
@@ -465,303 +464,7 @@ RZ_IPI void rz_x509_crl_free(RzX509CertificateRevocationList *crl) {
 	free(crl);
 }
 
-static void x509_validity_dump(RzX509Validity *validity, const char *pad, RzStrBuf *sb) {
-	if (!validity) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	const char *b = validity->notBefore ? validity->notBefore->string : "Missing";
-	const char *a = validity->notAfter ? validity->notAfter->string : "Missing";
-	rz_strbuf_appendf(sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
-}
-
-RZ_IPI void rz_x509_name_dump(RzX509Name *name, const char *pad, RzStrBuf *sb) {
-	ut32 i;
-	if (!name) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	for (i = 0; i < name->length; i++) {
-		if (!name->oids[i] || !name->names[i]) {
-			continue;
-		}
-		rz_strbuf_appendf(sb, "%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
-	}
-}
-
-static void x509_subjectpublickeyinfo_dump(RzX509SubjectPublicKeyInfo *spki, const char *pad, RzStrBuf *sb) {
-	const char *a;
-	if (!spki) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	a = spki->algorithm.algorithm ? spki->algorithm.algorithm->string : "Missing";
-	RzASN1String *m = NULL;
-	if (spki->subjectPublicKeyModule) {
-		m = rz_asn1_stringify_integer(spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
-	}
-	//	RzASN1String* e = rz_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
-	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
-	//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
-	rz_strbuf_appendf(sb, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
-		pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
-	rz_asn1_string_free(m);
-	//	rz_asn1_string_free (e);
-}
-
-static void x509_extensions_dump(RzX509Extensions *exts, const char *pad, RzStrBuf *sb) {
-	ut32 i;
-	if (!exts) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	for (i = 0; i < exts->length; i++) {
-		RzX509Extension *e = exts->extensions[i];
-		if (!e) {
-			continue;
-		}
-		// TODO handle extensions..
-		// s = rz_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
-		rz_strbuf_appendf(sb, "%s%s: %s\n%s%u bytes\n", pad,
-			e->extnID ? e->extnID->string : "Missing",
-			e->critical ? "critical" : "",
-			pad, e->extnValue ? e->extnValue->length : 0);
-		// rz_asn1_string_free (s);
-	}
-}
-
-static void x509_tbscertificate_dump(RzX509TBSCertificate *tbsc, const char *pad, RzStrBuf *sb) {
-	RzASN1String *sid = NULL, *iid = NULL;
-	if (!tbsc) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	char *pad2 = rz_str_newf("%s  ", pad);
-	if (!pad2) {
-		return;
-	}
-	rz_strbuf_appendf(sb, "%sVersion: v%u\n"
-			      "%sSerial Number:\n%s  %s\n"
-			      "%sSignature Algorithm:\n%s  %s\n"
-			      "%sIssuer:\n",
-		pad, tbsc->version + 1,
-		pad, pad, tbsc->serialNumber ? tbsc->serialNumber->string : "Missing",
-		pad, pad, tbsc->signature.algorithm ? tbsc->signature.algorithm->string : "Missing",
-		pad);
-	rz_x509_name_dump(&tbsc->issuer, pad2, sb);
-
-	rz_strbuf_appendf(sb, "%sValidity:\n", pad);
-	x509_validity_dump(&tbsc->validity, pad2, sb);
-
-	rz_strbuf_appendf(sb, "%sSubject:\n", pad);
-	rz_x509_name_dump(&tbsc->subject, pad2, sb);
-
-	rz_strbuf_appendf(sb, "%sSubject Public Key Info:\n", pad);
-	x509_subjectpublickeyinfo_dump(&tbsc->subjectPublicKeyInfo, pad2, sb);
-
-	if (tbsc->issuerUniqueID) {
-		iid = rz_asn1_stringify_integer(tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
-		if (iid) {
-			rz_strbuf_appendf(sb, "%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
-			rz_asn1_string_free(iid);
-		}
-	}
-	if (tbsc->subjectUniqueID) {
-		sid = rz_asn1_stringify_integer(tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
-		if (sid) {
-			rz_strbuf_appendf(sb, "%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
-			rz_asn1_string_free(sid);
-		}
-	}
-
-	rz_strbuf_appendf(sb, "%sExtensions:\n", pad);
-	x509_extensions_dump(&tbsc->extensions, pad2, sb);
-	free(pad2);
-}
-
-/**
- * \brief      Converts a certificate into a human readable string
- *
- * \param      cert  The certificate to convert
- * \param[in]  pad   The padding to use for the string
- * \param      sb    The RzStrBuf to write to
- */
-RZ_API void rz_x509_certificate_dump(RZ_NULLABLE RzX509Certificate *cert, RZ_NULLABLE const char *pad, RZ_NONNULL RzStrBuf *sb) {
-	rz_return_if_fail(sb);
-	RzASN1String *algo = NULL;
-	char *pad2;
-	if (!cert) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	pad2 = rz_str_newf("%s  ", pad);
-	if (!pad2) {
-		return;
-	}
-	rz_strbuf_appendf(sb, "%sTBSCertificate:\n", pad);
-	x509_tbscertificate_dump(&cert->tbsCertificate, pad2, sb);
-
-	algo = cert->algorithmIdentifier.algorithm;
-	rz_strbuf_appendf(sb, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
-		pad, pad2, algo ? algo->string : "", pad, cert->signature->length);
-	free(pad2);
-}
-
-static void x509_crlentry_dump(RzX509CRLEntry *crle, const char *pad, RzStrBuf *sb) {
-	RzASN1String *id = NULL, *utc = NULL;
-	if (!crle) {
-		return;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	utc = crle->revocationDate;
-	if (crle->userCertificate) {
-		id = rz_asn1_stringify_integer(crle->userCertificate->binary, crle->userCertificate->length);
-	}
-	rz_strbuf_appendf(sb, "%sUser Certificate:\n%s  %s\n"
-			      "%sRevocation Date:\n%s  %s\n",
-		pad, pad, id ? id->string : "Missing",
-		pad, pad, utc ? utc->string : "Missing");
-	rz_asn1_string_free(id);
-}
-
-/**
- * \brief      Converts a certificate revocation list (or CRL) into human readable string
- *
- * \param      crl   The crl to convert to a string
- * \param[in]  pad   The padding to use for the spacing
- *
- * \return     On success returns a valid pointer, otherwise NULL
- */
-RZ_API RZ_OWN char *rz_x509_crl_to_string(RZ_NULLABLE RzX509CertificateRevocationList *crl, RZ_NULLABLE const char *pad) {
-	RzASN1String *algo = NULL, *last = NULL, *next = NULL;
-	ut32 i;
-	char *pad2, *pad3;
-	if (!crl) {
-		return NULL;
-	}
-	if (!pad) {
-		pad = "";
-	}
-	pad3 = rz_str_newf("%s    ", pad);
-	if (!pad3) {
-		return NULL;
-	}
-	pad2 = pad3 + 2;
-	algo = crl->signature.algorithm;
-	last = crl->lastUpdate;
-	next = crl->nextUpdate;
-	RzStrBuf *sb = rz_strbuf_new("");
-	rz_strbuf_appendf(sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
-		algo ? algo->string : "", pad2);
-	rz_x509_name_dump(&crl->issuer, pad3, sb);
-
-	rz_strbuf_appendf(sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
-		pad2, last ? last->string : "Missing",
-		pad2, next ? next->string : "Missing", pad2);
-
-	for (i = 0; i < crl->length; i++) {
-		x509_crlentry_dump(crl->revokedCertificates[i], pad3, sb);
-	}
-
-	free(pad3);
-	return rz_strbuf_drain(sb);
-}
-
-static void x509_validity_json(PJ *pj, RzX509Validity *validity) {
-	if (!validity) {
-		return;
-	}
-	if (validity->notBefore) {
-		pj_ks(pj, "NotBefore", validity->notBefore->string);
-	}
-	if (validity->notAfter) {
-		pj_ks(pj, "NotAfter", validity->notAfter->string);
-	}
-}
-
-RZ_IPI void rz_x509_name_json(PJ *pj, RzX509Name *name) {
-	ut32 i;
-	for (i = 0; i < name->length; i++) {
-		if (!name->oids[i] || !name->names[i]) {
-			continue;
-		}
-		pj_ks(pj, name->oids[i]->string, name->names[i]->string);
-	}
-}
-
-static void x509_subjectpublickeyinfo_json(PJ *pj, RzX509SubjectPublicKeyInfo *spki) {
-	RzASN1String *m = NULL;
-	if (!spki) {
-		return;
-	}
-	if (spki->algorithm.algorithm) {
-		pj_ks(pj, "Algorithm", spki->algorithm.algorithm->string);
-	}
-	if (spki->subjectPublicKeyModule) {
-		m = rz_asn1_stringify_integer(spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
-		if (m) {
-			pj_ks(pj, "Module", m->string);
-		}
-		rz_asn1_string_free(m);
-	}
-	if (spki->subjectPublicKeyExponent) {
-		m = rz_asn1_stringify_integer(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
-		if (m) {
-			pj_ks(pj, "Exponent", m->string);
-		}
-		rz_asn1_string_free(m);
-	}
-}
-
-static void x509_extensions_json(PJ *pj, RzX509Extensions *exts) {
-	if (!exts) {
-		return;
-	}
-
-	RzASN1String *m = NULL;
-	ut32 i;
-	pj_a(pj);
-	for (i = 0; i < exts->length; i++) {
-		RzX509Extension *e = exts->extensions[i];
-		if (!e) {
-			continue;
-		}
-		pj_o(pj);
-		if (e->extnID) {
-			pj_ks(pj, "OID", e->extnID->string);
-		}
-		if (e->critical) {
-			pj_kb(pj, "Critical", e->critical);
-		}
-		// TODO handle extensions correctly..
-		if (e->extnValue) {
-			m = rz_asn1_stringify_integer(e->extnValue->binary, e->extnValue->length);
-			if (m) {
-				pj_ks(pj, "Value", m->string);
-			}
-			rz_asn1_string_free(m);
-		}
-		pj_end(pj);
-	}
-	pj_end(pj);
-	pj_end(pj);
-}
-
-static void x509_crlentry_json(PJ *pj, RzX509CRLEntry *crle) {
+static void x509_crlentry_to_structure(RzStructuredData *parent, RzX509CRLEntry *crle) {
 	RzASN1String *m = NULL;
 	if (!crle) {
 		return;
@@ -770,121 +473,265 @@ static void x509_crlentry_json(PJ *pj, RzX509CRLEntry *crle) {
 	if (crle->userCertificate) {
 		m = rz_asn1_stringify_integer(crle->userCertificate->binary, crle->userCertificate->length);
 		if (m) {
-			pj_ks(pj, "UserCertificate", m->string);
+			rz_structured_data_map_add_string(parent, "userCertificate", m->string);
 		}
 		rz_asn1_string_free(m);
 	}
+
 	if (crle->revocationDate) {
-		pj_ks(pj, "RevocationDate", crle->revocationDate->string);
+		rz_structured_data_map_add_string(parent, "revocationDate", crle->revocationDate->string);
 	}
 }
 
-/**
- * \brief      Converts a certificate revocation list (or CRL) into a json structure
- *
- * \param      pj    The PJ pointer to write to
- * \param      crl   The crl to convert to json
- */
-RZ_API void rz_x509_crl_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509CertificateRevocationList *crl) {
-	rz_return_if_fail(pj);
-	ut32 i;
-	if (!crl) {
+RZ_IPI void rz_x509_algorithmidentifier_to_structure(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const RzX509AlgorithmIdentifier *ai) {
+	rz_return_if_fail(parent && ai);
+
+	if (ai->algorithm) {
+		rz_structured_data_map_add_string(parent, "algorithm", ai->algorithm->string);
+	}
+
+	if (!ai->parameters) {
+		return;
+	}
+	RzASN1Object *object = rz_asn1_object_parse(ai->parameters->binary, ai->parameters->length);
+	if (object) {
+		RzStructuredData *params = rz_asn1_to_structure(object, true);
+		rz_asn1_object_free(object);
+		rz_structured_data_map_add(parent, "parameters", params);
 		return;
 	}
 
-	if (crl->signature.algorithm) {
-		pj_ks(pj, "Signature", crl->signature.algorithm->string);
+	RzASN1String *params = NULL;
+	if (rz_str_is_printable_limited((const char *)ai->parameters->binary, ai->parameters->length)) {
+		params = rz_asn1_stringify_string(ai->parameters->binary, ai->parameters->length);
+	} else {
+		params = rz_asn1_stringify_bytes(ai->parameters->binary, ai->parameters->length);
 	}
-	pj_k(pj, "Issuer");
-	pj_o(pj);
-	rz_x509_name_json(pj, &crl->issuer);
-	pj_end(pj);
-	if (crl->lastUpdate) {
-		pj_ks(pj, "LastUpdate", crl->lastUpdate->string);
-	}
-	if (crl->nextUpdate) {
-		pj_ks(pj, "NextUpdate", crl->nextUpdate->string);
-	}
-	pj_k(pj, "RevokedCertificates");
-	pj_a(pj);
-	for (i = 0; i < crl->length; i++) {
-		x509_crlentry_json(pj, crl->revokedCertificates[i]);
-	}
-	pj_end(pj);
+
+	rz_structured_data_map_add_string(parent, "parameters", params->string);
+	rz_asn1_string_free(params);
 }
 
-static void x509_tbscertificate_json(PJ *pj, RzX509TBSCertificate *tbsc) {
-	pj_o(pj);
+/**
+ * \brief      Converts a certificate revocation list (or CRL) into RzStructuredData
+ *
+ * \param      crl   The crl to convert to a RzStructuredData
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzStructuredData *rz_x509_crl_to_structure(RZ_NULLABLE RzX509CertificateRevocationList *crl) {
+	if (!crl) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzASN1String *lastUpdate = crl->lastUpdate;
+	RzASN1String *nextUpdate = crl->nextUpdate;
+
+	RzStructuredData *signature = rz_structured_data_map_add_map(root, "signature");
+	rz_x509_algorithmidentifier_to_structure(signature, &crl->signature);
+
+	RzStructuredData *issuer = rz_structured_data_map_add_array(root, "issuer");
+	rz_x509_name_to_structure(issuer, &crl->issuer);
+
+	if (lastUpdate) {
+		rz_structured_data_map_add_string(root, "lastUpdate", lastUpdate->string);
+	}
+	if (nextUpdate) {
+		rz_structured_data_map_add_string(root, "nextUpdate", nextUpdate->string);
+	}
+
+	RzStructuredData *revokedCerts = rz_structured_data_map_add_array(root, "revokedCertificates");
+	for (ut32 i = 0; i < crl->length; i++) {
+		RzStructuredData *revoked = rz_structured_data_array_add_map(revokedCerts);
+		x509_crlentry_to_structure(revoked, crl->revokedCertificates[i]);
+	}
+
+	return root;
+}
+
+static void x509_validity_to_structure(RzStructuredData *parent, RzX509Validity *validity) {
+	if (!validity) {
+		return;
+	}
+	if (validity->notBefore) {
+		rz_structured_data_map_add_string(parent, "notBefore", validity->notBefore->string);
+	}
+	if (validity->notAfter) {
+		rz_structured_data_map_add_string(parent, "notAfter", validity->notAfter->string);
+	}
+}
+
+RZ_IPI void rz_x509_name_to_structure(RZ_NULLABLE RzStructuredData *array, RZ_NULLABLE RzX509Name *name) {
+	if (!array || !name) {
+		return;
+	}
+
+	for (ut32 i = 0; i < name->length; i++) {
+		if (!name->oids[i] || !name->names[i]) {
+			continue;
+		}
+		RzStructuredData *entry = rz_structured_data_array_add_map(array);
+		rz_structured_data_map_add_string(entry, "oid", name->oids[i]->string);
+		rz_structured_data_map_add_string(entry, "value", name->names[i]->string);
+	}
+}
+
+static void x509_subjectpublickeyinfo_to_structure(RzStructuredData *parent, RzX509SubjectPublicKeyInfo *spki) {
 	RzASN1String *m = NULL;
+	if (!spki) {
+		return;
+	}
+	if (spki->algorithm.algorithm) {
+		rz_structured_data_map_add_string(parent, "algorithm", spki->algorithm.algorithm->string);
+	}
+
+	if (spki->subjectPublicKeyModule && spki->subjectPublicKeyExponent) {
+		RzStructuredData *subjectPublicKey = rz_structured_data_map_add_map(parent, "subjectPublicKey");
+		m = rz_asn1_stringify_bytes(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
+		if (m) {
+			rz_structured_data_map_add_string(subjectPublicKey, "exponent", m->string);
+		}
+		rz_asn1_string_free(m);
+
+		m = rz_asn1_stringify_integer(spki->subjectPublicKeyModule->binary, spki->subjectPublicKeyModule->length);
+		if (m) {
+			rz_structured_data_map_add_string(subjectPublicKey, "module", m->string);
+		}
+		rz_asn1_string_free(m);
+	} else if (spki->subjectPublicKey) {
+		m = rz_asn1_stringify_bytes(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
+		if (m) {
+			rz_structured_data_map_add_string(parent, "subjectPublicKey", m->string);
+		}
+		rz_asn1_string_free(m);
+	}
+}
+
+static void x509_extensions_to_structure(RzStructuredData *parent, RzX509Extensions *exts) {
+	if (!exts) {
+		return;
+	}
+
+	RzASN1String *m = NULL;
+	RzStructuredData *extensions = rz_structured_data_map_add_array(parent, "extensions");
+	for (ut32 i = 0; i < exts->length; i++) {
+		RzX509Extension *e = exts->extensions[i];
+		if (!e) {
+			continue;
+		}
+
+		RzStructuredData *extension = rz_structured_data_array_add_map(extensions);
+		if (e->extnID) {
+			rz_structured_data_map_add_string(extension, "extnID", e->extnID->string);
+		}
+		if (e->critical) {
+			rz_structured_data_map_add_boolean(extension, "critical", e->critical);
+		}
+		if (e->extnValue) {
+			if (rz_str_is_printable_limited((const char *)e->extnValue->binary, e->extnValue->length)) {
+				m = rz_asn1_stringify_string(e->extnValue->binary, e->extnValue->length);
+			} else if (e->extnValue->length > 3) {
+				RzASN1Object *obj = rz_asn1_object_parse(e->extnValue->binary, e->extnValue->length);
+				if (obj) {
+					RzStructuredData *sd = rz_asn1_to_structure(obj, true);
+					rz_asn1_object_free(obj);
+					rz_structured_data_map_add(extension, "extnValue", sd);
+					continue;
+				}
+			}
+
+			if (!m && e->extnValue->length < 20) {
+				m = rz_asn1_stringify_integer(e->extnValue->binary, e->extnValue->length);
+			} else if (!m) {
+				m = rz_asn1_stringify_bytes(e->extnValue->binary, e->extnValue->length);
+			}
+			if (m) {
+				rz_structured_data_map_add_string(extension, "extnValue", m->string);
+			}
+			rz_asn1_string_free(m);
+		}
+	}
+}
+
+static void x509_tbscertificate_to_structure(RzStructuredData *parent, RzX509TBSCertificate *tbsc) {
 	if (!tbsc) {
 		return;
 	}
 
-	pj_ki(pj, "Version", tbsc->version + 1);
+	RzStructuredData *tbs_cert = rz_structured_data_map_add_map(parent, "tbsCertificate");
+	if (!tbs_cert) {
+		return;
+	}
+
+	rz_structured_data_map_add_signed(tbs_cert, "version", tbsc->version + 1);
 	if (tbsc->serialNumber) {
-		pj_ks(pj, "SerialNumber", tbsc->serialNumber->string);
+		rz_structured_data_map_add_string(tbs_cert, "serialNumber", tbsc->serialNumber->string);
 	}
-	if (tbsc->signature.algorithm) {
-		pj_ks(pj, "SignatureAlgorithm", tbsc->signature.algorithm->string);
-	}
-	pj_k(pj, "Issuer");
-	pj_o(pj);
-	rz_x509_name_json(pj, &tbsc->issuer);
-	pj_end(pj);
-	pj_k(pj, "Validity");
-	pj_o(pj);
-	x509_validity_json(pj, &tbsc->validity);
-	pj_end(pj);
-	pj_k(pj, "Subject");
-	pj_o(pj);
-	rz_x509_name_json(pj, &tbsc->subject);
-	pj_end(pj);
-	pj_k(pj, "SubjectPublicKeyInfo");
-	pj_o(pj);
-	x509_subjectpublickeyinfo_json(pj, &tbsc->subjectPublicKeyInfo);
-	pj_end(pj);
+
+	RzStructuredData *signature = rz_structured_data_map_add_map(tbs_cert, "signature");
+	rz_x509_algorithmidentifier_to_structure(signature, &tbsc->signature);
+	RzStructuredData *issuer = rz_structured_data_map_add_array(tbs_cert, "issuer");
+	rz_x509_name_to_structure(issuer, &tbsc->issuer);
+	RzStructuredData *validity = rz_structured_data_map_add_map(tbs_cert, "validity");
+	x509_validity_to_structure(validity, &tbsc->validity);
+	RzStructuredData *subject = rz_structured_data_map_add_array(tbs_cert, "subject");
+	rz_x509_name_to_structure(subject, &tbsc->subject);
+	RzStructuredData *subjectPki = rz_structured_data_map_add_map(tbs_cert, "subjectPublicKeyInfo");
+	x509_subjectpublickeyinfo_to_structure(subjectPki, &tbsc->subjectPublicKeyInfo);
+
 	if (tbsc->issuerUniqueID) {
-		m = rz_asn1_stringify_integer(tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
+		RzASN1String *m = rz_asn1_stringify_integer(tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
 		if (m) {
-			pj_ks(pj, "IssuerUniqueID", m->string);
+			rz_structured_data_map_add_string(tbs_cert, "issuerUniqueID", m->string);
 		}
 		rz_asn1_string_free(m);
 	}
+
 	if (tbsc->subjectUniqueID) {
-		m = rz_asn1_stringify_integer(tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
+		RzASN1String *m = rz_asn1_stringify_integer(tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
 		if (m) {
-			pj_ks(pj, "SubjectUniqueID", m->string);
+			rz_structured_data_map_add_string(tbs_cert, "subjectUniqueID", m->string);
 		}
 		rz_asn1_string_free(m);
 	}
-	pj_k(pj, "Extensions");
-	x509_extensions_json(pj, &tbsc->extensions);
+	x509_extensions_to_structure(tbs_cert, &tbsc->extensions);
 }
 
 /**
- * \brief      Converts a certificate into a json structure
+ * \brief      Converts a certificate to a RzStructuredData
  *
- * \param      pj           The PJ pointer to write to
- * \param      certificate  The certificate to convert to json
+ * \param      certificate  The certificate to convert to RzStructuredData
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API void rz_x509_certificate_json(RZ_NONNULL PJ *pj, RZ_NULLABLE RzX509Certificate *certificate) {
-	rz_return_if_fail(pj);
+RZ_API RZ_OWN RzStructuredData *rz_x509_certificate_to_structure(RZ_NULLABLE RzX509Certificate *certificate) {
 	if (!certificate) {
-		return;
+		return NULL;
 	}
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
 	RzASN1String *m = NULL;
-	pj_o(pj);
-	pj_k(pj, "TBSCertificate");
-	x509_tbscertificate_json(pj, &certificate->tbsCertificate);
-	if (certificate->algorithmIdentifier.algorithm) {
-		pj_ks(pj, "Algorithm", certificate->algorithmIdentifier.algorithm->string);
-	}
+	x509_tbscertificate_to_structure(root, &certificate->tbsCertificate);
+
+	RzStructuredData *algorithm_identifier = rz_structured_data_map_add_map(root, "algorithmIdentifier");
+	rz_x509_algorithmidentifier_to_structure(algorithm_identifier, &certificate->algorithmIdentifier);
+
 	if (certificate->signature) {
-		m = rz_asn1_stringify_integer(certificate->signature->binary, certificate->signature->length);
+		m = rz_asn1_stringify_bytes(certificate->signature->binary, certificate->signature->length);
 		if (m) {
-			pj_ks(pj, "Signature", m->string);
+			rz_structured_data_map_add_string(root, "signature", m->string);
 		}
 		rz_asn1_string_free(m);
 	}
-	pj_end(pj);
+
+	return root;
 }

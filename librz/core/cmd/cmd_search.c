@@ -64,13 +64,18 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (rz_pvector_empty(constraints)) {
-		rz_pvector_fini(constraints);
+		rz_pvector_free(constraints);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, NULL, false,
+		RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
+	if (!context) {
+		rz_pvector_free(constraints);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	context->constraints = constraints;
 	const RzCmdStatus cmd_status = rz_core_rop_search(core, context);
-	rz_pvector_fini(constraints);
 	rz_core_rop_search_context_free(context);
 	return cmd_status;
 }
@@ -954,7 +959,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				break;
 			}
 			if (param->outmode != RZ_MODE_JSON) {
-				RzSearchKeyword *kw = rz_list_first(core->search->kws);
+				RzSearchKeyword *kw = rz_list_first_val(core->search->kws);
 				eprintf("Searching");
 				if (!param->regex_search) {
 					int lenstr = kw ? kw->keyword_length : 0;
@@ -1880,21 +1885,32 @@ static RzSearchOpt *setup_search_options(RzCore *core) {
 	RzSearchOpt *search_opts = rz_search_opt_new();
 	ut32 max_threads = rz_th_max_threads(rz_config_get_i(core->config, "search.max_threads"));
 	ut32 max_hits = rz_config_get_i(core->config, "search.maxhits");
+	ut32 search_chunk = rz_config_get_i(core->config, "search.chunk");
 	const char *show_progress = rz_config_get(core->config, "search.show_progress");
 	if (!(rz_search_opt_set_max_threads(search_opts, max_threads) &&
 		    rz_search_opt_set_max_hits(search_opts, max_hits) &&
 		    rz_search_opt_set_show_progress_from_str(search_opts, show_progress))) {
 		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
+		return NULL;
+	}
+
+	if (search_chunk && !rz_search_opt_set_chunk_size(search_opts, search_chunk)) {
+		RZ_LOG_ERROR("Failed setup find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 
 	RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
 	if (!fopts) {
 		RZ_LOG_ERROR("Failed init find options.\n");
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	if (!rz_search_opt_set_find_options(search_opts, fopts)) {
 		RZ_LOG_ERROR("Failed add find options to the search optoins.\n");
+		rz_search_find_opt_free(fopts);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	return search_opts;
@@ -1904,6 +1920,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 
@@ -1917,6 +1934,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		rz_search_bytes_pattern_free(pattern);
 		goto error;
 	}
 	hits = rz_core_search_bytes(core, search_opts, pattern);
@@ -1962,6 +1980,7 @@ static RzCmdStatus value_range_search(RzCore *core, RZ_OWN RzVector /*<RzSearchV
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
+	rz_vector_free(ranges);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();
@@ -2085,7 +2104,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, con
 	return pass_to_legacy_api(core, argc, argv, RZ_OUTPUT_MODE_STANDARD);
 }
 
-// "/ca"
+// "/cm"
 RZ_IPI RzCmdStatus rz_cmd_search_cryptographic_material_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
 	if (argc < 2 || RZ_STR_ISEMPTY(argv[1])) {

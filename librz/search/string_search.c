@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2024-2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024-2025 Rot127 <rot127@posteo.com>
+// SPDX-FileCopyrightText: 2024-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_search.h>
@@ -219,11 +220,13 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
 	rz_return_val_if_fail(fopt, false);
 
+	void *data = NULL;
 	StringSearch *ss = (StringSearch *)user;
-	size_t *thread_id = rz_th_queue_pop(ss->thread_ids, false);
-	if (!thread_id) {
+	if (!rz_th_queue_pop(ss->thread_ids, false, &data) || !data) {
 		return false;
 	}
+
+	size_t *thread_id = data;
 	RzPVector *strings = rz_pvector_at(ss->strings, *thread_id);
 
 	void **it_m = NULL;

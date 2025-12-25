@@ -29,8 +29,14 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_string_parse(RZ_NULLABLE const char *string,
 	return s;
 }
 
-static RzASN1String *newstr(const char *string) {
+static RzASN1String *newstr_const(const char *string) {
 	return rz_asn1_string_parse(string, false, strlen(string) + 1);
+}
+
+static RzASN1String *newstr_strbuf_drain(RzStrBuf *sb) {
+	size_t length = rz_strbuf_length(sb) + 1;
+	char *string = rz_strbuf_drain_nofree(sb);
+	return rz_asn1_string_parse(string, true, length);
 }
 
 /**
@@ -161,21 +167,17 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_time(RZ_NULLABLE const ut8 *buffer
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bits(RZ_NULLABLE const ut8 *buffer, ut32 length) {
-	ut32 i, j, k;
-	ut64 size;
-	ut8 c;
-	char *str;
-	if (!buffer || !length) {
+	if (!buffer || length < 1 || buffer[0] > length) {
 		return NULL;
 	}
-	size = 1 + ((length - 1) * 8) - buffer[0];
-	str = (char *)malloc(size);
+	ut64 size = 1 + ((length - 1) * 8) - buffer[0];
+	char *str = (char *)malloc(size);
 	if (!str) {
 		return NULL;
 	}
-	for (i = 1, j = 0; i < length && j < size; i++) {
-		c = buffer[i];
-		for (k = 0; k < 8 && j < size; k++, j++) {
+	for (ut32 i = 1, j = 0; i < length && j < size; i++) {
+		ut8 c = buffer[i];
+		for (ut32 k = 0; k < 8 && j < size; k++, j++) {
 			str[size - j - 1] = c & 0x80 ? '1' : '0';
 			c <<= 1;
 		}
@@ -200,7 +202,7 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_boolean(RZ_NULLABLE const ut8 *buf
 	if (!buffer || length != 1 || (buffer[0] != 0 && buffer[0] != 0xFF)) {
 		return NULL;
 	}
-	return newstr(rz_str_bool(buffer[0]));
+	return newstr_const(rz_str_bool(buffer[0]));
 }
 
 /**
@@ -276,6 +278,8 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bytes(RZ_NULLABLE const ut8 *buffe
 		}
 	}
 	str[size - 1] = '\0';
+	str = rz_str_trim_tail(str);
+
 	RzASN1String *asn1str = rz_asn1_string_parse(str, true, size);
 	if (!asn1str) {
 		free(str);
@@ -292,25 +296,20 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_bytes(RZ_NULLABLE const ut8 *buffe
  * \return     On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_oid(RZ_NULLABLE const ut8 *buffer, ut32 length) {
-	const ut8 *start, *end;
-	char *str, *t;
-	ut32 i, slen, bits;
-	ut64 oid;
+	const ut8 *start = NULL, *end = NULL;
+	const char *oid_decoded = NULL;
+	const ASN1OidListEntry *oid_match = NULL;
+	size_t slen = 0;
+	ut32 bits = 0;
+	ut64 oid = 0;
+	RzStrBuf sb = { 0 };
 	if (!buffer || !length) {
 		return NULL;
 	}
 
-	str = (char *)calloc(1, RZ_ASN1_OID_LEN);
-	if (!str) {
-		return NULL;
-	}
+	rz_strbuf_init(&sb);
 
 	end = buffer + length;
-	t = str;
-	slen = 0;
-	bits = 0;
-	oid = 0;
-
 	for (start = buffer; start < end && slen < RZ_ASN1_OID_LEN; start++) {
 		ut8 c = *start;
 		oid <<= 7;
@@ -320,38 +319,67 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_oid(RZ_NULLABLE const ut8 *buffer,
 			if (!slen) {
 				ut32 m = oid / 40;
 				ut32 n = oid % 40;
-				snprintf(t, RZ_ASN1_OID_LEN, "%01u.%01u", m, n);
-				slen = strlen(str);
-				t = str + slen;
+				rz_strbuf_appendf(&sb, "%01u.%01u", m, n);
+				slen = rz_strbuf_length(&sb);
 			} else {
-				snprintf(t, RZ_ASN1_OID_LEN - slen, ".%01u", (ut32)oid);
-				slen = strlen(str);
-				t = str + slen;
+				rz_strbuf_appendf(&sb, ".%01u", (ut32)oid);
+				slen = rz_strbuf_length(&sb);
 			}
 			oid = 0;
 			bits = 0;
 		}
 	}
+
 	// incomplete oid.
 	// bad structure.
 	if (bits > 0) {
-		free(str);
+		rz_strbuf_fini(&sb);
 		return NULL;
 	}
-	i = 0;
-	do {
-		if (X509OIDList[i].oid[0] == str[0]) {
-			if (!strncmp(str, X509OIDList[i].oid, RZ_ASN1_OID_LEN)) {
-				free(str);
-				return newstr(X509OIDList[i].name);
-			}
+
+	slen = rz_strbuf_length(&sb);
+	oid_decoded = rz_strbuf_get(&sb);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(known_oid_list); ++i) {
+		if (slen < known_oid_list[i].length ||
+			(oid_match && oid_match->length > known_oid_list[i].length)) {
+			continue;
 		}
-		++i;
-	} while (X509OIDList[i].oid && X509OIDList[i].name);
-	RzASN1String *asn1str = rz_asn1_string_parse(str, true, RZ_ASN1_OID_LEN);
-	if (!asn1str) {
-		free(str);
+
+		size_t oid_len = RZ_MIN(slen, known_oid_list[i].length);
+		if (strncmp(known_oid_list[i].oid, oid_decoded, oid_len)) {
+			continue;
+		}
+
+		oid_match = &known_oid_list[i];
+		if (known_oid_list[i].length == slen) {
+			// perfect match
+			break;
+		}
 	}
+
+	RzASN1String *asn1str = NULL;
+	if (!oid_match) {
+		// no match, not even partial, so we return the actual oid.
+		asn1str = newstr_strbuf_drain(&sb);
+		return asn1str;
+	}
+
+	// we have a perfect or partial match, so we return the name + part of the unknown oid.
+	RzStrBuf match = { 0 };
+	rz_strbuf_init(&match);
+	rz_strbuf_set(&match, oid_match->name);
+
+	if (oid_match->length != slen) {
+		// partial match, so we return the partial name and the remaining ids.
+		rz_strbuf_append(&match, oid_decoded + oid_match->length);
+		const char *partial_str = rz_strbuf_get(&match);
+		rz_str_replace_ch((char *)partial_str + oid_match->length, '.', '/', 1);
+	}
+
+	rz_strbuf_appendf(&match, " (%s)", oid_decoded);
+
+	asn1str = newstr_strbuf_drain(&match);
+	rz_strbuf_fini(&sb);
 	return asn1str;
 }
 
@@ -412,7 +440,7 @@ RZ_API RzASN1String *asn1_stringify_tag(RzASN1Object *object) {
 	case RZ_ASN1_TAG_UNIVERSALSTRING: s = "UniversalString"; break;
 	case RZ_ASN1_TAG_BMPSTRING: s = "BMPString"; break;
 	}
-	return newstr(s);
+	return newstr_const(s);
 }
 
 /**
@@ -430,7 +458,7 @@ RZ_API RzASN1String *asn1_stringify_sector(RzASN1Object *object) {
 	case RZ_ASN1_TAG_EOC:
 		return NULL;
 	case RZ_ASN1_TAG_BOOLEAN:
-		return newstr(rz_str_bool(object->sector[0]));
+		return newstr_const(rz_str_bool(object->sector[0]));
 	case RZ_ASN1_TAG_REAL:
 	case RZ_ASN1_TAG_INTEGER:
 		if (object->length < 16) {
@@ -439,11 +467,11 @@ RZ_API RzASN1String *asn1_stringify_sector(RzASN1Object *object) {
 			return rz_asn1_stringify_bytes(object->sector, object->length);
 		}
 	case RZ_ASN1_TAG_BITSTRING:
-		// if (object->length < 8) {
-		return rz_asn1_stringify_bits(object->sector, object->length);
-		//} else {
-		//	return asn1_stringify_bytes (object->sector, object->length);
-		//}
+		if (object->length > 0 && object->length < 20) {
+			return rz_asn1_stringify_bits(object->sector, object->length);
+		} else {
+			return rz_asn1_stringify_bytes(object->sector, object->length);
+		}
 	case RZ_ASN1_TAG_OCTETSTRING:
 		return rz_asn1_stringify_bytes(object->sector, object->length);
 	case RZ_ASN1_TAG_NULL:

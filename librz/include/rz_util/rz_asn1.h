@@ -2,8 +2,8 @@
 #define RZ_ASN1_H
 
 #include <rz_types.h>
-#include <stdint.h>
 #include <rz_util/rz_strbuf.h>
+#include <rz_util/rz_structured_data.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,8 +101,8 @@ RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_boolean(RZ_NULLABLE const ut8 *buf
 RZ_API RZ_OWN RzASN1String *rz_asn1_stringify_oid(RZ_NULLABLE const ut8 *buffer, ut32 length);
 
 RZ_API void rz_asn1_object_free(RZ_NULLABLE RzASN1Object *object);
-RZ_API void rz_asn1_to_strbuf(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool structured, RZ_NONNULL RzStrBuf *sb);
-RZ_API RZ_OWN char *rz_asn1_to_string(RZ_NULLABLE RzASN1Object *object, ut32 depth, bool structured);
+RZ_API RZ_OWN char *rz_asn1_to_string(RZ_NULLABLE RzASN1Object *object);
+RZ_API RZ_OWN RzStructuredData *rz_asn1_to_structure(RZ_NULLABLE RzASN1Object *object, bool simplified);
 RZ_API void rz_asn1_string_free(RZ_NULLABLE RzASN1String *string);
 RZ_API void rz_asn1_binary_free(RZ_NULLABLE RzASN1Binary *string);
 

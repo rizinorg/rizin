@@ -252,7 +252,7 @@ RZ_API ut64 rz_bin_file_delete_all(RzBin *bin) {
 
 RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf) {
 	rz_return_val_if_fail(bin && bf, false);
-	RzListIter *it = rz_list_find_ptr(bin->binfiles, bf);
+	RzListIter *it = rz_list_find_val(bin->binfiles, bf);
 	rz_return_val_if_fail(it, false); // calling del on a bf not in the bin is a programming error
 	if (bin->cur == bf) {
 		bin->cur = NULL;

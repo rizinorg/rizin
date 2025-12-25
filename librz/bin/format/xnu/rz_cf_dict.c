@@ -122,7 +122,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 
 		switch (r) {
 		case YXML_ELEMSTART: {
-			RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_last_val(stack);
 			RzCFParseState *next_state = NULL;
 
 			if (!strcmp(x.elem, "dict")) {
@@ -189,7 +189,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 		}
 		case YXML_ELEMEND: {
 			RzCFParseState *state = (RzCFParseState *)rz_list_pop(stack);
-			RzCFParseState *next_state = (RzCFParseState *)rz_list_last(stack);
+			RzCFParseState *next_state = (RzCFParseState *)rz_list_last_val(stack);
 			if (!state || !next_state) {
 				goto beach;
 			}
@@ -317,7 +317,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 			break;
 		}
 		case YXML_CONTENT: {
-			RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+			RzCFParseState *state = (RzCFParseState *)rz_list_last_val(stack);
 			if (state->phase == RZ_CF_STATE_IN_IGNORE) {
 				break;
 			}
@@ -330,7 +330,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 		}
 		case YXML_ATTRSTART: {
 			if (idlist) {
-				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				RzCFParseState *state = (RzCFParseState *)rz_list_last_val(stack);
 				if (state->phase != RZ_CF_STATE_IN_DICT && state->phase != RZ_CF_STATE_IN_ARRAY && state->phase != RZ_CF_STATE_IN_SCALAR) {
 					break;
 				}
@@ -356,7 +356,7 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 		}
 		case YXML_ATTRVAL: {
 			if (idlist) {
-				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				RzCFParseState *state = (RzCFParseState *)rz_list_last_val(stack);
 				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
 					break;
 				}
@@ -366,12 +366,12 @@ RZ_API RzCFValueDict *rz_cf_value_dict_parse(RzBuffer *file_buf, ut64 offset, ut
 		}
 		case YXML_ATTREND: {
 			if (idlist) {
-				RzCFParseState *state = (RzCFParseState *)rz_list_last(stack);
+				RzCFParseState *state = (RzCFParseState *)rz_list_last_val(stack);
 				if (state->phase != RZ_CF_STATE_IN_ATTR_ID && state->phase != RZ_CF_STATE_IN_ATTR_IDREF) {
 					break;
 				}
 				rz_list_pop(stack);
-				RzCFParseState *next_state = (RzCFParseState *)rz_list_last(stack);
+				RzCFParseState *next_state = (RzCFParseState *)rz_list_last_val(stack);
 				next_state->id = (ut32)rz_num_get(NULL, content);
 				next_state->idstate = state->phase == RZ_CF_STATE_IN_ATTR_ID ? RZ_CF_ID_STATE_SET : RZ_CF_ID_STATE_REF;
 				RZ_FREE(content);

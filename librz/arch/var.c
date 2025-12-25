@@ -735,7 +735,7 @@ RZ_API RZ_NULLABLE char *rz_analysis_function_var_expr_for_reg_access_at(RzAnaly
 	// var found, create string
 	RzList *paths = rz_type_path_by_offset(fcn->analysis->typedb, var->type, var_offset, 1);
 	if (paths && !rz_list_empty(paths)) {
-		RzTypePath *path = rz_list_first(paths);
+		RzTypePath *path = rz_list_first_val(paths);
 		char *r = rz_str_newf("%s%s", var->name, path->path);
 		rz_list_free(paths);
 		return r;
@@ -1821,8 +1821,6 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 			RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned);
 			if (arg) {
 				rz_type_callable_arg_add(callable, arg);
-			} else {
-				rz_type_free(cloned);
 			}
 		}
 	}
