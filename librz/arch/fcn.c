@@ -1275,6 +1275,19 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
+
+			if (analysis->gnu_thumb1_case_uqi_addr && op.jump == analysis->gnu_thumb1_case_uqi_addr && analysis->opt.jmptbl) {
+				RzAnalysisJmpTableParams params = {
+					.jmp_address = op.addr,
+					.entry_size = 1,
+					.jmptbl_loc = op.addr + op.size,
+					.jmptbl_off = op.addr + op.size,
+					.sp = sp,
+					.tasks = tasks
+				};
+				ret = rz_analysis_walkthrough_arm_thumb1_case_uqi_table(analysis, fcn, bb, &params);
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
 		case RZ_ANALYSIS_OP_TYPE_RJMP:

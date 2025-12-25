@@ -2212,3 +2212,50 @@ stackop: inc
 stackptr: -60
 EOF
 RUN
+
+NAME=arm thumb-1: parse gcc __gnu_thumb1_case_uqi jump table
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+aa
+pdf @ sym._Unwind_VRS_Get
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from fcn.000080de @ 0x80ea
+            ; CALL XREFS from sym.__gnu_unwind_execute @ 0x812a, 0x815c, 0x81d6, 0x8240
+/ sym._Unwind_VRS_Get(int16_t arg1, int16_t arg2);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           0x000078ea      push  {r4, lr}
+|           0x000078ec      adds  r4, r0, 0                            ; arg1
+|           0x000078ee      cmp   r1, 4                                ; arg2
+|       ,=< 0x000078f0      bhi   case.0x78f4.2
+|       |   0x000078f2      adds  r0, r1, 0                            ; arg2
+|       |   ;-- switch
+|       |   0x000078f4      bl    sym.__gnu_thumb1_case_uqi            ; switch table (5 cases) at 0x78f8
+..
+|       |   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|       |   ;-- case 1:                                                ; from 0x78f4
+|       |   ;-- case 4:                                                ; from 0x78f4
+|       |   0x000078fe      movs  r0, 1
+|      ,==< 0x00007900      b     0x791c
+|      ||   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|      ||   ;-- case 0:                                                ; from 0x78f4
+|      ||   0x00007902      movs  r0, 2
+|      ||   0x00007904      cmp   r3, 0
+|     ,===< 0x00007906      bne   0x791c
+|     |||   0x00007908      cmp   r2, 0xf
+|    ,====< 0x0000790a      bhi   0x791c
+|    ||||   0x0000790c      lsls  r2, r0
+|    ||||   0x0000790e      adds  r4, r4, r2
+|    ||||   0x00007910      ldr   r2, [sp, 8]
+|    ||||   0x00007912      ldr   r1, [r4, 4]
+|    ||||   0x00007914      str   r1, [r2]
+|    ||||   0x00007916      adds  r0, r3, 0
+|   ,=====< 0x00007918      b     0x791c
+|   |||||   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|   |||||   ;-- case 2:                                                ; from 0x78f4
+|   ||||`-> 0x0000791a      movs  r0, 2
+|   ||||    ; CODE XREFS from sym._Unwind_VRS_Get @ 0x7900, 0x7918
+\   ````--> 0x0000791c      pop   {r4, pc}
+EOF
+RUN
