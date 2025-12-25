@@ -77,14 +77,11 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(RzThreadQueueSize max_size, RZ_NULL
  */
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /*<void *>*/ *list, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(list, NULL);
-
 	size_t max_size = rz_list_length(list);
 	RzList *copy = rz_list_clone(list);
-
 	if (!copy) {
 		return NULL;
 	}
-
 	copy->free = qfree;
 	return th_queue_new(max_size, copy);
 }
