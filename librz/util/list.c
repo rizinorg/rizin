@@ -174,7 +174,7 @@ RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
  **/
 RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
 	rz_return_val_if_fail(list, false);
-	RzListIter *iter = rz_list_find_ptr(list, ptr);
+	RzListIter *iter = rz_list_find_val(list, ptr);
 	if (!iter) {
 		return false;
 	}
@@ -615,23 +615,23 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer, if found
+ * \brief Returns the RzListIter of the given pointer value, if found.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
-	return rz_list_find_ptr(list, ptr);
+RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
+	return rz_list_find_val(list, val);
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer, if found
+ * \brief Returns the RzListIter of the given pointer value, if found.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
+RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
 	rz_return_val_if_fail(list, NULL);
 	void *p;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, p) {
-		if (ptr == p) {
+		if (val == p) {
 			return iter;
 		}
 	}
@@ -642,7 +642,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_
  * \brief Returns RzListIter element which matches via the RzListComparator
  *
  * Find the first RzListIter that is equal to the given data
- * For searching by pointer comparison, rz_list_find_ptr() provides a simpler interface.
+ * For searching by pointer comparison, rz_list_find_val() provides a simpler interface.
  *
  * \return the first RzListIter that is equall to p w.r.t. cmp.
  */
