@@ -111,7 +111,7 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
 		block = (RzAnalysisBlock *)*it;
-		rz_list_delete_data(block->fcns, fcn);
+		rz_list_delete_val(block->fcns, fcn);
 		rz_analysis_block_unref(block);
 	}
 	rz_pvector_free(fcn->bbs);
@@ -191,7 +191,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 }
 
 RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn) {
-	return rz_list_delete_data(fcn->analysis->fcns, fcn);
+	return rz_list_delete_val(fcn->analysis->fcns, fcn);
 }
 
 /**
@@ -348,7 +348,7 @@ RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBl
 }
 
 RZ_API void rz_analysis_function_remove_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
-	rz_list_delete_data(bb->fcns, fcn);
+	rz_list_delete_val(bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX && (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
 		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate

@@ -162,7 +162,7 @@ bool test_rz_list_length(void) {
 	}
 	mu_assert_eq(list->length, 3, "First length check");
 
-	rz_list_delete_data(list, (void *)&test1);
+	rz_list_delete_val(list, (void *)&test1);
 	mu_assert_eq(list->length, 2, "Second length check");
 
 	rz_list_append(list, (void *)&test1);

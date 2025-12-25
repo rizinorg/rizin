@@ -776,7 +776,7 @@ static void *find_library(void *BaseOfDll) {
 }
 
 static void remove_library(PLIB_ITEM library) {
-	rz_list_delete_data(lib_list, library);
+	rz_list_delete_val(lib_list, library);
 }
 
 static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
@@ -1178,7 +1178,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	if (th && th->bFinished) {
-		rz_list_delete_data(dbg->threads, th);
+		rz_list_delete_val(dbg->threads, th);
 	}
 
 	return tid;

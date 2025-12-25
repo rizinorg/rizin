@@ -169,12 +169,12 @@ RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
 }
 
 /**
- * \brief Deletes an entry in the list by searching for a pointer
+ * \brief Deletes a node in the list by searching for a pointer value.
  *
  **/
-RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
+RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val) {
 	rz_return_val_if_fail(list, false);
-	RzListIter *iter = rz_list_find_val(list, ptr);
+	RzListIter *iter = rz_list_find_val(list, val);
 	if (!iter) {
 		return false;
 	}
@@ -183,7 +183,7 @@ RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
 }
 
 /**
- * \brief Removes an entry in the list by using the RzListIter pointer
+ * \brief Deletes a node in the list by using an RzListIter pointer.
  *
  **/
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
