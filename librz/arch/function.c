@@ -272,12 +272,18 @@ RZ_API bool rz_analysis_function_modify_cc(RzAnalysisFunction *fn, RzAnalysis *a
 		RZ_LOG_ERROR("The '%s' is not a valid calling convention name\n", cc);
 		return false;
 	}
-	if (fn->cc && !rz_str_cmp(fn->cc, cc, -1)) {
+	char *dup_cc = rz_str_dup(cc);
+	if (RZ_STR_ISEMPTY(dup_cc)) {
+		free(dup_cc);
+		return false;
+	}
+	if (fn->cc && !rz_str_cmp(fn->cc, dup_cc, -1)) {
 		RZ_LOG_INFO("Same convention '%s' already present\n", cc);
+		free(dup_cc);
 		return false;
 	}
 	free((void *)fn->cc);
-	fn->cc = cc;
+	fn->cc = dup_cc;
 	fn->has_changed = true;
 	return true;
 }
