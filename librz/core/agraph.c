@@ -2311,9 +2311,9 @@ static void delete_dup_edges(RzAGraph *g) {
 					continue;
 				}
 				rz_list_delete(n->out_nodes, in_it2);
-				rz_list_delete_data(n->all_neighbours, b);
-				rz_list_delete_data(b->in_nodes, n);
-				rz_list_delete_data(b->all_neighbours, n);
+				rz_list_delete_val(n->all_neighbours, b);
+				rz_list_delete_val(b->in_nodes, n);
+				rz_list_delete_val(b->all_neighbours, n);
 				g->graph->n_edges--;
 			}
 		}

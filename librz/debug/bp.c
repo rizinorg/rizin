@@ -155,7 +155,7 @@ static void unlinkBreakpoint(RzBreakpoint *bp, RzBreakpointItem *b) {
 			bp->bps_idx[i] = NULL;
 		}
 	}
-	rz_list_delete_data(bp->bps, b);
+	rz_list_delete_val(bp->bps, b);
 }
 
 /**
@@ -331,7 +331,7 @@ RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr) {
 
 RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
-		rz_list_delete_data(bp->bps, bp->bps_idx[idx]);
+		rz_list_delete_val(bp->bps, bp->bps_idx[idx]);
 		bp->bps_idx[idx] = 0;
 		return true;
 	}
