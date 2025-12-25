@@ -233,6 +233,51 @@ nop
 EOF
 RUN
 
+NAME=wai
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d850678563412
+s 0
+pi 1
+p8 7
+s 0
+wai nop
+s 0
+pi 1
+p8 7
+EOF
+EXPECT=<<EOF
+lea rax, qword [rbp+0x34567806]
+488d8506785634
+nop
+90909090909090
+EOF
+RUN
+
+NAME=wai multiple instructions
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488d850678563412
+s 0
+pi 1
+p8 7
+s 0
+wai nop nop
+s 0
+pi 2
+p8 7
+EOF
+EXPECT=<<EOF
+lea rax, qword [rbp+0x34567806]
+488d8506785634
+nop
+nop
+90909090909090
+EOF
+RUN
+
 NAME=wb
 FILE==
 CMDS=<<EOF
