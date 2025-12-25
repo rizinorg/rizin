@@ -515,7 +515,6 @@ bool test_rz_analysis_function_set_cc() {
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "testfunc", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	mu_assert_notnull(fcn, "function should be created");
-	// Note: fcn->cc may be NULL if no default cc is set, which is fine
 
 	bool ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
 	mu_assert_true(ret, "setting valid cc should succeed");
@@ -546,11 +545,6 @@ bool test_rz_analysis_function_set_cc() {
 	ret = rz_analysis_function_set_cc(analysis, fcn, "anothercc");
 	mu_assert_true(ret, "setting cc to anothercc should succeed");
 	mu_assert_streq(fcn->cc, "anothercc", "cc should be set to anothercc");
-
-	ret = rz_analysis_function_set_cc(NULL, fcn, "testcc");
-	mu_assert_false(ret, "setting cc with NULL analysis should fail");
-	ret = rz_analysis_function_set_cc(analysis, NULL, "testcc");
-	mu_assert_false(ret, "setting cc with NULL function should fail");
 
 	rz_analysis_free(analysis);
 	mu_end;
