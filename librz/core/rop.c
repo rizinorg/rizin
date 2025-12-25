@@ -1601,6 +1601,74 @@ static bool match_detail_search(st64 gadget_val, RopDetailSearchCmpOp op, st64 t
 	return false;
 }
 
+static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRopConstraint *constraint) {
+	if (!gadget_info || !constraint) {
+		return false;
+	}
+
+	const char *dst_reg = constraint->args[DST_REG];
+	if (!dst_reg) {
+		return false;
+	}
+
+	RzRopRegInfo *reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, dst_reg);
+	if (!reg_info) {
+		return false;
+	}
+
+	switch (constraint->type) {
+	case MOV_CONST: {
+		const char *const_str = constraint->args[SRC_CONST];
+		if (!const_str) {
+			return false;
+		}
+		ut64 expected_val = strtoull(const_str, NULL, 0);
+		return reg_info->new_val == expected_val;
+	}
+	case MOV_REG: {
+		const char *src_reg = constraint->args[SRC_REG];
+		if (!src_reg) {
+			return false;
+		}
+		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
+	}
+	case MOV_OP_CONST: {
+		const char *src_reg = constraint->args[SRC_REG];
+		const char *src_const = constraint->args[SRC_CONST];
+		if (!src_reg || !src_const) {
+			return false;
+		}
+		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
+	}
+	case MOV_OP_REG: {
+		const char *src_reg = constraint->args[SRC_REG];
+		const char *src_reg_second = constraint->args[SRC_REG_SECOND];
+		if (!src_reg || !src_reg_second) {
+			return false;
+		}
+		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg) &&
+			rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg_second);
+	}
+	default:
+		return false;
+	}
+}
+
+static bool match_constraints(const RzRopGadgetInfo *gadget_info, const RzPVector /*<RzRopConstraint *>*/ *constraints) {
+	if (!constraints || rz_pvector_empty(constraints)) {
+		return true;
+	}
+
+	void **it;
+	rz_pvector_foreach (constraints, it) {
+		RzRopConstraint *constraint = *it;
+		if (!match_rop_constraint(gadget_info, constraint)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSearchContext *context,
 	RzList /*<char *>*/ *rx_list, RzRopEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -1616,7 +1684,14 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 		goto fini;
 	}
 
-	// search rop gadget given the details
+	if (context->constraints && !rz_pvector_empty(context->constraints)) {
+		RzRopGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		if (!rop_gadget_info || !match_constraints(rop_gadget_info, context->constraints)) {
+			rz_list_free(hitlist);
+			goto fini;
+		}
+	}
+
 	if (context->detail_mask) {
 		RzRopGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
 		if (!rop_gadget_info) {

@@ -549,6 +549,41 @@ commands:
           - name: key=value
             type: RZ_CMD_ARG_TYPE_STRING
             optional: false
+        details:
+          - name: Constraint types
+            entries:
+              - text: "reg=const"
+                comment: "Find gadgets that set a register to a constant value"
+              - text: "reg=reg"
+                comment: "Find gadgets that copy one register to another"
+              - text: "reg=reg OP const"
+                comment: "Find gadgets with register and constant arithmetic"
+              - text: "reg=reg OP reg"
+                comment: "Find gadgets with register-register operations"
+          - name: Supported operations
+            entries:
+              - text: "+ - * / %"
+                comment: "Arithmetic operations (add, sub, mul, div, mod)"
+              - text: "& | ^"
+                comment: "Bitwise operations (AND, OR, XOR)"
+              - text: "<< >>"
+                comment: "Shift operations (left, right)"
+          - name: Compound operators
+            entries:
+              - text: "reg++ or reg--"
+                comment: "Increment or decrement register"
+              - text: "reg+=val, reg-=val"
+                comment: "Compound assignment operators"
+          - name: Usage example
+            entries:
+              - text: "Find gadgets setting rax to 0"
+                comment: "/Rk rax=0"
+              - text: "Find gadgets copying rbx to rax"
+                comment: "/Rk rax=rbx"
+              - text: "Find gadgets with rax = rbx + 8"
+                comment: "/Rk rax=rbx+8"
+              - text: "Find gadgets with multiple constraints"
+                comment: "/Rk rax=0,rbx=rcx"
       - name: "/Rg"
         cname: cmd_detail_gadget
         summary: Gadget detail info

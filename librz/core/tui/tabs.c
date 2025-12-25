@@ -236,7 +236,7 @@ RZ_IPI void rz_core_visual_closetab(RzCore *core) {
 	}
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		rz_list_delete_data(visual->tabs, tab);
+		rz_list_delete_val(visual->tabs, tab);
 		const int tabsCount = rz_list_length(visual->tabs);
 		if (tabsCount > 0) {
 			if (visual->tab > 0) {

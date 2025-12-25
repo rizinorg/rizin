@@ -74,7 +74,7 @@ RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 		}
 		p->cur = NULL;
 	}
-	return rz_list_delete_data(p->parsers, plugin);
+	return rz_list_delete_val(p->parsers, plugin);
 }
 
 RZ_API bool rz_parse_use(RzParse *p, const char *name) {

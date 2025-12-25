@@ -179,7 +179,7 @@ RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 	log_init();
 	rz_th_lock_enter(logcfg.lock);
 	if (logcfg.callbacks) {
-		rz_list_delete_data(logcfg.callbacks, cbfunc);
+		rz_list_delete_val(logcfg.callbacks, cbfunc);
 	}
 	rz_th_lock_leave(logcfg.lock);
 }
