@@ -4093,11 +4093,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_cc_set_get_handler(RzCore *core, int arg
 		rz_cons_println(fcn->cc);
 		return RZ_CMD_STATUS_OK;
 	}
-	if (!rz_analysis_cc_exist(core->analysis, argv[1])) {
+	if (!rz_analysis_function_set_cc(core->analysis, fcn, argv[1])) {
 		RZ_LOG_ERROR("Unknown calling convention. See `afcl` for available ones.\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

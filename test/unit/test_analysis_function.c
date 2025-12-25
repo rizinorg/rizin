@@ -505,6 +505,57 @@ bool test_analysis_function_force_rename() {
 	mu_end;
 }
 
+bool test_rz_analysis_function_set_cc() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+
+	rz_analysis_cc_set(analysis, "eax testcc(ecx, edx, stack)");
+	mu_assert_true(rz_analysis_cc_exist(analysis, "testcc"), "testcc should exist");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "testfunc", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function should be created");
+	// Note: fcn->cc may be NULL if no default cc is set, which is fine
+
+	bool ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting valid cc should succeed");
+	mu_assert_streq(fcn->cc, "testcc", "cc should be set to testcc");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "nonexistent");
+	mu_assert_false(ret, "setting invalid cc should fail");
+	mu_assert_streq(fcn->cc, "testcc", "cc should remain unchanged after failed set");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, NULL);
+	mu_assert_true(ret, "setting NULL cc should succeed");
+	mu_assert_null(fcn->cc, "cc should be NULL after clearing");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting cc back to testcc should succeed");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "");
+	mu_assert_true(ret, "setting empty string cc should succeed");
+	mu_assert_null(fcn->cc, "cc should be NULL after setting empty string");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting cc to testcc should succeed");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting same cc again should succeed");
+	mu_assert_streq(fcn->cc, "testcc", "cc should still be testcc");
+
+	rz_analysis_cc_set(analysis, "eax anothercc(edx, stack)");
+	mu_assert_true(rz_analysis_cc_exist(analysis, "anothercc"), "anothercc should exist");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "anothercc");
+	mu_assert_true(ret, "setting cc to anothercc should succeed");
+	mu_assert_streq(fcn->cc, "anothercc", "cc should be set to anothercc");
+
+	ret = rz_analysis_function_set_cc(NULL, fcn, "testcc");
+	mu_assert_false(ret, "setting cc with NULL analysis should fail");
+	ret = rz_analysis_function_set_cc(analysis, NULL, "testcc");
+	mu_assert_false(ret, "setting cc with NULL function should fail");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -514,6 +565,7 @@ int all_tests() {
 	mu_run_test(test_autonames);
 	mu_run_test(test_initial_underscore);
 	mu_run_test(test_rz_analysis_function_set_type);
+	mu_run_test(test_rz_analysis_function_set_cc);
 	mu_run_test(test_noreturn_functions_list);
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
