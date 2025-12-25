@@ -429,7 +429,7 @@ static void event_desc_close_cb(RzEvent *ev, int type, void *user, void *data) {
 		return;
 	}
 	RzEventIODescClose *iev = data;
-	RzListIter *it = rz_list_find_ptr(tracker->expect, iev->desc);
+	RzListIter *it = rz_list_find_val(tracker->expect, iev->desc);
 	if (!it) {
 		tracker->failed_unexpected = true;
 		return;
@@ -498,7 +498,7 @@ static void event_map_del_cb(RzEvent *ev, int type, void *user, void *data) {
 		return;
 	}
 	RzEventIOMapDel *iev = data;
-	RzListIter *it = rz_list_find_ptr(tracker->expect, iev->map);
+	RzListIter *it = rz_list_find_val(tracker->expect, iev->map);
 	if (!it) {
 		tracker->failed_unexpected = true;
 		return;

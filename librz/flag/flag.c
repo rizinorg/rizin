@@ -93,7 +93,7 @@ static void remove_offsetmap(RzFlag *f, RzFlagItem *item) {
 	rz_return_if_fail(f && item);
 	RzFlagsAtOffset *flags = rz_flag_get_nearest_list(f, item->offset, 0);
 	if (flags) {
-		rz_list_delete_data(flags->flags, item);
+		rz_list_delete_val(flags->flags, item);
 		if (rz_list_empty(flags->flags)) {
 			rz_skiplist_delete(f->by_off, flags);
 		}

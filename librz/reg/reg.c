@@ -240,7 +240,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 			rz_list_free(reg->regset[i].regs);
 			reg->regset[i].regs = NULL;
 			// Ensure arena is freed and its registered in the pool
-			if (!rz_list_delete_data(reg->regset[i].pool, reg->regset[i].arena)) {
+			if (!rz_list_delete_val(reg->regset[i].pool, reg->regset[i].arena)) {
 				rz_reg_arena_free(reg->regset[i].arena);
 			}
 			reg->regset[i].arena = NULL;

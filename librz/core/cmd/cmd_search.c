@@ -64,13 +64,18 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (rz_pvector_empty(constraints)) {
-		rz_pvector_fini(constraints);
+		rz_pvector_free(constraints);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, NULL, false,
+		RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
+	if (!context) {
+		rz_pvector_free(constraints);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	context->constraints = constraints;
 	const RzCmdStatus cmd_status = rz_core_rop_search(core, context);
-	rz_pvector_fini(constraints);
 	rz_core_rop_search_context_free(context);
 	return cmd_status;
 }

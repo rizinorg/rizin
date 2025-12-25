@@ -1229,7 +1229,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	r->file = fh;
 	rz_io_use_fd(r->io, fd->fd);
 
-	if (!rz_list_find_ptr(r->files, fh)) {
+	if (!rz_list_find_val(r->files, fh)) {
 		rz_list_append(r->files, fh);
 	}
 	if (rz_config_get_b(r->config, "cfg.debug")) {
@@ -1331,7 +1331,7 @@ RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf) {
 RZ_API void rz_core_file_close(RzCoreFile *fh) {
 	rz_return_if_fail(fh && fh->core);
 	RzCore *r = fh->core;
-	RzListIter *fh_it = rz_list_find_ptr(r->files, fh);
+	RzListIter *fh_it = rz_list_find_val(r->files, fh);
 	rz_return_if_fail(fh_it);
 	RzIODesc *desc = rz_io_desc_get(r->io, fh->fd);
 	if (desc) {
