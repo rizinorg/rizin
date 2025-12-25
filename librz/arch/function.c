@@ -273,8 +273,12 @@ RZ_API bool rz_analysis_function_modify_cc(RzAnalysisFunction *fn, RzAnalysis *a
 		return false;
 	}
 	char *dup_cc = rz_str_dup(cc);
+	if (RZ_STR_ISEMPTY(dup_cc)) {
+		free(dup_cc);
+		return false;
+	}
 	if (fn->cc && !rz_str_cmp(fn->cc, dup_cc, -1)) {
-		RZ_LOG_INFO("Same convention present %s\n", cc);
+		RZ_LOG_INFO("Same convention '%s' already present\n", cc);
 		free(dup_cc);
 		return false;
 	}
