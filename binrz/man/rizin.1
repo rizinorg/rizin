@@ -1,5 +1,6 @@
-.Dd Aug 25, 2023
+.Dd August 25, 2023
 .Dt RIZIN 1
+.Os
 .Sh NAME
 .Nm rizin
 .Nd Advanced commandline hexadecimal editor, disassembler and debugger
@@ -11,7 +12,7 @@
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl i Ar file
-.Op Fl s Ar addr	
+.Op Fl s Ar addr
 .Op Fl B Ar baddr
 .Op Fl m Ar maddr
 .Op Fl c Ar cmd
@@ -19,8 +20,9 @@
 .Ar file|pid|-|--|=
 .Sh DESCRIPTION
 Rizin is a command-line reverse engineering framework designed to analyze and
-disassemble binary files. It provides various tools and features for analyzing
-and understanding the structure, behavior, and logic of executable files.
+disassemble binary files.
+It provides various tools and features for analyzing and understanding the
+structure, behavior, and logic of executable files.
 .Pp
 The options are:
 .Bl -tag -width Fl
@@ -39,16 +41,16 @@ Redirect stderr to stdout
 .It Fl 2
 Close stderr file descriptor (silent warning messages)
 .It Fl a Ar arch
-Set the assembly architecture.(x86, ppc, arm, mips, bf, java, ...)
+Set the assembly architecture (x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
 Run 'aaa' command before prompt or patch to analyze all referenced code
 .It Fl b Ar bits
-Set the assembly bitness. (16, 32, 64)
+Set the assembly bitness (16, 32, 64)
 .It Fl B Ar baddr
 Set the base address for Position-Independent Executables (PIE)
 .It Fl c Ar 'cmd..'
 Execute the specified Rizin command
-.It -C
+.It Fl C
 Specify a file in the format "host:port" to run Rizin remotely through HTTP
 .It Fl d
 Debug the executable 'file' or running process 'pid'
@@ -58,16 +60,18 @@ Enable debug mode, setting the configuration variable 'cfg.debug=true'
 Evaluate the specified configuration variable
 .It Fl f
 Set block size to be equal to file size
-.It -F binplugin
+.It Fl F Ar binplugin
 Force the use of a specific rbin plugin
-.It Fl h, hh
+.It Fl h , hh
 Show help messages, with -hh showing detailed help
 .It Fl H Ar [var]
-Print information about the installation paths and configuration settings of Rizin. This option is useful for obtaining details about the installation location, directories, and various components of Rizin
+Print information about installation paths and configuration settings.
+This option is useful for obtaining details about the installation location,
+directories, and various components of Rizin.
 .It Fl i Ar file
 Run the commands from the script file
 .It Fl I Ar file
-Run script file. Before the file is loaded
+Run script file before the file is loaded
 .It Fl k Ar OS/kern
 Set the assembly operating system
 .It Fl l Ar lib
@@ -78,24 +82,26 @@ List supported IO plugins
 Map file at given address
 .It Fl M
 Disable demangling
-.It Fl n, nn
+.It Fl n , nn
 Control loading of RzBin info, with -nn only loading binary structures
 .It Fl N
-Disable user settings/projects from ~/.rizinrc, ~/.config/rizin/rizinrc and the scripts inside .../rizinrc.d/ directory
+Disable user settings/projects from ~/.rizinrc and related directories.
 .It Fl NN
 Disable loading any scripts or plugins
 .It Fl q
 Quiet mode, suppresses prompt and quits after script execution
 .It Fl qq
-Quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated
+Quit before showing the prompt.
+Right after all the -e -c and -i arguments are evaluated.
 .It Fl Q
-Same as q, but exiting without freeing RzCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode
+Same as q, but exiting without freeing RzCore.
+This produces leaks at exit time, but saves precious ms for the testsuite.
 .It Fl p Ar prj
 Set project file
 .It Fl r Ar rz-run
-Specify dbg.profile rz-run profile to use when spawning a program for debugging
+Specify dbg.profile rz-run profile to use when spawning for debugging
 .It Fl R Ar rule
-Specify custom rz-run directives without having to create a rz-run profile
+Specify custom rz-run directives without having to create a profile
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl T
@@ -103,7 +109,8 @@ Avoid computing the file hashes
 .It Fl u
 Set bin.filter=false to load rbin info without filtering names
 .It Fl v
-Show version information and exit (Use -qv to get just the version number)
+Show version information and exit.
+Use -qv to get just the version number.
 .It Fl V
 Show rizin library versions
 .It Fl w
@@ -111,75 +118,73 @@ Open in write mode
 .It Fl x
 Open the file without the execute flag
 .It Fl X
-Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
-.It Fl z, zz
-do not load strings or load them even in raw
+Same as -e bin.usextr=false, do not use extract plugins.
+.It Fl z , zz
+Do not load strings or load them even in raw
 .El
 .Sh ENVIRONMENT
-.Pp
-ANSICON:             ansicon's W & H of the buffer and w & h of the window in the form of: "WxH (wxh)"
-.Pp
-DEBUGINFOD_URLS:     e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
-.Pp
-COLUMNS:             terminal columns to use
-.Pp
-RZ_ABORTLEVEL:       target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
-.Pp
-RZ_CURL:             whether to use curl (for SSL support)
-.Pp
-RZ_DEBUG_ASSERT:     set a breakpoint when hitting an assert
-.Pp
-RZ_DEBUG_TOOL        debug tool to use when showing error messages and crash signal
-.Pp
-RZ_DYLDCACHE_FILTER: dyld cache filter (MacOS dynamic libraries location(s) at runtime)
-.Pp
-RZ_HTTP_AUTHFILE:    HTTP Authentification user file
-.Pp
-RZ_LOGCOLORS:        should the log output use colors (TODO)
-.Pp
-RZ_LOGFILE:          logging output filename/path
-.Pp
-RZ_LOGLEVEL:         target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
-.Pp
-RZ_LOGSHOWSOURCES:   should the log output contain src info (filename:lineno)
-.Pp
-RZ_PIPE_IN:          rzpipe cmd input (file descriptor)
-.Pp
-RZ_PIPE_OUT:         rzpipe cmd output (file descriptor)
-.Pp
-RZ_PREFIX:           default prefix rizin was compiled for
-.Pp
-RZ_RCFILE:           user config file
-.Pp
-SFLIBPATH:           SFLib syscall library path
-
-.Sh EXAMPLE
-.Pp
-Start rizin in analysis mode (-A) on the /bin/ls executable:
+.Bl -tag -width RZ_DYLDCACHE_FILTER
+.It Ev ANSICON
+W & H of the buffer and w & h of the window in the form of: "WxH (wxh)"
+.It Ev DEBUGINFOD_URLS
+Use alternative debuginfod server via bin.dbginfo.debuginfod_urls
+.It Ev COLUMNS
+Terminal columns to use
+.It Ev RZ_ABORTLEVEL
+Target log level/severity when to abort.
+.It Ev RZ_CURL
+Whether to use curl (for SSL support)
+.It Ev RZ_DEBUG_ASSERT
+Set a breakpoint when hitting an assert
+.It Ev RZ_DEBUG_TOOL
+Debug tool to use when showing error messages and crash signal
+.It Ev RZ_DYLDCACHE_FILTER
+dyld cache filter (MacOS dynamic libraries location)
+.It Ev RZ_HTTP_AUTHFILE
+HTTP Authentification user file
+.It Ev RZ_LOGCOLORS
+Should the log output use colors
+.It Ev RZ_LOGFILE
+Logging output filename/path
+.It Ev RZ_LOGLEVEL
+Target log level/severity.
+.It Ev RZ_LOGSHOWSOURCES
+Should the log output contain src info (filename:lineno)
+.It Ev RZ_PIPE_IN
+rzpipe cmd input (file descriptor)
+.It Ev RZ_PIPE_OUT
+rzpipe cmd output (file descriptor)
+.It Ev RZ_PREFIX
+Default prefix rizin was compiled for
+.It Ev RZ_RCFILE
+User config file
+.It Ev SFLIBPATH
+SFLib syscall library path
+.El
+.Sh EXAMPLES
+Start rizin in analysis mode
+.Pq Fl A
+on the /bin/ls executable:
 .Pp
 .Nm rizin Fl A Ar /bin/ls
 .Pp
-Open the file /bin/ls in write mode, allowing you to make changes to the binary:
+Open the file /bin/ls in write mode:
 .Pp
 .Nm rizin Fl w Ar /bin/ls
 .Pp
-Start rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
+Start the debugger and pass arguments:
 .Pp
 .Nm rizin Fl d Ar /bin/ls Fl l Ar /tmp
-.Pp
 .Sh SEE ALSO
-.Pp
-.Xr rz-test(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-ax(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1)
+.Xr rz-asm 1 ,
+.Xr rz-ax 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-run 1 ,
+.Xr rz-test 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.It
-byteninjaa0
+.An pancake Aq Mt pancake@nopcode.org
+.An byteninjaa0
