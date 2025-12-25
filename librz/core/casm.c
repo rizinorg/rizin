@@ -286,7 +286,7 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 	RzListIter *it;
 	RzAsmPlugin *ap;
 	rz_list_foreach (plugin_list, it, ap) {
-		if (ap->cpus && RZ_STR_EQ(plugin, ap->name)) {
+		if (ap->cpus && RZ_STR_EQ(plugin, ap->name) && ap->get_cpu_desc) {
 			char **desc = ap->get_cpu_desc();
 			if (!desc) {
 				rz_iterator_free(iter);
