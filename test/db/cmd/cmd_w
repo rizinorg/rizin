@@ -242,7 +242,7 @@ s 0
 pi 1
 p8 7
 s 0
-wai nop
+wai "mov rax, rbx"
 s 0
 pi 1
 p8 7
@@ -250,8 +250,8 @@ EOF
 EXPECT=<<EOF
 lea rax, qword [rbp+0x34567806]
 488d8506785634
-nop
-90909090909090
+mov rax, rbx
+4889d890909090
 EOF
 RUN
 
@@ -264,7 +264,7 @@ s 0
 pi 1
 p8 7
 s 0
-wai nop nop
+wai "mov rax, rbx" "mov rcx, rdx"
 s 0
 pi 2
 p8 7
@@ -272,9 +272,9 @@ EOF
 EXPECT=<<EOF
 lea rax, qword [rbp+0x34567806]
 488d8506785634
-nop
-nop
-90909090909090
+mov rax, rbx
+mov rcx, rdx
+4889d84889d190
 EOF
 RUN
 
