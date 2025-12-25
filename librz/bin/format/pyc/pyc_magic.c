@@ -315,7 +315,23 @@ static struct pyc_version versions[] = {
 	{ 0x0a0d0df3, "v3.13.0rc3", "e9a10796b743e36f6a05a57ec9a25c68887a0ac4" },
 	{ 0x0a0d0df3, "v3.13.1", "7795862b852e7102d459cf760c68e43c1c0bcefb" },
 	{ 0x0a0d0df3, "v3.13.2", "88cec06dd0bd4bb41d5be96afef7f28de6e2bee3" },
-
+	{ 0x0a0d0e18, "v3.14.0a1", "ceb1929bdea4933df40c7a6dcd838015cd33ac91" },
+	{ 0x0a0d0e19, "v3.14.0a2", "df1c80e4a7fc0da506f712d68fa3a69bac713418" },
+	{ 0x0a0d0e19, "v3.14.0a3", "149e720d33250672626561f20688454b1f51852d" },
+	{ 0x0a0d0e1d, "v3.14.0a4", "e5a0f6090e31eaea0eed72cd2eca5daf1caac7e6" },
+	{ 0x0a0d0e20, "v3.14.0a5", "3c289d5d1b732ddfbf2b7483665b3d5bc55642ba" },
+	{ 0x0a0d0e23, "v3.14.0a6", "13a1c0a063c3aac53cb923f7721172f8285b9af9" },
+	{ 0x0a0d0e25, "v3.14.0a7", "304d08b978e8932c6cfe4ce5102139b16514dd05" },
+	{ 0x0a0d0e28, "v3.14.0b1", "ebbcbdd5d68ad46a2fd47e4b9a2702784c2b2286" },
+	{ 0x0a0d0e28, "v3.14.0b2", "c8c433daa144d9f5b46148665e6e2047c0224e10" },
+	{ 0x0a0d0e29, "v3.14.0b3", "704994724f9835c4f311a82b22fef65d842a4d9f" },
+	{ 0x0a0d0e29, "v3.14.0b4", "334d6e6c572ce99fba2709a7a66ce172dec05d5c" },
+	{ 0x0a0d0e29, "v3.14.0rc1", "e77434a3443592ad1639a92d806e724660ec69eb" },
+	{ 0x0a0d0e2a, "v3.14.0rc2", "08c753ebdcc99134545c99bf70ee65842efd4f57" },
+	{ 0x0a0d0e2b, "v3.14.0", "ac991beb29b1783316c4016c99468c008568d08a" },
+	{ 0x0a0d0e2b, "v3.14.0rc3", "806b5de894d16e7660ecabd5aa001f2bbd8faa2a" },
+	{ 0x0a0d0e2b, "v3.14.1", "be35a63d71708928cc83bd4a55103614b3e4bc83" },
+	{ 0x0a0d0e2b, "v3.14.2", "a1d0069daf8e85b25a0c3f96abc43182be6d429e" },
 };
 
 struct pyc_version get_pyc_version(ut32 magic) {
