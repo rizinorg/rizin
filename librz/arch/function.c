@@ -259,6 +259,32 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 }
 
 /**
+ * \brief safely overrides and Sets RzAnalysisFunction->cc with the given char value
+ * \param analysis pointer of type analysis
+ * \param fn pointer of type RzAnalysisFunction
+ * \param str pointer of type char which will be replaced with RzAnalysisFunction->cc
+ *
+ * \returns true for success
+ */
+RZ_API bool rz_analysis_function_modify_cc(RzAnalysisFunction *fn, RzAnalysis *analysis, const char *cc) {
+	rz_return_val_if_fail(analysis && fn && cc, false);
+	if (!rz_analysis_cc_exist(analysis, cc)) {
+		RZ_LOG_ERROR("The '%s' is not a valid calling convention name\n", cc);
+		return false;
+	}
+	char *dup_cc = rz_str_dup(cc);
+	if (fn->cc && !rz_str_cmp(fn->cc, dup_cc, -1)) {
+		RZ_LOG_INFO("Same convention present %s\n", cc);
+		free(dup_cc);
+		return false;
+	}
+	free((void *)fn->cc);
+	fn->cc = dup_cc;
+	fn->has_changed = true;
+	return true;
+}
+
+/**
  * \b Rename given function.
  * This method will fail if a function with same name as `name`
  * already exists in rizin's analysis.

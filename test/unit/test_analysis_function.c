@@ -505,6 +505,70 @@ bool test_analysis_function_force_rename() {
 	mu_end;
 }
 
+bool test_analysis_function_modify_cc() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+
+	rz_analysis_cc_set(analysis, "eax cdecl(ecx, edx, stack)");
+	rz_analysis_cc_set(analysis, "eax stdcall(ecx, edx, stack)");
+	rz_analysis_cc_set(analysis, "eax fastcall(ecx, edx, stack)");
+
+	RzAnalysisFunction *fn = rz_analysis_create_function(analysis, "test_func", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fn, "function created");
+
+	bool result = rz_analysis_function_modify_cc(fn, analysis, "cdecl");
+	mu_assert_true(result, "should set valid CC 'cdecl'");
+	mu_assert_notnull(fn->cc, "fn->cc should not be NULL");
+	mu_assert_streq(fn->cc, "cdecl", "fn->cc should be 'cdecl'");
+	mu_assert_true(fn->has_changed, "has_changed should be true");
+
+	fn->has_changed = false;
+	result = rz_analysis_function_modify_cc(fn, analysis, "stdcall");
+	mu_assert_true(result, "should change to valid CC 'stdcall'");
+	mu_assert_streq(fn->cc, "stdcall", "fn->cc should be 'stdcall'");
+	mu_assert_true(fn->has_changed, "has_changed should be true");
+
+	fn->has_changed = false;
+	result = rz_analysis_function_modify_cc(fn, analysis, "stdcall");
+	mu_assert_false(result, "should return false for same CC");
+	mu_assert_streq(fn->cc, "stdcall", "fn->cc should still be 'stdcall'");
+	mu_assert_false(fn->has_changed, "has_changed should not be modified");
+
+	result = rz_analysis_function_modify_cc(fn, analysis, "invalidcc");
+	mu_assert_false(result, "should return false for invalid CC");
+	mu_assert_streq(fn->cc, "stdcall", "fn->cc should remain 'stdcall'");
+
+	result = rz_analysis_function_modify_cc(fn, NULL, "cdecl");
+	mu_assert_false(result, "should return false for NULL analysis");
+
+	result = rz_analysis_function_modify_cc(NULL, analysis, "cdecl");
+	mu_assert_false(result, "should return false for NULL function");
+
+	result = rz_analysis_function_modify_cc(fn, analysis, NULL);
+	mu_assert_false(result, "should return false for NULL cc");
+
+	result = rz_analysis_function_modify_cc(fn, analysis, "");
+	mu_assert_false(result, "should return false for empty cc string");
+	mu_assert_streq(fn->cc, "stdcall", "fn->cc should remain unchanged");
+
+	fn->has_changed = false;
+	result = rz_analysis_function_modify_cc(fn, analysis, "fastcall");
+	mu_assert_true(result, "should change to 'fastcall'");
+	mu_assert_streq(fn->cc, "fastcall", "fn->cc should be 'fastcall'");
+	mu_assert_true(fn->has_changed, "has_changed should be true");
+
+	fn->has_changed = false;
+	result = rz_analysis_function_modify_cc(fn, analysis, "cdecl");
+	mu_assert_true(result, "should change back to 'cdecl'");
+	mu_assert_streq(fn->cc, "cdecl", "fn->cc should be 'cdecl'");
+	mu_assert_true(fn->has_changed, "has_changed should be true");
+
+	rz_analysis_free(analysis);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -517,6 +581,7 @@ int all_tests() {
 	mu_run_test(test_noreturn_functions_list);
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
+	mu_run_test(test_analysis_function_modify_cc);
 	return tests_passed != tests_run;
 }
 

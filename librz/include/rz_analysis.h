@@ -1564,6 +1564,8 @@ RZ_API RZ_BORROW RzList /*<RzAnalysisFunction *>*/ *rz_analysis_function_list(Rz
 // This can fail (and return false) if there is already another function at the new address
 RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr);
 
+RZ_API bool rz_analysis_function_modify_cc(RzAnalysisFunction *fn, RzAnalysis *analysis, const char *cc);
+
 // rename the given function
 // This can fail (and return false) if there is another function with the name given
 RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name);
