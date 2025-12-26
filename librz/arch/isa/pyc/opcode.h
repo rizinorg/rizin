@@ -71,6 +71,11 @@ typedef struct {
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 
+typedef struct {
+	const char *version;
+	pyc_opcodes *cache;
+} pyc_context_t;
+
 pyc_opcodes *opcode_2x(void);
 pyc_opcodes *opcode_3x(void);
 pyc_opcodes *opcode_10(void);
@@ -104,11 +109,11 @@ pyc_opcodes *opcode_312(void);
 pyc_opcodes *opcode_313(void);
 pyc_opcodes *opcode_314(void);
 
-pyc_opcodes *get_opcode_by_version(char *version);
+bool pyc_context_set_opcode_by_version(const char *version, pyc_context_t *ctx);
+void pyc_context_free(pyc_context_t *ctx);
 
 pyc_opcodes *new_pyc_opcodes();
 void free_opcode(pyc_opcodes *opcodes);
-bool pyc_opcodes_equal(pyc_opcodes *op, const char *version);
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 oparg));
 
