@@ -193,7 +193,7 @@ static coredump_thread_state_flavor_t
 		{ PPC_VECTOR_STATE, PPC_VECTOR_STATE_COUNT },
 	};
 
-static int coredump_nflavors = 4;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 4
 
 #elif defined(__ppc64__)
 
@@ -205,7 +205,7 @@ coredump_thread_state_flavor_t
 		{ PPC_VECTOR_STATE, PPC_VECTOR_STATE_COUNT },
 	};
 
-static int coredump_nflavors = 4;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 4
 
 #elif defined(__i386__)
 
@@ -216,7 +216,7 @@ static coredump_thread_state_flavor_t
 		{ x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
 	};
 
-static int coredump_nflavors = 3;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 3
 
 #elif defined(__x86_64__)
 
@@ -227,7 +227,7 @@ static coredump_thread_state_flavor_t
 		{ x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
 	};
 
-static int coredump_nflavors = 3;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 3
 
 #elif defined(__aarch64__) || defined(__arm64__)
 
@@ -236,7 +236,7 @@ static coredump_thread_state_flavor_t
 		{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT }
 	};
 
-static int coredump_nflavors = 1;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 1
 
 #elif defined(__arm__)
 
@@ -245,7 +245,7 @@ static coredump_thread_state_flavor_t
 		{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
 	};
 
-static int coredump_nflavors = 1;
+#define COREDUMP_FLAVORS_ARRAY_SIZE 1
 
 #else
 // XXX: Add __arm__ for iOS devices?
