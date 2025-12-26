@@ -9,9 +9,8 @@
 
 #include "pyc/pyc_dis.h"
 
-static pyc_opcodes *opcodes_cache = NULL;
-
-static int pyc_asm_disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
+static int pyc_asm_disassemble(RzAsm *a, RzAsmOp *aop, const ut8 *buf, int len) {
+	pyc_context_t *ctx = (pyc_context_t *)a->plugin_data;
 	RzList *shared = NULL;
 
 	RzBin *bin = a->binb.bin;
@@ -19,10 +18,8 @@ static int pyc_asm_disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int 
 
 	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
 
-	if (plugin) {
-		if (!strcmp(plugin->name, "pyc")) {
-			shared = ((RzBinPycObj *)bin->cur->o->bin_obj)->shared;
-		}
+	if (plugin && !strcmp(plugin->name, "pyc")) {
+		shared = ((RzBinPycObj *)bin->cur->o->bin_obj)->shared;
 	}
 
 	RzList *cobjs = NULL;
@@ -31,24 +28,30 @@ static int pyc_asm_disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int 
 		cobjs = rz_list_get_n(shared, 0);
 	}
 
-	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
-		opcodes_cache = get_opcode_by_version(a->cpu);
-		if (opcodes_cache == NULL) {
+	if (!ctx->cache || RZ_STR_NE(ctx->version, a->cpu)) {
+		if (!pyc_context_set_opcode_by_version(a->cpu, ctx)) {
 			RZ_LOG_ERROR("disassembler: pyc: unsupported pyc opcode cpu/version (asm.cpu=%s).\n", a->cpu);
-			return len;
+			return -1;
 		}
-		opcodes_cache->bits = a->bits;
+		ctx->cache->bits = a->bits;
 	}
-	int r = rz_pyc_disasm(opstruct, buf, cobjs, pc, opcodes_cache);
-	opstruct->size = r;
+	int r = rz_pyc_disasm(aop, buf, cobjs, pc, ctx->cache);
+	aop->size = r;
 	return r;
 }
 
-static bool pyc_asm_finish(void *user) {
-	if (opcodes_cache) {
-		free_opcode(opcodes_cache);
-		opcodes_cache = NULL;
+static bool pyc_asm_fini(void *user) {
+	pyc_context_free((pyc_context_t *)user);
+	return true;
+}
+
+static bool pyc_asm_init(void **user) {
+	pyc_context_t *context = RZ_NEW0(pyc_context_t);
+	if (!context) {
+		return false;
 	}
+
+	*user = context;
 	return true;
 }
 
@@ -59,7 +62,8 @@ RzAsmPlugin rz_asm_plugin_pyc = {
 	.bits = 16 | 8,
 	.desc = "Python bytecode (PYC) disassembler",
 	.disassemble = &pyc_asm_disassemble,
-	.fini = &pyc_asm_finish,
+	.init = &pyc_asm_init,
+	.fini = &pyc_asm_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE
