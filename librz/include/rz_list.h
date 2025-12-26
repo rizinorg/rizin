@@ -88,13 +88,11 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_init(RZ_NONNULL RzList *list);
-RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
+RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *ptr);
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
 RZ_API void rz_list_free(RZ_NULLABLE RzList *list);
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data);
-RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr);
-RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
