@@ -30,6 +30,8 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_new(RZ_OWN ut8 *byte
 	RzSearchBytesPattern *pat = RZ_NEW0(RzSearchBytesPattern);
 	if (!pat) {
 		RZ_LOG_ERROR("Failed to allocate pattern struct.\n");
+		free(bytes);
+		free(mask);
 		return NULL;
 	}
 	pat->bytes = bytes;
@@ -303,11 +305,13 @@ RZ_API bool rz_search_collection_bytes_add_pattern(RZ_NONNULL RzSearchCollection
 
 	if (!rz_search_collection_has_find_callback(col, bytes_find)) {
 		RZ_LOG_ERROR("search: cannot add hex to non-bytes collection\n");
+		rz_search_bytes_pattern_free(bytes_pattern);
 		return false;
 	}
 
 	if (!rz_pvector_push((RzPVector *)col->user, bytes_pattern)) {
 		RZ_LOG_ERROR("search: cannot add byte pattern to search.\n");
+		rz_search_bytes_pattern_free(bytes_pattern);
 		return false;
 	}
 	return true;

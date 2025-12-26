@@ -2867,3 +2867,84 @@ Gadget size: 8
 
 EOF
 RUN
+
+NAME=/Rk constraint filtering
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Rk eax=1
+/Rk ecx=0
+/Rk eax=1,ecx=0
+echo "Expected no results for eax=0"
+/Rk eax=0
+echo "Testing MOV_OP_CONST"
+/Rk eax+=1
+echo "Testing MOV_OP_REG"
+/Rk eax=ebx+ecx
+/Rk invalidconstraint
+EOF
+EXPECT=<<EOF
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+  0x000000b7               0100  add dword [eax], eax
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 12
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+Expected no results for eax=0
+Testing MOV_OP_CONST
+Testing MOV_OP_REG
+EOF
+RUN

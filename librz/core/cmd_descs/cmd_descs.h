@@ -2063,6 +2063,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_value_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_print_format_write_handler(RzCore *core, int argc, const char **argv);
 // "pFa"
 RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+// "pFas"
+RZ_IPI RzCmdStatus rz_cmd_print_asn1_structure_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pFb"
 RZ_IPI RzCmdStatus rz_cmd_print_protobuf_standard_handler(RzCore *core, int argc, const char **argv);
 // "pFbv"
@@ -2071,6 +2073,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_protobuf_verbose_handler(RzCore *core, int argc,
 RZ_IPI RzCmdStatus rz_cmd_print_pkcs7_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pFx"
 RZ_IPI RzCmdStatus rz_cmd_print_x509_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "pF8"
+RZ_IPI RzCmdStatus rz_cmd_print_pkcs8_pkey_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pFA"
 RZ_IPI RzCmdStatus rz_cmd_print_axml_handler(RzCore *core, int argc, const char **argv);
 // "ph"

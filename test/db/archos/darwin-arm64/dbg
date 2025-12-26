@@ -181,7 +181,7 @@ CMDS=<<EOF
 db @ main + 64
 dc
 dr x8
-dr x8 = 1337
+dr x8=1337
 dc
 EOF
 EXPECT=<<EOF

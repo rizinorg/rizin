@@ -6,9 +6,10 @@
 #include <rz_lib.h>
 #include <or1k/or1k_disas.h>
 
-static ut32 cpu[32] = { 0 }; /* register contents */
-static ut32 cpu_enable; /* allows to treat only registers with known value as
-	valid */
+typedef struct {
+	ut32 cpu[32]; ///< register contents
+	ut32 cpu_enable; ///< allows to treat only registers with known value as valid
+} or1k_context_t;
 
 /**
  * \brief Convert raw N operand to complete address
@@ -27,6 +28,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 }
 
 static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+	or1k_context_t *ctx = (or1k_context_t *)a->plugin_data;
 	struct operands o = { 0 };
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -76,16 +78,16 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 	case 0x11: /* l.jr */
 		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (cpu_enable & (1 << o.rb)) {
-			op->jump = cpu[o.rb];
+		if (ctx->cpu_enable & (1 << o.rb)) {
+			op->jump = ctx->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
 	case 0x12: /* l.jalr */
 		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (cpu_enable & (1 << o.rb)) {
-			op->jump = cpu[o.rb];
+		if (ctx->cpu_enable & (1 << o.rb)) {
+			op->jump = ctx->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
@@ -94,8 +96,8 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		case 0: /* l.movhi */
 			o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
 			o.k = get_operand_value(insn, type_descr, INSN_OPER_K);
-			cpu[o.rd] = o.k << 16;
-			cpu_enable |= (1 << o.rd);
+			ctx->cpu[o.rd] = o.k << 16;
+			ctx->cpu_enable |= (1 << o.rd);
 			break;
 		case 1: /* l.macrc */
 			break;
@@ -105,10 +107,10 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
-		if (cpu_enable & (1 << o.ra) & cpu_enable & (1 << o.rd)) {
-			cpu[o.rd] = cpu[o.ra] | o.i;
-			cpu_enable |= (1 << o.rd);
-			op->ptr = cpu[o.rd];
+		if (ctx->cpu_enable & (1 << o.ra) & ctx->cpu_enable & (1 << o.rd)) {
+			ctx->cpu[o.rd] = ctx->cpu[o.ra] | o.i;
+			ctx->cpu_enable |= (1 << o.rd);
+			op->ptr = ctx->cpu[o.rd];
 			op->direction = 8; /* reference */
 		}
 		break;
@@ -116,22 +118,22 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
-		if (cpu_enable & (1 << o.ra)) {
-			cpu[o.rd] = cpu[o.ra] | o.i;
-			cpu_enable |= (1 << o.rd);
-			op->ptr = cpu[o.rd];
+		if (ctx->cpu_enable & (1 << o.ra)) {
+			ctx->cpu[o.rd] = ctx->cpu[o.ra] | o.i;
+			ctx->cpu_enable |= (1 << o.rd);
+			op->ptr = ctx->cpu[o.rd];
 			op->direction = 8; /* reference */
 		}
 		break;
 	default:
 		/* if unknown instruction encountered, better forget state */
-		cpu_enable = 0;
+		ctx->cpu_enable = 0;
 	}
 
 	/* temporary solution to prevent using wrong register values */
 	if ((op->type & RZ_ANALYSIS_OP_TYPE_JMP) == RZ_ANALYSIS_OP_TYPE_JMP) {
 		/* FIXME: handle delay slot after branches */
-		cpu_enable = 0;
+		ctx->cpu_enable = 0;
 	}
 	return 4;
 }
@@ -174,6 +176,21 @@ static int or1k_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, 
 	return op->size;
 }
 
+static bool or1k_init(void **user) {
+	or1k_context_t *ctx = RZ_NEW0(or1k_context_t);
+	if (!ctx) {
+		return false;
+	}
+
+	*user = ctx;
+	return true;
+}
+
+static bool or1k_fini(void *user) {
+	free(user);
+	return true;
+}
+
 RzAnalysisPlugin rz_analysis_plugin_or1k = {
 	.name = "or1k",
 	.desc = "OpenRISC 1000",
@@ -182,4 +199,6 @@ RzAnalysisPlugin rz_analysis_plugin_or1k = {
 	.arch = "or1k",
 	.esil = false,
 	.op = &or1k_op,
+	.init = &or1k_init,
+	.fini = &or1k_fini,
 };

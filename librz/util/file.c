@@ -986,7 +986,7 @@ static RzMmap *file_mmap(RzMmap *m) {
 #else
 static RzMmap *file_mmap(RzMmap *m) {
 	m->len = lseek(m->fd, (off_t)0, SEEK_END);
-	m->buf = malloc (m->len));
+	m->buf = malloc(m->len);
 	if (!m->buf) {
 		rz_file_mmap_free(m);
 		return NULL;

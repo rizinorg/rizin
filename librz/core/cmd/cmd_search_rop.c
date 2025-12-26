@@ -490,6 +490,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 
 	free(context->greparg);
 	rz_strbuf_free(context->buf);
+	rz_pvector_free(context->constraints);
 	free(context);
 }
 

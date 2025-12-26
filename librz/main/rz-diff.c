@@ -1878,7 +1878,7 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 
 	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
-		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
+		pair = (RzAnalysisMatchPair *)rz_list_first_val(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
 	}
 

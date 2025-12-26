@@ -391,7 +391,7 @@ RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name) {
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		ht_sp_delete(cfg->ht, node->name);
-		rz_list_delete_data(cfg->nodes, node);
+		rz_list_delete_val(cfg->nodes, node);
 		return true;
 	}
 	return false;

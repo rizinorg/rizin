@@ -70,6 +70,7 @@ RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_new(RzTypeDB *typedb, RZ_NONNU
 	rz_return_val_if_fail(typedb && name && type, NULL);
 	RzCallableArg *arg = RZ_NEW0(RzCallableArg);
 	if (!arg) {
+		rz_type_free(type);
 		return NULL;
 	}
 	arg->name = rz_str_dup(name);
@@ -132,6 +133,7 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzCallable *callable = rz_type_callable_new(name);
 	if (!callable) {
+		rz_type_free(type);
 		return NULL;
 	}
 	callable->ret = type;
@@ -339,6 +341,7 @@ RZ_API bool rz_type_func_arg_add(RzTypeDB *typedb, RZ_NONNULL const char *func_n
 	rz_return_val_if_fail(typedb && func_name, false);
 	RzCallable *callable = rz_type_func_get(typedb, func_name);
 	if (!callable) {
+		rz_type_free(arg_type);
 		return false;
 	}
 	RzCallableArg *arg = rz_type_callable_arg_new(typedb, arg_name, arg_type);

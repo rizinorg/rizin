@@ -405,7 +405,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	RzAnalysisFunction *our_fcn = ctx->fcn;
 	rz_analysis_block_ref(block);
 	while (!rz_list_empty(block->fcns)) {
-		RzAnalysisFunction *other_fcn = rz_list_first(block->fcns);
+		RzAnalysisFunction *other_fcn = rz_list_first_val(block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
@@ -1275,6 +1275,19 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
+
+			if (analysis->gnu_thumb1_case_uqi_addr && op.jump == analysis->gnu_thumb1_case_uqi_addr && analysis->opt.jmptbl) {
+				RzAnalysisJmpTableParams params = {
+					.jmp_address = op.addr,
+					.entry_size = 1,
+					.jmptbl_loc = op.addr + op.size,
+					.jmptbl_off = op.addr + op.size,
+					.sp = sp,
+					.tasks = tasks
+				};
+				ret = rz_analysis_walkthrough_arm_thumb1_case_uqi_table(analysis, fcn, bb, &params);
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
 		case RZ_ANALYSIS_OP_TYPE_RJMP:
@@ -1722,7 +1735,7 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analy
 				}
 			}
 		} else {
-			ret = rz_list_first(list);
+			ret = rz_list_first_val(list);
 		}
 	}
 	rz_list_free(list);

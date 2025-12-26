@@ -81,7 +81,7 @@ static void remove_offsetmap(RzMark *b, RzMarkItem *item) {
 	rz_return_if_fail(b && item);
 	RzMarksAtOffset *marks = rz_mark_get_nearest_list(b, item->from, 0);
 	if (marks) {
-		rz_list_delete_data(marks->marks, item);
+		rz_list_delete_val(marks->marks, item);
 		if (rz_list_empty(marks->marks)) {
 			rz_skiplist_delete(b->by_off, marks);
 		}

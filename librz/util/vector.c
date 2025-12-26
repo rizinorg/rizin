@@ -499,6 +499,10 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 	rz_return_val_if_fail(vec && ptr, NULL);
 	void **p = rz_vector_index_ptr(&vec->v, index);
 	if (!p) {
+		if (vec->v.free_user) {
+			RzPVectorFree free_fn = (RzPVectorFree)vec->v.free_user;
+			free_fn(ptr);
+		}
 		return NULL;
 	}
 	void *prev = *p;

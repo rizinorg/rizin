@@ -297,10 +297,10 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_UNK = 7, /* unknown opcode type */
 	RZ_ANALYSIS_OP_TYPE_NOP = 8, /* does nothing */
 	RZ_ANALYSIS_OP_TYPE_MOV = 9, /* register move */
-	RZ_ANALYSIS_OP_TYPE_CMOV = 9 | RZ_ANALYSIS_OP_TYPE_COND, /* conditional move */
+	RZ_ANALYSIS_OP_TYPE_CMOV = RZ_ANALYSIS_OP_TYPE_MOV | RZ_ANALYSIS_OP_TYPE_COND, /* conditional move */
 	RZ_ANALYSIS_OP_TYPE_TRAP = 10, /* it's a trap! */
 	RZ_ANALYSIS_OP_TYPE_SWI = 11, /* syscall, software interrupt */
-	RZ_ANALYSIS_OP_TYPE_CSWI = 11 | RZ_ANALYSIS_OP_TYPE_COND, /* syscall, software interrupt */
+	RZ_ANALYSIS_OP_TYPE_CSWI = RZ_ANALYSIS_OP_TYPE_SWI | RZ_ANALYSIS_OP_TYPE_COND, /* syscall, software interrupt */
 	RZ_ANALYSIS_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
 	RZ_ANALYSIS_OP_TYPE_RPUSH = RZ_ANALYSIS_OP_TYPE_UPUSH | RZ_ANALYSIS_OP_TYPE_REG, /* push register */
 	RZ_ANALYSIS_OP_TYPE_PUSH = 13, /* push value into stack */
@@ -548,6 +548,7 @@ typedef struct rz_analysis_t {
 	char *sdb_types_path; ///<  system path prefix, whether created in initialization or passed by RzCore.
 	ut64 cmpval; ///< last compare value for jump table.
 	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
+	ut64 gnu_thumb1_case_uqi_addr; ///< address of a `__gnu_thumb1_case_uqi_addr` function (specific to ARM / Thumb-1)
 	HtSP /*<const char *, RzSetU *>*/ *ht_virtual_xrefs; ///< addresses of virtual function calls
 } RzAnalysis;
 
@@ -2037,6 +2038,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
 RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
 RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
+RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
 
 /* reflines.c */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
