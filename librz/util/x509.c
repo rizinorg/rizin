@@ -508,9 +508,7 @@ RZ_IPI void rz_x509_algorithmidentifier_to_structure(RZ_NONNULL RzStructuredData
 		params = rz_asn1_stringify_bytes(ai->parameters->binary, ai->parameters->length);
 	}
 
-	if (params) {
-		rz_structured_data_map_add_string(parent, "parameters", params->string);
-	}
+	rz_structured_data_map_add_string(parent, "parameters", params->string);
 	rz_asn1_string_free(params);
 }
 
@@ -606,13 +604,11 @@ static void x509_subjectpublickeyinfo_to_structure(RzStructuredData *parent, RzX
 		}
 		rz_asn1_string_free(m);
 	} else if (spki->subjectPublicKey) {
-		if (spki->subjectPublicKeyExponent) {
-			m = rz_asn1_stringify_bytes(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
-			if (m) {
-				rz_structured_data_map_add_string(parent, "subjectPublicKey", m->string);
-			}
-			rz_asn1_string_free(m);
+		m = rz_asn1_stringify_bytes(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
+		if (m) {
+			rz_structured_data_map_add_string(parent, "subjectPublicKey", m->string);
 		}
+		rz_asn1_string_free(m);
 	}
 }
 
@@ -621,13 +617,14 @@ static void x509_extensions_to_structure(RzStructuredData *parent, RzX509Extensi
 		return;
 	}
 
+	RzASN1String *m = NULL;
 	RzStructuredData *extensions = rz_structured_data_map_add_array(parent, "extensions");
 	for (ut32 i = 0; i < exts->length; i++) {
 		RzX509Extension *e = exts->extensions[i];
 		if (!e) {
 			continue;
 		}
-		RzASN1String *m = NULL;
+
 		RzStructuredData *extension = rz_structured_data_array_add_map(extensions);
 		if (e->extnID) {
 			rz_structured_data_map_add_string(extension, "extnID", e->extnID->string);
