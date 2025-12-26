@@ -186,7 +186,7 @@ RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val) {
  * \brief Deletes a node in the list by using an RzListIter pointer.
  *
  **/
-RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
+RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter) {
 	rz_return_if_fail(list && iter);
 	rz_list_split_iter(list, iter);
 	if (list->free && iter->val) {
