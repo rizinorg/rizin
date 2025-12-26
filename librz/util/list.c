@@ -196,21 +196,6 @@ RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter)
 	free(iter);
 }
 
-RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr) {
-	rz_return_if_fail(list);
-
-	RzListIter *iter = rz_list_iterator(list);
-	while (iter) {
-		void *item = iter->val;
-		if (ptr == item) {
-			rz_list_split_iter(list, iter);
-			free(iter);
-			break;
-		}
-		iter = iter->next;
-	}
-}
-
 RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
 	rz_return_if_fail(list);
 

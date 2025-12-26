@@ -93,7 +93,6 @@ RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *ptr);
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
 RZ_API void rz_list_free(RZ_NULLABLE RzList *list);
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data);
-RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr);
 RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter);
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
