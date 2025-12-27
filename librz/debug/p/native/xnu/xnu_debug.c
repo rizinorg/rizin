@@ -798,7 +798,6 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	struct thread_command *tc;
 	vm_offset_t header;
 	ut64 hoffset;
-	int i;
 
 	header = tir->header;
 	hoffset = tir->hoffset;
@@ -810,8 +809,8 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	tc->cmdsize = sizeof(struct thread_command) + tir->tstate_size;
 	hoffset += sizeof(struct thread_command);
 
-	for (i = 0; i < coredump_nflavors; i++) {
-		eprintf("[DEBUG] %d/%d\n", i + 1, coredump_nflavors);
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
+		eprintf("[DEBUG] %zu/%d\n", i + 1, COREDUMP_FLAVORS_ARRAY_SIZE);
 		*(coredump_thread_state_flavor_t *)(header + hoffset) = flavors[i];
 		hoffset += sizeof(coredump_thread_state_flavor_t);
 		xnu_get_thread_status(port, flavors[i].flavor,
@@ -845,7 +844,7 @@ static uid_t uidFromPid(pid_t pid) {
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	RzXnuDebug *ctx = dbg->plugin_data;
-	int error = 0, i;
+	int error = 0;
 	int tstate_size;
 	int segment_count;
 	int command_size;
@@ -877,7 +876,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	memcpy(thread_flavor_array, &flavors, sizeof(thread_flavor_array));
 	tstate_size = 0;
 
-	for (i = 0; i < coredump_nflavors; i++) {
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
 		tstate_size += sizeof(coredump_thread_state_flavor_t) +
 			(flavors[i].count * sizeof(int));
 	}
