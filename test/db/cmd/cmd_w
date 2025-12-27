@@ -239,17 +239,12 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.bytes=true
 wx 488d850678563412
-s 0
 p8 7
-s 0
 wai "mov rax, rbx"
-s 0
 pD 7
 p8 7
 wx 488d850678563412
-s 0
 wai "mov rax, rbx" "mov rcx, rdx"
-s 0
 pD 7
 p8 7
 EOF
