@@ -604,7 +604,7 @@ static void x509_subjectpublickeyinfo_to_structure(RzStructuredData *parent, RzX
 		}
 		rz_asn1_string_free(m);
 	} else if (spki->subjectPublicKey) {
-		m = rz_asn1_stringify_bytes(spki->subjectPublicKeyExponent->binary, spki->subjectPublicKeyExponent->length);
+		m = rz_asn1_stringify_bytes(spki->subjectPublicKey->binary, spki->subjectPublicKey->length);
 		if (m) {
 			rz_structured_data_map_add_string(parent, "subjectPublicKey", m->string);
 		}
@@ -617,7 +617,6 @@ static void x509_extensions_to_structure(RzStructuredData *parent, RzX509Extensi
 		return;
 	}
 
-	RzASN1String *m = NULL;
 	RzStructuredData *extensions = rz_structured_data_map_add_array(parent, "extensions");
 	for (ut32 i = 0; i < exts->length; i++) {
 		RzX509Extension *e = exts->extensions[i];
@@ -632,29 +631,34 @@ static void x509_extensions_to_structure(RzStructuredData *parent, RzX509Extensi
 		if (e->critical) {
 			rz_structured_data_map_add_boolean(extension, "critical", e->critical);
 		}
-		if (e->extnValue) {
-			if (rz_str_is_printable_limited((const char *)e->extnValue->binary, e->extnValue->length)) {
-				m = rz_asn1_stringify_string(e->extnValue->binary, e->extnValue->length);
-			} else if (e->extnValue->length > 3) {
-				RzASN1Object *obj = rz_asn1_object_parse(e->extnValue->binary, e->extnValue->length);
-				if (obj) {
-					RzStructuredData *sd = rz_asn1_to_structure(obj, true);
-					rz_asn1_object_free(obj);
-					rz_structured_data_map_add(extension, "extnValue", sd);
-					continue;
-				}
-			}
-
-			if (!m && e->extnValue->length < 20) {
-				m = rz_asn1_stringify_integer(e->extnValue->binary, e->extnValue->length);
-			} else if (!m) {
-				m = rz_asn1_stringify_bytes(e->extnValue->binary, e->extnValue->length);
-			}
-			if (m) {
-				rz_structured_data_map_add_string(extension, "extnValue", m->string);
-			}
-			rz_asn1_string_free(m);
+		if (!e->extnValue) {
+			continue;
 		}
+
+		RzASN1String *m = NULL;
+		const RzASN1Binary *val = e->extnValue;
+
+		if (rz_str_is_printable_limited((const char *)val->binary, val->length)) {
+			m = rz_asn1_stringify_string(val->binary, val->length);
+		} else if (val->length > 3) {
+			RzASN1Object *obj = rz_asn1_object_parse(val->binary, val->length);
+			if (obj) {
+				RzStructuredData *sd = rz_asn1_to_structure(obj, true);
+				rz_asn1_object_free(obj);
+				rz_structured_data_map_add(extension, "extnValue", sd);
+				continue;
+			}
+		}
+
+		if (!m && val->length < 20) {
+			m = rz_asn1_stringify_integer(val->binary, val->length);
+		} else if (!m) {
+			m = rz_asn1_stringify_bytes(val->binary, val->length);
+		}
+		if (m) {
+			rz_structured_data_map_add_string(extension, "extnValue", m->string);
+		}
+		rz_asn1_string_free(m);
 	}
 }
 
