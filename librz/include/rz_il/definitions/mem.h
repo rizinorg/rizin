@@ -28,7 +28,7 @@ typedef struct rz_il_mem_t {
 	ut32 key_len;
 } RzILMem;
 
-RZ_API RzILMem *rz_il_mem_new(RzBuffer *buf, ut32 key_len);
+RZ_API RZ_OWN RzILMem *rz_il_mem_new(RZ_NONNULL RZ_BORROW RzBuffer *buf, ut32 key_len);
 RZ_API void rz_il_mem_free(RzILMem *mem);
 RZ_API ut32 rz_il_mem_key_len(RzILMem *mem);
 RZ_API ut32 rz_il_mem_value_len(RzILMem *mem);

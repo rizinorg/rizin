@@ -367,6 +367,7 @@ typedef struct rz_core_visual_view_t {
 	bool hide_legend;
 	bool is_inputing; // whether the user is inputing
 	char *inputing; // for filter on the go in Vv mode
+	char *curtheme; // track current theme to invalidate cache on change
 } RzCoreVisualView;
 
 typedef struct rz_core_visual_t {

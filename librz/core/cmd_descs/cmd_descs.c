@@ -20,6 +20,7 @@ static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
+static const RzCmdDescDetail cmd_query_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_rop_search_size_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
@@ -2202,6 +2203,41 @@ static const RzCmdDescHelp cmd_search_gadget_help = {
 	.args = cmd_search_gadget_args,
 };
 
+static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Rk rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Rk rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Rk rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Rk rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_query_gadget_args[] = {
 	{
 		.name = "key=value",
@@ -2215,6 +2251,7 @@ static const RzCmdDescArg cmd_query_gadget_args[] = {
 static const RzCmdDescHelp cmd_query_gadget_help = {
 	.summary = "Query ROP Gadgets by providing constraints",
 	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_gadget_details,
 	.args = cmd_query_gadget_args,
 };
 
