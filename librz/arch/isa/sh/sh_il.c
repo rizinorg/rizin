@@ -468,6 +468,7 @@ static RzILOpEffect *sh_il_set_param_pc_ctx(SHParam param, RZ_OWN RzILOpPure *va
 	case SH_IMM_S:
 	default:
 		RZ_LOG_ERROR("RzIL: SuperH: Cannot set value for addressing mode: %u\n", param.mode);
+		rz_il_op_pure_free(val);
 		return NULL;
 	}
 

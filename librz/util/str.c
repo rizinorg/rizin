@@ -2153,9 +2153,11 @@ RZ_API bool rz_str_is_printable(const char *str) {
 	return true;
 }
 
-RZ_API bool rz_str_is_printable_limited(const char *str, int size) {
+RZ_API bool rz_str_is_printable_limited(RZ_NONNULL const char *str, size_t size) {
+	rz_return_val_if_fail(str, false);
+
 	while (size > 0 && *str) {
-		int ulen = rz_utf8_decode((const ut8 *)str, strlen(str), NULL, true);
+		int ulen = rz_utf8_decode((const ut8 *)str, size, NULL, true);
 		if (ulen > 1) {
 			str += ulen;
 			continue;

@@ -146,7 +146,7 @@ RZ_API bool rz_str_is_ascii(const char *str);
 RZ_API bool rz_str_is_utf8(RZ_NONNULL const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
-RZ_API bool rz_str_is_printable_limited(const char *str, int size);
+RZ_API bool rz_str_is_printable_limited(RZ_NONNULL const char *str, size_t size);
 RZ_API bool rz_str_is_printable_incl_newlines(const char *str);
 RZ_API char *rz_str_appendlen(char *ptr, const char *string, int slen);
 RZ_API char *rz_str_newf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);

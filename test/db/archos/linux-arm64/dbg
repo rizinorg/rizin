@@ -53,7 +53,7 @@ CMDS=<<EOF
 db @ main
 dc
 dr x8
-dr x8 = 0x1234
+dr x8=0x1234
 dr x8
 EOF
 EXPECT=<<EOF

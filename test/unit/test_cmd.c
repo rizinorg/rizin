@@ -1321,7 +1321,7 @@ bool test_simple_macros(void) {
 	mu_assert_true(res, "macro1 should be added");
 	RzList *l = rz_cmd_macro_list(cmd);
 	mu_assert_eq(rz_list_length(l), 1, "no macros");
-	const RzCmdMacro *macro1 = (const RzCmdMacro *)rz_list_first(l);
+	const RzCmdMacro *macro1 = (const RzCmdMacro *)rz_list_first_val(l);
 	mu_assert_streq(macro1->name, "macro1", "macro should be named macro1");
 	mu_assert_eq(macro1->nargs, 2, "macro1 should have 2 args");
 	mu_assert_streq(macro1->args[0], "a", "macro1 first arg should be a");

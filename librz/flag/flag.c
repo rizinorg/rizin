@@ -21,7 +21,7 @@ static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	}
 	if (f) {
 		const RzList *list = rz_flag_get_list(f, off);
-		RzFlagItem *item = rz_list_last(list);
+		RzFlagItem *item = rz_list_last_val(list);
 		if (item) {
 			if (ok) {
 				*ok = true;
@@ -93,7 +93,7 @@ static void remove_offsetmap(RzFlag *f, RzFlagItem *item) {
 	rz_return_if_fail(f && item);
 	RzFlagsAtOffset *flags = rz_flag_get_nearest_list(f, item->offset, 0);
 	if (flags) {
-		rz_list_delete_data(flags->flags, item);
+		rz_list_delete_val(flags->flags, item);
 		if (rz_list_empty(flags->flags)) {
 			rz_skiplist_delete(f->by_off, flags);
 		}
@@ -358,7 +358,7 @@ RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLA
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, NULL);
 	const RzList *list = rz_flag_get_list(f, off);
-	return list ? evalFlag(f, rz_list_last(list)) : NULL;
+	return list ? evalFlag(f, rz_list_last_val(list)) : NULL;
 }
 
 /* return the first flag that matches an offset ordered by the order of
@@ -382,7 +382,7 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 		goto beach;
 	}
 	if (rz_list_length(list) == 1) {
-		ret = rz_list_last(list);
+		ret = rz_list_last_val(list);
 		goto beach;
 	}
 

@@ -45,6 +45,7 @@ typedef enum {
 	TYPE_TUPLE = '(',
 	TYPE_UNICODE = 'u',
 	TYPE_UNKNOWN = '?',
+	TYPE_SLICE = ':',
 } pyc_marshal_type;
 
 typedef enum {

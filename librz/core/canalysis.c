@@ -83,7 +83,7 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 
 	rz_io_pread_at(core->io, pointer, buffer, sizeof(buffer));
 	if (rz_scan_strings_raw(buffer, strings, &scan_opt, 0, sizeof(buffer), strenc) < 1 ||
-		!(detected = rz_list_first(strings)) ||
+		!(detected = rz_list_first_val(strings)) ||
 		// ignore any address that is not address 0
 		// because we only want strings starting at 0
 		detected->addr) {
@@ -497,7 +497,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && bb && state);
 	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
-	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
+	RzAnalysisFunction *fcn = rz_list_first_val(bb->fcns);
 	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 }
 
@@ -767,7 +767,7 @@ static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
 	if (rz_pvector_len(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_pvector_head(fcn->bbs))->ninstr == 1) {
 		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		if (xrefs && rz_list_length(xrefs) == 1) {
-			RzAnalysisXRef *xref = rz_list_first(xrefs);
+			RzAnalysisXRef *xref = rz_list_first_val(xrefs);
 			if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) { /* Some fcns don't return */
 				RzFlagItem *flg = rz_flag_get_i(core->flags, xref->to);
 				if (flg && rz_str_startswith(flg->name, "sym.imp.")) {
@@ -2263,6 +2263,22 @@ static bool isSkippable(RzBinSymbol *s) {
 	return false;
 }
 
+static bool arch_is(RzCore *core, const char *x) {
+	RzAsm *as = core ? core->rasm : NULL;
+	if (as && as->cur && as->bits <= 32 && as->cur->name) {
+		return strstr(as->cur->name, x);
+	}
+	return false;
+}
+
+static bool archIsThumbable(RzCore *core) {
+	return arch_is(core, "arm");
+}
+
+static int compare_symbol_names(const char *s1, RzBinSymbol *sym, RZ_UNUSED void *user) {
+	return strcmp(s1, sym->name);
+}
+
 RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzPVector *vector;
 	RzListIter *iter;
@@ -2293,6 +2309,12 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
 	void **it;
 	if (o && (vector = o->symbols) != NULL) {
+		// Find address of `__gnu_thumb1_case_uqi` GCC helper function on ARM (Thumb-1 mode)
+		if (archIsThumbable(core) && (it = rz_pvector_find(vector, "__gnu_thumb1_case_uqi", (RzPVectorComparator)compare_symbol_names, NULL))) {
+			RzBinSymbol *symbol = *it;
+			core->analysis->gnu_thumb1_case_uqi_addr = isValidSymbol(symbol) ? rz_bin_object_get_vaddr(o, symbol->paddr, symbol->vaddr) : 0;
+		}
+
 		rz_pvector_foreach (vector, it) {
 			symbol = *it;
 			if (rz_cons_is_breaked()) {
@@ -4625,18 +4647,6 @@ RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end) {
 	rz_config_set_i(core->config, "analysis.from", a);
 	rz_config_set_i(core->config, "analysis.to", b);
 	rz_config_set(core->config, "analysis.limits", c ? c : "");
-}
-
-static bool arch_is(RzCore *core, const char *x) {
-	RzAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->bits <= 32 && as->cur->name) {
-		return strstr(as->cur->name, x);
-	}
-	return false;
-}
-
-static bool archIsThumbable(RzCore *core) {
-	return arch_is(core, "arm");
 }
 
 static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
