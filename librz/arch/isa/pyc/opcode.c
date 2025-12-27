@@ -267,41 +267,40 @@ static version_opcode version_op[] = {
 	{ "v3.14.0", opcode_314 },
 	{ "v3.14.1", opcode_314 },
 	{ "v3.14.2", opcode_314 },
-	{ NULL, NULL },
 };
 
-bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
-	if (version == NULL || op == NULL) {
-		return false;
-	}
-	version_opcode *vop = version_op;
-
-	while (vop->version) {
-		if (!strcmp(vop->version, version)) {
-			if (vop->opcode_func == (pyc_opcodes * (*)())(op->version_sig)) {
-				return true;
-			}
-		}
-		vop++;
+void pyc_context_free(pyc_context_t *ctx) {
+	if (!ctx) {
+		return;
 	}
 
-	return false;
+	free_opcode(ctx->cache);
+	free(ctx);
 }
 
-pyc_opcodes *get_opcode_by_version(char *version) {
-	if (version == NULL) {
-		return NULL;
+bool pyc_context_set_opcode_by_version(const char *version, pyc_context_t *ctx) {
+	if (!version) {
+		return false;
 	}
-	version_opcode *vop = version_op;
 
-	while (vop->version) {
-		if (!strcmp(vop->version, version)) {
-			return vop->opcode_func();
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(version_op); ++i) {
+		version_opcode *vop = &version_op[i];
+		if (RZ_STR_NE(vop->version, version)) {
+			continue;
 		}
-		vop++;
+
+		free_opcode(ctx->cache);
+		ctx->cache = vop->opcode_func();
+		if (!ctx->cache) {
+			// fail to alloc
+			return false;
+		}
+		ctx->version = vop->version;
+		return true;
 	}
 
-	return NULL; // No match version
+	// No match version
+	return false;
 }
 
 pyc_opcodes *new_pyc_opcodes() {
@@ -338,14 +337,11 @@ pyc_opcodes *new_pyc_opcodes() {
 }
 
 void free_opcode(pyc_opcodes *opcodes) {
-	size_t i;
-	if (opcodes == NULL || opcodes->opcodes == NULL) {
+	if (!opcodes) {
 		return;
 	}
-	for (i = 0; i < 256; i++) {
-		if (opcodes->opcodes[i].op_name) {
-			free(opcodes->opcodes[i].op_name);
-		}
+	for (size_t i = 0; i < 256 && opcodes->opcodes; i++) {
+		free(opcodes->opcodes[i].op_name);
 	}
 	free(opcodes->opcodes);
 	if (opcodes->opcode_arg_fmt) {

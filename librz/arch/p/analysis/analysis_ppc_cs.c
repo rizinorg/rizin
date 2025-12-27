@@ -47,6 +47,7 @@ typedef struct {
 	csh handle;
 	int omode;
 	int obits;
+	RzRegItem base_regs[4];
 } PPCContext;
 
 static bool ppc_init(void **user) {
@@ -869,22 +870,20 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static RzRegItem base_regs[4];
-
-static void create_src_dst(RzAnalysisOp *op) {
+static void create_src_dst(RzAnalysisOp *op, PPCContext *ctx) {
 	op->src[0] = rz_analysis_value_new();
 	op->src[1] = rz_analysis_value_new();
 	op->src[2] = rz_analysis_value_new();
 	op->dst = rz_analysis_value_new();
-	ZERO_FILL(base_regs[0]);
-	ZERO_FILL(base_regs[1]);
-	ZERO_FILL(base_regs[2]);
-	ZERO_FILL(base_regs[3]);
+	ZERO_FILL(ctx->base_regs[0]);
+	ZERO_FILL(ctx->base_regs[1]);
+	ZERO_FILL(ctx->base_regs[2]);
+	ZERO_FILL(ctx->base_regs[3]);
 }
 
-static void set_src_dst(RzAnalysisValue *val, csh *handle, cs_insn *insn, int x) {
+static void set_src_dst(RzAnalysisValue *val, csh *handle, cs_insn *insn, int x, PPCContext *ctx) {
 	cs_ppc_op ppcop = INSOP(x);
-	parse_reg_name(&base_regs[x], *handle, insn, x);
+	parse_reg_name(&ctx->base_regs[x], *handle, insn, x);
 	switch (ppcop.type) {
 	case PPC_OP_REG:
 		break;
@@ -897,11 +896,11 @@ static void set_src_dst(RzAnalysisValue *val, csh *handle, cs_insn *insn, int x)
 	default:
 		break;
 	}
-	val->reg = &base_regs[x];
+	val->reg = &ctx->base_regs[x];
 }
 
-static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
-	create_src_dst(op);
+static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn, PPCContext *ctx) {
+	create_src_dst(op, ctx);
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 	case RZ_ANALYSIS_OP_TYPE_CMP:
@@ -923,14 +922,14 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	case RZ_ANALYSIS_OP_TYPE_ROR:
 	case RZ_ANALYSIS_OP_TYPE_ROL:
 	case RZ_ANALYSIS_OP_TYPE_CAST:
-		set_src_dst(op->src[2], &handle, insn, 3);
-		set_src_dst(op->src[1], &handle, insn, 2);
-		set_src_dst(op->src[0], &handle, insn, 1);
-		set_src_dst(op->dst, &handle, insn, 0);
+		set_src_dst(op->src[2], &handle, insn, 3, ctx);
+		set_src_dst(op->src[1], &handle, insn, 2, ctx);
+		set_src_dst(op->src[0], &handle, insn, 1, ctx);
+		set_src_dst(op->dst, &handle, insn, 0, ctx);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_STORE:
-		set_src_dst(op->dst, &handle, insn, 1);
-		set_src_dst(op->src[0], &handle, insn, 0);
+		set_src_dst(op->dst, &handle, insn, 1, ctx);
+		set_src_dst(op->src[0], &handle, insn, 0, ctx);
 		break;
 	}
 }
@@ -1742,7 +1741,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 			break;
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			op_fillval(op, ctx->handle, insn);
+			op_fillval(op, ctx->handle, insn, ctx);
 		}
 		if (!(mask & RZ_ANALYSIS_OP_MASK_ESIL)) {
 			rz_strbuf_fini(&op->esil);
