@@ -233,6 +233,36 @@ nop
 EOF
 RUN
 
+NAME=wai
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.bytes=true
+wx 488d850678563412
+p8 7
+wai "mov rax, rbx"
+pD 7
+p8 7
+wx 488d850678563412
+wai "mov rax, rbx" "mov rcx, rdx"
+pD 7
+p8 7
+EOF
+EXPECT=<<EOF
+488d8506785634
+            0x00000000      4889d8         mov   rax, rbx
+            0x00000003      90             nop
+            0x00000004      90             nop
+            0x00000005      90             nop
+            0x00000006      90             nop
+4889d890909090
+            0x00000000      4889d8         mov   rax, rbx
+            0x00000003      4889d1         mov   rcx, rdx
+            0x00000006      90             nop
+4889d84889d190
+EOF
+RUN
+
 NAME=wb
 FILE==
 CMDS=<<EOF
