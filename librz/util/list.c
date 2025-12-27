@@ -594,11 +594,11 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer value, if found.
+ * \brief Returns true if the given pointer value is found, false otherwise.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
-	return rz_list_find_val(list, val);
+RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
+	return rz_list_find_val(list, val) != NULL;
 }
 
 /**
