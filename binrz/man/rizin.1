@@ -1,4 +1,4 @@
-.Dd August 25, 2023
+.Dd December 27, 2025
 .Dt RIZIN 1
 .Os
 .Sh NAME
@@ -85,7 +85,7 @@ Disable demangling
 .It Fl n , nn
 Control loading of RzBin info, with -nn only loading binary structures
 .It Fl N
-Disable user settings/projects from ~/.rizinrc and related directories.
+Disable user settings from ~/.config/rizin/rizinrc. Check RZ_CONFIGHOME in rizin -H output.
 .It Fl NN
 Disable loading any scripts or plugins
 .It Fl q
@@ -110,7 +110,7 @@ Avoid computing the file hashes
 Set bin.filter=false to load rbin info without filtering names
 .It Fl v
 Show version information and exit.
-Use -qv to get just the version number.
+Use .F1 qv to get just the version number.
 .It Fl V
 Show rizin library versions
 .It Fl w
@@ -168,11 +168,11 @@ on the /bin/ls executable:
 .Pp
 .Nm rizin Fl A Ar /bin/ls
 .Pp
-Open the file /bin/ls in write mode:
+Open the file /bin/ls in write mode, allowing you to make changes to the binary:
 .Pp
 .Nm rizin Fl w Ar /bin/ls
 .Pp
-Start the debugger and pass arguments:
+Start rizin's debugger (-d) on /bin/ls and passes arguments "-l" and "/tmp" to the program for debugging:
 .Pp
 .Nm rizin Fl d Ar /bin/ls Fl l Ar /tmp
 .Sh SEE ALSO
