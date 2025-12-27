@@ -2042,7 +2042,7 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 RZ_API bool rz_analysis_function_set_cc(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *cc) {
 	rz_return_val_if_fail(analysis && fcn, false);
 
-	if (!cc || !*cc) {
+	if (RZ_STR_ISEMPTY(cc)) {
 		fcn->cc = NULL;
 		return true;
 	}
