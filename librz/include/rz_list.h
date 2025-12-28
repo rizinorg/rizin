@@ -51,9 +51,9 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach_prev_safe(list, it, tmp, var) \
 	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
-#define rz_list_empty(x) (!(x) || !(x)->length)
-#define rz_list_head(x)  ((x) ? (x)->head : NULL)
-#define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
+#define rz_list_empty(x)     (!(x) || !(x)->length)
+#define rz_list_head(x)      ((x) ? (x)->head : NULL)
+#define rz_list_tail(x)      ((x) ? (x)->tail : NULL)
 #define rz_list_safe_prev(x) ((x) ? (x)->prev : NULL)
 #define rz_list_safe_next(x) ((x) ? (x)->next : NULL)
 
