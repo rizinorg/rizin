@@ -1061,7 +1061,7 @@ RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_ne
 	if (ce) {
 		op->op.imm = imm_is_scaled(op->attr) ? (op->op.imm >> op->shift) : op->op.imm;
 		op->op.imm = ((op->op.imm & 0x3F) | ce->const_ext);
-		rz_list_delete_data(state->const_ext_l, ce);
+		rz_list_delete_val(state->const_ext_l, ce);
 		return;
 	}
 }
@@ -1316,7 +1316,6 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 		if (p->last_instr_present && addr_at_io_map_border) {
 			make_packet_valid(state, p);
 		}
-		rz_reverse->pkt_fully_decoded = p->is_valid;
 	}
 
 	copy_asm_ana_ops(state, rz_reverse, hic);

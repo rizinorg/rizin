@@ -331,7 +331,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 
 	// there is no need to sort unmatch_b because it is already sorted.
 	rz_list_foreach (result->matches, iter, pair) {
-		rz_list_delete_data(unmatch_b, (void *)pair->pair_b);
+		rz_list_delete_val(unmatch_b, (void *)pair->pair_b);
 	}
 
 	rz_th_pool_free(pool);
@@ -529,7 +529,7 @@ static void *analysis_match_one_function(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	fcn_b = rz_list_first(shared->list_b);
+	fcn_b = rz_list_first_val(shared->list_b);
 	if (!shared_context_alloc_a(shared, fcn_b, &buf_b, &size_b)) {
 		RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (B)\n", fcn_b->name);
 		return NULL;

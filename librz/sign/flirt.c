@@ -1545,7 +1545,7 @@ static bool flirt_write_node(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBu
 		// leaf
 		ut8 flags = 0;
 
-		RzFlirtModule *last = rz_list_last(node->module_list);
+		RzFlirtModule *last = rz_list_last_val(node->module_list);
 		rz_list_foreach (node->module_list, it, module) {
 			bool already_found = !(flags & IDASIG_PARSE_MORE_MODULES_WITH_SAME_CRC);
 			if (last != module) {

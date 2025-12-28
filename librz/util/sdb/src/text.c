@@ -350,7 +350,7 @@ static bool load_process_final_line(LoadCtx *ctx) {
 	RzListIter *it;
 	void *token_off_tmp;
 	rz_list_foreach (ctx->path, it, token_off_tmp) {
-		it->elem = (void *)((size_t)token_off_tmp - ctx->line_begin);
+		it->val = (void *)((size_t)token_off_tmp - ctx->line_begin);
 	}
 	ctx->line_begin = 0;
 	load_process_line(ctx);

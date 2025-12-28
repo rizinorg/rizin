@@ -20,6 +20,7 @@ static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
 static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
+static const RzCmdDescDetail cmd_query_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_rop_search_size_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
@@ -2202,6 +2203,41 @@ static const RzCmdDescHelp cmd_search_gadget_help = {
 	.args = cmd_search_gadget_args,
 };
 
+static const RzCmdDescDetailEntry cmd_query_gadget_Constraint_space_types_detail_entries[] = {
+	{ .text = "reg=const", .arg_str = NULL, .comment = "Find gadgets that set a register to a constant value" },
+	{ .text = "reg=reg", .arg_str = NULL, .comment = "Find gadgets that copy one register to another" },
+	{ .text = "reg=reg OP const", .arg_str = NULL, .comment = "Find gadgets with register and constant arithmetic" },
+	{ .text = "reg=reg OP reg", .arg_str = NULL, .comment = "Find gadgets with register-register operations" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Supported_space_operations_detail_entries[] = {
+	{ .text = "+ - * / %", .arg_str = NULL, .comment = "Arithmetic operations (add, sub, mul, div, mod)" },
+	{ .text = "& | ^", .arg_str = NULL, .comment = "Bitwise operations (AND, OR, XOR)" },
+	{ .text = "<< >>", .arg_str = NULL, .comment = "Shift operations (left, right)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Compound_space_operators_detail_entries[] = {
+	{ .text = "reg++ or reg--", .arg_str = NULL, .comment = "Increment or decrement register" },
+	{ .text = "reg+=val, reg-=val", .arg_str = NULL, .comment = "Compound assignment operators" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry cmd_query_gadget_Usage_space_example_detail_entries[] = {
+	{ .text = "Find gadgets setting rax to 0", .arg_str = NULL, .comment = "/Rk rax=0" },
+	{ .text = "Find gadgets copying rbx to rax", .arg_str = NULL, .comment = "/Rk rax=rbx" },
+	{ .text = "Find gadgets with rax = rbx + 8", .arg_str = NULL, .comment = "/Rk rax=rbx+8" },
+	{ .text = "Find gadgets with multiple constraints", .arg_str = NULL, .comment = "/Rk rax=0,rbx=rcx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_query_gadget_details[] = {
+	{ .name = "Constraint types", .entries = cmd_query_gadget_Constraint_space_types_detail_entries },
+	{ .name = "Supported operations", .entries = cmd_query_gadget_Supported_space_operations_detail_entries },
+	{ .name = "Compound operators", .entries = cmd_query_gadget_Compound_space_operators_detail_entries },
+	{ .name = "Usage example", .entries = cmd_query_gadget_Usage_space_example_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg cmd_query_gadget_args[] = {
 	{
 		.name = "key=value",
@@ -2215,6 +2251,7 @@ static const RzCmdDescArg cmd_query_gadget_args[] = {
 static const RzCmdDescHelp cmd_query_gadget_help = {
 	.summary = "Query ROP Gadgets by providing constraints",
 	.args_str = " <key>[=<val>] [<key>[=<val>] ...]]",
+	.details = cmd_query_gadget_details,
 	.args = cmd_query_gadget_args,
 };
 
@@ -11053,17 +11090,17 @@ static const RzCmdDescHelp dr_help = {
 };
 static const RzCmdDescArg debug_regs_args[] = {
 	{
-		.name = "filter",
+		.name = "filters",
 		.type = RZ_CMD_ARG_TYPE_REG_FILTER,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp debug_regs_help = {
-	.summary = "Show registers with their values, or assign one (`dr reg=value`)",
-	.args_str = " [<filter> [= <value>]]",
+	.summary = "Show registers with their values, or assign registers (`dr reg1=value reg2=value`)",
+	.args_str = " [<filter1> [= <value>] <filter2> [= <value>] ...]",
 	.args = debug_regs_args,
 };
 
@@ -15776,24 +15813,35 @@ static const RzCmdDescHelp cmd_print_format_write_help = {
 };
 
 static const RzCmdDescHelp pF_help = {
-	.summary = "Print parsed ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
+	.summary = "Deserializes ASN.1, PKCS, X509, ProtoBuf, AXML, etc.. formats",
+};
+static const RzCmdDescHelp pFa_help = {
+	.summary = "Deserializes the ASN.1 DER structure from the current block",
 };
 static const RzCmdDescArg cmd_print_asn1_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_asn1_help = {
-	.summary = "Decode ASN.1 from current block",
+	.summary = "Deserializes the ASN.1 DER structure from the current block as a hexdump.",
 	.args = cmd_print_asn1_args,
 };
 
+static const RzCmdDescArg cmd_print_asn1_structure_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_asn1_structure_help = {
+	.summary = "Deserializes the ASN.1 DER structure from the current block as a structured data format.",
+	.args = cmd_print_asn1_structure_args,
+};
+
 static const RzCmdDescHelp cmd_print_protobuf_help = {
-	.summary = "Decode raw protobuf from current block",
+	.summary = "Deserializes raw protobuf from current block as a hexdump.",
 };
 static const RzCmdDescArg cmd_print_protobuf_standard_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_protobuf_standard_help = {
-	.summary = "Decode raw protobuf from current block",
+	.summary = "Deserializes raw protobuf from current block as a hexdump.",
 	.args = cmd_print_protobuf_standard_args,
 };
 
@@ -15801,7 +15849,7 @@ static const RzCmdDescArg cmd_print_protobuf_verbose_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_protobuf_verbose_help = {
-	.summary = "Decode raw protobuf from current block (verbose)",
+	.summary = "Deserializes raw protobuf from current block  as a hexdump(verbose).",
 	.args = cmd_print_protobuf_verbose_args,
 };
 
@@ -15809,7 +15857,7 @@ static const RzCmdDescArg cmd_print_pkcs7_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_pkcs7_help = {
-	.summary = "Decode PKCS7 from current block",
+	.summary = "Deserializes PKCS7 from current block as a structured data format.",
 	.args = cmd_print_pkcs7_args,
 };
 
@@ -15817,15 +15865,23 @@ static const RzCmdDescArg cmd_print_x509_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_x509_help = {
-	.summary = "Decode X.509 from current block",
+	.summary = "Deserializes X.509 from current block as a structured data format.",
 	.args = cmd_print_x509_args,
+};
+
+static const RzCmdDescArg cmd_print_pkcs8_pkey_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_pkcs8_pkey_help = {
+	.summary = "Deserializes PKCS#8 private keys from current block as a structured data format.",
+	.args = cmd_print_pkcs8_pkey_args,
 };
 
 static const RzCmdDescArg cmd_print_axml_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_print_axml_help = {
-	.summary = "Decode Android Binary XML from current block",
+	.summary = "Deserializes Android Binary XML from current block as XML format.",
 	.args = cmd_print_axml_args,
 };
 
@@ -24409,8 +24465,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *pF_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pF", NULL, NULL, &pF_help);
 	rz_warn_if_fail(pF_cd);
-	RzCmdDesc *cmd_print_asn1_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pF_cd, "pFa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_asn1_handler, &cmd_print_asn1_help);
-	rz_warn_if_fail(cmd_print_asn1_cd);
+	RzCmdDesc *pFa_cd = rz_cmd_desc_group_modes_new(core->rcmd, pF_cd, "pFa", RZ_OUTPUT_MODE_STANDARD, rz_cmd_print_asn1_handler, &cmd_print_asn1_help, &pFa_help);
+	rz_warn_if_fail(pFa_cd);
+	RzCmdDesc *cmd_print_asn1_structure_cd = rz_cmd_desc_argv_state_new(core->rcmd, pFa_cd, "pFas", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_asn1_structure_handler, &cmd_print_asn1_structure_help);
+	rz_warn_if_fail(cmd_print_asn1_structure_cd);
 
 	RzCmdDesc *cmd_print_protobuf_cd = rz_cmd_desc_group_new(core->rcmd, pF_cd, "pFb", rz_cmd_print_protobuf_standard_handler, &cmd_print_protobuf_standard_help, &cmd_print_protobuf_help);
 	rz_warn_if_fail(cmd_print_protobuf_cd);
@@ -24422,6 +24480,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_x509_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pFx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_x509_handler, &cmd_print_x509_help);
 	rz_warn_if_fail(cmd_print_x509_cd);
+
+	RzCmdDesc *cmd_print_pkcs8_pkey_cd = rz_cmd_desc_argv_state_new(core->rcmd, pF_cd, "pF8", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_pkcs8_pkey_handler, &cmd_print_pkcs8_pkey_help);
+	rz_warn_if_fail(cmd_print_pkcs8_pkey_cd);
 
 	RzCmdDesc *cmd_print_axml_cd = rz_cmd_desc_argv_new(core->rcmd, pF_cd, "pFA", rz_cmd_print_axml_handler, &cmd_print_axml_help);
 	rz_warn_if_fail(cmd_print_axml_cd);
