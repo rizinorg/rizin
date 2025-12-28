@@ -1,5 +1,3 @@
-
-
 // SPDX-FileCopyrightText: 2025 Zapper9982
 // SPDX-License-Identifier: LGPL-3.0-only
 

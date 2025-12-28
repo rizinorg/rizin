@@ -116,7 +116,6 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 			if (consecutive_invalid >= 3) {
 				break;
 			}
-			continue;
 		}
 
 		consecutive_invalid = 0;
@@ -275,7 +274,7 @@ RZ_IPI RzBinInfo *gns1_info(RzBinFile *bf) {
 	info->subsystem = rz_str_dup("baseband");
 	info->cpu = rz_str_dup("ARC700");
 	info->has_va = true;
-	info->bits = 32;
+	info->bits = 16;
 	info->big_endian = false;
 
 	return info;
@@ -318,11 +317,22 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 		rz_structured_data_map_add_unsigned(seg, "file_offset", entry->offset, true);
 
 		// for region (user-facing: region_a/region_b)
-		const char *region = entry->region == GNS1_REGION_A ? "region_a" : (entry->region == GNS1_REGION_B ? "region_b" : "unknown");
+		const char *region = NULL;
+		switch (entry->region) {
+		case GNS1_REGION_A:
+			region = "region_a";
+			break;
+		case GNS1_REGION_B:
+			region = "region_b";
+			break;
+		default:
+			region = "unknown";
+			break;
+		}
 		rz_structured_data_map_add_string(seg, "region", region);
 
 		// for type
-		const char *type = entry->type == GNS1_SEG_TEXT ? "text" : "data";
+		const char *type = entry->type == GNS1_SEG_TEXT ? ".text" : ".data";
 		rz_structured_data_map_add_string(seg, "type", type);
 
 		// calc rebase virtual addr
