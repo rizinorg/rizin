@@ -69,8 +69,6 @@ RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
 RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter);
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter);
 RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter);
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
