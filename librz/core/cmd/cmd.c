@@ -322,10 +322,10 @@ RZ_API int rz_line_hist_sdb_up(RzLine *line) {
 }
 
 RZ_API int rz_line_hist_sdb_down(RzLine *line) {
-	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
+	if (!rz_list_safe_prev(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
+	line->sdbshell_hist_iter = rz_list_safe_prev(line->sdbshell_hist_iter);
 	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;

@@ -2307,7 +2307,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 							rz_cons_printf("%d:", case_prev);
 						}
 						if (iter != uniqlist->head && iter != uniqlist->tail) {
-							iter = rz_list_iter_get_prev(iter);
+							iter = rz_list_safe_prev(iter);
 						}
 						case_start = case_current;
 					} else {
