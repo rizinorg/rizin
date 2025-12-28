@@ -308,8 +308,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char
 	rz_cons_sleep_end(bed);
 	return RZ_CMD_STATUS_OK;
 }
+//{ "uniq", rz_cmd_shell_uniq_handler, "Remove duplicate lines (supports piped input)", NULL },
 
-// uniq
 RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv) {
 	char *res = rz_syscmd_uniq(argv[1]);
 	if (!res) {
@@ -447,7 +447,8 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-// sort
+// { "sort", rz_cmd_shell_sort_handler, "Sort lines (supports piped input)", NULL },
+
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv) {
 	char *res = rz_syscmd_sort(argv[1]);
 	if (res) {
