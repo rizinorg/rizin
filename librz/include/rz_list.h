@@ -89,7 +89,7 @@ RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzL
 RZ_API void rz_list_sorted_uniq(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_init(RZ_NONNULL RzList *list);
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter);
-RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *ptr);
+RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val);
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list);
 RZ_API void rz_list_free(RZ_NULLABLE RzList *list);
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data);
@@ -105,9 +105,9 @@ RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list);
 RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
 
 /* hashlike api */
-RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);
-RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr);
-RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp, void *user);
+RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);
+RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val, RZ_NONNULL RzListComparator cmp, void *user);
 
 #ifdef __cplusplus
 }

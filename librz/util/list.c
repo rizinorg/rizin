@@ -594,11 +594,11 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer value, if found.
+ * \brief Returns true if the given pointer value is found, false otherwise.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
-	return rz_list_find_val(list, val);
+RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
+	return rz_list_find_val(list, val) != NULL;
 }
 
 /**
@@ -618,20 +618,20 @@ RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_
 }
 
 /**
- * \brief Returns RzListIter element which matches via the RzListComparator
+ * \brief Returns first RzListIter node that has a value that is RzListComparator-equal
+ *        to the given value.
+ * For searching by value equality, rz_list_find_val() provides a simpler interface.
  *
- * Find the first RzListIter that is equal to the given data
- * For searching by pointer comparison, rz_list_find_val() provides a simpler interface.
- *
- * \return the first RzListIter that is equall to p w.r.t. cmp.
+ * \return The first RzListIter node that matches `val` wrt `cmp`.
  */
-RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp, void *user) {
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val,
+	RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_val_if_fail(list && cmp, NULL);
 
 	void *q;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, q) {
-		if (!cmp(p, q, user)) {
+		if (!cmp(val, q, user)) {
 			return iter;
 		}
 	}
