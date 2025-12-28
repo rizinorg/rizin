@@ -27,5 +27,6 @@ install_man(
   'man/rz-asm.1',
   'man/rz-ax.1',
   'man/rz-sign.1',
+  'man/rz-test.1',
   'man/rz-esil.7',
 )
