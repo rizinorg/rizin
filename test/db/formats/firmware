@@ -316,7 +316,7 @@ binsz    0x00000094
             ;-- entry1:
             ;-- section.region_a_text_0:
             ;-- section.region_b_text_2:
-                    0x10000000      mov   r22, 25                              ; [02] -r-x section size 16 named region_b_text_2
+                   0x10000000      mov   r22, 25                              ; [02] -r-x section size 16 named region_b_text_2
 EOF
 RUN
 
