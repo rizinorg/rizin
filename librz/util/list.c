@@ -6,23 +6,6 @@
 #include <rz_util.h>
 
 /**
- * \brief returns the prev RzList iterator in the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	return iter->prev;
-}
-/**
- * \brief returns the next RzList iterator in the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	return iter->next;
-}
-
-/**
  * \brief returns the value stored in the prev RzList iterator
  *
  **/
