@@ -496,7 +496,7 @@ bool test_rz_list_find_val(void) {
 	mu_assert_notnull(it, "find_val");
 	mu_assert_ptreq(it, rz_list_head(l), "find_val");
 
-	RzListIter *expect = rz_list_iter_get_next(it);
+	RzListIter *expect = rz_list_safe_next(it);
 	mu_assert_notnull(it, "expect next");
 	it = rz_list_find_val(l, (void *)1337);
 	mu_assert_notnull(it, "find_val");
