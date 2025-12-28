@@ -542,8 +542,10 @@ typedef struct {
 // ... 6 is reserved
 #define PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I         7
 #define PE_IMAGE_REL_BASED_RISCV_LOW12S_LOONGARCH32_MARK_LA 8
-#define PE_IMAGE_REL_BASED_MIPS_JMPADDR16                   9
+#define PE_IMAGE_REL_BASED_MIPS_JMPADDR16_IA64_IMM64        9
 #define PE_IMAGE_REL_BASED_DIR64                            10
+// ... 11-14 are reserved or machine-specific
+#define PE_IMAGE_REL_BASED_RESERVED_15                      15
 
 #define STRINGFILEINFO_TEXT  "StringFileInfo"
 #define TRANSLATION_TEXT     "Translation"

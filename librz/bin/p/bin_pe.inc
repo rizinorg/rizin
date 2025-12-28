@@ -500,6 +500,8 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 
 	case PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I:
 		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_ARM:
+		case PE_IMAGE_FILE_MACHINE_ARMNT:
 		case PE_IMAGE_FILE_MACHINE_THUMB:
 			return "IMAGE_REL_BASED_THUMB_MOV32";
 		case PE_IMAGE_FILE_MACHINE_RISCV32:
@@ -523,7 +525,7 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
 			return "IMAGE_REL_BASED_UNKNOWN";
 		}
-	case PE_IMAGE_REL_BASED_MIPS_JMPADDR16:
+	case PE_IMAGE_REL_BASED_MIPS_JMPADDR16_IA64_IMM64:
 		switch (machine_type) {
 		case PE_IMAGE_FILE_MACHINE_MIPS16:
 		case PE_IMAGE_FILE_MACHINE_MIPSFPU:
@@ -531,12 +533,16 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 		case PE_IMAGE_FILE_MACHINE_R4000:
 		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
 			return "IMAGE_REL_BASED_MIPS_JMPADDR16";
+		case PE_IMAGE_FILE_MACHINE_IA64:
+			return "IMAGE_REL_BASED_IA64_IMM64";
 		default:
-			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
-			return "IMAGE_REL_BASED_UNKNOWN";
+			// Type 9 is machine-specific, return generic name for unsupported machines
+			return "IMAGE_REL_BASED_MACHINE_SPECIFIC_9";
 		}
 	case PE_IMAGE_REL_BASED_DIR64:
 		return "IMAGE_REL_BASED_DIR64";
+	case PE_IMAGE_REL_BASED_RESERVED_15:
+		return "IMAGE_REL_BASED_RESERVED_15";
 	default:
 		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
 		return "IMAGE_REL_BASED_UNKNOWN";
