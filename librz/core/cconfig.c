@@ -1901,7 +1901,8 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		} else {
 			color_name[0] = color_value[0] = color_meta[0] = reset_str[0] = '\0';
 		}
-		rz_cons_printf("%s%20s = %s%s %s%s; %s%s", color_name, node->name, color_value, node->value, color_meta, rz_config_node_is_ro(node) ? "(ro)" : "", reset_str, node->desc);
+		const char *ro_str = rz_config_node_is_ro(node) ? "(ro)" : "";
+		rz_cons_printf("%s%20s = %s%s %s%s; %s%s", color_name, node->name, color_value, node->value, color_meta, ro_str, reset_str, node->desc);
 		if (!rz_list_empty(node->options)) {
 			isFirst = true;
 			rz_cons_printf(" [");
