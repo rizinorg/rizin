@@ -976,10 +976,12 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 			asm_str = colored_asm ? rz_strbuf_get(colored_asm) : asm_str;
 		}
 		const char *reset_color = colorize ? Color_RESET : "";
+		rz_cons_printf("  0x%08" PFMT64x "  %.16s", addr + idx, hex ? hex : "");
+		int hex_len = hex ? RZ_MIN((int)strlen(hex), 16) : 0;
+		rz_cons_printf("%*s%s%s", 2 + (16 - hex_len), "", asm_str, reset_color);
 		size_t asm_len_clean = rz_str_ansi_len(asm_str);
-		size_t visible_len = 22 + asm_len_clean;
-		rz_cons_printf("  0x%08" PFMT64x "  %-8s  %s%s", addr + idx, hex ? hex : "", asm_str, reset_color);
-		int padding = req_width - visible_len;
+		size_t left_col_len = 10 + asm_len_clean;
+		int padding = 50 - left_col_len;
 		if (padding > 0) {
 			rz_cons_printf("%*s", padding, "");
 		}
