@@ -30,15 +30,16 @@ static void *http_server_thread(void *user) {
 
 	printf("Server: Listening on %s:%s\n", ADDR, PORT);
 
-	RzSocketHTTPOptions so = { .accept_timeout = true, .timeout = 1 };
+	RzSocketHTTPOptions so = { .accept_timeout = true, .timeout = 1 }; // timeout in seconds
 	RzSocketHTTPRequest *hr = NULL;
 
-	// Accept one request
-	while (!(hr = rz_socket_http_accept(s, &so))) {
-		// Wait for connection
-	}
+	while(1) {
+		hr = rz_socket_http_accept(s, &so);
 
-	if (hr) {
+		// fail ?
+		if (!hr) continue;
+
+		// handle the request.
 		printf("Server: Received %s request for %s\n", hr->method, hr->path);
 		const char *response_body = "<html><body><h1>Hello from Rizin!</h1></body></html>";
 		rz_socket_http_response(hr, 200, response_body, strlen(response_body), NULL);
