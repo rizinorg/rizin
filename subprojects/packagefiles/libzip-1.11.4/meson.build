@@ -319,6 +319,7 @@ zip_files = [
   'lib/zip_progress.c',
   'lib/zip_rename.c',
   'lib/zip_replace.c',
+  'lib/zip_realloc.c',
   'lib/zip_set_archive_comment.c',
   'lib/zip_set_archive_flag.c',
   'lib/zip_set_default_password.c',
