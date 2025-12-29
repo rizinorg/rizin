@@ -150,11 +150,51 @@ RzPVector /*<RzBinSection *>*/ *rz_bin_mz_get_segments(const struct rz_bin_mz_ob
 		}
 		section->vsize = section->size;
 		section->paddr = rz_bin_mz_la_to_pa(bin, section->vaddr);
-		section->perm = rz_str_rwx("rwx");
+		section->perm = RZ_PERM_RWX;
 	}
 	section = rz_pvector_tail(seg_vec);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
+
+	/* Map extra data (used for bss and out-of-image stack) */
+	ut64 stack_laddr = rz_bin_mz_va_to_la(bin->dos_header->ss, bin->dos_header->sp) + sizeof(ut16);
+	ut64 stack_size_outside_image = stack_laddr > bin->load_module_size ? stack_laddr - bin->load_module_size : 0;
+	ut64 extra_data = RZ_MAX(bin->dos_header->min_extra_paragraphs * 16, stack_size_outside_image);
+
+	if (extra_data) {
+		if (!(section = rz_bin_mz_init_section(bin, section->vaddr + section->vsize))) {
+			goto err_out;
+		}
+		if (bin->load_module_size % 16) {
+			/* add extra bytes so the section get to de-facto start on a paragraph-aligned address */
+			extra_data += 16 - bin->load_module_size % 16;
+		}
+		if (extra_data % 16) {
+			/* align section size to paragraph size */
+			extra_data += 16 - extra_data % 16;
+		}
+		section->name = rz_str_dup("extra");
+		section->size = 0;
+		section->vsize = extra_data;
+		section->is_data = true;
+		section->perm = RZ_PERM_RW;
+		rz_pvector_push(seg_vec, section);
+	}
+
+	/* Map overlay as a separate section */
+	ut64 overlay_size = bin->size > bin->dos_file_size ? bin->size - bin->dos_file_size : 0;
+	if (overlay_size) {
+		ut64 start_laddr = RZ_MAX(section->vaddr + section->vsize, 0x100000); /* map at/after 1mb */
+		if (!(section = rz_bin_mz_init_section(bin, start_laddr))) {
+			goto err_out;
+		}
+		section->paddr = bin->size - overlay_size;
+		section->name = rz_str_dup("overlay");
+		section->size = overlay_size;
+		section->vsize = section->size;
+		section->perm = RZ_PERM_RWX;
+		rz_pvector_push(seg_vec, section);
+	}
 
 	return seg_vec;
 
