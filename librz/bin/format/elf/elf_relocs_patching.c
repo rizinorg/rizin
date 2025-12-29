@@ -905,7 +905,21 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_NONE:
 		return;
 	case R_AARCH64_ABS16:
+	case R_AARCH64_PREL16:
+	case R_AARCH64_MOVW_UABS_G0:
+	case R_AARCH64_MOVW_UABS_G0_NC:
+	case R_AARCH64_MOVW_UABS_G1:
+	case R_AARCH64_MOVW_UABS_G1_NC:
+	case R_AARCH64_MOVW_UABS_G2:
+	case R_AARCH64_MOVW_UABS_G2_NC:
+	case R_AARCH64_MOVW_UABS_G3:
+	case R_AARCH64_MOVW_SABS_G0:
+	case R_AARCH64_MOVW_SABS_G1:
+	case R_AARCH64_MOVW_SABS_G2:
 		val = fs->S + fs->A;
+		if (rel->type == R_AARCH64_PREL16) {
+			val -= fs->P;
+		}
 		rz_write_le16(buf, val);
 		nbytes = 2;
 		break;
@@ -921,11 +935,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		val = fs->S + fs->A;
 		rz_write_le64(buf, val);
 		nbytes = 8;
-		break;
-	case R_AARCH64_PREL16:
-		val = fs->S + fs->A - fs->P;
-		rz_write_le16(buf, val);
-		nbytes = 2;
 		break;
 	case R_AARCH64_PREL32:
 		val = fs->S + fs->A - fs->P;
@@ -946,6 +955,8 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_ADR_PREL_PG_HI21_NC:
 	/* fall-thru */
 	case R_AARCH64_ADR_GOT_PAGE:
+	case R_AARCH64_LD_PREL_LO19:
+	case R_AARCH64_ADR_PREL_LO21:
 		// Reencode ADR imm
 		keep = rz_read_le32(buf) & ~(ADR_IMM_MASK1 | ADR_IMM_MASK2);
 		val = ((st64)(PG(fs->S + fs->A) - PG(fs->P))) >> 12;
@@ -954,6 +965,8 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_JUMP26:
 	/* fall-thru */
 	case R_AARCH64_CALL26:
+	case R_AARCH64_CONDBR19:
+	case R_AARCH64_TSTBR14:
 		// Reencode 26 bits of the offset
 		keep = rz_read_le32(buf) & ~RZ_BIT_MASK32(26, 0);
 		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
@@ -962,6 +975,8 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_AARCH64_LDST8_ABS_LO12_NC:
 	/* fall-thru */
 	case R_AARCH64_ADD_ABS_LO12_NC:
+	case R_AARCH64_LDST16_ABS_LO12_NC:
+	case R_AARCH64_LDST32_ABS_LO12_NC:
 		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
 		val = PG_OFFSET(fs->S + fs->A);
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
@@ -972,6 +987,11 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		// Reencode LD/ST imm
 		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
 		val = PG_OFFSET(fs->S + fs->A) >> 3;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+		break;
+	case R_AARCH64_LDST128_ABS_LO12_NC:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+		val = PG_OFFSET(fs->S + fs->A) >> 4;
 		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
 		break;
 	case R_AARCH64_TLSDESC:
@@ -990,18 +1010,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 #undef ADR_IMM_MASK2
 #undef ADR_IMM_MASK3
 }
-
-/**
- * \brief Patches the opcode at a given address depending on the relocation type.
- *
- * NOTE: Some relocation symbols are not yet implemented
- *
- * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
- * \param patch_addr The address of the opcode being patched.
- * \param rel_type The relocation type.
- * \param big_endian The endianness - true if BE, false if LE
- * \param fs Formular values to calculate the new relocation value.
- */
 static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[8] = { 0 };
