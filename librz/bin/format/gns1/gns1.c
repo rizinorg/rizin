@@ -311,7 +311,6 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 			continue;
 		}
 
-		rz_structured_data_map_add_unsigned(seg, "index", idx, false);
 		rz_structured_data_map_add_unsigned(seg, "size", entry->size, true);
 		rz_structured_data_map_add_unsigned(seg, "physical_addr", entry->paddr, true);
 		rz_structured_data_map_add_unsigned(seg, "file_offset", entry->offset, true);
