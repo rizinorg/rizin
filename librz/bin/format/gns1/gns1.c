@@ -304,7 +304,6 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 	}
 
 	Gns1SegmentEntry *entry;
-	ut32 idx = 0;
 	rz_vector_foreach (gns1->segments, entry) {
 		RzStructuredData *seg = rz_structured_data_array_add_map(segments);
 		if (!seg) {
@@ -336,7 +335,6 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 
 		// calc rebase virtual addr
 		rz_structured_data_map_add_unsigned(seg, "virtual_addr", gns1_translate_vaddr(entry->paddr), true);
-		idx++;
 	}
 
 	return info;
