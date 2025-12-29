@@ -463,11 +463,11 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 }
 
 /**
- * \brief Find the \p element in the \p vec
- * \param vec the RzPVector to search in
- * \param value the value that elements in pvector compare against by \p cmp
- * \param cmp the comparator function
- * \return the index of the element if found, SZT_MAX otherwise
+ * \brief Find the \p element in the \p vec.
+ * \param vec the RzPVector to search in.
+ * \param value the value that elements in pvector compare against by \p cmp.
+ * \param cmp the comparator function.
+ * \return the index of the element if found, SZT_MAX otherwise.
  */
 RZ_API RZ_BORROW size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec, SZT_MAX);
