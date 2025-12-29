@@ -80,7 +80,7 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /
 
 	size_t max_size = rz_list_length(list);
 	RzList *copy = rz_list_clone(list);
-	if (!list) {
+	if (!copy) {
 		return NULL;
 	}
 
