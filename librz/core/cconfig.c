@@ -3807,7 +3807,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* search */
 	SETCB("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
 	SETICB("search.align", 1, &cb_searchalign, "Only catch aligned search hits");
-	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
+	SETI("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8)");
 	SETI("search.esilcombo", 8, "Stop search after N consecutive hits");
 	SETI("search.distance", 0, "Search string distance");
 	SETBPREF("search.flags", "true", "All search results are flagged, otherwise only printed");

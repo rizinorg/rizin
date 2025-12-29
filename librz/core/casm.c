@@ -286,7 +286,7 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 	RzListIter *it;
 	RzAsmPlugin *ap;
 	rz_list_foreach (plugin_list, it, ap) {
-		if (ap->cpus && RZ_STR_EQ(plugin, ap->name)) {
+		if (ap->cpus && ap->get_cpu_desc && RZ_STR_EQ(plugin, ap->name)) {
 			char **desc = ap->get_cpu_desc();
 			if (!desc) {
 				rz_iterator_free(iter);
@@ -1011,7 +1011,7 @@ RZ_API ut32 rz_core_asm_bwdis_len(RzCore *core, int *instr_len, ut64 *start_addr
 		*instr_len = 0;
 	}
 	if (hits && rz_list_length(hits) > 0) {
-		hit = rz_list_first(hits);
+		hit = rz_list_first_val(hits);
 		if (start_addr) {
 			*start_addr = hit->addr;
 		}

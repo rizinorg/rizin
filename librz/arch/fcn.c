@@ -405,7 +405,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	RzAnalysisFunction *our_fcn = ctx->fcn;
 	rz_analysis_block_ref(block);
 	while (!rz_list_empty(block->fcns)) {
-		RzAnalysisFunction *other_fcn = rz_list_first(block->fcns);
+		RzAnalysisFunction *other_fcn = rz_list_first_val(block->fcns);
 		if (other_fcn->addr == block->addr) {
 			return false;
 		}
@@ -1275,6 +1275,19 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
+
+			if (analysis->gnu_thumb1_case_uqi_addr && op.jump == analysis->gnu_thumb1_case_uqi_addr && analysis->opt.jmptbl) {
+				RzAnalysisJmpTableParams params = {
+					.jmp_address = op.addr,
+					.entry_size = 1,
+					.jmptbl_loc = op.addr + op.size,
+					.jmptbl_off = op.addr + op.size,
+					.sp = sp,
+					.tasks = tasks
+				};
+				ret = rz_analysis_walkthrough_arm_thumb1_case_uqi_table(analysis, fcn, bb, &params);
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
+			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
 		case RZ_ANALYSIS_OP_TYPE_RJMP:
@@ -1722,7 +1735,7 @@ RZ_DEPRECATE RZ_API RzAnalysisFunction *rz_analysis_get_fcn_in(RzAnalysis *analy
 				}
 			}
 		} else {
-			ret = rz_list_first(list);
+			ret = rz_list_first_val(list);
 		}
 	}
 	rz_list_free(list);
@@ -2024,6 +2037,33 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 		return false;
 	}
 	rz_analysis_function_set_type(a, f, result->callable);
+	return true;
+}
+
+/**
+ * \brief Sets the calling convention for the given function
+ *
+ * Sets the calling convention (\p cc) for the function \p fcn. The calling convention
+ * must exist in the analysis instance. If \p cc is NULL or empty, the calling convention
+ * is cleared (set to NULL).
+ *
+ * \param analysis RzAnalysis instance
+ * \param fcn Function to update
+ * \param cc Calling convention name, or NULL to clear
+ * \return true on success, false if the calling convention doesn't exist
+ */
+RZ_API bool rz_analysis_function_set_cc(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *cc) {
+	rz_return_val_if_fail(analysis && fcn, false);
+
+	if (RZ_STR_ISEMPTY(cc)) {
+		fcn->cc = NULL;
+		return true;
+	}
+	if (!rz_analysis_cc_exist(analysis, cc)) {
+		RZ_LOG_ERROR("analysis: calling convention '%s' does not exist\n", cc);
+		return false;
+	}
+	fcn->cc = rz_str_constpool_get(&analysis->constpool, cc);
 	return true;
 }
 

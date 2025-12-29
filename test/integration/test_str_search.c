@@ -121,6 +121,8 @@ int test_rz_str_search_single_simple(void) {
 		free(hit_str);
 	}
 
+	rz_search_collection_free(collection);
+	rz_list_free(hits);
 	mu_end;
 }
 
@@ -191,7 +193,11 @@ int test_rz_str_search_io_simple(void) {
 	printf("Hit at 0x%" PFMT64x " size: %" PFMTSZd "\n", hit->address, hit->size);
 	mu_assert_true(hit->size == 22, "Incorrect size");
 	mu_assert_eq(hit->address, 0x004005ea, "Incorrect address");
-
+	rz_list_free(hits);
+	rz_list_free(boundaries);
+	rz_search_collection_free(collection);
+	rz_search_opt_free(search_opts);
+	rz_core_free(core);
 	mu_end;
 }
 
@@ -276,6 +282,7 @@ int test_rz_str_search_multiple_enc(void) {
 	mu_assert_eq(hit->size, 10, "Incorrect size");
 
 	rz_list_free(hits);
+	rz_search_collection_free(collection);
 	mu_end;
 }
 

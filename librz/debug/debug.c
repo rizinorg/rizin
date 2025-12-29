@@ -1770,7 +1770,7 @@ RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
 	rz_return_if_fail(debug);
 	RzList *threads = rz_debug_pids(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first(threads);
+		RzDebugPid *th = rz_list_first_val(threads);
 		rz_debug_select(debug, debug->pid, th->pid);
 	}
 	rz_list_free(threads);

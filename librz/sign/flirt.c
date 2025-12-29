@@ -412,7 +412,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RzFlirtFunction *next_flirt_func;
 			RzListIter *next_it;
-			rz_list_foreach_iter(rz_list_iter_get_next(it), next_it, next_flirt_func) {
+			rz_list_foreach_iter(rz_list_safe_next(it), next_it, next_flirt_func) {
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
 					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
 					break;
@@ -1545,7 +1545,7 @@ static bool flirt_write_node(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBu
 		// leaf
 		ut8 flags = 0;
 
-		RzFlirtModule *last = rz_list_last(node->module_list);
+		RzFlirtModule *last = rz_list_last_val(node->module_list);
 		rz_list_foreach (node->module_list, it, module) {
 			bool already_found = !(flags & IDASIG_PARSE_MORE_MODULES_WITH_SAME_CRC);
 			if (last != module) {

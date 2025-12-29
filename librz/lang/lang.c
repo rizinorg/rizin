@@ -141,7 +141,7 @@ RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	if (!plugin_fini(lang, plugin)) {
 		return false;
 	}
-	return rz_list_delete_data(lang->langs, plugin);
+	return rz_list_delete_val(lang->langs, plugin);
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {

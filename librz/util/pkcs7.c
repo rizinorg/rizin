@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdlib.h>
@@ -343,11 +343,13 @@ RZ_API RZ_OWN RzCMS *rz_pkcs7_cms_parse(RZ_NULLABLE const ut8 *buffer, ut32 leng
  * \param      container  The container to free
  */
 RZ_API void rz_pkcs7_cms_free(RZ_NULLABLE RzCMS *container) {
-	if (container) {
-		rz_asn1_string_free(container->contentType);
-		pkcs7_signeddata_fini(&container->signedData);
-		free(container);
+	if (!container) {
+		return;
 	}
+
+	rz_asn1_string_free(container->contentType);
+	pkcs7_signeddata_fini(&container->signedData);
+	free(container);
 }
 
 static RzPKCS7Attribute *pkcs7_attribute_parse(RzASN1Object *object) {
@@ -390,233 +392,139 @@ static bool pkcs7_attributes_parse(RzPKCS7Attributes *attributes, RzASN1Object *
 	return true;
 }
 
-static void pkcs7_signedinfo_dump(RzPKCS7SignerInfo *si, const char *pad, RzStrBuf *sb) {
-	RzASN1String *s = NULL;
-	RzASN1Binary *o = NULL;
-	char *pad2, *pad3;
+static void pkcs7_attributes_to_structure(RzStructuredData *array, RzPKCS7Attribute *attribute) {
+	if (!attribute || !attribute->oid) {
+		return;
+	}
+	RzStructuredData *attr = rz_structured_data_array_add_map(array);
+	if (!attribute->data) {
+		rz_structured_data_map_add_string(attr, attribute->oid->string, "");
+		return;
+	}
+
+	RzASN1String *bytes = rz_asn1_stringify_bytes(attribute->data->binary, attribute->data->length);
+	if (bytes) {
+		rz_structured_data_map_add_string(attr, attribute->oid->string, bytes->string);
+	}
+	rz_asn1_string_free(bytes);
+}
+
+static RzStructuredData *pkcs7_signedinfo_to_structure(RzPKCS7SignerInfo *si) {
 	if (!si) {
-		return;
+		return NULL;
 	}
-	if (!pad) {
-		pad = "";
-	}
-	pad3 = rz_str_newf("%s    ", pad);
-	if (!pad3) {
-		return;
-	}
-	pad2 = pad3 + 2;
 
-	rz_strbuf_appendf(sb, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
-	rz_x509_name_dump(&si->issuerAndSerialNumber.issuer, pad3, sb);
-	if ((o = si->issuerAndSerialNumber.serialNumber)) {
-		s = rz_asn1_stringify_integer(o->binary, o->length);
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
 	}
-	rz_strbuf_appendf(sb, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
-	rz_asn1_string_free(s);
 
-	s = si->digestAlgorithm.algorithm;
-	rz_strbuf_appendf(sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
-		pad2, pad3, s ? s->string : "Missing", pad2);
+	rz_structured_data_map_add_signed(root, "version", si->version + 1);
 
-	for (ut32 i = 0; i < si->authenticatedAttributes.length; i++) {
-		RzPKCS7Attribute *attr = si->authenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
+	RzStructuredData *issuer = rz_structured_data_map_add_array(root, "issuer");
+	rz_x509_name_to_structure(issuer, &si->issuerAndSerialNumber.issuer);
+
+	if (si->issuerAndSerialNumber.serialNumber) {
+		RzASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
+		RzASN1String *serial = rz_asn1_stringify_integer(o->binary, o->length);
+		rz_structured_data_map_add_string(root, "serialNumber", serial ? serial->string : "");
+		rz_asn1_string_free(serial);
+	}
+
+	RzStructuredData *digest_algorithm = rz_structured_data_map_add_map(root, "digestAlgorithm");
+	rz_x509_algorithmidentifier_to_structure(digest_algorithm, &si->digestAlgorithm);
+
+	if (si->authenticatedAttributes.length) {
+		RzStructuredData *authAttrbs = rz_structured_data_map_add_array(root, "authenticatedAttributes");
+		for (ut32 i = 0; i < si->authenticatedAttributes.length; i++) {
+			pkcs7_attributes_to_structure(authAttrbs, si->authenticatedAttributes.elements[i]);
 		}
-		rz_strbuf_appendf(sb, "%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
-			attr->data ? attr->data->length : 0);
 	}
-	s = si->digestEncryptionAlgorithm.algorithm;
-	rz_strbuf_appendf(sb, "%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 
-	//	if ((o = si->encryptedDigest)) s = rz_asn1_stringify_bytes (o->binary, o->length);
-	//	else s = NULL;
-	//	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-	//	rz_asn1_string_free (s);
-	rz_strbuf_appendf(sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
-	rz_strbuf_appendf(sb, "%sUnauthenticated Attributes:\n", pad2);
-	for (ut32 i = 0; i < si->unauthenticatedAttributes.length; i++) {
-		RzPKCS7Attribute *attr = si->unauthenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
-		}
-		o = attr->data;
-		eprintf("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
-			o ? o->length : 0);
+	RzStructuredData *digest_enc_algo = rz_structured_data_map_add_map(root, "digestEncryptionAlgorithm");
+	rz_x509_algorithmidentifier_to_structure(digest_enc_algo, &si->digestEncryptionAlgorithm);
+
+	if (si->encryptedDigest) {
+		RzASN1String *bytes = rz_asn1_stringify_bytes(si->encryptedDigest->binary, si->encryptedDigest->length);
+		rz_structured_data_map_add_string(root, "encryptedDigest", bytes->string);
+		rz_asn1_string_free(bytes);
 	}
-	free(pad3);
+
+	if (si->unauthenticatedAttributes.length) {
+		RzStructuredData *unauthAttrbs = rz_structured_data_map_add_array(root, "unauthenticatedAttributes");
+		for (ut32 i = 0; i < si->unauthenticatedAttributes.length; i++) {
+			pkcs7_attributes_to_structure(unauthAttrbs, si->unauthenticatedAttributes.elements[i]);
+		}
+	}
+
+	return root;
 }
 
 /**
- * \brief      Converts a Cryptographic Message Syntax (or CMS) into a human readable string
+ * \brief      Returns the Cryptographic Message Syntax (or CMS) as RzStructuredData
  *
- * \param      container  The container to be converted to string
+ * \param      container  The container to be converted to RzStructuredData
  *
  * \return     On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN char *rz_pkcs7_cms_to_string(RZ_NULLABLE RzCMS *container) {
+RZ_API RZ_OWN RzStructuredData *rz_pkcs7_cms_to_structure(RZ_NULLABLE RzCMS *container) {
 	if (!container) {
 		return NULL;
 	}
 	RzPKCS7SignedData *sd = &container->signedData;
-	RzStrBuf *sb = rz_strbuf_new("");
-	rz_strbuf_appendf(sb, "signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *signed_data = rz_structured_data_map_add_map(root, "signedData");
+	rz_structured_data_map_add_signed(signed_data, "version", sd->version);
 
 	if (container->signedData.digestAlgorithms.elements) {
+		RzStructuredData *digest_algos = rz_structured_data_map_add_array(signed_data, "digestAlgorithms");
 		for (ut32 i = 0; i < container->signedData.digestAlgorithms.length; i++) {
-			if (container->signedData.digestAlgorithms.elements[i]) {
-				RzASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				rz_strbuf_appendf(sb, "    %s\n", s ? s->string : "Missing");
+			if (!container->signedData.digestAlgorithms.elements[i]) {
+				continue;
 			}
+			RzStructuredData *digest = rz_structured_data_array_add_map(digest_algos);
+			rz_x509_algorithmidentifier_to_structure(digest, container->signedData.digestAlgorithms.elements[i]);
 		}
 	}
 
-	rz_strbuf_appendf(sb, "  Certificates: %u\n", container->signedData.certificates.length);
-
-	for (ut32 i = 0; i < container->signedData.certificates.length; i++) {
-		rz_x509_certificate_dump(container->signedData.certificates.elements[i], "    ", sb);
-	}
-
-	for (ut32 i = 0; i < container->signedData.crls.length; i++) {
-		char *res = rz_x509_crl_to_string(container->signedData.crls.elements[i], "    ");
-		if (res) {
-			rz_strbuf_append(sb, res);
-			free(res);
-		}
-	}
-
-	rz_strbuf_appendf(sb, "  SignerInfos:\n");
-	if (container->signedData.signerinfos.elements) {
-		for (ut32 i = 0; i < container->signedData.signerinfos.length; i++) {
-			pkcs7_signedinfo_dump(container->signedData.signerinfos.elements[i], "    ", sb);
-		}
-	}
-	return rz_strbuf_drain(sb);
-}
-
-static void pkcs7_signedinfo_json(PJ *pj, RzPKCS7SignerInfo *si) {
-	if (!si) {
-		return;
-	}
-	pj_o(pj);
-	pj_ki(pj, "Version", si->version + 1);
-	pj_k(pj, "Issuer");
-	pj_o(pj);
-	rz_x509_name_json(pj, &si->issuerAndSerialNumber.issuer);
-	pj_end(pj);
-	if (si->issuerAndSerialNumber.serialNumber) {
-		RzASN1Binary *o = si->issuerAndSerialNumber.serialNumber;
-		RzASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
-		if (s) {
-			pj_ks(pj, "SerialNumber", s->string);
-		}
-		rz_asn1_string_free(s);
-	}
-
-	if (si->digestAlgorithm.algorithm) {
-		pj_ks(pj, "DigestAlgorithm", si->digestAlgorithm.algorithm->string);
-	}
-	pj_k(pj, "AuthenticatedAttributes");
-	pj_a(pj);
-	for (ut32 i = 0; i < si->authenticatedAttributes.length; i++) {
-		RzPKCS7Attribute *attr = si->authenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
-		}
-		pj_o(pj);
-		if (attr->oid) {
-			pj_ks(pj, "oid", attr->oid->string);
-		}
-		if (attr->data) {
-			pj_ki(pj, "length", attr->data->length);
-		}
-		pj_end(pj);
-	}
-	pj_end(pj);
-	if (si->digestEncryptionAlgorithm.algorithm) {
-		pj_ks(pj, "DigestEncryptionAlgorithm", si->digestEncryptionAlgorithm.algorithm->string);
-	}
-
-	if (si->encryptedDigest) {
-		RzASN1Binary *o = si->encryptedDigest;
-		RzASN1String *s = rz_asn1_stringify_integer(o->binary, o->length);
-		if (s) {
-			pj_ks(pj, "EncryptedDigest", s->string);
-		}
-		rz_asn1_string_free(s);
-	}
-
-	pj_k(pj, "UnauthenticatedAttributes");
-	pj_a(pj);
-	for (ut32 i = 0; i < si->unauthenticatedAttributes.length; i++) {
-		RzPKCS7Attribute *attr = si->unauthenticatedAttributes.elements[i];
-		if (!attr) {
-			continue;
-		}
-		pj_o(pj);
-		if (attr->oid) {
-			pj_ks(pj, "oid", attr->oid->string);
-		}
-		if (attr->data) {
-			pj_ki(pj, "length", attr->data->length);
-		}
-		pj_end(pj);
-	}
-	pj_end(pj);
-	pj_end(pj);
-}
-
-/**
- * \brief      Converts a Cryptographic Message Syntax (or CMS) into a JSON object
- *
- * \param      container  The container to be converted to json
- */
-RZ_API void rz_pkcs7_cms_json(RZ_NULLABLE RzCMS *container, RZ_NONNULL PJ *pj) {
-	rz_return_if_fail(pj);
-	if (!container) {
-		return;
-	}
-
-	pj_o(pj);
-	pj_kn(pj, "Version", container->signedData.version);
-
-	if (container->signedData.digestAlgorithms.elements) {
-		pj_k(pj, "DigestAlgorithms");
-		pj_a(pj);
-		for (ut32 i = 0; i < container->signedData.digestAlgorithms.length; i++) {
-			if (container->signedData.digestAlgorithms.elements[i]) {
-				RzASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				if (s) {
-					pj_s(pj, s->string);
-				}
+	if (container->signedData.certificates.length) {
+		RzStructuredData *certificates = rz_structured_data_map_add_array(signed_data, "certificates");
+		for (ut32 i = 0; i < container->signedData.certificates.length; i++) {
+			RzStructuredData *cert = rz_x509_certificate_to_structure(container->signedData.certificates.elements[i]);
+			if (!cert) {
+				continue;
 			}
+			rz_structured_data_array_add(certificates, cert);
 		}
-		pj_end(pj);
 	}
 
-	pj_k(pj, "Certificates");
-	pj_a(pj);
-	for (ut32 i = 0; i < container->signedData.certificates.length; i++) {
-		rz_x509_certificate_json(pj, container->signedData.certificates.elements[i]);
+	if (container->signedData.crls.length) {
+		RzStructuredData *crls = rz_structured_data_map_add_array(signed_data, "crls");
+		for (ut32 i = 0; i < container->signedData.crls.length; i++) {
+			RzStructuredData *crl = rz_x509_crl_to_structure(container->signedData.crls.elements[i]);
+			if (!crl) {
+				continue;
+			}
+			rz_structured_data_array_add(crls, crl);
+		}
 	}
-	pj_end(pj);
 
-	pj_k(pj, "CRL");
-	pj_a(pj);
-	for (ut32 i = 0; i < container->signedData.crls.length; i++) {
-		rz_x509_crl_json(pj, container->signedData.crls.elements[i]);
-	}
-	pj_end(pj);
-
-	pj_k(pj, "SignerInfos");
-	pj_a(pj);
 	if (container->signedData.signerinfos.elements) {
+		RzStructuredData *sig_infos = rz_structured_data_map_add_array(signed_data, "signerInfos");
 		for (ut32 i = 0; i < container->signedData.signerinfos.length; i++) {
-			pkcs7_signedinfo_json(pj, container->signedData.signerinfos.elements[i]);
+			RzStructuredData *sig_info = pkcs7_signedinfo_to_structure(container->signedData.signerinfos.elements[i]);
+			if (!sig_info) {
+				continue;
+			}
+			rz_structured_data_array_add(sig_infos, sig_info);
 		}
 	}
-	pj_end(pj);
-	pj_end(pj);
+
+	return root;
 }
 
 static bool pkcs7_spcdata_parse(RzSpcAttributeTypeAndOptionalValue *data, RzASN1Object *object) {
@@ -661,7 +569,7 @@ RZ_API RZ_OWN RzSpcIndirectDataContent *rz_pkcs7_spcinfo_parse(RZ_NONNULL RzCMS 
 	rz_return_val_if_fail(cms, NULL);
 
 	RzASN1String *type = cms->signedData.contentInfo.contentType;
-	if (type && strcmp(type->string, "spcIndirectDataContext")) {
+	if (type && !rz_str_startswith(type->string, "spcIndirectDataContext")) {
 		return NULL;
 	}
 
@@ -726,4 +634,55 @@ RZ_API void rz_pkcs7_spcinfo_free(RZ_NULLABLE RzSpcIndirectDataContent *spcinfo)
 	pkcs7_spcdata_fini(&spcinfo->data);
 	pkcs7_spcmessagedigest_fini(&spcinfo->messageDigest);
 	free(spcinfo);
+}
+
+/**
+ * \brief      Returns the SPC structure as RzStructuredData
+ *
+ * \param      container  The container to be converted to RzStructuredData
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
+RZ_API RZ_OWN RzStructuredData *rz_pkcs7_spcinfo_to_structure(RZ_NULLABLE RzSpcIndirectDataContent *spcinfo) {
+	if (!spcinfo) {
+		return NULL;
+	}
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *spc_attribute = rz_structured_data_map_add_map(root, "spcAttribute");
+	if (spcinfo->data.type) {
+		rz_structured_data_map_add_string(spc_attribute, "type", spcinfo->data.type->string);
+	}
+	if (spcinfo->data.data) {
+		RzASN1Binary *opt = spcinfo->data.data;
+		RzASN1String *asn1str = NULL;
+		if (rz_str_is_printable_limited((const char *)opt->binary, opt->length)) {
+			asn1str = rz_asn1_stringify_string(opt->binary, opt->length);
+		} else {
+			asn1str = rz_asn1_stringify_bytes(opt->binary, opt->length);
+		}
+		if (asn1str) {
+			rz_structured_data_map_add_string(spc_attribute, "data", asn1str->string);
+			rz_asn1_string_free(asn1str);
+		}
+	}
+
+	RzStructuredData *message_digest = rz_structured_data_map_add_map(root, "messageDigest");
+	RzStructuredData *digest_algorithm = rz_structured_data_map_add_map(message_digest, "digestAlgorithm");
+
+	rz_x509_algorithmidentifier_to_structure(digest_algorithm, &spcinfo->messageDigest.digestAlgorithm);
+
+	if (spcinfo->messageDigest.digest) {
+		RzASN1Binary *opt = spcinfo->messageDigest.digest;
+		RzASN1String *asn1str = rz_asn1_stringify_bytes(opt->binary, opt->length);
+		if (asn1str) {
+			rz_structured_data_map_add_string(message_digest, "digest", asn1str->string);
+			rz_asn1_string_free(asn1str);
+		}
+	}
+
+	return root;
 }

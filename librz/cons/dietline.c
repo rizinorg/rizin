@@ -1681,6 +1681,13 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				__delete_next_char(line);
 			}
 			break;
+		case 7: // ^G
+			line->gcomp = 0;
+			line->buffer.data[0] = 0;
+			line->buffer.length = 0;
+			line->buffer.index = 0;
+			goto _end;
+			break;
 		case 11: // ^K
 			if (line->buffer.index != line->buffer.length) {
 				undo_add_entry(line, line->buffer.index, rz_str_dup(line->buffer.data + line->buffer.index), NULL);

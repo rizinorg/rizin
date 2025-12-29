@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -132,11 +132,15 @@ static RzPVector /*<RzBinString *>*/ *string_wildcard_search(
 	char *wildcard = rz_regex_create_wildcard_pattern(opt->min_length, 0);
 	if (!wildcard) {
 		RZ_LOG_ERROR("bin_file_strings: Failed to create wildcard pattern!\n");
+		rz_search_collection_free(collection);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	if (!rz_search_collection_string_add(collection, wildcard, RZ_REGEX_EXTENDED, match_alignment, opt->string_encoding)) {
 		RZ_LOG_ERROR("bin_file_strings: Failed to add wildcard pattern!\n");
+		free(wildcard);
 		rz_search_collection_free(collection);
+		rz_search_opt_free(search_opts);
 		return NULL;
 	}
 	free(wildcard);
@@ -259,10 +263,11 @@ static void *search_string_thread_runner(SearchThreadData *std) {
 	const RzBinFile *bf = shared->bf; // this data is always RO
 
 	do {
-		itv = rz_th_queue_pop(std->intervals, false);
-		if (!itv) {
+		void *data = NULL;
+		if (!rz_th_queue_pop(std->intervals, false, &data) || !data) {
 			break;
 		}
+		itv = (SearchInterval *)data;
 		paddr = itv->paddr;
 		psize = itv->psize;
 		free(itv);
@@ -665,6 +670,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		}
 	}
 
+	rz_th_queue_close_when_empty(intervals);
 	rz_th_pool_wait(pool);
 
 	results = rz_pvector_new((RzPVectorFree)rz_bin_string_free);

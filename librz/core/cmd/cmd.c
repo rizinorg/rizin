@@ -312,20 +312,20 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 }
 
 RZ_API int rz_line_hist_sdb_up(RzLine *line) {
-	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
+	if (!rz_list_safe_next(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = rz_list_iter_get_next(line->sdbshell_hist_iter);
+	line->sdbshell_hist_iter = rz_list_safe_next(line->sdbshell_hist_iter);
 	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
 
 RZ_API int rz_line_hist_sdb_down(RzLine *line) {
-	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
+	if (!rz_list_safe_prev(line->sdbshell_hist_iter)) {
 		return false;
 	}
-	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
+	line->sdbshell_hist_iter = rz_list_safe_prev(line->sdbshell_hist_iter);
 	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
@@ -2093,7 +2093,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_stmt) {
 		RZ_LOG_ERROR("core: No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
-	RzAnalysisBlock *bb = rz_list_last(bbl);
+	RzAnalysisBlock *bb = rz_list_last_val(bbl);
 	rz_analysis_block_ref(bb);
 	rz_list_free(bbl);
 

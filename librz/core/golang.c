@@ -325,7 +325,7 @@ static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -403,7 +403,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -492,7 +492,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -720,7 +720,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		free(flag);
 		free(raw);
 		return false;
-	} else if (rz_str_len_utf8_ansi(raw) != str_size) {
+	} else if (rz_str_utf8_ansi_cols(raw) != str_size) {
 		free(flag);
 		free(raw);
 		return false;
@@ -731,7 +731,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	rz_name_filter(flag + n_prefix, str_size, true);
 
 	// verify is a valid flag.
-	if (rz_str_len_utf8_ansi(flag) < 5) {
+	if (rz_str_utf8_ansi_cols(flag) < 5) {
 		free(flag);
 		free(raw);
 		return false;
