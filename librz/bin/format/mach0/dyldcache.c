@@ -526,7 +526,7 @@ static void match_bin_entries(RzDyldCache *cache, void *entries) {
 				bin->nlist_count = e->nlistCount;
 			}
 
-			it = rz_list_iter_get_next(it);
+			it = rz_list_safe_next(it);
 		}
 	}
 
