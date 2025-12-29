@@ -141,8 +141,27 @@ bool test_rz_direct_solver() {
 	mu_end;
 }
 
+bool test_rop_cache() {
+	RzCore *core = setup_rz_core("x86", 64);
+	mu_assert_notnull(core, "setup_rz_core failed");
+	mu_assert_null(core->analysis->ht_rop, "ht_rop should be NULL initially");
+	ut8 buf[8];
+	rz_hex_str2bin("48C7C301000000C3", buf);
+	rz_io_write_at(core->io, 0, buf, 8);
+	rz_config_set_b(core->config, "rop.cache", true);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(
+		core, "mov", false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, NULL);
+	RzCmdStatus status = rz_core_rop_search(core, context);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "rop search should succeed");
+	mu_assert_notnull(core->analysis->ht_rop, "ht_rop should be initialized after cached search");
+	rz_core_rop_search_context_free(context);
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_direct_solver);
+	mu_run_test(test_rop_cache);
 	return tests_passed != tests_run;
 }
 

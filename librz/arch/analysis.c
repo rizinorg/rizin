@@ -212,6 +212,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_str_constpool_fini(&a->constpool);
 	ht_sp_free(a->ht_global_var);
 	ht_up_free(a->ht_rop_semantics);
+	ht_up_free(a->ht_rop);
 	ht_sp_free(a->plugins);
 	rz_analysis_debug_info_free(a->debug_info);
 	ht_sp_free(a->ht_virtual_xrefs);

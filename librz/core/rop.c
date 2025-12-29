@@ -1878,6 +1878,19 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
+	if (context->cache && context->greparg) {
+		if (!core->analysis->ht_rop) {
+			core->analysis->ht_rop = ht_up_new(NULL, free);
+		}
+		ut64 cache_key = rz_str_djb2_hash(context->greparg);
+		char *cached_result = ht_up_find(core->analysis->ht_rop, cache_key, NULL);
+		if (cached_result) {
+			rz_cons_print(cached_result);
+			return RZ_CMD_STATUS_OK;
+		}
+		context->ret_val = true;
+	}
+
 	RzInterval search_itv = { 0 };
 	if (!fetch_search_itv(core, &search_itv)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -1942,6 +1955,18 @@ cleanup:
 	ht_su_free(context->unique_hitlists);
 	if (rz_cons_is_breaked()) {
 		eprintf("\n");
+	}
+
+	if (context->cache && context->greparg && context->buf) {
+		ut64 cache_key = rz_str_djb2_hash(context->greparg);
+		char *result = rz_strbuf_drain(context->buf);
+		context->buf = NULL;
+		if (result && *result) {
+			ht_up_insert(core->analysis->ht_rop, cache_key, result);
+			rz_cons_print(result);
+		} else {
+			free(result);
+		}
 	}
 
 	if (context->state) {
