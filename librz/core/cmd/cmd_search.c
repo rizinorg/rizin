@@ -1670,17 +1670,6 @@ reread:
 			RZ_LOG_ERROR("core: Missing delta\n");
 		}
 		break;
-	case 'f': // "/f" forward search
-		if (core->offset) {
-			RzInterval itv = { core->offset, -core->offset };
-			if (!rz_itv_overlap(search_itv, itv)) {
-				ret = false;
-				goto beach;
-			} else {
-				search_itv = rz_itv_intersect(search_itv, itv);
-			}
-		}
-		break;
 	case '+': // "/+"
 		if (input[1] == ' ') {
 			// TODO: support /+j
