@@ -155,6 +155,20 @@ static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnaly
 	return colored_asm;
 }
 
+static RZ_OWN char *get_colored_asm(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
+	const char *plain = rz_asm_op_get_asm(asmop);
+	if (!rz_config_get_i(core->config, "scr.color")) {
+		return rz_str_dup(plain);
+	}
+	RzStrBuf *colored_asm = get_colored_asm_str(core, asmop, aop);
+	if (!colored_asm) {
+		return rz_str_dup(plain);
+	}
+	char *ret_str_asm = rz_str_dup(rz_strbuf_get(colored_asm));
+	rz_strbuf_free(colored_asm);
+	return ret_str_asm;
+}
+
 static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
 	if (!core || !context) {
 		return false;
@@ -168,25 +182,16 @@ static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit,
 
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 
-	const char *asm_str = rz_asm_op_get_asm(asmop);
-	RzStrBuf *colored_asm = NULL;
-	if (colorize) {
-		colored_asm = get_colored_asm_str(core, asmop, &aop);
-		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
-	}
-
+	char *asm_str = get_colored_asm(core, asmop, &aop);
 	const char *reset_color = colorize ? Color_RESET : "";
 	const char *format = " %s%s;";
-	const char *output_str = asm_str;
+	char *output_str = asm_str;
 	if (context->ret_val) {
 		rz_strbuf_appendf(context->buf, format, output_str, reset_color);
 	} else {
 		rz_cons_printf(format, output_str, reset_color);
 	}
-
-	if (colored_asm) {
-		rz_strbuf_free(colored_asm);
-	}
+	free(output_str);
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
 
@@ -969,12 +974,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		}
 		rz_analysis_op(core->analysis, &aop, addr + idx, buf + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
 		char *hex = rz_hex_bin2strdup(buf + idx, len);
-		const char *asm_str = rz_asm_op_get_asm(&asmop);
-		RzStrBuf *colored_asm = NULL;
-		if (colorize) {
-			colored_asm = get_colored_asm_str(core, &asmop, &aop);
-			asm_str = colored_asm ? rz_strbuf_get(colored_asm) : asm_str;
-		}
+		char *asm_str = get_colored_asm(core, &asmop, &aop);
 		const char *reset_color = colorize ? Color_RESET : "";
 		rz_cons_printf("  0x%08" PFMT64x "  %.16s", addr + idx, hex ? hex : "");
 		int hex_len = hex ? RZ_MIN((int)strlen(hex), 16) : 0;
@@ -1027,7 +1027,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		} else {
 			rz_cons_newline();
 		}
-		rz_strbuf_free(colored_asm);
+		free(asm_str);
 		free(hex);
 		rz_analysis_op_fini(&aop);
 		idx += len;
