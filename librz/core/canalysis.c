@@ -377,9 +377,9 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
 	}
 	if (bb->switch_op) {
-		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
-		outputs += rz_list_length(unique_cases);
-		rz_list_free(unique_cases);
+		RzPVector *unique_cases = rz_pvector_uniq(bb->switch_op->cases, casecmp, NULL);
+		outputs += rz_pvector_len(unique_cases);
+		rz_pvector_free(unique_cases);
 	}
 	ut64 opaddr = __opaddr(bb, addr);
 
@@ -397,13 +397,13 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 			rz_cons_printf(" f 0x%08" PFMT64x, bb->fail);
 		}
 		if (bb->switch_op) {
-			RzAnalysisCaseOp *cop;
-			RzListIter *iter;
-			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp, NULL);
-			rz_list_foreach (unique_cases, iter, cop) {
+			RzPVector *unique_cases = rz_pvector_uniq(bb->switch_op->cases, casecmp, NULL);
+			void **unique_iter;
+			rz_pvector_foreach (unique_cases, unique_iter) {
+				const RzAnalysisCaseOp *cop = *unique_iter;
 				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
 			}
-			rz_list_free(unique_cases);
+			rz_pvector_free(unique_cases);
 		}
 		rz_cons_newline();
 		break;
@@ -425,9 +425,9 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 			pj_k(pj, "cases");
 			pj_a(pj);
 			{
-				RzListIter *case_op_iter;
-				RzAnalysisCaseOp *case_op;
-				rz_list_foreach (bb->switch_op->cases, case_op_iter, case_op) {
+				void **case_op_iter;
+				rz_pvector_foreach (bb->switch_op->cases, case_op_iter) {
+					RzAnalysisCaseOp *case_op = *case_op_iter;
 					pj_o(pj);
 					pj_kn(pj, "addr", case_op->addr);
 					pj_kn(pj, "jump", case_op->jump);

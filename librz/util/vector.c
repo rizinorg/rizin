@@ -590,3 +590,36 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
+
+/**
+ * \brief Find the unique values in the \p vec and push it in a new RzPVector.
+ * \param vec the RzPVector to search in.
+ * \param cmp the comparator function.
+ * \param user the user data for \p cmp function.
+ * \return Returns a new RzPVector which contains only unique values.
+ */
+RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && cmp, NULL);
+
+	RzPVector *npv = rz_pvector_new((RzPVectorFree)vec->v.free);
+	if (!npv) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (vec, it) {
+		bool found = false;
+		void **it2;
+		void *item = *it;
+		rz_pvector_foreach (npv, it2) {
+			void *item2 = *it2;
+			if (cmp(item, item2, user) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			rz_pvector_push(npv, item);
+		}
+	}
+	return npv;
+}
