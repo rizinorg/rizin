@@ -154,13 +154,13 @@ RZ_API int rz_search_legacy_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr)
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+			kw->last = addr + kw->keyword_length;
 			eprintf("0x%08" PFMT64x " Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+	kw->last = addr + kw->keyword_length;
 
 	if (s->callback) {
 		int ret = s->callback(kw, s->user, addr);
@@ -207,32 +207,17 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		}
 		s->data = left;
 		left->len = 0;
-		if (s->bckwrds) {
-			rz_list_foreach (s->kws, iter, kw) {
-				ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-				for (; i < j; i++) {
-					*i = -*i;
-				}
-			}
-		}
-	}
-	if (s->bckwrds) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
 	}
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
 	rz_list_foreach (s->kws, iter, kw) {
 		ut8 *a = kw->bin_keyword;
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len         ? kw->last + left->len - from
-							      : 0;
+		i = s->overlap ||
+				!kw->count
+			? 0
+			: from - kw->last < left->len ? kw->last + left->len - from
+						      : 0;
 		for (; i + kw->keyword_length < len1 && i < left->len; i++) {
 			if ((ut8)(left->data[i + 1] - left->data[i]) == a[0]) {
 				j = 1;
@@ -240,8 +225,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
-					kw->last += s->bckwrds ? 0 : 1;
+					int t = rz_search_legacy_hit_new(s, kw, from + i - left->len);
+					kw->last += 1;
 					if (!t) {
 						return -1;
 					}
@@ -254,9 +239,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 				}
 			}
 		}
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                     ? kw->last - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from < kw->last ? kw->last - from
+								   : 0;
 		for (; i + kw->keyword_length < len; i++) {
 			if ((ut8)(buf[i + 1] - buf[i]) == a[0]) {
 				j = 1;
@@ -264,8 +248,8 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 					j++;
 				}
 				if (j == kw->keyword_length) {
-					int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i : from + i);
-					kw->last += s->bckwrds ? 0 : 1;
+					int t = rz_search_legacy_hit_new(s, kw, from + i);
+					kw->last += 1;
 					if (!t) {
 						return -1;
 					}
@@ -290,7 +274,7 @@ RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->bckwrds ? from - len : from + len;
+	left->end = from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -379,25 +363,15 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		s->data = left;
 		left->len = 0;
 	}
-	if (s->bckwrds) {
-		// XXX Change function signature from const ut8 * to ut8 *
-		ut8 *i = (ut8 *)buf, *j = i + len;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
 
 	ut64 len1 = left->len + RZ_MIN(longest - 1, len);
 	memcpy(left->data + left->len, buf, len1 - left->len);
 	rz_list_foreach (s->kws, iter, kw) {
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? kw->last - from < left->len ? from + left->len - kw->last : 0
-			: from - kw->last < left->len         ? kw->last + left->len - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from - kw->last < left->len ? kw->last + left->len - from
+									       : 0;
 		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
 			if (brute_force_match(s, kw, left->data, i) != s->inverse) {
-				int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - i + left->len : from + i - left->len);
+				int t = rz_search_legacy_hit_new(s, kw, from + i - left->len);
 				if (!t) {
 					return -1;
 				}
@@ -409,12 +383,11 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 				}
 			}
 		}
-		i = s->overlap || !kw->count ? 0 : s->bckwrds ? from > kw->last ? from - kw->last : 0
-			: from < kw->last                     ? kw->last - from
-							      : 0;
+		i = s->overlap || !kw->count ? 0 : from < kw->last ? kw->last - from
+								   : 0;
 		for (; i + kw->keyword_length <= len; i++) {
 			if (brute_force_match(s, kw, buf, i) != s->inverse) {
-				int t = rz_search_legacy_hit_new(s, kw, s->bckwrds ? from - kw->keyword_length - i : from + i);
+				int t = rz_search_legacy_hit_new(s, kw, from + i);
 				if (!t) {
 					return -1;
 				}
@@ -438,7 +411,7 @@ RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, i
 		left->len = longest - 1;
 		memcpy(left->data, buf + len - longest + 1, longest - 1);
 	}
-	left->end = s->bckwrds ? from - len : from + len;
+	left->end = from + len;
 
 	return s->nhits - old_nhits;
 }
@@ -507,28 +480,6 @@ RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw) {
 	kw->kwidx = s->n_kws++;
 	rz_list_append(s->kws, kw);
 	return true;
-}
-
-// Reverse bin_keyword & bin_binmask for backward search
-RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
-	RzListIter *iter;
-	RzSearchKeyword *kw;
-	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
-	rz_list_foreach (s->kws, iter, kw) {
-		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-		i = kw->bin_binmask;
-		j = kw->bin_binmask + kw->binmask_length;
-		while (i < j) {
-			ut8 t = *i;
-			*i++ = *--j;
-			*j = t;
-		}
-	}
 }
 
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
