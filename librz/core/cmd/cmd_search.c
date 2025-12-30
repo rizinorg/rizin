@@ -29,8 +29,6 @@
 #define AES_SEARCH_LENGTH         40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
-static int preludecnt = 0;
-
 struct search_parameters {
 	RzCore *core;
 	RzList /*<RzIOMap *>*/ *boundaries;
@@ -150,10 +148,11 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 
 static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *)user;
+	rz_return_val_if_fail(core->search, 0);
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
 	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
-	preludecnt++;
+	core->search->preludecnt++;
 	return 1;
 }
 
@@ -173,7 +172,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
 	rz_search_begin(core->search);
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
-	preludecnt = 0;
+	core->search->preludecnt = 0;
 	for (at = from; at < to; at += core->blocksize) {
 		if (rz_cons_is_breaked()) {
 			break;
@@ -192,7 +191,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	// For now we will just use rz_search_kw_reset
 	rz_search_kw_reset(core->search);
 	free(b);
-	return preludecnt;
+	return core->search->preludecnt;
 }
 
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
