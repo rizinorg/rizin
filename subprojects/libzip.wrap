@@ -1,7 +1,7 @@
 [wrap-file]
-directory = libzip-1.11.3
-source_url = https://libzip.org/download/libzip-1.11.3.tar.gz
-source_fallback_url = https://github.com/nih-at/libzip/releases/download/v1.11.3/libzip-1.11.3.tar.gz
-source_filename = libzip-1.11.3.tar.gz
-source_hash = 76653f135dde3036036c500e11861648ffbf9e1fc5b233ff473c60897d9db0ea
-patch_directory = libzip-1.11.3
+directory = libzip-1.11.4
+source_url = https://libzip.org/download/libzip-1.11.4.tar.gz
+source_fallback_url = https://github.com/nih-at/libzip/releases/download/v1.11.4/libzip-1.11.4.tar.gz
+source_filename = libzip-1.11.4.tar.gz
+source_hash = 82e9f2f2421f9d7c2466bbc3173cd09595a88ea37db0d559a9d0a2dc60dc722e
+patch_directory = libzip-1.11.4
