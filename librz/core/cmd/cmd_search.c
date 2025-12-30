@@ -64,13 +64,18 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (rz_pvector_empty(constraints)) {
-		rz_pvector_fini(constraints);
+		rz_pvector_free(constraints);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzRopSearchContext *context = rz_core_rop_search_context_new(core, argv[1], false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, state);
+	RzRopSearchContext *context = rz_core_rop_search_context_new(core, NULL, false,
+		RZ_ROP_GADGET_PRINT | RZ_ROP_GADGET_ANALYZE, RZ_ROP_DETAIL_SEARCH_NON, state);
+	if (!context) {
+		rz_pvector_free(constraints);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	context->constraints = constraints;
 	const RzCmdStatus cmd_status = rz_core_rop_search(core, context);
-	rz_pvector_fini(constraints);
 	rz_core_rop_search_context_free(context);
 	return cmd_status;
 }
@@ -1954,6 +1959,7 @@ static RzCmdStatus value_range_search(RzCore *core, RZ_OWN RzVector /*<RzSearchV
 	RzSearchOpt *search_opts = setup_search_options(core);
 	RzList *hits = NULL;
 	if (!search_opts) {
+		rz_vector_free(ranges);
 		goto error;
 	}
 
@@ -1962,6 +1968,7 @@ static RzCmdStatus value_range_search(RzCore *core, RZ_OWN RzVector /*<RzSearchV
 	bool progress = !rz_str_is_false(rz_config_get(core->config, "search.show_progress"));
 	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
+		rz_vector_free(ranges);
 		goto error;
 	}
 	hits = rz_core_search_values(core, search_opts, ranges);
@@ -1975,7 +1982,6 @@ static RzCmdStatus value_range_search(RzCore *core, RZ_OWN RzVector /*<RzSearchV
 	return cmd_core_handle_search_hits(core, state, hits);
 
 error:
-	rz_vector_free(ranges);
 	rz_list_free(hits);
 	rz_search_opt_free(search_opts);
 	CMD_SEARCH_END();

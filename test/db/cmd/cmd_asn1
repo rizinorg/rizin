@@ -1383,3 +1383,91 @@ pe32:
 
 EOF
 RUN
+
+NAME=x509 ed25519
+FILE==
+CMDS=<<EOF
+b 0x200
+w6d MIIBCDCBuwIUGW78zw0OL0GptJi++a91dBa7DsQwBQYDK2VwMCcxCzAJBgNVBAYTAkRFMRgwFgYDVQQDDA93d3cuZXhhbXBsZS5jb20wHhcNMTkwMzMxMTc1MTIyWhcNMjEwMjI4MTc1MTIyWjAnMQswCQYDVQQGEwJERTEYMBYGA1UEAwwPd3d3LmV4YW1wbGUuY29tMCowBQYDK2VwAyEAK87g0b8CC1eA5mvKXt9uezZwJYWEyg74Y0xTZEkqCcwwBQYDK2VwA0EAIIu/aa3Qtr3IE5to/nvWVY9y3ciwG5DnA70X3ALUhFs+U5aLtfY8sNT1Ng72ht+UBwByuze20UsL9qMsmknQCA==
+pFa
+echo ---
+pFx
+EOF
+EXPECT=<<EOF
+   0   264: 0: cons SEQUENCE            : 
+   4   187: 1: cons SEQUENCE            : 
+   7    20: 2: prim INTEGER             : 19 6e fc cf 0d 0e 2f 41 a9 b4 98 be f9 af 75 74 |.n..../A......ut|
+                                        : 16 bb 0e c4                                     |....            |
+  29     5: 2: cons SEQUENCE            : 
+  31     3: 3: prim OBJECT_IDENTIFIER   : ed25519 (1.3.101.112)
+  36    39: 2: cons SEQUENCE            : 
+  38    11: 3: cons SET                 : 
+  40     9: 4: cons SEQUENCE            : 
+  42     3: 5: prim OBJECT_IDENTIFIER   : countryName (2.5.4.6)
+  47     2: 5: prim PrintableString     : DE
+  51    24: 3: cons SET                 : 
+  53    22: 4: cons SEQUENCE            : 
+  55     3: 5: prim OBJECT_IDENTIFIER   : commonName (2.5.4.3)
+  60    15: 5: prim UTF8String          : www.example.com
+  77    30: 2: cons SEQUENCE            : 
+  79    13: 3: prim UTCTime             : 31/03/2019 17:51:22 GMT
+  94    13: 3: prim UTCTime             : 28/02/2021 17:51:22 GMT
+ 109    39: 2: cons SEQUENCE            : 
+ 111    11: 3: cons SET                 : 
+ 113     9: 4: cons SEQUENCE            : 
+ 115     3: 5: prim OBJECT_IDENTIFIER   : countryName (2.5.4.6)
+ 120     2: 5: prim PrintableString     : DE
+ 124    24: 3: cons SET                 : 
+ 126    22: 4: cons SEQUENCE            : 
+ 128     3: 5: prim OBJECT_IDENTIFIER   : commonName (2.5.4.3)
+ 133    15: 5: prim UTF8String          : www.example.com
+ 150    42: 2: cons SEQUENCE            : 
+ 152     5: 3: cons SEQUENCE            : 
+ 154     3: 4: prim OBJECT_IDENTIFIER   : ed25519 (1.3.101.112)
+ 159    32: 3: prim BIT_STRING          : 
+ 162    29: 4: cons EMBEDDED_PDV        : 
+ 164    26: 5: cons Private_0           : 
+ 166     2: 6: cons Context [31]        : 0b 57                                           |.W              |
+ 170    19: 6: prim Context [0]         : 6b ca 5e df 6e 7b 36 70 25 85 84 ca 0e f8 63 4c |k.^.n{6p%.....cL|
+                                        : 53 64 49                                        |SdI             |
+ 194     5: 1: cons SEQUENCE            : 
+ 196     3: 2: prim OBJECT_IDENTIFIER   : ed25519 (1.3.101.112)
+ 201    64: 1: prim BIT_STRING          : 20 8b bf 69 ad d0 b6 bd c8 13 9b 68 fe 7b d6 55 | ..i.......h.{.U|
+                                        : 8f 72 dd c8 b0 1b 90 e7 03 bd 17 dc 02 d4 84 5b |.r.............[|
+                                        : 3e 53 96 8b b5 f6 3c b0 d4 f5 36 0e f6 86 df 94 |>S....<...6.....|
+                                        : 07 00 72 bb 37 b6 d1 4b 0b f6 a3 2c 9a 49 d0 08 |..r.7..K...,.I..|
+---
+tbsCertificate:
+  version: 1
+  serialNumber: "19:6e:fc:cf:0d:0e:2f:41:a9:b4:98:be:f9:af:75:74:16:bb:0e:c4"
+  signature:
+    algorithm: "ed25519 (1.3.101.112)"
+  issuer:
+    - oid: "countryName (2.5.4.6)"
+      value: "DE"
+    - oid: "commonName (2.5.4.3)"
+      value: "www.example.com"
+  validity:
+    notBefore: "31/03/2019 17:51:22 GMT"
+    notAfter: "28/02/2021 17:51:22 GMT"
+  subject:
+    - oid: "countryName (2.5.4.6)"
+      value: "DE"
+    - oid: "commonName (2.5.4.3)"
+      value: "www.example.com"
+  subjectPublicKeyInfo:
+    algorithm: "ed25519 (1.3.101.112)"
+    subjectPublicKey: |
+      2b ce e0 d1 bf 02 0b 57 80 e6 6b ca 5e df 6e 7b +......W..k.^.n{
+      36 70 25 85 84 ca 0e f8 63 4c 53 64 49 2a 09 cc 6p%.....cLSdI*..
+  extensions: []
+algorithmIdentifier:
+  algorithm: "ed25519 (1.3.101.112)"
+signature: |
+  20 8b bf 69 ad d0 b6 bd c8 13 9b 68 fe 7b d6 55  ..i.......h.{.U
+  8f 72 dd c8 b0 1b 90 e7 03 bd 17 dc 02 d4 84 5b .r.............[
+  3e 53 96 8b b5 f6 3c b0 d4 f5 36 0e f6 86 df 94 >S....<...6.....
+  07 00 72 bb 37 b6 d1 4b 0b f6 a3 2c 9a 49 d0 08 ..r.7..K...,.I..
+
+EOF
+RUN

@@ -20,7 +20,7 @@ static bool block_check_invariants(RzAnalysis *analysis) {
 		rz_list_foreach (block->fcns, fcniter, fcn) {
 			RzListIter *fcniter2;
 			RzAnalysisFunction *fcn2;
-			rz_list_foreach_iter(rz_list_iter_get_next(fcniter), fcniter2, fcn2) {
+			rz_list_foreach_iter(rz_list_next(fcniter), fcniter2, fcn2) {
 				mu_assert_ptrneq (fcn, fcn2, "duplicate function in basic block");
 			}
 			mu_assert ("block references function, but function does not reference block", rz_pvector_contains(fcn->bbs, block));

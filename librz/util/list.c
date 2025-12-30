@@ -6,23 +6,6 @@
 #include <rz_util.h>
 
 /**
- * \brief returns the prev RzList iterator in the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_prev(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	return iter->prev;
-}
-/**
- * \brief returns the next RzList iterator in the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iter_get_next(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	return iter->next;
-}
-
-/**
  * \brief returns the value stored in the prev RzList iterator
  *
  **/
@@ -169,12 +152,12 @@ RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
 }
 
 /**
- * \brief Deletes an entry in the list by searching for a pointer
+ * \brief Deletes a node in the list by searching for a pointer value.
  *
  **/
-RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
+RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val) {
 	rz_return_val_if_fail(list, false);
-	RzListIter *iter = rz_list_find_ptr(list, ptr);
+	RzListIter *iter = rz_list_find_val(list, val);
 	if (!iter) {
 		return false;
 	}
@@ -183,37 +166,11 @@ RZ_API bool rz_list_delete_data(RZ_NONNULL RzList *list, void *ptr) {
 }
 
 /**
- * \brief Removes an entry in the list by using the RzListIter pointer
+ * \brief Deletes a node in the list by using an RzListIter pointer.
  *
  **/
-RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
+RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter) {
 	rz_return_if_fail(list && iter);
-	rz_list_split_iter(list, iter);
-	if (list->free && iter->val) {
-		list->free(iter->val);
-	}
-	iter->val = NULL;
-	free(iter);
-}
-
-RZ_API void rz_list_split(RZ_NONNULL RzList *list, void *ptr) {
-	rz_return_if_fail(list);
-
-	RzListIter *iter = rz_list_iterator(list);
-	while (iter) {
-		void *item = iter->val;
-		if (ptr == item) {
-			rz_list_split_iter(list, iter);
-			free(iter);
-			break;
-		}
-		iter = iter->next;
-	}
-}
-
-RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *iter) {
-	rz_return_if_fail(list);
-
 	if (list->head == iter) {
 		list->head = iter->next;
 	}
@@ -227,6 +184,11 @@ RZ_API void rz_list_split_iter(RZ_NONNULL RzList *list, RZ_NONNULL RzListIter *i
 		iter->next->prev = iter->prev;
 	}
 	list->length--;
+	if (list->free && iter->val) {
+		list->free(iter->val);
+	}
+	iter->val = NULL;
+	free(iter);
 }
 
 /**
@@ -615,23 +577,23 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer, if found
+ * \brief Returns true if the given pointer value is found, false otherwise.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
-	return rz_list_find_ptr(list, ptr);
+RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
+	return rz_list_find_val(list, val) != NULL;
 }
 
 /**
- * \brief Returns the RzListIter of the given pointer, if found
+ * \brief Returns the RzListIter of the given pointer value, if found.
  *
  **/
-RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_NONNULL const void *ptr) {
+RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
 	rz_return_val_if_fail(list, NULL);
 	void *p;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, p) {
-		if (ptr == p) {
+		if (val == p) {
 			return iter;
 		}
 	}
@@ -639,20 +601,20 @@ RZ_API RZ_BORROW RzListIter *rz_list_find_ptr(RZ_NONNULL const RzList *list, RZ_
 }
 
 /**
- * \brief Returns RzListIter element which matches via the RzListComparator
+ * \brief Returns first RzListIter node that has a value that is RzListComparator-equal
+ *        to the given value.
+ * For searching by value equality, rz_list_find_val() provides a simpler interface.
  *
- * Find the first RzListIter that is equal to the given data
- * For searching by pointer comparison, rz_list_find_ptr() provides a simpler interface.
- *
- * \return the first RzListIter that is equall to p w.r.t. cmp.
+ * \return The first RzListIter node that matches `val` wrt `cmp`.
  */
-RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *p, RZ_NONNULL RzListComparator cmp, void *user) {
+RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val,
+	RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_val_if_fail(list && cmp, NULL);
 
 	void *q;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, q) {
-		if (!cmp(p, q, user)) {
+		if (!cmp(val, q, user)) {
 			return iter;
 		}
 	}

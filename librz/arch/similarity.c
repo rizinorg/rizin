@@ -331,7 +331,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 
 	// there is no need to sort unmatch_b because it is already sorted.
 	rz_list_foreach (result->matches, iter, pair) {
-		rz_list_delete_data(unmatch_b, (void *)pair->pair_b);
+		rz_list_delete_val(unmatch_b, (void *)pair->pair_b);
 	}
 
 	rz_th_pool_free(pool);

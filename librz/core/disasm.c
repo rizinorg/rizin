@@ -1731,13 +1731,14 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
  * \return the steps that original iter needs to go forward
  **/
 static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnalysisVar *>*/ *iter) {
+	rz_return_val_if_fail(iter, 0);
 	ut32 iter_mov = 0;
 	RzAnalysisVar *var = rz_list_iter_get_data(iter);
 	if (!strcmp(ds->fold_var, "none") || rz_analysis_var_is_arg(var)) {
 		return iter_mov;
 	}
 	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
-	RzListIter *temp_it = rz_list_iter_get_next(iter);
+	RzListIter *temp_it = rz_list_next(iter);
 	ut32 same_type_cnt = 1;
 	while (temp_it) {
 		RzAnalysisVar *temp_var = rz_list_iter_get_data(temp_it);
@@ -1754,7 +1755,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 		}
 		same_type_cnt += 1;
 		free(temp_vartype);
-		temp_it = rz_list_iter_get_next(temp_it);
+		temp_it = rz_list_next(temp_it);
 	}
 
 	// fold if more than 3 same-typed variables
@@ -1768,12 +1769,16 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	// fold_var = hide -> group the first two var with ellipsis in tail
 	ut32 group_num = strcmp(ds->fold_var, "group") ? 2 : 3;
 	while (iter_mov < group_num) {
+		if (!iter) {
+			rz_warn_if_reached();
+			break;
+		}
 		RzAnalysisVar *temp_var = rz_list_iter_get_data(iter);
 		const RzStackAddr off = temp_var->storage.stack_off;
 		const char sign = off >= 0 ? '+' : '-';
 		rz_strbuf_appendf(sb, "%s @ stack %c 0x%" PFMT64x "; ", temp_var->name, sign, RZ_ABS(off));
 		iter_mov++;
-		iter = rz_list_iter_get_next(iter);
+		iter = rz_list_next(iter);
 	}
 	// remove extra "; " in tail
 	rz_strbuf_slice(sb, 0, sb->len - 2);
@@ -1827,7 +1832,11 @@ static void ds_show_fn_vars_lines(
 		if (iter_mov > 0) {
 			int cnt = 0;
 			while (cnt++ < iter_mov - 1) {
-				iter = rz_list_iter_get_next(iter);
+				if (!iter) {
+					rz_warn_if_reached();
+					break;
+				}
+				iter = rz_list_next(iter);
 			}
 			continue;
 		}
@@ -2307,7 +2316,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 							rz_cons_printf("%d:", case_prev);
 						}
 						if (iter != uniqlist->head && iter != uniqlist->tail) {
-							iter = rz_list_iter_get_prev(iter);
+							iter = rz_list_prev(iter);
 						}
 						case_start = case_current;
 					} else {
@@ -4700,7 +4709,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 					}
 					warning = true;
 				}
-				nextele = rz_list_iter_get_next(iter);
+				nextele = rz_list_next(iter);
 				if (RZ_STR_ISEMPTY(arg->fmt)) {
 					if (ds->asm_types > 1) {
 						if (warning) {

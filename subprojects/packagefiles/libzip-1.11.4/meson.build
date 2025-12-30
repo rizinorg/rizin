@@ -1,5 +1,5 @@
 project('libzip', 'c',
-  version: '1.11.3',
+  version: '1.11.4',
   license: 'BSD-3-clause',
   meson_version: '>=0.55.0',
 )
@@ -319,6 +319,7 @@ zip_files = [
   'lib/zip_progress.c',
   'lib/zip_rename.c',
   'lib/zip_replace.c',
+  'lib/zip_realloc.c',
   'lib/zip_set_archive_comment.c',
   'lib/zip_set_archive_flag.c',
   'lib/zip_set_default_password.c',

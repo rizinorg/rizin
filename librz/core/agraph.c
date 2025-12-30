@@ -2306,14 +2306,14 @@ static void delete_dup_edges(RzAGraph *g) {
 	RzGraphNode *n, *a, *b;
 	rz_list_foreach (g->graph->nodes, it, n) {
 		rz_list_foreach (n->out_nodes, in_it, a) {
-			rz_list_foreach_iter_safe(rz_list_iter_get_next(in_it), in_it2, tmp, b) {
+			rz_list_foreach_iter_safe(rz_list_next(in_it), in_it2, tmp, b) {
 				if (a->idx != b->idx) {
 					continue;
 				}
 				rz_list_delete(n->out_nodes, in_it2);
-				rz_list_delete_data(n->all_neighbours, b);
-				rz_list_delete_data(b->in_nodes, n);
-				rz_list_delete_data(b->all_neighbours, n);
+				rz_list_delete_val(n->all_neighbours, b);
+				rz_list_delete_val(b->in_nodes, n);
+				rz_list_delete_val(b->all_neighbours, n);
 				g->graph->n_edges--;
 			}
 		}

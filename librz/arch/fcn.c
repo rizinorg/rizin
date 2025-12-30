@@ -2040,6 +2040,33 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 	return true;
 }
 
+/**
+ * \brief Sets the calling convention for the given function
+ *
+ * Sets the calling convention (\p cc) for the function \p fcn. The calling convention
+ * must exist in the analysis instance. If \p cc is NULL or empty, the calling convention
+ * is cleared (set to NULL).
+ *
+ * \param analysis RzAnalysis instance
+ * \param fcn Function to update
+ * \param cc Calling convention name, or NULL to clear
+ * \return true on success, false if the calling convention doesn't exist
+ */
+RZ_API bool rz_analysis_function_set_cc(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *cc) {
+	rz_return_val_if_fail(analysis && fcn, false);
+
+	if (RZ_STR_ISEMPTY(cc)) {
+		fcn->cc = NULL;
+		return true;
+	}
+	if (!rz_analysis_cc_exist(analysis, cc)) {
+		RZ_LOG_ERROR("analysis: calling convention '%s' does not exist\n", cc);
+		return false;
+	}
+	fcn->cc = rz_str_constpool_get(&analysis->constpool, cc);
+	return true;
+}
+
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr) {
 	RzAnalysisFunction *fcni;
 	RzListIter *iter;
