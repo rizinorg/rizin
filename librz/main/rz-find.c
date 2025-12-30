@@ -23,6 +23,7 @@ typedef struct {
 	bool identify;
 	bool import; /* search within import table */
 	bool symbol; /* search within symbol table */
+	bool verbose;
 	bool quiet;
 	bool hexstr;
 	bool widestr;
@@ -193,7 +194,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 
 static int show_help(const char *argv0, int line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-find [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n");
+	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n");
 	if (line) {
 		return 0;
 	}
@@ -219,6 +220,7 @@ static int show_help(const char *argv0, int line) {
 		"-t",    "to",      "Stop search at address 'to'",
 		"-q",    "",        "Quiet - do not show headings (filenames) above matching contents (default for searching a single file)",
 		"-v",    "",        "Show version information",
+		"-V",    "",        "Verbose: prints each file scanned",
 		"-x",    "hex",     "Search for hexpair string (909090) (can be used multiple times)",
 		"-X",    "",        "Show hexdump of search results",
 		"-z",    "",        "Search for zero-terminated strings",
@@ -235,6 +237,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	const char *kw;
 	bool last = false;
 	int ret, result = 0;
+
+	if (ro->verbose) {
+		printf("Scanning: %s\n", file);
+	}
 
 	ro->buf = NULL;
 	char *efile = rz_str_escape_sh(file);
@@ -528,7 +534,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvVZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -632,6 +638,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			rz_path_free(sys_path);
 			return print_val;
 		}
+		case 'V':
+			ro.verbose = true;
+			break;
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
@@ -649,7 +658,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 	/* Enable quiet mode if searching just a single file */
 	if (opt.ind + 1 == argc && RZ_STR_ISNOTEMPTY(argv[opt.ind]) && !rz_file_is_directory(argv[opt.ind])) {
-		ro.quiet = true;
+		if (!ro.verbose) {
+			ro.quiet = true;
+		}
 	}
 	if (ro.json) {
 		printf("[");

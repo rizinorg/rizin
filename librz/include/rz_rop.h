@@ -142,6 +142,7 @@ typedef struct rz_rop_search_context_t {
 	HtSU *unique_hitlists; ///< Cache unique ROP hitlists.
 	bool ret_val; ///< Flag to indicate return the search results.
 	RzStrBuf *buf; ///< String buffer for storing search results.
+	RzPVector /*<RzRopConstraint *>*/ *constraints; ///< User constraints for filtering.
 } RzRopSearchContext;
 
 /**

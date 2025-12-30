@@ -118,46 +118,50 @@ char *tms320_c64x_mnemonics(RzAsm *a, int id, bool json, void *c64x) {
 	return rz_strbuf_drain(buf);
 }
 
-static void tms320_c64x_opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *tms320_c64x_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_tms320c64x *x = &insn->detail->tms320c64x;
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_tms320c64x_op *op = x->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case TMS320C64X_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case TMS320C64X_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case TMS320C64X_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base != SPARC_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
-			pj_kN(pj, "disp", (st64)op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "disp", (st64)op->mem.disp);
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 int tms320_c64x_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask, void *c64x) {
@@ -184,7 +188,7 @@ int tms320_c64x_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, i
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			tms320_c64x_opex(&op->opex, ctx->handle, insn);
+			op->opex = tms320_c64x_opex(ctx->handle, insn);
 		}
 		op->size = insn->size;
 		op->id = insn->id;

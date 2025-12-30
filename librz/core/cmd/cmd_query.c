@@ -31,26 +31,6 @@ RZ_IPI RzCmdStatus rz_query_sdb_get_set_handler(RzCore *core, int argc, const ch
 	return RZ_CMD_STATUS_OK;
 }
 
-static int rz_line_hist_sdb_up(RzLine *line) {
-	if (!rz_list_iter_get_next(line->sdbshell_hist_iter)) {
-		return false;
-	}
-	line->sdbshell_hist_iter = rz_list_iter_get_next(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
-	return true;
-}
-
-static int rz_line_hist_sdb_down(RzLine *line) {
-	if (!rz_list_iter_get_prev(line->sdbshell_hist_iter)) {
-		return false;
-	}
-	line->sdbshell_hist_iter = rz_list_iter_get_prev(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
-	return true;
-}
-
 RZ_IPI RzCmdStatus rz_query_shell_sdb_handler(RzCore *core, int argc, const char **argv) {
 	char buf[1024], *out;
 	Sdb *sdb = core->sdb;

@@ -98,6 +98,7 @@ rz_util_files = [
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
   'rz_util/rz_pkcs7.h',
+  'rz_util/rz_pkcs8.h',
   'rz_util/rz_print.h',
   'rz_util/rz_protobuf.h',
   'rz_util/rz_punycode.h',

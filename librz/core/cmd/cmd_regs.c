@@ -150,10 +150,11 @@ RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *r
  */
 static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *arg, size_t eq_pos) {
 	char *str = rz_str_dup(arg);
-	if (!str) {
+	if (RZ_STR_ISEMPTY(arg) || eq_pos == 0 || RZ_STR_ISEMPTY(str)) {
+		free(str);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	str[eq_pos] = 0;
+	str[eq_pos] = '\0';
 	char *val = str + eq_pos + 1;
 	rz_str_trim(str);
 	rz_str_trim(val);
@@ -271,18 +272,37 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 }
 
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *filter = argc > 1 ? argv[1] : NULL;
+	bool did_assign = false;
+	RzCmdStatus st = RZ_CMD_STATUS_OK;
 
-	// check if the argument is an assignment like reg=0x42
-	if (filter) {
-		char *eq = strchr(filter, '=');
-		if (eq) {
-			return assign_reg(core, reg, sync_cb, filter, eq - filter);
+	for (int i = 1; i < argc; i++) {
+		const char *arg = argv[i];
+		const char *eq = rz_str_strchr(arg, "=");
+		if (!eq) {
+			continue;
+		}
+		did_assign = true;
+		st = assign_reg(core, reg, sync_cb, arg, eq - arg);
+		if (st != RZ_CMD_STATUS_OK) {
+			return st;
 		}
 	}
 
-	// just show
-	return show_regs_handler(core, reg, sync_cb, filter, state);
+	if (did_assign) {
+		return RZ_CMD_STATUS_OK;
+	}
+
+	if (argc <= 1) {
+		return show_regs_handler(core, reg, sync_cb, NULL, state);
+	}
+
+	for (int i = 1; i < argc; i++) {
+		st = show_regs_handler(core, reg, sync_cb, argv[i], state);
+		if (st != RZ_CMD_STATUS_OK) {
+			return st;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {

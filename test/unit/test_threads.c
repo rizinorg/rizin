@@ -44,15 +44,28 @@ bool test_thread_pool_cores(void) {
 	mu_end;
 }
 
+#define THREAD_WAIT_AT_LEAST_MICROSEC 1500000
+
 void *thread_queue_push_timed(RzThreadQueue *queue) {
-	rz_sys_sleep(2);
-	return rz_th_queue_push(queue, queue, true) ? queue : NULL;
+	void *data = NULL;
+	ut64 start = rz_time_now();
+	if (!rz_th_queue_pop(queue, true, &data)) {
+		return NULL;
+	}
+	ut64 diff = rz_time_now() - start;
+	if (diff < THREAD_WAIT_AT_LEAST_MICROSEC) {
+		return "did not wait for " RZ_STR(THREAD_WAIT_AT_LEAST_MICROSEC) " microsec";
+	} else if (!strcmp((const char *)data, "rizin")) {
+		return "OK";
+	}
+	return "did not receive 'rizin'";
 }
 
 bool test_thread_queue(void) {
 	// test limited queue
 	void *head = (void *)"aaaaaa";
 	void *tail = (void *)"bbbbbb";
+	void *pop_data = NULL;
 	RzThreadQueue *queue = rz_th_queue_new(3, NULL);
 	mu_assert_notnull(queue, "rz_th_queue_new(3) null check");
 	mu_assert_true(rz_th_queue_is_empty(queue), "queue is empty");
@@ -61,10 +74,20 @@ bool test_thread_queue(void) {
 	mu_assert_true(rz_th_queue_push(queue, tail, true), "queue pushed tail new element");
 	mu_assert_true(rz_th_queue_is_full(queue), "queue is full");
 	mu_assert_false(rz_th_queue_push(queue, "kkkkkk", true), "queue cannot push a new element");
-	mu_assert_ptreq(rz_th_queue_pop(queue, false), head, "queue can pop head and is that element");
-	mu_assert_ptreq(rz_th_queue_pop(queue, true), tail, "queue can pop tail and is that element");
+	mu_assert_true(rz_th_queue_pop(queue, false, &pop_data), "queue can pop head");
+	mu_assert_ptreq(pop_data, head, "queue popped head and is head");
+	pop_data = NULL;
+	mu_assert_true(rz_th_queue_pop(queue, true, &pop_data), "queue can pop tail");
+	mu_assert_ptreq(pop_data, tail, "queue popped tail and is tail");
 	mu_assert_false(rz_th_queue_is_empty(queue), "queue is empty");
+	mu_assert_false(rz_th_queue_is_closed(queue), "queue is not closed");
 	mu_assert_false(rz_th_queue_is_full(queue), "queue is not full");
+	// close queue, so no read/writes can happen
+	pop_data = NULL;
+	rz_th_queue_close(queue);
+	mu_assert_true(rz_th_queue_is_closed(queue), "queue is closed");
+	mu_assert_false(rz_th_queue_push(queue, "cccccc", true), "closed queue cannot push new data");
+	mu_assert_false(rz_th_queue_pop(queue, false, &pop_data), "closed queue cannot pop new data");
 	rz_th_queue_free(queue);
 
 	// test unlimited queue
@@ -85,14 +108,18 @@ bool test_thread_queue(void) {
 	RzThread *th = rz_th_new((RzThreadFunction)thread_queue_push_timed, queue);
 	mu_assert_false(rz_th_terminated(th), "Thread should still sleep and count as running.");
 	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, queue) null check");
-	ut64 start = rz_time_now();
-	tail = rz_th_queue_wait_pop(queue, true);
-	ut64 diff = rz_time_now() - start;
+
+	rz_sys_sleep(2);
+	mu_assert_true(rz_th_queue_push(queue, "rizin", true), "queue can push an element after 2 sec of waiting");
+	// we wait for the queue to be empty
+	rz_th_queue_close_when_empty(queue);
 	rz_th_wait(th);
+
+	const char *thread_string = rz_th_get_retv(th);
+	mu_assert_notnull(thread_string, "thread retuned non-null value");
+	mu_assert_streq(thread_string, "OK", "thread retuned the 'OK' string");
 	mu_assert_true(rz_th_terminated(th), "Thread should count as terminated.");
-	mu_assert_ptreq(tail, queue, "rz_th_queue_wait_pop(queue, true) is queue");
-	mu_assert_true(diff >= 1500000, "queue did wait for value.");
-	mu_assert_ptreq(rz_th_get_retv(th), queue, "verify it returned queue");
+	mu_assert_true(rz_th_queue_is_closed(queue), "verify the queue is closed");
 	rz_th_free(th);
 	rz_th_queue_free(queue);
 

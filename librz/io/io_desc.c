@@ -202,7 +202,7 @@ RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, size_t len) {
 	ut64 seek = rz_io_desc_seek(desc, 0LL, RZ_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && rz_io_cache_at(desc->io, seek)) {
-			return rz_io_cache_read(desc->io, seek, buf, len);
+			return rz_io_cache_read(desc->io, seek, buf, len, NULL);
 		}
 	}
 	int ret = rz_io_plugin_read(desc, buf, len);

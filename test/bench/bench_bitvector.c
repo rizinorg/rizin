@@ -99,7 +99,59 @@ static void bench_bv_set_range_100_bit(RzTable *t_out) {
 	rz_bv_free(a);
 }
 
-int main(RzTable *t_out) {
+static void bench_bv_add_inplace(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x1122334455667799ULL);
+
+	RZ_BENCH_RUN("rz_bv_add_inplace(a, b, NULL)", t_out, 1000000, {
+		rz_bv_add_inplace(a, b, NULL);
+	});
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+}
+
+static void bench_bv_add(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x1122334455667799ULL);
+
+	RZ_BENCH_RUN("rz_bv_add(a, b, NULL)", t_out, 1000000, {
+		RzBitVector *a_prev = a;
+		a = rz_bv_add(a, b, NULL);
+		rz_bv_free(a_prev);
+	});
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+}
+
+static void bench_bv_sub_inplace(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x11);
+
+	RZ_BENCH_RUN("rz_bv_sub_inplace(a, b, NULL)", t_out, 1000000, {
+		rz_bv_sub_inplace(a, b, NULL);
+	});
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+}
+
+static void bench_bv_sub(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
+	RzBitVector *b = rz_bv_new_from_ut64(64, 0x11);
+
+	RZ_BENCH_RUN("rz_bv_sub(a, b, NULL)", t_out, 1000000, {
+		RzBitVector *a_prev = a;
+		a = rz_bv_sub(a, b, NULL);
+		rz_bv_free(a_prev);
+	});
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+}
+
+int main() {
 	RzTable *t = rz_table_new();
 	rz_table_set_columnsf(t, "snnnn", "Benchmark", "Iterations", "Total time [ms]", "Average time [us/op]", "Throughput [ops/sec]");
 
@@ -111,9 +163,13 @@ int main(RzTable *t_out) {
 	bench_bv_copy_small_to_large_60_bit(t);
 	bench_bv_set_range_60_bit(t);
 	bench_bv_set_range_100_bit(t);
+	bench_bv_add(t);
+	bench_bv_add_inplace(t);
+	bench_bv_sub(t);
+	bench_bv_sub_inplace(t);
 
 	// Print results
-	const char *out = rz_table_tostring(t);
+	char *out = rz_table_tostring(t);
 	printf("%s\n", out);
 
 	free(out);

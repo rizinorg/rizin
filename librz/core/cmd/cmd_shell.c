@@ -716,7 +716,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 		msg = space + 1;
 	}
 	const char *f;
-	int msglen = rz_str_len_utf8(msg);
+	int msglen = rz_str_utf8_cols(msg);
 	char *s = rz_str_pad(' ', msglen);
 	char *l;
 

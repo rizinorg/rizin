@@ -1975,7 +1975,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	detected = rz_list_first(found);
+	detected = rz_list_first_val(found);
 	if (detected) {
 		rz_cons_memcat(detected->string, detected->size);
 		rz_cons_newline();
@@ -3628,13 +3628,44 @@ RZ_IPI RzCmdStatus rz_cmd_print_asn1_handler(RzCore *core, int argc, const char 
 		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *res = rz_asn1_to_string(asn1, 0, mode == RZ_OUTPUT_MODE_STANDARD);
+	char *res = rz_asn1_to_string(asn1);
 	rz_asn1_object_free(asn1);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("%s", res);
 	free(res);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_asn1_structure_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzASN1Object *asn1 = rz_asn1_object_parse(core->block, core->blocksize);
+	if (!asn1) {
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzStructuredData *sd = rz_asn1_to_structure(asn1, state->mode == RZ_OUTPUT_MODE_QUIET);
+	rz_asn1_object_free(asn1);
+	if (!sd) {
+		RZ_LOG_ERROR("core: failed to create RzStructuredData from ASN1 data.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_structured_data_to_pj(sd, state->d.pj);
+		break;
+	default: {
+		char *res = rz_structured_data_to_yaml(sd);
+		if (res) {
+			rz_cons_println(res);
+			free(res);
+		}
+		break;
+	}
+	}
+	rz_structured_data_free(sd);
+
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3661,57 +3692,97 @@ RZ_IPI RzCmdStatus rz_cmd_print_protobuf_verbose_handler(RzCore *core, int argc,
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_pkcs7_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *res = NULL;
 	RzCMS *cms = rz_pkcs7_cms_parse(core->block, core->blocksize);
 	if (!cms) {
 		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzStructuredData *sd = rz_pkcs7_cms_to_structure(cms);
+	rz_pkcs7_cms_free(cms);
+	if (!sd) {
+		RZ_LOG_ERROR("core: failed to create RzStructuredData from CMS data.\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_pkcs7_cms_json(cms, state->d.pj);
+		rz_structured_data_to_pj(sd, state->d.pj);
 		break;
-	default:
-		res = rz_pkcs7_cms_to_string(cms);
+	default: {
+		char *res = rz_structured_data_to_yaml(sd);
 		if (res) {
-			rz_cons_printf("%s", res);
+			rz_cons_println(res);
 			free(res);
 		}
 		break;
 	}
-	rz_pkcs7_cms_free(cms);
+	}
+	rz_structured_data_free(sd);
+
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_x509_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	char *res = NULL;
-	RzStrBuf *sb = NULL;
 	RzX509Certificate *x509 = rz_x509_certificate_parse2(core->block, core->blocksize);
 	if (!x509) {
 		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+	RzStructuredData *sd = rz_x509_certificate_to_structure(x509);
+	rz_x509_certificate_free(x509);
+	if (!sd) {
+		RZ_LOG_ERROR("core: failed to create RzStructuredData from x509 data.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_x509_certificate_json(state->d.pj, x509);
+		rz_structured_data_to_pj(sd, state->d.pj);
 		break;
-	default:
-		sb = rz_strbuf_new(NULL);
-		if (!sb) {
-			RZ_LOG_ERROR("core: failed to allocate RzStrBuf\n");
-			rz_x509_certificate_free(x509);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_x509_certificate_dump(x509, NULL, sb);
-		res = rz_strbuf_drain(sb);
+	default: {
+		char *res = rz_structured_data_to_yaml(sd);
 		if (res) {
-			rz_cons_printf("%s", res);
+			rz_cons_println(res);
 			free(res);
 		}
 		break;
 	}
-	rz_x509_certificate_free(x509);
+	}
+	rz_structured_data_free(sd);
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_pkcs8_pkey_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzPrivateKeyInfo *pki = rz_pkcs8_private_key_info_parse(core->block, core->blocksize);
+	if (!pki) {
+		RZ_LOG_ERROR("core: Malformed object: did you supply enough data?\ntry to change the block size (see b? or @!<size>)\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzStructuredData *sd = rz_pkcs8_private_key_info_to_structure(pki);
+	rz_pkcs8_private_key_info_free(pki);
+	if (!sd) {
+		RZ_LOG_ERROR("core: failed to create RzStructuredData from PrivateKeyInfo data.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_structured_data_to_pj(sd, state->d.pj);
+		break;
+	default: {
+		char *res = rz_structured_data_to_yaml(sd);
+		if (res) {
+			rz_cons_println(res);
+			free(res);
+		}
+		break;
+	}
+	}
+	rz_structured_data_free(sd);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4896,7 +4967,7 @@ static CoreBlockRange *calculate_blocks_range(RzCore *core, ut64 from, ut64 to, 
 			free(brange);
 			return NULL;
 		}
-		RzIOMap *map = rz_list_first(boundaries);
+		RzIOMap *map = rz_list_first_val(boundaries);
 		if (map) {
 			brange->from = map->itv.addr;
 			RzIOMap *m;
@@ -5184,6 +5255,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_NONNULL const unsigned ch
 		hist->h = h;
 		RzStrBuf *str = rz_histogram_interactive_horizontal(hist, data);
 		rz_cons_canvas_write(hist->can, str->ptr);
+		rz_strbuf_free(str);
 		rz_cons_canvas_print_region(hist->can);
 		rz_cons_newline();
 		rz_cons_visual_flush();

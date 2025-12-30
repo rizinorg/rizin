@@ -1346,6 +1346,7 @@ RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) 
 		spp_eval(lbuf, &out);
 		free(lbuf);
 		lbuf = rz_str_dup(rz_strbuf_get(out.cout));
+		rz_strbuf_free(out.cout);
 	}
 	acode = rz_asm_massemble(a, lbuf);
 	free(lbuf);
@@ -1385,6 +1386,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 
 	RzAsmTokenString *newt = RZ_NEW0(RzAsmTokenString);
 	if (!newt) {
+		rz_asm_token_string_free(toks);
 		return NULL;
 	}
 	newt->tokens = rz_pvector_clonef(toks->tokens, (RzPVectorItemCpyFunc)clone_asm_token);

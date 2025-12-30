@@ -52,7 +52,7 @@ static RzList /*<RzList<void *> *>*/ *get_pyc_code_obj(RzAnalysis *analysis) {
 }
 
 static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	pyc_opcodes *ops = (pyc_opcodes *)a->plugin_data;
+	pyc_context_t *ctx = (pyc_context_t *)a->plugin_data;
 	RzList *cobjs = rz_list_get_n(get_pyc_code_obj(a), 0);
 	RzListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
@@ -74,28 +74,25 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	op->id = op_code;
 
-	if (!pyc_opcodes_equal(ops, a->cpu)) {
-		free_opcode(ops);
-		ops = NULL;
-	}
-
-	if (!ops) {
-		if (!(ops = get_opcode_by_version(a->cpu))) {
+	if (!ctx->cache || RZ_STR_NE(ctx->version, a->cpu)) {
+		if (!pyc_context_set_opcode_by_version(a->cpu, ctx)) {
+			RZ_LOG_ERROR("analysis: pyc: unsupported pyc opcode cpu/version (analysis.cpu=%s).\n", a->cpu);
 			return -1;
 		}
-		a->plugin_data = ops;
+		ctx->cache->bits = a->bits;
 	}
+
 	bool is_python36 = a->bits == 8;
-	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
+	pyc_opcode_object *op_obj = &ctx->cache->opcodes[op_code];
 	if (!op_obj->op_name) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 1;
 		goto analysis_end;
 	}
 
-	op->size = is_python36 ? 2 : ((op_code >= ops->have_argument) ? 3 : 1);
+	op->size = is_python36 ? 2 : ((op_code >= ctx->cache->have_argument) ? 3 : 1);
 
-	if (op_code >= ops->have_argument) {
+	if (op_code >= ctx->cache->have_argument) {
 		if (!is_python36) {
 			oparg = data[1] + data[2] * 256 + extended_arg;
 		} else {
@@ -105,7 +102,7 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 
 	if (op_obj->type & HASJABS) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = func_base + JMP_OFFSET(ops, oparg);
+		op->jump = func_base + JMP_OFFSET(ctx->cache, oparg);
 
 		if (op_obj->type & HASCONDITION) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -115,7 +112,7 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	}
 	if (op_obj->type & HASJREL) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = addr + ((is_python36) ? 2 : 3) + JMP_OFFSET(ops, oparg);
+		op->jump = addr + ((is_python36) ? 2 : 3) + JMP_OFFSET(ctx->cache, oparg);
 		op->fail = addr + ((is_python36) ? 2 : 3);
 
 		if (op_obj->type & HASCONDITION) {
@@ -136,9 +133,18 @@ analysis_end:
 	return op->size;
 }
 
-static bool pyc_analysis_finish(void *user) {
-	pyc_opcodes *ops = (user);
-	free_opcode(ops);
+static bool pyc_analysis_fini(void *user) {
+	pyc_context_free((pyc_context_t *)user);
+	return true;
+}
+
+static bool pyc_analysis_init(void **user) {
+	pyc_context_t *context = RZ_NEW0(pyc_context_t);
+	if (!context) {
+		return false;
+	}
+
+	*user = context;
 	return true;
 }
 
@@ -152,5 +158,6 @@ RzAnalysisPlugin rz_analysis_plugin_pyc = {
 	.get_reg_profile = get_reg_profile,
 	.op = &pyc_op,
 	.esil = false,
-	.fini = &pyc_analysis_finish,
+	.init = &pyc_analysis_init,
+	.fini = &pyc_analysis_fini,
 };

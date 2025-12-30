@@ -40,6 +40,7 @@ iI~bits
 aaa
 pdf
 pdf @ fcn.00010208
+ao @ 0x00007538
 EOF
 EXPECT=<<EOF
 arch     loongarch
@@ -130,5 +131,26 @@ bits     64
 |       `-> 0x000102c4      pcalau12i t0, 0x24
 |           0x000102c8      ld.d  t0, t0, -0x4a8
 \           0x000102cc      jirl  ra, t0, 0
+address: 0x7538
+opcode: pcalau12i ra, -3
+disasm: pcalau12i ra, -3
+mnemonic: pcalau12i
+mask: ffffffff
+prefix: 0
+id: 397
+bytes: a1ffff1b
+val: 0xffffffffffff5ac8
+refptr: 0
+size: 4
+sign: false
+type: lea
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "ra"
+    - type: "imm"
+      value: -3
+family: cpu
 EOF
 RUN

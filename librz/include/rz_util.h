@@ -55,6 +55,7 @@
 #include <rz_util/rz_path.h>
 #include <rz_util/rz_pj.h>
 #include <rz_util/rz_pkcs7.h>
+#include <rz_util/rz_pkcs8.h>
 #include <rz_util/rz_protobuf.h>
 #include <rz_util/rz_punycode.h>
 #include <rz_util/rz_range.h>

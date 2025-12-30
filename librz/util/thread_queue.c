@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_th.h>
@@ -15,11 +15,41 @@
  * rz_th_queue_free     Frees a RzThreadQueue structure, if the queue is not empty, it frees the elements with the provided qfree function.
  */
 struct rz_th_queue_t {
-	RzThreadLock *lock;
-	RzThreadCond *cond;
-	RzThreadQueueSize max_size;
-	RzList /*<void *>*/ *list;
+	RzThreadLock *reader_lock; ///< Lock for readers
+	RzThreadCond *reader_cond; ///< Cond for readers
+	size_t reader_awaiting; ///< Number of readers awaiting to read
+
+	RzThreadCond *empty_cond; ///< Cond any thread waiting for an empty queue
+
+	RzThreadLock *data_lock; ///< Lock used to modify the RzThreadQueue data
+	RzThreadQueueSize max_size; ///< Max queue size or unlimited
+	RzList /*<void *>*/ *list; ///< Stored data
+	bool closed; ///< Defines if the queue is closed (i.e. reads or writes cannot be performed).
 };
+
+static RZ_OWN RzThreadQueue *th_queue_new(RzThreadQueueSize max_size, RzList /*<void *>*/ *list) {
+	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
+	if (!queue) {
+		return NULL;
+	}
+
+	queue->max_size = max_size;
+	queue->list = list;
+	queue->data_lock = rz_th_lock_new(false);
+	queue->reader_lock = rz_th_lock_new(false);
+	queue->reader_cond = rz_th_cond_new();
+	queue->empty_cond = rz_th_cond_new();
+	if (!queue->list ||
+		!queue->data_lock ||
+		!queue->reader_lock ||
+		!queue->reader_cond ||
+		!queue->empty_cond) {
+		rz_th_queue_free(queue);
+		return NULL;
+	}
+
+	return queue;
+}
 
 /**
  * \brief  Allocates and initializes a new fifo queue
@@ -30,21 +60,12 @@ struct rz_th_queue_t {
  * \return On success returns a valid pointer, otherwise NULL
  */
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(RzThreadQueueSize max_size, RZ_NULLABLE RzListFree qfree) {
-	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
-	if (!queue) {
+	RzList *list = rz_list_newf(qfree);
+	if (!list) {
 		return NULL;
 	}
 
-	queue->max_size = max_size;
-	queue->list = rz_list_newf(qfree);
-	queue->lock = rz_th_lock_new(false);
-	queue->cond = rz_th_cond_new();
-	if (!queue->list || !queue->lock || !queue->cond) {
-		rz_th_queue_free(queue);
-		return NULL;
-	}
-
-	return queue;
+	return th_queue_new(max_size, list);
 }
 
 /**
@@ -56,27 +77,15 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_new(RzThreadQueueSize max_size, RZ_NULL
  */
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /*<void *>*/ *list, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(list, NULL);
-	RzThreadQueue *queue = RZ_NEW0(RzThreadQueue);
-	if (!queue) {
+
+	size_t max_size = rz_list_length(list);
+	RzList *copy = rz_list_clone(list);
+	if (!copy) {
 		return NULL;
 	}
 
-	queue->list = rz_list_clone(list);
-	if (!queue->list) {
-		free(queue);
-		return NULL;
-	}
-
-	queue->list->free = qfree;
-	queue->max_size = rz_list_length(list);
-	queue->lock = rz_th_lock_new(false);
-	queue->cond = rz_th_cond_new();
-	if (!queue->list || !queue->lock || !queue->cond) {
-		rz_th_queue_free(queue);
-		return NULL;
-	}
-
-	return queue;
+	copy->free = qfree;
+	return th_queue_new(max_size, copy);
 }
 
 /**
@@ -89,8 +98,10 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_list(RZ_NONNULL RZ_BORROW RzList /
  */
 RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVector /*<void *>*/ *vector, RZ_NULLABLE RzListFree qfree) {
 	rz_return_val_if_fail(vector, NULL);
-	RzThreadQueue *queue = rz_th_queue_new(rz_pvector_len(vector), qfree);
-	if (!queue) {
+
+	size_t max_size = rz_pvector_len(vector);
+	RzList *list = rz_list_newf(qfree);
+	if (!list) {
 		return NULL;
 	}
 
@@ -100,13 +111,69 @@ RZ_API RZ_OWN RzThreadQueue *rz_th_queue_from_pvector(RZ_NONNULL RZ_BORROW RzPVe
 		if (!value) {
 			continue;
 		}
-		if (!rz_list_append(queue->list, value)) {
-			rz_th_queue_free(queue);
+		if (!rz_list_append(list, value)) {
+			rz_list_free(list);
 			return NULL;
 		}
 	}
 
-	return queue;
+	return th_queue_new(max_size, list);
+}
+
+/**
+ * \brief  Closes a RzThreadQueue but only when empty (once closed you cannot read/write data).
+ *
+ * \param  queue The RzThreadQueue to close
+ */
+RZ_API void rz_th_queue_close_when_empty(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_if_fail(queue);
+
+	rz_th_lock_enter(queue->data_lock);
+	if (queue->closed) {
+		// already closed.
+		rz_th_lock_leave(queue->data_lock);
+		return;
+	}
+
+	while (!rz_list_empty(queue->list)) {
+		// the list is not empty, so we wait for it to be empty.
+		rz_th_cond_timed_wait(queue->empty_cond, queue->data_lock, 100);
+	}
+
+	// we finally close the queue & notify all awating readers
+	queue->closed = true;
+	rz_th_cond_signal_all(queue->reader_cond);
+
+	rz_th_lock_leave(queue->data_lock);
+}
+
+/**
+ * \brief  Closes a RzThreadQueue (once closed you cannot read/write data).
+ *
+ * \param  queue The RzThreadQueue to close
+ */
+RZ_API void rz_th_queue_close(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_if_fail(queue);
+
+	rz_th_lock_enter(queue->data_lock);
+	if (!queue->closed) {
+		queue->closed = true;
+		rz_th_cond_signal_all(queue->reader_cond);
+	}
+	rz_th_lock_leave(queue->data_lock);
+}
+
+/**
+ * \brief  Returns true if a given RzThreadQueue is closed.
+ *
+ * \param  queue The RzThreadQueue to check if is closed or not.
+ */
+RZ_API bool rz_th_queue_is_closed(RZ_NONNULL RzThreadQueue *queue) {
+	rz_return_val_if_fail(queue, false);
+	rz_th_lock_enter(queue->data_lock);
+	bool closed = queue->closed;
+	rz_th_lock_leave(queue->data_lock);
+	return closed;
 }
 
 /**
@@ -119,9 +186,14 @@ RZ_API void rz_th_queue_free(RZ_NULLABLE RzThreadQueue *queue) {
 		return;
 	}
 
+	// always close before freeing it.
+	rz_th_queue_close(queue);
+
 	rz_list_free(queue->list);
-	rz_th_lock_free(queue->lock);
-	rz_th_cond_free(queue->cond);
+	rz_th_cond_free(queue->empty_cond);
+	rz_th_lock_free(queue->reader_lock);
+	rz_th_cond_free(queue->reader_cond);
+	rz_th_lock_free(queue->data_lock);
 	free(queue);
 }
 
@@ -138,7 +210,13 @@ RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *u
 	rz_return_val_if_fail(queue && user, false);
 
 	bool added = false;
-	rz_th_lock_enter(queue->lock);
+	rz_th_lock_enter(queue->data_lock);
+
+	if (queue->closed) {
+		// never write to a closed queue
+		goto end;
+	}
+
 	if (!queue->max_size || rz_list_length(queue->list) < queue->max_size) {
 		if (tail) {
 			added = rz_list_append(queue->list, user) != NULL;
@@ -146,58 +224,62 @@ RZ_API bool rz_th_queue_push(RZ_NONNULL RzThreadQueue *queue, RZ_NONNULL void *u
 			added = rz_list_prepend(queue->list, user) != NULL;
 		}
 	}
-	if (added) {
-		rz_th_cond_signal(queue->cond);
+
+	if (!added) {
+		// we failed to add an element to the queue, so we return.
+		goto end;
 	}
-	rz_th_lock_leave(queue->lock);
+
+	// we notify a reader that there is new data
+	if (queue->reader_awaiting > 0) {
+		// we notify a reader that there is now data.
+		rz_th_cond_signal(queue->reader_cond);
+	}
+
+end:
+	rz_th_lock_leave(queue->data_lock);
 	return added;
 }
 
 /**
- * \brief  Removes an element from the queue, but does not awaits when empty.
+ * \brief  Removes an element from the queue. It blocks until it can read or the queue is closed.
  *
  * \param  queue The RzThreadQueue to pop from
  * \param  tail  When true, pops the element from the tail, otherwise from the head
+ * \param  data  The data removed from the queue
  *
  * \return On success returns a valid pointer, otherwise NULL
  */
-RZ_API RZ_OWN void *rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
-	rz_return_val_if_fail(queue, NULL);
+RZ_API bool rz_th_queue_pop(RZ_NONNULL RzThreadQueue *queue, bool tail, RZ_NONNULL RZ_OUT void **data) {
+	rz_return_val_if_fail(queue && data, NULL);
 
-	void *user = NULL;
-	rz_th_lock_enter(queue->lock);
+	bool ret = false;
+	rz_th_lock_enter(queue->reader_lock);
+	rz_th_lock_enter(queue->data_lock);
+
+	while (!queue->closed && rz_list_empty(queue->list)) {
+		// the queue is not closed and we need to wait till there is new data
+		queue->reader_awaiting++;
+		rz_th_cond_wait(queue->reader_cond, queue->data_lock);
+		queue->reader_awaiting--;
+	}
+
+	if (queue->closed) {
+		// the queue is closed, nothing to do.
+		goto end;
+	}
+
 	if (tail) {
-		user = rz_list_pop(queue->list);
+		*data = rz_list_pop(queue->list);
 	} else {
-		user = rz_list_pop_head(queue->list);
+		*data = rz_list_pop_head(queue->list);
 	}
-	rz_th_lock_leave(queue->lock);
-	return user;
-}
+	ret = true;
 
-/**
- * \brief  Removes an element from the queue, but yields the thread till not empty.
- *
- * \param  queue The RzThreadQueue to push to
- * \param  tail  When true, pops the element from the tail, otherwise from the head
- *
- * \return On success returns a valid pointer, otherwise NULL
- */
-RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool tail) {
-	rz_return_val_if_fail(queue, NULL);
-
-	void *user = NULL;
-	rz_th_lock_enter(queue->lock);
-	if (rz_list_empty(queue->list)) {
-		rz_th_cond_wait(queue->cond, queue->lock);
-	}
-	if (tail) {
-		user = rz_list_pop(queue->list);
-	} else {
-		user = rz_list_pop_head(queue->list);
-	}
-	rz_th_lock_leave(queue->lock);
-	return user;
+end:
+	rz_th_lock_leave(queue->data_lock);
+	rz_th_lock_leave(queue->reader_lock);
+	return ret;
 }
 
 /**
@@ -210,9 +292,9 @@ RZ_API RZ_OWN void *rz_th_queue_wait_pop(RZ_NONNULL RzThreadQueue *queue, bool t
 RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue) {
 	rz_return_val_if_fail(queue, false);
 
-	rz_th_lock_enter(queue->lock);
+	rz_th_lock_enter(queue->data_lock);
 	bool is_empty = rz_list_empty(queue->list);
-	rz_th_lock_leave(queue->lock);
+	rz_th_lock_leave(queue->data_lock);
 	return is_empty;
 }
 
@@ -226,9 +308,9 @@ RZ_API bool rz_th_queue_is_empty(RZ_NONNULL RzThreadQueue *queue) {
 RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
 	rz_return_val_if_fail(queue, false);
 
-	rz_th_lock_enter(queue->lock);
+	rz_th_lock_enter(queue->data_lock);
 	bool is_full = queue->max_size != RZ_THREAD_QUEUE_UNLIMITED && rz_list_length(queue->list) >= queue->max_size;
-	rz_th_lock_leave(queue->lock);
+	rz_th_lock_leave(queue->data_lock);
 	return is_full;
 }
 
@@ -242,9 +324,9 @@ RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue) {
 RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue) {
 	rz_return_val_if_fail(queue, false);
 
-	rz_th_lock_enter(queue->lock);
+	rz_th_lock_enter(queue->data_lock);
 	size_t size = rz_list_length(queue->list);
-	rz_th_lock_leave(queue->lock);
+	rz_th_lock_leave(queue->data_lock);
 	return size;
 }
 
@@ -263,9 +345,9 @@ RZ_API RZ_OWN RzList /*<void *>*/ *rz_th_queue_pop_all(RZ_NONNULL RzThreadQueue 
 		return NULL;
 	}
 
-	rz_th_lock_enter(queue->lock);
+	rz_th_lock_enter(queue->data_lock);
 	RzList *res = queue->list;
 	queue->list = list;
-	rz_th_lock_leave(queue->lock);
+	rz_th_lock_leave(queue->data_lock);
 	return res;
 }

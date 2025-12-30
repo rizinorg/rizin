@@ -25,10 +25,11 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new(RzILTypePure type) {
  * \param  bv  RzBitVector to set
  * \return val RzILVal, pointer to this value
  */
-RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv) {
+RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_OWN RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 	RzILVal *ret = rz_il_value_new(RZ_IL_TYPE_PURE_BITVECTOR);
 	if (!ret) {
+		rz_bv_free(bv);
 		return NULL;
 	}
 	ret->data.bv = bv;
@@ -40,10 +41,11 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_bitv(RZ_NONNULL RzBitVector *bv) {
  * \param  b   RzILBool to set
  * \return val RzILVal, pointer to this value
  */
-RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b) {
+RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_OWN RZ_NONNULL RzILBool *b) {
 	rz_return_val_if_fail(b, NULL);
 	RzILVal *ret = rz_il_value_new(RZ_IL_TYPE_PURE_BOOL);
 	if (!ret) {
+		rz_il_bool_free(b);
 		return NULL;
 	}
 	ret->data.b = b;
@@ -55,10 +57,11 @@ RZ_API RZ_OWN RzILVal *rz_il_value_new_bool(RZ_NONNULL RzILBool *b) {
  * \param f RzFloat to set
  * \return val RzILVal, pointer to this value
  */
-RZ_API RZ_OWN RzILVal *rz_il_value_new_float(RZ_NONNULL RzFloat *f) {
+RZ_API RZ_OWN RzILVal *rz_il_value_new_float(RZ_OWN RZ_NONNULL RzFloat *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzILVal *ret = rz_il_value_new(RZ_IL_TYPE_PURE_FLOAT);
 	if (!ret) {
+		rz_float_free(f);
 		return NULL;
 	}
 	ret->data.f = f;

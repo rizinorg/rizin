@@ -609,7 +609,7 @@ static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 G
 	case R_AARCH64_TLS_DTPMOD: UNHANDL("R_AARCH64_TLS_DTPMOD");
 	case R_AARCH64_TLS_DTPREL: UNHANDL("R_AARCH64_TLS_DTPREL");
 	case R_AARCH64_TLS_TPREL: UNHANDL("R_AARCH64_TLS_TPREL");
-	case R_AARCH64_TLSDESC: UNHANDL("R_AARCH64_TLSDESC");
+	case R_AARCH64_TLSDESC: ADD(64, 0, "R_AARCH64_TLSDESC"); // resolved at runtime
 	case R_AARCH64_IRELATIVE: UNHANDL("R_AARCH64_IRELATIVE");
 
 	// FIXME: Quite a few relocations missing here

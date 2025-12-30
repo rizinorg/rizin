@@ -1698,6 +1698,7 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_LONG
         args: []
       - name: axf
         summary: List xrefs from current seek

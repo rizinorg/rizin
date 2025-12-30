@@ -224,13 +224,17 @@ e asm.bits=32
 # pd 2 - note different colors
 pi 2
 ao~type[1]
-ao@ 4~type[1]
+ao @ 4~type[1]
 EOF
 EXPECT=<<EOF
 ldr ip, [0x00000028]
 ldr ip, [sl, ip]
 load
+type:
+type:
 load
+type:
+type:
 EOF
 RUN
 
@@ -348,7 +352,11 @@ EXPECT=<<EOF
 ldr ip, [0x00000028]
 ldr ip, [sl, ip]
 load
+type:
+type:
 load
+type:
+type:
 EOF
 RUN
 
@@ -920,6 +928,15 @@ type: push
 cycles: 1
 esil: r3,sp,-8,+,=[4],lr,sp,-4,+,=[4],-8,sp,+=,
 rzil: (seq (storew 0 (- (var sp) (bv 32 0x8)) (var r3)) (storew 0 (- (var sp) (bv 32 0x4)) (var lr)) (set sp (- (var sp) (bv 32 0x8))))
+opex:
+  operands:
+    - type: "reg"
+      value: "sp"
+    - type: "reg"
+      value: "r3"
+    - type: "reg"
+      value: "lr"
+  writeback: true
 direction: write
 family: cpu
 stackop: inc
@@ -942,6 +959,14 @@ type: add
 cycles: 1
 esil: 0,sp,+,0xffffffff,&,r7,=
 rzil: (set r7 (+ (var sp) (bv 32 0x0)))
+opex:
+  operands:
+    - type: "reg"
+      value: "r7"
+    - type: "reg"
+      value: "sp"
+    - type: "imm"
+      value: 0
 family: cpu
 EOF
 RUN
@@ -1313,5 +1338,924 @@ EXPECT=<<EOF
             0x00000114      movs  r0, r0
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000019c  0c01 0000                                ....
+EOF
+RUN
+
+NAME=opex arm32 & aarch64
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 864860f44d0fe2f4edffffeb04e02de500000000e08322e5f102030e0000a0e30230c1e7000053e3000201f10540d0e8f4800000
+ao 13
+echo ---
+e asm.bits=64
+wx 090038d5bf4000d50c0513d52050020e20e43d0f0018a05fa200ae9e9f3703d5bf3303d5df3f03d5217c029b217c00530040214be10b40b9200481da2008028b105be83cfd7bbaa9fdc743f8
+ao 19
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: vld2.32 {d20, d21}, [r0], r6
+disasm: vld2.32 {d20, d21}, [r0], r6
+pseudo: asm("vld2.32 {d20, d21}, [r0], r6")
+mnemonic: vld2.32
+mask: ffffffff
+prefix: 0
+id: 16
+bytes: 864860f4
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 1
+rzil: (seq empty (set d20 (<< (cast 64 false (loadw 0 32 (var r0))) (bv 8 0x0) false)) (set d21 (<< (cast 64 false (loadw 0 32 (+ (var r0) (bv 32 0x4)))) (bv 8 0x0) false)) (set d20 (<< (cast 64 false (loadw 0 32 (+ (+ (var r0) (bv 32 0x4)) (bv 32 0x4)))) (bv 8 0x20) false)) (set d21 (<< (cast 64 false (loadw 0 32 (+ (+ (+ (var r0) (bv 32 0x4)) (bv 32 0x4)) (bv 32 0x4)))) (bv 8 0x20) false)) (set r0 (+ (var r0) (var r6))))
+opex:
+  operands:
+    - type: "reg"
+      value: "d20"
+    - type: "reg"
+      value: "d21"
+    - type: "mem"
+      base: "r0"
+      index: "r6"
+      scale: 0
+      disp: 0
+  writeback: true
+  vector_size: 32
+family: mmx
+address: 0x4
+opcode: vld4.16 {d16[], d17[], d18[], d19[]}, [r2]!
+disasm: vld4.16 {d16[], d17[], d18[], d19[]}, [r2]!
+pseudo: asm("vld4.16 {d16[], d17[], d18[], d19[]}, [r2]!")
+mnemonic: vld4.16
+mask: ffffffff
+prefix: 0
+id: 18
+bytes: 4d0fe2f4
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 1
+rzil: (seq empty (set d16 (<< (cast 64 false (loadw 0 16 (var r2))) (bv 8 0x0) false)) (set d17 (<< (cast 64 false (loadw 0 16 (+ (var r2) (bv 32 0x2)))) (bv 8 0x0) false)) (set d18 (<< (cast 64 false (loadw 0 16 (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x0) false)) (set d19 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x0) false)) (set d16 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x10) false)) (set d17 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x10) false)) (set d18 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x10) false)) (set d19 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x10) false)) (set d16 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x20) false)) (set d17 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x20) false)) (set d18 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x20) false)) (set d19 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x20) false)) (set d16 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x30) false)) (set d17 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x30) false)) (set d18 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x30) false)) (set d19 (<< (cast 64 false (loadw 0 16 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r2) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)) (bv 32 0x2)))) (bv 8 0x30) false)) (set r2 (+ (var r2) (bv 32 0x20))))
+opex:
+  operands:
+    - type: "reg"
+      value: "d16"
+    - type: "reg"
+      value: "d17"
+    - type: "reg"
+      value: "d18"
+    - type: "reg"
+      value: "d19"
+    - type: "mem"
+      base: "r2"
+      scale: 0
+      disp: 0
+  writeback: true
+  vector_size: 16
+family: mmx
+address: 0x8
+opcode: bl 0xffffffc4
+disasm: bl 0xffffffc4
+pseudo: 0xffffffc4 ()
+mnemonic: bl
+description: branches and link, similar to call in i386, set lr(r14) = pc, changes pc (r15) )
+mask: 0000f0ff
+prefix: 0
+id: 48
+bytes: edffffeb
+refptr: 0
+size: 4
+sign: false
+type: call
+cycles: 4
+esil: pc,0,+,lr,=,4294967236,pc,=
+rzil: (seq (set lr (bv 32 0xc)) (jmp (bv 32 0xffffffc4)))
+opex:
+  operands:
+    - type: "imm"
+      value: 4294967236
+jump: 0xffffffc4
+direction: exec
+fail: 0x0000000c
+family: cpu
+address: 0xc
+opcode: str lr, [sp, -4]!
+disasm: str lr, [sp, -4]!
+pseudo: [sp - 4]! = lr
+mnemonic: str
+description: store register into memory
+mask: ffffffff
+prefix: 0
+id: 31
+bytes: 04e02de5
+refptr: 0
+size: 4
+sign: false
+type: store
+cycles: 4
+esil: lr,0x4,sp,-,0xffffffff,&,=[4],4,sp,-,sp,=
+rzil: (seq (set sp (- (var sp) (bv 32 0x4))) (storew 0 (var sp) (var lr)))
+opex:
+  operands:
+    - type: "reg"
+      value: "lr"
+    - type: "mem"
+      base: "sp"
+      scale: 0
+      disp: 4
+      subtracted: true
+  writeback: true
+direction: write
+family: cpu
+address: 0x10
+opcode: andeq r0, r0, r0
+disasm: andeq r0, r0, r0
+pseudo: asm("andeq r0, r0, r0")
+mnemonic: andeq
+description: logical AND if Z set (equal)
+mask: ffffffff
+prefix: 0
+id: 39
+bytes: 00000000
+refptr: 0
+size: 4
+sign: false
+type: and
+cycles: 1
+esil: zf,?{,r0,r0,&,0xffffffff,&,r0,=,}
+rzil: (branch (var zf) (set r0 (& (var r0) (var r0))) nop)
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "reg"
+      value: "r0"
+    - type: "reg"
+      value: "r0"
+  cc: "eq"
+family: cpu
+address: 0x14
+opcode: str r8, [r2, -0x3e0]!
+disasm: str r8, [r2, -0x3e0]!
+pseudo: [r2 - 0x3e0]! = r8
+mnemonic: str
+description: store register into memory
+mask: ffffffff
+prefix: 0
+id: 31
+bytes: e08322e5
+refptr: 0
+size: 4
+sign: false
+type: store
+cycles: 4
+esil: r8,0x3e0,r2,-,0xffffffff,&,=[4],992,r2,-,r2,=
+rzil: (seq (set r2 (- (var r2) (bv 32 0x3e0))) (storew 0 (var r2) (var r8)))
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "mem"
+      base: "r2"
+      scale: 0
+      disp: 992
+      subtracted: true
+  writeback: true
+direction: write
+family: cpu
+address: 0x18
+opcode: mcreq p2, 0, r0, c3, c1, 7
+disasm: mcreq p2, 0, r0, c3, c1, 7
+pseudo: asm("mcreq p2, 0, r0, c3, c1, 7")
+mnemonic: mcreq
+mask: ffffffff
+prefix: 0
+id: 119
+bytes: f102030e
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 1
+esil: zf,?{,,}
+opex:
+  operands:
+    - type: "pimm"
+      value: 2
+    - type: "imm"
+      value: 0
+    - type: "reg"
+      value: "r0"
+    - type: "cimm"
+      value: 3
+    - type: "cimm"
+      value: 1
+    - type: "imm"
+      value: 7
+  cc: "eq"
+family: priv
+address: 0x1c
+opcode: mov r0, 0
+disasm: mov r0, 0
+pseudo: r0 = 0
+mnemonic: mov
+description: move value between registers
+mask: ffffffff
+prefix: 0
+id: 28
+bytes: 0000a0e3
+val: 0x00000000
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 1
+esil: 0,r0,=
+rzil: (set r0 (bv 32 0x0))
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0
+family: cpu
+address: 0x20
+opcode: strb r3, [r1, r2]
+disasm: strb r3, [r1, r2]
+pseudo: [r1 + r2] = (byte) r3
+mnemonic: strb
+description: store byte value in register into memory
+mask: ffffffff
+prefix: 0
+id: 29
+bytes: 0230c1e7
+refptr: 0
+size: 4
+sign: false
+type: store
+cycles: 4
+esil: r3,r2,r1,+,0xffffffff,&,=[1]
+rzil: (store 0 (+ (var r1) (var r2)) (cast 8 false (var r3)))
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "mem"
+      base: "r1"
+      index: "r2"
+      scale: 1
+      disp: 0
+direction: write
+family: cpu
+address: 0x24
+opcode: cmp r3, 0
+disasm: cmp r3, 0
+pseudo: if (r3 == 0)
+mnemonic: cmp
+description: compares two registers
+mask: 0000f0ff
+prefix: 0
+id: 76
+bytes: 000053e3
+ptr: 0x00000000
+refptr: 0
+size: 4
+sign: false
+type: cmp
+cycles: 1
+reg: r3
+esil: 0,r3,==,$z,zf,:=,31,$s,nf,:=,32,$b,!,cf,:=,31,$o,vf,:=
+rzil: (seq (set a (var r3)) (set b (bv 32 0x0)) (set res (- (var a) (var b))) (set cf (ule (var b) (var a))) (set vf (&& (^^ (msb (var a)) (msb (var b))) (^^ (msb (var a)) (msb (var res))))) (set zf (is_zero (var res))) (set nf (msb (var res))))
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "imm"
+      value: 0
+  update_flags: true
+family: cpu
+address: 0x28
+opcode: setend be
+disasm: setend be
+pseudo: asm("setend be")
+mnemonic: setend
+mask: ffffffff
+prefix: 0
+id: 364
+bytes: 000201f1
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 1
+opex:
+  operands:
+    - type: "setend"
+      value: "be"
+family: cpu
+address: 0x2c
+opcode: ldm r0, {r0, r2, lr} ^
+disasm: ldm r0, {r0, r2, lr} ^
+pseudo: asm("ldm r0, {r0, r2, lr} ^")
+mnemonic: ldm
+description: load to multiple registers from memory
+mask: ffffffff
+prefix: 0
+id: 112
+bytes: 0540d0e8
+refptr: 0
+size: 4
+sign: false
+type: load
+cycles: 2
+esil: r0,0,+,[4],r0,=,r0,4,+,[4],r2,=,r0,8,+,[4],lr,=,
+rzil: (seq (set base (var r0)) (set r0 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set r2 (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set lr (loadw 0 32 (+ (var base) (bv 32 0x8)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "reg"
+      value: "r0"
+    - type: "reg"
+      value: "r2"
+    - type: "reg"
+      value: "lr"
+direction: read
+family: cpu
+address: 0x30
+opcode: strdeq r8, sb, [r0], -r4
+disasm: strdeq r8, sb, [r0], -r4
+pseudo: asm("strdeq r8, sb, [r0], -r4")
+mnemonic: strdeq
+mask: ffffffff
+prefix: 0
+id: 443
+bytes: f4800000
+refptr: 0
+size: 4
+sign: false
+type: store
+cycles: 4
+esil: zf,?{,r8,r0,0xffffffff,&,=[4],sb,4,r0,+,0xffffffff,&,=[4],r4,r0,-=,}
+rzil: (branch (var zf) (seq (storew 0 (var r0) (var r8)) (storew 0 (+ (var r0) (bv 32 0x4)) (var r9)) (set r0 (+ (var r0) (var r4)))) nop)
+opex:
+  operands:
+    - type: "reg"
+      value: "r8"
+    - type: "reg"
+      value: "sb"
+    - type: "mem"
+      base: "r0"
+      index: "r4"
+      scale: -1
+      disp: 0
+      subtracted: true
+  writeback: true
+  cc: "eq"
+direction: write
+family: cpu
+---
+address: 0x0
+opcode: mrs x9, MIDR_EL1
+disasm: mrs x9, MIDR_EL1
+pseudo: asm("mrs x9, MIDR_EL1")
+mnemonic: mrs
+mask: ffffffff
+prefix: 0
+id: 752
+bytes: 090038d5
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x9"
+    - type: "sysreg"
+      sysreg: 0xc000
+      tlbi: 0xc000
+      ic: 0xc000
+family: priv
+address: 0x4
+opcode: msr SPSel, 0
+disasm: msr SPSel, 0
+pseudo: asm("msr SPSel, 0")
+mnemonic: msr
+mask: ffffffff
+prefix: 0
+id: 754
+bytes: bf4000d5
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "pstate"
+      value: "spsel"
+    - type: "imm"
+      value: 0
+family: priv
+address: 0x8
+opcode: msr DBGDTRTX_EL0, x12
+disasm: msr DBGDTRTX_EL0, x12
+pseudo: asm("msr DBGDTRTX_EL0, x12")
+mnemonic: msr
+mask: ffffffff
+prefix: 0
+id: 754
+bytes: 0c0513d5
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "sysreg"
+      sysreg: 0x9828
+      tlbi: 0x9828
+      ic: 0x9828
+    - type: "reg"
+      value: "x12"
+family: priv
+address: 0xc
+opcode: tbx v0.8b, { v1.16b, v2.16b, v3.16b }, v2.8b
+disasm: tbx v0.8b, { v1.16b, v2.16b, v3.16b }, v2.8b
+pseudo: asm("tbx v0.8b, { v1.16b, v2.16b, v3.16b }, v2.8b")
+mnemonic: tbx
+mask: ffffffff
+prefix: 0
+id: 1249
+bytes: 2050020e
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "d0"
+      vas: "8b"
+    - type: "reg"
+      value: "q1"
+      vas: "16b"
+    - type: "reg"
+      value: "q2"
+      vas: "16b"
+    - type: "reg"
+      value: "q3"
+      vas: "16b"
+    - type: "reg"
+      value: "d2"
+      vas: "8b"
+  writeback: true
+family: mmx
+address: 0x10
+opcode: scvtf v0.2s, v1.2s, 3
+disasm: scvtf v0.2s, v1.2s, 3
+pseudo: asm("scvtf v0.2s, v1.2s, 3")
+mnemonic: scvtf
+mask: ffffffff
+prefix: 0
+id: 941
+bytes: 20e43d0f
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "d0"
+      vas: "2s"
+    - type: "reg"
+      value: "d1"
+      vas: "2s"
+    - type: "imm"
+      value: 3
+family: mmx
+address: 0x14
+opcode: fmla s0, s0, v0.s[3]
+disasm: fmla s0, s0, v0.s[3]
+pseudo: asm("fmla s0, s0, v0.s[3]")
+mnemonic: fmla
+mask: ffffffff
+prefix: 0
+id: 417
+bytes: 0018a05f
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "s0"
+    - type: "reg"
+      value: "s0"
+    - type: "reg"
+      value: "q0"
+      vector_index: 3
+      vas: ""
+  writeback: true
+family: mmx
+address: 0x18
+opcode: fmov x2, v5.d[1]
+disasm: fmov x2, v5.d[1]
+pseudo: x2 = v5.d[1]
+mnemonic: fmov
+mask: ffffffff
+prefix: 0
+id: 426
+bytes: a200ae9e
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x2"
+    - type: "reg"
+      value: "q5"
+      vector_index: 1
+      vas: ""
+family: fpu
+address: 0x1c
+opcode: dsb nsh
+disasm: dsb nsh
+pseudo: asm("dsb nsh")
+mnemonic: dsb
+description: data synchronization barrier.
+mask: ffffffff
+prefix: 0
+id: 301
+bytes: 9f3703d5
+refptr: 0
+size: 4
+sign: false
+type: sync
+cycles: 0
+opex:
+  operands:
+    - type: "prefetch"
+      value: 7
+family: thread
+address: 0x20
+opcode: dmb osh
+disasm: dmb osh
+pseudo: asm("dmb osh")
+mnemonic: dmb
+mask: ffffffff
+prefix: 0
+id: 299
+bytes: bf3303d5
+refptr: 0
+size: 4
+sign: false
+type: sync
+cycles: 0
+opex:
+  operands:
+    - type: "prefetch"
+      value: 3
+family: thread
+address: 0x24
+opcode: isb
+disasm: isb
+pseudo: asm("isb")
+mnemonic: isb
+description: instruction synchronization barrier.
+mask: ffffffff
+prefix: 0
+id: 509
+bytes: df3f03d5
+refptr: 0
+size: 4
+sign: false
+type: sync
+cycles: 0
+opex:
+  operands:
+    - type: "sys"
+      value: 15
+family: thread
+address: 0x28
+opcode: mul x1, x1, x2
+disasm: mul x1, x1, x2
+pseudo: x1 = x1 * x2
+mnemonic: mul
+description: multiply
+mask: ffffffff
+prefix: 0
+id: 731
+bytes: 217c029b
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 0
+esil: x2,x1,*,xzr,+,x1,=
+rzil: (set x1 (* (var x1) (var x2)))
+opex:
+  operands:
+    - type: "reg"
+      value: "x1"
+    - type: "reg"
+      value: "x1"
+    - type: "reg"
+      value: "x2"
+    - type: "reg"
+      value: "xzr"
+family: cpu
+address: 0x2c
+opcode: lsr w1, w1, 0
+disasm: lsr w1, w1, 0
+pseudo: w1 = w1 >> 0
+mnemonic: lsr
+description: logical shift right
+mask: ffffffff
+prefix: 0
+id: 1281
+bytes: 217c0053
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+esil: 0,w1,>>,w1,=
+rzil: (set x1 (cast 64 false (>> (cast 32 false (var x1)) (bv 6 0x0) false)))
+opex:
+  operands:
+    - type: "reg"
+      value: "w1"
+    - type: "reg"
+      value: "w1"
+    - type: "imm"
+      value: 0
+    - type: "imm"
+      value: 31
+family: cpu
+address: 0x30
+opcode: sub w0, w0, w1, uxtw
+disasm: sub w0, w0, w1, uxtw
+pseudo: w0 = w0 - w1
+mnemonic: sub
+description: substract two values
+mask: ffffffff
+prefix: 0
+id: 1211
+bytes: 0040214b
+refptr: 0
+size: 4
+sign: false
+type: sub
+cycles: 1
+esil: w1,w0,-,w0,=
+rzil: (set x0 (cast 64 false (- (cast 32 false (var x0)) (cast 32 false (var x1)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "w0"
+    - type: "reg"
+      value: "w0"
+    - type: "reg"
+      value: "w1"
+      shift:
+        type: "lsl"
+        value: 0
+      ext: "uxtw"
+family: cpu
+address: 0x34
+opcode: ldr w1, [sp, 8]
+disasm: ldr w1, [sp, 8]
+pseudo: w1 = [sp + 8]
+mnemonic: ldr
+description: load from memory to register
+mask: ffffffff
+prefix: 0
+id: 634
+bytes: e10b40b9
+ptr: 0x00000008
+refptr: 4
+size: 4
+sign: false
+type: load
+cycles: 0
+esil: 8,sp,+,DUP,tmp,=,[4],w1,=
+rzil: (set x1 (cast 64 false (loadw 0 32 (+ (var sp) (bv 64 0x8)))))
+opex:
+  operands:
+    - type: "reg"
+      value: "w1"
+    - type: "mem"
+      base: "sp"
+      disp: 8
+direction: read
+family: cpu
+address: 0x38
+opcode: cneg x0, x1, ne
+disasm: cneg x0, x1, ne
+pseudo: asm("cneg x0, x1, ne")
+mnemonic: cneg
+mask: ffffffff
+prefix: 0
+id: 287
+bytes: 200481da
+refptr: 0
+size: 4
+sign: false
+type: null
+cycles: 0
+esil: zf,?{,,}
+rzil: (set x0 (ite (! (var zf)) (~- (var x1)) (var x1)))
+opex:
+  operands:
+    - type: "reg"
+      value: "x0"
+    - type: "reg"
+      value: "x1"
+    - type: "reg"
+      value: "x1"
+  cc: "eq"
+family: cpu
+address: 0x3c
+opcode: add x0, x1, x2, lsl 2
+disasm: add x0, x1, x2, lsl 2
+pseudo: x0 = x1 + x2
+mnemonic: add
+description: add two values
+mask: ffffffff
+prefix: 0
+id: 22
+bytes: 2008028b
+refptr: 0
+size: 4
+sign: false
+type: add
+cycles: 1
+esil: 2,x2,<<,x1,+,x0,=
+rzil: (set x0 (+ (var x1) (<< (var x2) (bv 6 0x2) false)))
+opex:
+  operands:
+    - type: "reg"
+      value: "x0"
+    - type: "reg"
+      value: "x1"
+    - type: "reg"
+      value: "x2"
+      shift:
+        type: "lsl"
+        value: 2
+family: cpu
+address: 0x40
+opcode: ldr q16, [x24, w8, uxtw 4]
+disasm: ldr q16, [x24, w8, uxtw 4]
+pseudo: q16 = [x24 + w8 + uxtw
+mnemonic: ldr
+description: load from memory to register
+mask: ffffffff
+prefix: 0
+id: 634
+bytes: 105be83c
+ptr: 0x00000000
+refptr: 4
+size: 4
+sign: false
+type: load
+cycles: 0
+esil: 4,w8,<<,x24,+,[16],q16,=
+opex:
+  operands:
+    - type: "reg"
+      value: "q16"
+    - type: "mem"
+      base: "x24"
+      index: "w8"
+      disp: 0
+      shift:
+        type: "lsl"
+        value: 4
+      ext: "uxtw"
+direction: read
+family: fpu
+address: 0x44
+opcode: stp fp, lr, [sp, -0x60]!
+disasm: stp fp, lr, [sp, -0x60]!
+pseudo: [sp - 0x60]! = (fp, lr)
+mnemonic: stp
+mask: ffffffff
+prefix: 0
+id: 1180
+bytes: fd7bbaa9
+refptr: 0
+size: 4
+sign: false
+type: store
+cycles: 0
+esil: 96,sp,-=,fp,sp,=[8],lr,sp,8,+,=[8]
+rzil: (seq (storew 0 (- (var sp) (bv 64 0x60)) (var x29)) (storew 0 (+ (- (var sp) (bv 64 0x60)) (bv 64 0x8)) (var x30)) (set sp (- (var sp) (bv 64 0x60))))
+opex:
+  operands:
+    - type: "reg"
+      value: "fp"
+    - type: "reg"
+      value: "lr"
+    - type: "mem"
+      base: "sp"
+      disp: -96
+  writeback: true
+direction: write
+family: cpu
+stackop: inc
+stackptr: 96
+address: 0x48
+opcode: ldr fp, [sp], 0x3c
+disasm: ldr fp, [sp], 0x3c
+pseudo: fp = [sp]
+mnemonic: ldr
+description: load from memory to register
+mask: ffffffff
+prefix: 0
+id: 634
+bytes: fdc743f8
+ptr: 0x0000003c
+refptr: 4
+size: 4
+sign: false
+type: load
+cycles: 0
+esil: 60,sp,+,DUP,tmp,=,[8],fp,=,tmp,60,+,sp,=
+rzil: (seq (set x29 (loadw 0 64 (var sp))) (set sp (+ (var sp) (bv 64 0x3c))))
+opex:
+  operands:
+    - type: "reg"
+      value: "fp"
+    - type: "mem"
+      base: "sp"
+      disp: 60
+  writeback: true
+direction: read
+family: cpu
+stackop: inc
+stackptr: -60
+EOF
+RUN
+
+NAME=arm thumb-1: parse gcc __gnu_thumb1_case_uqi jump table
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+aa
+pdf @ sym._Unwind_VRS_Get
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from fcn.000080de @ 0x80ea
+            ; CALL XREFS from sym.__gnu_unwind_execute @ 0x812a, 0x815c, 0x81d6, 0x8240
+/ sym._Unwind_VRS_Get(int16_t arg1, int16_t arg2);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           0x000078ea      push  {r4, lr}
+|           0x000078ec      adds  r4, r0, 0                            ; arg1
+|           0x000078ee      cmp   r1, 4                                ; arg2
+|       ,=< 0x000078f0      bhi   case.0x78f4.2
+|       |   0x000078f2      adds  r0, r1, 0                            ; arg2
+|       |   ;-- switch
+|       |   0x000078f4      bl    sym.__gnu_thumb1_case_uqi            ; switch table (5 cases) at 0x78f8
+..
+|       |   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|       |   ;-- case 1:                                                ; from 0x78f4
+|       |   ;-- case 4:                                                ; from 0x78f4
+|       |   0x000078fe      movs  r0, 1
+|      ,==< 0x00007900      b     0x791c
+|      ||   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|      ||   ;-- case 0:                                                ; from 0x78f4
+|      ||   0x00007902      movs  r0, 2
+|      ||   0x00007904      cmp   r3, 0
+|     ,===< 0x00007906      bne   0x791c
+|     |||   0x00007908      cmp   r2, 0xf
+|    ,====< 0x0000790a      bhi   0x791c
+|    ||||   0x0000790c      lsls  r2, r0
+|    ||||   0x0000790e      adds  r4, r4, r2
+|    ||||   0x00007910      ldr   r2, [sp, 8]
+|    ||||   0x00007912      ldr   r1, [r4, 4]
+|    ||||   0x00007914      str   r1, [r2]
+|    ||||   0x00007916      adds  r0, r3, 0
+|   ,=====< 0x00007918      b     0x791c
+|   |||||   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
+|   |||||   ;-- case 2:                                                ; from 0x78f4
+|   ||||`-> 0x0000791a      movs  r0, 2
+|   ||||    ; CODE XREFS from sym._Unwind_VRS_Get @ 0x7900, 0x7918
+\   ````--> 0x0000791c      pop   {r4, pc}
 EOF
 RUN

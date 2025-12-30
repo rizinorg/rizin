@@ -186,18 +186,18 @@ RZ_API void rz_graph_del_node(RzGraph *t, RZ_OWN RzGraphNode *n) {
 		return;
 	}
 	rz_list_foreach (n->in_nodes, it, gn) {
-		rz_list_delete_data(gn->out_nodes, n);
-		rz_list_delete_data(gn->all_neighbours, n);
+		rz_list_delete_val(gn->out_nodes, n);
+		rz_list_delete_val(gn->all_neighbours, n);
 		t->n_edges--;
 	}
 
 	rz_list_foreach (n->out_nodes, it, gn) {
-		rz_list_delete_data(gn->in_nodes, n);
-		rz_list_delete_data(gn->all_neighbours, n);
+		rz_list_delete_val(gn->in_nodes, n);
+		rz_list_delete_val(gn->all_neighbours, n);
 		t->n_edges--;
 	}
 
-	rz_list_delete_data(t->nodes, n);
+	rz_list_delete_val(t->nodes, n);
 	t->n_nodes--;
 }
 
@@ -224,9 +224,9 @@ RZ_API RzGraphNode *rz_graph_node_split_forward(RzGraph *g, RzGraphNode *split_m
 	RzListIter *iter;
 	RzGraphNode *n;
 	rz_list_foreach (front->out_nodes, iter, n) {
-		rz_list_delete_data(n->in_nodes, split_me); // optimize me
-		rz_list_delete_data(n->all_neighbours, split_me); // boy this all_neighbours is so retarding perf here
-		rz_list_delete_data(split_me->all_neighbours, n);
+		rz_list_delete_val(n->in_nodes, split_me); // optimize me
+		rz_list_delete_val(n->all_neighbours, split_me); // boy this all_neighbours is so retarding perf here
+		rz_list_delete_val(split_me->all_neighbours, n);
 		rz_list_append(n->all_neighbours, front);
 		rz_list_append(n->in_nodes, front);
 		rz_list_append(front->all_neighbours, n);
@@ -238,10 +238,10 @@ RZ_API void rz_graph_del_edge(RzGraph *t, RzGraphNode *from, RzGraphNode *to) {
 	if (!from || !to || !rz_graph_adjacent(t, from, to)) {
 		return;
 	}
-	rz_list_delete_data(from->out_nodes, to);
-	rz_list_delete_data(from->all_neighbours, to);
-	rz_list_delete_data(to->in_nodes, from);
-	rz_list_delete_data(to->all_neighbours, from);
+	rz_list_delete_val(from->out_nodes, to);
+	rz_list_delete_val(from->all_neighbours, to);
+	rz_list_delete_val(to->in_nodes, from);
+	rz_list_delete_val(to->all_neighbours, from);
 	t->n_edges--;
 }
 

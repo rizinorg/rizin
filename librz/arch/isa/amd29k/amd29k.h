@@ -25,6 +25,7 @@ typedef struct amd29k_instr_s {
 bool amd29k_instr_decode(const ut8 *buffer, const ut32 buffer_size, amd29k_instr_t *instruction, const ut32 cpu_id);
 void amd29k_instr_print(amd29k_instr_t *instruction, ut64 address, RzStrBuf *sb);
 
+RzStructuredData *amd29k_instr_opex(amd29k_instr_t *instruction, ut64 address);
 bool amd29k_instr_is_ret(amd29k_instr_t *instruction);
 ut64 amd29k_instr_jump(amd29k_instr_t *instruction, ut64 address);
 

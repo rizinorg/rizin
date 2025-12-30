@@ -184,7 +184,7 @@ RZ_API RzAnalysisBlock *rz_analysis_create_block(RzAnalysis *analysis, ut64 addr
 RZ_API void rz_analysis_delete_block(RzAnalysisBlock *bb) {
 	rz_analysis_block_ref(bb);
 	while (!rz_list_empty(bb->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(bb->fcns), bb);
+		rz_analysis_function_remove_block(rz_list_first_val(bb->fcns), bb);
 	}
 	rz_analysis_block_unref(bb);
 }
@@ -343,7 +343,7 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	// Keep a ref to b, but remove all references of b from its functions
 	rz_analysis_block_ref(b);
 	while (!rz_list_empty(b->fcns)) {
-		rz_analysis_function_remove_block(rz_list_first(b->fcns), b);
+		rz_analysis_function_remove_block(rz_list_first_val(b->fcns), b);
 	}
 
 	// merge ops from b into a
@@ -526,12 +526,12 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+				cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 			}
 			if (cur_ctx->switch_it) {
 				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
 				while (ht_up_find_kv(visited, cop->jump, NULL)) {
-					cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it);
+					cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 					if (!cur_ctx->switch_it) {
 						cop = NULL;
 						break;

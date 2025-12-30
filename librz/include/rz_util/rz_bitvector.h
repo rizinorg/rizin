@@ -17,11 +17,21 @@ extern "C" {
  *  Ref : https://web.cs.dal.ca/~jamie/UWO/BitVectors/README.html
  */
 typedef struct bitvector_t {
-	union {
+	struct {
 		ut8 *large_a; ///< little endian array of bytes for bitvectors > 64 bits whose size is defined in _elem_len
 		ut64 small_u; ///< value of the bitvector when the size is <= 64 bits
 	} bits;
-	ut32 _elem_len; ///< length of ut8 array (bits.large_a) -- real / physical
+	/**
+	 * \brief This flag is set if the bit vector is allocated on the stack.
+	 * This means large_a must not be reallocated or freed.
+	 */
+	bool stack_alloc;
+	/**
+	 * \brief length of ut8 array (bits.large_a) -- real / physical
+	 * NOTE: It is possible that a bits.large_a is larger than required for the
+	 * bit vector length.
+	 */
+	ut32 _elem_len;
 	ut32 len; ///< number of bits -- virtual / logical
 } RzBitVector;
 
@@ -54,24 +64,34 @@ RZ_API bool rz_bv_rshift(RZ_NONNULL RzBitVector *bv, ut32 size);
 RZ_API bool rz_bv_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit);
 RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_bit);
 RZ_API RZ_OWN RzBitVector *rz_bv_and(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_and_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_or(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_or_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_xor(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
-#define rz_bv_neg rz_bv_complement_2
-#define rz_bv_not rz_bv_complement_1
+RZ_API bool rz_bv_xor_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_NONNULL const RzBitVector *y);
+#define rz_bv_neg         rz_bv_complement_2
+#define rz_bv_neg_inplace rz_bv_complement_2_inplace
+#define rz_bv_not         rz_bv_complement_1
+#define rz_bv_not_inplace rz_bv_complement_1_inplace
 RZ_API RZ_OWN RzBitVector *rz_bv_complement_1(RZ_NONNULL RzBitVector *bv);
+RZ_API bool rz_bv_complement_1_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv);
+RZ_API bool rz_bv_complement_2_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv);
 
 // Module 2 arithmetic operations
 RZ_API RZ_OWN RzBitVector *rz_bv_add(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
+RZ_API bool rz_bv_add_inplace(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, const RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry);
 RZ_API RZ_OWN RzBitVector *rz_bv_sub(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow);
+RZ_API bool rz_bv_sub_inplace(RZ_INOUT RZ_NONNULL RzBitVector *x, RZ_INOUT RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *borrow);
 RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_mul_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 
-RZ_API bool rz_bv_msb(RZ_NONNULL RzBitVector *bv);
-RZ_API bool rz_bv_lsb(RZ_NONNULL RzBitVector *bv);
+RZ_API bool rz_bv_msb(RZ_NONNULL const RzBitVector *bv);
+RZ_API bool rz_bv_lsb(RZ_NONNULL const RzBitVector *bv);
 RZ_API bool rz_bv_eq(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_ule(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
@@ -79,6 +99,7 @@ RZ_API bool rz_bv_sle(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv);
 RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv);
 
+RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
 RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
 
 // some convert functions
@@ -95,8 +116,10 @@ RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_le(RZ_IN RZ_NONNULL const ut8 *b
 RZ_API RZ_OWN RzBitVector *rz_bv_new_from_bytes_be(RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value);
 RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value);
+RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size, bool big_endian);
 RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
+RZ_API void rz_bv_set_to_bytes_ble(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf, bool big_endian);
 RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
 RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
 RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL const RzBitVector *bv);
