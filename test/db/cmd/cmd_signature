@@ -394,6 +394,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=FLIRT apply pat signature with CRLF line endings
+FILE=bins/flirt/elf-x86/curl-example
+CMDS=<<EOF
+aaa
+Fs bins/flirt/elf-x86/libcurl.a.crlf.pat
+EOF
+EXPECT=<<EOF
+Found 148 FLIRT signatures via bins/flirt/elf-x86/libcurl.a.crlf.pat
+EOF
+RUN
+
 NAME=FLIRT verify correctness of main (PAT)
 FILE=bins/flirt/elf-x86/test.stripped
 CMDS=<<EOF
