@@ -967,6 +967,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		rep_str = rz_str_repeat("–", req_width);
 		rz_cons_printf("%s––%s\n", rep_str, rep_str);
 	} else {
+		rep_str = rz_str_repeat("--", req_width);
 		rz_cons_printf("%s--%s\n", rep_str, rep_str);
 	}
 	RzAsmOp asmop = RZ_EMPTY;
