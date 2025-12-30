@@ -526,12 +526,12 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+				cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 			}
 			if (cur_ctx->switch_it) {
 				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
 				while (ht_up_find_kv(visited, cop->jump, NULL)) {
-					cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+					cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 					if (!cur_ctx->switch_it) {
 						cop = NULL;
 						break;
