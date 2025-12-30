@@ -430,10 +430,8 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return true;
 }
 
-static int c = 0;
-
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
-	if ((++c % 64) || (param->outmode == RZ_MODE_JSON)) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param, size_t c) {
+	if ((c % 64) || (param->outmode == RZ_MODE_JSON)) {
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
@@ -979,8 +977,9 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				   from1 = search->bckwrds ? to : from,
 				   to1 = search->bckwrds ? from : to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
-				print_search_progress(at, to1, search->nhits, param);
+			size_t c = 0;
+			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len, c++) {
+				print_search_progress(at, to1, search->nhits, param, c);
 				if (rz_cons_is_breaked()) {
 					eprintf("\n\n");
 					break;
@@ -1029,7 +1028,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 					goto done;
 				}
 			}
-			print_search_progress(at, to1, search->nhits, param);
+			print_search_progress(at, to1, search->nhits, param, c);
 			rz_cons_clear_line(stderr);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_MODE_JSON) {
@@ -1440,8 +1439,6 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 		search_itv.addr = 0;
 		search_itv.size = UT64_MAX;
 	}
-
-	c = 0;
 
 	param.searchshow = rz_config_get_i(core->config, "search.show");
 	param.mode = rz_config_get(core->config, "search.in");
