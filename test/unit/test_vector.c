@@ -925,6 +925,25 @@ static bool test_pvector_find(void) {
 	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
 	mu_assert_eq(*p, e, "find");
 	mu_assert_eq(num, 44, "ensure user is passed");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static bool test_pvector_find_index(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	int num = 77;
+	ut32 e_val0 = 0;
+	ut32 e_val2 = 2;
+	ut32 e_val6 = 6;
+	size_t index = rz_pvector_find_index(&v, &e_val2, compare_int, &num);
+	mu_assert_eq(index, 2, "find index");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	index = rz_pvector_find_index(&v, &e_val6, compare_int, &num);
+	mu_assert_eq(index, SZT_MAX, "not found index");
+	index = rz_pvector_find_index(&v, &e_val0, compare_int, &num);
+	mu_assert_eq(index, 0, "find index 0");
+	rz_pvector_clear(&v);
 	mu_end;
 }
 
@@ -936,6 +955,8 @@ static bool test_pvector_join(void) {
 	rz_pvector_join(&m, &n);
 	mu_assert_eq(rz_pvector_len(&m), 8, "length is 8 after join");
 	mu_assert_eq(*((ut32 *)rz_pvector_at(&m, 6)), 1, "m[6] = n[1]");
+	rz_pvector_clear(&m);
+	rz_pvector_clear(&n);
 	mu_end;
 }
 
@@ -1467,6 +1488,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
+	mu_run_test(test_pvector_find_index);
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);

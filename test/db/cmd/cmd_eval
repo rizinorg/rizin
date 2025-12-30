@@ -180,11 +180,11 @@ EXPECT=<<EOF
              zoom.in: Specify  boundaries for zoom
           zoom.maxsz: Zoom max size of block
              zoom.to: Zoom end address
-zoom.byte = h ; Zoom callback to calculate each byte (See pz? for help)
-zoom.from = 0 ; Zoom start address
-zoom.in = io.map ; Specify  boundaries for zoom [raw, block, bin.section, bin.sections, bin.sections.rwx, bin.sections.r, bin.sections.rw, bin.sections.rx, bin.sections.wx, bin.sections.x, io.map, io.maps, io.maps.rwx, io.maps.r, io.maps.rw, io.maps.rx, io.maps.wx, io.maps.x, dbg.stack, dbg.heap, dbg.map, dbg.maps, dbg.maps.rwx, dbg.maps.r, dbg.maps.rw, dbg.maps.rx, dbg.maps.wx, dbg.maps.x, analysis.fcn, analysis.bb]
-zoom.maxsz = 512 ; Zoom max size of block
-zoom.to = 0 ; Zoom end address
+           zoom.byte = h ; Zoom callback to calculate each byte (See pz? for help)
+           zoom.from = 0 ; Zoom start address
+             zoom.in = io.map ; Specify  boundaries for zoom [raw, block, bin.section, bin.sections, bin.sections.rwx, bin.sections.r, bin.sections.rw, bin.sections.rx, bin.sections.wx, bin.sections.x, io.map, io.maps, io.maps.rwx, io.maps.r, io.maps.rw, io.maps.rx, io.maps.wx, io.maps.x, dbg.stack, dbg.heap, dbg.map, dbg.maps, dbg.maps.rwx, dbg.maps.r, dbg.maps.rw, dbg.maps.rx, dbg.maps.wx, dbg.maps.x, analysis.fcn, analysis.bb]
+          zoom.maxsz = 512 ; Zoom max size of block
+             zoom.to = 0 ; Zoom end address
 zoom.byte=h
 zoom.from=0
 zoom.in=io.map
