@@ -941,9 +941,6 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		if (!param->regex_search && !(buf = malloc(core->blocksize))) {
 			return;
 		}
-		if (search->bckwrds) {
-			rz_search_string_prepare_backward(search);
-		}
 		rz_cons_break_push(NULL, NULL);
 		// TODO search cross boundary
 		rz_list_foreach (param->boundaries, iter, map) {
@@ -965,53 +962,42 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				}
 				eprintf(" in [0x%" PFMT64x ",0x%" PFMT64x ")\n", itv.addr, rz_itv_end(itv));
 			}
-			if (!core->search->bckwrds) {
-				RzListIter *it;
-				RzSearchKeyword *kw;
-				rz_list_foreach (core->search->kws, it, kw) {
-					kw->last = 0;
-				}
+			RzListIter *it;
+			RzSearchKeyword *kw;
+			rz_list_foreach (core->search->kws, it, kw) {
+				kw->last = 0;
 			}
 
 			const ut64 from = itv.addr, to = rz_itv_end(itv),
-				   from1 = search->bckwrds ? to : from,
-				   to1 = search->bckwrds ? from : to;
+				   from1 = from,
+				   to1 = to;
 			ut64 len;
 			size_t c = 0;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len, c++) {
+			for (at = from1; at != to1; at = at + len) {
 				print_search_progress(at, to1, search->nhits, param, c);
 				if (rz_cons_is_breaked()) {
 					eprintf("\n\n");
 					break;
 				}
-				if (search->bckwrds) {
-					len = RZ_MIN(core->blocksize, at - from);
-					// TODO prefix_read_at
-					if (!rz_io_is_valid_offset(core->io, at - len, 0)) {
-						break;
+				if (param->regex_search) {
+					// Since regex match length can be infinite, for 100% correctness
+					// it is not possible to chunk the search. This could be a problem
+					// for large binaries.
+					free(buf);
+					len = to - at;
+					if (!(buf = malloc(len))) {
+						RZ_LOG_ERROR("Cannot allocate search buffer"
+							     " of size 0x%" PFMT64x "\n",
+							len);
+						return;
 					}
-					(void)rz_io_read_at(core->io, at - len, buf, len);
 				} else {
-					if (param->regex_search) {
-						// Since regex match length can be infinite, for 100% correctness
-						// it is not possible to chunk the search. This could be a problem
-						// for large binaries.
-						free(buf);
-						len = to - at;
-						if (!(buf = malloc(len))) {
-							RZ_LOG_ERROR("Cannot allocate search buffer"
-								     " of size 0x%" PFMT64x "\n",
-								len);
-							return;
-						}
-					} else {
-						len = RZ_MIN(core->blocksize, to - at);
-					}
-					if (!rz_io_is_valid_offset(core->io, at, 0)) {
-						break;
-					}
-					(void)rz_io_read_at(core->io, at, buf, len);
+					len = RZ_MIN(core->blocksize, to - at);
 				}
+				if (!rz_io_is_valid_offset(core->io, at, 0)) {
+					break;
+				}
+				(void)rz_io_read_at(core->io, at, buf, len);
 				rz_search_update(core->search, at, buf, len);
 				if (param->aes_search) {
 					// Adjust length to search between blocks.
@@ -1449,7 +1435,6 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 	core->search->maxhits = rz_config_get_i(core->config, "search.maxhits");
 	param.hit_prefix = rz_config_get(core->config, "search.prefix");
 	core->search->overlap = rz_config_get_i(core->config, "search.overlap");
-	core->search->bckwrds = false;
 
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
@@ -1463,22 +1448,6 @@ reread:
 	case '!':
 		input++;
 		param.inverse = true;
-		goto reread;
-	case 'b': // "/b" backward search
-		if (*(++input) == '?') {
-			RZ_LOG_ERROR("core: Usage: /b<command> [value] backward search, see '/?'\n");
-			goto beach;
-		}
-		search->bckwrds = true;
-		if (core->offset) {
-			RzInterval itv = { 0, core->offset };
-			if (!rz_itv_overlap(search_itv, itv)) {
-				ret = false;
-				goto beach;
-			} else {
-				search_itv = rz_itv_intersect(search_itv, itv);
-			}
-		}
 		goto reread;
 	case 'r': // "/r"
 	{
