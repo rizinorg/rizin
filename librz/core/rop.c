@@ -959,10 +959,16 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		return;
 	}
 	const int req_width = 50;
-	char *rep_str = rz_str_repeat("-", req_width);
+	char *rep_str = NULL;
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
-	rz_cons_printf("%s--%s\n", rep_str, rep_str);
+	if (utf8) {
+		rep_str = rz_str_repeat("–", req_width);
+		rz_cons_printf("%s––%s\n", rep_str, rep_str);
+	} else {
+		rz_cons_printf("%s--%s\n", rep_str, rep_str);
+	}
 	RzAsmOp asmop = RZ_EMPTY;
 	RzAnalysisOp aop = RZ_EMPTY;
 	int instr_count = 0;
@@ -985,7 +991,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		if (padding > 0) {
 			rz_cons_printf("%*s", padding, "");
 		}
-		rz_cons_print(" | ");
+		rz_cons_print(utf8 ? " │ " : " | ");
 		if (instr_count < 1) {
 			rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 		} else if (instr_count == 1) {
