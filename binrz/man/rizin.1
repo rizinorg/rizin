@@ -1,4 +1,4 @@
-.Dd December 28, 2025
+.Dd December 30, 2025
 .Dt RIZIN 1
 .Os
 .Sh NAME
@@ -99,7 +99,7 @@ Set project file
 .It Fl r Ar rz-run
 Specify dbg.profile rz-run profile to use when spawning a program for debugging
 .It Fl R Ar rule
-Specify custom rz-run directives without having to create a profile
+Specify custom rz-run directives without having to create a rz-run profile
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl T
@@ -129,7 +129,8 @@ Use alternative debuginfod server via bin.dbginfo.debuginfod_urls
 .It Ev COLUMNS
 Terminal columns to use
 .It Ev RZ_ABORTLEVEL
-Target log level/severity when to abort.
+Target log level/severity when to abort
+(0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
 .It Ev RZ_CURL
 Whether to use curl (for SSL support)
 .It Ev RZ_DEBUG_ASSERT
@@ -145,7 +146,8 @@ Should the log output use colors
 .It Ev RZ_LOGFILE
 Logging output filename/path
 .It Ev RZ_LOGLEVEL
-Target log level/severity.
+Target log level/severity
+(0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
 .It Ev RZ_LOGSHOWSOURCES
 Should the log output contain src info (filename:lineno)
 .It Ev RZ_PIPE_IN
