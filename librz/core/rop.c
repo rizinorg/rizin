@@ -981,7 +981,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		rz_cons_printf("%*s%s%s", 2 + (16 - hex_len), "", asm_str, reset_color);
 		size_t asm_len_clean = rz_str_ansi_len(asm_str);
 		size_t left_col_len = 10 + asm_len_clean;
-		int padding = 50 - left_col_len;
+		int padding = req_width - left_col_len;
 		if (padding > 0) {
 			rz_cons_printf("%*s", padding, "");
 		}
