@@ -29,8 +29,6 @@
 #define AES_SEARCH_LENGTH         40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
-static int preludecnt = 0;
-
 struct search_parameters {
 	RzCore *core;
 	RzList /*<RzIOMap *>*/ *boundaries;
@@ -150,10 +148,11 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 
 static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *)user;
+	rz_return_val_if_fail(core->search, 0);
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
 	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
-	preludecnt++;
+	core->search->preludecnt++;
 	return 1;
 }
 
@@ -173,7 +172,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	rz_search_kw_add(core->search, rz_search_keyword_new(buf, blen, mask, mlen, NULL));
 	rz_search_begin(core->search);
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
-	preludecnt = 0;
+	core->search->preludecnt = 0;
 	for (at = from; at < to; at += core->blocksize) {
 		if (rz_cons_is_breaked()) {
 			break;
@@ -192,7 +191,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	// For now we will just use rz_search_kw_reset
 	rz_search_kw_reset(core->search);
 	free(b);
-	return preludecnt;
+	return core->search->preludecnt;
 }
 
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
@@ -431,10 +430,8 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return true;
 }
 
-static int c = 0;
-
-static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
-	if ((++c % 64) || (param->outmode == RZ_MODE_JSON)) {
+static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param, size_t c) {
+	if ((c % 64) || (param->outmode == RZ_MODE_JSON)) {
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
@@ -980,8 +977,9 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				   from1 = search->bckwrds ? to : from,
 				   to1 = search->bckwrds ? from : to;
 			ut64 len;
-			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len) {
-				print_search_progress(at, to1, search->nhits, param);
+			size_t c = 0;
+			for (at = from1; at != to1; at = search->bckwrds ? at - len : at + len, c++) {
+				print_search_progress(at, to1, search->nhits, param, c);
 				if (rz_cons_is_breaked()) {
 					eprintf("\n\n");
 					break;
@@ -1030,7 +1028,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 					goto done;
 				}
 			}
-			print_search_progress(at, to1, search->nhits, param);
+			print_search_progress(at, to1, search->nhits, param, c);
 			rz_cons_clear_line(stderr);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_MODE_JSON) {
@@ -1441,8 +1439,6 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 		search_itv.addr = 0;
 		search_itv.size = UT64_MAX;
 	}
-
-	c = 0;
 
 	param.searchshow = rz_config_get_i(core->config, "search.show");
 	param.mode = rz_config_get(core->config, "search.in");
