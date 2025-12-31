@@ -71,6 +71,7 @@ typedef struct rz_search_t {
 	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
 	char bckwrds;
+	int preludecnt; ///< Counts found preludes.
 } RzSearch;
 
 typedef struct rz_search_value_range_t {
