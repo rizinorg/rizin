@@ -14,7 +14,6 @@ static const RzCmdDescDetail alias_details[2];
 static const RzCmdDescDetail oparen__details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail interpret_macro_multiple_details[2];
-static const RzCmdDescDetail cmd_search_collision_details[2];
 static const RzCmdDescDetail cmd_search_hash_block_details[3];
 static const RzCmdDescDetail cmd_search_hash_entropy_details[2];
 static const RzCmdDescDetail cmd_search_hash_entropy_fractional_details[2];
@@ -144,7 +143,6 @@ static const RzCmdDescArg cmd_search_assemble_s_args[2];
 static const RzCmdDescArg cmd_search_assemble_sl_args[2];
 static const RzCmdDescArg cmd_search_assemble_t_args[2];
 static const RzCmdDescArg cmd_search_assemble_tl_args[2];
-static const RzCmdDescArg cmd_search_collision_args[4];
 static const RzCmdDescArg cmd_search_hash_block_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_args[4];
 static const RzCmdDescArg cmd_search_hash_entropy_fractional_args[4];
@@ -1757,46 +1755,6 @@ static const RzCmdDescHelp cmd_search_assemble_tl_help = {
 static const RzCmdDescHelp slash_c_help = {
 	.summary = "Cryptographic material search.",
 };
-static const RzCmdDescDetailEntry cmd_search_collision_Modes_detail_entries[] = {
-	{ .text = "a", .arg_str = NULL, .comment = "lowercase alphabet chars only" },
-	{ .text = "A", .arg_str = NULL, .comment = "uppercase alphabet chars only" },
-	{ .text = "l", .arg_str = NULL, .comment = "letters (lower + upper alphabet chars)" },
-	{ .text = "d", .arg_str = NULL, .comment = "digits (only numbers)" },
-	{ .text = "p", .arg_str = NULL, .comment = "printable (alpha + digit)" },
-	{ .text = "b", .arg_str = NULL, .comment = "binary (any number is valid)" },
-	{ 0 },
-};
-static const RzCmdDescDetail cmd_search_collision_details[] = {
-	{ .name = "Modes", .entries = cmd_search_collision_Modes_detail_entries },
-	{ 0 },
-};
-static const char *cmd_search_collision_mode_choices[] = { "p", "a", "A", "l", "d", "b", NULL };
-static const RzCmdDescArg cmd_search_collision_args[] = {
-	{
-		.name = "mode",
-		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.choices.choices = cmd_search_collision_mode_choices,
-
-	},
-	{
-		.name = "algo",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "digest",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_search_collision_help = {
-	.summary = "Find collisions (bruteforce block length values until given checksum is found).",
-	.details = cmd_search_collision_details,
-	.args = cmd_search_collision_args,
-};
-
 static const RzCmdDescDetailEntry cmd_search_hash_block_Usage_space_example_detail_entries[] = {
 	{ .text = "/ch", .arg_str = " md5 0bc8f8c426b74ffaedac8330a7464014 512", .comment = "MD5 hash search within blocks of 512 bytes." },
 	{ 0 },
@@ -21598,9 +21556,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_c_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/c", NULL, NULL, &slash_c_help);
 	rz_warn_if_fail(slash_c_cd);
-	RzCmdDesc *cmd_search_collision_cd = rz_cmd_desc_argv_new(core->rcmd, slash_c_cd, "/cc", rz_cmd_search_collision_handler, &cmd_search_collision_help);
-	rz_warn_if_fail(cmd_search_collision_cd);
-
 	RzCmdDesc *cmd_search_hash_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_c_cd, "/ch", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_hash_block_handler, &cmd_search_hash_block_help);
 	rz_warn_if_fail(cmd_search_hash_block_cd);
 
