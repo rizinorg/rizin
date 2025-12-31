@@ -191,38 +191,6 @@ commands:
   - name: "/c"
     summary: Cryptographic material search.
     subcommands:
-    - name: "/cc"
-      summary: Find collisions (bruteforce block length values until given checksum is found).
-      cname: cmd_search_collision
-      args:
-        - name: "mode"
-          type: RZ_CMD_ARG_TYPE_CHOICES
-          choices:
-            - "p"
-            - "a"
-            - "A"
-            - "l"
-            - "d"
-            - "b"
-        - name: "algo"
-          type: RZ_CMD_ARG_TYPE_STRING
-        - name: "digest"
-          type: RZ_CMD_ARG_TYPE_STRING
-      details:
-        - name: Modes
-          entries:
-            - text: a
-              comment: "lowercase alphabet chars only"
-            - text: A
-              comment: "uppercase alphabet chars only"
-            - text: l
-              comment: "letters (lower + upper alphabet chars)"
-            - text: d
-              comment: "digits (only numbers)"
-            - text: p
-              comment: "printable (alpha + digit)"
-            - text: b
-              comment: "binary (any number is valid)"
     - name: "/ch"
       summary: Search for blocks that have the same hash.
       cname: cmd_search_hash_block
