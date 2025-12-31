@@ -2953,7 +2953,7 @@ NAME=/Rgl test
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 aaa
-/Rgl @ 0x804868f
+/Rgl
 EOF
 EXPECT=<<EOF
 Gadget 0x8048275 (size 6 bytes)
