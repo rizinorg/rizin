@@ -984,7 +984,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		char *asm_str = get_colored_asm(core, &asmop, &aop);
 		const char *reset_color = colorize ? Color_RESET : "";
 		rz_cons_printf("  0x%08" PFMT64x "  %.16s", addr + idx, hex ? hex : "");
-		int hex_len = hex ? RZ_MIN((int)strlen(hex), 16) : 0;
+		int hex_len = hex ? RZ_MIN(rz_str_ansi_len(hex), 16) : 0;
 		rz_cons_printf("%*s%s%s", 2 + (16 - hex_len), "", asm_str, reset_color);
 		size_t asm_len_clean = rz_str_ansi_len(asm_str);
 		size_t left_col_len = 10 + asm_len_clean;
