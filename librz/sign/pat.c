@@ -153,7 +153,7 @@ static bool flirt_pat_parse_line(RzFlirtNode *root, RzStrBuf *sb, ut32 line_num,
 	if (line[line_len - 1] == '\r') {
 		line_len--;
 		line[line_len] = 0;
-		if (*line || line_len < 1) {
+		if (!*line || line_len < 1) {
 			RZ_LOG_WARN("FLIRT: line %u is empty\n", line_num);
 			return true;
 		}
