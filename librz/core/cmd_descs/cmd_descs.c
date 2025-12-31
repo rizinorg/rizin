@@ -21123,12 +21123,13 @@ static const RzCmdDescArg cmd_shell_uniq_args[] = {
 	{
 		.name = "filename",
 		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_shell_uniq_help = {
-	.summary = "List uniq strings in <filename>",
+	.summary = "List unique strings in <filename> or from piped input",
 	.args = cmd_shell_uniq_args,
 };
 
@@ -21276,12 +21277,13 @@ static const RzCmdDescArg cmd_shell_sort_args[] = {
 	{
 		.name = "file",
 		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_shell_sort_help = {
-	.summary = "Sort the contents of <file>",
+	.summary = "Sort the contents of <file> or from piped input",
 	.args = cmd_shell_sort_args,
 };
 
