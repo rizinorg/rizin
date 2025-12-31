@@ -400,7 +400,7 @@ CMDS=<<EOF
 Fd bins/flirt/librust.pat~?
 EOF
 EXPECT=<<EOF
-55789
+21174
 EOF
 RUN
 
