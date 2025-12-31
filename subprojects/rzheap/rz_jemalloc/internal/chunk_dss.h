@@ -23,10 +23,10 @@ extern const char *dss_prec_names[];
 
 dss_prec_t	chunk_dss_prec_get(void);
 bool	chunk_dss_prec_set(dss_prec_t dss_prec);
-void	*chunk_alloc_dss(tsdn_t *tsdn, arena_t *arena, void *new_addr,
-    size_t size, size_t alignment, bool *zero, bool *commit);
-bool	chunk_in_dss(void *chunk);
-bool	chunk_dss_mergeable(void *chunk_a, void *chunk_b);
+void	*chunk_alloc_dss(tsdn_t *tsdn, arena_t *arena, GHT new_addr,
+    GHT size, GHT alignment, bool *zero, bool *commit);
+bool	chunk_in_dss(GHT chunk);
+bool	chunk_dss_mergeable(GHT chunk_a, GHT chunk_b);
 void	chunk_dss_boot(void);
 
 #endif /* JEMALLOC_H_EXTERNS */

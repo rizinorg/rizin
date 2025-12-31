@@ -54,12 +54,12 @@ typedef enum {
  * Note that all of the functions deal in terms of (a_type *) rather than
  * (a_type) so that it is possible to support non-pointer types (unlike
  * pthreads TSD).  example_tsd_cleanup() is passed an (a_type *) pointer that is
- * cast to (void *).  This means that the cleanup function needs to cast the
+ * cast to (GHT ).  This means that the cleanup function needs to cast the
  * function argument to (a_type *), then dereference the resulting pointer to
  * access fields, e.g.
  *
  *   void
- *   example_tsd_cleanup(void *arg)
+ *   example_tsd_cleanup(GHT arg)
  *   {
  *           example_t *example = (example_t *)arg;
  *
@@ -292,7 +292,7 @@ a_name##tsd_set(a_type *val)						\
 	a_name##tsd_tls = (*val);					\
 	if (a_cleanup != malloc_tsd_no_cleanup) {			\
 		if (pthread_setspecific(a_name##tsd_tsd,		\
-		    (void *)(&a_name##tsd_tls))) {			\
+		    (GHT )(&a_name##tsd_tls))) {			\
 			malloc_write("<jemalloc>: Error"		\
 			    " setting TSD for "#a_name"\n");		\
 			if (opt_abort)					\
@@ -330,7 +330,7 @@ a_attr void								\
 a_name##tsd_wrapper_set(a_name##tsd_wrapper_t *wrapper)			\
 {									\
 									\
-	if (!TlsSetValue(a_name##tsd_tsd, (void *)wrapper)) {		\
+	if (!TlsSetValue(a_name##tsd_tsd, (GHT )wrapper)) {		\
 		malloc_write("<jemalloc>: Error setting"		\
 		    " TSD for "#a_name"\n");				\
 		abort();						\
@@ -438,7 +438,7 @@ a_name##tsd_set(a_type *val)						\
     a_cleanup)								\
 /* Initialization/cleanup. */						\
 a_attr void								\
-a_name##tsd_cleanup_wrapper(void *arg)					\
+a_name##tsd_cleanup_wrapper(GHT arg)					\
 {									\
 	a_name##tsd_wrapper_t *wrapper = (a_name##tsd_wrapper_t *)arg;	\
 									\
@@ -449,7 +449,7 @@ a_name##tsd_cleanup_wrapper(void *arg)					\
 		if (wrapper->initialized) {				\
 			/* Trigger another cleanup round. */		\
 			if (pthread_setspecific(a_name##tsd_tsd,	\
-			    (void *)wrapper)) {				\
+			    (GHT )wrapper)) {				\
 				malloc_write("<jemalloc>: Error"	\
 				    " setting TSD for "#a_name"\n");	\
 				if (opt_abort)				\
@@ -465,7 +465,7 @@ a_name##tsd_wrapper_set(a_name##tsd_wrapper_t *wrapper)			\
 {									\
 									\
 	if (pthread_setspecific(a_name##tsd_tsd,			\
-	    (void *)wrapper)) {						\
+	    (GHT )wrapper)) {						\
 		malloc_write("<jemalloc>: Error setting"		\
 		    " TSD for "#a_name"\n");				\
 		abort();						\
@@ -486,7 +486,7 @@ a_name##tsd_wrapper_get(bool init)					\
 		    return (wrapper);					\
 		wrapper = (a_name##tsd_wrapper_t *)			\
 		    malloc_tsd_malloc(sizeof(a_name##tsd_wrapper_t));	\
-		block.data = (void *)wrapper;				\
+		block.data = (GHT )wrapper;				\
 		if (wrapper == NULL) {					\
 			malloc_write("<jemalloc>: Error allocating"	\
 			    " TSD for "#a_name"\n");			\
@@ -650,9 +650,9 @@ malloc_tsd_types(, tsd_t)
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	*malloc_tsd_malloc(size_t size);
-void	malloc_tsd_dalloc(void *wrapper);
-void	malloc_tsd_no_cleanup(void *arg);
+void	*malloc_tsd_malloc(GHT size);
+void	malloc_tsd_dalloc(GHT wrapper);
+void	malloc_tsd_no_cleanup(GHT arg);
 void	malloc_tsd_cleanup_register(bool (*f)(void));
 tsd_t	*malloc_tsd_boot0(void);
 void	malloc_tsd_boot1(void);
@@ -662,7 +662,7 @@ void	*tsd_init_check_recursion(tsd_init_head_t *head,
     tsd_init_block_t *block);
 void	tsd_init_finish(tsd_init_head_t *head, tsd_init_block_t *block);
 #endif
-void	tsd_cleanup(void *arg);
+void	tsd_cleanup(GHT arg);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/

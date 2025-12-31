@@ -175,10 +175,10 @@
 #define	NSIZES			107
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	"NA"
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 30) + (((size_t)3) << 28))
+#define	HUGE_MAXCLASS		((((GHT)1) << 30) + (((GHT)3) << 28))
 #endif
 
 #if (LG_SIZEOF_PTR == 2 && LG_TINY_MIN == 3 && LG_QUANTUM == 4 && LG_PAGE == 12)
@@ -322,10 +322,10 @@
 #define	NSIZES			104
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	3
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 30) + (((size_t)3) << 28))
+#define	HUGE_MAXCLASS		((((GHT)1) << 30) + (((GHT)3) << 28))
 #endif
 
 #if (LG_SIZEOF_PTR == 2 && LG_TINY_MIN == 4 && LG_QUANTUM == 4 && LG_PAGE == 12)
@@ -467,10 +467,10 @@
 #define	NSIZES			103
 #define	NPSIZES			71
 #define	LG_TINY_MAXCLASS	"NA"
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 30) + (((size_t)3) << 28))
+#define	HUGE_MAXCLASS		((((GHT)1) << 30) + (((GHT)3) << 28))
 #endif
 
 #if (LG_SIZEOF_PTR == 3 && LG_TINY_MIN == 3 && LG_QUANTUM == 3 && LG_PAGE == 12)
@@ -777,10 +777,10 @@
 #define	NSIZES			235
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	"NA"
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 62) + (((size_t)3) << 60))
+#define	HUGE_MAXCLASS		((((GHT)1) << 62) + (((GHT)3) << 60))
 #endif
 
 #if (LG_SIZEOF_PTR == 3 && LG_TINY_MIN == 3 && LG_QUANTUM == 4 && LG_PAGE == 12)
@@ -1084,10 +1084,10 @@
 #define	NSIZES			232
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	3
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 62) + (((size_t)3) << 60))
+#define	HUGE_MAXCLASS		((((GHT)1) << 62) + (((GHT)3) << 60))
 #endif
 
 #if (LG_SIZEOF_PTR == 3 && LG_TINY_MIN == 4 && LG_QUANTUM == 4 && LG_PAGE == 12)
@@ -1389,10 +1389,10 @@
 #define	NSIZES			231
 #define	NPSIZES			199
 #define	LG_TINY_MAXCLASS	"NA"
-#define	LOOKUP_MAXCLASS		((((size_t)1) << 11) + (((size_t)4) << 9))
-#define	SMALL_MAXCLASS		((((size_t)1) << 13) + (((size_t)3) << 11))
+#define	LOOKUP_MAXCLASS		((((GHT)1) << 11) + (((GHT)4) << 9))
+#define	SMALL_MAXCLASS		((((GHT)1) << 13) + (((GHT)3) << 11))
 #define	LG_LARGE_MINCLASS	14
-#define	HUGE_MAXCLASS		((((size_t)1) << 62) + (((size_t)3) << 60))
+#define	HUGE_MAXCLASS		((((GHT)1) << 62) + (((GHT)3) << 60))
 #endif
 
 #ifndef SIZE_CLASSES_DEFINED

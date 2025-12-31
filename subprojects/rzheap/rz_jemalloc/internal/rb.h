@@ -55,28 +55,28 @@ struct {								\
 /* Right accessors. */
 #define	rbtn_right_get(a_type, a_field, a_node)				\
     ((a_type *) (((intptr_t) (a_node)->a_field.rbn_right_red)		\
-      & ((ssize_t)-2)))
+      & ((GHST)-2)))
 #define	rbtn_right_set(a_type, a_field, a_node, a_right) do {		\
     (a_node)->a_field.rbn_right_red = (a_type *) (((uintptr_t) a_right)	\
-      | (((uintptr_t) (a_node)->a_field.rbn_right_red) & ((size_t)1)));	\
+      | (((uintptr_t) (a_node)->a_field.rbn_right_red) & ((GHT)1)));	\
 } while (0)
 
 /* Color accessors. */
 #define	rbtn_red_get(a_type, a_field, a_node)				\
     ((bool) (((uintptr_t) (a_node)->a_field.rbn_right_red)		\
-      & ((size_t)1)))
+      & ((GHT)1)))
 #define	rbtn_color_set(a_type, a_field, a_node, a_red) do {		\
     (a_node)->a_field.rbn_right_red = (a_type *) ((((intptr_t)		\
-      (a_node)->a_field.rbn_right_red) & ((ssize_t)-2))			\
-      | ((ssize_t)a_red));						\
+      (a_node)->a_field.rbn_right_red) & ((GHST)-2))			\
+      | ((GHST)a_red));						\
 } while (0)
 #define	rbtn_red_set(a_type, a_field, a_node) do {			\
     (a_node)->a_field.rbn_right_red = (a_type *) (((uintptr_t)		\
-      (a_node)->a_field.rbn_right_red) | ((size_t)1));			\
+      (a_node)->a_field.rbn_right_red) | ((GHT)1));			\
 } while (0)
 #define	rbtn_black_set(a_type, a_field, a_node) do {			\
     (a_node)->a_field.rbn_right_red = (a_type *) (((intptr_t)		\
-      (a_node)->a_field.rbn_right_red) & ((ssize_t)-2));		\
+      (a_node)->a_field.rbn_right_red) & ((GHST)-2));		\
 } while (0)
 
 /* Node initializer. */
@@ -185,13 +185,13 @@ a_attr void								\
 a_prefix##remove(a_rbt_type *rbtree, a_type *node);			\
 a_attr a_type *								\
 a_prefix##iter(a_rbt_type *rbtree, a_type *start, a_type *(*cb)(	\
-  a_rbt_type *, a_type *, void *), void *arg);				\
+  a_rbt_type *, a_type *, GHT ), GHT arg);				\
 a_attr a_type *								\
 a_prefix##reverse_iter(a_rbt_type *rbtree, a_type *start,		\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg);		\
+  a_type *(*cb)(a_rbt_type *, a_type *, GHT ), GHT arg);		\
 a_attr void								\
-a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
-  void *arg);
+a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, GHT ),	\
+  GHT arg);
 
 /*
  * The rb_gen() macro generates a type-specific red-black tree implementation,
@@ -298,10 +298,10 @@ a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
  *
  *   static ex_node_t *
  *   ex_iter(ex_t *tree, ex_node_t *start, ex_node_t *(*cb)(ex_t *,
- *     ex_node_t *, void *), void *arg);
+ *     ex_node_t *, GHT ), GHT arg);
  *   static ex_node_t *
  *   ex_reverse_iter(ex_t *tree, ex_node_t *start, ex_node *(*cb)(ex_t *,
- *     ex_node_t *, void *), void *arg);
+ *     ex_node_t *, GHT ), GHT arg);
  *       Description: Iterate forward/backward over tree, starting at node.  If
  *                    tree is modified, iteration must be immediately
  *                    terminated by the callback function that causes the
@@ -322,7 +322,7 @@ a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
  *            that caused termination of the iteration.
  *
  *   static void
- *   ex_destroy(ex_t *tree, void (*cb)(ex_node_t *, void *), void *arg);
+ *   ex_destroy(ex_t *tree, void (*cb)(ex_node_t *, GHT ), GHT arg);
  *       Description: Iterate over the tree with post-order traversal, remove
  *                    each node, and run the callback if non-null.  This is
  *                    used for destroying a tree without paying the cost to
@@ -464,7 +464,7 @@ a_prefix##insert(a_rbt_type *rbtree, a_type *node) {			\
     struct {								\
 	a_type *node;							\
 	int cmp;							\
-    } path[sizeof(void *) << 4], *pathp;				\
+    } path[sizeof(GHT ) << 4], *pathp;				\
     rbt_node_new(a_type, a_field, rbtree, node);			\
     /* Wind. */								\
     path->node = rbtree->rbt_root;					\
@@ -534,7 +534,7 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
     struct {								\
 	a_type *node;							\
 	int cmp;							\
-    } *pathp, *nodep, path[sizeof(void *) << 4];			\
+    } *pathp, *nodep, path[sizeof(GHT ) << 4];			\
     /* Wind. */								\
     nodep = NULL; /* Silence compiler warning. */			\
     path->node = rbtree->rbt_root;					\
@@ -873,7 +873,7 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
 }									\
 a_attr a_type *								\
 a_prefix##iter_recurse(a_rbt_type *rbtree, a_type *node,		\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg) {		\
+  a_type *(*cb)(a_rbt_type *, a_type *, GHT ), GHT arg) {		\
     if (node == NULL) {							\
 	return (NULL);							\
     } else {								\
@@ -889,7 +889,7 @@ a_prefix##iter_recurse(a_rbt_type *rbtree, a_type *node,		\
 }									\
 a_attr a_type *								\
 a_prefix##iter_start(a_rbt_type *rbtree, a_type *start, a_type *node,	\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg) {		\
+  a_type *(*cb)(a_rbt_type *, a_type *, GHT ), GHT arg) {		\
     int cmp = a_cmp(start, node);					\
     if (cmp < 0) {							\
 	a_type *ret;							\
@@ -914,7 +914,7 @@ a_prefix##iter_start(a_rbt_type *rbtree, a_type *start, a_type *node,	\
 }									\
 a_attr a_type *								\
 a_prefix##iter(a_rbt_type *rbtree, a_type *start, a_type *(*cb)(	\
-  a_rbt_type *, a_type *, void *), void *arg) {				\
+  a_rbt_type *, a_type *, GHT ), GHT arg) {				\
     a_type *ret;							\
     if (start != NULL) {						\
 	ret = a_prefix##iter_start(rbtree, start, rbtree->rbt_root,	\
@@ -926,7 +926,7 @@ a_prefix##iter(a_rbt_type *rbtree, a_type *start, a_type *(*cb)(	\
 }									\
 a_attr a_type *								\
 a_prefix##reverse_iter_recurse(a_rbt_type *rbtree, a_type *node,	\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg) {		\
+  a_type *(*cb)(a_rbt_type *, a_type *, GHT ), GHT arg) {		\
     if (node == NULL) {							\
 	return (NULL);							\
     } else {								\
@@ -942,8 +942,8 @@ a_prefix##reverse_iter_recurse(a_rbt_type *rbtree, a_type *node,	\
 }									\
 a_attr a_type *								\
 a_prefix##reverse_iter_start(a_rbt_type *rbtree, a_type *start,		\
-  a_type *node, a_type *(*cb)(a_rbt_type *, a_type *, void *),		\
-  void *arg) {								\
+  a_type *node, a_type *(*cb)(a_rbt_type *, a_type *, GHT ),		\
+  GHT arg) {								\
     int cmp = a_cmp(start, node);					\
     if (cmp > 0) {							\
 	a_type *ret;							\
@@ -968,7 +968,7 @@ a_prefix##reverse_iter_start(a_rbt_type *rbtree, a_type *start,		\
 }									\
 a_attr a_type *								\
 a_prefix##reverse_iter(a_rbt_type *rbtree, a_type *start,		\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg) {		\
+  a_type *(*cb)(a_rbt_type *, a_type *, GHT ), GHT arg) {		\
     a_type *ret;							\
     if (start != NULL) {						\
 	ret = a_prefix##reverse_iter_start(rbtree, start,		\
@@ -981,7 +981,7 @@ a_prefix##reverse_iter(a_rbt_type *rbtree, a_type *start,		\
 }									\
 a_attr void								\
 a_prefix##destroy_recurse(a_rbt_type *rbtree, a_type *node, void (*cb)(	\
-  a_type *, void *), void *arg) {					\
+  a_type *, GHT ), GHT arg) {					\
     if (node == NULL) {							\
 	return;								\
     }									\
@@ -996,8 +996,8 @@ a_prefix##destroy_recurse(a_rbt_type *rbtree, a_type *node, void (*cb)(	\
     }									\
 }									\
 a_attr void								\
-a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
-  void *arg) {								\
+a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, GHT ),	\
+  GHT arg) {								\
     a_prefix##destroy_recurse(rbtree, rbtree->rbt_root, cb, arg);	\
     rbtree->rbt_root = NULL;						\
 }

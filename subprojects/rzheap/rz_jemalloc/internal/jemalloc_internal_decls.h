@@ -43,14 +43,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #ifndef offsetof
-#  define offsetof(type, member)	((size_t)&(((type *)NULL)->member))
+#  define offsetof(type, member)	((GHT)&(((type *)NULL)->member))
 #endif
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
 #ifdef _MSC_VER
 #  include <io.h>
-typedef intptr_t ssize_t;
+typedef intptr_t GHST;
 #  define PATH_MAX 1024
 #  define STDERR_FILENO 2
 #  define __func__ __FUNCTION__

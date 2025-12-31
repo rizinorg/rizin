@@ -5,8 +5,8 @@ typedef struct ckh_s ckh_t;
 typedef struct ckhc_s ckhc_t;
 
 /* Typedefs to allow easy function pointer passing. */
-typedef void ckh_hash_t (const void *, size_t[2]);
-typedef bool ckh_keycomp_t (const void *, const void *);
+typedef void ckh_hash_t (const GHT , GHT[2]);
+typedef bool ckh_keycomp_t (const GHT , const GHT );
 
 /* Maintain counters used to get an idea of performance. */
 /* #define	CKH_COUNT */
@@ -43,7 +43,7 @@ struct ckh_s {
 	uint64_t	prng_state;
 
 	/* Total number of items. */
-	size_t		count;
+	GHT		count;
 
 	/*
 	 * Minimum and current number of hash table buckets.  There are
@@ -64,19 +64,19 @@ struct ckh_s {
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-bool	ckh_new(tsd_t *tsd, ckh_t *ckh, size_t minitems, ckh_hash_t *hash,
+bool	ckh_new(tsd_t *tsd, ckh_t *ckh, GHT minitems, ckh_hash_t *hash,
     ckh_keycomp_t *keycomp);
 void	ckh_delete(tsd_t *tsd, ckh_t *ckh);
-size_t	ckh_count(ckh_t *ckh);
-bool	ckh_iter(ckh_t *ckh, size_t *tabind, void **key, void **data);
-bool	ckh_insert(tsd_t *tsd, ckh_t *ckh, const void *key, const void *data);
-bool	ckh_remove(tsd_t *tsd, ckh_t *ckh, const void *searchkey, void **key,
-    void **data);
-bool	ckh_search(ckh_t *ckh, const void *searchkey, void **key, void **data);
-void	ckh_string_hash(const void *key, size_t rz_hash[2]);
-bool	ckh_string_keycomp(const void *k1, const void *k2);
-void	ckh_pointer_hash(const void *key, size_t rz_hash[2]);
-bool	ckh_pointer_keycomp(const void *k1, const void *k2);
+GHT	ckh_count(ckh_t *ckh);
+bool	ckh_iter(ckh_t *ckh, GHT *tabind, GHT *key, GHT *data);
+bool	ckh_insert(tsd_t *tsd, ckh_t *ckh, const GHT key, const GHT data);
+bool	ckh_remove(tsd_t *tsd, ckh_t *ckh, const GHT searchkey, GHT *key,
+    GHT *data);
+bool	ckh_search(ckh_t *ckh, const GHT searchkey, GHT *key, GHT *data);
+void	ckh_string_hash(const GHT key, GHT rz_hash[2]);
+bool	ckh_string_keycomp(const GHT k1, const GHT k2);
+void	ckh_pointer_hash(const GHT key, GHT rz_hash[2]);
+bool	ckh_pointer_keycomp(const GHT k1, const GHT k2);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/

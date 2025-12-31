@@ -41,7 +41,7 @@ struct malloc_bin_stats_s {
 	 * Current number of regions of this size class, including regions
 	 * currently cached by tcache.
 	 */
-	size_t		curregs;
+	GHT		curregs;
 
 	/* Number of tcache fills from this bin. */
 	uint64_t	nfills;
@@ -59,7 +59,7 @@ struct malloc_bin_stats_s {
 	uint64_t	reruns;
 
 	/* Current number of runs in this bin. */
-	size_t		curruns;
+	GHT		curruns;
 };
 
 struct malloc_large_stats_s {
@@ -83,7 +83,7 @@ struct malloc_large_stats_s {
 	 * Current number of runs of this size class, including runs currently
 	 * cached by tcache.
 	 */
-	size_t		curruns;
+	GHT		curruns;
 };
 
 struct malloc_huge_stats_s {
@@ -95,12 +95,12 @@ struct malloc_huge_stats_s {
 	uint64_t	ndalloc;
 
 	/* Current number of (multi-)chunk allocations of this size class. */
-	size_t		curhchunks;
+	GHT		curhchunks;
 };
 
 struct arena_stats_s {
 	/* Number of bytes currently mapped. */
-	size_t		mapped;
+	GHT		mapped;
 
 	/*
 	 * Number of bytes currently retained as a side effect of munmap() being
@@ -108,7 +108,7 @@ struct arena_stats_s {
 	 * always decommitted or purged), but they are excluded from the mapped
 	 * statistic (above).
 	 */
-	size_t		retained;
+	GHT		retained;
 
 	/*
 	 * Total number of purge sweeps, total number of madvise calls made,
@@ -123,16 +123,16 @@ struct arena_stats_s {
 	 * Number of bytes currently mapped purely for metadata purposes, and
 	 * number of bytes currently allocated for internal metadata.
 	 */
-	size_t		metadata_mapped;
-	size_t		metadata_allocated; /* Protected via atomic_*_z(). */
+	GHT		metadata_mapped;
+	GHT		metadata_allocated; /* Protected via atomic_*_z(). */
 
 	/* Per-size-category statistics. */
-	size_t		allocated_large;
+	GHT		allocated_large;
 	uint64_t	nmalloc_large;
 	uint64_t	ndalloc_large;
 	uint64_t	nrequests_large;
 
-	size_t		allocated_huge;
+	GHT		allocated_huge;
 	uint64_t	nmalloc_huge;
 	uint64_t	ndalloc_huge;
 
@@ -149,9 +149,9 @@ struct arena_stats_s {
 
 extern bool	opt_stats_print;
 
-extern size_t	stats_cactive;
+extern GHT	stats_cactive;
 
-void	stats_print(void (*write)(void *, const char *), void *cbopaque,
+void	stats_print(void (*write)(GHT , const char *), GHT cbopaque,
     const char *opts);
 
 #endif /* JEMALLOC_H_EXTERNS */
@@ -159,13 +159,13 @@ void	stats_print(void (*write)(void *, const char *), void *cbopaque,
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-size_t	stats_cactive_get(void);
-void	stats_cactive_add(size_t size);
-void	stats_cactive_sub(size_t size);
+GHT	stats_cactive_get(void);
+void	stats_cactive_add(GHT size);
+void	stats_cactive_sub(GHT size);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_STATS_C_))
-JEMALLOC_INLINE size_t
+JEMALLOC_INLINE GHT
 stats_cactive_get(void)
 {
 
@@ -173,7 +173,7 @@ stats_cactive_get(void)
 }
 
 JEMALLOC_INLINE void
-stats_cactive_add(size_t size)
+stats_cactive_add(GHT size)
 {
 
 	assert(size > 0);
@@ -183,7 +183,7 @@ stats_cactive_add(size_t size)
 }
 
 JEMALLOC_INLINE void
-stats_cactive_sub(size_t size)
+stats_cactive_sub(GHT size)
 {
 
 	assert(size > 0);

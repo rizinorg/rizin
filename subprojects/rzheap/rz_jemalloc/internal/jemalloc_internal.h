@@ -295,14 +295,14 @@ typedef unsigned szind_t;
 #endif
 #endif
 
-#define QUANTUM      ((size_t)(1U << LG_QUANTUM))
+#define QUANTUM      ((GHT)(1U << LG_QUANTUM))
 #define QUANTUM_MASK (QUANTUM - 1)
 
 /* Return the smallest quantum multiple that is >= a. */
 #define QUANTUM_CEILING(a) \
 	(((a) + QUANTUM_MASK) & ~QUANTUM_MASK)
 
-#define LONG      ((size_t)(1U << LG_SIZEOF_LONG))
+#define LONG      ((GHT)(1U << LG_SIZEOF_LONG))
 #define LONG_MASK (LONG - 1)
 
 /* Return the smallest long multiple that is >= a. */
@@ -312,7 +312,7 @@ typedef unsigned szind_t;
 #define SIZEOF_PTR (1U << LG_SIZEOF_PTR)
 #define PTR_MASK   (SIZEOF_PTR - 1)
 
-/* Return the smallest (void *) multiple that is >= a. */
+/* Return the smallest (GHT ) multiple that is >= a. */
 #define PTR_CEILING(a) \
 	(((a) + PTR_MASK) & ~PTR_MASK)
 
@@ -335,12 +335,12 @@ typedef unsigned szind_t;
 #ifdef PAGE_MASK
 #undef PAGE_MASK
 #endif
-#define PAGE      ((size_t)(1U << LG_PAGE))
-#define PAGE_MASK ((size_t)(PAGE - 1))
+#define PAGE      ((GHT)(1U << LG_PAGE))
+#define PAGE_MASK ((GHT)(PAGE - 1))
 
 /* Return the page base address for the page containing address a. */
 #define PAGE_ADDR2BASE(a) \
-	((void *)((uintptr_t)(a) & ~PAGE_MASK))
+	((GHT )((uintptr_t)(a) & ~PAGE_MASK))
 
 /* Return the smallest pagesize multiple that is >= s. */
 #define PAGE_CEILING(s) \
@@ -348,11 +348,11 @@ typedef unsigned szind_t;
 
 /* Return the nearest aligned address at or below a. */
 #define ALIGNMENT_ADDR2BASE(a, alignment) \
-	((void *)((uintptr_t)(a) & ((~(alignment)) + 1)))
+	((GHT )((uintptr_t)(a) & ((~(alignment)) + 1)))
 
 /* Return the offset between a and the nearest aligned address at or below a. */
 #define ALIGNMENT_ADDR2OFFSET(a, alignment) \
-	((size_t)((uintptr_t)(a) & (alignment - 1)))
+	((GHT)((uintptr_t)(a) & (alignment - 1)))
 
 /* Return the smallest alignment multiple that is >= s. */
 #define ALIGNMENT_CEILING(s, alignment) \
@@ -371,6 +371,9 @@ typedef unsigned szind_t;
 #else
 #define VARIABLE_ARRAY(type, name, count) type name[(count)]
 #endif
+
+#define GHT     ut64
+#define GHST    ut64
 
 #include "nstime.h"
 #include "valgrind.h"
@@ -448,7 +451,7 @@ typedef unsigned szind_t;
 extern const char *opt_junk;
 extern bool opt_junk_alloc;
 extern bool opt_junk_free;
-extern size_t opt_quarantine;
+extern GHT opt_quarantine;
 extern bool opt_redzone;
 extern bool opt_utrace;
 extern bool opt_xmalloc;
@@ -473,12 +476,12 @@ extern arena_t **arenas;
  * pind2sz_tab encodes the same information as could be computed by
  * pind2sz_compute().
  */
-extern size_t const pind2sz_tab[NPSIZES];
+extern GHT const pind2sz_tab[NPSIZES];
 /*
  * index2size_tab encodes the same information as could be computed (at
  * unacceptable cost in some code paths) by index2size_compute().
  */
-extern size_t const index2size_tab[NSIZES];
+extern GHT const index2size_tab[NSIZES];
 /*
  * size2index_tab is a compact lookup table that rounds request sizes up to
  * size classes.  In order to reduce cache footprint, the table is compressed,
@@ -487,11 +490,11 @@ extern size_t const index2size_tab[NSIZES];
 extern uint8_t const size2index_tab[];
 
 arena_t *a0get(void);
-void *a0malloc(size_t size);
-void a0dalloc(void *ptr);
-void *bootstrap_malloc(size_t size);
-void *bootstrap_calloc(size_t num, size_t size);
-void bootstrap_free(void *ptr);
+GHT a0malloc(GHT size);
+void a0dalloc(GHT ptr);
+GHT bootstrap_malloc(GHT size);
+GHT bootstrap_calloc(GHT num, GHT size);
+void bootstrap_free(GHT ptr);
 unsigned narenas_total_get(void);
 arena_t *arena_init(tsdn_t *tsdn, unsigned ind);
 arena_tdata_t *arena_tdata_get_hard(tsd_t *tsd, unsigned ind);
@@ -565,21 +568,21 @@ void jemalloc_postfork_child(void);
 #include "huge.h"
 
 #ifndef JEMALLOC_ENABLE_INLINE
-pszind_t psz2ind(size_t psz);
-size_t pind2sz_compute(pszind_t pind);
-size_t pind2sz_lookup(pszind_t pind);
-size_t pind2sz(pszind_t pind);
-size_t psz2u(size_t psz);
-szind_t size2index_compute(size_t size);
-szind_t size2index_lookup(size_t size);
-szind_t size2index(size_t size);
-size_t index2size_compute(szind_t index);
-size_t index2size_lookup(szind_t index);
-size_t index2size(szind_t index);
-size_t s2u_compute(size_t size);
-size_t s2u_lookup(size_t size);
-size_t s2u(size_t size);
-size_t sa2u(size_t size, size_t alignment);
+pszind_t psz2ind(GHT psz);
+GHT pind2sz_compute(pszind_t pind);
+GHT pind2sz_lookup(pszind_t pind);
+GHT pind2sz(pszind_t pind);
+GHT psz2u(GHT psz);
+szind_t size2index_compute(GHT size);
+szind_t size2index_lookup(GHT size);
+szind_t size2index(GHT size);
+GHT index2size_compute(szind_t index);
+GHT index2size_lookup(szind_t index);
+GHT index2size(szind_t index);
+GHT s2u_compute(GHT size);
+GHT s2u_lookup(GHT size);
+GHT s2u(GHT size);
+GHT sa2u(GHT size, GHT alignment);
 arena_t *arena_choose_impl(tsd_t *tsd, arena_t *arena, bool internal);
 arena_t *arena_choose(tsd_t *tsd, arena_t *arena);
 arena_t *arena_ichoose(tsd_t *tsd, arena_t *arena);

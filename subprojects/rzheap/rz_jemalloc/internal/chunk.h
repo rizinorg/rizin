@@ -9,11 +9,11 @@
 
 /* Return the chunk address for allocation address a. */
 #define	CHUNK_ADDR2BASE(a)						\
-	((void *)((uintptr_t)(a) & ~chunksize_mask))
+	((GHT )((uintptr_t)(a) & ~chunksize_mask))
 
 /* Return the chunk offset of address a. */
 #define	CHUNK_ADDR2OFFSET(a)						\
-	((size_t)((uintptr_t)(a) & chunksize_mask))
+	((GHT)((uintptr_t)(a) & chunksize_mask))
 
 /* Return the smallest chunk multiple that is >= s. */
 #define	CHUNK_CEILING(s)						\
@@ -37,14 +37,14 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-extern size_t		opt_lg_chunk;
+extern GHT		opt_lg_chunk;
 extern const char	*opt_dss;
 
 extern rtree_t		chunks_rtree;
 
-extern size_t		chunksize;
-extern size_t		chunksize_mask; /* (chunksize - 1). */
-extern size_t		chunk_npages;
+extern GHT		chunksize;
+extern GHT		chunksize_mask; /* (chunksize - 1). */
+extern GHT		chunk_npages;
 
 extern const chunk_hooks_t	chunk_hooks_default;
 
@@ -52,25 +52,25 @@ chunk_hooks_t	chunk_hooks_get(tsdn_t *tsdn, arena_t *arena);
 chunk_hooks_t	chunk_hooks_set(tsdn_t *tsdn, arena_t *arena,
     const chunk_hooks_t *chunk_hooks);
 
-bool	chunk_register(const void *chunk, const extent_node_t *node,
+bool	chunk_register(const GHT chunk, const extent_node_t *node,
     bool *gdump);
-void	chunk_deregister(const void *chunk, const extent_node_t *node);
-void	*chunk_alloc_base(size_t size);
+void	chunk_deregister(const GHT chunk, const extent_node_t *node);
+void	*chunk_alloc_base(GHT size);
 void	*chunk_alloc_cache(tsdn_t *tsdn, arena_t *arena,
-    chunk_hooks_t *chunk_hooks, void *new_addr, size_t size, size_t alignment,
-    size_t *sn, bool *zero, bool *commit, bool dalloc_node);
+    chunk_hooks_t *chunk_hooks, GHT new_addr, GHT size, GHT alignment,
+    GHT *sn, bool *zero, bool *commit, bool dalloc_node);
 void	*chunk_alloc_wrapper(tsdn_t *tsdn, arena_t *arena,
-    chunk_hooks_t *chunk_hooks, void *new_addr, size_t size, size_t alignment,
-    size_t *sn, bool *zero, bool *commit);
+    chunk_hooks_t *chunk_hooks, GHT new_addr, GHT size, GHT alignment,
+    GHT *sn, bool *zero, bool *commit);
 void	chunk_dalloc_cache(tsdn_t *tsdn, arena_t *arena,
-    chunk_hooks_t *chunk_hooks, void *chunk, size_t size, size_t sn,
+    chunk_hooks_t *chunk_hooks, GHT chunk, GHT size, GHT sn,
     bool committed);
 void	chunk_dalloc_wrapper(tsdn_t *tsdn, arena_t *arena,
-    chunk_hooks_t *chunk_hooks, void *chunk, size_t size, size_t sn,
+    chunk_hooks_t *chunk_hooks, GHT chunk, GHT size, GHT sn,
     bool zeroed, bool committed);
 bool	chunk_purge_wrapper(tsdn_t *tsdn, arena_t *arena,
-    chunk_hooks_t *chunk_hooks, void *chunk, size_t size, size_t offset,
-    size_t length);
+    chunk_hooks_t *chunk_hooks, GHT chunk, GHT size, GHT offset,
+    GHT length);
 bool	chunk_boot(void);
 
 #endif /* JEMALLOC_H_EXTERNS */
@@ -78,12 +78,12 @@ bool	chunk_boot(void);
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-extent_node_t	*chunk_lookup(const void *chunk, bool dependent);
+extent_node_t	*chunk_lookup(const GHT chunk, bool dependent);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_CHUNK_C_))
 JEMALLOC_INLINE extent_node_t *
-chunk_lookup(const void *ptr, bool dependent)
+chunk_lookup(const GHT ptr, bool dependent)
 {
 
 	return (rtree_get(&chunks_rtree, (uintptr_t)ptr, dependent));

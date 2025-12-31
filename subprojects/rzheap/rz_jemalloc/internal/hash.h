@@ -19,13 +19,13 @@
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-uint32_t	hash_x86_32(const void *key, int len, uint32_t seed);
-void	hash_x86_128(const void *key, const int len, uint32_t seed,
+uint32_t	hash_x86_32(const GHT key, int len, uint32_t seed);
+void	hash_x86_128(const GHT key, const int len, uint32_t seed,
     uint64_t rz_out[2]);
-void	hash_x64_128(const void *key, const int len, const uint32_t seed,
+void	hash_x64_128(const GHT key, const int len, const uint32_t seed,
     uint64_t rz_out[2]);
-void	hash(const void *key, size_t len, const uint32_t seed,
-    size_t rz_hash[2]);
+void	hash(const GHT key, GHT len, const uint32_t seed,
+    GHT rz_hash[2]);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_HASH_C_))
@@ -102,7 +102,7 @@ hash_fmix_64(uint64_t k)
 }
 
 JEMALLOC_INLINE uint32_t
-hash_x86_32(const void *key, int len, uint32_t seed)
+hash_x86_32(const GHT key, int len, uint32_t seed)
 {
 	const uint8_t *data = (const uint8_t *) key;
 	const int nblocks = len / 4;
@@ -153,7 +153,7 @@ hash_x86_32(const void *key, int len, uint32_t seed)
 }
 
 RZ_UNUSED JEMALLOC_INLINE void
-hash_x86_128(const void *key, const int len, uint32_t seed,
+hash_x86_128(const GHT key, const int len, uint32_t seed,
     uint64_t rz_out[2])
 {
 	const uint8_t * data = (const uint8_t *) key;
@@ -255,7 +255,7 @@ hash_x86_128(const void *key, const int len, uint32_t seed,
 }
 
 RZ_UNUSED JEMALLOC_INLINE void
-hash_x64_128(const void *key, const int len, const uint32_t seed,
+hash_x64_128(const GHT key, const int len, const uint32_t seed,
     uint64_t rz_out[2])
 {
 	const uint8_t *data = (const uint8_t *) key;
@@ -335,7 +335,7 @@ hash_x64_128(const void *key, const int len, const uint32_t seed,
 /******************************************************************************/
 /* API. */
 JEMALLOC_INLINE void
-hash(const void *key, size_t len, const uint32_t seed, size_t rz_hash[2])
+hash(const GHT key, GHT len, const uint32_t seed, GHT rz_hash[2])
 {
 
 	assert(len <= INT_MAX); /* Unfortunate implementation limitation. */
@@ -346,8 +346,8 @@ hash(const void *key, size_t len, const uint32_t seed, size_t rz_hash[2])
 	{
 		uint64_t hashes[2];
 		hash_x86_128(key, (int)len, seed, hashes);
-		rz_hash[0] = (size_t)hashes[0];
-		rz_hash[1] = (size_t)hashes[1];
+		rz_hash[0] = (GHT)hashes[0];
+		rz_hash[1] = (GHT)hashes[1];
 	}
 #endif
 }

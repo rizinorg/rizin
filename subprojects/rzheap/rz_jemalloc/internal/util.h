@@ -102,7 +102,7 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-int	buferror(int err, char *buf, size_t buflen);
+int	buferror(int err, char *buf, GHT buflen);
 uintmax_t	malloc_strtoumax(const char *nptr,
     char **endptr, int base);
 void	malloc_write(const char *s);
@@ -111,14 +111,14 @@ void	malloc_write(const char *s);
  * malloc_vsnprintf() supports a subset of snprintf(3) that avoids floating
  * point math.
  */
-size_t	malloc_vsnprintf(char *str, size_t size, const char *format,
+GHT	malloc_vsnprintf(char *str, GHT size, const char *format,
     va_list ap);
 /*
-size_t	malloc_snprintf(char *str, size_t size, const char *format, ...)
+GHT	malloc_snprintf(char *str, GHT size, const char *format, ...)
     JEMALLOC_FORMAT_PRINTF(3, 4);
-void	malloc_vcprintf(void (*write_cb)(void *, const char *), void *cbopaque,
+void	malloc_vcprintf(void (*write_cb)(GHT , const char *), GHT cbopaque,
     const char *format, va_list ap);
-void malloc_cprintf(void (*write)(void *, const char *), void *cbopaque,
+void malloc_cprintf(void (*write)(GHT , const char *), GHT cbopaque,
     const char *format, ...) JEMALLOC_FORMAT_PRINTF(3, 4);
 void	malloc_printf(const char *format, ...) JEMALLOC_FORMAT_PRINTF(1, 2);
 */
@@ -131,13 +131,13 @@ void	malloc_printf(const char *format, ...) JEMALLOC_FORMAT_PRINTF(1, 2);
 unsigned	ffs_llu(unsigned long long bitmap);
 unsigned	ffs_lu(unsigned long bitmap);
 unsigned	ffs_u(unsigned bitmap);
-unsigned	ffs_zu(size_t bitmap);
+unsigned	ffs_zu(GHT bitmap);
 unsigned	ffs_u64(uint64_t bitmap);
 unsigned	ffs_u32(uint32_t bitmap);
 uint64_t	pow2_ceil_u64(uint64_t x);
 uint32_t	pow2_ceil_u32(uint32_t x);
-size_t	pow2_ceil_zu(size_t x);
-unsigned	lg_floor(size_t x);
+GHT	pow2_ceil_zu(GHT x);
+unsigned	lg_floor(GHT x);
 void	set_errno(int errnum);
 int	get_errno(void);
 #endif
@@ -172,7 +172,7 @@ ffs_u(unsigned bitmap)
 }
 
 JEMALLOC_ALWAYS_INLINE unsigned
-ffs_zu(size_t bitmap)
+ffs_zu(GHT bitmap)
 {
 
 #if LG_SIZEOF_PTR == LG_SIZEOF_INT
@@ -182,7 +182,7 @@ ffs_zu(size_t bitmap)
 #elif LG_SIZEOF_PTR == LG_SIZEOF_LONG_LONG
 	return (ffs_llu(bitmap));
 #else
-#error No implementation for size_t ffs()
+#error No implementation for GHT ffs()
 #endif
 }
 
@@ -241,8 +241,8 @@ pow2_ceil_u32(uint32_t x)
 }
 
 /* Compute the smallest power of 2 that is >= x. */
-JEMALLOC_INLINE size_t
-pow2_ceil_zu(size_t x)
+JEMALLOC_INLINE GHT
+pow2_ceil_zu(GHT x)
 {
 
 #if (LG_SIZEOF_PTR == 3)
@@ -254,9 +254,9 @@ pow2_ceil_zu(size_t x)
 
 #if (defined(__i386__) || defined(__amd64__) || defined(__x86_64__))
 JEMALLOC_INLINE unsigned
-lg_floor(size_t x)
+lg_floor(GHT x)
 {
-	size_t ret;
+	GHT ret;
 
 	if (x == 0) {
 		return UINT_MAX;
@@ -271,7 +271,7 @@ lg_floor(size_t x)
 }
 #elif (defined(_MSC_VER))
 JEMALLOC_INLINE unsigned
-lg_floor(size_t x)
+lg_floor(GHT x)
 {
 	unsigned long ret;
 
@@ -289,7 +289,7 @@ lg_floor(size_t x)
 }
 #elif (defined(JEMALLOC_HAVE_BUILTIN_CLZ))
 JEMALLOC_INLINE unsigned
-lg_floor(size_t x)
+lg_floor(GHT x)
 {
 
 	assert(x != 0);
@@ -304,7 +304,7 @@ lg_floor(size_t x)
 }
 #else
 JEMALLOC_INLINE unsigned
-lg_floor(size_t x)
+lg_floor(GHT x)
 {
 
 	assert(x != 0);

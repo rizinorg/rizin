@@ -28,7 +28,7 @@ typedef struct rtree_s rtree_t;
  * rtree_node_elm_t structures to allocate, and the resulting memory must be
  * zeroed.
  */
-typedef rtree_node_elm_t *(rtree_node_alloc_t)(size_t);
+typedef rtree_node_elm_t *(rtree_node_alloc_t)(GHT);
 typedef void (rtree_node_dalloc_t)(rtree_node_elm_t *);
 
 #endif /* JEMALLOC_H_TYPES */

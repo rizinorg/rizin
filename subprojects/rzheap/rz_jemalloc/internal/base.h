@@ -9,9 +9,9 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	*base_alloc(tsdn_t *tsdn, size_t size);
-void	base_stats_get(tsdn_t *tsdn, size_t *allocated, size_t *resident,
-    size_t *mapped);
+void	*base_alloc(tsdn_t *tsdn, GHT size);
+void	base_stats_get(tsdn_t *tsdn, GHT *allocated, GHT *resident,
+    GHT *mapped);
 bool	base_boot(void);
 void	base_prefork(tsdn_t *tsdn);
 void	base_postfork_parent(tsdn_t *tsdn);

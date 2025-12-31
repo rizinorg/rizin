@@ -246,8 +246,8 @@ typedef rb_tree(prof_tdata_t) prof_tdata_tree_t;
 extern bool	opt_prof;
 extern bool	opt_prof_active;
 extern bool	opt_prof_thread_active_init;
-extern size_t	opt_lg_prof_sample;   /* Mean bytes between samples. */
-extern ssize_t	opt_lg_prof_interval; /* lg(prof_interval). */
+extern GHT	opt_lg_prof_sample;   /* Mean bytes between samples. */
+extern GHST	opt_lg_prof_interval; /* lg(prof_interval). */
 extern bool	opt_prof_gdump;       /* High-water memory dumping. */
 extern bool	opt_prof_final;       /* Final profile dumping. */
 extern bool	opt_prof_leak;        /* Dump leak summary at exit. */
@@ -278,18 +278,18 @@ extern uint64_t	prof_interval;
  * Initialized as opt_lg_prof_sample, and potentially modified during profiling
  * resets.
  */
-extern size_t	lg_prof_sample;
+extern GHT	lg_prof_sample;
 
 void	prof_alloc_rollback(tsd_t *tsd, prof_tctx_t *tctx, bool updated);
-void	prof_malloc_sample_object(tsdn_t *tsdn, const void *ptr, size_t usize,
+void	prof_malloc_sample_object(tsdn_t *tsdn, const GHT ptr, GHT usize,
     prof_tctx_t *tctx);
-void	prof_free_sampled_object(tsd_t *tsd, size_t usize, prof_tctx_t *tctx);
-void	bt_init(prof_bt_t *bt, void **vec);
+void	prof_free_sampled_object(tsd_t *tsd, GHT usize, prof_tctx_t *tctx);
+void	bt_init(prof_bt_t *bt, GHT *vec);
 void	prof_backtrace(prof_bt_t *bt);
 prof_tctx_t	*prof_lookup(tsd_t *tsd, prof_bt_t *bt);
 #ifdef JEMALLOC_JET
-size_t	prof_tdata_count(void);
-size_t	prof_bt_count(void);
+GHT	prof_tdata_count(void);
+GHT	prof_bt_count(void);
 const prof_cnt_t *prof_cnt_all(void);
 typedef int (prof_dump_open_t)(bool, const char *);
 extern prof_dump_open_t *prof_dump_open;
@@ -301,7 +301,7 @@ bool	prof_mdump(tsd_t *tsd, const char *filename);
 void	prof_gdump(tsdn_t *tsdn);
 prof_tdata_t	*prof_tdata_init(tsd_t *tsd);
 prof_tdata_t	*prof_tdata_reinit(tsd_t *tsd, prof_tdata_t *tdata);
-void	prof_reset(tsd_t *tsd, size_t lg_sample);
+void	prof_reset(tsd_t *tsd, GHT lg_sample);
 void	prof_tdata_cleanup(tsd_t *tsd);
 bool	prof_active_get(tsdn_t *tsdn);
 bool	prof_active_set(tsdn_t *tsdn, bool active);
@@ -330,21 +330,21 @@ void	prof_sample_threshold_update(prof_tdata_t *tdata);
 bool	prof_active_get_unlocked(void);
 bool	prof_gdump_get_unlocked(void);
 prof_tdata_t	*prof_tdata_get(tsd_t *tsd, bool create);
-prof_tctx_t	*prof_tctx_get(tsdn_t *tsdn, const void *ptr);
-void	prof_tctx_set(tsdn_t *tsdn, const void *ptr, size_t usize,
+prof_tctx_t	*prof_tctx_get(tsdn_t *tsdn, const GHT ptr);
+void	prof_tctx_set(tsdn_t *tsdn, const GHT ptr, GHT usize,
     prof_tctx_t *tctx);
-void	prof_tctx_reset(tsdn_t *tsdn, const void *ptr, size_t usize,
-    const void *old_ptr, prof_tctx_t *tctx);
-bool	prof_sample_accum_update(tsd_t *tsd, size_t usize, bool commit,
+void	prof_tctx_reset(tsdn_t *tsdn, const GHT ptr, GHT usize,
+    const GHT old_ptr, prof_tctx_t *tctx);
+bool	prof_sample_accum_update(tsd_t *tsd, GHT usize, bool commit,
     prof_tdata_t **tdata_out);
-prof_tctx_t	*prof_alloc_prep(tsd_t *tsd, size_t usize, bool prof_active,
+prof_tctx_t	*prof_alloc_prep(tsd_t *tsd, GHT usize, bool prof_active,
     bool update);
-void	prof_malloc(tsdn_t *tsdn, const void *ptr, size_t usize,
+void	prof_malloc(tsdn_t *tsdn, const GHT ptr, GHT usize,
     prof_tctx_t *tctx);
-void	prof_realloc(tsd_t *tsd, const void *ptr, size_t usize,
-    prof_tctx_t *tctx, bool prof_active, bool updated, const void *old_ptr,
-    size_t old_usize, prof_tctx_t *old_tctx);
-void	prof_free(tsd_t *tsd, const void *ptr, size_t usize);
+void	prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize,
+    prof_tctx_t *tctx, bool prof_active, bool updated, const GHT old_ptr,
+    GHT old_usize, prof_tctx_t *old_tctx);
+void	prof_free(tsd_t *tsd, const GHT ptr, GHT usize);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_PROF_C_))
@@ -400,7 +400,7 @@ prof_tdata_get(tsd_t *tsd, bool create)
 }
 
 JEMALLOC_ALWAYS_INLINE prof_tctx_t *
-prof_tctx_get(tsdn_t *tsdn, const void *ptr)
+prof_tctx_get(tsdn_t *tsdn, const GHT ptr)
 {
 	if (unlikely (!config_prof || ptr == NULL))
 		return NULL;
@@ -408,7 +408,7 @@ prof_tctx_get(tsdn_t *tsdn, const void *ptr)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_tctx_set(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
+prof_tctx_set(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
 {
 	cassert(config_prof);
 	assert(ptr != NULL);
@@ -416,7 +416,7 @@ prof_tctx_set(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_tctx_reset(tsdn_t *tsdn, const void *ptr, size_t usize, const void *old_ptr,
+prof_tctx_reset(tsdn_t *tsdn, const GHT ptr, GHT usize, const GHT old_ptr,
     prof_tctx_t *old_tctx)
 {
 	cassert(config_prof);
@@ -426,7 +426,7 @@ prof_tctx_reset(tsdn_t *tsdn, const void *ptr, size_t usize, const void *old_ptr
 }
 
 JEMALLOC_ALWAYS_INLINE bool
-prof_sample_accum_update(tsd_t *tsd, size_t usize, bool update,
+prof_sample_accum_update(tsd_t *tsd, GHT usize, bool update,
     prof_tdata_t **tdata_out)
 {
 	prof_tdata_t *tdata;
@@ -457,7 +457,7 @@ prof_sample_accum_update(tsd_t *tsd, size_t usize, bool update,
 }
 
 JEMALLOC_ALWAYS_INLINE prof_tctx_t *
-prof_alloc_prep(tsd_t *tsd, size_t usize, bool prof_active, bool update)
+prof_alloc_prep(tsd_t *tsd, GHT usize, bool prof_active, bool update)
 {
 	prof_tctx_t *ret;
 	prof_tdata_t *tdata;
@@ -479,7 +479,7 @@ prof_alloc_prep(tsd_t *tsd, size_t usize, bool prof_active, bool update)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_malloc(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
+prof_malloc(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
 {
 	cassert(config_prof);
 	assert(ptr != NULL);
@@ -492,8 +492,8 @@ prof_malloc(tsdn_t *tsdn, const void *ptr, size_t usize, prof_tctx_t *tctx)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_realloc(tsd_t *tsd, const void *ptr, size_t usize, prof_tctx_t *tctx,
-    bool prof_active, bool updated, const void *old_ptr, size_t old_usize,
+prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize, prof_tctx_t *tctx,
+    bool prof_active, bool updated, const GHT old_ptr, GHT old_usize,
     prof_tctx_t *old_tctx)
 {
 	bool sampled, old_sampled;
@@ -529,7 +529,7 @@ prof_realloc(tsd_t *tsd, const void *ptr, size_t usize, prof_tctx_t *tctx,
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_free(tsd_t *tsd, const void *ptr, size_t usize)
+prof_free(tsd_t *tsd, const GHT ptr, GHT usize)
 {
 	prof_tctx_t *tctx = prof_tctx_get(tsd_tsdn(tsd), ptr);
 

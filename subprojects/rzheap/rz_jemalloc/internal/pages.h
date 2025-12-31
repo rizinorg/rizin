@@ -9,15 +9,15 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	*pages_map(void *addr, size_t size, bool *commit);
-void	pages_unmap(void *addr, size_t size);
-void	*pages_trim(void *addr, size_t alloc_size, size_t leadsize,
-    size_t size, bool *commit);
-bool	pages_commit(void *addr, size_t size);
-bool	pages_decommit(void *addr, size_t size);
-bool	pages_purge(void *addr, size_t size);
-bool	pages_huge(void *addr, size_t size);
-bool	pages_nohuge(void *addr, size_t size);
+void	*pages_map(GHT addr, GHT size, bool *commit);
+void	pages_unmap(GHT addr, GHT size);
+void	*pages_trim(GHT addr, GHT alloc_size, GHT leadsize,
+    GHT size, bool *commit);
+bool	pages_commit(GHT addr, GHT size);
+bool	pages_decommit(GHT addr, GHT size);
+bool	pages_purge(GHT addr, GHT size);
+bool	pages_huge(GHT addr, GHT size);
+bool	pages_nohuge(GHT addr, GHT size);
 void	pages_boot(void);
 
 #endif /* JEMALLOC_H_EXTERNS */

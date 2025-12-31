@@ -32,7 +32,7 @@ struct {								\
     } while (0)
 
 #define	qr_meld(a_qr_a, a_qr_b, a_field) do {				\
-	void *t;							\
+	GHT t;							\
 	(a_qr_a)->a_field.qre_prev->a_field.qre_next = (a_qr_b);	\
 	(a_qr_b)->a_field.qre_prev->a_field.qre_next = (a_qr_a);	\
 	t = (a_qr_a)->a_field.qre_prev;					\

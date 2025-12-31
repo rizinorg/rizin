@@ -51,7 +51,7 @@
 #define	JEMALLOC_VALGRIND_REALLOC(moved, tsdn, ptr, usize, ptr_null,	\
     old_ptr, old_usize, old_rzsize, old_ptr_null, zero) do {		\
 	if (unlikely(in_valgrind)) {					\
-		size_t rzsize = p2rz(tsdn, ptr);			\
+		GHT rzsize = p2rz(tsdn, ptr);			\
 									\
 		if (!JEMALLOC_VALGRIND_REALLOC_MOVED_##moved(ptr,	\
 		    old_ptr)) {						\
@@ -59,7 +59,7 @@
 			    usize, rzsize);				\
 			if (zero && old_usize < usize) {		\
 				valgrind_make_mem_defined(		\
-				    (void *)((uintptr_t)ptr +		\
+				    (GHT )((uintptr_t)ptr +		\
 				    old_usize), usize - old_usize);	\
 			}						\
 		} else {						\
@@ -70,9 +70,9 @@
 			}						\
 			if (!JEMALLOC_VALGRIND_REALLOC_PTR_NULL_##	\
 			    ptr_null(ptr)) {				\
-				size_t copy_size = (old_usize < usize)	\
+				GHT copy_size = (old_usize < usize)	\
 				    ?  old_usize : usize;		\
-				size_t tail_size = usize - copy_size;	\
+				GHT tail_size = usize - copy_size;	\
 				VALGRIND_MALLOCLIKE_BLOCK(ptr, usize,	\
 				    rzsize, false);			\
 				if (copy_size > 0) {			\
@@ -81,7 +81,7 @@
 				}					\
 				if (zero && tail_size > 0) {		\
 					valgrind_make_mem_defined(	\
-					    (void *)((uintptr_t)ptr +	\
+					    (GHT )((uintptr_t)ptr +	\
 					    copy_size), tail_size);	\
 				}					\
 			}						\
@@ -113,10 +113,10 @@
 #ifdef JEMALLOC_H_EXTERNS
 
 #ifdef JEMALLOC_VALGRIND
-void	valgrind_make_mem_noaccess(void *ptr, size_t usize);
-void	valgrind_make_mem_undefined(void *ptr, size_t usize);
-void	valgrind_make_mem_defined(void *ptr, size_t usize);
-void	valgrind_freelike_block(void *ptr, size_t usize);
+void	valgrind_make_mem_noaccess(GHT ptr, GHT usize);
+void	valgrind_make_mem_undefined(GHT ptr, GHT usize);
+void	valgrind_make_mem_defined(GHT ptr, GHT usize);
+void	valgrind_freelike_block(GHT ptr, GHT usize);
 #endif
 
 #endif /* JEMALLOC_H_EXTERNS */

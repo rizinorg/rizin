@@ -32,8 +32,8 @@
 #  endif
 #endif
 
-#define	ZU(z)	((size_t)z)
-#define	ZI(z)	((ssize_t)z)
+#define	ZU(z)	((GHT)z)
+#define	ZI(z)	((GHST)z)
 #define	QU(q)	((uint64_t)q)
 #define	QI(q)	((int64_t)q)
 
@@ -43,7 +43,7 @@
 #define	KQI(q)	QI(q##LL)
 
 #ifndef __DECONST
-#  define	__DECONST(type, var)	((type)(uintptr_t)(const void *)(var))
+#  define	__DECONST(type, var)	((type)(uintptr_t)(const GHT )(var))
 #endif
 
 #ifndef JEMALLOC_HAS_RESTRICT

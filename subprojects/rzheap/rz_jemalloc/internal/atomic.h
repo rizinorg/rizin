@@ -50,14 +50,14 @@ uint32_t	atomic_add_uint32(uint32_t *p, uint32_t x);
 uint32_t	atomic_sub_uint32(uint32_t *p, uint32_t x);
 bool	atomic_cas_uint32(uint32_t *p, uint32_t c, uint32_t s);
 void	atomic_write_uint32(uint32_t *p, uint32_t x);
-void	*atomic_add_p(void **p, void *x);
-void	*atomic_sub_p(void **p, void *x);
-bool	atomic_cas_p(void **p, void *c, void *s);
-void	atomic_write_p(void **p, const void *x);
-size_t	atomic_add_z(size_t *p, size_t x);
-size_t	atomic_sub_z(size_t *p, size_t x);
-bool	atomic_cas_z(size_t *p, size_t c, size_t s);
-void	atomic_write_z(size_t *p, size_t x);
+void	*atomic_add_p(GHT *p, GHT x);
+void	*atomic_sub_p(GHT *p, GHT x);
+bool	atomic_cas_p(GHT *p, GHT c, GHT s);
+void	atomic_write_p(GHT *p, const GHT x);
+GHT	atomic_add_z(GHT *p, GHT x);
+GHT	atomic_sub_z(GHT *p, GHT x);
+bool	atomic_cas_z(GHT *p, GHT c, GHT s);
+void	atomic_write_z(GHT *p, GHT x);
 unsigned	atomic_add_u(unsigned *p, unsigned x);
 unsigned	atomic_sub_u(unsigned *p, unsigned x);
 bool	atomic_cas_u(unsigned *p, unsigned c, unsigned s);
@@ -133,31 +133,31 @@ atomic_write_uint32(uint32_t *p, uint32_t x)
 
 /******************************************************************************/
 /* Pointer operations. */
-JEMALLOC_INLINE void *
-atomic_add_p(void **p, void *x)
+JEMALLOC_INLINE GHT 
+atomic_add_p(GHT *p, GHT x)
 {
 	if (sizeof (*p) == 8) {
-		return ((void *)(size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)(size_t)x));
+		return ((GHT )(GHT)atomic_add_uint64((uint64_t *)p, (uint64_t)(GHT)x));
 	}
-	return ((void *)(size_t)atomic_add_uint32((uint32_t *)(size_t)p, (uint32_t)(size_t)x));
+	return ((GHT )(GHT)atomic_add_uint32((uint32_t *)(GHT)p, (uint32_t)(GHT)x));
 }
 
 #if 0
-JEMALLOC_INLINE void *
-atomic_sub_p(void **p, void *x)
+JEMALLOC_INLINE GHT 
+atomic_sub_p(GHT *p, GHT x)
 {
 
 #if (LG_SIZEOF_PTR == 3)
-	return ((void *)atomic_add_uint64((uint64_t *)p,
+	return ((GHT )atomic_add_uint64((uint64_t *)p,
 	    (uint64_t)-((int64_t)x)));
 #elif (LG_SIZEOF_PTR == 2)
-	return ((void *)atomic_add_uint32((uint32_t *)p,
+	return ((GHT )atomic_add_uint32((uint32_t *)p,
 	    (uint32_t)-((int32_t)x)));
 #endif
 }
 
 JEMALLOC_INLINE bool
-atomic_cas_p(void **p, void *c, void *s)
+atomic_cas_p(GHT *p, GHT c, GHT s)
 {
 
 #if (LG_SIZEOF_PTR == 3)
@@ -170,41 +170,41 @@ atomic_cas_p(void **p, void *c, void *s)
 #endif
 
 JEMALLOC_INLINE void
-atomic_write_p(void **p, const void *x)
+atomic_write_p(GHT *p, const GHT x)
 {
 
 #if (LG_SIZEOF_PTR == 3)
-	atomic_write_uint64((uint64_t *)p, (uint64_t)(size_t)x);
+	atomic_write_uint64((uint64_t *)p, (uint64_t)(GHT)x);
 #elif (LG_SIZEOF_PTR == 2)
-	atomic_write_uint32((uint32_t *)p, (uint32_t)(size_t)x);
+	atomic_write_uint32((uint32_t *)p, (uint32_t)(GHT)x);
 #endif
 }
 
 /******************************************************************************/
-/* size_t operations. */
-JEMALLOC_INLINE size_t
-atomic_add_z(size_t *p, size_t x)
+/* GHT operations. */
+JEMALLOC_INLINE GHT
+atomic_add_z(GHT *p, GHT x)
 {
 	if (sizeof (*p) == 8) {
-		return ((size_t)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
+		return ((GHT)atomic_add_uint64((uint64_t *)p, (uint64_t)x));
 	}
-	return ((size_t)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
+	return ((GHT)atomic_add_uint32((uint32_t *)p, (uint32_t)x));
 }
 
-JEMALLOC_INLINE size_t
-atomic_sub_z(size_t *p, size_t x)
+JEMALLOC_INLINE GHT
+atomic_sub_z(GHT *p, GHT x)
 {
 	if (sizeof (*p) == 8) {
-		return ((size_t)atomic_add_uint64((uint64_t *)p,
+		return ((GHT)atomic_add_uint64((uint64_t *)p,
 		    (uint64_t)-((int64_t)x)));
 	}
-	return ((size_t)atomic_add_uint32((uint32_t *)p,
+	return ((GHT)atomic_add_uint32((uint32_t *)p,
 	    (uint32_t)-((int32_t)x)));
 }
 
 
 JEMALLOC_INLINE bool
-atomic_cas_z(size_t *p, size_t c, size_t s)
+atomic_cas_z(GHT *p, GHT c, GHT s)
 {
 	if (sizeof (*p) == 8) {
 		return (atomic_cas_uint64((uint64_t *)p, (uint64_t)c, (uint64_t)s));
@@ -215,7 +215,7 @@ atomic_cas_z(size_t *p, size_t c, size_t s)
 #if 0
 
 JEMALLOC_INLINE void
-atomic_write_z(size_t *p, size_t x)
+atomic_write_z(GHT *p, GHT x)
 {
 
 #if (LG_SIZEOF_PTR == 3)

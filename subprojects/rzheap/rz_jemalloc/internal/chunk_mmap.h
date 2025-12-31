@@ -9,9 +9,9 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	*chunk_alloc_mmap(void *new_addr, size_t size, size_t alignment,
+void	*chunk_alloc_mmap(GHT new_addr, GHT size, GHT alignment,
     bool *zero, bool *commit);
-bool	chunk_dalloc_mmap(void *chunk, size_t size);
+bool	chunk_dalloc_mmap(GHT chunk, GHT size);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/

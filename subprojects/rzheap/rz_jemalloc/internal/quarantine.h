@@ -13,15 +13,15 @@ typedef struct quarantine_s quarantine_t;
 
 struct quarantine_obj_s {
 	void	*ptr;
-	size_t	usize;
+	GHT	usize;
 };
 
 struct quarantine_s {
-	size_t			curbytes;
-	size_t			curobjs;
-	size_t			first;
+	GHT			curbytes;
+	GHT			curobjs;
+	GHT			first;
 #define	LG_MAXOBJS_INIT 10
-	size_t			lg_maxobjs;
+	GHT			lg_maxobjs;
 	quarantine_obj_t	objs[1]; /* Dynamically sized ring buffer. */
 };
 
@@ -30,7 +30,7 @@ struct quarantine_s {
 #ifdef JEMALLOC_H_EXTERNS
 
 void	quarantine_alloc_hook_work(tsd_t *tsd);
-void	quarantine(tsd_t *tsd, void *ptr);
+void	quarantine(tsd_t *tsd, GHT ptr);
 void	quarantine_cleanup(tsd_t *tsd);
 
 #endif /* JEMALLOC_H_EXTERNS */
