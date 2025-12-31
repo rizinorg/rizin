@@ -397,7 +397,7 @@ RUN
 NAME=FLIRT dump pat signature with CRLF line endings
 FILE==
 CMDS=<<EOF
-Fd bins/flirt/elf-x86/librust.pat.txt~?
+Fd bins/flirt/librust.pat~?
 EOF
 EXPECT=<<EOF
 55789
