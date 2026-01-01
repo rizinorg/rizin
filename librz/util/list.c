@@ -805,3 +805,14 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch) {
 	}
 	return rz_strbuf_drain(buf);
 }
+
+/**
+ * \brief Returns the next RzList node in the list.
+ *
+ * \deprecated Use the rz_list_next() macro instead. Function is retained only
+ *             until rz-bindgen wraps the aforementioned macro.
+ **/
+RZ_DEPRECATE RZ_API RZ_BORROW RzListIter *rz_list_get_next(RZ_NONNULL RzListIter *iter) {
+	rz_return_val_if_fail(iter, NULL);
+	return iter->next;
+}

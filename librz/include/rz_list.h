@@ -109,6 +109,8 @@ RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL
 RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);
 RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val, RZ_NONNULL RzListComparator cmp, void *user);
 
+RZ_DEPRECATE RZ_API RZ_BORROW RzListIter *rz_list_get_next(RZ_NONNULL RzListIter *iter);
+
 #ifdef __cplusplus
 }
 #endif
