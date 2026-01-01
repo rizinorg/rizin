@@ -98,7 +98,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	fprintf(out, "S70500000000FA\n");
 	fclose(out);
 	out = NULL;
-	return 0;
+	return count;
 }
 
 static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {

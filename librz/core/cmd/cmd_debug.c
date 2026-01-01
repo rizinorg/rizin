@@ -1016,7 +1016,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 }
 
 static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
-	CMD_CHECK_DEBUG_DEAD(core);
+	// Only check debug mode when no argument is provided (symbol resolution needed)
+	// With address arguments we can still work in static mode
+	if (!arg || arg[0] == '\0') {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
 #if HAVE_JEMALLOC
 	if (core->rasm->bits == 64) {
 		cmd_dbg_map_jemalloc_64(core, type, arg);
