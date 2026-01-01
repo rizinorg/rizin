@@ -144,17 +144,25 @@ bool test_rz_direct_solver() {
 bool test_rop_cache() {
 	RzCore *core = setup_rz_core("x86", 64);
 	mu_assert_notnull(core, "setup_rz_core failed");
-	mu_assert_null(core->analysis->ht_rop, "ht_rop should be NULL initially");
-	ut8 buf[8];
-	rz_hex_str2bin("48C7C301000000C3", buf);
-	rz_io_write_at(core->io, 0, buf, 8);
 	rz_config_set_b(core->config, "rop.cache", true);
-	RzRopSearchContext *context = rz_core_rop_search_context_new(
-		core, "mov", false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, NULL);
-	RzCmdStatus status = rz_core_rop_search(core, context);
-	mu_assert_eq(status, RZ_CMD_STATUS_OK, "rop search should succeed");
-	mu_assert_notnull(core->analysis->ht_rop, "ht_rop should be initialized after cached search");
-	rz_core_rop_search_context_free(context);
+
+	const char *greparg = "mov";
+	const char *expected = "0x00000000: mov rbx, 1; ret;\n";
+	ut64 cache_key = rz_str_djb2_hash(greparg);
+
+	core->analysis->ht_rop = ht_up_new(NULL, free);
+	ht_up_insert(core->analysis->ht_rop, cache_key, strdup(expected));
+	char *cached = ht_up_find(core->analysis->ht_rop, cache_key, NULL);
+	mu_assert_streq(cached, expected, "cache store failed");
+
+	rz_cons_new();
+	RzRopSearchContext *ctx = rz_core_rop_search_context_new(
+		core, greparg, false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, NULL);
+	rz_core_rop_search(core, ctx);
+	rz_core_rop_search_context_free(ctx);
+	mu_assert_streq(rz_cons_get_buffer(), expected, "cache retrieval failed");
+	rz_cons_free();
+
 	rz_core_free(core);
 	mu_end;
 }
