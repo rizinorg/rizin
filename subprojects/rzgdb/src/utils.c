@@ -11,7 +11,7 @@
  * Function creates the checksum
  * for the given command
  * - command : is used to calculate the checksum needs to be null terminated
- * @returns : calculated checksum
+ * \returns : calculated checksum
  */
 uint8_t cmd_checksum(const char *command) {
 	uint8_t sum = 0;
@@ -56,7 +56,7 @@ uint64_t unpack_uint64_co(char *buff, int len) {
 
 /**
  * Converts a given hex character into its int value
- * @returns value of hex or -1 on error
+ * \returns value of hex or -1 on error
  */
 int hex2int(int ch) {
 	if (ch >= 'a' && ch <= 'f') {
@@ -73,7 +73,7 @@ int hex2int(int ch) {
 
 /**
  * Converts a given nibble (4bit) into its hex representation
- * @returns hex char or -1 on error
+ * \returns hex char or -1 on error
  */
 int int2hex(int i) {
 	if (i >= 0 && i <= 9) {
