@@ -192,10 +192,10 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
 
 #ifdef PT_GETEVENTMSG
 /*
- * @brief Handle PTRACE_EVENT_* when receiving SIGTRAP
+ * \brief Handle PTRACE_EVENT_* when receiving SIGTRAP
  *
- * @param dowait Do waitpid to consume any signal in the newly created task
- * @return RzDebugReasonType,
+ * \param dowait Do waitpid to consume any signal in the newly created task
+ * \return RzDebugReasonType,
  * - RZ_DEBUG_REASON_UNKNOWN if the ptrace_event cannot be handled,
  * - RZ_DEBUG_REASON_ERROR if a ptrace command failed.
  *
@@ -286,11 +286,11 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 #endif
 
 /*
- * @brief Search for the parent of the newly created task and
+ * \brief Search for the parent of the newly created task and
  * handle the pending SIGTRAP with PTRACE_EVENT_*
  *
- * @param tid, TID of the new task
- * @return RzDebugReasonType, Debug reason
+ * \param tid, TID of the new task
+ * \return RzDebugReasonType, Debug reason
  */
 static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid) {
 	int ret, status;

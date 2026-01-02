@@ -103,7 +103,7 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 	} while (0)
 
 /**
- * @param width maximum nibbles per address
+ * \param width maximum nibbles per address
  */
 static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, size_t width) {
 	static const char *fmt[9] = {

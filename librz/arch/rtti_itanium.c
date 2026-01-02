@@ -534,12 +534,12 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 }
 
 /**
- * @brief Try to parse as much valid looking RTTI as you can
+ * \brief Try to parse as much valid looking RTTI as you can
  *
- * @param context
- * @param vtable_addr
- * @param rtti_addr
- * @return class_type_info* NULL if not even default class RTTI could be parsed or error
+ * \param context
+ * \param vtable_addr
+ * \param rtti_addr
+ * \return class_type_info* NULL if not even default class RTTI could be parsed or error
  */
 static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
 	/*
@@ -793,10 +793,10 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 }
 
 /**
- * @brief Add any base class information about the type into analysis/classes
+ * \brief Add any base class information about the type into analysis/classes
  *
- * @param context
- * @param cti
+ * \param context
+ * \param cti
  */
 static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
 	class_type_info base_info;
