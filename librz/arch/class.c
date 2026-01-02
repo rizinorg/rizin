@@ -1267,11 +1267,11 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 }
 
 /**
- * @brief Creates RzGraph from class inheritance information where
+ * \brief Creates RzGraph from class inheritance information where
  *        each node has RzGraphNodeInfo as generic data
  *
- * @param analysis
- * @return RzGraph* NULL if failure
+ * \param analysis
+ * \return RzGraph* NULL if failure
  */
 RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);

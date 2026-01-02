@@ -232,14 +232,14 @@ static bool is_xmm_reg(const ZydisDecodedOperand op) {
 /**
  * Translates operand N to esil
  *
- * @param  Getarg  Structure with Instruction & Operands
- * @param  n       Operand index
- * @param  set     if 1 it adds set (=) to the operand
- * @param  setop   Extra operation for the set (^, -, +, etc...)
- * @param  sel     Selector for output buffer in staic array
- * @param  bitsize Size of operand in bits
- * @param  addr	   pc value
- * @return         Pointer to esil operand in static array
+ * \param  Getarg  Structure with Instruction & Operands
+ * \param  n       Operand index
+ * \param  set     if 1 it adds set (=) to the operand
+ * \param  setop   Extra operation for the set (^, -, +, etc...)
+ * \param  sel     Selector for output buffer in staic array
+ * \param  bitsize Size of operand in bits
+ * \param  addr	   pc value
+ * \return         Pointer to esil operand in static array
  */
 static RZ_OWN RZ_BORROW char *getarg(RzAnalysis *a, struct Getarg *gop, size_t n, size_t set, char *setop, size_t sel, RZ_OUT ut32 *bitsize, ut64 addr) {
 	X86ZYDISContext *zydx = (X86ZYDISContext *)a->plugin_data;
