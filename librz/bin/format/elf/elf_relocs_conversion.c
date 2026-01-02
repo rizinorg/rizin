@@ -298,7 +298,7 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	ut64 Pa = P & 0xfffffffc;
 	bool T = 0;
 	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, rel->sym);
-	if (symbol && strcmp(symbol->type, RZ_BIN_TYPE_FUNC_STR) == 0) {
+	if (symbol && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 		// Check for LSB to know if symbol addresses thumb instruction
 		T = (symbol->vaddr & 1) ? 1 : 0;
 	}
