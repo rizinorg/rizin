@@ -217,13 +217,13 @@ static bool is_xmm_reg(cs_x86_op op) {
 /**
  * Translates operand N to esil
  *
- * @param  handle  csh
- * @param  insn    cs_insn
- * @param  n       Operand index
- * @param  set     if 1 it adds set (=) to the operand
- * @param  setoper Extra operation for the set (^, -, +, etc...)
- * @param  sel     Selector for output buffer in staic array
- * @return         Pointer to esil operand in static array
+ * \param  Getarg  Structure with Instruction & Operands
+ * \param  n       Operand index
+ * \param  set     if 1 it adds set (=) to the operand
+ * \param  setop   Extra operation for the set (^, -, +, etc...)
+ * \param  sel     Selector for output buffer in staic array
+ * \param  bitsize Size of operand in bits
+ * \return         Pointer to esil operand in static array
  */
 static char *getarg(RzAnalysis *a, struct Getarg *gop, int n, int set, char *setop, int sel, ut32 *bitsize) {
 	X86CSContext *ctx = (X86CSContext *)a->plugin_data;

@@ -82,9 +82,9 @@ static ut64 base36_decode(const char *str) {
 }
 
 /*
- * @brief Initialize the key for enc/decrypting KDNet packet with the type Data.
+ * \brief Initialize the key for enc/decrypting KDNet packet with the type Data.
  *
- * @param resbuf, the buffer that contains the KDNet Data of a Response packet.
+ * \param resbuf, the buffer that contains the KDNet Data of a Response packet.
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
 	RzHashSize digest_size = 0;
@@ -340,9 +340,9 @@ end:
 }
 
 /*
- * @brief Respond to the Poke packet with a Response packet
+ * \brief Respond to the Poke packet with a Response packet
  *
- * @param pokedata, the buffer than contains the KDNet Data of a Poke packet
+ * \param pokedata, the buffer than contains the KDNet Data of a Poke packet
  */
 static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	size_t i;
