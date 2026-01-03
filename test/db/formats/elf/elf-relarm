@@ -234,9 +234,8 @@ NAME=arm R_ARM_PREL31 relocation
 FILE=bins/elf/arm-reloc-prel31.o
 CMDS=<<EOF
 ir~R_ARM_PREL31?
-s 0x08000038
-pf w
-pd 1
+pf w @ 0x08000038
+pd 1 @ 0x08000038
 EOF
 EXPECT=<<EOF
 1
@@ -253,12 +252,9 @@ NAME=arm call/jump relocations
 FILE=bins/elf/arm-reloc-call.o
 CMDS=<<EOF
 ir
-s 0x08000038
-pd 1
-s 0x0800003c
-pd 1
-s 0x08000040
-pd 1
+pd 1 @ 0x08000038
+pd 1 @ 0x0800003c
+pd 1 @ 0x08000040
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type         name 
@@ -280,8 +276,7 @@ NAME=arm alu group relocations
 FILE=bins/elf/arm-reloc-alu-group.o
 CMDS=<<EOF
 ir
-s 0x08000038
-pd 2
+pd 2 @ 0x08000038
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type            name 
@@ -300,9 +295,8 @@ NAME=arm dynamic R_ARM_JUMP_SLOT relocation
 FILE=bins/elf/arm-reloc-jump-slot.so
 CMDS=<<EOF
 ir
-s 0x000011c4
-pf w
-pd 1
+pf w @ 0x000011c4
+pd 1 @ 0x000011c4
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type            name        
@@ -318,9 +312,8 @@ NAME=thumb32 R_ARM_THM_JUMP24 relocation
 FILE=bins/elf/arm-reloc-thm-jump24.o
 CMDS=<<EOF
 ir
-s 0x08000034
-pd 1
-pf w
+pd 1 @ 0x08000034
+pf w @ 0x08000034
 EOF
 EXPECT=<<EOF
      vaddr      paddr     target type             name 
