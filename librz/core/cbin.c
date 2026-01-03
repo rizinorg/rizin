@@ -1966,6 +1966,16 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 	void **iter;
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 
+	bool color_enabled = rz_config_get_i(core->config, "scr.color") > 0;
+	char color_autoname[32], color_reset[32], color_name[32];
+	if (color_enabled) {
+		RzColor color_autoname_val = rz_cons_pal_get("label");
+		RzColor color_name_val = rz_cons_pal_get("other");
+		rz_cons_rgb_str(color_autoname, sizeof(color_autoname), &color_autoname_val);
+		rz_cons_rgb_str(color_name, sizeof(color_name), &color_name_val);
+		strcpy(color_reset, "\x1b[0m");
+	}
+
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "dXXssnss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
 
@@ -2000,16 +2010,32 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			rz_strf(addr_value, "0x%08" PFMT64x, addr);
 		}
 
+		bool is_autoname = rz_str_startswith(symbol->name, "unknown_");
+
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("%s %" PFMT64u " %s%s%s\n",
-				addr_value, size,
-				rz_str_get(symbol->libname),
-				sn.libname ? " " : "",
-				sn.symbolname);
+			if (color_enabled) {
+				rz_cons_printf("%s%s %" PFMT64u " %s%s%s%s\n",
+					is_autoname ? color_autoname : color_name,
+					addr_value, size,
+					rz_str_get(symbol->libname),
+					sn.libname ? " " : "",
+					sn.symbolname,
+					color_reset);
+			} else {
+				rz_cons_printf("%s %" PFMT64u " %s%s%s\n",
+					addr_value, size,
+					rz_str_get(symbol->libname),
+					sn.libname ? " " : "",
+					sn.symbolname);
+			}
 			break;
 		case RZ_OUTPUT_MODE_QUIETEST:
-			rz_cons_printf("%s\n", sn.symbolname);
+			if (color_enabled) {
+				rz_cons_printf("%s%s%s\n", is_autoname ? color_autoname : color_name, sn.symbolname, color_reset);
+			} else {
+				rz_cons_printf("%s\n", sn.symbolname);
+			}
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -2030,19 +2056,38 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 				pj_kn(state->d.pj, "paddr", symbol->paddr);
 			}
 			pj_kb(state->d.pj, "is_imported", symbol->is_imported);
+			pj_kb(state->d.pj, "is_autonamed", is_autoname);
 			pj_ks(state->d.pj, "lib", rz_str_get(symbol->libname));
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "dXXssnss",
-				symbol->ordinal,
-				symbol->paddr,
-				addr,
-				symbol->bind ? symbol->bind : "NONE",
-				symbol->type ? symbol->type : "NONE",
-				size,
-				rz_str_get(symbol->libname),
-				rz_str_get_null(sn.symbolname));
+			if (color_enabled && sn.symbolname) {
+				char *colored_ordinal = rz_str_newf("%s%d", is_autoname ? color_autoname : color_name, symbol->ordinal);
+				char *colored_name = rz_str_newf("%s%s", sn.symbolname, color_reset);
+
+				rz_table_add_rowf(state->d.t, "sXXssnss",
+					colored_ordinal,
+					symbol->paddr,
+					addr,
+					symbol->bind ? symbol->bind : "NONE",
+					symbol->type ? symbol->type : "NONE",
+					size,
+					rz_str_get(symbol->libname),
+					colored_name);
+
+				free(colored_ordinal);
+				free(colored_name);
+			} else {
+				rz_table_add_rowf(state->d.t, "dXXssnss",
+					symbol->ordinal,
+					symbol->paddr,
+					addr,
+					symbol->bind ? symbol->bind : "NONE",
+					symbol->type ? symbol->type : "NONE",
+					size,
+					rz_str_get(symbol->libname),
+					rz_str_get_null(sn.symbolname));
+			}
 			break;
 		default:
 			rz_warn_if_reached();
