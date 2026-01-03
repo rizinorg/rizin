@@ -822,6 +822,61 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	}
 }
 
+// For arm group relocations related to ALU instructions
+static ut32 convert_alu_group_mask(ut32 X, int n) {
+	ut32 residual = X;
+	ut32 encoded_g_n = 0;
+
+	for (int current_n = 0; current_n <= n; current_n++) {
+		int msb;
+		int shift;
+
+		if (residual == 0) {
+			shift = 0;
+		} else {
+			for (msb = 30; msb >= 0; msb -= 2) {
+				if (residual & (0x3 << msb)) {
+					break;
+				}
+			}
+			shift = ((msb - 6) < 0) ? 0 : (msb - 6);
+		}
+
+		ut32 g_n = residual & (0xFF << shift);
+		encoded_g_n = (g_n >> shift) | ((g_n <= 0xff ? 0 : (32 - shift) / 2) << 8);
+
+		residual &= ~g_n;
+	}
+
+	return encoded_g_n;
+}
+
+// For arm group relocations not related to ALU instructions
+static ut32 convert_group_mask(ut32 X, int n) {
+	ut32 residual = X;
+
+	for (int current_n = 0; current_n <= n; current_n++) {
+		int msb;
+		int shift;
+
+		if (residual == 0) {
+			shift = 0;
+		} else {
+			for (msb = 30; msb >= 0; msb -= 2) {
+				if (residual & (0x3 << msb)) {
+					break;
+				}
+			}
+			shift = ((msb - 6) < 0) ? 0 : (msb - 6);
+		}
+
+		ut32 g_n = residual & (0xFF << shift);
+		residual &= ~g_n;
+	}
+
+	return residual;
+}
+
 /**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
@@ -839,14 +894,15 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	ut32 nbytes = 4;
 	ut8 buf[4] = { 0 };
 	ut64 val = 0;
+	ut16 offset = 0;
 
-	rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 	switch (rel->type) {
 	case R_ARM_NONE:
 		return;
 	case R_ARM_THM_JUMP24:
 		/* fall-thru */
-	case R_ARM_THM_PC22:
+	case R_ARM_THM_CALL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		// Encoding B  T4, BL T1, BLX T2: Val = S:I1:I2:imm10:imm11:0
 		// I1 = NOT(J1 EOR S)
 		// I2 = NOT(J2 EOR S)
@@ -864,16 +920,549 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 				(((~(val >> 11)) ^ (val >> 13)) & 0x0800) | // J2
 				((val >> 1) & 0x07ff), // imm11
 			big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
+
+	case R_ARM_ABS32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_REL32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->P;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_PC24:
+	/* fall through */
+	case R_ARM_PLT32:
+	/* fall through */
+	case R_ARM_CALL:
+	/* fall through */
+	case R_ARM_JUMP24:
+		val = fs->S + fs->A - fs->P;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x03FFFFFE, (val >> 2));
+		break;
+
+	case R_ARM_MOVW_PREL_NC:
+		val = fs->S + fs->A - fs->P;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_THM_MOVW_PREL_NC:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm4:i:imm3:imm8
+		val = fs->S + fs->A - fs->P;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val & 0xF000) >> 12) | // imm4
+			((val & 0x0800) >> 1); // i
+		keephw2 = (keephw2 & 0x8F00) |
+			((val & 0x0700) << 4) | // imm3
+			((val & 0x00FF)); // imm8
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_JUMP19:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = S:J1:J2:imm6:imm11:0
+		val = fs->S + fs->A - fs->P;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw1 = (keephw1 & 0xFBC0) |
+			((val >> 10) & 0x0400) | // S
+			((val >> 12) & 0x003F); // imm6
+		keephw2 = (keephw2 & 0xD000) |
+			(((val >> 19) & 1) << 13) | // J1
+			(((val >> 18) & 1) << 11) | // J2
+			((val >> 1) & 0x07FF); // imm11
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_ALU_PREL_11_0:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = i:imm3:imm8
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC); // S+A-Pa
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBFF) |
+			((val >> 1) & 0x0400); // i
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_ABS16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A;
+		rz_write_ble16(buf, (val & 0xFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_ABS12:
+		val = fs->S + fs->A;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		break;
+
+	case R_ARM_THM_ABS5:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = ((fs->S + fs->A) & 0x7C) >> 2;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xF83F) |
+			(val << 6);
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_ABS8:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A;
+		rz_write_ble8(buf, (val & 0xFF));
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_SBREL32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->B;
+		rz_write_ble32(buf, (val & 0xFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_PC8:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - (fs->P & 0xFFFFFFFC);
+		val = (val & 0x3FC) >> 2;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xFF00) | val;
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_GOTOFF32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->GOT;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_BASE_PREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		if (fs->S == 0) { // NUll symbol
+			val = fs->GOT + fs->A;
+		} else {
+			val = fs->B + fs->A;
+		}
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_GOT_BREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->A;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_BASE_ABS:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_write_ble32(buf, (fs->A & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_PREL31:
+		val = (fs->S + fs->A - fs->P) >> 1;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x7FFFFFFF, val);
+		break;
+
+	case R_ARM_MOVW_ABS_NC:
+		// val = imm4:imm12
+		val = (fs->S + fs->A) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_MOVT_ABS:
+		/* fall through */
+	case R_ARM_MOVT_PREL:
+		// val = imm4:imm12
+		val = (fs->S + fs->A) >> 16;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_THM_MOVW_ABS_NC:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) & 0xFFFF;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val >> 1) & 0x0400) | // i
+			((val >> 12) & 0x000F); // imm4
+
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_MOVT_ABS:
+		/* fall through */
+	case R_ARM_THM_MOVT_PREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) >> 16;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val >> 1) & 0x0400) | // i
+			((val >> 12) & 0x000F); // imm4
+
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_JUMP6:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = i:imm5
+		val = ((fs->S + fs->A) & 0x7E) >> 1;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xFD07) |
+			((val << 4) & 0x0200) | // i
+			((val << 3) & 0x00F8); // imm5
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_PC12:
+		// val = imm12
+		val = (fs->S + fs->A) & 0xFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		break;
+
+	case R_ARM_ABS32_NOI:
+		/* fall through */
+	case R_ARM_REL32_NOI:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_MOVW_BREL:
+		/* fall through */
+	case R_ARM_MOVW_BREL_NC:
+		// val = imm4:imm12
+		val = (fs->S + fs->A - fs->B) & 0xFFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_MOVT_BREL:
+		val = (fs->S + fs->A) >> 16;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_THM_MOVW_BREL:
+		/* fall through */
+	case R_ARM_THM_MOVW_BREL_NC:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A - fs->B) & 0xFFFF;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val >> 1) & 0x0400) | // i
+			((val >> 12) & 0x000F); // imm4
+
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_MOVT_BREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm4:i:imm3:imm8
+		val = (fs->S + fs->A) >> 16;
+		keephw1 = rz_read_ble16(&buf[0], big_endian);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+
+		keephw1 = (keephw1 & 0xFBF0) |
+			((val >> 1) & 0x0400) | // i
+			((val >> 12) & 0x000F); // imm4
+
+		keephw2 = (keephw2 & 0x8F00) |
+			((val << 4) & 0x7000) | // imm3
+			(val & 0x00FF); // imm8
+
+		rz_write_ble16(&buf[0], keephw1, big_endian);
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_GOT_PREL:
+		/* fall through */
+	case R_ARM_GOT_ABS:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->GOT + fs->A;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_GOT_BREL12:
+		/* fall through */
+	case R_ARM_TLS_IE12GP:
+		/* fall through */
+	case R_ARM_GOT_BREL12:
+		// val = imm12
+		val = (fs->G + fs->A) & 0xFFF; // G(S) + A - GOT_ORG
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		break;
+
+	case R_ARM_GOTOFF12:
+		// val = imm12
+		val = (fs->S + fs->A) & 0xFFF;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		break;
+
+	case R_ARM_THM_JUMP11:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val = imm11
+		val = ((fs->S + fs->A) & 0xFFE) >> 1;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xF800) | val;
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_THM_JUMP8:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		// val - imm8
+		val = ((fs->S + fs->A) & 0x1FE) >> 1;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw1 = (keephw1 & 0xFF00) | val;
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_TLS_GD32:
+		/* fall through */
+	case R_ARM_TLS_LDM32:
+		/* fall through */
+	case R_ARM_TLS_IE32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->GOT + fs->A;
+		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+
+	case R_ARM_ALU_PC_G0:
+		/* fall through */
+	case R_ARM_ALU_PC_G0_NC:
+		val = fs->S + fs->A - fs->P;
+		offset = convert_alu_group_mask(val, 0);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_ALU_PC_G1:
+		/* fall through */
+	case R_ARM_ALU_PC_G1_NC:
+		val = fs->S + fs->A - fs->P;
+		offset = convert_alu_group_mask(val, 1);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_ALU_PC_G2:
+		val = fs->S + fs->A - fs->P;
+		offset = convert_alu_group_mask(val, 2);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_LDR_SB_G0:
+		/* fall through */
+	case R_ARM_LDR_PC_G0:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 0);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_LDR_SB_G1:
+		/* fall through */
+	case R_ARM_LDR_PC_G1:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 1);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_LDR_SB_G2:
+		/* fall through */
+	case R_ARM_LDR_PC_G2:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 2);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_LDRS_SB_G0:
+		/* fall through */
+	case R_ARM_LDRS_PC_G0:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 0);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x0F0F, offset);
+		break;
+
+	case R_ARM_LDRS_SB_G1:
+		/* fall through */
+	case R_ARM_LDRS_PC_G1:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 1);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x0F0F, offset);
+		break;
+
+	case R_ARM_LDRS_SB_G2:
+		/* fall through */
+	case R_ARM_LDRS_PC_G2:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 2);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x0F0F, offset);
+		break;
+
+	case R_ARM_LDC_SB_G0:
+		/* fall through */
+	case R_ARM_LDC_PC_G0:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 0);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFF, offset);
+		break;
+
+	case R_ARM_LDC_SB_G1:
+		/* fall through */
+	case R_ARM_LDC_PC_G1:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 1);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFF, offset);
+		break;
+
+	case R_ARM_LDC_SB_G2:
+		/* fall through */
+	case R_ARM_LDC_PC_G2:
+		val = fs->S + fs->A;
+		offset = convert_group_mask(val, 2);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFF, offset);
+		break;
+
+	case R_ARM_ALU_SB_G0:
+		/* fall through */
+	case R_ARM_ALU_SB_G0_NC:
+		val = fs->S + fs->A - fs->B;
+		offset = convert_alu_group_mask(val, 0);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_ALU_SB_G1:
+		/* fall through */
+	case R_ARM_ALU_SB_G1_NC:
+		val = fs->S + fs->A - fs->B;
+		offset = convert_alu_group_mask(val, 1);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	case R_ARM_ALU_SB_G2:
+		val = fs->S + fs->A - fs->B;
+		offset = convert_alu_group_mask(val, 2);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, offset);
+		break;
+
+	/*
+		The following relocations are for Branch Future instructions in Armv8.1-M Mainline.
+		Check the docs: https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#56114armv81-m-mainline-branch-future-relocations
+	 */
+	case R_ARM_THM_BF16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = (fs->S + fs->A - fs->P) & 0x0001FFFE;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw2 = rz_read_ble16(buf + 2, big_endian);
+		// insn[10:1] = (val >> 2) & 0x3FF
+		// insn[11] = (val >> 1) & 0x1
+		// insn[20:16] = val >> 12
+		keephw1 = (keephw1 & 0xF800) | ((val >> 2) & 0x3FF) | (((val >> 1) & 0x1) << 11);
+		keephw2 = (keephw2 & 0xFFE0) | ((val >> 12) & 0x1F);
+
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_write_ble16(buf + 2, keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_ARM_THM_BF12:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->P;
+		val = val & 0x00001FFE;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw2 = rz_read_ble16(buf + 2, big_endian);
+		// insn[10:1] = (val >> 2) & 0x3FF
+		// insn[11] = (val >> 1) & 0x1
+		// insn[16] = val >> 12
+		keephw1 = (keephw1 & 0xF800) | ((val >> 2) & 0x3FF) | (((val >> 1) & 0x1) << 11);
+		keephw2 = (keephw2 & 0xFFFE) | ((val >> 12) & 0x1);
+
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_write_ble16(buf + 2, keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_ARM_THM_BF18:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->P;
+		val = val & 0x0007FFFE;
+		keephw1 = rz_read_ble16(buf, big_endian);
+		keephw2 = rz_read_ble16(buf + 2, big_endian);
+		// insn[10:1] = (val >> 2) & 0x3FF
+		// insn[11] = (val >> 1) & 0x1
+		// insn[22:16] = val >> 12
+		keephw1 = (keephw1 & 0xF800) | ((val >> 2) & 0x3FF) | (((val >> 1) & 0x1) << 11);
+		keephw2 = (keephw2 & 0xFF80) | ((val >> 12) & 0x7F);
+
+		rz_write_ble16(buf, keephw1, big_endian);
+		rz_write_ble16(buf + 2, keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	default:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->S + fs->A;
 		if (!rel->sym && rel->mode == DT_REL) {
 			val += rz_read_ble32(buf, big_endian);
 		}
 		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 	}
-	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 }
 
 /**
