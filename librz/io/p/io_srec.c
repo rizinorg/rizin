@@ -44,7 +44,7 @@ static void write_S3_record(FILE *fd, ut32 address, const ut8 *buffer, ut16 size
 		fprintf(fd, "%02x", buffer[j]);
 	}
 
-	fprintf(fd, "%02x\n", ~checksum & UT8_MAX);
+	fprintf(fd, "%02" PFMT32x "\n", ~checksum & UT8_MAX);
 }
 
 static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
