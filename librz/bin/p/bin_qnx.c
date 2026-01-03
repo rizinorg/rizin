@@ -222,8 +222,8 @@ beach:
 
 /*
  * Provides the info about the binary file
- * @param RzBinFile to extract the data from
- * @return RzBinInfo file with the info
+ * \param RzBinFile to extract the data from
+ * \return RzBinInfo file with the info
  */
 static RzBinInfo *qnx_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
@@ -342,8 +342,8 @@ static RzPVector /*<RzBinSection *>*/ *qnx_sections(RzBinFile *bf) {
 
 /*
  * Returns the sdb
- * @param RzBinFile
- * @return sdb of the bin_obj
+ * \param RzBinFile
+ * \return sdb of the bin_obj
  */
 static Sdb *qnx_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
@@ -356,8 +356,8 @@ static Sdb *qnx_get_sdb(RzBinFile *bf) {
 
 /*
  * Returns the base address of the image from the binary header
- * @param RzBinFile
- * @return image_base address
+ * \param RzBinFile
+ * \return image_base address
  */
 static ut64 qnx_baddr(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
@@ -385,8 +385,8 @@ static RzPVector /*<RzBinAddr *>*/ *qnx_entries(RzBinFile *bf) {
 }
 
 /*
- * @param RzBinFile
- * @return signature of the binary
+ * \param RzBinFile
+ * \return signature of the binary
  */
 static char *qnx_signature(RzBinFile *bf, bool json) {
 	char buf[64];
@@ -404,7 +404,7 @@ static char *qnx_signature(RzBinFile *bf, bool json) {
 }
 
 /*
- * @return: returns the vaddr
+ * \return: returns the vaddr
  */
 static ut64 qnx_get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;

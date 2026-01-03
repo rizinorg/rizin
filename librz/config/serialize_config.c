@@ -43,7 +43,7 @@ static bool load_config_cb(void *user, const SdbKv *kv) {
 }
 
 /**
- * @param exclude NULL-terminated array of keys to not load from the sdb.
+ * \param exclude NULL-terminated array of keys to not load from the sdb.
  */
 RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config,
 	RZ_NULLABLE const char *const *exclude, RZ_NULLABLE RzSerializeResultInfo *res) {

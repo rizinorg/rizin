@@ -16,7 +16,16 @@
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
 // Segfaults - stack overflow, because of recursion
-static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, const RzPVector /*<RzBinClass *>*/ *vec) {
+
+typedef enum {
+	TUI_CLASS_MODE_NONE = ' ',
+	TUI_CLASS_MODE_CLASSES = 'c',
+	TUI_CLASS_MODE_FIELDS = 'f',
+	TUI_CLASS_MODE_METHODS = 'm',
+	TUI_CLASS_MODE_DETAILS = 'd',
+} TuiClassMode;
+
+static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_c, const char *grep, const RzPVector /*<RzBinClass *>*/ *vec) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
 	RzListIter *iter;
 	RzBinClass *c, *cur = NULL;
@@ -27,7 +36,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 	bool found = false;
 
 	switch (mode) {
-	case 'c':
+	case TUI_CLASS_MODE_CLASSES:
 		rz_cons_printf("[hjkl_/Cfm]> classes:\n\n");
 		void **vec_it;
 		rz_pvector_foreach (vec, vec_it) {
@@ -73,7 +82,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 			return NULL; // show_class (core, mode, idx, _c, "", list);
 		}
 		return cur;
-	case 'f':
+	case TUI_CLASS_MODE_FIELDS:
 		// show fields
 		rz_cons_printf("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
 		rz_list_foreach (_c->fields, iter, f) {
@@ -128,7 +137,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 		}
 		return fur;
 		break;
-	case 'm':
+	case TUI_CLASS_MODE_METHODS:
 		// show methods
 		if (!_c) {
 			eprintf("No class selected.\n");
@@ -187,6 +196,10 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 			return NULL; // show_class (core, mode, idx, _c, grep, list);
 		}
 		return mur;
+		break;
+
+	default:
+		break;
 	}
 	return NULL;
 }
@@ -194,7 +207,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const 
 RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
-	int mode = 'c';
+	TuiClassMode mode = TUI_CLASS_MODE_CLASSES;
 	RzBinClass *cur = NULL;
 	RzBinSymbol *mur = NULL;
 	RzBinClassField *fur = NULL;
@@ -217,14 +230,16 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		}
 		ptr = show_class(core, mode, &index, cur, grep, vec);
 		switch (mode) {
-		case 'f':
+		case TUI_CLASS_MODE_FIELDS:
 			fur = (RzBinClassField *)ptr;
 			break;
-		case 'm':
+		case TUI_CLASS_MODE_METHODS:
 			mur = (RzBinSymbol *)ptr;
 			break;
-		case 'c':
+		case TUI_CLASS_MODE_CLASSES:
 			cur = (RzBinClass *)ptr;
+			break;
+		default:
 			break;
 		}
 
@@ -301,17 +316,17 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			}
 		} break;
 		case 'p':
-			if (mode == 'm' && mur) {
+			if (mode == TUI_CLASS_MODE_METHODS && mur) {
 				rz_core_seek(core, mur->vaddr, true);
 				rz_core_analysis_function_add(core, NULL, core->offset, false);
 				rz_core_cmd0(core, "pdf~..");
 			}
 			break;
 		case 'm': // methods
-			mode = 'm';
+			mode = TUI_CLASS_MODE_METHODS;
 			break;
 		case 'f': // fields
-			mode = 'f';
+			mode = TUI_CLASS_MODE_FIELDS;
 			break;
 		case 'h':
 		case 127: // backspace
@@ -319,10 +334,10 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		case 'Q':
 		case 'c':
 		case 'q':
-			if (mode == 'c') {
+			if (mode == TUI_CLASS_MODE_CLASSES) {
 				return true;
 			}
-			mode = 'c';
+			mode = TUI_CLASS_MODE_CLASSES;
 			index = oldcur;
 			break;
 		case '/':
@@ -332,7 +347,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		case ' ':
 		case '\r':
 		case '\n':
-			if (mur && mode == 'm') {
+			if (mur && mode == TUI_CLASS_MODE_METHODS) {
 				rz_core_seek(core, mur->vaddr, true);
 				return true;
 			}
@@ -343,7 +358,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			if (cur) {
 				oldcur = index;
 				index = 0;
-				mode = 'm';
+				mode = TUI_CLASS_MODE_METHODS;
 			}
 			break;
 		case '?':
@@ -435,13 +450,13 @@ static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	}
 }
 
-static const char *show_analysis_classes(RzCore *core, char mode, int *idx, RzPVector /*<SdbKv *>*/ *classes, const char *class_name) {
+static const char *show_analysis_classes(RzCore *core, TuiClassMode mode, int *idx, RzPVector /*<SdbKv *>*/ *classes, const char *class_name) {
 	bool show_color = rz_config_get_i(core->config, "scr.color");
 	int skip = *idx - 10;
 	const char *cur_class = NULL;
 	rz_cons_printf("[hjkl_/Cfm]> analysis classes:\n\n");
 
-	if (mode == 'd' && class_name) {
+	if (mode == TUI_CLASS_MODE_DETAILS && class_name) {
 		analysis_class_print(core->analysis, class_name);
 		return class_name;
 	}
@@ -486,7 +501,7 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	char command[1024];
 	RzPVector *classes = rz_analysis_class_get_all(core->analysis, true);
 	int oldcur = 0;
-	char mode = ' ';
+	TuiClassMode mode = TUI_CLASS_MODE_NONE;
 	const char *class_name = "";
 	RzLine *line = core->cons->line;
 
@@ -547,17 +562,17 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 		case 'Q':
 		case 'c':
 		case 'q':
-			if (mode == ' ') {
+			if (mode == TUI_CLASS_MODE_NONE) {
 				goto cleanup;
 			}
-			mode = ' ';
+			mode = TUI_CLASS_MODE_NONE;
 			index = oldcur;
 			break;
 		case 'l':
 		case ' ':
 		case '\r':
 		case '\n':
-			mode = 'd';
+			mode = TUI_CLASS_MODE_DETAILS;
 			break;
 		case '?':
 			rz_cons_clear00();
