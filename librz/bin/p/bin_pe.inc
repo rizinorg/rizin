@@ -537,6 +537,8 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 		}
 	case PE_IMAGE_REL_BASED_DIR64:
 		return "IMAGE_REL_BASED_DIR64";
+	case 15:
+    	return "IMAGE_REL_BASED_TYPE15";
 	default:
 		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
 		return "IMAGE_REL_BASED_UNKNOWN";
