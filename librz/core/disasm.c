@@ -1769,10 +1769,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	// fold_var = hide -> group the first two var with ellipsis in tail
 	ut32 group_num = strcmp(ds->fold_var, "group") ? 2 : 3;
 	while (iter_mov < group_num) {
-		if (!iter) {
-			rz_warn_if_reached();
-			break;
-		}
+		rz_goto_if_fail(iter, loop_end);
 		RzAnalysisVar *temp_var = rz_list_iter_get_data(iter);
 		const RzStackAddr off = temp_var->storage.stack_off;
 		const char sign = off >= 0 ? '+' : '-';
@@ -1780,6 +1777,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 		iter_mov++;
 		iter = rz_list_next(iter);
 	}
+loop_end:
 	// remove extra "; " in tail
 	rz_strbuf_slice(sb, 0, sb->len - 2);
 	if (!strcmp(ds->fold_var, "hide")) {
@@ -1832,12 +1830,10 @@ static void ds_show_fn_vars_lines(
 		if (iter_mov > 0) {
 			int cnt = 0;
 			while (cnt++ < iter_mov - 1) {
-				if (!iter) {
-					rz_warn_if_reached();
-					break;
-				}
+				rz_goto_if_fail(iter, loop_end);
 				iter = rz_list_next(iter);
 			}
+		loop_end:
 			continue;
 		}
 		ds_show_fn_var_line(ds, f, var);
