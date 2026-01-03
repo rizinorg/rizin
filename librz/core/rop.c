@@ -986,7 +986,7 @@ static void print_rop_dependencies(const RzRopGadgetInfo *gadget_info) {
 	}
 }
 
-static void print_rop_long_info_vec(const RzRopGadgetInfo *gadget_info, RzVector *lens, RzVector *add, RzPVector *asm_strs, RzPVector *hex_strs, int high_pad, bool utf8, bool colorize) {
+static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector *lens, RzVector *add, RzPVector *asm_strs, RzPVector *hex_strs, int high_pad, bool utf8, bool colorize) {
 	ut32 size = gadget_info->size;
 	size_t instr_count = 0;
 	int pad = 0;
@@ -1081,7 +1081,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 		free(hex);
 		rz_analysis_op_fini(&aop);
 	}
-	print_rop_long_info_vec(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
+	print_rop_long_info(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
 	free(rep_str);
 	rz_asm_op_fini(&asmop);
 	rz_vector_free(lens);
