@@ -1,25 +1,38 @@
-#ifndef RZ_HEAP_JEMALLOC_H
-#define RZ_HEAP_JEMALLOC_H
+// Allow re-entry for 32-bit pass
+#if !defined(RZ_HEAP_JEMALLOC_H_TYPES) || defined(INC_HEAP32)
 
-#include <rz_jemalloc/internal/jemalloc_internal.h>
-
-#define INC_HEAP32 1
-#include "rz_heap_jemalloc.h"
-#undef INC_HEAP32
-
-#undef GH
-#undef GHT
-#undef GHT_MAX
-
-#if INC_HEAP32
-#define GH(x)   x##_32
-#define GHT     ut32
-#define GHT_MAX UT32_MAX
-#else
+#ifndef INC_HEAP32
+// First pass: 64-bit
 #define GH(x)   x##_64
 #define GHT     ut64
 #define GHT_MAX UT64_MAX
+#define GHST    st64
+#else
+// Second pass: 32-bit
+#undef GH
+#undef GHT
+#undef GHT_MAX
+#undef GHST
+#define GH(x)   x##_32
+#define GHT     ut32
+#define GHT_MAX UT32_MAX
+#define GHST    st32
 #endif
+
+#include <rz_jemalloc/internal/jemalloc_internal.h>
+
+#ifndef INC_HEAP32
+#undef JEMALLOC_INTERNAL_H
+#define INC_HEAP32 1
+#include "rz_heap_jemalloc.h"
+#undef INC_HEAP32
+#define RZ_HEAP_JEMALLOC_H_TYPES
+#endif
+
+#endif // RZ_HEAP_JEMALLOC_H_TYPES
+
+#ifndef RZ_HEAP_JEMALLOC_H
+#define RZ_HEAP_JEMALLOC_H
 
 #undef PRINTF_A
 #undef PRINTF_YA

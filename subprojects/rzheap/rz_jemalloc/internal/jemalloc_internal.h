@@ -372,8 +372,8 @@ typedef unsigned szind_t;
 #define VARIABLE_ARRAY(type, name, count) type name[(count)]
 #endif
 
-#define GHT     ut64
-#define GHST    ut64
+// #define GHT     ut64
+// #define GHST    ut64
 
 #include "nstime.h"
 #include "valgrind.h"

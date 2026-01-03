@@ -37,7 +37,7 @@ typedef enum {
 
 typedef struct arena_runs_dirty_link_s arena_runs_dirty_link_t;
 typedef struct arena_avail_links_s arena_avail_links_t;
-typedef struct arena_run_s arena_run_t;
+typedef struct GH(arena_run_s) GH(arena_run_t);
 typedef struct arena_chunk_map_bits_s arena_chunk_map_bits_t;
 typedef struct arena_chunk_map_misc_s arena_chunk_map_misc_t;
 typedef struct arena_chunk_s arena_chunk_t;
@@ -52,7 +52,7 @@ typedef struct arena_tdata_s arena_tdata_t;
 #ifdef JEMALLOC_H_STRUCTS
 
 #ifdef JEMALLOC_ARENA_STRUCTS_A
-struct arena_run_s {
+struct GH(arena_run_s) {
 	/* Index of bin this run is associated with. */
 	szind_t		binind;
 
@@ -174,7 +174,7 @@ struct arena_chunk_map_misc_s {
 		};
 
 		/* Small region run metadata. */
-		arena_run_t			run;
+		GH(arena_run_t)			run;
 	};
 };
 typedef ph(arena_chunk_map_misc_t) arena_run_heap_t;
@@ -322,7 +322,7 @@ struct arena_bin_s {
 	 * Current run being used to service allocations of this bin's size
 	 * class.
 	 */
-	arena_run_t		*runcur;
+	GH(arena_run_t)		*runcur;
 
 	/*
 	 * Heap of non-full runs.  This heap is used when looking for an
