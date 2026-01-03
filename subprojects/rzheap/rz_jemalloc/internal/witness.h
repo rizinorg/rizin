@@ -1,10 +1,10 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct witness_s witness_t;
+typedef struct GH(witness_s) GH(witness_t);
 typedef unsigned witness_rank_t;
-typedef ql_head(witness_t) witness_list_t;
-typedef int witness_comp_t (const witness_t *, const witness_t *);
+typedef ql_head(GH(witness_t)) witness_list_t;
+typedef int witness_comp_t (const GH(witness_t) *, const GH(witness_t) *);
 
 /*
  * Lock ranks.  Witnesses with rank WITNESS_RANK_OMIT are completely ignored by
@@ -55,7 +55,7 @@ typedef int witness_comp_t (const witness_t *, const witness_t *);
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct witness_s {
+struct GH(witness_s) {
 	/* Name, used for printing lock order reversal messages. */
 	const char		*name;
 
@@ -73,33 +73,33 @@ struct witness_s {
 	witness_comp_t		*comp;
 
 	/* Linkage for thread's currently owned locks. */
-	ql_elm(witness_t)	link;
+	ql_elm(GH(witness_t))	link;
 };
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	witness_init(witness_t *witness, const char *name, witness_rank_t rank,
+void	witness_init(GH(witness_t) *witness, const char *name, witness_rank_t rank,
     witness_comp_t *comp);
 #ifdef JEMALLOC_JET
-typedef void (witness_lock_error_t)(const witness_list_t *, const witness_t *);
+typedef void (witness_lock_error_t)(const witness_list_t *, const GH(witness_t) *);
 extern witness_lock_error_t *witness_lock_error;
 #else
 void	witness_lock_error(const witness_list_t *witnesses,
-    const witness_t *witness);
+    const GH(witness_t) *witness);
 #endif
 #ifdef JEMALLOC_JET
-typedef void (witness_owner_error_t)(const witness_t *);
+typedef void (witness_owner_error_t)(const GH(witness_t) *);
 extern witness_owner_error_t *witness_owner_error;
 #else
-void	witness_owner_error(const witness_t *witness);
+void	witness_owner_error(const GH(witness_t) *witness);
 #endif
 #ifdef JEMALLOC_JET
-typedef void (witness_not_owner_error_t)(const witness_t *);
+typedef void (witness_not_owner_error_t)(const GH(witness_t) *);
 extern witness_not_owner_error_t *witness_not_owner_error;
 #else
-void	witness_not_owner_error(const witness_t *witness);
+void	witness_not_owner_error(const GH(witness_t) *witness);
 #endif
 #ifdef JEMALLOC_JET
 typedef void (witness_depth_error_t)(const witness_list_t *,
@@ -110,34 +110,34 @@ void	witness_depth_error(const witness_list_t *witnesses,
     witness_rank_t rank_inclusive, unsigned depth);
 #endif
 
-void	witnesses_cleanup(tsd_t *tsd);
-void	witness_fork_cleanup(tsd_t *tsd);
-void	witness_prefork(tsd_t *tsd);
-void	witness_postfork_parent(tsd_t *tsd);
-void	witness_postfork_child(tsd_t *tsd);
+void	witnesses_cleanup(GH(tsd_t) *tsd);
+void	witness_fork_cleanup(GH(tsd_t) *tsd);
+void	witness_prefork(GH(tsd_t) *tsd);
+void	witness_postfork_parent(GH(tsd_t) *tsd);
+void	witness_postfork_child(GH(tsd_t) *tsd);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-bool	witness_owner(tsd_t *tsd, const witness_t *witness);
-void	witness_assert_owner(tsdn_t *tsdn, const witness_t *witness);
-void	witness_assert_not_owner(tsdn_t *tsdn, const witness_t *witness);
-void witness_assert_depth_to_rank(tsdn_t *tsdn, witness_rank_t rank_inclusive,
+bool	witness_owner(GH(tsd_t) *tsd, const GH(witness_t) *witness);
+void	witness_assert_owner(GH(tsdn_t) *tsdn, const GH(witness_t) *witness);
+void	witness_assert_not_owner(GH(tsdn_t) *tsdn, const GH(witness_t) *witness);
+void witness_assert_depth_to_rank(GH(tsdn_t) *tsdn, witness_rank_t rank_inclusive,
     unsigned depth);
-void witness_assert_depth(tsdn_t *tsdn, unsigned depth);
-void	witness_assert_lockless(tsdn_t *tsdn);
-void	witness_lock(tsdn_t *tsdn, witness_t *witness);
-void	witness_unlock(tsdn_t *tsdn, witness_t *witness);
+void witness_assert_depth(GH(tsdn_t) *tsdn, unsigned depth);
+void	witness_assert_lockless(GH(tsdn_t) *tsdn);
+void	witness_lock(GH(tsdn_t) *tsdn, GH(witness_t) *witness);
+void	witness_unlock(GH(tsdn_t) *tsdn, GH(witness_t) *witness);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_MUTEX_C_))
 JEMALLOC_INLINE bool
-witness_owner(tsd_t *tsd, const witness_t *witness)
+witness_owner(GH(tsd_t) *tsd, const GH(witness_t) *witness)
 {
 	witness_list_t *witnesses;
-	witness_t *w;
+	GH(witness_t) *w;
 
 	cassert(config_debug);
 
@@ -151,9 +151,9 @@ witness_owner(tsd_t *tsd, const witness_t *witness)
 }
 
 JEMALLOC_INLINE void
-witness_assert_owner(tsdn_t *tsdn, const witness_t *witness)
+witness_assert_owner(GH(tsdn_t) *tsdn, const GH(witness_t) *witness)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 
 	if (!config_debug)
 		return;
@@ -170,11 +170,11 @@ witness_assert_owner(tsdn_t *tsdn, const witness_t *witness)
 }
 
 JEMALLOC_INLINE void
-witness_assert_not_owner(tsdn_t *tsdn, const witness_t *witness)
+witness_assert_not_owner(GH(tsdn_t) *tsdn, const GH(witness_t) *witness)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	witness_list_t *witnesses;
-	witness_t *w;
+	GH(witness_t) *w;
 
 	if (!config_debug)
 		return;
@@ -193,12 +193,12 @@ witness_assert_not_owner(tsdn_t *tsdn, const witness_t *witness)
 }
 
 JEMALLOC_INLINE void
-witness_assert_depth_to_rank(tsdn_t *tsdn, witness_rank_t rank_inclusive,
+witness_assert_depth_to_rank(GH(tsdn_t) *tsdn, witness_rank_t rank_inclusive,
     unsigned depth) {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	unsigned d;
 	witness_list_t *witnesses;
-	witness_t *w;
+	GH(witness_t) *w;
 
 	if (!config_debug)
 		return;
@@ -223,21 +223,21 @@ witness_assert_depth_to_rank(tsdn_t *tsdn, witness_rank_t rank_inclusive,
 }
 
 JEMALLOC_INLINE void
-witness_assert_depth(tsdn_t *tsdn, unsigned depth) {
+witness_assert_depth(GH(tsdn_t) *tsdn, unsigned depth) {
 	witness_assert_depth_to_rank(tsdn, WITNESS_RANK_MIN, depth);
 }
 
 JEMALLOC_INLINE void
-witness_assert_lockless(tsdn_t *tsdn) {
+witness_assert_lockless(GH(tsdn_t) *tsdn) {
 	witness_assert_depth(tsdn, 0);
 }
 
 JEMALLOC_INLINE void
-witness_lock(tsdn_t *tsdn, witness_t *witness)
+witness_lock(GH(tsdn_t) *tsdn, GH(witness_t) *witness)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	witness_list_t *witnesses;
-	witness_t *w;
+	GH(witness_t) *w;
 
 	if (!config_debug)
 		return;
@@ -273,9 +273,9 @@ witness_lock(tsdn_t *tsdn, witness_t *witness)
 }
 
 JEMALLOC_INLINE void
-witness_unlock(tsdn_t *tsdn, witness_t *witness)
+witness_unlock(GH(tsdn_t) *tsdn, GH(witness_t) *witness)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	witness_list_t *witnesses;
 
 	if (!config_debug)

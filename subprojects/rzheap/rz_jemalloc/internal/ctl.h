@@ -1,37 +1,37 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct ctl_node_s ctl_node_t;
-typedef struct ctl_named_node_s ctl_named_node_t;
-typedef struct ctl_indexed_node_s ctl_indexed_node_t;
-typedef struct ctl_arena_stats_s ctl_arena_stats_t;
-typedef struct ctl_stats_s ctl_stats_t;
+typedef struct GH(ctl_node_s) GH(ctl_node_t);
+typedef struct GH(ctl_named_node_s) GH(ctl_named_node_t);
+typedef struct GH(ctl_indexed_node_s) GH(ctl_indexed_node_t);
+typedef struct GH(ctl_arena_stats_s) GH(ctl_arena_stats_t);
+typedef struct GH(ctl_stats_s) GH(ctl_stats_t);
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct ctl_node_s {
+struct GH(ctl_node_s) {
 	bool			named;
 };
 
-struct ctl_named_node_s {
-	struct ctl_node_s	node;
+struct GH(ctl_named_node_s) {
+	struct GH(ctl_node_s)	node;
 	const char		*name;
 	/* If (nchildren == 0), this is a terminal node. */
 	unsigned		nchildren;
-	const			ctl_node_t *children;
-	int			(*ctl)(tsd_t *, const GHT *, GHT, GHT ,
+	const			GH(ctl_node_t) *children;
+	int			(*ctl)(GH(tsd_t) *, const GHT *, GHT, GHT ,
 	    GHT *, GHT , GHT);
 };
 
-struct ctl_indexed_node_s {
-	struct ctl_node_s	node;
-	const ctl_named_node_t	*(*index)(tsdn_t *, const GHT *, GHT,
+struct GH(ctl_indexed_node_s) {
+	struct GH(ctl_node_s)	node;
+	const GH(ctl_named_node_t)	*(*index)(GH(tsdn_t) *, const GHT *, GHT,
 	    GHT);
 };
 
-struct ctl_arena_stats_s {
+struct GH(ctl_arena_stats_s) {
 	bool			initialized;
 	unsigned		nthreads;
 	const char		*dss;
@@ -42,7 +42,7 @@ struct ctl_arena_stats_s {
 
 	/* The remainder are only populated if config_stats is true. */
 
-	arena_stats_t		astats;
+	GH(arena_stats_t)		astats;
 
 	/* Aggregate stats for small size classes, based on bin stats. */
 	GHT			allocated_small;
@@ -50,12 +50,12 @@ struct ctl_arena_stats_s {
 	uint64_t		ndalloc_small;
 	uint64_t		nrequests_small;
 
-	malloc_bin_stats_t	bstats[JM_NBINS];
-	malloc_large_stats_t	*lstats;	/* nlclasses elements. */
-	malloc_huge_stats_t	*hstats;	/* nhclasses elements. */
+	GH(malloc_bin_stats_t)	bstats[JM_NBINS];
+	GH(malloc_large_stats_t)	*lstats;	/* nlclasses elements. */
+	GH(malloc_huge_stats_t)	*hstats;	/* nhclasses elements. */
 };
 
-struct ctl_stats_s {
+struct GH(ctl_stats_s) {
 	GHT			allocated;
 	GHT			active;
 	GHT			metadata;
@@ -63,24 +63,24 @@ struct ctl_stats_s {
 	GHT			mapped;
 	GHT			retained;
 	unsigned		narenas;
-	ctl_arena_stats_t	*arenas;	/* (narenas + 1) elements. */
+	GH(ctl_arena_stats_t)	*arenas;	/* (narenas + 1) elements. */
 };
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-int	ctl_byname(tsd_t *tsd, const char *name, GHT oldp, GHT *oldlenp,
+int	ctl_byname(GH(tsd_t) *tsd, const char *name, GHT oldp, GHT *oldlenp,
     GHT newp, GHT newlen);
-int	ctl_nametomib(tsdn_t *tsdn, const char *name, GHT *mibp,
+int	ctl_nametomib(GH(tsdn_t) *tsdn, const char *name, GHT *mibp,
     GHT *miblenp);
 
-int	ctl_bymib(tsd_t *tsd, const GHT *mib, GHT miblen, GHT oldp,
+int	ctl_bymib(GH(tsd_t) *tsd, const GHT *mib, GHT miblen, GHT oldp,
     GHT *oldlenp, GHT newp, GHT newlen);
 bool	ctl_boot(void);
-void	ctl_prefork(tsdn_t *tsdn);
-void	ctl_postfork_parent(tsdn_t *tsdn);
-void	ctl_postfork_child(tsdn_t *tsdn);
+void	ctl_prefork(GH(tsdn_t) *tsdn);
+void	ctl_postfork_parent(GH(tsdn_t) *tsdn);
+void	ctl_postfork_child(GH(tsdn_t) *tsdn);
 
 #define	xmallctl(name, oldp, oldlenp, newp, newlen) do {		\
 	if (je_mallctl(name, oldp, oldlenp, newp, newlen)		\

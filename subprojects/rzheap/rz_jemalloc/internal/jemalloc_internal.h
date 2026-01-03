@@ -470,7 +470,7 @@ extern unsigned narenas_auto;
  * Arenas that are used to service external requests.  Not all elements of the
  * arenas array are necessarily used; arenas are created lazily as needed.
  */
-extern arena_t **arenas;
+extern GH(arena_t) **arenas;
 
 /*
  * pind2sz_tab encodes the same information as could be computed by
@@ -489,24 +489,24 @@ extern GHT const index2size_tab[NSIZES];
  */
 extern uint8_t const size2index_tab[];
 
-arena_t *a0get(void);
+GH(arena_t) *a0get(void);
 GHT a0malloc(GHT size);
 void a0dalloc(GHT ptr);
 GHT bootstrap_malloc(GHT size);
 GHT bootstrap_calloc(GHT num, GHT size);
 void bootstrap_free(GHT ptr);
 unsigned narenas_total_get(void);
-arena_t *arena_init(tsdn_t *tsdn, unsigned ind);
-arena_tdata_t *arena_tdata_get_hard(tsd_t *tsd, unsigned ind);
-arena_t *arena_choose_hard(tsd_t *tsd, bool internal);
-void arena_migrate(tsd_t *tsd, unsigned oldind, unsigned newind);
-void thread_allocated_cleanup(tsd_t *tsd);
-void thread_deallocated_cleanup(tsd_t *tsd);
-void iarena_cleanup(tsd_t *tsd);
-void arena_cleanup(tsd_t *tsd);
-void arenas_tdata_cleanup(tsd_t *tsd);
-void narenas_tdata_cleanup(tsd_t *tsd);
-void arenas_tdata_bypass_cleanup(tsd_t *tsd);
+GH(arena_t) *arena_init(GH(tsdn_t) *tsdn, unsigned ind);
+GH(arena_tdata_t) *arena_tdata_get_hard(GH(tsd_t) *tsd, unsigned ind);
+GH(arena_t) *arena_choose_hard(GH(tsd_t) *tsd, bool internal);
+void arena_migrate(GH(tsd_t) *tsd, unsigned oldind, unsigned newind);
+void thread_allocated_cleanup(GH(tsd_t) *tsd);
+void thread_deallocated_cleanup(GH(tsd_t) *tsd);
+void iarena_cleanup(GH(tsd_t) *tsd);
+void arena_cleanup(GH(tsd_t) *tsd);
+void arenas_tdata_cleanup(GH(tsd_t) *tsd);
+void narenas_tdata_cleanup(GH(tsd_t) *tsd);
+void arenas_tdata_bypass_cleanup(GH(tsd_t) *tsd);
 void jemalloc_prefork(void);
 void jemalloc_postfork_parent(void);
 void jemalloc_postfork_child(void);
@@ -583,13 +583,13 @@ GHT s2u_compute(GHT size);
 GHT s2u_lookup(GHT size);
 GHT s2u(GHT size);
 GHT sa2u(GHT size, GHT alignment);
-arena_t *arena_choose_impl(tsd_t *tsd, arena_t *arena, bool internal);
-arena_t *arena_choose(tsd_t *tsd, arena_t *arena);
-arena_t *arena_ichoose(tsd_t *tsd, arena_t *arena);
-arena_tdata_t *arena_tdata_get(tsd_t *tsd, unsigned ind,
+GH(arena_t) *arena_choose_impl(GH(tsd_t) *tsd, GH(arena_t) *arena, bool internal);
+GH(arena_t) *arena_choose(GH(tsd_t) *tsd, GH(arena_t) *arena);
+GH(arena_t) *arena_ichoose(GH(tsd_t) *tsd, GH(arena_t) *arena);
+GH(arena_tdata_t) *arena_tdata_get(GH(tsd_t) *tsd, unsigned ind,
 	bool refresh_if_missing);
-arena_t *arena_get(tsdn_t *tsdn, unsigned ind, bool init_if_missing);
-ticker_t *decay_ticker_get(tsd_t *tsd, unsigned ind);
+GH(arena_t) *arena_get(GH(tsdn_t) *tsdn, unsigned ind, bool init_if_missing);
+GH(ticker_t) *decay_ticker_get(GH(tsd_t) *tsd, unsigned ind);
 #endif
 
 #include "bitmap.h"

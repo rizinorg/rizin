@@ -1,19 +1,19 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct tcache_bin_info_s tcache_bin_info_t;
-typedef struct tcache_bin_s tcache_bin_t;
-typedef struct tcache_s tcache_t;
-typedef struct tcaches_s tcaches_t;
+typedef struct GH(tcache_bin_info_s) GH(tcache_bin_info_t);
+typedef struct GH(tcache_bin_s) GH(tcache_bin_t);
+typedef struct GH(tcache_s) GH(tcache_t);
+typedef struct GH(tcaches_s) GH(tcaches_t);
 
 /*
  * tcache pointers close to NULL are used to encode state information that is
  * used for two purposes: preventing thread caching on a per thread basis and
  * cleaning up during thread shutdown.
  */
-#define	TCACHE_STATE_DISABLED		((tcache_t *)(uintptr_t)1)
-#define	TCACHE_STATE_REINCARNATED	((tcache_t *)(uintptr_t)2)
-#define	TCACHE_STATE_PURGATORY		((tcache_t *)(uintptr_t)3)
+#define	TCACHE_STATE_DISABLED		((GH(tcache_t) *)(uintptr_t)1)
+#define	TCACHE_STATE_REINCARNATED	((GH(tcache_t) *)(uintptr_t)2)
+#define	TCACHE_STATE_PURGATORY		((GH(tcache_t) *)(uintptr_t)3)
 #define	TCACHE_STATE_MAX		TCACHE_STATE_PURGATORY
 
 /*
@@ -58,15 +58,15 @@ typedef enum {
 } tcache_enabled_t;
 
 /*
- * Read-only information associated with each element of tcache_t's tbins array
+ * Read-only information associated with each element of GH(tcache_t)'s tbins array
  * is stored separately, mainly to reduce memory usage.
  */
-struct tcache_bin_info_s {
+struct GH(tcache_bin_info_s) {
 	unsigned	ncached_max;	/* Upper limit on ncached. */
 };
 
-struct tcache_bin_s {
-	tcache_bin_stats_t tstats;
+struct GH(tcache_bin_s) {
+	GH(tcache_bin_stats_t) tstats;
 	int		low_water;	/* Min # cached since last GC. */
 	unsigned	lg_fill_div;	/* Fill (ncached_max >> lg_fill_div). */
 	unsigned	ncached;	/* # of cached objects. */
@@ -80,12 +80,12 @@ struct tcache_bin_s {
 	void		**avail;	/* Stack of available objects. */
 };
 
-struct tcache_s {
-	ql_elm(tcache_t) link;		/* Used for aggregating stats. */
+struct GH(tcache_s) {
+	ql_elm(GH(tcache_t)) link;		/* Used for aggregating stats. */
 	uint64_t	prof_accumbytes;/* Cleared after arena_prof_accum(). */
-	ticker_t	gc_ticker;	/* Drives incremental GC. */
+	GH(ticker_t)	gc_ticker;	/* Drives incremental GC. */
 	szind_t		next_gc_bin;	/* Next bin to GC. */
-	tcache_bin_t	tbins[1];	/* Dynamically sized. */
+	GH(tcache_bin_t)	tbins[1];	/* Dynamically sized. */
 	/*
 	 * The pointer stacks associated with tbins follow as a contiguous
 	 * array.  During tcache initialization, the avail pointer in each
@@ -95,10 +95,10 @@ struct tcache_s {
 };
 
 /* Linkage for list of available (previously used) explicit tcache IDs. */
-struct tcaches_s {
+struct GH(tcaches_s) {
 	union {
-		tcache_t	*tcache;
-		tcaches_t	*next;
+		GH(tcache_t)	*tcache;
+		GH(tcaches_t)	*next;
 	};
 };
 
@@ -109,7 +109,7 @@ struct tcaches_s {
 extern bool	opt_tcache;
 extern GHST	opt_lg_tcache_max;
 
-extern tcache_bin_info_t	*tcache_bin_info;
+extern GH(tcache_bin_info_t)	*tcache_bin_info;
 
 /*
  * Number of tcache bins.  There are JM_NBINS small-object bins, plus 0 or more
@@ -128,58 +128,58 @@ extern GHT	tcache_maxclass;
  * touched.  This allows the entire array to be allocated the first time an
  * explicit tcache is created without a disproportionate impact on memory usage.
  */
-extern tcaches_t	*tcaches;
+extern GH(tcaches_t)	*tcaches;
 
-GHT	tcache_salloc(tsdn_t *tsdn, const GHT ptr);
-void	tcache_event_hard(tsd_t *tsd, tcache_t *tcache);
-void	*tcache_alloc_small_hard(tsdn_t *tsdn, arena_t *arena, tcache_t *tcache,
-    tcache_bin_t *tbin, szind_t binind, bool *tcache_success);
-void	tcache_bin_flush_small(tsd_t *tsd, tcache_t *tcache, tcache_bin_t *tbin,
+GHT	tcache_salloc(GH(tsdn_t) *tsdn, const GHT ptr);
+void	tcache_event_hard(GH(tsd_t) *tsd, GH(tcache_t) *tcache);
+void	*tcache_alloc_small_hard(GH(tsdn_t) *tsdn, GH(arena_t) *arena, GH(tcache_t) *tcache,
+    GH(tcache_bin_t) *tbin, szind_t binind, bool *tcache_success);
+void	tcache_bin_flush_small(GH(tsd_t) *tsd, GH(tcache_t) *tcache, GH(tcache_bin_t) *tbin,
     szind_t binind, unsigned rem);
-void	tcache_bin_flush_large(tsd_t *tsd, tcache_bin_t *tbin, szind_t binind,
-    unsigned rem, tcache_t *tcache);
-void	tcache_arena_reassociate(tsdn_t *tsdn, tcache_t *tcache,
-    arena_t *oldarena, arena_t *newarena);
-tcache_t *tcache_get_hard(tsd_t *tsd);
-tcache_t *tcache_create(tsdn_t *tsdn, arena_t *arena);
-void	tcache_cleanup(tsd_t *tsd);
-void	tcache_enabled_cleanup(tsd_t *tsd);
-void	tcache_stats_merge(tsdn_t *tsdn, tcache_t *tcache, arena_t *arena);
-bool	tcaches_create(tsd_t *tsd, unsigned *rz_ind);
-void	tcaches_flush(tsd_t *tsd, unsigned ind);
-void	tcaches_destroy(tsd_t *tsd, unsigned ind);
-bool	tcache_boot(tsdn_t *tsdn);
-void tcache_prefork(tsdn_t *tsdn);
-void tcache_postfork_parent(tsdn_t *tsdn);
-void tcache_postfork_child(tsdn_t *tsdn);
+void	tcache_bin_flush_large(GH(tsd_t) *tsd, GH(tcache_bin_t) *tbin, szind_t binind,
+    unsigned rem, GH(tcache_t) *tcache);
+void	tcache_arena_reassociate(GH(tsdn_t) *tsdn, GH(tcache_t) *tcache,
+    GH(arena_t) *oldarena, GH(arena_t) *newarena);
+GH(tcache_t) *tcache_get_hard(GH(tsd_t) *tsd);
+GH(tcache_t) *tcache_create(GH(tsdn_t) *tsdn, GH(arena_t) *arena);
+void	tcache_cleanup(GH(tsd_t) *tsd);
+void	tcache_enabled_cleanup(GH(tsd_t) *tsd);
+void	tcache_stats_merge(GH(tsdn_t) *tsdn, GH(tcache_t) *tcache, GH(arena_t) *arena);
+bool	tcaches_create(GH(tsd_t) *tsd, unsigned *rz_ind);
+void	tcaches_flush(GH(tsd_t) *tsd, unsigned ind);
+void	tcaches_destroy(GH(tsd_t) *tsd, unsigned ind);
+bool	tcache_boot(GH(tsdn_t) *tsdn);
+void tcache_prefork(GH(tsdn_t) *tsdn);
+void tcache_postfork_parent(GH(tsdn_t) *tsdn);
+void tcache_postfork_child(GH(tsdn_t) *tsdn);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-void	tcache_event(tsd_t *tsd, tcache_t *tcache);
+void	tcache_event(GH(tsd_t) *tsd, GH(tcache_t) *tcache);
 void	tcache_flush(void);
 bool	tcache_enabled_get(void);
-tcache_t *tcache_get(tsd_t *tsd, bool create);
+GH(tcache_t) *tcache_get(GH(tsd_t) *tsd, bool create);
 void	tcache_enabled_set(bool enabled);
-void	*tcache_alloc_easy(tcache_bin_t *tbin, bool *tcache_success);
-void	*tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache,
+void	*tcache_alloc_easy(GH(tcache_bin_t) *tbin, bool *tcache_success);
+void	*tcache_alloc_small(GH(tsd_t) *tsd, GH(arena_t) *arena, GH(tcache_t) *tcache,
     GHT size, szind_t ind, bool zero, bool slow_path);
-void	*tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache,
+void	*tcache_alloc_large(GH(tsd_t) *tsd, GH(arena_t) *arena, GH(tcache_t) *tcache,
     GHT size, szind_t ind, bool zero, bool slow_path);
-void	tcache_dalloc_small(tsd_t *tsd, tcache_t *tcache, GHT ptr,
+void	tcache_dalloc_small(GH(tsd_t) *tsd, GH(tcache_t) *tcache, GHT ptr,
     szind_t binind, bool slow_path);
-void	tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, GHT ptr,
+void	tcache_dalloc_large(GH(tsd_t) *tsd, GH(tcache_t) *tcache, GHT ptr,
     GHT size, bool slow_path);
-tcache_t	*tcaches_get(tsd_t *tsd, unsigned ind);
+GH(tcache_t)	*tcaches_get(GH(tsd_t) *tsd, unsigned ind);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_TCACHE_C_))
 JEMALLOC_INLINE void
 tcache_flush(void)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 
 	cassert(config_tcache);
 
@@ -190,7 +190,7 @@ tcache_flush(void)
 JEMALLOC_INLINE bool
 tcache_enabled_get(void)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	tcache_enabled_t tcache_enabled;
 
 	if(unlikely(!config_tcache))
@@ -208,7 +208,7 @@ tcache_enabled_get(void)
 JEMALLOC_INLINE void
 tcache_enabled_set(bool enabled)
 {
-	tsd_t *tsd;
+	GH(tsd_t) *tsd;
 	tcache_enabled_t tcache_enabled;
 
 	cassert(config_tcache);
@@ -222,10 +222,10 @@ tcache_enabled_set(bool enabled)
 		tcache_cleanup(tsd);
 }
 
-JEMALLOC_ALWAYS_INLINE tcache_t *
-tcache_get(tsd_t *tsd, bool create)
+JEMALLOC_ALWAYS_INLINE GH(tcache_t) *
+tcache_get(GH(tsd_t) *tsd, bool create)
 {
-	tcache_t *tcache;
+	GH(tcache_t) *tcache;
 
 	if (!config_tcache)
 		return (NULL);
@@ -242,7 +242,7 @@ tcache_get(tsd_t *tsd, bool create)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-tcache_event(tsd_t *tsd, tcache_t *tcache)
+tcache_event(GH(tsd_t) *tsd, GH(tcache_t) *tcache)
 {
 
 	if (TCACHE_GC_INCR == 0)
@@ -253,7 +253,7 @@ tcache_event(tsd_t *tsd, tcache_t *tcache)
 }
 
 JEMALLOC_ALWAYS_INLINE GHT 
-tcache_alloc_easy(tcache_bin_t *tbin, bool *tcache_success)
+tcache_alloc_easy(GH(tcache_bin_t) *tbin, bool *tcache_success)
 {
 	GHT ret;
 
@@ -280,11 +280,11 @@ tcache_alloc_easy(tcache_bin_t *tbin, bool *tcache_success)
 }
 
 JEMALLOC_ALWAYS_INLINE GHT 
-tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, GHT size,
+tcache_alloc_small(GH(tsd_t) *tsd, GH(arena_t) *arena, GH(tcache_t) *tcache, GHT size,
     szind_t binind, bool zero, bool slow_path)
 {
 	GHT ret;
-	tcache_bin_t *tbin;
+	GH(tcache_bin_t) *tbin;
 	bool tcache_success;
 	GHT usize JEMALLOC_CC_SILENCE_INIT(0);
 
@@ -346,11 +346,11 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, GHT size,
 }
 
 JEMALLOC_ALWAYS_INLINE GHT 
-tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache, GHT size,
+tcache_alloc_large(GH(tsd_t) *tsd, GH(arena_t) *arena, GH(tcache_t) *tcache, GHT size,
     szind_t binind, bool zero, bool slow_path)
 {
 	GHT ret;
-	tcache_bin_t *tbin;
+	GH(tcache_bin_t) *tbin;
 	bool tcache_success;
 
 	if (unlikely(binind > nhbins))
@@ -384,8 +384,8 @@ tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache, GHT size,
 		}
 
 		if (config_prof && usize == LARGE_MINCLASS) {
-			arena_chunk_t *chunk =
-			    (arena_chunk_t *)CHUNK_ADDR2BASE(ret);
+			GH(arena_chunk_t) *chunk =
+			    (GH(arena_chunk_t) *)CHUNK_ADDR2BASE(ret);
 			GHT pageind = (((uintptr_t)ret - (uintptr_t)chunk) >>
 			    LG_PAGE);
 			arena_mapbits_large_binind_set(chunk, pageind,
@@ -413,11 +413,11 @@ tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache, GHT size,
 }
 
 JEMALLOC_ALWAYS_INLINE void
-tcache_dalloc_small(tsd_t *tsd, tcache_t *tcache, GHT ptr, szind_t binind,
+tcache_dalloc_small(GH(tsd_t) *tsd, GH(tcache_t) *tcache, GHT ptr, szind_t binind,
     bool slow_path)
 {
-	tcache_bin_t *tbin;
-	tcache_bin_info_t *tbin_info;
+	GH(tcache_bin_t) *tbin;
+	GH(tcache_bin_info_t) *tbin_info;
 
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) <= SMALL_MAXCLASS);
 
@@ -438,12 +438,12 @@ tcache_dalloc_small(tsd_t *tsd, tcache_t *tcache, GHT ptr, szind_t binind,
 }
 
 JEMALLOC_ALWAYS_INLINE void
-tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, GHT ptr, GHT size,
+tcache_dalloc_large(GH(tsd_t) *tsd, GH(tcache_t) *tcache, GHT ptr, GHT size,
     bool slow_path)
 {
 	szind_t binind;
-	tcache_bin_t *tbin;
-	tcache_bin_info_t *tbin_info;
+	GH(tcache_bin_t) *tbin;
+	GH(tcache_bin_info_t) *tbin_info;
 
 	assert((size & PAGE_MASK) == 0);
 	assert(tcache_salloc(tsd_tsdn(tsd), ptr) > SMALL_MAXCLASS);
@@ -468,10 +468,10 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, GHT ptr, GHT size,
 	tcache_event(tsd, tcache);
 }
 
-JEMALLOC_ALWAYS_INLINE tcache_t *
-tcaches_get(tsd_t *tsd, unsigned ind)
+JEMALLOC_ALWAYS_INLINE GH(tcache_t) *
+tcaches_get(GH(tsd_t) *tsd, unsigned ind)
 {
-	tcaches_t *elm = &tcaches[ind];
+	GH(tcaches_t) *elm = &tcaches[ind];
 	if (unlikely(elm->tcache == NULL)) {
 		elm->tcache = tcache_create(tsd_tsdn(tsd), arena_choose(tsd,
 		    NULL));

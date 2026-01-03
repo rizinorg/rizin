@@ -6,9 +6,9 @@
  */
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct rtree_node_elm_s rtree_node_elm_t;
-typedef struct rtree_level_s rtree_level_t;
-typedef struct rtree_s rtree_t;
+typedef struct GH(rtree_node_elm_s) GH(rtree_node_elm_t);
+typedef struct GH(rtree_level_s) GH(rtree_level_t);
+typedef struct GH(rtree_s) GH(rtree_t);
 
 /*
  * RTREE_BITS_PER_LEVEL must be a power of two that is no larger than the
@@ -21,29 +21,29 @@ typedef struct rtree_s rtree_t;
     ((1U << (LG_SIZEOF_PTR+3)) / RTREE_BITS_PER_LEVEL)
 
 /* Used for two-stage lock-free node initialization. */
-#define	RTREE_NODE_INITIALIZING	((rtree_node_elm_t *)0x1)
+#define	RTREE_NODE_INITIALIZING	((GH(rtree_node_elm_t) *)0x1)
 
 /*
  * The node allocation callback function's argument is the number of contiguous
- * rtree_node_elm_t structures to allocate, and the resulting memory must be
+ * GH(rtree_node_elm_t) structures to allocate, and the resulting memory must be
  * zeroed.
  */
-typedef rtree_node_elm_t *(rtree_node_alloc_t)(GHT);
-typedef void (rtree_node_dalloc_t)(rtree_node_elm_t *);
+typedef GH(rtree_node_elm_t) *(rtree_node_alloc_t)(GHT);
+typedef void (rtree_node_dalloc_t)(GH(rtree_node_elm_t) *);
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct rtree_node_elm_s {
+struct GH(rtree_node_elm_s) {
 	union {
 		void			*pun;
-		rtree_node_elm_t	*child;
-		extent_node_t		*val;
+		GH(rtree_node_elm_t)	*child;
+		GH(extent_node_t)		*val;
 	};
 };
 
-struct rtree_level_s {
+struct GH(rtree_level_s) {
 	/*
 	 * A non-NULL subtree points to a subtree rooted along the hypothetical
 	 * path to the leaf node corresponding to key 0.  Depending on what keys
@@ -68,7 +68,7 @@ struct rtree_level_s {
 	 */
 	union {
 		void			*subtree_pun;
-		rtree_node_elm_t	*subtree;
+		GH(rtree_node_elm_t)	*subtree;
 	};
 	/* Number of key bits distinguished by this level. */
 	unsigned		bits;
@@ -79,7 +79,7 @@ struct rtree_level_s {
 	unsigned		cumulative_bits;
 };
 
-struct rtree_s {
+struct GH(rtree_s) {
 	rtree_node_alloc_t	*alloc;
 	rtree_node_dalloc_t	*dalloc;
 	unsigned		height;
@@ -88,50 +88,50 @@ struct rtree_s {
 	 * bits to which subtree level to start at.
 	 */
 	unsigned		start_level[RTREE_HEIGHT_MAX];
-	rtree_level_t		levels[RTREE_HEIGHT_MAX];
+	GH(rtree_level_t)		levels[RTREE_HEIGHT_MAX];
 };
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-bool rtree_new(rtree_t *rtree, unsigned bits, rtree_node_alloc_t *alloc,
+bool rtree_new(GH(rtree_t) *rtree, unsigned bits, rtree_node_alloc_t *alloc,
     rtree_node_dalloc_t *dalloc);
-void	rtree_delete(rtree_t *rtree);
-rtree_node_elm_t	*rtree_subtree_read_hard(rtree_t *rtree,
+void	rtree_delete(GH(rtree_t) *rtree);
+GH(rtree_node_elm_t)	*rtree_subtree_read_hard(GH(rtree_t) *rtree,
     unsigned level);
-rtree_node_elm_t	*rtree_child_read_hard(rtree_t *rtree,
-    rtree_node_elm_t *elm, unsigned level);
+GH(rtree_node_elm_t)	*rtree_child_read_hard(GH(rtree_t) *rtree,
+    GH(rtree_node_elm_t) *elm, unsigned level);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-unsigned	rtree_start_level(rtree_t *rtree, uintptr_t key);
-uintptr_t	rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level);
+unsigned	rtree_start_level(GH(rtree_t) *rtree, uintptr_t key);
+uintptr_t	rtree_subkey(GH(rtree_t) *rtree, uintptr_t key, unsigned level);
 
-bool	rtree_node_valid(rtree_node_elm_t *node);
-rtree_node_elm_t	*rtree_child_tryread(rtree_node_elm_t *elm,
+bool	rtree_node_valid(GH(rtree_node_elm_t) *node);
+GH(rtree_node_elm_t)	*rtree_child_tryread(GH(rtree_node_elm_t) *elm,
     bool dependent);
-rtree_node_elm_t	*rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm,
+GH(rtree_node_elm_t)	*rtree_child_read(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm,
     unsigned level, bool dependent);
-extent_node_t	*rtree_val_read(rtree_t *rtree, rtree_node_elm_t *elm,
+GH(extent_node_t)	*rtree_val_read(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm,
     bool dependent);
-void	rtree_val_write(rtree_t *rtree, rtree_node_elm_t *elm,
-    const extent_node_t *val);
-rtree_node_elm_t	*rtree_subtree_tryread(rtree_t *rtree, unsigned level,
+void	rtree_val_write(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm,
+    const GH(extent_node_t) *val);
+GH(rtree_node_elm_t)	*rtree_subtree_tryread(GH(rtree_t) *rtree, unsigned level,
     bool dependent);
-rtree_node_elm_t	*rtree_subtree_read(rtree_t *rtree, unsigned level,
+GH(rtree_node_elm_t)	*rtree_subtree_read(GH(rtree_t) *rtree, unsigned level,
     bool dependent);
 
-extent_node_t	*rtree_get(rtree_t *rtree, uintptr_t key, bool dependent);
-bool	rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val);
+GH(extent_node_t)	*rtree_get(GH(rtree_t) *rtree, uintptr_t key, bool dependent);
+bool	rtree_set(GH(rtree_t) *rtree, uintptr_t key, const GH(extent_node_t) *val);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_RTREE_C_))
 JEMALLOC_ALWAYS_INLINE unsigned
-rtree_start_level(rtree_t *rtree, uintptr_t key)
+rtree_start_level(GH(rtree_t) *rtree, uintptr_t key)
 {
 	unsigned start_level;
 
@@ -145,7 +145,7 @@ rtree_start_level(rtree_t *rtree, uintptr_t key)
 }
 
 JEMALLOC_ALWAYS_INLINE uintptr_t
-rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level)
+rtree_subkey(GH(rtree_t) *rtree, uintptr_t key, unsigned level)
 {
 
 	return ((key >> ((ZU(1) << (LG_SIZEOF_PTR+3)) -
@@ -154,16 +154,16 @@ rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level)
 }
 
 JEMALLOC_ALWAYS_INLINE bool
-rtree_node_valid(rtree_node_elm_t *node)
+rtree_node_valid(GH(rtree_node_elm_t) *node)
 {
 
 	return ((uintptr_t)node > (uintptr_t)RTREE_NODE_INITIALIZING);
 }
 
-JEMALLOC_ALWAYS_INLINE rtree_node_elm_t *
-rtree_child_tryread(rtree_node_elm_t *elm, bool dependent)
+JEMALLOC_ALWAYS_INLINE GH(rtree_node_elm_t) *
+rtree_child_tryread(GH(rtree_node_elm_t) *elm, bool dependent)
 {
-	rtree_node_elm_t *child;
+	GH(rtree_node_elm_t) *child;
 
 	/* Double-checked read (first read may be stale. */
 	child = elm->child;
@@ -174,11 +174,11 @@ rtree_child_tryread(rtree_node_elm_t *elm, bool dependent)
 	return (child);
 }
 
-JEMALLOC_ALWAYS_INLINE rtree_node_elm_t *
-rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm, unsigned level,
+JEMALLOC_ALWAYS_INLINE GH(rtree_node_elm_t) *
+rtree_child_read(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm, unsigned level,
     bool dependent)
 {
-	rtree_node_elm_t *child;
+	GH(rtree_node_elm_t) *child;
 
 	child = rtree_child_tryread(elm, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(child)))
@@ -188,8 +188,8 @@ rtree_child_read(rtree_t *rtree, rtree_node_elm_t *elm, unsigned level,
 	return (child);
 }
 
-JEMALLOC_ALWAYS_INLINE extent_node_t *
-rtree_val_read(rtree_t *rtree, rtree_node_elm_t *elm, bool dependent)
+JEMALLOC_ALWAYS_INLINE GH(extent_node_t) *
+rtree_val_read(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm, bool dependent)
 {
 
 	if (dependent) {
@@ -211,16 +211,16 @@ rtree_val_read(rtree_t *rtree, rtree_node_elm_t *elm, bool dependent)
 }
 
 JEMALLOC_INLINE void
-rtree_val_write(rtree_t *rtree, rtree_node_elm_t *elm, const extent_node_t *val)
+rtree_val_write(GH(rtree_t) *rtree, GH(rtree_node_elm_t) *elm, const GH(extent_node_t) *val)
 {
 
 	atomic_write_p(&elm->pun, val);
 }
 
-JEMALLOC_ALWAYS_INLINE rtree_node_elm_t *
-rtree_subtree_tryread(rtree_t *rtree, unsigned level, bool dependent)
+JEMALLOC_ALWAYS_INLINE GH(rtree_node_elm_t) *
+rtree_subtree_tryread(GH(rtree_t) *rtree, unsigned level, bool dependent)
 {
-	rtree_node_elm_t *subtree;
+	GH(rtree_node_elm_t) *subtree;
 
 	/* Double-checked read (first read may be stale. */
 	subtree = rtree->levels[level].subtree;
@@ -232,10 +232,10 @@ rtree_subtree_tryread(rtree_t *rtree, unsigned level, bool dependent)
 	return (subtree);
 }
 
-JEMALLOC_ALWAYS_INLINE rtree_node_elm_t *
-rtree_subtree_read(rtree_t *rtree, unsigned level, bool dependent)
+JEMALLOC_ALWAYS_INLINE GH(rtree_node_elm_t) *
+rtree_subtree_read(GH(rtree_t) *rtree, unsigned level, bool dependent)
 {
-	rtree_node_elm_t *subtree;
+	GH(rtree_node_elm_t) *subtree;
 
 	subtree = rtree_subtree_tryread(rtree, level, dependent);
 	if (!dependent && unlikely(!rtree_node_valid(subtree)))
@@ -245,12 +245,12 @@ rtree_subtree_read(rtree_t *rtree, unsigned level, bool dependent)
 	return (subtree);
 }
 
-JEMALLOC_ALWAYS_INLINE extent_node_t *
-rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
+JEMALLOC_ALWAYS_INLINE GH(extent_node_t) *
+rtree_get(GH(rtree_t) *rtree, uintptr_t key, bool dependent)
 {
 	uintptr_t subkey;
 	unsigned start_level;
-	rtree_node_elm_t *node;
+	GH(rtree_node_elm_t) *node;
 
 	start_level = rtree_start_level(rtree, key);
 
@@ -339,11 +339,11 @@ rtree_get(rtree_t *rtree, uintptr_t key, bool dependent)
 }
 
 JEMALLOC_INLINE bool
-rtree_set(rtree_t *rtree, uintptr_t key, const extent_node_t *val)
+rtree_set(GH(rtree_t) *rtree, uintptr_t key, const GH(extent_node_t) *val)
 {
 	uintptr_t subkey;
 	unsigned i, start_level;
-	rtree_node_elm_t *node, *child;
+	GH(rtree_node_elm_t) *node, *child;
 
 	start_level = rtree_start_level(rtree, key);
 

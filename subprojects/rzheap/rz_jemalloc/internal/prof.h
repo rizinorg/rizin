@@ -1,11 +1,11 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct prof_bt_s prof_bt_t;
-typedef struct prof_cnt_s prof_cnt_t;
-typedef struct prof_tctx_s prof_tctx_t;
-typedef struct prof_gctx_s prof_gctx_t;
-typedef struct prof_tdata_s prof_tdata_t;
+typedef struct GH(prof_bt_s) GH(prof_bt_t);
+typedef struct GH(prof_cnt_s) GH(prof_cnt_t);
+typedef struct GH(prof_tctx_s) GH(prof_tctx_t);
+typedef struct GH(prof_gctx_s) GH(prof_gctx_t);
+typedef struct GH(prof_tdata_s) GH(prof_tdata_t);
 
 /* Option defaults. */
 #ifdef JEMALLOC_PROF
@@ -48,15 +48,15 @@ typedef struct prof_tdata_s prof_tdata_t;
  * prof_tdata pointers close to NULL are used to encode state information that
  * is used for cleaning up during thread shutdown.
  */
-#define	PROF_TDATA_STATE_REINCARNATED	((prof_tdata_t *)(uintptr_t)1)
-#define	PROF_TDATA_STATE_PURGATORY	((prof_tdata_t *)(uintptr_t)2)
+#define	PROF_TDATA_STATE_REINCARNATED	((GH(prof_tdata_t) *)(uintptr_t)1)
+#define	PROF_TDATA_STATE_PURGATORY	((GH(prof_tdata_t) *)(uintptr_t)2)
 #define	PROF_TDATA_STATE_MAX		PROF_TDATA_STATE_PURGATORY
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct prof_bt_s {
+struct GH(prof_bt_s) {
 	/* Backtrace, stored as len program counters. */
 	void		**vec;
 	unsigned	len;
@@ -65,12 +65,12 @@ struct prof_bt_s {
 #ifdef JEMALLOC_PROF_LIBGCC
 /* Data structure passed to libgcc _Unwind_Backtrace() callback functions. */
 typedef struct {
-	prof_bt_t	*bt;
+	GH(prof_bt_t)	*bt;
 	unsigned	max;
 } prof_unwind_data_t;
 #endif
 
-struct prof_cnt_s {
+struct GH(prof_cnt_s) {
 	/* Profiling counters. */
 	uint64_t	curobjs;
 	uint64_t	curbytes;
@@ -85,9 +85,9 @@ typedef enum {
 	prof_tctx_state_purgatory /* Dumper must finish destroying. */
 } prof_tctx_state_t;
 
-struct prof_tctx_s {
+struct GH(prof_tctx_s) {
 	/* Thread data for thread that performed the allocation. */
-	prof_tdata_t		*tdata;
+	GH(prof_tdata_t)		*tdata;
 
 	/*
 	 * Copy of tdata->thr_{uid,discrim}, necessary because tdata may be
@@ -97,10 +97,10 @@ struct prof_tctx_s {
 	uint64_t		thr_discrim;
 
 	/* Profiling counters, protected by tdata->lock. */
-	prof_cnt_t		cnts;
+	GH(prof_cnt_t)		cnts;
 
 	/* Associated global context. */
-	prof_gctx_t		*gctx;
+	GH(prof_gctx_t)		*gctx;
 
 	/*
 	 * UID that distinguishes multiple tctx's created by the same thread,
@@ -118,7 +118,7 @@ struct prof_tctx_s {
 	uint64_t		tctx_uid;
 
 	/* Linkage into gctx's tctxs. */
-	rb_node(prof_tctx_t)	tctx_link;
+	rb_node(GH(prof_tctx_t))	tctx_link;
 
 	/*
 	 * True during prof_alloc_prep()..prof_malloc_sample_object(), prevents
@@ -133,13 +133,13 @@ struct prof_tctx_s {
 	 * Copy of cnts snapshotted during early dump phase, protected by
 	 * dump_mtx.
 	 */
-	prof_cnt_t		dump_cnts;
+	GH(prof_cnt_t)		dump_cnts;
 };
-typedef rb_tree(prof_tctx_t) prof_tctx_tree_t;
+typedef rb_tree(GH(prof_tctx_t)) prof_tctx_tree_t;
 
-struct prof_gctx_s {
+struct GH(prof_gctx_s) {
 	/* Protects nlimbo, cnt_summed, and tctxs. */
-	malloc_mutex_t		*lock;
+	GH(malloc_mutex_t)		*lock;
 
 	/*
 	 * Number of threads that currently cause this gctx to be in a state of
@@ -160,21 +160,21 @@ struct prof_gctx_s {
 	prof_tctx_tree_t	tctxs;
 
 	/* Linkage for tree of contexts to be dumped. */
-	rb_node(prof_gctx_t)	dump_link;
+	rb_node(GH(prof_gctx_t))	dump_link;
 
 	/* Temporary storage for summation during dump. */
-	prof_cnt_t		cnt_summed;
+	GH(prof_cnt_t)		cnt_summed;
 
 	/* Associated backtrace. */
-	prof_bt_t		bt;
+	GH(prof_bt_t)		bt;
 
 	/* Backtrace vector, variable size, referred to by bt. */
 	void			*vec[1];
 };
-typedef rb_tree(prof_gctx_t) prof_gctx_tree_t;
+typedef rb_tree(GH(prof_gctx_t)) prof_gctx_tree_t;
 
-struct prof_tdata_s {
-	malloc_mutex_t		*lock;
+struct GH(prof_tdata_s) {
+	GH(malloc_mutex_t)		*lock;
 
 	/* Monotonically increasing unique thread identifier. */
 	uint64_t		thr_uid;
@@ -191,22 +191,22 @@ struct prof_tdata_s {
 	bool			attached;
 	bool			expired;
 
-	rb_node(prof_tdata_t)	tdata_link;
+	rb_node(GH(prof_tdata_t))	tdata_link;
 
 	/*
-	 * Counter used to initialize prof_tctx_t's tctx_uid.  No locking is
+	 * Counter used to initialize GH(prof_tctx_t)'s tctx_uid.  No locking is
 	 * necessary when incrementing this field, because only one thread ever
 	 * does so.
 	 */
 	uint64_t		tctx_uid_next;
 
 	/*
-	 * Hash of (prof_bt_t *)-->(prof_tctx_t *).  Each thread tracks
+	 * Hash of (GH(prof_bt_t) *)-->(GH(prof_tctx_t) *).  Each thread tracks
 	 * backtraces for which it has non-zero allocation/deallocation counters
-	 * associated with thread-specific prof_tctx_t objects.  Other threads
-	 * may write to prof_tctx_t contents when freeing associated objects.
+	 * associated with thread-specific GH(prof_tctx_t) objects.  Other threads
+	 * may write to GH(prof_tctx_t) contents when freeing associated objects.
 	 */
-	ckh_t			bt2tctx;
+	GH(ckh_t)			bt2tctx;
 
 	/* Sampling state. */
 	uint64_t		prng_state;
@@ -232,12 +232,12 @@ struct prof_tdata_s {
 	bool			active;
 
 	/* Temporary storage for summation during dump. */
-	prof_cnt_t		cnt_summed;
+	GH(prof_cnt_t)		cnt_summed;
 
 	/* Backtrace vector, used for calls to prof_backtrace(). */
 	void			*vec[PROF_BT_MAX];
 };
-typedef rb_tree(prof_tdata_t) prof_tdata_tree_t;
+typedef rb_tree(GH(prof_tdata_t)) prof_tdata_tree_t;
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
@@ -280,47 +280,47 @@ extern uint64_t	prof_interval;
  */
 extern GHT	lg_prof_sample;
 
-void	prof_alloc_rollback(tsd_t *tsd, prof_tctx_t *tctx, bool updated);
-void	prof_malloc_sample_object(tsdn_t *tsdn, const GHT ptr, GHT usize,
-    prof_tctx_t *tctx);
-void	prof_free_sampled_object(tsd_t *tsd, GHT usize, prof_tctx_t *tctx);
-void	bt_init(prof_bt_t *bt, GHT *vec);
-void	prof_backtrace(prof_bt_t *bt);
-prof_tctx_t	*prof_lookup(tsd_t *tsd, prof_bt_t *bt);
+void	prof_alloc_rollback(GH(tsd_t) *tsd, GH(prof_tctx_t) *tctx, bool updated);
+void	prof_malloc_sample_object(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize,
+    GH(prof_tctx_t) *tctx);
+void	prof_free_sampled_object(GH(tsd_t) *tsd, GHT usize, GH(prof_tctx_t) *tctx);
+void	bt_init(GH(prof_bt_t) *bt, GHT *vec);
+void	prof_backtrace(GH(prof_bt_t) *bt);
+GH(prof_tctx_t)	*prof_lookup(GH(tsd_t) *tsd, GH(prof_bt_t) *bt);
 #ifdef JEMALLOC_JET
 GHT	prof_tdata_count(void);
 GHT	prof_bt_count(void);
-const prof_cnt_t *prof_cnt_all(void);
+const GH(prof_cnt_t) *prof_cnt_all(void);
 typedef int (prof_dump_open_t)(bool, const char *);
 extern prof_dump_open_t *prof_dump_open;
-typedef bool (prof_dump_header_t)(tsdn_t *, bool, const prof_cnt_t *);
+typedef bool (prof_dump_header_t)(GH(tsdn_t) *, bool, const GH(prof_cnt_t) *);
 extern prof_dump_header_t *prof_dump_header;
 #endif
-void	prof_idump(tsdn_t *tsdn);
-bool	prof_mdump(tsd_t *tsd, const char *filename);
-void	prof_gdump(tsdn_t *tsdn);
-prof_tdata_t	*prof_tdata_init(tsd_t *tsd);
-prof_tdata_t	*prof_tdata_reinit(tsd_t *tsd, prof_tdata_t *tdata);
-void	prof_reset(tsd_t *tsd, GHT lg_sample);
-void	prof_tdata_cleanup(tsd_t *tsd);
-bool	prof_active_get(tsdn_t *tsdn);
-bool	prof_active_set(tsdn_t *tsdn, bool active);
-const char	*prof_thread_name_get(tsd_t *tsd);
-int	prof_thread_name_set(tsd_t *tsd, const char *thread_name);
-bool	prof_thread_active_get(tsd_t *tsd);
-bool	prof_thread_active_set(tsd_t *tsd, bool active);
-bool	prof_thread_active_init_get(tsdn_t *tsdn);
-bool	prof_thread_active_init_set(tsdn_t *tsdn, bool active_init);
-bool	prof_gdump_get(tsdn_t *tsdn);
-bool	prof_gdump_set(tsdn_t *tsdn, bool active);
+void	prof_idump(GH(tsdn_t) *tsdn);
+bool	prof_mdump(GH(tsd_t) *tsd, const char *filename);
+void	prof_gdump(GH(tsdn_t) *tsdn);
+GH(prof_tdata_t)	*prof_tdata_init(GH(tsd_t) *tsd);
+GH(prof_tdata_t)	*prof_tdata_reinit(GH(tsd_t) *tsd, GH(prof_tdata_t) *tdata);
+void	prof_reset(GH(tsd_t) *tsd, GHT lg_sample);
+void	prof_tdata_cleanup(GH(tsd_t) *tsd);
+bool	prof_active_get(GH(tsdn_t) *tsdn);
+bool	prof_active_set(GH(tsdn_t) *tsdn, bool active);
+const char	*prof_thread_name_get(GH(tsd_t) *tsd);
+int	prof_thread_name_set(GH(tsd_t) *tsd, const char *thread_name);
+bool	prof_thread_active_get(GH(tsd_t) *tsd);
+bool	prof_thread_active_set(GH(tsd_t) *tsd, bool active);
+bool	prof_thread_active_init_get(GH(tsdn_t) *tsdn);
+bool	prof_thread_active_init_set(GH(tsdn_t) *tsdn, bool active_init);
+bool	prof_gdump_get(GH(tsdn_t) *tsdn);
+bool	prof_gdump_set(GH(tsdn_t) *tsdn, bool active);
 void	prof_boot0(void);
 void	prof_boot1(void);
-bool	prof_boot2(tsd_t *tsd);
-void	prof_prefork0(tsdn_t *tsdn);
-void	prof_prefork1(tsdn_t *tsdn);
-void	prof_postfork_parent(tsdn_t *tsdn);
-void	prof_postfork_child(tsdn_t *tsdn);
-void	prof_sample_threshold_update(prof_tdata_t *tdata);
+bool	prof_boot2(GH(tsd_t) *tsd);
+void	prof_prefork0(GH(tsdn_t) *tsdn);
+void	prof_prefork1(GH(tsdn_t) *tsdn);
+void	prof_postfork_parent(GH(tsdn_t) *tsdn);
+void	prof_postfork_child(GH(tsdn_t) *tsdn);
+void	prof_sample_threshold_update(GH(prof_tdata_t) *tdata);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
@@ -329,22 +329,22 @@ void	prof_sample_threshold_update(prof_tdata_t *tdata);
 #ifndef JEMALLOC_ENABLE_INLINE
 bool	prof_active_get_unlocked(void);
 bool	prof_gdump_get_unlocked(void);
-prof_tdata_t	*prof_tdata_get(tsd_t *tsd, bool create);
-prof_tctx_t	*prof_tctx_get(tsdn_t *tsdn, const GHT ptr);
-void	prof_tctx_set(tsdn_t *tsdn, const GHT ptr, GHT usize,
-    prof_tctx_t *tctx);
-void	prof_tctx_reset(tsdn_t *tsdn, const GHT ptr, GHT usize,
-    const GHT old_ptr, prof_tctx_t *tctx);
-bool	prof_sample_accum_update(tsd_t *tsd, GHT usize, bool commit,
-    prof_tdata_t **tdata_out);
-prof_tctx_t	*prof_alloc_prep(tsd_t *tsd, GHT usize, bool prof_active,
+GH(prof_tdata_t)	*prof_tdata_get(GH(tsd_t) *tsd, bool create);
+GH(prof_tctx_t)	*prof_tctx_get(GH(tsdn_t) *tsdn, const GHT ptr);
+void	prof_tctx_set(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize,
+    GH(prof_tctx_t) *tctx);
+void	prof_tctx_reset(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize,
+    const GHT old_ptr, GH(prof_tctx_t) *tctx);
+bool	prof_sample_accum_update(GH(tsd_t) *tsd, GHT usize, bool commit,
+    GH(prof_tdata_t) **tdata_out);
+GH(prof_tctx_t)	*prof_alloc_prep(GH(tsd_t) *tsd, GHT usize, bool prof_active,
     bool update);
-void	prof_malloc(tsdn_t *tsdn, const GHT ptr, GHT usize,
-    prof_tctx_t *tctx);
-void	prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize,
-    prof_tctx_t *tctx, bool prof_active, bool updated, const GHT old_ptr,
-    GHT old_usize, prof_tctx_t *old_tctx);
-void	prof_free(tsd_t *tsd, const GHT ptr, GHT usize);
+void	prof_malloc(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize,
+    GH(prof_tctx_t) *tctx);
+void	prof_realloc(GH(tsd_t) *tsd, const GHT ptr, GHT usize,
+    GH(prof_tctx_t) *tctx, bool prof_active, bool updated, const GHT old_ptr,
+    GHT old_usize, GH(prof_tctx_t) *old_tctx);
+void	prof_free(GH(tsd_t) *tsd, const GHT ptr, GHT usize);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_PROF_C_))
@@ -373,10 +373,10 @@ prof_gdump_get_unlocked(void)
 	return (prof_gdump_val);
 }
 
-JEMALLOC_ALWAYS_INLINE prof_tdata_t *
-prof_tdata_get(tsd_t *tsd, bool create)
+JEMALLOC_ALWAYS_INLINE GH(prof_tdata_t) *
+prof_tdata_get(GH(tsd_t) *tsd, bool create)
 {
-	prof_tdata_t *tdata;
+	GH(prof_tdata_t) *tdata;
 
 	if (unlikely(!config_prof))
 		return NULL;
@@ -399,8 +399,8 @@ prof_tdata_get(tsd_t *tsd, bool create)
 	return (tdata);
 }
 
-JEMALLOC_ALWAYS_INLINE prof_tctx_t *
-prof_tctx_get(tsdn_t *tsdn, const GHT ptr)
+JEMALLOC_ALWAYS_INLINE GH(prof_tctx_t) *
+prof_tctx_get(GH(tsdn_t) *tsdn, const GHT ptr)
 {
 	if (unlikely (!config_prof || ptr == NULL))
 		return NULL;
@@ -408,7 +408,7 @@ prof_tctx_get(tsdn_t *tsdn, const GHT ptr)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_tctx_set(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
+prof_tctx_set(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize, GH(prof_tctx_t) *tctx)
 {
 	cassert(config_prof);
 	assert(ptr != NULL);
@@ -416,8 +416,8 @@ prof_tctx_set(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_tctx_reset(tsdn_t *tsdn, const GHT ptr, GHT usize, const GHT old_ptr,
-    prof_tctx_t *old_tctx)
+prof_tctx_reset(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize, const GHT old_ptr,
+    GH(prof_tctx_t) *old_tctx)
 {
 	cassert(config_prof);
 	assert(ptr != NULL);
@@ -426,10 +426,10 @@ prof_tctx_reset(tsdn_t *tsdn, const GHT ptr, GHT usize, const GHT old_ptr,
 }
 
 JEMALLOC_ALWAYS_INLINE bool
-prof_sample_accum_update(tsd_t *tsd, GHT usize, bool update,
-    prof_tdata_t **tdata_out)
+prof_sample_accum_update(GH(tsd_t) *tsd, GHT usize, bool update,
+    GH(prof_tdata_t) **tdata_out)
 {
-	prof_tdata_t *tdata;
+	GH(prof_tdata_t) *tdata;
 
 	if (unlikely(!config_prof))
 		return false;
@@ -456,19 +456,19 @@ prof_sample_accum_update(tsd_t *tsd, GHT usize, bool update,
 	}
 }
 
-JEMALLOC_ALWAYS_INLINE prof_tctx_t *
-prof_alloc_prep(tsd_t *tsd, GHT usize, bool prof_active, bool update)
+JEMALLOC_ALWAYS_INLINE GH(prof_tctx_t) *
+prof_alloc_prep(GH(tsd_t) *tsd, GHT usize, bool prof_active, bool update)
 {
-	prof_tctx_t *ret;
-	prof_tdata_t *tdata;
-	prof_bt_t bt;
+	GH(prof_tctx_t) *ret;
+	GH(prof_tdata_t) *tdata;
+	GH(prof_bt_t) bt;
 
 	if (unlikely(usize != s2u(usize)))
 		return NULL;
 
 	if (!prof_active || likely(prof_sample_accum_update(tsd, usize, update,
 	    &tdata)))
-		ret = (prof_tctx_t *)(uintptr_t)1U;
+		ret = (GH(prof_tctx_t) *)(uintptr_t)1U;
 	else {
 		bt_init(&bt, tdata->vec);
 		prof_backtrace(&bt);
@@ -479,7 +479,7 @@ prof_alloc_prep(tsd_t *tsd, GHT usize, bool prof_active, bool update)
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_malloc(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
+prof_malloc(GH(tsdn_t) *tsdn, const GHT ptr, GHT usize, GH(prof_tctx_t) *tctx)
 {
 	cassert(config_prof);
 	assert(ptr != NULL);
@@ -488,13 +488,13 @@ prof_malloc(tsdn_t *tsdn, const GHT ptr, GHT usize, prof_tctx_t *tctx)
 	if (unlikely((uintptr_t)tctx > (uintptr_t)1U))
 		prof_malloc_sample_object(tsdn, ptr, usize, tctx);
 	else
-		prof_tctx_set(tsdn, ptr, usize, (prof_tctx_t *)(uintptr_t)1U);
+		prof_tctx_set(tsdn, ptr, usize, (GH(prof_tctx_t) *)(uintptr_t)1U);
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize, prof_tctx_t *tctx,
+prof_realloc(GH(tsd_t) *tsd, const GHT ptr, GHT usize, GH(prof_tctx_t) *tctx,
     bool prof_active, bool updated, const GHT old_ptr, GHT old_usize,
-    prof_tctx_t *old_tctx)
+    GH(prof_tctx_t) *old_tctx)
 {
 	bool sampled, old_sampled;
 
@@ -512,7 +512,7 @@ prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize, prof_tctx_t *tctx,
 			 * sample threshold.
 			 */
 			prof_alloc_rollback(tsd, tctx, true);
-			tctx = (prof_tctx_t *)(uintptr_t)1U;
+			tctx = (GH(prof_tctx_t) *)(uintptr_t)1U;
 		}
 	}
 
@@ -529,9 +529,9 @@ prof_realloc(tsd_t *tsd, const GHT ptr, GHT usize, prof_tctx_t *tctx,
 }
 
 JEMALLOC_ALWAYS_INLINE void
-prof_free(tsd_t *tsd, const GHT ptr, GHT usize)
+prof_free(GH(tsd_t) *tsd, const GHT ptr, GHT usize)
 {
-	prof_tctx_t *tctx = prof_tctx_get(tsd_tsdn(tsd), ptr);
+	GH(prof_tctx_t) *tctx = prof_tctx_get(tsd_tsdn(tsd), ptr);
 
 	cassert(config_prof);
 	assert(usize == isalloc(tsd_tsdn(tsd), ptr, true));

@@ -5,8 +5,8 @@
 #define	LG_BITMAP_MAXBITS	LG_RUN_MAXREGS
 #define	BITMAP_MAXBITS		(ZU(1) << LG_BITMAP_MAXBITS)
 
-typedef struct bitmap_level_s bitmap_level_t;
-typedef struct bitmap_info_s bitmap_info_t;
+typedef struct GH(bitmap_level_s) GH(bitmap_level_t);
+typedef struct GH(bitmap_info_s) GH(bitmap_info_t);
 typedef unsigned long bitmap_t;
 #define	LG_SIZEOF_BITMAP	LG_SIZEOF_LONG
 
@@ -86,12 +86,12 @@ typedef unsigned long bitmap_t;
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct bitmap_level_s {
+struct GH(bitmap_level_s) {
 	/* Offset of this level's groups within the array of groups. */
 	GHT group_offset;
 };
 
-struct bitmap_info_s {
+struct GH(bitmap_info_s) {
 	/* Logical number of bits in bitmap (stored at bottom level). */
 	GHT nbits;
 
@@ -103,7 +103,7 @@ struct bitmap_info_s {
 	 * Only the first (nlevels+1) elements are used, and levels are ordered
 	 * bottom to top (e.g. the bottom level is stored in levels[0]).
 	 */
-	bitmap_level_t levels[BITMAP_MAX_LEVELS+1];
+	GH(bitmap_level_t) levels[BITMAP_MAX_LEVELS+1];
 #else /* USE_TREE */
 	/* Number of groups necessary for nbits. */
 	GHT ngroups;
@@ -114,25 +114,25 @@ struct bitmap_info_s {
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-void	bitmap_info_init(bitmap_info_t *binfo, GHT nbits);
-void	bitmap_init(bitmap_t *bitmap, const bitmap_info_t *binfo);
-GHT	bitmap_size(const bitmap_info_t *binfo);
+void	bitmap_info_init(GH(bitmap_info_t) *binfo, GHT nbits);
+void	bitmap_init(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo);
+GHT	bitmap_size(const GH(bitmap_info_t) *binfo);
 
 #endif /* JEMALLOC_H_EXTERNS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-bool	bitmap_full(bitmap_t *bitmap, const bitmap_info_t *binfo);
-bool	bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit);
-void	bitmap_set(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit);
-GHT	bitmap_sfu(bitmap_t *bitmap, const bitmap_info_t *binfo);
-void	bitmap_unset(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit);
+bool	bitmap_full(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo);
+bool	bitmap_get(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit);
+void	bitmap_set(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit);
+GHT	bitmap_sfu(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo);
+void	bitmap_unset(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_BITMAP_C_))
 JEMALLOC_INLINE bool
-bitmap_full(bitmap_t *bitmap, const bitmap_info_t *binfo)
+bitmap_full(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo)
 {
 #ifdef USE_TREE
 	GHT rgoff = binfo->levels[binfo->nlevels].group_offset - 1;
@@ -151,7 +151,7 @@ bitmap_full(bitmap_t *bitmap, const bitmap_info_t *binfo)
 }
 
 JEMALLOC_INLINE bool
-bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit)
+bitmap_get(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit)
 {
 	GHT goff;
 	bitmap_t g;
@@ -164,7 +164,7 @@ bitmap_get(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit)
 }
 
 JEMALLOC_INLINE void
-bitmap_set(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit)
+bitmap_set(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit)
 {
 	GHT goff;
 	bitmap_t *gp;
@@ -200,7 +200,7 @@ bitmap_set(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit)
 
 /* sfu: set first unset. */
 JEMALLOC_INLINE GHT
-bitmap_sfu(bitmap_t *bitmap, const bitmap_info_t *binfo)
+bitmap_sfu(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo)
 {
 	GHT bit;
 	bitmap_t g;
@@ -231,7 +231,7 @@ bitmap_sfu(bitmap_t *bitmap, const bitmap_info_t *binfo)
 }
 
 JEMALLOC_INLINE void
-bitmap_unset(bitmap_t *bitmap, const bitmap_info_t *binfo, GHT bit)
+bitmap_unset(bitmap_t *bitmap, const GH(bitmap_info_t) *binfo, GHT bit)
 {
 	GHT goff;
 	bitmap_t *gp;

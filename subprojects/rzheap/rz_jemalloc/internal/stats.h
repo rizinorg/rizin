@@ -1,18 +1,18 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct tcache_bin_stats_s tcache_bin_stats_t;
-typedef struct malloc_bin_stats_s malloc_bin_stats_t;
-typedef struct malloc_large_stats_s malloc_large_stats_t;
-typedef struct malloc_huge_stats_s malloc_huge_stats_t;
-typedef struct arena_stats_s arena_stats_t;
-typedef struct chunk_stats_s chunk_stats_t;
+typedef struct GH(tcache_bin_stats_s) GH(tcache_bin_stats_t);
+typedef struct GH(malloc_bin_stats_s) GH(malloc_bin_stats_t);
+typedef struct GH(malloc_large_stats_s) GH(malloc_large_stats_t);
+typedef struct GH(malloc_huge_stats_s) GH(malloc_huge_stats_t);
+typedef struct GH(arena_stats_s) GH(arena_stats_t);
+typedef struct GH(chunk_stats_s) GH(chunk_stats_t);
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct tcache_bin_stats_s {
+struct GH(tcache_bin_stats_s) {
 	/*
 	 * Number of allocation requests that corresponded to the size of this
 	 * bin.
@@ -20,7 +20,7 @@ struct tcache_bin_stats_s {
 	uint64_t	nrequests;
 };
 
-struct malloc_bin_stats_s {
+struct GH(malloc_bin_stats_s) {
 	/*
 	 * Total number of allocation/deallocation requests served directly by
 	 * the bin.  Note that tcache may allocate an object, then recycle it
@@ -62,7 +62,7 @@ struct malloc_bin_stats_s {
 	GHT		curruns;
 };
 
-struct malloc_large_stats_s {
+struct GH(malloc_large_stats_s) {
 	/*
 	 * Total number of allocation/deallocation requests served directly by
 	 * the arena.  Note that tcache may allocate an object, then recycle it
@@ -86,7 +86,7 @@ struct malloc_large_stats_s {
 	GHT		curruns;
 };
 
-struct malloc_huge_stats_s {
+struct GH(malloc_huge_stats_s) {
 	/*
 	 * Total number of allocation/deallocation requests served directly by
 	 * the arena.
@@ -98,7 +98,7 @@ struct malloc_huge_stats_s {
 	GHT		curhchunks;
 };
 
-struct arena_stats_s {
+struct GH(arena_stats_s) {
 	/* Number of bytes currently mapped. */
 	GHT		mapped;
 
@@ -137,10 +137,10 @@ struct arena_stats_s {
 	uint64_t	ndalloc_huge;
 
 	/* One element for each large size class. */
-	malloc_large_stats_t	*lstats;
+	GH(malloc_large_stats_t)	*lstats;
 
 	/* One element for each huge size class. */
-	malloc_huge_stats_t	*hstats;
+	GH(malloc_huge_stats_t)	*hstats;
 };
 
 #endif /* JEMALLOC_H_STRUCTS */

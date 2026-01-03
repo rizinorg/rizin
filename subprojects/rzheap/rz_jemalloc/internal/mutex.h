@@ -1,7 +1,7 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct malloc_mutex_s malloc_mutex_t;
+typedef struct GH(malloc_mutex_s) GH(malloc_mutex_t);
 
 #ifdef _WIN32
 #  define MALLOC_MUTEX_INITIALIZER
@@ -31,7 +31,7 @@ typedef struct malloc_mutex_s malloc_mutex_t;
 /******************************************************************************/
 #ifdef JEMALLOC_H_STRUCTS
 
-struct malloc_mutex_s {
+struct GH(malloc_mutex_s) {
 #ifdef _WIN32
 #  if _WIN32_WINNT >= 0x0600
 	SRWLOCK         	lock;
@@ -44,11 +44,11 @@ struct malloc_mutex_s {
 	OSSpinLock		lock;
 #elif (defined(JEMALLOC_MUTEX_INIT_CB))
 	pthread_mutex_t		lock;
-	malloc_mutex_t		*postponed_next;
+	GH(malloc_mutex_t)		*postponed_next;
 #else
 	pthread_mutex_t		lock;
 #endif
-	witness_t		witness;
+	GH(witness_t)		witness;
 };
 
 #endif /* JEMALLOC_H_STRUCTS */
@@ -62,11 +62,11 @@ extern bool isthreaded;
 #  define isthreaded true
 #endif
 
-bool	malloc_mutex_init(malloc_mutex_t *mutex, const char *name,
+bool	malloc_mutex_init(GH(malloc_mutex_t) *mutex, const char *name,
     witness_rank_t rank);
-void	malloc_mutex_prefork(tsdn_t *tsdn, malloc_mutex_t *mutex);
-void	malloc_mutex_postfork_parent(tsdn_t *tsdn, malloc_mutex_t *mutex);
-void	malloc_mutex_postfork_child(tsdn_t *tsdn, malloc_mutex_t *mutex);
+void	malloc_mutex_prefork(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
+void	malloc_mutex_postfork_parent(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
+void	malloc_mutex_postfork_child(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
 bool	malloc_mutex_boot(void);
 
 #endif /* JEMALLOC_H_EXTERNS */
@@ -74,15 +74,15 @@ bool	malloc_mutex_boot(void);
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-void	malloc_mutex_lock(tsdn_t *tsdn, malloc_mutex_t *mutex);
-void	malloc_mutex_unlock(tsdn_t *tsdn, malloc_mutex_t *mutex);
-void	malloc_mutex_assert_owner(tsdn_t *tsdn, malloc_mutex_t *mutex);
-void	malloc_mutex_assert_not_owner(tsdn_t *tsdn, malloc_mutex_t *mutex);
+void	malloc_mutex_lock(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
+void	malloc_mutex_unlock(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
+void	malloc_mutex_assert_owner(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
+void	malloc_mutex_assert_not_owner(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_MUTEX_C_))
 JEMALLOC_INLINE void
-malloc_mutex_lock(tsdn_t *tsdn, malloc_mutex_t *mutex)
+malloc_mutex_lock(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex)
 {
 
 	witness_assert_not_owner(tsdn, &mutex->witness);
@@ -105,7 +105,7 @@ malloc_mutex_lock(tsdn_t *tsdn, malloc_mutex_t *mutex)
 }
 
 JEMALLOC_INLINE void
-malloc_mutex_unlock(tsdn_t *tsdn, malloc_mutex_t *mutex)
+malloc_mutex_unlock(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex)
 {
 
 	witness_unlock(tsdn, &mutex->witness);
@@ -127,14 +127,14 @@ malloc_mutex_unlock(tsdn_t *tsdn, malloc_mutex_t *mutex)
 }
 
 JEMALLOC_INLINE void
-malloc_mutex_assert_owner(tsdn_t *tsdn, malloc_mutex_t *mutex)
+malloc_mutex_assert_owner(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex)
 {
 
 	witness_assert_owner(tsdn, &mutex->witness);
 }
 
 JEMALLOC_INLINE void
-malloc_mutex_assert_not_owner(tsdn_t *tsdn, malloc_mutex_t *mutex)
+malloc_mutex_assert_not_owner(GH(tsdn_t) *tsdn, GH(malloc_mutex_t) *mutex)
 {
 
 	witness_assert_not_owner(tsdn, &mutex->witness);

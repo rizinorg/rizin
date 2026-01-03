@@ -1,8 +1,8 @@
 /******************************************************************************/
 #ifdef JEMALLOC_H_TYPES
 
-typedef struct ckh_s ckh_t;
-typedef struct ckhc_s ckhc_t;
+typedef struct GH(ckh_s) GH(ckh_t);
+typedef struct GH(ckhc_s) GH(ckhc_t);
 
 /* Typedefs to allow easy function pointer passing. */
 typedef void ckh_hash_t (const GHT , GHT[2]);
@@ -24,12 +24,12 @@ typedef bool ckh_keycomp_t (const GHT , const GHT );
 #ifdef JEMALLOC_H_STRUCTS
 
 /* Hash table cell. */
-struct ckhc_s {
+struct GH(ckhc_s) {
 	const void	*key;
 	const void	*data;
 };
 
-struct ckh_s {
+struct GH(ckh_s) {
 #ifdef CKH_COUNT
 	/* Counters used to get an idea of performance. */
 	uint64_t	ngrows;
@@ -57,22 +57,22 @@ struct ckh_s {
 	ckh_keycomp_t	*keycomp;
 
 	/* Hash table with 2^lg_curbuckets buckets. */
-	ckhc_t		*tab;
+	GH(ckhc_t)		*tab;
 };
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
 #ifdef JEMALLOC_H_EXTERNS
 
-bool	ckh_new(tsd_t *tsd, ckh_t *ckh, GHT minitems, ckh_hash_t *hash,
+bool	ckh_new(GH(tsd_t) *tsd, GH(ckh_t) *ckh, GHT minitems, ckh_hash_t *hash,
     ckh_keycomp_t *keycomp);
-void	ckh_delete(tsd_t *tsd, ckh_t *ckh);
-GHT	ckh_count(ckh_t *ckh);
-bool	ckh_iter(ckh_t *ckh, GHT *tabind, GHT *key, GHT *data);
-bool	ckh_insert(tsd_t *tsd, ckh_t *ckh, const GHT key, const GHT data);
-bool	ckh_remove(tsd_t *tsd, ckh_t *ckh, const GHT searchkey, GHT *key,
+void	ckh_delete(GH(tsd_t) *tsd, GH(ckh_t) *ckh);
+GHT	ckh_count(GH(ckh_t) *ckh);
+bool	ckh_iter(GH(ckh_t) *ckh, GHT *tabind, GHT *key, GHT *data);
+bool	ckh_insert(GH(tsd_t) *tsd, GH(ckh_t) *ckh, const GHT key, const GHT data);
+bool	ckh_remove(GH(tsd_t) *tsd, GH(ckh_t) *ckh, const GHT searchkey, GHT *key,
     GHT *data);
-bool	ckh_search(ckh_t *ckh, const GHT searchkey, GHT *key, GHT *data);
+bool	ckh_search(GH(ckh_t) *ckh, const GHT searchkey, GHT *key, GHT *data);
 void	ckh_string_hash(const GHT key, GHT rz_hash[2]);
 bool	ckh_string_keycomp(const GHT k1, const GHT k2);
 void	ckh_pointer_hash(const GHT key, GHT rz_hash[2]);

@@ -102,7 +102,7 @@ mb_write(void)
 JEMALLOC_INLINE void
 mb_write(void)
 {
-	malloc_mutex_t mtx;
+	GH(malloc_mutex_t) mtx;
 
 	malloc_mutex_init(&mtx, "mb", WITNESS_RANK_OMIT);
 	malloc_mutex_lock(TSDN_NULL, &mtx);

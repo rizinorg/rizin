@@ -23,7 +23,7 @@ extern const char *dss_prec_names[];
 
 dss_prec_t	chunk_dss_prec_get(void);
 bool	chunk_dss_prec_set(dss_prec_t dss_prec);
-void	*chunk_alloc_dss(tsdn_t *tsdn, arena_t *arena, GHT new_addr,
+void	*chunk_alloc_dss(GH(tsdn_t) *tsdn, GH(arena_t) *arena, GHT new_addr,
     GHT size, GHT alignment, bool *zero, bool *commit);
 bool	chunk_in_dss(GHT chunk);
 bool	chunk_dss_mergeable(GHT chunk_a, GHT chunk_b);

@@ -8,14 +8,14 @@ typedef bool (*malloc_tsd_cleanup_t)(void);
 
 #if (!defined(JEMALLOC_MALLOC_THREAD_CLEANUP) && !defined(JEMALLOC_TLS) && \
     !defined(_WIN32))
-typedef struct tsd_init_block_s tsd_init_block_t;
-typedef struct tsd_init_head_s tsd_init_head_t;
+typedef struct GH(tsd_init_block_s) GH(tsd_init_block_t);
+typedef struct GH(tsd_init_head_s) GH(tsd_init_head_t);
 #endif
 
-typedef struct tsd_s tsd_t;
-typedef struct tsdn_s tsdn_t;
+typedef struct GH(tsd_s) GH(tsd_t);
+typedef struct GH(tsdn_s) GH(tsdn_t);
 
-#define	TSDN_NULL	((tsdn_t *)0)
+#define	TSDN_NULL	((GH(tsdn_t) *)0)
 
 typedef enum {
 	tsd_state_uninitialized,
@@ -128,7 +128,7 @@ extern bool		a_name##tsd_booted;
 #else
 #define	malloc_tsd_externs(a_name, a_type)				\
 extern pthread_key_t	a_name##tsd_tsd;				\
-extern tsd_init_head_t	a_name##tsd_init_head;				\
+extern GH(tsd_init_head_t)	a_name##tsd_init_head;				\
 extern a_name##tsd_wrapper_t	a_name##tsd_boot_wrapper;		\
 extern bool		a_name##tsd_booted;
 #endif
@@ -158,7 +158,7 @@ a_attr bool		a_name##tsd_booted = false;
 #else
 #define	malloc_tsd_data(a_attr, a_name, a_type, a_initializer)		\
 a_attr pthread_key_t	a_name##tsd_tsd;				\
-a_attr tsd_init_head_t	a_name##tsd_init_head = {			\
+a_attr GH(tsd_init_head_t)	a_name##tsd_init_head = {			\
 	ql_head_initializer(blocks),					\
 	MALLOC_MUTEX_INITIALIZER					\
 };									\
@@ -478,7 +478,7 @@ a_name##tsd_wrapper_get(bool init)					\
 	    pthread_getspecific(a_name##tsd_tsd);			\
 									\
 	if (init && unlikely(wrapper == NULL)) {			\
-		tsd_init_block_t block;					\
+		GH(tsd_init_block_t) block;					\
 		wrapper = (a_name##tsd_wrapper_t *)			\
 		    tsd_init_check_recursion(&a_name##tsd_init_head,	\
 		    &block);						\
@@ -581,30 +581,30 @@ a_name##tsd_set(a_type *val)						\
 
 #if (!defined(JEMALLOC_MALLOC_THREAD_CLEANUP) && !defined(JEMALLOC_TLS) && \
     !defined(_WIN32))
-struct tsd_init_block_s {
-	ql_elm(tsd_init_block_t)	link;
+struct GH(tsd_init_block_s) {
+	ql_elm(GH(tsd_init_block_t))	link;
 	pthread_t			thread;
 	void				*data;
 };
-struct tsd_init_head_s {
-	ql_head(tsd_init_block_t)	blocks;
-	malloc_mutex_t			lock;
+struct GH(tsd_init_head_s) {
+	ql_head(GH(tsd_init_block_t))	blocks;
+	GH(malloc_mutex_t)			lock;
 };
 #endif
 
 #define	MALLOC_TSD							\
 /*  O(name,			type) */				\
-    O(tcache,			tcache_t *)				\
+    O(tcache,			GH(tcache_t) *)				\
     O(thread_allocated,		uint64_t)				\
     O(thread_deallocated,	uint64_t)				\
-    O(prof_tdata,		prof_tdata_t *)				\
-    O(iarena,			arena_t *)				\
-    O(arena,			arena_t *)				\
-    O(arenas_tdata,		arena_tdata_t *)			\
+    O(prof_tdata,		GH(prof_tdata_t) *)				\
+    O(iarena,			GH(arena_t) *)				\
+    O(arena,			GH(arena_t) *)				\
+    O(arenas_tdata,		GH(arena_tdata_t) *)			\
     O(narenas_tdata,		unsigned)				\
     O(arenas_tdata_bypass,	bool)					\
     O(tcache_enabled,		tcache_enabled_t)			\
-    O(quarantine,		quarantine_t *)				\
+    O(quarantine,		GH(quarantine_t) *)				\
     O(witnesses,		witness_list_t)				\
     O(witness_fork,		bool)					\
 
@@ -625,7 +625,7 @@ struct tsd_init_head_s {
     false								\
 }
 
-struct tsd_s {
+struct GH(tsd_s) {
 	tsd_state_t	state;
 #define	O(n, t)								\
 	t		n;
@@ -634,17 +634,17 @@ MALLOC_TSD
 };
 
 /*
- * Wrapper around tsd_t that makes it possible to avoid implicit conversion
- * between tsd_t and tsdn_t, where tsdn_t is "nullable" and has to be
- * explicitly converted to tsd_t, which is non-nullable.
+ * Wrapper around GH(tsd_t) that makes it possible to avoid implicit conversion
+ * between GH(tsd_t) and GH(tsdn_t), where GH(tsdn_t) is "nullable" and has to be
+ * explicitly converted to GH(tsd_t), which is non-nullable.
  */
-struct tsdn_s {
-	tsd_t	tsd;
+struct GH(tsdn_s) {
+	GH(tsd_t)	tsd;
 };
 
-static const tsd_t tsd_initializer = TSD_INITIALIZER;
+static const GH(tsd_t) tsd_initializer = TSD_INITIALIZER;
 
-malloc_tsd_types(, tsd_t)
+malloc_tsd_types(, GH(tsd_t))
 
 #endif /* JEMALLOC_H_STRUCTS */
 /******************************************************************************/
@@ -654,13 +654,13 @@ void	*malloc_tsd_malloc(GHT size);
 void	malloc_tsd_dalloc(GHT wrapper);
 void	malloc_tsd_no_cleanup(GHT arg);
 void	malloc_tsd_cleanup_register(bool (*f)(void));
-tsd_t	*malloc_tsd_boot0(void);
+GH(tsd_t)	*malloc_tsd_boot0(void);
 void	malloc_tsd_boot1(void);
 #if (!defined(JEMALLOC_MALLOC_THREAD_CLEANUP) && !defined(JEMALLOC_TLS) && \
     !defined(_WIN32))
-void	*tsd_init_check_recursion(tsd_init_head_t *head,
-    tsd_init_block_t *block);
-void	tsd_init_finish(tsd_init_head_t *head, tsd_init_block_t *block);
+void	*tsd_init_check_recursion(GH(tsd_init_head_t) *head,
+    GH(tsd_init_block_t) *block);
+void	tsd_init_finish(GH(tsd_init_head_t) *head, GH(tsd_init_block_t) *block);
 #endif
 void	tsd_cleanup(GHT arg);
 
@@ -669,31 +669,31 @@ void	tsd_cleanup(GHT arg);
 #ifdef JEMALLOC_H_INLINES
 
 #ifndef JEMALLOC_ENABLE_INLINE
-malloc_tsd_protos(JEMALLOC_ATTR(unused), , tsd_t)
+malloc_tsd_protos(JEMALLOC_ATTR(unused), , GH(tsd_t))
 
-tsd_t	*tsd_fetch_impl(bool init);
-tsd_t	*tsd_fetch(void);
-tsdn_t	*tsd_tsdn(tsd_t *tsd);
-bool	tsd_nominal(tsd_t *tsd);
+GH(tsd_t)	*tsd_fetch_impl(bool init);
+GH(tsd_t)	*tsd_fetch(void);
+GH(tsdn_t)	*tsd_tsdn(GH(tsd_t) *tsd);
+bool	tsd_nominal(GH(tsd_t) *tsd);
 #define	O(n, t)								\
-t	*tsd_##n##p_get(tsd_t *tsd);					\
-t	tsd_##n##_get(tsd_t *tsd);					\
-void	tsd_##n##_set(tsd_t *tsd, t n);
+t	*tsd_##n##p_get(GH(tsd_t) *tsd);					\
+t	tsd_##n##_get(GH(tsd_t) *tsd);					\
+void	tsd_##n##_set(GH(tsd_t) *tsd, t n);
 MALLOC_TSD
 #undef O
-tsdn_t	*tsdn_fetch(void);
-bool	tsdn_null(const tsdn_t *tsdn);
-tsd_t	*tsdn_tsd(tsdn_t *tsdn);
+GH(tsdn_t)	*tsdn_fetch(void);
+bool	tsdn_null(const GH(tsdn_t) *tsdn);
+GH(tsd_t)	*tsdn_tsd(GH(tsdn_t) *tsdn);
 #endif
 
 #if (defined(JEMALLOC_ENABLE_INLINE) || defined(JEMALLOC_TSD_C_))
-malloc_tsd_externs(, tsd_t)
-malloc_tsd_funcs(JEMALLOC_ALWAYS_INLINE, , tsd_t, tsd_initializer, tsd_cleanup)
+malloc_tsd_externs(, GH(tsd_t))
+malloc_tsd_funcs(JEMALLOC_ALWAYS_INLINE, , GH(tsd_t), tsd_initializer, tsd_cleanup)
 
-JEMALLOC_ALWAYS_INLINE tsd_t *
+JEMALLOC_ALWAYS_INLINE GH(tsd_t) *
 tsd_fetch_impl(bool init)
 {
-	tsd_t *tsd = tsd_get(init);
+	GH(tsd_t) *tsd = tsd_get(init);
 
 	if (!init && tsd_get_allocates() && tsd == NULL)
 		return (NULL);
@@ -717,22 +717,22 @@ tsd_fetch_impl(bool init)
 	return (tsd);
 }
 
-JEMALLOC_ALWAYS_INLINE tsd_t *
+JEMALLOC_ALWAYS_INLINE GH(tsd_t) *
 tsd_fetch(void)
 {
 
 	return (tsd_fetch_impl(true));
 }
 
-JEMALLOC_ALWAYS_INLINE tsdn_t *
-tsd_tsdn(tsd_t *tsd)
+JEMALLOC_ALWAYS_INLINE GH(tsdn_t) *
+tsd_tsdn(GH(tsd_t) *tsd)
 {
 
-	return ((tsdn_t *)tsd);
+	return ((GH(tsdn_t) *)tsd);
 }
 
 JEMALLOC_INLINE bool
-tsd_nominal(tsd_t *tsd)
+tsd_nominal(GH(tsd_t) *tsd)
 {
 
 	return (tsd->state == tsd_state_nominal);
@@ -740,21 +740,21 @@ tsd_nominal(tsd_t *tsd)
 
 #define	O(n, t)								\
 JEMALLOC_ALWAYS_INLINE t *						\
-tsd_##n##p_get(tsd_t *tsd)						\
+tsd_##n##p_get(GH(tsd_t) *tsd)						\
 {									\
 									\
 	return (&tsd->n);						\
 }									\
 									\
 JEMALLOC_ALWAYS_INLINE t						\
-tsd_##n##_get(tsd_t *tsd)						\
+tsd_##n##_get(GH(tsd_t) *tsd)						\
 {									\
 									\
 	return (*tsd_##n##p_get(tsd));					\
 }									\
 									\
 JEMALLOC_ALWAYS_INLINE void						\
-tsd_##n##_set(tsd_t *tsd, t n)						\
+tsd_##n##_set(GH(tsd_t) *tsd, t n)						\
 {									\
 									\
 	assert(tsd->state == tsd_state_nominal);			\
@@ -763,7 +763,7 @@ tsd_##n##_set(tsd_t *tsd, t n)						\
 MALLOC_TSD
 #undef O
 
-JEMALLOC_ALWAYS_INLINE tsdn_t *
+JEMALLOC_ALWAYS_INLINE GH(tsdn_t) *
 tsdn_fetch(void)
 {
 
@@ -774,14 +774,14 @@ tsdn_fetch(void)
 }
 
 JEMALLOC_ALWAYS_INLINE bool
-tsdn_null(const tsdn_t *tsdn)
+tsdn_null(const GH(tsdn_t) *tsdn)
 {
 
 	return (tsdn == NULL);
 }
 
-JEMALLOC_ALWAYS_INLINE tsd_t *
-tsdn_tsd(tsdn_t *tsdn)
+JEMALLOC_ALWAYS_INLINE GH(tsd_t) *
+tsdn_tsd(GH(tsdn_t) *tsdn)
 {
 	if (unlikely(tsdn_null(tsdn)))
 		return (NULL);

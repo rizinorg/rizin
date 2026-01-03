@@ -1403,7 +1403,7 @@
  * The size2index_tab lookup table uses uint8_t to encode each bin index, so we
  * cannot support more than 256 small size classes.  Further constrain JM_NBINS to
  * 255 since all small size classes, plus a "not small" size class must be
- * stored in 8 bits of arena_chunk_map_bits_t's bits field.
+ * stored in 8 bits of GH(arena_chunk_map_bits_t)'s bits field.
  */
 #if (JM_NBINS > 255)
 #  error "Too many small size classes"
