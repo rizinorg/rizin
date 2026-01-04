@@ -140,6 +140,7 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state);
 RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state);
+RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLABLE RzList /*<RzDbgListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);

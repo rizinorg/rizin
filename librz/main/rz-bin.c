@@ -42,9 +42,9 @@ static bool add_footer(RzCmdStateOutput *main_state, RzCmdStateOutput *state) {
 	return true;
 }
 
-static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode mode, const char *header) {
+static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode mode, const char *header, RzCore *core) {
 	RzCmdStateOutput *state = RZ_NEW(RzCmdStateOutput);
-	rz_cmd_state_output_init(state, mode);
+	rz_cmd_state_output_init(state, mode, core);
 	if (mode == RZ_OUTPUT_MODE_TABLE || mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -621,12 +621,12 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) 
 	RzCmdStateOutput state = { 0 };
 	if (rad == RZ_MODE_JSON) {
 		format = 'j';
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL);
 	} else if (rad) {
 		format = 'q';
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL);
 	} else {
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, NULL);
 	}
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
@@ -1251,7 +1251,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 #define ismodejson (out_mode == RZ_MODE_JSON && actions > 0)
 #define run_action(n, x, y) \
 	if (action & (x)) { \
-		RzCmdStateOutput *st = add_header(&state, mode, n); \
+		RzCmdStateOutput *st = add_header(&state, mode, n, &core); \
 		y(&core, st); \
 		add_footer(&state, st); \
 	}
@@ -1272,7 +1272,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzCmdStateOutput state;
 	RzOutputMode mode = rad2outputmode(out_mode);
-	if (!rz_cmd_state_output_init(&state, mode)) {
+	if (!rz_cmd_state_output_init(&state, mode, &core)) {
 		result = 1;
 		goto chksum_err;
 	}
@@ -1280,7 +1280,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	// List fatmach0 sub-binaries, etc
 	if (action & RZ_BIN_REQ_LISTARCHS || (arch && bits && !rz_bin_select(bin, arch, bits, machine, NULL))) {
-		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs");
+		RzCmdStateOutput *st = add_header(&state, mode == RZ_OUTPUT_MODE_STANDARD ? RZ_OUTPUT_MODE_TABLE : mode, "archs", &core);
 		rz_core_bin_archs_print(bin, st);
 		add_footer(&state, st);
 	}

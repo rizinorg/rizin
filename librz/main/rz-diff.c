@@ -83,6 +83,7 @@ typedef struct diff_context_t {
 	const char *input_b;
 	const char *file_a;
 	const char *file_b;
+	const char *theme_name;
 	DiffScreen screen;
 	RzList /*<char *>*/ *evars;
 } DiffContext;
@@ -215,6 +216,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"-q",       "",             "Quiet output",
 		"-V",       "",             "Show version information",
 		"-v",       "",             "Be more verbose (stderr output)",
+		"-K",       "theme",        "Set a give color theme (see rizin 'eco' command)",
 		"-e",       "k=v",          "Set an evaluable config variable",
 		"-A",       "",             "Compare virtual and physical addresses",
 		"-B",       "",             "Run 'aaa' when loading the bin",
@@ -277,7 +279,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:K:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -299,6 +301,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
+		case 'K': rz_diff_set_def(ctx->theme_name, NULL, opt.arg); break;
 		default:
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "unknown flag '%c'\n", c);
 		}
@@ -1992,7 +1995,7 @@ static void diff_similarity_as_json(RzAnalysisFunction *fcn_a, RzAnalysisFunctio
 	pj_end(pj); // } -- match object end
 }
 
-static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, bool color, bool no_name, RzTable *table) {
+static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, bool no_name, RzTable *table) {
 	char tmp[128];
 	const char *type_s = NULL;
 	const char *type_n = NULL;
@@ -2003,18 +2006,18 @@ static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFuncti
 	if (similarity > 0.0 && fcn_a && fcn_b) {
 		type_n = tmp;
 		if (similarity >= 1.0) {
-			rz_strf(tmp, color ? Color_BGREEN "%.6f" Color_RESET : "%.6f", similarity);
-			type_s = color ? Color_BGREEN "COMPLETE" Color_RESET : "COMPLETE";
+			rz_strf(tmp, "%.6f", similarity);
+			type_s = "COMPLETE";
 		} else if (similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
-			rz_strf(tmp, color ? Color_BYELLOW "%.6f" Color_RESET : "%.6f", similarity);
-			type_s = color ? Color_BYELLOW "PARTIAL " Color_RESET : "PARTIAL ";
+			rz_strf(tmp, "%.6f", similarity);
+			type_s = "PARTIAL";
 		} else {
-			rz_strf(tmp, color ? Color_BRED "%.4f" Color_RESET : "%.4f", similarity);
-			type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+			rz_strf(tmp, "%.4f", similarity);
+			type_s = "UNLIKE";
 		}
 	} else {
-		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
-		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+		type_n = "0.000000";
+		type_s = "UNLIKE";
 	}
 
 	if (no_name) {
@@ -2042,6 +2045,29 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
 	const RzAnalysisFunction *a = ma->pair_a;
 	const RzAnalysisFunction *b = mb->pair_a;
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
+}
+
+static const char *diff_table_color_selector(const char *value, const char *column, const size_t column_n, const RzTableColumnType type, void *user) {
+	if (!column || !value) {
+		return NULL;
+	}
+	const RzConsContext *ctx = (const RzConsContext *)user;
+	if (RZ_STR_EQ(column, "type")) {
+		if (RZ_STR_EQ(value, "COMPLETE")) {
+			return ctx->pal.diff_match;
+		} else if (RZ_STR_EQ(value, "PARTIAL")) {
+			return ctx->pal.diff_unmatch;
+		}
+		return ctx->pal.diff_unknown;
+	}
+	if (RZ_STR_EQ(column, "similarity")) {
+		return ctx->pal.cjmp;
+	} else if (rz_str_startswith(column, "size")) {
+		return ctx->pal.num;
+	} else if (rz_str_startswith(column, "addr")) {
+		return ctx->pal.offset;
+	}
+	return ctx->pal.label;
 }
 
 /**
@@ -2140,7 +2166,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(fcn_a, fcn_b, pair->similarity, pj);
 		} else {
-			diff_similarity_as_table(fcn_a, fcn_b, pair->similarity, color, no_name, table);
+			diff_similarity_as_table(fcn_a, fcn_b, pair->similarity, no_name, table);
 		}
 	}
 
@@ -2152,7 +2178,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(fcn_a, NULL, 0.0, pj);
 		} else {
-			diff_similarity_as_table(fcn_a, NULL, 0.0, color, no_name, table);
+			diff_similarity_as_table(fcn_a, NULL, 0.0, no_name, table);
 		}
 	}
 
@@ -2164,7 +2190,18 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(NULL, fcn_b, 0.0, pj);
 		} else {
-			diff_similarity_as_table(NULL, fcn_b, 0.0, color, no_name, table);
+			diff_similarity_as_table(NULL, fcn_b, 0.0, no_name, table);
+		}
+	}
+
+	if (table) {
+		if (color) {
+			rz_table_set_color_selector(table, diff_table_color_selector, core_a->cons->context);
+		}
+		if (core_a->cons->use_utf8_curvy) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+		} else if (core_a->cons->use_utf8) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8);
 		}
 	}
 
@@ -2288,6 +2325,9 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		}
 		if (ctx->verbose) {
 			fprintf(stderr, "rz-diff: start diffing.\n");
+		}
+		if (ctx->colors) {
+			rz_core_theme_load(a->core, ctx->theme_name ? ctx->theme_name : "default");
 		}
 		core_diff_show(a->core, b->core, ctx->input_a, ctx->mode, ctx->verbose);
 	}

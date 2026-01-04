@@ -567,7 +567,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			free(debugbackend);
 			debugbackend = rz_str_dup(opt.arg);
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, r);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
 				rz_cmd_state_output_print(&state);
@@ -781,7 +781,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);

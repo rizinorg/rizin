@@ -11,8 +11,8 @@ bool test_rz_table(void) {
 	RzTable *t = rz_table_new();
 
 	// rz_table_fromcsv (t, csv);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name", 0);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "address", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "address");
 
 	rz_table_add_row(t, "hello", "100", NULL);
 	rz_table_add_row(t, "namings", "20000", NULL);
@@ -34,8 +34,8 @@ bool test_rz_table(void) {
 RzTable *__table_test_data1() {
 	RzTable *t = rz_table_new();
 
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "ascii", 0);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "code", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "ascii");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "code");
 
 	rz_table_add_row(t, "a", "97", NULL);
 	rz_table_add_row(t, "b", "98", NULL);
@@ -222,13 +222,13 @@ bool test_rz_table_group(void) {
 	mu_end;
 }
 
-bool test_rz_table_columns() {
+bool test_rz_table_columns_select() {
 	RzTable *t = NULL;
 #define CREATE_TABLE \
 	rz_table_free(t); \
 	t = rz_table_new(); \
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "name", 0); \
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "address", 0); \
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "name"); \
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "address"); \
 	rz_table_add_row(t, "hello", "100", NULL); \
 	rz_table_add_row(t, "namings", "20000", NULL);
 
@@ -242,14 +242,14 @@ bool test_rz_table_columns() {
 	free(s);
 
 	RzList *newcols = rz_list_new();
-	rz_table_columns(t, newcols);
+	rz_table_columns_select(t, newcols);
 	s = rz_table_tocsv(t);
 	mu_assert_streq(s, "", "no cols");
 	free(s);
 
 	CREATE_TABLE
 	rz_list_push(newcols, "address");
-	rz_table_columns(t, newcols);
+	rz_table_columns_select(t, newcols);
 	s = rz_table_tocsv(t);
 	mu_assert_streq(s,
 		"address\n"
@@ -260,7 +260,7 @@ bool test_rz_table_columns() {
 
 	CREATE_TABLE
 	rz_list_push(newcols, "name");
-	rz_table_columns(t, newcols);
+	rz_table_columns_select(t, newcols);
 	s = rz_table_tocsv(t);
 	mu_assert_streq(s,
 		"address,name\n"
@@ -272,7 +272,7 @@ bool test_rz_table_columns() {
 	CREATE_TABLE
 	rz_list_push(newcols, "name");
 	rz_list_push(newcols, "address");
-	rz_table_columns(t, newcols);
+	rz_table_columns_select(t, newcols);
 	s = rz_table_tocsv(t);
 	mu_assert_streq(s,
 		"address,name,name,address\n"
@@ -389,7 +389,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_sort1);
 	mu_run_test(test_rz_table_uniq);
 	mu_run_test(test_rz_table_group);
-	mu_run_test(test_rz_table_columns);
+	mu_run_test(test_rz_table_columns_select);
 	mu_run_test(test_rz_table_transpose);
 	mu_run_test(test_rz_table_add_row_columnsf);
 	mu_run_test(test_rz_table_query);

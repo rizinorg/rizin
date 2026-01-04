@@ -945,7 +945,7 @@ RUN
 
 NAME=rz-diff functions comparison
 FILE==
-CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
 | name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
@@ -964,38 +964,38 @@ RUN
 
 NAME=rz-diff functions comparison (colored)
 FILE==
-CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -t functions bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -K ayu -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
 | name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
 )-------------------------------------------------------------------------------------------------(
-| test.00401460 |    41 | 0x00401460 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401470 |    41 | test.00401470 |
-| test.00401990 |   137 | 0x00401990 | [93mPARTIAL [0m | [93m0.985401[0m   | 0x004019a0 |   137 | test.004019a0 |
-| test.00401a20 |   162 | 0x00401a20 | [92mCOMPLETE[0m | [92m1.000000[0m   | 0x00401a30 |   162 | test.00401a30 |
-| test.00401ae0 |   228 | 0x00401ae0 | [93mPARTIAL [0m | [93m0.964912[0m   | 0x00401af0 |   228 | test.00401af0 |
-| test.00401be0 |  2728 | 0x00401be0 | [93mPARTIAL [0m | [93m0.991569[0m   | 0x00401bf0 |  2728 | test.00401bf0 |
-| test.00402730 |   425 | 0x00402730 | [93mPARTIAL [0m | [93m0.971765[0m   | 0x00402740 |   425 | test.00402740 |
-| test.004029a0 |    50 | 0x004029a0 | [93mPARTIAL [0m | [93m0.980000[0m   | 0x004029b0 |    50 | test.004029b0 |
-| test.00402e20 |   204 | 0x00402e20 | [93mPARTIAL [0m | [93m0.960784[0m   | 0x00402e30 |   204 | test.00402e30 |
+| [36mtest.00401460 [0m|[31m    41[0m |[31m 0x00401460[0m | [90mCOMPLETE [0m| [33m1.000000   [0m|[31m 0x00401470[0m |[31m    41[0m | [36mtest.00401470 [0m|
+| [36mtest.00401990 [0m|[31m   137[0m |[31m 0x00401990[0m | [33mPARTIAL  [0m| [33m0.985401   [0m|[31m 0x004019a0[0m |[31m   137[0m | [36mtest.004019a0 [0m|
+| [36mtest.00401a20 [0m|[31m   162[0m |[31m 0x00401a20[0m | [90mCOMPLETE [0m| [33m1.000000   [0m|[31m 0x00401a30[0m |[31m   162[0m | [36mtest.00401a30 [0m|
+| [36mtest.00401ae0 [0m|[31m   228[0m |[31m 0x00401ae0[0m | [33mPARTIAL  [0m| [33m0.964912   [0m|[31m 0x00401af0[0m |[31m   228[0m | [36mtest.00401af0 [0m|
+| [36mtest.00401be0 [0m|[31m  2728[0m |[31m 0x00401be0[0m | [33mPARTIAL  [0m| [33m0.991569   [0m|[31m 0x00401bf0[0m |[31m  2728[0m | [36mtest.00401bf0 [0m|
+| [36mtest.00402730 [0m|[31m   425[0m |[31m 0x00402730[0m | [33mPARTIAL  [0m| [33m0.971765   [0m|[31m 0x00402740[0m |[31m   425[0m | [36mtest.00402740 [0m|
+| [36mtest.004029a0 [0m|[31m    50[0m |[31m 0x004029a0[0m | [33mPARTIAL  [0m| [33m0.980000   [0m|[31m 0x004029b0[0m |[31m    50[0m | [36mtest.004029b0 [0m|
+| [36mtest.00402e20 [0m|[31m   204[0m |[31m 0x00402e20[0m | [33mPARTIAL  [0m| [33m0.960784   [0m|[31m 0x00402e30[0m |[31m   204[0m | [36mtest.00402e30 [0m|
 `-------------------------------------------------------------------------------------------------'
 EOF
 RUN
 
 NAME=rz-diff functions comparison against only one function
 FILE==
-CMDS=!rz-diff -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
-.-------------------------------------------------------------------------------------------------.
-| name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
-)-------------------------------------------------------------------------------------------------(
-| test.00401470 |    41 | 0x00401470 | UNLIKE   | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.004019a0 |   137 | 0x004019a0 | UNLIKE   | 0.1228     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.00401a30 |   162 | 0x00401a30 | UNLIKE   | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.00401af0 |   228 | 0x00401af0 | PARTIAL  | 0.964912   | 0x00401ae0 |   228 | test.00401ae0 |
-| test.00401bf0 |  2728 | 0x00401bf0 | UNLIKE   | 0.0433     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.00402740 |   425 | 0x00402740 | UNLIKE   | 0.1106     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.004029b0 |    50 | 0x004029b0 | UNLIKE   | 0.0702     | 0x00401ae0 |   228 | test.00401ae0 |
-| test.00402e30 |   204 | 0x00402e30 | UNLIKE   | 0.1140     | 0x00401ae0 |   228 | test.00401ae0 |
-`-------------------------------------------------------------------------------------------------'
+.------------------------------------------------------------------------------------------------.
+| name0         | size0 |      addr0 | type    | similarity |      addr1 | size1 | name1         |
+)------------------------------------------------------------------------------------------------(
+| test.00401470 |    41 | 0x00401470 | UNLIKE  | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.004019a0 |   137 | 0x004019a0 | UNLIKE  | 0.1228     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401a30 |   162 | 0x00401a30 | UNLIKE  | 0.0746     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401af0 |   228 | 0x00401af0 | PARTIAL | 0.964912   | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00401bf0 |  2728 | 0x00401bf0 | UNLIKE  | 0.0433     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00402740 |   425 | 0x00402740 | UNLIKE  | 0.1106     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.004029b0 |    50 | 0x004029b0 | UNLIKE  | 0.0702     | 0x00401ae0 |   228 | test.00401ae0 |
+| test.00402e30 |   204 | 0x00402e30 | UNLIKE  | 0.1140     | 0x00401ae0 |   228 | test.00401ae0 |
+`------------------------------------------------------------------------------------------------'
 EOF
 RUN

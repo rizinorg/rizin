@@ -2257,8 +2257,13 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 
 RZ_API RzTable *rz_core_table(RzCore *core) {
 	RzTable *table = rz_table_new();
-	if (table) {
-		table->cons = core->cons;
+	if (!table || !core->cons) {
+		return table;
+	}
+	if (core->cons->use_utf8_curvy) {
+		rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+	} else if (core->cons->use_utf8) {
+		rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8);
 	}
 	return table;
 }

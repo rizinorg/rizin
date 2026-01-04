@@ -78,6 +78,11 @@ static void table_column_fini_wrapper(void *_col, void *user) {
 	table_column_fini((RzTableColumn *)_col);
 }
 
+/**
+ * \brief      Allocates and initialize an RzTable structure
+ *
+ * \return     On success returns a valid pointer, otherwise NULL
+ */
 RZ_API RZ_OWN RzTable *rz_table_new(void) {
 	RzTable *t = RZ_NEW0(RzTable);
 	if (!t) {
@@ -91,6 +96,11 @@ RZ_API RZ_OWN RzTable *rz_table_new(void) {
 	return t;
 }
 
+/**
+ * \brief      Frees an given RzTable structure
+ *
+ * \param      t Referenced \p RzTable
+ */
 RZ_API void rz_table_free(RZ_NULLABLE RzTable *t) {
 	if (!t) {
 		return;
@@ -115,7 +125,7 @@ static bool table_index_of_column(RzTable *t, const char *name, size_t *index) {
 	return false;
 }
 
-static bool table_add_column(RzTable *t, const RzTableColumnType type, RzTableColumnTypeComparator cmp, const char *name, size_t max_width) {
+static bool table_add_column(RzTable *t, const RzTableColumnType type, RzTableColumnTypeComparator cmp, const char *name) {
 	if (table_index_of_column(t, name, NULL)) {
 		return false;
 	}
@@ -124,7 +134,6 @@ static bool table_add_column(RzTable *t, const RzTableColumnType type, RzTableCo
 	c.type_cmp = cmp;
 	c.type = type;
 	c.name = rz_str_dup(name);
-	c.maxWidth = max_width;
 	c.width = rz_str_utf8_ansi_cols(name) + 1;
 	c.total = -1;
 	if (c.type == RZ_TABLE_COLUMN_TYPE_NUMBER) {
@@ -134,10 +143,18 @@ static bool table_add_column(RzTable *t, const RzTableColumnType type, RzTableCo
 	return true;
 }
 
-RZ_API void rz_table_add_column(RZ_NONNULL RzTable *t, const RzTableColumnType type, RZ_NONNULL const char *name, size_t max_width) {
+/**
+ * \brief      Adds a new column to a RzTable structure
+ *
+ * \param      t          The RzTable to use
+ * \param[in]  type       The column type
+ * \param[in]  name       The column name
+ * \param[in]  max_width  The column maximum width
+ */
+RZ_API void rz_table_add_column(RZ_NONNULL RzTable *t, const RzTableColumnType type, RZ_NONNULL const char *name) {
 	rz_return_if_fail(t && type < RZ_TABLE_COLUMN_TYPE_ENUM_MAX && RZ_STR_ISNOTEMPTY(name));
 	RzTableColumnTypeComparator cmp = table_type_to_comparator(type);
-	table_add_column(t, type, cmp, name, max_width);
+	table_add_column(t, type, cmp, name);
 }
 
 static bool table_add_row(RzTable *t, RzPVector /*<char *>*/ *items, const char *arg, int col) {
@@ -189,18 +206,18 @@ RZ_API void rz_table_set_vcolumnsf(RZ_NONNULL RzTable *t, RZ_NONNULL const char 
 		}
 		switch (*f) {
 		case 'b':
-			table_add_column(t, RZ_TABLE_COLUMN_TYPE_BOOL, cmp_number, name, 0);
+			table_add_column(t, RZ_TABLE_COLUMN_TYPE_BOOL, cmp_number, name);
 			break;
 		case 's':
 		case 'z':
-			table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, name, 0);
+			table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, name);
 			break;
 		case 'i':
 		case 'd':
 		case 'n':
 		case 'x':
 		case 'X':
-			table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, cmp_number, name, 0);
+			table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, cmp_number, name);
 			break;
 		default:
 			RZ_LOG_ERROR("table: invalid format string char '%c'\n", *f);
@@ -292,7 +309,11 @@ RZ_API void rz_table_set_columnsf(RZ_NONNULL RzTable *t, RZ_NONNULL const char *
 	} while (0)
 
 /**
- * Add some columns values to the last created row, if any, or create a new row otherwise.
+ * \brief      Add some columns values to the last created row, if any, or create a new row otherwise.
+ *
+ * \param      t          The RzTable to use
+ * \param[in]  fmt        The format to decode
+ * \param[in]  ...        The var args to use as arguments.
  */
 RZ_API void rz_table_add_row_columnsf(RZ_NONNULL RzTable *t, RZ_NONNULL const char *fmt, ...) {
 	rz_return_if_fail(t && RZ_STR_ISNOTEMPTY(fmt));
@@ -319,7 +340,7 @@ RZ_API void rz_table_add_row_columnsf(RZ_NONNULL RzTable *t, RZ_NONNULL const ch
 }
 
 /**
- * \breif Add a new row with given format and variadic list of values.
+ * \brief Add a new row with given format and variadic list of values.
  *
  * \param t Table to add new row into
  * \param fmt Format string to define column ordering and type of given row.
@@ -338,7 +359,11 @@ RZ_API void rz_table_add_vrowf(RZ_NONNULL RzTable *t, RZ_NONNULL const char *fmt
 }
 
 /**
- * Add a new row with the specified columns values.
+ * \brief      Add a new row with the specified columns values.
+ *
+ * \param      t          The RzTable to use
+ * \param[in]  fmt        The format to decode
+ * \param[in]  ...        The var args to use as arguments.
  */
 RZ_API void rz_table_add_rowf(RZ_NONNULL RzTable *t, RZ_NONNULL const char *fmt, ...) {
 	rz_return_if_fail(t && RZ_STR_ISNOTEMPTY(fmt));
@@ -349,6 +374,13 @@ RZ_API void rz_table_add_rowf(RZ_NONNULL RzTable *t, RZ_NONNULL const char *fmt,
 	va_end(ap);
 }
 
+/**
+ * \brief      Add a new row with the specified column name and values.
+ *
+ * \param      t          The RzTable to use
+ * \param[in]  name       The column name
+ * \param[in]  ...        The var args to use as values.
+ */
 RZ_API void rz_table_add_row(RZ_NONNULL RzTable *t, RZ_NONNULL const char *name, ...) {
 	rz_return_if_fail(t && RZ_STR_ISNOTEMPTY(name));
 
@@ -376,11 +408,15 @@ RZ_API void rz_table_add_row(RZ_NONNULL RzTable *t, RZ_NONNULL const char *name,
 	t->totalCols = RZ_MAX(t->totalCols, rz_pvector_len(items));
 }
 
-// import / export
+static const char *table_get_color(RzTable *t, const char *value, const RzTableColumn *col, size_t n_col) {
+	if (!t->color) {
+		return NULL;
+	}
+	return t->color(value, col->name, n_col, col->type, t->color_user);
+}
 
-static int table_strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableColumn *col, char *str) {
-	RzCons *cons = (RzCons *)t->cons;
-	const char *v_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
+static int table_strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTableColumn *col, char *str, const char *color) {
+	const char *v_line = t->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length(sb);
 	int pad = 0;
 	int len = rz_str_utf8_ansi_cols(str);
@@ -389,19 +425,33 @@ static int table_strbuf_append_col_aligned_fancy(RzTable *t, RzStrBuf *sb, RzTab
 	}
 
 	switch (col->align) {
+	default:
+		/* fall-thru */
 	case RZ_TABLE_ALIGN_LEFT:
-		rz_strbuf_appendf(sb, "%s %-*s", v_line, col->width, str);
+		if (color) {
+			rz_strbuf_appendf(sb, "%s %s%-*s" Color_RESET, v_line, color, col->width, str);
+		} else {
+			rz_strbuf_appendf(sb, "%s %-*s", v_line, col->width, str);
+		}
 		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_RIGHT:
-		rz_strbuf_appendf(sb, "%s%*s ", v_line, col->width, str);
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%s%*s" Color_RESET " ", v_line, color, col->width, str);
+		} else {
+			rz_strbuf_appendf(sb, "%s%*s ", v_line, col->width, str);
+		}
 		rz_strbuf_appendf(sb, "%*s", pad, "");
 		break;
 	case RZ_TABLE_ALIGN_CENTER: {
 		pad = (col->width - len) / 2;
 		int left = col->width - (pad * 2 + len);
 		rz_strbuf_appendf(sb, "%s %-*s", v_line, pad, " ");
-		rz_strbuf_appendf(sb, "%-*s", pad + left, str);
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%-*s" Color_RESET, color, pad + left, str);
+		} else {
+			rz_strbuf_appendf(sb, "%-*s", pad + left, str);
+		}
 		break;
 	}
 	}
@@ -443,13 +493,12 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	RzTableRow *row;
 	RzTableColumn *col;
-	RzCons *cons = (RzCons *)t->cons;
-	bool useUtf8 = (cons && cons->use_utf8);
-	bool useUtf8Curvy = (cons && cons->use_utf8_curvy);
-	const char *v_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "|";
-	const char *h_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_HORIZ : "-";
-	const char *l_intersect = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : ")";
-	const char *rz_intersect = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "(";
+	bool useUtf8 = t->char_mode != RZ_TABLE_CHAR_MODE_ASCII;
+	bool useUtf8Curvy = t->char_mode == RZ_TABLE_CHAR_MODE_UTF8_CURVY;
+	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
+	const char *h_line = useUtf8 ? RUNE_LINE_HORIZ : "-";
+	const char *l_intersect = useUtf8 ? RUNE_LINE_VERT : ")";
+	const char *rz_intersect = useUtf8 ? RUNE_LINE_VERT : "(";
 	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TL : RUNE_CORNER_TL) : ".";
 	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_TR : RUNE_CORNER_TR) : ".";
 	const char *bl_corner = useUtf8 ? (useUtf8Curvy ? RUNE_CURVE_CORNER_BL : RUNE_CORNER_BL) : "`";
@@ -457,7 +506,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	table_adjust(t);
 
 	rz_vector_foreach (t->cols, col) {
-		table_strbuf_append_col_aligned_fancy(t, sb, col, col->name);
+		table_strbuf_append_col_aligned_fancy(t, sb, col, col->name, NULL);
 	}
 	int len = rz_str_utf8_ansi_cols(rz_strbuf_get(sb)) - 1;
 	int maxlen = len;
@@ -472,14 +521,16 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	rz_vector_foreach (t->rows, row) {
 		void **pitem;
 		char *item;
-		int c = 0;
+		size_t n_col = 0;
 		rz_pvector_foreach (row->items, pitem) {
 			item = *pitem;
-			RzTableColumn *col = rz_vector_index_ptr(t->cols, c);
-			if (col) {
-				(void)table_strbuf_append_col_aligned_fancy(t, sb, col, item);
+			if (n_col >= rz_vector_len(t->cols)) {
+				break;
 			}
-			c++;
+			RzTableColumn *col = rz_vector_index_ptr(t->cols, n_col);
+			const char *color = table_get_color(t, item, col, n_col);
+			(void)table_strbuf_append_col_aligned_fancy(t, sb, col, item, color);
+			n_col++;
 		}
 		rz_strbuf_appendf(sb, "%s\n", v_line);
 	}
@@ -490,7 +541,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 		rz_strbuf_appendf(sb, "%s%s%s\n", l_intersect, h_line_str, rz_intersect);
 		rz_vector_foreach (t->cols, col) {
 			char *num = col->total == -1 ? "" : sdb_itoa(col->total, tmp, 10);
-			(void)table_strbuf_append_col_aligned_fancy(t, sb, col, num);
+			(void)table_strbuf_append_col_aligned_fancy(t, sb, col, num, NULL);
 		}
 		rz_strbuf_appendf(sb, "%s\n", v_line);
 	}
@@ -499,7 +550,7 @@ RZ_API RZ_OWN char *rz_table_tofancystring(RZ_NONNULL RzTable *t) {
 	return rz_strbuf_drain(sb);
 }
 
-static int table_strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const char *str, bool nopad) {
+static int table_strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, const char *str, bool nopad, const char *color) {
 	int ll = rz_strbuf_length(sb);
 	char *pad = "";
 	int padlen = 0;
@@ -513,12 +564,22 @@ static int table_strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, con
 		}
 	}
 	switch (col->align) {
+	default:
+		/* fall-thru */
 	case RZ_TABLE_ALIGN_LEFT:
 		if (nopad) {
-			rz_strbuf_appendf(sb, "%s", str);
+			if (color) {
+				rz_strbuf_appendf(sb, "%s%s" Color_RESET, color, str);
+			} else {
+				rz_strbuf_appendf(sb, "%s", str);
+			}
 		} else {
 			pad = rz_str_repeat(" ", padlen);
-			rz_strbuf_appendf(sb, "%-*s%s", col->width, str, pad);
+			if (color) {
+				rz_strbuf_appendf(sb, "%s%-*s" Color_RESET "%s", color, col->width, str, pad);
+			} else {
+				rz_strbuf_appendf(sb, "%-*s%s", col->width, str, pad);
+			}
 			free(pad);
 		}
 		break;
@@ -527,23 +588,35 @@ static int table_strbuf_append_col_aligned(RzStrBuf *sb, RzTableColumn *col, con
 			padlen++;
 		}
 		pad = rz_str_repeat(" ", padlen);
-		rz_strbuf_appendf(sb, "%*s%s", col->width - 1, str, pad);
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%*s" Color_RESET "%s", color, col->width - 1, str, pad);
+		} else {
+			rz_strbuf_appendf(sb, "%*s%s", col->width - 1, str, pad);
+		}
 		free(pad);
 		break;
 	case RZ_TABLE_ALIGN_CENTER: {
 		int pad = (col->width - len2) / 2;
 		int left = col->width - (pad * 2 + len2);
 		rz_strbuf_appendf(sb, "%-*s", pad, " ");
-		rz_strbuf_appendf(sb, "%-*s ", pad + left, str);
+		if (color) {
+			rz_strbuf_appendf(sb, "%s%-*s" Color_RESET " ", color, pad + left, str);
+		} else {
+			rz_strbuf_appendf(sb, "%-*s ", pad + left, str);
+		}
 		break;
 	}
-	default:
-		rz_warn_if_reached();
-		break;
 	}
 	return rz_strbuf_length(sb) - ll;
 }
 
+/**
+ * \brief      Stringifies a given RzTable (the output depends by the table configuration)
+ *
+ * \param      t     The RzTable to use
+ *
+ * \return     On success returns a valid C string, otherwise NULL.
+ */
 RZ_API RZ_OWN char *rz_table_tostring(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 
@@ -562,6 +635,13 @@ RZ_API RZ_OWN char *rz_table_tostring(RZ_NONNULL RzTable *t) {
 	return rz_table_tosimplestring(t);
 }
 
+/**
+ * \brief      Stringifies a given RzTable using the simplified format
+ *
+ * \param      t     The RzTable to use
+ *
+ * \return     On success returns a valid C string, otherwise NULL.
+ */
 RZ_API RZ_OWN char *rz_table_tosimplestring(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 
@@ -572,13 +652,12 @@ RZ_API RZ_OWN char *rz_table_tosimplestring(RZ_NONNULL RzTable *t) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	RzTableRow *row;
 	RzTableColumn *col;
-	RzCons *cons = (RzCons *)t->cons;
-	const char *h_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *h_line = t->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? RUNE_LONG_LINE_HORIZ : "-";
 	table_adjust(t);
 	int maxlen = 0;
 	if (t->showHeader) {
 		rz_vector_foreach (t->cols, col) {
-			int ll = table_strbuf_append_col_aligned(sb, col, col->name, false);
+			int ll = table_strbuf_append_col_aligned(sb, col, col->name, false, NULL);
 			maxlen = RZ_MAX(maxlen, ll);
 		}
 		int len = rz_str_utf8_ansi_cols(rz_strbuf_get(sb));
@@ -591,15 +670,17 @@ RZ_API RZ_OWN char *rz_table_tosimplestring(RZ_NONNULL RzTable *t) {
 	rz_vector_foreach (t->rows, row) {
 		void **pitem;
 		char *item;
-		int c = 0;
+		size_t n_col = 0;
 		rz_pvector_foreach (row->items, pitem) {
 			item = *pitem;
-			bool nopad = (item == rz_pvector_tail(row->items));
-			RzTableColumn *col = rz_vector_index_ptr(t->cols, c);
-			if (col) {
-				(void)table_strbuf_append_col_aligned(sb, col, item, nopad);
+			if (n_col >= rz_vector_len(t->cols)) {
+				break;
 			}
-			c++;
+			RzTableColumn *col = rz_vector_index_ptr(t->cols, n_col);
+			bool nopad = (item == rz_pvector_tail(row->items));
+			const char *color = table_get_color(t, item, col, n_col);
+			(void)table_strbuf_append_col_aligned(sb, col, item, nopad, color);
+			n_col++;
 		}
 		rz_strbuf_append(sb, "\n");
 	}
@@ -615,12 +696,19 @@ RZ_API RZ_OWN char *rz_table_tosimplestring(RZ_NONNULL RzTable *t) {
 		}
 		rz_vector_foreach (t->cols, col) {
 			bool nopad = (col == rz_vector_tail(t->cols));
-			(void)table_strbuf_append_col_aligned(sb, col, sdb_itoa(col->total, tmp, 10), nopad);
+			(void)table_strbuf_append_col_aligned(sb, col, sdb_itoa(col->total, tmp, 10), nopad, NULL);
 		}
 	}
 	return rz_strbuf_drain(sb);
 }
 
+/**
+ * \brief      Stringifies a given RzTable to CSV
+ *
+ * \param      t     The RzTable to use
+ *
+ * \return     On success returns a valid C string, otherwise NULL.
+ */
 RZ_API RZ_OWN char *rz_table_tocsv(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
 
@@ -668,10 +756,11 @@ RZ_API RZ_OWN char *rz_table_tocsv(RZ_NONNULL RzTable *t) {
 }
 
 /**
- * \brief Convert RzTable to json format
+ * \brief      Stringifies a given RzTable to JSON
  *
- * \param t pointer to RzTable
- * \return json string
+ * \param      t     The RzTable to use
+ *
+ * \return     On success returns a valid C string, otherwise NULL.
  */
 RZ_API RZ_OWN char *rz_table_tojson(RZ_NONNULL RzTable *t) {
 	rz_return_val_if_fail(t, NULL);
@@ -713,9 +802,7 @@ RZ_API RZ_OWN char *rz_table_tojson(RZ_NONNULL RzTable *t) {
 	return pj_drain(pj);
 }
 
-RZ_API void rz_table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL const char *un) {
-	rz_return_if_fail(t && un);
-
+static void table_filter(RZ_NONNULL RzTable *t, size_t nth, int op, RZ_NONNULL const char *un) {
 	if (nth >= rz_vector_len(t->cols)) {
 		return;
 	}
@@ -849,6 +936,13 @@ static int cmp(const void *_a, const void *_b, void *user) {
 	return info->cmp(wa, wb);
 }
 
+/**
+ * \brief      Sorts the rows of a given RzTable by the selected column type
+ *
+ * \param[in]  t        The RzTable to use
+ * \param[in]  nth      The nth column to use for sorting
+ * \param[in]  reverse  When true, the table is sorted in reverse order
+ */
 RZ_API void rz_table_sort(RZ_NONNULL RzTable *t, size_t nth, bool reverse) {
 	rz_return_if_fail(t);
 
@@ -876,7 +970,16 @@ static int cmplen(const void *_a, const void *_b, void *user) {
 	return strlen(wa) - strlen(wb);
 }
 
-RZ_API void rz_table_sortlen(RzTable *t, size_t nth, bool reverse) {
+/**
+ * \brief      Sorts the rows of a given RzTable by the selected column value length
+ *
+ * \param[in]  t        The RzTable to use
+ * \param[in]  nth      The nth column to use for sorting
+ * \param[in]  reverse  When true, the table is sorted in reverse order
+ */
+RZ_API void rz_table_sortlen(RZ_NONNULL RzTable *t, size_t nth, bool reverse) {
+	rz_return_if_fail(t);
+
 	if (nth >= rz_vector_len(t->cols)) {
 		return;
 	}
@@ -938,6 +1041,11 @@ static int table_rows_cmp_all(RzPVector /*<char *>*/ *lhs, RzPVector /*<char *>*
 	return 0;
 }
 
+/**
+ * \brief      Removes from the RzTable any duplicated rows
+ *
+ * \param      t     The RzTable to use
+ */
 RZ_API void rz_table_uniq(RZ_NONNULL RzTable *t) {
 	rz_return_if_fail(t);
 
@@ -962,6 +1070,13 @@ RZ_API void rz_table_uniq(RZ_NONNULL RzTable *t) {
 	}
 }
 
+/**
+ * \brief      Removes from the RzTable any grouped row via its column
+ *
+ * \param      t         The RzTable to use
+ * \param      nth       The column to select
+ * \param      selector  The selector to apply (can be null)
+ */
 RZ_API void rz_table_group(RZ_NONNULL RzTable *t, size_t nth, RZ_NULLABLE RzTableSelector selector) {
 	rz_return_if_fail(t);
 
@@ -1024,10 +1139,10 @@ typedef struct col_source {
 /**
  * \brief Select specific columns in RzTable
  *
- * \param t pointer to RzTable
- * \param col_names pointer to RzList containing column names
+ * \param  t          The RzTable to use
+ * \param  col_names  pointer to RzList containing column names
  */
-RZ_API void rz_table_columns(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<char *>*/ *col_names) {
+RZ_API void rz_table_columns_select(RZ_NONNULL RzTable *t, RZ_NONNULL RzList /*<char *>*/ *col_names) {
 	rz_return_if_fail(t && col_names);
 
 	// 1 bool per OLD column to indicate whether it should be freed (masked out)
@@ -1148,6 +1263,12 @@ static bool set_table_format(RzTable *t, const char *q) {
 	return true;
 }
 
+/**
+ * \brief Applies a given table query syntax to an RzTable (some values may be lost based on the query)
+ *
+ * \param  t   The RzTable to use
+ * \param  q   Query syntax to apply
+ */
 RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 	rz_return_val_if_fail(t, false);
 	if (q) {
@@ -1224,7 +1345,7 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 			RzList *list = rz_list_new();
 			if (list) {
 				rz_list_append(list, rz_str_dup(columnName));
-				rz_table_columns(t, list);
+				rz_table_columns_select(t, list);
 				rz_list_free(list);
 			}
 		} else if (!strcmp(operation, "sort")) {
@@ -1239,43 +1360,43 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 			char *op = rz_str_dup(operand ? operand : "");
 			RzList *list = rz_str_split_list(op, "/", 0);
 			rz_list_prepend(list, rz_str_dup(columnName));
-			rz_table_columns(t, list); // select/reorder columns
+			rz_table_columns_select(t, list); // select/reorder columns
 			rz_list_free(list);
-			rz_table_filter(t, 0, '+', op);
+			table_filter(t, 0, '+', op);
 			free(op);
 		} else if (!strcmp(operation, "strlen")) {
 			if (operand) {
-				rz_table_filter(t, col, 's', operand);
+				table_filter(t, col, 's', operand);
 			}
 		} else if (!strcmp(operation, "minlen")) {
 			if (operand) {
-				rz_table_filter(t, col, 'l', operand);
+				table_filter(t, col, 'l', operand);
 			}
 		} else if (!strcmp(operation, "maxlen")) {
 			if (operand) {
-				rz_table_filter(t, col, 'L', operand);
+				table_filter(t, col, 'L', operand);
 			}
 		} else if (!strcmp(operation, "page")) {
 			if (operand) {
-				rz_table_filter(t, col, 'p', operand);
+				table_filter(t, col, 'p', operand);
 			}
 		} else if (!strcmp(operation, "tail")) {
 			if (operand) {
-				rz_table_filter(t, col, 't', operand);
+				table_filter(t, col, 't', operand);
 			}
 		} else if (!strcmp(operation, "head")) {
 			if (operand) {
-				rz_table_filter(t, col, 'h', operand);
+				table_filter(t, col, 'h', operand);
 			}
 		} else if (!strcmp(operation, "str")) {
 			if (operand) {
-				rz_table_filter(t, col, '~', operand);
+				table_filter(t, col, '~', operand);
 			}
 		} else if (!strcmp(operation, "cols")) {
 			char *op = rz_str_dup(operand ? operand : "");
 			RzList *list = rz_str_split_list(op, "/", 0);
 			rz_list_prepend(list, rz_str_dup(columnName));
-			rz_table_columns(t, list); // select/reorder columns
+			rz_table_columns_select(t, list); // select/reorder columns
 			rz_list_free(list);
 			free(op);
 		} else {
@@ -1283,7 +1404,7 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 			if (op == -1) {
 				RZ_LOG_ERROR("table: Invalid operation (%s)\n", operation);
 			} else {
-				rz_table_filter(t, col, op, operand);
+				table_filter(t, col, op, operand);
 			}
 		}
 		rz_list_free(q);
@@ -1294,7 +1415,16 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 	return true;
 }
 
-RZ_API bool rz_table_align(RzTable *t, size_t nth, RzTableAlign align) {
+/**
+ * \brief      Sets the a given column alignment
+ *
+ * \param      t      The RzTable to use
+ * \param[in]  nth    The nth column to set the alignment to.
+ * \param[in]  align  The column alignment to use
+ *
+ * \return     On success returns true, othewise false
+ */
+RZ_API bool rz_table_align(RZ_NONNULL RzTable *t, size_t nth, RzTableAlign align) {
 	rz_return_val_if_fail(t && align < RZ_TABLE_ALIGN_ENUM_MAX, false);
 
 	if (nth >= rz_vector_len(t->cols)) {
@@ -1309,115 +1439,42 @@ RZ_API bool rz_table_align(RzTable *t, size_t nth, RzTableAlign align) {
 	return false;
 }
 
+/**
+ * \brief      Sets/unsets if the header should be part of the table or not
+ *
+ * \param      t            The RzTable to use
+ * \param[in]  show_header  The boolean to set
+ */
 RZ_API void rz_table_show_header(RZ_NONNULL RzTable *t, bool show_header) {
 	rz_return_if_fail(t);
 
 	t->showHeader = show_header;
 }
 
-RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra) {
-	RzListInfo *info = RZ_NEW(RzListInfo);
-	if (info) {
-		info->name = rz_str_dup(name);
-		info->pitv = pitv;
-		info->vitv = vitv;
-		info->perm = perm;
-		info->extra = rz_str_dup(extra);
-	}
-	return info;
+/**
+ * \brief      Sets the charset mode to use (ascii, utf8 or utf8 curvy)
+ *
+ * \param      t     The RzTable to use
+ * \param[in]  mode  The mode to set
+ */
+RZ_API void rz_table_set_char_mode(RZ_NONNULL RzTable *t, RzTableCharMode mode) {
+	rz_return_if_fail(t);
+
+	t->char_mode = mode;
 }
 
-RZ_API void rz_listinfo_free(RzListInfo *info) {
-	if (!info) {
-		return;
-	}
-	free(info->name);
-	free(info->extra);
-	free(info);
-}
+/**
+ * \brief      Sets the color callback, called by rz_table_tofancystring and rz_table_tosimplestring
+ *
+ * \param      t         The RzTable to use
+ * \param[in]  color_cb  The color cb to set/unset
+ * \param      user      The user context to pass to the callback
+ */
+RZ_API void rz_table_set_color_selector(RZ_NONNULL RzTable *t, RZ_NULLABLE RzTableColorSelector color_cb, void *user) {
+	rz_return_if_fail(t);
 
-RZ_API void rz_table_visual_list(RzTable *table, RzList /*<RzListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va) {
-	ut64 mul, min = -1, max = -1;
-	RzListIter *iter;
-	RzListInfo *info;
-	RzCons *cons = (RzCons *)table->cons;
-	table->showHeader = false;
-	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = cons->use_utf8 ? UTF_BLOCK : "#";
-	int j, i;
-	width -= 80;
-	if (width < 1) {
-		width = 30;
-	}
-
-	rz_table_set_columnsf(table, "sxsxsss", "No.", "start", "blocks", "end", "perms", "extra", "name");
-	rz_list_foreach (list, iter, info) {
-		if (min == -1 || info->pitv.addr < min) {
-			min = info->pitv.addr;
-		}
-		if (max == -1 || info->pitv.addr + info->pitv.size > max) {
-			max = info->pitv.addr + info->pitv.size;
-		}
-	}
-	mul = (max - min) / width;
-	if (min != -1 && mul > 0) {
-		i = 0;
-		rz_list_foreach (list, iter, info) {
-			RzStrBuf *buf = rz_strbuf_new("");
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + j * mul;
-				ut64 npos = min + (j + 1) * mul;
-				const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
-					? block
-					: h_line;
-				rz_strbuf_append(buf, arg);
-			}
-			char *b = rz_strbuf_drain(buf);
-			char no[64];
-			if (va) {
-				rz_table_add_rowf(table, "sxsxsss",
-					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
-					info->vitv.addr,
-					b,
-					rz_itv_end(info->vitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
-					(info->extra) ? info->extra : "",
-					(info->name) ? info->name : "");
-			} else {
-				rz_table_add_rowf(table, "sxsxsss",
-					rz_strf(no, "%d%c", i, rz_itv_contain(info->pitv, seek) ? '*' : ' '),
-					info->pitv.addr,
-					b,
-					rz_itv_end(info->pitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
-					(info->extra) ? info->extra : "",
-					(info->name) ? info->name : "");
-			}
-			free(b);
-			i++;
-		}
-		RzStrBuf *buf = rz_strbuf_new("");
-		/* current seek */
-		if (i > 0 && len != 0) {
-			if (seek == UT64_MAX) {
-				seek = 0;
-			}
-			for (j = 0; j < width; j++) {
-				rz_strbuf_append(buf, ((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
-			}
-			char *s = rz_strbuf_drain(buf);
-			char *seekstart = rz_str_newf("0x%08" PFMT64x, seek);
-			char *seekend = rz_str_newf("0x%08" PFMT64x, seek + len);
-
-			rz_table_add_rowf(table, "sssssss", "=>", seekstart, s, seekend, "", "", "");
-
-			free(seekend);
-			free(seekstart);
-			free(s);
-		} else {
-			rz_strbuf_free(buf);
-		}
-	}
+	t->color = color_cb;
+	t->color_user = user;
 }
 
 /**
@@ -1440,15 +1497,15 @@ RZ_API RZ_OWN RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
 	ut32 i;
 
 	// getting table column names to add to row head
-	table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, "Name", 0);
+	table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, "Name");
 
 	// adding rows to transpose table rows * (number of columns in the table)
 	for (i = 0; i < rz_vector_len(t->rows); i++) {
 		char name[20];
 		if (rz_vector_len(t->rows) == 1) {
-			table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, "Value", 0);
+			table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, "Value");
 		} else {
-			table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, rz_strf(name, "Value%d", i + 1), 0);
+			table_add_column(transpose, RZ_TABLE_COLUMN_TYPE_STRING, cmp_string, rz_strf(name, "Value%d", i + 1));
 		}
 	}
 

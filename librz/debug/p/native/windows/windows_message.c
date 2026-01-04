@@ -291,10 +291,10 @@ static RzTable *create_window_table(void) {
 	if (!t) {
 		return NULL;
 	}
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Handle", ST32_MAX);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "PID", ST32_MAX);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "TID", ST32_MAX);
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "Class Name", ST32_MAX);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Handle");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "PID");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "TID");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "Class Name");
 	return t;
 }
 
