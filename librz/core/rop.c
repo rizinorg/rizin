@@ -986,7 +986,7 @@ static void print_rop_dependencies(const RzRopGadgetInfo *gadget_info) {
 	}
 }
 
-static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector /*<size_t *>*/ *lens, RzVector /*<ut64 *>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
+static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
 	ut32 size = gadget_info->size;
 	size_t instr_count = 0;
 	int pad = 0;
