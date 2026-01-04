@@ -2214,7 +2214,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 		if (!strncmp(flag->name, "case.", 5)) {
 			sscanf(flag->name + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = rz_num_math(core->num, addr);
-			if (case_start == -1) {
+			if (case_start == -1 || switch_addr != saddr) {
 				switch_addr = saddr;
 				case_prev = case_current;
 				case_start = case_current;
@@ -2321,7 +2321,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 						} else {
 							rz_cons_printf("%s:", case_prev_name);
 						}
-						case_start = -1;
+						case_start = case_current;
 					}
 				}
 				case_prev = case_current;
