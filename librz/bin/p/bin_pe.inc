@@ -32,7 +32,8 @@ static bool pe_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 }
 
 static void pe_destroy(RzBinFile *bf) {
-	PE_(rz_bin_pe_free)((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
+	PE_(rz_bin_pe_free)
+	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
 }
 
 static ut64 pe_baddr(RzBinFile *bf) {
@@ -165,7 +166,8 @@ static RzPVector /*<RzBinMap *>*/ *pe_maps(RzBinFile *bf) {
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
 	rz_pvector_push(ret, map);
-	PE_(rz_bin_pe_check_sections)(bin, &sections);
+	PE_(rz_bin_pe_check_sections)
+	(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
@@ -208,7 +210,8 @@ static RzPVector /*<RzBinSection *>*/ *pe_sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)(bin, &sections);
+	PE_(rz_bin_pe_check_sections)
+	(bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
@@ -538,7 +541,7 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 	case PE_IMAGE_REL_BASED_DIR64:
 		return "IMAGE_REL_BASED_DIR64";
 	case 15:
-    	return "IMAGE_REL_BASED_TYPE15";
+		return "IMAGE_REL_BASED_TYPE15";
 	default:
 		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
 		return "IMAGE_REL_BASED_UNKNOWN";
