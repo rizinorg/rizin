@@ -229,3 +229,101 @@ ldr x0, [x0, 0x8c8]
 bl reloc.target.fputs
 EOF
 RUN
+
+NAME=arm R_ARM_PREL31 relocation
+FILE=bins/elf/arm-reloc-prel31.o
+CMDS=<<EOF
+ir~R_ARM_PREL31?
+pf w @ 0x08000038
+pd 1 @ 0x08000038
+EOF
+EXPECT=<<EOF
+1
+0x08000038 = 0x0090
+            ;-- section..data:
+            ;-- foo:
+            ;-- .data:
+            ;-- reloc_slot:
+            0x08000038      .dword 0x00000090                          ; RELOC 32 foo ; [02] -rw- section size 4 named .data
+EOF
+RUN
+
+NAME=arm call/jump relocations
+FILE=bins/elf/arm-reloc-call.o
+CMDS=<<EOF
+ir
+pd 1 @ 0x08000038
+pd 1 @ 0x0800003c
+pd 1 @ 0x08000040
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type         name 
+---------------------------------------------------
+0x08000038 0x00000038 0x08000034 R_ARM_CALL   foo
+0x0800003c 0x0000003c 0x08000034 R_ARM_JUMP24 foo
+0x08000040 0x00000040 0x08000034 R_ARM_CALL   foo
+            ;-- foo:
+            ;-- arm:
+            0x08000038      bl    loc.arm                              ; RELOC 24 foo @ 0x08000034
+            ;-- foo:
+            0x0800003c      bl    reloc.foo.800003c                    ; RELOC 24 foo @ 0x08000034
+            ;-- foo:
+            0x08000040      blx   foo                                  ; RELOC 24 foo @ 0x08000034
+EOF
+RUN
+
+NAME=arm alu group relocations
+FILE=bins/elf/arm-reloc-alu-group.o
+CMDS=<<EOF
+ir
+pd 2 @ 0x08000038
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type            name 
+------------------------------------------------------
+0x08000038 0x00000038 0x08000034 R_ARM_ALU_PC_G0 foo
+0x0800003c 0x0000003c 0x08000034 R_ARM_ALU_PC_G1 foo
+            ;-- foo:
+            ;-- test:
+            0x08000038      add   r0, pc, -0x1000000                   ; RELOC 32 foo @ 0x08000034
+            ;-- foo:
+            0x0800003c      add   r0, r0, 0xff0000                     ; RELOC 32 foo @ 0x08000034
+EOF
+RUN
+
+NAME=arm dynamic R_ARM_JUMP_SLOT relocation
+FILE=bins/elf/arm-reloc-jump-slot.so
+CMDS=<<EOF
+ir
+pf w @ 0x000011c4
+pd 1 @ 0x000011c4
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type            name        
+-------------------------------------------------------------
+0x000011c4 0x000001c4 0x000011d0 R_ARM_JUMP_SLOT target_func
+0x000011c4 = 0x11d0
+            ;-- target_func:
+            0x000011c4      .dword 0x000011d0 ; reloc.target.target_func; RELOC 32 target_func
+EOF
+RUN
+
+NAME=thumb32 R_ARM_THM_JUMP24 relocation
+FILE=bins/elf/arm-reloc-thm-jump24.o
+CMDS=<<EOF
+ir
+pd 1 @ 0x08000034
+pf w @ 0x08000034
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type             name 
+-------------------------------------------------------
+0x08000034 0x00000034 0x0800012c R_ARM_THM_JUMP24 foo
+            ;-- section..text:
+            ;-- foo:
+            ;-- .text:
+            ;-- _start:
+        ,=< 0x08000034      b.w   foo                                  ; RELOC 24 foo ; [01] -r-x section size 4 named .text
+0x08000034 = 0xf000
+EOF
+RUN
