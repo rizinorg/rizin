@@ -3203,27 +3203,25 @@ static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *
 }
 
 static void function_list_print_to_table(RzCore *core, RzList /*<RzAnalysisFunction *>*/ *list, RzTable *t, bool verbose) {
-	RzTableColumnType *typeString = rz_table_type("string");
-	RzTableColumnType *typeNumber = rz_table_type("number");
-	rz_table_add_column(t, typeNumber, "addr", 0);
-	rz_table_add_column(t, typeString, "name", 0);
-	rz_table_add_column(t, typeNumber, "size", 0);
-	rz_table_add_column(t, typeNumber, "xrefsTo", 0);
-	rz_table_add_column(t, typeNumber, "xrefsFrom", 0);
-	rz_table_add_column(t, typeNumber, "calls", 0);
-	rz_table_add_column(t, typeNumber, "nbbs", 0);
-	rz_table_add_column(t, typeNumber, "edges", 0);
-	rz_table_add_column(t, typeNumber, "cc", 0);
-	rz_table_add_column(t, typeNumber, "cost", 0);
-	rz_table_add_column(t, rz_table_type("boolean"), "noreturn", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "addr", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "size", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "xrefsTo", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "xrefsFrom", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "calls", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "nbbs", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "edges", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "cc", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "cost", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_BOOL, "noreturn", 0);
 	if (verbose) {
-		rz_table_add_column(t, typeNumber, "min bound", 0);
-		rz_table_add_column(t, typeNumber, "range", 0);
-		rz_table_add_column(t, typeNumber, "max bound", 0);
-		rz_table_add_column(t, typeNumber, "locals", 0);
-		rz_table_add_column(t, typeNumber, "args", 0);
-		rz_table_add_column(t, typeNumber, "frame", 0);
-		rz_table_add_column(t, typeNumber, "loops", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "min bound", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "range", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "max bound", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "locals", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "args", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "frame", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "loops", 0);
 	}
 
 	RzListIter *iter;
@@ -3852,11 +3850,9 @@ static void print_stats(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, RzCmdSt
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTable *t = state->d.t;
-		RzTableColumnType *typeString = rz_table_type("string");
-		RzTableColumnType *typeNumber = rz_table_type("number");
-		rz_table_add_column(t, typeString, "name", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name", 0);
 		rz_list_foreach (list, iter, name) {
-			rz_table_add_column(t, typeNumber, name, 0);
+			rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, name, 0);
 		}
 		RzPVector *items = rz_pvector_new(free);
 		if (!items) {
@@ -3942,14 +3938,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	rz_list_sort(keys, (RzListComparator)strcmp, NULL);
 
 	RzTable *t = state->d.t;
-	RzTableColumnType *typeString = rz_table_type("string");
-	RzTableColumnType *typeNumber = rz_table_type("number");
-	rz_table_add_column(t, typeString, "name", 0);
-	rz_table_add_column(t, typeNumber, "addr", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "addr", 0);
 
 	char *key;
 	rz_list_foreach (keys, iter, key) {
-		rz_table_add_column(t, typeNumber, key, 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, key, 0);
 	}
 
 	RzListIter *iter2;

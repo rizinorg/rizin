@@ -41,8 +41,7 @@
 static RZ_NULLABLE RZ_BORROW const RzPVector /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
 
 static void table_add_row_bool(RzTable *t, const char *key, bool val) {
-	RzTableColumnType *typeString = rz_table_type("bool");
-	const char *b = val || typeString ? rz_str_bool(val) : "";
+	const char *b = rz_str_bool(val);
 	rz_table_add_rowf(t, "ss", key, b);
 }
 
@@ -3122,7 +3121,7 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE: {
-		rz_table_hide_header(state->d.t);
+		rz_table_show_header(state->d.t, false);
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
@@ -3354,7 +3353,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_set_columnsf(t, "ss", "field", "value");
-		rz_table_hide_header(t);
+		rz_table_show_header(t, false);
 
 		rz_table_add_rowf(t, "ss", "arch", str2na(info->arch));
 		rz_table_add_rowf(t, "ss", "cpu", str2na(info->cpu));

@@ -287,15 +287,15 @@ static window *window_from_handle(HANDLE hwnd) {
 }
 
 static RzTable *create_window_table(void) {
-	RzTable *tbl = rz_table_new();
-	if (!tbl) {
+	RzTable *t = rz_table_new();
+	if (!t) {
 		return NULL;
 	}
-	rz_table_add_column(tbl, rz_table_type("number"), "Handle", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("number"), "PID", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("number"), "TID", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("string"), "Class Name", ST32_MAX);
-	return tbl;
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Handle", ST32_MAX);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "PID", ST32_MAX);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "TID", ST32_MAX);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "Class Name", ST32_MAX);
+	return t;
 }
 
 static void add_window_to_table(RzTable *tbl, window *win) {

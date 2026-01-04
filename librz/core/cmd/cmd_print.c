@@ -1712,18 +1712,15 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 	}
 
 	const ut8 *buf = core->block;
-
 	bool be = core->analysis->big_endian;
 	int end = RZ_MIN(core->blocksize, len);
 	int bitsize = wordsize * 8;
 	RzOutputMode mode = state->mode;
 	if (mode == RZ_OUTPUT_MODE_TABLE) {
 		RzTable *t = state->d.t;
-		RzTableColumnType *n = rz_table_type("number");
-		RzTableColumnType *s = rz_table_type("string");
-		rz_table_add_column(t, n, "addr", 0);
-		rz_table_add_column(t, n, "value", 0);
-		rz_table_add_column(t, s, "refs", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "addr", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "value", 0);
+		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "refs", 0);
 		for (ut64 i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = at + i;
 			ut64 val = rz_read_ble(buf + i, be, bitsize);
@@ -5399,12 +5396,10 @@ static bool print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutpu
 	bool resetFlag = 1;
 	st8 lastEdge = 0;
 	RzTable *t = state->d.t;
-	RzTableColumnType *n = rz_table_type("number");
-	RzTableColumnType *s = rz_table_type("string");
-	rz_table_add_column(t, n, "addr", 0);
-	rz_table_add_column(t, n, "index", 0);
-	rz_table_add_column(t, s, "edge_type", 0);
-	rz_table_add_column(t, n, "entropy_value", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "addr", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "index", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "edge_type", 0);
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "entropy_value", 0);
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
 		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))

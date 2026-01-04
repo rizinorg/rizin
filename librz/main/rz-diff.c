@@ -2181,7 +2181,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 		break;
 	default: // DIFF_MODE_QUIET
 		rz_table_align(table, 0, RZ_TABLE_ALIGN_RIGHT);
-		rz_table_hide_header(table);
+		rz_table_show_header(table, false);
 		output = rz_table_tosimplestring(table);
 		rz_cons_printf("%s", output);
 		break;
