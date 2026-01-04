@@ -1885,6 +1885,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
 	RZ_FREE_CUSTOM(c->sys_path, rz_path_free);
 	RZ_FREE_CUSTOM(c->marks, rz_mark_free);
+	RZ_FREE_CUSTOM(c->backup, sdb_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {

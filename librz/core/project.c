@@ -40,6 +40,92 @@ RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *fi
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
+static unsigned long rz_project_get_version(RzProject *prj) {
+	const char *version_str = sdb_const_get(prj, RZ_PROJECT_KEY_VERSION);
+	if (!version_str) {
+		return ULONG_MAX;
+	}
+	return strtoul(version_str, NULL, 0);
+}
+
+/**
+ * \brief Write the backup-database to a backup file.
+ *
+ * The backup-file will be created with the following name-scheme:
+ * `.${FileBasename}_${OriginalVersion}.BAK`
+ *
+ * \param core[in,out] RzCore instance
+ * \param file[in] A string representing the path to the original file. This is not the backup-file-path!
+ * \param compress[in] Indiates if the database was originally compressed (backup file will also be compressed)
+ * \return An error code, indicating the state of the operation
+ * \retval RZ_PROJECT_ERR_SUCCESS If the backup was written correctly, or no backup was necessary
+ * \retval RZ_PROJECT_ERR_INVALID_VERSION If the backup has a corrupted version number
+ * \retval RZ_PROJECT_ERR_FILE If the backup could not be written, due to file operation errors
+ * \retval RZ_PROJECT_ERR_UNKNOWN If a memory allocation failed
+ * \retval RZ_PROJECT_ERR_COMPRESSION_FAILED If the deflate operation failed
+ */
+RZ_API RzProjectErr rz_project_save_backup_file(RzCore *core, const char *file, bool compress) {
+	char *tmp_file = NULL;
+	if (!core->backup) {
+		/* No backup necessary */
+		return RZ_PROJECT_ERR_SUCCESS;
+	}
+
+	if (compress) {
+		int mkstemp_fd = rz_file_mkstemp("svprjbu", &tmp_file);
+		if (mkstemp_fd == -1 || !tmp_file) {
+			return RZ_PROJECT_ERR_FILE;
+		}
+		close(mkstemp_fd);
+	}
+
+	char *dst_path = NULL;
+	const char *basename = rz_file_basename(file);
+	char *dirname = rz_file_dirname(file);
+	unsigned long version = rz_project_get_version(core->backup);
+	if (!version || version == ULONG_MAX) {
+		free(dirname);
+		return RZ_PROJECT_ERR_INVALID_VERSION;
+	}
+
+	int dst_path_len = snprintf(NULL, 0, "%s/.%s_%ld.BAK", dirname, basename, version);
+	if (dst_path_len < 0) {
+		free(dirname);
+		return RZ_PROJECT_ERR_UNKNOWN;
+	}
+
+	dst_path_len++;
+	dst_path = calloc(dst_path_len, 1);
+	if (dst_path == NULL) {
+		free(dirname);
+		return RZ_PROJECT_ERR_UNKNOWN;
+	}
+
+	if (strlen(dirname) > 0) {
+		snprintf(dst_path, dst_path_len, "%s/.%s_%ld.BAK", dirname, basename, version);
+	} else {
+		snprintf(dst_path, dst_path_len, ".%s_%ld.BAK", basename, version);
+	}
+
+	free(dirname);
+
+	const char *save_file = compress ? tmp_file : dst_path;
+	RzProjectErr err = RZ_PROJECT_ERR_SUCCESS;
+
+	if (!sdb_text_save(core->backup, save_file, true)) {
+		err = RZ_PROJECT_ERR_FILE;
+		goto tmp_file_err;
+	}
+
+	if (compress && !rz_file_deflate(tmp_file, dst_path)) {
+		err = RZ_PROJECT_ERR_COMPRESSION_FAILED;
+	}
+
+tmp_file_err:
+	free(dst_path);
+	return err;
+}
+
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool compress) {
 	char *tmp_file = NULL;
 
@@ -137,11 +223,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 	if (!type || strcmp(type, RZ_PROJECT_TYPE) != 0) {
 		return RZ_PROJECT_ERR_INVALID_TYPE;
 	}
-	const char *version_str = sdb_const_get(prj, RZ_PROJECT_KEY_VERSION);
-	if (!version_str) {
-		return RZ_PROJECT_ERR_INVALID_VERSION;
-	}
-	unsigned long version = strtoul(version_str, NULL, 0);
+	unsigned long version = rz_project_get_version(prj);
 	if (!version || version == ULONG_MAX) {
 		return RZ_PROJECT_ERR_INVALID_VERSION;
 	}
@@ -159,6 +241,11 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 	}
 	if (!rz_serialize_core_load(core_db, core, load_bin_io, file, res)) {
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
+	}
+
+	if (prj->backup) {
+		prj->backup->refs++;
+		core->backup = prj->backup;
 	}
 
 	rz_config_set(core->config, "prj.file", file);

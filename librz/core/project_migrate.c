@@ -757,8 +757,16 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 };
 
 /// Migrate the given project to the current version in-place
+//
+// Also: will set the backup pointer to a copy of prj, before the database was migrated
 RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res) {
 	RZ_STATIC_ASSERT(RZ_ARRAY_SIZE(migrations) + 1 == RZ_PROJECT_VERSION);
+
+	if (prj->backup == NULL) {
+		prj->backup = sdb_new0();
+		sdb_copy(prj, prj->backup);
+	}
+
 	while (version < RZ_PROJECT_VERSION) {
 		bool succ = migrations[version - 1](prj, res);
 		if (!succ) {

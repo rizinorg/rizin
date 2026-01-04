@@ -1444,11 +1444,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (no_question_save) {
 				if (prj && *prj && y_save_project) {
 					prj_err = rz_project_save_file(r, prj, compress);
+					rz_project_save_backup_file(r, prj, compress);
 				}
 			} else {
 				question = rz_str_newf("Do you want to save the '%s' project? (Y/n)", prj);
 				if (prj && *prj && rz_cons_yesno('y', "%s", question)) {
 					prj_err = rz_project_save_file(r, prj, compress);
+					rz_project_save_backup_file(r, prj, compress);
 				}
 				free(question);
 			}

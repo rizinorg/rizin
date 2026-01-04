@@ -193,6 +193,9 @@ static void sdb_fini(Sdb *s, int donull) {
 	}
 	free(s->ndump);
 	free(s->dir);
+	if (s->backup) {
+		sdb_free(s->backup);
+	};
 	if (donull) {
 		memset(s, 0, sizeof(Sdb));
 	}

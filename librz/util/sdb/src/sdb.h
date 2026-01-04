@@ -81,6 +81,7 @@ typedef struct sdb_t {
 	int ns_lock; // TODO: merge into options?
 	RzList /*<SdbNs *>*/ *ns;
 	ut32 depth;
+	struct sdb_t *backup;
 } Sdb;
 
 typedef struct sdb_ns_t {

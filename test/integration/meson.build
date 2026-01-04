@@ -25,6 +25,7 @@ if get_option('enable_tests') and cli_enabled
     'dwarf_integration',
     'glibc_version',
     'open_analyse_save_load_project',
+    'open_migrate_backup_compare_project',
     'pdb',
     'project_migrate',
     'rzpipe',
