@@ -274,11 +274,10 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
 	bool did_assign = false;
 	RzCmdStatus st = RZ_CMD_STATUS_OK;
-	const char rq_char = '=';
 
 	for (int i = 1; i < argc; i++) {
 		const char *arg = argv[i];
-		const char *eq = rz_str_strchr(arg, &rq_char);
+		const char *eq = rz_str_strchr(arg, "=");
 		if (!eq) {
 			continue;
 		}

@@ -1,0 +1,38 @@
+NAME=dmxa/dmxb with jemalloc memory dump
+FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
+ARGS=-n
+CMDS=<<EOF
+om 3 0x7f2601a03c00 0x8 0x0 rw- je_arenas
+om 3 0x7f2601f5b2d0 0x4 0x8 rw- narenas_total
+om 3 0x7f2601f5b380 0x900 0xc rw- je_arena_bin_info
+om 3 0x7f2601a00140 0x2758 0x90c rw- arena
+om 3 0x7f2601800000 0x200000 0x3064 rw- [heap]
+
+dmxa 0x7f2601a00140~ind
+dmxa 0x7f2601a00140~nthreads: application
+dmxa 0x7f2601a00140~extent_sn_next
+dmxa 0x7f2601a00140~spare
+dmxa 0x7f2601a00140~purging
+dmxa 0x7f2601a00140~nactive
+dmxa 0x7f2601a00140~bins
+echo ----
+dmxb 0x7f2601a00140 0x7f2601f5b380~?regsize
+dmxb 0x7f2601a00140 0x7f2601f5b380~regsize : 0x800
+dmxb 0x7f2601a00140 0x7f2601f5b380~regsize : 0x3800
+dmxb 0x7f2601a00140 0x7f2601f5b380~nregs : 0x200
+EOF
+EXPECT=<<EOF
+  ind = 0x0
+  nthreads: application allocation = 0x1
+  extent_sn_next = 0x1
+  spare = 0x0
+  purging = false
+  nactive = 0xc
+  bins = 36 0x7f2601a00ac0
+----
+36
+       regsize : 0x800
+       regsize : 0x3800
+       nregs : 0x200
+EOF
+RUN

@@ -51,11 +51,11 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach_prev_safe(list, it, tmp, var) \
 	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
-#define rz_list_empty(x)     (!(x) || !(x)->length)
-#define rz_list_head(x)      ((x) ? (x)->head : NULL)
-#define rz_list_tail(x)      ((x) ? (x)->tail : NULL)
-#define rz_list_safe_prev(x) ((x) ? (x)->prev : NULL)
-#define rz_list_safe_next(x) ((x) ? (x)->next : NULL)
+#define rz_list_empty(x) (!(x) || !(x)->length)
+#define rz_list_head(x)  ((x) ? (x)->head : NULL)
+#define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
+#define rz_list_prev(x)  ((x)->prev)
+#define rz_list_next(x)  ((x)->next)
 
 #define rz_list_iter_get(x) \
 	x->val; \
@@ -108,6 +108,8 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList *list, char ch);
 RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);
 RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val);
 RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val, RZ_NONNULL RzListComparator cmp, void *user);
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzListIter *rz_list_get_next(RZ_NONNULL RzListIter *iter);
 
 #ifdef __cplusplus
 }

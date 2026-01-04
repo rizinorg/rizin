@@ -925,6 +925,25 @@ static bool test_pvector_find(void) {
 	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
 	mu_assert_eq(*p, e, "find");
 	mu_assert_eq(num, 44, "ensure user is passed");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static bool test_pvector_find_index(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	int num = 77;
+	ut32 e_val0 = 0;
+	ut32 e_val2 = 2;
+	ut32 e_val6 = 6;
+	size_t index = rz_pvector_find_index(&v, &e_val2, compare_int, &num);
+	mu_assert_eq(index, 2, "find index");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	index = rz_pvector_find_index(&v, &e_val6, compare_int, &num);
+	mu_assert_eq(index, SZT_MAX, "not found index");
+	index = rz_pvector_find_index(&v, &e_val0, compare_int, &num);
+	mu_assert_eq(index, 0, "find index 0");
+	rz_pvector_clear(&v);
 	mu_end;
 }
 
@@ -936,6 +955,8 @@ static bool test_pvector_join(void) {
 	rz_pvector_join(&m, &n);
 	mu_assert_eq(rz_pvector_len(&m), 8, "length is 8 after join");
 	mu_assert_eq(*((ut32 *)rz_pvector_at(&m, 6)), 1, "m[6] = n[1]");
+	rz_pvector_clear(&m);
+	rz_pvector_clear(&n);
 	mu_end;
 }
 
@@ -1382,6 +1403,24 @@ static bool test_pvector_tips(void) {
 	mu_end;
 }
 
+static bool test_pvector_uniq(void) {
+	RzPVector v;
+	int num = 77;
+	int arr[10] = { 42, 43, 44, 42, 43, 44, 45, 48, 49, 49 };
+	rz_pvector_init(&v, NULL);
+	for (int i = 0; i < 10; i++) {
+		rz_pvector_push(&v, (void *)&arr[i]);
+	}
+	RzPVector *uv = rz_pvector_uniq(&v, compare_int, &num);
+	mu_assert_eq(uv->v.capacity, 8, "uniq values capacity before shrink");
+	rz_pvector_shrink(uv);
+	mu_assert_eq(uv->v.capacity, 6, "uniq values capacity after shrink");
+	mu_assert_eq(rz_pvector_len(uv), 6, "uniq values count");
+	rz_pvector_clear(&v);
+	rz_pvector_free(uv);
+	mu_end;
+}
+
 static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 	size_t i;
 	for (i = 0; i < count; i++) {
@@ -1467,6 +1506,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
+	mu_run_test(test_pvector_find_index);
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
@@ -1481,6 +1521,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_foreach);
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
+	mu_run_test(test_pvector_uniq);
 
 	mu_run_test(test_array_bounds_fuzz);
 

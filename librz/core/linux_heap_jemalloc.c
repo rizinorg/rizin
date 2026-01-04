@@ -133,16 +133,14 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 	}
 	rz_io_read_at(core->io, cnksz, (ut8 *)&cnksz, sizeof(GHT));
 
-	switch (input[0]) {
-	case '\0':
+	if (input[0] == '\0') {
 		RZ_LOG_ERROR("need an arena_t to associate chunks\n");
-		break;
-	case ' ': {
+	} else if (input[0] != '*') {
+		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
 		GHT arena = GHT_MAX;
 		arena_t *ar = RZ_NEW0(arena_t);
 		extent_node_t *node = RZ_NEW0(extent_node_t), *head = RZ_NEW0(extent_node_t);
-		input += 1;
-		arena = rz_num_math(core->num, input);
+		arena = rz_num_math(core->num, addr_str);
 
 		if (arena) {
 			rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
@@ -169,9 +167,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		free(ar);
 		free(head);
 		free(node);
-		break;
-	}
-	case '*': {
+	} else if (input[0] == '*') {
 		int i = 0;
 		ut64 sym;
 		GHT arenas = GHT_MAX, arena = GHT_MAX;
@@ -222,7 +218,6 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 		free(ar);
 		free(head);
 		free(node);
-	} break;
 	}
 }
 
@@ -243,8 +238,7 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 	GHT narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	switch (input[0]) {
-	case '\0':
+	if (input[0] == '\0') {
 		if (GH(rz_resolve_jemalloc)(core, "narenas_total", &symaddr)) {
 			rz_io_read_at(core->io, symaddr, (ut8 *)&narenas, sizeof(GHT));
 			PRINTF_GA("narenas : %" PFMT64d "\n", (ut64)narenas);
@@ -273,15 +267,15 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 					continue;
 				}
 				PRINTF_YA("  arenas[%d]: ", i);
-				PRINTF_BA("@ 0x%" PFMT64x "\n", at);
+				PRINTF_BA("@ 0x%" PFMT64x "\n", (ut64)arena);
 			}
 		}
 		PRINT_GA("}\n");
-		break;
-	case ' ':
-		arena = rz_num_math(core->num, input + 1);
+	} else {
+		// Handle address argument (with or without leading space)
+		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
+		arena = rz_num_math(core->num, addr_str);
 		rz_io_read_at(core->io, (GHT)arena, (ut8 *)ar, sizeof(arena_t));
-
 		PRINT_GA("struct arena_s {\n");
 #define OO(x) (ut64)(arena + rz_offsetof(arena_t, x))
 		PRINTF_BA("  ind = 0x%x\n", ar->ind);
@@ -318,35 +312,57 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", JM_NBINS, OO(bins));
 		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", NPSIZES, OO(runs_avail));
 		PRINT_GA("}\n");
-		break;
 	}
 	free(ar);
 	free(stats);
 }
 
+// Helper to print bin info for a single arena
+static void GH(jemalloc_print_arena_bins)(RzCore *core, GHT arena, ut64 bin_info, RzConsPrintablePalette *pal) {
+	int j;
+	arena_t *ar = RZ_NEW0(arena_t);
+	arena_bin_info_t *b = RZ_NEW0(arena_bin_info_t);
+	if (!ar || !b) {
+		free(ar);
+		free(b);
+		return;
+	}
+
+	rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
+	for (j = 0; j < JM_NBINS; j++) {
+		rz_io_read_at(core->io, (GHT)(bin_info + j * sizeof(arena_bin_info_t)),
+			(ut8 *)b, sizeof(arena_bin_info_t));
+		PRINT_YA("    {\n");
+		PRINT_YA("       regsize : ");
+		PRINTF_BA("0x%zx\n", b->reg_size);
+		PRINT_YA("       redzone size ");
+		PRINTF_BA("0x%zx\n", b->redzone_size);
+		PRINT_YA("       reg_interval : ");
+		PRINTF_BA("0x%zx\n", b->reg_interval);
+		PRINT_YA("       run_size : ");
+		PRINTF_BA("0x%zx\n", b->run_size);
+		PRINT_YA("       nregs : ");
+		PRINTF_BA("0x%x\n", b->nregs);
+		PRINT_YA("       reg0_offset : ");
+		PRINTF_BA("0x%" PFMT64x "\n\n", (ut64)b->reg0_offset);
+		PRINT_YA("    }\n");
+	}
+	free(ar);
+	free(b);
+}
+
 static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
-	int i = 0, j;
+	int i = 0;
 	ut64 bin_info;
 	ut64 arenas;
-	GHT arena = GHT_MAX; //, bin = GHT_MAX;
-	arena_t *ar = NULL;
-	arena_bin_info_t *b = NULL;
+	GHT arena = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	switch (input[0]) {
-	case ' ':
-		ar = RZ_NEW0(arena_t);
-		if (!ar) {
-			break;
-		}
-		b = RZ_NEW0(arena_bin_info_t);
-		if (!b) {
-			break;
-		}
+	if (input[0] == '\0') {
+		// No argument - use symbol resolution (debug mode)
 		if (!GH(rz_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			RZ_LOG_ERROR("Cannot resolve je_arena_bin_info\n");
-			RZ_FREE(b);
-			break;
+			return;
 		}
 		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &arenas)) {
 			rz_io_read_at(core->io, arenas, (ut8 *)&arenas, sizeof(GHT));
@@ -354,56 +370,38 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 			for (;;) {
 				rz_io_read_at(core->io, arenas + i * sizeof(GHT), (ut8 *)&arena, sizeof(GHT));
 				if (!arena) {
-					RZ_FREE(b);
 					break;
 				}
-				PRINTF_YA("   arenas[%d]: ", i++);
-				PRINTF_BA("@ 0x%" PFMTx, (GHT)arena);
-				PRINT_YA(" {\n");
-				rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
-				for (j = 0; j < JM_NBINS; j++) {
-					rz_io_read_at(core->io, (GHT)(bin_info + j * sizeof(arena_bin_info_t)),
-						(ut8 *)b, sizeof(arena_bin_info_t));
-					PRINT_YA("    {\n");
-					PRINT_YA("       regsize : ");
-					PRINTF_BA("0x%zx\n", b->reg_size);
-					PRINT_YA("       redzone size ");
-					PRINTF_BA("0x%zx\n", b->redzone_size);
-					PRINT_YA("       reg_interval : ");
-					PRINTF_BA("0x%zx\n", b->reg_interval);
-					PRINT_YA("       run_size : ");
-					PRINTF_BA("0x%zx\n", b->run_size);
-					PRINT_YA("       nregs : ");
-					PRINTF_BA("0x%x\n", b->nregs);
-					// FIXME: It's a structure of bitmap_info_t
-					// PRINT_YA ("       bitmap_info : ");
-					// PRINTF_BA ("0x%"PFMT64x"\n", b->bitmap_info);
-					PRINT_YA("       reg0_offset : ");
-					PRINTF_BA("0x%" PFMT64x "\n\n", (ut64)b->reg0_offset);
-					// FIXME: It's a structure of malloc_mutex_t
-					// PRINTF_YA ("       bins[%d]->lock ", j);
-					// PRINTF_BA ("= 0x%"PFMT64x"\n", ar->bins[j].lock);
-					// FIXME: It's a structure of arena_run_t*
-					// PRINTF_YA ("       bins[%d]->runcur ", j);
-					// PRINTF_BA ("@ 0x%"PFMT64x"\n", ar->bins[j].runcur);
-					// FIXME: It's a structure of arena_run_heap_t*
-					// PRINTF_YA ("       bins[%d]->runs ", j);
-					// PRINTF_BA ("@ 0x%"PFMTx"\n", ar->bins[j].runs);
-					// FIXME: It's a structure of malloc_bin_stats_t
-					// PRINTF_YA ("       bins[%d]->stats ", j);
-					// PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
-					PRINT_YA("    }\n");
-				}
+				PRINTF_YA("  arenas[%d]: @ 0x%" PFMTx " {\n", i++, (GHT)arena);
+				GH(jemalloc_print_arena_bins)(core, arena, bin_info, pal);
 				PRINT_YA("  }\n");
 			}
 		}
 		PRINT_GA("}\n");
-		break;
-	}
-	free(ar);
-	free(b);
-}
+	} else {
+		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
+		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
 
+		char *args = strdup(addr_str);
+		char *bin_info_str = strchr(args, ' ');
+
+		if (!bin_info_str) {
+			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			free(args);
+			return;
+		}
+
+		*bin_info_str++ = '\0';
+		arena = rz_num_math(core->num, args);
+		bin_info = rz_num_math(core->num, bin_info_str);
+
+		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", (ut64)arena, JM_NBINS);
+		GH(jemalloc_print_arena_bins)(core, arena, bin_info, pal);
+		PRINT_GA("}\n");
+
+		free(args);
+	}
+}
 #if 0
 static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 	switch (input[0]) {

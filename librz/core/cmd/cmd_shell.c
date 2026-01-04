@@ -311,6 +311,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char
 
 // uniq
 RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
+	}
 	char *res = rz_syscmd_uniq(argv[1]);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
@@ -449,11 +452,15 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 
 // sort
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_sort(argv[1]);
-	if (res) {
-		rz_cons_print(res);
-		free(res);
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
 	}
+	char *res = rz_syscmd_sort(argv[1]);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(res);
+	free(res);
 	return RZ_CMD_STATUS_OK;
 }
 

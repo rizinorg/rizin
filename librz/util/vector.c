@@ -463,6 +463,26 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 }
 
 /**
+ * \brief Find the \p element in the \p vec.
+ * \param vec the RzPVector to search in.
+ * \param value the value that elements in pvector compare against by \p cmp.
+ * \param cmp the comparator function.
+ * \return Returns the index of the first matching element, SZT_MAX otherwise.
+ */
+RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec, SZT_MAX);
+
+	void **iter = NULL;
+	size_t i = 0;
+	rz_pvector_enumerate (vec, iter, i) {
+		if (!cmp(value, *iter, user)) {
+			return i;
+		}
+	}
+	return SZT_MAX;
+}
+
+/**
  * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
  *
  **/
@@ -569,4 +589,37 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 		return;
 	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
+}
+
+/**
+ * \brief Find the unique values in the \p vec and push it in a new RzPVector.
+ * \param vec the RzPVector to search in.
+ * \param cmp the comparator function.
+ * \param user the user data for \p cmp function.
+ * \return Returns a new RzPVector which contains only unique values.
+ */
+RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && cmp, NULL);
+
+	RzPVector *npv = rz_pvector_new(NULL);
+	if (!npv) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (vec, it) {
+		bool found = false;
+		void **it2;
+		void *item = *it;
+		rz_pvector_foreach (npv, it2) {
+			void *item2 = *it2;
+			if (cmp(item, item2, user) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			rz_pvector_push(npv, item);
+		}
+	}
+	return npv;
 }

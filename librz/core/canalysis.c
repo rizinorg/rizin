@@ -1768,7 +1768,6 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	int i, count = 0;
 	RzAnalysisOp op = { 0 };
 	ut64 at;
-	char bckwrds, do_bckwrd_srch;
 	int arch = -1;
 	if (core->rasm->bits == 64) {
 		// speedup search
@@ -1776,10 +1775,6 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 			arch = RZ_ARCH_ARM64;
 		}
 	}
-	// TODO: get current section range here
-	// ???
-	// XXX must read bytes correctly
-	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
 	}
@@ -1790,17 +1785,8 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	}
 	rz_cons_break_push(NULL, NULL);
 	if (core->blocksize > OPSZ) {
-		if (bckwrds) {
-			if (from + core->blocksize > to) {
-				at = from;
-				do_bckwrd_srch = false;
-			} else {
-				at = to - core->blocksize;
-			}
-		} else {
-			at = from;
-		}
-		while ((!bckwrds && at < to) || bckwrds) {
+		at = from;
+		while (at < to) {
 			eprintf("\r[0x%08" PFMT64x "-0x%08" PFMT64x "] ", at, to);
 			if (rz_cons_is_breaked()) {
 				break;
@@ -1810,10 +1796,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 				RZ_LOG_ERROR("core: failed to read at 0x%08" PFMT64x "\n", at);
 				break;
 			}
-			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;
-				(!bckwrds && i < core->blocksize - OPSZ) ||
-				(bckwrds && i > 0);
-				bckwrds ? i-- : i++) {
+			for (i = 0; (i < core->blocksize - OPSZ); i++) {
 				// TODO: honor analysis.align
 				if (rz_cons_is_breaked()) {
 					break;
@@ -1896,19 +1879,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 				i += op.size - 1;
 				rz_analysis_op_fini(&op);
 			}
-			if (bckwrds) {
-				if (!do_bckwrd_srch) {
-					break;
-				}
-				if (at > from + core->blocksize - OPSZ) {
-					at -= core->blocksize;
-				} else {
-					do_bckwrd_srch = false;
-					at = from;
-				}
-			} else {
-				at += core->blocksize - OPSZ;
-			}
+			at += core->blocksize - OPSZ;
 		}
 	} else {
 		RZ_LOG_ERROR("core: block size too small\n");
