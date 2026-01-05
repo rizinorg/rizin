@@ -357,8 +357,8 @@ Rizin is trying to comply with the Software Package Data Exchange® (SPDX®),
 an open standard to communicate in a clear way licenses and copyrights, among
 other things, of a software. All files in the repository should either have
 an header specifying the copyright and the license that apply or an entry in
-.reuse/dep5 file. All pieces of code copied from other projects should have
-a license/copyright entry as well.
+the [REUSE.toml](REUSE.toml) file. All pieces of code copied from other projects
+should have a license/copyright entry as well.
 
 In particular, the SPDX header may look like:
 ```C
