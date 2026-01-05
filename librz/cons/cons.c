@@ -252,7 +252,7 @@ RZ_API void rz_cons_strcat_justify(const char *str, int j, char c) {
 			len = 0;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_memcat(str + o, len);
 	}
 }
@@ -288,7 +288,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 			rows++;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_gotoxy(x, y + rows);
 		rz_cons_memcat(str + o, len);
 	}

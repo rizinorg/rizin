@@ -42,12 +42,12 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 	const char *vline = opts->unicode ? RUNE_LINE_VERT : "|";
 	const char *block = opts->unicode ? UTF_BLOCK : "#";
 	const char *kol[5];
-	kol[0] = opts->pal->call;
-	kol[1] = opts->pal->jmp;
-	kol[2] = opts->pal->cjmp;
-	kol[3] = opts->pal->mov;
-	kol[4] = opts->pal->nop;
 	if (opts->color) {
+		kol[0] = opts->pal->call;
+		kol[1] = opts->pal->jmp;
+		kol[2] = opts->pal->cjmp;
+		kol[3] = opts->pal->mov;
+		kol[4] = opts->pal->nop;
 		for (i = 0; i < rows; i++) {
 			size_t threshold = i * (0xff / rows);
 			size_t koli = i * 5 / rows;
