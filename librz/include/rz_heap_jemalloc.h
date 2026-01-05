@@ -46,19 +46,29 @@ typedef st32 __attribute__((aligned(4))) GHST_32;
 #undef PRINTF_BA
 #undef PRINTF_RA
 
-#define PRINTF_A(color, fmt, ...) rz_cons_printf("%s" fmt "%s", \
-	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? (color) : "", \
-	__VA_ARGS__, \
-	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? Color_RESET : "")
+#define PRINTF_A(color, fmt, ...) do { \
+	if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+		rz_cons_print(color); \
+	} \
+	rz_cons_printf(fmt, __VA_ARGS__); \
+	if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+		rz_cons_print(Color_RESET); \
+	} \
+} while(0)
 #define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
 #define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
 #define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
 #define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
 
-#define PRINT_A(color, msg) rz_cons_printf("%s%s%s", \
-	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? (color) : "", \
-	msg, \
-	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? Color_RESET : "")
+#define PRINT_A(color, msg) do { \
+	if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+		rz_cons_print(color); \
+	} \
+	rz_cons_print(msg); \
+	if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+		rz_cons_print(Color_RESET); \
+	} \
+} while(0)
 #define PRINT_YA(msg) PRINT_A(pal->offset, msg)
 #define PRINT_GA(msg) PRINT_A(pal->args, msg)
 #define PRINT_BA(msg) PRINT_A(pal->num, msg)

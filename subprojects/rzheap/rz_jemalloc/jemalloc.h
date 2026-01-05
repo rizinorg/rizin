@@ -41,7 +41,7 @@
 #define RZ_JM_QL_ELM(a_type)  RZ_JM_QR(a_type)
 #define RZ_JM_RB_NODE(a_type) struct GH_ALIGN { GHT rbn_left; GHT rbn_right; }
 
-/* DSS precedence enum - only define once */
+/* only define once */
 #ifndef RZ_JM_DEFINE_ONLY_ONCE
 #define RZ_JM_DEFINE_ONLY_ONCE
 typedef enum {
