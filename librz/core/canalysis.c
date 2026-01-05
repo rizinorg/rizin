@@ -304,7 +304,7 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 }
 
 RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn) {
-	RzList *flist = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *flist = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!flist) {
 		return;
 	}
@@ -314,14 +314,14 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	rz_pvector_foreach (fcn->bbs, iter) {
 		b = (RzAnalysisBlock *)*iter;
 		RzInterval inter = (RzInterval){ b->addr, b->size };
-		RzListInfo *info = rz_listinfo_new(NULL, inter, inter, -1, NULL);
+		RzDbgListInfo *info = rz_debug_listinfo_new(NULL, inter, inter, -1, NULL);
 		if (!info) {
 			break;
 		}
 		rz_list_append(flist, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, flist, core->offset, core->blocksize,
+	rz_core_debug_listinfo_to_table(table, flist, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	rz_cons_printf("\n%s\n", rz_table_tostring(table));
 	rz_table_free(table);

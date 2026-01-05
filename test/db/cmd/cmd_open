@@ -420,6 +420,9 @@ CMDS=<<EOF
 obl~?
 i
 oc =
+# oc resets RzCore completely
+e scr.utf8=false
+e scr.color=0
 echo --
 obl~?
 i

@@ -212,7 +212,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 }
 
 static int cmpaddr(const void *_a, const void *_b, void *user) {
-	const RzListInfo *a = _a, *b = _b;
+	const RzDbgListInfo *a = _a, *b = _b;
 	return (rz_itv_begin(a->pitv) > rz_itv_begin(b->pitv)) ? 1 : (rz_itv_begin(a->pitv) < rz_itv_begin(b->pitv)) ? -1
 														     : 0;
 }
@@ -221,13 +221,13 @@ static int cmpaddr(const void *_a, const void *_b, void *user) {
  * Get all trace info
  * \param dbg core->dbg
  * \param offset offset of address
- * \return a RzList of RzListInfo
+ * \return a RzList of RzDbgListInfo
  */
-RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzDbgListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
 	rz_return_val_if_fail(dbg, NULL);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	RzList *info_list = rz_list_new();
+	RzList *info_list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!info_list) {
 		return NULL;
 	}
@@ -237,7 +237,7 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 		if (trace->tag && !(tag & trace->tag)) {
 			continue;
 		}
-		RzListInfo *info = RZ_NEW0(RzListInfo);
+		RzDbgListInfo *info = RZ_NEW0(RzDbgListInfo);
 		if (!info) {
 			rz_list_free(info_list);
 			return NULL;
@@ -282,4 +282,26 @@ RZ_API void rz_debug_trace_reset(RzDebug *dbg) {
 	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	t->traces = rz_list_new();
 	t->traces->free = free;
+}
+
+RZ_API RZ_OWN RzDbgListInfo *rz_debug_listinfo_new(RZ_NULLABLE const char *name, RzInterval pitv, RzInterval vitv, int perm, RZ_NULLABLE const char *extra) {
+	RzDbgListInfo *info = RZ_NEW(RzDbgListInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->name = rz_str_dup(name);
+	info->pitv = pitv;
+	info->vitv = vitv;
+	info->perm = perm;
+	info->extra = rz_str_dup(extra);
+	return info;
+}
+
+RZ_API void rz_debug_listinfo_free(RZ_NULLABLE RzDbgListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->name);
+	free(info->extra);
+	free(info);
 }

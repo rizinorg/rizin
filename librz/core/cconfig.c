@@ -416,7 +416,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		update_asmcpu_options(core, node);
 		/* print verbose help instead of plain option listing */
 		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
@@ -508,7 +508,7 @@ static bool cb_asmarch(void *user, void *data) {
 		if (strlen(node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 			rz_core_asm_plugins_print(core, &state, NULL);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
@@ -1563,9 +1563,9 @@ static bool cb_dbg_args(void *user, void *data) {
 static bool cb_dbgbackend(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 	if (!strcmp(node->value, "?")) {
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 		rz_core_debug_plugins_print(core, &state);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);

@@ -186,7 +186,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 // "?**e"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STR_BUF);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STR_BUF, core);
 	rz_core_config_print_all(core->config, "", &state);
 
 	RzConfig **cfg;
