@@ -244,7 +244,7 @@ RZ_IPI RzCmdStatus rz_open_maps_remove_all_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const char **argv) {
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -254,14 +254,14 @@ RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const
 		RzIOMap *map = *it;
 		char temp[32];
 		rz_strf(temp, "%d", map->fd);
-		RzListInfo *info = rz_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
+		RzDbgListInfo *info = rz_debug_listinfo_new(map->name, map->itv, map->itv, map->perm, temp);
 		if (!info) {
 			break;
 		}
 		rz_list_append(list, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, list, core->offset, core->blocksize,
+	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	char *tablestr = rz_table_tostring(table);
 	rz_cons_printf("%s", tablestr);
@@ -678,7 +678,7 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 	if (!bin) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -687,14 +687,14 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 	rz_list_foreach (bin->binfiles, iter, bf) {
 		char temp[64];
 		RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
-		RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
+		RzDbgListInfo *info = rz_debug_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 		if (!info) {
 			break;
 		}
 		rz_list_append(list, info);
 	}
 	RzTable *table = rz_core_table(core);
-	rz_table_visual_list(table, list, core->offset, core->blocksize,
+	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
 		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
 	char *table_text = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", table_text);

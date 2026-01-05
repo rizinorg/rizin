@@ -646,7 +646,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			core->rasm = as->a;
 			core->analysis = as->analysis;
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
+			rz_cmd_state_output_init(&state, as->json ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD, core);
 			if (opt.argv[opt.ind]) {
 				rz_core_asm_cpu_plugin_print(core, &state, opt.argv[opt.ind]);
 			} else {
