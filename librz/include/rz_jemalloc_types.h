@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Rizin Contributors
+// SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_JEMALLOC_TYPES_H
