@@ -61,10 +61,6 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	return vaddr;
 }
 
-static int GH(je_matched)(const char *ptr, const char *str) {
-	int ret = strncmp(ptr, str, strlen(str) - 1);
-	return !ret;
-}
 #endif
 
 static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
