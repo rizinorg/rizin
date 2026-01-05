@@ -51,10 +51,7 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 		Pe_image_metadata_methoddef *methoddef = *it;
 
 		if ((type_name || type_namespace) && i >= type_methods_start && i >= type_methods_end) {
-			if (!type_it) {
-				rz_warn_if_reached();
-				break;
-			}
+			rz_goto_if_fail(type_it, loop_end);
 
 			// Update class and namespace
 			free(type_name);
@@ -100,6 +97,7 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 		rz_list_append(methods, sym);
 		i++;
 	}
+loop_end:
 
 	// Cleanup class / namespace strings
 	free(type_name);

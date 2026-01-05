@@ -110,10 +110,11 @@ commands:
         type: RZ_CMD_ARG_TYPE_NUM
   - name: uniq
     cname: cmd_shell_uniq
-    summary: List uniq strings in <filename>
+    summary: List unique strings in <filename> or from piped input
     args:
       - name: filename
         type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: uname
     cname: cmd_shell_uname
     summary: Provide system info
@@ -183,11 +184,12 @@ commands:
     cname: cmd_shell_pwd
     args: []
   - name: sort
-    summary: Sort the contents of <file>
+    summary: Sort the contents of <file> or from piped input
     cname: cmd_shell_sort
     args:
       - name: file
         type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
   - name: clear
     summary: Clear screen/console
     cname: cmd_shell_clear
