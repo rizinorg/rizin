@@ -14,7 +14,6 @@
 #undef GHT_MAX
 #undef PFMTx
 
-// FIXME: It should be detected at runtime, not during the compilation stage
 #if HEAP32
 #define GH(x)   x##_32
 #define GHT     ut32
