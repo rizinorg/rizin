@@ -89,12 +89,6 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 		return false;
 	}
 #if __linux__
-	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
-
-	if (!is_debug_file) {
-		RZ_LOG_WARN("Is libjemalloc.so.2 in /usr/local/lib path?\n");
-		return false;
-	}
 	char *path = rz_str_newf("%s", jemalloc_ver_end);
 	if (rz_file_exists(path)) {
 		ut64 vaddr = GH(je_get_va_symbol)(core, path, symname);
@@ -310,7 +304,7 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 		PRINTF_BA("  node_cache_mtx = 0x%" PFMT64x "\n", OO(node_cache_mtx));
 		PRINTF_BA("  chunks_hooks = 0x%" PFMT64x "\n", OO(chunk_hooks));
 		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", JM_NBINS, OO(bins));
-		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", NPSIZES, OO(runs_avail));
+		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", GH(NPSIZES), OO(runs_avail));
 		PRINT_GA("}\n");
 	}
 	free(ar);

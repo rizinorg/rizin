@@ -4,22 +4,28 @@
 #ifndef INC_HEAP32
 // First pass: 64-bit
 #define GH(x)   x##_64
-#define GHT     ut64
+typedef ut64 __attribute__((aligned(8))) GHT_64;
+typedef st64 __attribute__((aligned(8))) GHST_64;
+#define GHT     GHT_64
 #define GHT_MAX UT64_MAX
-#define GHST    st64
+#define GHST    GHST_64
+#define GH_IS_64 1
 #else
 // Second pass: 32-bit
 #undef GH
 #undef GHT
 #undef GHT_MAX
 #undef GHST
+#undef GH_IS_64
 #define GH(x)   x##_32
-#define GHT     ut32
+typedef ut32 __attribute__((aligned(4))) GHT_32;
+typedef st32 __attribute__((aligned(4))) GHST_32;
+#define GHT     GHT_32
 #define GHT_MAX UT32_MAX
-#define GHST    st32
+#define GHST    GHST_32
 #endif
 
-#include <rz_jemalloc/internal/jemalloc_internal.h>
+#include <rz_jemalloc/jemalloc.h>
 
 #ifndef INC_HEAP32
 #undef JEMALLOC_INTERNAL_H
@@ -41,18 +47,18 @@
 #undef PRINTF_RA
 
 #define PRINTF_A(color, fmt, ...) rz_cons_printf("%s" fmt "%s", \
-	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
+	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? (color) : "", \
 	__VA_ARGS__, \
-	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
+	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? Color_RESET : "")
 #define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
 #define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
 #define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
 #define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
 
 #define PRINT_A(color, msg) rz_cons_printf("%s%s%s", \
-	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
+	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? (color) : "", \
 	msg, \
-	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
+	(rz_config_get_i(core->config, "scr.color") > 0 && (color)) ? Color_RESET : "")
 #define PRINT_YA(msg) PRINT_A(pal->offset, msg)
 #define PRINT_GA(msg) PRINT_A(pal->args, msg)
 #define PRINT_BA(msg) PRINT_A(pal->num, msg)
