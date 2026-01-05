@@ -27,6 +27,7 @@
 /* Alignment macro - ut64 only has 4-byte alignment on 32-bit hosts,
  * so we need explicit alignment for 64-bit structs.
  */
+#undef GH_ALIGN
 #ifdef GH_IS_64
 #define GH_ALIGN __attribute__((aligned(8)))
 #else

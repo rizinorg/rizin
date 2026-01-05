@@ -63,6 +63,12 @@ typedef st32 __attribute__((aligned(4))) GHST_32;
 #define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
 #define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
 
+#undef PRINT_A
+#undef PRINT_YA
+#undef PRINT_GA
+#undef PRINT_BA
+#undef PRINT_RA
+
 #define PRINT_A(color, msg) \
 	do { \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
