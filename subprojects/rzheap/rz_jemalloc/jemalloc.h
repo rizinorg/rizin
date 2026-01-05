@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2025 jemalloc <https://jemalloc.net/>
 // SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -88,7 +89,9 @@ typedef struct GH(bitmap_level_s) GH(bitmap_level_t);
 #define arena_stats_t GH(arena_stats_t)
 #define arena_bin_info_t GH(arena_bin_info_t)
 
-/* chunk_hooks_t */
+/* chunk_hooks_t 
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/jemalloc_typedefs.h.in
+ */
 typedef struct GH_ALIGN {
 	GHT alloc;
 	GHT dalloc;
@@ -100,12 +103,16 @@ typedef struct GH_ALIGN {
 } GH(chunk_hooks_t);
 
 
-/* arena_runs_dirty_link_t */
+/* arena_runs_dirty_link_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
 struct GH_ALIGN GH(arena_runs_dirty_link_s) {
 	RZ_JM_QR(void) rd_link;
 };
 
-/* extent_node_t - chunk/extent tracking */
+/* extent_node_t - chunk/extent tracking 
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/extent.h
+ */
 struct GH_ALIGN GH(extent_node_s) {
 	GHT en_arena;
 	GHT en_addr;
@@ -125,7 +132,9 @@ struct GH_ALIGN GH(extent_node_s) {
 };
 
 
-/* arena_decay_t */
+/* arena_decay_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
 struct GH_ALIGN GH(arena_decay_s) {
 	GHST time;
 	GH(nstime_t) interval;
@@ -137,11 +146,15 @@ struct GH_ALIGN GH(arena_decay_s) {
 };
 
 
-/* arena_run_heap_t - pairing heap of runs */
+/* arena_run_heap_t - pairing heap of runs
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
 typedef RZ_JM_PH(void) GH(arena_run_heap_t);
 
 
-/* arena_t - main arena structure */
+/* arena_t - main arena structure
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
 struct GH_ALIGN GH(arena_s) {
 	unsigned ind;
 	unsigned nthreads[2];
@@ -176,10 +189,16 @@ struct GH_ALIGN GH(arena_s) {
 };
 
 
+/* bitmap_level_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
+ */
 struct GH_ALIGN GH(bitmap_level_s) {
 	GHT group_offset;
 };
 
+/* bitmap_info_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
+ */
 #ifndef GH_IS_64
 /* 32-bit uses USE_TREE */
 struct GH_ALIGN GH(bitmap_info_s) {
@@ -195,7 +214,9 @@ struct GH_ALIGN GH(bitmap_info_s) {
 };
 #endif
 
-/* arena_bin_info_t - bin configuration */
+/* arena_bin_info_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
 struct GH_ALIGN GH(arena_bin_info_s) {
 	GHT reg_size;
 	GHT redzone_size;
