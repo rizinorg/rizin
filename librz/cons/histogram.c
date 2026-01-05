@@ -82,7 +82,11 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 				if (opts->thinline) {
 					rz_strbuf_append(buf, vline);
 				} else {
-					rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					if (opts->color) {
+						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					} else {
+						rz_strbuf_append(buf, block);
+					}
 				}
 			} else if (i + 1 == rows) {
 				rz_strbuf_append(buf, "_");
