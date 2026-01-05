@@ -2222,7 +2222,12 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					continue;
 				}
 			}
-			if (case_current == case_prev + 1 && switch_addr == saddr) {
+			bool next_is_default = false;
+			if (iter != uniqlist->tail) {
+				RzFlagItem *next_flag = rz_list_next(iter)->val;
+				next_is_default = !strncmp(next_flag->name + 5, "default", 7);
+			}
+			if ((case_current == case_prev + 1 || case_current == case_prev) && !next_is_default && switch_addr == saddr) {
 				case_prev = case_current;
 				if (iter != uniqlist->tail) {
 					continue;
