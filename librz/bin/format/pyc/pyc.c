@@ -23,6 +23,15 @@ bool pyc_is_code(ut8 b, ut32 magic) {
 	}
 	return false;
 }
+/**
+ * \brief Create structured data representation of PYC file header
+ * \param pyc Pointer to RzBinPycObj containing parsed PYC data
+ * \return Structured data containing magic, version, and revision, or NULL on failure
+ *
+ * Extracts header information from a Python bytecode file and formats it
+ * as structured data for display with the iH command. The returned structure
+ * contains the magic number, Python version string, and build revision.
+ */
 RZ_API RzStructuredData *rz_bin_pyc_structure(RzBinPycObj *pyc) {
 	rz_return_val_if_fail(pyc, NULL);
 	RzStructuredData *info = rz_structured_data_new_map();
