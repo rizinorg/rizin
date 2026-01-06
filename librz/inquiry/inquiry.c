@@ -75,8 +75,9 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 }
 
 static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
-	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: 0x%" PFMT64x "\n",
+	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
+		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	io_res->req_ok = false;
 	RzILMemIndex mem_idx = io_req->mem_idx;
