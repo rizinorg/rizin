@@ -82,7 +82,7 @@ static void sparc_il_init(RzAnalysisILVM *vm, RzReg *reg, size_t addr_width) {
 	if (!buf) {
 		return;
 	}
-	RzILMem *mem = rz_il_mem_new(buf, addr_width);
+	RzILMem *mem = rz_il_mem_new_owned(buf, addr_width);
 	if (!mem) {
 		rz_buf_free(buf);
 		return;

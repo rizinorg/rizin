@@ -7,15 +7,7 @@
 
 #define KEY_LEN_MAX 64 // because RzBuffer uses ut64 addresses
 
-/**
- * Create a memory for accessing the given buffer.
- *
- * \param buf The buffer of the memory.
- * \param key_len The number of bits a memory key requires.
- *
- * \return The new RzILMem object, or NULL in case of failure.
- */
-RZ_API RZ_OWN RzILMem *rz_il_mem_new(RZ_NONNULL RZ_BORROW RzBuffer *buf, ut32 key_len) {
+static RzILMem *mem_new(RZ_NONNULL RzBuffer *buf, ut32 key_len, bool take_buf_ownerhip) {
 	rz_return_val_if_fail(buf && key_len, NULL);
 	if (key_len > KEY_LEN_MAX) {
 		// no assertion because it's not stricly a programming error to call this
@@ -26,12 +18,44 @@ RZ_API RZ_OWN RzILMem *rz_il_mem_new(RZ_NONNULL RZ_BORROW RzBuffer *buf, ut32 ke
 	if (!ret) {
 		return NULL;
 	}
-	// Increment reference count to ensure it is not freed by the owner while
-	// this object still uses it.
-	rz_buf_ref(buf);
+	if (!take_buf_ownerhip) {
+		// Increment reference count to ensure it is not freed by the owner while
+		// this object still uses it.
+		rz_buf_ref(buf);
+	}
 	ret->buf = buf;
 	ret->key_len = key_len;
 	return ret;
+}
+
+/**
+ * Create a memory for accessing the given buffer.
+ * The buffer ownership is transferred to the RzILMem object.
+ *
+ * \param buf The buffer of the memory.
+ * \param key_len The number of bits a memory key requires.
+ * \param take_buf_ownerhip If set, RzILMem takes ownership of the buffer.
+ *
+ * \return The new RzILMem object, or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzILMem *rz_il_mem_new_owned(RZ_NONNULL RZ_OWN RzBuffer *buf, ut32 key_len) {
+	rz_return_val_if_fail(buf && key_len, NULL);
+	return mem_new(buf, key_len, true);
+}
+
+/**
+ * Create a memory for accessing the given buffer.
+ * The buffer is borrowed to the RzILMem object.
+ *
+ * \param buf The buffer of the memory.
+ * \param key_len The number of bits a memory key requires.
+ * \param take_buf_ownerhip If set, RzILMem takes ownership of the buffer.
+ *
+ * \return The new RzILMem object, or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzILMem *rz_il_mem_new_borrowed(RZ_NONNULL RZ_BORROW RzBuffer *buf, ut32 key_len) {
+	rz_return_val_if_fail(buf && key_len, NULL);
+	return mem_new(buf, key_len, false);
 }
 
 /**
