@@ -13,25 +13,25 @@ bool test_rz_progressbar(void) {
 	opts.legend = false;
 
 	buf = rz_progressbar(&opts, 50, 50);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "[#################------------------]", "Progressbar no legend");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "[#################------------------]", "Progressbar no legend");
 
 	opts.legend = true;
 	buf = rz_progressbar(&opts, 50, 50);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "  50% [#################------------------]", "Progressbar with legend");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "  50% [#################------------------]", "Progressbar with legend");
 
 	buf = rz_progressbar(&opts, -10, 50);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "   0% [-----------------------------------]", "Progressbar pc < 0");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "   0% [-----------------------------------]", "Progressbar pc < 0");
 
 	buf = rz_progressbar(&opts, 110, 50);
-	mu_assert_streq_free (rz_strbuf_drain(buf), " 100% [###################################]", "Progressbar pc > 100");
+	mu_assert_streq_free(rz_strbuf_drain(buf), " 100% [###################################]", "Progressbar pc > 100");
 
 	opts.legend = false;
 	buf = rz_progressbar(&opts, 25, -1);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "[###############------------------------------------------------]", "Progressbar width=-1");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "[###############------------------------------------------------]", "Progressbar width=-1");
 
 	opts.unicode = true;
 	buf = rz_progressbar(&opts, 75, 50);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "[██████████████████████████―――――――――]", "Progressbar unicode");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "[██████████████████████████―――――――――]", "Progressbar unicode");
 
 	mu_end;
 }
@@ -44,20 +44,20 @@ bool test_rz_rangebar(void) {
 	opts.color = false;
 
 	buf = rz_rangebar(&opts, 0, 10, 0, 100, 10);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "|##--------|", "Simple range");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "|##--------|", "Simple range");
 
 	buf = rz_rangebar(&opts, 50, 60, 0, 100, 10);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "|----###---|", "Simple range 2");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "|----###---|", "Simple range 2");
 
 	buf = rz_rangebar(&opts, 90, 100, 0, 100, 10);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "|--------##|", "Simple range 3");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "|--------##|", "Simple range 3");
 
 	buf = rz_rangebar(&opts, 0, 100, 0, 100, 10);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "|##########|", "Full range");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "|##########|", "Full range");
 
 	opts.unicode = true;
 	buf = rz_rangebar(&opts, 0, 10, 0, 100, 10);
-	mu_assert_streq_free (rz_strbuf_drain(buf), "|██――――――――|", "Unicode range");
+	mu_assert_streq_free(rz_strbuf_drain(buf), "|██――――――――|", "Unicode range");
 
 	mu_end;
 }

@@ -16,17 +16,17 @@ bool test_rgb_tostring(void) {
 
 bool test_rgb_str(void) {
 	char buf[128];
-	RzColor color = {0};
+	RzColor color = { 0 };
 	color.r = 255;
 	color.g = 255;
 	color.b = 255;
-	color.a = 255; 
-	
+	color.a = 255;
+
 	RzCons *c = rz_cons_new();
 	rz_cons_rgb_str(buf, sizeof(buf), &color);
-	
+
 	mu_assert_streq(buf, "", "Disabled color mode");
-	
+
 	c->context->color_mode = COLOR_MODE_16M;
 	rz_cons_rgb_str(buf, sizeof(buf), &color);
 	mu_assert_streq(buf, "\x1b[38;2;255;255;255m", "16M color mode");

@@ -5,6 +5,9 @@
 #include "minunit.h"
 
 static RzLineNSCompletionResult *nocompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	(void)buf;
+	(void)prompt_type;
+	(void)user;
 	return rz_line_ns_completion_result_new(0, 0, NULL);
 }
 
@@ -25,6 +28,9 @@ bool test_line_nocompletion(void) {
 }
 
 static RzLineNSCompletionResult *onecompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	(void)buf;
+	(void)prompt_type;
+	(void)user;
 	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new(0, 2, NULL);
 	rz_line_ns_completion_result_add(res, "pdf");
 	return res;
@@ -57,6 +63,9 @@ bool test_line_onecompletion(void) {
 }
 
 static RzLineNSCompletionResult *multicompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	(void)buf;
+	(void)prompt_type;
+	(void)user;
 	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new(0, 2, NULL);
 	rz_line_ns_completion_result_add(res, "pdf");
 	rz_line_ns_completion_result_add(res, "pdF");
@@ -66,6 +75,9 @@ static RzLineNSCompletionResult *multicompletion_run(RzLineBuffer *buf, RzLinePr
 }
 
 static RzLineNSCompletionResult *multicompletion_run2(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	(void)buf;
+	(void)prompt_type;
+	(void)user;
 	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new(0, 1, NULL);
 	rz_line_ns_completion_result_add(res, "pdf");
 	rz_line_ns_completion_result_add(res, "pdF");
@@ -79,9 +91,8 @@ bool test_line_multicompletion(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	RzLine *line = rz_line_new();
+	RzLine *line = cons->line;
 	line->ns_completion.run = multicompletion_run;
-	cons->line = line;
 
 	strcpy(line->buffer.data, "pd");
 	line->buffer.length = strlen("pd");
@@ -124,9 +135,8 @@ bool test_line_kill_word(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	RzLine *line = rz_line_new();
+	RzLine *line = cons->line;
 	line->ns_completion.run = multicompletion_run;
-	cons->line = line;
 
 	// write the string, then do ^b two times to move the index to 10, then ^d to delete the word under the cursor
 	const char instr[] = "pd 10@ hello\x1b\x62\x1b\x62\x1b\x64\n";
@@ -145,8 +155,7 @@ bool test_line_undo(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
-	RzLine *line = rz_line_new();
-	cons->line = line;
+	RzLine *line = cons->line;
 
 	// write 20 chars and undo once
 	char input_concat[] = "01234567890123456789\x1f\n";
@@ -187,10 +196,10 @@ bool test_line_misc(void) {
 	char *prompt = rz_line_get_prompt(line);
 	mu_assert_notnull(prompt, "Prompt should not be null");
 	mu_assert_streq_free(prompt, "test> ", "Line prompt check");
-	
+
 	rz_line_clipboard_push(line, "item1");
 	mu_assert_eq(rz_list_length(line->kill_ring), 1, "Kill ring size");
-	
+
 	rz_line_free(line);
 	mu_end;
 }
@@ -198,21 +207,21 @@ bool test_line_misc(void) {
 bool test_line_ns_completion(void) {
 	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new(0, 5, ".");
 	mu_assert_notnull(res, "Completion result new");
-	
+
 	rz_line_ns_completion_result_add(res, "test1");
 	rz_line_ns_completion_result_add(res, "test2");
 	rz_line_ns_completion_result_add(res, "test1"); // Should be ignored
-	
+
 	mu_assert_eq(rz_pvector_len(&res->options), 2, "Two unique options");
 	mu_assert_streq(rz_pvector_at(&res->options, 0), "test1", "Option 0 check");
 	mu_assert_streq(rz_pvector_at(&res->options, 1), "test2", "Option 1 check");
-	
+
 	rz_line_ns_completion_result_propose(res, "hello", "he", 2);
 	mu_assert_eq(rz_pvector_len(&res->options), 3, "Three options after propose");
 	char *opt2 = rz_pvector_at(&res->options, 2);
 	mu_assert_notnull(opt2, "Option 2 should not be null");
 	mu_assert_streq(opt2, "hello", "Option 2 check");
-	
+
 	rz_line_ns_completion_result_free(res);
 	mu_end;
 }

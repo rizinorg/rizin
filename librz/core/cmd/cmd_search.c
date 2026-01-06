@@ -37,7 +37,7 @@ struct search_parameters {
 	int searchflags;
 	int searchshow;
 	PJ *pj;
-	int outmode; // 0 or RZ_MODE_RIZINCMD or RZ_MODE_JSON
+	RzOutputMode outmode; // 0 or RZ_OUTPUT_MODE_STANDARD or RZ_OUTPUT_MODE_JSON
 	bool inverse;
 	bool aes_search;
 	bool privkey_search;
@@ -316,7 +316,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	if (param->searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		char *s = NULL, *str = NULL, *p = NULL;
-		extra = (param->outmode == RZ_MODE_JSON) ? 3 : 1;
+		extra = (param->outmode == RZ_OUTPUT_MODE_JSON) ? 3 : 1;
 		const char *type = "hexpair";
 		ut8 *buf = malloc(keyword_len);
 		if (!buf) {
@@ -336,7 +336,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			if (!pos) {
 				pos = rz_str_dup("");
 			}
-			if (param->outmode == RZ_MODE_JSON) {
+			if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 				wrd = getstring(buf + prectx, len, false);
 				s = rz_str_newf("%s%s%s", pre, wrd, pos);
 			} else {
@@ -367,7 +367,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				p = str;
 				memset(str, 0, len);
 				rz_io_read_at(core->io, base_addr + addr, buf, keyword_len);
-				if (param->outmode == RZ_MODE_JSON) {
+				if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 					p = str;
 				}
 				const int bytes = (len > 40) ? 40 : len;
@@ -388,7 +388,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			break;
 		}
 
-		if (param->outmode == RZ_MODE_JSON) {
+		if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(param->pj);
 			pj_kn(param->pj, "offset", base_addr + addr);
 			pj_ks(param->pj, "type", type);
@@ -402,7 +402,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		free(buf);
 		free(str);
 	} else if (kw) {
-		if (param->outmode == RZ_MODE_JSON) {
+		if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(param->pj);
 			pj_kn(param->pj, "offset", base_addr + addr);
 			pj_ki(param->pj, "len", keyword_len);
@@ -430,7 +430,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param, size_t c) {
-	if ((c % 64) || (param->outmode == RZ_MODE_JSON)) {
+	if ((c % 64) || (param->outmode == RZ_OUTPUT_MODE_JSON)) {
 		return;
 	}
 	if (rz_cons_singleton()->columns < 50) {
@@ -827,7 +827,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
-		param->outmode = RZ_MODE_JSON;
+		param->outmode = RZ_OUTPUT_MODE_JSON;
 		break;
 	default:
 		break;
@@ -838,7 +838,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 
 	maxhits = (int)rz_config_get_i(core->config, "search.maxhits");
 	filter = (int)rz_config_get_i(core->config, "asm.sub.names");
-	if (param->outmode == RZ_MODE_JSON) {
+	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(param->pj);
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -870,7 +870,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 					rz_core_cmdf(core, "%s @ 0x%" PFMT64x, cmdhit, hit->addr);
 				}
 				switch (param->outmode) {
-				case RZ_MODE_JSON:
+				case RZ_OUTPUT_MODE_JSON:
 					pj_o(param->pj);
 					pj_kn(param->pj, "offset", hit->addr);
 					pj_ki(param->pj, "len", hit->len);
@@ -906,7 +906,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 			rz_list_free(hits);
 		}
 	}
-	if (param->outmode == RZ_MODE_JSON) {
+	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(param->pj);
 	}
 	rz_cons_break_pop();
@@ -917,12 +917,12 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	ut8 *buf = NULL;
 	RzSearch *search = core->search;
 
-	if (param->outmode == RZ_MODE_JSON) {
+	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(param->pj);
 	}
 	RzListIter *iter;
 	RzIOMap *map;
-	if (!param->searchflags && param->outmode != RZ_MODE_JSON) {
+	if (!param->searchflags && param->outmode != RZ_OUTPUT_MODE_JSON) {
 		rz_cons_printf("fs hits\n");
 	}
 	core->search->inverse = param->inverse;
@@ -951,7 +951,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			if (rz_cons_is_breaked()) {
 				break;
 			}
-			if (param->outmode != RZ_MODE_JSON) {
+			if (param->outmode != RZ_OUTPUT_MODE_JSON) {
 				RzSearchKeyword *kw = rz_list_first_val(core->search->kws);
 				eprintf("Searching");
 				if (!param->regex_search) {
@@ -1016,7 +1016,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			print_search_progress(at, to1, search->nhits, param, c);
 			rz_cons_clear_line(stderr);
 			core->num->value = search->nhits;
-			if (param->outmode != RZ_MODE_JSON) {
+			if (param->outmode != RZ_OUTPUT_MODE_JSON) {
 				eprintf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
@@ -1027,7 +1027,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		RZ_LOG_ERROR("core: No keywords defined\n");
 	}
 
-	if (param->outmode == RZ_MODE_JSON) {
+	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(param->pj);
 	}
 }
@@ -1120,7 +1120,7 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 			to--;
 		}
 	}
-	if (param->outmode != RZ_MODE_JSON) {
+	if (param->outmode != RZ_OUTPUT_MODE_JSON) {
 		rz_cons_printf("0x%" PFMT64x ": 0x%" PFMT64x "\n", from, to);
 	} else {
 		pj_o(param->pj);
@@ -1226,7 +1226,7 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 	struct search_parameters param = {
 		.core = core,
 		.cmd_hit = rz_config_get(core->config, "cmd.hit"),
-		.outmode = 0,
+		.outmode = RZ_OUTPUT_MODE_STANDARD,
 		.inverse = false,
 		.aes_search = false,
 		.privkey_search = false,
@@ -1292,7 +1292,7 @@ static int cmd_search_legacy_handler(void *data, const char *input) {
 
 	/* Quick & dirty check for json output */
 	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
-		param.outmode = RZ_MODE_JSON;
+		param.outmode = RZ_OUTPUT_MODE_JSON;
 		param_offset++;
 	}
 	param.pj = pj_new();
@@ -1485,7 +1485,7 @@ beach:
 	core->num->value = search->nhits;
 	core->in_search = false;
 	rz_flag_space_pop(core->flags);
-	if (param.outmode == RZ_MODE_JSON) {
+	if (param.outmode == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_println(pj_string(param.pj));
 	}
 	pj_free(param.pj);
@@ -2010,7 +2010,7 @@ static void legacy_param_setup(RzCore *core, struct search_parameters *param, si
 	param->searchshow = rz_config_get_i(core->config, "search.show");
 	param->searchflags = rz_config_get_i(core->config, "search.flags");
 	param->boundaries = rz_core_get_boundaries_select(core, "search.from", "search.to", "search.in");
-	if (param->outmode == RZ_MODE_JSON) {
+	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		param->pj = pj_new();
 	}
 }
@@ -2126,7 +2126,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 	}
 	CMD_SEARCH_BEGIN();
 	struct search_parameters param = { 0 };
-	legacy_param_setup(core, &param, 0);
+	legacy_param_setup(core, &param, RZ_OUTPUT_MODE_STANDARD);
 	RzListIter *iter;
 	RzIOMap *map;
 	rz_list_foreach (param.boundaries, iter, map) {
@@ -2149,7 +2149,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_cmd_search_blocks_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	CMD_SEARCH_BEGIN();
 	struct search_parameters param = { 0 };
-	legacy_param_setup(core, &param, 0);
+	legacy_param_setup(core, &param, RZ_OUTPUT_MODE_STANDARD);
 	search_similar_pattern(core, rz_num_get(NULL, argv[1]), &param);
 	CMD_SEARCH_END();
 	return RZ_CMD_STATUS_OK;

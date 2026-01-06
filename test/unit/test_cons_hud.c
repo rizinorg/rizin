@@ -7,11 +7,13 @@
 // HUD internal functions testing
 // Copying __matchString here to avoid including the whole hud.c
 static bool __matchString_test(char *entry, char *filter, char *mask, const int mask_size) {
-	if (!entry || !filter || !mask) return false;
+	if (!entry || !filter || !mask)
+		return false;
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen(filter);
 	char *ansi_filtered = rz_str_dup(entry);
-	if (!ansi_filtered) return false;
+	if (!ansi_filtered)
+		return false;
 	int *cps = NULL;
 	int j = rz_str_ansi_filter(ansi_filtered, NULL, &cps, -1);
 	if (j < 0 || !cps) {
@@ -61,13 +63,13 @@ static bool __matchString_test(char *entry, char *filter, char *mask, const int 
 bool test_hud_matchString(void) {
 	char mask[128];
 	memset(mask, 0, sizeof(mask));
-	
+
 	char *filter = strdup("hello");
 	mu_assert_notnull(filter, "Filter string should not be null");
 	bool res = __matchString_test("hello world", filter, mask, sizeof(mask));
 	mu_assert_true(res, "Match hello");
 	free(filter);
-	
+
 	filter = strdup("world hello");
 	res = __matchString_test("hello world", filter, mask, sizeof(mask));
 	mu_assert_true(res, "Match multiple words out of order");
@@ -82,7 +84,7 @@ bool test_hud_matchString(void) {
 	// Actually real_pos is in terms of ORIGINAL string.
 	// hello starts at index 5 in "\x1b[31mhello"
 	free(filter);
-	
+
 	mu_end;
 }
 

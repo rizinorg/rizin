@@ -1230,14 +1230,17 @@ err:
 }
 
 static RzTable *__new_heapblock_tbl(void) {
-	RzTable *tbl = rz_table_new();
-	rz_table_add_column(tbl, rz_table_type("number"), "HeaderAddress", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "UserAddress", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Size", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Granularity", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Unused", -1);
-	rz_table_add_column(tbl, rz_table_type("String"), "Type", -1);
-	return tbl;
+	RzTable *t = rz_table_new();
+	if (!t) {
+		return NULL;
+	}
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "HeaderAddress");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "UserAddress");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Size");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Granularity");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Unused");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "Type");
+	return t;
 }
 
 RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
@@ -1257,10 +1260,10 @@ RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 	CHECK_INFO(heapInfo);
 	int i;
 	RzTable *tbl = rz_table_new();
-	rz_table_add_column(tbl, rz_table_type("number"), "Address", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Blocks", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Allocated", -1);
-	rz_table_add_column(tbl, rz_table_type("number"), "Commited", -1);
+	rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Address");
+	rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Blocks");
+	rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Allocated");
+	rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Commited");
 	PJ *pj = pj_new();
 	pj_a(pj);
 	for (i = 0; i < heapInfo->count; i++) {

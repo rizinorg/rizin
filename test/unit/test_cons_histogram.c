@@ -5,15 +5,15 @@
 #include "minunit.h"
 
 bool test_histogram_horizontal(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
 	opts.ruler = true;
-	
+
 	ut8 data[] = { 50, 200 };
 	RzStrBuf *buf = rz_histogram_horizontal(&opts, data, 2, 2);
-	
+
 	char *res = rz_strbuf_drain(buf);
 	mu_assert_notnull(res, "Histogram buffer should not be null");
 	mu_assert_true(strstr(res, "255|") != NULL, "Ruler 255 present");
@@ -25,14 +25,14 @@ bool test_histogram_horizontal(void) {
 }
 
 bool test_histogram_vertical(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
-	
+
 	ut8 data[] = { 255, 0 };
 	RzStrBuf *buf = rz_histogram_vertical(&opts, data, 2, 5);
-	
+
 	char *res = rz_strbuf_drain(buf);
 	// Vertical histogram for 255 and 0 should have one full column and one empty
 	mu_assert_notnull(res, "Histogram buffer should not be null");

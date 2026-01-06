@@ -10,13 +10,13 @@ bool test_pager_splitlines(void) {
 	char *s = strdup("line1\nline2\nline3");
 	int count = 0;
 	int *lines = pager_splitlines(s, &count);
-	
+
 	mu_assert_eq(count, 3, "Split 3 lines");
 	mu_assert_eq(lines[0], 0, "First line offset");
 	mu_assert_streq(s + lines[0], "line1", "First line content");
 	mu_assert_streq(s + lines[1], "line2", "Second line content");
 	mu_assert_streq(s + lines[2], "line3", "Third line content");
-	
+
 	free(lines);
 	free(s);
 	mu_end;

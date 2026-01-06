@@ -1204,7 +1204,7 @@ repeat:
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
 		rz_config_set_b(core->config, "asm.bytes", false);
 		RzCmdStateOutput state;
-		if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD)) {
+		if (!rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
 		rz_core_flag_describe(core, core->offset, false, &state);

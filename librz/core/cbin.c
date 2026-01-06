@@ -41,8 +41,7 @@
 static RZ_NULLABLE RZ_BORROW const RzPVector /*<RzBinString *>*/ *core_bin_strings(RzCore *r, RzBinFile *file);
 
 static void table_add_row_bool(RzTable *t, const char *key, bool val) {
-	RzTableColumnType *typeString = rz_table_type("bool");
-	const char *b = val || typeString ? rz_str_bool(val) : "";
+	const char *b = rz_str_bool(val);
 	rz_table_add_rowf(t, "ss", key, b);
 }
 
@@ -319,9 +318,9 @@ static bool add_footer(RzCmdStateOutput *main_state, RzCmdStateOutput *state) {
 	return true;
 }
 
-static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode default_mode, const char *header) {
+static RzCmdStateOutput *add_header(RzCmdStateOutput *main_state, RzOutputMode default_mode, const char *header, RzCore *core) {
 	RzCmdStateOutput *state = RZ_NEW(RzCmdStateOutput);
-	rz_cmd_state_output_init(state, main_state->mode == RZ_OUTPUT_MODE_STANDARD ? default_mode : main_state->mode);
+	rz_cmd_state_output_init(state, main_state->mode == RZ_OUTPUT_MODE_STANDARD ? default_mode : main_state->mode, core);
 	if (state->mode == RZ_OUTPUT_MODE_TABLE || state->mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_cons_printf("[%c%s]\n", toupper(header[0]), header + 1);
 	} else if (state->mode == RZ_OUTPUT_MODE_JSON || state->mode == RZ_OUTPUT_MODE_LONG_JSON) {
@@ -354,7 +353,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 
 #define wrap_mode(header, default_mode, method) \
 	do { \
-		RzCmdStateOutput *st = add_header(state, default_mode, header); \
+		RzCmdStateOutput *st = add_header(state, default_mode, header, core); \
 		res &= (method); \
 		add_footer(state, st); \
 	} while (0)
@@ -447,7 +446,7 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 	}
 	if (mask & RZ_CORE_BIN_ACC_PDB) {
 		if (state->mode & (RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON)) {
-			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb");
+			RzCmdStateOutput *st = add_header(state, RZ_OUTPUT_MODE_STANDARD, "pdb", core);
 			RzPdb *pdb = rz_core_pdb_load_info(core, core->bin->file);
 			if (!pdb) {
 				rz_cmd_state_output_free(st);
@@ -3122,7 +3121,7 @@ RZ_API bool rz_core_file_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFil
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_TABLE: {
-		rz_table_hide_header(state->d.t);
+		rz_table_show_header(state->d.t, false);
 		if (desc) {
 			rz_table_add_rowf(state->d.t, "sd", "fd", desc->fd);
 		}
@@ -3168,6 +3167,44 @@ static const char *str2na(const char *s) {
 	return RZ_STR_ISEMPTY(s) ? "N/A" : s;
 }
 
+static bool core_bin_info_is_number(const char *value) {
+	if (RZ_STR_ISEMPTY(value)) {
+		return false;
+	}
+	for (size_t i = 0; value[i]; ++i) {
+		if (!IS_DIGIT(value[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static const char *core_bin_info_color_selector(const char *value, const char *column, const size_t column_n, const RzTableColumnType type, void *user) {
+	if (!column || !value) {
+		return NULL;
+	}
+	const RzCore *core = (const RzCore *)user;
+	const RzConsContext *ctx = core->cons->context;
+
+	if (RZ_STR_EQ(value, "N/A")) {
+		return ctx->pal.invalid;
+	} else if (value[0] == '0' && value[1] == 'x') {
+		return ctx->pal.offset;
+	} else if (core_bin_info_is_number(value)) {
+		return ctx->pal.num;
+	} else if (rz_str_is_true(value)) {
+		return ctx->pal.graph_true;
+	} else if (rz_str_is_false(value)) {
+		return ctx->pal.graph_false;
+	} else if (RZ_STR_EQ(value, "BE")) {
+		return ctx->pal.ai_seq;
+	} else if (RZ_STR_EQ(value, "LE")) {
+		return ctx->pal.ai_write;
+	}
+
+	return column_n ? ctx->pal.diff_match : ctx->pal.label;
+}
+
 RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
@@ -3182,6 +3219,11 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 	const char *compiled = NULL;
 	bool havecode;
 	int bits;
+
+	rz_cmd_state_output_set_columnsf(state, "ss", "field", "value");
+	if (core->cons->context->color_mode != COLOR_MODE_DISABLED) {
+		rz_cmd_state_output_set_color_selector(state, core_bin_info_color_selector, core);
+	}
 
 	havecode = is_executable(obj) || rz_pvector_len(obj->entries) > 0;
 	compiled = rz_core_bin_get_compile_time(bf);
@@ -3353,8 +3395,7 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		rz_table_set_columnsf(t, "ss", "field", "value");
-		rz_table_hide_header(t);
+		rz_table_show_header(t, false);
 
 		rz_table_add_rowf(t, "ss", "arch", str2na(info->arch));
 		rz_table_add_rowf(t, "ss", "cpu", str2na(info->cpu));

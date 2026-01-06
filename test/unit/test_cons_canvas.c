@@ -14,57 +14,57 @@ bool test_canvas_new_free(void) {
 }
 
 bool test_canvas_write_tostring(void) {
-	RzCons *cons = rz_cons_new();
-	
+	rz_cons_new();
+
 	RzConsCanvas *c = rz_cons_canvas_new(10, 3);
 	rz_cons_canvas_gotoxy(c, 0, 0);
 	rz_cons_canvas_write(c, "Hello");
 	rz_cons_canvas_gotoxy(c, 2, 1);
 	rz_cons_canvas_write(c, "World");
-	
+
 	char *res = rz_cons_canvas_to_string(c);
 	mu_assert_notnull(res, "Canvas string should not be null");
 	mu_assert_streq_free(res, "Hello\n  World\n", "Canvas content check");
-	
+
 	rz_cons_canvas_free(c);
 	rz_cons_free();
 	mu_end;
 }
 
 bool test_canvas_resize(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzConsCanvas *c = rz_cons_canvas_new(5, 2);
 	rz_cons_canvas_gotoxy(c, 0, 0);
 	rz_cons_canvas_write(c, "Hi");
-	
+
 	bool ret = rz_cons_canvas_resize(c, 10, 4);
 	mu_assert_true(ret, "Resize should succeed");
 	mu_assert_eq(c->w, 10, "New width 10");
 	mu_assert_eq(c->h, 4, "New height 4");
-	
+
 	char *res = rz_cons_canvas_to_string(c);
 	mu_assert_notnull(res, "Canvas string should not be null");
 	mu_assert_streq_free(res, "\n\n\n", "Canvas cleared after resize");
-	
+
 	rz_cons_canvas_free(c);
 	rz_cons_free();
 	mu_end;
 }
 
 bool test_canvas_gotoxy_bounds(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzConsCanvas *c = rz_cons_canvas_new(10, 5);
 	bool ret;
-	
+
 	ret = rz_cons_canvas_gotoxy(c, 0, 0);
 	mu_assert_true(ret, "0,0 is valid");
-	
+
 	ret = rz_cons_canvas_gotoxy(c, 9, 4);
 	mu_assert_true(ret, "9,4 is valid");
-	
+
 	ret = rz_cons_canvas_gotoxy(c, 10, 0);
 	mu_assert_false(ret, "10,0 is OOB x");
-	
+
 	ret = rz_cons_canvas_gotoxy(c, 0, 5);
 	mu_assert_false(ret, "0,5 is OOB y");
 
@@ -74,7 +74,7 @@ bool test_canvas_gotoxy_bounds(void) {
 }
 
 bool test_canvas_fill(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzConsCanvas *c = rz_cons_canvas_new(5, 5);
 	rz_cons_canvas_fill(c, 1, 1, 3, 3, 'X');
 	char *res = rz_cons_canvas_to_string(c);
@@ -86,7 +86,7 @@ bool test_canvas_fill(void) {
 }
 
 bool test_canvas_box(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzConsCanvas *c = rz_cons_canvas_new(5, 5);
 	rz_cons_canvas_box(c, 0, 0, 5, 5, "");
 	char *res = rz_cons_canvas_to_string(c);
@@ -111,10 +111,10 @@ bool test_canvas_box(void) {
 }
 
 bool test_canvas_lines(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	RzConsCanvas *c = rz_cons_canvas_new(5, 5);
 	RzCanvasLineStyle style = { LINE_NONE, LINE_NOSYM_HORIZ, DOT_STYLE_NORMAL };
-	
+
 	// Diagonal line (0,0) to (3,3)
 	rz_cons_canvas_line_diagonal(c, 0, 0, 3, 3, &style);
 	char *res = rz_cons_canvas_to_string(c);

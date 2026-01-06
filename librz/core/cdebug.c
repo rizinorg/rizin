@@ -763,8 +763,17 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_return_if_fail(dbg);
 	RzList *info_list = rz_debug_traces_info(dbg, offset);
 	RzTable *table = rz_table_new();
-	table->cons = rz_cons_singleton();
-	rz_table_visual_list(table, info_list, offset, 1,
+
+	RzCons *cons = rz_cons_singleton();
+	if (cons) {
+		if (cons->use_utf8_curvy) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+		} else if (cons->use_utf8) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8);
+		}
+	}
+
+	rz_core_debug_listinfo_to_table(table, info_list, offset, 1,
 		rz_cons_get_size(NULL), dbg->iob.io->va);
 	char *s = rz_table_tostring(table);
 	rz_cons_printf("\n%s\n", s);
@@ -1319,4 +1328,99 @@ RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state) {
 		break;
 	}
 	rz_cmd_state_output_array_end(state);
+}
+
+/**
+ * \brief      Populates a RzTable with a given RzList of RzDbgListInfo
+ *
+ * \param      table  The table to fill
+ * \param      list   The list to use for filling
+ * \param[in]  seek   The seek is used as selector to show the current seek
+ * \param[in]  len    The length of the current selected section
+ * \param[in]  width  The width max width for printing
+ * \param[in]  va     When true, seek is a virtual address.
+ */
+RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLABLE RzList /*<RzDbgListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va) {
+	rz_return_if_fail(table);
+
+	ut64 mul, min = -1, max = -1;
+	RzListIter *iter;
+	RzDbgListInfo *info;
+	table->showHeader = false;
+	const char *h_line = table->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = table->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? UTF_BLOCK : "#";
+	int j, i;
+	width -= 80;
+	if (width < 1) {
+		width = 30;
+	}
+
+	rz_table_set_columnsf(table, "sxsxsss", "No.", "start", "blocks", "end", "perms", "extra", "name");
+	rz_list_foreach (list, iter, info) {
+		if (min == -1 || info->pitv.addr < min) {
+			min = info->pitv.addr;
+		}
+		if (max == -1 || info->pitv.addr + info->pitv.size > max) {
+			max = info->pitv.addr + info->pitv.size;
+		}
+	}
+	mul = (max - min) / width;
+	if (min != -1 && mul > 0) {
+		i = 0;
+		rz_list_foreach (list, iter, info) {
+			RzStrBuf *buf = rz_strbuf_new("");
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + j * mul;
+				ut64 npos = min + (j + 1) * mul;
+				const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
+					? block
+					: h_line;
+				rz_strbuf_append(buf, arg);
+			}
+			char *b = rz_strbuf_drain(buf);
+			char no[64];
+			if (va) {
+				rz_table_add_rowf(table, "sxsxsss",
+					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
+					info->vitv.addr,
+					b,
+					rz_itv_end(info->vitv),
+					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					(info->extra) ? info->extra : "",
+					(info->name) ? info->name : "");
+			} else {
+				rz_table_add_rowf(table, "sxsxsss",
+					rz_strf(no, "%d%c", i, rz_itv_contain(info->pitv, seek) ? '*' : ' '),
+					info->pitv.addr,
+					b,
+					rz_itv_end(info->pitv),
+					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					(info->extra) ? info->extra : "",
+					(info->name) ? info->name : "");
+			}
+			free(b);
+			i++;
+		}
+		RzStrBuf *buf = rz_strbuf_new("");
+		/* current seek */
+		if (i > 0 && len != 0) {
+			if (seek == UT64_MAX) {
+				seek = 0;
+			}
+			for (j = 0; j < width; j++) {
+				rz_strbuf_append(buf, ((j * mul) + min >= seek && (j * mul) + min <= seek + len) ? "^" : h_line);
+			}
+			char *s = rz_strbuf_drain(buf);
+			char *seekstart = rz_str_newf("0x%08" PFMT64x, seek);
+			char *seekend = rz_str_newf("0x%08" PFMT64x, seek + len);
+
+			rz_table_add_rowf(table, "sssssss", "=>", seekstart, s, seekend, "", "", "");
+
+			free(seekend);
+			free(seekstart);
+			free(s);
+		} else {
+			rz_strbuf_free(buf);
+		}
+	}
 }

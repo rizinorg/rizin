@@ -1089,7 +1089,7 @@ static void func2_output(RzCmdStateOutput *state) {
 
 bool test_state_output_concat_standard(void) {
 	RzCmdStateOutput state;
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, NULL), "state is initialized correctly");
 
 	rz_cons_flush();
 	rz_cons_push();
@@ -1118,11 +1118,11 @@ bool test_state_output_concat_table(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1145,11 +1145,11 @@ bool test_state_output_concat_mix(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1170,11 +1170,11 @@ bool test_state_output_concat_json(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	func1_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	func2_output(&state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1186,7 +1186,7 @@ bool test_state_output_concat_json(void) {
 
 	rz_cons_flush();
 	rz_cons_push();
-	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON), "state is initialized correctly");
+	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	pj_o(state.d.pj);
 	pj_k(state.d.pj, "first");
 	func1_output(&state);

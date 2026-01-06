@@ -8,7 +8,7 @@ bool test_grep_parse_simple(void) {
 	RzCons *cons = rz_cons_new();
 	char *cmd = strdup("pd~mov");
 	rz_cons_grep_parsecmd(cmd, "");
-	
+
 	RzConsGrep *grep = &cons->context->grep;
 	mu_assert_eq(grep->nstrings, 1, "nstrings is 1");
 	mu_assert_streq(grep->strings[0], "mov", "string is mov");
@@ -23,7 +23,7 @@ bool test_grep_parse_multiple(void) {
 	RzCons *cons = rz_cons_new();
 	char *cmd = strdup("pd~mov,call");
 	rz_cons_grep_parsecmd(cmd, "");
-	
+
 	RzConsGrep *grep = &cons->context->grep;
 	mu_assert_eq(grep->nstrings, 2, "nstrings is 2");
 	mu_assert_streq(grep->strings[0], "mov", "string 0 is mov");
@@ -38,7 +38,7 @@ bool test_grep_parse_negation(void) {
 	RzCons *cons = rz_cons_new();
 	char *cmd = strdup("pd~!mov");
 	rz_cons_grep_parsecmd(cmd, "");
-	
+
 	RzConsGrep *grep = &cons->context->grep;
 	mu_assert_eq(grep->neg, 1, "negation is set");
 	mu_assert_eq(grep->nstrings, 1, "nstrings is 1");
@@ -53,7 +53,7 @@ bool test_grep_parse_case_insensitive(void) {
 	RzCons *cons = rz_cons_new();
 	char *cmd = strdup("pd~+mov");
 	rz_cons_grep_parsecmd(cmd, "");
-	
+
 	RzConsGrep *grep = &cons->context->grep;
 	mu_assert_eq(grep->icase, 1, "icase is set");
 	mu_assert_eq(grep->nstrings, 1, "nstrings is 1");
@@ -68,7 +68,7 @@ bool test_grep_parse_line(void) {
 	RzCons *cons = rz_cons_new();
 	char *cmd = strdup("pd~:5");
 	rz_cons_grep_parsecmd(cmd, "");
-	
+
 	RzConsGrep *grep = &cons->context->grep;
 	mu_assert_eq(grep->line, 5, "line is 5");
 
@@ -78,16 +78,16 @@ bool test_grep_parse_line(void) {
 }
 
 bool test_grep_line(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	rz_cons_grep("mov");
 	char line[] = "mov eax, 1";
 	int len = rz_cons_grep_line(line, strlen(line));
 	mu_assert_eq(len, 10, "Grep line matches");
-	
+
 	char line2[] = "sub eax, 1";
 	int len2 = rz_cons_grep_line(line2, strlen(line2));
 	mu_assert_eq(len2, 0, "Grep line does not match");
-	
+
 	rz_cons_free();
 	mu_end;
 }

@@ -123,12 +123,12 @@ bool test_rz_cons() {
 }
 
 bool test_cons_justify(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	rz_cons_reset();
 	rz_cons_strcat_justify("Line1\nLine2", 2, '|');
 	const char *buf = rz_cons_get_buffer();
 	const char *expected = "  | Line1\nLine2";
-	
+
 	mu_assert_streq(buf, expected, "Justify multiple lines");
 
 	rz_cons_reset();
@@ -141,7 +141,7 @@ bool test_cons_justify(void) {
 }
 
 bool test_cons_at(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	rz_cons_reset();
 	rz_cons_strcat_at("Hello", 2, 0, 10, 1);
 	const char *buf = rz_cons_get_buffer();
@@ -151,17 +151,41 @@ bool test_cons_at(void) {
 }
 
 bool test_cons_misc(void) {
-	RzCons *cons = rz_cons_new();
+	rz_cons_new();
 	mu_assert_notnull(rz_cons_singleton(), "Singleton check");
-	
+
 	rz_cons_break_push(NULL, NULL);
 	mu_assert_false(rz_cons_is_breaked(), "Not breaked initially");
 	rz_cons_break_pop();
-	
-	// Just call some functions to increase coverage
-	rz_cons_is_utf8();
-	rz_cons_is_interactive();
-	
+
+#if __UNIX__
+	// Test UTF-8 detection via environment
+	const char *env_vars[] = { "LC_ALL", "LC_CTYPE", "LANG" };
+	char *old_envs[3];
+	for (int i = 0; i < 3; i++) {
+		old_envs[i] = rz_sys_getenv(env_vars[i]);
+		rz_sys_setenv(env_vars[i], NULL);
+	}
+
+	rz_sys_setenv("LANG", "en_US.UTF-8");
+	mu_assert_true(rz_cons_is_utf8(), "UTF-8 detected with LANG=en_US.UTF-8");
+
+	rz_sys_setenv("LANG", "C");
+	mu_assert_false(rz_cons_is_utf8(), "UTF-8 NOT detected with LANG=C");
+
+	for (int i = 0; i < 3; i++) {
+		rz_sys_setenv(env_vars[i], old_envs[i]);
+		free(old_envs[i]);
+	}
+#endif
+
+	// Interactive check
+	mu_assert_false(rz_cons_is_interactive(), "Unit tests should not be interactive by default");
+	rz_cons_set_interactive(true);
+	mu_assert_true(rz_cons_is_interactive(), "Manually set interactive to true");
+	rz_cons_set_interactive(false);
+	mu_assert_false(rz_cons_is_interactive(), "Manually set interactive to false");
+
 	rz_cons_free();
 	mu_end;
 }

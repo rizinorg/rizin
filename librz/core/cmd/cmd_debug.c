@@ -745,7 +745,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG, core);
 	rz_core_debug_map_print(core, addr, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
