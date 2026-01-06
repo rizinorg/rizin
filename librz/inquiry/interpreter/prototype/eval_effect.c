@@ -145,6 +145,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	case RZ_IL_OP_GOTO:
 	case RZ_IL_OP_BLK:
 	case RZ_IL_OP_REPEAT:
+		RZ_LOG_ERROR("Unhandled effect %" PFMT32d "\n", effect->code);
 		// Ignore for now.
 		break;
 	}
