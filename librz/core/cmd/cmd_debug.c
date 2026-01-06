@@ -745,7 +745,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG, core);
 	rz_core_debug_map_print(core, addr, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -1016,7 +1016,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 }
 
 static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
-	CMD_CHECK_DEBUG_DEAD(core);
+	// Only check debug mode when no argument is provided (symbol resolution needed)
+	// With address arguments we can still work in static mode
+	if (!arg || arg[0] == '\0') {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
 #if HAVE_JEMALLOC
 	if (core->rasm->bits == 64) {
 		cmd_dbg_map_jemalloc_64(core, type, arg);

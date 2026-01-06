@@ -416,7 +416,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		update_asmcpu_options(core, node);
 		/* print verbose help instead of plain option listing */
 		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
@@ -508,7 +508,7 @@ static bool cb_asmarch(void *user, void *data) {
 		if (strlen(node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 			rz_core_asm_plugins_print(core, &state, NULL);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);
@@ -1563,9 +1563,9 @@ static bool cb_dbg_args(void *user, void *data) {
 static bool cb_dbgbackend(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
 	if (!strcmp(node->value, "?")) {
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 		rz_core_debug_plugins_print(core, &state);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
@@ -1885,11 +1885,24 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		}
 		pj_end(pj);
 		break;
-	case RZ_OUTPUT_MODE_LONG:
-		rz_cons_printf("%s = %s %s; %s",
-			node->name, node->value,
-			rz_config_node_is_ro(node) ? "(ro)" : "",
-			node->desc);
+	case RZ_OUTPUT_MODE_LONG: {
+		bool color_enabled = rz_config_get_i(cfg, "scr.color") > 0;
+		char color_name[32], color_value[32], color_meta[32], reset_str[32];
+
+		if (color_enabled) {
+			RzColor color_name_val = rz_cons_pal_get("label");
+			RzColor color_value_val = rz_cons_pal_get("args");
+			RzColor color_meta_val = rz_cons_pal_get("comment");
+			RzColor reset_val = rz_cons_pal_get("help");
+			rz_cons_rgb_str(color_name, sizeof(color_name), &color_name_val);
+			rz_cons_rgb_str(color_value, sizeof(color_value), &color_value_val);
+			rz_cons_rgb_str(color_meta, sizeof(color_meta), &color_meta_val);
+			rz_cons_rgb_str(reset_str, sizeof(reset_str), &reset_val);
+		} else {
+			color_name[0] = color_value[0] = color_meta[0] = reset_str[0] = '\0';
+		}
+		const char *ro_str = rz_config_node_is_ro(node) ? "(ro)" : "";
+		rz_cons_printf("%s%20s = %s%s %s%s; %s%s", color_name, node->name, color_value, node->value, color_meta, ro_str, reset_str, node->desc);
 		if (!rz_list_empty(node->options)) {
 			isFirst = true;
 			rz_cons_printf(" [");
@@ -1905,6 +1918,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, RzCmdStateOutpu
 		}
 		rz_cons_println("");
 		break;
+	}
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("%s=%s\n", node->name, node->value);
 		break;

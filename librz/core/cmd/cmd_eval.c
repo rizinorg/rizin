@@ -319,7 +319,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_next_theme_handler(RzCore *core, int a
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, mode);
+	rz_cmd_state_output_init(&state, mode, core);
 	rz_core_meta_print_list_all(core, RZ_META_TYPE_HIGHLIGHT, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -413,7 +413,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_current_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 	rz_core_meta_print_list_in_function(core, RZ_META_TYPE_COMMENT, core->offset, &state);
 	rz_cmd_state_output_print(&state);
 	rz_cmd_state_output_fini(&state);
@@ -434,7 +434,7 @@ static void print_all_plugin_configs(const RzCore *core) {
 	// Incomplete plugin config key.
 	RzConfig **cfg;
 	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
 	rz_iterator_foreach(it, cfg) {
 		rz_core_config_print_all(*cfg, "", &state);
@@ -498,7 +498,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 			rz_core_config_print_all(cfg, key, &state);
 			rz_cmd_state_output_print(&state);
 			rz_cmd_state_output_fini(&state);

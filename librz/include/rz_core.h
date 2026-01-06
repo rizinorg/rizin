@@ -1332,8 +1332,6 @@ typedef void *(*RzCoreTaskFunction)(RzCore *core, void *user);
 RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fcn, void *fcn_user);
 RZ_API void *rz_core_function_task_get_result(RzCoreTask *task);
 RZ_API const char *rz_core_task_status(RzCoreTask *task);
-RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j);
-RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API bool rz_core_task_is_cmd(RzCore *core, int id);
 RZ_API void rz_core_task_del_all_done(RzCore *core);
 

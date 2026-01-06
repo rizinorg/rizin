@@ -38,7 +38,7 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 		type_methods_start = typedef_->methodlist;
 		type_methods_end = rz_pvector_len(bin->clr->methoddefs) + 1;
 
-		type_it = rz_list_safe_next(type_it);
+		type_it = rz_list_next(type_it);
 		if (type_it) {
 			Pe_image_metadata_typedef *itypedef_ = rz_list_iter_get_data(type_it);
 			type_methods_end = itypedef_->methodlist;
@@ -51,6 +51,8 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 		Pe_image_metadata_methoddef *methoddef = *it;
 
 		if ((type_name || type_namespace) && i >= type_methods_start && i >= type_methods_end) {
+			rz_goto_if_fail(type_it, loop_end);
+
 			// Update class and namespace
 			free(type_name);
 			free(type_namespace);
@@ -60,7 +62,7 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 			type_namespace = rz_buf_get_string(bin->clr->strings, typedef_->namespace);
 
 			// Update next end
-			type_it = rz_list_safe_next(type_it);
+			type_it = rz_list_next(type_it);
 			if (type_it) {
 				Pe_image_metadata_typedef *next_typedef_ = rz_list_iter_get_data(type_it);
 				type_methods_end = next_typedef_->methodlist;
@@ -95,6 +97,7 @@ RZ_OWN RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_pe_get_clr_symbols)(RzBinPEObj *bi
 		rz_list_append(methods, sym);
 		i++;
 	}
+loop_end:
 
 	// Cleanup class / namespace strings
 	free(type_name);

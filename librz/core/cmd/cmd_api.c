@@ -759,7 +759,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
 		RzCmdStateOutput state;
-		if (!rz_cmd_state_output_init(&state, mode)) {
+		if (!rz_cmd_state_output_init(&state, mode, cmd->core)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
@@ -2453,6 +2453,14 @@ RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char
 	va_end(ap);
 }
 
+RZ_API void rz_cmd_state_output_set_color_selector(RzCmdStateOutput *state, RzTableColorSelector color_cb, void *user) {
+	rz_return_if_fail(state);
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		rz_return_if_fail(state->d.t);
+		rz_table_set_color_selector(state->d.t, color_cb, user);
+	}
+}
+
 /**
  * \brief Clear the inner fields of RzCmdStateOutput structure, but do not free it.
  */
@@ -2488,10 +2496,100 @@ RZ_API void rz_cmd_state_output_free(RZ_NONNULL RzCmdStateOutput *state) {
 	free(state);
 }
 
+static inline bool table_value_is_invalid(const char *value) {
+	if (RZ_STR_ISEMPTY(value)) {
+		return true;
+	}
+	for (size_t i = 0; value[i]; ++i) {
+		if (value[i] != '-') {
+			return false;
+		}
+	}
+	return true;
+}
+
+static inline bool table_value_is_flags(const char *column) {
+	if (!column) {
+		return false;
+	}
+	return rz_str_startswith(column, "perm") ||
+		rz_str_startswith(column, "flag");
+}
+
+static inline bool table_value_is_offset(const char *column) {
+	if (!column) {
+		return false;
+	}
+	return RZ_STR_EQ(column, "vaddr") ||
+		RZ_STR_EQ(column, "paddr") ||
+		RZ_STR_EQ(column, "va") ||
+		RZ_STR_EQ(column, "pa") ||
+		RZ_STR_EQ(column, "va_end") ||
+		RZ_STR_EQ(column, "pa_end") ||
+		RZ_STR_EQ(column, "addr") ||
+		RZ_STR_EQ(column, "offset");
+}
+
+static inline bool table_value_is_meta(const char *column) {
+	if (!column) {
+		return false;
+	}
+	return rz_str_startswith(column, "type") ||
+		rz_str_startswith(column, "meta") ||
+		RZ_STR_EQ(column, "fd");
+}
+
+static inline bool table_value_is_name(const char *column) {
+	if (!column) {
+		return false;
+	}
+	return rz_str_startswith(column, "name");
+}
+
+static inline bool table_value_is_comment(const char *column) {
+	if (!column) {
+		return false;
+	}
+	return rz_str_startswith(column, "comment");
+}
+
+static const char *core_cmd_default_table_color(const char *value, const char *column, const size_t column_n, const RzTableColumnType type, void *user) {
+	const RzCore *core = (const RzCore *)user;
+	const RzConsContext *ctx = core->cons->context;
+	if (ctx->color_mode == COLOR_MODE_DISABLED) {
+		return NULL;
+	}
+
+	if (table_value_is_invalid(value)) {
+		return ctx->pal.invalid;
+	} else if (table_value_is_flags(column)) {
+		return ctx->pal.flag;
+	} else if (table_value_is_name(column)) {
+		return ctx->pal.fname;
+	} else if (table_value_is_meta(column)) {
+		return ctx->pal.meta;
+	} else if (table_value_is_comment(column)) {
+		return ctx->pal.comment;
+	} else if (table_value_is_offset(column)) {
+		return ctx->pal.offset;
+	}
+
+	switch (type) {
+	case RZ_TABLE_COLUMN_TYPE_STRING:
+		return ctx->pal.label;
+	case RZ_TABLE_COLUMN_TYPE_NUMBER:
+		return ctx->pal.num;
+	case RZ_TABLE_COLUMN_TYPE_BOOL:
+		return ctx->pal.cjmp;
+	default:
+		return NULL;
+	}
+}
+
 /**
  * \brief Initialize a RzCmdStateOutput structure and its inner fields based on the provided mode
  */
-RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode) {
+RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode, RZ_NULLABLE const RzCore *core) {
 	rz_return_val_if_fail(state, false);
 
 	state->mode = mode;
@@ -2500,6 +2598,16 @@ RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutpu
 		state->d.t = rz_table_new();
 		if (!state->d.t) {
 			return false;
+		}
+		if (core && core->cons && core->cons->context) {
+			if (core->cons->use_utf8_curvy) {
+				rz_table_set_char_mode(state->d.t, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+			} else if (core->cons->use_utf8) {
+				rz_table_set_char_mode(state->d.t, RZ_TABLE_CHAR_MODE_UTF8);
+			}
+			if (core->cons->context->color_mode != COLOR_MODE_DISABLED) {
+				rz_table_set_color_selector(state->d.t, core_cmd_default_table_color, (void *)core);
+			}
 		}
 		break;
 	case RZ_OUTPUT_MODE_STR_BUF:

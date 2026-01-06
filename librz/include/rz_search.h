@@ -70,7 +70,7 @@ typedef struct rz_search_t {
 	int (*update)(struct rz_search_t *s, ut64 from, const ut8 *buf, int len);
 	RzList /*<RzSearchKeyword *>*/ *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
-	char bckwrds;
+	int preludecnt; ///< Counts found preludes.
 } RzSearch;
 
 typedef struct rz_search_value_range_t {
@@ -103,7 +103,6 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char
 RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw);
 RZ_API void rz_search_reset(RzSearch *s, int mode);
 RZ_API void rz_search_kw_reset(RzSearch *s);
-RZ_API void rz_search_string_prepare_backward(RzSearch *s);
 
 // TODO: is this an internal API?
 RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len);

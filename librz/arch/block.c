@@ -526,12 +526,12 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = rz_list_head(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+				cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 			}
 			if (cur_ctx->switch_it) {
 				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
 				while (ht_up_find_kv(visited, cop->jump, NULL)) {
-					cur_ctx->switch_it = rz_list_safe_next(cur_ctx->switch_it);
+					cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 					if (!cur_ctx->switch_it) {
 						cop = NULL;
 						break;
@@ -1020,7 +1020,7 @@ RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *anal
 }
 
 /**
- * @return the offset of the i-th instruction in the basicblock bb or U16_MAX if i is invalid.
+ * \return the offset of the i-th instruction in the basicblock bb or U16_MAX if i is invalid.
  */
 RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i) {
 	if (i >= block->ninstr) {
@@ -1030,7 +1030,7 @@ RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i) {
 }
 
 /**
- * @return the absolute address of the i-th instruction in block or UT64_MAX if i is invalid.
+ * \return the absolute address of the i-th instruction in block or UT64_MAX if i is invalid.
  */
 RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i) {
 	ut16 offset = rz_analysis_block_get_op_offset(block, i);

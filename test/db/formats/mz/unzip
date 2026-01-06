@@ -20,3 +20,21 @@ EXPECT=<<EOF
 mov bp, ax
 EOF
 RUN
+
+NAME=MZ: unzip-modified-ss-sp.exe - correct section sizes
+FILE=bins/mz/unzip-modified-ss-sp.exe
+CMDS=<<EOF
+iSt
+x 8 @ 0x100000
+EOF
+EXPECT=<<EOF
+     paddr    size      vaddr   vsize align perm name    type flags 
+--------------------------------------------------------------------
+0x00000200 0x15000 0x00000000 0x15000   0x0 -rwx seg_000      
+0x00015200   0xfce 0x00015000   0xfce   0x0 -rwx seg_001      
+0x00000000     0x0 0x00015fce  0xa1f0   0x0 -rw- extra        
+0x000161ce     0x5 0x00100000     0x5   0x0 -rwx overlay      
+- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0000:0000  6865 6c6c 6fff ffff                      hello...
+EOF
+RUN
