@@ -152,7 +152,7 @@ bool store_abstr_data(
 	io_req.st_data = src->bv;
 
 	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("Prototype: STORE @ 0x%" PFMT64x " : %s\n", rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 
 	rz_th_queue_push(io_request, &io_req, true);
@@ -193,7 +193,7 @@ bool load_abstr_data(
 	out->is_concrete = true;
 
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
-	RZ_LOG_DEBUG("Prototype: READ @ 0x%" PFMT64x " : %s\n", rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("Prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 	return true;
 }

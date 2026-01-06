@@ -62,10 +62,12 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 	AD(state->pc->abstr_data)->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, entry_point);
 	AD(state->pc->abstr_data)->is_concrete = true;
-	RzIterator *it = ht_up_as_iter(state->globals);
-	RzInterpreterAbstrVal **v;
-	rz_iterator_foreach(it, v) {
-		RzInterpreterAbstrVal *av = *v;
+	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		ut64 djb2_reg_name = *k;
+		RzInterpreterAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		rz_return_val_if_fail(av, false);
 		av->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
 		// Length doesn't matter here. Because the destination is always
 		// set to the length of the src.
@@ -75,6 +77,18 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
 		AD(av->abstr_data)->is_concrete = true;
+		if (state->il_config->init_state) {
+			RzAnalysisILInitStateVar *il_var;
+			rz_vector_foreach(&state->il_config->init_state->vars, il_var) {
+				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
+					continue;
+				}
+				// The RzArch plugin defined a default value for this global.
+				RzBitVector *default_val = rz_il_value_to_bv(il_var->val);
+				rz_bv_copy(default_val, AD(av->abstr_data)->bv);
+				rz_bv_free(default_val);
+			}
+		}
 	}
 	rz_iterator_free(it);
 	state->ext = RZ_NEW0(ProtoInterprSharedObjects);
