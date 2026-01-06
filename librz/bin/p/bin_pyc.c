@@ -166,7 +166,12 @@ static void destroy(RzBinFile *bf) {
 	rz_list_free(pyc->shared);
 	RZ_FREE(bf->o->bin_obj);
 }
+static RzStructuredData *pyc_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
+	RzBinPycObj *pyc = bf->o->bin_obj;
+	return rz_bin_pyc_structure(pyc);
+}
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python byte-compiled",
@@ -175,6 +180,7 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
+	.bin_structure = &pyc_structure,
 	.entries = &entries,
 	.sections = &sections,
 	.baddr = &baddr,

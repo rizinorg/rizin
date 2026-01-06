@@ -14,5 +14,5 @@
 
 bool pyc_get_sections_symbols(RzBinPycObj *pyc, RzPVector /*<RzBinSection *>*/ *sections, RzPVector /*<RzBinSymbol *>*/ *symbols, RzList /*<pyc_code_object *>*/ *mem, RzBuffer *buf, ut32 magic);
 bool pyc_is_code(ut8 b, ut32 magic);
-
+RZ_API RzStructuredData *rz_bin_pyc_structure(RzBinPycObj *pyc);
 #endif
