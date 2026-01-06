@@ -2565,6 +2565,9 @@ static const char *core_cmd_default_table_color(const char *value, const char *c
 	} else if (table_value_is_flags(column)) {
 		return ctx->pal.flag;
 	} else if (table_value_is_name(column)) {
+		if (value && rz_str_startswith(value, "unknown_")) {
+			return ctx->pal.diff_unknown;
+		}
 		return ctx->pal.fname;
 	} else if (table_value_is_meta(column)) {
 		return ctx->pal.meta;
