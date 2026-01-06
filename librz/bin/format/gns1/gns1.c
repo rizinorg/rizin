@@ -121,7 +121,7 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 		}
 
 		consecutive_invalid = 0;
-		
+
 		rz_vector_push(gns1->segments, &entry);
 		gns1->num_segments++;
 
@@ -215,7 +215,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 
 /**
  * \brief Create sections from GNS1 segments.
- * 
+ *
  * Note: These are segments, not sections (in ELF terminology).
  * The GNS1 format does not provide information about actual sections,
  * so we expose the raw segments as RzBinSection objects for analysis.

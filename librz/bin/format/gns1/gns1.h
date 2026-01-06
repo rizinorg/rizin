@@ -11,8 +11,8 @@
 
 #define GNS1_SEGMENT_ENTRY_SIZE 12
 #define GNS1_MIN_FILE_SIZE      64
-#define GNS1_REGION1_BASE         0x12000000 // region_a base
-#define GNS1_REGION2_BASE         0x15000000 // region_b base
+#define GNS1_REGION1_BASE       0x12000000 // region_a base
+#define GNS1_REGION2_BASE       0x15000000 // region_b base
 #define GNS1_INTERNAL_BASE      0x10000000
 #define GNS1_ADDRMASK           0xFFFFFF
 
