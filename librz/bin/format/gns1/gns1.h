@@ -11,8 +11,8 @@
 
 #define GNS1_SEGMENT_ENTRY_SIZE 12
 #define GNS1_MIN_FILE_SIZE      64
-#define GNS1_CORE1_BASE         0x12000000 // region_a base
-#define GNS1_CORE2_BASE         0x15000000 // region_b base
+#define GNS1_REGION1_BASE         0x12000000 // region_a base
+#define GNS1_REGION2_BASE         0x15000000 // region_b base
 #define GNS1_INTERNAL_BASE      0x10000000
 #define GNS1_ADDRMASK           0xFFFFFF
 
@@ -31,8 +31,8 @@ typedef enum {
 
 typedef enum {
 	GNS1_REGION_UNKNOWN,
-	GNS1_REGION_A, // region_a (was core0)
-	GNS1_REGION_B // region_b (was core1)
+	GNS1_REGION_A, // region_a (possibly core0)
+	GNS1_REGION_B // region_b (possible core1)
 } Gns1Region;
 
 typedef struct gns1_segment_entry {
@@ -43,13 +43,14 @@ typedef struct gns1_segment_entry {
 	Gns1Region region; ///< Region (region_a/region_b)
 } Gns1SegmentEntry;
 
-//  parses the GNS1 file structure.
+/**
+ * \brief A GNS1 object file.
+ */
 typedef struct gns1_obj {
-	RzVector /*<Gns1SegmentEntry>*/ *segments; ///< Vector of Gns1SegmentEntry
+	RzVector /*<Gns1SegmentEntry>*/ *segments; ///< Segments of the binary.
 	ut32 num_segments; ///< Number of segments in the file
 } Gns1Obj;
 
-// functions
 RZ_IPI bool gns1_check_buffer(RzBuffer *b);
 RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb);
 RZ_IPI void gns1_destroy(RzBinFile *bf);

@@ -24,9 +24,9 @@ static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry
 	entry->type = (entry->paddr & GNS1_ADDRMASK) == 0 ? GNS1_SEG_TEXT : GNS1_SEG_DATA;
 
 	// Set region (named region_a/region_b to avoid speculation about meaning)
-	if (entry->paddr >= GNS1_CORE1_BASE && entry->paddr < GNS1_CORE2_BASE) {
+	if (entry->paddr >= GNS1_REGION1_BASE && entry->paddr < GNS1_REGION2_BASE) {
 		entry->region = GNS1_REGION_A;
-	} else if (entry->paddr >= GNS1_CORE2_BASE) {
+	} else if (entry->paddr >= GNS1_REGION2_BASE) {
 		entry->region = GNS1_REGION_B;
 	} else {
 		entry->region = GNS1_REGION_UNKNOWN;
@@ -36,7 +36,7 @@ static bool gns1_read_segment(RzBuffer *b, ut64 *offset, Gns1SegmentEntry *entry
 
 static inline ut64 gns1_translate_vaddr(ut32 paddr) {
 	ut32 core_base = paddr & 0xFF000000;
-	if (core_base == GNS1_CORE1_BASE || core_base == GNS1_CORE2_BASE) {
+	if (core_base == GNS1_REGION1_BASE || core_base == GNS1_REGION2_BASE) {
 		return GNS1_INTERNAL_BASE + (paddr & GNS1_ADDRMASK);
 	}
 	return paddr;
@@ -114,12 +114,14 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 			consecutive_invalid++;
 			// If 3 consecutive invalid segments, stop parsing (prevents infinite loop)
 			if (consecutive_invalid >= 3) {
+				RZ_LOG_ERROR("GNS1: 3 invalid segments found. exiting \n");
 				break;
 			}
+			continue;
 		}
 
 		consecutive_invalid = 0;
-
+		
 		rz_vector_push(gns1->segments, &entry);
 		gns1->num_segments++;
 
@@ -177,15 +179,16 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 
 	Gns1SegmentEntry *entry;
 	rz_vector_foreach (gns1->segments, entry) {
-		if (entry->type == GNS1_SEG_TEXT) {
-			if (entry->region == GNS1_REGION_A) {
-				if (!region_a_text || entry->paddr < region_a_text->paddr) {
-					region_a_text = entry;
-				}
-			} else if (entry->region == GNS1_REGION_B) {
-				if (!region_b_text || entry->paddr < region_b_text->paddr) {
-					region_b_text = entry;
-				}
+		if (entry->type != GNS1_SEG_TEXT) {
+			continue;
+		}
+		if (entry->region == GNS1_REGION_A) {
+			if (!region_a_text || entry->paddr < region_a_text->paddr) {
+				region_a_text = entry;
+			}
+		} else if (entry->region == GNS1_REGION_B) {
+			if (!region_b_text || entry->paddr < region_b_text->paddr) {
+				region_b_text = entry;
 			}
 		}
 	}
@@ -210,7 +213,13 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *gns1_entries(RzBinFile *bf) {
 	return ret;
 }
 
-// create sections from GNS1 segments.
+/**
+ * \brief Create sections from GNS1 segments.
+ * 
+ * Note: These are segments, not sections (in ELF terminology).
+ * The GNS1 format does not provide information about actual sections,
+ * so we expose the raw segments as RzBinSection objects for analysis.
+ */
 RZ_IPI RzPVector /*<RzBinSection *>*/ *gns1_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
@@ -292,8 +301,8 @@ RZ_IPI RzStructuredData *gns1_structure(RzBinFile *bf) {
 
 	// header information
 	rz_structured_data_map_add_unsigned(info, "num_segments", gns1->num_segments, false);
-	rz_structured_data_map_add_unsigned(info, "region_a_base", GNS1_CORE1_BASE, true);
-	rz_structured_data_map_add_unsigned(info, "region_b_base", GNS1_CORE2_BASE, true);
+	rz_structured_data_map_add_unsigned(info, "region_a_base", GNS1_REGION1_BASE, true);
+	rz_structured_data_map_add_unsigned(info, "region_b_base", GNS1_REGION2_BASE, true);
 	rz_structured_data_map_add_unsigned(info, "internal_base", GNS1_INTERNAL_BASE, true);
 
 	//  segment table
