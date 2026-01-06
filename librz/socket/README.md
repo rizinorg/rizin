@@ -2,20 +2,6 @@
 
 `RzSocket` provides a portable abstraction for network sockets, process pipes, and serial communication. It is used across Rizin for IPC, remote analysis, and communication with external tools.
 
-### RzPipe Ecosystem
-
-The RzPipe protocol is implemented in many programming languages, allowing you to interact with Rizin from almost anywhere.
-
-Supported languages include:
-- [Python](https://github.com/rizinorg/rz-pipe-python)
-- [Rust](https://github.com/rizinorg/rz-pipe-rs)
-- [Go](https://github.com/rizinorg/rz-pipe-go)
-- [Haskell](https://github.com/rizinorg/rz-pipe-haskell)
-- [OCaml](https://github.com/rizinorg/rz-pipe-ocaml)
-- [Ruby](https://github.com/rizinorg/rz-pipe-ruby)
-
-For a complete list of implementations, visit the [rz-pipe](https://github.com/rizinorg/rz-pipe) repository.
-
 ## Architecture
 
 The module is divided into several components:
@@ -109,3 +95,17 @@ if (fd != -1) {
 }
 rz_socket_free(s);
 ```
+
+## RzPipe Ecosystem
+
+The RzPipe protocol is implemented in many programming languages, allowing you to interact with Rizin from almost anywhere.
+
+Supported languages include:
+- [Python](https://github.com/rizinorg/rz-pipe/tree/master/python)
+- [Rust](https://github.com/rizinorg/rz-pipe/tree/master/rust)
+- [Go](https://github.com/rizinorg/rz-pipe/tree/master/go)
+- [Haskell](https://github.com/rizinorg/rz-pipe/tree/master/haskell)
+- [OCaml](https://github.com/rizinorg/rz-pipe/tree/master/ocaml)
+- [Ruby](https://github.com/rizinorg/rz-pipe/tree/master/ruby)
+
+For a complete list of implementations, visit the [rz-pipe](https://github.com/rizinorg/rz-pipe) repository.
