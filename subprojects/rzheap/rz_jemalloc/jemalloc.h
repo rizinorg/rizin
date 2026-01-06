@@ -1,383 +1,231 @@
-#ifndef JEMALLOC_H_
-#define	JEMALLOC_H_
-#ifdef __cplusplus
-extern "C" {
+// SPDX-FileCopyrightText: 2026 jemalloc <https://jemalloc.net/>
+// SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+/**
+ * Minimal jemalloc struct definitions for heap parsing.
+ * This file is included twice with different GH/GHT definitions.
+ * Based on jemalloc 4.5.0 structure layouts.
+ */
+
+#ifndef GH
+#error "GH macro must be defined before including this file"
+#endif
+#ifndef GHT
+#error "GHT macro must be defined before including this file"
 #endif
 
-/* Defined if __attribute__((...)) syntax is supported. */
-#define	JEMALLOC_HAVE_ATTR
-
-/* Defined if alloc_size attribute is supported. */
-#define	JEMALLOC_HAVE_ATTR_ALLOC_SIZE
-
-/* Defined if format(gnu_printf, ...) attribute is supported. */
-#define	JEMALLOC_HAVE_ATTR_FORMAT_GNU_PRINTF
-
-/* Defined if format(printf, ...) attribute is supported. */
-#define	JEMALLOC_HAVE_ATTR_FORMAT_PRINTF
-
-/*
- * Define overrides for non-standard allocator-related functions if they are
- * present on the system.
- */
-#define	JEMALLOC_OVERRIDE_MEMALIGN
-#define	JEMALLOC_OVERRIDE_VALLOC
-
-/*
- * At least Linux omits the "const" in:
- *
- *   size_t malloc_usable_size(const void *ptr);
- *
- * Match the operating system's prototype.
- */
-#define	JEMALLOC_USABLE_SIZE_CONST
-
-/*
- * If defined, specify throw() for the public function prototypes when compiling
- * with C++.  The only justification for this is to match the prototypes that
- * glibc defines.
- */
-#define	JEMALLOC_USE_CXX_THROW
-
-#ifdef _MSC_VER
-#  ifdef _WIN64
-#    define LG_SIZEOF_PTR_WIN 3
-#  else
-#    define LG_SIZEOF_PTR_WIN 2
-#  endif
+/* Constants - only define once */
+#ifndef JM_NBINS
+#define JM_NBINS 36
+#define NPSIZES_64 199
+#define NPSIZES_32 71
+#define SMOOTHSTEP_NSTEPS 200
+#define BITMAP_MAX_LEVELS 5
 #endif
 
-/* sizeof(void *) == 2^LG_SIZEOF_PTR. */
-#define	LG_SIZEOF_PTR 3
 
-/*
- * Name mangling for public symbols is controlled by --with-mangling and
- * --with-jemalloc-prefix.  With default settings the je_ prefix is stripped by
- * these macro definitions.
+/* Alignment macro - ut64 only has 4-byte alignment on 32-bit hosts,
+ * so we need explicit alignment for 64-bit structs.
  */
-#ifndef JEMALLOC_NO_RENAME
-#  define je_malloc_conf malloc_conf
-#  define je_malloc_message malloc_message
-#  define je_malloc malloc
-#  define je_calloc calloc
-#  define je_posix_memalign posix_memalign
-#  define je_aligned_alloc aligned_alloc
-#  define je_realloc realloc
-#  define je_free free
-#  define je_mallocx mallocx
-#  define je_rallocx rallocx
-#  define je_xallocx xallocx
-#  define je_sallocx sallocx
-#  define je_dallocx dallocx
-#  define je_sdallocx sdallocx
-#  define je_nallocx nallocx
-#  define je_mallctl mallctl
-#  define je_mallctlnametomib mallctlnametomib
-#  define je_mallctlbymib mallctlbymib
-#  define je_malloc_stats_print malloc_stats_print
-// #  define je_malloc_usable_size malloc_usable_size
-#  define je_memalign memalign
-#  define je_valloc valloc
-#endif
-
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <limits.h>
-#include <strings.h>
-
-#define	JEMALLOC_VERSION "4.5.0-0-g04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
-#define	JEMALLOC_VERSION_MAJOR 4
-#define	JEMALLOC_VERSION_MINOR 5
-#define	JEMALLOC_VERSION_BUGFIX 0
-#define	JEMALLOC_VERSION_NREV 0
-#define	JEMALLOC_VERSION_GID "04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
-
-#  define MALLOCX_LG_ALIGN(la)	((int)(la))
-#  if LG_SIZEOF_PTR == 2
-#    define MALLOCX_ALIGN(a)	((int)(ffs((int)(a))-1))
-#  else
-#    define MALLOCX_ALIGN(a)						\
-       ((int)(((size_t)(a) < (size_t)INT_MAX) ? ffs((int)(a))-1 :	\
-       ffs((int)(((size_t)(a))>>32))+31))
-#  endif
-#  define MALLOCX_ZERO	((int)0x40)
-/*
- * Bias tcache index bits so that 0 encodes "automatic tcache management", and 1
- * encodes MALLOCX_TCACHE_NONE.
- */
-#  define MALLOCX_TCACHE(tc)	((int)(((tc)+2) << 8))
-#  define MALLOCX_TCACHE_NONE	MALLOCX_TCACHE(-1)
-/*
- * Bias arena index bits so that 0 encodes "use an automatically chosen arena".
- */
-#  define MALLOCX_ARENA(a)	((((int)(a))+1) << 20)
-
-#if defined(__cplusplus) && defined(JEMALLOC_USE_CXX_THROW)
-#  define JEMALLOC_CXX_THROW throw()
+#undef GH_ALIGN
+#ifdef GH_IS_64
+#define GH_ALIGN __attribute__((aligned(8)))
 #else
-#  define JEMALLOC_CXX_THROW
+#define GH_ALIGN __attribute__((aligned(4)))
 #endif
 
-#if _MSC_VER
-#  define JEMALLOC_ATTR(s)
-#  define JEMALLOC_ALIGNED(s) __declspec(align(s))
-#  define JEMALLOC_ALLOC_SIZE(s)
-#  define JEMALLOC_ALLOC_SIZE2(s1, s2)
-#  ifndef JEMALLOC_EXPORT
-#    ifdef DLLEXPORT
-#      define JEMALLOC_EXPORT __declspec(dllexport)
-#    else
-#      define JEMALLOC_EXPORT __declspec(dllimport)
-#    endif
-#  endif
-#  define JEMALLOC_FORMAT_PRINTF(s, i)
-#  define JEMALLOC_NOINLINE __declspec(noinline)
-#  ifdef __cplusplus
-#    define JEMALLOC_NOTHROW __declspec(nothrow)
-#  else
-#    define JEMALLOC_NOTHROW
-#  endif
-#  define JEMALLOC_SECTION(s) __declspec(allocate(s))
-#  define JEMALLOC_RESTRICT_RETURN __declspec(restrict)
-#  if _MSC_VER >= 1900 && !defined(__EDG__)
-#    define JEMALLOC_ALLOCATOR __declspec(allocator)
-#  else
-#    define JEMALLOC_ALLOCATOR
-#  endif
-#elif defined(JEMALLOC_HAVE_ATTR)
-#  define JEMALLOC_ATTR(s) __attribute__((s))
-#  define JEMALLOC_ALIGNED(s) JEMALLOC_ATTR(aligned(s))
-// #  ifdef JEMALLOC_HAVE_ATTR_ALLOC_SIZE
-#  if 0
-#    define JEMALLOC_ALLOC_SIZE(s) JEMALLOC_ATTR(alloc_size(s))
-#    define JEMALLOC_ALLOC_SIZE2(s1, s2) JEMALLOC_ATTR(alloc_size(s1, s2))
-#  else
-#    define JEMALLOC_ALLOC_SIZE(s)
-#    define JEMALLOC_ALLOC_SIZE2(s1, s2)
-#  endif
-#  ifndef JEMALLOC_EXPORT
-#    define JEMALLOC_EXPORT JEMALLOC_ATTR(visibility("default"))
-#  endif
-#  ifdef JEMALLOC_HAVE_ATTR_FORMAT_GNU_PRINTF
-#    define JEMALLOC_FORMAT_PRINTF(s, i) JEMALLOC_ATTR(format(gnu_printf, s, i))
-#  elif defined(JEMALLOC_HAVE_ATTR_FORMAT_PRINTF)
-#    define JEMALLOC_FORMAT_PRINTF(s, i) JEMALLOC_ATTR(format(printf, s, i))
-#  else
-#    define JEMALLOC_FORMAT_PRINTF(s, i)
-#  endif
-#  define JEMALLOC_NOINLINE JEMALLOC_ATTR(noinline)
-#  define JEMALLOC_NOTHROW JEMALLOC_ATTR(nothrow)
-#  define JEMALLOC_SECTION(s) JEMALLOC_ATTR(section(s))
-#  define JEMALLOC_RESTRICT_RETURN
-#  define JEMALLOC_ALLOCATOR
+/* Queue/list helper macros - pointers become GHT */
+#define RZ_JM_QL_HEAD(a_type) struct GH_ALIGN { GHT qlh_first; }
+#define RZ_JM_QR(a_type)      struct GH_ALIGN { GHT qre_next; GHT qre_prev; }
+#define RZ_JM_RB_TREE(a_type) struct GH_ALIGN { GHT rbt_root; }
+#define RZ_JM_PH(a_type)      struct GH_ALIGN { GHT ph_root; }
+#define RZ_JM_QL_ELM(a_type)  RZ_JM_QR(a_type)
+#define RZ_JM_RB_NODE(a_type) struct GH_ALIGN { GHT rbn_left; GHT rbn_right; }
+
+/* only define once */
+#ifndef RZ_JM_DEFINE_ONLY_ONCE
+#define RZ_JM_DEFINE_ONLY_ONCE
+typedef enum {
+	dss_prec_disabled  = 0,
+	dss_prec_primary   = 1,
+	dss_prec_secondary = 2,
+	dss_prec_limit     = 3
+} dss_prec_t;
+
+/* Opaque types - internal layout doesn't matter, only size and alignment
+ * 32-bit types: 4-byte alignment (contains ut32 pointers)
+ * 64-bit types: 8-byte alignment (contains ut64 pointers)
+ * Note: We use __attribute__((aligned(N))) because ut64 only has 4-byte
+ * alignment on 32-bit hosts, so we can't rely on natural alignment.
+ */
+typedef struct __attribute__((aligned(4))) { ut8 data[44]; } malloc_mutex_t_32;
+typedef struct __attribute__((aligned(8))) { ut8 data[80]; } malloc_mutex_t_64;
+typedef struct __attribute__((aligned(4))) { ut8 data[8]; } nstime_t_32;
+typedef struct __attribute__((aligned(8))) { ut8 data[8]; } nstime_t_64;
+typedef struct __attribute__((aligned(4))) { ut8 data[112]; } prof_tctx_t_32;
+typedef struct __attribute__((aligned(8))) { ut8 data[128]; } prof_tctx_t_64;
+typedef struct __attribute__((aligned(4))) { ut8 data[96]; } arena_stats_t_32;
+typedef struct __attribute__((aligned(8))) { ut8 data[128]; } arena_stats_t_64;
+typedef struct __attribute__((aligned(4))) { ut8 data[116]; } arena_bin_t_32;
+typedef struct __attribute__((aligned(8))) { ut8 data[168]; } arena_bin_t_64;
+#endif
+
+typedef struct GH(arena_runs_dirty_link_s) GH(arena_runs_dirty_link_t);
+typedef struct GH(arena_bin_info_s) GH(arena_bin_info_t);
+typedef struct GH(arena_decay_s) GH(arena_decay_t);
+typedef struct GH(arena_s) GH(arena_t);
+typedef struct GH(extent_node_s) GH(extent_node_t);
+typedef RZ_JM_RB_TREE(extent_node_t) GH(extent_tree_t);
+typedef struct GH(bitmap_info_s) GH(bitmap_info_t);
+typedef struct GH(bitmap_level_s) GH(bitmap_level_t);
+
+#undef arena_t
+#undef extent_node_t
+#undef arena_stats_t
+#undef arena_bin_info_t
+#define arena_t GH(arena_t)
+#define extent_node_t GH(extent_node_t)
+#define arena_stats_t GH(arena_stats_t)
+#define arena_bin_info_t GH(arena_bin_info_t)
+
+/* chunk_hooks_t 
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/jemalloc_typedefs.h.in
+ */
+typedef struct GH_ALIGN {
+	GHT alloc;
+	GHT dalloc;
+	GHT commit;
+	GHT decommit;
+	GHT purge;
+	GHT split;
+	GHT merge;
+} GH(chunk_hooks_t);
+
+
+/* arena_runs_dirty_link_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
+struct GH_ALIGN GH(arena_runs_dirty_link_s) {
+	RZ_JM_QR(void) rd_link;
+};
+
+/* extent_node_t - chunk/extent tracking 
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/extent.h
+ */
+struct GH_ALIGN GH(extent_node_s) {
+	GHT en_arena;
+	GHT en_addr;
+	GHT en_size;
+	GHT en_sn;
+	bool en_zeroed;
+	bool en_committed;
+	bool en_achunk;
+	GHT en_prof_tctx;
+	GH(arena_runs_dirty_link_t)	rd;
+	RZ_JM_QR(GH(extent_node_t))	cc_link;
+	union {
+		RZ_JM_RB_NODE(GH(extent_node_t))	szsnad_link;
+		RZ_JM_QL_ELM(GH(extent_node_t))	ql_link;
+	};
+	RZ_JM_RB_NODE(GH(extent_node_t))	ad_link;
+};
+
+
+/* arena_decay_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
+struct GH_ALIGN GH(arena_decay_s) {
+	GHST time;
+	GH(nstime_t) interval;
+	GH(nstime_t) epoch;
+	ut64 jitter_state;
+	GH(nstime_t) deadline;
+	GHT ndirty;
+	GHT backlog[SMOOTHSTEP_NSTEPS];
+};
+
+
+/* arena_run_heap_t - pairing heap of runs
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
+typedef RZ_JM_PH(void) GH(arena_run_heap_t);
+
+
+/* arena_t - main arena structure
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
+ */
+struct GH_ALIGN GH(arena_s) {
+	unsigned ind;
+	unsigned nthreads[2];
+	GH(malloc_mutex_t) lock;
+	GH(arena_stats_t) stats;
+	RZ_JM_QL_HEAD(void) tcache_ql;
+	ut64 prof_accumbytes;
+	GHT offset_state;
+	dss_prec_t dss_prec;
+	RZ_JM_QL_HEAD(GH(extent_node_t)) achunks;
+	GHT extent_sn_next;
+	GHT spare;
+	GHST lg_dirty_mult;
+	bool purging;
+	GHT nactive;
+	GHT ndirty;
+	GH(arena_runs_dirty_link_t) runs_dirty;
+	GH(extent_node_t) chunks_cache;
+	GH(arena_decay_t) decay;
+	RZ_JM_QL_HEAD(GH(extent_node_t)) huge;
+	GH(malloc_mutex_t) huge_mtx;
+	GH(extent_tree_t) chunks_szsnad_cached;
+	GH(extent_tree_t) chunks_ad_cached;
+	GH(extent_tree_t) chunks_szsnad_retained;
+	GH(extent_tree_t) chunks_ad_retained;
+	GH(malloc_mutex_t) chunks_mtx;
+	RZ_JM_QL_HEAD(GH(extent_node_t)) node_cache;
+	GH(malloc_mutex_t) node_cache_mtx;
+	GH(chunk_hooks_t) chunk_hooks;
+	GH(arena_bin_t) bins[JM_NBINS];
+	GH(arena_run_heap_t) runs_avail[GH(NPSIZES)];
+};
+
+
+/* bitmap_level_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
+ */
+struct GH_ALIGN GH(bitmap_level_s) {
+	GHT group_offset;
+};
+
+/* bitmap_info_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
+ */
+#ifndef GH_IS_64
+/* 32-bit uses USE_TREE */
+struct GH_ALIGN GH(bitmap_info_s) {
+	GHT nbits;
+	unsigned nlevels;
+	GH(bitmap_level_t) levels[BITMAP_MAX_LEVELS+1];
+};
 #else
-#  define JEMALLOC_ATTR(s)
-#  define JEMALLOC_ALIGNED(s)
-#  define JEMALLOC_ALLOC_SIZE(s)
-#  define JEMALLOC_ALLOC_SIZE2(s1, s2)
-#  define JEMALLOC_EXPORT
-#  define JEMALLOC_FORMAT_PRINTF(s, i)
-#  define JEMALLOC_NOINLINE
-#  define JEMALLOC_NOTHROW
-#  define JEMALLOC_SECTION(s)
-#  define JEMALLOC_RESTRICT_RETURN
-#  define JEMALLOC_ALLOCATOR
+/* 64-bit does not use USE_TREE */
+struct GH_ALIGN GH(bitmap_info_s) {
+	GHT nbits;
+	GHT ngroups;
+};
 #endif
 
-/*
- * The je_ prefix on the following public symbol declarations is an artifact
- * of namespace management, and should be omitted in application code unless
- * JEMALLOC_NO_DEMANGLE is defined (see jemalloc_mangle.h).
+/* arena_bin_info_t
+ * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-extern JEMALLOC_EXPORT const char	*je_malloc_conf;
-extern JEMALLOC_EXPORT void		(*je_malloc_message)(void *cbopaque,
-    const char *s);
+struct GH_ALIGN GH(arena_bin_info_s) {
+	GHT reg_size;
+	GHT redzone_size;
+	GHT reg_interval;
+	GHT run_size;
+	ut32 nregs;
+	GH(bitmap_info_t)		bitmap_info;
+	ut32 reg0_offset;
+};
 
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_malloc(size_t size)
-    JEMALLOC_CXX_THROW JEMALLOC_ATTR(malloc) JEMALLOC_ALLOC_SIZE(1);
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_calloc(size_t num, size_t size)
-    JEMALLOC_CXX_THROW JEMALLOC_ATTR(malloc) JEMALLOC_ALLOC_SIZE2(1, 2);
-JEMALLOC_EXPORT int JEMALLOC_NOTHROW	je_posix_memalign(void **memptr,
-    size_t alignment, size_t size) JEMALLOC_CXX_THROW JEMALLOC_ATTR(nonnull(1));
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_aligned_alloc(size_t alignment,
-    size_t size) JEMALLOC_CXX_THROW JEMALLOC_ATTR(malloc)
-    JEMALLOC_ALLOC_SIZE(2);
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_realloc(void *ptr, size_t size)
-    JEMALLOC_CXX_THROW JEMALLOC_ALLOC_SIZE(2);
-JEMALLOC_EXPORT void JEMALLOC_NOTHROW	je_free(void *ptr)
-    JEMALLOC_CXX_THROW;
 
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_mallocx(size_t size, int flags)
-    JEMALLOC_ATTR(malloc) JEMALLOC_ALLOC_SIZE(1);
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_rallocx(void *ptr, size_t size,
-    int flags) JEMALLOC_ALLOC_SIZE(2);
-JEMALLOC_EXPORT size_t JEMALLOC_NOTHROW	je_xallocx(void *ptr, size_t size,
-    size_t extra, int flags);
-JEMALLOC_EXPORT size_t JEMALLOC_NOTHROW	je_sallocx(const void *ptr,
-    int flags) JEMALLOC_ATTR(pure);
-JEMALLOC_EXPORT void JEMALLOC_NOTHROW	je_dallocx(void *ptr, int flags);
-JEMALLOC_EXPORT void JEMALLOC_NOTHROW	je_sdallocx(void *ptr, size_t size,
-    int flags);
-JEMALLOC_EXPORT size_t JEMALLOC_NOTHROW	je_nallocx(size_t size, int flags)
-    JEMALLOC_ATTR(pure);
 
-JEMALLOC_EXPORT int JEMALLOC_NOTHROW	je_mallctl(const char *name,
-    void *oldp, size_t *oldlenp, void *newp, size_t newlen);
-JEMALLOC_EXPORT int JEMALLOC_NOTHROW	je_mallctlnametomib(const char *name,
-    size_t *mibp, size_t *miblenp);
-JEMALLOC_EXPORT int JEMALLOC_NOTHROW	je_mallctlbymib(const size_t *mib,
-    size_t miblen, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
-JEMALLOC_EXPORT void JEMALLOC_NOTHROW	je_malloc_stats_print(
-    void (*write_cb)(void *, const char *), void *je_cbopaque,
-    const char *opts);
-JEMALLOC_EXPORT size_t JEMALLOC_NOTHROW	je_malloc_usable_size(
-    JEMALLOC_USABLE_SIZE_CONST void *ptr) JEMALLOC_CXX_THROW;
-
-#ifdef JEMALLOC_OVERRIDE_MEMALIGN
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_memalign(size_t alignment, size_t size)
-    JEMALLOC_CXX_THROW JEMALLOC_ATTR(malloc);
-#endif
-
-#ifdef JEMALLOC_OVERRIDE_VALLOC
-JEMALLOC_EXPORT JEMALLOC_ALLOCATOR JEMALLOC_RESTRICT_RETURN
-    void JEMALLOC_NOTHROW	*je_valloc(size_t size) JEMALLOC_CXX_THROW
-    JEMALLOC_ATTR(malloc);
-#endif
-
-/*
- * void *
- * chunk_alloc(void *new_addr, size_t size, size_t alignment, bool *zero,
- *     bool *commit, unsigned arena_ind);
- */
-typedef void *(chunk_alloc_t)(void *, size_t, size_t, bool *, bool *, unsigned);
-
-/*
- * bool
- * chunk_dalloc(void *chunk, size_t size, bool committed, unsigned arena_ind);
- */
-typedef bool (chunk_dalloc_t)(void *, size_t, bool, unsigned);
-
-/*
- * bool
- * chunk_commit(void *chunk, size_t size, size_t offset, size_t length,
- *     unsigned arena_ind);
- */
-typedef bool (chunk_commit_t)(void *, size_t, size_t, size_t, unsigned);
-
-/*
- * bool
- * chunk_decommit(void *chunk, size_t size, size_t offset, size_t length,
- *     unsigned arena_ind);
- */
-typedef bool (chunk_decommit_t)(void *, size_t, size_t, size_t, unsigned);
-
-/*
- * bool
- * chunk_purge(void *chunk, size_t size, size_t offset, size_t length,
- *     unsigned arena_ind);
- */
-typedef bool (chunk_purge_t)(void *, size_t, size_t, size_t, unsigned);
-
-/*
- * bool
- * chunk_split(void *chunk, size_t size, size_t size_a, size_t size_b,
- *     bool committed, unsigned arena_ind);
- */
-typedef bool (chunk_split_t)(void *, size_t, size_t, size_t, bool, unsigned);
-
-/*
- * bool
- * chunk_merge(void *chunk_a, size_t size_a, void *chunk_b, size_t size_b,
- *     bool committed, unsigned arena_ind);
- */
-typedef bool (chunk_merge_t)(void *, size_t, void *, size_t, bool, unsigned);
-
-typedef struct {
-	chunk_alloc_t		*alloc;
-	chunk_dalloc_t		*dalloc;
-	chunk_commit_t		*commit;
-	chunk_decommit_t	*decommit;
-	chunk_purge_t		*purge;
-	chunk_split_t		*split;
-	chunk_merge_t		*merge;
-} chunk_hooks_t;
-
-/*
- * By default application code must explicitly refer to mangled symbol names,
- * so that it is possible to use jemalloc in conjunction with another allocator
- * in the same application.  Define JEMALLOC_MANGLE in order to cause automatic
- * name mangling that matches the API prefixing that happened as a result of
- * --with-mangling and/or --with-jemalloc-prefix configuration settings.
- */
-#ifdef JEMALLOC_MANGLE
-#  ifndef JEMALLOC_NO_DEMANGLE
-#    define JEMALLOC_NO_DEMANGLE
-#  endif
-#  define malloc_conf je_malloc_conf
-#  define malloc_message je_malloc_message
-#  define malloc je_malloc
-#  define calloc je_calloc
-#  define posix_memalign je_posix_memalign
-#  define aligned_alloc je_aligned_alloc
-#  define realloc je_realloc
-#  define free je_free
-#  define mallocx je_mallocx
-#  define rallocx je_rallocx
-#  define xallocx je_xallocx
-#  define sallocx je_sallocx
-#  define dallocx je_dallocx
-#  define sdallocx je_sdallocx
-#  define nallocx je_nallocx
-#  define mallctl je_mallctl
-#  define mallctlnametomib je_mallctlnametomib
-#  define mallctlbymib je_mallctlbymib
-#  define malloc_stats_print je_malloc_stats_print
-#  define malloc_usable_size je_malloc_usable_size
-#  define memalign je_memalign
-#  define valloc je_valloc
-#endif
-
-/*
- * The je_* macros can be used as stable alternative names for the
- * public jemalloc API if JEMALLOC_NO_DEMANGLE is defined.  This is primarily
- * meant for use in jemalloc itself, but it can be used by application code to
- * provide isolation from the name mangling specified via --with-mangling
- * and/or --with-jemalloc-prefix.
- */
-#ifndef JEMALLOC_NO_DEMANGLE
-#  undef je_malloc_conf
-#  undef je_malloc_message
-#  undef je_malloc
-#  undef je_calloc
-#  undef je_posix_memalign
-#  undef je_aligned_alloc
-#  undef je_realloc
-#  undef je_free
-#  undef je_mallocx
-#  undef je_rallocx
-#  undef je_xallocx
-#  undef je_sallocx
-#  undef je_dallocx
-#  undef je_sdallocx
-#  undef je_nallocx
-#  undef je_mallctl
-#  undef je_mallctlnametomib
-#  undef je_mallctlbymib
-#  undef je_malloc_stats_print
-#  undef je_malloc_usable_size
-#  undef je_memalign
-#  undef je_valloc
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* JEMALLOC_H_ */
