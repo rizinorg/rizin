@@ -735,20 +735,24 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 
 static bool sparc_fini(void *user) {
 	RzAnalysisValueSPARC *sparc = (RzAnalysisValueSPARC *)user;
-	if (sparc) {
-		RzIterator *iter = ht_up_as_iter(sparc->delayed_branch);
-		RzSparcDelatedBranchOp **eff;
-		rz_iterator_foreach(iter, eff) {
-			rz_il_op_effect_free((*eff)->perform_fail_jmp);
-			rz_il_op_effect_free((*eff)->perform_jmp);
-			rz_il_op_effect_free((*eff)->set_ea);
-			free(*eff);
-		}
-		ht_up_free(sparc->delayed_branch);
-		rz_iterator_free(iter);
-
-		RZ_FREE(sparc);
+	if (!sparc) {
+		return true;
 	}
+	RzIterator *iter = ht_up_as_iter(sparc->delayed_branch);
+	RzSparcDelatedBranchOp **eff;
+	rz_iterator_foreach(iter, eff) {
+		rz_il_op_effect_free((*eff)->perform_fail_jmp);
+		rz_il_op_effect_free((*eff)->perform_jmp);
+		rz_il_op_effect_free((*eff)->set_ea);
+		free(*eff);
+	}
+	ht_up_free(sparc->delayed_branch);
+	rz_iterator_free(iter);
+	if (sparc->handle != 0) {
+		cs_close(&sparc->handle);
+	}
+
+	RZ_FREE(sparc);
 	return true;
 }
 
