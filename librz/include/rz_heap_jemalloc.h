@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
+// SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 
 // Allow re-entry for 32-bit pass
 #if !defined(RZ_HEAP_JEMALLOC_H_TYPES) || defined(INC_HEAP32)
