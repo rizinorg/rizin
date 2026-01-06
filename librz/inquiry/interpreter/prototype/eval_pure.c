@@ -469,9 +469,59 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 		rz_bv_fini(y.bv);
 		break;
 	}
-	case RZ_IL_OP_DIV:
+	case RZ_IL_OP_MOD: {
+		RzILOpPure *px = pure->op.mod.x;
+		RzILOpPure *py = pure->op.mod.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: MOD x failed to evaluate.\n");
+			return false;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: MOD y failed to evaluate.\n");
+			return false;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_mod_inplace(out->bv, y.bv)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
+	case RZ_IL_OP_DIV: {
+		RzILOpPure *px = pure->op.div.x;
+		RzILOpPure *py = pure->op.div.y;
+		if (!interpreter_prototype_eval_pure(state, px, out, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: DIV x failed to evaluate.\n");
+			return false;
+		}
+		if (!out->is_concrete) {
+			goto map_to_bottom;
+		}
+		STACK_ABSTR_DATA_OUT(y);
+		if (!interpreter_prototype_eval_pure(state, py, &y, yield_queues, io_request, io_result, plugin_data)) {
+			RZ_LOG_ERROR("prototype: DIV y failed to evaluate.\n");
+			return false;
+		}
+		if (!y.is_concrete) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		if (!rz_bv_div_inplace(out->bv, y.bv)) {
+			rz_bv_fini(y.bv);
+			goto map_to_bottom;
+		}
+		rz_bv_fini(y.bv);
+		break;
+	}
 	case RZ_IL_OP_SDIV:
-	case RZ_IL_OP_MOD:
 	case RZ_IL_OP_SMOD:
 	case RZ_IL_OP_FLOAT:
 	case RZ_IL_OP_FBITS:
@@ -507,7 +557,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	case RZ_IL_OP_FPOWN:
 	case RZ_IL_OP_FCOMPOUND:
 	case RZ_IL_OP_FEXCEPT:
-		RZ_LOG_DEBUG("\nUnhandled op\n");
+		RZ_LOG_ERROR("Unhandled pure %" PFMT32d "\n", pure->code);
 		// Not implemented.
 		goto map_to_bottom;
 	}
