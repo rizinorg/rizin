@@ -1331,6 +1331,50 @@ RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state) {
 }
 
 /**
+ * \brief Color selector callback for oml command table output
+ * 
+ * This callback is called by the table system for each cell to determine
+ * what color (if any) should be applied. It only applies colors when the
+ * color mode is enabled; the table system automatically handles JSON/CSV
+ * output modes by not calling this callback.
+ */
+static const char *oml_table_color_selector(const char *value, const char *column, const size_t column_n, const RzTableColumnType type, void *user) {
+	if (!column || !value) {
+		return NULL;
+	}
+
+	const RzCons *cons = (const RzCons *)user;
+	if (!cons || cons->context->color_mode == COLOR_MODE_DISABLED) {
+		return NULL;
+	}
+
+	const RzConsPrintablePalette *pal = &cons->context->pal;
+
+	// Apply colors to the "perms" column based on permission value
+	if (RZ_STR_EQ(column, "perms")) {
+		// Parse the permission string (e.g., "rwx", "rw-", "r-x")
+		int perm = rz_str_rwx(value);
+
+		if ((perm & RZ_PERM_RWX) == RZ_PERM_RWX) {
+			return pal->widget_sel; // rwx
+		} else if ((perm & RZ_PERM_RW) == RZ_PERM_RW) {
+			return pal->ai_write; // rw
+		} else if ((perm & RZ_PERM_RX) == RZ_PERM_RX) {
+			return pal->ai_exec; // rx
+		} else if (perm & RZ_PERM_R) {
+			return pal->ai_read; // r
+		}
+	}
+
+	// Apply colors to address columns
+	if (RZ_STR_EQ(column, "start") || RZ_STR_EQ(column, "end")) {
+		return pal->offset;
+	}
+
+	return NULL; // No color for other columns
+}
+
+/**
  * \brief      Populates a RzTable with a given RzList of RzDbgListInfo
  *
  * \param      table  The table to fill
@@ -1347,6 +1391,13 @@ RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLAB
 	RzListIter *iter;
 	RzDbgListInfo *info;
 	table->showHeader = false;
+	RzCons *cons = rz_cons_singleton();
+	
+	// Register color selector callback if colors are enabled
+	if (cons && cons->context->color_mode != COLOR_MODE_DISABLED) {
+		rz_table_set_color_selector(table, oml_table_color_selector, (void *)cons);
+	}
+	
 	const char *h_line = table->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *block = table->char_mode != RZ_TABLE_CHAR_MODE_ASCII ? UTF_BLOCK : "#";
 	int j, i;
@@ -1379,13 +1430,15 @@ RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLAB
 			}
 			char *b = rz_strbuf_drain(buf);
 			char no[64];
+			// Cell values are now plain text - the color callback handles coloring
+			const char *perm_str = info->perm != -1 ? rz_str_rwx_i(info->perm) : "";
 			if (va) {
 				rz_table_add_rowf(table, "sxsxsss",
 					rz_strf(no, "%d%c", i, rz_itv_contain(info->vitv, seek) ? '*' : ' '),
 					info->vitv.addr,
 					b,
 					rz_itv_end(info->vitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					perm_str,
 					(info->extra) ? info->extra : "",
 					(info->name) ? info->name : "");
 			} else {
@@ -1394,7 +1447,7 @@ RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLAB
 					info->pitv.addr,
 					b,
 					rz_itv_end(info->pitv),
-					(info->perm != -1) ? rz_str_rwx_i(info->perm) : "",
+					perm_str,
 					(info->extra) ? info->extra : "",
 					(info->name) ? info->name : "");
 			}
