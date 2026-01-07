@@ -100,8 +100,8 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 	// Parse segment table entries from buffer
 	ut64 offset = 0;
 	Gns1SegmentEntry entry;
-	int consecutive_invalid = 0;
 	ut64 file_size = rz_buf_size(b);
+	int invalid_count = 0;
 
 	while (gns1_read_segment(b, &offset, &entry)) {
 		// End of segment table: size==0 marks end (per reference loader)
@@ -111,16 +111,14 @@ RZ_IPI bool gns1_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *
 
 		// Validate segment offset and size are within file bounds
 		if (entry.offset >= file_size || entry.offset + entry.size > file_size) {
-			consecutive_invalid++;
-			// If 3 consecutive invalid segments, stop parsing (prevents infinite loop)
-			if (consecutive_invalid >= 3) {
-				RZ_LOG_ERROR("GNS1: 3 invalid segments found. exiting \n");
+			invalid_count++;
+			// Allow at most 3 invalid segments in total
+			if (invalid_count >= 3) {
+				RZ_LOG_ERROR("GNS1: 3 invalid segments found, Stop parsing segments\n");
 				break;
 			}
 			continue;
 		}
-
-		consecutive_invalid = 0;
 
 		rz_vector_push(gns1->segments, &entry);
 		gns1->num_segments++;
