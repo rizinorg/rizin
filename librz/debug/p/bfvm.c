@@ -12,7 +12,7 @@ static ut8 bfvm_op(BfvmCPU *c) {
 	return buf[0];
 }
 
-RZ_API int bfvm_in_trap(BfvmCPU *c) {
+int bfvm_in_trap(BfvmCPU *c) {
 	switch (bfvm_op(c)) {
 	case 0x00:
 	case 0xcc:
@@ -22,7 +22,7 @@ RZ_API int bfvm_in_trap(BfvmCPU *c) {
 	return 0;
 }
 
-RZ_API void bfvm_reset(BfvmCPU *c) {
+void bfvm_reset(BfvmCPU *c) {
 	memset(c->mem, '\0', c->size);
 	memset(c->input_buf, '\0', c->input_size);
 	memset(c->screen_buf, '\0', c->screen_size);
@@ -36,7 +36,7 @@ RZ_API void bfvm_reset(BfvmCPU *c) {
 	c->esp = c->base;
 }
 
-RZ_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
+int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	memset(c, '\0', sizeof(BfvmCPU));
 
 	/* data */
@@ -64,14 +64,14 @@ RZ_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	return 1;
 }
 
-RZ_API BfvmCPU *bfvm_new(RzIOBind *iob) {
+BfvmCPU *bfvm_new(RzIOBind *iob) {
 	BfvmCPU *c = RZ_NEW0(BfvmCPU);
 	bfvm_init(c, 4096, 1);
 	memcpy(&c->iob, iob, sizeof(c->iob));
 	return c;
 }
 
-RZ_API BfvmCPU *bfvm_free(BfvmCPU *c) {
+BfvmCPU *bfvm_free(BfvmCPU *c) {
 	free(c->mem);
 	c->mem = 0;
 	free(c->screen_buf);
@@ -80,7 +80,7 @@ RZ_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 	return NULL;
 }
 
-RZ_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
+ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 	if (at >= c->base) {
 		at -= c->base;
 	} else if (at >= c->size) {
@@ -89,31 +89,31 @@ RZ_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 	return c->mem + at;
 }
 
-RZ_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
+ut8 *bfvm_get_ptr(BfvmCPU *c) {
 	// return bfvm_cpu.mem;
 	return bfvm_get_ptr_at(c, c->ptr);
 }
 
-RZ_API ut8 bfvm_get(BfvmCPU *c) {
+ut8 bfvm_get(BfvmCPU *c) {
 	ut8 *ptr = bfvm_get_ptr(c);
 	return ptr ? *ptr : 0;
 }
 
-RZ_API void bfvm_inc(BfvmCPU *c) {
+void bfvm_inc(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr(c);
 	if (mem != NULL) {
 		mem[0]++;
 	}
 }
 
-RZ_API void bfvm_dec(BfvmCPU *c) {
+void bfvm_dec(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr(c);
 	if (mem != NULL) {
 		mem[0]--;
 	}
 }
 
-RZ_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
+int bfvm_reg_set(BfvmCPU *c, const char *str) {
 	char *ptr = strchr(str, ' ');
 	if (!ptr) {
 		return 0;
@@ -129,7 +129,7 @@ RZ_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
 }
 
 /* screen and input */
-RZ_API void bfvm_peek(BfvmCPU *c) {
+void bfvm_peek(BfvmCPU *c) {
 	int idx = c->input_idx;
 	ut8 *ptr = bfvm_get_ptr(c);
 
@@ -143,13 +143,13 @@ RZ_API void bfvm_peek(BfvmCPU *c) {
 	}
 }
 
-RZ_API void bfvm_poke(BfvmCPU *c) {
+void bfvm_poke(BfvmCPU *c) {
 	int idx = c->screen_idx;
 	c->screen_buf[idx] = bfvm_get(c);
 	c->screen_idx = idx + 1;
 }
 
-RZ_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
+int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 	ut8 g;
 	switch (op) {
 	case '\0':
@@ -177,7 +177,7 @@ RZ_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 
 #define T if (c->trace)
 /* debug */
-RZ_API int bfvm_step(BfvmCPU *c, int over) {
+int bfvm_step(BfvmCPU *c, int over) {
 	ut8 op2, op = bfvm_op(c);
 
 	do {
@@ -230,7 +230,7 @@ RZ_API int bfvm_step(BfvmCPU *c, int over) {
 	return 0;
 }
 
-RZ_API int bfvm_contsc(BfvmCPU *c) {
+int bfvm_contsc(BfvmCPU *c) {
 	c->breaked = 0;
 	while (!c->breaked) {
 		bfvm_step(c, 0);
@@ -252,7 +252,7 @@ RZ_API int bfvm_contsc(BfvmCPU *c) {
 	return 0;
 }
 
-RZ_API int bfvm_cont(BfvmCPU *c, ut64 until) {
+int bfvm_cont(BfvmCPU *c, ut64 until) {
 	c->breaked = 0;
 	while (!c->breaked && c->eip != until) {
 		bfvm_step(c, 0);
@@ -264,14 +264,14 @@ RZ_API int bfvm_cont(BfvmCPU *c, ut64 until) {
 	return 0;
 }
 
-RZ_API int bfvm_trace(BfvmCPU *c, ut64 until) {
+int bfvm_trace(BfvmCPU *c, ut64 until) {
 	c->trace = 1;
 	bfvm_cont(c, until);
 	c->trace = 0;
 	return 0;
 }
 
-RZ_API void bfvm_show_regs(BfvmCPU *c, int rad) {
+void bfvm_show_regs(BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf("fs regs\n");
 		eprintf("f eip @ 0x%08" PFMT64x "\n", (ut64)c->eip);
@@ -287,7 +287,7 @@ RZ_API void bfvm_show_regs(BfvmCPU *c, int rad) {
 	}
 }
 
-RZ_API void bfvm_maps(BfvmCPU *c, int rad) {
+void bfvm_maps(BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf("fs sections\n");
 		eprintf("e cmd.vprompt=px@screen\n");

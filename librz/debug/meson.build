@@ -33,7 +33,6 @@ rz_debug_sources = [
   'serialize_debug.c',
   'snap.c',
   'trace.c',
-  'p/bfvm.c',
   'p/common_windows.c',
   'p/common_winkd.c',
   'p/debug_bf.c',

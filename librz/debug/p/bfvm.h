@@ -37,10 +37,8 @@ typedef struct bfvm_cpu_t {
 	RzIOBind iob;
 } BfvmCPU;
 
-#ifdef RZ_API
-RZ_API BfvmCPU *bfvm_new(RzIOBind *iob);
-RZ_API BfvmCPU *bfvm_free(BfvmCPU *c);
-RZ_API int bfvm_step(BfvmCPU *c, int over);
-#endif
+BfvmCPU *bfvm_new(RzIOBind *iob);
+BfvmCPU *bfvm_free(BfvmCPU *c);
+int bfvm_step(BfvmCPU *c, int over);
 
 #endif
