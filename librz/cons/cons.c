@@ -141,6 +141,14 @@ static void cons_context_deinit(RzConsContext *context) {
 	rz_stack_free(context->break_stack);
 	context->break_stack = NULL;
 	rz_cons_pal_free(context);
+	cons_grep_reset(&context->grep);
+	free(context->buffer);
+	context->buffer = NULL;
+	context->buffer_sz = 0;
+	context->buffer_len = 0;
+	free(context->lastOutput);
+	context->lastOutput = NULL;
+	context->lastLength = 0;
 }
 
 static void __break_signal(int sig) {
@@ -252,7 +260,7 @@ RZ_API void rz_cons_strcat_justify(const char *str, int j, char c) {
 			len = 0;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_memcat(str + o, len);
 	}
 }
@@ -288,7 +296,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 			rows++;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_gotoxy(x, y + rows);
 		rz_cons_memcat(str + o, len);
 	}
@@ -679,12 +687,11 @@ RZ_API RzCons *rz_cons_free(void) {
 	}
 	RZ_FREE(I.input->readbuffer);
 	RZ_FREE(I.input);
-	RZ_FREE(CTX(buffer));
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
+	I.context = NULL;
 	rz_strbuf_free(I.echobuf);
-	RZ_FREE(CTX(lastOutput));
-	CTX(lastLength) = 0;
+	I.echobuf = NULL;
 	RZ_FREE(I.pager);
 	return NULL;
 }

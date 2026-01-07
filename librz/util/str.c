@@ -2259,6 +2259,7 @@ RZ_API int rz_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 			j++;
 		}
 	}
+	cps[j] = i;
 	str[j] = tmp[i];
 
 	if (out) {

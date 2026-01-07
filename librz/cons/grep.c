@@ -725,6 +725,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	const int ob_len = rz_strbuf_length(ob);
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;
+		free(cons->context->buffer);
 		cons->context->buffer = rz_strbuf_drain(ob);
 	} else {
 		memcpy(cons->context->buffer, rz_strbuf_getbin(ob, NULL), ob_len);

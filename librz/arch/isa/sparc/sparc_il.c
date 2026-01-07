@@ -121,11 +121,6 @@ RZ_IPI RzAnalysisILConfig *rz_sparc_cs_64_il_config(bool big_endian) {
 	fp_exception_label->hook = label_fp_exception;
 	rz_analysis_il_config_add_label(cfg, fp_exception_label);
 
-	cfg->init_state = rz_analysis_il_init_state_new();
-	if (!cfg->init_state) {
-		rz_analysis_il_config_free(cfg);
-		return NULL;
-	}
 	cfg->init_state->cb = sparc_il_init_64_cb;
 	return cfg;
 }
@@ -153,11 +148,6 @@ RZ_IPI RzAnalysisILConfig *rz_sparc_cs_32_il_config(bool big_endian) {
 	fp_exception_label->hook = label_fp_exception;
 	rz_analysis_il_config_add_label(cfg, fp_exception_label);
 
-	cfg->init_state = rz_analysis_il_init_state_new();
-	if (!cfg->init_state) {
-		rz_analysis_il_config_free(cfg);
-		return NULL;
-	}
 	cfg->init_state->cb = sparc_il_init_32_cb;
 	return cfg;
 }
