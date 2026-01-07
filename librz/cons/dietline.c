@@ -341,7 +341,7 @@ static void kill_word(RzLine *line, BreakMode mode) {
 	line->clipboard = rz_str_ndup(line->buffer.data + line->buffer.index, len);
 	rz_line_clipboard_push(line, line->clipboard);
 	memmove(line->buffer.data + line->buffer.index, line->buffer.data + i, line->buffer.length - i + 1);
-	undo_add_entry(line, i, rz_str_ndup(line->clipboard, len), NULL);
+	undo_add_entry(line, line->buffer.index, rz_str_ndup(line->clipboard, len), NULL);
 	line->buffer.length -= len;
 }
 
@@ -382,6 +382,7 @@ static void unix_word_rubout(RzLine *line) {
 		line->buffer.length = line->buffer.index;
 	}
 	len = line->buffer.index - i;
+	free(line->clipboard);
 	line->clipboard = rz_str_ndup(line->buffer.data + i, len);
 	rz_line_clipboard_push(line, line->clipboard);
 	undo_add_entry(line, i, rz_str_ndup(line->clipboard, len), NULL);
@@ -1131,7 +1132,8 @@ static inline void rotate_kill_ring(RzLine *line, bool *enable_yank_pop) {
 	if (line->kill_ring_ptr < 0) {
 		line->kill_ring_ptr = line->kill_ring->length - 1;
 	}
-	line->clipboard = rz_list_get_n(line->kill_ring, line->kill_ring_ptr);
+	free(line->clipboard);
+	line->clipboard = rz_str_dup(rz_list_get_n(line->kill_ring, line->kill_ring_ptr));
 	paste(line, enable_yank_pop);
 	undo_continuous_entries_end(line);
 }
