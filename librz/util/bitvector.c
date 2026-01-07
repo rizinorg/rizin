@@ -701,7 +701,7 @@ RZ_API bool rz_bv_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 
 	// left shift
 	if (size == 0) {
-		return false;
+		return true;
 	}
 
 	if (size >= bv->len) {
@@ -740,7 +740,7 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 
 	// left shift
 	if (size == 0) {
-		return false;
+		return true;
 	}
 
 	if (size >= bv->len) {
