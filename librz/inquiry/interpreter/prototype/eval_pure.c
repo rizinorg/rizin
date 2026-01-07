@@ -87,7 +87,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			return false;
 		}
 		if (!out->is_concrete) {
-			break;
+			goto map_to_bottom;
 		}
 		STACK_ABSTR_DATA_OUT(fill_bit);
 		if (!interpreter_prototype_eval_pure(state, pure->op.cast.fill, &fill_bit, yield_queues, io_request, io_result, plugin_data)) {
@@ -95,7 +95,8 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			return false;
 		}
 		if (!fill_bit.is_concrete) {
-			break;
+			rz_bv_fini(fill_bit.bv);
+			goto map_to_bottom;
 		}
 		rz_bv_cast_inplace(out->bv, pure->op.cast.length, abstr_is_true(state, &fill_bit));
 		break;
