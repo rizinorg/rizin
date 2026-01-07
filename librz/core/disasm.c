@@ -2223,20 +2223,15 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					continue;
 				}
 			}
-			bool next_is_default = false;
-			if (iter != uniqlist->tail) {
-				RzFlagItem *next_flag = rz_list_next(iter)->val;
-				next_is_default = !strncmp(next_flag->name + 5, "default", 7);
-			}
-			if (next_is_default && case_current == case_prev && !switch_addr_changed) {
-				// After reaching past a range, we get the last index iterated twice, so if we're just
-				// before a "default" label, this block will avoid displaying the last index twice
-				continue;
-			}
 			if ((case_current == case_prev + 1 || case_current == case_prev) && !switch_addr_changed) {
 				// We're still inside a range, continue extending the range boundary until we reach the
 				// end of the label list or a default label
 				case_prev = case_current;
+				bool next_is_default = false;
+				if (iter != uniqlist->tail) {
+					RzFlagItem *next_flag = rz_list_next(iter)->val;
+					next_is_default = !strncmp(next_flag->name + 5, "default", 7);
+				}
 				if (iter != uniqlist->tail && !next_is_default) {
 					continue;
 				}
@@ -2327,7 +2322,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 						} else {
 							rz_cons_printf("%d:", case_prev);
 						}
-						if (iter != uniqlist->head && iter != uniqlist->tail) {
+						if (iter != uniqlist->head && iter != uniqlist->tail && case_current != case_prev) {
 							iter = rz_list_prev(iter);
 						}
 						case_start = case_current;
