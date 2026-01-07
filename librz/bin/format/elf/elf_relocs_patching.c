@@ -1704,6 +1704,61 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
+	case R_386_GOT32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->A - fs->GOT;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_PLT32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->L + fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GLOB_DAT:
+	/* fall through */
+	case R_386_JMP_SLOT:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_RELATIVE:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GOTOFF:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GOTPC:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		uint32_t val = fs->GOT - fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_386_16:
+	/* fall through */
+	case R_386_PC16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		val = fs->S + fs->A;
+		rz_write_le16(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
+	case R_386_8:
+	/* fall through */
+	case R_386_PC8:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 1);
+		val = fs->S + fs->A;
+		rz_write_le8(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 1);
+		break;
 	default:
 		UNHANDL_DEF("x86_32", rel_type);
 		return;
