@@ -1,0 +1,133 @@
+
+NAME=pyc header structure v3.11
+FILE=bins/pyc/py311.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d2d0d
+  magic_int: 0xa0d2d0d
+  version: "v3.11.0"
+  revision: "968953dcd8930880a3e9c5302b6892a5a0836c14"
+  code_start_offset: 0x0
+  symbols_ordinal: 0
+  sections_count: 0
+  symbols_count: 0
+  strings_count: 0
+  interned_count: 0
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN
+
+NAME=pyc header structure v3.10
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d0d0d
+  magic_int: 0xa0d0d0d
+  version: "v3.10.0"
+  revision: "7bffc66f515fa9c973da90f5951441d8bf78de07"
+  code_start_offset: 0x0
+  symbols_ordinal: 0
+  sections_count: 0
+  symbols_count: 0
+  strings_count: 0
+  interned_count: 0
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN
+
+NAME=pyc header structure v3.9
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d0d61
+  magic_int: 0xa0d0d61
+  version: "v3.9.0"
+  revision: "d2b9e6d75e53ab164b829f3bb2df0be36d471cc7"
+  code_start_offset: 0x0
+  symbols_ordinal: 0
+  sections_count: 0
+  symbols_count: 0
+  strings_count: 0
+  interned_count: 0
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN
+
+NAME=pyc header structure v3.7
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d0d42
+  magic_int: 0xa0d0d42
+  version: "v3.7.0"
+  revision: "8fb992c87c6d7bfe0b9b2f862cf0a4d048cbc835"
+  code_start_offset: 0x0
+  symbols_ordinal: 0
+  sections_count: 0
+  symbols_count: 0
+  strings_count: 0
+  interned_count: 0
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN
+
+NAME=pyc header structure v2.7
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0x3f0d0d03
+  magic_int: 0x3f0d0d03
+  version: "v2.7.0"
+  revision: "8fb992c87c6d7bfe0b9b2f862cf0a4d048cbc835"
+  code_start_offset: 0x0
+  symbols_ordinal: 0
+  sections_count: 0
+  symbols_count: 0
+  strings_count: 0
+  interned_count: 0
+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN
+
+NAME=pyc header structure JSON output
+FILE=bins/pyc/pyc312.pyc
+CMDS=<<EOF
+iHj
+EOF
+EXPECT=<<EOF
+{"pyc":{"magic":168562891,"magic_int":168562891,"version":"v3.12.0","revision":"0fb6e700c2f94ae0717ee1be7d4e50b2dd480d14","code_start_offset":0,"symbols_ordinal":0,"sections_count":0,"symbols_count":0,"strings_count":0,"interned_count":0}}
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Undefined type in free_object (0)
+EOF
+RUN

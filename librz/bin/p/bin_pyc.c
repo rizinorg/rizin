@@ -67,6 +67,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	ut32 magic = 0;
 	rz_buf_read_le32_at(buf, 0, &magic);
 	ctx->version = get_pyc_version(magic);
+	ctx->magic_int = magic;
 	obj->bin_obj = ctx;
 	return true;
 }
@@ -167,10 +168,46 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 static RzStructuredData *pyc_structure(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
 
 	RzBinPycObj *pyc = bf->o->bin_obj;
-	return rz_bin_pyc_structure(pyc);
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *pyc_data = rz_structured_data_map_add_map(info, "pyc");
+	if (!pyc_data) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+	rz_structured_data_map_add_unsigned(pyc_data, "magic", (ut64)pyc->version.magic, true);
+	rz_structured_data_map_add_unsigned(pyc_data, "magic_int", (ut64)pyc->magic_int, true);
+
+	if (pyc->version.version) {
+		rz_structured_data_map_add_string(pyc_data, "version", pyc->version.version);
+	}
+	if (pyc->version.revision) {
+		rz_structured_data_map_add_string(pyc_data, "revision", pyc->version.revision);
+	}
+
+	rz_structured_data_map_add_unsigned(pyc_data, "code_start_offset", pyc->code_start_offset, true);
+	rz_structured_data_map_add_unsigned(pyc_data, "symbols_ordinal", pyc->symbols_ordinal, false);
+
+	// It will be 0 if not initialized yet
+	rz_structured_data_map_add_unsigned(pyc_data, "sections_count", 
+		pyc->sections_cache ? rz_pvector_len(pyc->sections_cache) : 0, false);
+	rz_structured_data_map_add_unsigned(pyc_data, "symbols_count", 
+		pyc->symbols_cache ? rz_pvector_len(pyc->symbols_cache) : 0, false);
+	rz_structured_data_map_add_unsigned(pyc_data, "strings_count", 
+		pyc->strings_cache ? rz_pvector_len(pyc->strings_cache) : 0, false);
+	rz_structured_data_map_add_unsigned(pyc_data, "interned_count", 
+		pyc->interned_table ? rz_list_length(pyc->interned_table) : 0, false);
+
+	return info;
 }
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
