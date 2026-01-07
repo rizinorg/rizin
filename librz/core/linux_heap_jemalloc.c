@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2017 javierptd <javierptd@gmail.com>
+// SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
@@ -13,7 +14,6 @@
 #undef GHT_MAX
 #undef PFMTx
 
-// FIXME: It should be detected at runtime, not during the compilation stage
 #if HEAP32
 #define GH(x)   x##_32
 #define GHT     ut32
@@ -61,10 +61,6 @@ static GHT GH(je_get_va_symbol)(RzCore *core, const char *path, const char *sym_
 	return vaddr;
 }
 
-static int GH(je_matched)(const char *ptr, const char *str) {
-	int ret = strncmp(ptr, str, strlen(str) - 1);
-	return !ret;
-}
 #endif
 
 static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
@@ -89,12 +85,6 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 		return false;
 	}
 #if __linux__
-	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
-
-	if (!is_debug_file) {
-		RZ_LOG_WARN("Is libjemalloc.so.2 in /usr/local/lib path?\n");
-		return false;
-	}
 	char *path = rz_str_newf("%s", jemalloc_ver_end);
 	if (rz_file_exists(path)) {
 		ut64 vaddr = GH(je_get_va_symbol)(core, path, symname);
@@ -149,7 +139,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 				PRINT_YA("   Chunk - start: ");
 				PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)head->en_addr);
 				PRINT_YA(", end: ");
-				PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+				PRINTF_BA("0x%08" PFMT64x, (ut64)head->en_addr + cnksz);
 				PRINT_YA(", size: ");
 				PRINTF_BA("0x%08" PFMT64x "\n", (ut64)cnksz);
 				rz_io_read_at(core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
@@ -157,7 +147,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 					PRINT_YA("   Chunk - start: ");
 					PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)node->en_addr);
 					PRINT_YA(", end: ");
-					PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+					PRINTF_BA("0x%" PFMT64x, (ut64)node->en_addr + cnksz);
 					PRINT_YA(", size: ");
 					PRINTF_BA("0x%08" PFMT64x "\n", cnksz);
 					rz_io_read_at(core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
@@ -197,7 +187,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 					PRINT_YA("   Chunk - start: ");
 					PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)head->en_addr);
 					PRINT_YA(", end: ");
-					PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+					PRINTF_BA("0x%" PFMT64x, (ut64)head->en_addr + cnksz);
 					PRINT_YA(", size: ");
 					PRINTF_BA("0x%08" PFMT64x "\n", (ut64)cnksz);
 					ut64 addr = (ut64)(size_t)head->ql_link.qre_next;
@@ -206,7 +196,7 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 						PRINT_YA("   Chunk - start: ");
 						PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)node->en_addr);
 						PRINT_YA(", end: ");
-						PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+						PRINTF_BA("0x%" PFMT64x, (ut64)node->en_addr + cnksz);
 						PRINT_YA(", size: ");
 						PRINTF_BA("0x%" PFMT64x "\n", cnksz);
 						rz_io_read_at(core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
@@ -310,7 +300,7 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 		PRINTF_BA("  node_cache_mtx = 0x%" PFMT64x "\n", OO(node_cache_mtx));
 		PRINTF_BA("  chunks_hooks = 0x%" PFMT64x "\n", OO(chunk_hooks));
 		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", JM_NBINS, OO(bins));
-		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", NPSIZES, OO(runs_avail));
+		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", GH(NPSIZES), OO(runs_avail));
 		PRINT_GA("}\n");
 	}
 	free(ar);
@@ -334,13 +324,13 @@ static void GH(jemalloc_print_arena_bins)(RzCore *core, GHT arena, ut64 bin_info
 			(ut8 *)b, sizeof(arena_bin_info_t));
 		PRINT_YA("    {\n");
 		PRINT_YA("       regsize : ");
-		PRINTF_BA("0x%zx\n", b->reg_size);
+		PRINTF_BA("0x%" PFMT64x "\n", (ut64)b->reg_size);
 		PRINT_YA("       redzone size ");
-		PRINTF_BA("0x%zx\n", b->redzone_size);
+		PRINTF_BA("0x%" PFMT64x "\n", (ut64)b->redzone_size);
 		PRINT_YA("       reg_interval : ");
-		PRINTF_BA("0x%zx\n", b->reg_interval);
+		PRINTF_BA("0x%" PFMT64x "\n", (ut64)b->reg_interval);
 		PRINT_YA("       run_size : ");
-		PRINTF_BA("0x%zx\n", b->run_size);
+		PRINTF_BA("0x%" PFMT64x "\n", (ut64)b->run_size);
 		PRINT_YA("       nregs : ");
 		PRINTF_BA("0x%x\n", b->nregs);
 		PRINT_YA("       reg0_offset : ");

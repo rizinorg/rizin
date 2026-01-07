@@ -2,6 +2,7 @@ NAME=dmxa/dmxb with jemalloc memory dump
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
+e asm.bits=64
 om 3 0x7f2601a03c00 0x8 0x0 rw- je_arenas
 om 3 0x7f2601f5b2d0 0x4 0x8 rw- narenas_total
 om 3 0x7f2601f5b380 0x900 0xc rw- je_arena_bin_info
