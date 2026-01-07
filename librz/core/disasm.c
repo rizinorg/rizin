@@ -2214,7 +2214,8 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 		if (!strncmp(flag->name, "case.", 5)) {
 			sscanf(flag->name + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = rz_num_math(core->num, addr);
-			if (case_start == -1 || switch_addr != saddr) {
+			bool switch_addr_changed = switch_addr != saddr;
+			if (case_start == -1 || switch_addr_changed) {
 				switch_addr = saddr;
 				case_prev = case_current;
 				case_start = case_current;
@@ -2227,11 +2228,21 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				RzFlagItem *next_flag = rz_list_next(iter)->val;
 				next_is_default = !strncmp(next_flag->name + 5, "default", 7);
 			}
-			if ((case_current == case_prev + 1 || case_current == case_prev) && !next_is_default && switch_addr == saddr) {
+			if (next_is_default && case_current == case_prev && !switch_addr_changed) {
+				// After reaching past a range, we get the last index iterated twice, so if we're just
+				// before a "default" label, this block will avoid displaying the last index twice
+				continue;
+			}
+			if ((case_current == case_prev + 1 || case_current == case_prev) && !switch_addr_changed) {
+				// We're still inside a range, continue extending the range boundary until we reach the
+				// end of the label list or a default label
 				case_prev = case_current;
-				if (iter != uniqlist->tail) {
+				if (iter != uniqlist->tail && !next_is_default) {
 					continue;
 				}
+			} else if (!switch_addr_changed && iter == uniqlist->tail) {
+				// Iterate last index for a second time, otherwise the index will not get displayed
+				iter = rz_list_prev(iter);
 			}
 		}
 		if (printPre) {

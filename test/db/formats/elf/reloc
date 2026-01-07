@@ -337,8 +337,7 @@ EXPECT=<<EOF
 |       |   ;-- case 34:                                               ; from 0x800005e
 |       |   ;-- case 36...50:                                          ; from 0x800005e
 |       |   ;-- case 52...54:                                          ; from 0x800005e
-|       |   ;-- case 56...117:                                         ; from 0x800005e
-|       |   ;-- case 118:                                              ; from 0x800005e
+|       |   ;-- case 56...118:                                         ; from 0x800005e
 |       |   ;-- default:                                               ; from 0x800005e
 |       `-> 0x08000060      xor   eax, eax
 |           0x08000062      ret
@@ -353,6 +352,7 @@ EXPECT=<<EOF
 |           ;-- case 26:                                               ; from 0x800005e
 |           ;-- case 29:                                               ; from 0x800005e
 |           ;-- case 33:                                               ; from 0x800005e
+|           ;-- case 35:                                               ; from 0x800005e
 |           0x08000068      mov   rsi, rdi                             ; arg1
 |           0x0800006b      mov   edi, 0x01
 |       ,=< 0x08000070      jmp   reloc.target.getPageLengthNV         ; RELOC 32 getPageLengthNV
@@ -368,6 +368,7 @@ EXPECT=<<EOF
 ..
 |      ||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
 |      ||   ;-- case 51:                                               ; from 0x800005e
+|      ||   ;-- case 119:                                              ; from 0x800005e
 |      ||   0x08000088      mov   rsi, rdi                             ; arg1
 |      ||   0x0800008b      mov   edi, 0x01
 |     ,===< 0x08000090      jmp   reloc.target.getPageLengthSHAEE      ; RELOC 32 getPageLengthSHAEE
