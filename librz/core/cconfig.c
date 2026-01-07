@@ -3200,6 +3200,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETI("dbg.glibc.fastbinmax", 10, "Upper bound on the number of fastbins printed");
 
+	n = NODECB("dbg.jemalloc.version", "4.5.0", NULL);
+	SETDESC(n, "Select jemalloc version for heap parsing");
+	SETOPTIONS(n, "4.5.0", "5.3.0", NULL);
+
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");

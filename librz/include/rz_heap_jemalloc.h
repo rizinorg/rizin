@@ -27,7 +27,8 @@ typedef st32 RZ_ALIGNED(4) GHST_32;
 #define GHST    GHST_32
 #endif
 
-#include <rz_jemalloc/jemalloc.h>
+#include <rz_jemalloc/jemalloc_450.h>
+#include <rz_jemalloc/jemalloc_530.h>
 
 #ifndef INC_HEAP32
 #undef JEMALLOC_INTERNAL_H
