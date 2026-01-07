@@ -1052,9 +1052,9 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 	return *dstr;
 }
 
-RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
+RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, RzOutputMode mode) {
 	if (mode) {
-		PJ *pj = (mode == 'j') ? pj_new() : NULL;
+		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 		const int hex_depth = 1; // r_config_get_i (core->config, "hex.depth");
 		char *res = rz_core_analysis_hasrefs_to_depth(core, value, pj, hex_depth);
 		if (pj) {
@@ -1405,7 +1405,7 @@ static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return rz_core_analysis_optype_colorfor((RzCore *)user, addr, verbose);
 }
 
-static char *hasrefs_cb(void *user, ut64 addr, int mode) {
+static char *hasrefs_cb(void *user, ut64 addr, RzOutputMode mode) {
 	return rz_core_analysis_hasrefs((RzCore *)user, addr, mode);
 }
 

@@ -5998,7 +5998,7 @@ clean_return:
 	return res;
 }
 
-RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode) {
+RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzOutputMode mode) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
@@ -6012,7 +6012,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		rz_io_read_at(core->io, addr, buf, l);
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return 0;
@@ -6027,14 +6027,14 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		RzAsmOp asmop = { 0 };
+		RzAsmOp asmop = RZ_EMPTY;
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
 			switch (mode) {
-			case 'j':
-			case '=':
+			case RZ_OUTPUT_MODE_JSON:
+			case RZ_OUTPUT_MODE_VISUAL:
 				break;
-			case 'i':
+			case RZ_OUTPUT_MODE_QUIET:
 				rz_cons_printf("???\n");
 				break;
 			default:
@@ -6044,7 +6044,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		} else {
 			count++;
 			switch (mode) {
-			case 'i':
+			case RZ_OUTPUT_MODE_QUIET:
 				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop),
 					str, sizeof(str), core->print->big_endian);
 				if (scr_color) {
@@ -6064,7 +6064,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 					rz_cons_println(rz_asm_op_get_asm(&asmop));
 				}
 				break;
-			case '=':
+			case RZ_OUTPUT_MODE_VISUAL:
 				if (i < 28) {
 					char *str = rz_str_newf("0x%08" PFMT64x " %60s  %s\n", ds->vat, "", rz_asm_op_get_asm(&asmop));
 					char *sp = strchr(str, ' ');
@@ -6086,7 +6086,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 					free(str);
 				}
 				break;
-			case 'j': {
+			case RZ_OUTPUT_MODE_JSON: {
 				char *op_hex = rz_asm_op_get_hex(&asmop);
 				pj_o(pj);
 				pj_kn(pj, "addr", addr + i);
@@ -6111,7 +6111,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	if (buf != core->block) {
 		free(buf);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);

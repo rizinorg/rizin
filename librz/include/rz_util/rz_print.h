@@ -6,6 +6,7 @@
 #include "rz_bind.h"
 #include "rz_io.h"
 #include "rz_reg.h"
+#include "rz_cmd.h"
 #include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus
@@ -39,7 +40,7 @@ typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
+typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, RzOutputMode mode);
 
 typedef enum {
 	RZ_ASM_TOKEN_UNKNOWN = 0, ///< Does not fit to any token below.
