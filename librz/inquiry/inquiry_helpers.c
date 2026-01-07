@@ -27,6 +27,8 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 	if (!il_bb) {
 		goto fail;
 	}
+	RZ_LOG_DEBUG("Gen BB:\n");
+	bool sparc_add_delayed_insn = false;
 	bool changes_cf = true;
 	do {
 		// Don't use rz_io_read_at_mapped() here.
@@ -56,9 +58,20 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 		if (lifted) {
 			changes_cf = rz_analysis_op_changes_control_flow(&op);
 		}
+		RZ_LOG_DEBUG("\t0x%" PFMT64x "\n", addr);
 		rz_analysis_op_fini(&op);
 		addr += op.size;
 		rz_mem_memzero(buf, max_read_size);
+		if (sparc_add_delayed_insn) {
+			// Instruction was added, now the BB is complete.
+			break;
+		}
+		if (changes_cf && RZ_STR_EQ(analysis->cur->arch, "sparc")) {
+			// We need to add the instruction after the branch.
+			// So one more iteration is needed.
+			sparc_add_delayed_insn = true;
+			changes_cf = false;
+		}
 	} while (!changes_cf);
 
 	free(buf);
