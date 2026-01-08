@@ -26,7 +26,7 @@ static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch
 }
 
 static void apply_switch(RzAnalysis *analysis, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
-	RZ_LOG_DEBUG("Creating switch table (%" PFMT64u " cases) at 0x%" PFMT64x, cases_count, jmptbl_addr);
+	RZ_LOG_DEBUG("Creating switch table (%" PFMT64u " cases) at 0x%" PFMT64x "\n", cases_count, jmptbl_addr);
 
 	char tmp[0x30];
 	snprintf(tmp, sizeof(tmp), "switch table (%" PFMT64u " cases) at 0x%" PFMT64x, cases_count, jmptbl_addr);
