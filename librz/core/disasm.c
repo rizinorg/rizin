@@ -6027,7 +6027,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		RzAsmOp asmop = RZ_EMPTY;
+		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
 			switch (mode) {
