@@ -363,7 +363,8 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 					break;
 				}
 				PRINTF_YA("  arenas[%d]: @ 0x%" PFMTx " {\n", i++, (GHT)arena);
-				GH(jemalloc_print_arena_bins)(core, arena, bin_info, pal);
+				GH(jemalloc_print_arena_bins)
+				(core, arena, bin_info, pal);
 				PRINT_YA("  }\n");
 			}
 		}
@@ -386,7 +387,8 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 		bin_info = rz_num_math(core->num, bin_info_str);
 
 		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", (ut64)arena, JM_NBINS);
-		GH(jemalloc_print_arena_bins)(core, arena, bin_info, pal);
+		GH(jemalloc_print_arena_bins)
+		(core, arena, bin_info, pal);
 		PRINT_GA("}\n");
 
 		free(args);
@@ -485,13 +487,16 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 static void GH(cmd_dbg_map_jemalloc)(RzCore *core, char dmx_variant, const char *arg) {
 	switch (dmx_variant) {
 	case 'a': // dmxa
-		GH(jemalloc_print_narenas)(core, arg);
+		GH(jemalloc_print_narenas)
+		(core, arg);
 		break;
 	case 'b': // dmxb
-		GH(jemalloc_get_bins)(core, arg);
+		GH(jemalloc_get_bins)
+		(core, arg);
 		break;
 	case 'c': // dmxc
-		GH(jemalloc_get_chunks)(core, arg);
+		GH(jemalloc_get_chunks)
+		(core, arg);
 		break;
 	}
 }

@@ -515,10 +515,10 @@ static RzILOpBool *sh_il_is_add_carry(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure 
 	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
-	RzILOpBool *or = OR(xy, ry);
+	RzILOpBool * or = OR(xy, ry);
 	or = OR(or, xr);
 
-	return or;
+	return or ;
 }
 
 /**
@@ -550,10 +550,10 @@ static RzILOpBool *sh_il_is_sub_borrow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPure
 	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
-	RzILOpBool *or = OR(nxy, rny);
+	RzILOpBool * or = OR(nxy, rny);
 	or = OR(or, rnx);
 
-	return or;
+	return or ;
 }
 
 /**
@@ -579,9 +579,9 @@ static RzILOpBool *sh_il_is_add_overflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpPu
 	// res & !x & !y
 	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
 	// or = nrxy | rnxny
-	RzILOpBool *or = OR(nrxy, rnxny);
+	RzILOpBool * or = OR(nrxy, rnxny);
 
-	return or;
+	return or ;
 }
 
 /**
@@ -607,9 +607,9 @@ static RzILOpBool *sh_il_is_sub_underflow(RZ_OWN RzILOpPure *res, RZ_OWN RzILOpP
 	// res & !x & y
 	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
 	// or = nrxny | rnxy
-	RzILOpBool *or = OR(nrxny, rnxy);
+	RzILOpBool * or = OR(nrxny, rnxy);
 
-	return or;
+	return or ;
 }
 
 /* Instruction implementations */

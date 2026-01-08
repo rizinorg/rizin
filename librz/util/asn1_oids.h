@@ -11,7 +11,8 @@ typedef struct asn1_oid_list_entry_t {
 } ASN1OidListEntry;
 
 ASN1OidListEntry known_oid_list[] = {
-#define DEFINE_OID(oid, name) { oid, (sizeof(oid) - 1), name }
+#define DEFINE_OID(oid, name) \
+	{ oid, (sizeof(oid) - 1), name }
 
 	DEFINE_OID("0.2.262.1.10", "Telesec"),
 	DEFINE_OID("0.2.262.1.10.0", "extension"),
