@@ -9,11 +9,9 @@
 #include <rz_list.h>
 #include <rz_types_overflow.h>
 
-#define aprintf(format, ...) \
-	RZ_LOG_DEBUG(format, __VA_ARGS__)
-
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
-	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
+	RZ_LOG_DEBUG("jump table: apply_case: 0x%" PFMT64x " from 0x%" PFMT64x "\n", case_addr, case_addr_loc);
+
 	rz_meta_set_data_at(analysis, case_addr_loc, offset_sz);
 	rz_analysis_hint_set_immbase(analysis, case_addr_loc, 10);
 	rz_analysis_xrefs_set(analysis, switch_addr, case_addr, RZ_ANALYSIS_XREF_TYPE_CODE);
@@ -28,6 +26,8 @@ static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch
 }
 
 static void apply_switch(RzAnalysis *analysis, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
+	RZ_LOG_DEBUG("Creating switch table (%" PFMT64u " cases) at 0x%" PFMT64x "\n", cases_count, jmptbl_addr);
+
 	char tmp[0x30];
 	snprintf(tmp, sizeof(tmp), "switch table (%" PFMT64u " cases) at 0x%" PFMT64x, cases_count, jmptbl_addr);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, switch_addr, tmp);
@@ -81,15 +81,15 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 	if (params->jmptbl_loc == UT64_MAX) {
-		aprintf("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		RZ_LOG_DEBUG("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (params->casetbl_loc == UT64_MAX) {
-		aprintf("Invalid case table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		RZ_LOG_DEBUG("Invalid case table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (jmptable_size_is_invalid(params)) {
-		aprintf("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
+		RZ_LOG_DEBUG("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, case_idx, jmpptr_idx;
@@ -181,11 +181,11 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 		params->table_count = analysis->opt.jmptbl_maxcount;
 	}
 	if (params->jmptbl_loc == UT64_MAX) {
-		aprintf("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
+		RZ_LOG_DEBUG("Invalid jump table location 0x%08" PFMT64x "\n", params->jmptbl_loc);
 		return false;
 	}
 	if (jmptable_size_is_invalid(params)) {
-		aprintf("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
+		RZ_LOG_DEBUG("Invalid jump table size at 0x%08" PFMT64x "\n", params->jmp_address);
 		return false;
 	}
 	ut64 jmpptr, offs;
@@ -193,8 +193,9 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 	if (!jmptbl) {
 		return false;
 	}
+	RZ_LOG_DEBUG("Detected jump table at 0x%" PFMT64x ", walking...\n", params->jmptbl_loc);
+
 	bool is_arm = analysis->cur->arch && !strncmp(analysis->cur->arch, "arm", 3);
-	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	analysis->iob.read_at(analysis->iob.io, params->jmptbl_loc, jmptbl, params->table_count * params->entry_size);
 	for (offs = 0; offs + params->entry_size - 1 < params->table_count * params->entry_size; offs += params->entry_size) {
 		switch (params->entry_size) {
@@ -209,12 +210,13 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 			break;
 		case 8:
 			jmpptr = rz_read_le64(jmptbl + offs);
-			break; // XXX
+			break;
 		default:
 			jmpptr = rz_read_le64(jmptbl + offs);
 			break;
 		}
-		// eprintf ("WALKING %llx\n", jmpptr);
+		RZ_LOG_DEBUG("Checking jump table item pointing to 0x%" PFMT64x "\n", jmpptr);
+
 		// if we don't check for 0 here, the next check with ptr+jmpptr
 		// will obviously be a good offset since it will be the start
 		// of the table, which is not what we want
@@ -393,7 +395,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
  */
 RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
 	/*
-	 * Example about arm jump table
+	 * Example of the ARM jump table
 	 *
 	 * 0x000105b4      060050e3       cmp r0, 3
 	 * 0x000105b8      00f18f90       addls pc, pc, r0, lsl 2
@@ -527,7 +529,7 @@ RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		aprintf("Missing predecesessor on basic block conditional jump at 0x%08" PFMT64x ", required by jump table\n", jmp_address);
+		RZ_LOG_DEBUG("Missing predecesessor on basic block conditional jump at 0x%08" PFMT64x ", required by jump table\n", jmp_address);
 		return false;
 	}
 
