@@ -2082,16 +2082,26 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 		// The bit vector needs a larger buffer.
 		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
 	}
+	size_t old_size = bv->len;
 	if (bv->len <= 64) {
-		// This was a small bit vector and now is a large one.
-		// Copy bits to the buffer.
-		bv_copy_nbits_small_to_large(bv, 0, bv, 0, bv->len);
+		if (bv_copy_nbits_small_to_large(bv, 0, bv, 0, old_size) != old_size) {
+			return false;
+		}
+	} else if (to_size <= 64) {
+		if (bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size) != to_size) {
+			return false;
+		}
+	} else if (to_size >= old_size) {
+		if (bv_copy_nbits_large_aligned(bv, 0, bv, 0, old_size) != old_size) {
+			return false;
+		}
 	} else {
-		bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size);
+		if (bv_copy_nbits_large_aligned(bv, 0, bv, 0, to_size) != to_size) {
+			return false;
+		}
 	}
-	size_t old_len = bv->len;
 	bv->len = to_size;
-	rz_bv_set_range(bv, old_len, to_size - 1, fill_bit);
+	rz_bv_set_range(bv, old_size, to_size - 1, fill_bit);
 	return true;
 }
 
