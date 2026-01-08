@@ -166,3 +166,19 @@ jobs:
       uses: actions/checkout@v6
     - name: REUSE Compliance Check
       uses: fsfe/reuse-action@v6
+
+  rizin-format:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.clang-format == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run Rizin Format Script
+        run: |
+          ./sys/format.sh
+          # The job fails if the script makes changes, meaning the PR wasn't formatted
+          git diff --exit-code
+      - name: Install clang-format-20
+        run: sudo apt --assume-yes install clang-format-20
