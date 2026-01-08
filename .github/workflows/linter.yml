@@ -175,10 +175,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Install clang-format-20 and gitpython
+        run: |
+          sudo apt --assume-yes install clang-format-20
+          sudo pip install gitpython --break-system-packages
+
       - name: Run Rizin Format Script
         run: |
-          ./sys/format.sh
-          # The job fails if the script makes changes, meaning the PR wasn't formatted
+          python3 sys/clang-format.py
           git diff --exit-code
-      - name: Install clang-format-20
-        run: sudo apt --assume-yes install clang-format-20
