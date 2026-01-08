@@ -441,6 +441,131 @@ bool test_rz_bv_algorithm128(void) {
 	mu_end;
 }
 
+/**
+ * \brief Reference implementation of rz_bv_add() to test against
+ */
+static RzBitVector *rz_bv_add_ref(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, const RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry) {
+	rz_return_val_if_fail(x && y, false);
+
+	if (x->len != y->len || x->len == 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzBitVector *ret = rz_bv_dup(x);
+	bool a = false, b = false, _carry = false;
+
+	for (ut32 pos = 0; pos < ret->len; ++pos) {
+		a = rz_bv_get(ret, pos);
+		b = rz_bv_get(y, pos);
+		rz_bv_set(ret, pos, a ^ b ^ _carry);
+		_carry = ((a & b) | (a & _carry)) | (b & _carry);
+	}
+
+	if (carry) {
+		*carry = _carry;
+	}
+
+	return ret;
+}
+
+/**
+ * todo..
+ */
+static const char *test_rz_bv_add_against_ref(ut64 size, const ut8 *a_bytes, const ut8 *b_bytes) {
+	RzBitVector *a, *b;
+	RzBitVector *result, *ref;
+	bool carry_a = false;
+	bool carry_b = false;
+	const char *error = NULL;
+
+	a = rz_bv_new_from_bytes_be(a_bytes, 0, size);
+	b = rz_bv_new_from_bytes_be(b_bytes, 0, size);
+
+	result = rz_bv_add(a, b, &carry_a);
+	ref = rz_bv_add_ref(a, b, &carry_b);
+
+	if (rz_bv_cmp(result, ref)) {
+		error = "rz_bv_add() result differs from reference";
+		goto finally;
+	}
+
+	if (carry_a != carry_b) {
+		error = "rz_bv_add() carry flag differs from reference";
+		goto finally;
+	}
+
+finally:
+	rz_bv_free(result);
+	rz_bv_free(ref);
+	rz_bv_free(a);
+	rz_bv_free(b);
+
+	return error;
+}
+
+bool test_rz_bv_add(void) {
+	const char *error = NULL;
+
+	// Add 5-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		5,
+		(ut8[1]){ 0x1f },
+		(ut8[1]){ 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 5-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		5,
+		(ut8[1]){ 0x10 },
+		(ut8[1]){ 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 64-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		64,
+		(ut8[8]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[8]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 64-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		64,
+		(ut8[8]){ 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[8]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 128-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		128,
+		(ut8[16]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[16]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 128-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		128,
+		(ut8[16]){ 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[16]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F });
+	mu_assert_null(error, error);
+
+	// Add 125-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		125,
+		(ut8[16]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F },
+		(ut8[16]){ 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+	mu_assert_null(error, error);
+
+	// Add 125-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		125,
+		(ut8[16]){ 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x10 },
+		(ut8[16]){ 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x00 });
+	mu_assert_null(error, error);
+
+	mu_end;
+}
+
 bool test_rz_bv_cmp(void) {
 	RzBitVector *x, *y;
 
@@ -1745,6 +1870,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_logic_large);
 	mu_run_test(test_rz_bv_algorithm32);
 	mu_run_test(test_rz_bv_algorithm128);
+	mu_run_test(test_rz_bv_add);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
 	mu_run_test(test_rz_bv_set_from_bytes_be);
 	mu_run_test(test_rz_bv_as_hex_string);
