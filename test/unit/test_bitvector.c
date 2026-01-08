@@ -327,26 +327,34 @@ bool test_rz_bv_logic(void) {
 	rz_bv_free(neg);
 
 	result = rz_bv_dup(y);
-	rz_bv_lshift(result, 3);
+	mu_assert_true(rz_bv_lshift(result, 3), "Shift failed");
 	mu_assert("left shift y", is_equal_bv(result, ls));
 	rz_bv_free(result);
 	rz_bv_free(ls);
 
 	result = rz_bv_dup(y);
-	rz_bv_lshift_fill(result, 3, true);
+	mu_assert_true(rz_bv_lshift_fill(result, 3, true), "Shift failed");
 	mu_assert("left shift y filling 1", is_equal_bv(result, ls_fill));
 	rz_bv_free(result);
 	rz_bv_free(ls_fill);
 
 	result = rz_bv_dup(y);
-	rz_bv_rshift(result, 3);
+	mu_assert_true(rz_bv_rshift(result, 3), "Shift failed");
 	mu_assert("right shift y", is_equal_bv(result, rs));
 	rz_bv_free(result);
 	rz_bv_free(rs);
 
 	result = rz_bv_dup(y);
-	rz_bv_rshift_fill(result, 3, true);
+	mu_assert_true(rz_bv_rshift_fill(result, 3, true), "Shift failed");
 	mu_assert("right shift y", is_equal_bv(result, rs_fill));
+
+	ut64 before = rz_bv_to_ut64(result);
+	mu_assert_true(rz_bv_rshift_fill(result, 0, true), "Shift failed");
+	mu_assert_eq(rz_bv_to_ut64(result), before, "right shift 0 failed");
+
+	mu_assert_true(rz_bv_lshift_fill(result, 0, true), "Shift failed");
+	mu_assert_eq(rz_bv_to_ut64(result), before, "left shift 0 failed");
+
 	rz_bv_free(result);
 	rz_bv_free(rs_fill);
 
@@ -994,7 +1002,7 @@ bool test_rz_bv_div(void) {
 	TEST_DIV(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x6186185");
 	TEST_DIV(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x1");
 	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
-	rz_bv_lshift(superbig, 70);
+	mu_assert_true(rz_bv_lshift(superbig, 70), "Shift failed");
 	TEST_DIV(superbig, rz_bv_new_from_ut64(80, 2), "0x5400000000000000000");
 
 #undef TEST_DIV
@@ -1029,7 +1037,7 @@ bool test_rz_bv_mod(void) {
 	TEST_MOD(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x4");
 	TEST_MOD(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x0");
 	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
-	rz_bv_lshift(superbig, 70);
+	mu_assert_true(rz_bv_lshift(superbig, 70), "Shift failed");
 	TEST_MOD(rz_bv_dup(superbig), rz_bv_new_from_ut64(80, 2), "0x0");
 	rz_bv_set(superbig, 0, true);
 	rz_bv_set(superbig, 1, true);
@@ -1187,7 +1195,7 @@ static bool test_rz_bv_set_to_bytes_le(void) {
 	{
 		ut8 buf9[9] = { 0 };
 		RzBitVector *bv = rz_bv_new_from_ut64(64 + 8, 0xc0ffee4200000000);
-		rz_bv_lshift_fill(bv, 8, true);
+		mu_assert_true(rz_bv_lshift_fill(bv, 8, true), "Shift failed");
 		rz_bv_set_to_bytes_le(bv, buf9);
 		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0x42, 0xee, 0xff, 0xc0 };
 		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
@@ -1197,7 +1205,7 @@ static bool test_rz_bv_set_to_bytes_le(void) {
 		ut8 buf9[9] = { 0 };
 		buf9[8] = 0xff; // make sure these trailing bits are not overwritten
 		RzBitVector *bv = rz_bv_new_from_ut64(64 + 6, 0xffffee00000000);
-		rz_bv_lshift_fill(bv, 8, true);
+		mu_assert_true(rz_bv_lshift_fill(bv, 8, true), "Shift failed");
 		rz_bv_set_to_bytes_le(bv, buf9);
 		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0xee, 0xff, 0xff, 0xc0 };
 		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
@@ -1370,6 +1378,7 @@ bool test_rz_bv_cast_inplace(void) {
 	mu_assert_notnull(small->bits.large_a, "Buffer not set");
 	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
 
+	// Cast large to small
 	mu_assert_true(rz_bv_cast_inplace(large, 32, true), "Cast failed");
 	mu_assert_eq(rz_bv_to_ut64(large), 0x0c0d0e0f, "Mismatch after cast");
 	mu_assert_streq_free(rz_bv_as_hex_string(large, true), "0x0c0d0e0f", "small to large cast failed");
@@ -1377,9 +1386,17 @@ bool test_rz_bv_cast_inplace(void) {
 	mu_assert_notnull(large->bits.large_a, "Buffer not set");
 	mu_assert_eq(large->_elem_len, 16, "Buffer length wrong");
 
+	// Cast small to large
 	mu_assert_true(rz_bv_cast_inplace(large, 256, true), "Cast failed");
 	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff0c0d0e0f", "small to large cast failed");
 	mu_assert_eq(large->len, 256, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
+
+	// Cast large 256 bit to 128 bit.
+	mu_assert_true(rz_bv_cast_inplace(large, 128, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffff0c0d0e0f", "large to large cast failed");
+	mu_assert_eq(large->len, 128, "New size is off");
 	mu_assert_notnull(large->bits.large_a, "Buffer not set");
 	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
 
