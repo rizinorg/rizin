@@ -140,6 +140,7 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state);
 RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state);
+RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLABLE RzList /*<RzDbgListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
@@ -175,6 +176,10 @@ RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_si
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index);
+
+/* cmd_task.c */
+RZ_IPI void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode, PJ *j);
+RZ_IPI void rz_core_tasks_print(RzCore *core, RzOutputMode mode);
 
 /* cmd_meta.c */
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);

@@ -266,7 +266,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 	}
 
 	int cols = rz_cons_get_size(NULL);
-	RzList *list = rz_list_newf((RzListFree)rz_listinfo_free);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		goto sections_err;
 	}
@@ -280,7 +280,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RzInterval vitv = (RzInterval){ section->vaddr, section->vsize };
 
 		rz_num_units(humansz, sizeof(humansz), section->size);
-		RzListInfo *info = rz_listinfo_new(section->name, pitv, vitv, section->perm, humansz);
+		RzDbgListInfo *info = rz_debug_listinfo_new(section->name, pitv, vitv, section->perm, humansz);
 		if (!info) {
 			RZ_LOG_ERROR("Cannot print section bars\n");
 			goto list_err;
@@ -292,7 +292,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot print section bars\n");
 		goto list_err;
 	}
-	rz_table_visual_list(table, list, core->offset, 1, cols, core->io->va);
+	rz_core_debug_listinfo_to_table(table, list, core->offset, 1, cols, core->io->va);
 
 	char *s = rz_table_tostring(table);
 	if (!s) {

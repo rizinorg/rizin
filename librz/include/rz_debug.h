@@ -428,6 +428,14 @@ typedef struct rz_debug_esil_watchpoint_t {
 	char *expr;
 } RzDebugEsilWatchpoint;
 
+typedef struct {
+	char *name; ///< Name of the information
+	RzInterval pitv; ///< Offset interval
+	RzInterval vitv; ///< Virtual address interval
+	int perm; ///< Permissions
+	char *extra; ///< Extra printable information
+} RzDbgListInfo;
+
 #ifdef RZ_API
 
 /**
@@ -556,7 +564,7 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
 RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset);
-RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset);
+RZ_API RZ_OWN RzList /*<RzDbgListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset);
 RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset);
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size);
 RZ_API RzDebugTrace *rz_debug_trace_new(void);
@@ -606,6 +614,9 @@ RZ_API int rz_debug_step_back(RzDebug *dbg, int steps);
 RZ_API bool rz_debug_goto_cnum(RzDebug *dbg, ut32 cnum);
 RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps);
 RZ_API bool rz_debug_continue_back(RzDebug *dbg);
+
+RZ_API RZ_OWN RzDbgListInfo *rz_debug_listinfo_new(RZ_NULLABLE const char *name, RzInterval pitv, RzInterval vitv, int perm, RZ_NULLABLE const char *extra);
+RZ_API void rz_debug_listinfo_free(RZ_NULLABLE RzDbgListInfo *info);
 
 /* serialize */
 RZ_API void rz_serialize_debug_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzDebug *dbg);

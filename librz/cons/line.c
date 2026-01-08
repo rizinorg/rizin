@@ -49,6 +49,7 @@ RZ_API void rz_line_free(RZ_NULLABLE RzLine *line) {
 	rz_list_free(line->kill_ring);
 	rz_line_hist_free(line);
 	undo_free(line);
+	free(line->clipboard);
 	rz_line_completion_fini(&line->completion);
 	free(line);
 }

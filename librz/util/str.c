@@ -331,7 +331,7 @@ RZ_API int rz_str_rwx(const char *str) {
 	return ret;
 }
 
-// Returns the string representation of the permission of the inputted integer.
+// Returns the string representation of the permission of the input integer.
 RZ_API const char *rz_str_rwx_i(int rwx) {
 	if (rwx < 0 || rwx >= RZ_ARRAY_SIZE(rwxstr)) {
 		rwx = 0;
@@ -2259,6 +2259,7 @@ RZ_API int rz_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 			j++;
 		}
 	}
+	cps[j] = i;
 	str[j] = tmp[i];
 
 	if (out) {

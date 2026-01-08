@@ -822,13 +822,16 @@ static RzILOpEffect *arithmetic_float_op_1(const csh handle, const cs_insn *insn
 
 	switch (insn->id) {
 	default:
+		rz_il_op_pure_free(src0);
 		rz_warn_if_reached();
 		NOT_IMPLEMENTED;
 	case SPARC_INS_FONE:
 	case SPARC_INS_FONES:
+		rz_il_op_pure_free(src0);
 		return rz_sparc_bv_to_consec_regs(handle, mode, INSOP(0).reg, width == SPARC_WORD ? U32(UT32_MAX) : U64(UT64_MAX), width);
 	case SPARC_INS_FZERO:
 	case SPARC_INS_FZEROS:
+		rz_il_op_pure_free(src0);
 		return rz_sparc_bv_to_consec_regs(handle, mode, INSOP(0).reg, width == SPARC_WORD ? U32(0) : U64(0), width);
 	case SPARC_INS_FSQRTS:
 	case SPARC_INS_FSQRTD:
@@ -1198,10 +1201,6 @@ static RzILOpEffect *misc_insn(const csh handle, const cs_insn *insn, const cs_m
 		RzILOpPure *rs1 = rz_sparc_cs_get_operand(handle, insn, mode, 0, SPARC_DOUBLE_WORD);
 		RzILOpPure *rs2 = rz_sparc_cs_get_operand(handle, insn, mode, 1, SPARC_DOUBLE_WORD);
 		const char *dst = cs_reg_name(handle, INSOP(2).reg);
-		RzILOpPure *align_bits = LOGAND(VARL("addr"), U64(7));
-		if (insn->id == SPARC_INS_ALIGNADDRL) {
-			align_bits = LOGAND(NEG(align_bits), U64(7));
-		}
 		return SEQ2(SETL("data", APPEND(F2BV(rs1), F2BV(rs2))), SETG(dst, UNSIGNED(64, SHIFTR0(VARL("data"), MUL(SUB(U8(8), UNSIGNED(8, UNSIGNED(3, VARG("gsr")))), U8(8))))));
 	}
 	case SPARC_INS_PDIST:
@@ -2129,7 +2128,7 @@ static RzILOpEffect *store_op(const csh handle, const cs_insn *insn, const cs_mo
 			} else {
 				rval = VARG(reg);
 			}
-			val = !val ? rval : APPEND(DUP(rval), val);
+			val = !val ? rval : APPEND(rval, val);
 		}
 		return STOREWI(asi, addr, val);
 	}

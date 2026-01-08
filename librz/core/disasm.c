@@ -2214,7 +2214,8 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 		if (!strncmp(flag->name, "case.", 5)) {
 			sscanf(flag->name + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = rz_num_math(core->num, addr);
-			if (case_start == -1) {
+			bool switch_addr_changed = switch_addr != saddr;
+			if (case_start == -1 || switch_addr_changed) {
 				switch_addr = saddr;
 				case_prev = case_current;
 				case_start = case_current;
@@ -2222,11 +2223,21 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					continue;
 				}
 			}
-			if (case_current == case_prev + 1 && switch_addr == saddr) {
+			if ((case_current == case_prev + 1 || case_current == case_prev) && !switch_addr_changed) {
+				// We're still inside a range, continue extending the range boundary until we reach the
+				// end of the label list or a default label
 				case_prev = case_current;
+				bool next_is_default = false;
 				if (iter != uniqlist->tail) {
+					RzFlagItem *next_flag = rz_list_next(iter)->val;
+					next_is_default = !strncmp(next_flag->name + 5, "default", 7);
+				}
+				if (iter != uniqlist->tail && !next_is_default) {
 					continue;
 				}
+			} else if (!switch_addr_changed && iter == uniqlist->tail) {
+				// Iterate last index for a second time, otherwise the index will not get displayed
+				iter = rz_list_prev(iter);
 			}
 		}
 		if (printPre) {
@@ -2311,7 +2322,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 						} else {
 							rz_cons_printf("%d:", case_prev);
 						}
-						if (iter != uniqlist->head && iter != uniqlist->tail) {
+						if (iter != uniqlist->head && iter != uniqlist->tail && case_current != case_prev) {
 							iter = rz_list_prev(iter);
 						}
 						case_start = case_current;
@@ -2321,7 +2332,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 						} else {
 							rz_cons_printf("%s:", case_prev_name);
 						}
-						case_start = -1;
+						case_start = case_current;
 					}
 				}
 				case_prev = case_current;

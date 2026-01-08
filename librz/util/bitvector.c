@@ -1173,7 +1173,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_mul(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
  * if x == y return 0
  * if x > y return positive (+1)
  */
-int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
+int bv_unsigned_cmp(const RZ_NONNULL RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y, 0);
 
 	if (x->len != y->len) {
@@ -1198,6 +1198,75 @@ int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 }
 
 /**
+ * Result of x = (x / y) mod 2^length
+ * Both operands must have the same length.
+ * If \p y is a zero vector, the result defined as a vector of all ones.
+ *
+ * \param x dividend
+ * \param y divisor
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y && x->len == y->len, false);
+
+	if (rz_bv_is_zero_vector(y)) {
+		rz_bv_set_all(x, true);
+		return true;
+	}
+
+	if (x->len <= 64) {
+		rz_bv_set_from_ut64(x, rz_bv_to_ut64(x) / rz_bv_to_ut64(y));
+		return true;
+	}
+
+	int compare_result = bv_unsigned_cmp(x, y);
+	// dividend < divisor
+	// remainder = dividend, quotient = 0
+	if (compare_result < 0) {
+		rz_bv_set_from_ut64(x, 0);
+		return true;
+	}
+	// dividend == divisor
+	// remainder = 0, quotient = 1
+	if (compare_result == 0) {
+		rz_bv_set_from_ut64(x, 1);
+		return true;
+	}
+
+	// dividend > divisor
+	// do typical division by shift and subtract
+	RzBitVector dend;
+	rz_bv_init(&dend, x->len);
+	rz_bv_copy(x, &dend);
+	RzBitVector sor;
+	rz_bv_init(&sor, y->len);
+	rz_bv_copy(y, &sor);
+
+	// shift the divisor left to align both highest bits
+	ut32 sorlz = rz_bv_clz(&sor);
+	ut32 shift = sorlz - rz_bv_clz(&dend);
+	rz_bv_lshift(&sor, shift);
+
+	rz_bv_set_from_ut64(x, 0);
+	for (ut32 b = shift + 1; b; b--) {
+		if (rz_bv_ule(&sor, &dend)) {
+			rz_bv_set(x, b - 1, true);
+
+			// sub_inplace() negates sor_cpy
+			RzBitVector sor_cpy;
+			rz_bv_init(&sor_cpy, y->len);
+			rz_bv_copy(&sor, &sor_cpy);
+			rz_bv_sub_inplace(&dend, &sor_cpy, NULL);
+			rz_bv_fini(&sor_cpy);
+		}
+		rz_bv_rshift(&sor, 1);
+	}
+	rz_bv_fini(&dend);
+	rz_bv_fini(&sor);
+	return true;
+}
+
+/**
  * Result of (x / y) mod 2^length
  * Both operands must have the same length.
  * If \p y is a zero vector, the result defined as a vector of all ones.
@@ -1208,50 +1277,46 @@ int bv_unsigned_cmp(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
+	RzBitVector *res = rz_bv_dup(x);
+	if (!rz_bv_div_inplace(res, y)) {
+		rz_bv_free(res);
+		return NULL;
+	}
+	return res;
+}
 
+/**
+ * Result of x = (x mod y) mod 2^length
+ * Both operands must have the same length.
+ * If \p y == 0, the result is \p x
+ *
+ * \param x dividend
+ * \param y divisor
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_bv_mod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y && x->len == y->len, false);
 	if (rz_bv_is_zero_vector(y)) {
-		RzBitVector *ret = rz_bv_new(y->len);
-		rz_bv_set_all(ret, true);
-		return ret;
+		return true;
 	}
+	RzBitVector remul;
+	rz_bv_init(&remul, rz_bv_len(x));
+	rz_bv_copy(x, &remul);
 
-	if (x->len <= 64) {
-		return rz_bv_new_from_ut64(x->len, rz_bv_to_ut64(x) / rz_bv_to_ut64(y));
+	if (!rz_bv_div_inplace(&remul, y)) {
+		rz_bv_fini(&remul);
+		return false;
 	}
-
-	int compare_result = bv_unsigned_cmp(x, y);
-	// dividend < divisor
-	// remainder = dividend, quotient = 0
-	if (compare_result < 0) {
-		return rz_bv_new(x->len);
+	if (!rz_bv_mul_inplace(&remul, y)) {
+		rz_bv_fini(&remul);
+		return false;
 	}
-	// dividend == divisor
-	// remainder = 0, quotient = 1
-	if (compare_result == 0) {
-		return rz_bv_new_one(rz_bv_len(x));
+	if (!rz_bv_sub_inplace(x, &remul, NULL)) {
+		rz_bv_fini(&remul);
+		return false;
 	}
-
-	// dividend > divisor
-	// do typical division by shift and subtract
-	RzBitVector *dend = rz_bv_dup(x);
-	RzBitVector *sor = rz_bv_dup(y);
-	// shift the divisor left to align both highest bits
-	ut32 sorlz = rz_bv_clz(sor);
-	ut32 shift = sorlz - rz_bv_clz(dend);
-	rz_bv_lshift(sor, shift);
-	RzBitVector *quot = rz_bv_new_zero(rz_bv_len(x));
-	for (ut32 b = shift + 1; b; b--) {
-		if (rz_bv_ule(sor, dend)) {
-			rz_bv_set(quot, b - 1, true);
-			RzBitVector *tmp = rz_bv_sub(dend, sor, NULL);
-			rz_bv_free(dend);
-			dend = tmp;
-		}
-		rz_bv_rshift(sor, 1);
-	}
-	rz_bv_free(dend);
-	rz_bv_free(sor);
-	return quot;
+	rz_bv_fini(&remul);
+	return true;
 }
 
 /**
@@ -1265,14 +1330,11 @@ RZ_API RZ_OWN RzBitVector *rz_bv_div(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
 	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
-	if (rz_bv_is_zero_vector(y)) {
-		return rz_bv_dup(x);
+	RzBitVector *r = rz_bv_dup(x);
+	if (!rz_bv_mod_inplace(r, y)) {
+		rz_bv_free(r);
+		return NULL;
 	}
-	RzBitVector *quot = rz_bv_div(x, y);
-	RzBitVector *remul = rz_bv_mul(quot, y);
-	RzBitVector *r = rz_bv_sub(x, remul, NULL);
-	rz_bv_free(quot);
-	rz_bv_free(remul);
 	return r;
 }
 
@@ -2020,16 +2082,26 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 		// The bit vector needs a larger buffer.
 		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
 	}
+	size_t old_size = bv->len;
 	if (bv->len <= 64) {
-		// This was a small bit vector and now is a large one.
-		// Copy bits to the buffer.
-		bv_copy_nbits_small_to_large(bv, 0, bv, 0, bv->len);
+		if (bv_copy_nbits_small_to_large(bv, 0, bv, 0, old_size) != old_size) {
+			return false;
+		}
+	} else if (to_size <= 64) {
+		if (bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size) != to_size) {
+			return false;
+		}
+	} else if (to_size >= old_size) {
+		if (bv_copy_nbits_large_aligned(bv, 0, bv, 0, old_size) != old_size) {
+			return false;
+		}
 	} else {
-		bv_copy_nbits_large_to_small(bv, 0, bv, 0, to_size);
+		if (bv_copy_nbits_large_aligned(bv, 0, bv, 0, to_size) != to_size) {
+			return false;
+		}
 	}
-	size_t old_len = bv->len;
 	bv->len = to_size;
-	rz_bv_set_range(bv, old_len, to_size - 1, fill_bit);
+	rz_bv_set_range(bv, old_size, to_size - 1, fill_bit);
 	return true;
 }
 

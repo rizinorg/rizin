@@ -155,6 +155,20 @@ static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnaly
 	return colored_asm;
 }
 
+static RZ_OWN char *get_colored_asm(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
+	const char *plain = rz_asm_op_get_asm(asmop);
+	if (!rz_config_get_i(core->config, "scr.color")) {
+		return rz_str_dup(plain);
+	}
+	RzStrBuf *colored_asm = get_colored_asm_str(core, asmop, aop);
+	if (!colored_asm) {
+		return rz_str_dup(plain);
+	}
+	char *ret_str_asm = rz_str_dup(rz_strbuf_get(colored_asm));
+	rz_strbuf_free(colored_asm);
+	return ret_str_asm;
+}
+
 static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
 	if (!core || !context) {
 		return false;
@@ -168,25 +182,16 @@ static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit,
 
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 
-	const char *asm_str = rz_asm_op_get_asm(asmop);
-	RzStrBuf *colored_asm = NULL;
-	if (colorize) {
-		colored_asm = get_colored_asm_str(core, asmop, &aop);
-		asm_str = colored_asm ? rz_strbuf_get(colored_asm) : "";
-	}
-
+	char *asm_str = get_colored_asm(core, asmop, &aop);
 	const char *reset_color = colorize ? Color_RESET : "";
 	const char *format = " %s%s;";
-	const char *output_str = asm_str;
+	char *output_str = asm_str;
 	if (context->ret_val) {
 		rz_strbuf_appendf(context->buf, format, output_str, reset_color);
 	} else {
 		rz_cons_printf(format, output_str, reset_color);
 	}
-
-	if (colored_asm) {
-		rz_strbuf_free(colored_asm);
-	}
+	free(output_str);
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
 
@@ -943,6 +948,150 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_end(pj);
 }
 
+static void print_modified_reg(const RzRopGadgetInfo *gadget_info) {
+	rz_cons_printf("Modified regs: ");
+	if (gadget_info->modified_registers) {
+		void **it;
+		bool first = true;
+		rz_pvector_foreach (gadget_info->modified_registers, it) {
+			RzRopRegInfo *reg_info = (RzRopRegInfo *)*it;
+			if (!reg_info || !reg_info->name) {
+				continue;
+			}
+			if (!first) {
+				rz_cons_printf(" ");
+			}
+			rz_cons_printf("%s", reg_info->name);
+			first = false;
+		}
+	}
+}
+
+static void print_rop_dependencies(const RzRopGadgetInfo *gadget_info) {
+	rz_cons_printf("Dependencies:  ");
+	if (gadget_info->dependencies) {
+		RzListIter *iter;
+		RzRopRegInfo *dep_info;
+		bool first = true;
+		rz_list_foreach (gadget_info->dependencies, iter, dep_info) {
+			if (!dep_info || !dep_info->name) {
+				continue;
+			}
+			if (!first) {
+				rz_cons_printf(" ");
+			}
+			rz_cons_printf("%s", dep_info->name);
+			first = false;
+		}
+	}
+}
+
+static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
+	ut32 size = gadget_info->size;
+	size_t instr_count = 0;
+	int pad = 0;
+
+	for (size_t idx = 0; idx < size && instr_count < rz_vector_len(lens);) {
+		const size_t *lens_elem = (const size_t *)rz_vector_index_ptr(lens, instr_count);
+
+		if (!lens_elem) {
+			break;
+		}
+		const ut64 *addr_elem = (const ut64 *)rz_vector_index_ptr(add, instr_count);
+		ut64 addr = *addr_elem;
+		const char *hex = (const char *)rz_pvector_at(hex_strs, instr_count);
+		const char *asm_str = (const char *)rz_pvector_at(asm_strs, instr_count);
+		const char *reset_color = colorize ? Color_RESET : "";
+		rz_cons_printf("  0x%08" PFMT64x "  %-16s %s%s", addr + idx, hex, asm_str, reset_color);
+		int cur_asm_len = rz_str_ansi_len(asm_str);
+		pad = (high_pad - cur_asm_len);
+		if (pad > 0) {
+			rz_cons_printf("%*s", pad, "");
+		}
+		rz_cons_print(utf8 ? " │ " : " | ");
+		if (instr_count < 1) {
+			rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
+		} else if (instr_count == 1) {
+			print_modified_reg(gadget_info);
+			rz_cons_newline();
+		} else if (instr_count == 2) {
+			print_rop_dependencies(gadget_info);
+			rz_cons_newline();
+		} else {
+			rz_cons_newline();
+		}
+		idx += *lens_elem;
+		instr_count++;
+	}
+}
+
+static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
+	rz_return_if_fail(core && core->analysis);
+
+	ut64 addr = gadget_info->address;
+	ut32 size = gadget_info->size;
+	ut8 *buf = RZ_NEWS0(ut8, size);
+	int high_pad = 0;
+	if ((!buf || rz_io_read_at(core->io, addr, buf, size) < 1)) {
+		free(buf);
+		return;
+	}
+	RzVector *lens = rz_vector_new(sizeof(size_t), NULL, NULL);
+	RzVector *add = rz_vector_new(sizeof(ut64), NULL, NULL);
+	RzPVector *asm_strs = rz_pvector_new(free);
+	RzPVector *hex_strs = rz_pvector_new(free);
+	size_t instr_len = 0;
+	ut64 current_addr = 0;
+	const int req_width = 50;
+	char *rep_str = NULL;
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
+	const bool colorize = rz_config_get_i(core->config, "scr.color");
+	rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
+	if (utf8) {
+		rep_str = rz_str_repeat("–", req_width);
+		rz_cons_printf("%s––%s\n", rep_str, rep_str);
+	} else {
+		rep_str = rz_str_repeat("-", req_width);
+		rz_cons_printf("%s--%s\n", rep_str, rep_str);
+	}
+	RzAsmOp asmop = RZ_EMPTY;
+	RzAnalysisOp aop = RZ_EMPTY;
+	for (size_t idx = 0; idx < size;) {
+		rz_asm_set_pc(core->rasm, addr + idx);
+		int len = rz_asm_disassemble(core->rasm, &asmop, buf + idx, size - idx);
+		if (len < 1) {
+			break;
+		}
+		instr_len = (size_t)len;
+		rz_vector_push(lens, &instr_len);
+		rz_analysis_op(core->analysis, &aop, addr + idx, buf + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
+		char *hex = rz_hex_bin2strdup(buf + idx, len);
+		char *asm_str = get_colored_asm(core, &asmop, &aop);
+		rz_pvector_push(asm_strs, rz_str_dup(asm_str));
+		rz_pvector_push(hex_strs, rz_str_dup(hex));
+		current_addr = addr;
+		rz_vector_push(add, &current_addr);
+		size_t asm_len_clean = rz_str_ansi_len(asm_str);
+		int temp = asm_len_clean;
+		if (high_pad == 0 || temp > high_pad) {
+			high_pad = temp;
+		}
+		idx += len;
+		free(asm_str);
+		free(hex);
+		rz_analysis_op_fini(&aop);
+	}
+	print_rop_long_info(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
+	free(rep_str);
+	rz_asm_op_fini(&asmop);
+	rz_vector_free(lens);
+	rz_vector_free(add);
+	rz_pvector_free(asm_strs);
+	rz_pvector_free(hex_strs);
+	free(buf);
+	rz_cons_newline();
+}
+
 static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
 	rz_return_if_fail(gadget_info && context);
 	if (!context->state) {
@@ -961,6 +1110,9 @@ static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gad
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_rop_gadget_print_standard_mode(core, gadget_info);
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_rop_gadget_print_long_mode(core, gadget_info, context);
 		break;
 	default:
 		rz_warn_if_reached();
