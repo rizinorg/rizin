@@ -20,6 +20,8 @@ Usage Example:
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_socket.h>
+#include <stdint.h>
+
 
 #define RZP_PID(x)    (((RzPipe *)(x)->data)->pid)
 #define RZP_INPUT(x)  (((RzPipe *)(x)->data)->input[0])
@@ -243,7 +245,7 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 	}
 #if __WINDOWS__
 	w32_createPipe(rzp, cmd);
-	rzp->child = (int)(rzp->pipe);
+	rzp->child = (int)(intptr_t)rzp->pipe;
 #else
 	int r = rz_sys_pipe(rzp->input, false);
 	if (r != 0) {

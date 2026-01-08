@@ -14,6 +14,7 @@
 #include <rz_cons.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 #if __APPLE__ && HAVE_FORK
 #include <spawn.h>
@@ -700,7 +701,7 @@ static int redirect_socket_to_stdio(RzSocket *sock) {
 
 #if __WINDOWS__
 static void *exit_process(void *user) {
-	int timeout = (int)(void *)user;
+	int timeout = (int)(intptr_t)user;
 	rz_sys_sleep(timeout);
 	RZ_LOG_DEBUG("rz_run: Interrupted by timeout\n");
 	exit(0);
@@ -1050,7 +1051,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		}
 #else
 		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
-			rz_th_new(exit_process, (void *)p->_timeout);
+			rz_th_new(exit_process, (void *)(intptr_t)p->_timeout);
 		} else {
 			RZ_LOG_ERROR("rz-run: timeout with signal not supported for this platform\n");
 		}
