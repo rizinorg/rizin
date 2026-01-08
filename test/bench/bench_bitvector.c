@@ -99,11 +99,23 @@ static void bench_bv_set_range_100_bit(RzTable *t_out) {
 	rz_bv_free(a);
 }
 
-static void bench_bv_add_inplace(RzTable *t_out) {
+static void bench_bv_add_inplace_64(RzTable *t_out) {
 	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
 	RzBitVector *b = rz_bv_new_from_ut64(64, 0x1122334455667799ULL);
 
-	RZ_BENCH_RUN("rz_bv_add_inplace(a, b, NULL)", t_out, 1000000, {
+	RZ_BENCH_RUN("rz_bv_add_inplace(a, b, NULL) - (64 bit)", t_out, 1000000, {
+		rz_bv_add_inplace(a, b, NULL);
+	});
+
+	rz_bv_free(a);
+	rz_bv_free(b);
+}
+
+static void bench_bv_add_inplace_256(RzTable *t_out) {
+	RzBitVector *a = rz_bv_new_from_ut64(256, 0x1122334455667788ULL);
+	RzBitVector *b = rz_bv_new_from_ut64(256, 0x1122334455667799ULL);
+
+	RZ_BENCH_RUN("rz_bv_add_inplace(a, b, NULL) - (256 bit)", t_out, 1000000, {
 		rz_bv_add_inplace(a, b, NULL);
 	});
 
@@ -115,7 +127,7 @@ static void bench_bv_add(RzTable *t_out) {
 	RzBitVector *a = rz_bv_new_from_ut64(64, 0x1122334455667788ULL);
 	RzBitVector *b = rz_bv_new_from_ut64(64, 0x1122334455667799ULL);
 
-	RZ_BENCH_RUN("rz_bv_add(a, b, NULL)", t_out, 1000000, {
+	RZ_BENCH_RUN("rz_bv_add(a, b, NULL) - (64 bit)", t_out, 1000000, {
 		RzBitVector *a_prev = a;
 		a = rz_bv_add(a, b, NULL);
 		rz_bv_free(a_prev);
@@ -164,7 +176,8 @@ int main() {
 	bench_bv_set_range_60_bit(t);
 	bench_bv_set_range_100_bit(t);
 	bench_bv_add(t);
-	bench_bv_add_inplace(t);
+	bench_bv_add_inplace_64(t);
+	bench_bv_add_inplace_256(t);
 	bench_bv_sub(t);
 	bench_bv_sub_inplace(t);
 
