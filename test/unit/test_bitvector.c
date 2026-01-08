@@ -474,17 +474,14 @@ static RzBitVector *rz_bv_add_ref(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, 
  * compares the resultant bitvector and carry flag and returns an error if there is a difference.
  */
 static const char *test_rz_bv_add_against_ref(ut64 size, const ut8 *a_bytes, const ut8 *b_bytes) {
-	RzBitVector *a, *b;
-	RzBitVector *result, *ref;
 	bool carry_a = false;
 	bool carry_b = false;
 	const char *error = NULL;
 
-	a = rz_bv_new_from_bytes_be(a_bytes, 0, size);
-	b = rz_bv_new_from_bytes_be(b_bytes, 0, size);
-
-	result = rz_bv_add(a, b, &carry_a);
-	ref = rz_bv_add_ref(a, b, &carry_b);
+	RzBitVector *a = rz_bv_new_from_bytes_be(a_bytes, 0, size);
+	RzBitVector *b = rz_bv_new_from_bytes_be(b_bytes, 0, size);
+	RzBitVector *result = rz_bv_add(a, b, &carry_a);
+	RzBitVector *ref = rz_bv_add_ref(a, b, &carry_b);
 
 	if (rz_bv_cmp(result, ref)) {
 		error = "rz_bv_add() result differs from reference";

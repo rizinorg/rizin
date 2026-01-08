@@ -1021,7 +1021,7 @@ static inline ut64 add_with_carry_ut64(ut64 a, ut64 b, ut8 bit_size, ut8 *carry_
 
 /**
  * Result of x = (x + y) mod 2^length
- * Both operands must have the same length. Also the length should be greater than zero.
+ * Both operands must have the same length. The length should be greater than zero.
  * \param x The input and output operand of the addition.
  * \param y RzBitVector, Operand
  * \param carry bool*, bool pointer to where to save the carry value.
