@@ -185,7 +185,7 @@ int rz_test_main(int argc, const char **argv) {
 	RzTestState state = { 0 };
 
 	eprintf("Running rz-test on %s\n", RZ_TEST_ARCH_OS);
-
+    UINT old_cp = 0;
 	if (!except_dir) {
 		RZ_LOG_ERROR("Fail to create RzPVector\n");
 		ret = -1;
@@ -193,7 +193,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 #if __WINDOWS__
-	UINT old_cp = GetConsoleOutputCP();
+	old_cp = GetConsoleOutputCP();
 	{
 		HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 		DWORD mode;

@@ -501,7 +501,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		free(name);
 		return false;
 	}
-	char *cond;
+
 	if (window_id) {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
@@ -513,7 +513,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		} else {
 			reg = "edx";
 		}
-		b->cond = rz_str_newf("%= `ae %s,%d,-`", reg, type);
+		b->cond = rz_str_newf("`ae %s,%lu,-`", reg,(unsigned long)type);
 	} else {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
@@ -529,7 +529,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 				reg = "ecx";
 			}
 		}
-		b->cond = rz_str_newf("%= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
+		b->cond = rz_str_newf("`ae %lu,%s,%d,+,[4],-`",(unsigned long)type, reg, dbg->bits);
 	}
 	free(name);
 	return true;
