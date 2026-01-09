@@ -437,6 +437,7 @@ static void GH(jemalloc_get_bins_450)(RzCore *core, const char *input) {
 	}
 }
 
+#ifdef GH_IS_64
 static GHT GH(rtree_leaf_elm_bits_edata_get)(GHT bits) {
 	if (bits == 0) {
 		return 0;
@@ -456,6 +457,7 @@ static GHT GH(rtree_leaf_elm_bits_edata_get)(GHT bits) {
 	ptr = ptr & ~((GHT)128 - 1);
 	return ptr;
 }
+#endif
 
 static void GH(jemalloc_print_extent_info)(RzCore *core, GHT edata_addr, RzConsPrintablePalette *pal) {
 	GH(edata_t_530)
@@ -583,7 +585,8 @@ static GHT GH(jemalloc_rtree_lookup_530)(RzCore *core, GHT rtree_addr, GHT addr)
 	GHT root_addr = rtree_addr + root_offset;
 
 	// Read root node to get leaf array base
-	GH(rtree_node_elm_t_530) node;
+	GH(rtree_node_elm_t_530)
+	node;
 	GHT node_addr = root_addr + (GHT)root_idx * sizeof(GH(rtree_node_elm_t_530));
 	if (!rz_io_read_at(core->io, node_addr, (ut8 *)&node, sizeof(node))) {
 		return 0;
@@ -595,7 +598,8 @@ static GHT GH(jemalloc_rtree_lookup_530)(RzCore *core, GHT rtree_addr, GHT addr)
 	}
 
 	/* Read leaf element */
-	GH(rtree_leaf_elm_t_530) leaf;
+	GH(rtree_leaf_elm_t_530)
+	leaf;
 	GHT leaf_addr = leaf_base + (GHT)leaf_idx * sizeof(GH(rtree_leaf_elm_t_530));
 	if (!rz_io_read_at(core->io, leaf_addr, (ut8 *)&leaf, sizeof(leaf))) {
 		return 0;
@@ -658,16 +662,18 @@ static void GH(jemalloc_extent_info_530)(RzCore *core, const char *input) {
 }
 
 static void GH(jemalloc_print_arena_bins_530)(RzCore *core, GHT arena, ut64 bin_info_addr, RzConsPrintablePalette *pal) {
-	GH(bin_info_t_530) bin_info;
-	GH(bin_t_530) bin;
+	GH(bin_info_t_530)
+	bin_info;
+	GH(bin_t_530)
+	bin;
 
 	ut64 bins_offset = rz_offsetof(GH(arena_t_530), bins);
 
 	for (int j = 0; j < JM_NBINS_530; j++) {
 		rz_io_read_at(core->io, bin_info_addr + j * sizeof(GH(bin_info_t_530)),
 			(ut8 *)&bin_info, sizeof(GH(bin_info_t_530)));
-		
-			ut64 bin_addr = arena + bins_offset + j * sizeof(GH(bin_t_530));
+
+		ut64 bin_addr = arena + bins_offset + j * sizeof(GH(bin_t_530));
 		rz_io_read_at(core->io, bin_addr, (ut8 *)&bin, sizeof(GH(bin_t_530)));
 
 		PRINTF_YA("    bin[%d] @ 0x%" PFMT64x " {\n", j, bin_addr);
@@ -799,7 +805,7 @@ static void GH(cmd_dbg_map_jemalloc)(RzCore *core, char dmx_variant, const char 
 		GH(rz_jemalloc_detect_version)(core);
 		version = rz_config_get(core->config, "dbg.jemalloc.version");
 	}
-	
+
 	if (version && strcmp(version, "4.5.0") == 0) {
 		switch (dmx_variant) {
 		case 'a': // dmxa
