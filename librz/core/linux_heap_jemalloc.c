@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2017 javierptd <javierptd@gmail.com>
-// SPDX-FileCopyrightText: 2025 bubblepipe <bubblepipe42@gmail.com>
+// SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
