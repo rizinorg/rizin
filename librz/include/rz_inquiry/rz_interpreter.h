@@ -56,6 +56,7 @@ typedef struct {
 
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
+	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzInterpreterAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
@@ -154,6 +155,16 @@ typedef struct {
 	 */
 	bool (*successors)(RZ_NONNULL const RzInterpreterAbstrState *state,
 		RZ_NONNULL RZ_OUT RzVector /*<ut64>*/ *successors,
+		void *plugin_data);
+
+	/**
+	 * \brief Builds a string for printing the current state.
+	 *
+	 * \return Returns false in case of error. The interpretation must abort.
+	 * True otherwise.
+	 */
+	bool (*state_as_str)(RZ_NONNULL const RzInterpreterAbstrState *state,
+		RZ_NONNULL RZ_OUT RzStrBuf *str_buf,
 		void *plugin_data);
 	/**
 	 * \brief Set the abstract PC to the given address.
