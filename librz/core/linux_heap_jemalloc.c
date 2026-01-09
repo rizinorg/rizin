@@ -698,12 +698,12 @@ static void GH(jemalloc_get_bins_530)(RzCore *core, const char *input) {
 	GHT arena = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	if (!GH(rz_resolve_jemalloc)(core, "je_bin_infos", &bin_info)) {
-		RZ_LOG_ERROR("Cannot resolve je_bin_infos\n");
-		return;
-	}
-
-	if (input[0] == '\0') { // no argument, iterate through all arenas
+	if (input[0] == '\0') {
+		// No argument - use symbol resolution (debug mode)
+		if (!GH(rz_resolve_jemalloc)(core, "je_bin_infos", &bin_info)) {
+			RZ_LOG_ERROR("Cannot resolve je_bin_infos\n");
+			return;
+		}
 		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &arenas_sym)) {
 			PRINTF_GA("arenas @ 0x%" PFMT64x " {\n", arenas_sym);
 			for (;;) {
@@ -718,12 +718,28 @@ static void GH(jemalloc_get_bins_530)(RzCore *core, const char *input) {
 		}
 		PRINT_GA("}\n");
 	} else {
+		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
 		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		arena = rz_num_math(core->num, addr_str);
+		char *args = strdup(addr_str);
+		if (!args) {
+			return;
+		}
+		char *bin_info_str = strchr(args, ' ');
+
+		if (!bin_info_str) {
+			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			free(args);
+			return;
+		}
+
+		*bin_info_str++ = '\0';
+		arena = rz_num_math(core->num, args);
+		bin_info = rz_num_math(core->num, bin_info_str);
 
 		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", (ut64)arena, JM_NBINS_530);
 		GH(jemalloc_print_arena_bins_530)(core, arena, bin_info, pal);
 		PRINT_GA("}\n");
+		free(args);
 	}
 }
 
@@ -800,7 +816,6 @@ static void GH(jemalloc_print_narenas_530)(RzCore *core, const char *input) {
 
 static void GH(cmd_dbg_map_jemalloc)(RzCore *core, char dmx_variant, const char *arg) {
 	const char *version = rz_config_get(core->config, "dbg.jemalloc.version");
-	/* Auto-detect version if set to "auto", "NULL", or unset */
 	if (!version || strcmp(version, "auto") == 0 || strcmp(version, "NULL") == 0 || version[0] == '\0') {
 		GH(rz_jemalloc_detect_version)(core);
 		version = rz_config_get(core->config, "dbg.jemalloc.version");
