@@ -92,19 +92,22 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 		return NULL;
 	}
 	// Initialize the register file with uninitialized abstract values.
+	state->var_name_hashes = ht_up_new(NULL, free);
 	state->globals = ht_up_new(NULL, free);
 	for (size_t i = 0; i < reg_bindings->regs_count; i++) {
 		const char *rname = reg_bindings->regs[i].name;
 		RzInterpreterAbstrVal *aval = RZ_NEW0(RzInterpreterAbstrVal);
 		if (!aval) {
 			ht_up_free(state->globals);
+			ht_up_free(state->var_name_hashes);
 			free(state);
 			return NULL;
 		}
 
 		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
-		if (!ht_up_insert(state->globals, djb2_reg_hash, aval)) {
+		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
+		    !ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
 			RZ_LOG_ERROR("Failed to add %s to the global variable map. "
 				     "DJB2 hash collision of the register name. DJB2 hash = 0x%" PFMT64x "\n",
 				rname, djb2_reg_hash);
@@ -120,6 +123,9 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state) {
 	if (!state) {
 		return;
+	}
+	if (state->var_name_hashes) {
+		ht_up_free(state->var_name_hashes);
 	}
 	if (state->globals) {
 		ht_up_free(state->globals);
@@ -249,6 +255,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// Start interpretation
 	//
 
+	RzStrBuf *state_str = rz_strbuf_new("");
+
 	// A vector for the plugin to push the determined successors into.
 	RzVector *tmp_succ_addr = NULL;
 	// The set of reachable states.
@@ -307,6 +315,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// Determine the successor effects to evaluate.
 		// Only newly reached states are allowed to add successors.
 		if (new_state_reached) {
+			plugin->state_as_str(out_state, state_str, plugin_data);
+			char *s = rz_strbuf_drain_nofree(state_str);
+			RZ_LOG_DEBUG("%s", s);
+			free(s);
 			// Determine successors and increase the reference counts for the current out state.
 			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
 				goto in_loop_error;
@@ -353,6 +365,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	}
 
 loop_cleanup:
+	rz_strbuf_free(state_str);
 	rz_vector_free(tmp_succ_addr);
 	rz_vector_free(succ_states);
 	rz_set_u_free(reachable_states);

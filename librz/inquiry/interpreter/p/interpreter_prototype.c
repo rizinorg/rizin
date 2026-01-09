@@ -162,6 +162,32 @@ static ut64 hash_state(RZ_NONNULL const RzInterpreterAbstrState *state, void *pl
 	return h;
 }
 
+bool state_as_str(RZ_NONNULL const RzInterpreterAbstrState *state,
+	RZ_NONNULL RZ_OUT RzStrBuf *sb,
+	void *plugin_data) {
+	rz_return_val_if_fail(state && sb, false);
+
+	ut64 hash = hash_state(state, plugin_data);
+	rz_strbuf_appendf(sb, "hash = 0x%" PFMT64x "\n\n", hash);
+	rz_strbuf_append(sb, "Globals\n\n");
+	char *value = AD(state->pc->abstr_data)->is_concrete ? rz_bv_as_hex_string(AD(state->pc->abstr_data)->bv, true) : rz_str_dup("⊥");
+	rz_strbuf_appendf(sb, "\tpc = %s\n\n", value);
+	free(value);
+
+	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		const char *gname = ht_up_find(state->var_name_hashes, *k, NULL);
+		RzInterpreterAbstrVal *av = ht_up_find(state->globals, *k, NULL);
+		ProtoIntrprAbstrData *ad = av->abstr_data;
+		value = ad->is_concrete ? rz_bv_as_hex_string(ad->bv, true) : rz_str_dup("⊥");
+		rz_strbuf_appendf(sb, "\t%s = %s\n", gname, value);
+		free(value);
+	}
+	rz_iterator_free(it);
+	return true;
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -178,6 +204,7 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.fini_state = fini_state,
 	.hash_state = hash_state,
 	.set_pc = set_pc,
+	.state_as_str = state_as_str,
 	.clone_state = NULL,
 };
 
