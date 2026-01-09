@@ -236,7 +236,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		to = rz_itv_end(p->itv);
 		if ((to - from) >= limit) {
 			RZ_LOG_WARN("aap: search interval (from 0x%" PFMT64x
-				    " to 0x%" PFMT64x ") exeeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
+				    " to 0x%" PFMT64x ") exceeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
 				from, to, limit);
 			continue;
 		}

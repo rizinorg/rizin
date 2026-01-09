@@ -69,7 +69,7 @@ RZ_API RzThreadNCores rz_th_physical_core_number() {
 }
 
 /**
- * \brief      Returns the maximum number of threads available unless it exeeds N_THREAD_LIMIT.
+ * \brief      Returns the maximum number of threads available unless it exceeds N_THREAD_LIMIT.
  *	           When set to 0, it will be the max number of cores.
  *
  * \param[in]  max_threads  The maximum number of threads to request
