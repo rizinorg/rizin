@@ -15,7 +15,7 @@ environment:
   matrix:
     # VS2017 64
     - builder: vs2017_64
-      PYTHON: 'C:\\Python37-x64'
+      PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
@@ -31,7 +31,7 @@ environment:
       TEST_INCLUDE_HEADERS_CPP: true
     # VS2017 64 (Dynamic linking)
     - builder: vs2017_64_dyn
-      PYTHON: 'C:\\Python37'
+      PYTHON: 'C:\\Python38'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       BUILD_DIR: build
@@ -69,6 +69,8 @@ install:
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
+  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install --upgrade pip)
+  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install --upgrade certifi pip-system-certs)
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson ninja PyYAML tomli)
 
 # Build scripts
