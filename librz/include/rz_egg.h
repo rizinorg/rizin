@@ -226,7 +226,7 @@ RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 val, ut32 bits);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
 /* rz_egg_Cfile.c */
-RZ_API char *rz_egg_Cfile_parser(RZ_BORROW RZ_NONNULL RzPath *sys_path, const char *file, const char *arch, const char *os, int bits);
+RZ_API RZ_OWN char *rz_egg_compile_c_source(RZ_NONNULL const char *source_file, RZ_NONNULL const char *arch, RZ_NONNULL const char *os, int bits, RZ_BORROW RZ_NONNULL RzPath *sys_path);
 
 /* lang.c */
 RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta);

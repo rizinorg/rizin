@@ -178,6 +178,17 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 			egg->endian = endian;
 			break;
 		}
+	} else if (!strcmp(arch, "mips")) {
+		egg->arch = RZ_SYS_ARCH_MIPS;
+		switch (bits) {
+		case 16:
+		case 32:
+		case 64:
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		}
 	} else if (!strcmp(arch, "trace")) {
 		// rz_syscall_setup (egg->syscall, arch, os, bits);
 		egg->remit = &emit_trace;
@@ -234,7 +245,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 		rz_str_sanitize(fileSanitized);
 		const char *arch = rz_sys_arch_str(egg->arch);
 		const char *os = rz_egg_os_as_string(egg->os);
-		char *textFile = rz_egg_Cfile_parser(egg->sys_path, fileSanitized, arch, os, egg->bits);
+		char *textFile = rz_egg_compile_c_source(fileSanitized, arch, os, egg->bits, egg->sys_path);
 		if (!textFile) {
 			RZ_LOG_ERROR("egg: failure while parsing '%s'\n", fileSanitized);
 			free(fileSanitized);
