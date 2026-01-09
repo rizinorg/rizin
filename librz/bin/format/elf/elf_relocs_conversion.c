@@ -195,7 +195,7 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	case R_386_32: ADD(32, 0, "R_386_32");
 	case R_386_PC32: ADD(32, -P, "R_386_PC32");
 	case R_386_GOT32: ADD(32, -P, "R_386_GOT32");
-	case R_386_PLT32: ADD(32, -P,"R_386_PLT32");
+	case R_386_PLT32: ADD(32, -P, "R_386_PLT32");
 	case R_386_COPY: ADD(32, 0, "R_386_COPY"); // copy symbol at runtime
 	case R_386_GLOB_DAT: SET(32, "R_386_GLOB_DAT");
 	case R_386_JMP_SLOT: SET(32, "R_386_JMP_SLOT");
@@ -207,7 +207,7 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 	case R_386_8: ADD(8, 0, "R_386_8");
 	case R_386_PC8: ADD(8, -P, "R_386_PC8");
 	case R_386_IRELATIVE: IFCN(32, "R_386_IRELATIVE");
-	case R_386_32PLT: ADD(32, -P,"R_386_32PLT");
+	case R_386_32PLT: ADD(32, -P, "R_386_32PLT");
 	case R_386_TLS_TPOFF: UNHANDL("R_386_TLS_TPOFF");
 	case R_386_TLS_IE: UNHANDL("R_386_TLS_IE");
 	case R_386_TLS_GOTIE: UNHANDL("R_386_TLS_GOTIE");
