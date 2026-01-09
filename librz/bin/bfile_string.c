@@ -437,7 +437,7 @@ static void scan_cfstring_table(RzBinFile *bf, HtUP *strings_db, RzPVector /*<Rz
 			continue;
 		} else if (max_region_size && section->size > max_region_size) {
 			RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
-				    ") exeeds max region size (0x%" PFMT64x "), skipping it.\n",
+				    ") exceeds max region size (0x%" PFMT64x "), skipping it.\n",
 				section->size, max_region_size);
 			continue;
 		}
@@ -491,7 +491,7 @@ static RzList /*<RzInterval *>*/ *gen_intervals(RzBinFile *bf, const RzBinString
 
 		if (opt->max_region_size && section_size > opt->max_region_size) {
 			RZ_LOG_ERROR("bin_file_strings: search interval size (0x%" PFMT64x
-				     ") exeeds max region size (0x%" PFMTSZx ").\n",
+				     ") exceeds max region size (0x%" PFMTSZx ").\n",
 				section_size, opt->max_region_size);
 			goto fail;
 		}
@@ -524,7 +524,7 @@ static RzList /*<RzInterval *>*/ *gen_intervals(RzBinFile *bf, const RzBinString
 				continue;
 			} else if (opt->max_region_size && section->size > opt->max_region_size) {
 				RZ_LOG_WARN("bin_file_strings: search interval size (0x%" PFMT64x
-					    ") exeeds max region size (0x%" PFMTSZx "), skipping it.\n",
+					    ") exceeds max region size (0x%" PFMTSZx "), skipping it.\n",
 					section->size, opt->max_region_size);
 				continue;
 			}
