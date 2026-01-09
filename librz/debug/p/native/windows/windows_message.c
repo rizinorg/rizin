@@ -3,6 +3,7 @@
 
 #include <rz_windows.h>
 #include "windows_message.h"
+#include <rz_types.h>  // for PFMT64u, ut64 
 
 static char *msg_types_arr[] = {
 	"WM_NULL=0x0000",
@@ -513,7 +514,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		} else {
 			reg = "edx";
 		}
-		b->cond = rz_str_newf("`ae %s,%lu,-`", reg, (unsigned long)type);
+		b->cond = rz_str_newf("ae %s,%" PFMT64u ",-", reg, (ut64)type);
 	} else {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
@@ -529,7 +530,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 				reg = "ecx";
 			}
 		}
-		b->cond = rz_str_newf("`ae %lu,%s,%d,+,[4],-`",(unsigned long)type, reg, dbg->bits);
+		b->cond = rz_str_newf("ae %" PFMT64u ",%s,%d,+,[4],-",(ut64)type, reg, dbg->bits);
 	}
 	free(name);
 	return true;
