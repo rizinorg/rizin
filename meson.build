@@ -220,7 +220,7 @@ endif
 pcre2_dep_opt = get_option('use_sys_pcre2')
 pcre2_dep = disabler()
 sys_pcre2_found = false
-if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_build()
+if pcre2_dep_opt.enabled() and not meson.is_cross_build()
   pcre2_deps = []
   sys_pcre2_found = true
   foreach utf : [8, 16, 32]
@@ -233,7 +233,7 @@ if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_buil
   if sys_pcre2_found
     pcre2_dep = declare_dependency(dependencies: pcre2_deps, version: pcre2_deps[0].version())
   else
-    pcre2_dep = cc.find_library('pcre2', required: true, static: true)
+    error('use_sys_pcre2 is enabled but system PCRE2 was not found')
   endif
 else
   pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true)
