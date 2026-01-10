@@ -105,7 +105,7 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 			//     __libc_lock_lock (av->mutex);
 			ut64 mallopt_addr = base_addr + off;
 			ut8 bytes[200] = { 0 };
-			rz_io_read_at(core->io, mallopt_addr, bytes, sizeof(bytes));
+			rz_io_read_at_mapped(core->io, mallopt_addr, bytes, sizeof(bytes));
 			const ut8 mov[] = { 0xba, 0x1, 0x0, 0x0, 0x0 };
 			const ut8 cmpxchg[] = { 0x0f, 0xb1, 0x15 };
 			const ut8 *mov_ptr = rz_mem_mem(bytes, sizeof(bytes), mov, sizeof(mov));
@@ -455,7 +455,7 @@ static GHT GH(tcache_chunk_size)(RzCore *core, GHT brk_start) {
 	if (!cnk) {
 		return sz;
 	}
-	rz_io_read_at(core->io, brk_start, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	rz_io_read_at_mapped(core->io, brk_start, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	sz = (cnk->size >> 3) << 3; // clear chunk flag
 	return sz;
 }
@@ -519,7 +519,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState_tcache)));
+		(void)rz_io_read_at_mapped(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState_tcache)));
 		/* arena->next should point to itself even if there is only one thread */
 		if (!cmain_arena->next) {
 			return false;
@@ -531,7 +531,7 @@ RZ_API bool GH(rz_heap_update_main_arena)(RzCore *core, GHT m_arena, MallocState
 		if (!cmain_arena) {
 			return false;
 		}
-		(void)rz_io_read_at(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState)));
+		(void)rz_io_read_at_mapped(core->io, m_arena, (ut8 *)cmain_arena, sizeof(GH(RzHeap_MallocState)));
 		GH(update_arena_without_tc)(cmain_arena, main_arena);
 		free(cmain_arena);
 	}
@@ -944,7 +944,7 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 		return;
 	}
 
-	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
+	(void)rz_io_read_at_mapped(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
 
 	PRINT_GA("struct malloc_chunk @ ");
 	PRINTF_BA("0x%" PFMT64x, (ut64)chunk);
@@ -981,7 +981,7 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 
 	char *data = calloc(1, size);
 	if (data) {
-		rz_io_read_at(core->io, chunk + SZ * 2, (ut8 *)data, size);
+		rz_io_read_at_mapped(core->io, chunk + SZ * 2, (ut8 *)data, size);
 		PRINT_GA("chunk data = \n");
 		rz_core_print_hexdump(core, chunk + SZ * 2, (ut8 *)data, size, SZ * 8, SZ, 1);
 		free(data);
@@ -1110,7 +1110,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 		return -1;
 	}
 
-	rz_io_read_at(core->io, bin, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	rz_io_read_at_mapped(core->io, bin, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 
 	PRINTF_GA("    0x%" PFMT64x, (ut64)bin);
 	if (cnk->fd != bin) {
@@ -1124,7 +1124,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 			free(cnk);
 			return -1;
 		}
-		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	}
 
 	PRINTF_GA("->fd = 0x%" PFMT64x, (ut64)cnk->fd);
@@ -1135,7 +1135,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 		free(cnk);
 		return -1;
 	}
-	(void)rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	(void)rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	PRINTF_GA("\n    0x%" PFMT64x, (ut64)bin);
 
 	while (cnk->bk != bin) {
@@ -1146,7 +1146,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 			free(cnk);
 			return -1;
 		}
-		(void)rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		(void)rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	}
 
 	PRINTF_GA("->bk = 0x%" PFMT64x, (ut64)cnk->bk);
@@ -1169,7 +1169,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 	}
 	g->can->color = rz_config_get_i(core->config, "scr.color");
 
-	(void)rz_io_read_at(core->io, bin, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	(void)rz_io_read_at_mapped(core->io, bin, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	snprintf(title, sizeof(title) - 1, "bin @ 0x%" PFMT64x "\n", (ut64)bin);
 	snprintf(chunk, sizeof(chunk) - 1, "fd: 0x%" PFMT64x "\nbk: 0x%" PFMT64x "\n",
 		(ut64)cnk->fd, (ut64)cnk->bk);
@@ -1185,7 +1185,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 			return -1;
 		}
 
-		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		snprintf(title, sizeof(title) - 1, "Chunk @ 0x%" PFMT64x "\n", (ut64)next);
 		snprintf(chunk, sizeof(chunk) - 1, "fd: 0x%" PFMT64x "\nbk: 0x%" PFMT64x "\n",
 			(ut64)cnk->fd, (ut64)cnk->bk);
@@ -1332,7 +1332,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		item->status = rz_str_dup("free");
 		rz_list_append(heap_bin->chunks, item);
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->top) {
-			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+			rz_io_read_at_mapped(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			next_tmp = GH(get_next_pointer)(core, next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
@@ -1342,7 +1342,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 				break;
 			}
 		}
-		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		next = GH(get_next_pointer)(core, next, cnk->fd);
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			char message[50];
@@ -1466,8 +1466,8 @@ RZ_API void GH(tcache_free)(GH(RTcache) * tcache) {
 static bool GH(tcache_read)(RzCore *core, GHT tcache_start, GH(RTcache) * tcache) {
 	rz_return_val_if_fail(core && tcache, false);
 	return tcache->type == NEW
-		? rz_io_read_at(core->io, tcache_start, (ut8 *)tcache->RzHeapTcache.heap_tcache, sizeof(GH(RzHeapTcache)))
-		: rz_io_read_at(core->io, tcache_start, (ut8 *)tcache->RzHeapTcache.heap_tcache_pre_230, sizeof(GH(RzHeapTcachePre230)));
+		? rz_io_read_at_mapped(core->io, tcache_start, (ut8 *)tcache->RzHeapTcache.heap_tcache, sizeof(GH(RzHeapTcache)))
+		: rz_io_read_at_mapped(core->io, tcache_start, (ut8 *)tcache->RzHeapTcache.heap_tcache_pre_230, sizeof(GH(RzHeapTcachePre230)));
 }
 
 static int GH(tcache_get_count)(GH(RTcache) * tcache, int index) {
@@ -1739,7 +1739,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 		if (!heap_info) {
 			return;
 		}
-		rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
+		rz_io_read_at_mapped(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
 		GH(print_inst_minfo)(core, heap_info, h_info);
 		MallocState *ms = RZ_NEW0(MallocState);
 		if (!ms) {
@@ -1755,7 +1755,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 			}
 			if ((ms->top >> 16) << 16 != h_info) {
 				h_info = (ms->top >> 16) << 16;
-				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
+				rz_io_read_at_mapped(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
 				GH(print_inst_minfo)(core, heap_info, h_info);
 			}
 		}
@@ -1818,7 +1818,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 		return NULL;
 	}
 
-	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
+	(void)rz_io_read_at_mapped(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
 
 	if (head->fd == fw) {
 		return bin;
@@ -1853,7 +1853,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 			bin->message = rz_str_dup("Corrupted list");
 			break;
 		}
-		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		rz_io_read_at_mapped(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
 		if (!chunk) {
 			break;
@@ -2189,7 +2189,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 		return chunks;
 	}
 
-	(void)rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	(void)rz_io_read_at_mapped(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
@@ -2214,7 +2214,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 		if (fastbin) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT idx = (GHT)main_arena->fastbinsY[i];
-			(void)rz_io_read_at(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+			(void)rz_io_read_at_mapped(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			GHT next = GH(get_next_pointer)(core, idx, cnk->fd);
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
@@ -2226,7 +2226,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 						double_free = true;
 						break;
 					}
-					(void)rz_io_read_at(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
+					(void)rz_io_read_at_mapped(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
 					GHT next_node = GH(get_next_pointer)(core, next, cnk_next->fd);
 					// avoid triple while?
 					while (next_node && next_node >= brk_start && next_node < main_arena->top) {
@@ -2234,14 +2234,14 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 							double_free = true;
 							break;
 						}
-						(void)rz_io_read_at(core->io, next_node, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
+						(void)rz_io_read_at_mapped(core->io, next_node, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
 						next_node = GH(get_next_pointer)(core, next_node, cnk_next->fd);
 					}
 					if (double_free) {
 						break;
 					}
 				}
-				(void)rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+				(void)rz_io_read_at_mapped(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 				next = GH(get_next_pointer)(core, next, cnk->fd);
 			}
 			if (double_free) {
@@ -2273,7 +2273,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 						tcache_fd = entry;
 						int n;
 						for (n = 1; n < count; n++) {
-							bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+							bool r = rz_io_read_at_mapped(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
 							if (!r) {
 								break;
 							}
@@ -2293,7 +2293,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *GH(rz_heap_chunks_list)(RzCore *core,
 
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
-		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		rz_io_read_at_mapped(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
 		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 		if (!block) {

@@ -80,7 +80,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		if ((i + bs) > size) {
 			bs = size - i;
 		}
-		rz_io_read_at(core->io, addr + i, buf, bs);
+		rz_io_read_at_mapped(core->io, addr + i, buf, bs);
 		if (fwrite(buf, bs, 1, fd) < 1) {
 			RZ_LOG_ERROR("core: cannot write to buffer\n");
 			break;
@@ -233,7 +233,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 		res = false;
 	} else {
 		rz_io_use_fd(core->io, core->file->fd);
-		rz_io_read_at(core->io, addr, shift_buf, b_size);
+		rz_io_read_at_mapped(core->io, addr, shift_buf, b_size);
 		rz_io_write_at(core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
@@ -244,7 +244,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 
 RZ_API int rz_core_block_read(RzCore *core) {
 	if (core && core->block) {
-		return rz_io_read_at(core->io, core->offset, core->block, core->blocksize);
+		return rz_io_read_at_mapped(core->io, core->offset, core->block, core->blocksize);
 	}
 	return -1;
 }

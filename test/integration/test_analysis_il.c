@@ -88,7 +88,7 @@ static bool test_analysis_il() {
 
 	ut64 obj_seckrit = rz_num_get(core->num, "obj.seckrit");
 	// New file mapping from 0x0-0xf
-	rz_core_file_malloc_copy_chunk(core, 0x10, obj_seckrit); 
+	rz_core_file_malloc_copy_chunk(core, 0x10, obj_seckrit);
 
 	RzIOMap *map = rz_io_map_get(core->io, 0);
 	rz_io_map_remap(core->io, map->id, obj_seckrit);
@@ -101,7 +101,7 @@ static bool test_analysis_il() {
 	mu_assert("eval rzil", rz_core_il_step_until(core, 0x914));
 	char buf[0x20];
 	obj_seckrit = rz_num_get(core->num, "obj.seckrit");
-	rz_io_read_at(core->io, obj_seckrit, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
+	rz_io_read_at_mapped(core->io, obj_seckrit, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
 	mu_assert_streq(buf, "Hello from RzIL!", "eval rzil in function");
 
 	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);

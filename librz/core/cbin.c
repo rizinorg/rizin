@@ -161,7 +161,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				ut64 addr = rz_num_get(NULL, off);
 				ut8 *buf = malloc(fmtsize);
 				if (buf) {
-					rz_io_read_at(core->io, addr, buf, fmtsize);
+					rz_io_read_at_mapped(core->io, addr, buf, fmtsize);
 					char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
 						fmtsize, v, 0, NULL, NULL);
 					free(buf);
@@ -2949,7 +2949,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_core_bin_whole_strings(RZ_NONNUL
 		if (!tmp) {
 			return NULL;
 		}
-		rz_io_read_at(core->io, 0, tmp, bf->size);
+		rz_io_read_at_mapped(core->io, 0, tmp, bf->size);
 		rz_buf_write_at(bf->buf, 0, tmp, bf->size);
 	}
 	if (!core->file) {
