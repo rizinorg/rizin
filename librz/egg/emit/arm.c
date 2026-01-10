@@ -119,7 +119,7 @@ static void emit_set_string(RzEgg *egg, const char *dstvar, const char *str, int
 	}
 	rz_egg_printf(egg, "  sub r0, pc, %d\n", off + 12);
 	{
-		char str[32], *p = rz_egg_mkvar(egg, str, dstvar, 0);
+		char str[32], *p = rz_egg_lang_mkvar(egg, str, dstvar, 0);
 		// rz_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
 		rz_egg_printf(egg, "  str r0, [%s]\n", p);
 		free(p);
@@ -254,7 +254,7 @@ static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, 
 	if (*arg == '=') {
 		arg++; /* for <=, >=, ... */
 	}
-	p = rz_egg_mkvar(egg, str, arg, 0);
+	p = rz_egg_lang_mkvar(egg, str, arg, 0);
 	rz_egg_printf(egg, "  pop " RZ_AX "\n"); /* TODO: add support for more than one arg get arg0 */
 	rz_egg_printf(egg, "  cmp %s, " RZ_AX "\n", p);
 	// if (context>0)

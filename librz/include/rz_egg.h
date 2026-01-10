@@ -185,9 +185,9 @@ static inline int rz_egg_plugin_cmp(RZ_NULLABLE const RzEggPlugin *a, RZ_NULLABL
 }
 
 #ifdef RZ_API
+
+/* egg.c */
 RZ_API RzEgg *rz_egg_new(void);
-RZ_API void rz_egg_lang_init(RzEgg *egg);
-RZ_API void rz_egg_lang_free(RzEgg *egg);
 RZ_API const char *rz_egg_os_as_string(int os);
 RZ_API char *rz_egg_to_string(RzEgg *egg);
 RZ_API void rz_egg_free(RzEgg *egg);
@@ -199,7 +199,6 @@ RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
 RZ_API void rz_egg_load(RzEgg *egg, const char *code, int format);
 RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file);
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len);
 RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
@@ -207,14 +206,12 @@ RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name);
 #define rz_egg_get_shellcodes(x) x->plugins
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *k, const char *v);
 RZ_API char *rz_egg_option_get(RzEgg *egg, const char *k);
-RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v);
 RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_egg_compile(RzEgg *egg);
 RZ_API int rz_egg_padding(RzEgg *egg, const char *pad);
 RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API bool rz_egg_pattern(RzEgg *egg, int size);
-// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 RZ_API char *rz_egg_get_source(RzEgg *egg);
 RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg);
 RZ_API char *rz_egg_get_assembly(RzEgg *egg);
@@ -225,11 +222,13 @@ RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *b, int l);
 RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 val, ut32 bits);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
-/* rz_egg_Cfile.c */
+/* egg_c_compile.c */
 RZ_API RZ_OWN char *rz_egg_compile_c_source(RZ_NONNULL const char *source_file, RZ_NONNULL const char *arch, RZ_NONNULL const char *os, int bits, RZ_BORROW RZ_NONNULL RzPath *sys_path);
 
-/* lang.c */
-RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta);
+/* egg_lang.c */
+RZ_API void rz_egg_lang_init(RzEgg *egg);
+RZ_API void rz_egg_lang_free(RzEgg *egg);
+RZ_API char *rz_egg_lang_mkvar(RzEgg *egg, char *out, const char *_str, int delta);
 RZ_API int rz_egg_lang_parsechar(RzEgg *egg, char c);
 RZ_API void rz_egg_lang_include_path(RzEgg *egg, const char *path);
 RZ_API void rz_egg_lang_include_init(RzEgg *egg);
