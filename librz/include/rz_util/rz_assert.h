@@ -41,7 +41,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	} while (0)
 
 /*
- * RZ_CHECKS_LEVEL determines the behaviour of the rz_return_* set of functions.
+ * RZ_CHECKS_LEVEL determines the behaviour of the rz_return/goto_* set of functions.
  *
  * 0: completely disable every function and make them like no-operation
  * 1: silently enable checks. Check expressions and do return, but do not log anything
@@ -145,7 +145,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); jumping to %s\n", RZ_FUNCTION, #expr, __LINE__, #where); \
 			goto where; \
 		} \
 	} while (0)
