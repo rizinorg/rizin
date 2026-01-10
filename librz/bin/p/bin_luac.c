@@ -157,6 +157,43 @@ static void destroy(RzBinFile *bf) {
 	luac_build_info_free(bin_info_obj);
 }
 
+static RzStructuredData *luac_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj && bf->buf, NULL);
+
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	RzBuffer *buffer = bf->buf;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *luac = rz_structured_data_map_add_map(info, "luac");
+	if (!luac) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	ut8 magic[LUAC_MAGIC_SIZE];
+	rz_buf_read_at(buffer, LUAC_MAGIC_OFFSET, magic, LUAC_MAGIC_SIZE);
+	char *magic_hex = rz_hex_bin2strdup(magic, LUAC_MAGIC_SIZE);
+	rz_structured_data_map_add_string(luac, "magic", rz_str_get(magic_hex));
+	free(magic_hex);
+
+	char version_str[8];
+	rz_strf(version_str, "%d.%d", bin_info_obj->major, bin_info_obj->minor);
+	rz_structured_data_map_add_string(luac, "version", version_str);
+	rz_structured_data_map_add_unsigned(luac, "major", bin_info_obj->major, false);
+	rz_structured_data_map_add_unsigned(luac, "minor", bin_info_obj->minor, false);
+
+	ut8 format;
+	if (rz_buf_read8_at(buffer, 0x05, &format)) {
+		rz_structured_data_map_add_unsigned(luac, "format", format, false);
+	}
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
 	.desc = "Lua compiled binary",
@@ -173,6 +210,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.symbols = &symbols,
 	.info = &info,
 	.strings = &strings,
+	.bin_structure = &luac_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

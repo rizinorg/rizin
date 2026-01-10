@@ -230,6 +230,57 @@ static ut64 size(RzBinFile *bf) {
 	return text + data + syms + spsz + (6 * 4);
 }
 
+static RzStructuredData *p9_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->buf, NULL);
+
+	if (rz_buf_size(bf->buf) < 32) {
+		return NULL;
+	}
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *p9 = rz_structured_data_map_add_map(info, "plan9");
+	if (!p9) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	ut32 magic, text, data, bss, syms, entry, spsz, pcsz;
+	if (!rz_buf_read_le32_at(bf->buf, 0, &magic) ||
+		!rz_buf_read_le32_at(bf->buf, 4, &text) ||
+		!rz_buf_read_le32_at(bf->buf, 8, &data) ||
+		!rz_buf_read_le32_at(bf->buf, 12, &bss) ||
+		!rz_buf_read_le32_at(bf->buf, 16, &syms) ||
+		!rz_buf_read_le32_at(bf->buf, 20, &entry) ||
+		!rz_buf_read_le32_at(bf->buf, 24, &spsz) ||
+		!rz_buf_read_le32_at(bf->buf, 28, &pcsz)) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(p9, "magic", magic, true);
+	rz_structured_data_map_add_unsigned(p9, "text_size", text, true);
+	rz_structured_data_map_add_unsigned(p9, "data_size", data, true);
+	rz_structured_data_map_add_unsigned(p9, "bss_size", bss, true);
+	rz_structured_data_map_add_unsigned(p9, "syms_size", syms, true);
+	rz_structured_data_map_add_unsigned(p9, "entry", entry, true);
+	rz_structured_data_map_add_unsigned(p9, "spsz", spsz, true);
+	rz_structured_data_map_add_unsigned(p9, "pcsz", pcsz, true);
+
+	int bits = 32, big_endian = 0;
+	int arch = rz_bin_p9_get_arch(bf->buf, &bits, &big_endian);
+	if (arch) {
+		rz_structured_data_map_add_string(p9, "arch", rz_sys_arch_str(arch));
+		rz_structured_data_map_add_unsigned(p9, "bits", bits, false);
+		rz_structured_data_map_add_boolean(p9, "big_endian", big_endian);
+	}
+
+	return info;
+}
+
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
@@ -268,6 +319,7 @@ RzBinPlugin rz_bin_plugin_p9 = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
+	.bin_structure = &p9_structure,
 	.create = &create,
 };
 

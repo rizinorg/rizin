@@ -1,3 +1,16 @@
+NAME=pyc structured data (iH)
+FILE=bins/pyc/py37.pyc
+CMDS=iH 2>/dev/null
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d0d42
+  version: "v3.7.0"
+  revision: "ae1f6af15f3e4110616801e235873e47fd7d1977"
+  code_start_offset: 0x0
+
+EOF
+RUN
+
 NAME=pyc load version314
 FILE=bins/pyc/pyc314.pyc
 CMDS=<<EOF

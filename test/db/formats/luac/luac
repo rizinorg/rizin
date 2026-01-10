@@ -1,3 +1,17 @@
+NAME=LUAC: structured data (iH)
+FILE=bins/luac/none.luac
+CMDS=iH
+EXPECT=<<EOF
+luac:
+  magic: "1b4c7561"
+  version: "5.4"
+  major: 5
+  minor: 4
+  format: 0
+
+EOF
+RUN
+
 NAME=LUAC: plugin load
 FILE=bins/luac/none.luac
 CMDS=<<EOF

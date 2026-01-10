@@ -99,6 +99,13 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	return buf;
 }
 
+static RzStructuredData *cgc_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = (ELFOBJ *)bf->o->bin_obj;
+	return elf_structure(bin);
+}
+
 RzBinPlugin rz_bin_plugin_cgc = {
 	.name = "cgc",
 	.desc = "CGC (Cyber Grand Challenge)",
@@ -118,6 +125,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.symbols = &elf_symbols,
 	.imports = &elf_imports,
 	.info = &elf_info,
+	.bin_structure = &cgc_structure,
 	.fields = &elf_fields,
 	.size = &elf_size,
 	.libs = &elf_libs,

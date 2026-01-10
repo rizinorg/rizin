@@ -1,3 +1,29 @@
+NAME=omf structured data (iH) 16 bits
+FILE=bins/omf/hello_world
+CMDS=iH
+EXPECT=<<EOF
+omf:
+  bits: 16
+  num_names: 3
+  num_sections: 2
+  num_symbols: 1
+
+EOF
+RUN
+
+NAME=omf structured data (iH) 32 bits
+FILE=bins/omf/hello_world32
+CMDS=iH
+EXPECT=<<EOF
+omf:
+  bits: 32
+  num_names: 7
+  num_sections: 2
+  num_symbols: 1
+
+EOF
+RUN
+
 NAME=load 16 bits omf
 FILE=bins/omf/hello_world
 CMDS=iI~bits

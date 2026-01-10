@@ -1,3 +1,23 @@
+NAME=Plan9: structured data (iH)
+FILE=bins/plan9/bin
+CMDS=iH 2>/dev/null
+EXPECT=<<EOF
+plan9:
+  magic: 0xeb010000
+  text_size: 0x364a0701
+  data_size: 0x408a0500
+  bss_size: 0x609d0100
+  syms_size: 0x0
+  entry: 0x40ee0400
+  spsz: 0x0
+  pcsz: 0x0
+  arch: "x86"
+  bits: 32
+  big_endian: false
+
+EOF
+RUN
+
 NAME=Plan9: Open/iI
 FILE=bins/plan9/bin
 CMDS=iI~?plan9

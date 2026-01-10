@@ -6,6 +6,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=CGC: structured data (iH)
+FILE=bins/cgc/CADET_00001
+CMDS=iH~ei_osabi,ei_class
+EXPECT=<<EOF
+    ei_class: 1
+    ei_osabi: 67
+EOF
+RUN
+
 NAME=CGC: Create
 FILE==
 CMDS=<<EOF

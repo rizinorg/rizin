@@ -366,6 +366,64 @@ static ut64 baddr(RzBinFile *bf) {
 	return obj->header.base;
 }
 
+static RzStructuredData *xbe_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
+	xbe_header *h = &obj->header;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *xbe = rz_structured_data_map_add_map(info, "xbe");
+	if (!xbe) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	char magic[5] = { 0 };
+	memcpy(magic, h->magic, 4);
+	rz_structured_data_map_add_string(xbe, "magic", magic);
+
+	char *signature_hex = rz_hex_bin2strdup(h->signature, sizeof(h->signature));
+	rz_structured_data_map_add_string(xbe, "signature", rz_str_get(signature_hex));
+	free(signature_hex);
+
+	rz_structured_data_map_add_unsigned(xbe, "base_address", h->base, true);
+	rz_structured_data_map_add_unsigned(xbe, "headers_size", h->headers_size, true);
+	rz_structured_data_map_add_unsigned(xbe, "image_size", h->image_size, true);
+	rz_structured_data_map_add_unsigned(xbe, "image_header_size", h->image_header_size, true);
+	rz_structured_data_map_add_unsigned(xbe, "timestamp", h->timestamp, true);
+	rz_structured_data_map_add_unsigned(xbe, "certificate_address", h->cert_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "num_sections", h->sections, false);
+	rz_structured_data_map_add_unsigned(xbe, "section_headers_address", h->sechdr_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "init_flags", h->init_flags, true);
+	rz_structured_data_map_add_unsigned(xbe, "entry_point_encrypted", h->ep, true);
+	rz_structured_data_map_add_unsigned(xbe, "entry_point", h->ep ^ obj->ep_key, true);
+	rz_structured_data_map_add_unsigned(xbe, "tls_address", h->tls_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "debug_path_address", h->debug_path_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "debug_name_address", h->debug_name_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "kernel_thunk_address_encrypted", h->kernel_thunk_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "kernel_thunk_address", h->kernel_thunk_addr ^ obj->kt_key, true);
+	rz_structured_data_map_add_unsigned(xbe, "nonkernel_import_dir_address", h->nonkernel_import_dir_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "num_library_versions", h->lib_versions, false);
+	rz_structured_data_map_add_unsigned(xbe, "library_versions_address", h->lib_versions_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "kernel_library_address", h->kernel_lib_addr, true);
+	rz_structured_data_map_add_unsigned(xbe, "xapi_library_address", h->xapi_lib_addr, true);
+
+	const char *xbe_type = "retail";
+	if ((h->ep & 0xf0000000) == 0x40000000) {
+		xbe_type = "chihiro";
+	} else if ((h->ep ^ XBE_EP_RETAIL) > 0x1000000) {
+		xbe_type = "debug";
+	}
+	rz_structured_data_map_add_string(xbe, "xbe_type", xbe_type);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_xbe = {
 	.name = "xbe",
 	.desc = "Microsoft Xbox XBE (Xbox Executable)",
@@ -382,6 +440,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.symbols = &symbols,
 	.info = &info,
 	.libs = &libs,
+	.bin_structure = &xbe_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

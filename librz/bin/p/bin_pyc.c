@@ -167,6 +167,30 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
+static RzStructuredData *pyc_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	RzBinPycObj *ctx = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *pyc = rz_structured_data_map_add_map(info, "pyc");
+	if (!pyc) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(pyc, "magic", ctx->version.magic, true);
+	rz_structured_data_map_add_string(pyc, "version", rz_str_get(ctx->version.version));
+	rz_structured_data_map_add_string(pyc, "revision", rz_str_get(ctx->version.revision));
+	rz_structured_data_map_add_unsigned(pyc, "code_start_offset", ctx->code_start_offset, true);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python byte-compiled",
@@ -180,7 +204,8 @@ RzBinPlugin rz_bin_plugin_pyc = {
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.strings = &strings,
-	.destroy = &destroy
+	.destroy = &destroy,
+	.bin_structure = &pyc_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

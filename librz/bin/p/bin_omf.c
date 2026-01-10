@@ -162,6 +162,31 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 
+static RzStructuredData *omf_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	rz_bin_omf_obj *obj = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *omf = rz_structured_data_map_add_map(info, "omf");
+	if (!omf) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	int bits = rz_bin_omf_get_bits(obj);
+	rz_structured_data_map_add_unsigned(omf, "bits", bits, false);
+	rz_structured_data_map_add_unsigned(omf, "num_names", obj->nb_name, false);
+	rz_structured_data_map_add_unsigned(omf, "num_sections", obj->nb_section, false);
+	rz_structured_data_map_add_unsigned(omf, "num_symbols", obj->nb_symbol, false);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "OMF (Object Module Format)",
@@ -176,6 +201,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
+	.bin_structure = &omf_structure,
 	.get_vaddr = &get_vaddr,
 };
 

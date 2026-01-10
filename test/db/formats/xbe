@@ -1,3 +1,36 @@
+NAME=xbe structured data (iH)
+FILE=bins/xbe/default.xbe
+CMDS=iH
+EXPECT=<<EOF
+xbe:
+  magic: "XBEH"
+  signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  base_address: 0x10000
+  headers_size: 0x742
+  image_size: 0x134ac4
+  image_header_size: 0x178
+  timestamp: 0x3dd817da
+  certificate_address: 0x10178
+  num_sections: 5
+  section_headers_address: 0x10348
+  init_flags: 0x0
+  entry_point_encrypted: 0xa8fd47ab
+  entry_point: 0x11000
+  tls_address: 0x0
+  debug_path_address: 0x1048b
+  debug_name_address: 0x1048b
+  kernel_thunk_address_encrypted: 0x5b6c5676
+  kernel_thunk_address: 0x116c0
+  nonkernel_import_dir_address: 0x0
+  num_library_versions: 0
+  library_versions_address: 0x0
+  kernel_library_address: 0x0
+  xapi_library_address: 0x0
+  xbe_type: "retail"
+
+EOF
+RUN
+
 NAME=loading an xbe file
 FILE=bins/xbe/default.xbe
 CMDS=q!
