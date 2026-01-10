@@ -3849,6 +3849,33 @@ end:
 	analysis->coreb.archbits = archbits;
 }
 
+static void populate_global_vars_from_symbols(RzCore *core) {
+	RzBinFile *bf = core->bin->cur;
+	if (!bf || !bf->o || !bf->o->symbols) {
+		return;
+	}
+	void **it;
+	rz_pvector_foreach (bf->o->symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (!sym || !sym->name || !sym->bind || !sym->type) {
+			continue;
+		}
+		if (strcmp(sym->bind, RZ_BIN_BIND_GLOBAL_STR) != 0) {
+			continue;
+		}
+		if (strcmp(sym->type, RZ_BIN_TYPE_OBJECT_STR) != 0) {
+			continue;
+		}
+		if (rz_analysis_var_global_get_byaddr_in(core->analysis, sym->vaddr)) {
+			continue;
+		}
+		RzAnalysisVarGlobal *gv = rz_analysis_var_global_new(sym->name, sym->vaddr);
+		if (gv) {
+			rz_analysis_var_global_add(core->analysis, gv);
+		}
+	}
+}
+
 static bool is_unknown_file(RzCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
 		return (rz_pvector_empty(core->bin->cur->o->sections));
@@ -4373,17 +4400,14 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 }
 
 static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzCmdStateOutput *state) {
-	char *var_type = rz_type_as_string(analysis->typedb, glob->type);
-	if (!var_type) {
-		return;
-	}
-	ut64 var_size = rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8;
+	char *var_type = glob->type ? rz_type_as_string(analysis->typedb, glob->type) : NULL;
+	ut64 var_size = glob->type ? rz_type_db_get_bitsize(analysis->typedb, glob->type) / 8 : 0;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_println(glob->name);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("global %s %s @ 0x%" PFMT64x, var_type, glob->name, glob->addr);
+		rz_cons_printf("global %s %s @ 0x%" PFMT64x, var_type ? var_type : "unknown", glob->name, glob->addr);
 		if (RZ_STR_ISNOTEMPTY(glob->coord.decl_file)) {
 			rz_cons_printf(" %s:%" PFMT32d "%" PFMT32d "\n",
 				glob->coord.decl_file, glob->coord.decl_line, glob->coord.decl_col);
@@ -4395,7 +4419,7 @@ static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzC
 		PJ *pj = state->d.pj;
 		pj_o(pj);
 		pj_ks(pj, "name", glob->name);
-		pj_ks(pj, "type", var_type);
+		pj_ks(pj, "type", var_type ? var_type : "unknown");
 		pj_kn(pj, "size", var_size);
 		char addr[32];
 		rz_strf(addr, "0x%" PFMT64x, glob->addr);
@@ -4410,7 +4434,7 @@ static void var_global_show(RzAnalysis *analysis, RzAnalysisVarGlobal *glob, RzC
 		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE: {
-		rz_table_add_rowf(state->d.t, "ssxxsdd", glob->name, var_type, var_size, glob->addr,
+		rz_table_add_rowf(state->d.t, "ssxxsdd", glob->name, var_type ? var_type : "unknown", var_size, glob->addr,
 			RZ_STR_ISNOTEMPTY(glob->coord.decl_file) ? glob->coord.decl_file : "-",
 			glob->coord.decl_line, glob->coord.decl_col);
 		break;
@@ -5928,6 +5952,8 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 		debugger = core->dbg->cur ? rz_str_dup(core->dbg->cur->name) : rz_str_dup("esil");
 	}
 	rz_cons_clear_line(stderr);
+
+	populate_global_vars_from_symbols(core);
 
 	// if type was simple only then don't proceed further
 	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
