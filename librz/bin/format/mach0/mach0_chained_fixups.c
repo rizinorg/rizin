@@ -197,7 +197,10 @@ RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset
 		return false;
 	}
 	ut64 cursor = starts_at + sizeof(ut32);
-	size_t max_count = RZ_MAX(bin->nsegs, cf->starts_count);
+	size_t max_count = bin->nsegs;
+	if (max_count > cf->starts_count) {
+		max_count = cf->starts_count;
+	}
 	for (size_t i = 0; i < max_count; i++) {
 		ut32 seg_off = 0;
 		if (!rz_buf_read_le32_at(bin->b, cursor, &seg_off)) {
