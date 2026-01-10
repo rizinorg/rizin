@@ -95,7 +95,7 @@ d "ld [iy+0x00], d" fd7200
 d "ld [iy+0x00], e" fd7300
 d "ld [iy+0x00], h" fd7400
 d "ld [iy+0x00], l" fd7500
-d "ld a, 0x00" 3e00
+ad "ld a, 0x00" 3e00
 d "ld a, [0x0000]" 3a0000
 d "ld a, [bc]" 0a
 d "ld a, [de]" 1a
@@ -115,7 +115,7 @@ d "ld a, iyh" fd7c
 d "ld a, iyl" fd7d
 d "ld a, l" 7d
 d "ld a, r" ed5f
-d "ld b, 0x00" 0600
+ad "ld b, 0x00" 0600
 d "ld b, [hl]" 46
 d "ld b, [ix+0x00]" dd4600
 d "ld b, [iy+0x00]" fd4600
@@ -132,7 +132,7 @@ d "ld b, iyl" fd45
 d "ld b, l" 45
 d "ld bc, 0x0000" 010000
 d "ld bc, [0x0000]" ed4b0000
-d "ld c, 0x00" 0e00
+ad "ld c, 0x00" 0e00
 d "ld c, [hl]" 4e
 d "ld c, [ix+0x00]" dd4e00
 d "ld c, [iy+0x00]" fd4e00
@@ -164,7 +164,7 @@ d "ld d, iyl" fd55
 d "ld d, l" 55
 d "ld de, 0x0000" 110000
 d "ld de, [0x0000]" ed5b0000
-d "ld e, 0x00" 1e00
+ad "ld e, 0x00" 1e00
 d "ld e, [hl]" 5e
 d "ld e, [ix+0x00]" dd5e00
 d "ld e, [iy+0x00]" fd5e00
@@ -229,7 +229,7 @@ d "ld iyl, d" fd6a
 d "ld iyl, e" fd6b
 d "ld iyl, iyh" fd6c
 d "ld iyl, iyl" fd6d
-d "ld l, 0x00" 2e00
+ad "ld l, 0x00" 2e00
 d "ld l, [hl]" 6e
 d "ld l, [ix+0x00]" dd6e00
 d "ld l, [iy+0x00]" fd6e00
