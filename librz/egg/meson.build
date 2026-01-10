@@ -16,7 +16,7 @@ egg_plugins = {
 
 rz_egg_sources = [
   'egg.c',
-  'egg_Cfile.c',
+  'egg_c_compile.c',
   'egg_lang.c',
   'emit_arm.c',
   'emit_trace.c',
