@@ -155,7 +155,7 @@ bool test_rop_cache(void) {
 	ut64 key = rz_str_djb2_hash(filter);
 
 	RzCmdStateOutput state;
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
 
 	RzRopSearchContext *ctx = rz_core_rop_search_context_new(
 		core, filter, false, RZ_ROP_GADGET_PRINT, RZ_ROP_DETAIL_SEARCH_NON, &state);
