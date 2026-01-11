@@ -24,7 +24,6 @@ static void add_class_base(RzAnalysis *analysis, char *class_name, char *super_c
 }
 
 static void rz_add_swift_base_classes(RzAnalysis *analysis, RzBinClass *bin_class, HtUP *swift_metaclass_info) {
-	RzCore *core = analysis->core;
 	RzList *fields = bin_class->fields;
 	RzListIter *iter;
 	RzBinClassField *field;
@@ -47,7 +46,7 @@ static void rz_add_swift_base_classes(RzAnalysis *analysis, RzBinClass *bin_clas
 	// it should be address to type metadata of superclass
 	ut64 super_vaddr = 0;
 	ut8 buffer[sizeof(ut64)] = { 0 };
-	if (rz_io_nread_at(core->io, vaddr, (ut8 *)&buffer, sizeof(super_vaddr))) {
+	if (analysis->iob.read_at(analysis->iob.io, vaddr, (ut8 *)&buffer, sizeof(super_vaddr))) {
 		super_vaddr = rz_read_ble64(buffer, analysis->big_endian);
 	}
 	bool found = false;
