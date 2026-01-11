@@ -164,6 +164,13 @@ rz_il_files = [
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 
+rz_memory_files = [
+  'rz_memory/rz_memory.h',
+  'rz_memory/rz_memory_map.h',
+  'rz_memory/rz_memory_region.h',
+]
+install_headers(rz_memory_files, install_dir: join_paths(rizin_incdir, 'rz_memory'))
+
 rz_crypto_files = [
   'rz_crypto/rz_des.h',
   'rz_crypto/rz_aes.h',

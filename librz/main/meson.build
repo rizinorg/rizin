@@ -23,6 +23,7 @@ rz_main_deps = [
   rz_crypto_dep,
   rz_il_dep,
   rz_io_dep,
+  rz_memory_dep,
   rz_reg_dep,
   rz_syscall_dep,
   rz_arch_dep,
