@@ -341,14 +341,9 @@ static inline ut128 rz_read_be128(const void *src) {
 		val.Low = UT64_MAX;
 		return val;
 	}
-#if RZ_HOST_IS_BIG_ENDIAN
-	memcpy(&val, src, sizeof(val));
-	return val;
-#else
 	val.High = rz_read_be64(src);
 	val.Low = rz_read_at_be64(src, sizeof(ut64));
 	return val;
-#endif
 }
 
 /**
@@ -376,12 +371,8 @@ static inline ut128 rz_read_at_be128(const void *src, size_t offset) {
  * \param val The written 128-bit value.
  */
 static inline void rz_write_be128(void *dest, ut128 val) {
-#if RZ_HOST_IS_BIG_ENDIAN
-	memcpy(dest, &val, sizeof(val));
-#else
 	rz_write_be64(dest, val.High);
 	rz_write_at_be64(dest, val.Low, sizeof(ut64));
-#endif
 }
 
 /**
