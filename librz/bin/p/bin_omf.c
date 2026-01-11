@@ -162,6 +162,167 @@ static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 
+#define OMF_MAX_DATA_BLOCKS 100
+
+static const char *omf_segment_name(rz_bin_omf_obj *obj, OMF_segment *seg) {
+	if (!seg || seg->name_idx == 0 || seg->name_idx > obj->nb_name || !obj->names) {
+		return NULL;
+	}
+	return obj->names[seg->name_idx - 1];
+}
+
+static void omf_structure_add_names(RzStructuredData *omf, rz_bin_omf_obj *obj) {
+	if (obj->nb_name == 0 || !obj->names) {
+		return;
+	}
+
+	RzStructuredData *names = rz_structured_data_map_add_array(omf, "names");
+	if (!names) {
+		return;
+	}
+
+	for (ut32 i = 0; i < obj->nb_name; i++) {
+		if (obj->names[i]) {
+			rz_structured_data_array_add_string(names, obj->names[i]);
+		}
+	}
+}
+
+static void omf_structure_add_data_blocks(RzStructuredData *section, OMF_segment *seg) {
+	if (!seg->data) {
+		return;
+	}
+
+	RzStructuredData *data_blocks = rz_structured_data_map_add_array(section, "data_blocks");
+	if (!data_blocks) {
+		return;
+	}
+
+	OMF_data *data = seg->data;
+	ut32 block_count = 0;
+	while (data && block_count < OMF_MAX_DATA_BLOCKS) {
+		RzStructuredData *block = rz_structured_data_array_add_map(data_blocks);
+		if (block) {
+			rz_structured_data_map_add_unsigned(block, "paddr", data->paddr, true);
+			rz_structured_data_map_add_unsigned(block, "size", data->size, false);
+			rz_structured_data_map_add_unsigned(block, "offset", data->offset, true);
+		}
+		data = data->next;
+		block_count++;
+	}
+	if (block_count >= OMF_MAX_DATA_BLOCKS && data) {
+		RZ_LOG_WARN("OMF: Maximum number of data blocks (%d) reached, some blocks may be missing\n", OMF_MAX_DATA_BLOCKS);
+	}
+}
+
+static void omf_structure_add_section(RzStructuredData *sections, OMF_segment *seg, rz_bin_omf_obj *obj) {
+	RzStructuredData *section = rz_structured_data_array_add_map(sections);
+	if (!section) {
+		return;
+	}
+
+	const char *name = omf_segment_name(obj, seg);
+	if (name) {
+		rz_structured_data_map_add_string(section, "name", rz_str_get(name));
+	}
+
+	rz_structured_data_map_add_unsigned(section, "name_idx", seg->name_idx, false);
+	rz_structured_data_map_add_unsigned(section, "vaddr", seg->vaddr, true);
+	rz_structured_data_map_add_unsigned(section, "size", seg->size, false);
+	rz_structured_data_map_add_unsigned(section, "bits", seg->bits, false);
+
+	omf_structure_add_data_blocks(section, seg);
+}
+
+static void omf_structure_add_sections(RzStructuredData *omf, rz_bin_omf_obj *obj) {
+	if (obj->nb_section == 0 || !obj->sections) {
+		return;
+	}
+
+	RzStructuredData *sections = rz_structured_data_map_add_array(omf, "sections");
+	if (!sections) {
+		return;
+	}
+
+	for (ut32 i = 0; i < obj->nb_section; i++) {
+		OMF_segment *seg = obj->sections[i];
+		if (!seg) {
+			continue;
+		}
+		omf_structure_add_section(sections, seg, obj);
+	}
+}
+
+static void omf_structure_add_symbol(RzStructuredData *symbols, OMF_symbol *sym, rz_bin_omf_obj *obj) {
+	RzStructuredData *symbol = rz_structured_data_array_add_map(symbols);
+	if (!symbol) {
+		return;
+	}
+
+	rz_structured_data_map_add_string(symbol, "name", rz_str_get(sym->name));
+	rz_structured_data_map_add_unsigned(symbol, "seg_idx", sym->seg_idx, false);
+	rz_structured_data_map_add_unsigned(symbol, "offset", sym->offset, true);
+
+	if (sym->seg_idx > 0 && sym->seg_idx <= obj->nb_section && obj->sections) {
+		OMF_segment *seg = obj->sections[sym->seg_idx - 1];
+		const char *seg_name = omf_segment_name(obj, seg);
+		rz_structured_data_map_add_string(symbol, "segment", rz_str_get(seg_name));
+	}
+
+	ut64 paddr = rz_bin_omf_get_paddr_sym(obj, sym);
+	ut64 vaddr = rz_bin_omf_get_vaddr_sym(obj, sym);
+	rz_structured_data_map_add_unsigned(symbol, "paddr", paddr, true);
+	rz_structured_data_map_add_unsigned(symbol, "vaddr", vaddr, true);
+}
+
+static void omf_structure_add_symbols(RzStructuredData *omf, rz_bin_omf_obj *obj) {
+	if (obj->nb_symbol == 0 || !obj->symbols) {
+		return;
+	}
+
+	RzStructuredData *symbols = rz_structured_data_map_add_array(omf, "symbols");
+	if (!symbols) {
+		return;
+	}
+
+	for (ut32 i = 0; i < obj->nb_symbol; i++) {
+		OMF_symbol *sym = obj->symbols[i];
+		if (!sym) {
+			continue;
+		}
+		omf_structure_add_symbol(symbols, sym, obj);
+	}
+}
+
+static RzStructuredData *omf_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	rz_bin_omf_obj *obj = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *omf = rz_structured_data_map_add_map(info, "omf");
+	if (!omf) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	int bits = rz_bin_omf_get_bits(obj);
+	rz_structured_data_map_add_unsigned(omf, "bits", bits, false);
+	rz_structured_data_map_add_unsigned(omf, "num_names", obj->nb_name, false);
+	rz_structured_data_map_add_unsigned(omf, "num_sections", obj->nb_section, false);
+	rz_structured_data_map_add_unsigned(omf, "num_symbols", obj->nb_symbol, false);
+
+	omf_structure_add_names(omf, obj);
+	omf_structure_add_sections(omf, obj);
+	omf_structure_add_symbols(omf, obj);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "OMF (Object Module Format)",
@@ -176,6 +337,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
+	.bin_structure = &omf_structure,
 	.get_vaddr = &get_vaddr,
 };
 
