@@ -920,7 +920,7 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	for (int i = 0; i < times; i++) {
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		addr += aop.size;

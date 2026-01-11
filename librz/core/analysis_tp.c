@@ -772,7 +772,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 		if (aop->ptr && aop->refptr && aop->ptr != UT64_MAX) {
 			if (type == RZ_ANALYSIS_OP_TYPE_LOAD) {
 				ut8 buf[256] = { 0 };
-				rz_io_read_at(core->io, aop->ptr, buf, sizeof(buf) - 1);
+				rz_io_read_at_mapped(core->io, aop->ptr, buf, sizeof(buf) - 1);
 				ut64 ptr = rz_read_ble(buf, core->print->big_endian, aop->refptr * 8);
 				if (ptr && ptr != UT64_MAX) {
 					RzFlagItem *f = rz_flag_get_by_spaces(core->flags, ptr, RZ_FLAGS_FS_STRINGS, NULL);

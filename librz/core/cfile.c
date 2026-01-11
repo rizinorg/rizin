@@ -1272,7 +1272,7 @@ RZ_API bool rz_core_file_malloc_copy_chunk(RzCore *core, size_t len, ut64 offset
 	if (!data) {
 		return false;
 	}
-	if (!rz_io_read_at(core->io, offset, data, len)) {
+	if (!rz_io_read_at_mapped(core->io, offset, data, len)) {
 		RZ_LOG_ERROR("Cannot read %zu bytes from offset 0x%" PFMT64x ".\n", len, offset);
 		goto err;
 	}

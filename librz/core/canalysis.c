@@ -126,7 +126,7 @@ RZ_IPI bool rz_core_get_string_at(RzCore *core, ut64 address, char **string, siz
 		address = paddress;
 	}
 
-	if (rz_io_read_at(core->io, address, tmp64, sizeof(tmp64))) {
+	if (rz_io_read_at_mapped(core->io, address, tmp64, sizeof(tmp64))) {
 		// checks if is a pointer to a string structure
 		pointer = rz_read_ble(tmp64, core->analysis->big_endian, core->analysis->bits);
 	}
@@ -663,7 +663,7 @@ static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisXRef *xref, int fcnd
 
 	if (map->perm & RZ_PERM_X) {
 		ut8 buf[64];
-		rz_io_read_at(core->io, xref->to, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, xref->to, buf, sizeof(buf));
 		bool looksLikeAFunction = rz_analysis_check_fcn(core->analysis, buf, sizeof(buf), xref->to, map->itv.addr,
 			map->itv.addr + map->itv.size);
 		if (looksLikeAFunction) {
@@ -688,7 +688,7 @@ static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisXRef *xref, int fcnd
 		ut64 offe = offs + 1024;
 		for (offs = 0; offs < offe; offs += sz, xref1.from += sz) {
 			ut8 bo[8];
-			rz_io_read_at(core->io, xref->to + offs, bo, RZ_MIN(sizeof(bo), sz));
+			rz_io_read_at_mapped(core->io, xref->to + offs, bo, RZ_MIN(sizeof(bo), sz));
 			bool be = core->analysis->big_endian;
 			switch (sz) {
 			case 1:
@@ -1018,7 +1018,7 @@ RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 			goto err_op;
 		}
 	} else {
-		if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+		if (!rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf))) {
 			goto err_op;
 		}
 		ptr = buf;
@@ -1792,7 +1792,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 				break;
 			}
 			// TODO: this can be probably enhanced
-			if (!rz_io_read_at(core->io, at, buf, core->blocksize)) {
+			if (!rz_io_read_at_mapped(core->io, at, buf, core->blocksize)) {
 				RZ_LOG_ERROR("core: failed to read at 0x%08" PFMT64x "\n", at);
 				break;
 			}
@@ -2098,7 +2098,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 		if (!rz_io_is_valid_offset(core->io, at, RZ_PERM_X)) {
 			break;
 		}
-		(void)rz_io_read_at(core->io, at, buf, bsz);
+		(void)rz_io_read_at_mapped(core->io, at, buf, bsz);
 		memset(block, -1, bsz);
 		if (!memcmp(buf, block, bsz)) {
 			at += ret;
@@ -5287,7 +5287,7 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
 	if (!ctx) {
 		goto cleanup;
 	}
-	if (!rz_io_read_at(core->io, offset, buf, len)) {
+	if (!rz_io_read_at_mapped(core->io, offset, buf, len)) {
 		goto cleanup;
 	}
 
@@ -5339,7 +5339,7 @@ RZ_API bool rz_core_analysis_hint_set_offset(RZ_NONNULL RzCore *core, RZ_NONNULL
 	rz_return_val_if_fail(core && struct_member, false);
 	RzAnalysisOp op = { 0 };
 	ut8 code[128] = { 0 };
-	if (!rz_io_read_at(core->io, core->offset, code, sizeof(code))) {
+	if (!rz_io_read_at_mapped(core->io, core->offset, code, sizeof(code))) {
 		return false;
 	}
 	bool res = false;
@@ -5566,7 +5566,7 @@ RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	rz_return_val_if_fail(core && core->analysis && RZ_STR_ISNOTEMPTY(name), false);
 
 	ut8 buf[128];
-	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+	if (!rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf))) {
 		return false;
 	}
 
@@ -5604,7 +5604,7 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
 	ut8 buf[128];
-	if (!rz_io_read_at(core->io, addr, buf, sizeof(buf))) {
+	if (!rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf))) {
 		return NULL;
 	}
 
@@ -5682,7 +5682,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 			bufi = 0;
 		}
 		if (!bufi) {
-			(void)rz_io_read_at(core->io, addr, buf, bsz);
+			(void)rz_io_read_at_mapped(core->io, addr, buf, bsz);
 		}
 		if (!memcmp(buf, block0, bsz) || !memcmp(buf, block1, bsz)) {
 			// eprintf ("Error: skipping uninitialized block \n");
@@ -5716,7 +5716,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 				}
 				if (isValidCall) {
 					ut8 buf[4];
-					rz_io_read_at(core->io, op.jump, buf, 4);
+					rz_io_read_at_mapped(core->io, op.jump, buf, 4);
 					isValidCall = memcmp(buf, "\x00\x00\x00\x00", 4);
 				}
 				if (isValidCall) {
@@ -5824,7 +5824,7 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 	int midflags = rz_config_get_i(core->config, "asm.flags.middle");
 	target = addr;
 	base = target > OPDELTA ? target - OPDELTA : 0;
-	rz_io_read_at(core->io, base, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, base, buf, sizeof(buf));
 	for (i = 0; i < sizeof(buf); i++) {
 		rz_analysis_op_init(&op);
 		ret = rz_analysis_op(core->analysis, &op, base + i,

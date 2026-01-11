@@ -1236,7 +1236,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 		if (xref->type & RZ_ANALYSIS_XREF_TYPE_CALL) {
 			RzAnalysisOp aop = { 0 };
 			ut8 buf[12];
-			rz_io_read_at(ds->core->io, xref->from, buf, sizeof(buf));
+			rz_io_read_at_mapped(ds->core->io, xref->from, buf, sizeof(buf));
 			rz_analysis_op(ds->core->analysis, &aop, xref->from, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 			if ((aop.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UCALL) {
 				RzAnalysisFunction *fcn = rz_analysis_get_function_at(ds->core->analysis, xref->to);
@@ -3504,7 +3504,7 @@ static bool ds_print_core_vmode_jump_hit(RzDisasmState *ds, int pos) {
 
 static ut64 get_ptr(RzDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof(ut64)] = { 0 };
-	rz_io_read_at(ds->core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(ds->core->io, addr, buf, sizeof(buf));
 	ut64 n64_32;
 	if (ds->core->rasm->bits == 64) {
 		n64_32 = rz_read_ble64(buf, 0);
@@ -3518,7 +3518,7 @@ static ut64 get_ptr_ble(RzDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof(ut64)] = { 0 };
 	int endian = ds->core->rasm->big_endian;
 	ut64 n64_32;
-	rz_io_read_at(ds->core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(ds->core->io, addr, buf, sizeof(buf));
 	if (ds->core->rasm->bits == 64) {
 		n64_32 = rz_read_ble64(buf, endian);
 	} else {
@@ -3945,7 +3945,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				}
 			}
 		}
-		rz_io_read_at(core->io, refaddr, (ut8 *)msg, len - 1);
+		rz_io_read_at_mapped(core->io, refaddr, (ut8 *)msg, len - 1);
 		if (refptr && ds->show_refptr) {
 			ut64 num = rz_read_ble(msg, core->print->big_endian, refptr * 8);
 			st64 n = (st64)num;
@@ -3954,7 +3954,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 				char str[128] = { 0 };
 				f = rz_flag_get_i(core->flags, refaddr);
 				if (!f && ds->show_slow) {
-					rz_io_read_at(ds->core->io, ds->analysis_op.ptr,
+					rz_io_read_at_mapped(ds->core->io, ds->analysis_op.ptr,
 						(ut8 *)str, sizeof(str) - 1);
 					str[sizeof(str) - 1] = 0;
 					if (!string_printed && str[0] && rz_str_is_printable_incl_newlines(str)) {
@@ -3978,7 +3978,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 						flag = f2_->name;
 					} else {
 						msg2 = calloc(sizeof(char), len);
-						rz_io_read_at(core->io, n, (ut8 *)msg2, len - 1);
+						rz_io_read_at_mapped(core->io, n, (ut8 *)msg2, len - 1);
 						msg2[len - 1] = 0;
 						data_kind = rz_analysis_data_kind(core->analysis, refaddr, (const ut8 *)msg2, len - 1);
 						if (data_kind == RZ_ANALYSIS_DATA_KIND_STRING) {
@@ -4261,7 +4261,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		bool emu_str_printed = false;
 		char *type = NULL;
-		(void)rz_io_read_at(esil->analysis->iob.io, *val, (ut8 *)str, sizeof(str) - 1);
+		(void)rz_io_read_at_mapped(esil->analysis->iob.io, *val, (ut8 *)str, sizeof(str) - 1);
 		str[sizeof(str) - 1] = 0;
 		ds->emuptr = *val;
 		// support cstring here
@@ -4278,7 +4278,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 				if (!(*val >> 32)) {
 					addr = addr & UT32_MAX;
 				}
-				(void)rz_io_read_at(esil->analysis->iob.io, addr,
+				(void)rz_io_read_at_mapped(esil->analysis->iob.io, addr,
 					(ut8 *)str, sizeof(str) - 1);
 				//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
 				type = rz_str_newf("(cstr 0x%08" PFMT64x ") ", addr);
@@ -4286,7 +4286,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 			} else if (rz_io_is_valid_offset(esil->analysis->iob.io, addr, 0)) {
 				ds->printed_str_addr = mem_0;
 				type = rz_str_newf("(pstr 0x%08" PFMT64x ") ", addr);
-				(void)rz_io_read_at(esil->analysis->iob.io, addr,
+				(void)rz_io_read_at_mapped(esil->analysis->iob.io, addr,
 					(ut8 *)str, sizeof(str) - 1);
 				//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
 			}
@@ -5557,13 +5557,13 @@ toro:
 		free(nbuf);
 		buf = nbuf = malloc(len);
 		if (ds->tries > 0) {
-			if (rz_io_read_at(core->io, ds->addr, buf, len)) {
+			if (rz_io_read_at_mapped(core->io, ds->addr, buf, len)) {
 				goto toro;
 			}
 		}
 		if (ds->lines < ds->nlines) {
 			// ds->addr += idx;
-			if (!rz_io_read_at(core->io, ds->addr, buf, len)) {
+			if (!rz_io_read_at_mapped(core->io, ds->addr, buf, len)) {
 				// ds->tries = -1;
 			}
 			goto toro;
@@ -6007,7 +6007,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	RzDisasmState *ds = ds_init(core);
 	if (l > core->blocksize || addr != core->offset) {
 		buf = malloc(l + 1);
-		rz_io_read_at(core->io, addr, buf, l);
+		rz_io_read_at_mapped(core->io, addr, buf, l);
 	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -6538,7 +6538,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 		b = (RzAnalysisBlock *)*locs_it;
 		ut8 *buf = malloc(b->size);
 		if (buf) {
-			rz_io_read_at(core->io, b->addr, buf, b->size);
+			rz_io_read_at_mapped(core->io, b->addr, buf, b->size);
 			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
 			free(buf);
 		} else {
@@ -6580,7 +6580,7 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	if (core->parser->subrel) {
 		core->parser->subrel_addr = reladdr;
 	}
-	rz_io_read_at(core->io, addr, buf, size);
+	rz_io_read_at_mapped(core->io, addr, buf, size);
 	rz_asm_set_pc(core->rasm, addr);
 	// use core binding to set asm.bits correctly based on the addr
 	// this is because of the hassle of arm/thumb

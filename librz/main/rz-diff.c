@@ -1530,7 +1530,7 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 		goto exit;
 	}
 
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
