@@ -91,6 +91,7 @@ extern char **environ;
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
 #include <psapi.h>
+#include <dbghelp.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
 #endif /* _MSC_VER */
@@ -353,7 +354,53 @@ RZ_API void rz_sys_backtrace(void) {
 	}
 #else
 #ifdef _MSC_VER
-#pragma message("TODO: rz_sys_backtrace : unimplemented")
+	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+
+	HANDLE process = GetCurrentProcess();
+
+	if (!SymInitialize(process, NULL, TRUE)) {
+		eprintf("SymInitialize() failed (%d), no backtrace will be generated\n", GetLastError());
+		return;
+	}
+
+	void *stack[64];
+	ut16 frame_count = CaptureStackBackTrace(0, 64, stack, NULL);
+	eprintf("Tracing %" PFMT32u " stack frames:\n", frame_count);
+
+	ut8 *buffer = malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
+
+	if (!buffer) {
+		eprintf("malloc failed, no backtrace will be generated\n", GetLastError());
+		SymCleanup(process);
+		return;
+	}
+
+	SYMBOL_INFO *symbol = (SYMBOL_INFO *)buffer;
+	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+	symbol->MaxNameLen = MAX_SYM_NAME;
+
+	for (ut16 i = 0; i < frame_count; i++) {
+		ut64 offset_from_sym = 0;
+		ut32 line_displacement = 0;
+		IMAGEHLP_LINE64 line = { .SizeOfStruct = sizeof(IMAGEHLP_LINE64) };
+
+		if (!SymFromAddr(process, (utptr)(stack[i]), &offset_from_sym, symbol)) {
+			// Print only symbol name + pc/rip address
+			eprintf("  [%" PFMT32u "]: 0x%" PFMT64x "\n", i, (ut64)(stack[i]));
+			continue;
+		}
+
+		if (SymGetLineFromAddr64(process, (utptr)(stack[i]), &line_displacement, &line)) {
+			// Source file and line details available
+			eprintf("  [%" PFMT32u "] %s() at %s:%" PFMT32u "\n", i, symbol->Name, line.FileName, line.LineNumber);
+		} else {
+			// Print only symbol name + pc/rip address
+			eprintf("  [%" PFMT32u "]: %s()+0x%" PFMT64x "\n", i, symbol->Name, offset_from_sym);
+		}
+	}
+
+	free(buffer);
+	SymCleanup(process);
 #else
 #warning TODO: rz_sys_backtrace : unimplemented
 #endif
