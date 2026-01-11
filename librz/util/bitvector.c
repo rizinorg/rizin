@@ -1004,8 +1004,24 @@ RZ_API RZ_OWN RzBitVector *rz_bv_complement_2(RZ_NONNULL RzBitVector *bv) {
 }
 
 /**
+ * Adds 2 unsigned integers with arbitrary bit size (up to 64). The function allows specifying
+ * input carry flag, and produces an output carry flag.
+ */
+static inline ut64 add_with_carry_ut64(ut64 a, ut64 b, ut8 bit_size, ut8 *carry_inout) {
+	const ut64 result = a + b + *carry_inout;
+
+	if (bit_size < 64) {
+		*carry_inout = (result >> bit_size) & 1;
+		return result & ((1ull << bit_size) - 1);
+	}
+
+	*carry_inout = result < a || (result - *carry_inout) < a || result < b || (result - *carry_inout) < b;
+	return result;
+}
+
+/**
  * Result of x = (x + y) mod 2^length
- * Both operands must have the same length.
+ * Both operands must have the same length. The length should be greater than zero.
  * \param x The input and output operand of the addition.
  * \param y RzBitVector, Operand
  * \param carry bool*, bool pointer to where to save the carry value.
@@ -1017,21 +1033,64 @@ RZ_API bool rz_bv_add_inplace(
 	RZ_NULLABLE bool *carry) {
 	rz_return_val_if_fail(x && y, false);
 
-	if (x->len != y->len) {
+	if (x->len != y->len || x->len == 0) {
 		rz_warn_if_reached();
 		return false;
 	}
 
-	bool a = false, b = false, _carry = false;
+	ut8 carry_over = 0;
 
-	for (ut32 pos = 0; pos < x->len; ++pos) {
-		a = rz_bv_get(x, pos);
-		b = rz_bv_get(y, pos);
-		rz_bv_set(x, pos, a ^ b ^ _carry);
-		_carry = ((a & b) | (a & _carry)) | (b & _carry);
+	// handle small bit vectors
+	if (x->len <= 64) {
+		x->bits.small_u = add_with_carry_ut64(x->bits.small_u, y->bits.small_u, x->len, &carry_over);
+		if (carry) {
+			*carry = carry_over;
+		}
+		return true;
 	}
+
+	ut32 bit_offset = 0;
+
+	// handle large bit vectors
+	while (bit_offset < x->len) {
+		const ut32 remaining_bits = x->len - bit_offset;
+		const ut32 byte_offset = bit_offset / 8;
+
+		if (remaining_bits >= 64) {
+			const ut64 r = add_with_carry_ut64(rz_read_le64(x->bits.large_a + byte_offset), rz_read_le64(y->bits.large_a + byte_offset), 64, &carry_over);
+			rz_write_le64(x->bits.large_a + byte_offset, r);
+			bit_offset += 64;
+			continue;
+		}
+		if (remaining_bits >= 32) {
+			const ut64 r = add_with_carry_ut64(rz_read_le32(x->bits.large_a + byte_offset), rz_read_le32(y->bits.large_a + byte_offset), 32, &carry_over);
+			rz_write_le32(x->bits.large_a + byte_offset, r);
+			bit_offset += 32;
+			continue;
+		}
+		if (remaining_bits >= 16) {
+			const ut64 r = add_with_carry_ut64(rz_read_le16(x->bits.large_a + byte_offset), rz_read_le16(y->bits.large_a + byte_offset), 16, &carry_over);
+			rz_write_le16(x->bits.large_a + byte_offset, r);
+			bit_offset += 16;
+			continue;
+		}
+		if (remaining_bits >= 8) {
+			const ut64 r = add_with_carry_ut64(rz_read_le8(x->bits.large_a + byte_offset), rz_read_le8(y->bits.large_a + byte_offset), 8, &carry_over);
+			rz_write_le8(x->bits.large_a + byte_offset, r);
+			bit_offset += 8;
+			continue;
+		}
+		for (ut32 pos = bit_offset; pos < x->len; ++pos) {
+			const bool a = rz_bv_get(x, pos);
+			const bool b = rz_bv_get(y, pos);
+			rz_bv_set(x, pos, a ^ b ^ carry_over);
+			carry_over = ((a & b) | (a & carry_over)) | (b & carry_over);
+		}
+		bit_offset += remaining_bits;
+	}
+
 	if (carry) {
-		*carry = _carry;
+		*carry = (bool)carry_over;
 	}
 
 	return true;
