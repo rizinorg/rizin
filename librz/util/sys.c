@@ -370,7 +370,7 @@ RZ_API void rz_sys_backtrace(void) {
 	ut8 *buffer = malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
 
 	if (!buffer) {
-		eprintf("malloc failed, no backtrace will be generated\n", GetLastError());
+		eprintf("malloc failed, no backtrace will be generated\n");
 		SymCleanup(process);
 		return;
 	}
@@ -392,9 +392,9 @@ RZ_API void rz_sys_backtrace(void) {
 
 		if (SymGetLineFromAddr64(process, (utptr)(stack[i]), &line_displacement, &line)) {
 			// Source file and line details available
-			eprintf("  [%" PFMT32u "] %s() at %s:%" PFMT32u "\n", i, symbol->Name, line.FileName, line.LineNumber);
+			eprintf("  [%" PFMT32u "]: %s() at %s:%" PFMT32u "\n", i, symbol->Name, line.FileName, line.LineNumber);
 		} else {
-			// Print only symbol name + pc/rip address
+			// Print only symbol name + offset from symbol
 			eprintf("  [%" PFMT32u "]: %s()+0x%" PFMT64x "\n", i, symbol->Name, offset_from_sym);
 		}
 	}
