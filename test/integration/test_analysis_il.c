@@ -53,7 +53,13 @@ static bool test_analysis_il_vm_step() {
 static bool test_analysis_il() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "init core");
-	RzCoreFile *cf = rz_core_file_open(core, "bins/elf/emulateme.arm64", RZ_PERM_RWX, 0);
+	char *tb = rz_sys_getenv("RZ_TESTBINS");
+	mu_assert_notnull(tb, "RZ_TESTBINS not set");
+
+	char *path = rz_str_newf("%s/elf/emulateme.arm64", tb);
+	rz_mem_free(tb);
+	RzCoreFile *cf = rz_core_file_open(core, path, RZ_PERM_RWX, 0);
+	rz_mem_free(path);
 	mu_assert_notnull(cf, "open file");
 	mu_assert("load file", rz_core_bin_load(core, NULL, 0));
 	mu_assert("il vm setup", rz_analysis_il_vm_setup(core->analysis));
@@ -76,7 +82,10 @@ static bool test_analysis_il() {
 	RzILVal *v = rz_il_vm_get_var_value(core->analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, "sp");
 	mu_assert_notnull(v, "RzIL vm var value");
 	mu_assert_eq(v->type, RZ_IL_TYPE_PURE_BITVECTOR, "var type");
+	rz_strbuf_fini(&sb);
+	rz_analysis_op_fini(&op);
 	mu_assert_eq(rz_bv_to_ut64(v->data.bv), -0x20, "var value");
+	rz_analysis_op_init(&op);
 
 	// extract and evaluate a whole function
 	RzAnalysisFunction *f = rz_analysis_get_function_byname(core->analysis, "sym.decrypt");
@@ -124,6 +133,7 @@ static bool test_analysis_il() {
 	}
 	mu_assert_eq(count, 69, "il op count of function");
 	rz_iterator_free(iter);
+	rz_strbuf_fini(&sb);
 
 	// extract and evaluate a chunk of instructions
 	count = 0;
@@ -145,10 +155,12 @@ static bool test_analysis_il() {
 	}
 	mu_assert_eq(count, 30, "il op count of function");
 	rz_iterator_free(iter);
+	rz_strbuf_fini(&sb);
 
 	rz_core_seek(core, 0x918, true);
 	rz_core_analysis_il_reinit(core);
 	mu_assert("eval rzil", rz_core_il_step(core, 3));
+	rz_analysis_op_fini(&op);
 
 	rz_core_free(core);
 	mu_end;
