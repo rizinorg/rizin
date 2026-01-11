@@ -470,7 +470,7 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 }
 
 RZ_API RzSubprocessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user) {
-	const char *cmd = "e analysis.timeout=60; aaa";
+	const char *cmd = "e analysis.nopskip=0; aaa";
 	RzList *files = rz_list_new();
 	rz_list_push(files, test->file);
 #if ASAN
