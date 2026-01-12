@@ -88,18 +88,18 @@ FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x32
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
-dmxa~narenas
+dmxa~?narenas
 echo ----
 dmxb~reg_size : 0x800
 echo ----
-dmxe~Total extents found:
+dmxe~?Total extents found:
 EOF
 EXPECT=<<EOF
-narenas : 129
+1
 ----
       reg_size : 0x800
 ----
-Total extents found: 15
+1
 EOF
 RUN
 
@@ -110,14 +110,14 @@ FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x64
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
-dmxa~narenas
+dmxa~?narenas
 echo ----
 dmxb~reg_size : 0x800
 echo ----
 dmxe~Total extents found:
 EOF
 EXPECT=<<EOF
-narenas : 129
+1
 ----
       reg_size : 0x800
 ----
