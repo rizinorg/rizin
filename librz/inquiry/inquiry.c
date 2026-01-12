@@ -152,12 +152,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	// Add the Effect for each entry point.
 	ut64 *ep;
 	rz_vector_foreach (entry_points, ep) {
-		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, *ep);
+		size_t bb_size = 0;
+		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, *ep, &bb_size);
 		if (!il_op) {
 			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", *ep);
 			return_code = false;
 			goto error_free;
 		}
+		rz_analysis_add_bb(core->analysis, *ep, bb_size);
 		rz_th_queue_push(il_queue, il_op, true);
 		rz_pvector_push(il_cache, il_op);
 	}
@@ -296,7 +298,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 					break;
 				}
 				RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-				RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr);
+				size_t bb_size = 0;
+				RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
 				if (!bb) {
 					RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 					// Signal interpreter the lifting failed.
@@ -304,6 +307,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 					rz_th_queue_close(iset->il_queue);
 					break;
 				}
+				rz_analysis_add_bb(core->analysis, *addr, bb_size);
 				RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 				rz_pvector_push(il_cache, bb);
 				// TODO: Free unused if too big.
