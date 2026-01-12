@@ -8,8 +8,6 @@
 #include <string.h>
 #include <rz_endian.h>
 
-
-
 static void str_op(char *c) {
 	if (IS_UPPER(c[0])) {
 		c[0] += 0x20;
@@ -19,7 +17,7 @@ static void str_op(char *c) {
 static int z80_reg_idx(char r) {
 	switch (r) {
 	case 'b': return 0;
-	case 'c': return 1;	
+	case 'c': return 1;
 	case 'd': return 2;
 	case 'e': return 3;
 	case 'h': return 4;
@@ -30,6 +28,8 @@ static int z80_reg_idx(char r) {
 	}
 }
 
+// Parse CB-prefixed rotate/shift instructions.
+// Supports registers, [hl], and [ix+d]/[iy+d] memory forms.
 static int z80_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	int i;
 	if ((i = strlen(buf_asm)) < minlen) {
@@ -93,6 +93,8 @@ static int z80_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	return 0;
 }
 
+// Parse CB-prefixed bit/set/res instructions.
+// Handles bit number with register, [hl], or [ix+d]/[iy+d].
 static int z80_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	int i;
 	ut64 num;
@@ -204,6 +206,8 @@ static int z80_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 	return 2;
 }
 
+// Parse arithmetic instructions with one operand (add, sub, and, or, xor, cp).
+// Supports registers, immediate values, and memory forms like [hl] and [ix+d]/[iy+d].
 static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 	rz_str_do_until_token(str_op, buf_asm, '\0');
 	char *left = strtok(buf_asm + 3, ",");
@@ -272,30 +276,6 @@ static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 	return 0;
 }
 
-static int z80_parse_ld_mem_nn(ut8 *buf, const char *reg, ut16 addr) {
-	if (!strcmp(reg, "a")) {
-		buf[0] = 0x32;
-		buf[1] = addr & 0xff;
-		buf[2] = addr >> 8;
-		return 3;
-	}
-	if (!strcmp(reg, "bc")) { buf[0]=0xed; buf[1]=0x43; }
-	else if (!strcmp(reg, "de")) { buf[0]=0xed; buf[1]=0x53; }
-	else if (!strcmp(reg, "hl")) { buf[0]=0x22; }
-	else if (!strcmp(reg, "sp")) { buf[0]=0xed; buf[1]=0x73; }
-	else return 0;
-
-	if (buf[0] == 0x22) {
-		buf[1] = addr & 0xff;
-		buf[2] = addr >> 8;
-		return 3;
-	}
-
-	buf[2] = addr & 0xff;
-	buf[3] = addr >> 8;
-	return 4;
-}
-
 int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 	int mn_len, j, len = 1;
 	ut32 mn = 0;
@@ -317,154 +297,19 @@ int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		return 0;
 	}
 	switch (mn_len) {
-case 2:
-	mn = rz_read_be16(buf_asm);
-	break;
-case 3:
-	mn = rz_read_be24(buf_asm);
-	break;
-case 4:
-	mn = rz_read_be32(buf_asm);
-	break;
-default:
-	return 0;
-}
+	case 2:
+		mn = rz_read_be16(buf_asm);
+		break;
+	case 3:
+		mn = rz_read_be24(buf_asm);
+		break;
+	case 4:
+		mn = rz_read_be32(buf_asm);
+		break;
+	default:
+		return 0;
+	}
 	switch (mn) {
-		case 0x6c64: { // ld
-	rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
-
-	char *lhs = buf_asm + 3;
-	char *rhs = strchr(lhs, ',');
-	if (!rhs) return 0;
-	*rhs++ = '\0';
-
-	rz_str_trim(lhs);
-	rz_str_trim(rhs);
-
-	if (lhs[0] == '[' && rhs[0] != '[') {
-		ut16 addr = rz_num_get(NULL, lhs + 1);
-		if (!strcmp(lhs, "[bc]") && !strcmp(rhs, "a")) {
-			opbuf[0] = 0x02;
-			len = 1;
-		}
-		else if (!strcmp(lhs, "[de]") && !strcmp(rhs, "a")) {
-			opbuf[0] = 0x12;
-			len = 1;
-		}
-		else if (lhs[1] == '0') {
-			len = z80_parse_ld_mem_nn(opbuf, rhs, addr);
-		}
-		else if (!strncmp(lhs, "[hl]", 4)) {
-			if (rhs[0] >= '0' && rhs[0] <= '9') {
-				opbuf[0] = 0x36;
-				opbuf[1] = rz_num_get(NULL, rhs);
-				len = 2;
-			} else {
-				opbuf[0] = 0x70 | z80_reg_idx(rhs[0]);
-				len = 1;
-			}
-		}
-		else if (!strncmp(lhs, "[ix+", 4) || !strncmp(lhs, "[iy+", 4)) {
-			bool ix = lhs[2] == 'x';
-			int disp = rz_num_get(NULL, lhs + 4);
-
-			opbuf[0] = ix ? 0xdd : 0xfd;
-			if (rhs[0] >= '0' && rhs[0] <= '9') {
-				opbuf[1] = 0x36;
-				opbuf[2] = disp;
-				opbuf[3] = rz_num_get(NULL, rhs);
-				len = 4;
-			} else {
-				opbuf[1] = 0x70 | z80_reg_idx(rhs[0]);
-				opbuf[2] = disp;
-				len = 3;
-			}
-		}
-		break;
-	}
-
-	if (rhs[0] == '[') {
-		ut16 addr = rz_num_get(NULL, rhs + 1);
-
-		if (!strcmp(rhs, "[bc]") && !strcmp(lhs, "a")) {
-			opbuf[0] = 0x0a;
-			len = 1;
-		}
-		else if (!strcmp(rhs, "[de]") && !strcmp(lhs, "a")) {
-			opbuf[0] = 0x1a;
-			len = 1;
-		}
-		else if (rhs[1] == '0' && !strcmp(lhs, "a")) {
-			opbuf[0] = 0x3a;
-			opbuf[1] = addr & 0xff;
-			opbuf[2] = addr >> 8;
-			len = 3;
-		}
-		else if (!strncmp(rhs, "[hl]", 4)) {
-			opbuf[0] = 0x46 | (z80_reg_idx(lhs[0]) << 3);
-			len = 1;
-		}
-		else if (!strncmp(rhs, "[ix+", 4) || !strncmp(rhs, "[iy+", 4)) {
-			bool ix = rhs[2] == 'x';
-			int disp = rz_num_get(NULL, rhs + 4);
-
-			opbuf[0] = ix ? 0xdd : 0xfd;
-			opbuf[1] = 0x46 | (z80_reg_idx(lhs[0]) << 3);
-			opbuf[2] = disp;
-			len = 3;
-		}
-		break;
-	}
-
-if (!strcmp(lhs, "i") && !strcmp(rhs, "a")) {
-	opbuf[0] = 0xed;
-	opbuf[1] = 0x47;
-	len = 2;
-	break;
-}
-if (!strcmp(lhs, "r") && !strcmp(rhs, "a")) {
-	opbuf[0] = 0xed;
-	opbuf[1] = 0x4f;
-	len = 2;
-	break;
-}
-if (!strcmp(lhs, "a") && !strcmp(rhs, "i")) {
-	opbuf[0] = 0xed;
-	opbuf[1] = 0x57;
-	len = 2;
-	break;
-}
-if (!strcmp(lhs, "a") && !strcmp(rhs, "r")) {
-	opbuf[0] = 0xed;
-	opbuf[1] = 0x5f;
-	len = 2;
-	break;
-}
-
-
-	// -------------------------
-	// ld r, r / r, imm
-	// -------------------------
-	int dst = z80_reg_idx(lhs[0]);
-	int src = z80_reg_idx(rhs[0]);
-
-	if (dst != -1 && src != -1) {
-		opbuf[0] = 0x40 | (dst << 3) | src;
-		len = 1;
-		break;
-	}
-
-	if (dst != -1 && rhs[0] >= '0' && rhs[0] <= '9') {
-		opbuf[0] = 0x06 | (dst << 3);
-		opbuf[1] = rz_num_get(NULL, rhs);
-		len = 2;
-		break;
-	}
-
-	len = 0;
-	break;
-}
-
 	case 0x616463: // adc
 		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
 		if (strlen(buf_asm) < 5)
@@ -927,6 +772,80 @@ if (!strcmp(lhs, "a") && !strcmp(rhs, "r")) {
 			}
 		}
 		break;
+	case 0x6c64: { // ld
+		if (strlen(buf_asm) < 4) {
+			len = 0;
+			break;
+		}
+		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
+		rz_str_replace_in(buf_asm, strlen(buf_asm), "[ ", "[", true);
+		rz_str_replace_in(buf_asm, strlen(buf_asm), " ]", "]", true);
+		char *comma = strchr(buf_asm + 3, ',');
+		if (!comma) {
+			len = 0;
+			break;
+		}
+		char *dst = buf_asm + 3;
+		char *src = comma + 1;
+		*comma = '\0';
+		rz_str_trim(dst);
+		rz_str_trim(src);
+		if (!strcmp(dst, "i") && !strcmp(src, "a")) {
+			opbuf[0] = 0xed;
+			opbuf[1] = 0x47;
+			len = 2;
+			break;
+		}
+		if (!strcmp(dst, "r") && !strcmp(src, "a")) {
+			opbuf[0] = 0xed;
+			opbuf[1] = 0x4f;
+			len = 2;
+			break;
+		}
+		if (!strcmp(dst, "a") && !strcmp(src, "i")) {
+			opbuf[0] = 0xed;
+			opbuf[1] = 0x57;
+			len = 2;
+			break;
+		}
+		if (!strcmp(dst, "a") && !strcmp(src, "r")) {
+			opbuf[0] = 0xed;
+			opbuf[1] = 0x5f;
+			len = 2;
+			break;
+		}
+		int d = z80_reg_idx(dst[0]);
+		int s = z80_reg_idx(src[0]);
+		if (d != -1 && s != -1) {
+			opbuf[0] = 0x40 | (d << 3) | s;
+			len = 1;
+			break;
+		}
+		if (d != -1 && src[0] >= '0') {
+			opbuf[0] = 0x06 | (d << 3);
+			opbuf[1] = (ut8)(rz_num_get(NULL, src) & 0xff);
+			len = 2;
+			break;
+		}
+		if (!strcmp(src, "a") && dst[0] == '[') {
+			ut16 nn = (ut16)rz_num_get(NULL, dst + 1);
+			opbuf[0] = 0x32;
+			opbuf[1] = nn & 0xff;
+			opbuf[2] = nn >> 8;
+			len = 3;
+			break;
+		}
+		if (!strcmp(dst, "a") && src[0] == '[') {
+			ut16 nn = (ut16)rz_num_get(NULL, src + 1);
+			opbuf[0] = 0x3a;
+			opbuf[1] = nn & 0xff;
+			opbuf[2] = nn >> 8;
+			len = 3;
+			break;
+		}
+		len = 0;
+		break;
+	}
 	case 0x6c6464: // ldd
 		opbuf[0] = 0xed;
 		opbuf[1] = 0xa8;
