@@ -22,6 +22,7 @@ rz_il_sources = [
    'il_validate.c',
    'il_vm.c',
    'il_vm_eval.c',
+   'il_traverse.c'
 ]
 
 rz_il_inc = [

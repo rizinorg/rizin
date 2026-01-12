@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2022-2026 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2010-2020 oddcoder <ahmedsoliman@oddcoder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -9,6 +9,13 @@
 #include <rz_cons.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
+
+#if 0
+#define P(...) eprintf(__VA_ARGS__)
+#define PRINTING
+#else
+#define P(...)
+#endif
 
 /**
  * \brief Compare two RzAnalysisVarAccess objects.
@@ -350,6 +357,14 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
+	if (stor->type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
+		P("SET VAR @ stack + %"PFMT64d" with name %s\n", stor->stack_off, name);
+#ifdef PRINTING
+		rz_sys_backtrace();
+#endif
+	} else {
+		P("SET OTHER VAR\n");
+	}
 	if (var) {
 		if (!rz_analysis_var_storage_equals(&var->storage, stor)) {
 			// var name already exists at a different kind+delta
@@ -1087,6 +1102,138 @@ static inline bool is_not_read_nor_write(const RzAnalysisOpDirection direction) 
 	return direction != RZ_ANALYSIS_OP_DIR_READ && direction != RZ_ANALYSIS_OP_DIR_WRITE;
 }
 
+typedef struct {
+	const char *reg;
+	const char *sign;
+	st64 *addend_out;
+} ExtractRegBasedVarCtx;
+
+static RzILRecurseCont extract_reg_based_variable_cb_pure(RzILOpPure *op, void *user) {
+	ExtractRegBasedVarCtx *ctx = user;
+
+	// Pattern matching for any of:
+	// (+ (var <reg>)  (bv <const>))
+	// (+ (bv <const>) (var <reg>))
+	// (- (var <reg>)  (bv <const>))
+
+	RzILOpBitVector *reg_op;
+	RzILOpBitVector *const_op;
+	if (op->code == RZ_IL_OP_ADD) {
+		// add is commutative
+		reg_op = op->op.add.x->code == RZ_IL_OP_VAR ? op->op.add.x : op->op.add.y;
+		const_op = op->op.add.x->code == RZ_IL_OP_VAR ? op->op.add.y : op->op.add.x;
+	} else if (op->code == RZ_IL_OP_SUB) {
+		reg_op = op->op.sub.x;
+		const_op = op->op.sub.y;
+	} else {
+		return RZ_IL_RECURSE_STEP_INTO;
+	}
+
+	if (reg_op->code != RZ_IL_OP_VAR || const_op->code != RZ_IL_OP_BITV || strcmp(reg_op->op.var.v, ctx->reg)) {
+		return RZ_IL_RECURSE_STEP_INTO;
+	}
+	RzBitVector *const_val = const_op->op.bitv.value;
+	bool op_is_subtracting = rz_bv_msb(const_val) != (op->code == RZ_IL_OP_SUB);
+	if (op_is_subtracting != (*ctx->sign == '-')) {
+		return RZ_IL_RECURSE_STEP_INTO;
+	}
+	RzBitVector val;
+	rz_bv_init_copy(&val, const_val);
+	if (op->code == RZ_IL_OP_SUB) {
+		rz_bv_neg_inplace(&val);
+	}
+	char *s = rz_bv_as_hex_string(&val, true);
+	rz_bv_signed_cast_inplace(&val, 64);
+	P("bv: %s\n", s);
+	*ctx->addend_out = (st64)rz_bv_to_ut64(&val);
+	return RZ_IL_RECURSE_BREAK;
+}
+
+static RzILRecurseCont extract_reg_bases_variable_cb_effect(RzILOpEffect *op, void *user) {
+	ExtractRegBasedVarCtx *ctx = user;
+	if (op->code == RZ_IL_OP_SET && !strcmp(op->op.set.v, ctx->reg)) {
+		// skip assignments like
+		//   rsp += 8
+		// as encountered for example during function return
+		return RZ_IL_RECURSE_STEP_OVER;
+	}
+	return RZ_IL_RECURSE_STEP_INTO;
+}
+
+static bool extract_reg_based_variable_access(RzILOpEffect *op, const char *reg, const char *sign, st64 *addend_out) {
+	ExtractRegBasedVarCtx ctx = {
+		.reg = reg,
+		.sign = sign,
+		.addend_out = addend_out
+	};
+	return !rz_il_op_effect_recurse(op, extract_reg_bases_variable_cb_effect, &ctx, extract_reg_based_variable_cb_pure, &ctx);
+}
+
+static bool extract_reg_based_variable_access_esil(RzAnalysis *analysis, RzAnalysisOp *op, const char *reg, const char *sign, st64 *addend_out) {
+	char *esil_buf = NULL;
+	const char *op_esil = rz_strbuf_get(&op->esil);
+	if (!op_esil) {
+		return false;
+	}
+	esil_buf = rz_str_dup(op_esil);
+	if (!esil_buf) {
+		return false;
+	}
+	char *tmp = rz_str_newf(",%s,%s,", reg, sign);
+	char *ptr_end = tmp ? strstr(esil_buf, tmp) : NULL;
+	free(tmp);
+	if (!ptr_end) {
+		free(esil_buf);
+		return false;
+	}
+	P("occurence: %s       in         %s\n", ptr_end, op_esil);
+	*ptr_end = 0;
+	char *addr = ptr_end;
+	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
+		addr--;
+	}
+	P("   => addr = %s\n", addr);
+	if (strncmp(addr, "0x", 2)) {
+		P("  " Color_RED "ESIL going into WORKAROUND!\n" Color_RESET);
+		// XXX: This is a workaround for inconsistent esil
+		if (!op->stackop && op->dst) {
+			const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
+			const char *bp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+			const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
+			if (rn && ((bp && !strcmp(bp, rn)) || (sp && !strcmp(sp, rn)))) {
+				RZ_LOG_DEBUG("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
+				goto beach;
+			}
+		}
+		if (*addr == ',') {
+			addr++;
+		}
+		if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP && op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber(addr)) {
+			*addend_out = (st64)rz_num_get(NULL, addr);
+			if (*addend_out && op->src[0] && *addend_out == op->src[0]->imm) {
+				goto beach;
+			}
+		} else if ((op->stackop == RZ_ANALYSIS_STACK_SET) || (op->stackop == RZ_ANALYSIS_STACK_GET)) {
+			if (op->ptr % 4) {
+				goto beach;
+			}
+			*addend_out = op->ptr;
+		} else {
+			goto beach;
+		}
+	} else {
+		*addend_out = (st64)rz_num_get(NULL, addr);
+	}
+	if (*sign == '-') {
+		*addend_out = -*addend_out;
+	}
+	free(esil_buf);
+	return true;
+beach:
+	free(esil_buf);
+	return false;
+}
+
 /**
  * \brief Try to extract any args from a single op
  *
@@ -1098,6 +1245,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 	st64 addend = 0;
 	bool found_addend = false;
 	size_t i;
+#define PRINTEND P("^ 0x%"PFMT64x" ----\n", op->addr);
 	for (i = 0; i < RZ_ARRAY_SIZE(op->src); i++) {
 		if (!op->src[i] || !op->src[i]->reg || !op->src[i]->reg->name) {
 			continue;
@@ -1119,65 +1267,48 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		break;
 	}
 
-	char *esil_buf = NULL;
 	if (!found_addend) {
-		const char *op_esil = rz_strbuf_get(&op->esil);
-		if (!op_esil) {
+		st64 addend_from_esil = 0;
+		bool from_esil = extract_reg_based_variable_access_esil(analysis, op, reg, sign, &addend_from_esil);
+
+		RzAnalysisLiftedILOp il = op->il_op;
+		found_addend = il && extract_reg_based_variable_access(il, reg, sign, &addend);
+
+		if (!from_esil && !found_addend) {
+			PRINTEND
 			return;
 		}
-		esil_buf = rz_str_dup(op_esil);
-		if (!esil_buf) {
-			return;
-		}
-		char *tmp = rz_str_newf(",%s,%s,", reg, sign);
-		char *ptr_end = tmp ? strstr(esil_buf, tmp) : NULL;
-		free(tmp);
-		if (!ptr_end) {
-			free(esil_buf);
-			return;
-		}
-		*ptr_end = 0;
-		char *addr = ptr_end;
-		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
-			addr--;
-		}
-		if (strncmp(addr, "0x", 2)) {
-			// XXX: This is a workaround for inconsistent esil
-			if (!op->stackop && op->dst) {
-				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
-				const char *bp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
-				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
-				if (rn && ((bp && !strcmp(bp, rn)) || (sp && !strcmp(sp, rn)))) {
-					RZ_LOG_DEBUG("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
-					goto beach;
-				}
-			}
-			if (*addr == ',') {
-				addr++;
-			}
-			if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP && op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber(addr)) {
-				addend = (st64)rz_num_get(NULL, addr);
-				if (addend && op->src[0] && addend == op->src[0]->imm) {
-					goto beach;
-				}
-			} else if ((op->stackop == RZ_ANALYSIS_STACK_SET) || (op->stackop == RZ_ANALYSIS_STACK_GET)) {
-				if (op->ptr % 4) {
-					goto beach;
-				}
-				addend = op->ptr;
-			} else {
-				goto beach;
-			}
-		} else {
-			addend = (st64)rz_num_get(NULL, addr);
-		}
-		if (*sign == '-') {
-			addend = -addend;
-		}
+
 		if (addend == 0 && is_not_read_nor_write(op->direction)) {
 			// avoid creating variables for just `mov rbp, rsp`, which would otherwise detect a var at rsp+0
 			// so for addend == 0, we only consider actual memory operations for now
-			goto beach;
+			PRINTEND
+			return;
+		}
+
+		if (from_esil || found_addend) {
+			P("  0x%" PFMT64x "    reg is %s, sign is %s\n", op->addr, reg, sign);
+			if (from_esil) {
+				P("  ESIL extracted: %" PFMT64d "\n", addend_from_esil);
+			}
+			if (found_addend) {
+				P("  RzIL extracted: %" PFMT64d "\n", addend);
+			}
+			if (found_addend != from_esil) {
+				P("  esil was %s\n", rz_strbuf_get(&op->esil));
+				if (il) {
+					RzStrBuf buf;
+					rz_strbuf_init(&buf);
+					rz_il_op_effect_stringify(op->il_op, &buf, true);
+					P("  rzil was %s\n", rz_strbuf_get(&buf));
+					rz_strbuf_fini(&buf);
+				} else {
+					P("  rzil was NOT LIFTED\n");
+				}
+#ifdef PRINTING
+				rz_sys_backtrace();
+#endif
+			}
 		}
 	}
 
@@ -1193,7 +1324,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 	}
 	if (!stack_off) {
 		// Do not create a var/arg for the return address
-		free(esil_buf);
+		PRINTEND
 		return;
 	}
 
@@ -1204,7 +1335,8 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, stack_off);
 		if (var) {
 			rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
-			goto beach;
+			PRINTEND
+			return;
 		}
 		char *varname = NULL;
 		RzType *vartype = NULL;
@@ -1262,7 +1394,8 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, stor.stack_off);
 		if (var) {
 			rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
-			goto beach;
+			PRINTEND
+			return;
 		}
 		char *varname = rz_str_newf("%s_%" PFMT64x "h", VARPREFIX, RZ_ABS(stor.stack_off));
 		if (varname) {
@@ -1273,8 +1406,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 			free(varname);
 		}
 	}
-beach:
-	free(esil_buf);
+	PRINTEND
 }
 
 static bool is_reg_in_src(const char *regname, RzAnalysis *analysis, RzAnalysisOp *op);

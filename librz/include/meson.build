@@ -160,7 +160,8 @@ rz_il_files = [
   'rz_il/rz_il_events.h',
   'rz_il/rz_il_reg.h',
   'rz_il/rz_il_validate.h',
-  'rz_il/rz_il_vm.h'
+  'rz_il/rz_il_vm.h',
+  'rz_il/rz_il_traverse.h'
 ]
 install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 

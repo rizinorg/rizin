@@ -187,6 +187,17 @@ bool test_rz_bv_init_signed(void) {
 	mu_end;
 }
 
+bool test_rz_bv_init_copy(void) {
+	RzBitVector *src = rz_bv_new_from_ut64(43, 0x1234);
+	RzBitVector a;
+	bool r = rz_bv_init_copy(&a, src);
+	mu_assert_true(r, "init_copy return");
+	mu_assert_eq(rz_bv_len(&a), 43, "copied len");
+	mu_assert_eq(rz_bv_to_ut64(&a), 0x1234, "copied value");
+	rz_bv_fini(&a);
+	mu_end;
+}
+
 bool test_rz_bv_logic_large(void) {
 	RzBitVector *x, *y, *z;
 	RzBitVector *result;
@@ -1980,6 +1991,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init128);
 	mu_run_test(test_rz_bv_init70);
 	mu_run_test(test_rz_bv_init_signed);
+	mu_run_test(test_rz_bv_init_copy);
 	mu_run_test(test_rz_bv_cmp);
 	mu_run_test(test_rz_bv_eq);
 	mu_run_test(test_rz_bv_cast);
