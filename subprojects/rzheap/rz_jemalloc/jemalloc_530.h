@@ -10,12 +10,14 @@
 #endif
 
 #undef GH_ALIGN
+#undef GH_PACKED
 #ifdef GH_IS_64
 /* 64-bit: use natural alignment (jemalloc is not packed on 64-bit) */
 #define GH_ALIGN RZ_ALIGNED(8)
+#define GH_PACKED(decl) decl
 #else
-/* 32-bit: pack to prevent 8-byte alignment padding for ut64 members on 64-bit host */
-#define GH_ALIGN RZ_ALIGNED(4) __attribute__((packed))
+#define GH_ALIGN RZ_ALIGNED(4)
+#define GH_PACKED(decl) RZ_PACKED(decl)
 #endif
 
 
@@ -64,42 +66,42 @@ typedef struct GH(ph_s_530) GH(ph_t_530);
 #ifndef RZ_JM_DEFINE_ONLY_ONCE_530
 #define RZ_JM_DEFINE_ONLY_ONCE_530
 
-#define RZ_JM_QL_HEAD(a_type) struct GH_ALIGN { GHT qlh_first; }
-#define RZ_JM_QR(a_type)      struct GH_ALIGN { GHT qre_next; GHT qre_prev; }
-#define RZ_JM_RB_TREE(a_type) struct GH_ALIGN { GHT rbt_root; }
-#define RZ_JM_PH(a_type)      struct GH_ALIGN { GHT ph_root; }
+#define RZ_JM_QL_HEAD(a_type) GH_PACKED(struct GH_ALIGN { GHT qlh_first; })
+#define RZ_JM_QR(a_type)      GH_PACKED(struct GH_ALIGN { GHT qre_next; GHT qre_prev; })
+#define RZ_JM_RB_TREE(a_type) GH_PACKED(struct GH_ALIGN { GHT rbt_root; })
+#define RZ_JM_PH(a_type)      GH_PACKED(struct GH_ALIGN { GHT ph_root; })
 #define RZ_JM_QL_ELM(a_type)  RZ_JM_QR(a_type)
-#define RZ_JM_RB_NODE(a_type) struct GH_ALIGN { GHT rbn_left; GHT rbn_right; }
+#define RZ_JM_RB_NODE(a_type) GH_PACKED(struct GH_ALIGN { GHT rbn_left; GHT rbn_right; })
 
 #define RZ_JM_PH_STRUCTS(a_prefix, a_type) \
-typedef struct GH_ALIGN { \
+typedef GH_PACKED(struct GH_ALIGN { \
 	GH(phn_link_t_530) link; \
-} GH(a_prefix##_link_t_530); \
+}) GH(a_prefix##_link_t_530); \
                           \
-typedef struct GH_ALIGN { \
+typedef GH_PACKED(struct GH_ALIGN { \
 	GH(ph_t_530) ph; \
-} GH(a_prefix##_t_530);
+}) GH(a_prefix##_t_530);
 
 #define RZ_JM_TYPED_LIST(list_type, el_type, linkage) \
-typedef struct GH_ALIGN { \
+typedef GH_PACKED(struct GH_ALIGN { \
 	RZ_JM_QL_HEAD(el_type) head; \
-} GH(list_type##_t_530); \
+}) GH(list_type##_t_530); \
 
 /* Opaque types - internal layout doesn't matter, only size and alignment */
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[88]; } malloc_mutex_t_530_32; 
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[112]; } malloc_mutex_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[68]; } slab_data_t_530_32;
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[64]; } slab_data_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[20]; } e_prof_info_t_530_32;
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[32]; } e_prof_info_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[68]; } bin_stats_t_530_32; 
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[80]; } bin_stats_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[3944]; } arena_stats_t_530_32; 
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[10368]; } arena_stats_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[17836]; } pa_shard_t_530_32;
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[68280]; } pa_shard_t_530_64;
-typedef struct RZ_ALIGNED(4) __attribute__((packed)) { ut8 data[2064]; } tsdn_t_530_32;
-typedef struct RZ_ALIGNED(8) __attribute__((packed)) { ut8 data[2632]; } tsdn_t_530_64;
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[88]; } malloc_mutex_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[112]; } malloc_mutex_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[68]; } slab_data_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[64]; } slab_data_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[20]; } e_prof_info_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[32]; } e_prof_info_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[68]; } bin_stats_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[80]; } bin_stats_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[3944]; } arena_stats_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[10368]; } arena_stats_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[17836]; } pa_shard_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[68280]; } pa_shard_t_530_64);
+GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[2064]; } tsdn_t_530_32);
+GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[2632]; } tsdn_t_530_64);
 
 #define MALLOCX_ARENA_BITS 12
 #define EDATA_ALIGNMENT 128
@@ -163,21 +165,21 @@ RZ_JM_TYPED_LIST(edata_list_active, GH(edata_t_530), ql_link_active)
  * 64 bit size is 24 bytes
  * 32 bit size is 12 bytes
  */
-struct GH_ALIGN GH(phn_link_s_530) {
+GH_PACKED(struct GH_ALIGN GH(phn_link_s_530) {
 	GHT prev;
 	GHT next;
 	GHT lchild;
-};
+});
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/ph.h
  * 64 bit size is 16 bytes
  * 32 bit size is 8 bytes
  */
-struct GH_ALIGN GH(ph_s_530) {
+GH_PACKED(struct GH_ALIGN GH(ph_s_530) {
 	GHT root;
 	GHT auxcount;
-};
+});
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/rtree.h
@@ -185,14 +187,14 @@ struct GH_ALIGN GH(ph_s_530) {
  * 32 bit size is 8 bytes
  */
 typedef struct GH(rtree_leaf_elm_s_530) GH(rtree_leaf_elm_t_530);
-struct GH_ALIGN GH(rtree_leaf_elm_s_530) {
+GH_PACKED(struct GH_ALIGN GH(rtree_leaf_elm_s_530) {
 #ifdef RTREE_LEAF_COMPACT
     GHT	le_bits;
 #else
     GHT	le_edata;
     GHT	le_metadata;
 #endif
-};
+});
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/rtree.h
@@ -200,9 +202,9 @@ struct GH_ALIGN GH(rtree_leaf_elm_s_530) {
  * 32 bit size is 4 bytes
  */
 typedef struct GH(rtree_node_elm_s_530) GH(rtree_node_elm_t_530);
-struct GH_ALIGN GH(rtree_node_elm_s_530) {
+GH_PACKED(struct GH_ALIGN GH(rtree_node_elm_s_530) {
     GHT	child;
-};
+});
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/rtree.h
@@ -210,12 +212,12 @@ struct GH_ALIGN GH(rtree_node_elm_s_530) {
  * 32 bit size is 4188 bytes 
  */
 typedef struct GH(rtree_s_530) GH(rtree_t_530);
-struct GH_ALIGN GH(rtree_s_530) {
+GH_PACKED(struct GH_ALIGN GH(rtree_s_530) {
 	GHT base;
 	GH(malloc_mutex_t_530)		init_lock;
 	/* Number of elements based on rtree_levels[0].bits. */
 	GH(rtree_node_elm_t_530) root[1U << (RTREE_NSB/RTREE_HEIGHT)];
-};
+});
 
 
 /*
@@ -226,7 +228,7 @@ struct GH_ALIGN GH(rtree_s_530) {
 typedef struct GH(edata_s_530) GH(edata_t_530);
 RZ_JM_PH_STRUCTS(edata_avail, GH(edata_t_530));
 RZ_JM_PH_STRUCTS(edata_heap, GH(edata_t_530));
-struct GH_ALIGN GH(edata_s_530) {
+GH_PACKED(struct GH_ALIGN GH(edata_s_530) {
 	ut64 e_bits;
 	GHT e_addr;
 	union {
@@ -251,7 +253,7 @@ struct GH_ALIGN GH(edata_s_530) {
 		GH(slab_data_t_530) e_slab_data;
 		GH(e_prof_info_t_530) e_prof_info;
 	};
-};
+});
 
 
 /*
@@ -259,9 +261,9 @@ struct GH_ALIGN GH(edata_s_530) {
  * 64 bit size is 8 bytes 
  * 32 bit size is 8 bytes
  */
-typedef struct GH_ALIGN {
+GH_PACKED(typedef struct GH_ALIGN {
 	ut64 ns;
-} GH(nstime_t_530);
+} GH(nstime_t_530));
 
 
 RZ_JM_PH_STRUCTS(edata_heap_530, GH(edata_t_530));
@@ -272,7 +274,7 @@ RZ_JM_PH_STRUCTS(edata_heap_530, GH(edata_t_530));
  * 64 bit size is 16 bytes
  * 32 bit size is 32 bytes
  */
-typedef struct GH_ALIGN GH(bitmap_info_s_530) {
+typedef GH_PACKED(struct GH_ALIGN GH(bitmap_info_s_530) {
 	GHT nbits;
 #ifdef BITMAP_USE_TREE
 	ut32 nlevels;
@@ -281,20 +283,20 @@ typedef struct GH_ALIGN GH(bitmap_info_s_530) {
 #else
 	GHT ngroups;
 #endif
-} GH(bitmap_info_t_530);
+}) GH(bitmap_info_t_530);
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/bin.h
  * 64 bit size is 40 bytes
  * 32 bit size is 48 bytes
  */
-typedef struct GH_ALIGN GH(bin_info_s_530) {
+typedef GH_PACKED(struct GH_ALIGN GH(bin_info_s_530) {
 	GHT reg_size;
 	GHT slab_size;
 	ut32 nregs;
 	ut32 n_shards;
 	GH(bitmap_info_t_530) bitmap_info;
-} GH(bin_info_t_530);
+}) GH(bin_info_t_530);
 
 #define JM_NBINS_530 36
 
@@ -304,13 +306,13 @@ typedef struct GH_ALIGN GH(bin_info_s_530) {
  * 32 bit size is 172 bytes
  */
 typedef struct GH(bin_s_530) GH(bin_t_530);
-struct GH_ALIGN GH(bin_s_530) {
+GH_PACKED(struct GH_ALIGN GH(bin_s_530) {
 	GH(malloc_mutex_t_530) lock;
 	GH(bin_stats_t_530) stats;
 	GHT slabcur;
 	GH(edata_heap_t_530) slabs_nonfull;
 	GH(edata_list_active_t_530) slabs_full;
-};
+});
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/arena_structs.h
@@ -318,7 +320,7 @@ struct GH_ALIGN GH(bin_s_530) {
  * 32 bit size is 22004 bytes
  */
 typedef struct GH(arena_s_530) GH(arena_t_530);
-struct GH_ALIGN GH(arena_s_530) {
+GH_PACKED(struct GH_ALIGN GH(arena_s_530) {
 	ut32 nthreads[2];
 	ut32 binshard_next;
 	GHT last_thd;  /* pointer - use GHT for correct size on cross-arch */
@@ -335,5 +337,5 @@ struct GH_ALIGN GH(arena_s_530) {
 	/* Used to determine uptime.  Read-only after initialization. */
 	GH(nstime_t_530) create_time;
 	GH(bin_t_530) bins[0];
-};
+});
 
