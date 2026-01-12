@@ -405,7 +405,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		break;
 	case 'm':
 		sscanf(cmd + 1, "%" PFMT64x ",%x", &m_off, &ret);
-		if (rz_io_read_at(core->io, m_off, (ut8 *)out_buf, ret)) {
+		if (rz_io_read_at_mapped(core->io, m_off, (ut8 *)out_buf, ret)) {
 			return ret;
 		}
 		return -1;

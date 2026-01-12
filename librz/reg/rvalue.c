@@ -91,7 +91,7 @@ static bool reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
 		} else {
 			int idx = item->offset / 8;
 			if (idx + item->size > arena->size) {
-				RZ_LOG_ERROR("reg: index (%d) exeeds arena size (%d)\n", idx + item->size, arena->size);
+				RZ_LOG_ERROR("reg: index (%d) exceeds arena size (%d)\n", idx + item->size, arena->size);
 				return false;
 			}
 			ut8 *buf = arena->bytes + idx;

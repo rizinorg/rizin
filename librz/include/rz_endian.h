@@ -215,9 +215,15 @@ static inline ut32 rz_read_be32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
 	}
+#if RZ_HOST_IS_BIG_ENDIAN
+	ut32 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[2]) << 8) | (((ut32)s[3]) << 0);
+#endif
 }
 
 /**
@@ -241,8 +247,12 @@ static inline ut32 rz_read_at_be32(const void *src, size_t offset) {
  * \param val The written 32-bit value.
  */
 static inline void rz_write_be32(void *dest, ut32 val) {
+#if RZ_HOST_IS_BIG_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_be16(dest, val >> 16);
 	rz_write_at_be16(dest, val, sizeof(ut16));
+#endif
 }
 
 /**
@@ -266,9 +276,15 @@ static inline ut64 rz_read_be64(const void *src) {
 	if (!src) {
 		return UT64_MAX;
 	}
+#if RZ_HOST_IS_BIG_ENDIAN
+	ut64 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	ut64 val = ((ut64)(rz_read_be32(src))) << 32;
 	val |= rz_read_at_be32(src, sizeof(ut32));
 	return val;
+#endif
 }
 
 /**
@@ -292,8 +308,12 @@ static inline ut64 rz_read_at_be64(const void *src, size_t offset) {
  * \param val The written 64-bit value.
  */
 static inline void rz_write_be64(void *dest, ut64 val) {
+#if RZ_HOST_IS_BIG_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_be32(dest, val >> 32);
 	rz_write_at_be32(dest, (ut32)val, sizeof(ut32));
+#endif
 }
 
 /**
@@ -638,9 +658,15 @@ static inline ut32 rz_read_le32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	ut32 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[3]) << 24) | (((ut32)s[2]) << 16) |
 		(((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
+#endif
 }
 
 /**
@@ -664,8 +690,12 @@ static inline ut32 rz_read_at_le32(const void *src, size_t offset) {
  * \param val The written 32-bit value.
  */
 static inline void rz_write_le32(void *dest, ut32 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le16(dest, val);
 	rz_write_at_le16(dest, val >> 16, sizeof(ut16));
+#endif
 }
 
 /**
@@ -689,9 +719,15 @@ static inline ut64 rz_read_le64(const void *src) {
 	if (!src) {
 		return UT64_MAX;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	ut64 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	ut64 val = ((ut64)(rz_read_at_le32(src, sizeof(ut32)))) << 32;
 	val |= rz_read_le32(src);
 	return val;
+#endif
 }
 
 /**
@@ -715,8 +751,12 @@ static inline ut64 rz_read_at_le64(const void *src, size_t offset) {
  * \param val The written 64-bit value.
  */
 static inline void rz_write_le64(void *dest, ut64 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le32(dest, (ut32)val);
 	rz_write_at_le32(dest, val >> 32, sizeof(ut32));
+#endif
 }
 
 /**
@@ -744,9 +784,14 @@ static inline ut128 rz_read_le128(const void *src) {
 		val.Low = UT64_MAX;
 		return val;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	val.High = rz_read_at_le64(src, sizeof(ut64));
 	val.Low = rz_read_le64(src);
 	return val;
+#endif
 }
 
 /**
@@ -774,8 +819,12 @@ static inline ut128 rz_read_at_le128(const void *src, size_t offset) {
  * \param val The written 128-bit value.
  */
 static inline void rz_write_le128(void *dest, ut128 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le64(dest, val.Low);
 	rz_write_at_le64(dest, val.High, sizeof(ut64));
+#endif
 }
 
 /**

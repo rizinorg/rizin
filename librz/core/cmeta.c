@@ -351,7 +351,7 @@ static bool meta_string_8bit_add(RzCore *core, ut64 addr, size_t limit, ut8 **na
 	if (!*name) {
 		return false;
 	}
-	if (!rz_io_read_at(core->io, addr, *name, limit)) {
+	if (!rz_io_read_at_mapped(core->io, addr, *name, limit)) {
 		RZ_FREE(*name);
 		return false;
 	}

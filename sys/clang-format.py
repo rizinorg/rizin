@@ -83,12 +83,14 @@ def format_files(args, files):
     sys.exit(r.returncode)
 
 
-def get_file(args):
-    filename = args.file
-    if should_scan(filename) and not skip(filename):
-        return [filename]
-
-    return []
+def get_files_from_arg_option(args):
+    files = []
+    for filename in args.file:
+        if should_scan(filename) and not skip(filename):
+            files.append(filename)
+        else:
+            print(f"{filename} will be skipped.")
+    return files
 
 
 def get_files(args):
@@ -96,7 +98,7 @@ def get_files(args):
         return get_edited_files(args)
 
     if args.file:
-        return get_file(args)
+        return get_files_from_arg_option(args)
 
     return get_matching_files()
 
@@ -118,7 +120,9 @@ def parse():
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="use verbose output"
     )
-    parser.add_argument("-f", "--file", help="formats (or checks) only the given file")
+    parser.add_argument(
+        "-f", "--file", action="append", help="formats (or checks) only the given file"
+    )
     parser.add_argument(
         "-d",
         "--diff",

@@ -292,7 +292,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		/* TODO: disassemble instruction and strstr */
 		rz_asm_set_pc(core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
-		rz_io_read_at(core->io, pc, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, pc, buf, sizeof(buf));
 		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
 		rz_cons_printf("0x%08" PFMT64x " %d %s\n", pc, ret, rz_asm_op_get_asm(&asmop)); // asmop.buf_asm);
@@ -368,7 +368,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			pc = rz_reg_getv(core->analysis->reg, "PC");
 		}
-		rz_io_read_at(core->io, pc, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, pc, buf, sizeof(buf));
 		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			RZ_LOG_ERROR("rz_analysis_op failed\n");
@@ -504,7 +504,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			oaddr = addr;
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
-			rz_io_read_at(core->io, addr, buf, 32); // XXX longer opcodes?
+			rz_io_read_at_mapped(core->io, addr, buf, 32); // XXX longer opcodes?
 			rz_analysis_op_fini(&aop);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
@@ -547,7 +547,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 				free(buf);
 				continue;
 			}
-			rz_io_read_at(core->io, map->addr, buf, map->size);
+			rz_io_read_at_mapped(core->io, map->addr, buf, map->size);
 			char *file = filename
 				? rz_str_dup(filename)
 				: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
@@ -1282,7 +1282,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		}
 		addr_in_range = addr >= from && addr < to;
 
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		eprintf("%d %" PFMT64x "\r", n++, addr);
@@ -2510,7 +2510,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const 
 	for (int i = 0; i < times; i++) {
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 		ut64 addr = rz_debug_reg_get(core->dbg, "PC");
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 		RzAnalysisOp aop = { 0 };
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);

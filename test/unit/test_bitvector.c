@@ -327,26 +327,34 @@ bool test_rz_bv_logic(void) {
 	rz_bv_free(neg);
 
 	result = rz_bv_dup(y);
-	rz_bv_lshift(result, 3);
+	mu_assert_true(rz_bv_lshift(result, 3), "Shift failed");
 	mu_assert("left shift y", is_equal_bv(result, ls));
 	rz_bv_free(result);
 	rz_bv_free(ls);
 
 	result = rz_bv_dup(y);
-	rz_bv_lshift_fill(result, 3, true);
+	mu_assert_true(rz_bv_lshift_fill(result, 3, true), "Shift failed");
 	mu_assert("left shift y filling 1", is_equal_bv(result, ls_fill));
 	rz_bv_free(result);
 	rz_bv_free(ls_fill);
 
 	result = rz_bv_dup(y);
-	rz_bv_rshift(result, 3);
+	mu_assert_true(rz_bv_rshift(result, 3), "Shift failed");
 	mu_assert("right shift y", is_equal_bv(result, rs));
 	rz_bv_free(result);
 	rz_bv_free(rs);
 
 	result = rz_bv_dup(y);
-	rz_bv_rshift_fill(result, 3, true);
+	mu_assert_true(rz_bv_rshift_fill(result, 3, true), "Shift failed");
 	mu_assert("right shift y", is_equal_bv(result, rs_fill));
+
+	ut64 before = rz_bv_to_ut64(result);
+	mu_assert_true(rz_bv_rshift_fill(result, 0, true), "Shift failed");
+	mu_assert_eq(rz_bv_to_ut64(result), before, "right shift 0 failed");
+
+	mu_assert_true(rz_bv_lshift_fill(result, 0, true), "Shift failed");
+	mu_assert_eq(rz_bv_to_ut64(result), before, "left shift 0 failed");
+
 	rz_bv_free(result);
 	rz_bv_free(rs_fill);
 
@@ -438,6 +446,129 @@ bool test_rz_bv_algorithm128(void) {
 	rz_bv_free(div);
 	rz_bv_free(mul);
 	rz_bv_free(mod);
+	mu_end;
+}
+
+/**
+ * \brief Reference implementation of rz_bv_add() to test against
+ */
+static RzBitVector *rz_bv_add_ref(RZ_INOUT RZ_NONNULL RZ_BORROW RzBitVector *x, const RZ_NONNULL RzBitVector *y, RZ_NULLABLE bool *carry) {
+	rz_return_val_if_fail(x && y, false);
+
+	if (x->len != y->len || x->len == 0) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+
+	RzBitVector *ret = rz_bv_dup(x);
+	bool a = false, b = false, _carry = false;
+
+	for (ut32 pos = 0; pos < ret->len; ++pos) {
+		a = rz_bv_get(ret, pos);
+		b = rz_bv_get(y, pos);
+		rz_bv_set(ret, pos, a ^ b ^ _carry);
+		_carry = ((a & b) | (a & _carry)) | (b & _carry);
+	}
+
+	if (carry) {
+		*carry = _carry;
+	}
+
+	return ret;
+}
+
+/**
+ * \brief This function calls `rz_bv_add()` and it related baseline implementation `rz_bv_add_ref()` and then
+ * compares the resultant bitvector and carry flag and returns an error if there is a difference.
+ */
+static const char *test_rz_bv_add_against_ref(ut64 size, const ut8 *a_bytes, const ut8 *b_bytes) {
+	bool carry_a = false;
+	bool carry_b = false;
+	const char *error = NULL;
+
+	RzBitVector *a = rz_bv_new_from_bytes_be(a_bytes, 0, size);
+	RzBitVector *b = rz_bv_new_from_bytes_be(b_bytes, 0, size);
+	RzBitVector *result = rz_bv_add(a, b, &carry_a);
+	RzBitVector *ref = rz_bv_add_ref(a, b, &carry_b);
+
+	if (rz_bv_cmp(result, ref)) {
+		error = "rz_bv_add() result differs from reference";
+		goto finally;
+	}
+
+	if (carry_a != carry_b) {
+		error = "rz_bv_add() carry flag differs from reference";
+		goto finally;
+	}
+
+finally:
+	rz_bv_free(result);
+	rz_bv_free(ref);
+	rz_bv_free(a);
+	rz_bv_free(b);
+
+	return error;
+}
+
+bool test_rz_bv_add(void) {
+	const char *error = NULL;
+
+	// Add 5-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		5,
+		(ut8[1]){ 0x1f },
+		(ut8[1]){ 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 5-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		5,
+		(ut8[1]){ 0x10 },
+		(ut8[1]){ 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 64-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		64,
+		(ut8[8]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[8]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 64-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		64,
+		(ut8[8]){ 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[8]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 });
+	mu_assert_null(error, error);
+
+	// Add 128-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		128,
+		(ut8[16]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
+		(ut8[16]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
+	mu_assert_null(error, error);
+
+	// Add 128-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		128,
+		(ut8[16]){ 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
+		(ut8[16]){ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F });
+	mu_assert_null(error, error);
+
+	// Add 125-bit vectors with carry
+	error = test_rz_bv_add_against_ref(
+		125,
+		(ut8[16]){ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F },
+		(ut8[16]){ 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+	mu_assert_null(error, error);
+
+	// Add 125-bit vectors without carry
+	error = test_rz_bv_add_against_ref(
+		125,
+		(ut8[16]){ 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x10 },
+		(ut8[16]){ 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x00 });
+	mu_assert_null(error, error);
+
 	mu_end;
 }
 
@@ -994,7 +1125,7 @@ bool test_rz_bv_div(void) {
 	TEST_DIV(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x6186185");
 	TEST_DIV(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x1");
 	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
-	rz_bv_lshift(superbig, 70);
+	mu_assert_true(rz_bv_lshift(superbig, 70), "Shift failed");
 	TEST_DIV(superbig, rz_bv_new_from_ut64(80, 2), "0x5400000000000000000");
 
 #undef TEST_DIV
@@ -1029,7 +1160,7 @@ bool test_rz_bv_mod(void) {
 	TEST_MOD(rz_bv_new_from_ut64(70, 0xffffffd6), rz_bv_new_from_ut64(70, 42), "0x4");
 	TEST_MOD(rz_bv_new_from_ut64(70, 42), rz_bv_new_from_ut64(70, 42), "0x0");
 	RzBitVector *superbig = rz_bv_new_from_ut64(80, 42);
-	rz_bv_lshift(superbig, 70);
+	mu_assert_true(rz_bv_lshift(superbig, 70), "Shift failed");
 	TEST_MOD(rz_bv_dup(superbig), rz_bv_new_from_ut64(80, 2), "0x0");
 	rz_bv_set(superbig, 0, true);
 	rz_bv_set(superbig, 1, true);
@@ -1187,7 +1318,7 @@ static bool test_rz_bv_set_to_bytes_le(void) {
 	{
 		ut8 buf9[9] = { 0 };
 		RzBitVector *bv = rz_bv_new_from_ut64(64 + 8, 0xc0ffee4200000000);
-		rz_bv_lshift_fill(bv, 8, true);
+		mu_assert_true(rz_bv_lshift_fill(bv, 8, true), "Shift failed");
 		rz_bv_set_to_bytes_le(bv, buf9);
 		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0x42, 0xee, 0xff, 0xc0 };
 		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
@@ -1197,7 +1328,7 @@ static bool test_rz_bv_set_to_bytes_le(void) {
 		ut8 buf9[9] = { 0 };
 		buf9[8] = 0xff; // make sure these trailing bits are not overwritten
 		RzBitVector *bv = rz_bv_new_from_ut64(64 + 6, 0xffffee00000000);
-		rz_bv_lshift_fill(bv, 8, true);
+		mu_assert_true(rz_bv_lshift_fill(bv, 8, true), "Shift failed");
 		rz_bv_set_to_bytes_le(bv, buf9);
 		const ut8 expect9[9] = { 0xff, 0x00, 0x00, 0x00, 0x00, 0xee, 0xff, 0xff, 0xc0 };
 		mu_assert_memeq(buf9, expect9, sizeof(expect9), "set to bytes le");
@@ -1370,6 +1501,7 @@ bool test_rz_bv_cast_inplace(void) {
 	mu_assert_notnull(small->bits.large_a, "Buffer not set");
 	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
 
+	// Cast large to small
 	mu_assert_true(rz_bv_cast_inplace(large, 32, true), "Cast failed");
 	mu_assert_eq(rz_bv_to_ut64(large), 0x0c0d0e0f, "Mismatch after cast");
 	mu_assert_streq_free(rz_bv_as_hex_string(large, true), "0x0c0d0e0f", "small to large cast failed");
@@ -1377,9 +1509,17 @@ bool test_rz_bv_cast_inplace(void) {
 	mu_assert_notnull(large->bits.large_a, "Buffer not set");
 	mu_assert_eq(large->_elem_len, 16, "Buffer length wrong");
 
+	// Cast small to large
 	mu_assert_true(rz_bv_cast_inplace(large, 256, true), "Cast failed");
 	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff0c0d0e0f", "small to large cast failed");
 	mu_assert_eq(large->len, 256, "New size is off");
+	mu_assert_notnull(large->bits.large_a, "Buffer not set");
+	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
+
+	// Cast large 256 bit to 128 bit.
+	mu_assert_true(rz_bv_cast_inplace(large, 128, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(large, false), "0xffffffffffffffffffffffff0c0d0e0f", "large to large cast failed");
+	mu_assert_eq(large->len, 128, "New size is off");
 	mu_assert_notnull(large->bits.large_a, "Buffer not set");
 	mu_assert_eq(large->_elem_len, 32, "Buffer length wrong");
 
@@ -1745,6 +1885,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_logic_large);
 	mu_run_test(test_rz_bv_algorithm32);
 	mu_run_test(test_rz_bv_algorithm128);
+	mu_run_test(test_rz_bv_add);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
 	mu_run_test(test_rz_bv_set_from_bytes_be);
 	mu_run_test(test_rz_bv_as_hex_string);

@@ -50,7 +50,7 @@ Let's make an example and suppose we want to add the `sky` command, which
 would find all occurrences of the word "sky" in a binary. The first thing to
 do is to see where `sky` command could be added by reading
 [`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_descs.yaml).
-`sky` is `s` command's subcommand and they are splitted and placed inside the .YAML
+`sky` is `s` command's subcommand and they are split and placed inside the .YAML
 file specified by the descriptor `subcommands` of the respective command. Since `sky`
 starts with an `s`, its subcommands would be in [`librz/core/cmd_descs/cmd_seek.yaml`](https://github.com/rizinorg/rizin/blob/6f40dfe493f0caf9e0541e1ee83e3d8012b5750f/librz/core/cmd_descs/cmd_seek.yaml).
 That file respects the same tree structure used when executing rizin and seeing its help,

@@ -41,7 +41,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	} while (0)
 
 /*
- * RZ_CHECKS_LEVEL determines the behaviour of the rz_return_* set of functions.
+ * RZ_CHECKS_LEVEL determines the behaviour of the rz_return/goto/break_* set of functions.
  *
  * 0: completely disable every function and make them like no-operation
  * 1: silently enable checks. Check expressions and do return, but do not log anything
@@ -70,16 +70,25 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	do { \
 		return (val); \
 	} while (0)
+
 #define rz_goto_if_reached(where) \
 	do { \
 		goto where; \
 	} while (0)
-
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		if (!(expr)) { \
 			goto where; \
 		} \
+	} while (0)
+
+#define rz_break_if_reached() \
+	{ \
+		break; \
+	}
+#define rz_break_if_fail(expr) \
+	do { \
+		; \
 	} while (0)
 
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
@@ -145,10 +154,24 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); jumping to %s\n", RZ_FUNCTION, #expr, __LINE__, #where); \
 			goto where; \
 		} \
 	} while (0)
+
+#define rz_break_if_reached() \
+	{ \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting loop\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		break; \
+	}
+
+#define rz_break_if_fail(expr) \
+	{ \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting loop\n", RZ_FUNCTION, #expr, __LINE__); \
+			break; \
+		} \
+	}
 
 #else // RZ_CHECKS_LEVEL
 
@@ -170,12 +193,12 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 	do { \
 		assert(false); \
 	} while (0)
+
 #define rz_goto_if_reached(where) \
 	do { \
 		assert(false); \
 		goto where; \
 	} while (0)
-
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		assert(expr); \
@@ -183,6 +206,19 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 			goto where; \
 		} \
 	} while (0)
+
+#define rz_break_if_reached() \
+	{ \
+		assert(false); \
+		break; \
+	}
+#define rz_break_if_fail(expr) \
+	{ \
+		assert(expr); \
+		if (!(expr)) { \
+			break; \
+		} \
+	}
 
 #endif // RZ_CHECKS_LEVEL
 

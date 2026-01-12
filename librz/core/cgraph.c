@@ -252,7 +252,7 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 		return NULL;
 	}
 	rz_cons_push();
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};

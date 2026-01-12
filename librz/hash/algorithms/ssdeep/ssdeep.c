@@ -227,7 +227,7 @@ void rz_ssdeep_fini(RzSSDeep *context, char *result) {
 	ut32 roll_hash = roll_hash_sum(&context->roll);
 
 	if (context->total_size > SSDEEP_LIMIT_MAX_SIZE) {
-		RZ_LOG_ERROR("ssdeep: total size exeeds max size\n");
+		RZ_LOG_ERROR("ssdeep: total size exceeds max size\n");
 		return;
 	}
 

@@ -176,7 +176,6 @@ static const struct {
 	{ "lm32", RZ_SYS_ARCH_LM32 },
 	{ "v850", RZ_SYS_ARCH_V850 },
 	{ "tricore", RZ_SYS_ARCH_TRICORE },
-	{ NULL, 0 }
 };
 
 #if __WINDOWS__
@@ -926,8 +925,7 @@ RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
 }
 
 RZ_API int rz_sys_arch_id(const char *arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
 		if (!strcmp(arch, arch_bit_array[i].name)) {
 			return arch_bit_array[i].bit;
 		}
@@ -936,9 +934,8 @@ RZ_API int rz_sys_arch_id(const char *arch) {
 }
 
 RZ_API const char *rz_sys_arch_str(int arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
-		if (arch & arch_bit_array[i].bit) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
+		if (arch == arch_bit_array[i].bit) {
 			return arch_bit_array[i].name;
 		}
 	}

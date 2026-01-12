@@ -270,7 +270,6 @@ RZ_API bool rz_str_isnumber(const char *str);
 RZ_API const char *rz_str_last(const char *in, const char *ch);
 RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 RZ_API char *rz_str_from_ut64(ut64 val);
-RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep);
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep);
 RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width);
@@ -282,7 +281,7 @@ typedef struct rz_str_stringify_opt_t {
 	const ut8 *buffer; ///< String buffer (cannot be NULL).
 	ut32 length; ///< String buffer length.
 	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
-	ut32 wrap_at; ///< Adds a new line the output when it exeeds this value.
+	ut32 wrap_at; ///< Adds a new line the output when it exceeds this value.
 	bool escape_nl; ///< When enabled escapes new lines (\n).
 	bool json; ///< Encodes the output as a JSON string.
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
