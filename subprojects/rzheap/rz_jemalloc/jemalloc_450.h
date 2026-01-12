@@ -36,6 +36,12 @@
 #endif
 
 /* Queue/list helper macros - pointers become GHT */
+#undef RZ_JM_QL_HEAD
+#undef RZ_JM_QR
+#undef RZ_JM_RB_TREE
+#undef RZ_JM_PH
+#undef RZ_JM_QL_ELM
+#undef RZ_JM_RB_NODE
 #define RZ_JM_QL_HEAD(a_type) struct GH_ALIGN { GHT qlh_first; }
 #define RZ_JM_QR(a_type)      struct GH_ALIGN { GHT qre_next; GHT qre_prev; }
 #define RZ_JM_RB_TREE(a_type) struct GH_ALIGN { GHT rbt_root; }

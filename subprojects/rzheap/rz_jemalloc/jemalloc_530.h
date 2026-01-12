@@ -62,16 +62,23 @@ typedef struct GH(phn_link_s_530) GH(phn_link_t_530);
 typedef struct GH(ph_s_530) GH(ph_t_530);
 
 
-/* only define once */
-#ifndef RZ_JM_DEFINE_ONLY_ONCE_530
-#define RZ_JM_DEFINE_ONLY_ONCE_530
-
+/* Redefine queue/list macros for 530 to use GH_PACKED */
+#undef RZ_JM_QL_HEAD
+#undef RZ_JM_QR
+#undef RZ_JM_RB_TREE
+#undef RZ_JM_PH
+#undef RZ_JM_QL_ELM
+#undef RZ_JM_RB_NODE
 #define RZ_JM_QL_HEAD(a_type) GH_PACKED(struct GH_ALIGN { GHT qlh_first; })
 #define RZ_JM_QR(a_type)      GH_PACKED(struct GH_ALIGN { GHT qre_next; GHT qre_prev; })
 #define RZ_JM_RB_TREE(a_type) GH_PACKED(struct GH_ALIGN { GHT rbt_root; })
 #define RZ_JM_PH(a_type)      GH_PACKED(struct GH_ALIGN { GHT ph_root; })
 #define RZ_JM_QL_ELM(a_type)  RZ_JM_QR(a_type)
 #define RZ_JM_RB_NODE(a_type) GH_PACKED(struct GH_ALIGN { GHT rbn_left; GHT rbn_right; })
+
+/* only define once */
+#ifndef RZ_JM_DEFINE_ONLY_ONCE_530
+#define RZ_JM_DEFINE_ONLY_ONCE_530
 
 #define RZ_JM_PH_STRUCTS(a_prefix, a_type) \
 typedef GH_PACKED(struct GH_ALIGN { \
@@ -88,20 +95,20 @@ typedef GH_PACKED(struct GH_ALIGN { \
 }) GH(list_type##_t_530); \
 
 /* Opaque types - internal layout doesn't matter, only size and alignment */
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[88]; } malloc_mutex_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[112]; } malloc_mutex_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[68]; } slab_data_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[64]; } slab_data_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[20]; } e_prof_info_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[32]; } e_prof_info_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[68]; } bin_stats_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[80]; } bin_stats_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[3944]; } arena_stats_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[10368]; } arena_stats_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[17836]; } pa_shard_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[68280]; } pa_shard_t_530_64);
-GH_PACKED(typedef struct RZ_ALIGNED(4) { ut8 data[2064]; } tsdn_t_530_32);
-GH_PACKED(typedef struct RZ_ALIGNED(8) { ut8 data[2632]; } tsdn_t_530_64);
+typedef struct RZ_ALIGNED(4) { ut8 data[88]; } malloc_mutex_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[112]; } malloc_mutex_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[68]; } slab_data_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[64]; } slab_data_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[20]; } e_prof_info_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[32]; } e_prof_info_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[68]; } bin_stats_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[80]; } bin_stats_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[3944]; } arena_stats_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[10368]; } arena_stats_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[17836]; } pa_shard_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[68280]; } pa_shard_t_530_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[2064]; } tsdn_t_530_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[2632]; } tsdn_t_530_64;
 
 #define MALLOCX_ARENA_BITS 12
 #define EDATA_ALIGNMENT 128
@@ -261,9 +268,9 @@ GH_PACKED(struct GH_ALIGN GH(edata_s_530) {
  * 64 bit size is 8 bytes 
  * 32 bit size is 8 bytes
  */
-GH_PACKED(typedef struct GH_ALIGN {
+typedef GH_PACKED(struct GH_ALIGN {
 	ut64 ns;
-} GH(nstime_t_530));
+}) GH(nstime_t_530);
 
 
 RZ_JM_PH_STRUCTS(edata_heap_530, GH(edata_t_530));
