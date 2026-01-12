@@ -573,6 +573,18 @@ static bool is_unknown_call_from_plt(RzAnalysis *analysis, ut64 op_address) {
 }
 
 /**
+ * Assuming arm, detect if op is "mov lr, pc"
+ */
+static bool op_is_arm_mov_lr_pc(RzAnalysisOp *op) {
+	RzAnalysisLiftedILOp il = op->il_op;
+	if (!il || il->code != RZ_IL_OP_SET || il->op.set.is_local || strcmp(il->op.set.v, "lr")) {
+		return false;
+	}
+	RzILOpPure *src = il->op.set.x;
+	return src->code == RZ_IL_OP_BITV && rz_bv_to_ut64(src->op.bitv.value) == op->addr + 2 * op->size;
+}
+
+/**
  * \brief Analyses the given task item \p item for branches.
  *
  * Analysis starts for all instructions from \p item->start_address. If a branch is
@@ -943,11 +955,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
 		case RZ_ANALYSIS_OP_TYPE_MOV:
 			last_is_reg_mov_lea = false;
-			if (is_arm) { // mov lr, pc
-				const char *esil = rz_strbuf_get(&op.esil);
-				if (!rz_str_cmp(esil, "pc,lr,=", -1)) {
-					last_is_mov_lr_pc = true;
-				}
+			if (is_arm && op_is_arm_mov_lr_pc(&op)) { // mov lr, pc
+				last_is_mov_lr_pc = true;
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
 				fcn->bp_off = -sp;
