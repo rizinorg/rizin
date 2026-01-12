@@ -10,7 +10,7 @@ static int z80_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass(op, buf, len);
 }
 
-static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int z80_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return op->size = z80Asm(a, op, buf);
 }
 
@@ -23,5 +23,5 @@ RzAsmPlugin rz_asm_plugin_z80_gnu = {
 	.bits = 8,
 	.endian = RZ_SYS_ENDIAN_NONE,
 	.disassemble = &z80_gnu_disassemble,
-	.assemble = &do_assemble,
+	.assemble = &z80_assemble,
 };
