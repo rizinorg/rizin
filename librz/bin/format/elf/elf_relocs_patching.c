@@ -1871,7 +1871,7 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		break;
 	case R_X86_64_GOT64:
 		word = 8;
-		val =  fs->G + fs->A;
+		val = fs->G + fs->A;
 		break;
 	case R_X86_64_GOTPC64:
 		word = 8;
