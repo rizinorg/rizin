@@ -146,7 +146,13 @@ bool test_rop_cache(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core");
 
-	RzCoreFile *cf = rz_core_file_open(core, "bins/elf/analysis/hello-linux-x86_64", RZ_PERM_RX, 0);
+#if __WINDOWS__
+	const char *test_bin = "bins/pe/standard.exe";
+#else
+	const char *test_bin = "bins/elf/analysis/hello-linux-x86_64";
+#endif
+
+	RzCoreFile *cf = rz_core_file_open(core, test_bin, RZ_PERM_RX, 0);
 	mu_assert_notnull(cf, "open file");
 	rz_core_bin_load(core, NULL, 0);
 	rz_config_set_b(core->config, "rop.cache", true);
