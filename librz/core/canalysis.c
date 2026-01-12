@@ -3907,6 +3907,7 @@ static void populate_global_vars_from_symbols(RzCore *core) {
 		if (is_compiler_or_runtime_symbol(sym->name)) {
 			continue;
 		}
+		// Skip if there's already a global variable at this address
 		if (rz_analysis_var_global_get_byaddr_in(core->analysis, sym->vaddr)) {
 			continue;
 		}
@@ -5994,12 +5995,19 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	}
 	rz_cons_clear_line(stderr);
 
-	populate_global_vars_from_symbols(core);
-
 	// if type was simple only then don't proceed further
 	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_cons_is_breaked()) {
 		goto finish;
 	}
+
+	// Only populate globals from symbol table if no globals exist yet (i.e., no DWARF info)
+	// This only runs for advanced analysis (aaa), not simple analysis (aa)
+	// If DWARF info exists, globals are already populated with proper type information
+	RzList *existing_globals = rz_analysis_var_global_get_all(core->analysis);
+	if (rz_list_empty(existing_globals)) {
+		populate_global_vars_from_symbols(core);
+	}
+	rz_list_free(existing_globals);
 
 	// Run pending analysis immediately after analysis
 	// Usefull when running commands with ";" or via rizin -c,-i
