@@ -208,8 +208,8 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64
 
 	RZ_LOG_VERBOSE("print hexdump diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
 
-	rz_io_read_at(core->io, aa, a, (int)len);
-	rz_io_read_at(core->io, ba, b, (int)len);
+	rz_io_read_at_mapped(core->io, aa, a, (int)len);
+	rz_io_read_at_mapped(core->io, ba, b, (int)len);
 	int col = core->cons->columns > 123;
 	char *pstr = rz_print_hexdiff_str(core->print, aa, a,
 		ba, b, (int)len, col);
@@ -297,7 +297,7 @@ RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode
 	}
 
 	char *string = NULL;
-	rz_io_read_at(core->io, addr, buffer, len);
+	rz_io_read_at_mapped(core->io, addr, buffer, len);
 	RzPrint *print = core->print;
 	rz_print_init_rowoffsets(print);
 	bool old_use_comments = print->use_comments;
@@ -356,7 +356,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 		if (!buffer) {
 			return NULL;
 		}
-		rz_io_read_at(core->io, addr, buffer, len);
+		rz_io_read_at_mapped(core->io, addr, buffer, len);
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			string = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
@@ -428,7 +428,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		return NULL;
 	}
 
-	rz_io_read_at(core->io, addr, buffer, len);
+	rz_io_read_at_mapped(core->io, addr, buffer, len);
 	const int round_len = len - (len % size);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	for (int i = 0; i < round_len; i += size) {
@@ -498,7 +498,7 @@ RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 add
 	}
 	core->print->cols = 1;
 	core->print->flags |= RZ_PRINT_FLAGS_REFS;
-	rz_io_read_at(core->io, address, buffer, len);
+	rz_io_read_at_mapped(core->io, address, buffer, len);
 	char *hexdump_str = rz_print_hexdump_str(core->print, address, buffer,
 		len, wordsize * 8, bitsize / 8, 1);
 	core->print->flags &= ~RZ_PRINT_FLAGS_REFS;

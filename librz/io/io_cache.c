@@ -117,7 +117,7 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, size_t len) {
 	{
 		const bool cm = io->cachemode;
 		io->cachemode = false;
-		rz_io_read_at(io, addr, ch->odata, len);
+		rz_io_read_at_mapped(io, addr, ch->odata, len);
 		io->cachemode = cm;
 	}
 	memcpy(ch->data, buf, len);

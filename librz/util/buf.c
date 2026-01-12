@@ -600,7 +600,7 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io_fd(RZ_NONNULL void *iob, int fd) {
  * \param iob Pointer to RzIOBind structure.
  * \return Return the new allocated buffer.
  *
- * This buffer will use `rz_io_read_at()`/`rz_io_write_at()` as implemented by
+ * This buffer will use `rz_io_read_at_mapped()`/`rz_io_write_at()` as implemented by
  * the RzIOBind given.
  */
 RZ_API RZ_OWN RzBuffer *rz_buf_new_with_io(RZ_NONNULL void *iob) {

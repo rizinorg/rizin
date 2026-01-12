@@ -178,6 +178,17 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 			egg->endian = endian;
 			break;
 		}
+	} else if (!strcmp(arch, "mips")) {
+		egg->arch = RZ_SYS_ARCH_MIPS;
+		switch (bits) {
+		case 16:
+		case 32:
+		case 64:
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		}
 	} else if (!strcmp(arch, "trace")) {
 		// rz_syscall_setup (egg->syscall, arch, os, bits);
 		egg->remit = &emit_trace;
@@ -234,7 +245,7 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 		rz_str_sanitize(fileSanitized);
 		const char *arch = rz_sys_arch_str(egg->arch);
 		const char *os = rz_egg_os_as_string(egg->os);
-		char *textFile = rz_egg_Cfile_parser(egg->sys_path, fileSanitized, arch, os, egg->bits);
+		char *textFile = rz_egg_compile_c_source(fileSanitized, arch, os, egg->bits, egg->sys_path);
 		if (!textFile) {
 			RZ_LOG_ERROR("egg: failure while parsing '%s'\n", fileSanitized);
 			free(fileSanitized);
@@ -283,17 +294,8 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
 	rz_syscall_item_free(item);
 }
 
-RZ_API void rz_egg_alloc(RzEgg *egg, int n) {
-	// add esp, n
-}
-
 RZ_API void rz_egg_label(RzEgg *egg, const char *name) {
 	rz_egg_printf(egg, "%s:\n", name);
-}
-
-RZ_API void rz_egg_math(RzEgg *egg) { //, char eq, const char *vs, char type, const char *sr
-	// TODO
-	// e->mathop (egg, op, type, eq, p);
 }
 
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len) {
@@ -344,11 +346,6 @@ static int rz_egg_append_bytes(RzEgg *egg, const ut8 *b, int len) {
 	}
 
 	return true;
-}
-
-// rz_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
-RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v) {
-	//	egg->depth++;
 }
 
 RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) {
@@ -442,8 +439,6 @@ RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg) {
 	// TODO increment reference
 	return egg->bin;
 }
-
-// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
 
 RZ_API char *rz_egg_get_source(RzEgg *egg) {
 	return rz_buf_to_string(egg->src);
@@ -539,10 +534,6 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 	}
 	free(o);
 	return true;
-}
-
-RZ_API void rz_egg_fill(RzEgg *egg, int pos, int type, int argc, int length) {
-	// TODO
 }
 
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *key, const char *val) {

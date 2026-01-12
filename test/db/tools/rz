@@ -566,6 +566,7 @@ ec diff.unmatch red    | mismatch color
  [32m-s[0m           [0mShow assembler
  [32m-S[0m[33m string [0m   [0mAppend a string
  [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mIncrease the verbosity
  [32m-w[0m[33m off:hex [0m  [0mPatch hexpairs at given offset
  [32m-x[0m           [0mExecute
  [32m-X[0m           [0mExecute rop chain, using the stack provided

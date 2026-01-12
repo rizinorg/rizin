@@ -255,7 +255,7 @@ If Rizin was installed using `meson`, you can run the following command from the
 same build directory where you had previously installed Rizin:
 
 ```
-$ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time```
+$ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time
 ```
 
 Furthermore, if you had installed Rizin using a distribution package, use the
@@ -273,7 +273,7 @@ $ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not
 
 If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
-`rizin` from `./build/binrz/rizin/rizin.`
+`rizin` from `./build/binrz/rizin/rizin`
 
 If you encounter issues while re-building Rizin, try to remove the existing
 build directory (e.g. `rm -r ./build`) and clean the subproject files

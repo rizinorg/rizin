@@ -141,7 +141,7 @@ static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, 
 	if (*arg == '=') {
 		arg++; /* for <=, >=, ... */
 	}
-	p = rz_egg_mkvar(egg, str, arg, 0);
+	p = rz_egg_lang_mkvar(egg, str, arg, 0);
 	rz_egg_printf(egg, "%s (%s) => (%s)\n", op, p, dst);
 	free(p);
 }

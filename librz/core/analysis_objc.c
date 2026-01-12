@@ -64,13 +64,13 @@ static inline bool inBetween(RzBinSection *s, ut64 addr) {
 
 static ut32 readDword(RzCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[4];
-	*success = rz_io_read_at(objc->core->io, addr, buf, sizeof(buf));
+	*success = rz_io_read_at_mapped(objc->core->io, addr, buf, sizeof(buf));
 	return rz_read_le32(buf);
 }
 
 static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[8] = { 0 };
-	*success = rz_io_read_at(objc->core->io, addr, buf, sizeof(buf));
+	*success = rz_io_read_at_mapped(objc->core->io, addr, buf, sizeof(buf));
 	return rz_read_le64(buf);
 }
 
@@ -141,7 +141,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 		return false;
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
-	if (!rz_io_read_at(objc->core->io, objc->_const->vaddr, buf, ss_const)) {
+	if (!rz_io_read_at_mapped(objc->core->io, objc->_const->vaddr, buf, ss_const)) {
 		RZ_LOG_ERROR("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
@@ -152,7 +152,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 			array_add(objc, va, xrefs_to);
 		}
 	}
-	if (!rz_io_read_at(objc->core->io, va_selrefs, buf, ss_selrefs)) {
+	if (!rz_io_read_at_mapped(objc->core->io, va_selrefs, buf, ss_selrefs)) {
 		RZ_LOG_ERROR("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
@@ -233,7 +233,7 @@ static bool objc_find_refs(RzCore *core) {
 		}
 
 		ut64 va = objc->_data->vaddr + off;
-		// XXX do a single rz_io_read_at() and just rz_read_le64() here
+		// XXX do a single rz_io_read_at_mapped() and just rz_read_le64() here
 		ut64 classRoVA = readQword(objc, va + objc2ClassInfoOffs, &readSuccess);
 		if (!readSuccess || isInvalid(classRoVA)) {
 			continue;

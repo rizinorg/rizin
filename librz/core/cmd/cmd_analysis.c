@@ -883,7 +883,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	if (!buf) {
 		return false;
 	}
-	(void)rz_io_read_at(core->io, addr, (ut8 *)buf, buf_sz);
+	(void)rz_io_read_at_mapped(core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init(&stats);
 
 	// esil_init (core);
@@ -1302,7 +1302,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 			if (!buf) {
 				break;
 			}
-			rz_io_read_at(core->io, pc, buf, bbs);
+			rz_io_read_at_mapped(core->io, pc, buf, bbs);
 			int left;
 			bool opskip;
 			while (pc < end) {
@@ -1404,7 +1404,7 @@ static bool print_cmd_analysis_after_traps_print(RZ_NONNULL RzCore *core, ut64 n
 			bufi = 0;
 		}
 		if (!bufi) {
-			rz_io_read_at(core->io, addr, buf, 4096);
+			rz_io_read_at_mapped(core->io, addr, buf, 4096);
 		}
 		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->analysis, &op, addr, buf + bufi, 4096 - bufi, RZ_ANALYSIS_OP_MASK_BASIC) > 0) {
@@ -1922,7 +1922,7 @@ static bool function_byte_signature(RzCore *core, RzAnalysisFunction *fcn, ut8 *
 	current = 0;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		if (bb->size > 0 && !rz_io_read_at(core->io, bb->addr, data + current, bb->size)) {
+		if (bb->size > 0 && !rz_io_read_at_mapped(core->io, bb->addr, data + current, bb->size)) {
 			RZ_LOG_ERROR("core: failed to read at %" PFMT64x "\n", bb->addr);
 			goto fail;
 		}
@@ -2965,7 +2965,7 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, c
 			if (flag) {
 				desc = flag->name;
 			} else {
-				rz_io_read_at(core->io, xref->to, buf, sizeof(buf));
+				rz_io_read_at_mapped(core->io, xref->to, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, xref->to);
 				RzAsmOp asmop = { 0 };
 				rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));

@@ -342,7 +342,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 			i = 0;
 		}
 		if (!i) {
-			rz_io_read_at(core->io, addr, buf, bsize);
+			rz_io_read_at_mapped(core->io, addr, buf, bsize);
 		}
 		if (addr == until_addr) {
 			break;
@@ -1005,7 +1005,7 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 		ESILISTATE->last_read = addr;
 	}
 	handle_var_stack_access(esil, addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, len);
-	if (myvalid(core->io, addr) && rz_io_read_at(core->io, addr, (ut8 *)buf, len)) {
+	if (myvalid(core->io, addr) && rz_io_read_at_mapped(core->io, addr, (ut8 *)buf, len)) {
 		ut64 refptr;
 		bool trace = true;
 		switch (len) {
@@ -1020,13 +1020,13 @@ static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len
 			break;
 		default:
 			trace = false;
-			rz_io_read_at(core->io, addr, (ut8 *)buf, len);
+			rz_io_read_at_mapped(core->io, addr, (ut8 *)buf, len);
 			break;
 		}
 		// TODO incorrect
 		if (trace && myvalid(core->io, refptr)) {
 			str[0] = 0;
-			if (rz_io_read_at(core->io, refptr, str, sizeof(str)) < 1) {
+			if (rz_io_read_at_mapped(core->io, refptr, str, sizeof(str)) < 1) {
 				// RZ_LOG_ERROR("core: invalid read\n");
 				str[0] = 0;
 			} else {
@@ -1122,7 +1122,7 @@ static void getpcfromstack(RzCore *core, RzAnalysisEsil *esil) {
 		return;
 	}
 
-	rz_io_read_at(core->io, addr, buf, size + 1);
+	rz_io_read_at_mapped(core->io, addr, buf, size + 1);
 
 	// TODO Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
 	idx = 0;
@@ -1324,7 +1324,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		return;
 	}
 	ESILISTATE->last_read = UT64_MAX;
-	rz_io_read_at(core->io, start, buf, iend + 1);
+	rz_io_read_at_mapped(core->io, start, buf, iend + 1);
 	rz_reg_arena_push(core->analysis->reg);
 
 	RzAnalysisEsil *ESIL = core->analysis->esil;

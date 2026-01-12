@@ -71,7 +71,7 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 				break;
 			case 'z':
 				memset(str, 0, sizeof(str));
-				rz_io_read_at(core->io, arg, (ut8 *)str, sizeof(str) - 1);
+				rz_io_read_at_mapped(core->io, arg, (ut8 *)str, sizeof(str) - 1);
 				rz_str_filter(str);
 				res = rz_str_appendf(res, "\"%s\"", str);
 				break;
@@ -82,7 +82,7 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 				if (len == 0) {
 					len = 16; // override default
 				}
-				(void)rz_io_read_at(core->io, arg, (ut8 *)str, len);
+				(void)rz_io_read_at_mapped(core->io, arg, (ut8 *)str, len);
 				str[len] = 0;
 				rz_str_filter(str);
 				res = rz_str_appendf(res, "\"%s\"", str);
