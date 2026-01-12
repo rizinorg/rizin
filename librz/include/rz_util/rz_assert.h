@@ -26,18 +26,18 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define RZ_FUNCTION ((const char *)("???"))
 #endif
 
-#define rz_warn_if_reached() \
-	do { \
-		rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
-			__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : ""); \
-	} while (0)
-
 #define rz_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
 			rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
 		} \
+	} while (0)
+
+#define rz_warn_if_reached() \
+	do { \
+		rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
+			__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
 /*
@@ -71,23 +71,23 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		return (val); \
 	} while (0)
 
-#define rz_goto_if_reached(where) \
-	do { \
-		goto where; \
-	} while (0)
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		; \
 	} while (0)
+#define rz_goto_if_reached(where) \
+	do { \
+		goto where; \
+	} while (0)
 
-#define rz_break_if_reached() \
-	{ \
-		break; \
-	}
 #define rz_break_if_fail(expr) \
 	do { \
 		; \
 	} while (0)
+#define rz_break_if_reached() \
+	{ \
+		break; \
+	}
 
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
 
@@ -143,12 +143,6 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		return (val); \
 	} while (0)
 
-#define rz_goto_if_reached(where) \
-	do { \
-		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; jumping to %s\n", __FILE__, __LINE__, RZ_FUNCTION, #where); \
-		goto where; \
-	} while (0)
-
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		if (!(expr)) { \
@@ -157,11 +151,11 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		} \
 	} while (0)
 
-#define rz_break_if_reached() \
-	{ \
-		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting loop\n", __FILE__, __LINE__, RZ_FUNCTION); \
-		break; \
-	}
+#define rz_goto_if_reached(where) \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; jumping to %s\n", __FILE__, __LINE__, RZ_FUNCTION, #where); \
+		goto where; \
+	} while (0)
 
 #define rz_break_if_fail(expr) \
 	{ \
@@ -169,6 +163,12 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting loop\n", RZ_FUNCTION, #expr, __LINE__); \
 			break; \
 		} \
+	}
+
+#define rz_break_if_reached() \
+	{ \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting loop\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		break; \
 	}
 
 #else // RZ_CHECKS_LEVEL
@@ -192,11 +192,6 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 		assert(false); \
 	} while (0)
 
-#define rz_goto_if_reached(where) \
-	do { \
-		assert(false); \
-		goto where; \
-	} while (0)
 #define rz_goto_if_fail(expr, where) \
 	do { \
 		assert(expr); \
@@ -204,18 +199,23 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 			goto where; \
 		} \
 	} while (0)
-
-#define rz_break_if_reached() \
-	{ \
+#define rz_goto_if_reached(where) \
+	do { \
 		assert(false); \
-		break; \
-	}
+		goto where; \
+	} while (0)
+
 #define rz_break_if_fail(expr) \
 	{ \
 		assert(expr); \
 		if (!(expr)) { \
 			break; \
 		} \
+	}
+#define rz_break_if_reached() \
+	{ \
+		assert(false); \
+		break; \
 	}
 
 #endif // RZ_CHECKS_LEVEL
