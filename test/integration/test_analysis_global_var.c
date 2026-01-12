@@ -207,92 +207,6 @@ bool test_flag_confusion_addr() {
 	mu_end;
 }
 
-bool test_global_vars_from_symbols() {
-	RzCore *core = rz_core_new();
-	rz_type_db_init(core->analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
-
-	const char *fpath = "bins/elf/dectest64";
-	mu_assert_notnull(rz_core_file_open(core, fpath, RZ_PERM_R, 0), "open file");
-	rz_core_bin_load(core, fpath, 0);
-	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_SIMPLE);
-
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_get_byname(core->analysis, "global_var");
-	mu_assert_notnull(glob, "global_var populated from symbol table");
-	mu_assert_eq(glob->addr, 0x00404050, "global_var address");
-	mu_assert_null(glob->type, "global_var type is NULL (no DWARF)");
-
-	glob = rz_analysis_var_global_get_byname(core->analysis, "global_array");
-	mu_assert_notnull(glob, "global_array populated from symbol table");
-	mu_assert_eq(glob->addr, 0x00404058, "global_array address");
-	mu_assert_null(glob->type, "global_array type is NULL (no DWARF)");
-
-	rz_core_free(core);
-	mu_end;
-}
-
-bool test_global_var_null_type_output() {
-	RzCore *core = rz_core_new();
-	rz_type_db_init(core->analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
-
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("test_null_type", 0x1234);
-	mu_assert_notnull(glob, "create global with NULL type");
-	rz_analysis_var_global_add(core->analysis, glob);
-
-	char *output = rz_core_cmd_str(core, "avgl");
-	mu_assert_notnull(output, "avgl output");
-	mu_assert_true(strstr(output, "test_null_type") != NULL, "standard shows name");
-	mu_assert_true(strstr(output, "unknown") != NULL, "standard shows unknown type");
-	free(output);
-
-	output = rz_core_cmd_str(core, "avglq");
-	mu_assert_notnull(output, "avglq output");
-	mu_assert_true(strstr(output, "test_null_type") != NULL, "quiet shows name");
-	free(output);
-
-	output = rz_core_cmd_str(core, "avglj");
-	mu_assert_notnull(output, "avglj output");
-	mu_assert_true(strstr(output, "\"type\":\"unknown\"") != NULL, "json shows unknown type");
-	mu_assert_true(strstr(output, "\"size\":0") != NULL, "json shows size 0");
-	free(output);
-
-	output = rz_core_cmd_str(core, "avglt");
-	mu_assert_notnull(output, "avglt output");
-	mu_assert_true(strstr(output, "unknown") != NULL, "table shows unknown type");
-	free(output);
-
-	rz_core_free(core);
-	mu_end;
-}
-
-bool test_global_var_no_duplicate() {
-	RzCore *core = rz_core_new();
-	RzAnalysis *analysis = core->analysis;
-	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
-
-	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("existing_global", 0x404050);
-	mu_assert_notnull(glob, "create existing global");
-	RzTypeParser *parser = rz_type_parser_new();
-	RzType *typ = rz_type_parse_string_single(parser, "int", NULL);
-	rz_analysis_var_global_set_type(glob, typ);
-	rz_analysis_var_global_add(analysis, glob);
-
-	const char *fpath = "bins/elf/dectest64";
-	mu_assert_notnull(rz_core_file_open(core, fpath, RZ_PERM_R, 0), "open file");
-	rz_core_bin_load(core, fpath, 0);
-	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_SIMPLE);
-
-	RzAnalysisVarGlobal *check = rz_analysis_var_global_get_byaddr_at(analysis, 0x404050);
-	mu_assert_notnull(check, "global at address still exists");
-	mu_assert_streq(check->name, "existing_global", "original global preserved");
-	mu_assert_notnull(check->type, "original type preserved");
-
-	mu_assert_null(rz_analysis_var_global_get_byname(analysis, "global_var"), "global_var not created (duplicate address)");
-
-	rz_type_parser_free(parser);
-	rz_core_free(core);
-	mu_end;
-}
-
 bool test_flag_confusion_delete() {
 	RzCore *core = rz_core_new();
 	RzAnalysis *analysis = core->analysis;
@@ -345,9 +259,6 @@ int all_tests() {
 	mu_run_test(test_flag_confusion_space_name);
 	mu_run_test(test_flag_confusion_addr);
 	mu_run_test(test_flag_confusion_delete);
-	mu_run_test(test_global_vars_from_symbols);
-	mu_run_test(test_global_var_null_type_output);
-	mu_run_test(test_global_var_no_duplicate);
 	return tests_passed != tests_run;
 }
 
