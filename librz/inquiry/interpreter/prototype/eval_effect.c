@@ -138,7 +138,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		report_xref_yield(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_DATA);
+		report_xref_yield(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		if (!store_abstr_data(state, mem_idx, &st_addr, &eval_out, io_request, io_result)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;
