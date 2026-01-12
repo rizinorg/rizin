@@ -236,7 +236,7 @@ if (pcre2_dep_opt.enabled() or pcre2_dep_opt.auto()) and not meson.is_cross_buil
     pcre2_dep = cc.find_library('pcre2', required: true, static: true)
   endif
 else
-  pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true)
+  pcre2_dep = dependency('pcre2', version: '>=10.42', required: true, static: true, allow_fallback: true)
 endif
 
 if meson.is_cross_build()
