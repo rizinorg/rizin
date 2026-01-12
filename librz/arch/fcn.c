@@ -755,7 +755,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		rz_analysis_op_fini(&op);
 		rz_analysis_op_init(&op);
-		if ((oplen = rz_analysis_op(analysis, &op, at, buf, bytes_read, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
+		if ((oplen = rz_analysis_op(analysis, &op, at, buf, bytes_read, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
 			RZ_LOG_DEBUG("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, analysis->bits);
 			// gotoBeach (RZ_ANALYSIS_RET_ERROR);
 			// RET_END causes infinite loops somehow
