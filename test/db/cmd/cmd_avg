@@ -147,11 +147,8 @@ CMDS=<<EOF
 avgl
 EOF
 EXPECT=<<EOF
-global unknown _IO_stdin_used @ 0x402000
-global unknown __dso_handle @ 0x404048
 global unknown global_var @ 0x404050
 global unknown global_array @ 0x404058
-global unknown __TMC_END__ @ 0x404060
 EOF
 RUN
 
@@ -162,7 +159,7 @@ CMDS=<<EOF
 avglj
 EOF
 EXPECT=<<EOF
-[{"name":"_IO_stdin_used","type":"unknown","size":0,"addr":"0x402000"},{"name":"__dso_handle","type":"unknown","size":0,"addr":"0x404048"},{"name":"global_var","type":"unknown","size":0,"addr":"0x404050"},{"name":"global_array","type":"unknown","size":0,"addr":"0x404058"},{"name":"__TMC_END__","type":"unknown","size":0,"addr":"0x404060"}]
+[{"name":"global_var","type":"unknown","size":0,"addr":"0x404050"},{"name":"global_array","type":"unknown","size":0,"addr":"0x404058"}]
 EOF
 RUN
 
@@ -173,10 +170,7 @@ CMDS=<<EOF
 avglq
 EOF
 EXPECT=<<EOF
-_IO_stdin_used
-__dso_handle
 global_var
 global_array
-__TMC_END__
 EOF
 RUN

@@ -3849,6 +3849,43 @@ end:
 	analysis->coreb.archbits = archbits;
 }
 
+// Check if a symbol name appears to be compiler-generated or runtime internal
+static bool is_compiler_or_runtime_symbol(const char *name) {
+	if (!name || !*name) {
+		return true;
+	}
+	// Skip symbols starting with underscore (compiler/linker generated)
+	// This catches __dso_handle, _IO_stdin_used, __TMC_END__, etc.
+	if (name[0] == '_') {
+		return true;
+	}
+	// Skip Go runtime and standard library package symbols
+	// Note: Go symbols are package-prefixed with dots (e.g., "runtime.var" or "fmt.Printf")
+	if (rz_str_startswith(name, "type.") ||
+		rz_str_startswith(name, "runtime.") ||
+		rz_str_startswith(name, "runtime/") ||
+		rz_str_startswith(name, "internal/") ||
+		rz_str_startswith(name, "go.") ||
+		rz_str_startswith(name, "fmt.") ||
+		rz_str_startswith(name, "sync.") ||
+		rz_str_startswith(name, "syscall.") ||
+		rz_str_startswith(name, "strconv.") ||
+		rz_str_startswith(name, "unicode.") ||
+		rz_str_startswith(name, "unicode/") ||
+		rz_str_startswith(name, "errors.") ||
+		rz_str_startswith(name, "io.") ||
+		rz_str_startswith(name, "math.") ||
+		rz_str_startswith(name, "sort.") ||
+		rz_str_startswith(name, "reflect.") ||
+		rz_str_startswith(name, "os.") ||
+		rz_str_startswith(name, "time.") ||
+		strstr(name, ".stkobj") ||
+		strstr(name, "..inittask")) {
+		return true;
+	}
+	return false;
+}
+
 static void populate_global_vars_from_symbols(RzCore *core) {
 	RzBinFile *bf = core->bin->cur;
 	if (!bf || !bf->o || !bf->o->symbols) {
@@ -3864,6 +3901,10 @@ static void populate_global_vars_from_symbols(RzCore *core) {
 			continue;
 		}
 		if (strcmp(sym->type, RZ_BIN_TYPE_OBJECT_STR) != 0) {
+			continue;
+		}
+		// Skip compiler-generated and runtime symbols
+		if (is_compiler_or_runtime_symbol(sym->name)) {
 			continue;
 		}
 		if (rz_analysis_var_global_get_byaddr_in(core->analysis, sym->vaddr)) {
