@@ -1845,6 +1845,8 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		word = 4;
 		val = fs->G + fs->A;
 		break;
+	case R_X86_64_GOTPCREL64:
+		/* fall thru */
 	case R_X86_64_GOTPCREL:
 		/* fall thru */
 	case R_X86_64_GOTPCRELX:
@@ -1866,6 +1868,18 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_X86_64_GOTPC32:
 		word = 4;
 		val = fs->GOT + fs->A - fs->P;
+		break;
+	case R_X86_64_GOT64:
+		word = 8;
+		val =  fs->G + fs->A;
+		break;
+	case R_X86_64_GOTPC64:
+		word = 8;
+		val = fs->GOT - fs->P + fs->A;
+		break;
+	case R_X86_64_PLTOFF64:
+		word = 8;
+		val = fs->L - fs->GOT + fs->A;
 		break;
 	default:
 		UNHANDL_DEF("x86_64", rel_type);

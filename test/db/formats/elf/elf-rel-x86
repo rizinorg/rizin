@@ -1,4 +1,4 @@
-NAME=ELF: x86 relocs 
+NAME=ELF: x86 relocs patching test
 FILE=bins/elf/x86_relocs.o
 CMDS=<<EOF
 ir
