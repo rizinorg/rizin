@@ -219,3 +219,128 @@ WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readabl
 ERROR: Failed to read chunk of size 0x101 at 0x8000040 for disassembly.
 EOF
 RUN
+
+NAME=Indirect call sparc
+FILE=bins/inquiry/interpreter/prototype/sparc_icall_malloc
+CMDS=<<EOF
+# NOTE: This test is incomplete. As you can see the references from/to function_2 are missing.
+# This happens because the interpreter hashes the register state and quits if the state has been seen before.
+# Sparc passes values over the stack for function calls.
+# But the stack itself is not hashed in the current prototype.
+# So when it returns from function_1 it has seen the state already after returning from function_0 and quits.
+# Because the VM has the same register content when it returns from function_0 and function_1.
+# Only the stack differs, which is not checked.
+# Hence, every reference afterwards is missing.
+aaaaIp sym.main
+pd 60 @ sym.some_ptr
+axl
+EOF
+EXPECT=<<EOF
+            ; CODE XREF from sym.function_0 @ +0x8
+            ; CODE XREF from sym.function_1 @ +0x8
+            ;-- section..text:
+            ;-- .text:
+            ;-- some_ptr:
+            0x08000040      save  sp, -0xb0, sp                        ; RELOC TARGET 64 .text @ 0x08000040 + 0x50 ; [01] -r-x section size 236 named .text
+            ;-- .bss:
+            0x08000044      sethi 0x20000, g1                          ; RELOC 0 .bss @ 0x08000148
+            ;-- .bss:
+            0x08000048      or    g1, 0x148, g1                        ; RELOC 0 .bss @ 0x08000148
+            0x0800004c      mov   g1, i0
+            0x08000050      rett  i7+8
+            0x08000054      nop
+            ; CODE XREF from reloc..data.80000c4 @ +0x18
+            ;-- function_0:
+            0x08000058      save  sp, -0xb0, sp
+            0x0800005c      call  sym.some_ptr
+            0x08000060      nop
+            ; CODE XREF from reloc..bss.8000048 @ +0xc
+            0x08000064      mov   o0, g1
+            0x08000068      mov   g1, i0
+            0x0800006c      rett  i7+8
+            0x08000070      nop
+            ; CODE XREF from reloc..data.80000c4 @ +0x18
+            ;-- function_1:
+            0x08000074      save  sp, -0xb0, sp
+            0x08000078      call  sym.some_ptr
+            0x0800007c      nop
+            ; CODE XREF from reloc..bss.8000048 @ +0xc
+            0x08000080      mov   o0, g1
+            0x08000084      mov   g1, i0
+            0x08000088      rett  i7+8
+            0x0800008c      nop
+            ;-- function_2:
+            0x08000090      save  sp, -0xb0, sp
+            0x08000094      call  sym.some_ptr
+            0x08000098      nop
+            0x0800009c      mov   o0, g1
+            0x080000a0      mov   g1, i0
+            0x080000a4      rett  i7+8
+            0x080000a8      nop
+            ;-- main:
+            0x080000ac      save  sp, -0xc0, sp
+            0x080000b0      st    g0, [fp+0x7fb]
+            0x080000b4      st    g0, [fp+0x7f7]
+        ,=< 0x080000b8      ba    xcc, 0x8000108
+        |   0x080000bc      nop
+        |   ; CODE XREF from reloc..data.80000c4 @ +0x50
+        |   ;-- .data:
+       .--> 0x080000c0      sethi 0x20000, g1                          ; RELOC 0 .data @ 0x08000130
+       :|   ;-- .data:
+       :|   0x080000c4      or    g1, 0x130, g2                        ; RELOC 0 .data @ 0x08000130
+       :|   0x080000c8      ld    [fp+0x7f7], g1
+       :|   0x080000cc      srl   g1, 0, g1
+       :|   0x080000d0      sllx  g1, 3, g1
+       :|   0x080000d4      ldx   [g2+g1], g1                          ; 0x8000130
+       :|                                                              ; obj.fcn_arr
+       :|   0x080000d8      call  g1
+       :|   0x080000dc      nop
+       :|   ; CODE XREF from sym.function_0 @ +0x18
+       :|   ; CODE XREF from sym.function_1 @ +0x18
+       :|   0x080000e0      stx   o0, [fp+0x7ef]
+       :|   0x080000e4      ldx   [fp+0x7ef], g1
+       :|   0x080000e8      ldub  [g1], g1
+       :|   0x080000ec      and   g1, 0xff, g1
+       :|   0x080000f0      ld    [fp+0x7fb], g2
+       :|   0x080000f4      add   g2, g1, g1
+       :|   0x080000f8      st    g1, [fp+0x7fb]
+       :|   0x080000fc      ld    [fp+0x7f7], g1
+       :|   0x08000100      add   g1, 1, g1
+       :|   0x08000104      st    g1, [fp+0x7f7]
+       :|   ; CODE XREF from sym.main @ +0x10
+       :`-> 0x08000108      ld    [fp+0x7f7], g1
+       :    0x0800010c      cmp   g1, 2
+       `==< 0x08000110      bleu  icc, reloc..data
+            0x08000114      nop
+            0x08000118      ld    [fp+0x7fb], g1
+            0x0800011c      sra   g1, 0, g1
+            0x08000120      mov   g1, i0
+            0x08000124      rett  i7+8
+            0x08000128      nop
+            0x0800012c      invalid
+                   reloc..bss.8000048+12 0x8000054 ->      CODE -> 0x8000064 sym.function_0+12
+                   reloc..bss.8000048+12 0x8000054 ->      CODE -> 0x8000080 sym.function_1+12
+                        sym.function_0+8 0x8000060 ->      CODE -> 0x8000040 section..text
+                       sym.function_0+24 0x8000070 ->      CODE -> 0x80000e0 reloc..data.80000c4+28
+                        sym.function_1+8 0x800007c ->      CODE -> 0x8000040 section..text
+                       sym.function_1+24 0x800008c ->      CODE -> 0x80000e0 reloc..data.80000c4+28
+                             sym.main+16 0x80000bc ->      CODE -> 0x8000108 reloc..data.80000c4+68
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000130 section..data
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000138 reloc..text.8000138
+                  reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000058 sym.function_0
+                  reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000074 sym.function_1
+                  reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: Skip adding map 'fmap..rela.text' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..rela.data' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..comment' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..strtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..shstrtab' to boundaries, because it is not readable.
+EOF
+RUN
