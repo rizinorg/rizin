@@ -105,7 +105,7 @@ static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, 
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
  */
-RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
+RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entry_points) {
 	// All the things we need
 	bool return_code = true;
 	RzThreadQueue *io_request_q = NULL;
@@ -120,7 +120,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	RzInterpreterSet *iset = NULL;
 	RzPVector *il_cache = NULL;
 	RzThreadQueue *il_queue = NULL;
-	RzVector *entry_points = NULL;
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
@@ -151,29 +150,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 	}
 
 	// Add the Effect for each entry point.
-	entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
-	il_op = NULL;
-	if (argc == 1) {
-		ut64 entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
-		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
+	ut64 *ep;
+	rz_vector_foreach (entry_points, ep) {
+		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, *ep);
 		if (!il_op) {
-			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", (ut64)entry_point);
+			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", *ep);
 			return_code = false;
 			goto error_free;
-		}
-		rz_vector_push(entry_points, &entry_point);
-		rz_th_queue_push(il_queue, il_op, true);
-		rz_pvector_push(il_cache, il_op);
-	} else {
-		// Add all entry points given as arguments.
-		for (size_t i = 1; i < argc; i++) {
-			ut64 entry_point = rz_num_get(core->num, argv[i]);
-			il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, entry_point);
-			if (!il_op) {
-				return_code = false;
-				goto error_free;
-			}
-			rz_vector_push(entry_points, &entry_point);
 		}
 		rz_th_queue_push(il_queue, il_op, true);
 		rz_pvector_push(il_cache, il_op);
@@ -270,7 +253,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		io_request_q,
 		io_result_q,
 		is_running,
-		entry_points);
+		rz_vector_clone(entry_points));
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();
@@ -346,7 +329,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv) {
 		}
 
 		// This part plays the role of a yield consumer.
-		// In our prototype it inly receives xrefs and stores them in RzAnalysis.
+		// In our prototype it only receives xrefs and stores them in RzAnalysis.
 		{
 			RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 			if (!rz_th_queue_is_empty(q->yield_queue)) {
@@ -389,7 +372,6 @@ error_free:
 		ht_up_free(yield_queues);
 		rz_atomic_bool_free(is_running);
 		rz_interpreter_abstr_state_free(abstr_state);
-		rz_vector_free(entry_points);
 	} else {
 		// Ownership was passed to iset
 		rz_interpreter_set_free(iset);

@@ -195,7 +195,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points) {
-	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag, NULL);
+	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
 	if (!set) {
