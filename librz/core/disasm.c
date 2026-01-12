@@ -6030,7 +6030,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 		if (ret < 1) {
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON:
-			case RZ_OUTPUT_MODE_VISUAL:
 				break;
 			case RZ_OUTPUT_MODE_QUIET:
 				rz_cons_printf("???\n");
@@ -6060,28 +6059,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 					}
 				} else {
 					rz_cons_println(rz_asm_op_get_asm(&asmop));
-				}
-				break;
-			case RZ_OUTPUT_MODE_VISUAL:
-				if (i < 28) {
-					char *str = rz_str_newf("0x%08" PFMT64x " %60s  %s\n", ds->vat, "", rz_asm_op_get_asm(&asmop));
-					char *sp = strchr(str, ' ');
-					if (sp) {
-						char *end = sp + 60 + 1;
-						char *src = rz_asm_op_get_hex(&asmop);
-						char *dst = sp + 1 + (i * 2);
-						int len = strlen(src);
-						if (dst < end) {
-							if (dst + len >= end) {
-								len = end - dst;
-								dst[len] = '.';
-							}
-							memcpy(dst, src, len);
-						}
-						free(src);
-					}
-					rz_cons_strcat(str);
-					free(str);
 				}
 				break;
 			case RZ_OUTPUT_MODE_JSON: {
