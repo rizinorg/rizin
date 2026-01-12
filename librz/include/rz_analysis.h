@@ -956,10 +956,18 @@ typedef struct rz_analysis_task_item {
 
 typedef enum {
 	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
-	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', ///< Unspecified code reference.
 	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', ///< Unspecified data memory access.
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's', ///< String reference
+	/**
+	 * \brief Memory read reference.
+	 * Probably not the same as RZ_ANALYSIS_XREF_TYPE_DATA, but the data
+	 * reference is used everywhere and changes the output of the disassembly.
+	 * So keep it for now like that to have better test output.
+	 */
+	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
+	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
