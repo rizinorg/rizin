@@ -107,7 +107,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 		aval->kind = RZ_INTERPRETER_ABSTRACTION_UNDEF;
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
 		if (!ht_up_insert(state->globals, djb2_reg_hash, aval) ||
-		    !ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
+			!ht_up_insert(state->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
 			RZ_LOG_ERROR("Failed to add %s to the global variable map. "
 				     "DJB2 hash collision of the register name. DJB2 hash = 0x%" PFMT64x "\n",
 				rname, djb2_reg_hash);
@@ -271,7 +271,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		goto pre_loop_error;
 	}
 	RzInterpreterAbstrState *in_state = iset->state;
+#if RZ_BUILD_DEBUG
 	ut64 in_hash = plugin->hash_state(in_state, plugin_data);
+#endif
 	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
@@ -304,7 +306,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// The input state was (almost always) manipulated by eval(). Rename to clarify.
 		out_state = in_state;
 		out_hash = plugin->hash_state(out_state, plugin_data);
+#if RZ_BUILD_DEBUG
 		RZ_LOG_DEBUG("in_hash = 0x%llx, out_hash = 0x%llx\n", in_hash, out_hash);
+#endif
 
 		// Add out_state hash to the reachable states and
 		// set a flag if it was a new state.
@@ -353,7 +357,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// Set effect and state for next evaluation.
 		SuccessorState next = { 0 };
 		rz_vector_pop_front(succ_states, &next);
+#if RZ_BUILD_DEBUG
 		in_hash = next.in_state_hash;
+#endif
 		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 			goto in_loop_error;
 		}

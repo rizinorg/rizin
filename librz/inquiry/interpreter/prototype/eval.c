@@ -68,6 +68,9 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 	const ProtoIntrprAbstrData *data) {
 	HtUP *ht_vals;
 	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
 		ht_vals = state->globals;
 		break;
@@ -97,6 +100,9 @@ bool read_var_from_state(RzInterpreterAbstrState *state,
 	RZ_OUT ProtoIntrprAbstrData *data) {
 	HtUP *ht_vals;
 	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
 		ht_vals = state->globals;
 		break;
