@@ -23,5 +23,5 @@ RzAsmPlugin rz_asm_plugin_z80_gnu = {
 	.bits = 8,
 	.endian = RZ_SYS_ENDIAN_NONE,
 	.disassemble = &z80_gnu_disassemble,
-	.assemble = &z80_gnu_assemble,
+	.assemble = &do_assemble,
 };

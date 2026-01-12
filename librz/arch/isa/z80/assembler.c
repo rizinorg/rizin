@@ -279,7 +279,7 @@ static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 }
 
 int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
-	int mn_len, j, len = 1;
+	int mn_len, len = 1;
 	ut32 mn = 0;
 	ut64 num;
 	size_t i;
