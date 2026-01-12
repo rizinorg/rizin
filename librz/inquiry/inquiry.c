@@ -217,7 +217,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	// This prototype won't use the RzAnalysisILVM directly but its components.
 	// That is because the prototypes doesn't handle the VM tasks (track PC, handle IO)
 	// in one VM object, but in separated modules.
-	// So analysis_vm->vm->vm_memorys is used for handling IO requests and 
+	// So analysis_vm->vm->vm_memorys is used for handling IO requests and
 	// analysis_vm->reg_binding is used for the abstract state setup.
 	//
 	// TODO: Is it a good idea to separate these tasks into different modules?
@@ -239,6 +239,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 			config,
 			analysis_vm->reg_binding);
 	}
+
+	RZ_LOG_DEBUG("INQUIRY: Enforce enabling IO cache.\n");
+	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
+	rz_config_set(core->config, "io.cache", "true");
 
 	// Bundle all the queues into one object to pass it to the thread.
 	// Later we would pass a unique iset to each interpreter with
@@ -271,9 +275,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	// - Receiving and adding the found xrefs to RzAnalysis.
 	// In the final implementation each of those roles would be split into
 	// two or more separated modules running in parallel.
-	RZ_LOG_DEBUG("INQUIRY: Enforce enabling IO cache.\n");
-	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
-	rz_config_set(core->config, "io.cache", "true");
 	RZ_LOG_DEBUG("INQUIRY: Start IL providing loop.\n");
 
 	// Poor man's shared memory.
