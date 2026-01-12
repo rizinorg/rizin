@@ -99,7 +99,7 @@ narenas : 129
 ----
       reg_size : 0x800
 ----
-Total extents found: 5
+Total extents found: 15
 EOF
 RUN
 
