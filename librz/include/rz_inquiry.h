@@ -37,7 +37,7 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzList /*<RzIOMap *>*/ *allowed_io_maps);
 
-RZ_API bool rz_inquiry_interpreter(RzCore *core, int argc, const char **argv);
+RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entry_points);
 
 #ifdef __cplusplus
 }
