@@ -147,6 +147,8 @@ static int z80_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	return 0;
 }
 
+// Parse arithmetic instructions with one operand (add, sub, and, or, xor, cp).
+// Supports registers, immediate values, and memory forms like [hl] and [ix+d]/[iy+d].
 static int z80_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
 	ut64 num;
 	char *src;
@@ -206,8 +208,8 @@ static int z80_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 	return 2;
 }
 
-// Parse arithmetic instructions with one operand (add, sub, and, or, xor, cp).
-// Supports registers, immediate values, and memory forms like [hl] and [ix+d]/[iy+d].
+// Parse IN and OUT instructions.
+// Handles register and [c] forms, as well as immediate port access.
 static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 	rz_str_do_until_token(str_op, buf_asm, '\0');
 	char *left = strtok(buf_asm + 3, ",");
