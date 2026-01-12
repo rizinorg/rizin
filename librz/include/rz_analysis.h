@@ -975,6 +975,7 @@ typedef struct rz_analysis_ref_t {
 	ut64 to;
 	RzAnalysisXRefType type;
 } RzAnalysisXRef;
+
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
@@ -1536,6 +1537,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 RZ_API int rz_analysis_fcn_del(RzAnalysis *analysis, ut64 addr);
 RZ_API int rz_analysis_fcn_del_locs(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail);
+RZ_API bool rz_analysis_add_bb(RzAnalysis *a, ut64 addr, ut64 size);
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
