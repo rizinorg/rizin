@@ -57,8 +57,9 @@ static int z80_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 
 		if (mem && reg) {
 			const char *plus = strchr(mem, '+');
-			if (!plus)
+			if (!plus) {
 				return 0;
+			}
 			int disp = rz_num_get(NULL, plus + 1);
 			bool is_ix = strstr(mem, "[ix+") != NULL;
 			int reg_idx = z80_reg_idx(reg[0]);
@@ -80,8 +81,9 @@ static int z80_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	// Only memory: rlc [ix+00] or [iy+00]
 	if (strstr(left, "[ix+") || strstr(left, "[iy+")) {
 		const char *plus = strchr(left, '+');
-		if (!plus)
+		if (!plus) {
 			return 0;
+		}
 		int disp = rz_num_get(NULL, plus + 1);
 		bool is_ix = strstr(left, "[ix+") != NULL;
 		buf[0] = is_ix ? 0xdd : 0xfd;
@@ -217,8 +219,9 @@ static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 	if (!left)
 		return 0;
 	rz_str_trim(left);
-	if (right)
+	if (right) {
 		rz_str_trim(right);
+	}
 	if (!right && !strcmp(left, "[c]")) {
 		buf[0] = is_in ? 0xed : 0xd3;
 		buf[1] = is_in ? 0x70 : 0x00; // fixed opcode for "in [c], 0"
@@ -233,28 +236,30 @@ static int z80_parse_in_out(ut8 *buf, char *buf_asm, bool is_in) {
 			return 0;
 		if (is_in) {
 			// in reg, [c]
-			if (reg[0] >= '0' && reg[0] <= '9') { // if reg is a number (like 0, 5, etc.)
+			if (rz_str_isnumber(reg)) { // if reg is a number (like 0, 5, etc.)
 				buf[0] = 0xed;
-				buf[1] = 0x70; // fixed opcode for "out [c], 0"
+				buf[1] = 0x70; // fixed opcode for "in [c], 0"
 				return 2;
 			} else {
 				int reg_idx = z80_reg_idx(reg[0]);
-				if (reg_idx == -1 || reg_idx == 6)
+				if (reg_idx == -1 || reg_idx == 6) {
 					return 0;
+				}
 				buf[0] = 0xed;
 				buf[1] = 0x40 | (reg_idx << 3);
 				return 2;
 			}
 		} else {
 			// out [c], reg  or out reg, [c]
-			if (reg[0] >= '0' && reg[0] <= '9') { // if reg is a number (like 0, 5, etc.)
+			if (rz_str_isnumber(reg)) { // if reg is a number (like 0, 5, etc.)
 				buf[0] = 0xed;
 				buf[1] = 0x71; // fixed opcode for "out [c], 0"
 				return 2;
 			} else {
 				int reg_idx = z80_reg_idx(reg[0]);
-				if (reg_idx == -1 || reg_idx == 6)
+				if (reg_idx == -1 || reg_idx == 6) {
 					return 0;
+				}
 				buf[0] = 0xed;
 				buf[1] = 0x41 | (reg_idx << 3);
 				return 2;
@@ -314,8 +319,9 @@ int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 	switch (mn) {
 	case 0x616463: // adc
 		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
-		if (strlen(buf_asm) < 5)
+		if (strlen(buf_asm) < 5) {
 			return op->size = 0;
+		}
 		if (!strcmp(buf_asm + 4, "hl,bc")) {
 			opbuf[0] = 0xed;
 			opbuf[1] = 0x4a;
@@ -338,8 +344,9 @@ int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		break;
 	case 0x616464: // add
 		rz_str_replace_in(buf_asm, strlen(buf_asm), ", ", ",", true);
-		if (strlen(buf_asm) < 5)
+		if (strlen(buf_asm) < 5) {
 			return len = 0;
+		}
 		if (buf_asm[4] == 's' && buf_asm[5] == 'p' && buf_asm[6] == ',' && buf_asm[7] != '\0') {
 			opbuf[0] = 0xe8;
 			num = rz_num_get(NULL, buf_asm + 7);
@@ -974,7 +981,9 @@ int z80Asm(RzAsm *a, RzAsmOp *op, const char *buf) {
 		} else if (!strncmp(buf_asm + 4, "z", 2)) {
 			opbuf[0] = 0xC8;
 		} else if (!*buf_asm + 4) { // plain "ret"
-			opbuf[0] = 0xC9;
+			{
+				opbuf[0] = 0xC9;
+			}
 		} else {
 			return op->size = 0;
 		}
