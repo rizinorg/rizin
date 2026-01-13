@@ -145,31 +145,13 @@ FILE=bins/elf/dectest64
 ARGS=-A
 CMDS=<<EOF
 avgl
+avglj
+avglq
 EOF
 EXPECT=<<EOF
 global unknown global_var @ 0x404050
 global unknown global_array @ 0x404058
-EOF
-RUN
-
-NAME=avglj - show globals from symbol table in JSON (issue #5730)
-FILE=bins/elf/dectest64
-ARGS=-A
-CMDS=<<EOF
-avglj
-EOF
-EXPECT=<<EOF
 [{"name":"global_var","type":"unknown","size":0,"addr":"0x404050"},{"name":"global_array","type":"unknown","size":0,"addr":"0x404058"}]
-EOF
-RUN
-
-NAME=avglq - show globals from symbol table in quiet mode (issue #5730)
-FILE=bins/elf/dectest64
-ARGS=-A
-CMDS=<<EOF
-avglq
-EOF
-EXPECT=<<EOF
 global_var
 global_array
 EOF
