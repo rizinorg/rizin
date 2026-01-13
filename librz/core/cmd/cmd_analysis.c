@@ -5485,6 +5485,7 @@ static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 			i += op.size - 1;
 		}
 	}
+	free(data);
 	return list;
 }
 
