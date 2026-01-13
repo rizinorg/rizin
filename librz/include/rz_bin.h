@@ -711,6 +711,7 @@ typedef struct rz_bin_symbol_t {
 	/* see RZ_BIN_METH_* constants */
 	ut64 method_flags;
 	int dup_count;
+	bool is_auto_generated;
 } RzBinSymbol;
 
 typedef struct rz_bin_import_t {
