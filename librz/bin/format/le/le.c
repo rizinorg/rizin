@@ -1282,7 +1282,7 @@ static bool le_patch_relocs(rz_bin_le_obj_t *bin) {
 	return true;
 }
 
-static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzBinReloc *>*/ *out, bool skip_fixup) {
+static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<LE_reloc *>*/ *out, bool skip_fixup) {
 	if (skip_fixup) {
 		return true; // Fixup has been parsed but contains invalid data, ignore and proceed
 	}
@@ -1308,9 +1308,7 @@ static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzB
 	return false;
 }
 
-static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/ *relocs_out,
-	ut32 page_i, ut64 *offset, ut64 offset_end) {
-
+static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<LE_reloc *>*/ *relocs_out, ut32 page_i, ut64 *offset, ut64 offset_end) {
 	LE_header *h = bin->header;
 	ut64 start_offset = *offset;
 	if (false) {
@@ -1459,8 +1457,8 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 				if (src_off < 0 || src_off + 4 > h->pagesize || cnt > h->pagesize) {
 					RZ_LOG_WARN("LE: malformed or circular fixup chain at 0x%" PFMT64x ".\n",
 						start_paddr);
-					while (relocs_out->tail != prev_tail) {
-						rz_bin_reloc_free(rz_list_pop(relocs_out));
+					while (rz_list_tail(relocs_out) != prev_tail) {
+						free(rz_list_pop(relocs_out));
 					}
 					break;
 				}
