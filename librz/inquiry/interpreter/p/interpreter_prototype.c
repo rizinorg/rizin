@@ -97,19 +97,22 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 
 static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
 	ProtoIntrprAbstrData *ad = state->pc->abstr_data;
-	if (ad->bv) {
+	if (ad && ad->bv) {
 		rz_bv_free(ad->bv);
 	}
 	free(ad);
+	state->pc->abstr_data = NULL;
+
 	RzIterator *it = ht_up_as_iter(state->globals);
 	RzInterpreterAbstrVal **v;
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
-		if (ad->bv) {
+		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
 		}
 		free(ad);
+		av->abstr_data = NULL;
 	}
 	rz_iterator_free(it);
 
@@ -117,10 +120,11 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
-		if (ad->bv) {
+		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
 		}
 		free(ad);
+		av->abstr_data = NULL;
 	}
 	rz_iterator_free(it);
 
@@ -128,13 +132,15 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 	rz_iterator_foreach(it, v) {
 		RzInterpreterAbstrVal *av = *v;
 		ProtoIntrprAbstrData *ad = av->abstr_data;
-		if (ad->bv) {
+		if (ad && ad->bv) {
 			rz_bv_free(ad->bv);
 		}
 		free(ad);
+		av->abstr_data = NULL;
 	}
 	rz_iterator_free(it);
 	free(state->ext);
+	state->ext = NULL;
 	return true;
 }
 

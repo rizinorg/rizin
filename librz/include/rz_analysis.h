@@ -1472,6 +1472,7 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op);
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name);
 RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
@@ -1576,6 +1577,8 @@ RZ_API RZ_OWN RzList /*<RzAnalysisXRef *>*/ *rz_analysis_function_get_xrefs_to(c
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
+
+RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzList /*<RzIOMap *>*/ *maps, RZ_NONNULL RZ_OUT RzSetU *call_targets);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(

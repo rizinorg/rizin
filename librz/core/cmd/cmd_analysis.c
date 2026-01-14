@@ -2119,6 +2119,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 			case RZ_ANALYSIS_XREF_TYPE_NULL:
 				rz_cons_printf("0x%08" PFMT64x " ", xref->to);
 				break;
+			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 			case RZ_ANALYSIS_XREF_TYPE_CODE:
 			case RZ_ANALYSIS_XREF_TYPE_CALL:
 			case RZ_ANALYSIS_XREF_TYPE_DATA:

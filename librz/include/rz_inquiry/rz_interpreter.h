@@ -126,7 +126,7 @@ typedef struct {
 	 */
 	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data);
 	/**
-	 * \brief Closes the abstract state and frees all its abstract data.
+	 * \brief Closes the abstract state and frees all its abstract data and sets the pointers to NULL.
 	 */
 	bool (*fini_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
 	/**
@@ -240,6 +240,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
+RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points);
 
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *queue_set);
 

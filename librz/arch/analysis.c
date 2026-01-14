@@ -1017,6 +1017,20 @@ RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *o
 	}
 }
 
+/**
+ * \brief Returns true if the \p op is a direct call.
+ */
+RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, false);
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+		return true;
+	default:
+		return false;
+	}
+}
+
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);
