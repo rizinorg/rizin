@@ -1878,7 +1878,7 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
 RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
-	if (context->cache && context->greparg) {
+	if (context->cache && context->greparg && *context->greparg) {
 		if (!core->analysis->ht_rop) {
 			core->analysis->ht_rop = ht_up_new(NULL, free);
 		}
@@ -1957,7 +1957,7 @@ cleanup:
 		eprintf("\n");
 	}
 
-	if (context->cache && context->greparg && context->buf) {
+	if (context->cache && context->greparg && *context->greparg && context->buf) {
 		ut64 cache_key = rz_str_djb2_hash(context->greparg);
 		char *result = rz_strbuf_drain(context->buf);
 		context->buf = NULL;
