@@ -31,7 +31,7 @@ static void define_data_ntimes(RzCore *core, ut64 off, int times, int type) {
 }
 
 static bool is_visual_mode_disasm(RzCoreVisualMode mode) {
-	return (mode == 1 || mode == 2);
+	return (mode == RZ_CORE_VISUAL_MODE_PD || mode == RZ_CORE_VISUAL_MODE_DB);
 }
 
 static void handleHints(RzCore *core) {
