@@ -5996,7 +5996,7 @@ clean_return:
 	return res;
 }
 
-RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzOutputMode mode) {
+RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
@@ -6009,14 +6009,6 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 		buf = malloc(l + 1);
 		rz_io_read_at_mapped(core->io, addr, buf, l);
 	}
-	PJ *pj = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return 0;
-		}
-		pj_a(pj);
-	}
 	rz_cons_break_push(NULL, NULL);
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
@@ -6028,56 +6020,25 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			switch (mode) {
-			case RZ_OUTPUT_MODE_JSON:
-				break;
-			case RZ_OUTPUT_MODE_QUIET:
-				rz_cons_printf("???\n");
-				break;
-			default:
-				rz_cons_printf("0x%08" PFMT64x " ???\n", ds->vat);
-				break;
-			}
+			rz_cons_printf("0x%08" PFMT64x " ???\n", ds->vat);
 		} else {
 			count++;
-			switch (mode) {
-			case RZ_OUTPUT_MODE_QUIET:
-				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop),
-					str, sizeof(str), core->print->big_endian);
-				if (scr_color) {
-					RzAnalysisOp aop = { 0 };
-					rz_analysis_op_init(&aop);
-					rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
-					RzStrBuf *colored_asm;
-					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
-					rz_analysis_op_fini(&aop);
-					rz_asm_parse_param_free(param);
-					if (colored_asm) {
-						rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
-						rz_strbuf_free(colored_asm);
-					}
-				} else {
-					rz_cons_println(rz_asm_op_get_asm(&asmop));
+			rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop), str, sizeof(str), core->print->big_endian);
+			if (scr_color) {
+				RzAnalysisOp aop = { 0 };
+				rz_analysis_op_init(&aop);
+				rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
+				RzStrBuf *colored_asm;
+				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+				colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+				rz_analysis_op_fini(&aop);
+				rz_asm_parse_param_free(param);
+				if (colored_asm) {
+					rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
+					rz_strbuf_free(colored_asm);
 				}
-				break;
-			case RZ_OUTPUT_MODE_JSON: {
-				char *op_hex = rz_asm_op_get_hex(&asmop);
-				pj_o(pj);
-				pj_kn(pj, "addr", addr + i);
-				pj_ks(pj, "bytes", op_hex);
-				pj_ks(pj, "inst", rz_asm_op_get_asm(&asmop));
-				pj_end(pj);
-				free(op_hex);
-				break;
-			}
-			default: {
-				char *op_hex = rz_asm_op_get_hex(&asmop);
-				rz_cons_printf("0x%08" PFMT64x " %20s  %s\n",
-					addr + i, op_hex,
-					rz_asm_op_get_asm(&asmop));
-				free(op_hex);
-			}
+			} else {
+				rz_cons_println(rz_asm_op_get_asm(&asmop));
 			}
 		}
 		rz_asm_op_fini(&asmop);
@@ -6085,11 +6046,6 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzO
 	rz_cons_break_pop();
 	if (buf != core->block) {
 		free(buf);
-	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 	}
 	ds_free(ds);
 	return count;

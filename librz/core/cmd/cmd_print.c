@@ -4267,7 +4267,7 @@ RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const 
 	if (N == 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_print_disasm_all(core, core->offset, N, N, RZ_OUTPUT_MODE_QUIET);
+	rz_core_print_disasm_all(core, core->offset, N, N);
 	return RZ_CMD_STATUS_OK;
 }
 
