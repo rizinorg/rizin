@@ -2235,7 +2235,7 @@ EXPECT=<<EOF
 ..
 |       |   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4
 |       |   ;-- case 1:                                                ; from 0x78f4
-|       |   ;-- case 3...4:                                            ; from 0x78f4
+|       |   ;-- case 4:                                                ; from 0x78f4
 |       |   0x000078fe      movs  r0, 1
 |      ,==< 0x00007900      b     0x791c
 |      ||   ; CODE XREF from sym._Unwind_VRS_Get @ 0x78f4

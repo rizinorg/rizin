@@ -3793,10 +3793,12 @@ EXPECT=<<EOF
 ;-- case 3...9:                                                        ; from 0x140001034
 ;-- case 12:                                                           ; from 0x140001034
 ;-- case 14:                                                           ; from 0x140001034
-;-- case 17...18:                                                      ; from 0x140001034
-;-- case 21...29:                                                      ; from 0x140001034
-;-- case 31...49:                                                      ; from 0x140001034
-;-- case 51...96:                                                      ; from 0x140001034
+;-- case 18:                                                           ; from 0x140001034
+;-- case 22...29:                                                      ; from 0x140001034
+;-- case 31:                                                           ; from 0x140001034
+;-- case 32...49:                                                      ; from 0x140001034
+;-- case 51:                                                           ; from 0x140001034
+;-- case 52...96:                                                      ; from 0x140001034
 ;-- case 98:                                                           ; from 0x140001034
 EOF
 RUN
