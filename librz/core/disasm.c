@@ -5996,7 +5996,7 @@ clean_return:
 	return res;
 }
 
-RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzOutputMode mode) {
+RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzOutputMode mode) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
