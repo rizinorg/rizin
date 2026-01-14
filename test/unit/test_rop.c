@@ -141,7 +141,6 @@ bool test_rz_direct_solver() {
 	mu_end;
 }
 
-
 bool test_rop_cache(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core");
