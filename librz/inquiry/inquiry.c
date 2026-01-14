@@ -16,6 +16,7 @@
 #include "rz_th.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_buf.h"
+#include "rz_util/rz_set.h"
 #include "rz_vector.h"
 #include <rz_il.h>
 #include <rz_list.h>
@@ -176,12 +177,11 @@ error_free:
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
  */
-RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entry_points) {
+RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points) {
 	// All the things we need
 	bool return_code = true;
 	RzThreadQueue *io_request_q = NULL;
 	RzThreadQueue *io_result_q = NULL;
-	RzInterpreterILBB *il_op = NULL;
 	RzThreadQueue *addr_queue = NULL;
 	HtUP *yield_queues = NULL;
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
@@ -192,6 +192,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
+	RzSetU *call_targets = rz_set_u_new();
 
 	rz_cons_push();
 
@@ -205,20 +206,18 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	// of the pointers.
 	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
 
-	// Add the Effect for each entry point.
-	ut64 *ep;
-	rz_vector_foreach (entry_points, ep) {
-		size_t bb_size = 0;
-		il_op = rz_inquiry_gen_il_bb(core->analysis, core->io, *ep, &bb_size);
-		if (!il_op) {
-			RZ_LOG_WARN("Could not get entry point IL operation at 0x%" PFMT64x "\n", *ep);
-			return_code = false;
-			goto error_free;
-		}
-		rz_analysis_add_bb(core->analysis, *ep, bb_size);
-		rz_th_queue_push(il_queue, il_op, true);
-		rz_pvector_push(il_cache, il_op);
+	RzInterval iv = { .addr = 0, .size = UT64_MAX };
+	RzList *boundaries = rz_io_get_boundaries_all_io_maps(core->io, iv);
+	if (!boundaries) {
+		goto error_free;
 	}
+	if (!rz_analysis_get_all_call_targets(core->analysis, boundaries, call_targets)) {
+		RZ_LOG_ERROR("Failed to get call targets.\n");
+		return_code = false;
+		goto error_free;
+	}
+	rz_list_free(boundaries);
+	RZ_LOG_DEBUG("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(call_targets));
 
 	// Initialize the abstract state with the architecture's registers.
 	if (!core->analysis->cur->il_config) {
@@ -278,89 +277,155 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 		goto error_free;
 	}
 
-	// Dispatch prototype interpreter into a thread.
-	RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
-	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	do {
+		// Dispatch prototype interpreter into a thread.
+		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
+		interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
-	// From here on, the code plays the role of the cache, IO handler,
-	// and yield consumer.
-	// - Waiting for new Effects to be requested and sending them.
-	// - Handling IO requests.
-	// - Receiving and adding the found xrefs to RzAnalysis.
-	// In the final implementation each of those roles would be split into
-	// two or more separated modules running in parallel.
-	RZ_LOG_DEBUG("INQUIRY: Start IL providing loop.\n");
+		// Poor man's shared memory.
+		RzInterpreterIOResult _io_res = { 0 };
+		RzInterpreterIOResult *io_res = &_io_res;
 
-	// Poor man's shared memory.
-	RzInterpreterIOResult _io_res = { 0 };
-	RzInterpreterIOResult *io_res = &_io_res;
+		// From here on, the code plays the role of the cache, IO handler,
+		// and yield consumer.
+		// - Waiting for new Effects to be requested and sending them.
+		// - Handling IO requests.
+		// - Receiving and adding the found xrefs to RzAnalysis.
+		// In the final implementation each of those roles would be split into
+		// two or more separated modules running in parallel.
+		RZ_LOG_DEBUG("INQUIRY: Start IL providing loop.\n");
+		rz_atomic_bool_set(is_running, true);
 
-	while (rz_atomic_bool_get(is_running)) {
-		if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
-			rz_atomic_bool_set(is_running, false);
+		while (rz_atomic_bool_get(is_running)) {
+			if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
+				rz_atomic_bool_set(is_running, false);
+				break;
+			}
+
+			// =========
+			// IL CACHE
+			// =========
+			//
+			// This block mimics the IL cache.
+			{
+				if (!rz_th_queue_is_empty(iset->addr_queue)) {
+					ut64 *addr = NULL;
+					if (!rz_th_queue_pop(iset->addr_queue, false, (void **)&addr) || !addr) {
+						rz_warn_if_reached();
+						break;
+					}
+					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
+					size_t bb_size = 0;
+					RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
+					if (!bb) {
+						RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
+						// Signal interpreter the lifting failed.
+						rz_atomic_bool_set(is_running, false);
+						rz_th_queue_close(iset->il_queue);
+						break;
+					}
+					rz_analysis_add_bb(core->analysis, *addr, bb_size);
+					RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
+					rz_pvector_push(il_cache, bb);
+					// TODO: Free unused if too big.
+					rz_th_queue_push(il_queue, bb, true);
+				}
+			}
+
+			// ==========
+			// IO HANDLER
+			// ==========
+			//
+			// This plays the IO handler for a single(!) interpreter instances.
+			// In the future we should have only one IO handler for multiple interpreters.
+			// But this requires multiple IO write caches
+			// (one for each interpreter instance).
+			// Because this is not yet implemented, there is only one interpreter thread for now.
+			{
+				if (!rz_th_queue_is_empty(io_request_q)) {
+					RzInterpreterIORequest *io_req = NULL;
+					if (!rz_th_queue_pop(io_request_q, false, (void **)&io_req) || !io_req) {
+						rz_atomic_bool_set(is_running, false);
+						rz_warn_if_reached();
+						break;
+					}
+					handle_io_request(core, &analysis_vm->vm->vm_memory, io_req, io_res);
+					rz_th_queue_push(io_result_q, io_res, true);
+				}
+			}
+
+			// ==============
+			// YIELD CONSUMER
+			// ==============
+			//
+			// This part plays the role of a yield consumer.
+			// In our prototype it only receives xrefs and stores them in RzAnalysis.
+			{
+				RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+				if (!rz_th_queue_is_empty(q->yield_queue)) {
+					RzAnalysisXRef *xref = NULL;
+					if (!rz_th_queue_pop(q->yield_queue, false, (void **)&xref) || !xref) {
+						rz_atomic_bool_set(is_running, false);
+						break;
+					}
+					// TODO: Currently we can't classify calls as such.
+					rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
+					RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
+				}
+			}
+		}
+
+		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
+		rz_th_wait(interpr_th);
+		return_code = rz_th_get_retv(interpr_th);
+		rz_th_free(interpr_th);
+		if (!return_code) {
+			RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
 			break;
 		}
 
-		// This block mimics the IL cache.
+		// At this point the interpreter is finished and returned.
+		// Now we need to check for executable regions it did not cover.
+		// For this we simply delete all call targets from our set, which point
+		// into the already handled basic blocks.
+		// Then add a few addresses as new entry points.
+		// The addresses we add are call targets from call instructions in the binary.
 		{
-			if (!rz_th_queue_is_empty(iset->addr_queue)) {
-				ut64 *addr = NULL;
-				if (!rz_th_queue_pop(iset->addr_queue, false, (void **)&addr) || !addr) {
-					rz_warn_if_reached();
+			rz_vector_clear(entry_points);
+			RzVector *covered_call_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
+			RzIterator *ct_iter = rz_set_u_as_iter(call_targets);
+			size_t x = 0;
+			ut64 *ct;
+			rz_iterator_foreach(ct_iter, ct) {
+				RzList *containing_blocks = rz_analysis_get_blocks_in(core->analysis, *ct);
+				if (rz_list_length(containing_blocks) != 0) {
+					rz_vector_push(covered_call_targets, ct);
+					rz_list_free(containing_blocks);
+					continue;
+				}
+				rz_list_free(containing_blocks);
+				x++;
+				rz_vector_push(entry_points, ct);
+				// Experiment how many new entry points we add.
+				if (x >= 1) {
 					break;
 				}
-				RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-				size_t bb_size = 0;
-				RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
-				if (!bb) {
-					RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
-					// Signal interpreter the lifting failed.
-					rz_atomic_bool_set(is_running, false);
-					rz_th_queue_close(iset->il_queue);
-					break;
-				}
-				rz_analysis_add_bb(core->analysis, *addr, bb_size);
-				RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
-				rz_pvector_push(il_cache, bb);
-				// TODO: Free unused if too big.
-				rz_th_queue_push(il_queue, bb, true);
 			}
-		}
+			rz_interpreter_set_add_entry_points(iset, entry_points);
 
-		// This plays the IO handler for a single(!) interpreter instances.
-		// In the future we should have only one IO handler for multiple interpreters.
-		// But this requires multiple IO write caches
-		// (one for each interpreter instance).
-		// Because this is not yet implemented, there is only one interpreter thread for now.
-		{
-			if (!rz_th_queue_is_empty(io_request_q)) {
-				RzInterpreterIORequest *io_req = NULL;
-				if (!rz_th_queue_pop(io_request_q, false, (void **)&io_req) || !io_req) {
-					rz_atomic_bool_set(is_running, false);
-					rz_warn_if_reached();
-					break;
-				}
-				handle_io_request(core, &analysis_vm->vm->vm_memory, io_req, io_res);
-				rz_th_queue_push(io_result_q, io_res, true);
+			rz_iterator_free(ct_iter);
+			ut64 *ep;
+			rz_vector_foreach (covered_call_targets, ep) {
+				// Delete the selected ones from the call target set.
+				// So they are not requested again.
+				rz_set_u_delete(call_targets, *ep);
 			}
-		}
+			rz_vector_free(covered_call_targets);
 
-		// This part plays the role of a yield consumer.
-		// In our prototype it only receives xrefs and stores them in RzAnalysis.
-		{
-			RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
-			if (!rz_th_queue_is_empty(q->yield_queue)) {
-				RzAnalysisXRef *xref = NULL;
-				if (!rz_th_queue_pop(q->yield_queue, false, (void **)&xref) || !xref) {
-					rz_atomic_bool_set(is_running, false);
-					break;
-				}
-				// TODO: Currently we can't classify calls as such.
-				rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
-				RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
-			}
+			RZ_LOG_DEBUG("Call targets left: %" PFMT32d "\n", rz_set_u_size(call_targets));
 		}
-	}
+	} while (!rz_vector_empty(entry_points));
+
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
@@ -368,17 +433,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	// Wait for thread to finish before cleaning.
 error_free:
 	RZ_LOG_DEBUG("INQUIRY: Close queues\n");
+	rz_vector_free(entry_points);
+	rz_set_u_free(call_targets);
 	rz_buf_free(io_buf);
 	rz_analysis_il_vm_free(analysis_vm);
 	rz_th_queue_close(il_queue);
 	rz_th_queue_close(io_request_q);
 	rz_th_queue_close(io_result_q);
-	if (interpr_th) {
-		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
-		rz_th_wait(interpr_th);
-		return_code = rz_th_get_retv(interpr_th);
-		rz_th_free(interpr_th);
-	}
 
 	if (!iset) {
 		rz_th_queue_free(addr_queue);

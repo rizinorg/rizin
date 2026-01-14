@@ -6,6 +6,7 @@
  */
 
 #include "rz_cons.h"
+#include "rz_util/rz_assert.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -218,6 +219,12 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	return set;
 }
 
+RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points) {
+	rz_return_if_fail(iset && entry_points);
+	rz_vector_clear(iset->entry_points);
+	rz_vector_clone_intof(iset->entry_points, entry_points, NULL);
+}
+
 typedef struct {
 	ut64 addr;
 	ut64 in_state_hash;
@@ -240,7 +247,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			iset->plugin->fini_state &&
 			iset->plugin->hash_state,
 		entry_assert_error);
-	bool success = false;
+	bool success = true;
 
 	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
@@ -265,6 +272,13 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// This vector must have the same order as the elements pushed into addr_queue.
 	RzVector *succ_states = NULL;
 
+	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
+	// For now let's just drop them.
+	if (rz_vector_len(iset->entry_points) > 1) {
+		RZ_LOG_ERROR("More than one entry point is not yet supported by the prototype.\n");
+		goto pre_loop_error;
+	}
+
 	ut64 entry_point;
 	rz_vector_pop_front(iset->entry_points, &entry_point);
 	if (!plugin->init_state(iset->state, entry_point, plugin_data)) {
@@ -277,17 +291,11 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
+	rz_th_queue_push(iset->addr_queue, &entry_point, true);
 	const RzInterpreterILBB *il_bb = NULL;
 	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 		goto pre_loop_error;
 	}
-	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
-	// For now let's just drop them.
-	RzList *additional_entries = rz_th_queue_pop_all(iset->il_queue);
-	if (rz_list_length(additional_entries) > 0) {
-		RZ_LOG_WARN("More than one entry point is not yet supported by the prototype.\n");
-	}
-	rz_list_free(additional_entries);
 
 	tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
 	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);

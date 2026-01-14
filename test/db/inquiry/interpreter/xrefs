@@ -4,6 +4,7 @@ CMDS=<<EOF
 aaaaIp main
 pd 48 @ main
 axl
+ablt
 EOF
 EXPECT=<<EOF
             ;-- main:
@@ -91,8 +92,24 @@ EXPECT=<<EOF
                        sym.function_1+10 0x401afa ->      CODE -> 0x401aa1 main+49
                         sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
                        sym.function_2+10 0x401b0a ->      CODE -> 0x401aa1 main+49
+    addr size traced ninstr jump fail fcns calls       xrefs       
+-------------------------------------------------------------------
+0x401a70   35      0      0                            
+0x401a8d    6      0      0                            
+0x401a93   14      0      0                            
+0x401aa1   28      0      0                            
+0x401abd    9      0      0                            
+0x401ad0    9      0      0                 0x00401ae0  0x00401ae0
+0x401ad9    2      0      0                            
+0x401ae0   16      0      0                            
+0x401af0    9      0      0                 0x00401ae0  0x00401ae0
+0x401af9    2      0      0                            
+0x401b00    9      0      0                 0x00401ae0  0x00401ae0
+0x401b09    2      0      0                            
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Failed to read memory at 0x4af3e0 size: 224.
+EOF
 RUN
 
 NAME=Indirect call hexagon
@@ -101,6 +118,7 @@ CMDS=<<EOF
 aaaaIp
 pd 47
 axl
+ablt
 EOF
 EXPECT=<<EOF
             ;-- section..text:
@@ -206,6 +224,22 @@ EXPECT=<<EOF
                         sym.function_1+8 0x80000d8 ->      CODE -> 0x8000080 reloc..data.8000078+8
                         sym.function_2+4 0x80000e0 ->      CODE -> 0x80000c0 sym.some_ptr
                         sym.function_2+8 0x80000e4 ->      CODE -> 0x8000080 reloc..data.8000078+8
+     addr size traced ninstr jump fail fcns calls       xrefs       
+--------------------------------------------------------------------
+0x8000040   32      0      0                            
+0x8000060   12      0      0                            
+0x800006c    4      0      0                            
+0x8000070   16      0      0                            
+0x8000080   28      0      0                            
+0x800009c   16      0      0                            
+0x80000ac    8      0      0                            
+0x80000b4    8      0      0                 0x080000c0  0x080000c0
+0x80000bc    4      0      0                            
+0x80000c0   16      0      0                            
+0x80000d0    8      0      0                 0x080000c0  0x080000c0
+0x80000d8    4      0      0                            
+0x80000dc    8      0      0                 0x080000c0  0x080000c0
+0x80000e4    4      0      0                            
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Skip adding map 'fmap..strtab' to boundaries, because it is not readable.
@@ -216,6 +250,18 @@ WARNING: Skip adding map 'fmap..note.llvm.cgmdinfo' to boundaries, because it is
 WARNING: Skip adding map 'fmap..hexagon.attributes' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..llvm_addrsig' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..strtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..rela.text' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..rela.data' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..comment' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..note.llvm.cgmdinfo' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..hexagon.attributes' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..llvm_addrsig' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
+WARNING: Failed to read memory at 0x80003a4 size: 64.
+WARNING: Failed to read memory at 0x80000bc size: 64.
+WARNING: Failed to read memory at 0x80000e8 size: 64.
+WARNING: Failed to read memory at 0x80000f8 size: 64.
 ERROR: Failed to read chunk of size 0x101 at 0x8000040 for disassembly.
 EOF
 RUN
@@ -234,6 +280,7 @@ CMDS=<<EOF
 aaaaIp sym.main
 pd 60 @ sym.some_ptr
 axl
+ablt
 EOF
 EXPECT=<<EOF
             ; CODE XREF from sym.function_0 @ +0x8
@@ -330,6 +377,17 @@ EXPECT=<<EOF
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000058 sym.function_0
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000074 sym.function_1
                   reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
+     addr size traced ninstr jump fail fcns calls               xrefs               
+------------------------------------------------------------------------------------
+0x8000040   24      0      0                                    
+0x8000058   12      0      0                 0x08000040          0x08000040
+0x8000064   16      0      0                                    
+0x8000074   12      0      0                 0x08000040          0x08000040
+0x8000080   16      0      0                                    
+0x80000ac   20      0      0                                    
+0x80000c0   32      0      0                 0xffffffffffffffff  0xffffffffffffffff
+0x80000e0   56      0      0                                    
+0x8000108   16      0      0                                    
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
@@ -342,5 +400,15 @@ WARNING: Skip adding map 'fmap..comment' to boundaries, because it is not readab
 WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..strtab' to boundaries, because it is not readable.
 WARNING: Skip adding map 'fmap..shstrtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..rela.text' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..rela.data' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..comment' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..symtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..strtab' to boundaries, because it is not readable.
+WARNING: Skip adding map 'fmap..shstrtab' to boundaries, because it is not readable.
+WARNING: Failed to read memory at 0x8000470 size: 192.
+WARNING: Failed to read memory at 0x800008c size: 192.
+WARNING: Failed to read memory at 0x8000130 size: 192.
+WARNING: Failed to read memory at 0x8000148 size: 192.
 EOF
 RUN

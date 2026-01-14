@@ -313,3 +313,56 @@ RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 	}
 	return "unknown";
 }
+
+int is_in_x_map(const ut64 *call_target, const RzIOMap *map, void *user) {
+	return (map->perm & RZ_PERM_X && rz_itv_contain(map->itv, *call_target)) ? 0 : -1;
+}
+
+/**
+ * \brief Returns all targets of call instructions within the \p boundaries.
+ * NOTE: This function disassembles all instructions within the boundaries and checks for calls.
+ * It DOES NOT use the existing xrefs.
+ *
+ * \param analysis The analysis plugin.
+ * \param maps The IO maps to disassemble to find call instructions.
+ * \param call_targets The found call targets of all disassemble calls.
+ *        NOTE: They can point outside of \p maps!
+ *
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzList /*<RzIOMap *>*/ *maps, RZ_NONNULL RZ_OUT RzSetU *call_targets) {
+	rz_return_val_if_fail(analysis && analysis->cur && maps && call_targets, false);
+	int buf_size = (analysis->cur->bits / 8) * 16;
+	ut8 *buf = RZ_NEWS0(ut8, buf_size);
+	if (!buf_size || !buf) {
+		return false;
+	}
+
+	RzAnalysisOp op = { 0 };
+	RzIOMap *map;
+	RzListIter *it;
+	rz_list_foreach (maps, it, map) {
+		ut64 off = 0;
+		ut64 addr = map->itv.addr + off;
+		while (map->itv.addr + off < map->itv.addr + map->itv.size) {
+			if (analysis->iob.read_at(analysis->iob.io, addr, buf, buf_size) == 0) {
+				RZ_LOG_WARN("Failed to read memory at 0x%" PFMT64x " size: %u.\n", addr, buf_size);
+				rz_analysis_op_fini(&op);
+				break;
+			}
+			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
+				rz_analysis_op_fini(&op);
+				break;
+			}
+			// Only add call targets going to executable regions.
+			if (rz_analysis_op_is_direct_call(&op) && rz_list_find(maps, &op.jump, (RzListComparator)is_in_x_map, NULL)) {
+				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
+				rz_set_u_add(call_targets, op.jump);
+			}
+			addr += op.size;
+			rz_analysis_op_fini(&op);
+		}
+	}
+	free(buf);
+	return true;
+}
