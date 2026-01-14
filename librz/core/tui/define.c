@@ -30,7 +30,7 @@ static void define_data_ntimes(RzCore *core, ut64 off, int times, int type) {
 	}
 }
 
-static bool isDisasmPrint(int mode) {
+static bool is_visual_mode_disasm(RzCoreVisualMode mode) {
 	return (mode == 1 || mode == 2);
 }
 
