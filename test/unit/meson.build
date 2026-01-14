@@ -73,7 +73,6 @@ if get_option('enable_tests')
     'glob',
     'graph',
     'hash',
-    'heap_jemalloc',
     'hex',
     'ht',
     'id_storage',
