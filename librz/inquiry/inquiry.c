@@ -101,6 +101,77 @@ static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, 
 		rz_str_bool(io_res->req_ok));
 }
 
+static bool setup_queues(RzIO *io,
+	RZ_OUT RzThreadQueue **il_queue,
+	RZ_OUT RzThreadQueue **io_request_q,
+	RZ_OUT RzThreadQueue **io_result_q,
+	RZ_OUT RzThreadQueue **addr_queue,
+	RZ_OUT HtUP **yield_queues) {
+	RzList *boundaries = NULL;
+	RzInterpreterYieldQueue *yield_queue = NULL;
+	// The queue to pass the Effects to the interpreter.
+	// This is only one queue for the prototype.
+	// In practice it would be one for each interpreter.
+	*il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
+	if (!il_queue) {
+		goto error_free;
+	}
+
+	// Setup the IO queues. Each interpreter instance needs it's own queue at
+	// for writing IO. Because the writing is done on the IO cache, and each
+	// instance needs its own cache.
+	*io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	*io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	if (!io_request_q || !io_result_q) {
+		goto error_free;
+	}
+
+	// The address queue. It is the queue the interpreter can request new Effects.
+	// Of course, currently there is only a single one for the prototype.
+	// In practice there would be one for each interpreter instance.
+	*addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, NULL);
+	if (!addr_queue) {
+		goto error_free;
+	}
+
+	// Here we build the filter for the yield queue.
+	// The prototype generates constant xrefs.
+	// So the filter checks the generated xrefs, if they are within the IO map
+	// boundaries.
+	RzInterval iv = { .addr = 0, .size = UT64_MAX };
+	boundaries = rz_io_get_boundaries_all_io_maps(io, iv);
+	if (!boundaries) {
+		goto error_free;
+	}
+
+	// Now create a set of yield queue(s).
+	// These yield queues can be shared between different interpreters.
+	// So we have one yield queue for each yield type.
+	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
+	yield_queue = rz_interpreter_yield_queue_new(
+		yield_kind,
+		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
+		boundaries);
+	if (!yield_queue) {
+		goto error_free;
+	}
+
+	// Multiple yield queues can be used by a single interpreter.
+	// E.g. if the interpreter has a complex abstract memory model
+	// for stack, heap and constant values.
+	// Then it can produce three kind of yields.
+	*yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
+	if (!yield_queue || !yield_queues) {
+		goto error_free;
+	}
+	ht_up_insert(*yield_queues, yield_kind, yield_queue);
+
+	return true;
+
+error_free:
+	return false;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -112,8 +183,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 	RzThreadQueue *io_result_q = NULL;
 	RzInterpreterILBB *il_op = NULL;
 	RzThreadQueue *addr_queue = NULL;
-	RzList *boundaries = NULL;
-	RzInterpreterYieldQueue *yield_queue = NULL;
 	HtUP *yield_queues = NULL;
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 	RzInterpreterAbstrState *abstr_state = NULL;
@@ -126,28 +195,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 
 	rz_cons_push();
 
-	// The pseudo cache of IL effects.
-	// This is only a vector so we can simulate the ownership separation
-	// of the pointers.
-	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
-	// The queue to pass the Effects to the interpreter.
-	// This is only one queue for the prototype.
-	// In practice it would be one for each interpreter.
-	il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
-	if (!il_queue) {
+	if (!setup_queues(core->io, &il_queue, &io_request_q, &io_result_q, &addr_queue, &yield_queues)) {
 		return_code = false;
 		goto error_free;
 	}
 
-	// Setup the IO queues. Each interpreter instance needs it's own queue at
-	// for writing IO. Because the writing is done on the IO cache, and each
-	// instance needs its own cache.
-	io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	if (!io_request_q || !io_result_q) {
-		return_code = false;
-		goto error_free;
-	}
+	// The pseudo cache of IL effects.
+	// This is only a vector so we can simulate the ownership separation
+	// of the pointers.
+	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
 
 	// Add the Effect for each entry point.
 	ut64 *ep;
@@ -163,50 +219,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, const RzVector /*<ut64>*/ *entr
 		rz_th_queue_push(il_queue, il_op, true);
 		rz_pvector_push(il_cache, il_op);
 	}
-
-	// The address queue. It is the queue the interpreter can request new Effects.
-	// Of course, currently there is only a single one for the prototype.
-	// In practice there would be one for each interpreter instance.
-	addr_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, NULL);
-	if (!addr_queue) {
-		return_code = false;
-		goto error_free;
-	}
-
-	// Here we build the filter for the yield queue.
-	// The prototype generates constant xrefs.
-	// So the filter checks the generated xrefs, if they are within the IO map
-	// boundaries.
-	RzInterval iv = { .addr = 0, .size = UT64_MAX };
-	boundaries = rz_io_get_boundaries_all_io_maps(core->io, iv);
-	if (!boundaries) {
-		return_code = false;
-		goto error_free;
-	}
-
-	// Now create a set of yield queue(s).
-	// These yield queues can be shared between different interpreters.
-	// So we have one yield queue for each yield type.
-	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
-	yield_queue = rz_interpreter_yield_queue_new(
-		yield_kind,
-		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
-		boundaries);
-	if (!yield_queue) {
-		return_code = false;
-		goto error_free;
-	}
-
-	// Multiple yield queues can be used by a single interpreter.
-	// E.g. if the interpreter has a complex abstract memory model
-	// for stack, heap and constant values.
-	// Then it can produce three kind of yields.
-	yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
-	if (!yield_queue || !yield_queues) {
-		return_code = false;
-		goto error_free;
-	}
-	ht_up_insert(yield_queues, yield_kind, yield_queue);
 
 	// Initialize the abstract state with the architecture's registers.
 	if (!core->analysis->cur->il_config) {
