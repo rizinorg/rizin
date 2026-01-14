@@ -1351,19 +1351,19 @@ bool test_rz_bv_copy_nbits(void) {
 
 	/// copy part of bv to a new one with the same size
 	RzBitVector *small = rz_bv_new(part_sz);
-	actual_copy = rz_bv_copy_nbits(src, 0, small, 0, part_sz);
+	actual_copy = rz_bv_copy_nbits(small, 0, src, 0, part_sz);
 	mu_assert_eq(actual_copy, part_sz, "copy part_sz to normal");
 	mu_assert_streq_free(rz_bv_as_string(small), "11111111", "copy nbits small bv");
 
 	/// copy part of bv to a new one which has more spaces
 	RzBitVector *normal = rz_bv_new(size);
-	actual_copy = rz_bv_copy_nbits(src, 0, normal, 0, part_sz);
+	actual_copy = rz_bv_copy_nbits(normal, 0, src, 0, part_sz);
 	mu_assert_eq(actual_copy, part_sz, "copy part_sz bits to normal");
 	mu_assert_streq_free(rz_bv_as_string(normal), "00000000000011111111", "copy nbits normal length bv");
 
 	/// copy part of bv to the medium
 	RzBitVector *res = rz_bv_new(size);
-	actual_copy = rz_bv_copy_nbits(src, 0, res, 8, part_sz);
+	actual_copy = rz_bv_copy_nbits(res, 8, src, 0, part_sz);
 	mu_assert_eq(actual_copy, part_sz, "copy part_sz bits to medium");
 	mu_assert_streq_free(rz_bv_as_string(res), "00001111111100000000", "copy nbits to medium");
 
@@ -1373,13 +1373,13 @@ bool test_rz_bv_copy_nbits(void) {
 	/// expect : 0011 0000 1101 ... = 0x30d45678
 	RzBitVector *a = rz_bv_new_from_ut64(32, 0x12345678);
 	RzBitVector *b = rz_bv_new_from_ut64(32, 0x1986);
-	actual_copy = rz_bv_copy_nbits(b, 0, a, a->len - 11, 11);
+	actual_copy = rz_bv_copy_nbits(a, a->len - 11, b, 0, 11);
 	mu_assert_eq(actual_copy, 11, "copy non-zero 11 bits");
 	mu_assert_streq_free(rz_bv_as_hex_string(a, false), "0x30d45678", "copy non zero");
 
 	/// would fail (do nothing) if copy overflow is possible
 	RzBitVector *too_small = rz_bv_new(part_sz);
-	actual_copy = rz_bv_copy_nbits(src, 0, too_small, 0, part_sz + 2);
+	actual_copy = rz_bv_copy_nbits(too_small, 0, src, 0, part_sz + 2);
 	mu_assert_eq(actual_copy, 0, "copy 0 bits");
 	mu_assert_true(rz_bv_is_zero_vector(too_small), "copy nothing");
 
@@ -1420,25 +1420,25 @@ bool test_rz_bv_copy_nbits_inplace(void) {
 	RzBitVector *small_20 = rz_bv_new_from_ut64(20, 0x01234);
 	RzBitVector *large_128 = rz_bv_new_from_bytes_be(array_128, 0, 128);
 
-	mu_assert_eq(rz_bv_copy_nbits(small_20, 5, small_20, 1, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 1, small_20, 5, 7), 7, "wrong num bits copied");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 21), 0, "copy overflow");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
-	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 1, 20), 0, "copy overflow");
-	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 	mu_assert_eq(rz_bv_copy_nbits(small_20, 1, small_20, 0, 20), 0, "copy overflow");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
+	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 1, 20), 0, "copy overflow");
+	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 	mu_assert_eq(rz_bv_copy_nbits(small_20, 0, small_20, 0, 20), 20, "one to one copy");
 	mu_assert_eq(rz_bv_to_ut64(small_20), 0x01222, "Mismatch in place copy");
 
-	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 112, 16), 16, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 112, large_128, 0, 16), 16, "wrong num bits copied");
 	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_1, "copy to limits aligned");
-	mu_assert_eq(rz_bv_copy_nbits(large_128, 1, large_128, 2, 7), 7, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 2, large_128, 1, 7), 7, "wrong num bits copied");
 	mu_assert_streq_free(rz_bv_as_hex_string(large_128, true), large_exp_2, "copy overlap unaligned");
 
-	mu_assert_eq(rz_bv_copy_nbits(large_128, 0, large_128, 120, 16), 0, "wrong num bits copied");
+	mu_assert_eq(rz_bv_copy_nbits(large_128, 120, large_128, 0, 16), 0, "wrong num bits copied");
 
 	rz_bv_free(small_20);
 	rz_bv_free(large_128);
@@ -1531,7 +1531,7 @@ bool test_rz_bv_cast_inplace(void) {
 /**
  * \brief Reference implementation of rz_bv_copy_nbits() to test against
  */
-static ut32 rz_bv_copy_nbits_ref(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 rz_bv_copy_nbits_ref(RzBitVector *dst, ut32 dst_start_pos, const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	rz_return_val_if_fail(src && dst, 0);
 	ut32 max_nbit = RZ_MIN((src->len - src_start_pos), (dst->len - dst_start_pos));
 
@@ -1556,16 +1556,16 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	RzBitVector *dst_copy_ref = rz_bv_new(rz_bv_len(dst));
 	const char *error = NULL;
 
-	rz_bv_copy(src, src_copy);
-	rz_bv_copy(dst, dst_copy);
-	rz_bv_copy(dst, dst_copy_ref);
+	rz_bv_copy(src_copy, src);
+	rz_bv_copy(dst_copy, dst);
+	rz_bv_copy(dst_copy_ref, dst);
 
-	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
+	if (rz_bv_copy_nbits(dst_copy, dst_pos, src_copy, src_pos, nbit) != nbit) {
 		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
 
-	if (rz_bv_copy_nbits_ref(src_copy, src_pos, dst_copy_ref, dst_pos, nbit) != nbit) {
+	if (rz_bv_copy_nbits_ref(dst_copy_ref, dst_pos, src_copy, src_pos, nbit) != nbit) {
 		error = "rz_bv_copy_nbits_ref() incorrect number of bits copied";
 		goto finally;
 	}
@@ -1576,11 +1576,11 @@ static const char *test_rz_bv_copy_nbits_against_ref(const RzBitVector *src, ut3
 	}
 
 	// Test with inverted src/dst for extra certainty
-	rz_bv_copy(dst, dst_copy);
+	rz_bv_copy(dst_copy, dst);
 	rz_bv_toggle_all(src_copy);
 	rz_bv_toggle_all(dst_copy);
 
-	if (rz_bv_copy_nbits(src_copy, src_pos, dst_copy, dst_pos, nbit) != nbit) {
+	if (rz_bv_copy_nbits(dst_copy, dst_pos, src_copy, src_pos, nbit) != nbit) {
 		error = "rz_bv_copy_nbits() incorrect number of bits copied";
 		goto finally;
 	}
@@ -1649,7 +1649,7 @@ bool test_rz_bv_copy_nbits_large_aligned(void) {
 
 	/// Copy bits within the same bitvector
 	rz_bv_set_from_ut64(b, 0xAAAABBBBCCCCDDDD);
-	ut32 actual_copy = rz_bv_copy_nbits(b, 8, b, 16, 32);
+	ut32 actual_copy = rz_bv_copy_nbits(b, 16, b, 8, 32);
 	mu_assert_eq(actual_copy, 32, "copy 32 bits");
 	mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xaaaabbccccdddddd", "copy large aligned");
 
@@ -1688,7 +1688,7 @@ bool test_rz_bv_copy_nbits_large_unaligned(void) {
 
 	/// Copy bits within the same bitvector
 	rz_bv_set_from_ut64(b, 0xAAAABBBBCCCCDDDD);
-	ut32 actual_copy = rz_bv_copy_nbits(b, 0, b, 2, 30);
+	ut32 actual_copy = rz_bv_copy_nbits(b, 2, b, 0, 30);
 	mu_assert_eq(actual_copy, 30, "copy 30 bits");
 	mu_assert_streq_free(rz_bv_as_hex_string(b, false), "0xaaaabbbb33337775", "copy large aligned");
 
