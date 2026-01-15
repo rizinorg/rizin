@@ -39,7 +39,7 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 		rz_th_queue_free(yield_queue->yield_queue);
 	}
 	if (yield_queue->filter_data && yield_queue->filter_data->io_boundaries) {
-		rz_list_free(yield_queue->filter_data->io_boundaries);
+		rz_pvector_free(yield_queue->filter_data->io_boundaries);
 	}
 	free(yield_queue->filter_data);
 	free(yield_queue);

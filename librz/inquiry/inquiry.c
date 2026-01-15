@@ -61,13 +61,14 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 	return false;
 }
 
-RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzList /*<RzIOMap *>*/ *allowed_io_maps) {
-	rz_return_val_if_fail(xref_to_addr && allowed_io_maps, false);
-	const RzIOMap *map;
-	RzListIter *it;
-	rz_list_foreach (allowed_io_maps, it, map) {
-		ut64 start = map->itv.addr;
-		ut64 end = map->itv.addr + map->itv.size;
+RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
+	rz_return_val_if_fail(xref_to_addr && allowed_segments, false);
+	void **it;
+	rz_pvector_foreach (allowed_segments, it) {
+		const RzBinSection *sec = *it;
+
+		ut64 start = sec->vaddr;
+		ut64 end = start + sec->size;
 		if (RZ_BETWEEN(start, *xref_to_addr, end)) {
 			return true;
 		}
@@ -102,13 +103,13 @@ static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, 
 		rz_str_bool(io_res->req_ok));
 }
 
-static bool setup_queues(RzIO *io,
+static bool setup_queues(RzCore *core,
 	RZ_OUT RzThreadQueue **il_queue,
 	RZ_OUT RzThreadQueue **io_request_q,
 	RZ_OUT RzThreadQueue **io_result_q,
 	RZ_OUT RzThreadQueue **addr_queue,
 	RZ_OUT HtUP **yield_queues) {
-	RzList *boundaries = NULL;
+	RzPVector /*<RzBinSection *>*/ *boundaries = NULL;
 	RzInterpreterYieldQueue *yield_queue = NULL;
 	// The queue to pass the Effects to the interpreter.
 	// This is only one queue for the prototype.
@@ -139,8 +140,7 @@ static bool setup_queues(RzIO *io,
 	// The prototype generates constant xrefs.
 	// So the filter checks the generated xrefs, if they are within the IO map
 	// boundaries.
-	RzInterval iv = { .addr = 0, .size = UT64_MAX };
-	boundaries = rz_io_get_boundaries_all_io_maps(io, iv);
+	boundaries = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!boundaries) {
 		goto error_free;
 	}
@@ -192,11 +192,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
-	RzSetU *call_targets = rz_set_u_new();
+	RzSetU *jmp_targets = rz_set_u_new();
 
 	rz_cons_push();
 
-	if (!setup_queues(core->io, &il_queue, &io_request_q, &io_result_q, &addr_queue, &yield_queues)) {
+	if (!setup_queues(core, &il_queue, &io_request_q, &io_result_q, &addr_queue, &yield_queues)) {
 		return_code = false;
 		goto error_free;
 	}
@@ -206,18 +206,17 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// of the pointers.
 	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
 
-	RzInterval iv = { .addr = 0, .size = UT64_MAX };
-	RzList *boundaries = rz_io_get_boundaries_all_io_maps(core->io, iv);
+	RzPVector /*<RzBinSection *>*/ *boundaries = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!boundaries) {
 		goto error_free;
 	}
-	if (!rz_analysis_get_all_call_targets(core->analysis, boundaries, call_targets)) {
+	if (!rz_analysis_get_all_jmp_targets(core->analysis, boundaries, jmp_targets)) {
 		RZ_LOG_ERROR("Failed to get call targets.\n");
 		return_code = false;
 		goto error_free;
 	}
-	rz_list_free(boundaries);
-	RZ_LOG_DEBUG("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(call_targets));
+	rz_pvector_free(boundaries);
+	RZ_LOG_DEBUG("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(jmp_targets));
 
 	// Initialize the abstract state with the architecture's registers.
 	if (!core->analysis->cur->il_config) {
@@ -375,7 +374,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						rz_atomic_bool_set(is_running, false);
 						break;
 					}
-					// TODO: Currently we can't classify calls as such.
+					// TODO: Currently we can't classify jumps/calls as such.
 					rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
 					RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
 				}
@@ -391,27 +390,27 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			break;
 		} else if (bb_decode_failed) {
 			// Open queue again, so the interpretation can start at another
-			// call target again.
+			// jump target again.
 			rz_th_queue_open(iset->addr_queue);
 			rz_th_queue_open(iset->il_queue);
 		}
 
 		// At this point the interpreter is finished and returned.
 		// Now we need to check for executable regions it did not cover.
-		// For this we simply delete all call targets from our set, which point
+		// For this we simply delete all jump targets from our set, which point
 		// into the already handled basic blocks.
 		// Then add a few addresses as new entry points.
-		// The addresses we add are call targets from call instructions in the binary.
+		// The addresses we add are jump targets from jump instructions in the binary.
 		{
 			rz_vector_clear(entry_points);
-			RzVector *covered_call_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
-			RzIterator *ct_iter = rz_set_u_as_iter(call_targets);
+			RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
+			RzIterator *ct_iter = rz_set_u_as_iter(jmp_targets);
 			size_t x = 0;
 			ut64 *ct;
 			rz_iterator_foreach(ct_iter, ct) {
 				RzList *containing_blocks = rz_analysis_get_blocks_in(core->analysis, *ct);
 				if (rz_list_length(containing_blocks) != 0) {
-					rz_vector_push(covered_call_targets, ct);
+					rz_vector_push(covered_jump_targets, ct);
 					rz_list_free(containing_blocks);
 					continue;
 				}
@@ -427,14 +426,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 
 			rz_iterator_free(ct_iter);
 			ut64 *ep;
-			rz_vector_foreach (covered_call_targets, ep) {
-				// Delete the selected ones from the call target set.
+			rz_vector_foreach (covered_jump_targets, ep) {
+				// Delete the selected ones from the jump target set.
 				// So they are not requested again.
-				rz_set_u_delete(call_targets, *ep);
+				rz_set_u_delete(jmp_targets, *ep);
 			}
-			rz_vector_free(covered_call_targets);
+			rz_vector_free(covered_jump_targets);
 
-			RZ_LOG_DEBUG("Call targets left: %" PFMT32d "\n", rz_set_u_size(call_targets));
+			RZ_LOG_DEBUG("jump targets left: %" PFMT32d "\n", rz_set_u_size(jmp_targets));
 		}
 	} while (!rz_vector_empty(entry_points));
 
@@ -446,7 +445,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 error_free:
 	RZ_LOG_DEBUG("INQUIRY: Close queues\n");
 	rz_vector_free(entry_points);
-	rz_set_u_free(call_targets);
+	rz_set_u_free(jmp_targets);
 	rz_buf_free(io_buf);
 	rz_analysis_il_vm_free(analysis_vm);
 	rz_th_queue_close(il_queue);

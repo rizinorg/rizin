@@ -1578,7 +1578,7 @@ RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAn
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
-RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzList /*<RzIOMap *>*/ *maps, RZ_NONNULL RZ_OUT RzSetU *call_targets);
+RZ_API bool rz_analysis_get_all_jmp_targets(RzAnalysis *analysis, const RzPVector /*<RzBinSection *>*/ *sections, RZ_NONNULL RZ_OUT RzSetU *jump_targets);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(

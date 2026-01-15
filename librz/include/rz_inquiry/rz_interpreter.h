@@ -85,7 +85,7 @@ typedef union {
 typedef bool (*RzInterpreterYieldFilter)(const void *element, const void *filter_data);
 
 typedef struct {
-	RzList /*<RzIOMap *>*/ *io_boundaries;
+	RzPVector /*<RzBinSection *>*/ *io_boundaries;
 } RzInterpreterYieldFilterData;
 
 /**
