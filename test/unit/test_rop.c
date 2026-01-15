@@ -146,10 +146,28 @@ bool test_rop_cache(void) {
 	mu_assert_notnull(core, "core");
 
 #if __WINDOWS__
-	const char *test_bin = "bins/pe/standard.exe";
+	const char *test_bin_name = "bins/pe/standard.exe";
 #else
-	const char *test_bin = "bins/elf/analysis/hello-linux-x86_64";
+	const char *test_bin_name = "bins/elf/analysis/hello-linux-x86_64";
 #endif
+	char *test_bin = NULL;
+	if (rz_file_exists(test_bin_name)) {
+		test_bin = strdup(test_bin_name);
+	} else {
+		// Fallback for environments where bins/ is missing but rizin-testbins exists
+		// Try: rizin-testbins/elf/... (CWD is root)
+		test_bin = rz_str_newf("rizin-testbins/%s", test_bin_name + 5);
+		if (!rz_file_exists(test_bin)) {
+			free(test_bin);
+			// Try: ../rizin-testbins/elf/... (CWD is test/)
+			test_bin = rz_str_newf("../rizin-testbins/%s", test_bin_name + 5);
+			if (!rz_file_exists(test_bin)) {
+				free(test_bin);
+				// Try: ../../../rizin-testbins/elf/... (CWD is build/test/unit)
+				test_bin = rz_str_newf("../../../rizin-testbins/%s", test_bin_name + 5);
+			}
+		}
+	}
 
 	RzCoreFile *cf = rz_core_file_open(core, test_bin, RZ_PERM_RX, 0);
 	mu_assert_notnull(cf, "open file");
@@ -179,6 +197,7 @@ bool test_rop_cache(void) {
 	char *result2 = ht_up_find(core->analysis->ht_rop, key, NULL);
 	mu_assert_ptreq(result2, result, "cache hit");
 
+	free(test_bin);
 	rz_cmd_state_output_fini(&state);
 	rz_core_free(core);
 	mu_end;
