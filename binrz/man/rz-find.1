@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_FIND 1
+.Os
 .Sh NAME
 .Nm rz-find
 .Nd Find byte patterns in files
@@ -49,7 +50,8 @@ Print using rizin commands
 .It Fl s Ar str
 Search for a specific string (can be used multiple times)
 .It Fl w Ar str
-Search for a specific wide string (can be used multiple times). Assumes str is UTF-8
+Search for a specific wide string (can be used multiple times).
+Assumes str is UTF-8
 .It Fl I Ar str
 Search for an entry in import table
 .It Fl S Ar str
@@ -57,7 +59,8 @@ Search for a symbol in symbol table
 .It Fl t Ar to
 Stop search at address 'to'
 .It Fl q
-Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
+Quiet mode - do not show headings (filenames) above matching contents
+(default for searching a single file)
 .It Fl v
 Show version information
 .It Fl x Ar hex
@@ -68,19 +71,17 @@ Show hexdump of search results
 Search for zero-terminated strings
 .It Fl Z
 Show string found on each search hit
-.Pp
+.El
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1) ,
-.Xr rz-ax(1)
+.Xr rizin 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-run 1 ,
+.Xr rz-ax 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.Pp
-byteninjaa0
+.An pancake
+.Aq Mt pancake@nopcode.org
+.An byteninjaa0

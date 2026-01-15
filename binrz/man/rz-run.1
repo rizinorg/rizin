@@ -1,31 +1,36 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_RUN 1
+.Os
 .Sh NAME
 .Nm rz-run
 .Nd rizin utility to run programs in custom environments
 .Sh SYNOPSIS
 .Nm rz-run
 .Op Ar directives | script.rz
-.Op Fl - Ar program Op Ar args
+.Op Fl - Ar program Ar args
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default file descriptors.
+This program is used as a launcher for running programs with different
+environment variables, arguments, permissions, working directories and
+overridden default file descriptors.
 .Pp
 .Bl -tag -width Fl
 .It Fl l
 List all the supported profile directives.
-.Pp
 .It Fl t
 Output a base template profile. Try rz-run -d > profile.rz
-.Pp
 .It Fl w
-Show the terminal name and wait for a connection from another process. Try rz-run stdio=<ttypath> program=/bin/sh
+Show the terminal name and wait for a connection from another process.
+Try `rz-run stdio=<ttypath> program=/bin/sh` for a quick test.
 .El
 .Pp
-The program accepts a single argument which is the filename of the configuration file to run the program.
+The program accepts a single argument which is the filename of the
+configuration file to run the program.
 .Pp
-It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
+It is useful when you have to run a program using long arguments or pass
+long data to stdin, which is commonly required when analyzing exploits
+or crackmes.
 .Sh DIRECTIVES
 .Pp
 The rrz (rz-run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
@@ -159,31 +164,30 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run rizin
-  $ rizin \-r foo.rrz -d ls
+  $ rizin -r foo.rrz -d ls
   $ cat foo.rrz
   #!/usr/bin/rz-run
   stdio=/dev/ttys010
   ## Or you can use -R to set a key=value
-  rizin \-R stdio=/dev/ttys010 -d ls
+  rizin -R stdio=/dev/ttys010 -d ls
 .Pp
-You can also use the -- flag to specify program and arguments in a more natural way:
 .Pp
-.Nm rz-run Cm timeout=2 Ar -- sleep 4
+You can also use the .Cm -- flag to specify program and arguments in a more natural way:
+.Pp
+.Nm rz-run Cm timeout=2 Cm -- Ar sleep 4
 .Pp
 Run a library function
 .Pp
 .Nm rz-run Cm runlib=/lib/libc-2.25.so Cm runlib.fcn=system Cm arg1="ls /"
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-asm(1) ,
+.Xr rizin 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-find 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-asm 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.Pp
-byteninjaa0
+.An pancake
+.Aq Mt pancake@nopcode.org
+.An byteninjaa0

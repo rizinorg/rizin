@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_TEST 1
+.Os
 .Sh NAME
 .Nm rz-test
 .Nd rizin regression testsuite
@@ -11,9 +12,10 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-Run all the rizin-regressions tests matching a specific word in the name.
+Run all the rizin-regression tests matching a specific word in the
+test name.
 .Pp
-You need rizin to be available in $PATH.
+Rizin must be available in your $PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl h
@@ -31,9 +33,10 @@ Do nothing (don't run any test, just load/parse them)
 .It Fl L
 Log mode (better printing for CI, logfiles, etc.)
 .It Fl F Ar dir
-Run fuzz tests (open and default analysis) on all files in the given dir
+Run fuzz tests (open and default analysis) on all files in the given
+directory
 .It Fl j Ar threads
-How many threads to use for running tests concurrently (default is 8)
+Number of threads to use for running tests concurrently (default: 8)
 .It Fl r Ar rizin
 Set path to rizin executable (default is rizin)
 .It Fl m Ar rz-asm
@@ -61,21 +64,18 @@ EDITOR: editor to use (eg: "vim")
 
 .Sh USAGE
 .Pp
-Use the -n flag to dont run any test. Just load them.
+Use the -n flag to not run any tests; it will only load/parse them.
 .Pp
   $ rz-test -n
   [rz-test] Loading tests...
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-find(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
+.Xr rizin 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-find 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-asm 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.Pp
-byteninjaa0
+.An pancake
+.Aq Mt pancake@nopcode.org
+.An byteninjaa0

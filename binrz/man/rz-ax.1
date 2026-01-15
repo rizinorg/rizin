@@ -1,5 +1,6 @@
-.Dd Dec 28, 2020
+.Dd December 28, 2020
 .Dt RZ_AX 1
+.Os
 .Sh NAME
 .Nm rz-ax
 .Nd rizin base converter
@@ -10,7 +11,8 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This command allows you to convert values between positive and negative integer, float, octal, binary, ternary, and hexadecimal values.
+This command allows you to convert values between positive and negative
+integer, float, octal, binary, ternary, and hexadecimal values.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a
@@ -30,7 +32,8 @@ Base64 encode
 .It Fl f
 Floating point arithmetic (rz-ax -f 6.3+2.1)
 .It Fl F
-Read C strings from stdin and output in hexpairs. Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
+Read C strings from stdin and output in hexpairs.
+Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
 .It Fl h
 Show usage help message
 .It Fl i
@@ -46,9 +49,9 @@ Convert binary to hexadecimal (rz-ax -L 111111111 outputs 0x1ff)
 .It Fl n
 Show hexpairs from integer value (rz-ax -n 0x1234 # 34120000)
 .It Fl N
-Show hex C string from integer value (rz-ax -N 0x1234 # \x34\x12\x00\x00)
+Show hex C string from integer value (rz-ax -N 0x1234 # 34 12 00 00)
 .It Fl o
-Convert from octal string to char (rz-ax -o \162 \172 # rz)
+Convert from octal string to char (rz-ax -o 162 172 # rz)
 .It Fl r
 Rz style output (rz-ax -r 0x1234)
 .It Fl s
@@ -85,10 +88,10 @@ Force output mode (numeric base)
 .Pp
 Available variable types are:
 .Pp
-  int     \->  hex     rz-ax 10
-  hex     \->  int     rz-ax 0xa
-  \-int    \->  hex     rz-ax \-77
-  \-hex    \->  int     rz-ax 0xffffffb3
+  int     ->  hex     rz-ax 10
+  hex     ->  int     rz-ax 0xa
+  -int    ->  hex     rz-ax -77
+  -hex    ->  int     rz-ax 0xffffffb3
   int     \->  bin     rz-ax b30
   int     \->  ternary rz-ax t42
   ternary \->  int     rz-ax 1010dt
@@ -100,7 +103,7 @@ Available variable types are:
   bin     \->  hex     rz-ax 1100011b
   hex     \->  bin     rz-ax Bx63
   ternary \->  hex     rz-ax 212t
-  hex     \->  ternary z-ax Tx23
+  hex     ->  ternary rz-ax Tx23
   raw     \->  hex     rz-ax -S < /binfile
   hex     \->  raw     rz-ax -s 414141
 .Pp
@@ -114,7 +117,7 @@ as arguments.
 .Pp
 You can do 'unpack' hexpair encoded strings easily.
 .Pp
-  $ rz-ax \-s 41 42 43
+  $ rz-ax -s 41 42 43
   ABC
 .Pp
 And it supports some math operations.
@@ -123,21 +126,20 @@ And it supports some math operations.
   0x5*101b+5
   30
 .Pp
-It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
-.Pp
+It is a very useful tool for scripting, so you can read floating
+point values, or get the integer offset of a jump or a stack delta
+when analyzing programs.
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-sign(1)
+.Xr rizin 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-find 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-run 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-sign 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.Pp
+.An pancake
+.Aq Mt pancake@nopcode.org
 byteninjaa0
