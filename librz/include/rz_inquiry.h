@@ -35,7 +35,7 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *a);
 
 RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr, RZ_NULLABLE RZ_OUT size_t *bb_size);
 
-RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzList /*<RzIOMap *>*/ *allowed_io_maps);
+RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
 
 RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points);
 
