@@ -79,14 +79,16 @@ Set the seed for -a; use '^' to append it before the input.
 Use '@' prefix to load it from a file and '-' to read it
 .It Fl K Ar key
 Set the HMAC key for -a and the key for -E/-D.
-Use '@' prefix to load it from a file and '-' to read it from stdin (you can combine them)
+Use '@' prefix to load it from a file and '-' to read it from stdin
+(you can combine them)
 .It Fl s Ar string
 Input read from a zero-terminated string instead of from a file
 .It Fl x Ar hex
 Input read from a hexadecimal value instead of from a file
 .Pp
 All the inputs (besides -s/-x/-c) can be hexadecimal or strings if
-'s:' prefix is specified.
+.Cm s:
+prefix is specified.
 .El
 .Sh DIAGNOSTICS
 .Ex -std
@@ -94,14 +96,14 @@ All the inputs (besides -s/-x/-c) can be hexadecimal or strings if
 When -c is used, exit status 0 indicates a match between the expected and
 computed hashes
 .Sh SEE ALSO
-.Xr rizin 1 ,
-.Xr rz-find 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-ax 1 ,
 .Xr rz-bin 1 ,
 .Xr rz-diff 1 ,
-.Xr rz-asm 1 ,
+.Xr rz-find 1 ,
 .Xr rz-gg 1 ,
 .Xr rz-run 1 ,
-.Xr rz-ax 1
+.Xr rizin 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org

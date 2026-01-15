@@ -68,6 +68,7 @@ Output native format (osx=mach0, linux=elf, ..)
 Show usage help message
 .It Fl i Ar shellcode
 Include shellcode plugin, use options.
+.Pp
 See -L
 .It Fl I Ar path
 Add include path
@@ -138,6 +139,7 @@ Output in C string syntax
   Hello
 .Pp
   # Linked into a tiny binary. This is 165 bytes
+.Pp
   $ wc -c < hi
     165
 .Pp
@@ -152,12 +154,12 @@ Output in C string syntax
   c2c2f4a40ff4140404008cd75adbfbfbffa46404040f8414040404f45
   71bff87c4040404f45718083
 .Sh SEE ALSO
-.Xr rizin 1 ,
-.Xr rz-hash 1 ,
-.Xr rz-find 1 ,
+.Xr rz-asm 1 ,
 .Xr rz-bin 1 ,
 .Xr rz-diff 1 ,
-.Xr rz-asm 1
+.Xr rz-find 1 ,
+.Xr rz-hash 1 ,
+.Xr rizin 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org

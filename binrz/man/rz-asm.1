@@ -142,7 +142,8 @@ Mark the start of the text section
 Set the Thumb mode (as opposed to ARM) for ARM architecture
 .El
 .Sh ENVIRONMENT
-RZ_ARCH:      e asm.arch - architecture to assemble/disassemble (same as rz-asm -a)
+RZ_ARCH:      e asm.arch - architecture to assemble/disassemble
+(same as rz-asm -a)
 .Pp
 RZ_ASM_ARCH:  architecture to assemble/disassemble (same as rz-asm -a)
 .Pp
@@ -153,8 +154,7 @@ RZ_BITS:      e asm.bits - cpu register size (8, 16, 32, 64) (same as rz-asm -b)
 RZ_DEBUG:     if defined, show error messages and crash signal\n"
 .Pp
 RZ_NOPLUGINS: do not load shared plugins (speedup loading)\n"
-
-
+.Pp
 .Sh EXAMPLES
 Assemble opcode:
 .Nm rz-asm Fl a Cm x86 Fl b Cm 32 Ar 'mov eax, 33'
@@ -162,14 +162,14 @@ Assemble opcode:
 Disassemble opcode:
 .Nm rz-asm Fl d Cm 90
 .Sh SEE ALSO
-.Xr rizin 1 ,
-.Xr rz-find 1 ,
-.Xr rz-hash 1 ,
+.Xr rz-ax 1 ,
 .Xr rz-bin 1 ,
 .Xr rz-diff 1 ,
+.Xr rz-find 1 ,
 .Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
 .Xr rz-run 1 ,
-.Xr rz-ax 1
+.Xr rizin 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org
