@@ -143,5 +143,7 @@ void rz_magic_line_free(RZ_OWN RZ_NULLABLE RzMagicLine *ml) {
 	free(ml->type_string);
 	free(ml->result);
 	free(ml->mimetype);
+	free(ml->name);
+	free(ml->test_string);
 	free(ml);
 }
