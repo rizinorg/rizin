@@ -178,18 +178,26 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_return_if_fail(expr) \
 	do { \
 		assert(expr); \
+		if (!(expr)) { \
+			return; \
+		} \
 	} while (0)
 #define rz_return_val_if_fail(expr, val) \
 	do { \
 		assert(expr); \
+		if (!(expr)) { \
+			return (val); \
+		} \
 	} while (0)
 #define rz_return_if_reached() \
 	do { \
 		assert(false); \
+		return; \
 	} while (0)
 #define rz_return_val_if_reached(val) \
 	do { \
 		assert(false); \
+		return (val); \
 	} while (0)
 
 #define rz_goto_if_fail(expr, where) \
