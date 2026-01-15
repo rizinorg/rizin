@@ -278,6 +278,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	}
 
 	do {
+		bool bb_decode_failed = false;
+		// Clear queues from any left overs of previous runs.
+		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
+		rz_list_free(rz_th_queue_pop_all(iset->addr_queue));
+
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
 		interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
@@ -321,14 +326,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
+						rz_th_queue_close(iset->addr_queue);
 						rz_th_queue_close(iset->il_queue);
+						bb_decode_failed = true;
 						break;
 					}
 					rz_analysis_add_bb(core->analysis, *addr, bb_size);
 					RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 					rz_pvector_push(il_cache, bb);
 					// TODO: Free unused if too big.
-					rz_th_queue_push(il_queue, bb, true);
+					rz_th_queue_push(iset->il_queue, bb, true);
 				}
 			}
 
@@ -379,9 +386,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		rz_th_wait(interpr_th);
 		return_code = rz_th_get_retv(interpr_th);
 		rz_th_free(interpr_th);
-		if (!return_code) {
+		if (!return_code && !bb_decode_failed) {
 			RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
 			break;
+		} else if (bb_decode_failed) {
+			// Open queue again, so the interpretation can start at another
+			// call target again.
+			rz_th_queue_open(iset->addr_queue);
+			rz_th_queue_open(iset->il_queue);
 		}
 
 		// At this point the interpreter is finished and returned.
