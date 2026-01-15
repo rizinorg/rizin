@@ -16,85 +16,109 @@
 .Op Fl x Ar hexstr
 .Op Fl f Ar from
 .Op Fl t Ar to
-.Op Fl c Ar hash
-.Op [file] ...
+.Op Fl I Ar iv
+.Op Fl S Ar seed
+.Op Fl K Ar key
+.Op Fl i Ar times
+.Op Ar file ...
 .Sh DESCRIPTION
 This program is part of the Rizin project.
 .Pp
-rz-hash allows you to calculate, check and show the hash values of each
+.Nm rz-hash
+allows you to calculate, check and show hash values of each
 block of a target file.
 The block size is 32768 bytes by default.
-It's allowed to hash from stdin using '-' as a target file.
-You can compare against a known hash and get the result in the exit
-status.
 .Pp
-You can hash big files by hashing each block and later determine what
-part of it has been modified.
-Useful for filesystem analysis.
+It is possible to hash data from standard input by using
+.Ql -
+as the input file.
 .Pp
-This command can be used to calculate hashes of a certain part of a file
-or a command line passed string.
+You can compare against a known hash and retrieve the result
+via the exit status.
 .Pp
-This is the command used by the 'ph' command of rizin.
+Large files can be hashed block by block to detect which parts
+have changed.
+.Pp
+This command is also used internally by the
+.Cm ph
+command of rizin.
+.Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl v
 Show version information
 .It Fl h
 Show usage help message
-.It Fl 
-Input read from stdin instead of from a file
+.It Fl -
+Read input from standard input instead of a file
 .It Fl a Ar algo
-Hash algorithm to use; you can specify multiple ones by appending a
-comma (example: sha1,md4,md5,sha256)
+Hash algorithm; specify multiple algorithms separated by commas
+(example: sha1,md4,md5,sha256)
 .It Fl B
 Output the calculated value for each block
 .It Fl b Ar size
 Set the block size
 .It Fl c Ar value
-Compare calculated value with a given one (hexadecimal)
+Compare calculated value with the given hexadecimal hash
 .It Fl e Ar endian
-Set the endianness (default: 'big'; accepted: 'big' or 'little')
+Set the endianness (default: big; accepted: big or little)
 .It Fl D Ar algo
-Decrypt the given input; use -S to set the key and -I to set IV (if needed)
+Decrypt the input; use
+.Fl S
+to set the key and
+.Fl I
+to set the IV if required
 .It Fl E Ar algo
-Encrypt the given input; use -S to set the key and -I to set IV (if needed)
+Encrypt the input; use
+.Fl S
+to set the key and
+.Fl I
+to set the IV if required
 .It Fl f Ar from
-Start the calculation at the given offset
+Start calculation at the given offset
 .It Fl t Ar to
-Stop the calculation at the given offset
+Stop calculation at the given offset
 .It Fl I Ar iv
-Set the initialization vector (IV)
+Set the initialization vector
 .It Fl i Ar times
 Repeat the calculation N times
 .It Fl j
-Output the result as a JSON structure
+Output results as JSON
 .It Fl k
-Output the calculated value using openssh's randomkey algorithm
+Output using OpenSSH randomkey format
 .It Fl L
-List all algorithms
+List all supported algorithms
 .It Fl q
-Set quiet mode (use -qq to get only the calculated value)
+Quiet mode (use
+.Fl qq
+to output only the calculated value)
 .It Fl S Ar seed
-Set the seed for -a; use '^' to append it before the input.
-Use '@' prefix to load it from a file and '-' to read it
+Set the seed for
+.Fl a ;
+use
+.Ql ^
+to prepend,
+.Ql @
+to load from file,
+or
+.Ql -
+to read from stdin
 .It Fl K Ar key
-Set the HMAC key for -a and the key for -E/-D.
-Use '@' prefix to load it from a file and '-' to read it from stdin
-(you can combine them)
+Set HMAC key or encryption key; supports
+.Ql @
+file and
+.Ql -
+stdin prefixes
 .It Fl s Ar string
-Input read from a zero-terminated string instead of from a file
+Read input from a zero-terminated string
 .It Fl x Ar hex
-Input read from a hexadecimal value instead of from a file
-.Pp
-All the inputs (besides -s/-x/-c) can be hexadecimal or strings if
-.Cm s:
-prefix is specified.
+Read input from a hexadecimal string
 .El
 .Sh DIAGNOSTICS
 .Ex -std
 .Pp
-When -c is used, exit status 0 indicates a match between the expected and
-computed hashes
+When
+.Fl c
+is used, exit status 0 indicates a hash match.
 .Sh SEE ALSO
 .Xr rz-asm 1 ,
 .Xr rz-ax 1 ,
@@ -102,8 +126,7 @@ computed hashes
 .Xr rz-diff 1 ,
 .Xr rz-find 1 ,
 .Xr rz-gg 1 ,
-.Xr rz-run 1 ,
-.Xr rizin 1
+.Xr rz-run 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org

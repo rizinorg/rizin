@@ -10,10 +10,9 @@
 .Ar file0
 .Ar file1
 .Sh DESCRIPTION
-rz-diff compares two files or binary programs and highlights the
-differences between them.
-It supports diffing different aspects like raw bytes, text lines,
-functions, sections, strings, etc., based on the options used.
+rz-diff compares two files or binary programs and highlights differences.
+It supports diffing raw bytes, text lines, functions, sections,
+strings, etc., based on the options used.
 .Bl -tag -width Fl
 .It Fl A
 Compare virtual addresses from file0 with physical addresses in file1
@@ -90,18 +89,19 @@ Show timestamp information in the output
 .It Fl V
 Show version information for rz-diff
 .It Fl v
-be more verbose (stderr output)
+Be more verbose (stderr output)
 .El
 .Pp
 Palette colors can be changed by adding the following lines inside the
-$HOME/.rizinrc file
+.Pa $HOME/.rizinrc
+file
 .Bl -tag -width 20n
 .It Ic ec diff.unknown blue
-offset color
+Offset color
 .It Ic ec diff.match green
-match color
+Match color
 .It Ic ec diff.unmatch red
-mismatch color
+Mismatch color
 .El
 .Sh EXAMPLES
 Compare two binary files using the default settings:
@@ -122,8 +122,7 @@ Compare two functions from an architecture plugin:
 .Xr rz-find 1 ,
 .Xr rz-gg 1 ,
 .Xr rz-hash 1 ,
-.Xr rz-run 1 ,
-.Xr rizin 1
+.Xr rz-run 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org

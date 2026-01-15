@@ -11,27 +11,23 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This program is used as a launcher for running programs with different
-environment variables, arguments, permissions, working directories and
-overridden default file descriptors.
+This program launches programs with custom environment variables,
+arguments, permissions, working directories, and file descriptors.
 .Bl -tag -width Fl
 .It Fl l
-List all the supported profile directives.
+List all supported profile directives
 .It Fl t
 Output a base template profile.
-.Pp
 Try rz-run -d > profile.rz
 .It Fl w
 Show the terminal name and wait for a connection from another process.
-Try `rz-run stdio=<ttypath> program=/bin/sh` for a quick test.
+Try: rz-run stdio=<ttypath> program=/bin/sh
 .El
 .Pp
-The program accepts a single argument which is the filename of the
-configuration file to run the program.
+The program accepts a single argument: the configuration file to run.
 .Pp
-It is useful when you have to run a program using long arguments or pass
-long data to stdin, which is commonly required when analyzing exploits
-or crackmes.
+Useful for running programs with long arguments or passing long data
+to stdin for analyzing exploits or crackmes.
 .Sh DIRECTIVES
 The rrz (rz-run) configuration file accepts the following directives,
 described as key=value entries and comments defined as lines starting
@@ -56,8 +52,7 @@ Use a pty for connection over socket (with connect/listen)
 .It Ar envfile
 Set a file with lines like `var=value` to be used as env
 .It Ar fork
-Used with the listen option, allow to spawn a different process for each
-connection.
+Used with listen option to spawn different processes per connection.
 .Pp
 Ignored when debugging.
 .It Ar input
@@ -90,8 +85,7 @@ Path to the library to be executed
 .It Ar runlib.fcn
 Function name to call from runlib library
 .It Ar rzpreload
-Preload with librz; kill -USR1 to get an rizin shell or -USR2 to spawn a
-webserver in a thread
+Preload with librz; kill -USR1 for rizin shell or -USR2 for webserver
 .It Ar setenv
 Set value for given environment variable
 .It Ar setegid
@@ -109,11 +103,11 @@ Set io streams (stdin, stdout, stderr) to a value
 .It Ar stdio=!cmd
 Redirect input/output to the process created by the specified command
 .It Ar stdin
-Set stdin, stdout, and stderr streams to the specified value
+Set stdin, stdout, stderr streams to specified value
 .It Ar stdout
-Select file to replace stdout file descriptor
+Select file to replace stdout descriptor
 .It Ar stderr
-Select file to replace stderr file descriptor
+Select file to replace stderr descriptor
 .It Ar system
 Execute the given command
 .It Ar timeout
@@ -176,9 +170,8 @@ Debugging a program redirecting io to another terminal
   stdio=/dev/ttys010
   ## Or you can use -R to set a key=value
   rizin -R stdio=/dev/ttys010 -d ls
-.Sh EXAMPLES
-You can also use the \(em flag to specify program and arguments in a more
-natural way:
+.Sh MORE EXAMPLES
+You can also use the \(em flag to specify program and arguments naturally:
 .Pp
 .Nm rz-run Cm timeout=2 Cm \(em Ar sleep 4
 .Pp
@@ -192,7 +185,7 @@ Run a library function
 .Xr rz-diff 1 ,
 .Xr rz-find 1 ,
 .Xr rz-gg 1 ,
-.Xr rizin 1
+.Xr rz-hash 1
 .Sh AUTHORS
 .An pancake
 .Aq Mt pancake@nopcode.org
