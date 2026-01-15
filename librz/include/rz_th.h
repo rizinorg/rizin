@@ -104,6 +104,7 @@ RZ_API bool rz_th_queue_is_full(RZ_NONNULL RzThreadQueue *queue);
 RZ_API size_t rz_th_queue_size(RZ_NONNULL RzThreadQueue *queue);
 RZ_API void rz_th_queue_close_when_empty(RZ_NONNULL RzThreadQueue *queue);
 RZ_API void rz_th_queue_close(RZ_NONNULL RzThreadQueue *queue);
+RZ_API void rz_th_queue_open(RZ_NONNULL RzThreadQueue *queue);
 RZ_API bool rz_th_queue_is_closed(RZ_NONNULL RzThreadQueue *queue);
 
 RZ_API RZ_OWN RzAtomicBool *rz_atomic_bool_new(bool value);
