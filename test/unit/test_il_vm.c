@@ -1098,6 +1098,7 @@ static bool test_rzil_vm_op_fexcept() {
 	mu_assert_true(e->b, "div by zero exception should be set");
 	rz_float_free(result);
 	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
 
 	// 2. Test overflow
 	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,

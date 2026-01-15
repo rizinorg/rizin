@@ -585,7 +585,12 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			}
 			field_declarator = ts_node_next_named_sibling(field_declarator);
 		} while (!ts_node_is_null(field_declarator));
-		free(membtpair);
+		if (membtpair) {
+			if (membtpair->type) {
+				rz_type_free(membtpair->type);
+			}
+			free(membtpair);
+		}
 	}
 	// If parsing successfull completed - we store the state
 	if (struct_pair) {

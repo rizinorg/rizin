@@ -188,7 +188,12 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 		RZ_LOG_WARN("Command already in hash table. Previous command has been replaced.\n");
 		goto err;
 	}
-	cmd_desc_set_parent(cmd, res, parent);
+	if (!cmd_desc_set_parent(cmd, res, parent)) {
+		if (ht_insert) {
+			ht_sp_delete(cmd->ht_cmds, name);
+		}
+		goto err;
+	}
 	return res;
 err:
 	cmd_desc_free(res);

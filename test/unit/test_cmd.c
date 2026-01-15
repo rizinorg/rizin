@@ -1397,6 +1397,7 @@ bool test_call_macros(void) {
 	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "c command should not exist");
 
 	rz_cmd_free(cmd);
+	free(core);
 	mu_end;
 }
 
@@ -1427,6 +1428,7 @@ bool test_call_multiple_macros(void) {
 	status = rz_cmd_macro_call(cmd, "macro2", macro_args_val_wrong);
 	mu_assert_eq(status, RZ_CMD_STATUS_INVALID, "macro2 should be called with a multiple of arguments");
 	rz_cmd_free(cmd);
+	free(core);
 	mu_end;
 }
 

@@ -238,7 +238,7 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
-			acc->offset -= delta;
+			acc->offset = (st64)((ut64)acc->offset - (ut64)delta);
 		}
 	}
 	InstVarsRelocateCtx ctx = {

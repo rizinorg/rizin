@@ -359,9 +359,16 @@ VALIDATOR_PURE(ite) {
 	VALIDATOR_DESCEND(args->x, &sx);
 	RzILSortPure sy;
 	VALIDATOR_DESCEND(args->y, &sy);
-	VALIDATOR_ASSERT(rz_il_sort_pure_eq(sx, sy), "Types of ite branches do not agree: %s vs. %s.\n",
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy));
+	if (!rz_il_sort_pure_eq(sx, sy)) {
+		char *sxs = rz_il_sort_pure_stringify(sx);
+		char *sys = rz_il_sort_pure_stringify(sy);
+		rz_warn_if_reached();
+		rz_strbuf_appendf(report_builder, "Types of ite branches do not agree: %s vs. %s.\n",
+			rz_str_get_null(sxs), rz_str_get_null(sys));
+		free(sxs);
+		free(sys);
+		return false;
+	}
 
 	*sort_out = sx;
 	return true;
@@ -606,10 +613,18 @@ VALIDATOR_PURE(forder) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy));
+	if (sx.props.f.format != sy.props.f.format) {
+		char *sxs = rz_il_sort_pure_stringify(sx);
+		char *sys = rz_il_sort_pure_stringify(sy);
+		rz_warn_if_reached();
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code),
+			rz_str_get_null(sxs),
+			rz_str_get_null(sys));
+		free(sxs);
+		free(sys);
+		return false;
+	}
 
 	*sort_out = rz_il_sort_pure_bool();
 	return true;
@@ -652,10 +667,18 @@ VALIDATOR_PURE(float_binop_with_round) {
 	VALIDATOR_ASSERT(sy.type == RZ_IL_TYPE_PURE_FLOAT, "Right operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
 	// flatten validator assert
-	VALIDATOR_ASSERT(sx.props.f.format == sy.props.f.format, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy));
+	if (sx.props.f.format != sy.props.f.format) {
+		char *sxs = rz_il_sort_pure_stringify(sx);
+		char *sys = rz_il_sort_pure_stringify(sy);
+		rz_warn_if_reached();
+		rz_strbuf_appendf(report_builder, "Op %s formats of left operand (%s) and right operand (%s) do not agree.\n",
+			rz_il_op_pure_code_stringify(op->code),
+			rz_str_get_null(sxs),
+			rz_str_get_null(sys));
+		free(sxs);
+		free(sys);
+		return false;
+	}
 
 	*sort_out = sx;
 	return true;
@@ -674,12 +697,21 @@ VALIDATOR_PURE(float_terop_with_round) {
 	VALIDATOR_DESCEND(args->z, &sz);
 	VALIDATOR_ASSERT(sz.type == RZ_IL_TYPE_PURE_FLOAT, "3rd operand of %s op is not a float.\n", rz_il_op_pure_code_stringify(op->code));
 
-	VALIDATOR_ASSERT((sx.props.f.format == sy.props.f.format) && (sx.props.f.format == sz.props.f.format),
-		"types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
-		rz_il_op_pure_code_stringify(op->code),
-		rz_il_sort_pure_stringify(sx),
-		rz_il_sort_pure_stringify(sy),
-		rz_il_sort_pure_stringify(sz));
+	if (!((sx.props.f.format == sy.props.f.format) && (sx.props.f.format == sz.props.f.format))) {
+		char *sxs = rz_il_sort_pure_stringify(sx);
+		char *sys = rz_il_sort_pure_stringify(sy);
+		char *szs = rz_il_sort_pure_stringify(sz);
+		rz_warn_if_reached();
+		rz_strbuf_appendf(report_builder, "types of operand in op %s do not agree: operand1 (%s) operand2 (%s) operand3 (%s)",
+			rz_il_op_pure_code_stringify(op->code),
+			rz_str_get_null(sxs),
+			rz_str_get_null(sys),
+			rz_str_get_null(szs));
+		free(sxs);
+		free(sys);
+		free(szs);
+		return false;
+	}
 
 	*sort_out = sx;
 	return true;

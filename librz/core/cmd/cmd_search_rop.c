@@ -216,7 +216,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 
 	skip_whitespace(str, &idx);
 
-	RzList *args = rz_list_new();
+	RzList *args = rz_list_newf(free); // Fix memory leak: Auto-free elements
 	bool is_compound_op = false;
 	if (!parse_il_op(args, str, &idx, &is_compound_op)) {
 		free(src_reg);
@@ -283,7 +283,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 
 		const char *op_str = rz_il_op_pure_code_stringify(*op);
 		rop_constraint->args[OP] = rz_str_dup(op_str);
-		rop_constraint->args[SRC_REG_SECOND] = strdup(dst_reg1);
+		rop_constraint->args[SRC_REG_SECOND] = dst_reg1;
 		rz_list_free(args);
 		return true;
 	}
@@ -362,6 +362,7 @@ static bool parse_reg_to_reg(const RzCore *core, const char *str, RzRopConstrain
 
 	if (!parse_eof(str, idx)) {
 		free(dst_reg);
+		free(src_reg); // Fix memory leak
 		return false;
 	}
 
@@ -388,7 +389,7 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstra
 		free(dst_reg);
 		goto compound;
 	}
-	RzList *args = rz_list_new();
+	RzList *args = rz_list_newf(free); // Fix memory leak: Auto-free elements
 	if (!parse_il_op(args, str, &idx, NULL)) {
 		free(dst_reg);
 		free(src_reg);
@@ -512,7 +513,7 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstrain
 		goto compound;
 	}
 
-	RzList *args = rz_list_new();
+	RzList *args = rz_list_newf(free); // Fix memory leak: Auto-free elements
 	if (!args || !parse_il_op(args, str, &idx, NULL)) {
 		free(dst_reg);
 		free(src_reg1);
