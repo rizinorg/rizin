@@ -6020,7 +6020,7 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			RZ_LOG_ERROR("Failed to lead disassembly");
+			RZ_LOG_ERROR("Failed to print disassembly");
 		} else {
 			count++;
 			rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop), str, sizeof(str), core->print->big_endian);
