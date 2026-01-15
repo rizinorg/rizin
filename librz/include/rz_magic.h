@@ -343,7 +343,7 @@ struct rz_magic_line_t {
 	char indirect_operator;
 	int64_t indirect_operand;
 
-	const char *name;
+	char *name;
 
 	enum magic_type type;
 	char *type_string;
@@ -352,7 +352,7 @@ struct rz_magic_line_t {
 
 	char test_operator;
 	int test_not;
-	const char *test_string;
+	char *test_string;
 	size_t test_string_size;
 	ut64 test_unsigned;
 	int64_t test_signed;

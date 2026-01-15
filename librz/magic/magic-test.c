@@ -92,7 +92,7 @@ int file_printf(char **s, const char *fmt, ...) {
 
 static int magic_test_line(RzMagicLine *, RzMagicState *);
 
-static RzMagicLine *magic_get_named(RzMagic *m, const char *name) {
+static RzMagicLine *magic_get_named(RzMagic *m, char *name) {
 	RzMagicLine ml;
 
 	ml.name = name;

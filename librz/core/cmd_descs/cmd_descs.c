@@ -11111,7 +11111,7 @@ static const RzCmdDescArg debug_regs_args_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp debug_regs_args_help = {
-	.summary = "Show values of default function drgument registers (A0, A1, A2, ...) with telescoping",
+	.summary = "Show values of default function argument registers (A0, A1, A2, ...) with telescoping",
 	.details = debug_regs_args_details,
 	.args = debug_regs_args_args,
 };

@@ -753,7 +753,7 @@ RZ_API RZ_OWN RzFloat *rz_float_new_from_bv(RZ_NONNULL const RzBitVector *bv) {
 		return NULL;
 	}
 
-	rz_bv_copy(bv, f->s);
+	rz_bv_copy(f->s, bv);
 	return f;
 }
 
@@ -1641,7 +1641,7 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 
 	// WARN: possible overflow if length < exp_no_bias
 	// WARN: higher bits may be cut off
-	rz_bv_copy_nbits(rounded, 0, ret, 0, rz_bv_len(rounded));
+	rz_bv_copy_nbits(ret, 0, rounded, 0, rz_bv_len(rounded));
 	rz_bv_free(rounded);
 	return ret;
 }
