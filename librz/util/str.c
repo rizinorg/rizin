@@ -3919,42 +3919,6 @@ RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) {
 	return ret;
 }
 
-// Strips all the lines in str that contain key
-RZ_API void rz_str_stripLine(char *str, const char *key) {
-	size_t i, j, klen, slen, off;
-	const char *ptr;
-
-	if (!str || !key) {
-		return;
-	}
-	klen = strlen(key);
-	slen = strlen(str);
-
-	for (i = 0; i < slen;) {
-		ptr = (char *)rz_mem_mem((ut8 *)str + i, slen - i, (ut8 *)"\n", 1);
-		if (!ptr) {
-			ptr = (char *)rz_mem_mem((ut8 *)str + i, slen - i, (ut8 *)key, klen);
-			if (ptr) {
-				str[i] = '\0';
-				break;
-			}
-			break;
-		}
-
-		off = (size_t)(ptr - (str + i)) + 1;
-
-		ptr = (char *)rz_mem_mem((ut8 *)str + i, off, (ut8 *)key, klen);
-		if (ptr) {
-			for (j = i; j < slen - off + 1; j++) {
-				str[j] = str[j + off];
-			}
-			slen -= off;
-		} else {
-			i += off;
-		}
-	}
-}
-
 RZ_API char *rz_str_list_join(RzList /*<char *>*/ *str, const char *sep) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	const char *p;

@@ -187,7 +187,7 @@ repeat:
 			RzAnalysisOp op2;
 			// emulate only 1 instruction
 			rz_analysis_esil_set_pc(esil, naddr);
-			(void)rz_io_read_at(core->io, naddr, code2, sizeof(code2));
+			(void)rz_io_read_at_mapped(core->io, naddr, code2, sizeof(code2));
 			// TODO: sometimes this is dupe
 			rz_analysis_op_init(&op2);
 			ret = rz_analysis_op(core->analysis, &op2, naddr, code2, sizeof(code2), RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);

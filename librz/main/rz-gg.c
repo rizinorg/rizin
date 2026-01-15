@@ -44,6 +44,7 @@ static int usage(int v) {
 			"-s",		""              ,"Show assembler",
 			"-S",		"string"        ,"Append a string",
 			"-v",		""              ,"Show version information",
+			"-V",		""              ,"Increase the verbosity",
 			"-w",		"off:hex"       ,"Patch hexpairs at given offset",
 			"-x",		""              ,"Execute",
 			"-X",		""              ,"Execute rop chain, using the stack provided",
@@ -163,7 +164,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	RzEgg *egg = rz_egg_new();
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sVxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -324,6 +325,9 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			rz_egg_free(egg);
 			return print_val;
 		}
+		case 'V':
+			rz_log_set_level(RZ_LOGLVL_DEBUG);
+			break;
 		case 'z':
 			show_str = 1;
 			break;

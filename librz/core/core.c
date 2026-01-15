@@ -1249,7 +1249,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				ut8 buf[32];
 				rz_strbuf_appendf(s, "%sX%s ", c, cend);
 				/* instruction disassembly */
-				rz_io_read_at(core->io, value, buf, sizeof(buf));
+				rz_io_read_at_mapped(core->io, value, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, value);
 				rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
 				rz_strbuf_appendf(s, "'%s' ", rz_asm_op_get_asm(&op));
@@ -1269,7 +1269,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				}
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 				ut8 buf[8];
-				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
+				if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf))) {
 					ut64 n = rz_read_ble(buf, big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
@@ -1285,7 +1285,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
 		RzDetectedString *dstr = NULL;
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf)) &&
+		if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf)) &&
 			get_string(buf, sizeof(buf), &dstr, encoding, big_endian)) {
 			if (pj) {
 				pj_ks(pj, "string", dstr->string);
@@ -1298,7 +1298,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[8];
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
+		if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf))) {
 			ut64 n = rz_read_ble(buf, big_endian, bits);
 			if (n != value) {
 				if (pj) {
@@ -1380,7 +1380,7 @@ static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 }
 
 static bool rz_core_analysis_read_at(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len) {
-	return rz_io_read_at(analysis->iob.io, addr, buf, len);
+	return rz_io_read_at_mapped(analysis->iob.io, addr, buf, len);
 }
 
 static void rz_core_break(RzCore *core) {
@@ -2068,7 +2068,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	RzAsmOp op = { 0 };
 	ut8 buf[64];
 	rz_asm_set_pc(core->rasm, addr);
-	rz_io_read_at(core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 	int ret = rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
 	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(&op.buf_asm)) : NULL;
 	rz_asm_op_fini(&op);
@@ -2078,7 +2078,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
 	RzAnalysisOp *op = rz_analysis_op_new();
-	rz_io_read_at(core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 	rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), mask);
 	return op;
 }
@@ -2095,7 +2095,7 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 		if (delta < len) {
 			len = (int)delta;
 		}
-		if (!rz_io_read_at(core->io, from, buf, len)) {
+		if (!rz_io_read_at_mapped(core->io, from, buf, len)) {
 			RZ_LOG_ERROR("core: cannot read at 0x%" PFMT64x "\n", from);
 			break;
 		}

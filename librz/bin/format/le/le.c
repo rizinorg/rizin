@@ -1282,9 +1282,7 @@ static bool le_patch_relocs(rz_bin_le_obj_t *bin) {
 	return true;
 }
 
-static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzBinReloc *>*/ *out,
-	bool skip_fixup) {
-
+static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<LE_reloc *>*/ *out, bool skip_fixup) {
 	if (skip_fixup) {
 		return true; // Fixup has been parsed but contains invalid data, ignore and proceed
 	}
@@ -1303,17 +1301,14 @@ static bool le_append_fixup(rz_bin_le_obj_t *bin, LE_reloc *reloc, RzList /*<RzB
 	}
 
 	LE_reloc *tmp = RZ_NEWCOPY(LE_reloc, reloc);
-	if (!tmp || !rz_list_append(out, tmp)) {
-		free(tmp);
-		return false;
+	if (tmp && rz_list_append(out, tmp)) {
+		return true;
 	}
-	rz_list_append(bin->le_fixups, tmp);
-	return true;
+	free(tmp);
+	return false;
 }
 
-static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/ *relocs_out,
-	ut32 page_i, ut64 *offset, ut64 offset_end) {
-
+static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<LE_reloc *>*/ *relocs_out, ut32 page_i, ut64 *offset, ut64 offset_end) {
 	LE_header *h = bin->header;
 	ut64 start_offset = *offset;
 	if (false) {
@@ -1462,8 +1457,8 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 				if (src_off < 0 || src_off + 4 > h->pagesize || cnt > h->pagesize) {
 					RZ_LOG_WARN("LE: malformed or circular fixup chain at 0x%" PFMT64x ".\n",
 						start_paddr);
-					while (relocs_out->tail != prev_tail) {
-						rz_bin_reloc_free(rz_list_pop(relocs_out));
+					while (rz_list_tail(relocs_out) != prev_tail) {
+						free(rz_list_pop(relocs_out));
 					}
 					break;
 				}
@@ -1492,7 +1487,7 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<RzBinReloc *>*/
 }
 
 static RZ_OWN RzList /*<LE_reloc *>*/ *le_load_relocs(rz_bin_le_obj_t *bin) {
-	RzList *relocs = rz_list_newf(NULL);
+	RzList *relocs = rz_list_newf(free);
 	if (!relocs) {
 		return NULL;
 	}
@@ -1526,7 +1521,6 @@ static void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 	rz_pvector_free(bin->imports);
 	ht_pp_free(bin->le_import_ht);
 	rz_list_free(bin->le_relocs);
-	rz_list_free(bin->le_fixups);
 	free(bin);
 }
 
@@ -1573,7 +1567,6 @@ bool rz_bin_le_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *
 	CHECK(bin->imp_mod_names = le_load_import_mod_names(bin));
 	CHECK(bin->le_entries = le_load_entries(bin));
 	err_ctx = ", unable to load and apply relocations.";
-	CHECK(bin->le_fixups = rz_list_newf(free));
 	CHECK(bin->le_relocs = le_load_relocs(bin));
 	CHECK(le_patch_relocs(bin));
 

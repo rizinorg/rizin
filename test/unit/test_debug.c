@@ -134,7 +134,7 @@ static RzDebugReasonType mock_isa_step(DebugMockCtx *ctx, RzIO *io) {
 	}
 
 	ut8 opcode[4];
-	rz_io_read_at(io, ctx->pc, opcode, sizeof(opcode));
+	rz_io_read_at_mapped(io, ctx->pc, opcode, sizeof(opcode));
 	ctx->pc += sizeof(opcode);
 	if (!memcmp(opcode, op_nop, sizeof(opcode))) {
 		return RZ_DEBUG_REASON_NONE;
@@ -153,7 +153,7 @@ static RzDebugReasonType mock_isa_step(DebugMockCtx *ctx, RzIO *io) {
 		ut64 addr = strtoul(val, NULL, 16);
 		int perm;
 		if (*opcode == op_pfx_load) {
-			rz_io_read_at(io, addr, &ctx->a, 1);
+			rz_io_read_at_mapped(io, addr, &ctx->a, 1);
 			perm = RZ_PERM_R;
 		} else {
 			rz_io_write_at(io, addr, &ctx->a, 1);
@@ -308,7 +308,7 @@ static RzDebugReasonType mock_isa_multibits_step(DebugMockCtx *ctx, RzIO *io) {
 		static const char *op_switch = "sw"; ///< switch to 32bit isa
 
 		ut8 opcode[2];
-		rz_io_read_at(io, ctx->pc, opcode, sizeof(opcode));
+		rz_io_read_at_mapped(io, ctx->pc, opcode, sizeof(opcode));
 		ctx->pc += sizeof(opcode);
 		if (!memcmp(opcode, op_nop, sizeof(opcode))) {
 			return RZ_DEBUG_REASON_NONE;
@@ -331,7 +331,7 @@ static RzDebugReasonType mock_isa_multibits_step(DebugMockCtx *ctx, RzIO *io) {
 		static const char *op_switch = "SWCH"; ///< switch to 16bit isa
 
 		ut8 opcode[4];
-		rz_io_read_at(io, ctx->pc, opcode, sizeof(opcode));
+		rz_io_read_at_mapped(io, ctx->pc, opcode, sizeof(opcode));
 		ctx->pc += sizeof(opcode);
 		if (!memcmp(opcode, op_nop, sizeof(opcode))) {
 			return RZ_DEBUG_REASON_NONE;
@@ -442,7 +442,7 @@ static bool test_debug_sw_bp(void) {
 	mu_assert_eq(pc, 0x50, "pc recoiled after hitting sw breakpoint at 0x54");
 
 	ut8 data[4];
-	rz_io_read_at(io, 0x50, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x50, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)"PRNT", 4, "restored original bytes");
 
 	DebugMockCtx *ctx = dbg->plugin_data;
@@ -550,7 +550,7 @@ static bool test_debug_sw_bp_multibits(void) {
 	mu_assert_eq(pc, 0x50, "pc recoiled after hitting sw breakpoint at 0x54");
 	mu_assert_streq(rz_strbuf_get(&ctx->output), "", "output");
 	ut8 data[FULL_CODE_SIZE];
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 	r = rz_debug_continue(dbg);
@@ -563,7 +563,7 @@ static bool test_debug_sw_bp_multibits(void) {
 	mu_assert_streq(rz_strbuf_get(&ctx->output),
 		"PRNT with next pc = 0x54\n",
 		"output");
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 	r = rz_debug_continue(dbg);
@@ -576,7 +576,7 @@ static bool test_debug_sw_bp_multibits(void) {
 	mu_assert_streq(rz_strbuf_get(&ctx->output),
 		"PRNT with next pc = 0x54\n",
 		"output");
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 	r = rz_debug_continue(dbg);
@@ -590,7 +590,7 @@ static bool test_debug_sw_bp_multibits(void) {
 		"PRNT with next pc = 0x54\n"
 		"pr with next pc = 0x5a\n",
 		"output");
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 	r = rz_debug_continue(dbg);
@@ -605,7 +605,7 @@ static bool test_debug_sw_bp_multibits(void) {
 		"pr with next pc = 0x5a\n"
 		"pr with next pc = 0x5c\n",
 		"output");
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 	r = rz_debug_continue(dbg);
@@ -621,7 +621,7 @@ static bool test_debug_sw_bp_multibits(void) {
 		"pr with next pc = 0x5c\n"
 		"PRNT with next pc = 0x64\n",
 		"output");
-	rz_io_read_at(io, 0x4c, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x4c, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)full_code, sizeof(data), "restored original bytes");
 
 #undef FULL_CODE_SIZE
@@ -672,7 +672,7 @@ static bool test_debug_hw_bp(void) {
 	mu_assert_eq(pc, 0x50, "pc after hitting hw breakpoint at 0x54");
 
 	ut8 data[4];
-	rz_io_read_at(io, 0x50, data, sizeof(data));
+	rz_io_read_at_mapped(io, 0x50, data, sizeof(data));
 	mu_assert_memeq(data, (const ut8 *)"PRNT", 4, "original bytes");
 
 	DebugMockCtx *ctx = dbg->plugin_data;

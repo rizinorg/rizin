@@ -77,7 +77,7 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
-	if (!rz_io_read_at(core->io, core->offset, buf, sizeof(buf))) {
+	if (!rz_io_read_at_mapped(core->io, core->offset, buf, sizeof(buf))) {
 		cmd_write_fail(core);
 		return;
 	}
@@ -140,7 +140,7 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 	if (len > 0) {
 		ut8 *buf = calloc(1, len);
 		if (buf) {
-			if (rz_io_read_at(core->io, src, buf, len)) {
+			if (rz_io_read_at_mapped(core->io, src, buf, len)) {
 				if (rz_io_write_at(core->io, dst, buf, len)) {
 					rz_core_block_read(core);
 					ret = true;
@@ -148,7 +148,7 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 					RZ_LOG_ERROR("core: rz_io_write_at failed at 0x%08" PFMT64x "\n", dst);
 				}
 			} else {
-				RZ_LOG_ERROR("core: rz_io_read_at failed at 0x%08" PFMT64x "\n", src);
+				RZ_LOG_ERROR("core: rz_io_read_at_mapped failed at 0x%08" PFMT64x "\n", src);
 			}
 			free(buf);
 		}
@@ -177,7 +177,7 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 	}
 
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	if (!rz_io_read_at(core->io, dst, buf, len)) {
+	if (!rz_io_read_at_mapped(core->io, dst, buf, len)) {
 		RZ_LOG_ERROR("core: cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
 		goto err;
 	}

@@ -179,7 +179,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 		if (!rz_io_is_valid_offset(core->io, at, 0)) {
 			break;
 		}
-		(void)rz_io_read_at(core->io, at, b, core->blocksize);
+		(void)rz_io_read_at_mapped(core->io, at, b, core->blocksize);
 		if (rz_search_update(core->search, at, b, core->blocksize) == -1) {
 			RZ_LOG_ERROR("core: update read error at 0x%08" PFMT64x "\n", at);
 			break;
@@ -236,7 +236,7 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 		to = rz_itv_end(p->itv);
 		if ((to - from) >= limit) {
 			RZ_LOG_WARN("aap: search interval (from 0x%" PFMT64x
-				    " to 0x%" PFMT64x ") exeeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
+				    " to 0x%" PFMT64x ") exceeds analysis.prelude.limit (0x%" PFMT64x "), skipping it.\n",
 				from, to, limit);
 			continue;
 		}
@@ -330,7 +330,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			const int len = keyword_len;
 			char *buf = calloc(1, len + 32 + ctx * 2);
 			type = "string";
-			rz_io_read_at(core->io, addr - prectx, (ut8 *)buf, len + (ctx * 2));
+			rz_io_read_at_mapped(core->io, addr - prectx, (ut8 *)buf, len + (ctx * 2));
 			pre = getstring(buf, prectx, use_color);
 			pos = getstring(buf + prectx + len, ctx, use_color);
 			if (!pos) {
@@ -366,7 +366,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			if (str) {
 				p = str;
 				memset(str, 0, len);
-				rz_io_read_at(core->io, base_addr + addr, buf, keyword_len);
+				rz_io_read_at_mapped(core->io, base_addr + addr, buf, keyword_len);
 				if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 					p = str;
 				}
@@ -515,7 +515,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 				continue;
 			}
 			if (!i) {
-				rz_io_read_at(core->io, at, buf, bsize);
+				rz_io_read_at_mapped(core->io, at, buf, bsize);
 			}
 			rz_analysis_op_init(&aop);
 			ret = rz_analysis_op(core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_ESIL);
@@ -591,7 +591,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	if (list) {
 		rz_list_foreach (list, iter, xref) {
-			rz_io_read_at(core->io, xref->from, buf, size);
+			rz_io_read_at_mapped(core->io, xref->from, buf, size);
 			rz_asm_set_pc(core->rasm, xref->from);
 			RzAsmOp asmop = { 0 };
 			rz_asm_disassemble(core->rasm, &asmop, buf, size);
@@ -714,7 +714,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 			}
 			at = from + i;
 			ut8 bufop[32];
-			rz_io_read_at(core->io, at, bufop, sizeof(bufop));
+			rz_io_read_at_mapped(core->io, at, bufop, sizeof(bufop));
 			rz_analysis_op_init(&aop);
 			ret = rz_analysis_op(core->analysis, &aop, at, bufop, sizeof(bufop), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 			if (ret > 0) {
@@ -996,7 +996,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				if (!rz_io_is_valid_offset(core->io, at, 0)) {
 					break;
 				}
-				(void)rz_io_read_at(core->io, at, buf, len);
+				(void)rz_io_read_at_mapped(core->io, at, buf, len);
 				rz_search_update(core->search, at, buf, len);
 				if (param->aes_search) {
 					// Adjust length to search between blocks.
@@ -1051,7 +1051,7 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 		return;
 	}
 	while (addr < to) {
-		(void)rz_io_read_at(core->io, addr, block, core->blocksize);
+		(void)rz_io_read_at_mapped(core->io, addr, block, core->blocksize);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -1183,7 +1183,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 		if (!buf) {
 			continue;
 		}
-		(void)rz_io_read_at(core->io, map_begin, buf, map_size);
+		(void)rz_io_read_at_mapped(core->io, map_begin, buf, map_size);
 		for (at = map->itv.addr; at + 24 < map_end; at += 1) {
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, at, buf + (at - map_begin), 24, RZ_ANALYSIS_OP_MASK_HINT);
@@ -1200,7 +1200,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 	ut8 buf[32];
 	int i;
-	rz_io_read_at(core->io, 0, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, 0, buf, sizeof(buf));
 	if (nth < 0 || nth >= sizeof(buf) - 1) {
 		return;
 	}

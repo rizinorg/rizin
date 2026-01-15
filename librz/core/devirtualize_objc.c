@@ -182,7 +182,7 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 	rz_track_init(core->analysis, core);
 
 	ut8 *bytes = malloc(end - start);
-	if (!rz_io_read_at(core->io, start, bytes, end - start)) {
+	if (!rz_io_read_at_mapped(core->io, start, bytes, end - start)) {
 		RZ_LOG_ERROR("Cannot read at offset 0x%08" PFMT64x "\n", start);
 	}
 	ut64 offset = 0;

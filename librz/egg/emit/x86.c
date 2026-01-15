@@ -175,7 +175,7 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 	for (i = 4; i <= oj; i += 4) {
 		/* XXX endian issues (non-portable asm) */
 		ut32 *n = (ut32 *)(s + i - 4);
-		p = rz_egg_mkvar(egg, str2, dstvar, i + BPOFF);
+		p = rz_egg_lang_mkvar(egg, str2, dstvar, i + BPOFF);
 		if (attsyntax) {
 			rz_egg_printf(egg, "  movl $0x%x, %s\n", M32(*n), p);
 		} else {
@@ -187,7 +187,7 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 #undef M32
 
 	/* zero */
-	p = rz_egg_mkvar(egg, str2, dstvar, i + BPOFF);
+	p = rz_egg_lang_mkvar(egg, str2, dstvar, i + BPOFF);
 	if (attsyntax) {
 		rz_egg_printf(egg, "  movl $0, %s\n", p);
 	} else {
@@ -196,7 +196,7 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 	free(p);
 
 	/* store pointer */
-	p = rz_egg_mkvar(egg, str2, dstvar, j + 4 + BPOFF);
+	p = rz_egg_lang_mkvar(egg, str2, dstvar, j + 4 + BPOFF);
 	if (attsyntax) {
 		rz_egg_printf(egg, "  lea %s, %%" RZ_AX "\n", p);
 	} else {
@@ -204,7 +204,7 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 	}
 	free(p);
 
-	p = rz_egg_mkvar(egg, str2, dstvar, 0);
+	p = rz_egg_lang_mkvar(egg, str2, dstvar, 0);
 	if (attsyntax) {
 		rz_egg_printf(egg, "  mov %%" RZ_AX ", %s\n", p);
 	} else {
@@ -422,7 +422,7 @@ static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, 
 	if (*arg == '=') {
 		arg++; /* for <=, >=, ... */
 	}
-	p = rz_egg_mkvar(egg, str, arg, 0);
+	p = rz_egg_lang_mkvar(egg, str, arg, 0);
 	if (attsyntax) {
 		rz_egg_printf(egg, "  pop %%" RZ_AX "\n"); /* TODO: add support for more than one arg get arg0 */
 		rz_egg_printf(egg, "  cmp%c %s, %%" RZ_AX "\n", sz, p);
