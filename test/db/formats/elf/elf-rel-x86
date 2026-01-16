@@ -1,0 +1,45 @@
+NAME=ELF: x86 relocs patching test
+FILE=bins/elf/x86_relocs.o
+CMDS=<<EOF
+ir
+px 2 @ 0x08000053
+px 1 @ 0x08000057
+px 4 @ 0x0800005a
+pd 12
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type       name                    
+--------------------------------------------------------------------
+0x08000035 0x00000035 0x08000051 R_386_PC32 test_16bit - 0x08000035
+0x0800003a 0x0000003a 0x08000056 R_386_PC32 test_8bit - 0x0800003a
+0x0800003f 0x0000003f 0x08000059 R_386_PC32 test_32 - 0x0800003f
+0x08000044 0x00000044 0x0800005f R_386_PC32 test_pc32 - 0x08000044
+0x08000053 0x00000053 0x08000067 R_386_16   .data
+0x08000057 0x00000057 0x08000067 R_386_8    .data
+0x0800005a 0x0000005a 0x08000067 R_386_32   .data
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000053  6700                                     g.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000057  67                                       g
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800005a  6700 0008                                g...
+            ;-- section..text:
+            ;-- _start:
+            0x08000034      call  loc.test_16bit                       ; RELOC 32 test_16bit @ 0x08000051 - 0x8000035 ; [01] -r-x section size 51 named .text
+            0x08000039      call  loc.test_8bit                        ; RELOC 32 test_8bit @ 0x08000056 - 0x800003a
+            0x0800003e      call  loc.test_32                          ; RELOC 32 test_32 @ 0x08000059 - 0x800003f
+            0x08000043      call  loc.test_pc32                        ; RELOC 32 test_pc32 @ 0x0800005f - 0x8000044
+            0x08000048      mov   eax, 0x01
+            0x0800004d      xor   ebx, ebx
+            0x0800004f      int   0x80
+            ;-- test_16bit:
+            0x08000051      mov   ax, 0x67                             ; 'g' ; 103; RELOC 16 .data @ 0x08000067
+            0x08000055      ret
+            ;-- test_8bit:
+            0x08000056      mov   al, 0x67                             ; 'g' ; 103; RELOC 8 .data @ 0x08000067
+            0x08000058      ret
+            ;-- test_32:
+            0x08000059      mov   eax, loc.internal_word               ; 0x8000067 ; "4\U00000012B\xff\xff\U00000004"; RELOC 32 .data @ 0x08000067
+EOF
+# loc.internal_word not used for R_386_16 and R_386_8 because the value was truncated during assembling to generate these relocations.
+RUN
