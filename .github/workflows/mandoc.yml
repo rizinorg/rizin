@@ -3,10 +3,10 @@ name: mandoc manpage lint
 on:
   pull_request:
     paths:
-      - 'man/**'
+      - 'binrz/man/**'
   push:
     paths:
-      - 'man/**'
+      - 'binrz/man/**'
 
 jobs:
   mandoc:
@@ -23,4 +23,4 @@ jobs:
 
       - name: Lint all man pages
         run: |
-          mandoc -T lint man/*.1 man/*.7
+          mandoc -T lint binrz/man/*.1 binrz/man/*.7
