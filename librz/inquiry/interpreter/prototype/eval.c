@@ -56,7 +56,7 @@ bool report_xref_yield(
 }
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src) {
-	rz_return_if_fail(dst->bv && src->bv);
+	rz_return_if_fail(dst && src && dst->bv && src->bv);
 	rz_bv_cast_inplace(dst->bv, rz_bv_len(src->bv), false);
 	rz_bv_copy(dst->bv, src->bv);
 	dst->is_concrete = src->is_concrete;
@@ -86,10 +86,12 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
 			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
 		}
-		av = RZ_NEW(RzInterpreterAbstrVal);
+		av = RZ_NEW0(RzInterpreterAbstrVal);
+		ht_up_insert(ht_vals, var_id, av);
+	}
+	if (!av->abstr_data) {
 		av->kind = RZ_INTERPRETER_ABSTRACTION_CONST;
 		av->abstr_data = adata_new();
-		ht_up_insert(ht_vals, var_id, av);
 	}
 	copy_abstr_data(av->abstr_data, data);
 }
@@ -114,7 +116,7 @@ bool read_var_from_state(RzInterpreterAbstrState *state,
 		break;
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
-	if (!av) {
+	if (!av || !av->abstr_data) {
 		// Variable doesn't exist.
 		// This should never happen and is a bug.
 		rz_warn_if_reached();
@@ -208,7 +210,7 @@ bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	void *plugin_data) {
 	rz_return_val_if_fail(state, false);
 	AD(state->pc->abstr_data)->is_concrete = true;
-	RZ_LOG_DEBUG("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "(Concrete)\n",
+	RZ_LOG_DEBUG("Prototype: set_pc() - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (Concrete)\n",
 		rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
 		pc);
 	return rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, pc);
