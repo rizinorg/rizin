@@ -152,9 +152,7 @@ RZ_API void rz_th_queue_open(RZ_NONNULL RzThreadQueue *queue) {
 	rz_return_if_fail(queue);
 
 	rz_th_lock_enter(queue->data_lock);
-	if (!queue->closed) {
-		queue->closed = false;
-	}
+	queue->closed = false;
 	rz_th_lock_leave(queue->data_lock);
 }
 
