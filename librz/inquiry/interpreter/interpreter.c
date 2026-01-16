@@ -282,6 +282,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	ut64 entry_point;
 	rz_vector_pop_front(iset->entry_points, &entry_point);
 	if (!plugin->init_state(iset->state, entry_point, plugin_data)) {
+		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
 	RzInterpreterAbstrState *in_state = iset->state;
@@ -294,6 +295,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	rz_th_queue_push(iset->addr_queue, &entry_point, true);
 	const RzInterpreterILBB *il_bb = NULL;
 	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
 
@@ -301,6 +303,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	reachable_states = rz_set_u_new();
 	if (!tmp_succ_addr || !succ_states || !il_bb || !reachable_states) {
+		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
 	ut64 _addr = 0;
@@ -309,6 +312,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	while (rz_atomic_bool_get(iset->is_running_flag)) {
 		// Evaluate the effect on the input state.
 		if (!plugin->eval(in_state, il_bb, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
+			RZ_LOG_DEBUG("Eval failed\n");
 			goto in_loop_error;
 		}
 		// The input state was (almost always) manipulated by eval(). Rename to clarify.
@@ -327,12 +331,16 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// Determine the successor effects to evaluate.
 		// Only newly reached states are allowed to add successors.
 		if (new_state_reached) {
-			plugin->state_as_str(out_state, state_str, plugin_data);
-			char *s = rz_strbuf_drain_nofree(state_str);
-			RZ_LOG_DEBUG("%s", s);
-			free(s);
+			// Debug printing whole state of VM.
+			//
+			// plugin->state_as_str(out_state, state_str, plugin_data);
+			// char *s = rz_strbuf_drain_nofree(state_str);
+			// RZ_LOG_DEBUG("%s", s);
+			// free(s);
+
 			// Determine successors and increase the reference counts for the current out state.
 			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
+				rz_warn_if_reached();
 				goto in_loop_error;
 			}
 			// It is possible that the successor function doesn't add successors.
@@ -369,9 +377,11 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		in_hash = next.in_state_hash;
 #endif
 		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+			rz_warn_if_reached();
 			goto in_loop_error;
 		}
 		if (!plugin->set_pc(in_state, next.addr, plugin_data)) {
+			rz_warn_if_reached();
 			// Some error occurred lifting this basic block. Or updating the PC.
 			// Abort execution.
 			goto in_loop_error;
@@ -391,10 +401,12 @@ loop_cleanup:
 	return success;
 
 in_loop_error:
+	RZ_LOG_DEBUG("in_loop_error");
 	success = false;
 	goto loop_cleanup;
 
 pre_loop_error:
+	RZ_LOG_DEBUG("pre_loop_error");
 	success = false;
 	goto loop_cleanup;
 

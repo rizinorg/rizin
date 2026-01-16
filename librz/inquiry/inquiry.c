@@ -381,6 +381,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			}
 		}
 
+		rz_th_queue_close(iset->addr_queue);
+		rz_th_queue_close(iset->il_queue);
+
 		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
 		rz_th_wait(interpr_th);
 		return_code = rz_th_get_retv(interpr_th);
@@ -422,9 +425,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 					break;
 				}
 			}
+			rz_iterator_free(ct_iter);
 			rz_interpreter_set_add_entry_points(iset, entry_points);
 
-			rz_iterator_free(ct_iter);
 			ut64 *ep;
 			rz_vector_foreach (covered_jump_targets, ep) {
 				// Delete the selected ones from the jump target set.
@@ -453,6 +456,7 @@ error_free:
 	rz_th_queue_close(io_result_q);
 
 	if (!iset) {
+		// Ownership of all those objects wasn't yet passed to the iset.
 		rz_th_queue_free(addr_queue);
 		rz_th_queue_free(il_queue);
 		rz_th_queue_free(io_request_q);

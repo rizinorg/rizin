@@ -51,14 +51,14 @@ typedef struct {
  * \brief Creates abstract data on the heap with the given bit vector.
  */
 static inline RZ_OWN ProtoIntrprAbstrData *adata_from_bv(const RzBitVector *bv) {
-	ProtoIntrprAbstrData *ad = RZ_NEW(ProtoIntrprAbstrData);
+	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
 	ad->is_concrete = true;
 	ad->bv = rz_bv_dup(bv);
 	return ad;
 }
 
 static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
-	ProtoIntrprAbstrData *ad = RZ_NEW(ProtoIntrprAbstrData);
+	ProtoIntrprAbstrData *ad = RZ_NEW0(ProtoIntrprAbstrData);
 	ad->is_concrete = false;
 	ad->bv = rz_bv_new(BV_STACK_MAX_SIZE);
 	return ad;
