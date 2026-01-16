@@ -118,7 +118,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_return_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting function\n", RZ_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
 	} while (0)
@@ -126,20 +126,20 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 #define rz_return_val_if_fail(expr, val) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); returning %s\n", RZ_FUNCTION, #expr, __LINE__, #val); \
 			return (val); \
 		} \
 	} while (0)
 
 #define rz_return_if_reached() \
 	do { \
-		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting function\n", __FILE__, __LINE__, RZ_FUNCTION); \
 		return; \
 	} while (0)
 
 #define rz_return_val_if_reached(val) \
 	do { \
-		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; returning %s\n", __FILE__, __LINE__, RZ_FUNCTION, #val); \
 		return (val); \
 	} while (0)
 
