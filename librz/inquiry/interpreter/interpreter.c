@@ -351,6 +351,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			while (!rz_vector_empty(tmp_succ_addr)) {
 				rz_vector_pop_front(tmp_succ_addr, addr);
 				if (*addr == UT64_MAX || *addr == 0) {
+					RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
 					// Obviously wrong address.
 					goto loop_cleanup;
 				}
@@ -401,12 +402,12 @@ loop_cleanup:
 	return success;
 
 in_loop_error:
-	RZ_LOG_DEBUG("in_loop_error");
+	RZ_LOG_DEBUG("in_loop_error\n");
 	success = false;
 	goto loop_cleanup;
 
 pre_loop_error:
-	RZ_LOG_DEBUG("pre_loop_error");
+	RZ_LOG_DEBUG("pre_loop_error\n");
 	success = false;
 	goto loop_cleanup;
 
