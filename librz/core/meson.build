@@ -164,6 +164,7 @@ rz_core_deps = [
   rz_type_dep,
   rz_debug_dep,
   rz_config_dep,
+  rz_memory_dep,
   rz_bin_dep,
   rz_mark_dep,
   platform_deps,
