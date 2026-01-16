@@ -85,7 +85,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 				}
 				// The RzArch plugin defined a default value for this global.
 				RzBitVector *default_val = rz_il_value_to_bv(il_var->val);
-				rz_bv_copy(default_val, AD(av->abstr_data)->bv);
+				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
 				rz_bv_free(default_val);
 			}
 		}
