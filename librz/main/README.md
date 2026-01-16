@@ -41,6 +41,22 @@ The main library provides utilities for tool development:
 - **Error Handler**: Handle errors and signals
 - **Logger**: Application logging
 
+## RzMain Core Workflow
+```mermaid
+graph TD
+    subgraph RzMain Core Workflow
+        A[Initialize Context - rz_main_new];
+        A --> B[Register Options - rz_main_add_option];
+        B --> C[Parse Args - rz_main_parse_args];
+        C --> D{Handle Options};
+        D -->|help/version| E[Print Help/Version];
+        D -->|valid| F[Load Config];
+        F --> G[Initialize Components];
+        G --> H[Execute Main Logic];
+        H --> I[Cleanup - rz_main_free];
+    end
+```
+
 ## Key Structures
 
 ### RzMain

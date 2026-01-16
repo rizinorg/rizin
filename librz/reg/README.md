@@ -42,6 +42,21 @@ The register system uses profile-based architecture:
 - **Register Items**: Individual register information
 - **Register Arenas**: Value storage for register state
 
+## RzReg Core Workflow
+```mermaid
+graph TD
+    subgraph RzReg Core Workflow
+        A[Initialize Context - rz_reg_new];
+        A --> B[Load Profile - rz_reg_set_profile];
+        B --> C[Set Architecture Bits - rz_reg_set_bits];
+        C --> D[Set Values - rz_reg_setv];
+        D --> E[Read Values - rz_reg_getv];
+        E --> F[Sync Registers - rz_reg_sync];
+        F --> G[List Registers - rz_reg_get_list];
+        G --> H[Cleanup - rz_reg_free];
+    end
+```
+
 ## Key Structures
 
 ### RzReg

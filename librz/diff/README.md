@@ -36,6 +36,21 @@ The diff library uses a multi-engine architecture:
 - **Output Formatters**: Generate output in various formats
 - **Similarity Analyzer**: Score and analyze differences
 
+## RzDiff Core Workflow
+```mermaid
+graph TD
+    subgraph RzDiff Core Workflow
+        A[Initialize Context - rz_diff_new];
+        A --> B[Load Buffers - rz_diff_buffers];
+        B --> C[Compute Differences];
+        C --> D[Get Deltas - rz_diff_get_delta];
+        D --> E[Generate Output];
+        E --> F[Unified - rz_diff_unified];
+        E --> G[JSON or Binary];
+        G --> H[Cleanup - rz_diff_free];
+    end
+```
+
 ## Key Structures
 
 ### RzDiff

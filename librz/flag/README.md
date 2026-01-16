@@ -39,6 +39,23 @@ The flag system uses a tree-based data structure for efficient lookup:
 - **Flag Spaces**: Separate namespaces for flag organization
 - **RzFlagItem**: Individual flag entries
 
+## RzFlag Core Workflow
+```mermaid
+graph TD
+    subgraph RzFlag Core Workflow
+        A[Initialize Context - rz_flag_new];
+        A --> B[Create Flags - rz_flag_set];
+        B --> C[Organize Spaces - rz_flag_space_push];
+        C --> D[Query Flags];
+        D --> E[Get by Name - rz_flag_get];
+        D --> F[Get by Address - rz_flag_get_at];
+        F --> G[Update - rz_flag_rename];
+        G --> H[Remove - rz_flag_unset];
+        H --> I[List Flags - rz_flag_get_list];
+        I --> J[Cleanup - rz_flag_free];
+    end
+```
+
 ## Key Structures
 
 ### RzFlag

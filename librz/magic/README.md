@@ -38,6 +38,22 @@ The magic library uses a pattern-based detection system:
 - **Pattern Matcher**: Efficient pattern matching engine
 - **Rule Engine**: Evaluate detection rules
 
+## RzMagic Core Workflow
+```mermaid
+graph TD
+    subgraph RzMagic Core Workflow
+        A[Initialize Context - rz_magic_new];
+        A --> B[Load Database - rz_magic_load];
+        B --> C[Read File Data];
+        C --> D[Match Patterns - rz_magic_buffer];
+        D --> E{File Identified};
+        E -->|Yes| F[Return Type Description];
+        E -->|No| G[Unknown Type];
+        F --> H[Cleanup - rz_magic_free];
+        G --> H;
+    end
+```
+
 ## Key Structures
 
 ### RzMagic

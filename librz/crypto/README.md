@@ -39,6 +39,22 @@ The cryptography library uses a plugin-based architecture for algorithm manageme
 - **Hash Plugins**: Handle hashing operations
 - **Encoding Plugins**: Handle encoding/decoding
 
+## RzCrypto Core Workflow
+```mermaid
+graph TD
+    subgraph RzCrypto Core Workflow
+        A[Initialize Context - rz_crypto_new];
+        A --> B[Select Algorithm - rz_crypto_use];
+        B --> C[Set Key/IV - rz_crypto_set_key];
+        C --> D[Process Data Chunks];
+        D --> E[Update - rz_crypto_update];
+        E --> D;
+        D --> F[Finalize - rz_crypto_final];
+        F --> G[Get Result];
+        G --> H[Cleanup - rz_crypto_free];
+    end
+```
+
 ## Key Structures
 
 ### RzCrypto

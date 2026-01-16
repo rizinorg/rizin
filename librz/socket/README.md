@@ -38,6 +38,24 @@ The socket library provides cross-platform abstraction:
 - **Protocol Handlers**: Support different protocols
 - **Connection Management**: Manage active connections
 
+## RzSocket Core Workflow
+```mermaid
+graph TD
+    subgraph RzSocket Core Workflow
+        A[Initialize Context - rz_socket_new];
+        A --> B[Configure Type - TCP/UDP];
+        B --> C{Connection Type};
+        C -->|Client| D[Connect - rz_socket_connect];
+        C -->|Server| E[Listen - rz_socket_listen];
+        E --> F[Accept - rz_socket_accept];
+        D --> G[Write Data - rz_socket_write];
+        F --> G;
+        G --> H[Read Data - rz_socket_read];
+        H --> I[Close - rz_socket_close];
+        I --> J[Cleanup - rz_socket_free];
+    end
+```
+
 ## Key Structures
 
 ### RzSocket

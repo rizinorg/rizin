@@ -40,6 +40,22 @@ The type system uses a hierarchical architecture:
 - **Type Parser**: Parse type declarations
 - **Type Graph**: Relationships between types
 
+## RzType Core Workflow
+```mermaid
+graph TD
+    subgraph RzType Core Workflow
+        A[Initialize Context - rz_type_new];
+        A --> B[Parse Types - rz_type_parse];
+        B --> C[Define Structures - rz_type_parse];
+        C --> D[Query Types];
+        D --> E[Get Struct - rz_type_get_struct];
+        D --> F[Get Function - rz_type_get_func];
+        F --> G[Calculate Sizes/Offsets];
+        G --> H[Validate Types];
+        H --> I[Cleanup - rz_type_free];
+    end
+```
+
 ## Key Structures
 
 ### RzType

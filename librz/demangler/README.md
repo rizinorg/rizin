@@ -32,6 +32,22 @@ The demangler library uses a plugin-based architecture:
 - **External Tools**: Support for system demangling utilities
 - **Caching**: Cache demangled names for performance
 
+## RzDemangler Core Workflow
+```mermaid
+graph TD
+    subgraph RzDemangler Core Workflow
+        A[Initialize Context - rz_demangler_new];
+        A --> B[Process Symbol Names];
+        B --> C[Demangle - rz_demangler_demangle];
+        C --> D{Recognize Mangling};
+        D -->|Yes| E[Return Demangled Name];
+        D -->|No| F[Return Original Name];
+        E --> G[Cache Result];
+        F --> G;
+        G --> H[Cleanup - rz_demangler_free];
+    end
+```
+
 ## Key Structures
 
 ### RzDemangler

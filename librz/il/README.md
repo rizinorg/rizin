@@ -42,6 +42,22 @@ The IL library provides multiple layers:
 - **Semantics Engine**: Execute IL instructions
 - **Analysis Engines**: Perform analysis on IL
 
+## RzIl Core Workflow
+```mermaid
+graph TD
+    subgraph RzIL Core Workflow
+        A[Initialize Context - rz_il_new];
+        A --> B[Set Architecture - rz_il_set_current_arch];
+        B --> C[Generate IL from Instructions];
+        C --> D[Execute Operations - rz_il_step];
+        D --> E[Evaluate Expressions - rz_il_evaluate];
+        E --> F[Perform Analysis];
+        F --> G[Data Flow / Symbolic Execution];
+        G --> H[Get Results - rz_il_get_value];
+        H --> I[Cleanup - rz_il_free];
+    end
+```
+
 ## Key Structures
 
 ### RzILOp

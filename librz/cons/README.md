@@ -37,6 +37,20 @@ The console library uses a buffer-based approach for output management:
 - **Color System**: Manages colors and ANSI codes
 - **Terminal Context**: Handles terminal capabilities and dimensions
 - **Pager**: Manages scrollable output
+## RzCons Core Workflow
+```mermaid
+graph TD
+    subgraph RzCons Core Workflow
+        A[Initialize Context - rz_cons_new];
+        A --> B[Set Colors - rz_cons_printf with color codes];
+        B --> C[Print Output];
+        C --> D[rz_cons_println / rz_cons_printf];
+        D --> E[Flush Buffer - rz_cons_flush];
+        E --> F[Handle Pager for Long Output];
+        F --> E;
+        E --> G[Cleanup - rz_cons_free];
+    end
+```
 
 ## Key Structures
 

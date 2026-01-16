@@ -44,6 +44,24 @@ The debug library uses a modular backend architecture:
 - **Register Manager**: Handles processor registers
 - **Memory Manager**: Manages target memory access
 
+## RzDebug Core Workflow
+```mermaid
+graph TD
+    subgraph RzDebug Core Workflow
+        A[Initialize Context - rz_debug_new];
+        A --> B[Attach Process - rz_debug_attach];
+        B --> C[Set Breakpoints - rz_bp_add];
+        C --> D[Continue - rz_debug_continue];
+        D --> E{Hit Breakpoint};
+        E --> F[Inspect Registers - rz_debug_reg_sync];
+        F --> G[Read Memory - rz_debug_read_at];
+        G --> H[Step - rz_debug_step];
+        H --> D;
+        D --> I[Detach - rz_debug_detach];
+        I --> J[Cleanup - rz_debug_free];
+    end
+```
+
 ## Key Structures
 
 ### RzDebug

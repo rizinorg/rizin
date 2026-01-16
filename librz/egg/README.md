@@ -46,6 +46,21 @@ The egg library uses a multi-stage compilation architecture:
 - **Assembler**: Assemble to binary output
 - **Encoder**: Apply encoding/obfuscation
 
+## RzEgg Core Workflow
+```mermaid
+graph TD
+    subgraph RzEgg Core Workflow
+        A[Initialize Context - rz_egg_new];
+        A --> B[Setup Arch - rz_egg_setup];
+        B --> C[Load Source - rz_egg_load];
+        C --> D[Compile - rz_egg_compile];
+        D --> E[Encode/Obfuscate - rz_egg_encode];
+        E --> F[Assemble - rz_egg_assemble];
+        F --> G[Get Output - rz_egg_get_bin];
+        G --> H[Cleanup - rz_egg_free];
+    end
+```
+
 ## Key Structures
 
 ### RzEgg

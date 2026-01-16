@@ -35,6 +35,23 @@ The core library functions as an orchestrator:
 - **State Tracking**: Maintains analysis state and session information
 - **Task Queue**: Manages background analysis tasks
 
+## RzCore Core Workflow
+```mermaid
+graph TD
+    subgraph RzCore Core Workflow
+        A[Initialize Context - rz_core_new];
+        A --> B[Open Binary - rz_core_file_open];
+        B --> C[Analyze - rz_core_cmd aa];
+        C --> D[Execute Commands];
+        D --> E[Disassemble - rz_core_cmd pd];
+        D --> F[Search - rz_core_cmd /];
+        D --> G[Debug - rz_core_cmd db dc];
+        G --> D;
+        D --> H[Get Results - rz_core_cmd output];
+        H --> I[Cleanup - rz_core_free];
+    end
+```
+
 ## Key Structures
 
 ### RzCore

@@ -37,6 +37,22 @@ The mark system provides lightweight bookmarking:
 - **Mark Navigation**: Quick access to marks
 - **Mark Display**: Visual mark representation
 
+## RzMark Core Workflow
+```mermaid
+graph TD
+    subgraph RzMark Core Workflow
+        A[Initialize Context - rz_mark_new];
+        A --> B[Set Marks - rz_mark_set];
+        B --> C[Query Marks];
+        C --> D[Get by Name - rz_mark_get];
+        C --> E[Get by Address - rz_mark_at];
+        E --> F[List All - rz_mark_list];
+        F --> G[Remove - rz_mark_unset];
+        G --> H[Navigate to Marks];
+        H --> I[Cleanup - rz_mark_free];
+    end
+```
+
 ## Key Structures
 
 ### RzMark

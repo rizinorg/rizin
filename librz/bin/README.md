@@ -38,6 +38,22 @@ The main components are:
 - **`RzBinObject`**: The main object structure within a binary file (handles multi-object binaries)
 - **Format Plugins**: Handle specific binary format parsing
 - **`RzBinInfo`**: Metadata about the binary (arch, OS, entry point, etc.)
+## Rzbin WorkFlow
+```mermaid
+graph TD
+    subgraph RzBin Core Workflow
+        A[Initialize Context - rz_bin_new];
+        A --> B[Open Binary - rz_bin_open];
+        B --> C[Get Binary Info - rz_bin_object_get_info];
+        C --> D[Extract Components];
+        D --> E[Symbols - rz_bin_object_get_symbols];
+        D --> F[Sections - rz_bin_object_get_sections];
+        D --> G[Relocations - rz_bin_object_get_relocs];
+        D --> H[Strings - rz_bin_object_get_strings];
+        D --> I[Entry Points - rz_bin_object_get_entries];
+        I --> J[Cleanup - rz_bin_free];
+    end
+```
 
 ## Main Structures
 

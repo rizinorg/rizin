@@ -34,6 +34,21 @@ The configuration system uses a property-based approach where each configuration
 - **Description**: Human-readable description
 - **Callback**: Optional function called when value changes
 - **Range/Options**: Valid values or ranges for the setting
+## RzConfig Core Workflow
+```mermaid
+graph TD
+    subgraph RzConfig Core Workflow
+        A[Initialize Context - rz_config_new];
+        A --> B[Set Values - rz_config_set];
+        B --> C[Register Callbacks - rz_config_set_cb];
+        C --> D[Get Values - rz_config_get];
+        D --> E[Configuration Change];
+        E --> F[Callback Triggered];
+        F --> D;
+        D --> G[Save/Load Config];
+        G --> H[Cleanup - rz_config_free];
+    end
+```
 
 ## Configuration Categories
 

@@ -41,6 +41,21 @@ The language library uses a plugin-based architecture:
 - **API Bindings**: Expose Rizin to scripts
 - **Module System**: Organize scriptable functions
 
+## RzLang Core Workflow
+```mermaid
+graph TD
+    subgraph RzLang Core Workflow
+        A[Initialize Context - rz_lang_new];
+        A --> B[Select Language - rz_lang_use];
+        B --> C[Load Script - rz_lang_run_file];
+        C --> D[Execute - rz_lang_run];
+        D --> E[Access Rizin API];
+        E --> F[core.cmd / get_functions];
+        F --> G[Process Results];
+        G --> H[Cleanup - rz_lang_free];
+    end
+```
+
 ## Key Structures
 
 ### RzLang
