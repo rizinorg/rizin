@@ -68,7 +68,7 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 		const RzBinSection *sec = *it;
 
 		ut64 start = sec->vaddr;
-		ut64 end = start + sec->size;
+		ut64 end = start + sec->vsize;
 		if (RZ_BETWEEN(start, *xref_to_addr, end)) {
 			return true;
 		}
@@ -173,6 +173,33 @@ error_free:
 	return false;
 }
 
+static bool get_call_targets(RzCore *core, RzSetU *call_targets) {
+	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
+	if (!sections) {
+		return false;
+	}
+	RzVector *non_x_idx = rz_vector_new(sizeof(size_t), NULL, NULL);
+	void **it;
+	size_t i;
+	rz_pvector_enumerate (sections, it, i) {
+		RzBinSection *sec = *it;
+		if (!(sec->perm & RZ_PERM_X)) {
+			rz_vector_push(non_x_idx, &i);
+		}
+	}
+	size_t *j;
+	rz_vector_foreach_prev (non_x_idx, j) {
+		rz_pvector_remove_at(sections, *j);
+	}
+	rz_vector_free(non_x_idx);
+	if (!rz_analysis_get_all_call_targets(core->analysis, sections, call_targets)) {
+		RZ_LOG_ERROR("Failed to get call targets.\n");
+		return false;
+	}
+	rz_pvector_free(sections);
+	return true;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -192,7 +219,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
-	RzSetU *jmp_targets = rz_set_u_new();
+	RzSetU *call_targets = rz_set_u_new();
 
 	rz_cons_push();
 
@@ -206,17 +233,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// of the pointers.
 	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
 
-	RzPVector /*<RzBinSection *>*/ *boundaries = rz_bin_object_get_sections(core->bin->cur->o);
-	if (!boundaries) {
-		goto error_free;
-	}
-	if (!rz_analysis_get_all_jmp_targets(core->analysis, boundaries, jmp_targets)) {
+	if (!get_call_targets(core, call_targets)) {
 		RZ_LOG_ERROR("Failed to get call targets.\n");
 		return_code = false;
 		goto error_free;
 	}
-	rz_pvector_free(boundaries);
-	RZ_LOG_DEBUG("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(jmp_targets));
+	RZ_LOG_DEBUG("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(call_targets));
 
 	// Initialize the abstract state with the architecture's registers.
 	if (!core->analysis->cur->il_config) {
@@ -277,6 +299,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	}
 
 	do {
+		bool user_sent_signal = false;
 		bool bb_decode_failed = false;
 		// Clear queues from any left overs of previous runs.
 		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
@@ -303,6 +326,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		while (rz_atomic_bool_get(is_running)) {
 			if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
 				rz_atomic_bool_set(is_running, false);
+				user_sent_signal = true;
 				break;
 			}
 
@@ -325,6 +349,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
+						rz_th_queue_close(io_request_q);
+						rz_th_queue_close(io_result_q);
 						rz_th_queue_close(iset->addr_queue);
 						rz_th_queue_close(iset->il_queue);
 						bb_decode_failed = true;
@@ -381,6 +407,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			}
 		}
 
+		rz_th_queue_close(io_request_q);
+		rz_th_queue_close(io_result_q);
 		rz_th_queue_close(iset->addr_queue);
 		rz_th_queue_close(iset->il_queue);
 
@@ -388,15 +416,18 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		rz_th_wait(interpr_th);
 		return_code = rz_th_get_retv(interpr_th);
 		rz_th_free(interpr_th);
-		if (!return_code && !bb_decode_failed) {
-			RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
+		if ((!return_code && !bb_decode_failed) || user_sent_signal) {
+			if (!user_sent_signal) {
+				RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
+			}
 			break;
-		} else if (bb_decode_failed) {
-			// Open queue again, so the interpretation can start at another
-			// jump target again.
-			rz_th_queue_open(iset->addr_queue);
-			rz_th_queue_open(iset->il_queue);
 		}
+		// Open queue again, so the interpretation can start at another
+		// jump target again.
+		rz_th_queue_open(io_request_q);
+		rz_th_queue_open(io_result_q);
+		rz_th_queue_open(iset->addr_queue);
+		rz_th_queue_open(iset->il_queue);
 
 		// At this point the interpreter is finished and returned.
 		// Now we need to check for executable regions it did not cover.
@@ -407,7 +438,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		{
 			rz_vector_clear(entry_points);
 			RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
-			RzIterator *ct_iter = rz_set_u_as_iter(jmp_targets);
+			RzIterator *ct_iter = rz_set_u_as_iter(call_targets);
 			size_t x = 0;
 			ut64 *ct;
 			rz_iterator_foreach(ct_iter, ct) {
@@ -432,11 +463,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			rz_vector_foreach (covered_jump_targets, ep) {
 				// Delete the selected ones from the jump target set.
 				// So they are not requested again.
-				rz_set_u_delete(jmp_targets, *ep);
+				rz_set_u_delete(call_targets, *ep);
 			}
 			rz_vector_free(covered_jump_targets);
-
-			RZ_LOG_DEBUG("jump targets left: %" PFMT32d "\n", rz_set_u_size(jmp_targets));
 		}
 	} while (!rz_vector_empty(entry_points));
 
@@ -448,12 +477,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 error_free:
 	RZ_LOG_DEBUG("INQUIRY: Close queues\n");
 	rz_vector_free(entry_points);
-	rz_set_u_free(jmp_targets);
+	rz_set_u_free(call_targets);
 	rz_buf_free(io_buf);
 	rz_analysis_il_vm_free(analysis_vm);
-	rz_th_queue_close(il_queue);
 	rz_th_queue_close(io_request_q);
 	rz_th_queue_close(io_result_q);
+	rz_th_queue_close(iset->addr_queue);
+	rz_th_queue_close(iset->il_queue);
 
 	if (!iset) {
 		// Ownership of all those objects wasn't yet passed to the iset.

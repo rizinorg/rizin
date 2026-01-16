@@ -318,22 +318,32 @@ int addr_at_aligned_x_addr(const ut64 *addr, const RzBinSection *sec, void *user
 	return ((*addr & 3) == 0 && RZ_BETWEEN(sec->vaddr, *addr, sec->vaddr + sec->size)) ? 0 : -1;
 }
 
+static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_size) {
+	rz_mem_set_num(buf, buf_size, 0);
+	do {
+		if (analysis->iob.read_at(analysis->iob.io, addr, buf, buf_size) > 0) {
+			return true;
+		}
+		buf_size--;
+	} while (buf_size > 0);
+	return false;
+}
+
 /**
- * \brief Returns all targets of call instructions within the \p boundaries.
+ * \brief Returns all targets of call instructions within the \p sections.
  * NOTE: This function disassembles all instructions within the boundaries and checks for calls.
  * It DOES NOT use the existing xrefs.
- * NOTE: Jumps includes calls.
  *
  * \param analysis The analysis plugin.
- * \param sections The RzBinSections to disassemble to find jump/call instructions.
- * \param jump_targets The found jump targets of all disassemble jumps.
+ * \param sections The RzBinSections to disassemble to find call instructions.
+ * \param call_targets The found call targets of all disassemble calls.
  *        NOTE: They can point outside of \p maps!
  *
  * \return True in case of success, false otherwise.
  */
-RZ_API bool rz_analysis_get_all_jmp_targets(RzAnalysis *analysis, const RzPVector /*<RzBinSection *>*/ *sections, RZ_NONNULL RZ_OUT RzSetU *jump_targets) {
-	rz_return_val_if_fail(analysis && analysis->cur && sections && jump_targets, false);
-	int buf_size = (analysis->cur->bits / 8) * 16;
+RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzPVector /*<RzBinSection *>*/ *sections, RZ_NONNULL RZ_OUT RzSetU *call_targets) {
+	rz_return_val_if_fail(analysis && analysis->cur && sections && call_targets, false);
+	size_t buf_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, buf_size);
 	if (!buf_size || !buf) {
 		return false;
@@ -348,8 +358,8 @@ RZ_API bool rz_analysis_get_all_jmp_targets(RzAnalysis *analysis, const RzPVecto
 		}
 		ut64 addr = sec->vaddr;
 		while (addr < sec->vaddr + sec->size) {
-			if (analysis->iob.read_at(analysis->iob.io, addr, buf, buf_size) == 0) {
-				RZ_LOG_WARN("Failed to read memory at 0x%" PFMT64x " size: %u.\n", addr, buf_size);
+			if (!read_up_to(analysis, addr, buf, buf_size)) {
+				RZ_LOG_WARN("Failed to read memory at 0x%" PFMT64x " size: %" PFMTSZu ".\n", addr, buf_size);
 				rz_analysis_op_fini(&op);
 				break;
 			}
@@ -360,8 +370,8 @@ RZ_API bool rz_analysis_get_all_jmp_targets(RzAnalysis *analysis, const RzPVecto
 			}
 			// Only add jump targets going to executable regions.
 			if (rz_analysis_op_is_direct_call(&op) && op.jump != UT64_MAX && rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
-				RZ_LOG_DEBUG("Add jump target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
-				rz_set_u_add(jump_targets, op.jump);
+				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
+				rz_set_u_add(call_targets, op.jump);
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);
