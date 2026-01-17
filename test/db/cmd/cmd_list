@@ -90,7 +90,6 @@ Loq
 EOF
 EXPECT=<<EOF
 rw_  ar       Open ar/lib files (LGPL3) ar://,lib:// xarkes
-rw_  bfdbg    Attach to brainfuck Debugger instance (LGPL3) bfdbg://
 rwd  bochs    Attach to a BOCHS debugger instance (LGPL3) bochs://
 r_d  debug    Attach to native debugger instance (LGPL3) dbg://,pidof://,waitfor:// v0.2.0 pancake
 rw_  default  Open local files (LGPL3) file://,nocache://
@@ -106,22 +105,20 @@ rw_  null     Null plugin (LGPL3) null://
 rw_  procpid  Open /proc/[pid]/mem io (LGPL3) procpid://
 rwd  ptrace   Ptrace and /proc/pid/mem (if available) io plugin (LGPL3) ptrace://,attach://
 rwd  qnx      Attach to QNX pdebug instance (LGPL3) qnx://
-rw_  rzpipe   rzpipe io plugin (MIT) rzpipe://
-rw_  rzweb    rzweb io client plugin (LGPL3) rzweb://
 rw_  self     Read memory from self (LGPL3) self://
 rw_  shm      Shared memory resources plugin (MIT) shm://
 rw_  sparse   Sparse buffer allocation plugin (LGPL3) sparse://
 rw_  srec     Motorola S-record file format (LGPL-3) srec://
 rw_  tcp      Load files via TCP (listen or connect) (LGPL3) tcp://
+rw_  titxt    Texas Instruments TI-TXT file format (LGPL-3) titxt://
 rw_  vfile    Virtual Files provided by RzBin Files (LGPL) vfile://
 rwd  winedbg  Wine-dbg io and debug.io plugin (MIT) winedbg://
 rwd  winkd    Attach to a KD debugger (LGPL3) winkd://
 rw_  zip      Open zip files (BSD) zip://,apk://,ipa://,jar://,zipall://,apkall://,ipaall://,jarall://
-[{"permissions":"rw_","name":"ar","description":"Open ar/lib files","license":"LGPL3","uris":["ar://","lib://"],"author":"xarkes"},{"permissions":"rw_","name":"bfdbg","description":"Attach to brainfuck Debugger instance","license":"LGPL3","uris":["bfdbg://"]},{"permissions":"rwd","name":"bochs","description":"Attach to a BOCHS debugger instance","license":"LGPL3","uris":["bochs://"]},{"permissions":"r_d","name":"debug","description":"Attach to native debugger instance","license":"LGPL3","uris":["dbg://","pidof://","waitfor://"],"version":"0.2.0","author":"pancake"},{"permissions":"rw_","name":"default","description":"Open local files","license":"LGPL3","uris":["file://","nocache://"]},{"permissions":"rw_","name":"dmp","description":"Debug a Windows DMP file","license":"LGPL3","uris":["dmp://"]},{"permissions":"rw_","name":"fd","description":"Local process filedescriptor IO","license":"MIT","uris":["fd://"]},{"permissions":"rwd","name":"gdb","description":"Attach to gdbserver instance","license":"LGPL3","uris":["gdb://"]},{"permissions":"rw_","name":"gzip","description":"Read/write gzipped files","license":"LGPL3","uris":["gzip://"]},{"permissions":"rw_","name":"http","description":"Make http get requests","license":"LGPL3","uris":["http://"]},{"permissions":"rw_","name":"ihex","description":"Open intel HEX file","license":"LGPL","uris":["ihex://"]},{"permissions":"r__","name":"mach","description":"mach debug io (unsupported in this platform)","license":"LGPL"},{"permissions":"rw_","name":"malloc","description":"Memory allocation plugin","license":"LGPL3","uris":["malloc://","hex://"]},{"permissions":"rw_","name":"null","description":"Null plugin","license":"LGPL3","uris":["null://"]},{"permissions":"rw_","name":"procpid","description":"Open /proc/[pid]/mem io","license":"LGPL3","uris":["procpid://"]},{"permissions":"rwd","name":"ptrace","description":"Ptrace and /proc/pid/mem (if available) io plugin","license":"LGPL3","uris":["ptrace://","attach://"]},{"permissions":"rwd","name":"qnx","description":"Attach to QNX pdebug instance","license":"LGPL3","uris":["qnx://"]},{"permissions":"rw_","name":"rzpipe","description":"rzpipe io plugin","license":"MIT","uris":["rzpipe://"]},{"permissions":"rw_","name":"rzweb","description":"rzweb io client plugin","license":"LGPL3","uris":["rzweb://"]},{"permissions":"rw_","name":"self","description":"Read memory from self","license":"LGPL3","uris":["self://"]},{"permissions":"rw_","name":"shm","description":"Shared memory resources plugin","license":"MIT","uris":["shm://"]},{"permissions":"rw_","name":"sparse","description":"Sparse buffer allocation plugin","license":"LGPL3","uris":["sparse://"]},{"permissions":"rw_","name":"srec","description":"Motorola S-record file format","license":"LGPL-3","uris":["srec://"]},{"permissions":"rw_","name":"tcp","description":"Load files via TCP (listen or connect)","license":"LGPL3","uris":["tcp://"]},{"permissions":"rw_","name":"vfile","description":"Virtual Files provided by RzBin Files","license":"LGPL","uris":["vfile://"]},{"permissions":"rwd","name":"winedbg","description":"Wine-dbg io and debug.io plugin","license":"MIT","uris":["winedbg://"]},{"permissions":"rwd","name":"winkd","description":"Attach to a KD debugger","license":"LGPL3","uris":["winkd://"]},{"permissions":"rw_","name":"zip","description":"Open zip files","license":"BSD","uris":["zip://","apk://","ipa://","jar://","zipall://","apkall://","ipaall://","jarall://"]}]
+[{"permissions":"rw_","name":"ar","description":"Open ar/lib files","license":"LGPL3","uris":["ar://","lib://"],"author":"xarkes"},{"permissions":"rwd","name":"bochs","description":"Attach to a BOCHS debugger instance","license":"LGPL3","uris":["bochs://"]},{"permissions":"r_d","name":"debug","description":"Attach to native debugger instance","license":"LGPL3","uris":["dbg://","pidof://","waitfor://"],"version":"0.2.0","author":"pancake"},{"permissions":"rw_","name":"default","description":"Open local files","license":"LGPL3","uris":["file://","nocache://"]},{"permissions":"rw_","name":"dmp","description":"Debug a Windows DMP file","license":"LGPL3","uris":["dmp://"]},{"permissions":"rw_","name":"fd","description":"Local process filedescriptor IO","license":"MIT","uris":["fd://"]},{"permissions":"rwd","name":"gdb","description":"Attach to gdbserver instance","license":"LGPL3","uris":["gdb://"]},{"permissions":"rw_","name":"gzip","description":"Read/write gzipped files","license":"LGPL3","uris":["gzip://"]},{"permissions":"rw_","name":"ihex","description":"Open intel HEX file","license":"LGPL","uris":["ihex://"]},{"permissions":"r__","name":"mach","description":"mach debug io (unsupported in this platform)","license":"LGPL"},{"permissions":"rw_","name":"malloc","description":"Memory allocation plugin","license":"LGPL3","uris":["malloc://","hex://"]},{"permissions":"rw_","name":"null","description":"Null plugin","license":"LGPL3","uris":["null://"]},{"permissions":"rw_","name":"procpid","description":"Open /proc/[pid]/mem io","license":"LGPL3","uris":["procpid://"]},{"permissions":"rwd","name":"ptrace","description":"Ptrace and /proc/pid/mem (if available) io plugin","license":"LGPL3","uris":["ptrace://","attach://"]},{"permissions":"rwd","name":"qnx","description":"Attach to QNX pdebug instance","license":"LGPL3","uris":["qnx://"]},{"permissions":"rw_","name":"self","description":"Read memory from self","license":"LGPL3","uris":["self://"]},{"permissions":"rw_","name":"shm","description":"Shared memory resources plugin","license":"MIT","uris":["shm://"]},{"permissions":"rw_","name":"sparse","description":"Sparse buffer allocation plugin","license":"LGPL3","uris":["sparse://"]},{"permissions":"rw_","name":"srec","description":"Motorola S-record file format","license":"LGPL-3","uris":["srec://"]},{"permissions":"rw_","name":"tcp","description":"Load files via TCP (listen or connect)","license":"LGPL3","uris":["tcp://"]},{"permissions":"rw_","name":"titxt","description":"Texas Instruments TI-TXT file format","license":"LGPL-3","uris":["titxt://"]},{"permissions":"rw_","name":"vfile","description":"Virtual Files provided by RzBin Files","license":"LGPL","uris":["vfile://"]},{"permissions":"rwd","name":"winedbg","description":"Wine-dbg io and debug.io plugin","license":"MIT","uris":["winedbg://"]},{"permissions":"rwd","name":"winkd","description":"Attach to a KD debugger","license":"LGPL3","uris":["winkd://"]},{"permissions":"rw_","name":"zip","description":"Open zip files","license":"BSD","uris":["zip://","apk://","ipa://","jar://","zipall://","apkall://","ipaall://","jarall://"]}]
 perm license name    uri                                                                 description                                       
 -------------------------------------------------------------------------------------------------------------------------------------------
 rw_  LGPL3   ar      ar://,lib://                                                        Open ar/lib files
-rw_  LGPL3   bfdbg   bfdbg://                                                            Attach to brainfuck Debugger instance
 rwd  LGPL3   bochs   bochs://                                                            Attach to a BOCHS debugger instance
 r_d  LGPL3   debug   dbg://,pidof://,waitfor://                                          Attach to native debugger instance
 rw_  LGPL3   default file://,nocache://                                                  Open local files
@@ -129,7 +126,6 @@ rw_  LGPL3   dmp     dmp://                                                     
 rw_  MIT     fd      fd://                                                               Local process filedescriptor IO
 rwd  LGPL3   gdb     gdb://                                                              Attach to gdbserver instance
 rw_  LGPL3   gzip    gzip://                                                             Read/write gzipped files
-rw_  LGPL3   http    http://                                                             Make http get requests
 rw_  LGPL    ihex    ihex://                                                             Open intel HEX file
 r__  LGPL    mach                                                                        mach debug io (unsupported in this platform)
 rw_  LGPL3   malloc  malloc://,hex://                                                    Memory allocation plugin
@@ -137,19 +133,17 @@ rw_  LGPL3   null    null://                                                    
 rw_  LGPL3   procpid procpid://                                                          Open /proc/[pid]/mem io
 rwd  LGPL3   ptrace  ptrace://,attach://                                                 Ptrace and /proc/pid/mem (if available) io plugin
 rwd  LGPL3   qnx     qnx://                                                              Attach to QNX pdebug instance
-rw_  MIT     rzpipe  rzpipe://                                                           rzpipe io plugin
-rw_  LGPL3   rzweb   rzweb://                                                            rzweb io client plugin
 rw_  LGPL3   self    self://                                                             Read memory from self
 rw_  MIT     shm     shm://                                                              Shared memory resources plugin
 rw_  LGPL3   sparse  sparse://                                                           Sparse buffer allocation plugin
 rw_  LGPL-3  srec    srec://                                                             Motorola S-record file format
 rw_  LGPL3   tcp     tcp://                                                              Load files via TCP (listen or connect)
+rw_  LGPL-3  titxt   titxt://                                                            Texas Instruments TI-TXT file format
 rw_  LGPL    vfile   vfile://                                                            Virtual Files provided by RzBin Files
 rwd  MIT     winedbg winedbg://                                                          Wine-dbg io and debug.io plugin
 rwd  LGPL3   winkd   winkd://                                                            Attach to a KD debugger
 rw_  BSD     zip     zip://,apk://,ipa://,jar://,zipall://,apkall://,ipaall://,jarall:// Open zip files
 ar
-bfdbg
 bochs
 debug
 default
@@ -157,7 +151,6 @@ dmp
 fd
 gdb
 gzip
-http
 ihex
 mach
 malloc
@@ -165,13 +158,12 @@ null
 procpid
 ptrace
 qnx
-rzpipe
-rzweb
 self
 shm
 sparse
 srec
 tcp
+titxt
 vfile
 winedbg
 winkd
