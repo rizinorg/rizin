@@ -61,7 +61,6 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 	x->val; \
 	x = x->next
 #define rz_list_iter_next(x)     (x ? 1 : 0)
-#define rz_list_iter_cur(x)      x->prev
 #define rz_list_iter_has_next(x) (x->next)
 #define rz_list_iter_has_prev(x) (x->prev)
 
