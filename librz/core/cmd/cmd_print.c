@@ -1693,7 +1693,7 @@ static inline char *__refs(RzCore *core, ut64 x) {
 		return NULL;
 	}
 
-	char *refs = core->print->hasrefs(core->print->user, x, true);
+	char *refs = core->print->hasrefs(core->print->user, x, RZ_OUTPUT_MODE_STANDARD);
 	if (RZ_STR_ISNOTEMPTY(refs)) {
 		rz_str_trim(refs);
 	} else {
@@ -4267,7 +4267,7 @@ RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const 
 	if (N == 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_print_disasm_all(core, core->offset, N, N, 'i');
+	rz_core_print_disasm_all(core, core->offset, N, N);
 	return RZ_CMD_STATUS_OK;
 }
 
