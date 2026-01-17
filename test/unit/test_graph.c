@@ -14,7 +14,7 @@ static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
 		int diff = 0; \
-		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
+		while (ita && ite) { \
 			int a = (int)(size_t)rz_list_iter_get(ita); \
 			int e = (int)(size_t)rz_list_iter_get(ite); \
 			if (a != e) { \

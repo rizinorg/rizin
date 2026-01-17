@@ -88,7 +88,7 @@ static ut64 pdb_omap_remap(RZ_NONNULL RzPdbOmapStream *omap_stream, ut64 address
 			return -1;
 		}
 		it = rz_list_iterator(omap_stream->entries);
-		while (rz_list_iter_next(it)) {
+		while (it) {
 			omap_entry = (OmapEntry *)rz_list_iter_get(it);
 			omap_stream->froms[i] = omap_entry->from;
 			i++;
