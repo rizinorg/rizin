@@ -602,10 +602,10 @@ commands:
     details:
       - name: Table format specifiers (<table_spec>)
         entries:
-          - text: "<col>/sort/<inc|dec>"
-            comment: Sort table by column <col> in increasing or decreasing order.
-          - text: "<col>/sortlen/<inc|dec>"
-            comment: Sort table length of column <col> in increasing or decreasing order.
+          - text: "<col>/sort/rev"
+            comment: Sort table by column <col> in reverse order.
+          - text: "<col>/sortlen/rev"
+            comment: Sort table by column <col> length in reverse order.
           - text: "<col>/cols[/<col2>[/<col3>...]]"
             comment: Show only specified columns in the table.
           - text: "<col>"
