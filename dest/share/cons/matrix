@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+ec b0x00 rgb:030
+ec b0x7f rgb:0f0
+ec b0xff rgb:050
+ec bin rgb:0f0
+ec crypto rgb:0f0
+ec other rgb:0a0
+ec btext rgb:0b0
+ec ucall rgb:0b0
+ec call rgb:0b0
+ec ujmp rgb:2f2
+ec cjmp rgb:2f2
+ec jmp rgb:2f2
+ec cmp rgb:191
+ec comment rgb:060
+ec usrcmt rgb:3f3
+ec ret rgb:0b0
+ec fline rgb:0a0
+ec flow bgreen
+ec flow2 green
+ec fname rgb:0b0
+ec label rgb:0f0
+ec math rgb:040
+ec invalid rgb:060
+ec mov rgb:383
+ec nop rgb:030
+ec num rgb:3f3
+ec offset rgb:383
+ec pop rgb:040
+ec prompt rgb:080
+ec push rgb:060
+ec reg rgb:1a1
+ec args rgb:0b0
+ec help rgb:0b0
+ec input rgb:0a0
+ec trap rgb:040
+ec swi rgb:0b0
+ec creg rgb:080
+ec flag rgb:0f0
+ec linehl rgb:020
+ec graph.box green
+ec graph.box2 rgb:060
+ec graph.box3 rgb:ff0000
+ec graph.box4 rgb:0000ff
+ec graph.true green
+ec graph.false rgb:050
+ec graph.ujump green
+ec graph.current green
+ec graph.traced rgb:060
+
+ec func_var rgb:060
+ec func_var_type rgb:383
+ec func_var_addr rgb:060
+
+ec ai.read rgb:0a1
+ec ai.write rgb:1a1
+ec ai.exec rgb:383
+ec ai.seq rgb:3f3
+ec ai.ascii rgb:3f3
+
+ec widget_bg rgb:0b0 rgb:000
+ec widget_sel black rgb:0c0

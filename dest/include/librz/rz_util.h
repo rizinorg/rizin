@@ -1,0 +1,98 @@
+// SPDX-FileCopyrightText: 2008-2016 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef RZ_UTIL_H
+#define RZ_UTIL_H
+
+#include <rz_types.h>
+#include <rz_diff.h>
+#include <rz_getopt.h>
+#include <rz_list.h> // rizin linked list
+#include <rz_skiplist.h> // skiplist
+#include <rz_th.h>
+#if !__WINDOWS__
+#include <dirent.h>
+#include <signal.h>
+#endif
+#ifdef HAVE_LIB_GMP
+#include <gmp.h>
+#endif
+#if HAVE_LIB_SSL
+#include <openssl/bn.h>
+#endif
+#include <rz_util/rz_alloc.h>
+#include <rz_util/rz_ascii_table.h>
+#include <rz_util/rz_asn1.h>
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_axml.h>
+#include <rz_util/rz_base16.h>
+#include <rz_util/rz_base32.h>
+#include <rz_util/rz_base36.h>
+#include <rz_util/rz_base64.h>
+#include <rz_util/rz_base85.h>
+#include <rz_util/rz_base91.h>
+#include <rz_util/rz_big.h>
+#include <rz_util/rz_bits.h>
+#include <rz_util/rz_bitvector.h>
+#include <rz_util/rz_buf.h>
+#include <rz_util/rz_debruijn.h>
+#include <rz_util/rz_event.h>
+#include <rz_util/rz_file.h>
+#include <rz_util/rz_float.h>
+#include <rz_util/rz_graph.h>
+#include <rz_util/rz_hex.h>
+#include <rz_util/rz_idpool.h>
+#include <rz_util/rz_intervaltree.h>
+#include <rz_util/rz_iterator.h>
+#include <rz_util/rz_itv.h>
+#include <rz_util/rz_lang_byte_array.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_luhn.h>
+#include <rz_util/rz_mem.h>
+#include <rz_util/rz_name.h>
+#include <rz_util/rz_num.h>
+#include <rz_util/rz_panels.h>
+#include <rz_util/rz_path.h>
+#include <rz_util/rz_pj.h>
+#include <rz_util/rz_pkcs7.h>
+#include <rz_util/rz_pkcs8.h>
+#include <rz_util/rz_protobuf.h>
+#include <rz_util/rz_punycode.h>
+#include <rz_util/rz_range.h>
+#include <rz_util/rz_rbtree.h>
+#include <rz_util/rz_regex.h>
+#include <rz_util/rz_set.h>
+#include <rz_util/rz_signal.h>
+#include <rz_util/rz_spaces.h>
+#include <rz_util/rz_stack.h>
+#include <rz_util/rz_str.h>
+#include <rz_util/rz_str_constpool.h>
+#include <rz_util/rz_str_search.h>
+#include <rz_util/rz_strbuf.h>
+#include <rz_util/rz_strpool.h>
+#include <rz_util/rz_structured_data.h>
+#include <rz_util/rz_subprocess.h>
+#include <rz_util/rz_sys.h>
+#include <rz_util/rz_table.h>
+#include <rz_util/rz_time.h>
+#include <rz_util/rz_tree.h>
+#include <rz_util/rz_uleb128.h>
+#include <rz_util/rz_unicode.h>
+#include <rz_util/rz_utf16.h>
+#include <rz_util/rz_utf32.h>
+#include <rz_util/rz_utf8.h>
+#include <rz_util/rz_version.h>
+#include <rz_util/rz_x509.h>
+// requires io, core, ... #include "rz_util/rz_print.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+RZ_LIB_VERSION_HEADER(rz_util);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

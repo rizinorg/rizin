@@ -1,0 +1,43 @@
+.Dd Jan 21, 2024
+.Dt RZ_SIGN 1
+.Sh NAME
+.Nm RZ_SIGN
+.Nd rizin signature utility
+.Sh SYNOPSIS
+.Nm rz-sign
+.Op Fl aqv
+.Op Fl e Ar k=v
+.Fl ( c Ar pat sig | Fl o Ar sig bin | Fl d Ar sig )
+.Sh DESCRIPTION
+rz-sign allows to create and inspect FLIRT code signatures.
+.Pp
+.Bl -tag -width Fl
+.It Fl a, aa
+Analyze binary after loading it with RzCore and use -aa to run aaaa instead of aaa. Available only
+together with the -o option.
+.It Fl c Ar output.pat input.sig
+Interpret the input file as a FLIRT signature file and dump the pattern format.
+.It Fl d Ar flirt.sig
+Parse a FLIRT signature file.
+.It Fl e
+Set an evaluable config variable. Available only together with the -o option.
+.It Fl h
+Show usage help message.
+.It Fl o Ar output.sig input.bin
+Perform an analysis of a binary and generate FLIRT signatures for all functions inside it.
+.It Fl q
+Enable quiet mode.
+.It Fl v
+Show version information.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-ax(1) ,
+.Xr rz-diff(1) ,

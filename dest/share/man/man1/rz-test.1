@@ -1,0 +1,81 @@
+.Dd Jan 24, 2024
+.Dt RZ_TEST 1
+.Sh NAME
+.Nm rz-test
+.Nd rizin regression testsuite
+.Sh SYNOPSIS
+.Nm rz-test
+.Op Fl qvVnL
+.Op Fl j Ar threads
+.Op Fl test Ar file/dir | @test-type
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+Run all the rizin-regressions tests matching a specific word in the name.
+.Pp
+You need rizin to be available in $PATH.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl h
+Show usage help message
+.It Fl v
+Show version information
+.It Fl q
+Quiet mode
+.It Fl V
+Be verbose
+.It Fl i
+Interactive mode
+.It Fl n
+Do nothing (don't run any test, just load/parse them)
+.It Fl L
+Log mode (better printing for CI, logfiles, etc.)
+.It Fl F Ar dir
+Run fuzz tests (open and default analysis) on all files in the given dir
+.It Fl j Ar threads
+How many threads to use for running tests concurrently (default is 8)
+.It Fl r Ar rizin
+Set path to rizin executable (default is rizin)
+.It Fl m Ar rz-asm
+Set path to rz-asm executable (default is rz-asm)
+.It Fl f Ar file
+File to use for JSON tests (default is bins/elf/crackme0x00b)
+.It Fl C Ar dir
+Chdir before running rz-test (default follows executable symlink + test/new)
+.It Fl t Ar seconds
+Timeout per test (default is 960 seconds)
+.It Fl o Ar file
+Output test run information in JSON format to file
+.It Fl e Ar dir
+Exclude a particular directory while testing (this option can appear many times)
+.It Fl s Ar num
+Number of expected successful tests
+.It Fl x Ar num
+Number of expected failed tests
+.Pp
+Supported test types: @json @unit @fuzz @cmds
+.El
+.Sh ENVIRONMENT
+.Pp
+EDITOR: editor to use (eg: "vim")
+
+.Sh USAGE
+.Pp
+Use the -n flag to dont run any test. Just load them.
+.Pp
+  $ rz-test -n
+  [rz-test] Loading tests...
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

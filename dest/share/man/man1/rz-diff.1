@@ -1,0 +1,130 @@
+.Dd Aug 25, 2023
+.Dt RZ_DIFF 1
+.Sh NAME
+.Nm RZ_DIFF
+.Nd Compare files and find binary differences.
+.Sh SYNOPSIS
+.Nm rz-diff
+.B rz-diff
+[\fIOPTIONS\fR]
+\fIfile0\fR
+\fIfile1\fR
+.Sh DESCRIPTION
+rz-diff compares two files or binary programs and highlights the differences between them. It supports diffing different aspects like raw bytes, text lines, functions, sections, strings, etc., based on the options used.
+.Pp
+.Bl -tag -width Fl
+.It Fl A
+Compare virtual addresses from file0 with physical addresses in file1
+.It Fl a Ar arch	
+Specify the architecture plugin to use for analysis (e.g., x86, arm)
+.It Fl b Ar bits
+Specify the register size for the chosen architecture (e.g., 16, 32, 64)
+.It Fl B
+Run 'aaa' when loading the binary
+.It Fl C
+Disable the use of colors in the output
+.It Fl d Ar algo
+Compute the edit distance between files using the chosen algorithm:
+.Bl -tag -width
+.It Ic myers
+Eugene W. Myers' O(ND) algorithm (no substitution)
+.It Ic leven
+Levenshtein O(N^2) algorithm (with substitution)
+.It Ic ssdeep
+Context triggered piecewise hashing comparison
+.El
+.It Fl e Ar k=v
+Set an evaluable config variable
+.It Fl H 
+Enable hexadecimal visual mode for comparing files in hexadecimal format
+.It Fl h
+Display the help message
+.It Fl i 
+Use command line arguments instead of files (only for -d)
+.It Fl j
+Output the comparison results in JSON format
+.It Fl q
+Generate quiet output with minimal information
+.It Fl 0 Ar cmd
+Input for file0 when option -t 'commands' is given
+.It Fl 1 Ar cmd
+Input for file1 when option -t 'commands' is given
+.It Fl S Ar WxH
+Set the width and height of the terminal for visual mode
+.It Fl t Ar type
+Compute the difference between two files based on the specified type:
+.Bl -tag -width
+.It Ic bytes
+Compare raw bytes in the files (only for small files)
+.It Ic lines
+Compare text files
+.It Ic functions
+Compare functions found in the files
+.It Ic classes
+Compare classes found in the files
+.It Ic command
+Compare command output returned when executed in both files.
+Requires -0 <cmd>, -1 <cmd> is optional.
+.It Ic entries
+Compare entries found in the files
+.It Ic fields
+Compare fields found in the files
+.It Ic graphs
+Compare 2 functions and outputs in graphviz/dot format.
+Requires -0 <fcnname|offset>, -1 <fcn name|offset> is optional.
+.It Ic imports
+Compare imports found in the files
+.It Ic libraries
+Compare libraries found in the files
+.It Ic sections
+Compare sections found in the files
+.It Ic strings
+Compare strings found in the files
+.It Ic symbols
+Compare symbols found in the files
+.El
+.It Fl T
+Show timestamp information in the output
+.It Fl V
+Show version information for rz-diff
+.It Fl v
+be more verbose (stderr output)
+.El
+.Pp 
+Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file
+.Bl -tag
+.It Ic ec diff.unknown blue
+offset color
+.It Ic ec diff.match green
+match color
+.It Ic ec diff.unmatch red
+mismatch color	
+.El
+.Sh EXAMPLE
+.Pp
+Compare two binary files using the default settings:
+.Pp
+.Nm rz-diff Ar file1.bin Ar file2.bin
+.Pp
+Compare two text files and display the output in JSON format:
+.Pp
+.Nm rz-diff Fl j Fl t Cm lines Ar file1.txt Ar file2.txt
+.Pp
+Compare two functions from an architecture plugin:
+.Pp
+.Nm rz-diff Fl t Cm graphs Fl 0 Cm function1 Fl 1 Cm function2 Ar binary1 Ar binary2
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.It  
+byteninjaa0

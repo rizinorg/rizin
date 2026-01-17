@@ -1,0 +1,34 @@
+#ifndef RZ_HEX_H
+#define RZ_HEX_H
+
+#include <rz_types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+RZ_API int rz_hex_pair2bin(const char *arg);
+RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *out);
+RZ_API size_t rz_hex_str2bin_mask(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *out, RZ_NULLABLE RZ_OUT ut8 *mask, bool lsb_extend);
+RZ_API int rz_hex_str2bin(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *out);
+RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out);
+RZ_API void rz_hex_ut2st_str(const ut32 in, RZ_INOUT char *out, const int len);
+RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len);
+RZ_API bool rz_hex_to_byte(ut8 *val, ut8 c);
+RZ_API ut8 rz_hex_digit_to_byte(const char c);
+RZ_API ut16 rz_hex_digit_pair_to_byte(const char *c);
+RZ_API int rz_hex_str_is_valid(const char *s, bool allow_prefix);
+RZ_API st64 rz_hex_bin_truncate(ut64 in, int n);
+RZ_API char *rz_hex_from_c(const char *code);
+RZ_API char *rz_hex_from_py(const char *code);
+RZ_API char *rz_hex_from_code(const char *code);
+RZ_API char *rz_hex_no_code(const char *code);
+RZ_API char *rz_hex_from_py_str(char *out, const char *code);
+RZ_API char *rz_hex_from_py_array(char *out, const char *code);
+RZ_API char *rz_hex_from_c_str(char *out, const char **code);
+RZ_API char *rz_hex_from_c_array(char *out, const char *code);
+#ifdef __cplusplus
+}
+#endif
+
+#endif //  RZ_HEX_H

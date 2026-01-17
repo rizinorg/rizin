@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+# background of the terminal must be 134 o 033
+# xterm -fn 10x20 -bg rgb:14/14/14 -fg rgb:fe/ff/d3
+# ref: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr
+
+ec b0x00 rgb:446
+ec b0x7f rgb:c64
+ec b0xff rgb:c64
+ec bin rgb:ffd
+ec other rgb:aaa
+ec btext rgb:bb7
+ec ucall rgb:9b7
+ec call rgb:9b7
+ec ujmp rgb:788
+ec cjmp rgb:788
+ec jmp rgb:788
+ec cmp rgb:ffd
+ec comment rgb:c64
+ec usrcmt rgb:9b7
+ec ret rgb:ab7
+ec fline rgb:ca6
+ec flow rgb:446
+ec flow2 rgb:446
+ec fname rgb:bb7
+ec label rgb:788
+ec math rgb:ffd
+ec invalid rgb:c64
+ec mov rgb:ffd
+ec nop rgb:445
+ec num rgb:ffd
+ec offset rgb:788
+ec pop rgb:bb7
+ec prompt rgb:788
+ec push rgb:ffd
+ec reg rgb:ca6
+ec args rgb:bb7
+ec help rgb:ab7
+ec input rgb:ca6
+ec trap rgb:445
+ec swi rgb:bb7
+ec creg rgb:788
+ec flag rgb:ffd
+ec linehl rgb:004
+ec graph.true rgb:9b7
+ec graph.false rgb:b97
+ec graph.ujump rgb:64c
+ec graph.current blue
+ec graph.traced blue
+ec graph.box rgb:9b7
+ec graph.box2 rgb:b97
+ec graph.box3 rgb:b97
+ec graph.box4 rgb:b97
+
+ec func_var rgb:c64
+ec func_var_type rgb:aa6
+ec func_var_addr rgb:788
+
+ec ai.read rgb:db7
+ec ai.write rgb:ca6
+ec ai.exec rgb:ffd
+ec ai.seq rgb:bb7
+ec ai.ascii rgb:bb7
+
+ec widget_bg rgb:ffd rgb:344
+ec widget_sel black rgb:ca6

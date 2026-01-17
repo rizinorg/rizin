@@ -1,0 +1,143 @@
+.Dd Dec 28, 2020
+.Dt RZ_AX 1
+.Sh NAME
+.Nm rz-ax
+.Nd rizin base converter
+.Sh SYNOPSIS
+.Nm rz-ax
+.Op Fl ebBdDeEfFhiIklLosStuvwx
+.Op expr ...
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+This command allows you to convert values between positive and negative integer, float, octal, binary, ternary, and hexadecimal values.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl a
+Show ASCII table
+.It Fl b
+Convert from binary to string (rz-ax -b 01000101 01110110)
+.It Fl B
+Convert from string to binary (rz-ax -B hello)
+.It Fl d
+Force output as integer (rz-ax -d 3 outputs 3 instead of 0x3)
+.It Fl D
+Base64 decode
+.It Fl e
+Swap endianness (rz-ax -e 0x33)
+.It Fl E
+Base64 encode
+.It Fl f
+Floating point arithmetic (rz-ax -f 6.3+2.1)
+.It Fl F
+Read C strings from stdin and output in hexpairs. Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
+.It Fl h
+Show usage help message
+.It Fl i
+Dump stdin to C array in stdout (rz-ax -i < bytes)
+.It Fl I
+Convert LONG to/from IP ADDRESS (rz-ax -I 3530468537)
+.It Fl k
+Keep the same base as the input data (rz-ax -k 33+3 -> 36)
+.It Fl l
+Append newline to the decoded output
+.It Fl L
+Convert binary to hexadecimal (rz-ax -L 111111111 outputs 0x1ff)
+.It Fl n
+Show hexpairs from integer value (rz-ax -n 0x1234 # 34120000)
+.It Fl N
+Show hex C string from integer value (rz-ax -N 0x1234 # \x34\x12\x00\x00)
+.It Fl o
+Convert from octal string to char (rz-ax -o \162 \172 # rz)
+.It Fl r
+Rz style output (rz-ax -r 0x1234)
+.It Fl s
+Convert from hex string to character (rz-ax -s 43 4a 50)
+.It Fl S
+Convert from character to hex string (rz-ax -S < /bin/ls > ls.hex)
+.It Fl t
+Convert Unix timestamp to string (rz-ax -t 1234567890)
+.It Fl m
+Convert MS-DOS timestamp to string (rz-ax -m 0x12345678)
+.It Fl W
+Convert Win32 timestamp to string (rz-ax -W 1234567890)
+.It Fl u
+Convert given value to human readable units format (rz-ax -u 389289238 # 317.0M)
+.It Fl v
+Show version information
+.It Fl w
+Convert signed word (rz-ax -w 16 0xffff)
+.It Fl x
+Convert a string into a hash (rz-ax -x linux osx)
+.It Fl p
+Show position of set bits in the binary representation (rz-ax -p 0xb3)
+.El
+.Sh USAGE
+.Pp
+Force output mode (numeric base)
+.Pp
+  =f    floating point
+  =2    binary
+  =3    ternary
+  =8    octal
+  =10   decimal
+  =16   hexadecimal
+.Pp
+Available variable types are:
+.Pp
+  int     \->  hex     rz-ax 10
+  hex     \->  int     rz-ax 0xa
+  \-int    \->  hex     rz-ax \-77
+  \-hex    \->  int     rz-ax 0xffffffb3
+  int     \->  bin     rz-ax b30
+  int     \->  ternary rz-ax t42
+  ternary \->  int     rz-ax 1010dt
+  bin     \->  int     rz-ax 1010d
+  float   \->  hex     rz-ax 3.33f
+  hex     \->  float   rz-ax Fx40551ed8
+  oct     \->  hex     rz-ax 35o
+  hex     \->  oct     rz-ax Ox12 (O is a letter)
+  bin     \->  hex     rz-ax 1100011b
+  hex     \->  bin     rz-ax Bx63
+  ternary \->  hex     rz-ax 212t
+  hex     \->  ternary z-ax Tx23
+  raw     \->  hex     rz-ax -S < /binfile
+  hex     \->  raw     rz-ax -s 414141
+.Pp
+With no arguments, rz-ax read values from stdin. You can pass one or more values
+as arguments.
+.Pp
+  $ rz-ax 33 0x41 0101b
+  0x21
+  65
+  0x5
+.Pp
+You can do 'unpack' hexpair encoded strings easily.
+.Pp
+  $ rz-ax \-s 41 42 43
+  ABC
+.Pp
+And it supports some math operations.
+.Pp
+  $ rz-ax
+  0x5*101b+5
+  30
+.Pp
+It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-sign(1)
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

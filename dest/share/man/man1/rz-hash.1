@@ -1,0 +1,97 @@
+.Dd Jan 24, 2024
+.Dt RZ_HASH 1
+.Sh NAME
+.Nm rz-hash
+.Nd block based hashing utility
+.Sh SYNOPSIS
+.Nm rz-hash
+.Op Fl vhBkjLq
+.Op Fl a Ar algorithm
+.Op Fl b Ar size
+.Op Fl c Ar hash
+.Op Fl D Ar algo
+.Op Fl E Ar algo
+.Op Fl s Ar string
+.Op Fl x Ar hexstr
+.Op Fl f Ar from
+.Op Fl t Ar to
+.Op Fl c Ar hash
+.Op [file] ...
+.Sh DESCRIPTION
+This program is part of the Rizin project.
+.Pp
+rz-hash allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+.Pp
+You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
+.Pp
+This command can be used to calculate hashes of a certain part of a file or a command line passed string.
+.Pp
+This is the command used by the 'ph' command of rizin.
+.Bl -tag -width Fl
+.It Fl v
+Show version information
+.It Fl h
+Show usage help message
+.It Fl 
+Input read from stdin instead of from a file
+.It Fl a Ar algo
+Hash algorithm to use; you can specify multiple ones by appending a comma (example: sha1,md4,md5,sha256)
+.It Fl B
+Output the calculated value for each block
+.It Fl b Ar size
+Set the block size
+.It Fl c Ar value
+Compare calculated value with a given one (hexadecimal)
+.It Fl e Ar endian
+Set the endianness (default: 'big'; accepted: 'big' or 'little')
+.It Fl D Ar algo
+Decrypt the given input; use -S to set the key and -I to set IV (if needed)
+.It Fl E Ar algo
+Encrypt the given input; use -S to set the key and -I to set IV (if needed)
+.It Fl f Ar from
+Start the calculation at the given offset
+.It Fl t Ar to
+Stop the calculation at the given offset
+.It Fl I Ar iv
+Set the initialization vector (IV)
+.It Fl i Ar times
+Repeat the calculation N times
+.It Fl j
+Output the result as a JSON structure
+.It Fl k
+Output the calculated value using openssh's randomkey algorithm
+.It Fl L
+List all algorithms
+.It Fl q
+Set quiet mode (use -qq to get only the calculated value)
+.It Fl S Ar seed
+Set the seed for -a; use '^' to append it before the input. Use '@' prefix to load it from a file and '-' to read it
+.It Fl K Ar key
+Set the HMAC key for -a and the key for -E/-D. Use '@' prefix to load it from a file and '-' to read it from stdin (you can combine them)
+.It Fl s Ar string
+Input read from a zero-terminated string instead of from a file
+.It Fl x Ar hex
+Input read from a hexadecimal value instead of from a file
+.Pp
+All the inputs (besides -s/-x/-c) can be hexadecimal or strings if 's:' prefix is specified.
+.El
+.Sh DIAGNOSTICS
+.Ex -std
+.Pp
+When -c is used, exit status 0 indicates a match between the expected and computed hashes
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

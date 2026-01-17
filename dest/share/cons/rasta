@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+ec comment green
+ec usrcmt yellow
+ec fname yellow
+ec fline green
+ec flag green
+ec label yellow
+ec flow green
+ec flow2 yellow
+ec floc green
+ec prompt green
+ec offset yellow
+ec input green
+ec other green
+ec b0x00 yellow
+ec b0x7f green
+ec b0xff red
+ec math yellow
+ec bin green
+ec btext red
+ec push yellow
+ec pop green
+ec jmp red
+ec cjmp red
+ec ujmp red
+ec call red
+ec ucall red
+ec nop red
+ec ret yellow
+ec trap green
+ec swi red
+ec cmp yellow
+ec reg green
+ec num red
+ec mov yellow
+ec crypto yellow
+ec args green
+ec help yellow
+ec input green
+ec trap red
+ec swi red
+ec creg green
+ec flag yellow
+ec linehl rgb:008
+ec graph.box yellow
+ec graph.box2 green
+ec graph.box3 red
+ec graph.box4 red
+ec graph.true green
+ec graph.false red
+ec graph.ujump green
+ec graph.current green
+ec graph.traced yellow
+
+ec func_var green
+ec func_var_type red
+ec func_var_addr yellow
+
+ec ai.read green
+ec ai.write green
+ec ai.exec yellow
+ec ai.seq red
+ec ai.ascii red
+
+ec widget_bg yellow black
+ec widget_sel black green

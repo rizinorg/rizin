@@ -1,0 +1,181 @@
+.Dd Jan 22, 2024
+.Dt RZ_ASM 1
+.Sh NAME
+.Nm rz-asm
+.Nd rizin assembler and disassembler tool
+.Sh SYNOPSIS
+.Nm rz-asm
+.Op Fl ABCdDeIEhjLpqrvxw
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl m Ar plugin
+.Op Fl c Ar CPU
+.Op Fl O Ar file
+.Op Fl o Ar addr
+.Op Fl @ Ar addr
+.Op Fl f Ar file
+.Op Fl F Ar in:out
+.Op Fl i Ar len
+.Op Fl k Ar kernel
+.Op Fl s Ar syntax
+.Op Fl l Ar len
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+This tool uses RzAsm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
+.Pp
+.Bl -tag -width Fl
+.It Fl a Ar arch
+Set architecture to assemble/disassemble (see -L)
+.It Fl A
+Show analysis information from given hexpairs
+.It Fl b Ar bits
+Set CPU register size (8, 16, 32, 64) (RZ_ASM_BITS)
+.It Fl B
+Binary input/output (-l is mandatory for binary input)
+.It Fl c Ar CPU
+Select specific CPU (depends on the arch)
+.It Fl C
+Output in C format
+.It Fl d, D
+Disassemble from hexpair bytes (-D show hexpairs)
+.It Fl e
+Use big endian instead of little endian
+.It Fl I
+Display lifted RzIL code (same input as in -d, IL is also validated)
+.It Fl E
+Display ESIL expression (same input as in -d)
+.It Fl f Ar file
+Read data from file
+.It Fl F Ar in:out
+Specify input and/or output filters (att2intel, x86.pseudo, ...)
+.It Fl h, hh
+Show usage help message, hh for long
+.It Fl i Ar len
+Ignore N bytes of the input buffer
+.It Fl j
+Output in JSON format
+.It Fl k Ar kernel
+Select operating system (linux, windows, darwin, ..)
+.It Fl l Ar len
+Input/Output length
+.It Fl L
+List asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL, I=RzIL)
+.It Fl m Ar plugin
+List supported CPUs for the chosen plugin
+.It Fl o, @ Ar addr
+Set start address for code (default 0)
+.It Fl O Ar file
+Output file name (rz-asm -Bf a.asm -O a)
+.It Fl p
+Run SPP over input for assembly
+.It Fl q
+Quiet mode
+.It Fl r
+Output in rizin commands
+.It Fl s Ar syntax
+Select syntax (intel, att)
+.It Fl v
+Show version information
+.It Fl x
+Use hex dwords instead of hex pairs when assembling
+.It Fl w
+Describe opcode
+.El
+.Sh Directives
+.Pp
+.Bl -tag -width
+.It Ic .intel_syntax
+Use Intel syntax rather than AT&T
+.It Ic .att_syntax
+Use AT&T syntax rather than Intel
+.It Ic .align Ar number
+Set the code or data alignment
+.It Ic .arch Ar name
+Set the code architecture
+.It Ic .arm
+Set the ARM mode (as opposed to Thumb) for ARM architecture
+.It Ic .ascii Ar string
+Define the ASCII string
+.It Ic .asciz Ar string
+Define the zero-ending ASCII string
+.It Ic .bits Ar number
+Define the code bitness
+.It Ic .big_endian
+Set the BE (big endian) byte order
+.It Ic .cpu Ar name
+Set the CPU for the chosen architecture
+.It Ic .data
+Mark the start of the data section
+.It Ic .endian Ar 1|0
+Set the endianness (the byte order) - 1 is BE, 0 is LE
+.It Ic .equ Ar name Ar value
+Define the constant
+.It Ic .fill Ar repeat,size,value
+Fill the data with the repeating value pattern
+.It Ic .hex Ar data
+Define the data in hexadecimal format
+.It Ic .incbin Ar filename
+Include binary file
+.It Ic .int16 Ar number
+Define 16-bit integer
+.It Ic .int32 Ar number
+Define 32-bit integer
+.It Ic .int64 Ar number
+Define 64-bit integer
+.It Ic .kernel Ar name
+Set the kernel for syscalls
+.It Ic .little_endian
+Set the LE (little endian) byte order
+.It Ic .org Ar value
+Set the value of the PC (Program Counter) register
+.It Ic .os Ar name
+Set the operating system for syscalls
+.It Ic .short Ar number
+Define 16-bit integer
+.It Ic .string Ar string
+Define the ASCII string
+.It Ic .text
+Mark the start of the text section
+.It Ic .thumb
+Set the Thumb mode (as opposed to ARM) for ARM architecture
+.El
+.Sh ENVIRONMENT
+.Pp
+RZ_ARCH:      e asm.arch - architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_ARCH:  architecture to assemble/disassemble (same as rz-asm -a)
+.Pp
+RZ_ASM_BITS:  cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_BITS:      e asm.bits - cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+.Pp
+RZ_DEBUG:     if defined, show error messages and crash signal\n"
+.Pp
+RZ_NOPLUGINS: do not load shared plugins (speedup loading)\n"
+
+
+.Sh EXAMPLES
+.Pp
+Assemble opcode:
+.Pp
+.Nm rz-asm Fl a Cm x86 Fl b Cm 32 Ar 'mov eax, 33'
+.Pp
+Disassemble opcode:
+.Pp
+.Nm rz-asm Fl d Cm 90
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

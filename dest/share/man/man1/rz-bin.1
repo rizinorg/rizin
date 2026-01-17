@@ -1,0 +1,202 @@
+.Dd Jan 24, 2024
+.Dt RZ_BIN 1
+.Sh NAME
+.Nm rz-bin
+.Nd Binary program info extractor
+.Sh SYNOPSIS
+.Nm rz-bin
+.Op Fl AcdeEghHiIjlLMqrRsSUvVxzZ
+.Op Fl @ Ar at
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl B Ar addr
+.Op Fl C Ar F:C:D
+.Op Fl f Ar str
+.Op Fl m Ar addr
+.Op Fl n Ar str
+.Op Fl N Ar m:M
+.Op Fl P Ar pdb  
+.Op Fl o Ar str
+.Op Fl O Ar str
+.Op Fl k Ar query
+.Op Fl D Ar lang symname
+.Ar file
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+rz-bin can analyze and extract useful information from binary executable files like ELF, PE, Mach-O, etc. It supports multiple architectures like x86, ARM, MIPS, PowerPC, etc.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl @ Ar addr
+Show section, symbol, or import at the given address
+.It Fl A
+List sub-binaries and their arch-bits pairs
+.It Fl a Ar arch
+Set architecture (x86, arm, .. or <arch>_<bits>)
+.It Fl b Ar bits
+Set bits (32, 64 ...)
+.It Fl B Ar addr
+Override base address (PIE bins)
+.It Fl c
+List classes
+.It Fl cc
+List classes in header format
+.It Fl C Ar fmt:C:D
+Create [elf, mach0, pe] with Code and Data hexpairs (see -a)
+.It Fl d
+Show debug/dwarf information
+.It Fl dd
+Load debug/dwarf information from debuginfod server
+.It Fl D Ar lang name
+Demangle symbol name (-D all for bin.demangle=true)
+.It Fl e
+Entrypoint
+.It Fl E
+Globally exportable symbols
+.It Fl f Ar str
+Select sub-bin named str
+.It Fl F Ar binfmt
+Force to use that bin plugin (ignore header check)
+.It Fl g
+Same as -SMZIHVResizcld -SS -SSS -ee (show all information)
+.It Fl G Ar addr
+Load address . offset to header
+.It Fl h
+Show usage help message
+.It Fl H
+Header fields
+.It Fl i
+Import (symbols imported from libraries)
+.It Fl I
+Binary info
+.It Fl j
+Output in JSON
+.It Fl k Ar sdb-query
+Run sdb query. for example: '*'
+.It Fl K Ar algo
+Calculate checksums (md5, sha1, ..)
+.It Fl l
+Linked libraries
+.It Fl L Ar plugin
+List supported bin plugins or plugin details
+.It Fl m Ar addr
+Show source line at addr
+.It Fl M
+Main (show address of main symbol)
+.It Fl n Ar str
+Show section, symbol, or import named str
+.It Fl N Ar min:max
+Force min:max number of chars per string (see -z and -zz)
+.It Fl o Ar str
+Output file/folder for write operations (out by default)
+.It Fl O Ar str
+Write/extract operations (-O help)
+.It Fl p
+Show physical addresses
+.It Fl P
+Show debug/pdb information
+.It Fl PP
+Download pdb file for binary
+.It Fl q
+Be quiet, just show fewer data
+.It Fl qq
+Show less info (no offset/size for -z for ex.)
+.It Fl Q
+Show load address used by dlopen (non-aslr libs)
+.It Fl r
+Show output in rizin format
+.It Fl R
+Show relocations
+.It Fl s
+Symbols
+.It Fl S
+Sections
+.It Fl SS
+Segments
+.It Fl SSS
+Sections mapping to segments
+.It Fl T
+Display file signature
+.It Fl u
+Unfiltered (no rename duplicated symbols/sections)
+.It Fl U
+Resources
+.It Fl v
+Show version information
+.It Fl V
+Show binary version information
+.It Fl w
+Display try/catch blocks
+.It Fl x
+Extract bins contained in file
+.It Fl Y
+Calculate all the possibles base address candidates of a firmware bin
+.It Fl z
+Show strings (from data section)
+.It Fl zz
+Show strings (from raw strings from bin)
+.It Fl zzz
+Dump raw strings to stdout (for huge files)
+.It Fl Z
+Guess size of binary program
+.El
+.Sh ENVIRONMENT
+.Pp
+RZ_BIN_CODESIGN_VERBOSE: make code signatures verbose
+.Pp
+RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
+.Pp
+RZ_BIN_DEMANGLE:         e bin.demangle - do not demangle symbols
+.Pp
+RZ_BIN_LANG:             e bin.lang - assume lang for demangling
+.Pp
+RZ_BIN_MAXSTRBUF:        e bin.maxstrbuf - specify maximum buffer size
+.Pp
+RZ_BIN_PDBSERVER:        e pdb.server - use alternative PDB server
+.Pp
+RZ_BIN_PREFIX:           e bin.prefix - prefix symbols/sections/relocs with a specific string
+.Pp
+RZ_BIN_STRFILTER:        e bin.str.filter - rizin -qc 'e bin.str.filter=??' -
+.Pp
+RZ_BIN_STRPURGE:         e bin.str.purge - try to purge false positives
+.Pp
+RZ_BIN_SYMSTORE:         e pdb.symstore - path to downstream symbol store
+.Pp
+RZ_CONFIG:               sdb config file
+.Pp
+RZ_NOPLUGINS:            do not load shared plugins (speedup loading)
+
+.Sh EXAMPLES
+.Pp
+List symbols of a program:
+.Pp
+.Nm rz-bin Fl s Ar a.out
+.Pp
+Get offset of symbol:
+.Pp
+.Nm rz-bin Fl n Cm _main Ar a.out
+.Pp
+Get entrypoint:
+.Pp
+.Nm rz-bin Fl e Ar a.out
+.Pp
+Load symbols and imports from rizin:
+.Pp
+.Nm rizin Fl n Ar /bin/ls
+.Pp
+[0x00000000]> .!rz-bin -prsi $FILE
+.Sh SEE ALSO
+.Pp
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rizin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-ax(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1)
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>
+.Pp
+byteninjaa0

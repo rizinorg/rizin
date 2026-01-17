@@ -1,0 +1,235 @@
+#ifndef RZ_ASSERT_H
+#define RZ_ASSERT_H
+
+#include "rz_log.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define RZ_STATIC_ASSERT(x) \
+	switch (0) { \
+	case 0: \
+	case (x):; \
+	}
+
+RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+
+#if defined(__GNUC__) && defined(__cplusplus)
+#define RZ_FUNCTION ((const char *)(__PRETTY_FUNCTION__))
+#elif defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define RZ_FUNCTION ((const char *)(__func__))
+#elif defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
+#define RZ_FUNCTION ((const char *)(__FUNCTION__))
+#else
+#warning Do not know how to get function name in this setup
+#define RZ_FUNCTION ((const char *)("???"))
+#endif
+
+#define rz_warn_if_fail(expr) \
+	do { \
+		if (!(expr)) { \
+			rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s runtime check failed: (%s)\n", \
+				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
+		} \
+	} while (0)
+
+#define rz_warn_if_reached() \
+	do { \
+		rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
+			__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : ""); \
+	} while (0)
+
+/*
+ * RZ_CHECKS_LEVEL determines the behaviour of the rz_return/goto/break_* set of functions.
+ *
+ * 0: completely disable every function and make them like no-operation
+ * 1: silently enable checks. Check expressions and do return, but do not log anything
+ * 2: enable checks and logging (DEFAULT)
+ * 3: transform them into real assertion
+ */
+#ifndef RZ_CHECKS_LEVEL
+#define RZ_CHECKS_LEVEL 2
+#endif
+
+#if RZ_CHECKS_LEVEL == 0
+
+#define rz_return_if_fail(expr) \
+	do { \
+		; \
+	} while (0)
+#define rz_return_val_if_fail(expr, val) \
+	do { \
+		; \
+	} while (0)
+#define rz_return_if_reached() \
+	do { \
+		return; \
+	} while (0)
+#define rz_return_val_if_reached(val) \
+	do { \
+		return (val); \
+	} while (0)
+
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		; \
+	} while (0)
+#define rz_goto_if_reached(where) \
+	do { \
+		goto where; \
+	} while (0)
+
+#define rz_break_if_fail(expr) \
+	do { \
+		; \
+	} while (0)
+#define rz_break_if_reached() \
+	{ \
+		break; \
+	}
+
+#elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
+
+#if RZ_CHECKS_LEVEL == 1
+#define H_LOG_(loglevel, fmt, ...)
+#else
+#define H_LOG_(loglevel, fmt, ...) rz_assert_log(loglevel, fmt, __VA_ARGS__)
+#endif
+
+/**
+ * rz_return_if_fail:
+ * @expr: the expression to check
+ *
+ * Verifies that the expression @expr, usually representing a precondition,
+ * evaluates to `true`. If the function returns a value, use
+ * rz_return_val_if_fail() instead.
+ *
+ * If @expr evaluates to %FALSE, the current function should be considered to
+ * have undefined behaviour (a programmer error). The only correct solution
+ * to such an error is to change the module that is calling the current
+ * function, so that it avoids this incorrect call.
+ *
+ * To make this undefined behaviour visible, if @expr evaluates to %FALSE,
+ * the result is usually that a critical message is logged and the current
+ * function returns.
+ *
+ */
+#define rz_return_if_fail(expr) \
+	do { \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting function\n", RZ_FUNCTION, #expr, __LINE__); \
+			return; \
+		} \
+	} while (0)
+
+#define rz_return_val_if_fail(expr, val) \
+	do { \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); returning %s\n", RZ_FUNCTION, #expr, __LINE__, #val); \
+			return (val); \
+		} \
+	} while (0)
+
+#define rz_return_if_reached() \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting function\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		return; \
+	} while (0)
+
+#define rz_return_val_if_reached(val) \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; returning %s\n", __FILE__, __LINE__, RZ_FUNCTION, #val); \
+		return (val); \
+	} while (0)
+
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); jumping to %s\n", RZ_FUNCTION, #expr, __LINE__, #where); \
+			goto where; \
+		} \
+	} while (0)
+
+#define rz_goto_if_reached(where) \
+	do { \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; jumping to %s\n", __FILE__, __LINE__, RZ_FUNCTION, #where); \
+		goto where; \
+	} while (0)
+
+#define rz_break_if_fail(expr) \
+	{ \
+		if (!(expr)) { \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting loop\n", RZ_FUNCTION, #expr, __LINE__); \
+			break; \
+		} \
+	}
+
+#define rz_break_if_reached() \
+	{ \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached; exiting loop\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		break; \
+	}
+
+#else // RZ_CHECKS_LEVEL
+
+#include <assert.h>
+
+#define rz_return_if_fail(expr) \
+	do { \
+		assert(expr); \
+		if (!(expr)) { \
+			return; \
+		} \
+	} while (0)
+#define rz_return_val_if_fail(expr, val) \
+	do { \
+		assert(expr); \
+		if (!(expr)) { \
+			return (val); \
+		} \
+	} while (0)
+#define rz_return_if_reached() \
+	do { \
+		assert(false); \
+		return; \
+	} while (0)
+#define rz_return_val_if_reached(val) \
+	do { \
+		assert(false); \
+		return (val); \
+	} while (0)
+
+#define rz_goto_if_fail(expr, where) \
+	do { \
+		assert(expr); \
+		if (!(expr)) { \
+			goto where; \
+		} \
+	} while (0)
+#define rz_goto_if_reached(where) \
+	do { \
+		assert(false); \
+		goto where; \
+	} while (0)
+
+#define rz_break_if_fail(expr) \
+	{ \
+		assert(expr); \
+		if (!(expr)) { \
+			break; \
+		} \
+	}
+#define rz_break_if_reached() \
+	{ \
+		assert(false); \
+		break; \
+	}
+
+#endif // RZ_CHECKS_LEVEL
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
