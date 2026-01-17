@@ -611,14 +611,12 @@ Ldj~{[0]}
 Ldj~{[1]}
 Ldj~{[2]}
 Ldj~{[3]}
-Ldj~{[4]}
-# Ldj~{[5]} - Native plugin. The arch field changes in each test environment and breaks it.
+# Ldj~{[4]} - Native plugin. The arch field changes in each test environment and breaks it.
+Ldj~{[5]}
 Ldj~{[6]}
-Ldj~{[7]}
 Ldt:name/ne/native:name/ne/winkd:name/ne/windbg:name/cols/selected/license/bits/arch
 EOF
 EXPECT=<<EOF
---- bf LGPL3
 --- bochs LGPL3
 --- dmp LGPL3
 --- gdb LGPL3
@@ -626,7 +624,6 @@ EXPECT=<<EOF
 dbg null MIT
 --- qnx LGPL3
 --- winkd LGPL3
-{"arch":"bf","name":"bf","bits":"32 64","license":"LGPL3","version":""}
 {"arch":"x86","name":"bochs","bits":"16 32 64","license":"LGPL3","version":""}
 {"arch":"x86,arm","name":"dmp","bits":"32 64","license":"LGPL3","version":""}
 {"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2,tricore","name":"gdb","bits":"16 32 64","license":"LGPL3","version":""}
@@ -635,7 +632,6 @@ dbg null MIT
 {"arch":"x86,arm","name":"qnx","bits":"32 ","license":"LGPL3","version":""}
 name  selected license bits     arch                                      
 --------------------------------------------------------------------------
-bf             LGPL3   32 64    bf
 bochs          LGPL3   16 32 64 x86
 dmp            LGPL3   32 64    x86,arm
 gdb            LGPL3   16 32 64 x86,arm,sh,mips,avr,lm32,v850,ba2,tricore

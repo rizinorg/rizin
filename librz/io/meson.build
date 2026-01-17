@@ -1,7 +1,6 @@
 io_plugins_list = [
   'ar',
   'fd',
-  'bfdbg',
   'bochs',
   'debug',
   'default',
@@ -59,7 +58,6 @@ rz_io_sources = [
   'serialize_io.c',
   'p/io_ar.c',
   'p/io_fd.c',
-  'p/io_bfdbg.c',
   'p/io_bochs.c',
   'p/io_debug.c',
   'p/io_dmp.c',
