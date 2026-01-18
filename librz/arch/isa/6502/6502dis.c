@@ -8,6 +8,7 @@
 #include <rz_lib.h>
 #include <string.h>
 #include <snes/snes.h>
+#include "6502dis.h"
 
 static struct {
 	ut8 op;
@@ -181,4 +182,13 @@ int disass_6502(ut64 pc, RzAsmOp *op, const ut8 *buf, ut64 len) {
 	}
 beach:
 	return snesDisass(1, 1, pc, op, buf, len);
+}
+
+_6502State *_6502_state_new() {
+	_6502State *state = RZ_NEW0(_6502State);
+	if (!state) {
+		RZ_LOG_ERROR("Could not allocate memory for _6502State!");
+		return NULL;
+	}
+	return state;
 }
