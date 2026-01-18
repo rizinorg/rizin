@@ -291,7 +291,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		io_request_q,
 		io_result_q,
 		is_running,
-		rz_vector_clone(entry_points));
+		rz_vector_clone(entry_points),
+		rz_bin_object_get_symbols(core->bin->cur->o));
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();
