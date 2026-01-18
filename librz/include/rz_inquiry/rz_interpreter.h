@@ -205,6 +205,7 @@ typedef struct {
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
+	const RzPVector *symbols; ///< Known symbols of a binary.
 	/**
 	 * \brief The entry points for the interpreters.
 	 * Each address has its lifted IL op in the il_queue at the same index.
@@ -238,7 +239,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
-	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points);
+	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
+	RZ_NONNULL const RzPVector /*<RzBinSymbol *>*/ *symbols);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points);
 

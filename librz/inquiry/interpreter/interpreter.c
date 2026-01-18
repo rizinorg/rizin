@@ -195,8 +195,9 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
-	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points) {
-	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points, NULL);
+	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
+	RZ_NONNULL const RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points && symbols, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
 	if (!set) {
@@ -211,6 +212,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
 	set->entry_points = entry_points;
+	set->symbols = symbols;
 	if (state->kinds != (plugin->supported_abstractions & state->kinds)) {
 		RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
 		rz_interpreter_set_free(set);
@@ -229,6 +231,49 @@ typedef struct {
 	ut64 addr;
 	ut64 in_state_hash;
 } SuccessorState;
+
+static bool choose_next_pc(RzInterpreterSet *iset,
+	RzInterpreterAbstrState *out_state,
+	ut64 out_hash,
+	RzVector *tmp_succ_addr,
+	RzVector *succ_states,
+	ut64 *shared_addr_loc,
+	void *plugin_data) {
+	// Debug printing whole state of VM.
+	//
+	// plugin->state_as_str(out_state, state_str, plugin_data);
+	// char *s = rz_strbuf_drain_nofree(state_str);
+	// RZ_LOG_DEBUG("%s", s);
+	// free(s);
+
+	bool has_succsessor = true;
+
+	// Determine successors and increase the reference counts for the current out state.
+	if (!iset->plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	// It is possible that the successor function doesn't add successors.
+	// E.g. because the PC is an abstract value.
+	// In this case the state counts as invalid.
+	has_succsessor = !rz_vector_empty(tmp_succ_addr);
+	// Request the successor effects over the queue.
+	while (!rz_vector_empty(tmp_succ_addr)) {
+		rz_vector_pop_front(tmp_succ_addr, shared_addr_loc);
+		if (*shared_addr_loc == UT64_MAX || *shared_addr_loc == 0) {
+			RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
+			// Obviously wrong address.
+			return false;
+		}
+		SuccessorState ss = { .addr = *shared_addr_loc, .in_state_hash = out_hash };
+		// The successors are pushed in the same order into the succ_states
+		// vector, as they are requested over the addr_queue.
+		rz_vector_push(succ_states, &ss);
+		rz_th_queue_push(iset->addr_queue, shared_addr_loc, true);
+	}
+	return has_succsessor;
+}
 
 /**
  * Main interpretation.
@@ -306,6 +351,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
+
+	// Shared memory passed via the addr_queue.
 	ut64 _addr = 0;
 	ut64 *addr = &_addr;
 
