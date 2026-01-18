@@ -37,8 +37,6 @@ RZ_API void rz_bp_traptrace_reset(RzBreakpoint *bp, int hard) {
 	rz_list_foreach (bp->traces, iter, trace) {
 		if (hard) {
 			rz_bp_traptrace_free(trace);
-			// XXX: This segfaults
-			// rz_list_delete (bp->traces, rz_list_iter_cur (iter));
 		} else {
 			memset(trace->bits, 0x00, trace->bitlen);
 		}

@@ -1128,7 +1128,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_REG_FILTER
             optional: true
       - name: drA
-        summary: Show values of default function drgument registers (A0, A1, A2, ...) with telescoping
+        summary: Show values of default function argument registers (A0, A1, A2, ...) with telescoping
         cname: debug_regs_args
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
         details: [] # Explicitly empty to not show parent ones

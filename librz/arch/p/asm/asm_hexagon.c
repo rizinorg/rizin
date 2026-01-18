@@ -179,7 +179,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	ut32 addr = (ut32)a->pc;
 	HexReversedOpcode rev = { .action = HEXAGON_DISAS, .ana_op = NULL, .asm_op = op, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = l };
 	hexagon_reverse_opcode(&rev, addr, a, NULL);
-	return HEX_INSN_SIZE;
+	return op->size;
 }
 
 RzAsmPlugin rz_asm_plugin_hexagon = {

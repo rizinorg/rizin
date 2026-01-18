@@ -5996,7 +5996,7 @@ clean_return:
 	return res;
 }
 
-RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode) {
+RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
@@ -6009,14 +6009,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		buf = malloc(l + 1);
 		rz_io_read_at_mapped(core->io, addr, buf, l);
 	}
-	PJ *pj = NULL;
-	if (mode == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return 0;
-		}
-		pj_a(pj);
-	}
 	rz_cons_break_push(NULL, NULL);
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
@@ -6028,79 +6020,25 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
-			switch (mode) {
-			case 'j':
-			case '=':
-				break;
-			case 'i':
-				rz_cons_printf("???\n");
-				break;
-			default:
-				rz_cons_printf("0x%08" PFMT64x " ???\n", ds->vat);
-				break;
-			}
+			RZ_LOG_ERROR("Failed to print disassembly due to decoding error at 0x%08" PFMT64x "\n", ds->vat);
 		} else {
 			count++;
-			switch (mode) {
-			case 'i':
-				rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop),
-					str, sizeof(str), core->print->big_endian);
-				if (scr_color) {
-					RzAnalysisOp aop = { 0 };
-					rz_analysis_op_init(&aop);
-					rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
-					RzStrBuf *colored_asm;
-					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
-					colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
-					rz_analysis_op_fini(&aop);
-					rz_asm_parse_param_free(param);
-					if (colored_asm) {
-						rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
-						rz_strbuf_free(colored_asm);
-					}
-				} else {
-					rz_cons_println(rz_asm_op_get_asm(&asmop));
+			rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, rz_asm_op_get_asm(&asmop), str, sizeof(str), core->print->big_endian);
+			if (scr_color) {
+				RzAnalysisOp aop = { 0 };
+				rz_analysis_op_init(&aop);
+				rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
+				RzStrBuf *colored_asm;
+				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+				colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
+				rz_analysis_op_fini(&aop);
+				rz_asm_parse_param_free(param);
+				if (colored_asm) {
+					rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
+					rz_strbuf_free(colored_asm);
 				}
-				break;
-			case '=':
-				if (i < 28) {
-					char *str = rz_str_newf("0x%08" PFMT64x " %60s  %s\n", ds->vat, "", rz_asm_op_get_asm(&asmop));
-					char *sp = strchr(str, ' ');
-					if (sp) {
-						char *end = sp + 60 + 1;
-						char *src = rz_asm_op_get_hex(&asmop);
-						char *dst = sp + 1 + (i * 2);
-						int len = strlen(src);
-						if (dst < end) {
-							if (dst + len >= end) {
-								len = end - dst;
-								dst[len] = '.';
-							}
-							memcpy(dst, src, len);
-						}
-						free(src);
-					}
-					rz_cons_strcat(str);
-					free(str);
-				}
-				break;
-			case 'j': {
-				char *op_hex = rz_asm_op_get_hex(&asmop);
-				pj_o(pj);
-				pj_kn(pj, "addr", addr + i);
-				pj_ks(pj, "bytes", op_hex);
-				pj_ks(pj, "inst", rz_asm_op_get_asm(&asmop));
-				pj_end(pj);
-				free(op_hex);
-				break;
-			}
-			default: {
-				char *op_hex = rz_asm_op_get_hex(&asmop);
-				rz_cons_printf("0x%08" PFMT64x " %20s  %s\n",
-					addr + i, op_hex,
-					rz_asm_op_get_asm(&asmop));
-				free(op_hex);
-			}
+			} else {
+				rz_cons_println(rz_asm_op_get_asm(&asmop));
 			}
 		}
 		rz_asm_op_fini(&asmop);
@@ -6108,11 +6046,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	rz_cons_break_pop();
 	if (buf != core->block) {
 		free(buf);
-	}
-	if (mode == 'j') {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 	}
 	ds_free(ds);
 	return count;

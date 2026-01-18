@@ -378,7 +378,7 @@ static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync syn
 		const char *color = mode == RZ_OUTPUT_MODE_JSON ? NULL : get_reg_color(core, reg, r);
 		char *namestr = rz_str_newf("%s%s%s", rz_str_get(color), r->name, color ? Color_RESET : "");
 		char *valuestr = rz_str_newf("%s0x%" PFMT64x "%s", rz_str_get(color), value, color ? Color_RESET : "");
-		char *rrstr = rz_core_analysis_hasrefs(core, value, true);
+		char *rrstr = rz_core_analysis_hasrefs(core, value, RZ_OUTPUT_MODE_STANDARD);
 		rz_table_add_rowf(t, "ssss", rz_str_get(get_reg_role_name(reg, r)), namestr, valuestr, rz_str_get(rrstr));
 		free(namestr);
 		free(valuestr);
@@ -467,7 +467,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 			if (use_colors) {
 				rz_cons_strcat(Color_RESET);
 			}
-			char *rrstr = rz_core_analysis_hasrefs(core, *addr, true);
+			char *rrstr = rz_core_analysis_hasrefs(core, *addr, RZ_OUTPUT_MODE_STANDARD);
 			if (rrstr && *rrstr && strchr(rrstr, 'R')) {
 				rz_cons_printf("    ;%s%s", rrstr, use_colors ? Color_RESET : "");
 			}

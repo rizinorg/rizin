@@ -2253,7 +2253,7 @@ static void var_show(
 		if (ctx->out->mode == RZ_OUTPUT_MODE_LONG && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF) {
 			rz_cons_printf("%sorigin=DWARF @ %s\n", ctx->color_reset, loc_string);
 		} else {
-			rz_cons_printf("@ %s\n", storage_string);
+			rz_cons_printf("@ %s%s\n", storage_string, ctx->color_reset);
 		}
 		break;
 	}
@@ -5485,6 +5485,7 @@ static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 			i += op.size - 1;
 		}
 	}
+	free(data);
 	return list;
 }
 
