@@ -1,0 +1,26 @@
+name: mandoc manpage lint
+
+on:
+  pull_request:
+    paths:
+      - 'binrz/man/**'
+  push:
+    paths:
+      - 'binrz/man/**'
+
+jobs:
+  mandoc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install mandoc
+        run: |
+          sudo apt update
+          sudo apt install -y mandoc
+
+      - name: Lint all man pages
+        run: |
+          mandoc -T lint binrz/man/*.1 binrz/man/*.7

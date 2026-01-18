@@ -1,143 +1,136 @@
-.Dd Dec 28, 2020
+.Dd January 22, 2024
 .Dt RZ_AX 1
+.Os
 .Sh NAME
 .Nm rz-ax
-.Nd rizin base converter
+.Nd rizin numeric base converter
 .Sh SYNOPSIS
 .Nm rz-ax
-.Op Fl ebBdDeEfFhiIklLosStuvwx
-.Op expr ...
+.Op Fl AabBcdDeEfFhiIjkKlmMnNopPrRsStTuUvVwWxXyYzZ
+.Op Ar expression ...
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This command allows you to convert values between positive and negative integer, float, octal, binary, ternary, and hexadecimal values.
+.Nm
+is a base conversion utility that can convert numbers between different
+representations such as decimal, hexadecimal, binary, octal, floating point,
+strings, and more.
+.Pp
+Multiple flags can be combined to perform chained conversions.
+If no flag is specified, the default output is hexadecimal.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a
-Show ASCII table
+Convert ASCII to hexadecimal
+.It Fl A
+Convert hexadecimal to ASCII
 .It Fl b
-Convert from binary to string (rz-ax -b 01000101 01110110)
+Convert binary to hexadecimal
 .It Fl B
-Convert from string to binary (rz-ax -B hello)
+Convert hexadecimal to binary
+.It Fl c
+Convert signed decimal to hexadecimal
+.It Fl C
+Convert hexadecimal to signed decimal
 .It Fl d
-Force output as integer (rz-ax -d 3 outputs 3 instead of 0x3)
+Convert decimal to hexadecimal
 .It Fl D
-Base64 decode
+Convert hexadecimal to decimal
 .It Fl e
-Swap endianness (rz-ax -e 0x33)
+Convert big endian to little endian
 .It Fl E
-Base64 encode
+Convert little endian to big endian
 .It Fl f
-Floating point arithmetic (rz-ax -f 6.3+2.1)
+Convert float to hexadecimal
 .It Fl F
-Read C strings from stdin and output in hexpairs. Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
+Convert hexadecimal to float
 .It Fl h
-Show usage help message
+Show help message
 .It Fl i
-Dump stdin to C array in stdout (rz-ax -i < bytes)
+Convert IP address to hexadecimal
 .It Fl I
-Convert LONG to/from IP ADDRESS (rz-ax -I 3530468537)
+Convert hexadecimal to IP address
+.It Fl j
+Output in JSON format
 .It Fl k
-Keep the same base as the input data (rz-ax -k 33+3 -> 36)
+Convert hexadecimal to decimal with signed interpretation
+.It Fl K
+Convert decimal to hexadecimal with signed interpretation
 .It Fl l
-Append newline to the decoded output
-.It Fl L
-Convert binary to hexadecimal (rz-ax -L 111111111 outputs 0x1ff)
-.It Fl n
-Show hexpairs from integer value (rz-ax -n 0x1234 # 34120000)
-.It Fl N
-Show hex C string from integer value (rz-ax -N 0x1234 # \x34\x12\x00\x00)
-.It Fl o
-Convert from octal string to char (rz-ax -o \162 \172 # rz)
-.It Fl r
-Rz style output (rz-ax -r 0x1234)
-.It Fl s
-Convert from hex string to character (rz-ax -s 43 4a 50)
-.It Fl S
-Convert from character to hex string (rz-ax -S < /bin/ls > ls.hex)
-.It Fl t
-Convert Unix timestamp to string (rz-ax -t 1234567890)
+Convert string length
 .It Fl m
-Convert MS-DOS timestamp to string (rz-ax -m 0x12345678)
-.It Fl W
-Convert Win32 timestamp to string (rz-ax -W 1234567890)
+Convert memory size (K, M, G, T suffixes)
+.It Fl M
+Convert hexadecimal to memory size
+.It Fl n
+Convert decimal to octal
+.It Fl N
+Convert octal to decimal
+.It Fl o
+Convert octal to hexadecimal
+.It Fl O
+Convert hexadecimal to octal
+.It Fl p
+Convert physical address to hexadecimal
+.It Fl P
+Convert hexadecimal to physical address
+.It Fl r
+Swap byte order (reverse)
+.It Fl R
+Rotate bits right
+.It Fl s
+Convert string to hexadecimal
+.It Fl S
+Convert hexadecimal to string
+.It Fl t
+Convert time to hexadecimal
+.It Fl T
+Convert hexadecimal to time
 .It Fl u
-Convert given value to human readable units format (rz-ax -u 389289238 # 317.0M)
+Convert unsigned decimal to hexadecimal
+.It Fl U
+Convert hexadecimal to unsigned decimal
 .It Fl v
 Show version information
+.It Fl V
+Verbose mode
 .It Fl w
-Convert signed word (rz-ax -w 16 0xffff)
+Convert wide string to hexadecimal
+.It Fl W
+Convert hexadecimal to wide string
 .It Fl x
-Convert a string into a hash (rz-ax -x linux osx)
-.It Fl p
-Show position of set bits in the binary representation (rz-ax -p 0xb3)
+Force hexadecimal output
+.It Fl X
+Force uppercase hexadecimal output
+.It Fl y
+Convert Base64 to hexadecimal
+.It Fl Y
+Convert hexadecimal to Base64
+.It Fl z
+Pad output with zeroes
+.It Fl Z
+Strip leading zeroes
 .El
-.Sh USAGE
+.Sh EXAMPLES
+Convert decimal to hexadecimal:
 .Pp
-Force output mode (numeric base)
+.Nm rz-ax Fl d Cm 1234
 .Pp
-  =f    floating point
-  =2    binary
-  =3    ternary
-  =8    octal
-  =10   decimal
-  =16   hexadecimal
+Convert hexadecimal to ASCII:
 .Pp
-Available variable types are:
+.Nm rz-ax Fl A Cm 68656c6c6f
 .Pp
-  int     \->  hex     rz-ax 10
-  hex     \->  int     rz-ax 0xa
-  \-int    \->  hex     rz-ax \-77
-  \-hex    \->  int     rz-ax 0xffffffb3
-  int     \->  bin     rz-ax b30
-  int     \->  ternary rz-ax t42
-  ternary \->  int     rz-ax 1010dt
-  bin     \->  int     rz-ax 1010d
-  float   \->  hex     rz-ax 3.33f
-  hex     \->  float   rz-ax Fx40551ed8
-  oct     \->  hex     rz-ax 35o
-  hex     \->  oct     rz-ax Ox12 (O is a letter)
-  bin     \->  hex     rz-ax 1100011b
-  hex     \->  bin     rz-ax Bx63
-  ternary \->  hex     rz-ax 212t
-  hex     \->  ternary z-ax Tx23
-  raw     \->  hex     rz-ax -S < /binfile
-  hex     \->  raw     rz-ax -s 414141
+Reverse endianness:
 .Pp
-With no arguments, rz-ax read values from stdin. You can pass one or more values
-as arguments.
-.Pp
-  $ rz-ax 33 0x41 0101b
-  0x21
-  65
-  0x5
-.Pp
-You can do 'unpack' hexpair encoded strings easily.
-.Pp
-  $ rz-ax \-s 41 42 43
-  ABC
-.Pp
-And it supports some math operations.
-.Pp
-  $ rz-ax
-  0x5*101b+5
-  30
-.Pp
-It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
-.Pp
+.Nm rz-ax Fl r Cm 0x12345678
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-sign(1)
+.Xr rz-asm 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-run 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
-.Pp
-byteninjaa0
+.An pancake
+.Aq Mt pancake@nopcode.org
