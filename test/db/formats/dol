@@ -11,3 +11,125 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=DOL: sqrxz4 - architecture detection
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~arch
+EXPECT=<<EOF
+arch     ppc
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - endianness
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~endian
+EXPECT=<<EOF
+endian   BE
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - bits
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~bits
+EXPECT=<<EOF
+bits     32
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - machine
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~machine
+EXPECT=<<EOF
+machine  Nintendo Wii
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - os
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~^os
+EXPECT=<<EOF
+os       wii-ios
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - entry point
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=ie~program[0]
+EXPECT=<<EOF
+0x80003100
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - sections count
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~?
+EXPECT=<<EOF
+5
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - text section
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~text_0
+EXPECT=<<EOF
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - data section
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~data_0
+EXPECT=<<EOF
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - bss section
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~bss
+EXPECT=<<EOF
+0x00000000 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - text section permissions
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~text_0~r-x
+EXPECT=<<EOF
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - data section permissions
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~data_0~r--
+EXPECT=<<EOF
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - bss section permissions
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~bss~rw-
+EXPECT=<<EOF
+0x00000000 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - disassembly at entry
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=pd 1 @ entry0
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.text_0:
+        ,=< 0x80003100      b     0x80003120                           ; [00] -r-x section size 842080 named text_0
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - base address
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI~baddr
+EXPECT=<<EOF
+baddr    0x80b00000
+EOF
+RUN

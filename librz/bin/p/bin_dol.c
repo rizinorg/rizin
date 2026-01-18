@@ -23,22 +23,19 @@
 
 #define N_TEXT 7
 #define N_DATA 11
+#define DOL_HDR_SIZE 0x100
 
-RZ_PACKED(
-	typedef struct {
-		ut32 text_paddr[N_TEXT];
-		ut32 data_paddr[N_DATA];
-		ut32 text_vaddr[N_TEXT];
-		ut32 data_vaddr[N_DATA];
-		ut32 text_size[N_TEXT];
-		ut32 data_size[N_DATA];
-		ut32 bss_addr;
-		ut32 bss_size;
-		ut32 entrypoint;
-		ut32 padding[10];
-		// 0x100 -- start of data section
-	})
-DolHeader;
+typedef struct {
+	ut32 text_paddr[N_TEXT];
+	ut32 data_paddr[N_DATA];
+	ut32 text_vaddr[N_TEXT];
+	ut32 data_vaddr[N_DATA];
+	ut32 text_size[N_TEXT];
+	ut32 data_size[N_DATA];
+	ut32 bss_addr;
+	ut32 bss_size;
+	ut32 entrypoint;
+} DolHeader;
 
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[6];
@@ -54,8 +51,30 @@ static bool check_buffer(RzBuffer *buf) {
 	return false;
 }
 
+static bool read_u32_array(RzBuffer *buf, ut64 *offset, ut32 *arr, size_t count) {
+	for (size_t i = 0; i < count; i++) {
+		if (!rz_buf_read_be32_offset(buf, offset, &arr[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool dol_parse_header(RzBuffer *buf, DolHeader *dol) {
+	ut64 off = 0;
+	return read_u32_array(buf, &off, dol->text_paddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_paddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_vaddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_vaddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_size, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_size, N_DATA) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_addr) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_size) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->entrypoint);
+}
+
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	if (rz_buf_size(buf) < sizeof(DolHeader)) {
+	if (rz_buf_size(buf) < DOL_HDR_SIZE) {
 		return false;
 	}
 	DolHeader *dol = RZ_NEW0(DolHeader);
@@ -72,7 +91,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		goto lowername_err;
 	}
 	free(lowername);
-	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
+
+	if (!dol_parse_header(buf, dol)) {
+		goto dol_err;
+	}
+
 	obj->bin_obj = dol;
 	return true;
 
