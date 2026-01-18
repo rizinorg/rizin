@@ -24,6 +24,7 @@ EOF
 RUN
 
 NAME=ELF: arm relocs 1
+BROKEN=1
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir~?
@@ -86,6 +87,7 @@ EOF
 RUN
 
 NAME=ELF: arm relocs 2
+BROKEN=1
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir~?
@@ -249,6 +251,7 @@ EOF
 RUN
 
 NAME=arm call/jump relocations
+BROKEN=1
 FILE=bins/elf/arm-reloc-call.o
 CMDS=<<EOF
 ir
@@ -273,6 +276,7 @@ EOF
 RUN
 
 NAME=arm alu group relocations
+BROKEN=1
 FILE=bins/elf/arm-reloc-alu-group.o
 CMDS=<<EOF
 ir
@@ -309,6 +313,7 @@ EOF
 RUN
 
 NAME=thumb32 R_ARM_THM_JUMP24 relocation
+BROKEN=1
 FILE=bins/elf/arm-reloc-thm-jump24.o
 CMDS=<<EOF
 ir

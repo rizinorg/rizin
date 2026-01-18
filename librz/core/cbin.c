@@ -2243,20 +2243,20 @@ RZ_API bool rz_core_bin_main_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 }
 
 typedef struct {
-    const char *suffix;
-    bool needs_symbol;
+	const char *suffix;
+	bool needs_symbol;
 } RzRelocBaseFmt;
 
 static const RzRelocBaseFmt reloc_base_fmt[] = {
-    [RZ_RELOC_BASE_SYMBOL] = { "", true },
-    [RZ_RELOC_BASE_GOT_OFFSET] = { "G", true },
-    [RZ_RELOC_BASE_GOT] = { "GOT", false },
-    [RZ_RELOC_BASE_BASE] = { "BASE", false },
-    [RZ_RELOC_BASE_PLT_SYMBOL] = { "PLT", true },
-    [RZ_RELOC_BASE_SYMBOL_SIZE] = { "Z", true },
+	[RZ_RELOC_BASE_SYMBOL] = { "", true },
+	[RZ_RELOC_BASE_GOT_SYMBOL] = { "@got", true },
+	[RZ_RELOC_BASE_GOT] = { "GOT", false },
+	[RZ_RELOC_BASE_BASE] = { "BASE", false },
+	[RZ_RELOC_BASE_PLT_SYMBOL] = { "@plt", true },
+	[RZ_RELOC_BASE_SYMBOL_SIZE] = { "Z", true },
 };
 
-static void append_reloc_base_name(RzStrBuf *buf, const RzBinReloc *reloc) {
+static void append_reloc_base_name(RzStrBuf *buf, const RzBinReloc *reloc, char *relname) {
 	RzRelocBase base = reloc->reloc_base;
 
 	if (base < 0 || base >= RZ_ARRAY_SIZE(reloc_base_fmt)) {
@@ -2266,14 +2266,12 @@ static void append_reloc_base_name(RzStrBuf *buf, const RzBinReloc *reloc) {
 	const RzRelocBaseFmt *fmt = &reloc_base_fmt[base];
 
 	if (fmt->needs_symbol) {
-		if (reloc->symbol && reloc->symbol->name) {
-			if (fmt->suffix && !strcmp(fmt->suffix, "sizeof")) {
-				rz_strbuf_appendf(buf, "sizeof(%s)", reloc->symbol->name);
-			} else {
-				rz_strbuf_append(buf, reloc->symbol->name);
-				if (fmt->suffix) {
-					rz_strbuf_append(buf, fmt->suffix);
-				}
+		if (base == RZ_RELOC_BASE_SYMBOL_SIZE) {
+			rz_strbuf_appendf(buf, "sizeof(%s)", relname);
+		} else {
+			rz_strbuf_append(buf, relname);
+			if (fmt->suffix) {
+				rz_strbuf_append(buf, fmt->suffix);
 			}
 		}
 	} else {
@@ -2342,10 +2340,11 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 
 			break;
 		case RZ_OUTPUT_MODE_TABLE: {
-			RzStrBuf *buf = rz_strbuf_new(relname);
-			append_reloc_base_name(buf, reloc);
+			RzStrBuf *buf = rz_strbuf_new(NULL);
+			append_reloc_base_name(buf, reloc, relname);
 			if (reloc->addend) {
-				if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
+				// if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
+				if (!rz_strbuf_is_empty(buf) && reloc->addend > 0) {
 					rz_strbuf_append(buf, " +");
 				}
 				if (reloc->addend < 0) {

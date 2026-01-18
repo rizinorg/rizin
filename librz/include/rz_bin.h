@@ -726,13 +726,15 @@ typedef struct rz_bin_import_t {
 } RzBinImport;
 
 typedef enum rz_bin_reloc_base {
-	RZ_RELOC_BASE_UNKNOWN = -1,
-	RZ_RELOC_BASE_SYMBOL = 0, // S
-	RZ_RELOC_BASE_GOT_OFFSET, // G
-	RZ_RELOC_BASE_GOT, // GOT
-	RZ_RELOC_BASE_BASE, // B
-	RZ_RELOC_BASE_PLT_SYMBOL, // L
-	RZ_RELOC_BASE_SYMBOL_SIZE, // Z
+	RZ_RELOC_BASE_UNKNOWN = 0,
+	RZ_RELOC_BASE_SYMBOL, // S
+	RZ_RELOC_BASE_GOT_SYMBOL, ///< GOT(S): Address of GOT entry for the symbol
+	RZ_RELOC_BASE_GOT, // GOT : Address of Global Offset Table
+	RZ_RELOC_BASE_BASE, // Base address
+	RZ_RELOC_BASE_PLT_SYMBOL, // L(S): Address of PLT entry for the symbol
+	RZ_RELOC_BASE_SYMBOL_SIZE, // Z(S):  Size of the symbol
+	// max value
+	RZ_RELOC_BASE_ENUM_SIZE
 } RzRelocBase;
 
 typedef struct rz_bin_reloc_t {
@@ -757,7 +759,7 @@ typedef struct rz_bin_reloc_t {
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
-	RzRelocBase reloc_base;
+	RzRelocBase reloc_base; ///< Semantic Base for the reloc.
 } RzBinReloc;
 
 RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
