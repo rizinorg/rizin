@@ -15,12 +15,14 @@ static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 		RzListIter *ite = rz_list_iterator(exp); \
 		int diff = 0; \
 		while (ita && ite) { \
-			int a = (int)(size_t)rz_list_iter_get(ita); \
-			int e = (int)(size_t)rz_list_iter_get(ite); \
+			int a = (int)(size_t)rz_list_get(ita); \
+			int e = (int)(size_t)rz_list_get(ite); \
 			if (a != e) { \
 				eprintf("[-][%s] test failed (actual: %d; expected: %d)\n", descr, a, e); \
 				diff = 1; \
 			} \
+			ita = rz_list_next(ita); \
+			ite = rz_list_next(ite); \
 		} \
 		mu_assert_false(ita || ite || diff, "(one list shorter or different)"); \
 	} while (0)
