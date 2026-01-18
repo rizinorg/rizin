@@ -519,6 +519,8 @@ static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_attach_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
@@ -10829,7 +10831,7 @@ static const RzCmdDescHelp dmx_help = {
 };
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
 	{
-		.name = "arena_type",
+		.name = "arena_addr",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -10844,7 +10846,7 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
 
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
 	{
-		.name = "arena_type",
+		.name = "arena_addr|bin_info_addr",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -10853,7 +10855,7 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
-	.summary = "Show all arenas created, or print arena_type structure for given arena.",
+	.summary = "Show bin info for allocations.",
 	.args = cmd_debug_heap_jemalloc_b_args,
 };
 
@@ -10867,8 +10869,37 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
-	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.",
+	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instance (jemalloc 4.5.0 only).",
 	.args = cmd_debug_heap_jemalloc_c_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
+	{
+		.name = "malloc_addr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
+	.summary = "List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_e_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
+	{
+		.name = "extent_addr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
+	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_ei_args,
 };
 
 static const RzCmdDescHelp dp_help = {
@@ -23400,6 +23431,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxe", rz_cmd_debug_heap_jemalloc_e_handler, &cmd_debug_heap_jemalloc_e_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_e_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
 	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
 	rz_warn_if_fail(dp_cd);

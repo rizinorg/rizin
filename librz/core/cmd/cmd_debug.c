@@ -1048,6 +1048,16 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, 
 	return call_map_jemalloc(core, 'c', argv[1]);
 }
 
+// "dmxe" - Find extent for malloc address
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'e', argc == 1 ? "" : argv[1]);
+}
+
+// "dmxei" - Display extent info
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_ei_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'i', argv[1]);
+}
+
 static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;

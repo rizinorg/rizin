@@ -30,12 +30,18 @@
  */
 #undef GH_ALIGN
 #ifdef GH_IS_64
-#define GH_ALIGN __attribute__((aligned(8)))
+#define GH_ALIGN RZ_ALIGNED(8)
 #else
-#define GH_ALIGN __attribute__((aligned(4)))
+#define GH_ALIGN RZ_ALIGNED(4)
 #endif
 
 /* Queue/list helper macros - pointers become GHT */
+#undef RZ_JM_QL_HEAD
+#undef RZ_JM_QR
+#undef RZ_JM_RB_TREE
+#undef RZ_JM_PH
+#undef RZ_JM_QL_ELM
+#undef RZ_JM_RB_NODE
 #define RZ_JM_QL_HEAD(a_type) struct GH_ALIGN { GHT qlh_first; }
 #define RZ_JM_QR(a_type)      struct GH_ALIGN { GHT qre_next; GHT qre_prev; }
 #define RZ_JM_RB_TREE(a_type) struct GH_ALIGN { GHT rbt_root; }
@@ -44,8 +50,8 @@
 #define RZ_JM_RB_NODE(a_type) struct GH_ALIGN { GHT rbn_left; GHT rbn_right; }
 
 /* only define once */
-#ifndef RZ_JM_DEFINE_ONLY_ONCE
-#define RZ_JM_DEFINE_ONLY_ONCE
+#ifndef RZ_JM_DEFINE_ONLY_ONCE_450
+#define RZ_JM_DEFINE_ONLY_ONCE_450
 typedef enum {
 	dss_prec_disabled  = 0,
 	dss_prec_primary   = 1,
@@ -59,35 +65,33 @@ typedef enum {
  * Note: We use __attribute__((aligned(N))) because ut64 only has 4-byte
  * alignment on 32-bit hosts, so we can't rely on natural alignment.
  */
-typedef struct __attribute__((aligned(4))) { ut8 data[44]; } malloc_mutex_t_32;
-typedef struct __attribute__((aligned(8))) { ut8 data[80]; } malloc_mutex_t_64;
-typedef struct __attribute__((aligned(4))) { ut8 data[8]; } nstime_t_32;
-typedef struct __attribute__((aligned(8))) { ut8 data[8]; } nstime_t_64;
-typedef struct __attribute__((aligned(4))) { ut8 data[112]; } prof_tctx_t_32;
-typedef struct __attribute__((aligned(8))) { ut8 data[128]; } prof_tctx_t_64;
-typedef struct __attribute__((aligned(4))) { ut8 data[96]; } arena_stats_t_32;
-typedef struct __attribute__((aligned(8))) { ut8 data[128]; } arena_stats_t_64;
-typedef struct __attribute__((aligned(4))) { ut8 data[116]; } arena_bin_t_32;
-typedef struct __attribute__((aligned(8))) { ut8 data[168]; } arena_bin_t_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[44]; } malloc_mutex_t_450_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[80]; } malloc_mutex_t_450_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[8]; } nstime_t_450_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[8]; } nstime_t_450_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[112]; } prof_tctx_t_450_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[128]; } prof_tctx_t_450_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[96]; } arena_stats_t_450_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[128]; } arena_stats_t_450_64;
+typedef struct RZ_ALIGNED(4) { ut8 data[116]; } arena_bin_t_450_32;
+typedef struct RZ_ALIGNED(8) { ut8 data[168]; } arena_bin_t_450_64;
 #endif
 
-typedef struct GH(arena_runs_dirty_link_s) GH(arena_runs_dirty_link_t);
-typedef struct GH(arena_bin_info_s) GH(arena_bin_info_t);
-typedef struct GH(arena_decay_s) GH(arena_decay_t);
-typedef struct GH(arena_s) GH(arena_t);
-typedef struct GH(extent_node_s) GH(extent_node_t);
-typedef RZ_JM_RB_TREE(extent_node_t) GH(extent_tree_t);
-typedef struct GH(bitmap_info_s) GH(bitmap_info_t);
-typedef struct GH(bitmap_level_s) GH(bitmap_level_t);
+typedef struct GH(arena_runs_dirty_link_s_450) GH(arena_runs_dirty_link_t_450);
+typedef struct GH(arena_bin_info_s_450) GH(arena_bin_info_t_450);
+typedef struct GH(arena_decay_s_450) GH(arena_decay_t_450);
+typedef struct GH(arena_s_450) GH(arena_t_450);
+typedef struct GH(extent_node_s_450) GH(extent_node_t_450);
+typedef RZ_JM_RB_TREE(extent_node_t_450) GH(extent_tree_t_450);
+typedef struct GH(bitmap_info_s_450) GH(bitmap_info_t_450);
+typedef struct GH(bitmap_level_s_450) GH(bitmap_level_t_450);
 
-#undef arena_t
-#undef extent_node_t
-#undef arena_stats_t
-#undef arena_bin_info_t
-#define arena_t GH(arena_t)
-#define extent_node_t GH(extent_node_t)
-#define arena_stats_t GH(arena_stats_t)
-#define arena_bin_info_t GH(arena_bin_info_t)
+#undef arena_t_450
+#undef extent_node_t_450
+#undef arena_bin_info_t_450
+#define arena_t_450 GH(arena_t_450)
+#define extent_node_t_450 GH(extent_node_t_450)
+#define arena_bin_info_t_450 GH(arena_bin_info_t_450)
 
 /* chunk_hooks_t 
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/jemalloc_typedefs.h.in
@@ -100,20 +104,20 @@ typedef struct GH_ALIGN {
 	GHT purge;
 	GHT split;
 	GHT merge;
-} GH(chunk_hooks_t);
+} GH(chunk_hooks_t_450);
 
 
-/* arena_runs_dirty_link_t
+/* arena_runs_dirty_link_t_450
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-struct GH_ALIGN GH(arena_runs_dirty_link_s) {
+struct GH_ALIGN GH(arena_runs_dirty_link_s_450) {
 	RZ_JM_QR(void) rd_link;
 };
 
-/* extent_node_t - chunk/extent tracking 
+/* extent_node_t_450 - chunk/extent tracking
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/extent.h
  */
-struct GH_ALIGN GH(extent_node_s) {
+struct GH_ALIGN GH(extent_node_s_450) {
 	GHT en_arena;
 	GHT en_addr;
 	GHT en_size;
@@ -122,108 +126,108 @@ struct GH_ALIGN GH(extent_node_s) {
 	bool en_committed;
 	bool en_achunk;
 	GHT en_prof_tctx;
-	GH(arena_runs_dirty_link_t)	rd;
-	RZ_JM_QR(GH(extent_node_t))	cc_link;
+	GH(arena_runs_dirty_link_t_450)	rd;
+	RZ_JM_QR(GH(extent_node_t_450))	cc_link;
 	union {
-		RZ_JM_RB_NODE(GH(extent_node_t))	szsnad_link;
-		RZ_JM_QL_ELM(GH(extent_node_t))	ql_link;
+		RZ_JM_RB_NODE(GH(extent_node_t_450))	szsnad_link;
+		RZ_JM_QL_ELM(GH(extent_node_t_450))	ql_link;
 	};
-	RZ_JM_RB_NODE(GH(extent_node_t))	ad_link;
+	RZ_JM_RB_NODE(GH(extent_node_t_450))	ad_link;
 };
 
 
-/* arena_decay_t
+/* arena_decay_t_450
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-struct GH_ALIGN GH(arena_decay_s) {
+struct GH_ALIGN GH(arena_decay_s_450) {
 	GHST time;
-	GH(nstime_t) interval;
-	GH(nstime_t) epoch;
+	GH(nstime_t_450) interval;
+	GH(nstime_t_450) epoch;
 	ut64 jitter_state;
-	GH(nstime_t) deadline;
+	GH(nstime_t_450) deadline;
 	GHT ndirty;
 	GHT backlog[SMOOTHSTEP_NSTEPS];
 };
 
 
-/* arena_run_heap_t - pairing heap of runs
+/* arena_run_heap_t_450 - pairing heap of runs
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-typedef RZ_JM_PH(void) GH(arena_run_heap_t);
+typedef RZ_JM_PH(void) GH(arena_run_heap_t_450);
 
 
-/* arena_t - main arena structure
+/* arena_t_450 - main arena structure
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-struct GH_ALIGN GH(arena_s) {
+struct GH_ALIGN GH(arena_s_450) {
 	unsigned ind;
 	unsigned nthreads[2];
-	GH(malloc_mutex_t) lock;
-	GH(arena_stats_t) stats;
+	GH(malloc_mutex_t_450) lock;
+	GH(arena_stats_t_450) stats;
 	RZ_JM_QL_HEAD(void) tcache_ql;
 	ut64 prof_accumbytes;
 	GHT offset_state;
 	dss_prec_t dss_prec;
-	RZ_JM_QL_HEAD(GH(extent_node_t)) achunks;
+	RZ_JM_QL_HEAD(GH(extent_node_t_450)) achunks;
 	GHT extent_sn_next;
 	GHT spare;
 	GHST lg_dirty_mult;
 	bool purging;
 	GHT nactive;
 	GHT ndirty;
-	GH(arena_runs_dirty_link_t) runs_dirty;
-	GH(extent_node_t) chunks_cache;
-	GH(arena_decay_t) decay;
-	RZ_JM_QL_HEAD(GH(extent_node_t)) huge;
-	GH(malloc_mutex_t) huge_mtx;
-	GH(extent_tree_t) chunks_szsnad_cached;
-	GH(extent_tree_t) chunks_ad_cached;
-	GH(extent_tree_t) chunks_szsnad_retained;
-	GH(extent_tree_t) chunks_ad_retained;
-	GH(malloc_mutex_t) chunks_mtx;
-	RZ_JM_QL_HEAD(GH(extent_node_t)) node_cache;
-	GH(malloc_mutex_t) node_cache_mtx;
-	GH(chunk_hooks_t) chunk_hooks;
-	GH(arena_bin_t) bins[JM_NBINS];
-	GH(arena_run_heap_t) runs_avail[GH(NPSIZES)];
+	GH(arena_runs_dirty_link_t_450) runs_dirty;
+	GH(extent_node_t_450) chunks_cache;
+	GH(arena_decay_t_450) decay;
+	RZ_JM_QL_HEAD(GH(extent_node_t_450)) huge;
+	GH(malloc_mutex_t_450) huge_mtx;
+	GH(extent_tree_t_450) chunks_szsnad_cached;
+	GH(extent_tree_t_450) chunks_ad_cached;
+	GH(extent_tree_t_450) chunks_szsnad_retained;
+	GH(extent_tree_t_450) chunks_ad_retained;
+	GH(malloc_mutex_t_450) chunks_mtx;
+	RZ_JM_QL_HEAD(GH(extent_node_t_450)) node_cache;
+	GH(malloc_mutex_t_450) node_cache_mtx;
+	GH(chunk_hooks_t_450) chunk_hooks;
+	GH(arena_bin_t_450) bins[JM_NBINS];
+	GH(arena_run_heap_t_450) runs_avail[GH(NPSIZES)];
 };
 
 
-/* bitmap_level_t
+/* bitmap_level_t_450
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
  */
-struct GH_ALIGN GH(bitmap_level_s) {
+struct GH_ALIGN GH(bitmap_level_s_450) {
 	GHT group_offset;
 };
 
-/* bitmap_info_t
+/* bitmap_info_t_450
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/bitmap.h
  */
 #ifndef GH_IS_64
 /* 32-bit uses USE_TREE */
-struct GH_ALIGN GH(bitmap_info_s) {
+struct GH_ALIGN GH(bitmap_info_s_450) {
 	GHT nbits;
 	unsigned nlevels;
-	GH(bitmap_level_t) levels[BITMAP_MAX_LEVELS+1];
+	GH(bitmap_level_t_450) levels[BITMAP_MAX_LEVELS+1];
 };
 #else
 /* 64-bit does not use USE_TREE */
-struct GH_ALIGN GH(bitmap_info_s) {
+struct GH_ALIGN GH(bitmap_info_s_450) {
 	GHT nbits;
 	GHT ngroups;
 };
 #endif
 
-/* arena_bin_info_t
+/* arena_bin_info_t_450
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/arena.h
  */
-struct GH_ALIGN GH(arena_bin_info_s) {
+struct GH_ALIGN GH(arena_bin_info_s_450) {
 	GHT reg_size;
 	GHT redzone_size;
 	GHT reg_interval;
 	GHT run_size;
 	ut32 nregs;
-	GH(bitmap_info_t)		bitmap_info;
+	GH(bitmap_info_t_450)		bitmap_info;
 	ut32 reg0_offset;
 };
 

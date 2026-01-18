@@ -937,21 +937,36 @@ commands:
             summary: Show all arenas created, or print arena_type structure for given arena.
             cname: cmd_debug_heap_jemalloc_a
             args:
-              - name: arena_type
+              - name: arena_addr
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
           - name: dmxb
-            summary: Show all arenas created, or print arena_type structure for given arena.
+            summary: Show bin info for allocations. 
             cname: cmd_debug_heap_jemalloc_b
             args:
-              - name: arena_type
+              - name: arena_addr|bin_info_addr
                 type: RZ_CMD_ARG_TYPE_STRING
                 optional: true
           - name: dmxc
-            summary: Show all chunks created in all arenas, or show all chunks created for a given arena_t instanc.
+            summary: >-
+              Show all chunks created in all arenas, or show all chunks created for a given
+              arena_t instance (jemalloc 4.5.0 only).
             cname: cmd_debug_heap_jemalloc_c
             args:
               - name: "*|arena_type"
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: dmxe
+            summary: List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)
+            cname: cmd_debug_heap_jemalloc_e
+            args:
+              - name: malloc_addr
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmxei
+            summary: Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)
+            cname: cmd_debug_heap_jemalloc_ei
+            args:
+              - name: extent_addr
                 type: RZ_CMD_ARG_TYPE_STRING
   - name: dp
     summary: List or attach to process or thread

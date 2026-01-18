@@ -27,7 +27,8 @@ typedef st32 RZ_ALIGNED(4) GHST_32;
 #define GHST    GHST_32
 #endif
 
-#include <rz_jemalloc/jemalloc.h>
+/* jemalloc 4.5.0 still uses the GH/GHT macro system */
+#include <rz_jemalloc/jemalloc_450.h>
 
 #ifndef INC_HEAP32
 #undef JEMALLOC_INTERNAL_H
@@ -41,6 +42,9 @@ typedef st32 RZ_ALIGNED(4) GHST_32;
 
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
+
+/* jemalloc 5.3.0 uses unified structs with is_64bit parameter - included once */
+#include <rz_jemalloc/jemalloc_530.h>
 
 #undef PRINTF_A
 #undef PRINTF_YA
