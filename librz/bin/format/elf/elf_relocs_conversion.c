@@ -116,18 +116,6 @@ static RzBinReloc *reloc_convert_add(ELFOBJ *bin, RzBinElfReloc *rel, RzBinReloc
 	return r;
 }
 
-static RzBinReloc *reloc_convert_vaddr(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, ut64 vaddr, const char *print_name) {
-	RzBinReloc *r = reloc_convert_new(bin, rel);
-	if (!r) {
-		return NULL;
-	}
-
-	r->vaddr = vaddr;
-	r->type = type;
-	r->print_name = print_name;
-	return r;
-}
-
 static RzBinReloc *reloc_convert_ifunc(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRelocType type, const char *print_name) {
 	RzBinReloc *r = reloc_convert_new(bin, rel);
 	if (!r) {
@@ -169,9 +157,6 @@ static RzBinReloc *reloc_convert_add_t(ELFOBJ *bin, RzBinElfReloc *rel, RzBinRel
 
 #define ADD(BIT_SIZE, ADDEND, RELOC_NAME, RELOC_BASE) \
 	return reloc_convert_add(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDEND, RELOC_NAME, RELOC_BASE)
-
-#define VADDR(BIT_SIZE, ADDR, RELOC_NAME) \
-	return reloc_convert_vaddr(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, ADDR, RELOC_NAME)
 
 #define IFCN(BIT_SIZE, RELOC_NAME) \
 	return reloc_convert_ifunc(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, RELOC_NAME)
