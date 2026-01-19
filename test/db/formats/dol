@@ -4,10 +4,50 @@ CMDS=q!
 EXPECT=
 RUN
 
-NAME=DOL: sqrxz4 - iI
+NAME=DOL: sqrxz4 - file info
 FILE=bins/dol/sqrxz4-gc.dol
-CMDS=iI~?wii
+CMDS=<<EOF
+iI~arch
+iI~endian
+iI~bits
+iI~machine
+iI~^os
+iI~baddr
+EOF
 EXPECT=<<EOF
-2
+arch     ppc
+endian   BE
+bits     32
+machine  Nintendo Wii
+os       wii-ios
+baddr    0x80b00000
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - sections
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iS~0x
+EXPECT=<<EOF
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
+0x00000000 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - entry point
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=ie~program[0]
+EXPECT=<<EOF
+0x80003100
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - disassembly at entry
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=pd 1 @ entry0
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.text_0:
+        ,=< 0x80003100      b     0x80003120                           ; [00] -r-x section size 842080 named text_0
 EOF
 RUN
