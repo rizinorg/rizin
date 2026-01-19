@@ -2417,7 +2417,7 @@ static bool block_flags_stat(RzFlagItem *fi, void *user) {
 	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
 	size_t piece = (fi->offset - u->from) / u->step;
 	if (fi->space && !strcmp(fi->space->name, "flirt")) {
-		u->blocks[piece].flirts++;
+		u->blocks[piece].signatures++;
 		return true;
 	}
 	u->blocks[piece].flags++;
