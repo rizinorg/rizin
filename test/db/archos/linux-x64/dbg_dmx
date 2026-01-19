@@ -40,6 +40,49 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 4.5.0 runtime
+FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-x32
+ARGS=-d
+CMDS=<<EOF
+dcu sym.imp.getchar
+dmxa~?narenas
+echo ----
+dmxb~regsize : 0x800
+echo ----
+dmxc *~?Chunk
+EOF
+EXPECT=<<EOF
+1
+----
+       regsize : 0x800
+----
+1
+EOF
+RUN
+
+
+
+NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 4.5.0 runtime
+FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-x64
+ARGS=-d
+CMDS=<<EOF
+dcu sym.imp.getchar
+dmxa~?narenas
+echo ----
+dmxb~regsize : 0x800
+echo ----
+dmxc *~?Chunk
+EOF
+EXPECT=<<EOF
+1
+----
+       regsize : 0x800
+----
+1
+EOF
+RUN
+
+
 NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump
 FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
 ARGS=-n
@@ -124,3 +167,4 @@ EXPECT=<<EOF
 Total extents found: 16
 EOF
 RUN
+

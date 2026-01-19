@@ -1022,11 +1022,7 @@ static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
 		CMD_CHECK_DEBUG_DEAD(core);
 	}
 #if HAVE_JEMALLOC
-	if (core->rasm->bits == 64) {
-		cmd_dbg_map_jemalloc_64(core, type, arg);
-	} else {
-		cmd_dbg_map_jemalloc_32(core, type, arg);
-	}
+	cmd_dbg_map_jemalloc(core, type, arg);
 	return RZ_CMD_STATUS_OK;
 #endif
 	RZ_LOG_ERROR("JEMALLOC not supported.\n");
