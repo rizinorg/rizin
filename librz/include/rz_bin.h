@@ -629,12 +629,18 @@ typedef struct rz_bin_map_t {
 
 #define RZ_BIN_MAX_HANDLED_LAYOUT_SIZE (1024 * 1024 * 2)
 
+typedef enum {
+	RZ_BIN_SECTION_ROLE_UNSPECIFIED = 0,
+	RZ_BIN_SECTION_ROLE_LINKING, ///< Section is used for (dynamic) linking.
+} RzBinSectionRole;
+
 /**
  * \brief A repetitive data layout of a section. The type will be applied to
  * element_size * element_count.
  */
 typedef struct rz_bin_section_format_t {
 	int /* RzAnalysisMetaType */ type; ///< The meta type of the elements.
+	RzBinSectionRole role; ///< The role a section has.
 	ut64 element_size; ///< Size of an element in this section.
 	size_t count; ///< The number of consecutive elements in this section.
 } RzBinSectionLayout;

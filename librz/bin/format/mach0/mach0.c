@@ -2025,6 +2025,13 @@ RzPVector /*<RzBinMap *>*/ *MACH0_(get_maps)(RzBinFile *bf) {
 	return ret;
 }
 
+static bool is_linking_related_section(ut64 sec_type) {
+	return sec_type & S_SYMBOL_STUBS ||
+		sec_type & S_LAZY_SYMBOL_POINTERS ||
+		sec_type & S_NON_LAZY_SYMBOL_POINTERS ||
+		sec_type & S_LAZY_DYLIB_SYMBOL_POINTERS;
+}
+
 RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bin->sections_cache) {
@@ -2074,6 +2081,9 @@ RzPVector /*<RzBinSection *>*/ *MACH0_(get_segments)(RzBinFile *bf) {
 			s->flags = bin->sects[i].flags & 0xFFFFFF00;
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
+			if (is_linking_related_section(s->type)) {
+				s->layout.role = RZ_BIN_SECTION_ROLE_LINKING;
+			}
 			int segment_index = 0;
 			// s->perm =prot2perm (bin->segs[j].initprot);
 			for (j = 0; j < bin->nsegs; j++) {
