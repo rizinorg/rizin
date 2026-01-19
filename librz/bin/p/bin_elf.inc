@@ -857,6 +857,12 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 			ptr->layout.element_size = sizeof(Elf_(Addr));
 			ptr->layout.count = section->size / sizeof(Elf_(Addr));
 		}
+		if (section->type == SHT_RELA ||
+				section->type == SHT_DYNAMIC ||
+				section->type == SHT_DYNSYM ||
+				(section->name && strstr(section->name, ".plt"))) {
+			ptr->layout.role = RZ_BIN_SECTION_ROLE_LINKING;
+		}
 		ptr->size = section->type != SHT_NOBITS ? section->size : 0;
 		ptr->vsize = section->size;
 		ptr->paddr = section->offset;
