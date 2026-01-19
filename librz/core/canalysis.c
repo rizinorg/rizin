@@ -2418,7 +2418,6 @@ static bool block_flags_stat(RzFlagItem *fi, void *user) {
 	size_t piece = (fi->offset - u->from) / u->step;
 	if (fi->space && !strcmp(fi->space->name, "flirt")) {
 		u->blocks[piece].signatures++;
-		return true;
 	}
 	u->blocks[piece].flags++;
 	return true;
@@ -2511,9 +2510,8 @@ RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore 
 		size_t piece = (S->vaddr - from) / step;
 		if (S->is_imported) {
 			blocks[piece].imports++;
-		} else {
-			blocks[piece].symbols++;
 		}
+		blocks[piece].symbols++;
 	}
 	RzPVector *metas = to > from ? rz_meta_get_all_intersect(core->analysis, from, to - from, RZ_META_TYPE_ANY) : NULL;
 	if (metas) {
