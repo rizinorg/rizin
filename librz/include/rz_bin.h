@@ -726,8 +726,8 @@ typedef struct rz_bin_import_t {
 } RzBinImport;
 
 typedef enum rz_bin_reloc_base {
-	RZ_RELOC_BASE_UNKNOWN = 0,
-	RZ_RELOC_BASE_SYMBOL, // S
+	RZ_RELOC_BASE_UNKNOWN = -1,
+	RZ_RELOC_BASE_SYMBOL = 0, // S
 	RZ_RELOC_BASE_GOT_SYMBOL, ///< GOT(S): Address of GOT entry for the symbol
 	RZ_RELOC_BASE_GOT, // GOT : Address of Global Offset Table
 	RZ_RELOC_BASE_BASE, // Base address

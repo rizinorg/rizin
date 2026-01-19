@@ -2343,8 +2343,7 @@ RZ_API bool rz_core_bin_relocs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 			RzStrBuf *buf = rz_strbuf_new(NULL);
 			append_reloc_base_name(buf, reloc, relname);
 			if (reloc->addend) {
-				// if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
-				if (!rz_strbuf_is_empty(buf) && reloc->addend > 0) {
+				if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
 					rz_strbuf_append(buf, " +");
 				}
 				if (reloc->addend < 0) {
