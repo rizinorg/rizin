@@ -1,22 +1,11 @@
-NAME=BOOTIMG: minimal - open
-FILE=bins/bootimg/android_boot_min.img
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=BOOTIMG: minimal - info type
-FILE=bins/bootimg/android_boot_min.img
-CMDS=iI~type
+NAME=BOOTIMG: minimal - info + header section
+FILE=db/bins/bootimg/android_boot_min.img
+CMDS=<<EOF
+iI~bintype
+iS~header
+EOF
 EXPECT=<<EOF
-Android Boot Image
+bintype  image
+0x00000000 0x660 0x00000000 0x1000   0x0 -r-- header      
 EOF
 RUN
-
-NAME=BOOTIMG: minimal - sections include header
-FILE=bins/bootimg/android_boot_min.img
-CMDS=iS~header
-EXPECT=<<EOF
-header
-EOF
-RUN
-

@@ -45,27 +45,15 @@ typedef struct {
 	RzBuffer *buf;
 } BootImageObj;
 
-static bool read_u32le_seek(RzBuffer *b, ut32 *out) {
-    ut8 tmp[4];
-    if (rz_buf_read(b, tmp, sizeof(tmp)) != sizeof(tmp)) {
-        return false;
-    }
-    *out = rz_read_le32(tmp);
-    return true;
-}
 
 static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
-    char *n;
-    int i;
+    char *n = NULL;
+    int i = 0;
     BootImage *bi = &obj->bi;
-
-    // seek to start
-    if (rz_buf_seek(obj->buf, 0, RZ_BUF_SET) < 0) {
-        return false;
-    }
+    ut64 offset = 0;
 
     // Read magic
-    if (rz_buf_read(obj->buf, bi->magic, BOOT_MAGIC_SIZE) != BOOT_MAGIC_SIZE) {
+    if (!rz_buf_read_offset(obj->buf, &offset, bi->magic, BOOT_MAGIC_SIZE)) {
         return false;
     }
     if (memcmp(bi->magic, BOOT_MAGIC, BOOT_MAGIC_SIZE)) {
@@ -73,36 +61,56 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
     }
 
     // Read all 32-bit header fields (little-endian)
-    if (!read_u32le_seek(obj->buf, &bi->kernel_size)) return false;
-    if (!read_u32le_seek(obj->buf, &bi->kernel_addr)) return false;
-
-    if (!read_u32le_seek(obj->buf, &bi->ramdisk_size)) return false;
-    if (!read_u32le_seek(obj->buf, &bi->ramdisk_addr)) return false;
-
-    if (!read_u32le_seek(obj->buf, &bi->second_size)) return false;
-    if (!read_u32le_seek(obj->buf, &bi->second_addr)) return false;
-
-    if (!read_u32le_seek(obj->buf, &bi->tags_addr)) return false;
-    if (!read_u32le_seek(obj->buf, &bi->page_size)) return false;
-
-    if (!read_u32le_seek(obj->buf, &bi->unused[0])) return false;
-    if (!read_u32le_seek(obj->buf, &bi->unused[1])) return false;
-
-    // Read strings/arrays
-    if (rz_buf_read(obj->buf, bi->name, BOOT_NAME_SIZE) != BOOT_NAME_SIZE) {
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->kernel_size)) {
         return false;
     }
-    if (rz_buf_read(obj->buf, bi->cmdline, BOOT_ARGS_SIZE) != BOOT_ARGS_SIZE) {
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->kernel_addr)) {
+        return false;
+    }
+
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->ramdisk_size)) {
+        return false;
+    }
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->ramdisk_addr)) {
+        return false;
+    }
+
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->second_size)) {
+        return false;
+    }
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->second_addr)) {
+        return false;
+    }
+
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->tags_addr)) {
+        return false;
+    }
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->page_size)) {
+        return false;
+    }
+
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->unused[0])) {
+        return false;
+    }
+    if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->unused[1])) {
+        return false;
+    }
+
+    // Read strings/arrays
+    if (!rz_buf_read_offset(obj->buf, &offset, bi->name, BOOT_NAME_SIZE)) {
+        return false;
+    }
+    if (!rz_buf_read_offset(obj->buf, &offset, bi->cmdline, BOOT_ARGS_SIZE)) {
         return false;
     }
 
     for (i = 0; i < 8; i++) {
-        if (!read_u32le_seek(obj->buf, &bi->id[i])) {
+        if (!rz_buf_read_le32_offset(obj->buf, &offset, &bi->id[i])) {
             return false;
         }
     }
 
-    if (rz_buf_read(obj->buf, bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE) != BOOT_EXTRA_ARGS_SIZE) {
+    if (!rz_buf_read_offset(obj->buf, &offset, bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE)) {
         return false;
     }
 
@@ -116,7 +124,6 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
         free(n);
     }
 
-    // Fix bug: don't overwrite same "id" key repeatedly
     for (i = 0; i < 8; i++) {
         char key[16];
         snprintf(key, sizeof(key), "id.%d", i);
@@ -129,31 +136,6 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
     }
 
     return true;
-}
-
-	char *n;
-	int i;
-	if (rz_buf_size(obj->buf) < sizeof(BootImage)) {
-		return false;
-	}
-	// TODO make it endian-safe (void)rz_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
-	BootImage *bi = &obj->bi;
-	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
-		sdb_set(db, "name", n);
-		free(n);
-	}
-	if ((n = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
-		sdb_set(db, "cmdline", n);
-		free(n);
-	}
-	for (i = 0; i < 8; i++) {
-		sdb_num_set(db, "id", (ut64)bi->id[i]);
-	}
-	if ((n = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
-		sdb_set(db, "extra_cmdline", n);
-		free(n);
-	}
-	return true;
 }
 
 static Sdb *get_sdb(RzBinFile *bf) {
