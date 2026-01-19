@@ -843,9 +843,13 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 2;
 		op->size = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			ut8 magic = 0xee;
 			_6502ILAddr addr;
 			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_laximm(&addr, (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic"));
+			if (cfg_state && cfg_state->cfg) {
+				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
+			}
+			op->il_op = _6502_il_op_laximm(&addr, magic);
 		}
 		break;
 
@@ -1133,9 +1137,13 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->size = 2;
 		op->cycles = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			ut8 magic = 0xee;
 			_6502ILAddr addr;
 			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_ane(&addr, (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic"));
+			if (cfg_state && cfg_state->cfg) {
+				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
+			}
+			op->il_op = _6502_il_op_ane(&addr, magic);
 		}
 		break;
 
@@ -1863,8 +1871,12 @@ static int address_bits(RzAnalysis *analysis, int bits) {
 
 static RzAnalysisILConfig *_6502_il_config(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
-	analysis->plugin_data = (_6502State *)rz_asm_plugin_data_from_rz_analysis(analysis);
-	rz_return_val_if_fail(analysis->plugin_data, NULL);
+	if (!analysis->plugin_data && analysis->core) {
+		RzAsm *rasm = rz_analysis_to_rz_asm(analysis);
+		if (rasm && rasm->plugin_data) {
+			analysis->plugin_data = rasm->plugin_data;
+		}
+	}
 	return rz_analysis_il_config_new(16, false, 16);
 }
 
