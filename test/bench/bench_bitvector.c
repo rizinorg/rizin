@@ -6,7 +6,7 @@
 
 /**
  * \file bench_bitvector.c
- * \brief Benchmark for `rz_bv_*` functions (currently `rz_bv_copy_nbits` only)
+ * \brief Benchmark for `rz_bv_*` functions
  *
  * Tests various copy scenarios to measure performance of optimized paths
  */
@@ -165,7 +165,7 @@ static void bench_bv_sub(RzTable *t_out) {
 
 int main() {
 	RzTable *t = rz_table_new();
-	rz_table_set_columnsf(t, "snnnn", "Benchmark", "Iterations", "Total time [ms]", "Average time [us/op]", "Throughput [ops/sec]");
+	RZ_BENCH_TABLE_INIT(t);
 
 	// Micro benchmarks
 	bench_bv_copy_small_60_bit(t);
@@ -182,10 +182,6 @@ int main() {
 	bench_bv_sub_inplace(t);
 
 	// Print results
-	char *out = rz_table_tostring(t);
-	printf("%s\n", out);
-
-	free(out);
-	rz_table_free(t);
+	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
 	return 0;
 }
