@@ -463,7 +463,7 @@ RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core) {
  * The type of the variable is handled dynamically.
  * This is intended for setting from user input only.
  */
-RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value) {
+RZ_API bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value) {
 	rz_return_val_if_fail(core && core->analysis && var_name, false);
 
 	RzAnalysisILVM *vm = core->analysis->il_vm;
@@ -476,6 +476,7 @@ RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 
 		RzBitVector *bv = rz_bv_new_from_ut64(vm->vm->pc->len, value);
 		rz_bv_free(vm->vm->pc);
 		vm->vm->pc = bv;
+		rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, value);
 		return true;
 	}
 
@@ -568,7 +569,7 @@ static void rzil_print_register_float(RzFloat *number, ILPrint *p) {
 	free(hex);
 }
 
-RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
+RZ_API void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisILVM *vm = core->analysis->il_vm;
 	if (!vm) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
@@ -769,7 +770,7 @@ RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 unti
  * Perform a single step at the PC given by analysis->reg in RzIL and print any events that happened
  * \return false if an error occured (e.g. invalid op)
  */
-RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
+RZ_API bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 	if (!rz_core_il_step(core, 1)) {
 		return false;
 	}
@@ -815,6 +816,152 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 		rz_strbuf_free(sb);
 	}
 	return true;
+}
+
+static void initialize_il_stack(RzCore *core, ut64 addr, ut64 size) {
+	const char *mode = rz_config_get(core->config, "rzil.fillstack");
+	if (!mode || !*mode) {
+		mode = rz_config_get(core->config, "esil.fillstack");
+	}
+	if (mode && *mode && *mode != '0') {
+		const ut64 bs = 4096 * 32;
+		ut64 i;
+		for (i = 0; i < size; i += bs) {
+			ut64 left = RZ_MIN(bs, size - i);
+			switch (*mode) {
+			case 'd': { // "debrujn"
+				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
+				if (buf) {
+					if (!rz_core_write_at(core, addr + i, buf, left)) {
+						RZ_LOG_ERROR("core: cannot write at %" PFMT64x "\n", addr + i);
+					}
+					free(buf);
+				} else {
+					RZ_LOG_ERROR("core: cannot generate pattern of length %" PFMT64d "\n", left);
+				}
+			} break;
+			case 's':
+				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			case 'r':
+				rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
+				break;
+			case 'z':
+			case '0':
+				rz_core_cmdf(core, "wb 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			}
+		}
+	}
+}
+
+static char *get_il_stack_name(RzCore *core, const char *name, ut64 *addr, ut32 *size) {
+	ut64 sx_addr = rz_config_get_i(core->config, "rzil.stack.addr");
+	if (!sx_addr) {
+		sx_addr = rz_config_get_i(core->config, "esil.stack.addr");
+	}
+	ut32 sx_size = rz_config_get_i(core->config, "rzil.stack.size");
+	if (!sx_size) {
+		sx_size = rz_config_get_i(core->config, "esil.stack.size");
+	}
+
+	RzIOMap *map = rz_io_map_get(core->io, sx_addr);
+	if (map) {
+		sx_addr = UT64_MAX;
+	}
+	if (sx_addr == UT64_MAX) {
+		const ut64 align = 0x10000000;
+		sx_addr = rz_io_map_next_available(core->io, core->offset, sx_size, align);
+	}
+	if (*addr != UT64_MAX) {
+		sx_addr = *addr;
+	}
+	if (*size != UT32_MAX) {
+		sx_size = *size;
+	}
+	if (sx_size < 1) {
+		sx_size = 0xf0000;
+	}
+	*addr = sx_addr;
+	*size = sx_size;
+	if (RZ_STR_ISEMPTY(name)) {
+		return rz_str_newf("il.mem.0x%" PFMT64x "_0x%x", sx_addr, sx_size);
+	} else {
+		return rz_str_newf("il.mem.%s", name);
+	}
+}
+
+RZ_API void rz_core_analysis_il_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size) {
+	rz_return_if_fail(core && core->analysis);
+	ut64 current_offset = core->offset;
+	if (!core->analysis->il_vm) {
+		rz_core_analysis_il_reinit(core);
+	}
+	RzAnalysisILVM *il_vm = core->analysis->il_vm;
+	if (!il_vm) {
+		RZ_LOG_ERROR("core: cannot initialize IL VM\n");
+		return;
+	}
+
+	RzIOMap *stack_map;
+	if (!name && addr == UT64_MAX && size == UT32_MAX) {
+		const char *fi = sdb_const_get(core->sdb, "aezim.fd");
+		if (fi) {
+			ut64 fd = sdb_atoi(fi);
+			(void)rz_io_fd_close(core->io, fd);
+		}
+	}
+	const char *pattern = rz_config_get(core->config, "rzil.stack.pattern");
+	if (!pattern) {
+		pattern = rz_config_get(core->config, "esil.stack.pattern");
+	}
+
+	char *stack_name = get_il_stack_name(core, name, &addr, &size);
+
+	char uri[32];
+	rz_strf(uri, "malloc://%u", size);
+	il_vm->stack_fd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
+	if (!(stack_map = rz_io_map_add(core->io, il_vm->stack_fd, RZ_PERM_RW, 0LL, addr, size))) {
+		rz_io_fd_close(core->io, il_vm->stack_fd);
+		RZ_LOG_ERROR("core: cannot create map for the stack, fd %d got closed again\n", il_vm->stack_fd);
+		free(stack_name);
+		il_vm->stack_fd = 0;
+		return;
+	}
+	rz_io_map_set_name(stack_map, stack_name);
+	free(stack_name);
+	char val[128], *v;
+	v = sdb_itoa(il_vm->stack_fd, val, 10);
+	sdb_set(core->sdb, "aezim.fd", v);
+
+	rz_config_set_b(core->config, "io.va", true);
+	if (pattern && *pattern) {
+		switch (*pattern) {
+		case '0':
+			// do nothing
+			break;
+		case 'd':
+			rz_core_cmdf(core, "wopD %d @ 0x%" PFMT64x, size, addr);
+			break;
+		case 'i':
+			rz_core_cmdf(core, "woe 0 255 1 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		case 'w':
+			rz_core_cmdf(core, "woe 0 0xffff 1 4 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		}
+	}
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_BP, addr + (size / 2));
+	rz_reg_set_value_by_role(core->analysis->reg, RZ_REG_NAME_PC, current_offset);
+	rz_core_reg_update_flags(core);
+
+	rz_analysis_il_vm_sync_from_reg(il_vm, core->analysis->reg);
+
+	il_vm->stack_addr = addr;
+	il_vm->stack_size = size;
+	initialize_il_stack(core, addr, size);
+	rz_core_seek(core, current_offset, false);
 }
 
 static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {

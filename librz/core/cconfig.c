@@ -3950,6 +3950,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("rzil.step.events.halt_on_exc", "div0,fp_invalid_op", &rzil_halt_on_exec);
 	SETDESC(n, "Enables/disable exceptions the VM should halt if reached.");
 	SETOPTIONS(n, "div0", "fp_div0", "fp_inexact", "fp_underflow", "fp_overflow", "fp_invalid_op", "none", "all", NULL);
+	SETB("rzil.visual", false, "Use RzIL emulation in visual mode");
+	SETI("rzil.stack.size", 0xf0000, "Set stack size in RzIL VM");
+	SETI("rzil.stack.addr", 0x100000, "Set stack address in RzIL VM");
+	SETPREF("rzil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
+	SETPREF("rzil.fillstack", "", "Initialize RzIL stack with (random, debrujn, sequence, zeros, ...)");
 
 	/* FLIRT config */
 	SETBPREF("flirt.sig.library", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");

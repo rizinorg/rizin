@@ -759,6 +759,10 @@ RZ_API void rz_core_analysis_il_reinit(RZ_NONNULL RzCore *core);
 RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n);
 RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until);
 RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 until);
+RZ_API bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
+RZ_API void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode);
+RZ_API bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
+RZ_API void rz_core_analysis_il_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *name, ut64 addr, ut32 size);
 
 /* canalysis.c */
 typedef enum rz_core_analysis_name_type {

@@ -1,0 +1,21 @@
+NAME=RzIL aezim default
+FILE==
+CMDS=<<EOF
+aezim
+oml~il.mem
+EOF
+EXPECT=<<EOF
+ 2 fd: 4 +0x00000000 0x00100000 - 0x001effff rw- il.mem.0x100000_0xf0000
+EOF
+RUN
+
+NAME=RzIL aezim custom
+FILE==
+CMDS=<<EOF
+aezim 0x40000 0x1000 my_stack
+oml~il.mem
+EOF
+EXPECT=<<EOF
+ 2 fd: 4 +0x00000000 0x00040000 - 0x00040fff rw- il.mem.my_stack
+EOF
+RUN

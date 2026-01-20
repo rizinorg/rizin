@@ -28,9 +28,8 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
-RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
-RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
-RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
+
+RZ_IPI bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list);
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);

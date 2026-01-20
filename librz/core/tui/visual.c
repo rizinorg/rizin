@@ -2804,11 +2804,15 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case 's':
-			key_s = rz_config_get(core->config, "key.s");
-			if (key_s && *key_s) {
-				rz_core_cmd0(core, key_s);
+			if (rz_config_get_b(core->config, "rzil.visual")) {
+				rz_core_analysis_il_step_with_events(core, NULL);
 			} else {
-				rz_core_debug_single_step_in(core);
+				key_s = rz_config_get(core->config, "key.s");
+				if (key_s && *key_s) {
+					rz_core_cmd0(core, key_s);
+				} else {
+					rz_core_debug_single_step_in(core);
+				}
 			}
 			break;
 		case 'S':

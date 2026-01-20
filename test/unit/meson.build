@@ -136,6 +136,7 @@ if get_option('enable_tests')
     'util',
     'vector',
     'yank',
+    'rzil_api',
   ]
 
   unit_test_env = environment()

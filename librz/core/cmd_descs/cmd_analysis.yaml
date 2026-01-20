@@ -956,6 +956,20 @@ commands:
         type: RZ_CMD_DESC_TYPE_ARGV
         cname: il_vm_initialize
         args: []
+      - name: aezim
+        summary: Initialize RzIL VM stack
+        type: RZ_CMD_DESC_TYPE_ARGV
+        cname: il_vm_init_mem
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: aezs
         summary: Step N instructions within the RzIL Virtual Machine
         type: RZ_CMD_DESC_TYPE_ARGV

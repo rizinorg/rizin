@@ -4238,6 +4238,14 @@ RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_il_vm_init_mem_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : UT64_MAX;
+	ut32 size = argc > 2 ? (ut32)rz_num_math(core->num, argv[2]) : UT32_MAX;
+	const char *name = argc > 3 ? argv[3] : NULL;
+	rz_core_analysis_il_init_mem(core, name, addr, size);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
 	rz_core_il_step(core, repeat_times);

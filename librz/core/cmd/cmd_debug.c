@@ -11,7 +11,6 @@
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%" PFMT64u
 
-#include "rz_heap_glibc.h"
 
 #if HAVE_JEMALLOC
 #include "rz_heap_jemalloc.h"
@@ -318,7 +317,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
+RZ_IPI bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 	RzAnalysisOp op = { 0 };
 	ut8 buf[32];
 	ut64 pc;

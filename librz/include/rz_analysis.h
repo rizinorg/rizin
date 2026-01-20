@@ -1295,6 +1295,9 @@ struct rz_analysis_il_vm_t {
 	RZ_NONNULL RzILVM *vm; ///< low-level vm to execute IL code
 	RZ_NONNULL RzBuffer *io_buf; ///< buffer to use for memory 0 (io)
 	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers
+	ut64 stack_addr;
+	ut64 stack_size;
+	int stack_fd;
 } /* RzAnalysisILVM */;
 
 typedef enum {
