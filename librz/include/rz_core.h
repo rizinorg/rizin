@@ -1230,6 +1230,8 @@ typedef struct {
 	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;
+	ut32 signatures;
+	ut32 imports;
 	ut32 perm;
 } RzCoreAnalysisStatsItem;
 
