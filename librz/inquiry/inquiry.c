@@ -6,13 +6,13 @@
 #include <rz_inquiry.h>
 
 #include "rz_analysis.h"
+#include "rz_bin.h"
 #include "rz_config.h"
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
 #include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
-#include "rz_io.h"
 #include "rz_th.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_buf.h"
@@ -200,6 +200,29 @@ static bool get_call_targets(RzCore *core, RzSetU *call_targets) {
 	return true;
 }
 
+static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
+	const RzPVector /*<RzBinSymbol *>*/ *symbols,
+	RzPVector /*<RzBinSection *>*/ *sections) {
+	void **it;
+	RzVector *v = rz_vector_new(sizeof(RzInterval), NULL, NULL);
+	rz_pvector_foreach (sections, it) {
+		RzBinSection *sec = *it;
+		if (sec->layout.role == RZ_BIN_SECTION_ROLE_LINKING) {
+			RzInterval itv = { .addr = sec->vaddr, .size = sec->vsize };
+			rz_vector_push(v, &itv);
+		}
+	}
+	rz_pvector_free(sections);
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (sym->is_imported) {
+			RzInterval itv = { .addr = sym->vaddr, .size = sym->size };
+			rz_vector_push(v, &itv);
+		}
+	}
+	return v;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -292,7 +315,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		io_result_q,
 		is_running,
 		rz_vector_clone(entry_points),
-		rz_bin_object_get_symbols(core->bin->cur->o));
+		get_ignored_code_regions(
+			rz_bin_object_get_symbols(core->bin->cur->o),
+			rz_bin_object_get_sections(core->bin->cur->o)));
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();

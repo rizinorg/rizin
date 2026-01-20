@@ -23,10 +23,16 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 	if (!max_read_size || !buf) {
 		goto fail;
 	}
-	il_bb = rz_pvector_new((RzPVectorFree)rz_interpreter_insn_pkt_free);
+
+	il_bb = RZ_NEW0(RzInterpreterILBB);
 	if (!il_bb) {
 		goto fail;
 	}
+	il_bb->il_ops = rz_pvector_new((RzPVectorFree)rz_interpreter_insn_pkt_free);
+	if (!il_bb->il_ops) {
+		goto fail;
+	}
+	il_bb->bb_addr = addr;
 	RZ_LOG_DEBUG("Gen BB:\n");
 	bool sparc_add_delayed_insn = false;
 	bool changes_cf = true;
@@ -52,7 +58,8 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 		RzInterpreterInsnPkt *pkt = RZ_NEW0(RzInterpreterInsnPkt);
 		pkt->effect = op.il_op;
 		pkt->insn_pkt_size = op.size;
-		rz_pvector_push(il_bb, pkt);
+		il_bb->size += op.size;
+		rz_pvector_push(il_bb->il_ops, pkt);
 		// Take ownership of IL op pointer.
 		op.il_op = NULL;
 		if (lifted) {
@@ -83,6 +90,6 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 fail:
 	free(buf);
 	rz_analysis_op_fini(&op);
-	rz_pvector_free(il_bb);
+	rz_interpreter_il_bb_free(il_bb);
 	return NULL;
 }

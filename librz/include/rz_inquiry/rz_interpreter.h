@@ -98,7 +98,11 @@ typedef struct {
 	RzThreadQueue /*<const RzInterpreterYield>*/ *yield_queue;
 } RzInterpreterYieldQueue;
 
-typedef RzPVector RzInterpreterILBB;
+typedef struct {
+	RzPVector *il_ops; ///< The sequence of IL operations of this basic block.
+	size_t size; ///< The number of bytes the basic block has.
+	ut64 bb_addr; ///< The address where the basic block starts.
+} RzInterpreterILBB;
 
 typedef struct {
 	RzILOpEffect *effect; ///< Vector with all instruction packets of a basic block.
@@ -142,7 +146,7 @@ typedef struct {
 	 * \brief Evaluates an effect with the mutable state.
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
-		RZ_NONNULL const RzInterpreterILBB *il_op,
+		RZ_NONNULL const RzInterpreterILBB *il_bb,
 		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
@@ -205,7 +209,7 @@ typedef struct {
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
-	const RzPVector *symbols; ///< Known symbols of a binary.
+	RzVector /*<RzInterval>*/ *ignored_code;
 	/**
 	 * \brief The entry points for the interpreters.
 	 * Each address has its lifted IL op in the il_queue at the same index.
@@ -214,7 +218,7 @@ typedef struct {
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
 
-RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_op);
+RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
 
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
@@ -240,7 +244,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
-	RZ_NONNULL const RzPVector /*<RzBinSymbol *>*/ *symbols);
+	RZ_NONNULL RZ_OWN RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points);
 
