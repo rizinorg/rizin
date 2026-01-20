@@ -58,8 +58,7 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_next(x)     ((x)->next)
 #define rz_list_get(x)      ((x)->val)
 #define rz_list_has_prev(x) ((x)->prev != NULL)
-
-#define rz_list_iter_has_next(x) (x->next)
+#define rz_list_has_next(x) ((x)->next != NULL)
 
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
