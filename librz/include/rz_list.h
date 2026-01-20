@@ -51,15 +51,15 @@ typedef int (*RzListComparator)(const void *value, const void *list_data, void *
 #define rz_list_foreach_prev_safe(list, it, tmp, var) \
 	for (it = list->tail; it && (var = it->val, tmp = it->prev, 1); it = tmp)
 
-#define rz_list_empty(x) (!(x) || !(x)->length)
-#define rz_list_head(x)  ((x) ? (x)->head : NULL)
-#define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
-#define rz_list_prev(x)  ((x)->prev)
-#define rz_list_next(x)  ((x)->next)
-#define rz_list_get(x)   ((x)->val)
+#define rz_list_empty(x)    (!(x) || !(x)->length)
+#define rz_list_head(x)     ((x) ? (x)->head : NULL)
+#define rz_list_tail(x)     ((x) ? (x)->tail : NULL)
+#define rz_list_prev(x)     ((x)->prev)
+#define rz_list_next(x)     ((x)->next)
+#define rz_list_get(x)      ((x)->val)
+#define rz_list_has_prev(x) ((x)->prev != NULL)
 
 #define rz_list_iter_has_next(x) (x->next)
-#define rz_list_iter_has_prev(x) (x->prev)
 
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
