@@ -237,7 +237,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 	RzInterpreterAbstrState *abstr_state = NULL;
 	RzInterpreterSet *iset = NULL;
-	RzPVector *il_cache = NULL;
+	HtUP *il_cache = NULL;
 	RzThreadQueue *il_queue = NULL;
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
@@ -254,7 +254,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
 	// of the pointers.
-	il_cache = rz_pvector_new((RzPVectorFree)rz_interpreter_il_bb_free);
+	il_cache = ht_up_new(NULL, (RzPVectorFree)rz_interpreter_il_bb_free);
 
 	if (!get_call_targets(core, call_targets)) {
 		RZ_LOG_ERROR("Failed to get call targets.\n");
@@ -369,23 +369,29 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						break;
 					}
 					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-					size_t bb_size = 0;
-					RzInterpreterILBB *bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
-					if (!bb) {
-						RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
-						// Signal interpreter the lifting failed.
-						rz_atomic_bool_set(is_running, false);
-						rz_th_queue_close(io_request_q);
-						rz_th_queue_close(io_result_q);
-						rz_th_queue_close(iset->addr_queue);
-						rz_th_queue_close(iset->il_queue);
-						bb_decode_failed = true;
-						break;
+					RzInterpreterILBB *bb;
+					if (!ht_up_find(il_cache, *addr, NULL)) {
+						RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
+						size_t bb_size = 0;
+						bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
+						if (!bb) {
+							RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
+							// Signal interpreter the lifting failed.
+							rz_atomic_bool_set(is_running, false);
+							rz_th_queue_close(io_request_q);
+							rz_th_queue_close(io_result_q);
+							rz_th_queue_close(iset->addr_queue);
+							rz_th_queue_close(iset->il_queue);
+							bb_decode_failed = true;
+							break;
+						}
+						rz_analysis_add_bb(core->analysis, *addr, bb_size);
+						RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
+						ht_up_insert(il_cache, bb->bb_addr, bb);
+					} else {
+						RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
+						bb = ht_up_find(il_cache, *addr, NULL);
 					}
-					rz_analysis_add_bb(core->analysis, *addr, bb_size);
-					RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
-					rz_pvector_push(il_cache, bb);
-					// TODO: Free unused if too big.
 					rz_th_queue_push(iset->il_queue, bb, true);
 				}
 			}
@@ -525,7 +531,7 @@ error_free:
 		// Ownership was passed to iset
 		rz_interpreter_set_free(iset);
 	}
-	rz_pvector_free(il_cache);
+	ht_up_free(il_cache);
 
 	rz_cons_pop();
 	return return_code;
