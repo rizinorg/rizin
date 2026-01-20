@@ -9,13 +9,13 @@
 #include "../prototype/eval.h"
 
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
-	RZ_NONNULL const RzInterpreterILBB *il_op,
+	RZ_NONNULL const RzInterpreterILBB *il_bb,
 	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	void **it;
-	rz_pvector_foreach(il_op, it) {
+	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
 		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
 		RzInterpreterInsnPkt *pkt = *it;
@@ -23,6 +23,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 			return false;
 		}
 		if (pc == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv) && AD(state->pc->abstr_data)->is_concrete) {
+			// Instruction did not manipulate the PC. Set it to the next instruction (packet).
 			set_pc(state, pc + pkt->insn_pkt_size, plugin_data);
 		}
 	}

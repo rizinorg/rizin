@@ -5,8 +5,8 @@
  * \file The API implementation for all analysis interpreters.
  */
 
-#include "rz_cons.h"
 #include "rz_util/rz_assert.h"
+#include "rz_util/rz_itv.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -24,11 +24,12 @@ RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt
 	free(pkt);
 }
 
-RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_op) {
-	if (!il_op) {
+RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb) {
+	if (!il_bb) {
 		return;
 	}
-	rz_pvector_free(il_op);
+	rz_pvector_free(il_bb->il_ops);
+	free(il_bb);
 }
 
 RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue) {
@@ -165,6 +166,9 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->is_running_flag) {
 		rz_atomic_bool_free(iset->is_running_flag);
 	}
+	if (iset->ignored_code) {
+		rz_vector_free(iset->ignored_code);
+	}
 	if (iset->state) {
 		rz_interpreter_abstr_state_free(iset->state);
 	}
@@ -196,8 +200,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
-	RZ_NONNULL const RzPVector /*<RzBinSymbol *>*/ *symbols) {
-	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points && symbols, NULL);
+	RZ_NONNULL RZ_OWN RzVector /*<RzInterval>*/ *ignored_code) {
+	rz_return_val_if_fail(plugin && state && addr_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points && ignored_code, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
 	if (!set) {
@@ -212,13 +216,24 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	set->io_result = io_result;
 	set->is_running_flag = is_running_flag;
 	set->entry_points = entry_points;
-	set->symbols = symbols;
+	set->ignored_code = ignored_code;
 	if (state->kinds != (plugin->supported_abstractions & state->kinds)) {
 		RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
 		rz_interpreter_set_free(set);
 		return NULL;
 	}
 	return set;
+}
+
+static bool jumps_ignored_code(const RzVector *v, ut64 jump_target) {
+	void *it;
+	rz_vector_foreach (v, it) {
+		RzInterval *itv = it;
+		if (rz_itv_contain(*itv, jump_target)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points) {
@@ -237,7 +252,8 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	ut64 out_hash,
 	RzVector *tmp_succ_addr,
 	RzVector *succ_states,
-	ut64 *shared_addr_loc,
+	ut64 *shared_addr,
+	const RzInterpreterILBB *il_bb,
 	void *plugin_data) {
 	// Debug printing whole state of VM.
 	//
@@ -260,17 +276,27 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	has_succsessor = !rz_vector_empty(tmp_succ_addr);
 	// Request the successor effects over the queue.
 	while (!rz_vector_empty(tmp_succ_addr)) {
-		rz_vector_pop_front(tmp_succ_addr, shared_addr_loc);
-		if (*shared_addr_loc == UT64_MAX || *shared_addr_loc == 0) {
+		rz_vector_pop_front(tmp_succ_addr, shared_addr);
+		if (*shared_addr == UT64_MAX || *shared_addr == 0) {
 			RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
 			// Obviously wrong address.
 			return false;
 		}
-		SuccessorState ss = { .addr = *shared_addr_loc, .in_state_hash = out_hash };
+		if (jumps_ignored_code(iset->ignored_code, *shared_addr)) {
+			RZ_LOG_DEBUG("interpreter: tried to jump to ignored code region at 0x%" PFMT64x "\n", *shared_addr);
+			// Ignored code is mostly dynamically linked functions.
+			// Skip to the next following address after the jump.
+			*shared_addr = il_bb->bb_addr + il_bb->size;
+			RZ_LOG_DEBUG("interpreter: Request instead 0x%" PFMT64x "\n", *shared_addr);
+		}
+
+		SuccessorState ss = { .addr = *shared_addr, .in_state_hash = out_hash };
 		// The successors are pushed in the same order into the succ_states
 		// vector, as they are requested over the addr_queue.
 		rz_vector_push(succ_states, &ss);
-		rz_th_queue_push(iset->addr_queue, shared_addr_loc, true);
+		rz_th_queue_push(iset->addr_queue, shared_addr, true);
+		// TODO: Race condition:
+		// Multiple jump targets could overwrite the value in shared_addr before it is read.
 	}
 	return has_succsessor;
 }
@@ -377,41 +403,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 		// Determine the successor effects to evaluate.
 		// Only newly reached states are allowed to add successors.
-		if (new_state_reached) {
-			// Debug printing whole state of VM.
-			//
-			// plugin->state_as_str(out_state, state_str, plugin_data);
-			// char *s = rz_strbuf_drain_nofree(state_str);
-			// RZ_LOG_DEBUG("%s", s);
-			// free(s);
-
-			// Determine successors and increase the reference counts for the current out state.
-			if (!plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
-				rz_warn_if_reached();
-				goto in_loop_error;
-			}
-			// It is possible that the successor function doesn't add successors.
-			// E.g. because the PC is an abstract value.
-			// In this case the state counts as invalid.
-			new_state_reached = !rz_vector_empty(tmp_succ_addr);
-			// Request the successor effects over the queue.
-			while (!rz_vector_empty(tmp_succ_addr)) {
-				rz_vector_pop_front(tmp_succ_addr, addr);
-				if (*addr == UT64_MAX || *addr == 0) {
-					RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
-					// Obviously wrong address.
-					goto loop_cleanup;
-				}
-				SuccessorState ss = { .addr = *addr, .in_state_hash = out_hash };
-				// The successors are pushed in the same order into the succ_states
-				// vector, as they are requested over the addr_queue.
-				rz_vector_push(succ_states, &ss);
-				rz_th_queue_push(iset->addr_queue, addr, true);
-			}
-		}
-
-		if (!new_state_reached) {
-			// No new state, means we can stop interpreting.
+		if (!(new_state_reached && choose_next_pc(iset, out_state, out_hash, tmp_succ_addr, succ_states, addr, il_bb, plugin_data))) {
+			// No new state or address means we can stop interpreting.
 			// Note, that we can't use the queues as cancel condition because they
 			// are asynchronous and checking them would introduces race conditions.
 			// TODO: This doesn't work if the interpreter can produce multiple out states.
