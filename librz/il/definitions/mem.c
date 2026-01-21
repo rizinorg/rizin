@@ -113,28 +113,28 @@ RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) 
 }
 
 static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bool big_endian) {
-	RzBitVector *value = rz_bv_new_zero(n_bits);
-	if (!value) {
-		rz_warn_if_reached();
+	st64 current_address = 0;
+
+	if ((current_address = rz_buf_tell(buf)) < 0 || rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
+		// Seek failed
 		return NULL;
 	}
 
-	ut64 address = rz_bv_to_ut64(key);
-	ut32 n_bytes = rz_bv_len_bytes(value);
-
-	ut8 *data = calloc(n_bytes, 1);
-	if (!data) {
-		return value;
+	RzBitVector *value = rz_bv_new_zero(n_bits);
+	if (!value) {
+		rz_warn_if_reached();
+		rz_buf_seek(buf, current_address, RZ_BUF_SET);
+		return NULL;
 	}
 
-	// we ignore bad reads. RzBuffer fills up with its "overflow byte" on failure.
-	rz_buf_read_at(buf, address, data, n_bytes);
-	if (big_endian) {
-		rz_bv_set_from_bytes_be(value, data, 0, n_bits);
-	} else {
-		rz_bv_set_from_bytes_le(value, data, 0, n_bits);
+	rz_bv_set_from_buffer_ble(value, buf, rz_bv_len_bytes(value), big_endian);
+
+	// Seek back
+	if (rz_buf_seek(buf, current_address, RZ_BUF_SET) < 0) {
+		rz_bv_free(value);
+		return NULL;
 	}
-	free(data);
+
 	return value;
 }
 
@@ -159,7 +159,7 @@ static bool write_n_bits(RzBuffer *buf, RzBitVector *key, RzBitVector *value, bo
 }
 
 /**
- * Load an entire work of the given size from the given address
+ * Load an entire word of the given size from the given address
  * \param key address (bitvector)
  * \param n_bits How many bits to read. This also determines the size of the returned bitvector
  * \return data (bitvector)

@@ -5,6 +5,7 @@
 #define RZ_BITVECTOR_H
 
 #include <rz_types.h>
+#include <rz_util/rz_buf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,6 +122,9 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value);
 RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size, bool big_endian);
 RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
 RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size);
+RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size);
+RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size);
+RZ_API void rz_bv_set_from_buffer_ble(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size, bool big_endian);
 RZ_API void rz_bv_set_to_bytes_ble(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf, bool big_endian);
 RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
 RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
