@@ -92,7 +92,6 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		}
 	}
 	rz_iterator_free(it);
-	state->ext = RZ_NEW0(ProtoInterprSharedObjects);
 	return true;
 }
 
@@ -140,8 +139,6 @@ static bool fini_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_da
 		av->abstr_data = NULL;
 	}
 	rz_iterator_free(it);
-	free(state->ext);
-	state->ext = NULL;
 	return true;
 }
 

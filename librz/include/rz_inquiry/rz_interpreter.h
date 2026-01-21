@@ -54,6 +54,19 @@ typedef struct {
 	void *abstr_data; ///< The abstract data. It is managed by individual interpreter.
 } RzInterpreterAbstrVal;
 
+/**
+ * objects the interpreter should use to send over the queues.
+ *
+ * TODO: Race conditions ahead, if one party is faster in overwriting one value
+ * than the other using it.
+ * Shouldn't happen though as long as there is only one interpreter
+ * and one RzInquiry managing everything.
+ */
+typedef struct {
+	RzAnalysisXRef xref; ///< OWNER: yield consumer - The xref object passed over the queue.
+	ut64 shared_addr; ///< OWNER: IL cache - The address object passed to an IL cache for BB requests.
+} RzInterpreterSharedObjects;
+
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
@@ -63,7 +76,11 @@ typedef struct {
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
-	void *ext; ///< Optional state extensions. Managed by individual interpreters.
+	/**
+	 * \brief Shared objects. Pointers to the members are passed over the queue.
+	 * TODO: This is obviously not the final solution. Just some poor man's shared memory.
+	 */
+	RzInterpreterSharedObjects *shared_obj;
 } RzInterpreterAbstrState;
 
 typedef enum {
