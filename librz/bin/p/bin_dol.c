@@ -23,39 +23,62 @@
 
 #define N_TEXT 7
 #define N_DATA 11
+#define DOL_HDR_SIZE 0x100           
 
-RZ_PACKED(
-	typedef struct {
-		ut32 text_paddr[N_TEXT];
-		ut32 data_paddr[N_DATA];
-		ut32 text_vaddr[N_TEXT];
-		ut32 data_vaddr[N_DATA];
-		ut32 text_size[N_TEXT];
-		ut32 data_size[N_DATA];
-		ut32 bss_addr;
-		ut32 bss_size;
-		ut32 entrypoint;
-		ut32 padding[10];
-		// 0x100 -- start of data section
-	})
+
+typedef struct {
+	ut32 text_paddr[N_TEXT];
+	ut32 data_paddr[N_DATA];
+	ut32 text_vaddr[N_TEXT];
+	ut32 data_vaddr[N_DATA];
+	ut32 text_size[N_TEXT];
+	ut32 data_size[N_DATA];
+	ut32 bss_addr;
+	ut32 bss_size;
+	ut32 entrypoint;
+	}
 DolHeader;
 
-static bool check_buffer(RzBuffer *buf) {
-	ut8 tmp[6];
-	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
-	bool one = r == sizeof(tmp) && !memcmp(tmp, "\x00\x00\x01\x00\x00\x00", sizeof(tmp));
-	if (one) {
-		int r = rz_buf_read_at(buf, 6, tmp, sizeof(tmp));
-		if (r != 6) {
+static bool read_u32_array(RzBuffer *buf, ut64 *offset, ut32 *arr, size_t count) {
+	for (size_t i = 0; i < count; i++) {
+		if (!rz_buf_read_be32_offset(buf, offset, &arr[i])) {
 			return false;
 		}
-		return sizeof(tmp) && !memcmp(tmp, "\x00\x00\x00\x00\x00\x00", sizeof(tmp));
 	}
-	return false;
+	return true;
 }
 
+static bool dol_parse_header(RzBuffer *buf, DolHeader *dol) {
+	ut64 off = 0;
+	return read_u32_array(buf, &off, dol->text_paddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_paddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_vaddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_vaddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_size, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_size, N_DATA) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_addr) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_size) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->entrypoint);
+}
+
+static bool check_buffer(RzBuffer *buf) { 
+	if (!buf || rz_buf_size(buf) < DOL_HDR_SIZE) {
+		 return false;
+	 } 
+	ut32 text0_off, entry;
+    if (!rz_buf_read_be32_at(buf, 0x00, &text0_off)) { 
+		return false; 
+	} 
+	if (!rz_buf_read_be32_at(buf, 0xE0, &entry)) { 
+		return false; 
+	}  
+	bool text0_valid = (text0_off >= 0x100) && (text0_off % 4 == 0);
+	bool entry_valid = (entry & 0xF0000000) == 0x80000000;
+
+	return text0_valid && entry_valid;
+}
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	if (rz_buf_size(buf) < sizeof(DolHeader)) {
+	if (rz_buf_size(buf) < DOL_HDR_SIZE) {
 		return false;
 	}
 	DolHeader *dol = RZ_NEW0(DolHeader);
@@ -72,12 +95,16 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 		goto lowername_err;
 	}
 	free(lowername);
-	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
+	if (!dol_parse_header(buf, dol)) {
+		goto dol_err;
+	}
 	obj->bin_obj = dol;
 	return true;
 
 lowername_err:
 	free(lowername);
+	free(dol);
+	return false;
 dol_err:
 	free(dol);
 	return false;

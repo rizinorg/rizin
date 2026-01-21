@@ -11,3 +11,77 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME=DOL: sqrxz4 - iI
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=iI
+EXPECT=<<EOF
+arch     ppc
+cpu      N/A
+features N/A
+baddr    0x80b00000
+binsz    0x000fcc80
+bintype  N/A
+bits     32
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Nintendo Wii
+maxopsz  4
+minopsz  4
+os       wii-ios
+cc       N/A
+rpath    N/A
+subsys
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - aflt 
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=aflt:json
+EXPECT=<<EOF
+[{"addr":2147496192,"name":"entry0","size":2384,"xrefsTo":7,"xrefsFrom":64,"calls":42,"nbbs":63,"edges":94,"cc":33,"noreturn":"false"}]
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - flt csv
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=flt:csv
+EXPECT=<<EOF
+addr,size,space,name,realname
+0x80003100,550176,symbols,entry0,entry0
+0x80003100,842080,sections,section.text_0,section.text_0
+0x800d0a60,193024,sections,section.data_0,section.data_0
+0x800ffc60,3434688,sections,section.bss,section.bss
+EOF
+RUN
+
+NAME=DOL: sqrxz4 - entry point
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=ie~program[0]
+EXPECT=<<EOF
+0x80003100
+EOF
+RUN
+
+
+
