@@ -327,11 +327,11 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
 
-	void **priv_ptr = NULL;
+	void *priv_ptr = NULL;
 	if (iset->plugin->init) {
-		iset->plugin->init(priv_ptr);
+		iset->plugin->init(&priv_ptr);
 	}
-	void *plugin_data = priv_ptr ? *priv_ptr : NULL;
+	void *plugin_data = priv_ptr ? priv_ptr : NULL;
 
 	//
 	// Start interpretation

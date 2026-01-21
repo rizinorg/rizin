@@ -28,8 +28,8 @@ typedef struct {
 } ProtoIntrprAbstrData;
 
 typedef struct {
-	RzAnalysisXRef xref;
-} ProtoInterprSharedObjects;
+	HtUU *bb_invocation_count;
+} ProtoIntrprPluginData;
 
 /**
  * \brief In bytes
