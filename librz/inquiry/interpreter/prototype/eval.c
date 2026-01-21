@@ -38,11 +38,10 @@ bool report_xref_yield(
 		// packet. So skip them here.
 		return true;
 	}
-	ProtoInterprSharedObjects *sobj = state->ext;
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
-		RzAnalysisXRef *xref = &sobj->xref;
+		RzAnalysisXRef *xref = &state->shared_obj->xref;
 		xref->from = from;
 		xref->to = to_addr;
 		xref->type = type;

@@ -119,6 +119,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	state->locals = ht_up_new(NULL, free);
 	state->lets = ht_up_new(NULL, free);
 	state->il_config = il_config;
+	state->shared_obj = RZ_NEW0(RzInterpreterSharedObjects);
 	return state;
 }
 
@@ -143,6 +144,9 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 	}
 	if (state->il_config) {
 		rz_analysis_il_config_free(state->il_config);
+	}
+	if (state->shared_obj) {
+		free(state->shared_obj);
 	}
 	free(state);
 }
@@ -252,7 +256,6 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	ut64 out_hash,
 	RzVector *tmp_succ_addr,
 	RzVector *succ_states,
-	ut64 *shared_addr,
 	const RzInterpreterILBB *il_bb,
 	void *plugin_data) {
 	// Debug printing whole state of VM.
@@ -262,6 +265,7 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	// RZ_LOG_DEBUG("%s", s);
 	// free(s);
 
+	ut64 *shared_addr = &iset->state->shared_obj->shared_addr;
 	bool has_succsessor = true;
 
 	// Determine successors and increase the reference counts for the current out state.
@@ -378,10 +382,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		goto pre_loop_error;
 	}
 
-	// Shared memory passed via the addr_queue.
-	ut64 _addr = 0;
-	ut64 *addr = &_addr;
-
 	while (rz_atomic_bool_get(iset->is_running_flag)) {
 		// Evaluate the effect on the input state.
 		if (!plugin->eval(in_state, il_bb, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
@@ -403,7 +403,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 		// Determine the successor effects to evaluate.
 		// Only newly reached states are allowed to add successors.
-		if (!(new_state_reached && choose_next_pc(iset, out_state, out_hash, tmp_succ_addr, succ_states, addr, il_bb, plugin_data))) {
+		if (!(new_state_reached && choose_next_pc(iset, out_state, out_hash, tmp_succ_addr, succ_states, il_bb, plugin_data))) {
 			// No new state or address means we can stop interpreting.
 			// Note, that we can't use the queues as cancel condition because they
 			// are asynchronous and checking them would introduces race conditions.
