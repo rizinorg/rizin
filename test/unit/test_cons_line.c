@@ -226,6 +226,20 @@ bool test_line_ns_completion(void) {
 	mu_end;
 }
 
+bool test_line_ctrl_r_noninteractive(void) {
+	RzCons *cons = rz_cons_new();
+	cons->context->is_interactive = false; // Simulate non-interactive input
+	RzLine *line = cons->line;
+	const char instr[] = "< \x12"
+	                     "asd\n";
+	rz_cons_readpush(instr, sizeof(instr));
+	const char *result = rz_line_readline(line);
+	mu_assert_eq(line->gcomp, 0, "unexpected gcomp activation");
+	mu_assert_notnull(result, "readline returned NULL");
+	rz_cons_free();
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_line_nocompletion);
 	mu_run_test(test_line_onecompletion);
@@ -234,6 +248,7 @@ bool all_tests() {
 	mu_run_test(test_line_undo);
 	mu_run_test(test_line_misc);
 	mu_run_test(test_line_ns_completion);
+	mu_run_test(test_line_ctrl_r_noninteractive);
 	return tests_passed != tests_run;
 }
 

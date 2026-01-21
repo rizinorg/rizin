@@ -1707,11 +1707,13 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			fflush(stdout);
 			break;
 		case 18: // ^R -- reverse-search
-			if (line->gcomp) {
-				line->gcomp_idx++;
+			if (rz_cons_is_interactive()) {
+				if (line->gcomp) {
+					line->gcomp_idx++;
+				}
+				gcomp_is_rev = true;
+				line->gcomp = 1;
 			}
-			gcomp_is_rev = true;
-			line->gcomp = 1;
 			break;
 		case 19: // ^S -- forward-search
 			if (line->gcomp) {
