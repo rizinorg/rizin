@@ -7,6 +7,9 @@
 #include <rz_util.h>
 
 #include "../prototype/eval.h"
+#include "rz_util/ht_uu.h"
+
+#define MAX_INVOCATIONS_PER_BB 3
 
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzInterpreterILBB *il_bb,
@@ -14,6 +17,20 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
+	ProtoIntrprPluginData *pdata = plugin_data;
+	bool found = false;
+	ut64 ic_pc = ht_uu_find(pdata->bb_invocation_count, il_bb->bb_addr, &found);
+	if (!found) {
+		ic_pc = 0;
+	} else if (ic_pc > MAX_INVOCATIONS_PER_BB) {
+		// TODO: Make it configurable
+		RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->bb_addr)
+		set_pc(state, il_bb->bb_addr + il_bb->size, plugin_data);
+		return true;
+	}
+	ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, ic_pc + 1);
+	RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc, il_bb->bb_addr);
+
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
@@ -192,6 +209,32 @@ bool state_as_str(RZ_NONNULL const RzInterpreterAbstrState *state,
 	return true;
 }
 
+bool init(void **plugin_data) {
+	ProtoIntrprPluginData *pdata = RZ_NEW0(ProtoIntrprPluginData);
+	if (!pdata) {
+		return NULL;
+	}
+	RZ_LOG_DEBUG("prototype: init()\n");
+	pdata->bb_invocation_count = ht_uu_new();
+	if (!pdata->bb_invocation_count) {
+		free(pdata);
+		return false;
+	}
+	*plugin_data = pdata;
+	return true;
+}
+
+bool fini(void *plugin_data) {
+	if (!plugin_data) {
+		return true;
+	}
+	RZ_LOG_DEBUG("prototype: fini()\n");
+	ProtoIntrprPluginData *pdata = plugin_data;
+	ht_uu_free(pdata->bb_invocation_count);
+	free(pdata);
+	return true;
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -200,8 +243,8 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.license = "LGPL-3.0-only",
 	.supported_abstractions = RZ_INTERPRETER_ABSTRACTION_CONST,
 	.supported_yields = RZ_INTERPRETER_YIELD_KIND_XREF,
-	.init = NULL,
-	.fini = NULL,
+	.init = init,
+	.fini = fini,
 	.eval = eval,
 	.successors = successors,
 	.init_state = init_state,
