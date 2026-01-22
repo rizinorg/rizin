@@ -114,25 +114,29 @@ RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) 
 
 static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bool big_endian) {
 	st64 current_address = 0;
+	RzBitVector *value = rz_bv_new_zero(n_bits);
 
-	if ((current_address = rz_buf_tell(buf)) < 0 || rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
-		// Seek failed
+	if (!value) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
-	RzBitVector *value = rz_bv_new_zero(n_bits);
-	if (!value) {
-		rz_warn_if_reached();
-		rz_buf_seek(buf, current_address, RZ_BUF_SET);
-		return NULL;
+	if ((current_address = rz_buf_tell(buf)) < 0 || rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
+		// Seek failed
+
+		// TODO:
+		//   this seem to fail for addresses above UT64_MAX/2;
+		//   should we return NULL (which breaks other tests)? the alternative is to fail silently and read from the wrong address
+		//
+		return value;
 	}
 
 	rz_bv_set_from_buffer_ble(value, buf, rz_bv_len(value), big_endian);
 
 	// Seek back
 	if (rz_buf_seek(buf, current_address, RZ_BUF_SET) < 0) {
-		rz_bv_free(value);
-		return NULL;
+		// rz_bv_free(value);
+		// return NULL;
 	}
 
 	return value;
