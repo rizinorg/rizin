@@ -28,10 +28,8 @@ static bool read_n_bits_into(RzBuffer *mem_buf, RZ_OUT RzBitVector *out_bv, ut32
 	// }
 	// free(data);
 
-	st64 prev_addr = rz_buf_tell(mem_buf);
 	rz_buf_seek(mem_buf, address, RZ_BUF_SET);
 	rz_bv_set_from_buffer_ble(out_bv, mem_buf, n_bytes, big_endian);
-	rz_buf_seek(mem_buf, prev_addr, RZ_BUF_SET);
 	return true;
 }
 

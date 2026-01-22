@@ -113,7 +113,6 @@ RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value) 
 }
 
 static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bool big_endian) {
-	st64 current_address = 0;
 	RzBitVector *value = rz_bv_new_zero(n_bits);
 
 	if (!value) {
@@ -121,19 +120,13 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 		return NULL;
 	}
 
-	if ((current_address = rz_buf_tell(buf)) < 0 || rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
+	if (rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
 		// Seek failed
-		RZ_LOG_WARN("Attempted read beyond ST64_MAX");
+		RZ_LOG_WARN("Attempted read beyond ST64_MAX. See issue #5806.");
 		return value;
 	}
 
 	rz_bv_set_from_buffer_ble(value, buf, rz_bv_len(value), big_endian);
-
-	// Seek back
-	if (rz_buf_seek(buf, current_address, RZ_BUF_SET) < 0) {
-		rz_warn_if_reached();
-	}
-
 	return value;
 }
 
