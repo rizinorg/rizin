@@ -1863,31 +1863,11 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 #endif
 
 /**
- * \def todo..
- * \brief todo..
+ * \brief Reverses the byte order of an arbitrary sized byte array.
+ * \param bytes The byte array.
+ * \param n Length of the byte array.
  */
 static inline void rz_swap_n_bytes(ut8 *bytes, ut32 n) {
-	switch (n) {
-	case 0:
-	case 1:
-		return;
-	case 2: {
-		ut16 *p = (ut16 *)bytes;
-		*p = rz_swap_ut16(*p);
-		return;
-	}
-	case 4: {
-		ut32 *p = (ut32 *)bytes;
-		*p = rz_swap_ut32(*p);
-		return;
-	}
-	case 8: {
-		ut64 *p = (ut64 *)bytes;
-		*p = rz_swap_ut64(*p);
-		return;
-	}
-	}
-
 	for (ut32 i = 0; i < n / 2; i++) {
 		ut32 j = n - i - 1;
 		ut8 tmp = bytes[i];

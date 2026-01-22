@@ -125,8 +125,10 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 		// Seek failed
 
 		// TODO:
-		//   this seem to fail for addresses above UT64_MAX/2;
-		//   should we return NULL (which breaks other tests)? the alternative is to fail silently and read from the wrong address
+		//   this seem to fail for addresses above UT64_MAX/2; possible options:
+		//      - should we return NULL (which breaks other tests)?
+		//      - call rz_warn_if_reached() and return zero bitvector?
+		//      - otherwise fail silently and return a zero bitvector (current case)
 		//
 		return value;
 	}

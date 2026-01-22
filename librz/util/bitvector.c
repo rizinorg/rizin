@@ -1836,7 +1836,16 @@ RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNUL
 }
 
 /**
- * \brief todo
+ * Reads \p bit_size number of bits (assumed in little-endian byte order) from the current position of a RzBuffer \p buf and assigns to the value of the bitvector \p bv.
+ * \param bv bitvector to assign the new value to.
+ * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
+ * \param bit_size number of bits to read from buf.
+ *
+ * The buffer position remains changed, so the caller is expected to seek the buffer cursor back if necessary.
+ *
+ * Similar to `rz_bv_set_from_bytes_le()`:
+ *  - The bitvector's size is unchanged.
+ *  - If `bv->len` < `bit_size`, additional bits are cut off, if `bv->len` > `bit_size`, the rest is filled up with 0.
  */
 RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
 	rz_return_if_fail(bv && buf && bit_size);
@@ -1872,8 +1881,16 @@ RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 }
 
 /**
- * \brief todo
+ * Reads \p bit_size number of bits (assumed in big-endian byte order) from the current position of a RzBuffer \p buf and assigns to the value of the bitvector \p bv.
+ * \param bv bitvector to assign the new value to.
+ * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
+ * \param bit_size number of bits to read from \p buf.
  *
+ * The buffer position remains changed, so the caller is expected to seek the buffer cursor back if necessary.
+ *
+ * Similar to `rz_bv_set_from_bytes_be()`:
+ *  - The bitvector's size is unchanged.
+ *  - If `bv->len` < `bit_size`, additional bits are cut off, if `bv->len` > `bit_size`, the rest is filled up with 0.
  */
 RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
 	rz_return_if_fail(bv && buf && bit_size);
@@ -1924,7 +1941,11 @@ RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 }
 
 /**
- * \brief todo..
+ * \brief Helper function for calling `rz_bv_set_from_buffer_be()` or `rz_bv_set_from_buffer_le()` based on a flag
+ * \param bv bitvector to assign the new value to.
+ * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
+ * \param bit_size number of bits to read from \p buf
+ * \param big_endian control flag for specifying endian type
  */
 RZ_API void rz_bv_set_from_buffer_ble(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size, bool big_endian) {
 	if (big_endian) {
