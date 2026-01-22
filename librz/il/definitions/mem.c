@@ -123,13 +123,7 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 
 	if ((current_address = rz_buf_tell(buf)) < 0 || rz_buf_seek(buf, rz_bv_to_ut64(key), RZ_BUF_SET) < 0) {
 		// Seek failed
-
-		// TODO:
-		//   this seem to fail for addresses above UT64_MAX/2; possible options:
-		//      - should we return NULL (which breaks other tests)?
-		//      - call rz_warn_if_reached() and return zero bitvector?
-		//      - otherwise fail silently and return a zero bitvector (current case)
-		//
+		RZ_LOG_WARN("Attempted read beyond ST64_MAX");
 		return value;
 	}
 
@@ -137,8 +131,7 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 
 	// Seek back
 	if (rz_buf_seek(buf, current_address, RZ_BUF_SET) < 0) {
-		// rz_bv_free(value);
-		// return NULL;
+		rz_warn_if_reached();
 	}
 
 	return value;
