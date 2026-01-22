@@ -45,13 +45,15 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 	} while (0)
 
 /**
- * \brief todo..
+ * \brief Initializes the RzTable \p T used for storing results of microbenchmarks.
+ * \param T table to initialize.
  */
 #define RZ_BENCH_TABLE_INIT(T) \
 	rz_table_set_columnsf(T, "snnnn", "Benchmark", "Iterations", "Total time [ms]", "Average time [us/op]", "Throughput [ops/sec]");
 
 /**
- * \brief todo..
+ * \brief Prints microbenchmark results and frees the RzTable \p T. Should be called at end of a benchmark suite.
+ * \param T table to print and free.
  */
 #define RZ_BENCH_TABLE_PRINT_AND_FREE(T) \
 	char *table_out = rz_table_tostring(T); \
