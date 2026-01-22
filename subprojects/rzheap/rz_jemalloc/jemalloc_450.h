@@ -5,125 +5,509 @@
 #ifndef RZ_JEMALLOC_450_H
 #define RZ_JEMALLOC_450_H
 
+#include "jemalloc_arch.h"
 #include <rz_util.h>
 #include <rz_io.h>
 
-#define JM_NBINS_450          36
 #define NPSIZES_64_450        199
 #define NPSIZES_32_450        71
 #define SMOOTHSTEP_NSTEPS_450 200
 #define BITMAP_MAX_LEVELS_450 5
 #define LG_PAGE_450           12
 
-#define EXTENT_NODE_SIZE_64  112
-#define EXTENT_NODE_SIZE_32  56
-#define EXTENT_NODE_SIZE_MAX 112
+// ============================================================================
+// jemalloc 4.5.0 configuration
+// ============================================================================
 
-#define ARENA_SIZE_64_450  10072
-#define ARENA_SIZE_32_450  5748
-#define ARENA_SIZE_MAX_450 10072
+typedef struct rz_jemalloc_arena_offsets_450_t {
+	ut32 lock;
+	ut32 stats;
+	ut32 tcache_ql;
+	ut32 prof_accumbytes;
+	ut32 achunks;
+	ut32 extent_sn_next;
+	ut32 lg_dirty_mult;
+	ut32 purging;
+	ut32 nactive;
+	ut32 runs_dirty;
+	ut32 chunks_cache;
+	ut32 decay;
+	ut32 huge;
+	ut32 huge_mtx;
+	ut32 chunks_szsnad_cached;
+	ut32 chunks_ad_cached;
+	ut32 chunks_mtx;
+	ut32 node_cache;
+	ut32 node_cache_mtx;
+	ut32 chunk_hooks;
+	ut32 bins;
+	ut32 runs_avail;
+} RzJemallocArenaOffsets450;
 
-#define ARENA_BIN_INFO_SIZE_64  64
-#define ARENA_BIN_INFO_SIZE_32  56
-#define ARENA_BIN_INFO_SIZE_MAX 64
+typedef struct rz_jemalloc_extent_node_offsets_450_t {
+	ut32 ql_link_next;
+} RzJemallocExtentNodeOffsets450;
 
-#define ARENA_BIN_SIZE_64  168
-#define ARENA_BIN_SIZE_32  116
-#define ARENA_BIN_SIZE_MAX 168
+typedef struct rz_jemalloc_bin_info_offsets_450_t {
+	ut32 bitmap_info;
+	ut32 reg0_offset;
+} RzJemallocBinInfoOffsets450;
 
-#define MALLOC_MUTEX_SIZE_64_450 80
-#define MALLOC_MUTEX_SIZE_32_450 44
+typedef struct rz_jemalloc_config_450_t {
+	RzJemallocArch arch;
+	ut8 ptr_size;
+	bool is_big_endian;
 
-#define BITMAP_INFO_SIZE_64_450 16
-#define BITMAP_INFO_SIZE_32_450 32
+	ut8 lg_page;
 
-#define EXTENT_NODE_EN_ARENA_OFFSET_64     0
-#define EXTENT_NODE_EN_ADDR_OFFSET_64      8
-#define EXTENT_NODE_EN_SIZE_OFFSET_64      16
-#define EXTENT_NODE_EN_SN_OFFSET_64        24
-#define EXTENT_NODE_QL_LINK_NEXT_OFFSET_64 80
-#define EXTENT_NODE_QL_LINK_PREV_OFFSET_64 88
+	ut32 sc_nbins;
+	ut32 npsizes;
 
-#define EXTENT_NODE_EN_ARENA_OFFSET_32     0
-#define EXTENT_NODE_EN_ADDR_OFFSET_32      4
-#define EXTENT_NODE_EN_SIZE_OFFSET_32      8
-#define EXTENT_NODE_EN_SN_OFFSET_32        12
-#define EXTENT_NODE_QL_LINK_NEXT_OFFSET_32 40
-#define EXTENT_NODE_QL_LINK_PREV_OFFSET_32 44
+	bool bitmap_use_tree;
+	ut32 bitmap_max_levels;
 
-#define ARENA_IND_OFFSET_64_450                  0
-#define ARENA_NTHREADS_OFFSET_64_450             4
-#define ARENA_LOCK_OFFSET_64_450                 16
-#define ARENA_STATS_OFFSET_64_450                96
-#define ARENA_TCACHE_QL_OFFSET_64_450            224
-#define ARENA_PROF_ACCUMBYTES_OFFSET_64_450      232
-#define ARENA_OFFSET_STATE_OFFSET_64_450         240
-#define ARENA_DSS_PREC_OFFSET_64_450             248
-#define ARENA_ACHUNKS_OFFSET_64_450              256
-#define ARENA_EXTENT_SN_NEXT_OFFSET_64_450       264
-#define ARENA_SPARE_OFFSET_64_450                272
-#define ARENA_LG_DIRTY_MULT_OFFSET_64_450        280
-#define ARENA_PURGING_OFFSET_64_450              288
-#define ARENA_NACTIVE_OFFSET_64_450              296
-#define ARENA_NDIRTY_OFFSET_64_450               304
-#define ARENA_RUNS_DIRTY_OFFSET_64_450           312
-#define ARENA_CHUNKS_CACHE_OFFSET_64_450         328
-#define ARENA_DECAY_OFFSET_64_450                440
-#define ARENA_HUGE_OFFSET_64_450                 2088
-#define ARENA_HUGE_MTX_OFFSET_64_450             2096
-#define ARENA_CHUNKS_SZSNAD_CACHED_OFFSET_64_450 2176
-#define ARENA_CHUNKS_AD_CACHED_OFFSET_64_450     2184
-#define ARENA_CHUNKS_MTX_OFFSET_64_450           2208
-#define ARENA_NODE_CACHE_OFFSET_64_450           2288
-#define ARENA_NODE_CACHE_MTX_OFFSET_64_450       2296
-#define ARENA_CHUNK_HOOKS_OFFSET_64_450          2376
-#define ARENA_BINS_OFFSET_64_450                 2432
-#define ARENA_RUNS_AVAIL_OFFSET_64_450           8480
+	ut32 extent_node_size;
+	ut32 bin_info_size;
+	ut32 bin_size;
+	ut32 arena_size;
+	ut32 bitmap_info_size;
+	ut32 malloc_mutex_size;
 
-#define ARENA_IND_OFFSET_32_450                  0
-#define ARENA_NTHREADS_OFFSET_32_450             4
-#define ARENA_LOCK_OFFSET_32_450                 12
-#define ARENA_STATS_OFFSET_32_450                56
-#define ARENA_TCACHE_QL_OFFSET_32_450            152
-#define ARENA_PROF_ACCUMBYTES_OFFSET_32_450      156
-#define ARENA_OFFSET_STATE_OFFSET_32_450         164
-#define ARENA_DSS_PREC_OFFSET_32_450             168
-#define ARENA_ACHUNKS_OFFSET_32_450              172
-#define ARENA_EXTENT_SN_NEXT_OFFSET_32_450       176
-#define ARENA_SPARE_OFFSET_32_450                180
-#define ARENA_LG_DIRTY_MULT_OFFSET_32_450        184
-#define ARENA_PURGING_OFFSET_32_450              188
-#define ARENA_NACTIVE_OFFSET_32_450              192
-#define ARENA_NDIRTY_OFFSET_32_450               196
-#define ARENA_RUNS_DIRTY_OFFSET_32_450           200
-#define ARENA_CHUNKS_CACHE_OFFSET_32_450         208
-#define ARENA_DECAY_OFFSET_32_450                264
-#define ARENA_HUGE_OFFSET_32_450                 1104
-#define ARENA_HUGE_MTX_OFFSET_32_450             1108
-#define ARENA_CHUNKS_SZSNAD_CACHED_OFFSET_32_450 1152
-#define ARENA_CHUNKS_AD_CACHED_OFFSET_32_450     1156
-#define ARENA_CHUNKS_MTX_OFFSET_32_450           1168
-#define ARENA_NODE_CACHE_OFFSET_32_450           1212
-#define ARENA_NODE_CACHE_MTX_OFFSET_32_450       1216
-#define ARENA_CHUNK_HOOKS_OFFSET_32_450          1260
-#define ARENA_BINS_OFFSET_32_450                 1288
-#define ARENA_RUNS_AVAIL_OFFSET_32_450           5464
+	RzJemallocArenaOffsets450 arena_offsets;
+	RzJemallocExtentNodeOffsets450 extent_node_offsets;
+	RzJemallocBinInfoOffsets450 bin_info_offsets;
+} RzJemallocConfig450;
 
-#define ARENA_BIN_INFO_REG_SIZE_OFFSET_64     0
-#define ARENA_BIN_INFO_REDZONE_SIZE_OFFSET_64 8
-#define ARENA_BIN_INFO_REG_INTERVAL_OFFSET_64 16
-#define ARENA_BIN_INFO_RUN_SIZE_OFFSET_64     24
-#define ARENA_BIN_INFO_NREGS_OFFSET_64        32
-#define ARENA_BIN_INFO_BITMAP_INFO_OFFSET_64  40
-#define ARENA_BIN_INFO_REG0_OFFSET_OFFSET_64  56
+static const RzJemallocConfig450 rz_jemalloc_config_amd64_linux_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AMD64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.npsizes = 199,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.extent_node_size = 112,
+	.bin_info_size = 64,
+	.bin_size = 168,
+	.arena_size = 10072,
+	.bitmap_info_size = 16,
+	.malloc_mutex_size = 80,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 96,
+		.tcache_ql = 224,
+		.prof_accumbytes = 232,
+		.achunks = 256,
+		.extent_sn_next = 264,
+		.lg_dirty_mult = 280,
+		.purging = 288,
+		.nactive = 296,
+		.runs_dirty = 312,
+		.chunks_cache = 328,
+		.decay = 440,
+		.huge = 2088,
+		.huge_mtx = 2096,
+		.chunks_szsnad_cached = 2176,
+		.chunks_ad_cached = 2184,
+		.chunks_mtx = 2208,
+		.node_cache = 2288,
+		.node_cache_mtx = 2296,
+		.chunk_hooks = 2376,
+		.bins = 2432,
+		.runs_avail = 8480,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 56,
+	},
+};
 
-#define ARENA_BIN_INFO_REG_SIZE_OFFSET_32     0
-#define ARENA_BIN_INFO_REDZONE_SIZE_OFFSET_32 4
-#define ARENA_BIN_INFO_REG_INTERVAL_OFFSET_32 8
-#define ARENA_BIN_INFO_RUN_SIZE_OFFSET_32     12
-#define ARENA_BIN_INFO_NREGS_OFFSET_32        16
-#define ARENA_BIN_INFO_BITMAP_INFO_OFFSET_32  20
-#define ARENA_BIN_INFO_REG0_OFFSET_OFFSET_32  52
+static const RzJemallocConfig450 rz_jemalloc_config_i386_linux_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_I386,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.npsizes = 71,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.extent_node_size = 56,
+	.bin_info_size = 56,
+	.bin_size = 116,
+	.arena_size = 5748,
+	.bitmap_info_size = 32,
+	.malloc_mutex_size = 44,
+	.arena_offsets = {
+		.lock = 12,
+		.stats = 56,
+		.tcache_ql = 152,
+		.prof_accumbytes = 156,
+		.achunks = 172,
+		.extent_sn_next = 176,
+		.lg_dirty_mult = 184,
+		.purging = 188,
+		.nactive = 192,
+		.runs_dirty = 200,
+		.chunks_cache = 208,
+		.decay = 264,
+		.huge = 1104,
+		.huge_mtx = 1108,
+		.chunks_szsnad_cached = 1152,
+		.chunks_ad_cached = 1156,
+		.chunks_mtx = 1168,
+		.node_cache = 1212,
+		.node_cache_mtx = 1216,
+		.chunk_hooks = 1260,
+		.bins = 1288,
+		.runs_avail = 5464,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 40,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 20,
+		.reg0_offset = 52,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_aarch64_linux_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.npsizes = 199,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.extent_node_size = 112,
+	.bin_info_size = 64,
+	.bin_size = 176,
+	.arena_size = 10392,
+	.bitmap_info_size = 16,
+	.malloc_mutex_size = 88,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 104,
+		.tcache_ql = 232,
+		.prof_accumbytes = 240,
+		.achunks = 264,
+		.extent_sn_next = 272,
+		.lg_dirty_mult = 288,
+		.purging = 296,
+		.nactive = 304,
+		.runs_dirty = 320,
+		.chunks_cache = 336,
+		.decay = 448,
+		.huge = 2096,
+		.huge_mtx = 2104,
+		.chunks_szsnad_cached = 2192,
+		.chunks_ad_cached = 2200,
+		.chunks_mtx = 2224,
+		.node_cache = 2312,
+		.node_cache_mtx = 2320,
+		.chunk_hooks = 2408,
+		.bins = 2464,
+		.runs_avail = 8800,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 56,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_aarch64_linux_16k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 14,
+	.sc_nbins = 44,
+	.npsizes = 191,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 4,
+	.extent_node_size = 112,
+	.bin_info_size = 104,
+	.bin_size = 176,
+	.arena_size = 11736,
+	.bitmap_info_size = 56,
+	.malloc_mutex_size = 88,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 104,
+		.tcache_ql = 232,
+		.prof_accumbytes = 240,
+		.achunks = 264,
+		.extent_sn_next = 272,
+		.lg_dirty_mult = 288,
+		.purging = 296,
+		.nactive = 304,
+		.runs_dirty = 320,
+		.chunks_cache = 336,
+		.decay = 448,
+		.huge = 2096,
+		.huge_mtx = 2104,
+		.chunks_szsnad_cached = 2192,
+		.chunks_ad_cached = 2200,
+		.chunks_mtx = 2224,
+		.node_cache = 2312,
+		.node_cache_mtx = 2320,
+		.chunk_hooks = 2408,
+		.bins = 2464,
+		.runs_avail = 10208,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 96,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_aarch64_linux_64k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 16,
+	.sc_nbins = 52,
+	.npsizes = 183,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.extent_node_size = 112,
+	.bin_info_size = 112,
+	.bin_size = 176,
+	.arena_size = 13080,
+	.bitmap_info_size = 64,
+	.malloc_mutex_size = 88,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 104,
+		.tcache_ql = 232,
+		.prof_accumbytes = 240,
+		.achunks = 264,
+		.extent_sn_next = 272,
+		.lg_dirty_mult = 288,
+		.purging = 296,
+		.nactive = 304,
+		.runs_dirty = 320,
+		.chunks_cache = 336,
+		.decay = 448,
+		.huge = 2096,
+		.huge_mtx = 2104,
+		.chunks_szsnad_cached = 2192,
+		.chunks_ad_cached = 2200,
+		.chunks_mtx = 2224,
+		.node_cache = 2312,
+		.node_cache_mtx = 2320,
+		.chunk_hooks = 2408,
+		.bins = 2464,
+		.runs_avail = 11616,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 104,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_arm32_linux_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_ARM32,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 39,
+	.npsizes = 71,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.extent_node_size = 56,
+	.bin_info_size = 56,
+	.bin_size = 128,
+	.arena_size = 6592,
+	.bitmap_info_size = 32,
+	.malloc_mutex_size = 44,
+	.arena_offsets = {
+		.lock = 12,
+		.stats = 56,
+		.tcache_ql = 160,
+		.prof_accumbytes = 168,
+		.achunks = 184,
+		.extent_sn_next = 188,
+		.lg_dirty_mult = 196,
+		.purging = 200,
+		.nactive = 204,
+		.runs_dirty = 212,
+		.chunks_cache = 220,
+		.decay = 280,
+		.huge = 1128,
+		.huge_mtx = 1132,
+		.chunks_szsnad_cached = 1176,
+		.chunks_ad_cached = 1180,
+		.chunks_mtx = 1192,
+		.node_cache = 1236,
+		.node_cache_mtx = 1240,
+		.chunk_hooks = 1284,
+		.bins = 1312,
+		.runs_avail = 6304,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 40,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 20,
+		.reg0_offset = 52,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_arm32_linux_64k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_ARM32,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 16,
+	.sc_nbins = 55,
+	.npsizes = 55,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 7,
+	.extent_node_size = 56,
+	.bin_info_size = 64,
+	.bin_size = 128,
+	.arena_size = 8576,
+	.bitmap_info_size = 40,
+	.malloc_mutex_size = 44,
+	.arena_offsets = {
+		.lock = 12,
+		.stats = 56,
+		.tcache_ql = 160,
+		.prof_accumbytes = 168,
+		.achunks = 184,
+		.extent_sn_next = 188,
+		.lg_dirty_mult = 196,
+		.purging = 200,
+		.nactive = 204,
+		.runs_dirty = 212,
+		.chunks_cache = 220,
+		.decay = 280,
+		.huge = 1128,
+		.huge_mtx = 1132,
+		.chunks_szsnad_cached = 1176,
+		.chunks_ad_cached = 1180,
+		.chunks_mtx = 1192,
+		.node_cache = 1236,
+		.node_cache_mtx = 1240,
+		.chunk_hooks = 1284,
+		.bins = 1312,
+		.runs_avail = 8352,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 40,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 20,
+		.reg0_offset = 60,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_aarch64_darwin_16k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 14,
+	.sc_nbins = 44,
+	.npsizes = 191,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 4,
+	.extent_node_size = 112,
+	.bin_info_size = 104,
+	.bin_size = 136,
+	.arena_size = 9816,
+	.bitmap_info_size = 56,
+	.malloc_mutex_size = 48,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 64,
+		.tcache_ql = 192,
+		.prof_accumbytes = 200,
+		.achunks = 224,
+		.extent_sn_next = 232,
+		.lg_dirty_mult = 248,
+		.purging = 256,
+		.nactive = 264,
+		.runs_dirty = 280,
+		.chunks_cache = 296,
+		.decay = 408,
+		.huge = 2056,
+		.huge_mtx = 2064,
+		.chunks_szsnad_cached = 2112,
+		.chunks_ad_cached = 2120,
+		.chunks_mtx = 2144,
+		.node_cache = 2192,
+		.node_cache_mtx = 2200,
+		.chunk_hooks = 2248,
+		.bins = 2304,
+		.runs_avail = 8288,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 96,
+	},
+};
+
+static inline const RzJemallocConfig450 *rz_jemalloc_get_config_450(const char *arch, const char *os, int bits, const char *page_size) {
+	if (!arch || !os) {
+		return NULL;
+	}
+
+	bool is_darwin = !strcmp(os, "darwin") || !strcmp(os, "macos") || !strcmp(os, "ios");
+	bool is_x86 = !strcmp(arch, "x86") || !strcmp(arch, "x64");
+	bool is_arm = !strcmp(arch, "arm") || !strcmp(arch, "aarch64");
+
+	bool is_16k = page_size && (!strcmp(page_size, "16k") || !strcmp(page_size, "16K"));
+	bool is_64k = page_size && (!strcmp(page_size, "64k") || !strcmp(page_size, "64K"));
+
+	if (is_darwin && is_arm && bits == 64) {
+		return &rz_jemalloc_config_aarch64_darwin_16k_450;
+	}
+
+	if (is_x86) {
+		if (bits == 64) {
+			return &rz_jemalloc_config_amd64_linux_4k_450;
+		} else {
+			return &rz_jemalloc_config_i386_linux_4k_450;
+		}
+	}
+
+	if (is_arm) {
+		if (bits == 64) {
+			if (is_64k) {
+				return &rz_jemalloc_config_aarch64_linux_64k_450;
+			} else if (is_16k) {
+				return &rz_jemalloc_config_aarch64_linux_16k_450;
+			}
+			return &rz_jemalloc_config_aarch64_linux_4k_450;
+		} else {
+			if (is_64k) {
+				return &rz_jemalloc_config_arm32_linux_64k_450;
+			}
+			return &rz_jemalloc_config_arm32_linux_4k_450;
+		}
+	}
+
+	return NULL;
+}
+
+// ============================================================================
+// jemalloc 4.5.0 structs
+// ============================================================================
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/4.5.0/include/jemalloc/internal/extent.h
@@ -142,9 +526,7 @@ typedef struct extent_node_t_450 {
  */
 typedef struct bitmap_info_t_450 {
 	ut64 nbits;
-	// 64 bit dont use tree
 	ut64 ngroups;
-	// 32 bit uses tree
 	ut32 nlevels;
 	ut64 levels[BITMAP_MAX_LEVELS_450 + 1];
 } bitmap_info_t_450;
@@ -196,229 +578,188 @@ typedef struct arena_t_450 {
 	ut64 runs_avail_addr;
 } arena_t_450;
 
-static inline size_t extent_node_size_450(bool is_64bit) {
-	return is_64bit ? EXTENT_NODE_SIZE_64 : EXTENT_NODE_SIZE_32;
-}
+// ============================================================================
+// jemalloc 4.5.0 parser functions
+// ============================================================================
 
-static inline size_t arena_size_450(bool is_64bit) {
-	return is_64bit ? ARENA_SIZE_64_450 : ARENA_SIZE_32_450;
-}
-
-static inline size_t arena_bin_info_size_450(bool is_64bit) {
-	return is_64bit ? ARENA_BIN_INFO_SIZE_64 : ARENA_BIN_INFO_SIZE_32;
-}
-
-static inline size_t arena_bin_size_450(bool is_64bit) {
-	return is_64bit ? ARENA_BIN_SIZE_64 : ARENA_BIN_SIZE_32;
-}
-
-static inline size_t malloc_mutex_size_450(bool is_64bit) {
-	return is_64bit ? MALLOC_MUTEX_SIZE_64_450 : MALLOC_MUTEX_SIZE_32_450;
-}
-
-static inline size_t bitmap_info_size_450(bool is_64bit) {
-	return is_64bit ? BITMAP_INFO_SIZE_64_450 : BITMAP_INFO_SIZE_32_450;
-}
-
-static inline ut64 bins_offset_450(bool is_64bit) {
-	return is_64bit ? ARENA_BINS_OFFSET_64_450 : ARENA_BINS_OFFSET_32_450;
-}
-
-static inline ut64 achunks_offset_450(bool is_64bit) {
-	return is_64bit ? ARENA_ACHUNKS_OFFSET_64_450 : ARENA_ACHUNKS_OFFSET_32_450;
-}
-
-static inline ut32 npsizes_450(bool is_64bit) {
-	return is_64bit ? NPSIZES_64_450 : NPSIZES_32_450;
-}
-
-static inline bool read_and_parse_extent_node_t_450_64(RzIO *io, ut64 addr, extent_node_t_450 *out) {
-	bool ret = false;
-	ut8 buf[EXTENT_NODE_SIZE_64];
-	if (!rz_io_read_at_mapped(io, addr, buf, EXTENT_NODE_SIZE_64)) {
+static inline bool read_and_parse_extent_node_t_450(RzIO *io, ut64 addr, extent_node_t_450 *out,
+	const RzJemallocConfig450 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->extent_node_size);
+	if (!buf) {
 		return false;
 	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, EXTENT_NODE_SIZE_64);
+	if (!rz_io_read_at_mapped(io, addr, buf, config->extent_node_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->extent_node_size, true);
 	if (!b) {
+		free(buf);
 		return false;
 	}
 	ut64 offset = 0;
-
-	if (!rz_buf_read_le64_offset(b, &offset, &out->en_arena) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->en_addr) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->en_size) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->en_sn)) {
-		goto cleanup;
-	}
-	offset = EXTENT_NODE_QL_LINK_NEXT_OFFSET_64;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->ql_link_next) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->ql_link_prev)) {
-		goto cleanup;
-	}
-	ret = true;
-
-cleanup:
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_extent_node_t_450_32(RzIO *io, ut64 addr, extent_node_t_450 *out) {
 	bool ret = false;
-	ut8 buf[EXTENT_NODE_SIZE_32];
-	if (!rz_io_read_at_mapped(io, addr, buf, EXTENT_NODE_SIZE_32)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, EXTENT_NODE_SIZE_32);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
 
-	ut32 en_arena, en_addr, en_size, en_sn;
-	if (!rz_buf_read_le32_offset(b, &offset, &en_arena) ||
-		!rz_buf_read_le32_offset(b, &offset, &en_addr) ||
-		!rz_buf_read_le32_offset(b, &offset, &en_size) ||
-		!rz_buf_read_le32_offset(b, &offset, &en_sn)) {
-		goto cleanup;
-	}
-	out->en_arena = en_arena;
-	out->en_addr = en_addr;
-	out->en_size = en_size;
-	out->en_sn = en_sn;
+	const RzJemallocExtentNodeOffsets450 *eno = &config->extent_node_offsets;
 
-	offset = EXTENT_NODE_QL_LINK_NEXT_OFFSET_32;
-	ut32 ql_next, ql_prev;
-	if (!rz_buf_read_le32_offset(b, &offset, &ql_next) ||
-		!rz_buf_read_le32_offset(b, &offset, &ql_prev)) {
-		goto cleanup;
-	}
-	out->ql_link_next = ql_next;
-	out->ql_link_prev = ql_prev;
-	ret = true;
-
-cleanup:
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_extent_node_t_450(RzIO *io, ut64 addr, extent_node_t_450 *out, bool is_64bit) {
-	return is_64bit
-		? read_and_parse_extent_node_t_450_64(io, addr, out)
-		: read_and_parse_extent_node_t_450_32(io, addr, out);
-}
-
-static inline bool read_and_parse_arena_bin_info_t_450_64(RzIO *io, ut64 addr, arena_bin_info_t_450 *out) {
-	bool ret = false;
-	ut8 buf[ARENA_BIN_INFO_SIZE_64];
-	if (!rz_io_read_at_mapped(io, addr, buf, ARENA_BIN_INFO_SIZE_64)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, ARENA_BIN_INFO_SIZE_64);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
-
-	if (!rz_buf_read_le64_offset(b, &offset, &out->reg_size) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->redzone_size) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->reg_interval) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->run_size) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->nregs)) {
-		goto cleanup;
-	}
-	offset = ARENA_BIN_INFO_BITMAP_INFO_OFFSET_64;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.ngroups)) {
-		goto cleanup;
-	}
-	out->bitmap_info.nlevels = 0;
-	for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
-		out->bitmap_info.levels[i] = 0;
-	}
-	offset = ARENA_BIN_INFO_REG0_OFFSET_OFFSET_64;
-	if (!rz_buf_read_le32_offset(b, &offset, &out->reg0_offset)) {
-		goto cleanup;
-	}
-	ret = true;
-
-cleanup:
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_arena_bin_info_t_450_32(RzIO *io, ut64 addr, arena_bin_info_t_450 *out) {
-	bool ret = false;
-	ut8 buf[ARENA_BIN_INFO_SIZE_32];
-	if (!rz_io_read_at_mapped(io, addr, buf, ARENA_BIN_INFO_SIZE_32)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, ARENA_BIN_INFO_SIZE_32);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
-
-	ut32 reg_size, redzone_size, reg_interval, run_size;
-	if (!rz_buf_read_le32_offset(b, &offset, &reg_size) ||
-		!rz_buf_read_le32_offset(b, &offset, &redzone_size) ||
-		!rz_buf_read_le32_offset(b, &offset, &reg_interval) ||
-		!rz_buf_read_le32_offset(b, &offset, &run_size) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->nregs)) {
-		goto cleanup;
-	}
-	out->reg_size = reg_size;
-	out->redzone_size = redzone_size;
-	out->reg_interval = reg_interval;
-	out->run_size = run_size;
-
-	offset = ARENA_BIN_INFO_BITMAP_INFO_OFFSET_32;
-	ut32 nbits;
-	if (!rz_buf_read_le32_offset(b, &offset, &nbits) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
-		goto cleanup;
-	}
-	out->bitmap_info.nbits = nbits;
-	out->bitmap_info.ngroups = 0;
-	for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
-		ut32 level;
-		if (!rz_buf_read_le32_offset(b, &offset, &level)) {
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->en_arena) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->en_addr) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->en_size) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->en_sn) ||
+			((offset = eno->ql_link_next), !rz_buf_read_le64_offset(b, &offset, &out->ql_link_next)) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->ql_link_prev)) {
 			goto cleanup;
 		}
-		out->bitmap_info.levels[i] = level;
-	}
-	offset = ARENA_BIN_INFO_REG0_OFFSET_OFFSET_32;
-	if (!rz_buf_read_le32_offset(b, &offset, &out->reg0_offset)) {
-		goto cleanup;
+	} else {
+		ut32 en_arena, en_addr, en_size, en_sn, ql_next, ql_prev;
+		if (!rz_buf_read_le32_offset(b, &offset, &en_arena) ||
+			!rz_buf_read_le32_offset(b, &offset, &en_addr) ||
+			!rz_buf_read_le32_offset(b, &offset, &en_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &en_sn) ||
+			((offset = eno->ql_link_next), !rz_buf_read_le32_offset(b, &offset, &ql_next)) ||
+			!rz_buf_read_le32_offset(b, &offset, &ql_prev)) {
+			goto cleanup;
+		}
+		out->en_arena = en_arena;
+		out->en_addr = en_addr;
+		out->en_size = en_size;
+		out->en_sn = en_sn;
+		out->ql_link_next = ql_next;
+		out->ql_link_prev = ql_prev;
 	}
 	ret = true;
-
 cleanup:
 	rz_buf_free(b);
 	return ret;
 }
 
-static inline bool read_and_parse_arena_bin_info_t_450(RzIO *io, ut64 addr, arena_bin_info_t_450 *out, bool is_64bit) {
-	return is_64bit
-		? read_and_parse_arena_bin_info_t_450_64(io, addr, out)
-		: read_and_parse_arena_bin_info_t_450_32(io, addr, out);
-}
-
-static inline bool read_and_parse_arena_t_450_64(RzIO *io, ut64 addr, arena_t_450 *out) {
-	bool ret = false;
-	ut8 *buf = malloc(ARENA_SIZE_64_450);
+static inline bool read_and_parse_arena_bin_info_t_450(RzIO *io, ut64 addr, arena_bin_info_t_450 *out,
+	const RzJemallocConfig450 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->bin_info_size);
 	if (!buf) {
 		return false;
 	}
-	if (!rz_io_read_at_mapped(io, addr, buf, ARENA_SIZE_64_450)) {
+	if (!rz_io_read_at_mapped(io, addr, buf, config->bin_info_size)) {
 		free(buf);
 		return false;
 	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, ARENA_SIZE_64_450);
-	free(buf);
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->bin_info_size, true);
 	if (!b) {
+		free(buf);
 		return false;
 	}
 	ut64 offset = 0;
+	bool ret = false;
+
+	const RzJemallocBinInfoOffsets450 *bio = &config->bin_info_offsets;
+
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->reg_size) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->redzone_size) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->reg_interval) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->run_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->nregs)) {
+			goto cleanup;
+		}
+
+		offset = bio->bitmap_info;
+		if (config->bitmap_use_tree) { // tree format for 64 bit
+			if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
+				goto cleanup;
+			}
+			out->bitmap_info.ngroups = 0;
+			for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
+				if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.levels[i])) {
+					goto cleanup;
+				}
+			}
+		} else { // non-tree format for 64 bit
+			if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) ||
+				!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.ngroups)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nlevels = 0;
+			for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
+				out->bitmap_info.levels[i] = 0;
+			}
+		}
+		if (((offset = bio->reg0_offset), !rz_buf_read_le32_offset(b, &offset, &out->reg0_offset))) {
+			goto cleanup;
+		}
+	} else {
+		ut32 reg_size, redzone_size, reg_interval, run_size;
+		if (!rz_buf_read_le32_offset(b, &offset, &reg_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &redzone_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &reg_interval) ||
+			!rz_buf_read_le32_offset(b, &offset, &run_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->nregs)) {
+			goto cleanup;
+		}
+		out->reg_size = reg_size;
+		out->redzone_size = redzone_size;
+		out->reg_interval = reg_interval;
+		out->run_size = run_size;
+
+		offset = bio->bitmap_info;
+		if (config->bitmap_use_tree) { // tree format for 32 bit
+			ut32 nbits;
+			if (!rz_buf_read_le32_offset(b, &offset, &nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nbits = nbits;
+			out->bitmap_info.ngroups = 0;
+			for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
+				ut32 level;
+				if (!rz_buf_read_le32_offset(b, &offset, &level)) {
+					goto cleanup;
+				}
+				out->bitmap_info.levels[i] = level;
+			}
+		} else { // non-tree format for 32 bit
+			ut32 nbits, ngroups;
+			if (!rz_buf_read_le32_offset(b, &offset, &nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &ngroups)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nbits = nbits;
+			out->bitmap_info.ngroups = ngroups;
+			out->bitmap_info.nlevels = 0;
+			for (int i = 0; i < BITMAP_MAX_LEVELS_450 + 1; i++) {
+				out->bitmap_info.levels[i] = 0;
+			}
+		}
+		if (((offset = bio->reg0_offset), !rz_buf_read_le32_offset(b, &offset, &out->reg0_offset))) {
+			goto cleanup;
+		}
+	}
+	ret = true;
+cleanup:
+	rz_buf_free(b);
+	return ret;
+}
+
+static inline bool read_and_parse_arena_t_450(RzIO *io, ut64 addr, arena_t_450 *out,
+	const RzJemallocConfig450 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->arena_size);
+	if (!buf) {
+		return false;
+	}
+	if (!rz_io_read_at_mapped(io, addr, buf, config->arena_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->arena_size, true);
+	if (!b) {
+		free(buf);
+		return false;
+	}
+	ut64 offset = 0;
+	bool ret = false;
+
+	const RzJemallocArenaOffsets450 *ao = &config->arena_offsets;
 
 	if (!rz_buf_read_le32_offset(b, &offset, &out->ind) ||
 		!rz_buf_read_le32_offset(b, &offset, &out->nthreads[0]) ||
@@ -426,158 +767,72 @@ static inline bool read_and_parse_arena_t_450_64(RzIO *io, ut64 addr, arena_t_45
 		goto cleanup;
 	}
 
-	ut64 lg_dirty_mult_raw;
-	ut8 purging_byte;
-
-	offset = ARENA_PROF_ACCUMBYTES_OFFSET_64_450;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->prof_accumbytes) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->offset_state) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) {
-		goto cleanup;
+	if (config->ptr_size == 8) {
+		ut64 lg_dirty_mult_tmp;
+		ut8 purging_byte;
+		if (((offset = ao->prof_accumbytes), !rz_buf_read_le64_offset(b, &offset, &out->prof_accumbytes)) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->offset_state) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->dss_prec) ||
+			((offset = ao->extent_sn_next), !rz_buf_read_le64_offset(b, &offset, &out->extent_sn_next)) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->spare) ||
+			((offset = ao->lg_dirty_mult), !rz_buf_read_le64_offset(b, &offset, &lg_dirty_mult_tmp)) ||
+			((offset = ao->purging), !rz_buf_read8_offset(b, &offset, &purging_byte)) ||
+			((offset = ao->nactive), !rz_buf_read_le64_offset(b, &offset, &out->nactive)) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->ndirty)) {
+			goto cleanup;
+		}
+		out->lg_dirty_mult = (st64)lg_dirty_mult_tmp;
+		out->purging = purging_byte != 0;
+	} else {
+		ut32 offset_state, extent_sn_next, spare, lg_dirty_mult_tmp, nactive, ndirty;
+		ut8 purging_byte;
+		if (((offset = ao->prof_accumbytes), !rz_buf_read_le64_offset(b, &offset, &out->prof_accumbytes)) ||
+			!rz_buf_read_le32_offset(b, &offset, &offset_state) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->dss_prec) ||
+			((offset = ao->extent_sn_next), !rz_buf_read_le32_offset(b, &offset, &extent_sn_next)) ||
+			!rz_buf_read_le32_offset(b, &offset, &spare) ||
+			((offset = ao->lg_dirty_mult), !rz_buf_read_le32_offset(b, &offset, &lg_dirty_mult_tmp)) ||
+			((offset = ao->purging), !rz_buf_read8_offset(b, &offset, &purging_byte)) ||
+			((offset = ao->nactive), !rz_buf_read_le32_offset(b, &offset, &nactive)) ||
+			!rz_buf_read_le32_offset(b, &offset, &ndirty)) {
+			goto cleanup;
+		}
+		out->offset_state = offset_state;
+		out->extent_sn_next = extent_sn_next;
+		out->spare = spare;
+		out->lg_dirty_mult = (st32)lg_dirty_mult_tmp;
+		out->purging = purging_byte != 0;
+		out->nactive = nactive;
+		out->ndirty = ndirty;
 	}
 
-	offset = ARENA_EXTENT_SN_NEXT_OFFSET_64_450;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->extent_sn_next) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->spare)) {
-		goto cleanup;
-	}
+	out->lock_addr = addr + ao->lock;
+	out->stats_addr = addr + ao->stats;
+	out->tcache_ql_addr = addr + ao->tcache_ql;
+	out->achunks_addr = addr + ao->achunks;
+	out->runs_dirty_addr = addr + ao->runs_dirty;
+	out->chunks_cache_addr = addr + ao->chunks_cache;
+	out->decay_addr = addr + ao->decay;
+	out->huge_addr = addr + ao->huge;
+	out->huge_mtx_addr = addr + ao->huge_mtx;
+	out->chunks_szsnad_cached_addr = addr + ao->chunks_szsnad_cached;
+	out->chunks_ad_cached_addr = addr + ao->chunks_ad_cached;
+	out->chunks_mtx_addr = addr + ao->chunks_mtx;
+	out->node_cache_addr = addr + ao->node_cache;
+	out->node_cache_mtx_addr = addr + ao->node_cache_mtx;
+	out->chunk_hooks_addr = addr + ao->chunk_hooks;
+	out->bins_addr = addr + ao->bins;
+	out->runs_avail_addr = addr + ao->runs_avail;
 
-	offset = ARENA_LG_DIRTY_MULT_OFFSET_64_450;
-	if (!rz_buf_read_le64_offset(b, &offset, &lg_dirty_mult_raw)) {
-		goto cleanup;
-	}
-	out->lg_dirty_mult = (st64)lg_dirty_mult_raw;
-
-	offset = ARENA_PURGING_OFFSET_64_450;
-	if (rz_buf_read_at(b, offset, &purging_byte, 1) != 1) {
-		goto cleanup;
-	}
-	out->purging = purging_byte != 0;
-
-	offset = ARENA_NACTIVE_OFFSET_64_450;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->nactive) ||
-		!rz_buf_read_le64_offset(b, &offset, &out->ndirty)) {
-		goto cleanup;
-	}
-
-	out->lock_addr = addr + ARENA_LOCK_OFFSET_64_450;
-	out->stats_addr = addr + ARENA_STATS_OFFSET_64_450;
-	out->tcache_ql_addr = addr + ARENA_TCACHE_QL_OFFSET_64_450;
-	out->achunks_addr = addr + ARENA_ACHUNKS_OFFSET_64_450;
-	out->runs_dirty_addr = addr + ARENA_RUNS_DIRTY_OFFSET_64_450;
-	out->chunks_cache_addr = addr + ARENA_CHUNKS_CACHE_OFFSET_64_450;
-	out->decay_addr = addr + ARENA_DECAY_OFFSET_64_450;
-	out->huge_addr = addr + ARENA_HUGE_OFFSET_64_450;
-	out->huge_mtx_addr = addr + ARENA_HUGE_MTX_OFFSET_64_450;
-	out->chunks_szsnad_cached_addr = addr + ARENA_CHUNKS_SZSNAD_CACHED_OFFSET_64_450;
-	out->chunks_ad_cached_addr = addr + ARENA_CHUNKS_AD_CACHED_OFFSET_64_450;
-	out->chunks_mtx_addr = addr + ARENA_CHUNKS_MTX_OFFSET_64_450;
-	out->node_cache_addr = addr + ARENA_NODE_CACHE_OFFSET_64_450;
-	out->node_cache_mtx_addr = addr + ARENA_NODE_CACHE_MTX_OFFSET_64_450;
-	out->chunk_hooks_addr = addr + ARENA_CHUNK_HOOKS_OFFSET_64_450;
-	out->bins_addr = addr + ARENA_BINS_OFFSET_64_450;
-	out->runs_avail_addr = addr + ARENA_RUNS_AVAIL_OFFSET_64_450;
 	ret = true;
-
 cleanup:
 	rz_buf_free(b);
 	return ret;
 }
 
-static inline bool read_and_parse_arena_t_450_32(RzIO *io, ut64 addr, arena_t_450 *out) {
-	bool ret = false;
-	ut8 *buf = malloc(ARENA_SIZE_32_450);
-	if (!buf) {
-		return false;
-	}
-	if (!rz_io_read_at_mapped(io, addr, buf, ARENA_SIZE_32_450)) {
-		free(buf);
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, ARENA_SIZE_32_450);
-	free(buf);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
-
-	if (!rz_buf_read_le32_offset(b, &offset, &out->ind) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->nthreads[0]) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->nthreads[1])) {
-		goto cleanup;
-	}
-
-	ut32 offset_state, extent_sn_next, spare, lg_dirty_mult_raw, nactive, ndirty;
-	ut8 purging_byte;
-
-	offset = ARENA_PROF_ACCUMBYTES_OFFSET_32_450;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->prof_accumbytes) ||
-		!rz_buf_read_le32_offset(b, &offset, &offset_state) ||
-		!rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) {
-		goto cleanup;
-	}
-	out->offset_state = offset_state;
-
-	offset = ARENA_EXTENT_SN_NEXT_OFFSET_32_450;
-	if (!rz_buf_read_le32_offset(b, &offset, &extent_sn_next) ||
-		!rz_buf_read_le32_offset(b, &offset, &spare)) {
-		goto cleanup;
-	}
-	out->extent_sn_next = extent_sn_next;
-	out->spare = spare;
-
-	offset = ARENA_LG_DIRTY_MULT_OFFSET_32_450;
-	if (!rz_buf_read_le32_offset(b, &offset, &lg_dirty_mult_raw)) {
-		goto cleanup;
-	}
-	out->lg_dirty_mult = (st32)lg_dirty_mult_raw;
-
-	offset = ARENA_PURGING_OFFSET_32_450;
-	if (rz_buf_read_at(b, offset, &purging_byte, 1) != 1) {
-		goto cleanup;
-	}
-	out->purging = purging_byte != 0;
-
-	offset = ARENA_NACTIVE_OFFSET_32_450;
-	if (!rz_buf_read_le32_offset(b, &offset, &nactive) ||
-		!rz_buf_read_le32_offset(b, &offset, &ndirty)) {
-		goto cleanup;
-	}
-	out->nactive = nactive;
-	out->ndirty = ndirty;
-
-	out->lock_addr = addr + ARENA_LOCK_OFFSET_32_450;
-	out->stats_addr = addr + ARENA_STATS_OFFSET_32_450;
-	out->tcache_ql_addr = addr + ARENA_TCACHE_QL_OFFSET_32_450;
-	out->achunks_addr = addr + ARENA_ACHUNKS_OFFSET_32_450;
-	out->runs_dirty_addr = addr + ARENA_RUNS_DIRTY_OFFSET_32_450;
-	out->chunks_cache_addr = addr + ARENA_CHUNKS_CACHE_OFFSET_32_450;
-	out->decay_addr = addr + ARENA_DECAY_OFFSET_32_450;
-	out->huge_addr = addr + ARENA_HUGE_OFFSET_32_450;
-	out->huge_mtx_addr = addr + ARENA_HUGE_MTX_OFFSET_32_450;
-	out->chunks_szsnad_cached_addr = addr + ARENA_CHUNKS_SZSNAD_CACHED_OFFSET_32_450;
-	out->chunks_ad_cached_addr = addr + ARENA_CHUNKS_AD_CACHED_OFFSET_32_450;
-	out->chunks_mtx_addr = addr + ARENA_CHUNKS_MTX_OFFSET_32_450;
-	out->node_cache_addr = addr + ARENA_NODE_CACHE_OFFSET_32_450;
-	out->node_cache_mtx_addr = addr + ARENA_NODE_CACHE_MTX_OFFSET_32_450;
-	out->chunk_hooks_addr = addr + ARENA_CHUNK_HOOKS_OFFSET_32_450;
-	out->bins_addr = addr + ARENA_BINS_OFFSET_32_450;
-	out->runs_avail_addr = addr + ARENA_RUNS_AVAIL_OFFSET_32_450;
-	ret = true;
-
-cleanup:
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_arena_t_450(RzIO *io, ut64 addr, arena_t_450 *out, bool is_64bit) {
-	return is_64bit
-		? read_and_parse_arena_t_450_64(io, addr, out)
-		: read_and_parse_arena_t_450_32(io, addr, out);
-}
-
-static inline bool read_achunks_first_450(RzIO *io, ut64 achunks_addr, ut64 *first_out, bool is_64bit) {
-	if (is_64bit) {
+static inline bool read_achunks_first_450(RzIO *io, ut64 achunks_addr, ut64 *first_out,
+	const RzJemallocConfig450 *config) {
+	if (config->ptr_size == 8) {
 		ut8 buf[8];
 		if (!rz_io_read_at_mapped(io, achunks_addr, buf, 8)) {
 			return false;

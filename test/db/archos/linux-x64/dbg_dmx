@@ -2,8 +2,11 @@ NAME=dmxa/dmxb with jemalloc 4.5.0 memory dump
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
+e asm.os=linux
 e dbg.jemalloc.version=4.5.0
+e dbg.jemalloc.page_size=4k
 
 om 3 0x7f2601a03c00 0x8 0x0 rw- je_arenas
 om 3 0x7f2601f5b2d0 0x4 0x8 rw- narenas_total
@@ -87,8 +90,11 @@ NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump
 FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
+e asm.os=linux
 e dbg.jemalloc.version=5.3.0
+e dbg.jemalloc.page_size=4k
 
 om 3 0x561974e68b00 1440 0x0 rw- bin_info
 om 3 0x7faa2cc010c0 0x20000 1440 rw- arena

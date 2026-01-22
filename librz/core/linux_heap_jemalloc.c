@@ -5,7 +5,7 @@
 #include <rz_core.h>
 #include <rz_heap_jemalloc.h>
 
-static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool is_64bit) {
+static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_name) {
 	ut64 vaddr = UT64_MAX;
 	RzBin *bin = core->bin;
 	RzBinFile *current_bf = rz_bin_cur(bin);
@@ -39,7 +39,7 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
-static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol, bool is_64bit) {
+static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	const char *jemalloc_path = NULL;
@@ -72,7 +72,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol,
 	if (jemalloc_path) {
 		char *path = rz_str_newf("%s", jemalloc_path);
 		if (rz_file_exists(path)) {
-			ut64 vaddr = je_get_va_symbol(core, path, symname, is_64bit);
+			ut64 vaddr = je_get_va_symbol(core, path, symname);
 			if (jemalloc_addr != UT64_MAX && vaddr != UT64_MAX) {
 				*symbol = jemalloc_addr + vaddr;
 				free(path);
@@ -86,7 +86,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol,
 	if (binary_path) {
 		char *path = rz_str_newf("%s", binary_path);
 		if (rz_file_exists(path)) {
-			ut64 vaddr = je_get_va_symbol(core, path, symname, is_64bit);
+			ut64 vaddr = je_get_va_symbol(core, path, symname);
 			if (binary_addr != UT64_MAX && vaddr != UT64_MAX) {
 				*symbol = binary_addr + vaddr;
 				free(path);
@@ -104,19 +104,19 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol,
  * jemalloc 4.x has je_chunksize symbol (chunk-based architecture)
  * jemalloc 5.x does NOT have je_chunksize (extent-based architecture)
  */
-static bool rz_jemalloc_detect_version(RzCore *core, bool is_64bit) {
+static bool rz_jemalloc_detect_version(RzCore *core) {
 	ut64 chunksize_addr;
 	const char *current_version = rz_config_get(core->config, "dbg.jemalloc.version");
 
 	// Try to resolve je_chunksize - only exists in jemalloc 4.5.0
-	if (rz_resolve_jemalloc(core, "je_chunksize", &chunksize_addr, is_64bit)) {
+	if (rz_resolve_jemalloc(core, "je_chunksize", &chunksize_addr)) {
 		// je_chunksize found -> jemalloc 4.5.0
 		if (strcmp(current_version, "4.5.0") != 0) {
 			rz_config_set(core->config, "dbg.jemalloc.version", "4.5.0");
 			RZ_LOG_INFO("Detected jemalloc 4.5.0 (je_chunksize symbol found)\n");
 		}
 		return true;
-	} else if (rz_resolve_jemalloc(core, "je_arena_emap_global", &chunksize_addr, is_64bit)) {
+	} else if (rz_resolve_jemalloc(core, "je_arena_emap_global", &chunksize_addr)) {
 		if (strcmp(current_version, "5.3.0") != 0) {
 			rz_config_set(core->config, "dbg.jemalloc.version", "5.3.0");
 			RZ_LOG_INFO("Detected jemalloc 5.3.0 (je_arena_emap_global symbol found)\n");
@@ -129,20 +129,8 @@ static bool rz_jemalloc_detect_version(RzCore *core, bool is_64bit) {
 	}
 }
 
-// ============================================================================
-// jemalloc 4.5.0
-// ============================================================================
-
-/**
- * \brief Read a pointer-sized value from memory
- * \param io RzIO instance
- * \param addr Address to read from
- * \param value Output pointer for the value
- * \param is_64bit Whether the target is 64-bit
- * \return true on success, false on failure
- */
-static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, bool is_64bit) {
-	if (is_64bit) {
+static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, ut8 ptr_size) {
+	if (ptr_size == 8) {
 		ut8 buf[8];
 		if (!rz_io_read_at_mapped(io, addr, buf, 8)) {
 			return false;
@@ -158,16 +146,19 @@ static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, bool is_64bit) 
 	return true;
 }
 
-static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64bit) {
+// ============================================================================
+// jemalloc 4.5.0
+// ============================================================================
+
+static void jemalloc_get_chunks_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
 	ut64 cnksz;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t ptr_size = is_64bit ? 8 : 4;
 
-	if (!rz_resolve_jemalloc(core, "je_chunksize", &cnksz, is_64bit)) {
+	if (!rz_resolve_jemalloc(core, "je_chunksize", &cnksz)) {
 		RZ_LOG_ERROR("Fail at reading symbol je_chunksize\n");
 		return;
 	}
-	if (!read_ptr_at(core->io, cnksz, &cnksz, is_64bit)) {
+	if (!read_ptr_at(core->io, cnksz, &cnksz, config->ptr_size)) {
 		RZ_LOG_ERROR("Failed to read je_chunksize value\n");
 		return;
 	}
@@ -185,14 +176,14 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 			return;
 		}
 
-		if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, is_64bit)) {
+		if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, config)) {
 			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena_addr);
 			return;
 		}
 
 		// Read achunks.qlh_first pointer
 		ut64 achunks_first = 0;
-		if (!read_achunks_first_450(core->io, ar.achunks_addr, &achunks_first, is_64bit)) {
+		if (!read_achunks_first_450(core->io, ar.achunks_addr, &achunks_first, config)) {
 			RZ_LOG_ERROR("Failed to read achunks list head\n");
 			return;
 		}
@@ -201,7 +192,7 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 			return;
 		}
 
-		if (!read_and_parse_extent_node_t_450(core->io, achunks_first, &head, is_64bit)) {
+		if (!read_and_parse_extent_node_t_450(core->io, achunks_first, &head, config)) {
 			RZ_LOG_ERROR("Failed to read extent_node\n");
 			return;
 		}
@@ -215,7 +206,7 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 			PRINTF_BA("0x%08" PFMT64x "\n", cnksz);
 
 			ut64 next_addr = head.ql_link_next;
-			while (next_addr && read_and_parse_extent_node_t_450(core->io, next_addr, &node, is_64bit)) {
+			while (next_addr && read_and_parse_extent_node_t_450(core->io, next_addr, &node, config)) {
 				if (node.en_addr == head.en_addr) {
 					break;
 				}
@@ -236,18 +227,18 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 		arena_t_450 ar;
 		extent_node_t_450 node, head;
 
-		if (!rz_resolve_jemalloc(core, "je_arenas", &sym, is_64bit)) {
+		if (!rz_resolve_jemalloc(core, "je_arenas", &sym)) {
 			RZ_LOG_ERROR("Cannot resolve je_arenas\n");
 			return;
 		}
 
-		if (!read_ptr_at(core->io, sym, &arenas_ptr, is_64bit)) {
+		if (!read_ptr_at(core->io, sym, &arenas_ptr, config->ptr_size)) {
 			RZ_LOG_ERROR("Failed to read je_arenas pointer\n");
 			return;
 		}
 
 		for (;;) {
-			if (!read_ptr_at(core->io, arenas_ptr + i * ptr_size, &arena_addr, is_64bit)) {
+			if (!read_ptr_at(core->io, arenas_ptr + i * config->ptr_size, &arena_addr, config->ptr_size)) {
 				break;
 			}
 			if (!arena_addr) {
@@ -256,19 +247,19 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 
 			PRINTF_GA("arenas[%d]: @ 0x%" PFMT64x " { \n", i++, arena_addr);
 
-			if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, is_64bit)) {
+			if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, config)) {
 				PRINT_GA("}\n");
 				continue;
 			}
 
 			ut64 achunks_first = 0;
-			if (!read_achunks_first_450(core->io, ar.achunks_addr, &achunks_first, is_64bit) ||
+			if (!read_achunks_first_450(core->io, ar.achunks_addr, &achunks_first, config) ||
 				achunks_first == 0) {
 				PRINT_GA("}\n");
 				continue;
 			}
 
-			if (!read_and_parse_extent_node_t_450(core->io, achunks_first, &head, is_64bit)) {
+			if (!read_and_parse_extent_node_t_450(core->io, achunks_first, &head, config)) {
 				PRINT_GA("}\n");
 				continue;
 			}
@@ -282,7 +273,7 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 				PRINTF_BA("0x%08" PFMT64x "\n", cnksz);
 
 				ut64 next_addr = head.ql_link_next;
-				while (next_addr && read_and_parse_extent_node_t_450(core->io, next_addr, &node, is_64bit)) {
+				while (next_addr && read_and_parse_extent_node_t_450(core->io, next_addr, &node, config)) {
 					if (node.en_addr == head.en_addr) {
 						break;
 					}
@@ -300,18 +291,17 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, bool is_64b
 	}
 }
 
-static void jemalloc_print_narenas_450(RzCore *core, const char *input, bool is_64bit) {
+static void jemalloc_print_narenas_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
 	ut64 symaddr;
 	ut64 arenas;
 	ut64 arena_addr = UT64_MAX;
 	int i = 0;
 	ut64 narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t ptr_size = is_64bit ? 8 : 4;
 
 	if (input[0] == '\0') {
-		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr, is_64bit)) {
-			if (!read_ptr_at(core->io, symaddr, &narenas, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
+			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
 				return;
 			}
@@ -326,15 +316,15 @@ static void jemalloc_print_narenas_450(RzCore *core, const char *input, bool is_
 			return;
 		}
 
-		if (rz_resolve_jemalloc(core, "je_arenas", &arenas, is_64bit)) {
-			if (!read_ptr_at(core->io, arenas, &arenas, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "je_arenas", &arenas)) {
+			if (!read_ptr_at(core->io, arenas, &arenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read je_arenas pointer\n");
 				return;
 			}
 			PRINTF_GA("arenas[%" PFMT64d "] @ 0x%" PFMT64x " {\n", narenas, arenas);
 			for (i = 0; i < (int)narenas; i++) {
-				ut64 at = arenas + (i * ptr_size);
-				if (!read_ptr_at(core->io, at, &arena_addr, is_64bit)) {
+				ut64 at = arenas + (i * config->ptr_size);
+				if (!read_ptr_at(core->io, at, &arena_addr, config->ptr_size)) {
 					continue;
 				}
 				if (!arena_addr) {
@@ -352,7 +342,7 @@ static void jemalloc_print_narenas_450(RzCore *core, const char *input, bool is_
 		arena_addr = rz_num_math(core->num, addr_str);
 
 		arena_t_450 ar;
-		if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, is_64bit)) {
+		if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, config)) {
 			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena_addr);
 			return;
 		}
@@ -386,19 +376,18 @@ static void jemalloc_print_narenas_450(RzCore *core, const char *input, bool is_
 		PRINTF_BA("  node_cache = 0x%" PFMT64x "\n", ar.node_cache_addr);
 		PRINTF_BA("  node_cache_mtx = 0x%" PFMT64x "\n", ar.node_cache_mtx_addr);
 		PRINTF_BA("  chunks_hooks = 0x%" PFMT64x "\n", ar.chunk_hooks_addr);
-		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", JM_NBINS_450, ar.bins_addr);
-		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", npsizes_450(is_64bit), ar.runs_avail_addr);
+		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", config->sc_nbins, ar.bins_addr);
+		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", config->npsizes, ar.runs_avail_addr);
 		PRINT_GA("}\n");
 	}
 }
 
 // Helper to print bin info for a single arena
-static void jemalloc_print_arena_bins_450(RzCore *core, ut64 arena_addr, ut64 bin_info, RzConsPrintablePalette *pal, bool is_64bit) {
+static void jemalloc_print_arena_bins_450(RzCore *core, ut64 arena_addr, ut64 bin_info, RzConsPrintablePalette *pal, const RzJemallocConfig450 *config) {
 	arena_bin_info_t_450 b;
-	size_t bin_info_size = arena_bin_info_size_450(is_64bit);
 
-	for (int j = 0; j < JM_NBINS_450; j++) {
-		if (!read_and_parse_arena_bin_info_t_450(core->io, bin_info + j * bin_info_size, &b, is_64bit)) {
+	for (ut32 j = 0; j < config->sc_nbins; j++) {
+		if (!read_and_parse_arena_bin_info_t_450(core->io, bin_info + j * config->bin_info_size, &b, config)) {
 			continue;
 		}
 		PRINT_YA("    {\n");
@@ -418,35 +407,34 @@ static void jemalloc_print_arena_bins_450(RzCore *core, ut64 arena_addr, ut64 bi
 	}
 }
 
-static void jemalloc_get_bins_450(RzCore *core, const char *input, bool is_64bit) {
-	int i = 0;
+static void jemalloc_get_bins_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
 	ut64 bin_info;
 	ut64 arenas;
 	ut64 arena_addr = UT64_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t ptr_size = is_64bit ? 8 : 4;
+	int i = 0;
 
 	if (input[0] == '\0') {
 		// No argument - use symbol resolution (debug mode)
-		if (!rz_resolve_jemalloc(core, "je_arena_bin_info", &bin_info, is_64bit)) {
+		if (!rz_resolve_jemalloc(core, "je_arena_bin_info", &bin_info)) {
 			RZ_LOG_ERROR("Cannot resolve je_arena_bin_info\n");
 			return;
 		}
-		if (rz_resolve_jemalloc(core, "je_arenas", &arenas, is_64bit)) {
-			if (!read_ptr_at(core->io, arenas, &arenas, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "je_arenas", &arenas)) {
+			if (!read_ptr_at(core->io, arenas, &arenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read je_arenas pointer\n");
 				return;
 			}
 			PRINTF_GA("arenas @ 0x%" PFMT64x " {\n", arenas);
 			for (;;) {
-				if (!read_ptr_at(core->io, arenas + i * ptr_size, &arena_addr, is_64bit)) {
+				if (!read_ptr_at(core->io, arenas + i * config->ptr_size, &arena_addr, config->ptr_size)) {
 					break;
 				}
 				if (!arena_addr) {
 					break;
 				}
 				PRINTF_YA("  arenas[%d]: @ 0x%" PFMT64x " {\n", i++, arena_addr);
-				jemalloc_print_arena_bins_450(core, arena_addr, bin_info, pal, is_64bit);
+				jemalloc_print_arena_bins_450(core, arena_addr, bin_info, pal, config);
 				PRINT_YA("  }\n");
 			}
 		}
@@ -471,8 +459,8 @@ static void jemalloc_get_bins_450(RzCore *core, const char *input, bool is_64bit
 		arena_addr = rz_num_math(core->num, args);
 		bin_info = rz_num_math(core->num, bin_info_str);
 
-		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena_addr, JM_NBINS_450);
-		jemalloc_print_arena_bins_450(core, arena_addr, bin_info, pal, is_64bit);
+		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena_addr, config->sc_nbins);
+		jemalloc_print_arena_bins_450(core, arena_addr, bin_info, pal, config);
 		PRINT_GA("}\n");
 
 		free(args);
@@ -483,19 +471,19 @@ static void jemalloc_get_bins_450(RzCore *core, const char *input, bool is_64bit
 // jemalloc 5.3.0
 // ============================================================================
 
-static void jemalloc_print_extent_info_530(RzCore *core, ut64 edata_addr, bool is_64bit) {
+static void jemalloc_print_extent_info_530(RzCore *core, ut64 edata_addr, const RzJemallocConfig530 *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	edata_t_530 edata;
 	static const char *state_names[] = { "Active", "Dirty", "Muzzy", "Retained" };
 
-	if (!read_and_parse_edata_t_530(core->io, edata_addr, &edata, is_64bit)) {
+	if (!read_and_parse_edata_t_530(core->io, edata_addr, &edata, config)) {
 		RZ_LOG_ERROR("Failed to read edata at 0x%" PFMT64x "\n", edata_addr);
 		return;
 	}
 
 	ut64 e_bits = edata.e_bits;
 	ut64 e_addr = edata.e_addr;
-	ut64 e_size = edata.e_size_esn & ~((ut64)(1 << LG_PAGE_530) - 1);
+	ut64 e_size = edata.e_size_esn & ~((ut64)(1 << config->lg_page) - 1);
 	ut32 state = (e_bits & EDATA_BITS_STATE_MASK) >> EDATA_BITS_STATE_SHIFT;
 	bool slab = (e_bits & EDATA_BITS_SLAB_MASK) >> EDATA_BITS_SLAB_SHIFT;
 
@@ -511,7 +499,7 @@ static void jemalloc_print_extent_info_530(RzCore *core, ut64 edata_addr, bool i
 	PRINTF_BA("%s\n", state < 4 ? state_names[state] : "Unknown");
 }
 
-static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool is_64bit) {
+static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, const RzJemallocConfig530 *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	HtUU *seen_extents = ht_uu_new();
 	if (!seen_extents) {
@@ -521,11 +509,9 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool i
 
 	ut32 lg_page, rtree_nsb, bits_per_level, max_subkeys;
 	ut64 root_offset;
-	rtree_params_530(is_64bit, &lg_page, &rtree_nsb, &bits_per_level, &max_subkeys, &root_offset);
+	rtree_params_530(config, &lg_page, &rtree_nsb, &bits_per_level, &max_subkeys, &root_offset);
 
 	ut64 root_addr = rtree_addr + root_offset;
-	size_t node_elm_size = rtree_node_elm_size_530(is_64bit);
-	size_t leaf_elm_size = rtree_leaf_elm_size_530(is_64bit);
 	ut32 extent_count = 0;
 
 	PRINT_GA("Enumerating extents from rtree...\n");
@@ -533,9 +519,9 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool i
 	// Level 1: iterate through root nodes
 	for (ut32 i = 0; i < max_subkeys; i++) {
 		rtree_node_elm_t_530 node;
-		ut64 node_addr = root_addr + i * node_elm_size;
+		ut64 node_addr = root_addr + i * config->rtree_node_elm_size;
 
-		if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, is_64bit)) {
+		if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
 			continue;
 		}
 
@@ -547,14 +533,14 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool i
 		// Level 2: iterate through leaf nodes
 		for (ut32 j = 0; j < max_subkeys; j++) {
 			rtree_leaf_elm_t_530 leaf;
-			ut64 leaf_addr = leaf_base + j * leaf_elm_size;
+			ut64 leaf_addr = leaf_base + j * config->rtree_leaf_elm_size;
 
-			if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, is_64bit)) {
+			if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
 				continue;
 			}
 
 			ut64 edata_addr;
-			if (is_64bit) {
+			if (config->rtree_leaf_compact) {
 				// 64-bit uses compact leaf format with le_bits
 				if (leaf.le_bits == 0) {
 					continue;
@@ -577,7 +563,7 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool i
 			}
 			ht_uu_insert(seen_extents, edata_addr, 1);
 
-			jemalloc_print_extent_info_530(core, edata_addr, is_64bit);
+			jemalloc_print_extent_info_530(core, edata_addr, config);
 			rz_cons_printf("\n");
 			extent_count++;
 		}
@@ -587,10 +573,10 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, bool i
 	ht_uu_free(seen_extents);
 }
 
-static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, bool is_64bit) {
+static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, const RzJemallocConfig530 *config) {
 	ut32 lg_page, rtree_nsb, bits_per_level, max_subkeys;
 	ut64 root_offset;
-	rtree_params_530(is_64bit, &lg_page, &rtree_nsb, &bits_per_level, &max_subkeys, &root_offset);
+	rtree_params_530(config, &lg_page, &rtree_nsb, &bits_per_level, &max_subkeys, &root_offset);
 
 	// Remove page offset to get the key
 	ut64 key = addr >> lg_page;
@@ -601,13 +587,11 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 	ut32 leaf_idx = key & mask;
 
 	ut64 root_addr = rtree_addr + root_offset;
-	size_t node_elm_size = rtree_node_elm_size_530(is_64bit);
-	size_t leaf_elm_size = rtree_leaf_elm_size_530(is_64bit);
 
 	// Read root node to get leaf array base
 	rtree_node_elm_t_530 node;
-	ut64 node_addr = root_addr + (ut64)root_idx * node_elm_size;
-	if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, is_64bit)) {
+	ut64 node_addr = root_addr + (ut64)root_idx * config->rtree_node_elm_size;
+	if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
 		return 0;
 	}
 
@@ -617,12 +601,12 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 	}
 
 	rtree_leaf_elm_t_530 leaf;
-	ut64 leaf_addr = leaf_base + (ut64)leaf_idx * leaf_elm_size;
-	if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, is_64bit)) {
+	ut64 leaf_addr = leaf_base + (ut64)leaf_idx * config->rtree_leaf_elm_size;
+	if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
 		return 0;
 	}
 
-	if (is_64bit) {
+	if (config->rtree_leaf_compact) {
 		if (leaf.le_bits == 0) {
 			return 0;
 		}
@@ -632,14 +616,14 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 	}
 }
 
-static void jemalloc_find_extent_530(RzCore *core, const char *input, bool is_64bit) {
+static void jemalloc_find_extent_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
 	ut64 je_arena_emap_global_addr;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (input[0] == '\0') {
 		// No argument: enumerate all extents
-		if (rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr, is_64bit)) {
-			jemalloc_enumerate_extents_530(core, je_arena_emap_global_addr, is_64bit);
+		if (rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr)) {
+			jemalloc_enumerate_extents_530(core, je_arena_emap_global_addr, config);
 		} else {
 			RZ_LOG_ERROR("Cannot resolve je_arena_emap_global\n");
 		}
@@ -648,22 +632,22 @@ static void jemalloc_find_extent_530(RzCore *core, const char *input, bool is_64
 		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
 		ut64 lookup_addr = rz_num_math(core->num, addr_str);
 
-		if (!rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr, is_64bit)) {
+		if (!rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr)) {
 			RZ_LOG_ERROR("Cannot resolve je_arena_emap_global\n");
 			return;
 		}
 
-		ut64 edata_addr = jemalloc_rtree_lookup_530(core, je_arena_emap_global_addr, lookup_addr, is_64bit);
+		ut64 edata_addr = jemalloc_rtree_lookup_530(core, je_arena_emap_global_addr, lookup_addr, config);
 		if (edata_addr == 0) {
 			PRINTF_RA("No extent found for address 0x%" PFMT64x "\n", lookup_addr);
 			return;
 		}
 
-		jemalloc_print_extent_info_530(core, edata_addr, is_64bit);
+		jemalloc_print_extent_info_530(core, edata_addr, config);
 	}
 }
 
-static void jemalloc_extent_info_530(RzCore *core, const char *input, bool is_64bit) {
+static void jemalloc_extent_info_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
 	if (input[0] == '\0') {
 		RZ_LOG_ERROR("Usage: dmxei <edata_addr>\n");
 		return;
@@ -672,25 +656,23 @@ static void jemalloc_extent_info_530(RzCore *core, const char *input, bool is_64
 	const char *addr_str = (input[0] == ' ') ? input + 1 : input;
 	ut64 edata_addr = rz_num_math(core->num, addr_str);
 
-	jemalloc_print_extent_info_530(core, edata_addr, is_64bit);
+	jemalloc_print_extent_info_530(core, edata_addr, config);
 }
 
-static void jemalloc_print_arena_bins_530(RzCore *core, ut64 arena, ut64 bin_info_addr, bool is_64bit) {
+static void jemalloc_print_arena_bins_530(RzCore *core, ut64 arena, ut64 bin_info_addr, const RzJemallocConfig530 *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	bin_info_t_530 bin_info;
 	bin_t_530 bin;
 
-	ut64 bins_off = bins_offset_530(is_64bit);
-	size_t bin_info_size = bin_info_size_530(is_64bit);
-	size_t bin_size = bin_size_530(is_64bit);
+	ut64 bins_off = config->arena_offsets.bins;
 
-	for (int j = 0; j < JM_NBINS_530; j++) {
-		if (!read_and_parse_bin_info_t_530(core->io, bin_info_addr + j * bin_info_size, &bin_info, is_64bit)) {
+	for (ut32 j = 0; j < config->sc_nbins; j++) {
+		if (!read_and_parse_bin_info_t_530(core->io, bin_info_addr + j * config->bin_info_size, &bin_info, config)) {
 			continue;
 		}
 
-		ut64 bin_addr = arena + bins_off + j * bin_size;
-		if (!read_and_parse_bin_t_530(core->io, bin_addr, &bin, is_64bit)) {
+		ut64 bin_addr = arena + bins_off + j * config->bin_size;
+		if (!read_and_parse_bin_t_530(core->io, bin_addr, &bin, config)) {
 			continue;
 		}
 
@@ -709,31 +691,30 @@ static void jemalloc_print_arena_bins_530(RzCore *core, ut64 arena, ut64 bin_inf
 	}
 }
 
-static void jemalloc_get_bins_530(RzCore *core, const char *input, bool is_64bit) {
+static void jemalloc_get_bins_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
 	int i = 0;
 	ut64 bin_info;
 	ut64 arenas_sym;
 	ut64 arena = UT64_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t ptr_size = is_64bit ? 8 : 4;
 
 	if (input[0] == '\0') {
 		// No argument - use symbol resolution (debug mode)
-		if (!rz_resolve_jemalloc(core, "je_bin_infos", &bin_info, is_64bit)) {
+		if (!rz_resolve_jemalloc(core, "je_bin_infos", &bin_info)) {
 			RZ_LOG_ERROR("Cannot resolve je_bin_infos\n");
 			return;
 		}
-		if (rz_resolve_jemalloc(core, "je_arenas", &arenas_sym, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "je_arenas", &arenas_sym)) {
 			PRINTF_GA("arenas @ 0x%" PFMT64x " {\n", arenas_sym);
 			for (;;) {
-				if (!read_ptr_at(core->io, arenas_sym + i * ptr_size, &arena, is_64bit)) {
+				if (!read_ptr_at(core->io, arenas_sym + i * config->ptr_size, &arena, config->ptr_size)) {
 					break;
 				}
 				if (!arena) {
 					break;
 				}
 				PRINTF_YA("  arenas[%d]: @ 0x%" PFMT64x " {\n", i++, arena);
-				jemalloc_print_arena_bins_530(core, arena, bin_info, is_64bit);
+				jemalloc_print_arena_bins_530(core, arena, bin_info, config);
 				PRINT_YA("  }\n");
 			}
 		}
@@ -757,25 +738,24 @@ static void jemalloc_get_bins_530(RzCore *core, const char *input, bool is_64bit
 		arena = rz_num_math(core->num, args);
 		bin_info = rz_num_math(core->num, bin_info_str);
 
-		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena, JM_NBINS_530);
-		jemalloc_print_arena_bins_530(core, arena, bin_info, is_64bit);
+		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena, config->sc_nbins);
+		jemalloc_print_arena_bins_530(core, arena, bin_info, config);
 		PRINT_GA("}\n");
 		free(args);
 	}
 }
 
-static void jemalloc_print_narenas_530(RzCore *core, const char *input, bool is_64bit) {
+static void jemalloc_print_narenas_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
 	ut64 symaddr;
 	ut64 arenas;
 	ut64 arena = UT64_MAX;
 	int i = 0;
 	ut64 narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	size_t ptr_size = is_64bit ? 8 : 4;
 
 	if (input[0] == '\0') { // no args, list all arenas
-		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr, is_64bit)) {
-			if (!read_ptr_at(core->io, symaddr, &narenas, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
+			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
 				return;
 			}
@@ -790,11 +770,11 @@ static void jemalloc_print_narenas_530(RzCore *core, const char *input, bool is_
 			return;
 		}
 
-		if (rz_resolve_jemalloc(core, "je_arenas", &arenas, is_64bit)) {
+		if (rz_resolve_jemalloc(core, "je_arenas", &arenas)) {
 			PRINTF_GA("arenas[%" PFMT64d "] @ 0x%" PFMT64x " {\n", narenas, arenas);
 			for (i = 0; i < (int)narenas; i++) {
-				ut64 at = arenas + (i * ptr_size);
-				if (!read_ptr_at(core->io, at, &arena, is_64bit)) {
+				ut64 at = arenas + (i * config->ptr_size);
+				if (!read_ptr_at(core->io, at, &arena, config->ptr_size)) {
 					continue;
 				}
 				if (!arena) {
@@ -811,7 +791,7 @@ static void jemalloc_print_narenas_530(RzCore *core, const char *input, bool is_
 		arena = rz_num_math(core->num, addr_str);
 
 		arena_t_530 ar;
-		if (!read_and_parse_arena_t_530(core->io, arena, &ar, is_64bit)) {
+		if (!read_and_parse_arena_t_530(core->io, arena, &ar, config)) {
 			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena);
 			return;
 		}
@@ -842,42 +822,57 @@ static void jemalloc_print_narenas_530(RzCore *core, const char *input, bool is_
 // ============================================================================
 
 void cmd_dbg_map_jemalloc(RzCore *core, char dmx_variant, const char *arg) {
-	bool is_64bit = core->rasm->bits == 64;
-
 	const char *version = rz_config_get(core->config, "dbg.jemalloc.version");
 	if (!version || strcmp(version, "auto") == 0 || strcmp(version, "NULL") == 0 || version[0] == '\0') {
-		rz_jemalloc_detect_version(core, is_64bit);
+		rz_jemalloc_detect_version(core);
 		version = rz_config_get(core->config, "dbg.jemalloc.version");
 	}
 
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	const char *os = rz_config_get(core->config, "asm.os");
+	int bits = rz_config_get_i(core->config, "asm.bits");
+	const char *page_size = rz_config_get(core->config, "dbg.jemalloc.page_size");
+
 	if (version && strcmp(version, "4.5.0") == 0) {
+		const RzJemallocConfig450 *config = rz_jemalloc_get_config_450(arch, os, bits, page_size);
+		if (!config) {
+			RZ_LOG_ERROR("Failed to get jemalloc 4.5.0 configuration\n");
+			return;
+		}
+
 		switch (dmx_variant) {
 		case 'a': // dmxa
-			jemalloc_print_narenas_450(core, arg, is_64bit);
+			jemalloc_print_narenas_450(core, arg, config);
 			break;
 		case 'b': // dmxb
-			jemalloc_get_bins_450(core, arg, is_64bit);
+			jemalloc_get_bins_450(core, arg, config);
 			break;
 		case 'c': // dmxc
-			jemalloc_get_chunks_450(core, arg, is_64bit);
+			jemalloc_get_chunks_450(core, arg, config);
 			break;
 		default:
 			RZ_LOG_ERROR("Command not supported for jemalloc 4.5.0\n");
 			break;
 		}
 	} else if (version && strcmp(version, "5.3.0") == 0) {
+		const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
+		if (!config) {
+			RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
+			return;
+		}
+
 		switch (dmx_variant) {
 		case 'a': // dmxa - print arena
-			jemalloc_print_narenas_530(core, arg, is_64bit);
+			jemalloc_print_narenas_530(core, arg, config);
 			break;
 		case 'b': // dmxb - bin info
-			jemalloc_get_bins_530(core, arg, is_64bit);
+			jemalloc_get_bins_530(core, arg, config);
 			break;
 		case 'e': // dmxe - find extent for malloc'd address
-			jemalloc_find_extent_530(core, arg, is_64bit);
+			jemalloc_find_extent_530(core, arg, config);
 			break;
 		case 'i': // dmxei - extent info
-			jemalloc_extent_info_530(core, arg, is_64bit);
+			jemalloc_extent_info_530(core, arg, config);
 			break;
 		default:
 			RZ_LOG_ERROR("Command not supported for jemalloc 5.3.0\n");
