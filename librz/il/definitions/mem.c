@@ -127,7 +127,7 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 		return NULL;
 	}
 
-	rz_bv_set_from_buffer_ble(value, buf, rz_bv_len_bytes(value), big_endian);
+	rz_bv_set_from_buffer_ble(value, buf, rz_bv_len(value), big_endian);
 
 	// Seek back
 	if (rz_buf_seek(buf, current_address, RZ_BUF_SET) < 0) {
