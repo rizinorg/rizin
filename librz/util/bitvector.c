@@ -1857,13 +1857,13 @@ RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 	}
 
 	if (bv->len <= 64) {
-#if RZ_HOST_IS_LITTLE_ENDIAN
 		rz_buf_read(buf, (ut8 *)&bv->bits.small_u, byte_size);
-		bv->bits.small_u &= (UT64_MAX >> (64 - bit_size));
-#else
-		// todo
+
+#if RZ_HOST_IS_BIG_ENDIAN
+		bv->bits.small_u = rz_swap_ut64(bv->bits.small_u);
 #endif
 
+		bv->bits.small_u &= UT64_MAX >> (64 - bit_size);
 		return;
 	}
 
@@ -1879,7 +1879,6 @@ RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 	rz_return_if_fail(bv && buf && bit_size);
 	bit_size = RZ_MIN(bit_size, bv->len);
 	ut32 byte_size = (bit_size + 7) / 8;
-	ut32 pad = 0;
 
 	if (!bit_size) {
 		rz_warn_if_reached();
@@ -1896,21 +1895,15 @@ RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 
 	// Specialized handling for small bitvectors (<= 64 bit)
 	if (bv->len <= 64) {
+		rz_buf_read(buf, ((ut8 *)&bv->bits.small_u), byte_size);
+
 #if RZ_HOST_IS_LITTLE_ENDIAN
-		// Copy buffer to the `byte_size`-th least significant bytes of `bits.small_u`
-		rz_buf_read(buf, (ut8 *)&bv->bits.small_u, byte_size);
-
-		// Swap all 8 bytes
 		bv->bits.small_u = rz_swap_ut64(bv->bits.small_u);
-
-		// Align least significant bits of source bit string [len-1..0] and internal store `small_u` [63..0]
-		bv->bits.small_u >>= 64 - bv->len;
-
-		// Set outstanding bits to zero
-		bv->bits.small_u &= UT64_MAX << (bv->len - bit_size);
-#else
-		// todo
 #endif
+
+		bv->bits.small_u >>= 64 - bv->len;
+		bv->bits.small_u &= (UT64_MAX << (bv->len - bit_size));
+
 		return;
 	}
 
