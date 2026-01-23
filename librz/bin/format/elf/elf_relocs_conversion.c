@@ -169,7 +169,6 @@ We do A|T this would result the same as (S+A)|T
 	return reloc_convert_add_t(bin, rel, RZ_BIN_RELOC_##BIT_SIZE, T, ADDEND, RELOC_NAME, RELOC_BASE)
 
 static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
@@ -221,7 +220,6 @@ static RzBinReloc *reloc_convert_intel_80386(ELFOBJ *bin, RzBinElfReloc *rel, ut
 }
 
 static RzBinReloc *reloc_convert_amd64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
@@ -425,7 +423,6 @@ static RzBinReloc *reloc_convert_arm(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 }
 
 static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	ut64 B = bin->baddr;
 
 	switch (rel->type) {
 	case R_RISCV_NONE:
@@ -490,7 +487,6 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 }
 
 static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	ut64 B = bin->baddr;
 
 	switch (rel->type) {
 	case R_AARCH64_NONE:
