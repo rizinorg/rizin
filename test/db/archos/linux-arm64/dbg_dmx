@@ -1,3 +1,23 @@
+NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 5.3.0 runtime (aarch64-linux-)
+FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-aarch64
+ARGS=-d
+CMDS=<<EOF
+dcu sym.imp.getchar
+dmxa~?narenas
+echo ----
+dmxb~reg_size : 0x800
+echo ----
+dmxe~Total extents found:
+EOF
+EXPECT=<<EOF
+1
+----
+      reg_size : 0x800
+----
+Total extents found: 16
+EOF
+RUN
+
 NAME=dmxa/dmxb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
@@ -40,48 +60,6 @@ EXPECT=<<EOF
        regsize : 0x800
        regsize : 0x3800
        nregs : 0x200
-EOF
-RUN
-
-NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 4.5.0 runtime (linux-x86-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-amd64
-ARGS=-d
-CMDS=<<EOF
-dcu sym.imp.getchar
-dmxa~?narenas
-echo ----
-dmxb~regsize : 0x800
-echo ----
-dmxc *~?Chunk
-EOF
-EXPECT=<<EOF
-1
-----
-       regsize : 0x800
-----
-1
-EOF
-RUN
-
-
-
-NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 4.5.0 runtime (linux-amd64-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-x64
-ARGS=-d
-CMDS=<<EOF
-dcu sym.imp.getchar
-dmxa~?narenas
-echo ----
-dmxb~regsize : 0x800
-echo ----
-dmxc *~?Chunk
-EOF
-EXPECT=<<EOF
-1
-----
-       regsize : 0x800
-----
-1
 EOF
 RUN
 
@@ -130,47 +108,3 @@ Extent @ 0x7faa2cc16500
   Allocated Address: 0x7faa2ca00000
 EOF
 RUN
-
-
-NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 5.3.0 runtime (linux-x86-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x32
-ARGS=-d
-CMDS=<<EOF
-dcu sym.imp.getchar
-dmxa~?narenas
-echo ----
-dmxb~reg_size : 0x800
-echo ----
-dmxe~?Total extents found:
-EOF
-EXPECT=<<EOF
-1
-----
-      reg_size : 0x800
-----
-1
-EOF
-RUN
-
-
-
-NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 5.3.0 runtime (linux-amd64-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x64
-ARGS=-d
-CMDS=<<EOF
-dcu sym.imp.getchar
-dmxa~?narenas
-echo ----
-dmxb~reg_size : 0x800
-echo ----
-dmxe~Total extents found:
-EOF
-EXPECT=<<EOF
-1
-----
-      reg_size : 0x800
-----
-Total extents found: 16
-EOF
-RUN
-
