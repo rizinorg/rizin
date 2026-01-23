@@ -51,8 +51,8 @@ NX       false
 0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
 ---------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
 ---
-     vaddr      paddr     hvaddr      haddr type
-------------------------------------------------------------
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
 0x80003100 ---------- ---------- ---------- program
 EOF
 RUN
