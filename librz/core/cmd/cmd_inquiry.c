@@ -11,7 +11,7 @@
 #include <rz_util/rz_assert.h>
 
 RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv) {
-	rz_return_val_if_fail(core->analysis && core->io, RZ_CMD_STATUS_ERROR);
+	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
 	RzVector *entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
 	if (!entry_points) {
 		return RZ_CMD_STATUS_ERROR;
