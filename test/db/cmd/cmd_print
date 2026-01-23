@@ -206,6 +206,25 @@ jnle 0xa
 EOF
 RUN
 
+NAME=pia output
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+pia 10
+EOF
+EXPECT=<<EOF
+xor ebp, ebp
+in eax, dx
+mov r9, rdx
+mov ecx, edx
+rcr dword [rsi+0x48], 0x01
+pop rsi
+mov rdx, rsp
+mov edx, esp
+loop 0x400462
+invalid
+EOF
+RUN
+
 NAME=pdj 3
 FILE=malloc://512
 CMDS=<<EOF

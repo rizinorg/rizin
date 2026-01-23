@@ -259,3 +259,87 @@ EXPECT=<<EOF
 0x00000080 CCu "DMA page registers (0080-008F)"
 EOF
 RUN
+
+
+NAME=GNS1: comprehensive validation
+FILE=bins/firmware/gns1_test.bin
+CMDS=<<EOF
+iI~bintype
+iI~arch
+iI~cpu
+iI~baddr
+iI~bits
+iI~endian
+iI~machine
+iI~^os
+iI~^va
+ie~program
+ie~0x10000000
+iS~region?
+iS~region
+iS~region_a_text
+iS~region_b_text
+iS~0x12
+iS~0x15
+iH~num_segments
+iH~base
+iI~binsz
+pd 1 @ 0x10000000
+EOF
+EXPECT=<<EOF
+bintype  firmware
+arch     arc
+cpu      ARC700
+baddr    0x10000000
+bits     16
+endian   LE
+machine  Apple C4000 Baseband
+os       N/A
+va       true
+0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
+0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
+4
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x00000074  0x8 0x10001000   0x8   0x0 -rw- region_a_data_1      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
+0x0000008c  0x8 0x10001000   0x8   0x0 -rw- region_b_data_3      
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
+num_segments: 4
+region_a_base: 0x12000000
+region_b_base: 0x15000000
+internal_base: 0x10000000
+binsz    0x00000094
+            ;-- entry0:
+            ;-- entry1:
+            ;-- section.region_a_text_0:
+            ;-- section.region_b_text_2:
+            0x10000000      mov   r22, 25                              ; [02] -r-x section size 16 named region_b_text_2
+EOF
+RUN
+
+NAME=GNS1: reject file too small
+FILE=bins/firmware/gns1_invalid_small.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject invalid offset
+FILE=bins/firmware/gns1_invalid_offset.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject segment overflow
+FILE=bins/firmware/gns1_invalid_overflow.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN

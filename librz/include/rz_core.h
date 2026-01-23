@@ -941,7 +941,6 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
-RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode);
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *state);
@@ -1227,6 +1226,8 @@ typedef struct {
 	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;
+	ut32 signatures;
+	ut32 imports;
 	ut32 perm;
 } RzCoreAnalysisStatsItem;
 
@@ -1240,7 +1241,7 @@ typedef struct {
 	RzVector /*<RzCoreAnalysisStatsItem>*/ blocks;
 } RzCoreAnalysisStats;
 
-RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
+RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, RzOutputMode mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
 RZ_API RZ_OWN RzCoreAnalysisStats *rz_core_analysis_get_stats(RZ_NONNULL RzCore *a, ut64 from, ut64 to, ut64 step);
 RZ_API void rz_core_analysis_stats_free(RzCoreAnalysisStats *s);

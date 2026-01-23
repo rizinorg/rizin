@@ -993,7 +993,7 @@ static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	case RZ_OUTPUT_MODE_LONG:
 		datalen = cols * 8 * core->cons->rows;
 		data = malloc(datalen);
-		rz_io_read_at(core->io, core->offset, data, datalen);
+		rz_io_read_at_mapped(core->io, core->offset, data, datalen);
 		len = datalen;
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -1576,7 +1576,7 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 				RZ_LOG_ERROR("core: cannot allocate %" PFMT64u " byte(s)\n", b->size);
 				return;
 			}
-			rz_io_read_at(core->io, b->addr, buf, b->size);
+			rz_io_read_at_mapped(core->io, b->addr, buf, b->size);
 			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, state->d.pj);
 			free(buf);
 		}
@@ -1693,7 +1693,7 @@ static inline char *__refs(RzCore *core, ut64 x) {
 		return NULL;
 	}
 
-	char *refs = core->print->hasrefs(core->print->user, x, true);
+	char *refs = core->print->hasrefs(core->print->user, x, RZ_OUTPUT_MODE_STANDARD);
 	if (RZ_STR_ISNOTEMPTY(refs)) {
 		rz_str_trim(refs);
 	} else {
@@ -2508,7 +2508,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_function_handler(RzCore *core, int argc, con
 			core->print->flags = old_flags;
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_io_read_at(core->io, b->addr, buf, b->size);
+		rz_io_read_at_mapped(core->io, b->addr, buf, b->size);
 		rz_core_print_hexdump(core, b->addr, buf, b->size, 0, 16, 0);
 		free(buf);
 	}
@@ -2609,7 +2609,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_hexless_words_handler(RzCore *core, int argc
 	if (!buf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, core->offset, buf, len * 4);
+	rz_io_read_at_mapped(core->io, core->offset, buf, len * 4);
 	core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
 	rz_core_print_hexdump(core, core->offset, buf, len * 4, 8, 1, 1);
 	core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
@@ -2764,7 +2764,7 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 		if (!comment) {
 			comment = "";
 		}
-		rz_io_read_at(core->io, offset, buffer, RZ_MIN(op->size, sizeof(buffer)));
+		rz_io_read_at_mapped(core->io, offset, buffer, RZ_MIN(op->size, sizeof(buffer)));
 		char *bytes = rz_hex_bin2strdup(buffer, op->size);
 		RzFlagItem *flag = rz_flag_get_i(core->flags, offset);
 		char *function_name = flag ? flag->name : "";
@@ -2873,7 +2873,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_handler(RzCore *core,
 	if (!buffer) {
 		goto fail;
 	}
-	if (!rz_io_read_at(core->io, core->offset, buffer, n_bytes)) {
+	if (!rz_io_read_at_mapped(core->io, core->offset, buffer, n_bytes)) {
 		goto fail;
 	}
 	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, n_bytes);
@@ -2923,7 +2923,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_all_possible_opcodes_treeview_handler(RzCo
 	ut8 buffer[TREEVIEW_N_BYTES];
 	RzPVector *vec = NULL;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (!rz_io_read_at(core->io, core->offset, buffer, TREEVIEW_N_BYTES)) {
+	if (!rz_io_read_at_mapped(core->io, core->offset, buffer, TREEVIEW_N_BYTES)) {
 		goto fail;
 	}
 	vec = rz_core_disasm_all_possible_opcodes(core, buffer, core->offset, TREEVIEW_N_BYTES);
@@ -2971,7 +2971,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_handler(RzCore *core, int argc
 		RZ_LOG_ERROR("Cannot allocate buffer\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
@@ -3007,7 +3007,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_basic_block_as_text_json_handler(RzCore *c
 		RZ_LOG_ERROR("Cannot allocate buffer\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
@@ -3081,7 +3081,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	(void)rz_io_read_at(core->io, start, bytes, size);
+	(void)rz_io_read_at_mapped(core->io, start, bytes, size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 1,
 		.function = function,
@@ -3349,7 +3349,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	(void)rz_io_read_at(core->io, core->offset, bytes, core->blocksize);
+	(void)rz_io_read_at_mapped(core->io, core->offset, bytes, core->blocksize);
 
 	rz_cmd_state_output_array_start(state);
 	for (ut32 i = 0; i < core->blocksize - asm_bytes; i += asm_bytes) {
@@ -3406,7 +3406,7 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 				RZ_LOG_ERROR("cannot allocate %" PFMT64u " byte(s)\n", b->size);
 				return false;
 			}
-			(void)rz_io_read_at(core->io, b->addr, buf, b->size);
+			(void)rz_io_read_at_mapped(core->io, b->addr, buf, b->size);
 			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, state->d.pj);
 			free(buf);
 		}
@@ -3611,7 +3611,7 @@ RZ_IPI RzCmdStatus rz_print_byte_bitstream_handler(RzCore *core, int argc, const
 		free(str_buf);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, start, bit_buf, len);
+	rz_io_read_at_mapped(core->io, start, bit_buf, len);
 	rz_str_bits(str_buf, (const ut8 *)bit_buf, len * 8, NULL);
 	rz_cons_println(str_buf);
 	free(bit_buf);
@@ -4234,7 +4234,7 @@ RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const cha
 		for (j = 0; j < cols; j++) {
 			rz_cons_canvas_gotoxy(c, j * 20, i * 11);
 			core->offset += len;
-			rz_io_read_at(core->io, core->offset, core->block, len);
+			rz_io_read_at_mapped(core->io, core->offset, core->block, len);
 			s = rz_hash_cfg_randomart(core->block, len, core->offset);
 			rz_cons_canvas_write(c, s);
 			free(s);
@@ -4242,7 +4242,7 @@ RZ_IPI RzCmdStatus rz_print_key_mosaic_handler(RzCore *core, int argc, const cha
 	}
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
-	rz_io_read_at(core->io, offset0, core->block, len);
+	rz_io_read_at_mapped(core->io, offset0, core->block, len);
 	core->offset = offset0;
 	rz_cons_printf("\n");
 	return RZ_CMD_STATUS_OK;
@@ -4267,7 +4267,7 @@ RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const 
 	if (N == 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_print_disasm_all(core, core->offset, N, N, 'i');
+	rz_core_print_disasm_all(core, core->offset, N, N);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4503,6 +4503,10 @@ static void analysis_stats_standard_info(RzCore *core, RzCoreAnalysisStatsRange 
 		}
 		if (sitem->strings > 0) {
 			rz_cons_memcat("z", 1);
+		} else if (sitem->signatures) {
+			rz_cons_memcat("S", 1);
+		} else if (sitem->imports > 0) {
+			rz_cons_memcat("i", 1);
 		} else if (sitem->symbols > 0) {
 			rz_cons_memcat("s", 1);
 		} else if (sitem->functions > 0) {
@@ -4526,7 +4530,7 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 	ut64 at = rz_core_analysis_stats_get_block_from(as, blockidx);
 	ut64 ate = rz_core_analysis_stats_get_block_to(as, blockidx) + 1;
 	pj_o(state->d.pj);
-	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->perm) || (sitem->strings)) {
+	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->perm) || (sitem->strings) || (sitem->signatures) || (sitem->imports)) {
 		pj_kn(state->d.pj, "offset", at);
 		pj_kn(state->d.pj, "size", ate - at);
 	}
@@ -4548,6 +4552,12 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 	if (sitem->strings) {
 		pj_ki(state->d.pj, "strings", sitem->strings);
 	}
+	if (sitem->signatures) {
+		pj_ki(state->d.pj, "signatures", sitem->signatures);
+	}
+	if (sitem->imports) {
+		pj_ki(state->d.pj, "imports", sitem->imports);
+	}
 	if (sitem->perm) {
 		pj_ks(state->d.pj, "perm", rz_str_rwx_i(sitem->perm));
 	}
@@ -4556,9 +4566,9 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 
 static void analysis_stats_table_info(RzCore *core, RzCoreAnalysisStats *as, RzCoreAnalysisStatsItem *sitem, ut64 blockidx, RzCmdStateOutput *state) {
 	ut64 at = rz_core_analysis_stats_get_block_from(as, blockidx);
-	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->strings)) {
-		rz_table_add_rowf(state->d.t, "xddddd", at, sitem->flags,
-			sitem->functions, sitem->comments, sitem->symbols, sitem->strings);
+	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->strings) || (sitem->signatures) || (sitem->imports)) {
+		rz_table_add_rowf(state->d.t, "xddddddd", at, sitem->flags,
+			sitem->functions, sitem->comments, sitem->symbols, sitem->strings, sitem->signatures, sitem->imports);
 	}
 }
 
@@ -4569,7 +4579,7 @@ static void analysis_stats_entropy_info(RzCore *core, RzCoreAnalysisStats *as, u
 	if (!blockptr) {
 		return;
 	}
-	if (rz_io_read_at(core->io, at, blockptr, (ate - at))) {
+	if (rz_io_read_at_mapped(core->io, at, blockptr, (ate - at))) {
 		ut8 entropy = (ut8)(rz_hash_entropy_fraction(blockptr, (ate - at)) * 255);
 		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
 		if (use_color) {
@@ -4650,7 +4660,7 @@ RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "xddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
+	rz_cmd_state_output_set_columnsf(state, "xddddddd", "offset", "flags", "funcs", "cmts", "syms", "str", "sigs", "imps");
 	state->d.t->showSum = true;
 	state->d.t->showFancy = true;
 	for (size_t i = 0; i < rz_vector_len(&srange->as->blocks); i++) {
@@ -5320,7 +5330,7 @@ static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
-	rz_io_read_at(core->io, core->offset, data, brange->nblocks);
+	rz_io_read_at_mapped(core->io, core->offset, data, brange->nblocks);
 	if (isinteractive) {
 		if (!print_visual_bytes(core, data, brange)) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
@@ -5368,7 +5378,7 @@ static RzCmdStatus print_histogram_entropy(RzCore *core, int argc, const char **
 	}
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
 		data[i] = (ut8)(255 * rz_hash_entropy_fraction(tmp, brange->blocksize));
 	}
 	free(tmp);
@@ -5402,7 +5412,7 @@ static bool print_rising_and_falling_entropy_table(RzCore *core, RzCmdStateOutpu
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "entropy_value");
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+		if (!rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize))
 			return false;
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
@@ -5436,7 +5446,7 @@ static bool print_rising_and_falling_entropy_JSON(RzCore *core, RzCmdStateOutput
 	pj_a(pj);
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize))
+		if (!rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize))
 			return false;
 		double data = rz_hash_entropy_fraction(tmp, brange->blocksize);
 		// reseting flag if goes above falling threshold and below rising threshold
@@ -5484,7 +5494,7 @@ static bool print_rising_and_falling_entropy_quiet(RzCore *core, CoreBlockRange 
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+		if (!rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize)) {
 			rz_strbuf_free(buf);
 			return false;
 		}
@@ -5526,7 +5536,7 @@ static bool print_rising_and_falling_entropy_standard(RzCore *core, CoreBlockRan
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+		if (!rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize)) {
 			rz_strbuf_free(buf);
 			return false;
 		}
@@ -5568,7 +5578,7 @@ static bool print_rising_and_falling_entropy_long(RzCore *core, CoreBlockRange *
 	st8 lastEdge = 0;
 	for (int i = 0; i < brange->nblocks; i++) {
 		ut64 off = brange->from + (brange->blocksize * (i));
-		if (!rz_io_read_at(core->io, off, tmp, brange->blocksize)) {
+		if (!rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize)) {
 			rz_strbuf_free(buf);
 			return false;
 		}
@@ -5764,7 +5774,7 @@ static RzCmdStatus print_histogram_0x00(RzCore *core, int argc, const char **arg
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		int k = 0;
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
 		for (size_t j = k = 0; j < brange->blocksize; j++) {
 			if (!tmp[j]) {
 				k++;
@@ -5821,7 +5831,7 @@ static RzCmdStatus print_histogram_0xff(RzCore *core, int argc, const char **arg
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		int k = 0;
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
 		for (size_t j = k = 0; j < brange->blocksize; j++) {
 			if (tmp[j] == 0xff) {
 				k++;
@@ -5878,7 +5888,7 @@ static RzCmdStatus print_histogram_printable(RzCore *core, int argc, const char 
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		int k = 0;
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
 		for (size_t j = k = 0; j < brange->blocksize; j++) {
 			if (IS_PRINTABLE(tmp[j])) {
 				k++;
@@ -5936,7 +5946,7 @@ static RzCmdStatus print_histogram_z(RzCore *core, int argc, const char **argv, 
 	for (size_t i = 0; i < brange->nblocks; i++) {
 		int k = 0;
 		ut64 off = brange->from + (brange->blocksize * (i + brange->skipblocks));
-		rz_io_read_at(core->io, off, tmp, brange->blocksize);
+		rz_io_read_at_mapped(core->io, off, tmp, brange->blocksize);
 		for (size_t j = k = 0; j < brange->blocksize; j++) {
 			if (IS_PRINTABLE(tmp[j])) {
 				if ((j + 1) < brange->blocksize && tmp[j + 1] == 0) {
@@ -6158,7 +6168,7 @@ static void printraw(RzCore *core, int len, bool stop_at_null) {
 	if (!data) {
 		return;
 	}
-	if (rz_io_read_at(core->io, core->offset, data, len)) {
+	if (rz_io_read_at_mapped(core->io, core->offset, data, len)) {
 		if (stop_at_null) {
 			len = rz_str_nlen((const char *)data, len);
 		}
@@ -6421,7 +6431,7 @@ static RzCmdStatus print_8bit_hexpair(RzCore *core, ut64 addr, size_t len) {
 		RZ_LOG_ERROR("core: cannot allocate %zu byte(s)\n", len);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_io_read_at(core->io, addr, buf, len);
+	rz_io_read_at_mapped(core->io, addr, buf, len);
 	rz_print_bytes(core->print, buf, len, "%02x");
 	return RZ_CMD_STATUS_OK;
 }

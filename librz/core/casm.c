@@ -375,7 +375,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 		if (!rz_io_is_valid_offset(core->io, at, 0)) {
 			break;
 		}
-		(void)rz_io_read_at(core->io, at, buf, core->blocksize);
+		(void)rz_io_read_at_mapped(core->io, at, buf, core->blocksize);
 		idx = 0, matchcount = 0;
 		while (addrbytes * (idx + 1) <= core->blocksize) {
 			ut64 addr = at + idx;
@@ -761,7 +761,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 		free(buf);
 		return NULL;
 	}
-	if (!rz_io_read_at(core->io, addr - len / addrbytes, buf, len)) {
+	if (!rz_io_read_at_mapped(core->io, addr - len / addrbytes, buf, len)) {
 		rz_list_free(hits);
 		free(buf);
 		return NULL;
@@ -823,7 +823,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 		return NULL;
 	}
 
-	if (!rz_io_read_at(core->io, addr - (len + extra_padding), buf, len + extra_padding)) {
+	if (!rz_io_read_at_mapped(core->io, addr - (len + extra_padding), buf, len + extra_padding)) {
 		rz_list_purge(hits);
 		free(hits);
 		free(buf);
@@ -888,7 +888,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, u
 		return NULL;
 	}
 
-	if (!rz_io_read_at(core->io, (addr + extra_padding) - len, buf, len + extra_padding)) {
+	if (!rz_io_read_at_mapped(core->io, (addr + extra_padding) - len, buf, len + extra_padding)) {
 		rz_list_purge(hits);
 		free(hits);
 		free(buf);

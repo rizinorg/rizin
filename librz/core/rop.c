@@ -1032,7 +1032,7 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 	ut32 size = gadget_info->size;
 	ut8 *buf = RZ_NEWS0(ut8, size);
 	int high_pad = 0;
-	if ((!buf || rz_io_read_at(core->io, addr, buf, size) < 1)) {
+	if ((!buf || rz_io_read_at_mapped(core->io, addr, buf, size) < 1)) {
 		free(buf);
 		return;
 	}

@@ -3557,9 +3557,17 @@ ARM32 relocations:
 #define R_X86_64_RELATIVE64      38 /* 64-bit adjust by program base */
 /* 39 Reserved was R_X86_64_PC32_BND */
 /* 40 Reserved was R_X86_64_PLT32_BND */
-#define R_X86_64_GOTPCRELX     41 /* Load from 32 bit signed pc relative offset to GOT entry without REX prefix, relaxable.  */
-#define R_X86_64_REX_GOTPCRELX 42 /* Load from 32 bit signed pc relative offset to GOT entry with REX prefix, relaxable.  */
-#define R_X86_64_NUM           43
+#define R_X86_64_GOTPCRELX              41 /* Load from 32 bit signed pc relative offset to GOT entry without REX prefix, relaxable.  */
+#define R_X86_64_REX_GOTPCRELX          42 /* Load from 32 bit signed pc relative offset to GOT entry with REX prefix, relaxable.  */
+#define R_X86_64_CODE_4_GOTPCRELX       43
+#define R_X86_64_CODE_4_GOTTPOFF        44
+#define R_X86_64_CODE_4_GOTPC32_TLSDESC 45
+#define R_X86_64_CODE_5_GOTPCRELX       46
+#define R_X86_64_CODE_5_GOTTPOFF        47
+#define R_X86_64_CODE_5_GOTPC32_TLSDESC 48
+#define R_X86_64_CODE_6_GOTPCRELX       49
+#define R_X86_64_CODE_6_GOTTPOFF        50
+#define R_X86_64_CODE_6_GOTPC32_TLSDESC 51
 
 /* x86-64 sh_type values.  */
 #define SHT_X86_64_UNWIND 0x70000001 /* Unwind information.  */

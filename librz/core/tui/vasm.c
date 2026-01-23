@@ -75,7 +75,7 @@ RZ_IPI void rz_core_visual_asm(RzCore *core, ut64 off) {
 		.core = core,
 		.off = off
 	};
-	rz_io_read_at(core->io, off, cva.buf, sizeof(cva.buf));
+	rz_io_read_at_mapped(core->io, off, cva.buf, sizeof(cva.buf));
 	cva.blocklen = rz_hex_bin2str(cva.buf, sizeof(cva.buf), cva.blockbuf);
 
 	rz_line_readline_cb(core->cons->line, readline_callback, &cva);

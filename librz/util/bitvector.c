@@ -184,7 +184,7 @@ RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv) {
 	rz_return_val_if_fail(bv, NULL);
 
 	RzBitVector *new_bv = rz_bv_new(bv->len);
-	if (!new_bv || !rz_bv_copy(bv, new_bv)) {
+	if (!new_bv || !rz_bv_copy(new_bv, bv)) {
 		rz_bv_free(new_bv);
 		return NULL;
 	}
@@ -196,11 +196,11 @@ RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv) {
  * Copy from source bitvector to destination bitvector.
  * The bitvectors must have the same length.
  *
- * \param src RzBitVector, the source bitvector
  * \param dst RzBitVector, the destination bitvector
+ * \param src RzBitVector, the source bitvector
  * \return Actual size of copy
  */
-RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector *dst) {
+RZ_API ut32 rz_bv_copy(RZ_NONNULL RzBitVector *dst, RZ_NONNULL const RzBitVector *src) {
 	rz_return_val_if_fail(src && dst, 0);
 
 	if (dst->len != src->len) {
@@ -220,7 +220,7 @@ RZ_API ut32 rz_bv_copy(RZ_NONNULL const RzBitVector *src, RZ_NONNULL RzBitVector
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with bit positions aligned to BV_ELEM_SIZE
  */
-static ut32 bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 bv_copy_nbits_large_aligned(RzBitVector *dst, ut32 dst_start_pos, const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
 	ut8 trailing_bits = RZ_MIN((src_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
@@ -260,7 +260,7 @@ static ut32 bv_copy_nbits_large_aligned(const RzBitVector *src, ut32 src_start_p
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a large bitvector to a small one
  */
-static ut32 bv_copy_nbits_large_to_small(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 bv_copy_nbits_large_to_small(RzBitVector *dst, ut32 dst_start_pos, const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	ut64 buffer = 0;
 	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - src_start_pos) % BV_ELEM_SIZE, nbit);
 	ut32 byte_index = (src_start_pos + start_bits) / BV_ELEM_SIZE;
@@ -309,7 +309,7 @@ static ut32 bv_copy_nbits_large_to_small(const RzBitVector *src, ut32 src_start_
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for copying bit range from a small bitvector to a large one
  */
-static ut32 bv_copy_nbits_small_to_large(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 bv_copy_nbits_small_to_large(RzBitVector *dst, ut32 dst_start_pos, const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	ut64 byte_index = dst_start_pos / BV_ELEM_SIZE;
 	ut8 start_bits = RZ_MIN((BV_ELEM_SIZE - dst_start_pos) % BV_ELEM_SIZE, nbit);
 	ut8 trailing_bits = RZ_MIN((dst_start_pos + nbit) % BV_ELEM_SIZE, nbit - start_bits);
@@ -368,7 +368,7 @@ static ut32 bv_copy_nbits_small_to_large(const RzBitVector *src, ut32 src_start_
 /**
  * \brief Optimized version of rz_bv_copy_nbits() for large bitvectors (more than 64 bits) with unaligned bit positions
  */
-static ut32 bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start_pos, RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+static ut32 bv_copy_nbits_large_unaligned(RzBitVector *dst, ut32 dst_start_pos, const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	// Sanity check performed by caller
 	ut64 bits_remaining = nbit;
 
@@ -404,14 +404,14 @@ static ut32 bv_copy_nbits_large_unaligned(const RzBitVector *src, ut32 src_start
  * Copy n bits from start position of source to start position of dest, return num of copied bits
  * NOTE: src and dst can be the same bit vector pointer.
  *
- * \param src RzBitVector, data source
- * \param src_start_pos ut32, start position in source bitvector of copy
  * \param dst RzBitVector, destination of copy
  * \param dst_start_pos ut32, start position in destination bitvector
+ * \param src RzBitVector, data source
+ * \param src_start_pos ut32, start position in source bitvector of copy
  * \param nbit ut32, control the size of copy (in bits)
  * \return copied_size ut32, Actual copied size
  */
-RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, ut32 nbit) {
+RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos, RZ_NONNULL const RzBitVector *src, ut32 src_start_pos, ut32 nbit) {
 	rz_return_val_if_fail(src && dst, 0);
 
 	ut32 max_nbit = RZ_MIN((src->len - src_start_pos),
@@ -431,29 +431,29 @@ RZ_API ut32 rz_bv_copy_nbits(RZ_NONNULL const RzBitVector *src, ut32 src_start_p
 	if (src->len > 64 && dst->len > 64) {
 		// Both src and dst are larger than 64 bits
 		if (src_start_pos % BV_ELEM_SIZE == dst_start_pos % BV_ELEM_SIZE) {
-			return bv_copy_nbits_large_aligned(src, src_start_pos, dst, dst_start_pos, nbit);
+			return bv_copy_nbits_large_aligned(dst, dst_start_pos, src, src_start_pos, nbit);
 		}
 
 		if (src->bits.large_a != dst->bits.large_a) {
-			return bv_copy_nbits_large_unaligned(src, src_start_pos, dst, dst_start_pos, nbit);
+			return bv_copy_nbits_large_unaligned(dst, dst_start_pos, src, src_start_pos, nbit);
 		}
 
 		// Use a temporary bitvector for same-vector copies
 		RzBitVector *temp = rz_bv_new(rz_bv_len(dst));
-		rz_bv_copy(dst, temp);
-		ut32 bits_copied = bv_copy_nbits_large_unaligned(src, src_start_pos, temp, dst_start_pos, nbit);
 		rz_bv_copy(temp, dst);
+		ut32 bits_copied = bv_copy_nbits_large_unaligned(temp, dst_start_pos, src, src_start_pos, nbit);
+		rz_bv_copy(dst, temp);
 		rz_bv_free(temp);
 		return bits_copied;
 	}
 
 	if (src->len > 64) {
 		// Large to small copy
-		return bv_copy_nbits_large_to_small(src, src_start_pos, dst, dst_start_pos, nbit);
+		return bv_copy_nbits_large_to_small(dst, dst_start_pos, src, src_start_pos, nbit);
 	}
 
 	// Small to large
-	return bv_copy_nbits_small_to_large(src, src_start_pos, dst, dst_start_pos, nbit);
+	return bv_copy_nbits_small_to_large(dst, dst_start_pos, src, src_start_pos, nbit);
 }
 
 /**
@@ -555,8 +555,8 @@ RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta
 RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *high, RZ_NONNULL RzBitVector *low) {
 	rz_return_val_if_fail(high && low, NULL);
 	RzBitVector *ret = rz_bv_new(high->len + low->len);
-	rz_bv_copy_nbits(low, 0, ret, 0, low->len);
-	rz_bv_copy_nbits(high, 0, ret, low->len, high->len);
+	rz_bv_copy_nbits(ret, 0, low, 0, low->len);
+	rz_bv_copy_nbits(ret, low->len, high, 0, high->len);
 	return ret;
 }
 
@@ -715,13 +715,13 @@ RZ_API bool rz_bv_lshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 	}
 	rz_bv_set_all(&tmp, fill_bit);
 
-	int copied_size = rz_bv_copy_nbits(bv, 0, &tmp, size, bv->len - size);
+	int copied_size = rz_bv_copy_nbits(&tmp, size, bv, 0, bv->len - size);
 	if (copied_size == 0) {
 		rz_bv_fini(&tmp);
 		return false;
 	}
 
-	rz_bv_copy(&tmp, bv);
+	rz_bv_copy(bv, &tmp);
 	rz_bv_fini(&tmp);
 
 	return true;
@@ -754,13 +754,13 @@ RZ_API bool rz_bv_rshift_fill(RZ_NONNULL RzBitVector *bv, ut32 size, bool fill_b
 	}
 	rz_bv_set_all(&tmp, fill_bit);
 
-	int copied_size = rz_bv_copy_nbits(bv, size, &tmp, 0, bv->len - size);
+	int copied_size = rz_bv_copy_nbits(&tmp, 0, bv, size, bv->len - size);
 	if (copied_size == 0) {
 		rz_bv_fini(&tmp);
 		return false;
 	}
 
-	rz_bv_copy(&tmp, bv);
+	rz_bv_copy(bv, &tmp);
 	rz_bv_fini(&tmp);
 
 	return true;
@@ -1182,7 +1182,7 @@ RZ_API bool rz_bv_mul_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 	rz_return_val_if_fail(x && y, false);
 	RzBitVector dup;
 	rz_bv_init(&dup, x->len);
-	rz_bv_copy(x, &dup);
+	rz_bv_copy(&dup, x);
 	rz_bv_set_all(x, false);
 
 	bool cur_bit = false;
@@ -1296,10 +1296,10 @@ RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 	// do typical division by shift and subtract
 	RzBitVector dend;
 	rz_bv_init(&dend, x->len);
-	rz_bv_copy(x, &dend);
+	rz_bv_copy(&dend, x);
 	RzBitVector sor;
 	rz_bv_init(&sor, y->len);
-	rz_bv_copy(y, &sor);
+	rz_bv_copy(&sor, y);
 
 	// shift the divisor left to align both highest bits
 	ut32 sorlz = rz_bv_clz(&sor);
@@ -1314,7 +1314,7 @@ RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 			// sub_inplace() negates sor_cpy
 			RzBitVector sor_cpy;
 			rz_bv_init(&sor_cpy, y->len);
-			rz_bv_copy(&sor, &sor_cpy);
+			rz_bv_copy(&sor_cpy, &sor);
 			rz_bv_sub_inplace(&dend, &sor_cpy, NULL);
 			rz_bv_fini(&sor_cpy);
 		}
@@ -1360,7 +1360,7 @@ RZ_API bool rz_bv_mod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 	}
 	RzBitVector remul;
 	rz_bv_init(&remul, rz_bv_len(x));
-	rz_bv_copy(x, &remul);
+	rz_bv_copy(&remul, x);
 
 	if (!rz_bv_div_inplace(&remul, y)) {
 		rz_bv_fini(&remul);
@@ -2177,7 +2177,7 @@ RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fi
 
 	RzBitVector *ret = rz_bv_new(to_size);
 	rz_bv_set_all(ret, fill_bit);
-	rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, to_size));
+	rz_bv_copy_nbits(ret, 0, bv, 0, RZ_MIN(bv->len, to_size));
 
 	return ret;
 }
