@@ -4,6 +4,8 @@ CMDS=<<EOF
 iI
 echo ---
 iS
+echo ---
+ie
 EOF
 EXPECT=<<EOF
 arch     ppc
@@ -29,7 +31,7 @@ minopsz  4
 os       wii-ios
 cc       N/A
 rpath    N/A
-subsys
+subsys   
 stripped false
 crypto   false
 havecode true
@@ -43,10 +45,14 @@ PIE      false
 RELROCS  false
 NX       false
 ---
-     paddr     size      vaddr    vsize align perm name   type flags
+     paddr     size      vaddr    vsize align perm name   type flags 
 ---------------------------------------------------------------------
-0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0
-0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0
----------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
+---------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+---
+     vaddr      paddr     hvaddr      haddr type
+------------------------------------------------------------
+0x80003100 ---------- ---------- ---------- program
 EOF
 RUN
