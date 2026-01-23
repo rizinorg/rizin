@@ -8,18 +8,18 @@
 #include <string.h>
 
 /*
-	Start	End	Length	Description
-	0x0	0x3	4	File offset to start of Text0
-	0x04	0x1b	24	File offsets for Text1..6
-	0x1c	0x47	44	File offsets for Data0..10
-	0x48	0x4B	4	Loading address for Text0
-	0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
-	0x90	0xD7	72	Section sizes for Text0..6, Data0..10
-	0xD8	0xDB	4	BSS address
-	0xDC	0xDF	4	BSS size
-	0xE0	0xE3	4	Entry point
-	0xE4	0xFF		padding
-*/
+   Start	End	Length	Description
+   0x0	0x3	4	File offset to start of Text0
+   0x04	0x1b	24	File offsets for Text1..6
+   0x1c	0x47	44	File offsets for Data0..10
+   0x48	0x4B	4	Loading address for Text0
+   0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
+   0x90	0xD7	72	Section sizes for Text0..6, Data0..10
+   0xD8	0xDB	4	BSS address
+   0xDC	0xDF	4	BSS size
+   0xE0	0xE3	4	Entry point
+   0xE4	0xFF		padding
+ */
 
 #define N_TEXT       7
 #define N_DATA       11
@@ -106,7 +106,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return true;
 }
 
-static RzPVector *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	DolHeader *dol = bf->o->bin_obj;
@@ -122,6 +122,9 @@ static RzPVector *sections(RzBinFile *bf) {
 			continue;
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
+		if (!s) {
+			return NULL;
+		}
 		s->name = rz_str_newf("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -138,6 +141,9 @@ static RzPVector *sections(RzBinFile *bf) {
 			continue;
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
+		if (!s) {
+			return NULL;
+		}
 		s->name = rz_str_newf("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -149,6 +155,9 @@ static RzPVector *sections(RzBinFile *bf) {
 
 	if (dol->bss_size) {
 		RzBinSection *bss = RZ_NEW0(RzBinSection);
+		if (!s) {
+			return NULL;
+		}
 		bss->name = rz_str_dup("bss");
 		bss->paddr = UT64_MAX;
 		bss->vaddr = dol->bss_addr;
