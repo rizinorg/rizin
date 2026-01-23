@@ -4,6 +4,12 @@ CMDS=q!
 EXPECT=
 RUN
 
+NAME=DOL: sqrxz4 - aa
+FILE=bins/dol/sqrxz4-gc.dol
+CMDS=aa
+EXPECT=
+RUN
+
 NAME=DOL: sqrxz4 - iI
 FILE=bins/dol/sqrxz4-gc.dol
 CMDS=<<EOF
