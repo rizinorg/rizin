@@ -27,12 +27,9 @@ try to keep the codebase consistent and clean.
 * When relevant, write a test in [test/](test).
 
 > [!IMPORTANT]
-> AI tools must not be used to fix GitHub issues labelled `good first
-> issue`. These issues are generally not urgent, and are
-> intended to be learning opportunities for new contributors to get familiar with
-> the codebase. Whether you are a newcomer or not, fully automating the process
-> of fixing this issue squanders the learning opportunity and doesn't add much
-> value to the project.
+> AI tools must not be used to fix issues labelled `good first issue`.
+> These issues are generally not urgent, and are intended to be learning opportunities for new contributors to get familiar with the codebase.
+> Whether you are a newcomer or not, fully automating the process of fixing this issue squanders the learning opportunity and doesn't add much value to the project.
 > **Using AI tools to fix issues labelled as "good first issues" is forbidden**.
 
 ## Requirements for new contributors
