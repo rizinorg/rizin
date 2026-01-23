@@ -499,6 +499,43 @@ static void jemalloc_print_extent_info_530(RzCore *core, ut64 edata_addr, const 
 	PRINTF_BA("%s\n", state < 4 ? state_names[state] : "Unknown");
 }
 
+static void jemalloc_process_leaf_elm_530(RzCore *core, ut64 leaf_addr, const RzJemallocConfig530 *config,
+	HtUU *seen_extents, ut32 *extent_count) {
+	rtree_leaf_elm_t_530 leaf;
+
+	if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
+		return;
+	}
+
+	ut64 edata_addr;
+	if (config->rtree_leaf_compact) {
+		// Compact leaf format with le_bits
+		if (leaf.le_bits == 0) {
+			return;
+		}
+		edata_addr = rtree_leaf_elm_bits_edata_get_530(leaf.le_bits);
+	} else {
+		// Non-compact format with direct le_edata pointer
+		edata_addr = leaf.le_edata;
+	}
+
+	if (edata_addr == 0) {
+		return;
+	}
+
+	// Skip duplicates
+	bool found = false;
+	ht_uu_find(seen_extents, edata_addr, &found);
+	if (found) {
+		return;
+	}
+	ht_uu_insert(seen_extents, edata_addr, 1);
+
+	jemalloc_print_extent_info_530(core, edata_addr, config);
+	rz_cons_printf("\n");
+	(*extent_count)++;
+}
+
 static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, const RzJemallocConfig530 *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	HtUU *seen_extents = ht_uu_new();
@@ -513,60 +550,69 @@ static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, const 
 
 	ut64 root_addr = rtree_addr + root_offset;
 	ut32 extent_count = 0;
+	ut32 rtree_height = config->rtree_height;
 
 	PRINT_GA("Enumerating extents from rtree...\n");
 
-	// Level 1: iterate through root nodes
-	for (ut32 i = 0; i < max_subkeys; i++) {
-		rtree_node_elm_t_530 node;
-		ut64 node_addr = root_addr + i * config->rtree_node_elm_size;
+	if (rtree_height == 2) {
+		// 2-level tree: root -> leaf (x86_64, aarch64, i386, arm32)
+		for (ut32 i = 0; i < max_subkeys; i++) {
+			rtree_node_elm_t_530 node;
+			ut64 node_addr = root_addr + i * config->rtree_node_elm_size;
 
-		if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
-			continue;
-		}
-
-		ut64 leaf_base = node.child;
-		if (leaf_base == 0) {
-			continue;
-		}
-
-		// Level 2: iterate through leaf nodes
-		for (ut32 j = 0; j < max_subkeys; j++) {
-			rtree_leaf_elm_t_530 leaf;
-			ut64 leaf_addr = leaf_base + j * config->rtree_leaf_elm_size;
-
-			if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
+			if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
 				continue;
 			}
 
-			ut64 edata_addr;
-			if (config->rtree_leaf_compact) {
-				// 64-bit uses compact leaf format with le_bits
-				if (leaf.le_bits == 0) {
+			ut64 leaf_base = node.child;
+			if (leaf_base == 0) {
+				continue;
+			}
+
+			// Level 2: iterate through leaf nodes
+			for (ut32 j = 0; j < max_subkeys; j++) {
+				ut64 leaf_addr = leaf_base + j * config->rtree_leaf_elm_size;
+				jemalloc_process_leaf_elm_530(core, leaf_addr, config, seen_extents, &extent_count);
+			}
+		}
+	} else if (rtree_height == 3) {
+		// 3-level tree: root -> node -> leaf (riscv64)
+		for (ut32 i = 0; i < max_subkeys; i++) {
+			rtree_node_elm_t_530 level1_node;
+			ut64 level1_addr = root_addr + i * config->rtree_node_elm_size;
+
+			if (!read_and_parse_rtree_node_elm_t_530(core->io, level1_addr, &level1_node, config)) {
+				continue;
+			}
+
+			ut64 level2_base = level1_node.child;
+			if (level2_base == 0) {
+				continue;
+			}
+
+			// Level 2: intermediate nodes
+			for (ut32 j = 0; j < max_subkeys; j++) {
+				rtree_node_elm_t_530 level2_node;
+				ut64 level2_addr = level2_base + j * config->rtree_node_elm_size;
+
+				if (!read_and_parse_rtree_node_elm_t_530(core->io, level2_addr, &level2_node, config)) {
 					continue;
 				}
-				edata_addr = rtree_leaf_elm_bits_edata_get_530(leaf.le_bits);
-			} else {
-				// 32-bit uses non-compact format with direct le_edata pointer
-				edata_addr = leaf.le_edata;
-			}
 
-			if (edata_addr == 0) {
-				continue;
-			}
+				ut64 leaf_base = level2_node.child;
+				if (leaf_base == 0) {
+					continue;
+				}
 
-			// Skip duplicates
-			bool found = false;
-			ht_uu_find(seen_extents, edata_addr, &found);
-			if (found) {
-				continue;
+				// Level 3: leaf nodes
+				for (ut32 k = 0; k < max_subkeys; k++) {
+					ut64 leaf_addr = leaf_base + k * config->rtree_leaf_elm_size;
+					jemalloc_process_leaf_elm_530(core, leaf_addr, config, seen_extents, &extent_count);
+				}
 			}
-			ht_uu_insert(seen_extents, edata_addr, 1);
-
-			jemalloc_print_extent_info_530(core, edata_addr, config);
-			rz_cons_printf("\n");
-			extent_count++;
 		}
+	} else {
+		RZ_LOG_ERROR("Unsupported rtree height: %u\n", rtree_height);
 	}
 
 	PRINTF_GA("Total extents found: %u\n", extent_count);
@@ -581,39 +627,90 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 	// Remove page offset to get the key
 	ut64 key = addr >> lg_page;
 
-	// Calculate indices for each level
 	ut32 mask = (1U << bits_per_level) - 1;
-	ut32 root_idx = (key >> bits_per_level) & mask;
-	ut32 leaf_idx = key & mask;
-
 	ut64 root_addr = rtree_addr + root_offset;
+	ut32 rtree_height = config->rtree_height;
 
-	// Read root node to get leaf array base
-	rtree_node_elm_t_530 node;
-	ut64 node_addr = root_addr + (ut64)root_idx * config->rtree_node_elm_size;
-	if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
-		return 0;
-	}
+	ut64 leaf_base = 0;
 
-	ut64 leaf_base = node.child;
-	if (leaf_base == 0) {
-		return 0;
-	}
+	if (rtree_height == 2) {
+		// 2-level tree: root -> leaf
+		ut32 root_idx = (key >> bits_per_level) & mask;
+		ut32 leaf_idx = key & mask;
 
-	rtree_leaf_elm_t_530 leaf;
-	ut64 leaf_addr = leaf_base + (ut64)leaf_idx * config->rtree_leaf_elm_size;
-	if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
-		return 0;
-	}
-
-	if (config->rtree_leaf_compact) {
-		if (leaf.le_bits == 0) {
+		rtree_node_elm_t_530 node;
+		ut64 node_addr = root_addr + (ut64)root_idx * config->rtree_node_elm_size;
+		if (!read_and_parse_rtree_node_elm_t_530(core->io, node_addr, &node, config)) {
 			return 0;
 		}
-		return rtree_leaf_elm_bits_edata_get_530(leaf.le_bits);
-	} else {
-		return leaf.le_edata;
+
+		leaf_base = node.child;
+		if (leaf_base == 0) {
+			return 0;
+		}
+
+		rtree_leaf_elm_t_530 leaf;
+		ut64 leaf_addr = leaf_base + (ut64)leaf_idx * config->rtree_leaf_elm_size;
+		if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
+			return 0;
+		}
+
+		if (config->rtree_leaf_compact) {
+			if (leaf.le_bits == 0) {
+				return 0;
+			}
+			return rtree_leaf_elm_bits_edata_get_530(leaf.le_bits);
+		} else {
+			return leaf.le_edata;
+		}
+	} else if (rtree_height == 3) {
+		// 3-level tree: root -> node -> leaf (riscv64)
+		ut32 level1_idx = (key >> (2 * bits_per_level)) & mask;
+		ut32 level2_idx = (key >> bits_per_level) & mask;
+		ut32 leaf_idx = key & mask;
+
+		// Level 1: root node
+		rtree_node_elm_t_530 level1_node;
+		ut64 level1_addr = root_addr + (ut64)level1_idx * config->rtree_node_elm_size;
+		if (!read_and_parse_rtree_node_elm_t_530(core->io, level1_addr, &level1_node, config)) {
+			return 0;
+		}
+
+		ut64 level2_base = level1_node.child;
+		if (level2_base == 0) {
+			return 0;
+		}
+
+		// Level 2: intermediate node
+		rtree_node_elm_t_530 level2_node;
+		ut64 level2_addr = level2_base + (ut64)level2_idx * config->rtree_node_elm_size;
+		if (!read_and_parse_rtree_node_elm_t_530(core->io, level2_addr, &level2_node, config)) {
+			return 0;
+		}
+
+		leaf_base = level2_node.child;
+		if (leaf_base == 0) {
+			return 0;
+		}
+
+		// Level 3: leaf
+		rtree_leaf_elm_t_530 leaf;
+		ut64 leaf_addr = leaf_base + (ut64)leaf_idx * config->rtree_leaf_elm_size;
+		if (!read_and_parse_rtree_leaf_elm_t_530(core->io, leaf_addr, &leaf, config)) {
+			return 0;
+		}
+
+		if (config->rtree_leaf_compact) {
+			if (leaf.le_bits == 0) {
+				return 0;
+			}
+			return rtree_leaf_elm_bits_edata_get_530(leaf.le_bits);
+		} else {
+			return leaf.le_edata;
+		}
 	}
+
+	return 0;
 }
 
 static void jemalloc_find_extent_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {

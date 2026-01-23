@@ -108,3 +108,48 @@ Extent @ 0x7faa2cc16500
   Allocated Address: 0x7faa2ca00000
 EOF
 RUN
+
+NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
+FILE=bins/heap/linux_jemalloc-5.3.0_riscv64.bin
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+e asm.os=linux
+e dbg.jemalloc.version=5.3.0
+e dbg.jemalloc.page_size=4k
+
+om 3 0x55555d5b4830 1440 0x0 rw- bin_info
+om 3 0x7fff960010c0 0x20000 1440 rw- arena
+om 3 0x7fff96016500 128 0x205a0 rw- extent
+
+dmxa 0x7fff960010c0~ind
+dmxa 0x7fff960010c0~nthreads: application
+dmxa 0x7fff960010c0~stats
+dmxa 0x7fff960010c0~dss_prec
+dmxa 0x7fff960010c0~create_time.ns
+echo ----
+dmxb 0x7fff960010c0 0x55555d5b4830~?reg_size
+dmxb 0x7fff960010c0 0x55555d5b4830~reg_size : 0x800
+dmxb 0x7fff960010c0 0x55555d5b4830~reg_size : 0x3800
+dmxb 0x7fff960010c0 0x55555d5b4830~nregs : 0x200
+echo ----
+dmxei 0x7fff96016500~Extent
+dmxei 0x7fff96016500~Allocated Address
+EOF
+EXPECT=<<EOF
+  ind = 0x0
+  nthreads: application allocation = 0x1
+  stats = 0x7fff960010d8
+  dss_prec = 0x2
+  create_time.ns = 0x35366573ac
+----
+36
+      reg_size : 0x800
+      reg_size : 0x3800
+      nregs : 0x200
+----
+Extent @ 0x7fff96016500
+  Allocated Address: 0x7fff95e00000
+EOF
+RUN

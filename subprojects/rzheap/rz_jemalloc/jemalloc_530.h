@@ -702,22 +702,32 @@ static inline bool read_and_parse_rtree_leaf_elm_t_530(RzIO *io, ut64 addr, rtre
 	ut64 offset = 0;
 	bool ret = false;
 	if (config->rtree_leaf_compact) {
-		// 64-bit uses compact format with le_bits
+		// Compact format with le_bits (used by x86_64, aarch64)
 		if (!rz_buf_read_le64_offset(b, &offset, &out->le_bits)) {
 			goto cleanup;
 		}
 		out->le_edata = 0;
 		out->le_metadata = 0;
 	} else {
-		// 32-bit uses non-compact format
-		ut32 edata, metadata;
-		if (!rz_buf_read_le32_offset(b, &offset, &edata) ||
-			!rz_buf_read_le32_offset(b, &offset, &metadata)) {
-			goto cleanup;
-		}
+		// Non-compact format with separate le_edata and le_metadata
+		// Used by i386, arm32, and riscv64
 		out->le_bits = 0;
-		out->le_edata = edata;
-		out->le_metadata = metadata;
+		if (config->ptr_size == 8) {
+			// 64-bit non-compact format (riscv64)
+			if (!rz_buf_read_le64_offset(b, &offset, &out->le_edata) ||
+				!rz_buf_read_le64_offset(b, &offset, &out->le_metadata)) {
+				goto cleanup;
+			}
+		} else {
+			// 32-bit non-compact format (i386, arm32)
+			ut32 edata, metadata;
+			if (!rz_buf_read_le32_offset(b, &offset, &edata) ||
+				!rz_buf_read_le32_offset(b, &offset, &metadata)) {
+				goto cleanup;
+			}
+			out->le_edata = edata;
+			out->le_metadata = metadata;
+		}
 	}
 	ret = true;
 cleanup:
