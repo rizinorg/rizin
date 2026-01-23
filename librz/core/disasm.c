@@ -1292,7 +1292,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 			ds_comment(ds, false, "%s 0x%08" PFMT64x "  ",
 				rz_analysis_xrefs_type_tostring(xrefi->type), xrefi->from);
 			if (count == cols) {
-				if (rz_list_iter_has_next(iter)) {
+				if (rz_list_has_next(iter)) {
 					ds_print_color_reset(ds);
 					ds_newline(ds);
 					ds_begin_line(ds);

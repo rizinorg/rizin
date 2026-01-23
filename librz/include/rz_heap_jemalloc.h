@@ -1,56 +1,23 @@
 // SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
-
-// Allow re-entry for 32-bit pass
-#if !defined(RZ_HEAP_JEMALLOC_H_TYPES) || defined(INC_HEAP32)
-
-#ifndef INC_HEAP32
-// First pass: 64-bit
-#define GH(x) x##_64
-typedef ut64 RZ_ALIGNED(8) GHT_64;
-typedef st64 RZ_ALIGNED(8) GHST_64;
-#define GHT      GHT_64
-#define GHT_MAX  UT64_MAX
-#define GHST     GHST_64
-#define GH_IS_64 1
-#else
-// Second pass: 32-bit
-#undef GH
-#undef GHT
-#undef GHT_MAX
-#undef GHST
-#undef GH_IS_64
-#define GH(x)   x##_32
-typedef ut32 RZ_ALIGNED(4) GHT_32;
-typedef st32 RZ_ALIGNED(4) GHST_32;
-#define GHT     GHT_32
-#define GHT_MAX UT32_MAX
-#define GHST    GHST_32
-#endif
-
-/* jemalloc 4.5.0 still uses the GH/GHT macro system */
-#include <rz_jemalloc/jemalloc_450.h>
-
-#ifndef INC_HEAP32
-#undef JEMALLOC_INTERNAL_H
-#define INC_HEAP32 1
-#include "rz_heap_jemalloc.h"
-#undef INC_HEAP32
-#define RZ_HEAP_JEMALLOC_H_TYPES
-#endif
-
-#endif // RZ_HEAP_JEMALLOC_H_TYPES
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
 
-/* jemalloc 5.3.0 uses unified structs with is_64bit parameter - included once */
+#include <rz_jemalloc/jemalloc_450.h>
 #include <rz_jemalloc/jemalloc_530.h>
 
+// Undefine any previous definitions from rz_heap_glibc.h
 #undef PRINTF_A
 #undef PRINTF_YA
 #undef PRINTF_GA
 #undef PRINTF_BA
 #undef PRINTF_RA
+#undef PRINT_A
+#undef PRINT_YA
+#undef PRINT_GA
+#undef PRINT_BA
+#undef PRINT_RA
 
 #define PRINTF_A(color, fmt, ...) \
 	do { \
@@ -67,12 +34,6 @@ typedef st32 RZ_ALIGNED(4) GHST_32;
 #define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
 #define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
 
-#undef PRINT_A
-#undef PRINT_YA
-#undef PRINT_GA
-#undef PRINT_BA
-#undef PRINT_RA
-
 #define PRINT_A(color, msg) \
 	do { \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
@@ -88,4 +49,4 @@ typedef st32 RZ_ALIGNED(4) GHST_32;
 #define PRINT_BA(msg) PRINT_A(pal->num, msg)
 #define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
 
-#endif
+#endif // RZ_HEAP_JEMALLOC_H
