@@ -6,16 +6,13 @@ RUN
 
 NAME=DOL: sqrxz4 - iI
 FILE=bins/dol/sqrxz4-gc.dol
-CMDS=iI~?wii
+CMDS=<<EOF
+iI~?wii
+iI
+ie~program[0]
+EOF
 EXPECT=<<EOF
 2
-EOF
-RUN
-
-NAME=DOL: sqrxz4 - iI
-FILE=bins/dol/sqrxz4-gc.dol
-CMDS=iI
-EXPECT=<<EOF
 arch     ppc
 cpu      N/A
 features N/A
@@ -52,6 +49,7 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
+0x80003100
 EOF
 RUN
 
@@ -74,14 +72,3 @@ addr,size,space,name,realname
 0x800ffc60,3434688,sections,section.bss,section.bss
 EOF
 RUN
-
-NAME=DOL: sqrxz4 - entry point
-FILE=bins/dol/sqrxz4-gc.dol
-CMDS=ie~program[0]
-EXPECT=<<EOF
-0x80003100
-EOF
-RUN
-
-
-
