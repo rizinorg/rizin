@@ -8,21 +8,21 @@
 #include <string.h>
 
 /*
-Start	End	Length	Description
-0x0	0x3	4	File offset to start of Text0
-0x04	0x1b	24	File offsets for Text1..6
-0x1c	0x47	44	File offsets for Data0..10
-0x48	0x4B	4	Loading address for Text0
-0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
-0x90	0xD7	72	Section sizes for Text0..6, Data0..10
-0xD8	0xDB	4	BSS address
-0xDC	0xDF	4	BSS size
-0xE0	0xE3	4	Entry point
-0xE4	0xFF		padding
+	Start	End	Length	Description
+	0x0	0x3	4	File offset to start of Text0
+	0x04	0x1b	24	File offsets for Text1..6
+	0x1c	0x47	44	File offsets for Data0..10
+	0x48	0x4B	4	Loading address for Text0
+	0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
+	0x90	0xD7	72	Section sizes for Text0..6, Data0..10
+	0xD8	0xDB	4	BSS address
+	0xDC	0xDF	4	BSS size
+	0xE0	0xE3	4	Entry point
+	0xE4	0xFF		padding
 */
 
-#define N_TEXT 7
-#define N_DATA 11
+#define N_TEXT       7
+#define N_DATA       11
 #define DOL_HDR_SIZE 0x100
 
 typedef struct dol_header_s {
@@ -38,7 +38,21 @@ typedef struct dol_header_s {
 	ut32 padding[10];
 } DolHeader;
 
-static bool check_buffer(RzBuffer *buf) {
+/*
+	Performs a check on the buffer to verify if is a DOL header.
+	The DOL format does not have a magic, thus requires some heuristics to detect it.
+	The size is always 0x100 and thus we expect the text0 offset to alway start after 0x100.
+
+	On the Broadway the executable range starts from 0x80000000 till 0x80003F00 for iOS and for applications between the 0x80003F00 and 0x81330000.
+	Thus, we expect the entrypoint for these files to always have the MSB to 1.
+
+	Reference:
+		https://wiki.tockdom.com/wiki/DOL_(File_Format)
+		https://wiibrew.org/wiki/Memory_map
+ */
+
+static bool
+check_buffer(RzBuffer *buf) {
 	if (!buf || rz_buf_size(buf) < DOL_HDR_SIZE) {
 		return false;
 	}
@@ -49,33 +63,12 @@ static bool check_buffer(RzBuffer *buf) {
 	if (!rz_buf_read_be32_at(buf, 0xE0, &entry)) {
 		return false;
 	}
-	
+
 	bool text0_valid = (text0_off >= DOL_HDR_SIZE) && (text0_off < rz_buf_size(buf)) && (text0_off % 4 == 0);
 	bool entry_valid = (entry & 0xF0000000) == 0x80000000;
 	return text0_valid && entry_valid;
 }
-/*
-dol Header:
---> The dol header have a fixed size of 0x100. But in the dol_parse_header when you add all the memory space it would be 0xE4, this is okay as rest all of the space is considered as padding.
 
-	0x100 - 0xE4 = padding 
-
-Generally this padding is ignored.
-dol header entrypoint:
---> Previously, we validated whether a file was a DOL file by comparing the first 6 bytes with a magic value. This method was weak and unreliable.
-
---> We have now introduced a more robust validation method based on the entrypoint address range.
-
---> A valid DOL entrypoint must fall within the memory range:
-
-      (0x80004000 <–> 0x81200000)
-
---> By verifying that the entrypoint lies within this range, we can more confidently determine whether the file is a valid DOL  file. This also improves the overall reliability of DOL file detection.
-
---> Reference:
-	https://wiki.tockdom.com/wiki/DOL_(File_Format)
-	https://wiibrew.org/wiki/Memory_map
-*/
 static bool read_u32_array(RzBuffer *b, ut64 *off, ut32 *dst, int n) {
 	for (int i = 0; i < n; i++) {
 		if (!rz_buf_read_be32_offset(b, off, &dst[i])) {
@@ -121,7 +114,7 @@ static RzPVector *sections(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-		
+
 	for (int i = 0; i < N_TEXT; i++) {
 		if (!dol->text_paddr[i] ||
 			!dol->text_vaddr[i] ||
@@ -132,11 +125,11 @@ static RzPVector *sections(RzBinFile *bf) {
 		s->name = rz_str_newf("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
-		s->size  = dol->text_size[i];
+		s->size = dol->text_size[i];
 		s->vsize = s->size;
-		s->perm  = rz_str_rwx("r-x");
+		s->perm = rz_str_rwx("r-x");
 		rz_pvector_push(ret, s);
-}
+	}
 
 	for (int i = 0; i < N_DATA; i++) {
 		if (!dol->data_paddr[i] ||
@@ -148,44 +141,38 @@ static RzPVector *sections(RzBinFile *bf) {
 		s->name = rz_str_newf("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
-		s->size  = dol->data_size[i];
+		s->size = dol->data_size[i];
 		s->vsize = s->size;
-		s->perm  = rz_str_rwx("r--");
+		s->perm = rz_str_rwx("r--");
 		rz_pvector_push(ret, s);
 	}
 
 	if (dol->bss_size) {
 		RzBinSection *bss = RZ_NEW0(RzBinSection);
-		bss->name  = rz_str_dup("bss");
+		bss->name = rz_str_dup("bss");
 		bss->paddr = UT64_MAX;
 		bss->vaddr = dol->bss_addr;
-		bss->size  = dol->bss_size;
+		bss->size = dol->bss_size;
 		bss->vsize = bss->size;
-		bss->perm  = rz_str_rwx("rw-");
+		bss->perm = rz_str_rwx("rw-");
 		rz_pvector_push(ret, bss);
 	}
-
 	return ret;
 }
-
 static RzPVector *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
 	DolHeader *dol = bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new(NULL);
 	if (!ret) {
 		return NULL;
 	}
-
 	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	if (!addr) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-
 	addr->vaddr = dol->entrypoint;
-	addr->paddr = UT64_MAX; 
-
+	addr->paddr = UT64_MAX;
 	rz_pvector_push(ret, addr);
 	return ret;
 }
