@@ -155,7 +155,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	if (dol->bss_size) {
 		RzBinSection *bss = RZ_NEW0(RzBinSection);
-		if (!s) {
+		if (!bss) {
 			return NULL;
 		}
 		bss->name = rz_str_dup("bss");
