@@ -818,6 +818,82 @@ static void jemalloc_print_narenas_530(RzCore *core, const char *input, const Rz
 }
 
 // ============================================================================
+// page size detection
+// ============================================================================
+
+static const char *detect_page_size_from_smaps(int pid) {
+#if __linux__
+	if (pid <= 0) {
+		return NULL;
+	}
+
+	char path[64];
+	snprintf(path, sizeof(path), "/proc/%d/smaps", pid);
+
+	FILE *f = fopen(path, "r");
+	if (!f) {
+		return NULL;
+	}
+
+	char line[256];
+	const char *result = NULL;
+	while (fgets(line, sizeof(line), f)) {
+		int page_kb = 0;
+		if (sscanf(line, "KernelPageSize: %d kB", &page_kb) == 1) {
+			switch (page_kb) {
+			case 4:
+				result = "4k";
+				break;
+			case 16:
+				result = "16k";
+				break;
+			case 64:
+				result = "64k";
+				break;
+			default:
+				result = "4k";
+				break;
+			}
+			break;
+		}
+	}
+	fclose(f);
+	return result;
+#else
+	return NULL;
+#endif
+}
+
+static const char *detect_page_size(RzCore *core, const char *arch, const char *os, int bits) {
+	const char *page_size = rz_config_get(core->config, "dbg.jemalloc.page_size");
+	if (page_size && strcmp(page_size, "auto") != 0) {
+		return page_size;
+	}
+
+	bool is_darwin = os && (!strcmp(os, "darwin") || !strcmp(os, "macos") || !strcmp(os, "ios"));
+	bool is_linux = os && !strcmp(os, "linux");
+	bool is_aarch64 = arch && (!strcmp(arch, "arm") || !strcmp(arch, "aarch64")) && bits == 64;
+
+	// darwin on aarch64: always 16KB
+	if (is_darwin && is_aarch64) {
+		return "16k";
+	}
+
+	// aarch64 linux: Can be 4k, 16k, or 64k
+	if (is_linux && is_aarch64) {
+		int pid = core->dbg ? core->dbg->pid : -1;
+		const char *detected = detect_page_size_from_smaps(pid);
+		if (detected) {
+			return detected;
+		}
+		// Fall back to 4k (most common)
+	}
+
+	// everything else: 4k (x86, x86_64, riscv, arm32)
+	return "4k";
+}
+
+// ============================================================================
 // dispatcher
 // ============================================================================
 
@@ -831,7 +907,7 @@ void cmd_dbg_map_jemalloc(RzCore *core, char dmx_variant, const char *arg) {
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 	int bits = rz_config_get_i(core->config, "asm.bits");
-	const char *page_size = rz_config_get(core->config, "dbg.jemalloc.page_size");
+	const char *page_size = detect_page_size(core, arch, os, bits);
 
 	if (version && strcmp(version, "4.5.0") == 0) {
 		const RzJemallocConfig450 *config = rz_jemalloc_get_config_450(arch, os, bits, page_size);
