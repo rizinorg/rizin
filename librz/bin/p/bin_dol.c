@@ -47,8 +47,8 @@ typedef struct dol_header_s {
    Thus, we expect the entrypoint for these files to always have the MSB to 1.
 
    Reference:
-   	https://wiki.tockdom.com/wiki/DOL_(File_Format)
-   	https://wiibrew.org/wiki/Memory_map
+    https://wiki.tockdom.com/wiki/DOL_(File_Format)
+    https://wiibrew.org/wiki/Memory_map
  */
 
 static bool check_buffer(RzBuffer *buf) {
