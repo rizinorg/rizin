@@ -314,7 +314,12 @@ static RzStructuredData *omf_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(omf, "bits", bits, false);
 	rz_structured_data_map_add_unsigned(omf, "num_names", obj->nb_name, false);
 	rz_structured_data_map_add_unsigned(omf, "num_sections", obj->nb_section, false);
+	rz_structured_data_map_add_unsigned(omf, "num_sections", obj->nb_section, false);
 	rz_structured_data_map_add_unsigned(omf, "num_symbols", obj->nb_symbol, false);
+
+	if (obj->module_name) {
+		rz_structured_data_map_add_string(omf, "module_name", obj->module_name);
+	}
 
 	omf_structure_add_names(omf, obj);
 	omf_structure_add_sections(omf, obj);

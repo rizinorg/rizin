@@ -230,6 +230,39 @@ static ut64 size(RzBinFile *bf) {
 	return text + data + syms + spsz + (6 * 4);
 }
 
+static RzStructuredData *p9_structure(RzBinFile *bf) {
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+	RzStructuredData *p9 = rz_structured_data_map_add_map(info, "p9");
+	if (!p9) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	ut32 magic, text, data, bss, syms, entry, spsz, pcsz;
+	rz_buf_read_le32_at(bf->buf, 0, &magic);
+	rz_buf_read_le32_at(bf->buf, 4, &text);
+	rz_buf_read_le32_at(bf->buf, 8, &data);
+	rz_buf_read_le32_at(bf->buf, 12, &bss);
+	rz_buf_read_le32_at(bf->buf, 16, &syms);
+	rz_buf_read_le32_at(bf->buf, 20, &entry);
+	rz_buf_read_le32_at(bf->buf, 24, &spsz);
+	rz_buf_read_le32_at(bf->buf, 28, &pcsz);
+
+	rz_structured_data_map_add_unsigned(p9, "magic", magic, true);
+	rz_structured_data_map_add_unsigned(p9, "text", text, false);
+	rz_structured_data_map_add_unsigned(p9, "data", data, false);
+	rz_structured_data_map_add_unsigned(p9, "bss", bss, false);
+	rz_structured_data_map_add_unsigned(p9, "syms", syms, false);
+	rz_structured_data_map_add_unsigned(p9, "entry", entry, true);
+	rz_structured_data_map_add_unsigned(p9, "spsz", spsz, false);
+	rz_structured_data_map_add_unsigned(p9, "pcsz", pcsz, false);
+
+	return info;
+}
+
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
@@ -269,6 +302,7 @@ RzBinPlugin rz_bin_plugin_p9 = {
 	.info = &info,
 	.libs = &libs,
 	.create = &create,
+	.bin_structure = &p9_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

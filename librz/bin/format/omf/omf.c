@@ -584,7 +584,6 @@ static int get_omf_infos(rz_bin_omf_obj *obj) {
 	// get all data (ledata record)
 	get_omf_data_info(obj);
 	// get all symbols (pubdef + lpubdef)
-	obj->nb_symbol = count_omf_multi_record_type(obj, OMF_PUBDEF);
 	if (obj->nb_symbol > 0) {
 		if (!(obj->symbols = RZ_NEWS0(OMF_symbol *, obj->nb_symbol))) {
 			return false;
@@ -592,6 +591,23 @@ static int get_omf_infos(rz_bin_omf_obj *obj) {
 		if (!get_omf_symbol_info(obj)) {
 			return false;
 		}
+	}
+	// get module name from THEADR or LHEADR
+	OMF_record_handler *tmp = obj->records;
+	while (tmp) {
+		if (tmp->record.type == OMF_THEADR || tmp->record.type == OMF_LHEADR) {
+			if (tmp->record.content && tmp->record.size > 1) {
+				ut8 len = *(ut8 *)tmp->record.content;
+				if (len > 0 && len < tmp->record.size) {
+					obj->module_name = RZ_NEWS0(char, len + 1);
+					if (obj->module_name) {
+						memcpy(obj->module_name, (char *)tmp->record.content + 1, len);
+					}
+				}
+			}
+			break;
+		}
+		tmp = tmp->next;
 	}
 	return true;
 }
@@ -674,6 +690,7 @@ void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj) {
 		if (obj->names) {
 			free_all_omf_names(obj);
 		}
+		RZ_FREE(obj->module_name);
 		free(obj);
 	}
 }

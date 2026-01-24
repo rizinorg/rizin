@@ -54,6 +54,7 @@ typedef struct {
 	OMF_symbol **symbols;
 	ut32 nb_symbol;
 	OMF_record_handler *records;
+	char *module_name;
 } rz_bin_omf_obj;
 
 // this value was chosen arbitrarily to made the loader work correctly

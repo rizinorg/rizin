@@ -382,6 +382,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.symbols = &symbols,
 	.info = &info,
 	.libs = &libs,
+	.bin_structure = &xbe_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE
