@@ -1,4 +1,4 @@
-NAME=dmxa/dmxb with jemalloc 4.5.0 memory dump
+NAME=dmxa/dmxb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -40,8 +40,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 4.5.0 runtime
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-x32
+NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 4.5.0 runtime (linux-x86-4k_page)
+FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-i386
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
@@ -62,8 +62,8 @@ RUN
 
 
 
-NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 4.5.0 runtime
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-x64
+NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 4.5.0 runtime (linux-amd64-4k_page)
+FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-amd64
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
@@ -83,7 +83,7 @@ EOF
 RUN
 
 
-NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump
+NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -126,8 +126,8 @@ EOF
 RUN
 
 
-NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 5.3.0 runtime
-FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x32
+NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 5.3.0 runtime (linux-x86-4k_page)
+FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-i386
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
@@ -148,8 +148,8 @@ RUN
 
 
 
-NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 5.3.0 runtime
-FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-x64
+NAME=dmxa/dmxb/dmxe with 64-bit jemalloc 5.3.0 runtime (linux-amd64-4k_page)
+FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-amd64
 ARGS=-d
 CMDS=<<EOF
 dcu sym.imp.getchar
@@ -167,4 +167,3 @@ EXPECT=<<EOF
 Total extents found: 16
 EOF
 RUN
-
