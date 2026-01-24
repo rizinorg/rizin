@@ -296,7 +296,7 @@ NAME=rz-find -V verbose shows all files in directory
 FILE==
 CMDS=!rz-find -V -q -s README bins/arm | grep -c "Scanning:"
 EXPECT=<<EOF
-9
+10
 EOF
 RUN
 
