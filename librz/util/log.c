@@ -69,6 +69,16 @@ RZ_API void rz_log_set_level(RzLogLevel level) {
 }
 
 /**
+ * \brief      Gets the log level
+ *
+ * \param[in]  level  The current log level.
+ */
+RZ_API RzLogLevel rz_log_get_level() {
+	log_init();
+	return logcfg.level;
+}
+
+/**
  * \brief      Sets the log level when to abort execution
  *
  * \param[in]  level  The abort log level to set.
