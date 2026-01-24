@@ -110,15 +110,13 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	DolHeader *dol = bf->o->bin_obj;
-	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
 
 	for (int i = 0; i < N_TEXT; i++) {
-		if (!dol->text_paddr[i] ||
-			!dol->text_vaddr[i] ||
-			!dol->text_size[i]) {
+		if (!dol->text_paddr[i] || !dol->text_vaddr[i] || !dol->text_size[i]) {
 			continue;
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
@@ -136,9 +134,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 
 	for (int i = 0; i < N_DATA; i++) {
-		if (!dol->data_paddr[i] ||
-			!dol->data_vaddr[i] ||
-			!dol->data_size[i]) {
+		if (!dol->data_paddr[i] || !dol->data_vaddr[i] || !dol->data_size[i]) {
 			continue;
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
@@ -175,7 +171,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	DolHeader *dol = bf->o->bin_obj;
-	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
+	RzPVector *ret = rz_pvector_new(free);
 	if (!ret) {
 		return NULL;
 	}
