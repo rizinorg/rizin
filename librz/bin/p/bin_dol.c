@@ -172,7 +172,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	DolHeader *dol = bf->o->bin_obj;
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
