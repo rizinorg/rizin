@@ -39,20 +39,19 @@ typedef struct dol_header_s {
 } DolHeader;
 
 /*
-	Performs a check on the buffer to verify if is a DOL header.
-	The DOL format does not have a magic, thus requires some heuristics to detect it.
-	The size is always 0x100 and thus we expect the text0 offset to alway start after 0x100.
+   Performs a check on the buffer to verify if is a DOL header.
+   The DOL format does not have a magic, thus requires some heuristics to detect it.
+   The size is always 0x100 and thus we expect the text0 offset to alway start after 0x100.
 
-	On the Broadway the executable range starts from 0x80000000 till 0x80003F00 for iOS and for applications between the 0x80003F00 and 0x81330000.
-	Thus, we expect the entrypoint for these files to always have the MSB to 1.
+   On the Broadway the executable range starts from 0x80000000 till 0x80003F00 for iOS and for applications between the 0x80003F00 and 0x81330000.
+   Thus, we expect the entrypoint for these files to always have the MSB to 1.
 
-	Reference:
-		https://wiki.tockdom.com/wiki/DOL_(File_Format)
-		https://wiibrew.org/wiki/Memory_map
+   Reference:
+   	https://wiki.tockdom.com/wiki/DOL_(File_Format)
+   	https://wiibrew.org/wiki/Memory_map
  */
 
-static bool
-check_buffer(RzBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	if (!buf || rz_buf_size(buf) < DOL_HDR_SIZE) {
 		return false;
 	}
@@ -77,6 +76,7 @@ static bool read_u32_array(RzBuffer *b, ut64 *off, ut32 *dst, int n) {
 	}
 	return true;
 }
+
 static bool dol_parse_header(RzBuffer *buf, DolHeader *dol) {
 	ut64 off = 0;
 	return read_u32_array(buf, &off, dol->text_paddr, N_TEXT) &&
@@ -110,7 +110,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	DolHeader *dol = bf->o->bin_obj;
-	RzPVector *ret = rz_pvector_new(NULL);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
 	if (!ret) {
 		return NULL;
 	}
@@ -123,6 +123,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
 		if (!s) {
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		s->name = rz_str_newf("text_%d", i);
@@ -142,6 +143,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		RzBinSection *s = RZ_NEW0(RzBinSection);
 		if (!s) {
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		s->name = rz_str_newf("data_%d", i);
@@ -156,6 +158,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	if (dol->bss_size) {
 		RzBinSection *bss = RZ_NEW0(RzBinSection);
 		if (!bss) {
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		bss->name = rz_str_dup("bss");
@@ -168,10 +171,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	}
 	return ret;
 }
+
 static RzPVector *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	DolHeader *dol = bf->o->bin_obj;
-	RzPVector *ret = rz_pvector_new(NULL);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
 	if (!ret) {
 		return NULL;
 	}
