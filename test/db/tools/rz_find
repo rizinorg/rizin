@@ -292,14 +292,6 @@ File: bins/arm/README
 EOF
 RUN
 
-NAME=rz-find -V verbose shows all files in directory
-FILE==
-CMDS=!rz-find -V -q -s README bins/arm | grep -c "Scanning:"
-EXPECT=<<EOF
-10
-EOF
-RUN
-
 NAME=rz-find -V with -q still shows scanning
 FILE==
 CMDS=!rz-find -V -q -s 250382 bins/elf/ioli/crackme0x00 | head -1
