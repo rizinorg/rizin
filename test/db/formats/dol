@@ -25,7 +25,7 @@ guid     N/A
 intrp    N/A
 laddr    0x00000000
 lang     N/A
-machine  Nintendo Wii
+machine  Nintendo Wii/GC
 maxopsz  4
 minopsz  4
 os       wii-ios
@@ -47,12 +47,12 @@ NX       false
 ---
      paddr     size      vaddr    vsize align perm name   type flags 
 ---------------------------------------------------------------------
-0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
-0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
----------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x .text0      
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- .data0      
+---------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- .bss        
 ---
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
-0x80003100 ---------- ---------- ---------- program
+0x80003100 0x00000100 ---------- ---------- program
 EOF
 RUN
