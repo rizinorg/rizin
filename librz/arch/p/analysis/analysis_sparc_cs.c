@@ -157,6 +157,21 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 
 		op->il_op = rz_sparc_cs_get_il_op(sparc->handle, insn, mode, sparc);
 		if (has_delayed_branch) {
+			if (op->il_op && op->il_op->code == RZ_IL_OP_NOP) {
+				// Unconditional jumps have often a nop instruction in the delayed slot.
+				// But we should not execute it. Because it will set the PC temporarily (before the JUMP is executed)
+				// to the instruction *after* the delayed slot.
+				// This is semantically not correct and can lead to bugs if the IL op is used
+				// in analysis.
+				// So replace it with an EMPTY effect.
+				// NOTE: The jump of an unconditional branch is still executed on the
+				// PC of the delayed slot! This is semantically also not correct,
+				// because the delayed slot instruction should never be executed for unconditional jumps.
+				// But we need to wait for RzArch implementation and support for instruction packets
+				// to do this properly. So I safe the time spent on a work around.
+				rz_il_op_effect_free(op->il_op);
+				op->il_op = rz_il_op_new_empty();
+			}
 			if (op->il_op && delayed_branch->cond) {
 				// The branch is conditionally and annuls the delay slot if not taken (skips op->il_op).
 				op->il_op = rz_il_op_new_branch(delayed_branch->cond,

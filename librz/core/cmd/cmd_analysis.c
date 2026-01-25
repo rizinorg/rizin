@@ -802,7 +802,7 @@ static void showregs(RzList /*<char *>*/ *list) {
 		RzListIter *iter;
 		rz_list_foreach (list, iter, reg) {
 			rz_cons_print(reg);
-			if (rz_list_iter_has_next(iter)) {
+			if (rz_list_has_next(iter)) {
 				rz_cons_printf(" ");
 			}
 		}
@@ -5485,6 +5485,7 @@ static RzList /*<ut64 *>*/ *get_calls(RzAnalysisBlock *block) {
 			i += op.size - 1;
 		}
 	}
+	free(data);
 	return list;
 }
 

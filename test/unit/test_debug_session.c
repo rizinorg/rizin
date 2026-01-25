@@ -185,9 +185,11 @@ static bool test_session_load(void) {
 		RzListIter *actual_snaps_iter = rz_list_iterator(chkpt->snaps);
 		RzListIter *expected_snaps_iter = rz_list_iterator(ref_chkpt->snaps);
 		while (actual_snaps_iter && expected_snaps_iter) {
-			RzDebugSnap *actual_snap = rz_list_iter_get(actual_snaps_iter);
-			RzDebugSnap *expected_snap = rz_list_iter_get(expected_snaps_iter);
+			RzDebugSnap *actual_snap = rz_list_get(actual_snaps_iter);
+			RzDebugSnap *expected_snap = rz_list_get(expected_snaps_iter);
 			snap_eq(actual_snap, expected_snap);
+			actual_snaps_iter = rz_list_next(actual_snaps_iter);
+			expected_snaps_iter = rz_list_next(expected_snaps_iter);
 		}
 	}
 

@@ -1,5 +1,4 @@
 debug_plugins_list = [
-  'bf',
   'bochs',
   'dmp',
   'gdb',
@@ -33,10 +32,8 @@ rz_debug_sources = [
   'serialize_debug.c',
   'snap.c',
   'trace.c',
-  'p/bfvm.c',
   'p/common_windows.c',
   'p/common_winkd.c',
-  'p/debug_bf.c',
   'p/debug_bochs.c',
   'p/debug_dmp.c',
   'p/debug_gdb.c',

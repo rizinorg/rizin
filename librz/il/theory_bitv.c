@@ -358,7 +358,7 @@ void *rz_il_handler_cast(RzILVM *vm, RzILOpBitVector *op, RzILTypePure *type) {
 
 	RzBitVector *ret = rz_bv_new(op_cast->length);
 	rz_bv_set_all(ret, fill->b);
-	rz_bv_copy_nbits(bv, 0, ret, 0, RZ_MIN(bv->len, ret->len));
+	rz_bv_copy_nbits(ret, 0, bv, 0, RZ_MIN(bv->len, ret->len));
 
 	rz_il_bool_free(fill);
 	rz_bv_free(bv);

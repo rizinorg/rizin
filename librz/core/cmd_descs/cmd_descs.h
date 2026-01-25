@@ -1371,6 +1371,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, const char **argv);
 // "dmxc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv);
+// "dmxe"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, const char **argv);
+// "dmxei"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_ei_handler(RzCore *core, int argc, const char **argv);
 // "dp"
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dpl"

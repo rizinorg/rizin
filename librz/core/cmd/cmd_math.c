@@ -704,7 +704,7 @@ RZ_IPI RzCmdStatus rz_input_conditional_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
-	char *rstr = core->print->hasrefs(core->print->user, addr, true);
+	char *rstr = core->print->hasrefs(core->print->user, addr, RZ_OUTPUT_MODE_STANDARD);
 	if (!rstr) {
 		RZ_LOG_ERROR("core: Cannot get refs\n");
 		return RZ_CMD_STATUS_ERROR;

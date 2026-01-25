@@ -250,7 +250,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBindin
 			RzBitVector *pcbv = rz_bv_new_zero(ri->size);
 			if (pcbv) {
 				perfect &= rz_bv_len(pcbv) == rz_bv_len(vm->pc);
-				rz_bv_copy_nbits(vm->pc, 0, pcbv, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
+				rz_bv_copy_nbits(pcbv, 0, vm->pc, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
 				rz_reg_set_bv(reg, ri, pcbv);
 				rz_bv_free(pcbv);
 			} else {
@@ -293,7 +293,7 @@ RZ_API bool rz_il_vm_sync_to_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBindin
 					break;
 				}
 				if (ri->size > 1) {
-					rz_bv_copy_nbits(bv, 0, dupped, 0, RZ_MIN(rz_bv_len(bv), ri->size));
+					rz_bv_copy_nbits(dupped, 0, bv, 0, RZ_MIN(rz_bv_len(bv), ri->size));
 				} else {
 					rz_bv_set_from_ut64(dupped, rz_bv_is_zero_vector(bv) ? 0 : 1);
 				}
@@ -324,7 +324,7 @@ RZ_API void rz_il_vm_sync_from_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBind
 			rz_bv_set_all(vm->pc, 0);
 			RzBitVector *pcbv = rz_reg_get_bv(reg, ri);
 			if (pcbv) {
-				rz_bv_copy_nbits(pcbv, 0, vm->pc, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
+				rz_bv_copy_nbits(vm->pc, 0, pcbv, 0, RZ_MIN(rz_bv_len(pcbv), rz_bv_len(vm->pc)));
 				rz_bv_free(pcbv);
 			}
 		}
@@ -352,7 +352,7 @@ RZ_API void rz_il_vm_sync_from_reg(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILRegBind
 					rz_bv_free(bv);
 					break;
 				}
-				rz_bv_copy_nbits(bv, 0, nbv, 0, RZ_MIN(rz_bv_len(bv), item->size));
+				rz_bv_copy_nbits(nbv, 0, bv, 0, RZ_MIN(rz_bv_len(bv), item->size));
 				dupped = bv;
 				bv = nbv;
 			}

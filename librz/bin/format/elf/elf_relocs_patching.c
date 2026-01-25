@@ -1704,6 +1704,67 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		rz_write_le32(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
+	case R_386_GOT32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->A - fs->GOT;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_PLT32:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->L + fs->A - fs->P;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GLOB_DAT:
+	/* fall through */
+	case R_386_JMP_SLOT:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_RELATIVE:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->B + fs->A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GOTOFF:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + fs->A - fs->GOT;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GOTPC:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->GOT + fs->A - fs->P;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
+	case R_386_16:
+	/* fall through */
+	case R_386_PC16:
+		val = fs->S + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
+		if (rel_type == R_386_PC16) {
+			val -= fs->P;
+		}
+		rz_write_le16(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+		break;
+	case R_386_8:
+	/* fall through */
+	case R_386_PC8:
+		val = fs->S + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 1);
+		if (rel_type == R_386_PC16) {
+			val -= fs->P;
+		}
+		rz_write_le8(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 1);
+		break;
 	default:
 		UNHANDL_DEF("x86_32", rel_type);
 		return;
@@ -1774,9 +1835,51 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		word = 4;
 		val = fs->L + fs->A - fs->P;
 		break;
+	case R_X86_64_RELATIVE64:
+		/* fall-thru */
 	case R_X86_64_RELATIVE:
 		word = 8;
 		val = fs->B + fs->A;
+		break;
+	case R_X86_64_GOT32:
+		word = 4;
+		val = fs->G + fs->A;
+		break;
+	case R_X86_64_GOTPCREL64:
+		/* fall thru */
+	case R_X86_64_GOTPCREL:
+		/* fall thru */
+	case R_X86_64_GOTPCRELX:
+		/* fall thru */
+	case R_X86_64_REX_GOTPCRELX:
+		/* fall thru */
+	case R_X86_64_CODE_4_GOTPCRELX:
+		/* fall thru */
+	case R_X86_64_CODE_5_GOTPCRELX:
+		/* fall thru */
+	case R_X86_64_CODE_6_GOTPCRELX:
+		word = 4;
+		val = fs->G + fs->GOT + fs->A - fs->P;
+		break;
+	case R_X86_64_GOTOFF64:
+		word = 8;
+		val = fs->S + fs->A - fs->GOT;
+		break;
+	case R_X86_64_GOTPC32:
+		word = 4;
+		val = fs->GOT + fs->A - fs->P;
+		break;
+	case R_X86_64_GOT64:
+		word = 8;
+		val = fs->G + fs->A;
+		break;
+	case R_X86_64_GOTPC64:
+		word = 8;
+		val = fs->GOT - fs->P + fs->A;
+		break;
+	case R_X86_64_PLTOFF64:
+		word = 8;
+		val = fs->L - fs->GOT + fs->A;
 		break;
 	default:
 		UNHANDL_DEF("x86_64", rel_type);

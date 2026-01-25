@@ -168,6 +168,7 @@ if get_option('enable_tests')
         rz_magic_dep,
         rz_il_dep,
         rz_mark_dep,
+        dependency('rzheap'),
         lrt,
       ],
       install: false,
