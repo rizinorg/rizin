@@ -48,14 +48,22 @@ RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYiel
 
 RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
 	RzInterpreterYieldFilter filter,
-	RZ_OWN RZ_NULLABLE void *filter_data_io_boundaries) {
+	RZ_OWN RZ_NULLABLE void *filter_data) {
 	RzInterpreterYieldQueue *yield_queue = RZ_NEW0(RzInterpreterYieldQueue);
 	if (!yield_queue) {
 		return NULL;
 	}
 	RzThreadQueue *queue = NULL;
 	switch (kind) {
+	case RZ_INTERPRETER_YIELD_KIND_RET_LOC:
+	case RZ_INTERPRETER_YIELD_KIND_ST_NPC:
+		queue = rz_th_queue_new(RZ_INTERPRETER_YIELD_QUEUE_SIZE, NULL);
+		break;
 	case RZ_INTERPRETER_YIELD_KIND_XREF:
+		if (filter_data) {
+			yield_queue->filter_data = RZ_NEW0(RzInterpreterYieldFilterData);
+			yield_queue->filter_data->io_boundaries = filter_data;
+		}
 		queue = rz_th_queue_new(RZ_INTERPRETER_YIELD_QUEUE_SIZE, NULL);
 		break;
 	}
@@ -66,10 +74,6 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 	yield_queue->kind = kind;
 	yield_queue->yield_queue = queue;
 	yield_queue->filter = filter;
-	yield_queue->filter_data = RZ_NEW0(RzInterpreterYieldFilterData);
-	if (filter_data_io_boundaries) {
-		yield_queue->filter_data->io_boundaries = filter_data_io_boundaries;
-	}
 	return yield_queue;
 }
 

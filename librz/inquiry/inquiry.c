@@ -110,6 +110,12 @@ static bool setup_queues(RzCore *core,
 	RZ_OUT RzThreadQueue **io_result_q,
 	RZ_OUT RzThreadQueue **addr_queue,
 	RZ_OUT HtUP **yield_queues) {
+	*il_queue = NULL;
+	*io_request_q = NULL;
+	*io_result_q = NULL;
+	*addr_queue = NULL;
+	*yield_queues = NULL;
+
 	RzPVector /*<RzBinSection *>*/ *boundaries = NULL;
 	RzInterpreterYieldQueue *yield_queue = NULL;
 	// The queue to pass the Effects to the interpreter.
@@ -137,6 +143,15 @@ static bool setup_queues(RzCore *core,
 		goto error_free;
 	}
 
+	// Multiple yield queues can be used by a single interpreter.
+	// E.g. if the interpreter has a complex abstract memory model
+	// for stack, heap and constant values.
+	// Then it can produce three kind of yields.
+	*yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
+	if (!yield_queues) {
+		goto error_free;
+	}
+
 	// Here we build the filter for the yield queue.
 	// The prototype generates constant xrefs.
 	// So the filter checks the generated xrefs, if they are within the IO map
@@ -146,9 +161,10 @@ static bool setup_queues(RzCore *core,
 		goto error_free;
 	}
 
-	// Now create a set of yield queue(s).
 	// These yield queues can be shared between different interpreters.
 	// So we have one yield queue for each yield type.
+
+	// Xref yield queue.
 	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
 	yield_queue = rz_interpreter_yield_queue_new(
 		yield_kind,
@@ -157,13 +173,20 @@ static bool setup_queues(RzCore *core,
 	if (!yield_queue) {
 		goto error_free;
 	}
+	ht_up_insert(*yield_queues, yield_kind, yield_queue);
 
-	// Multiple yield queues can be used by a single interpreter.
-	// E.g. if the interpreter has a complex abstract memory model
-	// for stack, heap and constant values.
-	// Then it can produce three kind of yields.
-	*yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
-	if (!yield_queue || !yield_queues) {
+	// stores npc yield queue.
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_ST_NPC;
+	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
+	if (!yield_queue) {
+		goto error_free;
+	}
+	ht_up_insert(*yield_queues, yield_kind, yield_queue);
+
+	// return location yield queue.
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_RET_LOC;
+	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
+	if (!yield_queue) {
 		goto error_free;
 	}
 	ht_up_insert(*yield_queues, yield_kind, yield_queue);
@@ -171,6 +194,11 @@ static bool setup_queues(RzCore *core,
 	return true;
 
 error_free:
+	ht_up_free(*yield_queues);
+	rz_th_queue_free(*il_queue);
+	rz_th_queue_free(*io_request_q);
+	rz_th_queue_free(*io_result_q);
+	rz_th_queue_free(*addr_queue);
 	return false;
 }
 
