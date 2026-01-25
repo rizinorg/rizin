@@ -4,8 +4,6 @@
 #ifndef DISASSEMBLE_6502_H
 #define DISASSEMBLE_6502_H
 
-#include <rz_asm.h>
-
 typedef struct {
 	RzConfig *cfg;
 } _6502State;

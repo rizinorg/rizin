@@ -19,7 +19,7 @@
 #include "snes/snes_op_table.h"
 #include "6502/6502_il.inc"
 #include <6502/6502dis.h>
-#include <rz_core.h>
+#include <rz_config.h>
 
 enum {
 	_6502_FLAGS_C = (1 << 0),
