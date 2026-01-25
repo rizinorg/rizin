@@ -1022,11 +1022,7 @@ static RzCmdStatus call_map_jemalloc(RzCore *core, char type, const char *arg) {
 		CMD_CHECK_DEBUG_DEAD(core);
 	}
 #if HAVE_JEMALLOC
-	if (core->rasm->bits == 64) {
-		cmd_dbg_map_jemalloc_64(core, type, arg);
-	} else {
-		cmd_dbg_map_jemalloc_32(core, type, arg);
-	}
+	cmd_dbg_map_jemalloc(core, type, arg);
 	return RZ_CMD_STATUS_OK;
 #endif
 	RZ_LOG_ERROR("JEMALLOC not supported.\n");
@@ -1046,6 +1042,16 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, 
 // "dmxc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv) {
 	return call_map_jemalloc(core, 'c', argv[1]);
+}
+
+// "dmxe" - Find extent for malloc address
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'e', argc == 1 ? "" : argv[1]);
+}
+
+// "dmxei" - Display extent info
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_ei_handler(RzCore *core, int argc, const char **argv) {
+	return call_map_jemalloc(core, 'i', argv[1]);
 }
 
 static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {

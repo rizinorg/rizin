@@ -39,7 +39,7 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 		op->il_op = hex_get_il_op(addr, rev.pkt_fully_decoded, rev.state);
 	}
 
-	return HEX_INSN_SIZE;
+	return op->size;
 }
 
 static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {

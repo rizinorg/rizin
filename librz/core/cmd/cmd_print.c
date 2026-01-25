@@ -1693,7 +1693,7 @@ static inline char *__refs(RzCore *core, ut64 x) {
 		return NULL;
 	}
 
-	char *refs = core->print->hasrefs(core->print->user, x, true);
+	char *refs = core->print->hasrefs(core->print->user, x, RZ_OUTPUT_MODE_STANDARD);
 	if (RZ_STR_ISNOTEMPTY(refs)) {
 		rz_str_trim(refs);
 	} else {
@@ -4267,7 +4267,7 @@ RZ_IPI RzCmdStatus rz_print_instr_opcodes_handler(RzCore *core, int argc, const 
 	if (N == 0) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_print_disasm_all(core, core->offset, N, N, 'i');
+	rz_core_print_disasm_all(core, core->offset, N, N);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4503,6 +4503,10 @@ static void analysis_stats_standard_info(RzCore *core, RzCoreAnalysisStatsRange 
 		}
 		if (sitem->strings > 0) {
 			rz_cons_memcat("z", 1);
+		} else if (sitem->signatures) {
+			rz_cons_memcat("S", 1);
+		} else if (sitem->imports > 0) {
+			rz_cons_memcat("i", 1);
 		} else if (sitem->symbols > 0) {
 			rz_cons_memcat("s", 1);
 		} else if (sitem->functions > 0) {
@@ -4526,7 +4530,7 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 	ut64 at = rz_core_analysis_stats_get_block_from(as, blockidx);
 	ut64 ate = rz_core_analysis_stats_get_block_to(as, blockidx) + 1;
 	pj_o(state->d.pj);
-	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->perm) || (sitem->strings)) {
+	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->perm) || (sitem->strings) || (sitem->signatures) || (sitem->imports)) {
 		pj_kn(state->d.pj, "offset", at);
 		pj_kn(state->d.pj, "size", ate - at);
 	}
@@ -4548,6 +4552,12 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 	if (sitem->strings) {
 		pj_ki(state->d.pj, "strings", sitem->strings);
 	}
+	if (sitem->signatures) {
+		pj_ki(state->d.pj, "signatures", sitem->signatures);
+	}
+	if (sitem->imports) {
+		pj_ki(state->d.pj, "imports", sitem->imports);
+	}
 	if (sitem->perm) {
 		pj_ks(state->d.pj, "perm", rz_str_rwx_i(sitem->perm));
 	}
@@ -4556,9 +4566,9 @@ static void analysis_stats_json_info(RzCore *core, RzCoreAnalysisStats *as, RzCo
 
 static void analysis_stats_table_info(RzCore *core, RzCoreAnalysisStats *as, RzCoreAnalysisStatsItem *sitem, ut64 blockidx, RzCmdStateOutput *state) {
 	ut64 at = rz_core_analysis_stats_get_block_from(as, blockidx);
-	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->strings)) {
-		rz_table_add_rowf(state->d.t, "xddddd", at, sitem->flags,
-			sitem->functions, sitem->comments, sitem->symbols, sitem->strings);
+	if ((sitem->flags) || (sitem->functions) || (sitem->comments) || (sitem->symbols) || (sitem->strings) || (sitem->signatures) || (sitem->imports)) {
+		rz_table_add_rowf(state->d.t, "xddddddd", at, sitem->flags,
+			sitem->functions, sitem->comments, sitem->symbols, sitem->strings, sitem->signatures, sitem->imports);
 	}
 }
 
@@ -4650,7 +4660,7 @@ RZ_IPI RzCmdStatus rz_print_minus_table_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "xddddd", "offset", "flags", "funcs", "cmts", "syms", "str");
+	rz_cmd_state_output_set_columnsf(state, "xddddddd", "offset", "flags", "funcs", "cmts", "syms", "str", "sigs", "imps");
 	state->d.t->showSum = true;
 	state->d.t->showFancy = true;
 	for (size_t i = 0; i < rz_vector_len(&srange->as->blocks); i++) {
