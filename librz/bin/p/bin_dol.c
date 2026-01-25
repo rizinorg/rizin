@@ -21,84 +21,109 @@
    0xE4	0xFF		padding
  */
 
-#define N_TEXT 7
-#define N_DATA 11
+#define N_TEXT       7
+#define N_DATA       11
+#define DOL_HDR_SIZE 0x100
 
-RZ_PACKED(
-	typedef struct {
-		ut32 text_paddr[N_TEXT];
-		ut32 data_paddr[N_DATA];
-		ut32 text_vaddr[N_TEXT];
-		ut32 data_vaddr[N_DATA];
-		ut32 text_size[N_TEXT];
-		ut32 data_size[N_DATA];
-		ut32 bss_addr;
-		ut32 bss_size;
-		ut32 entrypoint;
-		ut32 padding[10];
-		// 0x100 -- start of data section
-	})
-DolHeader;
+typedef struct dol_header_s {
+	ut32 text_paddr[N_TEXT];
+	ut32 data_paddr[N_DATA];
+	ut32 text_vaddr[N_TEXT];
+	ut32 data_vaddr[N_DATA];
+	ut32 text_size[N_TEXT];
+	ut32 data_size[N_DATA];
+	ut32 bss_addr;
+	ut32 bss_size;
+	ut32 entrypoint;
+	ut32 padding[10];
+} DolHeader;
+
+/*
+   Performs a check on the buffer to verify if is a DOL header.
+   The DOL format does not have a magic, thus requires some heuristics to detect it.
+   The size is always 0x100 and thus we expect the text0 offset to alway start after 0x100.
+
+   On the Broadway the executable range starts from 0x80000000 till 0x80003F00 for iOS and for applications between the 0x80003F00 and 0x81330000.
+   Thus, we expect the entrypoint for these files to always have the MSB to 1.
+
+   Reference:
+    https://wiki.tockdom.com/wiki/DOL_(File_Format)
+    https://wiibrew.org/wiki/Memory_map
+ */
 
 static bool check_buffer(RzBuffer *buf) {
-	ut8 tmp[6];
-	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
-	bool one = r == sizeof(tmp) && !memcmp(tmp, "\x00\x00\x01\x00\x00\x00", sizeof(tmp));
-	if (one) {
-		int r = rz_buf_read_at(buf, 6, tmp, sizeof(tmp));
-		if (r != 6) {
+	if (!buf || rz_buf_size(buf) < DOL_HDR_SIZE) {
+		return false;
+	}
+	ut32 text0_off, entry;
+	if (!rz_buf_read_be32_at(buf, 0x00, &text0_off)) {
+		return false;
+	}
+	if (!rz_buf_read_be32_at(buf, 0xE0, &entry)) {
+		return false;
+	}
+
+	bool text0_valid = (text0_off >= DOL_HDR_SIZE) && (text0_off < rz_buf_size(buf)) && (text0_off % 4 == 0);
+	bool entry_valid = (entry & 0xF0000000) == 0x80000000;
+	return text0_valid && entry_valid;
+}
+
+static bool read_u32_array(RzBuffer *b, ut64 *off, ut32 *dst, int n) {
+	for (int i = 0; i < n; i++) {
+		if (!rz_buf_read_be32_offset(b, off, &dst[i])) {
 			return false;
 		}
-		return sizeof(tmp) && !memcmp(tmp, "\x00\x00\x00\x00\x00\x00", sizeof(tmp));
 	}
-	return false;
+	return true;
+}
+
+static bool dol_parse_header(RzBuffer *buf, DolHeader *dol) {
+	ut64 off = 0;
+	return read_u32_array(buf, &off, dol->text_paddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_paddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_vaddr, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_vaddr, N_DATA) &&
+		read_u32_array(buf, &off, dol->text_size, N_TEXT) &&
+		read_u32_array(buf, &off, dol->data_size, N_DATA) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_addr) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->bss_size) &&
+		rz_buf_read_be32_offset(buf, &off, &dol->entrypoint);
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	if (rz_buf_size(buf) < sizeof(DolHeader)) {
+	if (!bf || !obj || !buf || rz_buf_size(buf) < DOL_HDR_SIZE) {
 		return false;
 	}
 	DolHeader *dol = RZ_NEW0(DolHeader);
 	if (!dol) {
 		return false;
 	}
-	char *lowername = rz_str_dup(bf->file);
-	if (!lowername) {
-		goto dol_err;
+	if (!dol_parse_header(buf, dol)) {
+		free(dol);
+		return false;
 	}
-	rz_str_case(lowername, 0);
-	char *ext = strstr(lowername, ".dol");
-	if (!ext || ext[4] != 0) {
-		goto lowername_err;
-	}
-	free(lowername);
-	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
 	obj->bin_obj = dol;
 	return true;
-
-lowername_err:
-	free(lowername);
-dol_err:
-	free(dol);
-	return false;
 }
 
 static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-	int i;
-	RzPVector *ret;
-	RzBinSection *s;
+
 	DolHeader *dol = bf->o->bin_obj;
-	if (!(ret = rz_pvector_new(NULL))) {
+	RzPVector *ret = rz_pvector_new(free);
+	if (!ret) {
 		return NULL;
 	}
 
-	/* text sections */
-	for (i = 0; i < N_TEXT; i++) {
-		if (!dol->text_paddr[i] || !dol->text_vaddr[i]) {
+	for (int i = 0; i < N_TEXT; i++) {
+		if (!dol->text_paddr[i] || !dol->text_vaddr[i] || !dol->text_size[i]) {
 			continue;
 		}
-		s = RZ_NEW0(RzBinSection);
+		RzBinSection *s = RZ_NEW0(RzBinSection);
+		if (!s) {
+			rz_pvector_free(ret);
+			return NULL;
+		}
 		s->name = rz_str_newf("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -107,12 +132,16 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		s->perm = rz_str_rwx("r-x");
 		rz_pvector_push(ret, s);
 	}
-	/* data sections */
-	for (i = 0; i < N_DATA; i++) {
-		if (!dol->data_paddr[i] || !dol->data_vaddr[i]) {
+
+	for (int i = 0; i < N_DATA; i++) {
+		if (!dol->data_paddr[i] || !dol->data_vaddr[i] || !dol->data_size[i]) {
 			continue;
 		}
-		s = RZ_NEW0(RzBinSection);
+		RzBinSection *s = RZ_NEW0(RzBinSection);
+		if (!s) {
+			rz_pvector_free(ret);
+			return NULL;
+		}
 		s->name = rz_str_newf("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -121,50 +150,62 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		s->perm = rz_str_rwx("r--");
 		rz_pvector_push(ret, s);
 	}
-	/* bss section */
-	s = RZ_NEW0(RzBinSection);
-	s->name = rz_str_dup("bss");
-	s->paddr = 0;
-	s->vaddr = dol->bss_addr;
-	s->size = dol->bss_size;
-	s->vsize = s->size;
-	s->perm = rz_str_rwx("rw-");
-	rz_pvector_push(ret, s);
 
+	if (dol->bss_size) {
+		RzBinSection *bss = RZ_NEW0(RzBinSection);
+		if (!bss) {
+			rz_pvector_free(ret);
+			return NULL;
+		}
+		bss->name = rz_str_dup("bss");
+		bss->paddr = UT64_MAX;
+		bss->vaddr = dol->bss_addr;
+		bss->size = dol->bss_size;
+		bss->vsize = bss->size;
+		bss->perm = rz_str_rwx("rw-");
+		rz_pvector_push(ret, bss);
+	}
 	return ret;
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-	RzPVector *ret = rz_pvector_new(NULL);
-	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
-	addr->vaddr = (ut64)dol->entrypoint;
-	addr->paddr = addr->vaddr & 0xFFFF;
+	RzPVector *ret = rz_pvector_new(free);
+	if (!ret) {
+		return NULL;
+	}
+	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
+	if (!addr) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+	addr->vaddr = dol->entrypoint;
+	addr->paddr = UT64_MAX;
 	rz_pvector_push(ret, addr);
 	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->buf, NULL);
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
+
 	ret->file = rz_str_dup(bf->file);
 	ret->big_endian = true;
 	ret->type = rz_str_dup("ROM");
 	ret->machine = rz_str_dup("Nintendo Wii");
 	ret->os = rz_str_dup("wii-ios");
 	ret->arch = rz_str_dup("ppc");
-	ret->has_va = true;
 	ret->bits = 32;
+	ret->has_va = true;
 
 	return ret;
 }
 
 static ut64 baddr(RzBinFile *bf) {
-	return 0x80b00000; // XXX
+	return 0x80004000;
 }
 
 RzBinPlugin rz_bin_plugin_dol = {
@@ -172,13 +213,13 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.desc = "Nintendo Dolphin binary",
 	.license = "BSD",
 	.author = "pancake",
-	.load_buffer = &load_buffer,
-	.baddr = &baddr,
 	.check_buffer = &check_buffer,
+	.load_buffer = &load_buffer,
 	.entries = &entries,
-	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
+	.maps = &rz_bin_maps_of_file_sections,
 	.info = &info,
+	.baddr = &baddr,
 };
 
 #ifndef RZ_PLUGIN_INCORE
