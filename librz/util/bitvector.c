@@ -1840,6 +1840,7 @@ RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNUL
  * \param bv bitvector to assign the new value to.
  * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
  * \param bit_size number of bits to read from buf.
+ * \return true on success, false if \p bit_size is `0` or \p bv and \p buf are null pointers
  *
  * The buffer position remains changed, so the caller is expected to seek the buffer cursor back if necessary.
  *
@@ -1847,25 +1848,22 @@ RZ_API void rz_bv_set_from_bytes_ble(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNUL
  *  - The bitvector's size is unchanged.
  *  - If `bv->len` < `bit_size`, additional bits are cut off, if `bv->len` > `bit_size`, the rest is filled up with 0.
  */
-RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
-	rz_return_if_fail(bv && buf && bit_size);
-	bit_size = RZ_MIN(bit_size, bv->len);
-	ut32 byte_size = (bit_size + 7) / 8;
+RZ_API bool rz_bv_set_from_buffer_le(RZ_NONNULL RZ_OUT RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
+	rz_return_val_if_fail(bv && buf && bit_size, false);
 
-	if (!bit_size) {
-		rz_warn_if_reached();
-		return;
-	}
+	ut32 len = rz_bv_len(bv);
+	bit_size = RZ_MIN(bit_size, len);
+	ut32 byte_size = (bit_size + 7) / 8;
 
 	// Handle sub-byte copies
 	if (bit_size < 8) {
 		ut8 data = 0;
 		rz_buf_read(buf, &data, 1);
 		rz_bv_set_from_bytes_le(bv, &data, 0, bit_size);
-		return;
+		return true;
 	}
 
-	if (bv->len <= 64) {
+	if (len <= 64) {
 		rz_buf_read(buf, (ut8 *)&bv->bits.small_u, byte_size);
 
 #if RZ_HOST_IS_BIG_ENDIAN
@@ -1873,11 +1871,12 @@ RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
 #endif
 
 		bv->bits.small_u &= UT64_MAX >> (64 - bit_size);
-		return;
+		return true;
 	}
 
 	rz_buf_read(buf, bv->bits.large_a, byte_size);
-	rz_bv_set_range(bv, bit_size, bv->len - 1, false);
+	rz_bv_set_range(bv, bit_size, len - 1, false);
+	return true;
 }
 
 /**
@@ -1885,6 +1884,7 @@ RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
  * \param bv bitvector to assign the new value to.
  * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
  * \param bit_size number of bits to read from \p buf.
+ * \return true on success, false if \p bit_size is `0` or \p bv and \p buf are null pointers
  *
  * The buffer position remains changed, so the caller is expected to seek the buffer cursor back if necessary.
  *
@@ -1892,52 +1892,49 @@ RZ_API void rz_bv_set_from_buffer_le(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
  *  - The bitvector's size is unchanged.
  *  - If `bv->len` < `bit_size`, additional bits are cut off, if `bv->len` > `bit_size`, the rest is filled up with 0.
  */
-RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
-	rz_return_if_fail(bv && buf && bit_size);
-	bit_size = RZ_MIN(bit_size, bv->len);
-	ut32 byte_size = (bit_size + 7) / 8;
+RZ_API bool rz_bv_set_from_buffer_be(RZ_NONNULL RZ_OUT RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size) {
+	rz_return_val_if_fail(bv && buf && bit_size, false);
 
-	if (!bit_size) {
-		rz_warn_if_reached();
-		return;
-	}
+	ut32 len = rz_bv_len(bv);
+	bit_size = RZ_MIN(bit_size, len);
+	ut32 byte_size = (bit_size + 7) / 8;
 
 	// Handle sub-byte copies
 	if (bit_size < 8) {
 		ut8 data = 0;
 		rz_buf_read(buf, &data, 1);
 		rz_bv_set_from_bytes_be(bv, &data, 0, bit_size);
-		return;
+		return true;
 	}
 
 	// Specialized handling for small bitvectors (<= 64 bit)
-	if (bv->len <= 64) {
-		rz_buf_read(buf, ((ut8 *)&bv->bits.small_u), byte_size);
+	if (len <= 64) {
+		rz_buf_read(buf, (ut8 *)&bv->bits.small_u, byte_size);
 
 #if RZ_HOST_IS_LITTLE_ENDIAN
 		bv->bits.small_u = rz_swap_ut64(bv->bits.small_u);
 #endif
 
-		bv->bits.small_u >>= 64 - bv->len;
-		bv->bits.small_u &= (UT64_MAX << (bv->len - bit_size));
-
-		return;
+		bv->bits.small_u >>= 64 - len;
+		bv->bits.small_u &= (UT64_MAX << (len - bit_size));
+		return true;
 	}
 
 	// Handle large bitvectors (> 64 bit)
 	rz_buf_read(buf, bv->bits.large_a, byte_size);
-	rz_swap_n_bytes(bv->bits.large_a, rz_bv_len_bytes(bv));
+	rz_mem_swap_bytes_n_inplace(bv->bits.large_a, rz_bv_len_bytes(bv));
 
-	if (bv->len % 8) {
-		ut32 outstanding_bits = 8 - bv->len % 8;
-		ut32 shift = rz_bv_len_bytes(bv) * 8 - bv->len;
+	if (len % 8) {
+		ut32 outstanding_bits = 8 - len % 8;
+		ut32 shift = rz_bv_len_bytes(bv) * 8 - len;
 
 		bv->len += outstanding_bits; // temporary extend, so we can access all bits in LSB
 		rz_bv_rshift_fill(bv, shift, false);
 		bv->len -= outstanding_bits;
 	}
 
-	rz_bv_set_range(bv, 0, bv->len - bit_size - 1, false);
+	rz_bv_set_range(bv, 0, len - bit_size - 1, false);
+	return true;
 }
 
 /**
@@ -1946,13 +1943,13 @@ RZ_API void rz_bv_set_from_buffer_be(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBu
  * \param buf RzBuffer containing at least `(bit_size + 7) / 8` bytes at\after the current position.
  * \param bit_size number of bits to read from \p buf
  * \param big_endian control flag for specifying endian type
+ * \return true on success, false if \p bit_size is `0` or \p bv and \p buf are null pointers
  */
-RZ_API void rz_bv_set_from_buffer_ble(RZ_NONNULL RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size, bool big_endian) {
+RZ_API bool rz_bv_set_from_buffer_ble(RZ_NONNULL RZ_OUT RzBitVector *bv, RZ_NONNULL RzBuffer *buf, ut32 bit_size, bool big_endian) {
 	if (big_endian) {
-		rz_bv_set_from_buffer_be(bv, buf, bit_size);
-	} else {
-		rz_bv_set_from_buffer_le(bv, buf, bit_size);
+		return rz_bv_set_from_buffer_be(bv, buf, bit_size);
 	}
+	return rz_bv_set_from_buffer_le(bv, buf, bit_size);
 }
 
 /**

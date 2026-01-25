@@ -1863,20 +1863,6 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 #endif
 
 /**
- * \brief Reverses the byte order of an arbitrary sized byte array.
- * \param bytes The byte array.
- * \param n Length of the byte array.
- */
-static inline void rz_swap_n_bytes(ut8 *bytes, ut32 n) {
-	for (ut32 i = 0; i < n / 2; i++) {
-		ut32 j = n - i - 1;
-		ut8 tmp = bytes[i];
-		bytes[i] = bytes[j];
-		bytes[j] = tmp;
-	}
-}
-
-/**
  * \def rz_swap_2b_ut64
  * \brief Swaps pairs of 2 bytes in a 64bit value
  *
