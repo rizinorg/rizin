@@ -62,7 +62,7 @@ static bool check_big_endian(RzBuffer *buf) {
 	int flag_len = rz_buf_size(buf);
 	while (counter < flag_len) {
 		rz_buf_read8_at(buf, counter, &res);
-		luaJIT_decode_ULEB128(buf, LUAJIT_FLAG_OFFSET_AT, (ut64)res);
+		luaJIT_decode_ULEB128(buf, LUAJIT_FLAG_OFFSET_AT, (ut64*)res);
 		if (((ut64)res & LUAJIT_BCDUMP_F_BE)) {
 			return true;
 		}
