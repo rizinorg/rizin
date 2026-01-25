@@ -63,8 +63,14 @@ typedef struct {
  * and one RzInquiry managing everything.
  */
 typedef struct {
-	RzAnalysisXRef xref; ///< OWNER: yield consumer - The xref object passed over the queue.
-	ut64 shared_addr; ///< OWNER: IL cache - The address object passed to an IL cache for BB requests.
+	RZ_LIFETIME(RzInquiry)
+	ut64 shared_addr; ///< The address object passed to an IL cache for BB requests.
+	RZ_LIFETIME(RzInquiry)
+	RzAnalysisXRef xref; ///< The xref object passed over the queue.
+	RZ_LIFETIME(RzInquiry)
+	ut64 return_loc; ///< The return location passed over the queue.
+	RZ_LIFETIME(RzInquiry)
+	bool stores_npc; ///< The stores next pc flag passed over the queue.
 } RzInterpreterSharedObjects;
 
 typedef struct {
@@ -84,7 +90,25 @@ typedef struct {
 } RzInterpreterAbstrState;
 
 typedef enum {
+	/**
+	 * \brief The yield is an cross reference.
+	 */
 	RZ_INTERPRETER_YIELD_KIND_XREF = 1 << 0,
+
+	/**
+	 * \brief This yield is a simple flag, signaling if the current basic block
+	 * storing the next PC (address _after_ the basic block) to memory or an register.
+	 *
+	 * If the last branch instruction does not jump to the neighboring basic block
+	 * it is a strong indicator that the jump is a call and the next address a return point.
+	 */
+	RZ_INTERPRETER_YIELD_KIND_ST_NPC = 1 << 1,
+
+	/**
+	 * \brief This yield is a simple flag, signaling for a given address that it
+	 * a location where a functions' return instruction jumps to.
+	 */
+	RZ_INTERPRETER_YIELD_KIND_RET_LOC = 1 << 2,
 } RzInterpreterYieldKind;
 
 /**
@@ -93,6 +117,8 @@ typedef enum {
  */
 typedef union {
 	RzAnalysisXRef *abstr_const;
+	bool backs_up_npc;
+	ut64 return_point;
 } RzInterpreterYield;
 
 /**
