@@ -6,7 +6,10 @@ if get_option('enable_benchmarks')
   bench_utils = static_library('bench_utils',
     'bench_utils.c',
     include_directories: [platform_inc],
-    dependencies: [rz_util_dep],
+    dependencies: [
+      rz_util_dep,
+      rz_il_dep
+    ],
   )
 
   bench_utils_dep = declare_dependency(
@@ -17,6 +20,7 @@ if get_option('enable_benchmarks')
   # List of benchmarks to build
   benchmarks = [
     'bitvector',
+    'il',
   ]
 
   # Create benchmark executables

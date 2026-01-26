@@ -980,6 +980,53 @@ bool test_rz_bv_set_from_bytes_le(void) {
 	mu_end;
 }
 
+bool test_rz_bv_set_from_buffer_ble(bool big_endian) {
+	const ut8 data[0x10] = {
+		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01,
+		0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe
+	};
+
+	const ut8 len[5] = {
+		4, 42, 64, 80, 82
+	};
+
+	RzBuffer *buf = rz_buf_new_with_bytes(data, 0x10);
+	char *error = NULL;
+
+	for (int i = 0; i < sizeof(len); i++) {
+		RzBitVector bv;
+		rz_bv_init(&bv, len[i]);
+
+		for (ut32 bits_to_copy = 1; bits_to_copy < bv.len + 10; bits_to_copy++) {
+			rz_buf_seek(buf, 0, RZ_BUF_SET);
+			rz_bv_set_from_buffer_ble(&bv, buf, bits_to_copy, big_endian);
+			char *result = rz_bv_as_hex_string(&bv, true);
+
+			rz_bv_set_from_bytes_ble(&bv, data, 0, bits_to_copy, big_endian);
+			char *ref = rz_bv_as_hex_string(&bv, true);
+
+			if (strcmp(result, ref)) {
+				error = rz_str_newf(
+					"%s result (%s) doesn't match reference (%s) for bit_size: %" PFMT32u " and bitvector length: %" PFMT32u,
+					big_endian ? "rz_bv_set_from_buffer_be()" : "rz_bv_set_from_buffer_le()",
+					result,
+					ref,
+					bits_to_copy,
+					bv.len);
+				mu_fail(error);
+			}
+
+			free(result);
+			free(ref);
+		}
+
+		rz_bv_fini(&bv);
+	}
+
+	rz_buf_free(buf);
+	mu_end;
+}
+
 bool test_rz_bv_as_hex_string(void) {
 	char *s = NULL;
 
@@ -1888,6 +1935,8 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_add);
 	mu_run_test(test_rz_bv_set_from_bytes_le);
 	mu_run_test(test_rz_bv_set_from_bytes_be);
+	mu_run_test(test_rz_bv_set_from_buffer_ble, true);
+	mu_run_test(test_rz_bv_set_from_buffer_ble, false);
 	mu_run_test(test_rz_bv_as_hex_string);
 	mu_run_test(test_rz_bv_clz);
 	mu_run_test(test_rz_bv_ctz);

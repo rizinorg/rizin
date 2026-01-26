@@ -58,6 +58,22 @@ static inline ut64 rz_mem_ptr_alignment(RZ_NONNULL const void *ptr) {
 	return 1ull << rz_bits_trailing_zeros((utptr)ptr);
 }
 
+/**
+ * \brief Reverses the byte order of an arbitrary sized byte array. There are no alignment requirements for \p bytes.
+ * \param bytes The byte array.
+ * \param n Length of the byte array.
+ */
+static inline RZ_OWN ut8 *rz_mem_swap_bytes_n_inplace(RZ_NONNULL RZ_INOUT ut8 *bytes, ut32 n) {
+	rz_return_val_if_fail(bytes, NULL);
+	for (ut32 i = 0; i < n / 2; i++) {
+		ut32 j = n - i - 1;
+		ut8 tmp = bytes[i];
+		bytes[i] = bytes[j];
+		bytes[j] = tmp;
+	}
+	return bytes;
+}
+
 #ifdef __cplusplus
 }
 #endif
