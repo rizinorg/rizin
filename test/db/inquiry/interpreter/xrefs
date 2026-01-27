@@ -3,8 +3,10 @@ FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
 aaaaIp main
 pd 48 @ main
-axl
-ablt
+# Only grep for references within those instructions below.
+axl~0x401a
+ablt~0x401a
+ablt~0x401b
 EOF
 EXPECT=<<EOF
             ;-- main:
@@ -92,8 +94,6 @@ EXPECT=<<EOF
                        sym.function_1+10 0x401afa ->      CODE -> 0x401aa1 main+49
                         sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
                        sym.function_2+10 0x401b0a ->      CODE -> 0x401aa1 main+49
-    addr size traced ninstr jump fail fcns calls       xrefs       
--------------------------------------------------------------------
 0x401a70   35      0      0                            
 0x401a8d    6      0      0                            
 0x401a93   14      0      0                            
@@ -106,9 +106,13 @@ EXPECT=<<EOF
 0x401af9    2      0      0                            
 0x401b00    9      0      0                 0x00401ae0  0x00401ae0
 0x401b09    2      0      0                            
-EOF
-EXPECT_ERR=<<EOF
-WARNING: Failed to read memory at 0x4af3e0 size: 224.
+0x401b70   27      0      0                            
+0x401b8b   34      0      0                            
+0x401bb6   23      0      0                            
+0x401bcd   18      0      0                            
+0x401bdf    5      0      0                            
+0x401be4    9      0      0                            
+0x401bed    5      0      0                            
 EOF
 RUN
 
