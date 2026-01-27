@@ -6,8 +6,6 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-typedef struct boot_img_hdr BootImage;
-
 #define BOOT_MAGIC           "ANDROID!"
 #define BOOT_MAGIC_SIZE      8
 #define BOOT_NAME_SIZE       16
@@ -17,36 +15,67 @@ typedef struct boot_img_hdr BootImage;
 #define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
 #define ROUND_DOWN(val, aln)    ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
-RZ_PACKED(
-	struct boot_img_hdr {
-		ut8 magic[BOOT_MAGIC_SIZE];
+typedef struct {
+	ut8 magic[BOOT_MAGIC_SIZE];
 
-		ut32 kernel_size; /* size in bytes */
-		ut32 kernel_addr; /* physical load addr */
+	ut32 kernel_size; /* size in bytes */
+	ut32 kernel_addr; /* physical load addr */
 
-		ut32 ramdisk_size; /* size in bytes */
-		ut32 ramdisk_addr; /* physical load addr */
+	ut32 ramdisk_size; /* size in bytes */
+	ut32 ramdisk_addr; /* physical load addr */
 
-		ut32 second_size; /* size in bytes */
-		ut32 second_addr; /* physical load addr */
+	ut32 second_size; /* size in bytes */
+	ut32 second_addr; /* physical load addr */
 
-		ut32 tags_addr; /* physical addr for kernel tags */
-		ut32 page_size; /* flash page size we assume */
-		ut32 unused[2]; /* future expansion: should be 0 */
-		ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
-		ut8 cmdline[BOOT_ARGS_SIZE];
-		ut32 id[8]; /* timestamp / checksum / sha1 / etc */
+	ut32 tags_addr; /* physical addr for kernel tags */
+	ut32 page_size; /* flash page size we assume */
+	ut32 unused[2]; /* future expansion: should be 0 */
+	ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
+	ut8 cmdline[BOOT_ARGS_SIZE];
+	ut32 id[8]; /* timestamp / checksum / sha1 / etc */
 
-		/* Supplemental command line data; kept here to maintain
-		 * binary compatibility with older versions of mkbootimg */
-		ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
-	});
+	/* Supplemental command line data; kept here to maintain
+		* binary compatibility with older versions of mkbootimg */
+	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+} BootImage;
+
+static bool parse_boot_img_hdr(RzBuffer *b, BootImage *boot_img_hdr, bool big_endian) {
+    ut64 offset = 0;
+	return rz_buf_read_offset(b, &offset, (ut8 *)boot_img_hdr->magic, sizeof(boot_img_hdr->magic)) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->kernel_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->kernel_addr, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->ramdisk_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->ramdisk_addr, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->second_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->second_addr, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->tags_addr, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, &boot_img_hdr->page_size, big_endian) &&
+		rz_buf_read_ble32_offset(b, &offset, (ut32 *) boot_img_hdr->unused, sizeof(boot_img_hdr->unused)) &&
+		rz_buf_read_offset(b, &offset, (ut8 *)boot_img_hdr->name, sizeof(boot_img_hdr->name)) &&
+		rz_buf_read_offset(b, &offset, (ut8 *)boot_img_hdr->cmdline, sizeof(boot_img_hdr->cmdline)) &&
+		rz_buf_read_ble32_offset(b, &offset, (ut32 *) boot_img_hdr->id, sizeof(boot_img_hdr->id)) &&
+		rz_buf_read_offset(b, &offset, (ut8 *)boot_img_hdr->extra_cmdline, sizeof(boot_img_hdr->extra_cmdline));
+}
 
 typedef struct {
 	Sdb *kv;
 	BootImage bi;
 	RzBuffer *buf;
 } BootImageObj;
+
+static char *safe_ndup(const char *src, size_t max_len) {
+    size_t len = 0;
+    while (len < max_len && src[len] != '\0') {
+        len++;
+    }
+    char *out = rz_malloc(len + 1);
+    if (!out) {
+        return NULL;
+    }
+    memcpy(out, src, len);
+    out[len] = '\0'; // ensure null termination
+    return out;
+}
 
 static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
@@ -56,21 +85,25 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	}
 	// TODO make it endian-safe (void)rz_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
 	BootImage *bi = &obj->bi;
-	(void)rz_buf_read_at(obj->buf, 0, (ut8 *)bi, sizeof(BootImage));
-	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
-		sdb_set(db, "name", n);
-		free(n);
+	if (!parse_boot_img_hdr(obj->buf, bi, false)) {
+		return false;
 	}
-	if ((n = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
+	if ((n = safe_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
+    sdb_set(db, "name", n);
+    free(n);
+	}
+	if ((n = safe_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
 		sdb_set(db, "cmdline", n);
 		free(n);
 	}
-	for (i = 0; i < 8; i++) {
-		sdb_num_set(db, "id", (ut64)bi->id[i]);
-	}
-	if ((n = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
+	if ((n = safe_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
 		sdb_set(db, "extra_cmdline", n);
 		free(n);
+	}
+	for (i = 0; i < 8; i++) {
+		char key[8];
+		rz_strf(key, "id.%d", i);
+		sdb_num_set(db, key, (ut64)bi->id[i]);
 	}
 	return true;
 }
