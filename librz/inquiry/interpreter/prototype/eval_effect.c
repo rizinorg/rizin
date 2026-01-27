@@ -13,13 +13,13 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
+	ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
 
 	switch (effect->code) {
 	default:
 	case RZ_IL_OP_EMPTY:
 		break;
 	case RZ_IL_OP_NOP: {
-		ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
 		if (!pc->is_concrete) {
 			// The PC is no longer a concrete value.
 			// This plugin has no addition for it defined.
@@ -67,10 +67,10 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
-			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(AD(state->pc->abstr_data)->bv));
+			RZ_LOG_DEBUG("PC is going to be set to an abstract value! Current PC = 0x%" PFMT64x "\n", rz_bv_to_ut64(pc->bv));
 		}
 		RZ_LOG_DEBUG("Prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n",
-			rz_bv_to_ut64(AD(state->pc->abstr_data)->bv),
+			rz_bv_to_ut64(pc->bv),
 			rz_bv_to_ut64(eval_out.bv),
 			eval_out.is_concrete ? "Concrete" : "Abstract");
 		// Setting the PC to a bottom value is allowed here!
@@ -78,7 +78,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (eval_out.is_concrete) {
 			// NOTE: This prototype can't classify into call or jump.
 			// Everything is just a jump for it at this point.
-			report_xref_yield(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
+			report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
 		}
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		break;

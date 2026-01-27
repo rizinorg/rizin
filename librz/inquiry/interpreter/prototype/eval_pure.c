@@ -435,7 +435,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 			rz_bv_and_inplace(ld_addr.bv, &mask);
 		}
 
-		report_xref_yield(state, 0, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &ld_addr, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
+		report_yield_xref(state, 0, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &ld_addr, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
 		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? state->il_config->mem_key_size : pure->op.loadw.n_bits;
 		if (!load_abstr_data(state, mem_idx, &ld_addr, n_bits, out, io_request, io_result)) {
 			rz_bv_fini(ld_addr.bv);

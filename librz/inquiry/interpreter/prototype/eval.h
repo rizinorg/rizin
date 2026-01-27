@@ -100,7 +100,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data);
 
-bool report_xref_yield(
+bool report_yield_xref(
 	RzInterpreterAbstrState *state,
 	size_t insn_pkt_size,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
