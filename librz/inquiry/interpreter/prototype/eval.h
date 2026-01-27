@@ -108,6 +108,14 @@ bool report_yield_xref(
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
+bool report_yield_str_pc_ret_loc(
+	RzInterpreterAbstrState *state,
+	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	ut64 bb_addr,
+	ut64 insn_pkt_addr,
+	const ProtoIntrprAbstrData *npc,
+	bool in_mem);
+
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	void *plugin_data);
 

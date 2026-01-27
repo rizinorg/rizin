@@ -976,6 +976,18 @@ typedef struct rz_analysis_ref_t {
 	RzAnalysisXRefType type;
 } RzAnalysisXRef;
 
+/**
+ * \brief A struct combining information about an instruction storing the
+ * a next instruction pointer of a basic block.
+ * Indicative for a call instruction.
+ */
+typedef struct {
+	ut64 bb_addr; ///< The address of the basic block which stores the NPC.
+	ut64 insn_pkt_addr; ///< The address of the instruction packet storing the NPC.
+	ut64 npc; ///< The NPC stored.
+	bool in_mem; ///< True if the NPC is written to memory. False if it is written to a register.
+} RzAnalysisStNPCLoc;
+
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
