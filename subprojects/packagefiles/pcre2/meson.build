@@ -1,4 +1,4 @@
-project('pcre2', 'c', version: '10.45')
+project('pcre2', 'c', version: '10.47')
 
 cc = meson.get_compiler('c')
 
@@ -25,6 +25,7 @@ libpcre2_c_args = [
   '-DHAVE_MEMMOVE',
   '-DSUPPORT_UNICODE',
   '-fvisibility=default',
+  '-DPCRE2_SYMVERS',
 ]
 
 pcre2_files = [
@@ -32,6 +33,7 @@ pcre2_files = [
   pcre2_chartables,
   'src/pcre2_chkdint.c',
   'src/pcre2_compile.c',
+  'src/pcre2_compile_cgroup.c',
   'src/pcre2_compile_class.c',
   'src/pcre2_config.c',
   'src/pcre2_context.c',
@@ -43,6 +45,7 @@ pcre2_files = [
   'src/pcre2_maketables.c',
   'src/pcre2_match.c',
   'src/pcre2_match_data.c',
+  'src/pcre2_match_next.c',
   'src/pcre2_newline.c',
   'src/pcre2_ord2utf.c',
   'src/pcre2_pattern_info.c',
