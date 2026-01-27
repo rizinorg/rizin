@@ -14,8 +14,12 @@
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
 #include "rz_th.h"
+#include "rz_types.h"
+#include "rz_util/ht_pp.h"
+#include "rz_util/ht_sp.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_buf.h"
+#include "rz_util/rz_iterator.h"
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
@@ -41,25 +45,71 @@ RZ_API RZ_BORROW RzInquiryPlugin *rz_inquiry_get_plugin(size_t index) {
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OWN RZ_NONNULL RzInquiryPlugin *plugin) {
 	rz_return_val_if_fail(inquiry && plugin, false);
-	if (plugin->p_interpreter) {
-		if (!ht_sp_insert(inquiry->plugins, plugin->p_interpreter->name, plugin)) {
-			RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->p_interpreter->name);
-		}
+	if (!plugin->p_interpreter) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	if (!ht_sp_insert(inquiry->plugins, plugin->p_interpreter->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->p_interpreter->name);
 		return true;
 	}
 
-	rz_warn_if_reached();
-	return false;
+	void **p_data = RZ_NEW0(void *);
+	if (!ht_sp_insert(inquiry->plugins_data, plugin->p_interpreter->name, p_data)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	if (plugin->p_interpreter->init) {
+		plugin->p_interpreter->init(ht_sp_find(inquiry->plugins_data, plugin->p_interpreter->name, NULL));
+	}
+	return true;
 }
 
 RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OWN RZ_NONNULL RzInquiryPlugin *plugin) {
 	rz_return_val_if_fail(inquiry && plugin, false);
 
+	void **p_data = ht_sp_find(inquiry->plugins_data, plugin->p_interpreter->name, NULL);
+	if (plugin->p_interpreter->fini) {
+		plugin->p_interpreter->fini(p_data ? *p_data : NULL);
+	}
+	free(p_data);
 	if (plugin->p_interpreter) {
 		return ht_sp_delete(inquiry->plugins, plugin->p_interpreter->name);
 	}
 	rz_warn_if_reached();
 	return false;
+}
+
+RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
+	RzInquiry *iq = RZ_NEW0(RzInquiry);
+	if (!iq) {
+		return NULL;
+	}
+	iq->plugins = ht_sp_new(HT_STR_CONST, NULL, NULL);
+	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
+	if (!iq->plugins || !iq->plugins_data) {
+		ht_sp_free(iq->plugins);
+		ht_sp_free(iq->plugins_data);
+		free(iq);
+		return NULL;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(inquiry_static_plugins); ++i) {
+		rz_inquiry_plugin_add(iq, inquiry_static_plugins[i]);
+	}
+	return iq;
+}
+
+RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
+	if (!iq) {
+		return;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(inquiry_static_plugins); ++i) {
+		rz_inquiry_plugin_del(iq, inquiry_static_plugins[i]);
+	}
+	ht_sp_free(iq->plugins);
+	ht_sp_free(iq->plugins_data);
+	free(iq);
 }
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
@@ -349,8 +399,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
 	// But for the prototype we have only one iset with all queues.
+	RzInquiryPlugin *prototype = ht_sp_find(core->inquiry->plugins, "abstr_int_prototype", NULL);
+	if (!prototype) {
+		return_code = false;
+		rz_warn_if_reached();
+		goto error_free;
+	}
 	iset = rz_interpreter_set_new(
-		rz_inquiry_plugin_interpreter_prototype.p_interpreter,
+		// TODO: Maybe use the pointer from RzCore.
+		// But in general the whole thing should run without RzCore.
+		prototype->p_interpreter,
 		abstr_state,
 		addr_queue,
 		il_queue,
