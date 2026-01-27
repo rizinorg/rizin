@@ -30,5 +30,6 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		}
 	}
 	bool success = rz_inquiry_interpreter(core, entry_points);
+
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

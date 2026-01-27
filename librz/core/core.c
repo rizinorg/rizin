@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_inquiry.h"
 #include <rz_mark.h>
 #include <rz_util/rz_str.h>
 #include <rz_config.h>
@@ -1614,6 +1615,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		/* XXX memory leak */
 		return false;
 	}
+	core->inquiry = rz_inquiry_new();
 	core->ev = rz_event_new(core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new(NULL, "rzkv.sdb", 0); // XXX: path must be in home?
@@ -1869,6 +1871,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->hash, rz_hash_free);
 	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
 	RZ_FREE_CUSTOM(c->ev, rz_event_free);
+	RZ_FREE_CUSTOM(c->inquiry, rz_inquiry_free);
 	RZ_FREE(c->cmdlog);
 	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);

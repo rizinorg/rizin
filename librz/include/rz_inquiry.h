@@ -25,13 +25,14 @@ typedef struct {
 	 * \brief RzInquiry interpreter plugins. Indexed by name.
 	 */
 	HtSP /*<RzInquiryPlugin *>*/ *plugins;
+	HtSP /*<void *>*/ *plugins_data;
 } RzInquiry;
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
 RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
 
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void);
-RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *a);
+RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *q);
 
 RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr, RZ_NULLABLE RZ_OUT size_t *bb_size);
 
