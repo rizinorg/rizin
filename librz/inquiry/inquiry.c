@@ -252,6 +252,19 @@ static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
 	return v;
 }
 
+static bool handle_yields(RzCore *core, HtUP *yield_queues) {
+	RzInterpreterYieldQueue *q_xrefs = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+	if (!rz_th_queue_is_empty(q_xrefs->yield_queue)) {
+		RzAnalysisXRef *xref = NULL;
+		if (!rz_th_queue_pop(q_xrefs->yield_queue, false, (void **)&xref) || !xref) {
+			return false;
+		}
+		rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
+		RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
+	}
+	return true;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -456,16 +469,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			// This part plays the role of a yield consumer.
 			// In our prototype it only receives xrefs and stores them in RzAnalysis.
 			{
-				RzInterpreterYieldQueue *q = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
-				if (!rz_th_queue_is_empty(q->yield_queue)) {
-					RzAnalysisXRef *xref = NULL;
-					if (!rz_th_queue_pop(q->yield_queue, false, (void **)&xref) || !xref) {
-						rz_atomic_bool_set(is_running, false);
-						break;
-					}
-					// TODO: Currently we can't classify jumps/calls as such.
-					rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
-					RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
+				if (!handle_yields(core, yield_queues)) {
+					rz_atomic_bool_set(is_running, false);
+					break;
 				}
 			}
 		}
@@ -535,6 +541,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			fflush(stdout);
 		}
 	} while (!rz_vector_empty(entry_points));
+
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
