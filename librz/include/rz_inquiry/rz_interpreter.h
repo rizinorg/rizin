@@ -65,12 +65,15 @@ typedef struct {
 typedef struct {
 	RZ_LIFETIME(RzInquiry)
 	ut64 shared_addr; ///< The address object passed to an IL cache for BB requests.
+
 	RZ_LIFETIME(RzInquiry)
 	RzAnalysisXRef xref; ///< The xref object passed over the queue.
+
 	RZ_LIFETIME(RzInquiry)
 	ut64 return_loc; ///< The return location passed over the queue.
+
 	RZ_LIFETIME(RzInquiry)
-	bool stores_npc; ///< The stores next pc flag passed over the queue.
+	RzAnalysisStNPCLoc stores_npc; ///< The stores next pc info passed over the queue.
 } RzInterpreterSharedObjects;
 
 typedef struct {
@@ -86,7 +89,10 @@ typedef struct {
 	 * \brief Shared objects. Pointers to the members are passed over the queue.
 	 * TODO: This is obviously not the final solution. Just some poor man's shared memory.
 	 */
+	RZ_LIFETIME(RzInquiry)
 	RzInterpreterSharedObjects *shared_obj;
+	ut64 bb_addr;
+	ut64 bb_size;
 } RzInterpreterAbstrState;
 
 typedef enum {

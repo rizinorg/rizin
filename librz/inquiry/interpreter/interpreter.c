@@ -387,6 +387,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	}
 
 	while (rz_atomic_bool_get(iset->is_running_flag)) {
+		iset->state->bb_addr = il_bb->bb_addr;
+		iset->state->bb_size = il_bb->size;
 		// Evaluate the effect on the input state.
 		if (!plugin->eval(in_state, il_bb, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
 			RZ_LOG_DEBUG("Eval failed\n");

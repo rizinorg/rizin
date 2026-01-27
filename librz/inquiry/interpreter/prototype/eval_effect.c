@@ -3,6 +3,7 @@
 
 #include "eval.h"
 #include "rz_analysis.h"
+#include "rz_inquiry/rz_interpreter.h"
 #include "rz_util/rz_bitvector.h"
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
@@ -56,10 +57,13 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (!interpreter_prototype_eval_pure(state, effect->op.set.x, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
 			goto error;
 		}
-		write_var_to_state(state,
-			effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL,
-			vhash,
-			&eval_out);
+		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
+		write_var_to_state(state, kind, vhash, &eval_out);
+		if (eval_out.is_concrete &&
+			kind == RZ_IL_VAR_KIND_GLOBAL &&
+			rz_bv_to_ut64(eval_out.bv) == state->bb_addr + state->bb_size) {
+			report_yield_str_pc_ret_loc(state, yield_queues, state->bb_addr, rz_bv_to_ut64(pc->bv), &eval_out, false);
+		}
 		break;
 	}
 	case RZ_IL_OP_JMP: {
@@ -138,7 +142,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		report_xref_yield(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(AD(state->pc->abstr_data)->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		if (eval_out.is_concrete &&
+			rz_bv_to_ut64(eval_out.bv) == state->bb_addr + state->bb_size) {
+			report_yield_str_pc_ret_loc(state, yield_queues, state->bb_addr, rz_bv_to_ut64(pc->bv), &eval_out, true);
+		}
+		report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		if (!store_abstr_data(state, mem_idx, &st_addr, &eval_out, io_request, io_result)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;

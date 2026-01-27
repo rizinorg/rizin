@@ -91,6 +91,7 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		// set to the length of the src.
 		// TODO: Really a good idea to be so liberal?
 		// Or should the length of the globals be enforced?
+		// The bitvector arithmetic does enforce the length.
 		AD(av->abstr_data)->bv = rz_bv_new(state->il_config->mem_key_size);
 		// TODO: This is debatable. It depends on the ABI what the default values are.
 		// Some values must be concrete, otherwise the interpretation of the prototype end too early.
