@@ -290,7 +290,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		return_code = false;
 		goto error_free;
 	}
-	if (rz_log_get_level() > RZ_LOGLVL_INFO) {
+	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(call_targets));
 	}
 
@@ -530,12 +530,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			}
 			rz_vector_free(covered_jump_targets);
 		}
-		if (rz_log_get_level() > RZ_LOGLVL_INFO) {
+		if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 			printf(RZ_CONS_CLEAR_LINE "\rCall targets left: %" PFMT32d, rz_set_u_size(call_targets));
 			fflush(stdout);
 		}
 	} while (!rz_vector_empty(entry_points));
-	printf("\n");
+	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
+		printf("\n");
+	}
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
 
