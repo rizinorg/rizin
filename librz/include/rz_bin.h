@@ -725,14 +725,21 @@ typedef struct rz_bin_import_t {
 	ut32 visibility;
 } RzBinImport;
 
+/**
+ * \brief Base component used in relocation calculations
+ *
+ * Describes the base address or value in a relocation formula.
+ * For example, "GOT(S) + A" uses RZ_RELOC_BASE_GOT_SYMBOL as the base,
+ * where GOT(S) is the GOT entry address and A is the addend.
+ */
 typedef enum rz_bin_reloc_base {
 	RZ_RELOC_BASE_UNKNOWN = -1,
-	RZ_RELOC_BASE_SYMBOL = 0, // S
-	RZ_RELOC_BASE_GOT_SYMBOL, ///< GOT(S): Address of GOT entry for the symbol
-	RZ_RELOC_BASE_GOT, // GOT : Address of Global Offset Table
-	RZ_RELOC_BASE_BASE, // Base address
-	RZ_RELOC_BASE_PLT_SYMBOL, // L(S): Address of PLT entry for the symbol
-	RZ_RELOC_BASE_SYMBOL_SIZE, // Z(S):  Size of the symbol
+	RZ_RELOC_BASE_SYMBOL = 0, // S: Address of the symbol
+	RZ_RELOC_BASE_GOT_SYMBOL, // GOT(S): Address of GOT entry for the symbol
+	RZ_RELOC_BASE_GOT, // GOT: Address of the Global Offset Table
+	RZ_RELOC_BASE_BASE, // B: Base address at which the shared object is loaded into memory
+	RZ_RELOC_BASE_PLT_SYMBOL, // L(S): Address of the PLT entry for the symbol
+	RZ_RELOC_BASE_SYMBOL_SIZE, // Z(S): Size of the symbol
 	// max value
 	RZ_RELOC_BASE_ENUM_SIZE
 } RzRelocBase;
