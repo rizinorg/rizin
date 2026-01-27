@@ -4,6 +4,7 @@
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
 
+#include <rz_jemalloc/jemalloc_arch.h>
 #include <rz_jemalloc/jemalloc_450.h>
 #include <rz_jemalloc/jemalloc_530.h>
 

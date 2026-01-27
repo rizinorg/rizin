@@ -3204,6 +3204,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Select jemalloc version for heap parsing (auto-detected if 'auto')");
 	SETOPTIONS(n, "auto", "4.5.0", "5.3.0", NULL);
 
+	n = NODECB("dbg.jemalloc.page_size", "auto", NULL);
+	SETDESC(n, "Select page size for jemalloc heap parsing (auto-detected if 'auto')");
+	SETOPTIONS(n, "auto", "4k", "16k", "64k", NULL);
+
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
