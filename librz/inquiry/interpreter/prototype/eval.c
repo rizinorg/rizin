@@ -10,7 +10,7 @@
 #include "rz_util/rz_log.h"
 #include <rz_util/rz_bitvector.h>
 
-bool report_xref_yield(
+bool report_yield_xref(
 	RzInterpreterAbstrState *state,
 	size_t insn_pkt_size,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,

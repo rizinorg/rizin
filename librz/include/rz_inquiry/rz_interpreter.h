@@ -107,6 +107,11 @@ typedef enum {
 	/**
 	 * \brief This yield is a simple flag, signaling for a given address that it
 	 * a location where a functions' return instruction jumps to.
+	 *
+	 * TODO: This is one of the yields which has uncertainty attached to it.
+	 * Currently a return point is defined as instruction after a call.
+	 * But this is no given! If for example the call never returns (e.g. `call about()`).
+	 * Of course we could change the definition. But for the prototype this is good enough.
 	 */
 	RZ_INTERPRETER_YIELD_KIND_RET_LOC = 1 << 2,
 } RzInterpreterYieldKind;
