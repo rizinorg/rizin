@@ -224,7 +224,7 @@ d "sha 0xcafe,y" 9ffeca 0x0 (seq (set tmp (& (& (var a) (var x)) (+ (cast 8 fals
 d "shx 0xcafe,y" 9efeca 0x0 (seq (set tmp (& (var x) (+ (cast 8 false (>> (+ (bv 16 0xcafe) (cast 16 false (var y))) (bv 8 0x8) false)) (bv 8 0x1)))) (store 0 (+ (bv 16 0xcafe) (cast 16 false (var y))) (var tmp)))
 d "shy 0xcafe,x" 9cfeca 0x0 (seq (set tmp (& (var y) (+ (cast 8 false (>> (+ (bv 16 0xcafe) (cast 16 false (var x))) (bv 8 0x8) false)) (bv 8 0x1)))) (store 0 (+ (bv 16 0xcafe) (cast 16 false (var x))) (var tmp)))
 d "shs 0xcafe,y" 9bfeca 0x0 (seq (set sp (& (var a) (var x))) (set tmp (& (& (var a) (var x)) (+ (cast 8 false (>> (+ (bv 16 0xcafe) (cast 16 false (var y))) (bv 8 0x8) false)) (bv 8 0x1)))) (store 0 (+ (bv 16 0xcafe) (cast 16 false (var y))) (var tmp)))
-d "ane #0x42" 8b42 0x0 (seq (set a (& (| (var a) (bv 8 0xee)) (& (var x) (cast 8 false (+ (append (load 0 (cast 16 false (+ (bv 8 0x42) (bv 8 0x1)))) (load 0 (cast 16 false (bv 8 0x42)))) (cast 16 false (var y))))))) (set Z (is_zero (var a))) (set N (msb (var a))))
+d "ane #0x42" 8b42 0x0 (seq (set a (& (| (var a) (bv 8 0xee)) (& (var x) (cast 8 false (bv 8 0x42))))) (set Z (is_zero (var a))) (set N (msb (var a))))
 d "nop #0x42" 8042 0x0 nop
 d "nop #0x42" 8242 0x0 nop
 d "nop #0x42" c242 0x0 nop

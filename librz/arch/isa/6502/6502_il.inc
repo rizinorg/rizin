@@ -615,12 +615,11 @@ static RzILOpEffect *_6502_il_op_lax(_6502ILAddr *addr) {
 /**
  * LAX #imm
  */
-static RzILOpEffect *_6502_il_op_laximm(_6502ILAddr *addr) {
+static RzILOpEffect *_6502_il_op_laximm(_6502ILAddr *addr, ut8 magic) {
 	RzILOpEffect *tax = _6502_il_op_transfer("x", "a", false);
-	RzILOpBitVector *magic_constant = U8(0xee);
+	RzILOpBitVector *magic_constant = U8(magic);
 	// magic_constant's value is highy unpredictable (dependent on time & temperature)
 	// Some common values are 0xff, 0xef, 0x00, ...
-	// FIXME: Should the value be assigned here randomly?
 
 	return SEQ3(
 		SETG("a", LOGAND(LOGOR(VARG("a"), magic_constant), UNSIGNED(8, addr->addr))),
@@ -751,11 +750,10 @@ static RzILOpEffect *_6502_il_op_tas(_6502ILAddr *addr) {
 /**
  * ANE
  */
-static RzILOpEffect *_6502_il_op_ane(_6502ILAddr *addr) {
-	RzILOpBitVector *magic_constant = U8(0xee);
+static RzILOpEffect *_6502_il_op_ane(_6502ILAddr *addr, ut8 magic) {
+	RzILOpBitVector *magic_constant = U8(magic);
 	// magic_constant's value is highy unpredictable (dependent on time & temperature)
 	// Some common values are 0xff, 0xef, 0x00, ...
-	// FIXME: Should the value be assigned here randomly?
 
 	return SEQ2(
 		SETG("a", LOGAND(LOGOR(VARG("a"), magic_constant), LOGAND(VARG("x"), UNSIGNED(8, addr->addr)))),

@@ -18,6 +18,8 @@
 #include <rz_analysis.h>
 #include "snes/snes_op_table.h"
 #include "6502/6502_il.inc"
+#include <6502/6502dis.h>
+#include <rz_config.h>
 
 enum {
 	_6502_FLAGS_C = (1 << 0),
@@ -441,6 +443,8 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	rz_strbuf_init(&op->esil);
 	_6502ILAddr il_addr = { 0 };
 	_6502ILAddr *il_addr_ptr = (mask & RZ_ANALYSIS_OP_MASK_IL) ? &il_addr : NULL;
+	_6502State *cfg_state = (_6502State *)analysis->plugin_data;
+
 	switch (data[0]) {
 	// SLO
 	case 0x07: // slo $ff
@@ -839,9 +843,13 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->cycles = 2;
 		op->size = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			ut8 magic = 0xee;
 			_6502ILAddr addr;
 			_6502_il_immediate(&addr, data[1]);
-			op->il_op = _6502_il_op_laximm(&addr);
+			if (cfg_state && cfg_state->cfg) {
+				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
+			}
+			op->il_op = _6502_il_op_laximm(&addr, magic);
 		}
 		break;
 
@@ -1129,9 +1137,13 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->size = 2;
 		op->cycles = 2;
 		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			ut8 magic = 0xee;
 			_6502ILAddr addr;
-			_6502_il_addr_indirect_y(&addr, data[1]);
-			op->il_op = _6502_il_op_ane(&addr);
+			_6502_il_immediate(&addr, data[1]);
+			if (cfg_state && cfg_state->cfg) {
+				magic = (ut8)rz_config_get_i(cfg_state->cfg, "plugins.6502.magic");
+			}
+			op->il_op = _6502_il_op_ane(&addr, magic);
 		}
 		break;
 
@@ -1857,7 +1869,14 @@ static int address_bits(RzAnalysis *analysis, int bits) {
 	return 16;
 }
 
-static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+static RzAnalysisILConfig *_6502_il_config(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	if (!analysis->plugin_data && analysis->core) {
+		RzAsm *rasm = rz_analysis_to_rz_asm(analysis);
+		if (rasm && rasm->plugin_data) {
+			analysis->plugin_data = rasm->plugin_data;
+		}
+	}
 	return rz_analysis_il_config_new(16, false, 16);
 }
 
@@ -1873,6 +1892,6 @@ RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.esil = true,
 	.esil_init = esil_6502_init,
 	.esil_fini = esil_6502_fini,
-	.il_config = il_config
+	.il_config = _6502_il_config
 
 };
