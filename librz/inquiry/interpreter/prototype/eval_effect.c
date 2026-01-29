@@ -5,6 +5,15 @@
 #include "rz_analysis.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_util/rz_bitvector.h"
+#include "rz_util/rz_str.h"
+
+static bool value_indicates_ret_addr_write(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *val) {
+	return val->is_concrete &&
+		(rz_bv_to_ut64(val->bv) == state->bb_addr + state->bb_size ||
+			// Sparc stores the call instruction PC into o8.
+			// The return instruction jumps then to o7+8.
+			(rz_str_startswith(state->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv)));
+}
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
@@ -12,7 +21,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
-	void *plugin_data) {
+	ProtoIntrprPluginData *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
 	ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
 
@@ -59,10 +68,12 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
 		write_var_to_state(state, kind, vhash, &eval_out);
-		if (eval_out.is_concrete &&
-			kind == RZ_IL_VAR_KIND_GLOBAL &&
-			rz_bv_to_ut64(eval_out.bv) == state->bb_addr + state->bb_size) {
-			report_yield_str_pc_ret_loc(state, yield_queues, state->bb_addr, rz_bv_to_ut64(pc->bv), &eval_out, false);
+		if (value_indicates_ret_addr_write(state, &eval_out) &&
+			kind == RZ_IL_VAR_KIND_GLOBAL) {
+			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.npc = state->bb_addr + state->bb_size;
+			plugin_data->call_cand.bb_addr = state->bb_addr;
+			plugin_data->call_cand.in_mem = false;
 		}
 		break;
 	}
@@ -83,6 +94,13 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			// NOTE: This prototype can't classify into call or jump.
 			// Everything is just a jump for it at this point.
 			report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
+		}
+		if (plugin_data->call_cand.store_addr) {
+			// An instruction in this basic block stored the next PC.
+			// Report a call candidate.
+			plugin_data->call_cand.jmp_addr = rz_bv_to_ut64(pc->bv);
+			report_yield_call_candiate(state, yield_queues, plugin_data);
+			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		break;
@@ -142,9 +160,11 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		if (eval_out.is_concrete &&
-			rz_bv_to_ut64(eval_out.bv) == state->bb_addr + state->bb_size) {
-			report_yield_str_pc_ret_loc(state, yield_queues, state->bb_addr, rz_bv_to_ut64(pc->bv), &eval_out, true);
+		if (value_indicates_ret_addr_write(state, &eval_out)) {
+			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.npc = state->bb_addr + state->bb_size;
+			plugin_data->call_cand.bb_addr = state->bb_addr;
+			plugin_data->call_cand.in_mem = true;
 		}
 		report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		if (!store_abstr_data(state, mem_idx, &st_addr, &eval_out, io_request, io_result)) {

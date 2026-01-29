@@ -979,14 +979,16 @@ typedef struct rz_analysis_ref_t {
 /**
  * \brief A struct combining information about an instruction storing the
  * a next instruction pointer of a basic block.
- * Indicative for a call instruction.
+ * This indicates that the ending branch instruction in a basic block is
+ * a call instruction.
  */
 typedef struct {
 	ut64 bb_addr; ///< The address of the basic block which stores the NPC.
-	ut64 insn_pkt_addr; ///< The address of the instruction packet storing the NPC.
-	ut64 npc; ///< The NPC stored.
+	ut64 store_addr; ///< The address of the instruction packet storing the NPC.
+	ut64 jmp_addr; ///< Address of the call candidate instruction packet.
+	ut64 npc; ///< The NPC stored. Should point after a basic block.
 	bool in_mem; ///< True if the NPC is written to memory. False if it is written to a register.
-} RzAnalysisStNPCLoc;
+} RzAnalysisCallCandidate;
 
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
