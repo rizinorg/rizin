@@ -4020,17 +4020,17 @@ nth      paddr      vaddr bind   type   size lib name
   7 ---------- ---------- WEAK   NOTYPE    0     imp._ITM_registerTMCloneTable
      vaddr      paddr     target type           name                        
 ----------------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE 
-0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE 
+0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE BASE
+0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE BASE
 0x00001fe8 0x00000fe8 0x00002030 R_386_GLOB_DAT _ITM_deregisterTMCloneTable
 0x00001fec 0x00000fec 0x00002034 R_386_GLOB_DAT __cxa_finalize
 0x00001ff0 0x00000ff0 0x00002038 R_386_GLOB_DAT __gmon_start__
-0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE 
+0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE BASE
 0x00001ff8 0x00000ff8 0x0000203c R_386_GLOB_DAT _Jv_RegisterClasses
 0x00001ffc 0x00000ffc 0x00002040 R_386_GLOB_DAT _ITM_registerTMCloneTable
 0x0000200c 0x0000100c 0x00002028 R_386_JMP_SLOT puts
 0x00002010 0x00001010 0x0000202c R_386_JMP_SLOT __libc_start_main
-0x00002018 0x00001018 0x00000000 R_386_RELATIVE 
+0x00002018 0x00001018 0x00000000 R_386_RELATIVE BASE
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
