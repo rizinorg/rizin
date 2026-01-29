@@ -57,34 +57,19 @@ bool report_yield_xref(
 /**
  * \brief Report the store of the next PC and report it as possible return point.
  */
-bool report_yield_str_pc_ret_loc(
+bool report_yield_call_candiate(
 	RzInterpreterAbstrState *state,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	ut64 bb_addr,
-	ut64 insn_pkt_addr,
-	const ProtoIntrprAbstrData *npc,
-	bool in_mem) {
-	if (!npc->is_concrete || rz_bv_len(npc->bv) > 64) {
-		// Isn't reported
-		return true;
-	}
-	RzInterpreterYieldQueue *st_queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_ST_NPC, NULL);
-	RzInterpreterYieldQueue *ret_queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_RET_LOC, NULL);
-	if (!st_queue || !ret_queue) {
+	ProtoIntrprPluginData *plugin_data) {
+	RzInterpreterYieldQueue *cc_queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	if (!cc_queue) {
 		rz_warn_if_reached();
 		return false;
 	}
 
-	RzAnalysisStNPCLoc *st_npc = &state->shared_obj->stores_npc;
-	st_npc->bb_addr = bb_addr;
-	st_npc->insn_pkt_addr = insn_pkt_addr;
-	st_npc->in_mem = in_mem;
-	st_npc->npc = rz_bv_to_ut64(npc->bv);
-	rz_th_queue_push(st_queue->yield_queue, st_npc, true);
-
-	ut64 *ret_loc = &state->shared_obj->return_loc;
-	*ret_loc = rz_bv_to_ut64(npc->bv);
-	rz_th_queue_push(ret_queue->yield_queue, ret_loc, true);
+	RzAnalysisCallCandidate *cc = &state->shared_obj->call_cand;
+	memcpy(cc, &plugin_data->call_cand, sizeof(plugin_data->call_cand));
+	rz_th_queue_push(cc_queue->yield_queue, cc, true);
 	return true;
 }
 

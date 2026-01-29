@@ -29,6 +29,7 @@ typedef struct {
 
 typedef struct {
 	HtUU *bb_invocation_count;
+	RzAnalysisCallCandidate call_cand; ///< Data of a call candidate.
 } ProtoIntrprPluginData;
 
 /**
@@ -90,7 +91,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
-	void *plugin_data);
+	ProtoIntrprPluginData *plugin_data);
 RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpreterAbstrState *state,
 	const RzILOpPure *pure,
@@ -98,7 +99,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
-	void *plugin_data);
+	ProtoIntrprPluginData *plugin_data);
 
 bool report_yield_xref(
 	RzInterpreterAbstrState *state,
@@ -108,13 +109,10 @@ bool report_yield_xref(
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
-bool report_yield_str_pc_ret_loc(
+bool report_yield_call_candiate(
 	RzInterpreterAbstrState *state,
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	ut64 bb_addr,
-	ut64 insn_pkt_addr,
-	const ProtoIntrprAbstrData *npc,
-	bool in_mem);
+	ProtoIntrprPluginData *plugin_data);
 
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
 	void *plugin_data);

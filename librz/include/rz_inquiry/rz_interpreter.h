@@ -70,10 +70,7 @@ typedef struct {
 	RzAnalysisXRef xref; ///< The xref object passed over the queue.
 
 	RZ_LIFETIME(RzInquiry)
-	ut64 return_loc; ///< The return location passed over the queue.
-
-	RZ_LIFETIME(RzInquiry)
-	RzAnalysisStNPCLoc stores_npc; ///< The stores next pc info passed over the queue.
+	RzAnalysisCallCandidate call_cand; ///< The stores next pc info passed over the queue.
 } RzInterpreterSharedObjects;
 
 typedef struct {
@@ -108,29 +105,8 @@ typedef enum {
 	 * If the last branch instruction does not jump to the neighboring basic block
 	 * it is a strong indicator that the jump is a call and the next address a return point.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_ST_NPC = 1 << 1,
-
-	/**
-	 * \brief This yield is a simple flag, signaling for a given address that it
-	 * a location where a functions' return instruction jumps to.
-	 *
-	 * TODO: This is one of the yields which has uncertainty attached to it.
-	 * Currently a return point is defined as instruction after a call.
-	 * But this is no given! If for example the call never returns (e.g. `call about()`).
-	 * Of course we could change the definition. But for the prototype this is good enough.
-	 */
-	RZ_INTERPRETER_YIELD_KIND_RET_LOC = 1 << 2,
+	RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE = 1 << 1,
 } RzInterpreterYieldKind;
-
-/**
- * \brief A yield of an interpreter. Type is implied by the queue.
- * Object is a union so the elements pushed over the queue are small.
- */
-typedef union {
-	RzAnalysisXRef *abstr_const;
-	bool backs_up_npc;
-	ut64 return_point;
-} RzInterpreterYield;
 
 /**
  * \brief A filter for abstract values to decide if they should be pushed into

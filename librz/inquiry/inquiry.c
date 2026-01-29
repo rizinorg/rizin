@@ -17,11 +17,13 @@
 #include "rz_types.h"
 #include "rz_util/ht_pp.h"
 #include "rz_util/ht_sp.h"
+#include "rz_util/ht_up.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_buf.h"
 #include "rz_util/rz_iterator.h"
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_set.h"
+#include "rz_util/rz_str.h"
 #include "rz_vector.h"
 #include <rz_il.h>
 #include <rz_list.h>
@@ -88,6 +90,7 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	}
 	iq->plugins = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
+	iq->call_candidates = ht_up_new(NULL, free);
 	if (!iq->plugins || !iq->plugins_data) {
 		ht_sp_free(iq->plugins);
 		ht_sp_free(iq->plugins_data);
@@ -109,6 +112,7 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 	}
 	ht_sp_free(iq->plugins);
 	ht_sp_free(iq->plugins_data);
+	ht_up_free(iq->call_candidates);
 	free(iq);
 }
 
@@ -225,22 +229,12 @@ static bool setup_queues(RzCore *core,
 	}
 	ht_up_insert(*yield_queues, yield_kind, yield_queue);
 
-	// stores npc yield queue.
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_ST_NPC;
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
 	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
 	if (!yield_queue) {
 		goto error_free;
 	}
 	ht_up_insert(*yield_queues, yield_kind, yield_queue);
-
-	// return location yield queue.
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_RET_LOC;
-	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
-	if (!yield_queue) {
-		goto error_free;
-	}
-	ht_up_insert(*yield_queues, yield_kind, yield_queue);
-
 	return true;
 
 error_free:
@@ -311,6 +305,21 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 		}
 		rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
 		RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
+	}
+
+	RzInterpreterYieldQueue *q_calls = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	if (!rz_th_queue_is_empty(q_calls->yield_queue)) {
+		RzAnalysisCallCandidate *cc = NULL;
+		if (!rz_th_queue_pop(q_calls->yield_queue, false, (void **)&cc) || !cc) {
+			return false;
+		}
+		RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
+		memcpy(cc_clone, cc, sizeof(RzAnalysisCallCandidate));
+		if (!ht_up_update(core->inquiry->call_candidates, cc_clone->jmp_addr, cc_clone)) {
+			RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->jmp_addr);
+		} else {
+			RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->jmp_addr);
+		}
 	}
 	return true;
 }
@@ -605,6 +614,20 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	}
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
+
+	printf("Found call candidates:\n");
+	RzIterator *it = ht_up_as_iter(core->inquiry->call_candidates);
+	RzAnalysisCallCandidate **v;
+	rz_iterator_foreach(it, v) {
+		RzAnalysisCallCandidate *cc = *v;
+		printf("\n");
+		printf("\tbb_addr = 0x%" PFMT64x "\n", cc->bb_addr);
+		printf("\tstore_addr = 0x%" PFMT64x "\n", cc->store_addr);
+		printf("\tjmp_addr = 0x%" PFMT64x "\n", cc->jmp_addr);
+		printf("\tnpc = 0x%" PFMT64x "\n", cc->npc);
+		printf("\tin_mem = %s\n", rz_str_bool(cc->in_mem));
+	}
+	rz_iterator_free(it);
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 

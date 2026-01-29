@@ -17,7 +17,6 @@ extern "C" {
 
 typedef struct rz_inquiry_plugin_t {
 	RzInterpreterPlugin *p_interpreter;
-	// RzInquiryAlgorithm *p_algorithm;
 } RzInquiryPlugin;
 
 typedef struct {
@@ -26,6 +25,8 @@ typedef struct {
 	 */
 	HtSP /*<RzInquiryPlugin *>*/ *plugins;
 	HtSP /*<void *>*/ *plugins_data;
+
+	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of candidate instruction.
 } RzInquiry;
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);

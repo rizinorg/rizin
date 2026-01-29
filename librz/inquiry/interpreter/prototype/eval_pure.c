@@ -15,8 +15,7 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
 	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
-	void *plugin_data) {
-
+	ProtoIntrprPluginData *plugin_data) {
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {

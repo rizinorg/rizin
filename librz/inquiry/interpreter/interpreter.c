@@ -55,8 +55,7 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 	}
 	RzThreadQueue *queue = NULL;
 	switch (kind) {
-	case RZ_INTERPRETER_YIELD_KIND_RET_LOC:
-	case RZ_INTERPRETER_YIELD_KIND_ST_NPC:
+	case RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE:
 		queue = rz_th_queue_new(RZ_INTERPRETER_YIELD_QUEUE_SIZE, NULL);
 		break;
 	case RZ_INTERPRETER_YIELD_KIND_XREF:
