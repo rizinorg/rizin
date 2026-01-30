@@ -294,6 +294,29 @@ static void init_symbols_info(ELFOBJ *bin) {
 	}
 }
 
+static void init_elf_context(ELFOBJ *bin) {
+	bin->elfctx = RZ_NEW0(RzElfCtx);
+	ut64 got_addr;
+	ut64 jmprel;
+	ut64 pltrelsz;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+		got_addr = UT64_MAX;
+	}
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &jmprel)) {
+		jmprel = UT64_MAX;
+	}
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &pltrelsz)) {
+		pltrelsz = UT64_MAX;
+	}
+
+	bin->elfctx->got_addr = got_addr;
+	bin->elfctx->jmprel = jmprel;
+	bin->elfctx->pltrelsz = pltrelsz;
+}
+
 static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	/* bin is not an ELF */
 	if (!init_ehdr(bin)) {
@@ -313,6 +336,7 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 		init_dt_dynamic(bin);
 		init_dynstr(bin);
 		init_symbols_info(bin);
+		init_elf_context(bin);
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {

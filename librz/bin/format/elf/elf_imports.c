@@ -40,18 +40,20 @@ static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 jmprel_addr;
-	ut64 got_addr;
-	ut64 dt_pltrelsz;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &jmprel_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &got_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &dt_pltrelsz)) {
+	if (!bin->elfctx) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
+	if (bin->elfctx->got_addr == ELF_ADDR_MAX ||
+		bin->elfctx->jmprel == ELF_ADDR_MAX ||
+		bin->elfctx->pltrelsz == ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x2);
 
 	ut8 buf[1024];
-	ut64 plt_addr = jmprel_addr + dt_pltrelsz;
+	ut64 plt_addr = bin->elfctx->jmprel + bin->elfctx->pltrelsz;
 	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p)(bin, plt_addr);
 	int res = rz_buf_read_at(bin->b, p_plt_addr, buf, sizeof(buf));
 	if (res != sizeof(buf)) {
@@ -103,19 +105,17 @@ static ut64 get_import_addr_parisc(ELFOBJ *bin, RzBinElfReloc *rel) {
  *
  * \return The import address or UT64_MAX in case of failure.
  */
-static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
-	ut64 got_addr = 0;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(eo, DT_PLTGOT, &got_addr) || got_addr == UT64_MAX) {
+static ut64 get_import_addr_hexagon(ELFOBJ *bin, RzBinElfReloc *rel) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
-	ut64 plt_addr = get_got_entry(eo, rel);
+	ut64 plt_addr = get_got_entry(bin, rel);
 	if (plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
 
-	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x3);
 
 	switch (rel->type) {
 	default: UNHANDL_IMPORT("Hexagon", rel->type);
@@ -125,9 +125,7 @@ static ut64 get_import_addr_hexagon(ELFOBJ *eo, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_loongarch(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -136,14 +134,12 @@ static ut64 get_import_addr_loongarch(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x2);
 	return plt_addr + LOONGARCH_PLT_OFFSET + pos * LOONGARCH_PLT_ENTRY_SIZE;
 }
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -152,7 +148,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x2);
 	return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
 }
 
@@ -166,13 +162,11 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 plt_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &plt_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
-	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p)(bin, plt_addr);
+	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p)(bin, bin->elfctx->got_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -183,7 +177,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 	}
 
 	ut64 nrel = Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(bin);
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, plt_addr, 0x0);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x0);
 
 	ut64 base = tmp;
 
@@ -200,13 +194,11 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
-	ut64 got_offset = Elf_(rz_bin_elf_v2p)(bin, got_addr);
+	ut64 got_offset = Elf_(rz_bin_elf_v2p)(bin, bin->elfctx->got_addr);
 	if (got_offset == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -269,13 +261,11 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 	RzBinElfSection *pltsec_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
 
 	if (pltsec_section) {
-		ut64 got_addr;
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
 
-		if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
-			return UT64_MAX;
-		}
-
-		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x3);
 		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
 
@@ -283,9 +273,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -294,7 +282,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x3);
 
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT:
@@ -309,9 +297,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_aarch64(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
@@ -320,7 +306,7 @@ static ut64 get_import_addr_aarch64(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x3);
 
 	switch (rel->type) {
 	case R_ARM_JUMP_SLOT: // AArch64 supports ARM32 relocs.
@@ -346,8 +332,7 @@ static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (rel->type != R_ALPHA_JMP_SLOT) {
 		UNHANDL_IMPORT("Alpha", rel->type);
 	}
-	ut64 got_addr;
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+	if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 	ut64 plt_addr = get_got_entry(bin, rel);
@@ -355,15 +340,15 @@ static ut64 get_import_addr_alpha(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	const ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x3);
 	return plt_addr + pos * 16 + 32;
 }
 
 /**
  * \brief Determines and returns the import address for the given relocation.
  *
- * \param eo The Elf object.
- * \param rel The Elf relocation to get the address for.
+ * \param bin The Elf object.
+ * \param reloc The Elf relocation to get the address for.
  *
  * \return The import address or UT64_MAX in case of failure.
  */

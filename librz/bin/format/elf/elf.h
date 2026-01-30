@@ -197,6 +197,12 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 #define RZ_BIN_ELF_DEFAULT_BADDR_RELOC 0x08000000
 
+typedef struct Elf_(rz_bin_elf_context_t){
+	Elf_(Addr) got_addr;
+	Elf_(Addr) jmprel;
+	Elf_(Addr) pltrelsz;
+}RzElfCtx;
+
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
 
@@ -215,6 +221,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	Elf_(Ehdr) ehdr;
 
+	RzElfCtx *elfctx;
 	RzVector /*<RzBinElfSegment>*/ *segments; // should be use with elf_segments.c
 	RzVector /*<RzBinElfSection>*/ *sections; // should be use with elf_sections.c
 
