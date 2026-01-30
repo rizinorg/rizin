@@ -187,7 +187,8 @@ rz_core = library('rz_core', rz_core_sources,
 )
 
 rz_core_dep = declare_dependency(link_with: rz_core,
-                                include_directories: rz_core_inc)
+                                include_directories: rz_core_inc,
+                                dependencies: rz_core_deps)
 meson.override_dependency('rz_core', rz_core_dep)
 
 modules += { 'rz_core': {

@@ -304,6 +304,8 @@ rz_bin_sources = [
   'dwarf/dwarf.c',
 ]
 
+rz_svd_dep = dependency('rz_svd', required: true)
+
 rz_bin_inc = [platform_inc, include_directories('format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
@@ -324,6 +326,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_io_dep,
     rz_type_dep,
     libmspack_dep,
+    rz_svd_dep,
   ],
   install: true,
   implicit_include_directories: false,
