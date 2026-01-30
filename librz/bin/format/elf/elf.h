@@ -197,11 +197,11 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 #define RZ_BIN_ELF_DEFAULT_BADDR_RELOC 0x08000000
 
-typedef struct Elf_(rz_bin_elf_context_t){
+typedef struct Elf_(rz_bin_elf_context_t) {
 	Elf_(Addr) got_addr;
 	Elf_(Addr) jmprel;
 	Elf_(Addr) pltrelsz;
-}RzElfCtx;
+} RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
