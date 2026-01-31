@@ -201,6 +201,7 @@ typedef struct Elf_(rz_bin_elf_context_t) {
 	Elf_(Addr) got_addr;
 	Elf_(Addr) jmprel;
 	Elf_(Addr) pltrelsz;
+	Elf_(Addr) mips_got_addr;
 } RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {

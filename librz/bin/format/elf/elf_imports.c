@@ -44,13 +44,13 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	if (bin->elfctx->got_addr == ELF_ADDR_MAX ||
+	if (bin->elfctx->mips_got_addr == ELF_ADDR_MAX ||
 		bin->elfctx->jmprel == ELF_ADDR_MAX ||
 		bin->elfctx->pltrelsz == ELF_ADDR_MAX) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->got_addr, 0x2);
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, bin->elfctx->mips_got_addr, 0x2);
 
 	ut8 buf[1024];
 	ut64 plt_addr = bin->elfctx->jmprel + bin->elfctx->pltrelsz;

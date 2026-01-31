@@ -299,6 +299,7 @@ static void init_elf_context(ELFOBJ *bin) {
 	ut64 got_addr;
 	ut64 jmprel;
 	ut64 pltrelsz;
+	ut64 mips_got_addr;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
 		got_addr = UT64_MAX;
@@ -312,9 +313,14 @@ static void init_elf_context(ELFOBJ *bin) {
 		pltrelsz = UT64_MAX;
 	}
 
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &mips_got_addr)) {
+		mips_got_addr = UT64_MAX;
+	}
+
 	bin->elfctx->got_addr = got_addr;
 	bin->elfctx->jmprel = jmprel;
 	bin->elfctx->pltrelsz = pltrelsz;
+	bin->elfctx->mips_got_addr = mips_got_addr;
 }
 
 static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
@@ -414,6 +420,8 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	rz_vector_free(bin->symbols);
 	rz_vector_free(bin->imports);
+
+	RZ_FREE(bin->elfctx);
 
 	free(bin);
 }
