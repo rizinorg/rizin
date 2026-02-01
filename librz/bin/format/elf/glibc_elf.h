@@ -2880,12 +2880,14 @@ enum {
 #define SHT_ARM_PREEMPTMAP (SHT_LOPROC + 2) /* Preemption details.  */
 #define SHT_ARM_ATTRIBUTES (SHT_LOPROC + 3) /* ARM attributes section.  */
 
-/* Constants defining public attributes sub-subsections.  */
+/* Constants defining public attributes sub-subsections.
+   https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#324formal-syntax-of-a-public-aeabi-attributes-subsection */
 #define ARM_TAG_FILE    1
 #define ARM_TAG_SECTION 2
 #define ARM_TAG_SYMBOL  3
 
-/* ARM target-related attributes.  */
+/* ARM target-related attributes.
+   https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#335target-related-attributes */
 #define TAG_CPU_RAW_NAME         4
 #define TAG_CPU_NAME             5
 #define TAG_CPU_ARCH             6
@@ -2906,7 +2908,8 @@ enum {
 #define TAG_T2EE_USE             66
 #define TAG_VIRTUALIZATION_USE   68
 
-/* ARM procedure call-related attributes.  */
+/* ARM procedure call-related attributes.
+   https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#336procedure-call-related-attributes */
 #define TAG_PCS_CONFIG             13
 #define TAG_ABI_PCS_R9_USE         14
 #define TAG_ABI_PCS_RW_DATA        15
@@ -2928,26 +2931,18 @@ enum {
 #define TAG_FRAMEPOINTER_USE       72
 #define TAG_BTI_USE                74
 
-/* ARM miscellaneous attributes.  */
-#define TAG_PACRET_USE 76
-
-/* ARM optimization attributes.  */
+/* ARM miscellaneous attributes.
+   https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#337miscellaneous-attributes */
+#define TAG_PACRET_USE                76
 #define TAG_ABI_OPTIMIZATION_GOALS    30
 #define TAG_ABI_FP_OPTIMIZATION_GOALS 31
+#define TAG_COMPATIBILITY             32
+#define TAG_ALSO_COMPATIBLE_WITH      65
+#define TAG_CONFORMANCE               67
+#define TAG_NODEFAULTS                64
 
-/* ARM generic compatibility tag.  */
-#define TAG_COMPATIBILITY 32
-
-/* ARM secondary compatibility tag.  */
-#define TAG_ALSO_COMPATIBLE_WITH 65
-
-/* ARM conformance tag.  */
-#define TAG_CONFORMANCE 67
-
-/* ARM no defaults tag.  */
-#define TAG_NODEFAULTS 64
-
-/* ARM CPU Arch Version  */
+/* ARM CPU Arch version and profile values used for the TAG_CPU_ARCH and TAG_CPU_ARCH_PROFILE tags.
+   https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#335target-related-attributes */
 #define ARM_VER_PRE_V4          0
 #define ARM_VER_V4              1
 #define ARM_VER_V4T             2
@@ -2971,13 +2966,11 @@ enum {
 #define ARM_VER_V8_3_A          20
 #define ARM_VER_V8_1_M_MAINLINE 21
 #define ARM_VER_V9_A            22
-
-/* ARM CPU Arch Profile  */
-#define ARM_PROFILE_0 0
-#define ARM_PROFILE_A 0x41
-#define ARM_PROFILE_R 0x52
-#define ARM_PROFILE_M 0x4d
-#define ARM_PROFILE_S 0x53
+#define ARM_PROFILE_0           0
+#define ARM_PROFILE_A           0x41
+#define ARM_PROFILE_R           0x52
+#define ARM_PROFILE_M           0x4d
+#define ARM_PROFILE_S           0x53
 
 /* AArch64 relocs.  */
 
