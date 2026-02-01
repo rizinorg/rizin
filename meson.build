@@ -714,6 +714,27 @@ endif
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
 
+# handle rz-svd dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'rz-svd', check: false)
+if r.returncode() == 1 and get_option('subprojects_check')
+  error(subproject_clean_error_msg)
+endif
+
+rz_include_dep = declare_dependency(include_directories: [
+  include_directories('librz/include'),
+  include_directories('.')  # for generated headers like rz_userconf.h
+])
+
+rz_svd_proj = subproject(
+  'rz-svd',
+  default_options: [
+    'default_library=static',
+    'werror=false',
+  ]
+)
+
+rz_svd_dep = rz_svd_proj.get_variable('rz_svd_dep')
+
 use_rpath = false
 use_rpath_absolute = false
 if host_machine.system() != 'windows' and get_option('default_library') == 'shared'

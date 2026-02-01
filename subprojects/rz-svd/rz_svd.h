@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Muqeet Salam <muqeetsalam168@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_SVD_H
 #define RZ_SVD_H
 

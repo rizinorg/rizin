@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <rz_util/rz_file.h>
 
 /** \file bin_avr.c
  * This plugin detects the usermode rom in AVR binaries.
@@ -98,9 +99,6 @@ typedef struct {
 
 // Helper functions for AVR SVD loader
 static char *avr_str_dup(const char *str);
-static char *avr_str_ndup(const char *str, size_t n);
-static void avr_str_tolower(char *str);
-static const char *avr_path_basename(const char *path);
 static char *rz_avr_detect_device_name(RzBinFile *bf);
 static RzAvrSvdDevice *rz_avr_svd_create_dummy_device(const char *name);
 static RzAvrSvdDevice *rz_avr_svd_extract_device(void *svd_ctx, const char *device_name, ut8 pc_width);
@@ -128,39 +126,6 @@ static char *avr_str_dup(const char *str) {
 	return (char *)memcpy(dup, str, len);
 }
 
-/**
- * Helper: Allocate and copy n bytes of a string
- */
-static char *avr_str_ndup(const char *str, size_t n) {
-	if (!str) return NULL;
-	char *dup = (char *)malloc(n + 1);
-	if (!dup) return NULL;
-	memcpy(dup, str, n);
-	dup[n] = '\0';
-	return dup;
-}
-
-/**
- * Helper: Convert string to lowercase in place
- */
-static void avr_str_tolower(char *str) {
-	if (!str) return;
-	for (; *str; str++) {
-		*str = tolower((unsigned char)*str);
-	}
-}
-
-/**
- * Helper: Extract basename from filepath
- */
-static const char *avr_path_basename(const char *path) {
-	if (!path) return NULL;
-	const char *sep = strrchr(path, '/');
-#ifdef _WIN32
-	if (!sep) sep = strrchr(path, '\\');
-#endif
-	return sep ? sep + 1 : path;
-}
 
 /**
  * Detect device name from multiple sources:
@@ -173,7 +138,7 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 		return NULL;
 	}
 
-	const char *filename = avr_path_basename(bf->file);
+	const char *filename = rz_file_basename(bf->file);
 	if (!filename) {
 		return NULL;
 	}
@@ -183,7 +148,7 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 		return NULL;
 	}
 
-	avr_str_tolower(lower_filename);
+	rz_str_case(lower_filename, false); // false indicates conversion to lowercase
 
 	const char *patterns[] = {
 		"attiny", "atmega", "atxmega",
@@ -202,7 +167,7 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 
 			size_t devlen = end - match;
 			if (devlen > 0 && devlen < 32) {
-				device_name = avr_str_ndup(match, devlen);
+				device_name = rz_str_ndup(match, devlen);
 				if (device_name) {
 					device_name[0] = toupper((unsigned char)device_name[0]);
 					device_name[1] = toupper((unsigned char)device_name[1]);

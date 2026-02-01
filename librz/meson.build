@@ -19,10 +19,6 @@ subdir('flag')
 subdir('mark')
 subdir('reg')
 subdir('type')
-rz_svd_proj = subproject(
-  'rz-svd',
-  default_options: ['default_library=static', 'werror=false']
-)
 subdir('bin')
 subdir('config')
 subdir('lang')
