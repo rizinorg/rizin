@@ -1981,6 +1981,9 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 			case CS_AC_WRITE:
 				val->access = RZ_ANALYSIS_ACC_W;
 				break;
+			case CS_AC_READ_WRITE:
+				val->access = RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W;
+				break;
 			case CS_AC_INVALID:
 				val->access = RZ_ANALYSIS_ACC_UNKNOWN;
 				break;
