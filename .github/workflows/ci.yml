@@ -624,10 +624,10 @@ jobs:
           ./rizin_cmake_test
         working-directory: rizin
 
-  build-osx-pkg:
-    name: Build OSX package
+  build-macos-pkg:
+    name: Build macOS package
     runs-on: macos-15
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'macos') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v4
@@ -635,11 +635,13 @@ jobs:
           fetch-depth: 2
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
       - name: Install ImageMagick
         run: brew install imagemagick
-      - name: Create OSX package
+      - name: Create macOS package
         run: |
-          ./dist/osx/build_osx_package.sh
+          ./dist/macos/build_macos_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
         uses: actions/upload-artifact@v4
@@ -845,14 +847,14 @@ jobs:
           echo "import rizin" > testimport.py
           python3 testimport.py
 
-  test-osx-pkg:
-    name: Test OSX pkg
+  test-macos-pkg:
+    name: Test macOS pkg
     strategy:
       matrix:
         system:
           - macos-15
     runs-on: ${{ matrix.system }}
-    needs: [ build-osx-pkg ]
+    needs: [ build-macos-pkg ]
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -938,7 +940,7 @@ jobs:
         build-static,
         build-android,
         build-cpp-linux,
-        test-osx-pkg,
+        test-macos-pkg,
         test-windows-clang_cl,
         build-rzpipe,
       ]
