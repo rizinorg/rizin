@@ -321,6 +321,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 
 		if (foundCmp) {
 			if (tmp_aop.type != RZ_ANALYSIS_OP_TYPE_CJMP) {
+				rz_analysis_op_fini(&tmp_aop);
 				continue;
 			}
 
@@ -330,6 +331,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 
 		ut32 type = tmp_aop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		if (type != RZ_ANALYSIS_OP_TYPE_CMP) {
+			rz_analysis_op_fini(&tmp_aop);
 			continue;
 		}
 		// get the value of the cmp
