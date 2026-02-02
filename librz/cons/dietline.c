@@ -1846,6 +1846,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				if (line->sel_widget) {
 					selection_widget_erase(line);
 				}
+				line->buffer.index = line->buffer.length = line->gcomp = 0;
+				*line->buffer.data = '\0';
+				goto _end;
 				break;
 			case 1: // begin
 				line->buffer.index = 0;

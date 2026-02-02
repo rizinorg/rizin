@@ -2011,6 +2011,47 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	}
 }
 
+/**
+ * \brief Patches the opcode at a given address depending on the relocation type.
+ *
+ * NOTE: Some relocation symbols are not yet implemented
+ *
+ * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
+ * \param patch_addr The address of the opcode being patched.
+ * \param rel_type The relocation type.
+ * \param big_endian The endianness - true if BE, false if LE
+ * \param fs Formular values to calculate the new relocation value.
+ */
+static void patch_reloc_parisc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+	ut8 buf[8] = { 0 };
+	ut64 val = 0;
+
+	switch (rel_type) {
+	default:
+		UNHANDL_DEF("PARISC", rel_type);
+		return;
+	case R_PARISC_COPY:
+		/* fall-thru */
+	case R_PARISC_NONE:
+		return;
+	case R_PARISC_DIR32: // S + A
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = rz_read_ble32(buf, big_endian);
+		val += fs->S + fs->A;
+		rz_write_ble32(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		return;
+	case R_PARISC_DIR64: // S + A
+		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
+		val = rz_read_ble64(buf, big_endian);
+		val += fs->S + fs->A;
+		rz_write_ble64(buf, val, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
+		return;
+	}
+}
+
 #undef UNHANDL
 #undef UNHANDL_DEF
 
@@ -2080,13 +2121,15 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_SPARCV9:
 		patch_reloc_sparc(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
+	case EM_PARISC:
+		patch_reloc_parisc(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
+		break;
 	case EM_M32: ARCH_MISSING("EM_M32");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
 	case EM_IAMCU: ARCH_MISSING("EM_IAMCU");
 	case EM_860: ARCH_MISSING("EM_860");
 	case EM_S370: ARCH_MISSING("EM_S370");
-	case EM_PARISC: ARCH_MISSING("EM_PARISC");
 	case EM_VPP500: ARCH_MISSING("EM_VPP500");
 	case EM_960: ARCH_MISSING("EM_960");
 	case EM_PPC: ARCH_MISSING("EM_PPC");

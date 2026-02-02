@@ -313,18 +313,17 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	cwd = rz_sys_getdir();
-	if (rz_test_dir) {
-		if (chdir(rz_test_dir) == -1) {
-			eprintf("Cannot find %s directory.\n", rz_test_dir);
-			ret = -1;
-			goto beach;
-		}
-	} else {
+	if (!rz_test_dir) {
 		bool dir_found = rz_test_chdir_fromtest(opt.ind < argc ? argv[opt.ind] : NULL);
 		if (!dir_found) {
-			eprintf("Cannot find db/ directory related to the given test. Assuming '-C .'.\n");
-			rz_test_dir = ".";
+			eprintf("Cannot find db/ directory related to the given tests. Assuming '-C .'.\n");
+			rz_test_dir = cwd;
 		}
+	}
+	if (rz_test_dir && chdir(rz_test_dir) == -1) {
+		eprintf("Cannot find %s directory.\n", rz_test_dir);
+		ret = -1;
+		goto beach;
 	}
 
 	if (fuzz_dir) {
