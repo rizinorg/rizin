@@ -471,7 +471,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			// IL CACHE
 			// =========
 			//
-			// This block mimics the IL cache.
+			// This block mimics the IL cache. It uplifts basic blocks,
+			// caches them, logs them in RzAnalysis.
 			{
 				if (!rz_th_queue_is_empty(iset->addr_queue)) {
 					ut64 *addr = NULL;
@@ -480,8 +481,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						break;
 					}
 					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-					RzInterpreterILBB *bb;
-					if (!ht_up_find(il_cache, *addr, NULL)) {
+					RzInterpreterILBB *bb = ht_up_find(il_cache, *addr, NULL);
+					if (!bb) {
 						RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
 						size_t bb_size = 0;
 						bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
@@ -501,7 +502,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						ht_up_insert(il_cache, bb->bb_addr, bb);
 					} else {
 						RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
-						bb = ht_up_find(il_cache, *addr, NULL);
 					}
 					rz_th_queue_push(iset->il_queue, bb, true);
 				}
@@ -614,20 +614,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	}
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
-
-	printf("Found call candidates:\n");
-	RzIterator *it = ht_up_as_iter(core->inquiry->call_candidates);
-	RzAnalysisCallCandidate **v;
-	rz_iterator_foreach(it, v) {
-		RzAnalysisCallCandidate *cc = *v;
-		printf("\n");
-		printf("\tbb_addr = 0x%" PFMT64x "\n", cc->bb_addr);
-		printf("\tstore_addr = 0x%" PFMT64x "\n", cc->store_addr);
-		printf("\tjmp_addr = 0x%" PFMT64x "\n", cc->jmp_addr);
-		printf("\tnpc = 0x%" PFMT64x "\n", cc->npc);
-		printf("\tin_mem = %s\n", rz_str_bool(cc->in_mem));
-	}
-	rz_iterator_free(it);
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 

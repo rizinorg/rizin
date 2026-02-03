@@ -31,5 +31,19 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	}
 	bool success = rz_inquiry_interpreter(core, entry_points);
 
+	printf("Found call candidates:\n");
+	RzIterator *it = ht_up_as_iter(core->inquiry->call_candidates);
+	RzAnalysisCallCandidate **v;
+	rz_iterator_foreach(it, v) {
+		RzAnalysisCallCandidate *cc = *v;
+		printf("\n");
+		printf("\tbb_addr = 0x%" PFMT64x "\n", cc->bb_addr);
+		printf("\tstore_addr = 0x%" PFMT64x "\n", cc->store_addr);
+		printf("\tjmp_addr = 0x%" PFMT64x "\n", cc->jmp_addr);
+		printf("\tnpc = 0x%" PFMT64x "\n", cc->npc);
+		printf("\tin_mem = %s\n", rz_str_bool(cc->in_mem));
+	}
+	rz_iterator_free(it);
+
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
