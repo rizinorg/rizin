@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Muqeet Salam <muqeetsalam168@gmail.com>
+// SPDX-FileCopyrightText: 2020 Aswin C (officialcjunior) <realc@protonmail.com>, 2026 Muqeet Salam <muqeetsalam168@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_svd.h"
@@ -51,7 +51,13 @@ static void free_device(RzSvdDevice *device) {
 	free(device);
 }
 
-RZ_API RzSvdContext *rz_svd_new(const char *svd_path) {
+/**
+ * \brief Create a new SVD context from a file path
+ *
+ * \param[in] svd_path Path to the SVD file
+ * \return RzSvdContext* or NULL on failure
+ */
+RZ_API RZ_OWN RzSvdContext *rz_svd_new(RZ_NONNULL const char *svd_path) {
 	if (!svd_path) {
 		return NULL;
 	}
@@ -95,7 +101,12 @@ RZ_API RzSvdContext *rz_svd_new(const char *svd_path) {
 	return ctx;
 }
 
-RZ_API void rz_svd_free(RzSvdContext *ctx) {
+/**
+ * \brief Free an SVD context and all its data
+ *
+ * \param[in] ctx SVD context to free
+ */
+RZ_API void rz_svd_free(RZ_NULLABLE RzSvdContext *ctx) {
 	if (!ctx) {
 		return;
 	}
@@ -104,7 +115,14 @@ RZ_API void rz_svd_free(RzSvdContext *ctx) {
 	free(ctx);
 }
 
-RZ_API RzSvdDevice *rz_svd_get_device(RzSvdContext *ctx, const char *device_name) {
+/**
+ * \brief Get a device by name from the SVD context
+ *
+ * \param[in] ctx SVD context
+ * \param[in] device_name Device name (case-insensitive)
+ * \return RzSvdDevice* or NULL if not found
+ */
+RZ_API RZ_NULLABLE RzSvdDevice *rz_svd_get_device(RZ_NULLABLE RzSvdContext *ctx, RZ_NULLABLE const char *device_name) {
 	if (!ctx || !device_name) {
 		return NULL;
 	}
@@ -119,7 +137,14 @@ RZ_API RzSvdDevice *rz_svd_get_device(RzSvdContext *ctx, const char *device_name
 	return NULL;
 }
 
-RZ_API RzSvdInterrupt *rz_svd_device_get_interrupt(RzSvdDevice *device, ut32 index) {
+/**
+ * \brief Get interrupt by index
+ *
+ * \param[in] device SVD device
+ * \param[in] index Interrupt index
+ * \return RzSvdInterrupt* or NULL if index out of range
+ */
+RZ_API RZ_NULLABLE RzSvdInterrupt *rz_svd_device_get_interrupt(RZ_NULLABLE RzSvdDevice *device, ut32 index) {
 	if (!device || !device->interrupts) {
 		return NULL;
 	}
@@ -134,7 +159,18 @@ RZ_API RzSvdInterrupt *rz_svd_device_get_interrupt(RzSvdDevice *device, ut32 ind
 	return NULL;
 }
 
-RZ_API char *rz_svd_find_file(const char *device_name) {
+/**
+ * \brief Find an SVD file for a given device name
+ *
+ * Searches in standard locations:
+ * - ~/.local/share/rizin/svd/
+ * - /usr/share/rizin/svd/
+ * - /usr/local/share/rizin/svd/
+ *
+ * \param[in] device_name Device name
+ * \return char* path to SVD file or NULL if not found (caller must free)
+ */
+RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 	if (!device_name) {
 		return NULL;
 	}
