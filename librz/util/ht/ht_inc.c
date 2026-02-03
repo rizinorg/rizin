@@ -2,35 +2,65 @@
 // SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2016-2018 ret2libc <sirmy15@gmail.com>
 // SPDX-FileCopyrightText: 2024 pelijah
+// SPDX-FileCopyrightText: 2026 Anton Angelov <anton.angelov@protonmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <rz_types.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_iterator.h>
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_bits.h>
 
-#define LOAD_FACTOR     1
-#define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+// Load factor thershold of 87.5% (after that the table grows)
+#define LOAD_FACTOR_NUM 7
+#define LOAD_FACTOR_DEN 8 /* should be power of 2; also GROUP_WIDTH should be multiple of LOAD_FACTOR_DEN */
 
-// Sizes of the ht.
-static const ut32 ht_primes_sizes[] = {
-	3, 7, 11, 17, 23, 29, 37, 47, 59, 71, 89, 107, 131,
-	163, 197, 239, 293, 353, 431, 521, 631, 761, 919,
-	1103, 1327, 1597, 1931, 2333, 2801, 3371, 4049, 4861,
-	5839, 7013, 8419, 10103, 12143, 14591, 17519, 21023,
-	25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523,
-	108631, 130363, 156437, 187751, 225307, 270371, 324449,
-	389357, 467237, 560689, 672827, 807403, 968897, 1162687,
-	1395263, 1674319, 2009191, 2411033, 2893249, 3471899,
-	4166287, 4999559, 5999471, 7199369
-};
+// #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0])) /*??*/
+// #define QUICK_MIX(h) ((key) ^= (key) >> 16, (h) *= 0x9e3779b1u, (h) ^= (h) >> 15)
+#define HASH_MIX(h) (h)
 
-static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
+#define H1(HASH)                     (HASH >> 7)
+#define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
+#define H2_STATUS_DELETED            0b11111110
+#define H2_STATUS_EMPTY              0b11111111
+#define H2_IS_EMPTY_OR_DELETED(CTRL) (CTRL >> 7)
+#define H2_IS_EMPTY(CTRL)            (CTRL == H2_STATUS_EMPTY)
+#define H2_IS_DELETED(CTRL)          (CTRL == H2_STATUS_DELETED)
+#define INDEX_TYPE                   ut32
+#define INVALID_INDEX                UT32_MAX
+
+// todo:
+//	- [x] allocate first -> 0 bytes (update: actually MIN_CAPACITY)
+// 	- [x] handle realloc / rehash -> capacity should be multiple of x^2-1; new_cap = (old_cap + 1 * 2) - 1 (update: capacity is actually x^2, and bitmask is capacity-1)
+// 	- [x] should keep up to 87.5% load factor
+// 	- [x] "rehash in place"
+// 	- ensure SIMD alignment
+//	- [x] clone first group at `ctrl` end
+//	- [x] handle ctrl mirroring for sizes < GROUP_WIDTH
+//	- the hash function should distribute entroy in both high and low bits to avoid H1 and H2 collisions
+
+// todo: define likely/unlikely; OR remove it there is no impact
+#define RZ_HOT_PATH
+#define RZ_COLD_PATH
+
+#define GROUP_WIDTH 8
+
+/*
+ * TODO:
+ *	- add support for native 4-group parallel lookup on 32-bit environments
+ *	- add support for ARM SIMD (NEON)
+ */
+
+#define MIN_CAPACITY (GROUP_WIDTH)
+
+// static inline ut32 hashfn_quick_mix(ut32 h) {
+//     ut32 x = (h ^ (h >> 16)) * 0x9e3779b1u;
+//     return x ^ (x >> 15);
+// }
+
+static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) { // todo: maybe use 64-bit hash
 	return ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
-}
-
-static inline ut32 bucketfn(HtName_(Ht) *ht, const KEY_TYPE k) {
-	return hashfn(ht, k) % ht->size;
 }
 
 static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -55,70 +85,111 @@ static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	}
 }
 
-static inline ut32 next_idx(ut32 idx) {
-	if (idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) - 1) {
-		return idx + 1;
-	}
-	return UT32_MAX;
-}
+// static inline ut32 next_idx(ut32 idx) { // ??
+// 	if (idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) - 1) {
+// 		return idx + 1;
+// 	}
+// 	return UT32_MAX;
+// }
 
-static inline ut32 compute_size(ut32 idx, ut32 sz) {
-	// when possible, use the precomputed prime numbers which help with
-	// collisions, otherwise, at least make the number odd with |1
-	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
-}
+// static inline ut32 compute_size(ut32 idx, ut32 sz) {
+// 	// when possible, use the precomputed prime numbers which help with
+// 	// collisions, otherwise, at least make the number odd with |1
+// 	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
+// }
 
-static inline bool is_kv_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
+static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
 	if (key_len != kv->key_len) {
 		return false;
 	}
 
-	bool res = key == kv->key;
-	if (!res && ht->opt.cmp) {
-		res = !ht->opt.cmp(key, kv->key);
+	if (key == kv->key) {
+		return true;
 	}
-	return res;
+
+	return ht->opt.cmp && !ht->opt.cmp(key, kv->key);
 }
 
-static inline HT_(Kv) *kv_at(HtName_(Ht) *ht, HT_(Bucket) *bt, ut32 i) {
-	return (HT_(Kv) *)((char *)bt->arr + i * ht->opt.elem_size);
+// static inline HT_(Kv) *kv_at(HtName_(Ht) *ht, HT_(Bucket) *bt, ut32 i) {
+// 	return (HT_(Kv) *)((char *)bt->arr + i * ht->opt.elem_size);
+// }
+
+// static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
+// 	return (HT_(Kv) *)((char *)kv + ht->opt.elem_size);
+// }
+
+// #define BUCKET_FOREACH(ht, bt, j, kv) \
+// 	if ((bt)->arr) \
+// 		for ((j) = 0, (kv) = (bt)->arr; (j) < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
+
+// #define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
+// 	if ((bt)->arr) \
+// 		for ((j) = 0, (kv) = (bt)->arr, (count) = (ht)->count; \
+// 			(j) < (bt)->count; \
+// 			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
+
+// todo: avoid assigning past end
+#define HT_FOREACH(ht, i, kv) \
+	for ((i) = 0, (kv) = (void*)&(ht)->slots[(i)]; (i) < (ht)->capacity; (i)++) if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[(i)]))
+
+static void ctrl_table_set(HtName_(Ht) *ht, INDEX_TYPE idx, ut8 value) {
+	ht->ctrl[idx] = value;
+
+	// Copy to mirrored bytes
+	if (idx < GROUP_WIDTH - 1) {
+		ht->ctrl[ht->capacity + idx] = value;
+	}
 }
 
-static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
-	return (HT_(Kv) *)((char *)kv + ht->opt.elem_size);
+static ut32 next_power_of_two(ut32 n) {
+	if (n <= 1) {
+		return 1;
+	}
+
+	if ((n & (n - 1)) == 0) {
+		return n;
+	}
+
+	return 1ul << (32 - rz_bits_leading_zeros(n));
 }
-
-#define BUCKET_FOREACH(ht, bt, j, kv) \
-	if ((bt)->arr) \
-		for ((j) = 0, (kv) = (bt)->arr; (j) < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
-
-#define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
-	if ((bt)->arr) \
-		for ((j) = 0, (kv) = (bt)->arr, (count) = (ht)->count; \
-			(j) < (bt)->count; \
-			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
 
 // Create a new hashtable and return a pointer to it.
 // size - number of buckets in the hashtable
-static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) *opt) {
+/**
+ * todo..
+ */
+static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options) *opt) {
 	HtName_(Ht) *ht = RZ_NEW0(HtName_(Ht));
 	if (!ht) {
 		return NULL;
 	}
-	ht->size = size;
-	ht->count = 0;
-	ht->prime_idx = prime_idx;
-	ht->table = calloc(ht->size, sizeof(*ht->table));
-	if (!ht->table) {
-		free(ht);
+
+	// Use minimum capacity of group size in order to avoid edge cases (related to ctrl byte mirroring and deletion slot placement)
+	// No maximum capacity enforcement at the moment..
+	ht->capacity = next_power_of_two(RZ_MAX(requested_capacity, 16));
+	ht->size = 0;
+
+	// Allocate additional space for the mirrored bytes at the end of the control array
+	ut32 ctrl_size = (ht->capacity + GROUP_WIDTH) * sizeof(*ht->ctrl);
+	ut32 slots_size = ht->capacity * sizeof(*ht->slots);
+
+	// Allocate single heap block for both control and slot arrays
+	if ((ht->data = calloc(ctrl_size + slots_size, sizeof(ut8))) == NULL) { // todo: use malloc
 		return NULL;
 	}
+
+	ht->ctrl = ht->data;
+	ht->slots = (HT_(Kv) *)(ht->data + ctrl_size);
 	ht->opt = *opt;
-	// if not provided, assume we are dealing with a regular HtName_(Ht), with
-	// HT_(Kv) as elements
+
+	// Initialize all slots as empty
+	memset(ht->ctrl, H2_STATUS_EMPTY, ctrl_size);
+
+	// If not provided, assume we are dealing with a regular HtName_(Ht), with HT_(Kv) as elements
 	if (ht->opt.elem_size == 0) {
 		ht->opt.elem_size = sizeof(HT_(Kv));
 	}
+
 	return ht;
 }
 
@@ -129,7 +200,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 size, ut32 prime_idx, HT_(Option
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt) {
 	rz_return_val_if_fail(opt, NULL);
-	return internal_ht_new(ht_primes_sizes[0], 0, opt);
+	return internal_ht_new(0, opt);
 }
 
 /**
@@ -140,76 +211,106 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt) {
  */
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 initial_size) {
 	rz_return_val_if_fail(opt, NULL);
-	ut32 idx = 0;
-	while (idx < S_ARRAY_SIZE(ht_primes_sizes) &&
-		ht_primes_sizes[idx] * LOAD_FACTOR < initial_size) {
-		idx++;
-	}
-	if (idx == S_ARRAY_SIZE(ht_primes_sizes)) {
-		idx = UT32_MAX;
-	}
-	ut32 sz = compute_size(idx, (ut32)(initial_size * (2 - LOAD_FACTOR)));
-	return internal_ht_new(sz, idx, opt);
+	return internal_ht_new(initial_size, opt);
 }
 
+/**
+ * todo..
+ */
 RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	if (!ht) {
 		return;
 	}
 
-	ut32 i;
-	for (i = 0; i < ht->size; i++) {
-		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) *kv;
-		ut32 j;
-
-		if (ht->opt.finiKV) {
-			BUCKET_FOREACH(ht, bt, j, kv) {
-				ht->opt.finiKV(kv, ht->opt.finiKV_user);
+	if (ht->opt.finiKV) {
+		for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
+			if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
+				continue;
 			}
+			ht->opt.finiKV(&ht->slots[i], ht->opt.finiKV_user);
 		}
-
-		free(bt->arr);
 	}
-	free(ht->table);
+
+	free(ht->data);
 	free(ht);
 }
 
 /**
- * Increases the size of the hashtable by 2.
+ * Increases the capacity of the hashtable to `(x + 1) * 2 - 1` where `x` is the previous cpacity.
  * Tracks change of KV \p tracked position.
  */
-static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
-	ut32 idx = next_idx(ht->prime_idx);
-	ut32 sz = compute_size(idx, ht->size * 2);
+// static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
+// 	ut32 idx = next_idx(ht->prime_idx);
+// 	// ut32 sz = compute_size(idx, ht->size * 2);
+// 	ut32 cap = (ht->capacity + 1) * 2 - 1;
 
-	HtName_(Ht) *ht2 = internal_ht_new(sz, idx, &ht->opt);
+// 	HtName_(Ht) *ht2 = internal_ht_new(cp, idx, &ht->opt);
+// 	if (!ht2) {
+// 		// we can't grow the ht anymore. Never mind, we'll be slower,
+// 		// but everything can continue to work
+// 		return tracked;
+// 	}
+
+// 	// Iterate all slots
+// 	for (ut32 i = 0; i < ht->capacity; i++) {
+// 		if (ht->ctrl[i].empty) {
+// 			continue;
+// 		}
+// 		if (kv == tracked) {
+// 			continue;
+// 		}
+// 		if (Ht_(insert_kv_ex)(ht2, ht->slots[i], false, NULL) < 0) {
+// 			ht2->opt.finiKV = NULL;
+// 			Ht_(free)(ht2);
+// 			return tracked; //?
+// 		}
+// 	}
+
+// 	// Insert ???
+// 	if (Ht_(insert_kv_ex)(ht2, tracked, false, &tracked) < 0) {
+// 		ht2->opt.finiKV = NULL;
+// 		Ht_(free)(ht2);
+// 		return tracked;
+// 	}
+
+// 	// And now swap the internals.
+// 	HtName_(Ht) swap = *ht;
+// 	*ht = *ht2;
+// 	*ht2 = swap;
+
+// 	ht2->opt.finiKV = NULL;
+// 	Ht_(free)(ht2);
+// 	return tracked;
+// }
+
+/**
+ * todo
+ * \return true if either no growing is needed or there was a successfull growth; otherwise returns false on failed growth attempt
+ */
+static bool grow_if_needed(HtName_(Ht) *ht) {
+	if (ht->size < (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM) {
+		return true;
+	}
+
+	// Create a new hash table
+	HtName_(Ht) *ht2 = internal_ht_new(ht->capacity + 1, &ht->opt);
 	if (!ht2) {
 		// we can't grow the ht anymore. Never mind, we'll be slower,
 		// but everything can continue to work
-		return tracked;
+		return false;
 	}
 
-	for (ut32 i = 0; i < ht->size; i++) {
-		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) *kv;
-		ut32 j;
-
-		BUCKET_FOREACH(ht, bt, j, kv) {
-			if (kv == tracked) {
-				continue;
-			}
-			if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
-				ht2->opt.finiKV = NULL;
-				Ht_(free)(ht2);
-				return tracked;
-			}
+	// Iterate all slots and copy elements to `h2`
+	for (ut32 i = 0; i < ht->capacity; i++) {
+		if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) {
+			continue;
 		}
-	}
-	if (Ht_(insert_kv_ex)(ht2, tracked, false, &tracked) < 0) {
-		ht2->opt.finiKV = NULL;
-		Ht_(free)(ht2);
-		return tracked;
+
+		if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
+			ht2->opt.finiKV = NULL;
+			Ht_(free)(ht2);
+			return false;
+		}
 	}
 
 	// And now swap the internals.
@@ -219,47 +320,135 @@ static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
 
 	ht2->opt.finiKV = NULL;
 	Ht_(free)(ht2);
-	return tracked;
+	return true;
 }
 
-static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
-	if (ht->count >= LOAD_FACTOR * ht->size) {
-		return internal_ht_grow(ht, tracked);
+// static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
+// 	if (ht->count >= LOAD_FACTOR * ht->capacity) {
+// 		return internal_ht_grow(ht, tracked);
+// 	}
+// 	return tracked;
+// }
+
+/**
+ * todo..
+ * \return if the \p key is found this function will return it's slot ID, otherwise will return the ID of the next available slot for insertion purposes
+ */
+static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool *existing) {
+	ut32 hash = hashfn(ht, key);
+	hash = HASH_MIX(hash);
+
+	ut32 hash_fragment = H2_HASH_FRAGMENT(hash);
+	ut32 probe_step = GROUP_WIDTH;
+	INDEX_TYPE index = H1(hash) & (ht->capacity - 1); // todo: rename to group_index_start, etc
+	INDEX_TYPE first_deleted = INVALID_INDEX;
+
+	while (true) {
+		// TODO: Probe one group at a time
+		for (INDEX_TYPE i = index; i < index + GROUP_WIDTH; i++) {
+			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
+			ut8 *ctrl = &ht->ctrl[i];
+
+			if (H2_IS_EMPTY(*ctrl)) {
+				*existing = false;
+				return first_deleted == INVALID_INDEX ? normalized_i : first_deleted;
+			}
+
+			if (H2_HASH_FRAGMENT(*ctrl) == H2_HASH_FRAGMENT(hash) && RZ_HOT_PATH(is_key_equal(ht, key, key_len, &ht->slots[normalized_i]))) {
+				*existing = true;
+				return normalized_i;
+			}
+
+			// If we visit a deleted slot, save it's index for potential later use
+			if (H2_IS_DELETED(*ctrl) && first_deleted == INVALID_INDEX) {
+				first_deleted = normalized_i;
+			}
+		}
+
+		// Warn if we reach past the probing sequence (unexpected since we shouldn't get above load factor > 85.4%)
+		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
+			rz_warn_if_reached();
+			*existing = false;
+			return INVALID_INDEX;
+		}
+
+		// Triangular probing
+		index = (index + probe_step) & (ht->capacity - 1);
+		probe_step += GROUP_WIDTH;
 	}
-	return tracked;
+}
+
+/**
+ * todo..
+ */
+static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len) {
+	ut32 hash = hashfn(ht, key);
+	hash = HASH_MIX(hash);
+
+	ut32 hash_fragment = H2_HASH_FRAGMENT(hash);
+	ut32 probe_step = GROUP_WIDTH;
+	INDEX_TYPE index = H1(hash) & (ht->capacity - 1);
+
+	while (true) {
+		// todo: Probe one group at a time
+		for (ut32 i = index; i < index + GROUP_WIDTH; i++) {
+			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
+			ut8 *ctrl = &ht->ctrl[i];
+
+			if (H2_IS_EMPTY(*ctrl)) {
+				return INVALID_INDEX;
+			}
+
+			if (H2_HASH_FRAGMENT(*ctrl) == hash_fragment && RZ_HOT_PATH(is_key_equal(ht, key, key_len, &ht->slots[normalized_i]))) {
+				return normalized_i;
+			}
+		}
+
+		// Warn if we reach past the probing sequence (unexpected)
+		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
+			rz_warn_if_reached();
+			return INVALID_INDEX;
+		}
+
+		// Triangular probing
+		index = (index + probe_step) & (ht->capacity - 1);
+		probe_step += GROUP_WIDTH;
+	}
 }
 
 /**
  * \brief Get an existing KV with key \p key or allocate a new KV otherwise
  */
 static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
-	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
-	HT_(Kv) *kvtmp;
-	ut32 j;
-
-	BUCKET_FOREACH(ht, bt, j, kvtmp) {
-		if (is_kv_equal(ht, key, key_len, kvtmp)) {
-			if (update) {
-				fini_kv_pair(ht, kvtmp);
-				*code = HT_RC_UPDATED;
-			} else {
-				*code = HT_RC_EXISTING;
-			}
-			return kvtmp;
-		}
-	}
-
-	HT_(Kv) *newkvarr = realloc(bt->arr, (bt->count + 1) * ht->opt.elem_size);
-	if (!newkvarr) {
+	if (RZ_COLD_PATH(!grow_if_needed(ht))) {
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
 
-	bt->arr = newkvarr;
-	bt->count++;
-	ht->count++;
+	bool existing = false;
+	INDEX_TYPE idx = ctrl_table_lookup_or_reserve(ht, key, key_len, &existing);
+
+	if (RZ_COLD_PATH(idx == INVALID_INDEX)) {
+		*code = HT_RC_ERROR;
+		return NULL;
+	}
+
+	if (existing) {
+		if (update) {
+			fini_kv_pair(ht, &ht->slots[idx]);
+			*code = HT_RC_UPDATED;
+		} else {
+			*code = HT_RC_EXISTING;
+		}
+		return &ht->slots[idx];
+	}
+
+	// Writing over an empty or a deleted slot
 	*code = HT_RC_INSERTED;
-	return kv_at(ht, bt, bt->count - 1);
+
+	ht->size++;
+	ctrl_table_set(ht, idx, H2_HASH_FRAGMENT(hashfn(ht, key)));
+	return &ht->slots[idx];
 }
 
 /**
@@ -271,6 +460,7 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
  * \return Returns true if insertion/replacement took place
  */
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
+	// todo: check if we need to inline
 	return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0;
 }
 
@@ -292,23 +482,27 @@ RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv
 
 	HtRetCode rc;
 	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
+
 	if (rc <= 0) {
 		if (out_kv) {
 			*out_kv = kv_dst;
 		}
 		return rc;
 	}
+
 	memcpy(kv_dst, kv, ht->opt.elem_size);
-	kv_dst = check_growing(ht, kv_dst);
+
 	if (out_kv) {
 		*out_kv = kv_dst;
 	}
+
 	return rc;
 }
 
-static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+static HtRetCode insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	ut32 key_len = calcsize_key(ht, key);
 	HtRetCode rc;
+
 	HT_(Kv) *kv_dst = reserve_kv(ht, key, key_len, update, &rc);
 	if (rc <= 0) {
 		if (out_kv) {
@@ -316,14 +510,16 @@ static int insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_T
 		}
 		return rc;
 	}
+
 	kv_dst->key = dupkey(ht, key);
 	kv_dst->key_len = key_len;
 	kv_dst->value = dupval(ht, value);
 	kv_dst->value_len = calcsize_val(ht, value);
-	kv_dst = check_growing(ht, kv_dst);
+
 	if (out_kv) {
 		*out_kv = kv_dst;
 	}
+
 	return rc;
 }
 
@@ -392,46 +588,31 @@ RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
  */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
+	INDEX_TYPE idx;
+
 	// First look for the value associated with old_key
-	bool found;
-	VALUE_TYPE value = Ht_(find)(ht, old_key, &found);
-	if (!found) {
+	if ((idx = ctrl_table_lookup(ht, old_key, calcsize_key(ht, old_key))) == INVALID_INDEX) {
 		return false;
 	}
 
-	// Associate the existing value with new_key
-	bool inserted = insert_update(ht, new_key, value, false, NULL) > 0;
-	if (!inserted) {
+	// Associate the new key with the existing value
+	if (insert_update(ht, new_key, ht->slots[idx].value, false, NULL) <= 0) {
 		return false;
 	}
 
 	// Remove the old_key kv, paying attention to not double free the value
-	HT_(Bucket) *bt = &ht->table[bucketfn(ht, old_key)];
-	const int old_key_len = calcsize_key(ht, old_key);
-	HT_(Kv) *kv;
-	ut32 j;
+	// TODO: use empty instead of delete where possible...
+	ctrl_table_set(ht, idx, H2_STATUS_DELETED);
 
-	BUCKET_FOREACH(ht, bt, j, kv) {
-		if (is_kv_equal(ht, old_key, old_key_len, kv)) {
-			if (!ht->opt.dupvalue) {
-				// do not free the value part if dupvalue is not
-				// set, because the old value has been
-				// associated with the new key and it should not
-				// be freed
-				kv->value = HT_NULL_VALUE;
-				kv->value_len = 0;
-			}
-			fini_kv_pair(ht, kv);
-
-			void *src = next_kv(ht, kv);
-			memmove(kv, src, (bt->count - j - 1) * ht->opt.elem_size);
-			bt->count--;
-			ht->count--;
-			return true;
-		}
+	// Do not free the value part if dupvalue is not set, because the old value will be
+	// associated with the new key and it should not be freed
+	if (!ht->opt.dupvalue) {
+		ht->slots[idx].value = HT_NULL_VALUE;
+		ht->slots[idx].value_len = 0;
 	}
+	fini_kv_pair(ht, &ht->slots[idx]);
 
-	return false;
+	return true;
 }
 
 /**
@@ -440,25 +621,21 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
  * false otherwise.
  */
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
-	if (found) {
-		*found = false;
-	}
 	rz_return_val_if_fail(ht, NULL);
+	INDEX_TYPE idx = ctrl_table_lookup(ht, key, calcsize_key(ht, key));
 
-	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
-	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) *kv;
-	ut32 j;
-
-	BUCKET_FOREACH(ht, bt, j, kv) {
-		if (is_kv_equal(ht, key, key_len, kv)) {
-			if (found) {
-				*found = true;
-			}
-			return kv;
+	if (idx == INVALID_INDEX) {
+		if (found) {
+			*found = false;
 		}
+		return NULL;
 	}
-	return NULL;
+
+	if (found) {
+		*found = true;
+	}
+
+	return &ht->slots[idx];
 }
 
 /**
@@ -476,22 +653,17 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
  */
 RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 	rz_return_val_if_fail(ht, false);
-	HT_(Bucket) *bt = &ht->table[bucketfn(ht, key)];
-	ut32 key_len = calcsize_key(ht, key);
-	HT_(Kv) *kv;
-	ut32 j;
+	INDEX_TYPE idx = ctrl_table_lookup(ht, key, calcsize_key(ht, key));
 
-	BUCKET_FOREACH(ht, bt, j, kv) {
-		if (is_kv_equal(ht, key, key_len, kv)) {
-			fini_kv_pair(ht, kv);
-			void *src = next_kv(ht, kv);
-			memmove(kv, src, (bt->count - j - 1) * ht->opt.elem_size);
-			bt->count--;
-			ht->count--;
-			return true;
-		}
+	if (idx == INVALID_INDEX) {
+		return false;
 	}
-	return false;
+
+	ht->size--;
+	ctrl_table_set(ht, idx, H2_STATUS_DELETED); // todo: use empty where possible
+	fini_kv_pair(ht, &ht->slots[idx]);
+
+	return true;
 }
 
 /**
@@ -500,17 +672,15 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
  */
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
-	ut32 i;
 
-	for (i = 0; i < ht->size; ++i) {
-		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) *kv;
-		ut32 j, count;
+	// Iterate all slots and copy elements to `h2`
+	for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
+		if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
+			continue;
+		}
 
-		BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) {
-			if (!cb(user, kv->key, kv->value)) {
-				return;
-			}
+		if (!cb(user, ht->slots[i].key, ht->slots[i].value)) {
+			return;
 		}
 	}
 }
@@ -519,12 +689,11 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
  * \brief Returns the number of elements stored in the hash map \p ht.
  *
  * \param ht The hash map.
- *
  * \return The number of elements saved in the hash map.
  */
 RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_val_if_fail(ht, 0);
-	return ht->count;
+	return ht->size;
 }
 
 /**
@@ -534,29 +703,18 @@ RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht) {
  */
 RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 	rz_return_val_if_fail(it, NULL);
-
 	HT_(IterMutState) *state = it->u;
-	if (state->ti >= state->ht->size) {
-		// Iteration is done. No elements left to select.
-		return NULL;
-	}
+
 	// Iterate over tables until a table with an element is found.
-	for (; state->ti < state->ht->size; state->ti++) {
-		if (state->ht->table[state->ti].count == 0) {
-			// Table has no elements. Check next table.
+	for (; state->ti < state->ht->capacity; state->ti++) {
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
 			continue;
 		}
-		if (state->bi < state->ht->table[state->ti].count) {
-			// Table has elements, select the element.
-			state->kv = &state->ht->table[state->ti].arr[state->bi];
-			// For the next iteration, increment bucket index to the following element.
-			state->bi++;
-			return &state->kv->value;
-		}
-		// Reset bucket index to first bucket.
-		state->bi = 0;
-		// Go to next table
+		state->kv = &state->ht->slots[state->ti];
+		state->ti++;
+		return &state->kv->value;
 	}
+
 	// Iteration is done. No elements left to select.
 	return NULL;
 }
@@ -568,29 +726,18 @@ RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
  */
 RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
 	rz_return_val_if_fail(it, NULL);
-
 	HT_(IterState) *state = it->u;
-	if (state->ti >= state->ht->size) {
-		// Iteration is done. No elements left to select.
-		return NULL;
-	}
+
 	// Iterate over tables until a table with an element is found.
-	for (; state->ti < state->ht->size; state->ti++) {
-		if (state->ht->table[state->ti].count == 0) {
-			// Table has no elements. Check next table.
+	for (; state->ti < state->ht->capacity; state->ti++) {
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
 			continue;
 		}
-		if (state->bi < state->ht->table[state->ti].count) {
-			// Table has elements, select the element.
-			state->kv = &state->ht->table[state->ti].arr[state->bi];
-			// For the next iteration, increment bucket index to the following element.
-			state->bi++;
-			return (const VALUE_TYPE *)&state->kv->value;
-		}
-		// Reset bucket index to first bucket.
-		state->bi = 0;
-		// Go to next table
+		state->kv = &state->ht->slots[state->ti];
+		state->ti++;
+		return (const VALUE_TYPE *)&state->kv->value;
 	}
+
 	// Iteration is done. No elements left to select.
 	return NULL;
 }
@@ -603,29 +750,18 @@ RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
  */
 RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it) {
 	rz_return_val_if_fail(it, NULL);
+	HT_(IterMutState) *state = it->u;
 
-	HT_(IterState) *state = it->u;
-	if (state->ti >= state->ht->size) {
-		// Iteration is done. No elements left to select.
-		return NULL;
-	}
 	// Iterate over tables until a table with an element is found.
-	for (; state->ti < state->ht->size; state->ti++) {
-		if (state->ht->table[state->ti].count == 0) {
-			// Table has no elements. Check next table.
+	for (; state->ti < state->ht->capacity; state->ti++) {
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
 			continue;
 		}
-		if (state->bi < state->ht->table[state->ti].count) {
-			// Table has elements, select the element.
-			state->kv = &state->ht->table[state->ti].arr[state->bi];
-			// For the next iteration, increment bucket index to the following element.
-			state->bi++;
-			return (const KEY_TYPE *)&state->kv->key;
-		}
-		// Reset bucket index to first bucket.
-		state->bi = 0;
-		// Go to next table
+		state->kv = &state->ht->slots[state->ti];
+		state->ti++;
+		return (const KEY_TYPE *)&state->kv->key;
 	}
+
 	// Iteration is done. No elements left to select.
 	return NULL;
 }

@@ -29,5 +29,5 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt) {
 		.finiKV_user = NULL,
 		.elem_size = 0,
 	};
-	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+	return internal_ht_new(0, &opt);
 }

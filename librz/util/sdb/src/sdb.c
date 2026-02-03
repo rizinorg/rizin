@@ -16,14 +16,19 @@ static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
 	return (SdbKv *)((char *)kv + ht->opt.elem_size);
 }
 
-#define BUCKET_FOREACH(ht, bt, j, kv) \
-	for ((j) = 0, (kv) = (SdbKv *)(bt)->arr; j < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
+// #define BUCKET_FOREACH(ht, bt, j, kv) \
+// 	for ((j) = 0, (kv) = (SdbKv *)(bt)->arr; j < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
 
-#define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
-	if ((bt)->arr) \
-		for ((j) = 0, (kv) = (SdbKv *)(bt)->arr, (count) = (ht)->count; \
-			(j) < (bt)->count; \
-			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
+// #define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
+// 	if ((bt)->arr) \
+// 		for ((j) = 0, (kv) = (SdbKv *)(bt)->arr, (count) = (ht)->count; \
+// 			(j) < (bt)->count; \
+// 			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
+#define H2_IS_EMPTY_OR_DELETED(CTRL) (CTRL >> 7)
+#define HT_FOREACH(ht, i, kv) \
+	for ((i) = 0, (kv) = (void*)&(ht)->slots[(i)]; (i) < (ht)->capacity; (i)++) if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[(i)]))
+
+// todo: remove ^
 
 // TODO: use mmap instead of read.. much faster!
 RZ_API RZ_OWN Sdb *sdb_new0(void) {
@@ -146,7 +151,7 @@ RZ_API bool sdb_isempty(Sdb *s) {
 				return false;
 			}
 		}
-		if (s->ht && s->ht->count > 0) {
+		if (s->ht && ht_ss_size(s->ht) > 0) {
 			return false;
 		}
 	}
@@ -164,7 +169,7 @@ RZ_API int sdb_count(Sdb *s) {
 			}
 		}
 		if (s->ht) {
-			count += s->ht->count;
+			count += ht_ss_size(s->ht);
 		}
 	}
 	return count;
@@ -753,19 +758,32 @@ RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_
 		return sdb_foreach_end(s, false);
 	}
 
-	for (ut32 i = 0; i < s->ht->size; ++i) {
-		HtSSBucket *bt = &s->ht->table[i];
-		SdbKv *kv;
-		ut32 j, count;
+	// for (ut32 i = 0; i < s->ht->size; ++i) {
+	// 	HtSSBucket *bt = &s->ht->table[i];
+	// 	SdbKv *kv;
+	// 	ut32 j, count;
 
-		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
-			if (kv && sdbkv_value(kv) && *sdbkv_value(kv)) {
-				if (!cb(user, kv)) {
-					return sdb_foreach_end(s, false);
-				}
+	// 	BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
+	// 		if (kv && sdbkv_value(kv) && *sdbkv_value(kv)) {
+	// 			if (!cb(user, kv)) {
+	// 				return sdb_foreach_end(s, false);
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// todo: delete ^
+
+	ut32 i;
+	SdbKv *kv;
+
+	HT_FOREACH(s->ht, i, kv) {
+		if (kv && sdbkv_value(kv) && *sdbkv_value(kv)) {
+			if (!cb(user, kv)) {
+				return sdb_foreach_end(s, false);
 			}
 		}
 	}
+
 	return sdb_foreach_end(s, true);
 }
 
@@ -791,19 +809,28 @@ RZ_API bool sdb_sync(Sdb *s) {
 	}
 
 	/* append new keyvalues */
-	for (i = 0; i < s->ht->size; ++i) {
-		HtSSBucket *bt = &s->ht->table[i];
-		SdbKv *kv;
-		ut32 j, count;
+	// for (i = 0; i < s->ht->size; ++i) {
+	// 	HtSSBucket *bt = &s->ht->table[i];
+	// 	SdbKv *kv;
+	// 	ut32 j, count;
 
-		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
-			if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
-				if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
-					sdb_remove(s, sdbkv_key(kv));
-				}
+	// 	BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
+	// 		if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
+	// 			if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
+	// 				sdb_remove(s, sdbkv_key(kv));
+	// 			}
+	// 		}
+	// 	}
+	// }
+	SdbKv *kv;
+	HT_FOREACH(s->ht, i, kv) {
+		if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
+			if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
+				sdb_remove(s, sdbkv_key(kv));
 			}
 		}
 	}
+
 	sdb_disk_finish(s);
 	// TODO: sdb_reset memory state?
 	return true;
@@ -842,7 +869,7 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
 		*disk = count;
 	}
 	if (mem) {
-		*mem = s->ht->count;
+		*mem = ht_ss_size(s->ht);
 	}
 	return disk || mem;
 }

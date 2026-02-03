@@ -41,5 +41,5 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, HtStrOption val_opt) {
 		.finiKV_user = val_opt == HT_STR_CONST ? NULL : (HT_(FreeValue))free,
 		.elem_size = 0,
 	};
-	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+	return internal_ht_new(0, &opt);
 }

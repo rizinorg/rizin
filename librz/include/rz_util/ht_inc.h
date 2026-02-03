@@ -4,6 +4,8 @@
 // SPDX-FileCopyrightText: 2024 pelijah
 // SPDX-License-Identifier: BSD-3-Clause
 
+// todo..
+
 #include <rz_util/rz_iterator.h>
 
 #ifndef HT_TYPE
@@ -18,6 +20,13 @@
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
 
+#define HT_HASH_FUNC_MUL(key) ((ut32)(key) * 0x9e3779b9)
+#define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, key)) /* todo: add portable alternative */
+
+#define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(key))
+#define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_MUL(key))
+#define KEY_TO_HASH_SX(key) ((ut32)(uintptr_t)(key))
+
 #if HT_TYPE == 1
 // Hash table HtPP that has void* as key and void* as value
 #define HtName_(name)  name##PP
@@ -25,16 +34,16 @@
 #define HT_(name)      HtPP##name
 #define KEY_TYPE       void *
 #define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_PX(x)
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 2
-// Hash table HtPU that has void* as key and ut64 as value
+// Hash table HtUP that has void* as key and ut64 as value
 #define HtName_(name)  name##UP
 #define Ht_(name)      ht_up_##name
 #define HT_(name)      HtUP##name
 #define KEY_TYPE       ut64
 #define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) ((ut32)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_UX(x)
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 3
 // Hash table HtUU that has ut64 as key and ut64 as value
@@ -43,7 +52,7 @@
 #define HT_(name)      HtUU##name
 #define KEY_TYPE       ut64
 #define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) ((ut32)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_UX(x)
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 4
 // Hash table HtPU that has void* as key and ut64 as value
@@ -52,7 +61,7 @@
 #define HT_(name)      HtPU##name
 #define KEY_TYPE       void *
 #define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_PX(x)
 #define HT_NULL_VALUE  0
 #elif HT_TYPE == 5
 // Hash table HtSP that has C-string as key and void* as value
@@ -61,7 +70,7 @@
 #define HT_(name)      HtSP##name
 #define KEY_TYPE       char *
 #define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 6
 // Hash table HtSS that has C-string as key and C-string as value
@@ -70,7 +79,7 @@
 #define HT_(name)      HtSS##name
 #define KEY_TYPE       char *
 #define VALUE_TYPE     char *
-#define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
 #define HT_NULL_VALUE  NULL
 #elif HT_TYPE == 7
 // Hash table HtSU that has C-string as key and ut64 as value
@@ -79,7 +88,7 @@
 #define HT_(name)      HtSU##name
 #define KEY_TYPE       char *
 #define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) ((ut32)(uintptr_t)(x))
+#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
 #define HT_NULL_VALUE  0
 #endif
 
@@ -125,11 +134,6 @@ typedef ut32 (*HT_(HashFunction))(const KEY_TYPE);
 typedef int (*HT_(Comparator))(const KEY_TYPE, const KEY_TYPE);
 typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYPE);
 
-typedef struct Ht_(bucket_t) {
-	HT_(Kv) *arr;
-	ut32 count;
-} HT_(Bucket);
-
 /**
  * Options contain all the settings of the hashtable.
  */
@@ -157,17 +161,18 @@ typedef struct Ht_(options_t) {
 
 /* Ht is the hashtable structure */
 typedef struct Ht_(t) {
-	ut32 size; ///< Size of the hash table in buckets.
-	ut32 count; ///< Number of stored elements.
-	HT_(Bucket) *table; ///< Actual table.
-	ut32 prime_idx;
-	HT_(Options) opt;
+	ut32 capacity; ///< Capacity of the main array.
+	ut32 size; ///< Number of stored elements.
+	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays
+	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer
+	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer
+	HT_(Options) opt; ///< Methods
 } HtName_(Ht);
 
 typedef struct Ht_(iter_mut_t) {
 	HtName_(Ht) *ht; ///< The hash table to iterate over.
 	ut32 ti; ///< Table index
-	ut32 bi; ///< Bucket index
+	// ut32 bi; ///< Bucket index // todo: delete
 	HT_(Kv) *kv; ///< Current Key-Value-pair.
 } HT_(IterMutState);
 
