@@ -134,7 +134,7 @@ EOF
 RUN
 
 NAME=dmxa/dmxb/dmxc with 32-bit jemalloc 4.5.0 runtime (freebsd-i386-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-i386-freebsd
+FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-i386-bsd
 ARGS=-Rstdout=/dev/null -Rstderr=/dev/null -Rstdin=/dev/zero -d
 CMDS=<<EOF
 dcu 0x0040c30b
@@ -154,7 +154,7 @@ EOF
 RUN
 
 NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 5.3.0 runtime (freebsd-amd64-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-amd64-freebsd
+FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-amd64-bsd
 ARGS=-Rstdout=/dev/null -Rstderr=/dev/null -Rstdin=/dev/zero -d
 CMDS=<<EOF
 dcu 0x00218ab5
