@@ -163,7 +163,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
-	ret->bits = 32;
+	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	ret->rclass = rz_str_dup("image");
@@ -171,36 +171,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static bool check_buffer(RzBuffer *buf) {
-	BootImage h;
-
-	if (!bootimg_read_header(buf, &h)) {
-		return false;
-	}
-
-	if (memcmp(h.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE) != 0) {
-		return false;
-	}
-
-	if (h.kernel_size == 0 || h.ramdisk_size == 0) {
-		return false;
-	}
-
-	ut32 page_size = h.page_size;
-	if (page_size != 2048 && page_size != 4096 &&
-		page_size != 8192 && page_size != 16384) {
-		return false;
-	}
-
-	ut64 n = (ut64)(h.kernel_size + page_size - 1) / page_size;
-	ut64 m = (ut64)(h.ramdisk_size + page_size - 1) / page_size;
-	ut64 o = (ut64)(h.second_size + page_size - 1) / page_size;
-	ut64 total_size = (1 + n + m + o) * page_size;
-
-	if (total_size > rz_buf_size(buf)) {
-		return false;
-	}
-
-	return true;
+	ut8 tmp[13];
+	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
+	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {

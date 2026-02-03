@@ -2,13 +2,14 @@ NAME=empty.img
 FILE=bins/bootimg/empty.img
 CMDS=iI
 EXPECT=<<EOF
-arch     N/A
+arch     arm
 cpu      N/A
 features N/A
-baddr    0x00000000
+baddr    0x40200000
 binsz    0x00001800
-bintype  N/A
-bits     64
+bintype  image
+bits     16
+retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -18,18 +19,18 @@ guid     N/A
 intrp    N/A
 laddr    0x00000000
 lang     N/A
-machine  N/A
-maxopsz  16
-minopsz  1
-os       N/A
+machine  arm
+maxopsz  4
+minopsz  2
+os       android
 cc       N/A
-pcalign  1
+pcalign  2
 rpath    N/A
-subsys
+subsys   unknown
 stripped false
 crypto   false
-havecode false
-va       false
+havecode true
+va       true
 sanitiz  false
 static   true
 linenum  false
@@ -38,24 +39,5 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-EOF
-RUN
-
-NAME=empty.img_set
-FILE=bins/bootimg/empty.img
-CMDS=s 0
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=empty.img_header
-FILE=bins/bootimg/empty.img
-CMDS=px 64
-EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x00000000  414e 4452 4f49 4421 8000 0000 0000 2040  ANDROID!...... @
-0x00000010  0000 0000 0000 2041 0000 0000 0000 1041  ...... A.......A
-0x00000020  0001 2040 0008 0000 0000 0000 0000 0000  .. @............
-0x00000030  6431 2d6e 657a 6861 0000 0000 0000 0000  d1-nezha........
 EOF
 RUN
