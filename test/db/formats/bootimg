@@ -1,0 +1,62 @@
+NAME=empty.img
+FILE=empty.img
+CMDS=iI
+EXPECT=<<EOF
+arch     N/A
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x00001800
+bintype  N/A
+bits     64
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  N/A
+maxopsz  16
+minopsz  1
+os       N/A
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys
+stripped false
+crypto   false
+havecode false
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+EOF
+RUN
+
+NAME=empty.img
+FILE=empty.img
+CMDS=s 0
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=empty.img
+FILE=empty.img
+CMDS=px 64
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  414e 4452 4f49 4421 8000 0000 0000 2040  ANDROID!...... @
+0x00000010  0000 0000 0000 2041 0000 0000 0000 1041  ...... A.......A
+0x00000020  0001 2040 0008 0000 0000 0000 0000 0000  .. @............
+0x00000030  6431 2d6e 657a 6861 0000 0000 0000 0000  d1-nezha........
+EOF
+RUN
+store

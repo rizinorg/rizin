@@ -6,8 +6,6 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-typedef struct boot_img_hdr BootImage;
-
 #define BOOT_MAGIC           "ANDROID!"
 #define BOOT_MAGIC_SIZE      8
 #define BOOT_NAME_SIZE       16
@@ -17,30 +15,52 @@ typedef struct boot_img_hdr BootImage;
 #define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
 #define ROUND_DOWN(val, aln)    ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
-RZ_PACKED(
-	struct boot_img_hdr {
-		ut8 magic[BOOT_MAGIC_SIZE];
+typedef struct boot_img_hdr {
+	ut8 magic[BOOT_MAGIC_SIZE];
 
-		ut32 kernel_size; /* size in bytes */
-		ut32 kernel_addr; /* physical load addr */
+	ut32 kernel_size; /* size in bytes */
+	ut32 kernel_addr; /* physical load addr */
+	ut32 ramdisk_size; /* size in bytes */
+	ut32 ramdisk_addr; /* physical load addr */
+	ut32 second_size; /* size in bytes */
+	ut32 second_addr; /* physical load addr */
+	ut32 tags_addr; /* physical addr for kernel tags */
+	ut32 page_size; /* flash page size we assume */
+	ut32 unused[2]; /* future expansion: should be 0 */
+	ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
+	ut8 cmdline[BOOT_ARGS_SIZE];
+	ut32 id[8]; /* timestamp / checksum / sha1 / etc */
 
-		ut32 ramdisk_size; /* size in bytes */
-		ut32 ramdisk_addr; /* physical load addr */
+	/* Supplemental command line data; kept here to maintain
+	 * binary compatibility with older versions of mkbootimg */
+	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+} BootImage;
 
-		ut32 second_size; /* size in bytes */
-		ut32 second_addr; /* physical load addr */
-
-		ut32 tags_addr; /* physical addr for kernel tags */
-		ut32 page_size; /* flash page size we assume */
-		ut32 unused[2]; /* future expansion: should be 0 */
-		ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
-		ut8 cmdline[BOOT_ARGS_SIZE];
-		ut32 id[8]; /* timestamp / checksum / sha1 / etc */
-
-		/* Supplemental command line data; kept here to maintain
-		 * binary compatibility with older versions of mkbootimg */
-		ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
-	});
+static bool bootimg_read_header(RzBuffer *buf, BootImage *h) {
+	ut64 off = 0;
+	return rz_buf_read_offset(buf, &off, h->magic, BOOT_MAGIC_SIZE) &&
+		rz_buf_read_le32_offset(buf, &off, &h->kernel_size) &&
+		rz_buf_read_le32_offset(buf, &off, &h->kernel_addr) &&
+		rz_buf_read_le32_offset(buf, &off, &h->ramdisk_size) &&
+		rz_buf_read_le32_offset(buf, &off, &h->ramdisk_addr) &&
+		rz_buf_read_le32_offset(buf, &off, &h->second_size) &&
+		rz_buf_read_le32_offset(buf, &off, &h->second_addr) &&
+		rz_buf_read_le32_offset(buf, &off, &h->tags_addr) &&
+		rz_buf_read_le32_offset(buf, &off, &h->page_size) &&
+		rz_buf_read_le32_offset(buf, &off, &h->unused[0]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->unused[1]) &&
+		rz_buf_read_offset(buf, &off, h->name, BOOT_NAME_SIZE) &&
+		rz_buf_read_offset(buf, &off, h->cmdline, BOOT_ARGS_SIZE) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[0]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[1]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[2]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[3]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[4]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[5]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[6]) &&
+		rz_buf_read_le32_offset(buf, &off, &h->id[7]) &&
+		rz_buf_read_offset(buf, &off, h->extra_cmdline, BOOT_EXTRA_ARGS_SIZE);
+}
 
 typedef struct {
 	Sdb *kv;
@@ -51,12 +71,10 @@ typedef struct {
 static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
-	if (rz_buf_size(obj->buf) < sizeof(BootImage)) {
+	if (!bootimg_read_header(obj->buf, &obj->bi)) {
 		return false;
 	}
-	// TODO make it endian-safe (void)rz_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
 	BootImage *bi = &obj->bi;
-	(void)rz_buf_read_at(obj->buf, 0, (ut8 *)bi, sizeof(BootImage));
 	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
 		sdb_set(db, "name", n);
 		free(n);
@@ -97,6 +115,8 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	}
 	bio->buf = rz_buf_ref(buf);
 	if (!bootimg_header_load(bio, bio->kv)) {
+		sdb_free(bio->kv);
+		rz_buf_free(bio->buf);
 		free(bio);
 		return false;
 	}
@@ -106,8 +126,12 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 }
 
 static void destroy(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return;
+	}
 	BootImageObj *bio = bf->o->bin_obj;
 	rz_buf_free(bio->buf);
+	sdb_free(bio->kv);
 	RZ_FREE(bf->o->bin_obj);
 }
 
@@ -139,7 +163,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
-	ret->bits = 16;
+	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	ret->rclass = rz_str_dup("image");
@@ -147,9 +171,36 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static bool check_buffer(RzBuffer *buf) {
-	ut8 tmp[13];
-	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
-	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
+	BootImage h;
+
+	if (!bootimg_read_header(buf, &h)) {
+		return false;
+	}
+
+	if (memcmp(h.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE) != 0) {
+		return false;
+	}
+
+	if (h.kernel_size == 0 || h.ramdisk_size == 0) {
+		return false;
+	}
+
+	ut32 page_size = h.page_size;
+	if (page_size != 2048 && page_size != 4096 &&
+		page_size != 8192 && page_size != 16384) {
+		return false;
+	}
+
+	ut64 n = (ut64)(h.kernel_size + page_size - 1) / page_size;
+	ut64 m = (ut64)(h.ramdisk_size + page_size - 1) / page_size;
+	ut64 o = (ut64)(h.second_size + page_size - 1) / page_size;
+	ut64 total_size = (1 + n + m + o) * page_size;
+
+	if (total_size > rz_buf_size(buf)) {
+		return false;
+	}
+
+	return true;
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
@@ -263,3 +314,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.version = RZ_VERSION
 };
 #endif
+store
