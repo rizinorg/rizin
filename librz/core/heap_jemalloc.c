@@ -828,14 +828,6 @@ static void jemalloc_print_narenas_530(RzCore *core, bool has_specified_addr, ut
 	ut64 narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	// 	(lldb) image lookup -s narenas_total
-	// 1 symbols match 'narenas_total' in /root/rizin/test/bins/heap/src/simpleheap:
-	//         Address: simpleheap[0x0000000000280bb8] (simpleheap.PT_LOAD[3]..bss + 32888)
-	//         Summary: simpleheap`narenas_total
-
-	// (lldb)  memory read -s 8 -f u -c 1 0x0000000000280bb8
-	// 0x00280bb8: 65
-
 	if (!has_specified_addr) { // no args, list all arenas
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
 			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
