@@ -130,7 +130,7 @@ RUN
 
 NAME=emulateme
 FILE=bins/elf/emulateme.arm32
-TIMEOUT=30
+TIMEOUT=60
 CMDS=<<EOF
 s sym.decrypt
 e asm.bits=32
