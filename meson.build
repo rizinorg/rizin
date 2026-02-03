@@ -427,7 +427,6 @@ foreach it : ccs
   it_userconf.set('INCLUDEDIR', rizin_incdir)
   it_userconf.set('DATADIR_RZ', rizin_datdir_rz)
   is_ppc = it_machine.cpu_family() == 'ppc' or it_machine.cpu_family() == 'ppc64'
-  it_userconf.set10('HAVE_JEMALLOC', it_machine.system() != 'windows' and (it_machine.system() != 'darwin' or not is_ppc))
   it_userconf.set('DATADIR', rizin_datdir)
   it_userconf.set('WWWROOT', rizin_wwwroot)
   it_userconf.set('SDB', rizin_sdb)

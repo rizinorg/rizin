@@ -4,13 +4,18 @@
 
 #include <rz_core.h>
 #include <rz_heap_jemalloc.h>
+#include <stdio.h>
 
-static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_name) {
+static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool *is_pie) {
 	ut64 vaddr = UT64_MAX;
 	RzBin *bin = core->bin;
 	RzBinFile *current_bf = rz_bin_cur(bin);
 	void **iter;
 	RzBinSymbol *s;
+
+	if (is_pie) {
+		*is_pie = false;
+	}
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
@@ -31,6 +36,11 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 			vaddr = s->vaddr;
 			break;
 		}
+	}
+
+	// Check if binary is PIE/shared object
+	if (is_pie && o && o->info) {
+		*is_pie = o->info->has_pi;
 	}
 
 	rz_bin_file_delete(bin, libc_bf);
@@ -72,8 +82,10 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 	if (jemalloc_path) {
 		char *path = rz_str_newf("%s", jemalloc_path);
 		if (rz_file_exists(path)) {
-			ut64 vaddr = je_get_va_symbol(core, path, symname);
+			bool is_pie = false;
+			ut64 vaddr = je_get_va_symbol(core, path, symname, &is_pie);
 			if (jemalloc_addr != UT64_MAX && vaddr != UT64_MAX) {
+				// For shared libraries, always add base address
 				*symbol = jemalloc_addr + vaddr;
 				free(path);
 				return true;
@@ -86,9 +98,12 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 	if (binary_path) {
 		char *path = rz_str_newf("%s", binary_path);
 		if (rz_file_exists(path)) {
-			ut64 vaddr = je_get_va_symbol(core, path, symname);
+			bool is_pie = false;
+			ut64 vaddr = je_get_va_symbol(core, path, symname, &is_pie);
 			if (binary_addr != UT64_MAX && vaddr != UT64_MAX) {
-				*symbol = binary_addr + vaddr;
+				// For PIE binaries, add base address (Linux PIE binaries)
+				// For non-PIE binaries, vaddr is already absolute (FreeBSD non-PIE)
+				*symbol = is_pie ? (binary_addr + vaddr) : vaddr;
 				free(path);
 				return true;
 			}
@@ -150,7 +165,7 @@ static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, ut8 ptr_size) {
 // jemalloc 4.5.0
 // ============================================================================
 
-static void jemalloc_get_chunks_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
+static void jemalloc_get_chunks_450(RzCore *core, bool has_specified_addr, ut64 arena_addr, const RzJemallocConfig450 *config) {
 	ut64 cnksz;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
@@ -163,16 +178,12 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, const RzJem
 		return;
 	}
 
-	if (input[0] == '\0') {
-		RZ_LOG_ERROR("need an arena_t_450 to associate chunks\n");
-	} else if (input[0] != '*') {
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		ut64 arena_addr = rz_num_math(core->num, addr_str);
-
+	if (has_specified_addr) {
 		arena_t_450 ar;
 		extent_node_t_450 node, head;
 
 		if (arena_addr == 0) {
+			RZ_LOG_ERROR("need an arena_t_450 to associate chunks\n");
 			return;
 		}
 
@@ -219,7 +230,7 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, const RzJem
 				next_addr = node.ql_link_next;
 			}
 		}
-	} else if (input[0] == '*') {
+	} else {
 		int i = 0;
 		ut64 sym;
 		ut64 arenas_ptr = UT64_MAX;
@@ -291,7 +302,7 @@ static void jemalloc_get_chunks_450(RzCore *core, const char *input, const RzJem
 	}
 }
 
-static void jemalloc_print_narenas_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
+static void jemalloc_print_narenas_450(RzCore *core, bool has_specified_addr, ut64 addr, const RzJemallocConfig450 *config) {
 	ut64 symaddr;
 	ut64 arenas;
 	ut64 arena_addr = UT64_MAX;
@@ -299,7 +310,7 @@ static void jemalloc_print_narenas_450(RzCore *core, const char *input, const Rz
 	ut64 narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	if (input[0] == '\0') {
+	if (!has_specified_addr) {
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
 			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
@@ -337,11 +348,8 @@ static void jemalloc_print_narenas_450(RzCore *core, const char *input, const Rz
 		}
 		PRINT_GA("}\n");
 	} else {
-		// Handle address argument (with or without leading space)
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		arena_addr = rz_num_math(core->num, addr_str);
-
 		arena_t_450 ar;
+		arena_addr = addr;
 		if (!read_and_parse_arena_t_450(core->io, arena_addr, &ar, config)) {
 			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena_addr);
 			return;
@@ -407,14 +415,15 @@ static void jemalloc_print_arena_bins_450(RzCore *core, ut64 arena_addr, ut64 bi
 	}
 }
 
-static void jemalloc_get_bins_450(RzCore *core, const char *input, const RzJemallocConfig450 *config) {
-	ut64 bin_info;
-	ut64 arenas;
+static void jemalloc_get_bins_450(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info,
+	ut64 bin_info_addr, const RzJemallocConfig450 *config) {
+	ut64 bin_info = 0;
+	ut64 arenas = 0;
 	ut64 arena_addr = UT64_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	int i = 0;
 
-	if (input[0] == '\0') {
+	if (!has_specified_addr) {
 		// No argument - use symbol resolution (debug mode)
 		if (!rz_resolve_jemalloc(core, "je_arena_bin_info", &bin_info)) {
 			RZ_LOG_ERROR("Cannot resolve je_arena_bin_info\n");
@@ -441,29 +450,15 @@ static void jemalloc_get_bins_450(RzCore *core, const char *input, const RzJemal
 		PRINT_GA("}\n");
 	} else {
 		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-
-		char *args = strdup(addr_str);
-		if (!args) {
-			return;
-		}
-		char *bin_info_str = strchr(args, ' ');
-
-		if (!bin_info_str) {
+		arena_addr = addr;
+		if (!has_bin_info) {
 			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
-			free(args);
 			return;
 		}
-
-		*bin_info_str++ = '\0';
-		arena_addr = rz_num_math(core->num, args);
-		bin_info = rz_num_math(core->num, bin_info_str);
 
 		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena_addr, config->sc_nbins);
-		jemalloc_print_arena_bins_450(core, arena_addr, bin_info, pal, config);
+		jemalloc_print_arena_bins_450(core, arena_addr, bin_info_addr, pal, config);
 		PRINT_GA("}\n");
-
-		free(args);
 	}
 }
 
@@ -713,11 +708,11 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 	return 0;
 }
 
-static void jemalloc_find_extent_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
+static void jemalloc_find_extent_530(RzCore *core, bool has_specified_addr, ut64 addr, const RzJemallocConfig530 *config) {
 	ut64 je_arena_emap_global_addr;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	if (input[0] == '\0') {
+	if (!has_specified_addr) {
 		// No argument: enumerate all extents
 		if (rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr)) {
 			jemalloc_enumerate_extents_530(core, je_arena_emap_global_addr, config);
@@ -726,17 +721,14 @@ static void jemalloc_find_extent_530(RzCore *core, const char *input, const RzJe
 		}
 	} else {
 		// Address argument: lookup single address in rtree
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		ut64 lookup_addr = rz_num_math(core->num, addr_str);
-
 		if (!rz_resolve_jemalloc(core, "je_arena_emap_global", &je_arena_emap_global_addr)) {
 			RZ_LOG_ERROR("Cannot resolve je_arena_emap_global\n");
 			return;
 		}
 
-		ut64 edata_addr = jemalloc_rtree_lookup_530(core, je_arena_emap_global_addr, lookup_addr, config);
+		ut64 edata_addr = jemalloc_rtree_lookup_530(core, je_arena_emap_global_addr, addr, config);
 		if (edata_addr == 0) {
-			PRINTF_RA("No extent found for address 0x%" PFMT64x "\n", lookup_addr);
+			PRINTF_RA("No extent found for address 0x%" PFMT64x "\n", addr);
 			return;
 		}
 
@@ -744,14 +736,11 @@ static void jemalloc_find_extent_530(RzCore *core, const char *input, const RzJe
 	}
 }
 
-static void jemalloc_extent_info_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
-	if (input[0] == '\0') {
+static void jemalloc_extent_info_530(RzCore *core, bool has_specified_addr, ut64 edata_addr, const RzJemallocConfig530 *config) {
+	if (!has_specified_addr) {
 		RZ_LOG_ERROR("Usage: dmxei <edata_addr>\n");
 		return;
 	}
-
-	const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-	ut64 edata_addr = rz_num_math(core->num, addr_str);
 
 	jemalloc_print_extent_info_530(core, edata_addr, config);
 }
@@ -788,14 +777,15 @@ static void jemalloc_print_arena_bins_530(RzCore *core, ut64 arena, ut64 bin_inf
 	}
 }
 
-static void jemalloc_get_bins_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
+static void jemalloc_get_bins_530(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info,
+	ut64 bin_info_addr, const RzJemallocConfig530 *config) {
 	int i = 0;
-	ut64 bin_info;
-	ut64 arenas_sym;
-	ut64 arena = UT64_MAX;
+	ut64 bin_info = 0;
+	ut64 arenas_sym = 0;
+	ut64 arena_addr = UT64_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	if (input[0] == '\0') {
+	if (!has_specified_addr) {
 		// No argument - use symbol resolution (debug mode)
 		if (!rz_resolve_jemalloc(core, "je_bin_infos", &bin_info)) {
 			RZ_LOG_ERROR("Cannot resolve je_bin_infos\n");
@@ -804,53 +794,49 @@ static void jemalloc_get_bins_530(RzCore *core, const char *input, const RzJemal
 		if (rz_resolve_jemalloc(core, "je_arenas", &arenas_sym)) {
 			PRINTF_GA("arenas @ 0x%" PFMT64x " {\n", arenas_sym);
 			for (;;) {
-				if (!read_ptr_at(core->io, arenas_sym + i * config->ptr_size, &arena, config->ptr_size)) {
+				if (!read_ptr_at(core->io, arenas_sym + i * config->ptr_size, &arena_addr, config->ptr_size)) {
 					break;
 				}
-				if (!arena) {
+				if (!arena_addr) {
 					break;
 				}
-				PRINTF_YA("  arenas[%d]: @ 0x%" PFMT64x " {\n", i++, arena);
-				jemalloc_print_arena_bins_530(core, arena, bin_info, config);
+				PRINTF_YA("  arenas[%d]: @ 0x%" PFMT64x " {\n", i++, arena_addr);
+				jemalloc_print_arena_bins_530(core, arena_addr, bin_info, config);
 				PRINT_YA("  }\n");
 			}
 		}
 		PRINT_GA("}\n");
 	} else {
 		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		char *args = strdup(addr_str);
-		if (!args) {
-			return;
-		}
-		char *bin_info_str = strchr(args, ' ');
-
-		if (!bin_info_str) {
+		arena_addr = addr;
+		if (!has_bin_info) {
 			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
-			free(args);
 			return;
 		}
 
-		*bin_info_str++ = '\0';
-		arena = rz_num_math(core->num, args);
-		bin_info = rz_num_math(core->num, bin_info_str);
-
-		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena, config->sc_nbins);
-		jemalloc_print_arena_bins_530(core, arena, bin_info, config);
+		PRINTF_GA("arena_t @ 0x%" PFMT64x " bins[%d] {\n", arena_addr, config->sc_nbins);
+		jemalloc_print_arena_bins_530(core, arena_addr, bin_info_addr, config);
 		PRINT_GA("}\n");
-		free(args);
 	}
 }
 
-static void jemalloc_print_narenas_530(RzCore *core, const char *input, const RzJemallocConfig530 *config) {
+static void jemalloc_print_narenas_530(RzCore *core, bool has_specified_addr, ut64 addr, const RzJemallocConfig530 *config) {
 	ut64 symaddr;
 	ut64 arenas;
-	ut64 arena = UT64_MAX;
+	ut64 arena_addr = UT64_MAX;
 	int i = 0;
 	ut64 narenas = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
-	if (input[0] == '\0') { // no args, list all arenas
+	// 	(lldb) image lookup -s narenas_total
+	// 1 symbols match 'narenas_total' in /root/rizin/test/bins/heap/src/simpleheap:
+	//         Address: simpleheap[0x0000000000280bb8] (simpleheap.PT_LOAD[3]..bss + 32888)
+	//         Summary: simpleheap`narenas_total
+
+	// (lldb)  memory read -s 8 -f u -c 1 0x0000000000280bb8
+	// 0x00280bb8: 65
+
+	if (!has_specified_addr) { // no args, list all arenas
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
 			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
@@ -871,25 +857,23 @@ static void jemalloc_print_narenas_530(RzCore *core, const char *input, const Rz
 			PRINTF_GA("arenas[%" PFMT64d "] @ 0x%" PFMT64x " {\n", narenas, arenas);
 			for (i = 0; i < (int)narenas; i++) {
 				ut64 at = arenas + (i * config->ptr_size);
-				if (!read_ptr_at(core->io, at, &arena, config->ptr_size)) {
+				if (!read_ptr_at(core->io, at, &arena_addr, config->ptr_size)) {
 					continue;
 				}
-				if (!arena) {
+				if (!arena_addr) {
 					PRINTF_YA("  arenas[%d]: (empty)\n", i);
 					continue;
 				}
 				PRINTF_YA("  arenas[%d]: ", i);
-				PRINTF_BA("@ 0x%" PFMT64x "\n", arena);
+				PRINTF_BA("@ 0x%" PFMT64x "\n", arena_addr);
 			}
 		}
 		PRINT_GA("}\n");
 	} else {
-		const char *addr_str = (input[0] == ' ') ? input + 1 : input;
-		arena = rz_num_math(core->num, addr_str);
-
 		arena_t_530 ar;
-		if (!read_and_parse_arena_t_530(core->io, arena, &ar, config)) {
-			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena);
+		arena_addr = addr;
+		if (!read_and_parse_arena_t_530(core->io, arena_addr, &ar, config)) {
+			RZ_LOG_ERROR("Failed to read arena at 0x%" PFMT64x "\n", arena_addr);
 			return;
 		}
 
@@ -990,68 +974,174 @@ static const char *detect_page_size(RzCore *core, const char *arch, const char *
 	return "4k";
 }
 
-// ============================================================================
-// dispatcher
-// ============================================================================
+typedef enum {
+	JEMALLOC_VERSION_UNKNOWN,
+	JEMALLOC_VERSION_450,
+	JEMALLOC_VERSION_530,
+} JemallocVersion;
 
-void cmd_dbg_map_jemalloc(RzCore *core, char dmx_variant, const char *arg) {
+static JemallocVersion jemalloc_get_version_kind(RzCore *core) {
 	const char *version = rz_config_get(core->config, "dbg.jemalloc.version");
 	if (!version || strcmp(version, "auto") == 0 || strcmp(version, "NULL") == 0 || version[0] == '\0') {
 		rz_jemalloc_detect_version(core);
 		version = rz_config_get(core->config, "dbg.jemalloc.version");
 	}
 
-	const char *arch = rz_config_get(core->config, "asm.arch");
-	const char *os = rz_config_get(core->config, "asm.os");
-	int bits = rz_config_get_i(core->config, "asm.bits");
-	const char *page_size = detect_page_size(core, arch, os, bits);
-
 	if (version && strcmp(version, "4.5.0") == 0) {
+		return JEMALLOC_VERSION_450;
+	}
+	if (version && strcmp(version, "5.3.0") == 0) {
+		return JEMALLOC_VERSION_530;
+	}
+	return JEMALLOC_VERSION_UNKNOWN;
+}
+
+static bool jemalloc_get_common_params(RzCore *core, const char **arch, const char **os, int *bits,
+	const char **page_size, JemallocVersion *version) {
+	*arch = rz_config_get(core->config, "asm.arch");
+	*os = rz_config_get(core->config, "asm.os");
+	*bits = rz_config_get_i(core->config, "asm.bits");
+	*page_size = detect_page_size(core, *arch, *os, *bits);
+	*version = jemalloc_get_version_kind(core);
+
+	if (*version == JEMALLOC_VERSION_UNKNOWN) {
+		RZ_LOG_ERROR("Unknown jemalloc version. Please set dbg.jemalloc.version to '4.5.0' or '5.3.0'\n");
+		return false;
+	}
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr) {
+	const char *arch = NULL;
+	const char *os = NULL;
+	const char *page_size = NULL;
+	int bits = 0;
+	JemallocVersion version = JEMALLOC_VERSION_UNKNOWN;
+
+	if (!jemalloc_get_common_params(core, &arch, &os, &bits, &page_size, &version)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (version == JEMALLOC_VERSION_450) {
 		const RzJemallocConfig450 *config = rz_jemalloc_get_config_450(arch, os, bits, page_size);
 		if (!config) {
 			RZ_LOG_ERROR("Failed to get jemalloc 4.5.0 configuration\n");
-			return;
+			return RZ_CMD_STATUS_ERROR;
 		}
-
-		switch (dmx_variant) {
-		case 'a': // dmxa
-			jemalloc_print_narenas_450(core, arg, config);
-			break;
-		case 'b': // dmxb
-			jemalloc_get_bins_450(core, arg, config);
-			break;
-		case 'c': // dmxc
-			jemalloc_get_chunks_450(core, arg, config);
-			break;
-		default:
-			RZ_LOG_ERROR("Command not supported for jemalloc 4.5.0\n");
-			break;
-		}
-	} else if (version && strcmp(version, "5.3.0") == 0) {
-		const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
-		if (!config) {
-			RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
-			return;
-		}
-
-		switch (dmx_variant) {
-		case 'a': // dmxa - print arena
-			jemalloc_print_narenas_530(core, arg, config);
-			break;
-		case 'b': // dmxb - bin info
-			jemalloc_get_bins_530(core, arg, config);
-			break;
-		case 'e': // dmxe - find extent for malloc'd address
-			jemalloc_find_extent_530(core, arg, config);
-			break;
-		case 'i': // dmxei - extent info
-			jemalloc_extent_info_530(core, arg, config);
-			break;
-		default:
-			RZ_LOG_ERROR("Command not supported for jemalloc 5.3.0\n");
-			break;
-		}
-	} else {
-		RZ_LOG_ERROR("Unknown jemalloc version. Please set dbg.jemalloc.version to '4.5.0' or '5.3.0'\n");
+		jemalloc_print_narenas_450(core, has_specified_addr, addr, config);
+		return RZ_CMD_STATUS_OK;
 	}
+
+	const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
+	if (!config) {
+		RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	jemalloc_print_narenas_530(core, has_specified_addr, addr, config);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_b(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info, ut64 bin_info_addr) {
+	const char *arch = NULL;
+	const char *os = NULL;
+	const char *page_size = NULL;
+	int bits = 0;
+	JemallocVersion version = JEMALLOC_VERSION_UNKNOWN;
+
+	if (!jemalloc_get_common_params(core, &arch, &os, &bits, &page_size, &version)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (version == JEMALLOC_VERSION_450) {
+		const RzJemallocConfig450 *config = rz_jemalloc_get_config_450(arch, os, bits, page_size);
+		if (!config) {
+			RZ_LOG_ERROR("Failed to get jemalloc 4.5.0 configuration\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		jemalloc_get_bins_450(core, has_specified_addr, addr, has_bin_info, bin_info_addr, config);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
+	if (!config) {
+		RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	jemalloc_get_bins_530(core, has_specified_addr, addr, has_bin_info, bin_info_addr, config);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr) {
+	const char *arch = NULL;
+	const char *os = NULL;
+	const char *page_size = NULL;
+	int bits = 0;
+	JemallocVersion version = JEMALLOC_VERSION_UNKNOWN;
+
+	if (!jemalloc_get_common_params(core, &arch, &os, &bits, &page_size, &version)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (version != JEMALLOC_VERSION_450) {
+		RZ_LOG_ERROR("Command not supported for jemalloc 5.3.0\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzJemallocConfig450 *config = rz_jemalloc_get_config_450(arch, os, bits, page_size);
+	if (!config) {
+		RZ_LOG_ERROR("Failed to get jemalloc 4.5.0 configuration\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	jemalloc_get_chunks_450(core, has_specified_addr, addr, config);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr) {
+	const char *arch = NULL;
+	const char *os = NULL;
+	const char *page_size = NULL;
+	int bits = 0;
+	JemallocVersion version = JEMALLOC_VERSION_UNKNOWN;
+
+	if (!jemalloc_get_common_params(core, &arch, &os, &bits, &page_size, &version)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (version != JEMALLOC_VERSION_530) {
+		RZ_LOG_ERROR("Command not supported for jemalloc 4.5.0\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
+	if (!config) {
+		RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	jemalloc_find_extent_530(core, has_specified_addr, addr, config);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr) {
+	const char *arch = NULL;
+	const char *os = NULL;
+	const char *page_size = NULL;
+	int bits = 0;
+	JemallocVersion version = JEMALLOC_VERSION_UNKNOWN;
+
+	if (!jemalloc_get_common_params(core, &arch, &os, &bits, &page_size, &version)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (version != JEMALLOC_VERSION_530) {
+		RZ_LOG_ERROR("Command not supported for jemalloc 4.5.0\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const RzJemallocConfig530 *config = rz_jemalloc_get_config_530(arch, os, bits, page_size);
+	if (!config) {
+		RZ_LOG_ERROR("Failed to get jemalloc 5.3.0 configuration\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	jemalloc_extent_info_530(core, has_specified_addr, addr, config);
+	return RZ_CMD_STATUS_OK;
 }

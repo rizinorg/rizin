@@ -517,7 +517,7 @@ static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
-static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[2];
+static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
@@ -10832,7 +10832,7 @@ static const RzCmdDescHelp dmx_help = {
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
 	{
 		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -10846,8 +10846,14 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
 
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
 	{
-		.name = "arena_addr|bin_info_addr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "bin_info_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -10861,9 +10867,10 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
 
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
 	{
-		.name = "*|arena_type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -10876,7 +10883,7 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
 static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
 	{
 		.name = "malloc_addr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -10891,7 +10898,7 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
 	{
 		.name = "extent_addr",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
