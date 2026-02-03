@@ -88,8 +88,6 @@ Extent @ 0x7faa2cc16500
 EOF
 RUN
 
-
-
 NAME=dmxa/dmxb/dmxei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_riscv64.bin
 ARGS=-n
