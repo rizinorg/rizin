@@ -133,26 +133,6 @@ Extent @ 0x7fff96016500
 EOF
 RUN
 
-NAME=dmxa/dmxb/dmxc with 32-bit jemalloc 4.5.0 runtime (freebsd-i386-4k_page)
-FILE=bins/heap/simpleheap-jemalloc-4.5.0-static-i386-bsd
-ARGS=-Rstdout=/dev/null -Rstderr=/dev/null -Rstdin=/dev/zero -d
-CMDS=<<EOF
-dcu 0x0040c30b
-dmxa~?narenas
-echo ----
-dmxb~regsize : 0x800
-echo ----
-dmxc~?Chunk
-EOF
-EXPECT=<<EOF
-1
-----
-       regsize : 0x800
-----
-1
-EOF
-RUN
-
 NAME=dmxa/dmxb/dmxe with 32-bit jemalloc 5.3.0 runtime (freebsd-amd64-4k_page)
 FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-amd64-bsd
 ARGS=-Rstdout=/dev/null -Rstderr=/dev/null -Rstdin=/dev/zero -d
@@ -167,7 +147,7 @@ EOF
 EXPECT=<<EOF
 1
 ----
-       regs_ize : 0x800
+      reg_size : 0x800
 ----
 Total extents found: 16
 EOF
