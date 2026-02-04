@@ -18,10 +18,13 @@
 
 // #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0])) /*??*/
 // #define QUICK_MIX(h) ((key) ^= (key) >> 16, (h) *= 0x9e3779b1u, (h) ^= (h) >> 15)
+// #define HASH_MIX(h) (hashfn_quick_mix(h))
 #define HASH_MIX(h) (h)
 
-#define H1(HASH)                     (HASH >> 7)
-#define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
+// #define H1(HASH)                     (HASH >> 7)
+// #define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
+#define H1(HASH)                     (HASH)
+#define H2_HASH_FRAGMENT(HASH)       (HASH >> 19)
 #define H2_STATUS_DELETED            0b11111110
 #define H2_STATUS_EMPTY              0b11111111
 #define H2_IS_EMPTY_OR_DELETED(CTRL) ((CTRL) >> 7)
@@ -35,7 +38,6 @@
 // 	- [x] handle realloc / rehash -> capacity should be multiple of x^2-1; new_cap = (old_cap + 1 * 2) - 1 (update: capacity is actually x^2, and bitmask is capacity-1)
 // 	- [x] should keep up to 87.5% load factor
 // 	- [x] "rehash in place"
-// 	- ensure SIMD alignment
 //	- [x] clone first group at `ctrl` end
 //	- [x] handle ctrl mirroring for sizes < GROUP_WIDTH
 //	- the hash function should distribute entroy in both high and low bits to avoid H1 and H2 collisions
@@ -47,7 +49,7 @@
 #define RZ_HOT_PATH
 #define RZ_COLD_PATH
 
-// todo: move to other header if going to be used
+// todo: move to another header if going to be used
 #if defined(_MSC_VER)
     #include <intrin.h>
     #define RZ_PREFETCH(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
@@ -219,13 +221,25 @@
 
 #define MIN_CAPACITY (GROUP_WIDTH)
 
-// static inline ut32 hashfn_quick_mix(ut32 h) {
-//     ut32 x = (h ^ (h >> 16)) * 0x9e3779b1u;
-//     return x ^ (x >> 15);
-// }
+static inline ut32 hashfn_quick_mix(ut64 h) {
+    // ut32 x = (h ^ ((h * 0xc2b2ae35) >> 16)) * 0x9e3779b1u;
+    // return x ^ (x >> 15);
+	return _mm_crc32_u32(0, h);
+}
 
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) { // todo: maybe use 64-bit hash
-	return ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
+	ut32 result = ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k); // todo: keep entropy for hashfn(k)
+
+	if (ht->hash_shift) {
+		result ^= result >> 16;
+        result *= 0x85ebca6b;
+        result ^= result >> ht->hash_shift;
+        if (ht->hash_shift == 13) {
+            result *= 0xc2b2ae35;
+        }
+	}
+
+	return result;
 }
 
 static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -338,6 +352,11 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// If not provided, assume we are dealing with a regular HtName_(Ht), with HT_(Kv) as elements
 	if (ht->opt.elem_size == 0) {
 		ht->opt.elem_size = sizeof(HT_(Kv));
+	}
+
+	if (ht->capacity < 8192) {
+		// For smaller hashtables we do additional bit mixing
+		ht->hash_shift = ht->capacity >= 512 ? 16 : 13;
 	}
 
 	return ht;
@@ -583,7 +602,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 			return INVALID_INDEX;
 		}
 
-#elif defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
+#elif defined(LOOKUP_METHOD_DEFAULT_64) || defined(LOOKUP_METHOD_DEFAULT_32)
 // #if defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
 		group_t group;
 

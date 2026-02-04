@@ -21,12 +21,27 @@
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
 
+#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
 #define HT_HASH_FUNC_MUL(key) ((ut32)(key) * 0x9e3779b9)
 #define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, (ut32)key)) /* todo: add portable alternative */
 
-#define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(key))
-#define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_MUL(key))
-#define KEY_TO_HASH_SX(key) ((ut32)(uintptr_t)(key))
+// todo: check for 32-bit platforms
+// #define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(key))
+// #define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_MUL(key))
+// #define KEY_TO_HASH_SX(key) ((ut32)(uintptr_t)(key))
+// #define KEY_TO_HASH_PX(key) ((ut32)(key) ^ (ut32)((uintptr_t)(key) >> 32))
+// #define KEY_TO_HASH_UX(key) ((ut32)(key) ^ (ut32)((ut64)(key) >> 32))
+// #define KEY_TO_HASH_SX(key) ((ut32)(key) ^ (ut32)((uintptr_t)(key) >> 32))
+// #define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
+// #define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
+// #define KEY_TO_HASH_SX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
+// #define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
+// #define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
+// #define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
+#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
+#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
+#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32(key))
+
 
 #if HT_TYPE == 1
 // Hash table HtPP that has void* as key and void* as value
@@ -164,6 +179,7 @@ typedef struct Ht_(options_t) {
 typedef struct Ht_(t) {
 	ut32 capacity; ///< Capacity of the main array.
 	ut32 size; ///< Number of stored elements.
+	ut8 hash_shift;
 	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays
 	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer
 	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer
