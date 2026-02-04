@@ -19,7 +19,7 @@
 // #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0])) /*??*/
 // #define QUICK_MIX(h) ((key) ^= (key) >> 16, (h) *= 0x9e3779b1u, (h) ^= (h) >> 15)
 // #define HASH_MIX(h) (hashfn_quick_mix(h))
-#define HASH_MIX(h) (h)
+// #define HASH_MIX(h) (h)
 
 // #define H1(HASH)                     (HASH >> 7)
 // #define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
@@ -91,7 +91,8 @@
 #endif
 
 #define HT_SLOT_AT(ht, index) \
-	((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
+	(&(ht)->slots[(index)])
+	// ((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
 	// (&(ht)->slots[(index)])
 
 // Helper macro for implementing an unrolled foreach loop
@@ -471,11 +472,7 @@ static bool grow_if_needed(HtName_(Ht) *ht) {
  * todo..
  * \return if the \p key is found this function will return it's slot ID, otherwise will return the ID of the next available slot for insertion purposes
  */
-static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool *existing) {
-	ut32 hash = hashfn(ht, key);
-	hash = HASH_MIX(hash);
-
-	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
+static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, ut32 hash, ut8 hash_fragment, bool *existing) {
 	ut32 probe_step = GROUP_WIDTH;
 	INDEX_TYPE index = H1(hash) & (ht->capacity - 1); // todo: rename to group_index_start, etc
 	INDEX_TYPE first_deleted = INVALID_INDEX;
@@ -581,8 +578,6 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
  */
 static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len) {
 	ut32 hash = hashfn(ht, key);
-	hash = HASH_MIX(hash);
-
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
 	ut32 probe_step = GROUP_WIDTH;
 	INDEX_TYPE index = H1(hash) & (ht->capacity - 1);
@@ -664,8 +659,10 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 		return NULL;
 	}
 
+	ut32 hash = hashfn(ht, key);
+	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
 	bool existing = false;
-	INDEX_TYPE idx = ctrl_table_lookup_or_reserve(ht, key, key_len, &existing);
+	INDEX_TYPE idx = ctrl_table_lookup_or_reserve(ht, key, key_len, hash, hash_fragment, &existing);
 
 	if (RZ_COLD_PATH(idx == INVALID_INDEX)) {
 		*code = HT_RC_ERROR;
@@ -688,7 +685,7 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 	*code = HT_RC_INSERTED;
 
 	ht->size++;
-	ctrl_table_set(ht, idx, H2_HASH_FRAGMENT(hashfn(ht, key))); // todo: avoid double hashing
+	ctrl_table_set(ht, idx, hash_fragment);
 	return HT_SLOT_AT(ht, idx);
 }
 
