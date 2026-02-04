@@ -24,9 +24,9 @@
 #define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
 #define H2_STATUS_DELETED            0b11111110
 #define H2_STATUS_EMPTY              0b11111111
-#define H2_IS_EMPTY_OR_DELETED(CTRL) (CTRL >> 7)
-#define H2_IS_EMPTY(CTRL)            (CTRL == H2_STATUS_EMPTY)
-#define H2_IS_DELETED(CTRL)          (CTRL == H2_STATUS_DELETED)
+#define H2_IS_EMPTY_OR_DELETED(CTRL) ((CTRL) >> 7)
+#define H2_IS_EMPTY(CTRL)            ((CTRL) == H2_STATUS_EMPTY)
+#define H2_IS_DELETED(CTRL)          ((CTRL) == H2_STATUS_DELETED)
 #define INDEX_TYPE                   ut32
 #define INVALID_INDEX                UT32_MAX
 
@@ -39,18 +39,131 @@
 //	- [x] clone first group at `ctrl` end
 //	- [x] handle ctrl mirroring for sizes < GROUP_WIDTH
 //	- the hash function should distribute entroy in both high and low bits to avoid H1 and H2 collisions
+//	- support custom element size
+//	- support deletion slot trick (use empty slot where possible)
+//	- allocate everything in one block
 
 // todo: define likely/unlikely; OR remove it there is no impact
 #define RZ_HOT_PATH
 #define RZ_COLD_PATH
 
-#define GROUP_WIDTH 8
+// todo: move to other header if going to be used
+#if defined(_MSC_VER)
+    #include <intrin.h>
+    #define RZ_PREFETCH(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#elif defined(__GNUC__) || defined(__clang__)
+    #define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#else
+    #define RZ_PREFETCH(addr) ((void)0)
+#endif
 
-/*
- * TODO:
- *	- add support for native 4-group parallel lookup on 32-bit environments
- *	- add support for ARM SIMD (NEON)
- */
+#if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
+    #define HAVE_SSE2
+#endif
+
+// #define GROUP_WIDTH 8
+
+// TODO: add support for AMD NEON
+// TODO: sse
+// #if HAVE_SSE2
+#if 0
+	// SSE2 is present x64/amd64 archs
+	#include <emmintrin.h>
+	#define LOOKUP_METHOD_SSE2
+	#define GROUP_WIDTH  16
+#elif RZ_SYS_BITS == RZ_SYS_BITS_64
+	#define LOOKUP_METHOD_DEFAULT_64
+	typedef ut64 group_t;
+	#define GROUP_WIDTH  sizeof(group_t)
+#else
+	#define LOOKUP_METHOD_DEFAULT_32
+	typedef ut32 group_t;
+	#define GROUP_WIDTH  sizeof(group_t)
+	// TODO: portable implementation for big-endian
+#endif
+
+// Helper function for the different lookup implementations
+#if defined(LOOKUP_METHOD_DEFAULT_64) || defined(LOOKUP_METHOD_DEFAULT_32)
+	// TODO: only little endian
+	// Construct a ut64/ut32 by repeating a byte value (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
+	static inline group_t bitops_repeat(ut8 byte) {
+	#if defined(LOOKUP_METHOD_DEFAULT_64)
+		return byte * 0x0101010101010101ull;
+	#elif defined(LOOKUP_METHOD_DEFAULT_32)
+		return byte * 0x01010101ul;
+	#else
+		#error "Unsupported group width"
+	#endif
+	}
+
+	// Match a hash fragment byte to 4/8 control bytes
+	static inline group_t bitops_match_hash_fragment(group_t group, ut8 ctrl) {
+		group_t diff = group ^ bitops_repeat(ctrl);
+		return (diff - bitops_repeat(0x01)) & ~diff & bitops_repeat(0x80);
+	}
+
+	static inline group_t bitops_match_empty(group_t group) {
+		return group & (group << 1) & bitops_repeat(0x80);
+	}
+
+	static inline group_t bitops_match_deleted(group_t group) {
+		return group & ~(group << 1) & bitops_repeat(0x80);
+	}
+
+	static inline group_t bitops_match_empty_or_deleted(group_t group) {
+		return group & bitops_repeat(0x80);
+	}
+
+	static inline group_t bitops_match_full(group_t group) {
+		return ~group & bitops_repeat(0x80);
+	}
+
+	static inline ut8 bitops_lowest_bit(group_t mask) {
+		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
+	}
+
+	// #define HT_FOREACH_BEGIN(ht, kv) \
+	// 	for (INDEX_TYPE gi = 0; gi < ht->capacity; gi += GROUP_WIDTH) { \
+	// 		group_t ctrl_match = bitops_match_full(*((group_t *)&(ht)->ctrl[gi])); \
+	// 		while (ctrl_match) { \
+	// 			INDEX_TYPE ofs = bitops_lowest_bit(ctrl_match); \
+	// 			HT_(Kv) *kv = &(ht)->slots[gi + ofs];
+
+	// #define HT_FOREACH_END(ht) \
+	// 			ctrl_match &= ~(0x80ULL << (ofs * 8)); \
+	// 		} \
+	// 	}
+
+	#define HT_FOREACH_UNROLL(ht, kv, idx, body) \
+		if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[idx])) { \
+			HT_(Kv) *kv = &(ht)->slots[idx]; \
+			body \
+		}
+
+	#define HT_FOREACH(ht, kv, body) \
+		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+			RZ_PREFETCH(&(ht)->slots[i + GROUP_WIDTH]); \
+			HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
+	}
+
+#else
+	// Default implementation
+	#define HT_FOREACH(ht, kv, body) \
+		for (INDEX_TYPE i = 0, i < (ht)->capacity; i++) { \
+			if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[i])) { \
+				HT_(Kv) *kv = &(ht)->slots[i]; \
+				body \
+			} \
+		}
+#endif
 
 #define MIN_CAPACITY (GROUP_WIDTH)
 
@@ -85,19 +198,6 @@ static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
 	}
 }
 
-// static inline ut32 next_idx(ut32 idx) { // ??
-// 	if (idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) - 1) {
-// 		return idx + 1;
-// 	}
-// 	return UT32_MAX;
-// }
-
-// static inline ut32 compute_size(ut32 idx, ut32 sz) {
-// 	// when possible, use the precomputed prime numbers which help with
-// 	// collisions, otherwise, at least make the number odd with |1
-// 	return idx != UT32_MAX && idx < S_ARRAY_SIZE(ht_primes_sizes) ? ht_primes_sizes[idx] : (sz | 1);
-// }
-
 static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
 	if (key_len != kv->key_len) {
 		return false;
@@ -129,15 +229,13 @@ static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 
 // 			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
 
 // todo: avoid assigning past end
-#define HT_FOREACH(ht, i, kv) \
-	for ((i) = 0, (kv) = (void*)&(ht)->slots[(i)]; (i) < (ht)->capacity; (i)++) if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[(i)]))
 
 static void ctrl_table_set(HtName_(Ht) *ht, INDEX_TYPE idx, ut8 value) {
 	ht->ctrl[idx] = value;
 
 	// Copy to mirrored bytes
 	if (idx < GROUP_WIDTH - 1) {
-		ht->ctrl[ht->capacity + idx] = value;
+		ht->ctrl[ht->capacity + idx] = value; // todo: consider branchless copy
 	}
 }
 
@@ -171,7 +269,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 
 	// Allocate additional space for the mirrored bytes at the end of the control array
 	ut32 ctrl_size = (ht->capacity + GROUP_WIDTH) * sizeof(*ht->ctrl);
-	ut32 slots_size = ht->capacity * sizeof(*ht->slots);
+	ut32 slots_size = ht->capacity * sizeof(*ht->slots); // todo: use elem_size
 
 	// Allocate single heap block for both control and slot arrays
 	if ((ht->data = calloc(ctrl_size + slots_size, sizeof(ut8))) == NULL) { // todo: use malloc
@@ -223,65 +321,20 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	}
 
 	if (ht->opt.finiKV) {
-		for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
-			if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
-				continue;
-			}
-			ht->opt.finiKV(&ht->slots[i], ht->opt.finiKV_user);
-		}
+		HT_FOREACH(ht, kv, {
+			ht->opt.finiKV(kv, ht->opt.finiKV_user);
+		});
+		// for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
+		// 	if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
+		// 		continue;
+		// 	}
+		// 	ht->opt.finiKV(&ht->slots[i], ht->opt.finiKV_user);
+		// }
 	}
 
 	free(ht->data);
 	free(ht);
 }
-
-/**
- * Increases the capacity of the hashtable to `(x + 1) * 2 - 1` where `x` is the previous cpacity.
- * Tracks change of KV \p tracked position.
- */
-// static HT_(Kv) *internal_ht_grow(HtName_(Ht) *ht, HT_(Kv) *tracked) {
-// 	ut32 idx = next_idx(ht->prime_idx);
-// 	// ut32 sz = compute_size(idx, ht->size * 2);
-// 	ut32 cap = (ht->capacity + 1) * 2 - 1;
-
-// 	HtName_(Ht) *ht2 = internal_ht_new(cp, idx, &ht->opt);
-// 	if (!ht2) {
-// 		// we can't grow the ht anymore. Never mind, we'll be slower,
-// 		// but everything can continue to work
-// 		return tracked;
-// 	}
-
-// 	// Iterate all slots
-// 	for (ut32 i = 0; i < ht->capacity; i++) {
-// 		if (ht->ctrl[i].empty) {
-// 			continue;
-// 		}
-// 		if (kv == tracked) {
-// 			continue;
-// 		}
-// 		if (Ht_(insert_kv_ex)(ht2, ht->slots[i], false, NULL) < 0) {
-// 			ht2->opt.finiKV = NULL;
-// 			Ht_(free)(ht2);
-// 			return tracked; //?
-// 		}
-// 	}
-
-// 	// Insert ???
-// 	if (Ht_(insert_kv_ex)(ht2, tracked, false, &tracked) < 0) {
-// 		ht2->opt.finiKV = NULL;
-// 		Ht_(free)(ht2);
-// 		return tracked;
-// 	}
-
-// 	// And now swap the internals.
-// 	HtName_(Ht) swap = *ht;
-// 	*ht = *ht2;
-// 	*ht2 = swap;
-
-// 	ht2->opt.finiKV = NULL;
-// 	Ht_(free)(ht2);
-// 	return tracked;
-// }
 
 /**
  * todo
@@ -301,17 +354,24 @@ static bool grow_if_needed(HtName_(Ht) *ht) {
 	}
 
 	// Iterate all slots and copy elements to `h2`
-	for (ut32 i = 0; i < ht->capacity; i++) {
-		if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) {
-			continue;
-		}
+	// for (ut32 i = 0; i < ht->capacity; i++) {
+	// 	if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) {
+	// 		continue;
+	// 	}
 
-		if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
+	// 	if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
+	// 		ht2->opt.finiKV = NULL;
+	// 		Ht_(free)(ht2);
+	// 		return false;
+	// 	}
+	// }
+	HT_FOREACH(ht, kv, {
+		if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
 			ht2->opt.finiKV = NULL;
 			Ht_(free)(ht2);
 			return false;
 		}
-	}
+	});
 
 	// And now swap the internals.
 	HtName_(Ht) swap = *ht;
@@ -344,7 +404,37 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 	INDEX_TYPE first_deleted = INVALID_INDEX;
 
 	while (true) {
-		// TODO: Probe one group at a time
+		// Probe one group at a time
+#ifdef LOOKUP_METHOD_DEFAULT_64
+// #if 0
+		group_t group;
+		group_t deleted_match;
+		group_t empty_match;
+
+		// Copy control group to a local variable, since the array offset has no alignment guarantees
+		memcpy(&group, &ht->ctrl[index], sizeof(group));
+
+		// Match all control group bytes with the hash fragment of `key`
+		for (group_t ctrl_match = bitops_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + bitops_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+
+			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
+				*existing = true;
+				return i;
+			}
+		}
+
+		// If we reach a "deleted" slot, save it's index and return later
+		if (first_deleted == INVALID_INDEX && (deleted_match = bitops_match_deleted(group))) {
+			first_deleted = (index + bitops_lowest_bit(empty_match)) & (ht->capacity - 1);
+		}
+
+		// Check if there is at least 1 empty slot in the group
+		if ((empty_match = bitops_match_empty(group))) {
+			*existing = false;
+			return first_deleted == INVALID_INDEX ? (index + bitops_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
+		}
+#else
 		for (INDEX_TYPE i = index; i < index + GROUP_WIDTH; i++) {
 			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
 			ut8 *ctrl = &ht->ctrl[i];
@@ -364,6 +454,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 				first_deleted = normalized_i;
 			}
 		}
+#endif
 
 		// Warn if we reach past the probing sequence (unexpected since we shouldn't get above load factor > 85.4%)
 		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
@@ -390,7 +481,28 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 	INDEX_TYPE index = H1(hash) & (ht->capacity - 1);
 
 	while (true) {
-		// todo: Probe one group at a time
+		// Probe one group at a time
+#if defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
+		group_t group;
+
+		// Copy control group to a local variable, since the array offset has no alignment guarantees
+		memcpy(&group, &ht->ctrl[index], sizeof(group));
+
+		// Match all group control bytes with the hash fragment of `key`
+		for (group_t ctrl_match = bitops_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + bitops_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+			// todo: test if index is correct (combined with `ctrl_match &= ctrl_match - 1`)
+
+			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
+				return i;
+			}
+		}
+
+		// Check if there is at least 1 empty slot in the group
+		if (bitops_match_empty(group)) {
+			return INVALID_INDEX;
+		}
+#else
 		for (ut32 i = index; i < index + GROUP_WIDTH; i++) {
 			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
 			ut8 *ctrl = &ht->ctrl[i];
@@ -403,6 +515,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 				return normalized_i;
 			}
 		}
+#endif
 
 		// Warn if we reach past the probing sequence (unexpected)
 		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
@@ -432,6 +545,8 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
+
+	RZ_PREFETCH(&ht->slots[idx]);
 
 	if (existing) {
 		if (update) {
@@ -673,16 +788,12 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
 
-	// Iterate all slots and copy elements to `h2`
-	for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
-		if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
-			continue;
-		}
-
-		if (!cb(user, ht->slots[i].key, ht->slots[i].value)) {
+	// Iterate all slots
+	HT_FOREACH(ht, kv, {
+		if (!cb(user, kv->key, kv->value)) {
 			return;
 		}
-	}
+	});
 }
 
 /**
@@ -707,7 +818,7 @@ RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group(?)
 			continue;
 		}
 		state->kv = &state->ht->slots[state->ti];
@@ -730,7 +841,7 @@ RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group (?)
 			continue;
 		}
 		state->kv = &state->ht->slots[state->ti];
@@ -754,7 +865,7 @@ RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group (?)
 			continue;
 		}
 		state->kv = &state->ht->slots[state->ti];

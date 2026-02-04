@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2016-2018 ret2libc <sirmy15@gmail.com>
 // SPDX-FileCopyrightText: 2024 pelijah
+// SPDX-FileCopyrightText: 2026 Anton Angelov <anton.angelov@protonmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
 // todo..
@@ -21,7 +22,7 @@
 #undef HT_NULL_VALUE
 
 #define HT_HASH_FUNC_MUL(key) ((ut32)(key) * 0x9e3779b9)
-#define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, key)) /* todo: add portable alternative */
+#define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, (ut32)key)) /* todo: add portable alternative */
 
 #define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(key))
 #define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_MUL(key))
