@@ -40,4 +40,22 @@ PIE      false
 RELROCS  false
 NX       false
 EOF
+NAME=empty.img
+FILE=bins/bootimg/empty.img
+CMDS=iH
+EXPECT=<<EOF
+bootimg:
+  magic: "ANDROID!"
+  kernel_size: 128
+  kernel_addr: 0x40200000
+  ramdisk_size: 0
+  ramdisk_addr: 0x41200000
+  second_size: 0
+  second_addr: 0x41100000
+  tags_addr: 0x40200100
+  page_size: 2048
+  name: "d1-nezha"
+  cmdline: ""
+  extra_cmdline: ""
+EOF
 RUN

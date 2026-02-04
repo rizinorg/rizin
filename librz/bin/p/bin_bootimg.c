@@ -176,6 +176,54 @@ static bool check_buffer(RzBuffer *buf) {
 	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
+static RzStructuredData *bootimg_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	BootImageObj *bio = bf->o->bin_obj;
+	BootImage *bi = &bio->bi;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *boot = rz_structured_data_map_add_map(info, "bootimg");
+	if (!boot) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_string(boot, "magic", "ANDROID!");
+	rz_structured_data_map_add_unsigned(boot, "kernel_size", bi->kernel_size, false);
+	rz_structured_data_map_add_unsigned(boot, "kernel_addr", bi->kernel_addr, true);
+	rz_structured_data_map_add_unsigned(boot, "ramdisk_size", bi->ramdisk_size, false);
+	rz_structured_data_map_add_unsigned(boot, "ramdisk_addr", bi->ramdisk_addr, true);
+	rz_structured_data_map_add_unsigned(boot, "second_size", bi->second_size, false);
+	rz_structured_data_map_add_unsigned(boot, "second_addr", bi->second_addr, true);
+	rz_structured_data_map_add_unsigned(boot, "tags_addr", bi->tags_addr, true);
+	rz_structured_data_map_add_unsigned(boot, "page_size", bi->page_size, false);
+
+	char *name = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE);
+	if (name) {
+		rz_structured_data_map_add_string(boot, "name", name);
+		free(name);
+	}
+
+	char *cmd = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE);
+	if (cmd) {
+		rz_structured_data_map_add_string(boot, "cmdline", cmd);
+		free(cmd);
+	}
+
+	char *extra = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE);
+	if (extra) {
+		rz_structured_data_map_add_string(boot, "extra_cmdline", extra);
+		free(extra);
+	}
+
+	return info;
+}
+
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	RzBinAddr *ptr = NULL;
@@ -278,6 +326,7 @@ RzBinPlugin rz_bin_plugin_bootimg = {
 	.entries = entries,
 	.strings = &strings,
 	.info = &info,
+	.bin_structure = &bootimg_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE
