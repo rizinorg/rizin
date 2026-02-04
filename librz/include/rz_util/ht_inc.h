@@ -38,9 +38,9 @@
 // #define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
 // #define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
 // #define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
-#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
+#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)) * 0x9e3779b9ul)
 #define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
-#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32(key))
+#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
 
 
 #if HT_TYPE == 1
