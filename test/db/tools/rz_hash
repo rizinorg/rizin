@@ -1030,7 +1030,7 @@ RUN
 
 NAME=rz-hash -qqE rc2
 FILE==
-CMDS=!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-ax -S 
+CMDS=!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-ax -S
 EXPECT=<<EOF
 a9c85c7650456d8f5f369704ad1e339f
 EOF

@@ -6,6 +6,9 @@ hash_plugins_list = [
   'sha256',
   'sha384',
   'sha512',
+  'sha3_256',
+  'sha3_384',
+  'sha3_512',
   'sm3',
   'blake3',
   'fletcher8',
@@ -97,6 +100,9 @@ rz_hash_sources = [
   'p/algo_sha256.c',
   'p/algo_sha384.c',
   'p/algo_sha512.c',
+  'p/algo_sha3_256.c',
+  'p/algo_sha3_384.c',
+  'p/algo_sha3_512.c',
   'p/algo_xor8.c',
   'p/algo_xor16.c',
   'p/algo_xxhash32.c',
@@ -127,6 +133,7 @@ else
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',
     'algorithms/sha2/sha2.c',
+    'algorithms/sha3/sha3.c',
     'algorithms/sm3/sm3.c'
   ]
 endif
