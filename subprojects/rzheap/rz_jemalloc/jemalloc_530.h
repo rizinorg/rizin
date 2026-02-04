@@ -8,6 +8,7 @@
 #include "jemalloc_arch.h"
 #include <rz_util.h>
 #include <rz_io.h>
+#include <stdio.h>
 
 #define BITMAP_MAX_LEVELS_530 6
 #define SC_NSIZES             235
@@ -147,6 +148,49 @@ static const RzJemallocConfig530 rz_jemalloc_config_amd64_linux_4k_530 = {
 	},
 };
 
+static const RzJemallocConfig530 rz_jemalloc_config_amd64_freebsd_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AMD64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.rtree_nsb = 36,
+	.rtree_bits_per_level = 18,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 128,
+	.bin_info_size = 40,
+	.bin_size = 200,
+	.arena_size = 78664,
+	.bitmap_info_size = 16,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10392,
+		.cache_bin_arr = 10400,
+		.tcache_ql_mtx = 10408,
+		.dss_prec = 10496,
+		.large = 10504,
+		.large_mtx = 10512,
+		.pa_shard = 10600,
+		.ind = 78640,
+		.base = 78648,
+		.create_time = 78656,
+		.bins = 78664,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 168,
+	},
+	.rtree_offsets = {
+		.root = 96,
+	},
+};
+
 static const RzJemallocConfig530 rz_jemalloc_config_i386_linux_4k_530 = {
 	.arch = RZ_JEMALLOC_ARCH_I386,
 	.ptr_size = 4,
@@ -187,6 +231,49 @@ static const RzJemallocConfig530 rz_jemalloc_config_i386_linux_4k_530 = {
 	},
 	.rtree_offsets = {
 		.root = 92,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_i386_freebsd_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_I386,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 104,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 20,
+	.rtree_bits_per_level = 10,
+	.rtree_height = 2,
+	.rtree_leaf_compact = false,
+	.edata_size = 108,
+	.bin_info_size = 48,
+	.bin_size = 156,
+	.arena_size = 21796,
+	.bitmap_info_size = 32,
+	.rtree_node_elm_size = 4,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 16,
+		.tcache_ql = 3944,
+		.cache_bin_arr = 3948,
+		.tcache_ql_mtx = 3952,
+		.dss_prec = 4024,
+		.large = 4028,
+		.large_mtx = 4032,
+		.pa_shard = 4104,
+		.ind = 21780,
+		.base = 21784,
+		.create_time = 21788,
+		.bins = 21796,
+		.last_thd = 12,
+	},
+	.bin_offsets = {
+		.slabcur = 140,
+	},
+	.rtree_offsets = {
+		.root = 76,
 	},
 };
 
@@ -498,6 +585,7 @@ static inline const RzJemallocConfig530 *rz_jemalloc_get_config_530(const char *
 
 	// default is_linux
 	bool is_darwin = !strcmp(os, "darwin") || !strcmp(os, "macos") || !strcmp(os, "ios");
+	bool is_freebsd = !strcmp(os, "freebsd");
 	bool is_x86 = !strcmp(arch, "x86") || !strcmp(arch, "x64");
 	bool is_arm = !strcmp(arch, "arm") || !strcmp(arch, "aarch64");
 	bool is_riscv = !strcmp(arch, "riscv");
@@ -509,7 +597,15 @@ static inline const RzJemallocConfig530 *rz_jemalloc_get_config_530(const char *
 		return &rz_jemalloc_config_aarch64_darwin_16k_530;
 	}
 
-	if (is_x86) {
+	if (is_freebsd && is_x86) {
+		if (bits == 64) {
+			return &rz_jemalloc_config_amd64_freebsd_4k_530;
+		} else {
+			return &rz_jemalloc_config_i386_freebsd_4k_530;
+		}
+	}
+
+	if (is_x86) { // by default is linux
 		if (bits == 64) {
 			return &rz_jemalloc_config_amd64_linux_4k_530;
 		} else {

@@ -126,6 +126,54 @@ static const RzJemallocConfig450 rz_jemalloc_config_amd64_linux_4k_450 = {
 	},
 };
 
+static const RzJemallocConfig450 rz_jemalloc_config_amd64_freebsd_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_AMD64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.npsizes = 199,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.extent_node_size = 112,
+	.bin_info_size = 64,
+	.bin_size = 144,
+	.arena_size = 9112,
+	.bitmap_info_size = 16,
+	.malloc_mutex_size = 56,
+	.arena_offsets = {
+		.lock = 16,
+		.stats = 72,
+		.tcache_ql = 200,
+		.prof_accumbytes = 208,
+		.achunks = 232,
+		.extent_sn_next = 240,
+		.lg_dirty_mult = 256,
+		.purging = 264,
+		.nactive = 272,
+		.runs_dirty = 288,
+		.chunks_cache = 304,
+		.decay = 416,
+		.huge = 2064,
+		.huge_mtx = 2072,
+		.chunks_szsnad_cached = 2128,
+		.chunks_ad_cached = 2136,
+		.chunks_mtx = 2160,
+		.node_cache = 2216,
+		.node_cache_mtx = 2224,
+		.chunk_hooks = 2280,
+		.bins = 2336,
+		.runs_avail = 7520,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 80,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 40,
+		.reg0_offset = 56,
+	},
+};
+
 static const RzJemallocConfig450 rz_jemalloc_config_i386_linux_4k_450 = {
 	.arch = RZ_JEMALLOC_ARCH_I386,
 	.ptr_size = 4,
@@ -164,6 +212,54 @@ static const RzJemallocConfig450 rz_jemalloc_config_i386_linux_4k_450 = {
 		.chunk_hooks = 1260,
 		.bins = 1288,
 		.runs_avail = 5464,
+	},
+	.extent_node_offsets = {
+		.ql_link_next = 40,
+	},
+	.bin_info_offsets = {
+		.bitmap_info = 20,
+		.reg0_offset = 52,
+	},
+};
+
+static const RzJemallocConfig450 rz_jemalloc_config_i386_freebsd_4k_450 = {
+	.arch = RZ_JEMALLOC_ARCH_I386,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.npsizes = 71,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.extent_node_size = 56,
+	.bin_info_size = 56,
+	.bin_size = 100,
+	.arena_size = 5108,
+	.bitmap_info_size = 32,
+	.malloc_mutex_size = 28,
+	.arena_offsets = {
+		.lock = 12,
+		.stats = 40,
+		.tcache_ql = 136,
+		.prof_accumbytes = 140,
+		.achunks = 156,
+		.extent_sn_next = 160,
+		.lg_dirty_mult = 168,
+		.purging = 172,
+		.nactive = 176,
+		.runs_dirty = 184,
+		.chunks_cache = 192,
+		.decay = 248,
+		.huge = 1088,
+		.huge_mtx = 1092,
+		.chunks_szsnad_cached = 1120,
+		.chunks_ad_cached = 1124,
+		.chunks_mtx = 1136,
+		.node_cache = 1164,
+		.node_cache_mtx = 1168,
+		.chunk_hooks = 1196,
+		.bins = 1224,
+		.runs_avail = 4824,
 	},
 	.extent_node_offsets = {
 		.ql_link_next = 40,
@@ -467,6 +563,7 @@ static inline const RzJemallocConfig450 *rz_jemalloc_get_config_450(const char *
 		return NULL;
 	}
 
+	bool is_freebsd = !strcmp(os, "freebsd");
 	bool is_darwin = !strcmp(os, "darwin") || !strcmp(os, "macos") || !strcmp(os, "ios");
 	bool is_x86 = !strcmp(arch, "x86") || !strcmp(arch, "x64");
 	bool is_arm = !strcmp(arch, "arm") || !strcmp(arch, "aarch64");
@@ -478,7 +575,15 @@ static inline const RzJemallocConfig450 *rz_jemalloc_get_config_450(const char *
 		return &rz_jemalloc_config_aarch64_darwin_16k_450;
 	}
 
-	if (is_x86) {
+	if (is_freebsd && is_x86) {
+		if (bits == 64) {
+			return &rz_jemalloc_config_amd64_freebsd_4k_450;
+		} else {
+			return &rz_jemalloc_config_i386_freebsd_4k_450;
+		}
+	}
+
+	if (is_x86) { // by default is linux
 		if (bits == 64) {
 			return &rz_jemalloc_config_amd64_linux_4k_450;
 		} else {

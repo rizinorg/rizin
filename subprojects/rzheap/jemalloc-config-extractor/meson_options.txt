@@ -1,0 +1,2 @@
+option('jemalloc', type: 'string', value: '', description: 'Path to jemalloc source tree')
+option('jemalloc_version', type: 'string', value: 'auto', description: 'Jemalloc major version (4/5/auto)')
