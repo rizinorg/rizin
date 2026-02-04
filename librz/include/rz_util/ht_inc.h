@@ -21,6 +21,12 @@
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
 
+// Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
+// slow down lookup/insert/iteration with about 5-10%.
+//#ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
+//#define HT_ENABLE_CUSTOM_ELEM_SIZE
+//#endif
+
 #define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
 #define HT_HASH_FUNC_MUL(key) ((ut32)(key) * 0x9e3779b9)
 #define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, (ut32)key)) /* todo: add portable alternative */

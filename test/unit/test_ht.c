@@ -30,6 +30,34 @@ bool test_ht_insert_lookup(void) {
 	mu_assert_streq(sdb_ht_find(ht, "CCCC", NULL), "vCCCC", "CCCC value wrong");
 
 	sdb_ht_free(ht);
+
+#ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
+	typedef struct {
+		HtUUKv base;
+		ut64 extra;
+	} CustomKv;
+
+	HtUUOptions opt = { 0 };
+	opt.elem_size = sizeof(CustomKv);
+	HtUU *ht_u = ht_uu_new_opt(&opt);
+
+	for (size_t i = 0; i < 100; ++i) {
+		CustomKv *tmp = NULL;
+		CustomKv kv = { 0 };
+
+		kv.base.key = 4 * i;
+		kv.base.value = i + 200;
+		kv.extra = i + 300;
+
+		ht_uu_insert_kv_ex(ht_u, (HtUUKv *)&kv, false, (HtUUKv **)&tmp);
+		mu_assert_notnull(tmp, "KV is set after rehashing");
+		mu_assert_eq(tmp->base.value, i + 200, "KV is valid after rehashing");
+		mu_assert_eq(tmp->extra, i + 300, "KV extra value is valid after rehashing");
+	}
+
+	ht_uu_free(ht_u);
+#endif
+
 	mu_end;
 }
 

@@ -90,10 +90,13 @@
 	// TODO: portable implementation for big-endian
 #endif
 
-#define HT_SLOT_AT(ht, index) \
-	(&(ht)->slots[(index)])
-	// ((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
-	// (&(ht)->slots[(index)])
+#ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
+	#define HT_SLOT_AT(ht, index) \
+		((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
+#else
+	#define HT_SLOT_AT(ht, index) \
+		(&(ht)->slots[(index)])
+#endif
 
 // Helper macro for implementing an unrolled foreach loop
 #define HT_FOREACH_UNROLL(ht, kv, idx, body) \
@@ -189,17 +192,6 @@
 		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX; // todo: maybe no need to check for 0
 	}
 
-	// #define HT_FOREACH_BEGIN(ht, kv) \
-	// 	for (INDEX_TYPE gi = 0; gi < ht->capacity; gi += GROUP_WIDTH) { \
-	// 		group_t ctrl_match = group_match_full(*((group_t *)&(ht)->ctrl[gi])); \
-	// 		while (ctrl_match) { \
-	// 			INDEX_TYPE ofs = group_lowest_bit(ctrl_match); \
-	// 			HT_(Kv) *kv = &(ht)->slots[gi + ofs];
-
-	// #define HT_FOREACH_END(ht) \
-	// 			ctrl_match &= ~(0x80ULL << (ofs * 8)); \
-	// 		} \
-	// 	}
 	#define HT_FOREACH(ht, kv, body) \
 		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
 			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
@@ -348,6 +340,15 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// Allocate additional space for the mirrored bytes at the end of the control array
 	ut32 ctrl_size = (ht->capacity + GROUP_WIDTH) * sizeof(*ht->ctrl);
 	ut32 slots_size = ht->capacity * ht->opt.elem_size; // todo: use elem_size
+
+#ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
+	if (ht->opt.elem_size != sizeof(HT_(Kv))) {
+		// Custom elem_size support can be enabled by uncommenting the respective define
+		rz_warn_if_reached();
+		free(ht);
+		return NULL;
+	}
+#endif
 
 	// Allocate single heap block for both control and slot arrays
 	if ((ht->data = calloc(ctrl_size + slots_size, sizeof(ut8))) == NULL) { // todo: use malloc
