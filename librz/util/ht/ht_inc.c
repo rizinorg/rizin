@@ -65,28 +65,87 @@
 
 // TODO: add support for AMD NEON
 // TODO: sse
-// #if HAVE_SSE2
-#if 0
+// #if 0
+#ifdef HAVE_SSE2
 	// SSE2 is present x64/amd64 archs
 	#include <emmintrin.h>
 	#define LOOKUP_METHOD_SSE2
 	#define GROUP_WIDTH  16
+	typedef ut16 group_mask_t;
+	typedef __m128i group_t;
 #elif RZ_SYS_BITS == RZ_SYS_BITS_64
 	#define LOOKUP_METHOD_DEFAULT_64
 	typedef ut64 group_t;
+	typedef ut64 group_mask_t;
 	#define GROUP_WIDTH  sizeof(group_t)
 #else
+	// todo: for 32-bit use default implementation below
 	#define LOOKUP_METHOD_DEFAULT_32
 	typedef ut32 group_t;
+	typedef ut32 group_mask_t;
 	#define GROUP_WIDTH  sizeof(group_t)
 	// TODO: portable implementation for big-endian
 #endif
 
+// Helper macro for implementing an unrolled foreach loop
+#define HT_FOREACH_UNROLL(ht, kv, idx, body) \
+		if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[idx])) { \
+			HT_(Kv) *kv = &(ht)->slots[idx]; \
+			body \
+		}
+
 // Helper function for the different lookup implementations
-#if defined(LOOKUP_METHOD_DEFAULT_64) || defined(LOOKUP_METHOD_DEFAULT_32)
+#if defined(HAVE_SSE2)
+	// todo
+	static inline group_mask_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+		__m128i ctrl_vec = _mm_set1_epi8((char)ctrl);
+		__m128i diff = _mm_cmpeq_epi8(group, ctrl_vec);
+		return (group_mask_t)_mm_movemask_epi8(diff);
+	}
+
+	static inline group_mask_t group_match_empty(group_t group) {
+		__m128i empty_vec = _mm_set1_epi8(H2_STATUS_EMPTY);
+		__m128i diff = _mm_cmpeq_epi8(group, empty_vec);
+		return (group_mask_t)_mm_movemask_epi8(diff);
+	}
+
+	static inline group_mask_t group_match_deleted(group_t group) {
+		__m128i deleted_vec = _mm_set1_epi8(H2_STATUS_DELETED);
+		__m128i diff = _mm_cmpeq_epi8(group, deleted_vec);
+		return (group_mask_t)_mm_movemask_epi8(diff);
+	}
+
+	static inline ut8 group_lowest_bit(group_mask_t mask) {
+		return rz_bits_trailing_zeros(mask);
+	}
+
+	#define HT_FOREACH(ht, kv, body) \
+		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+			RZ_PREFETCH(&(ht)->slots[i + GROUP_WIDTH]); \
+			HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 8, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 9, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 10, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 11, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 12, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 13, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
+			HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
+	}
+
+#elif defined(LOOKUP_METHOD_DEFAULT_64) || defined(LOOKUP_METHOD_DEFAULT_32)
+// #if defined(LOOKUP_METHOD_DEFAULT_64) || defined(LOOKUP_METHOD_DEFAULT_32)
 	// TODO: only little endian
 	// Construct a ut64/ut32 by repeating a byte value (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
-	static inline group_t bitops_repeat(ut8 byte) {
+	static inline group_t group_repeat(ut8 byte) {
 	#if defined(LOOKUP_METHOD_DEFAULT_64)
 		return byte * 0x0101010101010101ull;
 	#elif defined(LOOKUP_METHOD_DEFAULT_32)
@@ -97,49 +156,42 @@
 	}
 
 	// Match a hash fragment byte to 4/8 control bytes
-	static inline group_t bitops_match_hash_fragment(group_t group, ut8 ctrl) {
-		group_t diff = group ^ bitops_repeat(ctrl);
-		return (diff - bitops_repeat(0x01)) & ~diff & bitops_repeat(0x80);
+	static inline group_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+		group_t diff = group ^ group_repeat(ctrl);
+		return (diff - group_repeat(0x01)) & ~diff & group_repeat(0x80);
 	}
 
-	static inline group_t bitops_match_empty(group_t group) {
-		return group & (group << 1) & bitops_repeat(0x80);
+	static inline group_mask_t group_match_empty(group_t group) {
+		return group & (group << 1) & group_repeat(0x80);
 	}
 
-	static inline group_t bitops_match_deleted(group_t group) {
-		return group & ~(group << 1) & bitops_repeat(0x80);
+	static inline group_mask_t group_match_deleted(group_t group) {
+		return group & ~(group << 1) & group_repeat(0x80);
 	}
 
-	static inline group_t bitops_match_empty_or_deleted(group_t group) {
-		return group & bitops_repeat(0x80);
-	}
+	// static inline group_mask_t group_match_empty_or_deleted(group_t group) {
+	// 	return group & group_repeat(0x80);
+	// }
 
-	static inline group_t bitops_match_full(group_t group) {
-		return ~group & bitops_repeat(0x80);
-	}
+	// static inline group_mask_t group_match_full(group_t group) {
+	// 	return ~group & group_repeat(0x80);
+	// }
 
-	static inline ut8 bitops_lowest_bit(group_t mask) {
-		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
+	static inline ut8 group_lowest_bit(group_mask_t mask) {
+		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX; // todo: maybe no need to check for 0
 	}
 
 	// #define HT_FOREACH_BEGIN(ht, kv) \
 	// 	for (INDEX_TYPE gi = 0; gi < ht->capacity; gi += GROUP_WIDTH) { \
-	// 		group_t ctrl_match = bitops_match_full(*((group_t *)&(ht)->ctrl[gi])); \
+	// 		group_t ctrl_match = group_match_full(*((group_t *)&(ht)->ctrl[gi])); \
 	// 		while (ctrl_match) { \
-	// 			INDEX_TYPE ofs = bitops_lowest_bit(ctrl_match); \
+	// 			INDEX_TYPE ofs = group_lowest_bit(ctrl_match); \
 	// 			HT_(Kv) *kv = &(ht)->slots[gi + ofs];
 
 	// #define HT_FOREACH_END(ht) \
 	// 			ctrl_match &= ~(0x80ULL << (ofs * 8)); \
 	// 		} \
 	// 	}
-
-	#define HT_FOREACH_UNROLL(ht, kv, idx, body) \
-		if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[idx])) { \
-			HT_(Kv) *kv = &(ht)->slots[idx]; \
-			body \
-		}
-
 	#define HT_FOREACH(ht, kv, body) \
 		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
 			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
@@ -366,6 +418,7 @@ static bool grow_if_needed(HtName_(Ht) *ht) {
 	// 	}
 	// }
 	HT_FOREACH(ht, kv, {
+		// if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
 		if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
 			ht2->opt.finiKV = NULL;
 			Ht_(free)(ht2);
@@ -405,18 +458,18 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 	while (true) {
 		// Probe one group at a time
-#ifdef LOOKUP_METHOD_DEFAULT_64
 // #if 0
+#ifdef LOOKUP_METHOD_SSE2
 		group_t group;
-		group_t deleted_match;
-		group_t empty_match;
+		group_mask_t deleted_match;
+		group_mask_t empty_match;
 
-		// Copy control group to a local variable, since the array offset has no alignment guarantees
-		memcpy(&group, &ht->ctrl[index], sizeof(group));
+		// todo
+		group = _mm_loadu_si128((const __m128i *)(&ht->ctrl[index]));
 
 		// Match all control group bytes with the hash fragment of `key`
-		for (group_t ctrl_match = bitops_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
-			INDEX_TYPE i = (index + bitops_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
 
 			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
 				*existing = true;
@@ -425,14 +478,44 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 		}
 
 		// If we reach a "deleted" slot, save it's index and return later
-		if (first_deleted == INVALID_INDEX && (deleted_match = bitops_match_deleted(group))) {
-			first_deleted = (index + bitops_lowest_bit(empty_match)) & (ht->capacity - 1);
+		if (first_deleted == INVALID_INDEX && (deleted_match = group_match_deleted(group))) {
+			first_deleted = (index + group_lowest_bit(empty_match)) & (ht->capacity - 1);
 		}
 
 		// Check if there is at least 1 empty slot in the group
-		if ((empty_match = bitops_match_empty(group))) {
+		if ((empty_match = group_match_empty(group))) {
 			*existing = false;
-			return first_deleted == INVALID_INDEX ? (index + bitops_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
+			return first_deleted == INVALID_INDEX ? (index + group_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
+		}
+
+// #ifdef LOOKUP_METHOD_DEFAULT_64
+#elif defined(LOOKUP_METHOD_DEFAULT_64)
+		group_t group;
+		group_t deleted_match;
+		group_t empty_match;
+
+		// Copy control group to a local variable, since the array offset has no alignment guarantees
+		memcpy(&group, &ht->ctrl[index], sizeof(group)); // todo: read_le64
+
+		// Match all control group bytes with the hash fragment of `key`
+		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+
+			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
+				*existing = true;
+				return i;
+			}
+		}
+
+		// If we reach a "deleted" slot, save it's index and return later
+		if (first_deleted == INVALID_INDEX && (deleted_match = group_match_deleted(group))) {
+			first_deleted = (index + group_lowest_bit(empty_match)) & (ht->capacity - 1);
+		}
+
+		// Check if there is at least 1 empty slot in the group
+		if ((empty_match = group_match_empty(group))) {
+			*existing = false;
+			return first_deleted == INVALID_INDEX ? (index + group_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
 		}
 #else
 		for (INDEX_TYPE i = index; i < index + GROUP_WIDTH; i++) {
@@ -482,15 +565,34 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 
 	while (true) {
 		// Probe one group at a time
-#if defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
+#ifdef LOOKUP_METHOD_SSE2
+		// todo
+		__m128i group = _mm_loadu_si128((const __m128i *)(&ht->ctrl[index]));
+
+		// Match all group control bytes with the hash fragment of `key`
+		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+
+			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
+				return i;
+			}
+		}
+
+		// Check if there is at least 1 empty slot in the group
+		if (group_match_empty(group)) {
+			return INVALID_INDEX;
+		}
+
+#elif defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
+// #if defined(LOOKUP_METHOD_DEFAULT_64) | defined(LOOKUP_METHOD_DEFAULT_32)
 		group_t group;
 
 		// Copy control group to a local variable, since the array offset has no alignment guarantees
 		memcpy(&group, &ht->ctrl[index], sizeof(group));
 
 		// Match all group control bytes with the hash fragment of `key`
-		for (group_t ctrl_match = bitops_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
-			INDEX_TYPE i = (index + bitops_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+		for (group_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
 			// todo: test if index is correct (combined with `ctrl_match &= ctrl_match - 1`)
 
 			if (is_key_equal(ht, key, key_len, &ht->slots[i])) {
@@ -499,7 +601,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 		}
 
 		// Check if there is at least 1 empty slot in the group
-		if (bitops_match_empty(group)) {
+		if (group_match_empty(group)) {
 			return INVALID_INDEX;
 		}
 #else
