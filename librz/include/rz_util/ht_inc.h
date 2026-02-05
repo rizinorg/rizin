@@ -23,24 +23,24 @@
 
 // Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
 // slow down lookup/insert/iteration with about 5-10%.
-//#ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
-//#define HT_ENABLE_CUSTOM_ELEM_SIZE
-//#endif
+// #ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
+// #define HT_ENABLE_CUSTOM_ELEM_SIZE
+// #endif
 
 #ifndef HT_HASH_MIX_64_TO_32
-	#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
+#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
 #endif
 
 #ifndef KEY_TO_HASH_PX
-	#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
+#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
 #endif
 
 #ifndef KEY_TO_HASH_UX
-	#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
+#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
 #endif
 
 #ifndef KEY_TO_HASH_SX
-	#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
+#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
 #endif
 
 #if HT_TYPE == 1

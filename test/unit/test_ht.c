@@ -350,7 +350,7 @@ bool test_rehash_on_delete(void) {
 }
 
 bool test_ht_delete_optimized(void) {
-	// Test case for the "deletion trick" optimization. If the optimized implementation places 
+	// Test case for the "deletion trick" optimization. If the optimized implementation places
 	// incorrect "empty" slot, this would corrupt the hashtable and make some keys unreachable
 	bool found = false;
 
@@ -387,7 +387,6 @@ bool test_ht_delete_optimized(void) {
 
 	mu_end;
 }
-
 
 static bool grow_1_found[3];
 static bool grow_1_foreach(void *user, const char *k, int v) {

@@ -30,34 +30,34 @@
 
 // todo: move to another header if going to be used
 #if defined(_MSC_VER)
-    #include <intrin.h>
-    #define RZ_PREFETCH(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#include <intrin.h>
+#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
 #elif defined(__GNUC__) || defined(__clang__)
-    #define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
 #else
-    #define RZ_PREFETCH(addr) ((void)0)
+#define RZ_PREFETCH(addr) ((void)0)
 #endif
 
 #if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
-    #define HAVE_SSE2
+#define HAVE_SSE2
 #endif
 
 // Select lookup implementation
 #ifdef HAVE_SSE2
-	#include <emmintrin.h>
-	#define LOOKUP_METHOD_SSE2
-	#define GROUP_WIDTH  16
-	typedef ut16 group_mask_t;
-	typedef __m128i group_t;
+#include <emmintrin.h>
+#define LOOKUP_METHOD_SSE2
+#define GROUP_WIDTH 16
+typedef ut16 group_mask_t;
+typedef __m128i group_t;
 #elif RZ_SYS_BITS == RZ_SYS_BITS_64
-	#define LOOKUP_METHOD_BITWISE_64
-	typedef ut64 group_t;
-	typedef ut64 group_mask_t;
-	#define GROUP_WIDTH sizeof(group_t)
+#define LOOKUP_METHOD_BITWISE_64
+typedef ut64 group_t;
+typedef ut64 group_mask_t;
+#define GROUP_WIDTH sizeof(group_t)
 #else
-	// Default lookup implementation
-	typedef ut64 group_t;
-	#define GROUP_WIDTH sizeof(group_t)
+// Default lookup implementation
+typedef ut64 group_t;
+#define GROUP_WIDTH sizeof(group_t)
 #endif
 
 // Minimal capacity of a hash table
@@ -65,118 +65,118 @@
 
 // Slot addressing is different depending on whether custom elem_size is used
 #ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
-	#define HT_SLOT_AT(ht, index) \
-		((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
+#define HT_SLOT_AT(ht, index) \
+	((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
 #else
-	#define HT_SLOT_AT(ht, index) \
-		(&(ht)->slots[(index)])
+#define HT_SLOT_AT(ht, index) \
+	(&(ht)->slots[(index)])
 #endif
 
 // Helper macro for implementing an unrolled foreach loop
 #define HT_FOREACH_UNROLL(ht, kv, idx, body) \
-		if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[idx])) { \
-			HT_(Kv) *kv = HT_SLOT_AT((ht), (idx)); \
-			body \
-		}
+	if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[idx])) { \
+		HT_(Kv) *kv = HT_SLOT_AT((ht), (idx)); \
+		body \
+	}
 
 // Helper function for the different lookup implementations
 #if defined(LOOKUP_METHOD_SSE2)
-	static inline group_t group_load(const void *addr) {
-		return _mm_loadu_si128((const __m128i *)addr);
-	}
+static inline group_t group_load(const void *addr) {
+	return _mm_loadu_si128((const __m128i *)addr);
+}
 
-	static inline group_mask_t group_match_hash_fragment(group_t group, ut8 ctrl) {
-		__m128i ctrl_vec = _mm_set1_epi8((char)ctrl);
-		__m128i diff = _mm_cmpeq_epi8(group, ctrl_vec);
-		return (group_mask_t)_mm_movemask_epi8(diff);
-	}
+static inline group_mask_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+	__m128i ctrl_vec = _mm_set1_epi8((char)ctrl);
+	__m128i diff = _mm_cmpeq_epi8(group, ctrl_vec);
+	return (group_mask_t)_mm_movemask_epi8(diff);
+}
 
-	static inline group_mask_t group_match_empty(group_t group) {
-		__m128i empty_vec = _mm_set1_epi8(H2_STATUS_EMPTY);
-		__m128i diff = _mm_cmpeq_epi8(group, empty_vec);
-		return (group_mask_t)_mm_movemask_epi8(diff);
-	}
+static inline group_mask_t group_match_empty(group_t group) {
+	__m128i empty_vec = _mm_set1_epi8(H2_STATUS_EMPTY);
+	__m128i diff = _mm_cmpeq_epi8(group, empty_vec);
+	return (group_mask_t)_mm_movemask_epi8(diff);
+}
 
-	static inline group_mask_t group_match_deleted(group_t group) {
-		__m128i deleted_vec = _mm_set1_epi8(H2_STATUS_DELETED);
-		__m128i diff = _mm_cmpeq_epi8(group, deleted_vec);
-		return (group_mask_t)_mm_movemask_epi8(diff);
-	}
+static inline group_mask_t group_match_deleted(group_t group) {
+	__m128i deleted_vec = _mm_set1_epi8(H2_STATUS_DELETED);
+	__m128i diff = _mm_cmpeq_epi8(group, deleted_vec);
+	return (group_mask_t)_mm_movemask_epi8(diff);
+}
 
-	static inline ut8 group_lowest_bit(group_mask_t mask) {
-		return rz_bits_trailing_zeros(mask);
-	}
+static inline ut8 group_lowest_bit(group_mask_t mask) {
+	return rz_bits_trailing_zeros(mask);
+}
 
-	#define HT_FOREACH(ht, kv, body) \
-		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
-			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
-			RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
-			HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 8, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 9, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 10, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 11, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 12, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 13, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
+#define HT_FOREACH(ht, kv, body) \
+	for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+		RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+		RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
+		HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 8, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 9, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 10, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 11, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 12, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 13, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
 	}
 #elif defined(LOOKUP_METHOD_BITWISE_64)
-	static inline group_t group_load(const void *addr) {
-		return rz_read_le64(addr);
-	}
+static inline group_t group_load(const void *addr) {
+	return rz_read_le64(addr);
+}
 
-	// Construct a ut64 by repeating a single byte (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
-	static inline group_t group_repeat(ut8 byte) {
-		return byte * 0x0101010101010101ull;
-	}
+// Construct a ut64 by repeating a single byte (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
+static inline group_t group_repeat(ut8 byte) {
+	return byte * 0x0101010101010101ull;
+}
 
-	static inline group_t group_match_hash_fragment(group_t group, ut8 ctrl) {
-		group_t diff = group ^ group_repeat(ctrl);
-		return (diff - group_repeat(0x01)) & ~diff & group_repeat(0x80);
-	}
+static inline group_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+	group_t diff = group ^ group_repeat(ctrl);
+	return (diff - group_repeat(0x01)) & ~diff & group_repeat(0x80);
+}
 
-	static inline group_mask_t group_match_empty(group_t group) {
-		return group & (group << 1) & group_repeat(0x80);
-	}
+static inline group_mask_t group_match_empty(group_t group) {
+	return group & (group << 1) & group_repeat(0x80);
+}
 
-	static inline group_mask_t group_match_deleted(group_t group) {
-		return group & ~(group << 1) & group_repeat(0x80);
-	}
+static inline group_mask_t group_match_deleted(group_t group) {
+	return group & ~(group << 1) & group_repeat(0x80);
+}
 
-	static inline ut8 group_lowest_bit(group_mask_t mask) {
-		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
-	}
+static inline ut8 group_lowest_bit(group_mask_t mask) {
+	return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
+}
 
-	#define HT_FOREACH(ht, kv, body) \
-		for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
-			RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
-			RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
-			HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
-			HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
+#define HT_FOREACH(ht, kv, body) \
+	for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+		RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+		RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
+		HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
 	}
 #else
-	// Default implementation
-	#define HT_FOREACH(ht, kv, body) \
-		for (INDEX_TYPE i = 0; i < (ht)->capacity; i++) { \
-			if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[i])) { \
-				HT_(Kv) *kv = HT_SLOT_AT((ht), i); \
-				body \
-			} \
-		}
+// Default implementation
+#define HT_FOREACH(ht, kv, body) \
+	for (INDEX_TYPE i = 0; i < (ht)->capacity; i++) { \
+		if (!H2_IS_EMPTY_OR_DELETED((ht)->ctrl[i])) { \
+			HT_(Kv) *kv = HT_SLOT_AT((ht), i); \
+			body \
+		} \
+	}
 #endif
 
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -185,11 +185,11 @@ static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
 	if (ht->hash_shift) {
 		// Extra bit mixing for smaller hash tables
 		result ^= result >> 16;
-        result *= 0x85ebca6b;
-        result ^= result >> ht->hash_shift;
-        if (ht->hash_shift == 13) {
-            result *= 0xc2b2ae35;
-        }
+		result *= 0x85ebca6b;
+		result ^= result >> ht->hash_shift;
+		if (ht->hash_shift == 13) {
+			result *= 0xc2b2ae35;
+		}
 	}
 
 	return result;
