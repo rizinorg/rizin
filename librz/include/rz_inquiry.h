@@ -19,6 +19,32 @@ typedef struct rz_inquiry_plugin_t {
 	RzInterpreterPlugin *p_interpreter;
 } RzInquiryPlugin;
 
+/**
+ * \brief A control flow graph with basic blocks as nodes.
+ */
+typedef struct {
+	/**
+	 * \brief Indexed by start address of basic block.
+	 */
+	HtUP /*<RzInterval *>*/ *basic_blocks;
+
+	/**
+	 * \brief Maps a basic block address to its node index in the RzGraph instance.
+	 */
+	HtUU *bb_gidx_map;
+
+	/**
+	 * \brief Maps a basic block address to the RzgraphNode pointer of the RzGraph instance.
+	 */
+	HtUP /*<const RzGraphNode *>*/ *bb_gnode_map;
+
+	/**
+	 * \brief The CFG discovered during interpretation.
+	 * The node data are the addresses of basic blocks, cast to (void *).
+	 */
+	RzGraph *graph;
+} RzInquiryBBCFG;
+
 typedef struct {
 	/**
 	 * \brief RzInquiry interpreter plugins. Indexed by name.
@@ -26,8 +52,18 @@ typedef struct {
 	HtSP /*<RzInquiryPlugin *>*/ *plugins;
 	HtSP /*<void *>*/ *plugins_data;
 
-	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of candidate instruction.
+	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of call candidate instruction.
+	RzVector /*<RzAnalysisXRef>*/ *xrefs; ///< All xrefs it detected.
+	RzInquiryBBCFG *bb_cfg; ///< The control flow graph all the basic blocks build.
 } RzInquiry;
+
+RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new();
+RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg);
+RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size);
+
+RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref);
+
+RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq);
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
 RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
