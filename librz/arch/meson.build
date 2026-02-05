@@ -392,7 +392,6 @@ if get_option('use_gpl')
     'isa_gnu/lanai/lanai-opc.c',
     # 'isa_gnu/riscv/riscv-opc.c',
     # 'isa_gnu/riscv/riscv.c',
-    'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
