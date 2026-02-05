@@ -18,21 +18,23 @@
 typedef struct boot_img_hdr {
 	ut8 magic[BOOT_MAGIC_SIZE];
 
-	ut32 kernel_size; /* size in bytes */
-	ut32 kernel_addr; /* physical load addr */
-	ut32 ramdisk_size; /* size in bytes */
-	ut32 ramdisk_addr; /* physical load addr */
-	ut32 second_size; /* size in bytes */
-	ut32 second_addr; /* physical load addr */
-	ut32 tags_addr; /* physical addr for kernel tags */
-	ut32 page_size; /* flash page size we assume */
-	ut32 unused[2]; /* future expansion: should be 0 */
-	ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
+	ut32 kernel_size; ///< size in bytes
+	ut32 kernel_addr; ///< physical load addr
+	ut32 ramdisk_size; ///< size in bytes
+	ut32 ramdisk_addr; ///< physical load addr
+	ut32 second_size; ///< size in bytes
+	ut32 second_addr; ///< physical load addr
+	ut32 tags_addr; ///< physical addr for kernel tags
+	ut32 page_size; ///< flash page size we assume
+	ut32 unused[2]; ///< future expansion: should be 0
+	ut8 name[BOOT_NAME_SIZE]; ///< asciiz product name
 	ut8 cmdline[BOOT_ARGS_SIZE];
-	ut32 id[8]; /* timestamp / checksum / sha1 / etc */
+	ut32 id[8]; ///< timestamp / checksum / sha1 / etc
 
-	/* Supplemental command line data; kept here to maintain
-	 * binary compatibility with older versions of mkbootimg */
+	/*
+	 * Supplemental command line data; kept here to maintain
+	 * binary compatibility with older versions of mkbootimg
+	 */
 	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
 } BootImage;
 
