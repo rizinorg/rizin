@@ -325,6 +325,70 @@ bool test_delete(void) {
 	mu_end;
 }
 
+bool test_rehash_on_delete(void) {
+	HtUU *ht = ht_uu_new();
+	bool found = false;
+
+	for (ut32 i = 0; i < 32; i++) {
+		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
+	}
+
+	for (ut32 i = 0; i < 32; i++) {
+		mu_assert_true(ht_uu_delete(ht, i), "failed to delete element");
+	}
+
+	for (ut32 i = 0; i < 32; i++) {
+		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
+	}
+
+	for (ut32 i = 0; i < 32; i++) {
+		mu_assert_true(ht_uu_update_key(ht, i, i + 1000), "failed to update element key");
+	}
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
+bool test_ht_delete_optimized(void) {
+	// Test case for the "deletion trick" optimization. If the optimized implementation places 
+	// incorrect "empty" slot, this would corrupt the hashtable and make some keys unreachable
+	bool found = false;
+
+	for (ut32 size = 1; size <= 32; size++) {
+		for (ut32 delete_key = 0; delete_key < size; delete_key++) {
+			HtUU *ht = ht_uu_new();
+			ht->opt.hashfn = (HtUUHashFunction)create_collision;
+
+			// Insert all
+			for (ut32 i = 0; i < size; i++) {
+				ht_uu_insert(ht, i, i * 100);
+			}
+
+			// Delete 1
+			ht_uu_delete(ht, delete_key);
+
+			// Confirm
+			for (ut32 i = 0; i < size; i++) {
+				HtUUKv *kv = ht_uu_find_kv(ht, i, &found);
+
+				if (i == delete_key) {
+					mu_assert_null(kv, "element expected to be deleted");
+					mu_assert_false(found, "element expected to be deleted");
+				} else {
+					mu_assert_notnull(kv, "key not found");
+					mu_assert_true(found, "key not found");
+					mu_assert_eq(kv->value, i * 100, "incorrect value");
+				}
+			}
+
+			ht_uu_free(ht);
+		}
+	}
+
+	mu_end;
+}
+
+
 static bool grow_1_found[3];
 static bool grow_1_foreach(void *user, const char *k, int v) {
 	grow_1_found[v] = true;
@@ -871,6 +935,8 @@ int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
 	mu_run_test(test_ht_delete);
+	mu_run_test(test_ht_delete_optimized);
+	mu_run_test(test_rehash_on_delete);
 	mu_run_test(test_ht_insert_kvp);
 	mu_run_test(test_ht_insert_collision);
 	mu_run_test(test_ht_grow);

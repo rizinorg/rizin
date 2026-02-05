@@ -12,9 +12,9 @@
 #include "sdb.h"
 #include "sdb_private.h"
 
-static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
-	return (SdbKv *)((char *)kv + ht->opt.elem_size);
-}
+// static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
+// 	return (SdbKv *)((char *)kv + ht->opt.elem_size);
+// }
 
 // #define BUCKET_FOREACH(ht, bt, j, kv) \
 // 	for ((j) = 0, (kv) = (SdbKv *)(bt)->arr; j < (bt)->count; (j)++, (kv) = next_kv(ht, kv))

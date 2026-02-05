@@ -28,21 +28,6 @@
 #define INDEX_TYPE                   ut32
 #define INVALID_INDEX                UT32_MAX
 
-// todo:
-//	- [x] allocate first -> 0 bytes (update: actually MIN_CAPACITY)
-// 	- [x] handle realloc / rehash -> capacity should be multiple of x^2-1; new_cap = (old_cap + 1 * 2) - 1 (update: capacity is actually x^2, and bitmask is capacity-1)
-// 	- [x] should keep up to 87.5% load factor
-// 	- [x] "rehash in place"
-//	- [x] clone first group at `ctrl` end
-//	- [x] handle ctrl mirroring for sizes < GROUP_WIDTH
-//	- [x] the hash function should distribute entroy in both high and low bits to avoid H1 and H2 collisions
-//	- [x] support custom element size
-//	- support deletion slot trick (use empty slot where possible)
-//	- [?] allocate everything in one block
-//	- [x] support BE environments
-//	- clean up
-//  - adapt sdb.c
-
 // todo: move to another header if going to be used
 #if defined(_MSC_VER)
     #include <intrin.h>
@@ -167,7 +152,7 @@
 	}
 
 	static inline ut8 group_lowest_bit(group_mask_t mask) {
-		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX; // todo: maybe no need to check for 0
+		return mask ? rz_bits_trailing_zeros(mask) / 8 : UT8_MAX;
 	}
 
 	#define HT_FOREACH(ht, kv, body) \
@@ -290,7 +275,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 
 	// Allocate additional space for the mirrored bytes at the end of the control array
 	ut32 ctrl_size = (ht->capacity + GROUP_WIDTH) * sizeof(*ht->ctrl);
-	ut32 slots_size = ht->capacity * ht->opt.elem_size; // todo: use elem_size
+	ut32 slots_size = ht->capacity * ht->opt.elem_size;
 
 #ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
 	if (ht->opt.elem_size != sizeof(HT_(Kv))) {
@@ -359,17 +344,22 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	free(ht);
 }
 
+static bool grow_required(HtName_(Ht) *ht) {
+	return (ht->size + ht->deleted_slots) > ht->grow_threshold;
+}
+
+static bool rehash_required(HtName_(Ht) *ht) {
+	// rehash after 25% "deleted" slots
+	return ht->deleted_slots > ht->capacity / 4;
+}
+
 /**
  * todo
  * \return true if either no growing is needed or there was a successfull growth; otherwise returns false on failed growth attempt
  */
-static bool grow_if_needed(HtName_(Ht) *ht) {
-	if ((ht->size + ht->deleted_slots) < ht->grow_threshold) {
-		return true;
-	}
-
+static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 	// Create a new hash table
-	HtName_(Ht) *ht2 = internal_ht_new(ht->capacity + 1, &ht->opt);
+	HtName_(Ht) *ht2 = internal_ht_new(new_size, &ht->opt);
 	if (!ht2) {
 		// we can't grow the ht anymore. Never mind, we'll be slower,
 		// but everything can continue to work
@@ -545,7 +535,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
  * \brief Get an existing KV with key \p key or allocate a new KV otherwise
  */
 static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
-	if (!grow_if_needed(ht)) {
+	if (grow_required(ht) && !internal_ht_resize(ht, ht->capacity + 1)) {
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
@@ -745,6 +735,38 @@ RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
 }
 
 /**
+ * Deletion trick
+ */
+static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
+	// Decide if we should mark the slot as empty or deleted
+	INDEX_TYPE nearest_empty_before = 0;
+	INDEX_TYPE nearest_empty_after = 0;
+	INDEX_TYPE idx_prev = (idx - GROUP_WIDTH) & (ht->capacity - 1);
+
+	// Check up to `GROUP_WIDTH` preceeding control bytes
+	for (INDEX_TYPE i = 0; i < GROUP_WIDTH; i++) {
+		if (ht->ctrl[(idx - i - 1) & (ht->capacity - 1)] == H2_STATUS_EMPTY) {
+			break;
+		}
+		nearest_empty_before++;
+	}
+
+	// Check up to `GROUP_WIDTH` following control bytes
+	for (INDEX_TYPE i = 0; i < GROUP_WIDTH; i++) {
+		if (ht->ctrl[(idx + i) & (ht->capacity - 1)] == H2_STATUS_EMPTY) {
+			break;
+		}
+		nearest_empty_after++;
+	}
+
+	//
+	return nearest_empty_before + nearest_empty_after < GROUP_WIDTH ? H2_STATUS_EMPTY : H2_STATUS_DELETED;
+
+	// Deletion trick can be implemented here to reduce the frequency of "deleted" slots being placed
+	// return H2_STATUS_DELETED;
+}
+
+/**
  * Update the key of an element that has \p old_key as key and replace it with \p new_key
  */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
@@ -762,9 +784,8 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	}
 
 	// Remove the old_key kv, paying attention to not double free the value
-	// TODO: use empty instead of delete where possible...
-	ctrl_table_set(ht, idx, H2_STATUS_DELETED);
-	ht->deleted_slots++;
+	ut8 ctrl = select_slot_type_for_deletion(ht, idx);
+	ctrl_table_set(ht, idx, ctrl);
 
 	// Do not free the value part if dupvalue is not set, because the old value will be
 	// associated with the new key and it should not be freed
@@ -773,6 +794,16 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 		HT_SLOT_AT(ht, idx)->value_len = 0;
 	}
 	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
+
+	// Check if rehash is needed
+	if (ctrl == H2_STATUS_DELETED) {
+		ht->deleted_slots++;
+
+		// Rehash if needed
+		if (rehash_required(ht) && !internal_ht_resize(ht, ht->capacity)) {
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -826,10 +857,20 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 		return false;
 	}
 
+	ut8 ctrl = select_slot_type_for_deletion(ht, idx);
+
 	ht->size--;
-	ht->deleted_slots++; // todo: only if not placing empty
-	ctrl_table_set(ht, idx, H2_STATUS_DELETED); // todo: use empty where possible; do we need to keep track of deleted slots?
+	ctrl_table_set(ht, idx, ctrl);
 	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
+
+	if (ctrl == H2_STATUS_DELETED) {
+		ht->deleted_slots++;
+
+		// Rehash if needed
+		if (rehash_required(ht) && !internal_ht_resize(ht, ht->capacity)) {
+			return false;
+		}
+	}
 
 	return true;
 }
