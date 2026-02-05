@@ -5,6 +5,7 @@
 #include "rz_util/ht_uu.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
+#include "rz_util/rz_itv.h"
 #include "rz_util/rz_log.h"
 #include <rz_inquiry.h>
 
@@ -72,15 +73,48 @@ static /*const*/ RZ_BORROW RzGraphNode *get_add_node_to_cfg(RzInquiryBBCFG *cfg,
 	return n;
 }
 
-static bool add_edge_to_cfg(RzInquiryBBCFG *cfg, ut64 from, ut64 to) {
-	RzGraphNode *f = get_add_node_to_cfg(cfg, from);
-	RzGraphNode *t = get_add_node_to_cfg(cfg, to);
+/**
+ * \brief Adds an edge to the basic block CFG.
+ *
+ * \param cfg The basic block CFG to edit.
+ * \param from_bb The address of the basic block with the branch.
+ *                Not the address of the branch instruction!
+ * \param to_bb The address of the basic block the branch leads to.
+ *
+ * \return False if an error occurred. True otherwise.
+ */
+RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb) {
+	RzGraphNode *f = get_add_node_to_cfg(cfg, from_bb);
+	RzGraphNode *t = get_add_node_to_cfg(cfg, to_bb);
 	if (!f || !t) {
 		rz_warn_if_reached();
 		return false;
 	}
 	rz_graph_add_edge(cfg->graph, f, t);
 	return true;
+}
+
+RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInterval *bb) {
+	rz_return_val_if_fail(cfg && bb, false);
+	const RzInterval *itv = ht_up_find(cfg->basic_blocks, bb_addr, NULL);
+	if (!itv) {
+		rz_warn_if_reached();
+		return false;
+	}
+	bb->addr = itv->addr;
+	bb->size = itv->size;
+	return true;
+}
+
+RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+	rz_return_val_if_fail(cfg, NULL);
+
+	const RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
+	if (!n) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return rz_graph_get_neighbours(cfg->graph, n);
 }
 
 RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq) {
@@ -100,7 +134,7 @@ RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq) {
 			if (!rz_itv_contain(*bb, xref->from)) {
 				continue;
 			}
-			add_edge_to_cfg(iq->bb_cfg, bb->addr, xref->to);
+			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, xref->to);
 		}
 	}
 	return true;
