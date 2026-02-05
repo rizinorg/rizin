@@ -13,6 +13,7 @@ inquiry_plugins = {
 
 rz_inquiry_sources = [
   'inquiry.c',
+  'bb_cfg.c',
   'inquiry_helpers.c',
 ]
 

@@ -91,12 +91,16 @@ RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	iq->plugins = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->plugins_data = ht_sp_new(HT_STR_CONST, NULL, NULL);
 	iq->call_candidates = ht_up_new(NULL, free);
-	if (!iq->plugins || !iq->plugins_data) {
+	iq->xrefs = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
+	iq->bb_cfg = rz_inquiry_bb_cfg_new();
+	if (!iq->plugins || !iq->plugins_data || !iq->bb_cfg) {
 		ht_sp_free(iq->plugins);
 		ht_sp_free(iq->plugins_data);
+		rz_inquiry_bb_cfg_free(iq->bb_cfg);
 		free(iq);
 		return NULL;
 	}
+
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(inquiry_static_plugins); ++i) {
 		rz_inquiry_plugin_add(iq, inquiry_static_plugins[i]);
 	}
@@ -113,7 +117,15 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 	ht_sp_free(iq->plugins);
 	ht_sp_free(iq->plugins_data);
 	ht_up_free(iq->call_candidates);
+	rz_inquiry_bb_cfg_free(iq->bb_cfg);
+	rz_vector_free(iq->xrefs);
 	free(iq);
+}
+
+RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
+	RzAnalysisXRef clone = { 0 };
+	memcpy(&clone, xref, sizeof(RzAnalysisXRef));
+	rz_vector_push(iq->xrefs, &clone);
 }
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
@@ -303,6 +315,7 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 		if (!rz_th_queue_pop(q_xrefs->yield_queue, false, (void **)&xref) || !xref) {
 			return false;
 		}
+		rz_inquiry_add_xref(core->inquiry, xref);
 		rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
 		RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
 	}
@@ -500,6 +513,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						rz_analysis_add_bb(core->analysis, *addr, bb_size);
 						RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 						ht_up_insert(il_cache, bb->bb_addr, bb);
+						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
 					} else {
 						RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
 					}
