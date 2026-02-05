@@ -39,11 +39,6 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-EOF
-NAME=empty.img
-FILE=bins/bootimg/empty.img
-CMDS=iH
-EXPECT=<<EOF
 bootimg:
   magic: "ANDROID!"
   kernel_size: 128
@@ -57,6 +52,7 @@ bootimg:
   name: "d1-nezha"
   cmdline: ""
   extra_cmdline: ""
+
 EOF
 RUN
 
