@@ -12,8 +12,9 @@ inquiry_plugins = {
 }
 
 rz_inquiry_sources = [
-  'inquiry.c',
+  'algorithms/revng_fcn_detection.c',
   'bb_cfg.c',
+  'inquiry.c',
   'inquiry_helpers.c',
 ]
 

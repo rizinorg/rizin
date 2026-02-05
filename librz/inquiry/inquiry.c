@@ -83,6 +83,29 @@ RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 	return false;
 }
 
+RZ_IPI void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn) {
+	if (!fcn) {
+		return;
+	}
+	rz_inquiry_bb_cfg_free(fcn->bb_cfg);
+	rz_vector_free(fcn->entry_points);
+	free(fcn);
+}
+
+RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
+	RzInquiryFunction *fcn = RZ_NEW0(RzInquiryFunction);
+	if (!fcn) {
+		return NULL;
+	}
+	fcn->bb_cfg = rz_inquiry_bb_cfg_new();
+	fcn->entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
+	if (!fcn->bb_cfg || !fcn->entry_points) {
+		rz_inquiry_function_free(fcn);
+		return NULL;
+	}
+	return fcn;
+}
+
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	RzInquiry *iq = RZ_NEW0(RzInquiry);
 	if (!iq) {
