@@ -203,20 +203,16 @@ static RzStructuredData *bootimg_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(boot, "tags_addr", bi->tags_addr, true);
 	rz_structured_data_map_add_unsigned(boot, "page_size", bi->page_size, false);
 
-	char name_structure[BOOT_NAME_SIZE + 1];
-	rz_str_ncpy(name_structure, (const char *)bi->name, BOOT_NAME_SIZE);
-	name_structure[BOOT_NAME_SIZE] = '\0';
-	rz_structured_data_map_add_string(boot, "name", name_structure);
+	char structure_bootimg[BOOT_EXTRA_ARGS_SIZE + 1];
 
-	char cmd_structure[BOOT_ARGS_SIZE + 1];
-	rz_str_ncpy(cmd_structure, (const char *)bi->cmdline, BOOT_ARGS_SIZE);
-	cmd_structure[BOOT_ARGS_SIZE] = '\0';
-	rz_structured_data_map_add_string(boot, "cmdline", cmd_structure);
+	rz_str_ncpy(structure_bootimg, (const char *)bi->name, BOOT_NAME_SIZE);
+	rz_structured_data_map_add_string(boot, "name", structure_bootimg);
 
-	char extra_cmd_structure[BOOT_EXTRA_ARGS_SIZE + 1];
-	rz_str_ncpy(extra_cmd_structure, (const char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE);
-	extra_cmd_structure[BOOT_EXTRA_ARGS_SIZE] = '\0';
-	rz_structured_data_map_add_string(boot, "extra_cmdline", extra_cmd_structure);
+	rz_str_ncpy(structure_bootimg, (const char *)bi->cmdline, BOOT_ARGS_SIZE);
+	rz_structured_data_map_add_string(boot, "cmdline", structure_bootimg);
+
+	rz_str_ncpy(structure_bootimg, (const char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE);
+	rz_structured_data_map_add_string(boot, "extra_cmdline", structure_bootimg);
 
 	return info;
 }
