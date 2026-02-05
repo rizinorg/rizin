@@ -9,6 +9,10 @@
 
 #define VERSYM_VERSION 0x7fff
 
+// Modes analogous to CS_MODE_*
+#define MODE_MCLASS 1
+#define MODE_V8     2
+
 struct mips_bits_translation {
 	Elf_(Word) type;
 	int bits;
@@ -755,6 +759,10 @@ static bool arch_is_sparc(ELFOBJ *bin) {
 		bin->ehdr.e_machine == EM_SPARCV9;
 }
 
+static bool arch_is_arm(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_ARM || bin->ehdr.e_machine == EM_AARCH64;
+}
+
 static bool arch_is_arcompact(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_ARC_A5 ||
 		bin->ehdr.e_machine == EM_ARC_COMPACT3_64 ||
@@ -998,6 +1006,258 @@ static char *get_cpu_mips(ELFOBJ *bin) {
 				break;
 			}
 		}
+	}
+
+	return rz_strbuf_drain_nofree(&sb);
+}
+
+typedef struct {
+	ut8 tag;
+	ut64 value_int;
+	char *value_str;
+} arm_attribute_t;
+
+static const ut8 *parse_arm_attribute(const ut8 *data, ut32 size, arm_attribute_t *attribute) {
+	const ut8 *next_data = NULL;
+	const char *error = NULL;
+	ut32 n = 0;
+
+	attribute->tag = 0;
+	attribute->value_int = 0;
+	attribute->value_str = NULL;
+
+	ut64 tmp_attribute_tag = 0;
+	const ut8 *attribute_value_data = rz_uleb128(data, size, &tmp_attribute_tag, &error);
+	if (error) {
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute tag: %s\n", error);
+		RZ_FREE(error);
+		return NULL;
+	}
+	ut32 attribute_tag_len = attribute_value_data - data;
+	ut32 attribute_value_size = size - attribute_tag_len;
+
+	if (!attribute_value_size) {
+		RZ_LOG_WARN("ARM aeabi: missing data for attribute value\n");
+		return NULL;
+	}
+
+	// For N >= 128, tag N has the same properties as tag N modulo 128.
+	attribute->tag = tmp_attribute_tag % 128;
+
+	switch (attribute->tag) {
+	// target-related attributes
+	case TAG_CPU_ARCH:
+	case TAG_CPU_ARCH_PROFILE:
+	case TAG_ARM_ISA_USE:
+	case TAG_THUMB_ISA_USE:
+	case TAG_FP_ARCH:
+	case TAG_WMMX_ARCH:
+	case TAG_ADVANCED_SIMD_ARCH:
+	// procedure call-related attributes
+	case TAG_PCS_CONFIG:
+	case TAG_ABI_PCS_R9_USE:
+	case TAG_ABI_PCS_RW_DATA:
+	case TAG_ABI_PCS_RO_DATA:
+	case TAG_ABI_PCS_GOT_USE:
+	case TAG_ABI_PCS_WCHAR_T:
+	case TAG_ABI_ENUM_SIZE:
+	case TAG_ABI_ALIGN_NEEDED:
+	case TAG_ABI_ALIGN_PRESERVED:
+	case TAG_ABI_FP_ROUNDING:
+	case TAG_ABI_FP_DENORMAL:
+	case TAG_ABI_FP_EXCEPTIONS:
+	case TAG_ABI_FP_USER_EXCEPTIONS:
+	case TAG_ABI_FP_NUMBER_MODEL:
+	case TAG_ABI_HARDFP_USE:
+	case TAG_ABI_VFP_ARGS:
+	case TAG_ABI_WMMX_ARGS:
+	// optimization attributes
+	case TAG_ABI_OPTIMIZATION_GOALS:
+	case TAG_ABI_FP_OPTIMIZATION_GOALS:
+		next_data = rz_uleb128(attribute_value_data, attribute_value_size, &attribute->value_int, &error);
+		if (error) {
+			RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: %s\n", error);
+			RZ_FREE(error);
+			return NULL;
+		}
+		return next_data;
+	// target-related attributes
+	case TAG_CPU_NAME:
+	case TAG_CPU_RAW_NAME:
+	// generic compatibility tag
+	case TAG_COMPATIBILITY:
+		n = strnlen((const char *)attribute_value_data, attribute_value_size);
+		if (n < attribute_value_size) {
+			attribute->value_str = (char *)attribute_value_data;
+			return attribute_value_data + n + 1; // including terminating null byte
+		}
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: missing terminating null byte\n");
+		return NULL;
+	}
+
+	if (attribute->tag <= 32) {
+		RZ_LOG_WARN("ARM aeabi: unknown private attribute tag: %d\n", attribute->tag);
+		return NULL;
+	}
+
+	if (attribute->tag & 1) {
+		n = strnlen((const char *)attribute_value_data, attribute_value_size);
+		if (n < attribute_value_size) {
+			attribute->value_str = (char *)attribute_value_data;
+			return attribute_value_data + n + 1; // including terminating null byte
+		}
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: missing terminating null byte\n");
+		return NULL;
+	}
+	next_data = rz_uleb128(attribute_value_data, attribute_value_size, &attribute->value_int, &error);
+	if (error) {
+		RZ_LOG_WARN("ARM aeabi: cannot parse attribute value: %s\n", error);
+		RZ_FREE(error);
+		return NULL;
+	}
+	return next_data;
+}
+
+static int get_modes_from_arm_aeabi_attributes(const ut8 *data, ut32 size) {
+	int modes = 0;
+	while (size) {
+		arm_attribute_t attribute;
+		const ut8 *next = parse_arm_attribute(data, size, &attribute);
+		if (!next) {
+			break;
+		}
+
+		if (attribute.tag == TAG_CPU_ARCH_PROFILE) {
+			ut64 cpu_arch_profile = attribute.value_int;
+			if (cpu_arch_profile == ARM_PROFILE_M) {
+				modes |= MODE_MCLASS;
+			}
+		}
+
+		if (attribute.tag == TAG_CPU_ARCH) {
+			ut64 cpu_arch = attribute.value_int;
+			if (cpu_arch >= ARM_VER_V8_A && cpu_arch <= ARM_VER_V8_1_M_MAINLINE) {
+				modes |= MODE_V8;
+			}
+			if (cpu_arch >= ARM_VER_V9_A) {
+				// This is technically not V8 anymore, but probably a better approximation than "not v8".
+				modes |= MODE_V8;
+			}
+		}
+
+		size -= next - data;
+		data = next;
+	}
+
+	if (size > 0) {
+		RZ_LOG_WARN("ARM aeabi: attributes not fully parsed (%d bytes left)\n", size);
+	}
+
+	return modes;
+}
+
+static int get_modes_from_arm_aeabi_vendor_data(const char *data, ut32 size, bool big_endian) {
+	int modes = 0;
+
+	while (size >= 5) {
+		ut8 tag = rz_read_ble8(data);
+		if (tag != ARM_TAG_FILE && tag != ARM_TAG_SECTION && tag != ARM_TAG_SYMBOL) {
+			RZ_LOG_WARN("ARM aeabi: unknown sub-subsection tag=0x%02x\n", tag);
+			break;
+		}
+		ut32 subsubsection_size = rz_read_ble32(data + 1, big_endian);
+		if (subsubsection_size > size) {
+			RZ_LOG_WARN("ARM aeabi: sub-subsection size does not fit in subsection\n");
+			break;
+		}
+
+		if (tag == ARM_TAG_FILE && subsubsection_size > 5) {
+			modes |= get_modes_from_arm_aeabi_attributes((ut8 *)data + 5, subsubsection_size - 5);
+		}
+
+		// Advance to the next entry.
+		size -= subsubsection_size;
+		data += subsubsection_size;
+	}
+
+	if (size > 0) {
+		RZ_LOG_WARN("ARM aeabi: subsection not fully parsed (%d bytes left)\n", size);
+	}
+
+	return modes;
+}
+
+/**
+ * \brief Get more precise CPU details from .ARM.attributes section.
+ *
+ * - https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#536build-attributes
+ * - https://github.com/ARM-software/abi-aa/blob/main/addenda32/addenda32.rst#32representing-build-attributes-in-elf-files
+ */
+static int get_modes_from_arm_attributes_section(ELFOBJ *bin) {
+	int modes = 0;
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".ARM.attributes");
+	if (!section || !section->is_valid || section->type != SHT_ARM_ATTRIBUTES || section->size < 1) {
+		return modes;
+	}
+
+	char *buf = RZ_NEWS0(char, section->size + 1);
+	if (!buf) {
+		return modes;
+	}
+	if (rz_buf_read_at(bin->b, section->offset, (ut8 *)buf, section->size) != section->size) {
+		free(buf);
+		return modes;
+	}
+	const char *buf_end = buf + section->size + 1;
+
+	// The current format-version is just 'A'.
+	if (buf[0] != 'A') {
+		free(buf);
+		return modes;
+	}
+
+	bool big_endian = Elf_(rz_bin_elf_is_big_endian)(bin);
+
+	char *subsection_ptr = buf + 1;
+	while (buf_end > subsection_ptr + 4) {
+		const ut32 subsection_size = rz_read_ble32(subsection_ptr, big_endian);
+		if (subsection_size <= 4 || buf_end <= subsection_ptr + subsection_size) {
+			RZ_LOG_WARN("ARM aeabi: subsection size\n");
+			break;
+		}
+		ut32 i = 4;
+
+		// We are only interested in public ("aeabi") attributes subsection
+		const char aeabi[] = "aeabi";
+		if (!rz_str_cmp(&subsection_ptr[i], aeabi, sizeof(aeabi))) {
+			i += sizeof(aeabi);
+			modes |= get_modes_from_arm_aeabi_vendor_data(&subsection_ptr[i], subsection_size - i, big_endian);
+		}
+
+		subsection_ptr += subsection_size;
+	}
+
+	free(buf);
+	return modes;
+}
+
+/**
+ * Because only CS_MODE_MCLASS and CS_MODE_V8 are currently used for disassembly, we only need to detect those.
+ */
+static char *get_cpu_arm(ELFOBJ *bin) {
+	int modes = get_modes_from_arm_attributes_section(bin);
+
+	// Render modes to string buffer
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (modes & MODE_MCLASS) {
+		rz_strbuf_append(&sb, "cortexm");
+	}
+	if (modes & MODE_V8) {
+		if (!rz_strbuf_is_empty(&sb)) {
+			rz_strbuf_append(&sb, " ");
+		}
+		rz_strbuf_append(&sb, "v8");
 	}
 
 	return rz_strbuf_drain_nofree(&sb);
@@ -1672,6 +1932,8 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
 	} else if (arch_is_parisc(bin)) {
 		return get_cpu_hppa(bin);
+	} else if (arch_is_arm(bin)) {
+		return get_cpu_arm(bin);
 	}
 
 	return NULL;

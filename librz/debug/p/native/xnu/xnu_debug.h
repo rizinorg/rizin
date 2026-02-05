@@ -42,8 +42,9 @@
 #define PT_FIRSTMACH   32 /* for machine-specific requests */
 int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #else
+#include <AvailabilityMacros.h>
 #include <sys/ptrace.h>
-#if !__POWERPC__
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
 #include <sys/proc_info.h>
 #include <libproc.h>
 #define HAS_LIBPROC

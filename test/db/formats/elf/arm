@@ -1,0 +1,69 @@
+NAME=arm asm.cpu v6S-M
+FILE=bins/arm/elf/pico_serprog.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+cortexm
+EOF
+RUN
+
+NAME=arm asm.cpu v7E-M
+FILE=bins/arm/elf/mini/mini-cortex-m4.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+cortexm
+EOF
+RUN
+
+NAME=arm asm.cpu v8-M.baseline
+FILE=bins/arm/elf/mini/mini-cortex-m23.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+cortexm v8
+EOF
+RUN
+
+NAME=arm asm.cpu v8.1-M.mainline
+FILE=bins/arm/elf/mini/mini-cortex-m85.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+cortexm v8
+EOF
+RUN
+
+NAME=arm asm.cpu v7
+FILE=bins/arm/elf/mini/mini-cortex-a7.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+arm
+EOF
+RUN
+
+NAME=arm asm.cpu v8
+FILE=bins/arm/elf/mini/mini-cortex-a53.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+v8
+EOF
+RUN
+
+NAME=arm asm.cpu v9
+FILE=bins/arm/elf/mini/mini-cortex-a710.elf
+CMDS=<<EOF
+e asm.cpu
+EOF
+EXPECT=<<EOF
+v8
+EOF
+RUN
