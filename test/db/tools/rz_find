@@ -315,3 +315,78 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=rz-find multi-file continues on error
+FILE==
+CMDS=!rz-find -s README nonexistent_file.bin bins/arm/README
+EXPECT=<<EOF
+File: bins/arm/README
+0x0
+EOF
+EXPECT_ERR=<<EOF
+Cannot open file 'nonexistent_file.bin'
+EOF
+RUN
+
+NAME=rz-find multi-file error exit code
+FILE==
+CMDS=<<EOF
+!rz-find -s README nonexistent_file.bin bins/arm/README
+%v $?
+EOF
+EXPECT=<<EOF
+File: bins/arm/README
+0x0
+0x1
+EOF
+EXPECT_ERR=<<EOF
+Cannot open file 'nonexistent_file.bin'
+EOF
+RUN
+
+NAME=rz-find multi-file all success exit code
+FILE==
+CMDS=<<EOF
+!rz-find -q -s README bins/arm/README bins/arm/README
+%v $?
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x0
+EOF
+RUN
+
+NAME=rz-find empty path continues to next
+FILE==
+CMDS=<<EOF
+!rz-find -q -s README "" bins/arm/README
+%v $?
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+EOF
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=rz-find JSON multiple files keyword search
+FILE==
+CMDS=!rz-find -j -s 250382 bins/elf/ioli/crackme0x00 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+[{"offset":1423,"type":"string","data":"250382"},{"offset":1423,"type":"string","data":"250382"}]
+EOF
+RUN
+
+NAME=rz-find verbose with JSON outputs scanning to stderr
+FILE==
+CMDS=!rz-find -V -j -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+[{"offset":1423,"type":"string","data":"250382"}]
+EOF
+EXPECT_ERR=<<EOF
+Scanning: bins/elf/ioli/crackme0x00
+EOF
+RUN

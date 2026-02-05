@@ -11,12 +11,21 @@
 .Op Fl f/t Ar from/to
 .Op Fl  Ar [e|s|w|S|I] str
 .Op Fl x Ar hex
-.Op Fl  Ar |file|dir ..
+.Ar file|dir
+.Op Ar file|dir ...
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
 .Nm rz-find
-Searches for specified byte patterns, strings, or hexpairs in the given files.
+searches for specified byte patterns, strings, or hexpairs in the given files.
+Multiple files and/or directories can be specified as arguments.
+When a directory is provided, it is searched recursively.
+.Pp
+When searching a single file, quiet mode is enabled by default (no filename headers).
+When searching multiple files or directories, each result is prefixed with the filename
+unless
+.Fl q
+is specified.
 .Pp
 The options are:
 .Bl -tag -width Fl
@@ -37,13 +46,13 @@ Show usage help message
 .It Fl i
 Identify filetype (rizin -nqcpm file)
 .It Fl j
-Output in JSON
+Output in JSON format. Results are returned as a JSON array of objects.
 .It Fl m
 Magic search, file-type carver
 .It Fl M Ar str
 Set a binary mask to be applied on keywords
 .It Fl n
-Do not stop the search when a read error occurs
+Do not stop the search when a read error occurs. Continue to next block or file.
 .It Fl r
 Print using rizin commands
 .It Fl s Ar str
@@ -60,6 +69,10 @@ Stop search at address 'to'
 Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
 .It Fl v
 Show version information
+.It Fl V
+Verbose mode - show each file being scanned. When combined with
+.Fl j ,
+verbose output is written to stderr to preserve stdout for JSON results.
 .It Fl x Ar hex
 Search for an hexpair string (can be used multiple times)
 .It Fl X
@@ -68,6 +81,64 @@ Show hexdump of search results
 Search for zero-terminated strings
 .It Fl Z
 Show string found on each search hit
+.El
+.Sh MULTIPLE FILES AND DIRECTORIES
+.Nm rz-find
+supports searching across multiple files and directories in a single invocation.
+.Pp
+When multiple paths are provided:
+.Bl -bullet -compact
+.It
+Each file is searched in the order specified.
+.It
+Directories are searched recursively (hidden files starting with '.' are skipped).
+.It
+If any file cannot be opened or read, an error is printed but processing continues with remaining files.
+.It
+The exit code reflects whether all files were processed successfully (0) or if any errors occurred (1).
+.El
+.Sh EXIT STATUS
+.Bl -tag -width Ds
+.It 0
+All files were processed successfully.
+.It 1
+One or more files could not be opened or had read errors, or invalid arguments were provided.
+.El
+.Sh EXAMPLES
+Search for a string in a single file:
+.Bd -literal -offset indent
+rz-find -s "password" firmware.bin
+.Ed
+.Pp
+Search for a hex pattern in multiple files:
+.Bd -literal -offset indent
+rz-find -x "cafebabe" file1.bin file2.bin file3.bin
+.Ed
+.Pp
+Recursively search a directory for a string:
+.Bd -literal -offset indent
+rz-find -s "secret" /path/to/firmware/
+.Ed
+.Pp
+Search multiple directories and files with JSON output:
+.Bd -literal -offset indent
+rz-find -j -s "config" dir1/ dir2/ standalone.bin
+.Ed
+.Pp
+Search for zero-terminated strings in a binary with JSON output:
+.Bd -literal -offset indent
+rz-find -z -j firmware.bin
+.Ed
+.Pp
+Verbose search showing files being scanned:
+.Bd -literal -offset indent
+rz-find -V -s "pattern" *.bin
+.Ed
+.Pp
+Search with aligned hits (power of 2):
+.Bd -literal -offset indent
+rz-find -a 4 -x "00000000" memory.dump
+.Ed
 .Pp
 .Sh SEE ALSO
 .Pp

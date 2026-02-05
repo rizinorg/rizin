@@ -77,7 +77,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		eprintf("Invalid delta\n");
 		return 0;
 	}
-	if (!ro->quiet) {
+	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
 	char _str[128];
@@ -138,7 +138,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	if (ro->json) {
 		const char *type = "string";
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
-			ro->comma, addr, type, str);
+			ro->comma ? ro->comma : "", addr, type, str);
 		ro->comma = ",";
 	} else if (ro->rad) {
 		printf("f hit%d_%d @ 0x%08" PFMT64x " ; %s\n", 0, kw->count, addr, ro->curfile);
@@ -166,7 +166,14 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
+/**
+ * \brief Print a binary string result in the appropriate output format.
+ * \param bf The binary file containing the string.
+ * \param string The string to print.
+ * \param ro Options containing output format settings (JSON mode, comma state, quiet mode).
+ *            If NULL, prints as plain text.
+ */
+static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *ro) {
 	rz_return_if_fail(bf && string);
 
 	RzBinSection *s = rz_bin_get_section_at(bf->o, string->paddr, false);
@@ -175,19 +182,27 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, PJ *pj) {
 	}
 	string->vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 
-	if (pj) {
+	if (ro && ro->json) {
 		const char *section_name = s ? s->name : "";
 		const char *type_string = rz_str_enc_as_string(string->type);
-		pj_o(pj);
-		pj_kn(pj, "vaddr", string->vaddr);
-		pj_kn(pj, "paddr", string->paddr);
-		pj_kn(pj, "size", string->size);
-		pj_kn(pj, "length", string->length);
-		pj_ks(pj, "section", section_name);
-		pj_ks(pj, "type", type_string);
-		pj_ks(pj, "string", string->string);
-		pj_end(pj);
+		// Escape all string fields for JSON safety
+		char *escaped_section = rz_str_escape_utf8_for_json(section_name, -1);
+		char *escaped_type = rz_str_escape_utf8_for_json(type_string, -1);
+		char *escaped_string = rz_str_escape_utf8_for_json(string->string, -1);
+		printf("%s{\"vaddr\":%" PFMT64u ",\"paddr\":%" PFMT64u ",\"size\":%" PFMT64u ",\"length\":%" PFMT64u ",\"section\":\"%s\",\"type\":\"%s\",\"string\":\"%s\"}",
+			ro->comma ? ro->comma : "",
+			string->vaddr, string->paddr, (ut64)string->size, (ut64)string->length,
+			escaped_section ? escaped_section : "",
+			escaped_type ? escaped_type : "",
+			escaped_string ? escaped_string : "");
+		free(escaped_section);
+		free(escaped_type);
+		free(escaped_string);
+		ro->comma = ",";
 	} else {
+		if (ro && !ro->quiet) {
+			printf("File: %s\n", ro->curfile ? ro->curfile : "");
+		}
 		printf("%s\n", string->string);
 	}
 }
@@ -239,7 +254,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	int ret, result = 0;
 
 	if (ro->verbose) {
-		printf("Scanning: %s\n", file);
+		FILE *stream = ro->json ? stderr : stdout;
+		fprintf(stream, "Scanning: %s\n", file);
 	}
 
 	ro->buf = NULL;
@@ -289,7 +305,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				rz_pvector_foreach (imports, vec_it) {
 					import = *vec_it;
 					if (!strcmp(import->name, kw)) {
-						if (!ro->quiet) {
+						if (!ro->quiet && !ro->json) {
 							printf("File: %s\n", file);
 						}
 						printf("ordinal: %d %s\n", import->ordinal, kw);
@@ -311,7 +327,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 					}
 
 					if (!strcmp(symbol->name, kw)) {
-						if (!ro->quiet) {
+						if (!ro->quiet && !ro->json) {
 							printf("File: %s\n", file);
 						}
 						printf("paddr: 0x%08" PFMT64x " vaddr: 0x%08" PFMT64x " type: %s %s\n", symbol->paddr, symbol->vaddr, symbol->type, symbol->name);
@@ -378,34 +394,19 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
 
 	if (ro->mode == RZ_SEARCH_STRING) {
-		PJ *pj = NULL;
-		if (ro->json) {
-			pj = pj_new();
-			if (!pj) {
-				eprintf("rz-bin: Cannot allocate buffer for json array\n");
-				result = 1;
-				goto err;
-			}
-			pj_a(pj);
-		}
-
-		RzBinStringSearchOpt opt = bin->str_search_cfg;
+		RzBinStringSearchOpt search_opt = bin->str_search_cfg;
 		// enforce raw binary search
-		opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		search_opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
 
-		RzPVector *vec = rz_bin_file_strings(bf, &opt);
+		ro->curfile = file;
+		RzPVector *vec = rz_bin_file_strings(bf, &search_opt);
 		void **it;
 		RzBinString *string;
 		rz_pvector_foreach (vec, it) {
 			string = *it;
-			print_bin_string(bf, string, pj);
+			print_bin_string(bf, string, ro);
 		}
 		rz_pvector_free(vec);
-		if (pj) {
-			pj_end(pj);
-			printf("%s", pj_string(pj));
-			pj_free(pj);
-		}
 		goto done;
 	}
 
@@ -480,6 +481,7 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 	RzListIter *iter;
 	char *fullpath;
 	char *fname = NULL;
+	int result = 0;
 
 	RzList *files = rz_sys_dir(dir);
 
@@ -490,12 +492,15 @@ static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 				continue;
 			}
 			fullpath = rz_file_path_join(dir, fname);
-			(void)rzfind_open(ro, fullpath);
+			int res = rzfind_open(ro, fullpath);
+			if (res != 0) {
+				result = 1;
+			}
 			free(fullpath);
 		}
 		rz_list_free(files);
 	}
-	return 0;
+	return result;
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file) {
@@ -663,21 +668,26 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		}
 	}
 	if (ro.json) {
+		ro.comma = "";
 		printf("[");
 	}
+	int overall_result = 0;
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
 
 		if (RZ_STR_ISEMPTY(file)) {
 			eprintf("Cannot open empty path\n");
-			rz_list_free(ro.keywords);
-			return 1;
+			overall_result = 1;
+			continue;
 		}
-		rzfind_open(&ro, file);
+		int res = rzfind_open(&ro, file);
+		if (res != 0) {
+			overall_result = 1;
+		}
 	}
 	rz_list_free(ro.keywords);
 	if (ro.json) {
 		printf("]\n");
 	}
-	return 0;
+	return overall_result;
 }
