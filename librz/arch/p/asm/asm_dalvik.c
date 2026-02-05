@@ -343,7 +343,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 				rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
 			}
 			strasm = rz_str_append(strasm, str);
-			break;			
+			break;
 		}
 		case fmtopvCCCCmBBBB:
 			vA = (int)buf[1];
