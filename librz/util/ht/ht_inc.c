@@ -17,13 +17,7 @@
 #define LOAD_FACTOR_NUM 7
 #define LOAD_FACTOR_DEN 8 /* should be power of 2; also GROUP_WIDTH should be multiple of LOAD_FACTOR_DEN */
 
-// #define S_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0])) /*??*/
-// #define QUICK_MIX(h) ((key) ^= (key) >> 16, (h) *= 0x9e3779b1u, (h) ^= (h) >> 15)
-// #define HASH_MIX(h) (hashfn_quick_mix(h))
-// #define HASH_MIX(h) (h)
-
-// #define H1(HASH)                     (HASH >> 7)
-// #define H2_HASH_FRAGMENT(HASH)       (HASH & 0x7F)
+// Helper macros for H1/H2 hash components
 #define H1(HASH)                     (HASH)
 #define H2_HASH_FRAGMENT(HASH)       ((HASH >> 19) & 0x7F)
 #define H2_STATUS_DELETED            0b11111110
@@ -45,13 +39,9 @@
 //	- [x] support custom element size
 //	- support deletion slot trick (use empty slot where possible)
 //	- [?] allocate everything in one block
-//	- support BE environments
+//	- [x] support BE environments
 //	- clean up
 //  - adapt sdb.c
-
-// todo: define likely/unlikely; OR remove it there is no impact
-#define RZ_HOT_PATH
-#define RZ_COLD_PATH
 
 // todo: move to another header if going to be used
 #if defined(_MSC_VER)
@@ -67,8 +57,8 @@
     #define HAVE_SSE2
 #endif
 
+// Select lookup implementation
 #ifdef HAVE_SSE2
-	// SSE2 is present x64/amd64 archs
 	#include <emmintrin.h>
 	#define LOOKUP_METHOD_SSE2
 	#define GROUP_WIDTH  16
@@ -80,14 +70,15 @@
 	typedef ut64 group_mask_t;
 	#define GROUP_WIDTH sizeof(group_t)
 #else
-	// todo: for 32-bit use default implementation below
+	// Default lookup implementation
 	typedef ut64 group_t;
-	typedef ut64 group_mask_t;
 	#define GROUP_WIDTH sizeof(group_t)
 #endif
 
-#define MIN_CAPACITY (GROUP_WIDTH)
+// Minimal capacity of a hash table
+#define MIN_CAPACITY GROUP_WIDTH
 
+// Slot addressing is different depending on whether custom elem_size is used
 #ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
 	#define HT_SLOT_AT(ht, index) \
 		((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
@@ -152,18 +143,16 @@
 			HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
 			HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
 	}
-
 #elif defined(LOOKUP_METHOD_BITWISE_64)
 	static inline group_t group_load(const void *addr) {
 		return rz_read_le64(addr);
 	}
 
-	// Construct a ut64 by repeating/broadcasting a byte value (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
+	// Construct a ut64 by repeating a single byte (e.g. 0xF0 -> 0xF0F0F0F0F0F0F0F0)
 	static inline group_t group_repeat(ut8 byte) {
 		return byte * 0x0101010101010101ull;
 	}
 
-	// Match a hash fragment byte to 4/8 control bytes
 	static inline group_t group_match_hash_fragment(group_t group, ut8 ctrl) {
 		group_t diff = group ^ group_repeat(ctrl);
 		return (diff - group_repeat(0x01)) & ~diff & group_repeat(0x80);
@@ -194,7 +183,6 @@
 			HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
 			HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
 	}
-
 #else
 	// Default implementation
 	#define HT_FOREACH(ht, kv, body) \
@@ -206,16 +194,11 @@
 		}
 #endif
 
-// static inline ut32 hashfn_quick_mix(ut64 h) {
-//     // ut32 x = (h ^ ((h * 0xc2b2ae35) >> 16)) * 0x9e3779b1u;
-//     // return x ^ (x >> 15);
-// 	return _mm_crc32_u32(0, h);
-// }
-
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
-	ut32 result = ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k); // todo: keep entropy for hashfn(k)
+	ut32 result = ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
 
 	if (ht->hash_shift) {
+		// Extra bit mixing for smaller hash tables
 		result ^= result >> 16;
         result *= 0x85ebca6b;
         result ^= result >> ht->hash_shift;
@@ -261,26 +244,6 @@ static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 
 	return ht->opt.cmp && !ht->opt.cmp(key, kv->key);
 }
 
-// static inline HT_(Kv) *kv_at(HtName_(Ht) *ht, HT_(Bucket) *bt, ut32 i) {
-// 	return (HT_(Kv) *)((char *)bt->arr + i * ht->opt.elem_size);
-// }
-
-// static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
-// 	return (HT_(Kv) *)((char *)kv + ht->opt.elem_size);
-// }
-
-// #define BUCKET_FOREACH(ht, bt, j, kv) \
-// 	if ((bt)->arr) \
-// 		for ((j) = 0, (kv) = (bt)->arr; (j) < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
-
-// #define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
-// 	if ((bt)->arr) \
-// 		for ((j) = 0, (kv) = (bt)->arr, (count) = (ht)->count; \
-// 			(j) < (bt)->count; \
-// 			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
-
-// todo: avoid assigning past end
-
 static void ctrl_table_set(HtName_(Ht) *ht, INDEX_TYPE idx, ut8 value) {
 	ht->ctrl[idx] = value;
 
@@ -316,6 +279,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// Use minimum capacity of group size in order to avoid edge cases (related to ctrl byte mirroring and deletion slot placement)
 	// No maximum capacity enforcement at the moment..
 	ht->capacity = next_power_of_two(RZ_MAX(requested_capacity, 16));
+	ht->grow_threshold = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
 	ht->size = 0;
 	ht->opt = *opt;
 
@@ -389,12 +353,6 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 		HT_FOREACH(ht, kv, {
 			ht->opt.finiKV(kv, ht->opt.finiKV_user);
 		});
-		// for (INDEX_TYPE i = 0; i < ht->capacity; i++) {
-		// 	if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) { // todo: process all elements in group
-		// 		continue;
-		// 	}
-		// 	ht->opt.finiKV(&ht->slots[i], ht->opt.finiKV_user);
-		// }
 	}
 
 	free(ht->data);
@@ -406,7 +364,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
  * \return true if either no growing is needed or there was a successfull growth; otherwise returns false on failed growth attempt
  */
 static bool grow_if_needed(HtName_(Ht) *ht) {
-	if (ht->size < (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM) {
+	if ((ht->size + ht->deleted_slots) < ht->grow_threshold) {
 		return true;
 	}
 
@@ -418,18 +376,6 @@ static bool grow_if_needed(HtName_(Ht) *ht) {
 		return false;
 	}
 
-	// Iterate all slots and copy elements to `h2`
-	// for (ut32 i = 0; i < ht->capacity; i++) {
-	// 	if (H2_IS_EMPTY_OR_DELETED(ht->ctrl[i])) {
-	// 		continue;
-	// 	}
-
-	// 	if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
-	// 		ht2->opt.finiKV = NULL;
-	// 		Ht_(free)(ht2);
-	// 		return false;
-	// 	}
-	// }
 	HT_FOREACH(ht, kv, {
 		// if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
 		if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
@@ -449,18 +395,11 @@ static bool grow_if_needed(HtName_(Ht) *ht) {
 	return true;
 }
 
-// static HT_(Kv) *check_growing(HtName_(Ht) *ht, HT_(Kv) *tracked) {
-// 	if (ht->count >= LOAD_FACTOR * ht->capacity) {
-// 		return internal_ht_grow(ht, tracked);
-// 	}
-// 	return tracked;
-// }
-
 /**
  * todo..
  * \return if the \p key is found this function will return it's slot ID, otherwise will return the ID of the next available slot for insertion purposes
  */
-static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, ut32 hash, ut8 hash_fragment, bool *existing) {
+static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, ut32 hash, ut8 hash_fragment, ut8 *previous_ctrl, bool *existing) {
 	ut32 probe_step = GROUP_WIDTH;
 	INDEX_TYPE index = H1(hash) & (ht->capacity - 1); // todo: rename to group_index_start, etc
 	INDEX_TYPE first_deleted = INVALID_INDEX;
@@ -478,6 +417,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 			if (is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, i))) {
 				*existing = true;
+				*previous_ctrl = 0; // not empty or deleted; we don't need the actual value
 				return i;
 			}
 		}
@@ -490,7 +430,8 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 		// Check if there is at least 1 empty slot in the group
 		if ((empty_match = group_match_empty(group))) {
 			*existing = false;
-			return first_deleted == INVALID_INDEX ? (index + group_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
+			*previous_ctrl = first_deleted == INVALID_INDEX ? H2_STATUS_EMPTY : H2_STATUS_DELETED;
+			return *previous_ctrl == H2_STATUS_EMPTY ? (index + group_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
 		}
 #else
 		INDEX_TYPE first_empty = INVALID_INDEX;
@@ -503,8 +444,6 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 					first_empty = normalized_i;
 				}
 				continue;
-				// *existing = false;
-				// return first_deleted == INVALID_INDEX ? normalized_i : first_deleted;
 			}
 
 			// If we visit a deleted slot, save it's index for potential later use
@@ -515,20 +454,22 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 				continue;
 			}
 
-			if (ht->ctrl[i] == hash_fragment && RZ_HOT_PATH(is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, normalized_i)))) {
+			if (ht->ctrl[i] == hash_fragment && is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, normalized_i))) {
 				*existing = true;
+				*previous_ctrl = 0; // not empty; we don't need the value
 				return normalized_i;
 			}
 		}
 
 		if (first_empty != INVALID_INDEX) {
 			*existing = false;
-			return first_deleted != INVALID_INDEX ? first_deleted : first_empty;
+			*previous_ctrl = first_deleted == INVALID_INDEX ? H2_STATUS_EMPTY : H2_STATUS_DELETED;
+			return *previous_ctrl == H2_STATUS_EMPTY ? first_empty : first_deleted;
 		}
 #endif
 
 		// Warn if we reach past the probing sequence (unexpected since we shouldn't get above load factor > 85.4%)
-		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
+		if (probe_step >= ht->capacity) {
 			rz_warn_if_reached();
 			*existing = false;
 			return INVALID_INDEX;
@@ -544,9 +485,9 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
  * todo..
  */
 static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len) {
+	ut32 probe_step = GROUP_WIDTH;
 	ut32 hash = hashfn(ht, key);
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
-	ut32 probe_step = GROUP_WIDTH;
 	INDEX_TYPE index = H1(hash) & (ht->capacity - 1);
 
 	while (true) {
@@ -554,7 +495,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 #if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64)
 		group_t group = group_load(&ht->ctrl[index]);
 
-		// Match all group control bytes with the hash fragment of `key`
+		// Match all group control bytes with the H2 (hash fragment) of `key`
 		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
 			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
 
@@ -578,7 +519,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 				continue;
 			}
 
-			if (ht->ctrl[i] == hash_fragment && RZ_HOT_PATH(is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, normalized_i)))) {
+			if (ht->ctrl[i] == hash_fragment && is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, normalized_i))) {
 				return normalized_i;
 			}
 		}
@@ -589,7 +530,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 #endif
 
 		// Warn if we reach past the probing sequence (unexpected)
-		if (RZ_COLD_PATH(probe_step >= ht->capacity)) {
+		if (probe_step >= ht->capacity) {
 			rz_warn_if_reached();
 			return INVALID_INDEX;
 		}
@@ -604,17 +545,18 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
  * \brief Get an existing KV with key \p key or allocate a new KV otherwise
  */
 static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
-	if (RZ_COLD_PATH(!grow_if_needed(ht))) {
+	if (!grow_if_needed(ht)) {
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
 
 	ut32 hash = hashfn(ht, key);
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
+	ut8 previous_ctrl = 0;
 	bool existing = false;
-	INDEX_TYPE idx = ctrl_table_lookup_or_reserve(ht, key, key_len, hash, hash_fragment, &existing);
+	INDEX_TYPE idx = ctrl_table_lookup_or_reserve(ht, key, key_len, hash, hash_fragment, &previous_ctrl, &existing);
 
-	if (RZ_COLD_PATH(idx == INVALID_INDEX)) {
+	if (idx == INVALID_INDEX) {
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
@@ -634,38 +576,19 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 	// Writing over an empty or a deleted slot
 	*code = HT_RC_INSERTED;
 
+	// Decrease `deleted_slots` if writing over a deleted slot specifically
+	if (previous_ctrl == H2_STATUS_DELETED) {
+		ht->deleted_slots--;
+	}
+
 	ht->size++;
 	ctrl_table_set(ht, idx, hash_fragment);
 	return HT_SLOT_AT(ht, idx);
 }
 
-/**
- * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
- *        if hash table \p ht already contains a KV with the same key as \p kv
- * \param ht Hash table
- * \param kv KV; shallow copy is made when writing to the hash table
- * \param update Update flag; if set to true, replacement of existing KV is allowed
- * \return Returns true if insertion/replacement took place
- */
-RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
-	// todo: check if we need to inline
-	return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0; // todo: move to static function
-}
+//
 
-/**
- * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
- *        if hash table \p ht already contains a KV with the same key as \p kv
- * \param ht Hash table
- * \param kv KV; shallow copy is made when writing to the hash table
- * \param update Update flag; if set to true, replacement of existing KV is allowed
- * \param[out] out_kv Pointer to the inserted/updated KV
- *                    or pointer to the KV that prevented insertion (only if \p update set to false)
- *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
- * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
- *         returns HT_RC_EXISTING if key \p key already exists (only if \p update set to false);
- *         returns HT_RC_ERROR if out of memory.
- */
-RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+static inline HtRetCode internal_insert_kv_ex(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
 	HtRetCode rc;
@@ -685,6 +608,56 @@ RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv
 	}
 
 	return rc;
+}
+
+/**
+ * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
+ *        if hash table \p ht already contains a KV with the same key as \p kv
+ * \param ht Hash table
+ * \param kv KV; shallow copy is made when writing to the hash table
+ * \param update Update flag; if set to true, replacement of existing KV is allowed
+ * \return Returns true if insertion/replacement took place
+ */
+RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
+	// todo: check if we need to inline
+	// return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0; // todo: move to static function
+	return internal_insert_kv_ex(ht, kv, update, NULL) > 0;
+}
+
+/**
+ * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
+ *        if hash table \p ht already contains a KV with the same key as \p kv
+ * \param ht Hash table
+ * \param kv KV; shallow copy is made when writing to the hash table
+ * \param update Update flag; if set to true, replacement of existing KV is allowed
+ * \param[out] out_kv Pointer to the inserted/updated KV
+ *                    or pointer to the KV that prevented insertion (only if \p update set to false)
+ *                    or NULL in case of error. Pointers are valid until the next modification of the hash table.
+ * \return Returns HT_RC_INSERTED/HT_RC_UPDATED if KV was inserted/updated;
+ *         returns HT_RC_EXISTING if key \p key already exists (only if \p update set to false);
+ *         returns HT_RC_ERROR if out of memory.
+ */
+RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
+	return internal_insert_kv_ex(ht, kv, update, NULL);
+	// rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
+
+	// HtRetCode rc;
+	// HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
+
+	// if (rc <= 0) {
+	// 	if (out_kv) {
+	// 		*out_kv = kv_dst;
+	// 	}
+	// 	return rc;
+	// }
+
+	// memcpy(kv_dst, kv, ht->opt.elem_size);
+
+	// if (out_kv) {
+	// 	*out_kv = kv_dst;
+	// }
+
+	// return rc;
 }
 
 static HtRetCode insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
@@ -791,6 +764,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	// Remove the old_key kv, paying attention to not double free the value
 	// TODO: use empty instead of delete where possible...
 	ctrl_table_set(ht, idx, H2_STATUS_DELETED);
+	ht->deleted_slots++;
 
 	// Do not free the value part if dupvalue is not set, because the old value will be
 	// associated with the new key and it should not be freed
@@ -853,7 +827,8 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 	}
 
 	ht->size--;
-	ctrl_table_set(ht, idx, H2_STATUS_DELETED); // todo: use empty where possible
+	ht->deleted_slots++; // todo: only if not placing empty
+	ctrl_table_set(ht, idx, H2_STATUS_DELETED); // todo: use empty where possible; do we need to keep track of deleted slots?
 	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
 
 	return true;
@@ -896,7 +871,7 @@ RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group(?)
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) {
 			continue;
 		}
 		state->kv = HT_SLOT_AT(state->ht, state->ti);
@@ -919,7 +894,7 @@ RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group (?)
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) {
 			continue;
 		}
 		state->kv = HT_SLOT_AT(state->ht, state->ti);
@@ -943,7 +918,7 @@ RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it) {
 
 	// Iterate over tables until a table with an element is found.
 	for (; state->ti < state->ht->capacity; state->ti++) {
-		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) { // todo: process all elements in group (?)
+		if (H2_IS_EMPTY_OR_DELETED(state->ht->ctrl[state->ti])) {
 			continue;
 		}
 		state->kv = HT_SLOT_AT(state->ht, state->ti);

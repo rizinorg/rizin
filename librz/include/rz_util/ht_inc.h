@@ -27,27 +27,21 @@
 //#define HT_ENABLE_CUSTOM_ELEM_SIZE
 //#endif
 
-#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
-#define HT_HASH_FUNC_MUL(key) ((ut32)(key) * 0x9e3779b9)
-#define HT_HASH_FUNC_CRC(key) (_mm_crc32_u32(0, (ut32)key)) /* todo: add portable alternative */
+#ifndef HT_HASH_MIX_64_TO_32
+	#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
+#endif
 
-// todo: check for 32-bit platforms
-// #define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(key))
-// #define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_MUL(key))
-// #define KEY_TO_HASH_SX(key) ((ut32)(uintptr_t)(key))
-// #define KEY_TO_HASH_PX(key) ((ut32)(key) ^ (ut32)((uintptr_t)(key) >> 32))
-// #define KEY_TO_HASH_UX(key) ((ut32)(key) ^ (ut32)((ut64)(key) >> 32))
-// #define KEY_TO_HASH_SX(key) ((ut32)(key) ^ (ut32)((uintptr_t)(key) >> 32))
-// #define KEY_TO_HASH_PX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
-// #define KEY_TO_HASH_UX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
-// #define KEY_TO_HASH_SX(key) (HT_HASH_FUNC_CRC(HT_HASH_MIX_64_TO_32(key)))
-// #define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
-// #define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
-// #define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32(key) * 0x9e3779b9ul)
-#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)) * 0x9e3779b9ul)
-#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
-#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
+#ifndef KEY_TO_HASH_PX
+	#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
+#endif
 
+#ifndef KEY_TO_HASH_UX
+	#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
+#endif
+
+#ifndef KEY_TO_HASH_SX
+	#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
+#endif
 
 #if HT_TYPE == 1
 // Hash table HtPP that has void* as key and void* as value
@@ -160,6 +154,8 @@ typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYP
  * Options contain all the settings of the hashtable.
  */
 typedef struct Ht_(options_t) {
+	size_t elem_size; ///< Size of each HtKv element (useful for subclassing like SdbKv).
+			  ///< Zero value means to use default size of HtKv.
 	HT_(Comparator) cmp; ///< RZ_NULLABLE. Function for comparing keys.
 			     ///< Returns 0 if keys are equal.
 	///< Function is invoked only if == operator applied to keys returns false.
@@ -177,14 +173,14 @@ typedef struct Ht_(options_t) {
 				  ///< Not required for common scenarios. Could be used in subclasses.
 	HT_(FiniKv) finiKV; ///< RZ_NULLABLE. Function to clean up the key-value store.
 	void *finiKV_user; ///< RZ_NULLABLE. User data which is passed into finiKV.
-	size_t elem_size; ///< Size of each HtKv element (useful for subclassing like SdbKv).
-			  ///< Zero value means to use default size of HtKv.
 } HT_(Options);
 
 /* Ht is the hashtable structure */
 typedef struct Ht_(t) {
 	ut32 capacity; ///< Capacity of the main array.
+	ut32 grow_threshold; ///< The hash table is expected to grow if `size` reaches this threshold.
 	ut32 size; ///< Number of stored elements.
+	ut32 deleted_slots; ///< Counts number of deleted slots
 	ut8 hash_shift;
 	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays
 	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer
