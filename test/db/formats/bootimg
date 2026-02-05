@@ -1,6 +1,6 @@
 NAME=empty.img
 FILE=bins/bootimg/empty.img
-CMDS=iI
+CMDS=iI;iH
 EXPECT=<<EOF
 arch     arm
 cpu      N/A
