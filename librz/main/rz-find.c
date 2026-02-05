@@ -16,6 +16,7 @@
 #include <rz_lib.h>
 #include <rz_io.h>
 #include <rz_bin.h>
+#include <rz_magic.h>
 
 typedef struct {
 	bool showstr;
@@ -64,6 +65,80 @@ typedef struct {
 	RzfindOptions *opt;
 	const char *filename;
 } RzfindContext;
+
+static char *rzfind_resolve_rizin_path(void) {
+	char *path = rz_file_path("rizin");
+	if (path && rz_file_exists(path)) {
+		return path;
+	}
+	free(path);
+
+	char *self_path = rz_sys_pid_to_path(rz_sys_getpid());
+	if (!self_path) {
+		return rz_str_dup("rizin");
+	}
+	char *self_dir = rz_file_dirname(self_path);
+	free(self_path);
+	if (!self_dir) {
+		return rz_str_dup("rizin");
+	}
+
+#if __WINDOWS__
+	const char *rizin_exe = "rizin.exe";
+#else
+	const char *rizin_exe = "rizin";
+#endif
+
+	char *cand = rz_file_path_join(self_dir, rizin_exe);
+	if (cand && rz_file_exists(cand)) {
+		free(self_dir);
+		return cand;
+	}
+	free(cand);
+
+	char *parent = rz_file_path_join(self_dir, "..");
+	char *rizin_dir = parent ? rz_file_path_join(parent, "rizin") : NULL;
+	cand = rizin_dir ? rz_file_path_join(rizin_dir, rizin_exe) : NULL;
+	free(parent);
+	free(rizin_dir);
+	free(self_dir);
+
+	if (cand && rz_file_exists(cand)) {
+		return cand;
+	}
+	free(cand);
+	return rz_str_dup("rizin");
+}
+
+static int rzfind_run_subprocess(const char *file, const char *args[], size_t args_size) {
+	RzSubprocessOpt opt = {
+		.file = file,
+		.args = args,
+		.args_size = args_size,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
+		.pty = NULL,
+		.make_raw = false,
+	};
+
+	if (!rz_subprocess_init()) {
+		return -1;
+	}
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	if (!proc) {
+		rz_subprocess_fini();
+		return -1;
+	}
+	rz_subprocess_wait(proc, UT64_MAX);
+	int ret = rz_subprocess_ret(proc);
+	rz_subprocess_free(proc);
+	rz_subprocess_fini();
+	return ret;
+}
 
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindContext *ctx = (RzfindContext *)user;
@@ -262,9 +337,17 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	char *efile = rz_str_escape_sh(file);
 
 	if (ro->identify) {
-		char *cmd = rz_str_newf("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
-		rz_sys_xsystem(cmd);
-		free(cmd);
+		char *rizin_path = rzfind_resolve_rizin_path();
+		const char *args[] = {
+			"-e",
+			"search.show=false",
+			"-e",
+			"search.maxhits=1",
+			"-nqcpm",
+			file,
+		};
+		rzfind_run_subprocess(rizin_path, args, RZ_ARRAY_SIZE(args));
+		free(rizin_path);
 		free(efile);
 		return 0;
 	}
@@ -411,15 +494,116 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 
 	if (ro->mode == RZ_SEARCH_MAGIC) {
-		/* TODO: implement using api */
-		char *tostr = (to && to != UT64_MAX) ? rz_str_newf("-e search.to=%" PFMT64d, to) : rz_str_dup("");
-		rz_sys_cmdf("rizin"
-			    " -e search.in=range"
-			    " -e search.align=%d"
-			    " -e search.from=%" PFMT64d
-			    " %s -qnc/m%s \"%s\"",
-			ro->align < 1 ? 1 : ro->align, ro->from, tostr, ro->json ? "j" : "", efile);
-		free(tostr);
+		char *magic_dir = rz_path_system(NULL, RZ_SDB_MAGIC);
+		if (!magic_dir) {
+			eprintf("Cannot find magic directory\n");
+			result = 1;
+			goto err;
+		}
+
+		RzSearchCollection *collection = rz_search_collection_magic(magic_dir);
+		if (!collection) {
+			eprintf("Cannot initialize magic search\n");
+			free(magic_dir);
+			result = 1;
+			goto err;
+		}
+
+		RzSearchOpt *search_opts = rz_search_opt_new();
+		if (!search_opts) {
+			eprintf("Cannot create search options\n");
+			rz_search_collection_free(collection);
+			free(magic_dir);
+			result = 1;
+			goto err;
+		}
+
+		rz_search_opt_set_max_threads(search_opts, 1);
+		rz_search_opt_set_show_progress_from_str(search_opts, "no");
+		if (!rz_search_opt_set_chunk_size(search_opts, RZ_MAGIC_BUF_SIZE)) {
+			eprintf("Cannot set chunk size\n");
+			rz_search_opt_free(search_opts);
+			rz_search_collection_free(collection);
+			free(magic_dir);
+			result = 1;
+			goto err;
+		}
+
+		RzSearchFindOpt *find_opts = rz_search_find_opt_new();
+		if (!find_opts) {
+			eprintf("Cannot create find options\n");
+			rz_search_opt_free(search_opts);
+			rz_search_collection_free(collection);
+			free(magic_dir);
+			result = 1;
+			goto err;
+		}
+		rz_search_find_opt_set_alignment(find_opts, ro->align < 1 ? 1 : ro->align);
+		rz_search_find_opt_set_overlap_match(find_opts, false);
+		rz_search_opt_set_find_options(search_opts, find_opts);
+
+		RzBuffer *buffer = rz_buf_new_file(file, O_RDONLY, 0);
+		if (!buffer) {
+			eprintf("Cannot open file as buffer: '%s'\n", file);
+			rz_search_opt_free(search_opts);
+			rz_search_collection_free(collection);
+			free(magic_dir);
+			result = 1;
+			goto err;
+		}
+
+		RzList *ranges = NULL;
+		if (ro->from > 0 || (to && to != UT64_MAX && to != rz_buf_size(buffer))) {
+			ranges = rz_list_newf(free);
+			if (ranges) {
+				RzInterval *itv = RZ_NEW0(RzInterval);
+				if (itv) {
+					itv->addr = ro->from;
+					itv->size = (to && to != UT64_MAX) ? (to - ro->from) : (rz_buf_size(buffer) - ro->from);
+					rz_list_append(ranges, itv);
+				}
+			}
+		}
+
+		RzList *hits = rz_search_on_buffer(search_opts, collection, buffer, ranges);
+		rz_list_free(ranges);
+
+		if (hits) {
+			RzListIter *it;
+			RzSearchHit *hit;
+			size_t i = 0;
+			if (ro->json) {
+				rz_list_foreach (hits, it, hit) {
+					char *flag = rz_search_hit_flag_name(hit, i, "hit");
+					char *detail = rz_search_hit_detail_as_string(hit);
+					printf("%s{\"offset\":%" PFMT64u ",\"size\":%" PFMTSZu ",\"flag\":\"%s\",\"detail\":\"%s\"}",
+						ro->comma ? ro->comma : "",
+						hit->address, hit->size,
+						flag ? flag : "",
+						detail ? detail : "");
+					ro->comma = ",";
+					free(flag);
+					free(detail);
+					i++;
+				}
+			} else {
+				rz_list_foreach (hits, it, hit) {
+					char *flag = rz_search_hit_flag_name(hit, i, "hit");
+					char *detail = rz_search_hit_detail_as_string(hit);
+					printf("0x%08" PFMT64x " %" PFMTSZu " %s %s\n",
+						hit->address, hit->size, flag ? flag : "", detail ? detail : "");
+					free(flag);
+					free(detail);
+					i++;
+				}
+			}
+			rz_list_free(hits);
+		}
+
+		rz_buf_free(buffer);
+		rz_search_opt_free(search_opts);
+		rz_search_collection_free(collection);
+		free(magic_dir);
 		goto done;
 	}
 	if (ro->mode == RZ_SEARCH_KEYWORD) {
