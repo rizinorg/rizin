@@ -203,7 +203,7 @@ static RzStructuredData *bootimg_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(boot, "tags_addr", bi->tags_addr, true);
 	rz_structured_data_map_add_unsigned(boot, "page_size", bi->page_size, false);
 
-	char structure_bootimg[BOOT_EXTRA_ARGS_SIZE + 1];
+	char structure_bootimg[BOOT_EXTRA_ARGS_SIZE + 1] = { 0 };
 
 	rz_str_ncpy(structure_bootimg, (const char *)bi->name, BOOT_NAME_SIZE);
 	rz_structured_data_map_add_string(boot, "name", structure_bootimg);
