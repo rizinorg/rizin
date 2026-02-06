@@ -149,6 +149,7 @@ typedef ut32 (*HT_(CalcSizeV))(const VALUE_TYPE);
 typedef ut32 (*HT_(HashFunction))(const KEY_TYPE);
 typedef int (*HT_(Comparator))(const KEY_TYPE, const KEY_TYPE);
 typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYPE);
+typedef bool (*HT_(ForeachKvCallback))(void *user, HT_(Kv) *kv);
 
 /**
  * Options contain all the settings of the hashtable.
@@ -180,7 +181,7 @@ typedef struct Ht_(t) {
 	ut32 capacity; ///< Capacity of the main array.
 	ut32 capacity_mask; ///< Set to `capacity - 1` and used for bucket/index modulo.
 	ut32 size; ///< Number of stored elements.
-	ut32 growth_left; ///< Number of non-empty (deleted or full) slots.
+	ut32 growth_left; ///< Number of empty slots.
 	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer.
 	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer.
 	HT_(Options) opt; ///< Methods
@@ -190,7 +191,6 @@ typedef struct Ht_(t) {
 typedef struct Ht_(iter_mut_t) {
 	HtName_(Ht) *ht; ///< The hash table to iterate over.
 	ut32 ti; ///< Table index
-	// ut32 bi; ///< Bucket index // todo: delete
 	HT_(Kv) *kv; ///< Current Key-Value-pair.
 } HT_(IterMutState);
 
@@ -224,6 +224,7 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 // cb should not modify the hashtable.
 // NOTE: cb can delete the current element, but it should be avoided
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
+RZ_API void Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user);
 
 RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht);
 

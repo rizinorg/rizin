@@ -236,7 +236,7 @@ static void ctrl_table_set(HtName_(Ht) *ht, INDEX_TYPE idx, ut8 value) {
 	ht->ctrl[idx] = value;
 
 	// Copy to mirrored bytes
-	if (idx < GROUP_WIDTH - 1) {
+	if (idx < GROUP_WIDTH) {
 		ht->ctrl[ht->capacity + idx] = value;
 	}
 }
@@ -878,6 +878,20 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
 	// Iterate all slots
 	HT_FOREACH(ht, kv, {
 		if (!cb(user, kv->key, kv->value)) {
+			return;
+		}
+	});
+}
+
+/**
+ * todo
+ */
+RZ_API void Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
+	rz_return_if_fail(ht && cb);
+
+	// Iterate all slots
+	HT_FOREACH(ht, kv, {
+		if (!cb(user, kv)) {
 			return;
 		}
 	});

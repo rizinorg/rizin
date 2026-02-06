@@ -3,6 +3,15 @@
 
 #include "sdbht.h"
 
+/**
+ * todo..
+ */
+typedef struct {
+	SdbHtForeachCallback cb;
+	void *user;
+} HtSSForeachKvCallbackRedirect;
+
+
 RZ_API HtSS *sdb_ht_new(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 	if (ht) {
@@ -60,4 +69,20 @@ RZ_API void sdb_ht_free(HtSS *ht) {
 
 RZ_API bool sdb_ht_delete(HtSS *ht, const char *key) {
 	return ht_ss_delete(ht, key);
+}
+
+static bool sdb_ht_foreach_kv_filter(void *user, HtSSKv *kv) {
+	if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
+		HtSSForeachKvCallbackRedirect *redirect = user;
+		return redirect->cb(redirect->user, (SdbKv *)kv);
+	}
+	return true;
+}
+
+RZ_API void sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user) {
+	HtSSForeachKvCallbackRedirect redirect = {
+		.cb = cb,
+		.user = user
+	};
+	ht_ss_foreach_kv(ht, sdb_ht_foreach_kv_filter, &redirect);
 }
