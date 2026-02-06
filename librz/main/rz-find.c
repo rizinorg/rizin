@@ -139,7 +139,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	if (ro->json) {
 		const char *type = "string";
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
-			ro->comma ? ro->comma : "", addr, type, str);
+			rz_str_get(ro->comma), addr, type, str);
 		ro->comma = ",";
 	} else if (ro->rad) {
 		printf("f hit%d_%d @ 0x%08" PFMT64x " ; %s\n", 0, kw->count, addr, ro->curfile);
@@ -184,14 +184,14 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 	string->vaddr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 
 	if (ro && ro->json) {
-		const char *section_name = (s && s->name) ? s->name : "";
+		const char *section_name = rz_str_get(s ? s->name : NULL);
 		const char *type_string = rz_str_enc_as_string(string->type);
 		// Escape all string fields for JSON safety
 		char *escaped_section = rz_str_escape_utf8_for_json(section_name, -1);
 		char *escaped_type = rz_str_escape_utf8_for_json(rz_str_get(type_string), -1);
 		char *escaped_string = rz_str_escape_utf8_for_json(rz_str_get(string->string), -1);
 		printf("%s{\"vaddr\":%" PFMT64u ",\"paddr\":%" PFMT64u ",\"size\":%" PFMT64u ",\"length\":%" PFMT64u ",\"section\":\"%s\",\"type\":\"%s\",\"string\":\"%s\"}",
-			ro->comma ? ro->comma : "",
+			rz_str_get(ro->comma),
 			string->vaddr, string->paddr, (ut64)string->size, (ut64)string->length,
 			rz_str_get(escaped_section),
 			rz_str_get(escaped_type),
@@ -202,7 +202,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 		ro->comma = ",";
 	} else {
 		if (ro && !ro->quiet) {
-			printf("File: %s\n", ro->curfile ? ro->curfile : "");
+			printf("File: %s\n", rz_str_get(ro->curfile));
 		}
 		printf("%s\n", rz_str_get(string->string));
 	}
@@ -353,7 +353,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 				if (ro->json) {
 					char *escaped = rz_str_escape_utf8_for_json(rz_str_get(detail), -1);
 					printf("%s{\"address\":%" PFMT64u ",\"magic\":\"%s\"}",
-						ro->comma ? ro->comma : "",
+						rz_str_get(ro->comma),
 						hit->address,
 						rz_str_get(escaped));
 					free(escaped);
@@ -605,7 +605,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 					char *escaped_flag = rz_str_escape_utf8_for_json(rz_str_get(flag), -1);
 					char *escaped_detail = rz_str_escape_utf8_for_json(rz_str_get(detail), -1);
 					printf("%s{\"offset\":%" PFMT64u ",\"size\":%" PFMTSZu ",\"flag\":\"%s\",\"detail\":\"%s\"}",
-						ro->comma ? ro->comma : "",
+						rz_str_get(ro->comma),
 						hit->address, hit->size,
 						rz_str_get(escaped_flag),
 						rz_str_get(escaped_detail));
