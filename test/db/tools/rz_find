@@ -334,46 +334,32 @@ Cannot open file 'nonexistent_file.bin'
 EOF
 RUN
 
-NAME=rz-find multi-file error exit code
+NAME=rz-find multi-file exit codes
 FILE==
 CMDS=<<EOF
 !rz-find -s README nonexistent_file.bin bins/arm/README
+%v $?
+!echo ---
+!rz-find -q -s README bins/arm/README bins/arm/README
+%v $?
+!echo ---
+!rz-find -q -s README "" bins/arm/README
 %v $?
 EOF
 EXPECT=<<EOF
 File: bins/arm/README
 0x0
 0x1
-EOF
-EXPECT_ERR=<<EOF
-Cannot open file 'nonexistent_file.bin'
-EOF
-RUN
-
-NAME=rz-find multi-file all success exit code
-FILE==
-CMDS=<<EOF
-!rz-find -q -s README bins/arm/README bins/arm/README
-%v $?
-EOF
-EXPECT=<<EOF
+---
 0x0
 0x0
 0x0
-EOF
-RUN
-
-NAME=rz-find empty path continues to next
-FILE==
-CMDS=<<EOF
-!rz-find -q -s README "" bins/arm/README
-%v $?
-EOF
-EXPECT=<<EOF
+---
 0x0
 0x1
 EOF
 EXPECT_ERR=<<EOF
+Cannot open file 'nonexistent_file.bin'
 Cannot open empty path
 EOF
 RUN
