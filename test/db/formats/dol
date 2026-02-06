@@ -1,7 +1,9 @@
 NAME=DOL: sqrxz4 - aa
 FILE=bins/dol/sqrxz4-gc.dol
 CMDS=<<EOF
-iI;iH
+iI
+echo ---
+iH
 echo ---
 iS
 echo ---
@@ -44,6 +46,7 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
+---
 dol:
   text_paddr:
     - 0x100

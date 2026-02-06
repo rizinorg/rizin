@@ -234,7 +234,7 @@ static RzBinInfo *dol_info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool add_u64_array(RzStructuredData *parent, const char *name, const ut32 *values, size_t count) {
+static bool add_unsigned_array(RzStructuredData *parent, const char *name, const ut32 *values, size_t count) {
 	RzStructuredData *arr = rz_structured_data_map_add_array(parent, name);
 	if (!arr) {
 		return false;
@@ -260,12 +260,12 @@ static RzStructuredData *dol_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!add_u64_array(dol, "text_paddr", dh->text_paddr, N_TEXT) ||
-		!add_u64_array(dol, "text_vaddr", dh->text_vaddr, N_TEXT) ||
-		!add_u64_array(dol, "text_size", dh->text_size, N_TEXT) ||
-		!add_u64_array(dol, "data_paddr", dh->data_paddr, N_DATA) ||
-		!add_u64_array(dol, "data_vaddr", dh->data_vaddr, N_DATA) ||
-		!add_u64_array(dol, "data_size", dh->data_size, N_DATA)) {
+	if (!add_unsigned_array(dol, "text_paddr", dh->text_paddr, N_TEXT) ||
+		!add_unsigned_array(dol, "text_vaddr", dh->text_vaddr, N_TEXT) ||
+		!add_unsigned_array(dol, "text_size", dh->text_size, N_TEXT) ||
+		!add_unsigned_array(dol, "data_paddr", dh->data_paddr, N_DATA) ||
+		!add_unsigned_array(dol, "data_vaddr", dh->data_vaddr, N_DATA) ||
+		!add_unsigned_array(dol, "data_size", dh->data_size, N_DATA)) {
 		rz_structured_data_free(info);
 		return NULL;
 	}
