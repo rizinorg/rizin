@@ -11,7 +11,6 @@ typedef struct {
 	void *user;
 } HtSSForeachKvCallbackRedirect;
 
-
 RZ_API HtSS *sdb_ht_new(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 	if (ht) {
@@ -71,8 +70,9 @@ RZ_API bool sdb_ht_delete(HtSS *ht, const char *key) {
 	return ht_ss_delete(ht, key);
 }
 
-static bool sdb_ht_foreach_kv_filter(void *user, HtSSKv *kv) {
-	if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
+static bool sdb_ht_foreach_kv_filter(void *user, const HtSSKv *kv) {
+	SdbKv *sdb_kv = (SdbKv *)kv;
+	if (sdbkv_key(sdb_kv) && sdbkv_value(sdb_kv) && *sdbkv_value(sdb_kv)) {
 		HtSSForeachKvCallbackRedirect *redirect = user;
 		return redirect->cb(redirect->user, (SdbKv *)kv);
 	}

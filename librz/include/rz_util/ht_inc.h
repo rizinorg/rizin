@@ -149,7 +149,7 @@ typedef ut32 (*HT_(CalcSizeV))(const VALUE_TYPE);
 typedef ut32 (*HT_(HashFunction))(const KEY_TYPE);
 typedef int (*HT_(Comparator))(const KEY_TYPE, const KEY_TYPE);
 typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYPE);
-typedef bool (*HT_(ForeachKvCallback))(void *user, HT_(Kv) *kv);
+typedef bool (*HT_(ForeachKvCallback))(void *user, const HT_(Kv) *kv);
 
 /**
  * Options contain all the settings of the hashtable.

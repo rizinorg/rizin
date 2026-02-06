@@ -328,7 +328,6 @@ bool test_delete(void) {
 bool test_rehash_on_delete(void) {
 	HtUU *ht = ht_uu_new();
 	ht->opt.hashfn = (HtUUHashFunction)create_collision;
-	bool found = false;
 
 	for (ut32 i = 0; i < 56; i++) {
 		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");

@@ -61,7 +61,7 @@ typedef bool (*SdbHtForeachCallback)(void *user, const SdbKv *kv);
 /**
  * todo..
  */
-RZ_API void sdb_ht_foreach(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user);
+RZ_API void sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user);
 
 #ifdef __cplusplus
 }

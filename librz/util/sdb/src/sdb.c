@@ -752,7 +752,7 @@ static bool _insert_into_disk(void *user, const SdbKv *kv) {
 	return false;
 }
 
-static bool sdb_sync_foreach_cb(void *user, SdbKv *kv) {
+static bool sdb_sync_foreach_cb(void *user, const SdbKv *kv) {
 	Sdb *s = user;
 
 	if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
@@ -764,7 +764,6 @@ static bool sdb_sync_foreach_cb(void *user, SdbKv *kv) {
 
 RZ_API bool sdb_sync(Sdb *s) {
 	bool result;
-	ut32 i;
 
 	if (!s || !sdb_disk_create(s)) {
 		return false;
