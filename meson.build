@@ -679,6 +679,13 @@ if not libzip_dep.found()
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
+if host_machine.system() == 'serenity' and libzip_dep.found()
+  zlib_dep = dependency('zlib', required: true, static: is_static_build)
+  libzip_dep = declare_dependency(
+    dependencies: [libzip_dep, zlib_dep]
+  )
+endif
+
 # handle zstd dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
