@@ -2052,6 +2052,213 @@ static void patch_reloc_parisc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	}
 }
 
+static void patch_reloc_avr(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && fs);
+
+	ut8 buf[2] = { 0 };
+	st64 offset = 0;
+	ut16 opcode = 0;
+	ut32 nbytes = 2;
+
+	ut64 val = fs->S + fs->A;
+
+	switch (rel_type) {
+	case R_AVR_NONE:
+		return;
+	case R_AVR_32:
+		rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
+		break;
+	case R_AVR_7_PCREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val - fs->P - 2) / 2;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0x3F8, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_13_PCREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val - fs->P - 2) / 2;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xFFF, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_16:
+		rz_buf_write_ble16_at(buf_patched, patch_addr, val, big_endian);
+		break;
+	case R_AVR_16_PM:
+		rz_buf_write_ble16_at(buf_patched, patch_addr, val / 2, big_endian);
+		break;
+	case R_AVR_LO8_LDI:
+	/* fall through */
+	case R_AVR_LDI:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = val & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HI8_LDI:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val >> 8) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HH8_LDI:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val >> 16) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_LO8_LDI_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (-val) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HI8_LDI_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = ((-val) >> 8) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HH8_LDI_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = ((-val) >> 16) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_LO8_LDI_PM:
+		/* fall through */
+	case R_AVR_LO8_LDI_GS:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = val & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HI8_LDI_PM:
+		/* fall through */
+	case R_AVR_HI8_LDI_GS:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val >> 8) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HH8_LDI_PM:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val >> 16) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_LO8_LDI_PM_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (-val) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HI8_LDI_PM_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = ((-val) >> 8) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_HH8_LDI_PM_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = ((-val) >> 16) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset / 2);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_CALL:
+		nbytes = 4;
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		val = val / 2;
+		break;
+	case R_AVR_6:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0x2C07, val);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_6_ADIW:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xCF, val);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_MS8_LDI:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val >> 24) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_MS8_LDI_NEG:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = ((-val) >> 24) & 0xFF;
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF0F, offset);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_8:
+		/* fall through */
+	case R_AVR_8_LO8:
+		offset = val & 0xFF;
+		rz_buf_write_ble32_at(buf_patched, patch_addr, offset, big_endian);
+		break;
+	case R_AVR_8_HI8:
+		offset = (val >> 8) & 0xFF;
+		rz_buf_write_ble32_at(buf_patched, patch_addr, offset, big_endian);
+		break;
+	case R_AVR_8_HLO8:
+		offset = (val >> 16) & 0xFF;
+		rz_buf_write_ble32_at(buf_patched, patch_addr, offset, big_endian);
+		break;
+	case R_AVR_DIFF8:
+		/* fall through */
+	case R_AVR_DIFF16:
+		/* fall through */
+	case R_AVR_DIFF32:
+		/* Value already written by assembler */
+		break;
+	case R_AVR_LDS_STS_16:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		offset = (val - 0x40) & 0x7F;
+		offset = (val & 0x0f) | ((val & 0x30) << 5) | ((val & 0x40) << 2);
+		opcode = rz_read_ble16(buf, big_endian) | offset;
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_PORT6:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0x60F, val);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_PORT5:
+		rz_buf_read_at(buf_patched, patch_addr, buf, nbytes);
+		opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(0xF8, val);
+		rz_write_ble16(buf, opcode, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+		break;
+	case R_AVR_32_PCREL:
+		rz_buf_write_ble32_at(buf_patched, patch_addr, val - fs->P, big_endian);
+		break;
+	default:
+		UNHANDL_DEF("AVR", rel_type);
+		break;
+	}
+}
+
 #undef UNHANDL
 #undef UNHANDL_DEF
 
@@ -2124,6 +2331,9 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_PARISC:
 		patch_reloc_parisc(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
+	case EM_AVR:
+		patch_reloc_avr(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
+		break;
 	case EM_M32: ARCH_MISSING("EM_M32");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
@@ -2178,7 +2388,6 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_MMIX: ARCH_MISSING("EM_MMIX");
 	case EM_HUANY: ARCH_MISSING("EM_HUANY");
 	case EM_PRISM: ARCH_MISSING("EM_PRISM");
-	case EM_AVR: ARCH_MISSING("EM_AVR");
 	case EM_FR30: ARCH_MISSING("EM_FR30");
 	case EM_D10V: ARCH_MISSING("EM_D10V");
 	case EM_D30V: ARCH_MISSING("EM_D30V");
