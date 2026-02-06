@@ -267,7 +267,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 		printf("%s{\"vaddr\":%" PFMT64u ",\"paddr\":%" PFMT64u ",\"size\":%" PFMT64u ",\"length\":%" PFMT64u ",\"section\":\"%s\",\"type\":\"%s\",\"string\":\"%s\"}",
 			ro->comma ? ro->comma : "",
 			string->vaddr, string->paddr, (ut64)string->size, (ut64)string->length,
-			escaped_section ? escaped_section : "",
+			rz_str_get(escaped_section),
 			escaped_type ? escaped_type : "",
 			escaped_string ? escaped_string : "");
 		free(escaped_section);
