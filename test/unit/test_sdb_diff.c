@@ -128,12 +128,12 @@ bool test_sdb_diff_ns() {
 	mu_assert_streq(diff,
 		"-NS test\n"
 		"-NS test/subspace\n"
-		"-   test/subspace/here=lol\n"
-		"-   test/subspace/some=values\n"
 		"-   test/subspace/are=saved\n"
-		"-   test/a=123\n"
+		"-   test/subspace/some=values\n"
+		"-   test/subspace/here=lol\n"
+		"-   test/b=test\n"
 		"-   test/c=hello\n"
-		"-   test/b=test\n",
+		"-   test/a=123\n",
 		"ns removed diff");
 	free(diff);
 
@@ -142,12 +142,12 @@ bool test_sdb_diff_ns() {
 	mu_assert_streq(diff,
 		"+NS test\n"
 		"+NS test/subspace\n"
-		"+   test/subspace/here=lol\n"
-		"+   test/subspace/some=values\n"
 		"+   test/subspace/are=saved\n"
-		"+   test/a=123\n"
+		"+   test/subspace/some=values\n"
+		"+   test/subspace/here=lol\n"
+		"+   test/b=test\n"
 		"+   test/c=hello\n"
-		"+   test/b=test\n",
+		"+   test/a=123\n",
 		"ns added diff");
 	free(diff);
 
@@ -166,9 +166,9 @@ bool test_sdb_diff_ns_sub() {
 	mu_assert("sub ns removed (diff)", !diff_str(a, b, &diff));
 	mu_assert_streq(diff,
 		"-NS test/subspace\n"
-		"-   test/subspace/here=lol\n"
+		"-   test/subspace/are=saved\n"
 		"-   test/subspace/some=values\n"
-		"-   test/subspace/are=saved\n",
+		"-   test/subspace/here=lol\n",
 		"sub ns removed diff");
 	free(diff);
 
@@ -176,9 +176,9 @@ bool test_sdb_diff_ns_sub() {
 	mu_assert("sub ns added (diff)", !diff_str(b, a, &diff));
 	mu_assert_streq(diff,
 		"+NS test/subspace\n"
-		"+   test/subspace/here=lol\n"
+		"+   test/subspace/are=saved\n"
 		"+   test/subspace/some=values\n"
-		"+   test/subspace/are=saved\n",
+		"+   test/subspace/here=lol\n",
 		"sub ns added diff");
 	free(diff);
 
