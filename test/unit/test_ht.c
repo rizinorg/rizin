@@ -327,24 +327,26 @@ bool test_delete(void) {
 
 bool test_rehash_on_delete(void) {
 	HtUU *ht = ht_uu_new();
+	ht->opt.hashfn = (HtUUHashFunction)create_collision;
 	bool found = false;
 
-	for (ut32 i = 0; i < 32; i++) {
+	for (ut32 i = 0; i < 56; i++) {
 		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
 	}
 
-	for (ut32 i = 0; i < 32; i++) {
+	for (ut32 i = 0; i < 56; i++) {
 		mu_assert_true(ht_uu_delete(ht, i), "failed to delete element");
 	}
 
-	for (ut32 i = 0; i < 32; i++) {
+	for (ut32 i = 0; i < 56; i++) {
 		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
 	}
 
-	for (ut32 i = 0; i < 32; i++) {
+	for (ut32 i = 0; i < 56; i++) {
 		mu_assert_true(ht_uu_update_key(ht, i, i + 1000), "failed to update element key");
 	}
 
+	mu_assert_eq(ht_uu_size(ht), 56, "invalid table size");
 	ht_uu_free(ht);
 	mu_end;
 }
@@ -381,6 +383,7 @@ bool test_ht_delete_optimized(void) {
 				}
 			}
 
+			mu_assert_eq(ht_uu_size(ht), size - 1, "invalid table size");
 			ht_uu_free(ht);
 		}
 	}

@@ -182,12 +182,15 @@ static inline ut8 group_lowest_bit(group_mask_t mask) {
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
 	ut32 result = ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
 
-	if (ht->hash_shift) {
+	if (ht->capacity < 8192) {
 		// Extra bit mixing for smaller hash tables
 		result ^= result >> 16;
 		result *= 0x85ebca6b;
-		result ^= result >> ht->hash_shift;
-		if (ht->hash_shift == 13) {
+
+		if (ht->capacity >= 512) {
+			result ^= result >> 16;
+		} else {
+			result ^= result >> 13;
 			result *= 0xc2b2ae35;
 		}
 	}
@@ -264,7 +267,8 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// Use minimum capacity of group size in order to avoid edge cases (related to ctrl byte mirroring and deletion slot placement)
 	// No maximum capacity enforcement at the moment..
 	ht->capacity = next_power_of_two(RZ_MAX(requested_capacity, 16));
-	ht->grow_threshold = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
+	ht->capacity_mask = ht->capacity - 1;
+	ht->growth_left = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
 	ht->size = 0;
 	ht->opt = *opt;
 
@@ -296,12 +300,6 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 
 	// Initialize all slots as empty
 	memset(ht->ctrl, H2_STATUS_EMPTY, ctrl_size);
-
-	if (ht->capacity < 8192) {
-		// For smaller hashtables we do additional bit mixing
-		ht->hash_shift = ht->capacity >= 512 ? 16 : 13;
-	}
-
 	return ht;
 }
 
@@ -344,15 +342,6 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	free(ht);
 }
 
-static bool grow_required(HtName_(Ht) *ht) {
-	return (ht->size + ht->deleted_slots) > ht->grow_threshold;
-}
-
-static bool rehash_required(HtName_(Ht) *ht) {
-	// rehash after 25% "deleted" slots
-	return ht->deleted_slots > ht->capacity / 4;
-}
-
 /**
  * todo
  * \return true if either no growing is needed or there was a successfull growth; otherwise returns false on failed growth attempt
@@ -367,7 +356,6 @@ static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 	}
 
 	HT_FOREACH(ht, kv, {
-		// if (Ht_(insert_kv_ex)(ht2, &ht->slots[i], false, NULL) < 0) {
 		if (Ht_(insert_kv_ex)(ht2, kv, false, NULL) < 0) {
 			ht2->opt.finiKV = NULL;
 			Ht_(free)(ht2);
@@ -386,12 +374,32 @@ static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 }
 
 /**
+ * todo
+ */
+static bool internal_ht_rehash_if_needed(HtName_(Ht) *ht) {
+	if (ht->growth_left) {
+		return true;
+	}
+
+	ut32 capacity_used = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM - ht->growth_left;
+	ut32 num_deleted = capacity_used - ht->size;
+
+	if (num_deleted > ht->capacity / 4) {
+		// 25% of the elements are deleted slots; rehash with the same size
+		return internal_ht_resize(ht, ht->capacity);
+	}
+
+	// Grow
+	return internal_ht_resize(ht, ht->capacity + 1);
+}
+
+/**
  * todo..
  * \return if the \p key is found this function will return it's slot ID, otherwise will return the ID of the next available slot for insertion purposes
  */
 static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, ut32 hash, ut8 hash_fragment, ut8 *previous_ctrl, bool *existing) {
 	ut32 probe_step = GROUP_WIDTH;
-	INDEX_TYPE index = H1(hash) & (ht->capacity - 1); // todo: rename to group_index_start, etc
+	INDEX_TYPE index = H1(hash) & ht->capacity_mask;
 	INDEX_TYPE first_deleted = INVALID_INDEX;
 
 	while (true) {
@@ -403,7 +411,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 		// Match all control group bytes with the hash fragment of `key`
 		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
-			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & ht->capacity_mask;
 
 			if (is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, i))) {
 				*existing = true;
@@ -414,20 +422,20 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 		// If we reach a "deleted" slot, save it's index and return later
 		if (first_deleted == INVALID_INDEX && (deleted_match = group_match_deleted(group))) {
-			first_deleted = (index + group_lowest_bit(deleted_match)) & (ht->capacity - 1);
+			first_deleted = (index + group_lowest_bit(deleted_match)) & ht->capacity_mask;
 		}
 
 		// Check if there is at least 1 empty slot in the group
 		if ((empty_match = group_match_empty(group))) {
 			*existing = false;
 			*previous_ctrl = first_deleted == INVALID_INDEX ? H2_STATUS_EMPTY : H2_STATUS_DELETED;
-			return *previous_ctrl == H2_STATUS_EMPTY ? (index + group_lowest_bit(empty_match)) & (ht->capacity - 1) : first_deleted;
+			return *previous_ctrl == H2_STATUS_EMPTY ? (index + group_lowest_bit(empty_match)) & ht->capacity_mask : first_deleted;
 		}
 #else
 		INDEX_TYPE first_empty = INVALID_INDEX;
 
 		for (INDEX_TYPE i = index; i < index + GROUP_WIDTH; i++) {
-			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
+			INDEX_TYPE normalized_i = i & ht->capacity_mask;
 
 			if (H2_IS_EMPTY(ht->ctrl[i])) {
 				if (first_empty == INVALID_INDEX) {
@@ -466,7 +474,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 		}
 
 		// Triangular probing
-		index = (index + probe_step) & (ht->capacity - 1);
+		index = (index + probe_step) & ht->capacity_mask;
 		probe_step += GROUP_WIDTH;
 	}
 }
@@ -478,7 +486,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 	ut32 probe_step = GROUP_WIDTH;
 	ut32 hash = hashfn(ht, key);
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
-	INDEX_TYPE index = H1(hash) & (ht->capacity - 1);
+	INDEX_TYPE index = H1(hash) & ht->capacity_mask;
 
 	while (true) {
 		// Probe one group at a time
@@ -487,7 +495,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 
 		// Match all group control bytes with the H2 (hash fragment) of `key`
 		for (group_mask_t ctrl_match = group_match_hash_fragment(group, hash_fragment); ctrl_match != 0; ctrl_match &= ctrl_match - 1) {
-			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & (ht->capacity - 1);
+			INDEX_TYPE i = (index + group_lowest_bit(ctrl_match)) & ht->capacity_mask;
 
 			if (is_key_equal(ht, key, key_len, HT_SLOT_AT(ht, i))) {
 				return i;
@@ -502,7 +510,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 		bool empty_found = false;
 
 		for (ut32 i = index; i < index + GROUP_WIDTH; i++) {
-			INDEX_TYPE normalized_i = i & (ht->capacity - 1);
+			INDEX_TYPE normalized_i = i & ht->capacity_mask;
 
 			if (H2_IS_EMPTY(ht->ctrl[i])) {
 				empty_found = true;
@@ -526,7 +534,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 		}
 
 		// Triangular probing
-		index = (index + probe_step) & (ht->capacity - 1);
+		index = (index + probe_step) & ht->capacity_mask;
 		probe_step += GROUP_WIDTH;
 	}
 }
@@ -535,7 +543,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
  * \brief Get an existing KV with key \p key or allocate a new KV otherwise
  */
 static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
-	if (grow_required(ht) && !internal_ht_resize(ht, ht->capacity + 1)) {
+	if (!internal_ht_rehash_if_needed(ht)) {
 		*code = HT_RC_ERROR;
 		return NULL;
 	}
@@ -566,9 +574,9 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 	// Writing over an empty or a deleted slot
 	*code = HT_RC_INSERTED;
 
-	// Decrease `deleted_slots` if writing over a deleted slot specifically
-	if (previous_ctrl == H2_STATUS_DELETED) {
-		ht->deleted_slots--;
+	// Decrease `growth_left` if writing over an empty slot
+	if (previous_ctrl == H2_STATUS_EMPTY) {
+		ht->growth_left--;
 	}
 
 	ht->size++;
@@ -741,11 +749,10 @@ static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE 
 	// Decide if we should mark the slot as empty or deleted
 	INDEX_TYPE nearest_empty_before = 0;
 	INDEX_TYPE nearest_empty_after = 0;
-	INDEX_TYPE idx_prev = (idx - GROUP_WIDTH) & (ht->capacity - 1);
 
 	// Check up to `GROUP_WIDTH` preceeding control bytes
 	for (INDEX_TYPE i = 0; i < GROUP_WIDTH; i++) {
-		if (ht->ctrl[(idx - i - 1) & (ht->capacity - 1)] == H2_STATUS_EMPTY) {
+		if (ht->ctrl[(idx - i - 1) & ht->capacity_mask] == H2_STATUS_EMPTY) {
 			break;
 		}
 		nearest_empty_before++;
@@ -753,7 +760,7 @@ static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE 
 
 	// Check up to `GROUP_WIDTH` following control bytes
 	for (INDEX_TYPE i = 0; i < GROUP_WIDTH; i++) {
-		if (ht->ctrl[(idx + i) & (ht->capacity - 1)] == H2_STATUS_EMPTY) {
+		if (ht->ctrl[(idx + i) & ht->capacity_mask] == H2_STATUS_EMPTY) {
 			break;
 		}
 		nearest_empty_after++;
@@ -764,6 +771,17 @@ static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE 
 
 	// Deletion trick can be implemented here to reduce the frequency of "deleted" slots being placed
 	// return H2_STATUS_DELETED;
+}
+
+static bool internal_ht_delete(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
+	ut8 ctrl = select_slot_type_for_deletion(ht, idx);
+
+	ht->size--;
+	ht->growth_left += ctrl == H2_STATUS_EMPTY ? 1 : 0;
+
+	ctrl_table_set(ht, idx, ctrl);
+	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
+	return true;
 }
 
 /**
@@ -783,9 +801,10 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 		return false;
 	}
 
-	// Remove the old_key kv, paying attention to not double free the value
-	ut8 ctrl = select_slot_type_for_deletion(ht, idx);
-	ctrl_table_set(ht, idx, ctrl);
+	// Second look up of of the element associated with `old_key`, since the previous index could be invalidated
+	if ((idx = ctrl_table_lookup(ht, old_key, calcsize_key(ht, old_key))) == INVALID_INDEX) {
+		return false;
+	}
 
 	// Do not free the value part if dupvalue is not set, because the old value will be
 	// associated with the new key and it should not be freed
@@ -793,19 +812,8 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 		HT_SLOT_AT(ht, idx)->value = HT_NULL_VALUE;
 		HT_SLOT_AT(ht, idx)->value_len = 0;
 	}
-	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
 
-	// Check if rehash is needed
-	if (ctrl == H2_STATUS_DELETED) {
-		ht->deleted_slots++;
-
-		// Rehash if needed
-		if (rehash_required(ht) && !internal_ht_resize(ht, ht->capacity)) {
-			return false;
-		}
-	}
-
-	return true;
+	return internal_ht_delete(ht, idx);
 }
 
 static inline RZ_BORROW HT_(Kv) *internal_find_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
@@ -857,22 +865,7 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 		return false;
 	}
 
-	ut8 ctrl = select_slot_type_for_deletion(ht, idx);
-
-	ht->size--;
-	ctrl_table_set(ht, idx, ctrl);
-	fini_kv_pair(ht, HT_SLOT_AT(ht, idx));
-
-	if (ctrl == H2_STATUS_DELETED) {
-		ht->deleted_slots++;
-
-		// Rehash if needed
-		if (rehash_required(ht) && !internal_ht_resize(ht, ht->capacity)) {
-			return false;
-		}
-	}
-
-	return true;
+	return internal_ht_delete(ht, idx);
 }
 
 /**

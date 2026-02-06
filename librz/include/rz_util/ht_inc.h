@@ -161,16 +161,16 @@ typedef struct Ht_(options_t) {
 	///< Function is invoked only if == operator applied to keys returns false.
 	HT_(HashFunction) hashfn; ///< RZ_NULLABLE. Function for hashing items in the hash table.
 				  ///< If NULL KEY_TO_HASH macro is used.
-	HT_(DupKey) dupkey; ///< RZ_NULLABLE. Function for making a copy of key.
-			    ///< If NULL simple assignment operator is used.
-	HT_(DupValue) dupvalue; ///< RZ_NULLABLE. Function for making a copy of value.
-				///< If NULL simple assignment operator is used.
 	HT_(CalcSizeK) calcsizeK; ///< RZ_NULLABLE. Function to determine the key's size.
 				  ///< If NULL zero value is used as a size.
 				  ///< Key sizes are checked on equality during keys comparsion as a pre-check.
 	HT_(CalcSizeV) calcsizeV; ///< RZ_NULLABLE. Function to determine the value's size.
 				  ///< If NULL zero value is used as a size.
 				  ///< Not required for common scenarios. Could be used in subclasses.
+	HT_(DupKey) dupkey; ///< RZ_NULLABLE. Function for making a copy of key.
+			    ///< If NULL simple assignment operator is used.
+	HT_(DupValue) dupvalue; ///< RZ_NULLABLE. Function for making a copy of value.
+				///< If NULL simple assignment operator is used.
 	HT_(FiniKv) finiKV; ///< RZ_NULLABLE. Function to clean up the key-value store.
 	void *finiKV_user; ///< RZ_NULLABLE. User data which is passed into finiKV.
 } HT_(Options);
@@ -178,14 +178,13 @@ typedef struct Ht_(options_t) {
 /* Ht is the hashtable structure */
 typedef struct Ht_(t) {
 	ut32 capacity; ///< Capacity of the main array.
-	ut32 grow_threshold; ///< The hash table is expected to grow if `size` reaches this threshold.
+	ut32 capacity_mask; ///< Set to `capacity - 1` and used for bucket/index modulo.
 	ut32 size; ///< Number of stored elements.
-	ut32 deleted_slots; ///< Counts number of deleted slots
-	ut8 hash_shift; ///< Used for enabling additional hash bitmixing for small tables
-	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer
-	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer
+	ut32 growth_left; ///< Number of non-empty (deleted or full) slots.
+	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer.
+	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer.
 	HT_(Options) opt; ///< Methods
-	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays
+	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays.
 } HtName_(Ht);
 
 typedef struct Ht_(iter_mut_t) {
