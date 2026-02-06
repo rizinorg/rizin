@@ -621,7 +621,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 					char *flag = rz_search_hit_flag_name(hit, i, "hit");
 					char *detail = rz_search_hit_detail_as_string(hit);
 					printf("0x%08" PFMT64x " %" PFMTSZu " %s %s\n",
-						hit->address, hit->size, flag ? flag : "", detail ? detail : "");
+						hit->address, hit->size, rz_str_get(flag), rz_str_get(detail));
 					free(flag);
 					free(detail);
 					i++;
