@@ -399,7 +399,7 @@ foreach it : ccs
   if not it_cc.has_function('clock_gettime', prefix: '#include <time.h>') and it_cc.has_header_symbol('features.h', '__GLIBC__')
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
-  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(it_machine.system())
+  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku', 'serenity'].contains(it_machine.system())
   if have_lrt and not it_lrt.found()
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
