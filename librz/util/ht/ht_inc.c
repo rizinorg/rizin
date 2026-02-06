@@ -250,7 +250,15 @@ static ut32 next_power_of_two(ut32 n) {
 		return n;
 	}
 
-	return 1ul << (32 - rz_bits_leading_zeros(n));
+	ut8 shift = 64 - rz_bits_leading_zeros(n);
+
+	if (shift > 31) {
+		// ut32 overflow
+		rz_warn_if_reached();
+		return 0x80000000;
+	}
+
+	return 1ul << shift;
 }
 
 // Create a new hashtable and return a pointer to it.
