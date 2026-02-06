@@ -234,6 +234,49 @@ static RzBinInfo *dol_info(RzBinFile *bf) {
 	return ret;
 }
 
+static bool add_u64_array(RzStructuredData *parent, const char *name, const ut32 *values, size_t count) {
+	RzStructuredData *arr = rz_structured_data_map_add_array(parent, name);
+	if (!arr) {
+		return false;
+	}
+	for (size_t i = 0; i < count; i++) {
+		rz_structured_data_array_add_unsigned(arr, values[i], true);
+	}
+	return true;
+}
+
+static RzStructuredData *dol_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	DolHeader *dh = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *dol = rz_structured_data_map_add_map(info, "dol");
+	if (!dol) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	if (!add_u64_array(dol, "text_paddr", dh->text_paddr, N_TEXT) ||
+		!add_u64_array(dol, "text_vaddr", dh->text_vaddr, N_TEXT) ||
+		!add_u64_array(dol, "text_size", dh->text_size, N_TEXT) ||
+		!add_u64_array(dol, "data_paddr", dh->data_paddr, N_DATA) ||
+		!add_u64_array(dol, "data_vaddr", dh->data_vaddr, N_DATA) ||
+		!add_u64_array(dol, "data_size", dh->data_size, N_DATA)) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(dol, "bss_addr", dh->bss_addr, true);
+	rz_structured_data_map_add_unsigned(dol, "bss_size", dh->bss_size, true);
+	rz_structured_data_map_add_unsigned(dol, "entrypoint", dh->entrypoint, true);
+
+	return info;
+}
+
 static ut64 dol_baddr(RzBinFile *bf) {
 	// This should probably derived instead of being hardcoded.
 	return 0x80004000;
@@ -251,6 +294,7 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.info = &dol_info,
 	.baddr = &dol_baddr,
+	.bin_structure = &dol_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE
