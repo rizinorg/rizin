@@ -2856,9 +2856,12 @@ RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
 	if (!rz_heap_is_arena(core, m_arena, m_state, &config)) {
 		return NULL;
 	}
-	MallocState main_arena_storage = { 0 };
-	MallocState *main_arena = &main_arena_storage;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return NULL;
+	}
 	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+		free(main_arena);
 		return NULL;
 	}
 	return main_arena;
