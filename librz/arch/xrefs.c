@@ -256,7 +256,7 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis) {
 }
 
 static bool count_cb(void *user, const ut64 k, const void *v) {
-	(*(ut64 *)user) += ((HtUP *)v)->count;
+	(*(ut64 *)user) += ht_up_size((HtUP *)v);
 	return true;
 }
 

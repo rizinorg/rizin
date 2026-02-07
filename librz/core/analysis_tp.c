@@ -929,7 +929,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			rz_list_free(fcns);
 			// Recreate op_cache if it grows too large to avoid
 			// excessive memory usage.
-			if (op_cache->count > OP_CACHE_LIMIT) {
+			if (ht_up_size(op_cache) > OP_CACHE_LIMIT) {
 				ht_up_free(op_cache);
 				op_cache = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);
 				if (!op_cache) {

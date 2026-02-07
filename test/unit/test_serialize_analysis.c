@@ -280,7 +280,7 @@ bool test_analysis_function_load() {
 	mu_assert_eq(rz_list_length(f->imports), 2, "imports count");
 	mu_assert_streq(rz_list_get_n(f->imports, 0), "earth", "import");
 	mu_assert_streq(rz_list_get_n(f->imports, 1), "rise", "import");
-	mu_assert_eq(f->labels->count, 3, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 3, "labels count");
 	mu_assert_eq(rz_analysis_function_get_label(f, "beach"), 1400, "label");
 	mu_assert_eq(rz_analysis_function_get_label(f, "another"), 1450, "label");
 	mu_assert_eq(rz_analysis_function_get_label(f, "year"), 1440, "label");
@@ -301,7 +301,7 @@ bool test_analysis_function_load() {
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_eq(f->bp_off, 0, "bp off");
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 4242);
 	mu_assert_notnull(f, "function");
@@ -317,7 +317,7 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", !f->is_noreturn);
 	mu_assert("bp_frame", !f->bp_frame);
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 424242);
 	mu_assert_notnull(f, "function");
@@ -333,31 +333,31 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", f->is_noreturn);
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xdead);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "agnosie", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_IMP, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xbeef);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "eskapist", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_INT, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xc0ffee);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "lifnej", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_ROOT, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0x31337);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "aldebaran", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_ANY, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	assert_block_invariants(analysis);
 	assert_block_leaks(analysis);

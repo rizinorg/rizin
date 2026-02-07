@@ -253,7 +253,7 @@ RZ_API void rz_core_bin_dwarf_abbrevs_dump(
 	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(abbrevs && sb);
-	if (abbrevs->by_offset->count > 0) {
+	if (ht_up_size(abbrevs->by_offset) > 0) {
 		rz_strbuf_append(sb, ".debug_abbrevs content:\n");
 	}
 	ht_up_foreach(abbrevs->by_offset, cb_abbrev_table_dump, sb);
