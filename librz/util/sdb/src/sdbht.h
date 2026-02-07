@@ -61,8 +61,6 @@ RZ_API char *sdb_ht_find(HtSS *ht, const char *key, bool *found);
 RZ_API SdbKv *sdb_ht_find_kvp(HtSS *ht, const char *key, bool *found);
 // Iterate the hash table.
 
-typedef bool (*SdbHtForeachCallback)(void *user, const SdbKv *kv);
-
 /**
  * todo..
  */
