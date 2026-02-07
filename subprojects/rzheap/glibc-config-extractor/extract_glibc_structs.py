@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+"""Extract glibc malloc struct definitions from source.
+
+Reads malloc.c, arena.c and version.h from a glibc source tree,
+brace-matches the struct definitions we need, and emits a
+self-contained C header (glibc_structs.h) that the layout extractor
+can compile against without pulling in glibc's internal build
+machinery.
+
+Usage:
+    python3 extract_glibc_structs.py <glibc_src_dir> <output.h>
+"""
+
+import re
+import sys
+
+
+# ---------------------------------------------------------------------------
+# helpers
+# ---------------------------------------------------------------------------
+
+def extract_block(source, start_re):
+    """Locate *start_re*, then brace-match to the closing }; or } name;
+
+    Returns the full text from the start of the match through the
+    semicolon that closes the definition, or None if not found.
+    """
+    m = re.search(start_re, source)
+    if not m:
+        return None
+    brace = source.index("{", m.start())
+    depth = 0
+    i = brace
+    while i < len(source):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                semi = source.index(";", i)
+                return source[m.start() : semi + 1]
+        i += 1
+    return None
+
+
+def extract_define(source, name):
+    """Return the value text of a simple single-line #define, or None."""
+    m = re.search(rf"^\s*#\s*define\s+{name}\b\s+(.+)", source, re.MULTILINE)
+    return m.group(1).strip() if m else None
+
+
+def resolve_int(source, expr):
+    """Iteratively substitute macros and try to eval to int."""
+    if expr is None:
+        return None
+    # Strip C and C++ comments
+    expr = re.sub(r"/\*.*?\*/", "", expr).strip()
+    expr = re.sub(r"//.*", "", expr).strip()
+    for _ in range(10):
+        m = re.search(r"\b([A-Z_][A-Z_0-9]*)\b", expr)
+        if not m:
+            break
+        val = extract_define(source, m.group(1))
+        if val is None:
+            break
+        val = re.sub(r"/\*.*?\*/", "", val).strip()
+        val = re.sub(r"//.*", "", val).strip()
+        expr = expr[: m.start()] + "(" + val + ")" + expr[m.end() :]
+    try:
+        return int(eval(expr))  # noqa: S307 — trusted build-time input
+    except Exception:
+        return None
+
+
+def version_id(version_str):
+    """'2.42' -> 242"""
+    parts = version_str.split(".")
+    return int(parts[0]) * 100 + int(parts[1]) if len(parts) >= 2 else 0
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+
+def main():
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} <glibc_src_dir> <output.h>", file=sys.stderr)
+        sys.exit(1)
+
+    src_dir = sys.argv[1]
+    out_path = sys.argv[2]
+
+    # --- read sources ---
+    with open(f"{src_dir}/malloc/malloc.c") as f:
+        malloc_c = f.read()
+    with open(f"{src_dir}/malloc/arena.c") as f:
+        arena_c = f.read()
+    with open(f"{src_dir}/version.h") as f:
+        version_h = f.read()
+
+    # --- version ---
+    vm = re.search(r'#define\s+VERSION\s+"([^"]+)"', version_h)
+    version = vm.group(1) if vm else "unknown"
+    vid = version_id(version)
+
+    # --- extract structs ---
+    chunk = extract_block(malloc_c, r"struct\s+malloc_chunk\s*\{")
+    state = extract_block(malloc_c, r"struct\s+malloc_state\s*\{")
+    hinfo = extract_block(arena_c, r"typedef\s+struct\s+_heap_info\s*\{")
+    tcentry = extract_block(malloc_c, r"typedef\s+struct\s+tcache_entry\s*\{")
+    tcperth = extract_block(
+        malloc_c, r"typedef\s+struct\s+tcache_perthread_struct\s*\{"
+    )
+
+    # post-process: __libc_lock_define(, mutex); -> int mutex;
+    if state:
+        state = re.sub(
+            r"__libc_lock_define\s*\(\s*,\s*mutex\s*\)\s*;", "int mutex;", state
+        )
+
+    # --- constants ---
+    nbins = resolve_int(malloc_c, extract_define(malloc_c, "NBINS")) or 128
+    tcmax = resolve_int(malloc_c, extract_define(malloc_c, "TCACHE_MAX_BINS"))
+
+    # --- feature flags (derived from version) ---
+    has_tcache = vid >= 226
+    has_tcache_key = vid >= 229
+    has_fast_chunks = vid >= 227
+    has_att_threads = vid >= 223
+
+    # detect counts vs num_slots field name
+    tcache_counts_field = "counts"
+    if tcperth and "num_slots" in tcperth:
+        tcache_counts_field = "num_slots"
+
+    # ---------------------------------------------------------------------------
+    # emit header
+    # ---------------------------------------------------------------------------
+    L = []  # output lines
+
+    def w(s=""):
+        L.append(s)
+
+    w("// SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>")
+    w("// SPDX-License-Identifier: LGPL-3.0-only")
+    w("//")
+    w("// Auto-generated by extract_glibc_structs.py — do not edit.")
+    w(f"//   source  : {src_dir}")
+    w(f"//   version : {version}")
+    w("")
+    w("#ifndef _GLIBC_STRUCTS_EXTRACTED_H")
+    w("#define _GLIBC_STRUCTS_EXTRACTED_H")
+    w("")
+    w("#include <stddef.h>")
+    w("#include <stdint.h>")
+    w("")
+
+    # --- version & flags ---
+    w("/* ------------------------------------------------------------ */")
+    w("/* version & feature flags                                       */")
+    w("/* ------------------------------------------------------------ */")
+    w(f'#define GLIBC_SRC_VERSION       "{version}"')
+    w(f"#define GLIBC_SRC_VERSION_ID    {vid}")
+    w(f"#define GLIBC_HAS_TCACHE        {1 if has_tcache else 0}")
+    w(f"#define GLIBC_HAS_TCACHE_KEY    {1 if has_tcache_key else 0}")
+    w(f"#define GLIBC_HAS_FAST_CHUNKS   {1 if has_fast_chunks else 0}")
+    w(f"#define GLIBC_HAS_ATT_THREADS   {1 if has_att_threads else 0}")
+    w(f'#define GLIBC_MALLOC_STATE_TAG  "{version}"')
+    w("")
+
+    # --- type aliases ---
+    w("/* ------------------------------------------------------------ */")
+    w("/* type aliases matching glibc malloc internals                  */")
+    w("/* ------------------------------------------------------------ */")
+    w("#define INTERNAL_SIZE_T         size_t")
+    w("#define SIZE_SZ                 (sizeof(size_t))")
+    w("#define MALLOC_ALIGNMENT        (2 * SIZE_SZ)")
+    w("#define MALLOC_ALIGN_MASK       (MALLOC_ALIGNMENT - 1)")
+    w("")
+    w("struct malloc_chunk;")
+    w("typedef struct malloc_chunk    *mchunkptr;")
+    w("typedef mchunkptr               mfastbinptr;")
+    w("")
+    w("struct malloc_state;")
+    w("typedef struct malloc_state    *mstate;")
+    w("")
+
+    # --- constants ---
+    w("/* ------------------------------------------------------------ */")
+    w("/* constants                                                     */")
+    w("/* ------------------------------------------------------------ */")
+    w("#define NFASTBINS               10")
+    w(f"#define NBINS                   {nbins}")
+    w("#define BINMAPSIZE              (NBINS / (sizeof(unsigned int) * 8))")
+    if has_tcache:
+        w("#define USE_TCACHE              1")
+        if tcmax is not None:
+            w(f"#define TCACHE_MAX_BINS         {tcmax}")
+        w(f"#define TCACHE_COUNTS_FIELD     {tcache_counts_field}")
+    w("")
+
+    # --- structs ---
+    w("/* ------------------------------------------------------------ */")
+    w("/* struct definitions (extracted from glibc source)              */")
+    w("/* ------------------------------------------------------------ */")
+    w("")
+    w(chunk if chunk else "/* ERROR: struct malloc_chunk not found */")
+    w("")
+    w(hinfo if hinfo else "/* ERROR: heap_info not found */")
+    w("")
+    w(state if state else "/* ERROR: struct malloc_state not found */")
+    w("")
+    if has_tcache:
+        w(tcentry if tcentry else "/* ERROR: tcache_entry not found */")
+        w("")
+        w(tcperth if tcperth else "/* ERROR: tcache_perthread_struct not found */")
+        w("")
+
+    w("#endif /* _GLIBC_STRUCTS_EXTRACTED_H */")
+
+    with open(out_path, "w") as f:
+        f.write("\n".join(L) + "\n")
+
+
+if __name__ == "__main__":
+    main()

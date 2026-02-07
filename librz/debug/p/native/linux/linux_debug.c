@@ -236,7 +236,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		if (dbg->trace_clone) {
 			rz_debug_select(dbg, dbg->pid, (int)data);
 		}
-		rz_cons_printf("(%d) Created thread %d\n", ptid, (int)data);
+		rz_cons_printf("(%d)  threadCreated %d\n", ptid, (int)data);
 		return RZ_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
