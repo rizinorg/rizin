@@ -385,9 +385,7 @@ static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 }
 
 /**
- * \brief Checks if the hash table needs to
- *		- grow - if load factor limit is reached
- * 		- rehash - if there are too many slots marked as "deleted"
+ * \brief Checks if the hash table needs to grow (if load factor limit is reached) or rehash (if there are too many slots marked as "deleted")
  */
 static bool internal_ht_rehash_if_needed(HtName_(Ht) *ht) {
 	if (ht->growth_left) {
