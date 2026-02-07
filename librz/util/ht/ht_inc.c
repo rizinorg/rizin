@@ -899,16 +899,18 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
  * \param ht the hash table.
  * \param cb the callback function to invoke (returning `false` will cancel further iteration).
  * \param user pointer to user data (passed through to the callback).
+ * \return todo..
  */
-RZ_API void Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
-	rz_return_if_fail(ht && cb);
+RZ_API bool Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(ht && cb, false);
 
 	// Iterate all slots
 	HT_FOREACH(ht, kv, {
 		if (!cb(user, kv)) {
-			return;
+			return false;
 		}
 	});
+	return true;
 }
 
 /**

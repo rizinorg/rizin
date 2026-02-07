@@ -79,10 +79,10 @@ static bool sdb_ht_foreach_kv_filter(void *user, const HtSSKv *kv) {
 	return true;
 }
 
-RZ_API void sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user) {
+RZ_API bool sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user) {
 	HtSSForeachKvCallbackRedirect redirect = {
 		.cb = cb,
 		.user = user
 	};
-	ht_ss_foreach_kv(ht, sdb_ht_foreach_kv_filter, &redirect);
+	return ht_ss_foreach_kv(ht, sdb_ht_foreach_kv_filter, &redirect);
 }

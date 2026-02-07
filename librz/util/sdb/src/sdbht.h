@@ -16,6 +16,11 @@ typedef struct sdb_kv {
 	HtSSKv base;
 } SdbKv;
 
+/**
+ * todo..
+ */
+typedef bool (*SdbHtForeachCallback)(void *user, const SdbKv *kv);
+
 static inline const char *sdbkv_key(const SdbKv *kv) {
 	return kv->base.key;
 }
@@ -61,7 +66,7 @@ typedef bool (*SdbHtForeachCallback)(void *user, const SdbKv *kv);
 /**
  * todo..
  */
-RZ_API void sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user);
+RZ_API bool sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user);
 
 #ifdef __cplusplus
 }

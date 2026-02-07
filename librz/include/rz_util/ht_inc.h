@@ -224,7 +224,7 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 // cb should not modify the hashtable.
 // NOTE: cb can delete the current element, but it should be avoided
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user);
-RZ_API void Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user);
+RZ_API bool Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user);
 
 RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht);
 

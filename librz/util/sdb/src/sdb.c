@@ -739,7 +739,9 @@ RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_
 	if (!result) {
 		return sdb_foreach_end(s, false);
 	}
-	sdb_ht_foreach_kv(s->ht, cb, user);
+	if (!sdb_ht_foreach_kv(s->ht, cb, user)) {
+		return sdb_foreach_end(s, false);
+	}
 	return sdb_foreach_end(s, true);
 }
 
