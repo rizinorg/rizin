@@ -147,7 +147,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=dmhb/dmhg/dmhm
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
@@ -165,7 +164,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=dmhb/dmhg/dmhm
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
@@ -182,7 +180,6 @@ EXPECT=<<EOF
 1
 EOF
 RUN
-
 
 NAME=multi-arena dmha/dmhi
 FILE=bins/heap/multi-arena-glibc-2.31-amd64
