@@ -46,6 +46,7 @@ static void recurse_into_fcn_bbs(
 	ut64 this_bb_addr,
 	RzSetU *visited_fcn_bbs,
 	RZ_OUT RzSetU *tail_called_addr,
+	const RzSetU *return_addresses,
 	const RzList /*<ut64>*/ *cfep_addresses,
 	const RzInquiryBBCFG *binary_bb_cfg) {
 	if (rz_set_u_contains(visited_fcn_bbs, this_bb_addr)) {
@@ -89,38 +90,38 @@ static void recurse_into_fcn_bbs(
 	const RzGraphNode *s;
 	rz_list_foreach (successors, lit, s) {
 		ut64 succ_addr = (ut64)s->data;
-		if (rz_list_contains(cfep_addresses, (utptr *)succ_addr) ||
+		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr) ||
+			rz_list_contains(cfep_addresses, (utptr *)succ_addr) ||
 			rz_set_u_contains(tail_called_addr, succ_addr)) {
 			continue;
 		}
-		// Check if the successor lies past a cfep candidate.
-		// That indicates it might be a tail jump.
 
 		utptr *val;
 		RzListIter *it;
 		rz_list_foreach (cfep_addresses, it, val) {
 			ut64 cfep_addr = (ut64)val;
-			if (!(cfep_addr != this_bb_addr &&
-				    (RZ_BETWEEN_EXCL(this_bb_addr, cfep_addr, succ_addr) ||
-					    RZ_BETWEEN_EXCL(succ_addr, cfep_addr, this_bb_addr)))) {
-				// The jump goes not over cfep_addr
+			if (cfep_addr != this_bb_addr &&
+				(RZ_BETWEEN_EXCL(this_bb_addr, cfep_addr, succ_addr) ||
+					RZ_BETWEEN_EXCL(succ_addr, cfep_addr, this_bb_addr))) {
+				// The jump goes over a cfep candidate.
+				// Assume the succ_addr is a tail call target.
+				// Log it and don't recurse.
+				rz_set_u_add(tail_called_addr, succ_addr);
 				continue;
 			}
-			// The jump goes over a cfep candidate.
-			// Assume the succ_addr is a tail call target.
-			// Log it and don't recurse.
-			rz_set_u_add(tail_called_addr, succ_addr);
-			continue;
-		}
 
-		recurse_into_fcn_bbs(
-			fcn,
-			this_bb_addr,
-			succ_addr,
-			visited_fcn_bbs,
-			tail_called_addr,
-			cfep_addresses,
-			binary_bb_cfg);
+			// The jump goes not over cfep so it should be a
+			// valid basic block of this function.
+			recurse_into_fcn_bbs(
+				fcn,
+				this_bb_addr,
+				succ_addr,
+				visited_fcn_bbs,
+				tail_called_addr,
+				return_addresses,
+				cfep_addresses,
+				binary_bb_cfg);
+		}
 	}
 
 warn_return:
@@ -135,11 +136,13 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	rz_return_val_if_fail(call_candidates && binary_bb_cfg && fcns, false);
 
 	// Candidate function entry points
+	RzSetU *return_addresses = rz_set_u_new();
 	RzList *cfep_addresses = rz_list_new();
 	void **it;
 	RzIterator *iter = ht_up_as_iter(call_candidates);
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
+		rz_set_u_add(return_addresses, cc->npc);
 		rz_list_push(cfep_addresses, (utptr *)cc->jmp_addr);
 	}
 	rz_iterator_free(iter);
@@ -147,25 +150,44 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 
 	// Tail calls discovered by this algorithm.
 	RzSetU *tail_called_addr = rz_set_u_new();
+	// Set of handled cfep
+	RzSetU *cfep_handled = rz_set_u_new();
 
-	utptr *data;
-	RzListIter *lit;
-	rz_list_foreach (cfep_addresses, lit, data) {
-		RzSetU *visited_bbs = rz_set_u_new();
-		RzInquiryFunction *fcn = rz_inquiry_function_new();
-		recurse_into_fcn_bbs(fcn, UT64_MAX, (ut64)data, visited_bbs, tail_called_addr, cfep_addresses, binary_bb_cfg);
-		rz_set_u_free(visited_bbs);
-		rz_pvector_push(fcns, fcn);
-	}
-	rz_iterator_free(iter);
+	do {
+		utptr *data;
+		RzListIter *lit;
+		rz_list_foreach (cfep_addresses, lit, data) {
+			if (rz_set_u_contains(cfep_handled, (ut64)data)) {
+				continue;
+			}
 
-	if (rz_set_u_size(tail_called_addr) == 0) {
-		rz_set_u_free(tail_called_addr);
-		rz_list_free(cfep_addresses);
-		return true;
-	}
+			RzSetU *visited_bbs = rz_set_u_new();
+			RzInquiryFunction *fcn = rz_inquiry_function_new();
+			recurse_into_fcn_bbs(fcn,
+				UT64_MAX,
+				(ut64)data,
+				visited_bbs,
+				tail_called_addr,
+				return_addresses,
+				cfep_addresses,
+				binary_bb_cfg);
+			rz_set_u_free(visited_bbs);
+			rz_set_u_add(cfep_handled, (ut64)data);
+			rz_pvector_push(fcns, fcn);
+		}
 
-	// Handle tail calls.
+		iter = rz_set_u_as_iter(tail_called_addr);
+		ut64 *val;
+		rz_iterator_foreach(iter, val) {
+			ut64 tail_cfep = *val;
+			if (rz_list_find_val(cfep_addresses, (utptr *)tail_cfep)) {
+				continue;
+			}
+			rz_list_add_sorted(cfep_addresses, (utptr *)tail_cfep, cmp, NULL);
+		}
+		rz_iterator_free(iter);
+		rz_set_u_clean(tail_called_addr);
+	} while (rz_set_u_size(tail_called_addr) != 0);
 
 	rz_set_u_free(tail_called_addr);
 	rz_list_free(cfep_addresses);
