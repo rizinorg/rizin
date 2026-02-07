@@ -184,6 +184,7 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt)(RZ_NONNULL HT_(Options) *opt);
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 initial_size);
 // Destroy a hashtable and all of its entries.
 RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht);
+RZ_API void Ht_(clean)(RZ_NONNULL HtName_(Ht) *ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
 RZ_API bool Ht_(insert)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value);
 RZ_API HtRetCode Ht_(insert_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
