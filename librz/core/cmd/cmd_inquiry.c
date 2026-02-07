@@ -31,19 +31,34 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	}
 	bool success = rz_inquiry_interpreter(core, entry_points);
 
-	printf("Found call candidates:\n");
-	RzIterator *it = ht_up_as_iter(core->inquiry->call_candidates);
-	RzAnalysisCallCandidate **v;
-	rz_iterator_foreach(it, v) {
-		RzAnalysisCallCandidate *cc = *v;
-		printf("\n");
-		printf("\tbb_addr = 0x%" PFMT64x "\n", cc->bb_addr);
-		printf("\tstore_addr = 0x%" PFMT64x "\n", cc->store_addr);
-		printf("\tjmp_addr = 0x%" PFMT64x "\n", cc->jmp_addr);
-		printf("\tnpc = 0x%" PFMT64x "\n", cc->npc);
-		printf("\tin_mem = %s\n", rz_str_bool(cc->in_mem));
+	RZ_LOG_INFO("Finished reference recovery.");
+
+	RZ_LOG_INFO("Perform function deduction.");
+
+	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
+	rz_inquiry_algo_revng_fcn_detection(
+		core->inquiry->call_candidates,
+		core->inquiry->bb_cfg,
+		fcns);
+
+	void **it;
+	rz_pvector_foreach (fcns, it) {
+		RzInquiryFunction *fcn = *it;
+
+		char fcn_name[512] = { 0 };
+		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
+		rz_strf(fcn_name, "iq_fcn_0x%" PFMT64x, fcn_addr);
+		RzAnalysisFunction *afcn = rz_analysis_create_function(core->analysis, fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		rz_analysis_add_function(core->analysis, afcn);
+
+		void **it2;
+		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
+		rz_iterator_foreach(iter, it2) {
+			RzInterval *bb = *it2;
+			RzAnalysisBlock *abb = rz_analysis_create_block(core->analysis, bb->addr, bb->size);
+			rz_analysis_function_add_block(afcn, abb);
+		}
 	}
-	rz_iterator_free(it);
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

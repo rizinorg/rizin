@@ -93,7 +93,8 @@ typedef struct {
 } RzInquiryFunction;
 
 RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new();
-RZ_IPI void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn);
+
+RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn);
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
