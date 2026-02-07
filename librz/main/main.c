@@ -20,7 +20,7 @@ static MainEntry main_prog[] = {
 	{ "rz-ax", rz_main_rz_ax },
 	{ "rz-bin", rz_main_rz_bin },
 	{ "rz-diff", rz_main_rz_diff },
-	{ "rz-find", rz_main_rz_ax },
+	{ "rz-find", rz_main_rz_find },
 	{ "rz-gg", rz_main_rz_gg },
 	{ "rz-hash", rz_main_rz_hash },
 	{ "rz-run", rz_main_rz_run },
