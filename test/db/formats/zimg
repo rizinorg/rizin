@@ -1,8 +1,24 @@
 NAME=Test 32-bit arm
 FILE=bins/zimg/arm32
-CMDS=iI~arch
+CMDS=EOF
+iI~arch
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 arch     arm
+---
+zimg:
+  size: 1024
+  kernel:
+    kernel_start: 0x16f2818
+    kernel_end: 0x0
+    kernel_size: 18446744073685489640
+  magic:
+    magic0: 0xe1a00000
+    magic1: 0xe1a00000
+    arm_magic: 0xea000003
+
 EOF
 RUN
 

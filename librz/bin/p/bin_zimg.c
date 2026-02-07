@@ -54,6 +54,53 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
+static RzStructuredData *zimg_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinZimgObj *zo = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *zimg = rz_structured_data_map_add_map(info, "zimg");
+	if (!zimg) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(zimg, "size", zo->size, false);
+
+	RzStructuredData *kernel = rz_structured_data_map_add_map(zimg, "kernel");
+	if (!kernel) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	RzStructuredData *magic = rz_structured_data_map_add_map(zimg, "magic");
+	if (!magic) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	ut32 magic0 = rz_read_le32(&zo->header.magic[0]);
+	ut32 magic1 = rz_read_le32(&zo->header.magic[4]);
+	ut32 arm_magic = rz_read_le32(zo->header.arm_magic);
+
+	rz_structured_data_map_add_unsigned(magic, "magic0", magic0, true);
+	rz_structured_data_map_add_unsigned(magic, "magic1", magic1, true);
+	rz_structured_data_map_add_unsigned(magic, "arm_magic", arm_magic, true);
+
+	ut64 kernel_start = zo->header.kernel_start;
+	ut64 kernel_end = zo->header.kernel_end;
+
+	rz_structured_data_map_add_unsigned(kernel, "kernel_start", kernel_start, true);
+	rz_structured_data_map_add_unsigned(kernel, "kernel_end", kernel_end, true);
+	rz_structured_data_map_add_unsigned(kernel, "kernel_size", kernel_end - kernel_start, false);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "ZIMG format binary",
@@ -64,6 +111,7 @@ RzBinPlugin rz_bin_plugin_zimg = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.info = &info,
+	.bin_structure = &zimg_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE
