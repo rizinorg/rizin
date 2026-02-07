@@ -1,6 +1,6 @@
 NAME=Test 32-bit arm
 FILE=bins/zimg/arm32
-CMDS=EOF
+CMDS=<<EOF
 iI
 echo ---
 iH
