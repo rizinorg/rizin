@@ -3200,6 +3200,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETI("dbg.glibc.fastbinmax", 10, "Upper bound on the number of fastbins printed");
 
+	n = NODECB("dbg.glibc.version", "auto", NULL);
+	SETDESC(n, "Set glibc version for heap parsing (auto-detected if 'auto')");
+	SETOPTIONS(n, "auto", "2.23", "2.26", "2.27", "2.29", "2.30", "2.31", "2.32", "2.33", "2.34", "2.35", "2.36", "2.37", "2.38", "2.39", NULL);
+
 	n = NODECB("dbg.jemalloc.version", "auto", NULL);
 	SETDESC(n, "Select jemalloc version for heap parsing (auto-detected if 'auto')");
 	SETOPTIONS(n, "auto", "4.5.0", "5.3.0", NULL);

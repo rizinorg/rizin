@@ -1001,7 +1001,7 @@ RZ_API void rz_core_sysenv_end(RzCore *core);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
-/* cmd_linux_heap_glibc.c */
+/* heap_glibc.c */
 RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_arena);
 RZ_API RzList /*<MallocState *>*/ *rz_heap_arenas_list(RzCore *core);
 RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr);
