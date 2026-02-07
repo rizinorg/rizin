@@ -1,0 +1,58 @@
+NAME=empty.img
+FILE=bins/bootimg/empty.img
+CMDS=iI;iH
+EXPECT=<<EOF
+arch     arm
+cpu      N/A
+features N/A
+baddr    0x40200000
+binsz    0x00001800
+bintype  image
+bits     16
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  arm
+maxopsz  4
+minopsz  2
+os       android
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   unknown
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+bootimg:
+  magic: "ANDROID!"
+  kernel_size: 128
+  kernel_addr: 0x40200000
+  ramdisk_size: 0
+  ramdisk_addr: 0x41200000
+  second_size: 0
+  second_addr: 0x41100000
+  tags_addr: 0x40200100
+  page_size: 2048
+  name: "d1-nezha"
+  cmdline: ""
+  extra_cmdline: ""
+
+EOF
+RUN
+
