@@ -1,5 +1,6 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_analysis.h>
 #include "rz_reg.h"
@@ -462,10 +463,8 @@ static void set_op_val(RzAnalysisOp *op, cs_insn *insn) {
 		switch (insn->id) {
 		case RISCV_INS_LUI:
 		case RISCV_INS_C_LUI:
-			op->val = imm << 12;
-			break;
 		case RISCV_INS_AUIPC:
-			op->val = op->addr + (imm << 12);
+			op->val = imm << 12;
 			break;
 		default:
 			op->val = imm;
@@ -842,8 +841,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 
 	case RISCV_INS_JALR:
-		// special case (TODO: move to capstone and depend only on the groups API)
-		if (insn->detail->riscv.op_count == 0) {
+		if (group_exists_in(insn->detail->groups, insn->detail->groups_count, RISCV_GRP_RET)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			break;
 		}

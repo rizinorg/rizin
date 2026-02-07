@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <deprecated_arch_helper.h>
 #include <stddef.h>
@@ -116,7 +116,8 @@ size_t skip_extension_version(const char *arch_str, size_t curr) {
 	size_t curr1 = expect_char(arch_str, 'p', curr);
 	if (curr1 == curr) {
 		// error, expected p
-		RZ_LOG_ERROR("Invalid architecture string: expected the version separator 'p' at index %zu in archiecture string %s, found %c instead\n",
+		RZ_LOG_ERROR("Invalid architecture string: expected the version separator 'p' at index %zu"
+			     "in archiecture string %s, found %c instead\n",
 			curr, arch_str, arch_str[curr]);
 		return curr;
 	}

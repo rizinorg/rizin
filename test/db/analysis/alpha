@@ -51,7 +51,7 @@ opex:
     - type: "reg"
       value: "$2"
     - type: "imm"
-      value: 536982352
+      value: 4831949648
 jump: 0x12001b350
 fail: 0x12001b340
 cond: al

@@ -348,7 +348,7 @@ EXPECT=<<EOF
 ...dup (2044)
 |       |   ;-- .LBB0_2:
 |       `-> 0x08001032      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x08001032
-|           0x08001034      ret
+\           0x08001034      ret
 nth      paddr      vaddr bind   type   size lib name               
 --------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
@@ -392,7 +392,7 @@ EXPECT=<<EOF
 ...dup (2044)
 |       |   ;-- .LBB0_2:
 |       `-> 0x0800103e      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x0800103e
-|           0x08001040      ret
+\           0x08001040      ret
 nth      paddr      vaddr bind   type   size lib name               
 --------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_far.c
@@ -536,7 +536,7 @@ EXPECT=<<EOF
 |           0x08000058      lw    ra, 0xc(sp)
 |           0x0800005a      lw    s0, 8(sp)
 |           0x0800005c      addi  sp, sp, 0x10
-|           0x0800005e      ret
+\           0x0800005e      ret
 nth      paddr      vaddr bind   type   size lib name                               
 ------------------------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_relocations_relative_32_64.c
@@ -576,8 +576,7 @@ EXPECT=<<EOF
             ;-- .L0 :
             ;-- .text:
             ;-- main:
-/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0(int64_t arg5, int64_t arg6);
-|           ; arg int64_t arg5 @ a4
+/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0(int64_t arg6);
 |           ; arg int64_t arg6 @ a5
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
@@ -605,7 +604,7 @@ EXPECT=<<EOF
 |           ;-- .L0 :
 |           0x08000064      ld    s0, 0(sp)                            ; RELOC TARGET 0 .L0  @ 0x08000064
 |           0x08000066      addi  sp, sp, 0x10
-|           0x08000068      ret
+\           0x08000068      ret
 nth      paddr      vaddr bind   type   size lib name                                                                                                                                                                                     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_relocations_relative_32_64.c
@@ -776,7 +775,7 @@ EXPECT=<<EOF
 ...dup (125)
 |       |   ;-- .LBB0_2:
 |       `-> 0x08000132      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x08000132
-|           0x08000134      ret
+\           0x08000134      ret
 nth      paddr      vaddr bind   type   size lib name                          
 -------------------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c
@@ -862,7 +861,7 @@ EXPECT=<<EOF
 ...dup (125)
 |       |   ;-- .LBB0_2:
 |       `-> 0x0800013e      li    a0, 1                                ; RELOC TARGET 0 .LBB0_2 @ 0x0800013e
-|           0x08000140      ret
+\           0x08000140      ret
 nth      paddr      vaddr bind   type   size lib name                          
 -------------------------------------------------------------------------------
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_branch_compressed_far.c

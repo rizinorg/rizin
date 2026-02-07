@@ -1,5 +1,6 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_asm.h>
 #include <rz_lib.h>

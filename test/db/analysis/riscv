@@ -278,7 +278,9 @@ nth      paddr      vaddr bind   type   size lib name
   5 0x000004b0 0x000104b0 GLOBAL FUNC      0     imp.__libc_start_main
             ; CALL XREF from sym.test_aes64_instructions @ 0x10812
             ;-- aes64ds:
-/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zknd1p0_zkne1p0_zknh1p0();
+/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zknd1p0_zkne1p0_zknh1p0(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
@@ -288,8 +290,8 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010584      06f4           sd    ra, 0x28(sp)
 |           0x00010586      22f0           sd    s0, 0x20(sp)
 |           0x00010588      0018           addi  s0, sp, 0x30
-|           0x0001058a      233ca4fc       sd    a0, -0x28(s0)
-|           0x0001058e      2338b4fc       sd    a1, -0x30(s0)
+|           0x0001058a      233ca4fc       sd    a0, -0x28(s0)         ; arg1
+|           0x0001058e      2338b4fc       sd    a1, -0x30(s0)         ; arg2
 |           0x00010592      833784fd       ld    a5, -0x28(s0)
 |           0x00010596      033704fd       ld    a4, -0x30(s0)
 |           0x0001059a      b387e73a       aes64ds a5, a5, a4
@@ -299,9 +301,11 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000105a8      a270           ld    ra, 0x28(sp)
 |           0x000105aa      0274           ld    s0, 0x20(sp)
 |           0x000105ac      4561           addi  sp, sp, 0x30
-|           0x000105ae      8280           ret
+\           0x000105ae      8280           ret
             ; CALL XREF from sym.test_aes64_instructions @ 0x10822
-/ sym.aes64dsm();
+/ sym.aes64dsm(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
@@ -311,8 +315,8 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000105b2      06f4           sd    ra, 0x28(sp)
 |           0x000105b4      22f0           sd    s0, 0x20(sp)
 |           0x000105b6      0018           addi  s0, sp, 0x30
-|           0x000105b8      233ca4fc       sd    a0, -0x28(s0)
-|           0x000105bc      2338b4fc       sd    a1, -0x30(s0)
+|           0x000105b8      233ca4fc       sd    a0, -0x28(s0)         ; arg1
+|           0x000105bc      2338b4fc       sd    a1, -0x30(s0)         ; arg2
 |           0x000105c0      833784fd       ld    a5, -0x28(s0)
 |           0x000105c4      033704fd       ld    a4, -0x30(s0)
 |           0x000105c8      b387e73e       aes64dsm a5, a5, a4
@@ -322,9 +326,11 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000105d6      a270           ld    ra, 0x28(sp)
 |           0x000105d8      0274           ld    s0, 0x20(sp)
 |           0x000105da      4561           addi  sp, sp, 0x30
-|           0x000105dc      8280           ret
+\           0x000105dc      8280           ret
             ; CALL XREF from sym.test_aes64_instructions @ 0x10832
-/ sym.aes64es();
+/ sym.aes64es(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
@@ -334,8 +340,8 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000105e0      06f4           sd    ra, 0x28(sp)
 |           0x000105e2      22f0           sd    s0, 0x20(sp)
 |           0x000105e4      0018           addi  s0, sp, 0x30
-|           0x000105e6      233ca4fc       sd    a0, -0x28(s0)
-|           0x000105ea      2338b4fc       sd    a1, -0x30(s0)
+|           0x000105e6      233ca4fc       sd    a0, -0x28(s0)         ; arg1
+|           0x000105ea      2338b4fc       sd    a1, -0x30(s0)         ; arg2
 |           0x000105ee      833784fd       ld    a5, -0x28(s0)
 |           0x000105f2      033704fd       ld    a4, -0x30(s0)
 |           0x000105f6      b387e732       aes64es a5, a5, a4
@@ -345,9 +351,11 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010604      a270           ld    ra, 0x28(sp)
 |           0x00010606      0274           ld    s0, 0x20(sp)
 |           0x00010608      4561           addi  sp, sp, 0x30
-|           0x0001060a      8280           ret
+\           0x0001060a      8280           ret
             ; CALL XREF from sym.test_aes64_instructions @ 0x10842
-/ sym.aes64esm();
+/ sym.aes64esm(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
@@ -357,8 +365,8 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001060e      06f4           sd    ra, 0x28(sp)
 |           0x00010610      22f0           sd    s0, 0x20(sp)
 |           0x00010612      0018           addi  s0, sp, 0x30
-|           0x00010614      233ca4fc       sd    a0, -0x28(s0)
-|           0x00010618      2338b4fc       sd    a1, -0x30(s0)
+|           0x00010614      233ca4fc       sd    a0, -0x28(s0)         ; arg1
+|           0x00010618      2338b4fc       sd    a1, -0x30(s0)         ; arg2
 |           0x0001061c      833784fd       ld    a5, -0x28(s0)
 |           0x00010620      033704fd       ld    a4, -0x30(s0)
 |           0x00010624      b387e736       aes64esm a5, a5, a4
@@ -368,9 +376,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010632      a270           ld    ra, 0x28(sp)
 |           0x00010634      0274           ld    s0, 0x20(sp)
 |           0x00010636      4561           addi  sp, sp, 0x30
-|           0x00010638      8280           ret
+\           0x00010638      8280           ret
             ; CALL XREF from sym.test_aes64_instructions @ 0x1084e
-/ sym.aes64im();
+/ sym.aes64im(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -379,7 +388,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001063c      06f4           sd    ra, 0x28(sp)
 |           0x0001063e      22f0           sd    s0, 0x20(sp)
 |           0x00010640      0018           addi  s0, sp, 0x30
-|           0x00010642      233ca4fc       sd    a0, -0x28(s0)
+|           0x00010642      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x00010646      833784fd       ld    a5, -0x28(s0)
 |           0x0001064a      93970730       aes64im a5, a5
 |           0x0001064e      2334f4fe       sd    a5, -0x18(s0)
@@ -388,9 +397,11 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010658      a270           ld    ra, 0x28(sp)
 |           0x0001065a      0274           ld    s0, 0x20(sp)
 |           0x0001065c      4561           addi  sp, sp, 0x30
-|           0x0001065e      8280           ret
+\           0x0001065e      8280           ret
             ; CALL XREF from sym.test_aes64_instructions @ 0x1087a
-/ sym.aes64ks2();
+/ sym.aes64ks2(int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ a0
+|           ; arg int64_t arg2 @ a1
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
@@ -400,8 +411,8 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010662      06f4           sd    ra, 0x28(sp)
 |           0x00010664      22f0           sd    s0, 0x20(sp)
 |           0x00010666      0018           addi  s0, sp, 0x30
-|           0x00010668      233ca4fc       sd    a0, -0x28(s0)
-|           0x0001066c      2338b4fc       sd    a1, -0x30(s0)
+|           0x00010668      233ca4fc       sd    a0, -0x28(s0)         ; arg1
+|           0x0001066c      2338b4fc       sd    a1, -0x30(s0)         ; arg2
 |           0x00010670      833784fd       ld    a5, -0x28(s0)
 |           0x00010674      033704fd       ld    a4, -0x30(s0)
 |           0x00010678      b387e77e       aes64ks2 a5, a5, a4
@@ -411,9 +422,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010686      a270           ld    ra, 0x28(sp)
 |           0x00010688      0274           ld    s0, 0x20(sp)
 |           0x0001068a      4561           addi  sp, sp, 0x30
-|           0x0001068c      8280           ret
+\           0x0001068c      8280           ret
             ; CALL XREF from sym.test_sha256_instructions @ 0x108bc
-/ sym.sha256sig0();
+/ sym.sha256sig0(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -422,7 +434,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010690      06f4           sd    ra, 0x28(sp)
 |           0x00010692      22f0           sd    s0, 0x20(sp)
 |           0x00010694      0018           addi  s0, sp, 0x30
-|           0x00010696      233ca4fc       sd    a0, -0x28(s0)
+|           0x00010696      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x0001069a      833784fd       ld    a5, -0x28(s0)
 |           0x0001069e      93972710       sha256sig0 a5, a5
 |           0x000106a2      2334f4fe       sd    a5, -0x18(s0)
@@ -431,9 +443,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000106ac      a270           ld    ra, 0x28(sp)
 |           0x000106ae      0274           ld    s0, 0x20(sp)
 |           0x000106b0      4561           addi  sp, sp, 0x30
-|           0x000106b2      8280           ret
+\           0x000106b2      8280           ret
             ; CALL XREF from sym.test_sha256_instructions @ 0x108d6
-/ sym.sha256sig1();
+/ sym.sha256sig1(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -442,7 +455,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000106b6      06f4           sd    ra, 0x28(sp)
 |           0x000106b8      22f0           sd    s0, 0x20(sp)
 |           0x000106ba      0018           addi  s0, sp, 0x30
-|           0x000106bc      233ca4fc       sd    a0, -0x28(s0)
+|           0x000106bc      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x000106c0      833784fd       ld    a5, -0x28(s0)
 |           0x000106c4      93973710       sha256sig1 a5, a5
 |           0x000106c8      2334f4fe       sd    a5, -0x18(s0)
@@ -451,9 +464,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000106d2      a270           ld    ra, 0x28(sp)
 |           0x000106d4      0274           ld    s0, 0x20(sp)
 |           0x000106d6      4561           addi  sp, sp, 0x30
-|           0x000106d8      8280           ret
+\           0x000106d8      8280           ret
             ; CALL XREF from sym.test_sha256_instructions @ 0x108f0
-/ sym.sha256sum0();
+/ sym.sha256sum0(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -462,7 +476,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000106dc      06f4           sd    ra, 0x28(sp)
 |           0x000106de      22f0           sd    s0, 0x20(sp)
 |           0x000106e0      0018           addi  s0, sp, 0x30
-|           0x000106e2      233ca4fc       sd    a0, -0x28(s0)
+|           0x000106e2      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x000106e6      833784fd       ld    a5, -0x28(s0)
 |           0x000106ea      93970710       sha256sum0 a5, a5
 |           0x000106ee      2334f4fe       sd    a5, -0x18(s0)
@@ -471,9 +485,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000106f8      a270           ld    ra, 0x28(sp)
 |           0x000106fa      0274           ld    s0, 0x20(sp)
 |           0x000106fc      4561           addi  sp, sp, 0x30
-|           0x000106fe      8280           ret
+\           0x000106fe      8280           ret
             ; CALL XREF from sym.test_sha256_instructions @ 0x1090a
-/ sym.sha256sum1();
+/ sym.sha256sum1(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -482,7 +497,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010702      06f4           sd    ra, 0x28(sp)
 |           0x00010704      22f0           sd    s0, 0x20(sp)
 |           0x00010706      0018           addi  s0, sp, 0x30
-|           0x00010708      233ca4fc       sd    a0, -0x28(s0)
+|           0x00010708      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x0001070c      833784fd       ld    a5, -0x28(s0)
 |           0x00010710      93971710       sha256sum1 a5, a5
 |           0x00010714      2334f4fe       sd    a5, -0x18(s0)
@@ -491,9 +506,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001071e      a270           ld    ra, 0x28(sp)
 |           0x00010720      0274           ld    s0, 0x20(sp)
 |           0x00010722      4561           addi  sp, sp, 0x30
-|           0x00010724      8280           ret
+\           0x00010724      8280           ret
             ; CALL XREF from sym.test_sha512_instructions @ 0x1094a
-/ sym.sha512sig0();
+/ sym.sha512sig0(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -502,7 +518,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010728      06f4           sd    ra, 0x28(sp)
 |           0x0001072a      22f0           sd    s0, 0x20(sp)
 |           0x0001072c      0018           addi  s0, sp, 0x30
-|           0x0001072e      233ca4fc       sd    a0, -0x28(s0)
+|           0x0001072e      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x00010732      833784fd       ld    a5, -0x28(s0)
 |           0x00010736      93976710       sha512sig0 a5, a5
 |           0x0001073a      2334f4fe       sd    a5, -0x18(s0)
@@ -511,9 +527,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010744      a270           ld    ra, 0x28(sp)
 |           0x00010746      0274           ld    s0, 0x20(sp)
 |           0x00010748      4561           addi  sp, sp, 0x30
-|           0x0001074a      8280           ret
+\           0x0001074a      8280           ret
             ; CALL XREF from sym.test_sha512_instructions @ 0x10964
-/ sym.sha512sig1();
+/ sym.sha512sig1(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -522,7 +539,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001074e      06f4           sd    ra, 0x28(sp)
 |           0x00010750      22f0           sd    s0, 0x20(sp)
 |           0x00010752      0018           addi  s0, sp, 0x30
-|           0x00010754      233ca4fc       sd    a0, -0x28(s0)
+|           0x00010754      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x00010758      833784fd       ld    a5, -0x28(s0)
 |           0x0001075c      93977710       sha512sig1 a5, a5
 |           0x00010760      2334f4fe       sd    a5, -0x18(s0)
@@ -531,9 +548,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001076a      a270           ld    ra, 0x28(sp)
 |           0x0001076c      0274           ld    s0, 0x20(sp)
 |           0x0001076e      4561           addi  sp, sp, 0x30
-|           0x00010770      8280           ret
+\           0x00010770      8280           ret
             ; CALL XREF from sym.test_sha512_instructions @ 0x1097e
-/ sym.sha512sum0();
+/ sym.sha512sum0(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -542,7 +560,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010774      06f4           sd    ra, 0x28(sp)
 |           0x00010776      22f0           sd    s0, 0x20(sp)
 |           0x00010778      0018           addi  s0, sp, 0x30
-|           0x0001077a      233ca4fc       sd    a0, -0x28(s0)
+|           0x0001077a      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x0001077e      833784fd       ld    a5, -0x28(s0)
 |           0x00010782      93974710       sha512sum0 a5, a5
 |           0x00010786      2334f4fe       sd    a5, -0x18(s0)
@@ -551,9 +569,10 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010790      a270           ld    ra, 0x28(sp)
 |           0x00010792      0274           ld    s0, 0x20(sp)
 |           0x00010794      4561           addi  sp, sp, 0x30
-|           0x00010796      8280           ret
+\           0x00010796      8280           ret
             ; CALL XREF from sym.test_sha512_instructions @ 0x10998
-/ sym.sha512sum1();
+/ sym.sha512sum1(int64_t arg1);
+|           ; arg int64_t arg1 @ a0
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -562,7 +581,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0001079a      06f4           sd    ra, 0x28(sp)
 |           0x0001079c      22f0           sd    s0, 0x20(sp)
 |           0x0001079e      0018           addi  s0, sp, 0x30
-|           0x000107a0      233ca4fc       sd    a0, -0x28(s0)
+|           0x000107a0      233ca4fc       sd    a0, -0x28(s0)         ; arg1
 |           0x000107a4      833784fd       ld    a5, -0x28(s0)
 |           0x000107a8      93975710       sha512sum1 a5, a5
 |           0x000107ac      2334f4fe       sd    a5, -0x18(s0)
@@ -571,7 +590,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000107b6      a270           ld    ra, 0x28(sp)
 |           0x000107b8      0274           ld    s0, 0x20(sp)
 |           0x000107ba      4561           addi  sp, sp, 0x30
-|           0x000107bc      8280           ret
+\           0x000107bc      8280           ret
             ; CALL XREF from main @ 0x109e8
 / sym.test_aes64_instructions(int64_t arg6);
 |           ; arg int64_t arg6 @ a5
@@ -588,13 +607,13 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x000107e0      8000           addi  s0, sp, 0x40
 |           0x000107e2      c567           lui   a5, 0x11
 |           0x000107e4      83b707c3       ld    a5, -0x3d0(a5)        ; arg6
-|           0x000107e8      2334f4fe       sd    a5, -0x18(s0)
+|           0x000107e8      2334f4fe       sd    a5, -0x18(s0)         ; arg6
 |           0x000107ec      c567           lui   a5, 0x11
 |           0x000107ee      83b787c3       ld    a5, -0x3c8(a5)        ; arg6
-|           0x000107f2      2330f4fe       sd    a5, -0x20(s0)
+|           0x000107f2      2330f4fe       sd    a5, -0x20(s0)         ; arg6
 |           0x000107f6      c567           lui   a5, 0x11
 |           0x000107f8      83b707c4       ld    a5, -0x3c0(a5)        ; arg6
-|           0x000107fc      233cf4fc       sd    a5, -0x28(s0)
+|           0x000107fc      233cf4fc       sd    a5, -0x28(s0)         ; arg6
 |           0x00010800      c567           lui   a5, 0x11
 |           0x00010802      138587a5       addi  a0, a5, -0x5a8        ; arg6
 |           0x00010806      eff0bfcc       jal   sym.imp.puts          ; int puts(const char *s)
@@ -636,7 +655,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x00010892      e270           ld    ra, 0x38(sp)
 |           0x00010894      4274           ld    s0, 0x30(sp)
 |           0x00010896      2161           addi  sp, sp, 0x40
-|           0x00010898      8280           ret
+\           0x00010898      8280           ret
 EOF
 RUN
 
@@ -1152,7 +1171,7 @@ EXPECT=<<EOF
 |       :   0x000115d8      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x000115dc      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000115de      7df3           bnez  a4, 0x115c4
-|           0x000115e0      8280           ret
+\           0x000115e0      8280           ret
 EOF
 RUN
 
@@ -1218,7 +1237,7 @@ EXPECT=<<EOF
 |       :   0x000112d6      a7500602       vse16.v v1, (a2)            ; arg3
 |       :   0x000112da      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000112dc      71f7           bnez  a4, 0x112a8
-|           0x000112de      8280           ret
+\           0x000112de      8280           ret
 EOF
 RUN
 
@@ -1267,7 +1286,7 @@ EXPECT=<<EOF
 |       :   0x0001194a      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x0001194e      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011950      65f3           bnez  a4, 0x11930
-|           0x00011952      8280           ret
+\           0x00011952      8280           ret
 EOF
 RUN
 
@@ -1316,7 +1335,7 @@ EXPECT=<<EOF
 |       :   0x000118f6      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x000118fa      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000118fc      65f3           bnez  a4, 0x118dc
-|           0x000118fe      8280           ret
+\           0x000118fe      8280           ret
 EOF
 RUN
 
@@ -1388,7 +1407,7 @@ EXPECT=<<EOF
 |       :   0x000114ac      a7e00602       vse32.v v1, (a3)            ; arg4
 |       :   0x000114b0      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x000114b2      e31c08fc       bnez  a6, 0x1148a
-|           0x000114b6      8280           ret
+\           0x000114b6      8280           ret
 EOF
 RUN
 
@@ -1468,7 +1487,7 @@ EXPECT=<<EOF
 |       :   0x0001140c      a7610602       vse32.v v3, (a2)            ; arg3
 |       :   0x00011410      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
-|           0x00011414      8280           ret
+\           0x00011414      8280           ret
 EOF
 RUN
 
@@ -1547,7 +1566,7 @@ EXPECT=<<EOF
 |       :   0x0001140c      a7610602       vse32.v v3, (a2)            ; arg3
 |       :   0x00011410      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
-|           0x00011414      8280           ret
+\           0x00011414      8280           ret
 EOF
 RUN
 
@@ -1598,7 +1617,7 @@ EXPECT=<<EOF
 |       :   0x00011332      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x00011336      4296           add   a2, a2, a6            ; arg3
 |       `=< 0x00011338      71ff           bnez  a4, 0x11314
-|           0x0001133a      8280           ret
+\           0x0001133a      8280           ret
 EOF
 RUN
 
@@ -1667,7 +1686,7 @@ EXPECT=<<EOF
 |       :   0x000110f8      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x000110fc      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000110fe      6df3           bnez  a4, 0x110e0
-|           0x00011100      8280           ret
+\           0x00011100      8280           ret
 EOF
 RUN
 
@@ -1699,7 +1718,7 @@ EXPECT=<<EOF
 |       :   0x00011858      a7e00502       vse32.v v1, (a1)            ; arg2
 |       :   0x0001185c      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x0001185e      6df3           bnez  a4, 0x11840
-|           0x00011860      8280           ret
+\           0x00011860      8280           ret
 EOF
 RUN
 
@@ -1738,7 +1757,7 @@ EXPECT=<<EOF
 |       :   0x0001155c      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x00011560      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011562      7df3           bnez  a4, 0x11548
-|           0x00011564      8280           ret
+\           0x00011564      8280           ret
 EOF
 RUN
 
@@ -1766,7 +1785,7 @@ EXPECT=<<EOF
 |       :   0x00011358      a7d00502       vse16.v v1, (a1)            ; arg2
 |       :   0x0001135c      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x0001135e      6df3           bnez  a4, 0x11340
-|           0x00011360      8280           ret
+\           0x00011360      8280           ret
 EOF
 RUN
 
@@ -1797,7 +1816,7 @@ EXPECT=<<EOF
 |       :   0x00011826      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x0001182a      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x0001182c      65f3           bnez  a4, 0x1180c
-|           0x0001182e      8280           ret
+\           0x0001182e      8280           ret
 EOF
 RUN
 
@@ -1831,7 +1850,7 @@ EXPECT=<<EOF
 |       :   0x0001176c      a7e00602       vse32.v v1, (a3)            ; arg4
 |       :   0x00011770      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x00011772      e31a08fc       bnez  a6, 0x11746
-|           0x00011776      8280           ret
+\           0x00011776      8280           ret
 EOF
 RUN
 
@@ -1885,7 +1904,7 @@ EXPECT=<<EOF
 |       :   0x0001151a      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x0001151e      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011520      71fb           bnez  a4, 0x114f4
-|           0x00011522      8280           ret
+\           0x00011522      8280           ret
 EOF
 RUN
 
@@ -1915,7 +1934,7 @@ EXPECT=<<EOF
 |       :   0x00011796      a7700602       vse64.v v1, (a2)            ; arg3
 |       :   0x0001179a      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x0001179c      65f3           bnez  a4, 0x1177c
-|           0x0001179e      8280           ret
+\           0x0001179e      8280           ret
 EOF
 RUN
 
@@ -1989,7 +2008,7 @@ EXPECT=<<EOF
 |       :   0x000111a4      57812102       vadd.vv v2, v2, v3
 |       :   0x000111a8      2e96           add   a2, a2, a1            ; arg3
 |       `=< 0x000111aa      79f7           bnez  a4, 0x11178
-|           0x000111ac      8280           ret
+\           0x000111ac      8280           ret
 EOF
 RUN
 
@@ -2052,66 +2071,66 @@ EXPECT=<<EOF
 |      ||   0x00011668      bb8ef640       subw  t4, a3, a5
 |      ||   0x0001166c      3e88           mv    a6, a5
 |      ||   ; CODE XREF from sym.test_strided_access @ 0x11740
-|      ||   0x0001166e      732320c2       csrr  t1, vlenb
-|      ||   0x00011672      93563300       srli  a3, t1, 3
-|      ||   0x00011676      9388f6ff       addi  a7, a3, -1
-|      ||   0x0001167a      1307f03f       li    a4, 0x3ff
-|      ||   0x0001167e      1b860800       sext.w a2, a7
-|      ||   0x00011682      1d9f           subw  a4, a4, a5
-|     ,===< 0x00011684      636cc706       bltu  a4, a2, 0x116fc
-|     |||   0x00011688      13970702       slli  a4, a5, 0x20
-|     |||   0x0001168c      135ee701       srli  t3, a4, 0x1e
-|     |||   0x00011690      5776700d       vsetvli a2, zero, e0x20, mf2, ta, ma
-|     |||   0x00011694      330fc501       add   t5, a0, t3            ; arg1
-|     |||   0x00011698      87610f02       vle32.v v3, (t5)
-|     |||   0x0001169c      d7a00852       vid.v v1
-|     |||   0x000116a0      935f1300       srli  t6, t1, 1
-|     |||   0x000116a4      d7c0180e       vrsub.vx v1, v1, a7
-|     |||   0x000116a8      0567           lui   a4, 1
-|     |||   0x000116aa      3307f741       sub   a4, a4, t6
-|     |||   0x000116ae      57813032       vrgather.vv v2, v3, v1
-|     |||   0x000116b2      3307c741       sub   a4, a4, t3
-|     |||   0x000116b6      2e97           add   a4, a4, a1            ; arg2
-|     |||   0x000116b8      27610702       vse32.v v2, (a4)
-|     |||   0x000116bc      b308d040       neg   a7, a3
-|     |||   0x000116c0      93880840       addi  a7, a7, 0x400
-|     |||   0x000116c4      bb88f840       subw  a7, a7, a5
-|     |||   0x000116c8      130e0040       li    t3, 0x400
-|     |||   0x000116cc      8126           sext.w a3, a3
-|     |||   0x000116ce      bb07fe40       subw  a5, t3, a5
-|    ,====< 0x000116d2      63efd800       bltu  a7, a3, 0x116f0
-|    ||||   0x000116d6      7e9f           add   t5, t5, t6
-|    ||||   0x000116d8      87610f02       vle32.v v3, (t5)
-|    ||||   0x000116dc      3307f741       sub   a4, a4, t6
-|    ||||   0x000116e0      13532300       srli  t1, t1, 2
-|    ||||   0x000116e4      9b060300       sext.w a3, t1
-|    ||||   0x000116e8      57813032       vrgather.vv v2, v3, v1
-|    ||||   0x000116ec      27610702       vse32.v v2, (a4)
-|   ,`----> 0x000116f0      6383d704       beq   a5, a3, 0x11736
-|   | |||   0x000116f4      3b880601       addw  a6, a3, a6
-|   | |||   0x000116f8      bb8ede40       subw  t4, t4, a3
-|   | `---> 0x000116fc      9b86feff       addiw a3, t4, -1
-|   |  ||   0x00011700      1387f57f       addi  a4, a1, 0x7ff         ; arg2
-|   |  ||   0x00011704      0a08           slli  a6, a6, 2
-|   |  ||   0x00011706      1307977f       addi  a4, a4, 0x7f9
-|   |  ||   0x0001170a      13960602       slli  a2, a3, 0x20
-|   |  ||   0x0001170e      9387f57f       addi  a5, a1, 0x7ff         ; arg2
-|   |  ||   0x00011712      9356e601       srli  a3, a2, 0x1e
-|   |  ||   0x00011716      33070741       sub   a4, a4, a6
-|   |  ||   0x0001171a      9387d77f       addi  a5, a5, 0x7fd
-|   |  ||   0x0001171e      4295           add   a0, a0, a6            ; arg1
-|   |  ||   0x00011720      158f           sub   a4, a4, a3
-|   |  ||   0x00011722      b3870741       sub   a5, a5, a6
-|   | .---> 0x00011726      87270500       flw   fa5, 0(a0)            ; arg1
-|   | :||   0x0001172a      f117           addi  a5, a5, -4
-|   | :||   0x0001172c      1105           addi  a0, a0, 4             ; arg1
-|   | :||   0x0001172e      27a2f700       fsw   fa5, 4(a5)
-|   | `===< 0x00011732      e31af7fe       bne   a4, a5, 0x11726
-|   `--`--> 0x00011736      8280           ret
-|       `-> 0x00011738      8147           li    a5, 0
-|           0x0001173a      930e0040       li    t4, 0x400
-|           0x0001173e      0148           li    a6, 0
-|           0x00011740      3db7           j     0x1166e
+|     .---> 0x0001166e      732320c2       csrr  t1, vlenb
+|     :||   0x00011672      93563300       srli  a3, t1, 3
+|     :||   0x00011676      9388f6ff       addi  a7, a3, -1
+|     :||   0x0001167a      1307f03f       li    a4, 0x3ff
+|     :||   0x0001167e      1b860800       sext.w a2, a7
+|     :||   0x00011682      1d9f           subw  a4, a4, a5
+|    ,====< 0x00011684      636cc706       bltu  a4, a2, 0x116fc
+|    |:||   0x00011688      13970702       slli  a4, a5, 0x20
+|    |:||   0x0001168c      135ee701       srli  t3, a4, 0x1e
+|    |:||   0x00011690      5776700d       vsetvli a2, zero, e0x20, mf2, ta, ma
+|    |:||   0x00011694      330fc501       add   t5, a0, t3            ; arg1
+|    |:||   0x00011698      87610f02       vle32.v v3, (t5)
+|    |:||   0x0001169c      d7a00852       vid.v v1
+|    |:||   0x000116a0      935f1300       srli  t6, t1, 1
+|    |:||   0x000116a4      d7c0180e       vrsub.vx v1, v1, a7
+|    |:||   0x000116a8      0567           lui   a4, 1
+|    |:||   0x000116aa      3307f741       sub   a4, a4, t6
+|    |:||   0x000116ae      57813032       vrgather.vv v2, v3, v1
+|    |:||   0x000116b2      3307c741       sub   a4, a4, t3
+|    |:||   0x000116b6      2e97           add   a4, a4, a1            ; arg2
+|    |:||   0x000116b8      27610702       vse32.v v2, (a4)
+|    |:||   0x000116bc      b308d040       neg   a7, a3
+|    |:||   0x000116c0      93880840       addi  a7, a7, 0x400
+|    |:||   0x000116c4      bb88f840       subw  a7, a7, a5
+|    |:||   0x000116c8      130e0040       li    t3, 0x400
+|    |:||   0x000116cc      8126           sext.w a3, a3
+|    |:||   0x000116ce      bb07fe40       subw  a5, t3, a5
+|   ,=====< 0x000116d2      63efd800       bltu  a7, a3, 0x116f0
+|   ||:||   0x000116d6      7e9f           add   t5, t5, t6
+|   ||:||   0x000116d8      87610f02       vle32.v v3, (t5)
+|   ||:||   0x000116dc      3307f741       sub   a4, a4, t6
+|   ||:||   0x000116e0      13532300       srli  t1, t1, 2
+|   ||:||   0x000116e4      9b060300       sext.w a3, t1
+|   ||:||   0x000116e8      57813032       vrgather.vv v2, v3, v1
+|   ||:||   0x000116ec      27610702       vse32.v v2, (a4)
+|  ,`-----> 0x000116f0      6383d704       beq   a5, a3, 0x11736
+|  | |:||   0x000116f4      3b880601       addw  a6, a3, a6
+|  | |:||   0x000116f8      bb8ede40       subw  t4, t4, a3
+|  | `----> 0x000116fc      9b86feff       addiw a3, t4, -1
+|  |  :||   0x00011700      1387f57f       addi  a4, a1, 0x7ff         ; arg2
+|  |  :||   0x00011704      0a08           slli  a6, a6, 2
+|  |  :||   0x00011706      1307977f       addi  a4, a4, 0x7f9
+|  |  :||   0x0001170a      13960602       slli  a2, a3, 0x20
+|  |  :||   0x0001170e      9387f57f       addi  a5, a1, 0x7ff         ; arg2
+|  |  :||   0x00011712      9356e601       srli  a3, a2, 0x1e
+|  |  :||   0x00011716      33070741       sub   a4, a4, a6
+|  |  :||   0x0001171a      9387d77f       addi  a5, a5, 0x7fd
+|  |  :||   0x0001171e      4295           add   a0, a0, a6            ; arg1
+|  |  :||   0x00011720      158f           sub   a4, a4, a3
+|  |  :||   0x00011722      b3870741       sub   a5, a5, a6
+|  | .----> 0x00011726      87270500       flw   fa5, 0(a0)            ; arg1
+|  | ::||   0x0001172a      f117           addi  a5, a5, -4
+|  | ::||   0x0001172c      1105           addi  a0, a0, 4             ; arg1
+|  | ::||   0x0001172e      27a2f700       fsw   fa5, 4(a5)
+|  | `====< 0x00011732      e31af7fe       bne   a4, a5, 0x11726
+|  `---`--> 0x00011736      8280           ret
+|     : `-> 0x00011738      8147           li    a5, 0
+|     :     0x0001173a      930e0040       li    t4, 0x400
+|     :     0x0001173e      0148           li    a6, 0
+\     `===< 0x00011740      3db7           j     0x1166e
 EOF
 RUN
 
@@ -2154,7 +2173,7 @@ EXPECT=<<EOF
 |       :   0x000118a2      a7e00502       vse32.v v1, (a1)            ; arg2
 |       :   0x000118a6      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x000118a8      7df3           bnez  a4, 0x1188e
-|           0x000118aa      8280           ret
+\           0x000118aa      8280           ret
 EOF
 RUN
 
@@ -2167,7 +2186,7 @@ s 0x000105c0
 pdf
 EOF
 EXPECT=<<EOF
-            ; CODE XREF from loc.__wrap_main @ 
+            ; CODE XREF from loc.__wrap_main @
             ;-- section..text:
             ;-- .text:
             ;-- $xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0:
@@ -2723,7 +2742,7 @@ EXPECT=<<EOF
 |           0x00010ba0      ae6d           ld    s11, 0xc8(sp)
 |           0x00010ba2      0145           li    a0, 0
 |           0x00010ba4      5561           addi  sp, sp, 0x130
-|           0x00010ba6      8280           ret
+\           0x00010ba6      8280           ret
 EOF
 RUN
 
@@ -2776,7 +2795,7 @@ EXPECT=<<EOF
 |       :   0x000119b2      a7e00602       vse32.v v1, (a3)            ; arg4
 |       :   0x000119b6      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x000119b8      e31c08fc       bnez  a6, 0x11990
-|           0x000119bc      8280           ret
+\           0x000119bc      8280           ret
 EOF
 RUN
 
@@ -2851,7 +2870,7 @@ EXPECT=<<EOF
 |       :   0x00011248      a7600602       vse32.v v1, (a2)            ; arg3
 |       :   0x0001124c      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x0001124e      7df3           bnez  a4, 0x11234
-|           0x00011250      8280           ret
+\           0x00011250      8280           ret
 EOF
 RUN
 
@@ -2866,7 +2885,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_right_var();
 |           0x00010504      3b55b560       rorw  a0, a0, a1
-|           0x00010508      8280           ret
+\           0x00010508      8280           ret
 EOF
 RUN
 
@@ -2883,7 +2902,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg1 @ a0
 |           0x0001058e      13654508       ori   a0, a0, 0x84          ; arg1
 |           0x00010592      1315f528       bseti a0, a0, 0xf           ; arg1
-|           0x00010596      8280           ret
+\           0x00010596      8280           ret
 EOF
 RUN
 
@@ -2899,7 +2918,7 @@ EXPECT=<<EOF
 / sym.clear_bit_50(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x0001054a      1315254b       bclri a0, a0, 0x32          ; arg1
-|           0x0001054e      8280           ret
+\           0x0001054e      8280           ret
 EOF
 RUN
 
@@ -2915,7 +2934,7 @@ EXPECT=<<EOF
 / sym.set_bit_40(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x00010532      1315852a       bseti a0, a0, 0x28          ; arg1
-|           0x00010536      8280           ret
+\           0x00010536      8280           ret
 EOF
 RUN
 
@@ -2931,7 +2950,7 @@ EXPECT=<<EOF
 / sym.swap_endian_32();
 |           0x00010578      1355856b       rev8  a0, a0
 |           0x0001057c      0195           srai  a0, a0, 0x20
-|           0x0001057e      8280           ret
+\           0x0001057e      8280           ret
 EOF
 RUN
 
@@ -2949,7 +2968,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg2 @ a1
 |           0x000105c2      0841           lw    a0, 0(a0)             ; arg1
 |           0x000105c4      3355b548       bext  a0, a0, a1            ; arg2
-|           0x000105c8      8280           ret
+\           0x000105c8      8280           ret
 EOF
 RUN
 
@@ -2966,7 +2985,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
 |           0x0001056c      3355b548       bext  a0, a0, a1            ; arg2
-|           0x00010570      8280           ret
+\           0x00010570      8280           ret
 EOF
 RUN
 
@@ -2981,7 +3000,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_left_16_32bit();
 |           0x0001051c      1b550561       roriw a0, a0, 0x10
-|           0x00010520      8280           ret
+\           0x00010520      8280           ret
 EOF
 RUN
 
@@ -2996,7 +3015,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_right_12();
 |           0x000104f8      1b55c560       roriw a0, a0, 0xc
-|           0x000104fc      8280           ret
+\           0x000104fc      8280           ret
 EOF
 RUN
 
@@ -3012,7 +3031,7 @@ EXPECT=<<EOF
 / sym.extract_bit_9(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x00010566      13559548       bexti a0, a0, 9             ; arg1
-|           0x0001056a      8280           ret
+\           0x0001056a      8280           ret
 EOF
 RUN
 
@@ -3033,8 +3052,8 @@ EXPECT=<<EOF
 |           0x000105b4      8547           li    a5, 1
 |           0x000105b6      bb97b700       sllw  a5, a5, a1            ; arg6
 |           0x000105ba      b377f740       andn  a5, a4, a5
-|           0x000105be      1cc1           sw    a5, 0(a0)             ; arg1
-|           0x000105c0      8280           ret
+|           0x000105be      1cc1           sw    a5, 0(a0)             ; arg6
+\           0x000105c0      8280           ret
 EOF
 RUN
 
@@ -3050,7 +3069,7 @@ EXPECT=<<EOF
 / sym.host_to_network();
 |           0x000105d2      1355856b       rev8  a0, a0
 |           0x000105d6      0195           srai  a0, a0, 0x20
-|           0x000105d8      8280           ret
+\           0x000105d8      8280           ret
 EOF
 RUN
 
@@ -3065,7 +3084,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_left_64();
 |           0x0001050a      3315b560       rol   a0, a0, a1
-|           0x0001050e      8280           ret
+\           0x0001050e      8280           ret
 EOF
 RUN
 
@@ -3084,7 +3103,7 @@ EXPECT=<<EOF
 |           0x00010556      8547           li    a5, 1
 |           0x00010558      bb97b700       sllw  a5, a5, a1            ; arg6
 |           0x0001055c      3d8d           xor   a0, a0, a5
-|           0x0001055e      8280           ret
+\           0x0001055e      8280           ret
 EOF
 RUN
 
@@ -3100,7 +3119,7 @@ EXPECT=<<EOF
 / sym.clear_bit_7(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x00010538      1375f5f7       andi  a0, a0, -0x81         ; arg1
-|           0x0001053c      8280           ret
+\           0x0001053c      8280           ret
 EOF
 RUN
 
@@ -3116,7 +3135,7 @@ EXPECT=<<EOF
 / sym.bswap32_alt();
 |           0x00010586      1355856b       rev8  a0, a0
 |           0x0001058a      0195           srai  a0, a0, 0x20
-|           0x0001058c      8280           ret
+\           0x0001058c      8280           ret
 EOF
 RUN
 
@@ -3132,7 +3151,7 @@ EXPECT=<<EOF
 / sym.extract_bit_45(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x00010572      1355d54a       bexti a0, a0, 0x2d          ; arg1
-|           0x00010576      8280           ret
+\           0x00010576      8280           ret
 EOF
 RUN
 
@@ -3148,7 +3167,7 @@ EXPECT=<<EOF
 / sym.network_to_host();
 |           0x000105ca      1355856b       rev8  a0, a0
 |           0x000105ce      0195           srai  a0, a0, 0x20
-|           0x000105d0      8280           ret
+\           0x000105d0      8280           ret
 EOF
 RUN
 
@@ -3163,7 +3182,7 @@ EOF
 EXPECT=<<EOF
 / sym.toggle_bit_3();
 |           0x00010550      13458500       xori  a0, a0, 8
-|           0x00010554      8280           ret
+\           0x00010554      8280           ret
 EOF
 RUN
 
@@ -3182,7 +3201,7 @@ EXPECT=<<EOF
 |           0x0001053e      8547           li    a5, 1
 |           0x00010540      bb97b700       sllw  a5, a5, a1            ; arg6
 |           0x00010544      3375f540       andn  a0, a0, a5
-|           0x00010548      8280           ret
+\           0x00010548      8280           ret
 EOF
 RUN
 
@@ -3197,7 +3216,7 @@ EOF
 EXPECT=<<EOF
 / sym.swap_endian_64();
 |           0x00010580      1355856b       rev8  a0, a0
-|           0x00010584      8280           ret
+\           0x00010584      8280           ret
 EOF
 RUN
 
@@ -3213,7 +3232,7 @@ EXPECT=<<EOF
 / sym.set_bit_5(int64_t arg1);
 |           ; arg int64_t arg1 @ a0
 |           0x00010522      13650502       ori   a0, a0, 0x20          ; arg1
-|           0x00010526      8280           ret
+\           0x00010526      8280           ret
 EOF
 RUN
 
@@ -3228,7 +3247,7 @@ EOF
 EXPECT=<<EOF
 / sym.toggle_bit_35();
 |           0x00010560      1315356a       binvi a0, a0, 0x23
-|           0x00010564      8280           ret
+\           0x00010564      8280           ret
 EOF
 RUN
 
@@ -3245,7 +3264,7 @@ EXPECT=<<EOF
 |           0x000105da      1b553561       roriw a0, a0, 0x13
 |           0x000105de      2d8d           xor   a0, a0, a1
 |           0x000105e0      0125           sext.w a0, a0
-|           0x000105e2      8280           ret
+\           0x000105e2      8280           ret
 EOF
 RUN
 
@@ -3260,7 +3279,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_right_32on64();
 |           0x00010516      3b55b560       rorw  a0, a0, a1
-|           0x0001051a      8280           ret
+\           0x0001051a      8280           ret
 EOF
 RUN
 
@@ -3276,7 +3295,7 @@ EXPECT=<<EOF
             ;-- rotate_left_8:
 / loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zbb1p0_zbs1p0();
 |           0x000104f2      1b558561       roriw a0, a0, 0x18
-|           0x000104f6      8280           ret
+\           0x000104f6      8280           ret
 EOF
 RUN
 
@@ -3297,8 +3316,8 @@ EXPECT=<<EOF
 |           0x000105a6      8547           li    a5, 1
 |           0x000105a8      bb97b700       sllw  a5, a5, a1            ; arg6
 |           0x000105ac      d98f           or    a5, a5, a4
-|           0x000105ae      1cc1           sw    a5, 0(a0)             ; arg1
-|           0x000105b0      8280           ret
+|           0x000105ae      1cc1           sw    a5, 0(a0)             ; arg6
+\           0x000105b0      8280           ret
 EOF
 RUN
 
@@ -3313,7 +3332,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_right_64();
 |           0x00010510      3355b560       ror   a0, a0, a1
-|           0x00010514      8280           ret
+\           0x00010514      8280           ret
 EOF
 RUN
 
@@ -3328,7 +3347,7 @@ EOF
 EXPECT=<<EOF
 / sym.rotate_left_var();
 |           0x000104fe      3b15b560       rolw  a0, a0, a1
-|           0x00010502      8280           ret
+\           0x00010502      8280           ret
 EOF
 RUN
 
@@ -3346,7 +3365,7 @@ EXPECT=<<EOF
 |           0x00010598      b7f7efff       lui   a5, 0xffeff
 |           0x0001059c      9387f77e       addi  a5, a5, 0x7ef         ; arg6
 |           0x000105a0      7d8d           and   a0, a0, a5
-|           0x000105a2      8280           ret
+\           0x000105a2      8280           ret
 EOF
 RUN
 
@@ -3365,7 +3384,7 @@ EXPECT=<<EOF
 |           0x00010528      8547           li    a5, 1
 |           0x0001052a      bb97b700       sllw  a5, a5, a1            ; arg6
 |           0x0001052e      5d8d           or    a0, a0, a5
-|           0x00010530      8280           ret
+\           0x00010530      8280           ret
 EOF
 RUN
 
@@ -3394,7 +3413,7 @@ EXPECT=<<EOF
 |           0x0001119c      a2ba           cm.pop {ra, s0-s5}, 0x40
 |           ;-- $x.4:
 |           0x0001119e      0125           sext.w a0, a0
-|           0x000111a0      62be           cm.popret {ra, s0-s1}, 0x20
+\           0x000111a0      62be           cm.popret {ra, s0-s1}, 0x20
 EOF
 RUN
 
@@ -3423,7 +3442,7 @@ EXPECT=<<EOF
 |           0x000111ba      b2ba           cm.pop {ra, s0-s6}, 0x40
 |           ;-- $x.8:
 |           0x000111bc      0125           sext.w a0, a0
-|           0x000111be      a2be           cm.popret {ra, s0-s5}, 0x40
+\           0x000111be      a2be           cm.popret {ra, s0-s5}, 0x40
 EOF
 RUN
 
@@ -3469,7 +3488,7 @@ EXPECT=<<EOF
 |           0x0001120a      beba           cm.pop {ra, s0-s6}, 0x70
 |           ;-- $x.12:
 |           0x0001120c      0125           sext.w a0, a0
-|           0x0001120e      f2be           cm.popret {ra, s0-s11}, 0x70
+\           0x0001120e      f2be           cm.popret {ra, s0-s11}, 0x70
 EOF
 RUN
 
@@ -3493,7 +3512,7 @@ EXPECT=<<EOF
 |           0x0001121a      33049402       mul   s0, s0, s1
 |           0x0001121e      2285           mv    a0, s0
 |           ;-- $d.15:
-|           0x00011220      a2be           cm.popret {ra, s0-s5}, 0x40
+\           0x00011220      a2be           cm.popret {ra, s0-s5}, 0x40
 EOF
 RUN
 
@@ -3515,7 +3534,7 @@ EXPECT=<<EOF
 |           0x0001122e      ae84           mv    s1, a1
 |           0x00011230      04c0           sw    s1, 0(s0)
 |           ;-- $d.19:
-|           0x00011232      a2bc           cm.popretz {ra, s0-s5}, 0x40
+\           0x00011232      a2bc           cm.popretz {ra, s0-s5}, 0x40
 EOF
 RUN
 
@@ -3541,7 +3560,7 @@ EXPECT=<<EOF
 |           0x00011242      82ba           cm.pop {ra, s0-s3}, 0x30
 |           ;-- $x.24:
 |           0x00011244      1b850500       sext.w a0, a1               ; arg2
-|           0x00011248      8280           ret
+\           0x00011248      8280           ret
 EOF
 RUN
 
@@ -3626,7 +3645,7 @@ EXPECT=<<EOF
 |           0x000112d2      33049402       mul   s0, s0, s1
 |           0x000112d6      2285           mv    a0, s0
 |           ;-- $d.39:
-|           0x000112d8      a2be           cm.popret {ra, s0-s5}, 0x40
+\           0x000112d8      a2be           cm.popret {ra, s0-s5}, 0x40
 EOF
 RUN
 
@@ -3711,7 +3730,7 @@ EXPECT=<<EOF
 |           0x000112d2      33049402       mul   s0, s0, s1
 |           0x000112d6      2285           mv    a0, s0
 |           ;-- $d.39:
-|           0x000112d8      a2be           cm.popret {ra, s0-s5}, 0x40
+\           0x000112d8      a2be           cm.popret {ra, s0-s5}, 0x40
 EOF
 RUN
 

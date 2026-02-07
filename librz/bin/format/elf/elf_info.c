@@ -12,7 +12,6 @@
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_str.h"
 #include "rz_util/rz_strbuf.h"
-#include <termios.h>
 
 #define VERSYM_VERSION 0x7fff
 
@@ -748,14 +747,27 @@ static RzBuffer *get_riscv_attributes_section(ELFOBJ *bin) {
 	return rz_buf_new_slice(bin->b, section->offset, section->size);
 }
 
+/// All possible results of getting a riscv attribute of a given tag
 typedef enum {
-	RISCV_ATTR_NONE = 0,
-	RISCV_ATTR_TRUNCATED_NT_STRING = 1,
-	RISCV_ATTR_NT_STRING = 2,
-	RISCV_ATTR_ULEB128 = 3,
-	RISCV_ATTR_TRUNCATED_ULEB128 = 4,
+	RISCV_ATTR_NONE = 0, //< no attribute was found with the given tag or parsing error of the section format
+	RISCV_ATTR_TRUNCATED_NT_STRING = 1, //< attribute of type null-terminated string, too long to fit into result buffer
+	RISCV_ATTR_NT_STRING = 2, //< attribute of type null-terminated string
+	RISCV_ATTR_ULEB128 = 3, //< attribute of type uleb128 integer
+	RISCV_ATTR_TRUNCATED_ULEB128 = 4, //< attribute of type uleb128 integer, too big to fit into result buffer
 } riscv_attr_type;
 
+/**
+ * \brief Get a riscv attribute of a given tag from the .riscv.attributes section
+ * 		  This section is defined in the RISC-V ELF psABI as a sequence of uleb128 encoded tags
+ *        paired with either null-terminated string or uleb128 values.
+ *
+ * \param sec The .riscv.attributes section
+ * \param attr_tag The tag of the attribute to get
+ * \param result_maxlen The maximum capacity of the result buffer
+ * \param [out] result The result buffer
+ * \param [out] result_len The length of usable data in the result buffer, always <= result_maxlen
+ * \return riscv_attr_type The type of the found attribute, indicating whether it's a string or uleb128 integer and whether it was truncated
+ */
 static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr_tag, int result_maxlen, ut8 *result, int *result_len) {
 	// format:
 	/*
@@ -863,8 +875,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 	return RISCV_ATTR_NONE;
 }
 
-static int
-get_bits_mips(ELFOBJ *bin) {
+static int get_bits_mips(ELFOBJ *bin) {
 	if (is_elf_class64(bin)) {
 		return 64;
 	}

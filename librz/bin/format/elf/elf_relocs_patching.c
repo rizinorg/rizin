@@ -2327,6 +2327,7 @@ static const ut16 RISCV_CI_TYPE_IMM_MASK = (1 << 12) | (0x1f << 2);
 	if (w == 32) { \
 		i = ((ut32)i); \
 	}
+
 static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs, const int bits) {
 	rz_return_if_fail(buf_patched && fs);
 

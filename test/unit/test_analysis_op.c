@@ -79,6 +79,7 @@ bool test_rz_analysis_op_val() {
 	rz_analysis_op_fini(&op);
 
 	SWITCH_TO_ARCH_BITS("riscv", 32);
+	rz_analysis_set_cpu(analysis, "rv32i2p0_c2p0");
 	// lw s10, 64(sp)
 	rz_analysis_op_init(&op);
 	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x06\x4d", 2, RZ_ANALYSIS_OP_MASK_VAL);

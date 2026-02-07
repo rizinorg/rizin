@@ -1,5 +1,5 @@
 project('capstone', 'c',
-  version: 'capstone-riscv-updated',
+  version: 'next',
   meson_version: '>=0.55.0',
 )
 
@@ -55,6 +55,12 @@ cs_files = [
   'arch/PowerPC/PPCInstPrinter.c',
   'arch/PowerPC/PPCMapping.c',
   'arch/PowerPC/PPCModule.c',
+  'arch/RISCV/RISCVDisassembler.c',
+  'arch/RISCV/RISCVDisassemblerExtension.c',
+  'arch/RISCV/RISCVInstPrinter.c',
+  'arch/RISCV/RISCVBaseInfo.c', 
+  'arch/RISCV/RISCVMapping.c',
+  'arch/RISCV/RISCVModule.c',
   'arch/Sparc/SparcDisassembler.c',
   'arch/Sparc/SparcDisassemblerExtension.c',
   'arch/Sparc/SparcInstPrinter.c',
@@ -89,12 +95,6 @@ cs_files = [
   'arch/Xtensa/XtensaInstPrinter.c',
   'arch/Xtensa/XtensaMapping.c',
   'arch/Xtensa/XtensaModule.c',
-  'arch/RISCV/RISCVBaseInfo.c',
-  'arch/RISCV/RISCVDisassembler.c',
-  'arch/RISCV/RISCVDisassemblerExtension.c',
-  'arch/RISCV/RISCVInstPrinter.c',
-  'arch/RISCV/RISCVMapping.c',
-  'arch/RISCV/RISCVModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -129,7 +129,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_XTENSA',
-  '-DCAPSTONE_HAS_RISCV'
+  '-DCAPSTONE_HAS_RISCV',
 ]
 
 if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')

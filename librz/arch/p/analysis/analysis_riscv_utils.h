@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <rz_analysis.h>
 
 #include "cs_operand.h"
