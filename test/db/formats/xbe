@@ -1,7 +1,48 @@
-NAME=loading an xbe file
+NAME=entrypoint decoding
 FILE=bins/xbe/default.xbe
-CMDS=q!
-EXPECT=
+CMDS=ie
+EXPECT=<<EOF
+xbe:
+  identity:
+    magic: "XBEH"
+    signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    timestamp: 1658843531
+  memory:
+    base: 0x10000
+    headers_size: 1497
+    image_size: 110868
+    image_header_size: 376
+    entry_point: 0xa8fdc4cb
+    tls_addr: 0x26050
+  sections:
+    count: 4
+    header_addr: 0x10348
+  pe_data:
+    - 0x10000
+    - 0x100000
+    - 0x1000
+    - 0x10000
+    - 0x1c000
+    - 0x0
+    - 0x62dff175
+  debug:
+    path_addr: 0x1048a
+    name_addr: 0x1048a
+    uname_addr: 0x1048a
+  libraries:
+    count: 4
+    versions_addr: 0x1044a
+    kernel_addr: 0x0
+    xapi_addr: 0x0
+    kernel_thunk_addr: 0x5b6f3bd2
+    nonkernel_import_dir_addr: 0x0
+  misc:
+    init_flags: 5
+    padding:
+      - 0x10490
+      - 0x149
+
+EOF
 RUN
 
 NAME=entrypoint decoding

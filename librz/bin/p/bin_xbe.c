@@ -361,6 +361,94 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
+static RzStructuredData *xbe_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	xbe_header *xh = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *xbe = rz_structured_data_map_add_map(info, "xbe");
+	if (!xbe) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	RzStructuredData *identity = rz_structured_data_map_add_map(xbe, "identity");
+	if (identity) {
+		char magic_buf[5] = { 0 };
+		memcpy(magic_buf, xh->magic, 4);
+		rz_structured_data_map_add_string(identity, "magic", magic_buf);
+
+		char sig_hex[0x100 * 2 + 1];
+		for (size_t i = 0; i < 0x100; i++) {
+			snprintf(sig_hex + i * 2, 3, "%02x", xh->signature[i]);
+		}
+		sig_hex[sizeof(sig_hex) - 1] = '\0';
+
+		rz_structured_data_map_add_string(identity, "signature", sig_hex);
+		rz_structured_data_map_add_unsigned(identity, "timestamp", xh->timestamp, false);
+	}
+
+	RzStructuredData *memory = rz_structured_data_map_add_map(xbe, "memory");
+	if (memory) {
+		rz_structured_data_map_add_unsigned(memory, "base", xh->base, true);
+		rz_structured_data_map_add_unsigned(memory, "headers_size", xh->headers_size, false);
+		rz_structured_data_map_add_unsigned(memory, "image_size", xh->image_size, false);
+		rz_structured_data_map_add_unsigned(memory, "image_header_size", xh->image_header_size, false);
+		rz_structured_data_map_add_unsigned(memory, "entry_point", xh->ep, true);
+		rz_structured_data_map_add_unsigned(memory, "tls_addr", xh->tls_addr, true);
+	}
+
+	RzStructuredData *sections = rz_structured_data_map_add_map(xbe, "sections");
+	if (sections) {
+		rz_structured_data_map_add_unsigned(sections, "count", xh->sections, false);
+		rz_structured_data_map_add_unsigned(sections, "header_addr", xh->sechdr_addr, true);
+	}
+
+	RzStructuredData *pe = rz_structured_data_map_add_array(xbe, "pe_data");
+	if (pe) {
+		for (size_t i = 0; i < 7; i++) {
+			rz_structured_data_array_add_unsigned(pe, xh->pe_data[i], true);
+		}
+	}
+
+	RzStructuredData *debug = rz_structured_data_map_add_map(xbe, "debug");
+	if (debug) {
+		rz_structured_data_map_add_unsigned(debug, "path_addr", xh->debug_path_addr, true);
+		rz_structured_data_map_add_unsigned(debug, "name_addr", xh->debug_name_addr, true);
+		rz_structured_data_map_add_unsigned(debug, "uname_addr", xh->debug_uname_addr, true);
+	}
+
+	RzStructuredData *libs = rz_structured_data_map_add_map(xbe, "libraries");
+	if (libs) {
+		rz_structured_data_map_add_unsigned(libs, "count", xh->lib_versions, false);
+		rz_structured_data_map_add_unsigned(libs, "versions_addr", xh->lib_versions_addr, true);
+		rz_structured_data_map_add_unsigned(libs, "kernel_addr", xh->kernel_lib_addr, true);
+		rz_structured_data_map_add_unsigned(libs, "xapi_addr", xh->xapi_lib_addr, true);
+		rz_structured_data_map_add_unsigned(libs, "kernel_thunk_addr", xh->kernel_thunk_addr, true);
+		rz_structured_data_map_add_unsigned(
+			libs, "nonkernel_import_dir_addr",
+			xh->nonkernel_import_dir_addr, true);
+	}
+
+	RzStructuredData *misc = rz_structured_data_map_add_map(xbe, "misc");
+	if (misc) {
+		rz_structured_data_map_add_unsigned(misc, "init_flags", xh->init_flags, false);
+
+		RzStructuredData *pad = rz_structured_data_map_add_array(misc, "padding");
+		if (pad) {
+			for (size_t i = 0; i < 2; i++) {
+				rz_structured_data_array_add_unsigned(pad, xh->padding[i], true);
+			}
+		}
+	}
+
+	return info;
+}
+
 static ut64 baddr(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	return obj->header.base;
@@ -382,6 +470,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.symbols = &symbols,
 	.info = &info,
 	.libs = &libs,
+	.bin_structure = &xbe_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE
