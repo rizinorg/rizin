@@ -21,7 +21,6 @@
  * 	-
  */
 
-
 // Load factor thershold of 87.5% (after that the table grows)
 #define LOAD_FACTOR_NUM 7
 #define LOAD_FACTOR_DEN 8 /* should be power of 2; also GROUP_WIDTH should be multiple of LOAD_FACTOR_DEN */
@@ -47,7 +46,7 @@
 #define RZ_PREFETCH(addr) ((void)0)
 #endif
 
-#if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
+#if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
 #define HAVE_SSE2
 #endif
 
@@ -153,7 +152,8 @@ static inline group_t group_match_hash_fragment(group_t group, ut8 ctrl) {
 }
 
 static inline group_mask_t group_match_empty(group_t group) {
-	return group & (group << 1) & group_repeat(0x80);
+	group_mask_t xor = group ^ group_repeat(0xFF);
+	return (xor - group_repeat(0x01)) & ~xor & group_repeat(0x80);
 }
 
 static inline group_mask_t group_match_deleted(group_t group) {
@@ -385,7 +385,7 @@ static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 }
 
 /**
- * \brief Checks if the hash table needs to 
+ * \brief Checks if the hash table needs to
  *		- grow - if load factor limit is reached
  * 		- rehash - if there are too many slots marked as "deleted"
  */
