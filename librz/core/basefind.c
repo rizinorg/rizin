@@ -182,7 +182,7 @@ static HtUU *basefind_create_pointer_map(RzCore *core, ut32 pointer_size) {
 		ut64 value = ht_uu_find(map, address, NULL) + 1;
 		ht_uu_insert(map, address, value);
 	}
-	RZ_LOG_INFO("basefind: located %u pointers\n", map->count);
+	RZ_LOG_INFO("basefind: located %u pointers\n", ht_uu_size(map));
 
 	return map;
 }

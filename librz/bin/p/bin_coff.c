@@ -326,7 +326,7 @@ static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 }
 
 static void coff_populate_imports(struct rz_bin_coff_obj *obj) {
-	if (obj->imp_index->count || !obj->symbols) {
+	if (ht_uu_size(obj->imp_index) || !obj->symbols) {
 		return;
 	}
 	int ord = 0;
@@ -345,7 +345,7 @@ static void coff_populate_imports(struct rz_bin_coff_obj *obj) {
 
 static void coff_populate_symbols(RzBinFile *bf) {
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-	if (obj->sym_ht->count || !obj->symbols) {
+	if (ht_up_size(obj->sym_ht) || !obj->symbols) {
 		return;
 	}
 	coff_populate_imports(obj);

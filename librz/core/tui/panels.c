@@ -5730,7 +5730,7 @@ static bool key_to_vec_cb(void *user, const char *k, const void *v) {
  */
 static RZ_OWN RzPVector /*<const char *>*/ *get_HtSP_key_list(HtSP *ht) {
 	RzPVector *vec = rz_pvector_new(NULL);
-	if (!vec || !rz_pvector_reserve(vec, ht->count)) {
+	if (!vec || !rz_pvector_reserve(vec, ht_sp_size(ht))) {
 		rz_pvector_free(vec);
 		return NULL;
 	}
@@ -5744,7 +5744,7 @@ void __update_modal(RzCore *core, HtSP *menu_db, RModal *modal) {
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	RzConsCanvas *can = tab->can;
 	modal->data = rz_strbuf_new(NULL);
-	int count = menu_db->count;
+	int count = ht_sp_size(menu_db);
 	if (modal->idx >= count) {
 		modal->idx = 0;
 		modal->offset = 0;

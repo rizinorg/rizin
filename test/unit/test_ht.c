@@ -766,7 +766,7 @@ bool test_set_u(void) {
 	// Add an address as key which is far away from the heap addresses.
 	rz_set_u_add(set_u, 100000000);
 	mu_assert_true(rz_set_u_contains(set_u, 100000000), "Not contained.");
-	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_eq(rz_set_u_size(set_u), 5, "count");
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
