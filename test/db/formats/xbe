@@ -1,6 +1,6 @@
 NAME=ih header
 FILE=bins/xbe/default.xbe
-CMDS=ie
+CMDS=iH
 EXPECT=<<EOF
 xbe:
   identity:
