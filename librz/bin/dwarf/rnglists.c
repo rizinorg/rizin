@@ -342,7 +342,7 @@ RZ_API void rz_bin_dwarf_rnglists_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(rnglists && rnglists->by_offset && sb);
-	if (rnglists->by_offset->count > 0) {
+	if (ht_up_size(rnglists->by_offset) > 0) {
 		rz_strbuf_append(sb, ".debug_loclists content:\n");
 	}
 	ht_up_foreach(rnglists->by_offset, cb_rnglist_dump, sb);

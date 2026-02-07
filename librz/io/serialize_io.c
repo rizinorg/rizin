@@ -74,7 +74,7 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 
-	if (desc->cache->count) {
+	if (ht_up_size(desc->cache)) {
 		PCacheSaveCtx ctx = {
 			.fd = desc->fd,
 			.db = sdb_ns(db, "pcache", true)

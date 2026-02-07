@@ -61,7 +61,7 @@ RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set)
 	rz_return_val_if_fail(set, NULL);
 
 	RzPVector *vec = rz_pvector_new(set->opt.finiKV ? free : NULL);
-	if (!vec || !rz_pvector_reserve(vec, set->count)) {
+	if (!vec || !rz_pvector_reserve(vec, ht_sp_size((HtSP *)set))) {
 		rz_pvector_free(vec);
 		return NULL;
 	}
