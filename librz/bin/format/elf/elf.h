@@ -198,10 +198,13 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 #define RZ_BIN_ELF_DEFAULT_BADDR_RELOC 0x08000000
 
 typedef struct Elf_(rz_bin_elf_context_t) {
-	Elf_(Addr) got_addr;
-	Elf_(Addr) jmprel;
-	Elf_(Addr) pltrelsz;
-	Elf_(Addr) mips_got_addr;
+	Elf_(Addr) got_addr; // DT_PLTGOT
+	Elf_(Addr) jmprel; // DT_JMPREL
+	Elf_(Addr) pltrelsz; // DT_PLTRELSZ
+	Elf_(Addr) mips_got_addr; // DT_MIPS_PLTGOT
+
+	RzBinElfSection *plt_got; // .plt.got section
+	RzBinElfSection *plt_sec; // .plt.sec section
 } RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {

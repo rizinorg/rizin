@@ -205,7 +205,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 	// XXX HACK ALERT!!!! full relro?? try to fix it
 	// will there always be .plt.got, what would happen if is .got.plt?
-	RzBinElfSection *s = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
+	RzBinElfSection *s = bin->elfctx->plt_got;
 	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
 		return UT64_MAX;
 	}
@@ -258,7 +258,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return get_import_addr_x86_manual(bin, rel);
 	}
 
-	RzBinElfSection *pltsec_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
+	RzBinElfSection *pltsec_section = bin->elfctx->plt_sec;
 
 	if (pltsec_section) {
 		if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {

@@ -296,6 +296,9 @@ static void init_symbols_info(ELFOBJ *bin) {
 
 static void init_elf_context(ELFOBJ *bin) {
 	bin->elfctx = RZ_NEW0(RzElfCtx);
+	if (!bin->elfctx) {
+		RZ_LOG_INFO("Failed to initialize ELF context.\n");
+	}
 	ut64 got_addr;
 	ut64 jmprel;
 	ut64 pltrelsz;
@@ -316,6 +319,9 @@ static void init_elf_context(ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &mips_got_addr)) {
 		mips_got_addr = UT64_MAX;
 	}
+
+	bin->elfctx->plt_got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
+	bin->elfctx->plt_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
 
 	bin->elfctx->got_addr = got_addr;
 	bin->elfctx->jmprel = jmprel;
