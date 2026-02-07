@@ -13,6 +13,15 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_bits.h>
 
+/**
+ * \file ht_inc.c
+ * \brief "SwissTable" hash table implementation
+ *
+ * References:
+ * 	-
+ */
+
+
 // Load factor thershold of 87.5% (after that the table grows)
 #define LOAD_FACTOR_NUM 7
 #define LOAD_FACTOR_DEN 8 /* should be power of 2; also GROUP_WIDTH should be multiple of LOAD_FACTOR_DEN */
@@ -261,10 +270,8 @@ static ut32 next_power_of_two(ut32 n) {
 	return 1ul << shift;
 }
 
-// Create a new hashtable and return a pointer to it.
-// size - number of buckets in the hashtable
 /**
- * todo..
+ * \brief Create a new hashtable and return a pointer to it.
  */
 static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options) *opt) {
 	HtName_(Ht) *ht = RZ_NEW0(HtName_(Ht));
@@ -332,9 +339,6 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new_opt_size)(RZ_NONNULL HT_(Options) *opt, ut32 
 	return internal_ht_new(initial_size, opt);
 }
 
-/**
- * todo..
- */
 RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 	if (!ht) {
 		return;
@@ -351,8 +355,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 }
 
 /**
- * todo
- * \return true if either no growing is needed or there was a successfull growth; otherwise returns false on failed growth attempt
+ * \brief Creates a new hash table with requested size, copies existing elements and swaps with \p ht.
  */
 static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 	// Create a new hash table
@@ -382,7 +385,9 @@ static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {
 }
 
 /**
- * todo
+ * \brief Checks if the hash table needs to 
+ *		- grow - if load factor limit is reached
+ * 		- rehash - if there are too many slots marked as "deleted"
  */
 static bool internal_ht_rehash_if_needed(HtName_(Ht) *ht) {
 	if (ht->growth_left) {
@@ -402,8 +407,7 @@ static bool internal_ht_rehash_if_needed(HtName_(Ht) *ht) {
 }
 
 /**
- * todo..
- * \return if the \p key is found this function will return it's slot ID, otherwise will return the ID of the next available slot for insertion purposes
+ * \brief Looks up an existing \p key, or reserves an unused slot otherwise.
  */
 static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, ut32 hash, ut8 hash_fragment, ut8 *previous_ctrl, bool *existing) {
 	ut32 probe_step = GROUP_WIDTH;
@@ -488,7 +492,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 }
 
 /**
- * todo..
+ * \brief Looks up a \p key and returns it's slot index.
  */
 static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len) {
 	ut32 probe_step = GROUP_WIDTH;
@@ -548,7 +552,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 }
 
 /**
- * \brief Get an existing KV with key \p key or allocate a new KV otherwise
+ * \brief Get an existing KV with key \p key or allocate a new KV otherwise.
  */
 static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, bool update, RZ_NONNULL HtRetCode *code) {
 	if (!internal_ht_rehash_if_needed(ht)) {
@@ -625,8 +629,6 @@ static inline HtRetCode internal_insert_kv_ex(RZ_NONNULL HtName_(Ht) *ht, RZ_NON
  * \return Returns true if insertion/replacement took place
  */
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update) {
-	// todo: check if we need to inline
-	// return Ht_(insert_kv_ex)(ht, kv, update, NULL) > 0; // todo: move to static function
 	return internal_insert_kv_ex(ht, kv, update, NULL) > 0;
 }
 
@@ -645,25 +647,6 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
  */
 RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
 	return internal_insert_kv_ex(ht, kv, update, NULL);
-	// rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
-
-	// HtRetCode rc;
-	// HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
-
-	// if (rc <= 0) {
-	// 	if (out_kv) {
-	// 		*out_kv = kv_dst;
-	// 	}
-	// 	return rc;
-	// }
-
-	// memcpy(kv_dst, kv, ht->opt.elem_size);
-
-	// if (out_kv) {
-	// 	*out_kv = kv_dst;
-	// }
-
-	// return rc;
 }
 
 static HtRetCode insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv) {
@@ -751,7 +734,7 @@ RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
 }
 
 /**
- * Deletion trick
+ * \brief This function decides if a slot should be marked as "empty" or "deleted" based on a heuristic.
  */
 static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
 	// Decide if we should mark the slot as empty or deleted
@@ -793,7 +776,11 @@ static bool internal_ht_delete(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
 }
 
 /**
- * Update the key of an element that has \p old_key as key and replace it with \p new_key
+ * \brief Update the key of an element that has \p old_key as key and replace it with \p new_key
+ * \param ht the hash table.
+ * \param old_key the key to update
+ * \param new_key the new key
+ * \return true if \p old_key was found and update, false otherwise
  */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
@@ -842,9 +829,12 @@ static inline RZ_BORROW HT_(Kv) *internal_find_kv(RZ_NONNULL HtName_(Ht) *ht, co
 }
 
 /**
- * Returns the corresponding Kv entry from \p key.
- * If \p found is not NULL, it will be set to true if the entry was found,
- * false otherwise.
+ * \brief Returns the corresponding Kv entry from \p key.
+ * \param ht the hash table.
+ * \param key the key to look up.
+ * \param[out] found pointer to a bool, that would receive a value indicating if the key was found or not (optional).
+ * \return if the kay is found, the function will return a pointer to it's KV entry, or `NULL` otherwise.
+ * If \p found is not NULL, it will be set to true if the entry was found, false otherwise.
  */
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	rz_return_val_if_fail(ht, NULL);
@@ -852,9 +842,14 @@ RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYP
 }
 
 /**
- * Looks up the corresponding value from \p key.
- * If \p found is not NULL, it will be set to true if the entry was found,
- * false otherwise.
+ * \brief Looks up the corresponding value from \p key.
+ *
+ * If \p found is not NULL, it will be set to true if the entry was found, false otherwise.
+ *
+ * \param ht the hash table.
+ * \param key the key to look up.
+ * \param[out] found pointer to a bool, that would receive a value indicating if the key was found or not (optional).
+ * \return if the kay is found, the function will return the value associated with the key, or `HT_NULL_VALUE` otherwise.
  */
 RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	rz_return_val_if_fail(ht, HT_NULL_VALUE);
@@ -863,7 +858,10 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 }
 
 /**
- * Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
+ * \brief Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
+ * \param ht the hash table.
+ * \param key the key to delete.
+ * \return true on success, false otherwise.
  */
 RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 	rz_return_val_if_fail(ht, false);
@@ -877,8 +875,10 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 }
 
 /**
- * Apply \p cb for each KV pair in \p ht.
- * If \p cb returns false, the iteration is stopped.
+ * \brief Apply \p cb for each KV pair in \p ht. If \p cb returns false, the iteration is stopped.
+ * \param ht the hash table.
+ * \param cb the callback function to invoke.
+ * \param user pointer to user data (passed through to the callback).
  */
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
@@ -892,7 +892,13 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
 }
 
 /**
- * todo
+ * \brief Iterates all elements inside \p ht and invokes the callback function \p cb for each element.
+ *
+ * This function is similar to `Ht_(foreach)`, but the key/value are passed as pointer rather than by value.
+ *
+ * \param ht the hash table.
+ * \param cb the callback function to invoke (returning `false` will cancel further iteration).
+ * \param user pointer to user data (passed through to the callback).
  */
 RZ_API void Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
