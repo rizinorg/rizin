@@ -1,8 +1,60 @@
 NAME=Test 32-bit arm
 FILE=bins/zimg/arm32
-CMDS=iI~arch
+CMDS=<<EOF
+iI
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 arch     arm
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x00000400
+bintype  zimg
+bits     32
+retguard false
+class    Compressed Linux Kernel
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     C
+machine  ARM
+maxopsz  4
+minopsz  4
+os       linux
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+zimg:
+  size: 1024
+  kernel:
+    kernel_start: 0x16f2818
+    kernel_end: 0x0
+    kernel_size: 18446744073685489640
+  magic:
+    magic0: 0xe1a00000
+    magic1: 0xe1a00000
+    arm_magic: 0xea000003
+
 EOF
 RUN
 
