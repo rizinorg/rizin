@@ -154,6 +154,8 @@ RZ_API void *rz_vector_push(RzVector *vec, void *x);
 // like rz_vector_insert for the beginning of vec
 RZ_API void *rz_vector_push_front(RzVector *vec, void *x);
 
+RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem);
+
 /**
  * \brief Swap two elements of the vector
  * \param index_a index of the first element to swap

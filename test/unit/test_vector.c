@@ -646,6 +646,23 @@ static bool test_vector_push_front(void) {
 	mu_end;
 }
 
+static bool test_vector_contains(void) {
+	RzVector v;
+	init_test_vector(&v, 6, 0, NULL, NULL);
+	ut64 a = 0;
+	ut64 b = 5;
+	ut64 c = 6;
+	mu_assert_true(rz_vector_contains(&v, &a), "Should contain");
+	mu_assert_true(rz_vector_contains(&v, &b), "Should contain");
+	mu_assert_false(rz_vector_contains(&v, &c), "Should not contain");
+	rz_vector_pop(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &b), "Should contain");
+	rz_vector_pop_front(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &a), "Should contain");
+	rz_vector_clear(&v);
+	mu_end;
+}
+
 static bool test_vector_swap(void) {
 	RzVector v;
 	init_test_vector(&v, 3, 0, NULL, NULL);
@@ -1491,6 +1508,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);
 	mu_run_test(test_vector_push_front);
+	mu_run_test(test_vector_contains);
 	mu_run_test(test_vector_swap);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);

@@ -283,6 +283,26 @@ RZ_API void *rz_vector_push_front(RzVector *vec, void *x) {
 	return rz_vector_insert(vec, 0, x);
 }
 
+/**
+ * \brief Checks if the given element is in the vector.
+ *
+ * \param vec The vector to search in.
+ * \param elem Pointer to the element to search.
+ *
+ * \return True if the vector contains the element, false otherwise.
+ */
+RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem) {
+	rz_return_val_if_fail(vec && elem, false);
+	for (size_t i = 0; i < vec->len; i++) {
+		// Casts to make Windows happy.
+		char *elem_v = (char *)vec->a + (vec->elem_size * i);
+		if (memcmp(elem_v, (char *)elem, vec->elem_size) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
 	ut8 *tmp = malloc(vec->elem_size);
@@ -432,6 +452,14 @@ RZ_API void rz_pvector_free(RzPVector *vec) {
 	free(vec);
 }
 
+/**
+ * \brief Checks if a the pointer \p x is in the vector.
+ *
+ * \param vec The vector to search in.
+ * \param x The pointer to search.
+ *
+ * \return Returns the pointer to the \p x pointer in the vector if found. NULL otherwise.
+ */
 RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	rz_return_val_if_fail(vec, NULL);
 	size_t i;
