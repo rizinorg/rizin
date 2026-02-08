@@ -1,47 +1,89 @@
 NAME=ih header
 FILE=bins/xbe/default.xbe
-CMDS=iH
+CMDS=<<EOF
+iH
+echo ---
+iI
+EOF
 EXPECT=<<EOF
 xbe:
   identity:
     magic: "XBEH"
     signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-    timestamp: 1658843531
+    timestamp: 1037572058
   memory:
     base: 0x10000
-    headers_size: 1497
-    image_size: 110868
+    headers_size: 1858
+    image_size: 1264324
     image_header_size: 376
-    entry_point: 0xa8fdc4cb
-    tls_addr: 0x26050
+    entry_point: 0xa8fd47ab
+    tls_addr: 0x0
   sections:
-    count: 4
+    count: 5
     header_addr: 0x10348
   pe_data:
     - 0x10000
     - 0x100000
     - 0x1000
-    - 0x10000
-    - 0x1c000
+    - 0x10d60
+    - 0x133d80
     - 0x0
-    - 0x62dff175
+    - 0x3dd817da
   debug:
-    path_addr: 0x1048a
-    name_addr: 0x1048a
-    uname_addr: 0x1048a
+    path_addr: 0x1048b
+    name_addr: 0x1048b
+    uname_addr: 0x1048b
   libraries:
-    count: 4
-    versions_addr: 0x1044a
+    count: 0
+    versions_addr: 0x0
     kernel_addr: 0x0
     xapi_addr: 0x0
-    kernel_thunk_addr: 0x5b6f3bd2
+    kernel_thunk_addr: 0x5b6c5676
     nonkernel_import_dir_addr: 0x0
   misc:
-    init_flags: 5
+    init_flags: 0
     padding:
       - 0x10490
-      - 0x149
+      - 0x2b2
 
+---
+arch     x86
+cpu      N/A
+features N/A
+baddr    0x00010000
+binsz    0x0000c000
+bintype  N/A
+bits     32
+retguard false
+class    program
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Microsoft Xbox
+maxopsz  16
+minopsz  1
+os       xbox
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 
