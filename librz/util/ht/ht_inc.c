@@ -355,6 +355,30 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 }
 
 /**
+ * \brief Remove all entries in the hash table.
+ *
+ * \param ht The hash table to clean.
+ */
+RZ_API void Ht_(clear)(RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_if_fail(ht);
+
+	ut32 i;
+	for (i = 0; i < ht->size; i++) {
+		HT_(Bucket) *bt = &ht->table[i];
+		HT_(Kv) *kv;
+		ut32 j;
+
+		if (ht->opt.finiKV) {
+			BUCKET_FOREACH(ht, bt, j, kv) {
+				ht->opt.finiKV(kv, ht->opt.finiKV_user);
+			}
+		}
+		bt->count = 0;
+	}
+	ht->count = 0;
+}
+
+/**
  * \brief Creates a new hash table with requested size, copies existing elements and swaps with \p ht.
  */
 static bool internal_ht_resize(HtName_(Ht) *ht, ut32 new_size) {

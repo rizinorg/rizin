@@ -24,9 +24,9 @@ RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
 /**
  * \brief Check if hash set \p set contains element \p str.
  */
-RZ_API bool rz_set_s_contains(RZ_NONNULL RzSetS *set, const char *str) {
+RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str) {
 	rz_return_val_if_fail(set, false);
-	return ht_sp_find(set, str, NULL) != NULL;
+	return ht_sp_find((RzSetS *)set, str, NULL) != NULL;
 }
 
 /**
@@ -76,6 +76,14 @@ RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 }
 
 /**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set) {
+	rz_return_if_fail(set);
+	ht_sp_clear(set);
+}
+
+/**
  * \brief Return number of elements saved in the set.
  */
 RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
@@ -101,9 +109,9 @@ RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 /**
  * \brief Check if hash set \p set contains element \p u.
  */
-RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {
+RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_val_if_fail(set, false);
-	return ht_up_find(set, u, NULL) != NULL;
+	return ht_up_find((RzSetU *)set, u, NULL) != NULL;
 }
 
 /**
@@ -112,6 +120,14 @@ RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_if_fail(set);
 	ht_up_delete(set, u);
+}
+
+/**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set) {
+	rz_return_if_fail(set);
+	ht_up_clear(set);
 }
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {
