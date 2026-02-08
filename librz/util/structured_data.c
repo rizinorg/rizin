@@ -182,6 +182,68 @@ static bool structured_data_array_add(RZ_NONNULL RzStructuredData *parent, RZ_NO
 	return true;
 }
 
+static char *structured_data_hexdump_padded(const ut8 *buffer, const size_t length) {
+	const char *pad = "                                        : ";
+	size_t i = 0, j = 0;
+	char readable[20] = { 0 };
+	RzStrBuf sb = { 0 };
+	rz_strbuf_init(&sb);
+
+	for (i = 0, j = 0; i < length; i++, j++) {
+		const ut8 c = buffer[i];
+		if (i > 0 && (i % 16) == 0) {
+			rz_strbuf_appendf(&sb, "|%-16s|\n%s", readable, pad);
+			memset(readable, 0, sizeof(readable));
+			j = 0;
+		}
+		rz_strbuf_appendf(&sb, "%02x ", c);
+		readable[j] = IS_PRINTABLE(c) ? c : '.';
+	}
+
+	while ((i % 16) != 0) {
+		rz_strbuf_append_n(&sb, "   ", 3);
+		i++;
+	}
+
+	rz_strbuf_appendf(&sb, "|%-16s|", readable);
+	return rz_strbuf_drain_nofree(&sb);
+}
+
+static char *structured_data_hex_colon_padded(const ut8 *buffer, size_t length) {
+	const char *hex = "0123456789abcdef";
+	const size_t size = 3 * length;
+	char *output = malloc(size);
+	if (!output) {
+		return NULL;
+	}
+
+	for (size_t i = 0, j = 0; i < length && j < size; i++, j += 3) {
+		const ut8 c = buffer[i];
+		output[j + 0] = hex[c >> 4];
+		output[j + 1] = hex[c & 0xf];
+		output[j + 2] = ':';
+	}
+
+	// always overwrite the last byte with null char.
+	output[size - 1] = '\0';
+	return output;
+}
+
+static char *structured_data_bytes_to_string(const ut8 *buffer, const size_t length, RzStructuredDataFormat fmt) {
+	if (length < 1) {
+		return strdup("");
+	}
+
+	switch (fmt) {
+	case RZ_STRUCTURED_DATA_FORMAT_COLON:
+		return structured_data_hex_colon_padded(buffer, length);
+	case RZ_STRUCTURED_DATA_FORMAT_HEXDUMP:
+		return structured_data_hexdump_padded(buffer, length);
+	default /* RZ_STRUCTURED_DATA_FORMAT_DEFAULT */:
+		return rz_hex_bin2strdup(buffer, length);
+	}
+}
+
 /**
  * \brief      Creates a new RzStructuredData initialized as a map
  *
@@ -340,6 +402,51 @@ RZ_API bool rz_structured_data_map_add_string(RZ_NONNULL RzStructuredData *paren
 }
 
 /**
+ * \brief      Adds a null terminated string type child (with a max size of n) to a parent and assigns it a map key
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param[in]  key     The key to assign the child RzStructuredData
+ * \param      s       The string value to assign to the child
+ * \param      s_len   The max size of the string value
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_map_add_string_n(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const char *s, size_t s_len) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key && s, false);
+
+	char *copy = rz_str_ndup(s, s_len);
+	if (!copy) {
+		return false;
+	}
+
+	RzStructuredData *child = structured_data_new_string(copy);
+	return structured_data_map_add(parent, key, child);
+}
+
+/**
+ * \brief      Generates a hexdump of the bytes and assignes the string type child to a map parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param[in]  key     The key to assign the child RzStructuredData
+ * \param      v       The bytes value to hexdump and assign to the child
+ * \param      v_size  The max size of the bytes value
+ * \param      fmt     The format to use when dumping the bytes
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_map_add_bytes(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, RZ_NONNULL const ut8 *v, size_t v_size, RzStructuredDataFormat fmt) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key && v && fmt < RZ_STRUCTURED_DATA_FORMAT_ENUM_MAX, false);
+
+	char *copy = structured_data_bytes_to_string(v, v_size, fmt);
+	if (!copy) {
+		return false;
+	}
+
+	RzStructuredData *child = structured_data_new_string(copy);
+	return structured_data_map_add(parent, key, child);
+}
+
+/**
  * \brief      Returns a child, map type, RzStructuredData that has been added to the given parent
  *
  * \param      parent  Where to add the child RzStructuredData
@@ -454,7 +561,7 @@ RZ_API bool rz_structured_data_array_add_boolean(RZ_NONNULL RzStructuredData *pa
  * \brief      Adds a null terminated string type child to an array type parent
  *
  * \param      parent  Where to add the child RzStructuredData
- * \param      n       The value to assign to the child
+ * \param      s       The string value to assign to the child
  *
  * \return     On success returns true, otherwise false.
  */
@@ -462,6 +569,49 @@ RZ_API bool rz_structured_data_array_add_string(RZ_NONNULL RzStructuredData *par
 	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY && s, false);
 
 	char *copy = rz_str_dup(s);
+	if (!copy) {
+		return false;
+	}
+
+	RzStructuredData *child = structured_data_new_string(copy);
+	return structured_data_array_add(parent, child);
+}
+
+/**
+ * \brief      Adds a null terminated string type child (with a max size of n) to an array type parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param      s       The string value to assign to the child
+ * \param      s_len   The size of the string value
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_array_add_string_n(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *s, size_t s_len) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY && s, false);
+
+	char *copy = rz_str_ndup(s, s_len);
+	if (!copy) {
+		return false;
+	}
+
+	RzStructuredData *child = structured_data_new_string(copy);
+	return structured_data_array_add(parent, child);
+}
+
+/**
+ * \brief      Generates a hexdump of the bytes and assignes the string type child to an array type parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param      v       The bytes value to hexdump and assign to the child
+ * \param      v_size  The max size of the bytes value
+ * \param      fmt     The format to use when dumping the bytes
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_array_add_bytes(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const ut8 *v, size_t v_size, RzStructuredDataFormat fmt) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY && v && fmt < RZ_STRUCTURED_DATA_FORMAT_ENUM_MAX, false);
+
+	char *copy = structured_data_bytes_to_string(v, v_size, fmt);
 	if (!copy) {
 		return false;
 	}
