@@ -58,7 +58,9 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			RzAnalysisBlock *abb = rz_analysis_create_block(core->analysis, bb->addr, bb->size);
 			rz_analysis_function_add_block(afcn, abb);
 		}
+		rz_iterator_free(iter);
 	}
+	rz_pvector_free(fcns);
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

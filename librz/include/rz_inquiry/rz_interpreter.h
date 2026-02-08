@@ -54,6 +54,11 @@ typedef struct {
 	void *abstr_data; ///< The abstract data. It is managed by individual interpreter.
 } RzInterpreterAbstrVal;
 
+typedef struct {
+	ut64 branching_bb_addr; ///< The address of the bb which branches.
+	ut64 target_addr; ///< The target address it branches to.
+} RzInterpreterBranch;
+
 /**
  * objects the interpreter should use to send over the queues.
  *
@@ -64,7 +69,7 @@ typedef struct {
  */
 typedef struct {
 	RZ_LIFETIME(RzInquiry)
-	ut64 shared_addr; ///< The address object passed to an IL cache for BB requests.
+	RzInterpreterBranch branch; ///< The address object passed to an IL cache for BB requests.
 
 	RZ_LIFETIME(RzInquiry)
 	RzAnalysisXRef xref; ///< The xref object passed over the queue.
@@ -232,7 +237,7 @@ typedef struct {
  */
 typedef struct {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
-	RzThreadQueue /*<const ut64 *>*/ *addr_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
+	RzThreadQueue /*<const RzInterpreterBranch *>*/ *branch_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.

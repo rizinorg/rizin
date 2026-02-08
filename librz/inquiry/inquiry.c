@@ -351,10 +351,10 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 		}
 		RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
 		memcpy(cc_clone, cc, sizeof(RzAnalysisCallCandidate));
-		if (!ht_up_update(core->inquiry->call_candidates, cc_clone->jmp_addr, cc_clone)) {
-			RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->jmp_addr);
+		if (!ht_up_update(core->inquiry->call_candidates, cc_clone->candidate_addr, cc_clone)) {
+			RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 		} else {
-			RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->jmp_addr);
+			RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 		}
 	}
 	return true;
@@ -476,7 +476,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		bool bb_decode_failed = false;
 		// Clear queues from any left overs of previous runs.
 		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
-		rz_list_free(rz_th_queue_pop_all(iset->addr_queue));
+		rz_list_free(rz_th_queue_pop_all(iset->branch_queue));
 
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
@@ -510,30 +510,31 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			// This block mimics the IL cache. It uplifts basic blocks,
 			// caches them, logs them in RzAnalysis.
 			{
-				if (!rz_th_queue_is_empty(iset->addr_queue)) {
-					ut64 *addr = NULL;
-					if (!rz_th_queue_pop(iset->addr_queue, false, (void **)&addr) || !addr) {
+				if (!rz_th_queue_is_empty(iset->branch_queue)) {
+					RzInterpreterBranch *branch = NULL;
+					if (!rz_th_queue_pop(iset->branch_queue, false, (void **)&branch) || !branch) {
 						rz_warn_if_reached();
 						break;
 					}
-					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", (*addr));
-					RzInterpreterILBB *bb = ht_up_find(il_cache, *addr, NULL);
+					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", branch->target_addr);
+					RzInterpreterILBB *bb = ht_up_find(il_cache, branch->target_addr, NULL);
 					if (!bb) {
 						RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
 						size_t bb_size = 0;
-						bb = rz_inquiry_gen_il_bb(core->analysis, core->io, *addr, &bb_size);
+						bb = rz_inquiry_gen_il_bb(core->analysis, core->io, branch->target_addr, &bb_size);
 						if (!bb) {
-							RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", *addr);
+							RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", branch->target_addr);
 							// Signal interpreter the lifting failed.
 							rz_atomic_bool_set(is_running, false);
 							rz_th_queue_close(io_request_q);
 							rz_th_queue_close(io_result_q);
-							rz_th_queue_close(iset->addr_queue);
+							rz_th_queue_close(iset->branch_queue);
 							rz_th_queue_close(iset->il_queue);
 							bb_decode_failed = true;
 							break;
 						}
-						rz_analysis_add_bb(core->analysis, *addr, bb_size);
+						rz_analysis_add_bb(core->analysis, branch->target_addr, bb_size);
+						rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 						RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 						ht_up_insert(il_cache, bb->bb_addr, bb);
 						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
@@ -582,7 +583,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 
 		rz_th_queue_close(io_request_q);
 		rz_th_queue_close(io_result_q);
-		rz_th_queue_close(iset->addr_queue);
+		rz_th_queue_close(iset->branch_queue);
 		rz_th_queue_close(iset->il_queue);
 
 		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
@@ -599,7 +600,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		// jump target again.
 		rz_th_queue_open(io_request_q);
 		rz_th_queue_open(io_result_q);
-		rz_th_queue_open(iset->addr_queue);
+		rz_th_queue_open(iset->branch_queue);
 		rz_th_queue_open(iset->il_queue);
 
 		// At this point the interpreter is finished and returned.
@@ -663,7 +664,7 @@ error_free:
 	rz_analysis_il_vm_free(analysis_vm);
 	rz_th_queue_close(io_request_q);
 	rz_th_queue_close(io_result_q);
-	rz_th_queue_close(iset->addr_queue);
+	rz_th_queue_close(iset->branch_queue);
 	rz_th_queue_close(iset->il_queue);
 
 	if (!iset) {
