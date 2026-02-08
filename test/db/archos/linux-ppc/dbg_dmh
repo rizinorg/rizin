@@ -65,7 +65,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=dmhc with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
