@@ -27,11 +27,11 @@ RZ_IPI void rz_arena_list_free(RzArenaListItem *item);
 RZ_API double rz_get_glibc_version(RzCore *core, const char *libc_path, ut8 *banner_start);
 RZ_IPI bool rz_heap_is_map_name_libc(const char *map_name);
 RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena);
-RZ_IPI RzList *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
-RZ_IPI RzList *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool show_unallocated, const RzHeapConfig *config);
+RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool show_unallocated, const RzHeapConfig *config);
 RZ_API RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena, const RzHeapConfig *config);
 RZ_API RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, int bin_num, const RzHeapConfig *config);
-RZ_API RzList *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config);
+RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config);
 RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state);
 static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config);
 static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map);
@@ -2026,7 +2026,7 @@ RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core
  * \param top_chunk Boolean value to return the top chunk in the list or not
  * \return RzList pointer for list of all chunks in a given arena
  */
-RZ_IPI RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena,
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena,
 	ut64 m_arena, ut64 m_state, bool top_chunk, const RzHeapConfig *config) {
 	RzList *chunks = rz_list_newf((RzListFree)rz_heap_chunk_free);
 	if (!core || !core->dbg || !core->dbg->maps) {
@@ -2762,7 +2762,7 @@ static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config) {
  * \param m_arena Base Address of the arena
  * \return RzList of heap chunks as RzHeapChunkListItem structs
  */
-RZ_IPI RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_state) {
+RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_state) {
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return rz_list_newf(free);
@@ -2856,9 +2856,12 @@ RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
 	if (!rz_heap_is_arena(core, m_arena, m_state, &config)) {
 		return NULL;
 	}
-	MallocState main_arena_storage = { 0 };
-	MallocState *main_arena = &main_arena_storage;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return NULL;
+	}
 	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+		free(main_arena);
 		return NULL;
 	}
 	return main_arena;
