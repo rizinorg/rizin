@@ -24,9 +24,9 @@ RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
 /**
  * \brief Check if hash set \p set contains element \p str.
  */
-RZ_API bool rz_set_s_contains(RZ_NONNULL RzSetS *set, const char *str) {
+RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str) {
 	rz_return_val_if_fail(set, false);
-	return ht_sp_find(set, str, NULL) != NULL;
+	return ht_sp_find((RzSetS *)set, str, NULL) != NULL;
 }
 
 /**
@@ -101,9 +101,9 @@ RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 /**
  * \brief Check if hash set \p set contains element \p u.
  */
-RZ_API bool rz_set_u_contains(RZ_NONNULL RzSetU *set, ut64 u) {
+RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_val_if_fail(set, false);
-	return ht_up_find(set, u, NULL) != NULL;
+	return ht_up_find((RzSetU *)set, u, NULL) != NULL;
 }
 
 /**
