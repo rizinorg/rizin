@@ -276,7 +276,7 @@ RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *
 	int inc = vec->reverse_sorted ? -1 : 1;
 
 	do {
-		void *velem = vec->a + (vec->elem_size * i);
+		void *velem = ((char *)vec->a) + (vec->elem_size * i);
 		if (cmp(velem, elem, user) >= 0) {
 			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
 		}
@@ -331,7 +331,7 @@ RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL 
 	rz_return_val_if_fail(vec && elem, false);
 	for (size_t i = 0; i < vec->len; i++) {
 		// Casts to make Windows happy.
-		char *elem_v = (char *)vec->a + (vec->elem_size * i);
+		char *elem_v = ((char *)vec->a) + (vec->elem_size * i);
 		if (memcmp(elem_v, (char *)elem, vec->elem_size) == 0) {
 			return true;
 		}
