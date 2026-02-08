@@ -98,7 +98,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (plugin_data->call_cand.store_addr) {
 			// An instruction in this basic block stored the next PC.
 			// Report a call candidate.
-			plugin_data->call_cand.jmp_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
 			report_yield_call_candiate(state, yield_queues, plugin_data);
 			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}

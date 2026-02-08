@@ -47,7 +47,7 @@ static void recurse_into_fcn_bbs(
 	RzSetU *visited_fcn_bbs,
 	RZ_OUT RzSetU *tail_called_addr,
 	const RzSetU *return_addresses,
-	const RzList /*<ut64>*/ *cfep_addresses,
+	const RzVector /*<ut64>*/ *cfep_addresses,
 	const RzInquiryBBCFG *binary_bb_cfg) {
 	if (rz_set_u_contains(visited_fcn_bbs, this_bb_addr)) {
 		return;
@@ -91,15 +91,14 @@ static void recurse_into_fcn_bbs(
 	rz_list_foreach (successors, lit, s) {
 		ut64 succ_addr = (ut64)s->data;
 		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr) ||
-			rz_list_contains(cfep_addresses, (utptr *)succ_addr) ||
+			rz_vector_contains(cfep_addresses, &succ_addr) ||
 			rz_set_u_contains(tail_called_addr, succ_addr)) {
 			continue;
 		}
 
-		utptr *val;
-		RzListIter *it;
-		rz_list_foreach (cfep_addresses, it, val) {
-			ut64 cfep_addr = (ut64)val;
+		ut64 *val;
+		rz_vector_foreach (cfep_addresses, val) {
+			ut64 cfep_addr = *val;
 			if (cfep_addr != this_bb_addr &&
 				(RZ_BETWEEN_EXCL(this_bb_addr, cfep_addr, succ_addr) ||
 					RZ_BETWEEN_EXCL(succ_addr, cfep_addr, this_bb_addr))) {
@@ -123,6 +122,7 @@ static void recurse_into_fcn_bbs(
 				binary_bb_cfg);
 		}
 	}
+	return;
 
 warn_return:
 	rz_warn_if_reached();
@@ -137,16 +137,16 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 
 	// Candidate function entry points
 	RzSetU *return_addresses = rz_set_u_new();
-	RzList *cfep_addresses = rz_list_new();
+	RzVector *cfep_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
 	void **it;
 	RzIterator *iter = ht_up_as_iter(call_candidates);
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
 		rz_set_u_add(return_addresses, cc->npc);
-		rz_list_push(cfep_addresses, (utptr *)cc->jmp_addr);
+		rz_vector_push(cfep_addresses, &cc->candidate_addr);
 	}
 	rz_iterator_free(iter);
-	rz_list_sort(cfep_addresses, cmp, NULL);
+	rz_vector_sort(cfep_addresses, cmp, false, NULL);
 
 	// Tail calls discovered by this algorithm.
 	RzSetU *tail_called_addr = rz_set_u_new();
@@ -154,25 +154,26 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RzSetU *cfep_handled = rz_set_u_new();
 
 	do {
-		utptr *data;
-		RzListIter *lit;
-		rz_list_foreach (cfep_addresses, lit, data) {
-			if (rz_set_u_contains(cfep_handled, (ut64)data)) {
+		ut64 *elem;
+		rz_vector_foreach (cfep_addresses, elem) {
+			ut64 cfep_addr = *elem;
+			if (rz_set_u_contains(cfep_handled, cfep_addr)) {
 				continue;
 			}
 
 			RzSetU *visited_bbs = rz_set_u_new();
 			RzInquiryFunction *fcn = rz_inquiry_function_new();
+			rz_vector_push(fcn->entry_points, &cfep_addr);
 			recurse_into_fcn_bbs(fcn,
 				UT64_MAX,
-				(ut64)data,
+				cfep_addr,
 				visited_bbs,
 				tail_called_addr,
 				return_addresses,
 				cfep_addresses,
 				binary_bb_cfg);
 			rz_set_u_free(visited_bbs);
-			rz_set_u_add(cfep_handled, (ut64)data);
+			rz_set_u_add(cfep_handled, cfep_addr);
 			rz_pvector_push(fcns, fcn);
 		}
 
@@ -180,16 +181,18 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 		ut64 *val;
 		rz_iterator_foreach(iter, val) {
 			ut64 tail_cfep = *val;
-			if (rz_list_find_val(cfep_addresses, (utptr *)tail_cfep)) {
+			if (rz_vector_contains(cfep_addresses, &tail_cfep)) {
 				continue;
 			}
-			rz_list_add_sorted(cfep_addresses, (utptr *)tail_cfep, cmp, NULL);
+			rz_vector_push_front(cfep_addresses, &tail_cfep);
 		}
 		rz_iterator_free(iter);
 		rz_set_u_clean(tail_called_addr);
 	} while (rz_set_u_size(tail_called_addr) != 0);
 
+	rz_set_u_free(cfep_handled);
 	rz_set_u_free(tail_called_addr);
-	rz_list_free(cfep_addresses);
+	rz_set_u_free(return_addresses);
+	rz_vector_free(cfep_addresses);
 	return true;
 }

@@ -98,7 +98,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 	rz_return_val_if_fail(cfg && bb, false);
 	const RzInterval *itv = ht_up_find(cfg->basic_blocks, bb_addr, NULL);
 	if (!itv) {
-		rz_warn_if_reached();
+		RZ_LOG_WARN("Could not find BB at 0x%" PFMT64x "\n", bb_addr);
 		return false;
 	}
 	bb->addr = itv->addr;
