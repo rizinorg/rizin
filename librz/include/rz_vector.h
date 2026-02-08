@@ -48,6 +48,7 @@ typedef struct rz_vector_t {
 	size_t len;
 	size_t capacity;
 	size_t elem_size;
+	bool reverse_sorted;
 	RzVectorFree free;
 	void *free_user;
 } RzVector;
@@ -141,6 +142,8 @@ RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x);
 
 // insert count values of size vec->elem_size into vec starting at the given index.
 RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE void *first, size_t count);
+
+RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user);
 
 // like rz_vector_remove_at for the last element
 RZ_API void rz_vector_pop(RzVector *vec, void *into);

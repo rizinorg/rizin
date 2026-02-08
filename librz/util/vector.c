@@ -36,6 +36,7 @@
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
 	vec->a = NULL;
+	vec->reverse_sorted = false;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
 	vec->free = free;
@@ -253,6 +254,41 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
 	return p;
 }
 
+/**
+ * \brief Inserts an element into a sorted vector keeping the order.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the final position of the element is undefined.
+ *
+ * \param vec A sorted vector to insert the element into.
+ * \param elem Pointer to the element to insert into the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Pointer to the position in the vector where the element was placed.
+ * Or NULL in case of failure.
+ */
+RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && elem, NULL);
+	if (rz_vector_empty(vec)) {
+		return rz_vector_push(vec, elem);
+	}
+	size_t i = vec->reverse_sorted ? rz_vector_len(vec) - 1 : 0;
+	int inc = vec->reverse_sorted ? -1 : 1;
+
+	do {
+		void *velem = vec->a + (vec->elem_size * i);
+		if (cmp(velem, elem, user) >= 0) {
+			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
+		}
+		if (i == 0 && inc == -1) {
+			// Overflow is undefined. So lets not depend on it.
+			break;
+		}
+		i += inc;
+	} while (i >= 0 && i < rz_vector_len(vec));
+	return vec->reverse_sorted ? rz_vector_push_front(vec, elem) : rz_vector_push(vec, elem);
+}
+
 RZ_API void rz_vector_pop(RzVector *vec, void *into) {
 	rz_return_if_fail(vec);
 	if (into) {
@@ -392,6 +428,7 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
  */
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
+	vec->reverse_sorted = reverse;
 	if (rz_vector_empty(vec)) {
 		return;
 	}
