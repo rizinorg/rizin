@@ -75,11 +75,11 @@ EXPECT=<<EOF
 Virtual xrefs to method_Employee_base
 C 0x100007804 bl sym.imp.objc_msgSend
 Virtual xrefs to method_Employee_sayHello
-C 0x1000077d4 bl sym.imp.objc_msgSend
 C 0x1000077c0 bl sym.imp.objc_msgSend
+C 0x1000077d4 bl sym.imp.objc_msgSend
        from 
 ------------
-0x1000077d4
 0x1000077c0
+0x1000077d4
 EOF
 RUN

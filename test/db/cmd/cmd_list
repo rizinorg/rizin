@@ -67,15 +67,15 @@ Lct
 Lcq
 EOF
 EXPECT=<<EOF
-java: Suite of java commands, type `java` for more info (Made by deroad, v1.0, LGPL-3.0-only)
 dex: Suite of dex commands, type `dex` for more info (Made by deroad, v1.0, LGPL-3.0-only)
-[{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"},{"name":"dex","description":"Suite of dex commands, type `dex` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
+java: Suite of java commands, type `java` for more info (Made by deroad, v1.0, LGPL-3.0-only)
+[{"name":"dex","description":"Suite of dex commands, type `dex` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"},{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
 name license       author version description                                       
 ------------------------------------------------------------------------------------
-java LGPL-3.0-only deroad 1.0     Suite of java commands, type `java` for more info
 dex  LGPL-3.0-only deroad 1.0     Suite of dex commands, type `dex` for more info
-java
+java LGPL-3.0-only deroad 1.0     Suite of java commands, type `java` for more info
 dex
+java
 EOF
 RUN
 

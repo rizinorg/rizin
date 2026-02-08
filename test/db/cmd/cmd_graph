@@ -264,8 +264,8 @@ age title3 title1
 agg *
 EOF
 EXPECT=<<EOF
-agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
 agn "title2" base64:Ym9keTI=
+agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
 agn "title1" base64:Ym9keTE=
 age "title3" "title1"
 age "title1" "title2"

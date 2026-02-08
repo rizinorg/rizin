@@ -1419,15 +1419,15 @@ CMDS=il
 EXPECT=<<EOF
 library      
 -------------
-user32.dll
 kernel32.dll
-pstorec.dll
-shell32.dll
 crypt32.dll
-oleaut32.dll
 advapi32.dll
-ole32.dll
+user32.dll
 rasapi32.dll
+pstorec.dll
+ole32.dll
+oleaut32.dll
+shell32.dll
 EOF
 RUN
 
