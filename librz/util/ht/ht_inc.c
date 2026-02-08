@@ -362,20 +362,16 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 RZ_API void Ht_(clear)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_if_fail(ht);
 
-	ut32 i;
-	for (i = 0; i < ht->size; i++) {
-		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) *kv;
-		ut32 j;
-
-		if (ht->opt.finiKV) {
-			BUCKET_FOREACH(ht, bt, j, kv) {
-				ht->opt.finiKV(kv, ht->opt.finiKV_user);
-			}
-		}
-		bt->count = 0;
+	if (ht->opt.finiKV) {
+		HT_FOREACH(ht, kv, {
+			ht->opt.finiKV(kv, ht->opt.finiKV_user);
+		});
 	}
-	ht->count = 0;
+
+	// Reset control byte array
+	memset(ht->ctrl, H2_STATUS_EMPTY, (ht->capacity + GROUP_WIDTH) * sizeof(*ht->ctrl));
+	ht->growth_left = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
+	ht->size = 0;
 }
 
 /**

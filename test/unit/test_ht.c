@@ -406,6 +406,7 @@ bool test_clear(void) {
 	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
 
 	ht_ss_free(ht);
+	mu_end;
 }
 
 static bool grow_1_found[3];
