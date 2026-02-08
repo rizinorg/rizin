@@ -20,6 +20,7 @@ RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set);
 RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API bool rz_set_s_contains(const RZ_NONNULL RzSetS *set, const char *str);
 RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str);
+RZ_API void rz_set_s_clean(RZ_NONNULL RzSetS *set);
 RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set);
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set);
 RZ_API RzIterator /* <RzSetS> */ *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set);
@@ -31,6 +32,7 @@ RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set);
 RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u);
+RZ_API void rz_set_u_clean(RZ_NONNULL RzSetU *set);
 RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set);
 RZ_API RzIterator /* <RzSetU> */ *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set);
 

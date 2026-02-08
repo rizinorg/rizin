@@ -76,6 +76,14 @@ RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 }
 
 /**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_s_clean(RZ_NONNULL RzSetS *set) {
+	rz_return_if_fail(set);
+	ht_sp_clean(set);
+}
+
+/**
  * \brief Return number of elements saved in the set.
  */
 RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
@@ -112,6 +120,14 @@ RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u) {
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 	rz_return_if_fail(set);
 	ht_up_delete(set, u);
+}
+
+/**
+ * \brief Cleans the set.
+ */
+RZ_API void rz_set_u_clean(RZ_NONNULL RzSetU *set) {
+	rz_return_if_fail(set);
+	ht_up_clean(set);
 }
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {
