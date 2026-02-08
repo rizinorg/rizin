@@ -71,7 +71,7 @@ os       xbox
 cc       N/A
 pcalign  1
 rpath    N/A
-subsys
+subsys   
 stripped false
 crypto   false
 havecode true
