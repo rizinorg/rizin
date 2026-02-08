@@ -182,8 +182,7 @@ EOF
 RUN
 
 NAME=multi-arena dmha/dmhi
-# FILE=bins/heap/multi-arena-glibc-2.31-amd64
-FILE=amd64-ci-test-will-remove
+FILE=bins/heap/multi-arena-glibc-2.31-amd64
 ARGS=-d
 CMDS=<<EOF
 dc

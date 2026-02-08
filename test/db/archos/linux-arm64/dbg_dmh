@@ -88,8 +88,7 @@ EOF
 RUN
 
 NAME=multi-arena dmh/dmhb/dmhc/dmhd/dmhf/dhmg/dmhm/dmht/dmha/dmhi aarch64
-# FILE=bins/heap/multi-arena-glibc-2.31-aarch64
-FILE=aarch64-ci-test-will-remove 
+FILE=bins/heap/multi-arena-glibc-2.31-aarch64
 ARGS=-d
 CMDS=<<EOF
 db @ sym.breakpoint_here
