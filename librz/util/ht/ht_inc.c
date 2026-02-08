@@ -157,7 +157,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 		return;
 	}
 
-	Ht_(clean)(ht);
+	Ht_(clear)(ht);
 	for (size_t i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		free(bt->arr);
@@ -171,7 +171,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
  *
  * \param ht The hash table to clean.
  */
-RZ_API void Ht_(clean)(RZ_NONNULL HtName_(Ht) *ht) {
+RZ_API void Ht_(clear)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_if_fail(ht);
 
 	ut32 i;

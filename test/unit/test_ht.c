@@ -297,14 +297,14 @@ bool test_delete(void) {
 	mu_end;
 }
 
-bool test_clean(void) {
+bool test_clear(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 
 	ht_ss_insert(ht, "key1", "value1");
 	ht_ss_insert(ht, "key2", "value2");
 	ht_ss_insert(ht, "key3", "value3");
 	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
-	ht_ss_clean(ht);
+	ht_ss_clear(ht);
 	mu_assert_eq(ht_ss_size(ht), 0, "Wrong size");
 
 	ht_ss_insert(ht, "key1", "value1");
@@ -769,7 +769,7 @@ bool test_set_u(void) {
 	rz_set_u_add(set_u, 0x53bc);
 
 	mu_assert_eq(rz_set_u_size(set_u), 2, "Wrong size");
-	rz_set_u_clean(set_u);
+	rz_set_u_clear(set_u);
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Wrong size");
 
 	rz_set_u_add(set_u, 0x53e0);
@@ -879,7 +879,7 @@ int all_tests() {
 	mu_run_test(test_insert);
 	mu_run_test(test_update);
 	mu_run_test(test_delete);
-	mu_run_test(test_clean);
+	mu_run_test(test_clear);
 	mu_run_test(test_grow_1);
 	mu_run_test(test_grow_2);
 	mu_run_test(test_grow_3);
