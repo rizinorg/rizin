@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 /* dietline is a lightweight and portable library similar to GNU readline */
 
+#include <ctype.h>
 #include <rz_cons.h>
 #include <rz_core.h>
 #include <string.h>
@@ -23,6 +24,12 @@ typedef enum {
 	MINOR_BREAK,
 	MAJOR_BREAK
 } BreakMode;
+
+typedef enum {
+	following_WORD_MODIFY_CAPITALIZE,
+	following_WORD_MODIFY_TOLOWER,
+	following_WORD_MODIFY_TOUPPER
+} FollowingWordModifyOp;
 
 /**
  * an entry of undo. it represents either a text insertion, deletion, or both.
@@ -1544,6 +1551,91 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	}
 }
 
+static int following_word_find_start(RzLine *line) {
+	rz_return_val_if_fail(line && line->buffer.length, -1);
+	int start = line->buffer.index;
+	while (start < line->buffer.length && !isalpha(line->buffer.data[start])) {
+		++start;
+	}
+	return start;
+}
+
+static int following_word_find_end(RzLine *line, int start) {
+	rz_return_val_if_fail(line && line->buffer.length, -1);
+	int end = RZ_MIN(start + 1, line->buffer.length);
+	while (end < line->buffer.length && isalpha(line->buffer.data[end])) {
+		++end;
+	}
+	return end;
+}
+
+static void following_word_capitalize(RzLine *line, int start, int end) {
+	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
+	char *line_buf = line->buffer.data;
+	for (int i = start; i < end; ++i) {
+		const bool is_first_chr = i == start;
+		const char chr = line_buf[i];
+		if (is_first_chr && islower(chr)) {
+			line_buf[i] = toupper(chr);
+		} else if (!is_first_chr && isupper(chr)) {
+			line_buf[i] = tolower(chr);
+		}
+	}
+}
+
+static void following_word_tolower(RzLine *line, int start, int end) {
+	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
+	char *line_buf = line->buffer.data;
+	for (int i = start; i < end; ++i) {
+		if (isupper(line_buf[i])) {
+			line_buf[i] = tolower(line_buf[i]);
+		}
+	}
+}
+
+static void following_word_toupper(RzLine *line, RZ_OUT int start, int end) {
+	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
+	char *line_buf = line->buffer.data;
+	for (int i = start; i < end; ++i) {
+		if (islower(line_buf[i])) {
+			line_buf[i] = toupper(line_buf[i]);
+		}
+	}
+}
+
+/**
+ * \brief Capitalizes/lowercases/uppercases the current or next word.
+ * Note: Sets the cursor position to the end of next word on success.
+ *
+ * \param line RzLine
+ * \param op The modify operation
+ */
+static void following_word_modify(RzLine *line, FollowingWordModifyOp op) {
+	rz_return_if_fail(line);
+	if (line->buffer.length <= 0) { // prevent WARN log
+		return;
+	}
+	const int start = following_word_find_start(line);
+	const int end = following_word_find_end(line, start);
+	rz_return_if_fail(start != -1 && end != -1);
+
+	switch (op) {
+	default:
+		rz_return_if_reached();
+		break;
+	case following_WORD_MODIFY_CAPITALIZE:
+		following_word_capitalize(line, start, end);
+		break;
+	case following_WORD_MODIFY_TOLOWER:
+		following_word_tolower(line, start, end);
+		break;
+	case following_WORD_MODIFY_TOUPPER:
+		following_word_toupper(line, start, end);
+		break;
+	}
+	line->buffer.index = end;
+}
+
 RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallback cb, void *user) {
 	rz_return_val_if_fail(line, NULL);
 	int rows;
@@ -1884,6 +1976,18 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				if (i >= line->buffer.length) {
 					line->buffer.index = line->buffer.length;
 				}
+				break;
+			case 'C':
+			case 'c':
+				following_word_modify(line, following_WORD_MODIFY_CAPITALIZE);
+				break;
+			case 'L':
+			case 'l':
+				following_word_modify(line, following_WORD_MODIFY_TOLOWER);
+				break;
+			case 'U':
+			case 'u':
+				following_word_modify(line, following_WORD_MODIFY_TOUPPER);
 				break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
