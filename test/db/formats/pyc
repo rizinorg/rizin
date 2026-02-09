@@ -966,3 +966,24 @@ EXPECT_ERR=<<EOF
 free_object (0)
 EOF
 RUN
+
+NAME=pyc iH
+FILE=bins/pyc/pyc314.pyc
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pyc:
+  magic: 0xa0d0e2b
+  python_version: "v3.14.0"
+  revision: "ac991beb29b1783316c4016c99468c008568d08a"
+  code_start_offset: 0x0
+
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
