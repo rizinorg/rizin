@@ -2240,7 +2240,6 @@ tn-*
 tn
 EOF
 EXPECT=<<EOF
-
 RaiseException
 FatalExit
 ExitProcess

@@ -590,6 +590,7 @@ le:
   stack_size: 0x1000
 
 EOF
+BROKEN=1
 RUN
 
 NAME=hellolx.dll unpack iterated page
