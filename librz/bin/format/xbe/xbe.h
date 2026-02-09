@@ -70,7 +70,7 @@ typedef struct {
 	int kt_key;
 	int ep_key;
 	RzVector /*<xbe_section>*/ sections;
-    RzVector /*<xbe_lib>*/ libs;
+	RzVector /*<xbe_lib>*/ libs;
 } rz_bin_xbe_obj_t;
 
 #endif
