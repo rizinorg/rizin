@@ -10,8 +10,10 @@
  * Usage:
  *   1. Configure jemalloc for target: ./configure --host=<target> --with-lg-page=<N>
  *   2. Build jemalloc: make
- *   3. Build this program: make -C extract_config
- *   4. Run: ./extract_config_530
+ *   3. Build this tool (Meson):
+ *      meson setup build -Djemalloc=/path/to/jemalloc -Djemalloc_version=5
+ *      meson compile -C build
+ *   4. Run: ./build/extract_config_530
  */
 
 // Note: We do NOT define JEMALLOC_NO_PRIVATE_NAMESPACE because we need the

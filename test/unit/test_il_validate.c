@@ -1002,7 +1002,7 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 1, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 1, "local var sorts count");
 	RzILSortPure *sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1019,7 +1019,7 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1039,7 +1039,7 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1144,7 +1144,7 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	RzILSortPure *sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1165,7 +1165,7 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 1, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 1, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "y", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bool()), "local var sort");
@@ -1182,7 +1182,7 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1201,7 +1201,7 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");
@@ -1223,7 +1223,7 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	mu_assert_notnull(local_var_sorts, "local var sorts");
-	mu_assert_eq(local_var_sorts->count, 2, "local var sorts count");
+	mu_assert_eq(ht_sp_size(local_var_sorts), 2, "local var sorts count");
 	sort = ht_sp_find(local_var_sorts, "x", NULL);
 	mu_assert_notnull(sort, "local var sort");
 	mu_assert_true(rz_il_sort_pure_eq(*sort, rz_il_sort_pure_bv(14)), "local var sort");

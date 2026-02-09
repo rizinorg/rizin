@@ -271,7 +271,6 @@ rz_bin_sources = [
   'format/pyc/pyc_magic.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
-  'format/zimg/zimg.c',
 
   'pdb/cab_extract.c',
   'pdb/dbi.c',

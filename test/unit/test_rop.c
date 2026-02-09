@@ -134,7 +134,7 @@ bool test_rz_direct_solver() {
 
 	HtUP *rop_semantics = core->analysis->ht_rop_semantics;
 	mu_assert_notnull(rop_semantics, "ROP semantics hashtable is NULL");
-	mu_assert_eq(rop_semantics->count, 2, "ROP semantics hashtable count is not 2");
+	mu_assert_eq(ht_up_size(rop_semantics), 2, "ROP semantics hashtable count is not 2");
 	ht_up_foreach(rop_semantics, rop_gadget_info_cb, ht_rop_analysis);
 	rz_core_rop_search_context_free(context);
 	cleanup_test(core, ht_rop_analysis);

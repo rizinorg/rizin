@@ -157,6 +157,23 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 		return;
 	}
 
+	Ht_(clear)(ht);
+	for (size_t i = 0; i < ht->size; i++) {
+		HT_(Bucket) *bt = &ht->table[i];
+		free(bt->arr);
+	}
+	free(ht->table);
+	free(ht);
+}
+
+/**
+ * \brief Remove all entries in the hash table.
+ *
+ * \param ht The hash table to clean.
+ */
+RZ_API void Ht_(clear)(RZ_NONNULL HtName_(Ht) *ht) {
+	rz_return_if_fail(ht);
+
 	ut32 i;
 	for (i = 0; i < ht->size; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
@@ -168,11 +185,9 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 				ht->opt.finiKV(kv, ht->opt.finiKV_user);
 			}
 		}
-
-		free(bt->arr);
+		bt->count = 0;
 	}
-	free(ht->table);
-	free(ht);
+	ht->count = 0;
 }
 
 /**

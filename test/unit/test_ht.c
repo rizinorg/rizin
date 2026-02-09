@@ -297,6 +297,25 @@ bool test_delete(void) {
 	mu_end;
 }
 
+bool test_clear(void) {
+	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+
+	ht_ss_insert(ht, "key1", "value1");
+	ht_ss_insert(ht, "key2", "value2");
+	ht_ss_insert(ht, "key3", "value3");
+	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
+	ht_ss_clear(ht);
+	mu_assert_eq(ht_ss_size(ht), 0, "Wrong size");
+
+	ht_ss_insert(ht, "key1", "value1");
+	ht_ss_insert(ht, "key2", "value2");
+	ht_ss_insert(ht, "key3", "value3");
+	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
+
+	ht_ss_free(ht);
+	mu_end;
+}
+
 static bool grow_1_found[3];
 static bool grow_1_foreach(void *user, const char *k, int v) {
 	grow_1_found[v] = true;
@@ -748,6 +767,14 @@ bool test_set_u(void) {
 	rz_iterator_free(it);
 	rz_set_u_add(set_u, 0x53e0);
 	rz_set_u_add(set_u, 0x53bc);
+
+	mu_assert_eq(rz_set_u_size(set_u), 2, "Wrong size");
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Wrong size");
+
+	rz_set_u_add(set_u, 0x53e0);
+	rz_set_u_add(set_u, 0x53bc);
+
 	x = 0;
 	it = rz_set_u_as_iter(set_u);
 	rz_iterator_foreach(it, im_elem) {
@@ -766,7 +793,7 @@ bool test_set_u(void) {
 	// Add an address as key which is far away from the heap addresses.
 	rz_set_u_add(set_u, 100000000);
 	mu_assert_true(rz_set_u_contains(set_u, 100000000), "Not contained.");
-	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_eq(rz_set_u_size(set_u), 5, "count");
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
@@ -852,6 +879,7 @@ int all_tests() {
 	mu_run_test(test_insert);
 	mu_run_test(test_update);
 	mu_run_test(test_delete);
+	mu_run_test(test_clear);
 	mu_run_test(test_grow_1);
 	mu_run_test(test_grow_2);
 	mu_run_test(test_grow_3);

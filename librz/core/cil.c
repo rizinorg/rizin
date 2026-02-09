@@ -568,6 +568,10 @@ static void rzil_print_register_float(RzFloat *number, ILPrint *p) {
 	free(hex);
 }
 
+static int compare_strings(const RzILVar *v1, const RzILVar *v2, RZ_UNUSED void *user) {
+	return strcmp(v1->name, v2->name);
+}
+
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisILVM *vm = core->analysis->il_vm;
 	if (!vm) {
@@ -600,6 +604,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 	}
 
 	RzPVector *global_vars = rz_il_vm_get_all_vars(vm->vm, RZ_IL_VAR_KIND_GLOBAL);
+	rz_pvector_sort(global_vars, (RzPVectorComparator)compare_strings, NULL);
 	if (global_vars) {
 		void **it;
 		rz_pvector_foreach (global_vars, it) {

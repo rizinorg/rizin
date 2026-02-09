@@ -1391,6 +1391,51 @@ static RzBinReloc *reloc_convert_sparc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 	}
 }
 
+static RzBinReloc *reloc_convert_avr(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	switch (rel->type) {
+	case R_AVR_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_AVR_NONE");
+	case R_AVR_32: SET(32, "R_AVR_32");
+	case R_AVR_7_PCREL: SET(16, "R_AVR_7_PCREL");
+	case R_AVR_13_PCREL: SET(16, "R_AVR_13_PCREL");
+	case R_AVR_16: SET(16, "R_AVR_16");
+	case R_AVR_16_PM: SET(16, "R_AVR_16_PM");
+	case R_AVR_LO8_LDI: SET(16, "R_AVR_LO8_LDI");
+	case R_AVR_HI8_LDI: SET(16, "R_AVR_HI8_LDI");
+	case R_AVR_HH8_LDI: SET(16, "R_AVR_HH8_LDI");
+	case R_AVR_LO8_LDI_NEG: SET(16, "R_AVR_LO8_LDI_NEG");
+	case R_AVR_HI8_LDI_NEG: SET(16, "R_AVR_HI8_LDI_NEG");
+	case R_AVR_HH8_LDI_NEG: SET(16, "R_AVR_HH8_LDI_NEG");
+	case R_AVR_LO8_LDI_PM: SET(16, "R_AVR_LO8_LDI_PM");
+	case R_AVR_HI8_LDI_PM: SET(16, "R_AVR_HI8_LDI_PM");
+	case R_AVR_HH8_LDI_PM: SET(16, "R_AVR_HH8_LDI_PM");
+	case R_AVR_LO8_LDI_PM_NEG: SET(16, "R_AVR_LO8_LDI_PM_NEG");
+	case R_AVR_HI8_LDI_PM_NEG: SET(16, "R_AVR_HI8_LDI_PM_NEG");
+	case R_AVR_HH8_LDI_PM_NEG: SET(16, "R_AVR_HH8_LDI_PM_NEG");
+	case R_AVR_CALL: SET(32, "R_AVR_CALL");
+	case R_AVR_LDI:
+		return reloc_convert_set(bin, rel, 0, "R_AVR_LDI");
+	case R_AVR_6: SET(16, "R_AVR_6");
+	case R_AVR_6_ADIW: SET(16, "R_AVR_6_ADIW");
+	case R_AVR_MS8_LDI: SET(16, "R_AVR_MS8_LDI");
+	case R_AVR_MS8_LDI_NEG: SET(16, "R_AVR_MS8_LDI_NEG");
+	case R_AVR_LO8_LDI_GS: SET(16, "R_AVR_LO8_LDI_GS");
+	case R_AVR_HI8_LDI_GS: SET(16, "R_AVR_HI8_LDI_GS");
+	case R_AVR_8: SET(8, "R_AVR_8");
+	case R_AVR_8_LO8: SET(8, "R_AVR_8_LO8");
+	case R_AVR_8_HI8: SET(8, "R_AVR_8_HI8");
+	case R_AVR_8_HLO8: SET(8, "R_AVR_8_HLO8");
+	case R_AVR_DIFF8: SET(8, "R_AVR_DIFF8");
+	case R_AVR_DIFF16: SET(16, "R_AVR_DIFF16");
+	case R_AVR_DIFF32: SET(32, "R_AVR_DIFF32");
+	case R_AVR_LDS_STS_16: SET(16, "R_AVR_LDS_STS_16");
+	case R_AVR_PORT6: SET(16, "R_AVR_PORT6");
+	case R_AVR_PORT5: SET(16, "R_AVR_PORT5");
+	case R_AVR_32_PCREL: SET(32, "R_AVR_32_PCREL");
+	default: UNSUPP("AVR");
+	}
+}
+
 #undef UNSUPP
 #undef UNHANDL
 #undef SET
@@ -1440,6 +1485,8 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 		return reloc_convert_mips(bin, rel, GOT);
 	case EM_IMG1: // nanomips
 		return reloc_convert_nanomips(bin, rel, GOT);
+	case EM_AVR:
+		return reloc_convert_avr(bin, rel, GOT);
 	case EM_M32: ARCH_MISSING("EM_M32");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
@@ -1495,7 +1542,6 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_MMIX: ARCH_MISSING("EM_MMIX");
 	case EM_HUANY: ARCH_MISSING("EM_HUANY");
 	case EM_PRISM: ARCH_MISSING("EM_PRISM");
-	case EM_AVR: ARCH_MISSING("EM_AVR");
 	case EM_FR30: ARCH_MISSING("EM_FR30");
 	case EM_D10V: ARCH_MISSING("EM_D10V");
 	case EM_D30V: ARCH_MISSING("EM_D30V");

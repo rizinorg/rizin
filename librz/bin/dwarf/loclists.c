@@ -451,7 +451,7 @@ RZ_API void rz_bin_dwarf_loclists_dump(
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(dw && loclists && loclists->by_offset && sb);
-	if (loclists->by_offset->count > 0) {
+	if (ht_up_size(loclists->by_offset) > 0) {
 		rz_strbuf_append(sb, ".debug_loclists content:\n");
 	}
 	DumpContext ctx = {
