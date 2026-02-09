@@ -1,5 +1,5 @@
-NAME=ih header
-FILE=bins/xbe/default.xbe
+NAME=iH and iI
+FILE=bins/xbe/nxdk-hello-dummy-libs.xbe
 CMDS=<<EOF
 iH
 echo ---
@@ -10,48 +10,114 @@ xbe:
   identity:
     magic: "XBEH"
     signature: "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-    timestamp: 1037572058
+    timestamp: 1658843531
   memory:
     base: 0x10000
-    headers_size: 1858
-    image_size: 1264324
+    headers_size: 1497
+    image_size: 110868
     image_header_size: 376
-    entry_point: 0xa8fd47ab
-    tls_addr: 0x0
+    entry_point: 0xa8fdc4cb
+    tls_addr: 0x26050
   sections:
-    count: 5
+    count: 4
     header_addr: 0x10348
   pe_data:
     - 0x10000
     - 0x100000
     - 0x1000
-    - 0x10d60
-    - 0x133d80
+    - 0x10000
+    - 0x1c000
     - 0x0
-    - 0x3dd817da
+    - 0x62dff175
   debug:
-    path_addr: 0x1048b
-    name_addr: 0x1048b
-    uname_addr: 0x1048b
+    path_addr: 0x1048a
+    name_addr: 0x1048a
+    uname_addr: 0x1048a
   libraries:
-    count: 0
-    versions_addr: 0x0
+    count: 4
+    versions_addr: 0x1044a
     kernel_addr: 0x0
     xapi_addr: 0x0
-    kernel_thunk_addr: 0x5b6c5676
+    kernel_thunk_addr: 0x5b6f3bd2
     nonkernel_import_dir_addr: 0x0
   misc:
-    init_flags: 0
+    init_flags: 5
     padding:
       - 0x10490
-      - 0x2b2
+      - 0x149
+  sections_detail:
+    - flags: 6
+      vaddr: 0x11000
+      vsize: 81920
+      offset: 4096
+      size: 79872
+      name_addr: 0x10432
+      refcount: 0
+      padding:
+        - 0x10428
+        - 0x1042a
+      digest: "0000000000000000000000000000000000000000"
+    - flags: 2
+      vaddr: 0x25000
+      vsize: 12288
+      offset: 86016
+      size: 11408
+      name_addr: 0x10438
+      refcount: 0
+      padding:
+        - 0x1042a
+        - 0x1042c
+      digest: "0000000000000000000000000000000000000000"
+    - flags: 3
+      vaddr: 0x28000
+      vsize: 12288
+      offset: 98304
+      size: 3380
+      name_addr: 0x1043f
+      refcount: 0
+      padding:
+        - 0x1042c
+        - 0x1042e
+      digest: "0000000000000000000000000000000000000000"
+    - flags: 3
+      vaddr: 0x2b000
+      vsize: 276
+      offset: 102400
+      size: 4
+      name_addr: 0x10445
+      refcount: 0
+      padding:
+        - 0x1042e
+        - 0x10430
+      digest: "0000000000000000000000000000000000000000"
+  libraries_detail:
+    - name: "RIZIN0"
+      major: 42
+      minor: 5
+      build: 0
+      flags: 0
+    - name: "RIZIN1"
+      major: 42
+      minor: 6
+      build: 1
+      flags: 0
+    - name: "RIZIN2"
+      major: 42
+      minor: 7
+      build: 2
+      flags: 0
+    - name: "RIZIN3"
+      major: 42
+      minor: 8
+      build: 3
+      flags: 0
 
 ---
 arch     x86
 cpu      N/A
 features N/A
 baddr    0x00010000
-binsz    0x0000c000
+binsz    0x0001a000
 bintype  N/A
 bits     32
 retguard false
@@ -77,7 +143,7 @@ crypto   false
 havecode true
 va       true
 sanitiz  false
-static   true
+static   false
 linenum  false
 lsyms    false
 canary   false
