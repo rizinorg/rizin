@@ -106,7 +106,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb
 	return true;
 }
 
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
 
 	const RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
@@ -115,6 +115,17 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours(const 
 		return NULL;
 	}
 	return rz_graph_get_neighbours(cfg->graph, n);
+}
+
+RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+	rz_return_val_if_fail(cfg, NULL);
+
+	const RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
+	if (!n) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return rz_graph_innodes(cfg->graph, n);
 }
 
 RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq) {

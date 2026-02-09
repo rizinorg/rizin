@@ -2,22 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file This is the function detection algorithm from the
+ * \file This is the function detection algorithm inspired by
  * paper: "REV.NG: A Unified Binary Analysis Framework to Recover CFGs and Function Boundaries"
  * chapter: "4.2 Function boundaries recovery"
  * doi: 10.1145/3033019.3033028
- *
- * The algorithm here differs in a few ways to fit the assumptions Rizin makes
- * and simplify implementation.
- *
- * 1. Function Call: A branch instruction with any store of the next PC **in its basic block**.
- *   - That introduces somewhat more inaccuracy.
- *     But is easier to implement for a prototype.
- * 2. Return: Any branch instruction whose destination is a return address.
- *   - Remove requirement for indirect branch and don't treat unknown targets as return.
- *     Easier to implement.
- * 3. Syscalls are ignored. They are not supported by RzIL, yet.
- * 4. longjmps/killer basic blocks are ignored. - Easier to implement.
  */
 
 #include "rz_analysis.h"
@@ -48,6 +36,7 @@ static void recurse_into_fcn_bbs(
 	RZ_OUT RzSetU *tail_called_addr,
 	const RzSetU *return_addresses,
 	const RzVector /*<ut64>*/ *cfep_addresses,
+	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	const RzInquiryBBCFG *binary_bb_cfg) {
 	if (rz_set_u_contains(visited_fcn_bbs, this_bb_addr)) {
 		return;
@@ -81,7 +70,7 @@ static void recurse_into_fcn_bbs(
 	//
 	// Visit neighbors
 	//
-	const RzList *successors = rz_inquiry_bb_cfg_get_neighbours(binary_bb_cfg, this_bb_addr);
+	const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, this_bb_addr);
 	if (!successors) {
 		goto warn_return;
 	}
@@ -91,9 +80,22 @@ static void recurse_into_fcn_bbs(
 	rz_list_foreach (successors, lit, s) {
 		ut64 succ_addr = (ut64)s->data;
 		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr) ||
-			rz_vector_contains(cfep_addresses, &succ_addr) ||
 			rz_set_u_contains(tail_called_addr, succ_addr)) {
+			// Ignore tail called functions and return points
+			// because they belong to a different function.
 			continue;
+		}
+		if (rz_vector_contains(cfep_addresses, &succ_addr)) {
+			// The successor is another function.
+			// If address after the branch is a return point we choose it as
+			// successor.
+			// If it isn't, then the call at this basic block is likely a tail call.
+			const RzAnalysisCallCandidate *cc = ht_up_find((HtUP *)call_candidates, this_bb_addr, NULL);
+			if (cc && rz_set_u_contains((RzSetU *)return_addresses, cc->npc)) {
+				succ_addr = cc->npc;
+			} else {
+				continue;
+			}
 		}
 
 		ut64 *val;
@@ -119,6 +121,7 @@ static void recurse_into_fcn_bbs(
 				tail_called_addr,
 				return_addresses,
 				cfep_addresses,
+				call_candidates,
 				binary_bb_cfg);
 		}
 	}
@@ -127,6 +130,32 @@ static void recurse_into_fcn_bbs(
 warn_return:
 	rz_warn_if_reached();
 	return;
+}
+
+static void fill_cfep_and_ret_addresses(
+	const RzInquiryBBCFG *binary_bb_cfg,
+	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
+	RzSetU *return_addresses,
+	RzVector *cfep_addresses) {
+	void **it;
+	RzIterator *iter = ht_up_as_iter(call_candidates);
+	rz_iterator_foreach(iter, it) {
+		RzAnalysisCallCandidate *cc = *it;
+		ut64 ret_addr = cc->npc;
+		const RzList *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
+		if (rz_list_length(predecessor) > 0) {
+			rz_set_u_add(return_addresses, ret_addr);
+		}
+
+		const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, cc->bb_addr);
+		RzGraphNode *gnode;
+		RzListIter *lit;
+		rz_list_foreach (successors, lit, gnode) {
+			rz_vector_push(cfep_addresses, &gnode->data);
+		}
+	}
+	rz_iterator_free(iter);
+	rz_vector_sort(cfep_addresses, cmp, false, NULL);
 }
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
@@ -138,20 +167,7 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	// Candidate function entry points
 	RzSetU *return_addresses = rz_set_u_new();
 	RzVector *cfep_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
-	void **it;
-	RzIterator *iter = ht_up_as_iter(call_candidates);
-	rz_iterator_foreach(iter, it) {
-		RzAnalysisCallCandidate *cc = *it;
-		rz_set_u_add(return_addresses, cc->npc);
-		const RzList *successors = rz_inquiry_bb_cfg_get_neighbours(binary_bb_cfg, cc->bb_addr);
-		RzGraphNode *gnode;
-		RzListIter *lit;
-		rz_list_foreach(successors, lit, gnode) {
-			rz_vector_push(cfep_addresses, &gnode->data);
-		}
-	}
-	rz_iterator_free(iter);
-	rz_vector_sort(cfep_addresses, cmp, false, NULL);
+	fill_cfep_and_ret_addresses(binary_bb_cfg, call_candidates, return_addresses, cfep_addresses);
 
 	// Tail calls discovered by this algorithm.
 	RzSetU *tail_called_addr = rz_set_u_new();
@@ -176,13 +192,14 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 				tail_called_addr,
 				return_addresses,
 				cfep_addresses,
+				call_candidates,
 				binary_bb_cfg);
 			rz_set_u_free(visited_bbs);
 			rz_set_u_add(cfep_handled, cfep_addr);
 			rz_pvector_push(fcns, fcn);
 		}
 
-		iter = rz_set_u_as_iter(tail_called_addr);
+		RzIterator *iter = rz_set_u_as_iter(tail_called_addr);
 		ut64 *val;
 		rz_iterator_foreach(iter, val) {
 			ut64 tail_cfep = *val;

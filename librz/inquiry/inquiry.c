@@ -370,7 +370,7 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 		}
 		RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
 		memcpy(cc_clone, cc, sizeof(RzAnalysisCallCandidate));
-		if (!ht_up_update(core->inquiry->call_candidates, cc_clone->candidate_addr, cc_clone)) {
+		if (!ht_up_update(core->inquiry->call_candidates, cc_clone->bb_addr, cc_clone)) {
 			RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 		} else {
 			RZ_LOG_DEBUG("Added call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
