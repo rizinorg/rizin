@@ -93,6 +93,7 @@ typedef struct {
 } RzInquiryFunction;
 
 RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new();
+RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn);
 
 RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn);
 
