@@ -69,7 +69,7 @@ typedef struct {
  */
 typedef struct {
 	RZ_LIFETIME(RzInquiry)
-	RzInterpreterBranch branch; ///< The address object passed to an IL cache for BB requests.
+	RzInterpreterBranch branch; ///< The branch object passed to an IL cache for BB requests.
 
 	RZ_LIFETIME(RzInquiry)
 	RzAnalysisXRef xref; ///< The xref object passed over the queue.
