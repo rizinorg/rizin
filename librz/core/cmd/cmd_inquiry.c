@@ -55,7 +55,14 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
 		rz_iterator_foreach(iter, it2) {
 			RzInterval *bb = *it2;
+			if (rz_analysis_get_block_at(core->analysis, bb->addr)) {
+				continue;
+			}
 			RzAnalysisBlock *abb = rz_analysis_create_block(core->analysis, bb->addr, bb->size);
+			if (!abb) {
+				rz_warn_if_reached();
+				break;
+			}
 			rz_analysis_function_add_block(afcn, abb);
 		}
 		rz_iterator_free(iter);

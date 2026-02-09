@@ -143,7 +143,12 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
 		rz_set_u_add(return_addresses, cc->npc);
-		rz_vector_push(cfep_addresses, &cc->candidate_addr);
+		const RzList *successors = rz_inquiry_bb_cfg_get_neighbours(binary_bb_cfg, cc->bb_addr);
+		RzGraphNode *gnode;
+		RzListIter *lit;
+		rz_list_foreach(successors, lit, gnode) {
+			rz_vector_push(cfep_addresses, &gnode->data);
+		}
 	}
 	rz_iterator_free(iter);
 	rz_vector_sort(cfep_addresses, cmp, false, NULL);
