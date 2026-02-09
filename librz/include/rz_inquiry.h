@@ -52,7 +52,7 @@ typedef struct {
 	HtSP /*<RzInquiryPlugin *>*/ *plugins;
 	HtSP /*<void *>*/ *plugins_data;
 
-	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of call candidate instruction.
+	HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates; ///< Indexed by address of basic block with the call candidate.
 	RzVector /*<RzAnalysisXRef>*/ *xrefs; ///< All xrefs it detected.
 	RzInquiryBBCFG *bb_cfg; ///< The control flow graph all the basic blocks build.
 } RzInquiry;
@@ -62,7 +62,8 @@ RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg);
 RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size);
 RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInterval *bb);
 RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb);
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours(const RzInquiryBBCFG *cfg, ut64 bb_addr);
+RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr);
+RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr);
 
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref);
 
