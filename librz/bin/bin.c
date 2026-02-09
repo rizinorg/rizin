@@ -366,23 +366,17 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
-RZ_OWN static char *join_plugin_names(const RzPVector /*<char *>*/ *plugin_names) {
-	ut32 result_size = rz_pvector_len(plugin_names);
+static RZ_OWN RzStrBuf *join_plugin_names(const RzPVector /*<char *>*/ *plugin_names) {
+	RzStrBuf *result = rz_strbuf_new("");
+	if (!result) {
+		return NULL;
+	}
 	void **it = NULL;
 	ut32 idx = 0;
-	rz_pvector_foreach (plugin_names, it) {
-		const char *name = *it;
-		result_size += strlen(name);
-	}
-	char *result = malloc(result_size);
-	if (!result) {
-		return "";
-	}
-	result[0] = '\0';
 	rz_pvector_enumerate (plugin_names, it, idx) {
 		const char *name = *it;
-		strcat(result, name);
-		strcat(result, idx < rz_pvector_len(plugin_names) - 1 ? "," : "\0");
+		rz_strbuf_append(result, name);
+		rz_strbuf_append(result, idx < rz_pvector_len(plugin_names) - 1 ? "," : "\0");
 	}
 	return result;
 }
@@ -415,10 +409,8 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 			rz_warn_if_reached();
 			continue;
 		}
-		if (plugin->check_buffer) {
-			if (plugin->check_buffer(buf)) {
-				rz_pvector_push(compatible_plugins, rz_str_dup(*key));
-			}
+		if (plugin->check_buffer && plugin->check_buffer(buf)) {
+			rz_pvector_push(compatible_plugins, rz_str_dup(*key));
 		}
 	}
 	rz_iterator_free(it);
@@ -429,10 +421,10 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	}
 	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
 	if (rz_pvector_len(compatible_plugins) > 1) {
-		char *compatible_plugin_list = join_plugin_names(compatible_plugins);
+		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
 		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
-			compatible_plugin_list, default_plugin);
-		free(compatible_plugin_list);
+			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
+		rz_strbuf_free(compatible_plugin_list);
 	}
 	RzBinPlugin *result = (RzBinPlugin *)ht_sp_find(bin->plugins, default_plugin, NULL);
 	rz_pvector_free(compatible_plugins);
