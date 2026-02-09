@@ -106,6 +106,25 @@ RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new() {
 	return fcn;
 }
 
+RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
+	RzStrBuf *buf = rz_strbuf_new("");
+	rz_strbuf_append(buf, "ifcn: [");
+	ut64 *it;
+	size_t i = 0;
+	rz_vector_foreach(fcn->entry_points, it) {
+		rz_strbuf_appendf(buf,  "%s0x%" PFMT64x, (i++ > 0 ? ", " : " "), *it);
+	}
+	rz_strbuf_append(buf, " ]\n");
+	RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
+	RzInterval **itv;
+	rz_iterator_foreach(iter, itv) {
+		RzInterval *bb = *itv;
+		rz_strbuf_appendf(buf, "\t0x%" PFMT64x ":0x%" PFMT64x "\n", bb->addr, bb->size);
+	}
+	rz_iterator_free(iter);
+	return rz_strbuf_drain(buf);
+}
+
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
 	RzInquiry *iq = RZ_NEW0(RzInquiry);
 	if (!iq) {
