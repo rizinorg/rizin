@@ -543,8 +543,8 @@ static void zimage_structure_riscv(zImage *image, RzStructuredData *root) {
 
 	RzStructuredData *version = rz_structured_data_map_add_map(root, "version");
 	if (version) {
-		rz_structured_data_map_add_unsigned(root, "major", zo->version_major, false);
-		rz_structured_data_map_add_unsigned(root, "minor", zo->version_minor, false);
+		rz_structured_data_map_add_unsigned(version, "major", zo->version_major, false);
+		rz_structured_data_map_add_unsigned(version, "minor", zo->version_minor, false);
 	}
 
 	rz_structured_data_map_add_unsigned(root, "padding0", zo->padding0, true);

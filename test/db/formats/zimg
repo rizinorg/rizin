@@ -225,9 +225,9 @@ zImage:
   image_load: 0x200000
   kernel_size: 0x92416c
   head_flags: 0x0
-  version: {}
-  major: 0
-  minor: 2
+  version:
+    major: 0
+    minor: 2
   padding0: 0x0
   padding1: 0x0
   riscv_magic1: "52 49 53 43 56 00 00 00                         |RISCV...        |"
