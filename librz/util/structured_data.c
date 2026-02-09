@@ -183,7 +183,6 @@ static bool structured_data_array_add(RZ_NONNULL RzStructuredData *parent, RZ_NO
 }
 
 static char *structured_data_hexdump_padded(const ut8 *buffer, const size_t length) {
-	const char *pad = "                                        : ";
 	size_t i = 0, j = 0;
 	char readable[20] = { 0 };
 	RzStrBuf sb = { 0 };
@@ -192,7 +191,7 @@ static char *structured_data_hexdump_padded(const ut8 *buffer, const size_t leng
 	for (i = 0, j = 0; i < length; i++, j++) {
 		const ut8 c = buffer[i];
 		if (i > 0 && (i % 16) == 0) {
-			rz_strbuf_appendf(&sb, "|%-16s|\n%s", readable, pad);
+			rz_strbuf_appendf(&sb, "|%-16s|\n", readable);
 			memset(readable, 0, sizeof(readable));
 			j = 0;
 		}
