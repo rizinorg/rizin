@@ -366,22 +366,24 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
-RZ_OWN static char *join_plugin_names(const RzPVector /* char **/ *plugin_names) {
+RZ_OWN static char *join_plugin_names(const RzPVector /*<char *>*/ *plugin_names) {
 	ut32 result_size = rz_pvector_len(plugin_names);
 	void **it = NULL;
-
+	ut32 idx = 0;
 	rz_pvector_foreach (plugin_names, it) {
 		const char *name = *it;
 		result_size += strlen(name);
 	}
 	char *result = malloc(result_size);
+	if (!result) {
+		return "";
+	}
 	result[0] = '\0';
-	rz_pvector_foreach (plugin_names, it) {
+	rz_pvector_enumerate (plugin_names, it, idx) {
 		const char *name = *it;
 		strcat(result, name);
-		strcat(result, ",");
+		strcat(result, idx < rz_pvector_len(plugin_names) - 1 ? "," : "\0");
 	}
-	result[result_size - 1] = '\0';
 	return result;
 }
 
@@ -395,7 +397,7 @@ RZ_OWN static char *join_plugin_names(const RzPVector /* char **/ *plugin_names)
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	rz_return_val_if_fail(bin && buf, NULL);
 
-	RzPVector /* char **/ *compatible_plugins = rz_pvector_new(NULL);
+	RzPVector /*<char *>*/ *compatible_plugins = rz_pvector_new((RzPVectorFree)free);
 	if (!compatible_plugins) {
 		return NULL;
 	}
@@ -404,7 +406,6 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 		rz_pvector_free(compatible_plugins);
 		return NULL;
 	}
-
 	// Iterate all plugins and save compatible plugins to `compatible_plugins`
 	char **key;
 	rz_iterator_foreach(it, key) {
@@ -428,9 +429,10 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	}
 	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
 	if (rz_pvector_len(compatible_plugins) > 1) {
-		const char *compatible_plugin_list = join_plugin_names(compatible_plugins);
-		RZ_LOG_WARN("The input file can be opened via multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+		char *compatible_plugin_list = join_plugin_names(compatible_plugins);
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
 			compatible_plugin_list, default_plugin);
+		free(compatible_plugin_list);
 	}
 	RzBinPlugin *result = (RzBinPlugin *)ht_sp_find(bin->plugins, default_plugin, NULL);
 	rz_pvector_free(compatible_plugins);
