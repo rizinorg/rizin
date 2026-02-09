@@ -705,3 +705,43 @@ error_free:
 	rz_cons_pop();
 	return return_code;
 }
+
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry) {
+	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
+	rz_inquiry_algo_revng_fcn_detection(
+		inquiry->call_candidates,
+		inquiry->bb_cfg,
+		fcns);
+
+	// Create analysis function and add their blocks to them.
+	void **it;
+	rz_pvector_foreach (fcns, it) {
+		RzInquiryFunction *fcn = *it;
+
+		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
+		char fcn_name[64] = { 0 };
+		rz_strf(fcn_name, "iq_fcn_0x%" PFMT64x, fcn_addr);
+		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+
+		void **it2;
+		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
+		rz_iterator_foreach(iter, it2) {
+			RzInterval *bb = *it2;
+			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
+			if (!abb) {
+				rz_analysis_create_block(analysis, bb->addr, bb->size);
+				if (!abb) {
+					rz_warn_if_reached();
+					break;
+				}
+			}
+			rz_analysis_function_add_block(afcn, abb);
+		}
+		rz_iterator_free(iter);
+	}
+	rz_pvector_free(fcns);
+
+	// Add edges between blocks
+
+	return true;
+}
