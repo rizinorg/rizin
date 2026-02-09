@@ -31,9 +31,8 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	}
 	bool success = rz_inquiry_interpreter(core, entry_points);
 
-	RZ_LOG_INFO("Finished reference recovery.");
-
-	RZ_LOG_INFO("Perform function deduction.");
+	RZ_LOG_INFO("Finished reference recovery.\n");
+	RZ_LOG_INFO("Perform function deduction.\n");
 
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	rz_inquiry_algo_revng_fcn_detection(
@@ -41,33 +40,39 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		core->inquiry->bb_cfg,
 		fcns);
 
+	// Create analysis function and add their blocks to them.
 	void **it;
 	rz_pvector_foreach (fcns, it) {
 		RzInquiryFunction *fcn = *it;
+		char *fcn_desc = rz_inquiry_function_str(fcn);
+		printf("%s", fcn_desc);
+		free(fcn_desc);
 
-		char fcn_name[512] = { 0 };
 		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
+		char fcn_name[512] = { 0 };
 		rz_strf(fcn_name, "iq_fcn_0x%" PFMT64x, fcn_addr);
 		RzAnalysisFunction *afcn = rz_analysis_create_function(core->analysis, fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
-		rz_analysis_add_function(core->analysis, afcn);
 
 		void **it2;
 		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
 		rz_iterator_foreach(iter, it2) {
 			RzInterval *bb = *it2;
-			if (rz_analysis_get_block_at(core->analysis, bb->addr)) {
-				continue;
-			}
-			RzAnalysisBlock *abb = rz_analysis_create_block(core->analysis, bb->addr, bb->size);
+			RzAnalysisBlock *abb = rz_analysis_get_block_at(core->analysis, bb->addr);
 			if (!abb) {
-				rz_warn_if_reached();
-				break;
+				rz_analysis_create_block(core->analysis, bb->addr, bb->size);
+				if (!abb) {
+					rz_warn_if_reached();
+					break;
+				}
 			}
 			rz_analysis_function_add_block(afcn, abb);
+			rz_analysis_block_update_hash(abb);
 		}
 		rz_iterator_free(iter);
 	}
 	rz_pvector_free(fcns);
+
+	// Add edges between blocks
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
