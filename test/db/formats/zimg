@@ -1,20 +1,26 @@
-NAME=Test 32-bit arm
+NAME=ARM32 LE zImage 3.16-4.14
 FILE=bins/zimg/arm32
 CMDS=<<EOF
 iI
 echo ---
 iH
+echo ---
+oml
+echo ---
+pd 16
+echo ---
+pxw 16 @ 0x24
 EOF
 EXPECT=<<EOF
 arch     arm
-cpu      N/A
+cpu      arm
 features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  zimg
 bits     32
 retguard false
-class    Compressed Linux Kernel
+class    Linux zImage Kernel (3.16-4.14)
 compiler N/A
 dbg_file N/A
 endian   LE
@@ -23,7 +29,7 @@ guid     N/A
 intrp    N/A
 laddr    0x00000000
 lang     C
-machine  ARM
+machine  ARM32 LE
 maxopsz  4
 minopsz  4
 os       linux
@@ -44,24 +50,230 @@ PIE      false
 RELROCS  false
 NX       false
 ---
-zimg:
-  size: 1024
-  kernel:
-    kernel_start: 0x16f2818
-    kernel_end: 0x0
-    kernel_size: 18446744073685489640
-  magic:
-    magic0: 0xe1a00000
-    magic1: 0xe1a00000
-    arm_magic: 0xea000003
+zImage:
+  machine: "ARM32 LE"
+  kernel: "3.16-4.14"
+  arm32_magic: 0x16f2818
+  kernel_start: 0x0
+  kernel_end: 0x343448
+  endianness_flag: 0x4030201
 
+---
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000003ff r-x 
+---
+            ;-- entry0:
+            0x00000000      mov   r0, r0
+            0x00000004      mov   r0, r0
+            0x00000008      mov   r0, r0
+            0x0000000c      mov   r0, r0
+            0x00000010      mov   r0, r0
+            0x00000014      mov   r0, r0
+            0x00000018      mov   r0, r0
+            0x0000001c      mov   r0, r0
+        ,=< 0x00000020      b     0x34
+        |   0x00000024      invalid
+        |   0x00000028      andeq r0, r0, r0
+        |   0x0000002c      eorseq r3, r4, r8, asr 8
+        |   0x00000030      streq r0, [r3], -0x201
+        `-> 0x00000034      mrs   sb, apsr
+            0x00000038      bl    0x3700
+            0x0000003c      mov   r7, r1
+---
+0x00000024  0x016f2818 0x00000000 0x00343448 0x04030201  .(o.....H44.....
 EOF
 RUN
 
-NAME=zimg maps
-FILE=bins/zimg/arm32
-CMDS=oml
+NAME=ARM32 LE zImage 3.14
+FILE=bins/zimg/zImage.3.14.arm32le
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+oml
+echo ---
+pd 16
+echo ---
+pxw 16 @ 0x24
+EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00000000 * 0x000003ff r-x 
+arch     arm
+cpu      arm
+features N/A
+baddr    0x00000000
+binsz    0x00000200
+bintype  zimg
+bits     32
+retguard false
+class    Linux zImage Kernel (2.6-3.16)
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     C
+machine  ARM32 LE
+maxopsz  4
+minopsz  4
+os       linux
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+zImage:
+  machine: "ARM32 LE"
+  kernel: "2.6-3.16"
+  arm32_magic: 0x16f2818
+  kernel_start: 0x0
+  kernel_end: 0x5abcd0
+
+---
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff r-x 
+---
+            ;-- entry0:
+            0x00000000      mov   r0, r0
+            0x00000004      mov   r0, r0
+            0x00000008      mov   r0, r0
+            0x0000000c      mov   r0, r0
+            0x00000010      mov   r0, r0
+            0x00000014      mov   r0, r0
+            0x00000018      mov   r0, r0
+            0x0000001c      mov   r0, r0
+        ,=< 0x00000020      b     0x30
+        |   0x00000024      invalid
+        |   0x00000028      andeq r0, r0, r0
+        |   0x0000002c      ldrsbeq fp, [sl], -0xc0
+        `-> 0x00000030      mrs   sb, apsr
+            0x00000034      bl    0x1480
+            0x00000038      mov   r7, r1
+            0x0000003c      mov   r8, r2
+---
+0x00000024  0x016f2818 0x00000000 0x005abcd0 0xe10f9000  .(o.......Z.....
+EOF
+RUN
+
+NAME=rv64 zImage 5.4
+FILE=bins/zimg/zImage.5.4.rv64
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+oml
+echo ---
+pd 32
+echo ---
+pxq 64 @ 0x8
+EOF
+EXPECT=<<EOF
+arch     riscv
+cpu      rv64
+features N/A
+baddr    0x00200000
+binsz    0x00000200
+bintype  zimg
+bits     64
+retguard false
+class    Linux zImage Kernel (5.2+)
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     C
+machine  RISC-V
+maxopsz  6
+minopsz  4
+os       linux
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+zImage:
+  machine: "RISC-V"
+  kernel: "5.2+"
+  image_load: 0x200000
+  kernel_size: 0x92416c
+  head_flags: 0x0
+  version:
+    major: 0
+    minor: 2
+  padding0: 0x0
+  padding1: 0x0
+  riscv_magic1: "52 49 53 43 56 00 00 00                         |RISCV...        |"
+  riscv_magic2: "52 53 43 05                                     |RSC.            |"
+
+---
+ 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff r-x 
+---
+            ;-- entry0:
+        ,=< 0x00000000      j     0x40
+        |   0x00000002      illegal
+        |   0x00000004      illegal
+        |   0x00000006      nop
+        |   0x00000008      illegal
+        |   0x0000000a      addi  s0, sp, 8
+        |   0x0000000c      illegal
+        |   0x0000000e      illegal
+        |   0x00000010      lw    a1, 68(a0)
+        |   0x00000012      slli  ra, ra, 0x4
+        |   0x00000014      illegal
+        |   0x00000016      illegal
+        |   0x00000018      illegal
+        |   0x0000001a      illegal
+        |   0x0000001c      illegal
+        |   0x0000001e      illegal
+        |   0x00000020      invalid
+        |   0x00000022      illegal
+        |   0x00000024      illegal
+        |   0x00000026      illegal
+        |   0x00000028      illegal
+        |   0x0000002a      illegal
+        |   0x0000002c      illegal
+        |   0x0000002e      illegal
+        |   ;-- str.RISCV:
+        |   0x00000030     .string "RISCV" ; len=6
+        |   0x00000036      illegal
+        |   0x00000038      lw    t1, 52(sp)
+        |   0x0000003a      fmadd.s fa0, ft0, ft0, ft0, rne
+        |   0x0000003e      illegal
+        `-> 0x00000040      csrw  sie, zero
+            0x00000044      csrw  sip, zero
+            0x00000048      auipc gp, 0x8e2
+---
+0x00000008  0x0000000000200000  0x000000000092416c   .. .....lA......
+0x00000018  0x0000000000000000  0x0000000000000002   ................
+0x00000028  0x0000000000000000  0x0000005643534952   ........RISCV...
+0x00000038  0x0000000005435352  0x1440107310401073   RSC.....s.@.s.@.
 EOF
 RUN

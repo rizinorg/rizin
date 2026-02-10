@@ -1282,7 +1282,7 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (flag && ref_idx) {
-		void *p = rz_list_iter_get_data(ref_idx);
+		void *p = rz_list_val(ref_idx);
 		free_object(p);
 		p = copy_object(ret);
 		rz_list_iter_set_data(ref_idx, p);

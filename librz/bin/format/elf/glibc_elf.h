@@ -48,6 +48,7 @@ typedef int64_t Elf64_Sxword;
 /* Type of addresses.  */
 typedef uint32_t Elf32_Addr;
 typedef uint64_t Elf64_Addr;
+#define ELF_ADDR_MAX ((Elf_(Addr))(-1))
 
 /* Type of file offsets.  */
 typedef uint32_t Elf32_Off;

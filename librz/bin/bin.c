@@ -366,22 +366,69 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
+static RZ_OWN RzStrBuf *join_plugin_names(const RzPVector /*<char *>*/ *plugin_names) {
+	RzStrBuf *result = rz_strbuf_new("");
+	if (!result) {
+		return NULL;
+	}
+	void **it = NULL;
+	ut32 idx = 0;
+	rz_pvector_enumerate (plugin_names, it, idx) {
+		const char *name = *it;
+		rz_strbuf_append(result, name);
+		rz_strbuf_append(result, idx < rz_pvector_len(plugin_names) - 1 ? "," : "\0");
+	}
+	return result;
+}
+
+/**
+ * \brief Iterates through the registered bin plugins and selects one which can open the file contained in \p buf.
+ *
+ * \param bin bin context.
+ * \param buf buffer holding the contents of an input file.
+ * \return returns a pointer to a `RzBinPlugin` of a compatible plugin (if found), NULL otherwise.
+ */
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	rz_return_val_if_fail(bin && buf, NULL);
-	RzIterator *it = ht_sp_as_iter(bin->plugins);
-	RzBinPlugin **val;
 
-	rz_iterator_foreach(it, val) {
-		RzBinPlugin *plugin = *val;
-		if (plugin->check_buffer) {
-			if (plugin->check_buffer(buf)) {
-				rz_iterator_free(it);
-				return plugin;
-			}
+	RzPVector /*<char *>*/ *compatible_plugins = rz_pvector_new((RzPVectorFree)free);
+	if (!compatible_plugins) {
+		return NULL;
+	}
+	RzIterator *it = ht_sp_as_iter_keys(bin->plugins);
+	if (!it) {
+		rz_pvector_free(compatible_plugins);
+		return NULL;
+	}
+	// Iterate all plugins and save compatible plugins to `compatible_plugins`
+	char **key;
+	rz_iterator_foreach(it, key) {
+		bool found = false;
+		RzBinPlugin *plugin = (RzBinPlugin *)ht_sp_find(bin->plugins, *key, &found);
+		if (!found) {
+			rz_warn_if_reached();
+			continue;
+		}
+		if (plugin->check_buffer && plugin->check_buffer(buf)) {
+			rz_pvector_push(compatible_plugins, rz_str_dup(*key));
 		}
 	}
 	rz_iterator_free(it);
-	return NULL;
+
+	if (rz_pvector_empty(compatible_plugins)) {
+		rz_pvector_free(compatible_plugins);
+		return NULL;
+	}
+	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
+	if (rz_pvector_len(compatible_plugins) > 1) {
+		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
+		rz_strbuf_free(compatible_plugin_list);
+	}
+	RzBinPlugin *result = (RzBinPlugin *)ht_sp_find(bin->plugins, default_plugin, NULL);
+	rz_pvector_free(compatible_plugins);
+	return result;
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {

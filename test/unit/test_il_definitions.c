@@ -90,8 +90,7 @@ static bool test_il_mem_load() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	RzILMem *mem = rz_il_mem_new(buf, 16);
-	rz_buf_free(buf); // buf is refcounted
+	RzILMem *mem = rz_il_mem_new_owned(buf, 16);
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid read
@@ -125,8 +124,7 @@ static bool test_il_mem_load() {
 static bool test_il_mem_store() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x42, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	RzILMem *mem = rz_il_mem_new(buf, 16);
-	rz_buf_free(buf); // buf is refcounted
+	RzILMem *mem = rz_il_mem_new_owned(buf, 16);
 	mu_assert_notnull(mem, "Create mem");
 
 	RzBitVector *addr = rz_bv_new_from_ut64(16, 1);
@@ -164,8 +162,7 @@ static bool test_il_mem_loadw() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x13, 0x37, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	RzILMem *mem = rz_il_mem_new(buf, 16);
-	rz_buf_free(buf); // buf is refcounted
+	RzILMem *mem = rz_il_mem_new_owned(buf, 16);
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid read (le)
@@ -207,8 +204,7 @@ static bool test_il_mem_loadw() {
 static bool test_il_mem_storew() {
 	ut8 data[] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	RzILMem *mem = rz_il_mem_new(buf, 32);
-	rz_buf_free(buf); // buf is refcounted
+	RzILMem *mem = rz_il_mem_new_owned(buf, 32);
 	mu_assert_notnull(mem, "Create mem");
 
 	// valid write (le)

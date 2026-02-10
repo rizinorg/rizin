@@ -1733,7 +1733,7 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnalysisVar *>*/ *iter) {
 	rz_return_val_if_fail(iter, 0);
 	ut32 iter_mov = 0;
-	RzAnalysisVar *var = rz_list_iter_get_data(iter);
+	RzAnalysisVar *var = rz_list_val(iter);
 	if (!strcmp(ds->fold_var, "none") || rz_analysis_var_is_arg(var)) {
 		return iter_mov;
 	}
@@ -1741,7 +1741,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	RzListIter *temp_it = rz_list_next(iter);
 	ut32 same_type_cnt = 1;
 	while (temp_it) {
-		RzAnalysisVar *temp_var = rz_list_iter_get_data(temp_it);
+		RzAnalysisVar *temp_var = rz_list_val(temp_it);
 		if (!temp_var) {
 			break;
 		}
@@ -1770,7 +1770,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	ut32 group_num = strcmp(ds->fold_var, "group") ? 2 : 3;
 	while (iter_mov < group_num) {
 		rz_break_if_fail(iter);
-		RzAnalysisVar *temp_var = rz_list_iter_get_data(iter);
+		RzAnalysisVar *temp_var = rz_list_val(iter);
 		const RzStackAddr off = temp_var->storage.stack_off;
 		const char sign = off >= 0 ? '+' : '-';
 		rz_strbuf_appendf(sb, "%s @ stack %c 0x%" PFMT64x "; ", temp_var->name, sign, RZ_ABS(off));
