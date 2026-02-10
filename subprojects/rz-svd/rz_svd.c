@@ -162,8 +162,10 @@ RZ_API RZ_NULLABLE RzSvdInterrupt *rz_svd_device_get_interrupt(RZ_NULLABLE RzSvd
 /**
  * \brief Find an SVD file for a given device name
  *
- * Searches in standard locations:
+ * Searches in standard locations in this order:
+ * - $RZ_SVD_DIR/ (if environment variable is set)
  * - ~/.local/share/rizin/svd/
+ * - <install_prefix>/share/rizin/svd/ (compile-time path)
  * - /usr/share/rizin/svd/
  * - /usr/local/share/rizin/svd/
  *
@@ -185,9 +187,20 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 	}
 
 	// Try various locations
-	const char *home = getenv("HOME");
 	char path[1024];
 	
+	// 1. First check RZ_SVD_DIR environment variable if set
+	const char *svd_dir = getenv("RZ_SVD_DIR");
+	if (svd_dir) {
+		snprintf(path, sizeof(path), "%s/%s.svd", svd_dir, lower_name);
+		if (rz_file_exists(path)) {
+			free(lower_name);
+			return strdup(path);
+		}
+	}
+	
+	// 2. Check user home directory
+	const char *home = getenv("HOME");
 	if (home) {
 		snprintf(path, sizeof(path), "%s/.local/share/rizin/svd/%s.svd", home, lower_name);
 		if (rz_file_exists(path)) {
@@ -196,6 +209,16 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 		}
 	}
 	
+	// 3. Check compile-time defined data directory (e.g., PREFIX/share/rizin/svd)
+#ifdef RZ_SVD_DATADIR
+	snprintf(path, sizeof(path), RZ_SVD_DATADIR "/%s.svd", lower_name);
+	if (rz_file_exists(path)) {
+		free(lower_name);
+		return strdup(path);
+	}
+#endif
+	
+	// 4. Fallback to standard system paths
 	snprintf(path, sizeof(path), "/usr/share/rizin/svd/%s.svd", lower_name);
 	if (rz_file_exists(path)) {
 		free(lower_name);
