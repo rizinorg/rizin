@@ -379,6 +379,25 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 	return true;
 }
 
+static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 addr) {
+	RzInterpreterILBB *bb = ht_up_find(il_cache, addr, NULL);
+	if (!bb) {
+		RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
+		bb = rz_inquiry_gen_il_bb(core->analysis, core->io, addr);
+		if (!bb) {
+			RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", addr);
+			return NULL;
+		}
+		rz_analysis_add_bb(core->analysis, bb->bb_addr, bb->size);
+		RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
+		ht_up_insert(il_cache, bb->bb_addr, bb);
+		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
+	} else {
+		RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
+	}
+	return bb;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -536,31 +555,19 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						break;
 					}
 					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", branch->target_addr);
-					RzInterpreterILBB *bb = ht_up_find(il_cache, branch->target_addr, NULL);
+					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, branch->target_addr);
 					if (!bb) {
-						RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
-						size_t bb_size = 0;
-						bb = rz_inquiry_gen_il_bb(core->analysis, core->io, branch->target_addr, &bb_size);
-						if (!bb) {
-							RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", branch->target_addr);
-							// Signal interpreter the lifting failed.
-							rz_atomic_bool_set(is_running, false);
-							rz_th_queue_close(io_request_q);
-							rz_th_queue_close(io_result_q);
-							rz_th_queue_close(iset->branch_queue);
-							rz_th_queue_close(iset->il_queue);
-							bb_decode_failed = true;
-							break;
-						}
-						rz_analysis_add_bb(core->analysis, branch->target_addr, bb_size);
-						rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
-						RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
-						ht_up_insert(il_cache, bb->bb_addr, bb);
-						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
-					} else {
-						RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
+						// Signal interpreter the lifting failed.
+						rz_atomic_bool_set(is_running, false);
+						rz_th_queue_close(io_request_q);
+						rz_th_queue_close(io_result_q);
+						rz_th_queue_close(iset->branch_queue);
+						rz_th_queue_close(iset->il_queue);
+						bb_decode_failed = true;
+						break;
 					}
-					rz_th_queue_push(iset->il_queue, bb, true);
+					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
+					rz_th_queue_push(iset->il_queue, (void *)bb, true);
 				}
 			}
 

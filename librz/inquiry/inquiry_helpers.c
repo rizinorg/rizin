@@ -12,7 +12,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 
-RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr, RZ_NULLABLE RZ_OUT size_t *bb_size) {
+RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
 	rz_return_val_if_fail(analysis && analysis->cur && io, NULL);
 	RzInterpreterILBB *il_bb = NULL;
 	RzAnalysisOp op = { 0 };
@@ -68,9 +68,6 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 		RZ_LOG_DEBUG("\t0x%" PFMT64x "\n", addr);
 		rz_analysis_op_fini(&op);
 		addr += op.size;
-		if (bb_size) {
-			*bb_size += op.size;
-		}
 		rz_mem_memzero(buf, max_read_size);
 		if (sparc_add_delayed_insn) {
 			// Instruction was added, now the BB is complete.
