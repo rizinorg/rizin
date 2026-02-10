@@ -32,15 +32,6 @@ RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
 }
 
 /**
- * \brief returns the value stored in the list iterator
- *
- **/
-RZ_API void *rz_list_iter_get_data(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	return iter->val;
-}
-
-/**
  * \brief Sets the value stored in the list iterator and returns true if succeeds
  *
  **/
