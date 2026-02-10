@@ -226,7 +226,7 @@ static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAna
 		vm->vm = NULL;
 		return;
 	}
-	rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new(vm->io_buf, cfg->mem_key_size));
+	rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new_borrowed(vm->io_buf, cfg->mem_key_size));
 	void **it;
 	rz_pvector_foreach (&cfg->labels, it) {
 		RzILEffectLabel *lbl = *it;

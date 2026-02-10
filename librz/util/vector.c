@@ -185,7 +185,9 @@ RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem) {
 }
 
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	void *p = rz_vector_index_ptr(vec, index);
 	if (into) {
 		rz_vector_assign(vec, into, p);
@@ -254,7 +256,9 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
 }
 
 RZ_API void rz_vector_pop(RzVector *vec, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	if (into) {
 		rz_vector_assign(vec, into, rz_vector_index_ptr(vec, vec->len - 1));
 	}
@@ -262,7 +266,9 @@ RZ_API void rz_vector_pop(RzVector *vec, void *into) {
 }
 
 RZ_API void rz_vector_pop_front(RzVector *vec, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	rz_vector_remove_at(vec, 0, into);
 }
 

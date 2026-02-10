@@ -595,8 +595,7 @@ static bool test_rzil_vm_op_load() {
 	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_load(0, rz_il_op_new_bitv_from_ut64(16, 3));
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -644,8 +643,7 @@ static bool test_rzil_vm_op_store() {
 	ut8 data[] = { 0x10, 0x11, 0x12, 0x42, 0x14, 0x15 };
 	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_store(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(8, 0xab));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -676,8 +674,7 @@ static bool test_rzil_vm_op_loadw_le() {
 	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -706,8 +703,7 @@ static bool test_rzil_vm_op_storew_le() {
 	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
 	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -738,8 +734,7 @@ static bool test_rzil_vm_op_loadw_be() {
 	RzILVM *vm = rz_il_vm_new(0, 12, true, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -768,8 +763,7 @@ static bool test_rzil_vm_op_storew_be() {
 	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
 	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
 	bool succ = rz_il_evaluate_effect(vm, op);
