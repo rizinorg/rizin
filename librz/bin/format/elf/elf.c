@@ -297,7 +297,7 @@ static void init_symbols_info(ELFOBJ *bin) {
 static void init_elf_context(ELFOBJ *bin) {
 	bin->elfctx = RZ_NEW0(RzElfCtx);
 	if (!bin->elfctx) {
-		RZ_LOG_INFO("Failed to initialize ELF context.\n");
+		RZ_LOG_ERROR("Failed to initialize ELF context.\n");
 	}
 	ut64 got_addr;
 	ut64 jmprel;
@@ -348,7 +348,6 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 		init_dt_dynamic(bin);
 		init_dynstr(bin);
 		init_symbols_info(bin);
-		init_elf_context(bin);
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {
@@ -358,6 +357,8 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 			init_shdr(bin, options, sections);
 		}
 	}
+
+	init_elf_context(bin);
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
@@ -427,8 +428,7 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 	rz_vector_free(bin->symbols);
 	rz_vector_free(bin->imports);
 
-	RZ_FREE(bin->elfctx);
-
+	free(bin->elfctx);
 	free(bin);
 }
 

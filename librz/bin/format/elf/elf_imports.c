@@ -259,7 +259,6 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 	}
 
 	RzBinElfSection *pltsec_section = bin->elfctx->plt_sec;
-
 	if (pltsec_section) {
 		if (bin->elfctx && bin->elfctx->got_addr == ELF_ADDR_MAX) {
 			return UT64_MAX;
