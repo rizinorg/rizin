@@ -1572,9 +1572,9 @@ static int following_word_find_end(RzLine *line, int start) {
 static void following_word_capitalize(RzLine *line, int start, int end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
-	for (int i = start; i < end; ++i) {
+	for (ssize_t i = start; i < end; ++i) {
 		const bool is_first_chr = i == start;
-		const char chr = line_buf[i];
+		const unsigned char chr = (unsigned char)line_buf[i];
 		if (is_first_chr && islower(chr)) {
 			line_buf[i] = toupper(chr);
 		} else if (!is_first_chr && isupper(chr)) {
@@ -1586,9 +1586,10 @@ static void following_word_capitalize(RzLine *line, int start, int end) {
 static void following_word_tolower(RzLine *line, int start, int end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
-	for (int i = start; i < end; ++i) {
-		if (isupper(line_buf[i])) {
-			line_buf[i] = tolower(line_buf[i]);
+	for (ssize_t i = start; i < end; ++i) {
+		const unsigned char chr = (unsigned char)line_buf[i];
+		if (isupper(chr)) {
+			line_buf[i] = tolower(chr);
 		}
 	}
 }
@@ -1596,9 +1597,10 @@ static void following_word_tolower(RzLine *line, int start, int end) {
 static void following_word_toupper(RzLine *line, RZ_OUT int start, int end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
-	for (int i = start; i < end; ++i) {
-		if (islower(line_buf[i])) {
-			line_buf[i] = toupper(line_buf[i]);
+	for (ssize_t i = start; i < end; ++i) {
+		const unsigned char chr = (unsigned char)line_buf[i];
+		if (islower(chr)) {
+			line_buf[i] = toupper(chr);
 		}
 	}
 }
