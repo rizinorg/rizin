@@ -26,9 +26,9 @@ typedef enum {
 } BreakMode;
 
 typedef enum {
-	following_WORD_MODIFY_CAPITALIZE,
-	following_WORD_MODIFY_TOLOWER,
-	following_WORD_MODIFY_TOUPPER
+	FOLLOWING_WORD_MODIFY_CAPITALIZE,
+	FOLLOWING_WORD_MODIFY_TOLOWER,
+	FOLLOWING_WORD_MODIFY_TOUPPER
 } FollowingWordModifyOp;
 
 /**
@@ -1623,13 +1623,13 @@ static void following_word_modify(RzLine *line, FollowingWordModifyOp op) {
 	default:
 		rz_return_if_reached();
 		break;
-	case following_WORD_MODIFY_CAPITALIZE:
+	case FOLLOWING_WORD_MODIFY_CAPITALIZE:
 		following_word_capitalize(line, start, end);
 		break;
-	case following_WORD_MODIFY_TOLOWER:
+	case FOLLOWING_WORD_MODIFY_TOLOWER:
 		following_word_tolower(line, start, end);
 		break;
-	case following_WORD_MODIFY_TOUPPER:
+	case FOLLOWING_WORD_MODIFY_TOUPPER:
 		following_word_toupper(line, start, end);
 		break;
 	}
@@ -1979,15 +1979,15 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				break;
 			case 'C':
 			case 'c':
-				following_word_modify(line, following_WORD_MODIFY_CAPITALIZE);
+				following_word_modify(line, FOLLOWING_WORD_MODIFY_CAPITALIZE);
 				break;
 			case 'L':
 			case 'l':
-				following_word_modify(line, following_WORD_MODIFY_TOLOWER);
+				following_word_modify(line, FOLLOWING_WORD_MODIFY_TOLOWER);
 				break;
 			case 'U':
 			case 'u':
-				following_word_modify(line, following_WORD_MODIFY_TOUPPER);
+				following_word_modify(line, FOLLOWING_WORD_MODIFY_TOUPPER);
 				break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
