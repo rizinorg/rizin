@@ -10,13 +10,6 @@
 #include <string.h>
 #include "../format/xbe/xbe.h"
 
-#define SECTION_WRITEABLE          0x00000001
-#define SECTION_PRELOAD            0x00000002
-#define SECTION_EXECUTABLE         0x00000004
-#define SECTION_INSERTFILE         0x00000008
-#define SECTION_HEAD_PAGE_READONLY 0x00000010
-#define SECTION_TAIL_PAGE_READONLY 0x00000020
-
 static const char *kt_name[] = {
 #include "../format/xbe/kernel.h"
 };
@@ -247,10 +240,10 @@ static RzPVector /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
 		item->vsize = sect.vsize;
 
 		item->perm = RZ_PERM_R;
-		if (sect.flags & SECT_FLAG_X) {
+		if (sect.flags & SECTION_EXECUTABLE) {
 			item->perm |= RZ_PERM_X;
 		}
-		if (sect.flags & SECT_FLAG_W) {
+		if (sect.flags & SECTION_WRITEABLE) {
 			item->perm |= RZ_PERM_W;
 		}
 		rz_pvector_push(ret, item);
@@ -413,32 +406,32 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static const char *xbe_section_flags_to_string(ut32 flags) {
-	static char buf[96];
-	size_t len = 0;
+	static RzStrBuf sb;
+	bool first = true;
 
-	buf[0] = '\0';
+	rz_strbuf_init(&sb);
+	rz_strbuf_set(&sb, "");
 
 	if (flags == 0) {
-		strcpy(buf, "NONE");
-		return buf;
+		rz_strbuf_set(&sb, "NONE");
+		return rz_strbuf_get(&sb);
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(xbe_section_flags); i++) {
 		if (flags & xbe_section_flags[i].bit) {
-			if (len > 0) {
-				strcpy(buf + len, " | ");
-				len += 3;
+			if (!first) {
+				rz_strbuf_append(&sb, " | ");
 			}
-			strcpy(buf + len, xbe_section_flags[i].name);
-			len += strlen(xbe_section_flags[i].name);
+			rz_strbuf_append(&sb, xbe_section_flags[i].name);
+			first = false;
 		}
 	}
 
-	if (len == 0) {
-		strcpy(buf, "UNKNOWN");
+	if (first) {
+		rz_strbuf_set(&sb, "UNKNOWN");
 	}
 
-	return buf;
+	return rz_strbuf_get(&sb);
 }
 
 static RzStructuredData *xbe_sections_structure(RzBinFile *bf) {
