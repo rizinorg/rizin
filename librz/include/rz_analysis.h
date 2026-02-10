@@ -1526,6 +1526,7 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_direct_jump(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
@@ -1633,7 +1634,10 @@ RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAn
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
-RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzPVector /*<RzBinSection *>*/ *sections, RZ_NONNULL RZ_OUT RzSetU *jump_targets);
+RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
+	const RzPVector /*<RzBinSection *>*/ *sections,
+	bool include_call_return_pts,
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(

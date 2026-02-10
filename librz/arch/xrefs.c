@@ -330,19 +330,23 @@ static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_siz
 }
 
 /**
- * \brief Returns all targets of call instructions within the \p sections.
- * NOTE: This function disassembles all instructions within the boundaries and checks for calls.
+ * \brief Returns all targets of call/jmp instructions within the \p sections.
+ * NOTE: This function disassembles all instructions within the boundaries and checks for calls/jmps.
  * It DOES NOT use the existing xrefs.
  *
  * \param analysis The analysis plugin.
- * \param sections The RzBinSections to disassemble to find call instructions.
- * \param call_targets The found call targets of all disassemble calls.
+ * \param sections The RzBinSections to disassemble to find call/jmp instructions.
+ * \param branch_targets The found call targets of all disassemble calls.
  *        NOTE: They can point outside of \p maps!
+ * \param include_call_return_pts If true, it will add addresses after a call instruction as well.
  *
  * \return True in case of success, false otherwise.
  */
-RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzPVector /*<RzBinSection *>*/ *sections, RZ_NONNULL RZ_OUT RzSetU *call_targets) {
-	rz_return_val_if_fail(analysis && analysis->cur && sections && call_targets, false);
+RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
+	const RzPVector /*<RzBinSection *>*/ *sections,
+	bool include_call_return_pts,
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets) {
+	rz_return_val_if_fail(analysis && analysis->cur && sections && branch_targets, false);
 	size_t buf_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, buf_size);
 	if (!buf_size || !buf) {
@@ -363,15 +367,23 @@ RZ_API bool rz_analysis_get_all_call_targets(RzAnalysis *analysis, const RzPVect
 				rz_analysis_op_fini(&op);
 				break;
 			}
-			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
+			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_INSN_PKT) <= 0) {
 				rz_analysis_op_fini(&op);
 				addr += op.size;
 				continue;
 			}
 			// Only add jump targets going to executable regions.
-			if (rz_analysis_op_is_direct_call(&op) && op.jump != UT64_MAX && rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
+			if ((rz_analysis_op_is_direct_call(&op) ||
+				    rz_analysis_op_is_direct_jump(&op)) &&
+				op.jump != UT64_MAX &&
+				rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
 				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
-				rz_set_u_add(call_targets, op.jump);
+				rz_set_u_add(branch_targets, op.jump);
+				if (include_call_return_pts && rz_analysis_op_is_direct_call(&op)) {
+					// If it is a call, also add the following instruction as reference.
+					// Because it is likely a return point.
+					rz_set_u_add(branch_targets, op.addr && op.size);
+				}
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);
