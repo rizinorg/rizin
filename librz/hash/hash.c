@@ -572,7 +572,7 @@ RZ_API RZ_BORROW const ut8 *rz_hash_cfg_get_result(RZ_NONNULL RzHashCfg *md, RZ_
 		return NULL;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (size) {
@@ -597,7 +597,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_get_result_string(RZ_NONNULL RzHashCfg *md, RZ_N
 		return NULL;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, NULL);
 
 	if (!strncmp(name, "entropy", strlen("entropy"))) {
@@ -642,7 +642,7 @@ RZ_API RzHashSize rz_hash_cfg_size(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const ch
 		return 0;
 	}
 
-	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_iter_get_data(it);
+	HashCfgConfig *mdc = (HashCfgConfig *)rz_list_val(it);
 	rz_return_val_if_fail(mdc, 0);
 	return mdc->plugin->digest_size(mdc->context);
 }
