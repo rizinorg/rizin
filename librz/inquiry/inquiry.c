@@ -713,9 +713,10 @@ error_free:
 	return return_code;
 }
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry) {
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point) {
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	rz_inquiry_algo_revng_fcn_detection(
+		entry_point,
 		inquiry->call_candidates,
 		inquiry->bb_cfg,
 		fcns);
