@@ -268,38 +268,6 @@ static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
 	rz_iterator_free(it);
 }
 
-static bool cb_analysis_arch(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		update_analysis_arch_options(core, node);
-		print_node_options(node);
-		return false;
-	}
-	if (*node->value) {
-		if (rz_analysis_use(core->analysis, node->value)) {
-			return true;
-		}
-		const char *aa = rz_config_get(core->config, "asm.arch");
-		if (!aa || strcmp(aa, node->value)) {
-			RZ_LOG_ERROR("core: analysis.arch: cannot find '%s'\n", node->value);
-		}
-	}
-	return false;
-}
-
-static bool cb_analysis_cpu(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	rz_analysis_set_cpu(core->analysis, node->value);
-	/* set pcalign */
-	{
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
-	}
-	return true;
-}
-
 static bool cb_analysis_recont(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -412,7 +380,8 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 static bool cb_asmcpu(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
+	const char *value = node->value;
+	if (*value == '?') {
 		update_asmcpu_options(core, node);
 		/* print verbose help instead of plain option listing */
 		RzCmdStateOutput state = { 0 };
@@ -422,24 +391,8 @@ static bool cb_asmcpu(void *user, void *data) {
 		rz_cmd_state_output_fini(&state);
 		return 0;
 	}
-	rz_asm_set_cpu(core->rasm, node->value);
-	rz_config_set(core->config, "analysis.cpu", node->value);
 
-	char *cpus_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_CPUS);
-	if (!cpus_dir) {
-		return false;
-	}
-	rz_platform_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), cpus_dir);
-	free(cpus_dir);
-	const char *platform = rz_config_get(core->config, "asm.platform");
-	char *platforms_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_PLATFORMS);
-	if (!platforms_dir) {
-		return false;
-	}
-	rz_platform_target_index_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, platforms_dir);
-	free(platforms_dir);
-
-	return true;
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ value, /*os*/ NULL, /*platform*/ NULL);
 }
 
 static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
@@ -469,14 +422,6 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 	}
 }
 
-static void update_syscall_ns(RzCore *core) {
-	if (core->analysis->syscall->db) {
-		sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
-	} else {
-		sdb_ns_unset(core->sdb, "syscall", NULL);
-	}
-}
-
 static bool cb_asm_varfold(void *core, void *node) {
 	char *choice[] = { "none", "group", "hide" };
 	RzConfigNode *n = node;
@@ -491,21 +436,12 @@ static bool cb_asm_varfold(void *core, void *node) {
 }
 
 static bool cb_asmarch(void *user, void *data) {
-	char asmparser[32];
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	const char *asmos = NULL;
-	int bits = RZ_SYS_BITS;
-	if (!*node->value || !core || !core->rasm) {
-		return false;
-	}
-	asmos = rz_config_get(core->config, "asm.os");
-	if (core && core->analysis && core->analysis->bits) {
-		bits = core->analysis->bits;
-	}
-	if (node->value[0] == '?') {
+	const char *value = node->value;
+	if (value[0] == '?') {
 		update_asmarch_options(core, node);
-		if (strlen(node->value) > 1 && node->value[1] == '?') {
+		if (strlen(value) > 1 && value[1] == '?') {
 			/* print more verbose help instead of plain option values */
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
@@ -518,142 +454,8 @@ static bool cb_asmarch(void *user, void *data) {
 			return false;
 		}
 	}
-	rz_egg_setup(core->egg, node->value, bits, 0, RZ_SYS_OS);
 
-	if (!rz_asm_use(core->rasm, node->value)) {
-		RZ_LOG_ERROR("core: asm.arch: cannot find (%s)\n", node->value);
-		return false;
-	}
-
-	RzConfigNode *asm_cpu_node = rz_config_node_get(core->config, "asm.cpu");
-	if (core->rasm->cur) {
-		const char *cpus = core->rasm->cur->cpus;
-		if (asm_cpu_node) {
-			if (RZ_STR_ISNOTEMPTY(cpus)) {
-				if ((asm_cpu_node->value && strstr(cpus, asm_cpu_node->value) == NULL) || RZ_STR_ISEMPTY(asm_cpu_node->value)) {
-					char *cpu0 = rz_str_dup(cpus);
-					char *comma = strchr(cpu0, ',');
-					if (comma) {
-						*comma = 0;
-					}
-
-					if (!*asm_cpu_node->value || (*asm_cpu_node->value && RZ_STR_NE(cpu0, asm_cpu_node->value))) {
-						rz_config_set(core->config, "asm.cpu", cpu0);
-					}
-					free(cpu0);
-				}
-			} else if (cpus && !*cpus) {
-				rz_config_set(core->config, "asm.cpu", "");
-			}
-		}
-
-		bits = core->rasm->cur->bits;
-		if (8 & bits) {
-			bits = 8;
-		} else if (16 & bits) {
-			bits = 16;
-		} else if (32 & bits) {
-			bits = 32;
-		} else {
-			bits = 64;
-		}
-		update_asmbits_options(core, rz_config_node_get(core->config, "asm.bits"));
-	}
-	snprintf(asmparser, sizeof(asmparser), "%s.pseudo", node->value);
-	rz_config_set(core->config, "asm.parser", asmparser);
-	if (core->rasm->cur && core->analysis &&
-		!(core->rasm->cur->bits & core->analysis->bits)) {
-		rz_config_set_i(core->config, "asm.bits", bits);
-	}
-
-	rz_debug_set_arch(core->dbg, node->value, bits);
-	if (!rz_config_set(core->config, "analysis.arch", node->value)) {
-		char *p, *s = rz_str_dup(node->value);
-		if (s) {
-			p = strchr(s, '.');
-			if (p) {
-				*p = 0;
-			}
-			if (!rz_config_set(core->config, "analysis.arch", s)) {
-				/* fall back to the analysis.null plugin */
-				rz_config_set(core->config, "analysis.arch", "null");
-			}
-			free(s);
-		}
-	}
-	// set pcalign
-	if (core->analysis) {
-		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-		const char *platform = rz_config_get(core->config, "asm.platform");
-		rz_config_set(core->config, "analysis.cpu", asmcpu);
-		rz_syscall_setup(core->analysis->syscall, core->sys_path, node->value, core->analysis->bits, asmcpu, asmos);
-		update_syscall_ns(core);
-		char *platforms_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_PLATFORMS);
-		if (!platforms_dir) {
-			return false;
-		}
-		char *cpus_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_CPUS);
-		if (!cpus_dir) {
-			free(platforms_dir);
-			return false;
-		}
-		rz_platform_target_index_init(core->analysis->platform_target, node->value, asmcpu, platform, platforms_dir);
-		rz_platform_profiles_init(core->analysis->arch_target, asmcpu, node->value, cpus_dir);
-		free(platforms_dir);
-		free(cpus_dir);
-	}
-	__setsegoff(core->config, node->value, core->rasm->bits);
-
-	// set a default endianness
-	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
-
-	// try to set endian of RzAsm to match binary
-	rz_asm_set_big_endian(core->rasm, big_endian);
-	// set endian of display to match binary
-	core->print->big_endian = big_endian;
-
-	rz_asm_set_cpu(core->rasm, asm_cpu_node->value);
-	if (asm_cpu_node) {
-		update_asmcpu_options(core, asm_cpu_node);
-	}
-	{
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		if (v != -1) {
-			rz_config_set_i(core->config, "asm.pcalign", v);
-		} else {
-			rz_config_set_i(core->config, "asm.pcalign", 1);
-		}
-	}
-	/* reload types and cc info */
-	// changing asm.arch changes analysis.arch
-	// changing analysis.arch sets types db
-	// so ressetting is redundant and may lead to bugs
-	// 1 case this is usefull is when types is null
-	if (!core->analysis || !core->analysis->typedb) {
-		rz_core_analysis_type_init(core);
-	}
-	// set endian of RzAnalysis to match binary
-	rz_analysis_set_big_endian(core->analysis, big_endian);
-	rz_core_analysis_cc_init(core);
-
-	const char *platform = rz_config_get(core->config, "asm.platform");
-	if (asm_cpu_node) {
-		char *platforms_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_PLATFORMS);
-		if (!platforms_dir) {
-			return false;
-		}
-		char *cpus_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_CPUS);
-		if (!cpus_dir) {
-			free(platforms_dir);
-			return false;
-		}
-		rz_platform_target_index_init(core->analysis->platform_target, node->value, asm_cpu_node->value, platform, platforms_dir);
-		rz_platform_profiles_init(core->analysis->arch_target, asm_cpu_node->value, node->value, cpus_dir);
-		free(cpus_dir);
-		free(platforms_dir);
-	}
-
-	return true;
+	return rz_core_arch_configure(core, /*arch*/ value, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
 }
 
 static bool cb_dbgbtdepth(void *user, void *data) {
@@ -667,54 +469,14 @@ static bool cb_asmbits(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 
+	int value = node->i_value;
 	if (node->value[0] == '?') {
 		update_asmbits_options(core, node);
 		print_node_options(node);
 		return false;
 	}
 
-	bool ret = false;
-
-	int bits = node->i_value;
-	if (!bits) {
-		return false;
-	}
-	if (bits > 0) {
-		ret = rz_asm_set_bits(core->rasm, bits);
-		if (!ret) {
-			RzAsmPlugin *h = core->rasm->cur;
-			if (!h) {
-				RZ_LOG_ERROR("core: asm.bits: cannot set value, no plugins defined yet\n");
-				ret = true;
-			}
-		}
-		if (!rz_analysis_set_bits(core->analysis, bits)) {
-			RZ_LOG_ERROR("core: asm.arch: cannot setup '%d' bits analysis engine\n", bits);
-			ret = false;
-		}
-		core->print->bits = bits;
-	}
-	if (core->dbg && core->analysis && core->analysis->cur) {
-		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
-		rz_analysis_set_reg_profile(core->analysis);
-	}
-	rz_core_analysis_cc_init(core);
-	const char *asmos = rz_config_get(core->config, "asm.os");
-	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-	if (core->analysis) {
-		rz_config_set(core->config, "analysis.cpu", asmcpu);
-		if (!rz_syscall_setup(core->analysis->syscall, core->sys_path, asmarch, bits, asmcpu, asmos)) {
-			// eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
-		}
-		update_syscall_ns(core);
-		__setsegoff(core->config, asmarch, core->analysis->bits);
-		/* set pcalign */
-		int v = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-		rz_config_set_i(core->config, "asm.pcalign", (v != -1) ? v : 1);
-	}
-	return ret;
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ value, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
 }
 
 static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
@@ -782,27 +544,14 @@ static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
 static bool cb_asmplatform(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (!core) {
-		return false;
-	}
-	if (*node->value == '?') {
+	const char *value = node->value;
+	if (*value == '?') {
 		update_asmplatforms_options(core, node);
 		print_node_options(node);
 		return 0;
 	}
-	RZ_FREE(core->rasm->platforms);
-	if (node->value[0]) {
-		core->rasm->platforms = rz_str_dup(node->value);
-	}
-	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	char *platforms_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_PLATFORMS);
-	if (!platforms_dir) {
-		return false;
-	}
-	rz_platform_target_index_init(core->analysis->platform_target, asmarch, asmcpu, node->value, platforms_dir);
-	free(platforms_dir);
-	return 1;
+
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ value);
 }
 
 static bool cb_asmlineswidth(void *user, void *data) {
@@ -866,27 +615,17 @@ static bool cb_asm_pcalign(void *user, void *data) {
 
 static bool cb_asmos(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	int asmbits = rz_config_get_i(core->config, "asm.bits");
-	RzConfigNode *asmarch, *node = (RzConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 
-	if (*node->value == '?') {
+	const char *value = node->value;
+	if (*value == '?') {
 		print_node_options(node);
 		return 0;
 	}
-	if (!node->value[0]) {
-		free(node->value);
-		node->value = rz_str_dup(RZ_SYS_OS);
+	if (!value[0]) {
+		value = RZ_SYS_OS;
 	}
-	asmarch = rz_config_node_get(core->config, "asm.arch");
-	if (asmarch) {
-		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-		rz_syscall_setup(core->analysis->syscall, core->sys_path, asmarch->value, core->analysis->bits, asmcpu, node->value);
-		update_syscall_ns(core);
-		__setsegoff(core->config, asmarch->value, asmbits);
-	}
-	rz_analysis_set_os(core->analysis, node->value);
-	rz_core_analysis_cc_init(core);
-	return true;
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ value, /*platform*/ NULL);
 }
 
 static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
@@ -3145,10 +2884,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.norevisit", "false", &cb_analysis_norevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
 	SETCB("analysis.nopskip", "true", &cb_analysis_nopskip, "Skip nops at the beginning of functions");
 	SETCB("analysis.hpskip", "false", &cb_analysis_hpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB("analysis.arch", RZ_SYS_ARCH, &cb_analysis_arch);
+	n = NODECB("analysis.arch", RZ_SYS_ARCH, &cb_asmarch);
 	SETDESC(n, "Select the architecture to use");
 	update_analysis_arch_options(core, n);
-	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_analysis_cpu, "Specify the analysis.cpu to use");
+	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_asmcpu, "Specify the analysis.cpu to use");
 	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
 	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
