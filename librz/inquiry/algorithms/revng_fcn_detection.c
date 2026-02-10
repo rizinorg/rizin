@@ -33,7 +33,6 @@ static void recurse_into_fcn_bbs(
 	ut64 predecessor_bb_addr,
 	ut64 this_bb_addr,
 	RzSetU *visited_fcn_bbs,
-	RZ_OUT RzSetU *tail_called_addr,
 	const RzSetU *return_addresses,
 	const RzVector /*<ut64>*/ *cfep_addresses,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
@@ -79,8 +78,7 @@ static void recurse_into_fcn_bbs(
 	const RzGraphNode *s;
 	rz_list_foreach (successors, lit, s) {
 		ut64 succ_addr = (ut64)s->data;
-		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr) ||
-			rz_set_u_contains(tail_called_addr, succ_addr)) {
+		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr)) {
 			// Ignore tail called functions and return points
 			// because they belong to a different function.
 			continue;
@@ -98,32 +96,15 @@ static void recurse_into_fcn_bbs(
 			}
 		}
 
-		ut64 *val;
-		rz_vector_foreach (cfep_addresses, val) {
-			ut64 cfep_addr = *val;
-			if (cfep_addr != this_bb_addr &&
-				(RZ_BETWEEN_EXCL(this_bb_addr, cfep_addr, succ_addr) ||
-					RZ_BETWEEN_EXCL(succ_addr, cfep_addr, this_bb_addr))) {
-				// The jump goes over a cfep candidate.
-				// Assume the succ_addr is a tail call target.
-				// Log it and don't recurse.
-				rz_set_u_add(tail_called_addr, succ_addr);
-				continue;
-			}
-
-			// The jump goes not over cfep so it should be a
-			// valid basic block of this function.
-			recurse_into_fcn_bbs(
-				fcn,
-				this_bb_addr,
-				succ_addr,
-				visited_fcn_bbs,
-				tail_called_addr,
-				return_addresses,
-				cfep_addresses,
-				call_candidates,
-				binary_bb_cfg);
-		}
+		recurse_into_fcn_bbs(
+			fcn,
+			this_bb_addr,
+			succ_addr,
+			visited_fcn_bbs,
+			return_addresses,
+			cfep_addresses,
+			call_candidates,
+			binary_bb_cfg);
 	}
 	return;
 
@@ -169,51 +150,33 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RzVector *cfep_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
 	fill_cfep_and_ret_addresses(binary_bb_cfg, call_candidates, return_addresses, cfep_addresses);
 
-	// Tail calls discovered by this algorithm.
-	RzSetU *tail_called_addr = rz_set_u_new();
 	// Set of handled cfep
 	RzSetU *cfep_handled = rz_set_u_new();
 
-	do {
-		ut64 *elem;
-		rz_vector_foreach (cfep_addresses, elem) {
-			ut64 cfep_addr = *elem;
-			if (rz_set_u_contains(cfep_handled, cfep_addr)) {
-				continue;
-			}
-
-			RzSetU *visited_bbs = rz_set_u_new();
-			RzInquiryFunction *fcn = rz_inquiry_function_new();
-			rz_vector_push(fcn->entry_points, &cfep_addr);
-			recurse_into_fcn_bbs(fcn,
-				UT64_MAX,
-				cfep_addr,
-				visited_bbs,
-				tail_called_addr,
-				return_addresses,
-				cfep_addresses,
-				call_candidates,
-				binary_bb_cfg);
-			rz_set_u_free(visited_bbs);
-			rz_set_u_add(cfep_handled, cfep_addr);
-			rz_pvector_push(fcns, fcn);
+	ut64 *elem;
+	rz_vector_foreach (cfep_addresses, elem) {
+		ut64 cfep_addr = *elem;
+		if (rz_set_u_contains(cfep_handled, cfep_addr)) {
+			continue;
 		}
 
-		RzIterator *iter = rz_set_u_as_iter(tail_called_addr);
-		ut64 *val;
-		rz_iterator_foreach(iter, val) {
-			ut64 tail_cfep = *val;
-			if (rz_vector_contains(cfep_addresses, &tail_cfep)) {
-				continue;
-			}
-			rz_vector_push_front(cfep_addresses, &tail_cfep);
-		}
-		rz_iterator_free(iter);
-		rz_set_u_clean(tail_called_addr);
-	} while (rz_set_u_size(tail_called_addr) != 0);
+		RzSetU *visited_bbs = rz_set_u_new();
+		RzInquiryFunction *fcn = rz_inquiry_function_new();
+		rz_vector_push(fcn->entry_points, &cfep_addr);
+		recurse_into_fcn_bbs(fcn,
+			UT64_MAX,
+			cfep_addr,
+			visited_bbs,
+			return_addresses,
+			cfep_addresses,
+			call_candidates,
+			binary_bb_cfg);
+		rz_set_u_free(visited_bbs);
+		rz_set_u_add(cfep_handled, cfep_addr);
+		rz_pvector_push(fcns, fcn);
+	}
 
 	rz_set_u_free(cfep_handled);
-	rz_set_u_free(tail_called_addr);
 	rz_set_u_free(return_addresses);
 	rz_vector_free(cfep_addresses);
 	return true;
