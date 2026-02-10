@@ -736,20 +736,25 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		rz_iterator_foreach(iter, it2) {
 			RzInterval *bb = *it2;
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
-			if (!abb) {
-				rz_analysis_create_block(analysis, bb->addr, bb->size);
-				if (!abb) {
-					rz_warn_if_reached();
-					break;
-				}
+			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
+				rz_warn_if_reached();
+				break;
+			}
+			const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
+			RzGraphNode *n;
+			if (rz_list_length(successors) > 0) {
+				n = rz_list_get_n(successors, 0);
+				abb->jump = (ut64)n->data;
+			}
+			if (rz_list_length(successors) > 1) {
+				n = rz_list_get_n(successors, 1);
+				abb->fail = (ut64)n->data;
 			}
 			rz_analysis_function_add_block(afcn, abb);
 		}
 		rz_iterator_free(iter);
 	}
 	rz_pvector_free(fcns);
-
-	// Add edges between blocks
 
 	return true;
 }
