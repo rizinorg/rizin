@@ -71,7 +71,7 @@ static inline RZ_BORROW RzListIter *rz_list_next(RZ_NONNULL const RzListIter *it
 	return iter->next;
 }
 
-static inline RZ_BORROW void *rz_list_get(RZ_NONNULL const RzListIter *iter) {
+static inline RZ_BORROW void *rz_list_val(RZ_NONNULL const RzListIter *iter) {
 	return iter->val;
 }
 
