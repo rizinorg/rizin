@@ -278,7 +278,10 @@ static bool test_vector_empty(void) {
 }
 
 static bool test_vector_remove_at(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_remove_at(&v, 0, NULL);
+
 	init_test_vector(&v, 5, 0, NULL, NULL);
 
 	ut32 e;
@@ -471,7 +474,9 @@ static bool test_vector_insert_range(void) {
 }
 
 static bool test_vector_pop(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_pop(&v, NULL);
 	init_test_vector(&v, 3, 0, NULL, NULL);
 
 	ut32 e;
@@ -496,7 +501,9 @@ static bool test_vector_pop(void) {
 }
 
 static bool test_vector_pop_front(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_pop_front(&v, NULL);
 	init_test_vector(&v, 3, 0, NULL, NULL);
 
 	ut32 e;
