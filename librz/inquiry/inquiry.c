@@ -730,6 +730,7 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		char fcn_name[64] = { 0 };
 		rz_strf(fcn_name, "iq_fcn_0x%" PFMT64x, fcn_addr);
 		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		rz_mem_memzero(fcn_name, sizeof(fcn_name));
 
 		void **it2;
 		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
