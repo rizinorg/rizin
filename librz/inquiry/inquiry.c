@@ -300,7 +300,7 @@ error_free:
 	return false;
 }
 
-static bool get_call_targets(RzCore *core, RzSetU *call_targets) {
+static bool get_call_targets(RzCore *core, RzSetU *branch_targets) {
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!sections) {
 		return false;
@@ -319,7 +319,7 @@ static bool get_call_targets(RzCore *core, RzSetU *call_targets) {
 		rz_pvector_remove_at(sections, *j);
 	}
 	rz_vector_free(non_x_idx);
-	if (!rz_analysis_get_all_call_targets(core->analysis, sections, call_targets)) {
+	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, false, branch_targets)) {
 		RZ_LOG_ERROR("Failed to get call targets.\n");
 		return false;
 	}
