@@ -1614,12 +1614,14 @@ static void following_word_toupper(RzLine *line, RZ_OUT int start, int end) {
  */
 static void following_word_modify(RzLine *line, FollowingWordModifyOp op) {
 	rz_return_if_fail(line);
-	if (line->buffer.length <= 0) { // prevent WARN log
+	if (line->buffer.length < 1) {
 		return;
 	}
 	const int start = following_word_find_start(line);
 	const int end = following_word_find_end(line, start);
-	rz_return_if_fail(start != -1 && end != -1);
+	if (start == -1 || end == -1) {
+		return;
+	}
 
 	switch (op) {
 	default:
