@@ -29,13 +29,13 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_vector_push(entry_points, &entry_point);
 		}
 	}
+	entry_point = *(ut64 *)rz_vector_head(entry_points);
 	bool success = rz_inquiry_interpreter(core, entry_points);
 	RZ_LOG_INFO("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	success = rz_inquiry_function_deduction(core->analysis, core->inquiry);
+	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, entry_point);
 	RZ_LOG_INFO("Perform function deduction: %s\n", success ? "OK" : "FAIL");
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;

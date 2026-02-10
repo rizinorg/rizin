@@ -81,7 +81,7 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 
 RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points);
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry);
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point);
 
 //============
 // Algorithms
@@ -101,6 +101,7 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn);
 RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn);
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
+	ut64 entry_point,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	const RzInquiryBBCFG *bb_cfg,
 	RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns);

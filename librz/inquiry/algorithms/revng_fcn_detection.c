@@ -140,6 +140,7 @@ static void fill_cfep_and_ret_addresses(
 }
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
+	ut64 entry_point,
 	RZ_NONNULL const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	RZ_NONNULL const RzInquiryBBCFG *binary_bb_cfg,
 	RZ_NONNULL RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns) {
@@ -148,6 +149,7 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	// Candidate function entry points
 	RzSetU *return_addresses = rz_set_u_new();
 	RzVector *cfep_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
+	rz_vector_push(cfep_addresses, &entry_point);
 	fill_cfep_and_ret_addresses(binary_bb_cfg, call_candidates, return_addresses, cfep_addresses);
 
 	// Set of handled cfep

@@ -348,11 +348,11 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// The set of reachable states.
 	RzSetU *reachable_states = NULL;
 	// The successor states to evaluate.
-	// This vector must have the same order as the elements pushed into addr_queue.
+	// This vector must have the same order as the elements pushed into branch_queue.
 	RzVector *succ_states = NULL;
 
 	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
-	// For now let's just drop them.
+	// For now let's just ignore them.
 	if (rz_vector_len(iset->entry_points) > 1) {
 		RZ_LOG_ERROR("More than one entry point is not yet supported by the prototype.\n");
 		goto pre_loop_error;
