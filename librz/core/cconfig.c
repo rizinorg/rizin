@@ -250,14 +250,6 @@ static bool cb_asm_features_set(void *user, void *data) {
 	return 1;
 }
 
-static bool cb_asm_features_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_features(core);
-	return true;
-}
-
 static bool cb_asm_parser_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -268,14 +260,6 @@ static bool cb_asm_parser_set(void *user, void *data) {
 	}
 
 	return rz_parse_use(core->parser, node->value);
-}
-
-static bool cb_asm_parser_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_parser(core);
-	return true;
 }
 
 static bool cb_asm_os_set(void *user, void *data) {
@@ -291,14 +275,6 @@ static bool cb_asm_os_set(void *user, void *data) {
 		value = RZ_SYS_OS;
 	}
 	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ value, /*platform*/ NULL);
-}
-
-static bool cb_asm_os_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_os(core);
-	return true;
 }
 
 static bool cb_asm_cpu_set(void *user, void *data) {
@@ -317,14 +293,6 @@ static bool cb_asm_cpu_set(void *user, void *data) {
 	}
 
 	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ value, /*os*/ NULL, /*platform*/ NULL);
-}
-
-static bool cb_asm_cpu_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_cpu(core);
-	return true;
 }
 
 static bool cb_asm_arch_set(void *user, void *data) {
@@ -350,14 +318,6 @@ static bool cb_asm_arch_set(void *user, void *data) {
 	return rz_core_arch_configure(core, /*arch*/ value, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
 }
 
-static bool cb_asm_arch_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_arch(core);
-	return true;
-}
-
 static bool cb_asm_platform_set(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -369,14 +329,6 @@ static bool cb_asm_platform_set(void *user, void *data) {
 	}
 
 	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ value);
-}
-
-static bool cb_asm_platform_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	const char **value = (const char **)data;
-
-	*value = rz_core_get_platform(core);
-	return true;
 }
 
 static bool cb_asm_bits_set(void *user, void *data) {
@@ -391,14 +343,6 @@ static bool cb_asm_bits_set(void *user, void *data) {
 	}
 
 	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ value, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
-}
-
-static bool cb_asm_bits_get(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	ut64 *value = (ut64 *)data;
-
-	*value = rz_core_get_bits(core);
-	return true;
 }
 
 static bool cb_debug_hitinfo(void *user, void *data) {
@@ -2935,10 +2879,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.norevisit", "false", &cb_analysis_norevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
 	SETCB("analysis.nopskip", "true", &cb_analysis_nopskip, "Skip nops at the beginning of functions");
 	SETCB("analysis.hpskip", "false", &cb_analysis_hpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB2("analysis.arch", RZ_SYS_ARCH, &cb_asm_arch_set, &cb_asm_arch_get);
+	n = NODECB("analysis.arch", RZ_SYS_ARCH, &cb_asm_arch_set);
 	SETDESC(n, "Select the architecture to use");
 	update_analysis_arch_options(core, n);
-	SETCB2("analysis.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set, &cb_asm_cpu_get, "Specify the analysis.cpu to use");
+	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set, "Specify the analysis.cpu to use");
 	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
 	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
@@ -3015,7 +2959,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
 	// asm.os needs to be first, since other asm.* depend on it
-	n = NODECB2("asm.os", "none", &cb_asm_os_set, &cb_asm_os_get);
+	n = NODECB("asm.os", "none", &cb_asm_os_set);
 	SETDESC(n, "Select operating system (kernel)");
 	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", "none", NULL);
 	SETI("asm.xrefs.fold", 5, "Maximum number of xrefs to be displayed as list (use columns above)");
@@ -3150,20 +3094,20 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
-	RzConfigNode *asmcpu = NODECB2("asm.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set, &cb_asm_cpu_get);
+	RzConfigNode *asmcpu = NODECB("asm.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set);
 	SETDESC(asmcpu, "Set the kind of asm.arch cpu");
-	RzConfigNode *asmarch = NODECB2("asm.arch", RZ_SYS_ARCH, &cb_asm_arch_set, &cb_asm_arch_get);
+	RzConfigNode *asmarch = NODECB("asm.arch", RZ_SYS_ARCH, &cb_asm_arch_set);
 	SETDESC(asmarch, "Set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options(core, asmarch);
 	update_asmcpu_options(core, asmcpu);
-	n = NODECB2("asm.features", "", &cb_asm_features_set, &cb_asm_features_get);
+	n = NODECB("asm.features", "", &cb_asm_features_set);
 	SETDESC(n, "Specify supported features by the target CPU");
 	update_asmfeatures_options(core, n);
-	n = NODECB2("asm.platform", "", &cb_asm_platform_set, &cb_asm_platform_get);
+	n = NODECB("asm.platform", "", &cb_asm_platform_set);
 	SETDESC(n, "Specify supported platforms by the target architecture");
 	update_asmplatforms_options(core, n);
-	n = NODECB2("asm.parser", RZ_SYS_ARCH ".pseudo", &cb_asm_parser_set, &cb_asm_parser_get);
+	n = NODECB("asm.parser", RZ_SYS_ARCH ".pseudo", &cb_asm_parser_set);
 	SETDESC(n, "Set the asm parser to use");
 	update_asmparser_options(core, n);
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
@@ -3175,9 +3119,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETBPREF("asm.bytes.space", "false", "Separate hexadecimal bytes with a whitespace");
 #if RZ_SYS_BITS == RZ_SYS_BITS_64
-	SETICB2("asm.bits", 64, &cb_asm_bits_set, &cb_asm_bits_get, "Word size in bits at assembler");
+	SETICB("asm.bits", 64, &cb_asm_bits_set, "Word size in bits at assembler");
 #else
-	SETICB2("asm.bits", 32, &cb_asm_bits_set, &cb_asm_bits_get, "Word size in bits at assembler");
+	SETICB("asm.bits", 32, &cb_asm_bits_set, "Word size in bits at assembler");
 #endif
 	n = rz_config_node_get(cfg, "asm.bits");
 	update_asmbits_options(core, n);
@@ -3532,9 +3476,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* scr */
 #if __EMSCRIPTEN__
-	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets, NULL);
+	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets);
 #else
-	rz_config_set_cb(cfg, "scr.fgets", "false", cb_scrfgets, NULL);
+	rz_config_set_cb(cfg, "scr.fgets", "false", cb_scrfgets);
 #endif
 	rz_config_desc(cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");

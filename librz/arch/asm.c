@@ -281,7 +281,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 		return NULL;
 	}
 	a->dataalign = 1;
-	a->bits = RZ_SYS_BITS;
+	a->bits = RZ_SYS_BITS << 3;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
 	a->sdb_opcodes_path = rz_path_new();

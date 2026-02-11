@@ -20,20 +20,16 @@ RZ_LIB_VERSION_HEADER(rz_config);
 #define CN_RO  0x000010
 #define CN_RW  0x000020
 
-#define NODECB(w, x, s)        rz_config_set_cb(cfg, w, x, s, NULL)
-#define NODEICB(w, x, s)       rz_config_set_i_cb(cfg, w, x, s, NULL)
-#define NODECB2(w, x, s, g)    rz_config_set_cb(cfg, w, x, s, g)
-#define NODEICB2(w, x, s, g)   rz_config_set_i_cb(cfg, w, x, s, g)
-#define SETDESC(x, y)          rz_config_node_desc(x, y)
-#define SETOPTIONS(x, ...)     set_options(x, __VA_ARGS__)
-#define SETI(x, y, z)          SETDESC(rz_config_set_i(cfg, x, y), z)
-#define SETB(x, y, z)          SETDESC(rz_config_set_b(cfg, x, y), z)
-#define SETICB(w, x, s, z)     SETDESC(NODEICB(w, x, s), z)
-#define SETICB2(w, x, s, g, z) SETDESC(NODEICB2(w, x, s, g), z)
-#define SETPREF(x, y, z)       SETDESC(rz_config_set(cfg, x, y), z)
-#define SETCB(w, x, s, z)      SETDESC(NODECB(w, x, s), z)
-#define SETCB2(w, x, s, g, z)  SETDESC(NODECB2(w, x, s, g), z)
-#define SETBPREF(x, s, z)      SETDESC(NODECB(x, s, boolify_var_cb), z)
+#define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
+#define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
+#define SETDESC(x, y)      rz_config_node_desc(x, y)
+#define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
+#define SETI(x, y, z)      SETDESC(rz_config_set_i(cfg, x, y), z)
+#define SETB(x, y, z)      SETDESC(rz_config_set_b(cfg, x, y), z)
+#define SETICB(w, x, y, z) SETDESC(NODEICB(w, x, y), z)
+#define SETPREF(x, y, z)   SETDESC(rz_config_set(cfg, x, y), z)
+#define SETCB(w, x, y, z)  SETDESC(NODECB(w, x, y), z)
+#define SETBPREF(x, y, z)  SETDESC(NODECB(x, y, boolify_var_cb), z)
 
 typedef bool (*RzConfigCallback)(void *user, void *data);
 
@@ -93,8 +89,8 @@ RZ_API void rz_config_lock(RZ_BORROW RzConfig *cfg, int l);
 RZ_API void rz_config_bump(RZ_BORROW RzConfig *cfg, const char *key);
 RZ_API RZ_BORROW RzConfigNode *rz_config_set_i(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const ut64 i);
 RZ_API RZ_BORROW RzConfigNode *rz_config_set_b(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, bool value);
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback setter, RzConfigCallback getter);
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback setter, RzConfigCallback getter);
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, bool (*callback)(void *user, void *data));
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, bool (*callback)(void *user, void *data));
 RZ_API RZ_BORROW RzConfigNode *rz_config_set(RZ_BORROW RzConfig *cfg, RZ_NONNULL const char *name, const char *value);
 RZ_API bool rz_config_add_node(RZ_BORROW RzConfig *cfg, RZ_OWN RzConfigNode *node);
 RZ_API bool rz_config_rm(RzConfig *cfg, RZ_NONNULL const char *name);

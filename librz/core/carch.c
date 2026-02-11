@@ -229,14 +229,17 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 
 static ut32 core_arch_get_default_bits(RzCore *core) {
 	ut32 bits = core->rasm->cur->bits;
-	if (8 & bits) {
-		return 8;
-	} else if (16 & bits) {
-		return 16;
-	} else if (32 & bits) {
+	if (bits & 32) {
 		return 32;
+	} else if (bits & 64) {
+		return 64;
+	} else if (bits & 16) {
+		return 16;
+	} else if (bits & 8) {
+		return 8;
 	}
-	return 64;
+
+	return CORE_DEFAULT_BITS;
 }
 
 RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
@@ -252,7 +255,9 @@ RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 b
 			// there are some plugins like the m68k which do not have a valid analysis plugin.
 		}
 
-		bits = core_arch_get_default_bits(core);
+		if (!bits) {
+			bits = core_arch_get_default_bits(core);
+		}
 	}
 
 	if (bits > 0) {

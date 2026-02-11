@@ -76,13 +76,8 @@ RZ_API RZ_BORROW const char *rz_config_get(RzConfig *cfg, RZ_NONNULL const char 
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
-		if (rz_config_node_is_bool(node)) {
-			return rz_str_bool(rz_config_get_b(cfg, name));
-		}
 		if (node->getter) {
-			const char *value = NULL;
-			node->getter(cfg->user, &value);
-			return rz_str_get(value);
+			node->getter(cfg->user, node);
 		}
 		if (rz_config_node_is_bool(node)) {
 			return rz_str_bool(rz_str_is_true(node->value));
@@ -125,13 +120,8 @@ RZ_API ut64 rz_config_get_i(RzConfig *cfg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(cfg && RZ_STR_ISNOTEMPTY(name), 0);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
-		if (rz_config_node_is_bool(node)) {
-			return (ut64)rz_config_get_b(cfg, name);
-		}
 		if (node->getter) {
-			ut64 value = 0;
-			node->getter(cfg->user, &value);
-			return value;
+			node->getter(cfg->user, node);
 		}
 		if (node->i_value || !strcmp(node->value, "false")) {
 			return node->i_value;
@@ -159,11 +149,6 @@ RZ_API bool rz_config_get_b(RzConfig *cfg, RZ_NONNULL const char *name) {
 		RZ_LOG_DEBUG("(error: '%s' is not a boolean variable)\n", name);
 		return false;
 	}
-	if (node->getter) {
-		bool value = false;
-		node->getter(cfg->user, &value);
-		return value;
-	}
 	return rz_str_is_true(node->value);
 }
 
@@ -182,25 +167,22 @@ RZ_API const char *rz_config_node_type(RzConfigNode *node) {
 	return "";
 }
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback setter, RzConfigCallback getter) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_cb(RZ_BORROW RzConfig *cfg, const char *name, const char *value, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set(cfg, name, value);
-	if (!node) {
-		return NULL;
-	}
-	node->getter = getter;
-	node->setter = setter;
-	if (node->setter && !node->setter(cfg->user, node)) {
-		return node;
+	if (node && (node->setter = cb)) {
+		if (!node->setter(cfg->user, node)) {
+			return node;
+		}
 	}
 	return node;
 }
 
-RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback setter, RzConfigCallback getter) {
+RZ_API RZ_BORROW RzConfigNode *rz_config_set_i_cb(RZ_BORROW RzConfig *cfg, const char *name, st64 ivalue, RzConfigCallback cb) {
 	RzConfigNode *node = rz_config_set_i(cfg, name, ivalue);
-	node->getter = getter;
-	node->setter = setter;
-	if (node->setter && !node->setter(cfg->user, node)) {
-		return node;
+	if (node && (node->setter = cb)) {
+		if (!node->setter(cfg->user, node)) {
+			return node;
+		}
 	}
 	return node;
 }
