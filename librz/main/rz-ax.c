@@ -524,7 +524,8 @@ dotherax:
 	} else if (is_timestamp(flags)) { // -t, -m, -W
 		RzList *split = rz_str_split_list(str, "GMT", 0);
 		RzListIter *head = rz_list_head(split);
-		char *ts = rz_list_iter_get_data(head);
+		rz_return_val_if_fail(head, false);
+		char *ts = rz_list_val(head);
 		const char *gmt = rz_list_iter_get_next_data(head);
 		if (gmt && strlen(gmt) < 2) {
 			gmt = NULL;

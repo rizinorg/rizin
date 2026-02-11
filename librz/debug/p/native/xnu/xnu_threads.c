@@ -395,7 +395,7 @@ RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
 			return NULL;
 		}
 	}
-	return (xnu_thread_t *)rz_list_iter_get_data(it);
+	return (xnu_thread_t *)rz_list_val(it);
 }
 
 /* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
