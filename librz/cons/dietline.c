@@ -1551,7 +1551,7 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	}
 }
 
-static ssize_t following_word_find_start(RzLine *line) {
+static ssize_t following_word_find_start(RZ_NONNULL RzLine *line) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
 	ssize_t start = line->buffer.index;
 	while (start < line->buffer.length && !isalpha(line->buffer.data[start])) {
@@ -1560,7 +1560,7 @@ static ssize_t following_word_find_start(RzLine *line) {
 	return start;
 }
 
-static ssize_t following_word_find_end(RzLine *line, ssize_t start) {
+static ssize_t following_word_find_end(RZ_NONNULL RzLine *line, ssize_t start) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
 	ssize_t end = RZ_MIN(start + 1, line->buffer.length);
 	while (end < line->buffer.length && isalpha(line->buffer.data[end])) {
@@ -1569,7 +1569,7 @@ static ssize_t following_word_find_end(RzLine *line, ssize_t start) {
 	return end;
 }
 
-static void following_word_capitalize(RzLine *line, ssize_t start, ssize_t end) {
+static void following_word_capitalize(RZ_NONNULL RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1583,7 +1583,7 @@ static void following_word_capitalize(RzLine *line, ssize_t start, ssize_t end) 
 	}
 }
 
-static void following_word_tolower(RzLine *line, ssize_t start, ssize_t end) {
+static void following_word_tolower(RZ_NONNULL RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1594,7 +1594,7 @@ static void following_word_tolower(RzLine *line, ssize_t start, ssize_t end) {
 	}
 }
 
-static void following_word_toupper(RzLine *line, ssize_t start, ssize_t end) {
+static void following_word_toupper(RZ_NONNULL RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1612,7 +1612,7 @@ static void following_word_toupper(RzLine *line, ssize_t start, ssize_t end) {
  * \param line RzLine
  * \param op The modify operation
  */
-static void following_word_modify(RzLine *line, FollowingWordModifyOp op) {
+static void following_word_modify(RZ_NONNULL RzLine *line, FollowingWordModifyOp op) {
 	rz_return_if_fail(line);
 	if (line->buffer.length < 1) {
 		return;
