@@ -502,6 +502,8 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 			}
 			a->cur = h;
 			rz_iterator_free(iter);
+			RZ_FREE(core->rasm->features);
+			RZ_FREE(core->rasm->platforms);
 			return true;
 		}
 	}

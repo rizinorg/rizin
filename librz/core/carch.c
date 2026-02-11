@@ -171,6 +171,10 @@ RZ_DEPRECATE static inline void core_update_asm_segoff(RzCore *core, const char 
 }
 
 RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os) {
+	if (os && *os != 'l' && *os != 'n') {
+		eprintf("OS: '%s'\n", os);
+		rz_warn_if_reached();
+	}
 	if (RZ_STR_ISEMPTY(os)) {
 		os = RZ_SYS_OS;
 	}
@@ -184,6 +188,16 @@ RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 b
 	return true;
 }
 
+RZ_DEPRECATE static void core_update_text_align(RzCore *core) {
+	int align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
+	if (align < 1) {
+		align = 1;
+	}
+
+	core->rasm->pcalign = align;
+	core->analysis->pcalign = align;
+}
+
 RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const char *cpu, const char *platform) {
 	if (RZ_STR_ISNOTEMPTY(cpu)) {
 		rz_asm_set_cpu(core->rasm, cpu);
@@ -191,6 +205,8 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 	} else {
 		cpu = core_get_cpu(core);
 	}
+
+	core_update_text_align(core);
 
 	char *cpus_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_CPUS);
 	if (!cpus_dir) {
@@ -218,6 +234,18 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 	return true;
 }
 
+static ut32 core_arch_get_default_bits(RzCore *core) {
+	ut32 bits = core->rasm->cur->bits;
+	if (8 & bits) {
+		return 8;
+	} else if (16 & bits) {
+		return 16;
+	} else if (32 & bits) {
+		return 32;
+	}
+	return 64;
+}
+
 RZ_DEPRECATE static bool core_arch_set_plugin(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
 	char asmparser[32] = { 0 };
 
@@ -231,8 +259,7 @@ RZ_DEPRECATE static bool core_arch_set_plugin(RzCore *core, const char *arch, ut
 			// there are some plugins like the m68k which do not have a valid analysis plugin.
 		}
 
-		RZ_FREE(core->rasm->features);
-		RZ_FREE(core->rasm->platforms);
+		bits = core_arch_get_default_bits(core);
 	}
 
 	if (bits > 0) {
@@ -253,7 +280,8 @@ RZ_DEPRECATE static bool core_arch_set_plugin(RzCore *core, const char *arch, ut
 		arch = core_get_arch(core);
 	}
 
-	if (!os) {
+	if (RZ_STR_ISEMPTY(os)) {
+		// we now need the current os.
 		os = core_get_os(core);
 	}
 
