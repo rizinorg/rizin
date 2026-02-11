@@ -1551,25 +1551,25 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	}
 }
 
-static int following_word_find_start(RzLine *line) {
+static ssize_t following_word_find_start(RzLine *line) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
-	int start = line->buffer.index;
+	ssize_t start = line->buffer.index;
 	while (start < line->buffer.length && !isalpha(line->buffer.data[start])) {
 		++start;
 	}
 	return start;
 }
 
-static int following_word_find_end(RzLine *line, int start) {
+static ssize_t following_word_find_end(RzLine *line, ssize_t start) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
-	int end = RZ_MIN(start + 1, line->buffer.length);
+	ssize_t end = RZ_MIN(start + 1, line->buffer.length);
 	while (end < line->buffer.length && isalpha(line->buffer.data[end])) {
 		++end;
 	}
 	return end;
 }
 
-static void following_word_capitalize(RzLine *line, int start, int end) {
+static void following_word_capitalize(RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1583,7 +1583,7 @@ static void following_word_capitalize(RzLine *line, int start, int end) {
 	}
 }
 
-static void following_word_tolower(RzLine *line, int start, int end) {
+static void following_word_tolower(RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1594,7 +1594,7 @@ static void following_word_tolower(RzLine *line, int start, int end) {
 	}
 }
 
-static void following_word_toupper(RzLine *line, RZ_OUT int start, int end) {
+static void following_word_toupper(RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
 	for (ssize_t i = start; i < end; ++i) {
@@ -1617,8 +1617,8 @@ static void following_word_modify(RzLine *line, FollowingWordModifyOp op) {
 	if (line->buffer.length < 1) {
 		return;
 	}
-	const int start = following_word_find_start(line);
-	const int end = following_word_find_end(line, start);
+	const ssize_t start = following_word_find_start(line);
+	const ssize_t end = following_word_find_end(line, start);
 	if (start == -1 || end == -1) {
 		return;
 	}
