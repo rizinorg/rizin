@@ -241,6 +241,7 @@ static bool test_vector_sort(void) {
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 3), "ccc", "sorted strings");
+	mu_assert_false(v->reverse_sorted, "Flag not set.");
 
 	// do dec sort
 	num = 55;
@@ -250,6 +251,55 @@ static bool test_vector_sort(void) {
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 3), "abb", "sorted strings");
+	mu_assert_true(v->reverse_sorted, "Flag not set.");
+
+	rz_vector_free(v);
+	mu_end;
+}
+
+static int uint_cmp(ut64 *a, ut64 *b, void *user) {
+	if (*a > *b) {
+		return 1;
+	} else if (*a < *b) {
+		return -1;
+	}
+	return 0;
+}
+
+static bool test_vector_insert_sorted(void) {
+	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
+	ut64 n[] = { 0, 1, 2, 3, 4, 5 };
+	rz_vector_insert_sorted(v, &n[1], (RzVectorComparator)uint_cmp, NULL);
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 0), 1, "Insert failed");
+
+	rz_vector_insert_sorted(v, &n[0], (RzVectorComparator)uint_cmp, NULL);
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 0), 0, "Insert failed");
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 1), 1, "Insert failed");
+
+	rz_vector_push(v, &n[2]);
+	rz_vector_push(v, &n[4]);
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, true, NULL);
+
+	rz_vector_insert_sorted(v, &n[3], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[5], (RzVectorComparator)uint_cmp, NULL);
+
+	size_t i = 5;
+	ut64 *it = NULL;
+	rz_vector_foreach (v, it) {
+		mu_assert_eq(*it, n[i--], "Compare failed");
+	}
+
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, false, NULL);
+	rz_vector_remove_at(v, 5, NULL);
+	rz_vector_remove_at(v, 1, NULL);
+	rz_vector_remove_at(v, 0, NULL);
+	rz_vector_insert_sorted(v, &n[5], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[0], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[1], (RzVectorComparator)uint_cmp, NULL);
+	i = 0;
+	rz_vector_foreach (v, it) {
+		mu_assert_eq(*it, n[i++], "Compare failed");
+	}
 
 	rz_vector_free(v);
 	mu_end;
@@ -650,6 +700,23 @@ static bool test_vector_push_front(void) {
 
 	rz_vector_clear(&v);
 
+	mu_end;
+}
+
+static bool test_vector_contains(void) {
+	RzVector v;
+	init_test_vector(&v, 6, 0, NULL, NULL);
+	ut64 a = 0;
+	ut64 b = 5;
+	ut64 c = 6;
+	mu_assert_true(rz_vector_contains(&v, &a), "Should contain");
+	mu_assert_true(rz_vector_contains(&v, &b), "Should contain");
+	mu_assert_false(rz_vector_contains(&v, &c), "Should not contain");
+	rz_vector_pop(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &b), "Should contain");
+	rz_vector_pop_front(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &a), "Should contain");
+	rz_vector_clear(&v);
 	mu_end;
 }
 
@@ -1494,10 +1561,12 @@ static int all_tests(void) {
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
+	mu_run_test(test_vector_insert_sorted);
 	mu_run_test(test_vector_pop);
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);
 	mu_run_test(test_vector_push_front);
+	mu_run_test(test_vector_contains);
 	mu_run_test(test_vector_swap);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);
