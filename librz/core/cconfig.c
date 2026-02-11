@@ -85,6 +85,112 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b,
 	return (sa > sb) - (sa < sb);
 }
 
+static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
+	RzAsmPlugin **val;
+	if (core && node && core->rasm) {
+		rz_list_purge(node->options);
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *h = *val;
+			SETOPTIONS(node, h->name, NULL);
+		}
+	}
+	rz_iterator_free(it);
+}
+
+static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
+	if (core && core->rasm && core->rasm->cur && node) {
+		int bits = core->rasm->cur->bits;
+		int i;
+		node->options->free = free;
+		rz_list_purge(node->options);
+		for (i = 1; i <= bits; i <<= 1) {
+			if (i & bits) {
+				SETOPTIONS(node, rz_str_newf("%d", i), NULL);
+			}
+		}
+	}
+}
+
+static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
+	int i, argc;
+
+	if (core && core->rasm && core->rasm->cur) {
+		if (core->rasm->cur->features) {
+			char *features = rz_str_dup(core->rasm->cur->features);
+			rz_list_purge(node->options);
+			argc = rz_str_split(features, ',');
+			for (i = 0; i < argc; i++) {
+				node->options->free = free;
+				const char *feature = rz_str_word_get0(features, i);
+				if (feature) {
+					rz_list_append(node->options, rz_str_dup(feature));
+				}
+			}
+			free(features);
+		}
+	}
+}
+
+static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
+	int i, argc;
+
+	if (core && core->rasm && core->rasm->cur) {
+		if (core->rasm->cur->platforms) {
+			char *platforms = rz_str_dup(core->rasm->cur->platforms);
+			rz_list_purge(node->options);
+			argc = rz_str_split(platforms, ',');
+			for (i = 0; i < argc; i++) {
+				node->options->free = free;
+				const char *feature = rz_str_word_get0(platforms, i);
+				if (feature) {
+					rz_list_append(node->options, rz_str_dup(feature));
+				}
+			}
+			free(platforms);
+		}
+	}
+}
+
+static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
+	RzListIter *iter;
+	RzParsePlugin *parser;
+	if (core && node && core->parser && core->parser->parsers) {
+		rz_list_purge(node->options);
+		rz_list_foreach (core->parser->parsers, iter, parser) {
+			SETOPTIONS(node, parser->name, NULL);
+		}
+	}
+}
+
+static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
+	rz_return_if_fail(core && core->rasm);
+
+	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
+	RzAsmPlugin **val;
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	if (!arch || !*arch) {
+		return;
+	}
+	rz_list_purge(node->options);
+	rz_iterator_foreach(it, val) {
+		RzAsmPlugin *h = *val;
+		if (h->cpus && !strcmp(arch, h->name)) {
+			char *c = rz_str_dup(h->cpus);
+			int i, n = rz_str_split(c, ',');
+			for (i = 0; i < n; i++) {
+				const char *word = rz_str_word_get0(c, i);
+				if (word && *word) {
+					node->options->free = free;
+					SETOPTIONS(node, rz_str_dup(word), NULL);
+				}
+			}
+			free(c);
+		}
+	}
+	rz_iterator_free(it);
+}
+
 static bool cb_search_case_sensitive(void *_core, void *_node) {
 	RzConfigNode *node = _node;
 	const char *case_sensitive = node->value;
@@ -129,9 +235,170 @@ fail:
 	return false;
 }
 
-static inline void __setsegoff(RzConfig *cfg, const char *asmarch, int asmbits) {
-	int autoseg = (!strncmp(asmarch, "x86", 3) && asmbits == 16);
-	rz_config_set(cfg, "asm.segoff", rz_str_bool(autoseg));
+static bool cb_asm_features_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (*node->value == '?') {
+		update_asmfeatures_options(core, node);
+		print_node_options(node);
+		return 0;
+	}
+	RZ_FREE(core->rasm->features);
+	if (node->value[0]) {
+		core->rasm->features = rz_str_dup(node->value);
+	}
+	return 1;
+}
+
+static bool cb_asm_features_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_features(core);
+	return true;
+}
+
+static bool cb_asm_parser_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		update_asmparser_options(core, node);
+		print_node_options(node);
+		return false;
+	}
+
+	return rz_parse_use(core->parser, node->value);
+}
+
+static bool cb_asm_parser_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_parser(core);
+	return true;
+}
+
+static bool cb_asm_os_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+
+	const char *value = node->value;
+	if (*value == '?') {
+		print_node_options(node);
+		return 0;
+	}
+	if (!value[0]) {
+		value = RZ_SYS_OS;
+	}
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ value, /*platform*/ NULL);
+}
+
+static bool cb_asm_os_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_os(core);
+	return true;
+}
+
+static bool cb_asm_cpu_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	const char *value = node->value;
+	if (*value == '?') {
+		update_asmcpu_options(core, node);
+		/* print verbose help instead of plain option listing */
+		RzCmdStateOutput state = { 0 };
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
+		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
+		rz_cmd_state_output_print(&state);
+		rz_cmd_state_output_fini(&state);
+		return 0;
+	}
+
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ value, /*os*/ NULL, /*platform*/ NULL);
+}
+
+static bool cb_asm_cpu_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_cpu(core);
+	return true;
+}
+
+static bool cb_asm_arch_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	const char *value = node->value;
+	if (value[0] == '?') {
+		update_asmarch_options(core, node);
+		if (strlen(value) > 1 && value[1] == '?') {
+			/* print more verbose help instead of plain option values */
+			RzCmdStateOutput state = { 0 };
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
+			rz_core_asm_plugins_print(core, &state, NULL);
+			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_fini(&state);
+			return false;
+		} else {
+			print_node_options(node);
+			return false;
+		}
+	}
+
+	return rz_core_arch_configure(core, /*arch*/ value, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
+}
+
+static bool cb_asm_arch_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_arch(core);
+	return true;
+}
+
+static bool cb_asm_platform_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	const char *value = node->value;
+	if (*value == '?') {
+		update_asmplatforms_options(core, node);
+		print_node_options(node);
+		return 0;
+	}
+
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ value);
+}
+
+static bool cb_asm_platform_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	const char **value = (const char **)data;
+
+	*value = rz_core_get_platform(core);
+	return true;
+}
+
+static bool cb_asm_bits_set(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+
+	int value = node->i_value;
+	if (node->value[0] == '?') {
+		update_asmbits_options(core, node);
+		print_node_options(node);
+		return false;
+	}
+
+	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ value, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
+}
+
+static bool cb_asm_bits_get(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	ut64 *value = (ut64 *)data;
+
+	*value = rz_core_get_bits(core);
+	return true;
 }
 
 static bool cb_debug_hitinfo(void *user, void *data) {
@@ -349,79 +616,6 @@ static bool cb_asmassembler(void *user, void *data) {
 	return true;
 }
 
-static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
-	rz_return_if_fail(core && core->rasm);
-
-	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
-	RzAsmPlugin **val;
-	const char *arch = rz_config_get(core->config, "asm.arch");
-	if (!arch || !*arch) {
-		return;
-	}
-	rz_list_purge(node->options);
-	rz_iterator_foreach(it, val) {
-		RzAsmPlugin *h = *val;
-		if (h->cpus && !strcmp(arch, h->name)) {
-			char *c = rz_str_dup(h->cpus);
-			int i, n = rz_str_split(c, ',');
-			for (i = 0; i < n; i++) {
-				const char *word = rz_str_word_get0(c, i);
-				if (word && *word) {
-					node->options->free = free;
-					SETOPTIONS(node, rz_str_dup(word), NULL);
-				}
-			}
-			free(c);
-		}
-	}
-	rz_iterator_free(it);
-}
-
-static bool cb_asmcpu(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	const char *value = node->value;
-	if (*value == '?') {
-		update_asmcpu_options(core, node);
-		/* print verbose help instead of plain option listing */
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
-		rz_core_asm_cpu_plugin_print(core, &state, rz_config_get(core->config, "asm.arch"));
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-		return 0;
-	}
-
-	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ value, /*os*/ NULL, /*platform*/ NULL);
-}
-
-static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
-	RzAsmPlugin **val;
-	if (core && node && core->rasm) {
-		rz_list_purge(node->options);
-		rz_iterator_foreach(it, val) {
-			RzAsmPlugin *h = *val;
-			SETOPTIONS(node, h->name, NULL);
-		}
-	}
-	rz_iterator_free(it);
-}
-
-static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
-	if (core && core->rasm && core->rasm->cur && node) {
-		int bits = core->rasm->cur->bits;
-		int i;
-		node->options->free = free;
-		rz_list_purge(node->options);
-		for (i = 1; i <= bits; i <<= 1) {
-			if (i & bits) {
-				SETOPTIONS(node, rz_str_newf("%d", i), NULL);
-			}
-		}
-	}
-}
-
 static bool cb_asm_varfold(void *core, void *node) {
 	char *choice[] = { "none", "group", "hide" };
 	RzConfigNode *n = node;
@@ -435,29 +629,6 @@ static bool cb_asm_varfold(void *core, void *node) {
 	return false;
 }
 
-static bool cb_asmarch(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	const char *value = node->value;
-	if (value[0] == '?') {
-		update_asmarch_options(core, node);
-		if (strlen(value) > 1 && value[1] == '?') {
-			/* print more verbose help instead of plain option values */
-			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
-			rz_core_asm_plugins_print(core, &state, NULL);
-			rz_cmd_state_output_print(&state);
-			rz_cmd_state_output_fini(&state);
-			return false;
-		} else {
-			print_node_options(node);
-			return false;
-		}
-	}
-
-	return rz_core_arch_configure(core, /*arch*/ value, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
-}
-
 static bool cb_dbgbtdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -465,93 +636,11 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmbits(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-
-	int value = node->i_value;
-	if (node->value[0] == '?') {
-		update_asmbits_options(core, node);
-		print_node_options(node);
-		return false;
-	}
-
-	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ value, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ NULL);
-}
-
-static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
-	int i, argc;
-
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->features) {
-			char *features = rz_str_dup(core->rasm->cur->features);
-			rz_list_purge(node->options);
-			argc = rz_str_split(features, ',');
-			for (i = 0; i < argc; i++) {
-				node->options->free = free;
-				const char *feature = rz_str_word_get0(features, i);
-				if (feature) {
-					rz_list_append(node->options, rz_str_dup(feature));
-				}
-			}
-			free(features);
-		}
-	}
-}
-
 static bool cb_flag_realnames(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->flags->realnames = node->i_value;
 	return true;
-}
-
-static bool cb_asmfeatures(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		update_asmfeatures_options(core, node);
-		print_node_options(node);
-		return 0;
-	}
-	RZ_FREE(core->rasm->features);
-	if (node->value[0]) {
-		core->rasm->features = rz_str_dup(node->value);
-	}
-	return 1;
-}
-
-static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
-	int i, argc;
-
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->platforms) {
-			char *platforms = rz_str_dup(core->rasm->cur->platforms);
-			rz_list_purge(node->options);
-			argc = rz_str_split(platforms, ',');
-			for (i = 0; i < argc; i++) {
-				node->options->free = free;
-				const char *feature = rz_str_word_get0(platforms, i);
-				if (feature) {
-					rz_list_append(node->options, rz_str_dup(feature));
-				}
-			}
-			free(platforms);
-		}
-	}
-}
-
-static bool cb_asmplatform(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	const char *value = node->value;
-	if (*value == '?') {
-		update_asmplatforms_options(core, node);
-		print_node_options(node);
-		return 0;
-	}
-
-	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ NULL, /*platform*/ value);
 }
 
 static bool cb_asmlineswidth(void *user, void *data) {
@@ -611,44 +700,6 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	core->rasm->pcalign = align;
 	core->analysis->pcalign = align;
 	return true;
-}
-
-static bool cb_asmos(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-
-	const char *value = node->value;
-	if (*value == '?') {
-		print_node_options(node);
-		return 0;
-	}
-	if (!value[0]) {
-		value = RZ_SYS_OS;
-	}
-	return rz_core_arch_configure(core, /*arch*/ NULL, /*bits*/ 0, /*cpu*/ NULL, /*os*/ value, /*platform*/ NULL);
-}
-
-static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
-	RzListIter *iter;
-	RzParsePlugin *parser;
-	if (core && node && core->parser && core->parser->parsers) {
-		rz_list_purge(node->options);
-		rz_list_foreach (core->parser->parsers, iter, parser) {
-			SETOPTIONS(node, parser->name, NULL);
-		}
-	}
-}
-
-static bool cb_asmparser(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		update_asmparser_options(core, node);
-		print_node_options(node);
-		return false;
-	}
-
-	return rz_parse_use(core->parser, node->value);
 }
 
 static bool cb_binfilter(void *user, void *data) {
@@ -2884,10 +2935,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("analysis.norevisit", "false", &cb_analysis_norevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
 	SETCB("analysis.nopskip", "true", &cb_analysis_nopskip, "Skip nops at the beginning of functions");
 	SETCB("analysis.hpskip", "false", &cb_analysis_hpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB("analysis.arch", RZ_SYS_ARCH, &cb_asmarch);
+	n = NODECB2("analysis.arch", RZ_SYS_ARCH, &cb_asm_arch_set, &cb_asm_arch_get);
 	SETDESC(n, "Select the architecture to use");
 	update_analysis_arch_options(core, n);
-	SETCB("analysis.cpu", RZ_SYS_ARCH, &cb_asmcpu, "Specify the analysis.cpu to use");
+	SETCB2("analysis.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set, &cb_asm_cpu_get, "Specify the analysis.cpu to use");
 	SETPREF("analysis.prelude", "", "Specify an hexpair to find preludes in code");
 	SETI("analysis.prelude.limit", 1024 * 1024 * 20, "Maximum size of the range to scan for preludes");
 	SETCB("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
@@ -2964,7 +3015,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
 	// asm.os needs to be first, since other asm.* depend on it
-	n = NODECB("asm.os", "none", &cb_asmos);
+	n = NODECB2("asm.os", "none", &cb_asm_os_set, &cb_asm_os_get);
 	SETDESC(n, "Select operating system (kernel)");
 	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", "none", NULL);
 	SETI("asm.xrefs.fold", 5, "Maximum number of xrefs to be displayed as list (use columns above)");
@@ -3099,20 +3150,20 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
-	RzConfigNode *asmcpu = NODECB("asm.cpu", RZ_SYS_ARCH, &cb_asmcpu);
+	RzConfigNode *asmcpu = NODECB2("asm.cpu", RZ_SYS_ARCH, &cb_asm_cpu_set, &cb_asm_cpu_get);
 	SETDESC(asmcpu, "Set the kind of asm.arch cpu");
-	RzConfigNode *asmarch = NODECB("asm.arch", RZ_SYS_ARCH, &cb_asmarch);
+	RzConfigNode *asmarch = NODECB2("asm.arch", RZ_SYS_ARCH, &cb_asm_arch_set, &cb_asm_arch_get);
 	SETDESC(asmarch, "Set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options(core, asmarch);
 	update_asmcpu_options(core, asmcpu);
-	n = NODECB("asm.features", "", &cb_asmfeatures);
+	n = NODECB2("asm.features", "", &cb_asm_features_set, &cb_asm_features_get);
 	SETDESC(n, "Specify supported features by the target CPU");
 	update_asmfeatures_options(core, n);
-	n = NODECB("asm.platform", "", &cb_asmplatform);
+	n = NODECB2("asm.platform", "", &cb_asm_platform_set, &cb_asm_platform_get);
 	SETDESC(n, "Specify supported platforms by the target architecture");
 	update_asmplatforms_options(core, n);
-	n = NODECB("asm.parser", "x86.pseudo", &cb_asmparser);
+	n = NODECB2("asm.parser", RZ_SYS_ARCH ".pseudo", &cb_asm_parser_set, &cb_asm_parser_get);
 	SETDESC(n, "Set the asm parser to use");
 	update_asmparser_options(core, n);
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
@@ -3124,9 +3175,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETBPREF("asm.bytes.space", "false", "Separate hexadecimal bytes with a whitespace");
 #if RZ_SYS_BITS == RZ_SYS_BITS_64
-	SETICB("asm.bits", 64, &cb_asmbits, "Word size in bits at assembler");
+	SETICB2("asm.bits", 64, &cb_asm_bits_set, &cb_asm_bits_get, "Word size in bits at assembler");
 #else
-	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
+	SETICB2("asm.bits", 32, &cb_asm_bits_set, &cb_asm_bits_get, "Word size in bits at assembler");
 #endif
 	n = rz_config_node_get(cfg, "asm.bits");
 	update_asmbits_options(core, n);
@@ -3481,9 +3532,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* scr */
 #if __EMSCRIPTEN__
-	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets);
+	rz_config_set_cb(cfg, "scr.fgets", "true", cb_scrfgets, NULL);
 #else
-	rz_config_set_cb(cfg, "scr.fgets", "false", cb_scrfgets);
+	rz_config_set_cb(cfg, "scr.fgets", "false", cb_scrfgets, NULL);
 #endif
 	rz_config_desc(cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");

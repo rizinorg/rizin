@@ -20,49 +20,49 @@
 #define core_update_config_s core_update_config_node_without_callback_string
 #define core_update_config_i core_update_config_node_without_callback_int
 
-RZ_DEPRECATE static const char *core_get_arch(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core) {
 	if (core->rasm->cur && RZ_STR_ISNOTEMPTY(core->rasm->cur->name)) {
 		return core->rasm->cur->name;
 	}
 	return CORE_DEFAULT_ARCH;
 }
 
-RZ_DEPRECATE static ut32 core_get_bits(RzCore *core) {
+RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core) {
 	if (core->rasm->bits > 0) {
 		return core->rasm->bits;
 	}
 	return CORE_DEFAULT_BITS;
 }
 
-RZ_DEPRECATE static const char *core_get_cpu(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core) {
 	if (RZ_STR_ISNOTEMPTY(core->rasm->cpu)) {
 		return core->rasm->cpu;
 	}
-	return core_get_arch(core);
+	return rz_core_get_arch(core);
 }
 
-RZ_DEPRECATE static const char *core_get_platform(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core) {
 	if (RZ_STR_ISNOTEMPTY(core->rasm->platforms)) {
 		return core->rasm->platforms;
 	}
 	return CORE_DEFAULT_PLATFORM;
 }
 
-RZ_DEPRECATE static const char *core_get_features(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core) {
 	if (RZ_STR_ISNOTEMPTY(core->rasm->features)) {
 		return core->rasm->features;
 	}
 	return CORE_DEFAULT_FEATURES;
 }
 
-RZ_DEPRECATE static const char *core_get_os(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core) {
 	if (RZ_STR_ISNOTEMPTY(core->analysis->os)) {
 		return core->analysis->os;
 	}
 	return CORE_DEFAULT_OS;
 }
 
-RZ_DEPRECATE static const char *core_get_parser(RzCore *core) {
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core) {
 	if (core->parser->cur && RZ_STR_ISNOTEMPTY(core->parser->cur->name)) {
 		return core->parser->cur->name;
 	}
@@ -171,13 +171,6 @@ RZ_DEPRECATE static inline void core_update_asm_segoff(RzCore *core, const char 
 }
 
 RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os) {
-	if (os && *os != 'l' && *os != 'n') {
-		eprintf("OS: '%s'\n", os);
-		rz_warn_if_reached();
-	}
-	if (RZ_STR_ISEMPTY(os)) {
-		os = RZ_SYS_OS;
-	}
 	rz_analysis_set_os(core->analysis, os);
 
 	rz_syscall_setup(core->analysis->syscall, core->sys_path, arch, bits, cpu, os);
@@ -203,7 +196,7 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 		rz_asm_set_cpu(core->rasm, cpu);
 		rz_analysis_set_cpu(core->analysis, cpu);
 	} else {
-		cpu = core_get_cpu(core);
+		cpu = rz_core_get_cpu(core);
 	}
 
 	core_update_text_align(core);
@@ -220,7 +213,7 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 		free(core->rasm->platforms);
 		core->rasm->platforms = rz_str_dup(platform);
 	} else {
-		platform = core_get_platform(core);
+		platform = rz_core_get_platform(core);
 	}
 
 	char *platforms_dir = rz_path_system(core->sys_path, RZ_SDB_ARCH_PLATFORMS);
@@ -246,7 +239,7 @@ static ut32 core_arch_get_default_bits(RzCore *core) {
 	return 64;
 }
 
-RZ_DEPRECATE static bool core_arch_set_plugin(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
+RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
 	char asmparser[32] = { 0 };
 
 	if (RZ_STR_ISNOTEMPTY(arch)) {
@@ -272,17 +265,17 @@ RZ_DEPRECATE static bool core_arch_set_plugin(RzCore *core, const char *arch, ut
 		}
 	} else {
 		// we now need the current bits.
-		bits = core_get_bits(core);
+		bits = rz_core_get_bits(core);
 	}
 
 	if (RZ_STR_ISEMPTY(arch)) {
 		// we now need the current arch.
-		arch = core_get_arch(core);
+		arch = rz_core_get_arch(core);
 	}
 
 	if (RZ_STR_ISEMPTY(os)) {
 		// we now need the current os.
-		os = core_get_os(core);
+		os = rz_core_get_os(core);
 	}
 
 	rz_egg_setup(core->egg, arch, bits, 0, os);
@@ -340,18 +333,18 @@ RZ_DEPRECATE static void core_update_config_node_without_callback_int(RzCore *co
 	node->setter = setter;
 }
 
-RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *u_arch, ut32 u_bits, const char *u_cpu, const char *u_os, const char *u_platform) {
+RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *u_arch) {
 	// this is a terrible way to update the values but the current config
 	// does weird callback calls which should not be done in this way and
 	// instead rely on the actual store data in a structure.
 
-	const char *arch = core_get_arch(core);
-	ut32 bits = core_get_bits(core);
-	const char *cpu = core_get_cpu(core);
-	const char *platform = core_get_platform(core);
-	const char *features = core_get_features(core);
-	const char *os = core_get_os(core);
-	const char *parser = core_get_parser(core);
+	const char *arch = rz_core_get_arch(core);
+	ut32 bits = rz_core_get_bits(core);
+	const char *cpu = rz_core_get_cpu(core);
+	const char *platform = rz_core_get_platform(core);
+	const char *features = rz_core_get_features(core);
+	const char *os = rz_core_get_os(core);
+	const char *parser = rz_core_get_parser(core);
 
 	core_update_config_s(core, "asm.arch", arch);
 	core_update_config_s(core, "asm.cpu", cpu);
@@ -372,6 +365,32 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *
 		core_update_config_platform_options(core, "asm.platform");
 		core_update_config_features_options(core, "asm.features");
 	}
+}
+
+static bool core_can_update_value(const char *new_val, const char *old_val) {
+	if (old_val && RZ_STR_ISNOTEMPTY(new_val)) {
+		return true;
+	}
+
+	return RZ_STR_ISEMPTY(old_val) || RZ_STR_NE(new_val, old_val);
+}
+
+RZ_DEPRECATE static bool core_can_update(RzCore *core, const char *u_arch, ut32 u_bits, const char *u_cpu, const char *u_os, const char *u_platform) {
+	// this is a terrible way to update the values but the current config
+	// does weird callback calls which should not be done in this way and
+	// instead rely on the actual store data in a structure.
+
+	ut32 bits = rz_core_get_bits(core);
+	const char *arch = rz_core_get_arch(core);
+	const char *cpu = rz_core_get_cpu(core);
+	const char *platform = rz_core_get_platform(core);
+	const char *os = rz_core_get_os(core);
+
+	return core_can_update_value(u_arch, arch) ||
+		core_can_update_value(u_cpu, cpu) ||
+		core_can_update_value(u_platform, platform) ||
+		core_can_update_value(u_os, os) ||
+		u_bits > bits;
 }
 
 /**
@@ -403,10 +422,14 @@ RZ_DEPRECATE RZ_API bool rz_core_arch_configure(RZ_NONNULL RzCore *core, RZ_NULL
 		return false;
 	}
 
-	if (!core_arch_set_plugin(core, arch, bits, cpu, os, platform)) {
+	if (!core_can_update(core, arch, bits, cpu, os, platform)) {
+		return true;
+	}
+
+	if (!core_update_arch(core, arch, bits, cpu, os, platform)) {
 		return false;
 	}
 
-	core_update_config_from_arch(core, arch, bits, cpu, os, platform);
+	core_update_config_from_arch(core, arch);
 	return true;
 }
