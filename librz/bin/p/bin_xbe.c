@@ -431,7 +431,6 @@ static char *xbe_section_flags_to_string(ut32 flags) {
 	}
 
 	return rz_strbuf_drain_nofree(&sb);
-
 }
 
 static RzStructuredData *xbe_sections_structure(RzBinFile *bf) {
