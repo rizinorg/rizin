@@ -405,16 +405,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static const char *xbe_section_flags_to_string(ut32 flags) {
-	static RzStrBuf sb;
+static char *xbe_section_flags_to_string(ut32 flags) {
+	RzStrBuf sb;
 	bool first = true;
 
 	rz_strbuf_init(&sb);
-	rz_strbuf_set(&sb, "");
 
 	if (flags == 0) {
 		rz_strbuf_set(&sb, "NONE");
-		return rz_strbuf_get(&sb);
+		return rz_strbuf_drain_nofree(&sb);
 	}
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(xbe_section_flags); i++) {
@@ -431,7 +430,8 @@ static const char *xbe_section_flags_to_string(ut32 flags) {
 		rz_strbuf_set(&sb, "UNKNOWN");
 	}
 
-	return rz_strbuf_get(&sb);
+	return rz_strbuf_drain_nofree(&sb);
+
 }
 
 static RzStructuredData *xbe_sections_structure(RzBinFile *bf) {
