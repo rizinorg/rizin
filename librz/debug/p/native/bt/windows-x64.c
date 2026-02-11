@@ -542,7 +542,7 @@ static bool backtrace_windows_x64(RZ_IN RzDebug *dbg, RZ_INOUT RzList /*<RzDebug
 			// Either broken stack or module info not avalable (PEB paged out, etc)
 			break;
 		}
-		RzDebugMap *module = rz_list_iter_get_data(it);
+		RzDebugMap *module = rz_list_val(it);
 		if (!module) {
 			// Should never happen
 			break;

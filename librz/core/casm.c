@@ -616,7 +616,8 @@ static RzCoreAsmHit *find_addr(RzList /*<RzCoreAsmHit *>*/ *hits, ut64 addr) {
 	RzCoreAsmHit dummy_value;
 	dummy_value.addr = addr;
 	addr_iter = rz_list_find(hits, &dummy_value, ((RzListComparator)coreasm_address_comparator), NULL);
-	return rz_list_iter_get_data(addr_iter);
+	rz_return_val_if_fail(addr_iter, NULL);
+	return rz_list_val(addr_iter);
 }
 
 static int handle_forward_disassemble(RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hits, ut8 *buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {

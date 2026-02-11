@@ -1790,5 +1790,5 @@ RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) 
 	if (!it) {
 		return NULL;
 	}
-	return (RzDebugPid *)rz_list_iter_get_data(it);
+	return (RzDebugPid *)rz_list_val(it);
 }
