@@ -706,9 +706,9 @@ static bool test_vector_push_front(void) {
 static bool test_vector_contains(void) {
 	RzVector v;
 	init_test_vector(&v, 6, 0, NULL, NULL);
-	ut64 a = 0;
-	ut64 b = 5;
-	ut64 c = 6;
+	ut32 a = 0;
+	ut32 b = 5;
+	ut32 c = 6;
 	mu_assert_true(rz_vector_contains(&v, &a), "Should contain");
 	mu_assert_true(rz_vector_contains(&v, &b), "Should contain");
 	mu_assert_false(rz_vector_contains(&v, &c), "Should not contain");
