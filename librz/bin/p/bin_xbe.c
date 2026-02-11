@@ -498,7 +498,7 @@ static RzStructuredData *xbe_libs_structure(RzBinFile *bf) {
 
 		char name_buf[9] = { 0 };
 		memcpy(name_buf, lib->name, 8);
-		rz_structured_data_map_add_string_n(m,"name",(const char *)lib->name,sizeof(lib->name));
+		rz_structured_data_map_add_string_n(m, "name", (const char *)lib->name, sizeof(lib->name));
 		rz_structured_data_map_add_unsigned(m, "major", lib->major, false);
 		rz_structured_data_map_add_unsigned(m, "minor", lib->minor, false);
 		rz_structured_data_map_add_unsigned(m, "build", lib->build, false);
