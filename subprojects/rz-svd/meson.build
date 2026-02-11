@@ -25,8 +25,12 @@ endif
 
 svd_datadir = rizin_datdir_rz / 'svd'
 
+# Source directory for SVD files (for development/testing)
+svd_srcdir = meson.current_source_dir() / 'svd'
+
 rz_svd_c_args = [
   '-DRZ_SVD_DATADIR="' + svd_datadir + '"',
+  '-DRZ_SVD_SRCDIR="' + svd_srcdir + '"',
 ]
 
 rz_svd = library('rz_svd',

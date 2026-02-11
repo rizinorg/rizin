@@ -218,7 +218,16 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 	}
 #endif
 	
-	// 4. Fallback to standard system paths
+	// 4. Check source directory (for development/testing)
+#ifdef RZ_SVD_SRCDIR
+	snprintf(path, sizeof(path), RZ_SVD_SRCDIR "/%s.svd", lower_name);
+	if (rz_file_exists(path)) {
+		free(lower_name);
+		return strdup(path);
+	}
+#endif
+
+	// 5. Fallback to standard system paths
 	snprintf(path, sizeof(path), "/usr/share/rizin/svd/%s.svd", lower_name);
 	if (rz_file_exists(path)) {
 		free(lower_name);

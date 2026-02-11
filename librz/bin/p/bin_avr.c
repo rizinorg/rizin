@@ -203,9 +203,10 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 	for (size_t i = 0; i < sizeof(patterns) / sizeof(patterns[0]); i++) {
 		const char *match = strstr(lower_filename, patterns[i]);
 		if (match) {
-			char *end = (char *)match;
+			// Skip the prefix part (e.g., "atmega", "attiny", "atxmega")
+			char *end = (char *)match + strlen(patterns[i]);
 			while (end < lower_filename + strlen(lower_filename) &&
-				   (isalnum((unsigned char)*end) || *end == '_')) {
+				   isalnum((unsigned char)*end)) {
 				end++;
 			}
 
@@ -215,9 +216,27 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 				if (device_name) {
 					device_name[0] = toupper((unsigned char)device_name[0]);
 					device_name[1] = toupper((unsigned char)device_name[1]);
-					char *p_suffix = strchr(device_name, 'p');
-					if (p_suffix) {
-						*p_suffix = 'P';
+					size_t dlen = strlen(device_name);
+					if (dlen > 1 && device_name[dlen - 1] == 'p' &&
+						isdigit((unsigned char)device_name[dlen - 2])) {
+						device_name[dlen - 1] = 'P';
+					}
+					char *u_suffix = strrchr(device_name, 'u');
+					if (u_suffix && u_suffix > device_name &&
+						isdigit((unsigned char)*(u_suffix - 1)) &&
+						isdigit((unsigned char)*(u_suffix + 1))) {
+						*u_suffix = 'U';
+					}
+					if (strncmp(device_name + 2, "xmega", 5) == 0) {
+						for (char *p = device_name + 7; *p; p++) {
+							if (isalpha((unsigned char)*p) && !islower((unsigned char)*p)) {
+								continue;
+							}
+							if (isalpha((unsigned char)*p) && p > device_name + 7 &&
+								isdigit((unsigned char)*(p - 1))) {
+								*p = toupper((unsigned char)*p);
+							}
+						}
 					}
 				}
 				break;
