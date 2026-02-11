@@ -21,6 +21,7 @@ dirlist = [
     "subprojects/rzw32dbg_wrap",
     "subprojects/rzwinkd",
     "subprojects/rzheap/rz_jemalloc",
+    "subprojects/rzheap/rz_glibc",
     "test/unit",
 ]
 
