@@ -17,25 +17,21 @@
 
 void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *pj, const RzHeapConfig *config);
 static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
-RZ_API bool rz_heap_update_main_arena(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
-RZ_IPI bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config);
-RZ_IPI bool rz_heap_is_tcache(RzCore *core);
-RZ_API RzHeapChunkSimple *rz_heap_chunk_internal(RzCore *core, ut64 addr, const RzHeapConfig *config);
-RZ_API void rz_heap_bin_free(RzHeapBin *bin);
-RZ_IPI void rz_heap_chunk_free(RzHeapChunkListItem *item);
-RZ_IPI void rz_arena_list_free(RzArenaListItem *item);
-RZ_API double rz_get_glibc_version(RzCore *core, const char *libc_path, ut8 *banner_start);
-RZ_IPI bool rz_heap_is_map_name_libc(const char *map_name);
-RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena);
-RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
-RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool show_unallocated, const RzHeapConfig *config);
-RZ_API RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena, const RzHeapConfig *config);
-RZ_API RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, int bin_num, const RzHeapConfig *config);
-RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config);
-RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state);
 static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config);
 static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map);
+static bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config);
+static bool rz_heap_is_tcache(RzCore *core);
 static char *rz_heap_bin_num_to_type(int bin_num);
+void rz_heap_chunk_free(RzHeapChunkListItem *item);
+void rz_arena_list_free(RzArenaListItem *item);
+RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config);
+RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, int bin_num, const RzHeapConfig *config);
+RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena, const RzHeapConfig *config);
+RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool show_unallocated, const RzHeapConfig *config);
+RzHeapChunkSimple *rz_heap_chunk_internal(RzCore *core, ut64 addr, const RzHeapConfig *config);
+RzHeapChunk *rz_heap_get_chunk_at_addr_internal(RzCore *core, ut64 chunk, const RzHeapConfig *config);
+RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
+bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
 
 static inline ut8 rz_heap_ptr_size(RzCore *core) {
 	ut8 bits = (ut8)core->rasm->bits;
@@ -338,7 +334,6 @@ static ut64 read_val(RzCore *core, const void *src, bool is_big_endian) {
  * Used to fill the tcache bins for the specific tcache.
  *
  */
-
 static RZ_BORROW RzList /*<RzList *>*/ *fill_tcache_entries(RzCore *core, const RzHeapTcache *tcache,
 	const RzHeapConfig *config) {
 	RzList *tcache_bins_list = rz_list_newf((RzListFree)rz_heap_bin_free);
@@ -469,8 +464,7 @@ static void print_tcache(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, cons
  *
  * Find if the binary uses tcache using glibc version parsing.
  */
-
-RZ_IPI bool rz_heap_is_tcache(RzCore *core) {
+static bool rz_heap_is_tcache(RzCore *core) {
 	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		int tcv = rz_config_get_i(core->config, "dbg.glibc.tcache");
 		RZ_LOG_WARN("core: dbg.glibc.tcache has been set to %i\n", tcv);
@@ -491,7 +485,16 @@ RZ_IPI bool rz_heap_is_tcache(RzCore *core) {
  * \param main_arena The MallocState struct in which the data is stored
  * \return True if the main_arena struct was successfully updated else False
  */
-RZ_API bool rz_heap_update_main_arena(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config) {
+RZ_API bool rz_heap_update_main_arena(RzCore *core, ut64 m_arena, MallocState *main_arena) {
+	rz_return_val_if_fail(core && main_arena, false);
+	RzHeapConfig config;
+	if (!init_glibc_config(core, &config)) {
+		return false;
+	}
+	return rz_heap_update_main_arena_internal(core, m_arena, main_arena, &config);
+}
+
+bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config) {
 	rz_return_val_if_fail(core && main_arena && config, false);
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!rz_glibc_read_malloc_state(core->io, m_arena, main_arena, config)) {
@@ -735,14 +738,14 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 	MallocState *ta = &ta_storage;
 
 	if (main_arena_sym != UT64_MAX) {
-		rz_heap_update_main_arena(core, main_arena_sym, ta, &config);
+		rz_heap_update_main_arena_internal(core, main_arena_sym, ta, &config);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
 		return true;
 	}
 
 	while (addr_srch < libc_addr_end) {
-		rz_heap_update_main_arena(core, addr_srch, ta, &config);
+		rz_heap_update_main_arena_internal(core, addr_srch, ta, &config);
 		if (ta->top > brk_start && ta->top < brk_end &&
 			ta->system_mem == heap_sz) {
 
@@ -973,7 +976,7 @@ void print_heap_chunk(RzCore *core, ut64 chunk, const RzHeapConfig *config) {
  * \param addr Base address of the chunk
  * \return RzHeapChunk struct pointer of the chunk
  */
-RZ_API RzHeapChunk *rz_heap_get_chunk_at_addr_internal(RzCore *core, ut64 chunk, const RzHeapConfig *config) {
+RzHeapChunk *rz_heap_get_chunk_at_addr_internal(RzCore *core, ut64 chunk, const RzHeapConfig *config) {
 	if (!config) {
 		return NULL;
 	}
@@ -1067,21 +1070,21 @@ void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *p
 	free(cnk);
 }
 
-RZ_IPI bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config) {
+static bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config) {
 	if (m_arena == m_state) {
 		return true;
 	}
 
 	MallocState ta_storage = { 0 };
 	MallocState *ta = &ta_storage;
-	if (!rz_heap_update_main_arena(core, m_arena, ta, config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_arena, ta, config)) {
 		return false;
 	}
 	if (ta->next == m_state) {
 		return true;
 	}
 	while (ta->next != UT64_MAX && ta->next != m_arena) {
-		if (!rz_heap_update_main_arena(core, ta->next, ta, config)) {
+		if (!rz_heap_update_main_arena_internal(core, ta->next, ta, config)) {
 			return false;
 		}
 		if (ta->next == m_state) {
@@ -1301,7 +1304,16 @@ void rz_heap_chunk_free(RzHeapChunkListItem *item) {
 	free(item);
 }
 
-RZ_API RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, int bin_num, const RzHeapConfig *config) {
+RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int bin_num) {
+	rz_return_val_if_fail(core && arena, NULL);
+	RzHeapConfig config;
+	if (!init_glibc_config(core, &config)) {
+		return NULL;
+	}
+	return rz_heap_fastbin_content_internal(core, arena, bin_num, &config);
+}
+
+RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, int bin_num, const RzHeapConfig *config) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps && arena && config, NULL);
 
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX;
@@ -1380,14 +1392,6 @@ RZ_API RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *ar
 	return heap_bin;
 }
 
-RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int bin_num) {
-	RzHeapConfig config;
-	if (!init_glibc_config(core, &config)) {
-		return NULL;
-	}
-	return rz_heap_fastbin_content_internal(core, arena, bin_num, &config);
-}
-
 void print_heap_fastbin(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, const char *input, bool main_arena_only, PJ *pj, const RzHeapConfig *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
@@ -1462,7 +1466,7 @@ void print_heap_fastbin(RzCore *core, ut64 m_arena, MallocState *main_arena, ut6
  * \param arena_base Base address of the arena
  * \return RzList of RzHeapBin pointers
  */
-RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
+RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
 	rz_return_val_if_fail(core && config, NULL);
 
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1495,7 +1499,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, u
 
 		MallocState arena_storage = { 0 };
 		MallocState *arena = &arena_storage;
-		if (!rz_heap_update_main_arena(core, arena_base, arena, config) || !arena->attached_threads) {
+		if (!rz_heap_update_main_arena_internal(core, arena_base, arena, config) || !arena->attached_threads) {
 			return NULL;
 		}
 	}
@@ -1632,7 +1636,7 @@ void print_malloc_info(RzCore *core, ut64 m_state, ut64 malloc_state, const RzHe
 		MallocState *ms = &ms_storage;
 
 		while (heap_info.prev != 0x0 && heap_info.prev != UT64_MAX) {
-			if (!rz_heap_update_main_arena(core, malloc_state, ms, config)) {
+			if (!rz_heap_update_main_arena_internal(core, malloc_state, ms, config)) {
 				return;
 			}
 			if ((ms->top >> 16) << 16 != h_info) {
@@ -1675,7 +1679,7 @@ RZ_API void rz_heap_bin_free(RzHeapBin *bin) {
  * \param bin_num bin number of bin whose chunk list you want
  * \return RzHeapBin struct for the bin
  */
-RZ_API RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena, const RzHeapConfig *config) {
+RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena, const RzHeapConfig *config) {
 	rz_return_val_if_fail(core && arena && config, NULL);
 	const ut8 ptr_size = config->ptr_size;
 
@@ -1970,7 +1974,7 @@ void rz_arena_list_free(RzArenaListItem *item) {
  * \param main_arena MallocState struct of main arena
  * \return RzList pointer for list of RzArenaListItem structs of all the arenas
  */
-RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config) {
+RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config) {
 	RzList *arena_list = rz_list_newf((RzListFree)rz_arena_list_free);
 	if (!config) {
 		return arena_list;
@@ -1980,7 +1984,7 @@ RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core
 		return arena_list;
 	}
 	// main arena
-	if (!rz_heap_update_main_arena(core, m_arena, ta, config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_arena, ta, config)) {
 		free(ta);
 		return arena_list;
 	}
@@ -1998,7 +2002,7 @@ RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core
 		while (rz_heap_is_arena(core, m_arena, ta->next, config) && ta->next != m_arena) {
 			ut64 ta_addr = ta->next;
 			ta = RZ_NEW0(MallocState);
-			if (!rz_heap_update_main_arena(core, ta_addr, ta, config)) {
+			if (!rz_heap_update_main_arena_internal(core, ta_addr, ta, config)) {
 				free(ta);
 				return arena_list;
 			}
@@ -2151,41 +2155,43 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *
 			prev_chunk_size = ((i + 1) * config->chunk_hdr_size) + config->chunk_hdr_size;
 		}
 
-		if (tcache) {
-			RzHeapTcache tcache_heap;
-			if (rz_glibc_read_tcache(core->io, tcache_initial_brk, &tcache_heap, config)) {
-				for (ut32 i = 0; i < config->tcache.num_bins; i++) {
-					ut16 count = tcache_heap.counts[i];
-					ut64 entry = tcache_heap.entries[i];
-					if (count > 0) {
-						if (rz_glibc_mem_to_chunk(entry, config) == prev_chunk) {
-							is_free = true;
-							prev_chunk_size = ((i + 1) * config->tcache_hdr_size) + config->tcache_chunk_extra;
-							break;
-						}
-						if (count > 1) {
-							tcache_fd = entry;
-							for (ut16 n = 1; n < count; n++) {
-								RzHeapTcacheEntry tentry;
-								if (!rz_glibc_read_tcache_entry(core->io, tcache_fd, &tentry, config)) {
-									break;
-								}
-								tcache_tmp = rz_glibc_tcache_next(&tentry, tcache_fd, config);
-								if (!tcache_tmp) {
-									continue;
-								}
-								if (rz_glibc_mem_to_chunk(tcache_tmp, config) == prev_chunk) {
-									is_free = true;
-									prev_chunk_size = ((i + 1) * config->tcache_hdr_size) + config->tcache_chunk_extra;
-									break;
-								}
-								tcache_fd = (ut64)tcache_tmp;
-							}
-						}
-					}
+		if (!tcache) {
+			goto skip_tcache;
+		}
+		RzHeapTcache tcache_heap;
+		if (!rz_glibc_read_tcache(core->io, tcache_initial_brk, &tcache_heap, config)) {
+			goto skip_tcache;
+		}
+		for (ut32 i = 0; i < config->tcache.num_bins; i++) {
+			ut16 count = tcache_heap.counts[i];
+			ut64 entry = tcache_heap.entries[i];
+			if (count == 0) {
+				continue;
+			}
+			if (rz_glibc_mem_to_chunk(entry, config) == prev_chunk) {
+				is_free = true;
+				prev_chunk_size = ((i + 1) * config->tcache_hdr_size) + config->tcache_chunk_extra;
+				break;
+			}
+			tcache_fd = entry;
+			for (ut16 n = 1; n < count; n++) {
+				RzHeapTcacheEntry tentry;
+				if (!rz_glibc_read_tcache_entry(core->io, tcache_fd, &tentry, config)) {
+					break;
 				}
+				tcache_tmp = rz_glibc_tcache_next(&tentry, tcache_fd, config);
+				if (!tcache_tmp) {
+					continue;
+				}
+				if (rz_glibc_mem_to_chunk(tcache_tmp, config) == prev_chunk) {
+					is_free = true;
+					prev_chunk_size = ((i + 1) * config->tcache_hdr_size) + config->tcache_chunk_extra;
+					break;
+				}
+				tcache_fd = (ut64)tcache_tmp;
 			}
 		}
+	skip_tcache:
 
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
@@ -2255,7 +2261,7 @@ RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char
 	if (!rz_heap_resolve_main_arena(core, &m_arena)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_heap_update_main_arena(core, m_arena, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_arena, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzList *arenas_list = rz_heap_arenas_list_internal(core, m_arena, main_arena, &config);
@@ -2310,7 +2316,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 brk_start = 0, brk_end = 0;
@@ -2462,7 +2468,7 @@ RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const
 		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	print_arena_stats(core, m_state, main_arena, global_max_fast, mode, &config);
@@ -2504,7 +2510,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const 
 		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	print_malloc_info(core, m_arena, m_state, &config);
@@ -2564,7 +2570,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, c
 		}
 	}
 	if (rz_heap_is_arena(core, m_arena, m_state, &config)) {
-		if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+		if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -2610,7 +2616,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler(RzCore *core, int argc, co
 		}
 	}
 	if (rz_heap_is_arena(core, m_arena, m_state, &config)) {
-		if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+		if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -2647,7 +2653,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, 
 		PRINT_RA("This address is not part of the arenas\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -2679,7 +2685,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, 
  * \param core RzCore pointer
  * \return RzList of RzArenaListItem
  */
-RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list(RzCore *core) {
+RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list(RzCore *core) {
 	ut64 m_arena;
 	if (!rz_heap_resolve_main_arena(core, &m_arena)) {
 		return rz_list_newf(free);
@@ -2690,7 +2696,7 @@ RZ_IPI RzList /*<RzArenaListItem *>*/ *rz_heap_arena_list(RzCore *core) {
 	}
 	MallocState main_arena_storage = { 0 };
 	MallocState *main_arena = &main_arena_storage;
-	if (!rz_heap_update_main_arena(core, m_arena, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_arena, main_arena, &config)) {
 		return rz_list_newf(free);
 	}
 	RzList *arenas_list = rz_heap_arenas_list_internal(core, m_arena, main_arena, &config);
@@ -2776,7 +2782,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut6
 	}
 	MallocState main_arena_storage = { 0 };
 	MallocState *main_arena = &main_arena_storage;
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return rz_list_newf(free);
 	}
 	RzList *chunks = rz_heap_chunks_list_internal(core, main_arena, m_arena, m_state, true, &config);
@@ -2789,7 +2795,7 @@ RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut6
  * \param addr Base address of the heap chunk
  * \return RzHeapChunkSimple struct pointer for the chunk
  */
-RZ_API RzHeapChunkSimple *rz_heap_chunk_internal(RzCore *core, ut64 addr, const RzHeapConfig *config) {
+RzHeapChunkSimple *rz_heap_chunk_internal(RzCore *core, ut64 addr, const RzHeapConfig *config) {
 	rz_return_val_if_fail(core && config, NULL);
 	RzHeapChunk *chunk = rz_heap_get_chunk_at_addr_internal(core, addr, config);
 	if (!chunk) {
@@ -2860,7 +2866,7 @@ RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
 	if (!main_arena) {
 		return NULL;
 	}
-	if (!rz_heap_update_main_arena(core, m_state, main_arena, &config)) {
+	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		free(main_arena);
 		return NULL;
 	}
