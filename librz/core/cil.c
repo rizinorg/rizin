@@ -1260,7 +1260,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 						}
 					}
 					if (!bbit && cop_it) {
-						RzAnalysisCaseOp *cop = rz_list_iter_get_data(cop_it);
+						RzAnalysisCaseOp *cop = rz_list_val(cop_it);
 						if (cop->jump == prev_bb->addr && rz_list_has_next(cop_it)) {
 							cop = rz_list_iter_get_next_data(cop_it);
 							rz_list_pop(ctx->switch_path);
@@ -1281,7 +1281,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				rz_list_free(ctx->bbl);
 				return false;
 			}
-			ctx->cur_bb = rz_list_iter_get_data(bbit);
+			ctx->cur_bb = rz_list_val(bbit);
 			rz_list_push(ctx->path, ctx->cur_bb);
 			rz_list_delete(ctx->bbl, bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;

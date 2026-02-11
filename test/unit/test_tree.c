@@ -19,8 +19,8 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
 		while (ita && ite) { \
-			int a = (int)(intptr_t)rz_list_get(ita); \
-			int e = (int)(intptr_t)rz_list_get(ite); \
+			int a = (int)(intptr_t)rz_list_val(ita); \
+			int e = (int)(intptr_t)rz_list_val(ite); \
 			mu_assert_eq(a, e, descr); \
 			ita = rz_list_next(ita); \
 			ite = rz_list_next(ite); \
@@ -33,8 +33,8 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
 		while (ita && ite) { \
-			char *a = rz_list_get(ita); \
-			char *e = rz_list_get(ite); \
+			char *a = rz_list_val(ita); \
+			char *e = rz_list_val(ite); \
 			mu_assert_streq(a, e, descr); \
 			ita = rz_list_next(ita); \
 			ite = rz_list_next(ite); \

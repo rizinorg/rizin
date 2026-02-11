@@ -2127,7 +2127,7 @@ void xtensa_il_init_cb(RzAnalysisILVM *vm, RzReg *reg) {
 	if (!buf) {
 		return;
 	}
-	RzILMem *mem = rz_il_mem_new(buf, 32);
+	RzILMem *mem = rz_il_mem_new_owned(buf, 32);
 	if (!mem) {
 		rz_buf_free(buf);
 		return;

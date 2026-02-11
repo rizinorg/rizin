@@ -78,9 +78,9 @@ RZ_API void rz_set_s_free(RZ_NULLABLE RzSetS *set) {
 /**
  * \brief Cleans the set.
  */
-RZ_API void rz_set_s_clean(RZ_NONNULL RzSetS *set) {
+RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set) {
 	rz_return_if_fail(set);
-	ht_sp_clean(set);
+	ht_sp_clear(set);
 }
 
 /**
@@ -125,9 +125,9 @@ RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u) {
 /**
  * \brief Cleans the set.
  */
-RZ_API void rz_set_u_clean(RZ_NONNULL RzSetU *set) {
+RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set) {
 	rz_return_if_fail(set);
-	ht_up_clean(set);
+	ht_up_clear(set);
 }
 
 RZ_API void rz_set_u_free(RZ_NULLABLE RzSetU *set) {

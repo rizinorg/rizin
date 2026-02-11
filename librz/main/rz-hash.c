@@ -403,9 +403,6 @@ static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) 
 			if (IS_NULLSTR(argv[i])) {
 				rz_hash_error(ctx, RZ_HASH_OP_ERROR, "cannot open a file without a name.\n");
 			}
-			if (rz_file_is_directory(argv[i])) {
-				rz_hash_error(ctx, RZ_HASH_OP_ERROR, "cannot open directories (%s).\n", argv[i]);
-			}
 			ctx->files[ctx->nfiles++] = argv[i];
 		}
 	}
@@ -652,6 +649,10 @@ static bool hash_context_run(RzHashContext *ctx, RzHashRun run) {
 		}
 	} else {
 		for (ut32 i = 0; i < ctx->nfiles; ++i) {
+			if (rz_file_is_directory(ctx->files[i])) {
+				eprintf("rz-hash: %s: Is a directory\n", ctx->files[i]);
+				continue;
+			}
 			desc = rz_io_open_nomap(io, ctx->files[i], RZ_PERM_R, 0);
 			if (!desc) {
 				RZ_LOG_ERROR("rz-hash: error, cannot open file '%s'\n", ctx->files[i]);
