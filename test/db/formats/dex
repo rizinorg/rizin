@@ -14,7 +14,7 @@ RUN
 
 NAME=loading DEX file
 FILE=bins/dex/Hello.dex
-CMDS=EOF
+CMDS=<<EOF
 iZ
 echo ---
 iH
