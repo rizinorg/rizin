@@ -1,7 +1,180 @@
-NAME=loading an xbe file
-FILE=bins/xbe/default.xbe
-CMDS=q!
-EXPECT=
+NAME=iH and iI
+FILE=bins/xbe/nxdk-hello-dummy-libs.xbe
+CMDS=<<EOF
+iH
+echo ---
+iI
+EOF
+EXPECT=<<EOF
+xbe:
+  identity:
+    magic: "58 42 45 48                                     |XBEH            |"
+    signature: |
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    timestamp: 1658843531
+  memory:
+    base: 0x10000
+    headers_size: 1497
+    image_size: 110868
+    image_header_size: 376
+    entry_point: 0xa8fdc4cb
+    tls_addr: 0x26050
+  sections:
+    count: 4
+    header_addr: 0x10348
+  pe_data:
+    - 0x10000
+    - 0x100000
+    - 0x1000
+    - 0x10000
+    - 0x1c000
+    - 0x0
+    - 0x62dff175
+  debug:
+    path_addr: 0x1048a
+    name_addr: 0x1048a
+    uname_addr: 0x1048a
+  libraries:
+    count: 4
+    versions_addr: 0x1044a
+    kernel_addr: 0x0
+    xapi_addr: 0x0
+    kernel_thunk_addr: 0x5b6f3bd2
+    nonkernel_import_dir_addr: 0x0
+  misc:
+    init_flags: 5
+    padding:
+      - 0x10490
+      - 0x149
+  sections_detail:
+    - flags:
+        value: 6
+        readable: "PRELOAD | EXEC"
+      vaddr: 0x11000
+      vsize: 81920
+      offset: 4096
+      size: 79872
+      name_addr: 0x10432
+      refcount: 0
+      padding:
+        - 0x10428
+        - 0x1042a
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 2
+        readable: "PRELOAD"
+      vaddr: 0x25000
+      vsize: 12288
+      offset: 86016
+      size: 11408
+      name_addr: 0x10438
+      refcount: 0
+      padding:
+        - 0x1042a
+        - 0x1042c
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 3
+        readable: "WRITE | PRELOAD"
+      vaddr: 0x28000
+      vsize: 12288
+      offset: 98304
+      size: 3380
+      name_addr: 0x1043f
+      refcount: 0
+      padding:
+        - 0x1042c
+        - 0x1042e
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 3
+        readable: "WRITE | PRELOAD"
+      vaddr: 0x2b000
+      vsize: 276
+      offset: 102400
+      size: 4
+      name_addr: 0x10445
+      refcount: 0
+      padding:
+        - 0x1042e
+        - 0x10430
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+  libraries_detail:
+    - name: "RIZIN0"
+      major: 42
+      minor: 5
+      build: 0
+      flags: 0
+    - name: "RIZIN1"
+      major: 42
+      minor: 6
+      build: 1
+      flags: 0
+    - name: "RIZIN2"
+      major: 42
+      minor: 7
+      build: 2
+      flags: 0
+    - name: "RIZIN3"
+      major: 42
+      minor: 8
+      build: 3
+      flags: 0
+
+---
+arch     x86
+cpu      N/A
+features N/A
+baddr    0x00010000
+binsz    0x0001a000
+bintype  N/A
+bits     32
+retguard false
+class    program
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Microsoft Xbox
+maxopsz  16
+minopsz  1
+os       xbox
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   false
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+EOF
 RUN
 
 NAME=entrypoint decoding
