@@ -21,15 +21,18 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 	int max_read_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, max_read_size);
 	if (!max_read_size || !buf) {
+		rz_warn_if_reached();
 		goto fail;
 	}
 
 	il_bb = RZ_NEW0(RzInterpreterILBB);
 	if (!il_bb) {
+		rz_warn_if_reached();
 		goto fail;
 	}
 	il_bb->il_ops = rz_pvector_new((RzPVectorFree)rz_interpreter_insn_pkt_free);
 	if (!il_bb->il_ops) {
+		rz_warn_if_reached();
 		goto fail;
 	}
 	il_bb->bb_addr = addr;
