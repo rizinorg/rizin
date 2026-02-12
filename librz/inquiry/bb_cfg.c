@@ -128,11 +128,7 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 	return rz_graph_innodes(cfg->graph, n);
 }
 
-RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq) {
-	if (ht_up_size(iq->bb_cfg->basic_blocks) == 0) {
-		RZ_LOG_WARN("No basic blocks present to fill CFG.\n");
-		return false;
-	}
+RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq) {
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (iq->xrefs, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
@@ -147,6 +143,7 @@ RZ_IPI bool rz_inquiry_fill_bb_cfg(RzInquiry *iq) {
 			}
 			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, xref->to);
 		}
+		rz_iterator_free(bb_iter);
 	}
 	return true;
 }

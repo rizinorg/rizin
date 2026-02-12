@@ -567,6 +567,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						break;
 					}
 					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
+					// Add or not add?
 					rz_th_queue_push(iset->il_queue, (void *)bb, true);
 				}
 			}
@@ -633,8 +634,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		// Now we need to check for executable regions it did not cover.
 		// For this we simply delete all jump targets from our set, which point
 		// into the already handled basic blocks.
-		// Then add a few addresses as new entry points.
-		// The addresses we add are jump targets from jump instructions in the binary.
+		// Then add a few addresses as new entry point.
+		// The addresses we add are jump targets from jump/call instructions in the binary.
 		{
 			rz_vector_clear(entry_points);
 			RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
@@ -676,6 +677,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
+	rz_inquiry_complement_bb_cfg(core->inquiry);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
 
@@ -750,6 +752,14 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 			if (rz_list_length(successors) > 1) {
 				n = rz_list_get_n(successors, 1);
 				abb->fail = (ut64)n->data;
+			}
+			RzAnalysisCallCandidate *cc;
+			if ((cc = ht_up_find(inquiry->call_candidates, bb->addr, NULL))) {
+				// Calls need an edge between the call instruction and its return address.
+				// That is technically wrong, because the call could be a tail call.
+				// But the prototype doesn't model this.
+				// So just add an edge.
+				abb->jump = cc->npc;
 			}
 			rz_analysis_function_add_block(afcn, abb);
 		}
