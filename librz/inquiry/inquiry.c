@@ -723,7 +723,8 @@ error_free:
 	return return_code;
 }
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point) {
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point,
+                                          const RzPVector /*<RzBinSymbol *>*/ *symbols) {
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	rz_inquiry_algo_revng_fcn_detection(
 		entry_point,
@@ -737,10 +738,25 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		RzInquiryFunction *fcn = *it;
 
 		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
-		char fcn_name[64] = { 0 };
-		rz_strf(fcn_name, "iq_fcn_0x%" PFMT64x, fcn_addr);
-		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
-		rz_mem_memzero(fcn_name, sizeof(fcn_name));
+		const char *symb_name = NULL;
+		void **it;
+		rz_pvector_foreach(symbols, it) {
+			RzBinSymbol *s = *it;
+			if (s->vaddr == fcn_addr) {
+				symb_name = s->name;
+				break;
+			}
+		}
+		if (RZ_STR_ISEMPTY(symb_name)) {
+			char new_fcn_name[64] = { 0 };
+			rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
+			symb_name = new_fcn_name;
+		}
+		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, symb_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		if (!afcn) {
+			rz_warn_if_reached();
+			return false;
+		}
 
 		void **it2;
 		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
