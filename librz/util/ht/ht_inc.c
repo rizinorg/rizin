@@ -307,6 +307,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 
 	// Allocate single heap block for both control and slot arrays
 	if ((ht->data = calloc(ctrl_size + slots_size, sizeof(ut8))) == NULL) { // todo: use malloc
+		free(ht);
 		return NULL;
 	}
 
@@ -346,7 +347,7 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 
 	if (ht->opt.finiKV) {
 		HT_FOREACH(ht, kv, {
-			ht->opt.finiKV(kv, ht->opt.finiKV_user);
+			fini_kv_pair(ht, kv);
 		});
 	}
 
@@ -357,14 +358,14 @@ RZ_API void Ht_(free)(RZ_NULLABLE HtName_(Ht) *ht) {
 /**
  * \brief Remove all entries in the hash table.
  *
- * \param ht The hash table to clean.
+ * \param ht The hash table to clear.
  */
 RZ_API void Ht_(clear)(RZ_NONNULL HtName_(Ht) *ht) {
 	rz_return_if_fail(ht);
 
 	if (ht->opt.finiKV) {
 		HT_FOREACH(ht, kv, {
-			ht->opt.finiKV(kv, ht->opt.finiKV_user);
+			fini_kv_pair(ht, kv);
 		});
 	}
 
