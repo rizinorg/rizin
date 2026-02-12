@@ -713,6 +713,10 @@ endif
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
 
+# handle rzheap dependency
+rzheap_proj = subproject('rzheap', default_options: ['default_library=static'])
+rzheap_dep = rzheap_proj.get_variable('rzheap_dep')
+
 use_rpath = false
 use_rpath_absolute = false
 if host_machine.system() != 'windows' and get_option('default_library') == 'shared'
