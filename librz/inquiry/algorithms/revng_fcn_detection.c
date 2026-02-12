@@ -124,6 +124,10 @@ static void fill_cfep_and_ret_addresses(
 		RzAnalysisCallCandidate *cc = *it;
 		ut64 ret_addr = cc->npc;
 		const RzList *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
+		if (!predecessor) {
+			RZ_LOG_WARN("The call candidate (0x%" PFMT64x ") NPC 0x%" PFMT64x " doesn't point to a BB.\n", cc->bb_addr, cc->npc);
+			continue;
+		}
 		if (rz_list_length(predecessor) > 0) {
 			rz_set_u_add(return_addresses, ret_addr);
 		}
