@@ -167,7 +167,7 @@ rz_core_deps = [
   rz_mark_dep,
   platform_deps,
   dependency('rzgdb'),
-  dependency('rzheap'),
+  rzheap_dep,
   shell_parser_dep,
   lrt,
   mth,
