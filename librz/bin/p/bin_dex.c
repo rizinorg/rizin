@@ -3,10 +3,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_types.h>
-#include <rz_util.h>
-#include <rz_lib.h>
-#include <string.h>
 #include "dex/dex.h"
 
 #define rz_bin_file_get_dex(bf) ((RzBinDex *)bf->o->bin_obj)
@@ -396,7 +392,7 @@ static RzStructuredData *dex_method_ids_structure(RzBinFile *bf) {
 	return arr;
 }
 
-static RzStructuredData *dex_encoded_fields_structure(RzList *fields) {
+static RzStructuredData *dex_encoded_fields_structure(RzList /*<DexEncodedField *>*/ *fields) {
 	if (!fields) {
 		return NULL;
 	}
@@ -430,7 +426,7 @@ static RzStructuredData *dex_encoded_fields_structure(RzList *fields) {
 	return arr;
 }
 
-static RzStructuredData *dex_encoded_methods_structure(RzList *methods) {
+static RzStructuredData *dex_encoded_methods_structure(RzList /*<DexEncodedMethod *>*/ *methods) {
 	if (!methods) {
 		return NULL;
 	}
