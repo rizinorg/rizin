@@ -1,185 +1,21 @@
-NAME=pyc load version314
+NAME=pyc 3.14
 FILE=bins/pyc/pyc314.pyc
 CMDS=<<EOF
 iI~machine
+iH
+iS~Bat
+pd 10
+s 0x00002c9e
+pd 49
 EOF
 EXPECT=<<EOF
 machine  Python v3.14.0 VM (rev ac991beb29b1783316c4016c99468c008568d08a)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
+pyc:
+  magic: 0xa0d0e2b
+  python_version: "v3.14.0"
+  revision: "ac991beb29b1783316c4016c99468c008568d08a"
+  code_start_offset: 0x0
 
-NAME=pyc load version313
-FILE=bins/pyc/pyc313.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.13.0 VM (rev 3f27099d916c7b885e3daf1fabedcc119462014d)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version312
-FILE=bins/pyc/pyc312.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.12.0 VM (rev 0fb6e700c2f94ae0717ee1be7d4e50b2dd480d14)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version311
-FILE=bins/pyc/py311.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.11.0 VM (rev 968953dcd8930880a3e9c5302b6892a5a0836c14)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version310
-FILE=bins/pyc/py310.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.10.0 VM (rev bfb376ffcc4260feb9bf1b9a110559b1ff31da80)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version39
-FILE=bins/pyc/py39.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.9.0 VM (rev 3a819e5c9d3feae85762ae87cebf55f9c8d2b526)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version38
-FILE=bins/pyc/py38.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version37
-FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version36
-FILE=bins/pyc/py36.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc load version27
-FILE=bins/pyc/py27.pyc
-CMDS=<<EOF
-iI~machine
-EOF
-EXPECT=<<EOF
-machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.7 symbols
-FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-is~?Human
-EOF
-EXPECT=<<EOF
-9
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.14 sections
-FILE=bins/pyc/pyc314.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
 0x00002eb6   0x3a 0x00002eb6   0x3a   0x0 ---- module_.Bat                     
 0x00002f1c   0x12 0x00002f1c   0x12   0x0 ---- module_.Bat.__init              
 0x00002f98    0xa 0x00002f98    0xa   0x0 ---- module_.Bat.say                 
@@ -187,179 +23,6 @@ EXPECT=<<EOF
 0x00003108   0x2c 0x00003108   0x2c   0x0 ---- module_.Batman                  
 0x0000315d   0x8c 0x0000315d   0x8c   0x0 ---- module_.Batman.__init           
 0x000032ee    0x6 0x000032ee    0x6   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.13 sections
-FILE=bins/pyc/pyc313.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x00002dcc   0x2e 0x00002dcc   0x2e   0x0 ---- module_.Bat                     
-0x00002e26   0x10 0x00002e26   0x10   0x0 ---- module_.Bat.__init              
-0x00002ea0    0xa 0x00002ea0    0xa   0x0 ---- module_.Bat.say                 
-0x00002f12    0x4 0x00002f12    0x4   0x0 ---- module_.Bat.sonar               
-0x00003002   0x20 0x00003002   0x20   0x0 ---- module_.Batman                  
-0x0000304b   0x88 0x0000304b   0x88   0x0 ---- module_.Batman.__init           
-0x000031d4    0x4 0x000031d4    0x4   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.12 sections
-FILE=bins/pyc/pyc312.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x00002d01   0x24 0x00002d01   0x24   0x0 ---- module_.Bat                     
-0x00002d4c   0x12 0x00002d4c   0x12   0x0 ---- module_.Bat.__init              
-0x00002dca    0xa 0x00002dca    0xa   0x0 ---- module_.Bat.say                 
-0x00002e3c    0x4 0x00002e3c    0x4   0x0 ---- module_.Bat.sonar               
-0x00002f1d   0x18 0x00002f1d   0x18   0x0 ---- module_.Batman                  
-0x00002f59   0x84 0x00002f59   0x84   0x0 ---- module_.Batman.__init           
-0x000030de    0x4 0x000030de    0x4   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.11 sections
-FILE=bins/pyc/py311.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x0000354b   0x26 0x0000354b   0x26   0x0 ---- module_.Bat                     
-0x00003599   0x14 0x00003599   0x14   0x0 ---- module_.Bat.__init              
-0x0000361d    0xa 0x0000361d    0xa   0x0 ---- module_.Bat.say                 
-0x0000368f    0x6 0x0000368f    0x6   0x0 ---- module_.Bat.sonar               
-0x000037a9   0x1a 0x000037a9   0x1a   0x0 ---- module_.Batman                  
-0x000037e7   0x76 0x000037e7   0x76   0x0 ---- module_.Batman.__init           
-0x00003981    0x6 0x00003981    0x6   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.10 sections
-FILE=bins/pyc/py310.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x0000201d  0x2a 0x0000201d  0x2a   0x0 ---- module_.Bat                     
-0x00002073   0x0 0x00002073   0x0   0x0 ---- module_.Bat.__init              
-0x000020da   0x8 0x000020da   0x8   0x0 ---- module_.Bat.say                 
-0x00002144   0x0 0x00002144   0x0   0x0 ---- module_.Bat.sonar               
-0x0000220e  0x1c 0x0000220e  0x1c   0x0 ---- module_.Batman                  
-0x00002252  0x48 0x00002252  0x48   0x0 ---- module_.Batman.__init           
-0x00002356   0x0 0x00002356   0x0   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.9 sections
-FILE=bins/pyc/py39.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x00001fdf  0x2a 0x00001fdf  0x2a   0x0 ---- module_.Bat                     
-0x00002035   0xa 0x00002035   0xa   0x0 ---- module_.Bat.__init              
-0x000020a6   0x8 0x000020a6   0x8   0x0 ---- module_.Bat.say                 
-0x00002110   0x4 0x00002110   0x4   0x0 ---- module_.Bat.sonar               
-0x000021de  0x1c 0x000021de  0x1c   0x0 ---- module_.Batman                  
-0x00002222  0x48 0x00002222  0x48   0x0 ---- module_.Batman.__init           
-0x00002326   0x4 0x00002326   0x4   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.7 sections
-FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-iS~Bat
-EOF
-EXPECT=<<EOF
-0x00001f0d  0x2a 0x00001f0d  0x2a   0x0 ---- module_.Bat                     
-0x00001f5f   0xa 0x00001f5f   0xa   0x0 ---- module_.Bat.__init              
-0x00001fca   0x8 0x00001fca   0x8   0x0 ---- module_.Bat.say                 
-0x00002037   0x4 0x00002037   0x4   0x0 ---- module_.Bat.sonar               
-0x00002103  0x1c 0x00002103  0x1c   0x0 ---- module_.Batman                  
-0x00002143  0x44 0x00002143  0x44   0x0 ---- module_.Batman.__init           
-0x00002235   0x4 0x00002235   0x4   0x0 ---- module_.Batman.sing             
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.7 maps
-FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-oml
-EOF
-EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00000000 * 0x00002be5 r-x 
-EOF
-RUN
-
-NAME=pyc 3.7 entry
-FILE=bins/pyc/py37.pyc
-CMDS=<<EOF
-ie~program
-EOF
-EXPECT=<<EOF
-0x0000002a 0x0000002a ---------- ---------- program
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.14 disasm
-FILE=bins/pyc/pyc314.pyc
-CMDS=<<EOF
-pd 10
-EOF
-EXPECT=<<EOF
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
@@ -375,142 +38,6 @@ as documentation.
             0x00000038      NOP
             0x0000003a      NOP
             0x0000003c      NOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.13 disasm
-FILE=bins/pyc/pyc313.pyc
-CMDS=<<EOF
-pd 10
-EOF
-EXPECT=<<EOF
-            ;-- entry0:
-            ;-- section.module:
-            ;-- <module>:
-            0x0000002a      RESUME                                     ; [00] ---- section size 6372 named module
-            0x0000002c      LOAD_CONST            Multiline strings can be written
-using three "s, and are often used
-as documentation.
-            0x0000002e      STORE_NAME            __doc__
-            0x00000030      NOP
-            0x00000032      NOP
-            0x00000034      NOP
-            0x00000036      NOP
-            0x00000038      NOP
-            0x0000003a      NOP
-            0x0000003c      NOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.12 disasm
-FILE=bins/pyc/pyc312.pyc
-CMDS=<<EOF
-pd 10
-EOF
-EXPECT=<<EOF
-            ;-- entry0:
-            ;-- section.module:
-            ;-- <module>:
-            0x0000002a      RESUME                0                    ; [00] ---- section size 6216 named module
-            0x0000002c      LOAD_CONST             Multiline strings can be written
-    using three "s, and are often used
-    as documentation.
-            0x0000002e      STORE_NAME            __doc__
-            0x00000030      NOP
-            0x00000032      NOP
-            0x00000034      NOP
-            0x00000036      NOP
-            0x00000038      NOP
-            0x0000003a      NOP
-            0x0000003c      NOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.11 disasm
-FILE=bins/pyc/py311.pyc
-CMDS=<<EOF
-pd 10
-EOF
-EXPECT=<<EOF
-            ;-- entry0:
-            ;-- section.module:
-            ;-- <module>:
-            0x0000002a      RESUME                0                    ; [00] ---- section size 7316 named module
-            0x0000002c      LOAD_CONST             Multiline strings can be written
-    using three "s, and are often used
-    as documentation.
-            0x0000002e      STORE_NAME            __doc__
-            0x00000030      NOP
-            0x00000032      NOP
-            0x00000034      NOP
-            0x00000036      NOP
-            0x00000038      NOP
-            0x0000003a      NOP
-            0x0000003c      NOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.10 disasm
-FILE=bins/pyc/py310.pyc
-CMDS=<<EOF
-pd 10
-EOF
-EXPECT=<<EOF
-            ;-- entry0:
-            ;-- section.module:
-            ;-- <module>:
-            0x0000002e      LOAD_CONST             Multiline strings can be written
-    using three "s, and are often used
-    as documentation. ; [00] ---- section size 3292 named module
-            0x00000030      STORE_NAME            __doc__
-            0x00000032      NOP
-            0x00000034      NOP
-            0x00000036      NOP
-            0x00000038      NOP
-            0x0000003a      NOP
-            0x0000003c      NOP
-            0x0000003e      NOP
-            0x00000040      NOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.14 disasm
-FILE=bins/pyc/pyc314.pyc
-CMDS=<<EOF
-s 0x00002c9e
-pd 49
-EOF
-EXPECT=<<EOF
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x00002c9e      RESUME                                     ; [25] ---- section size 98 named module_.Superhero.boast
@@ -571,13 +98,39 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.13 disasm
+NAME=pyc 3.13
 FILE=bins/pyc/pyc313.pyc
 CMDS=<<EOF
+iI~machine
+iS~Bat
+pd 10
 s 0x00002bc4
 pd 45
 EOF
 EXPECT=<<EOF
+machine  Python v3.13.0 VM (rev 3f27099d916c7b885e3daf1fabedcc119462014d)
+0x00002dcc   0x2e 0x00002dcc   0x2e   0x0 ---- module_.Bat                     
+0x00002e26   0x10 0x00002e26   0x10   0x0 ---- module_.Bat.__init              
+0x00002ea0    0xa 0x00002ea0    0xa   0x0 ---- module_.Bat.say                 
+0x00002f12    0x4 0x00002f12    0x4   0x0 ---- module_.Bat.sonar               
+0x00003002   0x20 0x00003002   0x20   0x0 ---- module_.Batman                  
+0x0000304b   0x88 0x0000304b   0x88   0x0 ---- module_.Batman.__init           
+0x000031d4    0x4 0x000031d4    0x4   0x0 ---- module_.Batman.sing             
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002a      RESUME                                     ; [00] ---- section size 6372 named module
+            0x0000002c      LOAD_CONST            Multiline strings can be written
+using three "s, and are often used
+as documentation.
+            0x0000002e      STORE_NAME            __doc__
+            0x00000030      NOP
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x00002bc4      RESUME                                     ; [25] ---- section size 90 named module_.Superhero.boast
@@ -634,13 +187,39 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.12 disasm
+NAME=pyc 3.12
 FILE=bins/pyc/pyc312.pyc
 CMDS=<<EOF
+iI~machine
+iS~Bat
+pd 10
 s 0x00002b11
 pd 46
 EOF
 EXPECT=<<EOF
+machine  Python v3.12.0 VM (rev 0fb6e700c2f94ae0717ee1be7d4e50b2dd480d14)
+0x00002d01   0x24 0x00002d01   0x24   0x0 ---- module_.Bat                     
+0x00002d4c   0x12 0x00002d4c   0x12   0x0 ---- module_.Bat.__init              
+0x00002dca    0xa 0x00002dca    0xa   0x0 ---- module_.Bat.say                 
+0x00002e3c    0x4 0x00002e3c    0x4   0x0 ---- module_.Bat.sonar               
+0x00002f1d   0x18 0x00002f1d   0x18   0x0 ---- module_.Batman                  
+0x00002f59   0x84 0x00002f59   0x84   0x0 ---- module_.Batman.__init           
+0x000030de    0x4 0x000030de    0x4   0x0 ---- module_.Batman.sing             
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002a      RESUME                0                    ; [00] ---- section size 6216 named module
+            0x0000002c      LOAD_CONST             Multiline strings can be written
+    using three "s, and are often used
+    as documentation.
+            0x0000002e      STORE_NAME            __doc__
+            0x00000030      NOP
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x00002b11      RESUME                0                    ; [25] ---- section size 92 named module_.Superhero.boast
@@ -698,13 +277,39 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.11 disasm
+NAME=pyc 3.11
 FILE=bins/pyc/py311.pyc
 CMDS=<<EOF
+iI~machine
+iS~Bat
+pd 10
 s 0x000032f3
 pd 48
 EOF
 EXPECT=<<EOF
+machine  Python v3.11.0 VM (rev 968953dcd8930880a3e9c5302b6892a5a0836c14)
+0x0000354b   0x26 0x0000354b   0x26   0x0 ---- module_.Bat                     
+0x00003599   0x14 0x00003599   0x14   0x0 ---- module_.Bat.__init              
+0x0000361d    0xa 0x0000361d    0xa   0x0 ---- module_.Bat.say                 
+0x0000368f    0x6 0x0000368f    0x6   0x0 ---- module_.Bat.sonar               
+0x000037a9   0x1a 0x000037a9   0x1a   0x0 ---- module_.Batman                  
+0x000037e7   0x76 0x000037e7   0x76   0x0 ---- module_.Batman.__init           
+0x00003981    0x6 0x00003981    0x6   0x0 ---- module_.Batman.sing             
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002a      RESUME                0                    ; [00] ---- section size 7316 named module
+            0x0000002c      LOAD_CONST             Multiline strings can be written
+    using three "s, and are often used
+    as documentation.
+            0x0000002e      STORE_NAME            __doc__
+            0x00000030      NOP
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x000032f3      RESUME                0                    ; [29] ---- section size 96 named module_.Superhero.boast
@@ -764,13 +369,39 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.10 disasm
+NAME=pyc 3.10
 FILE=bins/pyc/py310.pyc
 CMDS=<<EOF
+iI~machine
+iS~Bat
+pd 10
 s 0x00001eb3
 pd 16
 EOF
 EXPECT=<<EOF
+machine  Python v3.10.0 VM (rev bfb376ffcc4260feb9bf1b9a110559b1ff31da80)
+0x0000201d  0x2a 0x0000201d  0x2a   0x0 ---- module_.Bat                     
+0x00002073   0x0 0x00002073   0x0   0x0 ---- module_.Bat.__init              
+0x000020da   0x8 0x000020da   0x8   0x0 ---- module_.Bat.say                 
+0x00002144   0x0 0x00002144   0x0   0x0 ---- module_.Bat.sonar               
+0x0000220e  0x1c 0x0000220e  0x1c   0x0 ---- module_.Batman                  
+0x00002252  0x48 0x00002252  0x48   0x0 ---- module_.Batman.__init           
+0x00002356   0x0 0x00002356   0x0   0x0 ---- module_.Batman.sing             
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000002e      LOAD_CONST             Multiline strings can be written
+    using three "s, and are often used
+    as documentation. ; [00] ---- section size 3292 named module
+            0x00000030      STORE_NAME            __doc__
+            0x00000032      NOP
+            0x00000034      NOP
+            0x00000036      NOP
+            0x00000038      NOP
+            0x0000003a      NOP
+            0x0000003c      NOP
+            0x0000003e      NOP
+            0x00000040      NOP
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x00001eb3      LOAD_FAST             self                 ; [29] ---- section size 32 named module_.Superhero.boast
@@ -798,12 +429,24 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.9 disasm
+NAME=pyc 3.9
 FILE=bins/pyc/py39.pyc
 CMDS=<<EOF
+iI~machine
+iS~Bat
 pd 10
+s 0x00001e79
+pd 16
 EOF
 EXPECT=<<EOF
+machine  Python v3.9.0 VM (rev 3a819e5c9d3feae85762ae87cebf55f9c8d2b526)
+0x00001fdf  0x2a 0x00001fdf  0x2a   0x0 ---- module_.Bat                     
+0x00002035   0xa 0x00002035   0xa   0x0 ---- module_.Bat.__init              
+0x000020a6   0x8 0x000020a6   0x8   0x0 ---- module_.Bat.say                 
+0x00002110   0x4 0x00002110   0x4   0x0 ---- module_.Bat.sonar               
+0x000021de  0x1c 0x000021de  0x1c   0x0 ---- module_.Batman                  
+0x00002222  0x48 0x00002222  0x48   0x0 ---- module_.Batman.__init           
+0x00002326   0x4 0x00002326   0x4   0x0 ---- module_.Batman.sing             
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
@@ -819,22 +462,6 @@ EXPECT=<<EOF
         ,=< 0x0000003c      JUMP_IF_TRUE_OR_POP   18
         |   0x0000003e      LOAD_CONST            True
         `-> 0x00000040      POP_TOP
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc 3.9 disasm
-FILE=bins/pyc/py39.pyc
-CMDS=<<EOF
-s 0x00001e79
-pd 16
-EOF
-EXPECT=<<EOF
             ;-- section.module_.Superhero.boast:
             ;-- <module>.Superhero.boast:
             0x00001e79      LOAD_FAST             self                 ; [29] ---- section size 32 named module_.Superhero.boast
@@ -862,12 +489,44 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc 3.7 disasm
+NAME=pyc load version38
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=pyc 3.7
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
+iI~machine
+is~?Human
+iS~Bat
+oml
+ie~program
 pd 10
 EOF
 EXPECT=<<EOF
+machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
+9
+0x00001f0d  0x2a 0x00001f0d  0x2a   0x0 ---- module_.Bat                     
+0x00001f5f   0xa 0x00001f5f   0xa   0x0 ---- module_.Bat.__init              
+0x00001fca   0x8 0x00001fca   0x8   0x0 ---- module_.Bat.say                 
+0x00002037   0x4 0x00002037   0x4   0x0 ---- module_.Bat.sonar               
+0x00002103  0x1c 0x00002103  0x1c   0x0 ---- module_.Batman                  
+0x00002143  0x44 0x00002143  0x44   0x0 ---- module_.Batman.__init           
+0x00002235   0x4 0x00002235   0x4   0x0 ---- module_.Batman.sing             
+ 1 fd: 3 +0x00000000 0x00000000 * 0x00002be5 r-x 
+0x0000002a 0x0000002a ---------- ---------- program
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
@@ -892,13 +551,13 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc symbols for pyc2.7
-FILE=bins/pyc/py27.pyc
+NAME=pyc load version36
+FILE=bins/pyc/py36.pyc
 CMDS=<<EOF
-is~hello_world
+iI~machine
 EOF
 EXPECT=<<EOF
-  1 0x00000052 0x00000052 NONE FUNC    9     <module>.hello_world
+machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
 REGEXP_FILTER_ERR=<<EOF
 free_object\s\(0\)
@@ -908,12 +567,19 @@ free_object (0)
 EOF
 RUN
 
-NAME=pyc disasm for 2.7
+NAME=pyc 2.7
 FILE=bins/pyc/py27.pyc
 CMDS=<<EOF
+iI~machine
+is~hello_world
 pd 10
+aa
+e scr.utf8=false
+pdf
 EOF
 EXPECT=<<EOF
+machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
+  1 0x00000052 0x00000052 NONE FUNC    9     <module>.hello_world
             ;-- entry0:
             ;-- section.module:
             ;-- <module>:
@@ -927,23 +593,6 @@ EXPECT=<<EOF
             0x0000002f      CALL_FUNCTION         0 positional, 0 named
             0x00000032      POP_TOP
             0x00000033      LOAD_CONST            None
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
-RUN
-
-NAME=pyc function
-FILE=bins/pyc/py27.pyc
-CMDS=<<EOF
-aa
-e scr.utf8=false
-pdf
-EOF
-EXPECT=<<EOF
             ;-- section.module:
             ;-- <module>:
 / entry0();
