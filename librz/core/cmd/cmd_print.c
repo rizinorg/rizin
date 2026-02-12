@@ -6303,12 +6303,17 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc,
 	return print_format(core, argv[1], mode, state);
 }
 
+static int compare_type_formats(const RzTypeFormat *a, const RzTypeFormat *b, RZ_UNUSED void *user) {
+	return strcmp(a->name, b->name);
+}
+
 RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv) {
 	if (argc < 2) {
 		// List all named formats
 		RzListIter *iter;
 		RzTypeFormat *fmt = NULL;
 		RzList *formats = rz_type_db_format_all(core->analysis->typedb);
+		rz_list_sort(formats, (RzListComparator)compare_type_formats, NULL);
 		rz_list_foreach (formats, iter, fmt) {
 			rz_cons_printf("%s \"%s\"\n", fmt->name, fmt->body);
 		}

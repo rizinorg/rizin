@@ -888,12 +888,17 @@ beach:
 	free(buf);
 }
 
+static int compare_base_types(const RzBaseType *a, const RzBaseType *b, RZ_UNUSED void *user) {
+	return strcmp(a->name, b->name);
+}
+
 // Everything
 
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *it;
 	RzBaseType *btype;
 	RzList *types = rz_type_db_get_base_types(core->analysis->typedb);
+	rz_list_sort(types, (RzListComparator)compare_base_types, NULL);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();
