@@ -90,6 +90,11 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 t
 		rz_warn_if_reached();
 		return false;
 	}
+	const RzList /*<RzGraphNode *>*/ *neighs = rz_inquiry_bb_cfg_get_neighbours_from(cfg, from_bb);
+	if (rz_list_contains(neighs, t)) {
+		// Edge already added.
+		return true;
+	}
 	rz_graph_add_edge(cfg->graph, f, t);
 	return true;
 }
