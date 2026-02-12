@@ -188,7 +188,7 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 
 	// Try various locations
 	char path[1024];
-	
+
 	// 1. First check RZ_SVD_DIR environment variable if set
 	const char *svd_dir = getenv("RZ_SVD_DIR");
 	if (svd_dir) {
@@ -198,7 +198,7 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 			return strdup(path);
 		}
 	}
-	
+
 	// 2. Check user home directory
 	const char *home = getenv("HOME");
 	if (home) {
@@ -208,7 +208,7 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 			return strdup(path);
 		}
 	}
-	
+
 	// 3. Check compile-time defined data directory (e.g., PREFIX/share/rizin/svd)
 #ifdef RZ_SVD_DATADIR
 	snprintf(path, sizeof(path), RZ_SVD_DATADIR "/%s.svd", lower_name);
@@ -217,7 +217,7 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 		return strdup(path);
 	}
 #endif
-	
+
 	// 4. Check source directory (for development/testing)
 #ifdef RZ_SVD_SRCDIR
 	snprintf(path, sizeof(path), RZ_SVD_SRCDIR "/%s.svd", lower_name);
@@ -233,7 +233,7 @@ RZ_API RZ_OWN char *rz_svd_find_file(RZ_NULLABLE const char *device_name) {
 		free(lower_name);
 		return strdup(path);
 	}
-	
+
 	snprintf(path, sizeof(path), "/usr/local/share/rizin/svd/%s.svd", lower_name);
 	if (rz_file_exists(path)) {
 		free(lower_name);
@@ -324,9 +324,11 @@ static void parse_svd_xml(SvdParser *parser) {
 			if (content_buf && current_element != ELEM_NONE) {
 				// Trim whitespace
 				char *start = content_buf;
-				while (*start && isspace(*start)) start++;
+				while (*start && isspace(*start))
+					start++;
 				char *end = start + strlen(start) - 1;
-				while (end > start && isspace(*end)) *end-- = '\0';
+				while (end > start && isspace(*end))
+					*end-- = '\0';
 
 				switch (current_element) {
 				case ELEM_NAME:

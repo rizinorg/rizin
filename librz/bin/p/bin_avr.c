@@ -115,15 +115,16 @@ typedef struct bin_avr_rom {
 	RzVector /*<ut64>*/ *interrupt_handlers; ///< Parsed interrupt handlers addresses
 } BinAvrRom;
 
-
 /**
  * Helper: Allocate and duplicate a string
  */
 static char *avr_str_dup(const char *str) {
-	if (!str) return NULL;
+	if (!str)
+		return NULL;
 	size_t len = strlen(str) + 1;
 	char *dup = (char *)malloc(len);
-	if (!dup) return NULL;
+	if (!dup)
+		return NULL;
 	return (char *)memcpy(dup, str, len);
 }
 
@@ -170,7 +171,6 @@ static char *rz_avr_legacy_device_name(const char *name) {
 	return avr_str_dup(name);
 }
 
-
 /**
  * Detect device name from multiple sources:
  * 1. Filename heuristics
@@ -195,7 +195,9 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 	rz_str_case(lower_filename, false); // false indicates conversion to lowercase
 
 	const char *patterns[] = {
-		"attiny", "atmega", "atxmega",
+		"attiny",
+		"atmega",
+		"atxmega",
 	};
 
 	char *device_name = NULL;
@@ -206,7 +208,7 @@ static char *rz_avr_detect_device_name(RzBinFile *bf) {
 			// Skip the prefix part (e.g., "atmega", "attiny", "atxmega")
 			char *end = (char *)match + strlen(patterns[i]);
 			while (end < lower_filename + strlen(lower_filename) &&
-				   isalnum((unsigned char)*end)) {
+				isalnum((unsigned char)*end)) {
 				end++;
 			}
 
@@ -290,7 +292,7 @@ static RzAvrSvdDevice *rz_avr_svd_extract_device(
 
 	RzSvdContext *ctx = rz_svd_new(svd_file);
 	free(svd_file);
-	
+
 	if (!ctx) {
 		RZ_LOG_DEBUG("avr: Failed to parse SVD file for device %s\n", device_name);
 		return NULL;
@@ -409,7 +411,6 @@ static const char *rz_avr_svd_get_device_name(const RzAvrSvdLoader *loader) {
 	}
 	return loader->device->device_name;
 }
-
 
 static bool read_opcode32_at(RzBuffer *b, ut64 addr, ut16 opcode[2]) {
 	return rz_buf_read_ble16_at(b, addr, &opcode[0], false) &&
