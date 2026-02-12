@@ -81,7 +81,10 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 
 RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points);
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point);
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
+	RzInquiry *inquiry,
+	ut64 entry_point,
+	const RzPVector /*<RzBinSymbol *>*/ *symbols);
 
 //============
 // Algorithms
