@@ -85,7 +85,19 @@ static ut8 handle_i386_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut
 		return 4;
 	case COFF_REL_I386_REL32:
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_REL32");
-		// TODO: Missing handling of other relocation types
+	case COFF_REL_I386_SECREL7:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_SECREL7");
+	case COFF_REL_I386_TOKEN:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_TOKEN");
+	case COFF_REL_I386_SECREL:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_SECREL");
+	case COFF_REL_I386_SECTION:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_SECTION");
+	case COFF_REL_I386_DIR32NB:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_DIR32NB");
+	case COFF_REL_I386_DIR32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_DIR32");
+
 	default:
 		RZ_LOG_DEBUG("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
 		break;
@@ -96,48 +108,201 @@ static ut8 handle_i386_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut
 
 static ut8 handle_amd64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
 	switch (reloc_type) {
+	case COFF_REL_AMD64_ADDR64:
+		reloc->type = RZ_BIN_RELOC_64;
+		rz_write_le64(patch_buf, sym_vaddr);
+		reloc->print_name = "IMAGE_REL_AMD64_ADDR64";
+		return 8;
+
+	case COFF_REL_AMD64_ADDR32:
+		reloc->type = RZ_BIN_RELOC_32;
+		rz_write_le32(patch_buf, (ut32)sym_vaddr);
+		reloc->print_name = "IMAGE_REL_AMD64_ADDR32";
+		return 4;
+
 	case COFF_REL_AMD64_REL32:
 		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32");
-		// TODO: Missing handling of other relocation types
+	case COFF_REL_AMD64_REL32_1:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32_1");
+	case COFF_REL_AMD64_REL32_2:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32_2");
+	case COFF_REL_AMD64_REL32_3:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32_3");
+	case COFF_REL_AMD64_REL32_4:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32_4");
+	case COFF_REL_AMD64_REL32_5:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32_5");
+	case COFF_REL_AMD64_ADDR32NB:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_ADDR32NB");
+	case COFF_REL_AMD64_SECTION:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_SECTION");
+	case COFF_REL_AMD64_SECREL:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_SECREL");
+	case COFF_REL_AMD64_SECREL7:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_SECREL7");
+	case COFF_REL_AMD64_TOKEN:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_TOKEN");
+	case COFF_REL_AMD64_SREL32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_SREL32");
+	case COFF_REL_AMD64_PAIR:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_PAIR");
+	case COFF_REL_AMD64_SSPAN32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_SSPAN32");
+	case COFF_REL_AMD64_ABSOLUTE:
+		reloc->print_name = "IMAGE_REL_AMD64_ABSOLUTE";
+		return 0;
+
 	default:
-		RZ_LOG_DEBUG("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF AMD64 relocation type: %d\n",
+			reloc_type);
 		break;
 	}
 
 	return 0;
 }
 
-static ut8 handle_arm_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
-	switch (reloc_type) {
-	case COFF_REL_ARM_BRANCH24T:
-		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BRANCH24T");
-	case COFF_REL_ARM_BLX23T:
-		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BLX23T");
-		// TODO: Missing handling of other relocation types
-	default:
-		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
-		break;
-	}
+static ut8 handle_arm_relocs(struct rz_bin_coff_obj *bin,
+	RzBinReloc *reloc, ut64 sym_vaddr,
+	ut8 *patch_buf, ut16 reloc_type) {
 
-	return 0;
-}
-
-static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
 	switch (reloc_type) {
-	case COFF_REL_ARM64_BRANCH26:
+
+	case COFF_REL_ARM_ABSOLUTE:
+		reloc->print_name = "IMAGE_REL_ARM_ABSOLUTE";
+		return 0;
+
+	case COFF_REL_ARM_ADDR32:
 		reloc->type = RZ_BIN_RELOC_32;
+		rz_write_le32(patch_buf, (ut32)sym_vaddr);
+		reloc->print_name = "IMAGE_REL_ARM_ADDR32";
+		return 4;
+
+	case COFF_REL_ARM_ADDR32NB:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_ADDR32NB");
+	case COFF_REL_ARM_REL32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_REL32");
+	case COFF_REL_ARM_BRANCH24:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BRANCH24");
+	case COFF_REL_ARM_BRANCH11:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BRANCH11");
+	case COFF_REL_THUMB_BRANCH20:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_THUMB_BRANCH20");
+	case COFF_REL_THUMB_BRANCH24:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_THUMB_BRANCH24");
+	case COFF_REL_THUMB_BLX23:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_THUMB_BLX23");
+	case COFF_REL_ARM_MOV32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_MOV32");
+	case COFF_REL_THUMB_MOV32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_THUMB_MOV32");
+	case COFF_REL_ARM_SECTION:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_SECTION");
+	case COFF_REL_ARM_SECREL:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_SECREL");
+	case COFF_REL_ARM_PAIR:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_PAIR");
+	default:
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM relocation type: %d\n",
+			reloc_type);
+		break;
+	}
+
+	return 0;
+}
+
+static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin,
+	RzBinReloc *reloc, ut64 sym_vaddr,
+	ut8 *patch_buf, ut16 reloc_type) {
+
+	switch (reloc_type) {
+
+	case COFF_REL_ARM64_ABSOLUTE:
+		reloc->print_name = "IMAGE_REL_ARM64_ABSOLUTE";
+		return 0;
+
+	case COFF_REL_ARM64_ADDR64:
+		reloc->type = RZ_BIN_RELOC_64;
+		rz_write_le64(patch_buf, sym_vaddr);
+		reloc->print_name = "IMAGE_REL_ARM64_ADDR64";
+		return 8;
+
+	case COFF_REL_ARM64_ADDR32:
+		reloc->type = RZ_BIN_RELOC_32;
+		rz_write_le32(patch_buf, (ut32)sym_vaddr);
+		reloc->print_name = "IMAGE_REL_ARM64_ADDR32";
+		return 4;
+
+	case COFF_REL_ARM64_REL32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM64_REL32");
+
+	case COFF_REL_ARM64_BRANCH26: {
+		reloc->type = RZ_BIN_RELOC_32;
+
 		ut32 data;
 		if (!rz_buf_read_le32_at(bin->b, reloc->paddr, &data)) {
 			break;
 		}
+
 		ut64 dst = sym_vaddr - reloc->vaddr;
-		data |= (ut32)((dst >> 2) & 0x3ffffffULL);
+		data &= ~0x03ffffff; // clear imm26
+		data |= (ut32)((dst >> 2) & 0x03ffffff);
+
 		rz_write_le32(patch_buf, data);
 		reloc->print_name = "IMAGE_REL_ARM64_BRANCH26";
 		return 4;
-		// TODO: Missing handling of other relocation types
+	}
+
+	case COFF_REL_ARM64_BRANCH19: {
+		reloc->type = RZ_BIN_RELOC_32;
+
+		ut32 data;
+		if (!rz_buf_read_le32_at(bin->b, reloc->paddr, &data)) {
+			break;
+		}
+
+		ut64 dst = sym_vaddr - reloc->vaddr;
+		data &= ~(0x7ffff << 5); // clear imm19 field
+		data |= ((ut32)((dst >> 2) & 0x7ffff) << 5);
+
+		rz_write_le32(patch_buf, data);
+		reloc->print_name = "IMAGE_REL_ARM64_BRANCH19";
+		return 4;
+	}
+
+	case COFF_REL_ARM64_BRANCH14: {
+		reloc->type = RZ_BIN_RELOC_32;
+
+		ut32 data;
+		if (!rz_buf_read_le32_at(bin->b, reloc->paddr, &data)) {
+			break;
+		}
+
+		ut64 dst = sym_vaddr - reloc->vaddr;
+		data &= ~(0x3fff << 5); // clear imm14 field
+		data |= ((ut32)((dst >> 2) & 0x3fff) << 5);
+
+		rz_write_le32(patch_buf, data);
+		reloc->print_name = "IMAGE_REL_ARM64_BRANCH14";
+		return 4;
+	}
+
+	case COFF_REL_ARM64_PAGEBASE_REL21:
+	case COFF_REL_ARM64_REL21:
+	case COFF_REL_ARM64_PAGEOFFSET_12A:
+	case COFF_REL_ARM64_PAGEOFFSET_12L:
+	case COFF_REL_ARM64_SECREL:
+	case COFF_REL_ARM64_SECREL_LOW12A:
+	case COFF_REL_ARM64_SECREL_HIGH12A:
+	case COFF_REL_ARM64_SECREL_LOW12L:
+	case COFF_REL_ARM64_SECTION:
+	case COFF_REL_ARM64_TOKEN:
+	case COFF_REL_ARM64_ADDR32NB:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM64_OTHER");
+
 	default:
-		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
+		RZ_LOG_DEBUG(
+			"Unimplemented/unknown COFF ARM64 relocation type: %d\n",
+			reloc_type);
 		break;
 	}
 
