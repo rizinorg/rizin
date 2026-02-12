@@ -499,12 +499,17 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 	free(ret);
 }
 
+static int compare_function_names(const char *a, const char *b, RZ_UNUSED void *user) {
+	return strcmp(a, b);
+}
+
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 	RzList *l = rz_type_function_names(core->analysis->typedb);
+	rz_list_sort(l, (RzListComparator)compare_function_names, NULL);
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (l, iter, name) {
@@ -888,12 +893,17 @@ beach:
 	free(buf);
 }
 
+static int compare_base_types(const RzBaseType *a, const RzBaseType *b, RZ_UNUSED void *user) {
+	return strcmp(a->name, b->name);
+}
+
 // Everything
 
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *it;
 	RzBaseType *btype;
 	RzList *types = rz_type_db_get_base_types(core->analysis->typedb);
+	rz_list_sort(types, (RzListComparator)compare_base_types, NULL);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();

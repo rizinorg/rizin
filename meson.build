@@ -44,7 +44,7 @@ cc = meson.get_compiler('c')
 cc_native = meson.get_compiler('c', native: true)
 
 platform_deps = []
-platform_inc = ['.', 'librz', 'librz/include']
+platform_inc = ['.', 'librz', 'librz/include', 'subprojects/rzheap']
 if host_machine.system() == 'windows'
   add_project_arguments('-DPSAPI_VERSION=1', language: 'c')
   platform_deps = [
@@ -712,6 +712,10 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
+
+# handle rzheap dependency
+rzheap_proj = subproject('rzheap', default_options: ['default_library=static'])
+rzheap_dep = rzheap_proj.get_variable('rzheap_dep')
 
 use_rpath = false
 use_rpath_absolute = false

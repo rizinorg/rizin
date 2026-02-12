@@ -873,7 +873,7 @@ RzList /*<RzDebugFrame *>*/ *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 			if (!it) {
 				break;
 			}
-			WindModule *module = rz_list_iter_get_data(it);
+			WindModule *module = rz_list_val(it);
 			char *exepath, *pdbpath;
 			if (!winkd_download_module_and_pdb(module, server, symstore, &exepath, &pdbpath)) {
 				break;

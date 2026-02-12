@@ -50,7 +50,7 @@ static void *thread_iterate_list_cb(th_list_ctx_t *context) {
 			rz_th_lock_leave(lock);
 			break;
 		}
-		element = rz_list_iter_get_data(context->head);
+		element = rz_list_val(context->head);
 		context->head = rz_list_next(context->head);
 		rz_th_lock_leave(lock);
 

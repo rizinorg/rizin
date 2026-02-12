@@ -317,7 +317,7 @@ RZ_IPI int rz_line_hist_sdb_up(RzLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = rz_list_next(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
@@ -328,7 +328,7 @@ RZ_IPI int rz_line_hist_sdb_down(RzLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = rz_list_prev(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
