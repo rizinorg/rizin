@@ -10,6 +10,7 @@
 #include "rz_config.h"
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
+#include "rz_il/rz_il_validate.h"
 #include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
@@ -300,7 +301,7 @@ error_free:
 	return false;
 }
 
-static bool get_call_targets(RzCore *core, RzSetU *branch_targets) {
+static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!sections) {
 		return false;
@@ -320,7 +321,7 @@ static bool get_call_targets(RzCore *core, RzSetU *branch_targets) {
 	}
 	rz_vector_free(non_x_idx);
 	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, false, branch_targets)) {
-		RZ_LOG_ERROR("Failed to get call targets.\n");
+		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return false;
 	}
 	rz_pvector_free(sections);
@@ -388,6 +389,26 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 			RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", addr);
 			return NULL;
 		}
+
+#if RZ_BUILD_DEBUG
+		RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
+		RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
+		void **it;
+		size_t i = 0;
+		rz_pvector_enumerate(bb->il_ops, it, i) {
+			char *report = NULL;
+			RzInterpreterInsnPkt *pkt = *it;
+			if (!rz_il_validate_effect(pkt->effect, ctx, NULL, NULL, &report)) {
+				RZ_LOG_ERROR("Validation failed for IL op %" PFMTSZu " in BB 0x%" PFMT64x " in insn packet:\n"
+				             "\t'%s'\n", i, bb->bb_addr, report);
+			}
+			free(report);
+		}
+		rz_analysis_il_vm_free(vm);
+		rz_il_validate_global_context_free(ctx);
+		// Otherwise YOLO
+#endif
+
 		rz_analysis_add_bb(core->analysis, bb->bb_addr, bb->size);
 		RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 		ht_up_insert(il_cache, bb->bb_addr, bb);
@@ -417,7 +438,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
-	RzSetU *call_targets = rz_set_u_new();
+	RzSetU *branch_targets = rz_set_u_new();
 
 	rz_cons_push();
 
@@ -431,13 +452,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// of the pointers.
 	il_cache = ht_up_new(NULL, (RzPVectorFree)rz_interpreter_il_bb_free);
 
-	if (!get_call_targets(core, call_targets)) {
-		RZ_LOG_ERROR("Failed to get call targets.\n");
+	if (!get_branch_targets(core, branch_targets)) {
+		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return_code = false;
 		goto error_free;
 	}
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-		printf("Total call targets in binary: %" PFMT32d "\n", rz_set_u_size(call_targets));
+		printf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(branch_targets));
 	}
 
 	// Initialize the abstract state with the architecture's registers.
@@ -554,12 +575,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", branch->target_addr);
 					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, branch->target_addr);
 					if (!bb) {
-						// Delete the address from the call targets.
+						// Delete the address from the branch targets.
 						// This is currently necessary as a work around, because if the interpreter
 						// fails before interpreting the address, it is added again as next entry point.
 						// Giving an endless loop.
 						// One of the design thingies to fix in the proper implementation.
-						rz_set_u_delete(call_targets, branch->target_addr);
+						rz_set_u_delete(branch_targets, branch->target_addr);
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
 						rz_th_queue_close(io_request_q);
@@ -647,7 +668,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		{
 			rz_vector_clear(entry_points);
 			RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
-			RzIterator *ct_iter = rz_set_u_as_iter(call_targets);
+			RzIterator *ct_iter = rz_set_u_as_iter(branch_targets);
 			size_t x = 0;
 			ut64 *ct;
 			rz_iterator_foreach(ct_iter, ct) {
@@ -672,12 +693,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			rz_vector_foreach (covered_jump_targets, ep) {
 				// Delete the selected ones from the jump target set.
 				// So they are not requested again.
-				rz_set_u_delete(call_targets, *ep);
+				rz_set_u_delete(branch_targets, *ep);
 			}
 			rz_vector_free(covered_jump_targets);
 		}
 		if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-			printf(RZ_CONS_CLEAR_LINE "\rCall targets left: %" PFMT32d, rz_set_u_size(call_targets));
+			printf(RZ_CONS_CLEAR_LINE "\rBranch targets left: %" PFMT32d, rz_set_u_size(branch_targets));
 			fflush(stdout);
 		}
 	} while (!rz_vector_empty(entry_points));
@@ -695,7 +716,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 error_free:
 	RZ_LOG_DEBUG("INQUIRY: Close queues\n");
 	rz_vector_free(entry_points);
-	rz_set_u_free(call_targets);
+	rz_set_u_free(branch_targets);
 	rz_buf_free(io_buf);
 	rz_analysis_il_vm_free(analysis_vm);
 	rz_th_queue_close(io_request_q);
