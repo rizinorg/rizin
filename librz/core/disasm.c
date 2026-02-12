@@ -1292,7 +1292,7 @@ static void ds_show_xrefs(RzDisasmState *ds) {
  * \param addr The address to get XREFs for
  * \return A heap-allocated string containing the XREF comments, or NULL if none
  */
-RZ_API char *rz_core_get_xref_comment(RzCore *core, ut64 addr) {
+RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr) {
 	RzListIter *iter, *it;
 	RzAnalysisXRef *xrefi;
 	RzStrBuf *sb = rz_strbuf_new("");
