@@ -512,9 +512,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	do {
 		bool user_sent_signal = false;
 		bool bb_decode_failed = false;
-		// Clear queues from any left overs of previous runs.
-		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
-		rz_list_free(rz_th_queue_pop_all(iset->branch_queue));
 
 		// Dispatch prototype interpreter into a thread.
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
@@ -557,6 +554,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", branch->target_addr);
 					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, branch->target_addr);
 					if (!bb) {
+						// Delete the address from the call targets.
+						// This is currently necessary as a work around, because if the interpreter
+						// fails before interpreting the address, it is added again as next entry point.
+						// Giving an endless loop.
+						// One of the design thingies to fix in the proper implementation.
+						rz_set_u_delete(call_targets, branch->target_addr);
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
 						rz_th_queue_close(io_request_q);
@@ -629,6 +632,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		rz_th_queue_open(io_result_q);
 		rz_th_queue_open(iset->branch_queue);
 		rz_th_queue_open(iset->il_queue);
+		// Clear queues from any left overs of previous runs.
+		rz_list_free(rz_th_queue_pop_all(io_result_q));
+		rz_list_free(rz_th_queue_pop_all(io_request_q));
+		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
+		rz_list_free(rz_th_queue_pop_all(iset->branch_queue));
 
 		// At this point the interpreter is finished and returned.
 		// Now we need to check for executable regions it did not cover.
