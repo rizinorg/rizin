@@ -55,6 +55,7 @@
 	x86_il_get_operand_bits(ins->operands[opnum], analysis->bits, pc, 0, ins)
 #define x86_il_get_op_implicit(opnum, mem_sz) \
 	x86_il_get_operand_bits(ins->operands[opnum], analysis->bits, pc, mem_sz, ins)
+#define x86_il_get_op_size(opnum) ins->operands[opnum].size
 
 #define x86_il_set_operand(op, val) x86_il_set_operand_bits(op, val, analysis->bits, pc)
 #define x86_il_set_op(opnum, val)   x86_il_set_operand_bits(ins->operands[opnum], val, analysis->bits, pc)

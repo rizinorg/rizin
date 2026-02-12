@@ -409,7 +409,7 @@ RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
  * \param bits bitness
  */
 RzILOpPure *x86_il_get_gpr64(X86Reg reg, int bits) {
-	return VARG(x86_registers[reg]);
+	return UNSIGNED(64, VARG(x86_registers[reg]));
 }
 
 /**
@@ -448,7 +448,7 @@ RzILOpEffect *x86_il_set_gprl(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	if (bits == 16) {
 		// Don't perform unnecessary casting
-		return SETG(x86_registers[reg], val);
+		return SETG(x86_registers[reg], UNSIGNED(16, val));
 	}
 	RzILOpPure *mask = LOGNOT(UN(bits, 0xffff));
 	RzILOpPure *masked_reg = LOGAND(VARG(x86_registers[reg]), mask);
@@ -464,11 +464,7 @@ RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
  * \param bits bitness
  */
 RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
-	if (bits == 32) {
-		return SETG(x86_registers[reg], val);
-	}
-
-	return SETG(x86_registers[reg], UNSIGNED(64, val));
+	return SETG(x86_registers[reg], UNSIGNED(32, val));
 }
 /**
  * \brief  Set 64 bits (0-64) of register \p reg to \p val
@@ -478,7 +474,7 @@ RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
  * \param bits bitness
  */
 RzILOpEffect *x86_il_set_gpr64(X86Reg reg, RzILOpPure *val, int bits) {
-	return SETG(x86_registers[reg], val);
+	return SETG(x86_registers[reg], UNSIGNED(64, val));
 }
 
 /**
@@ -566,13 +562,13 @@ const struct extreg_lookup_helper_t extreg_lookup_table[] = {
 	extreg_lookup(, x86_il_get_gpr64, x86_il_set_gpr64)
 
 	// 8-bit wide (byte)
-	extreg_lookup(B, x86_il_get_gprl, x86_il_set_gpr64)
+	extreg_lookup(B, x86_il_get_gprl, x86_il_set_gprl)
 
 	// 16-bit wide (word)
-	extreg_lookup(W, x86_il_get_gpr16, x86_il_set_gpr64)
+	extreg_lookup(W, x86_il_get_gpr16, x86_il_set_gpr16)
 
 	// 32-bit wide (dword)
-	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr64)
+	extreg_lookup(D, x86_il_get_gpr32, x86_il_set_gpr32)
 };
 
 /**

@@ -203,7 +203,9 @@ IL_LIFTER(add) {
 IL_LIFTER(and) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
+	RzILOpEffect *and = SETL("and_",
+		LOGAND(CAST(x86_il_get_op_size(0), IL_FALSE, op1),
+		CAST(x86_il_get_op_size(0), IL_FALSE, op2)));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("and_"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -1501,7 +1503,9 @@ IL_LIFTER(not) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
-	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
+	RzILOpEffect * or = SETL("_or",
+		LOGOR(CAST(x86_il_get_op_size(0), IL_FALSE, op1),
+		CAST(x86_il_get_op_size(0), IL_FALSE, op2)));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
 	RzILOpEffect *clear_of = SETG(EFLAGS(OF), IL_FALSE);
@@ -1528,8 +1532,20 @@ typedef struct pop_helper_t {
 
 PopHelper x86_pop_helper_bits(unsigned int op_size, unsigned int bitness, ut64 pc) {
 	X86Mem stack_mem;
-	/* The correct register will automatically be chosen if we use RSP */
-	stack_mem.base = X86_REG_RSP;
+	switch (bitness) {
+	default:
+		rz_warn_if_reached();
+		// fallthrough
+	case 16:
+		stack_mem.base = X86_REG_SP;
+		break;
+	case 32:
+		stack_mem.base = X86_REG_ESP;
+		break;
+	case 64:
+		stack_mem.base = X86_REG_RSP;
+		break;
+	}
 	stack_mem.disp.value = 0;
 	stack_mem.index = X86_REG_NONE;
 	stack_mem.scale = 1;
@@ -1538,6 +1554,20 @@ PopHelper x86_pop_helper_bits(unsigned int op_size, unsigned int bitness, ut64 p
 	PopHelper ret;
 
 	ret.val = LOADW(op_size * BITS_PER_BYTE, x86_il_get_memaddr_bits(stack_mem, bitness, pc));
+	switch (bitness) {
+	default:
+		rz_warn_if_reached();
+		// fallthrough
+	case 16:
+		ret.val = UNSIGNED(16, ret.val);
+		break;
+	case 32:
+		ret.val = UNSIGNED(32, ret.val);
+		break;
+	case 64:
+		ret.val = UNSIGNED(64, ret.val);
+		break;
+	}
 	ret.eff = x86_il_set_reg_bits(X86_REG_RSP, ADD(x86_il_get_reg_bits(X86_REG_RSP, bitness, pc), UN(bitness, op_size)), bitness);
 
 	return ret;

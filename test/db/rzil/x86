@@ -105,3 +105,133 @@ EOF
 EXPECT=Hello from RzIL!
 EXPECT_ERR=
 RUN
+
+NAME=Missing casting of arguments and register write issue test
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4883e1f0
+pi 1
+aoip
+
+wx 4183c801
+pi 1
+aoip
+EOF
+EXPECT=<<EOF
+and rcx, 0xfffffffffffffff0
+0x0
+(seq
+  (set and_
+    (&
+      (cast 8
+        false
+        (var rcx))
+      (cast 8
+        false
+        (bv 64 0xfffffffffffffff0))))
+  (set rcx
+    (cast 64
+      false
+      (var and_)))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var and_))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+or r8d, 0x01
+0x0
+(seq
+  (set _or
+    (|
+      (cast 4
+        false
+        (cast 32
+          false
+          (var r8)))
+      (cast 4
+        false
+        (bv 8 0x1))))
+  (set r8
+    (cast 64
+      false
+      (cast 64
+        false
+        (var _or))))
+  (set of
+    false)
+  (set cf
+    false)
+  (set _result
+    (var _or))
+  (set pf
+    (!
+      (lsb
+        (let _val
+          (cast 8
+            false
+            (var _result))
+          (let _c4
+            (^
+              (var _val)
+              (>>
+                (var _val)
+                (bv 8 0x4)
+                false))
+            (let _c2
+              (^
+                (var _c4)
+                (>>
+                  (var _c4)
+                  (bv 8 0x2)
+                  false))
+              (^
+                (var _c2)
+                (>>
+                  (var _c2)
+                  (bv 8 0x1)
+                  false))))))))
+  (set zf
+    (is_zero
+      (var _result)))
+  (set sf
+    (msb
+      (var _result))))
+EOF
+EXPECT_ERR=
+RUN
