@@ -1254,72 +1254,101 @@ static void ds_show_refs(RzDisasmState *ds) {
 }
 
 static void ds_show_xrefs(RzDisasmState *ds) {
-	RzAnalysisXRef *xrefi;
-	RzListIter *iter, *it;
-	RzCore *core = ds->core;
-	char *name, *realname;
-	int count = 0;
 	if (!ds->show_xrefs || !ds->show_comments) {
 		return;
 	}
-	/* show xrefs */
-	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, ds->at);
-	if (!xrefs) {
+
+	char *all_xrefs = rz_core_get_xref_comment(ds->core, ds->at);
+	if (RZ_STR_ISEMPTY(all_xrefs)) {
+		free(all_xrefs);
 		return;
 	}
 	// only show fcnline in xrefs when addr is not the beginning of a function
 	bool fcnlines = (ds->fcn && ds->fcn->addr == ds->at);
-	if (rz_list_length(xrefs) > ds->maxrefs) {
+	RzList *lines = rz_str_split_list(all_xrefs, "\n", 0);
+	RzListIter *iter;
+	char *line_text;
+
+	rz_list_foreach (lines, iter, line_text) {
 		ds_begin_line(ds);
 		ds_pre_xrefs(ds, fcnlines);
-		ds_comment(ds, false, "%s; XREFS(%d)",
-			COLOR(ds, comment),
-			rz_list_length(xrefs));
+		ds_comment(ds, false, "%s%s", COLOR(ds, comment), line_text);
 		ds_print_color_reset(ds);
 		ds_newline(ds);
-		rz_list_free(xrefs);
-		return;
 	}
-	if (rz_list_length(xrefs) > ds->foldxrefs) {
+
+	rz_list_free(lines);
+	free(all_xrefs);
+}
+
+/**
+ * \brief Returns the auto-generated XREF comment(s) for a given address
+ *
+ * It returns a multi-line string containing cross-references to the given address.
+ * The output format (Summary, Folded, or Detailed) is determined by the
+ * `asm.xrefs.max` and `asm.xrefs.fold` configuration keys
+ *
+ * \param core RzCore instance
+ * \param addr The address to get XREFs for
+ * \return A heap-allocated string containing the XREF comments, or NULL if none
+ */
+RZ_API char *rz_core_get_xref_comment(RzCore *core, ut64 addr) {
+	RzListIter *iter, *it;
+	RzAnalysisXRef *xrefi;
+	RzStrBuf *sb = rz_strbuf_new("");
+	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, addr);
+
+	if (!xrefs || rz_list_empty(xrefs)) {
+		rz_list_free(xrefs);
+		return rz_strbuf_drain(sb);
+	}
+
+	ut32 xref_count = rz_list_length(xrefs);
+	ut64 maxrefs = rz_config_get_i(core->config, "asm.xrefs.max");
+	ut64 foldxrefs = rz_config_get_i(core->config, "asm.xrefs.fold");
+
+	if (xref_count > maxrefs) {
+		rz_strbuf_appendf(sb, "; XREFS(%d)", xref_count);
+		rz_list_free(xrefs);
+		return rz_strbuf_drain(sb);
+	}
+
+	if (xref_count > foldxrefs) {
+		int count = 0;
 		int cols = rz_cons_get_size(NULL);
-		cols -= 15;
+		cols = (cols - 15);
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
-		ds_begin_line(ds);
-		ds_pre_xrefs(ds, fcnlines);
-		ds_comment(ds, false, "%s; XREFS: ", COLOR(ds, comment));
+		rz_strbuf_append(sb, "; XREFS: ");
 		rz_list_foreach (xrefs, iter, xrefi) {
-			ds_comment(ds, false, "%s 0x%08" PFMT64x "  ",
+			rz_strbuf_appendf(sb, "%s 0x%08" PFMT64x "  ",
 				rz_analysis_xrefs_type_tostring(xrefi->type), xrefi->from);
+
 			if (count == cols) {
 				if (rz_list_has_next(iter)) {
-					ds_print_color_reset(ds);
-					ds_newline(ds);
-					ds_begin_line(ds);
-					ds_pre_xrefs(ds, fcnlines);
-					ds_comment(ds, false, "%s; XREFS: ", COLOR(ds, comment));
+					rz_strbuf_append(sb, "\n; XREFS: ");
 				}
 				count = 0;
 			} else {
-				count++;
+				++count;
 			}
 		}
-		ds_print_color_reset(ds);
-		ds_newline(ds);
 		rz_list_free(xrefs);
-		return;
+		return rz_strbuf_drain(sb);
 	}
 
 	RzList *addrs = rz_list_newf(free);
 	RzAnalysisFunction *fun, *next_fun;
 	RzFlagItem *f, *next_f;
 	rz_list_foreach (xrefs, iter, xrefi) {
-		if (!ds->asm_xrefs_code && xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
+
+		bool code = rz_config_get_b(core->config, "asm.xrefs.code");
+		if (!code && xrefi->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			continue;
 		}
-		if (xrefi->to == ds->at) {
-			realname = NULL;
-			fun = fcnIn(ds, xrefi->from, -1);
+		if (xrefi->to == addr) {
+			char *name = NULL;
+			fun = rz_analysis_get_fcn_in(core->analysis, xrefi->from, -1);
 			if (fun) {
 				if (iter != rz_list_tail(xrefs)) {
 					ut64 next_addr = ((RzAnalysisXRef *)rz_list_iter_get_next_data(iter))->from;
@@ -1348,39 +1377,29 @@ static void ds_show_xrefs(RzDisasmState *ds) {
 					name = rz_str_dup("unk");
 				}
 			}
-			ds_begin_line(ds);
-			ds_pre_xrefs(ds, fcnlines);
+
 			const char *plural = rz_list_length(addrs) > 1 ? "S" : "";
 			const char *plus = fun ? "" : "+";
-			ds_comment(ds, false, "%s; %s XREF%s from %s @ ",
-				COLOR(ds, comment), rz_analysis_xrefs_type_tostring(xrefi->type), plural,
-				realname ? realname : name);
+			rz_strbuf_appendf(sb, "; %s XREF%s from %s @ ", rz_analysis_xrefs_type_tostring(xrefi->type), plural, name);
 			ut64 *addrptr;
 			rz_list_foreach (addrs, it, addrptr) {
 				if (addrptr && *addrptr) {
-					ds_comment(ds, false, "%s%s0x%" PFMT64x, it == rz_list_head(addrs) ? "" : ", ", plus, *addrptr);
+					rz_strbuf_appendf(sb, "%s%s0x%" PFMT64x, it == rz_list_head(addrs) ? "" : ", ", plus, *addrptr);
 				}
 			}
-			if (realname && (!fun || rz_analysis_get_function_at(core->analysis, ds->at))) {
-				const char *pad = ds->show_comment_right ? "" : " ";
-				if (!ds->show_comment_right) {
-					ds_newline(ds);
-					ds_begin_line(ds);
-					ds_pre_xrefs(ds, fcnlines);
-				}
-				ds_comment(ds, false, " %s; %s", pad, name);
+
+			if (rz_list_has_next(iter)) {
+				rz_strbuf_append(sb, "\n");
 			}
-			ds_comment(ds, false, "%s", COLOR_RESET(ds));
-			ds_newline(ds);
 			rz_list_purge(addrs);
 			RZ_FREE(name);
-			free(realname);
 		} else {
 			RZ_LOG_ERROR("core: corrupted database?\n");
 		}
 	}
 	rz_list_free(addrs);
 	rz_list_free(xrefs);
+	return rz_strbuf_drain(sb);
 }
 
 static bool calc_tab_buf_size(size_t len, size_t tabs, size_t *c) {
