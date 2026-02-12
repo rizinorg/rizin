@@ -252,6 +252,9 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		}
 		plugin_fini(analysis);
 		analysis->cur = h;
+
+		// always set the cpu as the name of the arch.
+		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
 			rz_iterator_free(it);

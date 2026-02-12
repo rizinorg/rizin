@@ -227,19 +227,30 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 	return true;
 }
 
-static ut32 core_arch_get_default_bits(RzCore *core) {
-	ut32 bits = core->rasm->cur->bits;
-	if (bits & 32) {
-		return 32;
-	} else if (bits & 64) {
-		return 64;
-	} else if (bits & 16) {
-		return 16;
-	} else if (bits & 8) {
-		return 8;
+static ut32 core_arch_find_bits_via_bin(RzCore *core, const char *arch) {
+	const RzCoreFile *cf = NULL;
+	RzListIter *lit;
+	void **vit;
+
+	rz_list_foreach (core->files, lit, cf) {
+		rz_pvector_foreach (&cf->binfiles, vit) {
+			const RzBinFile *bf = *vit;
+			const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+			if (info && info->arch && RZ_STR_EQ(info->arch, arch)) {
+				return info->bits;
+			}
+		}
 	}
 
-	return CORE_DEFAULT_BITS;
+	return 0;
+}
+
+static ut32 core_arch_get_default_bits(RzCore *core, const char *arch) {
+	const ut32 bits = core_arch_find_bits_via_bin(core, arch);
+	if (bits) {
+		return bits;
+	}
+	return core->rasm->bits;
 }
 
 RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
@@ -256,7 +267,7 @@ RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 b
 		}
 
 		if (!bits) {
-			bits = core_arch_get_default_bits(core);
+			bits = core_arch_get_default_bits(core, arch);
 		}
 	}
 
@@ -411,7 +422,7 @@ RZ_DEPRECATE static bool core_can_update(RzCore *core, const char *u_arch, ut32 
  * \return     On success returns true, otherwise false.
  */
 RZ_DEPRECATE RZ_API bool rz_core_arch_configure(RZ_NONNULL RzCore *core, RZ_NULLABLE const char *arch, int bits, RZ_NULLABLE const char *cpu, RZ_NULLABLE const char *os, RZ_NULLABLE const char *platform) {
-	rz_return_val_if_fail(core && core->config && core->rasm && core->analysis && core->parser && core->dbg && core->egg, false);
+	rz_return_val_if_fail(core && core->config && core->bin && core->rasm && core->analysis && core->parser && core->dbg && core->egg, false);
 
 	if (bits < 1) {
 		// ensure we never have negative bits.

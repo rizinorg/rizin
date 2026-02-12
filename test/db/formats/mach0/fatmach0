@@ -97,6 +97,7 @@ RUN
 
 NAME=fatmach0 entry0
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=%v entry0
 EXPECT=<<EOF
 0x100000ef8
@@ -105,6 +106,7 @@ RUN
 
 NAME=fatmach0 entry0 data
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 64
 CMDS=p8 16 @ entry0
 EXPECT=<<EOF
 6a004889e54883e4f0488b7d08488d75
