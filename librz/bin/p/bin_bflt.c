@@ -270,7 +270,7 @@ static RzStructuredData *bflt_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	rz_structured_data_map_add_bytes(bflt_sd, "Magic", (const ut8 *)bin->hdr.magic, 4, true);
+	rz_structured_data_map_add_bytes(bflt_sd, "Magic", (const ut8 *)bin->hdr.magic, 4, RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
 	rz_structured_data_map_add_unsigned(bflt_sd, "Revision", bin->hdr.rev, true);
 	rz_structured_data_map_add_unsigned(bflt_sd, "Entry", bin->hdr.entry, true);
 

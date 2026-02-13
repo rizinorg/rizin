@@ -625,7 +625,7 @@ iH
 EOF
 EXPECT=<<EOF
 bflt:
-  Magic: "62:46:4c:54"
+  Magic: "62 46 4c 54                                     |bFLT            |"
   Revision: 0x4
   Entry: 0x44
   DataStart: 0x2e3c
