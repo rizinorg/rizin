@@ -627,7 +627,7 @@ static RzStructuredData *wasm_elements_structure(RzBinFile *bf) {
 		rz_structured_data_map_add_unsigned(m, "index", element->index, false);
 		rz_structured_data_map_add_unsigned(m, "num_elem", element->num_elem, false);
 
-		if (element->elems && element->num_elem) {
+		if (element->num_elem) {
 			RzStructuredData *elems = rz_structured_data_new_array();
 			if (!elems) {
 				rz_structured_data_free(arr);
