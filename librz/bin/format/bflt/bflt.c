@@ -36,6 +36,7 @@ static bool bflt_init_hdr(RzBfltObj *bin) {
 		return false;
 	}
 
+	memcpy(bin->hdr.magic, bhdr, 4);
 	size_t i = 4;
 	bin->hdr.rev = READ(bhdr, i);
 	bin->hdr.entry = READ(bhdr, i);

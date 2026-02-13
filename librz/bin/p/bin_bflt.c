@@ -7,7 +7,10 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
+#include <string.h>
 #include "bflt/bflt.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_structured_data.h"
 
 #define VFILE_NAME_PATCHED "patched"
 
@@ -248,6 +251,40 @@ static void destroy(RzBinFile *bf) {
 	rz_bflt_free(bf->o->bin_obj);
 }
 
+static RzStructuredData *bflt_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	RzBfltObj *bin = bf->o->bin_obj;
+	if (!bin) {
+		return NULL;
+	}
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *bflt_sd = rz_structured_data_map_add_map(info, "bflt");
+	if (!bflt_sd) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_bytes(bflt_sd, "Magic", (const ut8 *)bin->hdr.magic, 4, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "Revision", bin->hdr.rev, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "Entry", bin->hdr.entry, true);
+
+	rz_structured_data_map_add_unsigned(bflt_sd, "DataStart", bin->hdr.data_start, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "DataEnd", bin->hdr.data_end, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "BssEnd", bin->hdr.bss_end, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "StackSize", bin->hdr.stack_size, false);
+	rz_structured_data_map_add_unsigned(bflt_sd, "RelocStart", bin->hdr.reloc_start, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "RelocCount", bin->hdr.reloc_count, false);
+	rz_structured_data_map_add_unsigned(bflt_sd, "Flags", bin->hdr.flags, true);
+	rz_structured_data_map_add_unsigned(bflt_sd, "BuildDate", bin->hdr.build_date, false);
+
+	return info;
+}
 RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux binary",
@@ -261,6 +298,7 @@ RzBinPlugin rz_bin_plugin_bflt = {
 	.entries = &entries,
 	.sections = &sections,
 	.info = &info,
+	.bin_structure = &bflt_structure,
 	.relocs = &relocs
 };
 

@@ -618,3 +618,25 @@ PIE      true
 EOF
 RUN
 
+NAME=bflt header
+FILE=bins/bflt/bin.bflt
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+bflt:
+  Magic: "62:46:4c:54"
+  Revision: 0x4
+  Entry: 0x44
+  DataStart: 0x2e3c
+  DataEnd: 0x2fc4
+  BssEnd: 0x4ff0
+  StackSize: 4096
+  RelocStart: 0x2fc4
+  RelocCount: 92
+  Flags: 0x1
+  BuildDate: 1481527744
+
+EOF
+RUN
+
