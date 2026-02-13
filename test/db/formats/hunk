@@ -1,36 +1,15 @@
-NAME=hunk format identification
+NAME=hunk test
 FILE=bins/hunk/test
-CMDS=i~^format
+CMDS=i~^format; iS; is~magic_data,helper_function; ir
 EXPECT=<<EOF
 format   hunk
-EOF
-RUN
-
-NAME=hunk sections and mapping
-FILE=bins/hunk/test
-CMDS=iS
-EXPECT=<<EOF
      paddr   size      vaddr  vsize align perm name        type flags 
 ----------------------------------------------------------------------
 0x00000028 0x334c 0x00008000 0x334c   0x0 -r-x hunk_0_code      
 0x00004288  0x110 0x0000b34c  0x110   0x0 -rw- hunk_1_data      
 0x00004478    0x0 0x0000b45c   0x6c   0x0 -rw- hunk_2_bss       
-EOF
-RUN
-
-NAME=hunk symbols check
-FILE=bins/hunk/test
-CMDS=is~magic_data,helper_function
-EXPECT=<<EOF
   0 0x000002b2 0x0000828a NONE FUNC    0     _helper_function
   0 0x0000428c 0x0000b350 NONE OBJ     0     _magic_data
-EOF
-RUN
-
-NAME=hunk relocations check
-FILE=bins/hunk/test
-CMDS=ir
-EXPECT=<<EOF
      vaddr      paddr type   name 
 ----------------------------------
 0x00008002 0x0000002a ADD_32 
