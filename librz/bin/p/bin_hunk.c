@@ -81,16 +81,6 @@ typedef struct program_data {
 	RzVector *hunks; // without the header
 } ProgramData;
 
-static bool read_be32(RzBuffer *buf, ut64 *paddr, ut32 *result) {
-	rz_return_val_if_fail(buf, false);
-	if (rz_buf_read_at(buf, *paddr, (ut8 *)result, 4) < 4) {
-		return false;
-	}
-	*result = rz_read_be32(result);
-	*paddr += 4;
-	return true;
-}
-
 static inline const char *hunk_get_name_from_type(ut32 type) {
 	switch (type) {
 	case HUNK_HEADER:
@@ -151,12 +141,12 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	paddr += 4; // skip the header
 
 	ut32 strings_length;
-	while (read_be32(bf->buf, &paddr, &strings_length) && strings_length > 0) {
+	while (rz_buf_read_be32_offset(bf->buf, &paddr, &strings_length) && strings_length > 0) {
 		paddr += strings_length * 4; // skip the strings
 	}
 
 	ut32 hunks_count;
-	if (!read_be32(bf->buf, &paddr, &hunks_count)) {
+	if (!rz_buf_read_be32_offset(bf->buf, &paddr, &hunks_count)) {
 		return false;
 	}
 	program_data->hunks_count = hunks_count;
@@ -176,7 +166,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	ut32 current_hunk_index = 0;
 	ut32 hunk_type;
 	while (paddr < bf->size) {
-		if (!read_be32(bf->buf, &paddr, &hunk_type)) {
+		if (!rz_buf_read_be32_offset(bf->buf, &paddr, &hunk_type)) {
 			break;
 		}
 
@@ -187,7 +177,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 			}
 
 			ut32 hunk_size;
-			if (!read_be32(bf->buf, &paddr, &hunk_size)) {
+			if (!rz_buf_read_be32_offset(bf->buf, &paddr, &hunk_size)) {
 				break;
 			}
 			ut32 actual_size = (hunk_size & 0x3FFFFFFF) * 4; // mask the first 2 bits
@@ -219,20 +209,20 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 			}
 
 			ut32 relocs_count;
-			if (!read_be32(bf->buf, &paddr, &relocs_count)) {
+			if (!rz_buf_read_be32_offset(bf->buf, &paddr, &relocs_count)) {
 				return false;
 			}
 
 			while (relocs_count > 0) {
 				ut32 target_hunk_index;
-				if (!read_be32(bf->buf, &paddr, &target_hunk_index)) {
+				if (!rz_buf_read_be32_offset(bf->buf, &paddr, &target_hunk_index)) {
 					return false;
 				}
 
 				ut32 i;
 				for (i = 0; i < relocs_count; i++) {
 					ut32 offset;
-					if (!read_be32(bf->buf, &paddr, &offset)) {
+					if (!rz_buf_read_be32_offset(bf->buf, &paddr, &offset)) {
 						return false;
 					}
 
@@ -246,7 +236,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 					return false;
 				}
 
-				if (!read_be32(bf->buf, &paddr, &relocs_count)) {
+				if (!rz_buf_read_be32_offset(bf->buf, &paddr, &relocs_count)) {
 					return false;
 				}
 			}
@@ -262,10 +252,12 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 			}
 
 			HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, target_index);
-			rz_return_val_if_fail(hunk_data, false);
+			if (!hunk_data) {
+				break;
+			}
 
 			ut32 symbol_length;
-			if (!read_be32(bf->buf, &paddr, &symbol_length)) {
+			if (!rz_buf_read_be32_offset(bf->buf, &paddr, &symbol_length)) {
 				return false;
 			}
 			while (symbol_length > 0) {
@@ -282,7 +274,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 				paddr += symbol_length * 4;
 
 				ut32 symbol_offset;
-				if (!read_be32(bf->buf, &paddr, &symbol_offset)) {
+				if (!rz_buf_read_be32_offset(bf->buf, &paddr, &symbol_offset)) {
 					return false;
 				}
 
@@ -290,7 +282,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 				hunk_symbol.offset = symbol_offset;
 				rz_vector_push(hunk_data->symbols, &hunk_symbol); // uses memcpy to assign
 
-				if (!read_be32(bf->buf, &paddr, &symbol_length)) {
+				if (!rz_buf_read_be32_offset(bf->buf, &paddr, &symbol_length)) {
 					return false;
 				}
 			}
@@ -305,7 +297,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 			rz_return_val_if_fail(hunk_data, false);
 
 			ut32 debug_raw_size;
-			if (!read_be32(bf->buf, &paddr, &debug_raw_size)) {
+			if (!rz_buf_read_be32_offset(bf->buf, &paddr, &debug_raw_size)) {
 				return false;
 			}
 			ut32 debug_size = (debug_raw_size & 0x3FFFFFFF) * 4; // mask the first 2 bits
@@ -320,7 +312,7 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 			paddr += debug_size;
 
 			ut32 next_tag;
-			if (read_be32(bf->buf, &paddr, &next_tag)) {
+			if (rz_buf_read_be32_offset(bf->buf, &paddr, &next_tag)) {
 				if (next_tag != HUNK_END) {
 					paddr -= 4;
 				}
