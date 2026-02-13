@@ -294,6 +294,41 @@ static void init_symbols_info(ELFOBJ *bin) {
 	}
 }
 
+static void init_elf_context(ELFOBJ *bin) {
+	bin->elfctx = RZ_NEW0(RzElfCtx);
+	if (!bin->elfctx) {
+		RZ_LOG_ERROR("Failed to initialize ELF context.\n");
+	}
+	ut64 got_addr;
+	ut64 jmprel;
+	ut64 pltrelsz;
+	ut64 mips_got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+		got_addr = UT64_MAX;
+	}
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &jmprel)) {
+		jmprel = UT64_MAX;
+	}
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &pltrelsz)) {
+		pltrelsz = UT64_MAX;
+	}
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &mips_got_addr)) {
+		mips_got_addr = UT64_MAX;
+	}
+
+	bin->elfctx->plt_got = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
+	bin->elfctx->plt_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
+
+	bin->elfctx->got_addr = got_addr;
+	bin->elfctx->jmprel = jmprel;
+	bin->elfctx->pltrelsz = pltrelsz;
+	bin->elfctx->mips_got_addr = mips_got_addr;
+}
+
 static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 	/* bin is not an ELF */
 	if (!init_ehdr(bin)) {
@@ -322,6 +357,8 @@ static bool init(ELFOBJ *bin, RzBinObjectLoadOptions *options) {
 			init_shdr(bin, options, sections);
 		}
 	}
+
+	init_elf_context(bin);
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
@@ -391,6 +428,7 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 	rz_vector_free(bin->symbols);
 	rz_vector_free(bin->imports);
 
+	free(bin->elfctx);
 	free(bin);
 }
 

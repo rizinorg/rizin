@@ -222,10 +222,8 @@ static void omf_structure_add_section(RzStructuredData *sections, OMF_segment *s
 	}
 
 	const char *name = omf_segment_name(obj, seg);
-	if (name) {
-		rz_structured_data_map_add_string(section, "name", rz_str_get(name));
-	}
 
+	rz_structured_data_map_add_string(section, "name", rz_str_get(name));
 	rz_structured_data_map_add_unsigned(section, "name_idx", seg->name_idx, false);
 	rz_structured_data_map_add_unsigned(section, "vaddr", seg->vaddr, true);
 	rz_structured_data_map_add_unsigned(section, "size", seg->size, false);

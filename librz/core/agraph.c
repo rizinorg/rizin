@@ -827,7 +827,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 		d.to = b;
 		it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 		if (it) {
-			struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
+			struct dist_t *old = (struct dist_t *)rz_list_val(it);
 			return old->dist;
 		}
 	}
@@ -850,7 +850,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 				d.to = next;
 				it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 				if (it) {
-					struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
+					struct dist_t *old = (struct dist_t *)rz_list_val(it);
 					res += old->dist;
 					found = true;
 				}
@@ -893,7 +893,7 @@ static void set_dist_nodes(const RzAGraph *g, int l, int cur, int next) {
 	find_el.from = vi;
 	find_el.to = vip;
 	it = rz_list_find(g->dists, &find_el, (RzListComparator)find_dist, NULL);
-	d = it ? (struct dist_t *)rz_list_iter_get_data(it) : RZ_NEW0(struct dist_t);
+	d = it ? (struct dist_t *)rz_list_val(it) : RZ_NEW0(struct dist_t);
 
 	d->from = vi;
 	d->to = vip;
