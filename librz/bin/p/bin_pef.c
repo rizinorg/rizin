@@ -261,7 +261,7 @@ static RzPVector /*<RzBinSection *>*/ *pef_sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector *pef_entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *pef_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	PefContainer *c = (PefContainer *)bf->o->bin_obj;
