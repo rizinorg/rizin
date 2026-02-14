@@ -804,9 +804,10 @@ static bool internal_ht_delete(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
 	INDEX_TYPE idx;
+	ut32 old_key_size = calcsize_key(ht, old_key);
 
 	// First look for the value associated with old_key
-	if ((idx = ctrl_table_lookup(ht, old_key, calcsize_key(ht, old_key))) == INVALID_INDEX) {
+	if ((idx = ctrl_table_lookup(ht, old_key, old_key_size)) == INVALID_INDEX) {
 		return false;
 	}
 
@@ -816,7 +817,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	}
 
 	// Second look up of of the element associated with `old_key`, since the previous index could be invalidated
-	if ((idx = ctrl_table_lookup(ht, old_key, calcsize_key(ht, old_key))) == INVALID_INDEX) {
+	if ((idx = ctrl_table_lookup(ht, old_key, old_key_size)) == INVALID_INDEX) {
 		return false;
 	}
 
@@ -1053,6 +1054,9 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName
 	}
 
 	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
+	if (!iter) {
+		Ht_(free_iter_mut_state)(state);
+	}
 	return iter;
 }
 
@@ -1069,6 +1073,9 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtNa
 	rz_return_val_if_fail(state, NULL);
 
 	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (!iter) {
+		Ht_(free_iter_state)(state);
+	}
 	return iter;
 }
 
@@ -1085,5 +1092,8 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL
 	rz_return_val_if_fail(state, NULL);
 
 	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (!iter) {
+		Ht_(free_iter_state)(state);
+	}
 	return iter;
 }
