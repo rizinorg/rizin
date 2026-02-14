@@ -908,6 +908,62 @@ static RzBinAddr *avr_binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	}
 }
 
+static void avr_structure_add_board_info(RzStructuredData *avr, const BinAvrRom *rom) {
+	if (!rom->board) {
+		return;
+	}
+	rz_structured_data_map_add_string(avr, "board", rz_str_get(rom->board->name));
+	rz_structured_data_map_add_string(avr, "cpu", rz_str_get(rom->board->cpu));
+}
+
+static void avr_structure_add_reset_vector(RzStructuredData *avr, const BinAvrRom *rom) {
+	if (rz_vector_empty(rom->interrupt_handlers)) {
+		return;
+	}
+	ut64 *reset_handler = rz_vector_index_ptr(rom->interrupt_handlers, 0);
+	if (!reset_handler || *reset_handler == UT64_MAX) {
+		return;
+	}
+	RzStructuredData *reset = rz_structured_data_map_add_map(avr, "reset_vector");
+	if (!reset) {
+		return;
+	}
+	rz_structured_data_map_add_unsigned(reset, "address", 0, true);
+	rz_structured_data_map_add_unsigned(reset, "handler", *reset_handler, true);
+}
+
+static void avr_structure_add_interrupt_info(RzStructuredData *avr, const BinAvrRom *rom) {
+	rz_structured_data_map_add_unsigned(avr, "interrupt_vector_size", rom->n_bytes, false);
+	rz_structured_data_map_add_unsigned(avr, "num_interrupts",
+		rz_vector_len(rom->interrupt_handlers), false);
+	if (rom->bad_interrupt != UT64_MAX) {
+		rz_structured_data_map_add_unsigned(avr, "bad_interrupt", rom->bad_interrupt, true);
+	}
+}
+
+static RzStructuredData *avr_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	BinAvrRom *rom = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *avr = rz_structured_data_map_add_map(info, "avr");
+	if (!avr) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	avr_structure_add_board_info(avr, rom);
+	avr_structure_add_reset_vector(avr, rom);
+	avr_structure_add_interrupt_info(avr, rom);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR usermode",
@@ -921,6 +977,7 @@ RzBinPlugin rz_bin_plugin_avr = {
 	.check_buffer = &avr_check_buffer,
 	.info = &avr_info,
 	.strings = &avr_strings,
+	.bin_structure = &avr_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE
