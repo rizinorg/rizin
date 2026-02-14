@@ -6,6 +6,37 @@
  * paper: "REV.NG: A Unified Binary Analysis Framework to Recover CFGs and Function Boundaries"
  * chapter: "4.2 Function boundaries recovery"
  * doi: 10.1145/3033019.3033028
+ *
+ * The actualy algorithm is really simple.
+ *
+ * TERMS:
+ *
+ * Basic Block: A sequence of instructions ending with a branch of any kind.
+ * Call candidate: RzAnalysisCallCandidate
+ * Candidate function entry points (CFEP): Addresses of possible function entry point.
+ * Return Addresses: address after a call candidate BB, with an xref to it.
+ * Basic Block CFG: Control Flow Graph with basic blocks as nodes.
+ *
+ * IN:
+ *   - Call candidates.
+ *   - CFEPs
+ *   - Return Addresses
+ *   - Basic Block CFG (bb_cfg)
+ *
+ * ALGO:
+ *
+ * It simply iterates over all CFEPs.
+ * For each one it follows its edges in the bb_cfg.
+ * If an edge belongs to a call, it is NOT taken.
+ * Instead it continues with the basic block after the call, if it is a return address.
+ *
+ * Every walked edge and the basic blocks are added to the function.
+ *
+ * Tail calls are ignored.
+ *
+ * OUT:
+ *  - List of functions
+ *  - Each functions starts with one CFEP, and has a sub-graph in the bb_cfg.
  */
 
 #include "rz_analysis.h"

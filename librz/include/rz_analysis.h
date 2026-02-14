@@ -978,7 +978,7 @@ typedef struct rz_analysis_ref_t {
 
 /**
  * \brief A struct combining information about an instruction storing the
- * a next instruction pointer of a basic block.
+ * next instruction pointer of a basic block.
  * This indicates that the ending branch instruction in a basic block is
  * a call instruction.
  */
