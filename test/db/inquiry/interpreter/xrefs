@@ -1,118 +1,119 @@
 NAME=Indirect call x86
 FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
-aaaaIp main
-pd 48 @ main
-# Only grep for references within those instructions below.
-axl~0x401a
-ablt~0x401a
-ablt~0x401b
+# This test is incomplete.
+# The graph view of the main function will show the instructions
+# 0x0800005d and 0x08000061 twice.
+# Because they are part of two basic blocks.
+# Once of BB 0x0800005d and once 0x08000040
+aaaaIp sym.main
+pd 48 @ sym.main
+axl
+ablt
 EOF
 EXPECT=<<EOF
-            ;-- main:
-            0x00401a70      push  rbp
-            0x00401a71      mov   rbp, rsp
-            0x00401a74      sub   rsp, 0x20
-            0x00401a78      mov   dword [rbp-0x04], 0x00
-            0x00401a7f      mov   dword [rbp-0x08], 0x00
-            0x00401a86      mov   dword [rbp-0x0c], 0x00
-            ; CODE XREF from main @ +0x4b
-        .-> 0x00401a8d      cmp   dword [rbp-0x0c], 0x03
-       ,==< 0x00401a91      jnb   0x401abd
-       |:   0x00401a93      mov   eax, dword [rbp-0x0c]
-       |:   0x00401a96      mov   ecx, eax
-       |:   0x00401a98      mov   al, 0x00
-       |:   0x00401a9a      call  qword [rcx*8+obj.fcn_arr]            ; 0x4a80d0
-       |:   ; CODE XREF from sym.function_0 @ +0xa
-       |:   ; CODE XREF from sym.function_1 @ +0xa
-       |:   ; CODE XREF from sym.function_2 @ +0xa
-       |:   0x00401aa1      mov   qword [rbp-0x18], rax
-       |:   0x00401aa5      mov   rax, qword [rbp-0x18]
-       |:   0x00401aa9      movzx eax, byte [rax]                      ; [0x4a9b50:1]=0
-       |:   0x00401aac      add   eax, dword [rbp-0x08]
-       |:   0x00401aaf      mov   dword [rbp-0x08], eax
-       |:   0x00401ab2      mov   eax, dword [rbp-0x0c]
-       |:   0x00401ab5      add   eax, 0x01
-       |:   0x00401ab8      mov   dword [rbp-0x0c], eax
-       |`=< 0x00401abb      jmp   0x401a8d
-       |    ; CODE XREF from main @ +0x21
-       `--> 0x00401abd      mov   eax, dword [rbp-0x08]
-            0x00401ac0      add   rsp, 0x20
-            0x00401ac4      pop   rbp
-            0x00401ac5      ret
-            0x00401ac6      nop   word [rax+rax*1], ax
-            ; CODE XREF from main @ +0x2a
-            ;-- function_0:
-            0x00401ad0      push  rbp
-            0x00401ad1      mov   rbp, rsp
-            0x00401ad4      call  sym.some_ptr
-            ; CODE XREF from sym.some_ptr @ +0xf
-            0x00401ad9      pop   rbp
-            0x00401ada      ret
-            0x00401adb      nop   dword [rax+rax*1], eax
-            ; CODE XREF from sym.function_0 @ +0x4
-            ; CODE XREF from sym.function_1 @ +0x4
-            ; CODE XREF from sym.function_2 @ +0x4
-            ;-- some_ptr:
-            0x00401ae0      push  rbp
-            0x00401ae1      mov   rbp, rsp
-            0x00401ae4      mov   rax, obj.z                           ; 0x4a9b50
-            0x00401aee      pop   rbp
-            0x00401aef      ret
-            ; CODE XREF from main @ +0x2a
-            ;-- function_1:
-            0x00401af0      push  rbp
-            0x00401af1      mov   rbp, rsp
-            0x00401af4      call  sym.some_ptr
-            ; CODE XREF from sym.some_ptr @ +0xf
-            0x00401af9      pop   rbp
-            0x00401afa      ret
-            0x00401afb      nop   dword [rax+rax*1], eax
-            ; CODE XREF from main @ +0x2a
-            ;-- function_2:
-            0x00401b00      push  rbp
-            0x00401b01      mov   rbp, rsp
-            0x00401b04      call  sym.some_ptr
-            ; CODE XREF from sym.some_ptr @ +0xf
-            0x00401b09      pop   rbp
-            0x00401b0a      ret
-                                 main+33 0x401a91 ->      CODE -> 0x401abd main+77
-                                 main+42 0x401a9a ->      CODE -> 0x401ad0 sym.function_0
-                                 main+42 0x401a9a ->      CODE -> 0x401af0 sym.function_1
-                                 main+42 0x401a9a ->      CODE -> 0x401b00 sym.function_2
-                                 main+42 0x401a9a ->      DATA -> 0x4a80d0 obj.fcn_arr
-                                 main+42 0x401a9a ->      DATA -> 0x4a80d8 obj.fcn_arr+8
-                                 main+42 0x401a9a ->      DATA -> 0x4a80e0 obj.fcn_arr+16
-                                 main+57 0x401aa9 ->      DATA -> 0x4a9b50 obj.z
-                                 main+75 0x401abb ->      CODE -> 0x401a8d main+29
-                        sym.function_0+4 0x401ad4 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_0+10 0x401ada ->      CODE -> 0x401aa1 main+49
-                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401ad9 sym.function_0+9
-                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401af9 sym.function_1+9
-                         sym.some_ptr+15 0x401aef ->      CODE -> 0x401b09 sym.function_2+9
-                        sym.function_1+4 0x401af4 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_1+10 0x401afa ->      CODE -> 0x401aa1 main+49
-                        sym.function_2+4 0x401b04 ->      CODE -> 0x401ae0 sym.some_ptr
-                       sym.function_2+10 0x401b0a ->      CODE -> 0x401aa1 main+49
-0x401a70   35      0      0                            
-0x401a8d    6      0      0                            
-0x401a93   14      0      0                            
-0x401aa1   28      0      0                            
-0x401abd    9      0      0                            
-0x401ad0    9      0      0                 0x00401ae0  0x00401ae0
-0x401ad9    2      0      0                            
-0x401ae0   16      0      0                            
-0x401af0    9      0      0                 0x00401ae0  0x00401ae0
-0x401af9    2      0      0                            
-0x401b00    9      0      0                 0x00401ae0  0x00401ae0
-0x401b09    2      0      0                            
-0x401b70   27      0      0                            
-0x401b8b   34      0      0                            
-0x401bb6   23      0      0                            
-0x401bcd   18      0      0                            
-0x401bdf    5      0      0                            
-0x401be4    9      0      0                            
-0x401bed    5      0      0                            
+            ;-- section..text:
+            ;-- .text:
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000040      push  rbp                                  ; RELOC TARGET 32 .text @ 0x08000040 - 0x8000138 ; [02] -r-x section size 155 named .text
+|           0x08000041      mov   rbp, rsp
+|           0x08000044      sub   rsp, 0x20
+|           0x08000048      mov   dword [rbp-0x04], 0x00
+|           0x0800004f      mov   dword [rbp-0x08], 0x00
+|           0x08000056      mov   dword [rbp-0x0c], 0x00
+|           ; CODE XREF from sym.main @ 0x800008b
+|       .-> 0x0800005d      cmp   dword [rbp-0x0c], 0x03
+|      ,==< 0x08000061      jnb   0x800008d
+|      |:   0x08000063      mov   eax, dword [rbp-0x0c]
+|      |:   0x08000066      mov   ecx, eax
+|      |:   0x08000068      mov   al, 0x00
+|      |:   0x0800006a      call  qword [rcx*8+obj.fcn_arr]            ; sym..data
+|      |:                                                              ; 0x80000e0; RELOC 32 .data @ 0x080000e0
+|      |:   ; CODE XREF from sym.function_0 @ 0x80000aa
+|      |:   ; CODE XREF from sym.function_1 @ 0x80000ca
+|      |:   ; CODE XREF from sym.function_2 @ 0x80000da
+|      |:   0x08000071      mov   qword [rbp-0x18], rax
+|      |:   0x08000075      mov   rax, qword [rbp-0x18]
+|      |:   0x08000079      movzx eax, byte [rax]
+|      |:   0x0800007c      add   eax, dword [rbp-0x08]
+|      |:   0x0800007f      mov   dword [rbp-0x08], eax
+|      |:   0x08000082      mov   eax, dword [rbp-0x0c]
+|      |:   0x08000085      add   eax, 0x01
+|      |:   0x08000088      mov   dword [rbp-0x0c], eax
+|      |`=< 0x0800008b      jmp   0x800005d
+|      |    ; CODE XREF from sym.main @ 0x8000061
+|      `--> 0x0800008d      mov   eax, dword [rbp-0x08]
+|           0x08000090      add   rsp, 0x20
+|           0x08000094      pop   rbp
+\           0x08000095      ret
+            0x08000096      nop   word [rax+rax*1], ax
+            ; CODE XREF from sym.main @ 0x800006a
+/ sym.function_0();
+|           0x080000a0      push  rbp
+|           0x080000a1      mov   rbp, rsp
+|           0x080000a4      call  sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000bf
+|           0x080000a9      pop   rbp
+\           0x080000aa      ret
+            0x080000ab      nop   dword [rax+rax*1], eax
+            ; CODE XREF from sym.function_0 @ 0x80000a4
+            ; CODE XREF from sym.function_1 @ 0x80000c4
+            ; CODE XREF from sym.function_2 @ 0x80000d4
+/ sym.some_ptr();
+|           0x080000b0      push  rbp
+|           0x080000b1      mov   rbp, rsp
+|           0x080000b4      mov   rax, obj.z                           ; sym..bss
+|                                                                      ; 0x80000f8; RELOC 64 .bss @ 0x080000f8
+|           0x080000be      pop   rbp
+\           0x080000bf      ret
+            ; CODE XREF from sym.main @ 0x800006a
+/ sym.function_1();
+|           0x080000c0      push  rbp
+|           0x080000c1      mov   rbp, rsp
+|           0x080000c4      call  sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000bf
+|           0x080000c9      pop   rbp
+\           0x080000ca      ret
+            0x080000cb      nop   dword [rax+rax*1], eax
+            ; CODE XREF from sym.main @ 0x800006a
+/ sym.function_2();
+|           0x080000d0      push  rbp
+|           0x080000d1      mov   rbp, rsp
+|           0x080000d4      call  sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000bf
+|           0x080000d9      pop   rbp
+\           0x080000da      ret
+                        section..text+33 0x8000061 ->      CODE -> 0x800008d reloc..data+32
+                        section..text+42 0x800006a ->      CODE -> 0x80000a0 sym.function_0
+                        section..text+42 0x800006a ->      CODE -> 0x80000c0 sym.function_1
+                        section..text+42 0x800006a ->      CODE -> 0x80000d0 sym.function_2
+                        section..text+42 0x800006a ->      DATA -> 0x80000e0 section..data
+                        section..text+42 0x800006a ->      DATA -> 0x80000e8 reloc..text.80000e8
+                        section..text+42 0x800006a ->      DATA -> 0x80000f0 reloc..text.80000f0
+                          reloc..data+30 0x800008b ->      CODE -> 0x800005d section..text+29
+                        sym.function_0+4 0x80000a4 ->      CODE -> 0x80000b0 sym.some_ptr
+                       sym.function_0+10 0x80000aa ->      CODE -> 0x8000071 reloc..data+4
+                            reloc..bss+9 0x80000bf ->      CODE -> 0x80000a9 sym.function_0+9
+                            reloc..bss+9 0x80000bf ->      CODE -> 0x80000c9 sym.function_1+9
+                            reloc..bss+9 0x80000bf ->      CODE -> 0x80000d9 sym.function_2+9
+                        sym.function_1+4 0x80000c4 ->      CODE -> 0x80000b0 sym.some_ptr
+                       sym.function_1+10 0x80000ca ->      CODE -> 0x8000071 reloc..data+4
+                        sym.function_2+4 0x80000d4 ->      CODE -> 0x80000b0 sym.some_ptr
+                       sym.function_2+10 0x80000da ->      CODE -> 0x8000071 reloc..data+4
+     addr size traced ninstr jump       fail       fcns        calls       xrefs       
+---------------------------------------------------------------------------------------
+0x8000040   35      0      0 0x08000063 0x0800008d  0x08000040             
+0x800005d    6      0      0 0x08000063 0x0800008d  0x08000040             
+0x8000063   14      0      0 0x08000071 0x080000c0  0x08000040             
+0x8000071   28      0      0 0x0800005d             0x08000040             
+0x800008d    9      0      0                        0x08000040             
+0x80000a0    9      0      0 0x080000a9             0x080000a0  0x080000b0  0x080000b0
+0x80000a9    2      0      0 0x08000071             0x080000a0             
+0x80000b0   16      0      0 0x080000a9 0x080000c9  0x080000b0             
+0x80000c0    9      0      0 0x080000c9             0x080000c0  0x080000b0  0x080000b0
+0x80000c9    2      0      0 0x08000071             0x080000c0             
+0x80000d0    9      0      0 0x080000d9             0x080000d0  0x080000b0  0x080000b0
+0x80000d9    2      0      0 0x08000071             0x080000d0             
 EOF
 RUN
 
@@ -127,82 +128,82 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
-            ;-- main:
-            0x08000040      [   allocframe(SP,#0x10):raw               ; RELOC TARGET 32 .text @ 0x08000040 + 0x9c ; [02] -r-x section size 168 named .text
-            0x08000044      [   R2 = add(FP,##-0x4)
-            0x08000048      [   memw(R2+#0x0) = ##0x0
-            0x0800004c      [   R2 = add(FP,##-0x8)
-            0x08000050      [   memw(R2+#0x0) = ##0x0
-            0x08000054      [   R2 = add(FP,##-0xc)
-            0x08000058      [   memw(R2+#0x0) = ##0x0
-        ,=< 0x0800005c      [   jump 0x8000060
-        |   ; CODE XREF from reloc..data.8000078 @ +0x30
-       .`-> 0x08000060      [   R2 = memw(FP+##-0xc)
-       :    0x08000064      [   P0 = cmp.gtu(R2,##0x2)
-       :,=< 0x08000068      [   if (P0) jump:nt 0x80000ac
-      ,===< 0x0800006c      [   jump 0x8000070
-      `---> 0x08000070      [   R2 = memw(FP+##-0xc)
-       :|   ;-- .data:
-       :|   0x08000074      /       immext(##sym.some_ptr)             ; 0x80000e8
-       :|                                                              ; sym..data; RELOC 32 .data @ 0x080000e8
-       :|   ;-- .data:
-       :|   0x08000078      \       R2 = memw(R2<<#0x2+##0x80000e8)    ; RELOC 32 .data @ 0x080000e8
-       :|   0x0800007c      [   callr R2
-       :|   ; CODE XREF from sym.function_0 @ +0x8
-       :|   ; CODE XREF from sym.function_1 @ +0x8
-       :|   ; CODE XREF from sym.function_2 @ +0x8
-       :|   0x08000080      [   memw(FP+##-0x10) = R0
-       :|   0x08000084      [   R2 = memw(FP+##-0x10)
-       :|   0x08000088      [   R3 = memub(R2+##0x0)
-       :|   0x0800008c      [   R2 = memw(FP+##-0x8)
-       :|   0x08000090      [   R2 = add(R2,R3)
-       :|   0x08000094      [   memw(FP+##-0x8) = R2
-      ,===< 0x08000098      [   jump 0x800009c
-      `---> 0x0800009c      [   R2 = memw(FP+##-0xc)
-       :|   0x080000a0      [   R2 = add(R2,##0x1)
-       :|   0x080000a4      [   memw(FP+##-0xc) = R2
-       `==< 0x080000a8      [   jump 0x8000060
-        |   ; CODE XREF from section..text @ +0x28
-        `-> 0x080000ac      [   R0 = memw(FP+##-0x8)
-            0x080000b0      [   LR:FP = dealloc_return(FP):raw
-            ; CODE XREF from reloc..data.8000078 @ +0x4
-            ;-- function_0:
-            0x080000b4      [   allocframe(SP,#0x0):raw
-            0x080000b8      [   call sym.some_ptr
-            ; CODE XREF from reloc..bss.80000c8 @ +0x4
-            0x080000bc      [   LR:FP = dealloc_return(FP):raw
-            ; CODE XREF from sym.function_0 @ +0x4
-            ; CODE XREF from sym.function_1 @ +0x4
-            ; CODE XREF from sym.function_2 @ +0x4
-            ;-- some_ptr:
-            0x080000c0      [   allocframe(SP,#0x0):raw
-            ;-- .bss:
-            0x080000c4      /       immext(##sym.some_ptr)             ; RELOC 32 .bss @ 0x080000f8
-            ;-- .bss:
-            0x080000c8      \       R0 = ##obj.z                       ; RELOC 32 .bss @ 0x080000f8
-            0x080000cc      [   LR:FP = dealloc_return(FP):raw
-            ; CODE XREF from reloc..data.8000078 @ +0x4
-            ;-- function_1:
-            0x080000d0      [   allocframe(SP,#0x0):raw
-            0x080000d4      [   call sym.some_ptr
-            ; CODE XREF from reloc..bss.80000c8 @ +0x4
-            0x080000d8      [   LR:FP = dealloc_return(FP):raw
-            ; CODE XREF from reloc..data.8000078 @ +0x4
-            ;-- function_2:
-            0x080000dc      [   allocframe(SP,#0x0):raw
-            0x080000e0      [   call sym.some_ptr
-            ; CODE XREF from reloc..bss.80000c8 @ +0x4
-            0x080000e4      [   LR:FP = dealloc_return(FP):raw
-            ; DATA XREF from reloc..data @ 
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000040      [   allocframe(SP,#0x10):raw               ; RELOC TARGET 32 .text @ 0x08000040 + 0x9c ; [02] -r-x section size 168 named .text
+|           0x08000044      [   R2 = add(FP,##-0x4)
+|           0x08000048      [   memw(R2+#0x0) = ##0x0
+|           0x0800004c      [   R2 = add(FP,##-0x8)
+|           0x08000050      [   memw(R2+#0x0) = ##0x0
+|           0x08000054      [   R2 = add(FP,##-0xc)
+|           0x08000058      [   memw(R2+#0x0) = ##0x0
+|       ,=< 0x0800005c      [   jump 0x8000060
+|       |   ; CODE XREF from sym.main @ 0x80000a8
+|      .`-> 0x08000060      [   R2 = memw(FP+##-0xc)
+|      :    0x08000064      [   P0 = cmp.gtu(R2,##0x2)
+|      :,=< 0x08000068      [   if (P0) jump:nt 0x80000ac
+|     ,===< 0x0800006c      [   jump 0x8000070
+|     `---> 0x08000070      [   R2 = memw(FP+##-0xc)
+|      :|   ;-- .data:
+|      :|   0x08000074      /       immext(##sym.some_ptr)             ; 0x80000e8
+|      :|                                                              ; sym..data; RELOC 32 .data @ 0x080000e8
+|      :|   ;-- .data:
+|      :|   0x08000078      \       R2 = memw(R2<<#0x2)                ; RELOC 32 .data @ 0x080000e8
+|      :|   0x0800007c      [   callr R2
+|      :|   ; CODE XREF from sym.function_0 @ 0x80000bc
+|      :|   ; CODE XREF from sym.function_1 @ 0x80000d8
+|      :|   ; CODE XREF from sym.function_2 @ 0x80000e4
+|      :|   0x08000080      [   memw(FP+##-0x10) = R0
+|      :|   0x08000084      [   R2 = memw(FP+##-0x10)
+|      :|   0x08000088      [   R3 = memub(R2+##0x0)
+|      :|   0x0800008c      [   R2 = memw(FP+##-0x8)
+|      :|   0x08000090      [   R2 = add(R2,R3)
+|      :|   0x08000094      [   memw(FP+##-0x8) = R2
+|     ,===< 0x08000098      [   jump 0x800009c
+|     `---> 0x0800009c      [   R2 = memw(FP+##-0xc)
+|      :|   0x080000a0      [   R2 = add(R2,##0x1)
+|      :|   0x080000a4      [   memw(FP+##-0xc) = R2
+|      `==< 0x080000a8      [   jump 0x8000060
+|       |   ; CODE XREF from sym.main @ 0x8000068
+|       `-> 0x080000ac      [   R0 = memw(FP+##-0x8)
+\           0x080000b0      [   LR:FP = dealloc_return(FP):raw
+            ; CODE XREF from sym.main @ 0x800007c
+/ sym.function_0();
+|           0x080000b4      [   allocframe(SP,#0x0):raw
+|           0x080000b8      [   call sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000cc
+\           0x080000bc      [   LR:FP = dealloc_return(FP):raw
+            ; CODE XREF from sym.function_0 @ 0x80000b8
+            ; CODE XREF from sym.function_1 @ 0x80000d4
+            ; CODE XREF from sym.function_2 @ 0x80000e0
+/ sym.some_ptr();
+|           0x080000c0      [   allocframe(SP,#0x0):raw
+|           ;-- .bss:
+|           0x080000c4      /       immext(##sym.some_ptr)             ; RELOC 32 .bss @ 0x080000f8
+|           ;-- .bss:
+|           0x080000c8      \       R0 = ##obj.z                       ; RELOC 32 .bss @ 0x080000f8
+\           0x080000cc      [   LR:FP = dealloc_return(FP):raw
+            ; CODE XREF from sym.main @ 0x800007c
+/ sym.function_1();
+|           0x080000d0      [   allocframe(SP,#0x0):raw
+|           0x080000d4      [   call sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000cc
+\           0x080000d8      [   LR:FP = dealloc_return(FP):raw
+            ; CODE XREF from sym.main @ 0x800007c
+/ sym.function_2();
+|           0x080000dc      [   allocframe(SP,#0x0):raw
+|           0x080000e0      [   call sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x80000cc
+\           0x080000e4      [   LR:FP = dealloc_return(FP):raw
+            ; DATA XREF from sym.main @ 0x8000074
             ;-- section..data:
             ;-- .data:
             ;-- .text:
             ;-- fcn_arr:
             0x080000e8      .dword 0x080000b4 ; sym.function_0         ; RELOC 32 .text @ 0x08000040 + 0x74 ; [04] -rw- section size 12 named .data
-            ; DATA XREF from reloc..data @ 
+            ; DATA XREF from sym.main @ 0x8000074
             ;-- .text:
             0x080000ec      .dword 0x080000d0 ; sym.function_1         ; RELOC 32 .text @ 0x08000040 + 0x90
-            ; DATA XREF from reloc..data @ 
+            ; DATA XREF from sym.main @ 0x8000074
             ;-- .text:
             0x080000f0      .dword 0x080000dc ; sym.function_2         ; RELOC 32 .text @ 0x08000040 + 0x9c
             0x080000f4      
@@ -228,22 +229,22 @@ EXPECT=<<EOF
                         sym.function_1+8 0x80000d8 ->      CODE -> 0x8000080 reloc..data.8000078+8
                         sym.function_2+4 0x80000e0 ->      CODE -> 0x80000c0 sym.some_ptr
                         sym.function_2+8 0x80000e4 ->      CODE -> 0x8000080 reloc..data.8000078+8
-     addr size traced ninstr jump fail fcns calls       xrefs       
---------------------------------------------------------------------
-0x8000040   32      0      0                            
-0x8000060   12      0      0                            
-0x800006c    4      0      0                            
-0x8000070   16      0      0                            
-0x8000080   28      0      0                            
-0x800009c   16      0      0                            
-0x80000ac    8      0      0                            
-0x80000b4    8      0      0                 0x080000c0  0x080000c0
-0x80000bc    4      0      0                            
-0x80000c0   16      0      0                            
-0x80000d0    8      0      0                 0x080000c0  0x080000c0
-0x80000d8    4      0      0                            
-0x80000dc    8      0      0                 0x080000c0  0x080000c0
-0x80000e4    4      0      0                            
+     addr size traced ninstr jump       fail       fcns        calls       xrefs       
+---------------------------------------------------------------------------------------
+0x8000040   32      0      0 0x08000060             0x08000040             
+0x8000060   12      0      0 0x0800006c 0x080000ac  0x08000040             
+0x800006c    4      0      0 0x08000070             0x08000040             
+0x8000070   16      0      0 0x08000080 0x080000d0  0x08000040             
+0x8000080   28      0      0 0x0800009c             0x08000040             
+0x800009c   16      0      0 0x08000060             0x08000040             
+0x80000ac    8      0      0                        0x08000040             
+0x80000b4    8      0      0 0x080000bc             0x080000b4  0x080000c0  0x080000c0
+0x80000bc    4      0      0 0x08000080             0x080000b4             
+0x80000c0   16      0      0 0x080000bc 0x080000d8  0x080000c0             
+0x80000d0    8      0      0 0x080000d8             0x080000d0  0x080000c0  0x080000c0
+0x80000d8    4      0      0 0x08000080             0x080000d0             
+0x80000dc    8      0      0 0x080000e4             0x080000dc  0x080000c0  0x080000c0
+0x80000e4    4      0      0 0x08000080             0x080000dc             
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Failed to read chunk of size 0x101 at 0x8000040 for disassembly.
@@ -267,39 +268,39 @@ axl
 ablt
 EOF
 EXPECT=<<EOF
-            ; CODE XREF from sym.function_0 @ +0x8
-            ; CODE XREF from sym.function_1 @ +0x8
+            ; CODE XREF from sym.function_0 @ 0x8000060
+            ; CODE XREF from sym.function_1 @ 0x800007c
             ;-- section..text:
             ;-- .text:
-            ;-- some_ptr:
-            0x08000040      save  sp, -0xb0, sp                        ; RELOC TARGET 64 .text @ 0x08000040 + 0x50 ; [01] -r-x section size 236 named .text
-            ;-- .bss:
-            0x08000044      sethi 0x20000, g1                          ; RELOC 0 .bss @ 0x08000148
-            ;-- .bss:
-            0x08000048      or    g1, 0x148, g1                        ; RELOC 0 .bss @ 0x08000148
-            0x0800004c      mov   g1, i0
-            0x08000050      rett  i7+8
-            0x08000054      nop
-            ; CODE XREF from reloc..data.80000c4 @ +0x18
-            ;-- function_0:
-            0x08000058      save  sp, -0xb0, sp
-            0x0800005c      call  sym.some_ptr
-            0x08000060      nop
-            ; CODE XREF from reloc..bss.8000048 @ +0xc
-            0x08000064      mov   o0, g1
-            0x08000068      mov   g1, i0
-            0x0800006c      rett  i7+8
-            0x08000070      nop
-            ; CODE XREF from reloc..data.80000c4 @ +0x18
-            ;-- function_1:
-            0x08000074      save  sp, -0xb0, sp
-            0x08000078      call  sym.some_ptr
-            0x0800007c      nop
-            ; CODE XREF from reloc..bss.8000048 @ +0xc
-            0x08000080      mov   o0, g1
-            0x08000084      mov   g1, i0
-            0x08000088      rett  i7+8
-            0x0800008c      nop
+/ sym.some_ptr();
+|           0x08000040      save  sp, -0xb0, sp                        ; RELOC TARGET 64 .text @ 0x08000040 + 0x50 ; [01] -r-x section size 236 named .text
+|           ;-- .bss:
+|           0x08000044      sethi 0x20000, g1                          ; RELOC 0 .bss @ 0x08000148
+|           ;-- .bss:
+|           0x08000048      or    g1, 0x148, g1                        ; RELOC 0 .bss @ 0x08000148
+|           0x0800004c      mov   g1, i0
+|           0x08000050      rett  i7+8
+\           0x08000054      nop
+            ; CODE XREF from sym.main @ 0x80000dc
+/ sym.function_0();
+|           0x08000058      save  sp, -0xb0, sp
+|           0x0800005c      call  sym.some_ptr
+|           0x08000060      nop
+|           ; CODE XREF from sym.some_ptr @ 0x8000054
+|           0x08000064      mov   o0, g1
+|           0x08000068      mov   g1, i0
+|           0x0800006c      rett  i7+8
+\           0x08000070      nop
+            ; CODE XREF from sym.main @ 0x80000dc
+/ sym.function_1();
+|           0x08000074      save  sp, -0xb0, sp
+|           0x08000078      call  sym.some_ptr
+|           0x0800007c      nop
+|           ; CODE XREF from sym.some_ptr @ 0x8000054
+|           0x08000080      mov   o0, g1
+|           0x08000084      mov   g1, i0
+|           0x08000088      rett  i7+8
+\           0x0800008c      nop
             ;-- function_2:
             0x08000090      save  sp, -0xb0, sp
             0x08000094      call  sym.some_ptr
@@ -308,41 +309,41 @@ EXPECT=<<EOF
             0x080000a0      mov   g1, i0
             0x080000a4      rett  i7+8
             0x080000a8      nop
-            ;-- main:
-            0x080000ac      save  sp, -0xc0, sp
-            0x080000b0      st    g0, [fp+0x7fb]
-            0x080000b4      st    g0, [fp+0x7f7]
-        ,=< 0x080000b8      ba    xcc, 0x8000108
-        |   0x080000bc      nop
-        |   ; CODE XREF from reloc..data.80000c4 @ +0x50
-        |   ;-- .data:
-       .--> 0x080000c0      sethi 0x20000, g1                          ; RELOC 0 .data @ 0x08000130
-       :|   ;-- .data:
-       :|   0x080000c4      or    g1, 0x130, g2                        ; RELOC 0 .data @ 0x08000130
-       :|   0x080000c8      ld    [fp+0x7f7], g1
-       :|   0x080000cc      srl   g1, 0, g1
-       :|   0x080000d0      sllx  g1, 3, g1
-       :|   0x080000d4      ldx   [g2+g1], g1                          ; 0x8000130
-       :|                                                              ; obj.fcn_arr
-       :|   0x080000d8      call  g1
-       :|   0x080000dc      nop
-       :|   ; CODE XREF from sym.function_0 @ +0x18
-       :|   ; CODE XREF from sym.function_1 @ +0x18
-       :|   0x080000e0      stx   o0, [fp+0x7ef]
-       :|   0x080000e4      ldx   [fp+0x7ef], g1
-       :|   0x080000e8      ldub  [g1], g1
-       :|   0x080000ec      and   g1, 0xff, g1
-       :|   0x080000f0      ld    [fp+0x7fb], g2
-       :|   0x080000f4      add   g2, g1, g1
-       :|   0x080000f8      st    g1, [fp+0x7fb]
-       :|   0x080000fc      ld    [fp+0x7f7], g1
-       :|   0x08000100      add   g1, 1, g1
-       :|   0x08000104      st    g1, [fp+0x7f7]
-       :|   ; CODE XREF from sym.main @ +0x10
-       :`-> 0x08000108      ld    [fp+0x7f7], g1
-       :    0x0800010c      cmp   g1, 2
-       `==< 0x08000110      bleu  icc, reloc..data
-            0x08000114      nop
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x080000ac      save  sp, -0xc0, sp
+|           0x080000b0      st    g0, [fp+0x7fb]
+|           0x080000b4      st    g0, [fp+0x7f7]
+|       ,=< 0x080000b8      ba    xcc, 0x8000108
+|       |   0x080000bc      nop
+|       |   ; CODE XREF from sym.main @ 0x8000114
+|       |   ;-- .data:
+|      .--> 0x080000c0      sethi 0x20000, g1                          ; RELOC 0 .data @ 0x08000130
+|      :|   ;-- .data:
+|      :|   0x080000c4      or    g1, 0x130, g2                        ; RELOC 0 .data @ 0x08000130
+|      :|   0x080000c8      ld    [fp+0x7f7], g1
+|      :|   0x080000cc      srl   g1, 0, g1
+|      :|   0x080000d0      sllx  g1, 3, g1
+|      :|   0x080000d4      ldx   [g2+g1], g1                          ; 0x8000130
+|      :|                                                              ; obj.fcn_arr
+|      :|   0x080000d8      call  g1
+|      :|   0x080000dc      nop
+|      :|   ; CODE XREF from sym.function_0 @ 0x8000070
+|      :|   ; CODE XREF from sym.function_1 @ 0x800008c
+|      :|   0x080000e0      stx   o0, [fp+0x7ef]
+|      :|   0x080000e4      ldx   [fp+0x7ef], g1
+|      :|   0x080000e8      ldub  [g1], g1
+|      :|   0x080000ec      and   g1, 0xff, g1
+|      :|   0x080000f0      ld    [fp+0x7fb], g2
+|      :|   0x080000f4      add   g2, g1, g1
+|      :|   0x080000f8      st    g1, [fp+0x7fb]
+|      :|   0x080000fc      ld    [fp+0x7f7], g1
+|      :|   0x08000100      add   g1, 1, g1
+|      :|   0x08000104      st    g1, [fp+0x7f7]
+|      :|   ; CODE XREF from sym.main @ 0x80000bc
+|      :`-> 0x08000108      ld    [fp+0x7f7], g1
+|      :    0x0800010c      cmp   g1, 2
+|      `==< 0x08000110      bleu  icc, reloc..data
+\           0x08000114      nop
             0x08000118      ld    [fp+0x7fb], g1
             0x0800011c      sra   g1, 0, g1
             0x08000120      mov   g1, i0
@@ -361,17 +362,17 @@ EXPECT=<<EOF
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000058 sym.function_0
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000074 sym.function_1
                   reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
-     addr size traced ninstr jump fail fcns calls               xrefs               
-------------------------------------------------------------------------------------
-0x8000040   24      0      0                                    
-0x8000058   12      0      0                 0x08000040          0x08000040
-0x8000064   16      0      0                                    
-0x8000074   12      0      0                 0x08000040          0x08000040
-0x8000080   16      0      0                                    
-0x80000ac   20      0      0                                    
-0x80000c0   32      0      0                 0xffffffffffffffff  0xffffffffffffffff
-0x80000e0   56      0      0                                    
-0x8000108   16      0      0                                    
+     addr size traced ninstr jump       fail       fcns        calls               xrefs               
+-------------------------------------------------------------------------------------------------------
+0x8000040   24      0      0 0x08000064 0x08000080  0x08000040                     
+0x8000058   12      0      0 0x08000064             0x08000058  0x08000040          0x08000040
+0x8000064   16      0      0 0x080000e0             0x08000058                     
+0x8000074   12      0      0 0x08000080             0x08000074  0x08000040          0x08000040
+0x8000080   16      0      0 0x080000e0             0x08000074                     
+0x80000ac   20      0      0 0x08000108             0x080000ac                     
+0x80000c0   32      0      0 0x080000e0 0x08000074  0x080000ac  0xffffffffffffffff  0xffffffffffffffff
+0x80000e0   56      0      0 0x080000c0             0x080000ac                     
+0x8000108   16      0      0 0x080000c0             0x080000ac                     
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
