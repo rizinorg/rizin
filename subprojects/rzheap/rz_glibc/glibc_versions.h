@@ -49,7 +49,7 @@ typedef struct rz_glibc_chunk_layout_t {
 } RzHeapChunkLayout;
 
 static inline RzHeapChunkLayout rz_glibc_chunk_layout(ut8 ptr_size) {
-	return (RzHeapChunkLayout){
+	RzHeapChunkLayout layout = {
 		.prev_size = 0,
 		.size = ptr_size,
 		.fd = (ut32)(ptr_size * 2),
@@ -58,6 +58,7 @@ static inline RzHeapChunkLayout rz_glibc_chunk_layout(ut8 ptr_size) {
 		.bk_nextsize = (ut32)(ptr_size * 5),
 		.struct_size = (ut32)(ptr_size * 6),
 	};
+	return layout;
 }
 
 typedef struct rz_glibc_malloc_state_layout_t {
