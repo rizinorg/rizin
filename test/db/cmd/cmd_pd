@@ -1543,7 +1543,7 @@ e asm.xrefs.max=0
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
+[{"offset":0,"text":"            ; XREFS: CODE 0x00000001"},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
 [{"offset":0,"text":"            ; XREFS(1)"},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
 EOF
 RUN

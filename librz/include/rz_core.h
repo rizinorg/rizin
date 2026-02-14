@@ -949,6 +949,7 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t);
+RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr);
 
 /**
  * \brief Use RzAsmOp if it is sufficient
