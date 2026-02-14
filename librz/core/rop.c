@@ -573,7 +573,7 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by
 	RzRopRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (rz_rop_event_functions[event](reg_info)) {
-			rz_pvector_push(matches, reg_info);
+			rz_pvector_push(matches, rz_core_rop_reg_info_dup(reg_info));
 		}
 	}
 	return matches;

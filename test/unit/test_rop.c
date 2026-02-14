@@ -105,6 +105,7 @@ static bool rop_gadget_info_cb(void *user, const ut64 k, const void *v) {
 		mu_assert_eq(rz_pvector_len(reg_info_vector), 2, "ROP gadget register item count mismatch");
 		RzRopRegInfo *reg_info_analysis_reg = rz_pvector_at(reg_info_vector, 0);
 		mu_assert_streq(src->reg->name, reg_info_analysis_reg->name, "ROP gadget modified register value mismatch");
+		rz_pvector_free(reg_info_vector);
 	}
 
 	return true;

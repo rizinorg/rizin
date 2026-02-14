@@ -1396,6 +1396,7 @@ beach:
 	rz_key_parser_free(ctx.parser);
 	rz_serialize_analysis_var_parser_free(ctx.var_parser);
 	rz_key_parser_free(ctx.storage_parser);
+	rz_key_parser_free(ctx.piece_parser);
 	return ret;
 }
 
