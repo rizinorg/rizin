@@ -7,10 +7,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
-#include <string.h>
 #include "bflt/bflt.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_structured_data.h"
 
 #define VFILE_NAME_PATCHED "patched"
 
