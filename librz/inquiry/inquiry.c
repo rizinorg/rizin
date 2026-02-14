@@ -759,21 +759,19 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		RzInquiryFunction *fcn = *it;
 
 		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
-		const char *symb_name = NULL;
+		char new_fcn_name[64] = { 0 };
 		void **it;
 		rz_pvector_foreach(symbols, it) {
 			RzBinSymbol *s = *it;
-			if (s->vaddr == fcn_addr) {
-				symb_name = s->name;
+			if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
+				rz_strf(new_fcn_name, "sym.%s", s->name);
 				break;
 			}
 		}
-		if (RZ_STR_ISEMPTY(symb_name)) {
-			char new_fcn_name[64] = { 0 };
+		if (new_fcn_name[0] == '\0') {
 			rz_strf(new_fcn_name, "fcn_0x%" PFMT64x, fcn_addr);
-			symb_name = new_fcn_name;
 		}
-		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, symb_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
 		if (!afcn) {
 			rz_warn_if_reached();
 			return false;
