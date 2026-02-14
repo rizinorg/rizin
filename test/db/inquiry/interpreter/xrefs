@@ -535,3 +535,116 @@ WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
 WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
 EOF
 RUN
+
+NAME=Indirect call mips64
+FILE=bins/inquiry/interpreter/prototype/mips64_icall_malloc
+CMDS=<<EOF
+# Mips misses many relocations.
+# So the interpreter doesn't come far before a jump to 0x0 happens.
+aaaaIp 0x08000178
+pd 30 @ 0x08000178
+axl
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- main:
+/ fcn_0x8000178();
+|           0x08000178      lui   gp, 0                                ; RELOC 0 main @ 0x08000164
+|           0x0800017c      daddu gp, gp, t9
+|           ;-- main:
+|           0x08000180      daddiu gp, gp, 0                           ; RELOC 0 main @ 0x08000164
+|           0x08000184      sw    zero, 0(fp)
+|           0x08000188      sw    zero, 4(fp)
+|       ,=< 0x0800018c      b     0x80001dc
+        |   0x08000190      nop
+|       |   ; CODE XREF from fcn_0x8000178 @ 0x80001e4
+|       |   ;-- .data.rel.local:
+|      .--> 0x08000194      ld    v0, 0(gp)                            ; RELOC 0 .data.rel.local @ 0x080002f0
+|      :|   0x08000198      lwu   v1, 4(fp)
+|      :|   0x0800019c      dsll  v1, v1, 3
+|      :|   ;-- .data.rel.local:
+|      :|   0x080001a0      daddiu v0, v0, 0                           ; RELOC 0 .data.rel.local @ 0x080002f0
+|      :|   0x080001a4      daddu v0, v1, v0
+|      :|   0x080001a8      ld    v0, 0(v0)
+|      :|   0x080001ac      move  t9, v0
+|      :|   0x080001b0      jalr  t9
+       :|   0x080001b4      nop
+       :|   0x080001b8      sd    v0, 8(fp)
+       :|   0x080001bc      ld    v0, 8(fp)
+       :|   0x080001c0      lbu   v0, 0(v0)
+       :|   0x080001c4      lw    v1, 0(fp)
+       :|   0x080001c8      addu  v0, v1, v0
+       :|   0x080001cc      sw    v0, 0(fp)
+       :|   0x080001d0      lw    v0, 4(fp)
+       :|   0x080001d4      addiu v0, v0, 1
+       :|   0x080001d8      sw    v0, 4(fp)
+|      :|   ; CODE XREF from fcn_0x8000178 @ 0x800018c
+|      :`-> 0x080001dc      lw    v0, 4(fp)
+|      :    0x080001e0      sltiu v0, v0, 3
+\      `==< 0x080001e4      bnez  v0, reloc..data.rel.local
+            0x080001e8      nop
+            0x080001ec      lw    v0, 0(fp)
+                   reloc.main.8000180+12 0x800018c ->      CODE -> 0x80001dc reloc..data.rel.local.80001a0+60
+        reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
+     addr size traced ninstr jump       fail fcns        calls xrefs 
+---------------------------------------------------------------------
+0x8000178   24      0      0 0x080001dc       0x08000178       
+0x8000194   32      0      0                  0x08000178       
+0x80001dc   12      0      0 0x08000194       0x08000178       
+EOF
+EXPECT_ERR=<<EOF
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_JALR reloc
+WARNING: MIPS: Unhandled patching case for relocation 333831.
+WARNING: MIPS: Unhandled patching case for relocation 399367.
+WARNING: Unhandled R_MIPS_GOT_PAGE reloc
+WARNING: Unhandled R_MIPS_GOT_OFST reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled R_MIPS_64 reloc
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 37 (R_MIPS_JALR)
+WARNING: Unhandled conversion of ELF reloc 333831 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 399367 (R_MIPS_GPREL16)
+WARNING: Unhandled conversion of ELF reloc 20 (R_MIPS_GOT_PAGE)
+WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
+WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
+WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
+WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
+ERROR: Failed to read chunk of size 0x101 at 0x8000178 for disassembly.
+EOF
+RUN
