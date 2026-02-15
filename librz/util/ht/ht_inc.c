@@ -199,38 +199,6 @@ static inline ut32 murmur3_64_to_32(ut64 key) {
 
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
 	return ht->opt.hashfn ? ht->opt.hashfn(k) : murmur3_64_to_32(KEY_TO_HASH(k));
-	/*
-		if (ht->opt.hashfn) {
-			return ht->opt.hashfn(k);
-		}
-		// ut32 result = murmur3_64_to_32((ut64)k);
-		ut64 key = KEY_TO_HASH(k);
-
-		key ^= key >> 33;
-	    key *= 0xff51afd7ed558ccdULL;
-
-		if (ht->capacity < 8192 * 2) {
-			key ^= key >> 33;
-			key *= 0xc4ceb9fe1a85ec53ULL;
-			key ^= key >> 33;
-		}
-
-	    return (ut32)(key ^ (key >> 32));
-	*/
-	// if (ht->capacity < 8192) {
-	// 	// Extra bit mixing for smaller hash tables
-	// 	result ^= result >> 16;
-	// 	result *= 0x85ebca6b;
-
-	// 	if (ht->capacity >= 512) {
-	// 		result ^= result >> 16;
-	// 	} else {
-	// 		result ^= result >> 13;
-	// 		result *= 0xc2b2ae35;
-	// 	}
-	// }
-
-	// return result;
 }
 
 static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -295,14 +263,6 @@ static ut32 next_power_of_two(ut32 n) {
 
 	return 1ul << shift;
 }
-
-// static ut32 internal_growth_left(HtName_(Ht) *ht) {
-// 	if (ht->capacity < 2097152 / 2) {
-// 		return (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
-// 	}
-
-// 	return (ht->capacity * 14) / 16; // todo: do we need this?
-// }
 
 /**
  * \brief
