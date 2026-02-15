@@ -1,0 +1,77 @@
+NAME=ASL_S r0, r0, r2
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 2040
+pd 1
+EOF
+EXPECT=<<EOF
+asl_s r0, r0, r2
+EOF
+RUN
+
+NAME=ASR_S r14, r7, r0
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 8e53
+pd 1
+EOF
+EXPECT=<<EOF
+asr_s r14, r7, r0
+EOF
+RUN
+
+NAME=ASR_S r0, r0, r2
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 2050
+pd 1
+EOF
+EXPECT=<<EOF
+asr_s r0, r0, r2
+EOF
+RUN
+
+NAME=ASR_S r0, r0, r6
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 6050
+pd 1
+EOF
+EXPECT=<<EOF
+asr_s r0, r0, r6
+EOF
+RUN
+
+NAME=ASL_S r1, r0, r6
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 6140
+pd 1
+EOF
+EXPECT=<<EOF
+asl_s r1, r0, r6
+EOF
+RUN
+
+NAME=LSR_S r0, r0, r2
+FILE=-
+CMDS=<<EOF
+e asm.arch=arc
+e asm.bits=16
+wx 2060
+pd 1
+EOF
+EXPECT=<<EOF
+lsr_s r0, r0, r2
+EOF
+RUN

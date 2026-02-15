@@ -610,7 +610,10 @@ enum {
 	/* START ARC LOCAL */
 	op_MAJOR_5 = 5,
 	op_MAJOR_6 = 6,
+	op_ASL_S_RR = 8,
 	op_SIMD = 9,
+	op_ASR_S_RR = 10,
+	op_LSR_S_RR = 11,
 	op_LD_ADD = 12,
 	op_ADD_SUB_SHIFT = 13,
 	/* END ARC LOCAL */
@@ -2018,6 +2021,21 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 			instrName = "???_SIMD";
 			state->flow = invalid_instr;
 		}
+		break;
+
+	case op_ASL_S_RR:
+		decodingClass = 16;
+		instrName = "asl_s";
+		break;
+
+	case op_ASR_S_RR:
+		decodingClass = 16;
+		instrName = "asr_s";
+		break;
+
+	case op_LSR_S_RR:
+		decodingClass = 16;
+		instrName = "lsr_s";
 		break;
 
 	case op_LD_ADD:
