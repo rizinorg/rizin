@@ -19,7 +19,7 @@ static int assemble(RzAsm *a, RzAsmOp *rz_op, const char *buf) {
 RzAsmPlugin rz_asm_plugin_gb = {
 	.name = "gb",
 	.desc = "GameBoy(TM) (z80-like)",
-	.arch = "z80",
+	.arch = "gb",
 	.author = "condret",
 	.license = "LGPL3",
 	.bits = 16,
