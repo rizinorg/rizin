@@ -610,6 +610,7 @@ enum {
 	/* START ARC LOCAL */
 	op_MAJOR_5 = 5,
 	op_MAJOR_6 = 6,
+	op_MAJOR_7 = 7,
 	op_ASL_S_RR = 8,
 	op_SIMD = 9,
 	op_ASR_S_RR = 10,
@@ -1113,6 +1114,21 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 		}
 		break;
 		/* END ARC LOCAL */
+
+	case op_MAJOR_7:
+		decodingClass = 0;
+		subopcode = BITS(state->words[0], 0, 5);
+		switch (subopcode) {
+		case 0: instrName = "asl"; break;
+		case 1: instrName = "asr"; break;
+		case 2: instrName = "lsr"; break;
+		case 3: instrName = "ror"; break;
+		default:
+			instrName = "??? (7[3])";
+			state->flow = invalid_instr;
+			break;
+		}
+		break;
 
 		/* Aurora SIMD instruction support*/
 	case op_SIMD:
