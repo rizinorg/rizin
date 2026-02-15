@@ -5,7 +5,7 @@
 #define RZ_PEF_H
 
 /**
- * Reference:- https:///<developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
+ * Reference: https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
  */
 
 #define PEF_HDR_SIZE            0x28
@@ -112,7 +112,7 @@ typedef struct {
  */
 
 typedef struct {
-	int main_symbol_index; ///< index of main symbol (-1 if none)
+	st32 main_symbol_index; ///< index of main symbol (-1 if none)
 	ut32 main_symbol_offset; ///< offset of main in section
 	int init_symbol_index; ///< index of init symbol (-1 if none)
 	ut32 init_symbol_offset; ///< offset of init in section

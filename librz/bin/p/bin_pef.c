@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * Reference:- https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
+ * Reference: https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
  */
 
 #include <rz_types.h>
@@ -12,10 +12,8 @@
 #include <string.h>
 #include "../format/pef/pef.h"
 
-static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 off) {
+static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 offset	) {
 	rz_return_val_if_fail(hdr && b, false);
-
-	ut64 offset = off;
 
 	return rz_buf_read_offset(b, &offset, hdr->magic1, 4) &&
 		rz_buf_read_offset(b, &offset, hdr->magic2, 4) &&
@@ -30,10 +28,8 @@ static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 off) {
 		rz_buf_read_be32_offset(b, &offset, &hdr->reserved);
 }
 
-static bool read_pef_section_header(PefSectionHeader *sh, RzBuffer *b, ut64 off) {
+static bool read_pef_section_header(PefSectionHeader *sh, RzBuffer *b, ut64 offset) {
 	rz_return_val_if_fail(sh && b, false);
-
-	ut64 offset = off;
 
 	return rz_buf_read_be32_offset(b, &offset, &sh->nameOffset) &&
 		rz_buf_read_be32_offset(b, &offset, &sh->defaultAddress) &&
@@ -130,7 +126,7 @@ static bool pef_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 			return false;
 		}
 
-		PefSectionHeader sh;
+		PefSectionHeader sh ={ 0 };
 		if (!read_pef_section_header(&sh, buf, section_off)) {
 			pef_container_free(container);
 			return false;
@@ -344,15 +340,15 @@ static RzStructuredData *pef_sections_structure(PefContainer *c) {
 			return NULL;
 		}
 
-		rz_structured_data_map_add_unsigned(m, "name_offset", sh->nameOffset, false);
+		rz_structured_data_map_add_unsigned(m, "name_offset", sh->nameOffset, true);
 		rz_structured_data_map_add_unsigned(m, "default_address", sh->defaultAddress, true);
 		rz_structured_data_map_add_unsigned(m, "total_size", sh->totalSize, false);
 		rz_structured_data_map_add_unsigned(m, "unpacked_size", sh->unpackedSize, false);
 		rz_structured_data_map_add_unsigned(m, "packed_size", sh->packedSize, false);
-		rz_structured_data_map_add_unsigned(m, "container_offset", sh->containerOffset, false);
-		rz_structured_data_map_add_unsigned(m, "section_kind", sh->sectionKind, false);
+		rz_structured_data_map_add_unsigned(m, "container_offset", sh->containerOffset, true);
+		rz_structured_data_map_add_unsigned(m, "section_kind", sh->sectionKind, true);
 		rz_structured_data_map_add_string(m, "section_kind_name", pef_section_kind_to_string(sh->sectionKind));
-		rz_structured_data_map_add_unsigned(m, "share_kind", sh->shareKind, false);
+		rz_structured_data_map_add_unsigned(m, "share_kind", sh->shareKind, true);
 		rz_structured_data_map_add_string(m, "share_kind_name", pef_share_kind_to_string(sh->shareKind));
 		rz_structured_data_map_add_unsigned(m, "alignment_power", sh->alignment, false);
 	}
@@ -369,17 +365,17 @@ static RzStructuredData *pef_loader_header_structure(PefContainer *c) {
 	}
 
 	rz_structured_data_map_add_unsigned(m, "main_symbol_index", lh->main_symbol_index, false);
-	rz_structured_data_map_add_unsigned(m, "main_symbol_offset", lh->main_symbol_offset, false);
+	rz_structured_data_map_add_unsigned(m, "main_symbol_offset", lh->main_symbol_offset, true);
 	rz_structured_data_map_add_unsigned(m, "init_symbol_index", lh->init_symbol_index, false);
-	rz_structured_data_map_add_unsigned(m, "init_symbol_offset", lh->init_symbol_offset, false);
+	rz_structured_data_map_add_unsigned(m, "init_symbol_offset", lh->init_symbol_offset, true);
 	rz_structured_data_map_add_unsigned(m, "term_symbol_index", lh->term_symbol_index, false);
-	rz_structured_data_map_add_unsigned(m, "term_symbol_offset", lh->term_symbol_offset, false);
+	rz_structured_data_map_add_unsigned(m, "term_symbol_offset", lh->term_symbol_offset, true);
 	rz_structured_data_map_add_unsigned(m, "imported_lib_count", lh->imported_lib_count, false);
 	rz_structured_data_map_add_unsigned(m, "imported_symbol_count", lh->imported_symbol_count, false);
 	rz_structured_data_map_add_unsigned(m, "rel_section_count", lh->rel_section_count, false);
-	rz_structured_data_map_add_unsigned(m, "rel_commands_offset", lh->rel_commands_offset, false);
-	rz_structured_data_map_add_unsigned(m, "string_table_offset", lh->string_table_offset, false);
-	rz_structured_data_map_add_unsigned(m, "export_hash_offset", lh->export_hash_offset, false);
+	rz_structured_data_map_add_unsigned(m, "rel_commands_offset", lh->rel_commands_offset, true);
+	rz_structured_data_map_add_unsigned(m, "string_table_offset", lh->string_table_offset, true);
+	rz_structured_data_map_add_unsigned(m, "export_hash_offset", lh->export_hash_offset, true);
 	rz_structured_data_map_add_unsigned(m, "export_hash_power", lh->export_hash_power, false);
 	rz_structured_data_map_add_unsigned(m, "exported_symbol_count", lh->exported_symbol_count, false);
 
@@ -400,7 +396,7 @@ static RzStructuredData *pef_import_libs_structure(PefContainer *c) {
 			return NULL;
 		}
 
-		rz_structured_data_map_add_unsigned(m, "name_offset", lib->name_offset, false);
+		rz_structured_data_map_add_unsigned(m, "name_offset", lib->name_offset, true);
 		rz_structured_data_map_add_unsigned(m, "old_imp_version", lib->old_imp_version, false);
 		rz_structured_data_map_add_unsigned(m, "current_version", lib->current_version, false);
 		rz_structured_data_map_add_unsigned(m, "imported_symbol_count", lib->imported_symbol_count, false);
@@ -425,11 +421,10 @@ static RzStructuredData *pef_import_symbols_structure(PefContainer *c) {
 			return NULL;
 		}
 
-		rz_structured_data_map_add_unsigned(m, "raw",
-			sym->u, false);
+		rz_structured_data_map_add_unsigned(m, "raw", sym->u, false);
 		rz_structured_data_map_add_unsigned(m, "flags", pef_import_flags(sym->u), false);
 		rz_structured_data_map_add_unsigned(m, "type", pef_import_type(sym->u), false);
-		rz_structured_data_map_add_unsigned(m, "name_offset", pef_import_name_offset(sym->u), false);
+		rz_structured_data_map_add_unsigned(m, "name_offset", pef_import_name_offset(sym->u), true);
 	}
 
 	return arr;
@@ -452,7 +447,7 @@ static RzStructuredData *pef_export_symbols_structure(PefContainer *c) {
 		rz_structured_data_map_add_unsigned(m, "raw", sym->type_and_name, false);
 		rz_structured_data_map_add_unsigned(m, "flags", pef_export_symbol_flags(sym->type_and_name), false);
 		rz_structured_data_map_add_unsigned(m, "type", pef_export_symbol_type(sym->type_and_name), false);
-		rz_structured_data_map_add_unsigned(m, "name_offset", pef_export_symbol_name_offset(sym->type_and_name), false);
+		rz_structured_data_map_add_unsigned(m, "name_offset", pef_export_symbol_name_offset(sym->type_and_name), true);
 		rz_structured_data_map_add_unsigned(m, "value", sym->value, true);
 		rz_structured_data_map_add_unsigned(m, "section_index", sym->section_index, false);
 	}
