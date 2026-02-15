@@ -52,11 +52,11 @@ static inline RzHeapChunkLayout rz_glibc_chunk_layout(ut8 ptr_size) {
 	return (RzHeapChunkLayout){
 		.prev_size = 0,
 		.size = ptr_size,
-		.fd = ptr_size * 2,
-		.bk = ptr_size * 3,
-		.fd_nextsize = ptr_size * 4,
-		.bk_nextsize = ptr_size * 5,
-		.struct_size = ptr_size * 6,
+		.fd = (ut32)(ptr_size * 2),
+		.bk = (ut32)(ptr_size * 3),
+		.fd_nextsize = (ut32)(ptr_size * 4),
+		.bk_nextsize = (ut32)(ptr_size * 5),
+		.struct_size = (ut32)(ptr_size * 6),
 	};
 }
 

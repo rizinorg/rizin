@@ -989,8 +989,8 @@ EXPECT=<<EOF
 |    ||:|   0x00402630      lw    t9, -sym.matches(gp)                 ; [0x4351ac:4]=0x41b2b4 sym.matches
 |    ||:|   0x00402634      xori  v0, v0, 0x2d
 ..
-| |||||:|   ; XREFS: CODE 0x00402a64  CODE 0x00402a9c  CODE 0x00402ae0  
-| |||||:|   ; XREFS: CODE 0x00402b40  CODE 0x00402ba8  CODE 0x00402c0c  
+| |||||:|   ; XREFS: CODE 0x00402a64  CODE 0x00402a9c  CODE 0x00402ae0
+| |||||:|   ; XREFS: CODE 0x00402b40  CODE 0x00402ba8  CODE 0x00402c0c
 | --------> 0x004026f8      addiu s1, s1, -1
 | |||||:|   0x004026fc      slti  v0, s1, 2
 | |||||`==< 0x00402700      beqz  v0, 0x4025ec
