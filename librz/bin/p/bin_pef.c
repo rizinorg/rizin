@@ -12,7 +12,7 @@
 #include <string.h>
 #include "../format/pef/pef.h"
 
-static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 offset	) {
+static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 offset) {
 	rz_return_val_if_fail(hdr && b, false);
 
 	return rz_buf_read_offset(b, &offset, hdr->magic1, 4) &&
@@ -126,7 +126,7 @@ static bool pef_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 			return false;
 		}
 
-		PefSectionHeader sh ={ 0 };
+		PefSectionHeader sh = { 0 };
 		if (!read_pef_section_header(&sh, buf, section_off)) {
 			pef_container_free(container);
 			return false;
