@@ -114,9 +114,9 @@ pef:
 ---
      paddr    size      vaddr   vsize align perm name      type flags 
 ----------------------------------------------------------------------
-0x0001bb80 0x993cc 0x00000000 0x993cc   0x0 -r-x .text           
+0x0001bb80 0x993cc 0x00000000 0x993cc   0x0 -r-x .text          
 0x000b4f50  0xbfd6 0x00000000 0x192c4   0x0 -r-- section_1      
-0x00000080 0x1bafa 0x00000000     0x0   0x0 -r-- .loader         
+0x00000080 0x1bafa 0x00000000     0x0   0x0 -r-- .loader        
 EOF
 RUN
 
@@ -130,9 +130,9 @@ EOF
 EXPECT=<<EOF
      paddr    size      vaddr   vsize align perm name      type flags 
 ----------------------------------------------------------------------
-0x0001bec0 0x99b34 0x00000000 0x99b34   0x0 -r-x .text           
+0x0001bec0 0x99b34 0x00000000 0x99b34   0x0 -r-x .text          
 0x000b5a00  0xc0ba 0x00000000 0x19438   0x0 -r-- section_1      
-0x00000080 0x1be34 0x00000000     0x0   0x0 -r-- .loader         
+0x00000080 0x1be34 0x00000000     0x0   0x0 -r-- .loader        
 ---
 pef:
   header:
