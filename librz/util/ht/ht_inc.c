@@ -188,23 +188,49 @@ static inline ut8 group_lowest_bit(group_mask_t mask) {
 	}
 #endif
 
+static inline ut32 murmur3_64_to_32(ut64 key) {
+	key ^= key >> 33;
+	key *= 0xff51afd7ed558ccdULL;
+	key ^= key >> 33;
+	key *= 0xc4ceb9fe1a85ec53ULL;
+	key ^= key >> 33;
+	return (ut32)(key ^ (key >> 32));
+}
+
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
-	ut32 result = ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k);
-
-	if (ht->capacity < 8192) {
-		// Extra bit mixing for smaller hash tables
-		result ^= result >> 16;
-		result *= 0x85ebca6b;
-
-		if (ht->capacity >= 512) {
-			result ^= result >> 16;
-		} else {
-			result ^= result >> 13;
-			result *= 0xc2b2ae35;
+	return ht->opt.hashfn ? ht->opt.hashfn(k) : murmur3_64_to_32(KEY_TO_HASH(k));
+	/*
+		if (ht->opt.hashfn) {
+			return ht->opt.hashfn(k);
 		}
-	}
+		// ut32 result = murmur3_64_to_32((ut64)k);
+		ut64 key = KEY_TO_HASH(k);
 
-	return result;
+		key ^= key >> 33;
+	    key *= 0xff51afd7ed558ccdULL;
+
+		if (ht->capacity < 8192 * 2) {
+			key ^= key >> 33;
+			key *= 0xc4ceb9fe1a85ec53ULL;
+			key ^= key >> 33;
+		}
+
+	    return (ut32)(key ^ (key >> 32));
+	*/
+	// if (ht->capacity < 8192) {
+	// 	// Extra bit mixing for smaller hash tables
+	// 	result ^= result >> 16;
+	// 	result *= 0x85ebca6b;
+
+	// 	if (ht->capacity >= 512) {
+	// 		result ^= result >> 16;
+	// 	} else {
+	// 		result ^= result >> 13;
+	// 		result *= 0xc2b2ae35;
+	// 	}
+	// }
+
+	// return result;
 }
 
 static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -270,6 +296,42 @@ static ut32 next_power_of_two(ut32 n) {
 	return 1ul << shift;
 }
 
+// static ut32 internal_growth_left(HtName_(Ht) *ht) {
+// 	if (ht->capacity < 2097152 / 2) {
+// 		return (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
+// 	}
+
+// 	return (ht->capacity * 14) / 16; // todo: do we need this?
+// }
+
+/**
+ * \brief
+ *
+ * For larger hash tables having good quality hash distribution actually degrades performance,
+ * because it places elements at similar distance to each other so most random reads are likely
+ * to result in L3/TLB cache misses.
+ *
+ * In this case skewing the hash distribution causes clusters of elements which results in extra
+ * probing steps, but less cache misses, and overall better performance.
+ *
+ */
+static ut32 get_capacity_mask(HtName_(Ht) *ht) {
+	if (ht->capacity <= 16384) {
+		// No clustering
+		return ht->capacity - 1;
+	}
+
+	if (ht->capacity < 262144) {
+		return (ht->capacity - 1) & ~0x1;
+	}
+
+	if (ht->capacity < 2097152) {
+		return (ht->capacity - 1) & ~0x7;
+	}
+
+	return (ht->capacity - 1) & ~0x15;
+}
+
 /**
  * \brief Create a new hashtable and return a pointer to it.
  */
@@ -282,7 +344,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// Use minimum capacity of group size in order to avoid edge cases (related to ctrl byte mirroring and deletion slot placement)
 	// No maximum capacity enforcement at the moment..
 	ht->capacity = next_power_of_two(RZ_MAX(requested_capacity, 16));
-	ht->capacity_mask = ht->capacity - 1;
+	ht->capacity_mask = get_capacity_mask(ht);
 	ht->growth_left = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
 	ht->size = 0;
 	ht->opt = *opt;

@@ -28,7 +28,8 @@
 // #endif
 
 #ifndef HT_HASH_MIX_64_TO_32
-#define HT_HASH_MIX_64_TO_32(key) (((ut32)(key) ^ (ut32)((ut64)(key) >> 32)))
+// #define HT_HASH_MIX_64_TO_32(key) (((ut32)((key) * 0xc4ceb9fe1a85ec53ULL) ^ (ut32)((ut64)(key * 0xff51afd7ed558ccdULL) >> 32)))
+#define HT_HASH_MIX_64_TO_32(key) (ut64)((key))
 #endif
 
 #ifndef KEY_TO_HASH_PX
