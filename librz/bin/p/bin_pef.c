@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Farhan-25 <shadowfinder1799@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/*
-Reference:- https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
-*/
+/**
+ * Reference:- https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
+ */
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -15,40 +15,36 @@ Reference:- https://developer.apple.com/library/archive/documentation/mac/pdf/Ma
 static bool read_pef_header(PefHeader *hdr, RzBuffer *b, ut64 off) {
 	rz_return_val_if_fail(hdr && b, false);
 
-	if (!rz_buf_read_be32_at(b, off + 0x00, &hdr->magic1) ||
-		!rz_buf_read_be32_at(b, off + 0x04, &hdr->magic2) ||
-		!rz_buf_read_be32_at(b, off + 0x08, &hdr->arch) ||
-		!rz_buf_read_be32_at(b, off + 0x0C, &hdr->format_version) ||
-		!rz_buf_read_be32_at(b, off + 0x10, &hdr->timestamp) ||
-		!rz_buf_read_be32_at(b, off + 0x14, &hdr->old_def_version) ||
-		!rz_buf_read_be32_at(b, off + 0x18, &hdr->old_imp_version) ||
-		!rz_buf_read_be32_at(b, off + 0x1C, &hdr->current_version) ||
-		!rz_buf_read_be16_at(b, off + 0x20, &hdr->section_count) ||
-		!rz_buf_read_be16_at(b, off + 0x22, &hdr->inst_section_count) ||
-		!rz_buf_read_be32_at(b, off + 0x24, &hdr->reserved)) {
-		return false;
-	}
+	ut64 offset = off;
 
-	return true;
+	return rz_buf_read_offset(b, &offset, hdr->magic1, 4) &&
+		rz_buf_read_offset(b, &offset, hdr->magic2, 4) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->arch) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->format_version) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->timestamp) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->old_def_version) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->old_imp_version) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->current_version) &&
+		rz_buf_read_be16_offset(b, &offset, &hdr->section_count) &&
+		rz_buf_read_be16_offset(b, &offset, &hdr->inst_section_count) &&
+		rz_buf_read_be32_offset(b, &offset, &hdr->reserved);
 }
 
 static bool read_pef_section_header(PefSectionHeader *sh, RzBuffer *b, ut64 off) {
 	rz_return_val_if_fail(sh && b, false);
 
-	if (!rz_buf_read_be32_at(b, off + 0x00, &sh->nameOffset) ||
-		!rz_buf_read_be32_at(b, off + 0x04, &sh->defaultAddress) ||
-		!rz_buf_read_be32_at(b, off + 0x08, &sh->totalSize) ||
-		!rz_buf_read_be32_at(b, off + 0x0C, &sh->unpackedSize) ||
-		!rz_buf_read_be32_at(b, off + 0x10, &sh->packedSize) ||
-		!rz_buf_read_be32_at(b, off + 0x14, &sh->containerOffset) ||
-		rz_buf_read_at(b, off + 0x18, &sh->sectionKind, 1) != 1 ||
-		rz_buf_read_at(b, off + 0x19, &sh->shareKind, 1) != 1 ||
-		rz_buf_read_at(b, off + 0x1A, &sh->alignment, 1) != 1 ||
-		rz_buf_read_at(b, off + 0x1B, &sh->reservedA, 1) != 1) {
-		return false;
-	}
+	ut64 offset = off;
 
-	return true;
+	return rz_buf_read_be32_offset(b, &offset, &sh->nameOffset) &&
+		rz_buf_read_be32_offset(b, &offset, &sh->defaultAddress) &&
+		rz_buf_read_be32_offset(b, &offset, &sh->totalSize) &&
+		rz_buf_read_be32_offset(b, &offset, &sh->unpackedSize) &&
+		rz_buf_read_be32_offset(b, &offset, &sh->packedSize) &&
+		rz_buf_read_be32_offset(b, &offset, &sh->containerOffset) &&
+		rz_buf_read_offset(b, &offset, &sh->sectionKind, 1) &&
+		rz_buf_read_offset(b, &offset, &sh->shareKind, 1) &&
+		rz_buf_read_offset(b, &offset, &sh->alignment, 1) &&
+		rz_buf_read_offset(b, &offset, &sh->reservedA, 1);
 }
 
 static void pef_container_free(PefContainer *c) {
@@ -74,9 +70,11 @@ static bool pef_check_buffer(RzBuffer *buf) {
 	ut32 tag2 = 0;
 	ut32 arch = 0;
 
-	if (!rz_buf_read_be32_at(buf, 0x00, &tag1) ||
-		!rz_buf_read_be32_at(buf, 0x04, &tag2) ||
-		!rz_buf_read_be32_at(buf, 0x08, &arch)) {
+	ut64 offset = 0;
+
+	if (!rz_buf_read_be32_offset(buf, &offset, &tag1) ||
+		!rz_buf_read_be32_offset(buf, &offset, &tag2) ||
+		!rz_buf_read_be32_offset(buf, &offset, &arch)) {
 		return false;
 	}
 
@@ -187,11 +185,6 @@ static RzBinInfo *pef_info(RzBinFile *bf) {
 	ret->bits = 32;
 	ret->big_endian = true;
 	ret->has_va = true;
-	ret->has_pi = false;
-	ret->has_canary = false;
-	ret->has_nx = false;
-	ret->has_crypto = false;
-
 	return ret;
 }
 
@@ -211,47 +204,40 @@ static RzPVector /*<RzBinSection *>*/ *pef_sections(RzBinFile *bf) {
 			continue;
 		}
 
-		section->name = rz_str_newf("section_%d", i);
 		section->paddr = sh->containerOffset;
 		section->vaddr = sh->defaultAddress;
 		section->size = sh->packedSize;
 		section->vsize = sh->totalSize;
 
-		// Set permissions based on section kind
 		switch (sh->sectionKind) {
 		case EXECUTABLE_READONLY:
 			section->perm = RZ_PERM_R | RZ_PERM_X;
-			if (section->name) {
-				free(section->name);
-				section->name = strdup("text");
-			}
+			section->name = strdup(".text");
 			break;
+
 		case EXECUTABLE_READWRITE:
 			section->perm = RZ_PERM_RWX;
+			section->name = rz_str_newf("section_%u", i);
 			break;
+
 		case UNPACKED_DATA:
 			section->perm = RZ_PERM_RW;
-			if (section->name) {
-				free(section->name);
-				section->name = strdup("data");
-			}
+			section->name = strdup(".data");
 			break;
+
 		case CONSTANT:
 			section->perm = RZ_PERM_R;
-			if (section->name) {
-				free(section->name);
-				section->name = strdup("rodata");
-			}
+			section->name = strdup(".rodata");
 			break;
+
 		case LOADER:
 			section->perm = RZ_PERM_R;
-			if (section->name) {
-				free(section->name);
-				section->name = strdup("loader");
-			}
+			section->name = strdup(".loader");
 			break;
+
 		default:
 			section->perm = RZ_PERM_R;
+			section->name = rz_str_newf("section_%u", i);
 			break;
 		}
 
@@ -326,26 +312,12 @@ static const char *pef_share_kind_to_string(ut8 k) {
 
 static RzStructuredData *pef_header_structure(PefContainer *c) {
 	RzStructuredData *m = rz_structured_data_new_map();
-	if (!m)
+	if (!m) {
 		return NULL;
+	}
 
-	char magic1[5] = { 0 };
-	char magic2[5] = { 0 };
-
-	magic1[0] = (c->header.magic1 >> 24) & 0xFF;
-	magic1[1] = (c->header.magic1 >> 16) & 0xFF;
-	magic1[2] = (c->header.magic1 >> 8) & 0xFF;
-	magic1[3] = c->header.magic1 & 0xFF;
-
-	magic2[0] = (c->header.magic2 >> 24) & 0xFF;
-	magic2[1] = (c->header.magic2 >> 16) & 0xFF;
-	magic2[2] = (c->header.magic2 >> 8) & 0xFF;
-	magic2[3] = c->header.magic2 & 0xFF;
-
-	rz_structured_data_map_add_string(m, "magic1_ascii", magic1);
-	rz_structured_data_map_add_string(m, "magic2_ascii", magic2);
-	rz_structured_data_map_add_unsigned(m, "magic1_raw", c->header.magic1, false);
-	rz_structured_data_map_add_unsigned(m, "magic2_raw", c->header.magic2, false);
+	rz_structured_data_map_add_bytes(m, "magic1", c->header.magic1, 4, RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
+	rz_structured_data_map_add_bytes(m, "magic2", c->header.magic2, 4, RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
 	rz_structured_data_map_add_unsigned(m, "arch_raw", c->header.arch, false);
 	rz_structured_data_map_add_unsigned(m, "format_version", c->header.format_version, false);
 	rz_structured_data_map_add_unsigned(m, "timestamp", c->header.timestamp, false);
@@ -360,12 +332,13 @@ static RzStructuredData *pef_header_structure(PefContainer *c) {
 
 static RzStructuredData *pef_sections_structure(PefContainer *c) {
 	RzStructuredData *arr = rz_structured_data_new_array();
-	if (!arr)
+	if (!arr) {
 		return NULL;
+	}
 
 	PefSectionHeader *sh;
 	rz_vector_foreach (&c->sections, sh) {
-		RzStructuredData *m = rz_structured_data_new_map();
+		RzStructuredData *m = rz_structured_data_array_add_map(arr);
 		if (!m) {
 			rz_structured_data_free(arr);
 			return NULL;
@@ -382,8 +355,6 @@ static RzStructuredData *pef_sections_structure(PefContainer *c) {
 		rz_structured_data_map_add_unsigned(m, "share_kind", sh->shareKind, false);
 		rz_structured_data_map_add_string(m, "share_kind_name", pef_share_kind_to_string(sh->shareKind));
 		rz_structured_data_map_add_unsigned(m, "alignment_power", sh->alignment, false);
-
-		rz_structured_data_array_add(arr, m);
 	}
 
 	return arr;
@@ -393,8 +364,9 @@ static RzStructuredData *pef_loader_header_structure(PefContainer *c) {
 	PEFLoaderSectionHeader *lh = &c->loader_section.header;
 
 	RzStructuredData *m = rz_structured_data_new_map();
-	if (!m)
+	if (!m) {
 		return NULL;
+	}
 
 	rz_structured_data_map_add_unsigned(m, "main_symbol_index", lh->main_symbol_index, false);
 	rz_structured_data_map_add_unsigned(m, "main_symbol_offset", lh->main_symbol_offset, false);
@@ -416,12 +388,13 @@ static RzStructuredData *pef_loader_header_structure(PefContainer *c) {
 
 static RzStructuredData *pef_import_libs_structure(PefContainer *c) {
 	RzStructuredData *arr = rz_structured_data_new_array();
-	if (!arr)
+	if (!arr) {
 		return NULL;
+	}
 
 	PEFLoaderImportLibrary *lib;
 	rz_vector_foreach (&c->loader_section.loader_library, lib) {
-		RzStructuredData *m = rz_structured_data_new_map();
+		RzStructuredData *m = rz_structured_data_array_add_map(arr);
 		if (!m) {
 			rz_structured_data_free(arr);
 			return NULL;
@@ -433,8 +406,6 @@ static RzStructuredData *pef_import_libs_structure(PefContainer *c) {
 		rz_structured_data_map_add_unsigned(m, "imported_symbol_count", lib->imported_symbol_count, false);
 		rz_structured_data_map_add_unsigned(m, "start_index", lib->start_index, false);
 		rz_structured_data_map_add_unsigned(m, "options", lib->options, false);
-
-		rz_structured_data_array_add(arr, m);
 	}
 
 	return arr;
@@ -442,23 +413,23 @@ static RzStructuredData *pef_import_libs_structure(PefContainer *c) {
 
 static RzStructuredData *pef_import_symbols_structure(PefContainer *c) {
 	RzStructuredData *arr = rz_structured_data_new_array();
-	if (!arr)
+	if (!arr) {
 		return NULL;
+	}
 
 	PEFLoaderImportSymbol *sym;
 	rz_vector_foreach (&c->loader_section.loader_import_symbol, sym) {
-		RzStructuredData *m = rz_structured_data_new_map();
+		RzStructuredData *m = rz_structured_data_array_add_map(arr);
 		if (!m) {
 			rz_structured_data_free(arr);
 			return NULL;
 		}
 
-		rz_structured_data_map_add_unsigned(m, "raw", sym->u, false);
+		rz_structured_data_map_add_unsigned(m, "raw",
+			sym->u, false);
 		rz_structured_data_map_add_unsigned(m, "flags", pef_import_flags(sym->u), false);
 		rz_structured_data_map_add_unsigned(m, "type", pef_import_type(sym->u), false);
 		rz_structured_data_map_add_unsigned(m, "name_offset", pef_import_name_offset(sym->u), false);
-
-		rz_structured_data_array_add(arr, m);
 	}
 
 	return arr;
@@ -466,12 +437,13 @@ static RzStructuredData *pef_import_symbols_structure(PefContainer *c) {
 
 static RzStructuredData *pef_export_symbols_structure(PefContainer *c) {
 	RzStructuredData *arr = rz_structured_data_new_array();
-	if (!arr)
+	if (!arr) {
 		return NULL;
+	}
 
 	PEFLoaderExportSymbol *sym;
 	rz_vector_foreach (&c->loader_section.loader_export_symbol, sym) {
-		RzStructuredData *m = rz_structured_data_new_map();
+		RzStructuredData *m = rz_structured_data_array_add_map(arr);
 		if (!m) {
 			rz_structured_data_free(arr);
 			return NULL;
@@ -483,8 +455,6 @@ static RzStructuredData *pef_export_symbols_structure(PefContainer *c) {
 		rz_structured_data_map_add_unsigned(m, "name_offset", pef_export_symbol_name_offset(sym->type_and_name), false);
 		rz_structured_data_map_add_unsigned(m, "value", sym->value, true);
 		rz_structured_data_map_add_unsigned(m, "section_index", sym->section_index, false);
-
-		rz_structured_data_array_add(arr, m);
 	}
 
 	return arr;
@@ -492,15 +462,17 @@ static RzStructuredData *pef_export_symbols_structure(PefContainer *c) {
 
 static RzStructuredData *pef_structure(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
 	PefContainer *c = bf->o->bin_obj;
 
-	RzStructuredData *root = rz_structured_data_new_map();
-	if (!root)
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
 		return NULL;
+	}
 
-	RzStructuredData *pef = rz_structured_data_map_add_map(root, "pef");
+	RzStructuredData *pef = rz_structured_data_map_add_map(info, "pef");
 	if (!pef) {
-		rz_structured_data_free(root);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -509,7 +481,7 @@ static RzStructuredData *pef_structure(RzBinFile *bf) {
 
 	RzStructuredData *loader = rz_structured_data_map_add_map(pef, "loader");
 	if (!loader) {
-		rz_structured_data_free(root);
+		rz_structured_data_free(info);
 		return NULL;
 	}
 
@@ -518,7 +490,7 @@ static RzStructuredData *pef_structure(RzBinFile *bf) {
 	rz_structured_data_map_add(loader, "import_symbols", pef_import_symbols_structure(c));
 	rz_structured_data_map_add(loader, "export_symbols", pef_export_symbols_structure(c));
 
-	return root;
+	return info;
 }
 
 RZ_API RzBinPlugin rz_bin_plugin_pef = {

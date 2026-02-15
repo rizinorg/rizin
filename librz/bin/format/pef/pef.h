@@ -4,42 +4,42 @@
 #ifndef RZ_PEF_H
 #define RZ_PEF_H
 
-/*
-Reference:- https://developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
-*/
+/**
+ * Reference:- https:///<developer.apple.com/library/archive/documentation/mac/pdf/MacOS_RT_Architectures.pdf#G20.827
+ */
 
 #define PEF_HDR_SIZE            0x28
-#define PEF_SECTION_HEADER_SIZE 0x1C // 28 bytes
-#define MAGIC_HEADER_T1         0x4A6F7921 // 'Joy!'
-#define MAGIC_HEADER_T2         0x70656666 // 'peff'
-#define PEF_ARCH_PWPC           0x70777063 // 'pwpc'
-#define PEF_ARCH_M68K           0x6D36386B // 'm68k'
+#define PEF_SECTION_HEADER_SIZE 0x1C ///< 28 bytes
+#define MAGIC_HEADER_T1         0x4A6F7921 ///< 'Joy!'
+#define MAGIC_HEADER_T2         0x70656666 ///< 'peff'
+#define PEF_ARCH_PWPC           0x70777063 ///< 'pwpc'
+#define PEF_ARCH_M68K           0x6D36386B ///< 'm68k'
 #define PEF_DEFAULT_SIZE1       0x04
 #define PEF_DEFAULT_SIZE2       0x02
 #define PEF_VERSION_1           0x00000001
 
 typedef enum {
-	EXECUTABLE_READONLY = 0, // code, read-only
-	UNPACKED_DATA = 1, // read/write data
-	PATTERN_DATA = 2, // compressed/pattern data
-	CONSTANT = 3, // read-only data
-	LOADER = 4, // loader metadata
-	DEBUG_RESERVED = 5, // reserved
-	EXECUTABLE_READWRITE = 6, // writable code
-	EXCEPTION_RESERVED = 7, // reserved
-	TRACEBACK_RESERVED = 8, // reserved
+	EXECUTABLE_READONLY = 0, ///< code, read-only
+	UNPACKED_DATA = 1, ///< read/write data
+	PATTERN_DATA = 2, ///< compressed/pattern data
+	CONSTANT = 3, ///< read-only data
+	LOADER = 4, ///< loader metadata
+	DEBUG_RESERVED = 5, ///< reserved
+	EXECUTABLE_READWRITE = 6, ///< writable code
+	EXCEPTION_RESERVED = 7, ///< reserved
+	TRACEBACK_RESERVED = 8, ///< reserved
 } PEFSectionKind;
 
 typedef enum {
-	PROCESS = 1, // shared per process
-	GLOBAL = 4, // shared across processes
-	PROTECTED = 5, // global, read-only unless privileged
+	PROCESS = 1, ///< shared per process
+	GLOBAL = 4, ///< shared across processes
+	PROTECTED = 5, ///< global, read-only unless privileged
 } PEFShareKind;
 
 typedef enum {
 	WEAK_IMPORT = 0x40,
 	EARLY_INIT_REQUIRED = 0x80,
-} PEFImportLibraryFlags; // If library not found, set all import address to zero
+} PEFImportLibraryFlags; ///< If library not found, set all import address to zero
 
 typedef enum {
 	kPEFCodeSymbol = 0,
@@ -70,77 +70,77 @@ enum {
 } Reloc_opcode_values;
 
 typedef struct {
-	ut32 magic1;
-	ut32 magic2;
-	ut32 arch; // 'pwpc' or 'm68k'
-	ut32 format_version; // PEF format version
-	ut32 timestamp; // build time
-	ut32 old_def_version; // old definition version
-	ut32 old_imp_version; // old implementation version
-	ut32 current_version; // current version
-	ut16 section_count; // total sections
-	ut16 inst_section_count; // sections needed at runtime
-	ut32 reserved; // reserved
+	ut8 magic1[4];
+	ut8 magic2[4];
+	ut32 arch; ///< 'pwpc' or 'm68k'
+	ut32 format_version; ///< PEF format version
+	ut32 timestamp; ///< build time
+	ut32 old_def_version; ///< old definition version
+	ut32 old_imp_version; ///< old implementation version
+	ut32 current_version; ///< current version
+	ut16 section_count; ///< total sections
+	ut16 inst_section_count; ///< sections needed at runtime
+	ut32 reserved; ///< reserved
 } PefHeader;
 
 typedef struct {
-	ut32 nameOffset; // offset to section name (-1 if none)
-	ut32 defaultAddress; // preferred load address
-	ut32 totalSize; // size in memory (with zero-fill)
-	ut32 unpackedSize; // initialized size in memory
-	ut32 packedSize; // size stored in file
-	ut32 containerOffset; // offset in file to section data
-	ut8 sectionKind; // section type
-	ut8 shareKind; // sharing mode
-	ut8 alignment; // alignment (power of 2)
-	ut8 reservedA; // reserved
+	ut32 nameOffset; ///< offset to section name (-1 if none)
+	ut32 defaultAddress; ///< preferred load address
+	ut32 totalSize; ///< size in memory (with zero-fill)
+	ut32 unpackedSize; ///< initialized size in memory
+	ut32 packedSize; ///< size stored in file
+	ut32 containerOffset; ///< offset in file to section data
+	ut8 sectionKind; ///< section type
+	ut8 shareKind; ///< sharing mode
+	ut8 alignment; ///< alignment (power of 2)
+	ut8 reservedA; ///< reserved
 } PefSectionHeader;
 
-/*
-Loader section structure
-
-The loader section has, in this order:
-- PEFLoaderSectionHeader
-- PEFLoaderImportLibrary[header.imported_lib_count]
-- PEFLoaderImportSymbol[header.imported_symbol_count]
-- PEFLoaderRelocationHeader[header.rel_section_count]
-- Relocations
-- String table
-- Export hash table
-- Export key table
-- Exported symbol table
-*/
+/**
+ * Loader section structure
+ *
+ * The loader section has, in this order:
+ * - PEFLoaderSectionHeader
+ * - PEFLoaderImportLibrary[header.imported_lib_count]
+ * - PEFLoaderImportSymbol[header.imported_symbol_count]
+ * - PEFLoaderRelocationHeader[header.rel_section_count]
+ * - Relocations
+ * - String table
+ * - Export hash table
+ * - Export key table
+ * - Exported symbol table
+ */
 
 typedef struct {
-	int main_symbol_index; // index of main symbol (-1 if none)
-	ut32 main_symbol_offset; // offset of main in section
-	int init_symbol_index; // index of init symbol (-1 if none)
-	ut32 init_symbol_offset; // offset of init in section
-	int term_symbol_index; // index of term symbol (-1 if none)
-	ut32 term_symbol_offset; // offset of term in section
-	ut32 imported_lib_count; // number of imported libraries
-	ut32 imported_symbol_count; // number of imported symbols
-	ut32 rel_section_count; // sections with relocations
-	ut32 rel_commands_offset; // offset to relocation commands
-	ut32 string_table_offset; // offset to string table
-	ut32 export_hash_offset; // offset to export hash table
-	ut32 export_hash_power; // hash size = 2^value
-	ut32 exported_symbol_count; // number of exported symbols
+	int main_symbol_index; ///< index of main symbol (-1 if none)
+	ut32 main_symbol_offset; ///< offset of main in section
+	int init_symbol_index; ///< index of init symbol (-1 if none)
+	ut32 init_symbol_offset; ///< offset of init in section
+	int term_symbol_index; ///< index of term symbol (-1 if none)
+	ut32 term_symbol_offset; ///< offset of term in section
+	ut32 imported_lib_count; ///< number of imported libraries
+	ut32 imported_symbol_count; ///< number of imported symbols
+	ut32 rel_section_count; ///< sections with relocations
+	ut32 rel_commands_offset; ///< offset to relocation commands
+	ut32 string_table_offset; ///< offset to string table
+	ut32 export_hash_offset; ///< offset to export hash table
+	ut32 export_hash_power; ///< hash size = 2^value
+	ut32 exported_symbol_count; ///< number of exported symbols
 } PEFLoaderSectionHeader;
 
 typedef struct {
-	ut32 name_offset; // offset to library name
-	ut32 old_imp_version; // old implementation version
-	ut32 current_version; // current version
-	ut32 imported_symbol_count; // symbols imported from this lib
-	ut32 start_index; // first symbol index in import table
-	ut8 options; // library flags
-	ut8 reserved1; // reserved
-	ut16 reserved2; // reserved
+	ut32 name_offset; ///< offset to library name
+	ut32 old_imp_version; ///< old implementation version
+	ut32 current_version; ///< current version
+	ut32 imported_symbol_count; ///< symbols imported from this lib
+	ut32 start_index; ///< first symbol index in import table
+	ut8 options; ///< library flags
+	ut8 reserved1; ///< reserved
+	ut16 reserved2; ///< reserved
 } PEFLoaderImportLibrary;
 
 typedef struct {
-	ut32 u; // 32-bit packed field
+	ut32 u; ///< 32-bit packed field
 } PEFLoaderImportSymbol;
 
 static inline ut8 pef_import_flags(ut32 u) {
@@ -163,7 +163,7 @@ typedef struct {
 } PEFLoaderRelocationHeader;
 
 typedef struct {
-	ut32 u; // 32-bit packed value
+	ut32 u; ///< 32-bit packed value
 } PEFLoaderExportHashEntry;
 
 static inline ut16 pef_export_chain_count(ut32 u) {
@@ -180,10 +180,10 @@ typedef struct {
 } PEFLoaderExportHashKey;
 
 typedef struct {
-	ut32 type_and_name; // packed: flags(4) | type(4) | name_offset(24)
-	ut32 value; // usually offset from section start
-	ut16 section_index; // index of section containing symbol
-	ut16 reserved; // reserved
+	ut32 type_and_name; ///< packed: flags(4) | type(4) | name_offset(24)
+	ut32 value; ///< usually offset from section start
+	ut16 section_index; ///< index of section containing symbol
+	ut16 reserved; ///< reserved
 } PEFLoaderExportSymbol;
 
 static inline uint8_t pef_export_symbol_flags(ut32 u) {
@@ -199,22 +199,22 @@ static inline ut32 pef_export_symbol_name_offset(ut32 u) {
 }
 
 typedef struct {
-	ut8 length; // string length (0-255)
-	char data[]; // string data (not null-terminated)
+	ut8 length; ///< string length (0-255)
+	char data[]; ///< string data (not null-terminated)
 } PEFString;
 
 typedef struct {
-	ut32 offset; // offset in loader section
-	ut32 size; // total size of string table
-	const ut8 *data; // pointer to string table data
+	ut32 offset; ///< offset in loader section
+	ut32 size; ///< total size of string table
+	const ut8 *data; ///< pointer to string table data
 } PEFStringTable;
 
 typedef struct {
-	ut32 current_offset; // Current offset in section being relocated
-	ut16 current_section; // Current section index
-	ut32 import_index; // Last import symbol index used
-	const ut8 *reloc_ptr; // Current position in relocation stream
-	const ut8 *reloc_end; // End of relocation stream
+	ut32 current_offset; ///< Current offset in section being relocated
+	ut16 current_section; ///< Current section index
+	ut32 import_index; ///< Last import symbol index used
+	const ut8 *reloc_ptr; ///< Current position in relocation stream
+	const ut8 *reloc_end; ///< End of relocation stream
 } PEFRelocationContext;
 
 typedef struct {

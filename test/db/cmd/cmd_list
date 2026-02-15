@@ -217,10 +217,10 @@ nro          MIT       pancake         Nintendo Switch NRO
 nso          MIT       rkx1209         Nintendo Switch NSO                    
 omf          LGPL3     ampotos         OMF (Object Module Format)             
 p9           LGPL3     pancake         Plan9 binary                           
-pe           LGPL3     nibble          PE (Portable Executable)      
+pe           LGPL3     nibble          PE (Portable Executable)               
 pe64         LGPL3     nibble          PE64 (PE32+) binary                    
 pebble       LGPL      pancake         Pebble Watch App                       
-pef          LGPL3     farhan-25       Preferred Executable Format              
+pef          LGPL3     farhan-25       Preferred Executable Format            
 prg          LGPL3     thestr4ng3r     C64 PRG (Commodore 64)                 
 psxexe       LGPL3     Dax89           Sony PlayStation 1 executable          
 pyc          LGPL3     c0riolis        Python byte-compiled                   
@@ -278,10 +278,10 @@ nro          MIT     pancake        Nintendo Switch NRO
 nso          MIT     rkx1209        Nintendo Switch NSO                           
 omf          LGPL3   ampotos        OMF (Object Module Format)                    
 p9           LGPL3   pancake        Plan9 binary                                  
-pe           LGPL3   nibble         PE (Portable Executable)      
+pe           LGPL3   nibble         PE (Portable Executable)                      
 pe64         LGPL3   nibble         PE64 (PE32+) binary                           
 pebble       LGPL    pancake        Pebble Watch App                              
-pef          LGPL3   farhan-25      Preferred Executable Format                     
+pef          LGPL3   farhan-25      Preferred Executable Format                   
 prg          LGPL3   thestr4ng3r    C64 PRG (Commodore 64)                        
 psxexe       LGPL3   Dax89          Sony PlayStation 1 executable                 
 pyc          LGPL3   c0riolis       Python byte-compiled                          
