@@ -58,53 +58,53 @@ pef:
     section_count: 3
     inst_section_count: 2
   sections:
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 627660
       unpacked_size: 627660
       packed_size: 627660
-      container_offset: 113536
-      section_kind: 0
+      container_offset: 0x1bb80
+      section_kind: 0x0
       section_kind_name: "executable_readonly"
-      share_kind: 4
+      share_kind: 0x4
       share_kind_name: "global"
       alignment_power: 4
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 103108
       unpacked_size: 67452
       packed_size: 49110
-      container_offset: 741200
-      section_kind: 2
+      container_offset: 0xb4f50
+      section_kind: 0x2
       section_kind_name: "pattern_data"
-      share_kind: 1
+      share_kind: 0x1
       share_kind_name: "process"
       alignment_power: 4
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 0
       unpacked_size: 0
       packed_size: 113402
-      container_offset: 128
-      section_kind: 4
+      container_offset: 0x80
+      section_kind: 0x4
       section_kind_name: "loader"
-      share_kind: 4
+      share_kind: 0x4
       share_kind_name: "global"
       alignment_power: 4
   loader:
     header:
       main_symbol_index: 18446744073709551615
-      main_symbol_offset: 0
+      main_symbol_offset: 0x0
       init_symbol_index: 18446744073709551615
-      init_symbol_offset: 0
+      init_symbol_offset: 0x0
       term_symbol_index: 18446744073709551615
-      term_symbol_offset: 0
+      term_symbol_offset: 0x0
       imported_lib_count: 0
       imported_symbol_count: 0
       rel_section_count: 0
-      rel_commands_offset: 0
-      string_table_offset: 0
-      export_hash_offset: 0
+      rel_commands_offset: 0x0
+      string_table_offset: 0x0
+      export_hash_offset: 0x0
       export_hash_power: 0
       exported_symbol_count: 0
     import_libraries: []
@@ -147,53 +147,53 @@ pef:
     section_count: 3
     inst_section_count: 2
   sections:
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 629556
       unpacked_size: 629556
       packed_size: 629556
-      container_offset: 114368
-      section_kind: 0
+      container_offset: 0x1bec0
+      section_kind: 0x0
       section_kind_name: "executable_readonly"
-      share_kind: 4
+      share_kind: 0x4
       share_kind_name: "global"
       alignment_power: 4
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 103480
       unpacked_size: 67824
       packed_size: 49338
-      container_offset: 743936
-      section_kind: 2
+      container_offset: 0xb5a00
+      section_kind: 0x2
       section_kind_name: "pattern_data"
-      share_kind: 1
+      share_kind: 0x1
       share_kind_name: "process"
       alignment_power: 4
-    - name_offset: 4294967295
+    - name_offset: 0xffffffff
       default_address: 0x0
       total_size: 0
       unpacked_size: 0
       packed_size: 114228
-      container_offset: 128
-      section_kind: 4
+      container_offset: 0x80
+      section_kind: 0x4
       section_kind_name: "loader"
-      share_kind: 4
+      share_kind: 0x4
       share_kind_name: "global"
       alignment_power: 4
   loader:
     header:
       main_symbol_index: 18446744073709551615
-      main_symbol_offset: 0
+      main_symbol_offset: 0x0
       init_symbol_index: 18446744073709551615
-      init_symbol_offset: 0
+      init_symbol_offset: 0x0
       term_symbol_index: 18446744073709551615
-      term_symbol_offset: 0
+      term_symbol_offset: 0x0
       imported_lib_count: 0
       imported_symbol_count: 0
       rel_section_count: 0
-      rel_commands_offset: 0
-      string_table_offset: 0
-      export_hash_offset: 0
+      rel_commands_offset: 0x0
+      string_table_offset: 0x0
+      export_hash_offset: 0x0
       export_hash_power: 0
       exported_symbol_count: 0
     import_libraries: []
