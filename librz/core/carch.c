@@ -353,6 +353,11 @@ RZ_DEPRECATE static void core_update_config_node_without_callback_string(RzCore 
 		return;
 	}
 
+	if (node->value == value) {
+		// avoid setting itself.
+		return;
+	}
+
 	RzConfigCallback setter = node->setter;
 
 	node->setter = NULL;
