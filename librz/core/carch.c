@@ -196,6 +196,10 @@ RZ_DEPRECATE static inline void core_update_asm_segoff(RzCore *core, const char 
 RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os) {
 	rz_analysis_set_os(core->analysis, os);
 
+	if (RZ_STR_ISEMPTY(cpu)) {
+		cpu = rz_core_get_cpu(core);
+	}
+
 	rz_syscall_setup(core->analysis->syscall, core->sys_path, arch, bits, cpu, os);
 	core_update_syscall_db(core);
 	core_update_asm_segoff(core, arch, bits);
