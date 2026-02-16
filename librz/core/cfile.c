@@ -10,6 +10,38 @@
 static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
+RZ_IPI bool rz_core_is_core_dump(RzCore *core) {
+	if (!core || !core->io || !core->bin) {
+		return false;
+	}
+	int cur_fd = rz_io_fd_get_current(core->io);
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, cur_fd);
+	if (!bf) {
+		// Fallback for cases where there is no binfile bound to the current fd.
+		bf = rz_bin_cur(core->bin);
+	}
+	RzBinPlugin *plugin = bf ? rz_bin_file_cur_plugin(bf) : NULL;
+	return plugin && plugin->file_type && plugin->file_type(bf) == RZ_BIN_TYPE_CORE;
+}
+
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map) {
+	if (!map || !map->name) {
+		return NULL;
+	}
+	const char *name = map->name;
+	if (rz_str_startswith(name, "fmap.") ||
+		rz_str_startswith(name, "mmap.") ||
+		rz_str_startswith(name, "vmap.")) {
+		return name + 5;
+	}
+	return NULL;
+}
+
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map) {
+	const char *name = rz_core_io_map_strip_prefix(map);
+	return (name && *name == '/') ? name : NULL;
+}
+
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	RzCoreFile *r = RZ_NEW0(RzCoreFile);
 	if (!r) {

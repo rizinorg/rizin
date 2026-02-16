@@ -784,8 +784,11 @@ commands:
         args: []
       - name: dm.
         cname: cmd_debug_map_current
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: Show map name of current address
         args: []
+        modes: 
+          - RZ_OUTPUT_MODE_STANDARD
       - name: dmm
         summary: Module memory map commands
         subcommands:

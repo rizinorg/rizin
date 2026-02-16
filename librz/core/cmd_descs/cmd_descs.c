@@ -23352,7 +23352,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
 	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
 
-	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_state_new(core->rcmd, dm_cd, "dm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
 	rz_warn_if_fail(cmd_debug_map_current_cd);
 
 	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
