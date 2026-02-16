@@ -21,6 +21,8 @@
 #define core_update_config_i core_update_config_node_without_callback_int
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_ARCH);
+
 	if (core->rasm->cur && RZ_STR_ISNOTEMPTY(core->rasm->cur->name)) {
 		return core->rasm->cur->name;
 	}
@@ -28,13 +30,26 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core) {
 }
 
 RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_BITS);
+
 	if (core->rasm->bits > 0) {
 		return core->rasm->bits;
 	}
 	return CORE_DEFAULT_BITS;
 }
 
+RZ_DEPRECATE RZ_IPI ut32 rz_core_get_pc_align(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, 1);
+
+	if (core->rasm->pcalign > 0) {
+		return core->rasm->pcalign;
+	}
+	return 1;
+}
+
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_ARCH);
+
 	if (RZ_STR_ISNOTEMPTY(core->rasm->cpu)) {
 		return core->rasm->cpu;
 	}
@@ -42,6 +57,8 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core) {
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_PLATFORM);
+
 	if (RZ_STR_ISNOTEMPTY(core->rasm->platforms)) {
 		return core->rasm->platforms;
 	}
@@ -49,6 +66,8 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core) {
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core) {
+	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_FEATURES);
+
 	if (RZ_STR_ISNOTEMPTY(core->rasm->features)) {
 		return core->rasm->features;
 	}
@@ -56,6 +75,8 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core) {
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core) {
+	rz_return_val_if_fail(core && core->analysis, CORE_DEFAULT_OS);
+
 	if (RZ_STR_ISNOTEMPTY(core->analysis->os)) {
 		return core->analysis->os;
 	}
@@ -63,6 +84,8 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core) {
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core) {
+	rz_return_val_if_fail(core && core->parser, CORE_DEFAULT_OS);
+
 	if (core->parser->cur && RZ_STR_ISNOTEMPTY(core->parser->cur->name)) {
 		return core->parser->cur->name;
 	}
@@ -356,6 +379,7 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *
 
 	const char *arch = rz_core_get_arch(core);
 	ut32 bits = rz_core_get_bits(core);
+	ut32 pcalign = rz_core_get_pc_align(core);
 	const char *cpu = rz_core_get_cpu(core);
 	const char *platform = rz_core_get_platform(core);
 	const char *features = rz_core_get_features(core);
@@ -369,6 +393,7 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *
 	core_update_config_s(core, "asm.platform", platform);
 	core_update_config_s(core, "asm.features", features);
 	core_update_config_s(core, "asm.parser", parser);
+	core_update_config_i(core, "asm.pcalign", pcalign);
 	core_update_config_s(core, "analysis.arch", arch);
 	core_update_config_s(core, "analysis.cpu", cpu);
 	core_update_config_i(core, "analysis.bits", bits);
