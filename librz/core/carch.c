@@ -381,7 +381,7 @@ RZ_DEPRECATE static void core_update_config_node_without_callback_int(RzCore *co
 	node->setter = setter;
 }
 
-RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *u_arch) {
+RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, bool new_arch) {
 	// this is a terrible way to update the values but the current config
 	// does weird callback calls which should not be done in this way and
 	// instead rely on the actual store data in a structure.
@@ -407,7 +407,7 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, const char *
 	core_update_config_s(core, "analysis.cpu", cpu);
 	core_update_config_i(core, "analysis.bits", bits);
 
-	if (RZ_STR_ISNOTEMPTY(u_arch)) {
+	if (new_arch) {
 		core_update_config_bits_options(core, "asm.bits");
 		core_update_config_bits_options(core, "analysis.bits");
 		core_update_config_cpu_options(core, "asm.cpu");
@@ -476,10 +476,12 @@ RZ_DEPRECATE RZ_API bool rz_core_arch_configure(RZ_NONNULL RzCore *core, RZ_NULL
 		return true;
 	}
 
+	bool is_new_arch = RZ_STR_ISNOTEMPTY(arch);
+
 	if (!core_update_arch(core, arch, bits, cpu, os, platform)) {
 		return false;
 	}
 
-	core_update_config_from_arch(core, arch);
+	core_update_config_from_arch(core, is_new_arch);
 	return true;
 }
