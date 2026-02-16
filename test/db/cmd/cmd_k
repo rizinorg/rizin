@@ -8,6 +8,7 @@ k abc
 k **~!syscall
 k analysis/**
 e asm.arch=x86
+e asm.bits=64
 k analysis/cc/*
 EOF
 EXPECT=<<EOF
