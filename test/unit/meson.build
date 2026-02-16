@@ -89,6 +89,7 @@ if get_option('enable_tests')
     'io_ihex',
     'itv',
     'json',
+    'leb128',
     'list',
     'log',
     'lzma',
