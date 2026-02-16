@@ -1961,8 +1961,8 @@ RUN
 NAME=x86 ref issue
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx c7052a44000050000000
 ao~^ptr[1]
 EOF
