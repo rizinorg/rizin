@@ -753,6 +753,13 @@ static bool arch_is_mips(ELFOBJ *bin) {
 		arch_is_nanomips(bin);
 }
 
+static bool arch_is_h8xx(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_H8_300 ||
+		bin->ehdr.e_machine == EM_H8_300H ||
+		bin->ehdr.e_machine == EM_H8S ||
+		bin->ehdr.e_machine == EM_H8_500;
+}
+
 static bool arch_is_sparc(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_SPARC ||
 		bin->ehdr.e_machine == EM_SPARC32PLUS ||
@@ -1340,7 +1347,30 @@ static char *get_cpu_hppa(ELFOBJ *bin) {
 		}
 	}
 
-	return strdup(" Unknown HP PARISC ISA");
+	return strdup("Unknown HP PARISC ISA");
+}
+
+static char *get_cpu_h8xx(ELFOBJ *bin) {
+	if (bin->ehdr.e_machine == EM_H8_300H) {
+		return rz_str_dup("h8300h");
+	} else if (bin->ehdr.e_machine == EM_H8S) {
+		return rz_str_dup("h8300s");
+	} else if (bin->ehdr.e_machine == EM_H8_500) {
+		return rz_str_dup("h8500");
+	}
+
+	/// Reference:
+	/// https://gem5.googlesource.com/arm/linux/+/b24413180f5600bcb3bb70fbed5cf186b60864bd/arch/h8300/include/asm/elf.h#29
+	if (bin->ehdr.e_flags == 0x810000) {
+		return rz_str_dup("h8300h");
+	} else if (bin->ehdr.e_flags == 0x820000) {
+		// H8S
+		return rz_str_dup("h8300s");
+	} else if (bin->ehdr.e_flags == 0x830000) {
+		// cannot find this anywhere but is not H8300
+		return rz_str_dup("h8300h");
+	}
+	return rz_str_dup("h8300");
 }
 
 /**
@@ -1934,8 +1964,9 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return get_cpu_hppa(bin);
 	} else if (arch_is_arm(bin)) {
 		return get_cpu_arm(bin);
+	} else if (arch_is_h8xx(bin)) {
+		return get_cpu_h8xx(bin);
 	}
-
 	return NULL;
 }
 
@@ -2211,6 +2242,10 @@ int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin) {
 	/* Hack for Ps2 */
 	if (arch_is_mips(bin)) {
 		return get_bits_mips(bin);
+	}
+
+	if (arch_is_h8xx(bin)) {
+		return 16;
 	}
 
 	/* Hack for Thumb */
