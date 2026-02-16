@@ -78,8 +78,8 @@ bool test_rz_analysis_op_val() {
 	mu_assert_streq(op.src[0]->regdelta->name, "r3", "Source reg base should be r3");
 	rz_analysis_op_fini(&op);
 
-#if WITH_GPL
 	SWITCH_TO_ARCH_BITS("riscv", 32);
+	rz_analysis_set_cpu(analysis, "rv32i2p0_c2p0");
 	// lw s10, 64(sp)
 	rz_analysis_op_init(&op);
 	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x06\x4d", 2, RZ_ANALYSIS_OP_MASK_VAL);
@@ -94,13 +94,12 @@ bool test_rz_analysis_op_val() {
 	rz_analysis_op_init(&op);
 	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x22\xc5", 2, RZ_ANALYSIS_OP_MASK_VAL);
 	mu_assert_eq(len, 2, "Op is of size 2");
-	mu_assert_eq(op.dst->type, RZ_ANALYSIS_VAL_MEM, "Destination should be reg");
+	mu_assert_eq(op.dst->type, RZ_ANALYSIS_VAL_MEM, "Destination should be mem");
 	mu_assert_streq(op.dst->reg->name, "sp", "Dst reg should be s10");
 	mu_assert_eq(op.dst->delta, 136, "Source delta should be 64");
 	mu_assert_eq(op.src[0]->type, RZ_ANALYSIS_VAL_REG, "Source should be reg");
 	mu_assert_streq(op.src[0]->reg->name, "s0", "Source reg base should be s0");
 	rz_analysis_op_fini(&op);
-#endif
 
 	rz_analysis_free(analysis);
 	mu_end;
