@@ -105,7 +105,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 		return false;
 	}
 
-	// for debug mode 
+	// for debug mode
 	rz_debug_map_sync(core->dbg);
 	rz_list_foreach (core->dbg->maps, iter, debug_map) {
 		if (strstr(debug_map->name, "libjemalloc.")) {
@@ -122,7 +122,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 			}
 		}
 	}
-			
+
 	// Try dynamic library first
 	if (jemalloc_path) {
 		char *path = rz_str_newf("%s", jemalloc_path);

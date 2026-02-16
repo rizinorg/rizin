@@ -228,7 +228,6 @@ static ut64 rz_heap_get_main_arena_with_symbol_core_dump(RzCore *core, RzIOMap *
 	return UT64_MAX;
 }
 
-
 static ut8 *get_glibc_banner(RzCore *core, const char *section_name,
 	const char *libc_path) {
 	RzPVector *sections = NULL;

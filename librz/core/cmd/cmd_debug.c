@@ -938,12 +938,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 // dmd
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **argv) {
 
-	if (rz_core_is_core_dump(core)){
+	if (rz_core_is_core_dump(core)) {
 		if (argc == 2) {
 			dump_io_maps(core, -1, argv[1]);
 		} else if (argc == 1) {
 			dump_io_maps(core, -1, NULL);
-		}	
+		}
 		return RZ_CMD_STATUS_OK;
 	}
 	CMD_CHECK_DEBUG_DEAD(core);
@@ -957,7 +957,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 
 // dmda
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **argv) {
-	if (rz_core_is_core_dump(core)){
+	if (rz_core_is_core_dump(core)) {
 		dump_io_maps(core, 0, NULL);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -968,7 +968,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, co
 
 // dmdw
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **argv) {
-	if (rz_core_is_core_dump(core)){
+	if (rz_core_is_core_dump(core)) {
 		dump_io_maps(core, RZ_PERM_RW, NULL);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -996,7 +996,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 
 	if (argc == 1) {
 		// Effectively an alias for 'dmm'
-		if (rz_core_is_core_dump(core)){
+		if (rz_core_is_core_dump(core)) {
 			cmd_io_modules(core, state);
 			rz_cmd_state_output_print(state);
 			rz_cons_flush();
@@ -1013,8 +1013,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 	const char *sym_name = argc == 3 ? argv[2] : NULL;
 	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = sym_name };
 	int action = RZ_CORE_BIN_ACC_SYMBOLS;
-	
-	if (rz_core_is_core_dump(core)){
+
+	if (rz_core_is_core_dump(core)) {
 		RzIOMap *map = get_io_map_from_lib_name(core, lib_name);
 		if (!map) {
 			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
@@ -1048,7 +1048,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc == 1) {
 		// Effectively an alias for 'dmm'
-		if (rz_core_is_core_dump(core)){
+		if (rz_core_is_core_dump(core)) {
 			cmd_io_modules(core, state);
 			rz_cmd_state_output_print(state);
 			rz_cons_flush();
@@ -1064,7 +1064,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const ch
 	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = NULL };
 	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
 
-	if (rz_core_is_core_dump(core)){
+	if (rz_core_is_core_dump(core)) {
 		RzIOMap *map = get_io_map_from_lib_name(core, lib_name);
 		if (!map) {
 			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
@@ -1202,8 +1202,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 			ut64 map_addr = map->itv.addr;
 			ut64 map_end = map_addr + map->itv.size;
 			if ((!libname ||
-					(addr != UT64_MAX && (addr >= map_addr && addr < map_end)) ||
-					(libname != NULL && (strstr(map->name, libname))))) {
+				    (addr != UT64_MAX && (addr >= map_addr && addr < map_end)) ||
+				    (libname != NULL && (strstr(map->name, libname))))) {
 				baddr = map_addr;
 				char *res;
 				const char *file = rz_core_io_map_file_path(map);
@@ -1318,12 +1318,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 // "dmxa"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
-	
+
 	if (has_specified_arena) {
 		if (!rz_num_is_valid_input(core->num, argv[1])) {
 			RZ_LOG_ERROR("Invalid arena address '%s'\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
-		} 
+		}
 		ut64 arena_addr = rz_num_math(core->num, argv[1]);
 		return rz_heap_jemalloc_cmd_a(core, has_specified_arena, arena_addr);
 	}
