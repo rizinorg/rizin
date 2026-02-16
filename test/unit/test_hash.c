@@ -29,6 +29,10 @@ static hmac_data_t hmacs_to_test[] = {
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha256", .expected = "f44d2995b9a376a8bfa5250144e16970f0a4b11684c7dafd8b70718bcbd87bd9" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha384", .expected = "726c71ed3a2f057c71b4c8bc4e2b0c53fa16e93671c45bb9587eb3f30468c3b56b2fe8845e7acf2b49fc68f6e3942040" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha512", .expected = "610c4763276013ae15bdc3896cc9397027d3b69cd6b450e13a872c529750dd135e0ead3b23a3a4bde0e31d851eac33c0eb800dd9741235845c4ac1d8b51d6696" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-224", .expected = "1d6f2333df4a435fb48ddb6df3e81a613b8f0b348ea45da6a2465bf3" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-256", .expected = "742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-384", .expected = "1285af685ffd58fd556260ce5efe4e72e8232abd293a3d46bedb1fc68f8562acd62f5929cfb833390a8499726416e5a4" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-512", .expected = "1919c4d0c58ab2375dc9b5aa8170a026db42e15b7d32cd89e3d55f302ddff13913c51fa99b715f7caa8bdb35eb504bbaa60041f0b4ae834648f398a0fd82a74c" },
 #undef INDATA
 };
 
@@ -41,6 +45,10 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "sha256", .expected = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" },
 	{ INDATA("password"), .algo = "sha384", .expected = "a8b64babd0aca91a59bdbb7761b421d4f2bb38280d3a75ba0f21f2bebc45583d446c598660c94ce680c47d19c30783a7" },
 	{ INDATA("password"), .algo = "sha512", .expected = "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86" },
+	{ INDATA("password"), .algo = "sha3-224", .expected = "c3f847612c3780385a859a1993dfd9fe7c4e6d7f477148e527e9374c" },
+	{ INDATA("password"), .algo = "sha3-256", .expected = "c0067d4af4e87f00dbac63b6156828237059172d1bbeac67427345d6a9fda484" },
+	{ INDATA("password"), .algo = "sha3-384", .expected = "9c1565e99afa2ce7800e96a73c125363c06697c5674d59f227b3368fd00b85ead506eefa90702673d873cb2c9357eafc" },
+	{ INDATA("password"), .algo = "sha3-512", .expected = "e9a75486736a550af4fea861e2378305c4a555a05094dee1dca2f68afea49cc3a50e8de6ea131ea521311f4d6fb054a146e8282f8e35ff2e6368c1a62e909716" },
 	{ INDATA("password"), .algo = "sm3", .expected = "08594e140bcc046e345325435218f67a85c38c63de6443b197b544d70ee62f26" },
 	{ INDATA("password"), .algo = "blake3", .expected = "7f2611ba158b6dcea4a69c229c303358c5e04493abeadee106a4bfa464d55787" },
 	{ INDATA("password"), .algo = "fletcher8", .expected = "76" },
