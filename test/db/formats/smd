@@ -28,7 +28,7 @@ binsz    0x000272f8
 bintype  N/A
 bits     32
 retguard false
-class    SEGA MEGASIS    (C)2015 James L.
+class    SEGA MEGASIS    
 compiler N/A
 dbg_file N/A
 endian   BE
@@ -65,7 +65,7 @@ binsz    0x000272f8
 bintype  N/A
 bits     32
 retguard false
-class    SEGA MEGASIS    (C)2015 James L.
+class    SEGA MEGASIS    
 compiler N/A
 dbg_file N/A
 endian   BE
@@ -264,10 +264,11 @@ smd:
     Reserv3E: 0x1294
     Reserv3F: 0x1294
   header:
-    Copyright: "SEGA MEGASIS    (C)2015 James L."
-    DomesticName: "Liquid Space Dodger V3                          "
-    OverseasName: "Liquid Space Dodger V3                          "
-    ProductCode: "GM 01234567-89"
+    System: "SEGA MEGASIS    "
+    Publisher: "(C)2015 James L."
+    DomesticTitle: "Liquid Space Dodger V3                          "
+    ExportTitle: "Liquid Space Dodger V3                          "
+    SerialNumber: "GM 01234567-89"
     CheckSum: 0xdead
     Peripherials: "J               "
     RomStart: 0x0

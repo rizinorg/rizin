@@ -20,7 +20,7 @@ binsz    0x000272f8
 bintype  N/A
 bits     32
 retguard false
-class    SEGA MEGASIS    (C)2015 James L.
+class    SEGA MEGASIS    
 compiler N/A
 dbg_file N/A
 endian   BE

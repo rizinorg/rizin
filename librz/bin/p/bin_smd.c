@@ -87,10 +87,11 @@ enum smd_vectors_e {
 
 typedef struct smd_s {
 	ut32 vectors[SMD_VECTORS_ENUM_MAX];
-	char Copyright[32];
-	char DomesticName[48];
-	char OverseasName[48];
-	char ProductCode[14];
+	char System[16];
+	char Publisher[16];
+	char DomesticTitle[48];
+	char ExportTitle[48];
+	char SerialNumber[14];
 	ut16 CheckSum;
 	char Peripherials[16];
 	ut32 RomStart;
@@ -128,10 +129,11 @@ static bool smd_parse_vectors(RzBuffer *buf, ut64 *off, smd_t *hdr) {
 
 static bool smd_parse_header(RzBuffer *buf, ut64 off, smd_t *hdr) {
 	return smd_parse_vectors(buf, &off, hdr) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->Copyright, sizeof(hdr->Copyright)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->DomesticName, sizeof(hdr->DomesticName)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->OverseasName, sizeof(hdr->OverseasName)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->ProductCode, sizeof(hdr->ProductCode)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->System, sizeof(hdr->System)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->Publisher, sizeof(hdr->Publisher)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->DomesticTitle, sizeof(hdr->DomesticTitle)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->ExportTitle, sizeof(hdr->ExportTitle)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->SerialNumber, sizeof(hdr->SerialNumber)) &&
 		rz_buf_read_be16_offset(buf, &off, &hdr->CheckSum) &&
 		rz_buf_read_offset(buf, &off, (ut8 *)hdr->Peripherials, sizeof(hdr->Peripherials)) &&
 		rz_buf_read_be32_offset(buf, &off, &hdr->RomStart) &&
@@ -194,7 +196,7 @@ static RzBinInfo *smd_info(RzBinFile *bf) {
 	ret->file = rz_str_dup(bf->file);
 	ret->type = rz_str_dup("ROM");
 	ret->machine = rz_str_dup("Sega Megadrive");
-	ret->bclass = rz_str_ndup(hdr->Copyright, sizeof(hdr->Copyright));
+	ret->bclass = rz_str_ndup(hdr->System, sizeof(hdr->System));
 	ret->os = rz_str_dup("smd");
 	ret->arch = rz_str_dup("m68k");
 	ret->bits = 32;
@@ -340,10 +342,11 @@ static void smd_header_structure(const smd_t *hdr, RzStructuredData *parent) {
 		return;
 	}
 
-	rz_structured_data_map_add_string_n(header, "Copyright", hdr->Copyright, sizeof(hdr->Copyright));
-	rz_structured_data_map_add_string_n(header, "DomesticName", hdr->DomesticName, sizeof(hdr->DomesticName));
-	rz_structured_data_map_add_string_n(header, "OverseasName", hdr->OverseasName, sizeof(hdr->OverseasName));
-	rz_structured_data_map_add_string_n(header, "ProductCode", hdr->ProductCode, sizeof(hdr->ProductCode));
+	rz_structured_data_map_add_string_n(header, "System", hdr->System, sizeof(hdr->System));
+	rz_structured_data_map_add_string_n(header, "Publisher", hdr->Publisher, sizeof(hdr->Publisher));
+	rz_structured_data_map_add_string_n(header, "DomesticTitle", hdr->DomesticTitle, sizeof(hdr->DomesticTitle));
+	rz_structured_data_map_add_string_n(header, "ExportTitle", hdr->ExportTitle, sizeof(hdr->ExportTitle));
+	rz_structured_data_map_add_string_n(header, "SerialNumber", hdr->SerialNumber, sizeof(hdr->SerialNumber));
 	rz_structured_data_map_add_unsigned(header, "CheckSum", hdr->CheckSum, true);
 	rz_structured_data_map_add_string_n(header, "Peripherials", hdr->Peripherials, sizeof(hdr->Peripherials));
 	rz_structured_data_map_add_unsigned(header, "RomStart", hdr->RomStart, true);
