@@ -1,6 +1,16 @@
-NAME=sega megadrive rom info
+NAME=sega megadrive rom
 FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=i~!fd
+CMDS=<<EOF
+i~!fd
+echo ---
+ia
+echo ---
+pxw 4 @ 0x10100
+echo ---
+iH
+echo ---
+oml
+EOF
 EXPECT=<<EOF
 file     bins/smd/LiquidSpaceDodgerV3.bin
 size     0x272f8
@@ -16,7 +26,7 @@ features N/A
 baddr    0x00000000
 binsz    0x000272f8
 bintype  N/A
-bits     16
+bits     32
 retguard false
 class    SEGA MEGASIS    (C)2015 James L.
 compiler N/A
@@ -45,119 +55,238 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-EOF
-RUN
+---
+[Info]
+arch     m68k
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x000272f8
+bintype  N/A
+bits     32
+retguard false
+class    SEGA MEGASIS    (C)2015 James L.
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Sega Megadrive
+minopsz  1
+os       smd
+cc       N/A
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 
-NAME=sega megadrive rom symbols
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=isq
-EXPECT=<<EOF
-0x00000000 0 rom_start
-0x000272f8 0 rom_end
-0x00ff0000 0 ram_start
-0x00ffffff 0 ram_end
-0x00fffff0 0 SSP
-0x00000200 0 Reset
-0x00001300 0 BusErr
-0x0000130c 0 AdrErr
-0x000012a0 0 InvOpCode
-0x000012ac 0 DivBy0
-0x000012b8 0 Check
-0x000012c4 0 TrapV
-0x000012d0 0 GPF
-0x000012dc 0 Trace
-0x000012e8 0 Reserv0
-0x000012f4 0 Reserv1
-0x00001294 0 Reserv2
-0x444f4e27 0 Reserv3
-0x54204c4f 0 Reserv4
-0x4f4b2041 0 BadInt
-0x54205448 0 Reserv10
-0x49532100 0 Reserv11
-0x00001294 0 Reserv12
-0x00001294 0 Reserv13
-0x00001294 0 Reserv14
-0x00001294 0 Reserv15
-0x00001294 0 Reserv16
-0x00001294 0 Reserv17
-0x00001294 0 BadIRQ
-0x00001294 0 IRQ1
-0x00001294 0 EXT
-0x00001294 0 IRQ3
-0x00000bb2 0 HBLANK
-0x00001294 0 IRQ5
-0x00000bb8 0 VBLANK
-0x00001294 0 IRQ7
-0x00001294 0 Trap0
-0x00001294 0 Trap1
-0x00001294 0 Trap2
-0x00001294 0 Trap3
-0x00001294 0 Trap4
-0x00001294 0 Trap5
-0x00001294 0 Trap6
-0x00001294 0 Trap7
-0x00001294 0 Trap8
-0x00001294 0 Trap9
-0x00001294 0 Trap10
-0x00001294 0 Trap11
-0x00001294 0 Trap12
-0x00001294 0 Trap13
-0x00001294 0 Trap14
-0x00001294 0 Trap15
-0x00001294 0 Reserv30
-0x00001294 0 Reserv31
-0x00001294 0 Reserv32
-0x00001294 0 Reserv33
-0x00001294 0 Reserv34
-0x00001294 0 Reserv35
-0x00001294 0 Reserv36
-0x00001294 0 Reserv37
-0x00001294 0 Reserv38
-0x00001294 0 Reserv39
-0x00001294 0 Reserv3A
-0x00001294 0 Reserv3B
-0x00001294 0 Reserv3C
-0x00001294 0 Reserv3D
-0x00001294 0 Reserv3E
-0x00001294 0 Reserv3F
-EOF
-RUN
+[Imports]
+nth vaddr bind type lib name 
+-----------------------------
 
-NAME=sega megadrive rom entrypoint
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=ie:quiet
-EXPECT=<<EOF
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
 0x00000200 0x00000200 ---------- ---------- program
-EOF
-RUN
 
-NAME=sega megadrive rom maps and printing
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=pxw 4 @ 0x10100
-EXPECT=<<EOF
+[Exports]
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
+nth      paddr      vaddr bind type size lib name      
+-------------------------------------------------------
+  0 0x00fffff0 0x00fffff0 NONE NONE    4     SSP
+  1 0x00000200 0x00000200 NONE NONE    4     Reset
+  2 0x00001300 0x00001300 NONE NONE    4     BusErr
+  3 0x0000130c 0x0000130c NONE NONE    4     AdrErr
+  4 0x000012a0 0x000012a0 NONE NONE    4     InvOpCode
+  5 0x000012ac 0x000012ac NONE NONE    4     DivBy0
+  6 0x000012b8 0x000012b8 NONE NONE    4     Check
+  7 0x000012c4 0x000012c4 NONE NONE    4     TrapV
+  8 0x000012d0 0x000012d0 NONE NONE    4     GPF
+  9 0x000012dc 0x000012dc NONE NONE    4     Trace
+ 10 0x000012e8 0x000012e8 NONE NONE    4     Reserv0
+ 11 0x000012f4 0x000012f4 NONE NONE    4     Reserv1
+ 12 0x00001294 0x00001294 NONE NONE    4     Reserv2
+ 13 0x444f4e27 0x444f4e27 NONE NONE    4     Reserv3
+ 14 0x54204c4f 0x54204c4f NONE NONE    4     Reserv4
+ 15 0x4f4b2041 0x4f4b2041 NONE NONE    4     BadInt
+ 16 0x54205448 0x54205448 NONE NONE    4     Reserv10
+ 17 0x49532100 0x49532100 NONE NONE    4     Reserv11
+ 18 0x00001294 0x00001294 NONE NONE    4     Reserv12
+ 19 0x00001294 0x00001294 NONE NONE    4     Reserv13
+ 20 0x00001294 0x00001294 NONE NONE    4     Reserv14
+ 21 0x00001294 0x00001294 NONE NONE    4     Reserv15
+ 22 0x00001294 0x00001294 NONE NONE    4     Reserv16
+ 23 0x00001294 0x00001294 NONE NONE    4     Reserv17
+ 24 0x00001294 0x00001294 NONE NONE    4     BadIRQ
+ 25 0x00001294 0x00001294 NONE NONE    4     IRQ1
+ 26 0x00001294 0x00001294 NONE NONE    4     EXT
+ 27 0x00001294 0x00001294 NONE NONE    4     IRQ3
+ 28 0x00000bb2 0x00000bb2 NONE NONE    4     HBLANK
+ 29 0x00001294 0x00001294 NONE NONE    4     IRQ5
+ 30 0x00000bb8 0x00000bb8 NONE NONE    4     VBLANK
+ 31 0x00001294 0x00001294 NONE NONE    4     IRQ7
+ 32 0x00001294 0x00001294 NONE NONE    4     Trap0
+ 33 0x00001294 0x00001294 NONE NONE    4     Trap1
+ 34 0x00001294 0x00001294 NONE NONE    4     Trap2
+ 35 0x00001294 0x00001294 NONE NONE    4     Trap3
+ 36 0x00001294 0x00001294 NONE NONE    4     Trap4
+ 37 0x00001294 0x00001294 NONE NONE    4     Trap5
+ 38 0x00001294 0x00001294 NONE NONE    4     Trap6
+ 39 0x00001294 0x00001294 NONE NONE    4     Trap7
+ 40 0x00001294 0x00001294 NONE NONE    4     Trap8
+ 41 0x00001294 0x00001294 NONE NONE    4     Trap9
+ 42 0x00001294 0x00001294 NONE NONE    4     Trap10
+ 43 0x00001294 0x00001294 NONE NONE    4     Trap11
+ 44 0x00001294 0x00001294 NONE NONE    4     Trap12
+ 45 0x00001294 0x00001294 NONE NONE    4     Trap13
+ 46 0x00001294 0x00001294 NONE NONE    4     Trap14
+ 47 0x00001294 0x00001294 NONE NONE    4     Trap15
+ 48 0x00001294 0x00001294 NONE NONE    4     Reserv30
+ 49 0x00001294 0x00001294 NONE NONE    4     Reserv31
+ 50 0x00001294 0x00001294 NONE NONE    4     Reserv32
+ 51 0x00001294 0x00001294 NONE NONE    4     Reserv33
+ 52 0x00001294 0x00001294 NONE NONE    4     Reserv34
+ 53 0x00001294 0x00001294 NONE NONE    4     Reserv35
+ 54 0x00001294 0x00001294 NONE NONE    4     Reserv36
+ 55 0x00001294 0x00001294 NONE NONE    4     Reserv37
+ 56 0x00001294 0x00001294 NONE NONE    4     Reserv38
+ 57 0x00001294 0x00001294 NONE NONE    4     Reserv39
+ 58 0x00001294 0x00001294 NONE NONE    4     Reserv3A
+ 59 0x00001294 0x00001294 NONE NONE    4     Reserv3B
+ 60 0x00001294 0x00001294 NONE NONE    4     Reserv3C
+ 61 0x00001294 0x00001294 NONE NONE    4     Reserv3D
+ 62 0x00001294 0x00001294 NONE NONE    4     Reserv3E
+ 63 0x00001294 0x00001294 NONE NONE    4     Reserv3F
+
+[Sections]
+     paddr    size      vaddr   vsize align perm name     type flags 
+---------------------------------------------------------------------
+0x00000000   0x100 0x00000000   0x100   0x0 -r-- .vectors      
+0x00000100   0x100 0x00000100   0x100   0x0 -r-- .header       
+0x00000200 0x272f8 0x00000200 0x272f8   0x0 -r-x .text         
+----------     0x0 0x00ff0000  0xfdff   0x0 -rwx .ram          
+
+[Memory]
+name size address flags mirror 
+-------------------------------
+
+[Strings]
+paddr vaddr len size section type string 
+-----------------------------------------
+
+---
 0x00010100  0x00537413                                   .St.
-EOF
-RUN
+---
+smd:
+  vectors:
+    SSP: 0xfffff0
+    Reset: 0x200
+    BusErr: 0x1300
+    AdrErr: 0x130c
+    InvOpCode: 0x12a0
+    DivBy0: 0x12ac
+    Check: 0x12b8
+    TrapV: 0x12c4
+    GPF: 0x12d0
+    Trace: 0x12dc
+    Reserv0: 0x12e8
+    Reserv1: 0x12f4
+    Reserv2: 0x1294
+    Reserv3: 0x444f4e27
+    Reserv4: 0x54204c4f
+    BadInt: 0x4f4b2041
+    Reserv10: 0x54205448
+    Reserv11: 0x49532100
+    Reserv12: 0x1294
+    Reserv13: 0x1294
+    Reserv14: 0x1294
+    Reserv15: 0x1294
+    Reserv16: 0x1294
+    Reserv17: 0x1294
+    BadIRQ: 0x1294
+    IRQ1: 0x1294
+    EXT: 0x1294
+    IRQ3: 0x1294
+    HBLANK: 0xbb2
+    IRQ5: 0x1294
+    VBLANK: 0xbb8
+    IRQ7: 0x1294
+    Trap0: 0x1294
+    Trap1: 0x1294
+    Trap2: 0x1294
+    Trap3: 0x1294
+    Trap4: 0x1294
+    Trap5: 0x1294
+    Trap6: 0x1294
+    Trap7: 0x1294
+    Trap8: 0x1294
+    Trap9: 0x1294
+    Trap10: 0x1294
+    Trap11: 0x1294
+    Trap12: 0x1294
+    Trap13: 0x1294
+    Trap14: 0x1294
+    Trap15: 0x1294
+    Reserv30: 0x1294
+    Reserv31: 0x1294
+    Reserv32: 0x1294
+    Reserv33: 0x1294
+    Reserv34: 0x1294
+    Reserv35: 0x1294
+    Reserv36: 0x1294
+    Reserv37: 0x1294
+    Reserv38: 0x1294
+    Reserv39: 0x1294
+    Reserv3A: 0x1294
+    Reserv3B: 0x1294
+    Reserv3C: 0x1294
+    Reserv3D: 0x1294
+    Reserv3E: 0x1294
+    Reserv3F: 0x1294
+  header:
+    Copyright: "SEGA MEGASIS    (C)2015 James L."
+    DomesticName: "Liquid Space Dodger V3                          "
+    OverseasName: "Liquid Space Dodger V3                          "
+    ProductCode: "GM 01234567-89"
+    CheckSum: 0xdead
+    Peripherials: "J               "
+    RomStart: 0x0
+    RomEnd: 0x272f8
+    RamStart: 0xff0000
+    RamEnd: 0xffffff
+    SramCode: "20 20 20 20 20 20 20 20 20 20 20 20             |                |"
+    ModemCode: "20 20 20 20 20 20 20 20 20 20 20 20             |                |"
+    Reserved: |
+      54 68 69 73 20 70 72 6f 67 72 61 6d 20 63 6f 6e |This program con|
+      74 61 69 6e 73 20 62 6c 61 73 74 20 70 72 6f 63 |tains blast proc|
+      65 73 73 69 6e 67 21 20                         |essing!         |
+    CountryCode: "JUE             "
 
-NAME=sega megadrive maps
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=oml
-EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00000000 - 0x000000ff r-- fmap.vtable
- 2 fd: 3 +0x00000100 0x00000100 - 0x000001ff r-- fmap.header
- 3 fd: 3 +0x00000200 0x00000200 * 0x000272f7 r-x fmap.text
-EOF
-RUN
-
-NAME=sega megadrive sections
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=iS
-EXPECT=<<EOF
-     paddr    size      vaddr   vsize align perm name   type flags 
--------------------------------------------------------------------
-0x00000000   0x100 0x00000000   0x100   0x0 -r-- vtable      
-0x00000100   0x100 0x00000100   0x100   0x0 -r-- header      
-0x00000200 0x270f8 0x00000200 0x270f8   0x0 -r-x text        
+---
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000000ff r-- fmap..vectors
+ 2 fd: 3 +0x00000100 0x00000100 - 0x000001ff r-- fmap..header
+ 3 fd: 3 +0x00000200 0x00000200 * 0x000274f7 r-x fmap..text
+ 4 fd: 4 +0x00000000 0x00ff0000 - 0x00fffdfe rwx mmap..ram
 EOF
 RUN
 
