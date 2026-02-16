@@ -1,8 +1,11 @@
+// SPDX-FileCopyrightText: 2026 Farhan-25 <shadowfinder1799@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
 static bool test_read_u32_single_byte(void) {
-	ut8 buf[] = { 0x7f }; 
+	ut8 buf[] = { 0x7f };
 	ut32 value = 0;
 
 	size_t n = read_u32_leb128(buf, buf + sizeof(buf), &value);
@@ -24,7 +27,7 @@ static bool test_read_u32_multibyte(void) {
 }
 
 static bool test_read_i32_positive(void) {
-	ut8 buf[] = { 0x01 }; 
+	ut8 buf[] = { 0x01 };
 	st32 value = 0;
 
 	size_t n = read_i32_leb128(buf, buf + sizeof(buf), &value);
@@ -57,7 +60,7 @@ static bool test_read_i32_multibyte_negative(void) {
 }
 
 static bool test_read_u64_single_byte(void) {
-	ut8 buf[] = { 0x7f }; 
+	ut8 buf[] = { 0x7f };
 	ut64 value = 0;
 
 	size_t n = read_u64_leb128(buf, buf + sizeof(buf), &value);
