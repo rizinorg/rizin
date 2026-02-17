@@ -319,12 +319,22 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   # plugins
   arch_plugins_list += [
     'riscv_cs',
-    'tricore_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_riscv_cs.c',
+  ]
+endif
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
+  # plugins
+  arch_plugins_list += [
+    'tricore_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
     'p/arch_tricore_cs.c',
   ]
 
