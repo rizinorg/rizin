@@ -5,8 +5,6 @@
 // SPDX-FileCopyrightText: 2026 Anton Angelov <anton.angelov@protonmail.com>
 // SPDX-License-Identifier: BSD-3-Clause
 
-// todo..
-
 #include <rz_util/rz_iterator.h>
 
 #ifndef HT_TYPE
@@ -21,92 +19,135 @@
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
 
-// Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
-// slow down lookup/insert/iteration with about 5-10%.
-// #ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
-// #define HT_ENABLE_CUSTOM_ELEM_SIZE
-// #endif
-
-#ifndef HT_HASH_MIX_64_TO_32
-// #define HT_HASH_MIX_64_TO_32(key) (((ut32)((key) * 0xc4ceb9fe1a85ec53ULL) ^ (ut32)((ut64)(key * 0xff51afd7ed558ccdULL) >> 32)))
-#define HT_HASH_MIX_64_TO_32(key) (ut64)((key))
-#endif
-
-#ifndef KEY_TO_HASH_PX
-#define KEY_TO_HASH_PX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
-#endif
-
-#ifndef KEY_TO_HASH_UX
-#define KEY_TO_HASH_UX(key) (HT_HASH_MIX_64_TO_32(key))
-#endif
-
-#ifndef KEY_TO_HASH_SX
-#define KEY_TO_HASH_SX(key) (HT_HASH_MIX_64_TO_32((uintptr_t)(key)))
-#endif
-
 #if HT_TYPE == 1
 // Hash table HtPP that has void* as key and void* as value
-#define HtName_(name)  name##PP
-#define Ht_(name)      ht_pp_##name
-#define HT_(name)      HtPP##name
-#define KEY_TYPE       void *
-#define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) KEY_TO_HASH_PX(x)
-#define HT_NULL_VALUE  NULL
+#define HtName_(name)              name##PP
+#define Ht_(name)                  ht_pp_##name
+#define HT_(name)                  HtPP##name
+#define KEY_TYPE                   void *
+#define VALUE_TYPE                 void *
+#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
+#define HT_NULL_VALUE              NULL
 #elif HT_TYPE == 2
 // Hash table HtUP that has void* as key and ut64 as value
-#define HtName_(name)  name##UP
-#define Ht_(name)      ht_up_##name
-#define HT_(name)      HtUP##name
-#define KEY_TYPE       ut64
-#define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) KEY_TO_HASH_UX(x)
-#define HT_NULL_VALUE  0
+#define HtName_(name)              name##UP
+#define Ht_(name)                  ht_up_##name
+#define HT_(name)                  HtUP##name
+#define KEY_TYPE                   ut64
+#define VALUE_TYPE                 void *
+#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((ut64)(key)))
+#define HT_NULL_VALUE              0
 #elif HT_TYPE == 3
 // Hash table HtUU that has ut64 as key and ut64 as value
-#define HtName_(name)  name##UU
-#define Ht_(name)      ht_uu_##name
-#define HT_(name)      HtUU##name
-#define KEY_TYPE       ut64
-#define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) KEY_TO_HASH_UX(x)
-#define HT_NULL_VALUE  0
+#define HtName_(name)              name##UU
+#define Ht_(name)                  ht_uu_##name
+#define HT_(name)                  HtUU##name
+#define KEY_TYPE                   ut64
+#define VALUE_TYPE                 ut64
+#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((ut64)(key)))
+#define HT_NULL_VALUE              0
 #elif HT_TYPE == 4
 // Hash table HtPU that has void* as key and ut64 as value
-#define HtName_(name)  name##PU
-#define Ht_(name)      ht_pu_##name
-#define HT_(name)      HtPU##name
-#define KEY_TYPE       void *
-#define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) KEY_TO_HASH_PX(x)
-#define HT_NULL_VALUE  0
+#define HtName_(name)              name##PU
+#define Ht_(name)                  ht_pu_##name
+#define HT_(name)                  HtPU##name
+#define KEY_TYPE                   void *
+#define VALUE_TYPE                 ut64
+#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
+#define HT_NULL_VALUE              0
 #elif HT_TYPE == 5
 // Hash table HtSP that has C-string as key and void* as value
-#define HtName_(name)  name##SP
-#define Ht_(name)      ht_sp_##name
-#define HT_(name)      HtSP##name
-#define KEY_TYPE       char *
-#define VALUE_TYPE     void *
-#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
-#define HT_NULL_VALUE  NULL
+#define HtName_(name)              name##SP
+#define Ht_(name)                  ht_sp_##name
+#define HT_(name)                  HtSP##name
+#define KEY_TYPE                   char *
+#define VALUE_TYPE                 void *
+#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define HT_NULL_VALUE              NULL
 #elif HT_TYPE == 6
 // Hash table HtSS that has C-string as key and C-string as value
-#define HtName_(name)  name##SS
-#define Ht_(name)      ht_ss_##name
-#define HT_(name)      HtSS##name
-#define KEY_TYPE       char *
-#define VALUE_TYPE     char *
-#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
-#define HT_NULL_VALUE  NULL
+#define HtName_(name)              name##SS
+#define Ht_(name)                  ht_ss_##name
+#define HT_(name)                  HtSS##name
+#define KEY_TYPE                   char *
+#define VALUE_TYPE                 char *
+#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define HT_NULL_VALUE              NULL
 #elif HT_TYPE == 7
 // Hash table HtSU that has C-string as key and ut64 as value
-#define HtName_(name)  name##SU
-#define Ht_(name)      ht_su_##name
-#define HT_(name)      HtSU##name
-#define KEY_TYPE       char *
-#define VALUE_TYPE     ut64
-#define KEY_TO_HASH(x) KEY_TO_HASH_SX(x)
-#define HT_NULL_VALUE  0
+#define HtName_(name)              name##SU
+#define Ht_(name)                  ht_su_##name
+#define HT_(name)                  HtSU##name
+#define KEY_TYPE                   char *
+#define VALUE_TYPE                 ut64
+#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define HT_NULL_VALUE              0
+#endif
+
+// Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
+// slow down lookup/insert/iteration with about 5-10%.
+//#ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
+//#define HT_ENABLE_CUSTOM_ELEM_SIZE
+//#endif
+
+#ifndef HT_HASH_FUNCTIONS
+#define HT_HASH_FUNCTIONS
+/**
+ * \brief todo..
+ */
+static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
+	key ^= key >> 33;
+	key *= 0xff51afd7ed558ccdULL;
+	key ^= key >> 33;
+	return (uint32_t)(key ^ (key >> 32));
+}
+
+/**
+ * \brief todo
+ */
+static inline ut32 ht_string_hash_32(char *key, ut32 len) {
+	const uint64_t prime1 = 0xff51afd7ed558ccdULL; /* Murmur3 consts */
+	const uint64_t prime2 = 0xc4ceb9fe1a85ec53ULL;
+	ut64 result = 0xff51afd7ed558ccdULL;
+
+	// Process unaligned bytes first
+	while (len > 0 && (uintptr_t)key & 0x7) {
+		result += (result << 5) ^ *key * prime1;
+		len -= 1;
+		key += 1;
+	}
+
+	// Process aligned bytes in blocks
+	while (len > 0) {
+		if (len >= 8) {
+			ut64 block_64 = *((ut64 *)key);
+			result += (result << 5) ^ block_64 * prime1;
+			len -= 8;
+			key += 8;
+			continue;
+		}
+		if (len >= 4) {
+			ut64 block_32 = *((ut32 *)key);
+			result += (result << 5) ^ block_32 * prime1;
+			len -= 4;
+			key += 4;
+			continue;
+		}
+		while (len > 0) {
+			result += (result << 5) ^ *key * prime1;
+			len -= 1;
+			key += 1;
+		}
+		break;
+	}
+
+	// Finalize
+	result ^= result >> 33;
+	result *= prime2;
+
+	// Fold the result
+	return (ut32)(result ^ (result >> 32));
+}
 #endif
 
 #ifndef HT_ENUM_DEFINED

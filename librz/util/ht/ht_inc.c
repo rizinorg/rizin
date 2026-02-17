@@ -26,8 +26,8 @@
 #define LOAD_FACTOR_DEN 8 /* should be power of 2; also GROUP_WIDTH should be multiple of LOAD_FACTOR_DEN */
 
 // Helper macros for H1/H2 hash components
-#define H1(HASH)                     (HASH)
-#define H2_HASH_FRAGMENT(HASH)       ((HASH >> 19) & 0x7F)
+#define H1(HASH)                     ((HASH) >> 7)
+#define H2_HASH_FRAGMENT(HASH)       ((HASH) & 0x7F)
 #define H2_STATUS_DELETED            0b11111110
 #define H2_STATUS_EMPTY              0b11111111
 #define H2_IS_EMPTY_OR_DELETED(CTRL) ((CTRL) >> 7)
@@ -188,17 +188,8 @@ static inline ut8 group_lowest_bit(group_mask_t mask) {
 	}
 #endif
 
-static inline ut32 murmur3_64_to_32(ut64 key) {
-	key ^= key >> 33;
-	key *= 0xff51afd7ed558ccdULL;
-	key ^= key >> 33;
-	key *= 0xc4ceb9fe1a85ec53ULL;
-	key ^= key >> 33;
-	return (ut32)(key ^ (key >> 32));
-}
-
-static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k) {
-	return ht->opt.hashfn ? ht->opt.hashfn(k) : murmur3_64_to_32(KEY_TO_HASH(k));
+static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k, ut32 key_size) {
+	return ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k, key_size);
 }
 
 static inline KEY_TYPE dupkey(HtName_(Ht) *ht, const KEY_TYPE k) {
@@ -265,34 +256,6 @@ static ut32 next_power_of_two(ut32 n) {
 }
 
 /**
- * \brief
- *
- * For larger hash tables having good quality hash distribution actually degrades performance,
- * because it places elements at similar distance to each other so most random reads are likely
- * to result in L3/TLB cache misses.
- *
- * In this case skewing the hash distribution causes clusters of elements which results in extra
- * probing steps, but less cache misses, and overall better performance.
- *
- */
-static ut32 get_capacity_mask(HtName_(Ht) *ht) {
-	if (ht->capacity <= 16384) {
-		// No clustering
-		return ht->capacity - 1;
-	}
-
-	if (ht->capacity < 262144) {
-		return (ht->capacity - 1) & ~0x1;
-	}
-
-	if (ht->capacity < 2097152) {
-		return (ht->capacity - 1) & ~0x7;
-	}
-
-	return (ht->capacity - 1) & ~0x15;
-}
-
-/**
  * \brief Create a new hashtable and return a pointer to it.
  */
 static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options) *opt) {
@@ -304,7 +267,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	// Use minimum capacity of group size in order to avoid edge cases (related to ctrl byte mirroring and deletion slot placement)
 	// No maximum capacity enforcement at the moment..
 	ht->capacity = next_power_of_two(RZ_MAX(requested_capacity, 16));
-	ht->capacity_mask = get_capacity_mask(ht);
+	ht->capacity_mask = ht->capacity - 1;
 	ht->growth_left = (ht->capacity / LOAD_FACTOR_DEN) * LOAD_FACTOR_NUM;
 	ht->size = 0;
 	ht->opt = *opt;
@@ -537,9 +500,11 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
  */
 static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len) {
 	ut32 probe_step = GROUP_WIDTH;
-	ut32 hash = hashfn(ht, key);
+	ut32 hash = hashfn(ht, key, key_len);
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
 	INDEX_TYPE index = H1(hash) & ht->capacity_mask;
+
+	RZ_PREFETCH(HT_SLOT_AT(ht, index));
 
 	while (true) {
 		// Probe one group at a time
@@ -601,7 +566,7 @@ static RZ_BORROW HT_(Kv) *reserve_kv(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE 
 		return NULL;
 	}
 
-	ut32 hash = hashfn(ht, key);
+	ut32 hash = hashfn(ht, key, key_len);
 	ut8 hash_fragment = H2_HASH_FRAGMENT(hash);
 	ut8 previous_ctrl = 0;
 	bool existing = false;

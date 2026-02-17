@@ -20,7 +20,7 @@ static void fini_kv_key(HT_(Kv) *kv, RZ_UNUSED void *user) {
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt) {
 	HT_(Options) opt = {
 		.cmp = (HT_(Comparator))strcmp,
-		.hashfn = (HT_(HashFunction))sdb_hash,
+		.hashfn = NULL,
 		.dupkey = key_opt == HT_STR_DUP ? (HT_(DupKey))rz_str_dup : NULL,
 		.dupvalue = NULL,
 		.calcsizeK = (HT_(CalcSizeK))strlen,
