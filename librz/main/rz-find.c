@@ -39,6 +39,7 @@ typedef struct {
 	RzPrint *pr;
 	RzList /*<char *>*/ *keywords;
 	const char *mask;
+	const char *sys_command;
 	const char *curfile;
 	const char *comma;
 	const char *exec_command;
@@ -154,6 +155,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			}
 		}
 	}
+
+	// for option E (rz-find -E)
 	if (ro->exec_command) {
 		char *command = rz_str_newf("%s %s", ro->exec_command, ro->curfile);
 		int status = rz_sys_system(command);
@@ -163,6 +166,36 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		free(command);
 		return 1;
 	}
+
+	// for option R (rz-find -R)
+	if (ro->sys_command) {
+		char *tmp = rz_str_dup(ro->sys_command);
+		if (!tmp || tmp == NULL) {
+			return 1;
+		}
+
+		char *replaced = rz_str_replace(tmp, "{}", ro->curfile, 0);
+		if (!replaced) {
+			free(tmp);
+			replaced = rz_str_dup(ro->sys_command);
+			if (!replaced) {
+				return 1;
+			}
+		} else {
+			if (replaced != tmp) {
+				free(tmp);
+			}
+		}
+		// TODO : remove this altogether
+		RzCore *core = rz_core_new();
+		int status = rz_core_cmd(core, replaced, 1);
+		if (status == -1) {
+			RZ_LOG_ERROR("Failed to execute command: %s\n", replaced);
+		}
+		free(replaced);
+		return 1;
+	}
+
 	return 1;
 }
 
@@ -204,6 +237,7 @@ static int show_help(const char *argv0, int line) {
 		"-b",    "size",    "Set block size",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
 		"-E",    "cmd",     "Execute command for each file found",
+		"-R",    "cmd",     "Execute rizin command for each file found",
 		"-f",    "from",    "Start searching from address 'from'",
 		"-F",    "file",    "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
@@ -534,7 +568,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:rqnhvVZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -567,6 +601,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'E':
 			ro.quiet = true;
 			ro.exec_command = opt.arg;
+			break;
+		case 'R':
+			ro.quiet = true;
+			ro.sys_command = rz_str_dup(opt.arg);
 			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
@@ -664,6 +702,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 	if (ro.json) {
 		printf("[");
+	}
+	if (ro.sys_command) {
+		RZ_FREE(ro.sys_command);
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];

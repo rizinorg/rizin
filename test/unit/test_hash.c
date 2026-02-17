@@ -33,6 +33,9 @@ static hmac_data_t hmacs_to_test[] = {
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-256", .expected = "742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-384", .expected = "1285af685ffd58fd556260ce5efe4e72e8232abd293a3d46bedb1fc68f8562acd62f5929cfb833390a8499726416e5a4" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "sha3-512", .expected = "1919c4d0c58ab2375dc9b5aa8170a026db42e15b7d32cd89e3d55f302ddff13913c51fa99b715f7caa8bdb35eb504bbaa60041f0b4ae834648f398a0fd82a74c" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-256", .expected = "742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-384", .expected = "742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-512", .expected = "742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614" },
 #undef INDATA
 };
 
@@ -49,6 +52,9 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "sha3-256", .expected = "c0067d4af4e87f00dbac63b6156828237059172d1bbeac67427345d6a9fda484" },
 	{ INDATA("password"), .algo = "sha3-384", .expected = "9c1565e99afa2ce7800e96a73c125363c06697c5674d59f227b3368fd00b85ead506eefa90702673d873cb2c9357eafc" },
 	{ INDATA("password"), .algo = "sha3-512", .expected = "e9a75486736a550af4fea861e2378305c4a555a05094dee1dca2f68afea49cc3a50e8de6ea131ea521311f4d6fb054a146e8282f8e35ff2e6368c1a62e909716" },
+	{ INDATA("password"), .algo = "keccak-256", .expected = "b68fe43f0d1a0d7aef123722670be50268e15365401c442f8806ef83b612976b" },
+	{ INDATA("password"), .algo = "keccak-384", .expected = "e0779e9bb200a589bc70e499a9f7db1006e181519394990ef41800bebe452c23b4a8372fd89df8d5e0d951af240be7bc" },
+	{ INDATA("password"), .algo = "keccak-512", .expected = "a6818b8188b36c44d17784c5551f63accc5deaf8786f9d0ad1ae3cd8d887cbab4f777286dbb315fb14854c8774dc0d10b5567e4a705536cc2a1d61ec0a16a7a6" },
 	{ INDATA("password"), .algo = "sm3", .expected = "08594e140bcc046e345325435218f67a85c38c63de6443b197b544d70ee62f26" },
 	{ INDATA("password"), .algo = "blake3", .expected = "7f2611ba158b6dcea4a69c229c303358c5e04493abeadee106a4bfa464d55787" },
 	{ INDATA("password"), .algo = "fletcher8", .expected = "76" },
