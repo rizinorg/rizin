@@ -16130,12 +16130,23 @@ static const RzCmdDescHelp print_current_block_json_help = {
 	.args = print_current_block_json_args,
 };
 
+static const RzCmdDescHelp cmd_print_rzil_help = {
+	.summary = "Print RzIL",
+};
 static const RzCmdDescArg print_function_rzil_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_function_rzil_help = {
-	.summary = "Print the RzIL of the function",
+	.summary = "Print RzIL of the function",
 	.args = print_function_rzil_args,
+};
+
+static const RzCmdDescArg print_function_rzil_enriched_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp print_function_rzil_enriched_help = {
+	.summary = "Print enriched RzIL of the function",
+	.args = print_function_rzil_enriched_args,
 };
 
 static const RzCmdDescHelp pp_help = {
@@ -24618,8 +24629,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_current_block_json_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "pj", rz_print_current_block_json_handler, &print_current_block_json_help);
 	rz_warn_if_fail(print_current_block_json_cd);
 
-	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
+	RzCmdDesc *cmd_print_rzil_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pl", NULL, NULL, &cmd_print_rzil_help);
+	rz_warn_if_fail(cmd_print_rzil_cd);
+	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
 	rz_warn_if_fail(print_function_rzil_cd);
+
+	RzCmdDesc *print_function_rzil_enriched_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "pLf", rz_print_function_rzil_enriched_handler, &print_function_rzil_enriched_help);
+	rz_warn_if_fail(print_function_rzil_enriched_cd);
 
 	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);
 	rz_warn_if_fail(pp_cd);

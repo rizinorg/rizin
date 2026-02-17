@@ -868,6 +868,9 @@ RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL Rz
 RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
 
+RZ_API void rz_il_op_pure_stringify_unicode(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API void rz_il_op_effect_stringify_unicode(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
+
 #ifdef __cplusplus
 }
 #endif
