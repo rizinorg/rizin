@@ -128,7 +128,8 @@ RZ_API bool rz_platform_target_index_load_sdb(RZ_NONNULL RzPlatformTargetIndex *
  * \param platform reference to the selected platform (value of `asm.platform`)
  * \param platforms_dir reference to the directory containing platform files
  */
-RZ_API bool rz_platform_target_index_init(RzPlatformTargetIndex *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu, const char *platform, RZ_NONNULL const char *platforms_dir) {
+RZ_API bool rz_platform_target_index_init(RzPlatformTargetIndex *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
+	const char *platform, RZ_NONNULL const char *platforms_dir) {
 	if (RZ_STR_ISEMPTY(platform)) {
 		return true;
 	}

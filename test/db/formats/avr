@@ -8,7 +8,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega2561
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00001c52
@@ -344,7 +344,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega2561
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x0003e07e
@@ -731,7 +731,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega32u4
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x000065a0
@@ -1020,7 +1020,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega168
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00001236
@@ -1227,7 +1227,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega168
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00830001
@@ -1429,7 +1429,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega328p
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x000033ea
@@ -1638,7 +1638,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATTiny88
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00000270
@@ -1827,7 +1827,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega16
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00001dac
@@ -2014,7 +2014,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega8
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00000ef2
@@ -2193,7 +2193,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      ATmega8
+cpu      N/A
 features N/A
 baddr    ----------
 binsz    0x00003722

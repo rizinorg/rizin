@@ -5167,8 +5167,8 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	if (!rch) {
 		return 0;
 	}
-	rz_config_hold_s(rch, "asm.arch", NULL);
 	rz_config_hold_i(rch, "asm.bits", NULL);
+	rz_config_hold_s(rch, "asm.arch", NULL);
 
 	// TODO: All those ds must be print flags
 	RzDisasmState *ds = ds_init(core);

@@ -1562,19 +1562,15 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_op) {
 	bool is_arch_set = false, is_bits_set = false;
 	bool oldfixedarch = core->fixedarch, oldfixedbits = core->fixedbits;
 	int cmd_ignbithints = -1;
-	int bits = -1;
 
 	// change arch and bits
 	char *q = strchr(arg_str, ':');
 	if (q) {
 		*q++ = '\0';
-		bits = rz_num_math(core->num, q);
-	}
-	is_arch_set = set_tmp_arch(core, arg_str, &tmparch);
-
-	if (bits > 0) {
+		int bits = rz_num_math(core->num, q);
 		is_bits_set = set_tmp_bits(core, bits, &tmpbits, &cmd_ignbithints);
 	}
+	is_arch_set = set_tmp_arch(core, arg_str, &tmparch);
 
 	// execute command or next tmp op with changed settings
 	TSNode next = tmp_get_next_node(node);

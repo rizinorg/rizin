@@ -160,16 +160,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=analysis.arch & asm.arch must be the same
+NAME=analysis.arch != asm.arch
 FILE=--
 CMDS=<<EOF
 e asm.arch=lanai
 e analysis.arch
-e asm.arch=x86
+e asm.arch=x86.as
 e analysis.arch
 EOF
 EXPECT=<<EOF
-lanai
+null
 x86
 EOF
 RUN

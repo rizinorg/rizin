@@ -252,9 +252,6 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		}
 		plugin_fini(analysis);
 		analysis->cur = h;
-
-		// always set the cpu as the name of the arch.
-		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
 			rz_iterator_free(it);
@@ -315,17 +312,12 @@ RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 
 static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	rz_return_val_if_fail(analysis, false);
-	if (RZ_STR_ISEMPTY(os)) {
+	if (!os || !*os) {
 		os = RZ_SYS_OS;
 	}
-
-	if (analysis->os && RZ_STR_EQ(analysis->os, os)) {
-		return true;
-	}
-
-	RZ_FREE(analysis->os);
+	free(analysis->os);
 	analysis->os = rz_str_dup(os);
-	rz_type_db_set_os(analysis->typedb, analysis->os);
+	rz_type_db_set_os(analysis->typedb, os);
 	rz_type_db_reload(analysis->typedb, analysis->sdb_types_path);
 	return true;
 }

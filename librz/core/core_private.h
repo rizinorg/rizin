@@ -8,14 +8,6 @@
 #include <rz_core.h>
 #include <rz_il.h>
 
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core);
-RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core);
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core);
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core);
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core);
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core);
-RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
-
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);

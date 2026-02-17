@@ -37,7 +37,7 @@ stackframe: 0
 cyclomatic-cost: 0
 cyclomatic-complexity: 1
 loops: 0
-bits: 16
+bits: 32
 type: fcn
 num-bbs: 5
 edges: 6
