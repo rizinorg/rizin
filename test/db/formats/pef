@@ -1,0 +1,204 @@
+NAME=PEF iI/iH
+FILE=bins/pef/Test1
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+iS
+EOF
+EXPECT=<<EOF
+arch     ppc
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x000c0f26
+bintype  pef
+bits     32
+retguard false
+class    PEF
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  PowerPC
+maxopsz  4
+minopsz  4
+os       Mac OS
+cc       N/A
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+pef:
+  header:
+    magic1: "4a 6f 79 21                                     |Joy!            |"
+    magic2: "70 65 66 66                                     |peff            |"
+    arch_raw: 1886875747
+    format_version: 1
+    timestamp: 2902232786
+    old_def_version: 0
+    old_imp_version: 0
+    current_version: 0
+    section_count: 3
+    inst_section_count: 2
+  sections:
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 627660
+      unpacked_size: 627660
+      packed_size: 627660
+      container_offset: 0x1bb80
+      section_kind: 0x0
+      section_kind_name: "executable_readonly"
+      share_kind: 0x4
+      share_kind_name: "global"
+      alignment_power: 4
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 103108
+      unpacked_size: 67452
+      packed_size: 49110
+      container_offset: 0xb4f50
+      section_kind: 0x2
+      section_kind_name: "pattern_data"
+      share_kind: 0x1
+      share_kind_name: "process"
+      alignment_power: 4
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 0
+      unpacked_size: 0
+      packed_size: 113402
+      container_offset: 0x80
+      section_kind: 0x4
+      section_kind_name: "loader"
+      share_kind: 0x4
+      share_kind_name: "global"
+      alignment_power: 4
+  loader:
+    header:
+      main_symbol_index: 18446744073709551615
+      main_symbol_offset: 0x0
+      init_symbol_index: 18446744073709551615
+      init_symbol_offset: 0x0
+      term_symbol_index: 18446744073709551615
+      term_symbol_offset: 0x0
+      imported_lib_count: 0
+      imported_symbol_count: 0
+      rel_section_count: 0
+      rel_commands_offset: 0x0
+      string_table_offset: 0x0
+      export_hash_offset: 0x0
+      export_hash_power: 0
+      exported_symbol_count: 0
+    import_libraries: []
+    import_symbols: []
+    export_symbols: []
+
+---
+     paddr    size      vaddr   vsize align perm name      type flags 
+----------------------------------------------------------------------
+0x0001bb80 0x993cc 0x00000000 0x993cc   0x0 -r-x .text          
+0x000b4f50  0xbfd6 0x00000000 0x192c4   0x0 -r-- section_1      
+0x00000080 0x1bafa 0x00000000     0x0   0x0 -r-- .loader        
+EOF
+RUN
+
+NAME=PEF iS
+FILE=bins/pef/Test2
+CMDS=<<EOF
+iS
+echo ---
+iH
+EOF
+EXPECT=<<EOF
+     paddr    size      vaddr   vsize align perm name      type flags 
+----------------------------------------------------------------------
+0x0001bec0 0x99b34 0x00000000 0x99b34   0x0 -r-x .text          
+0x000b5a00  0xc0ba 0x00000000 0x19438   0x0 -r-- section_1      
+0x00000080 0x1be34 0x00000000     0x0   0x0 -r-- .loader        
+---
+pef:
+  header:
+    magic1: "4a 6f 79 21                                     |Joy!            |"
+    magic2: "70 65 66 66                                     |peff            |"
+    arch_raw: 1886875747
+    format_version: 1
+    timestamp: 2902230561
+    old_def_version: 0
+    old_imp_version: 0
+    current_version: 0
+    section_count: 3
+    inst_section_count: 2
+  sections:
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 629556
+      unpacked_size: 629556
+      packed_size: 629556
+      container_offset: 0x1bec0
+      section_kind: 0x0
+      section_kind_name: "executable_readonly"
+      share_kind: 0x4
+      share_kind_name: "global"
+      alignment_power: 4
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 103480
+      unpacked_size: 67824
+      packed_size: 49338
+      container_offset: 0xb5a00
+      section_kind: 0x2
+      section_kind_name: "pattern_data"
+      share_kind: 0x1
+      share_kind_name: "process"
+      alignment_power: 4
+    - name_offset: 0xffffffff
+      default_address: 0x0
+      total_size: 0
+      unpacked_size: 0
+      packed_size: 114228
+      container_offset: 0x80
+      section_kind: 0x4
+      section_kind_name: "loader"
+      share_kind: 0x4
+      share_kind_name: "global"
+      alignment_power: 4
+  loader:
+    header:
+      main_symbol_index: 18446744073709551615
+      main_symbol_offset: 0x0
+      init_symbol_index: 18446744073709551615
+      init_symbol_offset: 0x0
+      term_symbol_index: 18446744073709551615
+      term_symbol_offset: 0x0
+      imported_lib_count: 0
+      imported_symbol_count: 0
+      rel_section_count: 0
+      rel_commands_offset: 0x0
+      string_table_offset: 0x0
+      export_hash_offset: 0x0
+      export_hash_power: 0
+      exported_symbol_count: 0
+    import_libraries: []
+    import_symbols: []
+    export_symbols: []
+
+EOF
+RUN

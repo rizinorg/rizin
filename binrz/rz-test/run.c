@@ -571,15 +571,6 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	}
 	ret->time_elapsed = rz_time_now_mono() - start_time;
 	bool broken = rz_test_broken(test);
-#if ASAN
-#if !RZ_ASSERT_STDOUT
-#error RZ_ASSERT_STDOUT undefined or 0
-#endif
-	RzSubprocessOutput *out = ret->proc_out;
-	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr(test->path, "/dbg") && (!out->out || (!strstr((char *)out->out, "WARNING:") && !strstr((char *)out->out, "ERROR:") && !strstr((char *)out->out, "FATAL:"))) && (!out->err || (!strstr((char *)out->err, "Sanitizer") && !strstr((char *)out->err, "runtime error:")))) {
-		broken = true;
-	}
-#endif
 	if (!success) {
 		ret->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
 	} else {
