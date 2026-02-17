@@ -240,6 +240,7 @@ static RzBinInfo *qnx_info(RzBinFile *bf) {
 	ret->os = rz_str_dup("any");
 	ret->subsystem = rz_str_dup("any");
 	ret->lang = "C/C++";
+	ret->bits = 32;
 	ret->signature = true;
 	return ret;
 }

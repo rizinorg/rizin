@@ -884,42 +884,46 @@ static int get_bits_mips(ELFOBJ *bin) {
 	return get_bits_mips_common(mips_type);
 }
 
-static inline bool arch_is_nanomips(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_IMG1;
+static inline bool arch_is(ELFOBJ *bin, ut64 machine_id) {
+	return bin->ehdr.e_machine == machine_id;
 }
 
-static bool arch_is_mips(ELFOBJ *bin) {
+static inline bool arch_is_nanomips(ELFOBJ *bin) {
+	return arch_is(bin, EM_IMG1);
+}
+
+static inline bool arch_is_mips(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_MIPS ||
 		bin->ehdr.e_machine == EM_MIPS_RS3_LE ||
 		bin->ehdr.e_machine == EM_MIPS_X ||
 		arch_is_nanomips(bin);
 }
 
-static bool arch_is_h8xx(ELFOBJ *bin) {
+static inline bool arch_is_h8xx(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_H8_300 ||
 		bin->ehdr.e_machine == EM_H8_300H ||
 		bin->ehdr.e_machine == EM_H8S ||
 		bin->ehdr.e_machine == EM_H8_500;
 }
 
-static bool arch_is_sparc(ELFOBJ *bin) {
+static inline bool arch_is_sparc(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_SPARC ||
 		bin->ehdr.e_machine == EM_SPARC32PLUS ||
 		bin->ehdr.e_machine == EM_SPARCV9;
 }
 
-static bool arch_is_arm(ELFOBJ *bin) {
+static inline bool arch_is_arm(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_ARM || bin->ehdr.e_machine == EM_AARCH64;
 }
 
-static bool arch_is_arcompact(ELFOBJ *bin) {
+static inline bool arch_is_arcompact(ELFOBJ *bin) {
 	return bin->ehdr.e_machine == EM_ARC_A5 ||
 		bin->ehdr.e_machine == EM_ARC_COMPACT3_64 ||
 		bin->ehdr.e_machine == EM_ARC_COMPACT3;
 }
 
-static bool arch_is_parisc(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_PARISC;
+static inline bool arch_is_parisc(ELFOBJ *bin) {
+	return arch_is(bin, EM_PARISC);
 }
 
 static bool arch_is_riscv(ELFOBJ *bin) {
@@ -2389,18 +2393,15 @@ bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin) {
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	/* Hack for ARCompact */
-	if (arch_is_arcompact(bin)) {
+	if (arch_is_arcompact(bin) ||
+		arch_is_h8xx(bin) ||
+		arch_is(bin, EM_MSP430)) {
 		return 16;
 	}
 
 	/* Hack for Ps2 */
 	if (arch_is_mips(bin)) {
 		return get_bits_mips(bin);
-	}
-
-	if (arch_is_h8xx(bin)) {
-		return 16;
 	}
 
 	/* Hack for Thumb */

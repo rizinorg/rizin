@@ -281,7 +281,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 		return NULL;
 	}
 	a->dataalign = 1;
-	a->bits = RZ_SYS_BITS;
+	a->bits = RZ_SYS_BITS << 3;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
 	a->sdb_opcodes_path = rz_path_new();
@@ -449,6 +449,24 @@ static void remove_plugin_config(RZ_BORROW RzCore *core, const char *plugin_name
 	ht_sp_delete(core->plugin_configs, plugin_name);
 }
 
+static ut32 asm_get_first_default_bits(RzAsmPlugin *h) {
+	if (!h) {
+		return RZ_SYS_BITS << 3;
+	}
+
+	if (h->bits & 32) {
+		return 32;
+	} else if (h->bits & 64) {
+		return 64;
+	} else if (h->bits & 16) {
+		return 16;
+	} else if (h->bits & 8) {
+		return 8;
+	}
+
+	return RZ_SYS_BITS << 3;
+}
+
 // TODO: this can be optimized using rz_str_hash()
 /**
  * \brief Puts an Asm plugin in use and disables the previous one.
@@ -488,6 +506,8 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 				}
 				free(opcodes_dir);
 			}
+
+			rz_asm_set_cpu(a, NULL);
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
 				rz_iterator_free(iter);
@@ -502,6 +522,9 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 			}
 			a->cur = h;
 			rz_iterator_free(iter);
+			RZ_FREE(a->features);
+			RZ_FREE(a->platforms);
+			a->bits = asm_get_first_default_bits(h);
 			return true;
 		}
 	}
