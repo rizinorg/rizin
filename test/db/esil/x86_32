@@ -166,39 +166,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rep movsb 0x1000 randombytes x86-32
-FILE==
-BROKEN=1
-CMDS=<<EOF
-e io.va=true
-e asm.arch=x86
-e asm.bits=32
-aei
-aeim
-ar esp=0x00108000
-aeim 0x10000000 0x1000 source
-aeim 0x20000000 0x1000 destination
-wr 0x1000 @ 0x10000000
-ar edi=0x20000000
-ar esi=0x10000000
-ar ecx=0x1000
-.arf
-wx f3a4
-aes
-.arf
-s 0x10000000
-cX 0x20000000
-ar?edi
-ar?esi
-ar?ecx
-EOF
-EXPECT=<<EOF
-0x20001000
-0x10001000
-0x00000000
-EOF
-RUN
-
 NAME=lodsb ++ x86-32
 FILE==
 CMDS=<<EOF

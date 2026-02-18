@@ -310,13 +310,13 @@ FILE==
 CMDS=<<EOF
 e asm.arch=mips
 e asm.bits=32
-e cfg.bigendian=0
+e cfg.bigendian=false
 pa lui t9, 0x41
-e cfg.bigendian=1
+e cfg.bigendian=true
 pa lui t9, 0x41
-e cfg.bigendian=0
+e cfg.bigendian=false
 pad 4100193c
-e cfg.bigendian=1
+e cfg.bigendian=true
 pad 3c190041
 EOF
 EXPECT=<<EOF
@@ -386,6 +386,7 @@ wx 01001104
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips3
+e cfg.bigendian=false
 e asm.nbytes=4
 ao
 EOF
@@ -427,6 +428,7 @@ wx 0000000000000000010000100000000000000000
 e asm.arch=mips
 e asm.bits=32
 e asm.nbytes=4
+e cfg.bigendian=false
 af+ fcn.test @ 0x80100000
 afb+ 0x80100000 0x80100000 20
 pif
@@ -447,6 +449,7 @@ e asm.calls=false
 e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
+e cfg.bigendian=false
 e analysis.nopskip=false
 e asm.cmtcol=0
 e asm.comments=false
@@ -479,6 +482,7 @@ e asm.calls=false
 e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
+e cfg.bigendian=false
 e asm.lines.bb=0
 e asm.lines.fcn=false
 e asm.nbytes=4
@@ -516,6 +520,7 @@ e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
+e cfg.bigendian=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -539,6 +544,7 @@ e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
+e cfg.bigendian=false
 e asm.nbytes=4
 e asm.lines.fcn=false
 wx 0800e0030a1844000000000000000000000000
@@ -563,6 +569,7 @@ e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
 e asm.comments=false
+e cfg.bigendian=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -595,6 +602,7 @@ e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
+e cfg.bigendian=false
 e asm.comments=false
 e analysis.nopskip=false
 e asm.nbytes=4
@@ -627,6 +635,7 @@ e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=true
 e analysis.nopskip=false
@@ -660,6 +669,7 @@ e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.cpu=mips4
+e cfg.bigendian=false
 e asm.comments=false
 e analysis.nopskip=false
 e asm.nbytes=4
@@ -694,6 +704,7 @@ e asm.calls=false
 e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=0
 e analysis.hasnext=1
 e analysis.nopskip=1
@@ -763,6 +774,7 @@ e asm.calls=false
 e asm.bytes=true
 e asm.arch=mips
 e asm.bits=32
+e cfg.bigendian=false
 e analysis.noncode=1
 e asm.comments=0
 e analysis.hasnext=1
@@ -1246,6 +1258,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=mips
 e asm.cpu=mips32r2
+e cfg.bigendian=false
 wx 20204401
 ao
 echo '==============='

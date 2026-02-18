@@ -64,6 +64,7 @@ RUN
 NAME=pf xxd print happy
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 pfn foo "xxd foo bar cow"
 w hello happy world
 e asm.lines=0

@@ -518,7 +518,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmd
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz) {
 	rz_return_val_if_fail(sz == 0 || sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	core->num->value = 0;
 	if (sz == 0) {
@@ -564,7 +564,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 	rz_return_val_if_fail(sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	if (!rz_io_read_at_mapped(core->io, addr, buf, sz)) {
 		return false;

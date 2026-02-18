@@ -240,6 +240,7 @@ RUN
 NAME=/vj 4a search 4 byte in range with json
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 0x12345678aabbccddeeff12345678
 /vj 4a [0x78563412,0x78563420]
 EOF

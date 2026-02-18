@@ -2,6 +2,7 @@ NAME=pic regs
 FILE=
 CMDS=<<EOF
 e asm.arch=pic
+e cfg.bigendian=false
 echo =============== midrange
 e asm.cpu=midrange
 ar
@@ -123,6 +124,7 @@ NAME=pic18 functions
 FILE=ihex://bins/pic18c/FreeRTOS-pic18c.hex
 CMDS=<<EOF
 e asm.arch=pic
+e cfg.bigendian=false
 e asm.cpu=highend
 e asm.lines.call=true
 aaa
@@ -479,6 +481,7 @@ CMDS=<<EOF
 e asm.arch=pic
 e asm.cpu=baseline
 e asm.lines.call=true
+e cfg.bigendian=false
 aaa
 afl
 agf @ 0x000000b0

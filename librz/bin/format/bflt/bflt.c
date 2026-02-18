@@ -50,7 +50,7 @@ static bool bflt_init_hdr(RzBfltObj *bin) {
 static bool bflt_reloc_big_endian(RzBfltObj *bin) {
 	// if bin->hdr.flags & FLAT_FLAG_GOTPIC, then all relocs
 	// are already in target order, otherwise they are always be
-	return (bin->hdr.flags & FLAT_FLAG_GOTPIC) ?: true;
+	return (bin->hdr.flags & FLAT_FLAG_GOTPIC) ? bin->big_endian : true;
 }
 
 static void bflt_load_relocs(RzBfltObj *bin) {

@@ -555,6 +555,11 @@ RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
 	return false;
 }
 
+RZ_API ut32 rz_asm_get_endianness(RzAsm *a) {
+	rz_return_val_if_fail(a && a->cur, RZ_SYS_ENDIAN_NONE);
+	return a->cur->endian;
+}
+
 RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
 	rz_return_val_if_fail(a && a->cur, false);
 	a->big_endian = false; // little endian by default

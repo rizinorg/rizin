@@ -54,7 +54,7 @@ cs_mode cs_mode_from_feature_flag(ut64 feature_flag) {
 size_t expect_str(const char *arch_str, const char *expected, size_t curr) {
 	size_t l = strlen(expected);
 	if (strncmp(&arch_str[curr], expected, l) != 0) {
-		RZ_LOG_ERROR("Invalid architecture string: expected %s to equal %s",
+		RZ_LOG_ERROR("Invalid architecture string: expected %s to equal %s\n",
 			arch_str, expected);
 		return curr;
 	}
@@ -205,7 +205,7 @@ bool expect_extension(const char *arch_str, size_t *curr, cs_mode *cs_mode) {
 	}
 
 	// unreachable
-	RZ_LOG_ERROR("UNREACHABLE STATE WHEN PARSING RISCV ARCH STRING");
+	rz_warn_if_reached();
 	return true; // done, this is a bad state and we should terminate parsing immediately
 }
 
@@ -233,8 +233,8 @@ bool check_all_whitespace(const char *str) {
 	return true;
 }
 size_t mode_from_arch_string(const char *arch_str) {
-	if (!arch_str || check_all_whitespace(arch_str)) {
-		RZ_LOG_WARN("RISCV: empty architecture string, no non-default extensions enabled\n");
+	if (!arch_str || check_all_whitespace(arch_str) || RZ_STR_EQ(arch_str, "riscv")) {
+		RZ_LOG_INFO("RISCV: empty architecture string, no non-default extensions enabled\n");
 		return 0;
 	}
 	size_t curr = expect_architecture_string_header(arch_str);

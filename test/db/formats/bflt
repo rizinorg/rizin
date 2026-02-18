@@ -70,6 +70,9 @@ bflt:
   RelocCount: 92
   Flags: 0x1
   BuildDate: 1481527744
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
 
      paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
@@ -258,6 +261,9 @@ bflt:
   RelocCount: 1821
   Flags: 0x1
   BuildDate: 1634814878
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
 
 ------ reloc to string
             ; DATA XREFS from fcn.0408aafc @ +0xc84, +0xd80
@@ -341,6 +347,9 @@ bflt:
   RelocCount: 168
   Flags: 0x2
   BuildDate: 1634755328
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
 
 ------ got relocs (begin)
      vaddr      paddr     target type   name 

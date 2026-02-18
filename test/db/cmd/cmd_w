@@ -289,6 +289,7 @@ RUN
 NAME=wv
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv1 0x55
 pv4
 wv2 0x7733

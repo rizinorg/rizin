@@ -18,6 +18,7 @@ RUN
 NAME=pfd test E (elf_type)var0
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 td "enum elf_type {ET_HIPROC=0xffff};"
 wx 0xffff
 pfn test "E (elf_type)var0"

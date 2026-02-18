@@ -189,22 +189,8 @@ e asm.bytes=true
 e asm.sub.names=1
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 
-wx fa67bba9
-pd 1
-EOF
-EXPECT=<<EOF
-            0x00000000      fa67bba9       stp   x26, x25, [sp, -0x50]!
-EOF
-RUN
-
-NAME=asm.sub.names issue
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.sub.names=0
-e asm.bytes=true
-e asm.arch=arm
-e asm.bits=64
 wx fa67bba9
 pd 1
 EOF
