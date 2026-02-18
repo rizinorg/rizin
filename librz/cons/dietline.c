@@ -45,6 +45,12 @@ struct rz_line_undo_entry_t {
 	bool continuous_prev; ///< if true, undo function will continuously process the previous entry.
 };
 
+typedef struct {
+	bool move_cursor; ///< if true, cursor is moved to the end of the last word.
+	bool word_count_provided; ///< if true \p word_count is used, else a single word is modified.
+	size_t word_count; ///< number of words to modify.
+} FollowingWordModifyOpts;
+
 static inline bool is_undo_entry_valid(const RzLineUndoEntry *e) {
 	if (!e) {
 		return false;
@@ -1551,10 +1557,14 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 	}
 }
 
+static bool is_word_constituent(unsigned char c) {
+	return IS_ALPHANUM(c);
+}
+
 static ssize_t following_word_find_start(RZ_NONNULL RzLine *line) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
 	ssize_t start = line->buffer.index;
-	while (start < line->buffer.length && !isalpha(line->buffer.data[start])) {
+	while (start < line->buffer.length && !is_word_constituent((unsigned char)line->buffer.data[start])) {
 		++start;
 	}
 	return start;
@@ -1563,7 +1573,7 @@ static ssize_t following_word_find_start(RZ_NONNULL RzLine *line) {
 static ssize_t following_word_find_end(RZ_NONNULL RzLine *line, ssize_t start) {
 	rz_return_val_if_fail(line && line->buffer.length, -1);
 	ssize_t end = RZ_MIN(start + 1, line->buffer.length);
-	while (end < line->buffer.length && isalpha(line->buffer.data[end])) {
+	while (end < line->buffer.length && is_word_constituent((unsigned char)line->buffer.data[end])) {
 		++end;
 	}
 	return end;
@@ -1572,12 +1582,15 @@ static ssize_t following_word_find_end(RZ_NONNULL RzLine *line, ssize_t start) {
 static void following_word_capitalize(RZ_NONNULL RzLine *line, ssize_t start, ssize_t end) {
 	rz_return_if_fail(line && line->buffer.length > 0 && start <= end && end <= line->buffer.length);
 	char *line_buf = line->buffer.data;
+	bool is_first_alpha = true;
 	for (ssize_t i = start; i < end; ++i) {
-		const bool is_first_chr = i == start;
 		const unsigned char chr = (unsigned char)line_buf[i];
-		if (is_first_chr && islower(chr)) {
+		if (is_first_alpha) {
+			if (isalpha(chr)) {
+				is_first_alpha = false;
+			}
 			line_buf[i] = toupper(chr);
-		} else if (!is_first_chr && isupper(chr)) {
+		} else if (!is_first_alpha) {
 			line_buf[i] = tolower(chr);
 		}
 	}
@@ -1605,39 +1618,56 @@ static void following_word_toupper(RZ_NONNULL RzLine *line, ssize_t start, ssize
 	}
 }
 
+static void following_word_modify_opts_reset(RZ_NONNULL FollowingWordModifyOpts *opts) {
+	rz_return_if_fail(opts);
+	opts->move_cursor = true;
+	opts->word_count_provided = false;
+	opts->word_count = 0;
+}
+
 /**
- * \brief Capitalizes/lowercases/uppercases the current or next word.
- * Note: Sets the cursor position to the end of next word on success.
+ * \brief Capitalizes/lowercases/uppercases the current or next word(s).
+ * Note: Optionally sets the cursor position to the end of the last word.
  *
+ * \param opts The modify options
  * \param line RzLine
  * \param op The modify operation
  */
-static void following_word_modify(RZ_NONNULL RzLine *line, FollowingWordModifyOp op) {
-	rz_return_if_fail(line);
+static void following_word_modify(RZ_NONNULL FollowingWordModifyOpts *opts, RZ_NONNULL RzLine *line, FollowingWordModifyOp op) {
+	rz_return_if_fail(line && opts);
 	if (line->buffer.length < 1) {
 		return;
 	}
-	const ssize_t start = following_word_find_start(line);
-	const ssize_t end = following_word_find_end(line, start);
-	if (start == -1 || end == -1) {
-		return;
-	}
 
-	switch (op) {
-	default:
-		rz_return_if_reached();
-		break;
-	case FOLLOWING_WORD_MODIFY_CAPITALIZE:
-		following_word_capitalize(line, start, end);
-		break;
-	case FOLLOWING_WORD_MODIFY_TOLOWER:
-		following_word_tolower(line, start, end);
-		break;
-	case FOLLOWING_WORD_MODIFY_TOUPPER:
-		following_word_toupper(line, start, end);
-		break;
+	const ssize_t cursor_pos = line->buffer.index;
+	const size_t word_count = opts->word_count_provided ? opts->word_count : 1;
+	ssize_t start = following_word_find_start(line);
+	ssize_t end = following_word_find_end(line, start);
+	for (size_t i = 0; i < word_count && start < end; ++i) {
+		if (start == -1 || end == -1) {
+			break;
+		}
+		switch (op) {
+		default:
+			rz_break_if_reached();
+			break;
+		case FOLLOWING_WORD_MODIFY_CAPITALIZE:
+			following_word_capitalize(line, start, end);
+			break;
+		case FOLLOWING_WORD_MODIFY_TOLOWER:
+			following_word_tolower(line, start, end);
+			break;
+		case FOLLOWING_WORD_MODIFY_TOUPPER:
+			following_word_toupper(line, start, end);
+			break;
+		}
+		line->buffer.index = end;
+		start = following_word_find_start(line);
+		end = following_word_find_end(line, start);
 	}
-	line->buffer.index = end;
+	if (!opts->move_cursor) {
+		line->buffer.index = cursor_pos;
+	}
 }
 
 RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallback cb, void *user) {
@@ -1651,6 +1681,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	int prev_buflen = -1;
 	bool enable_yank_pop = false;
 	bool gcomp_is_rev = true;
+	FollowingWordModifyOpts fwm_opts;
+	following_word_modify_opts_reset(&fwm_opts);
 
 	RzCons *cons = rz_cons_singleton();
 
@@ -1983,16 +2015,42 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				break;
 			case 'C':
 			case 'c':
-				following_word_modify(line, FOLLOWING_WORD_MODIFY_CAPITALIZE);
+				following_word_modify(&fwm_opts, line, FOLLOWING_WORD_MODIFY_CAPITALIZE);
+				following_word_modify_opts_reset(&fwm_opts);
 				break;
 			case 'L':
 			case 'l':
-				following_word_modify(line, FOLLOWING_WORD_MODIFY_TOLOWER);
+				following_word_modify(&fwm_opts, line, FOLLOWING_WORD_MODIFY_TOLOWER);
+				following_word_modify_opts_reset(&fwm_opts);
 				break;
 			case 'U':
 			case 'u':
-				following_word_modify(line, FOLLOWING_WORD_MODIFY_TOUPPER);
+				following_word_modify(&fwm_opts, line, FOLLOWING_WORD_MODIFY_TOUPPER);
+				following_word_modify_opts_reset(&fwm_opts);
 				break;
+			case '-':
+				fwm_opts.move_cursor = !fwm_opts.move_cursor;
+				if (fwm_opts.word_count_provided) {
+					// word count must be provided after '-'
+					following_word_modify_opts_reset(&fwm_opts);
+				}
+				break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9': {
+				const ut32 d = buf[0] - '0';
+				fwm_opts.word_count = fwm_opts.word_count <= (UT32_MAX - d) / 10
+					? fwm_opts.word_count * 10 + d
+					: UT32_MAX;
+				fwm_opts.word_count_provided = true;
+			} break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
 				if (!line->gcomp && !line->hud && !line->sel_widget) {
