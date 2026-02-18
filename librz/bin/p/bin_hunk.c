@@ -601,8 +601,7 @@ static RzPVector /*<RzBinReloc *>*/ *hunk_relocs(RzBinFile *bf) {
 RzBinPlugin rz_bin_plugin_hunk = {
 	.name = "hunk",
 	.desc = "Amiga Hunk file format",
-	.author = "Stefan Bisti <stefbisti@gmail.com>",
-	.version = "1.0",
+	.author = "Stefan Bisti",
 	.license = "LGPL3",
 	.load_buffer = &hunk_load_buffer,
 	.destroy = &hunk_destroy,
