@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2016 Oscar Salvador <osalvador.vilardaga@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -19,41 +20,28 @@
 #define MAX_SHARED_LIBS 1 // this may be 4 depending on kernel config
 #define FLAT_DATA_ALIGN 0x20
 
-#define READ(x, i) \
-	rz_read_be32((x) + (i)); \
-	(i) += 4;
+static bool bflt_parse_hdr(RzBuffer *buf, ut64 off, RzBfltHdr *h, bool big_endian) {
+	return rz_buf_read_offset(buf, &off, (ut8 *)h->magic, sizeof(h->magic)) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->rev, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->entry, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->data_start, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->data_end, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->bss_end, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->stack_size, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->reloc_start, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->reloc_count, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->flags, big_endian) &&
+		rz_buf_read_ble32_offset(buf, &off, &h->build_date, big_endian) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)h->padding, sizeof(h->padding));
+}
 
 static bool bflt_init_hdr(RzBfltObj *bin) {
-	ut8 bhdr[BFLT_HDR_SIZE] = { 0 };
-	st64 len = rz_buf_read_at(bin->b, 0, bhdr, BFLT_HDR_SIZE);
-	if (len != BFLT_HDR_SIZE) {
-		RZ_LOG_WARN("read bFLT hdr failed\n");
+	if (!bflt_parse_hdr(bin->b, 0, &bin->hdr, true)) {
 		return false;
-	}
-
-	if (strncmp((const char *)bhdr, "bFLT", 4)) {
-		RZ_LOG_WARN("wrong magic number in bFLT file\n");
-		return false;
-	}
-
-	memcpy(bin->hdr.magic, bhdr, 4);
-	size_t i = 4;
-	bin->hdr.rev = READ(bhdr, i);
-	bin->hdr.entry = READ(bhdr, i);
-	bin->hdr.data_start = READ(bhdr, i);
-	bin->hdr.data_end = READ(bhdr, i);
-	bin->hdr.bss_end = READ(bhdr, i);
-	bin->hdr.stack_size = READ(bhdr, i);
-	bin->hdr.reloc_start = READ(bhdr, i);
-	bin->hdr.reloc_count = READ(bhdr, i);
-	bin->hdr.flags = READ(bhdr, i);
-	bin->hdr.build_date = READ(bhdr, i);
-
-	if (bin->hdr.rev != FLAT_VERSION) {
+	} else if (bin->hdr.rev != FLAT_VERSION) {
 		RZ_LOG_WARN("only bFLT v4 is supported! This file has version %" PFMT32u "\n", bin->hdr.rev);
 		return false;
-	}
-	if (bin->hdr.flags & FLAT_FLAG_GZIP || bin->hdr.flags & FLAT_FLAG_GZDATA) {
+	} else if (bin->hdr.flags & FLAT_FLAG_GZIP || bin->hdr.flags & FLAT_FLAG_GZDATA) {
 		RZ_LOG_WARN("this bFLT file is compressed. This is not (yet) supported.\n");
 	}
 	return true;
@@ -62,9 +50,7 @@ static bool bflt_init_hdr(RzBfltObj *bin) {
 static bool bflt_reloc_big_endian(RzBfltObj *bin) {
 	// if bin->hdr.flags & FLAT_FLAG_GOTPIC, then all relocs
 	// are already in target order, otherwise they are always be
-	return (bin->hdr.flags & FLAT_FLAG_GOTPIC)
-		? bin->big_endian
-		: true;
+	return (bin->hdr.flags & FLAT_FLAG_GOTPIC) ?: true;
 }
 
 static void bflt_load_relocs(RzBfltObj *bin) {
@@ -79,7 +65,7 @@ static void bflt_load_relocs(RzBfltObj *bin) {
 				break;
 			}
 			ut32 value;
-			if (!rz_buf_read_ble32_at(bin->b, paddr, &value, big_endian)) {
+			if (!rz_buf_read_ble32_at(bin->b, paddr, &value, bin->big_endian)) {
 				break;
 			}
 			if (value == 0xffffffff) {
@@ -145,6 +131,47 @@ static void bflt_patch_relocs(RzBfltObj *bin) {
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
+static void bflt_guess_arch(RzBuffer *buf, ut64 entry, const char **arch, bool *big_endian) {
+	*arch = "arm";
+	*big_endian = false;
+
+	ut8 code[4] = { 0 };
+	if (rz_buf_read_at(buf, entry, code, sizeof(code)) != sizeof(code)) {
+		return;
+	}
+
+#define IS_BYTE(i, b, m)                           ((code[i] & m) == b)
+#define IS_1_BYTES(b0, m0)                         IS_BYTE(0, b0, m0)
+#define IS_2_BYTES(b0, m0, b1, m1)                 (IS_BYTE(0, b0, m0) && IS_BYTE(1, b1, m1))
+#define IS_4_BYTES(b0, m0, b1, m1, b2, m2, b3, m3) (IS_BYTE(0, b0, m0) && IS_BYTE(1, b1, m1) && IS_BYTE(2, b2, m2) && IS_BYTE(3, b3, m3))
+
+	if (IS_2_BYTES(0x20, 0xf1, 0x00, 0x40 /* move.l  */) ||
+		IS_2_BYTES(0x20, 0xf1, 0x40, 0x40 /* movea.l */) ||
+		IS_2_BYTES(0x30, 0xf1, 0x40, 0x40 /* move.w  */) ||
+		IS_2_BYTES(0x48, 0xff, 0xe0, 0xff /* movem.l */) ||
+		IS_2_BYTES(0x4e, 0xff, 0x50, 0xf8 /* link.w  */) ||
+		IS_2_BYTES(0x90, 0xf0, 0x80, 0xc0 /* sub.l   */) ||
+		IS_2_BYTES(0x90, 0xf0, 0x40, 0xc0 /* sub.w   */) ||
+		IS_2_BYTES(0x91, 0xf1, 0x80, 0xa0 /* suba.l  */) ||
+		IS_2_BYTES(0x90, 0xf1, 0x80, 0xa0 /* suba.w  */) ||
+		IS_1_BYTES(0x70, 0xff /*             moveq   */)) {
+		*arch = "m68k";
+		*big_endian = true;
+		return;
+	} else if (IS_4_BYTES(0xe1, 0xfd, 0xa0, 0xff, 0x00, 0x00, 0x00, 0x00 /*  mov  */) ||
+		IS_4_BYTES(0xe9, 0xfd, 0x2d, 0xff, 0x00, 0x00, 0x00, 0x00 /*         push */)) {
+		// it's arm32:be
+		*big_endian = true;
+		return;
+	}
+	// it's arm32:le
+
+#undef IS_BYTE
+#undef IS_1_BYTES
+#undef IS_2_BYTES
+#undef IS_4_BYTES
+}
+
 static bool rz_bflt_init(RzBfltObj *obj, RzBuffer *buf, ut64 baddr, bool big_endian, bool patch_relocs) {
 	obj->b = rz_buf_ref(buf);
 	obj->size = rz_buf_size(buf);
@@ -155,6 +182,7 @@ static bool rz_bflt_init(RzBfltObj *obj, RzBuffer *buf, ut64 baddr, bool big_end
 	if (!bflt_init_hdr(obj)) {
 		return false;
 	}
+	bflt_guess_arch(obj->b, 0x44, &obj->arch, &obj->big_endian);
 	bflt_load_relocs(obj);
 	if (patch_relocs) {
 		bflt_patch_relocs(obj);

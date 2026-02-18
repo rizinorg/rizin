@@ -30,7 +30,7 @@ typedef struct rz_bflt_hdr_t {
 	ut32 reloc_count;
 	ut32 flags;
 	ut32 build_date;
-	ut32 filler[5];
+	ut8 padding[20];
 } RzBfltHdr;
 
 typedef struct rz_bflt_reloc_t {
@@ -46,6 +46,7 @@ typedef struct rz_bflt_obj_t {
 	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
 	ut64 baddr;
 	bool big_endian;
+	const char *arch;
 	size_t size;
 	uint32_t n_got;
 } RzBfltObj;
