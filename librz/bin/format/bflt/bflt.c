@@ -12,42 +12,33 @@
  */
 
 #include <rz_util.h>
-#include <rz_types.h>
-
 #include "bflt.h"
 
 #define MAX_SHARED_LIBS 1 // this may be 4 depending on kernel config
 #define FLAT_DATA_ALIGN 0x20
 
-#define READ(x, i) \
-	rz_read_be32((x) + (i)); \
-	(i) += 4;
-
 static bool bflt_init_hdr(RzBfltObj *bin) {
-	ut8 bhdr[BFLT_HDR_SIZE] = { 0 };
-	st64 len = rz_buf_read_at(bin->b, 0, bhdr, BFLT_HDR_SIZE);
-	if (len != BFLT_HDR_SIZE) {
+	ut64 offset = 0;
+	if (!(rz_buf_read_offset(bin->b, &offset, (ut8 *)(bin->hdr.magic), 4))) {
 		RZ_LOG_WARN("read bFLT hdr failed\n");
 		return false;
 	}
 
-	if (strncmp((const char *)bhdr, "bFLT", 4)) {
+	if (strncmp(bin->hdr.magic, "bFLT", 4)) {
 		RZ_LOG_WARN("wrong magic number in bFLT file\n");
 		return false;
 	}
 
-	memcpy(bin->hdr.magic, bhdr, 4);
-	size_t i = 4;
-	bin->hdr.rev = READ(bhdr, i);
-	bin->hdr.entry = READ(bhdr, i);
-	bin->hdr.data_start = READ(bhdr, i);
-	bin->hdr.data_end = READ(bhdr, i);
-	bin->hdr.bss_end = READ(bhdr, i);
-	bin->hdr.stack_size = READ(bhdr, i);
-	bin->hdr.reloc_start = READ(bhdr, i);
-	bin->hdr.reloc_count = READ(bhdr, i);
-	bin->hdr.flags = READ(bhdr, i);
-	bin->hdr.build_date = READ(bhdr, i);
+	bool check = rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.rev) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.entry) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.data_start) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.data_end) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.bss_end) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.stack_size) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.reloc_start) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.reloc_count) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.flags) &&
+		rz_buf_read_be32_offset(bin->b, &offset, &bin->hdr.build_date);
 
 	if (bin->hdr.rev != FLAT_VERSION) {
 		RZ_LOG_WARN("only bFLT v4 is supported! This file has version %" PFMT32u "\n", bin->hdr.rev);
@@ -56,7 +47,7 @@ static bool bflt_init_hdr(RzBfltObj *bin) {
 	if (bin->hdr.flags & FLAT_FLAG_GZIP || bin->hdr.flags & FLAT_FLAG_GZDATA) {
 		RZ_LOG_WARN("this bFLT file is compressed. This is not (yet) supported.\n");
 	}
-	return true;
+	return check;
 }
 
 static bool bflt_reloc_big_endian(RzBfltObj *bin) {
