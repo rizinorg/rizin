@@ -19,6 +19,7 @@
 
 #define core_update_config_s core_update_config_node_without_callback_string
 #define core_update_config_i core_update_config_node_without_callback_int
+#define core_update_config_b core_update_config_node_without_callback_bool
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_ARCH);
@@ -179,6 +180,73 @@ static void core_update_config_features_options(RzCore *core, const char *name) 
 	core_update_config_options(node, core->rasm->cur->features);
 }
 
+RZ_DEPRECATE static const RzBinInfo *core_arch_find_bin_info(RzCore *core, const char *arch) {
+	if (RZ_STR_ISEMPTY(arch)) {
+		return NULL;
+	}
+	const RzCoreFile *cf = NULL;
+	RzListIter *lit;
+	void **vit;
+
+	rz_list_foreach (core->files, lit, cf) {
+		rz_pvector_foreach (&cf->binfiles, vit) {
+			const RzBinFile *bf = *vit;
+			const RzBinInfo *info = rz_bin_object_get_info(bf->o);
+			if (info && info->arch && RZ_STR_EQ(info->arch, arch)) {
+				return info;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+static bool core_arch_default_is_big_endian(RzCore *core) {
+	bool big_endian = core->rasm->big_endian;
+	const char *arch = rz_core_get_arch(core);
+
+	const RzBinInfo *info = core_arch_find_bin_info(core, arch);
+	if (info) {
+		// always follow what the RzBin says first.
+		big_endian = info->big_endian;
+	}
+
+	ut32 endian = rz_asm_get_endianness(core->rasm);
+	if (endian == RZ_SYS_ENDIAN_NONE || endian == RZ_SYS_ENDIAN_BI) {
+		// always return what the bin or default endianness of the system
+		return big_endian;
+	}
+
+	if (big_endian && endian & RZ_SYS_ENDIAN_BIG) {
+		// the endianness must be big endian.
+		return true;
+	}
+
+	// the user must have asked for an arch that does not follow
+	// what the bin says (or is just little endian) so, we return
+	// as little endian.
+	return false;
+}
+
+RZ_DEPRECATE static void core_update_endianness(RzCore *core) {
+	bool big_endian = core_arch_default_is_big_endian(core);
+
+	rz_asm_set_big_endian(core->rasm, big_endian);
+	rz_analysis_set_big_endian(core->analysis, big_endian);
+
+	// While analysis sets endianess for TypesDB there might
+	// be cases when it isn't availble for the chosen analysis
+	// plugin but types and printing commands still need the
+	// corresponding endianness. Thus we set these explicitly:
+	rz_type_db_set_endian(core->analysis->typedb, big_endian);
+	core->print->big_endian = big_endian;
+
+	// the big endian should also be assigned to dbg->bp->endian
+	if (core->dbg && core->dbg->bp) {
+		core->dbg->bp->endian = big_endian;
+	}
+}
+
 // most of this code is a copy from cconfig
 RZ_DEPRECATE static void core_update_syscall_db(RzCore *core) {
 	if (core->analysis->syscall->db) {
@@ -254,30 +322,12 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 	return true;
 }
 
-static ut32 core_arch_find_bits_via_bin(RzCore *core, const char *arch) {
-	const RzCoreFile *cf = NULL;
-	RzListIter *lit;
-	void **vit;
-
-	rz_list_foreach (core->files, lit, cf) {
-		rz_pvector_foreach (&cf->binfiles, vit) {
-			const RzBinFile *bf = *vit;
-			const RzBinInfo *info = rz_bin_object_get_info(bf->o);
-			if (info && info->arch && RZ_STR_EQ(info->arch, arch)) {
-				return info->bits;
-			}
-		}
-	}
-
-	return 0;
-}
-
 static ut32 core_arch_get_default_bits(RzCore *core, const char *arch) {
-	const ut32 bits = core_arch_find_bits_via_bin(core, arch);
-	if (bits) {
-		return bits;
+	const RzBinInfo *info = core_arch_find_bin_info(core, arch);
+	if (!info || info->bits < 1) {
+		return core->rasm->bits;
 	}
-	return core->rasm->bits;
+	return info->bits;
 }
 
 RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
@@ -311,6 +361,9 @@ RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 b
 		bits = rz_core_get_bits(core);
 	}
 
+	// always update the endianness
+	core_update_endianness(core);
+
 	if (RZ_STR_ISEMPTY(arch)) {
 		// we now need the current arch.
 		arch = rz_core_get_arch(core);
@@ -341,6 +394,7 @@ RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 b
 	}
 
 	core_arch_set_os(core, arch, bits, cpu, os);
+
 	return true;
 }
 
@@ -381,6 +435,22 @@ RZ_DEPRECATE static void core_update_config_node_without_callback_int(RzCore *co
 	node->setter = setter;
 }
 
+// this is a ugly hack
+RZ_DEPRECATE static void core_update_config_node_without_callback_bool(RzCore *core, const char *name, bool value) {
+	RzConfigNode *node = rz_config_node_get(core->config, name);
+	if (!node) {
+		// the node does not exist yet and we can set stuff without worring about the callback
+		rz_config_set_b(core->config, name, value);
+		return;
+	}
+
+	RzConfigCallback setter = node->setter;
+
+	node->setter = NULL;
+	rz_config_set_b(core->config, name, value);
+	node->setter = setter;
+}
+
 RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, bool new_arch) {
 	// this is a terrible way to update the values but the current config
 	// does weird callback calls which should not be done in this way and
@@ -406,6 +476,7 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, bool new_arc
 	core_update_config_s(core, "analysis.arch", arch);
 	core_update_config_s(core, "analysis.cpu", cpu);
 	core_update_config_i(core, "analysis.bits", bits);
+	core_update_config_b(core, "cfg.bigendian", core->rasm->big_endian);
 
 	if (new_arch) {
 		core_update_config_bits_options(core, "asm.bits");

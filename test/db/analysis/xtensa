@@ -3,6 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 3a8868037813690568237915783362650232c31072650352c5108723e437640c68037813
 ao@ 0x1a~jump
 EOF
@@ -16,6 +17,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 12c1f0d91140d382c9213d0d093101f5ebc00000cd028c820c034d0d0112e4c0000008312d0cd811c82112c1100df0
 af
 afvl
@@ -33,6 +35,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 00000000ff11ff1121ffff0df0ff
 pD 3 @ 8
 EOF

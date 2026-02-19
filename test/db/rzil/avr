@@ -109,6 +109,7 @@ NAME=fmul 1.5 * 1.25
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xC0 ; ldi r17, 0xA0 ; fmul r16, r17"
 aezi
 aezse 3
@@ -130,6 +131,7 @@ NAME=fmul test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xec ; ldi r17, 0x17 ; fmul r16, r17"
 aezi
 aezse 3
@@ -151,6 +153,7 @@ NAME=fmuls -0.75 * -0.125
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xA0 ; ldi r17, 0xF0 ; fmuls r16, r17"
 aezi
 aezse 3
@@ -172,6 +175,7 @@ NAME=fmuls test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0x0f ; ldi r17, 0x1f ; fmuls r16, r17"
 aezi
 aezse 3
@@ -193,6 +197,7 @@ NAME=fmulsu -0.5 * 0.75
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xc0 ; ldi r17, 0x60 ; fmulsu r16, r17"
 aezi
 aezse 3
@@ -214,6 +219,7 @@ NAME=fmulsu test 2
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xff ; ldi r17, 0x50 ; fmulsu r16, r17"
 aezi
 aezse 3
@@ -235,6 +241,7 @@ NAME=push & pop
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0xC0 ; ldi r17, 0xA0 ; push r16 ; push r17 ; pop r16 ; pop r17"
 aezi
 ar SP=0x3F
@@ -274,6 +281,7 @@ NAME=Subtract r17:r16 from r31:r30
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r31, 0x11 ; ldi r30, 0xEE ; subi r30, 0x50 ; sbci r31, 0x72"
 aezi
 aezs 2
@@ -309,6 +317,7 @@ NAME=Perform SWAP
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "inc r1 ; swap r1 ; inc r1 ; swap r1 ; inc r1"
 aezi
 echo increase r1
@@ -345,6 +354,7 @@ NAME=Add r17:r16 to r31:r30
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r17, 0x7f" @ 0x0
 wa "ldi r16, 0x50" @ 0x2
 wa "ldi r31, 0x11" @ 0x4
@@ -388,6 +398,7 @@ NAME=Add Immediate to Word
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "adiw r25:r24, 1 ; adiw r31:r30, 63"
 aezi
 aezse 2~name
@@ -414,6 +425,7 @@ NAME=Shifts
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 # Load decimal 16 into r16
 wa "ldi r16, 0x10" @ 0
 # r16 /= 2
@@ -475,6 +487,7 @@ NAME=Status regs & bit Manipulations
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "ldi r16, 0x4" @ 0
 # Store bit 2 of r16 in T Flag
 wa "bst r16, 2" @ 2
@@ -534,6 +547,7 @@ NAME=Status regs clear and set
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wa "sei ; set ; seh ; ses ; sev ; sen ; sez ; sec"
 aezi
 aezs 8
@@ -553,6 +567,7 @@ NAME=Simple call & ret
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" @ 0x70
 wa "ldi r16, 0x7F" @ 0
 wa "ldi r17, 0xFC" @ 2

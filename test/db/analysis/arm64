@@ -3,6 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx e18f1394 # BL XXX
 sd +4
 wx 00013fd6 # BLR x8
@@ -31,6 +32,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 e asm.os=linux
 asn fstat
 asr 80

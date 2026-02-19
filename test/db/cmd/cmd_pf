@@ -1,6 +1,8 @@
 NAME=pf QeQ
 FILE==
 CMDS=<<EOF
+e asm.arch=arm
+e cfg.bigendian=false
 b 256
 woe 0 255 0x11
 e cfg.bigendian=false
@@ -79,6 +81,7 @@ RUN
 NAME=seteq
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfn foo "xd foo bar"
 pf. foo
 EOF
@@ -91,11 +94,13 @@ RUN
 NAME=float
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=arm
+e cfg.bigendian=false
 wx 00007a45457a0000
-e cfg.bigendian=0
+e cfg.bigendian=false
 pf ff
 wx 00007a45457a0000
-e cfg.bigendian=1
+e cfg.bigendian=true
 pf ff
 EOF
 EXPECT=<<EOF
@@ -109,6 +114,7 @@ RUN
 NAME=seteq2
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfn foo "xd foo bar"
 pf. foo
 EOF
@@ -121,6 +127,7 @@ RUN
 NAME=types
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 00007a452a4b9a0200002a
 pf fcbiC foo bar fool beer plop
 EOF
@@ -136,6 +143,7 @@ RUN
 NAME=word types
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx efbeadde002a0000adde
 pf qw bigWord beef
 EOF
@@ -148,6 +156,7 @@ RUN
 NAME=uleb type
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx e58e26
 pf u ulebtest
 wx 00000000e58e258e2525 @ 0x10
@@ -170,6 +179,7 @@ RUN
 NAME=Register
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 e asm.arch=x86
 e analysis.arch=x86
@@ -189,6 +199,7 @@ RUN
 NAME=Pointers
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 30
 wx 20 @ 0x04
 wx 40 @ 0x08
@@ -209,6 +220,7 @@ RUN
 NAME=Pointer sizes
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx added0dec0de5eba7ada1eab11caefbeadde0bb0
 pf p2p4p8pp2
@@ -225,6 +237,7 @@ RUN
 NAME=swap endianess
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx deadbeef00000000adde
 pf eqew bigWord beef
 EOF
@@ -237,6 +250,7 @@ RUN
 NAME=String pointer
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 w TROLL @ 0x30
 wx 30
 wx a00f @ 0x04
@@ -252,6 +266,7 @@ RUN
 NAME=timestamp
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 321ED92D90DF5254
 pf tt troll plop
 EOF
@@ -264,6 +279,7 @@ RUN
 NAME=named obj
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx a00f00004b
 pfn troll "ic lol cat"
 pf. troll
@@ -277,6 +293,7 @@ RUN
 NAME=array obj
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx a00f00004b2a0000004c
 pfn troll "2ic nb plop"
 pf. troll
@@ -296,6 +313,7 @@ RUN
 NAME=write test
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 32000000424c41424c41424c41424c41
 pfn troll "izi hu swagg plop"
 .pfw troll.hu 42
@@ -313,6 +331,7 @@ RUN
 NAME=write wide string
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 42004c00410042004c00410042004c00410042004c0041000000a00f0000
 pfn troll "Zi swagg plop"
 pf. troll
@@ -331,6 +350,7 @@ RUN
 NAME=fixed size variable
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx a00f0000000000002a412f00007a4500000000402a44adde00000000efbeadde00000000000000000000000040
 pf [2]i[3]b[2]f[3]c[3]w[2]q[6]x
 EOF
@@ -348,6 +368,7 @@ RUN
 NAME=fixed size str, widechar, and var
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 w TROLL
 wx 12 @ 0x02
 wx a00f @ 0x0a
@@ -366,6 +387,7 @@ RUN
 NAME=Enum test
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 td enum troll { BITE=42, PATE=4000};
 wx a00f
@@ -379,6 +401,7 @@ RUN
 NAME=32 bit twice then string
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wv 0x10
 wv 0x10 @ 4
@@ -400,6 +423,7 @@ RUN
 NAME=simple union test
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wv 0x2a
 pf 0iw integer word
@@ -413,6 +437,7 @@ RUN
 NAME=simple nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 2a
 wx a00f @ 0x04
@@ -441,6 +466,7 @@ RUN
 NAME=nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 2a000000a00f00001234100000006416
 wx 2a0000002a @ 0x10
@@ -466,6 +492,7 @@ RUN
 NAME=nested unions
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 2a000000a00f0000a02000000172
 pfn struct "xx first second"
@@ -490,6 +517,7 @@ RUN
 NAME=complex nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
 wx 800600000040 @ 0x20
@@ -526,6 +554,7 @@ RUN
 NAME=flag for nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 341289679a020000a00f00002a00300000001442
 wx 800600000040 @ 0x20
@@ -561,6 +590,7 @@ RUN
 NAME=struct size
 FILE=malloc://256
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 pfn plop "wi word int"
 pfn troll "bciwqfdoxs:S.[4]z[2]B[4]E? byte char int word quad float hexa octal hex strp wstrp str bitfield enum (plop)struct"
@@ -575,6 +605,7 @@ NAME=Print value only
 FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 s 0x80
 pfv .pe_nt_image_headers32.optionalHeader.dataDirectory[5].virtualAddress
@@ -587,6 +618,7 @@ RUN
 NAME=print signed and unsigned values
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 71776572747975696f706173646667686a6b6c7a786376626e6d71776572747975696f706173646667686a6b6c7a786376626e6d
 pf N8..N4.N2:N1..n8..n4n2n1 a b c d e f
 EOF
@@ -605,6 +637,7 @@ RUN
 NAME=Combining flags, backtick, and var length array
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 f test 4 @ 0x20
 w SWAG
@@ -623,6 +656,7 @@ RUN
 NAME=print n-times a format
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 wx 71776572747975696f706173646667686a6b6c7a786376626e6d71776572747975696f706173646667686a6b6c7a786376626e6d
 pfn plop "ip int ptr"
@@ -643,6 +677,7 @@ RUN
 NAME=print with byte(s) skip
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 wx 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
 pfn abc "ic...i:pii a b c d e f"
@@ -662,6 +697,7 @@ NAME=PE test
 FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 s 0x80
 pf. pe_nt_image_headers32
 EOF
@@ -780,6 +816,7 @@ RUN
 NAME=Variable length array
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 2a @ 0x20
 pf [*0x20]c
@@ -794,6 +831,7 @@ RUN
 NAME=Infinite Recursion segfault 1
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfn _NT_TIB "? (_NT_TIB)Self"
 pf. _NT_TIB > /dev/null
 pfn~NT_TIB
@@ -806,6 +844,7 @@ RUN
 NAME=Infinite Recursion segfault 2
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 pfn _NT_TIB "pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self"
 pf. _NT_TIB > /dev/null
 pfn~NT_TIB
@@ -819,6 +858,7 @@ NAME=One byte enum endianness
 BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=arm
 e cfg.bigendian=true
 wb 4142434431323334
 td "enum ascii{ LETTER_A=0x41, LETTER_D=0x44, DIGIT_1=0x31, DIGIT_4=0x34}"
@@ -840,6 +880,7 @@ RUN
 NAME=union pf
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wv4 1234
 pf "i;i"
 pf "i,,,,i"
@@ -868,6 +909,7 @@ RUN
 NAME=pf z, scr.strconv and str.escbslash
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wz \x7fabc\\123\n
 (print strconv escbslash; e scr.strconv=${strconv}; e str.escbslash=${escbslash}; pf z)
 .(print asciiesc false)
@@ -886,6 +928,7 @@ RUN
 NAME=pfj and triply-nested struct
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv2 0x1234
 wv4 0x56789abc @ 0x2
 wv8 0xdef0123456789abc @ 0x6
@@ -945,6 +988,7 @@ RUN
 NAME=pfj and Matryoshka dolls
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 7f
 wv8 0xdef0123456789abc @ 0x1
 pfn fourth "b fo1"

@@ -250,7 +250,7 @@ RUN
 NAME=endian tests: wv
 FILE==
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 e asm.bits=32
 wv4 3
 p8 4
@@ -267,7 +267,7 @@ RUN
 NAME=wv endian
 FILE=malloc://1024
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wv4 0x1234
 p8 2
 wv4 0x12345678
@@ -282,7 +282,7 @@ RUN
 NAME=wx 0x
 FILE=malloc://1024
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wx 0x1234
 p8 2
 wx 0x12345678

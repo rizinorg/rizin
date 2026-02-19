@@ -2,6 +2,7 @@ NAME=AVR: aeso on call
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.bits=8
 wx 0xf8 0x94 0x08 0xe0 0x0e 0xbf 0x0f 0xe5 0x0d 0xbf 0x0e 0x94 0x08 0x00 0x88 0x95 0x08 0x95
 aei
@@ -24,6 +25,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 (regs ;ar 8~:0..16) # show regs r0-r15
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0x41
 ar r1 = 0x20
@@ -359,6 +361,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 (regs ;ar 8~:0..16) # show regs r0-r15
 e asm.arch=avr
+e cfg.bigendian=false
 wx 58940b941b942b943b944b945b946b947b948b949b94ab94bb94cb94db94eb94fb94
 ar r0 = 0xf5
 ar r1 = 0xfe
@@ -697,6 +700,7 @@ NAME=AVR: mul
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 019f
 aei
 (mul x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -757,6 +761,7 @@ NAME=AVR: muls
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0102
 aei
 (muls x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -817,6 +822,7 @@ NAME=AVR: mulsu
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0103
 aei
 (mulsu x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -913,6 +919,7 @@ NAME=AVR: fmul
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0903
 aei
 (fmul x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -973,6 +980,7 @@ NAME=AVR: fmuls
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 8103
 aei
 (fmuls x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -1033,6 +1041,7 @@ NAME=AVR: fmulsu
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 8903
 aei
 (fmulsu x y; echo ======== ${x} * ${y} ========; ar r16 = ${x}; ar r17 = ${y}; ar pc = 0; aes; echo r0; ar r0; echo r1; ar r1; echo r16; ar r16; echo r17; ar r17; echo sreg; ar sreg)
@@ -1129,6 +1138,7 @@ NAME=AVR: adiw
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aei
 (adiw h l x; echo ======== ${h}:${l} + ${x} ========; wa "adiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; echo r26; ar r26; echo r27; ar r27; echo sreg; ar sreg)
 .(adiw 0xca 0xfe 0x3f)
@@ -1203,6 +1213,7 @@ NAME=AVR: sbiw
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aei
 (sbiw h l x; echo ======== ${h}:${l} - ${x} ========; wa "sbiw r27:r26, ${x}"; pi 1; ar r27 = ${h}; ar r26 = ${l}; ar pc = 0; aes; echo r26; ar r26; echo r27; ar r27; echo sreg; ar sreg)
 .(sbiw 0xca 0x21 0x3f)

@@ -175,6 +175,7 @@ RUN
 NAME=format memory metadata
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 41424344
 Cf 4 x
 pd 1

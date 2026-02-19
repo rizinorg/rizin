@@ -1,7 +1,10 @@
 NAME=op: nop
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 00
 aes
 ar pc; ar psw
@@ -15,7 +18,10 @@ RUN
 NAME=op: ajmp addr11
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a101
 aes
 ar pc; ar psw
@@ -29,7 +35,10 @@ RUN
 NAME=op: ljmp addr16
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 021234
 aes
 ar pc; ar psw
@@ -43,7 +52,10 @@ RUN
 NAME=op: sjmp offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 8010
 aes
 ar pc; ar psw
@@ -57,7 +69,10 @@ RUN
 NAME=op: jmp @a+dptr
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 73
 ar a=0x4
 ar dptr=0x1230
@@ -73,7 +88,10 @@ RUN
 NAME=op: acall addr11
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b101
 ar sp=0x20
 wx ffffff @ _idata+0x20
@@ -92,7 +110,10 @@ RUN
 NAME=op: lcall addr16
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 121234
 ar sp=0x20
 wx ffffff @ _idata+0x20
@@ -111,7 +132,10 @@ RUN
 NAME=op: ret
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 22
 wx 002301 @ _idata+0x20
 ar sp=0x22
@@ -128,7 +152,10 @@ RUN
 NAME=op: reti
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 32
 wx 002301 @ _idata+0x20
 ar sp=0x22
@@ -145,7 +172,10 @@ RUN
 NAME=op: push direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c030
 wx 40 @ _idata+0x30
 ar sp=0x21
@@ -165,7 +195,10 @@ RUN
 NAME=op: pop direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d030
 ar sp=0x21
 wx ff40ff @ _idata+0x20
@@ -184,7 +217,10 @@ RUN
 NAME=op: jbc bit, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 100330100430
 wx 10 @ _idata+0x20
 aes
@@ -204,7 +240,10 @@ RUN
 NAME=op: jb bit, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 200330200430
 wx 10 @ _idata+0x20
 aes
@@ -224,7 +263,10 @@ RUN
 NAME=op: jnb bit, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 300430300330
 wx 10 @ _idata+0x20
 aes
@@ -244,7 +286,10 @@ RUN
 NAME=op: jc offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c34030d34030
 aes
 aes
@@ -263,7 +308,10 @@ RUN
 NAME=op: jnc offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d35030c35030
 aes
 aes
@@ -282,7 +330,10 @@ RUN
 NAME=op: jz offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f46030e46030
 aes
 aes
@@ -301,7 +352,10 @@ RUN
 NAME=op: jnz offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e47030f47030
 aes
 aes
@@ -320,7 +374,10 @@ RUN
 NAME=op: cjne a, imm, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b46220b49620
 ar a=0x62
 aes
@@ -339,7 +396,10 @@ RUN
 NAME=op: cjne a, direct, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b52030b52130
 wx 1112 @ _idata+0x20
 ar a=0x11
@@ -359,7 +419,10 @@ RUN
 NAME=op: cjne @Ri, imm, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b71130b71030
 wx 1110 @ _idata+0x20
 ar r1=0x20
@@ -379,7 +442,10 @@ RUN
 NAME=op: cjne Rn, imm, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx bf1120bf1220
 ar r7=0x11
 aes
@@ -398,7 +464,10 @@ RUN
 NAME=op: djnz direct, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d52030d52030
 wx 01 @ _idata+0x20
 aes
@@ -419,7 +488,10 @@ RUN
 NAME=op: djnz Rn, offset
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx df30df30
 ar r7=0x01
 aes
@@ -440,7 +512,10 @@ RUN
 NAME=op: setb c
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d3
 aes
 ar pc; ar psw
@@ -454,7 +529,10 @@ RUN
 NAME=op: setb bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d204d206
 aes
 aes
@@ -472,7 +550,10 @@ RUN
 NAME=op: clr a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e4
 ar a=18
 ar P=1
@@ -489,7 +570,10 @@ RUN
 NAME=op: clr c
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c3
 ar c=1
 aes
@@ -504,7 +588,10 @@ RUN
 NAME=op: clr bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c204c206
 wx ff @ _idata+0x20
 aes
@@ -523,7 +610,10 @@ RUN
 NAME=op: cpl a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f4
 ar a=0xf8
 ar P=0
@@ -540,7 +630,10 @@ RUN
 NAME=op: cpl c
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b3
 ar c=1
 aes
@@ -555,7 +648,10 @@ RUN
 NAME=op: cpl bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx b203b206
 wx f0 @ _idata+0x20
 aes
@@ -574,7 +670,10 @@ RUN
 NAME=op: dec a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 14
 ar a=1
 aes
@@ -590,7 +689,10 @@ RUN
 NAME=op: dec direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 1520
 wx 80 @ _idata+0x20
 aes
@@ -608,7 +710,10 @@ RUN
 NAME=op: dec @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 16
 ar r0=0x20
 wx 80 @ _idata+0x20
@@ -627,7 +732,10 @@ RUN
 NAME=op: dec Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 1f
 ar r7=0x80
 aes
@@ -643,7 +751,10 @@ RUN
 NAME=op: inc a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 04
 ar a=0xff
 aes
@@ -659,7 +770,10 @@ RUN
 NAME=op: inc direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 0520
 wx 80 @ _idata+0x20
 aes
@@ -677,7 +791,10 @@ RUN
 NAME=op: inc @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 06
 ar r0=0x20
 wx 80 @ _idata+0x20
@@ -696,7 +813,10 @@ RUN
 NAME=op: inc Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 0f
 ar r7=0x80
 aes
@@ -712,7 +832,10 @@ RUN
 NAME=op: inc dptr
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a3
 ar dptr=0xff
 aes
@@ -728,7 +851,10 @@ RUN
 NAME=op: add a, imm (carry)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 2480
 ar a=0x80
 aes
@@ -744,7 +870,10 @@ RUN
 NAME=op: add a, imm (aux carry)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 2408
 ar a=0x08
 aes
@@ -760,7 +889,10 @@ RUN
 NAME=op: add a, imm (overflow)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 2440
 ar a=0x40
 aes
@@ -776,7 +908,10 @@ RUN
 NAME=op: add a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 2520
 ar a=0x81
 wx 2030 @ _idata+0x20
@@ -793,7 +928,10 @@ RUN
 NAME=op: add a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 27
 ar a=0x81
 ar r1=0x20
@@ -811,7 +949,10 @@ RUN
 NAME=op: add a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 2f
 ar a=0x81
 ar r7=0x20
@@ -828,7 +969,10 @@ RUN
 NAME=op: addc a, imm (carry)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 3480
 ar a=0x80
 ar c=1
@@ -845,7 +989,10 @@ RUN
 NAME=op: addc a, imm (aux carry)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 3408
 ar a=0x08
 ar c=1
@@ -862,7 +1009,10 @@ RUN
 NAME=op: addc a, imm (overflow)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 3440
 ar a=0x40
 ar c=1
@@ -879,7 +1029,10 @@ RUN
 NAME=op: addc a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 3520
 ar a=0x81
 ar c=1
@@ -897,7 +1050,10 @@ RUN
 NAME=op: addc a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 37
 ar a=0x81
 ar r1=0x20
@@ -916,7 +1072,10 @@ RUN
 NAME=op: addc a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 3f
 ar a=0x81
 ar r7=0x20
@@ -934,7 +1093,10 @@ RUN
 NAME=op: subb a, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c37462949674279412
 aes
 aes
@@ -957,7 +1119,10 @@ RUN
 NAME=op: subb a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c37462952074279521
 wx 9612 @ _idata+0x20
 aes
@@ -981,7 +1146,10 @@ RUN
 NAME=op: subb a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 7920c374629709742797
 wx 9612 @ _idata+0x20
 aes
@@ -1007,7 +1175,10 @@ RUN
 NAME=op: subb a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c374627f969f74277f129f
 aes
 aes
@@ -1032,7 +1203,10 @@ RUN
 NAME=op: da a (BCD no carry: 23+23)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 74232423d4
 aes
 aes
@@ -1049,7 +1223,10 @@ RUN
 NAME=op: da a (BCD with carry #1: 99+99)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 74992499d4
 aes
 aes
@@ -1066,7 +1243,10 @@ RUN
 NAME=op: da a (BCD with carry #2: 99+66)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 74992466d4
 aes
 aes
@@ -1083,7 +1263,10 @@ RUN
 NAME=op: div ab
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 848484
 ar a=106
 ar b=3
@@ -1111,7 +1294,10 @@ RUN
 NAME=op: mul ab
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a4a4
 ar a=32
 ar b=7
@@ -1136,7 +1322,10 @@ RUN
 NAME=op: orl direct, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 4220
 wx 3040 @ _idata+0x20
 ar a=0x81
@@ -1154,7 +1343,10 @@ RUN
 NAME=op: orl direct, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 432081
 wx 3040 @ _idata+0x20
 aes
@@ -1171,7 +1363,10 @@ RUN
 NAME=op: orl a, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 4483
 ar a=0x30
 aes
@@ -1187,7 +1382,10 @@ RUN
 NAME=op: orl a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 4520
 wx 3040 @ _idata+0x20
 ar a=0x83
@@ -1204,7 +1402,10 @@ RUN
 NAME=op: orl a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 47
 wx 3040 @ _idata+0x20
 ar r1=0x20
@@ -1222,7 +1423,10 @@ RUN
 NAME=op: orl a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 4f
 ar r7=0x30
 ar a=0x83
@@ -1239,7 +1443,10 @@ RUN
 NAME=op: orl c, bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 7203
 wx 08 @ _idata+0x20
 aes
@@ -1254,7 +1461,10 @@ RUN
 NAME=op: orl c, /bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a003
 wx 80 @ _idata+0x20
 aes
@@ -1269,7 +1479,10 @@ RUN
 NAME=op: anl direct, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 5220
 wx 3040 @ _idata+0x20
 ar a=0x10
@@ -1287,7 +1500,10 @@ RUN
 NAME=op: anl direct, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 532010
 wx 3040 @ _idata+0x20
 aes
@@ -1304,7 +1520,10 @@ RUN
 NAME=op: anl a, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 5410
 ar a=0x30
 aes
@@ -1320,7 +1539,10 @@ RUN
 NAME=op: anl a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 5520
 wx 3040 @ _idata+0x20
 ar a=0x10
@@ -1337,7 +1559,10 @@ RUN
 NAME=op: anl a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 57
 wx 3040 @ _idata+0x20
 ar r1=0x20
@@ -1355,7 +1580,10 @@ RUN
 NAME=op: anl a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 5f
 ar r7=0x30
 ar a=0x10
@@ -1372,7 +1600,10 @@ RUN
 NAME=op: anl c, bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d38203
 wx 08 @ _idata+0x20
 aes
@@ -1388,7 +1619,10 @@ RUN
 NAME=op: anl c, /bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d3b003
 wx 08 @ _idata+0x20
 aes
@@ -1404,7 +1638,10 @@ RUN
 NAME=op: xrl direct, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 6220
 wx 3040 @ _idata+0x20
 ar a=0x31
@@ -1422,7 +1659,10 @@ RUN
 NAME=op: xrl direct, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 632031
 wx 3040 @ _idata+0x20
 aes
@@ -1439,7 +1679,10 @@ RUN
 NAME=op: xrl a, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 6430
 ar a=0x31
 aes
@@ -1455,7 +1698,10 @@ RUN
 NAME=op: xrl a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 6520
 wx 3040 @ _idata+0x20
 ar a=0x31
@@ -1472,7 +1718,10 @@ RUN
 NAME=op: xrl a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 67
 wx 3040 @ _idata+0x20
 ar r1=0x20
@@ -1490,7 +1739,10 @@ RUN
 NAME=op: xrl a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 6f
 ar r7=0x30
 ar a=0x31
@@ -1507,7 +1759,10 @@ RUN
 NAME=op: rr a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 03
 ar a=0x89
 aes
@@ -1523,7 +1778,10 @@ RUN
 NAME=op: rrc a (carry set)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 13
 ar a=0x18
 ar c=1
@@ -1540,7 +1798,10 @@ RUN
 NAME=op: rrc a (carry clear)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 13
 ar a=0x99
 aes
@@ -1556,7 +1817,10 @@ RUN
 NAME=op: rl a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 23
 ar a=0x89
 aes
@@ -1572,7 +1836,10 @@ RUN
 NAME=op: rlc a (carry set)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 33
 ar a=0x18
 ar c=1
@@ -1589,7 +1856,10 @@ RUN
 NAME=op: rlc a (carry clear)
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 33
 ar a=0x99
 aes
@@ -1605,7 +1875,10 @@ RUN
 NAME=op: mov a, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 7420
 aes
 ar pc; ar psw; ar a
@@ -1620,7 +1893,10 @@ RUN
 NAME=op: mov direct, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 752021
 wx 3040 @ _idata+0x20
 aes
@@ -1637,7 +1913,10 @@ RUN
 NAME=op: mov @Ri imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 7720
 wx 3040 @ _idata+0x20
 ar r1=0x21
@@ -1655,7 +1934,10 @@ RUN
 NAME=op: mov Rn, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 7f20
 aes
 ar pc; ar psw; ar r7
@@ -1670,7 +1952,10 @@ RUN
 NAME=op: mov direct, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 852021
 wx 3040 @ _idata+0x20
 aes
@@ -1687,7 +1972,10 @@ RUN
 NAME=op: mov direct, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 8720
 wx 3040 @ _idata+0x20
 ar r1=0x21
@@ -1705,7 +1993,10 @@ RUN
 NAME=op: mov direct, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 8f20
 wx 3040 @ _idata+0x20
 ar r7=0x21
@@ -1723,7 +2014,10 @@ RUN
 NAME=op: mov dptr, imm
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 902010
 aes
 ar pc; ar psw; ar dptr
@@ -1738,7 +2032,10 @@ RUN
 NAME=op: mov bit, c
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d39203c39204
 wx f0 @ _idata+0x20
 ar c=1
@@ -1756,7 +2053,10 @@ RUN
 NAME=op: mov c, bit
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a203
 wx 08 @ _idata+0x20
 aes
@@ -1771,7 +2071,10 @@ RUN
 NAME=op: mov @Ri direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx a720
 wx 3040 @ _idata+0x20
 ar r1=0x21
@@ -1789,7 +2092,10 @@ RUN
 NAME=op: mov Rn, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx af20
 wx 3040 @ _idata+0x20
 ar r7=0x21
@@ -1806,7 +2112,10 @@ RUN
 NAME=op: mov a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e521
 wx 3040 @ _idata+0x20
 aes
@@ -1822,7 +2131,10 @@ RUN
 NAME=op: mov a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e7
 wx 3040 @ _idata+0x20
 ar r1=0x21
@@ -1839,7 +2151,10 @@ RUN
 NAME=op: mov a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx ef
 ar r7=0x20
 aes
@@ -1855,7 +2170,10 @@ RUN
 NAME=op: mov direct, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f520
 wx 3040 @ _idata+0x20
 ar a=0x21
@@ -1873,7 +2191,10 @@ RUN
 NAME=op: mov @Ri, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f7
 wx 3040 @ _idata+0x20
 ar a=0x20
@@ -1892,7 +2213,10 @@ RUN
 NAME=op: mov Rn, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx ff
 ar a=0x20
 aes
@@ -1908,7 +2232,10 @@ RUN
 NAME=op: movx a, @dptr
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e0
 wx 10 @ _xdata+0x100
 ar dptr=0x100
@@ -1925,7 +2252,10 @@ RUN
 NAME=op: movx a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx e3
 wx 3040 @ _xdata+0x020
 ar r1=0x21
@@ -1942,7 +2272,10 @@ RUN
 NAME=op: movx @dptr, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f0
 wx 10 @ _xdata+0x100
 ar dptr=0x100
@@ -1961,7 +2294,10 @@ RUN
 NAME=op: movx @Ri, a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx f3
 wx 10 @ _xdata+0x010
 ar r1=0x10
@@ -1980,7 +2316,10 @@ RUN
 NAME=op: movc a, @a+pc
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 83
 wx 10 @ 0xf0
 ar a=0xf0
@@ -1997,7 +2336,10 @@ RUN
 NAME=op: movc a, @a+dptr
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx 93
 wx 10 @ 0x100
 ar a=1
@@ -2015,7 +2357,10 @@ RUN
 NAME=op: swap a
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c4
 ar a=0x31
 aes
@@ -2031,7 +2376,10 @@ RUN
 NAME=op: xch a, direct
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c521
 wx 3040 @ _idata+0x20
 ar a=0x20
@@ -2050,7 +2398,10 @@ RUN
 NAME=op: xch a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx c7
 wx 3040 @ _idata+0x20
 ar r1=0x21
@@ -2070,7 +2421,10 @@ RUN
 NAME=op: xch a, Rn
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx cf
 ar r7=0x40
 ar a=0x20
@@ -2088,7 +2442,10 @@ RUN
 NAME=op: xchd a, @Ri
 FILE=malloc://0x10000
 CMDS=<<EOF
-e asm.arch=8051;e asm.bits=8; aei
+e asm.arch=8051
+e asm.bits=8
+e cfg.bigendian=false
+aei
 wx d7
 wx 34 @ _idata+0x20
 ar r1=0x20

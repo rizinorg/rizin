@@ -68,6 +68,7 @@ RUN
 NAME=pCx
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
 pCx 5
 EOF
@@ -84,6 +85,7 @@ RUN
 NAME=pCw
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 55aa55aa909055aa9090ff20000ffffffff55fffffaaffffffffff
 pCw 4
 EOF

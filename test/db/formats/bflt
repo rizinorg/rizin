@@ -3,7 +3,7 @@ FILE=bins/bflt/bin.bflt
 ARGS=-B0x6908000
 CMDS=<<EOF
 # Basic loading info
-i~format,os,subsys,PIE,endian
+iI
 iH
 iS
 iSS
@@ -20,12 +20,45 @@ pv4 @ 0x6908000+0x2fb8 # data -> data reloc
 pi 1 @ 0x6908000+0x0000016c
 EOF
 EXPECT=<<EOF
-format   bflt
+arch     arm
+cpu      N/A
+features N/A
+baddr    0x06908000
+binsz    0x00003134
+bintype  bflt
+bits     32
+retguard false
+class    bflt
+compiler N/A
+dbg_file N/A
 endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  unknown
+maxopsz  4
+minopsz  4
 os       Linux
+cc       N/A
+pcalign  4
+rpath    N/A
 subsys   uClinux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
 PIE      true
+RELROCS  false
+NX       false
 bflt:
+  guessed_arch: "arm"
   Magic: "62 46 4c 54                                     |bFLT            |"
   Revision: 0x4
   Entry: 0x44
@@ -37,6 +70,9 @@ bflt:
   RelocCount: 92
   Flags: 0x1
   BuildDate: 1481527744
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
 
      paddr   size      vaddr  vsize align perm name   type flags 
 -----------------------------------------------------------------
@@ -160,6 +196,9 @@ NAME=busybox arm32 data reference chain
 FILE=bins/bflt/busybox-arm32.bflt
 ARGS=-B0x4080000
 CMDS=<<EOF
+e cfg.bigendian
+iI
+iH
 aae
 aav
 echo ------ reloc to string
@@ -171,6 +210,61 @@ pd 1 @ 0x0408b780
 axf @ 0x0408b780
 EOF
 EXPECT=<<EOF
+false
+arch     arm
+cpu      N/A
+features N/A
+baddr    0x04080000
+binsz    0x00035bcc
+bintype  bflt
+bits     32
+retguard false
+class    bflt
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  unknown
+maxopsz  4
+minopsz  4
+os       Linux
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   uClinux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      true
+RELROCS  false
+NX       false
+bflt:
+  guessed_arch: "arm"
+  Magic: "62 46 4c 54                                     |bFLT            |"
+  Revision: 0x4
+  Entry: 0x44
+  DataStart: 0x2f2f4
+  DataEnd: 0x33f58
+  BssEnd: 0x373d0
+  StackSize: 16000
+  RelocStart: 0x33f58
+  RelocCount: 1821
+  Flags: 0x1
+  BuildDate: 1634814878
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
+
 ------ reloc to string
             ; DATA XREFS from fcn.0408aafc @ +0xc84, +0xd80
             0x0408b884      .dword 0x040af7c4 ; str.Success            ; RELOC 32 
@@ -187,9 +281,11 @@ RUN
 
 NAME=busybox m68k with gotpic
 FILE=bins/bflt/busybox-m68k.bflt
-ARGS=-a m68k -e cfg.bigendian=true -B 0x41e40000
+ARGS=-B0x41e40000
 CMDS=<<EOF
-i~format,os,subsys,PIE,endian
+e cfg.bigendian
+iI
+iH
 echo ------ got relocs (begin)
 ir~:0..10
 pv4 8 @ 0x41e6a8a0
@@ -202,11 +298,59 @@ ir~0x41e6c030
 pv4 @ 0x41e6c030
 EOF
 EXPECT=<<EOF
-format   bflt
+true
+arch     m68k
+cpu      N/A
+features N/A
+baddr    0x41e40000
+binsz    0x0002c6b8
+bintype  bflt
+bits     32
+retguard false
+class    bflt
+compiler N/A
+dbg_file N/A
 endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  unknown
+minopsz  1
 os       Linux
+cc       N/A
+rpath    N/A
 subsys   uClinux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
 PIE      true
+RELROCS  false
+NX       false
+bflt:
+  guessed_arch: "m68k"
+  Magic: "62 46 4c 54                                     |bFLT            |"
+  Revision: 0x4
+  Entry: 0x44
+  DataStart: 0x2a88c
+  DataEnd: 0x2c418
+  BssEnd: 0x2d2e0
+  StackSize: 16000
+  RelocStart: 0x2c418
+  RelocCount: 168
+  Flags: 0x2
+  BuildDate: 1634755328
+  Padding: |
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    00 00 00 00                                     |....            |
+
 ------ got relocs (begin)
      vaddr      paddr     target type   name 
 ---------------------------------------------

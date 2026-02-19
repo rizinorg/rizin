@@ -3,6 +3,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 e io.cache=true
 s 0x0008735c
 wx 30a1
@@ -23,6 +24,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wa "clz r0, r1"
 ar r1=0x80000000
 aes
@@ -47,6 +49,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 e io.cache=true
 s 0x00088a1c
 wx 0ff26c71
@@ -67,6 +70,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 aei
 aeim
 ar sp=0x00108000
@@ -85,6 +89,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 aei
 aeim
 ar sp=0x00108000
@@ -104,6 +109,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 aei
 aeim
 ar sp=0x00108000
@@ -124,6 +130,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 aei
 aeim
 ar sp=0x00108000
@@ -144,6 +151,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r0=4
 ar r1=2
@@ -162,6 +170,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=8
 # put value at r1 into r2 and at r1+4 into r3
 wx d1e90023 # ldrd r2,r3,[r1]
@@ -182,6 +191,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=4
 # put value at r1+4 into r2 and at r1+4+4 into r3
 wx d1e90123 # ldrd r2,r3,[r1, 4]
@@ -202,6 +212,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 # put value at pc+4 into r2 and at pc+4+4 into r3
 wx dfe90223 # ldrd r2, r3, [pc, #8]
 wx ddccbbaa @ 12
@@ -221,6 +232,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=4
 # put value at r1+4 into r2 and at r1+4+4 into r3 then put r1+4 into r1
 wx f1e90123 # ldrd r2, r3, [r1, #4]!
@@ -243,6 +255,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=8
 # put value at r1 into r2 and at r1+4 into r3 then put r1+4 into r1
 wx f1e80123 # ldrd r2,r3,[r1], 4
@@ -265,6 +278,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r3=4		# address
 ar r1=0		# init with dummy values
@@ -288,6 +302,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=4		# address
 ar r5=0xaabbccdd
 wx 20c1
@@ -306,6 +321,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r2=4		# address
 ar r1=0x11111111
@@ -328,6 +344,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r0=0x11223344
 wx c0f30722
@@ -344,6 +361,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 08bf
 aoe
 EOF
@@ -357,6 +375,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 18bf00000000
 aoe
 EOF
@@ -370,6 +389,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 28bf00000000
 aoe
 EOF
@@ -383,6 +403,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 38bf00000000
 aoe
 EOF
@@ -396,6 +417,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 48bf00000000
 aoe
 EOF
@@ -409,6 +431,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 58bf00000000
 aoe
 EOF
@@ -422,6 +445,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 68bf00000000
 aoe
 EOF
@@ -435,6 +459,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 78bf00000000
 aoe
 EOF
@@ -448,6 +473,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx e8bf00000000
 aoe
 EOF
@@ -461,6 +487,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r3=1
 ar r1=2
 wx 5a58aabbccddeeff
@@ -477,6 +504,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r1=0x80000001
 ar r2=0x1
@@ -501,6 +529,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r1=-8
 ar r2=2
@@ -525,6 +554,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar > /dev/null
 ar r4=-8
 wx a410
@@ -541,6 +571,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=0x3
 ar r2=0x7
 wv 0x0002ea61
@@ -557,6 +588,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wv 0x4478
 aes
 ar r0
@@ -571,6 +603,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 90e85000
 wv 0x11223344 @ 4
 wv 0x55667788 @ 8
@@ -590,6 +623,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 7158 #ldr r1, [r6, r1]
 wv 0x11223344 @ 2
 ar r1=0x4796eebe
@@ -607,6 +641,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wa "ldr r2, [r3], 10"
 wx aabbccdd @ 10
 ar r3=10
@@ -625,6 +660,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 0144 #add r1, r0
 ar r1=0x4796eebe
 ar r0=0xb8691144
@@ -641,6 +677,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wa "adcs r1, r3;adcs r1, r3"
 ar r1=0x90000000
 ar r3=0x80000000
@@ -665,6 +702,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wa "adds r1, 1"
 ar r1=0xffffffff
 aes
@@ -682,6 +720,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wa "subs r1, 1"
 ar r1=1
 aes
@@ -699,6 +738,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 51fb0001 #smmla r1, r1, r0, r0
 ar r1=0x4796eebe
 ar r0=0x11
@@ -715,6 +755,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 51fb1001 #smmlar r1, r1, r0, r0
 ar r1=0x4796eebe
 ar r0=0x11
@@ -731,6 +772,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx a1fb0212 #umull r1, r2, r1, r2
 ar r1=0x4796eebe
 ar r2=0x11
@@ -749,6 +791,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 01fb1200 #mls r0, r1, r2, r0
 ar r0=0x16161616
 ar r1=0x45
@@ -766,6 +809,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 00fb0211 #mla r1, r0, r2, r1
 ar r1=0x16161616
 ar r0=0x45
@@ -783,6 +827,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 6ff01201 #mvn r1, 0x12
 aes
 ar r1
@@ -797,6 +842,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r4=0x696969f9
 wx 6ff30604 #bfc r4, 0, 7
 aes
@@ -812,6 +858,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r2=0x696969f9
 ar r3=0x33333333
 wx 62f38703 #bfi r3, r2, 2, 6
@@ -828,6 +875,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r5=0x11223344
 wx 2bba #rev r3, r5
 aes
@@ -843,6 +891,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r7=0x11223344
 wx 7eba #rev16 r6, r7
 aes
@@ -858,6 +907,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=0x11223344
 wx cfba #revsh r7, r1
 aes
@@ -873,6 +923,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 ar r1=0x11223388
 wx cfba #revsh r7, r1
 aes
@@ -916,6 +967,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 7846 # mov r0, pc
 aes
 ar r0
@@ -930,6 +982,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 00f002f8 # bl 8
 aes
 ar lr
@@ -941,73 +994,17 @@ pc = 0x00000008
 EOF
 RUN
 
-NAME=x86-16 dos syscall
-FILE==
-ARGS=-ax86 -b16 -kdos
-CMDS=<<EOF
-wa "mov ah,0x30;int 0x21"
-aecu 0x4
-as
-EOF
-EXPECT=<<EOF
-48 = GetDOSVersion ()
-EOF
-RUN
-
-NAME=arm s110 syscalls esil
-BROKEN=1
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-wx 05220aa17cdf
-e emu.str=1
-pd 3
-EOF
-EXPECT=<<EOF
-            0x00000000      0522           movs r2, 5
-            0x00000002      0aa1           adr r1, 0x28                ; 0x2c ; ','
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000028, 0x00000005)
-EOF
-RUN
-
-NAME=arm s110 syscalls as
-BROKEN=1
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-wx 05220aa17cdf
-e emu.str=1
-sd +4
-as
-pd 1
-EOF
-EXPECT=<<EOF
-124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
-EOF
-RUN
-
-NAME=arm s110 syscalls as num
-BROKEN=1
-FILE==
-ARGS=-aarm -b16 -easm.os=s110
-CMDS=<<EOF
-wx 05220aa17cdf
-e emu.str=1
-sd +4
-as 123
-pd 1
-EOF
-EXPECT=<<EOF
-123 = sd_ble_gap_ppcp_get (0x00000000)
-            0x00000004      7cdf           svc 0x7c                    ; '|' ; 124 = sd_ble_gap_device_name_set (0x00000000, 0x00000000, 0x00000000)
-EOF
-RUN
-
 NAME=arm s110 syscalls /ad svc
 FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
-ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=/ad svc
+ARGS=-m 0x16000
+CMDS=
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.os=s110
+e cfg.bigendian=false
+/ad svc
+EOF
 EXPECT=<<EOF
 0x000168d0   # 2: svc 0x51
 0x000168f2   # 2: svc 0x61
@@ -1037,64 +1034,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm s110 syscalls /as
-BROKEN=1
-FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
-ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=/as
-EXPECT=<<EOF
-0x000168d0 sd_evt_get
-0x000168f2 sd_ble_evt_get
-0x00016b42 sd_ble_gap_sec_params_reply
-0x00016c1c sd_ble_gap_device_name_set
-0x00016c28 sd_ble_gap_appearance_set
-0x00016c32 sd_ble_gap_ppcp_set
-0x00016c3a sd_ble_gap_tx_power_set
-0x00016ce4 sd_ble_gatts_service_add
-0x00016ed6 sd_ble_gatts_sys_attr_set
-0x000171b2 sd_ble_gap_adv_start
-0x00017212 sd_ble_gap_adv_data_set
-0x0001721e sd_ble_gap_appearance_set
-0x00017408 sd_power_pof_threshold_set
-0x000177f6 sd_power_system_off
-0x000177f8 sd_softdevice_disable
-0x00017820 sd_softdevice_vector_table_base_set
-0x0001785c sd_ble_enable
-0x00017864 sd_ble_gap_address_get
-0x0001786c sd_ble_gap_address_set
-0x0001794c sd_ble_gatts_characteristic_add
-0x0001799e sd_ble_gatts_descriptor_add
-0x00017a1a sd_ble_uuid_vs_add
-0x00017d5e sd_softdevice_enable
-0x00017d6a sd_ppi_group_assign
-0x00018660 sd_ble_gatts_value_set
-EOF
-RUN
-
-NAME=arm s110 syscalls aae
-BROKEN=1
-FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
-ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
-CMDS=<<EOF
-e bin.baddr=0x16000;
-aae $s @ 0x00016000
-fs
-EOF
-EXPECT=<<EOF
-0    0 * sections
-1    0 * segments
-2    0 * relocs
-3    0 * symbols
-4   25 * syscalls
-5    5 * strings
-EOF
-RUN
-
 NAME=Pre-indexed addressing mode
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 10f8013f # ldrb r3, [r0, 1]!
 aes
 ar pc
@@ -1108,13 +1053,13 @@ r3 = 0x000000f8
 EOF
 RUN
 
-
 NAME=test-thumb-load
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wb 054b
 pd 10
 EOF

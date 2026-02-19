@@ -768,7 +768,7 @@ typedef enum {
  * \param [out] result_len The length of usable data in the result buffer, always <= result_maxlen
  * \return riscv_attr_type The type of the found attribute, indicating whether it's a string or uleb128 integer and whether it was truncated
  */
-static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr_tag, int result_maxlen, ut8 *result, int *result_len) {
+static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr_tag, size_t result_maxlen, ut8 *result, size_t *result_len) {
 	// format:
 	/*
 	 * <format-byte> <subsection 4-byte length> <null-terminated vendor name> <one or more tag-value pairs> */
@@ -778,14 +778,14 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 	ut64 curr = 0;
 
 	// format byte
-	ut8 format;
+	ut8 format = 0;
 	if (!sec || !rz_buf_read8_offset(sec, &curr, &format) || format != 'A') {
 		RZ_LOG_ERROR("Can't read the format byte of the RISCV attrbiute section or found a different format (expected 'A' at section start)\n");
 		return RISCV_ATTR_NONE;
 	}
 
 	// subsection length
-	ut32 subsec_len;
+	ut32 subsec_len = 0;
 	if (!rz_buf_read_ble32_offset(sec, &curr, &subsec_len, /* big endian? */ false)) {
 		RZ_LOG_ERROR("Can't read the subsection length of the RISCV attribute section\n");
 		return RISCV_ATTR_NONE;
@@ -802,7 +802,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 
 	// now parse the tag-value array
 	while (curr < rz_buf_size(sec)) {
-		ut64 tag;
+		ut64 tag = 0;
 		ut32 num_bytes_read = rz_buf_uleb128_at(sec, curr, &tag);
 		curr += num_bytes_read;
 
@@ -822,7 +822,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 		// Like ARM but even simpler, no special cases for tags below 32
 		bool tag_is_odd = tag & 0x1;
 
-		int result_curr = 0;
+		size_t result_curr = 0;
 		// value is a null-terminated string
 		if (tag_is_odd) {
 			int string_starts_at = curr;
@@ -840,7 +840,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 
 			bool result_overflow = false;
 			// have we filled the buffer ?
-			if (result_curr == result_maxlen) {
+			if (result_curr >= result_maxlen) {
 				result_overflow = result[result_maxlen - 1] != '\0';
 				// must force the last byte to null, in case the original string was too long
 				result[result_maxlen - 1] = '\0';
@@ -863,7 +863,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 
 			bool result_overflow = false;
 			// have we filled the buffer ?
-			if (result_curr == result_maxlen) {
+			if (result_curr >= result_maxlen) {
 				result_overflow = result[result_maxlen - 1] & 0x80;
 				// must force the last byte to a terminal byte, in case the original number was too long
 				result[result_maxlen - 1] = result[result_maxlen - 1] & 0x7F;
@@ -926,8 +926,8 @@ static inline bool arch_is_parisc(ELFOBJ *bin) {
 	return arch_is(bin, EM_PARISC);
 }
 
-static bool arch_is_riscv(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_RISCV;
+static inline bool arch_is_riscv(ELFOBJ *bin) {
+	return arch_is(bin, EM_RISCV);
 }
 
 static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
@@ -1521,6 +1521,19 @@ static char *get_cpu_h8xx(ELFOBJ *bin) {
 		return rz_str_dup("h8300h");
 	}
 	return rz_str_dup("h8300");
+}
+
+static char *get_cpu_riscv(ELFOBJ *bin) {
+	char bin_arch[256] = { 0 };
+	size_t len = 0;
+	riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	len = RZ_MIN(len, sizeof(bin_arch));
+	if (typ == RISCV_ATTR_NT_STRING) {
+		return rz_str_ndup((const char *)bin_arch, len);
+	}
+
+	// some hardcoded fallback, the mafd + vector
+	return strdup("rv64i2p0_c2p0_m2p0_a2p0_f2p0_d2p0_v2p0");
 }
 
 /**
@@ -2117,14 +2130,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	} else if (arch_is_h8xx(bin)) {
 		return get_cpu_h8xx(bin);
 	} else if (arch_is_riscv(bin)) {
-		ut8 archstr[256];
-		int archstr_len;
-		riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, 256, archstr, &archstr_len);
-		if (typ == RISCV_ATTR_NT_STRING) {
-			return rz_str_dup((const char *)archstr);
-		}
-		// some hardcoded fallback, the mafd + vector
-		return strdup("rv64i2p0_c2p0_m2p0_a2p0_f2p0_d2p0_v2p0");
+		return get_cpu_riscv(bin);
 	}
 	return NULL;
 }

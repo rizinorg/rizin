@@ -20,7 +20,7 @@ static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = 0;
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr(a->cpu, "68000")) {

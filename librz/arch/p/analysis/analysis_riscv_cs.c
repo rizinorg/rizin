@@ -37,20 +37,20 @@
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3(op); \
-	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
-	(op)->src[1]->reg = rz_reg_get(analysis->reg, REG(2), RZ_REG_TYPE_GPR);
+	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
+	(op)->src[1]->reg = riscv_reg_get(analysis->reg, REG(2), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3(op); \
-	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
+	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR); \
 	(op)->src[1]->imm = IMM(2);
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2(op); \
-	(op)->dst->reg = rz_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
-	(op)->src[0]->reg = rz_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR);
+	(op)->dst->reg = riscv_reg_get(analysis->reg, REG(0), RZ_REG_TYPE_GPR); \
+	(op)->src[0]->reg = riscv_reg_get(analysis->reg, REG(1), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == RISCV_OP_IMM) { \
@@ -60,6 +60,14 @@
 	}
 
 static void set_stack_effect(RzAnalysisOp *op, cs_insn *insn);
+
+static RzRegItem *riscv_reg_get(const RzReg *reg, const char *name, int type) {
+	if (!reg || RZ_STR_ISEMPTY(name)) {
+		RZ_LOG_DEBUG("riscv: reg (%p) or name (%p) is null (type %d)\n", reg, name, type);
+		return NULL;
+	}
+	return rz_reg_get(reg, name, type);
+}
 
 static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
 	if (!insn->detail) {
@@ -150,7 +158,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 			ZERO_FILL(ctx->reg);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_REG;
-			op->dst->reg = rz_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_WRITTEN_REGID(insn)), RZ_REG_TYPE_GPR);
+			op->dst->reg = riscv_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_WRITTEN_REGID(insn)), RZ_REG_TYPE_GPR);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
 			op->src[0]->reg = &ctx->reg;
@@ -170,7 +178,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 			op->dst->memref = op->refptr;
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_REG;
-			op->src[0]->reg = rz_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_READ_REGID(insn)), RZ_REG_TYPE_GPR);
+			op->src[0]->reg = riscv_reg_get(analysis->reg, cs_reg_name(*handle, FIRST_READ_REGID(insn)), RZ_REG_TYPE_GPR);
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_SHL:

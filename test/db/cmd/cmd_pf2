@@ -1,7 +1,9 @@
 NAME=PE JSON test
 FILE=bins/pe/ch22.exe
-ARGS=-e asm.bits=32 -nn
+ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
 s 0x80
 pfj pe_nt_image_headers32
 EOF
@@ -15,6 +17,7 @@ RUN
 NAME=JSON output
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
 wx 800600000040 @ 0x20
@@ -32,6 +35,7 @@ RUN
 NAME=access specific element through nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
 wx 800600000040 @ 0x20
@@ -57,6 +61,7 @@ RUN
 NAME=access specific element in an array
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx a00f0000adde @ 0x10
 pfn plop "iwqw one two three four"
@@ -85,6 +90,7 @@ NAME=Complex request with specific array element and specific field
 FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 s 0x80
 pf. pe_dos_header.e_res[2]
@@ -99,6 +105,7 @@ RUN
 NAME=write specific element through nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 341289679a020000a00f00002a003000000014426416
 wx 800600000040 @ 0x20
@@ -141,6 +148,7 @@ RUN
 NAME=print anonymous nested struct
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=32
 wx 71776572747975696f706173646667686a6b6c7a786376626e6d71776572747975696f706173646667686a6b6c7a786376626e6d
 pfn dsf "ii a b"
@@ -177,7 +185,10 @@ RUN
 
 NAME=pf field name
 FILE=malloc://1024
-CMDS=pf 2x x2
+CMDS=<<EOF
+e asm.arch=x86
+pf 2x x2
+EOF
 EXPECT=<<EOF
 0x00000000 [0] {
    x2 : 0x00000000 = 0x00000000
@@ -191,8 +202,10 @@ RUN
 NAME=pf *z (64bit addr)
 FILE==
 CMDS=<<EOF
-e io.cache=true
+e asm.arch=arm
 e asm.bits=64
+e io.cache=true
+e cfg.bigendian=false
 wz root @ 0x0000000100000faf
 pf z @ 0x0000000100000faf
 e cfg.bigendian=false
@@ -214,6 +227,7 @@ RUN
 NAME=pf F max precision (#13027)
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv8 0x400921fb54442d18
 pf F
 echo
@@ -232,6 +246,7 @@ RUN
 NAME=pf f max precision
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv4 0x40490fdb
 pf f
 EOF
@@ -243,6 +258,7 @@ RUN
 NAME=pfj z not-at-start fix
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 46
 wz ABCDE @ 0x1
 pf bz
@@ -258,6 +274,7 @@ RUN
 NAME=pf/pfj z with size
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wz ABCDE
 (pf2 format; pf ${format}; pfj ${format})
 .(pf2 z)
@@ -282,6 +299,7 @@ NAME=pf z overflow
 FILE=malloc://2048
 ARGS=-m 1000
 CMDS=<<EOF
+e asm.arch=x86
 e io.cache=false
 echo --- io.unalloc = true ---
 echo
@@ -353,6 +371,7 @@ NAME=pfj z overflow
 FILE=malloc://2048
 ARGS=-m 1000
 CMDS=<<EOF
+e asm.arch=x86
 e io.unalloc=true
 s 3046
 w AB
@@ -375,17 +394,14 @@ RUN
 NAME=pfn
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 pfo elf32
 pfn elf_header
+pfn cat_sat_on_keyboard
 EOF
 EXPECT=<<EOF
 ?[2]E[2]E[4]ExxxxN2N2N2N2N2N2 (elf_ident)ident (elf_type)type (elf_machine)machine (elf_obj_version)version entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx
 EOF
-RUN
-
-NAME=pfn format not defined
-FILE==
-CMDS=pfn cat_sat_on_keyboard
 EXPECT_ERR=<<EOF
 ERROR: Format with "cat_sat_on_keyboard" name not found
 EOF
@@ -395,6 +411,7 @@ NAME=-nn filename with @
 FILE=bins/elf/analysis/tiny1@invalid_addr
 ARGS=-nn
 CMDS=<<EOF
+e asm.arch=x86
 e io.va=0
 pf. elf_header @ elf_header
 EOF
