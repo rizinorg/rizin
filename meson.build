@@ -519,6 +519,13 @@ foreach it : ccs
     it_userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
   endforeach
 
+  # Try to compile a basic SSE2 code snippet to discover if SSE2 is supported for the target arch
+  sse2_code = '''#include <emmintrin.h>
+    int main (int argc, char *argv[]) { __m128i v = _mm_set_epi32(2, 3, 0, 1); return 0; }
+  '''
+  has_sse2 = it_cc.compiles(sse2_code, args : '-msse2', name: 'SSE2 code snippet')
+  it_userconf.set10('HAVE_SSE2', has_sse2)
+
   foreach item : [
       ['linux/ashmem.h', '', []],
       ['sys/shm.h', '', []],

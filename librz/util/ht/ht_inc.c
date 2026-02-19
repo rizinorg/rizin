@@ -36,10 +36,6 @@
 #define INDEX_TYPE                   ut32
 #define INVALID_INDEX                UT32_MAX
 
-#if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
-#define HAVE_SSE2
-#endif
-
 // Select lookup implementation
 #ifdef HAVE_SSE2
 #include <emmintrin.h>
