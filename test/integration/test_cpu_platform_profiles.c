@@ -17,16 +17,10 @@ bool test_cpu_profiles() {
 	RzCoreFile *file = rz_core_file_open(core, fpath, RZ_PERM_R, loadaddr);
 	mu_assert_notnull(file, "opening the firmware");
 	rz_core_bin_load(core, fpath, loadaddr);
-	// const char *tempfile = rz_file_temp(".sdb");
-	// rz_file_dump(tempfile, cpu_buffer, sizeof(cpu_buffer), false);
-	// rz_platform_load_profile_sdb(core->analysis->arch_target, tempfile);
-	rz_config_set(core->config, "asm.cpu", "ATTiny48");
-	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	// rz_platform_profi
-	rz_platform_profiles_init(core->analysis->arch_target, asmcpu, asmarch, dir_prefix);
-	// rz_arch_profiles_init(core->analysis->arch_target, asmcpu, asmarch, dir_prefix);
+
+	const char *tempfile = rz_file_temp(".sdb");
+	rz_file_dump(tempfile, cpu_buffer, sizeof(cpu_buffer), false);
+	rz_platform_load_profile_sdb(core->analysis->arch_target, tempfile);
 
 	// 2. Analyse the file
 	rz_platform_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
@@ -81,16 +75,10 @@ bool test_platform_profiles() {
 	mu_assert_notnull(file, "opening the binary");
 	rz_core_bin_load(core, fpath, loadaddr);
 
-	// const char *tempfile = rz_file_temp(".sdb");
-	// rz_file_dump(tempfile, platform_buffer, sizeof(platform_buffer), false);
-	// rz_platform_target_index_load_sdb(core->analysis->platform_target, tempfile);
-	rz_config_set(core->config, "asm.cpu", "arm1176");
-	rz_config_set(core->config, "asm.platform", "bcm2835");
-	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	const char *asmplatform = rz_config_get(core->config, "asm.platform");
-	rz_platform_target_index_init(core->analysis->platform_target, asmarch, asmcpu, asmplatform, dir_prefix);
+	const char *tempfile = rz_file_temp(".sdb");
+	rz_file_dump(tempfile, platform_buffer, sizeof(platform_buffer), false);
+	rz_platform_target_index_load_sdb(core->analysis->platform_target, tempfile);
+
 	// 2. Analyse the file
 	rz_platform_index_add_flags_comments(core);
 
