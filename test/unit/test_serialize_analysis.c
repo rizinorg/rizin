@@ -181,7 +181,7 @@ Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"bbs\":[1337]}");
 	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
-	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"another\":1450,\"year\":1440,\"beach\":1400}}");
+	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"year\":1440,\"another\":1450,\"beach\":1400}}");
 	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
 	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
 	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bbs\":[]}");

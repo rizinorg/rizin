@@ -132,8 +132,8 @@ bool test_sdb_diff_ns() {
 		"-   test/subspace/some=values\n"
 		"-   test/subspace/here=lol\n"
 		"-   test/b=test\n"
-		"-   test/c=hello\n"
-		"-   test/a=123\n",
+		"-   test/a=123\n"
+		"-   test/c=hello\n",
 		"ns removed diff");
 	free(diff);
 
@@ -146,8 +146,8 @@ bool test_sdb_diff_ns() {
 		"+   test/subspace/some=values\n"
 		"+   test/subspace/here=lol\n"
 		"+   test/b=test\n"
-		"+   test/c=hello\n"
-		"+   test/a=123\n",
+		"+   test/a=123\n"
+		"+   test/c=hello\n",
 		"ns added diff");
 	free(diff);
 
