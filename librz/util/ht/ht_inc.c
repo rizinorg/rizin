@@ -36,16 +36,6 @@
 #define INDEX_TYPE                   ut32
 #define INVALID_INDEX                UT32_MAX
 
-// todo: move to another header if going to be used
-#if defined(_MSC_VER)
-#include <intrin.h>
-#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
-#elif defined(__GNUC__) || defined(__clang__)
-#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
-#else
-#define RZ_PREFETCH(addr) ((void)0)
-#endif
-
 #if defined(__SSE2__) || (defined(_MSC_VER) && (defined(_M_X64) || defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
 #define HAVE_SSE2
 #endif

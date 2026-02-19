@@ -609,6 +609,18 @@ typedef enum {
 }
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+/**
+ * \def Prefetch data from a certain memory address to memory cache
+ */
+#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
+#else
+#define RZ_PREFETCH(addr) ((void)0)
+#endif
+
 static inline void rz_run_call1(void *fcn, void *arg1) {
 	((void (*)(void *))(fcn))(arg1);
 }
