@@ -314,6 +314,7 @@ FILE=malloc://16384
 ARGS=-s 0x3434 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega8
+e cfg.bigendian=false
 wx ffcf
 pi 1
 ao 1~^jump[1]
@@ -329,6 +330,7 @@ FILE=malloc://8192
 ARGS=-s 0x1000 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4
@@ -350,6 +352,7 @@ FILE=malloc://8192
 ARGS=-a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4

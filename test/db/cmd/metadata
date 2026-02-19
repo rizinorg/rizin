@@ -697,7 +697,7 @@ RUN
 
 NAME=Csl
 FILE=bins/arm/crackme.arm32.bin
-ARGS=-A -a arm -b 32 -m 0x8000000
+ARGS=-A -a arm -b 32 -E little -m 0x8000000
 CMDS=<<EOF
 Csl
 EOF

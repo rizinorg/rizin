@@ -228,9 +228,7 @@ static bool core_arch_default_is_big_endian(RzCore *core) {
 	return false;
 }
 
-RZ_DEPRECATE static void core_update_endianness(RzCore *core) {
-	bool big_endian = core_arch_default_is_big_endian(core);
-
+RZ_DEPRECATE static void core_set_endianness(RzCore *core, bool big_endian) {
 	rz_asm_set_big_endian(core->rasm, big_endian);
 	rz_analysis_set_big_endian(core->analysis, big_endian);
 
@@ -245,6 +243,11 @@ RZ_DEPRECATE static void core_update_endianness(RzCore *core) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = big_endian;
 	}
+}
+
+RZ_DEPRECATE static void core_update_endianness(RzCore *core) {
+	bool big_endian = core_arch_default_is_big_endian(core);
+	core_set_endianness(core, big_endian);
 }
 
 // most of this code is a copy from cconfig
@@ -554,5 +557,31 @@ RZ_DEPRECATE RZ_API bool rz_core_arch_configure(RZ_NONNULL RzCore *core, RZ_NULL
 	}
 
 	core_update_config_from_arch(core, is_new_arch);
+	return true;
+}
+
+/**
+ * \brief      Sets the endianness a given RzCore
+ *
+ * \param      core        The core
+ * \param[in]  big_endian  When true, tries to set the endianness to big endian, otherwise little endian
+ *
+ * \return     On success returns true, otherwise false
+ */
+RZ_DEPRECATE RZ_API bool rz_core_set_endianness(RZ_NONNULL RzCore *core, bool big_endian) {
+	rz_return_val_if_fail(core && core->config && core->bin && core->rasm && core->analysis && core->parser && core->dbg && core->egg, false);
+
+	ut32 endianness = big_endian ? RZ_SYS_ENDIAN_BIG : RZ_SYS_ENDIAN_LITTLE;
+
+	if (!rz_asm_support_endianness(core->rasm, endianness)) {
+		const char *arch = rz_core_get_arch(core);
+		const char *want = big_endian ? "big" : "little";
+		const char *supported = (!big_endian) ? "big" : "little";
+		RZ_LOG_ERROR("core: cannot change to %s endian (arch '%s' supports only %s endian)\n", want, arch, supported);
+		return false;
+	}
+
+	core_set_endianness(core, big_endian);
+	core_update_config_b(core, "cfg.bigendian", core->rasm->big_endian);
 	return true;
 }

@@ -36,6 +36,7 @@ NAME=pd V8 and Cortex-M profiles
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e cfg.bigendian=false
 echo
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=cortexm
@@ -1872,6 +1873,7 @@ NAME=@b and @addr should coexist
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 pd 1 @b:32 @ 0xc
 EOF
@@ -1884,6 +1886,7 @@ NAME=ahb should not be deleted with @b (#9751)
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 ahb 16 @ 0xc
 ahl
@@ -1901,6 +1904,7 @@ NAME=ahb should not override @b
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 ahb 16 @ 0xc
 pd 5 @b:32

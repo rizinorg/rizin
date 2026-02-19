@@ -366,6 +366,7 @@ NAME=mips pseudo sw + 0
 FILE=malloc://32
 ARGS=-a mips -m 0x80100000
 CMDS=<<EOF
+e cfg.bigendian=false
 e io.va=true
 e asm.bytes=true
 wx 0000beaf

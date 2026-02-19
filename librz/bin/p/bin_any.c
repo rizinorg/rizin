@@ -8,6 +8,12 @@
 #include <rz_bin.h>
 #include <rz_magic.h>
 
+#if RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_LITTLE
+#define ANY_DEFAULT_ENDIANNESS false
+#else
+#define ANY_DEFAULT_ENDIANNESS true
+#endif
+
 static char *get_filetype(RzBuffer *b) {
 	ut8 buf[4096] = { 0 };
 	char *res = NULL;
@@ -49,13 +55,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->lang = "";
 	ret->file = rz_str_dup(bf->file);
 	ret->type = get_filetype(bf->buf);
-	ret->has_pi = 0;
-	ret->has_canary = 0;
 	ret->has_retguard = -1;
-	ret->big_endian = 0;
-	ret->has_va = 0;
-	ret->has_nx = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = ANY_DEFAULT_ENDIANNESS;
 	return ret;
 }
 

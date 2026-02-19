@@ -178,6 +178,7 @@ RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
 RZ_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu);
 RZ_API ut32 rz_asm_get_endianness(RzAsm *a);
+RZ_API bool rz_asm_support_endianness(RzAsm *a, ut32 endian);
 RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool big_endian);
 RZ_API bool rz_asm_set_syntax(RzAsm *a, int syntax);
 RZ_API int rz_asm_syntax_from_string(const char *name);

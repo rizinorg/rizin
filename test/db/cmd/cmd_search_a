@@ -99,7 +99,7 @@ RUN
 
 NAME=/ad search - issue 4098
 FILE==
-ARGS=-e asm.arch=arm -e asm.bits=64
+ARGS=-a arm -b 64 -E little
 CMDS=<<EOF
 wx a0e1fe9000003b9141b8fe9021400f91
 pd 4

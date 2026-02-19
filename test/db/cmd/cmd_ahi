@@ -1,37 +1,3 @@
-NAME=ahi s + endian
-FILE==
-CMDS=<<EOF
-wx b8410d4300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'C\x0dA'
-mov eax, 'A\x0dC'
-EOF
-RUN
-
-NAME=ahi s + endian 2
-FILE==
-CMDS=<<EOF
-wx b841424300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'CBA'
-mov eax, 'ABC'
-EOF
-RUN
-
 NAME=1: ahi none
 FILE==
 CMDS=<<EOF
