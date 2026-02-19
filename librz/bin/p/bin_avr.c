@@ -734,12 +734,21 @@ static RzBinInfo *avr_info(RzBinFile *bf) {
 		return NULL;
 	}
 
+	const char *board = "ATmel (unknown)";
+	const char *cpu = "ATmega8";
+
+	if (rom->board) {
+		board = rom->board->name;
+		cpu = rom->board->cpu;
+	}
+
 	bi->file = rz_str_dup(bf->file);
 	bi->type = rz_str_dup("ROM");
-	bi->machine = rz_str_dup(rom->board ? rom->board->name : "ATmel (unknown)");
+	bi->machine = rz_str_dup(board);
 	bi->os = rz_str_dup("avr usermode");
 	bi->has_va = false;
 	bi->arch = rz_str_dup("avr");
+	bi->cpu = rz_str_dup(cpu);
 	bi->bits = 8;
 	return bi;
 }

@@ -45,8 +45,7 @@ _dAeI 32 64      ppc         BSD     PowerPC Capstone-based disassembler (by pan
 a____ 32 64      ppc.as      LGPL3   as PPC Assembler (use RZ_PPC_AS environment) (by eagleoflqj)
 _dA__ 32         propeller   LGPL3   Parallax Propeller disassembler
 _dA__ 8 16       pyc         LGPL3   Python bytecode (PYC) disassembler
-_dAe_ 32 64      riscv       GPL3    RISC-V disassembler
-_dA__ 32 64      riscv.cs    BSD     RISC-V Capstone-based disassembler
+_dA__ 32 64      riscv       BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
@@ -144,8 +143,11 @@ ATTiny48        8-bit AVR microcontroller with 4KB Flash, 256B SRAM
 ATTiny88        8-bit AVR microcontroller with 8KB Flash, 512B SRAM
 6800            Motorola 6800: 8-bit microprocessor launched in 1974
 6801            Motorola 6801: Enhanced version of the 6800 with additional features like on-chip RAM and timers.
+6802            Motorola 6802: Enhanced version of the 6800 with 128 bytes of on-chip RAM and internal clock
+6803            Motorola 6803: Version of 6801 without internal ROM
 6805            Motorola 68HC05: 8-bit microcontroller
 6808            Motorola 6808: Variant of the 6800 microprocessor
+68HC08          Motorola 68HC08: 8-bit microcontroller (abbreviated as HC08)
 6809            Motorola 6809: Advanced 8-bit microprocessor
 6811            Motorola 68HC11: 8-bit microcontroller (also abbreviated as 6811 or HC11)
 cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 6812 or HC12)

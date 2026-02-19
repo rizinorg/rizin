@@ -4125,6 +4125,17 @@ ARM32 relocations:
 
 #define R_RISCV_NUM 59
 
+/* RISCV Tags */
+#define T_RISCV_stack_align        4
+#define T_RISCV_arch               5
+#define T_RISCV_unaligned_access   6
+#define T_RISCV_priv_spec          8
+#define T_RISCV_priv_spec_minor    10
+#define T_RISCV_priv_spec_revision 12
+
+/* RISCV-specific section types */
+#define SHT_RISCV_ATTRIBUTES 0x70000003
+
 /* BPF specific declarations.  */
 
 #define R_BPF_NONE  0 /* No reloc */

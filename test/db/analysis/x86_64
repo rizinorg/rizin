@@ -855,9 +855,8 @@ RUN
 NAME=ahe
 FILE=malloc://512
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 ao~esil
 ahe test
 ao~esil
@@ -1601,8 +1600,8 @@ NAME=analysis vars crash 2
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 e analysis.arch=x86
 e asm.calls=false
 wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
@@ -1961,8 +1960,8 @@ RUN
 NAME=x86 ref issue
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx c7052a44000050000000
 ao~^ptr[1]
 EOF

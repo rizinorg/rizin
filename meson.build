@@ -312,11 +312,6 @@ libdemangle_options = [
   'default_library=static',
   'use_swift_demangler=false',
 ]
-if get_option('use_gpl')
-  libdemangle_options += 'use_gpl=true'
-else
-  libdemangle_options += 'use_gpl=false'
-endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')

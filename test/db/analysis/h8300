@@ -101,7 +101,7 @@ stackframe: 8
 cyclomatic-cost: 0
 cyclomatic-complexity: 5
 loops: 3
-bits: 32
+bits: 16
 type: fcn
 num-bbs: 8
 edges: 13
@@ -115,9 +115,9 @@ out-degree: 26
 data-xrefs:
 locals: 3
 args: 0
-var int a @ stack - 0x6
-var int j @ stack - 0x4
-var int i @ stack - 0x2
+var int a @ stack - 0x8
+var int j @ stack - 0x6
+var int i @ stack - 0x4
             ; CODE XREF from loc.start_bss_loop @ +0xa
             ;-- entry0:
             ;-- .LFB23:
@@ -125,9 +125,9 @@ var int i @ stack - 0x2
             ;-- _main:
             ;-- pc:
 / int main()
-|           ; var int i @ stack - 0x2
-|           ; var int j @ stack - 0x4
-|           ; var int a @ stack - 0x6
+|           ; var int i @ stack - 0x4
+|           ; var int j @ stack - 0x6
+|           ; var int a @ stack - 0x8
 |           0x00000478      push.l er6                                 ; main.c:186
 |           0x0000047c      mov.l er7,er6
 |           0x0000047e      sub.l #0x8,er7
@@ -261,8 +261,8 @@ var int i @ stack - 0x2
 |   ;-- .LM25:                        |
 |   ;-- _test_branch:                 |
 | void test_branch()                  |
-| ; var int a @ stack - 0x6           |
-| ; var int b @ stack - 0x8           |
+| ; var int a @ stack - 0x8           |
+| ; var int b @ stack - 0xa           |
 | push.l er6                          |
 | mov.l er7,er6                       |
 | subs #0x4,er7                       |
@@ -370,7 +370,7 @@ stackframe: 8
 cyclomatic-cost: 0
 cyclomatic-complexity: 5
 loops: 3
-bits: 32
+bits: 16
 type: fcn
 num-bbs: 8
 edges: 13
