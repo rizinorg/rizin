@@ -1,13 +1,17 @@
 // SPDX-FileCopyrightText: 2026 Stefan Bisti <stefbisti@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_buf.h"
 #include "rz_vector.h"
+#include <rz_util.h>
 #include <rz_bin.h>
 #include <rz_lib.h>
 
 /*
  * Hunk file format
+ *
+ * sources:
+ * https://en.wikipedia.org/wiki/Amiga_Hunk
+ * http://amiga-dev.wikidot.com/file-format:hunk
  *
  * File structure
  * 1. Hunk Header
@@ -47,10 +51,24 @@
 #define HUNK_DEBUG   0x3F1
 
 #define ANY_MEMORY  0x00
-#define CHIP_MEMORY 0x40 // needed for graphics, audio
-#define FAST_MEMORY 0x80 // standard RAM
+#define CHIP_MEMORY 0x40 /* needed for graphics, audio */
+#define FAST_MEMORY 0x80 /* standard RAM */
 
 #define VADDR_START 0x8000
+
+#define hunk_ret_if_fail(expr) \
+	do { \
+		if (!(expr)) { \
+			return; \
+		} \
+	} while (0)
+
+#define hunk_ret_val_if_fail(expr, val) \
+	do { \
+		if (!(expr)) { \
+			return (val); \
+		} \
+	} while (0)
 
 typedef struct hunk_reloc {
 	ut32 target_hunk_index;
@@ -104,45 +122,42 @@ static inline const char *hunk_get_name_from_type(ut32 type) {
 	}
 }
 
-static void hunk_data_free(HunkData *hd) {
-	rz_return_if_fail(hd);
-	rz_vector_free(hd->relocs);
-	rz_vector_free(hd->symbols);
-	if (hd->debug_data) {
-		free(hd->debug_data);
+static void hunk_data_free(HunkData *hunk_data) {
+	hunk_ret_if_fail(hunk_data);
+	rz_vector_free(hunk_data->relocs);
+	rz_vector_free(hunk_data->symbols);
+	if (hunk_data->debug_data) {
+		free(hunk_data->debug_data);
 	}
 }
 
 static void hunk_destroy(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o);
+	hunk_ret_if_fail(bf && bf->o);
 
 	ProgramData *program_data = bf->o->bin_obj;
+	hunk_ret_if_fail(program_data);
 
-	if (program_data) {
-		rz_vector_free(program_data->hunks);
-		free(program_data);
-		bf->o->bin_obj = NULL;
-	}
+	rz_vector_free(program_data->hunks);
+	free(program_data);
+	bf->o->bin_obj = NULL;
 }
 
 static void hunk_symbol_free(HunkSymbol *hunk_symbol) {
-	if (hunk_symbol && hunk_symbol->name) {
-		free(hunk_symbol->name);
-	}
+	hunk_ret_if_fail(hunk_symbol);
+	free(hunk_symbol->name);
 }
 
 static bool hunk_handle_code_data_bss(RzBinFile *bf, ProgramData *program_data,
 	ut32 current_hunk_index, ut64 *paddr, ut32 hunk_type, ut64 *vaddr) {
-	HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, current_hunk_index);
-	if (!hunk_data) {
-		return false;
-	}
 
-	ut32 hunk_size;
+	HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, current_hunk_index);
+	hunk_ret_val_if_fail(hunk_data, false);
+
+	ut32 hunk_size = 0;
 	if (!rz_buf_read_be32_offset(bf->buf, paddr, &hunk_size)) {
 		return false;
 	}
-	ut32 actual_size = (hunk_size & 0x3FFFFFFF) * 4; /* mask the first 2 bits */
+	ut32 actual_size = (hunk_size & 0x3FFFFFFF) * 4; /* mask the first 2 bits and convert to bytes */
 
 	hunk_data->type = hunk_type;
 	hunk_data->paddr = *paddr;
@@ -171,24 +186,22 @@ static bool hunk_handle_reloc(RzBinFile *bf, ProgramData *program_data,
 	}
 
 	HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, target_index);
-	if (!hunk_data) {
-		return false;
-	}
+	hunk_ret_val_if_fail(hunk_data, false);
 
-	ut32 relocs_count;
+	ut32 relocs_count = 0;
 	if (!rz_buf_read_be32_offset(bf->buf, paddr, &relocs_count)) {
 		return false;
 	}
 
 	while (relocs_count > 0) {
-		ut32 target_hunk_index;
+		ut32 target_hunk_index = 0;
 		if (!rz_buf_read_be32_offset(bf->buf, paddr, &target_hunk_index)) {
 			return false;
 		}
 
 		ut32 i;
 		for (i = 0; i < relocs_count; i++) {
-			ut32 offset;
+			ut32 offset = 0;
 			if (!rz_buf_read_be32_offset(bf->buf, paddr, &offset)) {
 				return false;
 			}
@@ -224,28 +237,26 @@ static bool hunk_handle_symbol(RzBinFile *bf, ProgramData *program_data,
 	}
 
 	HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, target_index);
-	if (!hunk_data) {
-		return false;
-	}
+	hunk_ret_val_if_fail(hunk_data, false);
 
-	ut32 symbol_length;
+	ut32 symbol_length = 0;
 	if (!rz_buf_read_be32_offset(bf->buf, paddr, &symbol_length)) {
 		return false;
 	}
 	while (symbol_length > 0) {
 		HunkSymbol hunk_symbol = { 0 };
-
 		hunk_data->symbols_count++;
 
 		char *symbol_name = rz_mem_alloc(symbol_length * 4 + 1);
-		rz_return_val_if_fail(symbol_name, false);
+		hunk_ret_val_if_fail(symbol_name, false);
+
 		if (rz_buf_read_at(bf->buf, *paddr, (ut8 *)symbol_name, symbol_length * 4) < symbol_length * 4) {
 			return false;
 		}
 		symbol_name[symbol_length * 4] = 0;
 		*paddr += symbol_length * 4;
 
-		ut32 symbol_offset;
+		ut32 symbol_offset = 0;
 		if (!rz_buf_read_be32_offset(bf->buf, paddr, &symbol_offset)) {
 			return false;
 		}
@@ -272,13 +283,13 @@ static bool hunk_handle_debug(RzBinFile *bf, ProgramData *program_data,
 	}
 
 	HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, target_index);
-	rz_return_val_if_fail(hunk_data, false);
+	hunk_ret_val_if_fail(hunk_data, false);
 
-	ut32 debug_raw_size;
+	ut32 debug_raw_size = 0;
 	if (!rz_buf_read_be32_offset(bf->buf, paddr, &debug_raw_size)) {
 		return false;
 	}
-	ut32 debug_size = (debug_raw_size & 0x3FFFFFFF) * 4; /* mask the first 2 bits */
+	ut32 debug_size = (debug_raw_size & 0x3FFFFFFF) * 4; /* mask the first 2 bits and convert into bytes */
 
 	hunk_data->debug_size = debug_size;
 	hunk_data->debug_data = rz_mem_alloc(debug_size);
@@ -289,7 +300,7 @@ static bool hunk_handle_debug(RzBinFile *bf, ProgramData *program_data,
 	}
 	*paddr += debug_size;
 
-	ut32 next_tag;
+	ut32 next_tag = 0;
 	if (rz_buf_read_be32_offset(bf->buf, paddr, &next_tag)) {
 		if (next_tag != HUNK_END) {
 			*paddr -= 4;
@@ -299,23 +310,45 @@ static bool hunk_handle_debug(RzBinFile *bf, ProgramData *program_data,
 	return true;
 }
 
+static bool handle_hunk(ut32 hunk_type, RzBinFile *bf, ProgramData *program_data,
+	ut32 *current_hunk_index, ut64 *paddr, ut64 *vaddr) {
+	switch (hunk_type) {
+	case HUNK_CODE:
+	case HUNK_DATA:
+	case HUNK_BSS:
+		return hunk_handle_code_data_bss(bf, program_data, *current_hunk_index, paddr, hunk_type, vaddr);
+	case HUNK_RELOC32:
+		return hunk_handle_reloc(bf, program_data, *current_hunk_index, paddr);
+	case HUNK_SYMBOL:
+		return hunk_handle_symbol(bf, program_data, *current_hunk_index, paddr);
+	case HUNK_DEBUG:
+		return hunk_handle_debug(bf, program_data, *current_hunk_index, paddr);
+	case HUNK_END:
+		if (*current_hunk_index < program_data->hunks_count) {
+			(*current_hunk_index)++;
+		}
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf, false);
 
 	ProgramData *program_data = RZ_NEW0(ProgramData);
-	rz_return_val_if_fail(program_data, false);
+	hunk_ret_val_if_fail(program_data, false);
 	obj->bin_obj = program_data;
 
-	ut64 paddr = 0;
+	ut64 paddr = 4; /* skip the header */
 	ut64 vaddr = VADDR_START;
-	paddr += 4; /* skip the header */
 
-	ut32 strings_length;
+	ut32 strings_length = 0;
 	while (rz_buf_read_be32_offset(bf->buf, &paddr, &strings_length) && strings_length > 0) {
 		paddr += strings_length * 4; /* skip the strings */
 	}
 
-	ut32 hunks_count;
+	ut32 hunks_count = 0;
 	if (!rz_buf_read_be32_offset(bf->buf, &paddr, &hunks_count)) {
 		return false;
 	}
@@ -334,47 +367,12 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 	paddr += hunks_count * 4; /* skip the sizes */
 
 	ut32 current_hunk_index = 0;
-	ut32 hunk_type;
+	ut32 hunk_type = 0;
 	while (paddr < bf->size) {
 		if (!rz_buf_read_be32_offset(bf->buf, &paddr, &hunk_type)) {
 			break;
 		}
-
-		ut8 executed_correctly = 1;
-		switch (hunk_type) {
-		case HUNK_CODE:
-		case HUNK_DATA:
-		case HUNK_BSS:
-			if (!hunk_handle_code_data_bss(bf, program_data, current_hunk_index, &paddr, hunk_type, &vaddr)) {
-				executed_correctly = 0;
-			}
-			break;
-		case HUNK_RELOC32:
-			if (!hunk_handle_reloc(bf, program_data, current_hunk_index, &paddr)) {
-				executed_correctly = 0;
-			}
-			break;
-		case HUNK_SYMBOL:
-			if (!hunk_handle_symbol(bf, program_data, current_hunk_index, &paddr)) {
-				executed_correctly = 0;
-			}
-			break;
-		case HUNK_DEBUG:
-			if (!hunk_handle_debug(bf, program_data, current_hunk_index, &paddr)) {
-				executed_correctly = 0;
-			}
-			break;
-		case HUNK_END:
-			if (current_hunk_index < program_data->hunks_count) {
-				current_hunk_index++;
-			}
-			break;
-		default:
-			executed_correctly = 0;
-			break;
-		}
-
-		if (!executed_correctly) {
+		if (!handle_hunk(hunk_type, bf, program_data, &current_hunk_index, &paddr, &vaddr)) {
 			break;
 		}
 	}
@@ -385,10 +383,9 @@ static bool hunk_check_buffer(RzBuffer *buf) {
 	rz_return_val_if_fail(buf, false);
 
 	ut32 magic = 0;
-	if (rz_buf_read_at(buf, 0, (ut8 *)&magic, 4) < 4) {
+	if (!rz_buf_read_be32_at(buf, 0, &magic)) {
 		return false;
 	}
-	magic = rz_read_be32(&magic);
 	return magic == HUNK_HEADER;
 }
 
@@ -396,15 +393,13 @@ static RzPVector /*<RzBinMap *>*/ *hunk_maps(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
-	rz_return_val_if_fail(ret, NULL);
+	hunk_ret_val_if_fail(ret, NULL);
 
 	ProgramData *program_data = bf->o->bin_obj;
 
 	for (ut32 i = 0; i < program_data->hunks_count; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (!map) {
-			break;
-		}
+		hunk_ret_val_if_fail(map, ret);
 		rz_pvector_push(ret, map);
 
 		HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, i);
@@ -412,28 +407,28 @@ static RzPVector /*<RzBinMap *>*/ *hunk_maps(RzBinFile *bf) {
 			continue;
 		}
 
-		map->name = rz_str_newf("hunk_%d_%s", i, hunk_get_name_from_type(hunk_data->type));
+		map->name = rz_str_newf("hunk_%u_%s", i, hunk_get_name_from_type(hunk_data->type));
 		map->paddr = hunk_data->paddr;
 		map->psize = hunk_data->psize;
 		map->vaddr = hunk_data->vaddr;
 		map->vsize = hunk_data->vsize;
 
 		if (hunk_data->type == HUNK_CODE) {
-			map->perm = RZ_PERM_R | RZ_PERM_X;
+			map->perm = RZ_PERM_RX;
 		} else {
-			map->perm = RZ_PERM_R | RZ_PERM_W;
+			map->perm = RZ_PERM_RW;
 		}
 	}
 
 	return ret;
 }
 
-/* finds the first HUNK_CODE segment */
+/* find the first HUNK_CODE segment */
 static RzPVector /*<RzBinAddr *>*/ *hunk_entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)free);
-	rz_return_val_if_fail(ret, NULL);
+	hunk_ret_val_if_fail(ret, NULL);
 
 	ProgramData *program_data = bf->o->bin_obj;
 
@@ -444,9 +439,7 @@ static RzPVector /*<RzBinAddr *>*/ *hunk_entries(RzBinFile *bf) {
 		}
 		if (hunk_data->type == HUNK_CODE) {
 			RzBinAddr *entry = RZ_NEW0(RzBinAddr);
-			if (!entry) {
-				break;
-			}
+			hunk_ret_val_if_fail(entry, ret);
 			rz_pvector_push(ret, entry);
 
 			entry->vaddr = hunk_data->vaddr;
@@ -464,16 +457,16 @@ static RzPVector /*<RzBinSection *>*/ *hunk_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
-	rz_return_val_if_fail(ret, NULL);
+	hunk_ret_val_if_fail(ret, NULL);
 
 	ProgramData *program_data = bf->o->bin_obj;
 
 	for (ut32 i = 0; i < program_data->hunks_count; i++) {
 		HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, i);
-		rz_return_val_if_fail(program_data, ret);
+		hunk_ret_val_if_fail(program_data, ret);
 
 		RzBinSection *section = RZ_NEW0(RzBinSection);
-		rz_return_val_if_fail(section, ret);
+		hunk_ret_val_if_fail(section, ret);
 		rz_pvector_push(ret, section);
 
 		section->name = rz_str_newf("hunk_%d_%s", i, hunk_get_name_from_type(hunk_data->type));
@@ -499,14 +492,10 @@ static RzPVector /*<RzBinSection *>*/ *hunk_sections(RzBinFile *bf) {
 static bool hunk_handle_symbols_for_hunk_data(HunkData *hunk_data, RzPVector /*<RzBinSymbol *>*/ *ret) {
 	for (ut32 j = 0; j < hunk_data->symbols_count; j++) {
 		HunkSymbol *hunk_symbol = (HunkSymbol *)rz_vector_index_ptr(hunk_data->symbols, j);
-		if (!hunk_symbol) {
-			return false;
-		}
+		hunk_ret_val_if_fail(hunk_symbol, false);
 
 		RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
-		if (!symbol) {
-			return false;
-		}
+		hunk_ret_val_if_fail(symbol, false);
 		rz_pvector_push(ret, symbol);
 
 		symbol->name = rz_str_dup(hunk_symbol->name);
@@ -522,16 +511,13 @@ static RzPVector /*<RzBinSymbol *>*/ *hunk_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
-	rz_return_val_if_fail(ret, NULL);
+	hunk_ret_val_if_fail(ret, NULL);
 
 	ProgramData *program_data = bf->o->bin_obj;
 
 	for (ut32 i = 0; i < program_data->hunks_count; i++) {
 		HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, i);
-		rz_return_val_if_fail(hunk_data, ret);
-		if (!hunk_data) {
-			return ret;
-		}
+		hunk_ret_val_if_fail(hunk_data, ret);
 		if (!hunk_handle_symbols_for_hunk_data(hunk_data, ret)) {
 			return ret;
 		}
@@ -543,7 +529,7 @@ static RzBinInfo *hunk_info(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
 
 	RzBinInfo *info = RZ_NEW0(RzBinInfo);
-	rz_return_val_if_fail(info, NULL);
+	hunk_ret_val_if_fail(info, NULL);
 
 	info->file = rz_str_dup(bf->file);
 	info->type = rz_str_dup("Amiga Hunk");
@@ -560,14 +546,10 @@ static RzBinInfo *hunk_info(RzBinFile *bf) {
 static bool hunk_handle_relocs_for_hunk_data(HunkData *hunk_data, RzPVector /*<RzBinReloc *>*/ *ret) {
 	for (ut32 j = 0; j < hunk_data->relocs_count; j++) {
 		HunkReloc *hunk_reloc = (HunkReloc *)rz_vector_index_ptr(hunk_data->relocs, j);
-		if (!hunk_reloc) {
-			return false;
-		}
+		hunk_ret_val_if_fail(hunk_reloc, false);
 
 		RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
-		if (!reloc) {
-			return false;
-		}
+		hunk_ret_val_if_fail(reloc, false);
 		rz_pvector_push(ret, reloc);
 
 		reloc->vaddr = hunk_data->vaddr + hunk_reloc->offset;
@@ -582,15 +564,13 @@ static RzPVector /*<RzBinReloc *>*/ *hunk_relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
-	rz_return_val_if_fail(ret, NULL);
+	hunk_ret_val_if_fail(ret, NULL);
 
 	ProgramData *program_data = bf->o->bin_obj;
 
 	for (ut32 i = 0; i < program_data->hunks_count; i++) {
 		HunkData *hunk_data = (HunkData *)rz_vector_index_ptr(program_data->hunks, i);
-		if (!hunk_data) {
-			return ret;
-		}
+		hunk_ret_val_if_fail(hunk_data, ret);
 		if (!hunk_handle_relocs_for_hunk_data(hunk_data, ret)) {
 			return ret;
 		}
