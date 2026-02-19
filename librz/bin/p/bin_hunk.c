@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Stefan Bisti <stefbisti@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_vector.h"
+#include <rz_vector.h>
 #include <rz_util.h>
 #include <rz_bin.h>
 #include <rz_lib.h>
@@ -122,7 +122,7 @@ static inline const char *hunk_get_name_from_type(ut32 type) {
 	}
 }
 
-static void hunk_data_free(HunkData *hunk_data) {
+static void hunk_data_fini(HunkData *hunk_data) {
 	hunk_ret_if_fail(hunk_data);
 	rz_vector_free(hunk_data->relocs);
 	rz_vector_free(hunk_data->symbols);
@@ -142,7 +142,7 @@ static void hunk_destroy(RzBinFile *bf) {
 	bf->o->bin_obj = NULL;
 }
 
-static void hunk_symbol_free(HunkSymbol *hunk_symbol) {
+static void hunk_symbol_fini(HunkSymbol *hunk_symbol) {
 	hunk_ret_if_fail(hunk_symbol);
 	free(hunk_symbol->name);
 }
@@ -353,12 +353,12 @@ static bool hunk_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb
 		return false;
 	}
 	program_data->hunks_count = hunks_count;
-	program_data->hunks = rz_vector_new(sizeof(HunkData), (RzVectorFree)hunk_data_free, NULL);
+	program_data->hunks = rz_vector_new(sizeof(HunkData), (RzVectorFree)hunk_data_fini, NULL);
 
 	for (ut32 i = 0; i < hunks_count; i++) {
 		HunkData hunk_data = { 0 };
 		hunk_data.relocs = rz_vector_new(sizeof(HunkReloc), NULL, NULL);
-		hunk_data.symbols = rz_vector_new(sizeof(HunkSymbol), (RzVectorFree)hunk_symbol_free, NULL);
+		hunk_data.symbols = rz_vector_new(sizeof(HunkSymbol), (RzVectorFree)hunk_symbol_fini, NULL);
 		rz_vector_push(program_data->hunks, &hunk_data); // uses memcpy to assign
 	}
 
