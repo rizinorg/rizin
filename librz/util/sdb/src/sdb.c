@@ -228,7 +228,7 @@ RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen) {
 		return NULL;
 	}
 	(void)cdb_findstart(&s->db);
-	if (cdb_findnext(&s->db, s->ht->opt.hashfn(key), key, keylen) < 1) {
+	if (cdb_findnext(&s->db, sdb_hash(key), key, keylen) < 1) {
 		return NULL;
 	}
 	len = cdb_datalen(&s->db);
