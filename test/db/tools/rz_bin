@@ -906,7 +906,7 @@ java   LGPL3        deroad
 msvc   LGPL3        inisider
 objc   LGPL3        pancake
 pascal LGPL3        deroad
-c++    GPL-2,LGPL3  FSF/deroad
+c++    LGPL3        billow
 rust   LGPL3        Dhruv Maroo/RizinOrg
 EOF
 RUN
