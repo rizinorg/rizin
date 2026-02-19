@@ -37,7 +37,7 @@
 #define INVALID_INDEX                UT32_MAX
 
 // Select lookup implementation
-#ifdef HAVE_SSE2
+#if HAVE_SSE2
 #include <emmintrin.h>
 #define LOOKUP_METHOD_SSE2
 #define GROUP_WIDTH 16
