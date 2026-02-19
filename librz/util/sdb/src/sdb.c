@@ -228,7 +228,7 @@ RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen) {
 		return NULL;
 	}
 	(void)cdb_findstart(&s->db);
-	if (cdb_findnext(&s->db, s->ht->opt.hashfn(key), key, keylen) < 1) {
+	if (cdb_findnext(&s->db, ht_ss_hash_key(s->ht, key, keylen), key, keylen) < 1) {
 		return NULL;
 	}
 	len = cdb_datalen(&s->db);
@@ -337,7 +337,7 @@ RZ_API bool sdb_exists(Sdb *s, const char *key) {
 		return false;
 	}
 	(void)cdb_findstart(&s->db);
-	if (cdb_findnext(&s->db, sdb_hash(key), key, klen)) {
+	if (cdb_findnext(&s->db, ht_ss_hash_key(s->ht, key, klen), key, klen)) {
 		pos = cdb_datapos(&s->db);
 		cdb_read(&s->db, &ch, 1, pos);
 		return ch != 0;
@@ -526,7 +526,7 @@ static bool sdb_set_internal(Sdb *s, const char *key, char *val, int owned) {
 	cdb_findstart(&s->db);
 	kv = sdb_ht_find_kvp(s->ht, key, &found);
 	if (found && sdbkv_value(kv)) {
-		if (cdb_findnext(&s->db, sdb_hash(key), key, klen)) {
+		if (cdb_findnext(&s->db, ht_ss_hash_key(s->ht, key, klen), key, klen)) {
 			if (vlen == sdbkv_value_len(kv) && !strcmp(sdbkv_value(kv), val)) {
 				return true;
 			}

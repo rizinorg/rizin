@@ -86,9 +86,9 @@
 
 // Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
 // slow down lookup/insert/iteration with about 5-10%.
-//#ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
-//#define HT_ENABLE_CUSTOM_ELEM_SIZE
-//#endif
+// #ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
+// #define HT_ENABLE_CUSTOM_ELEM_SIZE
+// #endif
 
 #ifndef HT_HASH_FUNCTIONS
 #define HT_HASH_FUNCTIONS
@@ -268,6 +268,7 @@ RZ_API ut32 Ht_(size)(const RZ_NONNULL HtName_(Ht) *ht);
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found);
 RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update);
 RZ_API HtRetCode Ht_(insert_kv_ex)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, bool update, RZ_OUT RZ_NULLABLE HT_(Kv) **out_kv);
+RZ_API ut32 Ht_(hash_key)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL const KEY_TYPE key, ut32 key_size);
 
 RZ_API RZ_OWN HT_(IterMutState) *Ht_(new_iter_mut_state)(RZ_NONNULL HtName_(Ht) *ht);
 RZ_API RZ_OWN HT_(IterState) *Ht_(new_iter_state)(const RZ_NONNULL HtName_(Ht) *ht);

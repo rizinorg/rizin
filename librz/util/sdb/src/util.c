@@ -5,14 +5,8 @@
 #include <rz_util/rz_time.h>
 
 RZ_API ut32 sdb_hash_len(const char *s, ut32 *len) {
-	ut32 h = CDB_HASHSTART;
-	ut32 count = 0;
-	if (s) {
-		while (*s) {
-			h = (h + (h << 5)) ^ *s++;
-			count++;
-		}
-	}
+	ut32 count = strlen(s);
+	ut32 h = ht_string_hash_32(s, count);
 	if (len) {
 		*len = count;
 	}

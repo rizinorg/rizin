@@ -275,8 +275,8 @@ static const char *text_ref_simple_unsorted =
 	"bbb=other stuff\n"
 	"\n"
 	"/subnamespace\n"
-	"key in sub=value in sub\n"
 	"\\/more stuff=in sub\n"
+	"key in sub=value in sub\n"
 	"\n"
 	"/subnamespace/subsub\n"
 	"some stuff=also down here\n";

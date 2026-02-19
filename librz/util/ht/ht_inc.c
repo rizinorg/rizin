@@ -624,6 +624,14 @@ RZ_API bool Ht_(insert_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(Kv) *kv, b
 }
 
 /**
+ * todo
+ */
+RZ_API ut32 Ht_(hash_key)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL const KEY_TYPE key, ut32 key_size) {
+	rz_return_val_if_fail(ht && key, 0);
+	return hashfn(ht, key, key_size);
+}
+
+/**
  * \brief Insert KV \p kv into hash table \p ht or replace an existing KV with \p kv,
  *        if hash table \p ht already contains a KV with the same key as \p kv
  * \param ht Hash table
