@@ -1420,14 +1420,14 @@ EXPECT=<<EOF
 library      
 -------------
 kernel32.dll
-crypt32.dll
 advapi32.dll
+shell32.dll
 user32.dll
-rasapi32.dll
+oleaut32.dll
+crypt32.dll
 pstorec.dll
 ole32.dll
-oleaut32.dll
-shell32.dll
+rasapi32.dll
 EOF
 RUN
 

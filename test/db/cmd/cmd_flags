@@ -541,41 +541,41 @@ ftll
 ftn bla
 EOF
 EXPECT=<<EOF
-stdout
-dylib
+time
 fs
+stdout
+string
+process
+alloc
 network
 env
 threads
-string
-time
-process
-alloc
-["stdout":[],"dylib":[],"fs":[],"network":[],"env":[],"threads":[],"string":[],"time":[],"process":[],"alloc":[]]
-stdout:
-dylib:
+dylib
+["time":[],"fs":[],"stdout":[],"string":[],"process":[],"alloc":[],"network":[],"env":[],"threads":[],"dylib":[]]
+time:
 fs:
+stdout:
+string:
+process:
+alloc:
 network:
 env:
 threads:
-string:
+dylib:
+bla
 time:
+fs:
+stdout:
+string:
 process:
 alloc:
-bla
-stdout:
-dylib:
-fs:
 network:
+env:
 bla:
 0x00400410  foo
 0x00400506  goo
-env:
 threads:
-string:
-time:
-process:
-alloc:
+dylib:
 0x00400410  foo
 0x00400506  goo
 EOF
