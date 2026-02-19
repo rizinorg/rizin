@@ -227,12 +227,11 @@ static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 
 }
 
 static void ctrl_table_set(HtName_(Ht) *ht, INDEX_TYPE idx, ut8 value) {
+	// Branchless copy to mirrored bytes: if idx < GROUP_WIDTH the code below will set `mirror_idx`
+	// to `ht->capacity + idx` and otherwise to `idx` (resulting in harmless duplicate write).
+	ut32 mirror_idx = ((idx - (GROUP_WIDTH - 1)) & ht->capacity_mask) + ((GROUP_WIDTH - 1) & ht->capacity_mask);
 	ht->ctrl[idx] = value;
-
-	// Copy to mirrored bytes
-	if (idx < GROUP_WIDTH) {
-		ht->ctrl[ht->capacity + idx] = value;
-	}
+	ht->ctrl[mirror_idx] = value;
 }
 
 static ut32 next_power_of_two(ut32 n) {
