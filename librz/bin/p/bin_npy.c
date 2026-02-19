@@ -42,32 +42,6 @@ static ut64 npy_total_elements(const NPYheader *hdr) {
 	return total;
 }
 
-static char *extract_quoted_value(const char *str) {
-	if (!str)
-		return NULL;
-
-	const char *quote_start = strchr(str, '\'');
-	if (!quote_start) {
-		quote_start = strchr(str, '"');
-	}
-	if (!quote_start)
-		return NULL;
-
-	char quote_char = *quote_start;
-	const char *quote_end = strchr(quote_start + 1, quote_char);
-	if (!quote_end)
-		return NULL;
-
-	size_t len = quote_end - quote_start - 1;
-	char *result = RZ_NEWS(char, len + 1);
-	if (!result)
-		return NULL;
-
-	memcpy(result, quote_start + 1, len);
-	result[len] = '\0';
-	return result;
-}
-
 static bool parse_descr(NPYheader *h) {
 	const char *d = h->descr;
 
@@ -75,13 +49,11 @@ static bool parse_descr(NPYheader *h) {
 		return false;
 	}
 
-	// skip byte-order char if present
 	const char *p = d;
 	if (*p == '<' || *p == '>' || *p == '|' || *p == '=') {
 		p++;
 	}
 
-	// skip type char
 	if (!isalpha((unsigned char)*p)) {
 		return false;
 	}
