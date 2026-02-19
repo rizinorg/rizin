@@ -476,7 +476,7 @@ static RzPVector /*<RzBinSection *>*/ *hunk_sections(RzBinFile *bf) {
 		section->vsize = hunk_data->vsize;
 
 		if (hunk_data->type == HUNK_CODE) {
-			section->perm = RZ_PERM_R | RZ_PERM_X;
+			section->perm = RZ_PERM_RX;
 			section->is_data = false;
 		} else {
 			section->perm = RZ_PERM_RW;
@@ -502,7 +502,7 @@ static bool hunk_handle_symbols_for_hunk_data(HunkData *hunk_data, RzPVector /*<
 		symbol->vaddr = hunk_data->vaddr + hunk_symbol->offset;
 		symbol->paddr = hunk_data->paddr + hunk_symbol->offset;
 		symbol->size = 0;
-		symbol->type = hunk_data->type == HUNK_CODE ? rz_str_dup("FUNC") : rz_str_dup("OBJ");
+		symbol->type = rz_str_dup(hunk_data->type == HUNK_CODE ? "FUNC" : "OBJ");
 	}
 	return true;
 }
@@ -578,6 +578,43 @@ static RzPVector /*<RzBinReloc *>*/ *hunk_relocs(RzBinFile *bf) {
 	return ret;
 }
 
+static RzStructuredData *hunk_bin_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ProgramData *program_data = bf->o->bin_obj;
+
+	RzStructuredData *sd = rz_structured_data_new_map();
+	hunk_ret_val_if_fail(sd, NULL);
+
+	rz_structured_data_map_add_unsigned(sd, "hunks_count", (ut64)program_data->hunks_count, false);
+
+	RzStructuredData *hunks_arr = rz_structured_data_map_add_array(sd, "hunks");
+	hunk_ret_val_if_fail(hunks_arr, sd);
+
+	for (ut32 i = 0; i < program_data->hunks_count; i++) {
+		HunkData *hunk = (HunkData *)rz_vector_index_ptr(program_data->hunks, i);
+		if (!hunk) {
+			continue;
+		}
+
+		RzStructuredData *hunk_map = rz_structured_data_array_add_map(hunks_arr);
+		if (!hunk_map) {
+			continue;
+		}
+
+		rz_structured_data_map_add_unsigned(hunk_map, "index", (ut64)i, false);
+		rz_structured_data_map_add_string(hunk_map, "type", hunk_get_name_from_type(hunk->type));
+		rz_structured_data_map_add_unsigned(hunk_map, "vaddr", hunk->vaddr, true);
+		rz_structured_data_map_add_unsigned(hunk_map, "vsize", hunk->vsize, true);
+		rz_structured_data_map_add_unsigned(hunk_map, "vsize", hunk->vsize, true);
+		rz_structured_data_map_add_unsigned(hunk_map, "psize", hunk->psize, true);
+		rz_structured_data_map_add_unsigned(hunk_map, "relocs_count", (ut64)hunk->relocs_count, false);
+		rz_structured_data_map_add_unsigned(hunk_map, "symbols_count", (ut64)hunk->symbols_count, false);
+	}
+
+	return sd;
+}
+
 RzBinPlugin rz_bin_plugin_hunk = {
 	.name = "hunk",
 	.desc = "Amiga Hunk file format",
@@ -592,6 +629,7 @@ RzBinPlugin rz_bin_plugin_hunk = {
 	.symbols = &hunk_symbols,
 	.info = &hunk_info,
 	.relocs = &hunk_relocs,
+	.bin_structure = &hunk_bin_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE
