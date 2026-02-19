@@ -105,57 +105,30 @@ static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
 /**
  * \brief todo
  */
-static inline ut32 ht_string_hash_32(char *key, ut32 len) {
+static inline ut32 ht_string_hash_32(const char *key, ut32 len) {
 	const uint64_t prime1 = 0xff51afd7ed558ccdULL; /* Murmur3 consts */
 	const uint64_t prime2 = 0xc4ceb9fe1a85ec53ULL;
 	ut64 result = 0xff51afd7ed558ccdULL;
 
-	// If the string is not properly aligned (very rare) perform special processing
-	if ((uintptr_t)key & 0x7) {
-		while (len > 0) {
-			if (len >= 8) {
-				ut64 block_64 = 0;
-				memcpy(&block_64, key, 8);
-				result += (result << 5) ^ block_64 * prime1;
-				len -= 8;
-				key += 8;
-				continue;
-			}
-			if (len >= 4) {
-				ut64 block_32 = 0;
-				memcpy(&block_32, key, 4);
-				result += (result << 5) ^ block_32 * prime1;
-				len -= 4;
-				key += 4;
-				continue;
-			}
-			while (len > 0) {
-				result += (result << 5) ^ *key * prime1;
-				len -= 1;
-				key += 1;
-			}
-			break;
-		}
-	}
-
-	// Process aligned bytes in blocks
 	while (len > 0) {
 		if (len >= 8) {
-			ut64 block_64 = *((ut64 *)key);
-			result += (result << 5) ^ block_64 * prime1;
+			ut64 block = 0;
+			memcpy(&block, key, 8);
+			result += (result << 5) ^ (block * prime1);
 			len -= 8;
 			key += 8;
 			continue;
 		}
 		if (len >= 4) {
-			ut64 block_32 = *((ut32 *)key);
-			result += (result << 5) ^ block_32 * prime1;
+			ut64 block = 0;
+			memcpy(&block, key, 4);
+			result += (result << 5) ^ (block * prime1);
 			len -= 4;
 			key += 4;
 			continue;
 		}
 		while (len > 0) {
-			result += (result << 5) ^ *key * prime1;
+			result += (result << 5) ^ (*key * prime1);
 			len -= 1;
 			key += 1;
 		}
