@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Stefan Bisti <stefbisti@gmail.com>
+// SPDX-FileCopyrightText: 2026 StefBisti <stefbisti@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_vector.h>
@@ -87,16 +87,16 @@ typedef struct hunk_data {
 	ut64 vaddr;
 	ut64 vsize;
 	ut32 relocs_count;
-	RzVector /*<HunkReloc *>*/ *relocs;
+	RzVector /*<HunkReloc>*/ *relocs;
 	ut32 symbols_count;
-	RzVector /*<HunkSymbol *>*/ *symbols;
+	RzVector /*<HunkSymbol>*/ *symbols;
 	ut32 debug_size;
 	ut8 *debug_data;
 } HunkData;
 
 typedef struct program_data {
 	ut32 hunks_count;
-	RzVector /*<HunkData *>*/ *hunks;
+	RzVector /*<HunkData>*/ *hunks;
 } ProgramData;
 
 static inline const char *hunk_get_name_from_type(ut32 type) {
@@ -618,7 +618,7 @@ static RzStructuredData *hunk_bin_structure(RzBinFile *bf) {
 RzBinPlugin rz_bin_plugin_hunk = {
 	.name = "hunk",
 	.desc = "Amiga Hunk file format",
-	.author = "Stefan Bisti",
+	.author = "StefBisti",
 	.license = "LGPL3",
 	.load_buffer = &hunk_load_buffer,
 	.destroy = &hunk_destroy,
