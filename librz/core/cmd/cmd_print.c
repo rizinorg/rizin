@@ -3118,10 +3118,10 @@ exit:
 }
 
 RZ_IPI RzCmdStatus rz_print_function_rzil_enriched_handler(RzCore *core, int argc, const char **argv) {
-    if (!rz_config_get_b(core->config, "scr.utf8")) {
-        RZ_LOG_ERROR("Config variable 'scr.utf8' is not set\n");
-        goto exit;
-    }
+	if (!rz_config_get_b(core->config, "scr.utf8")) {
+		RZ_LOG_ERROR("Config variable 'scr.utf8' is not set\n");
+		goto exit;
+	}
 	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
 	if (!f) {
 		goto exit;
