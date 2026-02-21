@@ -639,14 +639,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 
 		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
 		rz_th_wait(interpr_th);
-		return_code = rz_th_get_retv(interpr_th);
+		bool interpr_ret = rz_th_get_retv(interpr_th);
 		rz_th_free(interpr_th);
-		if ((!return_code && !bb_decode_failed) || user_sent_signal) {
+		if ((!interpr_ret && !bb_decode_failed) || user_sent_signal) {
 			if (!user_sent_signal) {
 				RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
 			}
 			break;
 		}
+		// Clear shared objects to not have any left overs in the next run.
+		memset((ut8 *)iset->state->shared_obj, 0, sizeof(RzInterpreterSharedObjects));
 		// Open queue again, so the interpretation can start at another
 		// jump target again.
 		rz_th_queue_open(io_request_q);
