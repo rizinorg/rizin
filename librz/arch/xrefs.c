@@ -337,7 +337,6 @@ static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_siz
  * \param analysis The analysis plugin.
  * \param sections The RzBinSections to disassemble to find call/jmp instructions.
  * \param branch_targets The found call targets of all disassemble calls.
- *        NOTE: They can point outside of \p maps!
  * \param include_call_return_pts If true, it will add addresses after a call instruction as well.
  *
  * \return True in case of success, false otherwise.
@@ -379,6 +378,10 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
 				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
 				rz_set_u_add(branch_targets, op.jump);
+				if (op.fail != UT64_MAX) {
+					RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.fail);
+					rz_set_u_add(branch_targets, op.fail);
+				}
 				if (include_call_return_pts && rz_analysis_op_is_direct_call(&op)) {
 					// If it is a call, also add the following instruction as reference.
 					// Because it is likely a return point.

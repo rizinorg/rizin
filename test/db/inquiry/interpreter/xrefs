@@ -373,12 +373,16 @@ EXPECT=<<EOF
 0x80000c0   32      0      0 0x080000e0 0x08000074  0x080000ac  0xffffffffffffffff  0xffffffffffffffff
 0x80000e0   56      0      0 0x080000c0             0x080000ac                     
 0x8000108   16      0      0 0x080000c0             0x080000ac                     
+0x8000118   20      0      0                                                       
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
 WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
 WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
 WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: inquiry: Failed to read memory for IL basic block generation at 0x8 size: 192.
+ERROR: Failed to lift basic block at 0x8
+WARNING: (../librz/inquiry/interpreter/interpreter.c:427):rz_interpreter_run: code should not be reached
 EOF
 RUN
 
@@ -521,10 +525,12 @@ EXPECT=<<EOF
 0x8000060   20      0      0 0x080000e8             0x08000054             
 0x8000074   12      0      0 0x08000080             0x08000074  0x08000034  0x08000034
 0x8000080   20      0      0 0x080000e8             0x08000074             
+0x80000a0   20      0      0                                               
 0x80000b4   32      0      0 0x08000110             0x080000b4             
 0x80000d4   20      0      0 0x080000e8 0x08000074  0x080000b4             
 0x80000e8   52      0      0 0x080000d4             0x080000b4             
 0x8000110   12      0      0 0x080000d4             0x080000b4             
+0x800011c   20      0      0                                               
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
@@ -533,6 +539,12 @@ WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
 WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
 WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
 WARNING: Unhandled conversion of ELF reloc 40 (R_ARM_V4BX)
+WARNING: inquiry: Failed to read memory for IL basic block generation at 0xffffffff size: 224.
+ERROR: Failed to lift basic block at 0xffffffff
+WARNING: (../librz/inquiry/interpreter/interpreter.c:427):rz_interpreter_run: code should not be reached
+WARNING: inquiry: Failed to read memory for IL basic block generation at 0xffffffff size: 224.
+ERROR: Failed to lift basic block at 0xffffffff
+WARNING: (../librz/inquiry/interpreter/interpreter.c:427):rz_interpreter_run: code should not be reached
 EOF
 RUN
 
@@ -541,14 +553,20 @@ FILE=bins/inquiry/interpreter/prototype/mips64_icall_malloc
 CMDS=<<EOF
 # Mips misses many relocations.
 # So the interpreter doesn't come far before a jump to 0x0 happens.
-aaaaIp 0x08000178
-pd 30 @ 0x08000178
+aaaaIp 0x08000164
+pd 40 @ 0x08000164
 axl
 ablt
 EOF
 EXPECT=<<EOF
             ;-- main:
-/ fcn_0x8000178();
+/ int sym.main(int argc, char **argv, char **envp);
+|           0x08000164      daddiu sp, sp, -0x30                       ; RELOC TARGET 32 main @ 0x08000164
+|           0x08000168      sd    ra, 0x28(sp)
+|           0x0800016c      sd    fp, 0x20(sp)
+|           0x08000170      sd    gp, 0x18(sp)
+|           0x08000174      move  fp, sp
+|           ;-- main:
 |           0x08000178      lui   gp, 0                                ; RELOC 0 main @ 0x08000164
 |           0x0800017c      daddu gp, gp, t9
 |           ;-- main:
@@ -557,7 +575,7 @@ EXPECT=<<EOF
 |           0x08000188      sw    zero, 4(fp)
 |       ,=< 0x0800018c      b     0x80001dc
         |   0x08000190      nop
-|       |   ; CODE XREF from fcn_0x8000178 @ 0x80001e4
+|       |   ; CODE XREF from sym.main @ 0x80001e4
 |       |   ;-- .data.rel.local:
 |      .--> 0x08000194      ld    v0, 0(gp)                            ; RELOC 0 .data.rel.local @ 0x080002f0
 |      :|   0x08000198      lwu   v1, 4(fp)
@@ -578,19 +596,25 @@ EXPECT=<<EOF
        :|   0x080001d0      lw    v0, 4(fp)
        :|   0x080001d4      addiu v0, v0, 1
        :|   0x080001d8      sw    v0, 4(fp)
-|      :|   ; CODE XREF from fcn_0x8000178 @ 0x800018c
+|      :|   ; CODE XREF from sym.main @ 0x800018c
 |      :`-> 0x080001dc      lw    v0, 4(fp)
 |      :    0x080001e0      sltiu v0, v0, 3
 \      `==< 0x080001e4      bnez  v0, reloc..data.rel.local
             0x080001e8      nop
             0x080001ec      lw    v0, 0(fp)
+            0x080001f0      move  sp, fp
+            0x080001f4      ld    ra, 0x28(sp)
+            0x080001f8      ld    fp, 0x20(sp)
+            0x080001fc      ld    gp, 0x18(sp)
+            0x08000200      daddiu sp, sp, 0x30
                    reloc.main.8000180+12 0x800018c ->      CODE -> 0x80001dc reloc..data.rel.local.80001a0+60
         reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
      addr size traced ninstr jump       fail fcns        calls xrefs 
 ---------------------------------------------------------------------
-0x8000178   24      0      0 0x080001dc       0x08000178       
-0x8000194   32      0      0                  0x08000178       
-0x80001dc   12      0      0 0x08000194       0x08000178       
+0x8000164   44      0      0 0x080001dc       0x08000164       
+0x8000194   32      0      0                  0x08000164       
+0x80001dc   12      0      0 0x08000194       0x08000164       
+0x80001e8   32      0      0                                   
 EOF
 EXPECT_ERR=<<EOF
 WARNING: MIPS: Unhandled patching case for relocation 333831.
@@ -645,6 +669,9 @@ WARNING: Unhandled conversion of ELF reloc 21 (R_MIPS_GOT_OFST)
 WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
 WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
 WARNING: Unhandled conversion of ELF reloc 18 (R_MIPS_64)
-ERROR: Failed to read chunk of size 0x101 at 0x8000178 for disassembly.
+WARNING: inquiry: Failed to read memory for IL basic block generation at 0xffffffffffffff size: 224.
+ERROR: Failed to lift basic block at 0xffffffffffffff
+WARNING: (../librz/inquiry/interpreter/interpreter.c:427):rz_interpreter_run: code should not be reached
+ERROR: Failed to read chunk of size 0x101 at 0x8000164 for disassembly.
 EOF
 RUN
