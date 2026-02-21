@@ -8,6 +8,7 @@
 #include <rz_project.h>
 #include <rz_flirt.h>
 #include <rz_socket.h>
+#include <locale.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -443,6 +444,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *files = rz_list_new();
 	RzList *prefiles = rz_list_new();
 	RzCmdStateOutput state = { 0 };
+
+	setlocale(LC_CTYPE, "");
 
 #define LISTS_FREE() \
 	{ \
