@@ -1911,6 +1911,8 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 beach:
 	if (insn) {
+		op->mnemonic = rz_str_newf("%s %s", insn->mnemonic, insn->op_str);
+
 		set_op_sign(op, insn);
 		set_op_data_size(op, insn);
 		set_op_val(op, insn);
