@@ -112,8 +112,8 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 	rz_strbuf_append(buf, "ifcn: [");
 	ut64 *it;
 	size_t i = 0;
-	rz_vector_foreach(fcn->entry_points, it) {
-		rz_strbuf_appendf(buf,  "%s0x%" PFMT64x, (i++ > 0 ? ", " : " "), *it);
+	rz_vector_foreach (fcn->entry_points, it) {
+		rz_strbuf_appendf(buf, "%s0x%" PFMT64x, (i++ > 0 ? ", " : " "), *it);
 	}
 	rz_strbuf_append(buf, " ]\n");
 	RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
@@ -395,12 +395,13 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 		RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
 		void **it;
 		size_t i = 0;
-		rz_pvector_enumerate(bb->il_ops, it, i) {
+		rz_pvector_enumerate (bb->il_ops, it, i) {
 			char *report = NULL;
 			RzInterpreterInsnPkt *pkt = *it;
 			if (!rz_il_validate_effect(pkt->effect, ctx, NULL, NULL, &report)) {
 				RZ_LOG_ERROR("Validation failed for IL op %" PFMTSZu " in BB 0x%" PFMT64x " in insn packet:\n"
-				             "\t'%s'\n", i, bb->bb_addr, report);
+					     "\t'%s'\n",
+					i, bb->bb_addr, report);
 			}
 			free(report);
 		}
@@ -747,7 +748,7 @@ error_free:
 }
 
 RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point,
-                                          const RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	rz_inquiry_algo_revng_fcn_detection(
 		entry_point,
@@ -763,7 +764,7 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		ut64 fcn_addr = *(ut64 *)rz_vector_head(fcn->entry_points);
 		char new_fcn_name[64] = { 0 };
 		void **it;
-		rz_pvector_foreach(symbols, it) {
+		rz_pvector_foreach (symbols, it) {
 			RzBinSymbol *s = *it;
 			if (s->vaddr == fcn_addr && RZ_STR_EQ(s->type, RZ_BIN_TYPE_FUNC_STR)) {
 				rz_strf(new_fcn_name, "sym.%s", s->name);
