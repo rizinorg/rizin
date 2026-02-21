@@ -3055,7 +3055,7 @@ RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 		return false;
 	}
 
-	RzPVector *xrefs_strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	RzPVector *xrefs_strings = rz_pvector_new(NULL);
 
 	if (!xrefs_strings) {
 		rz_pvector_free(whole_strings);
@@ -3073,7 +3073,6 @@ RZ_API bool rz_core_bin_xrefs_strings_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 			case RZ_ANALYSIS_XREF_TYPE_CODE:
 			case RZ_ANALYSIS_XREF_TYPE_DATA:
 				if (!rz_pvector_contains(xrefs_strings, string)) {
-					rz_pvector_remove_data(whole_strings, string);
 					rz_pvector_push_front(xrefs_strings, string);
 				}
 			default:
