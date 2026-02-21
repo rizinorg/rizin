@@ -1,10 +1,7 @@
-#include "rz_types.h"
-#include "rz_util/rz_assert.h"
-#include "rz_util/rz_strbuf.h"
+// SPDX-FileCopyrightText: 2026 Ehab-24 <ehabs1775@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_il/rz_il_opcodes.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
 
 static void il_op_pure_string_resolve(const RzILOpPure *op, RzStrBuf *sb);
 static void il_op_effect_string_resolve(const RzILOpEffect *op, RzStrBuf *sb);
