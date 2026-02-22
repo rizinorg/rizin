@@ -124,6 +124,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.cpu=cortexA8
 wx 2f6c642d
 aoj~{[0].disasm}

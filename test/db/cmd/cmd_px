@@ -107,6 +107,7 @@ RUN
 NAME=pxdw 16
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 1020ffff30400000
 pxdw 16
 EOF
@@ -119,6 +120,7 @@ RUN
 NAME=pxdw 8
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=x86
 wx 1020ffff30400000
 pxdw 8
 EOF
@@ -131,6 +133,7 @@ RUN
 NAME=pxH
 FILE=bins/elf/sse2-add
 CMDS=<<EOF
+e asm.arch=x86
 s 0x00000708
 pxH 0x6
 e hex.section=true

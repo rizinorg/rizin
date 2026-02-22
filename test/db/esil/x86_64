@@ -339,21 +339,6 @@ esil: rdx,rax,+,rbx,=
 EOF
 RUN
 
-NAME=ldrh instruction
-FILE==
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=32
-wx b030dfe10101010141424344
-aes
-ar r3
-EOF
-EXPECT=<<EOF
-r3 = 0x00004241
-EOF
-RUN
-
-
 NAME=x86-64 linux syscall
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF

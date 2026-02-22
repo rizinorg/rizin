@@ -215,7 +215,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp(cmd, "help")) {
-		eprintf("Usage: R!cmd args\n"
+		eprintf("Usage: R!<cmd> [args]\n"
 			" R!pid             - show targeted pid\n"
 			" R!pkt s           - send packet 's'\n"
 			" R!rd              - show reverse debugging availability\n"

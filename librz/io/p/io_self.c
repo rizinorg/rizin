@@ -498,16 +498,16 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				io_self->self_sections[i].name);
 		}
 	} else {
-		eprintf("|Usage: R![cmd] [args]\n");
-		eprintf("| R!pid               show getpid()\n");
-		eprintf("| R!maps              show map regions\n");
-		eprintf("| R!kill              commit suicide\n");
+		eprintf("Usage: R!<cmd> [args]\n");
+		eprintf(" R!pid               show getpid()\n");
+		eprintf(" R!maps              show map regions\n");
+		eprintf(" R!kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf("| R!alarm [secs]      setup alarm signal to raise rizin prompt\n");
+		eprintf(" R!alarm [secs]      setup alarm signal to raise rizin prompt\n");
 #endif
-		eprintf("| R!dlsym [sym]       dlopen\n");
-		eprintf("| R!call [sym] [...]  nativelly call a function\n");
-		eprintf("| R!mameio            enter mame IO mode\n");
+		eprintf(" R!dlsym [sym]       dlopen\n");
+		eprintf(" R!call [sym] [...]  nativelly call a function\n");
+		eprintf(" R!mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }

@@ -844,6 +844,7 @@ RUN
 NAME=tp struct
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 td "struct person { int age; char name[10]; }"
 s 14
 w Carlos
@@ -865,6 +866,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 td "union bla { int a; int b; float c; }"
 td "struct foo { union poo { int a; int b; long long c; } q; char *p; }"
 td "struct alb { int a; union moo { int t; char b; long long c; } f; void *goo; }"
@@ -939,7 +941,7 @@ RUN
 NAME=tpv
 FILE==
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=arm
 e asm.bits=16
 e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
@@ -1086,6 +1088,7 @@ RUN
 NAME=tpx test
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 td "struct foo {char* a; int b;}"
 tpx foo 41414141441414141414420010000000
 EOF
@@ -1101,6 +1104,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 082090e5040081e5
 td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -1123,6 +1127,7 @@ FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=mips
+e cfg.bigendian=false
 wx 08007fac040053800800538c
 td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -2272,6 +2277,7 @@ RUN
 NAME=td uint64_t
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8

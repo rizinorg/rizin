@@ -703,6 +703,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 s 0x100
 wx f80202a9
 f flag_name

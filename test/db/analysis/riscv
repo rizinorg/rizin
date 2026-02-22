@@ -9,34 +9,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=jump with compress instruction
+NAME=test instructions
 FILE==
 CMDS=<<EOF
 e asm.arch=riscv
 e asm.bytes=true
 e asm.bits=32
+e cfg.bigendian=false
+echo --- jump with compress instruction
 wx 21a001009d06aa858146
+pd 5
+echo --- branch with compress instruction
+wx 11c182809d06f5fe0000
 pd 5
 EOF
 EXPECT=<<EOF
+--- jump with compress instruction
         ,=< 0x00000000      21a0           j     8
         |   0x00000002      0100           nop
         |   0x00000004      9d06           addi  a3, a3, 7
         |   0x00000006      aa85           mv    a1, a0
         `-> 0x00000008      8146           li    a3, 0
-EOF
-RUN
-
-NAME=branch with compress instruction
-FILE==
-CMDS=<<EOF
-e asm.bytes=true
-e asm.arch=riscv
-e asm.bits=32
-wx 11c182809d06f5fe
-pd 5
-EOF
-EXPECT=<<EOF
+--- branch with compress instruction
         ,=< 0x00000000      11c1           beqz  a0, 4
        .--> 0x00000002      8280           ret
        :`-> 0x00000004      9d06           addi  a3, a3, 7
@@ -660,14 +654,85 @@ EOF
 RUN
 
 
-NAME=Vector instructions: symbol table
+NAME=Vector instructions
 FILE=bins/elf/riscv_vec_arith
 CMDS=<<EOF
 e asm.bytes=true
 aaa
+echo --- symbol table
 is
+echo --- vector reductions
+s 0x00010c56 
+pdf
+echo --- vector sign injection
+s 0x00011566 
+pdf
+echo ---  vector saturating
+s 0x00011252 
+pdf
+echo --- vector unsigned operations
+s 0x00011900 
+pdf
+echo --- vector minmax
+s 0x000118ac 
+pdf
+echo --- vector fused multiply-add
+s 0x00011416 
+pdf
+echo --- vector float operations
+s 0x00011362 
+pdf
+echo --- floating point operations
+s 0x00011362 
+pdf
+echo --- widening operations
+s 0x000112e0
+pdf
+echo --- comparisons
+s 0x0001106a 
+pdf
+echo --- clipping
+s 0x00011830
+pdf
+echo --- conversions
+s 0x00011524
+pdf
+echo --- narrowing
+s 0x0001133c
+pdf
+echo --- average
+s 0x00011804
+pdf
+echo --- segment access
+s 0x00011742
+pdf
+echo --- floating point comparisons
+s 0x000114b8
+pdf
+echo --- multi byte
+s 0x00011778
+pdf
+echo --- shifts
+s 0x00011102
+pdf
+echo --- strided access
+s 0x000115e2
+pdf
+echo --- absolute value and negation
+s 0x00011862
+pdf
+echo --- main function
+s 0x000105c0
+pdf
+echo --- madd
+s 0x00011954
+pdf
+echo --- bitwise
+s 0x000111ae
+pdf
 EOF
 EXPECT=<<EOF
+--- symbol table
 nth      paddr      vaddr bind   type   size lib name                                                                                                                                                                                     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   5 ---------- 0x00013828 GLOBAL NOTYPE    0     __global_pointer$
@@ -768,19 +833,7 @@ nth      paddr      vaddr bind   type   size lib name
   6 0x000005a0 0x000105a0 GLOBAL FUNC      0     imp.printf
   7 0x000005b0 0x000105b0 GLOBAL FUNC      0     imp.free
   8 0x00000570 0x00010570 GLOBAL FUNC      0     imp.__libc_start_main
-EOF
-RUN
-
-
-NAME=Vector instructions: vector reductions
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00010c56 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector reductions
         :   ; CALL XREF from main @ 0x10938
 / sym.test_reductions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_7fffffffffffffcfh, int64_t arg_7fffffffffffffd7h, int64_t arg_7fffffffffffffe7h, int64_t arg_7fffffffffffffefh, int64_t arg_7ffffffffffffff7h);
 |       :   ; arg int64_t arg1 @ a0
@@ -1111,19 +1164,7 @@ EXPECT=<<EOF
 |       :   0x00011060      130505a0       addi  a0, a0, -0x600
 |       :   0x00011064      2961           addi  sp, sp, 0xc0
 \       `=< 0x00011066      6ff0afd3       j     sym.imp.printf
-EOF
-RUN
-
-
-NAME=Vector instructions: vector sign injection
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011566 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector sign injection
             ; CALL XREF from main @ 0x10a04
 / sym.test_sign_injection(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1172,19 +1213,7 @@ EXPECT=<<EOF
 |       :   0x000115dc      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000115de      7df3           bnez  a4, 0x115c4
 \           0x000115e0      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: vector saturating
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011252 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector saturating
             ; CALL XREF from main @ 0x10960
 / sym.test_saturating(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1238,19 +1267,7 @@ EXPECT=<<EOF
 |       :   0x000112da      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000112dc      71f7           bnez  a4, 0x112a8
 \           0x000112de      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: vector unsigned operations
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011900 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector unsigned operations
             ; CALL XREF from main @ 0x10b02
 / sym.test_unsigned_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1287,19 +1304,7 @@ EXPECT=<<EOF
 |       :   0x0001194e      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011950      65f3           bnez  a4, 0x11930
 \           0x00011952      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: vector minmax
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000118ac 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector minmax
             ; CALL XREF from main @ 0x10af8
 / sym.test_minmax(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1336,19 +1341,7 @@ EXPECT=<<EOF
 |       :   0x000118fa      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000118fc      65f3           bnez  a4, 0x118dc
 \           0x000118fe      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: vector fused multiply-add
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011416 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector fused multiply-add
             ; CALL XREF from main @ 0x109a8
 / sym.test_fma(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1408,19 +1401,7 @@ EXPECT=<<EOF
 |       :   0x000114b0      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x000114b2      e31c08fc       bnez  a6, 0x1148a
 \           0x000114b6      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: vector float operations
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011362 
-pdf
-EOF
-EXPECT=<<EOF
+--- vector float operations
             ; CALL XREF from main @ 0x1099c
 / sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1488,18 +1469,7 @@ EXPECT=<<EOF
 |       :   0x00011410      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
 \           0x00011414      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: floating point operations
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011362 
-pdf
-EOF
-EXPECT=<<EOF
+--- floating point operations
             ; CALL XREF from main @ 0x1099c
 / sym.test_float_ops(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1567,18 +1537,7 @@ EXPECT=<<EOF
 |       :   0x00011410      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011412      79ff           bnez  a4, 0x113f0
 \           0x00011414      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: widening operations
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000112e0
-pdf
-EOF
-EXPECT=<<EOF
+--- widening operations
             ; CALL XREF from main @ 0x1096a
 / sym.test_widening(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg7, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1618,19 +1577,7 @@ EXPECT=<<EOF
 |       :   0x00011336      4296           add   a2, a2, a6            ; arg3
 |       `=< 0x00011338      71ff           bnez  a4, 0x11314
 \           0x0001133a      8280           ret
-EOF
-RUN
-
-
-NAME=Vector instructions: comparisons
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x0001106a 
-pdf
-EOF
-EXPECT=<<EOF
+--- comparisons
             ; CALL XREF from main @ 0x10942
 / sym.test_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1687,18 +1634,7 @@ EXPECT=<<EOF
 |       :   0x000110fc      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x000110fe      6df3           bnez  a4, 0x110e0
 \           0x00011100      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: clipping
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011830
-pdf
-EOF
-EXPECT=<<EOF
+--- clipping
 / sym.test_clip(int64_t arg1, int64_t arg2, int64_t arg5, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1719,18 +1655,7 @@ EXPECT=<<EOF
 |       :   0x0001185c      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x0001185e      6df3           bnez  a4, 0x11840
 \           0x00011860      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: conversions
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011524
-pdf
-EOF
-EXPECT=<<EOF
+--- conversions
 / sym.test_conversions(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1758,18 +1683,7 @@ EXPECT=<<EOF
 |       :   0x00011560      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011562      7df3           bnez  a4, 0x11548
 \           0x00011564      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: narrowing
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x0001133c
-pdf
-EOF
-EXPECT=<<EOF
+--- narrowing
 / sym.test_narrowing(int64_t arg1, int64_t arg2, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1786,18 +1700,7 @@ EXPECT=<<EOF
 |       :   0x0001135c      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x0001135e      6df3           bnez  a4, 0x11340
 \           0x00011360      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: average
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011804
-pdf
-EOF
-EXPECT=<<EOF
+--- average
 / sym.test_average(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1817,18 +1720,7 @@ EXPECT=<<EOF
 |       :   0x0001182a      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x0001182c      65f3           bnez  a4, 0x1180c
 \           0x0001182e      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: segment access
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011742
-pdf
-EOF
-EXPECT=<<EOF
+--- segment access
 / sym.test_segment_access(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1851,18 +1743,7 @@ EXPECT=<<EOF
 |       :   0x00011770      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x00011772      e31a08fc       bnez  a6, 0x11746
 \           0x00011776      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: floating point comparisons
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000114b8
-pdf
-EOF
-EXPECT=<<EOF
+--- floating point comparisons
             ; CALL XREF from main @ 0x109b2
 / sym.test_float_comparisons(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -1905,18 +1786,7 @@ EXPECT=<<EOF
 |       :   0x0001151e      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x00011520      71fb           bnez  a4, 0x114f4
 \           0x00011522      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: multi byte
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011778
-pdf
-EOF
-EXPECT=<<EOF
+--- multi byte
 / sym.test_multi_byte(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
 |           ; arg int64_t arg2 @ a1
@@ -1935,18 +1805,7 @@ EXPECT=<<EOF
 |       :   0x0001179a      3696           add   a2, a2, a3            ; arg3
 |       `=< 0x0001179c      65f3           bnez  a4, 0x1177c
 \           0x0001179e      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: shifts
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011102
-pdf
-EOF
-EXPECT=<<EOF
+--- shifts
             ; CALL XREF from main @ 0x1094c
 / sym.test_shifts(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg7);
 |           ; arg int64_t arg1 @ a0
@@ -2009,18 +1868,7 @@ EXPECT=<<EOF
 |       :   0x000111a8      2e96           add   a2, a2, a1            ; arg3
 |       `=< 0x000111aa      79f7           bnez  a4, 0x11178
 \           0x000111ac      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: strided access
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000115e2
-pdf
-EOF
-EXPECT=<<EOF
+--- strided access
             ; CALL XREF from main @ 0x10a0c
 / sym.test_strided_access(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
@@ -2131,18 +1979,7 @@ EXPECT=<<EOF
 |     :     0x0001173a      930e0040       li    t4, 0x400
 |     :     0x0001173e      0148           li    a6, 0
 \     `===< 0x00011740      3db7           j     0x1166e
-EOF
-RUN
-
-NAME=Vector instructions: absolute value and negation
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011862
-pdf
-EOF
-EXPECT=<<EOF
+--- absolute value and negation
             ; CALL XREF from main @ 0x10aee
 / sym.test_abs_neg(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6);
 |           ; arg int64_t arg1 @ a0
@@ -2174,18 +2011,7 @@ EXPECT=<<EOF
 |       :   0x000118a6      b695           add   a1, a1, a3            ; arg2
 |       `=< 0x000118a8      7df3           bnez  a4, 0x1188e
 \           0x000118aa      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: main function
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000105c0
-pdf
-EOF
-EXPECT=<<EOF
+--- main function
             ; CODE XREF from loc.__wrap_main @
             ;-- section..text:
             ;-- .text:
@@ -2743,18 +2569,7 @@ EXPECT=<<EOF
 |           0x00010ba2      0145           li    a0, 0
 |           0x00010ba4      5561           addi  sp, sp, 0x130
 \           0x00010ba6      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: madd
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x00011954
-pdf
-EOF
-EXPECT=<<EOF
+--- madd
             ; CALL XREF from main @ 0x10b0e
 / sym.test_madd(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0
@@ -2796,18 +2611,7 @@ EXPECT=<<EOF
 |       :   0x000119b6      ba96           add   a3, a3, a4            ; arg4
 |       `=< 0x000119b8      e31c08fc       bnez  a6, 0x11990
 \           0x000119bc      8280           ret
-EOF
-RUN
-
-NAME=Vector instructions: bitwise
-FILE=bins/elf/riscv_vec_arith
-CMDS=<<EOF
-e asm.bytes=true
-aaa
-s 0x000111ae
-pdf
-EOF
-EXPECT=<<EOF
+--- bitwise
             ; CALL XREF from main @ 0x10956
 / sym.test_bitwise(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg6, int64_t arg8);
 |           ; arg int64_t arg1 @ a0

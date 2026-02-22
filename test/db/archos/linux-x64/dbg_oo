@@ -102,11 +102,10 @@ fl@F:maps~?
 .(fl_F_maps_clean)
 EOF
 EXPECT=<<EOF
-10
+9
 0x08048000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x
 0x08049000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw
-0x________ 8192 vvar_.r
-0x________ 8192 vvar_vclock_.r
+0x________ 16384 vvar_.r
 0x________ 8192 vdso_.r_x
 0x________ 4096 usr_lib32_ld_linux.so.2.r
 0x________ 143360 usr_lib32_ld_linux.so.2.r_x

@@ -1851,7 +1851,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_op) {
 
 	ut64 v = rz_num_math(core->num, arg_str);
 	ut8 buf[8] = { 0 };
-	int be = rz_config_get_i(core->config, "cfg.bigendian");
+	int be = rz_config_get_b(core->config, "cfg.bigendian");
 	int bi = rz_config_get_i(core->config, "asm.bits");
 
 	rz_write_ble(buf, v, be, bi);

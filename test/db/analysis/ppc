@@ -572,6 +572,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64
+e cfg.bigendian=false
 wx f0ff2194
 aoj~{}
 EOF
