@@ -6,19 +6,17 @@ if cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
-conf_data = configuration_data()
-
 pcre2_chartables = configure_file(input : 'src/pcre2_chartables.c.dist',
   output : 'pcre2_chartables.c',
-  configuration : conf_data)
+  copy : true)
 
 pcre2_h = configure_file(input : 'src/pcre2.h.generic',
   output : 'pcre2.h',
-  configuration : conf_data)
+  copy : true)
 
 config_h = configure_file(input : 'src/config.h.generic',
   output : 'config.h',
-  configuration : conf_data)
+  copy : true)
 
 libpcre2_c_args = [
   '-DHAVE_CONFIG_H', # Default values from config.h

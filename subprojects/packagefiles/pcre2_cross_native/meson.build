@@ -6,19 +6,17 @@ project('pcre2_cross_native', 'c', version: '10.47')
 
 cc = meson.get_compiler('c')
 
-conf_data = configuration_data()
-
 pcre2_chartables = configure_file(input : 'src/pcre2_chartables.c.dist',
   output : 'pcre2_chartables.c',
-  configuration : conf_data)
+  copy : true)
 
 pcre2_h = configure_file(input : 'src/pcre2.h.generic',
   output : 'pcre2.h',
-  configuration : conf_data)
+  copy : true)
 
 config_h = configure_file(input : 'src/config.h.generic',
   output : 'config.h',
-  configuration : conf_data)
+  copy : true)
 
 libpcre2_c_args = [
   '-DHAVE_CONFIG_H', # Default values from config.h
