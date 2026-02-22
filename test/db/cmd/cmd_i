@@ -4454,11 +4454,45 @@ EOF
 RUN
 
 NAME=izx
-FILE=bins/arm/elf/hello_world 
+FILE=bins/arm/elf/ld-uClibc-0.9.28.so_rel_0_3
 CMDS=aaa;izxq
 EXPECT=<<EOF
-0x574 13 12 Hello world!
-0x494 10 10 \bH\tKxD\tJ{D
+0x51c0 16 15 LD_AOUT_PRELOAD
+0x519c 33 32 %s: aborted attempt to load %s!\n
+0x5190 9 8 libc.so.
+0x5164 31 30 %s: can't resolve symbol '%s'\n
+0x515c 7 6 malloc
+0x5154 7 6 atexit
+0x5148 10 9 __environ
+0x5138 16 15 \t%s => %s (%x)\n
+0x5118 29 28 %s: can't load library '%s'\n
+0x5104 18 17 \t%s => not found\n
+0x50ec 24 23 LD_TRACE_LOADED_OBJECTS
+0x50dc 16 15 LD_LIBRARY_PATH
+0x50d0 11 10 LD_PRELOAD
+0x50c4 12 11 LD_BIND_NOW
+0x5098 43 42 Standalone execution is not supported yet\n
+0x507c 28 27 can't handle reloc type %x\n
+0x506c 14 13 symbol '%s': 
+0x5064 6 5 \n%s: 
+0x4fcc 150 149 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/lib:/home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/usr/lib
+0x4fb4 16 15 Out of memory!\n
+0x4f60 82 81 Can't modify %s's text section. Use GCC option -fPIC for shared objects, please.\n
+0x4f38 39 38 %s: '%s' is missing a dynamic section\n
+0x4f24 18 17 %s: can't map %s\n
+0x4ef8 44 43 %s: '%s' has more than one dynamic section\n
+0x4ecc 44 43 %s: '%s' is not an ELF executable for MIPS\n
+0x4eac 29 28 %s: '%s' is not an ELF file\n
+0x4e98 20 19 %s: can't map '%s'\n
+0x4e74 34 33 %s: mmap of a spare page failed!\n
+0x4e58 27 26 %s: cache '%s' is corrupt\n
+0x4e50 6 5 1.7.0
+0x4e48 7 6 ld.so-
+0x4e2c 26 25 %s: can't map cache '%s'\n
+0x4dd4 85 84 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
+0x4d94 63 62 %s: cannot apply additional memory protection after relocation
+0x4d80 10 9 overflow\n
+0x4d70 15 14 ld-uClibc.so.0
 EOF
 RUN
 
