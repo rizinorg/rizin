@@ -889,6 +889,7 @@ typedef struct rz_analysis_op_t {
 	RzAnalysisSwitchOp *switch_op;
 	RzAnalysisHint hint;
 	RzAnalysisDataType datatype;
+	ut64 hexagon_pkt_addr;
 } RzAnalysisOp;
 
 #define RZ_TYPE_COND_SINGLE(x) (!x->arg[1] || x->arg[0] == x->arg[1])
@@ -1637,7 +1638,8 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 	const RzPVector /*<RzBinSection *>*/ *sections,
 	bool include_call_return_pts,
-	RZ_NONNULL RZ_OUT RzSetU *branch_targets);
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets,
+	RZ_NONNULL RZ_OUT RzVector /*<RzInterval>*/ *edges);
 
 /* var.c */
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
