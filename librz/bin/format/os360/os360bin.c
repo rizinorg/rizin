@@ -34,9 +34,11 @@
  * \endcode
  */
 #define rz_fundamental_chunk_be(src, fund, size) \
-	size_t off = sizeof(fund) - (size); \
-	ut8 *dest = ((ut8 *)&(fund)) + off; \
-	rz_read_array_ble((src), dest, (size), true)
+	do { \
+		size_t off = sizeof(fund) - (size); \
+		ut8 *dest = ((ut8 *)&(fund)) + off; \
+		rz_read_array_ble((src), dest, (size), true); \
+	} while (0)
 
 /**
  * \brief Read a little-endian byte chunk into a fundamental integer variable.
@@ -76,7 +78,7 @@
  * \note The order of bytes that's be written to \p dest is same as order of
  * host machine
  */
-void rz_read_array_ble(void *src, void *dest, size_t size, bool big_endian) {
+void rz_read_array_ble(const void *src, void *dest, size_t size, bool big_endian) {
 	const ut8 *s = (const ut8 *)src;
 	ut8 *d = (ut8 *)dest;
 
@@ -130,7 +132,7 @@ static RZ_OWN RzBinOS360EsdRecord *parse_record_esd(const ut8 *buf) {
 	for (ut8 i = 0; i < record->sym_num - 1; i++) {
 		RzBinOS360ModuleSymbol *sym = &(record->symbols[i]);
 
-        memcpy(sym->name, buf + off, 8);
+		memcpy(sym->name, buf + off, 8);
 		sym->type = buf[off + 8];
 		rz_fundamental_chunk_be(buf + off + 9, sym->address, 3);
 		sym->addition_1 = buf[off + 12];
@@ -220,7 +222,7 @@ static RZ_OWN RzBinOS360SymRecord *parse_record_sym(const ut8 *buf) {
 
 		if (IS_HAS_NAME_PROBE(entry->organization)) {
 			ut8 name_length = NAME_LENGTH_EXTRUDE(entry->organization);
-            memcpy(entry->name, buf + off, name_length);
+			memcpy(entry->name, buf + off, name_length);
 
 			off += name_length;
 		}
@@ -273,7 +275,7 @@ static RZ_OWN RzBinOS360XsdRecord *parse_record_xsd(const ut8 *buf) {
 	record->offset = rz_read_be64(buf + 20);
 	record->type = buf[24];
 	rz_fundamental_chunk_be(buf + 25, record->address, 3);
-	record->spec = buf + 28;
+	record->spec = buf[28];
 	rz_fundamental_chunk_be(buf + 29, record->length_or_ident, 3);
 	memcpy(record->name, buf + 32, record->length);
 
@@ -288,13 +290,13 @@ static RZ_OWN RzBinOS360EndRecord *parse_record_end(const ut8 *buf) {
 
 	rz_fundamental_chunk_be(buf + 5, record->entry_address, 3);
 	record->entry_esdid = rz_read_be16(buf + 14);
-    memcpy(record->start_name, buf + 16, 8);
+	memcpy(record->start_name, buf + 16, 8);
 	record->module_size = rz_read_be64(buf + 28);
 	record->format = buf[32];
 
 	ut8 off = 33;
-	for (ut8 i = 0; i < 2; i++) { 
-        RzBinOS360IDRRecordData *idr = &record->idr[i];
+	for (ut8 i = 0; i < 2; i++) {
+		RzBinOS360IDRRecordData *idr = &record->idr[i];
 		memcpy(idr->order_no, buf + off, 10);
 		idr->version = rz_read_be16(buf + off + 10);
 		idr->revision = rz_read_be16(buf + off + 12);
@@ -313,15 +315,15 @@ static RZ_OWN RzBinOS360BaseRecord *load_record_os360(const ut8 *buf) {
 		return NULL;
 	}
 
-    RzBinOS360BaseRecord *base_record = RZ_NEW0(RzBinOS360BaseRecord);
-    if (!base_record) {
-        return NULL;
-    }
+	RzBinOS360BaseRecord *base_record = RZ_NEW0(RzBinOS360BaseRecord);
+	if (!base_record) {
+		return NULL;
+	}
 
 	ut32 record_type = 0;
 	rz_fundamental_chunk_be(buf + 1, record_type, 3);
 
-	ut64 ident = rz_parse_be64(buf + 72);
+	ut64 ident = rz_read_be64(buf + 72);
 
 	base_record->type = record_type;
 	base_record->ident = ident;
@@ -329,7 +331,7 @@ static RZ_OWN RzBinOS360BaseRecord *load_record_os360(const ut8 *buf) {
 	case OS360_RECORD_TYPE_ESD: {
 		RzBinOS360EsdRecord *record = parse_record_esd(buf);
 		if (!record) {
-            RZ_FREE(base_record);
+			RZ_FREE(base_record);
 			return NULL;
 		}
 		base_record->content = record;
@@ -345,7 +347,7 @@ static RZ_OWN RzBinOS360BaseRecord *load_record_os360(const ut8 *buf) {
 	} break;
 
 	case OS360_RECORD_TYPE_RLD: {
-		RzBinOS360TxtRecord *record = parse_record_txt(buf);
+		RzBinOS360RldRecord *record = parse_record_rld(buf);
 		if (!record) {
 			RZ_FREE(base_record);
 			return NULL;
@@ -396,8 +398,11 @@ static bool load_all_os360_records(RzBinOS360Obj *obj, const ut8 *buf, ut64 size
 	}
 
 	while (size != 0) {
-        RzBinOS360BaseRecord *new_rec = load_record_os360(buf);
-        rz_vector_push(obj->records, new_rec);
+		RzBinOS360BaseRecord *record = load_record_os360(buf);
+		if (!record) {
+			return false;
+		}
+		rz_pvector_push(obj->records, record);
 
 		buf += OS360_RECORD_SIZE;
 		size -= OS360_RECORD_SIZE;
@@ -407,13 +412,13 @@ static bool load_all_os360_records(RzBinOS360Obj *obj, const ut8 *buf, ut64 size
 }
 
 void rz_bin_os360_destroy(RzBinOS360Obj *obj) {
-	rz_vector_free(obj->records);
+	rz_pvector_free(obj->records);
 	RZ_FREE(obj);
 }
 
 void base_record_destroy(RzBinOS360BaseRecord *record) {
-    RZ_FREE(record->content)
-    RZ_FREE(record);
+	RZ_FREE(record->content)
+	RZ_FREE(record);
 }
 
 RzBinOS360Obj *rz_bin_os360_init(const ut8 *buf, ut64 size) {
@@ -423,7 +428,7 @@ RzBinOS360Obj *rz_bin_os360_init(const ut8 *buf, ut64 size) {
 		return NULL;
 	}
 
-    ret->records = rz_pvector_new((RzPVectorFree)base_record_destroy);
+	ret->records = rz_pvector_new((RzPVectorFree)base_record_destroy);
 
 	if (!load_all_os360_records(ret, buf, size)) {
 		rz_bin_os360_destroy(ret);
@@ -433,17 +438,18 @@ RzBinOS360Obj *rz_bin_os360_init(const ut8 *buf, ut64 size) {
 	return ret;
 }
 
-ut32 esdid_address_extract(RzBinOS360BaseRecord *record, bool* is_valid) {
+ut32 esdid_address_extract(RzBinOS360BaseRecord *record, bool *is_valid) {
 	switch (record->type) {
 	case OS360_RECORD_TYPE_ESD: {
 		RzBinOS360EsdRecord *esd_record = record->content;
-		for(ut8 i = 0; i < esd_record->sym_num; i++) {
-            RzBinOS360ModuleSymbol *sym = &(esd_record->symbols[i]);
-            if (sym->type != OS360_ESD_TYPE_LD) {
-                return sym->address;
-            }
-        }
-        *is_valid = false;
+		for (ut8 i = 0; i < esd_record->sym_num; i++) {
+			RzBinOS360ModuleSymbol *sym = &(esd_record->symbols[i]);
+			if (sym->type != OS360_ESD_TYPE_LD) {
+				return sym->address;
+			}
+		}
+		*is_valid = false;
+		return 0;
 	}
 	case OS360_RECORD_TYPE_TXT: {
 		RzBinOS360TxtRecord *txt_record = record->content;
@@ -452,75 +458,78 @@ ut32 esdid_address_extract(RzBinOS360BaseRecord *record, bool* is_valid) {
 	}
 	case OS360_RECORD_TYPE_XSD: {
 		RzBinOS360XsdRecord *xsd_record = record->content;
-        *is_valid = true;
+		*is_valid = true;
 		return xsd_record->address;
 	}
+	default:
+		break;
 	}
 
 	*is_valid = false;
+	return 0;
 }
 
 RZ_OWN RzBinAddr *rz_bin_os360_extract_entry_address(RZ_NONNULL RzBinOS360Obj *obj, RzBinOS360BaseRecord *record) {
-        if (record->type != OS360_RECORD_TYPE_END) {
-            RZ_LOG_ERROR("Record is not an END record\n");
-            return NULL;
-        }
-        RzBinOS360EndRecord *end_record = record->content;
+	if (record->type != OS360_RECORD_TYPE_END) {
+		RZ_LOG_ERROR("Record is not an END record\n");
+		return NULL;
+	}
+	RzBinOS360EndRecord *end_record = record->content;
 
-        if (end_record->entry_address != 0) {
-			char *log = "From record with deck id %lld, found entry address: 0x%08x\n";
-			RZ_LOG_DEBUG(log, record->ident, end_record->entry_address);
-			RzBinAddr *entry = RZ_NEW0(RzBinAddr);
-			entry->vaddr = end_record->entry_address;
-			
-            return entry;
+	if (end_record->entry_address != 0) {
+		char *log = "From record with deck id %lld, found entry address: 0x%08x\n";
+		RZ_LOG_DEBUG(log, record->ident, end_record->entry_address);
+		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
+		entry->vaddr = end_record->entry_address;
+
+		return entry;
+	}
+
+	if (end_record->entry_esdid != 0) {
+		char *log = "From record with deck id %lld, found entry ESDID: %d\n";
+		RZ_LOG_DEBUG(log, record->ident, end_record->entry_esdid);
+		RzBinOS360BaseRecord *found_record = rz_bin_os360_find_record_by_esdid(obj, end_record->entry_esdid);
+		if (!found_record) {
+			RZ_LOG_ERROR("Failed to find record by ESDID: %d\n", end_record->entry_esdid);
+			return NULL;
 		}
 
-		if (end_record->entry_esdid != 0) {
-			char *log = "From record with deck id %lld, found entry ESDID: %d\n";
-			RZ_LOG_DEBUG(log, record->ident, end_record->entry_esdid);
-			RzBinOS360BaseRecord *found_record = rz_bin_os360_find_record_by_esdid(obj, end_record->entry_esdid);
-			if (!found_record) {
-				RZ_LOG_ERROR("Failed to find record by ESDID: %d\n", end_record->entry_esdid);
-				return NULL;
-			}
+		bool is_valid = false;
+		ut32 entry_addr = esdid_address_extract(found_record, &is_valid);
+		if (!is_valid) {
+			char *log = "Failed to extract address for record with deck id %lld and with ESDID: %d\n";
+			RZ_LOG_ERROR(log, found_record->ident, end_record->entry_esdid);
+			return NULL;
+		}
+		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
+		entry->vaddr = entry_addr;
 
-			bool is_valid = false;
-			ut32 entry_addr = esdid_address_extract(found_record, &is_valid);
-			if (!is_valid) {
-                char *log = "Failed to extract address for record with deck id %lld and with ESDID: %d\n";
-				RZ_LOG_ERROR(log, found_record->ident, end_record->entry_esdid);
-				return NULL;
-			}
-			RzBinAddr *entry = RZ_NEW0(RzBinAddr);
-			entry->vaddr = entry_addr;
-			
-            return entry;
+		return entry;
+	}
+
+	if (RZ_STR_ISNOTEMPTY(end_record->start_name)) {
+		char *log = "From record with deck id %lld, found entry name: %s\n";
+		RZ_LOG_DEBUG(log, record->ident, end_record->start_name);
+		RzBinOS360BaseRecord *found_record = rz_bin_os360_find_record_by_ident(obj, end_record->start_name);
+		if (!found_record) {
+			RZ_LOG_ERROR("Failed to find record by name: %s\n", end_record->start_name);
+			return NULL;
 		}
 
-		if (RZ_STR_ISNOTEMPTY(end_record->start_name)) {
-			char *log = "From record with deck id %lld, found entry name: %s\n";
-			RZ_LOG_DEBUG(log, record->ident, end_record->start_name);
-			RzBinOS360BaseRecord *found_record = rz_bin_os360_find_record_by_ident(obj, end_record->start_name);
-			if (!found_record) {
-				RZ_LOG_ERROR("Failed to find record by name: %s\n", end_record->start_name);
-				return NULL;
-			}
-
-            bool is_valid = false;
-			ut32 entry_addr = esdid_address_extract(found_record, &is_valid);
-			if (!is_valid) {
-                char* log = "Failed to extract address for record with deck id %lld and with name: %s\n";
-				RZ_LOG_ERROR(log, found_record->ident, end_record->start_name);
-				return NULL;
-			}
-			RzBinAddr *entry = RZ_NEW0(RzBinAddr);
-			entry->vaddr = entry_addr;
-			
-            return entry;
+		bool is_valid = false;
+		ut32 entry_addr = esdid_address_extract(found_record, &is_valid);
+		if (!is_valid) {
+			char *log = "Failed to extract address for record with deck id %lld and with name: %s\n";
+			RZ_LOG_ERROR(log, found_record->ident, end_record->start_name);
+			return NULL;
 		}
+		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
+		entry->vaddr = entry_addr;
 
-    return NULL;
+		return entry;
+	}
+
+	return NULL;
 }
 
 RzBinOS360BaseRecord *rz_bin_os360_find_record_by_ident(RzBinOS360Obj *obj, char *ident) {
@@ -528,7 +537,7 @@ RzBinOS360BaseRecord *rz_bin_os360_find_record_by_ident(RzBinOS360Obj *obj, char
 	rz_pvector_foreach (obj->records, it) {
 		RzBinOS360BaseRecord *record = *it;
 		switch (record->type) {
-            /* TODO */
+			/* TODO */
 		default:
 			return NULL;
 		}
@@ -565,6 +574,9 @@ RzBinOS360BaseRecord *rz_bin_os360_find_record_by_esdid(RzBinOS360Obj *obj, ut16
 				return record;
 			}
 		} break;
+
+		default:
+			break;
 		}
 	}
 
