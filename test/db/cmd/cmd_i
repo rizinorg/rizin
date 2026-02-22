@@ -4457,44 +4457,42 @@ NAME=izx
 FILE=bins/arm/elf/ld-uClibc-0.9.28.so_rel_0_3
 CMDS=aaa;izxq
 EXPECT=<<EOF
-     paddr      vaddr flag                                                                                                                                                     len size section type  xref-from                        string                                                                                                                           
-―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
-0x000051c0 0x000051c0 str.LD_AOUT_PRELOAD                                                                                                                                       15   16 .rodata ascii 0x0000393c,0x0000395c            LD_AOUT_PRELOAD
-0x0000519c 0x0000519c str.s:_aborted_attempt_to_load__s                                                                                                                         32   33 .rodata ascii 0x00001a24                       %s: aborted attempt to load %s!\n
-0x00005190 0x00005190 str.libc.so.                                                                                                                                               8    9 .rodata ascii 0x00001974,0x00001990            libc.so.
-0x00005164 0x00005164 str.s:_can_t_resolve_symbol___s                                                                                                                           30   31 .rodata ascii 0x00004cd8                       %s: can't resolve symbol '%s'\n
-0x0000515c 0x0000515c str.malloc                                                                                                                                                 6    7 .rodata ascii 0x000046bc                       malloc
-0x00005154 0x00005154 str.atexit                                                                                                                                                 6    7 .rodata ascii 0x0000467c                       atexit
-0x00005148 0x00005148 str.environ                                                                                                                                                9   10 .rodata ascii 0x000045ac                       __environ
-0x00005138 0x00005138 str.s_____s___x                                                                                                                                           15   16 .rodata ascii 0x00003f24,0x00004198,0x000044e8 \t%s => %s (%x)\n
-0x00005118 0x00005118 str.s:_can_t_load_library___s                                                                                                                             28   29 .rodata ascii 0x00003e68,0x0000410c            %s: can't load library '%s'\n
-0x00005104 0x00005104 str.s____not_found                                                                                                                                        17   18 .rodata ascii 0x00003e48,0x000040e4            \t%s => not found\n
-0x000050ec 0x000050ec str.LD_TRACE_LOADED_OBJECTS                                                                                                                               23   24 .rodata ascii 0x00003c68                       LD_TRACE_LOADED_OBJECTS
-0x000050dc 0x000050dc str.LD_LIBRARY_PATH                                                                                                                                       15   16 .rodata ascii 0x000038e4                       LD_LIBRARY_PATH
-0x000050d0 0x000050d0 str.LD_PRELOAD                                                                                                                                            10   11 .rodata ascii 0x000038bc                       LD_PRELOAD
-0x000050c4 0x000050c4 str.LD_BIND_NOW                                                                                                                                           11   12 .rodata ascii 0x000037c4                       LD_BIND_NOW
-0x00005098 0x00005098 str.Standalone_execution_is_not_supported_yet                                                                                                             42   43 .rodata ascii 0x00003780                       Standalone execution is not supported yet\n
-0x0000507c 0x0000507c str.can_t_handle_reloc_type__x                                                                                                                            27   28 .rodata ascii 0x000034a0                       can't handle reloc type %x\n
-0x0000506c 0x0000506c str.symbol___s_:                                                                                                                                          13   14 .rodata ascii 0x00003480                       symbol '%s':
-0x00005064 0x00005064 str.s:                                                                                                                                                     5    6 .rodata ascii 0x00003458                       \n%s:
-0x00004fcc 0x00004fcc str.home_liujiale_project_816_telnet_MTK7620A_DLINK_TELNET_source_romfs_lib:_home_liujiale_project_816_telnet_MTK7620A_DLINK_TELNET_source_romfs_usr_lib 149  150 .rodata ascii 0x000032f8                       /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/lib:/home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/usr/lib
-0x00004fb4 0x00004fb4 str.Out_of_memory                                                                                                                                         15   16 .rodata ascii 0x00002e98                       Out of memory!\n
-0x00004f60 0x00004f60 str.Can_t_modify__s_s_text_section._Use_GCC_option__fPIC_for_shared_objects__please.                                                                      81   82 .rodata ascii 0x00002c58                       Can't modify %s's text section. Use GCC option -fPIC for shared objects, please.\n
-0x00004f38 0x00004f38 str.s:___s__is_missing_a_dynamic_section                                                                                                                  38   39 .rodata ascii 0x00002bc4                       %s: '%s' is missing a dynamic section\n
-0x00004f24 0x00004f24 str.s:_can_t_map__s                                                                                                                                       17   18 .rodata ascii 0x0000274c                       %s: can't map %s\n
-0x00004ef8 0x00004ef8 str.s:___s__has_more_than_one_dynamic_section                                                                                                             43   44 .rodata ascii 0x000025f8                       %s: '%s' has more than one dynamic section\n
-0x00004ecc 0x00004ecc str.s:___s__is_not_an_ELF_executable_for_MIPS                                                                                                             43   44 .rodata ascii 0x00002594                       %s: '%s' is not an ELF executable for MIPS\n
-0x00004eac 0x00004eac str.s:___s__is_not_an_ELF_file                                                                                                                            28   29 .rodata ascii 0x00002528                       %s: '%s' is not an ELF file\n
-0x00004e98 0x00004e98 str.s:_can_t_map___s                                                                                                                                      19   20 .rodata ascii 0x000024a8,0x000028d0,0x00002aec %s: can't map '%s'\n
-0x00004e74 0x00004e74 str.s:_mmap_of_a_spare_page_failed                                                                                                                        33   34 .rodata ascii 0x00001fe0                       %s: mmap of a spare page failed!\n
-0x00004e58 0x00004e58 str.s:_cache___s__is_corrupt                                                                                                                              26   27 .rodata ascii 0x00001ea0                       %s: cache '%s' is corrupt\n
-0x00004e50 0x00004e50 str.1.7.0                                                                                                                                                  5    6 .rodata ascii 0x00001dc4,0x00001ddc            1.7.0
-0x00004e48 0x00004e48 str.ld.so                                                                                                                                                  6    7 .rodata ascii 0x00001d7c,0x00001d94            ld.so-
-0x00004e2c 0x00004e2c str.s:_can_t_map_cache___s                                                                                                                                25   26 .rodata ascii 0x00001d44                       %s: can't map cache '%s'\n
-0x00004dd4 0x00004dd4 str.home_liujiale_project_816_telnet_MTK7620A_DLINK_TELNET_source_romfs_etc_ld.so.cache                                                                   84   85 .rodata ascii 0x00001c3c,0x00001d48,0x00001ea4 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
-0x00004d94 0x00004d94 str.s:_cannot_apply_additional_memory_protection_after_relocation                                                                                         62   63 .rodata ascii 0x00001ba8                       %s: cannot apply additional memory protection after relocation
-0x00004d80 0x00004d80 str.overflow                                                                                                                                               9   10 .rodata ascii 0x000015dc                       overflow\n
-0x00004d70 0x00004d70 str.ld_uClibc.so.0,section..rodata,.rodata                                                                                                                14   15 .rodata ascii 0x00004070,0x00004084            ld-uClibc.so.0
+0x51c0 16 15 LD_AOUT_PRELOAD
+0x519c 33 32 %s: aborted attempt to load %s!\n
+0x5190 9 8 libc.so.
+0x5164 31 30 %s: can't resolve symbol '%s'\n
+0x515c 7 6 malloc
+0x5154 7 6 atexit
+0x5148 10 9 __environ
+0x5138 16 15 \t%s => %s (%x)\n
+0x5118 29 28 %s: can't load library '%s'\n
+0x5104 18 17 \t%s => not found\n
+0x50ec 24 23 LD_TRACE_LOADED_OBJECTS
+0x50dc 16 15 LD_LIBRARY_PATH
+0x50d0 11 10 LD_PRELOAD
+0x50c4 12 11 LD_BIND_NOW
+0x5098 43 42 Standalone execution is not supported yet\n
+0x507c 28 27 can't handle reloc type %x\n
+0x506c 14 13 symbol '%s':
+0x5064 6 5 \n%s:
+0x4fcc 150 149 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/lib:/home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/usr/lib
+0x4fb4 16 15 Out of memory!\n
+0x4f60 82 81 Can't modify %s's text section. Use GCC option -fPIC for shared objects, please.\n
+0x4f38 39 38 %s: '%s' is missing a dynamic section\n
+0x4f24 18 17 %s: can't map %s\n
+0x4ef8 44 43 %s: '%s' has more than one dynamic section\n
+0x4ecc 44 43 %s: '%s' is not an ELF executable for MIPS\n
+0x4eac 29 28 %s: '%s' is not an ELF file\n
+0x4e98 20 19 %s: can't map '%s'\n
+0x4e74 34 33 %s: mmap of a spare page failed!\n
+0x4e58 27 26 %s: cache '%s' is corrupt\n
+0x4e50 6 5 1.7.0
+0x4e48 7 6 ld.so-
+0x4e2c 26 25 %s: can't map cache '%s'\n
+0x4dd4 85 84 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
+0x4d94 63 62 %s: cannot apply additional memory protection after relocation
+0x4d80 10 9 overflow\n
+0x4d70 15 14 ld-uClibc.so.0                                                                                                             14   15 .rodata ascii 0x00004070,0x00004084            ld-uClibc.so.0
 EOF
 RUN
 
