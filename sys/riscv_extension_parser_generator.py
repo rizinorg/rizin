@@ -130,15 +130,17 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
             return lines
 
         # Non-leaf node - check if this is also a valid end point
-        if node.enum_name:
-            lines.append(f"{indent}STOP_WITH_MATCH({node.enum_name});")
-            lines.append("")
-
-        # Process children - add state comment only before branching
         sorted_children = sorted(node.children.items())
         expected_chars = [c for c, _ in sorted_children]
         expected_str = "".join(expected_chars)
 
+        if node.enum_name:
+            lines.append(
+                f'{indent}DO_IF_NOT_ANY_OF("{expected_str}", STOP_WITH_MATCH({node.enum_name}));'
+            )
+            lines.append("")
+
+        # Process children - add state comment only before branching
         lines.append(f"{indent}/* State: '{path}' expecting [{expected_str}] */")
 
         for i, (char, child) in enumerate(sorted_children):
@@ -269,6 +271,21 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
     full_code += "        } else { \\\n"
     full_code += "            return RISCV_EXT_PARSE_NO_MATCH_UNEXPECTED; \\\n"
     full_code += "        } \\\n"
+    full_code += "    } while (0)\n\n"
+
+    full_code += "/* Macro: Conditinally invoke a macro if the current character is not on a given blacklist*/\n"
+    full_code += "#define DO_IF_NOT_ANY_OF(blacklist, thing) \\\n"
+    full_code += "    do { \\\n"
+    full_code += "        bool __will_do__ = true; \\\n"
+    full_code += "        char *__curr__ = blacklist; \\\n"
+    full_code += "        while (*__curr__ != '\\0') { \\\n"
+    full_code += "            if (*p == *__curr__++) { \\\n"
+    full_code += "                __will_do__ = false; \\\n"
+    full_code += "            } \\\n"
+    full_code += "        } \\\n"
+    full_code += "    if (__will_do__) { \\\n"
+    full_code += "        thing; \\\n"
+    full_code += "    } \\\n"
     full_code += "    } while (0)\n\n"
 
     full_code += "/**\n"
