@@ -4473,8 +4473,8 @@ EXPECT=<<EOF
 0x50c4 12 11 LD_BIND_NOW
 0x5098 43 42 Standalone execution is not supported yet\n
 0x507c 28 27 can't handle reloc type %x\n
-0x506c 14 13 symbol '%s':
-0x5064 6 5 \n%s:
+0x506c 14 13 symbol '%s': 
+0x5064 6 5 \n%s: 
 0x4fcc 150 149 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/lib:/home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/usr/lib
 0x4fb4 16 15 Out of memory!\n
 0x4f60 82 81 Can't modify %s's text section. Use GCC option -fPIC for shared objects, please.\n
@@ -4492,7 +4492,7 @@ EXPECT=<<EOF
 0x4dd4 85 84 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
 0x4d94 63 62 %s: cannot apply additional memory protection after relocation
 0x4d80 10 9 overflow\n
-0x4d70 15 14 ld-uClibc.so.0                                                                                                             14   15 .rodata ascii 0x00004070,0x00004084            ld-uClibc.so.0
+0x4d70 15 14 ld-uClibc.so.0
 EOF
 RUN
 
