@@ -30,6 +30,7 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	hexagon_reverse_opcode(&rev, addr, NULL, analysis);
 	HexPkt *p = hex_get_pkt(rev.state, addr);
 	if (p) {
+		op->hexagon_pkt_addr = p->pkt_addr;
 		rev.pkt_fully_decoded = p->is_valid;
 		if (mask & RZ_ANALYSIS_OP_MASK_INSN_PKT) {
 			op->size = rz_list_length(p->bin) * HEX_INSN_SIZE;

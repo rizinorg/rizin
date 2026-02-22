@@ -344,7 +344,8 @@ static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_siz
 RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 	const RzPVector /*<RzBinSection *>*/ *sections,
 	bool include_call_return_pts,
-	RZ_NONNULL RZ_OUT RzSetU *branch_targets) {
+	RZ_NONNULL RZ_OUT RzSetU *branch_targets,
+	RZ_NONNULL RZ_OUT RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	rz_return_val_if_fail(analysis && analysis->cur && sections && branch_targets, false);
 	size_t buf_size = (analysis->cur->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, buf_size);
@@ -366,7 +367,7 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				rz_analysis_op_fini(&op);
 				break;
 			}
-			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_INSN_PKT) <= 0) {
+			if (rz_analysis_op(analysis, &op, addr, buf, buf_size, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
 				rz_analysis_op_fini(&op);
 				addr += op.size;
 				continue;
@@ -378,9 +379,15 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
 				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
 				rz_set_u_add(branch_targets, op.jump);
+
+				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
+				rz_vector_push(insn_to_insn_edges, &edge);
 				if (op.fail != UT64_MAX) {
-					RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.fail);
+					RZ_LOG_DEBUG("Add branch target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.fail);
 					rz_set_u_add(branch_targets, op.fail);
+
+					RzAnalysisXRef edge = { .from = addr, .to = op.fail };
+					rz_vector_push(insn_to_insn_edges, &edge);
 				}
 				if (include_call_return_pts && rz_analysis_op_is_direct_call(&op)) {
 					// If it is a call, also add the following instruction as reference.

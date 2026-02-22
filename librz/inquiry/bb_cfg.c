@@ -133,7 +133,7 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 	return rz_graph_innodes(cfg->graph, n);
 }
 
-RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq) {
+RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (iq->xrefs, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
@@ -147,6 +147,21 @@ RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq) {
 				continue;
 			}
 			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, xref->to);
+		}
+		rz_iterator_free(bb_iter);
+	}
+
+	// Add the instruction to instruction edges.
+	RzAnalysisXRef *i2i_edge;
+	rz_vector_foreach(insn_to_insn_edges, i2i_edge) {
+		void **it;
+		RzIterator *bb_iter = ht_up_as_iter(iq->bb_cfg->basic_blocks);
+		rz_iterator_foreach(bb_iter, it) {
+			RzInterval *bb = *it;
+			if (!rz_itv_contain(*bb, i2i_edge->from)) {
+				continue;
+			}
+			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to);
 		}
 		rz_iterator_free(bb_iter);
 	}

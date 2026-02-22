@@ -301,7 +301,7 @@ error_free:
 	return false;
 }
 
-static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
+static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!sections) {
 		return false;
@@ -320,7 +320,7 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets) {
 		rz_pvector_remove_at(sections, *j);
 	}
 	rz_vector_free(non_x_idx);
-	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, false, branch_targets)) {
+	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, false, branch_targets, insn_to_insn_edges)) {
 		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return false;
 	}
@@ -453,11 +453,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	// of the pointers.
 	il_cache = ht_up_new(NULL, (RzPVectorFree)rz_interpreter_il_bb_free);
 
-	if (!get_branch_targets(core, branch_targets)) {
+	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
+	if (!get_branch_targets(core, branch_targets, insn_to_insn_edges)) {
 		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return_code = false;
 		goto error_free;
 	}
+
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(branch_targets));
 	}
@@ -709,7 +711,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
-	rz_inquiry_complement_bb_cfg(core->inquiry);
+	rz_inquiry_complement_bb_cfg(core->inquiry, insn_to_insn_edges);
+	rz_vector_free(insn_to_insn_edges);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
 
