@@ -413,7 +413,6 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 		rz_analysis_add_bb(core->analysis, bb->bb_addr, bb->size);
 		RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 		ht_up_insert(il_cache, bb->bb_addr, bb);
-		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
 	} else {
 		RZ_LOG_DEBUG("INQUIRY: Serve BB from cache\n");
 	}
@@ -593,6 +592,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						bb_decode_failed = true;
 						break;
 					}
+					rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
 					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 					// Add or not add?
 					rz_th_queue_push(iset->il_queue, (void *)bb, true);
@@ -711,7 +711,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
-	rz_inquiry_complement_bb_cfg(core->inquiry, insn_to_insn_edges);
+	rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges);
 	rz_vector_free(insn_to_insn_edges);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
@@ -750,15 +750,8 @@ error_free:
 	return return_code;
 }
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point,
+static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry, RzPVector *fcns,
 	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
-	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
-	rz_inquiry_algo_revng_fcn_detection(
-		entry_point,
-		inquiry->call_candidates,
-		inquiry->bb_cfg,
-		fcns);
-
 	// Create analysis function and add their blocks to them.
 	void **it;
 	rz_pvector_foreach (fcns, it) {
@@ -790,7 +783,7 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
 				rz_warn_if_reached();
-				break;
+				return false;
 			}
 			const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
 			RzGraphNode *n;
@@ -815,6 +808,20 @@ RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inqui
 		rz_iterator_free(iter);
 	}
 	rz_pvector_free(fcns);
-
 	return true;
+}
+
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point,
+	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
+	if (!rz_inquiry_algo_revng_fcn_detection(
+		entry_point,
+		inquiry->call_candidates,
+		inquiry->bb_cfg,
+		fcns)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	return convert_and_add_to_analysis(analysis, inquiry, fcns, symbols);
 }

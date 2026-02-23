@@ -65,9 +65,9 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 t
 RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr);
 RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr);
 
-RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref);
+RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges);
 
-RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges);
+RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref);
 
 RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);
 RZ_API bool rz_inquiry_plugin_del(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_NONNULL RzInquiryPlugin *plugin);

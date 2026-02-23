@@ -55,13 +55,16 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 siz
 	return true;
 }
 
+static /*const*/ RZ_BORROW RzGraphNode *get_node(RzInquiryBBCFG *cfg, ut64 bb_addr) {
+	return ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
+}
+
 /**
  * \brief Adds new node or returns existing one.
  */
 static /*const*/ RZ_BORROW RzGraphNode *get_add_node_to_cfg(RzInquiryBBCFG *cfg, ut64 bb_addr) {
-	bool found = false;
-	RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, &found);
-	if (found) {
+	RzGraphNode *n = get_node(cfg, bb_addr);
+	if (n) {
 		return n;
 	}
 	n = rz_graph_add_node(cfg->graph, (void *)bb_addr);
@@ -133,7 +136,11 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 	return rz_graph_innodes(cfg->graph, n);
 }
 
-RZ_IPI bool rz_inquiry_complement_bb_cfg(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
+/**
+ * \brief Add edges from iq->xrefs and the \p insn_to_insn_edges to the cfg.
+ */
+RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
+	// Add all edges discovered by the interpreter
 	RzAnalysisXRef *xref;
 	rz_vector_foreach (iq->xrefs, xref) {
 		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
