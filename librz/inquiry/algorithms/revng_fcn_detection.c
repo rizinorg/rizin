@@ -11,7 +11,7 @@
  *
  * TERMS:
  *
- * Basic Block: A sequence of instructions ending with a branch of any kind.
+ * Basic Block: A sequence of instructions ending with exactly one known entry point and one branch at the end.
  * Call candidate: RzAnalysisCallCandidate
  * Candidate function entry points (CFEP): Addresses of possible function entry point.
  * Return Addresses: address after a call candidate BB, with an xref to it.
