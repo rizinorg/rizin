@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_list.h"
 #include "rz_util/ht_up.h"
 #include "rz_util/ht_uu.h"
 #include "rz_util/rz_assert.h"
@@ -74,6 +75,20 @@ static /*const*/ RZ_BORROW RzGraphNode *get_add_node_to_cfg(RzInquiryBBCFG *cfg,
 	ht_uu_insert(cfg->bb_gidx_map, bb_addr, n->idx);
 	ht_up_insert(cfg->bb_gnode_map, bb_addr, n);
 	return n;
+}
+
+RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
+	RzGraphNode *f = get_node(cfg, bb_addr);
+	rz_return_val_if_fail(f, false);
+	const RzList /*<RzGraphNode *>*/ *neighs = rz_inquiry_bb_cfg_get_neighbours_from(cfg, bb_addr);
+	RzGraphNode *t;
+	RzListIter *it;
+	RzList *ptr_clones = rz_list_clone(neighs);
+	rz_list_foreach (ptr_clones, it, t) {
+		rz_graph_del_edge(cfg->graph, f, t);
+	}
+	rz_list_free(ptr_clones);
+	return true;
 }
 
 /**
@@ -190,4 +205,71 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut
 		return false;
 	}
 	return true;
+}
+
+static int cmp(const ut64 *a, const ut64 *b, void *user) {
+	if (*a < *b) {
+		return -1;
+	} else if (*a > *b) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * \brief Reduces all basic blocks in the cfg to their minimum size.
+ * Removing duplicates and overlapping basic blocks.
+ * This function makes each basic block just have a single entry point.
+ */
+RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
+	// Index is end address of bb, values are starting address of bbs with that end address.
+	HtUP *overlapping_bbs = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
+
+	RzIterator *iter = ht_up_as_iter(cfg->basic_blocks);
+	void **it;
+	rz_iterator_foreach(iter, it) {
+		RzInterval *bb = *it;
+		ut64 end = bb->addr + bb->size;
+		RzVector *start_addresses = ht_up_find(overlapping_bbs, end, NULL);
+		if (!start_addresses) {
+			start_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
+			ht_up_insert(overlapping_bbs, end, start_addresses);
+		}
+		rz_vector_push(start_addresses, &bb->addr);
+	}
+	rz_iterator_free(iter);
+
+	iter = ht_up_as_iter(overlapping_bbs);
+	rz_iterator_foreach(iter, it) {
+		RzVector *addrs = *it;
+		size_t i = rz_vector_len(addrs);
+		if (i == 1) {
+			continue;
+		}
+		rz_vector_sort(addrs, (RzVectorComparator)cmp, false, NULL);
+		for (i = i - 1; i > 0; i--) {
+			ut64 small_bb_addr = *((ut64 *)rz_vector_index_ptr(addrs, i));
+			ut64 big_bb_addr = *((ut64 *)rz_vector_index_ptr(addrs, i - 1));
+			rz_goto_if_fail(small_bb_addr > big_bb_addr, fail);
+
+			// Change size of big bb
+			RzInterval *big_bb = ht_up_find(cfg->basic_blocks, big_bb_addr, NULL);
+			rz_goto_if_fail(big_bb, fail);
+			big_bb->size = small_bb_addr - big_bb_addr;
+
+			// add edge between big to small bb, remove old edges.
+			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr)) {
+				goto fail;
+			}
+		}
+	}
+	rz_iterator_free(iter);
+	ht_up_free(overlapping_bbs);
+	return true;
+
+fail:
+	ht_up_free(overlapping_bbs);
+	rz_warn_if_reached();
+	return false;
 }
