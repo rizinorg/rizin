@@ -386,7 +386,7 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 		RZ_LOG_DEBUG("INQUIRY: Lift new BB\n");
 		bb = rz_inquiry_gen_il_bb(core->analysis, core->io, addr);
 		if (!bb) {
-			RZ_LOG_ERROR("Failed to lift basic block at 0x%" PFMT64x "\n", addr);
+			RZ_LOG_DEBUG("Failed to lift basic block at 0x%" PFMT64x "\n", addr);
 			return NULL;
 		}
 
