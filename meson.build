@@ -213,7 +213,7 @@ endif
 
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
-pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() != 'darwin'
+pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']
 if pcre2_jit_supported
   add_project_arguments(['-DSUPPORTS_PCRE2_JIT'], language: 'c')
 endif
@@ -394,7 +394,7 @@ foreach it : ccs
   if not it_cc.has_function('clock_gettime', prefix: '#include <time.h>') and it_cc.has_header_symbol('features.h', '__GLIBC__')
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
-  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(it_machine.system())
+  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku', 'serenity'].contains(it_machine.system())
   if have_lrt and not it_lrt.found()
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
@@ -672,6 +672,13 @@ if not libzip_dep.found()
     'use_sys_openssl=@0@'.format(get_option('use_sys_libzip_openssl')),
   ])
   libzip_dep = libzip_proj.get_variable('libzip_dep')
+endif
+
+if host_machine.system() == 'serenity' and libzip_dep.found()
+  zlib_dep = dependency('zlib', required: true, static: is_static_build)
+  libzip_dep = declare_dependency(
+    dependencies: [libzip_dep, zlib_dep]
+  )
 endif
 
 # handle zstd dependency

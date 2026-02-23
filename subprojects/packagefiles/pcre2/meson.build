@@ -64,7 +64,7 @@ cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv
 # tcc doesn't support the MSVC asm syntax PCRE2 uses (`__asm { ... }`).
 # Darwin kernel not as well, because of forbidden wx memory.
 # It is used in the JIT compiler code.
-if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() != 'darwin'
+if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() not in ['darwin', 'serenity']
   libpcre2_c_args += ['-DSUPPORT_JIT']
   pcre2_files += ['src/pcre2_jit_compile.c']
 endif

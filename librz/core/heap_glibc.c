@@ -890,6 +890,7 @@ static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig
 	}
 }
 
+#if !defined(__serenity__)
 RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
 	RzDebug *dbg = core->dbg;
 
@@ -904,6 +905,7 @@ RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base,
 
 	return true;
 }
+#endif
 
 void print_heap_chunk(RzCore *core, ut64 chunk, const RzHeapConfig *config) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -2534,9 +2536,11 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+#if !defined(__serenity__)
 	if (!resolve_heap_tcache(core, m_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+#endif
 
 	return RZ_CMD_STATUS_OK;
 }
