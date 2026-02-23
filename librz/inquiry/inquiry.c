@@ -564,8 +564,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			// IL CACHE
 			// =========
 			//
-			// This block mimics the IL cache. It uplifts basic blocks,
-			// caches them, logs them in RzAnalysis.
+			// This block mimics the IL cache. It uplifts basic blocks and
+			// caches them.
 			{
 				if (!rz_th_queue_is_empty(iset->branch_queue)) {
 					RzInterpreterBranch *branch = NULL;
@@ -593,7 +593,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 					}
 					rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
 					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
-					// Add or not add?
 					rz_th_queue_push(iset->il_queue, (void *)bb, true);
 				}
 			}
@@ -625,7 +624,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			// ==============
 			//
 			// This part plays the role of a yield consumer.
-			// In our prototype it only receives xrefs and stores them in RzAnalysis.
+			// In our prototype it only receives xrefs and call candidates.
 			{
 				if (!handle_yields(core, yield_queues)) {
 					rz_atomic_bool_set(is_running, false);
