@@ -45,7 +45,6 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 		// Although this is expected here. rz_io_nread_at() on the other hand just
 		// reads less bytes.
 		if (rz_io_nread_at(io, addr, buf, max_read_size) == 0) {
-			RZ_LOG_WARN("inquiry: Failed to read memory for IL basic block generation at 0x%" PFMT64x " size: %u.\n", addr, max_read_size);
 			goto fail;
 		}
 		if (rz_analysis_op(analysis, &op, addr, buf, max_read_size, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_INSN_PKT) <= 0) {

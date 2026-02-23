@@ -424,7 +424,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		in_hash = next.in_state_hash;
 #endif
 		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
-			rz_warn_if_reached();
+			// The il op lifting failed. Likely because the PC
+			// pointed to an unmapped region.
 			goto in_loop_error;
 		}
 		if (!plugin->set_pc(in_state, next.addr, plugin_data)) {
