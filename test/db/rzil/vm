@@ -1,8 +1,7 @@
 NAME=Halt VM on exception
 FILE==
-ARGS=-a ppc -e cfg.bigendian=true -b 64
+ARGS=-a ppc -b 64 -E big
 CMDS=<<EOF
-
 # li	3, 4
 # li	4, 0
 # divdu 5, 3, 4

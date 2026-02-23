@@ -547,8 +547,6 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	rz_return_val_if_fail(r && binfile, false);
-	int v;
-	char str[RZ_FLAG_NAME_SIZE];
 	RzBinObject *obj = binfile->o;
 	if (!obj) {
 		return false;
@@ -558,38 +556,44 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		return false;
 	}
 	rz_config_set(r->config, "file.type", rz_str_get(info->rclass));
-	rz_config_set(r->config, "cfg.bigendian",
-		info->big_endian ? "true" : "false");
-	if (info->lang) {
-		rz_config_set(r->config, "bin.lang", info->lang);
-	}
-	rz_config_set(r->config, "asm.os", info->os);
+	rz_config_set(r->config, "bin.lang", rz_str_get(info->lang));
 	if (info->rclass && !strcmp(info->rclass, "pe")) {
 		rz_config_set(r->config, "analysis.cpp.abi", "msvc");
 	} else {
 		rz_config_set(r->config, "analysis.cpp.abi", "itanium");
 	}
-	rz_config_set(r->config, "asm.arch", info->arch);
+	if (RZ_STR_ISNOTEMPTY(info->os)) {
+		rz_config_set(r->config, "asm.os", info->os);
+	}
+	if (RZ_STR_ISNOTEMPTY(info->arch)) {
+		// update the arch & bits only if really set.
+		rz_config_set(r->config, "asm.arch", info->arch);
+		rz_config_set_i(r->config, "asm.bits", info->bits);
+	}
 	if (RZ_STR_ISNOTEMPTY(info->cpu)) {
+		// update the CPU only if really set.
 		rz_config_set(r->config, "asm.cpu", info->cpu);
 	}
 	if (RZ_STR_ISNOTEMPTY(info->features)) {
+		// update the CPU features only if really set.
 		rz_config_set(r->config, "asm.features", info->features);
 	}
-	rz_config_set(r->config, "analysis.arch", info->arch);
-	snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
-	rz_config_set(r->config, "asm.bits", str);
-	rz_config_set(r->config, "asm.debuginfo",
-		(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-	v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	if (v != -1) {
-		rz_config_set_i(r->config, "asm.pcalign", v);
+	if (RZ_STR_ISNOTEMPTY(info->arch)) {
+		// update the endianness only if the arch value is set.
+		ut32 endianness = info->big_endian ? RZ_SYS_ENDIAN_BIG : RZ_SYS_ENDIAN_LITTLE;
+		if (rz_asm_support_endianness(r->rasm, endianness)) {
+			// change only if the current arch supports it.
+			rz_config_set_b(r->config, "cfg.bigendian", info->big_endian);
+		}
 	}
+	rz_config_set_b(r->config, "asm.debuginfo", (RZ_BIN_DBG_STRIPPED & info->dbg_info) ? false : true);
+
 	rz_core_analysis_type_init(r);
 	rz_core_analysis_cc_init(r);
 	if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
 		rz_config_set(r->config, "analysis.cc", info->default_cc);
 	}
+
 	char *types_dir = rz_path_system(r->sys_path, RZ_SDB_TYPES);
 	if (!types_dir) {
 		return false;

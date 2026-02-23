@@ -643,7 +643,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 
 	if (bf->o) {
 		const RzBinInfo *binfo = rz_bin_object_get_info(bf->o);
-		prefer_big_endian = binfo ? binfo->big_endian : false;
+		// follow what RzBinInfo says only if the arch is set.
+		prefer_big_endian = binfo && binfo->arch ? binfo->big_endian : false;
 	}
 
 	SharedData shared = {

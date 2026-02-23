@@ -268,6 +268,7 @@ EXPECT=<<EOF
  [32m-d[0m         [0mDebug the executable 'file' or running process 'pid'
  [32m-D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
  [32m-e[0m[33m k=v [0m    [0mEvaluate config var
+ [32m-E[0m[33m endian [0m [0mEndianness -E big or -E little
  [32m-f[0m         [0mBlock size = file size
  [32m-F[0m[33m binplug [0m[0mForce to use that rbin plugin
  [32m-h, -hh[0m    [0mShow help message, -hh for long

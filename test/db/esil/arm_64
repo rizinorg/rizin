@@ -78,6 +78,7 @@ NAME=ldrsw x9, [x8, 0x468]
 FILE=malloc://0x200
 ARGS=-a arm -b 64 -m 0x464
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 096984b9@ 0x464
 wx 8877665544332211cacacacacaca@ 0x468
 aei

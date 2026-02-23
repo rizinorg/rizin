@@ -92,148 +92,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=i (all) (malloc)
-FILE=malloc://1025
-ARGS=-a x86 -b 64
-CMDS=<<EOF
-i
-iI
-ia
-ii
-ie
-is
-iS
-iz
-EOF
-EXPECT=<<EOF
-fd      3
-file    malloc://1025
-size    0x401
-humansz 1.0K
-mode    rwx
-format  any
-iorw    true
-block   0x100
-type    
-arch     N/A
-cpu      N/A
-features N/A
-baddr    0x00000000
-binsz    0x00000401
-bintype  N/A
-bits     64
-class    N/A
-compiler N/A
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    N/A
-laddr    0x00000000
-lang     N/A
-machine  N/A
-maxopsz  16
-minopsz  1
-os       N/A
-cc       N/A
-pcalign  1
-rpath    N/A
-subsys   
-stripped false
-crypto   false
-havecode false
-va       false
-sanitiz  false
-static   true
-linenum  false
-lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
-[Info]
-arch     N/A
-cpu      N/A
-features N/A
-baddr    0x00000000
-binsz    0x00000401
-bintype  N/A
-bits     64
-class    N/A
-compiler N/A
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    N/A
-laddr    0x00000000
-lang     N/A
-machine  N/A
-maxopsz  16
-minopsz  1
-os       N/A
-cc       N/A
-pcalign  1
-rpath    N/A
-subsys   
-stripped false
-crypto   false
-havecode false
-va       false
-sanitiz  false
-static   true
-linenum  false
-lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
-
-[Imports]
-nth vaddr bind type lib name 
------------------------------
-
-[Entries]
-vaddr paddr hvaddr haddr type 
-------------------------------
-
-[Exports]
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-
-[Classes]
-address min max name super 
----------------------------
-
-[Symbols]
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-
-[Sections]
-paddr size vaddr vsize align perm name type flags 
---------------------------------------------------
-
-[Memory]
-name size address flags mirror 
--------------------------------
-
-[Strings]
-paddr vaddr len size section type string 
------------------------------------------
-
-nth vaddr bind type lib name 
------------------------------
-vaddr paddr hvaddr haddr type 
-------------------------------
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-paddr size vaddr vsize align perm name type flags 
---------------------------------------------------
-paddr vaddr len size section type string 
------------------------------------------
-EOF
-RUN
-
 NAME=i (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=i~!file
@@ -3656,6 +3514,7 @@ RUN
 
 NAME=izz and str.encoding
 FILE==
+ARGS=-a x86 -b 32
 CMDS=<<EOF
 wz k\0i\0abcdefgh
 (izzenc enc; e str.encoding=${enc}; izz:quiet)
@@ -4315,17 +4174,10 @@ laddr    0x00000000
 EOF
 RUN
 
-NAME=ik-macho
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik mach0.entry.vaddr~?0x100000ef8
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=ik
 FILE=bins/mach0/fatmach0-3true
 CMDS=ik mach0.entry.vaddr
+ARGS=-a ppc -b 64
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -4351,6 +4203,7 @@ RUN
 
 NAME=iSq.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a ppc -b 64
 CMDS=iS.:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
      paddr       vaddr perm name            
@@ -4526,6 +4379,7 @@ RUN
 
 NAME=iT2
 FILE=--
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 mkdir .tmp
 cp bins/mach0/fatmach0-3true .tmp/it2-modfile

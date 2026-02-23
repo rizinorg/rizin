@@ -1,22 +1,30 @@
 NAME=debruijn little endian
 FILE==
 CMDS=<<EOF
+e asm.arch=arm
 e cfg.bigendian=false
 wD/ 0x41574141
+echo ---
+e cfg.bigendian=true
+wD/ 0x41574141
+echo ---
+e asm.arch=x86
+wD/ 0x41417641
+echo ---
+wD/ 41417641
+echo ---
 EOF
 EXPECT=<<EOF
 64
-EOF
-RUN
-
-NAME=debruijn big endian
-FILE==
-CMDS=<<EOF
-e cfg.bigendian=true
-wD/ 0x41574141
-EOF
-EXPECT=<<EOF
+---
 65
+---
+140
+---
+---
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Could not find value 277fba9 in Debruijn sequence.
 EOF
 RUN
 
@@ -29,21 +37,6 @@ EOF
 EXPECT=<<EOF
 41414142414143414144414145414146
 EOF
-RUN
-
-NAME=wD/ 0x41417641
-FILE==
-ARGS=-a x86
-CMDS=wD/ 0x41417641
-EXPECT=<<EOF
-140
-EOF
-RUN
-
-NAME=wD/ 41417641
-FILE==
-CMDS=wD/ 41417641
-EXPECT=
 RUN
 
 NAME=woE woD rc4

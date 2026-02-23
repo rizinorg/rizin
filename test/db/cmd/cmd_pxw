@@ -1,6 +1,8 @@
 NAME=pxw cfg.bigendian=true (elf64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
 e cfg.bigendian=true
 pxw 16
 EOF
@@ -34,6 +36,8 @@ RUN
 NAME=pxw cfg.bigendian=true (pe32)
 FILE=bins/pe/hello-mingw32
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
 e cfg.bigendian=true
 pxw 16
 EOF

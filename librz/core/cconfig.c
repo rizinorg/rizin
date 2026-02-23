@@ -13,6 +13,12 @@
 
 #include "core_private.h"
 
+#if RZ_SYS_ENDIAN == RZ_SYS_ENDIAN_LITTLE
+#define CFG_DEFAULT_ENDIANNESS "false"
+#else
+#define CFG_DEFAULT_ENDIANNESS "true"
+#endif
+
 typedef struct config_opt_descr {
 	const char *option;
 	const char *description;
@@ -790,21 +796,7 @@ static bool cb_asmsyntax(void *user, void *data) {
 static bool cb_bigendian(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	// Try to set endian based on preference, restrict by RzAsmPlugin
-	bool isbig = rz_asm_set_big_endian(core->rasm, node->i_value);
-	// Set analysis endianness the same as asm
-	rz_analysis_set_big_endian(core->analysis, isbig);
-	// While analysis sets endianess for TypesDB there might
-	// be cases when it isn't availble for the chosen analysis
-	// plugin but types and printing commands still need the
-	// corresponding endianness. Thus we set these explicitly:
-	rz_type_db_set_endian(core->analysis->typedb, node->i_value);
-	core->print->big_endian = node->i_value;
-	// the big endian should also be assigned to dbg->bp->endian
-	if (core->dbg && core->dbg->bp) {
-		core->dbg->bp->endian = isbig;
-	}
-	return true;
+	return rz_core_set_endianness(core, node->i_value);
 }
 
 static bool cb_cfgdatefmt(void *user, void *data) {
@@ -3197,7 +3189,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.wseek", "false", "Seek after write");
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
-	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETCB("cfg.bigendian", CFG_DEFAULT_ENDIANNESS, &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */

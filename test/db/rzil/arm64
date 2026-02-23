@@ -78,6 +78,7 @@ NAME=arm64 cls
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 6214c0da
 aezi
 echo -- 0x00800000
@@ -116,6 +117,7 @@ NAME=arm clz
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 6210c0da
 aezi
 echo -- 0x00800000
@@ -154,6 +156,7 @@ NAME=arm64 sdiv 64-bit
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 200cc29a
 aezi
 ar x1=42
@@ -212,6 +215,7 @@ NAME=arm64 sdiv 32-bit
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 200cc21a
 aezi
 ar x1=42
@@ -270,6 +274,7 @@ NAME=arm udiv 64-bit
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 0008c19a
 aezi
 ar x0=42
@@ -328,6 +333,7 @@ NAME=arm udiv 32-bit
 FILE=malloc://0x100
 ARGS=-aarm -b64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 0008c11a
 aezi
 ar x0=42

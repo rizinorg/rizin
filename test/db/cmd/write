@@ -147,6 +147,7 @@ NAME=wao nop (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao nop
@@ -168,6 +169,7 @@ NAME=wao trap (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao trap
@@ -250,8 +252,9 @@ RUN
 NAME=endian tests: wv
 FILE==
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wv4 3
 p8 4
 e cfg.bigendian=true

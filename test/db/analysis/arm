@@ -165,11 +165,11 @@ NAME=arm 16 BE 4 bytes instruction
 FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
-e cfg.bigendian=1
+e cfg.bigendian=true
 wa "blx 0x33b8"
 p8 4
 pi 1
-e cfg.bigendian=0
+e cfg.bigendian=false
 wa "blx 0x33b8"
 p8 4
 pi 1
@@ -1235,6 +1235,7 @@ NAME=aav thumb detection
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 aav
 fl
 EOF
@@ -1287,7 +1288,7 @@ RUN
 
 NAME=raw aac with maps (using a PIC bin)
 FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
+ARGS=-n -m 0x80000 -a arm -b 16 -E little
 CMDS=<<EOF
 aac
 e search.in=io.maps
@@ -1300,7 +1301,7 @@ RUN
 
 NAME=add/adc pc, pc issue #3965
 FILE==
-ARGS=-a arm -b 32 -e cfg.bigendian=false
+ARGS=-a arm -b 32 -E little
 CMDS=<<EOF
 wx ffff8f024fffaf02
 pd 2
@@ -1344,6 +1345,7 @@ NAME=Check MOV gets identified as JUMP if it moves to PC
 FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e cfg.bigendian=false
 s 0x100
 wx bff36f8f2548874680bd000072b680bd
 s 0x19c

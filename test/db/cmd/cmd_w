@@ -1,6 +1,7 @@
 NAME=wB
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e cfg.bigendian=false
 wB 0x55
 pv1
@@ -38,7 +39,7 @@ RUN
 
 NAME=w[1234]
 FILE==
-ARGS=-e cfg.bigendian=false
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 0022
 w1+ 1
