@@ -1,7 +1,7 @@
 # RzMain
 
 The `rz_main` library implements CLI entry points for the Rizin toolset and exports
-their as a C API for programmatic use.
+them as C API (see `rz_main.h`).
 
 > [!NOTE]
 > Internally used in `binrz\*` for creating binaries.
