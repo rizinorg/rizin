@@ -410,7 +410,6 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 		// Otherwise YOLO
 #endif
 
-		rz_analysis_add_bb(core->analysis, bb->bb_addr, bb->size);
 		RZ_LOG_DEBUG("INQUIRY: Send IL result: %p.\n", bb);
 		ht_up_insert(il_cache, bb->bb_addr, bb);
 	} else {
@@ -677,13 +676,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			size_t x = 0;
 			ut64 *ct;
 			rz_iterator_foreach(ct_iter, ct) {
-				RzList *containing_blocks = rz_analysis_get_blocks_in(core->analysis, *ct);
-				if (rz_list_length(containing_blocks) != 0) {
+				if (ht_up_find(il_cache, *ct, NULL)) {
+					// This call target was interpreted before (hence is in the IL cache).
 					rz_vector_push(covered_jump_targets, ct);
-					rz_list_free(containing_blocks);
 					continue;
 				}
-				rz_list_free(containing_blocks);
 				x++;
 				rz_vector_push(entry_points, ct);
 				// Experiment how many new entry points we add.
@@ -711,7 +708,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
-	rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges);
+	if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
+		rz_warn_if_reached();
+		goto error_free;
+	}
+	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
+		rz_warn_if_reached();
+		goto error_free;
+	}
 	rz_vector_free(insn_to_insn_edges);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
@@ -752,7 +756,17 @@ error_free:
 
 static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry, RzPVector *fcns,
 	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
-	// Create analysis function and add their blocks to them.
+	// Add all discovered binary blocks to analysis
+
+	RzIterator *iter = ht_up_as_iter(inquiry->bb_cfg->basic_blocks);
+	RzInterval **it_bb;
+	rz_iterator_foreach(iter, it_bb) {
+		RzInterval *bb = *it_bb;
+		rz_analysis_add_bb(analysis, bb->addr, bb->size);
+	}
+	rz_iterator_free(iter);
+
+	// Convert the Inquiry functions to analysis function.
 	void **it;
 	rz_pvector_foreach (fcns, it) {
 		RzInquiryFunction *fcn = *it;
