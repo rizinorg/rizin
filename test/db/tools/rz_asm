@@ -601,6 +601,8 @@ cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 681
 6301            Hitachi 6301: 8-bit microcontroller, CMOS version of 6800
 6309            Hitachi 6309: CMOS version of 6809
 hcs08           Freescale HCS08: 8-bit microcontroller family
+RS08            Freescale RS08: Reduced-resource version of HCS08
+HCS12X          Freescale HCS12X: 16-bit microcontroller (upwards compatible with cpu12)
 EOF
 RUN
 
