@@ -4,7 +4,7 @@
 #include "sdbht.h"
 
 /**
- * todo..
+ * \brief A helper struct used for forwarding iteration (foreach) callbacks between `ht_` and the `sdb_` APIs.
  */
 typedef struct {
 	SdbHtForeachCallback cb;
@@ -79,6 +79,14 @@ static bool sdb_ht_foreach_kv_filter(void *user, const HtSSKv *kv) {
 	return true;
 }
 
+/**
+ * \brief Iterates all elements of a `HtSS` hash table.
+ *
+ * \param ht The hash table.
+ * \param cb A callback to be invoked for each element.
+ * \param user Pointer to user data to be passed to the callback for each element.
+ * \return true if all elements were iterated, false if the iteration was cancelled by the user callback
+ */
 RZ_API bool sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user) {
 	HtSSForeachKvCallbackRedirect redirect = {
 		.cb = cb,

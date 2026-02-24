@@ -15,10 +15,11 @@
 
 /**
  * \file ht_inc.c
- * \brief "SwissTable" hash table implementation
+ * \brief "SwissTable" hash table implementation (an open-addressing hash table design by Google).
  *
  * References:
- * 	-
+ * 	- https://abseil.io/about/design/swisstables
+ *  - https://en.wikipedia.org/wiki/Open_addressing
  */
 
 // Load factor thershold of 87.5% (after that the table grows)
@@ -891,7 +892,7 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
  * \param ht the hash table.
  * \param cb the callback function to invoke (returning `false` will cancel further iteration).
  * \param user pointer to user data (passed through to the callback).
- * \return todo..
+ * \return true if all elements were iterated, false if the iteration was cancelled by the user callback
  */
 RZ_API bool Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(ht && cb, false);

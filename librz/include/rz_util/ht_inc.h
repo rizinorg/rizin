@@ -93,7 +93,9 @@
 #ifndef HT_HASH_FUNCTIONS
 #define HT_HASH_FUNCTIONS
 /**
- * \brief todo..
+ * \brief A Murmur3-like hash function which reduces a 64-bit key to a 32-bit non-cryptographic hash.
+ *
+ * It's simpler than MurmurHash3 which makes it run faster at the cost of slightly worse hash distribution.
  */
 static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
 	key ^= key >> 33;
@@ -103,7 +105,9 @@ static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
 }
 
 /**
- * \brief todo
+ * \brief Computes 32-bit hash for a byte buffer (string).
+ *
+ * The function uses Murmur3 mixing constants and tries to process the buffer in 8-byte or 4-byte blocks when possible.
  */
 static inline ut32 ht_string_hash_32(const char *key, ut32 len) {
 	const uint64_t prime1 = 0xff51afd7ed558ccdULL; /* Murmur3 consts */
