@@ -900,7 +900,7 @@ static ut64 rz_graph_node_default_hash(const void *identifier) {
  * to the appropriate impl initializer.
  *
  * \param impl_type RZ_GRAPH_IMPL_LIST or RZ_GRAPH_IMPL_MATRIX
- * \param user_hash optional custom hash function for node identifiers (currently overridden by default hash)
+ * \param user_hash optional custom hash function for node identifiers, use default hash if NULL
  * \param node_free callback to free node user data, or NULL
  * \param edge_free callback to free edge user data, or NULL
  * \return A new RzGraphNew, or NULL on failure
@@ -927,10 +927,14 @@ RZ_API RZ_OWN RzGraph *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGra
 		return NULL;
 	}
 
+	// use default hash if hash is NULL
+	if (!user_hash) {
+		user_hash = rz_graph_node_default_hash;
+	}
+
 	g->hash_func = user_hash;
 	g->node_data_free = node_free;
 	g->edge_data_free = edge_free;
-	g->hash_func = rz_graph_node_default_hash;
 	g->impl_type = impl_type;
 
 	switch (impl_type) {
@@ -1075,11 +1079,16 @@ RZ_API void rz_graph_reset(RzGraph *g) {
  *
  * \param g graph
  * \param user_data user data to attach to the node (ownership transferred)
- * \param identifier used by the hash function to generate node hash_id
+ * \param identifier used by the hash function to generate node hash_id, if NULL, use user_data as identifier
  * \return the newly created node (borrowed), or NULL on failure
  */
 RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_data, void *identifier) {
 	rz_return_val_if_fail(g, NULL);
+	if (!identifier) {
+		// default use user_data as identifier
+		identifier = user_data;
+	}
+
 	ut64 hash_id = g->hash_func(identifier);
 
 	bool found = false;
@@ -1210,7 +1219,7 @@ RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, vo
  * \param user_data unused
  * \return true on success, false if edge not found
  */
-RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	if (!g->impl_ops->del_edge(g, from, to)) {
 		return false;
@@ -1228,7 +1237,7 @@ RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, vo
  * \param user_data unused
  * \return true if the edge exists, false otherwise
  */
-RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	return g->impl_ops->has_edge(g, from, to);
 }
@@ -1482,4 +1491,20 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *node) {
 		rz_iterator_free(it);
 	}
 	return count;
+}
+
+RZ_API RzGraphNode *rz_graph_find_node_by_id(RzGraph *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, NULL);
+
+	bool found;
+	RzGraphNode *node = ht_up_find(g->nodes, hash_id, &found);
+	if (found && node) {
+		return node;
+	}
+
+	return NULL;
+}
+
+RZ_API ut64 rz_graph_adapter_get_node_id(RzGraphNode *node) {
+	return node->hash_id;
 }

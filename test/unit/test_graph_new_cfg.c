@@ -345,7 +345,7 @@ static bool test_cfg_edge_data(void) {
 	mu_end;
 }
 
-static void tmp_discover(RzGraphNode *n, RzGraphVisitorNew *v) {
+static void tmp_discover(RzGraphNode *n, RzGraphVisitor *v) {
 	BasicBlockNodeData *bb = (BasicBlockNodeData *)n->data;
 	rz_list_append((RzList *)v->data, (void *)(size_t)bb->bb_id);
 }
@@ -377,7 +377,7 @@ static bool test_cfg_dfs(void) {
 	// Perform DFS with counting visitor
 	RzList *visited = rz_list_new();
 
-	RzGraphVisitorNew vis = { 0 };
+	RzGraphVisitor vis = { 0 };
 	vis.data = visited;
 	vis.discover_node = tmp_discover;
 	rz_graph_dfs_from_node(cfg, n_entry, &vis);
