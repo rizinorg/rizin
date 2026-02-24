@@ -126,7 +126,7 @@ rz_bin_sources = [
   'p/bin_java.c',
   'p/bin_le.c',
   'p/bin_luac.c',
-  'p/bin_luaJIT.c',
+  'p/bin_luajit.c',
   'p/bin_mach0.c',
   'p/bin_mach064.c',
   'p/bin_mbn.c',
