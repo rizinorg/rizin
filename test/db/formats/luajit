@@ -1,0 +1,114 @@
+NAME=LUAJIT: plugin load
+FILE=bins/luaJIT/bin/dumb_code_2.1.ljbc
+CMDS=<<EOF
+iI~?luajit
+i~guid
+EOF
+EXPECT=<<EOF
+4
+guid     @dumb_code_2.1.lua
+EOF
+RUN
+
+NAME=LUAJIT: sections
+FILE=bins/luaJIT/bin/dumb_code_2.1.ljbc
+CMDS=<<EOF
+iS~header
+EOF
+EXPECT=<<EOF
+0x00000071  0xc 0x00000071   0xc   0x0 -r-- fcn.0x71.header            
+0x00000048  0xb 0x00000048   0xb   0x0 -r-- fcn.0x48.header            
+0x00000018  0xb 0x00000018   0xb   0x0 -r-- fcn.0x18.header            
+EOF
+RUN
+
+NAME=LUAJIT: Big file
+FILE=bins/luaJIT/bin/interpolation_search_2.1.ljbc
+CMDS=<<EOF
+iS~kgc
+iS
+is~VAL
+EOF
+EXPECT=<<EOF
+0x000001fb 0x74 0x000001fb  0x74   0x0 -r-- fcn.0x143.kgcobj         
+0x000000e7  0xb 0x000000e7   0xb   0x0 -r-- fcn.0x23.kgcobj          
+     paddr size      vaddr vsize align perm name                type flags 
+---------------------------------------------------------------------------
+0x00000143  0xc 0x00000143   0xc   0x0 -r-- fcn.0x143.header         
+0x0000014c  0x3 0x0000014c   0x3   0x0 -r-- fcn.0x143.hdr_debug      
+0x0000014f 0xac 0x0000014f  0xac   0x0 -r-x fcn.0x143.code           
+0x000001fb 0x74 0x000001fb  0x74   0x0 -r-- fcn.0x143.kgcobj         
+0x00000249 0x10 0x00000249  0x10   0x0 -r-- fcn.0x143.table          
+0x00000299 0x19 0x00000299  0x19   0x0 -r-- fcn.0x143.localvar       
+0x0000026e 0x2b 0x0000026e  0x2b   0x0 -r-- fcn.0x143.debug          
+0x00000023  0xc 0x00000023   0xc   0x0 -r-- fcn.0x23.header          
+0x0000002c  0x3 0x0000002c   0x3   0x0 -r-- fcn.0x23.hdr_debug       
+0x0000002f 0xb8 0x0000002f  0xb8   0x0 -r-x fcn.0x23.code            
+0x000000e7  0xb 0x000000e7   0xb   0x0 -r-- fcn.0x23.kgcobj          
+0x000000f2  0x1 0x000000f2   0x1   0x0 -r-- fcn.0x23.const           
+0x00000121 0x21 0x00000121  0x21   0x0 -r-- fcn.0x23.localvar        
+0x000000f3 0x2e 0x000000f3  0x2e   0x0 -r-- fcn.0x23.debug           
+  0 0x0000024c 0x0000024c NONE VAL_NIL      1     fcn.0x143_val_nil
+  0 0x0000024d 0x0000024d NONE VAL_NUM      1     fcn.0x143_val_1
+  0 0x0000024f 0x0000024f NONE VAL_NUM      1     fcn.0x143_val_2
+  0 0x00000251 0x00000251 NONE VAL_NUM      1     fcn.0x143_val_4
+  0 0x00000253 0x00000253 NONE VAL_NUM      1     fcn.0x143_val_5
+  0 0x00000255 0x00000255 NONE VAL_NUM      1     fcn.0x143_val_8
+  0 0x00000257 0x00000257 NONE VAL_NUM      1     fcn.0x143_val_9
+EOF
+RUN
+
+NAME=LUAJIT: iz strings
+FILE=bins/luaJIT/bin/find_string_2.1.ljbc
+CMDS=<<EOF
+iz~?finish
+iz
+EOF
+EXPECT=<<EOF
+3
+     paddr      vaddr len size section           type string                             
+-----------------------------------------------------------------------------------------
+0x00000006 0x00000006  20   20                   utf8 @find_string_2.1.lua
+0x000000b2 0x000000b2  34   34 fcn.0x1a.kgcobj   utf8 Sentence does not end with digits.
+0x000000d5 0x000000d5   5    5 fcn.0x1a.kgcobj   utf8 %d+%$
+0x000000db 0x000000db  28   28 fcn.0x1a.kgcobj   utf8 Sentence starts with 'Hello'
+0x000000f8 0x000000f8   6    6 fcn.0x1a.kgcobj   utf8 ^Hello
+0x000000ff 0x000000ff   3    3 fcn.0x1a.kgcobj   utf8 sub
+0x00000103 0x00000103  15   15 fcn.0x1a.kgcobj   utf8 Digit sequence:
+0x00000113 0x00000113   5    5 fcn.0x1a.kgcobj   utf8 print
+0x00000119 0x00000119   3    3 fcn.0x1a.kgcobj   utf8 %d+
+0x0000011d 0x0000011d   4    4 fcn.0x1a.kgcobj   utf8 text
+0x00000122 0x00000122   4    4 fcn.0x1a.kgcobj   utf8 find
+0x00000127 0x00000127   6    6 fcn.0x1a.kgcobj   utf8 string
+0x00000151 0x00000151   5    5 fcn.0x1a.localvar utf8 start
+0x00000159 0x00000159   6    6 fcn.0x1a.localvar utf8 finish
+0x00000162 0x00000162   5    5 fcn.0x1a.localvar utf8 start
+0x0000016a 0x0000016a   6    6 fcn.0x1a.localvar utf8 finish
+0x00000173 0x00000173   5    5 fcn.0x1a.localvar utf8 start
+0x0000017b 0x0000017b   6    6 fcn.0x1a.localvar utf8 finish
+EOF
+RUN
+
+NAME=LUAJIT: Sections and entry
+FILE=bins/luaJIT/bin/jump_search_2.1.ljbc
+CMDS=<<EOF
+ie~program
+is~?
+is
+EOF
+EXPECT=<<EOF
+0x0000014e 0x0000014e ---------- ---------- program
+0x00000026 0x00000026 ---------- ---------- program
+10
+nth      paddr      vaddr bind type      size lib name              
+--------------------------------------------------------------------
+  0 0x0000024b 0x0000024b NONE VAL_NIL      1     fcn.0x142_val_nil
+  0 0x0000024c 0x0000024c NONE VAL_NUM      1     fcn.0x142_val_1
+  0 0x0000024e 0x0000024e NONE VAL_NUM      1     fcn.0x142_val_2
+  0 0x00000250 0x00000250 NONE VAL_NUM      1     fcn.0x142_val_4
+  0 0x00000252 0x00000252 NONE VAL_NUM      1     fcn.0x142_val_5
+  0 0x00000254 0x00000254 NONE VAL_NUM      1     fcn.0x142_val_8
+  0 0x00000256 0x00000256 NONE VAL_NUM      1     fcn.0x142_val_9
+  0 0x000000f2 0x000000f2 NONE CONST_NUM    1     fcn.0x1a_const_1
+EOF
+RUN
