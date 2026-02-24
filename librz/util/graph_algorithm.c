@@ -48,7 +48,7 @@ static void dfs_entry_free(DfsEntry *entry) {
  * \param edge_color color array for all nodes, used to determine edge is visited or not, and end point or not
  * \param visitor callbacks
  */
-static void dfs_edge_policy(RzGraph *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitorNew *visitor) {
+static void dfs_edge_policy(RzGraph *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitor *visitor) {
 	// assert g, from, to, edge_color, visitor NON NULL
 
 	RzGraphEdge edge = {
@@ -118,7 +118,7 @@ static void dfs_push_neighbours(RzGraph *g, RzGraphNode *node, RzStack *stack, b
  * \param stack stack for emulating recursive DFS, each element is a DfsEntry struct to keep track of parent and current node
  * \param forward_search true for normal DFS, false for reverse DFS
  */
-static void dfs_from_entry(RzGraph *g, RzGraphNode *root, RzGraphVisitorNew *visitor, ut8 *color, RzStack *stack, bool forward_search) {
+static void dfs_from_entry(RzGraph *g, RzGraphNode *root, RzGraphVisitor *visitor, ut8 *color, RzStack *stack, bool forward_search) {
 	rz_return_if_fail(g && root && visitor && color && stack);
 
 	// build root node as first to start search
@@ -182,7 +182,7 @@ static void dfs_from_entry(RzGraph *g, RzGraphNode *root, RzGraphVisitorNew *vis
  * \param visitor callbacks
  * \param forward_search true for normal DFS, false for reverse DFS
  */
-static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitorNew *visitor, bool forward_search) {
+static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor, bool forward_search) {
 	rz_return_if_fail(g && start && visitor);
 	ut64 n = rz_pvector_len(g->node_vec);
 	if (n == 0) {
@@ -237,7 +237,7 @@ static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitorNew *visitor,
  * @param g graph
  * @param vis callback
  */
-RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitorNew *vis) {
+RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, true);
 }
 
@@ -252,7 +252,7 @@ RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitorNew *vis) {
  * @param g graph
  * @param vis callback
  */
-RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitorNew *vis) {
+RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, false);
 }
 
@@ -268,7 +268,7 @@ RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitorNew *vis) {
  * @param g graph
  * @param visitor callback
  */
-RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitorNew *visitor) {
+RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor) {
 	dfs_impl(g, start, visitor, true);
 }
 
@@ -284,6 +284,6 @@ RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisito
  * @param g graph
  * @param vis callback
  */
-RZ_API void rz_graph_dfs_reverse_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitorNew *vis) {
+RZ_API void rz_graph_dfs_reverse_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *vis) {
 	dfs_impl(g, start, vis, false);
 }

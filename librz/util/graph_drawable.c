@@ -158,7 +158,7 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *grap
 	if (!data) {
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_nodef(graph, data, rz_graph_free_node_info);
+	RzGraphNode *node = rz_graph_add_node(graph, data, NULL);
 	if (!node) {
 		rz_graph_free_node_info(data);
 	}
@@ -175,8 +175,6 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *grap
 RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	RZ_NULLABLE const char *node_properties, RZ_NULLABLE const char *edge_properties) {
 	rz_return_val_if_fail(graph, NULL);
-	RzList *nodes = graph->nodes;
-	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *target = NULL;
 	RzStrBuf buf;
 	rz_strbuf_init(&buf);
@@ -188,7 +186,13 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		edge_properties ? edge_properties : "",
 		node_properties ? node_properties : "");
 
-	rz_list_foreach (nodes, it, node) {
+	RzIterator *it_nodes = rz_graph_get_nodes(graph);
+	if (!it_nodes) {
+		rz_strbuf_free(&buf);
+		return NULL;
+	}
+
+	rz_iterator_foreach(it_nodes, node) {
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
 		char *url;
 		RzStrBuf *label = rz_strbuf_new("");
@@ -234,15 +238,26 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			}
 		}
 
-		rz_strbuf_appendf(&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
-			node->idx, url, rz_strbuf_get(label));
+		rz_strbuf_appendf(&buf, "%lld [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
+			rz_graph_adapter_get_node_id(node), url, rz_strbuf_get(label));
+
 		rz_strbuf_free(label);
 		// url sometimes is set to label above and shouldn't be used after label was freed.
 		url = NULL;
-		rz_list_foreach (node->out_nodes, itt, target) {
-			rz_strbuf_appendf(&buf, "%d -> %d\n", node->idx, target->idx);
+
+		// get Iterator
+		RzIterator *it_out_nodes = rz_graph_out_neighbors(graph, node);
+		if (!it_out_nodes) {
+			continue;
 		}
+
+		rz_iterator_foreach(it_out_nodes, target) {
+			rz_strbuf_appendf(&buf, "%lld -> %lld\n", rz_graph_adapter_get_node_id(node), rz_graph_adapter_get_node_id(target));
+		}
+		rz_iterator_free(it_out_nodes);
 	}
+	rz_iterator_free(it_nodes);
+
 	rz_strbuf_append(&buf, "}\n");
 	return rz_strbuf_drain_nofree(&buf);
 }
@@ -253,17 +268,16 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
  */
 RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL PJ *pj, bool use_offset) {
 	rz_return_if_fail(graph && pj);
-	RzList *nodes = graph->nodes, *neighbours = NULL;
-	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *neighbour = NULL;
 	pj_o(pj);
 	pj_k(pj, "nodes");
 	pj_a(pj);
 
-	rz_list_foreach (nodes, it, node) {
+	RzIterator *it = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(it, node) {
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
 		pj_o(pj);
-		pj_kn(pj, "id", node->idx);
+		pj_kn(pj, "id", rz_graph_adapter_get_node_id(node));
 		if (print_node->type == RZ_GRAPH_NODE_TYPE_DEFAULT) {
 			if (print_node->def.title) {
 				pj_ks(pj, "title", print_node->def.title);
@@ -289,13 +303,20 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
 		}
 		pj_k(pj, "out_nodes");
 		pj_a(pj);
-		neighbours = node->out_nodes;
-		rz_list_foreach (neighbours, itt, neighbour) {
-			pj_n(pj, neighbour->idx);
+
+		RzIterator *it_neighbours = rz_graph_out_neighbors(graph, node);
+		if (!it_neighbours) {
+			continue;
 		}
+
+		rz_iterator_foreach(it_neighbours, neighbour) {
+			pj_n(pj, rz_graph_adapter_get_node_id(neighbour));
+		}
+		rz_iterator_free(it_neighbours);
 		pj_end(pj);
 		pj_end(pj);
 	}
+	rz_iterator_free(it);
 	pj_end(pj);
 	pj_end(pj);
 }
@@ -335,8 +356,9 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 	}
 
 	RzGraphNode *node, *target;
-	RzListIter *it, *edge_it;
-	rz_list_foreach (graph->nodes, it, node) {
+
+	RzIterator *it_nodes = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(it_nodes, node) {
 		RzGraphNodeInfo *print_node = node->data;
 		if (RZ_STR_ISNOTEMPTY(print_node->def.body)) {
 			ut32 len = strlen(print_node->def.body);
@@ -350,13 +372,22 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_appendf(sb, "agn \"%s\"\n", print_node->def.title);
 		}
 	}
-	rz_list_foreach (graph->nodes, it, node) {
+	rz_iterator_free(it_nodes);
+
+	it_nodes = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(it_nodes, node) {
 		RzGraphNodeInfo *print_node = node->data;
-		rz_list_foreach (node->out_nodes, edge_it, target) {
+		RzIterator *it_out_neighbours = rz_graph_out_neighbors(graph, node);
+		if (!it_out_neighbours) {
+			continue;
+		}
+		rz_iterator_foreach(it_out_neighbours, target) {
 			RzGraphNodeInfo *to = target->data;
 			rz_strbuf_appendf(sb, "age \"%s\" \"%s\"\n", print_node->def.title, to->def.title);
 		}
+		rz_iterator_free(it_out_neighbours);
 	}
+	rz_iterator_free(it_nodes);
 	return rz_strbuf_drain(sb);
 }
 
@@ -374,11 +405,17 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			      "hierarchic 1\n"
 			      "label \"\"\n"
 			      "directed 1\n");
-	RzListIter *it;
 	RzGraphNode *graphNode, *target;
 	char *label;
 	char tmp[256] = { 0 };
-	rz_list_foreach (graph->nodes, it, graphNode) {
+
+	RzIterator *it_nodes = rz_graph_get_nodes(graph);
+	if (!it_nodes) {
+		rz_strbuf_free(sb);
+		return NULL;
+	}
+
+	rz_iterator_foreach(it_nodes, graphNode) {
 		RzGraphNodeInfo *print_node = graphNode->data;
 
 		switch (print_node->type) {
@@ -397,21 +434,32 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		}
 
 		rz_strbuf_appendf(sb, "  node [\n"
-				      "    id  %d\n"
+				      "    id  %lld\n"
 				      "    label  \"%s\"\n"
 				      "  ]\n",
-			graphNode->idx, label);
+			rz_graph_adapter_get_node_id(graphNode), label);
 	}
-	RzListIter *edge_it;
-	rz_list_foreach (graph->nodes, it, graphNode) {
-		rz_list_foreach (graphNode->out_nodes, edge_it, target) {
-			rz_strbuf_appendf(sb, "  edge [\n"
-					      "    source  %d\n"
-					      "    target  %d\n"
-					      "  ]\n",
-				graphNode->idx, target->idx);
+	rz_iterator_free(it_nodes);
+
+	RzIterator *it_out_nodes = rz_graph_get_nodes(graph);
+	RzIterator *it_neighbours = NULL;
+	rz_iterator_foreach(it_out_nodes, graphNode) {
+		it_neighbours = rz_graph_out_neighbors(graph, graphNode);
+		if (!it_neighbours) {
+			continue;
 		}
+
+		rz_iterator_foreach(it_neighbours, target) {
+			rz_strbuf_appendf(sb, "  edge [\n"
+					      "    source  %lld\n"
+					      "    target  %lld\n"
+					      "  ]\n",
+				rz_graph_adapter_get_node_id(graphNode), rz_graph_adapter_get_node_id(target));
+		}
+		rz_iterator_free(it_neighbours);
 	}
+	rz_iterator_free(it_out_nodes);
+
 	rz_strbuf_appendf(sb, "]\n");
 	return rz_strbuf_drain(sb);
 }

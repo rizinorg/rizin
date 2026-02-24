@@ -8,7 +8,7 @@ static ut64 simple_hash(const void *data) {
 	return *(ut64 *)data;
 }
 
-static void topo_sorting(RzGraphNode *n, RzGraphVisitorNew *vis) {
+static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 	RzList *order = (RzList *)vis->data;
 	rz_list_prepend(order, n->data);
 }
@@ -325,7 +325,7 @@ static bool test_graph_dfs(void) {
 	rz_graph_add_edge(g, n4, n5, NULL);
 
 	// Test DFS with topological sort visitor
-	RzGraphVisitorNew vis = { 0 };
+	RzGraphVisitor vis = { 0 };
 	RzList *topo_sort_list = rz_list_new();
 	vis.data = topo_sort_list;
 	vis.finish_node = topo_sorting;
@@ -729,7 +729,7 @@ static bool test_graph_dfs_matrix(void) {
 	rz_graph_add_edge(g, n4, n5, NULL);
 
 	// Test DFS with topological sort visitor
-	RzGraphVisitorNew vis = { 0 };
+	RzGraphVisitor vis = { 0 };
 	RzList *topo_sort_list = rz_list_new();
 	vis.data = topo_sort_list;
 	vis.finish_node = topo_sorting;

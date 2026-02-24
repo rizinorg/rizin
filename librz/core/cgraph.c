@@ -45,7 +45,7 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
 			char *dst = core_flag_name(core, xref->to);
 			RzGraphNode *node = rz_graph_add_node_info(graph, dst, NULL, xref->to);
 			free(dst);
-			rz_graph_add_edge(graph, curr_node, node);
+			rz_graph_add_edge(graph, curr_node, node, NULL);
 		}
 	}
 	rz_list_free(xrefs);
@@ -56,7 +56,7 @@ static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzG
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -96,7 +96,7 @@ static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		char *dst = core_flag_name(core, xref->to);
 		RzGraphNode *node = rz_graph_add_node_info(graph, dst, NULL, xref->to);
 		free(dst);
-		rz_graph_add_edge(graph, curr_node, node);
+		rz_graph_add_edge(graph, curr_node, node, NULL);
 	}
 	rz_list_free(xrefs);
 }
@@ -106,7 +106,7 @@ static void core_graph_coderef(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -143,7 +143,7 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph /*<RzGraphNod
 		char *src = core_flag_name(core, xref->from);
 		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->from);
 		free(src);
-		rz_graph_add_edge(graph, reference_from, curr_node);
+		rz_graph_add_edge(graph, reference_from, curr_node, NULL);
 	}
 	rz_list_free(list);
 }
@@ -157,7 +157,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONN
 	if (!obj) {
 		return NULL;
 	}
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -183,7 +183,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONN
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -208,7 +208,7 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
 		char *src = core_flag_name(core, xref->to);
 		RzGraphNode *node = rz_graph_add_node_info(graph, src, NULL, xref->to);
 		free(src);
-		rz_graph_add_edge(graph, curr_node, node);
+		rz_graph_add_edge(graph, curr_node, node, NULL);
 	}
 	rz_list_free(calls);
 }
@@ -218,7 +218,7 @@ static void core_graph_fn_call(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -305,14 +305,14 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 		if (bbi->jump != UT64_MAX) {
 			RzGraphNode *node = graph_add_cached(core, cache, NULL, bbi->jump, graph, body_fn);
 			if (node) {
-				rz_graph_add_edge(graph, bb_node, node);
+				rz_graph_add_edge(graph, bb_node, node, NULL);
 			}
 		}
 
 		if (bbi->fail != UT64_MAX) {
 			RzGraphNode *node = graph_add_cached(core, cache, NULL, bbi->fail, graph, body_fn);
 			if (node) {
-				rz_graph_add_edge(graph, bb_node, node);
+				rz_graph_add_edge(graph, bb_node, node, NULL);
 			}
 		}
 
@@ -324,12 +324,12 @@ static void core_graph_fn_bbs(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<
 		rz_list_foreach (bbi->switch_op->cases, iter_case, case_op) {
 			RzGraphNode *case_node = graph_add_cached(core, cache, NULL, case_op->addr, graph, body_fn);
 			if (case_node) {
-				rz_graph_add_edge(graph, bb_node, case_node);
+				rz_graph_add_edge(graph, bb_node, case_node, NULL);
 			}
 
 			RzGraphNode *case_jump_node = graph_add_cached(core, cache, NULL, case_op->jump, graph, body_fn);
 			if (case_jump_node) {
-				rz_graph_add_edge(graph, case_node, case_jump_node);
+				rz_graph_add_edge(graph, case_node, case_jump_node, NULL);
 			}
 		}
 	}
@@ -350,7 +350,7 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 	}
 	HtUP *cache = NULL;
 	RzConfigHold *hc = NULL;
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -810,7 +810,7 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ 
 		rz_warn_if_reached();
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_nodef(graph, data, rz_graph_free_node_info);
+	RzGraphNode *node = rz_graph_add_node(graph, data, NULL);
 	if (!node) {
 		rz_graph_free_node_info(data);
 	}
@@ -831,13 +831,15 @@ static RzGraphNode *rz_graph_add_node_info_icfg(RzGraph /*<RzGraphNodeInfo *>*/ 
 static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNodeInfo *>*/ *icfg, RZ_BORROW HtUU *graph_idx, const RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(icfg && graph_idx && fcn, NULL);
 	bool found = false;
-	ut64 i = ht_uu_find(graph_idx, fcn->addr, &found);
+	// TODO: refactor with identifier ? keep collecting hash id now
+	ut64 hash_id = ht_uu_find(graph_idx, fcn->addr, &found);
 	if (found) {
 		// Node already added, get it.
-		return rz_graph_get_node(icfg, i);
+		return rz_graph_find_node_by_id(icfg, hash_id);
 	}
-	ht_uu_insert(graph_idx, fcn->addr, rz_list_length(rz_graph_get_nodes(icfg)));
-	return rz_graph_add_node_info_icfg(icfg, fcn);
+	RzGraphNode *icfg_node = rz_graph_add_node_info_icfg(icfg, fcn);
+	ht_uu_insert(graph_idx, fcn->addr, icfg_node->hash_id);
+	return icfg_node;
 }
 
 /**
@@ -864,11 +866,11 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			continue;
 		}
 		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
-		if (rz_graph_adjacent(icfg, from_node, to_node)) {
+		if (rz_graph_has_edge(icfg, from_node, to_node)) {
 			// Edge already added and walked. Don't recurse.
 			continue;
 		}
-		rz_graph_add_edge(icfg, from_node, to_node);
+		rz_graph_add_edge(icfg, from_node, to_node, NULL);
 		// Recurse into called function.
 		extend_icfg(analysis, icfg, graph_idx, called_fcn);
 	}
@@ -885,7 +887,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 	const RzList *fcns = rz_analysis_function_list(core->analysis);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -965,7 +967,7 @@ static RzGraphNode *add_node_info_cfg(RzGraph /*<RzGraphNodeInfo *>*/ *cfg, cons
 	if (!data) {
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_nodef(cfg, data, rz_graph_free_node_info);
+	RzGraphNode *node = rz_graph_add_node(cfg, data, NULL);
 	if (!node) {
 		rz_graph_free_node_info(data);
 	}
@@ -1003,7 +1005,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	bool found = false;
 	ut64 to_idx = ht_uu_find(nodes_visited, to, &found);
 	if (found) {
-		to_node = rz_graph_get_node(graph, to_idx);
+		to_node = rz_graph_find_node_by_id(graph, to_idx);
 	} else {
 		to_node = add_node_info_cfg(graph, op_to, false);
 	}
@@ -1011,7 +1013,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 		RZ_LOG_ERROR("Could not add node at 0x%" PFMT64x "\n", to);
 		return false;
 	}
-	to_idx = to_node->idx;
+	to_idx = to_node->hash_id;
 	if (from == to) {
 		from_idx = to_idx;
 	}
@@ -1022,8 +1024,8 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 		rz_vector_push(to_visit, &to);
 	}
 
-	ht_uu_insert(nodes_visited, to, to_node->idx);
-	rz_graph_add_edge(graph, rz_graph_get_node(graph, from_idx), to_node);
+	ht_uu_insert(nodes_visited, to, to_node->hash_id);
+	rz_graph_add_edge(graph, rz_graph_find_node_by_id(graph, from_idx), to_node, NULL);
 	return true;
 }
 
@@ -1038,7 +1040,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core && core->analysis && core->io, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -1058,7 +1060,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	RzAnalysisOp target_op = { 0 };
 	int disas_bytes = rz_analysis_op(core->analysis, &curr_op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_DISASM);
 	RzGraphNode *entry = add_node_info_cfg(graph, &curr_op, true);
-	ht_uu_insert(nodes_visited, addr, entry->idx);
+	ht_uu_insert(nodes_visited, addr, entry->hash_id);
 	rz_vector_push(to_visit, &addr);
 
 	while (rz_vector_len(to_visit) > 0) {

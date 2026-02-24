@@ -19,7 +19,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 #define il_op_graph_add_edge_s(g, from, string) \
 	do { \
 		RzGraphNode *to = graph_add_node_il(g, string); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 	} while (0)
 
 #define il_op_graph_add_edge_f(g, from, ...) \
@@ -27,7 +27,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 		char *value = rz_str_newf(__VA_ARGS__); \
 		RzGraphNode *to = graph_add_node_il(g, value); \
 		free(value); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 	} while (0)
 
 #define il_op_param_0(name) \
@@ -36,14 +36,14 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 #define il_op_param_1(name, opx, v0) \
 	do { \
 		RzGraphNode *to = graph_add_node_il(g, name); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_pure_graph_resolve(opx.v0, g, to); \
 	} while (0)
 
 #define il_op_param_2(name, opx, sort0, v0, sort1, v1) \
 	do { \
 		RzGraphNode *to = graph_add_node_il(g, name); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_##sort0##_graph_resolve(opx.v0, g, to); \
 		il_op_##sort1##_graph_resolve(opx.v1, g, to); \
 	} while (0)
@@ -51,7 +51,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 #define il_op_param_3(name, opx, sort0, v0, sort1, v1, sort2, v2) \
 	do { \
 		RzGraphNode *to = graph_add_node_il(g, name); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_##sort0##_graph_resolve(opx.v0, g, to); \
 		il_op_##sort1##_graph_resolve(opx.v1, g, to); \
 		il_op_##sort2##_graph_resolve(opx.v2, g, to); \
@@ -63,7 +63,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 		char *value = rz_str_newf(name " %s", rmode_str); \
 		RzGraphNode *to = graph_add_node_il(g, value); \
 		free(value); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_pure_graph_resolve(opx.v0, g, to); \
 	} while (0)
 
@@ -73,7 +73,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 		char *value = rz_str_newf(name " %s", rmode_str); \
 		RzGraphNode *to = graph_add_node_il(g, value); \
 		free(value); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_##sort0##_graph_resolve(opx.v0, g, to); \
 		il_op_##sort1##_graph_resolve(opx.v1, g, to); \
 	} while (0)
@@ -84,7 +84,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 		char *value = rz_str_newf(name " %s", rmode_str); \
 		RzGraphNode *to = graph_add_node_il(g, value); \
 		free(value); \
-		rz_graph_add_edge(g, from, to); \
+		rz_graph_add_edge(g, from, to, NULL); \
 		il_op_##sort0##_graph_resolve(opx.v0, g, to); \
 		il_op_##sort1##_graph_resolve(opx.v1, g, to); \
 		il_op_##sort2##_graph_resolve(opx.v2, g, to); \
@@ -95,7 +95,7 @@ static void il_op_graph_var(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, 
 	char *value = rz_str_newf("var: %s", opx->v);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 }
 
 static void il_op_graph_ite(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
@@ -107,7 +107,7 @@ static void il_op_graph_let(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, 
 	char *value = rz_str_newf("let: %s", opx->name);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->exp, g, to);
 	il_op_pure_graph_resolve(opx->body, g, to);
 }
@@ -228,7 +228,7 @@ static void il_op_graph_cast(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g,
 	char *value = rz_str_newf("cast: %u", opx->length);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->fill, g, to);
 	il_op_pure_graph_resolve(opx->val, g, to);
 }
@@ -242,7 +242,7 @@ static void il_op_graph_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	char *value = rz_str_newf("float: %d", opx->r);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
@@ -288,7 +288,7 @@ static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*
 	char *value = rz_str_newf("fcast_int: %u %s", opx->length, rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
@@ -298,7 +298,7 @@ static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>
 	char *value = rz_str_newf("fcast_sint: %u %s", opx->length, rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
@@ -309,7 +309,7 @@ static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *
 	char *value = rz_str_newf("fcast_float: %s %s", format_str, rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
@@ -320,7 +320,7 @@ static void il_op_graph_fcast_sfloat(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	char *value = rz_str_newf("fcast_sfloat: %s %s", format_str, rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
@@ -331,7 +331,7 @@ static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/
 	char *value = rz_str_newf("fconvert: %s %s", format_str, rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
@@ -341,7 +341,7 @@ static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *
 	char *value = rz_str_newf("fround: %s", rmode_str);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
@@ -352,7 +352,7 @@ static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ 
 	char *value = rz_str_newf("frequal: %s %s", rmode_x, rmode_y);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 }
 
 static void il_op_graph_fsucc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
@@ -423,7 +423,7 @@ static void il_op_graph_load(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g,
 	char *value = rz_str_newf("load: %u", opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->key, g, to);
 }
 
@@ -432,7 +432,7 @@ static void il_op_graph_loadw(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	char *value = rz_str_newf("loadw: %u %u", (ut32)opx->mem, (ut32)opx->n_bits);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->key, g, to);
 }
 
@@ -441,7 +441,7 @@ static void il_op_graph_store(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ 
 	char *value = rz_str_newf("store: %u", (ut32)opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->key, g, to);
 	il_op_pure_graph_resolve(opx->value, g, to);
 }
@@ -451,7 +451,7 @@ static void il_op_graph_storew(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/
 	char *value = rz_str_newf("storew: %u", (ut32)opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->key, g, to);
 	il_op_pure_graph_resolve(opx->value, g, to);
 }
@@ -469,7 +469,7 @@ static void il_op_graph_set(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	char *value = rz_str_newf("set: %s", opx->v);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_pure_graph_resolve(opx->x, g, to);
 }
 
@@ -482,7 +482,7 @@ static void il_op_graph_goto(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *
 	char *value = rz_str_newf("goto: %s", opx->lbl);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 }
 
 static void il_op_graph_seq(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
@@ -504,7 +504,7 @@ static void il_op_graph_blk(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	char *value = rz_str_newf("blk: %s", opx->label);
 	RzGraphNode *to = graph_add_node_il(g, value);
 	free(value);
-	rz_graph_add_edge(g, from, to);
+	rz_graph_add_edge(g, from, to, NULL);
 	il_op_effect_graph_resolve(opx->data_eff, g, to);
 	il_op_effect_graph_resolve(opx->ctrl_eff, g, to);
 }
@@ -784,7 +784,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 	if (!graph) {
 		return NULL;
 	}
@@ -801,7 +801,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL Rz
  */
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
-	RzGraph *graph = rz_graph_new();
+	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 	if (!graph) {
 		return NULL;
 	}
