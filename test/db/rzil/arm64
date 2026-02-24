@@ -1,5 +1,6 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/emulateme.arm64
+TIMEOUT=10
 CMDS=<<EOF
 s sym.decrypt
 echo -- oneline
@@ -8,6 +9,10 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
+echo -- unicode
+e scr.utf8=true
+aaa
+pLf | head -n5
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -70,6 +75,12 @@ EXPECT=<<EOF
 .-----------.   .---------------.
 |  var: sp  |   |  bv: 64 0x30  |
 `-----------'   `---------------'
+-- unicode
+0x804 (sp←(sp-(ʙ⁶⁴0x30)))
+0x808 (ŝ⁰(sp+(ʙ⁶⁴0x8)) x0)
+0x80c (ꜱ⁰(sp+(ʙ⁶⁴0x2f))ꜱ((ʙ³²0x0)⇒⁸𝔽))
+0x810 (ŝ⁰(sp+(ʙ⁶⁴0x20)) (ʙ⁶⁴0x0))
+0x814 ⇡(ʙ⁶⁴0x888)
 EOF
 RUN
 

@@ -1,5 +1,6 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/ppc/emulateme-ppc32be
+TIMEOUT=60
 CMDS=<<EOF
 echo -- oneline
 aoi 5
@@ -7,6 +8,10 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
+echo -- unicode
+e scr.utf8=true
+aaa
+pLf | head -n13
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -178,6 +183,20 @@ EXPECT=<<EOF
 .-----------.   .-----------.
 |  var: r1  |   |  var: r1  |
 `-----------'   `-----------'
+-- unicode
+0x100278 ((res←(r1∨r1)) 
+        (r9←res) Ø)
+0x10027c ((mstart←(ʙ⁸0x20)) 
+        (mstop←(ʙ⁸0x3b)) 
+        (m←(ʙ⁶⁴0x0)) 
+        (!(mstart≡mstop)⟳((m←(m∨(((ʙ⁶⁴0x0)≫(ʙ⁸0x1)≫𝕋)≫mstart≫𝔽))) (mstart←((mstart+(ʙ⁸0x1))⊢(ʙ⁸0x40))))) 
+        (m←(m∨(((ʙ⁶⁴0x0)≫(ʙ⁸0x1)≫𝕋)≫mstop≫𝔽))) (mask←(m⇒³²𝔽))
+        Ø 
+        (result←((rotl32_x=(r1⇒³²𝔽) (rotl32_y=(ʙ⁸0x0) ((rotl32_x≪rotl32_y≪𝔽)∨(rotl32_x≫((ʙ⁸0x20)-(rotl32_y⇒⁸𝔽))≫𝔽))))∧mask)) 
+        (r1←result) Ø)
+0x100280 (r0←(v=(ʙ¹⁶0x0) (⊤v↠(v⇒³²⊤v)↠(v⇒³²𝔽))))
+0x100284 ((ŝ⁰(r1+(v=(ʙ¹⁶0xfff0) (⊤v↠(v⇒³²⊤v)↠(v⇒³²𝔽)))) (r1⇒³²𝔽)) (r1←(r1+(v=(ʙ¹⁶0xfff0) (⊤v↠(v⇒³²⊤v)↠(v⇒³²𝔽))))))
+0x100288 (lr←(r0⇒³²𝔽))
 EOF
 RUN
 

@@ -1,5 +1,6 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/ppc/ppc64le_uplifted
+TIMEOUT=60
 CMDS=<<EOF
 echo -- oneline
 aoi 5
@@ -7,6 +8,10 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
+echo -- unicode
+e scr.utf8=true
+aaa
+pLf | head -n17
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -202,6 +207,24 @@ EXPECT=<<EOF
                                        .----------.
                                        |  var: v  |
                                        `----------'
+-- unicode
+0x100508 (r2←(v=((ʙ¹⁶0x1e)∥(ʙ¹⁶0x0)) (⊤v↠(v⇒⁶⁴⊤v)↠(v⇒⁶⁴𝔽))))
+0x10050c ((a←r2) 
+        (b←(v=(ʙ¹⁶0x7c00) (⊤v↠(v⇒⁶⁴⊤v)↠(v⇒⁶⁴𝔽)))) Ø
+        (r2←(a+b)) 
+        Ø 
+        Ø Ø)
+0x100510 ((res←(r1∨r1)) 
+        (r9←res) Ø)
+0x100514 ((mstart←(ʙ⁸0x0)) 
+        (mstop←(ʙ⁸0x3b)) 
+        (m←(ʙ⁶⁴0x0)) 
+        (!(mstart≡mstop)⟳((m←(m∨(((ʙ⁶⁴0x0)≫(ʙ⁸0x1)≫𝕋)≫mstart≫𝔽))) (mstart←((mstart+(ʙ⁸0x1))⊢(ʙ⁸0x40))))) 
+        (m←(m∨(((ʙ⁶⁴0x0)≫(ʙ⁸0x1)≫𝕋)≫mstop≫𝔽))) (mask←(m⇒⁶⁴𝔽))
+        Ø 
+        (result←((rotl64_x=r1 (rotl64_y=((ʙ⁸0x3f)∧(ʙ⁸0x0)) ((rotl64_x≪rotl64_y≪𝔽)∨(rotl64_x≫((ʙ⁸0x40)-(rotl64_y⇒⁸𝔽))≫𝔽))))∧mask)) 
+        (r1←result) Ø)
+0x100518 (r0←(v=(ʙ¹⁶0x0) (⊤v↠(v⇒⁶⁴⊤v)↠(v⇒⁶⁴𝔽))))
 EOF
 RUN
 
