@@ -277,7 +277,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 #endif
 
 	// Allocate single heap block for both control and slot arrays
-	if ((ht->data = calloc(ctrl_size + slots_size, sizeof(ut8))) == NULL) { // todo: use malloc
+	if ((ht->data = malloc(ctrl_size + slots_size)) == NULL) {
 		free(ht);
 		return NULL;
 	}
