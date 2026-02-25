@@ -740,9 +740,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
-		rz_warn_if_reached();
-		goto error_free;
+	if (!user_sent_signal) {
+		printf("Complement BB CFG with statically known xrefs...\n");
+		if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
+			rz_warn_if_reached();
+			goto error_free;
+		}
 	}
 	rz_vector_free(insn_to_insn_edges);
 
