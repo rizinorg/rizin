@@ -12,6 +12,13 @@ static bool check_buffer(RzBuffer *buf) {
 	return r > SCGCMAG && !memcmp(tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
 }
 
+static RzStructuredData *cgc_info_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = (ELFOBJ *)bf->o->bin_obj;
+	return elf_structure(bin);
+}
+
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
@@ -118,6 +125,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.symbols = &elf_symbols,
 	.imports = &elf_imports,
 	.info = &elf_info,
+	.bin_structure = &cgc_info_structure,
 	.fields = &elf_fields,
 	.size = &elf_size,
 	.libs = &elf_libs,
