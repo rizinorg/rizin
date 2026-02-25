@@ -57,6 +57,15 @@ typedef struct {
 typedef struct {
 	ut64 branching_bb_addr; ///< The address of the bb which branches.
 	ut64 target_addr; ///< The target address it branches to.
+	/**
+	 * \brief Set after a attempted jump to an ignored code region.
+	 * This is almost always a call to an imported symbol.
+	 * Instead of using the target_addr above, the il_cache should serve the alt_target_addr.
+	 * target_addr should still be marked as potential cfep.
+	 *
+	 * 0 is an invalid address here.
+	 */
+	ut64 alt_target;
 } RzInterpreterBranch;
 
 /**
@@ -130,7 +139,7 @@ typedef struct {
 	RzInterpreterYieldKind kind;
 	RzInterpreterYieldFilter filter;
 	RzInterpreterYieldFilterData *filter_data;
-	RzThreadQueue /*<const RzInterpreterYield>*/ *yield_queue;
+	RzThreadQueue *yield_queue;
 } RzInterpreterYieldQueue;
 
 typedef struct {

@@ -118,12 +118,11 @@ static void recurse_into_fcn_bbs(
 			// The successor is another function.
 			// If address after the branch is a return point we choose it as
 			// successor.
-			// If it isn't, then the call at this basic block is likely a tail call.
+			// If it isn't a return point, then the call at this basic block is likely a tail call.
+			// But tail calls are ignored. So in either case we just choose the npc as successor.
 			const RzAnalysisCallCandidate *cc = ht_up_find((HtUP *)call_candidates, this_bb_addr, NULL);
-			if (cc && rz_set_u_contains((RzSetU *)return_addresses, cc->npc)) {
+			if (cc) {
 				succ_addr = cc->npc;
-			} else {
-				continue;
 			}
 		}
 

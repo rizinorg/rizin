@@ -232,7 +232,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	return set;
 }
 
-static bool jumps_ignored_code(const RzVector *v, ut64 jump_target) {
+static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
 	void *it;
 	rz_vector_foreach (v, it) {
 		RzInterval *itv = it;
@@ -290,15 +290,17 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 			return false;
 		}
 		shared_branch->branching_bb_addr = il_bb->bb_addr;
-		if (jumps_ignored_code(iset->ignored_code, shared_branch->target_addr)) {
+		if (jumps_to_ignored_code(iset->ignored_code, shared_branch->target_addr)) {
 			RZ_LOG_DEBUG("interpreter: tried to jump to ignored code region at 0x%" PFMT64x "\n", shared_branch->target_addr);
 			// Ignored code is mostly dynamically linked functions.
 			// Skip to the next following address after the jump.
-			shared_branch->target_addr = il_bb->bb_addr + il_bb->size;
-			RZ_LOG_DEBUG("interpreter: Request instead 0x%" PFMT64x "\n", shared_branch->target_addr);
+			shared_branch->alt_target = il_bb->bb_addr + il_bb->size;
 		}
 
-		SuccessorState ss = { .addr = shared_branch->target_addr, .in_state_hash = out_hash };
+		SuccessorState ss = {
+			.addr = shared_branch->alt_target ? shared_branch->alt_target : shared_branch->target_addr,
+			.in_state_hash = out_hash
+		};
 		// The successors are pushed in the same order into the succ_states
 		// vector, as they are requested over the addr_queue.
 		rz_vector_push(succ_states, &ss);
