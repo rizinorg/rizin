@@ -167,6 +167,7 @@ install_headers(rz_il_files, install_dir: join_paths(rizin_incdir, 'rz_il'))
 rz_crypto_files = [
   'rz_crypto/rz_des.h',
   'rz_crypto/rz_aes.h',
+  'rz_crypto/rz_rc4.h',
   'rz_crypto/rz_sm4.h',
 ]
 install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))

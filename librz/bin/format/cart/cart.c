@@ -2,8 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "cart.h"
+#include <rz_crypto/rz_rc4.h>
 #include <rz_util.h>
 
+/**
+ * Default RC4 key used by CaRT: first 8 digits of PI repeated twice.
+ * Reference: https://github.com/CybercentreCanada/cart/blob/master/cart/cart.py#L34
+ */
 static const ut8 CART_DEFAULT_RC4_KEY[CART_ARC4_KEY_LENGTH] = {
 	0x03, 0x01, 0x04, 0x01, 0x05, 0x09, 0x02, 0x06,
 	0x03, 0x01, 0x04, 0x01, 0x05, 0x09, 0x02, 0x06
@@ -16,32 +21,6 @@ static bool cart_key_is_null(const ut8 *key) {
 		}
 	}
 	return true;
-}
-
-static void cart_rc4_crypt(const ut8 *key, int keylen, const ut8 *in, ut8 *out, int len) {
-	ut8 S[256];
-	int i, j;
-
-	for (i = 0; i < 256; i++) {
-		S[i] = (ut8)i;
-	}
-
-	for (i = 0, j = 0; i < 256; i++) {
-		j = (j + S[i] + key[i % keylen]) % 256;
-		ut8 tmp = S[i];
-		S[i] = S[j];
-		S[j] = tmp;
-	}
-
-	i = j = 0;
-	for (int k = 0; k < len; k++) {
-		i = (i + 1) % 256;
-		j = (j + S[i]) % 256;
-		ut8 tmp = S[i];
-		S[i] = S[j];
-		S[j] = tmp;
-		out[k] = in[k] ^ S[(S[i] + S[j]) % 256];
-	}
 }
 
 RZ_API bool rz_bin_cart_check_buffer(RZ_NONNULL RzBuffer *buf) {
@@ -90,11 +69,12 @@ RZ_API RZ_OWN CartObj *rz_bin_cart_new_from_buffer(RZ_NONNULL RzBuffer *buf) {
 
 	obj->file_size = sz;
 
-	if (rz_buf_read_at(buf, 0, (ut8 *)obj->header.magic, CART_HEADER_MAGIC_SIZE) != CART_HEADER_MAGIC_SIZE) {
-		goto fail;
-	}
-
-	if (!rz_buf_read_le16_at(buf, 4, &obj->header.version)) {
+	ut64 off = 0;
+	if (!rz_buf_read_offset(buf, &off, (ut8 *)obj->header.magic, CART_HEADER_MAGIC_SIZE) ||
+		!rz_buf_read_le16_offset(buf, &off, &obj->header.version) ||
+		!rz_buf_read_le64_offset(buf, &off, &obj->header.reserved) ||
+		!rz_buf_read_offset(buf, &off, obj->header.arc4_key, CART_ARC4_KEY_LENGTH) ||
+		!rz_buf_read_le64_offset(buf, &off, &obj->header.opt_header_len)) {
 		goto fail;
 	}
 
@@ -103,42 +83,22 @@ RZ_API RZ_OWN CartObj *rz_bin_cart_new_from_buffer(RZ_NONNULL RzBuffer *buf) {
 		goto fail;
 	}
 
-	if (!rz_buf_read_le64_at(buf, 6, &obj->header.reserved)) {
-		goto fail;
-	}
-
 	if (obj->header.reserved != 0) {
 		RZ_LOG_WARN("CaRT: Invalid header reserved value (expected 0)\n");
 		goto fail;
 	}
 
-	if (rz_buf_read_at(buf, 14, obj->header.arc4_key, CART_ARC4_KEY_LENGTH) != CART_ARC4_KEY_LENGTH) {
-		goto fail;
-	}
-
-	if (!rz_buf_read_le64_at(buf, 30, &obj->header.opt_header_len)) {
-		goto fail;
-	}
-
 	ut64 footer_start = sz - CART_FOOTER_LENGTH;
-	if (rz_buf_read_at(buf, footer_start, (ut8 *)obj->footer.magic, CART_FOOTER_MAGIC_SIZE) != CART_FOOTER_MAGIC_SIZE) {
-		goto fail;
-	}
-
-	if (!rz_buf_read_le64_at(buf, footer_start + 4, &obj->footer.reserved)) {
+	off = footer_start;
+	if (!rz_buf_read_offset(buf, &off, (ut8 *)obj->footer.magic, CART_FOOTER_MAGIC_SIZE) ||
+		!rz_buf_read_le64_offset(buf, &off, &obj->footer.reserved) ||
+		!rz_buf_read_le64_offset(buf, &off, &obj->footer.opt_footer_pos) ||
+		!rz_buf_read_le64_offset(buf, &off, &obj->footer.opt_footer_len)) {
 		goto fail;
 	}
 
 	if (obj->footer.reserved != 0) {
 		RZ_LOG_WARN("CaRT: Invalid footer reserved value (expected 0)\n");
-		goto fail;
-	}
-
-	if (!rz_buf_read_le64_at(buf, footer_start + 12, &obj->footer.opt_footer_pos)) {
-		goto fail;
-	}
-
-	if (!rz_buf_read_le64_at(buf, footer_start + 20, &obj->footer.opt_footer_len)) {
 		goto fail;
 	}
 
@@ -202,7 +162,7 @@ RZ_API RZ_OWN ut8 *rz_bin_cart_extract(RZ_NONNULL RzBuffer *buf, RZ_NONNULL Cart
 		return NULL;
 	}
 
-	cart_rc4_crypt(key, CART_ARC4_KEY_LENGTH, encrypted, decrypted, obj->data_len);
+	rz_rc4_crypt(key, CART_ARC4_KEY_LENGTH, encrypted, decrypted, obj->data_len);
 	free(encrypted);
 
 	int decompressed_len = 0;

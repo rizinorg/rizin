@@ -1,10 +1,12 @@
-NAME=CaRT: Check file size
+NAME=CaRT: iI and extractor info
 FILE=bins/cart/sample.cart
 CMDS=<<EOF
-i~size
+iI~binsz
+i~packet
 EOF
 EXPECT=<<EOF
-size    0x14f
+binsz    0x00000039
+packet  xtr.cart
 EOF
 RUN
 

@@ -11,9 +11,6 @@
 extern "C" {
 #endif
 
-/** \file cart.h
- * CaRT (Compressed and RC4 Transport) container format */
-
 #define CART_HEADER_MAGIC      "CART"
 #define CART_FOOTER_MAGIC      "TRAC"
 #define CART_HEADER_MAGIC_SIZE 4
