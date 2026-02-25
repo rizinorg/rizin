@@ -14,6 +14,7 @@
 #include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
+#include "rz_io.h"
 #include "rz_th.h"
 #include "rz_types.h"
 #include "rz_util/ht_pp.h"
@@ -331,17 +332,27 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 
 static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
 	const RzPVector /*<RzBinSymbol *>*/ *symbols,
-	RzPVector /*<RzBinSection *>*/ *sections) {
+	RzPVector /*<RzBinSection *>*/ *sections,
+	const RzPVector /*<RzIOMap *>*/ *io_maps) {
 	void **it;
 	RzVector *v = rz_vector_new(sizeof(RzInterval), NULL, NULL);
 	rz_pvector_foreach (sections, it) {
 		RzBinSection *sec = *it;
-		if (sec->layout.role == RZ_BIN_SECTION_ROLE_LINKING) {
+		if (sec->layout.role == RZ_BIN_SECTION_ROLE_LINKING || !(sec->perm & RZ_PERM_X)) {
 			RzInterval itv = { .addr = sec->vaddr, .size = sec->vsize };
 			rz_vector_push(v, &itv);
 		}
 	}
 	rz_pvector_free(sections);
+
+	rz_pvector_foreach (io_maps, it) {
+		RzIOMap *map = *it;
+		if (!(map->perm & RZ_PERM_X)) {
+			RzInterval itv = { .addr = map->itv.addr, .size = map->itv.size };
+			rz_vector_push(v, &itv);
+		}
+	}
+
 	rz_pvector_foreach (symbols, it) {
 		RzBinSymbol *sym = *it;
 		if (sym->is_imported) {
@@ -526,7 +537,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		rz_vector_clone(entry_points),
 		get_ignored_code_regions(
 			rz_bin_object_get_symbols(core->bin->cur->o),
-			rz_bin_object_get_sections(core->bin->cur->o)));
+			rz_bin_object_get_sections(core->bin->cur->o),
+			rz_io_maps(core->io)));
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();
