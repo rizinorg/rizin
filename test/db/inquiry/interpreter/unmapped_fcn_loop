@@ -1,0 +1,146 @@
+NAME=Indirect call x86
+FILE=bins/inquiry/interpreter/prototype/x86_unmapped_fcn_in_loop
+CMDS=<<EOF
+aaaaIp sym.run
+agf @ sym.run
+agf @ sym.recurse
+agf @ sym.function_0
+axl
+ablt
+EOF
+EXPECT=<<EOF
+.-------.
+|.------|-.
+||      | |
+||.--------------------------------------.    .--------------------------------------------.
+|||  0x8000088                           |    |  0x8000050                                 |
+||| ; CODE XREF from sym.run @ 0x8000081 |    |   ; CODE XREF from sym.recurse @ 0x8000044 |
+||| mov rax, qword [rbp-0x10]            |    |   ;-- run:                                 |
+||| mov eax, dword [rax]                 |    | sym.run();                                 |
+||| add eax, dword [rbp-0x04]            |    | push rbp                                   |
+||| mov dword [rbp-0x04], eax            |    | mov rbp, rsp                               |
+||| mov eax, dword [rbp-0x08]            |    | sub rsp, 0x10                              |
+||| add eax, 0x01                        |    | mov dword [rbp-0x04], 0x00                 |
+||| mov dword [rbp-0x08], eax            |    | mov dword [rbp-0x08], 0x00                 |
+||| jmp 0x8000066                        |    `--------------------------------------------'
+||`--------------------------------------'        v
+||    v                                           |
+||    |                                           |
+||    '------------------------.                  |
+||                             | .----------------'
+||                             | |
+||                       .--------------------------------------.
+||                       |  0x8000066                           |
+||                       | ; CODE XREF from sym.run @ 0x800009d |
+||                       | cmp dword [rbp-0x08], 0x02           |
+||                       | jnl 0x800009f                        |
+||                       `--------------------------------------'
+||                             t f
+||                             | |
+||       .---------------------' |
+||       |                       '-------------------.
+||       |                                           |
+||   .--------------------------------------.    .--------------------------------.
+||   |  0x800009f                           |    |  0x800006c                     |
+||   | ; CODE XREF from sym.run @ 0x800006a |    | movsxd rcx, dword [rbp-0x08]   |
+||   | mov eax, dword [rbp-0x04]            |    | mov al, 0x00                   |
+||   | add rsp, 0x10                        |    | ; 0x80000d0                    |
+||   | pop rbp                              |    | call qword [rcx*8+obj.fcn_arr] |
+||   | ret                                  |    `--------------------------------'
+||   `--------------------------------------'          t f
+||                                                     | |
+||                                                     | |
+||                                 .-------------------' |
+||                                 |                     '-----------.
+||                                 |                                 |
+||                             .----------------------------.    .----------------------------------------.
+||                             |  0x8000079                 |    |  0x80000c0                             |
+||                             | mov qword [rbp-0x10], rax  |    |   ; CODE XREF from sym.run @ 0x8000072 |
+||                             | cmp dword [rbp-0x08], 0x03 |    | sym.function_1();                      |
+||                             | jnz 0x8000088              |    | push rbp                               |
+||                             `----------------------------'    | mov rbp, rsp                           |
+||                                   t f                         | ; 16                                   |
+||                                   | |                         | mov edi, 0x10                          |
+||                                   | |                         | call fcn_0x8000440                     |
+||                                   | |                         `----------------------------------------'
+||                                   | |
+||                                   | |
+|`-----------------------------------' |
+|                                      '.
+|                                       |
+|                                   .------------------.
+|                                   |  0x8000083       |
+|                                   | call sym.recurse |
+|                                   `------------------'
+|                                       v
+|                                       |
+`---------------------------------------'
+.------------------------------------------.
+|  0x8000040                               |
+| ; [02] -r-x section size 144 named .text |
+|   ; CODE XREF from sym.run @ 0x8000083   |
+|   ;-- section..text:                     |
+|   ;-- recurse:                           |
+|   ;-- .text:                             |
+| sym.recurse();                           |
+| push rbp                                 |
+| mov rbp, rsp                             |
+| call sym.run                             |
+`------------------------------------------'
+    v
+    |
+    '--------------.
+                   |
+               .-------------.
+               |  0x8000049  |
+               | pop rbp     |
+               | ret         |
+               `-------------'
+.----------------------------------------.
+|  0x80000b0                             |
+|   ; CODE XREF from sym.run @ 0x8000072 |
+| sym.function_0();                      |
+| push rbp                               |
+| mov rbp, rsp                           |
+| ; 0xc                                  |
+| ; 12                                   |
+| mov edi, 0x0c                          |
+| call fcn_0x8000440                     |
+`----------------------------------------'
+    v
+    |
+    '-------------.
+                  |
+              .-------------.
+              |  0x80000be  |
+              | pop rbp     |
+              | ret         |
+              `-------------'
+                         section..text+4 0x8000044 ->      CODE -> 0x8000050 reloc.target.run
+                     reloc.target.run+26 0x800006a ->      CODE -> 0x800009f reloc.recurse+27
+                     reloc.target.run+34 0x8000072 ->      CODE -> 0x80000b0 sym.function_0
+                     reloc.target.run+34 0x8000072 ->      CODE -> 0x80000c0 sym.function_1
+                     reloc.target.run+34 0x8000072 ->      DATA -> 0x80000d0 section..data
+                     reloc.target.run+34 0x8000072 ->      DATA -> 0x80000d8 reloc..text.80000d8
+                        reloc.fcn_arr+12 0x8000081 ->      CODE -> 0x8000088 reloc.recurse+4
+                        reloc.fcn_arr+14 0x8000083 ->      CODE -> 0x8000040 section..text
+                        reloc.recurse+25 0x800009d ->      CODE -> 0x8000066 reloc.target.run+22
+     addr size traced ninstr jump       fail       fcns        calls       xrefs       
+---------------------------------------------------------------------------------------
+0x8000040    9      0      0 0x08000049             0x08000040  0x08000050  0x08000050
+0x8000049    2      0      0                        0x08000040             
+0x8000050   22      0      0 0x08000066             0x08000050             
+0x8000066    6      0      0 0x0800006c 0x0800009f  0x08000050             
+0x800006c   13      0      0 0x08000079 0x080000c0  0x08000050             
+0x8000079   10      0      0 0x08000088 0x08000083  0x08000050             
+0x8000083    5      0      0 0x08000088             0x08000050  0x08000040  0x08000040
+0x8000088   23      0      0 0x08000066             0x08000050             
+0x800009f    9      0      0                        0x08000050             
+0x80000b0   14      0      0 0x080000be             0x080000b0  0x08000440  0x08000440
+0x80000be    2      0      0                        0x080000b0             
+0x80000c0   14      0      0 0x080000ce             0x080000c0  0x08000440  0x08000440
+0x80000ce    2      0      0                        0x080000c0             
+0x8000440    1      0      0                        0x08000440             
+EOF
+EXPECT_ERR=
+RUN
