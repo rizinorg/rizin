@@ -42,6 +42,7 @@ bool report_yield_xref(
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
 		RzAnalysisXRef *xref = &state->shared_obj->xref;
+		xref->bb_addr = state->bb_addr;
 		xref->from = from;
 		xref->to = to_addr;
 		xref->type = type;
