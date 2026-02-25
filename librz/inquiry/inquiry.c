@@ -439,6 +439,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
 	RzSetU *branch_targets = rz_set_u_new();
+	bool user_sent_signal = false;
 
 	rz_cons_push();
 
@@ -533,7 +534,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	}
 
 	do {
-		bool user_sent_signal = false;
 		bool bb_decode_failed = false;
 
 		// Dispatch prototype interpreter into a thread.
@@ -557,7 +557,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		while (rz_atomic_bool_get(is_running)) {
 			if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
 				rz_atomic_bool_set(is_running, false);
-				user_sent_signal = true;
+				user_sent_signal = rz_cons_is_breaked();
 				break;
 			}
 
@@ -646,6 +646,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		if ((!interpr_ret && !bb_decode_failed) || user_sent_signal) {
 			if (!user_sent_signal) {
 				RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
+			} else {
+				RZ_LOG_ERROR("User sent signal.\n");
 			}
 			break;
 		}
@@ -751,7 +753,7 @@ error_free:
 	ht_up_free(il_cache);
 
 	rz_cons_pop();
-	return return_code;
+	return return_code && !user_sent_signal;
 }
 
 static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry, RzPVector *fcns,
