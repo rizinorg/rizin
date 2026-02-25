@@ -152,13 +152,44 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 }
 
 /**
- * \brief Add edges from iq->xrefs and the \p insn_to_insn_edges to the cfg.
+ * \brief Add edges from \p insn_to_insn_edges to the cfg.
+ * These are edges statically known by checking RzAnalysisOp->jump and fail.
+ *
  * TODO: Crazy inefficient.
+ * But for now it is left in here. The problem is that the graph has basic blocks as nodes.
+ * But the xrefs are instruction to instruction. So we have this super expansive |bb| * |E| lookup.
+ *
+ * It would be way faster if we have an R-Tree to get bbs by an address it covers.
+ * Or just do a better design all along.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	// Add the instruction to instruction edges.
 	RzAnalysisXRef *i2i_edge;
 	rz_vector_foreach(insn_to_insn_edges, i2i_edge) {
+
+		// First check if the edge is already in the CFG.
+		// If so (not unlikely), skip the step where it iterates over all BBs.
+		const RzList *incoming = rz_inquiry_bb_cfg_get_neighbours_to(iq->bb_cfg, i2i_edge->to);
+		if (!incoming || rz_list_length(incoming) == 0) {
+			// Basic block not present. Ignore.
+			continue;
+		}
+
+		RzGraphNode *gn;
+		RzListIter *lit;
+		rz_list_foreach(incoming, lit, gn) {
+			RzInterval *bb = ht_up_find(iq->bb_cfg->basic_blocks, (ut64)gn->data, NULL);
+			if (!bb) {
+				continue;
+			}
+			if (rz_itv_contain(*bb, i2i_edge->from)) {
+				// This edge was already covered.
+				goto next_i2i_edge;
+			}
+		}
+
+		// Edge isn't in the CFG yet.
+		// Now we have to do the crazy expansive |bb| * |E| search.
 		void **it;
 		RzIterator *bb_iter = ht_up_as_iter(iq->bb_cfg->basic_blocks);
 		rz_iterator_foreach(bb_iter, it) {
@@ -169,6 +200,8 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to);
 		}
 		rz_iterator_free(bb_iter);
+next_i2i_edge:
+		continue;
 	}
 	return true;
 }
