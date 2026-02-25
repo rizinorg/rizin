@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2025 Ayush Dwivedi <ayushd785@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

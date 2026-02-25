@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2025 Ayush Dwivedi <ayushd785@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_BIN_CART_H
@@ -10,6 +10,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** \file cart.h
+ * CaRT (Compressed and RC4 Transport) container format */
 
 #define CART_HEADER_MAGIC      "CART"
 #define CART_FOOTER_MAGIC      "TRAC"
@@ -48,10 +51,15 @@ typedef struct cart_obj_t {
 	ut64 file_size;
 } CartObj;
 
+/** Check if buffer contains valid CaRT magic (CART/TRAC) */
 RZ_API bool rz_bin_cart_check_buffer(RZ_NONNULL RzBuffer *buf);
+/** Parse CaRT header and footer from buffer */
 RZ_API RZ_OWN CartObj *rz_bin_cart_new_from_buffer(RZ_NONNULL RzBuffer *buf);
+/** Free CartObj */
 RZ_API void rz_bin_cart_free(RZ_NULLABLE CartObj *obj);
+/** Extract decrypted and decompressed payload */
 RZ_API RZ_OWN ut8 *rz_bin_cart_extract(RZ_NONNULL RzBuffer *buf, RZ_NONNULL CartObj *obj, RZ_NONNULL int *out_size);
+/** Extract payload as RzBuffer */
 RZ_API RZ_OWN RzBuffer *rz_bin_cart_extract_buf(RZ_NONNULL RzBuffer *buf, RZ_NONNULL CartObj *obj);
 
 #ifdef __cplusplus

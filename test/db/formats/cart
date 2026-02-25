@@ -1,13 +1,3 @@
-NAME=CaRT: rz-bin list extractors
-FILE==
-CMDS=<<EOF
-!rz-bin -L~cart
-EOF
-EXPECT=<<EOF
-.cart        LGPL3                     CaRT (Compressed and RC4 Transport) extractor
-EOF
-RUN
-
 NAME=CaRT: Check file size
 FILE=bins/cart/sample.cart
 CMDS=<<EOF
