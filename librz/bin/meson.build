@@ -60,6 +60,7 @@ bin_plugins_list = [
 ]
 
 bin_xtr_plugins_list = [
+  'cart',
   'fatmach0',
   'sep64',
   # this was never built.
@@ -157,6 +158,7 @@ rz_bin_sources = [
   'p/bin_wasm.c',
   'p/bin_xbe.c',
   'p/bin_xnu_kernelcache.c',
+  'p/bin_xtr_cart.c',
   'p/bin_xtr_fatmach0.c',
   # this was never built.
   # 'p/bin_xtr_pemixed.c',
@@ -276,6 +278,7 @@ rz_bin_sources = [
   'format/pyc/marshal.c',
   'format/pyc/pyc.c',
   'format/pyc/pyc_magic.c',
+  'format/cart/cart.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
 

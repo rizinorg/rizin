@@ -1,0 +1,33 @@
+NAME=CaRT: rz-bin list extractors
+FILE==
+CMDS=<<EOF
+!rz-bin -L~cart
+EOF
+EXPECT=<<EOF
+.cart        LGPL3                     CaRT (Compressed and RC4 Transport) extractor
+EOF
+RUN
+
+NAME=CaRT: Check file size
+FILE=bins/cart/sample.cart
+CMDS=<<EOF
+i~size
+EOF
+EXPECT=<<EOF
+size    0x14f
+EOF
+RUN
+
+NAME=CaRT: Extract payload with rz-bin -x
+FILE==
+CMDS=<<EOF
+!rm -rf sample.cart.fat
+!rz-bin -x bins/cart/sample.cart
+!cat sample.cart.fat/sample.cart.unknown.cart_payload_0.0
+!rm -rf sample.cart.fat
+EOF
+EXPECT=<<EOF
+sample.cart.fat/sample.cart.unknown.cart_payload_0.0 created (57)
+This is a test payload for CaRT container format testing
+EOF
+RUN
