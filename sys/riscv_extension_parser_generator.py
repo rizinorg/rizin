@@ -5,12 +5,11 @@
 """
 RISC-V Extension Trie-Based Parser Generator
 
-Given a list of RISCV_FeatureStdExt* enums, generates C code that:
-1. Parses extension names using a trie data structure
-2. ORs the corresponding enum value with a running accumulator
+Given a list of RISCV_FeatureStdExt* enums (by passing arch/RISCV/RISCVGenSubtargetInfo.inc), it generates C code that:
+1. Parses extension names using a trie data structure (to efficiently exploit common prefixes)
+2. Increments the current index given to the parsing routine and returns an enum representing the extension parsed
 3. Includes an ASCII art tree visualization of the trie
-4. Annotates branches with parse state
-5. Uses macros to reduce boilerplate
+4. Annotates parsing control flow branches with parse state
 """
 
 import sys
@@ -186,8 +185,8 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
         " * Generated from arch/RISCV/RISCVGenSubtargetInfo.inc in Capstone sources \n"
     )
     full_code += " * \n"
-    full_code += " * This function parses a single RISC-V extension name and ORs the corresponding\n"
-    full_code += " * feature flags with an accumulator 'mode'.\n"
+    full_code += " * This function parses a single RISC-V extension name and returns the corresponding\n"
+    full_code += " * feature flag.\n"
     full_code += " * \n"
     full_code += " * Trie Diagram:\n"
     full_code += tree_comment + "\n"
@@ -273,7 +272,7 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
     full_code += "        } \\\n"
     full_code += "    } while (0)\n\n"
 
-    full_code += "/* Macro: Conditinally invoke a macro if the current character is not on a given blacklist*/\n"
+    full_code += "/* Macro: Conditionally invoke a macro if the current character is not on a given blacklist*/\n"
     full_code += "#define DO_IF_NOT_ANY_OF(blacklist, thing) \\\n"
     full_code += "    do { \\\n"
     full_code += "        bool __will_do__ = true; \\\n"
@@ -299,10 +298,7 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
         " * @param idx: Pointer to current index "
         "(will be updated to show consumed length)\n"
     )
-    full_code += (
-        " * @param mode: Pointer to the feature accumulator "
-        "(will be ORed with the feature flag if extension found)\n"
-    )
+    full_code += " * @param mode: Pointer to the feature result"
     full_code += " * @return: Parse result indicating why parsing stopped and whether a match was found\n"
     full_code += " * \n"
     full_code += " * Stopping conditions:\n"

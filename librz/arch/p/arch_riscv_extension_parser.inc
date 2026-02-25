@@ -9,8 +9,8 @@
  * RISC-V Extension Parser Using a Trie trick
  * Generated from arch/RISCV/RISCVGenSubtargetInfo.inc in Capstone sources
  *
- * This function parses a single RISC-V extension name and ORs the corresponding
- * feature flags with an accumulator 'mode'.
+ * This function parses a single RISC-V extension name and returns the corresponding
+ * feature flag.
  *
  * Trie Diagram:
  * ROOT
@@ -556,7 +556,7 @@ typedef enum {
 		} \
 	} while (0)
 
-/* Macro: Conditinally invoke a macro if the current character is not on a given blacklist*/
+/* Macro: Conditionally invoke a macro if the current character is not on a given blacklist*/
 #define DO_IF_NOT_ANY_OF(blacklist, thing) \
 	do { \
 		bool __will_do__ = true; \
@@ -576,8 +576,7 @@ typedef enum {
  *
  * @param arch_str: The full architecture string
  * @param idx: Pointer to current index (will be updated to show consumed length)
- * @param mode: Pointer to the feature accumulator (will be ORed with the feature flag if extension found)
- * @return: Parse result indicating why parsing stopped and whether a match was found
+ * @param mode: Pointer to the feature result * @return: Parse result indicating why parsing stopped and whether a match was found
  *
  * Stopping conditions:
  *   - '\0' (end of string)
