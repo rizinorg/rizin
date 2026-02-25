@@ -403,6 +403,7 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 		}
 
 #if RZ_BUILD_DEBUG
+		// Validate IL to catch more errors during testing.
 		RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
 		RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
 		void **it;
@@ -586,8 +587,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						rz_warn_if_reached();
 						break;
 					}
-					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x "\n", branch->target_addr);
-					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, branch->target_addr);
+					ut64 alt_addr = branch->alt_target;
+					if (alt_addr) {
+						branch->alt_target = 0;
+					}
+					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x " (alt: 0x%" PFMT64x ")\n", branch->target_addr, alt_addr);
+					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, alt_addr ? alt_addr : branch->target_addr);
 					if (!bb) {
 						// Delete the address from the branch targets.
 						// This is currently necessary as a work around, because if the interpreter
@@ -595,6 +600,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						// Giving an endless loop.
 						// One of the design thingies to fix in the proper implementation.
 						rz_set_u_delete(branch_targets, branch->target_addr);
+						if (alt_addr) {
+							rz_set_u_delete(branch_targets, alt_addr);
+						}
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
 						rz_th_queue_close(io_request_q);
@@ -605,6 +613,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 						break;
 					}
 					rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
+					if (alt_addr) {
+						// Add a dummy basic block at the address the call originally jumped to.
+						// This is the basic block for the imported function.
+						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
+						rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
+					}
 					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 					rz_th_queue_push(iset->il_queue, (void *)bb, true);
 				}

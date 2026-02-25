@@ -18,6 +18,9 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
+
+	// Check invocation count of the current address.
+	// Never execute the same address more than MAX_INVOCATIONS_PER_BB times.
 	bool found = false;
 	ut64 ic_pc = ht_uu_find(pdata->bb_invocation_count, il_bb->bb_addr, &found);
 	if (!found) {
@@ -34,6 +37,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	// Reset call candidate tracking for each basic block.
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
 
+	// Now execute the actual effects of the BB.
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
@@ -49,7 +53,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	}
 	// TODO: Clean up local variables.
 	// Or maybe not? Just costs performance. And the uplifted instructions should
-	// always set it before, otherwise the tests don't pass.
+	// always set it before reading, otherwise the tests wouldn't pass.
 	return true;
 }
 
