@@ -31,6 +31,9 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, ic_pc + 1);
 	RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc, il_bb->bb_addr);
 
+	// Reset call candidate tracking for each basic block.
+	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
+
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
 		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
