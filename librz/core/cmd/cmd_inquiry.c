@@ -31,13 +31,14 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	}
 	entry_point = *(ut64 *)rz_vector_head(entry_points);
 	bool success = rz_inquiry_interpreter(core, entry_points);
-	RZ_LOG_INFO("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
+	printf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+	printf("Perform function deduction: ");
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
 	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, entry_point, symbols);
-	RZ_LOG_INFO("Perform function deduction: %s\n", success ? "OK" : "FAIL");
+	printf("%s\n", success ? "OK" : "FAIL");
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
