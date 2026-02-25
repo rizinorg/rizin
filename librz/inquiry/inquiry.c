@@ -166,9 +166,10 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 }
 
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
-	RzAnalysisXRef clone = { 0 };
-	memcpy(&clone, xref, sizeof(RzAnalysisXRef));
-	rz_vector_push(iq->xrefs, &clone);
+	rz_vector_push(iq->xrefs, (void *)xref);
+	if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
+		rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, xref->bb_addr, xref->to);
+	}
 }
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
@@ -707,11 +708,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		printf("\n");
 	}
-	if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
+	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
+	if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
 		rz_warn_if_reached();
 		goto error_free;
 	}

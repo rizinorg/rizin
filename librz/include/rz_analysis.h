@@ -972,6 +972,7 @@ typedef enum {
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
+	ut64 bb_addr; ///< Temporary member to make prototype function detection work.
 	ut64 from;
 	ut64 to;
 	RzAnalysisXRefType type;

@@ -153,26 +153,9 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 
 /**
  * \brief Add edges from iq->xrefs and the \p insn_to_insn_edges to the cfg.
+ * TODO: Crazy inefficient.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
-	// Add all edges discovered by the interpreter
-	RzAnalysisXRef *xref;
-	rz_vector_foreach (iq->xrefs, xref) {
-		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
-			continue;
-		}
-		void **it;
-		RzIterator *bb_iter = ht_up_as_iter(iq->bb_cfg->basic_blocks);
-		rz_iterator_foreach(bb_iter, it) {
-			RzInterval *bb = *it;
-			if (!rz_itv_contain(*bb, xref->from)) {
-				continue;
-			}
-			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, xref->to);
-		}
-		rz_iterator_free(bb_iter);
-	}
-
 	// Add the instruction to instruction edges.
 	RzAnalysisXRef *i2i_edge;
 	rz_vector_foreach(insn_to_insn_edges, i2i_edge) {
