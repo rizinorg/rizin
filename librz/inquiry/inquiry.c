@@ -321,7 +321,7 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 		rz_pvector_remove_at(sections, *j);
 	}
 	rz_vector_free(non_x_idx);
-	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, false, branch_targets, insn_to_insn_edges)) {
+	if (!rz_analysis_get_all_branch_targets(core->analysis, sections, true, branch_targets, insn_to_insn_edges)) {
 		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return false;
 	}

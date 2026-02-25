@@ -1032,6 +1032,25 @@ RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op) {
 }
 
 /**
+ * \brief Returns true if the \p op is a call.
+ */
+RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op) {
+	rz_return_val_if_fail(op, false);
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/**
  * \brief Returns true if the \p op is a direct call.
  */
 RZ_API bool rz_analysis_op_is_direct_jump(RZ_NONNULL const RzAnalysisOp *op) {
