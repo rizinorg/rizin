@@ -397,7 +397,7 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 				if (include_call_return_pts && rz_analysis_op_is_direct_call(&op)) {
 					// If it is a call, also add the following instruction as reference.
 					// Because it is likely a return point.
-					rz_set_u_add(branch_targets, op.addr && op.size);
+					rz_set_u_add(branch_targets, op.addr + op.size);
 				}
 			}
 			addr += op.size;
