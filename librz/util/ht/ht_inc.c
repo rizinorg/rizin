@@ -175,6 +175,14 @@ static inline ut8 group_lowest_bit(group_mask_t mask) {
 	}
 #endif
 
+static inline ut32 kv_key_len(const HT_(Kv) *kv) {
+#ifdef VARIABLE_KEY_LEN
+	return kv->key_len;
+#else
+	return 0;
+#endif
+}
+
 static inline ut32 hashfn(HtName_(Ht) *ht, const KEY_TYPE k, ut32 key_size) {
 	return ht->opt.hashfn ? ht->opt.hashfn(k) : KEY_TO_HASH(k, key_size);
 }
@@ -188,11 +196,19 @@ static inline VALUE_TYPE dupval(HtName_(Ht) *ht, const VALUE_TYPE v) {
 }
 
 static inline ut32 calcsize_key(HtName_(Ht) *ht, const KEY_TYPE k) {
+#ifdef VARIABLE_KEY_LEN
 	return ht->opt.calcsizeK ? ht->opt.calcsizeK(k) : 0;
+#else
+	return 0;
+#endif
 }
 
 static inline ut32 calcsize_val(HtName_(Ht) *ht, const VALUE_TYPE v) {
+#ifdef VARIABLE_VALUE_LEN
 	return ht->opt.calcsizeV ? ht->opt.calcsizeV(v) : 0;
+#else
+	return 0;
+#endif
 }
 
 static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
@@ -202,9 +218,11 @@ static inline void fini_kv_pair(HtName_(Ht) *ht, HT_(Kv) *kv) {
 }
 
 static inline bool is_key_equal(HtName_(Ht) *ht, const KEY_TYPE key, const ut32 key_len, const HT_(Kv) *kv) {
-	if (key_len != kv->key_len) {
+#ifdef VARIABLE_KEY_LEN
+	if (key_len != kv_key_len(kv)) {
 		return false;
 	}
+#endif
 
 	if (key == kv->key) {
 		return true;
@@ -270,6 +288,24 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 #ifndef HT_ENABLE_CUSTOM_ELEM_SIZE
 	if (ht->opt.elem_size != sizeof(HT_(Kv))) {
 		// Custom elem_size support can be enabled by uncommenting the respective define
+		rz_warn_if_reached();
+		free(ht);
+		return NULL;
+	}
+#endif
+
+#ifndef VARIABLE_KEY_LEN
+	if (ht->opt.calcsizeK) {
+		// Key type is expected to be fixed sized (i.e. ut64)
+		rz_warn_if_reached();
+		free(ht);
+		return NULL;
+	}
+#endif
+
+#ifndef VARIABLE_VALUE_LEN
+	if (ht->opt.calcsizeV) {
+		// Value type is expected to be fixed sized (i.e. ut64)
 		rz_warn_if_reached();
 		free(ht);
 		return NULL;
@@ -594,7 +630,7 @@ static inline HtRetCode internal_insert_kv_ex(RZ_NONNULL HtName_(Ht) *ht, RZ_NON
 	rz_return_val_if_fail(ht && kv, HT_RC_ERROR);
 
 	HtRetCode rc;
-	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv->key_len, update, &rc);
+	HT_(Kv) *kv_dst = reserve_kv(ht, kv->key, kv_key_len(kv), update, &rc);
 
 	if (rc <= 0) {
 		if (out_kv) {
@@ -654,9 +690,14 @@ static HtRetCode insert_update(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, V
 	}
 
 	kv_dst->key = dupkey(ht, key);
-	kv_dst->key_len = key_len;
 	kv_dst->value = dupval(ht, value);
+
+#ifdef VARIABLE_KEY_LEN
+	kv_dst->key_len = key_len;
+#endif
+#ifdef VARIABLE_VALUE_LEN
 	kv_dst->value_len = calcsize_val(ht, value);
+#endif
 
 	if (out_kv) {
 		*out_kv = kv_dst;
@@ -798,7 +839,9 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 	// associated with the new key and it should not be freed
 	if (!ht->opt.dupvalue) {
 		HT_SLOT_AT(ht, idx)->value = HT_NULL_VALUE;
+#ifdef VARIABLE_VALUE_LEN
 		HT_SLOT_AT(ht, idx)->value_len = 0;
+#endif
 	}
 
 	return internal_ht_delete(ht, idx);

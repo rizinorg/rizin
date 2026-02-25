@@ -18,6 +18,8 @@
 #undef VALUE_TYPE
 #undef KEY_TO_HASH
 #undef HT_NULL_VALUE
+#undef VARIABLE_KEY_LEN
+#undef VARIABLE_VALUE_LEN
 
 #if HT_TYPE == 1
 // Hash table HtPP that has void* as key and void* as value
@@ -28,6 +30,8 @@
 #define VALUE_TYPE                 void *
 #define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
 #define HT_NULL_VALUE              NULL
+#define VARIABLE_KEY_LEN
+#define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 2
 // Hash table HtUP that has void* as key and ut64 as value
 #define HtName_(name)              name##UP
@@ -37,6 +41,7 @@
 #define VALUE_TYPE                 void *
 #define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((ut64)(key)))
 #define HT_NULL_VALUE              0
+#define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 3
 // Hash table HtUU that has ut64 as key and ut64 as value
 #define HtName_(name)              name##UU
@@ -55,6 +60,7 @@
 #define VALUE_TYPE                 ut64
 #define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
 #define HT_NULL_VALUE              0
+#define VARIABLE_KEY_LEN
 #elif HT_TYPE == 5
 // Hash table HtSP that has C-string as key and void* as value
 #define HtName_(name)              name##SP
@@ -64,6 +70,8 @@
 #define VALUE_TYPE                 void *
 #define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
 #define HT_NULL_VALUE              NULL
+#define VARIABLE_KEY_LEN
+#define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 6
 // Hash table HtSS that has C-string as key and C-string as value
 #define HtName_(name)              name##SS
@@ -73,6 +81,8 @@
 #define VALUE_TYPE                 char *
 #define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
 #define HT_NULL_VALUE              NULL
+#define VARIABLE_KEY_LEN
+#define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 7
 // Hash table HtSU that has C-string as key and ut64 as value
 #define HtName_(name)              name##SU
@@ -82,6 +92,7 @@
 #define VALUE_TYPE                 ut64
 #define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
 #define HT_NULL_VALUE              0
+#define VARIABLE_KEY_LEN
 #endif
 
 // Uncomment to enable support for custom element size (opt.elem_size != sizeof(VALUE_TYPE)). This could
@@ -172,12 +183,18 @@ typedef enum {
 
 #include <rz_types.h>
 
-/* Kv represents a single key/value element in the hashtable */
+/**
+ * \brief Kv represents a single key/value element in the hashtable
+ */
 typedef struct Ht_(kv) {
 	KEY_TYPE key;
 	VALUE_TYPE value;
-	ut32 key_len;
-	ut32 value_len;
+#ifdef VARIABLE_KEY_LEN
+	ut32 key_len; ///< Size of the key. Used only for pointer or string keys.
+#endif
+#ifdef VARIABLE_VALUE_LEN
+	ut32 value_len; ///< Size of the value. Used only for pointer or string values.
+#endif
 } HT_(Kv);
 
 typedef void (*HT_(FiniKv))(HT_(Kv) *kv, void *user);
