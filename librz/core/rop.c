@@ -1540,7 +1540,7 @@ static void set_increment_based_on_arch(const RzCore *core, const char *arch, in
 	} else if (RZ_STR_EQ(arch, "avr")) { // AVR is halfword aligned.
 		*increment = 2;
 	} else if (RZ_STR_EQ(arch, "riscv")) {
-		*increment = 2;
+		*increment = core->analysis->pcalign;
 	}
 }
 

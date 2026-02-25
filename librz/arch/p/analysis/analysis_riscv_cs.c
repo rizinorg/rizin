@@ -781,7 +781,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		ctx->omode = mode;
 		ctx->obits = analysis->bits;
 	}
-
+	analysis->pcalign = 2;
 	op->addr = addr;
 	if (len < 2) {
 		return -1;
@@ -1911,7 +1911,9 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 beach:
 	if (insn) {
-		op->mnemonic = rz_str_newf("%s %s", insn->mnemonic, insn->op_str);
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", rz_str_get(insn->op_str));
+		}
 
 		set_op_sign(op, insn);
 		set_op_data_size(op, insn);
