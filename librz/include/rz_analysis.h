@@ -1528,6 +1528,7 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_changes_control_flow(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_direct_call(RZ_NONNULL const RzAnalysisOp *op);
+RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_direct_jump(RZ_NONNULL const RzAnalysisOp *op);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);

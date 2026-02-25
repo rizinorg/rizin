@@ -254,14 +254,6 @@ RUN
 NAME=Indirect call sparc
 FILE=bins/inquiry/interpreter/prototype/sparc_icall_malloc
 CMDS=<<EOF
-# NOTE: This test is incomplete. As you can see the references from/to function_2 are missing.
-# This happens because the interpreter hashes the register state and quits if the state has been seen before.
-# Sparc passes values over the stack for function calls.
-# But the stack itself is not hashed in the current prototype.
-# So when it returns from function_1 it has seen the state already after returning from function_0 and quits.
-# Because the VM has the same register content when it returns from function_0 and function_1.
-# Only the stack differs, which is not checked.
-# Hence, every reference afterwards is missing.
 aaaaIp sym.main
 pd 60 @ sym.some_ptr
 axl
@@ -270,6 +262,7 @@ EOF
 EXPECT=<<EOF
             ; CODE XREF from sym.function_0 @ 0x8000060
             ; CODE XREF from sym.function_1 @ 0x800007c
+            ; CODE XREF from sym.function_2 @ 0x8000098
             ;-- section..text:
             ;-- .text:
 / sym.some_ptr();
@@ -301,14 +294,16 @@ EXPECT=<<EOF
 |           0x08000084      mov   g1, i0
 |           0x08000088      rett  i7+8
 \           0x0800008c      nop
-            ;-- function_2:
-            0x08000090      save  sp, -0xb0, sp
-            0x08000094      call  sym.some_ptr
-            0x08000098      nop
-            0x0800009c      mov   o0, g1
-            0x080000a0      mov   g1, i0
-            0x080000a4      rett  i7+8
-            0x080000a8      nop
+            ; CODE XREF from sym.main @ 0x80000dc
+/ sym.function_2();
+|           0x08000090      save  sp, -0xb0, sp
+|           0x08000094      call  sym.some_ptr
+|           0x08000098      nop
+|           ; CODE XREF from sym.some_ptr @ 0x8000054
+|           0x0800009c      mov   o0, g1
+|           0x080000a0      mov   g1, i0
+|           0x080000a4      rett  i7+8
+\           0x080000a8      nop
 / int sym.main(int argc, char **argv, char **envp);
 |           0x080000ac      save  sp, -0xc0, sp
 |           0x080000b0      st    g0, [fp+0x7fb]
@@ -329,6 +324,7 @@ EXPECT=<<EOF
 |      :|   0x080000dc      nop
 |      :|   ; CODE XREF from sym.function_0 @ 0x8000070
 |      :|   ; CODE XREF from sym.function_1 @ 0x800008c
+|      :|   ; CODE XREF from sym.function_2 @ 0x80000a8
 |      :|   0x080000e0      stx   o0, [fp+0x7ef]
 |      :|   0x080000e4      ldx   [fp+0x7ef], g1
 |      :|   0x080000e8      ldub  [g1], g1
@@ -352,25 +348,36 @@ EXPECT=<<EOF
             0x0800012c      invalid
                    reloc..bss.8000048+12 0x8000054 ->      CODE -> 0x8000064 sym.function_0+12
                    reloc..bss.8000048+12 0x8000054 ->      CODE -> 0x8000080 sym.function_1+12
+                   reloc..bss.8000048+12 0x8000054 ->      CODE -> 0x800009c sym.function_2+12
                         sym.function_0+8 0x8000060 ->      CODE -> 0x8000040 section..text
                        sym.function_0+24 0x8000070 ->      CODE -> 0x80000e0 reloc..data.80000c4+28
                         sym.function_1+8 0x800007c ->      CODE -> 0x8000040 section..text
                        sym.function_1+24 0x800008c ->      CODE -> 0x80000e0 reloc..data.80000c4+28
+                        sym.function_2+8 0x8000098 ->      CODE -> 0x8000040 section..text
+                       sym.function_2+24 0x80000a8 ->      CODE -> 0x80000e0 reloc..data.80000c4+28
                              sym.main+16 0x80000bc ->      CODE -> 0x8000108 reloc..data.80000c4+68
                   reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000130 section..data
                   reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000138 reloc..text.8000138
+                  reloc..data.80000c4+16 0x80000d4 ->      DATA -> 0x8000140 reloc..text.8000140
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000058 sym.function_0
                   reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000074 sym.function_1
+                  reloc..data.80000c4+24 0x80000dc ->      CODE -> 0x8000090 sym.function_2
                   reloc..data.80000c4+80 0x8000114 ->      CODE -> 0x80000c0 reloc..data
      addr size traced ninstr jump       fail       fcns        calls               xrefs               
 -------------------------------------------------------------------------------------------------------
 0x8000040   24      0      0 0x08000064 0x08000080  0x08000040                     
 0x8000058   12      0      0 0x08000064             0x08000058  0x08000040          0x08000040
+0x8000060    4      0      0                                                       
 0x8000064   16      0      0 0x080000e0             0x08000058                     
 0x8000074   12      0      0 0x08000080             0x08000074  0x08000040          0x08000040
+0x800007c    4      0      0                                                       
 0x8000080   16      0      0 0x080000e0             0x08000074                     
+0x8000090   12      0      0 0x0800009c             0x08000090  0x08000040          0x08000040
+0x8000098    4      0      0                                                       
+0x800009c   16      0      0 0x080000e0             0x08000090                     
 0x80000ac   20      0      0 0x08000108             0x080000ac                     
 0x80000c0   32      0      0 0x080000e0 0x08000074  0x080000ac  0xffffffffffffffff  0xffffffffffffffff
+0x80000dc    4      0      0                                                       
 0x80000e0   40      0      0 0x08000108             0x080000ac                     
 0x8000108   16      0      0 0x080000c0 0x08000118  0x080000ac                     
 0x8000118   20      0      0                        0x080000ac                     
@@ -522,6 +529,7 @@ EXPECT=<<EOF
 0x8000060   20      0      0 0x080000e8             0x08000054             
 0x8000074   12      0      0 0x08000080             0x08000074  0x08000034  0x08000034
 0x8000080   20      0      0 0x080000e8             0x08000074             
+0x80000a0   20      0      0                                               
 0x80000b4   32      0      0 0x08000110             0x080000b4             
 0x80000d4   20      0      0 0x080000e8 0x08000074  0x080000b4             
 0x80000e8   40      0      0 0x08000110             0x080000b4             
@@ -602,8 +610,12 @@ EXPECT=<<EOF
         reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
      addr size traced ninstr jump       fail       fcns        calls xrefs 
 ---------------------------------------------------------------------------
+0x80000a4   28      0      0                                         
+0x80000f4   28      0      0                                         
+0x8000144   28      0      0                                         
 0x8000164   44      0      0 0x080001dc             0x08000164       
 0x8000194   32      0      0                        0x08000164       
+0x80001b4   40      0      0                                         
 0x80001dc   12      0      0 0x08000194 0x080001e8  0x08000164       
 0x80001e8   32      0      0                        0x08000164       
 EOF

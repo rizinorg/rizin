@@ -389,16 +389,13 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 
 						RzAnalysisXRef edge = { .from = addr, .to = op.fail };
 						rz_vector_push(insn_to_insn_edges, &edge);
-					} else if (include_call_return_pts && rz_analysis_op_is_direct_jump(&op)) {
-						rz_set_u_add(branch_targets, op.fail);
-						// Don't add to insn_to_ins_edges. Those are only real edges.
 					}
 				}
-				if (include_call_return_pts && rz_analysis_op_is_direct_call(&op)) {
-					// If it is a call, also add the following instruction as reference.
-					// Because it is likely a return point.
-					rz_set_u_add(branch_targets, op.addr + op.size);
-				}
+			}
+			if (include_call_return_pts && rz_analysis_op_is_call(&op)) {
+				// If it is a call, also add the following instruction as reference.
+				// Because it is likely a return point.
+				rz_set_u_add(branch_targets, op.addr + op.size);
 			}
 			addr += op.size;
 			rz_analysis_op_fini(&op);
