@@ -9,8 +9,8 @@
  * RISC-V Extension Parser Using a Trie trick
  * Generated from arch/RISCV/RISCVGenSubtargetInfo.inc in Capstone sources
  *
- * This function parses a single RISC-V extension name and ORs the corresponding
- * feature flags with an accumulator 'mode'.
+ * This function parses a single RISC-V extension name and returns the corresponding
+ * feature flag.
  *
  * Trie Diagram:
  * ROOT
@@ -556,13 +556,27 @@ typedef enum {
 		} \
 	} while (0)
 
+/* Macro: Conditionally invoke a macro if the current character is not on a given blacklist*/
+#define DO_IF_NOT_ANY_OF(blacklist, thing) \
+	do { \
+		bool __will_do__ = true; \
+		char *__curr__ = blacklist; \
+		while (*__curr__ != '\0') { \
+			if (*p == *__curr__++) { \
+				__will_do__ = false; \
+			} \
+		} \
+		if (__will_do__) { \
+			thing; \
+		} \
+	} while (0)
+
 /**
  * Main parse routine: Try to consume a RISC-V extension name from the architecture string at a given position.
  *
  * @param arch_str: The full architecture string
  * @param idx: Pointer to current index (will be updated to show consumed length)
- * @param mode: Pointer to the feature accumulator (will be ORed with the feature flag if extension found)
- * @return: Parse result indicating why parsing stopped and whether a match was found
+ * @param mode: Pointer to the feature result * @return: Parse result indicating why parsing stopped and whether a match was found
  *
  * Stopping conditions:
  *   - '\0' (end of string)
@@ -1031,7 +1045,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 				}
 			} else if (*p == 'h') {
 				p++;
-				STOP_WITH_MATCH(RISCV_FeatureStdExtZfh);
+				DO_IF_NOT_ANY_OF("m", STOP_WITH_MATCH(RISCV_FeatureStdExtZfh));
 
 				/* State: 'zfh' expecting [m] */
 				if (*p == 'm') {
@@ -1087,7 +1101,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 					/* State: 'zhin' expecting [x] */
 					if (*p == 'x') {
 						p++;
-						STOP_WITH_MATCH(RISCV_FeatureStdExtZhinx);
+						DO_IF_NOT_ANY_OF("m", STOP_WITH_MATCH(RISCV_FeatureStdExtZhinx));
 
 						/* State: 'zhinx' expecting [m] */
 						if (*p == 'm') {
@@ -1473,12 +1487,12 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 			}
 		} else if (*p == 'k') {
 			p++;
-			STOP_WITH_MATCH(RISCV_FeatureStdExtZk);
+			DO_IF_NOT_ANY_OF("nrst", STOP_WITH_MATCH(RISCV_FeatureStdExtZk));
 
 			/* State: 'zk' expecting [nrst] */
 			if (*p == 'n') {
 				p++;
-				STOP_WITH_MATCH(RISCV_FeatureStdExtZkn);
+				DO_IF_NOT_ANY_OF("deh", STOP_WITH_MATCH(RISCV_FeatureStdExtZkn));
 
 				/* State: 'zkn' expecting [deh] */
 				if (*p == 'd') {
@@ -1499,7 +1513,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 				STOP_WITH_MATCH(RISCV_FeatureStdExtZkr);
 			} else if (*p == 's') {
 				p++;
-				STOP_WITH_MATCH(RISCV_FeatureStdExtZks);
+				DO_IF_NOT_ANY_OF("eh", STOP_WITH_MATCH(RISCV_FeatureStdExtZks));
 
 				/* State: 'zks' expecting [eh] */
 				if (*p == 'e') {
@@ -1686,7 +1700,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 					}
 				} else if (*p == 'h') {
 					p++;
-					STOP_WITH_MATCH(RISCV_FeatureStdExtZvfh);
+					DO_IF_NOT_ANY_OF("m", STOP_WITH_MATCH(RISCV_FeatureStdExtZvfh));
 
 					/* State: 'zvfh' expecting [m] */
 					if (*p == 'm') {
@@ -1725,7 +1739,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 					STOP_WITH_MATCH(RISCV_FeatureStdExtZvkg);
 				} else if (*p == 'n') {
 					p++;
-					STOP_WITH_MATCH(RISCV_FeatureStdExtZvkn);
+					DO_IF_NOT_ANY_OF("cegh", STOP_WITH_MATCH(RISCV_FeatureStdExtZvkn));
 
 					/* State: 'zvkn' expecting [cegh] */
 					if (*p == 'c') {
@@ -1763,7 +1777,7 @@ try_consume_riscv_ext_from(const char *ext_name, size_t *idx, ut64 *mode) {
 					}
 				} else if (*p == 's') {
 					p++;
-					STOP_WITH_MATCH(RISCV_FeatureStdExtZvks);
+					DO_IF_NOT_ANY_OF("cegh", STOP_WITH_MATCH(RISCV_FeatureStdExtZvks));
 
 					/* State: 'zvks' expecting [cegh] */
 					if (*p == 'c') {
