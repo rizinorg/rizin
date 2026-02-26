@@ -303,6 +303,8 @@ RZ_API char *rz_asctime_r(RZ_NONNULL const struct tm *tm, RZ_NONNULL char *buf) 
 #if __WINDOWS__
 	errno_t err = asctime_s(buf, ASCTIME_BUF_MINLEN, tm);
 	return err ? NULL : buf;
+#elif __sun
+	return asctime_r(tm, buf, ASCTIME_BUF_MINLEN);
 #else
 	return asctime_r(tm, buf);
 #endif
@@ -313,6 +315,8 @@ RZ_API char *rz_ctime_r(RZ_NONNULL const time_t *timer, RZ_NONNULL char *buf) {
 #if __WINDOWS__
 	errno_t err = ctime_s(buf, ASCTIME_BUF_MINLEN, timer);
 	return err ? NULL : buf;
+#elif __sun
+	return ctime_r(timer, buf, ASCTIME_BUF_MINLEN);
 #else
 	return ctime_r(timer, buf);
 #endif
