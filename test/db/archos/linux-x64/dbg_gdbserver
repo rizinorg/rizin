@@ -13,3 +13,16 @@ EXPECT=<<EOF
 0x0
 EOF
 RUN
+
+NAME=gdbserver dp
+FILE=bins/elf/analysis/pie
+CMDS=<<EOF
+!scripts/gdbserver.py --port 12346 --multi --binary bins/elf/analysis/pie
+oodf gdb://127.0.0.1:12346
+dp 
+EOF
+REGEXP_FILTER_OUT=(^([^\r\n]*))
+EXPECT=<<EOF
+ - 1 ppid:0 uid:0 S /usr/lib/systemd/systemd
+EOF
+RUN
