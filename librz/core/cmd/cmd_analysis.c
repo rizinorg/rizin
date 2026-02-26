@@ -2401,6 +2401,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_del_handler(RzCore *core, int argc,
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const char *varname = argv[1];
+	if (!strcmp(varname, "*")) {
+		rz_analysis_function_delete_all_vars(fcn);
+		return RZ_CMD_STATUS_OK;
+	}
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, varname);
 	if (!var) {
 		RZ_LOG_ERROR("Variable \"%s\" not found.\n", varname);
