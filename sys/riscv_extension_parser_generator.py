@@ -5,12 +5,11 @@
 """
 RISC-V Extension Trie-Based Parser Generator
 
-Given a list of RISCV_FeatureStdExt* enums, generates C code that:
-1. Parses extension names using a trie data structure
-2. ORs the corresponding enum value with a running accumulator
+Given a list of RISCV_FeatureStdExt* enums (by passing arch/RISCV/RISCVGenSubtargetInfo.inc), it generates C code that:
+1. Parses extension names using a trie data structure (to efficiently exploit common prefixes)
+2. Increments the current index given to the parsing routine and returns an enum representing the extension parsed
 3. Includes an ASCII art tree visualization of the trie
-4. Annotates branches with parse state
-5. Uses macros to reduce boilerplate
+4. Annotates parsing control flow branches with parse state
 """
 
 import sys
@@ -130,15 +129,17 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
             return lines
 
         # Non-leaf node - check if this is also a valid end point
-        if node.enum_name:
-            lines.append(f"{indent}STOP_WITH_MATCH({node.enum_name});")
-            lines.append("")
-
-        # Process children - add state comment only before branching
         sorted_children = sorted(node.children.items())
         expected_chars = [c for c, _ in sorted_children]
         expected_str = "".join(expected_chars)
 
+        if node.enum_name:
+            lines.append(
+                f'{indent}DO_IF_NOT_ANY_OF("{expected_str}", STOP_WITH_MATCH({node.enum_name}));'
+            )
+            lines.append("")
+
+        # Process children - add state comment only before branching
         lines.append(f"{indent}/* State: '{path}' expecting [{expected_str}] */")
 
         for i, (char, child) in enumerate(sorted_children):
@@ -184,8 +185,8 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
         " * Generated from arch/RISCV/RISCVGenSubtargetInfo.inc in Capstone sources \n"
     )
     full_code += " * \n"
-    full_code += " * This function parses a single RISC-V extension name and ORs the corresponding\n"
-    full_code += " * feature flags with an accumulator 'mode'.\n"
+    full_code += " * This function parses a single RISC-V extension name and returns the corresponding\n"
+    full_code += " * feature flag.\n"
     full_code += " * \n"
     full_code += " * Trie Diagram:\n"
     full_code += tree_comment + "\n"
@@ -271,6 +272,21 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
     full_code += "        } \\\n"
     full_code += "    } while (0)\n\n"
 
+    full_code += "/* Macro: Conditionally invoke a macro if the current character is not on a given blacklist*/\n"
+    full_code += "#define DO_IF_NOT_ANY_OF(blacklist, thing) \\\n"
+    full_code += "    do { \\\n"
+    full_code += "        bool __will_do__ = true; \\\n"
+    full_code += "        char *__curr__ = blacklist; \\\n"
+    full_code += "        while (*__curr__ != '\\0') { \\\n"
+    full_code += "            if (*p == *__curr__++) { \\\n"
+    full_code += "                __will_do__ = false; \\\n"
+    full_code += "            } \\\n"
+    full_code += "        } \\\n"
+    full_code += "    if (__will_do__) { \\\n"
+    full_code += "        thing; \\\n"
+    full_code += "    } \\\n"
+    full_code += "    } while (0)\n\n"
+
     full_code += "/**\n"
     full_code += (
         " * Main parse routine: Try to consume a RISC-V extension name "
@@ -282,10 +298,7 @@ def generate_c_code(trie: Trie, extensions: List[Tuple[str, str]]) -> str:
         " * @param idx: Pointer to current index "
         "(will be updated to show consumed length)\n"
     )
-    full_code += (
-        " * @param mode: Pointer to the feature accumulator "
-        "(will be ORed with the feature flag if extension found)\n"
-    )
+    full_code += " * @param mode: Pointer to the feature result"
     full_code += " * @return: Parse result indicating why parsing stopped and whether a match was found\n"
     full_code += " * \n"
     full_code += " * Stopping conditions:\n"
