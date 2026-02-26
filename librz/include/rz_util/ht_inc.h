@@ -28,7 +28,7 @@
 #define HT_(name)                  HtPP##name
 #define KEY_TYPE                   void *
 #define VALUE_TYPE                 void *
-#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_ut64((uintptr_t)(key)))
 #define HT_NULL_VALUE              NULL
 #define VARIABLE_KEY_LEN
 #define VARIABLE_VALUE_LEN
@@ -39,7 +39,7 @@
 #define HT_(name)                  HtUP##name
 #define KEY_TYPE                   ut64
 #define VALUE_TYPE                 void *
-#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((ut64)(key)))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_ut64((ut64)(key)))
 #define HT_NULL_VALUE              0
 #define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 3
@@ -49,7 +49,7 @@
 #define HT_(name)                  HtUU##name
 #define KEY_TYPE                   ut64
 #define VALUE_TYPE                 ut64
-#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((ut64)(key)))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_ut64((ut64)(key)))
 #define HT_NULL_VALUE              0
 #elif HT_TYPE == 4
 // Hash table HtPU that has void* as key and ut64 as value
@@ -58,7 +58,7 @@
 #define HT_(name)                  HtPU##name
 #define KEY_TYPE                   void *
 #define VALUE_TYPE                 ut64
-#define KEY_TO_HASH(key, key_size) (ht_simple_hash_64_to_32((uintptr_t)(key)))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_ut64((uintptr_t)(key)))
 #define HT_NULL_VALUE              0
 #define VARIABLE_KEY_LEN
 #elif HT_TYPE == 5
@@ -68,7 +68,7 @@
 #define HT_(name)                  HtSP##name
 #define KEY_TYPE                   char *
 #define VALUE_TYPE                 void *
-#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_string(key, key_size))
 #define HT_NULL_VALUE              NULL
 #define VARIABLE_KEY_LEN
 #define VARIABLE_VALUE_LEN
@@ -79,7 +79,7 @@
 #define HT_(name)                  HtSS##name
 #define KEY_TYPE                   char *
 #define VALUE_TYPE                 char *
-#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_string(key, key_size))
 #define HT_NULL_VALUE              NULL
 #define VARIABLE_KEY_LEN
 #define VARIABLE_VALUE_LEN
@@ -90,7 +90,7 @@
 #define HT_(name)                  HtSU##name
 #define KEY_TYPE                   char *
 #define VALUE_TYPE                 ut64
-#define KEY_TO_HASH(key, key_size) (ht_string_hash_32(key, key_size))
+#define KEY_TO_HASH(key, key_size) (ht_default_hash_string(key, key_size))
 #define HT_NULL_VALUE              0
 #define VARIABLE_KEY_LEN
 #endif
@@ -103,12 +103,14 @@
 
 #ifndef HT_HASH_FUNCTIONS
 #define HT_HASH_FUNCTIONS
+
 /**
  * \brief A Murmur3-like hash function which reduces a 64-bit key to a 32-bit non-cryptographic hash.
  *
  * It's simpler than MurmurHash3 which makes it run faster at the cost of slightly worse hash distribution.
+ * This hash function is used for HtPX and HtUX, if no custom hash function is specified.
  */
-static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
+static inline ut32 ht_default_hash_ut64(ut64 key) {
 	key ^= key >> 33;
 	key *= 0xff51afd7ed558ccdULL;
 	key ^= key >> 33;
@@ -118,9 +120,10 @@ static inline ut32 ht_simple_hash_64_to_32(ut64 key) {
 /**
  * \brief Computes 32-bit hash for a byte buffer (string).
  *
- * The function uses Murmur3 mixing constants and tries to process the buffer in 8-byte or 4-byte blocks when possible.
+ * The function uses Murmur3 mixing constants and tries to process the buffer in 16, 8 or 4-byte blocks when possible.
+ * This hash function is used for HtSX, if no custom hash function is specified.
  */
-static inline ut32 ht_string_hash_32(const char *key, ut32 len) {
+static inline ut32 ht_default_hash_string(const char *key, ut32 len) {
 	const uint64_t prime1 = 0xff51afd7ed558ccdULL; /* Murmur3 consts */
 	const uint64_t prime2 = 0xc4ceb9fe1a85ec53ULL;
 	ut64 result = 0xff51afd7ed558ccdULL;
