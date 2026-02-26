@@ -1,0 +1,13 @@
+# Docker Compose for rizin full test suite
+# Usage: docker compose -f docker/docker-compose.test.yml up --build
+
+services:
+  rizin-test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    image: rizin-test
+    # Run tests (default)
+    command: ["/run-tests.sh"]
+    # For interactive shell: override with
+    # docker compose -f docker/docker-compose.test.yml run --rm rizin-test /bin/bash

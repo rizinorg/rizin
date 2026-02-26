@@ -14,6 +14,7 @@ arch_plugins_list = [
   'chip8',
   'cil',
   'cr16',
+  'cris',
   'dalvik',
   'dcpu16',
   'ebc',
@@ -72,6 +73,7 @@ arch_plugin_sources = [
   'p/arch_chip8.c',
   'p/arch_cil.c',
   'p/arch_cr16.c',
+  'p/arch_cris.c',
   'p/arch_dalvik.c',
   'p/arch_dcpu16.c',
   'p/arch_ebc.c',
@@ -152,6 +154,9 @@ arch_isa_sources = [
   'isa/avr/disassembler.c',
   'isa/cil/cil_dis.c',
   'isa/cr16/cr16_disas.c',
+  'isa/cris/cris_disas.c',
+  'isa/cris/cris_esil.c',
+  'isa/cris/cris_il.c',
   'isa/dcpu16/asm.c',
   'isa/dcpu16/dis.c',
   'isa/ebc/ebc_disas.c',
@@ -373,7 +378,6 @@ if get_option('use_gpl')
   # GPL plugins
   arch_plugins_list += [
     'arc_gnu',
-    'cris_gnu',
     'lanai_gnu',
     'vax_gnu',
     'z80_gnu',
@@ -382,7 +386,6 @@ if get_option('use_gpl')
   # GPL plugins sources
   arch_plugin_sources += [
     'p_gnu/arch_arc.c',
-    'p_gnu/arch_cris.c',
     'p_gnu/arch_lanai.c',
     'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
@@ -394,8 +397,6 @@ if get_option('use_gpl')
     'isa_gnu/arc/arc-ext.c',
     'isa_gnu/arc/arc-opc.c',
     'isa_gnu/arc/arcompact-dis.c',
-    'isa_gnu/cris/cris-dis.c',
-    'isa_gnu/cris/cris-opc.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
     'isa_gnu/vax/vax-dis.c',

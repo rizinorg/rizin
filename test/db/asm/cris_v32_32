@@ -1,0 +1,73 @@
+d "nop" b005 0x0 nop
+d "ax" b015
+d "ei" b025
+d "di" f025
+d "halt" 30f9
+d "rfe" 3029
+d "break 13" 3de9
+d "addq 5,r2" 0522 0x0 (seq (set r2 (+ (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+d "subq 5,r2" 8522 0x0 (seq (set r2 (- (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+d "moveq 5,r2" 4522 0x0 (set r2 (bv 32 0x5))
+d "moveq -1,r3" 7f32
+d "cmpq 5,r0" c502
+d "andq -1,r3" 3f33
+d "orq 10,r3" 4a33
+d "btstq 1,r3" 8133
+d "asrq 1,r0" a103
+d "lslq 3,r0" c303
+d "lsrq 3,r0" e303
+d "add.d r1,r2" 2126
+d "add.b r1,r2" 0126
+d "add.w r1,r2" 1126
+d "move.d r1,r2" 6126 0x0 (set r2 (var r1))
+d "move.b r1,r2" 4126
+d "move.w r1,r2" 5126
+d "sub.d r1,r2" a126
+d "cmp.d r1,r2" e126
+d "and.d r1,r2" 2127
+d "or.d r1,r2" 6127
+d "xor r1,r2" b127
+d "asr.d r1,r2" a127
+d "lsl.d r1,r2" e124
+d "lsr.d r1,r2" e127
+d "neg.d r1,r2" a125
+d "bound.d r1,r2" e125
+d "abs r1,r2" b126
+d "dstep r1,r2" f126
+d "not r5" 7587
+d "btst r1,r2" f124
+d "muls.d r1,r2" 212d
+d "mulu.d r1,r2" 2129
+d "adds.b r1,r2" 2124
+d "adds.w r1,r2" 3124
+d "addu.b r1,r2" 0124
+d "addu.w r1,r2" 1124
+d "movs.b r1,r2" 6124
+d "movs.w r1,r2" 7124
+d "movu.b r1,r2" 4124
+d "movu.w r1,r2" 5124
+d "move.d [r3+],r5" 635e
+d "move.d [r3],r5" 635a
+d "move.d r5,[r3]" e35b
+d "move.d r5,[r3+]" e35f
+d "test.d [r3]" a30b
+d "movem [r1+],r7" b17f
+d "movem r7,[r1+]" f17f
+d "move.d 0x12345678,r0" 6f0e78563412
+d "add.d 0x100,r3" 2f3e00010000
+d "ba -2" fee0 0x0 (jmp (bv 32 0xfffffffe))
+d "bne 10" 0a20
+d "bcs 5" 0510
+d "beq 8" 0830
+d "bne 256" ff2d0001
+d "jump r3" b309 0x0 (jmp (var r3))
+d "jsr r3" b3b9
+d "ret" f0b9 0x0 (jmp (var srp))
+d "bsr 0x12345678" bfbe78563412
+d "jsr 0x12345678" bfbd78563412
+d "lapc 0x12345678,r3" 7f3d78563412
+d "setf cvzn" b0f5
+d "clearf cvzn" f0f5
+d "move r3,srp" 33b6
+d "move srp,r3" 73b6
+d "addoq 8,r3,acr" 0831

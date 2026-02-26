@@ -1,3 +1,4 @@
+*.sh text eol=lf
 subprojects/rizin-shell-parser/src/grammar.json linguist-generated=true
 subprojects/rizin-shell-parser/src/node-types.json linguist-generated=true
 subprojects/rizin-shell-parser/src/parser.c linguist-generated=true

@@ -5219,6 +5219,9 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
 	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops) {
 	rz_return_val_if_fail(core && buf, NULL);
 
+	if (buf == core->block) {
+		rz_core_block_read(core);
+	}
 	static const int mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_HINT;
 	int min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 

@@ -272,7 +272,14 @@ RZ_API void rz_test_asm_test_free(RzAsmTest *test) {
 }
 
 static bool parse_asm_path(const char *path, RzStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
-	RzList *file_tokens = rz_str_split_duplist(path, RZ_SYS_DIR, true);
+	char *pathdup = strdup(path);
+	if (!pathdup) {
+		return false;
+	}
+	/* Normalize path separators for correct parsing on Windows (handles mixed / and \) */
+	rz_str_replace_ch(pathdup, '/', RZ_SYS_DIR[0], true);
+	RzList *file_tokens = rz_str_split_duplist(pathdup, RZ_SYS_DIR, true);
+	free(pathdup);
 	if (!file_tokens || rz_list_empty(file_tokens)) {
 		rz_list_free(file_tokens);
 		return false;
@@ -587,6 +594,11 @@ RZ_API void rz_test_test_database_free(RzTestDatabase *db) {
 static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
 	RzTestType ret = RZ_TEST_TYPE_CMD;
 	char *pathdup = strdup(path);
+	if (!pathdup) {
+		return ret;
+	}
+	/* Normalize path separators for correct parsing on Windows (handles mixed / and \) */
+	rz_str_replace_ch(pathdup, '/', RZ_SYS_DIR[0], true);
 	RzList *tokens = rz_str_split_list(pathdup, RZ_SYS_DIR, 0);
 	if (!tokens) {
 		return ret;

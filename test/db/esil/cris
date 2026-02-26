@@ -1,0 +1,101 @@
+NAME=cris v10 addq esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+e asm.bits=32
+wx 0522
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+addq 5,r2
+0x00000000 5,r2,+=,$z,Z,:=,31,$s,N,:=,31,$o,V,:=,$c,C,:=
+EOF
+RUN
+
+NAME=cris v10 moveq esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+e asm.bits=32
+wx 4522
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+moveq 5,r2
+0x00000000 5,r2,=
+EOF
+RUN
+
+NAME=cris v10 ret esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+e asm.bits=32
+wx 7fb6
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+ret
+0x00000000 srp,pc,=
+EOF
+RUN
+
+NAME=cris v32 addq esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v32
+e asm.bits=32
+wx 0522
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+addq 5,r2
+0x00000000 5,r2,+=,$z,Z,:=,31,$s,N,:=,31,$o,V,:=,$c,C,:=
+EOF
+RUN
+
+NAME=cris v32 move.d esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v32
+e asm.bits=32
+wx 6126
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+move.d r1,r2
+0x00000000 r1,r2,=
+EOF
+RUN
+
+NAME=cris v32 ret esil
+FILE==
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v32
+e asm.bits=32
+wx f0b9
+s 0
+pi 1
+pie 1
+EOF
+EXPECT=<<EOF
+ret
+0x00000000 srp,pc,=
+EOF
+RUN

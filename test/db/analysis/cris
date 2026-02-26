@@ -1,14 +1,11 @@
-NAME=cris regs
+NAME=cris v32 regs
 FILE=
 CMDS=<<EOF
 e asm.arch=cris
+e asm.cpu=v32
 ar
 EOF
 EXPECT=<<EOF
-sp = 0x00000000
-acr = 0x00000000
-pc = 0x00000000
-srp = 0x00000000
 r0 = 0x00000000
 r1 = 0x00000000
 r2 = 0x00000000
@@ -23,7 +20,120 @@ r10 = 0x00000000
 r11 = 0x00000000
 r12 = 0x00000000
 r13 = 0x00000000
-r14 = 0x00000000
-r15 = 0x00000000
+sp = 0x00000000
+acr = 0x00000000
+pc = 0x00000000
+srp = 0x00000000
+mof = 0x00000000
+ccs = 0x00000000
+pid = 0x00000000
+srs = 0x00000000
+ebp = 0x00000000
+erp = 0x00000000
+nrp = 0x00000000
+usp = 0x00000000
+spc = 0x00000000
+exs = 0x00000000
+eda = 0x00000000
+vr = 0x00000000
+EOF
+RUN
+
+NAME=cris v10 regs
+FILE=
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+ar
+EOF
+EXPECT=<<EOF
+r0 = 0x00000000
+r1 = 0x00000000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+sp = 0x00000000
+pc = 0x00000000
+srp = 0x00000000
+mof = 0x00000000
+dccr = 0x00000000
+ibr = 0x00000000
+irp = 0x00000000
+bar = 0x00000000
+brp = 0x00000000
+usp = 0x00000000
+ccr = 0x00000000
+vr = 0x00000000
+EOF
+RUN
+
+NAME=cris v10 ao esil rzil
+BROKEN=1
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+e asm.bits=32
+wx 0f05
+ao 1
+wx 0522
+ao 1
+wx 4522
+ao 1
+wx 7fb6
+ao 1
+wx b309
+ao 1
+EOF
+REGEXP_FILTER_OUT=esil:|rzil:
+EXPECT=<<EOF
+esil: ,
+rzil: nop
+esil: 5,r2,+=$z,Z,:=,31,$s,N,:=,31,$o,V,:=,$c,C,:=
+rzil: (seq (set r2 (+ (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+esil: 5,r2,=
+rzil: (set r2 (bv 32 0x5))
+esil: srp,pc,=
+rzil: (jmp (var srp))
+esil: r3,pc,=
+rzil: (jmp (var r3))
+EOF
+RUN
+
+NAME=cris v32 ao esil rzil
+BROKEN=1
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v32
+e asm.bits=32
+wx b005
+ao 1
+wx 0522
+ao 1
+wx f0b9
+ao 1
+wx bfbe78563412
+ao 1
+EOF
+REGEXP_FILTER_OUT=esil:|rzil:
+EXPECT=<<EOF
+esil: ,
+rzil: nop
+esil: 5,r2,+=$z,Z,:=,31,$s,N,:=,31,$o,V,:=,$c,C,:=
+rzil: (seq (set r2 (+ (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+esil: srp,pc,=
+rzil: (jmp (var srp))
+esil: pc,srp,=,0x12345678,pc,=
+rzil: (seq (set srp (bv 32 0x6)) (jmp (bv 32 0x12345678)))
 EOF
 RUN

@@ -1,0 +1,99 @@
+# Docker image for full rizin + rz-tracetest testing
+# Build: docker build -f docker/Dockerfile.test -t rizin-test .
+# Run:   docker run --rm rizin-test
+
+FROM debian:12
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build dependencies (rizin uses meson subprojects for most libs)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ninja-build \
+    cmake \
+    gcc \
+    g++ \
+    git \
+    make \
+    pkg-config \
+    python3 \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    libc-dev \
+    meson \
+    && rm -rf /var/lib/apt/lists/*
+
+# Additional deps for rz-tracetest (protobuf)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libprotobuf-dev \
+    protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy rizin source
+COPY . /build/rizin/
+
+# Build rizin
+WORKDIR /build/rizin
+RUN meson setup build \
+    -Denable_tests=true \
+    -Denable_rz_test=true \
+    -Dcli=enabled \
+    --prefix=/usr \
+    && ninja -C build \
+    && DESTDIR=/build/install meson install -C build
+
+# Clone and build rz-tracetest (Rizin_DIR points to cmake config)
+WORKDIR /build
+RUN git clone --depth 1 https://github.com/rizinorg/rz-tracetest.git \
+    && cd rz-tracetest && git submodule update --init
+
+# Patch: rz_io_read_at was renamed to rz_io_pread_at in rizin API
+RUN sed -i 's/rz_io_read_at/rz_io_pread_at/g' /build/rz-tracetest/rz-tracetest/rzemu.cpp
+
+WORKDIR /build/rz-tracetest/rz-tracetest
+# Find RizinConfig (may be in lib/cmake or lib/x86_64-linux-gnu/cmake on Debian)
+RUN RIZIN_CMAKE=$(find /build/install -name "RizinConfig.cmake" 2>/dev/null | head -1) && \
+    RIZIN_DIR=$(dirname "$RIZIN_CMAKE") && \
+    cmake -B build -GNinja \
+    -DCMAKE_PREFIX_PATH=/build/install/usr \
+    -DRizin_DIR="$RIZIN_DIR" \
+    && ninja -C build
+
+# Copy test runner
+COPY docker/run-tests.sh /build/run-tests.sh
+RUN chmod +x /build/run-tests.sh
+
+# Final stage - minimal for running tests
+FROM debian:12
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    python3 \
+    python3-pip \
+    ninja-build \
+    meson \
+    jq \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed rizin
+COPY --from=0 /build/install/ /
+
+# Copy rz-tracetest binary
+COPY --from=0 /build/rz-tracetest/rz-tracetest/build/rz-tracetest /usr/local/bin/
+
+# Copy rizin source + build dir (keep /build/rizin path - ninja has absolute paths)
+COPY --from=0 /build/rizin /build/rizin
+
+# Copy test script (strip CRLF for Linux)
+COPY --from=0 /build/run-tests.sh /run-tests.sh
+RUN sed -i 's/\r$//' /run-tests.sh && chmod +x /run-tests.sh
+
+WORKDIR /build/rizin
+
+# Run tests by default
+CMD ["/run-tests.sh"]

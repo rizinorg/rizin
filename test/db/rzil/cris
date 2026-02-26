@@ -1,0 +1,62 @@
+NAME=cris v10 aoi
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v10
+e asm.bits=32
+wx 0f05
+aoi 1
+echo --
+wx 0522
+aoi 1
+echo --
+wx 4522
+aoi 1
+echo --
+wx 7fb6
+aoi 1
+echo --
+wx b309
+aoi 1
+EOF
+EXPECT=<<EOF
+0x0 nop
+--
+0x0 (seq (set r2 (+ (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+--
+0x0 (set r2 (bv 32 0x5))
+--
+0x0 (jmp (var srp))
+--
+0x0 (jmp (var r3))
+EOF
+RUN
+
+NAME=cris v32 aoi
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=cris
+e asm.cpu=v32
+e asm.bits=32
+wx b005
+aoi 1
+echo --
+wx 0522
+aoi 1
+echo --
+wx f0b9
+aoi 1
+echo --
+wx bfbe78563412
+aoi 1
+EOF
+EXPECT=<<EOF
+0x0 nop
+--
+0x0 (seq (set r2 (+ (var r2) (bv 32 0x5))) (set N (msb (var r2))) (set Z (is_zero (var r2))))
+--
+0x0 (jmp (var srp))
+--
+0x0 (seq (set srp (bv 32 0x6)) (jmp (bv 32 0x12345678)))
+EOF
+RUN
