@@ -1539,6 +1539,8 @@ static void set_increment_based_on_arch(const RzCore *core, const char *arch, in
 		*increment = rz_config_get_i(core->config, "asm.bits") == 16 ? 2 : 4;
 	} else if (RZ_STR_EQ(arch, "avr")) { // AVR is halfword aligned.
 		*increment = 2;
+	} else if (RZ_STR_EQ(arch, "riscv")) {
+		*increment = core->analysis->pcalign;
 	}
 }
 
