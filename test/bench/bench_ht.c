@@ -18,32 +18,37 @@ static bool ht_pu_foreach_cb(RZ_UNUSED ut64 *i, RZ_UNUSED const void *key, RZ_UN
 	return true;
 }
 
-static inline void *generate_pu_key(ut64 index) {
-	ut64 index_mod_1024 = index % 1024;
-	ut64 index_div_1024 = index / 1024; // +1
-
-	if (index == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	// Try to mimic real world pointer paterns
-	switch (index % 5) {
-	case 0:
-		return (void *)(0x100000000ull + index * 8); // base pointer + array index (8 byte elements)
-	case 1:
-		return (void *)(0x100100000ull + index_div_1024 * 0x100000 + index_mod_1024 * 64); // base pointer + array index (64 byte elements)
-	case 2:
-		return (void *)(0x100050000ull + index_div_1024 * 0x5000000 + index_mod_1024 * 4096); // base pointer + array index (4096 pages)
-	case 3:
-		return (void *)(0x7fffffffe000ull - index * 8); // stack pointers
-	case 4:
-		return (void *)(0x1000 + index * 2); // pointer 16-bit elements in a 16-bit arch
-	}
-
-	rz_warn_if_reached();
-	return NULL;
+/**
+ * Used for generating a pseudo-random value based on iteration number (for randomizing HtUU keys)
+ */
+static inline ut64 splitmix64(ut64 v) {
+	uint64_t z = (v + 0x9E3779B97F4A7C15ULL);
+	z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+	z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+	return z ^ (z >> 31);
 }
 
+/**
+ * A sample object to be used as a key for a HtPU hash table
+ */
+typedef struct {
+	ut32 a;
+	ut32 b;
+} PUKey;
+
+static inline PUKey make_pu_key(ut64 iteration) {
+	PUKey result;
+	result.a = iteration * 1000;
+	result.b = splitmix64(iteration);
+	return result;
+}
+
+/**
+ * Reshuffles a key in order to the following in a deterministic way:
+ *	- avoid sequential key insert/lookup
+ *	- create 87.5% chance of lookup hit vs 12.5% chance of miss
+ *	- make 10% of the elements (hot zone) to be requested 75.5% of the time
+ */
 static ut64 reshuffle_key(ut64 index, ut64 max_value, ut64 unexistent_key) {
 	const ut64 hot_zone_denom = 10; // 10% of the hash table elements are considered in the hot zone
 	ut64 hot_zone_size = max_value / hot_zone_denom;
@@ -65,21 +70,54 @@ static ut64 reshuffle_key(ut64 index, ut64 max_value, ut64 unexistent_key) {
 		return unexistent_key;
 	default:
 		rz_warn_if_reached();
+		return 0;
 	}
+}
+
+static ut32 pu_key_hash(void *p) {
+	PUKey *key = p;
+	return key->a ^ key->b;
+}
+
+static int pu_key_cmp(void *p1, void *p2) {
+	PUKey *key1 = p1;
+	PUKey *key2 = p2;
+
+	if (key1->a < key2->a) {
+		return -1;
+	}
+	if (key1->a > key2->a) {
+		return 1;
+	}
+	if (key1->b < key2->b) {
+		return -1;
+	}
+	if (key1->b > key2->b) {
+		return 1;
+	}
+	return 0;
 }
 
 static void bench_rz_ht_pu_combined(RzTable *t_out) {
 	ut64 temp = 0;
 	HtPUOptions pu_opt = { 0 };
+	pu_opt.hashfn = (HtPUHashFunction)pu_key_hash;
+	pu_opt.cmp = (HtPUComparator)pu_key_cmp;
+	PUKey *keys = malloc(sizeof(PUKey) * ITERATION_COUNT);
+
+	// Generate keys
+	for (ut64 i = 0; i < ITERATION_COUNT; i++) {
+		keys[i] = make_pu_key(i);
+	}
 
 	// Insert
 	{
 		HtPU *ht = ht_pu_new_opt(&pu_opt);
 		RZ_BENCH_RUN_I("[HtPU] insert", i, t_out, ITERATION_COUNT, {
-			ht_pu_insert(ht, generate_pu_key(i), i);
+			ht_pu_insert(ht, &keys[i], i);
 		});
 		RZ_BENCH_RUN_I("[HtPU] delete", i, t_out, ITERATION_COUNT, {
-			ht_pu_delete(ht, generate_pu_key(i));
+			ht_pu_delete(ht, &keys[i]);
 		});
 		ht_pu_free(ht);
 	}
@@ -93,7 +131,7 @@ static void bench_rz_ht_pu_combined(RzTable *t_out) {
 		HtPU *ht_1m = ht_pu_new_opt(&pu_opt);
 
 		for (ut64 i = 0; i < 1000000; i++) {
-			void *key = generate_pu_key(i);
+			PUKey *key = &keys[i];
 			if (i < 100) {
 				ht_pu_insert(ht_100, key, i);
 			}
@@ -113,24 +151,24 @@ static void bench_rz_ht_pu_combined(RzTable *t_out) {
 			ht_pu_foreach(ht_100, (HtPUForeachCallback)ht_pu_foreach_cb, &temp);
 		});
 		RZ_BENCH_RUN_I("[HtPU] lookup (100 elements)", i, t_out, ITERATION_COUNT, {
-			ut64 reshuffled_key = reshuffle_key(i, 100, UT64_MAX);
-			ut64 result = ht_pu_find(ht_100, generate_pu_key(reshuffled_key), NULL);
+			PUKey temp_key = make_pu_key(reshuffle_key(i, 100, UT64_MAX));
+			ut64 result = ht_pu_find(ht_100, &temp_key, NULL);
 		});
 		RZ_BENCH_RUN_I("[HtPU] lookup (1k elements)", i, t_out, ITERATION_COUNT, {
-			ut64 reshuffled_key = reshuffle_key(i, 1000, UT64_MAX);
-			ut64 result = ht_pu_find(ht_1k, generate_pu_key(reshuffled_key), NULL);
+			PUKey temp_key = make_pu_key(reshuffle_key(i, 1000, UT64_MAX));
+			ut64 result = ht_pu_find(ht_1k, &temp_key, NULL);
 		});
 		RZ_BENCH_RUN_I("[HtPU] lookup (10k elements)", i, t_out, ITERATION_COUNT, {
-			ut64 reshuffled_key = reshuffle_key(i, 10000, UT64_MAX);
-			ut64 result = ht_pu_find(ht_10k, generate_pu_key(reshuffled_key), NULL);
+			PUKey temp_key = make_pu_key(reshuffle_key(i, 10000, UT64_MAX));
+			ut64 result = ht_pu_find(ht_10k, &temp_key, NULL);
 		});
 		RZ_BENCH_RUN_I("[HtPU] lookup (100k elements)", i, t_out, ITERATION_COUNT, {
-			ut64 reshuffled_key = reshuffle_key(i, 100000, UT64_MAX);
-			ut64 result = ht_pu_find(ht_100k, generate_pu_key(reshuffled_key), NULL);
+			PUKey temp_key = make_pu_key(reshuffle_key(i, 100000, UT64_MAX));
+			ut64 result = ht_pu_find(ht_100k, &temp_key, NULL);
 		});
 		RZ_BENCH_RUN_I("[HtPU] lookup (1M elements)", i, t_out, ITERATION_COUNT, {
-			ut64 reshuffled_key = reshuffle_key(i, 1000000, UT64_MAX);
-			ut64 result = ht_pu_find(ht_1m, generate_pu_key(reshuffled_key), NULL);
+			PUKey temp_key = make_pu_key(reshuffle_key(i, 1000000, UT64_MAX));
+			ut64 result = ht_pu_find(ht_1m, &temp_key, NULL);
 		});
 
 		ht_pu_free(ht_100);
@@ -139,6 +177,8 @@ static void bench_rz_ht_pu_combined(RzTable *t_out) {
 		ht_pu_free(ht_100k);
 		ht_pu_free(ht_1m);
 	}
+
+	free(keys);
 }
 
 static char *generate_su_key(ut64 index) {
@@ -207,7 +247,7 @@ static bool ht_su_foreach_cb(RZ_UNUSED ut64 *i, RZ_UNUSED const char *key, RZ_UN
 }
 
 static void bench_rz_ht_su_combined(RzTable *t_out) {
-	char **precomputed_keys = malloc(ITERATION_COUNT * sizeof(char *) + 1);
+	char **precomputed_keys = malloc((ITERATION_COUNT + 1) * sizeof(char *));
 
 	// Generate test keys
 	for (ut64 i = 0; i < ITERATION_COUNT; i++) {
@@ -300,10 +340,10 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 	{
 		ht = ht_uu_new();
 		RZ_BENCH_RUN_I("[HtUU] insert", i, t_out, ITERATION_COUNT, {
-			ht_uu_insert(ht, i % ITERATION_COUNT, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		});
 		RZ_BENCH_RUN_I("[HtUU] delete", i, t_out, ITERATION_COUNT, {
-			ht_uu_delete(ht, (i * SHUFFLE_MULTIPLIER) % ITERATION_COUNT); // reshuffle keys
+			ht_uu_delete(ht, splitmix64(i)); // reshuffle keys
 		});
 		ht_uu_free(ht);
 	}
@@ -313,7 +353,7 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		const ut64 size = 100;
 		ht = ht_uu_new();
 		for (ut64 i = 0; i < size; i++) {
-			ht_uu_insert(ht, i, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		}
 
 		RZ_BENCH_RUN("[HtUU] iterate (100 elements)", t_out, ITERATION_COUNT, {
@@ -321,7 +361,7 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		});
 
 		RZ_BENCH_RUN_I("[HtUU] lookup (100 elements)", i, t_out, ITERATION_COUNT, {
-			ht_uu_find(ht, reshuffle_key(i, size, size), NULL);
+			ht_uu_find(ht, splitmix64(reshuffle_key(i, size, size)), NULL);
 		});
 
 		ht_uu_free(ht);
@@ -332,11 +372,11 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		const ut64 size = 1000;
 		ht = ht_uu_new();
 		for (ut64 i = 0; i < size; i++) {
-			ht_uu_insert(ht, i, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		}
 
 		RZ_BENCH_RUN_I("[HtUU] lookup (1k elements)", i, t_out, ITERATION_COUNT, {
-			ht_uu_find(ht, reshuffle_key(i, size, size), NULL);
+			ht_uu_find(ht, splitmix64(reshuffle_key(i, size, size)), NULL);
 		});
 
 		ht_uu_free(ht);
@@ -347,11 +387,11 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		const ut64 size = 10000;
 		ht = ht_uu_new();
 		for (ut64 i = 0; i < size; i++) {
-			ht_uu_insert(ht, i, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		}
 
 		RZ_BENCH_RUN_I("[HtUU] lookup (10k elements)", i, t_out, ITERATION_COUNT, {
-			ht_uu_find(ht, reshuffle_key(i, size, size), NULL);
+			ht_uu_find(ht, splitmix64(reshuffle_key(i, size, size)), NULL);
 		});
 
 		ht_uu_free(ht);
@@ -362,11 +402,11 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		const ut64 size = 100000;
 		ht = ht_uu_new();
 		for (ut64 i = 0; i < size; i++) {
-			ht_uu_insert(ht, i, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		}
 
 		RZ_BENCH_RUN_I("[HtUU] lookup (100k elements)", i, t_out, ITERATION_COUNT, {
-			ht_uu_find(ht, reshuffle_key(i, size, size), NULL);
+			ht_uu_find(ht, splitmix64(reshuffle_key(i, size, size)), NULL);
 		});
 
 		ht_uu_free(ht);
@@ -377,11 +417,11 @@ static void bench_rz_ht_uu_combined(RzTable *t_out) {
 		const ut64 size = 1000000;
 		ht = ht_uu_new();
 		for (ut64 i = 0; i < size; i++) {
-			ht_uu_insert(ht, i, i);
+			ht_uu_insert(ht, splitmix64(i), i);
 		}
 
 		RZ_BENCH_RUN_I("[HtUU] lookup (1M elements)", i, t_out, ITERATION_COUNT, {
-			ht_uu_find(ht, reshuffle_key(i, size, size), NULL);
+			ht_uu_find(ht, splitmix64(reshuffle_key(i, size, size)), NULL);
 		});
 
 		ht_uu_free(ht);
