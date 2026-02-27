@@ -11,8 +11,8 @@
 
 typedef ut32 RzROR13;
 
-void rz_ror13_init(RzROR13 *ctx);
+bool rz_ror13_init(RzROR13 *ctx);
 bool rz_ror13_update(RzROR13 *ctx, const ut8 *data, ut64 length);
-void rz_ror13_final(ut8 *digest, RzROR13 *ctx);
+bool rz_ror13_final(ut8 *digest, RzROR13 *ctx);
 
 #endif /* RZ_HASH_ROR13_H */
