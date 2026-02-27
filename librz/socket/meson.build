@@ -21,6 +21,13 @@ if host_machine.system() == 'haiku'
   ]
 endif
 
+if host_machine.system() == 'sunos'
+  dependencies += [
+    cc.find_library('socket'),
+    cc.find_library('nsl')
+  ]
+endif
+
 rz_socket = library('rz_socket', rz_socket_sources,
   include_directories: [platform_inc],
   dependencies: dependencies,

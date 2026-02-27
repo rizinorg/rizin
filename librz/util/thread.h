@@ -55,7 +55,7 @@
 #include <mach/thread_policy.h>
 #endif
 
-#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
+#if __APPLE__ || __NetBSD__ || __FreeBSD__ || __OpenBSD__ || __DragonFly__
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
