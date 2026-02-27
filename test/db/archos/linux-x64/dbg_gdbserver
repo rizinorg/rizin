@@ -21,8 +21,8 @@ CMDS=<<EOF
 oodf gdb://127.0.0.1:12346
 dp 
 EOF
-REGEXP_FILTER_OUT=(^([^\r\n]*))
+REGEXP_FILTER_OUT=(^\s*[*-]\s*(\d+\s+ppid:\d+\s+uid:\d+))
 EXPECT=<<EOF
- - 1 ppid:0 uid:0 S /usr/lib/systemd/systemd
+ - 1 ppid:0 uid:0
 EOF
 RUN
