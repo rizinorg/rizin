@@ -44,7 +44,7 @@ static inline PUKey make_pu_key(ut64 iteration) {
 }
 
 /**
- * Reshuffles a key in order to the following in a deterministic way:
+ * Reshuffles a key in order to do the following (in a deterministic way):
  *	- avoid sequential key insert/lookup
  *	- create 87.5% chance of lookup hit vs 12.5% chance of miss
  *	- make 10% of the elements (hot zone) to be requested 75.5% of the time

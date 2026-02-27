@@ -768,6 +768,9 @@ RZ_API HtRetCode Ht_(update_ex)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, 
 
 /**
  * \brief This function decides if a slot should be marked as "empty" or "deleted" based on a heuristic.
+ *
+ * If the distance between the previous and following empty slots is < GROUP_WIDTH it is safe to mark the slot 
+ * as "empty", otherwise we need to mark it as "deleted" (see references above for the difference between these two markers).
  */
 static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
 	// Decide if we should mark the slot as empty or deleted
@@ -790,11 +793,7 @@ static ut8 select_slot_type_for_deletion(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE 
 		nearest_empty_after++;
 	}
 
-	//
 	return nearest_empty_before + nearest_empty_after < GROUP_WIDTH ? H2_STATUS_EMPTY : H2_STATUS_DELETED;
-
-	// Deletion trick can be implemented here to reduce the frequency of "deleted" slots being placed
-	// return H2_STATUS_DELETED;
 }
 
 static bool internal_ht_delete(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
@@ -830,7 +829,7 @@ RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, 
 		return false;
 	}
 
-	// Second look up of of the element associated with `old_key`, since the previous index could be invalidated
+	// Second lookup of the element associated with `old_key`, since the previous index could be invalidated by a resize
 	if ((idx = ctrl_table_lookup(ht, old_key, old_key_size)) == INVALID_INDEX) {
 		return false;
 	}
