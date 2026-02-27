@@ -103,6 +103,14 @@ rz_io_deps = [
   platform_deps,
 ]
 
+if host_machine.system() == 'sunos'
+  rz_io_deps += [
+    cc.find_library('socket'),
+    cc.find_library('nsl'),
+    cc.find_library('proc'),
+  ]
+endif
+
 if get_option('use_gpl')
   rz_io_deps += dependency('rzqnx')
   rz_io_sources += 'p/io_qnx.c'
