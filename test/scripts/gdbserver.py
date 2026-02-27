@@ -51,7 +51,7 @@ def main():
     while True:
         cmd = ["gdbserver"]
         if args.multi:
-            cmd.append("--multi") # --multi comes before HOST:PORT
+            cmd.append("--multi")  # --multi comes before HOST:PORT
         cmd.append(f"{args.host}:{args.port}")
         if args.binary:
             cmd.append(args.binary)
