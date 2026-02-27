@@ -1437,6 +1437,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 		return false;
 	}
 	fcn = rz_analysis_get_fcn_in(core->analysis, at, 0);
+
 	if (fcn) {
 		if (fcn->addr == at) {
 			// if the function was already analyzed as a "loc.",
@@ -1448,18 +1449,13 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 
 			return 0; // already analyzed function
 		}
-
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
 			if (reftype == RZ_ANALYSIS_XREF_TYPE_CALL && from != UT64_MAX) {
-				RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
-				bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
-
-				if (is_valid_sym) {
-					RzList *refs_to_at = rz_analysis_xrefs_get_to(core->analysis, at);
-					bool destination_is_known = (refs_to_at && !rz_list_empty(refs_to_at));
-					rz_list_free(refs_to_at);
-
-					if (destination_is_known) {
+				ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
+				if (at < fcn->addr || at > fcn_end) {
+					RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+					bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+					if (is_valid_sym) {
 						goto perform_split;
 					}
 				}
