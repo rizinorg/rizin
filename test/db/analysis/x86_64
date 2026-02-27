@@ -5,7 +5,7 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-458
+459
 EOF
 RUN
 
@@ -4367,5 +4367,17 @@ aoj~{[0].opex.operands[1].value}
 EOF
 EXPECT=<<EOF
 214
+EOF
+RUN
+
+NAME=aac creates function at syn_start_line
+FILE=bins/elf/vim
+CMDS=<<EOF
+aac
+s 0x001b8420
+afl.
+EOF
+EXPECT=<<EOF
+0x001b8420 sym.syn_start_line
 EOF
 RUN

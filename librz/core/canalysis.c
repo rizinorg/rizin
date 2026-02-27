@@ -1448,7 +1448,23 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 
 			return 0; // already analyzed function
 		}
+
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
+			if (reftype == RZ_ANALYSIS_XREF_TYPE_CALL && from != UT64_MAX) {
+				RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+				bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+
+				if (is_valid_sym) {
+					RzList *refs_to_at = rz_analysis_xrefs_get_to(core->analysis, at);
+					bool destination_is_known = (refs_to_at && !rz_list_empty(refs_to_at));
+					rz_list_free(refs_to_at);
+
+					if (destination_is_known) {
+						goto perform_split;
+					}
+				}
+			}
+
 			RzList *l = rz_analysis_xrefs_get_to(core->analysis, from);
 			if (l && !rz_list_empty(l)) {
 				rz_list_free(l);
@@ -1463,6 +1479,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return true;
 		}
 	}
+perform_split:
 	if (__core_analysis_fcn(core, at, from, reftype, depth - 1)) {
 		// split function if overlaps
 		if (fcn) {
