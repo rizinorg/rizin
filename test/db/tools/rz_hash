@@ -277,7 +277,7 @@ ____hm md4            LGPL3      deroad                         MD4 cryptographi
 ____hm md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
 ____h_ mod255         LGPL3      deroad                         Modulo 255 checksum
 ____h_ parity         LGPL3      deroad                         Parity checksum
-____h_ ror13          LGPL3      Rifat Arifoglu                 ROR13 cryptographic hash
+____h_ ror13          LGPL3      Rifat Arifoglu                 ROR13 hash
 ____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 ____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
 ____hm sha3-224       BSD-3      Andrey Jivsov                  SHA3-224 cryptographic hash
