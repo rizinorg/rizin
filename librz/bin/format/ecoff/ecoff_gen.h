@@ -91,7 +91,7 @@
 	ECOFF_GEN_SYMBOLIC_HEADER_7009(size); \
 	typedef struct ecoff_symbolic_header_##size##_t { \
 		st16 magic; /* Symbol table magic must be 0x1992 (alpha) or 0x7009 (mips) */ \
-		ut8 vstamp[2]; /* Symbol table version stamp (major.minor) */ \
+		ut16 vstamp; /* Symbol table version stamp (major.minor) */ \
 		union { \
 			ECoff_SymHdr1992_##size _1992; \
 			ECoff_SymHdr7009_##size _7009; \
@@ -151,7 +151,7 @@
 		ut16 glevel; /* : 2 | Symbolic information level with which this file was compiled. */ \
 		ut16 f_trim; /* : 1 | Unused. */ \
 		ut16 reserved; /* : 5 | reserved bits */ \
-		ut8 vstamp[2]; /* Symbol table version stamp from the .o files. */ \
+		ut16 vstamp; /* Symbol table version stamp from the .o files. */ \
 		ut32 reserved2; /* reserved bytes */ \
 	} ECoff_FileDescEntry1992_##size
 

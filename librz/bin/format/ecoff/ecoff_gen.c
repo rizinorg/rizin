@@ -141,7 +141,7 @@
 	ECOFF_GEN_INIT_SYMBOLIC_HEADER_7009(bits); \
 	static bool ecoff_init_symbolic_header_##bits(RzBuffer *b, ut64 *offset, ECoff_SymHdr_##bits *symhdr, const bool big_endian) { \
 		bool ok = rz_buf_read_ble16_offset(b, offset, (ut16 *)&symhdr->magic, big_endian) && \
-			rz_buf_read_ble16_offset(b, offset, (ut16 *)symhdr->vstamp, big_endian); \
+			rz_buf_read_ble16_offset(b, offset, &symhdr->vstamp, big_endian); \
 		if (!ok) { \
 			return false; \
 		} \
@@ -351,7 +351,7 @@
 			rz_buf_read_ble32_offset(b, offset, (ut32 *)&fde->rfd_base, big_endian) && \
 			rz_buf_read_ble32_offset(b, offset, (ut32 *)&fde->crfd, big_endian) && \
 			rz_buf_read_ble16_offset(b, offset, &bit_fields, big_endian) && \
-			rz_buf_read_ble16_offset(b, offset, (ut16 *)fde->vstamp, big_endian) && \
+			rz_buf_read_ble16_offset(b, offset, &fde->vstamp, big_endian) && \
 			rz_buf_read_ble32_offset(b, offset, &fde->reserved2, big_endian); \
 		if (ok) { \
 			fde->lang = bit_fields & 0x1f; \
@@ -641,7 +641,7 @@
 		const char *glevel = ecoff_file_descr_entry_get_glevel(fde->glevel); \
 		const char *lang = ecoff_file_descr_entry_get_lang(fde->lang); \
 		char vstamp[16] = { 0 }; \
-		rz_strf(vstamp, "v%u.%u", fde->vstamp[1], fde->vstamp[0]); \
+		rz_strf(vstamp, "v%u.%u", fde->vstamp >> 8, fde->vstamp & 0xFF); \
 		return rz_structured_data_map_add_unsigned(fde_info, "adr", fde->adr, true) && \
 			rz_structured_data_map_add_signed(fde_info, "cb_line_offset", (st64)fde->cb_line_offset) && \
 			rz_structured_data_map_add_signed(fde_info, "cb_line", (st64)fde->cb_line) && \
@@ -828,7 +828,7 @@
 			return false; \
 		} \
 		char vstamp[16] = { 0 }; \
-		rz_strf(vstamp, "v%u.%u", symhdr->vstamp[1], symhdr->vstamp[0]); \
+		rz_strf(vstamp, "v%u.%u", symhdr->vstamp >> 8, symhdr->vstamp & 0xFF); \
 		bool ok = rz_structured_data_map_add_unsigned(symbolic_hdr, "magic", symhdr->magic, true) && \
 			rz_structured_data_map_add_string(symbolic_hdr, "vstamp", vstamp); \
 		if (!ok) { \
