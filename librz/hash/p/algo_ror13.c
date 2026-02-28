@@ -65,8 +65,8 @@ static bool plugin_ror13_small_block(const ut8 *data, ut64 size, ut8 **digest, R
 RzHashPlugin rz_hash_plugin_ror13 = {
 	.name = "ror13",
 	.license = "LGPL3",
-	.author = "Rifat",
-	.description = "ROR13 Windows shellcode API hash",
+	.author = "Rifat Arifoglu",
+	.description = "ROR13 cryptographic hash",
 	.support_hmac = false,
 	.context_new = plugin_ror13_context_new,
 	.context_free = plugin_ror13_context_free,

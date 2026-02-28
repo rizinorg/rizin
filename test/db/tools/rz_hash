@@ -1579,6 +1579,6 @@ NAME=rz-hash -a ror13 -s "LoadLibraryA"
 FILE==
 CMDS=!rz-hash -a ror13 -s "LoadLibraryA"
 EXPECT=<<EOF
-string: 0x00000000-0x00000005 ror13: ec0e4e8e
+string: 0x00000000-0x0000000c ror13: ec0e4e8e
 EOF
 RUN
