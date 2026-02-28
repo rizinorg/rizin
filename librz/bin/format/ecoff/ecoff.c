@@ -97,14 +97,6 @@ static inline bool ecoff_is_alpha_magic(const ut16 magic) {
 ECOFF_GEN_FUNCTIONS(32);
 ECOFF_GEN_FUNCTIONS(64);
 
-static inline bool ecoff_has_aouthdr(const ECoff *ecoff) {
-	if (ecoff_is_ecoff64(ecoff)) {
-		return ecoff->ecoff64.header.f_opthdr;
-	}
-
-	return ecoff->ecoff32.header.f_opthdr;
-}
-
 void ecoff_free(ECoff *ecoff) {
 	if (!ecoff) {
 		return;
