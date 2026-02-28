@@ -147,9 +147,9 @@ static bool plugin_argon2d_small_block(const ut8 *data, ut64 size,
 
 RzHashPlugin rz_hash_plugin_argon2d = {
 	.name = "argon2d",
-	.author = "Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, Samuel Neves",
-	.license = "CC0-1.0",
-	.description = "Argon2d memory-hard KDF (data-dependent memory access)",
+	.author = "Farhan-25",
+	.license = "CC0",
+	.description = "Argon2d checksum",
 	.support_hmac = false,
 	.context_new = plugin_argon2d_context_new,
 	.context_free = plugin_argon2d_context_free,
