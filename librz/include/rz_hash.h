@@ -176,6 +176,7 @@ extern RzHashPlugin rz_hash_plugin_xor8;
 extern RzHashPlugin rz_hash_plugin_xor16;
 extern RzHashPlugin rz_hash_plugin_xxhash32;
 extern RzHashPlugin rz_hash_plugin_parity;
+extern RzHashPlugin rz_hash_plugin_ror13;
 extern RzHashPlugin rz_hash_plugin_entropy;
 extern RzHashPlugin rz_hash_plugin_entropy_fract;
 extern RzHashPlugin rz_hash_plugin_blake3;
