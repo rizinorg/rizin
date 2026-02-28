@@ -106,7 +106,7 @@ RzHashPlugin rz_hash_plugin_sha3_224 = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_HASH,
-	.data = &rz_hash_plugin_sha3_256,
+	.data = &rz_hash_plugin_sha3_224,
 	.version = RZ_VERSION
 };
 #endif

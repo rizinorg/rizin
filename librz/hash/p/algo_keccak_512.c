@@ -4,7 +4,7 @@
 #include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
-// openssl doesnot have keccak
+// OpenSSL does not have keccak
 // #if HAVE_LIB_SSL
 /**
  * Use OpenSSL lib, not the Rizin implementation

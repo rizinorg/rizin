@@ -74,8 +74,7 @@ static const unsigned keccakf_piln[24] = {
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words
  * are XORed into the state s
  */
-static void
-keccakf(uint64_t s[25]) {
+static void keccakf(uint64_t s[25]) {
 	int i, j, round;
 	uint64_t t, bc[5];
 #define KECCAK_ROUNDS 24
@@ -115,10 +114,8 @@ keccakf(uint64_t s[25]) {
 }
 
 /* *************************** Public Inteface ************************ */
-
 /* For Init or Reset call these: */
-sha3_return_t
-sha3_Init(void *priv, unsigned bitSize) {
+sha3_return_t sha3_Init(void *priv, unsigned bitSize) {
 	sha3_context *ctx = (sha3_context *)priv;
 	if (bitSize != 224 && bitSize != 256 && bitSize != 384 && bitSize != 512)
 		return SHA3_RETURN_BAD_PARAMS;
@@ -143,8 +140,7 @@ void sha3_Init512(void *priv) {
 	sha3_Init(priv, 512);
 }
 
-enum SHA3_FLAGS
-sha3_SetFlags(void *priv, enum SHA3_FLAGS flags) {
+enum SHA3_FLAGS sha3_SetFlags(void *priv, enum SHA3_FLAGS flags) {
 	sha3_context *ctx = (sha3_context *)priv;
 	flags &= SHA3_FLAGS_KECCAK;
 	ctx->capacityWords |= (flags == SHA3_FLAGS_KECCAK ? SHA3_USE_KECCAK_FLAG : 0);
@@ -243,8 +239,7 @@ void sha3_Update(void *priv, void const *bufIn, size_t len) {
  * The padding block is 0x01 || 0x00* || 0x80. First 0x01 and last 0x80
  * bytes are always present, but they can be the same byte.
  */
-void const *
-sha3_Finalize(void *priv) {
+void const *sha3_Finalize(void *priv) {
 	sha3_context *ctx = (sha3_context *)priv;
 
 	SHA3_TRACE("called with %d bytes in the buffer", ctx->byteIndex);
