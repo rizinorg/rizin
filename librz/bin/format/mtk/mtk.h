@@ -15,6 +15,7 @@
 #define MTK_GFH_FILE_INFO_BODY_SIZE 48
 #define MTK_GFH_MIN_FILE_SIZE       (MTK_GFH_COMMON_HDR_SIZE + MTK_GFH_FILE_INFO_BODY_SIZE)
 #define MTK_GFH_FILE_INFO_NAME_SIZE 12
+#define MTK_MODEM_BADDR             0x90000000ULL ///< Runtime virtual base address for modem code
 
 typedef enum {
 	MTK_GFH_TYPE_FILE_INFO = 0x0000,

@@ -143,7 +143,7 @@ RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b) {
 		mtk->code_size = buf_size - mtk->code_offset;
 	}
 	// jump_offset is from the start of the file, not from load_addr
-	mtk->entry_vaddr = mtk->file_info.load_addr + (mtk->file_info.jump_offset - mtk->code_offset);
+	mtk->entry_vaddr = MTK_MODEM_BADDR + (mtk->file_info.jump_offset - mtk->code_offset);
 
 	// Parse additional GFH headers between the first header and the code area
 	offset = mtk->first_common.size;
@@ -205,9 +205,7 @@ RZ_IPI void mtk_destroy(RzBinFile *bf) {
 }
 
 RZ_IPI ut64 mtk_baddr(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, 0);
-	MtkObj *mtk = bf->o->bin_obj;
-	return mtk->file_info.load_addr;
+	return MTK_MODEM_BADDR;
 }
 
 RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf) {
@@ -258,7 +256,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf) {
 			code_section->paddr = mtk->code_offset;
 			code_section->size = mtk->code_size;
 			code_section->vsize = mtk->code_size;
-			code_section->vaddr = mtk->file_info.load_addr;
+			code_section->vaddr = MTK_MODEM_BADDR;
 			code_section->perm = RZ_PERM_RX;
 			rz_pvector_push(ret, code_section);
 		}
@@ -277,6 +275,7 @@ RZ_IPI RzBinInfo *mtk_info(RzBinFile *bf) {
 	info->type = rz_str_dup("MediaTek GFH");
 	info->machine = rz_str_dup("MediaTek Modem");
 	info->arch = rz_str_dup("mips");
+	info->cpu = rz_str_dup("nanomips");
 	info->rclass = rz_str_dup("firmware");
 	info->subsystem = rz_str_dup("modem");
 	info->has_va = true;

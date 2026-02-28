@@ -413,6 +413,7 @@ RZ_IPI RzBinInfo *md1img_info(RzBinFile *bf) {
 	info->type = rz_str_dup("MediaTek md1img container");
 	info->machine = rz_str_dup("MediaTek Modem");
 	info->arch = rz_str_dup("mips");
+	info->cpu = rz_str_dup("nanomips");
 	info->rclass = rz_str_dup("firmware");
 	info->subsystem = rz_str_dup("modem");
 	info->has_va = true;
@@ -423,12 +424,7 @@ RZ_IPI RzBinInfo *md1img_info(RzBinFile *bf) {
 }
 
 RZ_IPI ut64 md1img_baddr(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, 0);
-	Md1imgObj *md1 = bf->o->bin_obj;
-	if (md1->mtk) {
-		return md1->mtk->file_info.load_addr;
-	}
-	return 0;
+	return MTK_MODEM_BADDR;
 }
 
 RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf) {
@@ -443,7 +439,7 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *md1img_entries(RzBinFile *bf) {
 	if (md1->mtk) {
 		RzBinAddr *entry = RZ_NEW0(RzBinAddr);
 		if (entry) {
-			entry->vaddr = md1->mtk->entry_vaddr;
+			entry->vaddr = MTK_MODEM_BADDR + (md1->mtk->file_info.jump_offset - md1->mtk->code_offset);
 			entry->paddr = md1->gfh_offset + md1->mtk->file_info.jump_offset;
 			rz_pvector_push(ret, entry);
 		}
@@ -482,41 +478,30 @@ RZ_IPI RzPVector /*<RzBinMap *>*/ *md1img_maps(RzBinFile *bf) {
 		return NULL;
 	}
 
-	size_t i;
-	Md1imgSection *sec;
-	rz_vector_enumerate(md1->sections, sec, i) {
+	// Only map the md1rom section into the virtual address space.
+	// Other sections (md1dsp, md1drdi, certs, etc.) belong to different
+	// processors or address spaces and would conflict with md1rom if mapped.
+	// They remain accessible as virtual files for raw data viewing.
+	if (md1->md1rom_idx >= 0) {
+		Md1imgSection *sec = rz_vector_index_ptr(md1->sections, md1->md1rom_idx);
 		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (!map) {
-			continue;
-		}
-
-		map->name = rz_str_dup(sec->name);
-		map->vfile_name = rz_str_dup(sec->name);
-
-		if ((int)i == md1->md1rom_idx && md1->mtk) {
-			// Map the code region using GFH metadata
-			map->paddr = md1->gfh_offset + md1->mtk->code_offset;
-			map->psize = md1->mtk->code_size;
-			map->vaddr = md1->mtk->file_info.load_addr;
-			map->vsize = md1->mtk->code_size;
+		if (map) {
+			map->name = rz_str_dup(sec->name);
+			map->vfile_name = rz_str_dup(sec->name);
+			if (md1->mtk) {
+				map->paddr = md1->gfh_offset + md1->mtk->code_offset;
+				map->psize = md1->mtk->code_size;
+				map->vaddr = MTK_MODEM_BADDR;
+				map->vsize = md1->mtk->code_size;
+			} else {
+				map->paddr = 0;
+				map->psize = sec->dsize;
+				map->vaddr = sec->maddr;
+				map->vsize = sec->dsize;
+			}
 			map->perm = RZ_PERM_RX;
-		} else if ((int)i == md1->md1rom_idx) {
-			// md1rom without GFH — map as executable
-			map->paddr = 0;
-			map->psize = sec->dsize;
-			map->vaddr = sec->maddr;
-			map->vsize = sec->dsize;
-			map->perm = RZ_PERM_RX;
-		} else {
-			// Non-code sections
-			map->paddr = 0;
-			map->psize = sec->dsize;
-			map->vaddr = sec->maddr;
-			map->vsize = sec->dsize;
-			map->perm = RZ_PERM_R;
+			rz_pvector_push(ret, map);
 		}
-
-		rz_pvector_push(ret, map);
 	}
 
 	return ret;
@@ -539,7 +524,7 @@ RZ_IPI RzPVector /*<RzBinSection *>*/ *md1img_sections(RzBinFile *bf) {
 			code->paddr = md1->gfh_offset + md1->mtk->code_offset;
 			code->size = md1->mtk->code_size;
 			code->vsize = md1->mtk->code_size;
-			code->vaddr = md1->mtk->file_info.load_addr;
+			code->vaddr = MTK_MODEM_BADDR;
 			code->perm = RZ_PERM_RX;
 			rz_pvector_push(ret, code);
 		}
@@ -573,14 +558,11 @@ RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf) {
 		sym->size = dbg->size;
 		sym->type = RZ_BIN_TYPE_FUNC_STR;
 
-		// Compute paddr only for symbols within the GFH code region.
-		// Symbols outside (e.g. ARM modem at 0x90xxxxxx) belong to a
-		// different address space and cannot be mapped to a file offset.
+		// Compute paddr for symbols within [MTK_MODEM_BADDR, MTK_MODEM_BADDR + code_size).
 		if (md1->mtk) {
-			ut32 base = md1->mtk->file_info.load_addr;
-			ut32 end = base + md1->mtk->code_size;
-			if (dbg->addr >= base && dbg->addr < end) {
-				sym->paddr = md1->gfh_offset + md1->mtk->code_offset + (dbg->addr - base);
+			ut64 end = MTK_MODEM_BADDR + md1->mtk->code_size;
+			if (dbg->addr >= MTK_MODEM_BADDR && dbg->addr < end) {
+				sym->paddr = md1->gfh_offset + md1->mtk->code_offset + (dbg->addr - MTK_MODEM_BADDR);
 			}
 		}
 
