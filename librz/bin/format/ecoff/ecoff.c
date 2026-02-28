@@ -144,7 +144,7 @@ bool ecoff_is_valid_buffer(RzBuffer *buffer) {
 
 static bool ecoff_init_aouthdr_alpha(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Alpha *alpha, const bool big_endian) {
 	return rz_buf_read_ble16_offset(b, offset, &alpha->magic, big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, (ut16 *)alpha->vstamp, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &alpha->vstamp, big_endian) &&
 		rz_buf_read_ble16_offset(b, offset, &alpha->bldrev, big_endian) &&
 		rz_buf_read_ble16_offset(b, offset, &alpha->padding, big_endian) &&
 		rz_buf_read_ble64_offset(b, offset, &alpha->tsize, big_endian) &&
@@ -161,7 +161,7 @@ static bool ecoff_init_aouthdr_alpha(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Al
 
 static bool ecoff_init_aouthdr_mips(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Mips *mips, const bool big_endian) {
 	return rz_buf_read_ble16_offset(b, offset, &mips->magic, big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, (ut16 *)mips->vstamp, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &mips->vstamp, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &mips->tsize, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &mips->dsize, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &mips->bsize, big_endian) &&
@@ -1489,7 +1489,7 @@ static bool ecoff_aouthdr_alpha_to_structure(const ECoff_64 *ecoff, RzStructured
 	char vstamp[16] = { 0 };
 	const ECoff_AOutHdr_Alpha *alpha = &ecoff->aouthdr.alpha;
 	const char *magic = ecoff_aouthdr_magic_to_string(alpha->magic);
-	rz_strf(vstamp, "v%u.%u", alpha->vstamp[1], alpha->vstamp[0]);
+	rz_strf(vstamp, "v%u.%u", alpha->vstamp >> 8, alpha->vstamp & 0xff);
 
 	return rz_structured_data_map_add_string(parent, "magic", magic) &&
 		rz_structured_data_map_add_string(parent, "vstamp", vstamp) &&
@@ -1515,7 +1515,7 @@ static bool ecoff_aouthdr_mips_to_structure(const ECoff_32 *ecoff, RzStructuredD
 	char vstamp[16] = { 0 };
 	const ECoff_AOutHdr_Mips *mips = &ecoff->aouthdr.mips;
 	const char *magic = ecoff_aouthdr_magic_to_string(mips->magic);
-	rz_strf(vstamp, "v%u.%u", mips->vstamp[1], mips->vstamp[0]);
+	rz_strf(vstamp, "v%u.%u", mips->vstamp >> 8, mips->vstamp & 0xff);
 
 	bool res = rz_structured_data_map_add_string(parent, "magic", magic) &&
 		rz_structured_data_map_add_string(parent, "vstamp", vstamp) &&

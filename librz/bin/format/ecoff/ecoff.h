@@ -265,7 +265,7 @@
 
 typedef struct ecoff_aouthdr_alpha_t {
 	ut16 magic; /* type of file */
-	ut8 vstamp[2]; /* version stamp */
+	ut16 vstamp; /* version stamp */
 	ut16 bldrev; /* build revision */
 	ut16 padding; /* padding 2 byte */
 	ut64 tsize; /* text size in bytes */
@@ -282,7 +282,7 @@ typedef struct ecoff_aouthdr_alpha_t {
 
 typedef struct ecoff_aouthdr_mips_t {
 	ut16 magic; /* type of file */
-	ut8 vstamp[2]; /* version stamp */
+	ut16 vstamp; /* version stamp */
 	ut32 tsize; /* text size in bytes */
 	ut32 dsize; /* initialized data */
 	ut32 bsize; /* uninitialized data */
