@@ -227,9 +227,9 @@ CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
 ____h_ adler32        LGPL3      deroad                         Adler-32 checksum
-____h_ argon2d        CC0        Farhan-25                      Argon2d checksum
-____h_ argon2i        CC0        Farhan-25                      Argon2i checksum
-____h_ argon2id       CC0        Farhan-25                      Argon2id checksum
+____h_ argon2d        CC0        Farhan-25                      Argon2d cryptographic hash
+____h_ argon2i        CC0        Farhan-25                      Argon2i cryptographic hash
+____h_ argon2id       CC0        Farhan-25                      Argon2id cryptographic hash
 ____h_ blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
 ____h_ crc15can       LGPL3      deroad                         CRC-15 CAN checksum
 ____h_ crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
