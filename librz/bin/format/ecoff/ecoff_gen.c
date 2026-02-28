@@ -535,7 +535,7 @@
 	}
 
 #define ECOFF_GEN_GET_SECTIONS(bits) \
-	RzPVector /*<RzBinSection *>*/ *ecoff_get_sections_##bits(const ECoff_##bits *ecoff) { \
+	static void *ecoff_get_sections_##bits(const ECoff_##bits *ecoff) { \
 		RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free); \
 		if (!ret) { \
 			return NULL; \
@@ -586,7 +586,8 @@
 	}
 
 #define ECOFF_GEN_FILE_DESCR_ENTRY_7009_TO_STRUCTURE(bits) \
-	static bool ecoff_file_descr_entry_7009_to_structure_##bits(const ECoff_FileDescEntry7009_##bits *fde, RzStructuredData *parent, RzVector /*<ECoff_ProcDescrEntry_32_64>*/ *pdes) { \
+	static bool ecoff_file_descr_entry_7009_to_structure_##bits(const ECoff_FileDescEntry7009_##bits *fde, RzStructuredData *parent, void *v_pdes) { \
+		RzVector *pdes = v_pdes; \
 		RzStructuredData *fde_info = rz_structured_data_array_add_map(parent); \
 		RzStructuredData *pde_info = rz_structured_data_new_map(); \
 		if (!fde_info || !pde_info) { \
@@ -626,7 +627,8 @@
 	}
 
 #define ECOFF_GEN_FILE_DESCR_ENTRY_1992_TO_STRUCTURE(bits) \
-	static bool ecoff_file_descr_entry_1992_to_structure_##bits(const ECoff_FileDescEntry1992_##bits *fde, RzStructuredData *parent, RzVector /*<ECoff_ProcDescrEntry_32_64>*/ *pdes) { \
+	static bool ecoff_file_descr_entry_1992_to_structure_##bits(const ECoff_FileDescEntry1992_##bits *fde, RzStructuredData *parent, void *v_pdes) { \
+		RzVector *pdes = v_pdes; \
 		RzStructuredData *fde_info = rz_structured_data_array_add_map(parent); \
 		RzStructuredData *pde_info = rz_structured_data_new_map(); \
 		if (!fde_info || !pde_info) { \
@@ -675,7 +677,7 @@
 #define ECOFF_GEN_FILE_DESCR_ENTRIES_TO_STRUCTURE(bits) \
 	ECOFF_GEN_FILE_DESCR_ENTRY_1992_TO_STRUCTURE(bits) \
 	ECOFF_GEN_FILE_DESCR_ENTRY_7009_TO_STRUCTURE(bits) \
-	static bool ecoff_file_descr_entry_to_structure_##bits(const ECoff_##bits *ecoff, const ECoff_FileDescEntry_##bits *fde, RzStructuredData *parent, RzVector /*<ECoff_ProcDescrEntry_32_64>*/ *pdes) { \
+	static bool ecoff_file_descr_entry_to_structure_##bits(const ECoff_##bits *ecoff, const ECoff_FileDescEntry_##bits *fde, RzStructuredData *parent, void *pdes) { \
 		if (ecoff->symhdr.magic == ECOFF_SYMBOLIC_HEADER_MAGIC_7009) { \
 			return ecoff_file_descr_entry_7009_to_structure_##bits(&fde->_7009, parent, pdes); \
 		} \
