@@ -107,6 +107,14 @@ extern RzHashPlugin rz_hash_plugin_sha1;
 extern RzHashPlugin rz_hash_plugin_sha256;
 extern RzHashPlugin rz_hash_plugin_sha384;
 extern RzHashPlugin rz_hash_plugin_sha512;
+
+extern RzHashPlugin rz_hash_plugin_sha3_224;
+extern RzHashPlugin rz_hash_plugin_sha3_256;
+extern RzHashPlugin rz_hash_plugin_sha3_384;
+extern RzHashPlugin rz_hash_plugin_sha3_512;
+extern RzHashPlugin rz_hash_plugin_keccak_256;
+extern RzHashPlugin rz_hash_plugin_keccak_384;
+extern RzHashPlugin rz_hash_plugin_keccak_512;
 extern RzHashPlugin rz_hash_plugin_fletcher8;
 extern RzHashPlugin rz_hash_plugin_fletcher16;
 extern RzHashPlugin rz_hash_plugin_fletcher32;

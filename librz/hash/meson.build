@@ -6,6 +6,13 @@ hash_plugins_list = [
   'sha256',
   'sha384',
   'sha512',
+  'sha3_224',
+  'sha3_256',
+  'sha3_384',
+  'sha3_512',
+  'keccak_256',
+  'keccak_384',
+  'keccak_512',
   'sm3',
   'blake3',
   'fletcher8',
@@ -103,6 +110,13 @@ rz_hash_sources = [
   'p/algo_sha256.c',
   'p/algo_sha384.c',
   'p/algo_sha512.c',
+  'p/algo_sha3_224.c',
+  'p/algo_sha3_256.c',
+  'p/algo_sha3_384.c',
+  'p/algo_sha3_512.c',
+  'p/algo_keccak_256.c',
+  'p/algo_keccak_384.c',
+  'p/algo_keccak_512.c',
   'p/algo_xor8.c',
   'p/algo_xor16.c',
   'p/algo_xxhash32.c',
@@ -123,6 +137,7 @@ rz_hash_sources = [
   'algorithms/fletcher/fletcher.c',
   'algorithms/ssdeep/ssdeep.c',
   'algorithms/md2/md2.c',
+  'algorithms/sha3/sha3.c'
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
@@ -135,7 +150,7 @@ else
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',
     'algorithms/sha2/sha2.c',
-    'algorithms/sm3/sm3.c'
+    'algorithms/sm3/sm3.c',
   ]
 endif
 
