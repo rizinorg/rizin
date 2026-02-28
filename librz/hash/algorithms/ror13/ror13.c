@@ -31,7 +31,7 @@ bool rz_ror13_update(RzROR13 *ctx, const ut8 *data, ut64 length) {
 }
 
 bool rz_ror13_final(ut8 *digest, RzROR13 *ctx) {
-	rz_return_if_fail(digest && ctx, false);
+	rz_return_val_if_fail(digest && ctx, false);
 
 	rz_write_be32(digest, *ctx);
 
