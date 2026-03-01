@@ -15,7 +15,7 @@
 
 /**
  * \file ht_inc.c
- * \brief "SwissTable" hash table implementation (an open-addressing hash table design by Google).
+ * \brief "SwissTable" hash table implementation.
  *
  * References:
  * 	- https://abseil.io/about/design/swisstables
@@ -809,10 +809,10 @@ static bool internal_ht_delete(RZ_NONNULL HtName_(Ht) *ht, INDEX_TYPE idx) {
 
 /**
  * \brief Update the key of an element that has \p old_key as key and replace it with \p new_key
- * \param ht the hash table.
- * \param old_key the key to update
- * \param new_key the new key
- * \return true if \p old_key was found and update, false otherwise
+ * \param ht The hash table.
+ * \param old_key The key to update.
+ * \param new_key The new key.
+ * \return true if \p old_key was found and update, false otherwise.
  */
 RZ_API bool Ht_(update_key)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE old_key, const KEY_TYPE new_key) {
 	rz_return_val_if_fail(ht, false);
@@ -864,11 +864,11 @@ static inline RZ_BORROW HT_(Kv) *internal_find_kv(RZ_NONNULL HtName_(Ht) *ht, co
 }
 
 /**
- * \brief Returns the corresponding Kv entry from \p key.
- * \param ht the hash table.
- * \param key the key to look up.
- * \param[out] found pointer to a bool, that would receive a value indicating if the key was found or not (optional).
- * \return if the kay is found, the function will return a pointer to it's KV entry, or `NULL` otherwise.
+ * \brief Returns the corresponding KV entry from \p key.
+ * \param ht The hash table.
+ * \param key The key to look up.
+ * \param[out] found Pointer to a bool, that would receive a value indicating if the key was found or not (optional).
+ * \return If the key is found, the function will return a pointer to its KV entry, or `NULL` otherwise.
  * If \p found is not NULL, it will be set to true if the entry was found, false otherwise.
  */
 RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
@@ -881,10 +881,10 @@ RZ_API RZ_BORROW HT_(Kv) *Ht_(find_kv)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYP
  *
  * If \p found is not NULL, it will be set to true if the entry was found, false otherwise.
  *
- * \param ht the hash table.
- * \param key the key to look up.
- * \param[out] found pointer to a bool, that would receive a value indicating if the key was found or not (optional).
- * \return if the kay is found, the function will return the value associated with the key, or `HT_NULL_VALUE` otherwise.
+ * \param ht The hash table.
+ * \param key The key to look up.
+ * \param[out] found Pointer to a bool, that would receive a value indicating if the key was found or not (optional).
+ * \return If the key is found, the function will return the value associated with the key, or `HT_NULL_VALUE` otherwise.
  */
 RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_NULLABLE bool *found) {
 	rz_return_val_if_fail(ht, HT_NULL_VALUE);
@@ -894,8 +894,8 @@ RZ_API VALUE_TYPE Ht_(find)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key, RZ_N
 
 /**
  * \brief Deletes an entry from the hash table \p ht with key \p key, if the pair exists.
- * \param ht the hash table.
- * \param key the key to delete.
+ * \param ht The hash table.
+ * \param key The key to delete.
  * \return true on success, false otherwise.
  */
 RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
@@ -911,9 +911,9 @@ RZ_API bool Ht_(delete)(RZ_NONNULL HtName_(Ht) *ht, const KEY_TYPE key) {
 
 /**
  * \brief Apply \p cb for each KV pair in \p ht. If \p cb returns false, the iteration is stopped.
- * \param ht the hash table.
- * \param cb the callback function to invoke.
- * \param user pointer to user data (passed through to the callback).
+ * \param ht The hash table.
+ * \param cb The callback function to invoke.
+ * \param user Pointer to user data (passed through to the callback).
  */
 RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallback) cb, RZ_NULLABLE void *user) {
 	rz_return_if_fail(ht && cb);
@@ -931,9 +931,9 @@ RZ_API void Ht_(foreach)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachCallb
  *
  * This function is similar to `Ht_(foreach)`, but the key/value are passed as pointer rather than by value.
  *
- * \param ht the hash table.
- * \param cb the callback function to invoke (returning `false` will cancel further iteration).
- * \param user pointer to user data (passed through to the callback).
+ * \param ht The hash table.
+ * \param cb The callback function to invoke (returning `false` will cancel further iteration).
+ * \param user Pointer to user data (passed through to the callback).
  * \return true if all elements were iterated, false if the iteration was cancelled by the user callback
  */
 RZ_API bool Ht_(foreach_kv)(RZ_NONNULL HtName_(Ht) *ht, RZ_NONNULL HT_(ForeachKvCallback) cb, RZ_NULLABLE void *user) {
