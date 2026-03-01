@@ -18,9 +18,11 @@ RZ_API int rz_mutf8_decode(const ut8 *ptr, int ptrlen, RzCodePoint *ch);
 RZ_API int rz_utf8_encode_str(const RzCodePoint *str, ut8 *dst, const int dst_length);
 RZ_API int rz_utf8_size(const ut8 *ptr);
 RZ_API size_t rz_utf8_strlen(const ut8 *str);
+RZ_API size_t rz_utf8_strnlen(RZ_NULLABLE const ut8 *str, size_t maxlen);
 RZ_API const char *rz_utf_block_name(int idx);
 RZ_API int rz_utf_block_idx(RzCodePoint ch);
 RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list);
+RZ_API size_t rz_utf8_byte_length(RzCodePoint c);
 #if __WINDOWS__
 #define rz_utf16_to_utf8(wc)      rz_utf16_to_utf8_l((wchar_t *)wc, -1)
 #define rz_utf8_to_utf16(cstring) rz_utf8_to_utf16_l((char *)cstring, -1)

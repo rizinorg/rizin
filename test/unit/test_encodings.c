@@ -536,6 +536,84 @@ bool test_rz_utf16_valid(void) {
 	mu_end;
 }
 
+bool test_rz_unicode_lowercase_mapping(void) {
+	// first element
+	RzUnicodeCaseMapping f = rz_unicode_code_point_find_lower(65);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&f), "Should not be empty");
+	mu_assert_eq(f.key, 65, "Mismatched key");
+	mu_assert_eq(f.val[0], 97, "Incorrect lowercase value");
+
+	// multi-value
+	RzUnicodeCaseMapping mv = rz_unicode_code_point_find_lower(304);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&mv), "Should not be empty");
+	mu_assert_eq(mv.key, 304, "Mismatched key");
+	mu_assert_eq(mv.val[0], 105, "Incorrect lowercase value");
+	mu_assert_eq(mv.val[1], 775, "Incorrect lowercase value");
+
+	// last element
+	RzUnicodeCaseMapping l = rz_unicode_code_point_find_lower(125217);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
+	mu_assert_eq(l.key, 125217, "Mismatched key");
+	mu_assert_eq(l.val[0], 125251, "Incorrect lowercase value");
+
+	// not found
+	RzUnicodeCaseMapping nf = rz_unicode_code_point_find_lower(0xFFFFFFu);
+	mu_assert_eq(nf.key, 0xFFFFFFu, "Mismatched key");
+	mu_assert_true(rz_unicode_case_mapping_is_empty(&nf), "Should be empty");
+	mu_end;
+}
+
+bool test_rz_unicode_uppercase_mapping(void) {
+	// first element
+	RzUnicodeCaseMapping f = rz_unicode_code_point_find_upper(97);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&f), "Should not be empty");
+	mu_assert_eq(f.key, 97, "Mismatched key");
+	mu_assert_eq(f.val[0], 65, "Incorrect uppercase value");
+
+	// multi-value
+	RzUnicodeCaseMapping mv = rz_unicode_code_point_find_upper(223);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&mv), "Should not be empty");
+	mu_assert_eq(mv.key, 223, "Mismatched key");
+	mu_assert_true(mv.val[0] == 83 && mv.val[1] == 83, "Incorrect uppercase value");
+	mv = rz_unicode_code_point_find_upper(944);
+	mu_assert_eq(mv.key, 944, "Mismatched key");
+	mu_assert_true(mv.val[0] == 933 && mv.val[1] == 776 && mv.val[2] == 769, "Incorrect uppercase value");
+
+	// last element
+	RzUnicodeCaseMapping l = rz_unicode_code_point_find_upper(125248);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
+	mu_assert_eq(l.key, 125248, "Mismatched key");
+	mu_assert_eq(l.val[0], 125214, "Incorrect uppercase value");
+
+	// not found
+	RzUnicodeCaseMapping nf = rz_unicode_code_point_find_upper(-1);
+	mu_assert_true(rz_unicode_case_mapping_is_empty(&nf), "Should be empty");
+	mu_assert_true(nf.key == -1, "Mismatched key");
+	mu_end;
+}
+
+bool test_utf8_strlen(void) {
+	const char *str = "ṡome ⅄ṡ good";
+	size_t len = rz_utf8_strlen((const ut8 *)str);
+	mu_assert_eq(len, 12, "Should be 12 ucd code points");
+	len = rz_utf8_strnlen((const ut8 *)str, 99999999ul);
+	mu_assert_eq(len, 12, "Should be 12 ucd code points");
+	len = rz_utf8_strnlen((const ut8 *)str, 10);
+	mu_assert_eq(len, 6, "Should be 6 ucd code points");
+	len = rz_utf8_strnlen((const ut8 *)str, 7);
+	mu_assert_eq(len, 5, "Should be 5 ucd code points");
+	len = rz_utf8_strnlen((const ut8 *)str, 0);
+	mu_assert_eq(len, 0, "Should be 0 ucd code points");
+
+	// cut a multi-byte character
+	len = rz_utf8_strnlen((const ut8 *)str, 9);
+	mu_assert_eq(len, 6, "Should be 6 ucd code points");
+	len = rz_utf8_strnlen((const ut8 *)str, 8);
+	mu_assert_eq(len, 6, "Should be 6 ucd code points");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_utf8_decode);
 	mu_run_test(test_rz_utf16_decode);
@@ -549,6 +627,9 @@ bool all_tests() {
 	mu_run_test(test_rz_unicode_surrogate);
 	mu_run_test(test_rz_unicode_private);
 	mu_run_test(test_rz_unicode_control);
+	mu_run_test(test_rz_unicode_lowercase_mapping);
+	mu_run_test(test_rz_unicode_uppercase_mapping);
+	mu_run_test(test_utf8_strlen);
 
 	return tests_passed != tests_run;
 }
