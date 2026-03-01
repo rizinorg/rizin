@@ -930,6 +930,16 @@ commands:
             summary: Create flags for each allocated heap block
             cname: cmd_debug_heap_block_flag
             args: []
+      - name: dmn
+        summary: Mallocng heap commands
+        subcommands:
+          - name: dmnc
+            summary: Shows the global malloc context
+            cname: cmd_debug_heap_mallocng_c
+            args:
+              - name: context_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
       - name: dmx
         summary: Jemalloc heap commands
         subcommands:
@@ -941,7 +951,7 @@ commands:
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
           - name: dmxb
-            summary: Show bin info for allocations. 
+            summary: Show bin info for allocations.
             cname: cmd_debug_heap_jemalloc_b
             args:
               - name: arena_addr

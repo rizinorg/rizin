@@ -60,6 +60,7 @@ rz_core_sources = [
   'hack.c',
   'heap_glibc.c',
   'heap_jemalloc.c',
+  'heap_mallocng.c',
   'libs.c',
   'project.c',
   'project_migrate.c',

@@ -12,6 +12,7 @@
 #define TN_KEY_FMT "%" PFMT64u
 
 #include "rz_heap_jemalloc.h"
+#include "rz_heap_mallocng.h"
 
 #include "../core_private.h"
 
@@ -1008,6 +1009,24 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	size = (int)rz_num_math(core->num, argv[1]);
 	rz_debug_map_alloc(core->dbg, addr, size, true);
 	return RZ_CMD_STATUS_OK;
+}
+
+// "dmnc"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_mallocng_c_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	ut64 ctx_addr = 0;
+	// Only check debug mode when no argument is provided (symbol resolution needed)
+	// With address arguments we can still work in static mode
+	if (!has_specified_ctx) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid context address '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		ctx_addr = rz_num_math(core->num, argv[1]);
+	}
+
+	return rz_heap_mallocng_cmd_c(core, has_specified_ctx, ctx_addr);
 }
 
 // "dmxa"
