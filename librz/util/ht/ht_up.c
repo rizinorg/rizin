@@ -36,7 +36,7 @@ static void init_options(HT_(Options) *opt, HT_(DupValue) valdup, HT_(FreeValue)
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(RZ_NULLABLE HT_(DupValue) valdup, RZ_NULLABLE HT_(FreeValue) valfree) {
 	HT_(Options) opt;
 	init_options(&opt, valdup, valfree);
-	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+	return internal_ht_new(0, &opt);
 }
 
 /**

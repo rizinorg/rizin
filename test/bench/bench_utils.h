@@ -44,6 +44,18 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 		rz_bench_report(&ctx, table); \
 	} while (0)
 
+#define RZ_BENCH_RUN_I(name, i, table, iterations, code) \
+	do { \
+		RzBenchCtx ctx; \
+		rz_bench_init(&ctx, name, iterations); \
+		rz_bench_start(&ctx); \
+		for (ut64(i) = 0; (i) < iterations; (i)++) { \
+			code; \
+		} \
+		rz_bench_end(&ctx); \
+		rz_bench_report(&ctx, table); \
+	} while (0)
+
 /**
  * \brief Initializes the RzTable \p T used for storing results of microbenchmarks.
  * \param T table to initialize.

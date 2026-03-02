@@ -12,19 +12,6 @@
 #include "sdb.h"
 #include "sdb_private.h"
 
-static inline SdbKv *next_kv(HtSS *ht, SdbKv *kv) {
-	return (SdbKv *)((char *)kv + ht->opt.elem_size);
-}
-
-#define BUCKET_FOREACH(ht, bt, j, kv) \
-	for ((j) = 0, (kv) = (SdbKv *)(bt)->arr; j < (bt)->count; (j)++, (kv) = next_kv(ht, kv))
-
-#define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv) \
-	if ((bt)->arr) \
-		for ((j) = 0, (kv) = (SdbKv *)(bt)->arr, (count) = (ht)->count; \
-			(j) < (bt)->count; \
-			(j) = (count) == (ht)->count ? j + 1 : j, (kv) = (count) == (ht)->count ? next_kv(ht, kv) : kv, (count) = (ht)->count)
-
 // TODO: use mmap instead of read.. much faster!
 RZ_API RZ_OWN Sdb *sdb_new0(void) {
 	return sdb_new(NULL, NULL, 0);
@@ -146,7 +133,7 @@ RZ_API bool sdb_isempty(Sdb *s) {
 				return false;
 			}
 		}
-		if (s->ht && s->ht->count > 0) {
+		if (s->ht && ht_ss_size(s->ht) > 0) {
 			return false;
 		}
 	}
@@ -164,7 +151,7 @@ RZ_API int sdb_count(Sdb *s) {
 			}
 		}
 		if (s->ht) {
-			count += s->ht->count;
+			count += ht_ss_size(s->ht);
 		}
 	}
 	return count;
@@ -241,7 +228,7 @@ RZ_API const char *sdb_const_get_len(Sdb *s, const char *key, int *vlen) {
 		return NULL;
 	}
 	(void)cdb_findstart(&s->db);
-	if (cdb_findnext(&s->db, s->ht->opt.hashfn(key), key, keylen) < 1) {
+	if (cdb_findnext(&s->db, sdb_hash(key), key, keylen) < 1) {
 		return NULL;
 	}
 	len = cdb_datalen(&s->db);
@@ -752,19 +739,8 @@ RZ_API bool sdb_foreach(RZ_NONNULL Sdb *s, RZ_NONNULL SdbForeachCallback cb, RZ_
 	if (!result) {
 		return sdb_foreach_end(s, false);
 	}
-
-	for (ut32 i = 0; i < s->ht->size; ++i) {
-		HtSSBucket *bt = &s->ht->table[i];
-		SdbKv *kv;
-		ut32 j, count;
-
-		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
-			if (kv && sdbkv_value(kv) && *sdbkv_value(kv)) {
-				if (!cb(user, kv)) {
-					return sdb_foreach_end(s, false);
-				}
-			}
-		}
+	if (!sdb_ht_foreach_kv(s->ht, cb, user)) {
+		return sdb_foreach_end(s, false);
 	}
 	return sdb_foreach_end(s, true);
 }
@@ -778,9 +754,18 @@ static bool _insert_into_disk(void *user, const SdbKv *kv) {
 	return false;
 }
 
+static bool sdb_sync_foreach_cb(void *user, const SdbKv *kv) {
+	Sdb *s = user;
+
+	if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
+		sdb_remove(s, sdbkv_key(kv));
+	}
+
+	return true;
+}
+
 RZ_API bool sdb_sync(Sdb *s) {
 	bool result;
-	ut32 i;
 
 	if (!s || !sdb_disk_create(s)) {
 		return false;
@@ -789,21 +774,7 @@ RZ_API bool sdb_sync(Sdb *s) {
 	if (!result) {
 		return false;
 	}
-
-	/* append new keyvalues */
-	for (i = 0; i < s->ht->size; ++i) {
-		HtSSBucket *bt = &s->ht->table[i];
-		SdbKv *kv;
-		ut32 j, count;
-
-		BUCKET_FOREACH_SAFE(s->ht, bt, j, count, kv) {
-			if (sdbkv_key(kv) && sdbkv_value(kv) && *sdbkv_value(kv)) {
-				if (sdb_disk_insert(s, sdbkv_key(kv), sdbkv_value(kv))) {
-					sdb_remove(s, sdbkv_key(kv));
-				}
-			}
-		}
-	}
+	sdb_ht_foreach_kv(s->ht, sdb_sync_foreach_cb, s);
 	sdb_disk_finish(s);
 	// TODO: sdb_reset memory state?
 	return true;
@@ -842,7 +813,7 @@ RZ_API bool sdb_stats(Sdb *s, ut32 *disk, ut32 *mem) {
 		*disk = count;
 	}
 	if (mem) {
-		*mem = s->ht->count;
+		*mem = ht_ss_size(s->ht);
 	}
 	return disk || mem;
 }

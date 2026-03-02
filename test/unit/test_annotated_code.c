@@ -371,8 +371,8 @@ static bool test_rz_core_annotated_code_print(void) {
 static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	RzAnnotatedCode *code = get_hello_world();
 	char *actual;
-	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
-			 "CCu base64:cmV0dXJu @ 0x115f\n";
+	char *expected = "CCu base64:cmV0dXJu @ 0x115f\n"
+			 "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n";
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_comment_cmds(code);
