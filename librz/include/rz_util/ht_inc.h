@@ -129,25 +129,22 @@ static inline ut32 ht_default_hash_string(const char *key, ut32 len) {
 	ut64 result = 0xff51afd7ed558ccdULL;
 
 	while (len >= 16) {
-		ut64 blocks[2];
-		memcpy(blocks, key, sizeof(ut64) * 2);
-		result += (result << 5) ^ (blocks[0] * prime1);
-		result += (result << 5) ^ (blocks[1] * prime1);
+		ut128 block = rz_read_le128(key);
+		result += (result << 5) ^ (block.Low * prime1);
+		result += (result << 5) ^ (block.High * prime1);
 		len -= 16;
 		key += 16;
 	}
 
 	while (len >= 8) {
-		ut64 block = 0;
-		memcpy(&block, key, sizeof(ut64));
+		ut64 block = rz_read_le64(key);
 		result += (result << 5) ^ (block * prime1);
 		len -= 8;
 		key += 8;
 	}
 
 	while (len >= 4) {
-		ut32 block = 0;
-		memcpy(&block, key, sizeof(ut32));
+		ut32 block = rz_read_le32(key);
 		result += (result << 5) ^ (block * prime1);
 		len -= 4;
 		key += 4;
