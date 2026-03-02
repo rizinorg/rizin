@@ -25,7 +25,7 @@ class Comparator:
 
     def load_binaries(self, bin_path: Path):
         i = 0
-        for bp in bin_path.glob("**/*"):
+        for bp in list(bin_path.glob("**/*")) + [bin_path]:
             if bp.is_dir():
                 continue
             if not bp.exists():
