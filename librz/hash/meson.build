@@ -2,6 +2,7 @@ hash_plugins_list = [
   'md2',
   'md4',
   'md5',
+  'ripemd160',
   'sha1',
   'sha256',
   'sha384',
@@ -99,6 +100,7 @@ rz_hash_sources = [
   'p/algo_md2.c',
   'p/algo_md4.c',
   'p/algo_md5.c',
+  'p/algo_ripemd160.c',
   'p/algo_mod255.c',
   'p/algo_sha1.c',
   'p/algo_sha256.c',
@@ -140,6 +142,7 @@ else
   rz_hash_sources += [
     'algorithms/md4/md4.c',
     'algorithms/md5/md5.c',
+    'algorithms/ripemd160/ripemd160.c',
     'algorithms/sha1/sha1.c',
     'algorithms/sha2/sha2.c',
     'algorithms/sm3/sm3.c',

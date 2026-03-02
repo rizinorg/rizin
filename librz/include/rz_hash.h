@@ -103,6 +103,7 @@ RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
 extern RzHashPlugin rz_hash_plugin_md2;
 extern RzHashPlugin rz_hash_plugin_md4;
 extern RzHashPlugin rz_hash_plugin_md5;
+extern RzHashPlugin rz_hash_plugin_ripemd160;
 extern RzHashPlugin rz_hash_plugin_sha1;
 extern RzHashPlugin rz_hash_plugin_sha256;
 extern RzHashPlugin rz_hash_plugin_sha384;
