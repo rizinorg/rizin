@@ -1,3 +1,4 @@
 from numpy import uint64
+from typing import TypeAlias
 
-type Addr = uint64
+Addr: TypeAlias = uint64

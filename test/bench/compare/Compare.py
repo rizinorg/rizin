@@ -39,7 +39,7 @@ class Comparator:
                 i += 1
             except Exception as e:
                 log.error(f"Load error for '{bp}'.")
-                log.error(e)
+                log.error(repr(e))
 
             if i > self.MAX_BINARIES:
                 log.warning(f"Added maxiumum of {self.MAX_BINARIES} files. Stop.")

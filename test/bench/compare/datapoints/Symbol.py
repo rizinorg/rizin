@@ -1,0 +1,32 @@
+from datapoints.Data import Addr
+
+from enum import Enum
+
+
+class SymbolType(Enum):
+    UNSPECIFIED = 0
+    FUNCTION = 1
+    OBJECT = 2
+
+
+class Symbol:
+    # Tuple of address ranges a symbol covers.
+    # Each range is an right open interval: [low, high)
+    ranges: list[tuple[Addr, Addr]] = list()
+
+    entry_points: list[Addr] = list()
+
+    def __init__(self, name: str, type: SymbolType, size: int, location: Addr):
+        self.name = name
+        self.type = type
+        self.size = size
+        self.location = location
+
+    def add_range(self, range: tuple[Addr, Addr]):
+        self.ranges.append(range)
+
+    def add_entry_point(self, entry_point: Addr):
+        self.entry_points.append(entry_point)
+
+    def __repr__(self):
+        return f"SYMBOL<{self.name} | type: {self.type} | entries: {[e for e in self.entry_points]} | ranges: {[e for e in self.entry_points]}>"
