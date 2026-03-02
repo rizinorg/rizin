@@ -5,7 +5,12 @@ import argparse
 import logging as log
 
 from Binary import Binary, init_binary
-from Framework import FRAMEWORK_NAMES, Framework, init_framework_by_name
+from Framework import (
+    FRAMEWORK_NAMES,
+    FRAMEWORK_RIZIN,
+    Framework,
+    init_framework_by_name,
+)
 
 
 class Comparator:
@@ -24,7 +29,7 @@ class Comparator:
             if bp.is_dir():
                 continue
             if not bp.exists():
-                log.error(f"File '{bp}' doesn't exist.")
+                log.warning(f"File '{bp}' doesn't exist.")
                 continue
 
             try:
@@ -37,13 +42,14 @@ class Comparator:
                 log.error(e)
 
             if i > self.MAX_BINARIES:
-                log.error(f"Added {self.MAX_BINARIES} files. Stop.")
+                log.warning(f"Added maxiumum of {self.MAX_BINARIES} files. Stop.")
                 break
         log.info(f"Added {len(self.bins)} binaries")
 
-    def init_framework_analyzers(self):
+    def init_frameworks(self):
         for fname in self.framework_names:
             self.frameworks[fname] = init_framework_by_name(fname)
+            log.info(f"Initialized {fname}")
 
     def analyze_all():
         pass
@@ -52,12 +58,15 @@ class Comparator:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable debug output"
+    )
+    parser.add_argument(
         "-f",
         "--frameworks",
         help="The frameworks to compare.",
         nargs="+",
         choices=FRAMEWORK_NAMES,
-        default="rz",
+        default=[FRAMEWORK_RIZIN],
     )
     parser.add_argument(
         "bin_path",
@@ -70,4 +79,5 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
+    log.basicConfig(level=log.DEBUG if args.verbose else log.INFO)
     comparator = Comparator(args.bin_path, args.frameworks)

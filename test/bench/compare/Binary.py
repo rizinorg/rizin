@@ -16,7 +16,7 @@ class Binary(ABC):
     def _load_obj(self):
         raise NotImplementedError("_load_bin isn't implemented.")
 
-    @abstractmethod
+    @staticmethod
     def can_load(bin_path: Path) -> bool:
         raise NotImplementedError("_can_load isn't implemented.")
 
