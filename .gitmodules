@@ -1,0 +1,3 @@
+[submodule "test/bench/compare/rz-pipe"]
+	path = test/bench/compare/rz-pipe
+	url = https://github.com/rizinorg/rz-pipe.git

@@ -1,6 +1,5 @@
 from Binary import Object
 
-from typing import Self
 from pathlib import Path
 from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
