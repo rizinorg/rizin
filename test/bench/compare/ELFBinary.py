@@ -4,6 +4,8 @@ from pathlib import Path
 from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 
+from datapoints.Function import Function
+
 
 class ELFBinary(Binary):
     def __init__(self, bin_path: Path):
@@ -18,3 +20,6 @@ class ELFBinary(Binary):
             return True
         except ELFError:
             return False
+
+    def get_functions(self) -> None | list[Function]:
+        raise NotImplementedError("ELFBinary.get_functions not yet implemented.")

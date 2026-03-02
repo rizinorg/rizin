@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from elftools.elf.elffile import ELFFile
 
+from datapoints.Function import Function
+
 
 class Binary(ABC):
     obj: ELFFile
@@ -19,6 +21,10 @@ class Binary(ABC):
     @staticmethod
     def can_load(bin_path: Path) -> bool:
         raise NotImplementedError("_can_load isn't implemented.")
+
+    @abstractmethod
+    def get_functions(self) -> None | list[Function]:
+        raise NotImplementedError("_load_bin isn't implemented.")
 
 
 def init_binary(bin_path: Path) -> Binary:
