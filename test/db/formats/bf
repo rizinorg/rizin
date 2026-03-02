@@ -1,8 +1,12 @@
-NAME=bf with comments
+NAME=bf with comments and 30,000 nulls
 FILE=bins/bf/2+5.bf
-CMDS=i~^format
+CMDS=<<EOF
+i~^format
+ol~null
+EOF
 EXPECT=<<EOF
 format   bf
+ 4 - rw- 0x00007530 null://30000
 EOF
 RUN
 
@@ -19,10 +23,26 @@ size     0x2af
 EOF
 RUN
 
-NAME=30,000 nulls
-FILE=bins/bf/2+5.bf
-CMDS=ol~null
+NAME=bf iH
+FILE=bins/bf/hello-ok.bf
+CMDS=iH
 EXPECT=<<EOF
- 4 - rw- 0x00007530 null://30000
+bf:
+  file_size: 111
+  entry_point: 0x0
+  total_instructions: 111
+  instructions:
+    increment: 65
+    decrement: 15
+    move_right: 10
+    move_left: 6
+    loop_start: 1
+    loop_end: 1
+    input: 0
+    output: 13
+  memory:
+    data_area: 0x10000
+    data_size: 30000
+
 EOF
 RUN
