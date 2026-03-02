@@ -18,7 +18,7 @@ static bool check_buffer(RzBuffer *buf) {
 	/* hacky check to avoid detecting multidex or MZ bins as bios */
 	/* need better fix for this */
 	ut8 tmp[3];
-	if (rz_buf_read_at(buf, 0, tmp, sizeof(tmp)) <= 0 ||
+	if (rz_buf_read_at(buf, 0, tmp, sizeof(tmp)) != sizeof(tmp) ||
 		tmp[0] == 0xcf || tmp[0] == 0x7f ||
 		!memcmp(tmp, "dex", 3) || !memcmp(tmp, "MZ", 2)) {
 		return false;
