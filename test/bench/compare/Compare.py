@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 import logging as log
 
-from Binary import Binary
+from Binary import Binary, init_binary
 from Framework import FRAMEWORK_NAMES, Framework, init_framework_by_name
 
 
@@ -15,12 +15,12 @@ class Comparator:
         self.bins: list[Binary] = list()
         self.framework_names: list[str] = framework_names
         self.frameworks: dict[str, Framework] = dict()
-        self.load_binaries()
+        self.load_binaries(bin_path)
         self.init_frameworks()
 
-    def load_binaries(self):
+    def load_binaries(self, bin_path: Path):
         i = 0
-        for bp in self.bin_path.glob("**/*"):
+        for bp in bin_path.glob("**/*"):
             if bp.is_dir():
                 continue
             if not bp.exists():
@@ -28,7 +28,7 @@ class Comparator:
                 continue
 
             try:
-                bin = Binary(bp)
+                bin = init_binary(bp)
                 log.debug(f"Add '{bp}'")
                 self.bins.append(bin)
                 i += 1

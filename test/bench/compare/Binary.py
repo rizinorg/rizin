@@ -3,13 +3,14 @@ from pathlib import Path
 from elftools.elf.elffile import ELFFile
 
 
-class Object(ABC):
+class Binary(ABC):
     obj: ELFFile
 
-    def __init__(self, bin_path: Path) -> None:
+    def __init__(self, bin_path: Path):
         self.path: Path = bin_path
         if not self.path.exists():
             raise ValueError(f"Binary path '{self.path}' doesn't exist.")
+        self._load_obj()
 
     @abstractmethod
     def _load_obj(self):
@@ -20,17 +21,13 @@ class Object(ABC):
         raise NotImplementedError("_can_load isn't implemented.")
 
 
-class Binary:
-    def __init__(self, bin_path: Path) -> None:
-        self.path: Path = bin_path
-        if not self.path.exists():
-            raise ValueError(f"Binary path '{self.path}' doesn't exist.")
+def init_binary(bin_path: Path) -> Binary:
+    if not bin_path.exists():
+        raise ValueError(f"Binary path '{bin_path}' doesn't exist.")
 
-        self.bin: ELFFile
+    from ELFBinary import ELFBinary
 
-        from ELFObject import ELFObject
-
-        if ELFObject.can_load(self.path):
-            self.obj = ELFObject(self.path)
-        else:
-            raise NotImplementedError(f"Found no binary handler for {self.path}")
+    if ELFBinary.can_load(bin_path):
+        return ELFBinary(bin_path)
+    else:
+        raise NotImplementedError(f"Found no binary handler for {bin_path}")
