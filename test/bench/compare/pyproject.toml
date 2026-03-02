@@ -1,0 +1,13 @@
+[project]
+name = "compare"
+version = "0.1.0"
+description = "Comparison tool for Rizin to other RE frameworks or Rizin versions."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "argparse>=1.4.0",
+    "pathlib>=1.0.1",
+    "pyelftools>=0.32",
+    "ruff>=0.15.4",
+    "typing>=3.10.0.0",
+]
