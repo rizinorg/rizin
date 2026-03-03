@@ -6,11 +6,10 @@ from datapoints.Symbol import Symbol
 
 
 class Binary(ABC):
-    obj: ELFFile
-    has_debug_info: bool = False
-    symbols: list[Symbol] | None = list()
-
     def __init__(self, bin_path: Path):
+        self.obj: ELFFile
+        self.has_debug_info: bool = False
+        self.symbols: dict[str, Symbol] = dict()
         self.path: Path = bin_path
         if not self.path.exists():
             raise ValueError(f"Binary path '{self.path}' doesn't exist.")

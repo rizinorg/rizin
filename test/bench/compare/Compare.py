@@ -34,12 +34,13 @@ class Comparator:
 
             try:
                 bin = init_binary(bp)
-                log.debug(f"Add '{bp}'")
+                log.info(f"Add '{bp}' with {len(bin.symbols)} symbols")
                 self.bins.append(bin)
                 i += 1
             except Exception as e:
                 log.error(f"Load error for '{bp}'.")
-                log.error(repr(e))
+                # log.error(repr(e))
+                raise e
 
             if i > self.MAX_BINARIES:
                 log.warning(f"Added maxiumum of {self.MAX_BINARIES} files. Stop.")
