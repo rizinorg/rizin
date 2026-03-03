@@ -10827,8 +10827,8 @@ static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
 	.args = cmd_debug_heap_block_flag_args,
 };
 
-static const RzCmdDescHelp dmn_help = {
-	.summary = "Mallocng heap commands",
+static const RzCmdDescHelp dmu_help = {
+	.summary = "Musl heap commands",
 };
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[] = {
 	{
@@ -23447,9 +23447,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmw_cd, "dmwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
 	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
 
-	RzCmdDesc *dmn_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmn", NULL, NULL, &dmn_help);
-	rz_warn_if_fail(dmn_cd);
-	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmn_cd, "dmnc", rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
+	RzCmdDesc *dmu_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmu", NULL, NULL, &dmu_help);
+	rz_warn_if_fail(dmu_cd);
+	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmuc", rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
 	rz_warn_if_fail(cmd_debug_heap_musl_c_cd);
 
 	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);

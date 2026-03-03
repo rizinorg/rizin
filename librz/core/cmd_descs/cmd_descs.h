@@ -1365,7 +1365,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "dmwbf"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_block_flag_handler(RzCore *core, int argc, const char **argv);
-// "dmnc"
+// "dmuc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_c_handler(RzCore *core, int argc, const char **argv);
 // "dmxa"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv);

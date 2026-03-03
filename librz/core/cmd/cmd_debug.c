@@ -1011,7 +1011,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-// "dmnc"
+// "dmuc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_c_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 	ut64 ctx_addr = 0;
