@@ -12,7 +12,7 @@
 #define TN_KEY_FMT "%" PFMT64u
 
 #include "rz_heap_jemalloc.h"
-#include "rz_heap_mallocng.h"
+#include "rz_heap_musl.h"
 
 #include "../core_private.h"
 
@@ -1012,7 +1012,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 }
 
 // "dmnc"
-RZ_IPI RzCmdStatus rz_cmd_debug_heap_mallocng_c_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_c_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 	ut64 ctx_addr = 0;
 	// Only check debug mode when no argument is provided (symbol resolution needed)

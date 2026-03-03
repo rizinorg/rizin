@@ -5,7 +5,7 @@
 #ifndef RZ_HEAP_MUSL_MALLOCNG_H
 #define RZ_HEAP_MUSL_MALLOCNG_H
 
-#include <rz_mallocng/mallocng.h>
+#include <rz_musl/mallocng.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
 #include <rz_types.h>

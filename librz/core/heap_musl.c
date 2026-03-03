@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include <rz_heap_mallocng.h>
+#include <rz_heap_musl.h>
 
-static ut64 ng_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool *is_pie) {
+static ut64 musl_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool *is_pie) {
 	ut64 vaddr = UT64_MAX;
 	RzBin *bin = core->bin;
 	RzBinFile *current_bf = rz_bin_cur(bin);
@@ -49,7 +49,7 @@ static ut64 ng_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
-static bool rz_resolve_mallocng(RzCore *core, const char *symname, ut64 *symbol) {
+static bool rz_resolve_musl(RzCore *core, const char *symname, ut64 *symbol) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	const char *musl_path = NULL;
@@ -83,7 +83,7 @@ static bool rz_resolve_mallocng(RzCore *core, const char *symname, ut64 *symbol)
 		char *path = rz_str_newf("%s", musl_path);
 		if (rz_file_exists(path)) {
 			bool is_pie = false;
-			ut64 vaddr = ng_get_va_symbol(core, path, symname, &is_pie);
+			ut64 vaddr = musl_get_va_symbol(core, path, symname, &is_pie);
 			if (musl_addr != UT64_MAX && vaddr != UT64_MAX) {
 				// For shared libraries, always add base address
 				*symbol = musl_addr + vaddr;
@@ -99,7 +99,7 @@ static bool rz_resolve_mallocng(RzCore *core, const char *symname, ut64 *symbol)
 		char *path = rz_str_newf("%s", binary_path);
 		if (rz_file_exists(path)) {
 			bool is_pie = false;
-			ut64 vaddr = ng_get_va_symbol(core, path, symname, &is_pie);
+			ut64 vaddr = musl_get_va_symbol(core, path, symname, &is_pie);
 			if (binary_addr != UT64_MAX && vaddr != UT64_MAX) {
 				// For PIE binaries, add base address (Linux PIE binaries)
 				// For non-PIE binaries, vaddr is already absolute (FreeBSD non-PIE)
@@ -130,13 +130,26 @@ static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, ut8 ptr_size) {
 	return true;
 }
 
-void mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 addr) {
+typedef enum {
+	MUSL_UNKNOWN,
+	MUSL_OLDMALLOC,
+	MUSL_MALLOCNG,
+} MuslAllocator;
+
+MuslAllocator musl_get_allocator_kind(RzCore *core) {
+	ut64 ctx_addr;
+	if (rz_resolve_musl(core, "__malloc_context", &ctx_addr))
+		return MUSL_MALLOCNG;
+	return MUSL_OLDMALLOC;
+}
+
+void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 addr) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	mallocng_ctx ctx;
 	if (!has_specified_addr) {
-		if (rz_resolve_mallocng(core, "__malloc_context", &ctx_addr)) {
+		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
 			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
 				RZ_LOG_ERROR("Failed to read __malloc_context\n");
 				return;
@@ -153,6 +166,14 @@ void mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 addr) {
 		PRINTF_BA("  mmap_counter = 0x%x\n", ctx.mmap_counter);
 		PRINTF_BA("  free_meta_head = 0x%" PFMT64x "\n", ctx.free_meta_head);
 		PRINTF_BA("  avail_meta = 0x%" PFMT64x "\n", ctx.avail_meta);
+		PRINT_GA("  active = [\n");
+		for (int i = 0; i < 48; i++) {
+			if (ctx.active[i]) {
+				PRINTF_BA("    active[%d] = 0x%" PFMT64x " (%ld bytes)\n", i, ctx.active[i],
+					ctx.usage_by_class[i]);
+			}
+		}
+		PRINT_GA("  ]\n");
 		PRINTF_BA("  avail_meta_count = 0x%lx\n", ctx.avail_meta_count);
 		PRINTF_BA("  avail_meta_area_count = 0x%lx\n", ctx.avail_meta_area_count);
 		PRINTF_BA("  meta_alloc_shift = 0x%lx\n", ctx.meta_alloc_shift);
@@ -164,6 +185,11 @@ void mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 addr) {
 }
 
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr) {
-	mallocng_print_context(core, has_specified_addr, addr);
+	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
+		RZ_LOG_ERROR("This command requires musl ver > 1.2.4\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	musl_mallocng_print_context(core, has_specified_addr, addr);
 	return RZ_CMD_STATUS_OK;
 }

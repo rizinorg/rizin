@@ -27,7 +27,7 @@ include_files = [
   'rz_hash.h',
   'rz_heap_glibc.h',
   'rz_heap_jemalloc.h',
-  'rz_heap_mallocng.h',
+  'rz_heap_musl.h',
   'rz_il.h',
   'rz_io.h',
   'rz_lang.h',

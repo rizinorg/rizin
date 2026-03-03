@@ -7,6 +7,6 @@ install_headers(
 )
 
 rzheap_dep = declare_dependency(
-  include_directories: include_directories('.', 'rz_jemalloc', 'rz_glibc', 'rz_windows', 'rz_mallocng'),
+  include_directories: include_directories('.', 'rz_jemalloc', 'rz_glibc', 'rz_windows', 'rz_musl'),
 )
 meson.override_dependency('rzheap', rzheap_dep)

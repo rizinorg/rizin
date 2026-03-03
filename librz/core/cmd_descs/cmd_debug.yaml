@@ -934,8 +934,8 @@ commands:
         summary: Mallocng heap commands
         subcommands:
           - name: dmnc
-            summary: Shows the global malloc context
-            cname: cmd_debug_heap_mallocng_c
+            summary: Shows the global malloc context, requires musl ver > 1.2.4
+            cname: cmd_debug_heap_musl_c
             args:
               - name: context_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
