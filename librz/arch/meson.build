@@ -58,7 +58,8 @@ arch_plugins_list = [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'x86_zydis'
+  'x86_zydis',
+  'bpf_cs',
 ]
 
 arch_plugin_sources = [
@@ -116,7 +117,8 @@ arch_plugin_sources = [
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
-  'p/arch_x86_zydis.c'
+  'p/arch_x86_zydis.c',
+  'p/arch_bpf_cs.c'
 ]
 
 arch_esil_sources = [
