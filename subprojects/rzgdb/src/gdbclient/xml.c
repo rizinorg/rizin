@@ -408,7 +408,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		column += sizeof("<column name=\"command\">") - 1;
 		column_data_len = column_end - column;
-		memcpy(cmdline, column, column_data_len);
+		memcpy(cmdline, column, RZ_MIN(column_data_len, sizeof(cmdline)));
 		cmdline[column_data_len] = '\0';
 
 		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
