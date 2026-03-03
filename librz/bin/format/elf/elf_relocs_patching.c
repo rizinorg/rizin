@@ -2329,6 +2329,12 @@ static const ut16 RISCV_CI_TYPE_IMM_MASK = (1 << 12) | (0x1f << 2);
 		i = ((ut32)i); \
 	}
 
+#define RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, type) \
+	if (!success) { \
+		RZ_LOG_ERROR("Failed to successfully patch a %s reloc at %llx (S: %llx, A: %llx, B: %llx, P: %llx)", type, patch_addr, S, A, B, P); \
+		return; \
+	}
+
 static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs, const int bits) {
 	rz_return_if_fail(buf_patched && fs);
 
@@ -2346,13 +2352,13 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_RISCV_32: {
 		val = S + A;
 		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_32");
 		break;
 	}
 	case R_RISCV_64: {
 		val = S + A;
 		bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_64");
 		break;
 	}
 	case R_RISCV_RELATIVE:
@@ -2360,12 +2366,12 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		switch (bits) {
 		case 32: {
 			bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
-			rz_return_if_fail(success);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_RELATIVE 32");
 			break;
 		}
 		case 64: {
 			bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
-			rz_return_if_fail(success);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_RELATIVE 64");
 			break;
 		}
 		default:
@@ -2421,12 +2427,12 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		switch (bits) {
 		case 32: {
 			bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, S, big_endian);
-			rz_return_if_fail(success);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_JUMP_SLOT 32");
 			break;
 		}
 		case 64: {
 			bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, S, big_endian);
-			rz_return_if_fail(success);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_JUMP_SLOT 64");
 			break;
 		}
 		default:
@@ -2438,7 +2444,7 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_RISCV_32_PCREL: {
 		val = S + A - P;
 		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_32_PCREL");
 		break;
 	}
 
@@ -2520,78 +2526,78 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		ut64 result = ((ut64)old_val) + S + A;
 		unsigned long long addr = patch_addr;
 		bool success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD8");
 		break;
 	}
 
 	case R_RISCV_ADD16: {
 		ut16 old_val = 0;
 		bool success = rz_buf_read_ble16_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD16 [r]");
 		ut64 result = ((ut64)old_val) + S + A;
 		success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD16 [w]");
 		break;
 	}
 
 	case R_RISCV_ADD32: {
 		ut32 old_val = 0;
 		bool success = rz_buf_read_ble32_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD32 [r]");
 		ut64 result = ((ut64)old_val) + S + A;
 		success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD32 [w]");
 		break;
 	}
 
 	case R_RISCV_ADD64: {
 		ut64 old_val = 0;
 		bool success = rz_buf_read_ble64_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD64 [r]");
 		ut64 result = old_val + S + A;
 		success = rz_buf_write_ble64_at(buf_patched, patch_addr, result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD64 [w]");
 		break;
 	}
 
 	case R_RISCV_SUB8: {
 		ut8 old_val = 0;
 		bool success = rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB8 [r]");
 		ut64 result = ((ut64)old_val) - S - A;
 		unsigned long long addr = patch_addr;
 		success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB8 [w]");
 		break;
 	}
 
 	case R_RISCV_SUB16: {
 		ut16 old_val = 0;
 		bool success = rz_buf_read_ble16_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB16 [r]");
 		ut64 result = ((ut64)old_val) - S - A;
 		success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB16 [w]");
 		break;
 	}
 
 	case R_RISCV_SUB32: {
 		ut32 old_val = 0;
 		bool success = rz_buf_read_ble32_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB32 [r]");
 		ut64 result = ((ut64)old_val) - S - A;
 		success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB32 [w]");
 		break;
 	}
 
 	case R_RISCV_SUB64: {
 		ut64 old_val = 0;
 		bool success = rz_buf_read_ble64_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB64 [r]");
 		ut64 result = ((ut64)old_val) - S - A;
 		success = rz_buf_write_ble64_at(buf_patched, patch_addr, result, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB64 [w]");
 		break;
 	}
 
@@ -2599,19 +2605,19 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		val = S + A;
 		unsigned long long addr = patch_addr;
 		bool success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET8");
 		break;
 	}
 	case R_RISCV_SET16: {
 		val = S + A;
 		bool success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET16");
 		break;
 	}
 	case R_RISCV_SET32: {
 		val = S + A;
 		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET32");
 		break;
 	}
 
@@ -2619,11 +2625,11 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_RISCV_SUB6: {
 		ut8 old_val = 0;
 		bool success = rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, rel_type == R_RISCV_SET6 ? "R_RISCV_SET6 [r]" : "R_RISCV_SUB6 [r]");
 		val = S + A;
 		ut8 result = (rel_type == R_RISCV_SET6) ? val : ((old_val & 0x3F) - val);
 		success = rz_buf_write_ble8_at(buf_patched, patch_addr, (old_val & 0xC0) | (result & 0x3F), big_endian);
-		rz_return_if_fail(success);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, rel_type == R_RISCV_SET6 ? "R_RISCV_SET6 [w]" : "R_RISCV_SUB6 [w]");
 		break;
 	}
 
@@ -2673,6 +2679,8 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		return;
 	}
 }
+
+#undef RISCV_CHECK_SUCCESS_RET_IF_FAIL
 
 #undef UNHANDL
 #undef UNHANDL_DEF
