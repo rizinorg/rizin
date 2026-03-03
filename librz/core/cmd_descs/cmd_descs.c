@@ -10848,7 +10848,7 @@ static const RzCmdDescHelp cmd_debug_heap_musl_c_help = {
 
 static const RzCmdDescArg cmd_debug_heap_musl_a_args[] = {
 	{
-		.name = "context_addr",
+		.name = "meta_area_addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -10857,7 +10857,7 @@ static const RzCmdDescArg cmd_debug_heap_musl_a_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_heap_musl_a_help = {
-	.summary = "Shows all the meta_areas, or one in detail.",
+	.summary = "Shows all the meta_areas",
 	.args = cmd_debug_heap_musl_a_args,
 };
 

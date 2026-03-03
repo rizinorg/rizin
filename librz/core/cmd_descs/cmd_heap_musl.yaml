@@ -12,9 +12,9 @@ commands:
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
   - name: dmua
-    summary: Shows all the meta_areas, or one in detail.
+    summary: Shows all the meta_areas
     cname: cmd_debug_heap_musl_a
     args:
-      - name: context_addr
+      - name: meta_area_addr
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
