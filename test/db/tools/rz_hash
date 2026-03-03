@@ -62,25 +62,51 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha512: 2640b1ff9687
 EOF
 RUN
 
-NAME=rz-hash -a argon2d
+NAME=rz-hash -a blake2b -s "hello"
 FILE==
-CMDS=!rz-hash -a argon2d -s "password"
+CMDS=!rz-hash -a blake2b -s "hello"
 EXPECT=<<EOF
-string: 0x00000000-0x00000008 argon2d: 8b30da014d96e374876d0d2523c5b8445f8e2b5cb97ed68db77bddd8044a5cab185854926995593815950864b74b11f6
+string: 0x00000000-0x00000005 blake2b: e4cfa39a3d37be31c59609e807970799caa68a19bfaa15135f165085e01d41a65ba1e1b146aeb6bd0092b49eac214c103ccfa3a365954bbbe52f74a2b3620c94
 EOF
 RUN
-NAME=rz-hash -a argon2i
+
+NAME=rz-hash -a blake2s -s "hello"
 FILE==
-CMDS=!rz-hash -a argon2i -s "password"
+CMDS=!rz-hash -a blake2s -s "hello"
 EXPECT=<<EOF
-string: 0x00000000-0x00000008 argon2i: 8b30da014d96e374876d0d2523c5b84484063cf5bac2edd564ba3c3e637410a3b94ae46ff87bb0b5682e5dbea828eeb1
+string: 0x00000000-0x00000005 blake2s: 19213bacc58dee6dbde3ceb9a47cbb330b3d86f8cca8997eb00be456f140ca25
 EOF
 RUN
-NAME=rz-hash -a argon2id
+
+NAME=rz-hash -a blake2bp -s "hello"
 FILE==
-CMDS=!rz-hash -a argon2id -s "password"
+CMDS=!rz-hash -a blake2bp -s "hello"
 EXPECT=<<EOF
-string: 0x00000000-0x00000008 argon2id: 8b30da014d96e374876d0d2523c5b844bbf64c6c1a64f0975e3156404b6b73eaf25a02d6db51f177474440c2d085092a
+string: 0x00000000-0x00000005 blake2bp: 3d9b524855d3675f3ccbe8e189b3f00a2712ba7301f9b88a7e31aad4916777459953a70f9c98869bc39872591c30e6dfa5b5decbfcf977c909db9f9f7e4441d1
+EOF
+RUN
+
+NAME=rz-hash -a blake2sp -s "hello"
+FILE==
+CMDS=!rz-hash -a blake2sp -s "hello"
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2sp: 223dfe42565ddf97210b34a384860b603717d5c63c1872c9fc99f1b15de6631b
+EOF
+RUN
+
+NAME=rz-hash -a blake2xb -s "hello"
+FILE==
+CMDS=!rz-hash -a blake2xb -s "hello"
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2xb: e06286c0a7a340b49cc1c1a187ff088349d6ff51c225ca613f7d46a95f158942b7990b33c0caf9f3a1f4bede9f45d929bcfc028b348185c42040b2477b538df
+EOF
+RUN
+
+NAME=rz-hash -a blake2xs -s "hello"
+FILE==
+CMDS=!rz-hash -a blake2xs -s "hello"
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2xs: b80636fc190a0bcfd71bb107167ecc7613cc84fbf96094db27a9f67086dd7b2e
 EOF
 RUN
 
@@ -227,9 +253,8 @@ CMDS=!rz-hash -L
 EXPECT=<<EOF
 flags  algorithm      license    author
 ____h_ adler32        LGPL3      deroad                         Adler-32 checksum
-____h_ argon2d        CC0        Farhan-25                      Argon2d cryptographic hash
-____h_ argon2i        CC0        Farhan-25                      Argon2i cryptographic hash
-____h_ argon2id       CC0        Farhan-25                      Argon2id cryptographic hash
+____h_ blake2b        CC0        Samuel Neves                   blake2b cryptographic hash
+____h_ blake2s        CC0        Samuel Neves                   blake2s cryptographic hash
 ____h_ blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
 ____h_ crc15can       LGPL3      deroad                         CRC-15 CAN checksum
 ____h_ crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
