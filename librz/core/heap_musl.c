@@ -154,13 +154,12 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 add
 				RZ_LOG_ERROR("Failed to read __malloc_context\n");
 				return;
 			}
-			PRINTF_GA("__malloc_context : 0x%" PFMT64x "\n", ctx_addr);
 		}
 		if (!read_and_parse_ctx(core->io, ctx_addr, &ctx)) {
 			RZ_LOG_ERROR("Failed to read __malloc_context at 0x%" PFMT64x "\n", ctx_addr);
 			return;
 		}
-		PRINT_GA("struct malloc_context {\n");
+		PRINTF_GA("__malloc_context @ 0x%" PFMT64x " {\n", ctx_addr);
 		PRINTF_BA("  secret = 0x%" PFMT64x "\n", ctx.secret);
 		PRINTF_BA("  init_done = 0x%x\n", ctx.init_done);
 		PRINTF_BA("  mmap_counter = 0x%x\n", ctx.mmap_counter);
@@ -174,8 +173,8 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 add
 			}
 		}
 		PRINT_GA("  ]\n");
-		PRINTF_BA("  avail_meta_count = 0x%lx\n", ctx.avail_meta_count);
-		PRINTF_BA("  avail_meta_area_count = 0x%lx\n", ctx.avail_meta_area_count);
+		PRINTF_BA("  avail_meta_count = 0x%ld\n", ctx.avail_meta_count);
+		PRINTF_BA("  avail_meta_area_count = 0x%ld\n", ctx.avail_meta_area_count);
 		PRINTF_BA("  meta_alloc_shift = 0x%lx\n", ctx.meta_alloc_shift);
 		PRINTF_BA("  meta_area_head = 0x%" PFMT64x "\n", ctx.meta_area_head);
 		PRINTF_BA("  meta_area_tail = 0x%" PFMT64x "\n", ctx.meta_area_tail);
@@ -184,12 +183,73 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 add
 	}
 }
 
+void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 addr) {
+	ut64 secret = 0;
+	ut64 ctx_addr = 0;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	mallocng_ctx ctx;
+	mallocng_meta_area area;
+	mallocng_meta meta;
+	if (!has_specified_addr) {
+		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
+			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
+				RZ_LOG_ERROR("Failed to read __malloc_context\n");
+				return;
+			}
+		}
+		if (!read_and_parse_ctx(core->io, ctx_addr, &ctx)) {
+			RZ_LOG_ERROR("Failed to parse __malloc_context @ 0x%" PFMT64x "\n", ctx_addr);
+			return;
+		}
+
+		ut64 curr_meta = ctx.meta_area_head;
+		while (curr_meta) {
+			if (!read_and_parse_meta_area(core->io, curr_meta, &area)) {
+				RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+				return;
+			}
+
+			PRINTF_GA("meta_area @ 0x%" PFMT64x " {\n", curr_meta);
+			PRINTF_BA("  check = 0x%" PFMT64x "\n", area.check);
+			PRINTF_BA("  next = 0x%" PFMT64x "\n", area.next);
+			PRINT_BA("  slots = [\n");
+			for (int i = 0; i < area.nslots; i += 1) {
+				ut64 start_addr;
+				ut64 meta_addr;
+				if (!read_ptr_at(core->io, area.slots, &start_addr, 8) ||
+					!read_ptr_at(core->io, start_addr + i * sizeof(mallocng_meta), &meta_addr, 8) ||
+					!read_and_parse_meta(core->io, meta_addr, &meta)) {
+					RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+					return;
+				}
+
+				if (meta_addr) {
+					PRINTF_BA("    slot %d: 0x%" PFMT64x " (size %d)\n", i,
+						meta_addr, UNIT * ng_size_classes[meta.sizeclass] - IB);
+				}
+			}
+			PRINT_BA("  ]\n");
+			curr_meta = area.next;
+		}
+	}
+}
+
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr) {
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
-		RZ_LOG_ERROR("This command requires musl ver > 1.2.4\n");
+		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
 	musl_mallocng_print_context(core, has_specified_addr, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr) {
+	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
+		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	musl_mallocng_print_meta_areas(core, has_specified_addr, addr);
 	return RZ_CMD_STATUS_OK;
 }

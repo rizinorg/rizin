@@ -517,6 +517,7 @@ static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[2];
+static const RzCmdDescArg cmd_debug_heap_musl_a_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
@@ -10841,8 +10842,23 @@ static const RzCmdDescArg cmd_debug_heap_musl_c_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_heap_musl_c_help = {
-	.summary = "Shows the global malloc context, requires musl ver > 1.2.4",
+	.summary = "Shows the global malloc context",
 	.args = cmd_debug_heap_musl_c_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_musl_a_args[] = {
+	{
+		.name = "context_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_musl_a_help = {
+	.summary = "Shows all the meta_areas, or one in detail.",
+	.args = cmd_debug_heap_musl_a_args,
 };
 
 static const RzCmdDescHelp dmx_help = {
@@ -23451,6 +23467,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(dmu_cd);
 	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmuc", rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
 	rz_warn_if_fail(cmd_debug_heap_musl_c_cd);
+
+	RzCmdDesc *cmd_debug_heap_musl_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmua", rz_cmd_debug_heap_musl_a_handler, &cmd_debug_heap_musl_a_help);
+	rz_warn_if_fail(cmd_debug_heap_musl_a_cd);
 
 	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);
 	rz_warn_if_fail(dmx_cd);

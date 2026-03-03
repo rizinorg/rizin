@@ -5,8 +5,15 @@
 name: cmd_heap_musl
 commands:
   - name: dmuc
-    summary: Shows the global malloc context, requires musl ver > 1.2.4
+    summary: Shows the global malloc context
     cname: cmd_debug_heap_musl_c
+    args:
+      - name: context_addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: dmua
+    summary: Shows all the meta_areas, or one in detail.
+    cname: cmd_debug_heap_musl_a
     args:
       - name: context_addr
         type: RZ_CMD_ARG_TYPE_RZNUM

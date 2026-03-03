@@ -53,5 +53,6 @@
 #define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
 
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr);
 
 #endif // RZ_HEAP_MUSL_MALLOCNG_H
