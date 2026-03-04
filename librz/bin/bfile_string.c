@@ -23,6 +23,8 @@ typedef struct shared_data_t {
 	size_t min_str_length;
 	bool check_ascii_freq;
 	bool prefer_big_endian;
+	RzCodePoint *user_unprintable;
+	size_t user_unprintable_count;
 } SharedData;
 
 typedef struct search_thread_data_t {
@@ -233,6 +235,8 @@ static RzList /*<RzDetectedString *>*/ *string_scan_range(SharedData *shared, co
 		.min_str_length = shared->min_str_length,
 		.prefer_big_endian = shared->prefer_big_endian,
 		.check_ascii_freq = shared->check_ascii_freq,
+		.user_unprintable = shared->user_unprintable,
+		.user_unprintable_count = shared->user_unprintable_count,
 	};
 
 	ut8 *buf = calloc(interval_size, 1);
@@ -462,6 +466,8 @@ RZ_API void rz_bin_string_search_opt_init(RZ_NONNULL RzBinStringSearchOpt *opt) 
 	opt->raw_alignment = RZ_BIN_STRING_SEARCH_RAW_FILE_ALIGNMENT;
 	opt->string_encoding = RZ_STRING_ENC_GUESS;
 	opt->check_ascii_freq = RZ_BIN_STRING_SEARCH_CHECK_ASCII_FREQ;
+	opt->user_unprintable = NULL;
+	opt->user_unprintable_count = 0;
 	opt->mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
 }
 
@@ -656,6 +662,8 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 		.min_str_length = opt->min_length,
 		.check_ascii_freq = opt->check_ascii_freq,
 		.prefer_big_endian = prefer_big_endian,
+		.user_unprintable = opt->user_unprintable,
+		.user_unprintable_count = opt->user_unprintable_count,
 	};
 
 	if (shared.min_str_length < 1) {

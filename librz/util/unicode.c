@@ -1028,6 +1028,15 @@ RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c) {
 		!rz_unicode_code_point_is_private(c);
 }
 
+RZ_API bool rz_unicode_code_point_is_printable_user(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count) {
+	for (size_t i = 0; user_unprintable && i < user_unprintable_count; i++) {
+		if (user_unprintable[i] == c) {
+			return false;
+		}
+	}
+	return rz_unicode_code_point_is_printable(c);
+}
+
 static RzUnicodeCaseMapping bin_search_case_mapping(const RzUnicodeCaseMap map, size_t n, RzCodePoint key) {
 	size_t lo = 0, hi = n;
 	while (lo < hi) {

@@ -51,6 +51,7 @@ typedef struct rz_unicode_case_mapping_t {
 typedef RzUnicodeCaseMapping RzUnicodeCaseMap[];
 
 RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c);
+RZ_API bool rz_unicode_code_point_is_printable_user(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count);
 RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_control(const RzCodePoint c);

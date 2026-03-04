@@ -2,6 +2,7 @@
 #define RZ_STR_SEARCH_H
 
 #include <rz_util/rz_str.h>
+#include <rz_util/rz_unicode.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_buf.h>
 #include <rz_util/rz_regex.h>
@@ -20,6 +21,7 @@ typedef struct {
 	ut64 addr; ///< Address/offset of the string in the RzBuffer
 	ut32 size; ///< Size of buffer containing the string in bytes
 	ut32 length; ///< Length of string in chars
+	ut32 grapheme_length; ///< Length of string in grapheme clusters
 	RzStrEnc encoding; ///< String encoding in memory.
 	size_t alignment; ///< The address alignment a matched string must have. If search.align is set, both must match.
 	/**
@@ -41,6 +43,8 @@ typedef struct {
 	size_t min_str_length; ///< Minimum string length
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
+	RzCodePoint *user_unprintable; ///< User-defined non-printable code points
+	size_t user_unprintable_count; ///< Number of user-defined non-printable code points
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);

@@ -4182,6 +4182,15 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
  * \param  length The real string length.
  * \return The stringified raw buffer
  */
+static inline bool is_user_defined_unprintable(const RzStrStringifyOpt *option, RzCodePoint cp) {
+	for (size_t i = 0; option && option->user_unprintable && i < option->user_unprintable_count; i++) {
+		if (option->user_unprintable[i] == cp) {
+			return true;
+		}
+	}
+	return false;
+}
+
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
 	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
 	if (option->length < 1) {
@@ -4323,7 +4332,8 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl) || (rz_unicode_code_point_is_printable(code_point))) {
+			} else if ((code_point == '\n' && !option->escape_nl && !is_user_defined_unprintable(option, code_point)) ||
+				rz_unicode_code_point_is_printable_user(code_point, option->user_unprintable, option->user_unprintable_count)) {
 				char tmp[5] = { 0 };
 				rz_utf8_encode((ut8 *)tmp, code_point);
 				rz_strbuf_appendf(&sb, "%s", tmp);

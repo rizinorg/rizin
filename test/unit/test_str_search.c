@@ -203,6 +203,57 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_user_unprintable(void) {
+	// ASCII/UTF-8 string: "hello\tworld\ntest\0"
+	// With \t (0x09) and \n (0x0a) as user-defined non-printable,
+	// the scanner should produce: "hello", "world", "test"
+	static const unsigned char str[] = "hello\tworld\ntest";
+	static RzCodePoint user_unprintable[] = { 0x09, 0x0a };
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	opt.user_unprintable = user_unprintable;
+	opt.user_unprintable_count = RZ_ARRAY_SIZE(user_unprintable);
+	opt.min_str_length = 4;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_8BIT);
+	mu_assert_eq(n, 3, "rz_scan_strings user_unprintable, number of strings");
+
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	RzDetectedString *s2 = rz_list_get_n(str_list, 2);
+	mu_assert_streq(s0->string, "hello", "rz_scan_strings user_unprintable, first string");
+	mu_assert_streq(s1->string, "world", "rz_scan_strings user_unprintable, second string");
+	mu_assert_streq(s2->string, "test", "rz_scan_strings user_unprintable, third string");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	mu_end;
+}
+
+bool test_rz_scan_strings_grapheme_length(void) {
+	static const unsigned char str[] = "e\xcc\x81x\x00";
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	opt.min_str_length = 1;
+	opt.check_ascii_freq = false;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
+	mu_assert_eq(n, 1, "rz_scan_strings grapheme length, number of strings");
+
+	RzDetectedString *s = rz_list_get_n(str_list, 0);
+	mu_assert_streq(s->string, "e\xcc\x81x", "rz_scan_strings grapheme length, string");
+	mu_assert_eq(s->length, 3, "rz_scan_strings grapheme length, code point length");
+	mu_assert_eq(s->grapheme_length, 2, "rz_scan_strings grapheme length, grapheme length");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+
+	mu_end;
+}
+
 bool test_rz_scan_strings_detect_utf16_be(void) {
 	static const unsigned char str[] =
 		"\xff\xff\xff\x00\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
@@ -455,6 +506,8 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
+	mu_run_test(test_rz_scan_strings_user_unprintable);
+	mu_run_test(test_rz_scan_strings_grapheme_length);
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
