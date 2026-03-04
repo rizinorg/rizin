@@ -438,12 +438,12 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 	ctx->overlapped = false;
 
 	memset(&ctx->op, 0, sizeof(ctx->op));
-	ctx->oplen, ctx->idx = 0;
+	ctx->oplen = 0, ctx->idx = 0;
 	ctx->varset = false;
 	memset(&ctx->op, 0, sizeof(ctx->op));
 
 	ctx->read_ahead_cache.cache_addr = UT64_MAX; // invalidate the cache
-	ctx->tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
+	ctx->tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip"; // ???
 	ctx->arch_destroys_dst = does_arch_destroys_dst(ctx->analysis->cur->arch);
 	if (ctx->analysis->cur->arch) {
 		ctx->selected_architecture.is_arm = !strncmp(ctx->analysis->cur->arch, "arm", 3);
@@ -603,7 +603,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 		rz_analysis_op_fini(&ctx->op);
 		rz_analysis_op_init(&ctx->op);
 		if ((ctx->oplen = rz_analysis_op(ctx->analysis, &ctx->op, at, ctx->buf, bytes_read, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) < 1) {
-			RZ_LOG_DEBUG("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, analysis->bits);
+			RZ_LOG_DEBUG("Invalid instruction at 0x%" PFMT64x " with %d bits\n", at, ctx->analysis->bits);
 			// cleanup_basic_block (RZ_ANALYSIS_RET_ERROR);
 			// RET_END causes infinite loops somehow
 			ctx->ret = RZ_ANALYSIS_RET_END; // ???
@@ -721,7 +721,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			RZ_LOG_DEBUG("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at - oplen, bb->size);
+			RZ_LOG_DEBUG("Enter branch delay at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", at - ctx->oplen, ctx->bb->size);
 			ctx->delay.idx = ctx->idx - ctx->oplen;
 			ctx->delay.cnt = ctx->op.delay;
 			ctx->delay.pending = 1; // we need this in case the actual idx is zero...
@@ -744,7 +744,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 				// the branch delay.
 			}
 		} else if (ctx->op.delay > 0 && ctx->delay.pending) {
-			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n" ctx->, addr + idx - oplen, bb->size);
+			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n" ctx->addr + ctx->idx - ctx->oplen, ctx->bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
@@ -752,7 +752,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 				rz_analysis_block_set_size(ctx->bb, (ut64)ctx->addrbytes * (ut64)ctx->delay.after);
 				ctx->fcn->ninstr--;
 				RZ_LOG_DEBUG("Correct for branch delay @ 0x%08" PFMT64x " bb.addr=0x%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
-					ctx->addr + ctx->idx - ctx->oplen, ctx->bb->addr, ctx->bb->size, rz_analysis_function_linear_size(fcn));
+					ctx->addr + ctx->idx - ctx->oplen, ctx->bb->addr, ctx->bb->size, rz_analysis_function_linear_size(ctx->fcn));
 			}
 			// Next time, we go to the opcode after the delay count
 			// Take care not to use this below, use delay.un_idx instead ...
@@ -1173,7 +1173,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 					.tasks = tasks
 				};
 				ctx->ret = rz_analysis_walkthrough_arm_thumb1_case_uqi_table(ctx->analysis, ctx->fcn, ctx->bb, &params);
-				cleanup_basic_block(RZ_ANALYSIS_RET_BRANCH); // ???
+				return RZ_ANALYSIS_RET_BRANCH; // ???
 			}
 			break;
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
@@ -1355,7 +1355,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 			if (ctx->op.cond == RZ_TYPE_COND_AL) {
 				RZ_LOG_DEBUG("RET 0x%08" PFMT64x ". overlap=%s %" PFMT64u " %" PFMT64u "\n",
 					ctx->addr + ctx->delay.un_idx - ctx->oplen, rz_str_bool(ctx->overlapped),
-					ctx->bb->size, rz_analysis_function_linear_size(fcn));
+					ctx->bb->size, rz_analysis_function_linear_size(ctx->fcn));
 				ctx->ret = RZ_ANALYSIS_RET_END;
 				return ctx->ret;
 			}
