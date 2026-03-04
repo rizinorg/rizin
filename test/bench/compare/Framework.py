@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from datapoints.Bench import DPDuration
+from stats.DPDuration import DPDuration
 from Binary import Binary, Symbol
 
 FRAMEWORK_RIZIN = "rz"

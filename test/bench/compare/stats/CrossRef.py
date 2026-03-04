@@ -1,4 +1,4 @@
-from datapoints.Data import Addr
+from stats.Data import Addr
 
 from enum import Enum
 

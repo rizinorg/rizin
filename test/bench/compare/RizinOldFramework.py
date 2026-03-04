@@ -1,8 +1,8 @@
 from Binary import Binary
 from Framework import FRAMEWORK_RIZIN_OLD_ANALYSIS, Framework
-from datapoints.Symbol import Symbol, SymbolType
-from datapoints.Bench import DPDuration, DPTypeDuration
-from datapoints.Data import Addr
+from stats.Symbol import Symbol, SymbolType
+from stats.DPDuration import DPDuration, DPTypeDuration
+from stats.Data import Addr
 
 import logging as log
 

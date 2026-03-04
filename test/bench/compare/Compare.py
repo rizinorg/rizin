@@ -12,7 +12,7 @@ from Framework import (
     Framework,
     init_framework_by_name,
 )
-from datapoints.Bench import Stats
+from stats.Stats import Stats
 
 
 class Comparator:
@@ -20,7 +20,7 @@ class Comparator:
 
     def __init__(self, bin_path: Path, framework_names: list[str]):
         # Statistics for a Framework + Binary combination
-        self.stats: dict[tuple[Framework, Binary], Stats] = dict()
+        self.stats: Stats = Stats()
         self.bins: list[Binary] = list()
         self.framework_names: list[str] = framework_names
         self.frameworks: dict[str, Framework] = dict()

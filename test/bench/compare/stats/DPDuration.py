@@ -27,16 +27,3 @@ class DPDuration:
 
     def get_delta_ms(self) -> int:
         return self.get_delta_ns() / 1000
-
-
-class Stats:
-    """
-    A statistics object with a collection of data points.
-    """
-
-    def __init__(self):
-        # The duration data points for a given library.
-        self.duration_dps: list[DPDuration] = list()
-
-    def add_dps_duration(self, dps: list[DPDuration]):
-        self.duration_dps += dps

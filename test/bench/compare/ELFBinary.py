@@ -1,6 +1,6 @@
 from Binary import Binary
-from datapoints.Symbol import Symbol, SymbolType
-from datapoints.Data import Addr
+from stats.Symbol import Symbol, SymbolType
+from stats.Data import Addr
 
 from pathlib import Path
 from elftools.elf.elffile import ELFFile

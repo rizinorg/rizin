@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from elftools.elf.elffile import ELFFile
 
-from datapoints.Symbol import Symbol
+from stats.Symbol import Symbol
 
 
 class Binary(ABC):
