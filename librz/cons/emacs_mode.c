@@ -71,10 +71,10 @@ static RZ_OWN RZ_NULLABLE char *unicode_mapping_to_str(RZ_NONNULL RzUnicodeCaseM
  * \brief Find index of the first (unicode) character in the following word in \p buffer.
  */
 static ssize_t emacs_mode_find_word_start(RZ_NONNULL const RzCodePoints *buffer, ssize_t start) {
-	rz_return_val_if_fail(buffer && buffer->len, -1);
-	while (start < buffer->len) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[start];
-		if (is_word_constituent(cp)) {
+	rz_return_val_if_fail(buffer && rz_vector_len(buffer), -1);
+	while (start < rz_vector_len(buffer)) {
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, start);
+		if (is_word_constituent(*cp)) {
 			break;
 		}
 		++start;
@@ -86,11 +86,11 @@ static ssize_t emacs_mode_find_word_start(RZ_NONNULL const RzCodePoints *buffer,
  * \brief Find index of the last (unicode) character in the following word in \p buffer.
  */
 static ssize_t emacs_mode_find_word_end(RZ_NONNULL const RzCodePoints *buffer, ssize_t start) {
-	rz_return_val_if_fail(buffer && buffer->len, -1);
-	ssize_t end = RZ_MIN(start + 1, buffer->len);
-	while (end < buffer->len) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[end];
-		if (!is_word_constituent(cp)) {
+	rz_return_val_if_fail(buffer && rz_vector_len(buffer), -1);
+	ssize_t end = RZ_MIN(start + 1, rz_vector_len(buffer));
+	while (end < rz_vector_len(buffer)) {
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, end);
+		if (!is_word_constituent(*cp)) {
 			break;
 		}
 		++end;
@@ -107,11 +107,11 @@ static ssize_t emacs_mode_find_word_end(RZ_NONNULL const RzCodePoints *buffer, s
  * \return ssize_t -1 in case of failure.
  */
 static ssize_t emacs_mode_find_byte_index(RZ_NONNULL const RzCodePoints *buffer, size_t cp_index) {
-	rz_return_val_if_fail(cp_index <= buffer->len, -1);
+	rz_return_val_if_fail(cp_index <= rz_vector_len(buffer), -1);
 	ssize_t bytei = 0;
 	for (size_t i = 0; i < cp_index; ++i) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[i];
-		const size_t len = rz_utf8_byte_length(cp);
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, i);
+		const size_t len = rz_utf8_byte_length(*cp);
 		bytei += len ? len : 1;
 	}
 	return bytei;
@@ -128,24 +128,24 @@ static ssize_t emacs_mode_find_byte_index(RZ_NONNULL const RzCodePoints *buffer,
  * \return Capitalized word as UTF-8 encoded (null-terminated) string.
  */
 static RZ_OWN RZ_NULLABLE char *emacs_mode_capitalize(RZ_NONNULL const RzCodePoints *buffer, ssize_t start, ssize_t end, size_t utf8_len) {
-	rz_return_val_if_fail(buffer && buffer->len > 0 && utf8_len > 0 && start <= end && end <= buffer->len, NULL);
+	rz_return_val_if_fail(buffer && rz_vector_len(buffer) > 0 && utf8_len > 0 && start <= end && end <= rz_vector_len(buffer), NULL);
 
 	RzUnicodeCaseMappings *map = rz_vector_new(sizeof(RzUnicodeCaseMapping), NULL, NULL);
 	ssize_t i = start;
 	for (; i < end; ++i) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[i];
-		if (iswalpha((wint_t)cp)) {
-			RzUnicodeCaseMapping um = rz_unicode_code_point_find_upper(cp);
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, i);
+		if (iswalpha((wint_t)(*cp))) {
+			RzUnicodeCaseMapping um = rz_unicode_code_point_find_upper(*cp);
 			rz_vector_push(map, &um);
 			break;
 		} else {
-			RzUnicodeCaseMapping um = rz_unicode_case_mapping_default(cp);
+			RzUnicodeCaseMapping um = rz_unicode_case_mapping_default(*cp);
 			rz_vector_push(map, &um);
 		}
 	}
 	for (++i; i < end; ++i) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[i];
-		RzUnicodeCaseMapping um = rz_unicode_code_point_find_lower(cp);
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, i);
+		RzUnicodeCaseMapping um = rz_unicode_code_point_find_lower(*cp);
 		rz_vector_push(map, &um);
 	}
 
@@ -165,12 +165,12 @@ static RZ_OWN RZ_NULLABLE char *emacs_mode_capitalize(RZ_NONNULL const RzCodePoi
  * \return Lowercase word as UTF-8 encoded (null-terminated) string.
  */
 static char *emacs_mode_tolower(RZ_NONNULL const RzCodePoints *buffer, ssize_t start, ssize_t end, size_t utf8_len) {
-	rz_return_val_if_fail(buffer && buffer->len > 0 && utf8_len > 0 && start <= end && end <= buffer->len, NULL);
+	rz_return_val_if_fail(buffer && rz_vector_len(buffer) > 0 && utf8_len > 0 && start <= end && end <= rz_vector_len(buffer), NULL);
 
 	RzVector *map = rz_vector_new(sizeof(RzUnicodeCaseMapping), NULL, NULL);
 	for (ssize_t i = start; i < end; ++i) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[i];
-		RzUnicodeCaseMapping um = rz_unicode_code_point_find_lower(cp);
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, i);
+		RzUnicodeCaseMapping um = rz_unicode_code_point_find_lower(*cp);
 		rz_vector_push(map, &um);
 	}
 
@@ -190,12 +190,12 @@ static char *emacs_mode_tolower(RZ_NONNULL const RzCodePoints *buffer, ssize_t s
  * \return Uppercase word as UTF-8 encoded (null-terminated) string.
  */
 static RZ_OWN RZ_NULLABLE char *emacs_mode_toupper(RZ_NONNULL const RzCodePoints *buffer, ssize_t start, ssize_t end, size_t utf8_len) {
-	rz_return_val_if_fail(buffer && buffer->len > 0 && utf8_len > 0 && start <= end && end <= buffer->len, NULL);
+	rz_return_val_if_fail(buffer && rz_vector_len(buffer) > 0 && utf8_len > 0 && start <= end && end <= rz_vector_len(buffer), NULL);
 
 	RzVector *map = rz_vector_new(sizeof(RzUnicodeCaseMapping), NULL, NULL);
 	for (ssize_t i = start; i < end; ++i) {
-		const RzCodePoint cp = ((RzCodePoint *)buffer->a)[i];
-		RzUnicodeCaseMapping um = rz_unicode_code_point_find_upper(cp);
+		const RzCodePoint *cp = rz_vector_index_ptr(buffer, i);
+		RzUnicodeCaseMapping um = rz_unicode_code_point_find_upper(*cp);
 		rz_vector_push(map, &um);
 	}
 
@@ -277,7 +277,7 @@ RZ_IPI bool rz_emacs_mode_modify(RZ_NONNULL RzEmacsModeModifyOpts *opts, RZ_NONN
 	RzCodePoints *cpbuffer = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
 	const ut8 *line_buf = (ut8 *)line->buffer.data;
 	const bool decoded = utf8_decode_buf(line_buf, line->buffer.length, cpbuffer);
-	if (!decoded || cpbuffer->len < 1) {
+	if (!decoded || rz_vector_len(cpbuffer) < 1) {
 		goto cleanup_and_exit;
 	}
 
