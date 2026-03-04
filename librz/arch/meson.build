@@ -424,6 +424,7 @@ arch_common_sources = [
   'cycles.c',
   'data.c',
   'dwarf_process.c',
+  'basic_block_analysis.c',
   'fcn.c',
   'filter.c',
   'function.c',
