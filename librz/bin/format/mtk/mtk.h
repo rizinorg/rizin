@@ -97,6 +97,8 @@ RZ_IPI RzBinInfo *mtk_info(RzBinFile *bf);
 RZ_IPI ut64 mtk_baddr(RzBinFile *bf);
 RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf);
 RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf);
+RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector /*<RzBinMap *>*/ *ret);
+RZ_IPI RzPVector /*<RzBinMap *>*/ *mtk_maps(RzBinFile *bf);
 RZ_IPI RzStructuredData *mtk_structure(RzBinFile *bf);
 
 #endif

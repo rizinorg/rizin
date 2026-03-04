@@ -484,23 +484,21 @@ RZ_IPI RzPVector /*<RzBinMap *>*/ *md1img_maps(RzBinFile *bf) {
 	// They remain accessible as virtual files for raw data viewing.
 	if (md1->md1rom_idx >= 0) {
 		Md1imgSection *sec = rz_vector_index_ptr(md1->sections, md1->md1rom_idx);
-		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (map) {
-			map->name = rz_str_dup(sec->name);
-			map->vfile_name = rz_str_dup(sec->name);
-			if (md1->mtk) {
-				map->paddr = md1->gfh_offset + md1->mtk->code_offset;
-				map->psize = md1->mtk->code_size;
-				map->vaddr = MTK_MODEM_BADDR;
-				map->vsize = md1->mtk->code_size;
-			} else {
+		if (md1->mtk) {
+			ut64 paddr = md1->gfh_offset + md1->mtk->code_offset;
+			mtk_append_maps(md1->mtk, paddr, sec->name, ret);
+		} else {
+			RzBinMap *map = RZ_NEW0(RzBinMap);
+			if (map) {
+				map->name = rz_str_dup(sec->name);
+				map->vfile_name = rz_str_dup(sec->name);
 				map->paddr = 0;
 				map->psize = sec->dsize;
 				map->vaddr = sec->maddr;
 				map->vsize = sec->dsize;
+				map->perm = RZ_PERM_RX;
+				rz_pvector_push(ret, map);
 			}
-			map->perm = RZ_PERM_RX;
-			rz_pvector_push(ret, map);
 		}
 	}
 
@@ -558,11 +556,16 @@ RZ_IPI RzPVector /*<RzBinSymbol *>*/ *md1img_symbols(RzBinFile *bf) {
 		sym->size = dbg->size;
 		sym->type = RZ_BIN_TYPE_FUNC_STR;
 
-		// Compute paddr for symbols within [MTK_MODEM_BADDR, MTK_MODEM_BADDR + code_size).
+		// Compute paddr for symbols within mapped regions (kseg0 or kuseg).
 		if (md1->mtk) {
-			ut64 end = MTK_MODEM_BADDR + md1->mtk->code_size;
-			if (dbg->addr >= MTK_MODEM_BADDR && dbg->addr < end) {
-				sym->paddr = md1->gfh_offset + md1->mtk->code_offset + (dbg->addr - MTK_MODEM_BADDR);
+			ut64 code_paddr = md1->gfh_offset + md1->mtk->code_offset;
+			ut64 kseg0_end = MTK_MODEM_BADDR + md1->mtk->code_size;
+			ut64 kuseg_base = md1->mtk->file_info.load_addr + md1->mtk->code_offset;
+			ut64 kuseg_end = kuseg_base + md1->mtk->code_size;
+			if (dbg->addr >= MTK_MODEM_BADDR && dbg->addr < kseg0_end) {
+				sym->paddr = code_paddr + (dbg->addr - MTK_MODEM_BADDR);
+			} else if (dbg->addr >= kuseg_base && dbg->addr < kuseg_end) {
+				sym->paddr = code_paddr + (dbg->addr - kuseg_base);
 			}
 		}
 

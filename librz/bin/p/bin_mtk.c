@@ -14,7 +14,7 @@ RzBinPlugin rz_bin_plugin_mtk = {
 	.baddr = &mtk_baddr,
 	.entries = &mtk_entries,
 	.sections = &mtk_sections,
-	.maps = &rz_bin_maps_of_file_sections,
+	.maps = &mtk_maps,
 	.info = &mtk_info,
 	.bin_structure = &mtk_structure,
 };

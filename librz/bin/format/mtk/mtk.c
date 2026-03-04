@@ -227,6 +227,57 @@ RZ_IPI RzPVector /*<RzBinAddr *>*/ *mtk_entries(RzBinFile *bf) {
 	return ret;
 }
 
+RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector /*<RzBinMap *>*/ *ret) {
+	rz_return_val_if_fail(mtk && ret, false);
+	if (mtk->code_size == 0) {
+		return true;
+	}
+
+	// kseg0 map: main code at runtime virtual address
+	RzBinMap *kseg0 = RZ_NEW0(RzBinMap);
+	if (!kseg0) {
+		return false;
+	}
+	kseg0->name = name ? rz_str_dup(name) : rz_str_dup("code");
+	kseg0->vfile_name = name ? rz_str_dup(name) : NULL;
+	kseg0->paddr = paddr;
+	kseg0->psize = mtk->code_size;
+	kseg0->vaddr = MTK_MODEM_BADDR;
+	kseg0->vsize = mtk->code_size;
+	kseg0->perm = RZ_PERM_RX;
+	rz_pvector_push(ret, kseg0);
+
+	// kuseg map: same code at physical addresses (ERL=1 identity mapping).
+	// The boot code uses kuseg addresses before clearing ERL in Status.
+	RzBinMap *kuseg = RZ_NEW0(RzBinMap);
+	if (!kuseg) {
+		return false;
+	}
+	kuseg->name = name ? rz_str_newf("%s.kuseg", name) : rz_str_dup("code.kuseg");
+	kuseg->vfile_name = name ? rz_str_dup(name) : NULL;
+	kuseg->paddr = paddr;
+	kuseg->psize = mtk->code_size;
+	kuseg->vaddr = (ut64)mtk->file_info.load_addr + mtk->code_offset;
+	kuseg->vsize = mtk->code_size;
+	kuseg->perm = RZ_PERM_RX;
+	rz_pvector_push(ret, kuseg);
+
+	return true;
+}
+
+RZ_IPI RzPVector /*<RzBinMap *>*/ *mtk_maps(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	MtkObj *mtk = bf->o->bin_obj;
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	mtk_append_maps(mtk, mtk->code_offset, NULL, ret);
+	return ret;
+}
+
 RZ_IPI RzPVector /*<RzBinSection *>*/ *mtk_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
