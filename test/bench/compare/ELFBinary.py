@@ -43,9 +43,9 @@ class ELFBinary(Binary):
         self._load_elf_symbols()
         self._add_dwarf_symbols_data()
         self._clean_up_symbols()
-        log.debug("Symbols added")
-        for sym in self.symbols.values():
-            log.debug(f"\t{sym}")
+        # log.debug("Symbols added")
+        # for sym in self.symbols.values():
+        #     log.debug(f"\t{sym}")
 
     def _load_elf_symbols(self):
         """

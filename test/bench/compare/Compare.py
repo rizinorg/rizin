@@ -11,12 +11,15 @@ from Framework import (
     Framework,
     init_framework_by_name,
 )
+from datapoints.Bench import Stats
 
 
 class Comparator:
     MAX_BINARIES = 10
 
     def __init__(self, bin_path: Path, framework_names: list[str]):
+        # Statistics for a Framework + Binary combination
+        self.stats: dict[tuple[Framework, Binary], Stats] = dict()
         self.bins: list[Binary] = list()
         self.framework_names: list[str] = framework_names
         self.frameworks: dict[str, Framework] = dict()
@@ -52,8 +55,14 @@ class Comparator:
             self.frameworks[fname] = init_framework_by_name(fname)
             log.info(f"Initialized {fname}")
 
-    def analyze_all():
-        pass
+    def analyze_all(self):
+        for fw_name, fw in self.frameworks.items():
+            for bin in self.bins:
+                stats = Stats()
+                log.debug(f"Analyze '{bin.path.name}' with {fw_name}")
+                dps = fw.auto_analyze_bin(bin)
+                stats.add_dps_duration(dps)
+                self.stats[(fw, bin)] = stats
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,3 +91,4 @@ if __name__ == "__main__":
     args = parse_args()
     log.basicConfig(level=log.DEBUG if args.verbose else log.INFO)
     comparator = Comparator(args.bin_path, args.frameworks)
+    comparator.analyze_all()
