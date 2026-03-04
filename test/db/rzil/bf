@@ -92,11 +92,11 @@ EXPECT=<<EOF
          |  var: ptr  |
          `------------'
 -- unicode
-0x0 (ꜱ⁰ptrꜱ((ʟ⁰ptr)+(ʙ⁸0x1)))
-0x1 (ꜱ⁰ptrꜱ((ʟ⁰ptr)+(ʙ⁸0x1)))
-0x2 (ꜱ⁰ptrꜱ((ʟ⁰ptr)+(ʙ⁸0x1)))
-0x3 (ꜱ⁰ptrꜱ((ʟ⁰ptr)+(ʙ⁸0x1)))
-0x4 (ꜱ⁰ptrꜱ((ʟ⁰ptr)+(ʙ⁸0x1)))
+0x0 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
+0x1 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
+0x2 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
+0x3 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
+0x4 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
 EOF
 RUN
 

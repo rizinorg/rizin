@@ -8,27 +8,104 @@ static void il_op_effect_string_resolve(const RzILOpEffect *op, RzStrBuf *sb);
 
 static char *superscript_digits[10] = { "⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹" };
 
-typedef enum rz_il_unicode_colorify_state_t {
-	RZ_IL_COLORIFY_STATE_DEFAULT,
-	RZ_IL_COLORIFY_STATE_VARNAME,
-	RZ_IL_COLORIFY_STATE_NUMBER,
-	RZ_IL_COLORIFY_STATE_IL_OP
-} RzILUnicodeColorifyState;
+#define UCD_ITE          "↠"
+#define UCD_LET          "="
+#define UCD_BOOL_FALSE   "⊥"
+#define UCD_BOOL_TRUE    "⊤"
+#define UCD_BOOL_INV     "!"
+#define UCD_BOOL_AND     "&"
+#define UCD_BOOL_OR      "|"
+#define UCD_BOOL_XOR     "^"
+#define UCD_BITV         "ʙ"
+#define UCD_MSB          "↑"
+#define UCD_LSB          "↓"
+#define UCD_IS_ZERO      "≡ 0"
+#define UCD_NEG          "−"
+#define UCD_LOGNOT       "~"
+#define UCD_ADD          "+"
+#define UCD_SUB          "-"
+#define UCD_MUL          "*"
+#define UCD_DIV          "/"
+#define UCD_SDIV         "/⁺"
+#define UCD_MOD          "%"
+#define UCD_SMOD         "%⁺"
+#define UCD_LOGAND       "∧"
+#define UCD_LOGOR        "∨"
+#define UCD_LOGXOR       "⊕"
+#define UCD_SHIFTR       "≫"
+#define UCD_SHIFTL       "≪"
+#define UCD_EQ           "≡"
+#define UCD_SLE          "≦⁺"
+#define UCD_ULE          "≦"
+#define UCD_CAST         "≈"
+#define UCD_APPEND       "⊚"
+#define UCD_FLOAT        "ꜰ"
+#define UCD_FBITS        "ꜰʙ"
+#define UCD_IS_FINITE    "< ∞"
+#define UCD_IS_NAN       "≡ ɴ"
+#define UCD_IS_INF       "≡ ∞"
+#define UCD_IS_FZERO     "≡ 0"
+#define UCD_IS_FNEG      "< 0"
+#define UCD_IS_FPOS      "> 0"
+#define UCD_FNEG         "−"
+#define UCD_FABS         "‖"
+#define UCD_FCAST_INT    "ꜰ≈"
+#define UCD_FCAST_SINT   "ꜰ≈⁺"
+#define UCD_FCAST_FLOAT  "ꜰ≈ꜰ"
+#define UCD_FCAST_SFLOAT "ꜰ≈ꜰ⁺"
+#define UCD_FCONVERT     "⩭"
+#define UCD_FSQRT        "²√"
+#define UCD_FRSQRT       "¹/√"
+#define UCD_FROUND       "⭂"
+#define UCD_FREQUAL      "ꜰ≡"
+#define UCD_FSUCC        "⌊"
+#define UCD_FPRED        "⌋"
+#define UCD_FORDER       "<"
+#define UCD_FEXCEPT      "ᴇ"
+#define UCD_FADD         "+"
+#define UCD_FSUB         "-"
+#define UCD_FMUL         "*"
+#define UCD_FDIV         "/"
+#define UCD_FMOD         "ꜰ%"
+#define UCD_FHYPOT       "∠"
+#define UCD_FMAD         "ᴍᴀ"
+#define UCD_FPOW         "˰"
+#define UCD_FPOWN        "˰ⁿ"
+#define UCD_FROOTN       "ⁿ√"
+#define UCD_FCOMPOUND    "∪"
+#define UCD_LOAD         "ʟ"
+#define UCD_LOADW        "ʟ"
+#define UCD_STORE        "ꜱ"
+#define UCD_STOREW       "ŝ"
+#define UCD_NOP          "∅"
+#define UCD_EMPTY        "{}"
+#define UCD_SET          "←"
+#define UCD_JMP          "↷"
+#define UCD_GOTO         "@"
+#define UCD_REPEAT       "⟳"
+#define UCD_BRANCH       "⅄"
+#define UCD_UNK          "?"
 
 #define il_op_param_0(sym) \
 	rz_strbuf_append(sb, sym);
 
 #define il_op_param_1(sym, opx, sort0, v0) \
 	do { \
-		rz_strbuf_append(sb, sym); \
+		rz_strbuf_append(sb, sym " "); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
+	} while (0)
+
+#define il_op_param_1_rtl(sym, opx, sort0, v0) \
+	do { \
+		il_op_##sort0##_string_resolve(opx.v0, sb); \
+		rz_strbuf_append(sb, " " sym); \
 	} while (0)
 
 #define il_op_param_2(sym, opx, sort0, v0, sort1, v1) \
 	do { \
 		rz_strbuf_append(sb, "("); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
-		rz_strbuf_append(sb, sym); \
+		rz_strbuf_append(sb, " " sym " "); \
 		il_op_##sort1##_string_resolve(opx.v1, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -37,9 +114,9 @@ typedef enum rz_il_unicode_colorify_state_t {
 	do { \
 		rz_strbuf_append(sb, "("); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
-		rz_strbuf_append(sb, sym); \
+		rz_strbuf_append(sb, " " sym " "); \
 		il_op_##sort1##_string_resolve(opx.v1, sb); \
-		rz_strbuf_append(sb, sym); \
+		rz_strbuf_append(sb, " "); \
 		il_op_##sort2##_string_resolve(opx.v2, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -47,7 +124,7 @@ typedef enum rz_il_unicode_colorify_state_t {
 #define il_op_param_1_with_rmode(sym, opx, v0, sort0, vr) \
 	do { \
 		const char *rmode_str = rz_il_float_stringify_rmode(opx.vr); \
-		rz_strbuf_appendf(sb, "(%s " sym, rmode_str); \
+		rz_strbuf_appendf(sb, "(%s " sym " ", rmode_str); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -55,7 +132,7 @@ typedef enum rz_il_unicode_colorify_state_t {
 #define il_op_param_1_with_fexcept(sym, opx, v0, sort0, ve) \
 	do { \
 		const char *str = rz_il_float_stringify_exception(opx.ve); \
-		rz_strbuf_appendf(sb, "(%s " sym, str); \
+		rz_strbuf_appendf(sb, "(%s " sym " ", str); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -64,7 +141,7 @@ typedef enum rz_il_unicode_colorify_state_t {
 	do { \
 		rz_strbuf_appendf(sb, "("); \
 		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx.m)); \
-		rz_strbuf_appendf(sb, " %u" sym, opx.l); \
+		rz_strbuf_appendf(sb, " %u " sym " ", opx.l); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -75,7 +152,7 @@ typedef enum rz_il_unicode_colorify_state_t {
 		rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx.m)); \
 		rz_strbuf_append(sb, " "); \
 		rz_strbuf_append(sb, rz_il_float_stringify_format(opx.f)); \
-		rz_strbuf_append(sb, sym); \
+		rz_strbuf_append(sb, " " sym " "); \
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -97,7 +174,7 @@ typedef enum rz_il_unicode_colorify_state_t {
 		il_op_##sort0##_string_resolve(opx.v0, sb); \
 		rz_strbuf_append(sb, " " sym " "); \
 		il_op_##sort1##_string_resolve(opx.v1, sb); \
-		rz_strbuf_append(sb, " " sym " "); \
+		rz_strbuf_append(sb, " "); \
 		il_op_##sort2##_string_resolve(opx.v2, sb); \
 		rz_strbuf_append(sb, ")"); \
 	} while (0)
@@ -130,16 +207,20 @@ static RZ_OWN RZ_NULLABLE char *subscript_ut32(ut32 n) {
 
 static void il_opdmp_var(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsVar *opx = &op->op.var;
-	rz_strbuf_appendf(sb, "%s", opx->v);
+	if (!rz_str_cmp(opx->v, "_val", 4)) {
+		rz_strbuf_appendf(sb, "%s", opx->v);
+	} else {
+		rz_strbuf_appendf(sb, "%s", opx->v);
+	}
 }
 
 static void il_opdmp_ite(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_3("↠", op->op.ite, pure, condition, pure, x, pure, y);
+	il_op_param_3(UCD_ITE, op->op.ite, pure, condition, pure, x, pure, y);
 }
 
 static void il_opdmp_let(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsLet *opx = &op->op.let;
-	rz_strbuf_appendf(sb, "(%s=", opx->name);
+	rz_strbuf_appendf(sb, "(%s " UCD_LET " ", opx->name);
 	il_op_pure_string_resolve(opx->exp, sb);
 	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->body, sb);
@@ -147,309 +228,314 @@ static void il_opdmp_let(const RzILOpPure *op, RzStrBuf *sb) {
 }
 
 static void il_opdmp_bool_false(const RzILOpPure *op, RzStrBuf *sb) {
-	rz_strbuf_append(sb, "𝔽");
+	rz_strbuf_append(sb, UCD_BOOL_FALSE);
 }
 
 static void il_opdmp_bool_true(const RzILOpPure *op, RzStrBuf *sb) {
-	rz_strbuf_append(sb, "𝕋");
+	rz_strbuf_append(sb, UCD_BOOL_TRUE);
 }
 
 static void il_opdmp_bool_inv(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("!", op->op.boolinv, pure, x);
+	il_op_param_1(UCD_BOOL_INV, op->op.boolinv, pure, x);
 }
 
 static void il_opdmp_bool_and(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("&", op->op.booland, pure, x, pure, y);
+	il_op_param_2(UCD_BOOL_AND, op->op.booland, pure, x, pure, y);
 }
 
 static void il_opdmp_bool_or(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("|", op->op.boolor, pure, x, pure, y);
+	il_op_param_2(UCD_BOOL_OR, op->op.boolor, pure, x, pure, y);
 }
 
 static void il_opdmp_bool_xor(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("^", op->op.boolxor, pure, x, pure, y);
+	il_op_param_2(UCD_BOOL_XOR, op->op.boolxor, pure, x, pure, y);
 }
 
 static void il_opdmp_bitv(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsBv *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
-	rz_strbuf_appendf(sb, "(%s", "ʙ");
+	rz_strbuf_append(sb, "(" UCD_BITV);
 	append_superscript(sb, opx->value->len);
-	rz_strbuf_appendf(sb, "%s)", num);
+	rz_strbuf_appendf(sb, " %s)", num);
 	free(num);
 }
 
 static void il_opdmp_msb(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("⊤", op->op.msb, pure, bv);
+	il_op_param_1(UCD_MSB, op->op.msb, pure, bv);
 }
 
 static void il_opdmp_lsb(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("⊥", op->op.lsb, pure, bv);
+	il_op_param_1(UCD_LSB, op->op.lsb, pure, bv);
 }
 
 static void il_opdmp_is_zero(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("Φ", op->op.lsb, pure, bv);
+	il_op_param_1_rtl(UCD_IS_ZERO, op->op.lsb, pure, bv);
 }
 
 static void il_opdmp_neg(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("−", op->op.neg, pure, bv);
+	il_op_param_1(UCD_NEG, op->op.neg, pure, bv);
 }
 
 static void il_opdmp_lognot(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("~", op->op.lognot, pure, bv);
+	il_op_param_1(UCD_LOGNOT, op->op.lognot, pure, bv);
 }
 
 static void il_opdmp_add(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("+", op->op.add, pure, x, pure, y);
+	il_op_param_2(UCD_ADD, op->op.add, pure, x, pure, y);
 }
 
 static void il_opdmp_sub(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("-", op->op.sub, pure, x, pure, y);
+	il_op_param_2(UCD_SUB, op->op.sub, pure, x, pure, y);
 }
 
 static void il_opdmp_mul(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("*", op->op.mul, pure, x, pure, y);
+	il_op_param_2(UCD_MUL, op->op.mul, pure, x, pure, y);
 }
 
 static void il_opdmp_div(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("/", op->op.div, pure, x, pure, y);
+	il_op_param_2(UCD_DIV, op->op.div, pure, x, pure, y);
 }
 
 static void il_opdmp_sdiv(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("⁒", op->op.sdiv, pure, x, pure, y);
+	il_op_param_2(UCD_SDIV, op->op.sdiv, pure, x, pure, y);
 }
 
 static void il_opdmp_mod(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("⊢", op->op.mod, pure, x, pure, y);
+	il_op_param_2(UCD_MOD, op->op.mod, pure, x, pure, y);
 }
 
 static void il_opdmp_smod(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("⊨", op->op.smod, pure, x, pure, y);
+	il_op_param_2(UCD_SMOD, op->op.smod, pure, x, pure, y);
 }
 
 static void il_opdmp_logand(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("∧", op->op.logand, pure, x, pure, y);
+	il_op_param_2(UCD_LOGAND, op->op.logand, pure, x, pure, y);
 }
 
 static void il_opdmp_logor(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("∨", op->op.logor, pure, x, pure, y);
+	il_op_param_2(UCD_LOGOR, op->op.logor, pure, x, pure, y);
 }
 
 static void il_opdmp_logxor(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("⩟", op->op.logxor, pure, x, pure, y);
+	il_op_param_2(UCD_LOGXOR, op->op.logxor, pure, x, pure, y);
 }
 
 static void il_opdmp_shiftr(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_3("≫", op->op.shiftr, pure, x, pure, y, pure, fill_bit);
+	il_op_param_3(UCD_SHIFTR, op->op.shiftr, pure, x, pure, y, pure, fill_bit);
 }
 
 static void il_opdmp_shiftl(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_3("≪", op->op.shiftl, pure, x, pure, y, pure, fill_bit);
+	il_op_param_3(UCD_SHIFTL, op->op.shiftl, pure, x, pure, y, pure, fill_bit);
 }
 
 static void il_opdmp_eq(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("≡", op->op.ule, pure, x, pure, y);
+	il_op_param_2(UCD_EQ, op->op.ule, pure, x, pure, y);
 }
 
 static void il_opdmp_sle(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("≦", op->op.sle, pure, x, pure, y);
+	il_op_param_2(UCD_SLE, op->op.sle, pure, x, pure, y);
 }
 
 static void il_opdmp_ule(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("≼", op->op.ule, pure, x, pure, y);
+	il_op_param_2(UCD_ULE, op->op.ule, pure, x, pure, y);
 }
 
 static void il_opdmp_cast(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsCast *opx = &op->op.cast;
 	rz_strbuf_append(sb, "(");
 	il_op_pure_string_resolve(opx->val, sb);
-	rz_strbuf_append(sb, "⇒");
+	rz_strbuf_append(sb, " " UCD_CAST);
 	append_superscript(sb, opx->length);
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->fill, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_append(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("∥", op->op.append, pure, high, pure, low);
+	il_op_param_2(UCD_APPEND, op->op.append, pure, high, pure, low);
 }
 
 static void il_opdmp_float(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFloat *opx = &op->op.float_;
-	rz_strbuf_appendf(sb, "(%dꜰ", opx->r);
+	rz_strbuf_appendf(sb, "(%d " UCD_FLOAT " ", opx->r);
 	il_op_pure_string_resolve(opx->bv, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_fbits(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("ꜰʙ", op->op.fbits, pure, f);
+	il_op_param_1(UCD_FBITS, op->op.fbits, pure, f);
 }
 
 static void il_opdmp_is_finite(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("⌉", op->op.is_finite, pure, f);
+	il_op_param_1_rtl(UCD_IS_FINITE, op->op.is_finite, pure, f);
 }
 
 static void il_opdmp_is_nan(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("ɴ", op->op.is_nan, pure, f);
+	il_op_param_1_rtl(UCD_IS_NAN, op->op.is_nan, pure, f);
 }
 
 static void il_opdmp_is_inf(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("∞", op->op.is_inf, pure, f);
+	il_op_param_1_rtl(UCD_IS_INF, op->op.is_inf, pure, f);
 }
 
 static void il_opdmp_is_fzero(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("{", op->op.is_fzero, pure, f);
+	il_op_param_1_rtl(UCD_IS_FZERO, op->op.is_fzero, pure, f);
 }
 
 static void il_opdmp_is_fneg(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("−", op->op.is_fneg, pure, f);
+	il_op_param_1_rtl(UCD_IS_FNEG, op->op.is_fneg, pure, f);
 }
 
 static void il_opdmp_is_fpos(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("➕", op->op.is_fpos, pure, f);
+	il_op_param_1_rtl(UCD_IS_FPOS, op->op.is_fpos, pure, f);
 }
 
 static void il_opdmp_fneg(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("−", op->op.fneg, pure, f);
+	il_op_param_1(UCD_FNEG, op->op.fneg, pure, f);
 }
 
 static void il_opdmp_fabs(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1("⌈", op->op.fabs, pure, f);
+	il_op_param_1(UCD_FABS, op->op.fabs, pure, f);
 }
 
 static void il_opdmp_fcast_int(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_length("ꜰᴜ⇒", op->op.fcast_int, f, pure, mode, length);
+	il_op_param_1_with_mode_length(UCD_FCAST_INT, op->op.fcast_int, f, pure, mode, length);
 }
 
 static void il_opdmp_fcast_sint(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_length("ꜰɪ⇒", op->op.fcast_sint, f, pure, mode, length);
+	il_op_param_1_with_mode_length(UCD_FCAST_SINT, op->op.fcast_sint, f, pure, mode, length);
 }
 
 static void il_opdmp_fcast_float(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_format("ꜰᴜꜰ⇒", op->op.fcast_float, bv, pure, mode, format);
+	il_op_param_1_with_mode_format(UCD_FCAST_FLOAT, op->op.fcast_float, bv, pure, mode, format);
 }
 
 static void il_opdmp_fcast_sfloat(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_format("ꜰꜰ⇒", op->op.fcast_sfloat, bv, pure, mode, format);
+	il_op_param_1_with_mode_format(UCD_FCAST_SFLOAT, op->op.fcast_sfloat, bv, pure, mode, format);
 }
 
 static void il_opdmp_fconvert(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_mode_format("⇒", op->op.fconvert, f, pure, mode, format);
+	il_op_param_1_with_mode_format(UCD_FCONVERT, op->op.fconvert, f, pure, mode, format);
 }
 
 static void il_opdmp_fsqrt(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode("ʀ", op->op.fsqrt, f, pure, rmode);
+	il_op_param_1_with_rmode(UCD_FSQRT, op->op.fsqrt, f, pure, rmode);
 }
 
 static void il_opdmp_frsqrt(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode("Ȓ", op->op.frsqrt, f, pure, rmode);
+	il_op_param_1_with_rmode(UCD_FRSQRT, op->op.frsqrt, f, pure, rmode);
 }
 
 static void il_opdmp_fround(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_rmode("[", op->op.frsqrt, f, pure, rmode);
+	il_op_param_1_with_rmode(UCD_FROUND, op->op.fround, f, pure, rmode);
 }
 
 static void il_opdmp_frequal(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsFrequal *opx = &op->op.frequal;
 	rz_strbuf_append(sb, "(");
 	rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->x));
-	rz_strbuf_append(sb, "≡");
+	rz_strbuf_append(sb, " " UCD_FREQUAL " ");
 	rz_strbuf_append(sb, rz_il_float_stringify_rmode(opx->x));
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_fsucc(const RzILOpPure *op, RzStrBuf *sb) {
-	rz_strbuf_append(sb, "⌊(");
+	rz_strbuf_append(sb, UCD_FSUCC "(");
 	il_op_pure_string_resolve(op->op.fsucc.f, sb);
 	rz_strbuf_append(sb, ")");
 }
 static void il_opdmp_fpred(const RzILOpPure *op, RzStrBuf *sb) {
-	rz_strbuf_append(sb, "⌋(");
+	rz_strbuf_append(sb, UCD_FPRED "(");
 	il_op_pure_string_resolve(op->op.fpred.f, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_forder(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2("<", op->op.forder, pure, x, pure, y);
+	il_op_param_2(UCD_FORDER, op->op.forder, pure, x, pure, y);
 }
 
 static void il_opdmp_fexcept(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_1_with_fexcept("ᴇ", op->op.fexcept, x, pure, e);
+	il_op_param_1_with_fexcept(UCD_FEXCEPT, op->op.fexcept, x, pure, e);
 }
 
 static void il_opdmp_fadd(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("+", op->op.fadd, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FADD, op->op.fadd, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fsub(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("-", op->op.fsub, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FSUB, op->op.fsub, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fmul(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("*", op->op.fmul, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FMUL, op->op.fmul, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fdiv(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("/", op->op.fdiv, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FDIV, op->op.fdiv, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fmod(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("⊢", op->op.fmod, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FMOD, op->op.fmod, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fhypot(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("∠", op->op.fhypot, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FHYPOT, op->op.fhypot, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fpow(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("˰", op->op.fpow, x, pure, y, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FPOW, op->op.fpow, x, pure, y, pure, rmode);
 }
 
 static void il_opdmp_fmad(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_3_with_rmode("ᴍᴀ", op->op.fmad, x, pure, y, pure, z, pure, rmode);
+	il_op_param_3_with_rmode(UCD_FMAD, op->op.fmad, x, pure, y, pure, z, pure, rmode);
 }
 
 static void il_opdmp_fpown(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("⋏", op->op.fpown, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FPOWN, op->op.fpown, f, pure, n, pure, rmode);
 }
 
 static void il_opdmp_frootn(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("√", op->op.frootn, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FROOTN, op->op.frootn, f, pure, n, pure, rmode);
 }
 
 static void il_opdmp_fcompound(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode("∪", op->op.fcompound, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FCOMPOUND, op->op.fcompound, f, pure, n, pure, rmode);
 }
 
 static void il_opdmp_load(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsLoad *opx = &op->op.load;
-	rz_strbuf_append(sb, "(ʟ");
+	rz_strbuf_append(sb, "(" UCD_LOAD);
 	append_superscript(sb, opx->mem);
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->key, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_loadw(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsLoadW *opx = &op->op.loadw;
-	rz_strbuf_appendf(sb, "(%uʟ", (ut32)opx->n_bits);
+	rz_strbuf_appendf(sb, "(%u " UCD_LOADW, (ut32)opx->n_bits);
 	append_superscript(sb, opx->mem);
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->key, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_store(const RzILOpEffect *op, RzStrBuf *sb) {
 	const RzILOpArgsStore *opx = &op->op.store;
-	rz_strbuf_appendf(sb, "(ꜱ");
+	rz_strbuf_append(sb, "(" UCD_STORE);
 	append_superscript(sb, opx->mem);
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->key, sb);
-	rz_strbuf_append(sb, "ꜱ");
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->value, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_storew(const RzILOpEffect *op, RzStrBuf *sb) {
-	const RzILOpArgsStore *opx = &op->op.store;
-	rz_strbuf_append(sb, "(ŝ");
+	const RzILOpArgsStoreW *opx = &op->op.storew;
+	rz_strbuf_append(sb, "(" UCD_STOREW);
 	append_superscript(sb, opx->mem);
+	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->key, sb);
 	rz_strbuf_append(sb, " ");
 	il_op_pure_string_resolve(opx->value, sb);
@@ -457,27 +543,27 @@ static void il_opdmp_storew(const RzILOpEffect *op, RzStrBuf *sb) {
 }
 
 static void il_opdmp_nop(const RzILOpEffect *op, RzStrBuf *sb) {
-	il_op_param_0("Ǿ");
+	il_op_param_0(UCD_NOP);
 }
 
 static void il_opdmp_empty(const RzILOpEffect *op, RzStrBuf *sb) {
-	il_op_param_0("Ø");
+	il_op_param_0(UCD_EMPTY);
 }
 
 static void il_opdmp_set(const RzILOpEffect *op, RzStrBuf *sb) {
 	const RzILOpArgsSet *opx = &op->op.set;
-	rz_strbuf_appendf(sb, "(%s←", opx->v);
+	rz_strbuf_appendf(sb, "(%s " UCD_SET " ", opx->v);
 	il_op_pure_string_resolve(opx->x, sb);
 	rz_strbuf_append(sb, ")");
 }
 
 static void il_opdmp_jmp(const RzILOpEffect *op, RzStrBuf *sb) {
-	il_op_param_1("⇡", op->op.jmp, pure, dst);
+	il_op_param_1(UCD_JMP, op->op.jmp, pure, dst);
 }
 
 static void il_opdmp_goto(const RzILOpEffect *op, RzStrBuf *sb) {
 	const RzILOpArgsGoto *opx = &op->op.goto_;
-	rz_strbuf_appendf(sb, "(⇣%s)", opx->lbl);
+	rz_strbuf_appendf(sb, "(" UCD_GOTO "%s)", opx->lbl);
 }
 
 static void il_opdmp_seq_inner(const RzILOpEffect *op, RzStrBuf *sb) {
@@ -517,11 +603,11 @@ static void il_opdmp_blk(const RzILOpEffect *op, RzStrBuf *sb) {
 }
 
 static void il_opdmp_repeat(const RzILOpEffect *op, RzStrBuf *sb) {
-	il_op_param_2("⟳", op->op.repeat, pure, condition, effect, data_eff);
+	il_op_param_2(UCD_REPEAT, op->op.repeat, pure, condition, effect, data_eff);
 }
 
 static void il_opdmp_branch(const RzILOpEffect *op, RzStrBuf *sb) {
-	il_op_param_3("⅄", op->op.branch, pure, condition, effect, true_eff, effect, false_eff);
+	il_op_param_3(UCD_BRANCH, op->op.branch, pure, condition, effect, true_eff, effect, false_eff);
 }
 
 static void il_op_pure_string_resolve(const RzILOpPure *op, RzStrBuf *sb) {
@@ -737,14 +823,14 @@ static void il_op_pure_string_resolve(const RzILOpPure *op, RzStrBuf *sb) {
 
 	default:
 		rz_warn_if_reached();
-		rz_strbuf_appendf(sb, "?%u", op->code);
+		rz_strbuf_appendf(sb, UCD_UNK "%u", op->code);
 		return;
 	}
 }
 
 static void il_op_effect_string_resolve(const RzILOpEffect *op, RzStrBuf *sb) {
 	if (!op) {
-		rz_strbuf_append(sb, "Ǿ");
+		rz_strbuf_append(sb, UCD_NOP);
 		return;
 	}
 	switch (op->code) {
@@ -783,7 +869,7 @@ static void il_op_effect_string_resolve(const RzILOpEffect *op, RzStrBuf *sb) {
 		return;
 	default:
 		rz_warn_if_reached();
-		rz_strbuf_appendf(sb, "?%u", op->code);
+		rz_strbuf_appendf(sb, UCD_UNK "%u", op->code);
 		return;
 	}
 }

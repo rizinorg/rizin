@@ -90,12 +90,12 @@ EXPECT=<<EOF
 |  var: rsp  |    |  bv: 64 0x8  |          |  false   |    |  var: rbp  |
 `------------'    `--------------'          `----------'    `------------'
 -- unicode
-0x1006f5 ((final←(rsp-(ʙ⁶⁴0x8))) 
-        (ꜱᴡ⁰final (rbp⇒⁶⁴𝔽)) (rsp←final))
-0x1006f6 (rbp←rsp)
-0x1006f9 (ꜱᴡ⁰(rbp+(ʙ⁶⁴0xffffffffffffffd8)) rdi)
-0x1006fd (ꜱᴡ⁰(rbp+(ʙ⁶⁴0xffffffffffffffef)) (ʙ⁸0x0))
-0x100701 (ꜱᴡ⁰(rbp+(ʙ⁶⁴0xfffffffffffffff0)) (ʙ⁶⁴0x0))
+0x1006f5 ((final ← (rsp - (ʙ⁶⁴ 0x8))) 
+        (ŝ⁰ final (rbp ≈⁶⁴ ⊥)) (rsp ← final))
+0x1006f6 (rbp ← rsp)
+0x1006f9 (ŝ⁰ (rbp + (ʙ⁶⁴ 0xffffffffffffffd8)) rdi)
+0x1006fd (ŝ⁰ (rbp + (ʙ⁶⁴ 0xffffffffffffffef)) (ʙ⁸ 0x0))
+0x100701 (ŝ⁰ (rbp + (ʙ⁶⁴ 0xfffffffffffffff0)) (ʙ⁶⁴ 0x0))
 EOF
 RUN
 
@@ -116,5 +116,4 @@ psi @ obj.seckrit
 EOF
 EXPECT=Hello from RzIL!
 EXPECT_ERR=
-BROKEN=1
 RUN
