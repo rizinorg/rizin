@@ -19,8 +19,8 @@ class Comparator:
     MAX_BINARIES = 10
 
     def __init__(self, bin_path: Path, framework_names: list[str]):
-        # Statistics for a Framework + Binary combination
-        self.stats: Stats = Stats()
+        # Statistics for each (Framework, Binary) combination
+        self.stats: dict[tuple[Framework, Binary], Stats] = dict()
         self.bins: list[Binary] = list()
         self.framework_names: list[str] = framework_names
         self.frameworks: dict[str, Framework] = dict()
@@ -59,9 +59,11 @@ class Comparator:
     def analyze_all(self):
         for fw_name, fw in self.frameworks.items():
             for bin in self.bins:
-                stats = Stats()
                 dps = fw.analyze_bin(bin)
+
+                stats = Stats()
                 stats.add_dps_duration(dps)
+                stats.add_symbols(fw.symbols)
                 self.stats[(fw, bin)] = stats
                 log.info(
                     f"Analyzing '{bin.path.name}' with {fw_name} found {len(fw.symbols)} symbols."
