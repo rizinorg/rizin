@@ -27,7 +27,7 @@ int64_t
 size_t
 time_t
 tm
-unsigned long long
+unsigned long
 void
 wchar_t
 wint_t
