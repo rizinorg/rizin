@@ -33,7 +33,7 @@ static void fini_kv_val(HT_(Kv) *kv, void *user) {
 RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, RZ_NULLABLE HT_(DupValue) dup_val, RZ_NULLABLE HT_(FreeValue) free_val) {
 	HT_(Options) opt = {
 		.cmp = (HT_(Comparator))strcmp,
-		.hashfn = (HT_(HashFunction))sdb_hash,
+		.hashfn = NULL,
 		.dupkey = key_opt == HT_STR_DUP ? (HT_(DupKey))rz_str_dup : NULL,
 		.dupvalue = dup_val,
 		.calcsizeK = (HT_(CalcSizeK))strlen,
@@ -42,5 +42,5 @@ RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(HtStrOption key_opt, RZ_NULLABLE HT_(DupValu
 		.finiKV_user = (void *)free_val,
 		.elem_size = 0,
 	};
-	return internal_ht_new(ht_primes_sizes[0], 0, &opt);
+	return internal_ht_new(0, &opt);
 }

@@ -58,7 +58,7 @@ axtl @ sym.mf_write
 EOF
 EXPECT=<<EOF
 ;------------------------------------------
-void sym.mf_release(unsigned long long arg1, int64_t arg2, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h, int64_t arg_10h);
+void sym.mf_release(unsigned long arg1, int64_t arg2, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h, int64_t arg_10h);
 ; Xref from: sym.mf_release @ 0x00219836
 |       :   0x00219830      mov   rsi, rbx                             ; int64_t arg2
 |       :   0x00219833      mov   rdi, rbp                             ; int64_t arg1

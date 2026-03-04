@@ -103,6 +103,7 @@ static bool test_il_validate_pure_let() {
 	RzILSortPure sort;
 	RzILValidateReport report;
 	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_eq(op->op.let.hash, rz_str_djb2_hash("x"), "Hash mismatch");
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(64)), "sort");
 	mu_assert_null(report, "no report");
@@ -179,6 +180,7 @@ static bool test_il_validate_pure_var() {
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(42)), "sort");
 	mu_assert_null(report, "no report");
+	mu_assert_eq(op->op.var.hash, rz_str_djb2_hash("y"), "Hash mismatch");
 	rz_il_op_pure_free(op);
 
 	RzILOpEffect *eop = rz_il_op_new_seq(
@@ -195,6 +197,7 @@ static bool test_il_validate_pure_var() {
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"x\" referenced by var op does not exist.", "report");
+	mu_assert_eq(op->op.var.hash, rz_str_djb2_hash("x"), "Hash mismatch");
 	rz_il_op_pure_free(op);
 
 	op = rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL);

@@ -3,6 +3,14 @@
 
 #include "sdbht.h"
 
+/**
+ * \brief A helper struct used for forwarding iteration (foreach) callbacks between `ht_` and the `sdb_` APIs.
+ */
+typedef struct {
+	SdbHtForeachCallback cb;
+	void *user;
+} HtSSForeachKvCallbackRedirect;
+
 RZ_API HtSS *sdb_ht_new(void) {
 	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
 	if (ht) {
@@ -60,4 +68,29 @@ RZ_API void sdb_ht_free(HtSS *ht) {
 
 RZ_API bool sdb_ht_delete(HtSS *ht, const char *key) {
 	return ht_ss_delete(ht, key);
+}
+
+static bool sdb_ht_foreach_kv_filter(void *user, const HtSSKv *kv) {
+	SdbKv *sdb_kv = (SdbKv *)kv;
+	if (sdbkv_key(sdb_kv) && sdbkv_value(sdb_kv) && *sdbkv_value(sdb_kv)) {
+		HtSSForeachKvCallbackRedirect *redirect = user;
+		return redirect->cb(redirect->user, (SdbKv *)kv);
+	}
+	return true;
+}
+
+/**
+ * \brief Iterates all elements of a `HtSS` hash table.
+ *
+ * \param ht The hash table.
+ * \param cb A callback to be invoked for each element.
+ * \param user Pointer to user data to be passed to the callback for each element.
+ * \return true if all elements were iterated, false if the iteration was cancelled by the user callback
+ */
+RZ_API bool sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user) {
+	HtSSForeachKvCallbackRedirect redirect = {
+		.cb = cb,
+		.user = user
+	};
+	return ht_ss_foreach_kv(ht, sdb_ht_foreach_kv_filter, &redirect);
 }

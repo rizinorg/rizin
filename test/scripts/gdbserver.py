@@ -40,12 +40,22 @@ def main():
         action="store_true",
         help="print stdout output from gdbserver",
     )
+    parser.add_argument(
+        "--multi",
+        default=False,
+        action="store_true",
+        help="start gdbserver in multi-process (extended-remote) mode",
+    )
     args = parser.parse_args()
 
     while True:
-        for output in execute(
-            ["gdbserver", "{}:{}".format(args.host, args.port), args.binary]
-        ):
+        cmd = ["gdbserver"]
+        if args.multi:
+            cmd.append("--multi")  # --multi comes before HOST:PORT
+        cmd.append(f"{args.host}:{args.port}")
+        if args.binary:
+            cmd.append(args.binary)
+        for output in execute(cmd):
             if args.output:
                 print(output)
             # Exit once gdbserver is ready for connections

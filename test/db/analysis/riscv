@@ -3900,3 +3900,1072 @@ EXPECT=<<EOF
 \           0x0001062c      67800000       ret
 EOF
 RUN
+
+NAME=ROP Search by substring
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+aaa
+e asm.bytes=true
+/R/ jal 
+EOF
+EXPECT=<<EOF
+  0x000104ae               0e00  c.slli zero, 3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104b2               0000  unimp
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104b6               0eb5  fsd ft3, 0xa8(sp)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 4
+
+  0x000104be               0000  unimp
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104c2               0000  unimp
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104c6               8eb4  fsd ft3, 0x68(sp)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104ce               0000  unimp
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104d2               0000  unimp
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104d6               0eb4  fsd ft3, 0x28(sp)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104de               0000  unimp
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104e2               0000  unimp
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104e6               8eb3  fsd ft3, 0x1e0(sp)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104ea               0e00  c.slli zero, 3
+  0x000104ec           13000000  nop
+  0x000104f0           ef004002  jal 0x10514
+Gadget size: 10
+
+  0x000104ec           13000000  nop
+  0x000104f0           ef004002  jal 0x10514
+Gadget size: 8
+
+  0x000104ee               0000  unimp
+  0x000104f0           ef004002  jal 0x10514
+Gadget size: 6
+
+  0x000104f0           ef004002  jal 0x10514
+Gadget size: 4
+
+  0x00010502           137101ff  andi sp, sp, -0x10
+  0x00010506               8146  li a3, 0
+  0x00010508               0147  li a4, 0
+  0x0001050a               0a88  mv a6, sp
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 14
+
+  0x00010504               01ff  bnez a4, 0x1041c
+  0x00010506               8146  li a3, 0
+  0x00010508               0147  li a4, 0
+  0x0001050a               0a88  mv a6, sp
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 12
+
+  0x00010506               8146  li a3, 0
+  0x00010508               0147  li a4, 0
+  0x0001050a               0a88  mv a6, sp
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 10
+
+  0x00010508               0147  li a4, 0
+  0x0001050a               0a88  mv a6, sp
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 8
+
+  0x0001050a               0a88  mv a6, sp
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 6
+
+  0x0001050c           eff05ffa  jal 0x104b0
+Gadget size: 4
+
+  0x00010562           03c78702  lbu a4, 0x28(a5)
+  0x00010566               01ef  bnez a4, 0x1057e
+  0x00010568               4111  addi sp, sp, -0x10
+  0x0001056a               06e4  sd ra, 8(sp)
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 14
+
+  0x00010564           870201ef  vloxseg8ei8.v v5, (sp), v16
+  0x00010568               4111  addi sp, sp, -0x10
+  0x0001056a               06e4  sd ra, 8(sp)
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 12
+
+  0x00010566               01ef  bnez a4, 0x1057e
+  0x00010568               4111  addi sp, sp, -0x10
+  0x0001056a               06e4  sd ra, 8(sp)
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 10
+
+  0x00010568               4111  addi sp, sp, -0x10
+  0x0001056a               06e4  sd ra, 8(sp)
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 8
+
+  0x0001056a               06e4  sd ra, 8(sp)
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 6
+
+  0x0001056c           eff07ffb  jal 0x10522
+Gadget size: 4
+
+  0x00010578           e7024101  jalr t0, 0x14(sp)
+Gadget size: 4
+
+  0x000107c2               22e0  sd s0, 0(sp)
+  0x000107c4               0008  addi s0, sp, 0x10
+  0x000107c6               c567  lui a5, 0x11
+  0x000107c8           138587a2  addi a0, a5, -0x5d8
+  0x000107cc           eff05fd0  jal 0x104d0
+Gadget size: 14
+
+  0x000107c4               0008  addi s0, sp, 0x10
+  0x000107c6               c567  lui a5, 0x11
+  0x000107c8           138587a2  addi a0, a5, -0x5d8
+  0x000107cc           eff05fd0  jal 0x104d0
+Gadget size: 12
+
+  0x000107c6               c567  lui a5, 0x11
+  0x000107c8           138587a2  addi a0, a5, -0x5d8
+  0x000107cc           eff05fd0  jal 0x104d0
+Gadget size: 10
+
+  0x000107c8           138587a2  addi a0, a5, -0x5d8
+  0x000107cc           eff05fd0  jal 0x104d0
+Gadget size: 8
+
+  0x000107cc           eff05fd0  jal 0x104d0
+Gadget size: 4
+
+  0x000107fc           233cf4fc  sd a5, -0x28(s0)
+  0x00010800               c567  lui a5, 0x11
+  0x00010802           138587a5  addi a0, a5, -0x5a8
+  0x00010806           eff0bfcc  jal 0x104d0
+Gadget size: 14
+
+  0x000107fe               f4fc  sd a3, 0xf8(s1)
+  0x00010800               c567  lui a5, 0x11
+  0x00010802           138587a5  addi a0, a5, -0x5a8
+  0x00010806           eff0bfcc  jal 0x104d0
+Gadget size: 12
+
+  0x00010800               c567  lui a5, 0x11
+  0x00010802           138587a5  addi a0, a5, -0x5a8
+  0x00010806           eff0bfcc  jal 0x104d0
+Gadget size: 10
+
+  0x00010802           138587a5  addi a0, a5, -0x5a8
+  0x00010806           eff0bfcc  jal 0x104d0
+Gadget size: 8
+
+  0x00010806           eff0bfcc  jal 0x104d0
+Gadget size: 4
+
+  0x0001080a           833504fe  ld a1, -0x20(s0)
+  0x0001080e           033584fe  ld a0, -0x18(s0)
+  0x00010812           eff01fd7  jal 0x10582
+Gadget size: 12
+
+  0x0001080c               04fe  sd s1, 0x38(a2)
+  0x0001080e           033584fe  ld a0, -0x18(s0)
+  0x00010812           eff01fd7  jal 0x10582
+Gadget size: 10
+
+  0x0001080e           033584fe  ld a0, -0x18(s0)
+  0x00010812           eff01fd7  jal 0x10582
+Gadget size: 8
+
+  0x00010810               84fe  sd s1, 0x38(a3)
+  0x00010812           eff01fd7  jal 0x10582
+Gadget size: 6
+
+  0x00010812           eff01fd7  jal 0x10582
+Gadget size: 4
+
+  0x00010818               a4fe  sd s1, 0x78(a3)
+  0x0001081a           833504fe  ld a1, -0x20(s0)
+  0x0001081e           033584fe  ld a0, -0x18(s0)
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 14
+
+  0x0001081a           833504fe  ld a1, -0x20(s0)
+  0x0001081e           033584fe  ld a0, -0x18(s0)
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 12
+
+  0x0001081c               04fe  sd s1, 0x38(a2)
+  0x0001081e           033584fe  ld a0, -0x18(s0)
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 10
+
+  0x0001081e           033584fe  ld a0, -0x18(s0)
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 8
+
+  0x00010820               84fe  sd s1, 0x38(a3)
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 6
+
+  0x00010822           eff0ffd8  jal 0x105b0
+Gadget size: 4
+
+  0x00010828               a4fe  sd s1, 0x78(a3)
+  0x0001082a           833504fe  ld a1, -0x20(s0)
+  0x0001082e           033584fe  ld a0, -0x18(s0)
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 14
+
+  0x0001082a           833504fe  ld a1, -0x20(s0)
+  0x0001082e           033584fe  ld a0, -0x18(s0)
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 12
+
+  0x0001082c               04fe  sd s1, 0x38(a2)
+  0x0001082e           033584fe  ld a0, -0x18(s0)
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 10
+
+  0x0001082e           033584fe  ld a0, -0x18(s0)
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 8
+
+  0x00010830               84fe  sd s1, 0x38(a3)
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 6
+
+  0x00010832           eff0dfda  jal 0x105de
+Gadget size: 4
+
+  0x00010838               a4fe  sd s1, 0x78(a3)
+  0x0001083a           833504fe  ld a1, -0x20(s0)
+  0x0001083e           033584fe  ld a0, -0x18(s0)
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 14
+
+  0x0001083a           833504fe  ld a1, -0x20(s0)
+  0x0001083e           033584fe  ld a0, -0x18(s0)
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 12
+
+  0x0001083c               04fe  sd s1, 0x38(a2)
+  0x0001083e           033584fe  ld a0, -0x18(s0)
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 10
+
+  0x0001083e           033584fe  ld a0, -0x18(s0)
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 8
+
+  0x00010840               84fe  sd s1, 0x38(a3)
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 6
+
+  0x00010842           eff0bfdc  jal 0x1060c
+Gadget size: 4
+
+  0x00010846           2334a4fe  sd a0, -0x18(s0)
+  0x0001084a           033584fd  ld a0, -0x28(s0)
+  0x0001084e           eff0dfde  jal 0x1063a
+Gadget size: 12
+
+  0x00010848               a4fe  sd s1, 0x78(a3)
+  0x0001084a           033584fd  ld a0, -0x28(s0)
+  0x0001084e           eff0dfde  jal 0x1063a
+Gadget size: 10
+
+  0x0001084a           033584fd  ld a0, -0x28(s0)
+  0x0001084e           eff0dfde  jal 0x1063a
+Gadget size: 8
+
+  0x0001084c               84fd  sd s1, 0x38(a1)
+  0x0001084e           eff0dfde  jal 0x1063a
+Gadget size: 6
+
+  0x0001084e           eff0dfde  jal 0x1063a
+Gadget size: 4
+
+  0x00010870               f4fc  sd a3, 0xf8(s1)
+  0x00010872           833584fe  ld a1, -0x18(s0)
+  0x00010876           033584fd  ld a0, -0x28(s0)
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 14
+
+  0x00010872           833584fe  ld a1, -0x18(s0)
+  0x00010876           033584fd  ld a0, -0x28(s0)
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 12
+
+  0x00010874               84fe  sd s1, 0x38(a3)
+  0x00010876           033584fd  ld a0, -0x28(s0)
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 10
+
+  0x00010876           033584fd  ld a0, -0x28(s0)
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 8
+
+  0x00010878               84fd  sd s1, 0x38(a1)
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 6
+
+  0x0001087a           eff07fde  jal 0x10660
+Gadget size: 4
+
+  0x00010882           833584fd  ld a1, -0x28(s0)
+  0x00010886               c567  lui a5, 0x11
+  0x00010888           138587a7  addi a0, a5, -0x588
+  0x0001088c           eff05fc5  jal 0x104e0
+Gadget size: 14
+
+  0x00010884               84fd  sd s1, 0x38(a1)
+  0x00010886               c567  lui a5, 0x11
+  0x00010888           138587a7  addi a0, a5, -0x588
+  0x0001088c           eff05fc5  jal 0x104e0
+Gadget size: 12
+
+  0x00010886               c567  lui a5, 0x11
+  0x00010888           138587a7  addi a0, a5, -0x588
+  0x0001088c           eff05fc5  jal 0x104e0
+Gadget size: 10
+
+  0x00010888           138587a7  addi a0, a5, -0x588
+  0x0001088c           eff05fc5  jal 0x104e0
+Gadget size: 8
+
+  0x0001088c           eff05fc5  jal 0x104e0
+Gadget size: 4
+
+  0x000108aa           2334f4fe  sd a5, -0x18(s0)
+  0x000108ae               c567  lui a5, 0x11
+  0x000108b0           138587a9  addi a0, a5, -0x568
+  0x000108b4           eff0dfc1  jal 0x104d0
+Gadget size: 14
+
+  0x000108ac               f4fe  sd a3, 0xf8(a3)
+  0x000108ae               c567  lui a5, 0x11
+  0x000108b0           138587a9  addi a0, a5, -0x568
+  0x000108b4           eff0dfc1  jal 0x104d0
+Gadget size: 12
+
+  0x000108ae               c567  lui a5, 0x11
+  0x000108b0           138587a9  addi a0, a5, -0x568
+  0x000108b4           eff0dfc1  jal 0x104d0
+Gadget size: 10
+
+  0x000108b0           138587a9  addi a0, a5, -0x568
+  0x000108b4           eff0dfc1  jal 0x104d0
+Gadget size: 8
+
+  0x000108b4           eff0dfc1  jal 0x104d0
+Gadget size: 4
+
+  0x000108b8           033584fe  ld a0, -0x18(s0)
+  0x000108bc           eff03fdd  jal 0x1068e
+Gadget size: 8
+
+  0x000108ba               84fe  sd s1, 0x38(a3)
+  0x000108bc           eff03fdd  jal 0x1068e
+Gadget size: 6
+
+  0x000108bc           eff03fdd  jal 0x1068e
+Gadget size: 4
+
+  0x000108c4           833504fe  ld a1, -0x20(s0)
+  0x000108c8               c567  lui a5, 0x11
+  0x000108ca           138587ab  addi a0, a5, -0x548
+  0x000108ce           eff03fc1  jal 0x104e0
+Gadget size: 14
+
+  0x000108c6               04fe  sd s1, 0x38(a2)
+  0x000108c8               c567  lui a5, 0x11
+  0x000108ca           138587ab  addi a0, a5, -0x548
+  0x000108ce           eff03fc1  jal 0x104e0
+Gadget size: 12
+
+  0x000108c8               c567  lui a5, 0x11
+  0x000108ca           138587ab  addi a0, a5, -0x548
+  0x000108ce           eff03fc1  jal 0x104e0
+Gadget size: 10
+
+  0x000108ca           138587ab  addi a0, a5, -0x548
+  0x000108ce           eff03fc1  jal 0x104e0
+Gadget size: 8
+
+  0x000108ce           eff03fc1  jal 0x104e0
+Gadget size: 4
+
+  0x000108d2           033584fe  ld a0, -0x18(s0)
+  0x000108d6           eff0ffdd  jal 0x106b4
+Gadget size: 8
+
+  0x000108d4               84fe  sd s1, 0x38(a3)
+  0x000108d6           eff0ffdd  jal 0x106b4
+Gadget size: 6
+
+  0x000108d6           eff0ffdd  jal 0x106b4
+Gadget size: 4
+
+  0x000108de           833504fe  ld a1, -0x20(s0)
+  0x000108e2               c567  lui a5, 0x11
+  0x000108e4           138507ad  addi a0, a5, -0x530
+  0x000108e8           eff09fbf  jal 0x104e0
+Gadget size: 14
+
+  0x000108e0               04fe  sd s1, 0x38(a2)
+  0x000108e2               c567  lui a5, 0x11
+  0x000108e4           138507ad  addi a0, a5, -0x530
+  0x000108e8           eff09fbf  jal 0x104e0
+Gadget size: 12
+
+  0x000108e2               c567  lui a5, 0x11
+  0x000108e4           138507ad  addi a0, a5, -0x530
+  0x000108e8           eff09fbf  jal 0x104e0
+Gadget size: 10
+
+  0x000108e4           138507ad  addi a0, a5, -0x530
+  0x000108e8           eff09fbf  jal 0x104e0
+Gadget size: 8
+
+  0x000108e8           eff09fbf  jal 0x104e0
+Gadget size: 4
+
+  0x000108ec           033584fe  ld a0, -0x18(s0)
+  0x000108f0           eff0bfde  jal 0x106da
+Gadget size: 8
+
+  0x000108ee               84fe  sd s1, 0x38(a3)
+  0x000108f0           eff0bfde  jal 0x106da
+Gadget size: 6
+
+  0x000108f0           eff0bfde  jal 0x106da
+Gadget size: 4
+
+  0x000108f8           833504fe  ld a1, -0x20(s0)
+  0x000108fc               c567  lui a5, 0x11
+  0x000108fe           138587ae  addi a0, a5, -0x518
+  0x00010902           eff0ffbd  jal 0x104e0
+Gadget size: 14
+
+  0x000108fa               04fe  sd s1, 0x38(a2)
+  0x000108fc               c567  lui a5, 0x11
+  0x000108fe           138587ae  addi a0, a5, -0x518
+  0x00010902           eff0ffbd  jal 0x104e0
+Gadget size: 12
+
+  0x000108fc               c567  lui a5, 0x11
+  0x000108fe           138587ae  addi a0, a5, -0x518
+  0x00010902           eff0ffbd  jal 0x104e0
+Gadget size: 10
+
+  0x000108fe           138587ae  addi a0, a5, -0x518
+  0x00010902           eff0ffbd  jal 0x104e0
+Gadget size: 8
+
+  0x00010902           eff0ffbd  jal 0x104e0
+Gadget size: 4
+
+  0x00010906           033584fe  ld a0, -0x18(s0)
+  0x0001090a           eff07fdf  jal 0x10700
+Gadget size: 8
+
+  0x00010908               84fe  sd s1, 0x38(a3)
+  0x0001090a           eff07fdf  jal 0x10700
+Gadget size: 6
+
+  0x0001090a           eff07fdf  jal 0x10700
+Gadget size: 4
+
+  0x00010912           833504fe  ld a1, -0x20(s0)
+  0x00010916               c567  lui a5, 0x11
+  0x00010918           138507b0  addi a0, a5, -0x500
+  0x0001091c           eff05fbc  jal 0x104e0
+Gadget size: 14
+
+  0x00010914               04fe  sd s1, 0x38(a2)
+  0x00010916               c567  lui a5, 0x11
+  0x00010918           138507b0  addi a0, a5, -0x500
+  0x0001091c           eff05fbc  jal 0x104e0
+Gadget size: 12
+
+  0x00010916               c567  lui a5, 0x11
+  0x00010918           138507b0  addi a0, a5, -0x500
+  0x0001091c           eff05fbc  jal 0x104e0
+Gadget size: 10
+
+  0x00010918           138507b0  addi a0, a5, -0x500
+  0x0001091c           eff05fbc  jal 0x104e0
+Gadget size: 8
+
+  0x0001091c           eff05fbc  jal 0x104e0
+Gadget size: 4
+
+  0x00010938           2334f4fe  sd a5, -0x18(s0)
+  0x0001093c               c567  lui a5, 0x11
+  0x0001093e           138587b1  addi a0, a5, -0x4e8
+  0x00010942           eff0ffb8  jal 0x104d0
+Gadget size: 14
+
+  0x0001093a               f4fe  sd a3, 0xf8(a3)
+  0x0001093c               c567  lui a5, 0x11
+  0x0001093e           138587b1  addi a0, a5, -0x4e8
+  0x00010942           eff0ffb8  jal 0x104d0
+Gadget size: 12
+
+  0x0001093c               c567  lui a5, 0x11
+  0x0001093e           138587b1  addi a0, a5, -0x4e8
+  0x00010942           eff0ffb8  jal 0x104d0
+Gadget size: 10
+
+  0x0001093e           138587b1  addi a0, a5, -0x4e8
+  0x00010942           eff0ffb8  jal 0x104d0
+Gadget size: 8
+
+  0x00010942           eff0ffb8  jal 0x104d0
+Gadget size: 4
+
+  0x00010946           033584fe  ld a0, -0x18(s0)
+  0x0001094a           eff0dfdd  jal 0x10726
+Gadget size: 8
+
+  0x00010948               84fe  sd s1, 0x38(a3)
+  0x0001094a           eff0dfdd  jal 0x10726
+Gadget size: 6
+
+  0x0001094a           eff0dfdd  jal 0x10726
+Gadget size: 4
+
+  0x00010952           833504fe  ld a1, -0x20(s0)
+  0x00010956               c567  lui a5, 0x11
+  0x00010958           138507b4  addi a0, a5, -0x4c0
+  0x0001095c           eff05fb8  jal 0x104e0
+Gadget size: 14
+
+  0x00010954               04fe  sd s1, 0x38(a2)
+  0x00010956               c567  lui a5, 0x11
+  0x00010958           138507b4  addi a0, a5, -0x4c0
+  0x0001095c           eff05fb8  jal 0x104e0
+Gadget size: 12
+
+  0x00010956               c567  lui a5, 0x11
+  0x00010958           138507b4  addi a0, a5, -0x4c0
+  0x0001095c           eff05fb8  jal 0x104e0
+Gadget size: 10
+
+  0x00010958           138507b4  addi a0, a5, -0x4c0
+  0x0001095c           eff05fb8  jal 0x104e0
+Gadget size: 8
+
+  0x0001095c           eff05fb8  jal 0x104e0
+Gadget size: 4
+
+  0x00010960           033584fe  ld a0, -0x18(s0)
+  0x00010964           eff09fde  jal 0x1074c
+Gadget size: 8
+
+  0x00010962               84fe  sd s1, 0x38(a3)
+  0x00010964           eff09fde  jal 0x1074c
+Gadget size: 6
+
+  0x00010964           eff09fde  jal 0x1074c
+Gadget size: 4
+
+  0x0001096c           833504fe  ld a1, -0x20(s0)
+  0x00010970               c567  lui a5, 0x11
+  0x00010972           138587b5  addi a0, a5, -0x4a8
+  0x00010976           eff0bfb6  jal 0x104e0
+Gadget size: 14
+
+  0x0001096e               04fe  sd s1, 0x38(a2)
+  0x00010970               c567  lui a5, 0x11
+  0x00010972           138587b5  addi a0, a5, -0x4a8
+  0x00010976           eff0bfb6  jal 0x104e0
+Gadget size: 12
+
+  0x00010970               c567  lui a5, 0x11
+  0x00010972           138587b5  addi a0, a5, -0x4a8
+  0x00010976           eff0bfb6  jal 0x104e0
+Gadget size: 10
+
+  0x00010972           138587b5  addi a0, a5, -0x4a8
+  0x00010976           eff0bfb6  jal 0x104e0
+Gadget size: 8
+
+  0x00010976           eff0bfb6  jal 0x104e0
+Gadget size: 4
+
+  0x0001097a           033584fe  ld a0, -0x18(s0)
+  0x0001097e           eff05fdf  jal 0x10772
+Gadget size: 8
+
+  0x0001097c               84fe  sd s1, 0x38(a3)
+  0x0001097e           eff05fdf  jal 0x10772
+Gadget size: 6
+
+  0x0001097e           eff05fdf  jal 0x10772
+Gadget size: 4
+
+  0x00010986           833504fe  ld a1, -0x20(s0)
+  0x0001098a               c567  lui a5, 0x11
+  0x0001098c           138507b7  addi a0, a5, -0x490
+  0x00010990           eff01fb5  jal 0x104e0
+Gadget size: 14
+
+  0x00010988               04fe  sd s1, 0x38(a2)
+  0x0001098a               c567  lui a5, 0x11
+  0x0001098c           138507b7  addi a0, a5, -0x490
+  0x00010990           eff01fb5  jal 0x104e0
+Gadget size: 12
+
+  0x0001098a               c567  lui a5, 0x11
+  0x0001098c           138507b7  addi a0, a5, -0x490
+  0x00010990           eff01fb5  jal 0x104e0
+Gadget size: 10
+
+  0x0001098c           138507b7  addi a0, a5, -0x490
+  0x00010990           eff01fb5  jal 0x104e0
+Gadget size: 8
+
+  0x00010990           eff01fb5  jal 0x104e0
+Gadget size: 4
+
+  0x00010994           033584fe  ld a0, -0x18(s0)
+  0x00010998           eff01fe0  jal 0x10798
+Gadget size: 8
+
+  0x00010996               84fe  sd s1, 0x38(a3)
+  0x00010998           eff01fe0  jal 0x10798
+Gadget size: 6
+
+  0x00010998           eff01fe0  jal 0x10798
+Gadget size: 4
+
+  0x000109a0           833504fe  ld a1, -0x20(s0)
+  0x000109a4               c567  lui a5, 0x11
+  0x000109a6           138587b8  addi a0, a5, -0x478
+  0x000109aa           eff07fb3  jal 0x104e0
+Gadget size: 14
+
+  0x000109a2               04fe  sd s1, 0x38(a2)
+  0x000109a4               c567  lui a5, 0x11
+  0x000109a6           138587b8  addi a0, a5, -0x478
+  0x000109aa           eff07fb3  jal 0x104e0
+Gadget size: 12
+
+  0x000109a4               c567  lui a5, 0x11
+  0x000109a6           138587b8  addi a0, a5, -0x478
+  0x000109aa           eff07fb3  jal 0x104e0
+Gadget size: 10
+
+  0x000109a6           138587b8  addi a0, a5, -0x478
+  0x000109aa           eff07fb3  jal 0x104e0
+Gadget size: 8
+
+  0x000109aa           eff07fb3  jal 0x104e0
+Gadget size: 4
+
+  0x000109bc               22e0  sd s0, 0(sp)
+  0x000109be               0008  addi s0, sp, 0x10
+  0x000109c0               c567  lui a5, 0x11
+  0x000109c2           138507ba  addi a0, a5, -0x460
+  0x000109c6           eff0bfb0  jal 0x104d0
+Gadget size: 14
+
+  0x000109be               0008  addi s0, sp, 0x10
+  0x000109c0               c567  lui a5, 0x11
+  0x000109c2           138507ba  addi a0, a5, -0x460
+  0x000109c6           eff0bfb0  jal 0x104d0
+Gadget size: 12
+
+  0x000109c0               c567  lui a5, 0x11
+  0x000109c2           138507ba  addi a0, a5, -0x460
+  0x000109c6           eff0bfb0  jal 0x104d0
+Gadget size: 10
+
+  0x000109c2           138507ba  addi a0, a5, -0x460
+  0x000109c6           eff0bfb0  jal 0x104d0
+Gadget size: 8
+
+  0x000109c6           eff0bfb0  jal 0x104d0
+Gadget size: 4
+
+  0x000109ca               c567  lui a5, 0x11
+  0x000109cc           138587bc  addi a0, a5, -0x438
+  0x000109d0           eff01fb0  jal 0x104d0
+Gadget size: 10
+
+  0x000109cc           138587bc  addi a0, a5, -0x438
+  0x000109d0           eff01fb0  jal 0x104d0
+Gadget size: 8
+
+  0x000109d0           eff01fb0  jal 0x104d0
+Gadget size: 4
+
+  0x000109d4               c567  lui a5, 0x11
+  0x000109d6           138507bf  addi a0, a5, -0x410
+  0x000109da           eff07faf  jal 0x104d0
+Gadget size: 10
+
+  0x000109d6           138507bf  addi a0, a5, -0x410
+  0x000109da           eff07faf  jal 0x104d0
+Gadget size: 8
+
+  0x000109da           eff07faf  jal 0x104d0
+Gadget size: 4
+
+  0x000109de           eff01fde  jal 0x107be
+Gadget size: 4
+
+  0x000109e2               2945  li a0, 0xa
+  0x000109e4           eff0dfad  jal 0x104c0
+Gadget size: 6
+
+  0x000109e4           eff0dfad  jal 0x104c0
+Gadget size: 4
+
+  0x000109e8           eff03fdf  jal 0x107da
+Gadget size: 4
+
+  0x000109ec               2945  li a0, 0xa
+  0x000109ee           eff03fad  jal 0x104c0
+Gadget size: 6
+
+  0x000109ee           eff03fad  jal 0x104c0
+Gadget size: 4
+
+  0x000109f2           eff09fea  jal 0x1089a
+Gadget size: 4
+
+  0x000109f6               2945  li a0, 0xa
+  0x000109f8           eff09fac  jal 0x104c0
+Gadget size: 6
+
+  0x000109f8           eff09fac  jal 0x104c0
+Gadget size: 4
+
+  0x000109fc           eff0fff2  jal 0x1092a
+Gadget size: 4
+
+  0x00010a00               2945  li a0, 0xa
+  0x00010a02           eff0ffab  jal 0x104c0
+Gadget size: 6
+
+  0x00010a02           eff0ffab  jal 0x104c0
+Gadget size: 4
+
+  0x00010a06               c567  lui a5, 0x11
+  0x00010a08           138587c0  addi a0, a5, -0x3f8
+  0x00010a0c           eff05fac  jal 0x104d0
+Gadget size: 10
+
+  0x00010a08           138587c0  addi a0, a5, -0x3f8
+  0x00010a0c           eff05fac  jal 0x104d0
+Gadget size: 8
+
+  0x00010a0c           eff05fac  jal 0x104d0
+Gadget size: 4
+
+  0x00010a30               6e73  ld t1, 0xf8(sp)
+  0x00010a32               7472  ld a3, 0xe0(a2)
+  0x00010a34               7563  lui t1, 0x1d
+  0x00010a36               7469  ld a3, 0xd0(a0)
+  0x00010a38           6f6e7320  jal t3, 0x4743e
+Gadget size: 12
+
+  0x00010a32               7472  ld a3, 0xe0(a2)
+  0x00010a34               7563  lui t1, 0x1d
+  0x00010a36               7469  ld a3, 0xd0(a0)
+  0x00010a38           6f6e7320  jal t3, 0x4743e
+Gadget size: 10
+
+  0x00010a34               7563  lui t1, 0x1d
+  0x00010a36               7469  ld a3, 0xd0(a0)
+  0x00010a38           6f6e7320  jal t3, 0x4743e
+Gadget size: 8
+
+  0x00010a36               7469  ld a3, 0xd0(a0)
+  0x00010a38           6f6e7320  jal t3, 0x4743e
+Gadget size: 6
+
+  0x00010a38           6f6e7320  jal t3, 0x4743e
+Gadget size: 4
+
+  0x00010a3c           6f6e6c79  jal t3, 0xd71d2
+Gadget size: 4
+
+  0x00010a68               6e73  ld t1, 0xf8(sp)
+  0x00010a6a               7472  ld a3, 0xe0(a2)
+  0x00010a6c               7563  lui t1, 0x1d
+  0x00010a6e               7469  ld a3, 0xd0(a0)
+  0x00010a70           6f6e732e  jal t3, 0x47556
+Gadget size: 12
+
+  0x00010a6a               7472  ld a3, 0xe0(a2)
+  0x00010a6c               7563  lui t1, 0x1d
+  0x00010a6e               7469  ld a3, 0xd0(a0)
+  0x00010a70           6f6e732e  jal t3, 0x47556
+Gadget size: 10
+
+  0x00010a6c               7563  lui t1, 0x1d
+  0x00010a6e               7469  ld a3, 0xd0(a0)
+  0x00010a70           6f6e732e  jal t3, 0x47556
+Gadget size: 8
+
+  0x00010a6e               7469  ld a3, 0xd0(a0)
+  0x00010a70           6f6e732e  jal t3, 0x47556
+Gadget size: 6
+
+  0x00010a70           6f6e732e  jal t3, 0x47556
+Gadget size: 4
+
+  0x00010ba4               2d56  li a2, -0x15
+  0x00010ba6               2043  lw s0, 0x40(a4)
+  0x00010ba8               7279  ld s2, 0x138(sp)
+  0x00010baa               7074  ld a2, 0xe8(s0)
+  0x00010bac           6f677261  jal a4, 0x379c2
+Gadget size: 12
+
+  0x00010ba6               2043  lw s0, 0x40(a4)
+  0x00010ba8               7279  ld s2, 0x138(sp)
+  0x00010baa               7074  ld a2, 0xe8(s0)
+  0x00010bac           6f677261  jal a4, 0x379c2
+Gadget size: 10
+
+  0x00010ba8               7279  ld s2, 0x138(sp)
+  0x00010baa               7074  ld a2, 0xe8(s0)
+  0x00010bac           6f677261  jal a4, 0x379c2
+Gadget size: 8
+
+  0x00010baa               7074  ld a2, 0xe8(s0)
+  0x00010bac           6f677261  jal a4, 0x379c2
+Gadget size: 6
+
+  0x00010bac           6f677261  jal a4, 0x379c2
+Gadget size: 4
+
+  0x00010c26               7465  ld a3, 0xc8(a0)
+  0x00010c28           73746564  csrrci s0, hviprio1, 0xa
+  0x00010c2c               2100  c.nop 8
+  0x00010c2e               0000  unimp
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 14
+
+  0x00010c28           73746564  csrrci s0, hviprio1, 0xa
+  0x00010c2c               2100  c.nop 8
+  0x00010c2e               0000  unimp
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 12
+
+  0x00010c2a               6564  lui s0, 0x19
+  0x00010c2c               2100  c.nop 8
+  0x00010c2e               0000  unimp
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 10
+
+  0x00010c2c               2100  c.nop 8
+  0x00010c2e               0000  unimp
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 8
+
+  0x00010c2e               0000  unimp
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 6
+
+  0x00010c30           efcdab89  jal s11, 0xfffffffffffcccca
+Gadget size: 4
+
+EOF
+RUN
+
+NAME=ROP Search by regex
+FILE=bins/elf/riscv_crypto_64
+CMDS=<<EOF
+aaa
+e asm.bytes=true
+/R/ "jalr.*t1.*"
+echo ----------------------------
+/R/ "jalr.*sp.*"
+EOF
+EXPECT=<<EOF
+  0x000104ae               0e00  c.slli zero, 3
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104b0           173e0000  auipc t3, 3
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104b2               0000  unimp
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104b4           033e0eb5  ld t3, -0x4b0(t3)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104b6               0eb5  fsd ft3, 0xa8(sp)
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104b8           67030e00  jalr t1, t3
+Gadget size: 4
+
+  0x000104be               0000  unimp
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104c0           173e0000  auipc t3, 3
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104c2               0000  unimp
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104c4           033e8eb4  ld t3, -0x4b8(t3)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104c6               8eb4  fsd ft3, 0x68(sp)
+  0x000104c8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104ce               0000  unimp
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104d0           173e0000  auipc t3, 3
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104d2               0000  unimp
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104d4           033e0eb4  ld t3, -0x4c0(t3)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104d6               0eb4  fsd ft3, 0x28(sp)
+  0x000104d8           67030e00  jalr t1, t3
+Gadget size: 6
+
+  0x000104de               0000  unimp
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 14
+
+  0x000104e0           173e0000  auipc t3, 3
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 12
+
+  0x000104e2               0000  unimp
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 10
+
+  0x000104e4           033e8eb3  ld t3, -0x4c8(t3)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 8
+
+  0x000104e6               8eb3  fsd ft3, 0x1e0(sp)
+  0x000104e8           67030e00  jalr t1, t3
+Gadget size: 6
+
+----------------------------
+  0x00010578           e7024101  jalr t0, 0x14(sp)
+Gadget size: 4
+
+EOF
+RUN
