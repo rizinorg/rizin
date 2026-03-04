@@ -1,4 +1,4 @@
-from datapoints.Data import Addr
+from datapoints.Data import Addr, AddrRange
 
 from enum import Enum
 
@@ -15,13 +15,11 @@ class Symbol:
         self.type = type
         self.size = size
         self.location = location
-        # Tuple of address ranges a symbol covers.
-        # Each range is an right open interval: [low, high)
-        self.ranges: list[tuple[Addr, Addr]] = list()
+        self.ranges: list[AddrRange] = list()
 
         self.entry_points: list[Addr] = list()
 
-    def add_range(self, range: tuple[Addr, Addr]):
+    def add_range(self, range: AddrRange):
         self.ranges.append(range)
 
     def add_entry_point(self, entry_point: Addr):
