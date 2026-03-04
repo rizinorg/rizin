@@ -141,3 +141,15 @@ EXPECT=<<EOF
  char : 0x00000030 = [ 'd', 'g', 'h', 'd', 'f' ]
 EOF
 RUN
+
+NAME=avgl from OBJ symbols
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+avgl~global_var
+avgl~global_array
+EOF
+EXPECT=<<EOF
+global uint8_t [4] global_var @ 0x404050
+global uint8_t [8] global_array @ 0x404058
+EOF
+RUN

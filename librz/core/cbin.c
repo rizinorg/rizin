@@ -1578,6 +1578,41 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		rz_core_sym_name_fini(&sn);
 	}
 
+	// Register OBJ symbols as global variables if not already covered by debug info
+	rz_pvector_foreach (symbols, it) {
+		symbol = *it;
+		if (!symbol->name || !symbol->type || symbol->is_imported) {
+			continue;
+		}
+		if (strcmp(symbol->type, RZ_BIN_TYPE_OBJECT_STR)) {
+			continue;
+		}
+		if (!symbol->size) {
+			continue;
+		}
+		if (is_invalid_address_va(va, symbol->vaddr, symbol->paddr)) {
+			continue;
+		}
+		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
+		if (rz_analysis_var_global_get_byaddr_in(core->analysis, addr)) {
+			continue;
+		}
+		if (rz_analysis_var_global_get_byname(core->analysis, symbol->name)) {
+			continue;
+		}
+		RzType *type = rz_type_identifier_of_base_type_str(core->analysis->typedb, "uint8_t");
+		if (!type) {
+			continue;
+		}
+		if (symbol->size > 1) {
+			type = rz_type_array_of_type(core->analysis->typedb, type, symbol->size);
+			if (!type) {
+				continue;
+			}
+		}
+		rz_analysis_var_global_create(core->analysis, symbol->name, type, addr);
+	}
+
 	// handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		RzBinAddr *entry;
