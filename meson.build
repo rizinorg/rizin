@@ -520,11 +520,17 @@ foreach it : ccs
   endforeach
 
   # Try to compile a basic SSE2 code snippet to discover if SSE2 is supported for the target arch
+  sse2_compiler_flag = it_cc.get_id() == 'msvc' ? '/arch:SSE2' : '-msse2'
   sse2_code = '''#include <emmintrin.h>
     int main (int argc, char *argv[]) { __m128i v = _mm_set_epi32(2, 3, 0, 1); return 0; }
   '''
-  has_sse2 = it_cc.compiles(sse2_code, args : '-msse2', name: 'SSE2 code snippet')
+  has_sse2 = it_cc.compiles(sse2_code, args : [sse2_compiler_flag], name: 'SSE2 code snippet')
   it_userconf.set10('HAVE_SSE2', has_sse2)
+
+  # Enable SSE2 compiler support since it may not be enabled by default
+  if has_sse2 and it_machine.cpu_family() in ['x86', 'x86_64']
+    add_project_arguments([sse2_compiler_flag], language: 'c', native: it_native)
+  endif
 
   foreach item : [
       ['linux/ashmem.h', '', []],
