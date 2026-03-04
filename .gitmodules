@@ -1,3 +1,0 @@
-[submodule "subprojects/blake2"]
-	path = subprojects/blake2
-	url = https://github.com/BLAKE2/BLAKE2.git
