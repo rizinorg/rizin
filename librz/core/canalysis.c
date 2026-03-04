@@ -1397,6 +1397,19 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	const RzList *flags = rz_flag_get_list(core->flags, addr);
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
+static bool should_perform_split(RzCore *core, RzAnalysisFunction *fcn, int reftype, ut64 at, ut64 from) {
+	if (reftype == RZ_ANALYSIS_XREF_TYPE_CALL && from != UT64_MAX) {
+		ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
+		if (at < fcn->addr || at > fcn_end) {
+			RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+			bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+			if (is_valid_sym) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 // XXX: This function takes sometimes forever
 /* analyze a RzAnalysisFunction at the address 'at'.
@@ -1450,15 +1463,8 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return 0; // already analyzed function
 		}
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
-			if (reftype == RZ_ANALYSIS_XREF_TYPE_CALL && from != UT64_MAX) {
-				ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
-				if (at < fcn->addr || at > fcn_end) {
-					RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
-					bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
-					if (is_valid_sym) {
-						goto perform_split;
-					}
-				}
+			if (should_perform_split(core, fcn, reftype, at, from)) {
+				goto perform_split;
 			}
 
 			RzList *l = rz_analysis_xrefs_get_to(core->analysis, from);
