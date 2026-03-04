@@ -12,7 +12,7 @@ FRAMEWORK_BINARY_NINJA = "binja"
 
 FRAMEWORK_NAMES = [
     FRAMEWORK_RIZIN,
-    # FRAMEWORK_RIZIN_OLD_ANALYSIS,
+    FRAMEWORK_RIZIN_OLD_ANALYSIS,
     # FRAMEWORK_IDA,
     # FRAMEWORK_GHIDRA,
     # FRAMEWORK_RADARE2,
@@ -42,5 +42,9 @@ def init_framework_by_name(framework_name: str) -> Framework:
         from RizinFramework import RizinFramework
 
         return RizinFramework()
+    elif framework_name == FRAMEWORK_RIZIN_OLD_ANALYSIS:
+        from RizinOldFramework import RizinOldFramework
+
+        return RizinOldFramework()
     else:
         raise NotImplementedError(f"{framework_name} not implemented yet.")

@@ -8,6 +8,7 @@ from Binary import Binary, init_binary
 from Framework import (
     FRAMEWORK_NAMES,
     FRAMEWORK_RIZIN,
+    FRAMEWORK_RIZIN_OLD_ANALYSIS,
     Framework,
     init_framework_by_name,
 )
@@ -76,7 +77,7 @@ def parse_args() -> argparse.Namespace:
         help="The frameworks to compare.",
         nargs="+",
         choices=FRAMEWORK_NAMES,
-        default=[FRAMEWORK_RIZIN],
+        default=[FRAMEWORK_RIZIN, FRAMEWORK_RIZIN_OLD_ANALYSIS],
     )
     parser.add_argument(
         "bin_path",
