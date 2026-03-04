@@ -17,19 +17,19 @@ class RizinOldFramework(Framework):
     def init_framework(self):
         pass
 
-    def analyze_bin(self, bin: Binary) -> list[DPDuration]:
-        dps = list()
+    def analyze_bin(self, bin: Binary) -> dict[DPTypeDuration, DPDuration]:
+        dps = dict()
 
         open_dp = DPDuration(DPTypeDuration.RUNTIME_OPEN_FILE)
         pipe = rzpipe.open(str(bin.path))
         open_dp.set_end()
-        dps.append(open_dp)
+        dps[DPTypeDuration.RUNTIME_OPEN_FILE] = open_dp
 
         aaa_dp = DPDuration(DPTypeDuration.RUNTIME_ANALYZE_ALL)
         pipe.cmd("e log.level=5")
         pipe.cmd("aaa")
         aaa_dp.set_end()
-        dps.append(aaa_dp)
+        dps[DPTypeDuration.RUNTIME_ANALYZE_ALL] = aaa_dp
 
         # Add references and functions and all to
         all_fcns_json = pipe.cmd("aflj")

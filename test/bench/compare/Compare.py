@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from prettytable import PrettyTable
 from pathlib import Path
 import argparse
 import logging as log
@@ -13,6 +14,7 @@ from Framework import (
     init_framework_by_name,
 )
 from stats.Stats import Stats
+from stats.DPDuration import DPTypeDuration
 
 
 class Comparator:
@@ -69,6 +71,28 @@ class Comparator:
                     f"Analyzing '{bin.path.name}' with {fw_name} found {len(fw.symbols)} symbols."
                 )
 
+    def runtime_comparison_table(self):
+        if len(self.stats) == 0:
+            log.error("Analysis must run to collect data.")
+            return
+        # One table per Binary
+        for bin in self.bins:
+            table = PrettyTable()
+            field_names = ["Framework", "Open file", "Analysis"]
+            table.field_names = field_names
+
+            for fw_name, fw in self.frameworks.items():
+                if (fw, bin) not in self.stats:
+                    table.add_row([fw_name, "-", "-"])
+                    continue
+                stats = self.stats[(fw, bin)]
+                open_rt = stats.get_runtime_ms(DPTypeDuration.RUNTIME_OPEN_FILE) / 1000
+                ana_rt = stats.get_runtime_ms(DPTypeDuration.RUNTIME_ANALYZE_ALL) / 1000
+                table.add_row([fw_name, f"{open_rt:.2f}", f"{ana_rt:.2f}"])
+
+            print(f"FILE: {bin.path}")
+            print(table)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -97,3 +121,4 @@ if __name__ == "__main__":
     log.basicConfig(level=log.DEBUG if args.verbose else log.INFO)
     comparator = Comparator(args.bin_path, args.frameworks)
     comparator.analyze_all()
+    comparator.runtime_comparison_table()

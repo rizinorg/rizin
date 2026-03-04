@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from stats.DPDuration import DPDuration
+from stats.DPDuration import DPDuration, DPTypeDuration
 from Binary import Binary, Symbol
 
 FRAMEWORK_RIZIN = "rz"
@@ -33,7 +33,7 @@ class Framework(ABC):
         raise NotImplementedError("init_framework isn't implemented.")
 
     @abstractmethod
-    def analyze_bin(self, bin: Binary) -> list[DPDuration]:
+    def analyze_bin(self, bin: Binary) -> dict[DPTypeDuration, DPDuration]:
         """
         Do a full analysis of the binary and return duration of the different steps.
         """

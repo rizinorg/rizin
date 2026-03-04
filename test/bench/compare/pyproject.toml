@@ -8,6 +8,7 @@ dependencies = [
     "argparse>=1.4.0",
     "numpy>=2.4.2",
     "pathlib>=1.0.1",
+    "prettytable>=3.17.0",
     "pyelftools>=0.32",
     "ruff>=0.15.4",
     "rzpipe",
