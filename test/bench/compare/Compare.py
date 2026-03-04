@@ -60,10 +60,12 @@ class Comparator:
         for fw_name, fw in self.frameworks.items():
             for bin in self.bins:
                 stats = Stats()
-                log.debug(f"Analyze '{bin.path.name}' with {fw_name}")
-                dps = fw.auto_analyze_bin(bin)
+                dps = fw.analyze_bin(bin)
                 stats.add_dps_duration(dps)
                 self.stats[(fw, bin)] = stats
+                log.info(
+                    f"Analyzing '{bin.path.name}' with {fw_name} found {len(fw.symbols)} symbols."
+                )
 
 
 def parse_args() -> argparse.Namespace:

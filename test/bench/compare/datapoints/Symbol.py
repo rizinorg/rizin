@@ -27,5 +27,8 @@ class Symbol:
     def add_entry_point(self, entry_point: Addr):
         self.entry_points.append(entry_point)
 
+    def set_size(self, size: int):
+        self.size = size
+
     def __repr__(self):
         return f"SYMBOL<{self.name} | type: {self.type} | entries: {[e for e in self.entry_points]} | ranges: {[e for e in self.ranges]}>"

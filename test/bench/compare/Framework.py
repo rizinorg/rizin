@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from datapoints.Bench import DPDuration
-from Binary import Binary
+from Binary import Binary, Symbol
 
 FRAMEWORK_RIZIN = "rz"
 FRAMEWORK_RIZIN_OLD_ANALYSIS = "rz_old_ana"
@@ -23,6 +23,9 @@ FRAMEWORK_NAMES = [
 class Framework(ABC):
     def __init__(self, name: str):
         self.name = name
+        # The discovered symbols
+        self.symbols: dict[str, Symbol] = dict()
+
         self.init_framework()
 
     @abstractmethod
@@ -30,7 +33,7 @@ class Framework(ABC):
         raise NotImplementedError("init_framework isn't implemented.")
 
     @abstractmethod
-    def auto_analyze_bin(self, bin: Binary) -> list[DPDuration]:
+    def analyze_bin(self, bin: Binary) -> list[DPDuration]:
         """
         Do a full analysis of the binary and return duration of the different steps.
         """

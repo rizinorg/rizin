@@ -1,6 +1,10 @@
 from Binary import Binary
 from Framework import FRAMEWORK_RIZIN_OLD_ANALYSIS, Framework
+from datapoints.Symbol import Symbol, SymbolType
 from datapoints.Bench import DPDuration, DPTypeDuration
+from datapoints.Data import Addr
+
+import logging as log
 
 import json
 import rzpipe
@@ -13,7 +17,7 @@ class RizinOldFramework(Framework):
     def init_framework(self):
         pass
 
-    def auto_analyze_bin(self, bin: Binary) -> list[DPDuration]:
+    def analyze_bin(self, bin: Binary) -> list[DPDuration]:
         dps = list()
 
         open_dp = DPDuration(DPTypeDuration.RUNTIME_OPEN_FILE)
@@ -22,6 +26,7 @@ class RizinOldFramework(Framework):
         dps.append(open_dp)
 
         aaa_dp = DPDuration(DPTypeDuration.RUNTIME_ANALYZE_ALL)
+        pipe.cmd("e log.level=5")
         pipe.cmd("aaa")
         aaa_dp.set_end()
         dps.append(aaa_dp)
@@ -30,7 +35,22 @@ class RizinOldFramework(Framework):
         all_fcns_json = pipe.cmd("aflj")
         all_fcns = json.loads(all_fcns_json)
         for fcn in all_fcns:
-            pass
+            fcn_addr = fcn["offset"]
+            fcn_bbs = json.loads(pipe.cmd(f"afbj @ {fcn_addr:#x}"))
+            fcn_size = fcn["size"]
+            fcn_name = fcn["name"].strip("sym.")
+            symbol = Symbol(fcn_name, SymbolType.FUNCTION, fcn_size, Addr(fcn_addr))
+            symbol.add_entry_point(fcn_addr)
+
+            size_check = 0
+            for bb in fcn_bbs:
+                size_check += bb["size"]
+                symbol.add_range((Addr(bb["addr"]), Addr(bb["addr"] + bb["size"])))
+            if size_check != symbol.size:
+                log.warning(
+                    f"Function {fcn['name']} accumulated BBs have a different size than assigned in Rizin."
+                )
+            self.symbols[fcn_name] = symbol
 
         pipe.quit()
         return dps
