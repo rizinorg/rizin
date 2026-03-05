@@ -647,10 +647,12 @@ RZ_API RzCons *rz_cons_new(void) {
 	tcgetattr(0, &I.term_buf);
 	memcpy(&I.term_raw, &I.term_buf, sizeof(I.term_raw));
 	I.term_raw.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+	I.term_raw.c_oflag &= ~OPOST;
 	I.term_raw.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 	I.term_raw.c_cflag &= ~(CSIZE | PARENB);
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+	I.term_raw.c_cc[VTIME] = 0;
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
 	I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
