@@ -1856,14 +1856,14 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	case RZ_OUTPUT_MODE_STANDARD:
 		opt.buffer = buf;
 		opt.offset = core->offset + offset;
-		opt.length = UT32_MAX;
+		opt.length = stop_at_nil ? (1024 * 1024 * 10) : core->blocksize;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
 		opt.stop_at_unprintable = stop_at_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buf, core->offset + offset, UT32_MAX, encoding, stop_at_nil, stop_at_nil);
+		print_json_string(core, buf, core->offset + offset, stop_at_nil ? (1024 * 1024 * 10) : core->blocksize, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
