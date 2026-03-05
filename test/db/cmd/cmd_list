@@ -375,9 +375,9 @@ EXPECT=<<EOF
 adler32        LGPL3      deroad                         Adler-32 checksum
 blake2b        LGPL3      Farhan-25                      BLAKE2b cryptographic hash
 blake2bp       LGPL3      Farhan-25                      BLAKE2bp cryptographic hash
-blake2xb       LGPL3      Farhan-25                      BLAKE2xb cryptographic hash
 blake2s        LGPL3      Farhan-25                      BLAKE2s cryptographic hash
 blake2sp       LGPL3      Farhan-25                      BLAKE2sp cryptographic hash
+blake2xb       LGPL3      Farhan-25                      BLAKE2xb cryptographic hash
 blake2xs       LGPL3      Farhan-25                      BLAKE2xs cryptographic hash
 blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
 crc15can       LGPL3      deroad                         CRC-15 CAN checksum
@@ -465,9 +465,9 @@ algorithm     license author                     description
 adler32       LGPL3   deroad                     Adler-32 checksum
 blake2b       LGPL3   Farhan-25                  BLAKE2b cryptographic hash
 blake2bp      LGPL3   Farhan-25                  BLAKE2bp cryptographic hash
-blake2xb      LGPL3   Farhan-25                  BLAKE2xb cryptographic hash
 blake2s       LGPL3   Farhan-25                  BLAKE2s cryptographic hash
 blake2sp      LGPL3   Farhan-25                  BLAKE2sp cryptographic hash
+blake2xb      LGPL3   Farhan-25                  BLAKE2xb cryptographic hash
 blake2xs      LGPL3   Farhan-25                  BLAKE2xs cryptographic hash
 blake3        CC0     Samuel Neves,Jack O'Connor BLAKE3 cryptographic hash
 crc15can      LGPL3   deroad                     CRC-15 CAN checksum
