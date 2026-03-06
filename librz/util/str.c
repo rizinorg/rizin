@@ -4201,8 +4201,9 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 
 	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
 	if (option->length < 1) {
-		if (length)
+		if (length) {
 			*length = 0;
+		}
 		return NULL;
 	}
 
