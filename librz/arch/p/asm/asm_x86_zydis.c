@@ -142,7 +142,7 @@ static int x86_zydis_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, in
 	return op->size;
 }
 
-static bool x86_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+static bool x86_sw_breakpoint(const RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
 	// { 0, 1, 0, "\xcc" }, // valid for 16, 32, 64
 	// { 0, 2, 0, "\xcd\x03" },
 	rz_asm_op_set_buf(op, (const ut8 *)"\xcc", 1);

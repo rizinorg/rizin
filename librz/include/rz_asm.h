@@ -112,7 +112,7 @@ typedef struct rz_asm_plugin_t {
 	const char *features;
 	const char *platforms;
 	char **(*get_cpu_desc)();
-	bool (*sw_breakpoint)(const RzAsm *a, RzAsmOp *op);
+	bool (*sw_breakpoint)(const RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op);
 } RzAsmPlugin;
 
 /**
@@ -190,7 +190,7 @@ RZ_API void rz_asm_set_pc(RZ_NONNULL RzAsm *a, ut64 pc);
 RZ_API ut64 rz_asm_get_pc(RZ_NONNULL const RzAsm *a);
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 RZ_API int rz_asm_assemble(const RzAsm *a, RzAsmOp *op, const char *buf);
-RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, RZ_NONNULL RzAsmOp *op);
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL RzAsm *a, ut64 addr, RzIOBind *iob, RZ_NONNULL RzAsmOp *op);
 RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len);
 RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *hexstr);
 RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *buf);

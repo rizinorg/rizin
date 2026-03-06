@@ -12,7 +12,7 @@ return rz_str_dup(
 	"=A2	a12\n"
 	"=A3	a13\n"
 	"=A4	a14\n"
-	"gpr	x0	.64	?	0\n" // always zero
+	"gpr	pc	.64	0	0\n"
 	"gpr	x1	.64	8	0\n" // RA - return address
 	"gpr	x2	.64	16	0\n" // SP stack pointer
 	"gpr	x3	.64	24	0\n" // GP global pointer

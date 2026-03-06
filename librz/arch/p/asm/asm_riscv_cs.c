@@ -53,6 +53,30 @@ fin:
 	return op->size;
 }
 
+static bool riscv_sw_breakpoint(RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
+	// in big endian format:
+	// 0x00100073 → ebreak
+	// 0x9002 → c.ebreak
+
+	ut8 bytes[4] = { 0 };
+	if (iob && iob->io && iob->read_at && iob->read_at(iob->io, addr, bytes, 4)) {
+		RzAsmOp original = { 0 };
+		rz_asm_op_init(&original);
+		int sz = riscv_disassemble(a, &original, bytes, 4);
+		rz_asm_op_fini(&original);
+
+		if (sz == 2) {
+			rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x90\x02" : (const ut8 *)"\x02\x90", 2);
+		} else if (sz == 4) {
+			rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x00\x10\x00\x73" : (const ut8 *)"\x73\x00\x10\x00", 4);
+		} else {
+			RZ_LOG_ERROR("Can't set breakpoint: bad size %d bytes (RISC-V instructions are expected to be 2 or 4 bytes)", sz);
+		}
+	}
+
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.name = "riscv",
 	.desc = "RISC-V Capstone-based disassembler",
@@ -66,6 +90,7 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.fini = riscv_asm_fini,
 	.disassemble = &riscv_disassemble,
 	.mnemonics = riscv_asm_mnemonics,
+	.sw_breakpoint = riscv_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE

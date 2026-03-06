@@ -951,12 +951,12 @@ RZ_API void rz_asm_list_directives(void) {
  *
  * \return     On success true, otherwise false.
  */
-RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, RZ_NONNULL RzAsmOp *op) {
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL const RzAsm *a, ut64 addr, RzIOBind *iob, RZ_NONNULL RzAsmOp *op) {
 	rz_return_val_if_fail(a && op, false);
 	memset(op, 0, sizeof(RzAsmOp));
 
 	if (a->cur && a->cur->sw_breakpoint) {
-		return a->cur->sw_breakpoint(a, op);
+		return a->cur->sw_breakpoint(a, addr, iob, op);
 	}
 
 	return false;

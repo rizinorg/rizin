@@ -1521,7 +1521,7 @@ static void core_set_rz_asm_by_config(RzCore *core) {
 	rz_asm_set_arch(core->rasm, arch, bits);
 }
 
-static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
+static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user, RzIOBind *iob) {
 	RzCore *core = (RzCore *)user;
 	RzStrBuf *opcode = NULL;
 	RzAsmOp op = { 0 };
@@ -1529,7 +1529,7 @@ static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
 	core_set_rz_asm_by_hint(core, addr);
 
 	rz_asm_op_init(&op);
-	if (rz_asm_software_breakpoint(core->rasm, &op) &&
+	if (rz_asm_software_breakpoint(core->rasm, addr, iob, &op) &&
 		(opcode = rz_strbuf_new(NULL))) {
 		rz_strbuf_copy(opcode, &op.buf);
 	}
@@ -1539,7 +1539,7 @@ static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
 	return opcode;
 }
 
-static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
+static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user, RzIOBind *iob) {
 	RzCore *core = (RzCore *)user;
 	size_t length = 0;
 	RzAsmOp op = { 0 };
@@ -1547,7 +1547,7 @@ static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
 	core_set_rz_asm_by_hint(core, addr);
 
 	rz_asm_op_init(&op);
-	if (rz_asm_software_breakpoint(core->rasm, &op)) {
+	if (rz_asm_software_breakpoint(core->rasm, addr, iob, &op)) {
 		length = rz_strbuf_length(&op.buf);
 	}
 	rz_asm_op_fini(&op);

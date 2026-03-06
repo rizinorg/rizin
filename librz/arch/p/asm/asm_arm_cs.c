@@ -298,7 +298,7 @@ static char **arm_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool arm_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+static bool arm_sw_breakpoint(const RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
 	if (a->bits == 64) {
 		// arm64/aarch64
 		// { 64, 4, 0, "\x00\x00\x20\xd4" }, // le - arm64 brk0
