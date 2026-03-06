@@ -1,0 +1,182 @@
+NAME=LUAJIT: Disassembly
+FILE=bins/luaJIT/bin/big_2.1.ljbc
+CMDS=<<EOF
+aa
+pd 10
+s entry8
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.0x5d7.code:
+/ entry0();
+|           0x000005e5      gget  r0 0                                 ; [02] -r-x section size 124 named fcn.0x5d7.code
+|           0x000005e9      knum  r1 0
+|           0x000005ed      tsets r1 0 1
+|           0x000005f1      gget  r0 0
+|           0x000005f5      kpri  r1 2
+|           0x000005f9      tsets r1 0 2
+|           0x000005fd      knil  r0...r3
+|           0x00000601      tdup  r4 3
+|           0x00000605      fnew  r5 4
+|           0x00000609      mov   r6 r5
+            ;-- section.fcn.0xa6.code:
+/ entry8();
+|           0x000000b1      kshort r1 0                                ; [58] -r-x section size 16 named fcn.0xa6.code
+|           0x000000b5      fnew  r2 0
+|       ,=< 0x000000b9      uclo  r0 32768
+|       |   ; CODE XREF from entry8 @ 0xb9
+\       `-> 0x000000bd      ret1  r2 2
+EOF
+RUN
+
+NAME=LUAJIT: Analysis
+FILE=bins/luaJIT/bin/big_2.1.ljbc
+CMDS=<<EOF
+aa
+afl
+axl
+EOF
+EXPECT=<<EOF
+0x0000001e    4 44           entry9
+0x000000b1    2 16           entry8
+0x000000f3    5 128          entry7
+0x000001e6    1 64           entry6
+0x000002aa    9 108  -> 100  entry5
+0x000003b6   13 92   -> 80   entry4
+0x00000441    1 12           entry3
+0x00000468    4 52           entry2
+0x000004e0    1 80           entry1
+0x000005e5    2 124          entry0
+                               entry9+24 0x36 ->      CODE -> 0x3e entry9+32
+                                entry8+8 0xb9 ->      CODE -> 0xbd entry8+12
+                               entry7+64 0x133 ->      CODE -> 0x13f entry7+76
+                               entry7+72 0x13b ->      CODE -> 0x143 entry7+80
+                               entry5+88 0x302 ->      CODE -> 0x312 entry5+104
+                                entry4+8 0x3be ->      CODE -> 0x3ce entry4+24
+                               entry4+32 0x3d6 ->      CODE -> 0x3e6 entry4+48
+                               entry4+52 0x3ea ->      CODE -> 0x3fa entry4+68
+                               entry4+72 0x3fe ->      CODE -> 0x40a entry4+84
+                               entry2+24 0x480 ->      CODE -> 0x488 entry2+32
+                              entry0+116 0x659 ->      CODE -> 0x65d entry0+120
+EOF
+RUN
+
+NAME=LUAJIT: Function boundary
+FILE=bins/luaJIT/bin/big_2.1.ljbc
+CMDS=<<EOF
+aa
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.0x5d7.code:
+/ entry0();
+|           0x000005e5      gget  r0 0                                 ; [02] -r-x section size 124 named fcn.0x5d7.code
+|           0x000005e9      knum  r1 0
+|           0x000005ed      tsets r1 0 1
+|           0x000005f1      gget  r0 0
+|           0x000005f5      kpri  r1 2
+|           0x000005f9      tsets r1 0 2
+|           0x000005fd      knil  r0...r3
+|           0x00000601      tdup  r4 3
+|           0x00000605      fnew  r5 4
+|           0x00000609      mov   r6 r5
+|           0x0000060d      knum  r8 1
+|           0x00000611      call  r6 2 2
+|           0x00000615      mov   r7 r6
+|           0x00000619      kshort r9 45
+|           0x0000061d      kpri  r10 1
+|           0x00000621      call  r7 3 3
+|           0x00000625      mov   r9 r6
+|           0x00000629      kshort r11 50
+|           0x0000062d      kpri  r12 2
+|           0x00000631      call  r9 3 3
+|           0x00000635      fnew  r11 5
+|           0x00000639      fnew  r12 6
+|           0x0000063d      fnew  r13 7
+|           0x00000641      fnew  r14 8
+|           0x00000645      fnew  r15 9
+|           0x00000649      fnew  r16 10
+|           0x0000064d      fnew  r17 11
+|           0x00000651      mov   r18 r17
+|           0x00000655      call  r18 1 1
+|       ,=< 0x00000659      uclo  r0 32768
+|       |   ; CODE XREF from entry0 @ 0x659
+\       `-> 0x0000065d      ret0  r0 1
+EOF
+RUN
+
+NAME=LUAJIT: Function boundary small file
+FILE=bins/luaJIT/bin/find_string_2.1.ljbc
+CMDS=<<EOF
+aa
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.0x1a.code:
+/ entry0();
+|           0x00000026      gget  r0 0                                 ; [02] -r-x section size 140 named fcn.0x1a.code
+|           0x0000002a      tgets r0 0 1
+|           0x0000002e      gget  r2 2
+|           0x00000032      kstr  r3 3
+|           0x00000036      call  r0 3 3
+|           0x0000003a      gget  r2 4
+|           0x0000003e      kstr  r4 5
+|           0x00000042      gget  r5 0
+|           0x00000046      tgets r5 5 6
+|           0x0000004a      gget  r7 2
+|           0x0000004e      mov   r8 r0
+|           0x00000052      mov   r9 r1
+|           0x00000056      call  r5 0 4
+|           0x0000005a      callm r2 1 1
+|           0x0000005e      gget  r2 0
+|           0x00000062      tgets r2 2 1
+|           0x00000066      gget  r4 2
+|           0x0000006a      kstr  r5 7
+|           0x0000006e      call  r2 3 3
+|       ,=< 0x00000072      isf   r0 r2
+|      ,==< 0x00000076      jmp   r4 3
+|      |`-> 0x0000007a      gget  r4 4
+|      |    0x0000007e      kstr  r6 8
+|      |    0x00000082      call  r4 1 2
+|      |    ; CODE XREF from entry0 @ 0x76
+|      `--> 0x00000086      gget  r4 0
+|           0x0000008a      tgets r4 4 1
+|           0x0000008e      gget  r6 2
+|           0x00000092      kstr  r7 9
+|           0x00000096      call  r4 3 3
+|       ,=< 0x0000009a      ist   r0 r4
+|      ,==< 0x0000009e      jmp   r6 3
+|      |`-> 0x000000a2      gget  r6 4
+|      |    0x000000a6      kstr  r8 10
+|      |    0x000000aa      call  r6 1 2
+|      |    ; CODE XREF from entry0 @ 0x9e
+\      `--> 0x000000ae      ret0  r0 1
+EOF
+RUN
+
+NAME=LUAJIT: Function boundary small file
+FILE=bins/luaJIT/bin/find_string_2.1.ljbc
+CMDS=<<EOF
+aa
+pd 10
+afl
+axl
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.0x1a.code:
+/ entry0();
+|           0x00000026      gget  r0 0                                 ; [02] -r-x section size 140 named fcn.0x1a.code
+|           0x0000002a      tgets r0 0 1
+|           0x0000002e      gget  r2 2
+|           0x00000032      kstr  r3 3
+|           0x00000036      call  r0 3 3
+|           0x0000003a      gget  r2 4
+|           0x0000003e      kstr  r4 5
+|           0x00000042      gget  r5 0
+|           0x00000046      tgets r5 5 6
+|           0x0000004a      gget  r7 2
+0x00000026    7 140          entry0
+                               entry0+80 0x76 ->      CODE -> 0x86 entry0+96
+                              entry0+120 0x9e ->      CODE -> 0xae entry0+136
+EOF
+RUN
