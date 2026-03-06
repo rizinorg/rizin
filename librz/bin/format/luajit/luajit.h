@@ -12,7 +12,7 @@
 #define LUAJIT_GET_INTERNAL_BIN_INFO_OBJ(bf) ((LuaJITBinInfo *)(bf)->o->bin_obj)
 #define IS_FLAG(off, flag)                   ((off) & flag)
 
-/*Header Info*/
+/* Header Info */
 #define LUAJIT_MAGIC           "\x1b\x4c\x4a"
 #define LUAJIT_MAGIC_OFFSET    0x00
 #define LUAJIT_MAGIC_BYTE_SIZE 3
@@ -20,20 +20,20 @@
 #define LUAJIT_FLAG_OFFSET_AT  0x04
 #define LUAJIT_FILE_LEN_START  0x05
 
-/*Header Flags*/
+/* Header Flags */
 #define LUAJIT_BCDUMP_F_BE    0x01
 #define LUAJIT_BCDUMP_F_STRIP 0x02
 #define LUAJIT_BCDUMP_F_FFI   0x04
 #define LUAJIT_BCDUMP_F_FR2   0x08
 
-/*Protos flags*/
+/* Protos flags */
 #define LUAJIT_PROTO_CHILD   0x01
 #define LUAJIT_PROTO_VARARGS 0x02
 #define LUAJIT_PROTO_FFI     0x04
 #define LUAJIT_PROTO_NOJIT   0x08
 #define LUAJIT_PROTO_ILOOP   0x10
 
-/*LuaJIT Value Types*/
+/* LuaJIT Value Types */
 typedef enum {
 	LUAJIT_TNILL, ///< Type is nil
 	LUAJIT_TFALSE, ///< Type is False
@@ -43,7 +43,7 @@ typedef enum {
 	LUAJIT_TSTR ///< Type is a string
 } LuaJITValueType;
 
-/*LuaJIT Sections*/
+/* LuaJIT Sections */
 typedef enum {
 	LUAJIT_STKGCOBJ, ///< KGC objects section
 	LUAJIT_STTABLE, ///< Table section
@@ -52,7 +52,7 @@ typedef enum {
 	LUAJIT_STUPVALINFO ///< Up value at debug section
 } LuaJITSection;
 
-/*LuaJIT KGC object type*/
+/* LuaJIT KGC object type */
 typedef enum {
 	LUAJIT_KGCCHILD, ///< Previous parsed proto was child proto of the current proto
 	LUAJIT_KGCTABLE, ///< Type is Table
@@ -74,7 +74,7 @@ typedef struct LuaJIT_binInfo {
 	RzPVector /*<RzBinSection *>*/ *sections; ///< list of sections
 	RzList /*<RzBinSymbol *>*/ *symbol_list; ///< list of symbols
 	RzPVector /*<RzBinAddr *>*/ *entry_vec; ///< list of entries
-	RzList /*<RzBinString>*/ *strings; //< list of strings
+	RzList /*<RzBinString *>*/ *strings; //< list of strings
 	RzBinInfo *general_bin_info;
 } LuaJITBinInfo;
 
@@ -95,7 +95,7 @@ typedef struct luajit_proto_hdr_debug {
  * \brief Stores the proto info
  */
 typedef struct LuaJIT_Proto {
-	/*Header Info*/
+	/* Header Inf */
 	ut64 start_offset; ///< Beginning of the proto (starts from header)
 	ut64 end_offset; ///< End address of the proto
 	ut64 size; ///< Proto size
@@ -103,8 +103,8 @@ typedef struct LuaJIT_Proto {
 
 	LuaJITHdrDebug *hdr_dbg; ///< Info of Current proto header debug section.
 
-	/*Protos body*/
-	RzList /*<LuaJITProto>*/ *proto_entries; ///< Nested protos
+	/* Protos body */
+	RzList /*<LuaJITProto *>*/ *proto_entries; ///< Nested protos
 
 	int num_istr_cnt; ///< Number of bytecode instructions
 	ut64 instr_offset; ///< Instructions start offset.
@@ -112,17 +112,17 @@ typedef struct LuaJIT_Proto {
 	ut64 up_val_entry_offset; ///< Up_val section offset
 	int num_up_val; ///< Number of Up_values
 
-	RzList /*<LuaJITKgcObj>*/ *kgc_obj; ///< List of KGC objects
-	RzList /*<LuaJITTable>*/ *table; ///< List of the table
+	RzList /*<LuaJITKgcObj *>*/ *kgc_obj; ///< List of KGC objects
+	RzList /*<LuaJITTable *>*/ *table; ///< List of the table
 	int k_const; ///< Number of KGC objects present
 
-	RzList /*<LuaJITConstEntry>*/ *constant_entries; ///< List for Constants
+	RzList /*<LuaJITConstEntry *>*/ *constant_entries; ///< List for Constants
 	int num_const; ///< Number of constants present
 
 	ut64 debug_info_offset; ///< Debug mapping section offset
 	int dbg_info_size; ///< Debug mapping section size
-	RzList /*<LuaJITLocalVar>*/ *local_var_entry; ///< List to store local variables info
-	RzList /*<LuaJITUpValue>*/ *up_val_info; ///< List to store Up_value info
+	RzList /*<LuaJITLocalVar *>*/ *local_var_entry; ///< List to store local variables info
+	RzList /*<LuaJITUpValue *>*/ *up_val_info; ///< List to store Up_value info
 } LuaJITProto;
 
 /**
@@ -136,12 +136,11 @@ typedef struct luajit_table {
 	int size; ///< Size of the current table
 
 	// Array Part
-	RzList /* <LuaJITValue*> */ *array_items; ///< List of values in array
+	RzList /*<LuaJITValue *>*/ *array_items; ///< List of values in array
 
 	// Hash Part
-	RzList /* <LuaJITValue*> */ *hash_keys; ///< List of Keys for hash values
-	RzList /* <LuaJITValue*> */ *hash_values; ///< List of hash values
-
+	RzList /*<LuaJITValue *>*/ *hash_keys; ///< List of Keys for hash values
+	RzList /*<LuaJITValue *>*/ *hash_values; ///< List of hash values
 } LuaJITTable;
 
 /**
@@ -158,7 +157,6 @@ typedef struct luajit_kgc_obj {
 		double r_bits; ///< Real number
 		double i_bits; ///< Imaginary number
 	} cmplx; ///< Struct for storing complex numbers
-
 } LuaJITKgcObj;
 
 /**
@@ -205,11 +203,11 @@ typedef struct luajit_constant_entry {
 	int size; ///< Size of the constant section.
 } LuaJITConstEntry;
 
-/*Plugin*/
-RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*LuaJITProto*/ *proto_list, ut64 base_offset, ut64 byte_rd, bool last_proto);
+/* Plugin */
+RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*/ *proto_list, ut64 base_offset, ut64 byte_rd, bool last_proto);
 RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, int min);
 
-/*Common*/
+/* Common */
 RZ_IPI bool check_malformed_ULEB128(int val);
 RZ_IPI ut64 luajit_parse_string(RzBuffer *buf, ut64 offset, ut32 type, char **dest);
 

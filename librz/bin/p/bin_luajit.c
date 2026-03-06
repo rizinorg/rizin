@@ -48,9 +48,9 @@ void luajit_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int e
 	rz_pvector_push(entry_vec, entry);
 }
 
-static void luajit_add_strings(RzList /*<RzBinString>*/ *string_list, char *string, ut64 offset) {
+static void luajit_add_strings(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset) {
 	RzBinString *bin_string = RZ_NEW0(RzBinString);
-	if (!bin_string && !string) {
+	if (!bin_string || !string) {
 		return;
 	}
 
@@ -119,7 +119,7 @@ static LuaJITBinInfo *luajit_build_info_new() {
 	ret->symbol_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	ret->sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 
-	if ((!ret->strings && !ret->entry_vec && !ret->sections && !ret->symbol_list)) {
+	if ((!ret->strings || !ret->entry_vec || !ret->sections || !ret->symbol_list)) {
 		rz_pvector_free(ret->entry_vec);
 		rz_pvector_free(ret->sections);
 		rz_list_free(ret->strings);
@@ -130,7 +130,14 @@ static LuaJITBinInfo *luajit_build_info_new() {
 	return ret;
 }
 
-int luajit_get_section_size(RzList /*<LuaJITSections>*/ *l, LuaJITSection type) {
+/**
+ * \brief Calculates the section size
+ * \param l List of pointers of different section types defined in "LuaJITSection".
+ * \param type Type of pointer the list \p l contains.
+ *
+ * \return size of the section sent.
+ */
+int luajit_get_section_size(RzList /*<void *>*/ *l, LuaJITSection type) {
 	if (rz_list_empty(l)) {
 		return 0;
 	}
@@ -249,12 +256,168 @@ void add_table_string(LuaJITBinInfo *bi, LuaJITValue *val) {
 	}
 }
 
+char *get_luajit_cmplx_symbol(LuaJITKgcObj *k, char *proto_loc) {
+	if (!k || !proto_loc) {
+		return NULL;
+	}
+	return rz_str_newf("%s_kgcconst_%f%+fi", proto_loc, k->cmplx.r_bits, k->cmplx.i_bits);
+}
+
+char *get_kgc_symbol_type(LuaJITKGCTypes type) {
+	if (type == LUAJIT_KGCINT || type == LUAJIT_KGCFLT) {
+		return "KGC_NUM";
+	} else if (type == LUAJIT_KGCCMPLX) {
+		return "KGC_CMPLX";
+	} else {
+		return NULL;
+	}
+}
+
+static void _build_kgc_objects(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+	rz_return_if_fail(proto_loc);
+	if (rz_list_empty(proto->kgc_obj)) {
+		return;
+	}
+
+	RzListIter *iter;
+	LuaJITKgcObj *kgc_obj = rz_list_first_val(proto->kgc_obj);
+	ut64 current_offset = kgc_obj->offset;
+	ut64 current_size = luajit_get_section_size(proto->kgc_obj, LUAJIT_STKGCOBJ);
+
+	char *section_name = rz_str_newf("%s.kgcobj", proto_loc);
+	rz_return_if_fail(section_name);
+	luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
+
+	rz_list_foreach (proto->kgc_obj, iter, kgc_obj) {
+		char *symbol_name = NULL;
+		const char *symbol_type = get_kgc_symbol_type(kgc_obj->type);
+
+		switch (kgc_obj->type) {
+		case LUAJIT_KGCINT:
+			if (kgc_obj->data) {
+				symbol_name = rz_str_newf("%s_kgcconst_%" PFMT64d, proto_loc, *(ut64 *)kgc_obj->data);
+			}
+			break;
+		case LUAJIT_KGCFLT:
+			if (kgc_obj->data) {
+				symbol_name = rz_str_newf("%s_kgcconst_%f", proto_loc, *(double *)kgc_obj->data);
+			}
+			break;
+		case LUAJIT_KGCCMPLX:
+			symbol_name = get_luajit_cmplx_symbol(kgc_obj, proto_loc);
+			break;
+		default:
+			if (kgc_obj->type >= LUAJIT_KGCSTR && kgc_obj->data) {
+				luajit_add_strings(info->strings, kgc_obj->data, kgc_obj->offset);
+			}
+			break;
+		}
+
+		if (symbol_name) {
+			luajit_add_symbol(info->symbol_list, symbol_name, kgc_obj->offset, kgc_obj->size, symbol_type);
+			RZ_FREE(symbol_name);
+		}
+	}
+	RZ_FREE(section_name);
+}
+
+static void _build_constant_entries(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+	if (rz_list_empty(proto->constant_entries)) {
+		return;
+	}
+
+	RzListIter *iter;
+	LuaJITConstEntry *constant_entry = rz_list_first_val(proto->constant_entries);
+	ut64 current_offset = constant_entry->offset;
+	ut64 current_size = luajit_get_section_size(proto->constant_entries, LUAJIT_STCONSTENTR);
+
+	char *section_name = rz_str_newf("%s.const", proto_loc);
+	rz_return_if_fail(section_name);
+	luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
+
+	rz_list_foreach (proto->constant_entries, iter, constant_entry) {
+		char *symbol_name = get_symbol_const_name(proto_loc, constant_entry);
+		if (symbol_name) {
+			luajit_add_symbol(info->symbol_list, symbol_name, constant_entry->offset, constant_entry->size, get_tag_string(constant_entry->type, true));
+			RZ_FREE(symbol_name);
+		}
+	}
+	RZ_FREE(section_name);
+}
+
+void _build_table_val(LuaJITBinInfo *info, LuaJITValue *_val, char *proto_loc) {
+	char *symbol_name = NULL;
+	if (_val->type < LUAJIT_TSTR) {
+		symbol_name = get_value_symbol_name(proto_loc, _val);
+		if (symbol_name) {
+			luajit_add_symbol(info->symbol_list, symbol_name, _val->offset, _val->size, get_tag_string(_val->type, false));
+			RZ_FREE(symbol_name);
+		}
+	} else {
+		add_table_string(info, _val);
+	}
+}
+
+static void _build_tables(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+	if (rz_list_empty(proto->table)) {
+		return;
+	}
+
+	RzListIter *iter;
+	LuaJITTable *table = rz_list_first_val(proto->table);
+	ut64 current_offset = table->offset;
+	ut64 current_size = luajit_get_section_size(proto->table, LUAJIT_STTABLE);
+
+	char *section_name = rz_str_newf("%s.table", proto_loc);
+	rz_return_if_fail(section_name);
+	luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
+
+	rz_list_foreach (proto->table, iter, table) {
+		RzListIter *i;
+		LuaJITValue *_val;
+
+		if (table->narray > 0) {
+			rz_list_foreach (table->array_items, i, _val) {
+				_build_table_val(info, _val, proto_loc);
+			}
+		}
+
+		if (table->nhash > 0) {
+			rz_list_foreach (table->hash_keys, i, _val) {
+				_build_table_val(info, _val, proto_loc);
+			}
+			rz_list_foreach (table->hash_values, i, _val) {
+				_build_table_val(info, _val, proto_loc);
+			}
+		}
+	}
+	RZ_FREE(section_name);
+}
+
+static void _build_local_vars(LuaJITProto *proto, LuaJITBinInfo *info, const char *proto_loc) {
+	if (rz_list_empty(proto->local_var_entry)) {
+		return;
+	}
+
+	RzListIter *iter;
+	LuaJITLocalVar *local_var = rz_list_first_val(proto->local_var_entry);
+	ut64 current_offset = local_var->offset;
+	ut64 current_size = luajit_get_section_size(proto->local_var_entry, LUAJIT_STLOCALVAR);
+
+	char *section_name = rz_str_newf("%s.localvar", proto_loc);
+	if (section_name) {
+		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
+		rz_list_foreach (proto->local_var_entry, iter, local_var) {
+			luajit_add_strings(info->strings, local_var->varname, local_var->offset);
+		}
+		RZ_FREE(section_name);
+	}
+}
+
 static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 	RzListIter *iter;
 	char *section_name;
 	char *proto_loc;
-	char *symbol_name;
-	const char *symbol_type;
 
 	ut64 current_offset;
 	ut64 current_size;
@@ -283,6 +446,7 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		current_offset = proto->instr_offset;
 		current_size = proto->num_istr_cnt * 4;
 		luajit_add_section(info->sections, section_name, current_offset, current_size, false, false);
+		luajit_add_entry(info->entry_vec, current_offset, RZ_BIN_ENTRY_TYPE_PROGRAM);
 		RZ_FREE(section_name);
 	}
 
@@ -295,109 +459,13 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		RZ_FREE(section_name);
 	}
 
-	if (!rz_list_empty(proto->kgc_obj)) {
-		LuaJITKgcObj *kgc_obj = rz_list_first_val(proto->kgc_obj);
-		current_offset = kgc_obj->offset;
-		current_size = luajit_get_section_size(proto->kgc_obj, LUAJIT_STKGCOBJ);
-		section_name = rz_str_newf("%s.kgcobj", proto_loc);
-		rz_return_if_fail(section_name);
-		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
-		rz_list_foreach (proto->kgc_obj, iter, kgc_obj) {
-			if (kgc_obj->type == LUAJIT_KGCINT || kgc_obj->type == LUAJIT_KGCFLT || kgc_obj->type == LUAJIT_KGCCMPLX) {
-				symbol_name = rz_str_newf("%s_kgcconst_%f", proto_loc, *(double *)kgc_obj->data);
-				rz_return_if_fail(symbol_name);
-				symbol_type = "KGC_NUM";
-				luajit_add_symbol(info->symbol_list, symbol_name, kgc_obj->offset, kgc_obj->size, symbol_type);
-				RZ_FREE(symbol_name);
-			} else if (kgc_obj->type >= LUAJIT_KGCSTR) {
-				luajit_add_strings(info->strings, kgc_obj->data, kgc_obj->offset);
-			} else {
-				continue;
-			}
-		}
-		RZ_FREE(section_name);
-	}
+	_build_kgc_objects(proto, info, proto_loc);
 
-	if (!rz_list_empty(proto->constant_entries)) {
-		LuaJITConstEntry *constant_entry = rz_list_first_val(proto->constant_entries);
-		current_offset = constant_entry->offset;
-		current_size = luajit_get_section_size(proto->constant_entries, LUAJIT_STCONSTENTR);
-		section_name = rz_str_newf("%s.const", proto_loc);
-		rz_return_if_fail(section_name);
-		luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
-		rz_list_foreach (proto->constant_entries, iter, constant_entry) {
-			symbol_name = get_symbol_const_name(proto_loc, constant_entry);
-			if (!symbol_name) {
-				continue;
-			}
-			luajit_add_symbol(info->symbol_list, symbol_name, constant_entry->offset, constant_entry->size, get_tag_string(constant_entry->type, true));
-			RZ_FREE(symbol_name);
-		}
-		RZ_FREE(section_name);
-	}
+	_build_constant_entries(proto, info, proto_loc);
 
-	if (!rz_list_empty(proto->table)) {
-		LuaJITTable *table = rz_list_first_val(proto->table);
-		current_offset = table->offset;
-		current_size = luajit_get_section_size(proto->table, LUAJIT_STTABLE);
-		section_name = rz_str_newf("%s.table", proto_loc);
-		rz_return_if_fail(section_name);
-		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
-		rz_list_foreach (proto->table, iter, table) {
-			RzListIter *i;
-			LuaJITValue *_val;
-			if (table->narray > 0) {
-				rz_list_foreach (table->array_items, i, _val) {
-					if (_val->type < LUAJIT_TSTR) {
-						symbol_type = get_tag_string(_val->type, false);
-						symbol_name = get_value_symbol_name(proto_loc, _val);
-						rz_return_if_fail(symbol_name);
-						luajit_add_symbol(info->symbol_list, symbol_name, _val->offset, _val->size, symbol_type);
-						RZ_FREE(symbol_name);
-					} else {
-						add_table_string(info, _val);
-					}
-				}
-			}
-			if (table->nhash > 0) {
-				rz_list_foreach (table->hash_keys, i, _val) {
-					if (_val->type < LUAJIT_TSTR) {
-						symbol_type = get_tag_string(_val->type, false);
-						symbol_name = get_value_symbol_name(proto_loc, _val);
-						rz_return_if_fail(symbol_name);
-						luajit_add_symbol(info->symbol_list, symbol_name, _val->offset, _val->size, symbol_type);
-						RZ_FREE(symbol_name);
-					} else {
-						add_table_string(info, _val);
-					}
-				}
-				rz_list_foreach (table->hash_values, i, _val) {
-					if (_val->type < LUAJIT_TSTR) {
-						symbol_type = get_tag_string(_val->type, false);
-						symbol_name = get_value_symbol_name(proto_loc, _val);
-						rz_return_if_fail(symbol_name);
-						luajit_add_symbol(info->symbol_list, symbol_name, _val->offset, _val->size, symbol_type);
-						RZ_FREE(symbol_name);
-					} else {
-						add_table_string(info, _val);
-					}
-				}
-			}
-		}
-		RZ_FREE(section_name);
-	}
+	_build_tables(proto, info, proto_loc);
 
-	if (!rz_list_empty(proto->local_var_entry)) {
-		LuaJITLocalVar *local_var = rz_list_first_val(proto->local_var_entry);
-		current_offset = local_var->offset;
-		current_size = luajit_get_section_size(proto->local_var_entry, LUAJIT_STLOCALVAR);
-		section_name = rz_str_newf("%s.localvar", proto_loc);
-		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
-		rz_list_foreach (proto->local_var_entry, iter, local_var) {
-			luajit_add_strings(info->strings, local_var->varname, local_var->offset);
-		}
-		RZ_FREE(section_name);
-	}
+	_build_local_vars(proto, info, proto_loc);
 
 	if (!rz_list_empty(proto->up_val_info)) {
 		LuaJITUpValue *up_val_info = rz_list_first_val(proto->up_val_info);
@@ -413,10 +481,6 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 	section_name = rz_str_newf("%s.debug", proto_loc);
 	luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
 	RZ_FREE(section_name);
-
-	ut64 entry_offset;
-	entry_offset = proto->instr_offset;
-	luajit_add_entry(info->entry_vec, entry_offset, RZ_BIN_ENTRY_TYPE_PROGRAM);
 
 	LuaJITProto *sub_proto;
 	rz_list_foreach (proto->proto_entries, iter, sub_proto) {
@@ -435,7 +499,9 @@ LuaJITBinInfo *luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *ret) {
 	if (!ret) {
 		return NULL;
 	}
-	luajit_add_strings(ret->strings, ret->file_name, ret->header_end - rz_str_ansi_len(ret->file_name));
+	if (ret->file_name) {
+		luajit_add_strings(ret->strings, ret->file_name, ret->header_end - rz_str_ansi_len(ret->file_name));
+	}
 
 	_luajit_build_info(proto, ret);
 
@@ -448,7 +514,7 @@ static bool luajit_load_buffer(RzBinFile *b, RzBinObject *obj, RzBuffer *buf, Sd
 	LuaJITBinInfo *bin_info_obj = NULL;
 	LuaJITProto *proto_info = NULL;
 
-	RzList /*<LuaJITProto>*/ *proto_list = rz_list_newf((RzListFree)luajit_free_proto_entry); // A list to keep nested protos
+	RzList /*<LuaJITProto *>*/ *proto_list = rz_list_new(); // A list to keep nested protos
 
 	rz_buf_read_at(buf, LUAJIT_VERSION_OFFSET, &version, sizeof(version));
 
@@ -484,7 +550,7 @@ static bool luajit_load_buffer(RzBinFile *b, RzBinObject *obj, RzBuffer *buf, Sd
 	return true;
 }
 
-static RzPVector /*<RzBinString>*/ *luajit_strings(RzBinFile *bf) {
+static RzPVector /*<RzBinString *>*/ *luajit_strings(RzBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
@@ -536,7 +602,9 @@ static RzPVector /*<RzBinSymbol *>*/ *luajit_symbols(RzBinFile *bf) {
 	RzBinSymbol *sym;
 	RzPVector *vec = rz_pvector_new(NULL);
 	rz_list_foreach (bin_info_obj->symbol_list, iter, sym) {
-		rz_pvector_push(vec, sym);
+		if (vec != NULL) {
+			rz_pvector_push(vec, sym);
+		}
 	}
 	return vec;
 }

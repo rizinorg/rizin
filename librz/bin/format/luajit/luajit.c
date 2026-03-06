@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Arya-1-HR
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include "luajit.h"
 #include <rz_util/rz_str.h>
 
@@ -216,14 +217,16 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 	return offset;
 }
 
-static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer *buf, RzList /*LuaJITProto*/ *proto_stack, ut64 offset, LuaJITKGCTypes type) {
+static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer *buf, RzList /*<LuaJITProto *>*/ *proto_stack, ut64 offset, LuaJITKGCTypes type) {
 	kgc_obj->type = type;
 
 	switch (type) {
 	case LUAJIT_KGCCHILD: {
 		void *tmp = rz_list_pop(proto_stack);
 		LuaJITProto *child = (LuaJITProto *)rz_list_pop(proto_stack);
-		rz_list_append(proto->proto_entries, child);
+		if (child) {
+			rz_list_append(proto->proto_entries, child);
+		}
 		rz_list_append(proto_stack, tmp);
 		break;
 	}
@@ -265,7 +268,7 @@ static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer 
 	return offset;
 }
 
-static ut64 parse_kgc_objects(RzBuffer *buff, LuaJITProto *proto, RzList /*<LuaJITProto>*/ *proto_stack, ut64 offset_from) {
+static ut64 parse_kgc_objects(RzBuffer *buff, LuaJITProto *proto, RzList /*<LuaJITProto *>*/ *proto_stack, ut64 offset_from) {
 	int i, end_len;
 	ut64 off = offset_from;
 	ut64 ret;
@@ -393,8 +396,8 @@ static void parse_debug_info(RzBuffer *buf, LuaJITProto *proto, ut64 offset) {
 		local_var->offset = curr;
 		rz_buf_seek(buf, curr, RZ_BUF_SET);
 		char *str = NULL;
-		ut64 len = rz_buf_read_string(buf, &str);
-		if (len < 0 && str == NULL) {
+		int len = rz_buf_read_string(buf, &str);
+		if (len < 0 || str == NULL) {
 			free(local_var);
 			break;
 		}
@@ -423,7 +426,7 @@ static void parse_debug_info(RzBuffer *buf, LuaJITProto *proto, ut64 offset) {
 	}
 }
 
-RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto>*/ *proto_list, ut64 base_offset, ut64 byte_rd, bool last_proto) {
+RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*/ *proto_list, ut64 base_offset, ut64 byte_rd, bool last_proto) {
 	LuaJITProto *proto = luajit_new_proto();
 	luajit_return_if_null(proto, NULL);
 	RzListIter *iter;
