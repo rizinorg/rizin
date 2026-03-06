@@ -443,7 +443,7 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 	memset(&ctx->op, 0, sizeof(ctx->op));
 
 	ctx->read_ahead_cache.cache_addr = UT64_MAX; // invalidate the cache
-	ctx->tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip"; // ???
+	strcpy(ctx->tmp_buf, "skip");
 	ctx->arch_destroys_dst = does_arch_destroys_dst(ctx->analysis->cur->arch);
 	if (ctx->analysis->cur->arch) {
 		ctx->selected_architecture.is_arm = !strncmp(ctx->analysis->cur->arch, "arm", 3);
@@ -540,10 +540,10 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 			ctx->varset = true;
 		}
 	}
-	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
-	ut64 movscale = 0;
-	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
-	int maxlen = ctx->len * ctx->addrbytes;
+	ctx->movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
+	ctx->movscale = 0;
+	// ut8 buf[32]; // 32 bytes is enough to hold any instruction.
+	ctx->maxlen = ctx->len * ctx->addrbytes;
 
 	// Dalvik import skipping
 	if (ctx->selected_architecture.is_dalvik) {
@@ -564,7 +564,7 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 	if ((ctx->maxlen - (ctx->addrbytes * ctx->idx)) > MAX_SCAN_SIZE) {
 		// XXX idx is always 0 here, and maxlen comes from amalysis.bb.maxsize. This makes no sense.
 		RZ_LOG_DEBUG("Skipping large memory region during basic block analysis.\n");
-		maxlen = 0;
+		ctx->maxlen = 0;
 	}
 
 	return true;
