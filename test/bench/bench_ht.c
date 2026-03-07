@@ -187,10 +187,10 @@ static char *generate_su_key(ut64 index) {
 	// Try to mimic real world string keys
 	switch (index % 8) {
 	case 0:
-		snprintf(buffer, UT8_MAX, "user_%" PRIx64, index); // user id
+		snprintf(buffer, UT8_MAX, "user_%" PRIu64, index); // user id
 		break;
 	case 1:
-		snprintf(buffer, UT8_MAX, "session_%" PRIx64 "%" PRIx64, index, index * 7919); // session token
+		snprintf(buffer, UT8_MAX, "session_%" PRIu64 "%" PRIu64, index, index * 7919); // session token
 		break;
 	case 2: {
 		const char *sections[] = { "analysis", "asm", "scr", "graph", "str" };
@@ -202,7 +202,7 @@ static char *generate_su_key(ut64 index) {
 		const char *headers[] = { "content-type", "content-length", "authorization", "user-agent", "accept", "accept-encoding",
 			"cache-control", "connection", "host", "cookie", "referer", "accept-language",
 			"x-forwarded-for", "x-request-id", "etag" };
-		snprintf(buffer, UT8_MAX, "%s-%" PRIx64, headers[index % 15], index / 15); // http header
+		snprintf(buffer, UT8_MAX, "%s-%" PRIu64, headers[index % 15], index / 15); // http header
 		break;
 	}
 	case 4: {
@@ -212,11 +212,11 @@ static char *generate_su_key(ut64 index) {
 	}
 	case 5: {
 		const char *domains[] = { "example.com", "test.org", "mail.net", "company.io" };
-		snprintf(buffer, UT8_MAX, "user%" PRIx64 "@%s", index, domains[index % 4]); // email
+		snprintf(buffer, UT8_MAX, "user%" PRIu64 "@%s", index, domains[index % 4]); // email
 		break;
 	}
 	case 6: {
-		snprintf(buffer, UT8_MAX, "%08" PRIx64 "-%04" PRIx64 "-%04" PRIx64 "-%04" PRIx64 "-%012" PRIx64,
+		snprintf(buffer, UT8_MAX, "%08" PRIu64 "-%04" PRIu64 "-%04" PRIu64 "-%04" PRIu64 "-%012" PRIu64,
 			index,
 			(index >> 16) & 0xFFFF,
 			(index >> 8) & 0xFFFF,
