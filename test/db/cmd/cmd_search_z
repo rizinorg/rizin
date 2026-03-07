@@ -334,6 +334,7 @@ ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0 43
+
 EOF
 EXPECT_ERR=
 RUN
