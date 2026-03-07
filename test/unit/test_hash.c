@@ -126,7 +126,12 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "entropy", .expected = "2.75000000" },
 	{ INDATA("password"), .algo = "entropy_fract", .expected = "0.91666667" },
 	{ INDATA("abcdefgh"), .algo = "temperature", .expected = "1.00000000" },
-	{ INDATA("a"), .algo = "temperature", .expected = "0.00000000" }
+	{ INDATA("a"), .algo = "temperature", .expected = "0.00000000" },
+	{ INDATA(""), .algo = "djb2", .expected = "0515000000000000" },
+	{ INDATA("a"), .algo = "djb2", .expected = "06b6020000000000" },
+	{ INDATA("hello"), .algo = "djb2", .expected = "9930920f31000000" },
+	{ INDATA("hello world"), .algo = "djb2", .expected = "c1c85135d43f94c0" },
+	{ INDATA("password"), .algo = "djb2", .expected = "38dcf61769e71a00" }
 #undef INDATA
 };
 

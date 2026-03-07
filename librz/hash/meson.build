@@ -86,6 +86,7 @@ hash_plugins_list = [
   'entropy',
   'entropy_fract',
   'temperature',
+  'djb2',
 ]
 
 hash_plugins = {
@@ -131,6 +132,7 @@ rz_hash_sources = [
   'p/algo_entropy.c',
   'p/algo_entropy_fractional.c',
   'p/algo_temperature.c',
+  'p/algo_djb2.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
@@ -141,7 +143,8 @@ rz_hash_sources = [
   'algorithms/fletcher/fletcher.c',
   'algorithms/ssdeep/ssdeep.c',
   'algorithms/md2/md2.c',
-  'algorithms/sha3/sha3.c'
+  'algorithms/sha3/sha3.c',
+  'algorithms/djb2/djb2.c',
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep, blake2_dep]

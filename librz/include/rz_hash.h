@@ -182,6 +182,7 @@ extern RzHashPlugin rz_hash_plugin_blake3;
 extern RzHashPlugin rz_hash_plugin_ssdeep;
 extern RzHashPlugin rz_hash_plugin_sm3;
 extern RzHashPlugin rz_hash_plugin_temperature;
+extern RzHashPlugin rz_hash_plugin_djb2;
 
 #ifdef __cplusplus
 }
