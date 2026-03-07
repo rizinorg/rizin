@@ -303,9 +303,42 @@ error_free:
 	return false;
 }
 
+RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_targets) {
+	rz_return_val_if_fail(core && symbol_targets, false);
+	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
+	if (!sections) {
+		rz_warn_if_reached();
+		return false;
+	}
+	// Add function addresses of function symbols in the executable region.
+	void **it;
+	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
+	if (!symbols) {
+		rz_warn_if_reached();
+		return false;
+	}
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (!RZ_STR_EQ(sym->type, RZ_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
+		void **it2;
+		rz_pvector_foreach (sections, it2) {
+			RzBinSection *sec = *it2;
+			if (sec->perm & RZ_PERM_X &&
+				RZ_BETWEEN_EXCL(sec->vaddr, sym->vaddr, sec->vaddr + sec->vsize)) {
+				rz_set_u_add(symbol_targets, sym->vaddr);
+				break;
+			}
+		}
+	}
+	return true;
+}
+
 static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
 	if (!sections) {
+		rz_warn_if_reached();
 		return false;
 	}
 	RzVector *non_x_idx = rz_vector_new(sizeof(size_t), NULL, NULL);
@@ -451,6 +484,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
 	RzSetU *branch_targets = rz_set_u_new();
+	RzSetU *symbol_targets = rz_set_u_new();
 	bool user_sent_signal = false;
 
 	rz_cons_push();
@@ -466,14 +500,22 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 	il_cache = ht_up_new(NULL, (RzPVectorFree)rz_interpreter_il_bb_free);
 
 	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
-	if (!get_branch_targets(core, branch_targets, insn_to_insn_edges)) {
+	if (!get_branch_targets(core, branch_targets, insn_to_insn_edges) ||
+		!rz_inquiry_get_fcn_symbol_addr(core, symbol_targets)) {
 		RZ_LOG_ERROR("Failed to get branch targets.\n");
 		return_code = false;
 		goto error_free;
 	}
+	RzIterator *iter = rz_set_u_as_iter(symbol_targets);
+	ut64 *sym_addr;
+	rz_iterator_foreach(iter, sym_addr) {
+		rz_set_u_add(branch_targets, *sym_addr);
+	}
+	rz_iterator_free(iter);
+	rz_set_u_free(symbol_targets);
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-		printf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(branch_targets));
+		eprintf("Total branch targets in binary: %" PFMT32d "\n", rz_set_u_size(branch_targets));
 	}
 
 	// Initialize the abstract state with the architecture's registers.
@@ -728,20 +770,20 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 			rz_vector_free(covered_jump_targets);
 		}
 		if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-			printf(RZ_CONS_CLEAR_LINE "\rBranch targets left: %" PFMT32d, rz_set_u_size(branch_targets));
+			eprintf(RZ_CONS_CLEAR_LINE "\rBranch targets left: %" PFMT32d, rz_set_u_size(branch_targets));
 			fflush(stdout);
 		}
 	} while (!rz_vector_empty(entry_points));
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-		printf("\n");
+		eprintf("\n");
 	}
 	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
 		rz_warn_if_reached();
 		goto error_free;
 	}
 	if (!user_sent_signal) {
-		printf("Complement BB CFG with statically known xrefs...\n");
+		eprintf("Complement BB CFG with statically known xrefs...\n");
 		if (!rz_inquiry_bb_cfg_complement(core->inquiry, insn_to_insn_edges)) {
 			rz_warn_if_reached();
 			goto error_free;
@@ -856,14 +898,14 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	return true;
 }
 
-RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, ut64 entry_point,
+RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, RzSetU *symbol_addresses,
 	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	if (!rz_inquiry_algo_revng_fcn_detection(
-		entry_point,
-		inquiry->call_candidates,
-		inquiry->bb_cfg,
-		fcns)) {
+		    symbol_addresses,
+		    inquiry->call_candidates,
+		    inquiry->bb_cfg,
+		    fcns)) {
 		rz_warn_if_reached();
 		return false;
 	}

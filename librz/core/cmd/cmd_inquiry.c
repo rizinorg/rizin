@@ -29,16 +29,21 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_vector_push(entry_points, &entry_point);
 		}
 	}
-	entry_point = *(ut64 *)rz_vector_head(entry_points);
 	bool success = rz_inquiry_interpreter(core, entry_points);
-	printf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
+	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	printf("Perform function deduction: ");
+	eprintf("Perform function deduction: ");
+
+	RzSetU *symbol_addresses = rz_set_u_new();
+	if (!rz_inquiry_get_fcn_symbol_addr(core, symbol_addresses)) {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
-	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, entry_point, symbols);
-	printf("%s\n", success ? "OK" : "FAIL");
+	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols);
+	eprintf("%s\n", success ? "OK" : "FAIL");
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

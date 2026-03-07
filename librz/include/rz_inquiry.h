@@ -85,7 +85,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 
 RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
 	RzInquiry *inquiry,
-	ut64 entry_point,
+	RzSetU *symbol_addresses,
 	const RzPVector /*<RzBinSymbol *>*/ *symbols);
 
 //============
@@ -103,10 +103,12 @@ typedef struct {
 RZ_IPI RZ_OWN RzInquiryFunction *rz_inquiry_function_new();
 RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn);
 
+RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_targets);
+
 RZ_API void rz_inquiry_function_free(RZ_NULLABLE RZ_OWN RzInquiryFunction *fcn);
 
 RZ_API bool rz_inquiry_algo_revng_fcn_detection(
-	ut64 entry_point,
+	RzSetU *symbol_addresses,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	const RzInquiryBBCFG *bb_cfg,
 	RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns);
