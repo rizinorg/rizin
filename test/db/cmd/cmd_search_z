@@ -300,9 +300,11 @@ CMDS=<<EOF
 /z "placerat ut, eu etiam vitae nam" l ascii
 e str.unprintable=0x20
 /z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 0x000000fa 31 hit.string.ascii.0 31
+placerat
 EOF
 EXPECT_ERR=
 RUN
@@ -313,9 +315,11 @@ CMDS=<<EOF
 /z "placerat ut, eu etiam vitae nam" l ascii
 e str.unprintable=0x20,0x2c
 /z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
 EOF
 EXPECT=<<EOF
 0x000000fa 31 hit.string.ascii.0 31
+placerat
 EOF
 EXPECT_ERR=
 RUN
@@ -326,6 +330,7 @@ CMDS=<<EOF
 /z "ا الأوضاع, لم بوابة المب" l utf8
 e str.unprintable=0x627
 /z "ا الأوضاع, لم بوابة المب" l utf8
+ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0 43
