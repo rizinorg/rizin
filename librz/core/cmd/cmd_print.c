@@ -1618,12 +1618,12 @@ static inline ut32 cmd_pxb_k(const ut8 *buffer, int x) {
 
 static void print_json_string(RzCore *core, RzBuffer *b, ut64 offset, ut32 len, RzStrEnc encoding, bool stop_at_nil, bool stop_at_unprintable) {
 	char *section = get_section_name(core, core->offset);
-	ut32 dlength = 0;
-	RzStrStringifyOpt opt = { 0 };
 
 	if (!section) {
 		return;
 	}
+	ut32 dlength = 0;
+	RzStrStringifyOpt opt = { 0 };
 	opt.buffer = b;
 	opt.offset = offset;
 	opt.length = len;
@@ -2049,11 +2049,10 @@ RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, co
 	int width = (colwidth == 32) ? w : colwidth; // w;
 	ut64 blocksize = core->blocksize;
 	ut64 len = (h * w) / 3;
-	RzBuffer *buf = NULL;
+	RzBuffer *buf = rz_buf_new_with_pointers(core->block, len, false);
 	RzStrStringifyOpt opt = { 0 };
 
 	rz_core_block_size(core, len);
-	buf = rz_buf_new_with_pointers(core->block, len, false);
 
 	opt.buffer = buf;
 	opt.length = (ut32)len;
