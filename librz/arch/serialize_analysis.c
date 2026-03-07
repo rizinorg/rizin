@@ -1557,37 +1557,8 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 			pj_kn(j, "size", size);
 		}
 		char type_str[2] = { 0 };
-		switch (meta->type) {
-		case RZ_META_TYPE_DATA:
-			type_str[0] = 'd';
-			break;
-		case RZ_META_TYPE_CODE:
-			type_str[0] = 'c';
-			break;
-		case RZ_META_TYPE_STRING:
-			type_str[0] = 's';
-			break;
-		case RZ_META_TYPE_FORMAT:
-			type_str[0] = 'f';
-			break;
-		case RZ_META_TYPE_MAGIC:
-			type_str[0] = 'm';
-			break;
-		case RZ_META_TYPE_HIDE:
-			type_str[0] = 'h';
-			break;
-		case RZ_META_TYPE_COMMENT:
-			type_str[0] = 'C';
-			break;
-		case RZ_META_TYPE_HIGHLIGHT:
-			type_str[0] = 'H';
-			break;
-		case RZ_META_TYPE_VARTYPE:
-			type_str[0] = 't';
-			break;
-		default:
-			break;
-		}
+		type_str[0] = rz_meta_type_as_char(meta->type);
+
 		pj_ks(j, "type", type_str);
 		if (meta->subtype) {
 			pj_ki(j, "subtype", meta->subtype);
