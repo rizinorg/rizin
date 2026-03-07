@@ -1833,10 +1833,10 @@ beach:
 
 static char *get_args_offset(const char *arg) {
 	char *args = strchr(arg, ' ');
-	char *sq_bracket = strchr(arg, '[');
+	const char *sq_bracket = strchr(arg, '[');
 	int max = 30;
 	if (args && sq_bracket) {
-		char *csq_bracket = strchr(arg, ']');
+		const char *csq_bracket = strchr(arg, ']');
 		while (args && csq_bracket && csq_bracket > args && max--) {
 			args = strchr(csq_bracket, ' ');
 		}
@@ -1959,7 +1959,8 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = typedb->target->bits;
-	char *args = NULL, *bracket, tmp, last = 0;
+	char *args = NULL, tmp, last = 0;
+	const char *bracket;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	char namefmt[32], *field = NULL;
 	const char *arg = NULL;
