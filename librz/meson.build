@@ -11,6 +11,7 @@ subdir('crypto')
 
 subdir('cons')
 subdir('diff')
+subdir('memory')
 subdir('io')
 subdir('syscall')
 subdir('magic')

@@ -515,6 +515,7 @@ modules += { 'rz_arch': {
       'rz_diff',
       'rz_flag',
       'rz_hash',
+      'rz_memory',
       'rz_il',
       'rz_reg',
       'rz_search',

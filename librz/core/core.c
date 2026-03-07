@@ -1639,6 +1639,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 	core->crypto = rz_crypto_new();
+	core->memory = rz_memory_new();
 	core->warnings_after = rz_list_newf((RzListFree)free);
 
 	core->fixedarch = false;
@@ -1885,6 +1886,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
 	RZ_FREE_CUSTOM(c->sys_path, rz_path_free);
 	RZ_FREE_CUSTOM(c->marks, rz_mark_free);
+	RZ_FREE_CUSTOM(c->memory, rz_memory_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {

@@ -35,6 +35,7 @@
 #include <rz_heap_glibc.h>
 #include <rz_windows_heap.h>
 #include <rz_mark.h>
+#include <rz_memory/rz_memory.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -385,6 +386,7 @@ struct rz_core_t {
 	RzHash *hash;
 	RzList /*<char *>*/ *warnings_after;
 	RzPath *sys_path; ///< pointer to RzPath, contains path prefix of the system
+	RzMemory *memory;
 
 	bool vmarks_init;
 	ut64 vmarks[UT8_MAX + 1];

@@ -97,6 +97,7 @@ rz_io_deps = [
   lrt,
   rz_util_dep,
   rz_socket_dep,
+  rz_memory_dep,
   rz_hash_dep,
   rz_crypto_dep,
   rz_cons_dep,
@@ -142,6 +143,6 @@ meson.override_dependency('rz_io', rz_io_dep)
 
 modules += { 'rz_io': {
     'target': rz_io,
-    'dependencies': ['rz_util', 'rz_socket', 'rz_hash', 'rz_crypto', 'rz_cons'],
+    'dependencies': ['rz_util', 'rz_socket', 'rz_hash', 'rz_crypto', 'rz_cons', 'rz_memory'],
     'plugins': [io_plugins]
 }}

@@ -371,29 +371,24 @@ RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_
 	return rz_list_append(list, data);
 }
 
+static void *list_pop_iter(RzList *list, RzListIter *iter) {
+	if (!iter) {
+		return NULL;
+	}
+
+	void *data = iter->val;
+	iter->val = NULL;
+	rz_list_delete(list, iter);
+	return data;
+}
+
 /**
  * \brief Removes and returns the last element of the list
  *
  **/
 RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
-	void *data = NULL;
-	RzListIter *iter;
-
 	rz_return_val_if_fail(list, NULL);
-
-	if (list->tail) {
-		iter = list->tail;
-		if (list->head == list->tail) {
-			list->head = list->tail = NULL;
-		} else {
-			list->tail = iter->prev;
-			list->tail->next = NULL;
-		}
-		data = iter->val;
-		free(iter);
-		list->length--;
-	}
-	return data;
+	return list_pop_iter(list, list->tail);
 }
 
 /**
@@ -401,52 +396,51 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
  *
  **/
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
-	void *data = NULL;
+	rz_return_val_if_fail(list, NULL);
+	return list_pop_iter(list, list->head);
+}
 
+/**
+ * \brief Removes and returns the n-th element of the list
+ *
+ **/
+RZ_API RZ_OWN void *rz_list_pop_n(RZ_NONNULL RzList *list, ut32 n) {
 	rz_return_val_if_fail(list, NULL);
 
-	if (list->head) {
-		RzListIter *iter = list->head;
-		if (list->head == list->tail) {
-			list->head = list->tail = NULL;
-		} else {
-			list->head = iter->next;
-			list->head->prev = NULL;
-		}
-		data = iter->val;
-		free(iter);
-		list->length--;
+	if (n >= rz_list_length(list)) {
+		return NULL;
 	}
-	return data;
+
+	ut32 i;
+	RzListIter *it;
+	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
+		if (i != n) {
+			continue;
+		}
+		return list_pop_iter(list, it);
+	}
+	return NULL;
 }
 
 /**
  * \brief Removes the N-th element of the list
  *
  **/
-RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
-	RzListIter *it;
-	ut32 i;
-
+RZ_API bool rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
 	rz_return_val_if_fail(list, false);
 
+	if (n >= rz_list_length(list)) {
+		return false;
+	}
+
+	ut32 i;
+	RzListIter *it;
 	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			if (!it->prev && !it->next) {
-				list->head = list->tail = NULL;
-			} else if (!it->prev) {
-				it->next->prev = NULL;
-				list->head = it->next;
-			} else if (!it->next) {
-				it->prev->next = NULL;
-				list->tail = it->prev;
-			} else {
-				it->prev->next = it->next;
-				it->next->prev = it->prev;
-			}
-			rz_list_delete(list, it);
-			return true;
+		if (i != n) {
+			continue;
 		}
+		rz_list_delete(list, it);
+		return true;
 	}
 	return false;
 }
@@ -456,10 +450,9 @@ RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
  *
  **/
 RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
-	RzListIter *it, *tmp;
-
 	rz_return_if_fail(list);
 
+	RzListIter *it, *tmp;
 	for (it = list->head; it && it->val; it = it->prev) {
 		tmp = it->prev;
 		it->prev = it->next;
