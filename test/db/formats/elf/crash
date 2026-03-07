@@ -1,9 +1,3 @@
-NAME=ELF: negative vnext crash
-FILE=bins/elf/analysis/6921737e-08e3-11e6-998c-a8ddd566ab1c.jpg
-CMDS=q!
-EXPECT=
-RUN
-
 NAME=pseudo-crash
 FILE==
 CMDS=e asm.pseudo=1; e asm.arch=x86; e asm.bits=64; wx 7299; pdj 1

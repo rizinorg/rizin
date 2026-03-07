@@ -1,9 +1,3 @@
-NAME=ELF: bomb - open
-FILE=bins/elf/bomb
-CMDS=q!
-EXPECT=
-RUN
-
 NAME=ELF: bomb - entrypoint
 FILE=bins/elf/bomb
 CMDS=s
