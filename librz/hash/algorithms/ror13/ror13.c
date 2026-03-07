@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Rifat <rifatarifoglu38@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "ror13.h"
 #include <rz_types.h>
 #include <rz_util.h>
+#include "ror13.h"
 
 #define RZ_HASH_ROR13_ROTATION 0x0D
 
