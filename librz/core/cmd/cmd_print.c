@@ -1620,9 +1620,6 @@ static void print_json_string(RzCore *core, RzBuffer *b, ut64 offset, ut32 len, 
 	char *section = get_section_name(core, core->offset);
 	ut32 dlength = 0;
 	RzStrStringifyOpt opt = { 0 };
-	char *dstring = NULL;
-	PJ *pj = NULL;
-	const char *enc_name = NULL;
 
 	if (!section) {
 		return;
@@ -1634,20 +1631,20 @@ static void print_json_string(RzCore *core, RzBuffer *b, ut64 offset, ut32 len, 
 	opt.json = true;
 	opt.stop_at_nil = stop_at_nil;
 	opt.stop_at_unprintable = stop_at_unprintable;
-	dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
+	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
 	if (!dstring) {
 		free(section);
 		return;
 	}
 
-	pj = pj_new();
+	PJ *pj = pj_new();
 	if (!pj) {
 		free(section);
 		free(dstring);
 		return;
 	}
 
-	enc_name = rz_str_enc_as_string(encoding);
+	const char *enc_name = rz_str_enc_as_string(encoding);
 	pj_o(pj);
 	pj_k(pj, "string");
 	pj_raw(pj, "\"");

@@ -4184,11 +4184,11 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
  */
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
 	RzStrBuf sb;
-	RzBuffer *b = NULL;
-	ut64 offset = 0;
-	ut32 buflen = 0;
-	RzStrEnc enc = 0;
-	ut32 wrap_at = 0;
+	RzBuffer *b = option->buffer;
+	ut64 offset = option->offset;
+	ut32 buflen = option->length;
+	RzStrEnc enc = option->encoding;
+	ut32 wrap_at = option->wrap_at;
 	RzCodePoint code_point = 0;
 	ut32 n_runes = 0;
 	int rsize = 1; // rune size
@@ -4206,12 +4206,6 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		}
 		return NULL;
 	}
-
-	b = option->buffer;
-	offset = option->offset;
-	buflen = option->length;
-	enc = option->encoding;
-	wrap_at = option->wrap_at;
 
 	rz_strbuf_init(&sb);
 

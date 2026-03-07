@@ -277,10 +277,8 @@ RZ_API RzList /*<char *>*/ *rz_str_wrap(char *str, size_t width);
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
 
-typedef struct rz_buf_t RzBuffer;
-
 typedef struct rz_str_stringify_opt_t {
-	RzBuffer *buffer; ///< String buffer (cannot be NULL).
+	struct rz_buf_t *buffer; ///< String buffer (cannot be NULL).
 	ut64 offset; ///< Reading offset within the buffer.
 	ut32 length; ///< Maximum string length to stringify (UT32_MAX for unbounded).
 	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
