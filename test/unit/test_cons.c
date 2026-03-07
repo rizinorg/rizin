@@ -190,11 +190,42 @@ bool test_cons_misc(void) {
 	mu_end;
 }
 
+bool test_cons_raw_mode_flags(void) {
+#if __UNIX__
+	rz_cons_new();
+	RzCons *cons = rz_cons_singleton();
+
+	// Verify that OPOST is disabled in raw mode (fixes QNX echo issue #5248)
+	mu_assert_false((cons->term_raw.c_oflag & OPOST), "OPOST should be disabled in raw mode");
+
+	// Verify that ECHO and ICANON are disabled in raw mode
+	mu_assert_false((cons->term_raw.c_lflag & ECHO), "ECHO should be disabled in raw mode");
+	mu_assert_false((cons->term_raw.c_lflag & ICANON), "ICANON should be disabled in raw mode");
+	mu_assert_false((cons->term_raw.c_lflag & ISIG), "ISIG should be disabled in raw mode");
+	mu_assert_false((cons->term_raw.c_lflag & IEXTEN), "IEXTEN should be disabled in raw mode");
+
+	// Verify VMIN and VTIME for consistent blocking read semantics
+	mu_assert_eq(cons->term_raw.c_cc[VMIN], 1, "VMIN should be 1");
+	mu_assert_eq(cons->term_raw.c_cc[VTIME], 0, "VTIME should be 0");
+
+	// Verify input flags are cleared
+	mu_assert_false((cons->term_raw.c_iflag & ICRNL), "ICRNL should be disabled in raw mode");
+	mu_assert_false((cons->term_raw.c_iflag & IXON), "IXON should be disabled in raw mode");
+
+	// Verify CS8 is set
+	mu_assert_true((cons->term_raw.c_cflag & CS8), "CS8 should be set in raw mode");
+
+	rz_cons_free();
+#endif
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_justify);
 	mu_run_test(test_cons_at);
 	mu_run_test(test_cons_misc);
+	mu_run_test(test_cons_raw_mode_flags);
 	return tests_passed != tests_run;
 }
 
