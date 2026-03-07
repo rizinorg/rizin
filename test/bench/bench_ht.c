@@ -181,8 +181,11 @@ static void bench_rz_ht_pu_combined(RzTable *t_out) {
 	free(keys);
 }
 
-static char *generate_su_key(ut64 index) {
+static char *generate_su_key(ut64 i) {
 	char buffer[UT8_MAX];
+
+	// cast to uint64_t to avoid format specifier (PRIu64) mismatch
+	uint64_t index = (uint64_t)i;
 
 	// Try to mimic real world string keys
 	switch (index % 8) {
