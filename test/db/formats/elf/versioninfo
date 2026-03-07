@@ -1,3 +1,9 @@
+NAME=ELF: no version info
+FILE=bins/elf/analysis/x64-simple
+CMDS=iV
+EXPECT=
+RUN
+
 NAME=ELF: versioninfo 1
 FILE=bins/elf/analysis/serial
 CMDS=iV
