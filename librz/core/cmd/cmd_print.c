@@ -1836,14 +1836,12 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 }
 
 static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
-	RzStrEnc encoding = 0;
+	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
 	RzBuffer *buf = rz_buf_new_with_io(&core->print->iob);
 	if (!buf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = rz_str_guess_encoding_from_buffer(core->block + offset, core->blocksize - offset);

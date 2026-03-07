@@ -4183,6 +4183,14 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
  * \return The stringified raw buffer
  */
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
+	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
+	if (option->length < 1) {
+		if (length) {
+			*length = 0;
+		}
+		return NULL;
+	}
+
 	RzStrBuf sb;
 	RzBuffer *b = option->buffer;
 	ut64 offset = option->offset;
@@ -4194,22 +4202,12 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 	int rsize = 1; // rune size
 	ut8 fetch_buf[8] = { 0 };
 	const ut8 *buf = fetch_buf; // local buffer for decoding
-	ut32 i = 0;
-	ut32 line_runes = 0;
 	ut32 fetch_size = 0;
 	st64 r = 0;
 
-	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
-	if (option->length < 1) {
-		if (length) {
-			*length = 0;
-		}
-		return NULL;
-	}
-
 	rz_strbuf_init(&sb);
 
-	for (i = 0, line_runes = 0; i < buflen; i += rsize) {
+	for (ut32 i = 0, line_runes = 0; i < buflen; i += rsize) {
 		fetch_size = RZ_MIN(buflen - i, (ut32)4);
 		r = rz_buf_read_at(b, offset + i, fetch_buf, fetch_size);
 		if (r < 1) {
