@@ -25,7 +25,7 @@ RZ_API void rz_il_effect_label_free(RzILEffectLabel *lbl) {
 	return;
 }
 
-RZ_API RzILEffectLabel *rz_il_effect_label_dup(RZ_NONNULL RzILEffectLabel *lbl) {
+RZ_API RZ_OWN RzILEffectLabel *rz_il_effect_label_dup(RZ_NONNULL RzILEffectLabel *lbl) {
 	rz_return_val_if_fail(lbl, NULL);
 	RzILEffectLabel *r = rz_il_effect_label_new(lbl->label_id, lbl->type);
 	if (!r) {

@@ -696,7 +696,7 @@ typedef RzILOpBitVector *(rz_il_pure_2args_op)(RzILOpBitVector *, RzILOpBitVecto
 typedef RzILOpBitVector *(rz_il_pure_3args_op)(RzILOpBitVector *, RzILOpBitVector *, RzILOpBitVector *);
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
-RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
+RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, RzILVarKind kind);

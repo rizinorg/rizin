@@ -74,7 +74,7 @@ typedef struct rz_config_hold_t {
 } RzConfigHold;
 
 #ifdef RZ_API
-RZ_API RzConfigHold *rz_config_hold_new(RzConfig *cfg);
+RZ_API RZ_OWN RzConfigHold *rz_config_hold_new(RzConfig *cfg);
 RZ_API void rz_config_hold_free(RzConfigHold *h);
 
 RZ_API bool rz_config_hold_i(RzConfigHold *h, ...);

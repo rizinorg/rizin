@@ -113,7 +113,7 @@ RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
  * \param cfg RzConfig reference
  * \return RzConfigHold allocated object
  */
-RZ_API RzConfigHold *rz_config_hold_new(RzConfig *cfg) {
+RZ_API RZ_OWN RzConfigHold *rz_config_hold_new(RzConfig *cfg) {
 	if (cfg) {
 		RzConfigHold *hold = RZ_NEW0(RzConfigHold);
 		if (hold) {

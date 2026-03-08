@@ -9,7 +9,7 @@
 #include <rz_arch.h>
 #include <rz_lib.h>
 
-RZ_API RzParse *rz_parse_new(void) {
+RZ_API RZ_OWN RzParse *rz_parse_new(void) {
 	RzParse *p = RZ_NEW0(RzParse);
 	if (!p) {
 		return NULL;
@@ -128,7 +128,7 @@ RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str) {
  *
  * Converts the assembly line into pseudocode
  * */
-RZ_API char *rz_parse_pseudocode(RzParse *p, const char *assembly) {
+RZ_API RZ_OWN char *rz_parse_pseudocode(RzParse *p, const char *assembly) {
 	rz_return_val_if_fail(p, NULL);
 	if (RZ_STR_ISEMPTY(assembly)) {
 		return NULL;
@@ -148,7 +148,7 @@ RZ_API char *rz_parse_pseudocode(RzParse *p, const char *assembly) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API char *rz_parse_immtrim(char *opstr) {
+RZ_API RZ_BORROW char *rz_parse_immtrim(char *opstr) {
 	if (!opstr || !*opstr) {
 		return NULL;
 	}

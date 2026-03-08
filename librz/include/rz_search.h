@@ -83,22 +83,22 @@ typedef struct rz_search_value_range_t {
 
 #define RZ_SEARCH_AES_BOX_SIZE 31
 
-RZ_API RzSearch *rz_search_new(int mode);
+RZ_API RZ_OWN RzSearch *rz_search_new(int mode);
 RZ_API int rz_search_set_mode(RzSearch *s, int mode);
 RZ_API RzSearch *rz_search_free(RzSearch *s);
 
 /* keyword management */
-RZ_API RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
+RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_find(RzSearch *s, ut64 addr, const ut8 *buf, int len);
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len);
 RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len);
 
 RZ_API void rz_search_keyword_free(RzSearchKeyword *kw);
 RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new(const ut8 *kw_buf, int kw_len, RZ_NULLABLE const ut8 *bm_buf, int bm_buf_len, RZ_NULLABLE const char *data);
-RZ_API RzSearchKeyword *rz_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
-RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kw, const char *bm, const char *data, int icase);
-RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
-RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const char *data);
-RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data);
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_wide(const char *kw, const char *bm, const char *data, int icase);
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const char *data);
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data);
 
 RZ_API int rz_search_kw_add(RzSearch *s, RzSearchKeyword *kw);
 RZ_API void rz_search_reset(RzSearch *s, int mode);

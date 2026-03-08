@@ -2289,7 +2289,7 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
  * \param fill_bit specify filling bit if extend
  * \return new bv with length (to_size)
  */
-RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit) {
+RZ_API RZ_OWN RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit) {
 	rz_return_val_if_fail(bv, NULL);
 
 	RzBitVector *ret = rz_bv_new(to_size);
