@@ -73,4 +73,33 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 	free(table_out); \
 	rz_table_free(T);
 
+#if defined(__GNUC__) || defined(__clang__)
+/**
+ * \def Helper macro to prevent compiler optimizations on benchmarked code.
+ * \param type Return type of the expression \p x.
+ * \param x Function or code to be executed.
+ */
+#define RZ_DONT_OPTIMIZE(type, x) \
+	do { \
+		type tmp_ = (x); \
+		__asm__ volatile("" : : "r,m"(tmp_) : "memory"); \
+	} while (0)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#define RZ_DONT_OPTIMIZE(type, x) \
+	do { \
+		type tmp_ = (x); \
+		_WriteBarrier(); \
+		*(volatile char *)&tmp_; \
+		_ReadBarrier(); \
+	} while (0)
+#else
+// Fallback
+#define RZ_DONT_OPTIMIZE(type, x) \
+	do { \
+		volatile type tmp_ = (x); \
+		(void)tmp_; \
+	} while (0)
+#endif
+
 #endif // BENCH_UTILS_H

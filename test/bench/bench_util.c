@@ -13,7 +13,7 @@ static void bench_rz_bits_trailing_zeros(RzTable *t_out) {
 	ut64 v = 0;
 
 	RZ_BENCH_RUN("bench_rz_bits_trailing_zeros", t_out, 5000000, {
-		volatile ut64 result = rz_bits_trailing_zeros(v++);
+		RZ_DONT_OPTIMIZE(size_t, rz_bits_trailing_zeros(v++));
 	});
 }
 

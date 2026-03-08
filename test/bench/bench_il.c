@@ -12,7 +12,7 @@
 
 static void bench_rz_il_mem_loadw(const char *title, RzTable *t_out, ut32 bit_size, bool big_endian) {
 	RzBuffer *buf = rz_buf_new_empty(bit_size);
-	RzILMem *mem = rz_il_mem_new(buf, 64);
+	RzILMem *mem = rz_il_mem_new_borrowed(buf, 64);
 	RzBitVector *key = rz_bv_new_from_ut64(64, 0x12345678abcdef);
 
 	RZ_BENCH_RUN(title, t_out, 1000000, {
