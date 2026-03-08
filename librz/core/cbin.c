@@ -85,55 +85,7 @@ static Sdb *get_sdb_db(RzCore *core) {
 }
 
 /**
- * \brief Prints structured data formats.
- *
- * \param core A non null Pointer to the RzCore instance
- */
-RZ_API void rz_core_bin_print_format(RZ_NONNULL RzCore *core) {
-	char *flagname = NULL;
-	Sdb *db;
-	db = get_sdb_db(core);
-	if (!db) {
-		return;
-	}
-	void **iter;
-	RzPVector *items = sdb_get_items(db, false);
-	rz_pvector_foreach (items, iter) {
-		SdbKv *kv = *iter;
-		const char *k = sdbkv_key(kv);
-		const char *v = sdbkv_value(kv);
-		char *dup = rz_str_dup(k);
-		if ((flagname = strstr(dup, ".format"))) {
-			*flagname = 0;
-			flagname = dup;
-			int fmtsize = rz_type_format_struct_size(core->analysis->typedb, v, 0, 0);
-			char *offset_key = rz_str_newf("%s.offset", flagname);
-			const char *off = sdb_const_get(db, offset_key);
-			free(offset_key);
-			if (off) {
-				ut64 addr = rz_num_get(NULL, off);
-				ut8 *buf = malloc(fmtsize);
-				if (buf) {
-					rz_io_read_at_mapped(core->io, addr, buf, fmtsize);
-					char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
-						fmtsize, v, 0, NULL, NULL);
-					free(buf);
-					if (!format) {
-						RZ_LOG_WARN("core: cannot register invalid format (%s)\n", v);
-					} else {
-						rz_cons_print(format);
-						free(format);
-					}
-				}
-			}
-		}
-		free(dup);
-	}
-	rz_pvector_free(items);
-}
-
-/**
- * \brief Export binary information from sdb to the core environment in set mode.
+ * \brief Imports binary metadata from the sdb and sets the RzCore flag and RzTypeDB database
  *
  * \param core A non null Pointer to the RzCore instance
  */

@@ -464,7 +464,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 	return true;
 }
 
-static int rzbin_do_operation(RzBin *bin, const char *op, const char *output, const char *file, RzOutputMode rad) {
+static int rzbin_do_operation(RzBin *bin, const char *op, const char *output, const char *file, RzOutputMode mode) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -535,7 +535,7 @@ static int rzbin_do_operation(RzBin *bin, const char *op, const char *output, co
 			}
 		}
 		if (plg && plg->signature) {
-			char *sign = plg->signature(cur, rad == RZ_OUTPUT_MODE_JSON);
+			char *sign = plg->signature(cur, mode == RZ_OUTPUT_MODE_JSON);
 			if (sign) {
 				rz_cons_println(sign);
 				rz_cons_flush();
@@ -604,13 +604,13 @@ static bool lib_bin_xtr_dt(RzLibPlugin *pl, void *user, void *data) {
 	return rz_bin_xtr_plugin_del(user, (RzBinXtrPlugin *)data);
 }
 
-static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, RzOutputMode rad) {
+static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, RzOutputMode mode) {
 	int format = 0;
 	RzCmdStateOutput state = { 0 };
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		format = 'j';
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL);
-	} else if (rad) {
+	} else if (mode == RZ_OUTPUT_MODE_QUIET || mode == RZ_OUTPUT_MODE_QUIETEST) {
 		format = 'q';
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL);
 	} else {
