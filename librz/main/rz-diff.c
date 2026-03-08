@@ -205,17 +205,16 @@ static void rz_diff_show_help(bool usage_only) {
 		// clang-format off
 		"-a",       "arch",         "Specify architecture plugin to use (x86, arm, ..)",
 		"-b",       "bits",         "Specify register size for arch (16 (thumb), 32, 64, ..)",
-		"-d",       "algo",         "Compute edit distance based on the chosen algorithm:",
-		"",         "",             "   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)",
-		"",         "",             "   leven  | Levenshtein O(N^2) algorithm (with substitution)",
-		"",         "",             "   ssdeep | Context triggered piecewise hashing comparison",
+		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
+		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
+		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
 		"-h",       "",             "Show this help",
 		"-j",       "",             "JSON output",
 		"-q",       "",             "Quiet output",
-		"-V",       "",             "Show version information",
-		"-v",       "",             "Be more verbose (stderr output)",
+		"-v",       "",             "Show version information",
+		"-V",       "",             "Be more verbose (stderr output)",
 		"-K",       "theme",        "Set a give color theme (see rizin 'eco' command)",
 		"-e",       "k=v",          "Set an evaluable config variable",
 		"-A",       "",             "Compare virtual and physical addresses",
@@ -226,32 +225,32 @@ static void rz_diff_show_help(bool usage_only) {
 		"-0",       "cmd",          "Input for file0 when option -t 'commands' is given.",
 		"",         "",             "The same value will be set for file1, if -1 is not set.",
 		"-1",       "cmd",          "Input for file1 when option -t 'commands' is given.",
-		"-t",       "type",         "Compute the difference between two files based on its type:",
-		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
-		"",         "",             "   lines      | compare text files",
-		"",         "",             "   functions  | compare functions found in the files",
-		"",         "",             "              | optional -0 <fcn name|offset> to compare only one function",
-		"",         "",             "   classes    | compare classes found in the files",
-		"",         "",             "   command    | compare command output returned when executed in both files",
-		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
-		"",         "",             "   entries    | compare entries found in the files",
-		"",         "",             "   fields     | compare fields found in the files",
-		"",         "",             "   graphs     | compare 2 functions and outputs in graphviz/dot format",
-		"",         "",             "              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
-		"",         "",             "   imports    | compare imports found in the files",
-		"",         "",             "   libraries  | compare libraries found in the files",
-		"",         "",             "   sections   | compare sections found in the files",
-		"",         "",             "   strings    | compare strings found in the files",
-		"",         "",             "   symbols    | compare symbols found in the files",
+		"-t",       "bytes",        "Compare raw bytes in the files (only for small files)",
+		"-t",       "lines",        "Compare text files",
+		"-t",       "functions",    "Compare functions found in the files",
+		"",         "",             "optional -0 <fcn name|offset> to compare only one function",
+		"-t",       "classes",      "Compare classes found in the files",
+		"-t",       "command",      "Compare command output returned when executed in both files",
+		"",         "",             "requires -0 <cmd> and -1 <cmd> is optional",
+		"-t",       "entries",      "Compare entries found in the files",
+		"-t",       "fields",       "Compare fields found in the files",
+		"-t",       "graphs",       "Compare 2 functions and outputs in graphviz/dot format",
+		"",         "",             "requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
+		"-t",       "imports",      "Compare imports found in the files",
+		"-t",       "libraries",    "Compare libraries found in the files",
+		"-t",       "sections",     "Compare sections found in the files",
+		"-t",       "strings",      "Compare strings found in the files",
+		"-t",       "symbols",      "Compare symbols found in the files",
 		// clang-format on
 	};
 	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf(
-		"palette colors can be changed by adding the following lines\n"
-		"inside the $HOME/.rizinrc file\n"
-		"ec diff.unknown blue   | offset color\n"
-		"ec diff.match   green  | match color\n"
-		"ec diff.unmatch red    | mismatch color\n");
+		"Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file\n"
+		"  ec diff.unknown blue  | offset color\n"
+		"  ec diff.match   green | match color\n"
+		"  ec diff.unmatch red   | mismatch color\n"
+		"Environment variables\n"
+		"  RZ_COLOR              | enables/disables colors support\n");
 }
 
 static bool rz_diff_is_file(const char *file) {
@@ -264,12 +263,22 @@ static bool rz_diff_is_file(const char *file) {
 	return true;
 }
 
+static bool diff_env_get_bool(const char *key, bool def_value) {
+	bool value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (RZ_STR_ISNOTEMPTY(tmp)) {
+		value = rz_num_get(NULL, tmp) != 0;
+	}
+	free(tmp);
+	return value;
+}
+
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
-	ctx->colors = true;
+	ctx->colors = diff_env_get_bool("RZ_COLOR", true);
 	ctx->evars = rz_list_newf(free);
 
 	if (!ctx->evars) {
@@ -286,7 +295,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
 		case 'B': rz_diff_ctx_set_def(ctx, analyze_all, false, true); break;
-		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
+		case 'C': rz_diff_ctx_set_def(ctx, colors, ctx->colors, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
 		case 'b': rz_diff_ctx_set_unsigned(ctx, arch_bits, opt.arg); break;
@@ -296,8 +305,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
-		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
+		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'V': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;

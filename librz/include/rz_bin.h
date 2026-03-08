@@ -851,6 +851,7 @@ typedef struct rz_bin_resource_t {
 	char *name;
 	char *time;
 	ut64 vaddr;
+	ut64 paddr;
 	ut64 size;
 	char *type;
 	char *language;

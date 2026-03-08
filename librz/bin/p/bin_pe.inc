@@ -624,6 +624,7 @@ static RzPVector /*<RzBinResource *>*/ *pe_resources(RzBinFile *bf) {
 			goto err;
 		}
 		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
+		br->paddr = PE_(bin_pe_rva_to_paddr)(obj, rs->data->OffsetToData);
 		br->size = rs->data->Size;
 		br->type = rz_str_dup(rs->type);
 		if (!br->type) {
