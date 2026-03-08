@@ -12,7 +12,7 @@
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 
-#define BB_ALIGN             0x10
+#define BB_ALIGN 0x10
 
 #define DB             a->sdb_fcns
 #define EXISTS(x, ...) snprintf(key, sizeof(key) - 1, x, ##__VA_ARGS__), sdb_exists(DB, key)

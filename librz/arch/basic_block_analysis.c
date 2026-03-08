@@ -8,7 +8,6 @@
 // XXX must be configurable by the user
 #define JMPTBL_LEA_SEARCH_SZ 64
 
-
 const char *retpoline_reg(RzAnalysis *analysis, ut64 addr) {
 	RzFlagItem *flag = analysis->flag_get(analysis->flb.f, addr);
 	if (flag) {
@@ -62,28 +61,6 @@ ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, 
 		return tmp_bb->cmpval;
 	}
 	return UT64_MAX;
-}
-
-inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, const ut64 fail) {
-	bb->jump = jump;
-	bb->fail = fail;
-}
-
-/**
- * \brief Peaks into the memory at the jump address.
- * If it finds a function prelude, at it it returns true.
- * False otherwise.
- */
-inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr) {
-	ut8 buf[32] = { 0 };
-	(void)analysis->iob.read_at(analysis->iob.io, jmp_addr, (ut8 *)buf, sizeof(buf));
-	return rz_analysis_is_prelude(analysis, buf, sizeof(buf));
-}
-
-inline bool jump_leaves_mapped_mem(RzAnalysis *analysis, ut64 insn_addr, ut64 jump_target) {
-	rz_return_val_if_fail(analysis, false);
-	RzIOMap *map = analysis->iob.map_get(analysis->iob.io, insn_addr);
-	return (jump_target < map->itv.addr || jump_target >= map->itv.addr + map->itv.size);
 }
 
 bool is_unknown_call_from_plt(RzAnalysis *analysis, ut64 op_address) {
@@ -201,15 +178,6 @@ void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
 			op->reg = rr;
 		}
 	}
-}
-
-inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
-	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
-	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
-	if (has_dst_reg && has_src_reg) {
-		return !strcmp(bp_reg, op->dst->reg->name) && !strcmp(sp_reg, op->src[0]->reg->name);
-	}
-	return false;
 }
 
 int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 address) {
@@ -412,10 +380,6 @@ RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
-inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (!strncmp(arch, "arm", 3) || !strcmp(arch, "riscv") || !strcmp(arch, "ppc"));
-}
-
 bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVector /*RzAnalysisTaskItem*/ *tasks) {
 	rz_return_val_if_fail(item && tasks, RZ_ANALYSIS_RET_ERROR);
 
@@ -429,7 +393,7 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 	memset(&ctx->read_ahead_cache, 0, sizeof(ctx->read_ahead_cache));
 
 	ctx->continue_after_jump = ctx->analysis->opt.afterjmp;
-	ctx->addrbytes = ctx->analysis->iob.io ? ctx->analysis->iob.io->addrbytes : 1;
+	ctx->addrbytes = ctx->analysis->iob.io ? ctx->analysis->iob.io->addrbytes : 1; // warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 	ctx->last_reg_mov_lea_name = NULL;
 	ctx->movbasereg = NULL;
 	ctx->bb = item->block;
@@ -475,13 +439,13 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 			RZ_LOG_DEBUG("Invalid address 0x%" PFMT64x ". Try with io.va=true\n", ctx->addr);
 		}
 		ctx->ret = RZ_ANALYSIS_RET_ERROR; // MUST BE TOO DEEP
-		return false; 
+		return false;
 	}
 
 	RzAnalysisFunction *fcn_at_addr = rz_analysis_get_function_at(ctx->analysis, ctx->addr);
 	if (fcn_at_addr && fcn_at_addr != ctx->fcn) {
 		ctx->ret = RZ_ANALYSIS_RET_ERROR; // MUST BE NOT FOUND
-		return false; 
+		return false;
 	}
 
 	if (!ctx->bb) {
@@ -504,7 +468,7 @@ bool init_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysisTaskItem *item, RzVe
 			}
 			RZ_LOG_DEBUG("%s fails at 0x%" PFMT64x ".\n", __FUNCTION__, ctx->addr);
 			ctx->ret = RZ_ANALYSIS_RET_ERROR; // MUST BE NOT DUP
-			return false; 
+			return false;
 		}
 
 		item->block = ctx->bb = fcn_append_basic_block(ctx->analysis, ctx->fcn, ctx->addr);
