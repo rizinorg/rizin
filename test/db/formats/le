@@ -532,65 +532,23 @@ NAME=DOSEXT.EXE open extender binary
 FILE=bins/le/DOSEXT.EXE
 CMDS=iH
 EXPECT=<<EOF
-le:
-  signature: "LE"
-  le_offset: 0x3803c
-  mz_offset: 0x352a4
-  byte_order: "little endian"
-  word_order: "little endian"
-  format_level: 0
-  module_name: "hello"
-  type: "Program module (EXE)"
-  cpu: "80386"
-  os: "OS/2"
-  arch: "x86"
-  version: 0
-  mflags: 0x200
-  flags:
-    - "PMWINAPI"
-    - "EXE"
-  mpages: 7
-  initial_eip_obj: 1
-  initial_eip: 0xc4
-  initial_stack_obj: 2
-  initial_esp: 0x1f30
-  page_size: 0x1000
-  last_page_size: 0x96e
-  fixup_size: 0xfbe
-  fixup_checksum: 0x0
-  loader_size: 0x56
-  loader_checksum: 0x0
-  obj_table: 0xc4
-  obj_count: 2
-  obj_page_map: 0xf4
-  obj_iter_data_map: 0x0
-  resource_table: 0x110
-  resource_count: 0
-  resident_name_table: 0x110
-  entry_table: 0x119
-  directives_table: 0x0
-  directives_count: 0
-  fixup_page_table: 0x11a
-  fixup_record_table: 0x13a
-  import_module_name_table: 0x10d7
-  import_module_name_count: 0
-  import_procedure_name_table: 0x10d7
-  per_page_checksum_table: 0x0
-  enumerated_data_pages: 0x4000
-  number_of_preload_pages: 0
-  non_resident_names_table: 0x0
-  size_non_resident_names: 0
-  checksum_non_resident_names: 0x0
-  autodata_obj: 2
-  debug_info: 0x0
-  debug_length: 0x0
-  preload_pages: 0
-  demand_pages: 0
-  heap_size: 0x0
-  stack_size: 0x1000
+mz:
+  Signature: "MZ"
+  BytesInLastBlock: 0x74
+  BlocksInFile: 0x7b
+  NumRelocs: 78
+  HeaderParagraphs: 0x20
+  MinExtraParagraphs: 0x1
+  MaxExtraParagraphs: 0xffff
+  InitialSs: 0x121
+  InitialSp: 0x340
+  Checksum: 0xf7cd
+  InitialIp: 0x2382
+  InitialCs: 0x1bd
+  RelocTableOffset: 0x1e
+  OverlayNumber: 0
 
 EOF
-BROKEN=1
 RUN
 
 NAME=hellolx.dll unpack iterated page

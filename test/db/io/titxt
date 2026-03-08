@@ -48,80 +48,80 @@ EOF
 RUN
 
 NAME=incorrect-invalid-address.titxt
-FILE=titxt://bins/titxt/incorrect-invalid-address.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-invalid-address.titxt
 px 4 @ 0x1000f0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): invalid address format
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 6
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-invalid-address.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-invalid-address.titxt'
 EOF
 RUN
 
 NAME=incorrect-invalid-data-bytes.titxt
-FILE=titxt://bins/titxt/incorrect-invalid-data-bytes.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-invalid-data-bytes.titxt
 px 16 @ 0xffff0010
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): invalid hex digit
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 2, column 15
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-invalid-data-bytes.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-invalid-data-bytes.titxt'
 EOF
 RUN
 
 NAME=incorrect-missing-section-prefix.titxt
-FILE=titxt://bins/titxt/incorrect-missing-section-prefix.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-missing-section-prefix.titxt
 px 16 @ 0xffff0010
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): expected whitespace / newline after byte
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 5, column 3
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-missing-section-prefix.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-missing-section-prefix.titxt'
 EOF
 RUN
 
 NAME=incorrect-empty-section.titxt
-FILE=titxt://bins/titxt/incorrect-empty-section.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-empty-section.titxt
 px 16 @ 0xffff0010
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): invalid hex digit
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 6, column 2
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-empty-section.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-empty-section.titxt'
 EOF
 RUN
 
 NAME=incorrect-missing-eof-marker.titxt
-FILE=titxt://bins/titxt/incorrect-missing-eof-marker.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-missing-eof-marker.titxt
 px 16 @ 0xffff0010
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): expected whitespace / newline after byte
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 8, column 6
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-missing-eof-marker.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-missing-eof-marker.titxt'
 EOF
 RUN
 
 NAME=incorrect-only-data-bytes.titxt
-FILE=titxt://bins/titxt/incorrect-only-data-bytes.titxt
-BROKEN=1
+FILE=--
 CMDS=<<EOF
+o titxt://bins/titxt/incorrect-only-data-bytes.titxt
 px 16 @ 0xffff0010
 EOF
 EXPECT_ERR=<<EOF
 ERROR: titxt:parse_section(): section prefix missing
 ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 1
-ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-only-data-bytes.titxt'
+ERROR: Cannot open file 'titxt://bins/titxt/incorrect-only-data-bytes.titxt'
 EOF
 RUN
 

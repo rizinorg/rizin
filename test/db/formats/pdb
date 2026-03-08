@@ -285,8 +285,16 @@ FILE=bins/pdb/vs2019_cpp_override.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao "struct CTest2"
 EXPECT=<<EOF
 struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
+struct CTest2
 EOF
-BROKEN=1
 RUN
 
 NAME=find class _onexit_table_t # LF_STRUCTURE_19

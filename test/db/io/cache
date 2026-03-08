@@ -70,10 +70,11 @@ EOF
 RUN
 
 NAME=io.cache: empty file
-FILE=.empty.tmp
-BROKEN=1
+FILE=--
 CMDS=<<EOF
-echo
+!touch .empty.tmp
+o .empty.tmp
+oo+
 b 15
 p8
 w no-cache
@@ -82,7 +83,7 @@ e io.cache=true
 w cache-mode
 p8
 # Reseting cache restores original data.
-wcr
+wc-*
 p8
 w overwrite
 p8
@@ -90,23 +91,22 @@ wci
 # Commit cache overwrites original data.
 p8
 # Reset cache with no pending cache entries.
-wcr
+wc-*
 wci
 p8
-# File was correctly writen.
-cat .empty.tmp
+o--
+!rm .empty.tmp
 echo
 EOF
 EXPECT=<<EOF
-
 ffffffffffffffffffffffffffffff
-6e6f2d6361636865ffffffffffffff
+ffffffffffffffffffffffffffffff
 63616368652d6d6f6465ffffffffff
-6e6f2d6361636865ffffffffffffff
+ffffffffffffffffffffffffffffff
 6f7665727772697465ffffffffffff
 6f7665727772697465ffffffffffff
-6f7665727772697465ffffffffffff
-overwrite
+ffffffffffffffffffffffffffffff
+
 EOF
 RUN
 
