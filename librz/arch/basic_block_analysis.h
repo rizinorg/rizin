@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026  Mohit Ishpunyani <ishpunyanimohit@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_ANALYSIS_BLOCK_H
 #define RZ_ANALYSIS_BLOCK_H
 

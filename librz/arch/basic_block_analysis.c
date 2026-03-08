@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026  Mohit Ishpunyani <ishpunyanimohit@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util/rz_regex.h>
 #include <rz_analysis.h>
 #include <rz_parse.h>
@@ -708,7 +711,7 @@ RzAnalysisBBEndCause analysis_basic_block(BasicBlockAnalysisCtx *ctx, RzAnalysis
 				// the branch delay.
 			}
 		} else if (ctx->op.delay > 0 && ctx->delay.pending) {
-			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n" ctx->addr + ctx->idx - ctx->oplen, ctx->bb->size);
+			RZ_LOG_DEBUG("Revisit branch delay jump at 0x%08" PFMT64x ". bb->sz=%" PFMT64u "\n", ctx->addr + ctx->idx - ctx->oplen, ctx->bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
