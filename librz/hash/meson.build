@@ -14,6 +14,12 @@ hash_plugins_list = [
   'keccak_384',
   'keccak_512',
   'sm3',
+  'blake2b',
+  'blake2bp',
+  'blake2xb',
+  'blake2s',
+  'blake2sp',
+  'blake2xs',
   'blake3',
   'fletcher8',
   'fletcher16',
@@ -94,6 +100,12 @@ rz_hash_sources = [
   'p/algo_crca.c',
   'p/algo_adler32.c',
   'p/algo_fletcher.c',
+  'p/algo_blake2b.c',
+  'p/algo_blake2bp.c',
+  'p/algo_blake2xb.c',
+  'p/algo_blake2s.c',
+  'p/algo_blake2sp.c',
+  'p/algo_blake2xs.c',
   'p/algo_blake3.c',
   'p/algo_sm3.c',
   'p/algo_md2.c',
@@ -132,7 +144,7 @@ rz_hash_sources = [
   'algorithms/sha3/sha3.c'
 ]
 
-dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep]
+dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep, blake2_dep]
 
 if sys_openssl.found()
   dependencies += [sys_openssl]

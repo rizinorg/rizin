@@ -130,6 +130,7 @@ subprojects/zlib-*/
 subprojects/sigdb/
 subprojects/libdemangle/
 subprojects/libmspack/
+subprojects/blake2/
 subprojects/blake3/
 subprojects/xz-*/
 subprojects/zstd-*/
