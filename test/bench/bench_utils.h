@@ -82,7 +82,7 @@ RZ_API void rz_bench_report(RZ_NONNULL RzBenchCtx *ctx, RZ_NONNULL RzTable *t);
 #define RZ_DONT_OPTIMIZE(type, x) \
 	do { \
 		type tmp_ = (x); \
-		__asm__ volatile("" : "+r,m"(tmp_) : : "memory"); \
+		__asm__ volatile("" : : "r,m"(tmp_) : "memory"); \
 	} while (0)
 #elif defined(_MSC_VER)
 #include <intrin.h>
