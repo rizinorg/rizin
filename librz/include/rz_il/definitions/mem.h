@@ -33,9 +33,9 @@ RZ_API RZ_OWN RzILMem *rz_il_mem_new_borrowed(RZ_NONNULL RZ_BORROW RzBuffer *buf
 RZ_API void rz_il_mem_free(RzILMem *mem);
 RZ_API ut32 rz_il_mem_key_len(RzILMem *mem);
 RZ_API ut32 rz_il_mem_value_len(RzILMem *mem);
-RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key);
+RZ_API RZ_OWN RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key);
 RZ_API bool rz_il_mem_store(RzILMem *mem, RzBitVector *key, RzBitVector *value);
-RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian);
+RZ_API RZ_OWN RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian);
 RZ_API bool rz_il_mem_storew(RzILMem *mem, RzBitVector *key, RzBitVector *value, bool big_endian);
 
 #ifdef __cplusplus

@@ -3633,7 +3633,7 @@ static void agraph_sdb_init(const RzAGraph *g) {
 	sdb_set_enc(g->db, "agraph.color_false", cons->context->pal.graph_false);
 }
 
-RZ_API Sdb *rz_agraph_get_sdb(RzAGraph *g) {
+RZ_API RZ_BORROW Sdb *rz_agraph_get_sdb(RzAGraph *g) {
 	g->need_update_dim = true;
 	g->need_set_layout = true;
 	AGraphContext grp_ctx = { 0 };
@@ -3948,7 +3948,7 @@ RZ_API void rz_agraph_free(RzAGraph *g) {
 	free(g);
 }
 
-RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can) {
+RZ_API RZ_OWN RzAGraph *rz_agraph_new(RzConsCanvas *can) {
 	RzAGraph *g = RZ_NEW0(RzAGraph);
 	if (!g) {
 		return NULL;

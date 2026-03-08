@@ -20,7 +20,7 @@ struct rz_il_validate_global_context_t {
  * Create a new global context for validation
  * Vars and mems can be added manually with rz_il_validate_global_context_add_* functions.
  */
-RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len) {
+RZ_API RZ_OWN RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len) {
 	rz_return_val_if_fail(pc_len, NULL);
 	RzILValidateGlobalContext *ctx = RZ_NEW0(RzILValidateGlobalContext);
 	if (!ctx) {
@@ -65,7 +65,7 @@ RZ_API void rz_il_validate_global_context_add_mem(RzILValidateGlobalContext *ctx
 /**
  * Create a new context for IL validation based on the global vars and mems in \p vm
  */
-RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_NONNULL RzILVM *vm) {
+RZ_API RZ_OWN RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_NONNULL RzILVM *vm) {
 	rz_return_val_if_fail(vm, NULL);
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(rz_il_vm_get_pc_len(vm));
 	RzPVector *vars = rz_il_vm_get_all_vars(vm, RZ_IL_VAR_KIND_GLOBAL);

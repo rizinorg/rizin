@@ -298,12 +298,12 @@ RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap) {
 	return ret;
 }
 
-RZ_API char *rz_strbuf_get(RzStrBuf *sb) {
+RZ_API RZ_BORROW char *rz_strbuf_get(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
-RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len) {
+RZ_API RZ_BORROW ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len) {
 	rz_return_val_if_fail(sb, NULL);
 	if (len) {
 		*len = sb->len;

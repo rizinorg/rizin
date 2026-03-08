@@ -19,7 +19,7 @@ RZ_API RzStrBuf *rz_strbuf_new(const char *s);
 RZ_API const char *rz_strbuf_set(RzStrBuf *sb, const char *s); // return = the string or NULL on fail
 RZ_API bool rz_strbuf_slice(RZ_NONNULL RzStrBuf *sb, size_t from, size_t len);
 RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t len);
-RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len);
+RZ_API RZ_BORROW ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len);
 RZ_API const char *rz_strbuf_setf(RzStrBuf *sb, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3); // return = the string or NULL on fail
 RZ_API const char *rz_strbuf_vsetf(RzStrBuf *sb, const char *fmt, va_list ap); // return = the string or NULL on fail
 RZ_API bool rz_strbuf_append(RzStrBuf *sb, const char *s);
@@ -27,7 +27,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l);
 RZ_API bool rz_strbuf_prepend(RzStrBuf *sb, const char *s);
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap);
-RZ_API char *rz_strbuf_get(RzStrBuf *sb);
+RZ_API RZ_BORROW char *rz_strbuf_get(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb);
 RZ_API size_t rz_strbuf_length(RzStrBuf *sb);
