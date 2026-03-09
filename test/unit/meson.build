@@ -94,6 +94,7 @@ if get_option('enable_tests')
     'lzma',
     'mem',
     'ovf',
+    'ownership',
     'pj',
     'rbtree',
     'reg',
