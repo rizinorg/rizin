@@ -2566,10 +2566,9 @@ static const char *core_cmd_default_table_color(const char *value, const char *c
 		return ctx->pal.flag;
 	} else if (table_value_is_name(column)) {
 		RzBinSymbol *sym = rz_core_bin_get_symbol_by_name(core, value);
-		if (value && sym && sym->is_auto_generated) {
+		if (sym && sym->is_auto_generated) {
 			return ctx->pal.diff_unknown;
 		}
-		free(sym);
 		return ctx->pal.fname;
 	} else if (table_value_is_meta(column)) {
 		return ctx->pal.meta;

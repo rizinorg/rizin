@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 #include <rz_bin.h>
 #include "i/private.h"
-#include <rz_core.h>
 
 static void process_objc_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	if (!symbol->classname) {
@@ -86,27 +85,15 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	// methods and fields.
 	language_cb(o, symbol);
 }
-RZ_API RzBinSymbol *rz_core_bin_get_symbol_by_name(RZ_NONNULL const RzCore *core, const char *name) {
-	rz_return_val_if_fail(core && name, NULL);
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	if (!obj || !obj->symbols) {
-		return NULL;
-	}
-	void **it;
-	RzBinSymbol *element;
-	rz_pvector_foreach (obj->symbols, it) {
-		element = *it;
-		if (RZ_STR_EQ(element->name, name)) {
-			return element;
-		}
-	}
-	return NULL;
-}
 
 RZ_IPI void rz_bin_normalize_symbol(RzBinSymbol *symbol) {
 	rz_return_if_fail(symbol);
 	if (RZ_STR_ISEMPTY(symbol->name)) {
-		symbol->name = (symbol->vaddr && symbol->vaddr != UT64_MAX) ? rz_str_newf("unknown_0x%" PFMT64x, symbol->vaddr) : rz_str_newf("unknown_%d", symbol->ordinal);
+		if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
+			symbol->name = rz_str_newf("unknown_0x%" PFMT64x, symbol->vaddr);
+		} else {
+			symbol->name = rz_str_newf("unknown_%d", symbol->ordinal);
+		}
 		symbol->is_auto_generated = true;
 	} else {
 		symbol->is_auto_generated = false;
@@ -122,6 +109,9 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 	ht_sp_free(o->import_name_symbols);
 	o->import_name_symbols = ht_sp_new(HT_STR_DUP, NULL, NULL);
 
+	ht_sp_free(o->name_to_symbol);
+	o->name_to_symbol = ht_sp_new(HT_STR_DUP, NULL, NULL);
+
 	RzBinProcessLanguage language_cb = rz_bin_process_language_symbol(o);
 
 	void **it;
@@ -129,6 +119,9 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 	rz_pvector_foreach (o->symbols, it) {
 		element = *it;
 		rz_bin_normalize_symbol(element);
+		if (RZ_STR_ISNOTEMPTY(element->name) && !ht_sp_find(o->name_to_symbol, element->name, NULL)) {
+			ht_sp_insert(o->name_to_symbol, element->name, element);
+		}
 		process_handle_symbol(element, o, demangler, flags, language_cb);
 	}
 }
