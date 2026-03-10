@@ -117,10 +117,8 @@ static bool md1img_parse_cati_container(RzBuffer *b, RzPVector /*<MtkDbgSymbol *
 	// Parse nested CATI headers
 	while (rz_buf_tell(b) + 8 <= entries_end) {
 		ut8 magic[MTK_CATI_MAGIC_SIZE];
-		if (rz_buf_read(b, magic, MTK_CATI_MAGIC_SIZE) != MTK_CATI_MAGIC_SIZE) {
-			break;
-		}
-		if (memcmp(magic, MTK_CATI_MAGIC, MTK_CATI_MAGIC_SIZE) != 0) {
+		if (rz_buf_read(b, magic, MTK_CATI_MAGIC_SIZE) != MTK_CATI_MAGIC_SIZE ||
+			memcmp(magic, MTK_CATI_MAGIC, MTK_CATI_MAGIC_SIZE) != 0) {
 			break;
 		}
 
