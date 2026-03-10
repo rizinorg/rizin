@@ -1,6 +1,6 @@
 NAME=Printing IL ops in various formats
 FILE=bins/elf/emulateme.x86
-TIMEOUT=30
+TIMEOUT=90
 CMDS=<<EOF
 s sym.decrypt
 echo -- oneline

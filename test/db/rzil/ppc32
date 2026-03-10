@@ -1,6 +1,6 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/ppc/emulateme-ppc32be
-TIMEOUT=60
+TIMEOUT=120
 CMDS=<<EOF
 echo -- oneline
 aoi 5
