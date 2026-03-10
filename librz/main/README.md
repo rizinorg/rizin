@@ -16,4 +16,4 @@ them as C API (see `rz_main.h`).
 - dispatch table mapping tool names to their callbacks and corresponding `rz_main_find` 
 - `rz_main_version_print` for obtaining a version of the tool
 
-Each file with tool name provide CLI logic.
+Each file with a tool name provides the CLI logic.
