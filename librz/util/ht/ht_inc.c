@@ -61,10 +61,10 @@ typedef ut64 group_t;
 // Slot addressing is different depending on whether custom elem_size is used
 #ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
 #define HT_SLOT_AT(ht, index) \
-	((HT_(Kv) *)((ut8 *)(ht->slots) + index * ht->opt.elem_size))
+	((HT_(Kv) *)((ut8 *)(ht->slots_) + index * ht->opt.elem_size))
 #else
 #define HT_SLOT_AT(ht, index) \
-	(&(ht)->slots[(index)])
+	(&(ht)->slots_[(index)])
 #endif
 
 // Helper macro for implementing an unrolled foreach loop
@@ -319,7 +319,7 @@ static RZ_OWN HtName_(Ht) *internal_ht_new(ut32 requested_capacity, HT_(Options)
 	}
 
 	ht->ctrl = ht->data;
-	ht->slots = (HT_(Kv) *)(ht->data + ctrl_size);
+	ht->slots_ = (HT_(Kv) *)(ht->data + ctrl_size);
 
 	// Initialize all slots as empty
 	memset(ht->ctrl, H2_STATUS_EMPTY, ctrl_size);
