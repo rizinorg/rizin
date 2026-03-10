@@ -369,7 +369,7 @@ RZ_IPI RzStructuredData *mtk_structure(RzBinFile *bf) {
 		RzStructuredData *hdrs = rz_structured_data_map_add_array(root, "gfh_headers");
 		if (hdrs) {
 			MtkGfhHeader *extra;
-			rz_vector_foreach(mtk->extra_headers, extra) {
+			rz_vector_foreach (mtk->extra_headers, extra) {
 				RzStructuredData *h = rz_structured_data_array_add_map(hdrs);
 				if (!h) {
 					continue;

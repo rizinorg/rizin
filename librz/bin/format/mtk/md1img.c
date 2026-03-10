@@ -595,7 +595,7 @@ RZ_IPI RzStructuredData *md1img_structure(RzBinFile *bf) {
 	RzStructuredData *secs = rz_structured_data_map_add_array(root, "sections");
 	if (secs) {
 		Md1imgSection *sec;
-		rz_vector_foreach(md1->sections, sec) {
+		rz_vector_foreach (md1->sections, sec) {
 			RzStructuredData *s = rz_structured_data_array_add_map(secs);
 			if (!s) {
 				continue;
@@ -638,7 +638,7 @@ RZ_IPI RzStructuredData *md1img_structure(RzBinFile *bf) {
 			RzStructuredData *hdrs = rz_structured_data_map_add_array(root, "gfh_headers");
 			if (hdrs) {
 				MtkGfhHeader *extra;
-				rz_vector_foreach(mtk->extra_headers, extra) {
+				rz_vector_foreach (mtk->extra_headers, extra) {
 					RzStructuredData *h = rz_structured_data_array_add_map(hdrs);
 					if (!h) {
 						continue;
