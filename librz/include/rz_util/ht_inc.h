@@ -246,9 +246,9 @@ typedef struct Ht_(t) {
 	ut32 size; ///< Number of stored elements.
 	ut32 growth_left; ///< Number of empty slots.
 	RZ_BORROW ut8 *ctrl; ///< Control bytes (metadata) - point to the beginning of the `data` pointer.
-	RZ_BORROW HT_(Kv) *slots; ///< Main array (no buckets) - points to an offset after the `data` pointer.
+	RZ_BORROW HT_(Kv) *slots_; ///< Main array (no buckets) - points to an offset after the `data` pointer.
 	HT_(Options) opt; ///< Methods
-	ut8 *data; ///< Single allocation for `ctrl` and `slots` arrays.
+	ut8 *data; ///< Single allocation for `ctrl` and `slots_` arrays.
 } HtName_(Ht);
 
 typedef struct Ht_(iter_mut_t) {
