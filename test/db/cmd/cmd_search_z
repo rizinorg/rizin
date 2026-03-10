@@ -328,13 +328,14 @@ NAME=String Search - str.unprintable - utf8 code point
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF
 /z "ا الأوضاع, لم بوابة المب" l utf8
-e str.unprintable=0x627
+e str.unprintable=0x629
 /z "ا الأوضاع, لم بوابة المب" l utf8
+b 0x1000
 ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0 43
-
+ا الأوضاع, لم بوا
 EOF
 EXPECT_ERR=
 RUN

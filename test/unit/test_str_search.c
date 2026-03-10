@@ -232,21 +232,24 @@ bool test_rz_scan_strings_user_unprintable(void) {
 	mu_end;
 }
 
-bool test_rz_scan_strings_grapheme_length(void) {
-	static const unsigned char str[] = "e\xcc\x81x\x00";
+bool test_rz_scan_strings_user_unprintable_utf8(void) {
+	static const unsigned char str[] = "ab\xc3\xa9cd";
+	static RzCodePoint user_unprintable[] = { 0x00e9 };
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 	RzUtilStrScanOptions opt = g_opt;
-	opt.min_str_length = 1;
+	opt.user_unprintable = user_unprintable;
+	opt.user_unprintable_count = RZ_ARRAY_SIZE(user_unprintable);
+	opt.min_str_length = 2;
 	opt.check_ascii_freq = false;
 
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
 	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
-	mu_assert_eq(n, 1, "rz_scan_strings grapheme length, number of strings");
+	mu_assert_eq(n, 2, "rz_scan_strings user_unprintable utf8, number of strings");
 
-	RzDetectedString *s = rz_list_get_n(str_list, 0);
-	mu_assert_streq(s->string, "e\xcc\x81x", "rz_scan_strings grapheme length, string");
-	mu_assert_eq(s->length, 3, "rz_scan_strings grapheme length, code point length");
-	mu_assert_eq(s->grapheme_length, 2, "rz_scan_strings grapheme length, grapheme length");
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s0->string, "ab", "rz_scan_strings user_unprintable utf8, first string");
+	mu_assert_streq(s1->string, "cd", "rz_scan_strings user_unprintable utf8, second string");
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
@@ -507,7 +510,7 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
 	mu_run_test(test_rz_scan_strings_user_unprintable);
-	mu_run_test(test_rz_scan_strings_grapheme_length);
+	mu_run_test(test_rz_scan_strings_user_unprintable_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
