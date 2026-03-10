@@ -13,9 +13,35 @@
  * - https://github.com/u-boot/u-boot/blob/master/tools/mtk_image.h
  */
 #include "mtk.h"
+#include "md1img.h"
 
 static inline bool mtk_is_gfh_magic(ut32 magic_version) {
 	return (magic_version & MTK_GFH_MAGIC_MASK) == MTK_GFH_MAGIC;
+}
+
+/**
+ * \brief Scan for GFH FILE_INFO header within the first MTK_GFH_SCAN_LIMIT bytes.
+ * \return offset of the GFH header, or UT64_MAX if not found.
+ */
+static ut64 mtk_find_gfh(RzBuffer *b) {
+	ut64 buf_size = rz_buf_size(b);
+	ut64 limit = RZ_MIN(buf_size, MTK_GFH_SCAN_LIMIT);
+	// GFH headers are typically aligned to 4 bytes
+	for (ut64 off = 0; off + MTK_GFH_MIN_FILE_SIZE <= limit; off += 4) {
+		ut64 cursor = off;
+		MtkGfhCommonHdr hdr;
+		if (!rz_buf_read_le32_offset(b, &cursor, &hdr.magic_version) ||
+			!rz_buf_read_le16_offset(b, &cursor, &hdr.size) ||
+			!rz_buf_read_le16_offset(b, &cursor, &hdr.type)) {
+			continue;
+		}
+		if (mtk_is_gfh_magic(hdr.magic_version) &&
+			hdr.type == MTK_GFH_TYPE_FILE_INFO &&
+			hdr.size >= MTK_GFH_MIN_FILE_SIZE) {
+			return off;
+		}
+	}
+	return UT64_MAX;
 }
 
 static bool mtk_read_common_hdr(RzBuffer *b, ut64 *offset, MtkGfhCommonHdr *hdr) {
@@ -75,28 +101,25 @@ RZ_IPI bool mtk_check_buffer(RzBuffer *b) {
 		return false;
 	}
 
-	ut64 offset = 0;
-	MtkGfhCommonHdr hdr;
-	if (!mtk_read_common_hdr(b, &offset, &hdr)) {
+	// Reject md1img containers — they have their own plugin
+	ut8 first4[MD1IMG_MAGIC_SIZE];
+	if (rz_buf_read_at(b, 0, first4, MD1IMG_MAGIC_SIZE) == MD1IMG_MAGIC_SIZE &&
+		memcmp(first4, MD1IMG_MAGIC, MD1IMG_MAGIC_SIZE) == 0) {
 		return false;
 	}
 
-	if (!mtk_is_gfh_magic(hdr.magic_version)) {
-		return false;
-	}
-	if (hdr.type != MTK_GFH_TYPE_FILE_INFO) {
-		return false;
-	}
-	if (hdr.size < MTK_GFH_MIN_FILE_SIZE) {
+	ut64 gfh_off = mtk_find_gfh(b);
+	if (gfh_off == UT64_MAX) {
 		return false;
 	}
 
+	ut64 offset = gfh_off + MTK_GFH_COMMON_HDR_SIZE;
 	MtkGfhFileInfo fi;
 	if (!mtk_read_file_info(b, &offset, &fi)) {
 		return false;
 	}
 
-	if (fi.hdr_size < hdr.size || fi.hdr_size > buf_size) {
+	if (fi.hdr_size < MTK_GFH_MIN_FILE_SIZE || gfh_off + fi.hdr_size > buf_size) {
 		return false;
 	}
 	if (fi.load_addr == 0) {
@@ -120,12 +143,14 @@ RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b) {
 		return NULL;
 	}
 
-	ut64 offset = 0;
-	if (!mtk_read_common_hdr(b, &offset, &mtk->first_common)) {
+	ut64 gfh_off = mtk_find_gfh(b);
+	if (gfh_off == UT64_MAX) {
 		goto fail;
 	}
-	if (!mtk_is_gfh_magic(mtk->first_common.magic_version) ||
-		mtk->first_common.type != MTK_GFH_TYPE_FILE_INFO) {
+	mtk->gfh_offset = gfh_off;
+
+	ut64 offset = gfh_off;
+	if (!mtk_read_common_hdr(b, &offset, &mtk->first_common)) {
 		goto fail;
 	}
 	if (!mtk_read_file_info(b, &offset, &mtk->file_info)) {
@@ -133,22 +158,23 @@ RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b) {
 	}
 
 	ut64 buf_size = rz_buf_size(b);
-	if (mtk->file_info.hdr_size > buf_size) {
+	if (gfh_off + mtk->file_info.hdr_size > buf_size) {
 		RZ_LOG_ERROR("MTK: header size (0x%x) exceeds file size\n", mtk->file_info.hdr_size);
 		goto fail;
 	}
 
-	mtk->code_offset = mtk->file_info.hdr_size;
+	mtk->code_offset = gfh_off + mtk->file_info.hdr_size;
 	if (buf_size > mtk->code_offset) {
 		mtk->code_size = buf_size - mtk->code_offset;
 	}
-	// jump_offset is from the start of the file, not from load_addr
-	mtk->entry_vaddr = MTK_MODEM_BADDR + (mtk->file_info.jump_offset - mtk->code_offset);
+	// jump_offset is relative to the GFH start
+	ut32 code_offset_relative = mtk->file_info.hdr_size;
+	mtk->entry_vaddr = MTK_MODEM_BADDR + (mtk->file_info.jump_offset - code_offset_relative);
 
 	// Parse additional GFH headers between the first header and the code area
-	offset = mtk->first_common.size;
+	offset = gfh_off + mtk->first_common.size;
 	int count = 0;
-	while (offset + MTK_GFH_COMMON_HDR_SIZE <= mtk->file_info.hdr_size && count < 100) {
+	while (offset + MTK_GFH_COMMON_HDR_SIZE <= mtk->code_offset && count < 100) {
 		ut64 hdr_start = offset;
 		MtkGfhCommonHdr extra_common;
 		if (!mtk_read_common_hdr(b, &offset, &extra_common)) {
@@ -257,7 +283,7 @@ RZ_IPI bool mtk_append_maps(MtkObj *mtk, ut64 paddr, const char *name, RzPVector
 	kuseg->vfile_name = name ? rz_str_dup(name) : NULL;
 	kuseg->paddr = paddr;
 	kuseg->psize = mtk->code_size;
-	kuseg->vaddr = (ut64)mtk->file_info.load_addr + mtk->code_offset;
+	kuseg->vaddr = (ut64)mtk->file_info.load_addr + mtk->file_info.hdr_size;
 	kuseg->vsize = mtk->code_size;
 	kuseg->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, kuseg);

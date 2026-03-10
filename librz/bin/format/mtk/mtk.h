@@ -77,13 +77,17 @@ typedef struct mtk_gfh_header {
 /**
  * \brief Top-level parsed object stored as bin_obj.
  */
+/// Maximum offset to scan for GFH magic when it's not at file start
+#define MTK_GFH_SCAN_LIMIT 0x1000
+
 typedef struct mtk_obj {
 	MtkGfhCommonHdr first_common; ///< Common header of the first (file_info) block
 	MtkGfhFileInfo file_info; ///< Parsed file_info body
 	RzVector /*<MtkGfhHeader>*/ *extra_headers; ///< Additional GFH headers after file_info
-	ut32 code_offset; ///< File offset where code starts (= file_info.hdr_size)
+	ut64 gfh_offset; ///< File offset where GFH starts (0 if at beginning)
+	ut32 code_offset; ///< File offset where code starts (= gfh_offset + file_info.hdr_size)
 	ut32 code_size; ///< Size of code section
-	ut32 entry_vaddr; ///< = load_addr + (jump_offset - code_offset)
+	ut32 entry_vaddr; ///< = MTK_MODEM_BADDR + (jump_offset - code_offset_relative)
 } MtkObj;
 
 RZ_IPI MtkObj *mtk_obj_new(RzBuffer *b);
