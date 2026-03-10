@@ -1994,7 +1994,6 @@ RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const 
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut64 string_len = 0;
 	ut32 offset = 0;
-	RzBuffer *buf = NULL;
 
 	if (!strcmp(argv[1], "8")) {
 		string_len = (ut64)core->block[0];
@@ -2020,7 +2019,7 @@ RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const 
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	buf = rz_buf_new_with_pointers(core->block, core->blocksize, false);
+	RzBuffer *buf = rz_buf_new_with_pointers(core->block, core->blocksize, false);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		opt.buffer = buf;
