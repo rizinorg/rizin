@@ -67,15 +67,15 @@ Lct
 Lcq
 EOF
 EXPECT=<<EOF
-dex: Suite of dex commands, type `dex` for more info (Made by deroad, v1.0, LGPL-3.0-only)
 java: Suite of java commands, type `java` for more info (Made by deroad, v1.0, LGPL-3.0-only)
-[{"name":"dex","description":"Suite of dex commands, type `dex` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"},{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
+dex: Suite of dex commands, type `dex` for more info (Made by deroad, v1.0, LGPL-3.0-only)
+[{"name":"java","description":"Suite of java commands, type `java` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"},{"name":"dex","description":"Suite of dex commands, type `dex` for more info","author":"deroad","version":"1.0","license":"LGPL-3.0-only"}]
 name license       author version description                                       
 ------------------------------------------------------------------------------------
-dex  LGPL-3.0-only deroad 1.0     Suite of dex commands, type `dex` for more info
 java LGPL-3.0-only deroad 1.0     Suite of java commands, type `java` for more info
-dex
+dex  LGPL-3.0-only deroad 1.0     Suite of dex commands, type `dex` for more info
 java
+dex
 EOF
 RUN
 
@@ -194,7 +194,6 @@ dex          LGPL3     deroad          DEX (Dalvik Executable)
 dmp64        LGPL3     abcSup          Windows x64 Crash Dump                 
 dol          BSD       pancake         Nintendo Dolphin binary                
 dyldcache    LGPL3     pancake         Apple DYLD Cache                       
-ecoff        LGPL3     deroad          ECOFF (Extended Common Object File Format) 
 elf          LGPL3     nibble          ELF (Executable and Linkable Format)   
 elf64        LGPL3     nibble          ELF64 (64-bit Executable and Linkable Format) 
 gns1         LGPL3     Zapper9982      Apple C4000 baseband firmware (GNS1.bin) 
@@ -206,9 +205,11 @@ luac         LGPL3     Heersin         Lua compiled binary
 mach0        LGPL3     pancake         Mach-O (Mach Object)                   
 mach064      LGPL3     nibble          Mach-O 64-bit                          
 mbn          LGPL3     pancake         MBN/SBL bootloader binary              
+md1img       LGPL3     godcodehunter   MediaTek md1img firmware container     
 mdmp         LGPL3     Davis           Windows MiniDump                       
 mdt          LGPL3     Rot127          Qualcomm Peripheral Image Loader (32bit only) 
 menuet       LGPL3     pancake         Menuet/KolibriOS binary                
+mtk          LGPL3     godcodehunter   MediaTek GFH firmware image (md1rom)   
 mz           MIT       nodepad         MZ (DOS MZ Executable)                 
 ne           LGPL3     GustavoLCR      NE (New Executable)                    
 nes          MIT       maijin          Nintendo NES                           
@@ -240,7 +241,6 @@ wasm         MIT       pancake         WebAssembly
 xbe          LGPL3     LemonBoy        Microsoft Xbox XBE (Xbox Executable)   
 z64          LGPL3     lowlyw          Nintendo 64 Big-Endian binary          
 zimg         LGPL3     deroad          zImage format binary                   
-.cart        LGPL3                     CaRT (Compressed and RC4 Transport) extractor
 .fatmach0    LGPL3                     Fat Mach-O binary extractor
 .sep64       LGPL3                     64-bit SEP binary extractor
 [{"name":"any","description":"Dummy format binary","license":"LGPL3","author":"nibble"},{"name":"art","description":"Android Runtime","license":"LGPL3","author":"pancake"},{"name":"avr","description":"ATmel AVR usermode","license":"LGPL3","author":"deroad"},{"name":"bf","description":"Brainfuck","license":"LGPL3","author":"pancake"},{"name":"bflt","description":"bFLT uClinux binary","license":"LGPL3","author":"Oscar Salvador"},{"name":"bios","description":"BIOS binary","license":"LGPL","author":"pancake"},{"name":"bootimg","description":"Android Boot Image","license":"LGPL3","author":"pancake"},{"name":"c166","description":"Siemens/Infineon C166 family microcontroller binary","license":"LGPL3","author":"SSharshunov"},{"name":"cgc","description":"CGC (Cyber Grand Challenge)","license":"LGPL3","author":"ret2libc"},{"name":"coff","description":"COFF (Common Object File Format)","license":"LGPL3","author":"Fedor Sakharov"},{"name":"dex","description":"DEX (Dalvik Executable)","license":"LGPL3","author":"deroad"},{"name":"dmp64","description":"Windows x64 Crash Dump","license":"LGPL3","author":"abcSup"},{"name":"dol","description":"Nintendo Dolphin binary","license":"BSD","author":"pancake"},{"name":"dyldcache","description":"Apple DYLD Cache","license":"LGPL3","author":"pancake"},{"name":"ecoff","description":"ECOFF (Extended Common Object File Format)","license":"LGPL3","author":"deroad"},{"name":"elf","description":"ELF (Executable and Linkable Format)","license":"LGPL3","author":"nibble"},{"name":"elf64","description":"ELF64 (64-bit Executable and Linkable Format)","license":"LGPL3","author":"nibble"},{"name":"gns1","description":"Apple C4000 baseband firmware (GNS1.bin)","license":"LGPL3","author":"Zapper9982"},{"name":"hunk","description":"Amiga Hunk file format","license":"LGPL3","author":"StefBisti"},{"name":"java","description":"Java binary","license":"LGPL3","author":"deroad"},{"name":"kernelcache","description":"Apple Kernelcache","license":"LGPL3","author":"mrmacete"},{"name":"le","description":"LE/LX","license":"LGPL3","author":"GustavoLCR"},{"name":"luac","description":"Lua compiled binary","license":"LGPL3","author":"Heersin"},{"name":"mach0","description":"Mach-O (Mach Object)","license":"LGPL3","author":"pancake"},{"name":"mach064","description":"Mach-O 64-bit","license":"LGPL3","author":"nibble"},{"name":"mbn","description":"MBN/SBL bootloader binary","license":"LGPL3","author":"pancake"},{"name":"mdmp","description":"Windows MiniDump","license":"LGPL3","author":"Davis"},{"name":"mdt","description":"Qualcomm Peripheral Image Loader (32bit only)","license":"LGPL3","author":"Rot127"},{"name":"menuet","description":"Menuet/KolibriOS binary","license":"LGPL3","author":"pancake"},{"name":"mz","description":"MZ (DOS MZ Executable)","license":"MIT","author":"nodepad"},{"name":"ne","description":"NE (New Executable)","license":"LGPL3","author":"GustavoLCR"},{"name":"nes","description":"Nintendo NES","license":"MIT","author":"maijin"},{"name":"nin3ds","description":"Nintendo 3DS Firmware","license":"LGPL3","author":"a0rtega"},{"name":"ninds","description":"Nintendo DS binary","license":"LGPL3","author":"a0rtega"},{"name":"ningb","description":"Nintendo Game Boy","license":"LGPL3","author":"condret"},{"name":"ningba","description":"Nintendo Game Boy Advance","license":"LGPL3","author":"condret"},{"name":"nro","description":"Nintendo Switch NRO","license":"MIT","author":"pancake"},{"name":"nso","description":"Nintendo Switch NSO","license":"MIT","author":"rkx1209"},{"name":"omf","description":"OMF (Object Module Format)","license":"LGPL3","author":"ampotos"},{"name":"omf166","description":"OMF166 (Object Module Format by Siemens)","license":"LGPL3","author":"SSharshunov"},{"name":"p9","description":"Plan9 binary","license":"LGPL3","author":"pancake"},{"name":"pe","description":"PE (Portable Executable)","license":"LGPL3","author":"nibble"},{"name":"pe64","description":"PE64 (PE32+) binary","license":"LGPL3","author":"nibble"},{"name":"pebble","description":"Pebble Watch App","license":"LGPL","author":"pancake"},{"name":"pef","description":"Preferred Executable Format","license":"LGPL3","author":"farhan-25"},{"name":"prg","description":"C64 PRG (Commodore 64)","license":"LGPL3","author":"thestr4ng3r"},{"name":"psxexe","description":"Sony PlayStation 1 executable","license":"LGPL3","author":"Dax89"},{"name":"pyc","description":"Python byte-compiled","license":"LGPL3","author":"c0riolis"},{"name":"qnx","description":"QNX executable","license":"LGPL3","author":"deepakchethan"},{"name":"sfc","description":"Super NES / Super Famicom ROM","license":"LGPL3","author":"usrshare"},{"name":"smd","description":"SEGA Genesis / MegaDrive ROM","license":"LGPL3","author":"pancake"},{"name":"sms","description":"SEGA MasterSystem / GameGear ROM","license":"LGPL3","author":"shengdi"},{"name":"spc700","description":"SNES SPC700 sound data","license":"LGPL3","author":"maijin"},{"name":"symbols","description":"Apple Symbols file","license":"MIT","author":"pancake"},{"name":"te","description":"TE (Terse Executable)","license":"LGPL3","author":"xvilka"},{"name":"vsf","description":"VICE snapshot file","license":"LGPL3","author":"riq"},{"name":"wasm","description":"WebAssembly","license":"MIT","author":"pancake"},{"name":"xbe","description":"Microsoft Xbox XBE (Xbox Executable)","license":"LGPL3","author":"LemonBoy"},{"name":"z64","description":"Nintendo 64 Big-Endian binary","license":"LGPL3","author":"lowlyw"},{"name":"zimg","description":"zImage format binary","license":"LGPL3","author":"deroad"},{"name":"xtr.cart","description":"CaRT (Compressed and RC4 Transport) extractor","license":"LGPL3"},{"name":"xtr.fatmach0","description":"Fat Mach-O binary extractor","license":"LGPL3"},{"name":"xtr.sep64","description":"64-bit SEP binary extractor","license":"LGPL3"}]
@@ -323,7 +323,6 @@ dex
 dmp64
 dol
 dyldcache
-ecoff
 elf
 elf64
 gns1
@@ -335,9 +334,11 @@ luac
 mach0
 mach064
 mbn
+md1img
 mdmp
 mdt
 menuet
+mtk
 mz
 ne
 nes
@@ -369,7 +370,6 @@ wasm
 xbe
 z64
 zimg
-xtr.cart
 xtr.fatmach0
 xtr.sep64
 EOF
@@ -385,12 +385,6 @@ Lhq
 EOF
 EXPECT=<<EOF
 adler32        LGPL3      deroad                         Adler-32 checksum
-blake2b        LGPL3      Farhan-25                      BLAKE2b cryptographic hash
-blake2bp       LGPL3      Farhan-25                      BLAKE2bp cryptographic hash
-blake2s        LGPL3      Farhan-25                      BLAKE2s cryptographic hash
-blake2sp       LGPL3      Farhan-25                      BLAKE2sp cryptographic hash
-blake2xb       LGPL3      Farhan-25                      BLAKE2xb cryptographic hash
-blake2xs       LGPL3      Farhan-25                      BLAKE2xs cryptographic hash
 blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
 chisquare      LGPL3      xvilka                         Chi-square goodness-of-fit vs uniform
 crc15can       LGPL3      deroad                         CRC-15 CAN checksum
@@ -468,10 +462,6 @@ parity         LGPL3      deroad                         Parity checksum
 serialcorr     LGPL3      xvilka                         Serial correlation coefficient [-1.0-1.0]
 sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
-sha3-224       BSD-3      Andrey Jivsov                  SHA3-224 cryptographic hash
-sha3-256       BSD-3      Andrey Jivsov                  SHA3-256 cryptographic hash
-sha3-384       BSD-3      Andrey Jivsov                  SHA3-384 cryptographic hash
-sha3-512       BSD-3      Andrey Jivsov                  SHA3-512 cryptographic hash
 sha384         BSD-3      Aaron D. Gifford               SHA-384 cryptographic hash
 sha512         BSD-3      Aaron D. Gifford               SHA-512 cryptographic hash
 sm3            LGPL2      FSF/deroad                     ShangMi 3 (SM3) cryptographic hash
@@ -582,12 +572,6 @@ xor8            LGPL3   deroad                     XOR-8 checksum
 xxhash32        LGPL3   deroad                     xxHash32 non-cryptographic hash
 xxhash64        LGPL3   cheese-cakee               xxHash64 non-cryptographic hash
 adler32
-blake2b
-blake2bp
-blake2s
-blake2sp
-blake2xb
-blake2xs
 blake3
 chisquare
 crc15can
@@ -665,10 +649,6 @@ parity
 serialcorr
 sha1
 sha256
-sha3-224
-sha3-256
-sha3-384
-sha3-512
 sha384
 sha512
 sm3
