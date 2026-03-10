@@ -91,12 +91,21 @@ EXPECT=<<EOF
 0x08000120 0x00000120 0x08000178 R_AARCH64_MOVW_PREL_G2_NC     .data - 0x08000120
 0x08000124 0x00000124 0x08000178 R_AARCH64_MOVW_PREL_G3        .data - 0x08000124
             ;-- .data:
-            ;-- test_movw_sabs:
-            0x08000088      mov   x0, 0x178                            ; RELOC 64 .data @ 0x08000178
+            ;-- test_movw_prel:
+            0x0800010c      mov   x0, 0x6c                             ; 'l'; RELOC 64 .data @ 0x08000178 - 0x800010c
             ;-- .data:
-            0x0800008c      mov   x1, segment.ehdr                     ; RELOC 64 .data @ 0x08000178
+            0x08000110      movk  x0, 0x68                             ; RELOC 64 .data @ 0x08000178 - 0x8000110
             ;-- .data:
-            0x08000090      movz  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178
+            0x08000114      movz  x1, 0, lsl 16                        ; RELOC 64 .data @ 0x08000178 - 0x8000114
+            ;-- .data:
+            0x08000118      movk  x1, 0, lsl 16                        ; RELOC 64 .data @ 0x08000178 - 0x8000118
+            ;-- .data:
+            0x0800011c      movz  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178 - 0x800011c
+            ;-- .data:
+            0x08000120      movk  x2, 0, lsl 32                        ; RELOC 64 .data @ 0x08000178 - 0x8000120
+            ;-- .data:
+            0x08000124      movz  x3, 0, lsl 48                        ; RELOC 64 .data @ 0x08000178 - 0x8000124
+            0x08000128      ret
 EOF
 RUN
 
@@ -114,14 +123,14 @@ EXPECT=<<EOF
             ;-- .data:
             0x08000134      ldr   x0, [x0, 0xff8]                      ; [0xff8:4]=-1 ; 4088; RELOC 0 .data @ 0x08000178
             ;-- .data:
-            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:4]=-1; RELOC 0 .data @ 0x08000178
+            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:4]=-1; RELOC 32 .data @ 0x08000178 - 0x8000138
 EOF
 RUN
 
 NAME= R_AARCH64_LDST* relocs
 FILE=bins/elf/aarch64_relocs.o
 CMDS=<<EOF
-ir~R_AARCH64_LDST*
+ir~R_AARCH64_LDST
 pd 10 @ 0x080000b8
 EOF
 EXPECT=<<EOF
