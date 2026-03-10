@@ -127,12 +127,10 @@ static bool md1img_parse_cati_container(RzBuffer *b, RzPVector /*<MtkDbgSymbol *
 			break;
 		}
 
-		if (cati_type == MTK_CATI_TYPE_DEBUG || cati_type == MTK_CATI_TYPE_DEBUG_DSP) {
-			md1img_parse_cati_debug(b, symbols);
-		} else {
-			// Unknown nested type, stop
+		if (cati_type != MTK_CATI_TYPE_DEBUG && cati_type != MTK_CATI_TYPE_DEBUG_DSP) {
 			break;
 		}
+		md1img_parse_cati_debug(b, symbols);
 	}
 
 	return rz_pvector_len(symbols) > 0;
