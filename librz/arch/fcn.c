@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2010-2021 nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2010-2021 alvaro <alvaro.felipe91@gmail.com>
 // SPDX-FileCopyrightText: 2010-2021 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2026  Mohit Ishpunyani <ishpunyanimohit@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_regex.h>
