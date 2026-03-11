@@ -308,8 +308,6 @@ static bool ecoff_parse_symbols_32(RzBuffer *buffer, ECoff_32 *ecoff) {
 		return ecoff_parse_old_symbols(buffer, ecoff);
 	}
 
-	return ecoff_parse_local_symbols_32(buffer, ecoff);
-
 	return ecoff_parse_local_symbols_32(buffer, ecoff) &&
 		ecoff_parse_external_symbols_32(buffer, ecoff) &&
 		ecoff_parse_file_descriptor_entries_32(buffer, ecoff) &&
@@ -420,9 +418,9 @@ fail:
 
 static ut32 ecoff_section_flags_to_perms(ut64 s_flags) {
 	ut32 perms = 0;
-	if (s_flags & ECOFF_SECTION_TYPE_REG) {
+	if (s_flags == ECOFF_SECTION_TYPE_REG) {
 		// Regular section: allocated, relocated, loaded.
-		perms |= RZ_PERM_RWX;
+		return RZ_PERM_RWX;
 	}
 	if (s_flags & ECOFF_SECTION_TYPE_TEXT) {
 		// Text section
