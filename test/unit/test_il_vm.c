@@ -15,11 +15,11 @@ static bool test_rzil_vm_init() {
 }
 
 static bool test_rzil_vm_global_vars() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
+	RzILVM *vm1 = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 
 	// 1. create variables
-	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bool());
-	RzILVar *var_r2 = rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
+	RzILVar *var_r1 = rz_il_vm_create_global_var(vm1, "r1", rz_il_sort_pure_bool());
+	RzILVar *var_r2 = rz_il_vm_create_global_var(vm1, "r2", rz_il_sort_pure_bv(32));
 	mu_assert_notnull(var_r1, "Create var 1");
 	mu_assert_notnull(var_r2, "Create var 2");
 
@@ -32,32 +32,32 @@ static bool test_rzil_vm_global_vars() {
 	mu_assert_true(rz_il_sort_pure_eq(var_r2->sort, rz_il_sort_pure_bv(32)), "var r2 sort");
 
 	// find vars from vm
-	RzILVar *find_var_r1 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
-	RzILVar *find_var_r2 = rz_il_vm_get_var(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
+	RzILVar *find_var_r1 = rz_il_vm_get_var(vm1, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	RzILVar *find_var_r2 = rz_il_vm_get_var(vm1, RZ_IL_VAR_KIND_GLOBAL, "r2");
 	mu_assert_ptreq(var_r1, find_var_r1, "Store and find r1");
 	mu_assert_ptreq(var_r2, find_var_r2, "Store and find r2");
 
 	// initial contents
-	RzILVal *val_r1 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	RzILVal *val_r1 = rz_il_vm_get_var_value(vm1, RZ_IL_VAR_KIND_GLOBAL, "r1");
 	mu_assert_eq(val_r1->type, RZ_IL_TYPE_PURE_BOOL, "val type");
 	mu_assert_false(val_r1->data.b->b, "val content");
-	RzILVal *val_r2 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
+	RzILVal *val_r2 = rz_il_vm_get_var_value(vm1, RZ_IL_VAR_KIND_GLOBAL, "r2");
 	mu_assert_eq(val_r2->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
 	mu_assert_eq(rz_bv_len(val_r2->data.bv), 32, "val bv len");
 	mu_assert_eq(rz_bv_to_ut64(val_r2->data.bv), 0, "val bv content");
 
 	// bind value to var
-	rz_il_vm_set_global_var(vm, "r1", rz_il_value_new_bool(rz_il_bool_new(true)));
-	rz_il_vm_set_global_var(vm, "r2", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 123)));
-	val_r1 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r1");
+	rz_il_vm_set_global_var(vm1, "r1", rz_il_value_new_bool(rz_il_bool_new(true)));
+	rz_il_vm_set_global_var(vm1, "r2", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 123)));
+	val_r1 = rz_il_vm_get_var_value(vm1, RZ_IL_VAR_KIND_GLOBAL, "r1");
 	mu_assert_eq(val_r1->type, RZ_IL_TYPE_PURE_BOOL, "val type");
 	mu_assert_true(val_r1->data.b->b, "val content");
-	val_r2 = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, "r2");
+	val_r2 = rz_il_vm_get_var_value(vm1, RZ_IL_VAR_KIND_GLOBAL, "r2");
 	mu_assert_eq(val_r2->type, RZ_IL_TYPE_PURE_BITVECTOR, "val type");
 	mu_assert_eq(rz_bv_len(val_r2->data.bv), 32, "val bv len");
 	mu_assert_eq(rz_bv_to_ut64(val_r2->data.bv), 123, "val bv content");
 
-	rz_il_vm_free(vm);
+	// rz_il_vm_free(vm);
 	mu_end;
 }
 
