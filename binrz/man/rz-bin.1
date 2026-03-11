@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_BIN 1
+.Os
 .Sh NAME
 .Nm rz-bin
 .Nd Binary program info extractor
@@ -15,7 +16,7 @@
 .Op Fl m Ar addr
 .Op Fl n Ar str
 .Op Fl N Ar m:M
-.Op Fl P Ar pdb  
+.Op Fl P Ar pdb
 .Op Fl o Ar str
 .Op Fl O Ar str
 .Op Fl k Ar query
@@ -24,7 +25,9 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-rz-bin can analyze and extract useful information from binary executable files like ELF, PE, Mach-O, etc. It supports multiple architectures like x86, ARM, MIPS, PowerPC, etc.
+rz-bin can analyze and extract useful information
+from binary executable files like ELF, PE, Mach-O, etc.
+It supports multiple architectures like x86, ARM, MIPS, PowerPC, etc.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl @ Ar addr
@@ -141,7 +144,6 @@ Dump raw strings to stdout (for huge files)
 Guess size of binary program
 .El
 .Sh ENVIRONMENT
-.Pp
 RZ_BIN_CODESIGN_VERBOSE: make code signatures verbose
 .Pp
 RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
@@ -165,9 +167,7 @@ RZ_BIN_SYMSTORE:         e pdb.symstore - path to downstream symbol store
 RZ_CONFIG:               sdb config file
 .Pp
 RZ_NOPLUGINS:            do not load shared plugins (speedup loading)
-
 .Sh EXAMPLES
-.Pp
 List symbols of a program:
 .Pp
 .Nm rz-bin Fl s Ar a.out
@@ -186,17 +186,15 @@ Load symbols and imports from rizin:
 .Pp
 [0x00000000]> .!rz-bin -prsi $FILE
 .Sh SEE ALSO
-.Pp
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rizin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-ax(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1)
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-ax 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-run 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0
