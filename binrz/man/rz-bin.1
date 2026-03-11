@@ -144,29 +144,32 @@ Dump raw strings to stdout (for huge files)
 Guess size of binary program
 .El
 .Sh ENVIRONMENT
-RZ_BIN_CODESIGN_VERBOSE: make code signatures verbose
-.Pp
-RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls - use alternative debuginfod server
-.Pp
-RZ_BIN_DEMANGLE:         e bin.demangle - do not demangle symbols
-.Pp
-RZ_BIN_LANG:             e bin.lang - assume lang for demangling
-.Pp
-RZ_BIN_MAXSTRBUF:        e bin.maxstrbuf - specify maximum buffer size
-.Pp
-RZ_BIN_PDBSERVER:        e pdb.server - use alternative PDB server
-.Pp
-RZ_BIN_PREFIX:           e bin.prefix - prefix symbols/sections/relocs with a specific string
-.Pp
-RZ_BIN_STRFILTER:        e bin.str.filter - rizin -qc 'e bin.str.filter=??' -
-.Pp
-RZ_BIN_STRPURGE:         e bin.str.purge - try to purge false positives
-.Pp
-RZ_BIN_SYMSTORE:         e pdb.symstore - path to downstream symbol store
-.Pp
-RZ_CONFIG:               sdb config file
-.Pp
-RZ_NOPLUGINS:            do not load shared plugins (speedup loading)
+.Bl -tag -width RZ_BIN_DEBUGINFOD_URLS
+.It Ev RZ_BIN_CODESIGN_VERBOSE
+make code signatures verbose
+.It Ev RZ_BIN_DEBUGINFOD_URLS
+bin.dbginfo.debuginfod_urls - use alternative debuginfod server
+.It Ev RZ_BIN_DEMANGLE
+bin.demangle - do not demangle symbols
+.It Ev RZ_BIN_LANG
+bin.lang - assume lang for demangling
+.It Ev RZ_BIN_MAXSTRBUF
+bin.maxstrbuf - specify maximum buffer size
+.It Ev RZ_BIN_PDBSERVER
+pdb.server - use alternative PDB server
+.It Ev RZ_BIN_PREFIX
+bin.prefix - prefix symbols/sections/relocs with a specific string
+.It Ev RZ_BIN_STRFILTER
+bin.str.filter - rizin -qc 'e bin.str.filter=??' -
+.It Ev RZ_BIN_STRPURGE
+bin.str.purge - try to purge false positives
+.It Ev RZ_BIN_SYMSTORE
+pdb.symstore - path to downstream symbol store
+.It Ev RZ_CONFIG
+sdb config file
+.It Ev RZ_NOPLUGINS
+do not load shared plugins (speedup loading)
+.El
 .Sh EXAMPLES
 List symbols of a program:
 .Pp
