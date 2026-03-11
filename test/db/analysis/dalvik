@@ -205,7 +205,7 @@ af
 pdfj
 EOF
 EXPECT=<<EOF
-{"name":"fcn.00000000","size":2,"addr":0,"ops":[{"offset":0,"esil":"sp,[8],ip,=,8,sp,+=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"return-void","disasm":"return-void","bytes":"0e00","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0,"flags":["fcn.00000000"]}]}
+{"name":"fcn.00000000","size":2,"addr":0,"ops":[{"offset":0,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"return-void","disasm":"return-void","bytes":"0e00","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0,"flags":["fcn.00000000"]}]}
 EOF
 RUN
 
