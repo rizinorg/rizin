@@ -17,7 +17,8 @@ rz_cons_sources = [
   'prompt.c',
   'cpipe.c',
   'rgb.c',
-  'cutf8.c'
+  'cutf8.c',
+  'emacs_mode.c'
 ]
 
 rz_cons = library('rz_cons', rz_cons_sources,
