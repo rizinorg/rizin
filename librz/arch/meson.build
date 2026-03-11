@@ -11,6 +11,7 @@ arch_plugins_list = [
   'arm_cs',
   'avr',
   'bf',
+  'cbpf_cs',
   'chip8',
   'cil',
   'cr16',
@@ -59,7 +60,6 @@ arch_plugins_list = [
   'xap',
   'xcore_cs',
   'x86_zydis',
-  'bpf_cs',
 ]
 
 arch_plugin_sources = [
@@ -70,6 +70,7 @@ arch_plugin_sources = [
   'p/arch_arm_cs.c',
   'p/arch_avr.c',
   'p/arch_bf.c',
+  'p/arch_cbpf_cs.c',
   'p/arch_chip8.c',
   'p/arch_cil.c',
   'p/arch_cr16.c',
@@ -118,7 +119,6 @@ arch_plugin_sources = [
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
   'p/arch_x86_zydis.c',
-  'p/arch_bpf_cs.c'
 ]
 
 arch_esil_sources = [

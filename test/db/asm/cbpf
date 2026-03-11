@@ -48,6 +48,3 @@ d "mod x" 9c00303f9d338950
 d "ldx 4*([0xe3d4dfdd]&0xf)" a1005303dddfd4e3
 d "xor 0x4de2de3c" a400668f3cdee24d
 d "xor x" ac00022f1ee32e84
-
-
-
