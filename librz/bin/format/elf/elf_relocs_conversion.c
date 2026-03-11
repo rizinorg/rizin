@@ -488,8 +488,6 @@ static RzBinReloc *reloc_convert_riscv(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 }
 
 static RzBinReloc *reloc_convert_aarch64(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-
-	ut64 B = bin->baddr;
 	ut64 P = rel->vaddr;
 
 	switch (rel->type) {
