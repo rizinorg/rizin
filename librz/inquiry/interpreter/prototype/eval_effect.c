@@ -95,13 +95,14 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			// Everything is just a jump for it at this point.
 			report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
 		}
-		if (plugin_data->call_cand.store_addr) {
+		if (plugin_data->call_cand.store_addr && eval_out.is_concrete) {
 			// An instruction in this basic block stored the next PC.
 			// Report a call candidate.
 			plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
+			plugin_data->call_cand.target = rz_bv_to_ut64(eval_out.bv);
 			report_yield_call_candiate(state, yield_queues, plugin_data);
-			memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		}
+		memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
 		copy_abstr_data(state->pc->abstr_data, &eval_out);
 		break;
 	}

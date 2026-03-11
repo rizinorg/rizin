@@ -405,6 +405,7 @@ EOF
 EXPECT=<<EOF
             ; CODE XREF from sym.function_0 @ 0x800005c
             ; CODE XREF from sym.function_1 @ 0x800007c
+            ; CODE XREF from sym.function_2 @ 0x800009c
             ;-- section..text:
             ;-- .text:
 / sym.some_ptr();
@@ -443,14 +444,16 @@ EXPECT=<<EOF
 |           0x0800008c      pop   {fp, lr}
 \           0x08000090      bx    lr                                   ; RELOC 0 
             ;-- function_2:
-            0x08000094      push  {fp, lr}                             ; RELOC TARGET 32 function_2 @ 0x08000094
-            0x08000098      add   fp, sp, 4
-            0x0800009c      bl    sym.some_ptr
-            0x080000a0      mov   r3, r0
-            0x080000a4      mov   r0, r3
-            0x080000a8      sub   sp, fp, 4
-            0x080000ac      pop   {fp, lr}
-            0x080000b0      bx    lr                                   ; RELOC 0 
+/ sym.function_2();
+|           0x08000094      push  {fp, lr}                             ; RELOC TARGET 32 function_2 @ 0x08000094
+|           0x08000098      add   fp, sp, 4
+|           0x0800009c      bl    sym.some_ptr
+|           ; CODE XREF from sym.some_ptr @ 0x800004c
+|           0x080000a0      mov   r3, r0
+|           0x080000a4      mov   r0, r3
+|           0x080000a8      sub   sp, fp, 4
+|           0x080000ac      pop   {fp, lr}
+\           0x080000b0      bx    lr                                   ; RELOC 0 
 / int sym.main(int argc, char **argv, char **envp);
 |           0x080000b4      push  {fp, lr}
 |           0x080000b8      add   fp, sp, 4
@@ -511,10 +514,12 @@ EXPECT=<<EOF
                          section..text+8 0x800003c ->      DATA -> 0x8000050 reloc..bss
                         section..text+24 0x800004c ->      CODE -> 0x8000060 reloc.target.function_0+12
                         section..text+24 0x800004c ->      CODE -> 0x8000080 reloc.target.function_1+12
+                        section..text+24 0x800004c ->      CODE -> 0x80000a0 reloc.target.function_2+12
                reloc.target.function_0+8 0x800005c ->      CODE -> 0x8000034 section..text
               reloc.target.function_0+28 0x8000070 ->      CODE -> 0x80000e8 sym.main+52
                reloc.target.function_1+8 0x800007c ->      CODE -> 0x8000034 section..text
               reloc.target.function_1+28 0x8000090 ->      CODE -> 0x80000e8 sym.main+52
+               reloc.target.function_2+8 0x800009c ->      CODE -> 0x8000034 section..text
                              sym.main+28 0x80000d0 ->      CODE -> 0x8000110 sym.main+92
                              sym.main+32 0x80000d4 ->      DATA -> 0x8000130 reloc..data
                              sym.main+40 0x80000dc ->      DATA -> 0x8000134 section..data
@@ -529,7 +534,8 @@ EXPECT=<<EOF
 0x8000060   20      0      0 0x080000e8             0x08000054             
 0x8000074   12      0      0 0x08000080             0x08000074  0x08000034  0x08000034
 0x8000080   20      0      0 0x080000e8             0x08000074             
-0x80000a0   20      0      0                                               
+0x8000094   12      0      0 0x080000a0             0x08000094  0x08000034  0x08000034
+0x80000a0   20      0      0                        0x08000094             
 0x80000b4   32      0      0 0x08000110             0x080000b4             
 0x80000d4   20      0      0 0x080000e8 0x08000074  0x080000b4             
 0x80000e8   40      0      0 0x08000110             0x080000b4             
@@ -610,8 +616,12 @@ EXPECT=<<EOF
         reloc..data.rel.local.80001a0+68 0x80001e4 ->      CODE -> 0x8000194 reloc..data.rel.local
      addr size traced ninstr jump       fail       fcns        calls xrefs 
 ---------------------------------------------------------------------------
+0x8000040   48      0      0                        0x08000040       
+0x8000074   48      0      0                        0x08000074       
 0x80000a4   28      0      0                                         
+0x80000c4   48      0      0                        0x080000c4       
 0x80000f4   28      0      0                                         
+0x8000114   48      0      0                        0x08000114       
 0x8000144   28      0      0                                         
 0x8000164   44      0      0 0x080001dc             0x08000164       
 0x8000194   32      0      0                        0x08000164       

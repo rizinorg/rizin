@@ -154,20 +154,11 @@ static void fill_cfep_and_ret_addresses(
 		RzAnalysisCallCandidate *cc = *it;
 		ut64 ret_addr = cc->npc;
 		const RzList *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
-		if (!predecessor) {
-			RZ_LOG_WARN("The call candidate (0x%" PFMT64x ") NPC 0x%" PFMT64x " doesn't point to a BB.\n", cc->bb_addr, cc->npc);
-			continue;
-		}
-		if (rz_list_length(predecessor) > 0) {
+		if (predecessor && rz_list_length(predecessor) > 0) {
 			rz_set_u_add(return_addresses, ret_addr);
 		}
-
-		const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, cc->bb_addr);
-		RzGraphNode *gnode;
-		RzListIter *lit;
-		rz_list_foreach (successors, lit, gnode) {
-			rz_vector_push(cfep_addresses, &gnode->data);
-		}
+		RZ_LOG_DEBUG("Add cfep at 0x%llx based on BB 0x%llx\n", cc->candidate_addr, cc->target);
+		rz_vector_push(cfep_addresses, &cc->target);
 	}
 	rz_iterator_free(iter);
 	rz_vector_sort(cfep_addresses, cmp, false, NULL);
