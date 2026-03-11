@@ -1825,7 +1825,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
  */
 static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
-// AARCH64-specific defines
+
 // Take the PAGE component of an address or offset.
 #define PG(x)         ((x) & ~0xFFFULL)
 #define PG_OFFSET(x)  ((x) & 0xFFFULL)
@@ -1835,13 +1835,10 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 #define ADR_IMM_MASK  (ADR_IMM_MASK1 | ADR_IMM_MASK2)
 
 	ut32 keep = 0;
-	ut32 nbytes = 4;
 	ut8 buf[8] = { 0 };
 	ut64 val = 0;
 	bool big_endian = false;
-// AArch64 Relocation Patching Switch Cases
-// MOVZ/MOVN/MOVK instruction encoding helpers
-// imm16=bits[20:5], hw=bits[22:21], opc=bits[30:29], sf=bit[31]
+
 #define MOVW_IMM_MASK (0xFFFFU << 5) // bits [20:5]
 #define MOVW_HW_MASK  (0x3U << 21) // bits [22:21]
 #define MOVW_OPC_MASK (0x3U << 29) // bits [30:29]
@@ -1894,7 +1891,6 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
 		rz_write_le16(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-		nbytes = 2;
 		break;
 
 	case R_AARCH64_PREL32:
@@ -2324,33 +2320,20 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		break;
 
 	case R_AARCH64_RELATIVE:
-	case R_AARCH64_P32_RELATIVE:
-		// Delta(S) + A (or B + A)
 		val = fs->B + fs->A;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
 		rz_write_le64(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
-		// case R_AARCH64_TLS_IMPDEF1:
-		// case R_AARCH64_P32_TLS_IMPDEF1:
-		// case R_AARCH64_TLS_IMPDEF2:
-		// case R_AARCH64_P32_TLS_IMPDEF2:
-		// Implementation-defined TLS relocations
-		// Handled by dynamic linker
-
-		// case R_AARCH64_TLS_DTPREL:
-		// case R_AARCH64_P32_TLS_DTPREL:
-		// DTPREL(S+A) - TLS dynamic thread pointer relative
-		// Requires TLS module information
-
-		// case R_AARCH64_TLS_DTPMOD:
-		// case R_AARCH64_P32_TLS_DTPMOD:
-		// LDM(S) - TLS module ID
-		// Handled by dynamic linker
+	case R_AARCH64_P32_RELATIVE:
+		val = fs->B + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_write_le32(buf, (ut32)val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 
 	case R_AARCH64_TLS_TPREL:
-	case R_AARCH64_P32_TLS_TPREL:
 		// TPREL(S+A) - thread pointer relative offset
 		val = fs->TLS;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
@@ -2358,14 +2341,23 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
+	case R_AARCH64_P32_TLS_TPREL:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	case R_AARCH64_TLSDESC:
 	case R_AARCH64_P32_TLSDESC:
-		// TLS descriptor - handled by dynamic linker
+	case R_AARCH64_TLS_IMPDEF1:
+	case R_AARCH64_P32_TLS_IMPDEF1:
+	case R_AARCH64_TLS_IMPDEF2:
+	case R_AARCH64_P32_TLS_IMPDEF2:
+		// Handled by dynamic linker
 		// No static patching needed
 		break;
 
 	case R_AARCH64_IRELATIVE:
-	case R_AARCH64_P32_IRELATIVE:
 		// Indirect(Delta(S) + A) - resolver function address
 		val = fs->B + fs->A;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
@@ -2373,6 +2365,12 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		break;
 
+	case R_AARCH64_P32_IRELATIVE:
+		val = fs->B + fs->A;
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 	default:
 		UNHANDL_DEF("AARCH 64", rel->type);
 		return;

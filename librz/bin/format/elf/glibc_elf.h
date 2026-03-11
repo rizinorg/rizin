@@ -3189,6 +3189,25 @@ enum {
 #define R_AARCH64_TLS_TPREL                    1030 /* TP-relative offset, 64 bit.  */
 #define R_AARCH64_TLSDESC                      1031 /* TLS Descriptor.  */
 #define R_AARCH64_IRELATIVE                    1032 /* STT_GNU_IFUNC relocation.  */
+/* PAuth ABI relocations */
+#define R_AARCH64_AUTH_ABS64              580
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G0     581
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G0_NC  582
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G1     583
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G1_NC  584
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G2     585
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G2_NC  586
+#define R_AARCH64_AUTH_MOVW_GOTOFF_G3     587
+#define R_AARCH64_AUTH_GOT_LD_PREL19      588
+#define R_AARCH64_AUTH_LD64_GOTOFF_LO15   589
+#define R_AARCH64_AUTH_ADR_GOT_PAGE       590
+#define R_AARCH64_AUTH_LD64_GOT_LO12_NC   591
+#define R_AARCH64_AUTH_LD64_GOTPAGE_LO15  592
+#define R_AARCH64_AUTH_GOT_ADD_LO12_NC    593
+#define R_AARCH64_AUTH_GOT_ADR_PREL_LO21  594
+#define R_AARCH64_AUTH_TLSDESC_ADR_PAGE21 595
+#define R_AARCH64_AUTH_TLSDESC_LD64_LO12  596
+#define R_AARCH64_AUTH_TLSDESC_ADD_LO12   597
 
 /* AArch64 specific values for the Dyn d_tag field.  */
 #define DT_AARCH64_VARIANT_PCS (DT_LOPROC + 5)
