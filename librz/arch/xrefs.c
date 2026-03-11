@@ -314,10 +314,6 @@ RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 	return "unknown";
 }
 
-int addr_at_aligned_x_addr(const ut64 *addr, const RzBinSection *sec, void *user) {
-	return ((*addr & 3) == 0 && RZ_BETWEEN(sec->vaddr, *addr, sec->vaddr + sec->size)) ? 0 : -1;
-}
-
 static bool read_up_to(RzAnalysis *analysis, ut64 addr, ut8 *buf, size_t buf_size) {
 	rz_mem_set_num(buf, buf_size, 0);
 	do {
@@ -375,9 +371,8 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 			// Only add jump targets going to executable regions.
 			if ((rz_analysis_op_is_direct_call(&op) ||
 				    rz_analysis_op_is_direct_jump(&op)) &&
-				op.jump != UT64_MAX &&
-				rz_pvector_find(sections, &op.jump, (RzListComparator)addr_at_aligned_x_addr, NULL)) {
-				RZ_LOG_DEBUG("Add call target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
+				op.jump != UT64_MAX) {
+				eprintf("Add branch target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
 				rz_set_u_add(branch_targets, op.jump);
 
 				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
