@@ -1947,13 +1947,14 @@ RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
 RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-
-	size_t i;
-	for (i = 0; i < argc; i++) {
-		if (i > 0) {
+	for (size_t i = 0; i < argc; i++) {
+		const char *arg = argv[i];
+		if (!arg) {
+			arg = "";
+		}
+		if (!rz_strbuf_is_empty(&sb)) {
 			rz_strbuf_append(&sb, " ");
 		}
-		const char *arg = argv[i];
 		bool must_escape = strchr(arg, '\"') != NULL;
 		bool must_quote = strpbrk(arg, " \t") != NULL || !*arg;
 		if (!must_escape && must_quote && *arg && arg[strlen(arg) - 1] == '\\') {

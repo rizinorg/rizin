@@ -1,22 +1,22 @@
 NAME=TriCore lea
-FILE=malloc://512
-CMDS=!rz-asm -a tricore -d d916606c
+TOOL=rz-asm
+ARGS=-a tricore -d d916606c
 EXPECT=<<EOF
 lea a6, [a1]#-0x3a60
 EOF
 RUN
 
 NAME=TriCore sub
-FILE=malloc://512
-CMDS=!rz-asm -a tricore -d 200a
+TOOL=rz-asm
+ARGS=-a tricore -d 200a
 EXPECT=<<EOF
 sub.a sp, #0xa
 EOF
 RUN
 
 NAME=TriCore multi
-FILE=malloc://512
-CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
+TOOL=rz-asm
+ARGS=-a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, #6
@@ -27,8 +27,8 @@ EOF
 RUN
 
 NAME=TriCore multi
-FILE=malloc://512
-CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
+TOOL=rz-asm
+ARGS=-a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, #6
@@ -40,16 +40,14 @@ RUN
 
 NAME=TriCore return_0.elf
 FILE=bins/tricore/return_0.elf
-CMDS=iI~arch
+CMDS=<<EOF
+iI~arch
+echo ---
+arp
+EOF
 EXPECT=<<EOF
 arch     tricore
-EOF
-RUN
-
-NAME=TriCore return_0.elf
-FILE=bins/tricore/return_0.elf
-CMDS=arp
-EXPECT=<<EOF
+---
 =PC	pc
 =SP	a10
 =A0	a0
@@ -807,6 +805,11 @@ aga
 agc
 agr
 agf
+echo ---
+pdr
+pdR
+pdsf
+afi
 EOF
 EXPECT=<<EOF
 .-----------.
@@ -911,21 +914,7 @@ EXPECT=<<EOF
                                 | mov d2, d15                           |
                                 | ret                                   |
                                 `---------------------------------------'
-EOF
-RUN
-
-NAME=tricore analysis disassemble fcn
-FILE=bins/elf/float_ex1/float_ex1_tricore_gcc
-CMDS=<<EOF
-e asm.arch=tricore
-aaa
-s sym.fn1
-pdr
-pdR
-pdsf
-afi
-EOF
-EXPECT=<<EOF
+---
   ; CALL XREF from main @ 0x80000642
 / sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
 | ; arg size_t nbytes @ a0

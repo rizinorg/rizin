@@ -997,7 +997,6 @@ RUN
 NAME=arm s110 syscalls /ad svc
 FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-m 0x16000
-CMDS=
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16

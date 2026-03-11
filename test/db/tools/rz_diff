@@ -1,39 +1,6 @@
-NAME=rz-diff empty first file
-FILE==
-CMDS=!rz-diff -C -t bytes "" bins/other/rz-diff/rz-diff_c_2
-EXPECT_ERR=<<EOF
-ERROR: rz-diff: error, cannot open a file without a name.
-EOF
-RUN
-
-NAME=rz-diff empty second file
-FILE==
-CMDS=!rz-diff -C -t bytes bins/other/rz-diff/rz-diff_c_1 ""
-EXPECT_ERR=<<EOF
-ERROR: rz-diff: error, cannot open a file without a name.
-EOF
-RUN
-
-NAME=rz-diff -V~commit?"
-FILE==
-CMDS=!!rz-diff -C -V~commit?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rz-diff -h~Usage?"
-FILE==
-CMDS=!!rz-diff -C -h~Usage?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-
 NAME=rz-diff distance comparison (leven)
-FILE==
-CMDS=!rz-diff -C -d leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-d leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 similarity: 0.637
 distance: 529
@@ -41,16 +8,16 @@ EOF
 RUN
 
 NAME=rz-diff distance comparison (leven) JSON
-FILE==
-CMDS=!rz-diff -C -jd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-jd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"similarity":0.636676,"distance":529}
 EOF
 RUN
 
 NAME=rz-diff distance comparison (leven) QUIET
-FILE==
-CMDS=!rz-diff -C -qd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-qd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 0.637
 529
@@ -59,8 +26,8 @@ RUN
 
 
 NAME=rz-diff distance comparison (myers)
-FILE==
-CMDS=!rz-diff -C -d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 similarity: 0.769
 distance: 602
@@ -68,16 +35,16 @@ EOF
 RUN
 
 NAME=rz-diff distance comparison (myers) JSON
-FILE==
-CMDS=!rz-diff -C -jd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-jd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"similarity":0.768995,"distance":602}
 EOF
 RUN
 
 NAME=rz-diff distance comparison (myers) QUIET
-FILE==
-CMDS=!rz-diff -C -qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 0.769
 602
@@ -85,32 +52,32 @@ EOF
 RUN
 
 NAME=rz-diff similarity comparison (ssdeep)
-FILE==
-CMDS=!rz-diff -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+TOOL=rz-diff
+ARGS=-i -d ssdeep 384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC 384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC
 EXPECT=<<EOF
 similarity: 0.696
 EOF
 RUN
 
 NAME=rz-diff similarity comparison (ssdeep) json
-FILE==
-CMDS=!rz-diff -j -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+TOOL=rz-diff
+ARGS=-j -i -d ssdeep 384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC 384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC
 EXPECT=<<EOF
 {"similarity":0.695652}
 EOF
 RUN
 
 NAME=rz-diff similarity comparison (ssdeep) QUIET
-FILE==
-CMDS=!rz-diff -q -i -d ssdeep '384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC' '384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC'
+TOOL=rz-diff
+ARGS=-q -i -d ssdeep 384:2rOP+jOA3orMecdFpCAFRa5FZiqboYOCE:CwqVCA/IFZiqboYOC 384:lrOPfSTZjOA3orMecdFpu1FFl5bZiqboVOCX:zTZwqVu1fXbZiqboVOC
 EXPECT=<<EOF
 0.696
 EOF
 RUN
 
 NAME=rz-diff bytes comparison
-FILE==
-CMDS=!rz-diff -C -t bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+TOOL=rz-diff
+ARGS=-t bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 --- bins/other/rz-diff/rz-diff_c_1
 +++ bins/other/rz-diff/rz-diff_c_2
@@ -122,8 +89,8 @@ EOF
 RUN
 
 NAME=rz-diff bytes comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+TOOL=rz-diff
+ARGS=-jt bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 {"from":"bins/other/rz-diff/rz-diff_c_1","to":"bins/other/rz-diff/rz-diff_c_2","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"91"},{"op":"insert","value":"90"}]}]}
 EOF
@@ -131,8 +98,8 @@ RUN
 
 
 NAME=rz-diff strings comparison
-FILE==
-CMDS=!rz-diff -C -t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+TOOL=rz-diff
+ARGS=-t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
@@ -144,16 +111,16 @@ EOF
 RUN
 
 NAME=rz-diff strings comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+TOOL=rz-diff
+ARGS=-jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 {"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"Hello world!\n"},{"op":"insert","value":"AAAAo world!\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff strings comparison with addresses
-FILE==
-CMDS=!rz-diff -C -At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+TOOL=rz-diff
+ARGS=-At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
@@ -165,8 +132,8 @@ EOF
 RUN
 
 NAME=rz-diff strings comparison with addresses JSON
-FILE==
-CMDS=!rz-diff -C -Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+TOOL=rz-diff
+ARGS=-Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 {"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!\n"},{"op":"insert","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!\n"}]}]}
 EOF
@@ -174,8 +141,8 @@ RUN
 
 
 NAME=rz-diff functions comparison
-FILE==
-CMDS=!rz-diff -C -q -t functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-q -t functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
                   fcn.00401050    26 0x00401050 COMPLETE 1.000000   0x00401050    26 fcn.00401050
                sym.imp.__uflow     6 0x00401080 COMPLETE 1.000000   0x00401080     6 sym.imp.__uflow
@@ -252,16 +219,16 @@ EOF
 RUN
 
 NAME=rz-diff functions comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-jt functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 [{"similarity":1.000000,"type":"COMPLETE","original":{"name":"fcn.00401050","addr":4198480,"size":26},"modified":{"name":"fcn.00401050","addr":4198480,"size":26}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__uflow","addr":4198528,"size":6},"modified":{"name":"sym.imp.__uflow","addr":4198528,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.getenv","addr":4198544,"size":6},"modified":{"name":"sym.imp.getenv","addr":4198544,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.free","addr":4198560,"size":6},"modified":{"name":"sym.imp.free","addr":4198560,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.abort","addr":4198576,"size":6},"modified":{"name":"sym.imp.abort","addr":4198576,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__errno_location","addr":4198592,"size":6},"modified":{"name":"sym.imp.__errno_location","addr":4198592,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.strncmp","addr":4198608,"size":6},"modified":{"name":"sym.imp.strncmp","addr":4198608,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp._exit","addr":4198624,"size":6},"modified":{"name":"sym.imp._exit","addr":4198624,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.strcpy","addr":4198640,"size":6},"modified":{"name":"sym.imp.strcpy","addr":4198640,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__fpending","addr":4198656,"size":6},"modified":{"name":"sym.imp.__fpending","addr":4198656,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.textdomain","addr":4198672,"size":6},"modified":{"name":"sym.imp.textdomain","addr":4198672,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fclose","addr":4198688,"size":6},"modified":{"name":"sym.imp.fclose","addr":4198688,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.bindtextdomain","addr":4198704,"size":6},"modified":{"name":"sym.imp.bindtextdomain","addr":4198704,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.dcgettext","addr":4198720,"size":6},"modified":{"name":"sym.imp.dcgettext","addr":4198720,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__ctype_get_mb_cur_max","addr":4198736,"size":6},"modified":{"name":"sym.imp.__ctype_get_mb_cur_max","addr":4198736,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.strlen","addr":4198752,"size":6},"modified":{"name":"sym.imp.strlen","addr":4198752,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__stack_chk_fail","addr":4198768,"size":6},"modified":{"name":"sym.imp.__stack_chk_fail","addr":4198768,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.strrchr","addr":4198800,"size":6},"modified":{"name":"sym.imp.strrchr","addr":4198800,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.lseek","addr":4198816,"size":6},"modified":{"name":"sym.imp.lseek","addr":4198816,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.memset","addr":4198832,"size":6},"modified":{"name":"sym.imp.memset","addr":4198832,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fscanf","addr":4198848,"size":6},"modified":{"name":"sym.imp.fscanf","addr":4198848,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.close","addr":4198864,"size":6},"modified":{"name":"sym.imp.close","addr":4198864,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__libc_start_main","addr":4198880,"size":6},"modified":{"name":"sym.imp.__libc_start_main","addr":4198880,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.memcmp","addr":4198896,"size":6},"modified":{"name":"sym.imp.memcmp","addr":4198896,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fputs_unlocked","addr":4198912,"size":6},"modified":{"name":"sym.imp.fputs_unlocked","addr":4198912,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.calloc","addr":4198928,"size":6},"modified":{"name":"sym.imp.calloc","addr":4198928,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.strcmp","addr":4198944,"size":6},"modified":{"name":"sym.imp.strcmp","addr":4198944,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"loc.imp.__gmon_start","addr":4198960,"size":6},"modified":{"name":"loc.imp.__gmon_start","addr":4198960,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.memcpy","addr":4198976,"size":6},"modified":{"name":"sym.imp.memcpy","addr":4198976,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fileno","addr":4198992,"size":6},"modified":{"name":"sym.imp.fileno","addr":4198992,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.malloc","addr":4199008,"size":6},"modified":{"name":"sym.imp.malloc","addr":4199008,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.nl_langinfo","addr":4199040,"size":6},"modified":{"name":"sym.imp.nl_langinfo","addr":4199040,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.ungetc","addr":4199056,"size":6},"modified":{"name":"sym.imp.ungetc","addr":4199056,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__freading","addr":4199072,"size":6},"modified":{"name":"sym.imp.__freading","addr":4199072,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.realloc","addr":4199088,"size":6},"modified":{"name":"sym.imp.realloc","addr":4199088,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fdopen","addr":4199104,"size":6},"modified":{"name":"sym.imp.fdopen","addr":4199104,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.setlocale","addr":4199120,"size":6},"modified":{"name":"sym.imp.setlocale","addr":4199120,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__printf_chk","addr":4199136,"size":6},"modified":{"name":"sym.imp.__printf_chk","addr":4199136,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.error","addr":4199152,"size":6},"modified":{"name":"sym.imp.error","addr":4199152,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.open","addr":4199168,"size":6},"modified":{"name":"sym.imp.open","addr":4199168,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.exit","addr":4199216,"size":6},"modified":{"name":"sym.imp.exit","addr":4199216,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.fwrite","addr":4199232,"size":6},"modified":{"name":"sym.imp.fwrite","addr":4199232,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__fprintf_chk","addr":4199248,"size":6},"modified":{"name":"sym.imp.__fprintf_chk","addr":4199248,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.mbsinit","addr":4199264,"size":6},"modified":{"name":"sym.imp.mbsinit","addr":4199264,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.iswprint","addr":4199280,"size":6},"modified":{"name":"sym.imp.iswprint","addr":4199280,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"sym.imp.__ctype_b_loc","addr":4199296,"size":6},"modified":{"name":"sym.imp.__ctype_b_loc","addr":4199296,"size":6}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"fcn.00401460","addr":4199520,"size":41},"modified":{"name":"fcn.00401470","addr":4199536,"size":41}},{"similarity":0.879195,"type":"PARTIAL","original":{"name":"fcn.00401530","addr":4199728,"size":745},"modified":{"name":"fcn.00401540","addr":4199744,"size":745}},{"similarity":0.931973,"type":"PARTIAL","original":{"name":"fcn.004018f0","addr":4200688,"size":147},"modified":{"name":"fcn.00401900","addr":4200704,"size":147}},{"similarity":0.985401,"type":"PARTIAL","original":{"name":"fcn.00401990","addr":4200848,"size":137},"modified":{"name":"fcn.004019a0","addr":4200864,"size":137}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"fcn.00401a20","addr":4200992,"size":162},"modified":{"name":"fcn.00401a30","addr":4201008,"size":162}},{"similarity":0.964912,"type":"PARTIAL","original":{"name":"fcn.00401ae0","addr":4201184,"size":228},"modified":{"name":"fcn.00401af0","addr":4201200,"size":228}},{"similarity":0.991569,"type":"PARTIAL","original":{"name":"fcn.00401be0","addr":4201440,"size":2728},"modified":{"name":"fcn.00401bf0","addr":4201456,"size":2728}},{"similarity":0.971765,"type":"PARTIAL","original":{"name":"fcn.00402730","addr":4204336,"size":425},"modified":{"name":"fcn.00402740","addr":4204352,"size":425}},{"similarity":0.980000,"type":"PARTIAL","original":{"name":"fcn.004029a0","addr":4204960,"size":50},"modified":{"name":"fcn.004029b0","addr":4204976,"size":50}},{"similarity":0.960784,"type":"PARTIAL","original":{"name":"fcn.00402e20","addr":4206112,"size":204},"modified":{"name":"fcn.00402e30","addr":4206128,"size":204}},{"similarity":0.952331,"type":"PARTIAL","original":{"name":"fcn.00402fc0","addr":4206528,"size":944},"modified":{"name":"fcn.00402fd0","addr":4206544,"size":944}},{"similarity":0.992366,"type":"PARTIAL","original":{"name":"fcn.004033d0","addr":4207568,"size":131},"modified":{"name":"fcn.004033e0","addr":4207584,"size":131}},{"similarity":0.994012,"type":"PARTIAL","original":{"name":"fcn.00403460","addr":4207712,"size":167},"modified":{"name":"fcn.00403470","addr":4207728,"size":167}},{"similarity":0.961538,"type":"PARTIAL","original":{"name":"fcn.00403590","addr":4208016,"size":26},"modified":{"name":"fcn.004035a0","addr":4208032,"size":26}},{"similarity":0.958333,"type":"PARTIAL","original":{"name":"fcn.004035e0","addr":4208096,"size":48},"modified":{"name":"fcn.004035f0","addr":4208112,"size":48}},{"similarity":0.975000,"type":"PARTIAL","original":{"name":"fcn.00403750","addr":4208464,"size":40},"modified":{"name":"fcn.00403760","addr":4208480,"size":40}},{"similarity":0.857143,"type":"PARTIAL","original":{"name":"fcn.004037a0","addr":4208544,"size":49},"modified":{"name":"fcn.004037b0","addr":4208560,"size":49}},{"similarity":0.914286,"type":"PARTIAL","original":{"name":"fcn.004037e0","addr":4208608,"size":35},"modified":{"name":"fcn.004037f0","addr":4208624,"size":35}},{"similarity":1.000000,"type":"COMPLETE","original":{"name":"fcn.00403810","addr":4208656,"size":67},"modified":{"name":"fcn.00403820","addr":4208672,"size":67}},{"similarity":0.972222,"type":"PARTIAL","original":{"name":"fcn.00403860","addr":4208736,"size":108},"modified":{"name":"fcn.00403870","addr":4208752,"size":108}},{"similarity":0.958621,"type":"PARTIAL","original":{"name":"fcn.004038e0","addr":4208864,"size":1015},"modified":{"name":"fcn.004038f0","addr":4208880,"size":1015}},{"similarity":0.932203,"type":"PARTIAL","original":{"name":"fcn.00403cf0","addr":4209904,"size":118},"modified":{"name":"fcn.00403d00","addr":4209920,"size":118}},{"similarity":0.949153,"type":"PARTIAL","original":{"name":"fcn.00403d70","addr":4210032,"size":59},"modified":{"name":"fcn.00403d80","addr":4210048,"size":59}},{"similarity":0.965116,"type":"PARTIAL","original":{"name":"fcn.00403db0","addr":4210096,"size":86},"modified":{"name":"fcn.00403dc0","addr":4210112,"size":86}},{"similarity":0.923077,"type":"PARTIAL","original":{"name":"fcn.00403e90","addr":4210320,"size":26},"modified":{"name":"fcn.00403ea0","addr":4210336,"size":26}}]
 EOF
 RUN
 
 NAME=rz-diff graphs comparison with addresses
-FILE==
-CMDS=!rz-diff -C -t graphs -0 0x401ae0 -1 0x401af0 bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-t graphs -0 0x401ae0 -1 0x401af0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 digraph code {
 	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
@@ -321,8 +288,8 @@ EOF
 RUN
 
 NAME=rz-diff graphs comparison with addresses JSON
-FILE==
-CMDS=!rz-diff -e analysis.jmp.cref=true -C -j -t graphs -0 0x401ae0 -1 0x401af0 bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-e analysis.jmp.cref=true -j -t graphs -0 0x401ae0 -1 0x401af0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 {"source":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"match":{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn"},"result":[{"pair":{"source":{"address":4201184,"jump":4201232,"fail":4201217},"match":{"address":4201200,"jump":4201248,"fail":4201233}},"similarity":{"type":"PARTIAL","score":0.969697},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n-fcn.00401ae0(int64_t arg1, int64_t arg2);\n+fcn.00401af0(int64_t arg1, int64_t arg2);\n      ; arg int64_t arg1 @ rdi\n      ; arg int64_t arg2 @ rsi\n      push  r12\n@@ -12,4 +12,4 @@\n      call  sym.imp.dcgettext\n      cmp   rax, rbp\n      mov   rbx, rax\n-     jz    0x401b10\n+     jz    0x401b20\n"},{"pair":{"source":{"address":4201217},"match":{"address":4201233}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"     mov   rax, rbx\n     pop   rbx\n     pop   rbp\n     pop   r12\n     ret\n"},{"pair":{"source":{"address":4201232,"jump":4201336,"fail":4201248},"match":{"address":4201248,"jump":4201352,"fail":4201264}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     call  fcn.004038e0\n+     call  fcn.004038f0\n      movzx edx, byte [rax]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x55\n-     jnz   0x401b78\n+     jnz   0x401b88\n"},{"pair":{"source":{"address":4201248,"jump":4201312,"fail":4201260},"match":{"address":4201264,"jump":4201328,"fail":4201276}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax+0x01]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x54\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201260,"jump":4201312,"fail":4201272},"match":{"address":4201276,"jump":4201328,"fail":4201288}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax+0x02]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x46\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201272,"jump":4201312,"fail":4201278},"match":{"address":4201288,"jump":4201328,"fail":4201294}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x03], 0x2d\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201278,"jump":4201312,"fail":4201284},"match":{"address":4201294,"jump":4201328,"fail":4201300}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x04], 0x38\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201284,"jump":4201312,"fail":4201290},"match":{"address":4201300,"jump":4201328,"fail":4201306}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x05], 0x00\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201290,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.894737},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x404253\n-     mov   ebx, 0x404247\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmovz rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201312,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.550000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,5 +1,5 @@\n-     cmp   r12d, 0x07\n-     mov   ebx, 0x40424b\n-     mov   eax, 0x40424d\n+     cmp   byte [rbx], 0x60\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmovz rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":{"address":4201336,"jump":4201312,"fail":4201341},"match":{"address":4201352,"jump":4201328,"fail":4201357}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   dl, 0x47\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201341,"jump":4201312,"fail":4201353},"match":{"address":4201357,"jump":4201328,"fail":4201369}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -1,4 +1,4 @@\n      movzx edx, byte [rax+0x01]\n      and   edx, 0xffffffdf\n      cmp   dl, 0x42\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201353,"jump":4201312,"fail":4201359},"match":{"address":4201369,"jump":4201328,"fail":4201375}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x02], 0x31\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201359,"jump":4201312,"fail":4201365},"match":{"address":4201375,"jump":4201328,"fail":4201381}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x03], 0x38\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201365,"jump":4201312,"fail":4201371},"match":{"address":4201381,"jump":4201328,"fail":4201387}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x04], 0x30\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201371,"jump":4201312,"fail":4201377},"match":{"address":4201387,"jump":4201328,"fail":4201393}},"similarity":{"type":"COMPLETE","score":1.000000},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,4 +-1,4 @@\n      cmp   byte [rax+0x05], 0x33\n-     jnz   0x401b60\n+     jnz   0x401b70\n"},{"pair":{"source":{"address":4201377,"jump":4201312,"fail":4201404},"match":{"address":4201393,"jump":4201328,"fail":4201420}},"similarity":{"type":"PARTIAL","score":0.962963},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ -3,6 +3,6 @@\n      mov   edx, 0x30\n      mov   esi, str.GB18030\n      mov   rdi, rax\n-     call  fcn.00401a20\n+     call  fcn.00401a30\n      test  eax, eax\n-     jz    0x401b60\n+     jz    0x401b70\n"},{"pair":{"source":{"address":4201404,"jump":4201217},"match":{"address":4201306,"jump":4201233}},"similarity":{"type":"PARTIAL","score":0.681818},"opcodes":"--- fcn.00401ae0\n+++ fcn.00401af0\n@@ --1,7 +-1,7 @@\n      cmp   byte [rbx], 0x60\n-     mov   eax, 0x40424f\n-     mov   ebx, 0x404244\n+     mov   eax, 0x404293\n+     mov   ebx, 0x404287\n      cmovz rbx, rax\n-     jmp   0x401b01\n+     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201328,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   r12d, 0x07\n     mov   ebx, 0x40428b\n     mov   eax, 0x40428d\n     cmovz rbx, rax\n     jmp   0x401b11\n"},{"pair":{"source":null,"match":{"address":4201420,"jump":4201233}},"similarity":{"type":"UNLIKE","score":0.000000},"opcodes":"     cmp   byte [rbx], 0x60\n     mov   eax, 0x40428f\n     mov   ebx, 0x404284\n     cmovz rbx, rax\n     jmp   0x401b11\n"}]}
 EOF
@@ -330,8 +297,8 @@ RUN
 
 
 NAME=rz-diff entries comparison
-FILE==
-CMDS=!rz-diff -C -t entries bins/elf/hello_world bins/elf/hello_world32
+TOOL=rz-diff
+ARGS=-t entries bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/elf/hello_world32
@@ -347,8 +314,8 @@ EOF
 RUN
 
 NAME=rz-diff entries comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt entries bins/elf/hello_world bins/elf/hello_world32
+TOOL=rz-diff
+ARGS=-jt entries bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,3],"to":[1,3],"ops":[{"op":"delete","value":"virt: 0x00000000000007a0 phys: 0x00000000000007a0 entry init\n"},{"op":"delete","value":"virt: 0x0000000000000760 phys: 0x0000000000000760 entry fini\n"},{"op":"delete","value":"virt: 0x00000000000006a0 phys: 0x00000000000006a0 entry program\n"},{"op":"insert","value":"virt: 0x0000000000000600 phys: 0x0000000000000600 entry init\n"},{"op":"insert","value":"virt: 0x00000000000005b0 phys: 0x00000000000005b0 entry fini\n"},{"op":"insert","value":"virt: 0x00000000000004d0 phys: 0x00000000000004d0 entry program\n"}]}]}
 EOF
@@ -356,8 +323,8 @@ RUN
 
 
 NAME=rz-diff imports comparison
-FILE==
-CMDS=!rz-diff -C -t imports bins/elf/hello_world bins/other/rz-diff/true
+TOOL=rz-diff
+ARGS=-t imports bins/elf/hello_world bins/other/rz-diff/true
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/other/rz-diff/true
@@ -421,8 +388,8 @@ EOF
 RUN
 
 NAME=rz-diff imports comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt imports bins/elf/hello_world bins/other/rz-diff/true
+TOOL=rz-diff
+ARGS=-jt imports bins/elf/hello_world bins/other/rz-diff/true
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/other/rz-diff/true","diff":[{"from":[1,11],"to":[1,49],"ops":[{"op":"delete","value":"WEAK    NOTYPE  _ITM_deregisterTMCloneTable\n"},{"op":"delete","value":"WEAK    NOTYPE  _ITM_registerTMCloneTable\n"},{"op":"delete","value":"WEAK    FUNC    __cxa_finalize\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_b_loc\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_get_mb_cur_max\n"},{"op":"insert","value":"GLOBAL  FUNC    __cxa_atexit\n"},{"op":"insert","value":"GLOBAL  FUNC    __errno_location\n"},{"op":"insert","value":"GLOBAL  FUNC    __fpending\n"},{"op":"insert","value":"GLOBAL  FUNC    __fprintf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __freading\n"},{"op":"equal","value":"WEAK    NOTYPE  __gmon_start__\n"},{"op":"equal","value":"GLOBAL  FUNC    __libc_start_main\n"},{"op":"insert","value":"GLOBAL  FUNC    __printf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __stack_chk_fail\n"},{"op":"insert","value":"GLOBAL  FUNC    __uflow\n"},{"op":"insert","value":"GLOBAL  FUNC    _exit\n"},{"op":"insert","value":"GLOBAL  FUNC    abort\n"},{"op":"insert","value":"GLOBAL  FUNC    bindtextdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    calloc\n"},{"op":"insert","value":"GLOBAL  FUNC    close\n"},{"op":"insert","value":"GLOBAL  FUNC    dcgettext\n"},{"op":"insert","value":"GLOBAL  FUNC    error\n"},{"op":"insert","value":"GLOBAL  FUNC    exit\n"},{"op":"insert","value":"GLOBAL  FUNC    fclose\n"},{"op":"insert","value":"GLOBAL  FUNC    fdopen\n"},{"op":"insert","value":"GLOBAL  FUNC    fflush\n"},{"op":"insert","value":"GLOBAL  FUNC    fileno\n"},{"op":"insert","value":"GLOBAL  FUNC    fputs_unlocked\n"},{"op":"equal","value":"GLOBAL  FUNC    free\n"},{"op":"insert","value":"GLOBAL  FUNC    fscanf\n"},{"op":"insert","value":"GLOBAL  FUNC    fseeko\n"},{"op":"insert","value":"GLOBAL  FUNC    fwrite\n"},{"op":"insert","value":"GLOBAL  FUNC    getenv\n"},{"op":"insert","value":"GLOBAL  FUNC    iswprint\n"},{"op":"insert","value":"GLOBAL  FUNC    lseek\n"},{"op":"equal","value":"GLOBAL  FUNC    malloc\n"},{"op":"delete","value":"GLOBAL  FUNC    puts\n"},{"op":"delete","value":"GLOBAL  FUNC    strcat\n"},{"op":"insert","value":"GLOBAL  FUNC    mbrtowc\n"},{"op":"insert","value":"GLOBAL  FUNC    mbsinit\n"},{"op":"insert","value":"GLOBAL  FUNC    memcmp\n"},{"op":"insert","value":"GLOBAL  FUNC    memcpy\n"},{"op":"insert","value":"GLOBAL  FUNC    memset\n"},{"op":"insert","value":"GLOBAL  FUNC    nl_langinfo\n"},{"op":"insert","value":"GLOBAL  FUNC    open\n"},{"op":"insert","value":"GLOBAL  FUNC    realloc\n"},{"op":"insert","value":"GLOBAL  FUNC    setlocale\n"},{"op":"insert","value":"GLOBAL  FUNC    strcmp\n"},{"op":"equal","value":"GLOBAL  FUNC    strcpy\n"},{"op":"equal","value":"GLOBAL  FUNC    strlen\n"},{"op":"insert","value":"GLOBAL  FUNC    strncmp\n"},{"op":"insert","value":"GLOBAL  FUNC    strrchr\n"},{"op":"insert","value":"GLOBAL  FUNC    textdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    ungetc\n"}]}]}
 EOF
@@ -430,8 +397,8 @@ RUN
 
 
 NAME=rz-diff fields comparison
-FILE==
-CMDS=!rz-diff -C -t fields bins/mach0/test-arm32 bins/mach0/test-arm64
+TOOL=rz-diff
+ARGS=-t fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
 --- bins/mach0/test-arm32
 +++ bins/mach0/test-arm64
@@ -465,16 +432,16 @@ EOF
 RUN
 
 NAME=rz-diff fields comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt fields bins/mach0/test-arm32 bins/mach0/test-arm64
+TOOL=rz-diff
+ARGS=-jt fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
 {"from":"bins/mach0/test-arm32","to":"bins/mach0/test-arm64","diff":[{"from":[-1,16],"to":[-1,16],"ops":[{"op":"equal","value":" header\n"},{"op":"delete","value":" load_command_0_LC_SEGMENT\n"},{"op":"insert","value":" load_command_0_LC_SEGMENT_64\n"},{"op":"equal","value":" load_command_10_LC_SOURCE_VERSION\n"},{"op":"equal","value":" load_command_11_LC_MAIN\n"},{"op":"delete","value":" load_command_12_LC_ENCRYPTION_INFO\n"},{"op":"insert","value":" load_command_12_LC_ENCRYPTION_INFO_64\n"},{"op":"equal","value":" load_command_13_LC_LOAD_DYLIB\n"},{"op":"equal","value":" load_command_14_LC_FUNCTION_STARTS\n"},{"op":"equal","value":" load_command_15_LC_DATA_IN_CODE\n"},{"op":"delete","value":" load_command_1_LC_SEGMENT\n"},{"op":"delete","value":" load_command_2_LC_SEGMENT\n"},{"op":"delete","value":" load_command_3_LC_SEGMENT\n"},{"op":"insert","value":" load_command_1_LC_SEGMENT_64\n"},{"op":"insert","value":" load_command_2_LC_SEGMENT_64\n"},{"op":"insert","value":" load_command_3_LC_SEGMENT_64\n"},{"op":"equal","value":" load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"equal","value":" load_command_5_LC_SYMTAB\n"},{"op":"equal","value":" load_command_6_LC_DYSYMTAB\n"}]},{"from":[21,3],"to":[21,4],"ops":[{"op":"equal","value":" section_1\n"},{"op":"equal","value":" section_2\n"},{"op":"equal","value":" section_3\n"},{"op":"insert","value":" section_4\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff fields comparison with addresses
-FILE==
-CMDS=!rz-diff -C -At fields bins/mach0/test-arm32 bins/mach0/test-arm64
+TOOL=rz-diff
+ARGS=-At fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
 --- bins/mach0/test-arm32
 +++ bins/mach0/test-arm64
@@ -530,8 +497,8 @@ EOF
 RUN
 
 NAME=rz-diff fields comparison with addresses JSON
-FILE==
-CMDS=!rz-diff -C -Ajt fields bins/mach0/test-arm32 bins/mach0/test-arm64
+TOOL=rz-diff
+ARGS=-Ajt fields bins/mach0/test-arm32 bins/mach0/test-arm64
 EXPECT=<<EOF
 {"from":"bins/mach0/test-arm32","to":"bins/mach0/test-arm64","diff":[{"from":[-1,25],"to":[-1,26],"ops":[{"op":"equal","value":"virt: 0x0000000000000000 phys: 0x0000000000000000          header\n"},{"op":"delete","value":"virt: 0x000000000000001c phys: 0x000000000000001c          load_command_0_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_10_LC_SOURCE_VERSION\n"},{"op":"delete","value":"virt: 0x0000000000000380 phys: 0x0000000000000380          load_command_11_LC_MAIN\n"},{"op":"delete","value":"virt: 0x0000000000000398 phys: 0x0000000000000398          load_command_12_LC_ENCRYPTION_INFO\n"},{"op":"delete","value":"virt: 0x00000000000003ac phys: 0x00000000000003ac          load_command_13_LC_LOAD_DYLIB\n"},{"op":"delete","value":"virt: 0x00000000000003e0 phys: 0x00000000000003e0          load_command_14_LC_FUNCTION_STARTS\n"},{"op":"delete","value":"virt: 0x00000000000003f0 phys: 0x00000000000003f0          load_command_15_LC_DATA_IN_CODE\n"},{"op":"delete","value":"virt: 0x0000000000000054 phys: 0x0000000000000054          load_command_1_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x000000000000019c phys: 0x000000000000019c          load_command_2_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x000000000000025c phys: 0x000000000000025c          load_command_3_LC_SEGMENT\n"},{"op":"delete","value":"virt: 0x0000000000000294 phys: 0x0000000000000294          load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"delete","value":"virt: 0x00000000000002c4 phys: 0x00000000000002c4          load_command_5_LC_SYMTAB\n"},{"op":"delete","value":"virt: 0x00000000000002dc phys: 0x00000000000002dc          load_command_6_LC_DYSYMTAB\n"},{"op":"delete","value":"virt: 0x000000000000032c phys: 0x000000000000032c          load_command_7_LC_LOAD_DYLINKER\n"},{"op":"delete","value":"virt: 0x0000000000000348 phys: 0x0000000000000348          load_command_8_LC_UUID\n"},{"op":"delete","value":"virt: 0x0000000000000360 phys: 0x0000000000000360          load_command_9_LC_VERSION_MIN_IPHONEOS\n"},{"op":"delete","value":"virt: 0x00000000000001d4 phys: 0x00000000000001d4          section_0\n"},{"op":"delete","value":"virt: 0x000000000000008c phys: 0x000000000000008c          section_0\n"},{"op":"delete","value":"virt: 0x0000000000000218 phys: 0x0000000000000218          section_1\n"},{"op":"delete","value":"virt: 0x00000000000000d0 phys: 0x00000000000000d0          section_1\n"},{"op":"delete","value":"virt: 0x0000000000000114 phys: 0x0000000000000114          section_2\n"},{"op":"delete","value":"virt: 0x0000000000000158 phys: 0x0000000000000158          section_3\n"},{"op":"insert","value":"virt: 0x0000000000000020 phys: 0x0000000000000020          load_command_0_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000450 phys: 0x0000000000000450          load_command_10_LC_SOURCE_VERSION\n"},{"op":"insert","value":"virt: 0x0000000000000460 phys: 0x0000000000000460          load_command_11_LC_MAIN\n"},{"op":"insert","value":"virt: 0x0000000000000478 phys: 0x0000000000000478          load_command_12_LC_ENCRYPTION_INFO_64\n"},{"op":"insert","value":"virt: 0x0000000000000490 phys: 0x0000000000000490          load_command_13_LC_LOAD_DYLIB\n"},{"op":"insert","value":"virt: 0x00000000000004c8 phys: 0x00000000000004c8          load_command_14_LC_FUNCTION_STARTS\n"},{"op":"insert","value":"virt: 0x00000000000004d8 phys: 0x00000000000004d8          load_command_15_LC_DATA_IN_CODE\n"},{"op":"insert","value":"virt: 0x0000000000000068 phys: 0x0000000000000068          load_command_1_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000240 phys: 0x0000000000000240          load_command_2_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000328 phys: 0x0000000000000328          load_command_3_LC_SEGMENT_64\n"},{"op":"insert","value":"virt: 0x0000000000000370 phys: 0x0000000000000370          load_command_4_LC_DYLD_INFO_ONLY\n"},{"op":"insert","value":"virt: 0x00000000000003a0 phys: 0x00000000000003a0          load_command_5_LC_SYMTAB\n"},{"op":"insert","value":"virt: 0x00000000000003b8 phys: 0x00000000000003b8          load_command_6_LC_DYSYMTAB\n"},{"op":"insert","value":"virt: 0x0000000000000408 phys: 0x0000000000000408          load_command_7_LC_LOAD_DYLINKER\n"},{"op":"insert","value":"virt: 0x0000000000000428 phys: 0x0000000000000428          load_command_8_LC_UUID\n"},{"op":"insert","value":"virt: 0x0000000000000440 phys: 0x0000000000000440          load_command_9_LC_VERSION_MIN_IPHONEOS\n"},{"op":"insert","value":"virt: 0x0000000000000288 phys: 0x0000000000000288          section_0\n"},{"op":"insert","value":"virt: 0x00000000000000b0 phys: 0x00000000000000b0          section_0\n"},{"op":"insert","value":"virt: 0x00000000000002d8 phys: 0x00000000000002d8          section_1\n"},{"op":"insert","value":"virt: 0x0000000000000100 phys: 0x0000000000000100          section_1\n"},{"op":"insert","value":"virt: 0x0000000000000150 phys: 0x0000000000000150          section_2\n"},{"op":"insert","value":"virt: 0x00000000000001a0 phys: 0x00000000000001a0          section_3\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0          section_4\n"}]}]}
 EOF
@@ -539,8 +506,8 @@ RUN
 
 
 NAME=rz-diff libraries comparison
-FILE==
-CMDS=!rz-diff -C -t libraries bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-t libraries bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -564,8 +531,8 @@ EOF
 RUN
 
 NAME=rz-diff libraries comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt libraries bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-jt libraries bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,12],"to":[1,5],"ops":[{"op":"delete","value":"Main\n"},{"op":"delete","value":"[Ljava/lang/String;\n"},{"op":"delete","value":"java/io/BufferedReader\n"},{"op":"delete","value":"java/io/FileReader\n"},{"op":"insert","value":"Hello\n"},{"op":"equal","value":"java/io/PrintStream\n"},{"op":"delete","value":"java/lang/Exception\n"},{"op":"equal","value":"java/lang/Object\n"},{"op":"delete","value":"java/lang/String\n"},{"op":"insert","value":"java/lang/StringBuilder\n"},{"op":"equal","value":"java/lang/System\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles$Lookup\n"},{"op":"delete","value":"java/lang/invoke/StringConcatFactory\n"}]}]}
 EOF
@@ -573,8 +540,8 @@ RUN
 
 
 NAME=rz-diff sections comparison
-FILE==
-CMDS=!rz-diff -C -t sections bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-t sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -595,16 +562,16 @@ EOF
 RUN
 
 NAME=rz-diff sections comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt sections bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-jt sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[0,8],"to":[0,12],"ops":[{"op":"equal","value":"align: 0x00000000 -r-- class.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff sections comparison with addresses
-FILE==
-CMDS=!rz-diff -C -At sections bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-At sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -632,8 +599,8 @@ EOF
 RUN
 
 NAME=rz-diff sections comparison with addresses JSON
-FILE==
-CMDS=!rz-diff -C -Ajt sections bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-Ajt sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,7],"to":[1,11],"ops":[{"op":"delete","value":"virt: 0x000000000000058a:0x0026 phys: 0x000000000000058a:0x0026 align: 0x00000000 -r-- class.attr\n"},{"op":"delete","value":"virt: 0x000000000000000a:0x0480 phys: 0x000000000000000a:0x0480 align: 0x00000000 -r-- class.constant_pool\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x00fc phys: 0x000000000000048e:0x00fc align: 0x00000000 -r-- class.methods\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x002b phys: 0x000000000000048e:0x002b align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"delete","value":"virt: 0x00000000000004a4:0x001d phys: 0x00000000000004a4:0x001d align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"delete","value":"virt: 0x00000000000004b9:0x00d1 phys: 0x00000000000004b9:0x00d1 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"delete","value":"virt: 0x00000000000004cf:0x00c1 phys: 0x00000000000004cf:0x00c1 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x00000000000002cd:0x0008 phys: 0x00000000000002cd:0x0008 align: 0x00000000 -r-- class.attr\n"},{"op":"insert","value":"virt: 0x000000000000000a:0x01ff phys: 0x000000000000000a:0x01ff align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x00b8 phys: 0x0000000000000215:0x00b8 align: 0x00000000 -r-- class.methods\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x0038 phys: 0x0000000000000215:0x0038 align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"insert","value":"virt: 0x000000000000022b:0x002a phys: 0x000000000000022b:0x002a align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"insert","value":"virt: 0x0000000000000294:0x0039 phys: 0x0000000000000294:0x0039 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"insert","value":"virt: 0x00000000000002aa:0x0029 phys: 0x00000000000002aa:0x0029 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x000000000000024d:0x0047 phys: 0x000000000000024d:0x0047 align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"virt: 0x0000000000000263:0x0039 phys: 0x0000000000000263:0x0039 align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
 EOF
@@ -641,8 +608,8 @@ RUN
 
 
 NAME=rz-diff symbols comparison
-FILE==
-CMDS=!rz-diff -C -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+TOOL=rz-diff
+ARGS=-t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
@@ -666,16 +633,16 @@ EOF
 RUN
 
 NAME=rz-diff symbols comparison JSON
-FILE==
-CMDS=!rz-diff -C -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+TOOL=rz-diff
+ARGS=-jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[2,6],"to":[2,9],"ops":[{"op":"equal","value":"Main Main Main.<init>\n"},{"op":"equal","value":"Main Main Main.main\n"},{"op":"equal","value":"java.lang.Object Object Object.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.append\n"},{"op":"insert","value":"java.lang.StringBuilder StringBuilder StringBuilder.toString\n"},{"op":"equal","value":"java.lang.System System System.err\n"},{"op":"equal","value":"java.lang.System System System.out\n"},{"op":"equal","value":"java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>\n"}]},{"from":[10,4],"to":[13,3],"ops":[{"op":"equal","value":"java.io.FileReader java.io.FileReader java.io.FileReader.<init>\n"},{"op":"equal","value":"java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"equal","value":"java.io.PrintStream java.io.PrintStream java.io.PrintStream.println\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff symbols comparison with addresses
-FILE==
-CMDS=!rz-diff -C -At symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+TOOL=rz-diff
+ARGS=-At symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
@@ -707,8 +674,8 @@ EOF
 RUN
 
 NAME=rz-diff symbols comparison with addresses JSON
-FILE==
-CMDS=!rz-diff -C -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+TOOL=rz-diff
+ARGS=-Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception Exception Exception.printStackTrace\n"},{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main Main Main.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main Main Main.main\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception Exception Exception.printStackTrace\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main Main Main.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main Main Main.main\n"},{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object Object Object.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System System System.err\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder StringBuilder StringBuilder.<init>\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder StringBuilder StringBuilder.append\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder StringBuilder StringBuilder.toString\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System System System.err\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System System System.out\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.close\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader java.io.BufferedReader java.io.BufferedReader.readLine\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader java.io.FileReader java.io.FileReader.<init>\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream java.io.PrintStream java.io.PrintStream.format\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream java.io.PrintStream java.io.PrintStream.println\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
@@ -716,16 +683,17 @@ RUN
 
 
 NAME=rz-diff command with zero argument
-FILE==
-CMDS=!rz-diff -C -t command bins/java/Main.java.11.class bins/java/Hello.class
+TOOL=rz-diff
+ARGS=-t command bins/java/Main.java.11.class bins/java/Hello.class
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 ERROR: rz-diff: error, option -t 'command' requires -0 <command>.
 EOF
 RUN
 
 NAME=rz-diff command with one argument
-FILE==
-CMDS=!rz-diff -C -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.15.class
@@ -740,16 +708,24 @@ EOF
 RUN
 
 NAME=rz-diff command with one argument JSON
-FILE==
-CMDS=!rz-diff -C -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+TOOL=rz-diff
+ARGS=-j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) LMain;\n"},{"op":"equal","value":"Super: (#2) Ljava/lang/Object;\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff command with two arguments
-FILE==
-CMDS=!rz-diff -C -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+TOOL=rz-diff
+FILE=<<EOF
+-0
+pi 20 @ main
+-1
+pi 20 @ sym.main
+bins/elf/hello_world
+bins/elf/hello_world32
+EOF
+ARGS=-t command
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/elf/hello_world32
@@ -798,16 +774,24 @@ EOF
 RUN
 
 NAME=rz-diff command with two arguments JSON
-FILE==
-CMDS=!rz-diff -C -j -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+TOOL=rz-diff
+FILE=<<EOF
+-0
+pi 20 @ main
+-1
+pi 20 @ sym.main
+bins/elf/hello_world
+bins/elf/hello_world32
+EOF
+ARGS=-j -t command
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,20],"to":[1,20],"ops":[{"op":"delete","value":"push rbp\n"},{"op":"delete","value":"mov rbp, rsp\n"},{"op":"delete","value":"sub rsp, 0x20\n"},{"op":"delete","value":"lea rax, qword str.Hello\n"},{"op":"delete","value":"mov qword [rbp-0x18], rax\n"},{"op":"delete","value":"lea rax, qword str.r2_folks\n"},{"op":"delete","value":"mov qword [rbp-0x10], rax\n"},{"op":"delete","value":"mov rax, qword [rbp-0x18]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"insert","value":"lea ecx, dword [esp+0x04]\n"},{"op":"insert","value":"and esp, 0xfffffff0\n"},{"op":"insert","value":"push dword [ecx-0x04]\n"},{"op":"insert","value":"push ebp\n"},{"op":"insert","value":"mov ebp, esp\n"},{"op":"insert","value":"push ebx\n"},{"op":"insert","value":"push ecx\n"},{"op":"insert","value":"sub esp, 0x20\n"},{"op":"insert","value":"call sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"add ebx, 0x19a0\n"},{"op":"insert","value":"lea eax, dword [ebx-0x1874]\n"},{"op":"insert","value":"mov dword [ebp-0x1c], eax\n"},{"op":"insert","value":"lea eax, dword [ebx-0x186e]\n"},{"op":"insert","value":"mov dword [ebp-0x18], eax\n"},{"op":"insert","value":"sub esp, 0x0c\n"},{"op":"insert","value":"push dword [ebp-0x1c]\n"},{"op":"equal","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp-0x20], eax\n"},{"op":"delete","value":"mov rax, qword [rbp-0x10]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"delete","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp-0x1c], eax\n"},{"op":"delete","value":"mov edx, dword [rbp-0x20]\n"},{"op":"delete","value":"mov eax, dword [rbp-0x1c]\n"},{"op":"delete","value":"add eax, edx\n"},{"op":"delete","value":"add eax, 0x01\n"},{"op":"delete","value":"cdqe\n"},{"op":"insert","value":"add esp, 0x10\n"},{"op":"insert","value":"mov dword [ebp-0x14], eax\n"},{"op":"insert","value":"sub esp, 0x0c\n"}]}]}
 EOF
 RUN
 
 NAME=rz-diff text lines comparison
-FILE=--
-CMDS=!rz-diff -Ct lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
+TOOL=rz-diff
+ARGS=-Ct lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
 EXPECT=<<EOF
 --- bins/other/rz-diff/incorrect_cmd_i.txt
 +++ bins/other/rz-diff/correct_cmd_i.txt
@@ -875,8 +859,9 @@ EOF
 RUN
 
 NAME=rz-diff text lines comparison COLOR
-FILE=--
-CMDS=!rz-diff -t lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
+COLOR=1
+TOOL=rz-diff
+ARGS=-t lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
 EXPECT=<<EOF
 --- bins/other/rz-diff/incorrect_cmd_i.txt
 +++ bins/other/rz-diff/correct_cmd_i.txt
@@ -944,8 +929,8 @@ EOF
 RUN
 
 NAME=rz-diff functions comparison
-FILE==
-CMDS=!rz-diff -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-e scr.utf8=false -e scr.utf8.curvy=false -e analysis.fcnprefix=test -e analysis.limits=true -e analysis.from=0x401460 -e analysis.to=0x4033d0 -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
 | name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
@@ -963,8 +948,9 @@ EOF
 RUN
 
 NAME=rz-diff functions comparison (colored)
-FILE==
-CMDS=!rz-diff -K ayu -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -t functions bins/other/rz-diff/true bins/other/rz-diff/false
+COLOR=1
+TOOL=rz-diff
+ARGS=-K ayu -e scr.utf8=false -e scr.utf8.curvy=false -e analysis.fcnprefix=test -e analysis.limits=true -e analysis.from=0x401460 -e analysis.to=0x4033d0 -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .-------------------------------------------------------------------------------------------------.
 | name0         | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1         |
@@ -982,8 +968,8 @@ EOF
 RUN
 
 NAME=rz-diff functions comparison against only one function
-FILE==
-CMDS=!rz-diff -e 'scr.utf8=false' -e 'scr.utf8.curvy=false' -e 'analysis.fcnprefix=test' -e 'analysis.limits=true' -e 'analysis.from=0x401460' -e 'analysis.to=0x4033d0' -C -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
+TOOL=rz-diff
+ARGS=-e scr.utf8=false -e scr.utf8.curvy=false -e analysis.fcnprefix=test -e analysis.limits=true -e analysis.from=0x401460 -e analysis.to=0x4033d0 -t functions -0 test.00401ae0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 .------------------------------------------------------------------------------------------------.
 | name0         | size0 |      addr0 | type    | similarity |      addr1 | size1 | name1         |

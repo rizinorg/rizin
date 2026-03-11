@@ -5186,11 +5186,12 @@ static void bin_resources_print_standard(RzCore *core, RzList /*<char *>*/ *hash
 	rz_cons_printf("  name: %s\n", resource->name);
 	rz_cons_printf("  timestamp: %s\n", resource->time);
 	rz_cons_printf("  vaddr: 0x%08" PFMT64x "\n", resource->vaddr);
+	rz_cons_printf("  paddr: 0x%08" PFMT64x "\n", resource->paddr);
 	rz_cons_printf("  size: %s\n", humansz);
 	rz_cons_printf("  type: %s\n", resource->type);
 	rz_cons_printf("  language: %s\n", resource->language);
 	if (hashes && resource->size > 0) {
-		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->paddr, resource->size, hashes);
 		if (!digests) {
 			return;
 		}
@@ -5208,10 +5209,10 @@ static void bin_resources_print_standard(RzCore *core, RzList /*<char *>*/ *hash
 }
 
 static void bin_resources_print_table(RzCore *core, RzCmdStateOutput *state, RzList /*<char *>*/ *hashes, RzBinResource *resource) {
-	rz_table_add_rowf(state->d.t, "dssXxss", resource->index, resource->name,
-		resource->type, resource->vaddr, resource->size, resource->language, resource->time);
+	rz_table_add_rowf(state->d.t, "dssXXxss", resource->index, resource->name,
+		resource->type, resource->vaddr, resource->paddr, resource->size, resource->language, resource->time);
 	if (hashes && resource->size > 0) {
-		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->paddr, resource->size, hashes);
 		if (!digests) {
 			return;
 		}
@@ -5234,11 +5235,12 @@ static void bin_resources_print_json(RzCore *core, RzCmdStateOutput *state, RzLi
 	pj_ki(state->d.pj, "index", resource->index);
 	pj_ks(state->d.pj, "type", resource->type);
 	pj_kn(state->d.pj, "vaddr", resource->vaddr);
+	pj_kn(state->d.pj, "paddr", resource->paddr);
 	pj_ki(state->d.pj, "size", resource->size);
 	pj_ks(state->d.pj, "lang", resource->language);
 	pj_ks(state->d.pj, "timestamp", resource->time);
 	if (hashes && resource->size > 0) {
-		HtSS *digests = rz_core_bin_create_digests(core, resource->vaddr, resource->size, hashes);
+		HtSS *digests = rz_core_bin_create_digests(core, resource->paddr, resource->size, hashes);
 		if (!digests) {
 			goto end;
 		}
@@ -5264,7 +5266,7 @@ RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBi
 	char *hashname = NULL;
 
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "dssXxss", "index", "name", "type", "vaddr", "size", "lang", "timestamp");
+	rz_cmd_state_output_set_columnsf(state, "dssXXxss", "index", "name", "type", "vaddr", "paddr", "size", "lang", "timestamp");
 
 	rz_list_foreach (hashes, it, hashname) {
 		const RzHashPlugin *msg_plugin = rz_hash_plugin_by_name(core->hash, hashname);

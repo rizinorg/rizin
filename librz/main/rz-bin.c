@@ -231,6 +231,8 @@ static int rzbin_show_help(int v) {
 		       " RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives\n"
 		       " RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store\n"
 		       " RZ_CONFIG:                                             # config file\n"
+		       " RZ_COLOR:                                              # enables/disables colors support\n"
+		       " RZ_UTF8:                                               # enables/disables utf8 support\n"
 		       " RZ_NOPLUGINS:                                          # do not load plugins\n");
 	}
 	return 1;
@@ -782,6 +784,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_config_set(core.config, "pdb.server", tmp);
 		free(tmp);
 	}
+	if ((tmp = rz_sys_getenv("RZ_COLOR"))) {
+		rz_config_set(core.config, "scr.color", tmp);
+		free(tmp);
+	}
+	if ((tmp = rz_sys_getenv("RZ_UTF8"))) {
+		rz_config_set(core.config, "scr.utf8", tmp);
+		free(tmp);
+	}
 
 #define is_active(x) (action & (x))
 #define set_action(x) \
@@ -1313,6 +1323,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	ut32 mask = actions2mask(action);
+	rz_core_bin_apply_config(&core, bf);
 	rz_core_bin_print(&core, bf, mask, &filter, &state, chksum_list);
 
 	run_action("classes source", RZ_BIN_REQ_CLASSES_SOURCES, classes_as_source_print);

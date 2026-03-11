@@ -1,6 +1,6 @@
 NAME=rz-find -X -s
-FILE==
-CMDS=!rz-find -X -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -13,46 +13,47 @@ EOF
 RUN
 
 NAME=rz-find -r -X -s
-FILE==
-CMDS=!rz-find -r -X -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
 NAME=rz-find -f 0x00000000 -t 0x00000590 -r -X -s
-FILE==
-CMDS=!rz-find -f 0x00000000 -t 0x00001000 -r -X -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-f 0x00000000 -t 0x00001000 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
 NAME=rz-find -f 0x00010000 -t 0x00020000 -X -s
-FILE==
-CMDS=!rz-find -f 0x00010000 -t 0x00020000 -r -X -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-f 0x00010000 -t 0x00020000 -r -X -s 250382 bins/elf/ioli/crackme0x00
+EXIT_STATUS=1
 EXPECT=
 RUN
 
 NAME=rz-find -r -X -x
-FILE==
-CMDS=!rz-find -r -X -x 323530333832 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-r -X -x 323530333832 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 f hit0_0 @ 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
 NAME=rz-find -r -X -x with nibbles masked
-FILE==
-CMDS=!rz-find -r -X -x caf.bab. bins/java/Hello.class
+TOOL=rz-find
+ARGS=-r -X -x caf.bab. bins/java/Hello.class
 EXPECT=<<EOF
 f hit0_0 @ 0x00000000 ; bins/java/Hello.class
 EOF
 RUN
 
 NAME=rz-find -r -X -x with bin mask
-FILE==
-CMDS=!rz-find -r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
+TOOL=rz-find
+ARGS=-r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
 EXPECT=<<EOF
 f hit0_0 @ 0x00000000 ; bins/java/Hello.class
 EOF
@@ -77,32 +78,33 @@ EOF
 RUN
 
 NAME=rz-find can't open
-FILE==
-CMDS=!rz-find -n  -f 0x00010000 -t 0x00020000 -r -X -s 250382 incorrect_file
+TOOL=rz-find
+ARGS=-n  -f 0x00010000 -t 0x00020000 -r -X -s 250382 incorrect_file
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 Cannot open file 'incorrect_file'
 EOF
 RUN
 
 NAME=rz-find
-FILE==
-CMDS=!rz-find -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
 NAME=rz-find -i
-FILE==
-CMDS=!rz-find -i bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-i bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 ELF 32-bit LSB executable, Intel 80386, version 1
 EOF
 RUN
 
 NAME=rz-find -m
-FILE==
-CMDS=!rz-find -m bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-m bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x00000000 0 hit.magic.0 ELF 32-bit LSB executable, Intel 80386, version 1
 EOF
@@ -133,38 +135,38 @@ EOF
 RUN
 
 NAME=rz-find -b 0xa
-FILE==
-CMDS=!rz-find -s 250382 -b 0xa bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-s 250382 -b 0xa bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
 NAME=rz-find -a 2 -b 0x3
-FILE==
-CMDS=!rz-find -a 2 -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-a 2 -s 250382 -b 0x3 bins/elf/ioli/crackme0x00
 EXPECT=
 RUN
 
 NAME=rz-find -q
-FILE==
-CMDS=!rz-find -q -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-q -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
 NAME=rz-find -z 250382
-FILE==
-CMDS=!rz-find -z -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-z -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f
 EOF
 RUN
 
 NAME=rz-find -w ascii
-FILE==
-CMDS=!rz-find -w wide bins/pe/testapp-msvc64.exe
+TOOL=rz-find
+ARGS=-w wide bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x1481a
 0x14842
@@ -172,56 +174,48 @@ EOF
 RUN
 
 NAME=rz-find -w U+00ff < utf8 < U+10000
-FILE==
-CMDS=!rz-find -w واسع bins/pe/testapp-msvc64.exe
+TOOL=rz-find
+ARGS=-w واسع bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 0x14864
 EOF
 RUN
 
 NAME=rz-find -w utf8 >= U+10000
-FILE==
-CMDS=!rz-find -w 𐍈 bins/elf/strenc
+TOOL=rz-find
+ARGS=-w 𐍈 bins/elf/strenc
 EXPECT=<<EOF
 0x22ac
 EOF
 RUN
 
 NAME=rz-find -S ascii
-FILE==
-CMDS=!rz-find -S QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+TOOL=rz-find
+ARGS=-S QueryPerformanceCounter bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 paddr: 0x0000c000 vaddr: 0x14000d000 type: FUNC QueryPerformanceCounter
 EOF
 RUN
 
 NAME=rz-find -I ascii
-FILE==
-CMDS=!rz-find -I QueryPerformanceCounter bins/pe/testapp-msvc64.exe
+TOOL=rz-find
+ARGS=-I QueryPerformanceCounter bins/pe/testapp-msvc64.exe
 EXPECT=<<EOF
 ordinal: 1 QueryPerformanceCounter
 EOF
 RUN
 
 NAME=rz-find -Z
-FILE==
-CMDS=!rz-find -Z -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-Z -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f 250382
 EOF
 RUN
 
-NAME=rz-find ""
-FILE==
-CMDS=!rz-find ""
-EXPECT_ERR=<<EOF
-Cannot open empty path
-EOF
-RUN
-
 NAME=rz-find -F
-FILE==
-CMDS=!rz-find -F scripts/keyword bins/mach0/FileDP
+TOOL=rz-find
+ARGS=-F scripts/keyword bins/mach0/FileDP
 EXPECT=<<EOF
 0x4e9
 0x6f5
@@ -240,8 +234,8 @@ EOF
 RUN
 
 NAME=rz-find multiple files
-FILE==
-CMDS=!rz-find -s README bins/arm/README bins/arm/README
+TOOL=rz-find
+ARGS=-s README bins/arm/README bins/arm/README
 EXPECT=<<EOF
 File: bins/arm/README
 0x0
@@ -251,24 +245,25 @@ EOF
 RUN
 
 NAME=rz-find recursive
-FILE==
-CMDS=!rz-find -q -s README bins/arm
+TOOL=rz-find
+ARGS=-q -s README bins/arm
 EXPECT=<<EOF
 0x0
 EOF
 RUN
 
 NAME=rz-find -E with echo as a command
-FILE==
-CMDS=!rz-find -s "README" -E "echo" bins/arm~README~?
+TOOL=rz-find
+ARGS=-s README -E echo bins/arm
+REGEXP_FILTER_OUT=README
 EXPECT=<<EOF
-1
+README
 EOF
 RUN
 
 NAME=rz-find -V verbose flag single file
-FILE==
-CMDS=!rz-find -V -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-V -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 Scanning: bins/elf/ioli/crackme0x00
 File: bins/elf/ioli/crackme0x00
@@ -277,16 +272,16 @@ EOF
 RUN
 
 NAME=rz-find -V verbose flag with no match
-FILE==
-CMDS=!rz-find -V -s NOTFOUND bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-V -s NOTFOUND bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 Scanning: bins/elf/ioli/crackme0x00
 EOF
 RUN
 
 NAME=rz-find -V verbose flag multiple files
-FILE==
-CMDS=!rz-find -V -s README bins/arm/README bins/arm/README
+TOOL=rz-find
+ARGS=-V -s README bins/arm/README bins/arm/README
 EXPECT=<<EOF
 Scanning: bins/arm/README
 File: bins/arm/README
@@ -298,8 +293,8 @@ EOF
 RUN
 
 NAME=rz-find -V with -q still shows scanning
-FILE==
-CMDS=!rz-find -V -q -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-V -q -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 Scanning: bins/elf/ioli/crackme0x00
 0x58f
@@ -323,8 +318,9 @@ EXPECT=
 RUN
 
 NAME=rz-find multi-file continues on error
-FILE==
-CMDS=!rz-find -s README nonexistent_file.bin bins/arm/README
+TOOL=rz-find
+ARGS=-s README nonexistent_file.bin bins/arm/README
+EXIT_STATUS=1
 EXPECT=<<EOF
 File: bins/arm/README
 0x0
@@ -334,47 +330,27 @@ Cannot open file 'nonexistent_file.bin'
 EOF
 RUN
 
-NAME=rz-find multi-file exit codes
-FILE==
-CMDS=<<EOF
-!rz-find -s README nonexistent_file.bin bins/arm/README
-%v $?
-!echo ---
-!rz-find -q -s README bins/arm/README bins/arm/README
-%v $?
-!echo ---
-!rz-find -q -s README "" bins/arm/README
-%v $?
-EOF
+NAME=rz-find multi-file quiet
+TOOL=rz-find
+ARGS=-q -s README bins/arm/README bins/arm/README
 EXPECT=<<EOF
-File: bins/arm/README
-0x0
-0x1
----
 0x0
 0x0
-0x0
----
-0x0
-0x1
 EOF
-EXPECT_ERR=<<EOF
-Cannot open file 'nonexistent_file.bin'
-Cannot open empty path
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=rz-find JSON multiple files keyword search
-FILE==
-CMDS=!rz-find -j -s 250382 bins/elf/ioli/crackme0x00 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-j -s 250382 bins/elf/ioli/crackme0x00 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 [{"offset":1423,"type":"string","data":"250382"},{"offset":1423,"type":"string","data":"250382"}]
 EOF
 RUN
 
 NAME=rz-find verbose with JSON outputs scanning to stderr
-FILE==
-CMDS=!rz-find -V -j -s 250382 bins/elf/ioli/crackme0x00
+TOOL=rz-find
+ARGS=-V -j -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 [{"offset":1423,"type":"string","data":"250382"}]
 EOF

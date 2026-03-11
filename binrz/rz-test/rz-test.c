@@ -80,8 +80,7 @@ static int help(bool verbose) {
 			"-L",           "",               "Log mode (better printing for CI, logfiles, etc.)",
 			"-F",           "dir",            "Run fuzz tests (open and default analysis) on all files in the given dir",
 			"-j",           "threads",        "How many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")",
-			"-r",           "rizin",          "Path to rizin executable (default is " RIZIN_CMD_DEFAULT ")",
-			"-m",           "rz-asm",         "Path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")",
+			"-r",           "bindir",         "Path to rizin bin folder (default is $PATH)",
 			"-f",           "file",           "File to use for JSON tests (default is " JSON_TEST_FILE_DEFAULT ")",
 			"-C",           "dir",            "Chdir before running rz-test (default follows test pathname/cwd)",
 			"-t",           "seconds",        "Timeout per test (default is " TIMEOUT_DEFAULT_STR " seconds)",
@@ -160,6 +159,30 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	return found;
 }
 
+static bool rz_test_can_find_rizin(const char *bin_path) {
+	char *exec = NULL;
+	const char **tools = NULL;
+	size_t count = 0;
+	rz_test_load_valid_tools(&tools, &count);
+
+	for (size_t i = 0; i < count; ++i) {
+		exec = rz_test_find_executable(tools[i], bin_path);
+
+		if (RZ_STR_ISEMPTY(exec)) {
+			eprintf("Cannot find %s in bin path: %s\n", tools[i], bin_path ? bin_path : "$PATH");
+			free(exec);
+			return false;
+		} else if (!rz_test_check_tool_available(exec)) {
+			eprintf("%s is not a valid executable\n", exec);
+			free(exec);
+			return false;
+		}
+		free(exec);
+	}
+
+	return true;
+}
+
 static bool log_mode = false;
 
 int rz_test_main(int argc, const char **argv) {
@@ -170,8 +193,7 @@ int rz_test_main(int argc, const char **argv) {
 	bool quiet = false;
 	bool interactive = false;
 	bool accept = false;
-	char *rizin_cmd = NULL;
-	char *rz_asm_cmd = NULL;
+	char *bin_path = NULL;
 	char *json_test_file = NULL;
 	char *output_file = NULL;
 	char *fuzz_dir = NULL;
@@ -261,18 +283,13 @@ int rz_test_main(int argc, const char **argv) {
 			}
 			break;
 		case 'r':
-			free(rizin_cmd);
-			rizin_cmd = strdup(opt.arg);
+			bin_path = rz_file_abspath(opt.arg);
 			break;
 		case 'C':
 			rz_test_dir = opt.arg;
 			break;
 		case 'n':
 			nothing = true;
-			break;
-		case 'm':
-			free(rz_asm_cmd);
-			rz_asm_cmd = strdup(opt.arg);
 			break;
 		case 'f':
 			free(json_test_file);
@@ -339,17 +356,16 @@ int rz_test_main(int argc, const char **argv) {
 	}
 	atexit(rz_subprocess_fini);
 
+	// this must be done after initializing rz_subprocess
+	if (!rz_test_can_find_rizin(bin_path)) {
+		ret = -1;
+		goto beach;
+	}
+
 	rz_sys_setenv("TZ", "UTC");
 	ut64 time_start = rz_time_now_mono();
 	// Avoid PATH search for each process launched
-	if (!rizin_cmd) {
-		rizin_cmd = rz_file_path(RIZIN_CMD_DEFAULT);
-	}
-	if (!rz_asm_cmd) {
-		rz_asm_cmd = rz_file_path(RZ_ASM_CMD_DEFAULT);
-	}
-	state.run_config.rz_cmd = rizin_cmd;
-	state.run_config.rz_asm_cmd = rz_asm_cmd;
+	state.run_config.bin_path = bin_path;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
@@ -599,9 +615,8 @@ coast:
 	rz_test_test_database_free(state.db);
 	ht_sp_free(state.path_left);
 beach:
+	free(bin_path);
 	free(output_file);
-	free(rizin_cmd);
-	free(rz_asm_cmd);
 	free(json_test_file);
 	free(fuzz_dir);
 	RZ_FREE(cwd);
@@ -835,7 +850,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		} else if (*err) {
 			printf("-- stderr\n%s\n", err);
 		}
-		if (result->proc_out->ret != 0) {
+		if (result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 			printf("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 		}
 		break;
@@ -1257,7 +1272,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 
 static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
-	if (result->run_failed || result->proc_out->ret != 0) {
+	if (result->run_failed || result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 		return false;
 	}
 	RzCmdTest *test = result->test->cmd_test;
