@@ -189,9 +189,14 @@ Without the regex that filtered out the non-deterministic file path and addresse
 ```
 
 * **NAME** is the name of the test, it must be unique
-* **FILE** is the path of the file used for the test
-* **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
+* **FILE** (optional when `TOOL` is set) is the file or input used for the test
+* **TOOL** (optional) allows you to override the tool to test (supports only `rizin`, `rz-asm`, `rz-ax`, `rz-bin`, `rz-diff`, `rz-find`, `rz-gg`, `rz-hash`, `rz-run`, `rz-sign`, `rz-test`)
+* **ARGS** (optional, unless `TOOL` is set) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
+* **ENVS** (optional) allows to set a custom environment variable (example `FOO=bar`)
+* **EXIT_STATUS** (optional) allows to override the default expected exit status.
+* **COLOR** (optional) allows to use colors in the test (default `0`)
+* **UTF8** (optional) allows to use utf-8 in the test (default `0`)
 * **EXPECT** is the expected output of the test from stdout. If `REGEXP_FILTER_OUT` is used, `EXPECT` matches only the filtered output.
 * **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
