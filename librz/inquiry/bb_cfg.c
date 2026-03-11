@@ -165,19 +165,24 @@ RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(con
 RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
 	// Add the instruction to instruction edges.
 	RzAnalysisXRef *i2i_edge;
-	rz_vector_foreach(insn_to_insn_edges, i2i_edge) {
+	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
 
 		// First check if the edge is already in the CFG.
 		// If so (not unlikely), skip the step where it iterates over all BBs.
 		const RzList *incoming = rz_inquiry_bb_cfg_get_neighbours_to(iq->bb_cfg, i2i_edge->to);
-		if (!incoming || rz_list_length(incoming) == 0) {
-			// Basic block not present. Ignore.
+		if (!incoming) {
+			// Basic block not present.
 			continue;
+		}
+		if (rz_list_length(incoming) == 0) {
+			// No incoming edges in the CFG yet.
+			// Find the basic block this edge originates from.
+			goto find_bb;
 		}
 
 		RzGraphNode *gn;
 		RzListIter *lit;
-		rz_list_foreach(incoming, lit, gn) {
+		rz_list_foreach (incoming, lit, gn) {
 			RzInterval *bb = ht_up_find(iq->bb_cfg->basic_blocks, (ut64)gn->data, NULL);
 			if (!bb) {
 				continue;
@@ -188,6 +193,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 			}
 		}
 
+	find_bb: {
 		// Edge isn't in the CFG yet.
 		// Now we have to do the crazy expansive |bb| * |E| search.
 		void **it;
@@ -200,7 +206,8 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to);
 		}
 		rz_iterator_free(bb_iter);
-next_i2i_edge:
+	}
+	next_i2i_edge:
 		continue;
 	}
 	return true;

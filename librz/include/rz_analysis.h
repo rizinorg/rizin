@@ -989,6 +989,7 @@ typedef struct {
 	ut64 store_addr; ///< The address of the instruction packet storing the NPC. Might be 0, if it was not added by the interpreter.
 	ut64 candidate_addr; ///< Address of the call candidate instruction packet. Might be 0, if it was not added by the interpreter.
 	ut64 npc; ///< The NPC stored. Should point after a basic block.
+	ut64 target; ///< The address the call candidate jumps to.
 	bool in_mem; ///< True if the NPC is written to memory. False if it is written to a register.
 } RzAnalysisCallCandidate;
 
