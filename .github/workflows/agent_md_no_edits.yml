@@ -1,0 +1,15 @@
+name: No edits to AGENTS.md
+
+on:
+  pull_request:
+
+jobs:
+  check-diff:
+    name: Check diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch Base
+        run: git fetch --depth=1 origin ${{ pr.base.sha }}:pr-base
+      - name: Check Diff
+        run: ./sys/check_diff.sh pr-base AGENTS.md
