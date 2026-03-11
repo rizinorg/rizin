@@ -364,7 +364,10 @@ jobs:
       - name: Check for new leaks
         if: matrix.lsan_options != '' && matrix.enabled
         run: |
-          ./sys/lsan_check.py ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} /tmp/lsan_logs/*
+          # According to https://github.com/orgs/community/discussions/59677#discussioncomment-10782359
+          # the pr.base/pr.head variables are the only ones which are updated
+          # with PR changes.
+          ./sys/lsan_check.py ${{ pr.base.sha }} ${{ pr.head.sha }} /tmp/lsan_logs/*
       - name: Generate coverage data
         if: matrix.coverage && matrix.enabled
         run: |
