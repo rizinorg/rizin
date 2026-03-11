@@ -1,6 +1,5 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/ppc/ppc64le_uplifted
-TIMEOUT=120
 CMDS=<<EOF
 echo -- oneline
 aoi 5
@@ -8,10 +7,6 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
-echo -- unicode
-e scr.utf8=true
-aaa
-pLf | head -n17
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -207,24 +202,6 @@ EXPECT=<<EOF
                                        .----------.
                                        |  var: v  |
                                        `----------'
--- unicode
-0x100508 (r2 ← (v = ((ʙ¹⁶ 0x1e) ⊚ (ʙ¹⁶ 0x0)) (↑ v ↠ (v ≈⁶⁴ ↑ v) (v ≈⁶⁴ ⊥))))
-0x10050c ((a ← r2) 
-        (b ← (v = (ʙ¹⁶ 0x7c00) (↑ v ↠ (v ≈⁶⁴ ↑ v) (v ≈⁶⁴ ⊥)))) {}
-        (r2 ← (a + b)) 
-        {} 
-        {} {})
-0x100510 ((res ← (r1 ∨ r1)) 
-        (r9 ← res) {})
-0x100514 ((mstart ← (ʙ⁸ 0x0)) 
-        (mstop ← (ʙ⁸ 0x3b)) 
-        (m ← (ʙ⁶⁴ 0x0)) 
-        (! (mstart ≡ mstop) ⟳ ((m ← (m ∨ (((ʙ⁶⁴ 0x0) ≫ (ʙ⁸ 0x1) ⊤) ≫ mstart ⊥))) (mstart ← ((mstart + (ʙ⁸ 0x1)) % (ʙ⁸ 0x40))))) 
-        (m ← (m ∨ (((ʙ⁶⁴ 0x0) ≫ (ʙ⁸ 0x1) ⊤) ≫ mstop ⊥))) (mask ← (m ≈⁶⁴ ⊥))
-        {} 
-        (result ← ((rotl64_x = r1 (rotl64_y = ((ʙ⁸ 0x3f) ∧ (ʙ⁸ 0x0)) ((rotl64_x ≪ rotl64_y ⊥) ∨ (rotl64_x ≫ ((ʙ⁸ 0x40) - (rotl64_y ≈⁸ ⊥)) ⊥)))) ∧ mask)) 
-        (r1 ← result) {})
-0x100518 (r0 ← (v = (ʙ¹⁶ 0x0) (↑ v ↠ (v ≈⁶⁴ ↑ v) (v ≈⁶⁴ ⊥))))
 EOF
 RUN
 

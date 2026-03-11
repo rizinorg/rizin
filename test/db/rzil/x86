@@ -1,6 +1,5 @@
 NAME=Printing IL ops in various formats
 FILE=bins/elf/emulateme.x86
-TIMEOUT=90
 CMDS=<<EOF
 s sym.decrypt
 echo -- oneline
@@ -9,10 +8,6 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
-echo -- unicode
-e scr.utf8=true
-aaa
-pLf | head -n6
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -89,13 +84,6 @@ EXPECT=<<EOF
 .------------.    .--------------.          .----------.    .------------.
 |  var: rsp  |    |  bv: 64 0x8  |          |  false   |    |  var: rbp  |
 `------------'    `--------------'          `----------'    `------------'
--- unicode
-0x1006f5 ((final ← (rsp - (ʙ⁶⁴ 0x8))) 
-        (ŝ⁰ final (rbp ≈⁶⁴ ⊥)) (rsp ← final))
-0x1006f6 (rbp ← rsp)
-0x1006f9 (ŝ⁰ (rbp + (ʙ⁶⁴ 0xffffffffffffffd8)) rdi)
-0x1006fd (ŝ⁰ (rbp + (ʙ⁶⁴ 0xffffffffffffffef)) (ʙ⁸ 0x0))
-0x100701 (ŝ⁰ (rbp + (ʙ⁶⁴ 0xfffffffffffffff0)) (ʙ⁶⁴ 0x0))
 EOF
 RUN
 

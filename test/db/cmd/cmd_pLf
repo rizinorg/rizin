@@ -1,0 +1,70 @@
+NAME=pLf
+FILE=bins/elf/ls
+CMDS=<<EOF
+e scr.utf8=true
+aaa
+pLf
+echo "---"
+so 1
+pLf
+EOF
+EXPECT=<<EOF
+0x5ae0 {}
+0x5ae4 ((_xor ← ((rbp ≈³² ⊥) ⊕ (rbp ≈³² ⊥)))
+        (rbp ← (_xor ≈⁶⁴ ⊥))
+        (of ← ⊥)
+        (cf ← ⊥)
+        (_result ← _xor)
+        (pf ← ! ↓ (_val = (_result ≈⁸ ⊥) (_c4 = (_val ⊕ (_val ≫ (ʙ⁸ 0x4) ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ (ʙ⁸ 0x2) ⊥)) (_c2 ⊕ (_c2 ≫ (ʙ⁸ 0x1) ⊥))))))
+        (zf ← _result ≡ 0) (sf ← ↑ _result))
+0x5ae6 (r9 ← (rdx ≈⁶⁴ ⊥))
+0x5ae9 ((rsi ← (64 ʟ⁰ (rsp + (ʙ⁶⁴ 0x0)))) (rsp ← (rsp + (ʙ⁶⁴ 0x8))))
+0x5aea (rdx ← rsp)
+0x5aed ((and_ ← (rsp ∧ (ʙ⁶⁴ 0xfffffffffffffff0)))
+        (rsp ← and_)
+        (of ← ⊥)
+        (cf ← ⊥)
+        (_result ← and_)
+        (pf ← ! ↓ (_val = (_result ≈⁸ ⊥) (_c4 = (_val ⊕ (_val ≫ (ʙ⁸ 0x4) ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ (ʙ⁸ 0x2) ⊥)) (_c2 ⊕ (_c2 ≫ (ʙ⁸ 0x1) ⊥))))))
+        (zf ← _result ≡ 0) (sf ← ↑ _result))
+0x5af1 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final (rax ≈⁶⁴ ⊥)) (rsp ← final))
+0x5af2 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final (rsp ≈⁶⁴ ⊥)) (rsp ← final))
+0x5af3 (r8 ← ((((ʙ⁶⁴ 0x5afa) + (ʙ⁶⁴ 0x10c66)) ≈⁶⁴ ⊥) ≈⁶⁴ ⊥))
+0x5afa (rcx ← (((ʙ⁶⁴ 0x5b01) + (ʙ⁶⁴ 0x10bef)) ≈⁶⁴ ⊥))
+0x5b01 (rdi ← (((ʙ⁶⁴ 0x5b08) + (ʙ⁶⁴ 0xffffffffffffe568)) ≈⁶⁴ ⊥))
+0x5b08 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final ((ʙ⁶⁴ 0x5b0e) ≈⁶⁴ ⊥)) (rsp ← final)
+        ↷ (64 ʟ⁰ ((ʙ⁶⁴ 0x5b0e) + (ʙ⁶⁴ 0x1c30a))))
+---
+0x5ae0 {}
+0x5ae4 ((_xor ← ((rbp ≈³² ⊥) ⊕ (rbp ≈³² ⊥)))
+        (rbp ← (_xor ≈⁶⁴ ⊥))
+        (of ← ⊥)
+        (cf ← ⊥)
+        (_result ← _xor)
+        (pf ← ! ↓ (_val = (_result ≈⁸ ⊥) (_c4 = (_val ⊕ (_val ≫ (ʙ⁸ 0x4) ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ (ʙ⁸ 0x2) ⊥)) (_c2 ⊕ (_c2 ≫ (ʙ⁸ 0x1) ⊥))))))
+        (zf ← _result ≡ 0) (sf ← ↑ _result))
+0x5ae6 (r9 ← (rdx ≈⁶⁴ ⊥))
+0x5ae9 ((rsi ← (64 ʟ⁰ (rsp + (ʙ⁶⁴ 0x0)))) (rsp ← (rsp + (ʙ⁶⁴ 0x8))))
+0x5aea (rdx ← rsp)
+0x5aed ((and_ ← (rsp ∧ (ʙ⁶⁴ 0xfffffffffffffff0)))
+        (rsp ← and_)
+        (of ← ⊥)
+        (cf ← ⊥)
+        (_result ← and_)
+        (pf ← ! ↓ (_val = (_result ≈⁸ ⊥) (_c4 = (_val ⊕ (_val ≫ (ʙ⁸ 0x4) ⊥)) (_c2 = (_c4 ⊕ (_c4 ≫ (ʙ⁸ 0x2) ⊥)) (_c2 ⊕ (_c2 ≫ (ʙ⁸ 0x1) ⊥))))))
+        (zf ← _result ≡ 0) (sf ← ↑ _result))
+0x5af1 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final (rax ≈⁶⁴ ⊥)) (rsp ← final))
+0x5af2 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final (rsp ≈⁶⁴ ⊥)) (rsp ← final))
+0x5af3 (r8 ← ((((ʙ⁶⁴ 0x5afa) + (ʙ⁶⁴ 0x10c66)) ≈⁶⁴ ⊥) ≈⁶⁴ ⊥))
+0x5afa (rcx ← (((ʙ⁶⁴ 0x5b01) + (ʙ⁶⁴ 0x10bef)) ≈⁶⁴ ⊥))
+0x5b01 (rdi ← (((ʙ⁶⁴ 0x5b08) + (ʙ⁶⁴ 0xffffffffffffe568)) ≈⁶⁴ ⊥))
+0x5b08 ((final ← (rsp - (ʙ⁶⁴ 0x8)))
+        (ŝ⁰ final ((ʙ⁶⁴ 0x5b0e) ≈⁶⁴ ⊥)) (rsp ← final)
+        ↷ (64 ʟ⁰ ((ʙ⁶⁴ 0x5b0e) + (ʙ⁶⁴ 0x1c30a))))
+EOF
+RUN

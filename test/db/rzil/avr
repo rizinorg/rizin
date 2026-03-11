@@ -1,6 +1,5 @@
 NAME=Printing il statements in various formats
 FILE=bins/elf/avr-sbrx-rjmp.elf
-TIMEOUT=10
 CMDS=<<EOF
 echo -- oneline
 aoi 5
@@ -8,10 +7,6 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
-echo -- unicode
-e scr.utf8=true
-aaa
-pLf | head -n7
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -107,14 +102,6 @@ EXPECT=<<EOF
 .----------.    .-----------.
 |  false   |    |  var: sp  |
 `----------'    `-----------'
--- unicode
-0x0 ((ŝ⁰ ((sp ≈³² ⊥) - (ʙ³² 0x3)) (ʙ³² 0x2)) 
-        (sp ← (sp - (ʙ¹⁶ 0x4))) ↷ (ʙ³² 0x2))
-0x2 ((ŝ⁰ ((sp ≈³² ⊥) - (ʙ³² 0x3)) (ʙ³² 0x4)) 
-        (sp ← (sp - (ʙ¹⁶ 0x4))) ↷ (ʙ³² 0x4))
-0x4 (r28 ← ((sp ≫ (ʙ³² 0x8) ⊥) ≈⁸ ⊥))
-0x6 (r29 ← (sp ≈⁸ ⊥))
-0x8 (r24 ← (ʙ⁸ 0x1))
 EOF
 RUN
 

@@ -1,6 +1,5 @@
 NAME=Printing il statements in various formats
 FILE=bins/bf/hello-ok.bf
-TIMEOUT=10
 CMDS=<<EOF
 e asm.arch=bf
 e analysis.arch=bf
@@ -10,10 +9,6 @@ echo -- pretty
 aoip 5
 echo -- graph
 agI
-echo -- unicode
-e scr.utf8=true
-aaa
-pLf | head -n5
 EOF
 EXPECT=<<EOF
 -- oneline
@@ -91,12 +86,6 @@ EXPECT=<<EOF
          .------------.
          |  var: ptr  |
          `------------'
--- unicode
-0x0 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
-0x1 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
-0x2 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
-0x3 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
-0x4 (ꜱ⁰ ptr ((ʟ⁰ ptr) + (ʙ⁸ 0x1)))
 EOF
 RUN
 

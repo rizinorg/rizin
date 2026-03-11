@@ -574,7 +574,7 @@ static void il_opdmp_seq_inner(const RzILOpEffect *op, RzStrBuf *sb) {
 	} else {
 		il_op_effect_string_resolve(seq->x, sb);
 	}
-	if (seq->x->code != RZ_IL_OP_SEQ) {
+	if (seq->y->code != RZ_IL_OP_SEQ && seq->x->code != RZ_IL_OP_SEQ) {
 		rz_strbuf_append(sb, " ");
 	}
 	if (seq->y->code == RZ_IL_OP_SEQ) {
