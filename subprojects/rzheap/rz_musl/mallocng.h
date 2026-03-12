@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-FileCopyrightText: 2026 suleif <suleif@proton.me>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_MUSL_MALLOCNG_H
 #define RZ_MUSL_MALLOCNG_H
 
@@ -66,7 +67,7 @@ static const ut16 ng_size_classes[] = {
 typedef struct group {
 	ut64 meta;
 	ut64 active_idx : 5;
-	ut64 pad;
+	ut32 pad;
 	ut64 storage;
 } mallocng_group;
 
@@ -507,23 +508,21 @@ static inline bool read_and_parse_group(RzIO *io, ut64 addr, mallocng_group *out
 	if (config.ptr_size == 8) {
 		if (!rz_buf_read_le64_offset(b, &offset, &out->meta) ||
 			!rz_buf_read8_offset(b, &offset, &packed) ||
-			!rz_buf_read_le64_offset(b, &offset, &out->pad) ||
-			(offset = off.storage, !rz_buf_read_le64_offset(b, &offset, &out->storage))) {
+			!rz_buf_read_le32_offset(b, &offset, &out->pad)) {
 			goto cleanup;
 		}
 	} else {
-		ut32 meta, pad, storage;
+		ut32 meta, pad;
 		if (!rz_buf_read_le32_offset(b, &offset, &meta) ||
 			!rz_buf_read8_offset(b, &offset, &packed) ||
-			!rz_buf_read_le32_offset(b, &offset, &pad) ||
-			(offset = off.storage, !rz_buf_read_le32_offset(b, &offset, &storage))) {
+			!rz_buf_read_le32_offset(b, &offset, &pad)) {
 			goto cleanup;
 		}
 		out->meta = meta;
 		out->pad = pad;
-		out->storage = storage;
 	}
 	out->active_idx = packed & 0x1f;
+	out->storage = addr + off.storage;
 
 	ret = true;
 cleanup:

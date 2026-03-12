@@ -5,6 +5,7 @@
 
 #include <rz_core.h>
 #include <rz_heap_musl.h>
+#include "core_private.h"
 
 static ut64 musl_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool *is_pie) {
 	ut64 vaddr = UT64_MAX;
@@ -63,17 +64,10 @@ static bool rz_resolve_musl(RzCore *core, const char *symname, ut64 *symbol) {
 	rz_debug_map_sync(core->dbg);
 
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr(map->name, "musl")) {
+		if (strstr(map->name, "libc")) {
 			if (musl_addr == UT64_MAX || map->addr < musl_addr) {
 				musl_addr = map->addr;
 				musl_path = map->name;
-			}
-		}
-		if (!strstr(map->name, ".so") && !strstr(map->name, "lib") &&
-			!strstr(map->name, "[") && strlen(map->name) > 0) {
-			if (binary_addr == UT64_MAX || map->addr < binary_addr) {
-				binary_addr = map->addr;
-				binary_path = map->name;
 			}
 		}
 	}
@@ -140,7 +134,6 @@ MuslAllocator musl_get_allocator_kind(RzCore *core) {
 	ut64 ctx_addr;
 	if (rz_resolve_musl(core, "__malloc_context", &ctx_addr))
 		return MUSL_MALLOCNG;
-	printf("%llx ctx\n", ctx_addr);
 	return MUSL_OLDMALLOC;
 }
 
@@ -225,12 +218,55 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 
 				}
 
 				if (meta_addr) {
-					PRINTF_BA("    slot %d: 0x%" PFMT64x " (size %d)\n", i,
-						meta_addr, UNIT * ng_size_classes[meta.sizeclass] - IB);
+					PRINTF_BA("    slot %d: 0x%" PFMT64x " (size 0x%x)\n", i,
+						meta_addr, UNIT * ng_size_classes[meta.sizeclass]);
 				}
 			}
 			PRINT_BA("  ]\n");
+			PRINT_BA("}\n");
 			curr_meta = area.next;
+		}
+	}
+}
+
+void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config) {
+	ut64 secret = 0;
+	ut64 ctx_addr = 0;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	mallocng_ctx ctx;
+	mallocng_meta meta;
+	mallocng_group group;
+	if (!has_specified_addr) {
+		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
+			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
+				RZ_LOG_ERROR("Failed to read __malloc_context\n");
+				return;
+			}
+		}
+		if (!read_and_parse_ctx(core->io, ctx_addr, &ctx, config)) {
+			RZ_LOG_ERROR("Failed to read __malloc_context @ 0x%" PFMT64x "\n", ctx_addr);
+			return;
+		}
+
+		for (int i = 0; i < 48; i++) {
+			if (ctx.active[i]) {
+				if (!read_and_parse_meta(core->io, ctx.active[i], &meta, config)) {
+					RZ_LOG_ERROR("Failed to read meta @ 0x%" PFMT64x "\n", ctx.active[i]);
+					return;
+				}
+				if (!read_and_parse_group(core->io, meta.mem, &group, config)) {
+					RZ_LOG_ERROR("Failed to read group @ 0x%" PFMT64x "\n", meta.mem);
+					return;
+				}
+				int size = UNIT * ng_size_classes[meta.sizeclass];
+				PRINTF_BA("meta @ 0x%" PFMT64x ": \n", ctx.active[i]);
+				PRINTF_BA("  size: 0x%x, prev: 0x%" PFMT64x ", next: 0x%" PFMT64x ", group: 0x%" PFMT64x "\n",
+					size, meta.prev, meta.next, meta.mem);
+
+				rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, group.storage, config.ptr_size, size,
+					RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
+				PRINT_BA("\n");
+			}
 		}
 	}
 }
@@ -254,5 +290,16 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr,
 	}
 	const RzMallocngConfig ng_config = rz_musl_ng_get_config(bits);
 	musl_mallocng_print_meta_areas(core, has_specified_addr, addr, ng_config);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_m(RzCore *core, bool has_specified_addr, ut64 addr) {
+	const int bits = rz_config_get_i(core->config, "asm.bits");
+	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
+		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const RzMallocngConfig ng_config = rz_musl_ng_get_config(bits);
+	musl_mallocng_print_meta(core, has_specified_addr, addr, ng_config);
 	return RZ_CMD_STATUS_OK;
 }

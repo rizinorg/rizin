@@ -1033,8 +1033,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_c_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_a_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 	ut64 ctx_addr = 0;
-	// Only check debug mode when no argument is provided (symbol resolution needed)
-	// With address arguments we can still work in static mode
+
 	if (!has_specified_ctx) {
 		CMD_CHECK_DEBUG_DEAD(core);
 	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
@@ -1046,6 +1045,24 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_a_handler(RzCore *core, int argc, cons
 
 	return rz_heap_mallocng_cmd_a(core, has_specified_ctx, ctx_addr);
 }
+
+// "dmua"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_m_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	ut64 meta_addr = 0;
+
+	if (!has_specified_ctx) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid context address '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		meta_addr = rz_num_math(core->num, argv[1]);
+	}
+
+	return rz_heap_mallocng_cmd_m(core, has_specified_ctx, meta_addr);
+}
+
 // "dmxa"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);

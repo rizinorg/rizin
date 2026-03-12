@@ -18,3 +18,10 @@ commands:
       - name: meta_area_addr
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: dmum
+    summary: Shows all the metas
+    cname: cmd_debug_heap_musl_m
+    args:
+      - name: meta_addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
