@@ -903,6 +903,50 @@ static const RzUnicodeCaseMap uppercase_mapping = {
 };
 
 // clang-format on
+static ut64 *undefined_ranges_bitmap = NULL;
+static ut32 undefined_ranges_bitmap_size = 0;
+static ut32 undefined_ranges_skip_entries = 0;
+
+#ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(undefined_ranges_bitmap_bake)
+#endif
+RZ_DEFINE_CONSTRUCTOR(undefined_ranges_bitmap_bake)
+static void undefined_ranges_bitmap_bake(void) {
+	const ut32 bits_per_element = sizeof(undefined_ranges_bitmap[0]) * 8;
+	undefined_ranges_bitmap_size = 0x110000;
+	undefined_ranges_bitmap = RZ_NEWS0(ut64, (undefined_ranges_bitmap_size + (bits_per_element - 1)) / bits_per_element);
+
+	for (ut32 table_index = 0; table_index < RZ_ARRAY_SIZE(undefined_ranges); table_index++) {
+		ut32 from = undefined_ranges[table_index].from;
+		ut32 to = RZ_MIN(undefined_ranges[table_index].to + 1, undefined_ranges_bitmap_size);
+
+		for (RzCodePoint code = from; code < to; code++) { // todo: confirm range inclusion/exclusion
+			undefined_ranges_bitmap[code / bits_per_element] |= 1ull << (code % bits_per_element);
+		}
+
+		if (undefined_ranges[table_index].to >= undefined_ranges_bitmap_size) {
+			// For table entries not covered by the bitmap, fallback to binary search but skip the already covered entries
+			undefined_ranges_skip_entries = table_index;
+			break;
+		}
+	}
+}
+
+#ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
+#pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(undefined_ranges_bitmap_fini)
+#endif
+RZ_DEFINE_DESTRUCTOR(undefined_ranges_bitmap_fini)
+static void undefined_ranges_bitmap_fini(void) {
+	free(undefined_ranges_bitmap);
+}
+
+/**
+ * Note: undefined for `code_point` >= `undefined_ranges_bitmap_size`. Caller should do proper checks.
+ */
+static inline bool undefined_ranges_bitmap_at(RzCodePoint index) {
+	const ut32 bits_per_element = sizeof(undefined_ranges_bitmap[0]) * 8;
+	return (undefined_ranges_bitmap[index / bits_per_element] & (1ull << (index % bits_per_element))) != 0;
+}
 
 static bool bin_search_range(RzCodePoint cp, const RzUnicodeRangeTable table, size_t table_size) {
 	size_t low = 0;
@@ -938,7 +982,10 @@ RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c) {
 	if (c > RZ_UNICODE_LAST_CODE_POINT) {
 		return false;
 	}
-	return !bin_search_range(c, undefined_ranges, RZ_ARRAY_SIZE(undefined_ranges));
+	if (c < undefined_ranges_bitmap_size) {
+		return !undefined_ranges_bitmap_at(c);
+	}
+	return !bin_search_range(c, undefined_ranges + undefined_ranges_skip_entries, RZ_ARRAY_SIZE(undefined_ranges) - undefined_ranges_skip_entries);
 }
 
 /**
