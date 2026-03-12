@@ -1,15 +1,15 @@
-name: No edits to AGENTS.md
+name: AI/LLM Checks
 
 on:
   pull_request:
 
 jobs:
   check-diff:
-    name: Check diff
+    name: No edits to AGENTS.md
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Fetch Base
         run: git fetch --depth=1 origin ${{ pr.base.sha }}:pr-base
       - name: Check Diff
-        run: ./sys/check_diff.sh pr-base AGENTS.md
+        run: ./sys/check_agent_md.sh pr-base AGENTS.md
