@@ -1017,7 +1017,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Publish to Registry
         id: docker_build
         uses: docker/build-push-action@v7
