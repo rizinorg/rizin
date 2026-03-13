@@ -26,7 +26,7 @@ jobs:
     needs: real_pr_shas
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Full history needed for commit scanning
 
@@ -66,17 +66,12 @@ jobs:
           NUMBER: ${{ github.event.number }}
           BASE_SHA: ${{ needs.real_pr_shas.outputs.BASE_SHA }}
           HEAD_SHA: ${{ needs.real_pr_shas.outputs.HEAD_SHA }}
+          COMMIT_MSGS: ${{ needs.real_pr_shas.outputs.COMMIT_MSGS }}
         run: |
           LABEL_NAME="AI/LLM"
           NEEDLE="Co-authored-by agent"
 
-          diff=$(git log --pretty=%B "$BASE_SHA".."$HEAD_SHA" )
-          if [[ $? -eq 128 ]]; then
-          	echo "Failed to get log"
-          	exit 2
-          fi
-
-          if echo "$diff" | grep "$NEEDLE"; then
+          if echo "$COMMIT_MSGS" | grep "$NEEDLE"; then
             echo "Authored by AI agent"
             gh pr --repo $REPO edit $NUMBER --add-label "$LABEL_NAME"
           fi
