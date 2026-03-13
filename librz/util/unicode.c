@@ -920,7 +920,7 @@ static void undefined_ranges_bitmap_bake(void) {
 		ut32 from = undefined_ranges[table_index].from;
 		ut32 to = RZ_MIN(undefined_ranges[table_index].to + 1, undefined_ranges_bitmap_size);
 
-		for (RzCodePoint code = from; code < to; code++) { // todo: confirm range inclusion/exclusion
+		for (RzCodePoint code = from; code < to; code++) {
 			undefined_ranges_bitmap[code / bits_per_element] |= 1ull << (code % bits_per_element);
 		}
 

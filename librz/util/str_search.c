@@ -240,13 +240,18 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
 #define SCANNING_STACK_BUF_CHARS 16
 #define SCANNING_STACK_BUF_SIZE  (RZ_UNICODE_MAX_BYTES_PER_CHAR * SCANNING_STACK_BUF_CHARS)
 
-static void add_byte_mem_mapping(ut64 **byte_mem_map, size_t *byte_mem_map_size, size_t utf8_char_offset, size_t mem_offset) {
-	size_t size = *byte_mem_map_size;
-	if (!*byte_mem_map) {
-		*byte_mem_map = RZ_NEWS0(ut64, SCANNING_STACK_BUF_SIZE);
-		*byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
-	} else if (utf8_char_offset >= size) {
-		*byte_mem_map = realloc(*byte_mem_map, (size + SCANNING_STACK_BUF_SIZE) * sizeof(ut64));
+static void add_byte_mem_mapping(ut64 **byte_mem_map, ut64 *byte_mm_stack_alloc, size_t *byte_mem_map_size, size_t utf8_char_offset, size_t mem_offset) {
+	size_t current_size = *byte_mem_map_size;
+	if (utf8_char_offset >= current_size) {
+		ut32 new_size = current_size + SCANNING_STACK_BUF_SIZE;
+		if (*byte_mem_map == byte_mm_stack_alloc) {
+			// Switch from stack-allocated to heap-allocated memory map
+			*byte_mem_map = RZ_NEWS0(ut64, new_size);
+			rz_mem_copy(*byte_mem_map, new_size * sizeof(ut64), byte_mm_stack_alloc, current_size * sizeof(ut64));
+		} else {
+			// Extend the heap-allocated memory map
+			*byte_mem_map = realloc(*byte_mem_map, new_size * sizeof(ut64));
+		}
 		*byte_mem_map_size += SCANNING_STACK_BUF_SIZE;
 	}
 	if (utf8_char_offset >= *byte_mem_map_size) {
@@ -271,8 +276,9 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	// Gets only set if the stack buffer is full.
 	ut8 *heap_alloc = NULL;
 	ut8 *output_buf = stack_alloc;
-	ut64 *byte_mem_map = NULL;
-	size_t byte_mem_map_size = 0;
+	ut64 byte_mm_stack_alloc[SCANNING_STACK_BUF_SIZE] = { 0 };
+	ut64 *byte_mem_map = byte_mm_stack_alloc;
+	size_t byte_mem_map_size = SCANNING_STACK_BUF_SIZE;
 
 	ut64 str_addr = needle;
 	// Bytes of a decoded/encoded character/code point.
@@ -335,7 +341,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		if (!rz_string_enc_same_char_width_as_utf8(str_type)) {
-			add_byte_mem_mapping(&byte_mem_map, &byte_mem_map_size, i, needle);
+			add_byte_mem_mapping(&byte_mem_map, byte_mm_stack_alloc, &byte_mem_map_size, i, needle);
 		}
 
 		needle += char_bytes;
@@ -368,7 +374,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			break;
 		}
 	}
-	add_byte_mem_mapping(&byte_mem_map, &byte_mem_map_size, i, needle);
+	add_byte_mem_mapping(&byte_mem_map, byte_mm_stack_alloc, &byte_mem_map_size, i, needle);
 
 	int strbuf_size = i;
 	if (char_count >= opt->min_str_length && char_count <= opt->max_str_length) {
@@ -378,7 +384,9 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 				goto error;
 			} else if (false_positive_result == RETRY_ASCII) {
 				free(heap_alloc);
-				free(byte_mem_map);
+				if (byte_mem_map != byte_mm_stack_alloc) {
+					free(byte_mem_map);
+				}
 				return process_one_string(buf, from, str_addr, to, str_type, true, opt, false);
 			}
 		}
@@ -397,7 +405,12 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			ds->size -= char_bytes;
 		}
 		ds->addr = str_addr;
-		ds->byte_mem_map = byte_mem_map;
+		if (byte_mem_map == byte_mm_stack_alloc) {
+			ds->byte_mem_map = RZ_NEWS0(ut64, byte_mem_map_size);
+			rz_mem_copy(ds->byte_mem_map, byte_mem_map_size * sizeof(ut64), byte_mm_stack_alloc, sizeof(byte_mm_stack_alloc));
+		} else {
+			ds->byte_mem_map = byte_mem_map;
+		}
 
 		ut64 off_adj = adjust_offset(str_type, buf, ds->addr - from);
 		ds->addr -= off_adj;
@@ -408,7 +421,9 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 	}
 
 error:
-	free(byte_mem_map);
+	if (byte_mem_map != byte_mm_stack_alloc) {
+		free(byte_mem_map);
+	}
 	free(heap_alloc);
 	return NULL;
 }
