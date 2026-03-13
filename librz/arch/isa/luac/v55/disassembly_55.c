@@ -2,11 +2,10 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
-#include "arch_54.h"
-#include "rz_core.h"
+#include "arch_55.h"
 
-bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf *buf_asm) {
-	LuaOpNameList opnames = get_lua54_opnames();
+bool get_asm_string55(const LuaOpCode55 opcode, const ut32 instruction, RzStrBuf *buf_asm) {
+	LuaOpNameList opnames = get_lua55_opnames();
 	/* Pre-fetch arguments */
 	const int a = GETARG_A4(instruction);
 	const int b = GETARG_B4(instruction);
@@ -23,9 +22,10 @@ bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf
 
 	switch (opcode) {
 		/* iABC Instruction */
-	case OP_MMBIN: /*	A B C	call C metamethod over R[A] and R[B]		*/
+	case OP_MMBIN: /*	A B C	call C metamethod over R[A] and R[B]		*/ {
 		rz_strf(tmp_asm_string, "%s r%" PFMT32d " r%" PFMT32d " %" PFMT32d, opnames[opcode], a, b, c);
 		break;
+	}
 	case OP_GETI: /*	A B C	R[A] := R[B][C]					*/
 	case OP_GETTABUP: /*	A B C	R[A] := UpValue[B][K[C]:string]			*/
 	case OP_CALL: /*	A B C	R[A], ... ,R[A+C-2] := R[A](R[A+1], ... ,R[A+B-1]) */
@@ -44,6 +44,7 @@ bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf
 	case OP_BXOR: /*	A B C	R[A] := R[B] ~ R[C]				*/
 	case OP_SHL: /*	        A B C	R[A] := R[B] << R[C]				*/
 	case OP_SHR: /*	        A B C	R[A] := R[B] >> R[C]				*/
+	case OP_GETVARG: /*     A B C   R[A] := R[B][R[C]], R[B] is vararg parameter    */
 		rz_strf(tmp_asm_string, "%s r%" PFMT32d " r%" PFMT32d " r%" PFMT32d, opnames[opcode], a, b, c);
 		break;
 	case OP_ADDK: /*	A B C	R[A] := R[B] + K[C]				*/
@@ -135,12 +136,10 @@ bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf
 	case OP_LFALSESKIP: /*  A	R[A] := false; pc++				*/
 	case OP_LOADTRUE: /*	A	R[A] := true					*/
 	case OP_CLOSE: /*	A	close all upvalues >= R[A]			*/
-	case OP_RETURN1: /*	A	return R[A]					*/
-		rz_strf(tmp_asm_string, "%s r%" PFMT32d, opnames[opcode], a);
-		break;
 	case OP_TBC: /*	        A	mark variable A "to be closed"			*/
 	case OP_VARARGPREP: /*  A	(adjust vararg parameters)			*/
-		rz_strf(tmp_asm_string, "%s %" PFMT32d, opnames[opcode], a);
+	case OP_RETURN1: /*	A	return R[A]					*/
+		rz_strf(tmp_asm_string, "%s r%" PFMT32d, opnames[opcode], a);
 		break;
 		/* iABC - special instructions */
 	case OP_TEST: /*	A k	if (not R[A] == k) then pc++			*/
@@ -160,6 +159,7 @@ bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf
 	case OP_TFORLOOP: /*	A Bx	if R[A+2] ~= nil then { R[A]=R[A+2]; pc -= Bx }	*/
 		rz_strf(tmp_asm_string, "%s %" PFMT32d " %" PFMT32d, opnames[opcode], a, bx);
 		break;
+	case OP_ERRNNIL: /*     A Bx    raise error if R[A] ~= nil (K[Bx - 1] is global name)*/
 	case OP_CLOSURE: /*	A Bx	R[A] := closure(KPROTO[Bx])			*/
 		rz_strf(tmp_asm_string, "%s r%" PFMT32d " %" PFMT32d, opnames[opcode], a, bx); // or (bx + 1)
 		break;
@@ -188,4 +188,4 @@ bool get_asm_string54(const LuaOpCode54 opcode, const ut32 instruction, RzStrBuf
 	return true;
 }
 
-DISASM(54)
+DISASM(55)

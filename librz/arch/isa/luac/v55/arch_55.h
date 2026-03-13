@@ -2,11 +2,9 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
-#ifndef BUILD_ARCH_54_H
-#define BUILD_ARCH_54_H
+#ifndef BUILD_ARCH_55_H
+#define BUILD_ARCH_55_H
 
-#include <rz_types.h>
-#include <rz_asm.h>
 #include "../lua_arch.h"
 
 /**
@@ -17,19 +15,20 @@
  * All instructions have an opcode in the first 7 bits. @n
  * Instructions can have the following formats: @n
  * ```
- * 	3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
- * 	1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+ *        3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+ *        1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
  * iABC          C(8)     |      B(8)     |k|     A(8)      |   Op(7)     |
+ * ivABC         vC(10)     |     vB(6)   |k|     A(8)      |   Op(7)     |
  * iABx                Bx(17)               |     A(8)      |   Op(7)     |
  * iAsBx              sBx (signed)(17)      |     A(8)      |   Op(7)     |
  * iAx                           Ax(25)                     |   Op(7)     |
- * isJ                           sJ(25)                     |   Op(7)     |
+ * isJ                           sJ (signed)(25)            |   Op(7)     |
  * ```
+ * ('v' stands for "variant", 's' for "signed", 'x' for "extended".)
  * A signed argument is represented in excess K: the represented value is
- * the written unsigned value minus K, where K is half the maximum for the
- * corresponding unsigned argument.
- *
- * Notes :
+ * the written unsigned value minus K, where K is half (rounded down) the
+ * maximum value for the corresponding unsigned argument.
+ Notes:
 
   (*) Opcode OP_LFALSESKIP is used to convert a condition to a boolean
   value, in a code equivalent to (not cond ? false : true).  (It
@@ -47,7 +46,8 @@
   OP_RETURN*, OP_SETLIST) may use 'top'.
 
   (*) In OP_VARARG, if (C == 0) then use actual number of varargs and
-  set top (like in OP_CALL with C == 0).
+  set top (like in OP_CALL with C == 0). 'k' means function has a
+  vararg table, which is in R[B].
 
   (*) In OP_RETURN, if (B == 0) then return up to 'top'.
 
@@ -58,22 +58,27 @@
   real C = EXTRAARG _ C (the bits of EXTRAARG concatenated with the
   bits of C).
 
-  (*) In OP_NEWTABLE, B is log2 of the hash size (which is always a
+  (*) In OP_NEWTABLE, vB is log2 of the hash size (which is always a
   power of 2) plus 1, or zero for size zero. If not k, the array size
-  is C. Otherwise, the array size is EXTRAARG _ C.
+  is vC. Otherwise, the array size is EXTRAARG _ vC.
+
+  (*) In OP_ERRNNIL, (Bx == 0) means index of global name doesn't
+  fit in Bx. (So, that name is not available for the error message.)
 
   (*) For comparisons, k specifies what condition the test should accept
   (true or false).
 
   (*) In OP_MMBINI/OP_MMBINK, k means the arguments were flipped
-   (the constant is the first operand).
+  (the constant is the first operand).
 
-  (*) All 'skips' (pc++) assume that next instruction is a jump.
+  (*) All comparison and test instructions assume that the instruction
+  being skipped (pc++) is a jump.
 
   (*) In instructions OP_RETURN/OP_TAILCALL, 'k' specifies that the
   function builds upvalues, which may need to be closed. C > 0 means
-  the function is vararg, so that its 'func' must be corrected before
-  returning; in this case, (C - 1) is its number of fixed parameters.
+  the function has hidden vararg arguments, so that its 'func' must be
+  corrected before returning; in this case, (C - 1) is its number of
+  fixed parameters.
 
   (*) In comparisons with an immediate operand, C signals whether the
   original operand was a float. (It must be corrected in case of
@@ -122,8 +127,8 @@ typedef enum {
 	OP_BORK, ///<		A B C	R[A] := R[B] | K[C]:integer
 	OP_BXORK, ///<		A B C	R[A] := R[B] ~ K[C]:integer
 
-	OP_SHRI, ///<		A B sC	R[A] := R[B] >> sC
 	OP_SHLI, ///<		A B sC	R[A] := sC << R[B]
+	OP_SHRI, ///<		A B sC	R[A] := R[B] >> sC
 
 	OP_ADD, ///<		A B C	R[A] := R[B] + R[C]
 	OP_SUB, ///<		A B C	R[A] := R[B] - R[C]
@@ -182,12 +187,20 @@ typedef enum {
 	OP_TFORLOOP, ///<	A Bx	if R[A+2] ~= nil then { R[A]=R[A+2]; pc -= Bx }
 
 	OP_SETLIST, ///<	A B C k	R[A][C+i] := R[A+i], 1 <= i <= B
+
 	OP_CLOSURE, ///<	A Bx	R[A] := closure(KPROTO[Bx])
+
 	OP_VARARG, ///<		A C	R[A], R[A+1], ..., R[A+C-2] = vararg
+
+	OP_GETVARG, ///<	A B C    R[A] := R[B][R[C]], R[B] is vararg parameter
+
+	OP_ERRNNIL, ///<	A Bx    raise error if R[A] ~= nil (K[Bx - 1] is global name)
+
 	OP_VARARGPREP, ///<	A	(adjust vararg parameters)
+
 	OP_EXTRAARG ///<	Ax	extra (larger) argument for previous opcode
-} LuaOpCode54;
+} LuaOpCode55;
 
-#define LUA_NUM_OPCODES54 ((int)(OP_EXTRAARG) + 1)
+#define LUA_NUM_OPCODES55 ((int)(OP_EXTRAARG) + 1)
 
-#endif // BUILD_ARCH_54_H
+#endif // BUILD_ARCH_55_H
