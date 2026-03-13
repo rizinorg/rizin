@@ -16,6 +16,8 @@ typedef struct sdb_kv {
 	HtSSKv base;
 } SdbKv;
 
+typedef bool (*SdbHtForeachCallback)(void *user, const SdbKv *kv);
+
 static inline const char *sdbkv_key(const SdbKv *kv) {
 	return kv->base.key;
 }
@@ -54,6 +56,8 @@ RZ_API bool sdb_ht_delete(HtSS *ht, const char *key);
 RZ_API char *sdb_ht_find(HtSS *ht, const char *key, bool *found);
 // Find the KeyValuePair corresponding to the matching key.
 RZ_API SdbKv *sdb_ht_find_kvp(HtSS *ht, const char *key, bool *found);
+// Iterate the hash table.
+RZ_API bool sdb_ht_foreach_kv(RZ_NONNULL HtSS *ht, RZ_NONNULL SdbHtForeachCallback cb, RZ_NULLABLE void *user);
 
 #ifdef __cplusplus
 }

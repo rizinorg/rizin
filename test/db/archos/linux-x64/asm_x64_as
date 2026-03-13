@@ -1,46 +1,52 @@
 NAME=rz-asm #1167 3
-FILE==
-CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax"
+TOOL=rz-asm
+FILE=test %rbx, %rax
+ARGS=-s att -a x86.as -b 64
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
 NAME=rz-asm #1167 4
-FILE==
-CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx"
+TOOL=rz-asm
+FILE=test rax, rbx
+ARGS=-s intel -a x86.as -b 64
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
 NAME=rz-asm #1167 5
-FILE==
-CMDS=!rz-asm -s att -a x86.as -b 64 "add $33, %rbx"
+TOOL=rz-asm
+FILE=add $33, %rbx
+ARGS=-s att -a x86.as -b 64
 EXPECT=<<EOF
 4883c321
 EOF
 RUN
 
 NAME=rz-asm #1167 6
-FILE==
-CMDS=!rz-asm -s intel -a x86.as -b 64 "add rbx, 33"
+TOOL=rz-asm
+FILE=add rbx, 33
+ARGS=-s intel -a x86.as -b 64
 EXPECT=<<EOF
 4883c321
 EOF
 RUN
 
 NAME=rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
-FILE==
-CMDS=!rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
+TOOL=rz-asm
+FILE=movq %rdx, %rax
+ARGS=-s att -a x86.as -b 64
 EXPECT=<<EOF
 4889d0
 EOF
 RUN
 
 NAME=rz-asm -a x86 -s att "movl %eax, %ebx"
-FILE==
-CMDS=!rz-asm -a x86 -s att "movl %eax, %ebx"
+TOOL=rz-asm
+FILE=movl %eax, %ebx
+ARGS=-a x86 -s att
 EXPECT=<<EOF
 89c3
 EOF

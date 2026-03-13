@@ -405,6 +405,7 @@ static RzStructuredData *wasm_types_structure(RzBinFile *bf) {
 			RzStructuredData *params = rz_structured_data_new_array();
 			if (!params) {
 				rz_structured_data_free(arr);
+				rz_structured_data_free(m);
 				return NULL;
 			}
 			for (ut32 i = 0; i < type->param_count; i++) {
@@ -631,6 +632,7 @@ static RzStructuredData *wasm_elements_structure(RzBinFile *bf) {
 			RzStructuredData *elems = rz_structured_data_new_array();
 			if (!elems) {
 				rz_structured_data_free(arr);
+				rz_structured_data_free(m);
 				return NULL;
 			}
 			for (ut32 i = 0; i < element->num_elem; i++) {

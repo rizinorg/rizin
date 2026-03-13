@@ -15,6 +15,7 @@
 #include "../i/private.h"
 #include "elf/elf.h"
 #include "elf/glibc_elf.h"
+#include "rz_vector.h"
 #include <rz_analysis.h>
 #include <rz_util/ht_uu.h>
 

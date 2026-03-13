@@ -142,20 +142,6 @@ ihgf
 EOF
 RUN
 
-NAME=memory write (non-MIPS big endian)
-FILE==
-BROKEN=1
-CMDS=<<EOF
-e cfg.bigendian=true
-aeim
-ae "0x69686766,0x00100000,=[4]"
-ps @0x00100000
-EOF
-EXPECT=<<EOF
-ihgf
-EOF
-RUN
-
 NAME=esil poke some (32-bits ARM big endian)
 FILE==
 ARGS=-a arm -b 32

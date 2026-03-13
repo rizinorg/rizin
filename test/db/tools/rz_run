@@ -1,22 +1,7 @@
-NAME=rz-run -v 
-FILE==
-CMDS=!rz-run -v | grep -c commit
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=rz-run -h
-FILE==
-CMDS=!rz-run -h | grep -c Usage
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-run repeat error
-FILE==
-CMDS=!rz-run arg1='@32@' -- echo
+TOOL=rz-run
+ARGS=arg1=@32@ -- echo
+EXIT_STATUS=1
 REGEXP_FILTER_ERR=(ERROR: rz-run:.+$)
 EXPECT_ERR=<<EOF
 ERROR: rz-run: invalid string after @<num>@ in `@32@`
@@ -24,8 +9,9 @@ EOF
 RUN
 
 NAME=rz-run repeat error
-FILE==
-CMDS=!rz-run arg1='@32aaa' -- echo
+TOOL=rz-run
+ARGS=arg1=@32aaa -- echo
+EXIT_STATUS=1
 REGEXP_FILTER_ERR=(ERROR: rz-run:.+$)
 EXPECT_ERR=<<EOF
 ERROR: rz-run: invalid @<num>@ in `@32aaa`

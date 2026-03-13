@@ -1,6 +1,31 @@
 NAME=disass_Linux_sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=pi 10 @ entry0
+CMDS=<<EOF
+pi 10 @ entry0
+echo ---
+pad d0006354
+pad bc100000
+pad 9c23a018
+pad 9403a05c
+pad 110000af
+echo ---
+s main
+af
+afi~complex[1]
+afbi @ main
+echo ---
+e asm.bytes=true
+s sym.zwrite
+af
+afb
+echo ---
+pdf
+echo ---
+e analysis.recont=true
+s 0x0002bca0
+af
+afb
+EOF
 EXPECT=<<EOF
 mov g0, fp
 sub sp, 0x18, sp
@@ -12,69 +37,16 @@ sethi 0x30b, o4
 or o0, 0xa0, o0
 or o3, 0x80, o3
 or o4, 0x60, o4
-EOF
-RUN
-
-NAME=disass_Solaris_sparc
-FILE=bins/elf/elf-solaris-sparc-ls
-CMDS=pi 10 @ entry0
-EXPECT=<<EOF
-mov 0, fp
-ld [sp+0x40], l0
-add sp, 0x44, l1
-sub sp, 0x20, sp
-orcc g0, g1, g0
-be loc..nope
-mov g1, o0
-call sym.imp.atexit
-nop
-sethi 0xb0, o0
-EOF
-RUN
-
-NAME=print sparc disassembly ld
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-pad d0006354
-pad bc100000
-pad 9c23a018
-pad 9403a05c
-pad 110000af
-EOF
-EXPECT=<<EOF
+---
 ld [g1+0x354], o0
 mov g0, fp
 sub sp, 0x18, sp
 add sp, 0x5c, o2
 sethi 0xaf, o0
-EOF
-RUN
-
-NAME=cyclomatic sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-s main
-af
-afi~complex[1]
-afbi @ main
-EOF
-EXPECT=<<EOF
+---
 167
 0x0002bca0 0x0002bccc 00:0000 44 j 0x0002c534 f 0x0002bccc
-EOF
-RUN
-
-NAME=afb sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-e asm.bytes=true
-s sym.zwrite
-af
-afb
-echo
-pdf
-EOF
-EXPECT=<<EOF
+---
 0x000a0d80 0x000a0d94 00:0000 20 j 0x000a0d94
 0x000a0d94 0x000a0d98 00:0000 4 j 0x000a0d98
 0x000a0d98 0x000a0db0 00:0000 24 j 0x000a0dc8 f 0x000a0db0
@@ -85,7 +57,7 @@ EXPECT=<<EOF
 0x000a0de0 0x000a0dec 00:0000 12
 0x000a0dec 0x000a0e04 00:0000 24 j 0x000a0d98 f 0x000a0e04
 0x000a0e04 0x000a0e0c 00:0000 8
-
+---
 / sym.zwrite(int fd, const char *ptr, size_t nbytes);
 |           ; arg int fd @ i0
 |           ; arg const char *ptr @ i1
@@ -125,68 +97,7 @@ EXPECT=<<EOF
 |           0x000a0e00      92100019       mov   i1, o1
 |           0x000a0e04      81cfe008       rett  i7+8
 \           0x000a0e08      90103fff       mov   -1, o0
-EOF
-RUN
-
-NAME=af analysis.endsize sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-e analysis.endsize=0
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=af analysis.endsize sparc
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-e analysis.endsize=1
-aaa
-s 0x0002bca0
-afi~name
-EOF
-EXPECT=<<EOF
-name: main
-EOF
-RUN
-
-NAME=analysis.fcnprefix sparc
-FILE=bins/elf/elf-solaris-sparc-ls
-CMDS=<<EOF
-# The test before showed not a single function with a 'root' prefix.
-# No idea if those discovered functions are actual functions.
-# But at least they are named 'root.xxxxxx'.
-s 0x00018c08
-e analysis.fcnprefix=root
-af
-aac
-afl~root
-EOF
-EXPECT=<<EOF
-0x00012d9c    1 8            root.00012d9c
-0x00020110   17 224          root.00020110
-0x0002b180    1 8            root.0002b180
-0x0002b538    1 8            root.0002b538
-0x0002b938    1 8            root.0002b938
-0x0002bca4    1 8            root.0002bca4
-0x0002c05c    1 8            root.0002c05c
-0x0002c880    1 72           root.0002c880
-EOF
-RUN
-
-NAME=analysis.recont=true
-FILE=bins/elf/elf-Linux-SparcV8-bash
-CMDS=<<EOF
-e analysis.recont=true
-s 0x0002bca0
-af
-afb
-EOF
-EXPECT=<<EOF
+---
 0x0002bca0 0x0002bccc 00:0000 44 j 0x0002c534 f 0x0002bccc
 0x0002bccc 0x0002bcec 00:0000 32 j 0x0002bd04 f 0x0002bcec
 0x0002bcec 0x0002bd04 00:0000 24 j 0x0002bcec f 0x0002bd04
@@ -486,14 +397,58 @@ name: main
 EOF
 RUN
 
-NAME=Analyze bb with branch delay instruction head
+NAME=af analysis.endsize sparc
+FILE=bins/elf/elf-Linux-SparcV8-bash
+CMDS=<<EOF
+e analysis.endsize=1
+aaa
+s 0x0002bca0
+afi~name
+EOF
+EXPECT=<<EOF
+name: main
+EOF
+RUN
+
+NAME=disass_Solaris_sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
+pi 10 @ entry0
+echo ---
+# The test before showed not a single function with a 'root' prefix.
+# No idea if those discovered functions are actual functions.
+# But at least they are named 'root.xxxxxx'.
+s 0x00018c08
+e analysis.fcnprefix=root
+af
+aac
+afl~root
+echo ---
 s 0x0001bc04
 af
 afb
 EOF
 EXPECT=<<EOF
+mov 0, fp
+ld [sp+0x40], l0
+add sp, 0x44, l1
+sub sp, 0x20, sp
+orcc g0, g1, g0
+be loc..nope
+mov g1, o0
+call sym.imp.atexit
+nop
+sethi 0xb0, o0
+---
+0x00012d9c    1 8            root.00012d9c
+0x00020110   17 224          root.00020110
+0x0002b180    1 8            root.0002b180
+0x0002b538    1 8            root.0002b538
+0x0002b938    1 8            root.0002b938
+0x0002bca4    1 8            root.0002bca4
+0x0002c05c    1 8            root.0002c05c
+0x0002c880    1 72           root.0002c880
+---
 0x0001bc04 0x0001bc1c 00:0000 24 j 0x0001bc38 f 0x0001bc1c
 0x0001bc1c 0x0001bc30 00:0000 20 j 0x0001bc98 f 0x0001bc30
 0x0001bc30 0x0001bc34 00:0000 4 j 0x0001bc34
@@ -514,6 +469,7 @@ NAME=sparc regs
 FILE=
 CMDS=<<EOF
 e asm.arch=sparc
+e asm.bits=64
 ar
 EOF
 EXPECT=<<EOF

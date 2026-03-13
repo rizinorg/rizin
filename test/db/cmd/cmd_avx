@@ -20,8 +20,8 @@ avx method.Dog.run
 EOF
 EXPECT=<<EOF
 Virtual xrefs to method.Dog.run
-C 0x100002958 blr x8
 C 0x10000289c blr x8
+C 0x100002958 blr x8
 C 0x10000290c blr x8
 EOF
 RUN
@@ -37,8 +37,8 @@ EOF
 EXPECT=<<EOF
        from 
 ------------
-0x100002958
 0x10000289c
+0x100002958
 0x10000290c
 EOF
 RUN
@@ -53,12 +53,12 @@ avxt method_Employee_sayHello
 EOF
 EXPECT=<<EOF
 Virtual xrefs to method_Employee_sayHello
-C 0x100001914 call qword [reloc.objc_msgSend]
 C 0x100001937 call qword [reloc.objc_msgSend]
+C 0x100001914 call qword [reloc.objc_msgSend]
        from 
 ------------
-0x100001914
 0x100001937
+0x100001914
 EOF
 RUN
 

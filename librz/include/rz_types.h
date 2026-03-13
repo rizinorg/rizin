@@ -127,7 +127,7 @@ extern "C" {
 #define __WINDOWS__ 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
 #define __BSD__  0
 #define __UNIX__ 1
 #endif
@@ -601,12 +601,26 @@ typedef enum {
 #define RZ_SYS_OS "freebsd"
 #elif defined(__HAIKU__)
 #define RZ_SYS_OS "haiku"
+#elif defined(__serenity__)
+#define RZ_SYS_OS "serenity"
 #else
 #define RZ_SYS_OS "unknown"
 #endif
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+/**
+ * \def Prefetch data from a certain memory address to memory cache
+ */
+#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
+#else
+#define RZ_PREFETCH(addr) ((void)0)
 #endif
 
 static inline void rz_run_call1(void *fcn, void *arg1) {

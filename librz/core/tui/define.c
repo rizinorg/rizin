@@ -30,8 +30,8 @@ static void define_data_ntimes(RzCore *core, ut64 off, int times, int type) {
 	}
 }
 
-static bool isDisasmPrint(int mode) {
-	return (mode == 1 || mode == 2);
+static bool is_visual_mode_disasm(RzCoreVisualMode mode) {
+	return (mode == RZ_CORE_VISUAL_MODE_PD || mode == RZ_CORE_VISUAL_MODE_DB);
 }
 
 static void handleHints(RzCore *core) {
@@ -220,7 +220,7 @@ onemoretime:
 	case 'n': {
 		RzAnalysisOp op = { 0 };
 		ut64 tgt_addr = UT64_MAX;
-		if (!isDisasmPrint(visual->printidx)) {
+		if (!is_visual_mode_disasm(visual->printidx)) {
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.

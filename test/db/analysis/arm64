@@ -3,6 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx e18f1394 # BL XXX
 sd +4
 wx 00013fd6 # BLR x8
@@ -31,6 +32,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 e asm.os=linux
 asn fstat
 asr 80
@@ -155,7 +157,7 @@ RUN
 
 NAME=ao mte big endian
 FILE==
-ARGS=-a arm -b 64 -e cfg.bigendian=true
+ARGS=-a arm -b 64 -E big
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
 ao@ 0
@@ -247,6 +249,7 @@ NAME=Variable analysis with stp/preindexed str
 FILE=malloc://1024
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 00000000000000000000000000000000f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
 aap
 s 0x10
@@ -284,6 +287,7 @@ NAME=pacibsp considered a valid function preamble
 FILE=malloc://1024
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 7f2303d5fc6fbaa9fa6701a9f85f02a9
 af
 pd 4
@@ -301,6 +305,7 @@ NAME=pacibsp identified as function prologue
 FILE=malloc://1024
 ARGS=-a arm -b 64
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 7f2303d5fc6fbaa9fa6701a9f85f02a9ff0f5fd6
 aap
 pd 5

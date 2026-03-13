@@ -4554,12 +4554,13 @@ static void delete_last_comment(RzDisasmState *ds) {
 static bool can_emulate_metadata(RzCore *core, ut64 at) {
 	// check if there is a meta at the addr that is unemulateable
 	const char *emuskipmeta = rz_config_get(core->config, "emu.skip");
+
 	bool ret = true;
 	RzPVector *metas = rz_meta_get_all_at(core->analysis, at);
 	void **it;
 	rz_pvector_foreach (metas, it) {
 		RzAnalysisMetaItem *item = ((RzIntervalNode *)*it)->data;
-		if (strchr(emuskipmeta, (char)item->type)) {
+		if (strchr(emuskipmeta, rz_meta_type_as_char(item->type))) {
 			ret = false;
 			break;
 		}
@@ -5167,8 +5168,8 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	if (!rch) {
 		return 0;
 	}
-	rz_config_hold_i(rch, "asm.bits", NULL);
 	rz_config_hold_s(rch, "asm.arch", NULL);
+	rz_config_hold_i(rch, "asm.bits", NULL);
 
 	// TODO: All those ds must be print flags
 	RzDisasmState *ds = ds_init(core);

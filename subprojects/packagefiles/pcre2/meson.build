@@ -6,19 +6,17 @@ if cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c'])
 endif
 
-conf_data = configuration_data()
-
 pcre2_chartables = configure_file(input : 'src/pcre2_chartables.c.dist',
   output : 'pcre2_chartables.c',
-  configuration : conf_data)
+  copy : true)
 
 pcre2_h = configure_file(input : 'src/pcre2.h.generic',
   output : 'pcre2.h',
-  configuration : conf_data)
+  copy : true)
 
 config_h = configure_file(input : 'src/config.h.generic',
   output : 'config.h',
-  configuration : conf_data)
+  copy : true)
 
 libpcre2_c_args = [
   '-DHAVE_CONFIG_H', # Default values from config.h
@@ -66,7 +64,7 @@ cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv
 # tcc doesn't support the MSVC asm syntax PCRE2 uses (`__asm { ... }`).
 # Darwin kernel not as well, because of forbidden wx memory.
 # It is used in the JIT compiler code.
-if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() != 'darwin'
+if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() not in ['darwin', 'serenity']
   libpcre2_c_args += ['-DSUPPORT_JIT']
   pcre2_files += ['src/pcre2_jit_compile.c']
 endif

@@ -3,6 +3,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 s main
 af
 afi~^size
@@ -18,6 +19,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx dff80000 12000000 34000000
 pd 1
 EOF
@@ -31,6 +33,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx dff80000 12000000 34000000
 aes
 ar r0
@@ -45,6 +48,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx dff804c0 fc446047 18e0 0200
 af
 afi~size[1]
@@ -60,6 +64,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 0149 014a 014b 0000 1111 2222 3333 4444 5555 6666
 pd 3
 EOF
@@ -76,6 +81,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 e asm.emu=1
 wx 0249 024a 024b 7944 7a44 7b44 1111 2222 3333 4444 5555 6666 7777
 pd 6
@@ -96,6 +102,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 10b5 01a0 00bf 00bf 52616461726532207465737420737472696e6700
 pd 1 @ 0x2
 EOF
@@ -108,9 +115,10 @@ RUN
 NAME=pd bits override for arm
 FILE=malloc://32
 CMDS=<<EOF
-e asm.arch=arm
 e asm.bytes=true
+e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wa "mov r0, r0"
 pi 1
 pd 1
@@ -143,6 +151,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 10b5 01a0 00bf 00bf 5261646172653220746573740d0a00
 pd 1 @ 0x2
 EOF
@@ -156,11 +165,11 @@ NAME=arm 16 BE 4 bytes instruction
 FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
-e cfg.bigendian=1
+e cfg.bigendian=true
 wa "blx 0x33b8"
 p8 4
 pi 1
-e cfg.bigendian=0
+e cfg.bigendian=false
 wa "blx 0x33b8"
 p8 4
 pi 1
@@ -201,9 +210,10 @@ RUN
 NAME=ARM32 bb 0 size -- af
 FILE=malloc://32
 CMDS=<<EOF
-wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
+wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
 af
 #pdf
 afb
@@ -221,6 +231,7 @@ CMDS=<<EOF
 wx 20c09fe5 0cc09ae7
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 # pd 2 - note different colors
 pi 2
 ao~type[1]
@@ -243,6 +254,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx e59a9ae7
 e cfg.bigendian=false
 pi 1@ 0
@@ -260,6 +272,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx 2249224a
 ao~^ptr
 ao@ 2~^ptr
@@ -277,6 +290,7 @@ e asm.bytes=true
 e asm.calls=false
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 021081e0 1eff2f01 0020a0e3 1eff2fe1
 af
 pd 4
@@ -296,6 +310,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx fffffffa 04210924
 af
 pi 2 @ 4
@@ -311,6 +326,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e analysis.armthumb=true
 wx 0910 a0e3 11ff 2fe1 0421 0924
 aae
@@ -343,6 +359,7 @@ wx 20c09fe5
 wx 0cc09ae7 @ 4
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 # pd 2 - note different colors
 pi 2
 ao~type[1]
@@ -365,6 +382,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx e59a9ae7
 e cfg.bigendian=false
 pi 1@ 0
@@ -414,6 +432,7 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 1f2003d5d0d8065800021fd61f2003d5
 e analysis.nopskip=true
 e analysis.jmp.after=false
@@ -428,10 +447,11 @@ RUN
 NAME=ARM64 bl capstone
 FILE=malloc://32
 CMDS=<<EOF
-s 4
-wx 07000094
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
+s 4
+wx 07000094
 pi 1
 ao~jump
 EOF
@@ -447,6 +467,7 @@ CMDS=<<EOF
 wx 0d039fe5
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -464,6 +485,7 @@ CMDS=<<EOF
 wx 0c009fe5
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -483,6 +505,7 @@ FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -505,6 +528,7 @@ BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -523,6 +547,7 @@ FILE=malloc://4
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e io.va=true
 wx ffffffea # bl 0x80000000
 om 3 0x7ffffffc
@@ -694,6 +719,7 @@ FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -720,6 +746,7 @@ BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.comments=false
 e asm.bytes=false
 e asm.offset=false
@@ -751,6 +778,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
 afvl~var
@@ -840,6 +868,7 @@ FILE=malloc://2048
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 e cfg.wseek=true
 wx 01380793d3b24ff00109024600bf00bf00bf00bf59b2a1f120005a28139200f28d81404d02eb8004082601270122dfe810f09700850185015c0085015b008501850185018501a2
 wx 0097008501ac007b008501af005d005d005d005d005d005d005d005d005d008501850185018501850185018501c300850185018501c3008501c30085018501850185019c008501
@@ -999,6 +1028,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 ar=
 EOF
 EXPECT=<<EOF
@@ -1106,6 +1136,7 @@ CMDS=<<EOF
 wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 af
 afi~size
 EOF
@@ -1130,6 +1161,7 @@ FILE=
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.pcalign
 e asm.bits=16
 e asm.pcalign
@@ -1145,6 +1177,7 @@ FILE=malloc://0x1000
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e cfg.bigendian=false
 s 0x100
 wx 54bf53f8182c52181846
 pi 4
@@ -1182,6 +1215,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 10402de90040a0e100e08fe214ff2fe11080bde8
 af
 pdf
@@ -1201,6 +1235,7 @@ NAME=aav thumb detection
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 aav
 fl
 EOF
@@ -1253,7 +1288,7 @@ RUN
 
 NAME=raw aac with maps (using a PIC bin)
 FILE=bins/elf/libmagic.so
-ARGS=-n -m 0x80000 -a arm -b 16 -e cfg.bigendian=false
+ARGS=-n -m 0x80000 -a arm -b 16 -E little
 CMDS=<<EOF
 aac
 e search.in=io.maps
@@ -1266,7 +1301,7 @@ RUN
 
 NAME=add/adc pc, pc issue #3965
 FILE==
-ARGS=-a arm -b 32 -e cfg.bigendian=false
+ARGS=-a arm -b 32 -E little
 CMDS=<<EOF
 wx ffff8f024fffaf02
 pd 2
@@ -1310,6 +1345,7 @@ NAME=Check MOV gets identified as JUMP if it moves to PC
 FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e cfg.bigendian=false
 s 0x100
 wx bff36f8f2548874680bd000072b680bd
 s 0x19c
@@ -1346,6 +1382,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e cfg.bigendian=false
 wx 864860f44d0fe2f4edffffeb04e02de500000000e08322e5f102030e0000a0e30230c1e7000053e3000201f10540d0e8f4800000
 ao 13

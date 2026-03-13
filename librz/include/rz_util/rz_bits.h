@@ -42,41 +42,21 @@ DEFINE_COUNT_ONES(ut8);
  * \return The number of trailing zeros.
  */
 static inline size_t rz_bits_trailing_zeros(ut64 v) {
+#if HAVE___BUILTIN_CTZLL
 	if (v == 0) {
 		return 64;
 	}
-#if HAVE___BUILTIN_CTZLL
 	return __builtin_ctzll(v);
 #else
-	// src: https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightBinSearch
-	size_t c;
-	if (v & 0x1) {
-		// special case for odd v (assumed to happen half of the time)
-		return 0;
-	}
-	c = 1;
-	if ((v & 0xffffffff) == 0) {
-		v >>= 32;
-		c += 32;
-	}
-	if ((v & 0xffff) == 0) {
-		v >>= 16;
-		c += 16;
-	}
-	if ((v & 0xff) == 0) {
-		v >>= 8;
-		c += 8;
-	}
-	if ((v & 0xf) == 0) {
-		v >>= 4;
-		c += 4;
-	}
-	if ((v & 0x3) == 0) {
-		v >>= 2;
-		c += 2;
-	}
-	c -= v & 0x1;
-	return c;
+	// Branchless CTZ implementation using "de Bruijn" sequences
+	// https://en.wikipedia.org/wiki/Find_first_set#CTZ
+	static const unsigned char debruijn_map[64] = {
+		63, 0, 1, 52, 2, 6, 53, 26, 3, 37, 40, 7, 33, 54, 47, 27,
+		61, 4, 38, 45, 43, 41, 21, 8, 23, 34, 58, 55, 48, 17, 28, 10,
+		62, 51, 5, 25, 36, 39, 32, 46, 60, 44, 42, 20, 22, 57, 16, 9,
+		50, 24, 35, 31, 59, 19, 56, 15, 49, 30, 18, 14, 29, 13, 12, 11
+	};
+	return !v + debruijn_map[((v & (ut64)(-(st64)v)) * 0x045FBAC7992A70DA) >> 58];
 #endif
 }
 

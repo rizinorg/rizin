@@ -193,15 +193,15 @@ typedef struct rz_analysis_func_arg_t {
 typedef enum {
 	RZ_META_TYPE_NONE = 0,
 	RZ_META_TYPE_ANY = -1,
-	RZ_META_TYPE_DATA = 'd', //< marks the data as data (not a code)
-	RZ_META_TYPE_CODE = 'c', //< marks the data as code
-	RZ_META_TYPE_STRING = 's', //< marks the data as string
-	RZ_META_TYPE_FORMAT = 'f', //< sets the specified format (pf) to the data
-	RZ_META_TYPE_MAGIC = 'm', //< sets the magic string to the data
-	RZ_META_TYPE_HIDE = 'h', //< set the data as hidden
-	RZ_META_TYPE_COMMENT = 'C', //< attaches the comment to the data
-	RZ_META_TYPE_HIGHLIGHT = 'H', //< sets the specified highlight to the data
-	RZ_META_TYPE_VARTYPE = 't', //< sets the specified type to the variable/address
+	RZ_META_TYPE_DATA = 1, ///< marks the data as data (not as code)
+	RZ_META_TYPE_CODE = 2, ///< marks the data as code
+	RZ_META_TYPE_STRING = 3, ///< marks the data as string
+	RZ_META_TYPE_FORMAT = 4, ///< sets the specified format (pf) to the data
+	RZ_META_TYPE_MAGIC = 5, ///< sets the magic string to the data
+	RZ_META_TYPE_HIDE = 6, ///< set the data as hidden
+	RZ_META_TYPE_COMMENT = 7, ///< attaches the comment to the data
+	RZ_META_TYPE_HIGHLIGHT = 8, ///< sets the specified highlight to the data
+	RZ_META_TYPE_VARTYPE = 9, ///< sets the specified type to the variable/address
 } RzAnalysisMetaType;
 
 /* meta */
@@ -338,6 +338,9 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_CPL = 45, /* complement */
 	RZ_ANALYSIS_OP_TYPE_CRYPTO = 46,
 	RZ_ANALYSIS_OP_TYPE_SYNC = 47,
+	RZ_ANALYSIS_OP_TYPE_BCNT = 48, /* bit-counting operations like pop count */
+	RZ_ANALYSIS_OP_TYPE_REV = 49, /* byte-reversal and bit-reversal operations  */
+	RZ_ANALYSIS_OP_TYPE_REDUCE = 50, /* instructions that reduce a sequence, like string operations or vector sum */
 // RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	RZ_ANALYSIS_OP_TYPE_PRIV = 40, /* privileged instruction */
@@ -2114,6 +2117,8 @@ static inline ut64 rz_meta_node_size(RzIntervalNode *node) {
 // Set a meta item at addr with the given contents in the current space.
 // If there already exists an item with this type and space at addr (regardless of its size) it will be overwritten.
 RZ_API bool rz_meta_set(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 size, const char *str);
+
+RZ_DEPRECATE RZ_API char rz_meta_type_as_char(RzAnalysisMetaType type);
 
 // Same as rz_meta_set() but also sets the subtype.
 RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int subtype, ut64 addr, ut64 size, const char *str);

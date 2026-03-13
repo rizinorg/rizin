@@ -2,6 +2,7 @@ NAME=avr DISasm: [0e940b10 => 0x00002016] (ANAL)
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0e940b10 @ 0x2d0
 s 0x2d0
 ao 1~^jump[1]
@@ -15,6 +16,7 @@ NAME=avr DISasm: [0e940b10 => call] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2d0
 wx 0e940b10
 ao 1~jump
@@ -28,6 +30,7 @@ NAME=avr adiw/sbiw
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 2a961a97
 pd 2
 EOF
@@ -41,6 +44,7 @@ NAME=avr ld/ldd
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx a984fc91a184
 pd 3
 EOF
@@ -55,6 +59,7 @@ NAME=avr DISasm: [sts] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2d0
 wx 9093c007
 ao 1~jump
@@ -80,6 +85,7 @@ NAME=avr DISasm: opcode size
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0e941122
 ao~size[1]
 EOF
@@ -90,8 +96,48 @@ RUN
 
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
-CMDS=pd 13 @ 0x00000282
+CMDS=<<EOF
+iI
+pd 13 @ 0x00000282
+EOF
 EXPECT=<<EOF
+arch     avr
+cpu      ATmega8
+features N/A
+baddr    ----------
+binsz    0x00003722
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  ATmel (unknown)
+maxopsz  4
+minopsz  2
+os       avr usermode
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
             0x00000282      in    r24, 0x12                            ; IO Output pins/pullups address for port D
             0x00000284      subi  r24, 0x80
             0x00000286      out   0x12, r24                            ; IO Output pins/pullups address for port D
@@ -209,6 +255,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 61f0 @ 0x136
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 pi 1 @ 0x136
 ao 1 @ 0x136 ~^jump[1]
@@ -224,6 +271,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx e1f7 @ 0x14a
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 ao 1 @ 0x14a ~^jump[1]
 EOF
@@ -237,6 +285,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx f0cf @ 0x14e
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 s 0x14e
 ao 1 @ 0x14e ~^jump[1]
@@ -251,6 +300,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 0c941234 @ 0x15e
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 ao 1 @ 0x15e~^jump[1]
 EOF
@@ -264,6 +314,7 @@ FILE=malloc://16384
 ARGS=-s 0x3434 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega8
+e cfg.bigendian=false
 wx ffcf
 pi 1
 ao 1~^jump[1]
@@ -279,6 +330,7 @@ FILE=malloc://8192
 ARGS=-s 0x1000 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4
@@ -300,6 +352,7 @@ FILE=malloc://8192
 ARGS=-a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4
@@ -330,6 +383,7 @@ wx fec5 ffc5 00c6 01c6 7ec6 7fc6 80c6 81c6
 wx fec6 ffc6 00c7 01c7 7ec7 7fc7 80c7 81c7
 wx fec7 ffc7
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega640
 aoe 66 @ 0
 EOF
@@ -415,6 +469,7 @@ wx 00cd 01cd 7ecd 7fcd 80cd 81cd fecd ffcd @ 0x1050
 wx 00ce 01ce 7ece 7fce 80ce 81ce fece ffce @ 0x1060
 wx 00cf 01cf 7ecf 7fcf 80cf 81cf fecf ffcf @ 0x1070
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega640
 aoe 64 @ 0x1000
 EOF
@@ -490,6 +545,7 @@ NAME=avr functions 1
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 axt @ 0x28a
 EOF
@@ -502,6 +558,7 @@ NAME=avr functions 2
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 1895
 ao 1~fam[1]
 af
@@ -712,6 +769,7 @@ NAME=avr search
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 /ad call 0x4ec
 EOF
@@ -724,6 +782,7 @@ NAME=avr search - XXX dupped hit
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 /ad call 0x4ec
 EOF
@@ -736,6 +795,7 @@ NAME=avr search 2
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aac @ 0
 axt @ 0x4ec
 EOF
@@ -748,6 +808,7 @@ NAME=avr search 3
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 axt @ 0x4ec
 EOF
@@ -760,6 +821,7 @@ NAME=detect false xrefs
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.bytes=true
 e asm.lines=false
 aar
@@ -796,6 +858,7 @@ NAME=avr no warnings
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2ee8
 af
 aae
@@ -808,6 +871,7 @@ NAME=avr stop analysis when invalid instruction is found
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 fl
 EOF
@@ -976,6 +1040,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e analysis.jmp.cref=true
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega168
 aaa
 s fcn.000005a2
@@ -1053,6 +1118,7 @@ NAME=avr regs
 FILE=
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 ar
 EOF
 EXPECT=<<EOF
@@ -1107,6 +1173,7 @@ NAME=avr rjmp test
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0f94db6e8091bc1988231fc04090b4195090b5196090b6197090b7190f94e0514616
 om 3 0x0003755c 64 0 rwx test_map
 pd 10 @ 0x0003755c

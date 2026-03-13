@@ -388,7 +388,7 @@ static void il_opdmp_fneg(RzILOpPure *op, RzStrBuf *sb, int pad) {
 }
 
 static void il_opdmp_fabs(RzILOpPure *op, RzStrBuf *sb, int pad) {
-	il_op_param_1("fpos", op->op.fabs, f);
+	il_op_param_1("fabs", op->op.fabs, f);
 }
 
 static void il_opdmp_fcast_int(RzILOpPure *op, RzStrBuf *sb, int pad) {

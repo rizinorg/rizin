@@ -172,6 +172,7 @@ RUN
 NAME=ppd/ endianness
 FILE==
 CMDS=<<EOF
+e asm.arch=arm
 e cfg.bigendian=false
 ppd/ 0x41574141
 e cfg.bigendian=true

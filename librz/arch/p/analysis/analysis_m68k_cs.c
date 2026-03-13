@@ -180,14 +180,14 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *ins
 	}
 }
 
-static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	int n, ret, opsize = -1;
 	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = 0;
 
 	// mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != ctx->omode || a->bits != ctx->obits) {
@@ -723,7 +723,7 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -796,9 +796,9 @@ RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",
-	.get_reg_profile = &get_reg_profile,
+	.get_reg_profile = &m68k_get_reg_profile,
 	.bits = 32,
-	.op = &analyze_op,
+	.op = &m68k_analyze_op,
 	.init = m68k_init,
 	.fini = m68k_fini,
 };

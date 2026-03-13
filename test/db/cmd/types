@@ -844,6 +844,7 @@ RUN
 NAME=tp struct
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 td "struct person { int age; char name[10]; }"
 s 14
 w Carlos
@@ -865,6 +866,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 td "union bla { int a; int b; float c; }"
 td "struct foo { union poo { int a; int b; long long c; } q; char *p; }"
 td "struct alb { int a; union moo { int t; char b; long long c; } f; void *goo; }"
@@ -939,7 +941,7 @@ RUN
 NAME=tpv
 FILE==
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=arm
 e asm.bits=16
 e cfg.bigendian=false
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
@@ -1086,6 +1088,7 @@ RUN
 NAME=tpx test
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 td "struct foo {char* a; int b;}"
 tpx foo 41414141441414141414420010000000
 EOF
@@ -1101,6 +1104,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 082090e5040081e5
 td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -1123,6 +1127,7 @@ FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=mips
+e cfg.bigendian=false
 wx 08007fac040053800800538c
 td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -1616,8 +1621,8 @@ ar bp=0x98
 afvd var_70h
 EOF
 EXPECT=<<EOF
-var unsigned long long var_80h @ stack - 0x80
-var unsigned long long var_71h @ stack - 0x71
+var unsigned long var_80h @ stack - 0x80
+var unsigned long var_71h @ stack - 0x71
 var int64_t var_70h @ stack - 0x70
 var char *var_60h @ stack - 0x60
 var int64_t var_58h @ stack - 0x58
@@ -1630,8 +1635,8 @@ var int64_t var_40h @ stack - 0x40
 arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
 arg char **argv @ rsi
-var unsigned long long var_80h @ stack - 0x80
-var unsigned long long var_71h @ stack - 0x71
+var unsigned long var_80h @ stack - 0x80
+var unsigned long var_71h @ stack - 0x71
 var char [20] var_70h @ stack - 0x70
 var int64_t var_58h @ stack - 0x58
 var int64_t var_56h @ stack - 0x56
@@ -1791,10 +1796,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg1, unsigned long long arg2);
+sym.funcarg(const char *arg1, unsigned long arg2);
 ; arg const char *arg1 @ rdi
-; arg unsigned long long arg2 @ rsi
-; var unsigned long long var_14h @ stack - 0x14
+; arg unsigned long arg2 @ rsi
+; var unsigned long var_14h @ stack - 0x14
 ; var const char *var_10h @ stack - 0x10
 0x0000068a      55             push  rbp
 EOF
@@ -1812,10 +1817,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg(const char *arg_4h, size_t arg_8h);
+sym.funcarg(const char *arg_4h, unsigned long arg_8h);
 ; var int32_t var_8h @ stack - 0x8
 ; arg const char *arg_4h @ stack + 0x4
-; arg size_t arg_8h @ stack + 0x8
+; arg unsigned long arg_8h @ stack + 0x8
 0x0000054d      55             push  ebp
 EOF
 RUN
@@ -1882,7 +1887,7 @@ EOF
 EXPECT=<<EOF
 var int var_3ch @ stack - 0x3c
 var int64_t var_38h @ stack - 0x38
-var unsigned long long var_30h @ stack - 0x30
+var unsigned long var_30h @ stack - 0x30
 EOF
 RUN
 
@@ -1896,7 +1901,7 @@ afvl
 EOF
 EXPECT=<<EOF
 var void *va_args @ stack - 0x3c
-var unsigned long long var_34h @ stack - 0x34
+var unsigned long var_34h @ stack - 0x34
 var FILE *stream @ stack - 0x30
 var const char *s @ stack - 0x28
 var const char *var_20h @ stack - 0x20
@@ -1935,9 +1940,9 @@ var int *wstatus @ stack - 0x14d4
 var int64_t var_14cch @ stack - 0x14cc
 var int64_t var_14c8h @ stack - 0x14c8
 var int64_t var_14c4h @ stack - 0x14c4
-var unsigned long long pid @ stack - 0x14c0
-var unsigned long long var_14bch @ stack - 0x14bc
-var unsigned long long var_14b8h @ stack - 0x14b8
+var unsigned long pid @ stack - 0x14c0
+var unsigned long var_14bch @ stack - 0x14bc
+var unsigned long var_14b8h @ stack - 0x14b8
 var int64_t var_14b4h @ stack - 0x14b4
 var const char *var_14b0h @ stack - 0x14b0
 var const char *s @ stack - 0x14a8
@@ -1953,9 +1958,9 @@ var int64_t var_20h @ stack - 0x20
 arg int argc @ rdi
 arg char **argv @ rsi
 var char *str @ stack - 0xb8
-var long long signed int var_ach @ stack - 0xac
+var int_fast64_t var_ach @ stack - 0xac
 var int64_t var_a8h @ stack - 0xa8
-var unsigned long long var_a4h @ stack - 0xa4
+var unsigned long var_a4h @ stack - 0xa4
 var int var_a0h @ stack - 0xa0
 var int var_9ch @ stack - 0x9c
 var int var_98h @ stack - 0x98
@@ -1974,14 +1979,14 @@ var char *var_68h @ stack - 0x68
 var char *var_60h @ stack - 0x60
 var char *var_58h @ stack - 0x58
 var char *var_50h @ stack - 0x50
-var unsigned long long var_48h @ stack - 0x48
+var unsigned long var_48h @ stack - 0x48
 var const char *s1 @ stack - 0x40
 var const char *s @ stack - 0x38
 var const char *var_30h @ stack - 0x30
 var const char *var_28h @ stack - 0x28
 var int64_t var_20h @ stack - 0x20
 var int64_t var_10h @ stack - 0x10
-arg long long signed int arg1 @ rdi
+arg int_fast64_t arg1 @ rdi
 arg char *arg2 @ rsi
 EOF
 RUN
@@ -2240,18 +2245,18 @@ tn-*
 tn
 EOF
 EXPECT=<<EOF
+ExitThread
 FreeLibraryAndExitThread
+RaiseException
+RtlRaiseException
+ExitProcess
 FatalExit
-ExitProcess
-ExitThread
-RtlRaiseException
-RaiseException
 ---
-FreeLibraryAndExitThread
-ExitProcess
 ExitThread
-RtlRaiseException
+FreeLibraryAndExitThread
 RaiseException
+RtlRaiseException
+ExitProcess
 ---
 EOF
 RUN
@@ -2272,6 +2277,7 @@ RUN
 NAME=td uint64_t
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
@@ -2317,13 +2323,13 @@ EOF
 EXPECT=<<EOF
 int64_t
 const char *
-unsigned long long
+unsigned long
 int
 char **
 =
 int64_t
 const char *
-unsigned long long
+unsigned long
 const void *
 size_t
 mbstate_t *
@@ -8277,9 +8283,9 @@ tn
 tnj
 EOF
 EXPECT=<<EOF
-fun1
 fun2
-["fun1","fun2"]
+fun1
+["fun2","fun1"]
 EOF
 RUN
 

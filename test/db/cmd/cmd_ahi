@@ -1,42 +1,8 @@
-NAME=ahi s + endian
-FILE==
-CMDS=<<EOF
-wx b8410d4300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'C\x0dA'
-mov eax, 'A\x0dC'
-EOF
-RUN
-
-NAME=ahi s + endian 2
-FILE==
-CMDS=<<EOF
-wx b841424300
-e asm.arch=x86
-ahi s
-e cfg.bigendian=false
-pi 1
-e cfg.bigendian=true
-pi 1
-EOF
-EXPECT=<<EOF
-mov eax, 'CBA'
-mov eax, 'ABC'
-EOF
-RUN
-
 NAME=1: ahi none
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 pi 1
 EOF
@@ -48,9 +14,9 @@ RUN
 NAME=ahi with colors
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 e scr.color=1
 wx 4881ec48060000
 pd 1
@@ -66,8 +32,8 @@ RUN
 NAME=ahi 0x41 -> 'A'
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f841 # cmp rax, 0x41
 pi 1
@@ -83,8 +49,8 @@ RUN
 NAME=ahi 0xe -> 1
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f80e # cmp rax, 0xe
 pi 1
@@ -100,8 +66,8 @@ RUN
 NAME=ahi 4 -> 1
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 wx 4883f804 # cmp rax, 4
 pi 1
@@ -117,9 +83,9 @@ RUN
 NAME=2: ahi none
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 pd 1
 EOF
@@ -131,9 +97,9 @@ RUN
 NAME=3: ahi none
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 ahi 16
 wx 4881ec48060000
 pd 1
@@ -146,9 +112,9 @@ RUN
 NAME=1: ahi 10
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 10
 pd 1
@@ -161,9 +127,9 @@ RUN
 NAME=ahi 8
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 8
 pd 1
@@ -176,9 +142,9 @@ RUN
 NAME=1: ahi 2
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
-e asm.arch=x86
 wx 4881ec48060000
 ahi 2
 pd 1
@@ -191,8 +157,8 @@ RUN
 NAME=ahi 2 - pi
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 4881ec48060000
 ahi 2
 pi 1
@@ -297,8 +263,8 @@ RUN
 NAME=2: ahi s
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 67c744246864616572
 pi 1
 ahi s 1
@@ -329,8 +295,8 @@ FILE==
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx 67c74424681b5b306d
 ahi s 1
 e scr.color=0

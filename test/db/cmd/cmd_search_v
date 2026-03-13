@@ -204,6 +204,8 @@ RUN
 NAME=/V{2,4,8} alias
 FILE==
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
 e cfg.bigendian=true
 wx 0x12345678aabbccddeeff13345678
 /V2 0x7854 0x7858
@@ -240,6 +242,7 @@ RUN
 NAME=/vj 4a search 4 byte in range with json
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wx 0x12345678aabbccddeeff12345678
 /vj 4a [0x78563412,0x78563420]
 EOF

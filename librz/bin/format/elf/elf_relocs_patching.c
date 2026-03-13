@@ -4,6 +4,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include "elf/glibc_elf.h"
+#include "rz_types.h"
+#include "rz_types_base.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_buf.h"
+#include "rz_util/rz_log.h"
 
 typedef struct reloc_formular_symbols_t {
 	ut64 A; // Appendend
@@ -175,6 +181,20 @@ static void patch_val_over_mask_64(RZ_INOUT RzBuffer *buf_patched, bool big_endi
 
 	rz_write_ble64(buf, opcode, big_endian);
 	rz_buf_write_at(buf_patched, addr, buf, 8);
+}
+
+/**
+ * \brief Does the same as patch_val_over_mask_32 but for 16bit values.
+ */
+static void patch_val_over_mask_16(RZ_INOUT RzBuffer *buf_patched, bool big_endian, const ut64 addr, const ut16 mask, const ut16 val) {
+	rz_return_if_fail(buf_patched);
+	ut8 buf[2] = { 0 };
+
+	rz_buf_read_at(buf_patched, addr, buf, 2);
+	ut16 opcode = rz_read_ble16(buf, big_endian) | rz_bits_spread(mask, val);
+
+	rz_write_ble16(buf, opcode, big_endian);
+	rz_buf_write_at(buf_patched, addr, buf, 2);
 }
 
 #define UNHANDL(NAME) \
@@ -2258,6 +2278,409 @@ static void patch_reloc_avr(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 	}
 }
+// U-Type: 32-bit instructions that store a 20-bit immediate in their upper 20 bit
+static const ut32 RISCV_U_TYPE_IMM_MASK = ((1ULL << 20) - 1) << 12;
+// I-Type: 32-bit instructions that store a 12-bit immediate in their upper 12 bit
+static const ut32 RISCV_I_TYPE_IMM_MASK = ((1ULL << 12) - 1) << 20;
+// S-Type: 32-bit instructions that store a 12-bit immediate scattered over 2 places but still in relative order
+static const ut32 RISCV_S_TYPE_IMM_MASK = ((0x7F << 25) | (0x1F << 7));
+// B-TYPE: 32-bit instructions that store an 11-bit immediate scattered all over and out of order
+static const ut32 RISCV_B_TYPE_IMM_MASKS[] = {
+	1ULL << 31, // bit 31: imm[12]
+	0x3fULL << 25, // bits 30-25: imm[10:5]
+	0xfULL << 8, // bits 11-8: imm[4:1]
+	1ULL << 7 // bit 7: imm[11]
+};
+// J-TYPE: 32-bit instructions (JAL) that store a 20-bit immediate scattered all over and out of order
+static const ut32 RISCV_J_TYPE_IMM_MASKS[] = {
+	1ULL << 31, // bit 31: imm[20]
+	0x3ffULL << 21, // bits 30-21: imm[10:1]
+	1ULL << 20, // bit 20: imm[11]
+	0xffULL << 12 // bits 19-12: imm[19:12]
+};
+// CB-Type: 16-bit instructions that store an 8-bit immediate scattered all over and out of order
+// the immediate is effectively 9 bit with bit 0 implied and always zero
+static const ut16 RISCV_CB_TYPE_IMM_MASKS[] = {
+	(1 << 12), // bit 12: imm[8]
+	(3 << 10), // bits 11-10: imm[4:3]
+	(3 << 5), // bits 6-5: imm[7:6]
+	(3 << 3), // bits 4-3: imm[2:1]
+	(1 << 2) // bit 2: imm[5]
+};
+// CJ-Type: 16-bit instructions that store an 11-bit immediate scattered all over and out of order
+// the immediate is effectively 12 bit with bit 0 implied and always zero
+static const ut16 RISCV_CJ_TYPE_IMM_MASKS[] = {
+	(1 << 12), // bit 12: imm[11]
+	(1 << 11), // bit 11: imm[4]
+	(3 << 9), // bits 10:9: imm[9:8]
+	(1 << 8), // bit 8: imm[10]
+	(1 << 7), // bit 7: imm[6]
+	(1 << 6), // bit 6: imm[7]
+	(7 << 3), // bits 5:3: imm[3:1]
+	(1 << 2) // bit 2: imm[5]
+};
+// CI-type: 16-bit instructions that store a 6-bit immediate with the 6th bit scattered from the rest but still in relative order
+static const ut16 RISCV_CI_TYPE_IMM_MASK = (1 << 12) | (0x1f << 2);
+
+#define RISCV_HI20(i) ((i) + 0x800) >> 12
+#define RISCV_LO12(i) ((i) & 0xfff)
+#define RISCV_CHECK_NARROWING_32(i, w) \
+	if (w == 32) { \
+		i = ((ut32)i); \
+	}
+
+#define RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, type) \
+	if (!success) { \
+		RZ_LOG_ERROR("Failed to successfully patch a %s reloc at %llx (S: %llx, A: %llx, B: %llx, P: %llx)", type, patch_addr, S, A, B, P); \
+		return; \
+	}
+
+static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, const RelocFormularSymbols *fs, const int bits) {
+	rz_return_if_fail(buf_patched && fs);
+
+	ut64 val = 0;
+	// narrow address values for 32-bit binaries
+	ut64 S = (bits == 32) ? ((ut32)fs->S) : fs->S;
+	ut64 A = (bits == 32) ? ((ut32)fs->A) : fs->A;
+	ut64 B = (bits == 32) ? ((ut32)fs->B) : fs->B;
+	ut64 P = (bits == 32) ? ((ut32)fs->P) : fs->P;
+
+	switch (rel_type) {
+	case R_RISCV_NONE:
+		return;
+
+	case R_RISCV_32: {
+		val = S + A;
+		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_32");
+		break;
+	}
+	case R_RISCV_64: {
+		val = S + A;
+		bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_64");
+		break;
+	}
+	case R_RISCV_RELATIVE:
+		val = A + B;
+		switch (bits) {
+		case 32: {
+			bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_RELATIVE 32");
+			break;
+		}
+		case 64: {
+			bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, val, big_endian);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_RELATIVE 64");
+			break;
+		}
+		default:
+			RZ_LOG_WARN("Unsupported number of bits for R_RISCV_RELATIVE: %d, only 32 bits and 64 bits are supported", bits);
+			return;
+		}
+		break;
+
+	case R_RISCV_BRANCH: {
+		val = S + A - P;
+		ut64 imm12 = ((val >> 12) & 0x1); // inst[31] = imm[12]
+		ut64 imm10_5 = ((val >> 5) & 0x3f); // inst[30:25] = imm[10:5]
+		ut64 imm4_1 = ((val >> 1) & 0xf); // inst[11:8] = imm[4:1]
+		ut64 imm11 = ((val >> 11) & 0x1); // inst[7] = imm[11]
+		ut64 imms[4] = { imm12, imm10_5, imm4_1, imm11 };
+		for (int i = 0; i < sizeof(RISCV_B_TYPE_IMM_MASKS) / sizeof(RISCV_B_TYPE_IMM_MASKS[0]); i++) {
+			patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_B_TYPE_IMM_MASKS[i], imms[i]);
+		}
+		break;
+	}
+
+	case R_RISCV_JAL: {
+		val = S + A - P;
+		RISCV_CHECK_NARROWING_32(val, bits);
+		ut64 imm20 = ((val >> 20) & 0x1); // inst[31] = imm[20]
+		ut64 imm10_1 = ((val >> 1) & 0x3ff); // inst[30:21] = imm[10:1]
+		ut64 imm11 = ((val >> 11) & 0x1); // inst[20] = imm[11]
+		ut64 imm19_12 = ((val >> 12) & 0xff); // inst[19:12] = imm[19:12]
+		ut64 imms[4] = { imm20, imm10_1, imm11, imm19_12 };
+		for (int i = 0; i < sizeof(RISCV_J_TYPE_IMM_MASKS) / sizeof(RISCV_J_TYPE_IMM_MASKS[0]); i++) {
+			patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_J_TYPE_IMM_MASKS[i], imms[i]);
+		}
+		break;
+	}
+
+	// both handled by the same formula
+	// TODO: CALL_PLT is more complex if the symbol is outside the same object file
+	case R_RISCV_CALL:
+	case R_RISCV_CALL_PLT: {
+		ut64 result = S + A - P;
+
+		ut32 hi20 = RISCV_HI20(result);
+		ut32 lo12 = RISCV_LO12(result);
+
+		// the AUIPC part of the call sequence takes the upper 20 bits of the address
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_U_TYPE_IMM_MASK, hi20);
+		// the JALR part of the call sequence takes the lower 12 bits of the address;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr + 4, RISCV_I_TYPE_IMM_MASK, lo12);
+		break;
+	}
+
+	case R_RISCV_JUMP_SLOT:
+		switch (bits) {
+		case 32: {
+			bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, S, big_endian);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_JUMP_SLOT 32");
+			break;
+		}
+		case 64: {
+			bool success = rz_buf_write_ble64_at(buf_patched, patch_addr, S, big_endian);
+			RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_JUMP_SLOT 64");
+			break;
+		}
+		default:
+			RZ_LOG_WARN("Unsupported number of bits for R_RISCV_JUMP_SLOT: %d, only 32 bits and 64 bits are supported", bits);
+			break;
+		}
+		break;
+
+	case R_RISCV_32_PCREL: {
+		val = S + A - P;
+		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_32_PCREL");
+		break;
+	}
+
+	case R_RISCV_GOT_HI20: {
+		val = fs->G + fs->GOT + A - P;
+		ut32 hi20 = RISCV_HI20(val);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_U_TYPE_IMM_MASK, hi20);
+		break;
+	}
+	case R_RISCV_PCREL_HI20: {
+		val = S + A - P;
+		ut32 hi20 = RISCV_HI20(val);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_U_TYPE_IMM_MASK, hi20);
+		break;
+	}
+
+	case R_RISCV_PCREL_LO12_I:
+	case R_RISCV_PCREL_LO12_S: {
+		val = S + A - P;
+		ut32 lo12 = RISCV_LO12(val);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, (rel_type == R_RISCV_PCREL_LO12_I) ? RISCV_I_TYPE_IMM_MASK : RISCV_S_TYPE_IMM_MASK, lo12);
+		break;
+	}
+
+	case R_RISCV_HI20: {
+		val = S + A;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, RISCV_U_TYPE_IMM_MASK, RISCV_HI20(val));
+		break;
+	}
+
+	case R_RISCV_LO12_I:
+	case R_RISCV_LO12_S: {
+		val = S + A;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, (rel_type == R_RISCV_LO12_I) ? RISCV_I_TYPE_IMM_MASK : RISCV_S_TYPE_IMM_MASK, RISCV_LO12(val));
+		break;
+	}
+
+	case R_RISCV_RVC_BRANCH: {
+		val = S + A - P;
+		uint16_t imms[] = {
+			((val >> 8) & 0x1), // imm[8]
+			((val >> 3) & 0x3), // imm[4:3]
+			((val >> 6) & 0x3), // imm[7:6]
+			((val >> 1) & 0x3), // imm[2:1]
+			((val >> 5) & 0x1) // imm[5]
+		};
+		for (int i = 0; i < sizeof(RISCV_CB_TYPE_IMM_MASKS) / sizeof(RISCV_CB_TYPE_IMM_MASKS[0]); i++) {
+			patch_val_over_mask_16(buf_patched, big_endian, patch_addr, RISCV_CB_TYPE_IMM_MASKS[i], imms[i]);
+		}
+		break;
+	}
+
+	case R_RISCV_RVC_JUMP: {
+		val = S + A - P;
+		uint16_t imms[] = {
+			((val >> 11) & 0x1), // imm[11]
+			((val >> 4) & 0x1), // imm[4]
+			((val >> 8) & 0x3), // imm[9:8]
+			((val >> 10) & 0x1), // imm[10]
+			((val >> 6) & 0x1), // imm[6]
+			((val >> 7) & 0x1), // imm[7]
+			((val >> 1) & 0x7), // imm[3:1]
+			((val >> 5) & 0x1), // imm[5]
+		};
+		for (int i = 0; i < sizeof(RISCV_CJ_TYPE_IMM_MASKS) / sizeof(RISCV_CJ_TYPE_IMM_MASKS[0]); i++) {
+			patch_val_over_mask_16(buf_patched, big_endian, patch_addr, RISCV_CJ_TYPE_IMM_MASKS[i], imms[i]);
+		}
+		break;
+	}
+
+	case R_RISCV_RVC_LUI:
+		val = S + A;
+		patch_val_over_mask_16(buf_patched, big_endian, patch_addr, RISCV_CI_TYPE_IMM_MASK, val >> 12);
+		break;
+
+	case R_RISCV_ADD8: {
+		ut8 old_val = 0;
+		rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
+		ut64 result = ((ut64)old_val) + S + A;
+		unsigned long long addr = patch_addr;
+		bool success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD8");
+		break;
+	}
+
+	case R_RISCV_ADD16: {
+		ut16 old_val = 0;
+		bool success = rz_buf_read_ble16_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD16 [r]");
+		ut64 result = ((ut64)old_val) + S + A;
+		success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD16 [w]");
+		break;
+	}
+
+	case R_RISCV_ADD32: {
+		ut32 old_val = 0;
+		bool success = rz_buf_read_ble32_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD32 [r]");
+		ut64 result = ((ut64)old_val) + S + A;
+		success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD32 [w]");
+		break;
+	}
+
+	case R_RISCV_ADD64: {
+		ut64 old_val = 0;
+		bool success = rz_buf_read_ble64_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD64 [r]");
+		ut64 result = old_val + S + A;
+		success = rz_buf_write_ble64_at(buf_patched, patch_addr, result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_ADD64 [w]");
+		break;
+	}
+
+	case R_RISCV_SUB8: {
+		ut8 old_val = 0;
+		bool success = rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB8 [r]");
+		ut64 result = ((ut64)old_val) - S - A;
+		unsigned long long addr = patch_addr;
+		success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB8 [w]");
+		break;
+	}
+
+	case R_RISCV_SUB16: {
+		ut16 old_val = 0;
+		bool success = rz_buf_read_ble16_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB16 [r]");
+		ut64 result = ((ut64)old_val) - S - A;
+		success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB16 [w]");
+		break;
+	}
+
+	case R_RISCV_SUB32: {
+		ut32 old_val = 0;
+		bool success = rz_buf_read_ble32_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB32 [r]");
+		ut64 result = ((ut64)old_val) - S - A;
+		success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB32 [w]");
+		break;
+	}
+
+	case R_RISCV_SUB64: {
+		ut64 old_val = 0;
+		bool success = rz_buf_read_ble64_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB64 [r]");
+		ut64 result = ((ut64)old_val) - S - A;
+		success = rz_buf_write_ble64_at(buf_patched, patch_addr, result, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SUB64 [w]");
+		break;
+	}
+
+	case R_RISCV_SET8: {
+		val = S + A;
+		unsigned long long addr = patch_addr;
+		bool success = rz_buf_write_ble8_offset(buf_patched, &addr, (ut8)val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET8");
+		break;
+	}
+	case R_RISCV_SET16: {
+		val = S + A;
+		bool success = rz_buf_write_ble16_at(buf_patched, patch_addr, (ut16)val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET16");
+		break;
+	}
+	case R_RISCV_SET32: {
+		val = S + A;
+		bool success = rz_buf_write_ble32_at(buf_patched, patch_addr, (ut32)val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, "R_RISCV_SET32");
+		break;
+	}
+
+	case R_RISCV_SET6:
+	case R_RISCV_SUB6: {
+		ut8 old_val = 0;
+		bool success = rz_buf_read_ble8_at(buf_patched, patch_addr, &old_val, big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, rel_type == R_RISCV_SET6 ? "R_RISCV_SET6 [r]" : "R_RISCV_SUB6 [r]");
+		val = S + A;
+		ut8 result = (rel_type == R_RISCV_SET6) ? val : ((old_val & 0x3F) - val);
+		success = rz_buf_write_ble8_at(buf_patched, patch_addr, (old_val & 0xC0) | (result & 0x3F), big_endian);
+		RISCV_CHECK_SUCCESS_RET_IF_FAIL(success, rel_type == R_RISCV_SET6 ? "R_RISCV_SET6 [w]" : "R_RISCV_SUB6 [w]");
+		break;
+	}
+
+	/*************************************************** UNIMPLEMENTED ***************************************************/
+	case R_RISCV_TLS_DTPMOD32:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_DTPMOD32 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_DTPMOD64:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_DTPMOD64 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_TPREL32:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_TPREL32 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_TPREL64:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_TPREL64 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_GD_HI20:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_GD_HI20 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_GOT_HI20:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_GOT_HI20 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_DTPREL32:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_DTPREL32 UNIMPLEMENTED");
+		break;
+
+	case R_RISCV_TLS_DTPREL64:
+		UNHANDL_DEF("RISCV", rel_type);
+		RZ_LOG_WARN("RISCV Relocations: TLS_DTPREL64 UNIMPLEMENTED");
+		break;
+
+	default:
+		UNHANDL_DEF("RISC-V", rel_type);
+		return;
+	}
+}
+
+#undef RISCV_CHECK_SUCCESS_RET_IF_FAIL
 
 #undef UNHANDL
 #undef UNHANDL_DEF
@@ -2334,6 +2757,10 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_AVR:
 		patch_reloc_avr(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
 		break;
+	case EM_RISCV:
+		patch_reloc_riscv(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym, bin->bits);
+		break;
+
 	case EM_M32: ARCH_MISSING("EM_M32");
 	case EM_68K: ARCH_MISSING("EM_68K");
 	case EM_88K: ARCH_MISSING("EM_88K");
@@ -2546,5 +2973,4 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		return;
 	}
 }
-
 #undef ARCH_MISSING
