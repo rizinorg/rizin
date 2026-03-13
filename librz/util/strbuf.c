@@ -311,7 +311,7 @@ RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len) {
 	return (ut8 *)(sb->ptr ? sb->ptr : sb->buf);
 }
 
-static inline char *drain(RzStrBuf *sb) {
+static inline char *drain_str(RzStrBuf *sb) {
 	return sb->ptr ? sb->ptr : rz_str_dup(sb->buf);
 }
 
@@ -324,14 +324,14 @@ static inline char *drain(RzStrBuf *sb) {
  */
 RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
-	char *ret = drain(sb);
+	char *ret = drain_str(sb);
 	free(sb);
 	return ret;
 }
 
 RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
-	char *ret = drain(sb);
+	char *ret = drain_str(sb);
 	sb->ptr = NULL;
 	sb->len = 0;
 	sb->buf[0] = '\0';
