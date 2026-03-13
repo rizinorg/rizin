@@ -22,6 +22,9 @@ commands:
     summary: Shows all the metas
     cname: cmd_debug_heap_musl_m
     args:
+      - name: lines_num
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        default_value: 32
       - name: meta_addr
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true

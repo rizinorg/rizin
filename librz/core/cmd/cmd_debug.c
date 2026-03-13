@@ -1046,21 +1046,31 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_a_handler(RzCore *core, int argc, cons
 	return rz_heap_mallocng_cmd_a(core, has_specified_ctx, ctx_addr);
 }
 
-// "dmua"
+// "dmum"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_m_handler(RzCore *core, int argc, const char **argv) {
-	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	bool has_specified_ctx = argc > 2 && RZ_STR_ISNOTEMPTY(argv[2]);
 	ut64 meta_addr = 0;
+	ut32 lines = 32;
 
+	if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid number of lines '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (lines < 0) {
+		RZ_LOG_ERROR("Invalid number of lines '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	lines = rz_num_math(core->num, argv[1]);
 	if (!has_specified_ctx) {
 		CMD_CHECK_DEBUG_DEAD(core);
-	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
-		RZ_LOG_ERROR("Invalid context address '%s'\n", argv[1]);
+	} else if (!rz_num_is_valid_input(core->num, argv[2])) {
+		RZ_LOG_ERROR("Invalid meta address '%s'\n", argv[2]);
 		return RZ_CMD_STATUS_ERROR;
 	} else {
-		meta_addr = rz_num_math(core->num, argv[1]);
+		meta_addr = rz_num_math(core->num, argv[2]);
 	}
 
-	return rz_heap_mallocng_cmd_m(core, has_specified_ctx, meta_addr);
+	return rz_heap_mallocng_cmd_m(core, has_specified_ctx, meta_addr, lines);
 }
 
 // "dmxa"

@@ -518,7 +518,7 @@ static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_a_args[2];
-static const RzCmdDescArg cmd_debug_heap_musl_m_args[2];
+static const RzCmdDescArg cmd_debug_heap_musl_m_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
@@ -10863,6 +10863,12 @@ static const RzCmdDescHelp cmd_debug_heap_musl_a_help = {
 };
 
 static const RzCmdDescArg cmd_debug_heap_musl_m_args[] = {
+	{
+		.name = "lines_num",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.default_value = "32",
+
+	},
 	{
 		.name = "meta_addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,

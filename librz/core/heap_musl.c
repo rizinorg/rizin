@@ -153,27 +153,27 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 add
 			RZ_LOG_ERROR("Failed to read __malloc_context at 0x%" PFMT64x "\n", ctx_addr);
 			return;
 		}
-		PRINTF_GA("__malloc_context @ 0x%" PFMT64x " {\n", ctx_addr);
-		PRINTF_BA("  secret = 0x%" PFMT64x "\n", ctx.secret);
-		PRINTF_BA("  init_done = 0x%x\n", ctx.init_done);
-		PRINTF_BA("  mmap_counter = 0x%x\n", ctx.mmap_counter);
-		PRINTF_BA("  free_meta_head = 0x%" PFMT64x "\n", ctx.free_meta_head);
-		PRINTF_BA("  avail_meta = 0x%" PFMT64x "\n", ctx.avail_meta);
-		PRINT_GA("  active = [\n");
+		PRINTF_YA("__malloc_context @ 0x%" PFMT64x " {\n", ctx_addr);
+		PRINTF_YA("  secret = 0x%" PFMT64x "\n", ctx.secret);
+		PRINTF_YA("  init_done = 0x%x\n", ctx.init_done);
+		PRINTF_YA("  mmap_counter = 0x%x\n", ctx.mmap_counter);
+		PRINTF_YA("  free_meta_head = 0x%" PFMT64x "\n", ctx.free_meta_head);
+		PRINTF_YA("  avail_meta = 0x%" PFMT64x "\n", ctx.avail_meta);
+		PRINT_YA("  active = [\n");
 		for (int i = 0; i < 48; i++) {
 			if (ctx.active[i]) {
-				PRINTF_BA("    active[%d] = 0x%" PFMT64x " (%lld bytes)\n", i, ctx.active[i],
+				PRINTF_YA("    active[%d] = 0x%" PFMT64x " (%lld bytes)\n", i, ctx.active[i],
 					ctx.usage_by_class[i]);
 			}
 		}
-		PRINT_GA("  ]\n");
-		PRINTF_BA("  avail_meta_count = 0x%lld\n", ctx.avail_meta_count);
-		PRINTF_BA("  avail_meta_area_count = 0x%lld\n", ctx.avail_meta_area_count);
-		PRINTF_BA("  meta_alloc_shift = 0x%llx\n", ctx.meta_alloc_shift);
-		PRINTF_BA("  meta_area_head = 0x%" PFMT64x "\n", ctx.meta_area_head);
-		PRINTF_BA("  meta_area_tail = 0x%" PFMT64x "\n", ctx.meta_area_tail);
-		PRINTF_BA("  avail_meta_areas = 0x%" PFMT64x "\n", ctx.avail_meta_areas);
-		PRINT_GA("}\n");
+		PRINT_YA("  ]\n");
+		PRINTF_YA("  avail_meta_count = 0x%lld\n", ctx.avail_meta_count);
+		PRINTF_YA("  avail_meta_area_count = 0x%lld\n", ctx.avail_meta_area_count);
+		PRINTF_YA("  meta_alloc_shift = 0x%llx\n", ctx.meta_alloc_shift);
+		PRINTF_YA("  meta_area_head = 0x%" PFMT64x "\n", ctx.meta_area_head);
+		PRINTF_YA("  meta_area_tail = 0x%" PFMT64x "\n", ctx.meta_area_tail);
+		PRINTF_YA("  avail_meta_areas = 0x%" PFMT64x "\n", ctx.avail_meta_areas);
+		PRINT_YA("}\n");
 	}
 }
 
@@ -229,7 +229,7 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 
 	}
 }
 
-static void print_meta(RzCore *core, ut64 addr, RzMallocngConfig config) {
+static void print_meta(RzCore *core, ut64 addr, RzMallocngConfig config, ut32 lines) {
 	mallocng_meta meta;
 	mallocng_group group;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -247,16 +247,16 @@ static void print_meta(RzCore *core, ut64 addr, RzMallocngConfig config) {
 	PRINTF_BA("  size: 0x%x, prev: 0x%" PFMT64x ", next: 0x%" PFMT64x ", group: 0x%" PFMT64x "\n",
 		size, meta.prev, meta.next, meta.mem);
 
-	rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, group.storage, config.ptr_size, size,
+	lines = RZ_MIN(lines, size);
+	rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, group.storage, config.ptr_size, lines,
 		RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
 	PRINT_BA("\n");
 }
 
-void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config) {
+void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config, ut32 lines) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
 	mallocng_ctx ctx;
-
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
 			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
@@ -271,11 +271,11 @@ void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, 
 
 		for (int i = 0; i < 48; i++) {
 			if (ctx.active[i]) {
-				print_meta(core, ctx.active[i], config);
+				print_meta(core, ctx.active[i], config, lines);
 			}
 		}
 	} else {
-		print_meta(core, addr, config);
+		print_meta(core, addr, config, lines);
 	}
 }
 
@@ -301,13 +301,13 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr,
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_m(RzCore *core, bool has_specified_addr, ut64 addr) {
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_m(RzCore *core, bool has_specified_addr, ut64 addr, ut32 lines) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
 		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const RzMallocngConfig ng_config = rz_musl_ng_get_config(bits);
-	musl_mallocng_print_meta(core, has_specified_addr, addr, ng_config);
+	musl_mallocng_print_meta(core, has_specified_addr, addr, ng_config, lines);
 	return RZ_CMD_STATUS_OK;
 }
