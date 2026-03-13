@@ -58,7 +58,7 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	} else if (RZ_STR_EQ(analysis->cpu, "5.5")) {
 		ret = lua55_analysis_op(analysis, op, ctx, data, len);
 	} else {
-		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis\n");
+		RZ_LOG_ERROR("Cannot find a suitable lua version to handle lua analysis.\n");
 		return 0;
 	}
 
