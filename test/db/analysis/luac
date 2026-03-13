@@ -5,7 +5,23 @@ aa
 pdf~?
 EOF
 EXPECT=<<EOF
-294
+364
+EOF
+RUN
+
+NAME=LUAC_5.4: functions check
+FILE=bins/luac/class54.luac
+CMDS=<<EOF
+aa
+is
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  0 0x00000031 0x00000000 GLOBAL FUNC   92     entry0
+  0 0x000000cc 0x00001000 GLOBAL FUNC   36     proto1
+  0 0x00000147 0x00002000 GLOBAL FUNC   20     proto2
+  0 0x00000031 0x00000000 GLOBAL FUNC   92     entry0
 EOF
 RUN
 
@@ -14,17 +30,1192 @@ FILE=bins/luac/big.luac
 CMDS=<<EOF
 e scr.utf8=false
 aa
-s 0x51
+s 0x1c
 pd 7
 EOF
 EXPECT=<<EOF
-|      ,==< 0x00000051      lti   0 50 0
-|     ,===< 0x00000055      jmp   5
-|     |`--> 0x00000059      gettabup 0 0 0
-|     | :   0x0000005d      addi  0 0 1
-|     | :   0x00000061      mmbini 0 1 6 0
-|     | :   0x00000065      settabup 0 0 0 0
-|     `-`=< 0x00000069      jmp   -8
+|      ,==< 0x0000001c      lti   r0 50 0                              ; @learnlua.lua:25
+|     ,===< 0x00000020      jmp   5                                    ; jump to 0x38
+|     |`--> 0x00000024      gettabup r0 0 0                            ; @learnlua.lua:26 ; 0x820 ; r0 = _ENV['num']
+|     | :   0x00000028      addi  r0 r0 1                              ; r0 := r0 + (sC=1)
+|     | :   0x0000002c      mmbini r0 1 6                              ; add
+|     | :                                                              ; 0x15018 ; call metamethod __add(r0, 1)
+|     | :   0x00000030      settabup 0 0 r0                            ; 0x820 ; _ENV['num'] = r0
+|     | `=< 0x00000034      jmp   -8                                   ; jump to 0x18
 EOF
 RUN
 
+NAME=LUAC: plugin 5.4 vars and functions analysis
+FILE=bins/luac/class54.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 23 @ 0x0
+pd 9 @ 0x1000
+pd 5 @ 0x2000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           0x00000000      51000000       varargprep 0                ; @class.lua:1 ; prepare varargs, 0 fixed args
+|           0x00000004      13000000       newtable r0 0 0             ; r0 = {}; array: 0, hash: 0
+|           0x00000008      52000000       extraarg 0                  ; extension for previous opcode
+|           0x0000000c      0f000000       settabup 0 0 r0             ; 0x820 ; 0 ; _ENV['Account'] = r0
+|           0x00000010      0b000000       gettabup r0 0 0             ; @class.lua:2 ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000014      8b000000       gettabup r1 0 0             ; 0x820 ; 0 ; r1 = _ENV['Account']
+|           0x00000018      12000101       setfield r0 1 r1            ; table r0['__index'] = r1
+|           0x0000001c      0b000000       gettabup r0 0 0             ; @class.lua:4 ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000020      cf000000       closure r1 0                ; @class.lua:9 ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000024      12000201       setfield r0 2 r1            ; @class.lua:4 ; table r0['create'] = r1
+|           0x00000028      0b000003       gettabup r0 0 3             ; @class.lua:11 ; 0x880 ; 0 ; r0 = _ENV['Account']
+|           0x0000002c      cf800000       closure r1 1                ; @class.lua:13 ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 2 `proto2` at 0x2000
+|           0x00000030      12000401       setfield r0 4 r1            ; @class.lua:11 ; table r0['withdraw'] = r1
+|           0x00000034      0b000003       gettabup r0 0 3             ; @class.lua:16 ; 0x880 ; 0 ; r0 = _ENV['Account']
+|           0x00000038      14800002       self  r0 r0 section.fcn.00000000.const ; r1=r0 (self), r0=r0[2] self.create()
+|           0x0000003c      0181f381       loadi r2 1000               ; r2 = 1000
+|           0x00000040      44000302       call  r0 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00000044      0f000500       settabup 0 5 r0             ; 0x8c0 ; 0 ; _ENV['acc'] = r0
+|           0x00000048      0b000005       gettabup r0 0 5             ; @class.lua:17 ; 0x8c0 ; 0 ; r0 = _ENV['acc']
+|           0x0000004c      14800004       self  r0 r0 proto1          ; r1=r0 (self), r0=r0[4] self.withdraw()
+|           0x00000050      01813180       loadi r2 100                ; r2 = 100
+|           0x00000054      44000301       call  r0 3 1                ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 2 in 0 out
+|           0x00000058      46000101       return r0 1 1               ; 0 out
+            ; CALL XREF from entry0 @ 0x54
+            ; CALL XREF from proto1 @ 0x1014
+            ;-- section.fcn.00001000.code:
+/ proto1(int self, int balance);
+|           ; arg int self @ r2
+|           ; arg int balance @ r3
+|           ; var int acnt @ r4
+|           0x00001000      13010000       newtable r2 0 0             ; r2 = {}; array: 0, hash: 0
+|           0x00001004      52000000       extraarg 0                  ; extension for previous opcode
+|           0x00001008      8b010000       gettabup r3 0 0             ; 0x1820 ; r3 = _ENV['setmetatable']
+|           0x0000100c      00020200       move  r4 r2                 ; r4 = r2
+|           0x00001010      8b020001       gettabup r5 0 1             ; 0x1840 ; r5 = _ENV['Account']
+|           0x00001014      c4010301       call  r3 3 1                ; sym.proto1
+|                                                                      ; 0x1000 ; 2 in 0 out
+|           0x00001018      12010201       setfield r2 2 r1            ; table r2['balance'] = r1
+|           0x0000101c      48010200       return1 r2                  ; return r2
+|           0x00001020      c7010100       return0                     ; empty return
+            ; CALL XREF from entry0 @ 0x40
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|           0x00002000      0e010000       getfield r2 r0 0            ; r2 = r0['balance']
+|           0x00002004      23010201       sub   r2 r2 r1              ; r2 = r2 - r1
+|           0x00002008      2e010107       mmbin r2 r1 7               ; sub
+|                                                                      ; 0x1501c ; call metamethod __sub(r2, r1)
+|           0x0000200c      12000002       setfield r0 0 r2            ; table r0['balance'] = r2
+|           0x00002010      47010100       return0                     ; empty return
+EOF
+RUN
+
+NAME=LUAC: plugin 5.0 vars and functions analysis
+FILE=bins/luac/class50.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 42 @ 0x0
+pd 16 @ 0x1000
+pd 8 @ 0x2000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           0x00000000      0a000000       newtable r0 0 0             ; [07] -r-x section size 168 named fcn.00000000.code
+|           0x00000004      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000008      07000000       setglobal r0 0
+|           0x0000000c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000010      05000000       getglobal r0 0              ; r0 = Gbl[Account]
+|           0x00000014      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000018      05000001       getglobal r1 0              ; r1 = Gbl[Account]
+|           0x0000001c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000020      49807d00       settable 0 251 1            ; r0[r251] = r1
+|           0x00000024      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000028      05000000       getglobal r0 0              ; r0 = Gbl[Account]
+|           0x0000002c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000030      22000001       closure r1 0                ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000034      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000038      49007e00       settable 0 252 1            ; r0[r252] = r1
+|           0x0000003c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000040      05000000       getglobal r0 0              ; r0 = Gbl[Account]
+|           0x00000044      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000048      62000001       closure r1 1                ; instantiate proto 2 `proto2` at 0x2000
+|           0x0000004c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000050      49807e00       settable 0 253 1            ; r0[r253] = r1
+|           0x00000054      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000058      05000000       getglobal r0 0              ; r0 = Gbl[Account]
+|           0x0000005c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000060      0b3f0000       self  r0 r0 252             ; r1=r0 (self), r0=r0[create] self.create()
+|           0x00000064      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000068      41010002       loadk r2 5                  ; r2 = 1000
+|           0x0000006c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000070      99800100       call  r0 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00000074      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000078      07010000       setglobal r0 4
+|           0x0000007c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000080      05010000       getglobal r0 4              ; r0 = Gbl[acc]
+|           0x00000084      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000088      4b3f0000       self  r0 r0 253             ; r1=r0 (self), r0=r0[withdraw] self.withdraw()
+|           0x0000008c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000090      81010002       loadk r2 6                  ; r2 = 100
+|           0x00000094      00000000       move  r0 r0                 ; r0 = r0
+|           0x00000098      59800100       call  r0 3 1                ; sym.proto1
+|                                                                      ; 0x1000 ; "\n" ; proto1 ; 2 in 0 out
+|           0x0000009c      00000000       move  r0 r0                 ; r0 = r0
+\           0x000000a0      1b800000       return r0 1                 ; return r0(args: 0)
+            0x000000a4      00000000       move  r0 r0                 ; r0 = r0
+            ; CALL XREF from entry0 @ 0x98
+            ; CALL XREF from proto1 @ 0x1020
+            ;-- section.fcn.00001000.code:
+/ proto1(int self, int balance);
+|           ; arg int self @ r2
+|           ; arg int balance @ r3
+|           ; var int acnt @ r4
+|           0x00001000      0a000002       newtable r2 0 0             ; [03] -r-x section size 64 named fcn.00001000.code
+|           0x00001004      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001008      05000003       getglobal r3 0              ; r3 = Gbl[setmetatable]
+|           0x0000100c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001010      00000104       move  r4 r2                 ; r4 = r2
+|           0x00001014      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001018      45000005       getglobal r5 1              ; r5 = Gbl[Account]
+|           0x0000101c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001020      59800103       call  r3 3 1                ; sym.proto1
+|                                                                      ; 0x1000 ; "\n" ; 2 in 0 out
+|           0x00001024      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001028      49007e02       settable 2 252 1            ; r2[r252] = r1
+|           0x0000102c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00001030      1b000102       return r2 2                 ; return r2(args: 1)
+|           0x00001034      00000000       move  r0 r0                 ; r0 = r0
+\           0x00001038      1b800000       return r0 1                 ; return r0(args: 0)
+            0x0000103c      00000000       move  r0 r0                 ; r0 = r0
+            ; CALL XREF from entry0 @ 0x70
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|           0x00002000      863e0002       gettable r2 r0 r250         ; r2 = r0[r250]
+|           0x00002004      00000000       move  r0 r0                 ; r0 = r0
+|           0x00002008      4d000102       sub   2 2 1                 ; r2 = r2 - r1
+|           0x0000200c      00000000       move  r0 r0                 ; r0 = r0
+|           0x00002010      89007d00       settable 0 250 2            ; r0[r250] = r2
+|           0x00002014      00000000       move  r0 r0                 ; r0 = r0
+\           0x00002018      1b800000       return r0 1                 ; return r0(args: 0)
+            0x0000201c      00000000       move  r0 r0                 ; r0 = r0
+EOF
+RUN
+
+NAME=LUAC: plugin 5.1 vars and functions analysis
+FILE=bins/luac/sample0-51.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 20 @ 0x0
+pd 17 @ 0x1000
+pd 10 @ 0x2000
+pd 14 @ 0x3000
+pd 13 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      24000000       closure r0 0                ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000004      40000000       move  r1 r0                 ; r1 = r0
+|           0x00000008      81000000       loadk r2 -1                 ; r2 = 1000
+|           0x0000000c      5c800001       call  r1 2 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000010      8b40c000       self  r2 r1 -2              ; r3=r1 (self), r2=r1[batch_deposit] self.batch_deposit()
+|           0x00000014      01810000       loadk r4 -3                 ; r4 = 100
+|           0x00000018      41c10000       loadk r5 -4                 ; r5 = 200
+|           0x0000001c      81010100       loadk r6 -5                 ; r6 = 300
+|           0x00000020      9c408002       call  r2 5 1                ; sym.proto1
+|                                                                      ; 0x1000 ; "@" ; proto1 ; 4 in 0 out
+|           0x00000024      8b40c100       self  r2 r1 -6              ; r3=r1 (self), r2=r1[withdraw] self.withdraw()
+|           0x00000028      01810100       loadk r4 -7                 ; r4 = 500
+|           0x0000002c      9c808001       call  r2 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000030      9a000000       test  r2 0
+|      ,==< 0x00000034      16000180       jmp   0 5                   ; jump to 0x4c
+|      |`-> 0x00000038      85c00100       getglobal r2 -8             ; r2 = Gbl[print]
+|      |    0x0000003c      c1000200       loadk r3 -9                 ; r3 = New balance:
+|      |    0x00000040      0641c200       gettable r4 r1 -10          ; r4 = r1[balance]
+|      |    0x00000044      d5008101       concat r3 r3 r4
+\      |    0x00000048      9c400001       call  r2 2 1                ; sym.proto1
+\      |                                                               ; 0x1000 ; "@" ; proto1 ; 1 in 0 out
+       `--> 0x0000004c      1e008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0x20, 0x48
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int balance @ r2
+|           ; var int Account @ r3
+|           ; var int self @ r4
+|           0x00001000      40000000       move  r1 r0                 ; r1 = r0
+|           0x00001004      8a800000       newtable r2 0 2
+|           0x00001008      89404080       settable r2 -1 -2           ; r2[owner] = Admin
+|           0x0000100c      e4000000       closure r3 0                ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001010      89c00081       settable r2 -3 r3           ; r2[calculate_interest] = r3
+|           0x00001014      89808081       settable r2 -4 r2           ; r2[__index] = r2
+|           0x00001018      c5000100       getglobal r3 -5             ; r3 = Gbl[setmetatable]
+|           0x0000101c      0a410000       newtable r4 0 1
+|           0x00001020      09418082       settable r4 -6 r1           ; r4[balance] = r1
+|           0x00001024      40010001       move  r5 r2                 ; r5 = r2
+|           0x00001028      dc808001       call  r3 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x0000102c      24410000       closure r4 1                ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001030      c9000183       settable r3 -7 r4           ; r3[withdraw] = r4
+|           0x00001034      24810000       closure r4 2                ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001038      c9008183       settable r3 -8 r4           ; r3[batch_deposit] = r4
+\           0x0000103c      de000001       return r3 2                 ; return r3(args: 1)
+            0x00001040      1e008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0xc, 0x2c
+            ; CALL XREF from proto1 @ 0x1028
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for index) @ r7
+|           ; var int (for limit) @ r8
+|           ; var int (for step) @ r9
+|           ; var int i @ r10
+|           0x00002000      c6004000       gettable r3 r0 -1           ; r3 = r0[balance]
+|           0x00002004      01410000       loadk r4 -2                 ; r4 = 1
+|           0x00002008      40018000       move  r5 r1                 ; r5 = r1
+|           0x0000200c      81410000       loadk r6 -2                 ; r6 = 1
+|       ,=< 0x00002010      20410080       forprep r4 2
+|      .--> 0x00002014      0e828001       mul   r8 r3 r2              ; r8 = r3 * r2
+|      :|   0x00002018      cc008201       add   r3 r3 r8              ; r3 = r3 + r8
+|      ``-> 0x0000201c      1f01ff7f       forloop r4 -3               ; to 0x2014
+\           0x00002020      de000001       return r3 2                 ; return r3(args: 1)
+            0x00002024      1e008000       return r0 1                 ; return r0(args: 0)
+            ;-- section.fcn.00003000.code:
+/ proto3(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      18400080       lt    0 -1 r1               ; [07] -r-x section size 56 named fcn.00003000.code
+|      ,==< 0x00003004      16000280       jmp   0 9                   ; jump to 0x302c
+|      |`-> 0x00003008      86404000       gettable r2 r0 -2           ; r2 = r0[balance]
+|      |,=< 0x0000300c      19808000       le    0 r1 r2
+|     ,===< 0x00003010      16400180       jmp   0 6                   ; jump to 0x302c
+|     ||`-> 0x00003014      86404000       gettable r2 r0 -2           ; r2 = r0[balance]
+|     ||    0x00003018      8d400001       sub   r2 r2 r1              ; r2 = r2 - r1
+|     ||    0x0000301c      09808080       settable r0 -2 r2           ; r0[balance] = r2
+|     ||,=< 0x00003020      82008000       loadbool r2 1 0
+|     |||   0x00003024      9e000001       return r2 2                 ; return r2(args: 1)
+|    ,==`-> 0x00003028      16400080       jmp   0 2                   ; jump to 0x3034
+|    |``,=< 0x0000302c      82000000       loadbool r2 0 0
+\    |  |   0x00003030      9e000001       return r2 2                 ; return r2(args: 1)
+     `--`-> 0x00003034      1e008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREF from proto4 @ 0x4014
+            ;-- section.fcn.00004000.code:
+/ proto4(int self);
+|           ; arg int self @ r2
+|           ; var int arg @ r3
+|           ; var int args @ r4
+|           ; var int (for generator) @ r5
+|           ; var int (for state) @ r6
+|           ; var int (for control) @ r7
+|           ; var int _ @ r8
+|           ; var int val @ r9
+|           0x00004000      8a000000       newtable r2 0 0             ; [10] -r-x section size 52 named fcn.00004000.code
+|           0x00004004      e5000000       vararg r3 0
+|           0x00004008      a2400000       setlist r2 0 1
+|           0x0000400c      c5000000       getglobal r3 -1             ; r3 = Gbl[ipairs]
+|           0x00004010      00010001       move  r4 r2                 ; r4 = r2
+|           0x00004014      dc000101       call  r3 2 4                ; sym.proto4
+|                                                                      ; 0x4000 ; 1 in 3 out
+|      ,==< 0x00004018      16800080       jmp   0 3                   ; jump to 0x4028
+|     .---> 0x0000401c      06424000       gettable r8 r0 -2           ; r8 = r0[balance]
+|     :|    0x00004020      0cc20104       add   r8 r8 r7              ; r8 = r8 + r7
+|     :|    0x00004024      09008280       settable r0 -2 r8           ; r0[balance] = r8
+|     :`,=< 0x00004028      e1800000       tforloop 3 -131069          ; to 0xfffffffffff84038
+\     `===< 0x0000402c      1680fe7f       jmp   0 -5                  ; jump to 0x401c
+        |   0x00004030      1e008000       return r0 1                 ; return r0(args: 0)
+EOF
+RUN
+
+NAME=LUAC: plugin 5.2 vars and functions analysis
+FILE=bins/luac/sample0-52.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 20 @ 0x0
+pd 17 @ 0x1000
+pd 10 @ 0x2000
+pd 14 @ 0x3000
+pd 13 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      25000000       closure 0 0                 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000004      40000000       move  r1 r0                 ; r1 = r0
+|           0x00000008      81000000       loadk 2 -1                  ; r2 = 1000
+|           0x0000000c      5d800001       call  1 2 2                 ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000010      8c40c000       self  2 1 -2                ; r3=r1 (self), r2=r1[batch_deposit] self.batch_deposit()
+|           0x00000014      01810000       loadk 4 -3                  ; r4 = 100
+|           0x00000018      41c10000       loadk 5 -4                  ; r5 = 200
+|           0x0000001c      81010100       loadk 6 -5                  ; r6 = 300
+|           0x00000020      9d408002       call  2 5 1                 ; sym.proto1
+|                                                                      ; 0x1000 ; "@" ; proto1 ; 4 in 0 out
+|           0x00000024      8c40c100       self  2 1 -6                ; r3=r1 (self), r2=r1[withdraw] self.withdraw()
+|           0x00000028      01810100       loadk 4 -7                  ; r4 = 500
+|           0x0000002c      9d808001       call  2 3 2                 ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000030      9b000000       test  2 0
+|      ,==< 0x00000034      17000180       jmp   0 5                   ; jump to 0x4c
+|      |`-> 0x00000038      86c04100       gettabup 2 0 -8
+|      |    0x0000003c      c1000200       loadk 3 -9                  ; r3 = New balance:
+|      |    0x00000040      0741c200       gettable 4 1 -10            ; r4 = r1[balance]
+|      |    0x00000044      d6008101       concat 3 3 4
+\      |    0x00000048      9d400001       call  2 2 1                 ; sym.proto1
+\      |                                                               ; 0x1000 ; "@" ; proto1 ; 1 in 0 out
+       `--> 0x0000004c      1f008000       return 0 1                  ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0x20, 0x48
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int balance @ r2
+|           ; var int Account @ r3
+|           ; var int self @ r4
+|           0x00001000      40000000       move  r1 r0                 ; r1 = r0
+|           0x00001004      8b800000       newtable 2 0 2
+|           0x00001008      8a404080       settable 2 -1 -2            ; r2[owner] = Admin
+|           0x0000100c      e5000000       closure 3 0                 ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001010      8ac00081       settable 2 -3 3             ; r2[calculate_interest] = r3
+|           0x00001014      8a808081       settable 2 -4 2             ; r2[__index] = r2
+|           0x00001018      c6004100       gettabup 3 0 -5
+|           0x0000101c      0b410000       newtable 4 0 1
+|           0x00001020      0a418082       settable 4 -6 1             ; r4[balance] = r1
+|           0x00001024      40010001       move  r5 r2                 ; r5 = r2
+|           0x00001028      dd808001       call  3 3 2                 ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x0000102c      25410000       closure 4 1                 ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001030      ca000183       settable 3 -7 4             ; r3[withdraw] = r4
+|           0x00001034      25810000       closure 4 2                 ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001038      ca008183       settable 3 -8 4             ; r3[batch_deposit] = r4
+\           0x0000103c      df000001       return 3 2                  ; return r3(args: 1)
+            0x00001040      1f008000       return 0 1                  ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0xc, 0x2c
+            ; CALL XREF from proto1 @ 0x1028
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for index) @ r7
+|           ; var int (for limit) @ r8
+|           ; var int (for step) @ r9
+|           ; var int i @ r10
+|           0x00002000      c7004000       gettable 3 0 -1             ; r3 = r0[balance]
+|           0x00002004      01410000       loadk 4 -2                  ; r4 = 1
+|           0x00002008      40018000       move  r5 r1                 ; r5 = r1
+|           0x0000200c      81410000       loadk 6 -2                  ; r6 = 1
+|       ,=< 0x00002010      21410080       forprep 4 2                 ; to 0x201c
+|      .--> 0x00002014      0f828001       mul   8 3 2                 ; r8 = r3 * r2
+|      :|   0x00002018      cd008201       add   3 3 8                 ; r3 = r3 + r8
+|      ``-> 0x0000201c      2001ff7f       forloop 4 -3                ; to 0x2014
+\           0x00002020      df000001       return 3 2                  ; return r3(args: 1)
+            0x00002024      1f008000       return 0 1                  ; return r0(args: 0)
+            ;-- section.fcn.00003000.code:
+/ proto3(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      19400080       lt    0 -1 1                ; [08] -r-x section size 56 named fcn.00003000.code
+|      ,==< 0x00003004      17000280       jmp   0 9                   ; jump to 0x302c
+|      |`-> 0x00003008      87404000       gettable 2 0 -2             ; r2 = r0[balance]
+|      |,=< 0x0000300c      1a808000       le    0 1 2
+|     ,===< 0x00003010      17400180       jmp   0 6                   ; jump to 0x302c
+|     ||`-> 0x00003014      87404000       gettable 2 0 -2             ; r2 = r0[balance]
+|     ||    0x00003018      8e400001       sub   2 2 1                 ; r2 = r2 - r1
+|     ||    0x0000301c      0a808080       settable 0 -2 2             ; r0[balance] = r2
+|     ||,=< 0x00003020      83008000       loadbool 2 1 0
+|     |||   0x00003024      9f000001       return 2 2                  ; return r2(args: 1)
+|    ,==`-> 0x00003028      17400080       jmp   0 2                   ; jump to 0x3034
+|    |``,=< 0x0000302c      83000000       loadbool 2 0 0
+\    |  |   0x00003030      9f000001       return 2 2                  ; return r2(args: 1)
+     `--`-> 0x00003034      1f008000       return 0 1                  ; return r0(args: 0)
+            ; CALL XREF from proto4 @ 0x4014
+            ;-- section.fcn.00004000.code:
+/ proto4(int self);
+|           ; arg int self @ r2
+|           ; var int args @ r3
+|           ; var int (for generator) @ r4
+|           ; var int (for state) @ r5
+|           ; var int (for control) @ r6
+|           ; var int _ @ r7
+|           ; var int val @ r8
+|           0x00004000      4b000000       newtable 1 0 0              ; [12] -r-x section size 52 named fcn.00004000.code
+|           0x00004004      a6000000       vararg 2 0
+|           0x00004008      64400000       setlist 1 0 1
+|           0x0000400c      86004000       gettabup 2 0 -1
+|           0x00004010      c0008000       move  r3 r1                 ; r3 = r1
+|           0x00004014      9d000101       call  2 2 4                 ; sym.proto4
+|                                                                      ; 0x4000 ; "K" ; 1 in 3 out
+|       ,=< 0x00004018      17800080       jmp   0 3                   ; jump to 0x4028
+|      .--> 0x0000401c      c7414000       gettable 7 0 -2             ; r7 = r0[balance]
+|      :|   0x00004020      cd818103       add   7 7 6                 ; r7 = r7 + r6
+|      :|   0x00004024      0ac08180       settable 0 -2 7             ; r0[balance] = r7
+|      :`-> 0x00004028      a2800000       tforcall 2 2
+\      `==< 0x0000402c      2381fe7f       tforloop 4 -5               ; to 0x401c
+            0x00004030      1f008000       return 0 1                  ; return r0(args: 0)
+EOF
+RUN
+
+NAME=LUAC: plugin 5.3 vars and functions analysis
+FILE=bins/luac/sample0-53.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 20 @ 0x0
+pd 17 @ 0x1000
+pd 10 @ 0x2000
+pd 14 @ 0x3000
+pd 13 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      2c000000       closure r0 0                ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000004      40000000       move  r1 r0                 ; r1 = r0
+|           0x00000008      81000000       loadk r2 -1                 ; r2 = 1000
+|           0x0000000c      64800001       call  r1 2 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000010      8c40c000       self  r2 r1 -2              ; r3=r1 (self), r2=r1[batch_deposit] self.batch_deposit()
+|           0x00000014      01810000       loadk r4 -3                 ; r4 = 100
+|           0x00000018      41c10000       loadk r5 -4                 ; r5 = 200
+|           0x0000001c      81010100       loadk r6 -5                 ; r6 = 300
+|           0x00000020      a4408002       call  r2 5 1                ; sym.proto1
+|                                                                      ; 0x1000 ; "@" ; proto1 ; 4 in 0 out
+|           0x00000024      8c40c100       self  r2 r1 -6              ; r3=r1 (self), r2=r1[withdraw] self.withdraw()
+|           0x00000028      01810100       loadk r4 -7                 ; r4 = 500
+|           0x0000002c      a4808001       call  r2 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000030      a2000000       test  r2 0
+|      ,==< 0x00000034      1e000180       jmp   0 5                   ; jump to 0x4c
+|      |`-> 0x00000038      86c04100       gettabup r2 0 -8            ; 0x2900 ; r2 = _ENV['print']
+|      |    0x0000003c      c1000200       loadk r3 -9                 ; r3 = New balance:
+|      |    0x00000040      0741c200       gettable r4 r1 -10          ; r4 = r1[balance]
+|      |    0x00000044      dd008101       concat r3 r3 r4
+\      |    0x00000048      a4400001       call  r2 2 1                ; sym.proto1
+\      |                                                               ; 0x1000 ; "@" ; proto1 ; 1 in 0 out
+       `--> 0x0000004c      26008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0x20, 0x48
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int balance @ r2
+|           ; var int Account @ r3
+|           ; var int self @ r4
+|           0x00001000      40000000       move  r1 r0                 ; r1 = r0
+|           0x00001004      8b800000       newtable r2 0 2
+|           0x00001008      8a404080       settable r2 -1 -2           ; r2[owner] = Admin
+|           0x0000100c      ec000000       closure r3 0                ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001010      8ac00081       settable r2 -3 r3           ; r2[calculate_interest] = r3
+|           0x00001014      8a808081       settable r2 -4 r2           ; r2[__index] = r2
+|           0x00001018      c6004100       gettabup r3 0 -5            ; 0x38a0 ; r3 = _ENV['setmetatable']
+|           0x0000101c      0b410000       newtable r4 0 1
+|           0x00001020      0a418082       settable r4 -6 r1           ; r4[balance] = r1
+|           0x00001024      40010001       move  r5 r2                 ; r5 = r2
+|           0x00001028      e4808001       call  r3 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x0000102c      2c410000       closure r4 1                ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001030      ca000183       settable r3 -7 r4           ; r3[withdraw] = r4
+|           0x00001034      2c810000       closure r4 2                ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001038      ca008183       settable r3 -8 r4           ; r3[batch_deposit] = r4
+\           0x0000103c      e6000001       return r3 2                 ; return r3(args: 1)
+            0x00001040      26008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREFS from entry0 @ 0xc, 0x2c
+            ; CALL XREF from proto1 @ 0x1028
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for index) @ r7
+|           ; var int (for limit) @ r8
+|           ; var int (for step) @ r9
+|           ; var int i @ r10
+|           0x00002000      c7004000       gettable r3 r0 -1           ; r3 = r0[balance]
+|           0x00002004      01410000       loadk r4 -2                 ; r4 = 1
+|           0x00002008      40018000       move  r5 r1                 ; r5 = r1
+|           0x0000200c      81410000       loadk r6 -2                 ; r6 = 1
+|       ,=< 0x00002010      28410080       forprep r4 2                ; to 0x201c
+|      .--> 0x00002014      0f828001       mul   r8 r3 r2              ; r8 = r3 * r2
+|      :|   0x00002018      cd008201       add   r3 r3 r8              ; r3 = r3 + r8
+|      ``-> 0x0000201c      2701ff7f       forloop r4 -3               ; to 0x2014
+\           0x00002020      e6000001       return r3 2                 ; return r3(args: 1)
+            0x00002024      26008000       return r0 1                 ; return r0(args: 0)
+            ;-- section.fcn.00003000.code:
+/ proto3(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      20400080       lt    0 -1 r1               ; [10] -r-x section size 56 named fcn.00003000.code
+|      ,==< 0x00003004      1e000280       jmp   0 9                   ; jump to 0x302c
+|      |`-> 0x00003008      87404000       gettable r2 r0 -2           ; r2 = r0[balance]
+|      |,=< 0x0000300c      21808000       le    0 r1 r2
+|     ,===< 0x00003010      1e400180       jmp   0 6                   ; jump to 0x302c
+|     ||`-> 0x00003014      87404000       gettable r2 r0 -2           ; r2 = r0[balance]
+|     ||    0x00003018      8e400001       sub   r2 r2 r1              ; r2 = r2 - r1
+|     ||    0x0000301c      0a808080       settable r0 -2 r2           ; r0[balance] = r2
+|     ||,=< 0x00003020      83008000       loadbool r2 1 0
+|     |||   0x00003024      a6000001       return r2 2                 ; return r2(args: 1)
+|    ,==`-> 0x00003028      1e400080       jmp   0 2                   ; jump to 0x3034
+|    |``,=< 0x0000302c      83000000       loadbool r2 0 0
+\    |  |   0x00003030      a6000001       return r2 2                 ; return r2(args: 1)
+     `--`-> 0x00003034      26008000       return r0 1                 ; return r0(args: 0)
+            ; CALL XREF from proto4 @ 0x4014
+            ;-- section.fcn.00004000.code:
+/ proto4(int self);
+|           ; arg int self @ r2
+|           ; var int args @ r3
+|           ; var int (for generator) @ r4
+|           ; var int (for state) @ r5
+|           ; var int (for control) @ r6
+|           ; var int _ @ r7
+|           ; var int val @ r8
+|           0x00004000      4b000000       newtable r1 0 0             ; [14] -r-x section size 52 named fcn.00004000.code
+|           0x00004004      ad000000       vararg r2 0
+|           0x00004008      6b400000       setlist r1 0 1
+|           0x0000400c      86004000       gettabup r2 0 -1            ; 0x6820 ; r2 = _ENV['ipairs']
+|           0x00004010      c0008000       move  r3 r1                 ; r3 = r1
+|           0x00004014      a4000101       call  r2 2 4                ; sym.proto4
+|                                                                      ; 0x4000 ; "K" ; 1 in 3 out
+|       ,=< 0x00004018      1e800080       jmp   0 3                   ; jump to 0x4028
+|      .--> 0x0000401c      c7414000       gettable r7 r0 -2           ; r7 = r0[balance]
+|      :|   0x00004020      cd818103       add   r7 r7 r6              ; r7 = r7 + r6
+|      :|   0x00004024      0ac08180       settable r0 -2 r7           ; r0[balance] = r7
+|      :`-> 0x00004028      a9800000       tforcall 2 2
+\      `==< 0x0000402c      2a81fe7f       tforloop r4 -5              ; to 0x401c
+            0x00004030      26008000       return r0 1                 ; return r0(args: 0)
+EOF
+RUN
+
+NAME=LUAC: plugin 5.4 vars and functions analysis
+FILE=bins/luac/sample0-54.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+aa
+pd 21 @ 0x0
+pd 19 @ 0x1000
+pd 12 @ 0x2000
+pd 15 @ 0x3000
+pd 17 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      51000000       varargprep 0                ; @sample0.lua:1 ; prepare varargs, 0 fixed args
+|           0x00000004      4f000000       closure r0 0                ; @sample0.lua:42 ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000008      80000000       move  r1 r0                 ; @sample0.lua:45 ; r1 = r0
+|           0x0000000c      0181f381       loadi r2 1000               ; r2 = 1000
+|           0x00000010      c4000202       call  r1 2 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000014      14810100       self  r2 r1 0               ; @sample0.lua:46 ; r3=r1 (self), r2=r1[0] self.batch_deposit()
+|           0x00000018      01823180       loadi r4 100                ; r4 = 100
+|           0x0000001c      81826380       loadi r5 200                ; r5 = 200
+|           0x00000020      01839580       loadi r6 300                ; r6 = 300
+|           0x00000024      44010501       call  r2 5 1                ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 4 in 0 out
+|           0x00000028      14810101       self  r2 r1 1               ; @sample0.lua:48 ; r3=r1 (self), r2=r1[1] self.withdraw()
+|           0x0000002c      0182f980       loadi r4 500                ; r4 = 500
+|           0x00000030      44010302       call  r2 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000034      42010000       test  r2
+|      ,==< 0x00000038      38020080       jmp   5                     ; jump to 0x50
+|      |`-> 0x0000003c      0b010002       gettabup r2 0 2             ; @sample0.lua:49 ; 0x860 ; 0 ; r2 = _ENV['print']
+|      |    0x00000040      83810100       loadk r3 3                  ; r3 = New balance:
+|      |    0x00000044      0e020104       getfield r4 r1 4            ; r4 = r1['balance']
+|      |    0x00000048      b5010200       concat r3 r2
+|      |    0x0000004c      44010201       call  r2 2 1                ; sym.proto1
+|      |                                                               ; 0x1000 ; proto1 ; 1 in 0 out
+|      `--> 0x00000050      46010101       return r2 1 1               ; @sample0.lua:50 ; 0 out
+            ; CALL XREFS from entry0 @ 0x24, 0x4c
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int balance @ r2
+|           ; var int Account @ r3
+|           ; var int self @ r4
+|           0x00001000      80000000       move  r1 r0                 ; r1 = r0
+|           0x00001004      13010200       newtable r2 2 0             ; r2 = {}; array: 2, hash: 0
+|           0x00001008      52000000       extraarg 0                  ; extension for previous opcode
+|           0x0000100c      12810001       setfield r2 0 1k            ; table r2['owner'] = 1
+|           0x00001010      cf010000       closure r3 0                ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001014      12010203       setfield r2 2 r3            ; table r2['calculate_interest'] = r3
+|           0x00001018      12010302       setfield r2 3 r2            ; table r2['__index'] = r2
+|           0x0000101c      8b010004       gettabup r3 0 4             ; 0x18a0 ; r3 = _ENV['setmetatable']
+|           0x00001020      13020100       newtable r4 1 0             ; r4 = {}; array: 1, hash: 0
+|           0x00001024      52000000       extraarg 0                  ; extension for previous opcode
+|           0x00001028      12020501       setfield r4 5 r1            ; table r4['balance'] = r1
+|           0x0000102c      80020200       move  r5 r2                 ; r5 = r2
+|           0x00001030      c4010302       call  r3 3 2                ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00001034      4f820000       closure r4 1                ; sym.proto3
+|                                                                      ; 0x3000 ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001038      92010604       setfield r3 6 r4            ; table r3['withdraw'] = r4
+|           0x0000103c      4f020100       closure r4 2                ; sym.proto4
+|                                                                      ; 0x4000 ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001040      92010704       setfield r3 7 r4            ; table r3['batch_deposit'] = r4
+|           0x00001044      c8010200       return1 r3                  ; return r3
+|           0x00001048      47020100       return0                     ; empty return
+            ; CALL XREFS from entry0 @ 0x10, 0x30
+            ; CALL XREF from proto1 @ 0x1030
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for state) @ r7
+|           ; var int i @ r10
+|           0x00002000      8e010000       getfield r3 r0 0            ; r3 = r0['balance']
+|           0x00002004      01020080       loadi r4 1                  ; r4 = 1
+|           0x00002008      80020100       move  r5 r1                 ; r5 = r1
+|           0x0000200c      01030080       loadi r6 1                  ; r6 = 1
+|       ,=< 0x00002010      4a020200       forprep 4 4                 ; to 0x2028
+|      .--> 0x00002014      24040302       mul   r8 r3 r2              ; r8 = r3 * r2
+|      :|   0x00002018      ae010208       mmbin r3 r2 8               ; mul
+|      :|                                                              ; 0x15020 ; call metamethod __mul(r3, r2)
+|      :|   0x0000201c      a2010308       add   r3 r3 r8              ; r3 = r3 + r8
+|      :|   0x00002020      ae010806       mmbin r3 r8 6               ; add
+|      :|                                                              ; 0x15018 ; call metamethod __add(r3, r8)
+|      `==< 0x00002024      49820200       forloop 4 5
+|       `-> 0x00002028      c8010200       return1 r3                  ; return r3
+|           0x0000202c      47020100       return0                     ; empty return
+            ;-- section.fcn.00003000.code:
+/ proto3(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      c0007f00       gti   r1 0 0                ; [10] -r-x section size 60 named fcn.00003000.code
+|      ,==< 0x00003004      b8040080       jmp   10                    ; jump to 0x3030
+|      |`-> 0x00003008      0e010000       getfield r2 r0 0            ; r2 = r0['balance']
+|      |,=< 0x0000300c      bb000200       le    r1 r2
+|     ,===< 0x00003010      38030080       jmp   7                     ; jump to 0x3030
+|     ||`-> 0x00003014      0e010000       getfield r2 r0 0            ; r2 = r0['balance']
+|     ||    0x00003018      23010201       sub   r2 r2 r1              ; r2 = r2 - r1
+|     ||    0x0000301c      2e010107       mmbin r2 r1 7               ; sub
+|     ||                                                               ; 0x1501c ; call metamethod __sub(r2, r1)
+|     ||    0x00003020      12000002       setfield r0 0 r2            ; table r0['balance'] = r2
+|     ||    0x00003024      07010000       loadtrue r2
+|     ||    0x00003028      48010200       return1 r2                  ; return r2
+|     ||,=< 0x0000302c      b8000080       jmp   2                     ; jump to 0x3038
+|     ``--> 0x00003030      05010000       loadfalse r2
+|       |   0x00003034      48010200       return1 r2                  ; return r2
+|       `-> 0x00003038      47010100       return0                     ; empty return
+       ::   ;-- section.fcn.00004000.code:
+/ proto4(int self);
+|      ::   ; arg int self @ r2
+|      ::   ; var int args @ r3
+|      ::   ; var int (for state) @ r4
+|      ::   ; var int _ @ r8
+|      ::   ; var int val @ r9
+|      ::   0x00004000      d1000000       varargprep 1                ; prepare varargs, 1 fixed args
+|      ::   0x00004004      93000000       newtable r1 0 0             ; r1 = {}; array: 0, hash: 0
+|      ::   0x00004008      52000000       extraarg 0                  ; extension for previous opcode
+|      ::   0x0000400c      50010000       vararg r2 0                 ; r2... = varargs (all)
+|      ::   0x00004010      ce000000       setlist r1 0 0
+|      ::   0x00004014      0b010000       gettabup r2 0 0             ; 0x4820 ; r2 = _ENV['ipairs']
+|      ::   0x00004018      80010100       move  r3 r1                 ; r3 = r1
+|      ::   0x0000401c      44010205       call  r2 2 5                ; 0x5000 ; 1 in 4 out
+|      ,==< 0x00004020      4b010200       tforprep 2 4                ; to 0x4034
+|     .---> 0x00004024      0e040001       getfield r8 r0 1            ; r8 = r0['balance']
+|     :|:   0x00004028      22040807       add   r8 r8 r7              ; r8 = r8 + r7
+|     :|:   0x0000402c      2e040706       mmbin r8 r7 6               ; add
+|     :|:                                                              ; 0x15018 ; call metamethod __add(r8, r7)
+|     :|:   0x00004030      12000108       setfield r0 1 r8            ; table r0['balance'] = r8
+|     :`--> 0x00004034      4c010002       tforcall r2 2
+|     `=`=< 0x00004038      4d010300       tforloop 2 6                ; to 0x4024
+|           0x0000403c      36010000       close r2
+|           0x00004040      46810102       return r2 1 2 k             ; 0 out
+EOF
+RUN
+
+NAME=LUAC: plugin pseudo 5.0 version
+FILE=bins/luac/sample0-54.luac
+CMDS=<<EOF
+e asm.arch=luac
+e asm.bytes=true
+ao~disasm
+ao~pseudo
+ao~jump
+sd +4
+ao~disasm
+ao~pseudo
+ao~jump
+sd +4
+ao~disasm
+ao~pseudo
+ao~jump
+EOF
+EXPECT=<<EOF
+disasm: varargprep 0
+pseudo: varargs, 0
+jump: 0x00000004
+disasm: closure r0 0
+pseudo: r0 := closure(0)
+jump: 0x00000008
+disasm: move r1 r0
+pseudo: r1 := r0
+jump: 0x0000000c
+EOF
+RUN
+
+NAME=LUAC: pseudo
+FILE=bins/luac/class54.luac
+CMDS=<<EOF
+e asm.pseudo=true
+af
+aa
+pd 23 @ 0x0
+pd 9 @ 0x1000
+pd 5 @ 0x2000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           0x00000000      varargs, 0                                 ; @class.lua:1 ; prepare varargs, 0 fixed args
+|           0x00000004      r0 := {} (size = 0,0)                      ; r0 = {}; array: 0, hash: 0
+|           0x00000008      extra (larger) argument for previous opcode (0) ; extension for previous opcode
+|           0x0000000c      UpValue[0][K[0]:shortstring] := RK(r0)     ; 0x820 ; 0 ; _ENV['Account'] = r0
+|           0x00000010      r0 := UpValue[0][K[0]:shortstring]         ; @class.lua:2 ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000014      r1 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r1 = _ENV['Account']
+|           0x00000018      r0[K[1]:shortstring] := RK(r1)             ; table r0['__index'] = r1
+|           0x0000001c      r0 := UpValue[0][K[0]:shortstring]         ; @class.lua:4 ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000020      r1 := closure(0)                           ; @class.lua:9 ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000024      r0[K[2]:shortstring] := RK(r1)             ; @class.lua:4 ; table r0['create'] = r1
+|           0x00000028      r0 := UpValue[0][K[3]:shortstring]         ; @class.lua:11 ; 0x880 ; 0 ; r0 = _ENV['Account']
+|           0x0000002c      r1 := closure(1)                           ; @class.lua:13 ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 2 `proto2` at 0x2000
+|           0x00000030      r0[K[4]:shortstring] := RK(r1)             ; @class.lua:11 ; table r0['withdraw'] = r1
+|           0x00000034      r0 := UpValue[0][K[3]:shortstring]         ; @class.lua:16 ; 0x880 ; 0 ; r0 = _ENV['Account']
+|           0x00000038      r0 := r0 (self), section.fcn.00000000.const := r0[2k] ; r1=r0 (self), r0=r0[2] self.create()
+|           0x0000003c      r2 := 1000                                 ; r2 = 1000
+|           0x00000040      call r0; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00000044      UpValue[0][K[5]:shortstring] := RK(r0)     ; 0x8c0 ; 0 ; _ENV['acc'] = r0
+|           0x00000048      r0 := UpValue[0][K[5]:shortstring]         ; @class.lua:17 ; 0x8c0 ; 0 ; r0 = _ENV['acc']
+|           0x0000004c      r0 := r0 (self), proto1 := r0[4k]          ; r1=r0 (self), r0=r0[4] self.withdraw()
+|           0x00000050      r2 := 100                                  ; r2 = 100
+|           0x00000054      call r0; (3 in; 3 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 2 in 0 out
+|           0x00000058      return r0, ... ,r[1]                       ; 0 out
+            ; CALL XREF from entry0 @ 0x54
+            ; CALL XREF from proto1 @ 0x1014
+            ;-- section.fcn.00001000.code:
+/ proto1(int self, int balance);
+|           ; arg int self @ r2
+|           ; arg int balance @ r3
+|           ; var int acnt @ r4
+|           0x00001000      r2 := {} (size = 0,0)                      ; r2 = {}; array: 0, hash: 0
+|           0x00001004      extra (larger) argument for previous opcode (0) ; extension for previous opcode
+|           0x00001008      r3 := UpValue[0][K[0]:shortstring]         ; 0x1820 ; r3 = _ENV['setmetatable']
+|           0x0000100c      r4 := r2                                   ; r4 = r2
+|           0x00001010      r5 := UpValue[0][K[1]:shortstring]         ; 0x1840 ; r5 = _ENV['Account']
+|           0x00001014      call r3; (3 in; 3 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; 2 in 0 out
+|           0x00001018      r2[K[2]:shortstring] := RK(r1)             ; table r2['balance'] = r1
+|           0x0000101c      return1 r2                                 ; return r2
+|           0x00001020      return;                                    ; empty return
+            ; CALL XREF from entry0 @ 0x40
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|           0x00002000      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
+|           0x00002004      r2 := r2 - r1                              ; r2 = r2 - r1
+|           0x00002008      call 7 metamethod over r2 and r1           ; sub
+|                                                                      ; 0x1501c ; call metamethod __sub(r2, r1)
+|           0x0000200c      r0[K[0]:shortstring] := RK(r2)             ; table r0['balance'] = r2
+|           0x00002010      return;                                    ; empty return
+EOF
+RUN
+
+NAME=LUAC: pseudo 5.5
+FILE=bins/luac/class55.luac
+CMDS=<<EOF
+e asm.pseudo=true
+af
+aa
+pd 23 @ 0x0
+pd 9 @ 0x1000
+pd 5 @ 0x2000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           0x00000000      varargs, r0                                ; prepare varargs, 0 fixed args
+|           0x00000004      r0 := {} (size = 0,0)                      ; r0 = {}; array: 0, hash: 0
+|           0x00000008      extra (larger) argument for previous opcode (0)
+|           0x0000000c      UpValue[0][K[0]:shortstring] := RK(r0)     ; 0x820 ; 0 ; _ENV['Account'] = r0
+|           0x00000010      r0 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000014      r1 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r1 = _ENV['Account']
+|           0x00000018      r0[K[1]:shortstring] := RK(r1)             ; table r0['__index'] = r1
+|           0x0000001c      r0 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000020      r1 := closure(0)                           ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000024      r0[K[2]:shortstring] := RK(r1)             ; table r0['create'] = r1
+|           0x00000028      r0 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x0000002c      r1 := closure(1)                           ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 2 `proto2` at 0x2000
+|           0x00000030      r0[K[3]:shortstring] := RK(r1)             ; table r0['withdraw'] = r1
+|           0x00000034      r0 := UpValue[0][K[0]:shortstring]         ; 0x820 ; 0 ; r0 = _ENV['Account']
+|           0x00000038      r0 := r0 (self), r2 := r0[r2]              ; r1=r0 (self), r0=r0[r2] self.create()
+|           0x0000003c      r2 := 1000                                 ; r2 = 1000
+|           0x00000040      call r0; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00000044      UpValue[0][K[4]:shortstring] := RK(r0)     ; 0x8a0 ; 0 ; _ENV['acc'] = r0
+|           0x00000048      r0 := UpValue[0][K[4]:shortstring]         ; 0x8a0 ; 0 ; r0 = _ENV['acc']
+|           0x0000004c      r0 := r0 (self), r3 := r0[r3]              ; r1=r0 (self), r0=r0[r3] self.withdraw()
+|           0x00000050      r2 := 100                                  ; r2 = 100
+|           0x00000054      call r0; (3 in; 3 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 2 in 0 out
+|           0x00000058      return r0, ... ,r[1]                       ; 0 out
+            ; CALL XREF from entry0 @ 0x54
+            ; CALL XREF from proto1 @ 0x1014
+            ;-- section.fcn.00001000.code:
+/ proto1(int self, int unknown);
+|           ; arg int self @ r2
+|           ; arg int unknown @ r3
+|           ; var int acnt @ r4
+|           0x00001000      r2 := {} (size = 0,0)                      ; @class.lua:5 ; r2 = {}; array: 0, hash: 0
+|           0x00001004      extra (larger) argument for previous opcode (0)
+|           0x00001008      r3 := UpValue[0][K[0]:shortstring]         ; @class.lua:6 ; 0x1820 ; r3 = _ENV['setmetatable']
+|           0x0000100c      r4 := r2                                   ; r4 = r2
+|           0x00001010      r5 := UpValue[0][K[1]:shortstring]         ; 0x1840 ; r5 = _ENV['Account']
+|           0x00001014      call r3; (3 in; 3 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; 2 in 0 out
+|           0x00001018      r2[K[2]:shortstring] := RK(r1)             ; @class.lua:7 ; table r2['balance'] = r1
+|           0x0000101c      return1 r2                                 ; @class.lua:8 ; return r2
+|           0x00001020      return;                                    ; @class.lua:9 ; empty return
+            ; CALL XREF from entry0 @ 0x40
+            ;-- section.fcn.00002000.code:
+/ proto2(int unknown, int amount);
+|           ; arg int unknown @ r2
+|           ; arg int amount @ r3
+|           0x00002000      r2 := r0[K[0]:shortstring]                 ; r2 = r0['Account']
+|           0x00002004      r2 := r2 - r1                              ; r2 = r2 - r1
+|           0x00002008      call 7 metamethod over r2 and r1           ; sub
+|                                                                      ; 0x1501c ; call metamethod __sub(r2, r1)
+|           0x0000200c      r0[K[0]:shortstring] := RK(r2)             ; table r0['Account'] = r2
+|           0x00002010      return;                                    ; empty return
+EOF
+RUN
+
+NAME=LUAC: pseudo 5.4
+FILE=bins/luac/sample0-54.luac
+CMDS=<<EOF
+e asm.pseudo=true
+af
+aa
+pd 21 @ 0x0
+pd 19 @ 0x1000
+pd 12 @ 0x2000
+pd 15 @ 0x3000
+pd 17 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      varargs, 0                                 ; @sample0.lua:1 ; prepare varargs, 0 fixed args
+|           0x00000004      r0 := closure(0)                           ; @sample0.lua:42 ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000008      r1 := r0                                   ; @sample0.lua:45 ; r1 = r0
+|           0x0000000c      r2 := 1000                                 ; r2 = 1000
+|           0x00000010      call r1; (2 in; 2 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000014      r1 := r2 (self), 0 := r1[0k]               ; @sample0.lua:46 ; r3=r1 (self), r2=r1[0] self.batch_deposit()
+|           0x00000018      r4 := 100                                  ; r4 = 100
+|           0x0000001c      r5 := 200                                  ; r5 = 200
+|           0x00000020      r6 := 300                                  ; r6 = 300
+|           0x00000024      call r2; (5 in; 5 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 4 in 0 out
+|           0x00000028      r1 := r2 (self), 1 := r1[1k]               ; @sample0.lua:48 ; r3=r1 (self), r2=r1[1] self.withdraw()
+|           0x0000002c      r4 := 500                                  ; r4 = 500
+|           0x00000030      call r2; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000034      if (r2 != k) then pc++
+|      ,==< 0x00000038      goto pc + 5                                ; jump to 0x50
+|      |`-> 0x0000003c      r2 := UpValue[0][K[2]:shortstring]         ; @sample0.lua:49 ; 0x860 ; 0 ; r2 = _ENV['print']
+|      |    0x00000040      r3 := K[3]                                 ; r3 = New balance:
+|      |    0x00000044      r4 := r1[K[4]:shortstring]                 ; r4 = r1['balance']
+|      |    0x00000048      r3 := r3..r2
+|      |    0x0000004c      call r2; (2 in; 2 out)                     ; sym.proto1
+|      |                                                               ; 0x1000 ; proto1 ; 1 in 0 out
+|      `--> 0x00000050      return r2, ... ,r[1]                       ; @sample0.lua:50 ; 0 out
+            ; CALL XREFS from entry0 @ 0x24, 0x4c
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int balance @ r2
+|           ; var int Account @ r3
+|           ; var int self @ r4
+|           0x00001000      r1 := r0                                   ; r1 = r0
+|           0x00001004      r2 := {} (size = 2,0)                      ; r2 = {}; array: 2, hash: 0
+|           0x00001008      extra (larger) argument for previous opcode (0) ; extension for previous opcode
+|           0x0000100c      r2[K[0]:shortstring] := RK(1k)             ; table r2['owner'] = 1
+|           0x00001010      r3 := closure(0)                           ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001014      r2[K[2]:shortstring] := RK(r3)             ; table r2['calculate_interest'] = r3
+|           0x00001018      r2[K[3]:shortstring] := RK(r2)             ; table r2['__index'] = r2
+|           0x0000101c      r3 := UpValue[0][K[4]:shortstring]         ; 0x18a0 ; r3 = _ENV['setmetatable']
+|           0x00001020      r4 := {} (size = 1,0)                      ; r4 = {}; array: 1, hash: 0
+|           0x00001024      extra (larger) argument for previous opcode (0) ; extension for previous opcode
+|           0x00001028      r4[K[5]:shortstring] := RK(r1)             ; table r4['balance'] = r1
+|           0x0000102c      r5 := r2                                   ; r5 = r2
+|           0x00001030      call r3; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00001034      r4 := closure(1)                           ; sym.proto3
+|                                                                      ; 0x3000 ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001038      r3[K[6]:shortstring] := RK(r4)             ; table r3['withdraw'] = r4
+|           0x0000103c      r4 := closure(2)                           ; sym.proto4
+|                                                                      ; 0x4000 ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001040      r3[K[7]:shortstring] := RK(r4)             ; table r3['batch_deposit'] = r4
+|           0x00001044      return1 r3                                 ; return r3
+|           0x00001048      return;                                    ; empty return
+            ; CALL XREFS from entry0 @ 0x10, 0x30
+            ; CALL XREF from proto1 @ 0x1030
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for state) @ r7
+|           ; var int i @ r10
+|           0x00002000      r3 := r0[K[0]:shortstring]                 ; r3 = r0['balance']
+|           0x00002004      r4 := 1                                    ; r4 = 1
+|           0x00002008      r5 := r1                                   ; r5 = r1
+|           0x0000200c      r6 := 1                                    ; r6 = 1
+|       ,=< 0x00002010      <check values and prepare counters>; if not to run then pc+=4; ; to 0x2028
+|      .--> 0x00002014      r8 := r3 * r2                              ; r8 = r3 * r2
+|      :|   0x00002018      call 8 metamethod over r3 and r2           ; mul
+|      :|                                                              ; 0x15020 ; call metamethod __mul(r3, r2)
+|      :|   0x0000201c      r3 := r3 + r8                              ; r3 = r3 + r8
+|      :|   0x00002020      call 6 metamethod over r3 and r8           ; add
+|      :|                                                              ; 0x15018 ; call metamethod __add(r3, r8)
+|      `==< 0x00002024      update counters; if loop continues then pc-=5;
+|       `-> 0x00002028      return1 r3                                 ; return r3
+|           0x0000202c      return;                                    ; empty return
+            ;-- section.fcn.00003000.code:
+/ proto3(int self, int amount);
+|           ; arg int self @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      if ((r1 > 0) ~= k) then pc++               ; [10] -r-x section size 60 named fcn.00003000.code
+|      ,==< 0x00003004      goto pc + 10                               ; jump to 0x3030
+|      |`-> 0x00003008      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
+|      |,=< 0x0000300c      if ((r1 <= r2) ~= k) then pc++
+|     ,===< 0x00003010      goto pc + 7                                ; jump to 0x3030
+|     ||`-> 0x00003014      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
+|     ||    0x00003018      r2 := r2 - r1                              ; r2 = r2 - r1
+|     ||    0x0000301c      call 7 metamethod over r2 and r1           ; sub
+|     ||                                                               ; 0x1501c ; call metamethod __sub(r2, r1)
+|     ||    0x00003020      r0[K[0]:shortstring] := RK(r2)             ; table r0['balance'] = r2
+|     ||    0x00003024      r2 := true
+|     ||    0x00003028      return1 r2                                 ; return r2
+|     ||,=< 0x0000302c      goto pc + 2                                ; jump to 0x3038
+|     ``--> 0x00003030      r2 := false
+|       |   0x00003034      return1 r2                                 ; return r2
+|       `-> 0x00003038      return;                                    ; empty return
+       ::   ;-- section.fcn.00004000.code:
+/ proto4(int self);
+|      ::   ; arg int self @ r2
+|      ::   ; var int args @ r3
+|      ::   ; var int (for state) @ r4
+|      ::   ; var int _ @ r8
+|      ::   ; var int val @ r9
+|      ::   0x00004000      varargs, 1                                 ; prepare varargs, 1 fixed args
+|      ::   0x00004004      r1 := {} (size = 0,0)                      ; r1 = {}; array: 0, hash: 0
+|      ::   0x00004008      extra (larger) argument for previous opcode (0) ; extension for previous opcode
+|      ::   0x0000400c      r2, r[..+1], ..., r[..+0-2] = vararg       ; r2... = varargs (all)
+|      ::   0x00004010      r1[0] := r[r1+i], 1 <= i <= 0
+|      ::   0x00004014      r2 := UpValue[0][K[0]:shortstring]         ; 0x4820 ; r2 = _ENV['ipairs']
+|      ::   0x00004018      r3 := r1                                   ; r3 = r1
+|      ::   0x0000401c      call r2; (2 in; 2 out)                     ; 0x5000 ; 1 in 4 out
+|      ,==< 0x00004020      create upvalue for r[2 + 3]; pc+=4         ; to 0x4034
+|     .---> 0x00004024      r8 := r0[K[1]:shortstring]                 ; r8 = r0['balance']
+|     :|:   0x00004028      r8 := r8 + r7                              ; r8 = r8 + r7
+|     :|:   0x0000402c      call 6 metamethod over r8 and r7           ; add
+|     :|:                                                              ; 0x15018 ; call metamethod __add(r8, r7)
+|     :|:   0x00004030      r0[K[1]:shortstring] := RK(r8)             ; table r0['balance'] = r8
+|     :`--> 0x00004034      r[r2+4], ... ,r[r2+3+2] := r2(r[r2+1], r[r2+2]);
+|     `=`=< 0x00004038      if r[2] ~= nil then { 2=r[2+2]; pc -= 6 }  ; to 0x4024
+|           0x0000403c      close all upvalues >= r2
+|           0x00004040      return r2, ... ,r[1]                       ; 0 out
+EOF
+RUN
+
+NAME=LUAC: pseudo 5.5
+FILE=bins/luac/sample0-55.luac
+CMDS=<<EOF
+e asm.pseudo=true
+af
+aa
+pd 21 @ 0x0
+pd 19 @ 0x1000
+pd 12 @ 0x2000
+pd 15 @ 0x3000
+pd 17 @ 0x4000
+EOF
+EXPECT=<<EOF
+            ;-- section.fcn.00000000.code:
+/ entry0();
+|           ; var int create_account @ r1
+|           ; var int my_acc @ r2
+|           0x00000000      varargs, r0                                ; prepare varargs, 0 fixed args
+|           0x00000004      r0 := closure(0)                           ; sym.proto1
+|                                                                      ; 0x1000 ; instantiate proto 1 `proto1` at 0x1000
+|           0x00000008      r1 := r0                                   ; r1 = r0
+|           0x0000000c      r2 := 1000                                 ; r2 = 1000
+|           0x00000010      call r1; (2 in; 2 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 1 in 1 out
+|           0x00000014      r1 := r2 (self), r0 := r1[r0]              ; r3=r1 (self), r2=r1[r0] self.batch_deposit()
+|           0x00000018      r4 := 100                                  ; r4 = 100
+|           0x0000001c      r5 := 200                                  ; r5 = 200
+|           0x00000020      r6 := 300                                  ; r6 = 300
+|           0x00000024      call r2; (5 in; 5 out)                     ; sym.proto1
+|                                                                      ; 0x1000 ; proto1 ; 4 in 0 out
+|           0x00000028      r1 := r2 (self), r1 := r1[r1]              ; r3=r1 (self), r2=r1[r1] self.withdraw()
+|           0x0000002c      r4 := 500                                  ; r4 = 500
+|           0x00000030      call r2; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|       ,=< 0x00000034      if (r2 != k) then pc++
+|      ,==< 0x00000038      goto pc + 5                                ; jump to 0x50
+|      |`-> 0x0000003c      r2 := UpValue[0][K[2]:shortstring]         ; 0x860 ; 0 ; r2 = _ENV['print']
+|      |    0x00000040      r3 := K[3]                                 ; r3 = New balance:
+|      |    0x00000044      r4 := r1[K[4]:shortstring]                 ; r4 = r1['balance']
+|      |    0x00000048      r3 := r3..r2
+|      |    0x0000004c      call r2; (2 in; 2 out)                     ; sym.proto1
+|      |                                                               ; 0x1000 ; proto1 ; 1 in 0 out
+|      `--> 0x00000050      return r2, ... ,r[1]                       ; 0 out
+            ; CALL XREFS from entry0 @ 0x24, 0x4c
+            ;-- section.fcn.00001000.code:
+/ proto1(int initial_balance);
+|           ; arg int initial_balance @ r1
+|           ; var int unknown @ r2
+|           ; var int Account @ r3
+|           0x00001000      r1 := r0                                   ; r1 = r0
+|           0x00001004      r2 := {} (size = 2,0)                      ; r2 = {}; array: 2, hash: 0
+|           0x00001008      extra (larger) argument for previous opcode (0)
+|           0x0000100c      r2[K[0]:shortstring] := RK(1k)             ; table r2['owner'] = 1
+|           0x00001010      r3 := closure(0)                           ; sym.proto2
+|                                                                      ; 0x2000 ; instantiate proto 1 `proto2` at 0x2000
+|           0x00001014      r2[K[2]:shortstring] := RK(r3)             ; table r2['calculate_interest'] = r3
+|           0x00001018      r2[K[3]:shortstring] := RK(r2)             ; table r2['__index'] = r2
+|           0x0000101c      r3 := UpValue[0][K[4]:shortstring]         ; 0x18a0 ; r3 = _ENV['setmetatable']
+|           0x00001020      r4 := {} (size = 1,0)                      ; r4 = {}; array: 1, hash: 0
+|           0x00001024      extra (larger) argument for previous opcode (0)
+|           0x00001028      r4[K[5]:shortstring] := RK(r1)             ; table r4['balance'] = r1
+|           0x0000102c      r5 := r2                                   ; r5 = r2
+|           0x00001030      call r3; (3 in; 3 out)                     ; sym.proto2
+|                                                                      ; 0x2000 ; proto2 ; 2 in 1 out
+|           0x00001034      r4 := closure(1)                           ; sym.proto3
+|                                                                      ; 0x3000 ; instantiate proto 2 `proto3` at 0x3000
+|           0x00001038      r3[K[6]:shortstring] := RK(r4)             ; table r3['withdraw'] = r4
+|           0x0000103c      r4 := closure(2)                           ; sym.proto4
+|                                                                      ; 0x4000 ; "S" ; instantiate proto 3 `proto4` at 0x4000
+|           0x00001040      r3[K[7]:shortstring] := RK(r4)             ; table r3['batch_deposit'] = r4
+\           0x00001044      return1 r3                                 ; return r3
+            0x00001048      return;                                    ; empty return
+            ; CALL XREFS from entry0 @ 0x10, 0x30
+            ; CALL XREF from proto1 @ 0x1030
+            ;-- section.fcn.00002000.code:
+/ proto2(int self, int years, int rate);
+|           ; arg int self @ r3
+|           ; arg int years @ r4
+|           ; arg int rate @ r5
+|           ; var int total @ r6
+|           ; var int (for state) @ r7
+|           ; var int unknown @ r8
+|           ; var int i @ r9
+|           0x00002000      r3 := r0[K[0]:shortstring]                 ; @sample0.lua:10 ; r3 = r0['balance']
+|           0x00002004      r4 := 1                                    ; @sample0.lua:11 ; r4 = 1
+|           0x00002008      r5 := r1                                   ; r5 = r1
+|           0x0000200c      r6 := 1                                    ; r6 = 1
+|       ,=< 0x00002010      <check values and prepare counters>; if not to run then pc+=4; ; to 0x2028
+|      .--> 0x00002014      r7 := r3 * r2                              ; @sample0.lua:12 ; r7 = r3 * r2
+|      :|   0x00002018      call 8 metamethod over r3 and r2           ; mul
+|      :|                                                              ; 0x15020 ; call metamethod __mul(r3, r2)
+|      :|   0x0000201c      r3 := r3 + r7                              ; r3 = r3 + r7
+|      :|   0x00002020      call 6 metamethod over r3 and r7           ; add
+|      :|                                                              ; 0x15018 ; call metamethod __add(r3, r7)
+|      `==< 0x00002024      update counters; if loop continues then pc-=5; ; @sample0.lua:11
+|       `-> 0x00002028      return1 r3                                 ; @sample0.lua:14 ; return r3
+|           0x0000202c      return;                                    ; @sample0.lua:15 ; empty return
+            ;-- section.fcn.00003000.code:
+/ proto3(int unknown, int amount);
+|           ; arg int unknown @ r2
+|           ; arg int amount @ r3
+|       ,=< 0x00003000      if ((r1 > 0) ~= k) then pc++               ; [10] -r-x section size 60 named fcn.00003000.code
+|      ,==< 0x00003004      goto pc + 10                               ; jump to 0x3030
+|      |`-> 0x00003008      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
+|      |,=< 0x0000300c      if ((r1 <= r2) ~= k) then pc++
+|     ,===< 0x00003010      goto pc + 7                                ; jump to 0x3030
+|     ||`-> 0x00003014      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
+|     ||    0x00003018      r2 := r2 - r1                              ; r2 = r2 - r1
+|     ||    0x0000301c      call 7 metamethod over r2 and r1           ; sub
+|     ||                                                               ; 0x1501c ; call metamethod __sub(r2, r1)
+|     ||    0x00003020      r0[K[0]:shortstring] := RK(r2)             ; table r0['balance'] = r2
+|     ||    0x00003024      r2 := true
+|     ||    0x00003028      return1 r2                                 ; return r2
+|     ||,=< 0x0000302c      goto pc + 2                                ; jump to 0x3038
+|     ``--> 0x00003030      r2 := false
+|       |   0x00003034      return1 r2                                 ; return r2
+|       `-> 0x00003038      return;                                    ; empty return
+       ::   ;-- section.fcn.00004000.code:
+/ proto4(int unknown);
+|      ::   ; arg int unknown @ r2
+|      ::   ; var int (vararg table) @ r3
+|      ::   ; var int args @ r4
+|      ::   ; var int _ @ r8
+|      ::   ; var int val @ r9
+|      ::   0x00004000      varargs, r0                                ; prepare varargs, 0 fixed args
+|      ::   0x00004004      r2 := {} (size = 0,0)                      ; r2 = {}; array: 0, hash: 0
+|      ::   0x00004008      extra (larger) argument for previous opcode (0)
+|      ::   0x0000400c      r3, r[..+1], ..., r[..+0-2] = vararg       ; r3... = varargs (all)
+|      ::   0x00004010      r2[0] := r[r2+i], 1 <= i <= 0
+|      ::   0x00004014      r3 := UpValue[0][K[0]:shortstring]         ; 0x4820 ; r3 = _ENV['ipairs']
+|      ::   0x00004018      r4 := r2                                   ; r4 = r2
+|      ::   0x0000401c      call r3; (2 in; 2 out)                     ; 0x5000 ; 1 in 4 out
+|      ,==< 0x00004020      create upvalue for r[3 + 3]; pc+=4         ; to 0x4034
+|     .---> 0x00004024      r8 := r0[K[1]:shortstring]                 ; r8 = r0['balance']
+|     :|:   0x00004028      r8 := r8 + r7                              ; r8 = r8 + r7
+|     :|:   0x0000402c      call 6 metamethod over r8 and r7           ; add
+|     :|:                                                              ; 0x15018 ; call metamethod __add(r8, r7)
+|     :|:   0x00004030      r0[K[1]:shortstring] := RK(r8)             ; table r0['balance'] = r8
+|     :`--> 0x00004034      r[r3+4], ... ,r[r3+3+2] := r3(r[r3+1], r[r3+2]);
+|     `=`=< 0x00004038      if r[3] ~= nil then { 3=r[3+2]; pc -= 6 }  ; to 0x4024
+|           0x0000403c      close all upvalues >= r3
+|           0x00004040      return r3, ... ,r[1]                       ; 0 out
+EOF
+RUN

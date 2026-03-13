@@ -3,13 +3,12 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
-#include "arch_53.h"
-#include "../lua_arch.h"
+#include "arch_52.h"
 
-int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len) {
+int lua52_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len) {
 	const LuaInstruction instruction = ctx->instruction;
 	const ut64 addr = ctx->addr;
-	const LuaOpCode53 opcode = GET_OPCODE53(instruction);
+	const LuaOpCode52 opcode = GET_OPCODE52(instruction);
 	ctx->analysis = analysis;
 
 	char comment[128] = { 0 };
@@ -151,16 +150,15 @@ int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_LOAD, a);
 		///< read EXTRAARG
 		const ut32 next_inst = ctx->next_inst;
-		const int ax_prev = GETARG_Ax2(next_inst);
+		const int ax_prev = GETARG_Ax4(next_inst);
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->size = 8; ///< 2 instructions (4+4 bytes)
 		op->ptr = (st64)CONST_VADDRESS(addr, ax_prev);
 		rz_strf(comment, "r%d = constants[%d]", a, ax_prev);
 		break;
-	case OP_GETTABUP: /*  A B C   R(A) := UpValue[B][RK(C)]                       */ {
-		op->ptr = (st64)CONST_VADDRESS(addr, c);
-		rz_strf(comment, "r%d = %s['%s']", a, SCOPE(b), Kst(INDEXK(c)));
-		TYPE_DST_REG_SRC0_IMM(RZ_ANALYSIS_OP_TYPE_LOAD, a, b);
-	}
+	case OP_GETTABUP: /*  A B C   R(A) := UpValue[B][RK(C)]                       */
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
 	case OP_SETTABUP: /*	A B C	UpValue[A][K[B]:string] := RK(C)		*/ {
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_STORE, a);
 		op->ptr = (st64)CONST_VADDRESS(addr, b);
@@ -173,27 +171,12 @@ int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 		RKC_REG_OR_IMM(c, 1);
 		rz_strf(comment, "r%d=r%d (self), r%d=r%d[%s] self.%s()", a + 1, b, a, b, ISRKCk, ISRKCk);
 		TYPE_DST_SRC0_REG(RZ_ANALYSIS_OP_TYPE_LOAD, a, b);
-	case OP_IDIV: /*      A B C   R(A) := RK(B) // RK(C)                          */
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_DIV, "r%d := %s // %s");
-	case OP_BAND: /*      A B C   R(A) := RK(B) & RK(C)                           */
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_AND, "r%d := %s & %s");
-	case OP_BOR: /*       A B C   R(A) := RK(B) | RK(C)                           */
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_OR, "r%d := %s | %s");
-	case OP_BXOR: /*      A B C   R(A) := RK(B) ~ RK(C)                           */
-		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_XOR, "r%d := %s ~ %s");
-	case OP_SHL: /*       A B C   R(A) := RK(B) << RK(C)                          */
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_SHL, "r%d := %s << %s");
-	case OP_SHR: /*       A B C   R(A) := RK(B) >> RK(C)                          */
-		ARITHMETIC_OP_0_3(RZ_ANALYSIS_OP_TYPE_SHR, "r%d := %s >> %s");
-	case OP_BNOT: /*      A B     R(A) := ~R(B)                                   */
-		TYPE_DST_SRC_AB_REG(RZ_ANALYSIS_OP_TYPE_NOT, "r%d = ~r%d", a, b);
 	case OP_LEN: /*       A B     R(A) := length of R(B)                          */
 		TYPE_DST_SRC0_REG(RZ_ANALYSIS_OP_TYPE_LENGTH, a, b);
 	case OP_TFORCALL: /*  A C     R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));  */
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CALL, a);
 		op->val = (ut64)c;
-		op->fail = addr + 4;
+		/* op->fail = addr + 4; */
 		break;
 	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
 		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
