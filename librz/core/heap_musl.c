@@ -229,13 +229,34 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 
 	}
 }
 
+static void print_meta(RzCore *core, ut64 addr, RzMallocngConfig config) {
+	mallocng_meta meta;
+	mallocng_group group;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+
+	if (!read_and_parse_meta(core->io, addr, &meta, config)) {
+		RZ_LOG_ERROR("Failed to read meta @ 0x%" PFMT64x "\n", addr);
+		return;
+	}
+	if (!read_and_parse_group(core->io, meta.mem, &group, config)) {
+		RZ_LOG_ERROR("Failed to read group @ 0x%" PFMT64x "\n", meta.mem);
+		return;
+	}
+	int size = UNIT * ng_size_classes[meta.sizeclass];
+	PRINTF_BA("meta @ 0x%" PFMT64x ": \n", addr);
+	PRINTF_BA("  size: 0x%x, prev: 0x%" PFMT64x ", next: 0x%" PFMT64x ", group: 0x%" PFMT64x "\n",
+		size, meta.prev, meta.next, meta.mem);
+
+	rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, group.storage, config.ptr_size, size,
+		RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
+	PRINT_BA("\n");
+}
+
 void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	mallocng_ctx ctx;
-	mallocng_meta meta;
-	mallocng_group group;
+
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
 			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
@@ -250,24 +271,11 @@ void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, 
 
 		for (int i = 0; i < 48; i++) {
 			if (ctx.active[i]) {
-				if (!read_and_parse_meta(core->io, ctx.active[i], &meta, config)) {
-					RZ_LOG_ERROR("Failed to read meta @ 0x%" PFMT64x "\n", ctx.active[i]);
-					return;
-				}
-				if (!read_and_parse_group(core->io, meta.mem, &group, config)) {
-					RZ_LOG_ERROR("Failed to read group @ 0x%" PFMT64x "\n", meta.mem);
-					return;
-				}
-				int size = UNIT * ng_size_classes[meta.sizeclass];
-				PRINTF_BA("meta @ 0x%" PFMT64x ": \n", ctx.active[i]);
-				PRINTF_BA("  size: 0x%x, prev: 0x%" PFMT64x ", next: 0x%" PFMT64x ", group: 0x%" PFMT64x "\n",
-					size, meta.prev, meta.next, meta.mem);
-
-				rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, group.storage, config.ptr_size, size,
-					RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
-				PRINT_BA("\n");
+				print_meta(core, ctx.active[i], config);
 			}
 		}
+	} else {
+		print_meta(core, addr, config);
 	}
 }
 
