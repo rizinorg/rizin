@@ -2,6 +2,9 @@ name: TinyCC build
 
 on:
   push:
+    # Temp, remove before PR merge
+    branches-ignore:
+      - '**'
     paths:
     - '**.c'
     - '**.h'

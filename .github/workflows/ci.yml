@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "master"
@@ -25,6 +26,7 @@ concurrency:
 
 jobs:
   changes:
+    if: false
     runs-on: ubuntu-24.04
     outputs:
       edited: ${{ steps.filter.outputs.edited }}
@@ -46,6 +48,7 @@ jobs:
               - 'test/**'
 
   build-and-test:
+    if: false
     needs: changes
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -386,9 +389,10 @@ jobs:
           path: test/results.json
 
   build-centos7:
+    if: false
     name: Build on CentOS 7
     runs-on: ubuntu-24.04
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     container: centos:7
     steps:
       - name: Fix mirrors list
@@ -425,8 +429,9 @@ jobs:
         working-directory: rizin/test
 
   build-debian:
+    if: false
     name: Build on old Debian ${{ matrix.container }}
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     strategy:
       matrix:
         container:
@@ -514,8 +519,9 @@ jobs:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
 
   build-static:
+    if: false
     name: Build static
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     container:
       image: alpine:3.19
@@ -565,8 +571,9 @@ jobs:
           path: rizin/rizin-static.tar.xz
 
   create-tarball:
+    if: false
     name: Create source tarball
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
@@ -593,8 +600,9 @@ jobs:
           path: build/meson-dist/rizin-src.tar.xz
 
   test-tarball:
+    if: false
     name: Test source tarball
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
     runs-on: ubuntu-24.04
     needs: [ create-tarball ]
     steps:
@@ -631,9 +639,10 @@ jobs:
         working-directory: rizin
 
   build-macos-pkg:
+    if: false
     name: Build macOS package
     runs-on: macos-15
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'macos') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'macos') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v6
@@ -656,9 +665,10 @@ jobs:
           path: ./rizin.pkg
 
   build-windows:
+    if: false
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'))
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'))
     needs: [ build-and-test ]
     strategy:
       fail-fast: false
@@ -703,9 +713,10 @@ jobs:
           path: .\dist\windows\Output\rizin.exe
 
   build-android:
+    if: false
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-24.04
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     strategy:
       fail-fast: false
@@ -732,9 +743,10 @@ jobs:
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
   build-cpp-linux:
+    if: false
     name: Include Rizin headers from C++ program (Linux)
     runs-on: ubuntu-24.04
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'cpp') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v6
@@ -758,9 +770,10 @@ jobs:
           meson test -C build-cpp-test --print-errorlogs
 
   test-extra-prefix:
+    if: false
     name: Test EXTRA_PREFIX works well
     runs-on: ubuntu-24.04
-    if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v6
@@ -786,8 +799,9 @@ jobs:
           rizin -qc "Lc~jsdec"
 
   build-rzpipe:
+    if: false
     name: Build rizin rzpipe
-    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [ test-tarball ]
     runs-on: ubuntu-24.04
     env:
@@ -815,8 +829,9 @@ jobs:
           go install github.com/rizinorg/rz-pipe/go/example@latest
 
   build-bindgen:
+    if: false
     name: Build rz-bindgen
-    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
+    #if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
     needs: [ test-tarball ]
     runs-on: ubuntu-24.04
     steps:
@@ -856,6 +871,7 @@ jobs:
           python3 testimport.py
 
   test-macos-pkg:
+    if: false
     name: Test macOS pkg
     strategy:
       matrix:
@@ -879,6 +895,7 @@ jobs:
           ./test
 
   test-windows-clang_cl:
+    if: false
     name: Test Windows installer built with ${{ matrix.name }}
     runs-on: windows-latest
     needs: [ build-windows ]
@@ -935,6 +952,24 @@ jobs:
           cmake -G Ninja ..
           ninja
           .\rizin_cmake_test
+
+  test-riscv-inside-qemu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sh .github/riscv-qemu-install-all.sh
+
+      - name: Setup RISC-V QEMU environment
+        run: |
+          cd ..
+          sh rizin/.github/riscv-qemu-setup-all.sh /rizin -hh
+
+      - name: Run inside RISC-V QEMU
+        run: |
+          cd ..
+          sh rizin/.github/riscv-qemu-run-all.sh
 
   create-release:
     name: Create draft release and upload artifacts
