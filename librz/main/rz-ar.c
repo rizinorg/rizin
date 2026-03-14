@@ -4,6 +4,7 @@
 #include <rz_main.h>
 #include <rz_cons.h>
 #include <rz_util.h>
+#include <rz_util/rz_print.h>
 #include "ar.h"
 
 typedef struct {
