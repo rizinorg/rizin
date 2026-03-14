@@ -237,7 +237,7 @@ static inline size_t buf_look_ahead(const RzUtilStrScanOptions *opt, RzStrEnc en
  * it is copied to the heap.
  * Used to save unnecessary memory allocations.
  */
-#define SCANNING_STACK_BUF_CHARS 16
+#define SCANNING_STACK_BUF_CHARS 8
 #define SCANNING_STACK_BUF_SIZE  (RZ_UNICODE_MAX_BYTES_PER_CHAR * SCANNING_STACK_BUF_CHARS)
 
 static void add_byte_mem_mapping(ut64 **byte_mem_map, ut64 *byte_mm_stack_alloc, size_t *byte_mem_map_size, size_t utf8_char_offset, size_t mem_offset) {
