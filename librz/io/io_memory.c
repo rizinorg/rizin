@@ -95,12 +95,13 @@ bool io_memory_resize(RzIO *io, RzIODesc *fd, ut64 count) {
 }
 
 int io_memory_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
-	memset(buf, 0xff, count);
 	if (!fd || !fd->data) {
+		memset(buf, 0xff, count);
 		return -1;
 	}
 	ut32 mallocsz = _io_malloc_sz(fd);
 	if (_io_malloc_off(fd) > mallocsz) {
+		memset(buf, 0xff, count);
 		return -1;
 	}
 	if (_io_malloc_off(fd) + count >= mallocsz) {
