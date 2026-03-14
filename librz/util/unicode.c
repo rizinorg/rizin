@@ -907,9 +907,10 @@ static ut64 *undefined_ranges_bitmap = NULL;
 static ut32 undefined_ranges_bitmap_size = 0;
 static ut32 undefined_ranges_skip_entries = 0;
 
+#ifdef RZ_HAS_CONSTRUCTORS
 #ifdef RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
 #pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(undefined_ranges_bitmap_bake)
-#endif
+#endif // RZ_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
 RZ_DEFINE_CONSTRUCTOR(undefined_ranges_bitmap_bake)
 static void undefined_ranges_bitmap_bake(void) {
 	const ut32 bits_per_element = sizeof(undefined_ranges_bitmap[0]) * 8;
@@ -934,11 +935,12 @@ static void undefined_ranges_bitmap_bake(void) {
 
 #ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
 #pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(undefined_ranges_bitmap_fini)
-#endif
+#endif // RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
 RZ_DEFINE_DESTRUCTOR(undefined_ranges_bitmap_fini)
 static void undefined_ranges_bitmap_fini(void) {
 	free(undefined_ranges_bitmap);
 }
+#endif // RZ_HAS_CONSTRUCTORS
 
 /**
  * Note: undefined for `code_point` >= `undefined_ranges_bitmap_size`. Caller should do proper checks.
