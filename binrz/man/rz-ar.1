@@ -1,0 +1,67 @@
+.Dd Mar 14, 2026
+.Dt RZ_AR 1
+.Sh NAME
+.Nm rz-ar
+.Nd List and extract members from .a and .lib archives
+.Sh SYNOPSIS
+.Nm rz-ar
+.Op Fl hlqv
+.Op Fl o Ar outdir
+.Ar archive
+.Op Ar member ...
+.Sh DESCRIPTION
+This command is part of the Rizin project.
+.Pp
+.Nm rz-ar
+lists or extracts archive members from
+.Pa .a
+and
+.Pa .lib
+files.
+It creates missing directories in the output path automatically.
+.Pp
+When no member filters are provided, all members are processed.
+When one or more
+.Ar member
+arguments are provided, only matching members are processed.
+.Pp
+The options are:
+.Bl -tag -width Fl
+.It Fl h
+Show usage help message.
+.It Fl l
+List matching members only.
+.It Fl o Ar outdir
+Set extraction output directory. Default is current directory.
+.It Fl q
+Quiet mode.
+.It Fl v
+Show version information.
+.El
+.Sh EXIT STATUS
+.Bl -tag -width Ds
+.It 0
+Operation completed successfully.
+.It 1
+Invalid arguments, archive open failure, no matching members, or extraction failures.
+.El
+.Sh EXAMPLES
+List all members:
+.Bd -literal -offset indent
+rz-ar -l libfoo.a
+.Ed
+.Pp
+Extract all members into current directory:
+.Bd -literal -offset indent
+rz-ar libfoo.a
+.Ed
+.Pp
+Extract selected members into output directory:
+.Bd -literal -offset indent
+rz-ar -o out libfoo.a foo.o bar.o
+.Ed
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-hash(1)

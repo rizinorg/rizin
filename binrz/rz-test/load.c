@@ -104,6 +104,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 
 static const char *rz_test_tools[] = {
 	"rizin",
+	"rz-ar",
 	"rz-asm",
 	"rz-ax",
 	"rz-bin",
