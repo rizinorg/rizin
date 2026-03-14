@@ -1,18 +1,14 @@
 NAME=rz-ar -h
-FILE==
-REGEXP_FILTER_OUT=(Usage:)
-CMDS=!rz-ar -h
+TOOL=rz-ar
+ARGS=-h
+REGEXP_FILTER_OUT=(Usage:|Show this help|List matching members|Set output directory \(default \.\)|Quiet mode|Show version information)
 EXPECT=<<EOF
 Usage:
-EOF
-RUN
-
-NAME=rz-ar -v
-FILE==
-REGEXP_FILTER_OUT=(commit:)
-CMDS=!rz-ar -v
-EXPECT=<<EOF
-commit:
+Show this help
+List matching members
+Set output directory (default .)
+Quiet mode
+Show version information
 EOF
 RUN
 

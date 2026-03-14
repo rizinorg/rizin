@@ -16,23 +16,15 @@ typedef struct {
 static void rz_ar_show_help(void) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-ar [-hlqv] [-o outdir] archive [member ...]\n");
+	// clang-format off
 	const char *options[] = {
-		"-h",
-		"",
-		"Show this help",
-		"-l",
-		"",
-		"List matching members",
-		"-o",
-		"dir",
-		"Set output directory (default .)",
-		"-q",
-		"",
-		"Quiet mode",
-		"-v",
-		"",
-		"Show version information",
+		"-h", "", "Show this help",
+		"-l", "", "List matching members",
+		"-o", "dir", "Set output directory (default .)",
+		"-q", "", "Quiet mode",
+		"-v", "", "Show version information",
 	};
+	// clang-format on
 	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 }
 
