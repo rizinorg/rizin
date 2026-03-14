@@ -77,6 +77,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 				return -1;
 			}
 			ctx->flags &= ~ESC;
+			ctx->last = cur;
 			continue;
 		}
 		if (ctx->flags & DUP) {
