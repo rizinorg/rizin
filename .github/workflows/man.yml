@@ -2,11 +2,6 @@ name: Manpage lint
 
 on: 
   push:
-    branches: 
-      - 'master'
-      - 'dev'
-      - 'stable'
-      - "container-*"
     paths: 
       - 'binrz/man/*.[1-9]'
   pull_request: 
