@@ -13268,7 +13268,7 @@ static const RzCmdDescArg cmd_info_classes_to_types_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_info_classes_to_types_help = {
-	.summary = "Generate type definitions from classes as rizin commands",
+	.summary = "Generate type definitions from classes",
 	.args = cmd_info_classes_to_types_args,
 };
 
