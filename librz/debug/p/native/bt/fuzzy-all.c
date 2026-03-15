@@ -27,6 +27,16 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 			return 1;
 		}
 		// IMMAMISSINGANYOP
+	} else if (dbg->arch && !strcmp(dbg->arch, "riscv")) {
+		RzAnalysisOp op = { 0 };
+		(void)dbg->iob.read_at(dbg->iob.io, addr - 4, buf, 4);
+		rz_analysis_op_init(&op);
+		(void)rz_analysis_op(dbg->analysis, &op, addr - 4, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL || op.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
+			rz_analysis_op_fini(&op);
+			return 1;
+		}
+		rz_analysis_op_fini(&op);
 	} else {
 		RzAnalysisOp op = { 0 };
 		(void)dbg->iob.read_at(dbg->iob.io, addr - 8, buf, 8);

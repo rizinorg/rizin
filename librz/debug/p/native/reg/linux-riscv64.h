@@ -3,6 +3,7 @@
 
 return rz_str_dup(
 	"=PC	pc\n"
+	"=LR	x1\n"
 	"=SP	x2\n"
 	"=BP	x4\n"
 	"=R0	a10\n"
