@@ -1,5 +1,6 @@
-.Dd Mar 14, 2026
+.Dd March 14, 2026
 .Dt RZ_AR 1
+.Os
 .Sh NAME
 .Nm rz-ar
 .Nd List and extract members from .a and .lib archives
@@ -32,7 +33,7 @@ Show usage help message.
 .It Fl l
 List matching members only.
 .It Fl o Ar outdir
-Set extraction output directory. Default is current directory.
+Set extraction output directory (default: current directory).
 .It Fl q
 Quiet mode.
 .It Fl v
@@ -43,7 +44,7 @@ Show version information.
 .It 0
 Operation completed successfully.
 .It 1
-Invalid arguments, archive open failure, no matching members, or extraction failures.
+Invalid arguments, open failure, no matches, or extraction failures.
 .El
 .Sh EXAMPLES
 List all members:
@@ -61,7 +62,6 @@ Extract selected members into output directory:
 rz-ar -o out libfoo.a foo.o bar.o
 .Ed
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-hash(1)
+.Xr rizin 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-hash 1
