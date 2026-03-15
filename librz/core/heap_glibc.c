@@ -217,7 +217,7 @@ static ut64 rz_heap_get_main_arena_with_symbol_core_dump(RzCore *core, RzIOMap *
 
 	ut64 main_arena = UT64_MAX;
 	ut64 off = UT64_MAX;
-	const char *path = rz_core_io_map_file_path(map);
+	const char *path = rz_core_io_map_file_path_or_relative(map);
 	if (path && rz_file_exists(path)) {
 		off = rz_heap_get_va_symbol(core, path, "main_arena");
 		if (off != UT64_MAX) {
@@ -584,7 +584,7 @@ static void rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_
 	void **it;
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
-		const char *path = rz_core_io_map_file_path(map);
+		const char *path = rz_core_io_map_file_path_or_relative(map);
 		if (path && map->itv.addr < lowest_addr) {
 			lowest_addr = map->itv.addr;
 			exe_path = path;
@@ -599,7 +599,7 @@ static void rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_
 	ut64 exe_end = 0;
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
-		const char *path = rz_core_io_map_file_path(map);
+		const char *path = rz_core_io_map_file_path_or_relative(map);
 		if (path && !strcmp(path, exe_path)) {
 			ut64 end = map->itv.addr + map->itv.size;
 			if (end > exe_end) {

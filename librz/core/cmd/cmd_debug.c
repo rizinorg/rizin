@@ -663,7 +663,7 @@ static RzPVector /*<RzIOMap *>*/ *rz_io_modules_list(RzCore *core) { // "dmm"
 	void **it;
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (!file) {
 			continue;
 		}
@@ -688,7 +688,7 @@ static void cmd_io_current_modules(RzCore *core, RzOutputMode mode) { // "dmm"
 		if (!(addr >= map_addr && addr < map_end)) {
 			continue;
 		}
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (!file) {
 			file = map->name;
 		}
@@ -708,7 +708,7 @@ static void cmd_io_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 	list = rz_io_modules_list(core);
 	rz_pvector_foreach (list, it) {
 		map = *it;
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (!file) {
 			file = map->name;
 		}
@@ -779,7 +779,7 @@ static RzIOMap *get_io_map_from_lib_name(RzCore *core, const char *lib_name) {
 	void **it;
 	rz_pvector_foreach (modules, it) {
 		RzIOMap *map = *it;
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (file && strstr(rz_file_basename(file), basename)) {
 			result = map;
 			break;
@@ -793,7 +793,7 @@ static RzIOMap *get_io_map_from_lib_name(RzCore *core, const char *lib_name) {
 	RzPVector *maps = rz_io_maps(core->io);
 	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (file && strstr(rz_file_basename(file), basename)) {
 			return map;
 		}
@@ -1020,7 +1020,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (!file) {
 			file = map->name;
 		}
@@ -1070,7 +1070,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const ch
 			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		const char *file = rz_core_io_map_file_path(map);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
 		if (!file) {
 			file = map->name;
 		}
@@ -1206,7 +1206,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 				    (libname != NULL && (strstr(map->name, libname))))) {
 				baddr = map_addr;
 				char *res;
-				const char *file = rz_core_io_map_file_path(map);
+				const char *file = rz_core_io_map_file_path_or_relative(map);
 				if (!file) {
 					file = map->name;
 				}

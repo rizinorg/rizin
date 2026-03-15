@@ -116,11 +116,11 @@ CMDS=<<EOF
 oml
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
- 2 fd: 4 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-x mmap./home/florian/dev/crash/crash-linux-x86_64
- 3 fd: 5 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- mmap./home/florian/dev/crash/crash-linux-x86_64
- 4 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
- 5 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
+ 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap.bins/elf/core/crash-linux-x86_64
+ 2 fd: 4 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-x mmap.bins/elf/core/crash-linux-x86_64
+ 3 fd: 5 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- mmap.bins/elf/core/crash-linux-x86_64
+ 4 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- fmap.bins/elf/core/crash-linux-x86_64
+ 5 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- fmap.bins/elf/core/crash-linux-x86_64
  6 fd: 3 +0x00005000 0x7f582fa2e000 - 0x7f582fa2ffff r-- fmap.LOAD5
  7 fd: 6 +0x00000000 0x7f582fa31000 - 0x7f582fa55fff r-- mmap./usr/lib/libc-2.33.so
  8 fd: 3 +0x00007000 0x7f582fa30000 - 0x7f582fa30fff r-- fmap./usr/lib/libc-2.33.so
@@ -174,9 +174,9 @@ CMDS=<<EOF
 oml
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
- 2 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- fmap./home/alarm/crash/crash-linux-arm64
- 3 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- fmap./home/alarm/crash/crash-linux-arm64
+ 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap.bins/elf/core/crash-linux-arm64
+ 2 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- fmap.bins/elf/core/crash-linux-arm64
+ 3 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- fmap.bins/elf/core/crash-linux-arm64
  4 fd: 4 +0x00000000 0x7f8bd61000 - 0x7f8bebafff r-x mmap./usr/lib/libc-2.32.so
  5 fd: 3 +0x00004000 0x7f8bd60000 - 0x7f8bd60fff r-x fmap./usr/lib/libc-2.32.so
  6 fd: 5 +0x00000000 0x7f8bebb000 - 0x7f8becafff r-- mmap./usr/lib/libc-2.32.so
@@ -614,12 +614,10 @@ s 0x56149dfaf000
 dm.~0x56149dfaf000
 echo ----
 dmm~libc
-dmm.~home
+dmm.~bin
 echo ----
-!mkdir -p /home/florian/dev/crash/
-!cp bins/elf/core/crash-linux-x86_64 /home/florian/dev/crash/crash-linux-x86_64
-dmi /home/florian/dev/crash/crash-linux-x86_64~printf
-dmia /home/florian/dev/crash/crash-linux-x86_64~MAGIC
+dmi bins/elf/core/crash-linux-x86_64~printf
+dmia bins/elf/core/crash-linux-x86_64~MAGIC
 obf bins/elf/core/crash-linux-x86_64 
 dmi.~end
 echo ----
@@ -631,10 +629,10 @@ EXPECT=<<EOF
 15
 7
 ----
- 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
+ 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap.bins/elf/core/crash-linux-x86_64
 ----
 0x7f582fa31000 0x7f582fa56000  /usr/lib/libc-2.33.so
-0x56149dfaf000 0x56149dfb0000  /home/florian/dev/crash/crash-linux-x86_64
+0x56149dfaf000 0x56149dfb0000  bins/elf/core/crash-linux-x86_64
 ----
   2 0x00001030 0x56149dfb0030 GLOBAL FUNC     16     imp.printf
 0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
@@ -656,12 +654,10 @@ s 0x558ce37000
 dm.~0x558ce37000
 echo ----
 dmm~libc
-dmm.~home
+dmm.~bin
 echo ----
-!mkdir -p /home/alarm/crash/
-!cp bins/elf/core/crash-linux-arm64 /home/alarm/crash/crash-linux-arm64
-dmi /home/alarm/crash/crash-linux-arm64~printf
-dmia /home/alarm/crash/crash-linux-arm64~MAGIC
+dmi bins/elf/core/crash-linux-arm64~printf
+dmia bins/elf/core/crash-linux-arm64~MAGIC
 obf bins/elf/core/crash-linux-arm64 
 dmi.~end
 echo ----
@@ -673,10 +669,10 @@ EXPECT=<<EOF
 14
 3
 ----
- 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
+ 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap.bins/elf/core/crash-linux-arm64
 ----
 0x7f8bd61000 0x7f8bebb000  /usr/lib/libc-2.32.so
-0x558ce37000 0x558ce38000  /home/alarm/crash/crash-linux-arm64
+0x558ce37000 0x558ce38000  bins/elf/core/crash-linux-arm64
 ----
   9 0x00000620 0x558ce37620 GLOBAL FUNC     16     imp.printf
 0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00

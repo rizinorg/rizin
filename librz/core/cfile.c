@@ -42,6 +42,12 @@ RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map) {
 	return (name && *name == '/') ? name : NULL;
 }
 
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map) {
+	const char *name = rz_core_io_map_strip_prefix(map);
+	// Both "/abs/path" and "rel/path" contain a '/'; LOAD0, [stack] etc. do not.
+	return (name && strchr(name, '/')) ? name : NULL;
+}
+
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	RzCoreFile *r = RZ_NEW0(RzCoreFile);
 	if (!r) {

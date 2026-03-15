@@ -67,7 +67,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 		RzPVector *io_maps = rz_io_maps(core->io);
 		rz_pvector_foreach (io_maps, it) {
 			RzIOMap *io_map = *it;
-			const char *path = rz_core_io_map_file_path(io_map);
+			const char *path = rz_core_io_map_file_path_or_relative(io_map);
 
 			if (!rz_file_exists(path)) {
 				continue;
@@ -79,7 +79,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 			void **it2;
 			rz_pvector_foreach (io_maps, it2) {
 				RzIOMap *m2 = *it2;
-				const char *p2 = rz_core_io_map_file_path(m2);
+				const char *p2 = rz_core_io_map_file_path_or_relative(m2);
 				if (!p2 || strcmp(p2, path) != 0) {
 					continue;
 				}

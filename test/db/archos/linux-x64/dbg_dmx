@@ -222,8 +222,6 @@ RUN
 NAME=dmxa/dmxb/dmxe/dmxei with jemalloc 5.3.0 core dump (linux-amd64-4k_page)
 FILE=bins/heap/segfault-jemalloc5.3.0-amd64-core
 CMDS=<<EOF
-!mkdir -p /rizin/test/bins/heap/
-!cp bins/heap/segfault-jemalloc5.3.0-amd64 /rizin/test/bins/heap/
 dmxa~narena
 dmxa~0x55ae211c05c0
 dmxb~0x7f4550214528 

@@ -22,6 +22,7 @@ RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
 RZ_IPI bool rz_core_is_core_dump(RzCore *core);
 RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
 RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
