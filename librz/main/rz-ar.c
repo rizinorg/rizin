@@ -13,6 +13,8 @@ typedef struct {
 	bool quiet;
 } RzArOptions;
 
+#define RZ_AR_EXTRACT_CHUNK_SIZE 0x10000
+
 static void rz_ar_show_help(void) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
 	printf("rz-ar [-hlqv] [-o outdir] archive [member ...]\n");
@@ -30,7 +32,7 @@ static void rz_ar_show_help(void) {
 
 static char *rz_ar_normalize_member_path(const char *name) {
 	rz_return_val_if_fail(name, NULL);
-	char *tmp = rz_str_dup(name);
+	char *tmp = rz_file_path_local_to_unix(name);
 	if (!tmp) {
 		return NULL;
 	}
@@ -137,7 +139,7 @@ static bool rz_ar_extract_member(RzArFp *member, const char *dst_path) {
 	if (size == 0) {
 		return rz_file_dump(dst_path, NULL, 0, false);
 	}
-	ut8 *buf = malloc(0x10000);
+	ut8 *buf = malloc(RZ_AR_EXTRACT_CHUNK_SIZE);
 	if (!buf) {
 		return false;
 	}
@@ -145,7 +147,7 @@ static bool rz_ar_extract_member(RzArFp *member, const char *dst_path) {
 	bool append = false;
 	while (off < size) {
 		const ut64 left = size - off;
-		const int want = (int)RZ_MIN(left, (ut64)0x10000);
+		const int want = (int)RZ_MIN(left, (ut64)RZ_AR_EXTRACT_CHUNK_SIZE);
 		const int got = ar_read_at(member, off, buf, want);
 		if (got <= 0) {
 			break;
