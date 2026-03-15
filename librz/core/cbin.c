@@ -4159,12 +4159,10 @@ RZ_API RzCmdStatus rz_core_bin_class_apply_print(RZ_NONNULL RzCore *core, RZ_NON
 
 RZ_API bool rz_core_bin_classes_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(core && bf && bf->o, false);
-
 	const RzPVector *classes = rz_bin_object_get_classes(bf->o);
 	if (!classes) {
 		return false;
 	}
-
 	void **iter;
 	RzBinClass *c;
 	rz_pvector_foreach (classes, iter) {
@@ -4172,14 +4170,14 @@ RZ_API bool rz_core_bin_classes_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 		if (!c || !c->name || !c->name[0]) {
 			continue;
 		}
+		RzListIter *it;
+		RzBinClassField *f;
+		bool has_fields = false;
 		RzStrBuf *sb = rz_strbuf_new(NULL);
 		if (!sb) {
 			return false;
 		}
-		rz_strbuf_appendf(sb, "td \"struct %s {", c->name);
-		bool has_fields = false;
-		RzListIter *it;
-		RzBinClassField *f;
+		rz_strbuf_appendf(sb, "struct %s {", c->name);
 		rz_list_foreach (c->fields, it, f) {
 			if (!f->name) {
 				continue;
@@ -4192,8 +4190,8 @@ RZ_API bool rz_core_bin_classes_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzB
 			has_fields = true;
 		}
 		if (has_fields) {
-			rz_strbuf_append(sb, " };\"");
-			rz_cons_println(rz_strbuf_get(sb));
+			rz_strbuf_append(sb, " }");
+			rz_types_define(core, rz_strbuf_get(sb));
 		}
 		rz_strbuf_free(sb);
 	}
