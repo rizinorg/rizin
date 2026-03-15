@@ -4109,6 +4109,97 @@ RZ_API bool rz_core_bin_class_methods_print(RZ_NONNULL RzCore *core, RZ_NONNULL 
 	return true;
 }
 
+RZ_API RzCmdStatus rz_core_bin_class_apply_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *classname, ut64 addr) {
+	rz_return_val_if_fail(core && classname, RZ_CMD_STATUS_ERROR);
+
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	const RzPVector *classes = rz_bin_object_get_classes(o);
+	if (!classes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzBinClass *klass = NULL;
+	void **iter;
+	rz_pvector_foreach (classes, iter) {
+		RzBinClass *c = *iter;
+		if (c && c->name && !strcmp(c->name, classname)) {
+			klass = c;
+			break;
+		}
+	}
+
+	if (!klass) {
+		RZ_LOG_ERROR("Class \"%s\" not found\n", classname);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzListIter *it;
+	RzBinSymbol *sym;
+	ut64 min_vaddr = UT64_MAX;
+	rz_list_foreach (klass->methods, it, sym) {
+		if (sym->vaddr && sym->vaddr < min_vaddr) {
+			min_vaddr = sym->vaddr;
+		}
+	}
+	if (min_vaddr == UT64_MAX) {
+		min_vaddr = klass->addr;
+	}
+
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_CLASSES);
+	rz_list_foreach (klass->methods, it, sym) {
+		char *fn = rz_core_bin_method_build_flag_name(klass, sym);
+		if (fn) {
+			rz_flag_set(core->flags, fn, addr + (sym->vaddr - min_vaddr), sym->size);
+			free(fn);
+		}
+	}
+	rz_flag_space_pop(core->flags);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API bool rz_core_bin_classes_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(core && bf && bf->o, false);
+
+	const RzPVector *classes = rz_bin_object_get_classes(bf->o);
+	if (!classes) {
+		return false;
+	}
+
+	void **iter;
+	RzBinClass *c;
+	rz_pvector_foreach (classes, iter) {
+		c = *iter;
+		if (!c || !c->name || !c->name[0]) {
+			continue;
+		}
+		RzStrBuf *sb = rz_strbuf_new(NULL);
+		if (!sb) {
+			return false;
+		}
+		rz_strbuf_appendf(sb, "td \"struct %s {", c->name);
+		bool has_fields = false;
+		RzListIter *it;
+		RzBinClassField *f;
+		rz_list_foreach (c->fields, it, f) {
+			if (!f->name) {
+				continue;
+			}
+			char *type = objc_type_toc(f->type);
+			char *name = objc_name_toc(f->name);
+			rz_strbuf_appendf(sb, " %s %s;", type, name);
+			free(type);
+			free(name);
+			has_fields = true;
+		}
+		if (has_fields) {
+			rz_strbuf_append(sb, " };\"");
+			rz_cons_println(rz_strbuf_get(sb));
+		}
+		rz_strbuf_free(sb);
+	}
+	return true;
+}
+
 RZ_API bool rz_core_bin_classes_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && bf && bf->o && state, false);
 

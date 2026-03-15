@@ -84,7 +84,7 @@ NAME=tc4
 FILE=bins/mach0/objc-employee
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tc Employee
 tc NSString
 EOF
@@ -113,7 +113,7 @@ NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tsc Employee
 tsc NSString
 EOF
@@ -211,7 +211,7 @@ NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tc Employee
 tc NSString
 EOF
@@ -240,7 +240,7 @@ NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tsc Employee
 tsc NSString
 EOF
@@ -338,7 +338,7 @@ NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tc Employee
 tc NSString
 EOF
@@ -389,7 +389,7 @@ NAME=test cmd tsc
 FILE=bins/mach0/objc-employee
 BROKEN=1
 CMDS=<<EOF
-.ic*
+.ict
 tsc Employee
 EOF
 EXPECT=<<EOF

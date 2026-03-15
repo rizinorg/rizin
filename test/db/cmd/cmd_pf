@@ -1089,3 +1089,17 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=Apply named format at current offset
+FILE=malloc://1024
+CMDS=<<EOF
+pfn foo "xxd foo bar cow"
+w hello happy world
+pfa foo
+EOF
+EXPECT=<<EOF
+ foo : 0x00000000 = 0x6c6c6568
+ bar : 0x00000004 = 0x6168206f
+ cow : 0x00000008 = 544829552
+EOF
+RUN

@@ -6298,6 +6298,29 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_delete_all_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_format_apply_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	const char *typename = argv[1];
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+
+	const char *fmt = rz_type_db_format_get(core->analysis->typedb, typename);
+	if (RZ_STR_ISEMPTY(fmt)) {
+		RZ_LOG_ERROR("Format with \"%s\" name not found\n", typename);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 old_offset = core->offset;
+	rz_core_seek(core, addr, true);
+
+	RzCmdStatus status = print_format(core, fmt, RZ_PRINT_MUSTSEE, NULL);
+
+	rz_core_seek(core, old_offset, true);
+	return status;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	int mode = RZ_PRINT_MUSTSEE;
 	return print_format(core, argv[1], mode, state);

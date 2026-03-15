@@ -616,6 +616,30 @@ class std::type_info {
 EOF
 RUN
 
+NAME=ica
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+ica Employee 0x100000000
+fl@F:classes~method
+EOF
+EXPECT=<<EOF
+0x100000000 0 method.Employee.helloWorld
+0x100000030 0 method.Employee.sayHello
+0x100000060 0 method.Employee.p0
+0x100000080 0 method.Employee.p1
+0x1000000a0 0 method.Employee.p2
+0x1000000c0 0 method.Employee.p3
+0x1000000e0 0 method.Employee.base
+0x100000100 0 method.class.Employee.sayHello
+0x100000130 0 method.Employee.username
+0x100000160 0 method.Employee.setUsername:
+0x1000001a0 0 method.Employee.firstName
+0x1000001d0 0 method.Employee.setFirstName:
+0x100000210 0 method.Employee.shortWord
+0x100000230 0 method.Employee.wideWord
+EOF
+RUN
+
 NAME=iq & iaq
 FILE=bins/elf/libmagic.so
 CMDS=iq;iaq
