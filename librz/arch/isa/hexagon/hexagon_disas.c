@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
-// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
-// Date of code generation: 2025-02-21 18:11:59-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-15 22:23:13+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -1907,6 +1907,34 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.flags = HEX_INSN_TEMPLATE_FLAG_PREDICATED | HEX_INSN_TEMPLATE_FLAG_HAS_JMP_TGT,
 	},
 	{
+		// 00011001110tttttPP0uuuuu111ddddd | Vd = vgetqfext(Vu.x,Rt)
+		.encoding = { .mask = 0xffe020e0, .op = 0x19c000e0 },
+		.id = HEX_INS_V6_GET_QFEXT,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = vgetqfext(.x,)",
+	},
+	{
+		// 00011001110tttttPP0uuuuu110xxxxx | Vx |= vgetqfext(Vu.x,Rt)
+		.encoding = { .mask = 0xffe020e0, .op = 0x19c000c0 },
+		.id = HEX_INS_V6_GET_QFEXT_ORACC,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 14 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 17 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " |= vgetqfext(.x,)",
+	},
+	{
 		// 00011001110tttttPP000000010ddddd | Vd.b = vsplat(Rt)
 		.encoding = { .mask = 0xffe03fe0, .op = 0x19c00040 },
 		.id = HEX_INS_V6_LVSPLATB,
@@ -2055,6 +2083,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = " = xor(,)",
 	},
 	{
+		// 00011001110tttttPP0uuuuu011ddddd | Vd.x = vsetqfext(Vu,Rt)
+		.encoding = { .mask = 0xffe020e0, .op = 0x19c00060 },
+		.id = HEX_INS_V6_SET_QFEXT,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 15 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".x = vsetqfext(,)",
+	},
+	{
 		// 00011110tt000011PP0000ss000110dd | Qd.b = vshuffe(Qs.h,Qt.h)
 		.encoding = { .mask = 0xff3f3cfc, .op = 0x1e030018 },
 		.id = HEX_INS_V6_SHUFFEQH,
@@ -2143,6 +2185,19 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".w += V6mpy(.ub,.b,):v",
 	},
 	{
+		// 0001110001100110PP1uuuuu110ddddd | Vd.f8 = vabs(Vu.f8)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1c6620c0 },
+		.id = HEX_INS_V6_VABS_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = vabs(.f8)",
+	},
+	{
 		// 0001111000000110PP1uuuuu100ddddd | Vd.hf = vabs(Vu.hf)
 		.encoding = { .mask = 0xffff20e0, .op = 0x1e062080 },
 		.id = HEX_INS_V6_VABS_HF,
@@ -2154,6 +2209,58 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".hf = vabs(.hf)",
+	},
+	{
+		// 0001111000001110PP1uuuuu110ddddd | Vd.qf16 = vabs(Vu.hf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e20c0 },
+		.id = HEX_INS_V6_VABS_QF16_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vabs(.hf)",
+	},
+	{
+		// 0001111000001110PP1uuuuu111ddddd | Vd.qf16 = vabs(Vu.qf16)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e20e0 },
+		.id = HEX_INS_V6_VABS_QF16_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vabs(.qf16)",
+	},
+	{
+		// 0001111000001110PP1uuuuu101ddddd | Vd.qf32 = vabs(Vu.qf32)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e20a0 },
+		.id = HEX_INS_V6_VABS_QF32_QF32,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vabs(.qf32)",
+	},
+	{
+		// 0001111000001110PP1uuuuu100ddddd | Vd.qf32 = vabs(Vu.sf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e2080 },
+		.id = HEX_INS_V6_VABS_QF32_SF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vabs(.sf)",
 	},
 	{
 		// 0001111000000110PP1uuuuu101ddddd | Vd.sf = vabs(Vu.sf)
@@ -2315,6 +2422,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".qf16 = vadd(.hf,.hf)",
+	},
+	{
+		// 00011111100vvvvvPP0uuuuu100ddddd | Vdd.hf = vadd(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1f800080 },
+		.id = HEX_INS_V6_VADD_HF_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vadd(.f8,.f8)",
 	},
 	{
 		// 00011111101vvvvvPP1uuuuu111ddddd | Vd.hf = vadd(Vu.hf,Vv.hf)
@@ -2948,6 +3069,21 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".w = vadd(.w,.w):sat",
+	},
+	{
+		// 00011000vvvvvtttPP0uuuuu101ddddd | Vd = valign4(Vu,Vv,Rt)
+		.encoding = { .mask = 0xff0020e0, .op = 0x180000a0 },
+		.id = HEX_INS_V6_VALIGN4,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 19 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x3, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS_LOW8, .isa_id = 't', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = valign4(,,)",
 	},
 	{
 		// 00011011vvvvvtttPP0uuuuu000ddddd | Vd = valign(Vu,Vv,Rt)
@@ -3831,6 +3967,32 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".tmp = vcombine(,)",
 	},
 	{
+		// 0001111000000110PP1uuuuu111ddddd | Vd.bf = Vuu.qf32
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0620e0 },
+		.id = HEX_INS_V6_VCONV_BF_QF32,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'u', .syntax = 6 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".bf = .qf32",
+	},
+	{
+		// 0001111000001100PP1uuuuu111ddddd | Vd.f8 = Vu.qf16
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c20e0 },
+		.id = HEX_INS_V6_VCONV_F8_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 6 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = .qf16",
+	},
+	{
 		// 0001111000000101PP1uuuuu010ddddd | Vd.h = Vu.hf
 		.encoding = { .mask = 0xffff20e0, .op = 0x1e052040 },
 		.id = HEX_INS_V6_VCONV_H_HF,
@@ -3842,6 +4004,19 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".h = .hf",
+	},
+	{
+		// 0001111000000110PP1uuuuu110ddddd | Vd.h = Vu.hf:rnd
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0620c0 },
+		.id = HEX_INS_V6_VCONV_H_HF_RND,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 5 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".h = .hf:rnd",
 	},
 	{
 		// 0001111000000101PP1uuuuu100ddddd | Vd.hf = Vu.h
@@ -3883,6 +4058,71 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".hf = .qf32",
 	},
 	{
+		// 0001111000001100PP1uuuuu101ddddd | Vdd.qf16 = Vu.f8
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c20a0 },
+		.id = HEX_INS_V6_VCONV_QF16_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = .f8",
+	},
+	{
+		// 0001111000001100PP1uuuuu100ddddd | Vd.qf16 = Vu.hf
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c2080 },
+		.id = HEX_INS_V6_VCONV_QF16_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = .hf",
+	},
+	{
+		// 0001111000001100PP1uuuuu110ddddd | Vd.qf16 = Vu.qf16
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c20c0 },
+		.id = HEX_INS_V6_VCONV_QF16_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = .qf16",
+	},
+	{
+		// 0001111000001101PP1uuuuu111ddddd | Vd.qf32 = Vu.qf32
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0d20e0 },
+		.id = HEX_INS_V6_VCONV_QF32_QF32,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = .qf32",
+	},
+	{
+		// 0001111000001101PP1uuuuu110ddddd | Vd.qf32 = Vu.sf
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0d20c0 },
+		.id = HEX_INS_V6_VCONV_QF32_SF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = .sf",
+	},
+	{
 		// 0001111000000100PP1uuuuu000ddddd | Vd.sf = Vu.qf32
 		.encoding = { .mask = 0xffff20e0, .op = 0x1e042000 },
 		.id = HEX_INS_V6_VCONV_SF_QF32,
@@ -3922,6 +4162,60 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".w = .sf",
 	},
 	{
+		// 00011010110vvvvvPP1uuuuu110ddddd | Vd.b = vcvt2(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1ac020c0 },
+		.id = HEX_INS_V6_VCVT2_B_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".b = vcvt2(.hf,.hf)",
+	},
+	{
+		// 0001111011010101PP1uuuuu110ddddd | Vdd.hf = vcvt2(Vu.b)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1ed520c0 },
+		.id = HEX_INS_V6_VCVT2_HF_B,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vcvt2(.b)",
+	},
+	{
+		// 0001111011010101PP1uuuuu111ddddd | Vdd.hf = vcvt2(Vu.ub)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1ed520e0 },
+		.id = HEX_INS_V6_VCVT2_HF_UB,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vcvt2(.ub)",
+	},
+	{
+		// 00011010110vvvvvPP1uuuuu111ddddd | Vd.ub = vcvt2(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1ac020e0 },
+		.id = HEX_INS_V6_VCVT2_UB_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".ub = vcvt2(.hf,.hf)",
+	},
+	{
 		// 00011111110vvvvvPP1uuuuu110ddddd | Vd.b = vcvt(Vu.hf,Vv.hf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1fc020c0 },
 		.id = HEX_INS_V6_VCVT_B_HF,
@@ -3950,6 +4244,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".bf = vcvt(.sf,.sf)",
 	},
 	{
+		// 00011111111vvvvvPP1uuuuu010ddddd | Vd.f8 = vcvt(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1fe02040 },
+		.id = HEX_INS_V6_VCVT_F8_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = vcvt(.hf,.hf)",
+	},
+	{
 		// 0001111000000110PP1uuuuu000ddddd | Vd.h = vcvt(Vu.hf)
 		.encoding = { .mask = 0xffff20e0, .op = 0x1e062000 },
 		.id = HEX_INS_V6_VCVT_H_HF,
@@ -3974,6 +4282,19 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".hf = vcvt(.b)",
+	},
+	{
+		// 0001111000000101PP1uuuuu101ddddd | Vdd.hf = vcvt(Vu.f8)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0520a0 },
+		.id = HEX_INS_V6_VCVT_HF_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vcvt(.f8)",
 	},
 	{
 		// 0001111000000100PP1uuuuu111ddddd | Vd.hf = vcvt(Vu.h)
@@ -4572,6 +4893,118 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = " ^= vcmp.eq(.h,.h)",
 	},
 	{
+		// 00011111100vvvvvPP0uuuuu000111dd | Qd = vcmp.eq(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1f80001c },
+		.id = HEX_INS_V6_VEQHF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = vcmp.eq(.hf,.hf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu000111xx | Qx &= vcmp.eq(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80201c },
+		.id = HEX_INS_V6_VEQHF_AND,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " &= vcmp.eq(.hf,.hf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu010111xx | Qx |= vcmp.eq(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80205c },
+		.id = HEX_INS_V6_VEQHF_OR,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " |= vcmp.eq(.hf,.hf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu100111xx | Qx ^= vcmp.eq(Vu.hf,Vv.hf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80209c },
+		.id = HEX_INS_V6_VEQHF_XOR,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " ^= vcmp.eq(.hf,.hf)",
+	},
+	{
+		// 00011111100vvvvvPP0uuuuu000011dd | Qd = vcmp.eq(Vu.sf,Vv.sf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1f80000c },
+		.id = HEX_INS_V6_VEQSF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = vcmp.eq(.sf,.sf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu000011xx | Qx &= vcmp.eq(Vu.sf,Vv.sf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80200c },
+		.id = HEX_INS_V6_VEQSF_AND,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " &= vcmp.eq(.sf,.sf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu010011xx | Qx |= vcmp.eq(Vu.sf,Vv.sf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80204c },
+		.id = HEX_INS_V6_VEQSF_OR,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " |= vcmp.eq(.sf,.sf)",
+	},
+	{
+		// 00011100100vvvvvPP1uuuuu100011xx | Qx ^= vcmp.eq(Vu.sf,Vv.sf)
+		.encoding = { .mask = 0xffe020fc, .op = 0x1c80208c },
+		.id = HEX_INS_V6_VEQSF_XOR,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x2, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_QR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " ^= vcmp.eq(.sf,.sf)",
+	},
+	{
 		// 00011111100vvvvvPP0uuuuu000010dd | Qd = vcmp.eq(Vu.w,Vv.w)
 		.encoding = { .mask = 0xffe020fc, .op = 0x1f800008 },
 		.id = HEX_INS_V6_VEQW,
@@ -4628,6 +5061,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = " ^= vcmp.eq(.w,.w)",
 	},
 	{
+		// 00011100011vvvvvPP1uuuuu101ddddd | Vd.f8 = vfmax(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1c6020a0 },
+		.id = HEX_INS_V6_VFMAX_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = vfmax(.f8,.f8)",
+	},
+	{
 		// 00011100011vvvvvPP1uuuuu010ddddd | Vd.hf = vfmax(Vu.hf,Vv.hf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1c602040 },
 		.id = HEX_INS_V6_VFMAX_HF,
@@ -4656,6 +5103,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".sf = vfmax(.sf,.sf)",
 	},
 	{
+		// 00011100011vvvvvPP1uuuuu100ddddd | Vd.f8 = vfmin(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1c602080 },
+		.id = HEX_INS_V6_VFMIN_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = vfmin(.f8,.f8)",
+	},
+	{
 		// 00011100011vvvvvPP1uuuuu000ddddd | Vd.hf = vfmin(Vu.hf,Vv.hf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1c602000 },
 		.id = HEX_INS_V6_VFMIN_HF,
@@ -4682,6 +5143,19 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".sf = vfmin(.sf,.sf)",
+	},
+	{
+		// 0001110001100110PP1uuuuu111ddddd | Vd.f8 = vfneg(Vu.f8)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1c6620e0 },
+		.id = HEX_INS_V6_VFNEG_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".f8 = vfneg(.f8)",
 	},
 	{
 		// 0001111000000110PP1uuuuu010ddddd | Vd.hf = vfneg(Vu.hf)
@@ -5235,6 +5709,58 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = "vhist()",
 	},
 	{
+		// 0001111000001100PP1uuuuu011ddddd | Vd.w = vilog2(Vu.hf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c2060 },
+		.id = HEX_INS_V6_VILOG2_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".w = vilog2(.hf)",
+	},
+	{
+		// 0001111000001100PP1uuuuu001ddddd | Vd.w = vilog2(Vu.qf16)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c2020 },
+		.id = HEX_INS_V6_VILOG2_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".w = vilog2(.qf16)",
+	},
+	{
+		// 0001111000001100PP1uuuuu000ddddd | Vd.w = vilog2(Vu.qf32)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c2000 },
+		.id = HEX_INS_V6_VILOG2_QF32,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".w = vilog2(.qf32)",
+	},
+	{
+		// 0001111000001100PP1uuuuu010ddddd | Vd.w = vilog2(Vu.sf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0c2040 },
+		.id = HEX_INS_V6_VILOG2_SF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".w = vilog2(.sf)",
+	},
+	{
 		// 00011001101tttttPP100000001xxxxx | Vx.w = vinsert(Rt)
 		.encoding = { .mask = 0xffe03fe0, .op = 0x19a02020 },
 		.id = HEX_INS_V6_VINSERTWR,
@@ -5624,6 +6150,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".w = vmax(.w,.w)",
 	},
 	{
+		// 00011111000vvvvvPP1uuuuu111ddddd | Vd = vmerge(Vu.x,Vv.w)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1f0020e0 },
+		.id = HEX_INS_V6_VMERGE_QF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 10 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = vmerge(.x,.w)",
+	},
+	{
 		// 00011101010vvvvvPP1uuuuu000ddddd | Vd.bf = vmin(Vu.bf,Vv.bf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1d402000 },
 		.id = HEX_INS_V6_VMIN_BF,
@@ -5921,6 +6461,34 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".h = vmps(.h,.uh,.uh):sat",
 	},
 	{
+		// 00011111100vvvvvPP0uuuuu110ddddd | Vdd.hf = vmpy(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1f8000c0 },
+		.id = HEX_INS_V6_VMPY_HF_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vmpy(.f8,.f8)",
+	},
+	{
+		// 00011111100vvvvvPP0uuuuu111xxxxx | Vxx.hf += vmpy(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1f8000e0 },
+		.id = HEX_INS_V6_VMPY_HF_F8_ACC,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'x', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 12 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 16 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf += vmpy(.f8,.f8)",
+	},
+	{
 		// 00011111100vvvvvPP1uuuuu011ddddd | Vd.hf = vmpy(Vu.hf,Vv.hf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1f802060 },
 		.id = HEX_INS_V6_VMPY_HF_HF,
@@ -6054,6 +6622,48 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 17 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vmpy(.sf,.sf)",
+	},
+	{
+		// 00011010000tttttPP1uuuuu011ddddd | Vd.qf16 = vmpy(Vu.hf,Rt.hf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1a002060 },
+		.id = HEX_INS_V6_VMPY_RT_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 17 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vmpy(.hf,.hf)",
+	},
+	{
+		// 00011010000tttttPP1uuuuu010ddddd | Vd.qf16 = vmpy(Vu.qf16,Rt.hf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1a002040 },
+		.id = HEX_INS_V6_VMPY_RT_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 19 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vmpy(.qf16,.hf)",
+	},
+	{
+		// 00011010000tttttPP1uuuuu001ddddd | Vd.qf32 = vmpy(Vu.sf,Rt.sf)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1a002020 },
+		.id = HEX_INS_V6_VMPY_RT_SF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 't', .syntax = 17 },
 		},
 		.pred = HEX_NOPRED,
 		.cond = RZ_TYPE_COND_AL,
@@ -6917,6 +7527,58 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.type = RZ_ANALYSIS_OP_TYPE_COND,
 		.syntax = "if (!)  = ",
 		.flags = HEX_INSN_TEMPLATE_FLAG_PREDICATED,
+	},
+	{
+		// 0001111000001110PP1uuuuu010ddddd | Vd.qf16 = vneg(Vu.hf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e2040 },
+		.id = HEX_INS_V6_VNEG_QF16_HF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vneg(.hf)",
+	},
+	{
+		// 0001111000001110PP1uuuuu011ddddd | Vd.qf16 = vneg(Vu.qf16)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e2060 },
+		.id = HEX_INS_V6_VNEG_QF16_QF16,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vneg(.qf16)",
+	},
+	{
+		// 0001111000001110PP1uuuuu001ddddd | Vd.qf32 = vneg(Vu.qf32)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e2020 },
+		.id = HEX_INS_V6_VNEG_QF32_QF32,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vneg(.qf32)",
+	},
+	{
+		// 0001111000001110PP1uuuuu000ddddd | Vd.qf32 = vneg(Vu.sf)
+		.encoding = { .mask = 0xffff20e0, .op = 0x1e0e2000 },
+		.id = HEX_INS_V6_VNEG_QF32_SF,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vneg(.sf)",
 	},
 	{
 		// 0001111000000011PP0uuuuu101ddddd | Vd.h = vnormamt(Vu.h)
@@ -8063,6 +8725,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.syntax = ".qf16 = vsub(.hf,.hf)",
 	},
 	{
+		// 00011111100vvvvvPP0uuuuu101ddddd | Vdd.hf = vsub(Vu.f8,Vv.f8)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1f8000a0 },
+		.id = HEX_INS_V6_VSUB_HF_F8,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_WR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 11 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 15 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".hf = vsub(.f8,.f8)",
+	},
+	{
 		// 00011111011vvvvvPP1uuuuu000ddddd | Vd.hf = vsub(Vu.hf,Vv.hf)
 		.encoding = { .mask = 0xffe020e0, .op = 0x1f602000 },
 		.id = HEX_INS_V6_VSUB_HF_HF,
@@ -8075,6 +8751,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".hf = vsub(.hf,.hf)",
+	},
+	{
+		// 00011010000vvvvvPP1uuuuu100ddddd | Vd.qf16 = vsub(Vu.hf,Vv.qf16)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1a002080 },
+		.id = HEX_INS_V6_VSUB_HF_MIX,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 17 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf16 = vsub(.hf,.qf16)",
 	},
 	{
 		// 00011111011vvvvvPP1uuuuu101ddddd | Vd.qf16 = vsub(Vu.qf16,Vv.qf16)
@@ -8173,6 +8863,20 @@ static const HexInsnTemplate templates_normal_0x1[] = {
 		.cond = RZ_TYPE_COND_AL,
 		.type = RZ_ANALYSIS_OP_TYPE_NULL,
 		.syntax = ".sf = vsub(.hf,.hf)",
+	},
+	{
+		// 00011010000vvvvvPP1uuuuu000ddddd | Vd.qf32 = vsub(Vu.sf,Vv.qf32)
+		.encoding = { .mask = 0xffe020e0, .op = 0x1a002000 },
+		.id = HEX_INS_V6_VSUB_SF_MIX,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 8 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'u', .syntax = 13 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_HVX_VR, .isa_id = 'v', .syntax = 17 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = ".qf32 = vsub(.sf,.qf32)",
 	},
 	{
 		// 00011111100vvvvvPP1uuuuu111ddddd | Vd.sf = vsub(Vu.sf,Vv.sf)
@@ -15867,6 +16571,19 @@ static const HexInsnTemplate templates_normal_0x6[] = {
 		.ops = {
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 'd', .syntax = 0 },
 			{ .info = HEX_OP_TEMPLATE_TYPE_REG, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 's', .syntax = 8 },
+		},
+		.pred = HEX_NOPRED,
+		.cond = RZ_TYPE_COND_AL,
+		.type = RZ_ANALYSIS_OP_TYPE_NULL,
+		.syntax = " = tlbp()",
+	},
+	{
+		// 01101100011sssssPP000000000ddddd | Rd = tlbp(Rss)
+		.encoding = { .mask = 0xffe03fe0, .op = 0x6c600000 },
+		.id = HEX_INS_Y2_TLBPP,
+		.ops = {
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_OUT, .masks = { { 0x5, 0 } }, .reg_cls = HEX_REG_CLASS_INT_REGS, .isa_id = 'd', .syntax = 0 },
+			{ .info = HEX_OP_TEMPLATE_TYPE_REG | HEX_OP_TEMPLATE_FLAG_REG_PAIR, .masks = { { 0x5, 16 } }, .reg_cls = HEX_REG_CLASS_DOUBLE_REGS, .isa_id = 's', .syntax = 8 },
 		},
 		.pred = HEX_NOPRED,
 		.cond = RZ_TYPE_COND_AL,

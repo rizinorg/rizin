@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-15 22:23:13+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -187,7 +187,7 @@ RzAsmPlugin rz_asm_plugin_hexagon = {
 	.arch = "hexagon",
 	.author = "Rot127",
 	.license = "LGPL3",
-	.cpus = "v79llvm",
+	.cpus = "v81llvm",
 	.features = "HVX",
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
