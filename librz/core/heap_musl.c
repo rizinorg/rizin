@@ -183,9 +183,11 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
 	RzStructuredData *ctx_data = ctx_structured_data(ctx_addr, ctx);
 
 	char *ctx_data_str = rz_structured_data_to_yaml(ctx_data);
-	rz_cons_print(ctx_data_str);
+	if (ctx_data_str) {
+		rz_cons_print(ctx_data_str);
+		free(ctx_data_str);
+	}
 	rz_structured_data_free(ctx_data);
-	free(ctx_data_str);
 }
 
 static RzStructuredData *meta_area_structured_data(ut64 addr, mallocng_meta_area area,
@@ -249,10 +251,12 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
 			return;
 		}
 		char *area_str = rz_structured_data_to_yaml(area_data);
-		printf("meta_area #%d: \n", idx++);
-		rz_cons_print(area_str);
+		if (area_str) {
+			printf("meta_area #%d: \n", idx++);
+			rz_cons_print(area_str);
+			free(area_str);
+		}
 		rz_structured_data_free(area_data);
-		free(area_str);
 		curr_meta = area.next;
 	}
 }
