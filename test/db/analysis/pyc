@@ -1,0 +1,188 @@
+NAME=PYC: Function boundaries and disassembly (py27)
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+s 0x52
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.hello_world:
+/ sym._module_.hello_world();
+|           0x00000052      LOAD_CONST            'this is py2'        ; [01] ---- section size 9 named module_.hello_world
+|           0x00000055      PRINT_ITEM
+|           0x00000056      PRINT_NEWLINE
+|           0x00000057      LOAD_CONST            100
+\           0x0000005a      RETURN_VALUE
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=PYC: Function boundaries and disassembly (py310)
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+s 0x00001eb3
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.module_.Superhero.boast:
+/ sym._module_.Superhero.boast();
+|           0x00001eb3      LOAD_FAST             self                 ; [29] ---- section size 32 named module_.Superhero.boast
+|           0x00001eb5      LOAD_ATTR             superpowers
+|           0x00001eb7      GET_ITER
+|           ; CODE XREF from sym._module_.Superhero.boast @ 0x1ecd
+|     ,,.-> 0x00001eb9      FOR_ITER              10
+|     `---> 0x00001ebb      STORE_FAST            power
+|      |:   0x00001ebd      LOAD_GLOBAL           print
+|      |:   0x00001ebf      LOAD_CONST            I wield the power of {pow}!
+|      |:   0x00001ec1      LOAD_ATTR             format
+|      |:   0x00001ec3      LOAD_FAST             power
+|      |:   0x00001ec5      LOAD_CONST            (pow)
+|      |:   0x00001ec7      CALL_FUNCTION_KW      1 total positional and keyword args
+|      |:   0x00001ec9      CALL_FUNCTION         1
+|      |:   0x00001ecb      POP_TOP
+|      |`=< 0x00001ecd      JUMP_ABSOLUTE         3
+|      `--> 0x00001ecf      LOAD_CONST            None
+\           0x00001ed1      RETURN_VALUE
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=PYC: Control flow jump types (py310 FOR_ITER cjmp)
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+s 0x00001eb9
+ao
+EOF
+EXPECT=<<EOF
+address: 0x1eb9
+opcode: FOR_ITER              10
+disasm: FOR_ITER              10
+mnemonic: FOR_ITER
+mask: ff00
+prefix: 0
+id: 93
+bytes: 5d0a
+refptr: 0
+size: 2
+sign: true
+type: cjmp
+cycles: 0
+jump: 0x00001ebb
+fail: 0x00001ecf
+cond: al
+family: cpu
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=PYC: Control flow jump types (py310 JUMP_ABSOLUTE jmp)
+FILE=bins/pyc/py310.pyc
+CMDS=<<EOF
+s 0x00001ecd
+ao
+EOF
+EXPECT=<<EOF
+address: 0x1ecd
+opcode: JUMP_ABSOLUTE         3
+disasm: JUMP_ABSOLUTE         3
+mnemonic: JUMP_ABSOLUTE
+mask: ff00
+prefix: 0
+id: 113
+bytes: 7103
+refptr: 0
+size: 2
+sign: true
+type: jmp
+cycles: 0
+jump: 0x00001eb9
+family: cpu
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=PYC: Control flow jump types (py314 FOR_ITER cjmp)
+FILE=bins/pyc/pyc314.pyc
+CMDS=<<EOF
+s 0x00002cb8
+ao
+EOF
+EXPECT=<<EOF
+address: 0x2cb8
+opcode: FOR_ITER              30
+disasm: FOR_ITER              30
+mnemonic: FOR_ITER
+mask: ff00
+prefix: 0
+id: 70
+bytes: 461e
+refptr: 0
+size: 2
+sign: true
+type: cjmp
+cycles: 0
+jump: 0x00002cba
+fail: 0x00002cf6
+cond: al
+family: cpu
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
+
+NAME=PYC: Control flow jump types (py314 JUMP_BACKWARD jmp)
+FILE=bins/pyc/pyc314.pyc
+CMDS=<<EOF
+s 0x00002cf4
+ao
+EOF
+EXPECT=<<EOF
+address: 0x2cf4
+opcode: JUMP_BACKWARD         32
+disasm: JUMP_BACKWARD         32
+mnemonic: JUMP_BACKWARD
+mask: ff00
+prefix: 0
+id: 75
+bytes: 4b20
+refptr: 0
+size: 2
+sign: true
+type: jmp
+cycles: 0
+jump: 0x00002cb6
+fail: 0x00002cf6
+family: cpu
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\s\(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
+RUN
