@@ -613,7 +613,7 @@ static const RzCmdDescArg egg_type_args[2];
 static const RzCmdDescArg egg_padding_args[2];
 static const RzCmdDescArg egg_encoder_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
-static const RzCmdDescArg cmd_info_class_apply_args[3];
+static const RzCmdDescArg cmd_info_class_apply_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
@@ -13203,13 +13203,7 @@ static const RzCmdDescArg cmd_info_class_apply_args[] = {
 	{
 		.name = "class name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-
-	},
-	{
-		.name = "address",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
 
 	},
 	{ 0 },
@@ -13264,12 +13258,12 @@ static const RzCmdDescHelp cmd_info_class_methods_help = {
 	.args = cmd_info_class_methods_args,
 };
 
-static const RzCmdDescArg cmd_info_classes_to_types_args[] = {
+static const RzCmdDescArg cmd_info_classes_to_struct_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_info_classes_to_types_help = {
+static const RzCmdDescHelp cmd_info_classes_to_struct_help = {
 	.summary = "Generate type definitions from classes",
-	.args = cmd_info_classes_to_types_args,
+	.args = cmd_info_classes_to_struct_args,
 };
 
 static const RzCmdDescArg cmd_info_signature_args[] = {
@@ -23953,8 +23947,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_info_class_methods_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_class_methods_cd, RZ_OUTPUT_MODE_TABLE);
 
-	RzCmdDesc *cmd_info_classes_to_types_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ict", rz_cmd_info_classes_to_types_handler, &cmd_info_classes_to_types_help);
-	rz_warn_if_fail(cmd_info_classes_to_types_cd);
+	RzCmdDesc *cmd_info_classes_to_struct_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ics", rz_cmd_info_classes_to_struct_handler, &cmd_info_classes_to_struct_help);
+	rz_warn_if_fail(cmd_info_classes_to_struct_cd);
 
 	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_signature_handler, &cmd_info_signature_help);
 	rz_warn_if_fail(cmd_info_signature_cd);

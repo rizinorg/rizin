@@ -52,9 +52,6 @@ commands:
         args:
         - name: class name
           type: RZ_CMD_ARG_TYPE_STRING
-        - name: address
-          type: RZ_CMD_ARG_TYPE_RZNUM
-          optional: true
       - name: icc
         summary: Prints class, fields and methods as source code
         cname: cmd_info_class_as_source
@@ -90,9 +87,9 @@ commands:
           - name: class name
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: ict
+      - name: ics
         summary: Generate type definitions from classes
-        cname: cmd_info_classes_to_types
+        cname: cmd_info_classes_to_struct
         args: []
   - name: iC
     cname: cmd_info_signature

@@ -4157,7 +4157,7 @@ RZ_API RzCmdStatus rz_core_bin_class_apply_print(RZ_NONNULL RzCore *core, RZ_NON
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API bool rz_core_bin_classes_to_types(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
+RZ_API bool rz_core_bin_classes_to_struct(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(core && bf && bf->o, false);
 	const RzPVector *classes = rz_bin_object_get_classes(bf->o);
 	if (!classes) {

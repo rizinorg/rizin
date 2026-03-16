@@ -1694,8 +1694,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, c
 RZ_IPI RzCmdStatus rz_cmd_info_class_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "icm"
 RZ_IPI RzCmdStatus rz_cmd_info_class_methods_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
-// "ict"
-RZ_IPI RzCmdStatus rz_cmd_info_classes_to_types_handler(RzCore *core, int argc, const char **argv);
+// "ics"
+RZ_IPI RzCmdStatus rz_cmd_info_classes_to_struct_handler(RzCore *core, int argc, const char **argv);
 // "iC"
 RZ_IPI RzCmdStatus rz_cmd_info_signature_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "id"

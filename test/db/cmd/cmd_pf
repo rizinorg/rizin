@@ -82,12 +82,20 @@ NAME=seteq
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-pfn foo "xd foo bar"
-pf. foo
+pfn foo "xxd foo bar cow"
+w hello happy world
+w goodbye cruel world @ 0x20
+s 0x20
+pf. foo @ 0x00
+pfa foo
 EOF
 EXPECT=<<EOF
- foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0
+ foo : 0x00000000 = 0x6c6c6568
+ bar : 0x00000004 = 0x6168206f
+ cow : 0x00000008 = 544829552
+ foo : 0x00000020 = 0x646f6f67
+ bar : 0x00000024 = 0x20657962
+ cow : 0x00000028 = 1702195811
 EOF
 RUN
 
@@ -1087,19 +1095,5 @@ EXPECT=<<EOF
     ]
   }
 ]
-EOF
-RUN
-
-NAME=Apply named format at current offset
-FILE=malloc://1024
-CMDS=<<EOF
-pfn foo "xxd foo bar cow"
-w hello happy world
-pfa foo
-EOF
-EXPECT=<<EOF
- foo : 0x00000000 = 0x6c6c6568
- bar : 0x00000004 = 0x6168206f
- cow : 0x00000008 = 544829552
 EOF
 RUN

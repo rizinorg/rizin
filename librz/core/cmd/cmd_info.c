@@ -383,12 +383,12 @@ RZ_IPI RzCmdStatus rz_cmd_info_class_apply_handler(RzCore *core, int argc, const
 	return rz_core_bin_class_apply_print(core, argv[1], addr);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_info_classes_to_types_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_info_classes_to_struct_handler(RzCore *core, int argc, const char **argv) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	return bool2status(rz_core_bin_classes_to_types(core, bf));
+	return bool2status(rz_core_bin_classes_to_struct(core, bf));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv) {

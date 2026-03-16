@@ -619,7 +619,7 @@ RUN
 NAME=ica
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
-ica Employee 0x100000000
+ica Employee @ 0x100000000
 fl@F:classes~method
 EOF
 EXPECT=<<EOF
