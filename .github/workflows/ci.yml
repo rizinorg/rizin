@@ -978,7 +978,7 @@ jobs:
           tag_name: ${{ steps.extract_version.outputs.branch }}
           name: Release ${{ steps.extract_version.outputs.branch }}
           draft: true
-          prerelease: false
+          prerelease: true
           files: |
             rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
             rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
