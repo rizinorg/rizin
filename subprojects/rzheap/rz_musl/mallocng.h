@@ -415,7 +415,6 @@ static inline bool read_and_parse_meta_area(RzIO *io, ut64 addr, mallocng_meta_a
 			!rz_buf_read_le64_offset(b, &offset, &out->slots)) {
 			goto cleanup;
 		}
-		printf("ptrsize: %d\n", config.ptr_size);
 
 	} else {
 		ut32 next, nslots, slots;

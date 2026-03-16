@@ -137,10 +137,34 @@ MuslAllocator musl_get_allocator_kind(RzCore *core) {
 	return MUSL_OLDMALLOC;
 }
 
-void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config) {
+static RzStructuredData *ctx_structured_data(ut64 addr, mallocng_ctx ctx) {
+	RzStructuredData *ctx_data = rz_structured_data_new_map();
+	rz_structured_data_map_add_unsigned(ctx_data, "context address", addr, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "secret", ctx.secret, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "init_done", ctx.init_done, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "mmap_counter", ctx.mmap_counter, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "free_meta_head", ctx.free_meta_head, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "avail_meta", ctx.avail_meta, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "avail_meta_count", ctx.avail_meta_count, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "avail_meta_area_count", ctx.avail_meta_area_count, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "meta_alloc_shift", ctx.meta_alloc_shift, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "meta_area_head", ctx.meta_area_head, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "meta_area_tail", ctx.meta_area_tail, true);
+	rz_structured_data_map_add_unsigned(ctx_data, "avail_meta_areas", ctx.avail_meta_areas, true);
+
+	RzStructuredData *active_metas = rz_structured_data_map_add_array(ctx_data, "active");
+	for (int i = 0; i < 48; i++) {
+		if (ctx.active[i]) {
+			rz_structured_data_array_add_unsigned(active_metas, ctx.active[i], true);
+		}
+	}
+	return ctx_data;
+}
+
+void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
+	ut64 addr, RzMallocngConfig config) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	mallocng_ctx ctx;
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
@@ -149,41 +173,54 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr, ut64 add
 				return;
 			}
 		}
-		if (!read_and_parse_ctx(core->io, ctx_addr, &ctx, config)) {
-			RZ_LOG_ERROR("Failed to read __malloc_context at 0x%" PFMT64x "\n", ctx_addr);
-			return;
-		}
-		PRINTF_YA("__malloc_context @ 0x%" PFMT64x " {\n", ctx_addr);
-		PRINTF_YA("  secret = 0x%" PFMT64x "\n", ctx.secret);
-		PRINTF_YA("  init_done = 0x%x\n", ctx.init_done);
-		PRINTF_YA("  mmap_counter = 0x%x\n", ctx.mmap_counter);
-		PRINTF_YA("  free_meta_head = 0x%" PFMT64x "\n", ctx.free_meta_head);
-		PRINTF_YA("  avail_meta = 0x%" PFMT64x "\n", ctx.avail_meta);
-		PRINT_YA("  active = [\n");
-		for (int i = 0; i < 48; i++) {
-			if (ctx.active[i]) {
-				PRINTF_YA("    active[%d] = 0x%" PFMT64x " (%lld bytes)\n", i, ctx.active[i],
-					ctx.usage_by_class[i]);
-			}
-		}
-		PRINT_YA("  ]\n");
-		PRINTF_YA("  avail_meta_count = 0x%lld\n", ctx.avail_meta_count);
-		PRINTF_YA("  avail_meta_area_count = 0x%lld\n", ctx.avail_meta_area_count);
-		PRINTF_YA("  meta_alloc_shift = 0x%llx\n", ctx.meta_alloc_shift);
-		PRINTF_YA("  meta_area_head = 0x%" PFMT64x "\n", ctx.meta_area_head);
-		PRINTF_YA("  meta_area_tail = 0x%" PFMT64x "\n", ctx.meta_area_tail);
-		PRINTF_YA("  avail_meta_areas = 0x%" PFMT64x "\n", ctx.avail_meta_areas);
-		PRINT_YA("}\n");
+	} else {
+		ctx_addr = addr;
 	}
+	if (!read_and_parse_ctx(core->io, ctx_addr, &ctx, config)) {
+		RZ_LOG_ERROR("Failed to read __malloc_context at 0x%" PFMT64x "\n", ctx_addr);
+		return;
+	}
+	RzStructuredData *ctx_data = ctx_structured_data(ctx_addr, ctx);
+
+	char *ctx_data_str = rz_structured_data_to_yaml(ctx_data);
+	rz_cons_print(ctx_data_str);
+	rz_structured_data_free(ctx_data);
+	free(ctx_data_str);
 }
 
-void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config) {
+static RzStructuredData *meta_area_structured_data(ut64 addr, mallocng_meta_area area,
+	RzCore *core, RzMallocngConfig config) {
+
+	RzStructuredData *meta_area_data = rz_structured_data_new_map();
+	rz_structured_data_map_add_unsigned(meta_area_data, "meta area address", addr, true);
+	rz_structured_data_map_add_unsigned(meta_area_data, "check", area.check, true);
+	rz_structured_data_map_add_unsigned(meta_area_data, "next", area.next, true);
+	rz_structured_data_map_add_unsigned(meta_area_data, "nslots", area.nslots, true);
+
+	RzStructuredData *slots = rz_structured_data_map_add_array(meta_area_data, "slots");
+	for (int i = 0; i < area.nslots; i++) {
+		ut64 start_addr;
+		ut64 meta_addr;
+		if (!read_ptr_at(core->io, area.slots, &start_addr, config.ptr_size) ||
+			!read_ptr_at(core->io, start_addr + i * config.meta_size, &meta_addr, config.ptr_size)) {
+			return NULL;
+		}
+		if (meta_addr) {
+			rz_structured_data_array_add_unsigned(slots, meta_addr, true);
+		}
+	}
+	return meta_area_data;
+}
+
+void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
+	ut64 addr, RzMallocngConfig config) {
+	ut32 idx = 1;
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	ut64 curr_meta = 0;
 	mallocng_ctx ctx;
 	mallocng_meta_area area;
-	mallocng_meta meta;
+	RzStructuredData *area_data;
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
 			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
@@ -196,36 +233,27 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr, ut64 
 			return;
 		}
 
-		ut64 curr_meta = ctx.meta_area_head;
-		while (curr_meta) {
-			if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
-				RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-				return;
-			}
-
-			PRINTF_GA("meta_area @ 0x%" PFMT64x " {\n", curr_meta);
-			PRINTF_BA("  check = 0x%" PFMT64x "\n", area.check);
-			PRINTF_BA("  next = 0x%" PFMT64x "\n", area.next);
-			PRINT_BA("  slots = [\n");
-			for (int i = 0; i < area.nslots; i += 1) {
-				ut64 start_addr;
-				ut64 meta_addr;
-				if (!read_ptr_at(core->io, area.slots, &start_addr, config.ptr_size) ||
-					!read_ptr_at(core->io, start_addr + i * config.meta_size, &meta_addr, config.ptr_size) ||
-					!read_and_parse_meta(core->io, meta_addr, &meta, config)) {
-					RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-					return;
-				}
-
-				if (meta_addr) {
-					PRINTF_BA("    slot %d: 0x%" PFMT64x " (size 0x%x)\n", i,
-						meta_addr, UNIT * ng_size_classes[meta.sizeclass]);
-				}
-			}
-			PRINT_BA("  ]\n");
-			PRINT_BA("}\n");
-			curr_meta = area.next;
+		curr_meta = ctx.meta_area_head;
+	} else {
+		curr_meta = addr;
+	}
+	while (curr_meta) {
+		if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
+			RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+			return;
 		}
+
+		area_data = meta_area_structured_data(curr_meta, area, core, config);
+		if (!area_data) {
+			RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+			return;
+		}
+		char *area_str = rz_structured_data_to_yaml(area_data);
+		printf("meta_area #%d: \n", idx++);
+		rz_cons_print(area_str);
+		rz_structured_data_free(area_data);
+		free(area_str);
+		curr_meta = area.next;
 	}
 }
 
