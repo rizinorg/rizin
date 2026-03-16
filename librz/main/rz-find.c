@@ -43,6 +43,7 @@ typedef struct {
 	const char *curfile;
 	const char *comma;
 	const char *exec_command;
+	const char *rizin_command;
 } RzfindOptions;
 
 static void rzfind_options_fini(RzfindOptions *ro) {
@@ -57,6 +58,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->to = UT64_MAX;
 	ro->keywords = rz_list_newf(NULL);
 	ro->exec_command = NULL;
+	ro->rizin_command = NULL;
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -64,6 +66,7 @@ static int rzfind_open(RzfindOptions *ro, const char *file);
 typedef struct {
 	RzfindOptions *opt;
 	const char *filename;
+	RzCore *core;
 } RzfindContext;
 
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
@@ -164,6 +167,15 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		free(command);
 		return 1;
 	}
+	if (ro->rizin_command && ctx->core) {
+			rz_core_seek(ctx->core, addr, true);
+			char *output = rz_core_cmd_str(ctx->core, ro->rizin_command);
+			if (output) {
+				printf("%s", output);
+				free(output);
+			}
+			return 1;
+	}
 	return 1;
 }
 
@@ -210,7 +222,7 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 
 static int show_help(const char *argv0, int line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..\n");
+	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
 	if (line) {
 		return 0;
 	}
@@ -219,7 +231,8 @@ static int show_help(const char *argv0, int line) {
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
-		"-E",    "cmd",     "Execute command for each file found",
+		"-E",    "cmd",     "Execute shell command for each file found.",
+		"-R",    "cmd",     "Execute Rizin command for each search hit.",
 		"-f",    "from",    "Start searching from address 'from'",
 		"-F",    "file",    "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
@@ -483,7 +496,29 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		goto err;
 	}
 	rs->align = ro->align;
-	RzfindContext ctx = { .opt = ro, .filename = file };
+	RzCore *core = NULL;
+	if (ro->rizin_command) {
+		core = rz_core_new();
+		if (!core) {
+			eprintf("Cannot allocate core for rizin command execution\n");
+			result = 1;
+			goto err;
+		}
+		rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL);
+		rz_config_set_b(core->config, "scr.interactive", false);
+		rz_config_set_b(core->config, "scr.prompt", false);
+		rz_config_set_b(core->config, "cfg.debug", false);
+		RzCoreFile *cfile = rz_core_file_open(core, file, RZ_PERM_R, 0);
+		if (!cfile) {
+			eprintf("Cannot open file '%s' in core for rizin command\n", file);
+			rz_core_free(core);
+			core = NULL;
+			result = 1;
+			goto err;
+		}
+		rz_core_bin_load(core, NULL, UT64_MAX);
+	}
+	RzfindContext ctx = { .opt = ro, .filename = file, .core = core };
 	rz_search_set_callback(rs, &hit, &ctx);
 	ut64 to = ro->to;
 	if (to == -1) {
@@ -753,7 +788,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:rqnhvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:rqnhvVZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -787,6 +822,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.quiet = true;
 			ro.exec_command = opt.arg;
 			break;
+		case 'R':
+			ro.quiet = true;
+			ro.rizin_command = opt.arg;
+			break;			
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
 			ro.hexstr = false;

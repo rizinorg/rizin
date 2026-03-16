@@ -134,6 +134,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -R 
+FILE==
+CMDS=!rz-find -s "GCC" -R "px 1" bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x101d
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000101d  ff                                       .
+0x105c
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000105c  ff                                       .
+0x109b
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000109b  ff                                       .
+0x10da
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000010da  ff                                       .
+0x1119
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001119  ff                                       .
+0x1158
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001158  ff                                       .
+0x1197
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001197  ff                                       .
+EOF
+RUN
+
 NAME=rz-find -b 0xa
 TOOL=rz-find
 ARGS=-s 250382 -b 0xa bins/elf/ioli/crackme0x00
