@@ -528,6 +528,13 @@ foreach it : ccs
   '''
   has_sse2 = it_cc.compiles(sse2_code, args : [sse2_compiler_flag], name: 'SSE2 code snippet')
   it_userconf.set10('HAVE_SSE2', has_sse2)
+  
+  # Try to compile a basic Neon code snippet to discover if Neon is supported for the target arch
+  neon_code = '''#include <arm_neon.h>
+    int main (int argc, char *argv[]) { uint8x16_t v = vdupq_n_u8(1); return 0; }
+  '''
+  has_neon = it_cc.compiles(neon_code, name: 'Neon code snippet')
+  it_userconf.set10('HAVE_NEON', has_neon)
 
   # Enable SSE2 compiler support since it may not be enabled by default
   if has_sse2 and it_machine.cpu_family() in ['x86', 'x86_64']

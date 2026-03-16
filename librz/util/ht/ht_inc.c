@@ -44,6 +44,12 @@
 #define GROUP_WIDTH 16
 typedef ut16 group_mask_t;
 typedef __m128i group_t;
+#elif HAVE_NEON
+#include <arm_neon.h>
+#define LOOKUP_METHOD_NEON
+#define GROUP_WIDTH 16
+typedef ut16 group_mask_t;
+typedef uint8x16_t group_t;
 #elif RZ_SYS_BITS == RZ_SYS_BITS_64
 #define LOOKUP_METHOD_BITWISE_64
 typedef ut64 group_t;
@@ -96,6 +102,62 @@ static inline group_mask_t group_match_deleted(group_t group) {
 	__m128i deleted_vec = _mm_set1_epi8(H2_STATUS_DELETED);
 	__m128i diff = _mm_cmpeq_epi8(group, deleted_vec);
 	return (group_mask_t)_mm_movemask_epi8(diff);
+}
+
+static inline ut8 group_lowest_bit(group_mask_t mask) {
+	return rz_bits_trailing_zeros(mask);
+}
+
+#define HT_FOREACH(ht, kv, body) \
+	for (INDEX_TYPE i = 0; i < (ht)->capacity; i += GROUP_WIDTH) { \
+		RZ_PREFETCH(&(ht)->ctrl[i + GROUP_WIDTH]); \
+		RZ_PREFETCH(HT_SLOT_AT((ht), i + GROUP_WIDTH)); \
+		HT_FOREACH_UNROLL(ht, kv, i + 0, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 1, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 2, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 3, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 4, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 5, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 6, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 7, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 8, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 9, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 10, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 11, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 12, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 13, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 14, body); \
+		HT_FOREACH_UNROLL(ht, kv, i + 15, body); \
+	}
+#elif defined(LOOKUP_METHOD_NEON)
+static inline group_t group_load(const void *addr) {
+	return vld1q_u8((const uint8_t *)addr);
+}
+
+static inline group_mask_t movemask_neon(uint8x16_t input) {
+	uint16x8_t high_bits = vreinterpretq_u16_u8(vshrq_n_u8(input, 7));
+	uint32x4_t paired16 = vreinterpretq_u32_u16(vsraq_n_u16(high_bits, high_bits, 7));
+	uint64x2_t paired32 = vreinterpretq_u64_u32(vsraq_n_u32(paired16, paired16, 14));
+	uint8x16_t paired64 = vreinterpretq_u8_u64(vsraq_n_u64(paired32, paired32, 28));
+	return (group_mask_t)vgetq_lane_u8(paired64, 0) | ((group_mask_t)vgetq_lane_u8(paired64, 8) << 8);
+}
+
+static inline group_mask_t group_match_hash_fragment(group_t group, ut8 ctrl) {
+	uint8x16_t ctrl_vec = vdupq_n_u8(ctrl);
+	uint8x16_t match = vceqq_u8(group, ctrl_vec);
+	return movemask_neon(match);
+}
+
+static inline group_mask_t group_match_empty(group_t group) {
+	uint8x16_t empty_vec = vdupq_n_u8(H2_STATUS_EMPTY);
+	uint8x16_t match = vceqq_u8(group, empty_vec);
+	return movemask_neon(match);
+}
+
+static inline group_mask_t group_match_deleted(group_t group) {
+	uint8x16_t deleted_vec = vdupq_n_u8(H2_STATUS_DELETED);
+	uint8x16_t match = vceqq_u8(group, deleted_vec);
+	return movemask_neon(match);
 }
 
 static inline ut8 group_lowest_bit(group_mask_t mask) {
@@ -442,7 +504,7 @@ static INDEX_TYPE ctrl_table_lookup_or_reserve(HtName_(Ht) *ht, const KEY_TYPE k
 
 	while (true) {
 		// Probe one group at a time
-#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64)
+#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64) || defined(LOOKUP_METHOD_NEON)
 		group_mask_t deleted_match;
 		group_mask_t empty_match;
 		group_t group = group_load(&ht->ctrl[index]);
@@ -530,7 +592,7 @@ static INDEX_TYPE ctrl_table_lookup(HtName_(Ht) *ht, const KEY_TYPE key, const u
 
 	while (true) {
 		// Probe one group at a time
-#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64)
+#if defined(LOOKUP_METHOD_SSE2) || defined(LOOKUP_METHOD_BITWISE_64) || defined(LOOKUP_METHOD_NEON)
 		group_t group = group_load(&ht->ctrl[index]);
 
 		// Match all group control bytes with the H2 (hash fragment) of `key`
