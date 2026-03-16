@@ -168,13 +168,13 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		return 1;
 	}
 	if (ro->rizin_command && ctx->core) {
-			rz_core_seek(ctx->core, addr, true);
-			char *output = rz_core_cmd_str(ctx->core, ro->rizin_command);
-			if (output) {
-				printf("%s", output);
-				free(output);
-			}
-			return 1;
+		rz_core_seek(ctx->core, addr, true);
+		char *output = rz_core_cmd_str(ctx->core, ro->rizin_command);
+		if (output) {
+			printf("%s", output);
+			free(output);
+		}
+		return 1;
 	}
 	return 1;
 }
@@ -825,7 +825,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'R':
 			ro.quiet = true;
 			ro.rizin_command = opt.arg;
-			break;			
+			break;
 		case 's':
 			ro.mode = RZ_SEARCH_KEYWORD;
 			ro.hexstr = false;
