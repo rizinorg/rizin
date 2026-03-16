@@ -1219,6 +1219,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 				} else {
 					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin -B 0x%08" PFMT64x " -S \"%s\"", name, baddr, filesc);
 				}
+				if (res) {
+					rz_str_remove_char(res, '\r');
+				}
 				free(filesc);
 				rz_cons_println(res);
 				free(name);
@@ -1254,6 +1257,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin -B 0x%08" PFMT64x " -S \"%s\"", name, baddr, filesc);
 			}
 			free(filesc);
+			if (res) {
+				rz_str_remove_char(res, '\r');
+			}
 			rz_cons_println(res);
 			free(name);
 			free(res);
