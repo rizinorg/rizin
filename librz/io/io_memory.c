@@ -105,7 +105,9 @@ int io_memory_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 		return -1;
 	}
 	if (_io_malloc_off(fd) + count >= mallocsz) {
-		count = mallocsz - _io_malloc_off(fd);
+		size_t new_count = mallocsz - _io_malloc_off(fd);
+		memset(buf + new_count, 0xff, count - new_count);
+		count = new_count;
 	}
 	memcpy(buf, _io_malloc_buf(fd) + _io_malloc_off(fd), count);
 	_io_malloc_set_off(fd, _io_malloc_off(fd) + count);
