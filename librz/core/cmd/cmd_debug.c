@@ -1015,14 +1015,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char *
 		// Effectively an alias for 'dmm'
 		if (rz_core_is_core_dump(core)) {
 			cmd_io_modules(core, state);
-			rz_cmd_state_output_print(state);
-			rz_cons_flush();
 			return RZ_CMD_STATUS_OK;
 		}
 		CMD_CHECK_DEBUG_DEAD(core);
 		cmd_debug_modules(core, state);
-		rz_cmd_state_output_print(state);
-		rz_cons_flush();
 		return RZ_CMD_STATUS_OK;
 	}
 

@@ -607,6 +607,7 @@ FILE=bins/elf/core/core-linux-x86_64
 CMDS=<<EOF
 dm~fmap?
 dm~mmap?
+dmj~{[0]}
 dm=~fmap?
 dm=~mmap?
 echo ----
@@ -615,8 +616,11 @@ dm.~0x56149dfaf000
 echo ----
 dmm~libc
 dmm.~bin
+dmmj~libc
+dmm.j~crash
 echo ----
 dmi bins/elf/core/crash-linux-x86_64~printf
+dmij~{[0]}
 dmia bins/elf/core/crash-linux-x86_64~MAGIC
 obf bins/elf/core/crash-linux-x86_64 
 dmi.~end
@@ -626,6 +630,7 @@ EOF
 EXPECT=<<EOF
 15
 7
+{"map":1,"fd":3,"delta":8192,"from":94646549803008,"to":94646549807104,"perm":"r--","name":"fmap.bins/elf/core/crash-linux-x86_64"}
 15
 7
 ----
@@ -633,8 +638,11 @@ EXPECT=<<EOF
 ----
 0x7f582fa31000 0x7f582fa56000  /usr/lib/libc-2.33.so
 0x56149dfaf000 0x56149dfb0000  bins/elf/core/crash-linux-x86_64
+[{"addr":94646549803008,"addr_end":94646549807104,"name":"bins/elf/core/crash-linux-x86_64"},{"addr":140016733065216,"addr_end":140016733216768,"name":"/usr/lib/libc-2.33.so"},{"addr":140016735272960,"addr_end":140016735277056,"name":"/usr/lib/ld-2.33.so"}]
+[{"addr":94646549803008,"addr_end":94646549807104,"file":"bins/elf/core/crash-linux-x86_64"}]
 ----
   2 0x00001030 0x56149dfb0030 GLOBAL FUNC     16     imp.printf
+{"addr":94646549803008,"addr_end":94646549807104,"name":"bins/elf/core/crash-linux-x86_64"}
 0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
  34 ---------- 0x00004038 GLOBAL NOTYPE    0     _end
 ----
@@ -655,6 +663,8 @@ dm.~0x558ce37000
 echo ----
 dmm~libc
 dmm.~bin
+dmmj~libc
+dmm.j~crash
 echo ----
 dmi bins/elf/core/crash-linux-arm64~printf
 dmia bins/elf/core/crash-linux-arm64~MAGIC
@@ -673,6 +683,8 @@ EXPECT=<<EOF
 ----
 0x7f8bd61000 0x7f8bebb000  /usr/lib/libc-2.32.so
 0x558ce37000 0x558ce38000  bins/elf/core/crash-linux-arm64
+[{"addr":367435935744,"addr_end":367435939840,"name":"bins/elf/core/crash-linux-arm64"},{"addr":547806908416,"addr_end":547808325632,"name":"/usr/lib/libc-2.32.so"},{"addr":547808579584,"addr_end":547808714752,"name":"/usr/lib/ld-2.32.so"}]
+[{"addr":367435935744,"addr_end":367435939840,"file":"bins/elf/core/crash-linux-arm64"}]
 ----
   9 0x00000620 0x558ce37620 GLOBAL FUNC     16     imp.printf
 0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
