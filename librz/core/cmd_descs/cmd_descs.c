@@ -23352,12 +23352,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
 	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
 
-	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_state_new(core->rcmd, dm_cd, "dm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
 	rz_warn_if_fail(cmd_debug_map_current_cd);
 
 	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
 	rz_warn_if_fail(dmm_cd);
-	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
+	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
 	rz_warn_if_fail(cmd_debug_current_modules_cd);
 
 	RzCmdDesc *cmd_debug_deallocate_map_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm-", rz_cmd_debug_deallocate_map_handler, &cmd_debug_deallocate_map_help);
@@ -23417,7 +23417,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
 
-	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
 	rz_warn_if_fail(cmd_debug_dmS_cd);
 
 	RzCmdDesc *dmw_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heaps_handler, &cmd_debug_process_heaps_help, &dmw_help);
