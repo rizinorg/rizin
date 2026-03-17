@@ -1,5 +1,6 @@
-.Dd Dec 28, 2020
+.Dd December 28, 2020
 .Dt RZ_AX 1
+.Os
 .Sh NAME
 .Nm rz-ax
 .Nd rizin base converter
@@ -10,7 +11,8 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This command allows you to convert values between positive and negative integer, float, octal, binary, ternary, and hexadecimal values.
+This command allows you to convert values between positive and
+negative integer, float, octal, binary, ternary, and hexadecimal values.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl a
@@ -30,7 +32,8 @@ Base64 encode
 .It Fl f
 Floating point arithmetic (rz-ax -f 6.3+2.1)
 .It Fl F
-Read C strings from stdin and output in hexpairs. Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
+Read C strings from stdin and output in hexpairs.
+Useful to load shellcodes (rz-ax -F < shellcode.[c/py/js])
 .It Fl h
 Show usage help message
 .It Fl i
@@ -46,9 +49,9 @@ Convert binary to hexadecimal (rz-ax -L 111111111 outputs 0x1ff)
 .It Fl n
 Show hexpairs from integer value (rz-ax -n 0x1234 # 34120000)
 .It Fl N
-Show hex C string from integer value (rz-ax -N 0x1234 # \x34\x12\x00\x00)
+Show hex C string from integer value (rz-ax -N 0x1234 # \ex34\ex12\ex00\ex00)
 .It Fl o
-Convert from octal string to char (rz-ax -o \162 \172 # rz)
+Convert from octal string to char (rz-ax -o \e162 \e172 # rz)
 .It Fl r
 Rz style output (rz-ax -r 0x1234)
 .It Fl s
@@ -73,7 +76,6 @@ Convert a string into a hash (rz-ax -x linux osx)
 Show position of set bits in the binary representation (rz-ax -p 0xb3)
 .El
 .Sh USAGE
-.Pp
 Force output mode (numeric base)
 .Pp
   =f    floating point
@@ -104,8 +106,8 @@ Available variable types are:
   raw     \->  hex     rz-ax -S < /binfile
   hex     \->  raw     rz-ax -s 414141
 .Pp
-With no arguments, rz-ax read values from stdin. You can pass one or more values
-as arguments.
+With no arguments, rz-ax read values from stdin.
+You can pass one or more values as arguments.
 .Pp
   $ rz-ax 33 0x41 0101b
   0x21
@@ -123,21 +125,20 @@ And it supports some math operations.
   0x5*101b+5
   30
 .Pp
-It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
-.Pp
+It is a very useful tool for scripting,
+so you can read floating point values,
+or get the integer offset of a jump or a stack delta when analyzing programs.
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-sign(1)
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-run 1 ,
+.Xr rz-sign 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0

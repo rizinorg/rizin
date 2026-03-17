@@ -212,6 +212,38 @@ jmp far 0xf000:0xffaa
 EOF
 RUN
 
+NAME=BIOS iH [64k]
+FILE=bins/firmware/bios_64k.bin
+CMDS=iH
+EXPECT=<<EOF
+bios:
+  entry_point:
+    opcode: 0xea
+    type: "far jump"
+  sections:
+    - name: "bootblk"
+      address: 0xf0000
+      size: 0x10000
+
+EOF
+RUN
+
+NAME=BIOS iH [128k]
+FILE=bins/firmware/bios_128k.bin
+CMDS=iH
+EXPECT=<<EOF
+bios:
+  entry_point:
+    opcode: 0xea
+    type: "far jump"
+  sections:
+    - name: "bootblk"
+      address: 0xf0000
+      size: 0x10000
+
+EOF
+RUN
+
 NAME=test x86 IO ports
 FILE=bins/firmware/bios_1M.bin
 CMDS=<<EOF

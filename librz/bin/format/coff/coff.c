@@ -344,6 +344,7 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf) {
 
 	if (!coff_guess_endianness(buf, &obj->big_endian)) {
 		RZ_LOG_ERROR("failed to guess magic & endianness\n");
+		rz_bin_coff_free(obj);
 		return NULL;
 	} else if (!bin_coff_init_hdr(buf, obj, &offset)) {
 		RZ_LOG_ERROR("failed to init hdr\n");

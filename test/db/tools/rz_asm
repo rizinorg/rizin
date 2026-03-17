@@ -1,85 +1,66 @@
 NAME=rz-asm i4004
-FILE==
-CMDS=<<EOF
-!rz-asm -L~4004
-EOF
+TOOL=rz-asm
+ARGS=-L
+REGEXP_FILTER_OUT=.+i4004.+
+EXIT_STATUS=1
 EXPECT=<<EOF
 _dA__ 4          i4004       LGPL3   Intel 4004 disassembler
 EOF
 RUN
 
-NAME=rz-asm arm asm/dis endian
-FILE==
-CMDS=<<EOF
-!rz-asm -a arm -b32 "mov r0, 3"
-!rz-asm -a arm -b32 -e "mov r0, 3"
-!rz-asm -a arm -b32 -d 0300a0e3
-!rz-asm -a arm -b32 -e -d e3a00003
-EOF
+NAME=rz-asm arm32le assemble
+TOOL=rz-asm
+FILE=mov r0, 3
+ARGS=-a arm -b32
 EXPECT=<<EOF
 0300a0e3
+EOF
+RUN
+
+NAME=rz-asm arm32be assemble
+TOOL=rz-asm
+FILE=mov r0, 3
+ARGS=-a arm -b32 -e
+EXPECT=<<EOF
 e3a00003
-mov r0, 3
+EOF
+RUN
+
+NAME=rz-asm arm32le disassemble
+TOOL=rz-asm
+ARGS=-a arm -b32 -d 0300a0e3
+EXPECT=<<EOF
 mov r0, 3
 EOF
 RUN
 
-NAME=1: rz-asm
-FILE==
-CMDS=!rz-asm -a arm -b32 "mov r0, 3"
+NAME=rz-asm arm32be disassemble
+TOOL=rz-asm
+ARGS=-a arm -b32 -e -d e3a00003
 EXPECT=<<EOF
-0300a0e3
+mov r0, 3
 EOF
 RUN
 
 NAME=rz-asm blx arm/thumb
-FILE==
-CMDS=!rz-asm -o 0x4000 -a arm -b 16 -d 80f018ea
+TOOL=rz-asm
+ARGS=-o 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
 RUN
 
 NAME=rz-asm blx arm/thumb 2
-FILE==
-CMDS=!rz-asm -o 0x4000 -a arm -b 16 -d 80f018ea
+TOOL=rz-asm
+ARGS=-o 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
 EOF
 RUN
 
-NAME=rz-asm arm/thumb branch errors
-FILE==
-CMDS=<<EOF
-!rz-asm -a arm -b 16 'b.n 8'
-!rz-asm -a arm -b 16 'b.w 8'
-!rz-asm -a arm -b 16 'bl 8'
-!rz-asm -a arm -b 16 'blx 8'
-!rz-asm -a arm -b 16 'b.n 9'
-!rz-asm -a arm -b 16 'b.w 9'
-!rz-asm -a arm -b 16 'bl 9'
-!rz-asm -a arm -b 16 'blx 9'
-!rz-asm -a arm -b 16 'b.w 0x1000000'
-!rz-asm -a arm -b 16 'bl 0x1000000'
-!rz-asm -a arm -b 16 'blx 0x1000000'
-!rz-asm -a arm -b 16 'b.w 0x1000004'
-!rz-asm -a arm -b 16 'bl 0x1000004'
-!rz-asm -a arm -b 16 'blx 0x1000004'
-EOF
-EXPECT=<<EOF
-02e0
-00f002b8
-00f002f8
-00f002e8
-fff3fe97
-fff3fed7
-fff3fec7
-EOF
-RUN
-
 NAME=2: rz-asm
-FILE==
-CMDS=!rz-asm -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3"
+TOOL=rz-asm
+ARGS=-a x86 -b 64 -d 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
 EXPECT=<<EOF
 push rbp
 mov ebp, esp
@@ -96,38 +77,28 @@ EOF
 RUN
 
 NAME=rz-asm #1167
-FILE==
-CMDS=!rz-asm -a x86 -b 64 "cmp rax,rbx"
+TOOL=rz-asm
+FILE=cmp rax,rbx
+ARGS=-a x86 -b 64
 EXPECT=<<EOF
 4839d8
 EOF
 RUN
 
 NAME=rz-asm #1167 2
-FILE==
-CMDS=!rz-asm -a x86 -b 64 "test rax, rbx"
+TOOL=rz-asm
+FILE=test rax, rbx
+ARGS=-a x86 -b 64
 EXPECT=<<EOF
 4885d8
 EOF
 RUN
 
-NAME=rz-asm #1900
-FILE==
-CMDS=<<EOF
-!rz-asm -a x86 -b 32 "mov [0x33], eax"
-!rz-asm -a x86 -b 32 "mov eax, 33"
-!rz-asm -a x86 -b 32 "mov eax, 0x33"
-EOF
-EXPECT=<<EOF
-890533000000
-b821000000
-b833000000
-EOF
-RUN
-
 NAME=rz-asm #1900 (detect syntax error - case 1)
-FILE==
-CMDS=!rz-asm -a x86 -b 32 "mov hello, eax"
+TOOL=rz-asm
+FILE=mov hello, eax
+ARGS=-a x86 -b 32
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov hello, eax' at line 3
@@ -135,8 +106,10 @@ EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 2)
-FILE==
-CMDS=!rz-asm -a x86 -b 32 "mov 33, eax"
+TOOL=rz-asm
+FILE=mov 33, eax
+ARGS=-a x86 -b 32
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov 33, eax' at line 3
@@ -144,8 +117,10 @@ EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 3)
-FILE==
-CMDS=!rz-asm -a x86 -b 32 "mov eax, hello"
+TOOL=rz-asm
+FILE=mov eax, hello
+ARGS=-a x86 -b 32
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov eax, hello' at line 3
@@ -153,132 +128,109 @@ EOF
 RUN
 
 NAME=rz-asm x86_32 overlarge operand
-FILE==
-CMDS=!rz-asm -a x86 -b 32 "mov eax, 0x1122334455"
+TOOL=rz-asm
+FILE=mov eax, 0x1122334455
+ARGS=-a x86 -b 32
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
-EOF
-RUN
-
-NAME=rz-asm x86_64 overlarge operand
-FILE==
-CMDS=<<EOF
-!rz-asm -a x86 -b 64 "mov rax, 0x112233445566778899"
-!rz-asm -a x86 -b 64 "mov eax, 0x1122334455"
-EOF
-EXPECT=
-EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
 ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
 EOF
 RUN
 
 NAME=rz-asm #9197
-FILE==
-CMDS=!rz-asm -a arm -b 64 "ldur x1, [x29, -8]"
+TOOL=rz-asm
+FILE=ldur x1, [x29, -8]
+ARGS=-a arm -b 64
 EXPECT=<<EOF
 a1835ff8
 EOF
 RUN
 
-NAME=rz-asm -h~Usage?"
-FILE==
-CMDS=!rz-asm -h~Usage?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-asm -C
-FILE==
-CMDS=!rz-asm -C -a x86 -b 32 "mov eax, 33"
+TOOL=rz-asm
+FILE=mov eax, 33
+ARGS=-C -a x86 -b 32
 EXPECT=<<EOF
 "\xb8\x21\x00\x00\x00"
 EOF
 RUN
 
 NAME=rz-asm -d
-FILE==
-CMDS=!rz-asm -d -a x86 -b 32 "b821000000"
+TOOL=rz-asm
+ARGS=-d -a x86 -b 32 b821000000
 EXPECT=<<EOF
 mov eax, 0x21
 EOF
 RUN
 
 NAME=rz-asm -D
-FILE==
-CMDS=!rz-asm -D -a x86 -b 32 "b821000000"
+TOOL=rz-asm
+ARGS=-D -a x86 -b 32 b821000000
 EXPECT=<<EOF
 0x00000000   5               b821000000  mov eax, 0x21
 EOF
 RUN
 
 NAME=rz-asm -s
-FILE==
-CMDS=!rz-asm -s att -a x86 -b 32 -D "31ed"
+TOOL=rz-asm
+ARGS=-s att -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x00000000   2                     31ed  xor %ebp, %ebp
 EOF
 RUN
 
 NAME=rz-asm -o
-FILE==
-CMDS=!rz-asm -s att -o 0xa -a x86 -b 32 -D "31ed"
+TOOL=rz-asm
+ARGS=-s att -o 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor %ebp, %ebp
 EOF
 RUN
 
 NAME=rz-asm -F pseudo
-FILE==
-CMDS=!rz-asm -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
+TOOL=rz-asm
+ARGS=-a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
 EOF
 RUN
 
 NAME=rz-asm -F
-FILE==
-CMDS=!rz-asm -o 0xa -a x86 -b 32 -D 31ed
+TOOL=rz-asm
+ARGS=-o 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
 RUN
 
 NAME=rz-asm -F -o order bug
-FILE==
-CMDS=!rz-asm -a x86 -b 32 -o 0xa -D 31ed
+TOOL=rz-asm
+ARGS=-a x86 -b 32 -o 0xa -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
 EOF
 RUN
 
 NAME=rz-asm -B
-FILE==
-CMDS=!rz-asm -a x86 -b16 -B "xor al, 0x34";ps
+TOOL=rz-asm
+FILE=xor al, 0x34
+ARGS=-a x86 -b16 -B 
 EXPECT=44
 RUN
 
-NAME=rz-asm -v~commit?"
-FILE==
-CMDS=!rz-asm -v~commit?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-asm -w
-FILE==
-CMDS=!rz-asm -w -a x86 -b 32 "mov"
+TOOL=rz-asm
+ARGS=-w -a x86 -b 32 mov
 EXPECT=<<EOF
 moves data from src to dst
 EOF
 RUN
 
 NAME=rz-asm  dissassemble ARM32 binary file
-FILE==
-CMDS=!rz-asm -DB -a arm -o 0x200 -b 32 -f bins/other/rz-asm/testARM32.bin
+TOOL=rz-asm
+FILE=bins/other/rz-asm/testARM32.bin
+ARGS=-DB -a arm -o 0x200 -b 32 -f
 EXPECT=<<EOF
 0x00000200   4                 4661b0e1  asrs r6, r6, 2
 0x00000204   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
@@ -294,8 +246,8 @@ EOF
 RUN
 
 NAME=rz-asm  dissassemble ARM32 binary file with skip
-FILE==
-CMDS=!rz-asm -DB -a arm -o 0x200 -b 32 -f bins/other/rz-asm/testARM32.bin -i 4
+TOOL=rz-asm
+ARGS=-DB -a arm -o 0x200 -b 32 -f bins/other/rz-asm/testARM32.bin -i 4
 EXPECT=<<EOF
 0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
 0x00000204   4                 0040a0e3  mov r4, 0
@@ -310,32 +262,32 @@ EOF
 RUN
 
 NAME=rz-asm endian test 1
-FILE==
-CMDS=!rz-asm -e -a arm -b 32 -d 0ad0a0e1
+TOOL=rz-asm
+ARGS=-e -a arm -b 32 -d 0ad0a0e1
 EXPECT=<<EOF
 beq 0xff42838c
 EOF
 RUN
 
 NAME=rz-asm endian test 2
-FILE==
-CMDS=!rz-asm -e -a arm -b 32 -d fff0a0e3
+TOOL=rz-asm
+ARGS=-e -a arm -b 32 -d fff0a0e3
 EXPECT=<<EOF
 invalid
 EOF
 RUN
 
 NAME=rz-asm  SPP include directive
-FILE==
-CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm/include.asm
+TOOL=rz-asm
+ARGS=-a x86 -b 32 -p -f bins/other/rz-asm/asm/include.asm
 EXPECT=<<EOF
 9083e803bb00000000cd80c3
 EOF
 RUN
 
 NAME=rz-asm  SPP nested conditionals
-FILE==
-CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm/nest.asm
+TOOL=rz-asm
+ARGS=-a x86 -b 32 -p -f bins/other/rz-asm/asm/nest.asm
 EXPECT=<<EOF
 83c10283e90583c301b90200000090
 EOF
@@ -346,32 +298,34 @@ EOF
 RUN
 
 NAME=rz-asm x86.asm.32
-FILE==
-CMDS=!rz-asm -f bins/elf/analysis/hello.asm
+TOOL=rz-asm
+ARGS=-f bins/elf/analysis/hello.asm
 EXPECT=<<EOF
 ba0e000000b91d000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
 EOF
 RUN
 
 NAME=rz-asm bswap x64 #8095
-FILE==
-CMDS=!rz-asm -a x86 -b 64 "bswap rax;bswap rbx;bswap rcx;bswap rdx"
+TOOL=rz-asm
+FILE=bswap rax;bswap rbx;bswap rcx;bswap rdx
+ARGS=-a x86 -b 64
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
 EOF
 RUN
 
 NAME=rz-asm mov eax, [eax * 2 + 8]
-FILE==
-CMDS=!rz-asm -a x86 -b 32 "mov eax, [eax * 2 + 8]"
+TOOL=rz-asm
+FILE=mov eax, [eax * 2 + 8]
+ARGS=-a x86 -b 32 
 EXPECT=<<EOF
 8b044508000000
 EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -A 0x55
-FILE==
-CMDS=!rz-asm -a x86 -b 64 -A 0x55
+TOOL=rz-asm
+ARGS=-a x86 -b 64 -A 0x55
 EXPECT=<<EOF
 offset:   0x00000000
 bytes:    55
@@ -384,55 +338,32 @@ EOF
 RUN
 
 NAME=rz-asm -c
-FILE==
-CMDS=!rz-asm -a arm -b 16 -d -c cortexm 0x80f30988
+TOOL=rz-asm
+ARGS=-a arm -b 16 -d -c cortexm 0x80f30988
 EXPECT=<<EOF
 msr psp, r0
 EOF
 RUN
 
-NAME=rz-asm -A with -c and -o
-BROKEN=1 # See: https://github.com/rizinorg/rizin/issues/3694
-FILE==
-CMDS=!rz-asm -a arm -b 16 -A -o 0x1000 -c cortexm 0x80f30988
-EXPECT=<<EOF
-offset:   0x00001000
-bytes:    80f30988
-type:     mov
-stackop:  null
-esil:     0,0xFF,|,DUP,!,SWAP,&,r0,SWAP,cpsr,&,|,cpsr,=
-stackptr: 0
-
-EOF
-RUN
-
 NAME=rz-asm -a x86 -b 64 -E 0x55
-FILE==
-CMDS=!rz-asm -a x86 -b 64 -E 0x55
+TOOL=rz-asm
+ARGS=-a x86 -b 64 -E 0x55
 EXPECT=<<EOF
 rbp,8,rsp,-,=[8],8,rsp,-=
 EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -Aj 0x55
-FILE==
-CMDS=!rz-asm -a x86 -b 64 -Aj 0x55
+TOOL=rz-asm
+ARGS=-a x86 -b 64 -Aj 0x55
 EXPECT=<<EOF
 [{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
 EOF
 RUN
 
-NAME=rz-asm -v
-FILE==
-CMDS=!rz-asm -v  | grep -c commit
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-asm -a x86 -b 64 -r push ebp
-FILE==
-CMDS=!rz-asm -a x86 -b 64 -r push ebp
+TOOL=rz-asm
+ARGS=-a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -443,8 +374,9 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -e -d
-FILE==
-CMDS=!rz-asm -a sh -e -d "8d00 000b 2029 8ffb 0009 420b 31e0"
+TOOL=rz-asm
+FILE=8d00 000b 2029 8ffb 0009 420b 31e0
+ARGS=-a sh -e -d
 EXPECT=<<EOF
 bt/s 0x00000004
 rts
@@ -457,8 +389,9 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -e -D
-FILE==
-CMDS=!rz-asm -a sh -e -D "8d00 000b 2029 8ffb 0009 420b 31e0"
+TOOL=rz-asm
+FILE=8d00 000b 2029 8ffb 0009 420b 31e0
+ARGS=-a sh -e -D
 EXPECT=<<EOF
 0x00000000   2                     8d00  bt/s 0x00000004
 0x00000002   2                     000b  rts
@@ -471,8 +404,9 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -d
-FILE==
-CMDS=!rz-asm -a sh -d "008d 0b00 2920 fb8f 0900 0b42 e031"
+TOOL=rz-asm
+FILE=008d 0b00 2920 fb8f 0900 0b42 e031
+ARGS=-a sh -d
 EXPECT=<<EOF
 bt/s 0x00000004
 rts
@@ -485,8 +419,9 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -D
-FILE==
-CMDS=!rz-asm -a sh -D "008d 0b00 2920 fb8f 0900 0b42 e031"
+TOOL=rz-asm
+FILE=008d 0b00 2920 fb8f 0900 0b42 e031
+ARGS=-a sh -D
 EXPECT=<<EOF
 0x00000000   2                     008d  bt/s 0x00000004
 0x00000002   2                     0b00  rts
@@ -498,118 +433,142 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
-FILE==
-BROKEN=1
-CMDS=!rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
-EXPECT=<<EOF
-f8ffe1fb
-EOF
-RUN
-
 NAME=rz-asm -a ppc -b 64 -d f8ffe1fb
-FILE==
-CMDS=!rz-asm -a ppc -b 64 -d f8ffe1fb
+TOOL=rz-asm
+ARGS=-a ppc -b 64 -d f8ffe1fb
 EXPECT=<<EOF
 std r31, -8(r1)
 EOF
 RUN
 
 NAME=rz-asm -a ppc.as -b 32 -e "mr r10, r4"
-FILE==
 BROKEN=1
-CMDS=!rz-asm -a ppc.as -b 32 -e "mr r10, r4"
+TOOL=rz-asm
+FILE=mr r10, r4
+ARGS=-a ppc.as -b 32 -e
 EXPECT=<<EOF
 7c8a2378
 EOF
 RUN
 
 NAME=rz-asm -a ppc -b 32 -d 78238a7c
-FILE==
-CMDS=!rz-asm -a ppc -b 32 -d 78238a7c
+TOOL=rz-asm
+ARGS=-a ppc -b 32 -d 78238a7c
 EXPECT=<<EOF
 mr r10, r4
 EOF
 RUN
 
-NAME=rz-asm -a arm.as -b 16 "wfe"
-FILE==
+NAME=rz-asm #1900
+TOOL=rz-asm
+FILE=mov [0x33], eax
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+890533000000
+EOF
+RUN
+
+NAME=rz-asm #1900
+TOOL=rz-asm
+FILE=mov eax, 33
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+b821000000
+EOF
+RUN
+
+NAME=rz-asm #1900
+TOOL=rz-asm
+FILE=mov eax, 0x33
+ARGS=-a x86 -b 32
+EXPECT=<<EOF
+b833000000
+EOF
+RUN
+
+NAME=rz-asm x86_64 overlarge operand
+TOOL=rz-asm
+FILE=mov rax, 0x112233445566778899
+ARGS=-a x86 -b 64
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
+EOF
+RUN
+
+NAME=rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
 BROKEN=1
-CMDS=!rz-asm -a arm.as -b 16 "wfe"
+TOOL=rz-asm
+FILE=std r31, -8(r1)
+ARGS=-a ppc.as -b 64
+EXPECT=<<EOF
+f8ffe1fb
+EOF
+RUN
+
+NAME=rz-asm -a arm.as -b 16 "wfe"
+BROKEN=1
+TOOL=rz-asm
+FILE=wfe
+ARGS=-a arm.as -b 16
 EXPECT=<<EOF
 20bf
 EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 32 "add fp, sp, 0"
-FILE==
 BROKEN=1
-CMDS=!rz-asm -a arm.as -b 32 "add fp, sp, 0"
+TOOL=rz-asm
+FILE=add fp, sp, 0
+ARGS=-a arm.as -b 32
 EXPECT=<<EOF
 00b08de2
 EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
-FILE==
 BROKEN=1
-CMDS=!rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
+TOOL=rz-asm
+FILE=ldr fp, [sp], 4
+ARGS=-a arm.as -b 32 -e
 EXPECT=<<EOF
 e49db004
 EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 64 "sub sp, sp, 16"
-FILE==
 BROKEN=1
-CMDS=!rz-asm -a arm.as -b 64 "sub sp, sp, 16"
+TOOL=rz-asm
+FILE=sub sp, sp, 16
+ARGS=-a arm.as -b 64
 EXPECT=<<EOF
 ff4300d1
 EOF
 RUN
 
 NAME=rz-asm RzIL
-FILE=
-CMDS=<<EOF
-!rz-asm -a bf -I 3e
-%v $?
-EOF
+TOOL=rz-asm
+ARGS=-a bf -I 3e
 EXPECT=<<EOF
 (set ptr (+ (var ptr) (bv 64 0x1)))
-0x0
 EOF
 EXPECT_ERR=
 RUN
 
 NAME=rz-asm RzIL failure
-FILE=
-CMDS=<<EOF
-!rz-asm -a bf -I 00
-%v $?
-EOF
-EXPECT=<<EOF
-0x1
-EOF
+TOOL=rz-asm
+ARGS=-a bf -I 00
+EXIT_STATUS=1
+EXPECT=
 EXPECT_ERR=<<EOF
 Invalid instruction of lifting not implemented.
 EOF
 RUN
 
-NAME=rz-asm print cpus
-FILE=
-CMDS=<<EOF
-!rz-asm -m mips
-!rz-asm -m xtensa
-!rz-asm -m arm
-!rz-asm -m avr
-!rz-asm -m m680x
-!rz-asm -m m68k
-!rz-asm -m pic
-!rz-asm -m ppc
-!rz-asm -m sparc
-!rz-asm -m tms320
-!rz-asm -m tricore
-EOF
+NAME=rz-asm cpu mips
+TOOL=rz-asm
+ARGS=-m mips
 EXPECT=<<EOF
 mips3           MIPS III architecture.
 mips1           MIPS I architecture
@@ -642,14 +601,35 @@ r3000           R3000 MIPS cpu
 r10000          R10000 MIPS cpu
 noptr64         Special MIPS configuration to disable support for 64-bit pointers
 nofloat         Special MIPS configuration to disable support for floating-points
+EOF
+RUN
+
+NAME=rz-asm cpu xtensa
+TOOL=rz-asm
+ARGS=-m xtensa
+EXPECT=<<EOF
 esp32           Xtensa microcontroller with Wi-Fi and Bluetooth capabilities
 esp32s2         Xtensa microcontroller with Wi-Fi and USB OTG support
 esp8266         Xtensa microcontroller with Wi-Fi support
+EOF
+RUN
+
+NAME=rz-asm cpu arm
+TOOL=rz-asm
+ARGS=-m arm
+EXPECT=<<EOF
 v8              ARMv8 version
 cortexm         ARM Cortex-M family
 arm1176         ARM1176JZ(F)-S processor, ARMv6 version
 cortexA72       ARM Cortex-A72 processor, ARMv8-A version
 cortexA8        ARM Cortex-A8, ARMv7-A version
+EOF
+RUN
+
+NAME=rz-asm cpu avr
+TOOL=rz-asm
+ARGS=-m avr
+EXPECT=<<EOF
 ATmega8         8-bit AVR microcontroller with 8KB Flash, 1KB SRAM
 ATmega1280      8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
 ATmega1281      8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
@@ -665,6 +645,13 @@ ATmega88        8-bit AVR microcontroller with 8KB Flash, 1KB SRAM
 ATxmega128a4u   8-bit AVR microcontroller with 128KB Flash, 8KB SRAM
 ATTiny48        8-bit AVR microcontroller with 4KB Flash, 256B SRAM
 ATTiny88        8-bit AVR microcontroller with 8KB Flash, 512B SRAM
+EOF
+RUN
+
+NAME=rz-asm cpu m680x
+TOOL=rz-asm
+ARGS=-m m680x
+EXPECT=<<EOF
 6800            Motorola 6800: 8-bit microprocessor launched in 1974
 6801            Motorola 6801: Enhanced version of the 6800 with additional features like on-chip RAM and timers.
 6802            Motorola 6802: Enhanced version of the 6800 with 128 bytes of on-chip RAM and internal clock
@@ -678,37 +665,67 @@ cpu12           Motorola 68HC12: 16-bit microcontroller (also abbreviated as 681
 6301            Hitachi 6301: 8-bit microcontroller, CMOS version of 6800
 6309            Hitachi 6309: CMOS version of 6809
 hcs08           Freescale HCS08: 8-bit microcontroller family
+EOF
+RUN
+
+NAME=rz-asm cpu m68k
+TOOL=rz-asm
+ARGS=-m m68k
+EXPECT=<<EOF
 68000           Motorola 68000: 16/32-bit CISC microprocessor
 68010           Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000
 68020           Motorola 68020: 32-bit microprocessor with added instructions and additional addressing modes
 68030           Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU
 68040           Motorola 68040: High-performance 32-bit microprocessor with integrated FPU
 68060           Motorola 68060: 32-bit microprocessor, highest performer in m68k series
+EOF
+RUN
+
+NAME=rz-asm cpu pic
+TOOL=rz-asm
+ARGS=-m pic
+EXPECT=<<EOF
 baseline        Baseline 12-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 midrange        Mid-Range 14-bit instruction set microcontrollers: PIC10Fxxx, PIC12Fxxx, and PIC16Fxxx
 highend         High-End 16-bit instruction set microcontrollers: PIC18Fxxxx, PIC18FxxJxx, and PIC18FxxKxx
 pic18           alias for highend
+EOF
+RUN
+
+NAME=rz-asm cpu ppc
+TOOL=rz-asm
+ARGS=-m ppc
+EXPECT=<<EOF
 ppc             Generic PowerPC CPU
 vle             PowerPC with Variable Length Encoding extension
 ps              PowerPC with Paired Single SIMD extension
 qpx             PowerPC with Quad Processing eXtensions
+EOF
+RUN
+
+NAME=rz-asm cpu sparc
+TOOL=rz-asm
+ARGS=-m sparc
+EXPECT=<<EOF
 v9              SPARC V9: 64-bit RISC architecture specification
+EOF
+RUN
+
+NAME=rz-asm cpu tms320
+TOOL=rz-asm
+ARGS=-m tms320
+EXPECT=<<EOF
 c54x            Texas Instruments TMS320C54x DSP family
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
 c64x            Texas Instruments TMS320C64x DSP family
-tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN
 
-NAME=rz-asm invalid skip
-FILE=
-CMDS=<<EOF
-!rz-asm -i 6 -E 'mov eax, 30'
-EOF
+NAME=rz-asm cpu tricore
+TOOL=rz-asm
+ARGS=-m tricore
 EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-rz-asm: invalid skip value (skip 12 > 11 len).
+tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN

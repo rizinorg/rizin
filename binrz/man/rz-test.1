@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_TEST 1
+.Os
 .Sh NAME
 .Nm rz-test
 .Nd rizin regression testsuite
@@ -56,26 +57,21 @@ Number of expected failed tests
 Supported test types: @json @unit @fuzz @cmds
 .El
 .Sh ENVIRONMENT
-.Pp
 EDITOR: editor to use (eg: "vim")
-
 .Sh USAGE
-.Pp
-Use the -n flag to dont run any test. Just load them.
+Use the -n flag to dont run any test.
+Just load them.
 .Pp
   $ rz-test -n
   [rz-test] Loading tests...
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-find(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-hash 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0
