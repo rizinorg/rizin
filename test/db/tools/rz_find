@@ -136,7 +136,7 @@ RUN
 
 NAME=rz-find -R 
 FILE==
-CMDS=!rz-find -s "GCC" -R "px 1" bins/elf/ioli/crackme0x00
+CMDS=!rz-find -s "GCC" -R "px 1" bins/elf/ioli/crackme0x00 | sed 's/\x1b\[[0-9;]*m//g'
 EXPECT=<<EOF
 0x101d
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
