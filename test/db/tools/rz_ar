@@ -1,0 +1,63 @@
+NAME=rz-ar -h
+TOOL=rz-ar
+ARGS=-h
+REGEXP_FILTER_OUT=(Usage:|Show this help|List matching members|Set output directory \(default \.\)|Quiet mode|Show version information)
+EXPECT=<<EOF
+Usage:
+Show this help
+List matching members
+Set output directory (default .)
+Quiet mode
+Show version information
+EOF
+RUN
+
+NAME=rz-ar list fpu.lib
+TOOL=rz-ar
+ARGS=-l bins/ar/fpu.lib
+REGEXP_FILTER_OUT=(FpuXexpY\.obj|FpuTrunc\.obj)
+EXPECT=<<EOF
+FpuXexpY.obj
+FpuTrunc.obj
+EOF
+RUN
+
+NAME=rz-ar list ucrtd.osmode.lib
+TOOL=rz-ar
+ARGS=-l bins/ar/ucrtd.osmode.lib __setusermatherr_stub.obj
+REGEXP_FILTER_OUT=(__setusermatherr_stub\.obj)
+EXPECT=<<EOF
+__setusermatherr_stub.obj
+EOF
+RUN
+
+NAME=rz-ar list normalized parent path
+TOOL=rz-ar
+ARGS=-l bins/ar/ucrtd.osmode.lib __setusermatherr.obj
+EXPECT=<<EOF
+d_/os/obj/x86fre/minkernel/crts/ucrt/src/appcrt/dll/not_callable_by_os/objfre/i386/__setusermatherr.obj
+EOF
+RUN
+
+NAME=rz-ar extract one member
+TOOL=rz-ar
+ARGS=-o .tmp/rz-ar bins/ar/fpu.lib FpuXexpY.obj
+REGEXP_FILTER_OUT=(FpuXexpY\.obj)
+EXPECT=<<EOF
+FpuXexpY.obj
+EOF
+RUN
+
+NAME=rz-ar no matching members
+TOOL=rz-ar
+ARGS=bins/ar/fpu.lib not_existing_member.obj
+EXIT_STATUS=1
+EXPECT=
+RUN
+
+NAME=rz-ar invalid archive
+TOOL=rz-ar
+ARGS=bins/elf/analysis/hello-linux-x86_64
+EXIT_STATUS=1
+EXPECT=
+RUN
