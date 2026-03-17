@@ -648,7 +648,7 @@ static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 				if (strstr(map->name, "[heap]")) {
 					*brk_start = map->addr;
 					*brk_end = map->addr_end;
-					break;
+					return true;
 				}
 			}
 		}
