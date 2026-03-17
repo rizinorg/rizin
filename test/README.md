@@ -190,7 +190,7 @@ Without the regex that filtered out the non-deterministic file path and addresse
 
 * **NAME** is the name of the test, it must be unique
 * **FILE** (optional when `TOOL` is set) is the file or input used for the test
-* **TOOL** (optional) allows you to override the tool to test (supports only `rizin`, `rz-asm`, `rz-ax`, `rz-bin`, `rz-diff`, `rz-find`, `rz-gg`, `rz-hash`, `rz-run`, `rz-sign`, `rz-test`)
+* **TOOL** (optional) allows you to override the tool to test (supports only `rizin`, `rz-ar`, `rz-asm`, `rz-ax`, `rz-bin`, `rz-diff`, `rz-find`, `rz-gg`, `rz-hash`, `rz-run`, `rz-sign`, `rz-test`)
 * **ARGS** (optional, unless `TOOL` is set) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
 * **ENVS** (optional) allows to set a custom environment variable (example `FOO=bar`)
