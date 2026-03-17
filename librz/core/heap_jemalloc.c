@@ -68,7 +68,7 @@ static bool resolve_jemalloc_core_dump(RzCore *core, const char *symname, ut64 *
 		rz_pvector_foreach (io_maps, it2) {
 			RzIOMap *m2 = *it2;
 			const char *p2 = rz_core_io_map_file_path_or_relative(m2);
-			if (RZ_STR_EQ(p2, path)) {
+			if (!RZ_STR_EQ(p2, path)) {
 				continue;
 			}
 			if (it2 < it) {
