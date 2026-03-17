@@ -16,7 +16,7 @@
 #include "core_private.h"
 
 void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *pj, const RzHeapConfig *config);
-static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
+static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
 static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config);
 static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map);
 static bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config);
@@ -529,6 +529,16 @@ bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState 
 	return true;
 }
 
+/**
+ * \brief Check if an IOMap corresponds to an anonymous LOAD segment.
+ *
+ * An anonymous LOAD segment is a memory mapping that is not backed by a
+ * named file. It is identified by a name starting with "LOAD" followed only
+ * by digits.
+ *
+ * \param map RzIOMap instance
+ * \return true if the map is an anonymous LOAD segment, false otherwise
+ */
 static bool io_map_is_anonymous_load(const RzIOMap *map) {
 	const char *name = rz_core_io_map_strip_prefix(map);
 	if (!name) {
@@ -569,11 +579,19 @@ static bool io_map_is_anonymous_load(const RzIOMap *map) {
  * We identify the brk heap as the first anonymous LOAD segment after the main executable's last mapping.
  * This works because the kernel places the brk region right after the program's
  * data segment, while other regions are placed at a much higher address range.
+ *
+ * Source: https://man7.org/linux/man-pages/man2/brk.2.html
+ * "brk() and sbrk() change the location of the program break, which
+ * defines the end of the process's data segment (i.e., the program
+ * break is the first location after the end of the uninitialized
+ * data segment).  Increasing the program break has the effect of
+ * allocating memory to the process; decreasing the break deallocates
+ * memory."
  */
-static void rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+static bool rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 	RzPVector *maps = rz_io_maps(core->io);
 	if (!maps) {
-		return;
+		return false;
 	}
 
 	// identify the main executable's file path:
@@ -592,7 +610,7 @@ static void rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_
 	}
 
 	if (!exe_path) {
-		return;
+		return false;
 	}
 
 	// find the end of all mappings belonging to the executable
@@ -614,12 +632,13 @@ static void rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_
 		if (map->itv.addr > exe_end && io_map_is_anonymous_load(map)) {
 			*brk_start = map->itv.addr;
 			*brk_end = map->itv.addr + map->itv.size;
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
-static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		RzListIter *iter;
 		RzDebugMap *map;
@@ -642,12 +661,13 @@ static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 				if (strstr(map->name, "[heap]")) {
 					*brk_start = map->itv.addr;
 					*brk_end = map->itv.addr + map->itv.size;
-					return;
+					return true;
 				}
 			}
 		}
-		rz_heap_get_brks_core_dump(core, brk_start, brk_end);
+		return rz_heap_get_brks_core_dump(core, brk_start, brk_end);
 	}
+	return false;
 }
 
 static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, int format, const RzHeapConfig *config) {
@@ -860,8 +880,7 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 		return false;
 	}
 
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return false;
 	}
@@ -1367,8 +1386,7 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 		return -1;
 	}
 
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return -1;
 	}
@@ -1467,10 +1485,9 @@ RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, in
 	if (!next) {
 		return heap_bin;
 	}
-
-	rz_heap_get_brks(core, &brk_start, &brk_end);
 	heap_bin->fd = next;
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return heap_bin;
 	}
 
@@ -1620,8 +1637,7 @@ RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 are
 	}
 
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX;
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return NULL;
 	}
 
@@ -1847,8 +1863,7 @@ RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bi
 	}
 
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX, initial_brk = UT64_MAX;
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return bin;
 	}
 
@@ -2186,7 +2201,9 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (m_arena == m_state) {
-		rz_heap_get_brks(core, &brk_start, &brk_end);
+		if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
+			return chunks;
+		}
 		if (tcache) {
 			initial_brk = ((brk_start >> 12) << 12) + config->chunk_hdr_size;
 			tcache_initial_brk = initial_brk;
@@ -2456,8 +2473,9 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 	}
 	ut64 brk_start = 0, brk_end = 0;
 	if (m_arena == m_state) {
-		rz_heap_get_brks(core, &brk_start, &brk_end);
-
+		if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
 		brk_start = ((m_state >> 16) << 16);
 		brk_end = brk_start + main_arena->system_mem;

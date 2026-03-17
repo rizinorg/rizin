@@ -50,6 +50,49 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
+static bool resolve_jemalloc_core_dump(RzCore *core, const char *symname, ut64 *symbol) {
+	void **it;
+	RzPVector *io_maps = rz_io_maps(core->io);
+	rz_pvector_foreach (io_maps, it) {
+		RzIOMap *io_map = *it;
+		const char *path = rz_core_io_map_file_path_or_relative(io_map);
+
+		if (!rz_file_exists(path)) {
+			continue;
+		}
+
+		// find the lowest map address for this file, for base_addr
+		bool already_processed = false;
+		ut64 base_addr = io_map->itv.addr;
+		void **it2;
+		rz_pvector_foreach (io_maps, it2) {
+			RzIOMap *m2 = *it2;
+			const char *p2 = rz_core_io_map_file_path_or_relative(m2);
+			if (RZ_STR_EQ(p2, path)) {
+				continue;
+			}
+			if (it2 < it) {
+				already_processed = true;
+				break;
+			}
+			if (m2->itv.addr < base_addr) {
+				base_addr = m2->itv.addr;
+			}
+		}
+		if (already_processed) {
+			continue;
+		}
+
+		bool is_pie = false;
+		ut64 vaddr = je_get_va_symbol(core, path, symname, &is_pie);
+		if (vaddr != UT64_MAX) {
+			*symbol = is_pie ? (base_addr + vaddr) : vaddr;
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol) {
 	RzListIter *iter;
 	RzDebugMap *debug_map;
@@ -63,46 +106,7 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 	}
 
 	if (rz_core_is_core_dump(core)) {
-		void **it;
-		RzPVector *io_maps = rz_io_maps(core->io);
-		rz_pvector_foreach (io_maps, it) {
-			RzIOMap *io_map = *it;
-			const char *path = rz_core_io_map_file_path_or_relative(io_map);
-
-			if (!rz_file_exists(path)) {
-				continue;
-			}
-
-			// find the lowest map address for this file, for base_addr
-			bool already_processed = false;
-			ut64 base_addr = io_map->itv.addr;
-			void **it2;
-			rz_pvector_foreach (io_maps, it2) {
-				RzIOMap *m2 = *it2;
-				const char *p2 = rz_core_io_map_file_path_or_relative(m2);
-				if (!p2 || strcmp(p2, path) != 0) {
-					continue;
-				}
-				if (it2 < it) {
-					already_processed = true;
-					break;
-				}
-				if (m2->itv.addr < base_addr) {
-					base_addr = m2->itv.addr;
-				}
-			}
-			if (already_processed) {
-				continue;
-			}
-
-			bool is_pie = false;
-			ut64 vaddr = je_get_va_symbol(core, path, symname, &is_pie);
-			if (vaddr != UT64_MAX) {
-				*symbol = is_pie ? (base_addr + vaddr) : vaddr;
-				return true;
-			}
-		}
-		return false;
+		return resolve_jemalloc_core_dump(core, symname, symbol);
 	}
 
 	// for debug mode

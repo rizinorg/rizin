@@ -10,6 +10,11 @@
 static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
+/**
+ * \brief Check whether the current file is a core dump
+ * \param core RzCore instance
+ * \return true if the current file is a core dump, false otherwise
+ */
 RZ_IPI bool rz_core_is_core_dump(RzCore *core) {
 	if (!core || !core->io || !core->bin) {
 		return false;
@@ -24,6 +29,12 @@ RZ_IPI bool rz_core_is_core_dump(RzCore *core) {
 	return plugin && plugin->file_type && plugin->file_type(bf) == RZ_BIN_TYPE_CORE;
 }
 
+/**
+ * \brief Strip `[fmv]map.` prefix of a given IOMap name
+ * \param map RzIOMap instance
+ * \return the name without the prefix or the same name if no prefix is found.
+ *         NULL if map or map->name is NULL.
+ */
 RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map) {
 	if (!map || !map->name) {
 		return NULL;
