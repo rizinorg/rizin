@@ -613,6 +613,7 @@ static const RzCmdDescArg egg_type_args[2];
 static const RzCmdDescArg egg_padding_args[2];
 static const RzCmdDescArg egg_encoder_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
+static const RzCmdDescArg cmd_info_class_apply_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
@@ -718,6 +719,7 @@ static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_print_format_args[2];
 static const RzCmdDescArg cmd_print_format_delete_args[2];
+static const RzCmdDescArg cmd_print_format_apply_args[2];
 static const RzCmdDescArg cmd_print_format_c_args[2];
 static const RzCmdDescArg cmd_print_format_dot_args[2];
 static const RzCmdDescArg cmd_print_format_named_dot_args[2];
@@ -13197,6 +13199,20 @@ static const RzCmdDescHelp cmd_info_classes_help = {
 	.args = cmd_info_classes_args,
 };
 
+static const RzCmdDescArg cmd_info_class_apply_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_apply_help = {
+	.summary = "Apply class flags at given address",
+	.args = cmd_info_class_apply_args,
+};
+
 static const RzCmdDescArg cmd_info_class_as_source_args[] = {
 	{
 		.name = "class name",
@@ -13240,6 +13256,14 @@ static const RzCmdDescArg cmd_info_class_methods_args[] = {
 static const RzCmdDescHelp cmd_info_class_methods_help = {
 	.summary = "List class methods",
 	.args = cmd_info_class_methods_args,
+};
+
+static const RzCmdDescArg cmd_info_classes_to_struct_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_classes_to_struct_help = {
+	.summary = "Generate type definitions from classes",
+	.args = cmd_info_classes_to_struct_args,
 };
 
 static const RzCmdDescArg cmd_info_signature_args[] = {
@@ -15679,6 +15703,20 @@ static const RzCmdDescArg cmd_print_format_delete_all_args[] = {
 static const RzCmdDescHelp cmd_print_format_delete_all_help = {
 	.summary = "Remove all named formats",
 	.args = cmd_print_format_delete_all_args,
+};
+
+static const RzCmdDescArg cmd_print_format_apply_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_apply_help = {
+	.summary = "Apply format string at given address and define flags for each field",
+	.args = cmd_print_format_apply_args,
 };
 
 static const RzCmdDescArg cmd_print_format_c_args[] = {
@@ -23895,6 +23933,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *ic_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help, &ic_help);
 	rz_warn_if_fail(ic_cd);
 	rz_cmd_desc_set_default_mode(ic_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_class_apply_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ica", rz_cmd_info_class_apply_handler, &cmd_info_class_apply_help);
+	rz_warn_if_fail(cmd_info_class_apply_cd);
+
 	RzCmdDesc *cmd_info_class_as_source_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "icc", rz_cmd_info_class_as_source_handler, &cmd_info_class_as_source_help);
 	rz_warn_if_fail(cmd_info_class_as_source_cd);
 
@@ -23905,6 +23946,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_class_methods_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icm", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_info_class_methods_handler, &cmd_info_class_methods_help);
 	rz_warn_if_fail(cmd_info_class_methods_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_class_methods_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_classes_to_struct_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ics", rz_cmd_info_classes_to_struct_handler, &cmd_info_classes_to_struct_help);
+	rz_warn_if_fail(cmd_info_classes_to_struct_cd);
 
 	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_signature_handler, &cmd_info_signature_help);
 	rz_warn_if_fail(cmd_info_signature_cd);
@@ -24439,6 +24483,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_format_delete_all_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pf-*", rz_cmd_print_format_delete_all_handler, &cmd_print_format_delete_all_help);
 	rz_warn_if_fail(cmd_print_format_delete_all_cd);
+
+	RzCmdDesc *cmd_print_format_apply_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfa", rz_cmd_print_format_apply_handler, &cmd_print_format_apply_help);
+	rz_warn_if_fail(cmd_print_format_apply_cd);
 
 	RzCmdDesc *cmd_print_format_c_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfc", rz_cmd_print_format_c_handler, &cmd_print_format_c_help);
 	rz_warn_if_fail(cmd_print_format_c_cd);

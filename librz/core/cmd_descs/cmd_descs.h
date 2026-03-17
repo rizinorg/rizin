@@ -1686,12 +1686,16 @@ RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ic"
 RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "ica"
+RZ_IPI RzCmdStatus rz_cmd_info_class_apply_handler(RzCore *core, int argc, const char **argv);
 // "icc"
 RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv);
 // "icf"
 RZ_IPI RzCmdStatus rz_cmd_info_class_fields_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "icm"
 RZ_IPI RzCmdStatus rz_cmd_info_class_methods_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "ics"
+RZ_IPI RzCmdStatus rz_cmd_info_classes_to_struct_handler(RzCore *core, int argc, const char **argv);
 // "iC"
 RZ_IPI RzCmdStatus rz_cmd_info_signature_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "id"
@@ -2047,6 +2051,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_cmd_print_format_delete_handler(RzCore *core, int argc, const char **argv);
 // "pf-*"
 RZ_IPI RzCmdStatus rz_cmd_print_format_delete_all_handler(RzCore *core, int argc, const char **argv);
+// "pfa"
+RZ_IPI RzCmdStatus rz_cmd_print_format_apply_handler(RzCore *core, int argc, const char **argv);
 // "pfc"
 RZ_IPI RzCmdStatus rz_cmd_print_format_c_handler(RzCore *core, int argc, const char **argv);
 // "pfd"
