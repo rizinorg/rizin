@@ -378,6 +378,19 @@ RZ_IPI RzCmdStatus rz_cmd_info_classes_handler(RzCore *core, int argc, const cha
 	return bool2status(rz_core_bin_classes_print(core, bf, state));
 }
 
+RZ_IPI RzCmdStatus rz_cmd_info_class_apply_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+	return rz_core_bin_class_apply_print(core, argv[1], addr);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_classes_to_struct_handler(RzCore *core, int argc, const char **argv) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return bool2status(rz_core_bin_classes_to_struct(core, bf));
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_class_as_source_handler(RzCore *core, int argc, const char **argv) {
 	GET_CHECK_CUR_BINFILE(core);
 	return bool2status(rz_core_bin_class_as_source_print(core, bf, argv[1]));
