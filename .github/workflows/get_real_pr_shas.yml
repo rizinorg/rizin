@@ -22,7 +22,7 @@
 #     needs: real_pr_shas
 #     steps:
 #       - name: Checkout repository
-#         uses: actions/checkout@v4
+#         uses: actions/checkout@v6
 #         with:
 #           fetch-depth: 0  # Full history needed for commit scanning
 # ```
@@ -56,7 +56,7 @@ jobs:
       output_head: ${{ steps.get_shas.outputs.HEAD_SHA }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - id: get_shas
         run: |
           git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
