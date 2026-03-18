@@ -19,81 +19,68 @@
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
 
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = strdup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
+
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
-	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_META;
-	pat->pattern = rz_str_dup(
-		"^[\\[\\?\\/\\|\\\\\\{┌│└]|" // Packet prefix
-		"(∎|[<\\}])[\\s:]endloop[01]{1,2}" // Endloop markers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(META,
+		// Packet prefix
+		"^[\\[\\?\\/\\|\\\\\\{┌│└]|"
+		// Endloop markers
+		"(∎|[<\\}])[\\s:]endloop[01]{1,2}");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_META;
-	pat->pattern = rz_str_dup(
-		"\\#{1,2}|\\}$|" // Immediate prefix, Closing packet bracket
-		"\\.new|:n?t|:raw|<err>" // .new and jump hints
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(META,
+		// Immediate prefix, Closing packet bracket
+		"\\#{1,2}|\\}$|"
+		// .new and jump hints
+		"\\.new|:n?t|:raw|<err>|"
+		"after|before|single|above|retain|deep|dilate|drop|");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = rz_str_dup(
-		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|(GP|HTID|UGP|LR|FP|SP|([A-Z]{2,}[0-9]{,1}))" // Registers and double registers
-	);
-	rz_pvector_push(pvec, pat);
+	// Special registers
+	TOKEN(REGISTER,
+		"GP|HTID|UGP|LR|FP|SP|acc|activation|weight|cvt|bias|\\bz\\b");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_NUMBER;
-	pat->pattern = rz_str_dup(
-		"0x(\\d|[abcdef])+" // Hexadecimal numbers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(REGISTER,
+		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|"
+		// Registers and double registers
+		"([A-Z]{2,}[0-9]{,1})");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = rz_str_dup(
-		"\\w+_\\w+|[a-zA-Z]+\\d+[a-zA-Z]*" // Mnemonics with a decimal number in the name.
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(NUMBER,
+		// Hexadecimal numbers
+		"0x(\\d|[abcdef])+");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_NUMBER;
-	pat->pattern = rz_str_dup(
-		"\\d+" // Decimal numbers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(MNEMONIC,
+		// Mnemonics with a decimal number in the name.
+		"\\w+_\\w+|[a-zA-Z]+\\d+[a-zA-Z]*");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_SEPARATOR;
-	pat->pattern = rz_str_dup(
-		"\\s+|" // Spaces and tabs
-		"[,;\\.\\(\\)\\{\\}:]" // Brackets and others
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(NUMBER,
+		// Decimal numbers
+		"\\d+");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = rz_str_dup(
-		"[+*&+?=!^\\/|~\\-]{1,2}" // +,-,=,],[, ! (not the packet prefix)
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(SEPARATOR,
+		// Spaces and tabs
+		"\\s+|"
+		// Brackets and others
+		"[,;\\.\\(\\)\\{\\}:]");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = rz_str_dup(
-		"\\]|\\[|<{1,2}|>{1,2}" // +,-,=,],[, ! (not the packet prefix)
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(OPERATOR,
+		// +,-,=,],[, ! (not the packet prefix)
+		"[+*&+?=!^\\/|~\\-]{1,2}");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = rz_str_dup(
-		"\\w+" // Alphanumeric mnemonics
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(OPERATOR,
+		// +,-,=,],[, ! (not the packet prefix)
+		"\\]|\\[|<{1,2}|>{1,2}");
+
+	TOKEN(MNEMONIC,
+		// Alphanumeric mnemonics
+		"\\w+");
 
 	return pvec;
 }
