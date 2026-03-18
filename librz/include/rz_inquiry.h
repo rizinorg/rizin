@@ -81,12 +81,13 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
 
-RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points);
+RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points, RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
 RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
 	RzInquiry *inquiry,
 	RzSetU *symbol_addresses,
-	const RzPVector /*<RzBinSymbol *>*/ *symbols);
+	const RzPVector /*<RzBinSymbol *>*/ *symbols,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
 //============
 // Algorithms
@@ -111,7 +112,8 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RzSetU *symbol_addresses,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	const RzInquiryBBCFG *bb_cfg,
-	RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns);
+	RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
 #ifdef __cplusplus
 }

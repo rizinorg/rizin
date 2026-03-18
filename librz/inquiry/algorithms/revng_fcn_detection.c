@@ -46,6 +46,7 @@
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_iterator.h"
 #include "rz_util/rz_set.h"
+#include "rz_vector.h"
 #include <rz_inquiry.h>
 #include <rz_types.h>
 #include <rz_util.h>
@@ -59,6 +60,17 @@ static int cmp(const void *a, const void *b, void *user) {
 	return 0;
 }
 
+static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
+	void *it;
+	rz_vector_foreach (v, it) {
+		RzInterval *itv = it;
+		if (rz_itv_contain(*itv, jump_target)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void recurse_into_fcn_bbs(
 	RzInquiryFunction *fcn,
 	ut64 predecessor_bb_addr,
@@ -67,7 +79,8 @@ static void recurse_into_fcn_bbs(
 	const RzSetU *return_addresses,
 	const RzVector /*<ut64>*/ *cfep_addresses,
 	const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
-	const RzInquiryBBCFG *binary_bb_cfg) {
+	const RzInquiryBBCFG *binary_bb_cfg,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	if (rz_set_u_contains(visited_fcn_bbs, this_bb_addr)) {
 		return;
 	}
@@ -125,6 +138,9 @@ static void recurse_into_fcn_bbs(
 				succ_addr = cc->npc;
 			}
 		}
+		if (jumps_to_ignored_code(ignored_code, succ_addr)) {
+			continue;
+		}
 
 		recurse_into_fcn_bbs(
 			fcn,
@@ -134,7 +150,8 @@ static void recurse_into_fcn_bbs(
 			return_addresses,
 			cfep_addresses,
 			call_candidates,
-			binary_bb_cfg);
+			binary_bb_cfg,
+			ignored_code);
 	}
 	return;
 
@@ -168,7 +185,8 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RzSetU *symbol_addresses,
 	RZ_NONNULL const HtUP /*<RzAnalysisCallCandidate *>*/ *call_candidates,
 	RZ_NONNULL const RzInquiryBBCFG *binary_bb_cfg,
-	RZ_NONNULL RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns) {
+	RZ_NONNULL RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(call_candidates && binary_bb_cfg && fcns, false);
 
 	// Candidate function entry points
@@ -201,7 +219,8 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 			return_addresses,
 			cfep_addresses,
 			call_candidates,
-			binary_bb_cfg);
+			binary_bb_cfg,
+			ignored_code);
 		rz_set_u_free(visited_bbs);
 		rz_set_u_add(cfep_handled, cfep_addr);
 		rz_pvector_push(fcns, fcn);

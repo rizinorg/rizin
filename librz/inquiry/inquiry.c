@@ -363,39 +363,6 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 	return true;
 }
 
-static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
-	const RzPVector /*<RzBinSymbol *>*/ *symbols,
-	RzPVector /*<RzBinSection *>*/ *sections,
-	const RzPVector /*<RzIOMap *>*/ *io_maps) {
-	void **it;
-	RzVector *v = rz_vector_new(sizeof(RzInterval), NULL, NULL);
-	rz_pvector_foreach (sections, it) {
-		RzBinSection *sec = *it;
-		if (sec->layout.role == RZ_BIN_SECTION_ROLE_LINKING || !(sec->perm & RZ_PERM_X)) {
-			RzInterval itv = { .addr = sec->vaddr, .size = sec->vsize };
-			rz_vector_push(v, &itv);
-		}
-	}
-	rz_pvector_free(sections);
-
-	rz_pvector_foreach (io_maps, it) {
-		RzIOMap *map = *it;
-		if (!(map->perm & RZ_PERM_X)) {
-			RzInterval itv = { .addr = map->itv.addr, .size = map->itv.size };
-			rz_vector_push(v, &itv);
-		}
-	}
-
-	rz_pvector_foreach (symbols, it) {
-		RzBinSymbol *sym = *it;
-		if (sym->is_imported) {
-			RzInterval itv = { .addr = sym->vaddr, .size = sym->size };
-			rz_vector_push(v, &itv);
-		}
-	}
-	return v;
-}
-
 static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 	RzInterpreterYieldQueue *q_xrefs = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 	if (!rz_th_queue_is_empty(q_xrefs->yield_queue)) {
@@ -474,7 +441,9 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
  */
-RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points) {
+RZ_API bool rz_inquiry_interpreter(RzCore *core,
+	RZ_OWN RzVector /*<ut64>*/ *entry_points,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
 	RzThreadQueue *io_request_q = NULL;
@@ -584,10 +553,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *ent
 		io_result_q,
 		is_running,
 		rz_vector_clone(entry_points),
-		get_ignored_code_regions(
-			rz_bin_object_get_symbols(core->bin->cur->o),
-			rz_bin_object_get_sections(core->bin->cur->o),
-			rz_io_maps(core->io)));
+		ignored_code);
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();
@@ -905,13 +871,15 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 }
 
 RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis, RzInquiry *inquiry, RzSetU *symbol_addresses,
-	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
+	const RzPVector /*<RzBinSymbol *>*/ *symbols,
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	RzPVector *fcns = rz_pvector_new((RzPVectorFree)rz_inquiry_function_free);
 	if (!rz_inquiry_algo_revng_fcn_detection(
 		    symbol_addresses,
 		    inquiry->call_candidates,
 		    inquiry->bb_cfg,
-		    fcns)) {
+		    fcns,
+		    ignored_code)) {
 		rz_warn_if_reached();
 		return false;
 	}
