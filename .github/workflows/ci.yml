@@ -959,7 +959,14 @@ jobs:
       - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
-          sh .github/riscv-qemu-install-all.sh
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-riscv64 \
+            gcc-riscv64-linux-gnu \
+            g++-riscv64-linux-gnu \
+            binutils-riscv64-linux-gnu \
+            cpio
+          pip3 install meson ninja
 
       - name: Setup RISC-V QEMU environment
         run: |
@@ -969,7 +976,13 @@ jobs:
       - name: Run inside RISC-V QEMU
         run: |
           cd ..
-          sh rizin/.github/riscv-qemu-run-all.sh
+          qemu-system-riscv64 \
+            -machine virt -cpu rv64 -m 512M \
+            -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
+            -initrd initrd.cpio.gz \
+            -append "console=ttyS0,115200 earlycon" \
+            -nographic
+
 
   create-release:
     name: Create draft release and upload artifacts

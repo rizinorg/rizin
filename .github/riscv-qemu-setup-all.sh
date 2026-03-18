@@ -10,7 +10,7 @@ git clone https://github.com/rcore-os/busybox-prebuilts.git busybox
 
 # Cross-compile the Rizin repo
 cd rizin
-meson setup build --cross-file .github/meson-linux-riscv64.ini
+meson setup build --cross-file doc/examples/cross_builds/meson-linux-riscv64.ini
 meson compile -C build
 cd ..
 
