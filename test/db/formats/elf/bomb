@@ -1,24 +1,421 @@
-NAME=ELF: bomb - open
-FILE=bins/elf/bomb
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=ELF: bomb - entrypoint
-FILE=bins/elf/bomb
-CMDS=s
-EXPECT=<<EOF
-0x400c90
-EOF
-RUN
-
-NAME=ELF: bomb - pi 1
+NAME=ELF: bomb file analysis
 FILE=bins/elf/bomb
 CMDS=<<EOF
+s
+echo ---
 e asm.sub.names=false
 pi 1
+echo ---
+ia
 EOF
 EXPECT=<<EOF
+0x400c90
+---
 xor ebp, ebp
+---
+[Info]
+arch     x86
+cpu      N/A
+features N/A
+baddr    0x00400000
+binsz    0x00006726
+bintype  elf
+bits     64
+class    ELF64
+compiler GCC: (Ubuntu 4.8.1-2ubuntu1~12.04) 4.8.1 GCC: (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    /lib64/ld-linux-x86-64.so.2
+laddr    0x00000000
+lang     c
+machine  AMD x86-64 architecture
+maxopsz  16
+minopsz  1
+os       linux
+cc       N/A
+pcalign  1
+relro    partial
+rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   false
+linenum  true
+lsyms    true
+canary   true
+PIE      false
+RELROCS  true
+NX       true
+
+[Imports]
+nth      vaddr bind   type   lib name              
+---------------------------------------------------
+  1 0x00400ae0 GLOBAL FUNC       getenv
+  2 0x00400af0 GLOBAL FUNC       __errno_location
+  3 0x00400b00 GLOBAL FUNC       strcpy
+  4 0x00400b10 GLOBAL FUNC       puts
+  5 0x00400b20 GLOBAL FUNC       write
+  6 0x00400b30 GLOBAL FUNC       __stack_chk_fail
+  7 0x00400b40 GLOBAL FUNC       alarm
+  8 0x00400b50 GLOBAL FUNC       close
+  9 0x00400b60 GLOBAL FUNC       read
+ 10 0x00400b70 GLOBAL FUNC       __libc_start_main
+ 11 0x00400b80 GLOBAL FUNC       fgets
+ 12 0x00400b90 GLOBAL FUNC       signal
+ 13 0x00400ba0 GLOBAL FUNC       gethostbyname
+ 14 0x00400bb0 GLOBAL FUNC       __memmove_chk
+ 15 0x00400bc0 GLOBAL FUNC       __memcpy_chk
+ 16 ---------- WEAK   NOTYPE     __gmon_start__
+ 17 0x00400bd0 GLOBAL FUNC       strtol
+ 18 0x00400be0 GLOBAL FUNC       fflush
+ 19 0x00400bf0 GLOBAL FUNC       __isoc99_sscanf
+ 20 0x00400c00 GLOBAL FUNC       __printf_chk
+ 21 0x00400c10 GLOBAL FUNC       fopen
+ 22 0x00400c20 GLOBAL FUNC       exit
+ 23 0x00400c30 GLOBAL FUNC       connect
+ 24 0x00400c40 GLOBAL FUNC       __fprintf_chk
+ 25 0x00400c50 GLOBAL FUNC       sleep
+ 26 0x00400c60 GLOBAL FUNC       __ctype_b_loc
+ 27 0x00400c70 GLOBAL FUNC       __sprintf_chk
+ 28 0x00400c80 GLOBAL FUNC       socket
+
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00400c90 0x00000c90 0x00400018 0x00000018 program
+0x00400d70 0x00000d70 0x00602df8 0x00002df8 init
+0x00400d50 0x00000d50 0x00602e00 0x00002e00 fini
+
+[Exports]
+nth      paddr      vaddr bind   type   size lib name                  
+-----------------------------------------------------------------------
+ 29 ---------- 0x00603740 GLOBAL OBJ       8     stdout
+ 30 ---------- 0x00603748 GLOBAL OBJ       8     stdin
+ 31 ---------- 0x00603750 GLOBAL OBJ       8     stderr
+ 57 0x000022a0 0x004022a0 GLOBAL FUNC      2     __libc_csu_fini
+ 58 0x000013f9 0x004013f9 GLOBAL FUNC     65     skip
+ 60 0x000015c4 0x004015c4 GLOBAL FUNC    149     phase_defused
+ 61 0x00003190 0x00603190 GLOBAL OBJ      24     n31
+ 64 ---------- 0x00603740 GLOBAL OBJ       8     stdout@@GLIBC_2.2.5
+ 66 ---------- 0x00603780 GLOBAL OBJ    1600     input_strings
+ 68 0x00003170 0x00603170 GLOBAL OBJ      24     n33
+ 70 ---------- 0x00603748 GLOBAL OBJ       8     stdin@@GLIBC_2.2.5
+ 72 ---------- 0x00603740 GLOBAL NOTYPE    0     _edata
+ 73 0x00003230 0x00603230 GLOBAL OBJ      24     n44
+ 74 0x00003290 0x00603290 GLOBAL OBJ      24     n46
+ 75 0x00003250 0x00603250 GLOBAL OBJ      24     n42
+ 76 0x000032b0 0x006032b0 GLOBAL OBJ      24     n48
+ 77 0x000022a4 0x004022a4 GLOBAL FUNC      0     _fini
+ 79 ---------- 0x00603760 GLOBAL OBJ       4     num_input_strings
+ 80 0x00001062 0x00401062 GLOBAL FUNC    146     phase_5
+ 81 0x000013ba 0x004013ba GLOBAL FUNC      2     initialize_bomb_solve
+ 82 0x000013bc 0x004013bc GLOBAL FUNC     61     blank_line
+ 83 0x000017ac 0x004017ac GLOBAL FUNC   2021     submitr
+ 84 0x00000f43 0x00400f43 GLOBAL FUNC    139     phase_3
+ 85 0x00000ee0 0x00400ee0 GLOBAL FUNC     28     phase_1
+ 86 0x000012f6 0x004012f6 GLOBAL FUNC     37     invalid_phase
+ 87 0x00001fb8 0x00401fb8 GLOBAL FUNC    469     init_driver
+ 90 0x000032f0 0x006032f0 GLOBAL OBJ      16     node3
+ 94 0x0000143a 0x0040143a GLOBAL FUNC     34     explode_bomb
+ 95 0x000032d0 0x006032d0 GLOBAL OBJ      16     node1
+ 96 0x000030e0 0x006030e0 GLOBAL NOTYPE    0     __data_start
+ 99 0x00003310 0x00603310 GLOBAL OBJ      16     node5
+104 0x00001204 0x00401204 GLOBAL FUNC     62     fun7
+105 0x000030e8 0x006030e8 GLOBAL OBJ       0     __dso_handle
+106 0x000022b0 0x004022b0 GLOBAL OBJ       4     _IO_stdin_used
+107 0x00003130 0x00603130 GLOBAL OBJ      24     n22
+108 0x00003340 0x00603340 GLOBAL OBJ    1024     host_table
+109 0x00000fce 0x00400fce GLOBAL FUNC     62     func4
+110 0x000030f0 0x006030f0 GLOBAL OBJ      24     n1
+111 0x0000131b 0x0040131b GLOBAL FUNC     29     string_length
+112 0x00002210 0x00402210 GLOBAL FUNC    137     __libc_csu_init
+115 0x000031b0 0x006031b0 GLOBAL OBJ      24     n34
+116 0x00003150 0x00603150 GLOBAL OBJ      24     n32
+117 ---------- 0x00603e10 GLOBAL NOTYPE    0     _end
+118 0x00000c90 0x00400c90 GLOBAL FUNC      0     _start
+119 0x00001242 0x00401242 GLOBAL FUNC     81     secret_phase
+120 ---------- 0x00603768 GLOBAL OBJ       8     infile
+121 0x00001660 0x00401660 GLOBAL FUNC     46     sigalrm_handler
+122 0x00001f91 0x00401f91 GLOBAL FUNC     39     init_timeout
+123 ---------- 0x00603740 GLOBAL NOTYPE    0     __bss_start
+124 0x00000da0 0x00400da0 GLOBAL FUNC    311     main
+126 0x00003210 0x00603210 GLOBAL OBJ      24     n47
+127 0x00003270 0x00603270 GLOBAL OBJ      24     n43
+128 0x000031f0 0x006031f0 GLOBAL OBJ      24     n41
+129 0x0000149e 0x0040149e GLOBAL FUNC    294     read_line
+130 0x000031d0 0x006031d0 GLOBAL OBJ      24     n45
+131 0x00001338 0x00401338 GLOBAL FUNC    106     strings_not_equal
+132 0x0000100c 0x0040100c GLOBAL FUNC     86     phase_4
+134 0x000010f4 0x004010f4 GLOBAL FUNC    272     phase_6
+135 ---------- 0x00603dc0 GLOBAL OBJ      80     scratch
+137 0x0000218d 0x0040218d GLOBAL FUNC    119     driver_post
+138 0x00000efc 0x00400efc GLOBAL FUNC     71     phase_2
+140 ---------- 0x0060375c GLOBAL OBJ       4     bomb_id
+142 ---------- 0x00603740 GLOBAL OBJ       0     __TMC_END__
+145 0x000032e0 0x006032e0 GLOBAL OBJ      16     node2
+146 0x00003300 0x00603300 GLOBAL OBJ      16     node4
+148 0x00003320 0x00603320 GLOBAL OBJ      16     node6
+149 0x00000ac0 0x00400ac0 GLOBAL FUNC      0     _init
+150 0x0000145c 0x0040145c GLOBAL FUNC     66     read_six_numbers
+151 0x00003110 0x00603110 GLOBAL OBJ      24     n21
+152 0x000013a2 0x004013a2 GLOBAL FUNC     24     initialize_bomb
+154 ---------- 0x00603750 GLOBAL OBJ       8     stderr@@GLIBC_2.2.5
+
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
+nth      paddr      vaddr bind   type   size lib name                                   
+----------------------------------------------------------------------------------------
+ 29 ---------- 0x00603740 GLOBAL OBJ       8     stdout
+ 30 ---------- 0x00603748 GLOBAL OBJ       8     stdin
+ 31 ---------- 0x00603750 GLOBAL OBJ       8     stderr
+  1 0x00000238 0x00400238 LOCAL  SECT      0     .interp
+  2 0x00000254 0x00400254 LOCAL  SECT      0     .note.ABI-tag
+  3 0x00000274 0x00400274 LOCAL  SECT      0     .note.gnu.build-id
+  4 0x00000298 0x00400298 LOCAL  SECT      0     .gnu.hash
+  5 0x000002c8 0x004002c8 LOCAL  SECT      0     .dynsym
+  6 0x000005c8 0x004005c8 LOCAL  SECT      0     .dynstr
+  7 0x00000736 0x00400736 LOCAL  SECT      0     .gnu.version
+  8 0x00000778 0x00400778 LOCAL  SECT      0     .gnu.version_r
+  9 0x000007d8 0x004007d8 LOCAL  SECT      0     .rela.dyn
+ 10 0x00000838 0x00400838 LOCAL  SECT      0     .rela.plt
+ 11 0x00000ac0 0x00400ac0 LOCAL  SECT      0     .init
+ 12 0x00000ad0 0x00400ad0 LOCAL  SECT      0     .plt
+ 13 0x00000c90 0x00400c90 LOCAL  SECT      0     .text
+ 14 0x000022a4 0x004022a4 LOCAL  SECT      0     .fini
+ 15 0x000022b0 0x004022b0 LOCAL  SECT      0     .rodata
+ 16 0x00002798 0x00402798 LOCAL  SECT      0     .eh_frame_hdr
+ 17 0x000028a0 0x004028a0 LOCAL  SECT      0     .eh_frame
+ 18 0x00002df8 0x00602df8 LOCAL  SECT      0     .init_array
+ 19 0x00002e00 0x00602e00 LOCAL  SECT      0     .fini_array
+ 20 0x00002e08 0x00602e08 LOCAL  SECT      0     .jcr
+ 21 0x00002e10 0x00602e10 LOCAL  SECT      0     .dynamic
+ 22 0x00002fe0 0x00602fe0 LOCAL  SECT      0     .got
+ 23 0x00002fe8 0x00602fe8 LOCAL  SECT      0     .got.plt
+ 24 0x000030e0 0x006030e0 LOCAL  SECT      0     .data
+ 25 ---------- 0x00603740 LOCAL  SECT      0     .bss
+ 26 ---------- 0x00000000 LOCAL  SECT      0     .comment
+ 27 ---------- 0x00000000 LOCAL  SECT      0     .debug_aranges
+ 28 ---------- 0x00000000 LOCAL  SECT      0     .debug_info
+ 29 ---------- 0x00000000 LOCAL  SECT      0     .debug_abbrev
+ 30 ---------- 0x00000000 LOCAL  SECT      0     .debug_line
+ 31 ---------- 0x00000000 LOCAL  SECT      0     .debug_str
+ 32 ---------- 0x00000000 LOCAL  SECT      0     .debug_loc
+ 33 0x00000cbc 0x00400cbc LOCAL  FUNC      0     call_gmon_start
+ 34 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 35 0x00002e08 0x00602e08 LOCAL  OBJ       0     __JCR_LIST__
+ 36 0x00000ce0 0x00400ce0 LOCAL  FUNC      0     deregister_tm_clones
+ 37 0x00000d10 0x00400d10 LOCAL  FUNC      0     register_tm_clones
+ 38 0x00000d50 0x00400d50 LOCAL  FUNC      0     __do_global_dtors_aux
+ 39 ---------- 0x00603758 LOCAL  OBJ       1     completed.6976
+ 40 0x00002e00 0x00602e00 LOCAL  OBJ       0     __do_global_dtors_aux_fini_array_entry
+ 41 0x00000d70 0x00400d70 LOCAL  FUNC      0     frame_dummy
+ 42 0x00002df8 0x00602df8 LOCAL  OBJ       0     __frame_dummy_init_array_entry
+ 43 ---------- 0x00000000 LOCAL  FILE      0     bomb.c
+ 44 ---------- 0x00000000 LOCAL  FILE      0     phases.c
+ 45 0x000024b0 0x004024b0 LOCAL  OBJ      16     array.3449
+ 46 ---------- 0x00000000 LOCAL  FILE      0     support.c
+ 47 0x000012a0 0x004012a0 LOCAL  FUNC     86     sig_handler
+ 48 ---------- 0x00000000 LOCAL  FILE      0     driverlib.c
+ 49 0x0000168e 0x0040168e LOCAL  FUNC    286     rio_readlineb
+ 50 ---------- 0x00000000 LOCAL  FILE      0     crtstuff.c
+ 51 0x00002cf0 0x00402cf0 LOCAL  OBJ       0     __FRAME_END__
+ 52 0x00002e08 0x00602e08 LOCAL  OBJ       0     __JCR_END__
+ 53 0x00002e00 0x00602e00 LOCAL  NOTYPE    0     __init_array_end
+ 54 0x00002e10 0x00602e10 LOCAL  OBJ       0     _DYNAMIC
+ 55 0x00002df8 0x00602df8 LOCAL  NOTYPE    0     __init_array_start
+ 56 0x00002fe8 0x00602fe8 LOCAL  OBJ       0     _GLOBAL_OFFSET_TABLE_
+ 57 0x000022a0 0x004022a0 GLOBAL FUNC      2     __libc_csu_fini
+ 58 0x000013f9 0x004013f9 GLOBAL FUNC     65     skip
+ 60 0x000015c4 0x004015c4 GLOBAL FUNC    149     phase_defused
+ 61 0x00003190 0x00603190 GLOBAL OBJ      24     n31
+ 64 ---------- 0x00603740 GLOBAL OBJ       8     stdout@@GLIBC_2.2.5
+ 65 0x000030e0 0x006030e0 WEAK   NOTYPE    0     data_start
+ 66 ---------- 0x00603780 GLOBAL OBJ    1600     input_strings
+ 68 0x00003170 0x00603170 GLOBAL OBJ      24     n33
+ 70 ---------- 0x00603748 GLOBAL OBJ       8     stdin@@GLIBC_2.2.5
+ 72 ---------- 0x00603740 GLOBAL NOTYPE    0     _edata
+ 73 0x00003230 0x00603230 GLOBAL OBJ      24     n44
+ 74 0x00003290 0x00603290 GLOBAL OBJ      24     n46
+ 75 0x00003250 0x00603250 GLOBAL OBJ      24     n42
+ 76 0x000032b0 0x006032b0 GLOBAL OBJ      24     n48
+ 77 0x000022a4 0x004022a4 GLOBAL FUNC      0     _fini
+ 79 ---------- 0x00603760 GLOBAL OBJ       4     num_input_strings
+ 80 0x00001062 0x00401062 GLOBAL FUNC    146     phase_5
+ 81 0x000013ba 0x004013ba GLOBAL FUNC      2     initialize_bomb_solve
+ 82 0x000013bc 0x004013bc GLOBAL FUNC     61     blank_line
+ 83 0x000017ac 0x004017ac GLOBAL FUNC   2021     submitr
+ 84 0x00000f43 0x00400f43 GLOBAL FUNC    139     phase_3
+ 85 0x00000ee0 0x00400ee0 GLOBAL FUNC     28     phase_1
+ 86 0x000012f6 0x004012f6 GLOBAL FUNC     37     invalid_phase
+ 87 0x00001fb8 0x00401fb8 GLOBAL FUNC    469     init_driver
+ 90 0x000032f0 0x006032f0 GLOBAL OBJ      16     node3
+ 94 0x0000143a 0x0040143a GLOBAL FUNC     34     explode_bomb
+ 95 0x000032d0 0x006032d0 GLOBAL OBJ      16     node1
+ 96 0x000030e0 0x006030e0 GLOBAL NOTYPE    0     __data_start
+ 99 0x00003310 0x00603310 GLOBAL OBJ      16     node5
+104 0x00001204 0x00401204 GLOBAL FUNC     62     fun7
+105 0x000030e8 0x006030e8 GLOBAL OBJ       0     __dso_handle
+106 0x000022b0 0x004022b0 GLOBAL OBJ       4     _IO_stdin_used
+107 0x00003130 0x00603130 GLOBAL OBJ      24     n22
+108 0x00003340 0x00603340 GLOBAL OBJ    1024     host_table
+109 0x00000fce 0x00400fce GLOBAL FUNC     62     func4
+110 0x000030f0 0x006030f0 GLOBAL OBJ      24     n1
+111 0x0000131b 0x0040131b GLOBAL FUNC     29     string_length
+112 0x00002210 0x00402210 GLOBAL FUNC    137     __libc_csu_init
+115 0x000031b0 0x006031b0 GLOBAL OBJ      24     n34
+116 0x00003150 0x00603150 GLOBAL OBJ      24     n32
+117 ---------- 0x00603e10 GLOBAL NOTYPE    0     _end
+118 0x00000c90 0x00400c90 GLOBAL FUNC      0     _start
+119 0x00001242 0x00401242 GLOBAL FUNC     81     secret_phase
+120 ---------- 0x00603768 GLOBAL OBJ       8     infile
+121 0x00001660 0x00401660 GLOBAL FUNC     46     sigalrm_handler
+122 0x00001f91 0x00401f91 GLOBAL FUNC     39     init_timeout
+123 ---------- 0x00603740 GLOBAL NOTYPE    0     __bss_start
+124 0x00000da0 0x00400da0 GLOBAL FUNC    311     main
+126 0x00003210 0x00603210 GLOBAL OBJ      24     n47
+127 0x00003270 0x00603270 GLOBAL OBJ      24     n43
+128 0x000031f0 0x006031f0 GLOBAL OBJ      24     n41
+129 0x0000149e 0x0040149e GLOBAL FUNC    294     read_line
+130 0x000031d0 0x006031d0 GLOBAL OBJ      24     n45
+131 0x00001338 0x00401338 GLOBAL FUNC    106     strings_not_equal
+132 0x0000100c 0x0040100c GLOBAL FUNC     86     phase_4
+134 0x000010f4 0x004010f4 GLOBAL FUNC    272     phase_6
+135 ---------- 0x00603dc0 GLOBAL OBJ      80     scratch
+137 0x0000218d 0x0040218d GLOBAL FUNC    119     driver_post
+138 0x00000efc 0x00400efc GLOBAL FUNC     71     phase_2
+140 ---------- 0x0060375c GLOBAL OBJ       4     bomb_id
+142 ---------- 0x00603740 GLOBAL OBJ       0     __TMC_END__
+145 0x000032e0 0x006032e0 GLOBAL OBJ      16     node2
+146 0x00003300 0x00603300 GLOBAL OBJ      16     node4
+148 0x00003320 0x00603320 GLOBAL OBJ      16     node6
+149 0x00000ac0 0x00400ac0 GLOBAL FUNC      0     _init
+150 0x0000145c 0x0040145c GLOBAL FUNC     66     read_six_numbers
+151 0x00003110 0x00603110 GLOBAL OBJ      24     n21
+152 0x000013a2 0x004013a2 GLOBAL FUNC     24     initialize_bomb
+154 ---------- 0x00603750 GLOBAL OBJ       8     stderr@@GLIBC_2.2.5
+  1 0x00000ae0 0x00400ae0 GLOBAL FUNC     16     imp.getenv
+  2 0x00000af0 0x00400af0 GLOBAL FUNC     16     imp.__errno_location
+  3 0x00000b00 0x00400b00 GLOBAL FUNC     16     imp.strcpy
+  4 0x00000b10 0x00400b10 GLOBAL FUNC     16     imp.puts
+  5 0x00000b20 0x00400b20 GLOBAL FUNC     16     imp.write
+  6 0x00000b30 0x00400b30 GLOBAL FUNC     16     imp.__stack_chk_fail
+  7 0x00000b40 0x00400b40 GLOBAL FUNC     16     imp.alarm
+  8 0x00000b50 0x00400b50 GLOBAL FUNC     16     imp.close
+  9 0x00000b60 0x00400b60 GLOBAL FUNC     16     imp.read
+ 10 0x00000b70 0x00400b70 GLOBAL FUNC     16     imp.__libc_start_main
+ 11 0x00000b80 0x00400b80 GLOBAL FUNC     16     imp.fgets
+ 12 0x00000b90 0x00400b90 GLOBAL FUNC     16     imp.signal
+ 13 0x00000ba0 0x00400ba0 GLOBAL FUNC     16     imp.gethostbyname
+ 14 0x00000bb0 0x00400bb0 GLOBAL FUNC     16     imp.__memmove_chk
+ 15 0x00000bc0 0x00400bc0 GLOBAL FUNC     16     imp.__memcpy_chk
+ 16 ---------- ---------- WEAK   NOTYPE    0     imp.__gmon_start__
+ 17 0x00000bd0 0x00400bd0 GLOBAL FUNC     16     imp.strtol
+ 18 0x00000be0 0x00400be0 GLOBAL FUNC     16     imp.fflush
+ 19 0x00000bf0 0x00400bf0 GLOBAL FUNC     16     imp.__isoc99_sscanf
+ 20 0x00000c00 0x00400c00 GLOBAL FUNC     16     imp.__printf_chk
+ 21 0x00000c10 0x00400c10 GLOBAL FUNC     16     imp.fopen
+ 22 0x00000c20 0x00400c20 GLOBAL FUNC     16     imp.exit
+ 23 0x00000c30 0x00400c30 GLOBAL FUNC     16     imp.connect
+ 24 0x00000c40 0x00400c40 GLOBAL FUNC     16     imp.__fprintf_chk
+ 25 0x00000c50 0x00400c50 GLOBAL FUNC     16     imp.sleep
+ 26 0x00000c60 0x00400c60 GLOBAL FUNC     16     imp.__ctype_b_loc
+ 27 0x00000c70 0x00400c70 GLOBAL FUNC     16     imp.__sprintf_chk
+ 28 0x00000c80 0x00400c80 GLOBAL FUNC     16     imp.socket
+
+[Sections]
+     paddr   size      vaddr  vsize align perm name               type       flags         
+-------------------------------------------------------------------------------------------
+0x00000000    0x0 ----------    0x0   0x0 ----                    NULL       
+0x00000238   0x1c 0x00400238   0x1c   0x0 -r-- .interp            PROGBITS   alloc
+0x00000254   0x20 0x00400254   0x20   0x0 -r-- .note.ABI-tag      NOTE       alloc
+0x00000274   0x24 0x00400274   0x24   0x0 -r-- .note.gnu.build-id NOTE       alloc
+0x00000298   0x30 0x00400298   0x30   0x0 -r-- .gnu.hash          GNU_HASH   alloc
+0x000002c8  0x300 0x004002c8  0x300   0x0 -r-- .dynsym            DYNSYM     alloc
+0x000005c8  0x16d 0x004005c8  0x16d   0x0 -r-- .dynstr            STRTAB     alloc
+0x00000736   0x40 0x00400736   0x40   0x0 -r-- .gnu.version       VERSYM     alloc
+0x00000778   0x60 0x00400778   0x60   0x0 -r-- .gnu.version_r     VERNEED    alloc
+0x000007d8   0x60 0x004007d8   0x60   0x0 -r-- .rela.dyn          RELA       alloc
+0x00000838  0x288 0x00400838  0x288   0x0 -r-- .rela.plt          RELA       alloc
+0x00000ac0    0xe 0x00400ac0    0xe   0x0 -r-x .init              PROGBITS   alloc,execute
+0x00000ad0  0x1c0 0x00400ad0  0x1c0   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x00000c90 0x1614 0x00400c90 0x1614   0x0 -r-x .text              PROGBITS   alloc,execute
+0x000022a4    0x9 0x004022a4    0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
+0x000022b0  0x4e5 0x004022b0  0x4e5   0x0 -r-- .rodata            PROGBITS   alloc
+0x00002798  0x104 0x00402798  0x104   0x0 -r-- .eh_frame_hdr      PROGBITS   alloc
+0x000028a0  0x454 0x004028a0  0x454   0x0 -r-- .eh_frame          PROGBITS   alloc
+0x00002df8    0x8 0x00602df8    0x8   0x0 -rw- .init_array        INIT_ARRAY write,alloc
+0x00002e00    0x8 0x00602e00    0x8   0x0 -rw- .fini_array        FINI_ARRAY write,alloc
+0x00002e08    0x8 0x00602e08    0x8   0x0 -rw- .jcr               PROGBITS   write,alloc
+0x00002e10  0x1d0 0x00602e10  0x1d0   0x0 -rw- .dynamic           DYNAMIC    write,alloc
+0x00002fe0    0x8 0x00602fe0    0x8   0x0 -rw- .got               PROGBITS   write,alloc
+0x00002fe8   0xf0 0x00602fe8   0xf0   0x0 -rw- .got.plt           PROGBITS   write,alloc
+0x000030e0  0x660 0x006030e0  0x660   0x0 -rw- .data              PROGBITS   write,alloc
+0x00003740    0x0 0x00603740  0x6d0   0x0 -rw- .bss               NOBITS     write,alloc
+0x00003740   0x53 ----------   0x53   0x0 ---- .comment           PROGBITS   merge,strings
+0x00003793   0x30 ----------   0x30   0x0 ---- .debug_aranges     PROGBITS   
+0x000037c3  0x7a3 ----------  0x7a3   0x0 ---- .debug_info        PROGBITS   
+0x00003f66  0x21f ----------  0x21f   0x0 ---- .debug_abbrev      PROGBITS   
+0x00004185  0x161 ----------  0x161   0x0 ---- .debug_line        PROGBITS   
+0x000042e6  0x2f3 ----------  0x2f3   0x0 ---- .debug_str         PROGBITS   merge,strings
+0x000045d9  0x188 ----------  0x188   0x0 ---- .debug_loc         PROGBITS   
+0x00004761  0x153 ----------  0x153   0x0 ---- .shstrtab          STRTAB     
+0x000051b8  0xeb8 ----------  0xeb8   0x0 ---- .symtab            SYMTAB     
+0x00006070  0x6b6 ----------  0x6b6   0x0 ---- .strtab            STRTAB     
+
+[Memory]
+name size address flags mirror 
+-------------------------------
+
+[Strings]
+     paddr      vaddr len size section type  string                                                                        
+---------------------------------------------------------------------------------------------------------------------------
+0x000022b6 0x004022b6  28   29 .rodata ascii %s: Error: Couldn't open %s\n
+0x000022d3 0x004022d3  25   26 .rodata ascii Usage: %s [<input_file>]\n
+0x000022ed 0x004022ed  29   30 .rodata ascii That's number 2.  Keep going!
+0x0000230b 0x0040230b  14   15 .rodata ascii Halfway there!
+0x0000231a 0x0040231a  29   30 .rodata ascii Good work!  On to the next...
+0x00002338 0x00402338  58   59 .rodata ascii Welcome to my fiendish little bomb. You have 6 phases with
+0x00002378 0x00402378  43   44 .rodata ascii which to blow yourself up. Have a nice day!
+0x000023a8 0x004023a8  40   41 .rodata ascii Phase 1 defused. How about the next one?
+0x000023d8 0x004023d8  35   36 .rodata ascii So you got that one.  Try this one.
+0x00002400 0x00402400  52   53 .rodata ascii Border relations with Canada have never been better.
+0x00002438 0x00402438  37   38 .rodata ascii Wow! You've defused the secret stage!
+0x0000245e 0x0040245e   6    7 .rodata ascii flyers
+0x000024b0 0x004024b0  71   72 .rodata ascii maduiersnfotvbylSo you think you can stop the bomb with ctrl-c, do you?
+0x000024f8 0x004024f8  38   39 .rodata ascii Curses, you've found the secret phase!
+0x00002520 0x00402520  52   53 .rodata ascii But finding it and solving it are quite different...
+0x00002558 0x00402558  41   42 .rodata ascii Congratulations! You've defused the bomb!
+0x00002582 0x00402582   7    8 .rodata ascii Well...
+0x0000258a 0x0040258a   7    8 .rodata ascii OK. :-)
+0x00002592 0x00402592  16   17 .rodata ascii Invalid phase%s\n
+0x000025a3 0x004025a3   8    9 .rodata ascii \nBOOM!!!
+0x000025ac 0x004025ac  22   23 .rodata ascii The bomb has blown up.
+0x000025c3 0x004025c3  17   18 .rodata ascii %d %d %d %d %d %d
+0x000025d5 0x004025d5  29   30 .rodata ascii Error: Premature EOF on stdin
+0x000025f3 0x004025f3  10   11 .rodata ascii GRADE_BOMB
+0x000025fe 0x004025fe  26   27 .rodata ascii Error: Input line too long
+0x00002619 0x00402619   8    9 .rodata ascii %d %d %s
+0x00002622 0x00402622   6    7 .rodata ascii DrEvil
+0x00002629 0x00402629  25   26 .rodata ascii greatwhite.ics.cs.cmu.edu
+0x00002643 0x00402643  25   26 .rodata ascii angelshark.ics.cs.cmu.edu
+0x0000265d 0x0040265d  24   25 .rodata ascii makoshark.ics.cs.cmu.edu
+0x00002678 0x00402678  35   36 .rodata ascii Program timed out after %d seconds\n
+0x000026a0 0x004026a0  44   45 .rodata ascii Error: HTTP request failed with error %d: %s
+0x000026d0 0x004026d0  73   74 .rodata ascii GET /%s/submitr.pl/?userid=%s&lab=%s&result=%s&submit=submit HTTP/1.0\r\n\r\n
+0x00002720 0x00402720  37   38 .rodata ascii Error: Unable to connect to server %s
+0x00002748 0x00402748   6    7 .rodata ascii %%%02X
+0x0000274f 0x0040274f  16   17 .rodata ascii %s %d %[a-zA-z ]
+0x00002760 0x00402760  23   24 .rodata ascii changeme.ics.cs.cmu.edu
+0x00002778 0x00402778  22   23 .rodata ascii \nAUTORESULT_STRING=%s\n
+0x0000278f 0x0040278f   5    6 .rodata ascii csapp
+
 EOF
 RUN

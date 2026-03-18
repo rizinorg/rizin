@@ -1,18 +1,24 @@
-NAME=ELF: ppc relocs
+NAME=ELF: ppc relocs - imports
 FILE=bins/elf/hello.ppc
-CMDS=<<EOF
-ii
-ir
-s main
-af
-pdsf
-EOF
+CMDS=ii
 EXPECT=<<EOF
 nth      vaddr bind   type   lib name              
 ---------------------------------------------------
   1 ---------- GLOBAL FUNC       printf
   2 ---------- WEAK   NOTYPE     __gmon_start__
   3 ---------- GLOBAL FUNC       __libc_start_main
+EOF
+RUN
+
+NAME=ELF: ppc relocs - relocations and disasm
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+ir
+s main
+af
+pdsf
+EOF
+EXPECT=<<EOF
      vaddr      paddr type           name              
 -------------------------------------------------------
 0x10020008 0x00010008 R_PPC_GLOB_DAT __gmon_start__
@@ -23,31 +29,33 @@ nth      vaddr bind   type   lib name
 EOF
 RUN
 
-NAME=ELF: arm relocs 1
+NAME=ELF: arm relocs r2pay-arm32.so
 BROKEN=1
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir~?
-# ARM_RELATIVE
 s 0xb58c0
 pf bbbb
 pd 1
-# ARM_ABS32
+echo ---
 s 0xb58c4
 pf bbbb
 pd 1
-# ARM_ABS32
+echo ---
 s 0xb58d8
 pf bbbb
 pd 1
-# ARM_GLOB_DAT
+echo ---
 s 0xb5dbc
 pf bbbb
 pd 1
-# ARM_JUMP_SLOT
+echo ---
 s 0xb5e08
 pf bbbb
 pd 1
+echo ---
+s section..init_array
+pd 10
 EOF
 EXPECT=<<EOF
 427
@@ -58,6 +66,7 @@ EXPECT=<<EOF
             ;-- section..fini_array:
             ;-- segment.LOAD1:
             0x000b58c0      .dword 0x00004524 ; entry0 ; entry.fini0 ; section..text; RELOC 32  ; [13] -rw- section size 4 named .fini_array
+---
 0x000b58c4 = 0x60
 0x000b58c5 = 0x45
 0x000b58c6 = 0x00
@@ -65,37 +74,28 @@ EXPECT=<<EOF
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
             0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [14] -rw- section size 364 named .init_array
+---
 0x000b58d8 = 0x44
 0x000b58d9 = 0x8b
 0x000b58da = 0x09
 0x000b58db = 0x00
             ;-- .datadiv_decode668687990735969933:
             0x000b58d8      .dword 0x00098b44 ; reloc.target..datadiv_decode668687990735969933 ; sym..datadiv_decode668687990735969933; RELOC 32 .datadiv_decode668687990735969933 @ 0x00098b44
+---
 0x000b5dbc = 0x24
 0x000b5dbd = 0x35
 0x000b5dbe = 0x14
 0x000b5dbf = 0x00
             ;-- x.10:
             0x000b5dbc      .dword 0x00143524 ; reloc.target.x.10 ; obj.x.10; RELOC 32 x.10 @ 0x00143524
+---
 0x000b5e08 = 0xb4
 0x000b5e09 = 0x37
 0x000b5e0a = 0x14
 0x000b5e0b = 0x00
             ;-- __cxa_atexit:
             0x000b5e08      .dword 0x001437b4 ; reloc.target.__cxa_atexit; RELOC 32 __cxa_atexit
-EOF
-RUN
-
-NAME=ELF: arm relocs 2
-BROKEN=1
-FILE=bins/elf/r2pay-arm32.so
-CMDS=<<EOF
-ir~?
-s section..init_array
-pd 10
-EOF
-EXPECT=<<EOF
-427
+---
             ;-- section..init_array:
             ;-- .datadiv_decode1794556967687044894:
             0x000b58c4      .dword 0x00004560 ; reloc.target..datadiv_decode1794556967687044894 ; sym..datadiv_decode1794556967687044894; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [14] -rw- section size 364 named .init_array
@@ -122,7 +122,6 @@ NAME=ELF: arm thumb relocs 1
 FILE=bins/elf/mbedtls-bignum-thumb-interwork.so
 CMDS=<<EOF
 ir~?
-# ARM_THM_PC22
 s 0x08000b82
 pf bbbb
 pd 1
@@ -138,7 +137,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: arm64 relocs 1
+NAME=ELF: arm64 relocs r2pay-arm64.so
 FILE=bins/elf/r2pay-arm64.so
 CMDS=<<EOF
 ir~?
@@ -190,19 +189,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: arm64 relocs 2
+NAME=ELF: arm64 relocs graphascii
 FILE=bins/elf/graphascii.c-gcc-arm64-O0.o
 CMDS=<<EOF
 ir~?
 s 0x8000444
 pf bbbb
 pi 1
+echo ---
 s 0x8000460
 pf bbbb
 pi 1
+echo ---
 s 0x800046c
 pf bbbb
 pi 1
+echo ---
 s 0x80003d8
 pf bbbb
 pi 1
@@ -214,16 +216,19 @@ EXPECT=<<EOF
 0x08000446 = 0x00
 0x08000447 = 0xf0
 adrp x0, 0x8003000
+---
 0x08000460 = 0x1c
 0x08000461 = 0x0d
 0x08000462 = 0x00
 0x08000463 = 0x94
 bl reloc.target.stackCursor
+---
 0x0800046c = 0x00
 0x0800046d = 0x64
 0x0800046e = 0x44
 0x0800046f = 0xf9
 ldr x0, [x0, 0x8c8]
+---
 0x080003d8 = 0x3a
 0x080003d9 = 0x0d
 0x080003da = 0x00
@@ -256,7 +261,9 @@ FILE=bins/elf/arm-reloc-call.o
 CMDS=<<EOF
 ir
 pd 1 @ 0x08000038
+echo ---
 pd 1 @ 0x0800003c
+echo ---
 pd 1 @ 0x08000040
 EOF
 EXPECT=<<EOF
@@ -268,8 +275,10 @@ EXPECT=<<EOF
             ;-- foo:
             ;-- arm:
             0x08000038      bl    loc.arm                              ; RELOC 24 foo @ 0x08000034
+---
             ;-- foo:
             0x0800003c      bl    reloc.foo.800003c                    ; RELOC 24 foo @ 0x08000034
+---
             ;-- foo:
             0x08000040      blx   foo                                  ; RELOC 24 foo @ 0x08000034
 EOF
@@ -318,6 +327,7 @@ FILE=bins/elf/arm-reloc-thm-jump24.o
 CMDS=<<EOF
 ir
 pd 1 @ 0x08000034
+echo ---
 pf w @ 0x08000034
 EOF
 EXPECT=<<EOF
@@ -329,6 +339,7 @@ EXPECT=<<EOF
             ;-- .text:
             ;-- _start:
         ,=< 0x08000034      b.w   foo                                  ; RELOC 24 foo ; [01] -r-x section size 4 named .text
+---
 0x08000034 = 0xf000
 EOF
 RUN

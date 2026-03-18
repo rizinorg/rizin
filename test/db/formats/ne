@@ -1,6 +1,21 @@
-NAME=NE Symbols
+NAME=NE anim8 analysis
 FILE=bins/ne/anim8.exe
-CMDS=is
+CMDS=<<EOF
+is
+echo ---
+iSS
+echo ---
+ii
+echo ---
+ir~0x?
+echo ---
+ir~WIN87EM
+ir~:0..9
+echo ---
+pi 10 @ sym.WNDPROC
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 nth      paddr      vaddr bind   type size lib name       
 ----------------------------------------------------------
@@ -8,48 +23,21 @@ nth      paddr      vaddr bind   type size lib name
   1 0x00000d8e 0x00000d8e GLOBAL NONE    0     WNDPROC
   2 0x00002b5a 0x00002b5a GLOBAL NONE    0     DIAL_ABOUT
   0 0x00000a00 0x00000a00 NONE   NONE    0     ANIM8
-EOF
-RUN
-
-NAME=NE Segments
-FILE=bins/ne/anim8.exe
-CMDS=iSS
-EXPECT=<<EOF
+---
      paddr   size      vaddr  vsize align perm name           
 --------------------------------------------------------------
 0x00000a00 0x54ee 0x00000a00 0x54ee   0x0 ---x MOVEABLE.2560
 0x00007600 0x3ec4 0x00007600 0x3ec4   0x0 -rwx MOVEABLE.30208
-EOF
-RUN
-
-NAME=NE Module imports
-FILE=bins/ne/anim8.exe
-CMDS=ii
-EXPECT=<<EOF
+---
 nth      vaddr bind type lib name    
 -------------------------------------
   1 ---------- NONE NONE     KERNEL
   2 ---------- NONE NONE     USER
   3 ---------- NONE NONE     GDI
   4 ---------- NONE NONE     WIN87EM
-EOF
-RUN
-
-NAME=NE Relocs
-FILE=bins/ne/anim8.exe
-CMDS=ir~0x?
-EXPECT=<<EOF
+---
 718
-EOF
-RUN
-
-NAME=NE Relocs and resolve function ordinal names
-FILE=bins/ne/anim8.exe
-CMDS=<<EOF
-ir~WIN87EM
-ir~:0..9
-EOF
-EXPECT=<<EOF
+---
 0x00004c98 0x00004c98 POI_32_IMPORTED_ORD WIN87EM.__FPMATH
 0x00004cb2 0x00004cb2 OFF_16_IMPORTED_ORD WIN87EM.__FPMATH
 0x00004cb8 0x00004cb8 SEL_16_IMPORTED_ORD WIN87EM.__FPMATH
@@ -68,13 +56,7 @@ EXPECT=<<EOF
 0x00000a74 0x00000a74 POI_32_IMPORTED_ORD KERNEL.GETWINFLAGS
 0x00000ad0 0x00000ad0 POI_32_IMPORTED_ORD KERNEL.UNLOCKSEGMENT
 0x00000b86 0x00000b86 POI_32_IMPORTED_ORD KERNEL.CATCH
-EOF
-RUN
-
-NAME=NE Code
-FILE=bins/ne/anim8.exe
-CMDS=pi 10 @ sym.WNDPROC
-EXPECT=<<EOF
+---
 mov ax, ds
 nop
 inc bp
@@ -85,6 +67,40 @@ mov ds, ax
 mov ax, 0x5c
 call 0x4d35
 push si
+---
+ne:
+  MajLinkerVersion: 5
+  MinLinkerVersion: 10
+  EntryTableOffset: 0x3c4
+  EntryTableLength: 16
+  FileLoadCRC: 0x0
+  ProgFlags: 0xa
+  ApplFlags: 0x3
+  AutoDataSegIndex: 2
+  InitHeapSize: 1024
+  InitStackSize: 30000
+  EntryPointCSIndex: 1
+  EntryPointIPOff: 0x0
+  InitStack: 0x20000
+  SegCount: 2
+  ModuleRefsCount: 4
+  NonResNamesTblSiz: 0x9
+  SegTableOffset: 0x40
+  ResourceTblOff: 0x50
+  ResidentNameTblOff: 0x383
+  ModuleRefTblOff: 0x3a3
+  ImportNameTblOff: 0x3ab
+  OffStartNonResTab: 1572
+  MovEntryCount: 2
+  FileAlnSzShftCnt: 9
+  nResTabEntries: 0
+  OS: "Windows"
+  OS2EXEFlags: 0x8
+  retThunkOffset: 0x4
+  segRefThunksOff: 0x58
+  mincodeswap: 0
+  winver: "3.0"
+
 EOF
 RUN
 
@@ -1059,45 +1075,5 @@ EXPECT=<<EOF
 0x0000d4d5 0x0000d4d5 POI_32_IMPORTED_ORD KERNEL.GLOBALUNLOCK
 0x0000d4de 0x0000d4de POI_32_IMPORTED_ORD KERNEL.FREERESOURCE
 0x0000d544 0x0000d544 POI_32_IMPORTED_ORD GDI.SETDIBITSTODEVICE
-EOF
-RUN
-
-NAME=NE header
-FILE=bins/ne/anim8.exe
-CMDS=iH
-EXPECT=<<EOF
-ne:
-  MajLinkerVersion: 5
-  MinLinkerVersion: 10
-  EntryTableOffset: 0x3c4
-  EntryTableLength: 16
-  FileLoadCRC: 0x0
-  ProgFlags: 0xa
-  ApplFlags: 0x3
-  AutoDataSegIndex: 2
-  InitHeapSize: 1024
-  InitStackSize: 30000
-  EntryPointCSIndex: 1
-  EntryPointIPOff: 0x0
-  InitStack: 0x20000
-  SegCount: 2
-  ModuleRefsCount: 4
-  NonResNamesTblSiz: 0x9
-  SegTableOffset: 0x40
-  ResourceTblOff: 0x50
-  ResidentNameTblOff: 0x383
-  ModuleRefTblOff: 0x3a3
-  ImportNameTblOff: 0x3ab
-  OffStartNonResTab: 1572
-  MovEntryCount: 2
-  FileAlnSzShftCnt: 9
-  nResTabEntries: 0
-  OS: "Windows"
-  OS2EXEFlags: 0x8
-  retThunkOffset: 0x4
-  segRefThunksOff: 0x58
-  mincodeswap: 0
-  winver: "3.0"
-
 EOF
 RUN

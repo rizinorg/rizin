@@ -1,6 +1,10 @@
 NAME=hunk test
 FILE=bins/hunk/test
-CMDS=ia ; iH
+CMDS=<<EOF
+ia
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 [Info]
 arch     m68k
@@ -39,6 +43,7 @@ PIE      false
 RELROCS  false
 NX       false
 
+---
 [Imports]
 nth vaddr bind type lib name 
 -----------------------------

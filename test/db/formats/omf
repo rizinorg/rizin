@@ -2,11 +2,17 @@ NAME=16 bits omf
 FILE=bins/omf/hello_world
 CMDS=<<EOF
 iI~bits
+echo ---
 iH
+echo ---
 ie:quiet
+echo ---
 is
+echo ---
 iS
+echo ---
 oml
+echo ---
 px 16 @ section.text_1
 px 16 @ section.data_1
 e asm.bytes=true
@@ -14,6 +20,7 @@ pdq 1~mov[1]
 EOF
 EXPECT=<<EOF
 bits     16
+---
 omf:
   bits: 16
   num_names: 3
@@ -49,16 +56,21 @@ omf:
       paddr: 0x73
       vaddr: 0x1000
 
+---
 0x00001000 0x00000073 ---------- ---------- program
+---
 nth      paddr      vaddr bind type size lib name   
 ----------------------------------------------------
   1 0x00000073 0x00001000 NONE NONE    0     _start
+---
      paddr size      vaddr vsize align perm name   type flags 
 --------------------------------------------------------------
 0x00000073 0x13 0x00001000  0x13   0x0 -rwx text_1      
 0x00000095  0xe 0x00001013   0xe   0x0 -rwx data_1      
+---
  1 fd: 3 +0x00000073 0x00001000 * 0x00001012 r-x fmap.text_1
  2 fd: 3 +0x00000095 0x00001013 - 0x00001020 r-x fmap.data_1
+---
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1000  ba0e 00b9 0000 bb01 00b8 0400 cd80 b801  ................
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF

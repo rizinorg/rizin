@@ -1,15 +1,22 @@
-NAME=mdmp open
+NAME=mdmp calc.dmp
 FILE=bins/mdmp/calc.dmp
-CMDS=i~format
+CMDS=<<EOF
+i~format
+echo ---
+iI
+echo ---
+iS
+echo ---
+oml
+echo ---
+ie
+echo ---
+obR
+echo ok
+EOF
 EXPECT=<<EOF
 format   mdmp
-EOF
-RUN
-
-NAME=mdmp info
-FILE=bins/mdmp/calc.dmp
-CMDS=iI
-EXPECT=<<EOF
+---
 arch     x86
 cpu      N/A
 features N/A
@@ -49,13 +56,7 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
-EOF
-RUN
-
-NAME=mdmp sections
-FILE=bins/mdmp/calc.dmp
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr     size         vaddr    vsize align perm name                                  type flags 
 -------------------------------------------------------------------------------------------------------
 0x00000000  0xe3000    0xfffe0000  0xe3000   0x0 ---- C:_Windows_System32_calc.exe               
@@ -84,13 +85,7 @@ EXPECT=<<EOF
 0x00000000   0xf000 0x7fefd2b0000   0xf000   0x0 ---- C:_Windows_System32_CRYPTBASE.dll          
 0x00000000  0x99000 0x7fefddb0000  0x99000   0x0 ---- C:_Windows_System32_clbcatq.dll            
 0x00000000  0x54000 0x7fef62b0000  0x54000   0x0 ---- C:_Windows_System32_oleacc.dll             
-EOF
-RUN
-
-NAME=mdmp maps
-FILE=bins/mdmp/calc.dmp
-CMDS=oml
-EXPECT=<<EOF
+---
  1 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
  2 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
  3 fd: 3 +0x00004af4 0x032cf638 - 0x032cffff r-- fmap.memory.0x32cf638
@@ -100,12 +95,59 @@ EXPECT=<<EOF
  7 fd: 3 +0x00008c74 0x7776ad90 - 0x7776ae8f r-- fmap.memory.0x7776ad90
  8 fd: 3 +0x00008d74 0x7776bafa - 0x7776bbf9 r-- fmap.memory.0x7776bafa
  9 fd: 3 +0x00008e74 0x7776c06a - 0x7776c169 r-- fmap.memory.0x7776c06a
+---
+vaddr paddr hvaddr haddr type 
+------------------------------
+---
+ok
 EOF
 RUN
 
-NAME=mdmp memory64 maps
+NAME=mdmp hello64.dmp
 FILE=bins/mdmp/hello64.dmp
-CMDS=oml
+CMDS=<<EOF
+oml
+echo ---
+il:quiet~?
+echo ---
+il~kernel32.dll
+echo ---
+ie:quiet~?
+echo ---
+ie~0x00401500
+echo ---
+is~?
+echo ---
+is~imp.DeleteCriticalSection~KERNEL32.dll
+echo ---
+is~A_SHAFinal
+echo ---
+ii~?
+echo ---
+ii~KERNEL32.dll~GetCurrentProcessId
+echo ---
+iE~?
+echo ---
+iE~CsrVerifyRegion
+echo ---
+iz~0x002e2fe1[1,2,3,4,5,6,7,8]
+iz~0x002e2feb[1,2,3,4,5,6,7,8]
+iz~0x002e2ff5[1,2,3,4,5,6,7,8]
+iz~0x00330d85[1,2,3,4,5,6,7,8]
+iz~0x003310c1[1,2,3,4,5,6,7,8]
+iz~0x00161a37[1,2,3,4,5,6,7,8]
+iz~0x00161c7f[1,2,3,4,5,6,7,8]
+iz~0x00161dbf[1,2,3,4,5,6,7,8]
+iz~0x001d9d45[1,2,3,4,5,6,7,8]
+iz~0x001da0a5[1,2,3,4,5,6,7,8]
+iz~0x003fad45[1,2,3,4,5,6,7,8]
+iz~0x003fb0ad[1,2,3,4,5,6,7,8]
+iz~0x00480857[1,2,3,4,5,6,7,8]
+iz~0x004808c7[1,2,3,4,5,6,7,8]
+iz~0x00499cf5[1,2,3,4,5,6,7,8]
+iz~0x0049a045[1,2,3,4,5,6,7,8]
+EOF
+TIMEOUT=2040
 EXPECT=<<EOF
  1 fd: 3 +0x00002c8f 0x00010000 - 0x0001ffff r-- fmap.memory64.0x10000
  2 fd: 3 +0x00012c8f 0x00020000 - 0x0002ffff r-- fmap.memory64.0x20000
@@ -160,27 +202,145 @@ EXPECT=<<EOF
 51 fd: 3 +0x0049cc8f 0x7fffffb0000 - 0x7fffffd2fff r-- fmap.memory64.0x7fffffb0000
 52 fd: 3 +0x004bfc8f 0x7fffffd7000 - 0x7fffffd7fff r-- fmap.memory64.0x7fffffd7000
 53 fd: 3 +0x004c0c8f 0x7fffffde000 - 0x7fffffdffff r-- fmap.memory64.0x7fffffde000
+---
+49
+---
+[0x00400000] - kernel32.dll
+---
+5
+---
+   0x00401500 0x0009418f ---------- 0x00092d37 program
+---
+6826
+---
+   1 0x0009ae8b    0x004081fc NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
+---
+   9 0x001eb87f    0x77728bf0 GLOBAL FUNC    0 ntdll.dll                                     A_SHAFinal
+---
+1511
+---
+  4    0x00408214 NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
+---
+5317
+---
+  39 0x0029513f    0x777d24b0 GLOBAL FUNC    0 ntdll.dll      CsrVerifyRegion
+---
+0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
+0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
+0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
+0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
+0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
+0x7759dda8 7 16 C:_Windows_System32_kernel32.dll utf16le win.ini
+0x7759dff0 20 42 C:_Windows_System32_kernel32.dll utf16le \Classes\Wow6432Node
+0x7759e130 45 92 C:_Windows_System32_kernel32.dll utf16le \REGISTRY\USER\*\SOFTWARE\Classes\Wow6432Node
+0x776160b6 15 32 C:_Windows_System32_kernel32.dll utf16le VS_VERSION_INFO
+0x77616416 11 24 C:_Windows_System32_kernel32.dll utf16le VarFileInfo
+0x7fefd5080b6 15 32 C:_Windows_System32_KERNELBASE.dll utf16le VS_VERSION_INFO
+0x7fefd50841e 11 24 C:_Windows_System32_KERNELBASE.dll utf16le VarFileInfo
+0x7fefdb33bc8 4 10 C:_Windows_System32_msvcrt.dll utf16le PATH
+0x7fefdb33c38 10 22 C:_Windows_System32_msvcrt.dll utf16le SystemRoot
+0x7fefdb4d066 15 32 C:_Windows_System32_msvcrt.dll utf16le VS_VERSION_INFO
+0x7fefdb4d3b6 11 24 C:_Windows_System32_msvcrt.dll utf16le VarFileInfo
 EOF
 RUN
 
-NAME=mdmp entrypoints nomem .dmp
-FILE=bins/mdmp/calc.dmp
-CMDS=ie
-EXPECT=<<EOF
-vaddr paddr hvaddr haddr type 
-------------------------------
-EOF
-RUN
-
-NAME=mdmp resolve vaddr to paddr
+NAME=mdmp hello.dmp
 FILE=bins/mdmp/hello.dmp
-CMDS=px 64 @ 0x00400000
+CMDS=<<EOF
+px 64 @ 0x00400000
+echo ---
+il:quiet~?
+echo ---
+il~kernel32.dll
+echo ---
+ie:quiet~?
+iee:quiet~?
+echo ---
+ie~0x004014e0
+echo ---
+is~?
+echo ---
+is~DeleteCriticalSection:0
+echo ---
+is~RtlDeleteCriticalSection:0
+echo ---
+ii~?
+echo ---
+ii~TerminateProcess~KERNEL32.dll
+echo ---
+iE~?
+echo ---
+iE~Ordinal_1
+echo ---
+iz~0x0043cf24[1,2,3,4,5,6,7,8]
+iz~0x0043cf2e[1,2,3,4,5,6,7,8]
+iz~0x0043cf38[1,2,3,4,5,6,7,8]
+iz~0x00447247[1,2,3,4,5,6,7,8]
+iz~0x0044726b[1,2,3,4,5,6,7,8]
+iz~0x00447291[1,2,3,4,5,6,7,8]
+iz~0x004472ac[1,2,3,4,5,6,7,8]
+iz~0x0048acc8[1,2,3,4,5,6,7,8]
+iz~0x0048b004[1,2,3,4,5,6,7,8]
+iz~0x00168c38[1,2,3,4,5,6,7,8]
+iz~0x00168f80[1,2,3,4,5,6,7,8]
+iz~0x00128c38[1,2,3,4,5,6,7,8]
+iz~0x00128fa8[1,2,3,4,5,6,7,8]
+iz~0x000cdc38[1,2,3,4,5,6,7,8]
+iz~0x000cdf84[1,2,3,4,5,6,7,8]
+iz~0x00299106[1,2,3,4,5,6,7,8]
+iz~0x001adff0[1,2,3,4,5,6,7,8]
+iz~0x0033641a[1,2,3,4,5,6,7,8]
+iz~0x00337f88[1,2,3,4,5,6,7,8]
+EOF
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00400000  4d5a 9000 0300 0000 0400 0000 ffff 0000  MZ..............
 0x00400010  b800 0000 0000 0000 4000 0000 0000 0000  ........@.......
 0x00400020  0000 0000 0000 0000 0000 0000 0000 0000  ................
 0x00400030  0000 0000 0000 0000 0000 0000 8000 0000  ................
+---
+57
+---
+[0x00400000] - kernel32.dll
+---
+11
+2
+---
+0x004014e0 0x000990b2 ---------- 0x00097c7a program
+---
+7468
+---
+   1 0x0009dcda 0x00406108 NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
+---
+ 358 0x001c2176 0x76fb05a4 NONE   FUNC    0 ntdll.dll                                     imp.RtlDeleteCriticalSection
+---
+2030
+---
+ 17 0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
+---
+5440
+---
+   1 0x0041f1f2 0x77802620 GLOBAL FUNC    0 ntdll.dll      Ordinal_1
+---
+0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
+0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
+0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
+0x7782a675 35 36 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionGuid
+0x7782a699 37 38 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionString
+0x7782a6bf 26 27 C:_Windows_System32__tdll.dll ascii RtlFindCharInUnicodeString
+0x7782a6da 16 17 C:_Windows_System32__tdll.dll ascii RtlFindClearBits
+0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
+0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
+0x7500d066 15 32 C:_Windows_System32_wow64.dll utf16le VS_VERSION_INFO
+0x7500d3ae 11 24 C:_Windows_System32_wow64.dll utf16le VarFileInfo
+0x74fc9066 15 32 C:_Windows_System32_wow64win.dll utf16le VS_VERSION_INFO
+0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
+0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
+0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
+0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
+0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
+0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed: %s
+0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo
 EOF
 RUN
 
@@ -210,283 +370,5 @@ mdmp_thread_list "d[1]? NumberOfThreads (mdmp_thread)Threads"
 mdmp_token_info "ddq TokenSize TokenId TokenHandle"
 mdmp_token_info_list "dddd TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize"
 mdmp_vs_fixedfileinfo "ddddddddddddd dwSignature dwStrucVersion dwFileVersionMs dwFileVersionLs dwProductVersionMs dwProductVersionLs dwFileFlagsMask dwFileFlags dwFileOs dwFileType dwFileSubtype dwFileDateMs dwFileDateLs"
-EOF
-RUN
-
-NAME=mdmp 32bit - libraries count
-FILE=bins/mdmp/hello.dmp
-CMDS=il:quiet~?
-EXPECT=<<EOF
-57
-EOF
-RUN
-
-NAME=mdmp 32bit - libraries resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=il~kernel32.dll
-EXPECT=<<EOF
-[0x00400000] - kernel32.dll
-EOF
-RUN
-
-NAME=mdmp 32bit - entrypoints count
-FILE=bins/mdmp/hello.dmp
-CMDS=<<EOF
-ie:quiet~?
-iee:quiet~?
-EOF
-EXPECT=<<EOF
-11
-2
-EOF
-RUN
-
-NAME=mdmp 32bit - entrypoints resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ie~0x004014e0
-EXPECT=<<EOF
-0x004014e0 0x000990b2 ---------- 0x00097c7a program
-EOF
-RUN
-
-NAME=mdmp 32bit - symbols count
-FILE=bins/mdmp/hello.dmp
-CMDS=is~?
-EXPECT=<<EOF
-7468
-EOF
-RUN
-
-NAME=mdmp 32bit - symbols resolving 1
-FILE=bins/mdmp/hello.dmp
-CMDS=is~DeleteCriticalSection:0
-EXPECT=<<EOF
-   1 0x0009dcda 0x00406108 NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
-EOF
-RUN
-
-NAME=mdmp 32bit - symbols resolving 2
-FILE=bins/mdmp/hello.dmp
-CMDS=is~RtlDeleteCriticalSection:0
-EXPECT=<<EOF
- 358 0x001c2176 0x76fb05a4 NONE   FUNC    0 ntdll.dll                                     imp.RtlDeleteCriticalSection
-EOF
-RUN
-
-NAME=mdmp 32bit - imports count
-FILE=bins/mdmp/hello.dmp
-CMDS=ii~?
-EXPECT=<<EOF
-2030
-EOF
-RUN
-
-NAME=mdmp 32bit - imports resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=ii~TerminateProcess~KERNEL32.dll
-EXPECT=<<EOF
- 17 0x00406148 NONE FUNC KERNEL32.dll                                  TerminateProcess
-EOF
-RUN
-
-NAME=mdmp 32bit - exports count
-FILE=bins/mdmp/hello.dmp
-CMDS=iE~?
-EXPECT=<<EOF
-5440
-EOF
-RUN
-
-NAME=mdmp 32bit - exports resolving
-FILE=bins/mdmp/hello.dmp
-CMDS=iE~Ordinal_1
-EXPECT=<<EOF
-   1 0x0041f1f2 0x77802620 GLOBAL FUNC    0 ntdll.dll      Ordinal_1
-EOF
-RUN
-
-NAME=mdmp 32bit - strings
-FILE=bins/mdmp/hello.dmp
-CMDS=<<EOF
-iz~0x0043cf24[1,2,3,4,5,6,7,8]
-iz~0x0043cf2e[1,2,3,4,5,6,7,8]
-iz~0x0043cf38[1,2,3,4,5,6,7,8]
-iz~0x00447247[1,2,3,4,5,6,7,8]
-iz~0x0044726b[1,2,3,4,5,6,7,8]
-iz~0x00447291[1,2,3,4,5,6,7,8]
-iz~0x004472ac[1,2,3,4,5,6,7,8]
-iz~0x0048acc8[1,2,3,4,5,6,7,8]
-iz~0x0048b004[1,2,3,4,5,6,7,8]
-iz~0x00168c38[1,2,3,4,5,6,7,8]
-iz~0x00168f80[1,2,3,4,5,6,7,8]
-iz~0x00128c38[1,2,3,4,5,6,7,8]
-iz~0x00128fa8[1,2,3,4,5,6,7,8]
-iz~0x000cdc38[1,2,3,4,5,6,7,8]
-iz~0x000cdf84[1,2,3,4,5,6,7,8]
-iz~0x00299106[1,2,3,4,5,6,7,8]
-iz~0x001adff0[1,2,3,4,5,6,7,8]
-iz~0x0033641a[1,2,3,4,5,6,7,8]
-iz~0x00337f88[1,2,3,4,5,6,7,8]
-EOF
-EXPECT=<<EOF
-0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
-0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
-0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
-0x7782a675 35 36 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionGuid
-0x7782a699 37 38 C:_Windows_System32__tdll.dll ascii RtlFindActivationContextSectionString
-0x7782a6bf 26 27 C:_Windows_System32__tdll.dll ascii RtlFindCharInUnicodeString
-0x7782a6da 16 17 C:_Windows_System32__tdll.dll ascii RtlFindClearBits
-0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
-0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
-0x7500d066 15 32 C:_Windows_System32_wow64.dll utf16le VS_VERSION_INFO
-0x7500d3ae 11 24 C:_Windows_System32_wow64.dll utf16le VarFileInfo
-0x74fc9066 15 32 C:_Windows_System32_wow64win.dll utf16le VS_VERSION_INFO
-0x74fc93d6 11 24 C:_Windows_System32_wow64win.dll utf16le VarFileInfo
-0x74f66066 15 32 C:_Windows_System32_wow64cpu.dll utf16le VS_VERSION_INFO
-0x74f663b2 11 24 C:_Windows_System32_wow64cpu.dll utf16le VarFileInfo
-0x77378534 11 12 C:_Windows_SysWOW64_kernel32.dll ascii _vfprintf_l
-0x75d9341e 11 24 C:_Windows_SysWOW64_KERNELBASE.dll utf16le VarFileInfo
-0x77415848 39 40 C:_Windows_SysWOW64_msvcrt.dll ascii Assertion failed: %s
-0x774173b6 11 24 C:_Windows_SysWOW64_msvcrt.dll utf16le VarFileInfo
-EOF
-RUN
-
-NAME=mdmp 64bit - libraries count
-FILE=bins/mdmp/hello64.dmp
-CMDS=il:quiet~?
-EXPECT=<<EOF
-49
-EOF
-RUN
-
-NAME=mdmp 64bit - libraries resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=il~kernel32.dll
-EXPECT=<<EOF
-[0x00400000] - kernel32.dll
-EOF
-RUN
-
-NAME=mdmp 64bit - entrypoints count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ie:quiet~?
-EXPECT=<<EOF
-5
-EOF
-RUN
-
-NAME=mdmp 64bit - entrypoints resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ie~0x00401500
-EXPECT=<<EOF
-   0x00401500 0x0009418f ---------- 0x00092d37 program
-EOF
-RUN
-
-NAME=mdmp 64bit - symbols count
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~?
-EXPECT=<<EOF
-6826
-EOF
-RUN
-
-NAME=mdmp 64bit - symbols resolving 1
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
-EXPECT=<<EOF
-   1 0x0009ae8b    0x004081fc NONE   FUNC    0 KERNEL32.dll                                  imp.DeleteCriticalSection
-EOF
-RUN
-
-NAME=mdmp 64bit - symbols resolving 2
-FILE=bins/mdmp/hello64.dmp
-CMDS=is~A_SHAFinal
-EXPECT=<<EOF
-   9 0x001eb87f    0x77728bf0 GLOBAL FUNC    0 ntdll.dll                                     A_SHAFinal
-EOF
-RUN
-
-NAME=mdmp 64bit - imports count
-FILE=bins/mdmp/hello64.dmp
-CMDS=ii~?
-EXPECT=<<EOF
-1511
-EOF
-RUN
-
-NAME=mdmp 64bit - imports resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=ii~KERNEL32.dll~GetCurrentProcessId
-EXPECT=<<EOF
-  4    0x00408214 NONE FUNC KERNEL32.dll                                  GetCurrentProcessId
-EOF
-RUN
-
-NAME=mdmp 64bit - exports count
-FILE=bins/mdmp/hello64.dmp
-CMDS=iE~?
-EXPECT=<<EOF
-5317
-EOF
-RUN
-
-NAME=mdmp 64bit - exports resolving
-FILE=bins/mdmp/hello64.dmp
-CMDS=iE~CsrVerifyRegion
-EXPECT=<<EOF
-  39 0x0029513f    0x777d24b0 GLOBAL FUNC    0 ntdll.dll      CsrVerifyRegion
-EOF
-RUN
-
-NAME=mdmp 64bit - strings
-FILE=bins/mdmp/hello64.dmp
-TIMEOUT=2040
-CMDS=<<EOF
-iz~0x002e2fe1[1,2,3,4,5,6,7,8]
-iz~0x002e2feb[1,2,3,4,5,6,7,8]
-iz~0x002e2ff5[1,2,3,4,5,6,7,8]
-iz~0x00330d85[1,2,3,4,5,6,7,8]
-iz~0x003310c1[1,2,3,4,5,6,7,8]
-iz~0x00161a37[1,2,3,4,5,6,7,8]
-iz~0x00161c7f[1,2,3,4,5,6,7,8]
-iz~0x00161dbf[1,2,3,4,5,6,7,8]
-iz~0x001d9d45[1,2,3,4,5,6,7,8]
-iz~0x001da0a5[1,2,3,4,5,6,7,8]
-iz~0x003fad45[1,2,3,4,5,6,7,8]
-iz~0x003fb0ad[1,2,3,4,5,6,7,8]
-iz~0x00480857[1,2,3,4,5,6,7,8]
-iz~0x004808c7[1,2,3,4,5,6,7,8]
-iz~0x00499cf5[1,2,3,4,5,6,7,8]
-iz~0x0049a045[1,2,3,4,5,6,7,8]
-EOF
-EXPECT=<<EOF
-0x77820352 4 10 C:_Windows_System32__tdll.dll utf16le Alpc
-0x7782035c 4 10 C:_Windows_System32__tdll.dll utf16le Pool
-0x77820366 5 12 C:_Windows_System32__tdll.dll utf16le Timer
-0x7786e0f6 15 32 C:_Windows_System32__tdll.dll utf16le VS_VERSION_INFO
-0x7786e432 11 24 C:_Windows_System32__tdll.dll utf16le VarFileInfo
-0x7759dda8 7 16 C:_Windows_System32_kernel32.dll utf16le win.ini
-0x7759dff0 20 42 C:_Windows_System32_kernel32.dll utf16le \Classes\Wow6432Node
-0x7759e130 45 92 C:_Windows_System32_kernel32.dll utf16le \REGISTRY\USER\*\SOFTWARE\Classes\Wow6432Node
-0x776160b6 15 32 C:_Windows_System32_kernel32.dll utf16le VS_VERSION_INFO
-0x77616416 11 24 C:_Windows_System32_kernel32.dll utf16le VarFileInfo
-0x7fefd5080b6 15 32 C:_Windows_System32_KERNELBASE.dll utf16le VS_VERSION_INFO
-0x7fefd50841e 11 24 C:_Windows_System32_KERNELBASE.dll utf16le VarFileInfo
-0x7fefdb33bc8 4 10 C:_Windows_System32_msvcrt.dll utf16le PATH
-0x7fefdb33c38 10 22 C:_Windows_System32_msvcrt.dll utf16le SystemRoot
-0x7fefdb4d066 15 32 C:_Windows_System32_msvcrt.dll utf16le VS_VERSION_INFO
-0x7fefdb4d3b6 11 24 C:_Windows_System32_msvcrt.dll utf16le VarFileInfo
-EOF
-RUN
-
-NAME=mdmp reload file
-FILE=bins/mdmp/calc.dmp
-CMDS=<<EOF
-obR
-echo ok
-EOF
-EXPECT=<<EOF
-ok
 EOF
 RUN

@@ -1,4 +1,4 @@
-NAME=ELF: arm64 relocs crashing
+NAME=ELF: arm64 relocs crashing - rz-bin strings
 FILE==
 CMDS=!!rz-bin -qzz bins/elf/librsjni_androix.so~?
 EXPECT=<<EOF
@@ -6,9 +6,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: arm64 relocs crashing
+NAME=ELF: arm64 librsjni_androix.so
 FILE=bins/elf/librsjni_androix.so
-CMDS=ir
+CMDS=<<EOF
+ir
+echo ---
+ii
+EOF
 EXPECT=<<EOF
      vaddr      paddr     target type                name                                    
 ---------------------------------------------------------------------------------------------
@@ -29,13 +33,7 @@ EXPECT=<<EOF
 0x0000e280 0x0000e280 0x0000f7a0 R_AARCH64_JUMP_SLOT memcpy
 0x0000e288 0x0000e288 0x0000f7a8 R_AARCH64_JUMP_SLOT memset
 0x0000e290 0x0000e290 0x0000f7b0 R_AARCH64_JUMP_SLOT dlsym
-EOF
-RUN
-
-NAME=ELF: arm64 imports crashing
-FILE=bins/elf/librsjni_androix.so
-CMDS=ii
-EXPECT=<<EOF
+---
 nth      vaddr bind   type lib name                       
 ----------------------------------------------------------
   1 0x0000b7c0 GLOBAL FUNC     __cxa_finalize
@@ -56,19 +54,17 @@ nth      vaddr bind   type lib name
 EOF
 RUN
 
-NAME=ELF: corkami elf-relro - sections
+NAME=ELF: corkami elf-relro
 FILE=bins/elf/analysis/elf-relro
-CMDS=iS~rel
+CMDS=<<EOF
+iS~rel
+echo ---
+ik ~relro
+EOF
 EXPECT=<<EOF
 0x0000027c   0x8 0x0804827c   0x8   0x0 -r-- .rel.dyn           REL        alloc
 0x00000284  0x10 0x08048284  0x10   0x0 -r-- .rel.plt           REL        alloc
-EOF
-RUN
-
-NAME=ELF: corkami elf-relro - relro enabled
-FILE=bins/elf/analysis/elf-relro
-CMDS=ik ~relro
-EXPECT=<<EOF
+---
 elf.relro=partial
 EOF
 RUN

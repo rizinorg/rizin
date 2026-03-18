@@ -1,43 +1,27 @@
-NAME=avr entrypoint
-FILE=bins/elf/analysis/bugurtos-avr.elf
-CMDS=ie~program
-EXPECT=<<EOF
-0x00000000 0x00000074 0x00000018 0x00000018 program
-EOF
-RUN
-
-NAME=avr baddr
-FILE=bins/elf/analysis/bugurtos-avr.elf
-CMDS=iI~baddr[1]
-EXPECT=<<EOF
-0x00000000
-EOF
-RUN
-
-NAME=avr main address
-FILE=bins/elf/analysis/bugurtos-avr.elf
-CMDS=%v sym.main
-EXPECT=<<EOF
-0x308
-EOF
-RUN
-
-NAME=avr use va
+NAME=avr
 FILE=bins/elf/analysis/bugurtos-avr.elf
 CMDS=<<EOF
+ie~program
+echo ---
+iI~baddr[1]
+echo ---
+%v sym.main
+echo ---
 p8 10 @ entry0
 p8 10 @ sym.main
+echo ---
+pi 3 @ sym.main
 EOF
 EXPECT=<<EOF
+0x00000000 0x00000074 0x00000018 0x00000018 program
+---
+0x00000000
+---
+0x308
+---
 0c9446000c9430060c94
 ef92ff920f93df93cf93
-EOF
-RUN
-
-NAME=avr main code
-FILE=bins/elf/analysis/bugurtos-avr.elf
-CMDS=pi 3 @ sym.main
-EXPECT=<<EOF
+---
 push r14
 push r15
 push r16

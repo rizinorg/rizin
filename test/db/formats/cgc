@@ -2,6 +2,7 @@ NAME=CGC: Open/iI
 FILE=bins/cgc/CADET_00001
 CMDS=<<EOF
 iI
+echo ---
 iH
 EOF
 EXPECT=<<EOF
@@ -41,6 +42,7 @@ canary   false
 PIE      false
 RELROCS  false
 NX       false
+---
 elf:
   e_ident:
     bytes: "7f 43 47 43 01 01 01 43 01 4d 65 72 69 6e 6f 00"

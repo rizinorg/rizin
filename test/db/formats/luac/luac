@@ -1,21 +1,32 @@
-NAME=LUAC: plugin load
+NAME=LUAC: none.luac
 FILE=bins/luac/none.luac
 CMDS=<<EOF
 iI~?luac
+echo ---
+i~guid,machine
+echo ---
+iS~none
+echo ---
+is~UPVALUE
+echo ---
+ie~program
 EOF
 EXPECT=<<EOF
 2
-EOF
-RUN
-
-NAME=LUAC: info
-FILE=bins/luac/none.luac
-CMDS=<<EOF
-i~guid,machine
-EOF
-EXPECT=<<EOF
+---
 guid     @none.lua
 machine  Lua 5.4 VM
+---
+0x00000020 0x2a 0x00000020  0x2a   0x0 -r-- none.lua.header        
+0x0000002f  0x8 0x0000002f   0x8   0x0 -r-x none.lua.code          
+0x00000038  0x2 0x00000038   0x2   0x0 -r-- none.lua.const         
+0x00000039  0x5 0x00000039   0x5   0x0 -r-- none.lua.upvalues      
+0x0000003d  0x1 0x0000003d   0x1   0x0 -r-- none.lua.protos        
+0x0000003e  0xc 0x0000003e   0xc   0x0 -r-- none.lua.debug         
+---
+  0 0x0000003a 0x0000003a NONE UPVALUE    3     @none.lua_upvalue__ENV
+---
+0x00000030 0x00000030 ---------- ---------- program
 EOF
 RUN
 
@@ -29,45 +40,20 @@ compiler Unofficial Lua Compiler
 EOF
 RUN
 
-NAME=LUAC: sections
-FILE=bins/luac/none.luac
-CMDS=<<EOF
-iS~none
-EOF
-EXPECT=<<EOF
-0x00000020 0x2a 0x00000020  0x2a   0x0 -r-- none.lua.header        
-0x0000002f  0x8 0x0000002f   0x8   0x0 -r-x none.lua.code          
-0x00000038  0x2 0x00000038   0x2   0x0 -r-- none.lua.const         
-0x00000039  0x5 0x00000039   0x5   0x0 -r-- none.lua.upvalues      
-0x0000003d  0x1 0x0000003d   0x1   0x0 -r-- none.lua.protos        
-0x0000003e  0xc 0x0000003e   0xc   0x0 -r-- none.lua.debug         
-EOF
-RUN
-
-NAME=LUAC: symbols
-FILE=bins/luac/none.luac
-CMDS=<<EOF
-is~UPVALUE
-EOF
-EXPECT=<<EOF
-  0 0x0000003a 0x0000003a NONE UPVALUE    3     @none.lua_upvalue__ENV
-EOF
-RUN
-
-NAME=LUAC: entry
-FILE=bins/luac/none.luac
-CMDS=<<EOF
-ie~program
-EOF
-EXPECT=<<EOF
-0x00000030 0x00000030 ---------- ---------- program
-EOF
-RUN
-
-NAME=LUAC: big file
+NAME=LUAC: big.luac
 FILE=bins/luac/big.luac
 CMDS=<<EOF
 iS~header
+echo ---
+is~twas
+echo ---
+is~1729,1.21
+echo ---
+is~CONST_NUM
+echo ---
+pd 10 >/dev/null
+echo ---
+iz~?print
 EOF
 EXPECT=<<EOF
 0x00000020 0xe44 0x00000020 0xe44   0x0 -r-- learnlua.lua.header        
@@ -85,36 +71,12 @@ EXPECT=<<EOF
 0x00000b0b  0x54 0x00000b0b  0x54   0x0 -r-- fcn.00000b0b.header        
 0x00000b5e  0x6b 0x00000b5e  0x6b   0x0 -r-- fcn.00000b5e.header        
 0x00000bc8  0x71 0x00000bc8  0x71   0x0 -r-- fcn.00000bc8.header        
-EOF
-RUN
-
-NAME=LUAC: big file string symbol loading
-FILE=bins/luac/big.luac
-CMDS=<<EOF
-is~twas
-EOF
-EXPECT=<<EOF
+---
   0 0x000005d8 0x000005d8 NONE CONST_STRING   10     @learnlua.lua_const_twas false
-EOF
-RUN
-
-NAME=LUAC: big file num symbol loading
-FILE=bins/luac/big.luac
-CMDS=<<EOF
-is~1729,1.21
-EOF
-EXPECT=<<EOF
+---
   0 0x00000687 0x00000687 NONE CONST_NUM       8     @learnlua.lua_const_1729
   0 0x000006d5 0x000006d5 NONE CONST_NUM       8     @learnlua.lua_const_1.210000
-EOF
-RUN
-
-NAME=LUAC: big file symbols
-FILE=bins/luac/big.luac
-CMDS=<<EOF
-is~CONST_NUM
-EOF
-EXPECT=<<EOF
+---
   0 0x000004db 0x000004db NONE CONST_NUM       8     @learnlua.lua_const_42
   0 0x00000590 0x00000590 NONE CONST_NUM       8     @learnlua.lua_const_5
   0 0x000005fb 0x000005fb NONE CONST_NUM       8     @learnlua.lua_const_0
@@ -124,15 +86,10 @@ EXPECT=<<EOF
   0 0x000006ed 0x000006ed NONE CONST_NUM       8     @learnlua.lua_const_1
   0 0x000006f6 0x000006f6 NONE CONST_NUM       8     @learnlua.lua_const_2
   0 0x00000703 0x00000703 NONE CONST_NUM       8     @learnlua.lua_const_3
+---
+---
+7
 EOF
-RUN
-
-NAME=LUAC: disasm crash
-FILE=bins/luac/big.luac
-CMDS=<<EOF
-pd 10 >/dev/null
-EOF
-EXPECT=
 RUN
 
 # see https://travis-ci.com/github/rizinorg/rizin/jobs/492588616
@@ -147,15 +104,5 @@ EOF
 EXPECT_ERR=<<EOF
 ERROR: Truncated Code at [0x2f]
 ERROR: Invalid luac file
-EOF
-RUN
-
-NAME=LUAC: iz strings
-FILE=bins/luac/big.luac
-CMDS=<<EOF
-iz~?print
-EOF
-EXPECT=<<EOF
-7
 EOF
 RUN
