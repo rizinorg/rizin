@@ -181,7 +181,7 @@ RUN
 
 NAME=xbe analysis
 FILE=bins/xbe/default.xbe
-CMDS=EOF
+CMDS=<<EOF
 ie
 echo ---
 p8 16
