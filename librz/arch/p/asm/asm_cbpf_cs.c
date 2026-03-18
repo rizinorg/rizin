@@ -33,12 +33,12 @@ static int cbpf_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		rz_asm_op_set_asm(op, "invalid");
 		ret = -1;
 		cs_free(insn, n);
-		return 8;
+		return ret;
 	}
-	if (insn->size != 8 && insn->size != 16) {
+	if (insn->size != 8) {
 		cs_free(insn, n);
 		ret = -1;
-		return 8;
+		return ret;
 	}
 	op->size = insn->size;
 	ret = op->size;
