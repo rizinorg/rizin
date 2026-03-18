@@ -53,27 +53,26 @@ fin:
 	return op->size;
 }
 
-static bool riscv_sw_breakpoint(RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
-	// in big endian format:
-	// 0x00100073 → ebreak
-	// 0x9002 → c.ebreak
-
-	ut8 bytes[4] = { 0 };
-	if (iob && iob->io && iob->read_at && iob->read_at(iob->io, addr, bytes, 4)) {
-		RzAsmOp original = { 0 };
-		rz_asm_op_init(&original);
-		int sz = riscv_disassemble(a, &original, bytes, 4);
-		rz_asm_op_fini(&original);
-
-		if (sz == 2) {
-			rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x90\x02" : (const ut8 *)"\x02\x90", 2);
-		} else if (sz == 4) {
-			rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x00\x10\x00\x73" : (const ut8 *)"\x73\x00\x10\x00", 4);
-		} else {
-			RZ_LOG_ERROR("Can't set breakpoint: bad size %d bytes (RISC-V instructions are expected to be 2 or 4 bytes)", sz);
-		}
+/*
+ * \brief Places a breakpoint instruction at addr depending on the size of the original instruction there
+ * The returned instruction bytes are either (in big endian hex notation):
+ * 		0x00100073 → ebreak, or
+ * 		0x9002 → c.ebreak
+ * \param a  			[in]	The asm plugin.
+ * \param addr			[in]	The address to place the breakpoint.
+ * \param original		[in]	The original asm op at addr.
+ * \param breakpoint	[out]	The asm op to store the breakpoint instruction.
+ * \return	    		     	true if the breakpoint was placed successfully, false otherwise.
+ */
+static bool riscv_sw_breakpoint(RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
+	if (original->size == 2) {
+		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x90\x02" : (const ut8 *)"\x02\x90", 2);
+	} else if (original->size == 4) {
+		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x00\x10\x00\x73" : (const ut8 *)"\x73\x00\x10\x00", 4);
+	} else {
+		RZ_LOG_ERROR("Can't set breakpoint at 0x%llx : bad size (%ld bytes) of the instruction there, RISC-V instructions are expected to either be 2 or 4 bytes\n", addr, original->buf.len);
+		return false;
 	}
-
 	return true;
 }
 

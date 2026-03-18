@@ -55,8 +55,8 @@ typedef struct rz_bp_context_t {
 	void *user;
 	bool (*is_mapped)(ut64 addr, int perm, void *user); ///< check if the address is mapped and has the given permissions
 	void (*maps_sync)(void *user); ///< synchronize any maps from the debugee
-	RzStrBuf *(*get_sw_breakpoint_at)(ut64 addr, void *user, RzIOBind *iob); ///< get the software breakpoint based on the address hints
-	size_t (*get_sw_breakpoint_size_at)(ut64 addr, void *user, RzIOBind *iob); ///< get the software breakpoint based on the address hints
+	RzStrBuf *(*get_sw_breakpoint_at)(ut64 addr, void *user); ///< get the software breakpoint based on the address hints
+	size_t (*get_sw_breakpoint_size_at)(ut64 addr, void *user); ///< get the software breakpoint based on the address hints
 } RzBreakpointContext;
 
 typedef struct rz_bp_t {

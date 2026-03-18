@@ -122,13 +122,13 @@ static char **mips_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool mips_sw_breakpoint(const RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
+static bool mips_sw_breakpoint(const RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
 	// mips32/64
 	// { 32, 4, 0, "\x0d\x00\x00\x00" },
 	// { 32, 4, 1, "\x00\x00\x00\x0d" },
 	// { 64, 4, 0, "\x0d\x00\x00\x00" },
 	// { 64, 4, 1, "\x00\x00\x00\x0d" },
-	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x00\x00\x00\x0d" : (const ut8 *)"\x0d\x00\x00\x00", 4);
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x00\x00\x00\x0d" : (const ut8 *)"\x0d\x00\x00\x00", 4);
 	return true;
 }
 

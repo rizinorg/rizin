@@ -1,11 +1,16 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "linux/linux_debug.h"
-/* Contains common implementations of most functions in a native  debugger plugin
- * Those functions are duplicates for the even different archiectures like ARM and x86
- *
+
+/*
+ * \file Contains common implementations of most functions in a native  debugger plugin
+ * Those functions are mostly duplicates for even different archiectures like ARM and x86
+ * (For now however, this file only de-duplicates the 2 RISC-V implementations linux_riscv32.c and linux_riscv64.c)
  */
 
-/* ========================= DO NOT COMPILE THIS FILE ==============================*/
-/* ========================= ONLY EVER #include IT IN OTHER FILES ======================*/
+/* =========================    DO NOT EVER COMPILE THIS FILE      =========================*/
+/* =========================  ONLY #include IT IN ANOTHER FILE     =========================*/
 
 static bool rz_debug_native_step(RzDebug *dbg) {
 	return linux_step(dbg);

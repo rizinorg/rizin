@@ -277,11 +277,11 @@ static bool bp_everything_is_mapped(ut64 addr, int perm, void *user) {
 	return true;
 }
 
-static RzStrBuf *bp_mock_sw_opcode_at(ut64 addr, void *user, RzIOBind *iob) {
+static RzStrBuf *bp_mock_sw_opcode_at(ut64 addr, void *user) {
 	return rz_strbuf_new("STOP");
 }
 
-static size_t bp_mock_sw_opcode_size_at(ut64 addr, void *user, RzIOBind *iob) {
+static size_t bp_mock_sw_opcode_size_at(ut64 addr, void *user) {
 	return 4;
 }
 
@@ -457,7 +457,7 @@ static bool test_debug_sw_bp(void) {
  * Set up some mixed thumb and non-thumb code, put breakpoints in both parts and check that
  * all of them are set up correctly (selecting the right byte patterns from the bp plugin) and hit.
  */
-static RzStrBuf *bp_mock_sw_bp_multibits_opcode_at(ut64 addr, void *user, RzIOBind *iob) {
+static RzStrBuf *bp_mock_sw_bp_multibits_opcode_at(ut64 addr, void *user) {
 	// this corresponds to the instruction of the program written into io in test_debug_sw_bp_multibits()
 	if (addr >= 0x58 && addr < 0x60) {
 		return rz_strbuf_new("st");
@@ -465,7 +465,7 @@ static RzStrBuf *bp_mock_sw_bp_multibits_opcode_at(ut64 addr, void *user, RzIOBi
 	return rz_strbuf_new("STOP");
 }
 
-static size_t bp_mock_sw_bp_multibits_size_at(ut64 addr, void *user, RzIOBind *iob) {
+static size_t bp_mock_sw_bp_multibits_size_at(ut64 addr, void *user) {
 	// this corresponds to the instruction of the program written into io in test_debug_sw_bp_multibits()
 	return addr >= 0x58 && addr < 0x60 ? 2 : 4;
 }

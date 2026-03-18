@@ -188,10 +188,10 @@ static bool bf_fini(void *user) {
 	return true;
 }
 
-static bool bf_sw_breakpoint(const RzAsm *a, ut64 addr, RzIOBind *iob, RzAsmOp *op) {
+static bool bf_sw_breakpoint(const RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
 	// { 0, 1, 0, (const ut8 *)"\xff" },
 	// { 0, 1, 0, (const ut8 *)"\x00" },
-	rz_asm_op_set_buf(op, (const ut8 *)"\xff", 1);
+	rz_asm_op_set_buf(breakpoint, (const ut8 *)"\xff", 1);
 	return true;
 }
 

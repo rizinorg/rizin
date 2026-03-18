@@ -55,7 +55,7 @@ RZ_API bool rz_bp_set_opcode(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
 	if (!bp->ctx.get_sw_breakpoint_at) {
 		return false;
 	}
-	bp->opcode = bp->ctx.get_sw_breakpoint_at(addr, bp->ctx.user, &bp->iob);
+	bp->opcode = bp->ctx.get_sw_breakpoint_at(addr, bp->ctx.user);
 	return bp->opcode != NULL;
 }
 
@@ -361,7 +361,7 @@ RZ_API size_t rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr) {
 		// cannot use get the size of the opcode.
 		return 0;
 	}
-	return bp->ctx.get_sw_breakpoint_size_at(addr, bp->ctx.user, &bp->iob);
+	return bp->ctx.get_sw_breakpoint_size_at(addr, bp->ctx.user);
 }
 
 // Check if the breakpoint is in a valid map
