@@ -1,12 +1,12 @@
-NAME=dmhd with no allocated bins
+NAME=dmhgd with no allocated bins
 FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
 dcu main
-dmhd~?0 chunks
-dmhd small~?0 chunks
-dmhd large~?0 chunks
-dmhd unsorted~?0 chunks
+dmhgd~?0 chunks
+dmhgd small~?0 chunks
+dmhgd large~?0 chunks
+dmhgd unsorted~?0 chunks
 EOF
 EXPECT=<<EOF
 3
@@ -17,18 +17,18 @@ EOF
 RUN
 
 
-NAME=check dmhd fast / tcache with chunks
+NAME=check dmhgd fast / tcache with chunks
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF
 db @ 0x004011fa
 dc
-dmhd~?Chunk
-dmhd fast~?size=0x20
+dmhgd~?Chunk
+dmhgd fast~?size=0x20
 dc
-dmhd tcache~?Items: 6
+dmhgd tcache~?Items: 6
 dc 
-dmhd tcache~?Items: 5
+dmhgd tcache~?Items: 5
 EOF
 EXPECT=<<EOF
 15

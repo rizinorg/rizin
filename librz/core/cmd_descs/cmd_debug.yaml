@@ -830,7 +830,7 @@ commands:
             cname: cmd_debug_dump_maps_writable
             summary: Dump writable debug maps
             args: []
-      - name: dmh
+      - name: dmhg
         summary: Glibc heap commands
         subcommands: cmd_heap_glibc
       - name: dmi
@@ -912,17 +912,17 @@ commands:
           - name: sectname
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: dmw
+      - name: dmhw
         summary: Windows heap commands
         subcommands:
-          - name: dmw
+          - name: dmhw
             summary: List process heaps
             cname: cmd_debug_process_heaps
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
             args: []
-          - name: dmwb
+          - name: dmhwb
             summary: List allocated heap blocks
             cname: cmd_debug_process_heap_block
             modes:
@@ -932,21 +932,21 @@ commands:
               - name: addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-          - name: dmwbf
+          - name: dmhwbf
             summary: Create flags for each allocated heap block
             cname: cmd_debug_heap_block_flag
             args: []
-      - name: dmx
+      - name: dmhj
         summary: Jemalloc heap commands
         subcommands:
-          - name: dmxa
+          - name: dmhja
             summary: Show all arenas created, or print arena_type structure for given arena.
             cname: cmd_debug_heap_jemalloc_a
             args:
               - name: arena_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-          - name: dmxb
+          - name: dmhjb
             summary: Show bin info for allocations. 
             cname: cmd_debug_heap_jemalloc_b
             args:
@@ -956,7 +956,7 @@ commands:
               - name: bin_info_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-          - name: dmxc
+          - name: dmhjc
             summary: >-
               Show all chunks created in all arenas, or show all chunks created for a given
               arena_t instance (jemalloc 4.5.0 only).
@@ -965,14 +965,14 @@ commands:
               - name: arena_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-          - name: dmxe
+          - name: dmhje
             summary: List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)
             cname: cmd_debug_heap_jemalloc_e
             args:
               - name: malloc_addr
                 type: RZ_CMD_ARG_TYPE_RZNUM
                 optional: true
-          - name: dmxei
+          - name: dmhjei
             summary: Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)
             cname: cmd_debug_heap_jemalloc_ei
             args:
