@@ -425,6 +425,27 @@ static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 	return true;
 }
 
+#if 0
+static void validate_il_bb(RzCore *core, RzInterpreterILBB *bb) {
+	RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
+	void **it;
+	size_t i = 0;
+	rz_pvector_enumerate (bb->il_ops, it, i) {
+		char *report = NULL;
+		RzInterpreterInsnPkt *pkt = *it;
+		if (!rz_il_validate_effect(pkt->effect, ctx, NULL, NULL, &report)) {
+			RZ_LOG_ERROR("Validation failed for IL op %" PFMTSZu " in BB 0x%" PFMT64x " in insn packet:\n"
+				     "\t'%s'\n",
+				i, bb->bb_addr, report);
+		}
+		free(report);
+	}
+	rz_analysis_il_vm_free(vm);
+	rz_il_validate_global_context_free(ctx);
+}
+#endif
+
 static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 addr) {
 	RzInterpreterILBB *bb = ht_up_find(il_cache, addr, NULL);
 	if (!bb) {
@@ -435,24 +456,9 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 			return NULL;
 		}
 
-#if RZ_BUILD_DEBUG
+#if 0
 		// Validate IL to catch more errors during testing.
-		RzAnalysisILVM *vm = rz_analysis_il_vm_new(core->analysis, NULL);
-		RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
-		void **it;
-		size_t i = 0;
-		rz_pvector_enumerate (bb->il_ops, it, i) {
-			char *report = NULL;
-			RzInterpreterInsnPkt *pkt = *it;
-			if (!rz_il_validate_effect(pkt->effect, ctx, NULL, NULL, &report)) {
-				RZ_LOG_ERROR("Validation failed for IL op %" PFMTSZu " in BB 0x%" PFMT64x " in insn packet:\n"
-					     "\t'%s'\n",
-					i, bb->bb_addr, report);
-			}
-			free(report);
-		}
-		rz_analysis_il_vm_free(vm);
-		rz_il_validate_global_context_free(ctx);
+		validate_il_bb(core, bb);
 		// Otherwise YOLO
 #endif
 
