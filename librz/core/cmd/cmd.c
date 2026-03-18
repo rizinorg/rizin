@@ -1197,6 +1197,70 @@ err:
 	return res;
 }
 
+static bool is_push_stmt(TSNode node, const char *in) {
+	if (ts_node_is_null(node) || strcmp(ts_node_type(node), "arged_stmt")) {
+		return false;
+	}
+	TSNode cmd = ts_node_child_by_field_name(node, "command", strlen("command"));
+	if (ts_node_is_null(cmd)) {
+		return false;
+	}
+	TSNode extra = ts_node_child_by_field_name(cmd, "extra", strlen("extra"));
+	char *s = NULL;
+	if (!ts_node_is_null(extra)) {
+		ut32 start = ts_node_start_byte(cmd);
+		ut32 end = ts_node_start_byte(extra);
+		s = rz_str_newf("%.*s", end - start, in + start);
+	} else {
+		s = ts_node_sub_string(cmd, in);
+	}
+	if (!s) {
+		return false;
+	}
+	rz_str_unescape(s);
+	bool ret = !strcmp(s, "<");
+	free(s);
+	return ret;
+}
+
+static bool has_push(TSNode node, const char *in) {
+	if (is_push_stmt(node, in)) {
+		return true;
+	}
+	uint32_t n = ts_node_named_child_count(node);
+	for (uint32_t i = 0; i < n; i++) {
+		if (has_push(ts_node_named_child(node, i), in)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+RZ_IPI bool rz_core_cmd_has_push(const char *cstr) {
+	if (RZ_STR_ISEMPTY(cstr)) {
+		return false;
+	}
+	TSParser *parser = ts_parser_new();
+	if (!parser) {
+		return false;
+	}
+	bool ok = ts_parser_set_language(parser, tree_sitter_rzcmd());
+	if (!ok) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSTree *tree = ts_parser_parse_string(parser, NULL, cstr, strlen(cstr));
+	if (!tree) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSNode root = ts_tree_root_node(tree);
+	bool ret = !ts_node_has_error(root) && has_push(root, cstr);
+	ts_tree_delete(tree);
+	ts_parser_delete(parser);
+	return ret;
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(macro_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
 	char *macro_name_str = NULL;
@@ -2868,7 +2932,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
 
-	if (state.log) {
+	if (state.log && !has_push(root, state.input)) {
 		rz_line_hist_add(line, state.input);
 	}
 
