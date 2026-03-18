@@ -122,7 +122,7 @@ static char **mips_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool mips_sw_breakpoint(const RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
+static bool mips_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// mips32/64
 	// { 32, 4, 0, "\x0d\x00\x00\x00" },
 	// { 32, 4, 1, "\x00\x00\x00\x0d" },

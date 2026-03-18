@@ -31,10 +31,18 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 		RzAnalysisOp op = { 0 };
 		(void)dbg->iob.read_at(dbg->iob.io, addr - 4, buf, 4);
 		rz_analysis_op_init(&op);
+
 		(void)rz_analysis_op(dbg->analysis, &op, addr - 4, buf, 4, RZ_ANALYSIS_OP_MASK_ALL);
+		// is the operation precedeing the address a call ?
 		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL || op.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
-			rz_analysis_op_fini(&op);
-			return 1;
+			bool target_known = op.jump != 0 && op.jump != UT64_MAX;
+			// The address is assumed to be a true return address when one of the following is true
+			// 		1. The target of the call is known and is a valid function
+			// 		2. The target of the call is unknown (register-indirect call or similar)
+			if (!target_known || rz_analysis_get_function_at(dbg->analysis, op.jump)) {
+				rz_analysis_op_fini(&op);
+				return 1;
+			}
 		}
 		rz_analysis_op_fini(&op);
 	} else {

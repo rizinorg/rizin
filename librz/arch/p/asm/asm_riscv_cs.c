@@ -64,7 +64,7 @@ fin:
  * \param breakpoint	[out]	The asm op to store the breakpoint instruction.
  * \return	    		     	true if the breakpoint was placed successfully, false otherwise.
  */
-static bool riscv_sw_breakpoint(RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
+static bool riscv_sw_breakpoint(RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	if (original->size == 2) {
 		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x90\x02" : (const ut8 *)"\x02\x90", 2);
 	} else if (original->size == 4) {

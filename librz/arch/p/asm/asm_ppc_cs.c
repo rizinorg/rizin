@@ -128,7 +128,7 @@ static char **ppc_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool ppc_sw_breakpoint(const RzAsm *a, ut64 addr, RzAsmOp *original, RzAsmOp *breakpoint) {
+static bool ppc_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// ppc | tw 31, 0, 0 | trap
 	// { 0x7f, 0xe0, 0x00, 0x08 } | big endian
 	// { 0x08, 0x00, 0xe0, 0x7f } | little endian

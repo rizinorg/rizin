@@ -1,0 +1,151 @@
+NAME=Setting breakpoints on symbols works
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dbl
+dc
+dr PC; pdf @ sym.imp.printf
+EOF
+EXPECT=<<EOF
+     start        end size perm hwsw type  state   valid cmd cond name           module                                          
+---------------------------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+EOF
+RUN
+
+NAME=Disabling breakpoints works
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dbl
+dc
+dr PC; pdf @ sym.imp.printf
+ds
+dbd @ sym.imp.printf
+dbl
+dc
+EOF
+EXPECT=<<EOF
+     start        end size perm hwsw type  state   valid cmd cond name           module                                          
+---------------------------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break enabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+     start        end size perm hwsw type  state    valid cmd cond name           module                                          
+----------------------------------------------------------------------------------------------------------------------------------
+0x00010440 0x00010444    4 --x  sw   break disabled valid          sym.imp.printf /home/ubuntu/rizin/test/bins/elf/riscv_bitmanip
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN
+
+NAME=Stacktraces work
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ sym.imp.printf
+dc
+dr PC; pdf @ sym.imp.printf
+dbt
+EOF
+EXPECT=<<EOF
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440 b    auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+0  0x10440            sp: 0x0                 0    [sym.imp.printf]  sym.imp.printf
+1  0x105fa            sp: 0x0                 0    [sym.demonstrate_all_operations]  sym.demonstrate_all_operations+22
+2  0x10458            sp: 0x7ffff15a6458      8    [main]  main+8
+3  0x10480            sp: 0x7ffff15a65f8      416  [??]  entry0+32
+EOF
+RUN
+
+NAME=Single-stepping over function calls
+FILE=bins/elf/riscv_bitmanip
+ARGS=-d
+CMDS=<<EOF
+aaa
+db @ 0x000105f6
+dc
+dr PC; pd 3 @ 0x000105f6
+ds
+dr PC; pdf
+dc
+EOF
+EXPECT=<<EOF
+pc = 0x00000000000105f6
+|           ;-- pc:
+|           0x000105f6 b    jal   sym.imp.printf                       ; int printf(const char *format)
+|           0x000105fa      lui   a0, 0x10
+|           0x000105fc      lui   a1, 0x67812
+pc = 0x0000000000010440
+            ; XREFS(22)
+            ;-- pc:
+/ int sym.imp.printf(const char *format);
+|           0x00010440      auipc t3, 2
+|           0x00010444      ld    t3, -0x438(t3)
+\           0x00010448      jalr  t1, t3
+32-bit rotate left 8:  0x34567812
+32-bit rotate right 12: 0x67812345
+32-bit rotate left var: 0x1A2B3C09
+32-bit rotate right var: 0xCF02468A
+64-bit rotate left:  0x8ACF13579BDE0246
+64-bit rotate right: 0xE6F78091A2B3C4D5
+Set bit 5:   0x12345678
+Set bit var: 0x12345678
+Clear bit 7: 0x12345678
+Clear bit var: 0x12344678
+Toggle bit 3: 0x12345670
+Toggle bit var: 0x1234D678
+Extract bit 9: 1
+Extract bit var: 1
+Swap endian 32: 0x78563412
+Swap endian 64: 0xF0DEBC9A78563412
+Network to host: 0xDDCCBBAA
+Hash rotate: 0x5462BCA9
+Device flags after enable: 0x00001020
+Is flag 5 set? 1
+Is flag 7 set? 0
+Device flags after disable: 0x00001000
+EOF
+RUN
