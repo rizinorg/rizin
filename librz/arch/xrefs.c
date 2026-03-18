@@ -372,14 +372,12 @@ RZ_API bool rz_analysis_get_all_branch_targets(RzAnalysis *analysis,
 			if ((rz_analysis_op_is_direct_call(&op) ||
 				    rz_analysis_op_is_direct_jump(&op)) &&
 				op.jump != UT64_MAX) {
-				eprintf("Add branch target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.jump);
 				rz_set_u_add(branch_targets, op.jump);
 
 				RzAnalysisXRef edge = { .from = addr, .to = op.jump };
 				rz_vector_push(insn_to_insn_edges, &edge);
 				if (op.fail != UT64_MAX) {
 					if (rz_analysis_op_is_direct_jump(&op)) {
-						RZ_LOG_DEBUG("Add branch target 0x%" PFMT64x " -> 0x%" PFMT64x "\n", op.addr, op.fail);
 						rz_set_u_add(branch_targets, op.fail);
 
 						RzAnalysisXRef edge = { .from = addr, .to = op.fail };
