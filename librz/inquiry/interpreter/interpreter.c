@@ -173,9 +173,6 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->is_running_flag) {
 		rz_atomic_bool_free(iset->is_running_flag);
 	}
-	if (iset->ignored_code) {
-		rz_vector_free(iset->ignored_code);
-	}
 	if (iset->state) {
 		rz_interpreter_abstr_state_free(iset->state);
 	}
@@ -207,7 +204,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
-	RZ_NONNULL RZ_OWN RzVector /*<RzInterval>*/ *ignored_code) {
+	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(plugin && state && branch_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points && ignored_code, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);

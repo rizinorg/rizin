@@ -10,6 +10,39 @@
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_util/rz_assert.h>
 
+static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
+	const RzPVector /*<RzBinSymbol *>*/ *symbols,
+	RzPVector /*<RzBinSection *>*/ *sections,
+	const RzPVector /*<RzIOMap *>*/ *io_maps) {
+	void **it;
+	RzVector *v = rz_vector_new(sizeof(RzInterval), NULL, NULL);
+	rz_pvector_foreach (sections, it) {
+		RzBinSection *sec = *it;
+		if (sec->layout.role == RZ_BIN_SECTION_ROLE_LINKING || !(sec->perm & RZ_PERM_X)) {
+			RzInterval itv = { .addr = sec->vaddr, .size = sec->vsize };
+			rz_vector_push(v, &itv);
+		}
+	}
+	rz_pvector_free(sections);
+
+	rz_pvector_foreach (io_maps, it) {
+		RzIOMap *map = *it;
+		if (!(map->perm & RZ_PERM_X)) {
+			RzInterval itv = { .addr = map->itv.addr, .size = map->itv.size };
+			rz_vector_push(v, &itv);
+		}
+	}
+
+	rz_pvector_foreach (symbols, it) {
+		RzBinSymbol *sym = *it;
+		if (sym->is_imported) {
+			RzInterval itv = { .addr = sym->vaddr, .size = sym->size };
+			rz_vector_push(v, &itv);
+		}
+	}
+	return v;
+}
+
 RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
 	RzVector *entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
@@ -29,7 +62,11 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 			rz_vector_push(entry_points, &entry_point);
 		}
 	}
-	bool success = rz_inquiry_interpreter(core, entry_points);
+	RzVector *ignored_code_regions = get_ignored_code_regions(
+		rz_bin_object_get_symbols(core->bin->cur->o),
+		rz_bin_object_get_sections(core->bin->cur->o),
+		rz_io_maps(core->io));
+	bool success = rz_inquiry_interpreter(core, entry_points, ignored_code_regions);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
 		return RZ_CMD_STATUS_ERROR;
@@ -42,7 +79,7 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
-	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols);
+	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols, ignored_code_regions);
 	eprintf("%s\n", success ? "OK" : "FAIL");
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
