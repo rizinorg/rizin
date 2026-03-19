@@ -1,6 +1,9 @@
 NAME=binsym demangling
-TOOL=rz-bin
-ARGS=-qsD c++ all bins/mach0/hellocxx-osx-i386
+FILE=bins/mach0/hellocxx-osx-i386
+CMDS=<<EOF
+e bin.demangle=true
+isq
+EOF
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv
@@ -30,10 +33,12 @@ RUN
 
 NAME=binsym without demangling and simplified demangling in session
 FILE=bins/mach0/hellocxx-osx-i386
-ARGS=-M
+ARGS=-M -e bin.demangle=true
 CMDS=<<EOF
+e bin.demangle=false
 isq
 echo ---
+e bin.demangle=true
 isq~std:
 e bin.demangle.flags=simplify
 echo ---
@@ -492,7 +497,7 @@ EXPECT=<<EOF
 ---------- 0x00007d60 0x00007d60 std::sys_common::gnu::libbacktrace::print::syminfo_cb                                                                                                                                   
 ---------- ---------- ---------- std::sys_common::thread_info::THREAD_INFO::__getit::__KEY                                                                                                                               
 ---------- 0x0000fab0 0x0000fab0 std::sys_common::thread_info::set                                                                                                                                                       
----------- ---------- ---------- std::sys_common::thread_info::set::{{closure}}::_FILE_LINE                                                                                                                               
+---------- ---------- ---------- std::sys_common::thread_info::set::{{closure}}::_FILE_LINE                                                                                                                              
 ---------- 0x0000d520 0x0000d520 std::sys_common::thread_local::StaticKey::lazy_init                                                                                                                                     
 ---------- ---------- ---------- std::sys_common::thread_local::StaticKey::lazy_init::_FILE_LINE                                                                                                                         
 ---------- 0x00004650 0x00004650 std::sys_common::util::abort                                                                                                                                                            
@@ -502,7 +507,7 @@ EXPECT=<<EOF
 ---------- ---------- ---------- std::thread::ThreadId::new::COUNTER                                                                                                                                                     
 ---------- ---------- ---------- std::thread::ThreadId::new::GUARD                                                                                                                                                       
 ---------- ---------- ---------- std::thread::ThreadId::new::_FILE_LINE                                                                                                                                                  
----------- 0x0000e9b0 0x0000e9b0 std::thread::park                                                                                                                                                                      
+---------- 0x0000e9b0 0x0000e9b0 std::thread::park                                                                                                                                                                       
 ---------- 0x00014940 0x00014940 std_unicode::tables::general_category::N                                                                                                                                                
 ---------- 0x00014700 0x00014700 std_unicode::tables::trie_lookup_range_table                                                                                                                                            
 ---------- ---------- ---------- std_unicode::u_str::UTF8_CHAR_WIDTH                                                                                                                                                     

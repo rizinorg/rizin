@@ -43,7 +43,6 @@ PIE      false
 RELROCS  false
 NX       false
 
----
 [Imports]
 nth vaddr bind type lib name 
 -----------------------------
@@ -230,6 +229,7 @@ name size address flags mirror
 paddr vaddr len size section type string 
 -----------------------------------------
 
+---
 hunks_count: 3
 hunks:
   - index: 0
