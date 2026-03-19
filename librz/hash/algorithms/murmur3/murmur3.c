@@ -125,10 +125,10 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 	size_t h3 = seed;
 	size_t h4 = seed;
 
-	size_t c1 = 0x239b961b;
-	size_t c2 = 0xab0e9789;
-	size_t c3 = 0x38b34ae5;
-	size_t c4 = 0xa1e38b93;
+	const size_t c1 = 0x239b961b;
+	const size_t c2 = 0xab0e9789;
+	const size_t c3 = 0x38b34ae5;
+	const size_t c4 = 0xa1e38b93;
 
 	//----------
 	// body
@@ -297,8 +297,8 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 	uint64_t h1 = seed;
 	uint64_t h2 = seed;
 
-	uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
-	uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+	const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
+	const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
 
 	//----------
 	// body
