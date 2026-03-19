@@ -9,6 +9,7 @@
 #include <rz_util/rz_regex.h>
 #include <rz_types.h>
 #include <rz_arch.h>
+#include <rz_type.h>
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -417,6 +418,17 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				*ptr = 0;
 				snprintf(str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
 				return true;
+			}
+			if (hint->enum_name && *hint->enum_name && p && p->analb.analysis) {
+				const char *member = rz_type_db_enum_member_by_val(
+					p->analb.analysis->typedb, hint->enum_name, off);
+				if (member) {
+					char ename[256];
+					snprintf(ename, sizeof(ename), "%s.%s", hint->enum_name, member);
+					*ptr = 0;
+					snprintf(str, len, "%s%s%s", data, ename, (ptr != ptr2) ? ptr2 : "");
+					return true;
+				}
 			}
 			strncpy(num, ptr, sizeof(num) - 2);
 			pnum = num + parse_number(num);

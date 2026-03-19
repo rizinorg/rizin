@@ -800,9 +800,13 @@ RZ_IPI RzCmdStatus rz_analysis_hint_set_optype_handler(RzCore *core, int argc, c
 // "aho-"
 RZ_IPI RzCmdStatus rz_analysis_hint_del_optype_handler(RzCore *core, int argc, const char **argv);
 // "ahi"
-RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "ahi-"
 RZ_IPI RzCmdStatus rz_analysis_hint_del_immbase_handler(RzCore *core, int argc, const char **argv);
+// "ahie"
+RZ_IPI RzCmdStatus rz_analysis_hint_set_enum_handler(RzCore *core, int argc, const char **argv);
+// "ahie-"
+RZ_IPI RzCmdStatus rz_analysis_hint_del_enum_handler(RzCore *core, int argc, const char **argv);
 // "aht"
 RZ_IPI RzCmdStatus rz_analysis_hint_set_offset_handler(RzCore *core, int argc, const char **argv);
 // "aht-"
