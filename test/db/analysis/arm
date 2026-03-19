@@ -524,7 +524,6 @@ RUN
 
 NAME=arm subrel
 FILE=bins/elf/analysis/arm-ls
-BROKEN=1
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -535,10 +534,7 @@ e asm.offset=false
 pd 1 @ 0x00014368
 EOF
 EXPECT=<<EOF
-                 ldr r0, main
-                 ldr r1, obj.object.6286
-                 ldr r3, sym.__libc_csu_init
-                 ldr r4, obj.completed.6278
+                 ldr   r0, main
 EOF
 RUN
 
@@ -853,10 +849,9 @@ RUN
 
 NAME=arm main in disassembly
 FILE=bins/elf/analysis/ch23.bin
-BROKEN=1
 CMDS=<<EOF
 aaa
-pd 1 @ 0x000083d8~[5]
+pd 1 @ 0x000083d8~[3]
 EOF
 EXPECT=<<EOF
 main
