@@ -91,22 +91,27 @@ static void recurse_into_fcn_bbs(
 	//
 	RzInterval this_bb = { 0 };
 	if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, this_bb_addr, &this_bb)) {
-		goto warn_return;
+		rz_warn_if_reached();
+		goto err_return;
 	}
 	if (!rz_inquiry_bb_cfg_add_basic_block(fcn->bb_cfg, this_bb.addr, this_bb.size)) {
-		goto warn_return;
+		rz_warn_if_reached();
+		goto err_return;
 	}
 
 	if (predecessor_bb_addr != UT64_MAX) {
 		RzInterval from_bb = { 0 };
 		if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, predecessor_bb_addr, &from_bb)) {
-			goto warn_return;
+			rz_warn_if_reached();
+			goto err_return;
 		}
 		if (!rz_inquiry_bb_cfg_add_basic_block(fcn->bb_cfg, from_bb.addr, from_bb.size)) {
-			goto warn_return;
+			rz_warn_if_reached();
+			goto err_return;
 		}
 		if (!rz_inquiry_bb_cfg_add_edge(fcn->bb_cfg, predecessor_bb_addr, this_bb_addr)) {
-			goto warn_return;
+			rz_warn_if_reached();
+			goto err_return;
 		}
 	}
 
@@ -115,7 +120,8 @@ static void recurse_into_fcn_bbs(
 	//
 	const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, this_bb_addr);
 	if (!successors) {
-		goto warn_return;
+		rz_warn_if_reached();
+		goto err_return;
 	}
 
 	RzListIter *lit;
@@ -155,8 +161,7 @@ static void recurse_into_fcn_bbs(
 	}
 	return;
 
-warn_return:
-	rz_warn_if_reached();
+err_return:
 	return;
 }
 
