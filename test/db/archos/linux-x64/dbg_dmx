@@ -218,3 +218,21 @@ Extent @ 0x7fff96016500
   Allocated Address: 0x7fff95e00000
 EOF
 RUN
+
+NAME=dmxa/dmxb/dmxe/dmxei with jemalloc 5.3.0 core dump (linux-amd64-4k_page)
+FILE=bins/heap/segfault-jemalloc5.3.0-amd64-core
+CMDS=<<EOF
+dmxa~narena
+dmxa~0x55ae211c05c0
+dmxb~0x7f4550214528 
+dmxe~0x7f4550216500
+dmxei 0x7f4550216980~Size
+EOF
+EXPECT=<<EOF
+narenas : 129
+arenas[129] @ 0x55ae211c05c0 {
+    bin[0] @ 0x7f4550214528 {
+Extent @ 0x7f4550216500
+  Size: 0x1000
+EOF
+RUN

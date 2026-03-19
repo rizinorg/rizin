@@ -116,11 +116,11 @@ CMDS=<<EOF
 oml
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
- 2 fd: 4 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-x mmap./home/florian/dev/crash/crash-linux-x86_64
- 3 fd: 5 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- mmap./home/florian/dev/crash/crash-linux-x86_64
- 4 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
- 5 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
+ 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap.bins/elf/core/crash-linux-x86_64
+ 2 fd: 4 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-x mmap.bins/elf/core/crash-linux-x86_64
+ 3 fd: 5 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- mmap.bins/elf/core/crash-linux-x86_64
+ 4 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- fmap.bins/elf/core/crash-linux-x86_64
+ 5 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- fmap.bins/elf/core/crash-linux-x86_64
  6 fd: 3 +0x00005000 0x7f582fa2e000 - 0x7f582fa2ffff r-- fmap.LOAD5
  7 fd: 6 +0x00000000 0x7f582fa31000 - 0x7f582fa55fff r-- mmap./usr/lib/libc-2.33.so
  8 fd: 3 +0x00007000 0x7f582fa30000 - 0x7f582fa30fff r-- fmap./usr/lib/libc-2.33.so
@@ -174,9 +174,9 @@ CMDS=<<EOF
 oml
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
- 2 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- fmap./home/alarm/crash/crash-linux-arm64
- 3 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- fmap./home/alarm/crash/crash-linux-arm64
+ 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap.bins/elf/core/crash-linux-arm64
+ 2 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- fmap.bins/elf/core/crash-linux-arm64
+ 3 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- fmap.bins/elf/core/crash-linux-arm64
  4 fd: 4 +0x00000000 0x7f8bd61000 - 0x7f8bebafff r-x mmap./usr/lib/libc-2.32.so
  5 fd: 3 +0x00004000 0x7f8bd60000 - 0x7f8bd60fff r-x fmap./usr/lib/libc-2.32.so
  6 fd: 5 +0x00000000 0x7f8bebb000 - 0x7f8becafff r-- mmap./usr/lib/libc-2.32.so
@@ -599,5 +599,132 @@ badvaddr = 0x000000fff7f55c28
 status = 0x000000000000a4f3
 cause = 0x0000000010800024
 t = 0x0000000000000000
+EOF
+RUN
+
+NAME=dm commands on x86-64 core dump
+FILE=bins/elf/core/core-linux-x86_64
+CMDS=<<EOF
+dm~fmap?
+dm~mmap?
+dmj~{[0]}
+dm=~fmap?
+dm=~mmap?
+echo ----
+s 0x56149dfaf000
+dm.~0x56149dfaf000
+echo ----
+dmm~libc
+dmm.~bin
+dmmj~libc
+dmm.j~crash
+echo ----
+dmi bins/elf/core/crash-linux-x86_64~printf
+dmij~{[0]}
+dmia bins/elf/core/crash-linux-x86_64~MAGIC
+obf bins/elf/core/crash-linux-x86_64 
+dmi.~end
+echo ----
+dmS~.rodata
+EOF
+EXPECT=<<EOF
+15
+7
+{"map":1,"fd":3,"delta":8192,"from":94646549803008,"to":94646549807104,"perm":"r--","name":"fmap.bins/elf/core/crash-linux-x86_64"}
+15
+7
+----
+ 1 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap.bins/elf/core/crash-linux-x86_64
+----
+0x7f582fa31000 0x7f582fa56000  /usr/lib/libc-2.33.so
+0x56149dfaf000 0x56149dfb0000  bins/elf/core/crash-linux-x86_64
+[{"addr":94646549803008,"addr_end":94646549807104,"name":"bins/elf/core/crash-linux-x86_64"},{"addr":140016733065216,"addr_end":140016733216768,"name":"/usr/lib/libc-2.33.so"},{"addr":140016735272960,"addr_end":140016735277056,"name":"/usr/lib/ld-2.33.so"}]
+[{"addr":94646549803008,"addr_end":94646549807104,"file":"bins/elf/core/crash-linux-x86_64"}]
+----
+  2 0x00001030 0x56149dfb0030 GLOBAL FUNC     16     imp.printf
+{"addr":94646549803008,"addr_end":94646549807104,"name":"bins/elf/core/crash-linux-x86_64"}
+0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
+ 34 ---------- 0x00004038 GLOBAL NOTYPE    0     _end
+----
+0x00002000   0x8 0x56149dfb1000   0x8   0x0 -r-- crash-linux-x86_64..rodata            PROGBITS   alloc
+EOF
+RUN
+
+NAME=dm commands on arm64 core dump
+FILE=bins/elf/core/core-linux-arm64
+CMDS=<<EOF
+dm~fmap?
+dm~mmap?
+dm=~fmap?
+dm=~mmap?
+echo ----
+s 0x558ce37000
+dm.~0x558ce37000
+echo ----
+dmm~libc
+dmm.~bin
+dmmj~libc
+dmm.j~crash
+echo ----
+dmi bins/elf/core/crash-linux-arm64~printf
+dmia bins/elf/core/crash-linux-arm64~MAGIC
+obf bins/elf/core/crash-linux-arm64 
+dmi.~end
+echo ----
+dmS~.rodata
+EOF
+EXPECT=<<EOF
+14
+3
+14
+3
+----
+ 1 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap.bins/elf/core/crash-linux-arm64
+----
+0x7f8bd61000 0x7f8bebb000  /usr/lib/libc-2.32.so
+0x558ce37000 0x558ce38000  bins/elf/core/crash-linux-arm64
+[{"addr":367435935744,"addr_end":367435939840,"name":"bins/elf/core/crash-linux-arm64"},{"addr":547806908416,"addr_end":547808325632,"name":"/usr/lib/libc-2.32.so"},{"addr":547808579584,"addr_end":547808714752,"name":"/usr/lib/ld-2.32.so"}]
+[{"addr":367435935744,"addr_end":367435939840,"file":"bins/elf/core/crash-linux-arm64"}]
+----
+  9 0x00000620 0x558ce37620 GLOBAL FUNC     16     imp.printf
+0x00000000 MAGIC      0x00000000 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
+ 83 ---------- 0x00011038 GLOBAL NOTYPE    0     _bss_end__
+----
+0x00000818   0xc 0x558ce37818   0xc   0x0 -r-- crash-linux-arm64..rodata            PROGBITS   alloc
+EOF
+RUN
+
+NAME=dmh commands on arm64 core dump
+FILE=bins/heap/segfault-glibc-aarch64-core
+CMDS=<<EOF
+dmh~Arena
+dmha
+dmhb~Bin?
+dmhc @ 0xaaab126cd290~0xaaab126cd2a0
+echo ----
+dmhd~Empty
+dmhf~Arena
+echo ----
+dmhg~0x410?
+dmhm~malloc_state
+EOF
+EXPECT=<<EOF
+Arena @ 0xffff9a780a50
+Main arena  (addr=0xffff9a780a50, lastRemainder=0x0, top=0xaaab126cdae0, next=0xffff9a780a50)
+128
+0xaaab126cd2a0  0x6e75686320676942  0x617830207461206b   Big chunk at 0xa
+----
+Fast_bin[01] [size: 0x20] Empty bin
+Fast_bin[02] [size: 0x30] Empty bin
+Fast_bin[03] [size: 0x40] Empty bin
+Fast_bin[04] [size: 0x50] Empty bin
+Fast_bin[05] [size: 0x60] Empty bin
+Fast_bin[06] [size: 0x70] Empty bin
+Fast_bin[07] [size: 0x80] Empty bin
+Fast bins in Arena @ 0xffff9a780a50
+----
+2
+malloc_state @ 0xffff9a780a50
+struct malloc_state main_arena {
 EOF
 RUN

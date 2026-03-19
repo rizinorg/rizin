@@ -1,0 +1,32 @@
+name: Manpage lint
+
+on: 
+  push:
+    paths: 
+      - 'binrz/man/*.[1-9]'
+  pull_request: 
+    paths: 
+      - 'binrz/man/*.[1-9]'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+
+jobs:
+  mandoc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install mandoc
+        run: |
+          sudo apt-get update
+          sudo apt install -y mandoc
+
+      - name: Lint binrz manpages
+        run: |
+          cd binrz/man
+          for f in *.[1-9]; do
+            [ -e "$f" ] || continue
+            mandoc -Werror -Tlint "$f"
+          done

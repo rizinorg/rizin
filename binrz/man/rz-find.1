@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_FIND 1
+.Os
 .Sh NAME
 .Nm rz-find
 .Nd Find byte patterns in files
@@ -21,8 +22,10 @@ searches for specified byte patterns, strings, or hexpairs in the given files.
 Multiple files and/or directories can be specified as arguments.
 When a directory is provided, it is searched recursively.
 .Pp
-When searching a single file, quiet mode is enabled by default (no filename headers).
-When searching multiple files or directories, each result is prefixed with the filename
+When searching a single file,
+quiet mode is enabled by default (no filename headers).
+When searching multiple files or directories,
+each result is prefixed with the filename
 unless
 .Fl q
 is specified.
@@ -46,19 +49,22 @@ Show usage help message
 .It Fl i
 Identify filetype (magic signatures)
 .It Fl j
-Output in JSON format. Results are returned as a JSON array of objects.
+Output in JSON format.
+Results are returned as a JSON array of objects.
 .It Fl m
 Magic search, file-type carver
 .It Fl M Ar str
 Set a binary mask to be applied on keywords
 .It Fl n
-Do not stop the search when a read error occurs. Continue to next block or file.
+Do not stop the search when a read error occurs.
+Continue to next block or file.
 .It Fl r
 Print using rizin commands
 .It Fl s Ar str
 Search for a specific string (can be used multiple times)
 .It Fl w Ar str
-Search for a specific wide string (can be used multiple times). Assumes str is UTF-8
+Search for a specific wide string (can be used multiple times).
+Assumes str is UTF-8
 .It Fl I Ar str
 Search for an entry in import table
 .It Fl S Ar str
@@ -66,11 +72,13 @@ Search for a symbol in symbol table
 .It Fl t Ar to
 Stop search at address 'to'
 .It Fl q
-Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
+Quiet mode - do not show headings (filenames) above matching contents
+(default for searching a single file)
 .It Fl v
 Show version information
 .It Fl V
-Verbose mode - show each file being scanned. When combined with
+Verbose mode - show each file being scanned.
+When combined with
 .Fl j ,
 verbose output is written to stderr to preserve stdout for JSON results.
 .It Fl x Ar hex
@@ -91,18 +99,22 @@ When multiple paths are provided:
 .It
 Each file is searched in the order specified.
 .It
-Directories are searched recursively (hidden files starting with '.' are skipped).
+Directories are searched recursively
+(hidden files starting with '.' are skipped).
 .It
-If any file cannot be opened or read, an error is printed but processing continues with remaining files.
+If any file cannot be opened or read,
+an error is printed but processing continues with remaining files.
 .It
-The exit code reflects whether all files were processed successfully (0) or if any errors occurred (1).
+The exit code reflects whether all files were processed successfully (0)
+or if any errors occurred (1).
 .El
 .Sh EXIT STATUS
 .Bl -tag -width Ds
 .It 0
 All files were processed successfully.
 .It 1
-One or more files could not be opened or had read errors, or invalid arguments were provided.
+One or more files could not be opened or had read errors,
+or invalid arguments were provided.
 .El
 .Sh EXAMPLES
 Search for a string in a single file:
@@ -139,19 +151,16 @@ Search with aligned hits (power of 2):
 .Bd -literal -offset indent
 rz-find -a 4 -x "00000000" memory.dump
 .Ed
-.Pp
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-asm(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-run(1) ,
-.Xr rz-ax(1)
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-ax 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-gg 1 ,
+.Xr rz-hash 1 ,
+.Xr rz-run 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0
