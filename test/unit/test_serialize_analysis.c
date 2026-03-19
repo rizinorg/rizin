@@ -979,6 +979,7 @@ Sdb *hints_ref_db() {
 	sdb_set(db, "0x2b0", "{\"esil\":\"13,29,+\"}");
 	sdb_set(db, "0x2c0", "{\"high\":true}");
 	sdb_set(db, "0x2d0", "{\"val\":54323}");
+	sdb_set(db, "0x2e0", "{\"enum\":\"BLA\"}");
 	return db;
 }
 
@@ -1026,6 +1027,7 @@ bool test_analysis_hints_save() {
 	rz_analysis_hint_set_esil(analysis, 0x2b0, "13,29,+");
 	rz_analysis_hint_set_high(analysis, 0x2c0);
 	rz_analysis_hint_set_val(analysis, 0x2d0, 54323);
+	rz_analysis_hint_set_enum(analysis, 0x2e0, "BLA");
 
 	size_t i;
 	for (i = 0; i < ALL_OPTYPES_COUNT; i++) {
@@ -1070,7 +1072,7 @@ bool test_analysis_hints_load() {
 	rz_analysis_addr_hints_foreach(analysis, addr_hints_count_cb, &count);
 	rz_analysis_arch_hints_foreach(analysis, arch_hints_count_cb, &count);
 	rz_analysis_bits_hints_foreach(analysis, bits_hints_count_cb, &count);
-	mu_assert_eq(count, 19 + ALL_OPTYPES_COUNT, "hints count");
+	mu_assert_eq(count, 20 + ALL_OPTYPES_COUNT, "hints count");
 
 	ut64 addr;
 	const char *arch = rz_analysis_hint_arch_at(analysis, 0x100, &addr);
@@ -1116,6 +1118,7 @@ bool test_analysis_hints_load() {
 	assert_addr_hint(0x2b0, ESIL, mu_assert_streq(record->esil, "13,29,+", "esil hint"));
 	assert_addr_hint(0x2c0, HIGH, );
 	assert_addr_hint(0x2d0, VAL, mu_assert_eq(record->val, 54323, "val hint"));
+	assert_addr_hint(0x2e0, ENUM, mu_assert_streq(record->enum_name, "BLA", "enum hint"));
 
 	size_t i;
 	for (i = 0; i < ALL_OPTYPES_COUNT; i++) {

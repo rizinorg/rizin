@@ -356,6 +356,7 @@ static const RzCmdDescArg analysis_hint_set_ret_args[2];
 static const RzCmdDescArg analysis_hint_set_val_args[2];
 static const RzCmdDescArg analysis_hint_set_optype_args[2];
 static const RzCmdDescArg analysis_hint_set_immbase_args[3];
+static const RzCmdDescArg analysis_hint_set_enum_args[3];
 static const RzCmdDescArg analysis_hint_set_offset_args[2];
 static const RzCmdDescArg analysis_list_struct_offsets_args[2];
 static const RzCmdDescArg analysis_class_add_args[2];
@@ -6996,6 +6997,9 @@ static const RzCmdDescHelp analysis_hint_del_optype_help = {
 	.args = analysis_hint_del_optype_args,
 };
 
+static const RzCmdDescHelp ahi_help = {
+	.summary = "Manage immediate operand hints",
+};
 static const RzCmdDescDetailEntry analysis_hint_set_immbase_empty_detail_entries[] = {
 	{ .text = "ahi ", .arg_str = "<base>", .comment = "Set numeric <base> (2, 8, 10, 16)" },
 	{ .text = "ahi 10|d", .arg_str = NULL, .comment = "Set base to signed decimal (10), sign bit should depend on receiver size" },
@@ -7047,6 +7051,33 @@ static const RzCmdDescArg analysis_hint_del_immbase_args[] = {
 static const RzCmdDescHelp analysis_hint_del_immbase_help = {
 	.summary = "Delete immediate base hint",
 	.args = analysis_hint_del_immbase_args,
+};
+
+static const RzCmdDescArg analysis_hint_set_enum_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
+
+	},
+	{
+		.name = "nword",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_enum_help = {
+	.summary = "Set enum type hint for operand",
+	.args = analysis_hint_set_enum_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_enum_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_enum_help = {
+	.summary = "Delete enum type hint",
+	.args = analysis_hint_del_enum_args,
 };
 
 static const RzCmdDescDetailEntry analysis_hint_set_offset_empty_detail_entries[] = {
@@ -22651,11 +22682,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_hint_del_optype_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aho-", rz_analysis_hint_del_optype_handler, &analysis_hint_del_optype_help);
 	rz_warn_if_fail(analysis_hint_del_optype_cd);
 
-	RzCmdDesc *analysis_hint_set_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi", rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help);
-	rz_warn_if_fail(analysis_hint_set_immbase_cd);
-
-	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
+	RzCmdDesc *ahi_cd = rz_cmd_desc_group_modes_new(core->rcmd, ah_cd, "ahi", RZ_OUTPUT_MODE_STANDARD, rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help, &ahi_help);
+	rz_warn_if_fail(ahi_cd);
+	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
 	rz_warn_if_fail(analysis_hint_del_immbase_cd);
+
+	RzCmdDesc *analysis_hint_set_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie", rz_analysis_hint_set_enum_handler, &analysis_hint_set_enum_help);
+	rz_warn_if_fail(analysis_hint_set_enum_cd);
+
+	RzCmdDesc *analysis_hint_del_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie-", rz_analysis_hint_del_enum_handler, &analysis_hint_del_enum_help);
+	rz_warn_if_fail(analysis_hint_del_enum_cd);
 
 	RzCmdDesc *analysis_hint_set_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht", rz_analysis_hint_set_offset_handler, &analysis_hint_set_offset_help);
 	rz_warn_if_fail(analysis_hint_set_offset_cd);

@@ -109,6 +109,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ah? shows ahie
+FILE==
+CMDS=<<EOF
+ah?~ahi
+EOF
+EXPECT=<<EOF
+│ ahi[-e?]            # Manage immediate operand hints
+EOF
+RUN
+
 NAME=1: ahi 10
 FILE==
 CMDS=<<EOF
@@ -378,5 +388,72 @@ EXPECT=<<EOF
             0x00000000      cmp   rax, 0xffffffffffffffff
             0x00000000      cmp   rax, -1
             0x00000000      cmp   rax, 18446744073709551615
+EOF
+RUN
+
+NAME=ahie enum operand
+FILE==
+CMDS=<<EOF
+o malloc://64
+e asm.arch=x86
+e asm.bits=64
+td "enum BLA { FOO = 5, OOF = 6, BAR = 7 };"
+wx 4180fc07
+ahie BLA
+pi 1
+EOF
+EXPECT=<<EOF
+cmp r12b, BLA.BAR
+EOF
+RUN
+
+NAME=ahie- remove enum hint
+FILE==
+CMDS=<<EOF
+o malloc://64
+e asm.arch=x86
+e asm.bits=64
+td "enum BLA { FOO = 5, OOF = 6, BAR = 7 };"
+wx 4180fc07
+ahie BLA
+pi 1
+ahie-
+pi 1
+EOF
+EXPECT=<<EOF
+cmp r12b, BLA.BAR
+cmp r12b, 0x07
+EOF
+RUN
+
+NAME=ahie unknown value
+FILE==
+CMDS=<<EOF
+o malloc://64
+e asm.arch=x86
+e asm.bits=64
+td "enum BLA { FOO = 5, OOF = 6, BAR = 7 };"
+wx 4883f803
+ahie BLA
+pi 1
+EOF
+EXPECT=<<EOF
+cmp rax, 0x03
+EOF
+RUN
+
+NAME=ahie nword
+FILE==
+CMDS=<<EOF
+o malloc://64
+e asm.arch=x86
+e asm.bits=64
+td "enum BLA { ONE = 0xffc643 };"
+wx c7458843c6ff00
+ahie BLA 1
+pdq 1
+EOF
+EXPECT=<<EOF
+0x00000000 mov dword [rbp-0x78], BLA.ONE
 EOF
 RUN
