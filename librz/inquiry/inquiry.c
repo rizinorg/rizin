@@ -832,7 +832,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 		RzAnalysisFunction *afcn = rz_analysis_create_function(analysis, new_fcn_name, fcn_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
 		if (!afcn) {
 			rz_warn_if_reached();
-			return false;
+			continue;
 		}
 
 		void **it2;
@@ -842,7 +842,7 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
 				rz_warn_if_reached();
-				return false;
+				continue;
 			}
 			const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
 			RzGraphNode *n;
