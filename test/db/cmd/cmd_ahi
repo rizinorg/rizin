@@ -115,7 +115,7 @@ CMDS=<<EOF
 ah?~ahi
 EOF
 EXPECT=<<EOF
-│ ahi[-e?]            # Manage immediate operand hints
+| ahi[-e?]            # Manage immediate operand hints
 EOF
 RUN
 
