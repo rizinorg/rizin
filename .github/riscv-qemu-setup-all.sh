@@ -1,9 +1,10 @@
 # Fetch the kernel package
-wget \
-    https://ftp.debian.org/debian/pool/main/l/linux/linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb
+LINUX_IMG=linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb
+DEBIAN_SERVER=https://ftp.debian.org/debian/pool/main/l/linux
 
+wget "$DEBIAN_SERVER/$LINUX_IMG"
 # Extract
-dpkg-deb -x linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb linux-image
+dpkg-deb -x "$LINUX_IMG" linux-image
 
 # Fetch busybox
 git clone https://github.com/rcore-os/busybox-prebuilts.git busybox
@@ -25,7 +26,6 @@ find rizin/build/librz/ -name "*.so.[0-9].[0-9].[0-9]" -type f \
 
 # Copy rizin binary
 cp rizin/build/binrz/rizin/rizin rootfs/rizin
-
 
 # libc and libm
 cp /usr/riscv64-linux-gnu/lib/libc.so.6 rootfs/lib/
