@@ -114,6 +114,12 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		free(real_type);
 		return 0;
 	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *type_pair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!type_pair) {
@@ -147,6 +153,12 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 	// At first we search if the type is already presented in the state
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
 		free(real_type);
 		return 0;
 	}

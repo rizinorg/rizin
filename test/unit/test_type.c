@@ -762,6 +762,32 @@ static bool test_array_types(void) {
 	mu_end;
 }
 
+static bool test_single_typedef_aliases(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	const char *src[] = { "size_t", "uint32_t", "uint64_t", "const size_t" };
+	const char *name[] = { "size_t", "uint32_t", "uint64_t", "size_t" };
+	const bool cnst[] = { false, false, false, true };
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+	rz_type_db_set_bits(typedb, 64);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(src); i++) {
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(typedb->parser, src[i], &error_msg);
+		mu_assert_notnull(ttype, "typedef alias parse successful");
+		mu_assert_null(error_msg, "parsing errors");
+		mu_assert_eq(ttype->kind, RZ_TYPE_KIND_IDENTIFIER, "parsed type");
+		mu_assert_streq(ttype->identifier.name, name[i], "parsed type");
+		mu_assert_eq(ttype->identifier.is_const, cnst[i], "parsed const");
+		rz_type_free(ttype);
+	}
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
 static char *func_double_ptr_struct = "struct blabla { int a; wchar_t (**funk)(int a, const char *b); }";
 
@@ -1866,6 +1892,7 @@ int all_tests() {
 	mu_run_test(test_enum_types);
 	mu_run_test(test_const_types);
 	mu_run_test(test_array_types);
+	mu_run_test(test_single_typedef_aliases);
 	mu_run_test(test_struct_func_types);
 	mu_run_test(test_struct_array_types);
 	mu_run_test(test_struct_identifier_without_specifier);
