@@ -41,16 +41,16 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 		"\\#{1,2}|\\}$|"
 		// .new and jump hints
 		"\\.new|:n?t|:raw|<err>|"
-		"after|before|single|above|retain|deep|dilate|drop|");
+		":after|:before|:single|:above|:retain|:deep|:dilate|:drop");
 
 	// Special registers
 	TOKEN(REGISTER,
-		"GP|HTID|UGP|LR|FP|SP|acc|activation|weight|cvt|bias|\\bz\\b");
+		"\\b([A-Z]{2,}|acc|activation|weight|cvt|activation|bias|z)\\b");
 
 	TOKEN(REGISTER,
 		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|"
 		// Registers and double registers
-		"([A-Z]{2,}[0-9]{,1})");
+		"([A-Z]{2,}[0-9]{1})");
 
 	TOKEN(NUMBER,
 		// Hexadecimal numbers
