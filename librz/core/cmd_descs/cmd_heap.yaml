@@ -1,0 +1,155 @@
+# SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+---
+name: cmd_heap
+commands:
+  - name: dmhg
+    summary: Glibc heap commands
+    subcommands:
+      - name: dmhg
+        cname: cmd_heap_chunks_print
+        summary: List heap chunks of an arena
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: malloc_state
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhga
+        cname: cmd_arena_print
+        summary: List all the arenas
+        args: []
+      - name: dmhgb
+        cname: cmd_heap_bins_list_print
+        summary: >
+          Display double linked list for bins in an arena.
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_GRAPH
+        args:
+          - name: bin_num|bin_num:malloc_state
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: dmhgc
+        cname: cmd_heap_chunk_print
+        summary: Get info about heap chunk at current offset
+        args: []
+      - name: dmhgd
+        cname: cmd_heap_arena_bins_print
+        summary: >
+          Display state of bins in an arena. <bin_type>
+          can be tcache/fast/unsorted/small/large
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: bin_type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            optional: true
+            choices: ["small", "large", "fast", "unsorted", "tcache"]
+      - name: dmhgf
+        cname: cmd_heap_fastbins_print
+        summary: >
+          Display all parsed fastbins of main_arena's or a particular
+          arena fastbinY instance
+        args:
+          - name: fastbin_num|fastbin_num:malloc_state
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: dmhgg
+        cname: cmd_heap_chunks_graph
+        summary: Display heap graph of a particular arena
+        args:
+          - name: malloc_state
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhgi
+        cname: cmd_heap_info_print
+        summary: Display heap_info structure/structures for a given arena
+        args:
+          - name: malloc_state
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhgm
+        cname: cmd_main_arena_print
+        summary: List all elements of struct malloc_state
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+        args:
+          - name: malloc_state
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhgt
+        cname: cmd_heap_tcache_print
+        summary: Display all parsed thread cache bins of all arena's tcache instance
+        args: []
+  - name: dmhw
+    summary: Windows heap commands
+    subcommands:
+      - name: dmhw
+        summary: List process heaps
+        cname: cmd_debug_process_heaps
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: dmhwb
+        summary: List allocated heap blocks
+        cname: cmd_debug_process_heap_block
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhwbf
+        summary: Create flags for each allocated heap block
+        cname: cmd_debug_heap_block_flag
+        args: []
+  - name: dmhj
+    summary: Jemalloc heap commands
+    subcommands:
+      - name: dmhja
+        summary: Show all arenas created, or print arena_type structure for given arena.
+        cname: cmd_debug_heap_jemalloc_a
+        args:
+          - name: arena_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhjb
+        summary: Show bin info for allocations. 
+        cname: cmd_debug_heap_jemalloc_b
+        args:
+          - name: arena_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: bin_info_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhjc
+        summary: >-
+          Show all chunks created in all arenas, or show all chunks created for a given
+          arena_t instance (jemalloc 4.5.0 only).
+        cname: cmd_debug_heap_jemalloc_c
+        args:
+          - name: arena_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhje
+        summary: List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)
+        cname: cmd_debug_heap_jemalloc_e
+        args:
+          - name: malloc_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dmhjei
+        summary: Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)
+        cname: cmd_debug_heap_jemalloc_ei
+        args:
+          - name: extent_addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
