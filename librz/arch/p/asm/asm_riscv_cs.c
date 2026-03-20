@@ -16,6 +16,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn;
 	cs_mode mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	mode |= mode_from_arch_string(a->cpu);
+	mode |= resolve_features_from_list(a->features);
 	op->size = 4;
 	if (ctx->omode != mode) {
 		cs_close(&ctx->handle);
@@ -56,7 +57,8 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.desc = "RISC-V Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "riscv",
-	.cpus = NULL,
+	.cpus = ARCH_RISCV_CPUS,
+	.features = ARCH_RISCV_FEATURES,
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = riscv_asm_init,
