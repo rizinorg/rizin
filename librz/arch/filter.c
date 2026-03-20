@@ -43,15 +43,12 @@ static void insert(char *dst, const char *src) {
 	free(endNum);
 }
 
-static void replace_number_token(char *out, int out_len, char *data, char *num_start, char *num_end, const char *value) {
-	rz_return_if_fail(out && data && num_start && num_end && value);
+static void replace_number_token(char *out, size_t out_len, char *data, char *num_start, char *num_end, const char *value) {
 	*num_start = 0;
 	snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "");
 }
 
-static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, int out_len, char *num_start, char *num_end) {
-	rz_return_val_if_fail(p && hint && data && out && num_start && num_end, false);
-
+static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, size_t out_len, char *num_start, char *num_end) {
 	if (RZ_STR_ISEMPTY(hint->enum_name) || !p->analb.analysis || !p->analb.analysis->typedb) {
 		return false;
 	}
@@ -62,11 +59,11 @@ static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *
 		return false;
 	}
 
-	char ename[512];
+	char ename[512] = "";
 	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
 	if (ename_len <= sizeof(ename)) {
-		replace_number_token(out, out_len, data, num_start, num_end,
-			rz_strf(ename, "%s.%s", hint->enum_name, member));
+		rz_strf(ename, "%s.%s", hint->enum_name, member);
+		replace_number_token(out, out_len, data, num_start, num_end, ename);
 		return true;
 	}
 
