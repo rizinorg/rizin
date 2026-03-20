@@ -614,6 +614,22 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->asm_types = rz_config_get_i(core->config, "asm.types");
 	ds->foldxrefs = rz_config_get_i(core->config, "asm.xrefs.fold");
 	ds->show_lines = rz_config_get_b(core->config, "asm.lines");
+	bool suppress_lines_for_filter = false;
+	if (core->is_pipe) {
+		suppress_lines_for_filter = true;
+	}
+	if (core->cons && core->cons->filter) {
+		suppress_lines_for_filter = true;
+	}
+	if (core->cons && core->cons->context) {
+		RzConsGrep *grep = &core->cons->context->grep;
+		if (grep->str || grep->nstrings > 0 || grep->tokens_used > 0 || grep->line >= 0 || grep->less > 0 || grep->json > 0) {
+			suppress_lines_for_filter = true;
+		}
+	}
+	if (suppress_lines_for_filter) {
+		ds->show_lines = false;
+	}
 	ds->show_lines_bb = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.bb") : false;
 	ds->linesright = rz_config_get_b(core->config, "asm.lines.right");
 	ds->show_indent = rz_config_get_b(core->config, "asm.indent");
@@ -707,6 +723,9 @@ static RzDisasmState *ds_init(RzCore *core) {
 		ds->show_cmtoff = "nodup";
 	}
 	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
+	if (suppress_lines_for_filter) {
+		ds->show_functions = false;
+	}
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
 	ds->strenc = core->bin->str_search_cfg.string_encoding;
