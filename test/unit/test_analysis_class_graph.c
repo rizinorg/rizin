@@ -19,78 +19,86 @@ bool test_inherit_graph_creation() {
 	rz_core_cmd0(core, "acb D C");
 	RzGraph *graph = rz_analysis_class_get_inheritance_graph(core->analysis);
 	mu_assert_notnull(graph, "Couldn't create the graph");
-	mu_assert_eq(graph->nodes->length, 4, "Wrong node count");
+	mu_assert_eq(rz_graph_count_nodes(graph), 4, "Wrong node count");
 
-	RzListIter *iter;
+	RzIterator *iter = rz_graph_get_nodes(graph);
+	mu_assert_notnull(iter, "get_nodes iterator");
 	RzGraphNode *node;
 	int i = 0;
-	rz_list_foreach (graph->nodes, iter, node) {
+	rz_iterator_foreach(iter, node) {
 		RzGraphNodeInfo *info = node->data;
 		switch (i++) {
 		case 0:
 			mu_assert_streq(info->def.title, "A", "Wrong node name");
-			mu_assert_eq(node->out_nodes->length, 2, "Wrong node out-nodes");
+			mu_assert_eq(rz_graph_out_degree(graph, node), 2, "Wrong node out-nodes");
 			{
-				RzListIter *iter;
+				RzIterator *out_iter = rz_graph_out_neighbors(graph, node);
+				mu_assert_notnull(out_iter, "out_neighbors iter A");
 				RzGraphNode *out_node;
-				int i = 0;
-				rz_list_foreach (node->out_nodes, iter, out_node) {
-					RzGraphNodeInfo *info = out_node->data;
-					switch (i++) {
+				int j = 0;
+				rz_iterator_foreach(out_iter, out_node) {
+					RzGraphNodeInfo *out_info = out_node->data;
+					switch (j++) {
 					case 0:
-						mu_assert_streq(info->def.title, "B", "Wrong node name");
+						mu_assert_streq(out_info->def.title, "B", "Wrong node name");
 						break;
 					case 1:
-						mu_assert_streq(info->def.title, "C", "Wrong node name");
+						mu_assert_streq(out_info->def.title, "C", "Wrong node name");
 						break;
 					}
 				}
+				rz_iterator_free(out_iter);
 			}
 			break;
 		case 1:
 			mu_assert_streq(info->def.title, "B", "Wrong node name");
-			mu_assert_eq(node->out_nodes->length, 1, "Wrong node out-nodes");
-			mu_assert_eq(node->in_nodes->length, 1, "Wrong node in-nodes");
+			mu_assert_eq(rz_graph_out_degree(graph, node), 1, "Wrong node out-nodes");
+			mu_assert_eq(rz_graph_in_degree(graph, node), 1, "Wrong node in-nodes");
 			{
-				RzListIter *iter;
+				RzIterator *out_iter = rz_graph_out_neighbors(graph, node);
+				mu_assert_notnull(out_iter, "out_neighbors iter B");
 				RzGraphNode *out_node;
-				int i = 0;
-				rz_list_foreach (node->out_nodes, iter, out_node) {
-					RzGraphNodeInfo *info = out_node->data;
-					switch (i++) {
+				int j = 0;
+				rz_iterator_foreach(out_iter, out_node) {
+					RzGraphNodeInfo *out_info = out_node->data;
+					switch (j++) {
 					case 0:
-						mu_assert_streq(info->def.title, "D", "Wrong node name");
+						mu_assert_streq(out_info->def.title, "D", "Wrong node name");
 						break;
 					}
 				}
+				rz_iterator_free(out_iter);
 			}
 			break;
 		case 2:
 			mu_assert_streq(info->def.title, "C", "Wrong node name");
-			mu_assert_eq(node->out_nodes->length, 1, "Wrong node out-nodes");
-			mu_assert_eq(node->in_nodes->length, 1, "Wrong node in-nodes");
+			mu_assert_eq(rz_graph_out_degree(graph, node), 1, "Wrong node out-nodes");
+			mu_assert_eq(rz_graph_in_degree(graph, node), 1, "Wrong node in-nodes");
 			{
-				RzListIter *iter;
+				RzIterator *out_iter = rz_graph_out_neighbors(graph, node);
+				mu_assert_notnull(out_iter, "out_neighbors iter C");
 				RzGraphNode *out_node;
-				int i = 0;
-				rz_list_foreach (node->out_nodes, iter, out_node) {
-					RzGraphNodeInfo *info = out_node->data;
-					switch (i++) {
+				int j = 0;
+				rz_iterator_foreach(out_iter, out_node) {
+					RzGraphNodeInfo *out_info = out_node->data;
+					switch (j++) {
 					case 0:
-						mu_assert_streq(info->def.title, "D", "Wrong node name");
+						mu_assert_streq(out_info->def.title, "D", "Wrong node name");
 						break;
 					}
 				}
+				rz_iterator_free(out_iter);
 			}
 			break;
 		case 3:
 			mu_assert_streq(info->def.title, "D", "Wrong node name");
-			mu_assert_eq(node->in_nodes->length, 2, "Wrong node in-nodes");
+			mu_assert_eq(rz_graph_in_degree(graph, node), 2, "Wrong node in-nodes");
 			break;
 		default:
 			break;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_core_free(core);
 	rz_graph_free(graph);
 	mu_end;

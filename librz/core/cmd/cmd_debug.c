@@ -118,7 +118,7 @@ static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 		RzGraphNode *gn = get_graphtrace_node(g, gnodes, tn);
 		RzGraphNode *gn_parent = get_graphtrace_node(g, gnodes, tn_parent);
 
-		if (!rz_graph_has_edge(g, gn_parent, gn))
+		if (!rz_graph_has_edge(g, gn_parent, gn, NULL))
 			rz_graph_add_edge(g, gn_parent, gn, NULL);
 	}
 }

@@ -347,7 +347,7 @@ static bool test_cfg_edge_data(void) {
 
 static void tmp_discover(RzGraphNode *n, RzGraphVisitor *v) {
 	BasicBlockNodeData *bb = (BasicBlockNodeData *)n->data;
-	rz_list_append((RzList *)v->data, (void *)(size_t)bb->bb_id);
+	rz_list_append((RzList *)v->visitor_data, (void *)(size_t)bb->bb_id);
 }
 
 // Test DFS on CFG
@@ -378,7 +378,7 @@ static bool test_cfg_dfs(void) {
 	RzList *visited = rz_list_new();
 
 	RzGraphVisitor vis = { 0 };
-	vis.data = visited;
+	vis.visitor_data = visited;
 	vis.discover_node = tmp_discover;
 	rz_graph_dfs_from_node(cfg, n_entry, &vis);
 
