@@ -6,6 +6,9 @@ DEBIAN_SERVER=https://ftp.debian.org/debian/pool/main/l/linux
 BUSYBOX_PATH=busybox-1.30.1-riscv64
 BUSYBOX_VERSION=9d220791e5917fc2190c5cf405a014a483c01d86
 LIB_PATH=/usr/riscv64-linux-gnu/lib
+LIB_C=libc.so.6
+LIB_M=libm.so.6
+DYN_LD=ld-linux-riscv64-lp64d.so.1
 
 # Fetch the kernel package
 wget "$DEBIAN_SERVER/$LINUX_IMG"
@@ -35,8 +38,7 @@ find rizin/build/librz/ -name "*.so.[0-9].[0-9].[0-9]" -type f \
 cp rizin/build/binrz/rizin/rizin rootfs/rizin
 
 # libc and libm, dynamic linker
-cp "$LIB_PATH"/{libc.so.6,libm.so.6,ld-linux-riscv64-lp64d.so.1} rootfs/lib/
-
+cp "$LIB_PATH/$LIB_C" "$LIB_PATH/$LIB_M" "$LIB_PATH/$DYN_LD" rootfs/lib/
 
 # Copy busybox to rootfs
 cp "busybox/$BUSYBOX_PATH/busybox" rootfs/bb
