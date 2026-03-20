@@ -43,6 +43,41 @@ static void insert(char *dst, const char *src) {
 	free(endNum);
 }
 
+static bool replace_number_token(char *out, int out_len, char *data, char *num_start, char *num_end, const char *value) {
+	rz_return_val_if_fail(out && data && num_start && num_end && value, false);
+	*num_start = 0;
+	return snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "") >= 0;
+}
+
+static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, int out_len, char *num_start, char *num_end) {
+	rz_return_val_if_fail(p && hint && data && out && num_start && num_end, false);
+
+	if (RZ_STR_ISEMPTY(hint->enum_name) || !p->analb.analysis || !p->analb.analysis->typedb) {
+		return false;
+	}
+
+	const char *member = rz_type_db_enum_member_by_val(
+		p->analb.analysis->typedb, hint->enum_name, off);
+	if (!member) {
+		return false;
+	}
+
+	char ename[512];
+	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
+	if (ename_len <= sizeof(ename)) {
+		return replace_number_token(out, out_len, data, num_start, num_end,
+			rz_strf(ename, "%s.%s", hint->enum_name, member));
+	}
+
+	char *ename_dyn = rz_str_newf("%s.%s", hint->enum_name, member);
+	if (!ename_dyn) {
+		return false;
+	}
+	bool ok = replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
+	free(ename_dyn);
+	return ok;
+}
+
 static int parse_number(const char *str) {
 	const char *p = str;
 	// Parse as hexadecmial (0x notation)
@@ -406,6 +441,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 		}
 		if (hint) {
+			char *num_start = ptr;
+			char *num_end = ptr2;
 			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
@@ -415,22 +452,12 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			char num[256] = { 0 }, *pnum, *tmp;
 			int tmp_count;
 			if (hint->offset) {
-				*ptr = 0;
-				snprintf(str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
+				return replace_number_token(str, len, data, num_start, num_end, hint->offset);
+			}
+			if (replace_enum_hint(p, hint, off, data, str, len, num_start, num_end)) {
 				return true;
 			}
-			if (hint->enum_name && *hint->enum_name && p && p->analb.analysis) {
-				const char *member = rz_type_db_enum_member_by_val(
-					p->analb.analysis->typedb, hint->enum_name, off);
-				if (member) {
-					char ename[256];
-					rz_strf(ename, "%s.%s", hint->enum_name, member);
-					*ptr = 0;
-					snprintf(str, len, "%s%s%s", data, ename, (ptr != ptr2) ? ptr2 : "");
-					return true;
-				}
-			}
-			strncpy(num, ptr, sizeof(num) - 2);
+			strncpy(num, num_start, sizeof(num) - 2);
 			pnum = num + parse_number(num);
 			*pnum = 0;
 			switch (immbase) {
@@ -439,9 +466,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = data; tmp < num_start; tmp++) {
 					if (*tmp == 0x1b) {
-						while (tmp < ptr - 1 && *tmp != 'm') {
+						while (tmp < num_start - 1 && *tmp != 'm') {
 							tmp++;
 						}
 						continue;
@@ -557,9 +584,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			*ptr = 0;
-			snprintf(str, len, "%s%s%s", data, num, (ptr != ptr2) ? ptr2 : "");
-			return true;
+			return replace_number_token(str, len, data, num_start, num_end, num);
 		}
 		ptr = ptr2;
 	}
