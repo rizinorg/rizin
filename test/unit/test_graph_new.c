@@ -5,11 +5,11 @@
 #include "minunit.h"
 
 static ut64 simple_hash(const void *data) {
-	return *(ut64 *)data;
+	return (ut64)(ut64 *)data;
 }
 
 static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
-	RzList *order = (RzList *)vis->data;
+	RzList *order = (RzList *)vis->visitor_data;
 	rz_list_prepend(order, n->data);
 }
 
@@ -327,16 +327,16 @@ static bool test_graph_dfs(void) {
 	// Test DFS with topological sort visitor
 	RzGraphVisitor vis = { 0 };
 	RzList *topo_sort_list = rz_list_new();
-	vis.data = topo_sort_list;
+	vis.visitor_data = topo_sort_list;
 	vis.finish_node = topo_sorting;
 
 	rz_graph_dfs_from_node(g, n1, &vis);
 
 	// check that all nodes were visited
-	mu_assert_eq(rz_list_length((RzList *)vis.data), 5, "dfs.visited_count");
+	mu_assert_eq(rz_list_length((RzList *)vis.visitor_data), 5, "dfs.visited_count");
 
 	rz_list_free(topo_sort_list);
-	vis.data = NULL;
+	vis.visitor_data = NULL;
 	rz_graph_free(g);
 	mu_end;
 }
@@ -731,16 +731,16 @@ static bool test_graph_dfs_matrix(void) {
 	// Test DFS with topological sort visitor
 	RzGraphVisitor vis = { 0 };
 	RzList *topo_sort_list = rz_list_new();
-	vis.data = topo_sort_list;
+	vis.visitor_data = topo_sort_list;
 	vis.finish_node = topo_sorting;
 
 	rz_graph_dfs_from_node(g, n1, &vis);
 
 	// check that all nodes were visited
-	mu_assert_eq(rz_list_length((RzList *)vis.data), 5, "dfs.visited_count");
+	mu_assert_eq(rz_list_length((RzList *)vis.visitor_data), 5, "dfs.visited_count");
 
 	rz_list_free(topo_sort_list);
-	vis.data = NULL;
+	vis.visitor_data = NULL;
 	rz_graph_free(g);
 	mu_end;
 }

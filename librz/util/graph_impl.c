@@ -255,12 +255,14 @@ typedef struct {
 static void *pvecotr_iter_next(RzIterator *iter) {
 	RzGraphListIterState *state = (RzGraphListIterState *)iter->u;
 	ut64 vec_size = rz_pvector_len(state->vec);
-	if (state->cur_id >= vec_size) {
-		return NULL;
+	while (state->cur_id < vec_size) {
+		void *elem = rz_pvector_at(state->vec, state->cur_id);
+		state->cur_id += 1;
+		if (elem) {
+			return elem;
+		}
 	}
-	void *elem = rz_pvector_at(state->vec, state->cur_id);
-	state->cur_id += 1;
-	return elem;
+	return NULL;
 }
 
 /**
@@ -386,12 +388,10 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 				}
 			}
 
-			// NOTE: free user data of out edge only
-			// pop from vec
-			ut64 node_to_dest_as_oe_id = edge_vec_find_eid(out_vec, node, dest_node);
-			rz_pvector_remove_at(out_vec, node_to_dest_as_oe_id);
-
 			// clean and delete edge struct
+			// NOTE: do not remove from out_vec here — the entire out_vec is freed by
+			// ht_up_delete below; pvector removing elements mid-iteration shifts the array
+			// and causes the foreach pointer to skip the next element.
 			if (g->edge_data_free && node_to_dest_as_oe->data) {
 				g->edge_data_free(node_to_dest_as_oe->data);
 			}
@@ -424,11 +424,10 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 				}
 			}
 
-			// pop from vec
-			ut64 src_to_node_as_ie_id = edge_vec_find_eid(in_vec, src_node, node);
-			rz_pvector_remove_at(in_vec, src_to_node_as_ie_id);
-
 			// free struct
+			// NOTE: do not remove from in_vec here — the entire in_vec is freed by
+			// ht_up_delete below; removing elements mid-iteration shifts the array
+			// and causes the foreach pointer to skip the next element.
 			edge_free(src_to_node_as_ie);
 			g->n_edges -= 1;
 		}
@@ -987,28 +986,26 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph *g) {
 
 	// clean user data of all nodes
 	if (g->nodes && g->node_vec) {
-		if (g->node_data_free) {
-			void **it;
-			rz_pvector_foreach (g->node_vec, it) {
-				RzGraphNode *node = (RzGraphNode *)(*it);
-				if (node && node->data) {
-					g->node_data_free(node->data);
-					node->data = NULL;
-					free(node);
-					*it = NULL;
-				}
+		void **it;
+		rz_pvector_foreach (g->node_vec, it) {
+			RzGraphNode *node = (RzGraphNode *)(*it);
+			if (!node) {
+				continue;
 			}
+			if (g->node_data_free && node->data) {
+				g->node_data_free(node->data);
+				node->data = NULL;
+			}
+			free(node);
+			*it = NULL;
 		}
-
-		// clean node_vec container
-		rz_pvector_free(g->node_vec);
-		g->node_vec = NULL;
-
-		// clean hash table container since all nodes data has been cleaned
-		ht_up_free(g->nodes);
-		g->nodes = NULL;
 	}
 
+	// clean hash table container since all nodes data has been cleaned
+	ht_up_free(g->nodes);
+	g->nodes = NULL;
+
+	// clean node_vec container
 	if (g->node_vec) {
 		rz_pvector_free(g->node_vec);
 		g->node_vec = NULL;
@@ -1032,6 +1029,20 @@ RZ_API void rz_graph_reset(RzGraph *g) {
 		g->impl = NULL;
 	}
 
+	// free node and data
+	void **it;
+
+	// free nodes to fix leak
+	rz_pvector_foreach (g->node_vec, it) {
+		RzGraphNode *node = (RzGraphNode *)(*it);
+		if (node) {
+			if (g->node_data_free && node->data) {
+				g->node_data_free(node->data);
+			}
+			free(node);
+		}
+	}
+
 	// clean all nodes
 	if (g->nodes) {
 		ht_up_free(g->nodes);
@@ -1045,7 +1056,7 @@ RZ_API void rz_graph_reset(RzGraph *g) {
 	}
 
 	// re-init
-	g->nodes = ht_up_new(NULL, g->node_data_free);
+	g->nodes = ht_up_new(NULL, NULL);
 	g->n_nodes = 0;
 	g->n_edges = 0;
 	g->node_vec = rz_pvector_new(NULL);
@@ -1082,14 +1093,11 @@ RZ_API void rz_graph_reset(RzGraph *g) {
  * \param identifier used by the hash function to generate node hash_id, if NULL, use user_data as identifier
  * \return the newly created node (borrowed), or NULL on failure
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_data, void *identifier) {
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_data, const void *identifier) {
 	rz_return_val_if_fail(g, NULL);
-	if (!identifier) {
-		// default use user_data as identifier
-		identifier = user_data;
-	}
+	const void *id = identifier ? identifier : (const void *)user_data;
 
-	ut64 hash_id = g->hash_func(identifier);
+	ut64 hash_id = g->hash_func(id);
 
 	bool found = false;
 	ht_up_find(g->nodes, hash_id, &found);
@@ -1107,7 +1115,9 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_da
 
 	// insert node into hash table
 	if (!ht_up_insert(g->nodes, hash_id, node)) {
-		g->node_data_free(node->data);
+		if (g->node_data_free && node->data) {
+			g->node_data_free(node->data);
+		}
 		node->data = NULL;
 		free(node);
 		return NULL;
@@ -1182,7 +1192,7 @@ RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node) {
  * \param identifier the identifier to search for
  * \return the node if found (borrowed), or NULL
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, void *identifier) {
+RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier) {
 	rz_return_val_if_fail(g && g->hash_func && identifier, NULL);
 	ut64 hash_id = g->hash_func(identifier);
 	return ht_up_find(g->nodes, hash_id, NULL);
@@ -1219,7 +1229,7 @@ RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, vo
  * \param user_data unused
  * \return true on success, false if edge not found
  */
-RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	if (!g->impl_ops->del_edge(g, from, to)) {
 		return false;
@@ -1237,7 +1247,7 @@ RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
  * \param user_data unused
  * \return true if the edge exists, false otherwise
  */
-RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	return g->impl_ops->has_edge(g, from, to);
 }
@@ -1493,7 +1503,7 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *node) {
 	return count;
 }
 
-RZ_API RzGraphNode *rz_graph_find_node_by_id(RzGraph *g, ut64 hash_id) {
+RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 
 	bool found;
@@ -1506,5 +1516,118 @@ RZ_API RzGraphNode *rz_graph_find_node_by_id(RzGraph *g, ut64 hash_id) {
 }
 
 RZ_API ut64 rz_graph_adapter_get_node_id(RzGraphNode *node) {
-	return node->hash_id;
+	rz_return_val_if_fail(node, 0);
+	return node->_vec_id;
+}
+
+RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, false);
+	RzGraphNode *node = rz_graph_find_node(g, identifier);
+	if (!node) {
+		return false;
+	}
+	return rz_graph_del_node(g, node);
+}
+
+RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *user_data) {
+	rz_return_val_if_fail(g && from_id && to_id, false);
+	RzGraphNode *from = rz_graph_find_node(g, from_id);
+	RzGraphNode *to = rz_graph_find_node(g, to_id);
+	if (!from || !to) {
+		return false;
+	}
+	return rz_graph_add_edge(g, from, to, user_data);
+}
+
+RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
+	rz_return_val_if_fail(g && from_id && to_id, false);
+	RzGraphNode *from = rz_graph_find_node(g, from_id);
+	RzGraphNode *to = rz_graph_find_node(g, to_id);
+	if (!from || !to) {
+		return false;
+	}
+	return rz_graph_del_edge(g, from, to, user_data);
+}
+
+RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
+	rz_return_val_if_fail(g && from_id && to_id, false);
+	RzGraphNode *from = rz_graph_find_node(g, from_id);
+	RzGraphNode *to = rz_graph_find_node(g, to_id);
+	if (!from || !to) {
+		return false;
+	}
+	return rz_graph_has_edge(g, from, to, user_data);
+}
+
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, const void *from_id, const void *to_id) {
+	rz_return_val_if_fail(g && from_id && to_id, NULL);
+	RzGraphNode *from = rz_graph_find_node(g, from_id);
+	RzGraphNode *to = rz_graph_find_node(g, to_id);
+	if (!from || !to) {
+		return NULL;
+	}
+	return rz_graph_find_edge(g, from, to);
+}
+
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, NULL);
+	RzGraphNode *node = rz_graph_find_node(g, identifier);
+	if (!node) {
+		return NULL;
+	}
+	return rz_graph_out_edges(g, node);
+}
+
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, NULL);
+	RzGraphNode *node = rz_graph_find_node(g, identifier);
+	if (!node) {
+		return NULL;
+	}
+	return rz_graph_in_edges(g, node);
+}
+
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, NULL);
+	RzGraphNode *node = rz_graph_find_node(g, identifier);
+	if (!node) {
+		return NULL;
+	}
+	return rz_graph_out_neighbors(g, node);
+}
+
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, NULL);
+	RzGraphNode *node = rz_graph_find_node(g, identifier);
+	if (!node) {
+		return NULL;
+	}
+	return rz_graph_in_neighbors(g, node);
+}
+
+RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, 0);
+	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	if (!node) {
+		return 0;
+	}
+	return rz_graph_out_degree(g, node);
+}
+
+RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, const void *identifier) {
+	rz_return_val_if_fail(g && identifier, 0);
+	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	if (!node) {
+		return 0;
+	}
+	return rz_graph_in_degree(g, node);
+}
+
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, const void *identifier, ut64 nth, bool out_neighbor) {
+	rz_return_val_if_fail(g && identifier, NULL);
+	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	if (!node) {
+		return NULL;
+	}
+	return rz_graph_nth_neighbour(g, node, nth, out_neighbor);
 }

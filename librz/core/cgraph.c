@@ -831,7 +831,7 @@ static RZ_OWN RzGraphNode *get_graph_node_of_fcn(RZ_BORROW RzGraph /*<RzGraphNod
 	ut64 hash_id = ht_uu_find(graph_idx, fcn->addr, &found);
 	if (found) {
 		// Node already added, get it.
-		return rz_graph_find_node_by_id(icfg, hash_id);
+		return rz_graph_find_node_by_hashid(icfg, hash_id);
 	}
 	RzGraphNode *icfg_node = rz_graph_add_node_info_icfg(icfg, fcn);
 	ht_uu_insert(graph_idx, fcn->addr, icfg_node->hash_id);
@@ -862,7 +862,7 @@ static void extend_icfg(const RzAnalysis *analysis, RZ_BORROW RzGraph /*<RzGraph
 			continue;
 		}
 		RzGraphNode *to_node = get_graph_node_of_fcn(icfg, graph_idx, called_fcn);
-		if (rz_graph_has_edge(icfg, from_node, to_node)) {
+		if (rz_graph_has_edge(icfg, from_node, to_node, NULL)) {
 			// Edge already added and walked. Don't recurse.
 			continue;
 		}
@@ -1001,7 +1001,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	bool found = false;
 	ut64 to_idx = ht_uu_find(nodes_visited, to, &found);
 	if (found) {
-		to_node = rz_graph_find_node_by_id(graph, to_idx);
+		to_node = rz_graph_find_node_by_hashid(graph, to_idx);
 	} else {
 		to_node = add_node_info_cfg(graph, op_to, false);
 	}
@@ -1021,7 +1021,7 @@ static bool add_edge_to_cfg(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
 	}
 
 	ht_uu_insert(nodes_visited, to, to_node->hash_id);
-	rz_graph_add_edge(graph, rz_graph_find_node_by_id(graph, from_idx), to_node, NULL);
+	rz_graph_add_edge(graph, rz_graph_find_node_by_hashid(graph, from_idx), to_node, NULL);
 	return true;
 }
 
