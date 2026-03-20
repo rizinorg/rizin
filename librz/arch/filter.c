@@ -424,7 +424,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					p->analb.analysis->typedb, hint->enum_name, off);
 				if (member) {
 					char ename[256];
-					snprintf(ename, sizeof(ename), "%s.%s", hint->enum_name, member);
+					rz_strf(ename, "%s.%s", hint->enum_name, member);
 					*ptr = 0;
 					snprintf(str, len, "%s%s%s", data, ename, (ptr != ptr2) ? ptr2 : "");
 					return true;
