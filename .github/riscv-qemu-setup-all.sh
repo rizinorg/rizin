@@ -1,13 +1,20 @@
-# Fetch the kernel package
+#!/bin/sh
+set -eux
+
 LINUX_IMG=linux-image-6.12.73+deb13-riscv64_6.12.73-1_riscv64.deb
 DEBIAN_SERVER=https://ftp.debian.org/debian/pool/main/l/linux
+BUSYBOX_PATH=busybox-1.30.1-riscv64
+BUSYBOX_VERSION=9d220791e5917fc2190c5cf405a014a483c01d86
+LIB_PATH=/usr/riscv64-linux-gnu/lib
 
+# Fetch the kernel package
 wget "$DEBIAN_SERVER/$LINUX_IMG"
 # Extract
 dpkg-deb -x "$LINUX_IMG" linux-image
 
 # Fetch busybox
 git clone https://github.com/rcore-os/busybox-prebuilts.git busybox
+cd busybox && git checkout "$BUSYBOX_VERSION" && cd ..
 
 # Cross-compile the Rizin repo
 cd rizin
@@ -27,14 +34,12 @@ find rizin/build/librz/ -name "*.so.[0-9].[0-9].[0-9]" -type f \
 # Copy rizin binary
 cp rizin/build/binrz/rizin/rizin rootfs/rizin
 
-# libc and libm
-cp /usr/riscv64-linux-gnu/lib/libc.so.6 rootfs/lib/
-cp /usr/riscv64-linux-gnu/lib/libm.so.6 rootfs/lib/
-# dynamic linker 
-cp /usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 rootfs/lib/
+# libc and libm, dynamic linker
+cp "$LIB_PATH"/{libc.so.6,libm.so.6,ld-linux-riscv64-lp64d.so.1} rootfs/lib/
+
 
 # Copy busybox to rootfs
-cp busybox/busybox-1.30.1-riscv64/busybox rootfs/bb
+cp "busybox/$BUSYBOX_PATH/busybox" rootfs/bb
 
 # Make busybox the init launcher, poweroff, and mount
 ln -s bb rootfs/init
