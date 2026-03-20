@@ -43,10 +43,10 @@ static void insert(char *dst, const char *src) {
 	free(endNum);
 }
 
-static bool replace_number_token(char *out, int out_len, char *data, char *num_start, char *num_end, const char *value) {
-	rz_return_val_if_fail(out && data && num_start && num_end && value, false);
+static void replace_number_token(char *out, int out_len, char *data, char *num_start, char *num_end, const char *value) {
+	rz_return_if_fail(out && data && num_start && num_end && value);
 	*num_start = 0;
-	return snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "") >= 0;
+	snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "");
 }
 
 static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, int out_len, char *num_start, char *num_end) {
@@ -65,17 +65,18 @@ static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *
 	char ename[512];
 	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
 	if (ename_len <= sizeof(ename)) {
-		return replace_number_token(out, out_len, data, num_start, num_end,
+		replace_number_token(out, out_len, data, num_start, num_end,
 			rz_strf(ename, "%s.%s", hint->enum_name, member));
+		return true;
 	}
 
 	char *ename_dyn = rz_str_newf("%s.%s", hint->enum_name, member);
 	if (!ename_dyn) {
 		return false;
 	}
-	bool ok = replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
+	replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
 	free(ename_dyn);
-	return ok;
+	return true;
 }
 
 static int parse_number(const char *str) {
@@ -452,7 +453,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			char num[256] = { 0 }, *pnum, *tmp;
 			int tmp_count;
 			if (hint->offset) {
-				return replace_number_token(str, len, data, num_start, num_end, hint->offset);
+				replace_number_token(str, len, data, num_start, num_end, hint->offset);
+				return true;
 			}
 			if (replace_enum_hint(p, hint, off, data, str, len, num_start, num_end)) {
 				return true;
@@ -584,7 +586,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			return replace_number_token(str, len, data, num_start, num_end, num);
+			replace_number_token(str, len, data, num_start, num_end, num);
+			return true;
 		}
 		ptr = ptr2;
 	}
