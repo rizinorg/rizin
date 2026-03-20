@@ -694,19 +694,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmh commands on arm64 core dump
+NAME=dmhg commands on arm64 core dump
 FILE=bins/heap/segfault-glibc-aarch64-core
 CMDS=<<EOF
-dmh~Arena
-dmha
-dmhb~Bin?
-dmhc @ 0xaaab126cd290~0xaaab126cd2a0
+dmhg~Arena
+dmhga
+dmhgb~Bin?
+dmhgc @ 0xaaab126cd290~0xaaab126cd2a0
 echo ----
-dmhd~Empty
-dmhf~Arena
+dmhgd~Empty
+dmhgf~Arena
 echo ----
-dmhg~0x410?
-dmhm~malloc_state
+dmhgg~0x410?
+dmhgm~malloc_state
 EOF
 EXPECT=<<EOF
 Arena @ 0xffff9a780a50
