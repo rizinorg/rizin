@@ -68,22 +68,43 @@ typedef struct {
 	ut64 alt_target;
 } RzInterpreterBranch;
 
-/**
- * objects the interpreter should use to send over the queues.
- *
- * TODO: Race conditions ahead, if one party is faster in overwriting one value
- * than the other using it.
- * Shouldn't happen though as long as there is only one interpreter
- * and one RzInquiry managing everything.
- */
+typedef enum {
+	RZ_INTERPRETER_IO_READ,
+	RZ_INTERPRETER_IO_WRITE,
+} RzInterpreterIOReqType;
+
 typedef struct {
-	RZ_LIFETIME(RzInquiry)
+	RzInterpreterIOReqType type;
+	size_t mem_idx; ///< The memory space to read/write.
+	bool big_endian; ///< Set if the data is big endian ordered.
+	const RzBitVector *addr; ///< The address to read/write.
+	const RzBitVector *st_data; ///< The data to store.
+	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
+	size_t n_bits; ///< The number of bits to read/write.
+} RzInterpreterIORequest;
+
+typedef struct {
+	bool req_ok; ///< Set to true if IO request succeeded.
+} RzInterpreterIOResult;
+
+/**
+ * Objects an interpreter instance sends over queues.
+ */
+RZ_LIFETIME(RzInquiry)
+typedef struct {
+	size_t instance_id; ///< The interpreter instance this object belongs to.
+	/**
+	 * \brief Locked whenever an interpreter sent this object over the queue.
+	 * The consumer releases the lock when it collected the object.
+	 * The producer is not supposed to use this object as long as the lock is closed.
+	 */
+	RzThreadLock *received;
+
+	// Not inside the union so they can be read and written at the same time.
+	RzInterpreterIORequest io_req; ///< An IO request.
+	RzInterpreterIOResult io_res; ///< The IO result.
 	RzInterpreterBranch branch; ///< The branch object passed to an IL cache for BB requests.
-
-	RZ_LIFETIME(RzInquiry)
 	RzAnalysisXRef xref; ///< The xref object passed over the queue.
-
-	RZ_LIFETIME(RzInquiry)
 	RzAnalysisCallCandidate call_cand; ///< The stores next pc info passed over the queue.
 } RzInterpreterSharedObjects;
 
@@ -97,7 +118,7 @@ typedef struct {
 	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
 	/**
-	 * \brief Shared objects. Pointers to the members are passed over the queue.
+	 * \brief Shared objects. This pointer is pushed over the queue.
 	 * TODO: This is obviously not the final solution. Just some poor man's shared memory.
 	 */
 	RZ_LIFETIME(RzInquiry)
@@ -191,9 +212,9 @@ typedef struct {
 	 */
 	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
 		RZ_NONNULL const RzInterpreterILBB *il_bb,
-		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
@@ -222,36 +243,18 @@ typedef struct {
 		void *plugin_data);
 } RzInterpreterPlugin;
 
-typedef enum {
-	RZ_INTERPRETER_IO_READ,
-	RZ_INTERPRETER_IO_WRITE,
-} RzInterpreterIOReqType;
-
-typedef struct {
-	RzInterpreterIOReqType type;
-	size_t mem_idx; ///< The memory space to read/write.
-	bool big_endian; ///< Set if the data is big endian ordered.
-	const RzBitVector *addr; ///< The address to read/write.
-	const RzBitVector *st_data; ///< The data to store.
-	RzBitVector *ld_data; ///< The bit vector to load into. It is BORROWED.
-	size_t n_bits; ///< The number of bits to read/write.
-} RzInterpreterIORequest;
-
-typedef struct {
-	bool req_ok; ///< Set to true if IO request succeeded.
-} RzInterpreterIOResult;
-
 /**
  * \brief The set of required queues for an interpreter to run.
  */
+RZ_LIFETIME(RzInquiry)
 typedef struct {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
-	RzThreadQueue /*<const RzInterpreterBranch *>*/ *branch_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
-	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
 	// TODO: We need to decide how to distribute the yield.
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *branch_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result; ///< The queue for the read/write requests' answers.
+	RzThreadQueue /*<const RzInterpreterILBB *>*/ *il_queue; ///< The queue to receive the IL effects.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
 	const RzVector /*<RzInterval>*/ *ignored_code;
 	/**
@@ -261,6 +264,10 @@ typedef struct {
 	RzVector /*<ut64>*/ *entry_points;
 	RzInterpreterPlugin *plugin;
 } RzInterpreterSet;
+
+RZ_API RZ_OWN RzInterpreterSharedObjects *rz_interpreter_shared_objects_new(size_t instance_id);
+RZ_API void rz_interpreter_shared_objects_fini(RZ_NULLABLE RZ_BORROW RzInterpreterSharedObjects *so);
+RZ_API void rz_interpreter_shared_objects_free(RZ_NULLABLE RZ_OWN RzInterpreterSharedObjects *so);
 
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
@@ -281,11 +288,11 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const ut64 *>*/ *addr_queue,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIORequest *>*/ *io_request,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RzInterpreterIOResult *>*/ *io_result,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *branch_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterILBB *>*/ *il_queue,
+	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);

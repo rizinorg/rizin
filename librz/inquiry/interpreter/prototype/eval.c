@@ -13,7 +13,7 @@
 bool report_yield_xref(
 	RzInterpreterAbstrState *state,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type) {
@@ -41,6 +41,8 @@ bool report_yield_xref(
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
+		rz_th_lock_enter(state->shared_obj->received);
+
 		RzAnalysisXRef *xref = &state->shared_obj->xref;
 		xref->bb_addr = state->bb_addr;
 		xref->from = from;
@@ -50,7 +52,8 @@ bool report_yield_xref(
 		// before the previous one was handled.
 		// But this is fine for the prototype. Real implementation needs some kind
 		// of shared memory anyways.
-		rz_th_queue_push(queue->yield_queue, xref, true);
+		rz_th_queue_push(queue->yield_queue, state->shared_obj, true);
+		// Don't leave collection lock. Consumer will unlock it after it collected.
 	}
 	return true;
 }
@@ -60,7 +63,7 @@ bool report_yield_xref(
  */
 bool report_yield_call_candiate(
 	RzInterpreterAbstrState *state,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ProtoIntrprPluginData *plugin_data) {
 	RzInterpreterYieldQueue *cc_queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
 	if (!cc_queue) {
@@ -68,9 +71,11 @@ bool report_yield_call_candiate(
 		return false;
 	}
 
+	rz_th_lock_enter(state->shared_obj->received);
 	RzAnalysisCallCandidate *cc = &state->shared_obj->call_cand;
 	memcpy(cc, &plugin_data->call_cand, sizeof(plugin_data->call_cand));
-	rz_th_queue_push(cc_queue->yield_queue, cc, true);
+	rz_th_queue_push(cc_queue->yield_queue, state->shared_obj, true);
+	// Don't leave collection lock. Consumer will unlock it after it collected.
 	return true;
 }
 
@@ -163,30 +168,39 @@ bool store_abstr_data(
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result) {
 	if (!src->is_concrete) {
 		// Really don't write?
 		return true;
 	}
-	RzInterpreterIORequest io_req = { 0 };
-	io_req.n_bits = rz_bv_len(src->bv);
-	io_req.mem_idx = mem_idx;
-	io_req.big_endian = state->il_config->big_endian;
+	rz_th_lock_enter(state->shared_obj->received);
+	RzInterpreterIORequest *io_req = &state->shared_obj->io_req;
+	io_req->n_bits = rz_bv_len(src->bv);
+	io_req->mem_idx = mem_idx;
+	io_req->big_endian = state->il_config->big_endian;
 
-	io_req.type = RZ_INTERPRETER_IO_WRITE;
-	io_req.addr = addr->bv;
-	io_req.st_data = src->bv;
+	io_req->type = RZ_INTERPRETER_IO_WRITE;
+	io_req->addr = addr->bv;
+	io_req->st_data = src->bv;
 
 	char *bytes = rz_bv_as_hex_string(src->bv, true);
-	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req->addr), bytes);
 	free(bytes);
 
-	rz_th_queue_push(io_request, &io_req, true);
+	rz_th_queue_push(io_request, state->shared_obj, true);
+	// Don't leave collection lock. Consumer will unlock it after it collected.
+
 	// Wait for write being done.
-	RzInterpreterIOResult *io_res = NULL;
-	rz_th_queue_pop(io_result, false, (void **)&io_res);
-	return io_res ? io_res->req_ok : false;
+	RzInterpreterSharedObjects *so = NULL;
+	if (!rz_th_queue_pop(io_result, false, (void **)&so) || !so) {
+		rz_th_lock_leave(state->shared_obj->received);
+		return false;
+	};
+	bool write_ok = so->io_res.req_ok;
+	rz_th_lock_leave(so->received);
+
+	return write_ok;
 }
 
 bool load_abstr_data(
@@ -195,32 +209,42 @@ bool load_abstr_data(
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result) {
-	RzInterpreterIORequest io_req = { 0 };
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result) {
+
+	rz_th_lock_enter(state->shared_obj->received);
+	RzInterpreterIORequest *io_req = &state->shared_obj->io_req;
 	rz_bv_cast_inplace(out->bv, n_bits, 0);
-	io_req.type = RZ_INTERPRETER_IO_READ;
-	io_req.addr = addr->bv;
-	io_req.ld_data = out->bv;
-	io_req.mem_idx = mem_idx;
-	io_req.n_bits = n_bits;
-	io_req.big_endian = state->il_config->big_endian;
-	rz_th_queue_push(io_request, &io_req, true);
+	io_req->type = RZ_INTERPRETER_IO_READ;
+	io_req->addr = addr->bv;
+	io_req->ld_data = out->bv;
+	io_req->mem_idx = mem_idx;
+	io_req->n_bits = n_bits;
+	io_req->big_endian = state->il_config->big_endian;
+	ut64 req_addr = rz_bv_to_ut64(io_req->addr);
+
+	rz_th_queue_push(io_request, state->shared_obj, true);
+	// Don't leave collection lock. Consumer will unlock it after it collected.
+
 	// Wait for load being done.
-	RzInterpreterIOResult *io_res = NULL;
-	if (!rz_th_queue_pop(io_result, false, (void **)&io_res) || !io_res) {
+	RzInterpreterSharedObjects *so = NULL;
+	if (!rz_th_queue_pop(io_result, false, (void **)&so) || !so) {
+		rz_th_lock_leave(state->shared_obj->received);
 		return false;
 	}
-	if (!io_res->req_ok) {
+	if (!so->io_res.req_ok) {
 		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
 			    " Received: 0x%" PFMT32x " bits.\n",
 			n_bits, rz_bv_len(out->bv));
+		rz_th_lock_leave(so->received);
 		return false;
 	}
+	rz_th_lock_leave(so->received);
+
 	out->is_concrete = true;
 
 	char *bytes = rz_bv_as_hex_string(out->bv, true);
-	RZ_LOG_DEBUG("Prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
+	RZ_LOG_DEBUG("Prototype: READ @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, req_addr, bytes);
 	free(bytes);
 	return true;
 }

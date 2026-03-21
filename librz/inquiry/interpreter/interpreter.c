@@ -122,7 +122,8 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	state->locals = ht_up_new(NULL, free);
 	state->lets = ht_up_new(NULL, free);
 	state->il_config = il_config;
-	state->shared_obj = RZ_NEW0(RzInterpreterSharedObjects);
+	// TODO: Instance Id
+	state->shared_obj = rz_interpreter_shared_objects_new(0);
 	return state;
 }
 
@@ -149,7 +150,7 @@ RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbst
 		rz_analysis_il_config_free(state->il_config);
 	}
 	if (state->shared_obj) {
-		free(state->shared_obj);
+		rz_interpreter_shared_objects_free(state->shared_obj);
 	}
 	free(state);
 }
@@ -185,6 +186,40 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	free(iset);
 }
 
+
+RZ_API RZ_OWN RzInterpreterSharedObjects *rz_interpreter_shared_objects_new(size_t instance_id) {
+	RzInterpreterSharedObjects *so = RZ_NEW0(RzInterpreterSharedObjects);
+	if (!so) {
+		return NULL;
+	}
+	so->instance_id = instance_id;
+	so->received = rz_th_lock_new(false);
+	if (!so->received) {
+		free(so);
+		return NULL;
+	}
+	return so;
+}
+
+RZ_API void rz_interpreter_shared_objects_fini(RZ_NULLABLE RZ_BORROW RzInterpreterSharedObjects *so) {
+	if (!so) {
+		return;
+	}
+	rz_th_lock_free(so->received);
+	size_t instance_id = so->instance_id;
+	memset(so, 0, sizeof(RzInterpreterSharedObjects));
+	so->instance_id = instance_id;
+	so->received = rz_th_lock_new(false);
+}
+
+RZ_API void rz_interpreter_shared_objects_free(RZ_NULLABLE RZ_OWN RzInterpreterSharedObjects *so) {
+	if (!so) {
+		return;
+	}
+	rz_th_lock_free(so->received);
+	free(so);
+}
+
 /**
  * \brief Initializes a new RzInterpreterSet and returns it.
  * If it fails, all arguments are freed.
@@ -197,11 +232,11 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const ut64>*/ *branch_queue,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzILOpEffect *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *branch_queue,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterILBB *>*/ *il_queue,
+	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
@@ -265,7 +300,8 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	// RZ_LOG_DEBUG("%s", s);
 	// free(s);
 
-	RzInterpreterBranch *shared_branch = &iset->state->shared_obj->branch;
+	rz_th_lock_enter(iset->state->shared_obj->received);
+	RzInterpreterBranch *branch = &iset->state->shared_obj->branch;
 	bool has_succsessor = true;
 
 	// Determine successors and increase the reference counts for the current out state.
@@ -280,30 +316,29 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	has_succsessor = !rz_vector_empty(tmp_succ_addr);
 	// Request the successor effects over the queue.
 	while (!rz_vector_empty(tmp_succ_addr)) {
-		rz_vector_pop_front(tmp_succ_addr, &shared_branch->target_addr);
-		if (shared_branch->target_addr == UT64_MAX || shared_branch->target_addr == 0) {
+		rz_vector_pop_front(tmp_succ_addr, &branch->target_addr);
+		if (branch->target_addr == UT64_MAX || branch->target_addr == 0) {
 			RZ_LOG_DEBUG("interpreter: Quit due to invalid PC.\n");
 			// Obviously wrong address.
 			return false;
 		}
-		shared_branch->branching_bb_addr = il_bb->bb_addr;
-		if (jumps_to_ignored_code(iset->ignored_code, shared_branch->target_addr)) {
-			RZ_LOG_DEBUG("interpreter: tried to jump to ignored code region at 0x%" PFMT64x "\n", shared_branch->target_addr);
+		branch->branching_bb_addr = il_bb->bb_addr;
+		if (jumps_to_ignored_code(iset->ignored_code, branch->target_addr)) {
+			RZ_LOG_DEBUG("interpreter: tried to jump to ignored code region at 0x%" PFMT64x "\n", branch->target_addr);
 			// Ignored code is mostly dynamically linked functions.
 			// Skip to the next following address after the jump.
-			shared_branch->alt_target = il_bb->bb_addr + il_bb->size;
+			branch->alt_target = il_bb->bb_addr + il_bb->size;
 		}
 
 		SuccessorState ss = {
-			.addr = shared_branch->alt_target ? shared_branch->alt_target : shared_branch->target_addr,
+			.addr = branch->alt_target ? branch->alt_target : branch->target_addr,
 			.in_state_hash = out_hash
 		};
 		// The successors are pushed in the same order into the succ_states
-		// vector, as they are requested over the addr_queue.
+		// vector, as they are requested over the branch queue.
 		rz_vector_push(succ_states, &ss);
-		rz_th_queue_push(iset->branch_queue, shared_branch, true);
-		// TODO: Race condition:
-		// Multiple jump targets could overwrite the value in shared_addr before it is read.
+		rz_th_queue_push(iset->branch_queue, iset->state->shared_obj, true);
+		// Don't leave collection lock. Consumer will unlock it after it collected.
 	}
 	return has_succsessor;
 }
@@ -357,9 +392,10 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		goto pre_loop_error;
 	}
 
-	RzInterpreterBranch *shared_branch = &iset->state->shared_obj->branch;
-	rz_vector_pop_front(iset->entry_points, &shared_branch->target_addr);
-	if (!plugin->init_state(iset->state, shared_branch->target_addr, plugin_data)) {
+	rz_th_lock_enter(iset->state->shared_obj->received);
+	RzInterpreterBranch *branch = &iset->state->shared_obj->branch;
+	rz_vector_pop_front(iset->entry_points, &branch->target_addr);
+	if (!plugin->init_state(iset->state, branch->target_addr, plugin_data)) {
 		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
@@ -370,7 +406,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
-	rz_th_queue_push(iset->branch_queue, shared_branch, true);
+	rz_th_queue_push(iset->branch_queue, iset->state->shared_obj, true);
+	// Don't leave collection lock. Consumer will unlock it after it collected.
+
 	const RzInterpreterILBB *il_bb = NULL;
 	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 		goto pre_loop_error;

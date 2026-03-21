@@ -18,9 +18,9 @@ static bool value_indicates_ret_addr_write(RzInterpreterAbstrState *state, Proto
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
 	ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
