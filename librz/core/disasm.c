@@ -878,6 +878,13 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
+static RZ_OWN char *rz_strbuf_drain_padded(RZ_OWN RZ_NONNULL RzStrBuf *sb) {
+	rz_return_val_if_fail(sb, NULL);
+	const size_t len = rz_strbuf_length(sb);
+	(void)rz_strbuf_reserve(sb, len + 16);
+	return rz_strbuf_drain(sb);
+}
+
 static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	bool colorize_asm = print_color && ds->show_color && ds->colorop;
 	if (!colorize_asm) {
@@ -895,7 +902,10 @@ static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	if (!colored_asm) {
 		return;
 	}
-	char *new_opstr = rz_strbuf_drain(colored_asm);
+	char *new_opstr = rz_strbuf_drain_padded(colored_asm);
+	if (!new_opstr) {
+		return;
+	}
 	free(ds->opstr);
 	ds->opstr = new_opstr;
 }
