@@ -1,6 +1,14 @@
-NAME=ELF: AVR Relocations
+NAME=ELF: AVR Relocations patched bytes
 FILE=bins/elf/avr/avr_relocs.elf
-CMDS=ir
+CMDS=<<EOF
+ir
+echo ---
+px 4 @ 0x02
+echo ---
+px 2 @ 0x1c
+echo ---
+px 4 @ 0x22
+EOF
 EXPECT=<<EOF
      vaddr      paddr type                 name               
 --------------------------------------------------------------
@@ -53,19 +61,7 @@ EXPECT=<<EOF
 0x00800209 0x000000cf R_AVR_8_LO8          
 0x0080020a 0x000000d0 R_AVR_8_HI8          
 0x0080020b 0x000000d1 R_AVR_8_HLO8         
-EOF
-RUN
-
-NAME=ELF: AVR Relocations patched bytes
-FILE=bins/elf/avr/avr_relocs.elf
-CMDS=<<EOF
-px 4 @ 0x02
-echo ---
-px 2 @ 0x1c
-echo ---
-px 4 @ 0x22
-EOF
-EXPECT=<<EOF
+---
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000002  00e0 00e0                                ....
 ---

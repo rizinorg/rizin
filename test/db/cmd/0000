@@ -1,7 +1,3 @@
-# The test was broken because S was used for section mapping but rizin has been updated afterwards and om is used now.
-# om-* removes all the default IO maps created when the file is opened.
-# om 3 0x1000 64 0 r creates a new IO map for fd 3, mapping paddr 0x0 to vaddr 0x1000 with size 64.
-
 NAME=test va mapping
 FILE=malloc://0x4000
 CMDS=<<EOF
