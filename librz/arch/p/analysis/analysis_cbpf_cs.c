@@ -1,7 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Jagath-P jagathp0210@gmail.com
+// SPDX-FileCopyrightText: 2026 Jagath-P <jagathp0210@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_lib.h>
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
