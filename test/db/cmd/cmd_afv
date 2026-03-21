@@ -52,11 +52,11 @@ pdf~:1..4
 EOF
 EXPECT=<<EOF
 / sym.varfunc(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
-|           ; var int64_t var_2ch @ stack - 0x2c
+| ; arg int64_t arg1 @ rdi
+| ; var int64_t var_2ch @ stack - 0x2c
 
 / sym.varfunc();
-|           0x0000115c      push  rbp
-|           0x0000115d      mov   rbp, rsp
+| 0x0000115c      push  rbp
+| 0x0000115d      mov   rbp, rsp
 EOF
 RUN
