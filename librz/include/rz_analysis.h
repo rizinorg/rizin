@@ -1094,6 +1094,7 @@ typedef struct rz_analysis_il_config_t {
  */
 struct rz_analysis_il_vm_t {
 	RZ_NONNULL RzILVM *vm; ///< low-level vm to execute IL code
+	RZ_NONNULL RzBuffer *_priv_io_buf; ///< The real IO buffer. This member is private. Use io_buf instead.
 	RZ_NONNULL RzBuffer *io_buf; ///< buffer to use for memory 0 (io)
 	RZ_NONNULL RzILRegBinding *reg_binding; ///< specifies which (global) variables are bound to registers
 } /* RzAnalysisILVM */;
