@@ -81,6 +81,8 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
 	success = rz_inquiry_function_deduction(core->analysis, core->inquiry, symbol_addresses, symbols, ignored_code_regions);
 	eprintf("%s\n", success ? "OK" : "FAIL");
+	rz_set_u_free(symbol_addresses);
+	rz_vector_free(ignored_code_regions);
 
 	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
