@@ -23,11 +23,16 @@
 #include "rz_types_base.h"
 #include <string.h>
 
-static RZ_INLINE_1 uint32_t rotl32(uint32_t x, int8_t r) {
+// Murmur3 related macro , cuz there are 2 other definitions with same name as ROTL32 and ROTL64
+#define ROTL32_Murmur3(x, y) rotl32(x, y)
+#define ROTL64_Murmur3(x, y) rotl64(x, y)
+
+
+static RZ_INLINE uint32_t rotl32(uint32_t x, int8_t r) {
 	return (x << r) | (x >> (32 - r));
 }
 
-static RZ_INLINE_1 uint64_t rotl64(uint64_t x, int8_t r) {
+static RZ_INLINE uint64_t rotl64(uint64_t x, int8_t r) {
 	return (x << r) | (x >> (64 - r));
 }
 
@@ -40,7 +45,7 @@ static RZ_INLINE_1 uint64_t rotl64(uint64_t x, int8_t r) {
 /*
  * \brief Finalization mix - force all bits of a hash block to avalanche
  */
-static RZ_INLINE_1 uint32_t fmix32(uint32_t h) {
+static RZ_INLINE uint32_t fmix32(uint32_t h) {
 	h ^= h >> 16;
 	h *= 0x85ebca6b;
 	h ^= h >> 13;
@@ -50,7 +55,7 @@ static RZ_INLINE_1 uint32_t fmix32(uint32_t h) {
 	return h;
 }
 
-static RZ_INLINE_1 uint64_t fmix64(uint64_t k) {
+static RZ_INLINE uint64_t fmix64(uint64_t k) {
 	k ^= k >> 33;
 	k *= BIG_CONSTANT(0xff51afd7ed558ccd);
 	k ^= k >> 33;

@@ -232,14 +232,10 @@ typedef struct _utX {
 #define RZ_STR(s)     #s
 
 #ifdef __GNUC__
-#define RZ_INLINE_1 __attribute__((always_inline)) inline
+#define RZ_INLINE __attribute__((always_inline)) inline
 #else
-#define RZ_INLINE_1 inline
+#define RZ_INLINE inline
 #endif
-
-// Murmur3 related macro , cuz there are 2 other definitions with same name as ROTL32 and ROTL64
-#define ROTL32_Murmur3(x, y) rotl32(x, y)
-#define ROTL64_Murmur3(x, y) rotl64(x, y)
 
 #define BIG_CONSTANT(x) (x##LLU)
 
