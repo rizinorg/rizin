@@ -1980,47 +1980,65 @@ commands:
         cname: analysis_hint_del_optype
         args: []
       - name: ahi
-        summary: Set immediate base hint
-        cname: analysis_hint_set_immbase
-        args:
-          - name: type
-            type: RZ_CMD_ARG_TYPE_CHOICES
-            choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
-          - name: nword
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-        details:
-          - name: ""
-            entries:
-              - text: "ahi "
-                arg_str: <base>
-                comment: Set numeric <base> (2, 8, 10, 16)
-              - text: ahi 10|d
-                comment: Set base to signed decimal (10), sign bit should depend on receiver size
-              - text: ahi 10u|du
-                comment: Set base to unsigned decimal (11)
-              - text: ahi b
-                comment: Set base to binary (2)
-              - text: ahi o
-                comment: Set base to octal (8)
-              - text: ahi h
-                comment: Set base to hexadecimal (16)
-              - text: ahi i
-                comment: Set base to IP address (32)
-              - text: ahi p
-                comment: Set base to htons(port) (3)
-              - text: ahi S
-                comment: Set base to syscall (80)
-              - text: ahi s
-                comment: Set base to string (1)
-          - name: Set base of the N-th immediate (indexing starts from 0)
-            entries:
-              - text: ahi 16 1
-                comment: Set base of the 1-st immediate to hexadecimal
-      - name: ahi-
-        summary: Delete immediate base hint
-        cname: analysis_hint_del_immbase
-        args: []
+        summary: Manage immediate operand hints
+        subcommands:
+          - name: ahi
+            summary: Set immediate base hint
+            cname: analysis_hint_set_immbase
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                choices: ["2", "8", "10", "10u", "16", "b", "o", "h", "i", "p", "S", "s"]
+              - name: nword
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+            details:
+              - name: ""
+                entries:
+                  - text: "ahi "
+                    arg_str: <base>
+                    comment: Set numeric <base> (2, 8, 10, 16)
+                  - text: ahi 10|d
+                    comment: Set base to signed decimal (10), sign bit should depend on receiver size
+                  - text: ahi 10u|du
+                    comment: Set base to unsigned decimal (11)
+                  - text: ahi b
+                    comment: Set base to binary (2)
+                  - text: ahi o
+                    comment: Set base to octal (8)
+                  - text: ahi h
+                    comment: Set base to hexadecimal (16)
+                  - text: ahi i
+                    comment: Set base to IP address (32)
+                  - text: ahi p
+                    comment: Set base to htons(port) (3)
+                  - text: ahi S
+                    comment: Set base to syscall (80)
+                  - text: ahi s
+                    comment: Set base to string (1)
+              - name: Set base of the N-th immediate (indexing starts from 0)
+                entries:
+                  - text: ahi 16 1
+                    comment: Set base of the 1-st immediate to hexadecimal
+          - name: ahi-
+            summary: Delete immediate base hint
+            cname: analysis_hint_del_immbase
+            args: []
+          - name: ahie
+            summary: Set enum type hint for operand
+            cname: analysis_hint_set_enum
+            args:
+              - name: enum
+                type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+              - name: nword
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: ahie-
+            summary: Delete enum type hint
+            cname: analysis_hint_del_enum
+            args: []
       - name: aht
         summary: Set structure offset hint
         cname: analysis_hint_set_offset
