@@ -108,6 +108,7 @@ typedef struct {
 	int interactive;
 	bool subjmp;
 	bool subvar;
+	bool suppress_ref_lines;
 	bool show_lines;
 	bool show_lines_bb;
 	bool show_lines_ret;
@@ -369,6 +370,9 @@ static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 }
 
 static void ds_print_ref_lines(char *line, char *line_col, RzDisasmState *ds) {
+	if (ds->suppress_ref_lines) {
+		return;
+	}
 	int i;
 	int len = strlen(line);
 	if (ds->core->cons->use_utf8 || ds->linesopts & RZ_ANALYSIS_REFLINE_TYPE_UTF8) {
@@ -627,10 +631,8 @@ static RzDisasmState *ds_init(RzCore *core) {
 			suppress_lines_for_filter = true;
 		}
 	}
-	if (suppress_lines_for_filter) {
-		ds->show_lines = false;
-	}
 	ds->show_lines_bb = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.bb") : false;
+	ds->suppress_ref_lines = suppress_lines_for_filter;
 	ds->linesright = rz_config_get_b(core->config, "asm.lines.right");
 	ds->show_indent = rz_config_get_b(core->config, "asm.indent");
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");
@@ -723,9 +725,6 @@ static RzDisasmState *ds_init(RzCore *core) {
 		ds->show_cmtoff = "nodup";
 	}
 	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
-	if (suppress_lines_for_filter) {
-		ds->show_functions = false;
-	}
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
 	ds->strenc = core->bin->str_search_cfg.string_encoding;
