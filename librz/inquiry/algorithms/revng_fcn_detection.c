@@ -202,6 +202,7 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	rz_iterator_foreach(iter, addr) {
 		rz_vector_push(cfep_addresses, addr);
 	}
+	rz_iterator_free(iter);
 	fill_cfep_and_ret_addresses(binary_bb_cfg, call_candidates, return_addresses, cfep_addresses);
 
 	// Set of handled cfep

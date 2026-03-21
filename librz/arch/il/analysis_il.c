@@ -170,6 +170,7 @@ RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm) {
 	}
 	rz_il_vm_free(vm->vm);
 	rz_il_reg_binding_free(vm->reg_binding);
+	rz_buf_free(vm->_priv_io_buf);
 	rz_buf_free(vm->io_buf);
 	free(vm);
 }

@@ -314,6 +314,7 @@ RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_t
 	void **it;
 	const RzPVector *symbols = rz_bin_object_get_symbols(core->bin->cur->o);
 	if (!symbols) {
+		rz_pvector_free(sections);
 		rz_warn_if_reached();
 		return false;
 	}
@@ -332,6 +333,7 @@ RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_t
 			}
 		}
 	}
+	rz_pvector_free(sections);
 	return true;
 }
 
