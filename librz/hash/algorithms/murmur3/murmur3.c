@@ -4,6 +4,16 @@
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
 
+/**
+ * \file MurmurHash3.cpp
+ * \brief Implementation of the MurmurHash3 algorithm.
+ * * MurmurHash3 was written by Austin Appleby, and is placed in the public domain.
+ * * \author Andrey Jivsov <crypto@brainhub.org>
+ * \date 2015
+ * \copyright SPDX-FileCopyrightText: 2015 Andrey Jivsov
+ * \copyright SPDX-License-Identifier: MIT
+ */
+
 // Note - The x86 and x64 versions do _not_ produce the same results, as the
 // algorithms are optimized for their respective platforms. You can still
 // compile and run any of them on any platform, but your performance with the
@@ -13,24 +23,24 @@
 #include "rz_types_base.h"
 #include <string.h>
 
-static FORCE_INLINE uint32_t rotl32(uint32_t x, int8_t r) {
+static RZ_INLINE_1 uint32_t rotl32(uint32_t x, int8_t r) {
 	return (x << r) | (x >> (32 - r));
 }
 
-static FORCE_INLINE uint64_t rotl64(uint64_t x, int8_t r) {
+static RZ_INLINE_1 uint64_t rotl64(uint64_t x, int8_t r) {
 	return (x << r) | (x >> (64 - r));
 }
 
-//-----------------------------------------------------------------------------
-// Block read - if your platform needs to do endian-swapping or can only
-// handle aligned reads, do the conversion here
-
+/**
+ * \brief Block read - if your platform needs to do endian-swapping or can only
+ * handle aligned reads, do the conversion here
+ */
 #define getblock(p, i) (p[i])
 
-//-----------------------------------------------------------------------------
-// Finalization mix - force all bits of a hash block to avalanche
-
-static FORCE_INLINE uint32_t fmix32(uint32_t h) {
+/*
+ * \brief Finalization mix - force all bits of a hash block to avalanche
+ */
+static RZ_INLINE_1 uint32_t fmix32(uint32_t h) {
 	h ^= h >> 16;
 	h *= 0x85ebca6b;
 	h ^= h >> 13;
@@ -40,9 +50,7 @@ static FORCE_INLINE uint32_t fmix32(uint32_t h) {
 	return h;
 }
 
-//----------
-
-static FORCE_INLINE uint64_t fmix64(uint64_t k) {
+static RZ_INLINE_1 uint64_t fmix64(uint64_t k) {
 	k ^= k >> 33;
 	k *= BIG_CONSTANT(0xff51afd7ed558ccd);
 	k ^= k >> 33;
@@ -51,8 +59,6 @@ static FORCE_INLINE uint64_t fmix64(uint64_t k) {
 
 	return k;
 }
-
-//-----------------------------------------------------------------------------
 
 void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
@@ -63,10 +69,6 @@ void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 
 	uint32_t c1 = 0xcc9e2d51;
 	uint32_t c2 = 0x1b873593;
-
-	//----------
-	// body
-
 	const uint32_t *blocks = (const uint32_t *)(data + nblocks * 4);
 
 	for (i = -nblocks; i; i++) {
@@ -80,9 +82,6 @@ void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 		h1 = ROTL32_Murmur3(h1, 13);
 		h1 = h1 * 5 + 0xe6546b64;
 	}
-
-	//----------
-	// tail
 
 	const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
 
@@ -103,17 +102,11 @@ void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 		h1 ^= k1;
 	};
 
-	//----------
 	// finalization
-
 	h1 ^= len;
-
 	h1 = fmix32(h1);
-
 	*(uint32_t *)out = h1;
 }
-
-//-----------------------------------------------------------------------------
 
 void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
@@ -130,8 +123,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 	const size_t c3 = 0x38b34ae5;
 	const size_t c4 = 0xa1e38b93;
 
-	//----------
-	// body
 
 	const uint32_t *blocks = (const uint32_t *)(data + nblocks * 16);
 
@@ -178,8 +169,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 		h4 = h4 * 5 + 0x32ac3b17;
 	}
 
-	//----------
-	// tail
 
 	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
 
@@ -254,8 +243,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 		h1 ^= k1;
 	};
 
-	//----------
-	// finalization
 
 	h1 ^= len;
 	h2 ^= len;
@@ -287,8 +274,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 	((uint32_t *)out)[3] = h4;
 }
 
-//-----------------------------------------------------------------------------
-
 void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
 	const int nblocks = len / 16;
@@ -300,8 +285,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 	const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
 	const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
 
-	//----------
-	// body
 
 	const uint64_t *blocks = (const uint64_t *)(data);
 
@@ -328,8 +311,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 		h2 = h2 * 5 + 0x38495ab5;
 	}
 
-	//----------
-	// tail
 
 	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
 
@@ -361,7 +342,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 		k2 = ROTL64_Murmur3(k2, 33);
 		k2 *= c1;
 		h2 ^= k2;
-		/* fall through */
 
 	case 8:
 		k1 ^= (uint64_t)(tail[7]) << 56;
@@ -392,9 +372,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 		h1 ^= k1;
 	};
 
-	//----------
-	// finalization
-
 	h1 ^= len;
 	h2 ^= len;
 
@@ -410,5 +387,3 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 	((uint64_t *)out)[0] = h1;
 	((uint64_t *)out)[1] = h2;
 }
-
-//-----------------------------------------------------------------------------

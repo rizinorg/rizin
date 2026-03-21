@@ -232,9 +232,9 @@ typedef struct _utX {
 #define RZ_STR(s)     #s
 
 #ifdef __GNUC__
-#define FORCE_INLINE __attribute__((always_inline)) inline
+#define RZ_INLINE_1 __attribute__((always_inline)) inline
 #else
-#define FORCE_INLINE inline
+#define RZ_INLINE_1 inline
 #endif
 
 // Murmur3 related macro , cuz there are 2 other definitions with same name as ROTL32 and ROTL64
