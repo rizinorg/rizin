@@ -12,9 +12,9 @@ RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpreterAbstrState *state,
 	const RzILOpPure *pure,
 	RZ_OUT ProtoIntrprAbstrData *out,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data) {
 	switch (pure->code) {
 	default:

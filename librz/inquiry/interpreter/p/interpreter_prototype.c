@@ -13,7 +13,7 @@
 
 static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	RZ_NONNULL const RzInterpreterILBB *il_bb,
-	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
 	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {

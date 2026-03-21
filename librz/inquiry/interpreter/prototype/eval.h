@@ -74,44 +74,44 @@ bool store_abstr_data(
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	const ProtoIntrprAbstrData *src,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result);
 bool load_abstr_data(
 	RzInterpreterAbstrState *state,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
 	RZ_OUT ProtoIntrprAbstrData *out,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result);
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result);
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 	const RzILOpEffect *effect,
 	size_t nop_pc_inc,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data);
 RZ_IPI bool interpreter_prototype_eval_pure(
 	RzInterpreterAbstrState *state,
 	const RzILOpPure *pure,
 	RZ_OUT ProtoIntrprAbstrData *out,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
+	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data);
 
 bool report_yield_xref(
 	RzInterpreterAbstrState *state,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
 bool report_yield_call_candiate(
 	RzInterpreterAbstrState *state,
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues,
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ProtoIntrprPluginData *plugin_data);
 
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,
