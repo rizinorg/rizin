@@ -4274,7 +4274,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				break;
 			}
 			for (int j = 0; j < rsize; ++j) {
-				code_point = buf[i + j];
+				code_point = buf[j];
 				n_runes++;
 				if (option->urlencode) {
 					rz_strbuf_appendf(&sb, "%%%02x", code_point);
@@ -4331,7 +4331,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 				rz_strbuf_append(&sb, "\\\"");
 			} else {
 				for (int j = 0; j < rsize; ++j) {
-					code_point = buf[i + j];
+					code_point = buf[j];
 					rz_strbuf_appendf(&sb, "\\u%04x", code_point);
 				}
 				n_runes += rsize - 1;

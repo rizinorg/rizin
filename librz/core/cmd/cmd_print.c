@@ -2048,12 +2048,17 @@ RZ_IPI RzCmdStatus rz_print_string_wrap_width_handler(RzCore *core, int argc, co
 	int width = (colwidth == 32) ? w : colwidth; // w;
 	ut64 blocksize = core->blocksize;
 	ut64 len = (h * w) / 3;
-	RzBuffer *buf = rz_buf_new_with_pointers(core->block, len, false);
 	RzStrStringifyOpt opt = { 0 };
 
 	rz_core_block_size(core, len);
+	RzBuffer *buf = rz_buf_new_with_pointers(core->block, len, false);
+	if (!buf) {
+		rz_core_block_size(core, blocksize);
+		return RZ_CMD_STATUS_ERROR;
+	}
 
 	opt.buffer = buf;
+	opt.offset = 0;
 	opt.length = (ut32)len;
 	opt.encoding = RZ_STRING_ENC_8BIT;
 	opt.wrap_at = width;

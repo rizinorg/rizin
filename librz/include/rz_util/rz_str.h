@@ -3,6 +3,7 @@
 
 #include <wchar.h>
 #include "rz_assert.h"
+#include "rz_buf.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
 #include "rz_types.h"
