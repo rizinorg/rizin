@@ -337,7 +337,7 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 		k2 = ROTL64_Murmur3(k2, 33);
 		k2 *= c1;
 		h2 ^= k2;
-
+	/* fall through */
 	case 8:
 		k1 ^= (uint64_t)(tail[7]) << 56;
 		/* fall through */
