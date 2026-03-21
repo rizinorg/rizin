@@ -123,7 +123,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 	const size_t c3 = 0x38b34ae5;
 	const size_t c4 = 0xa1e38b93;
 
-
 	const uint32_t *blocks = (const uint32_t *)(data + nblocks * 16);
 
 	for (i = -nblocks; i; i++) {
@@ -168,7 +167,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 		h4 += h1;
 		h4 = h4 * 5 + 0x32ac3b17;
 	}
-
 
 	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
 
@@ -243,7 +241,6 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 		h1 ^= k1;
 	};
 
-
 	h1 ^= len;
 	h2 ^= len;
 	h3 ^= len;
@@ -285,7 +282,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 	const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
 	const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
 
-
 	const uint64_t *blocks = (const uint64_t *)(data);
 
 	for (i = 0; i < nblocks; i++) {
@@ -310,7 +306,6 @@ void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, vo
 		h2 += h1;
 		h2 = h2 * 5 + 0x38495ab5;
 	}
-
 
 	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
 
