@@ -1839,9 +1839,21 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
 	RzBuffer *buf = rz_buf_new_with_io(&core->print->iob);
+	ut64 max_len = core->blocksize;
 	if (!buf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
+
+	if (stop_at_nil && core->file) {
+		const ut64 str_off = core->offset + offset;
+		const ut64 fd_size = rz_io_fd_size(core->io, core->file->fd);
+		if (fd_size > str_off) {
+			max_len = fd_size - str_off;
+		} else {
+			max_len = 0;
+		}
+	}
+	max_len = RZ_MIN(max_len, (ut64)UT32_MAX);
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = rz_str_guess_encoding_from_buffer(core->block + offset, core->blocksize - offset);
@@ -1851,14 +1863,14 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	case RZ_OUTPUT_MODE_STANDARD:
 		opt.buffer = buf;
 		opt.offset = core->offset + offset;
-		opt.length = stop_at_nil ? UT32_MAX : core->blocksize;
+		opt.length = (ut32)max_len;
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
 		opt.stop_at_unprintable = stop_at_unprintable;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buf, core->offset + offset, stop_at_nil ? UT32_MAX : core->blocksize, encoding, stop_at_nil, stop_at_unprintable);
+		print_json_string(core, buf, core->offset + offset, (ut32)max_len, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
