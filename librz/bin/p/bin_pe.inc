@@ -537,6 +537,8 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 		}
 	case PE_IMAGE_REL_BASED_DIR64:
 		return "IMAGE_REL_BASED_DIR64";
+	case PE_IMAGE_REL_BASED_HIGH3ADJ:
+		return "IMAGE_REL_BASED_HIGH3ADJ";
 	default:
 		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
 		return "IMAGE_REL_BASED_UNKNOWN";
@@ -689,6 +691,7 @@ static RzBinInfo *pe_info(RzBinFile *bf) {
 	} else {
 		ret->type = rz_str_dup("EXEC (Executable file)");
 	}
+	
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum)(bf->o->bin_obj);
 	actual_checksum = PE_(bin_pe_get_actual_checksum)(bf->o->bin_obj);
 	pe_overlay = sdb_num_get(bf->sdb, "pe_overlay.size");
