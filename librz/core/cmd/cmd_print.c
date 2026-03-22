@@ -1839,10 +1839,8 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	if (stop_at_nil && core->file) {
 		const ut64 str_off = core->offset + offset;
 		const ut64 fd_size = rz_io_fd_size(core->io, core->file->fd);
-		if (fd_size > str_off) {
+		if (fd_size != UT64_MAX && fd_size > str_off) {
 			max_len = fd_size - str_off;
-		} else {
-			max_len = 0;
 		}
 	}
 	max_len = RZ_MIN(max_len, (ut64)UT32_MAX);
