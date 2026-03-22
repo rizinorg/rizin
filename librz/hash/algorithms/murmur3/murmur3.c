@@ -23,7 +23,6 @@
  * \copyright SPDX-License-Identifier: MIT
  */
 
-
 #include "murmur3.h"
 #include "rz_types_base.h"
 #include <string.h>
