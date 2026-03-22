@@ -233,7 +233,7 @@ bool test_rz_scan_strings_user_unprintable(void) {
 }
 
 bool test_rz_scan_strings_user_unprintable_utf8(void) {
-	static const unsigned char str[] = "ab\xC3\xA9cd";
+	static const unsigned char str[] = { 'a', 'b', 0xC3, 0xA9, 'c', 'd', 0x00 };
 	static RzCodePoint user_unprintable[] = { 0x00e9 };
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 	RzUtilStrScanOptions opt = g_opt;
