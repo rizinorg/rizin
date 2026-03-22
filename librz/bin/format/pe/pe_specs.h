@@ -544,8 +544,7 @@ typedef struct {
 #define PE_IMAGE_REL_BASED_RISCV_LOW12S_LOONGARCH32_MARK_LA 8
 #define PE_IMAGE_REL_BASED_MIPS_JMPADDR16                   9
 #define PE_IMAGE_REL_BASED_DIR64                            10
-#define PE_IMAGE_REL_BASED_HIGH3ADJ                         15
-
+#define PE_IMAGE_REL_BASED_HIGH3ADJ 15
 #define STRINGFILEINFO_TEXT  "StringFileInfo"
 #define TRANSLATION_TEXT     "Translation"
 #define VARFILEINFO_TEXT     "VarFileInfo"

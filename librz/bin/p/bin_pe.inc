@@ -688,9 +688,9 @@ static RzBinInfo *pe_info(RzBinFile *bf) {
 
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
 		ret->type = rz_str_dup("DLL (Dynamic Link Library)");
-	} else {
+	} else{
 		ret->type = rz_str_dup("EXEC (Executable file)");
-	}
+	}			
 
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum)(bf->o->bin_obj);
 	actual_checksum = PE_(bin_pe_get_actual_checksum)(bf->o->bin_obj);
