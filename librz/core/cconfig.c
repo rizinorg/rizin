@@ -985,6 +985,70 @@ static bool cb_str_encoding(void *user, void *data) {
 	return true;
 }
 
+static bool cb_str_unprintable(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (node->value[0] == '?') {
+		rz_cons_printf("Comma-separated list of Unicode code points treated as non-printable.\n");
+		rz_cons_printf("Examples:\n");
+		rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
+		rz_cons_printf("  e str.unprintable=0x200B\n");
+		rz_cons_printf("  e str.unprintable=\n");
+		return false;
+	}
+
+	if (RZ_STR_ISEMPTY(node->value)) {
+		free(core->bin->str_search_cfg.user_unprintable);
+		core->bin->str_search_cfg.user_unprintable = NULL;
+		core->bin->str_search_cfg.user_unprintable_count = 0;
+		check_reload_bin_str_search(core);
+		return true;
+	}
+
+	char *list = rz_str_dup(node->value);
+	if (!list) {
+		return false;
+	}
+
+	int argc = rz_str_split(list, ',');
+	if (argc < 1) {
+		free(list);
+		return false;
+	}
+
+	RzCodePoint *custom = RZ_NEWS(RzCodePoint, argc);
+	if (!custom) {
+		free(list);
+		return false;
+	}
+
+	size_t custom_count = 0;
+	for (int i = 0; i < argc; i++) {
+		const char *word = rz_str_word_get0(list, i);
+		if (RZ_STR_ISEMPTY(word) || !rz_is_valid_input_num_value(core->num, word)) {
+			RZ_LOG_ERROR("Invalid value for str.unprintable (%s).\n", word ? word : "");
+			free(custom);
+			free(list);
+			return false;
+		}
+		ut64 cp = rz_num_math(core->num, word);
+		if (cp > RZ_UNICODE_LAST_CODE_POINT) {
+			RZ_LOG_ERROR("str.unprintable code point out of range (%s).\n", word);
+			free(custom);
+			free(list);
+			return false;
+		}
+		custom[custom_count++] = (RzCodePoint)cp;
+	}
+	free(list);
+
+	free(core->bin->str_search_cfg.user_unprintable);
+	core->bin->str_search_cfg.user_unprintable = custom;
+	core->bin->str_search_cfg.user_unprintable_count = custom_count;
+	check_reload_bin_str_search(core);
+	return true;
+}
+
 static bool cb_str_search_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3524,6 +3588,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("str.encoding", "guess", &cb_str_encoding);
 	SETDESC(n, "The default string encoding type (when set to guess, it is automatically guessed).");
 	SETOPTIONS(n, "ascii", "8bit", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "ibm037", "ibm290", "ebcdices", "ebcdicuk", "ebcdicus", "guess", NULL);
+	SETCB("str.unprintable", "", &cb_str_unprintable, "Comma-separated hex code points treated as non-printable.");
 
 	/* string search options */
 	SETB("str.search.reload", true, "When enabled, any change to any option `str.search.*` will reload the bin strings.");

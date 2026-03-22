@@ -287,6 +287,8 @@ typedef struct rz_str_stringify_opt_t {
 	bool stop_at_nil; ///< When enabled stops printing when '\0' is found.
 	bool stop_at_unprintable; ///< When enabled stops printing at first non-printable character.
 	bool urlencode; ///< Encodes the output following RFC 3986.
+	ut32 *user_unprintable; ///< User-defined non-printable code points (array of Unicode code points).
+	size_t user_unprintable_count; ///< Number of user-defined non-printable code points.
 } RzStrStringifyOpt;
 
 RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, ut32 length);

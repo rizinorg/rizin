@@ -89,6 +89,15 @@ static inline bool is_c_escape_sequence(char ch) {
 	return strchr("\b\v\f\n\r\t\a\033\\", ch);
 }
 
+static inline bool is_user_defined_unprintable(const RzUtilStrScanOptions *opt, RzCodePoint cp) {
+	for (size_t i = 0; opt && opt->user_unprintable && i < opt->user_unprintable_count; i++) {
+		if (opt->user_unprintable[i] == cp) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 	UTF8StringInfo res = {
 		.num_ascii = 0,
@@ -351,10 +360,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			output_buf = heap_alloc;
 		}
 
-		if (rz_unicode_code_point_is_printable(ucp) && ucp != '\\') {
+		bool user_defined_unprintable = is_user_defined_unprintable(opt, ucp);
+		if (rz_unicode_code_point_is_printable_user(ucp, opt->user_unprintable, opt->user_unprintable_count) && ucp != '\\') {
 			char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			char_count++;
-		} else if (ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
+		} else if (!user_defined_unprintable && ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
 			if ((i + 32) < opt->max_str_length && ucp < 93) {
 				char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			} else {
@@ -595,7 +605,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &code_points[i]);
-					if (!rz_unicode_code_point_is_printable(code_points[i])) {
+					if (!rz_unicode_code_point_is_printable_user(code_points[i], opt->user_unprintable, opt->user_unprintable_count)) {
 						break;
 					}
 				}

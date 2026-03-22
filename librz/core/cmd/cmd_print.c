@@ -1621,6 +1621,8 @@ static void print_json_string(RzCore *core, const ut8 *block, ut32 len, RzStrEnc
 	opt.json = true;
 	opt.stop_at_nil = stop_at_nil;
 	opt.stop_at_unprintable = stop_at_unprintable;
+	opt.user_unprintable = core->bin->str_search_cfg.user_unprintable;
+	opt.user_unprintable_count = core->bin->str_search_cfg.user_unprintable_count;
 	char *dstring = rz_str_stringify_raw_buffer(&opt, &dlength);
 	if (!dstring) {
 		free(section);
@@ -1842,10 +1844,12 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
 		opt.stop_at_unprintable = stop_at_unprintable;
+		opt.user_unprintable = core->bin->str_search_cfg.user_unprintable;
+		opt.user_unprintable_count = core->bin->str_search_cfg.user_unprintable_count;
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
