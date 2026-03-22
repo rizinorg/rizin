@@ -1,4 +1,3 @@
-dB "+execute-inline {v1, v0}, method+3" EE2003000100
 d "+iget-object-quick v1, v3, [obj+000c]" F4310C00
 d "+iget-quick v1, v2, [obj+0010]" F2211000
 d "+iget-wide-quick v4, v6, [obj+0130]" F3643001
