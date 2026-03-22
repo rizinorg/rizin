@@ -1,6 +1,5 @@
 NAME=Open LE cdogs.exe
 FILE=bins/le/cdogs.exe
-TIMEOUT=1320
 CMDS=<<EOF
 iH
 echo ---
