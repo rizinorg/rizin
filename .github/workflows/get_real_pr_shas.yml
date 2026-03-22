@@ -87,4 +87,12 @@ jobs:
 
           echo "BASE_SHA=$BASE_SHA" >> $GITHUB_OUTPUT
           echo "HEAD_SHA=$HEAD_SHA" >> $GITHUB_OUTPUT
-          echo "COMMIT_MSGS=$COMMIT_MSGS" >> $GITHUB_OUTPUT
+          # Multi-line strings must be surrounded by some EOF indicator.
+          # https://stackoverflow.com/questions/74137120/how-to-fix-or-avoid-error-unable-to-process-file-command-output-successfully
+          # EOF value must be random because otherwise it could occur in
+          # the commit messages to end the early:
+          # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "COMMIT_MSGS<<$EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MSGS" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
