@@ -72,6 +72,7 @@ if get_option('enable_tests')
     'glob',
     'graph',
     'hash',
+    'hash_fnv1a',
     'hex',
     'ht',
     'id_storage',
