@@ -18,6 +18,9 @@ jobs:
   real_pr_shas:
     uses: rot127/rizin/.github/workflows/get_real_pr_shas.yml@random-change-test-base
 
+
+  # Some change
+
   ai_checks:
     name: LLM checks
     permissions:
