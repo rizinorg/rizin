@@ -516,6 +516,7 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
+static const RzCmdDescArg cmd_debug_heap_uclibc_args[2];
 static const RzCmdDescArg cmd_debug_dmi_args[3];
 static const RzCmdDescArg cmd_debug_dmi_all_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
@@ -10828,6 +10829,24 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
 static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
 	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
 	.args = cmd_debug_heap_jemalloc_ei_args,
+};
+
+static const RzCmdDescHelp dmhu_help = {
+	.summary = "uClibc heap commands",
+};
+static const RzCmdDescArg cmd_debug_heap_uclibc_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_uclibc_help = {
+	.summary = "Print uClibc heap free list starting at current offset or given address.",
+	.args = cmd_debug_heap_uclibc_args,
 };
 
 static const RzCmdDescHelp dmi_help = {
@@ -23503,6 +23522,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
+
+	RzCmdDesc *dmhu_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhu", rz_cmd_debug_heap_uclibc_handler, &cmd_debug_heap_uclibc_help, &dmhu_help);
+	rz_warn_if_fail(dmhu_cd);
+	RzCmdDesc *cmd_debug_heap_uclibc_cd = rz_cmd_desc_argv_new(core->rcmd, dmhu_cd, "dmhu", rz_cmd_debug_heap_uclibc_handler, &cmd_debug_heap_uclibc_help);
+	rz_warn_if_fail(cmd_debug_heap_uclibc_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);

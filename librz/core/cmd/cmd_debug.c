@@ -14,6 +14,7 @@
 #define TN_KEY_FMT "%" PFMT64u
 
 #include "rz_heap_jemalloc.h"
+#include "rz_heap_uclibc.h"
 
 #include "../core_private.h"
 
@@ -3443,4 +3444,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_signal_option_handler(RzCore *core, int argc, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_uclibc_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_core_is_core_dump(core)) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
+	return rz_heap_uclibc_print_handler(core, argc, argv);
 }

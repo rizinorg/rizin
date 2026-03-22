@@ -153,3 +153,13 @@ commands:
         args:
           - name: extent_addr
             type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dmhu
+    summary: uClibc heap commands
+    subcommands:
+      - name: dmhu
+        summary: Print uClibc heap free list starting at current offset or given address.
+        cname: cmd_debug_heap_uclibc
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
