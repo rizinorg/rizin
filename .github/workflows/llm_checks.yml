@@ -16,7 +16,7 @@ on:
 
 jobs:
   real_pr_shas:
-    uses: rizinorg/rizin/.github/workflows/get_real_pr_shas.yml@dev
+    uses: rot127/rizin/.github/workflows/get_real_pr_shas.yml@random-change-test-base
 
   ai_checks:
     name: LLM checks
