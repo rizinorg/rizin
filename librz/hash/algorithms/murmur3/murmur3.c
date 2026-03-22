@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2015. Andrey Jivsov <crypto@brainhub.org>
+// SPDX-FileCopyrightText: 2015 Andrey Jivsov <crypto@brainhub.org>
 // SPDX-License-Identifier: MIT
 
 /**
  * \file MurmurHash3.cpp
- * brief High performance non cryptographic hashing algorithm.
+ * High performance non cryptographic hashing algorithm.
  * Implementation of the MurmurHash3 algorithm.
  * 3 variants of this algo are provided to hash 32,64 and 128 bit data
  * MurmurHash3 was written by Austin Appleby, and is placed in the public domain.

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2015. Andrey Jivsov <crypto@brainhub.org>
+// SPDX-FileCopyrightText: 2015 Andrey Jivsov <crypto@brainhub.org>
 // SPDX-License-Identifier: MIT
 
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
