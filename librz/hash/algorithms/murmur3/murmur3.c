@@ -17,10 +17,6 @@
  * compile and run any of them on any platform, but your performance with the
  * non-native version will be less than optimal.
  *
- * \author Andrey Jivsov <crypto@brainhub.org>
- * \date 2015
- * \copyright SPDX-FileCopyrightText: 2015 Andrey Jivsov
- * \copyright SPDX-License-Identifier: MIT
  */
 
 #include "murmur3.h"
