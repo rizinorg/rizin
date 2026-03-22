@@ -295,6 +295,8 @@ ____h_ temperature    LGPL3      Seva                           Binary temperatu
 ____h_ xor16          LGPL3      deroad                         XOR-16 checksum
 ____h_ xor8           LGPL3      deroad                         XOR-8 checksum
 ____h_ xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
+____h_ fnv1a32        LGPL-3.0-only AHMEDSAMI11                    FNV-1a 32-bit non-cryptographic hash (common in malware for API hashing)
+____h_ fnv1a64        LGPL-3.0-only AHMEDSAMI11                    FNV-1a 64-bit non-cryptographic hash (common in malware for API hashing)
 _D____ ror            LGPL-3     pancake                        Rotate Right symmetric-key block cipher
 __ed__ base85         LGPL-3     Ahmed Ibrahim                  Base85 encoder/decoder
 E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
@@ -766,6 +768,8 @@ string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 ssdeep: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 temperature: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fnv1a32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fnv1a64: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
 EOF
