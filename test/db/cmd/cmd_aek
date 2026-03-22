@@ -22,10 +22,6 @@ RUN
 
 NAME=aek- - crash
 FILE==
-BROKEN=1
 CMDS=aek-
-EXPECT=<<EOF
-1
-0
-EOF
+EXPECT=
 RUN
