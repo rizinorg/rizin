@@ -1,0 +1,10 @@
+NAME=dmhu no crash without debug session
+FILE==
+ARGS=
+CMDS=<<EOF
+dmhu
+EOF
+EXPECT=<<EOF
+Debugging is not enabled. Run ood?
+EOF
+RUN
