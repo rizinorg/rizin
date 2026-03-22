@@ -3,6 +3,7 @@
 
 #include <wchar.h>
 #include "rz_assert.h"
+#include "rz_buf.h"
 #include "rz_str_util.h"
 #include "rz_list.h"
 #include "rz_types.h"
@@ -278,8 +279,9 @@ RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);
 
 typedef struct rz_str_stringify_opt_t {
-	const ut8 *buffer; ///< String buffer (cannot be NULL).
-	ut32 length; ///< String buffer length.
+	RzBuffer *buffer; ///< String buffer (cannot be NULL).
+	ut64 offset; ///< Reading offset within the buffer.
+	ut32 length; ///< Maximum string length to stringify (UT32_MAX for unbounded).
 	RzStrEnc encoding; ///< String encoding type (cannot be RZ_STRING_ENC_GUESS)
 	ut32 wrap_at; ///< Adds a new line the output when it exceeds this value.
 	bool escape_nl; ///< When enabled escapes new lines (\n).
