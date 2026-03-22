@@ -80,7 +80,7 @@ static bool plugin_fnv1a32_small_block(const ut8 *data, ut64 size, ut8 **digest,
 }
 RzHashPlugin rz_hash_plugin_fnv1a32 = {
 	.name = "fnv1a32",
-	.license = "LGPL-3.0-only",
+	.license = "LGPL3",
 	.author = "AHMEDSAMI11",
 	.description = "FNV-1a 32-bit non-cryptographic hash (common in malware for API hashing)",
 	.support_hmac = false,
@@ -158,7 +158,7 @@ static bool plugin_fnv1a64_small_block(const ut8 *data, ut64 size, ut8 **digest,
 }
 RzHashPlugin rz_hash_plugin_fnv1a64 = {
 	.name = "fnv1a64",
-	.license = "LGPL-3.0-only",
+	.license = "LGPL3",
 	.author = "AHMEDSAMI11",
 	.description = "FNV-1a 64-bit non-cryptographic hash (common in malware for API hashing)",
 	.support_hmac = false,
