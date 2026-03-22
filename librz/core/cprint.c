@@ -719,7 +719,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		const char *linecolor = NULL;
 		char *string = NULL;
 		if (qo) {
-			char *qoe = strrchr(qo + 1, '"');
+			const char *qoe = strrchr(qo + 1, '"');
 			if (qoe) {
 				int raw_len = qoe - qo - 1;
 				int actual_len = 0;
@@ -758,7 +758,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		}
 		char *string2 = NULL;
 		if (ox) {
-			char *qoe = strchr(ox + 3, ' ');
+			const char *qoe = strchr(ox + 3, ' ');
 			if (!qoe) {
 				qoe = strchr(ox + 3, '\x1b');
 			}

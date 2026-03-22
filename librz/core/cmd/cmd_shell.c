@@ -121,7 +121,7 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
-	char *p = NULL;
+	const char *p = NULL;
 	char *homepath = NULL;
 	char *pattern = NULL;
 	int printfmt = 0;
@@ -715,7 +715,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 	rz_return_val_if_fail(core && msg, NULL);
 	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
-		char *space = strchr(msg, ' ');
+		const char *space = strchr(msg, ' ');
 		if (!space) {
 			return NULL;
 		}

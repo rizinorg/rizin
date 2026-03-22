@@ -160,7 +160,7 @@ RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_seek_mark(core);
 
 	// NOTE: hack to make it work with local function labels
-	char *ptr;
+	const char *ptr;
 	if ((ptr = strstr(argv[1], "+.")) != NULL) {
 		char *dup = rz_str_dup(argv[1]);
 		dup[ptr - argv[1]] = '\x00';

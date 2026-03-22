@@ -824,7 +824,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	bool regexp = input[0] == '/'; // "/c/"
 	bool everyByte = regexp && input[1] == 'a';
 	char tmpbuf[128];
-	char *end_cmd = strchr(input, ' ');
+	const char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
 		param->outmode = RZ_OUTPUT_MODE_JSON;

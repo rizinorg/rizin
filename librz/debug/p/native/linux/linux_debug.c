@@ -757,7 +757,7 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (!pid_info) {
 		return NULL;
 	}
-	char *ptr = strstr(info, "State:");
+	const char *ptr = strstr(info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {
 		case 'R':

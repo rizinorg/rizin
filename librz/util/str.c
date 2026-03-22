@@ -270,7 +270,7 @@ RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz) {
 	ut64 out = 0LL;
 	/* return the numeric value associated to a string (rflags) */
 	for (; *buf; buf++) {
-		char *ch = strchr(bitz, toupper((const unsigned char)*buf));
+		const char *ch = strchr(bitz, toupper((const unsigned char)*buf));
 		if (!ch) {
 			ch = strchr(bitz, tolower((const unsigned char)*buf));
 		}
@@ -2476,7 +2476,7 @@ RZ_API bool rz_str_glob(const char *str, const char *glob) {
 	if (!glob) {
 		return true;
 	}
-	char *begin = strchr(glob, '^');
+	const char *begin = strchr(glob, '^');
 	if (begin) {
 		glob = ++begin;
 	}
@@ -3250,14 +3250,14 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 #define HASCH(x) strchr(input_value, x)
 #define CAST     (void *)(size_t)
 RZ_API ut8 rz_str_contains_macro(const char *input_value) {
-	char *has_tilde = input_value ? HASCH('~') : NULL,
-	     *has_bang = input_value ? HASCH('!') : NULL,
-	     *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
-	     *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
-	     *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
-	     *has_qmark = input_value ? HASCH('?') : NULL,
-	     *has_colon = input_value ? HASCH(':') : NULL,
-	     *has_at = input_value ? strchr(input_value, '@') : NULL;
+	const char *has_tilde = input_value ? HASCH('~') : NULL,
+		   *has_bang = input_value ? HASCH('!') : NULL,
+		   *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
+		   *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
+		   *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
+		   *has_qmark = input_value ? HASCH('?') : NULL,
+		   *has_colon = input_value ? HASCH(':') : NULL,
+		   *has_at = input_value ? strchr(input_value, '@') : NULL;
 
 	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark || has_paren || has_colon || has_at;
 }
@@ -3439,7 +3439,7 @@ RZ_API RZ_OWN char *rz_str_repeat(const char *str, ut16 times) {
 }
 
 RZ_API char *rz_str_between(const char *cmt, const char *prefix, const char *suffix) {
-	char *c0, *c1;
+	const char *c0, *c1;
 	if (!cmt || !prefix || !suffix || !*cmt) {
 		return NULL;
 	}
@@ -3742,7 +3742,7 @@ RZ_API bool rz_str_isnumber(const char *str) {
 
 /* TODO: optimize to start searching by the end of the string */
 RZ_API const char *rz_str_last(const char *str, const char *ch) {
-	char *ptr, *end = NULL;
+	const char *ptr, *end = NULL;
 	if (!str || !ch) {
 		return NULL;
 	}

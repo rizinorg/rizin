@@ -104,7 +104,7 @@ static const char *skip_comment_py(const char *code) {
 	if (*code != '#') {
 		return code;
 	}
-	char *end = strchr(code, '\n');
+	const char *end = strchr(code, '\n');
 	if (end) {
 		code = end;
 	}
@@ -118,7 +118,7 @@ RZ_API char *rz_hex_from_py_array(char *out, const char *code) {
 	}
 	code++;
 	for (; *code; code++) {
-		char *comma = strchr(code, ',');
+		const char *comma = strchr(code, ',');
 		if (!comma) {
 			comma = strchr(code, ']');
 		}
@@ -233,14 +233,14 @@ RZ_API char *rz_hex_from_c_str(char *out, const char **code) {
 
 const char *skip_comment_c(const char *code) {
 	if (!strncmp(code, "/*", 2)) {
-		char *end = strstr(code, "*/");
+		const char *end = strstr(code, "*/");
 		if (end) {
 			code = end + 2;
 		} else {
 			eprintf("Missing closing comment\n");
 		}
 	} else if (!strncmp(code, "//", 2)) {
-		char *end = strchr(code, '\n');
+		const char *end = strchr(code, '\n');
 		if (end) {
 			code = end + 2;
 		}
@@ -329,15 +329,15 @@ RZ_API char *rz_hex_from_c(const char *code) {
 }
 
 RZ_API char *rz_hex_from_js(const char *code) {
-	char *s1 = strchr(code, '\'');
-	char *s2 = strchr(code, '"');
+	const char *s1 = strchr(code, '\'');
+	const char *s2 = strchr(code, '"');
 
 	/* there are no strings in the input */
 	if (!(s1 || s2)) {
 		return NULL;
 	}
 
-	char *start, *end;
+	const char *start, *end;
 	if (s1 < s2) {
 		start = s1;
 		end = strchr(start + 1, '\'');

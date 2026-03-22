@@ -140,14 +140,14 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				str = ptr;
 				continue;
 			} else if (!strncmp(ptr, "48;5;", 5) || !strncmp(ptr, "48;2;", 5)) {
-				char *end = strchr(ptr, 'm');
+				const char *end = strchr(ptr, 'm');
 				gethtmlrgb(ptr, background_color);
 				need_to_set = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (!strncmp(ptr, "38;5;", 5) || !strncmp(ptr, "38;2;", 5)) {
-				char *end = strchr(ptr, 'm');
+				const char *end = strchr(ptr, 'm');
 				gethtmlrgb(ptr, text_color);
 				need_to_set = true;
 				ptr = end;

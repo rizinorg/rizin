@@ -952,7 +952,7 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 }
 
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
-	char *ptr;
+	const char *ptr;
 	if (!archstr || !arch || !*archstr || !*arch) {
 		return true;
 	}
