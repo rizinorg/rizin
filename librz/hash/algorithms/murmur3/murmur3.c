@@ -1,23 +1,28 @@
 // SPDX-FileCopyrightText: 2015. Andrey Jivsov <crypto@brainhub.org>
 // SPDX-License-Identifier: MIT
 
-// MurmurHash3 was written by Austin Appleby, and is placed in the public
-// domain. The author hereby disclaims copyright to this source code.
-
 /**
  * \file MurmurHash3.cpp
- * \brief Implementation of the MurmurHash3 algorithm.
- * * MurmurHash3 was written by Austin Appleby, and is placed in the public domain.
- * * \author Andrey Jivsov <crypto@brainhub.org>
+ * brief High performance non cryptographic hashing algorithm.
+ * Implementation of the MurmurHash3 algorithm.
+ * 3 variants of this algo are provided to hash 32,64 and 128 bit data
+ * MurmurHash3 was written by Austin Appleby, and is placed in the public domain.
+ * is engineered for speed and high-quality distribution,
+ * passing the full SMHasher test suite. This makes it a go-to choice for
+ * hash tables, bloom filters, and large-scale data de-duplication where
+ * performance is the primary constraint.
+ *
+ * Note - The x86 and x64 versions do _not_ produce the same results, as the
+ * algorithms are optimized for their respective platforms. You can still
+ * compile and run any of them on any platform, but your performance with the
+ * non-native version will be less than optimal.
+ *
+ * \author Andrey Jivsov <crypto@brainhub.org>
  * \date 2015
  * \copyright SPDX-FileCopyrightText: 2015 Andrey Jivsov
  * \copyright SPDX-License-Identifier: MIT
  */
 
-// Note - The x86 and x64 versions do _not_ produce the same results, as the
-// algorithms are optimized for their respective platforms. You can still
-// compile and run any of them on any platform, but your performance with the
-// non-native version will be less than optimal.
 
 #include "murmur3.h"
 #include "rz_types_base.h"
