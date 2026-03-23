@@ -12,6 +12,9 @@
 #define MURMUR3_32_DIGEST_LENGTH  4
 #define MURMUR3_128_DIGEST_LENGTH 16
 
+#define ROTL32_Murmur3(x, y) rotl32(x, y)
+#define ROTL64_Murmur3(x, y) rotl64(x, y)
+
 void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out);
 void MurmurHash3_x86_128(const void *key, int len, size_t seed, void *out);
 void MurmurHash3_x64_128(const void *key, int len, uint64_t seed, void *out);

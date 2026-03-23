@@ -23,10 +23,6 @@
 #include "rz_types_base.h"
 #include <string.h>
 
-// Murmur3 related macro , cuz there are 2 other definitions with same name as ROTL32 and ROTL64
-#define ROTL32_Murmur3(x, y) rotl32(x, y)
-#define ROTL64_Murmur3(x, y) rotl64(x, y)
-
 static RZ_INLINE uint32_t rotl32(uint32_t x, int8_t r) {
 	return (x << r) | (x >> (32 - r));
 }

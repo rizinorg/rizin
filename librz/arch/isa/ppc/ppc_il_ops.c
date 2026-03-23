@@ -1204,7 +1204,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		} else {
 			n = U8(sH);
 		}
-		r = ROTL32(UNSIGNED(32, VARG(rS)), n);
+        r = PPC_IL_ROTL32(UNSIGNED(32, VARG(rS)), n);
 #if CS_NEXT_VERSION >= 6
 		b = mB + 32;
 		e = mE + 32;
@@ -1254,7 +1254,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			n = U8(sH);
 		}
 		n = LOGAND(U8(0x3f), n);
-		r = ROTL64(VARG(rS), n);
+        r = PPC_IL_ROTL64(VARG(rS), n);
 #if CS_NEXT_VERSION >= 6
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
 			b = 0;
