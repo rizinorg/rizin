@@ -101,6 +101,19 @@ RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, u
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
+/**
+ * \brief Get the preferred flag item at an offset.
+ *
+ * The preferred item follows the standard space priority and avoids returning
+ * auto-generated `aav.*` entries when a non-`aav.*` fallback exists at the
+ * same offset.
+ *
+ * \param f The flag instance.
+ * \param off The offset to query.
+ *
+ * \return The preferred flag item, or NULL if none exists.
+ */
+RZ_API RzFlagItem *rz_flag_get_preferred_item(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...);
 RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space);

@@ -321,6 +321,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr);
 static void ds_opstr_sub_jumps(RzDisasmState *ds);
+static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds);
 static void ds_start_line_highlight(RzDisasmState *ds);
 static void ds_end_line_highlight(RzDisasmState *ds);
 static bool line_highlighted(RzDisasmState *ds);
@@ -878,106 +879,56 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
-
-/******************************************************** */
-/**
- * \brief Resolve aav.* symbols to their real names by following pointer dereferences
- * This applies the same hop logic used in comments to operand strings
- */
-static bool is_auto_aav_flag(const RzFlagItem *flag) {
-	return flag && !RZ_STR_ISEMPTY(flag->name) && rz_str_startswith(flag->name, "aav.");
-}
-
-RZ_API RzFlagItem *rz_flag_get_preferred_item(RzFlag *f, ut64 off) {
-	rz_return_val_if_fail(f, NULL);
-
-	RzFlagItem *preferred = rz_flag_get_by_spaces(f, off,
-		"symbols",
-		"imports",
-		"relocs",
-		"symbols.sections",
-		"functions",
-		"globals",
-		"strings",
-		"resources",
-		"sections",
-		"segments",
-		NULL);
-	if (!preferred || !is_auto_aav_flag(preferred)) {
-		return preferred;
-	}
-	RzFlagItem *fallback = rz_flag_get_i(f, off);
-	if (fallback && !is_auto_aav_flag(fallback)) {
-		return fallback;
-	}
-	return preferred;
-}
-
-
 static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds) {
 	if (!ds->opstr || !ds->core || !ds->core->flags || !ds->core->io) {
 		return;
 	}
-	
 	RzCore *core = ds->core;
-	// Look for aav.aav.0x... patterns (double aav prefix indicates indirect reference)
 	const char *pattern = "aav.aav.";
 	char *pos = strstr(ds->opstr, pattern);
 	if (!pos) {
 		return;
 	}
-	
-	// Extract the address after aav.aav.
+
 	char *addr_start = pos + strlen(pattern);
 	char *addr_end = addr_start;
-	while (*addr_end && (*addr_end == 'x' || IS_HEXCHAR(*addr_end))) {
+	while (*addr_end == 'x' || IS_HEXCHAR(*addr_end)) {
 		addr_end++;
 	}
-	
 	if (addr_end == addr_start) {
-		return; // No valid hex digits
-	}
-	
-	// Parse the address
-	char addr_str[32] = { 0 };
-	strncpy(addr_str, addr_start, RZ_MIN(addr_end - addr_start, sizeof(addr_str) - 1));
-	ut64 aav_addr = rz_num_get(NULL, addr_str);
-	
-	if (aav_addr == 0 || aav_addr < ds->min_ref_addr) {
 		return;
 	}
-	
-	// Get the symbol at the aav address
+
+	char addr_str[32] = { 0 };
+	const size_t addr_len = RZ_MIN((size_t)(addr_end - addr_start), sizeof(addr_str) - 1);
+	memcpy(addr_str, addr_start, addr_len);
+	ut64 aav_addr = rz_num_get(NULL, addr_str);
+	if (!aav_addr || aav_addr < ds->min_ref_addr) {
+		return;
+	}
+
 	RzFlagItem *f1 = rz_flag_get_preferred_item(core->flags, aav_addr);
 	if (!f1 || !rz_str_startswith(f1->name, "aav.")) {
 		return;
 	}
-	
-	// Try to dereference: read the value at this address and get the symbol there
-	if (ds->analysis_op.refptr) {
-		ut8 hop_buf[sizeof(ut64)] = { 0 };
-		if (rz_io_read_at_mapped(core->io, aav_addr, hop_buf, ds->analysis_op.refptr)) {
-			ut64 dereferenced = rz_read_ble(hop_buf, core->print->big_endian, ds->analysis_op.refptr * 8);
-			RzFlagItem *f2 = rz_flag_get_preferred_item(core->flags, dereferenced);
-			if (f2 && !rz_str_startswith(f2->name, "aav.")) {
-				// Found a better symbol! Replace aav.aav.0x... with the real name
-				char replacement[256] = { 0 };
-				rz_strf(replacement, "%s", f2->name);
-				
-				// Build the full pattern to replace (aav.aav.0x...)
-				char pattern_to_replace[64] = { 0 };
-				rz_strf(pattern_to_replace, "aav.aav.%s", addr_str);
-				
-				char *new_opstr = rz_str_replace(ds->opstr, pattern_to_replace, replacement, 1);
-				if (new_opstr) {
-					// free(ds->opstr);
-					ds->opstr = new_opstr;
-				}
-			}
-		}
+	if (!ds->analysis_op.refptr) {
+		return;
 	}
+
+	ut8 hop_buf[sizeof(ut64)] = { 0 };
+	if (!rz_io_read_at_mapped(core->io, aav_addr, hop_buf, ds->analysis_op.refptr)) {
+		return;
+	}
+	ut64 dereferenced = rz_read_ble(hop_buf, core->print->big_endian, ds->analysis_op.refptr * 8);
+	RzFlagItem *f2 = rz_flag_get_preferred_item(core->flags, dereferenced);
+	if (!f2 || rz_str_startswith(f2->name, "aav.")) {
+		return;
+	}
+
+	char pattern_to_replace[64] = { 0 };
+	rz_strf(pattern_to_replace, "aav.aav.%s", addr_str);
+	ds->opstr = rz_str_replace(ds->opstr, pattern_to_replace, f2->name, 1);
 }
-/**************************************************************** */
 
 static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	bool colorize_asm = print_color && ds->show_color && ds->colorop;
@@ -1157,7 +1108,6 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		core->parser->flagspace = ofs;
 		free(ds->opstr);
 		ds->opstr = rz_str_dup(ds->str);
-		// Resolve aav.* symbols to their real names by following pointer dereferences
 		ds_opstr_resolve_aav_symbols(ds);
 	} else {
 		ds_opstr_try_colorize(ds, print_color);
