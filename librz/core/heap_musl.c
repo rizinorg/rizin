@@ -174,9 +174,10 @@ static RzStructuredData *ctx_structured_data(ut64 addr, mallocng_ctx ctx) {
  * \return
  */
 void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
-	ut64 addr, RzMallocngConfig config) {
+	ut64 addr, RzMallocngConfig config, RzOutputMode mode) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
+	char *ctx_data_str = NULL;
 	mallocng_ctx ctx;
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
@@ -194,7 +195,11 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
 	}
 	RzStructuredData *ctx_data = ctx_structured_data(ctx_addr, ctx);
 
-	char *ctx_data_str = rz_structured_data_to_yaml(ctx_data);
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		ctx_data_str = rz_structured_data_to_yaml(ctx_data);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		ctx_data_str = rz_structured_data_to_json(ctx_data);
+	}
 	if (ctx_data_str) {
 		rz_cons_print(ctx_data_str);
 		free(ctx_data_str);
@@ -233,9 +238,9 @@ static RzStructuredData *meta_area_structured_data(ut64 addr, mallocng_meta_area
 	return meta_area_data;
 }
 
-ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config) {
+ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config, RzOutputMode mode) {
 	RzStructuredData *area_data;
-
+	char *area_str = NULL;
 	mallocng_meta_area area;
 	if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
 		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
@@ -247,7 +252,11 @@ ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config) {
 		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
 		return 0;
 	}
-	char *area_str = rz_structured_data_to_yaml(area_data);
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		area_str = rz_structured_data_to_yaml(area_data);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		area_str = rz_structured_data_to_json(area_data);
+	}
 	if (area_str) {
 		rz_cons_print(area_str);
 		free(area_str);
@@ -263,7 +272,7 @@ ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config) {
  * \return
  */
 void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
-	ut64 addr, RzMallocngConfig config) {
+	ut64 addr, RzMallocngConfig config, RzOutputMode mode) {
 	ut32 idx = 1;
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
@@ -284,10 +293,10 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
 		curr_meta = ctx.meta_area_head;
 		while (curr_meta) {
 			printf("meta_area #%d:\n", idx++);
-			curr_meta = print_meta_area(core, curr_meta, config);
+			curr_meta = print_meta_area(core, curr_meta, config, mode);
 		}
 	} else {
-		print_meta_area(core, addr, config);
+		print_meta_area(core, addr, config, mode);
 	}
 }
 
@@ -358,14 +367,14 @@ void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, 
 	Command for showing mallocng context information, if addr is not provided automatic symbol
 	resolution is attempted.
  */
-RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr) {
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr, RzOutputMode mode) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
 		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const RzMallocngConfig ng_config = rz_musl_ng_get_config(bits);
-	musl_mallocng_print_context(core, has_specified_addr, addr, ng_config);
+	musl_mallocng_print_context(core, has_specified_addr, addr, ng_config, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -377,14 +386,14 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr,
 	Command for showing meta area(s), if no addr is provided it will show all the available
 	meta areas.
  */
-RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr) {
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr, RzOutputMode mode) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
 		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const RzMallocngConfig ng_config = rz_musl_ng_get_config(bits);
-	musl_mallocng_print_meta_areas(core, has_specified_addr, addr, ng_config);
+	musl_mallocng_print_meta_areas(core, has_specified_addr, addr, ng_config, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -396,7 +405,7 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr,
 
 	Command for showing meta(s), if no addr is provided it will show all the available metas.
  */
-RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_m(RzCore *core, bool has_specified_addr, ut64 addr, ut32 lines) {
+RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr, ut32 lines) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
 		RZ_LOG_ERROR("This command requires musl ver >= 1.2.1\n");

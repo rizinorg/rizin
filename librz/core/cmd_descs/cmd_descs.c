@@ -518,7 +518,7 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_a_args[2];
-static const RzCmdDescArg cmd_debug_heap_musl_m_args[3];
+static const RzCmdDescArg cmd_debug_heap_musl_e_args[3];
 static const RzCmdDescArg cmd_debug_dmi_args[3];
 static const RzCmdDescArg cmd_debug_dmi_all_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
@@ -10833,8 +10833,8 @@ static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
 	.args = cmd_debug_heap_jemalloc_ei_args,
 };
 
-static const RzCmdDescHelp dmhu_help = {
-	.summary = "musl mallocng heap commands",
+static const RzCmdDescHelp dmhm_help = {
+	.summary = "musl heap commands",
 };
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[] = {
 	{
@@ -10866,7 +10866,7 @@ static const RzCmdDescHelp cmd_debug_heap_musl_a_help = {
 	.args = cmd_debug_heap_musl_a_args,
 };
 
-static const RzCmdDescArg cmd_debug_heap_musl_m_args[] = {
+static const RzCmdDescArg cmd_debug_heap_musl_e_args[] = {
 	{
 		.name = "lines_num",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
@@ -10882,9 +10882,9 @@ static const RzCmdDescArg cmd_debug_heap_musl_m_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_heap_musl_m_help = {
+static const RzCmdDescHelp cmd_debug_heap_musl_e_help = {
 	.summary = "Shows all the metas",
-	.args = cmd_debug_heap_musl_m_args,
+	.args = cmd_debug_heap_musl_e_args,
 };
 
 static const RzCmdDescHelp dmi_help = {
@@ -23561,16 +23561,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
-	RzCmdDesc *dmhu_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhu", NULL, NULL, &dmhu_help);
-	rz_warn_if_fail(dmhu_cd);
-	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmhu_cd, "dmhuc", rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
+	RzCmdDesc *dmhm_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhm", NULL, NULL, &dmhm_help);
+	rz_warn_if_fail(dmhm_cd);
+	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhm_cd, "dmhmc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
 	rz_warn_if_fail(cmd_debug_heap_musl_c_cd);
 
-	RzCmdDesc *cmd_debug_heap_musl_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmhu_cd, "dmhua", rz_cmd_debug_heap_musl_a_handler, &cmd_debug_heap_musl_a_help);
+	RzCmdDesc *cmd_debug_heap_musl_a_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhm_cd, "dmhma", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_heap_musl_a_handler, &cmd_debug_heap_musl_a_help);
 	rz_warn_if_fail(cmd_debug_heap_musl_a_cd);
 
-	RzCmdDesc *cmd_debug_heap_musl_m_cd = rz_cmd_desc_argv_new(core->rcmd, dmhu_cd, "dmhum", rz_cmd_debug_heap_musl_m_handler, &cmd_debug_heap_musl_m_help);
-	rz_warn_if_fail(cmd_debug_heap_musl_m_cd);
+	RzCmdDesc *cmd_debug_heap_musl_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmhm_cd, "dmhme", rz_cmd_debug_heap_musl_e_handler, &cmd_debug_heap_musl_e_help);
+	rz_warn_if_fail(cmd_debug_heap_musl_e_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);

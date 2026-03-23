@@ -153,26 +153,32 @@ commands:
         args:
           - name: extent_addr
             type: RZ_CMD_ARG_TYPE_RZNUM
-  - name: dmhu
-    summary: musl mallocng heap commands
+  - name: dmhm
+    summary: musl heap commands
     subcommands:
-      - name: dmhuc
+      - name: dmhmc
         summary: Shows the global malloc context
         cname: cmd_debug_heap_musl_c
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: context_addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: dmhua
+      - name: dmhma
         summary: Shows all the meta_areas
         cname: cmd_debug_heap_musl_a
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: meta_area_addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
-      - name: dmhum
+      - name: dmhme
         summary: Shows all the metas
-        cname: cmd_debug_heap_musl_m
+        cname: cmd_debug_heap_musl_e
         args:
           - name: lines_num
             type: RZ_CMD_ARG_TYPE_RZNUM
