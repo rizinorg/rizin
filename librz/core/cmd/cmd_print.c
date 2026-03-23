@@ -1836,11 +1836,11 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (stop_at_nil && core->file && !core->tmpseek) {
+	if (stop_at_nil && core->io && !core->fixedblock && !core->tmpseek) {
 		const ut64 str_off = core->offset + offset;
-		const ut64 fd_size = rz_io_fd_size(core->io, core->file->fd);
-		if (fd_size != UT64_MAX && fd_size > str_off) {
-			max_len = fd_size - str_off;
+		const ut64 io_size = rz_io_size(core->io);
+		if (io_size != UT64_MAX && io_size > str_off) {
+			max_len = io_size - str_off;
 		}
 	}
 	max_len = RZ_MIN(max_len, (ut64)UT32_MAX);
