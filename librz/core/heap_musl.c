@@ -239,13 +239,13 @@ ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config) {
 	mallocng_meta_area area;
 	if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
 		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-		return NULL;
+		return 0;
 	}
 
 	area_data = meta_area_structured_data(curr_meta, area, core, config);
 	if (!area_data) {
 		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-		return NULL;
+		return 0;
 	}
 	char *area_str = rz_structured_data_to_yaml(area_data);
 	if (area_str) {
