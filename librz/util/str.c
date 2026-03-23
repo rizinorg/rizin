@@ -4175,13 +4175,6 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 	return enc == RZ_STRING_ENC_GUESS ? RZ_STRING_ENC_UTF8 : enc;
 }
 
-/**
- * \brief Converts a raw buffer to a printable string based on the selected options
- *
- * \param  option Pointer to RzStrStringifyOpt.
- * \param  length The real string length.
- * \return The stringified raw buffer
- */
 static inline bool stringification_has_incomplete_tail(const ut8 *buf, ut32 buflen, ut32 i, RzStrEnc enc) {
 	const size_t remaining = buflen - i;
 	switch (enc) {
@@ -4198,6 +4191,13 @@ static inline bool stringification_has_incomplete_tail(const ut8 *buf, ut32 bufl
 	}
 }
 
+/**
+ * \brief Converts a raw buffer to a printable string based on the selected options
+ *
+ * \param  option Pointer to RzStrStringifyOpt.
+ * \param  length The real string length.
+ * \return The stringified raw buffer
+ */
 RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NULLABLE RZ_OUT ut32 *length) {
 	rz_return_val_if_fail(option && option->buffer && option->encoding != RZ_STRING_ENC_GUESS, NULL);
 	if (option->length < 1) {
