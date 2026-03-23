@@ -356,6 +356,7 @@ static const RzCmdDescArg analysis_hint_set_ret_args[2];
 static const RzCmdDescArg analysis_hint_set_val_args[2];
 static const RzCmdDescArg analysis_hint_set_optype_args[2];
 static const RzCmdDescArg analysis_hint_set_immbase_args[3];
+static const RzCmdDescArg analysis_hint_set_enum_args[3];
 static const RzCmdDescArg analysis_hint_set_offset_args[2];
 static const RzCmdDescArg analysis_list_struct_offsets_args[2];
 static const RzCmdDescArg analysis_class_add_args[2];
@@ -509,12 +510,6 @@ static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
-static const RzCmdDescArg cmd_debug_dmi_args[3];
-static const RzCmdDescArg cmd_debug_dmi_all_args[2];
-static const RzCmdDescArg cmd_debug_dml_args[2];
-static const RzCmdDescArg debug_memory_permission_args[3];
-static const RzCmdDescArg cmd_debug_dmL_args[2];
-static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_process_heap_block_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_musl_a_args[2];
@@ -524,6 +519,12 @@ static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[3];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[2];
 static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[2];
+static const RzCmdDescArg cmd_debug_dmi_args[3];
+static const RzCmdDescArg cmd_debug_dmi_all_args[2];
+static const RzCmdDescArg cmd_debug_dml_args[2];
+static const RzCmdDescArg debug_memory_permission_args[3];
+static const RzCmdDescArg cmd_debug_dmL_args[2];
+static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg cmd_debug_pid_list_args[2];
 static const RzCmdDescArg cmd_debug_pid_attach_args[2];
 static const RzCmdDescArg cmd_debug_pid_detach_args[2];
@@ -616,6 +617,7 @@ static const RzCmdDescArg egg_type_args[2];
 static const RzCmdDescArg egg_padding_args[2];
 static const RzCmdDescArg egg_encoder_args[3];
 static const RzCmdDescArg history_list_or_exec_args[2];
+static const RzCmdDescArg cmd_info_class_apply_args[2];
 static const RzCmdDescArg cmd_info_class_as_source_args[2];
 static const RzCmdDescArg cmd_info_class_fields_args[2];
 static const RzCmdDescArg cmd_info_class_methods_args[2];
@@ -721,6 +723,7 @@ static const RzCmdDescArg cmd_disassemble_ropchain_args[2];
 static const RzCmdDescArg cmd_disassemble_summarize_n_bytes_args[2];
 static const RzCmdDescArg cmd_print_format_args[2];
 static const RzCmdDescArg cmd_print_format_delete_args[2];
+static const RzCmdDescArg cmd_print_format_apply_args[2];
 static const RzCmdDescArg cmd_print_format_c_args[2];
 static const RzCmdDescArg cmd_print_format_dot_args[2];
 static const RzCmdDescArg cmd_print_format_named_dot_args[2];
@@ -6997,6 +7000,9 @@ static const RzCmdDescHelp analysis_hint_del_optype_help = {
 	.args = analysis_hint_del_optype_args,
 };
 
+static const RzCmdDescHelp ahi_help = {
+	.summary = "Manage immediate operand hints",
+};
 static const RzCmdDescDetailEntry analysis_hint_set_immbase_empty_detail_entries[] = {
 	{ .text = "ahi ", .arg_str = "<base>", .comment = "Set numeric <base> (2, 8, 10, 16)" },
 	{ .text = "ahi 10|d", .arg_str = NULL, .comment = "Set base to signed decimal (10), sign bit should depend on receiver size" },
@@ -7048,6 +7054,33 @@ static const RzCmdDescArg analysis_hint_del_immbase_args[] = {
 static const RzCmdDescHelp analysis_hint_del_immbase_help = {
 	.summary = "Delete immediate base hint",
 	.args = analysis_hint_del_immbase_args,
+};
+
+static const RzCmdDescArg analysis_hint_set_enum_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
+
+	},
+	{
+		.name = "nword",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_set_enum_help = {
+	.summary = "Set enum type hint for operand",
+	.args = analysis_hint_set_enum_args,
+};
+
+static const RzCmdDescArg analysis_hint_del_enum_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_hint_del_enum_help = {
+	.summary = "Delete enum type hint",
+	.args = analysis_hint_del_enum_args,
 };
 
 static const RzCmdDescDetailEntry analysis_hint_set_offset_empty_detail_entries[] = {
@@ -10548,6 +10581,9 @@ static const RzCmdDescHelp cmd_debug_dump_maps_writable_help = {
 };
 
 static const RzCmdDescHelp dmh_help = {
+	.summary = "Heap commands",
+};
+static const RzCmdDescHelp dmhg_help = {
 	.summary = "Glibc heap commands",
 };
 static const RzCmdDescArg cmd_heap_chunks_print_args[] = {
@@ -10680,6 +10716,123 @@ static const RzCmdDescHelp cmd_heap_tcache_print_help = {
 	.args = cmd_heap_tcache_print_args,
 };
 
+static const RzCmdDescHelp dmhw_help = {
+	.summary = "Windows heap commands",
+};
+static const RzCmdDescArg cmd_debug_process_heaps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_heaps_help = {
+	.summary = "List process heaps",
+	.args = cmd_debug_process_heaps_args,
+};
+
+static const RzCmdDescArg cmd_debug_process_heap_block_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_process_heap_block_help = {
+	.summary = "List allocated heap blocks",
+	.args = cmd_debug_process_heap_block_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_block_flag_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
+	.summary = "Create flags for each allocated heap block",
+	.args = cmd_debug_heap_block_flag_args,
+};
+
+static const RzCmdDescHelp dmhj_help = {
+	.summary = "Jemalloc heap commands",
+};
+static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
+	.summary = "Show all arenas created, or print arena_type structure for given arena.",
+	.args = cmd_debug_heap_jemalloc_a_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "bin_info_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
+	.summary = "Show bin info for allocations.",
+	.args = cmd_debug_heap_jemalloc_b_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
+	{
+		.name = "arena_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
+	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instance (jemalloc 4.5.0 only).",
+	.args = cmd_debug_heap_jemalloc_c_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
+	{
+		.name = "malloc_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
+	.summary = "List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_e_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
+	{
+		.name = "extent_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
+	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
+	.args = cmd_debug_heap_jemalloc_ei_args,
+};
+
 static const RzCmdDescHelp dmi_help = {
 	.summary = "List/Load symbols",
 };
@@ -10793,177 +10946,6 @@ static const RzCmdDescArg cmd_debug_dmS_args[] = {
 static const RzCmdDescHelp cmd_debug_dmS_help = {
 	.summary = "List sections of target lib",
 	.args = cmd_debug_dmS_args,
-};
-
-static const RzCmdDescHelp dmw_help = {
-	.summary = "Windows heap commands",
-};
-static const RzCmdDescArg cmd_debug_process_heaps_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_process_heaps_help = {
-	.summary = "List process heaps",
-	.args = cmd_debug_process_heaps_args,
-};
-
-static const RzCmdDescArg cmd_debug_process_heap_block_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_process_heap_block_help = {
-	.summary = "List allocated heap blocks",
-	.args = cmd_debug_process_heap_block_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_block_flag_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_block_flag_help = {
-	.summary = "Create flags for each allocated heap block",
-	.args = cmd_debug_heap_block_flag_args,
-};
-
-static const RzCmdDescHelp dmu_help = {
-	.summary = "Musl heap commands",
-};
-static const RzCmdDescArg cmd_debug_heap_musl_c_args[] = {
-	{
-		.name = "context_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_musl_c_help = {
-	.summary = "Shows the global malloc context",
-	.args = cmd_debug_heap_musl_c_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_musl_a_args[] = {
-	{
-		.name = "meta_area_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_musl_a_help = {
-	.summary = "Shows all the meta_areas",
-	.args = cmd_debug_heap_musl_a_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_musl_m_args[] = {
-	{
-		.name = "lines_num",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.default_value = "32",
-
-	},
-	{
-		.name = "meta_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_musl_m_help = {
-	.summary = "Shows all the metas",
-	.args = cmd_debug_heap_musl_m_args,
-};
-
-static const RzCmdDescHelp dmx_help = {
-	.summary = "Jemalloc heap commands",
-};
-static const RzCmdDescArg cmd_debug_heap_jemalloc_a_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_a_help = {
-	.summary = "Show all arenas created, or print arena_type structure for given arena.",
-	.args = cmd_debug_heap_jemalloc_a_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_b_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.optional = true,
-
-	},
-	{
-		.name = "bin_info_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_b_help = {
-	.summary = "Show bin info for allocations.",
-	.args = cmd_debug_heap_jemalloc_b_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_c_args[] = {
-	{
-		.name = "arena_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_c_help = {
-	.summary = "Show all chunks created in all arenas, or show all chunks created for a given arena_t instance (jemalloc 4.5.0 only).",
-	.args = cmd_debug_heap_jemalloc_c_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_e_args[] = {
-	{
-		.name = "malloc_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_e_help = {
-	.summary = "List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)",
-	.args = cmd_debug_heap_jemalloc_e_args,
-};
-
-static const RzCmdDescArg cmd_debug_heap_jemalloc_ei_args[] = {
-	{
-		.name = "extent_addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_heap_jemalloc_ei_help = {
-	.summary = "Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)",
-	.args = cmd_debug_heap_jemalloc_ei_args,
 };
 
 static const RzCmdDescHelp dp_help = {
@@ -13254,6 +13236,20 @@ static const RzCmdDescHelp cmd_info_classes_help = {
 	.args = cmd_info_classes_args,
 };
 
+static const RzCmdDescArg cmd_info_class_apply_args[] = {
+	{
+		.name = "class name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_class_apply_help = {
+	.summary = "Apply class flags at given address",
+	.args = cmd_info_class_apply_args,
+};
+
 static const RzCmdDescArg cmd_info_class_as_source_args[] = {
 	{
 		.name = "class name",
@@ -13297,6 +13293,14 @@ static const RzCmdDescArg cmd_info_class_methods_args[] = {
 static const RzCmdDescHelp cmd_info_class_methods_help = {
 	.summary = "List class methods",
 	.args = cmd_info_class_methods_args,
+};
+
+static const RzCmdDescArg cmd_info_classes_to_struct_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_classes_to_struct_help = {
+	.summary = "Generate type definitions from classes",
+	.args = cmd_info_classes_to_struct_args,
 };
 
 static const RzCmdDescArg cmd_info_signature_args[] = {
@@ -15736,6 +15740,20 @@ static const RzCmdDescArg cmd_print_format_delete_all_args[] = {
 static const RzCmdDescHelp cmd_print_format_delete_all_help = {
 	.summary = "Remove all named formats",
 	.args = cmd_print_format_delete_all_args,
+};
+
+static const RzCmdDescArg cmd_print_format_apply_args[] = {
+	{
+		.name = "format",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_format_apply_help = {
+	.summary = "Apply format string at given address and define flags for each field",
+	.args = cmd_print_format_apply_args,
 };
 
 static const RzCmdDescArg cmd_print_format_c_args[] = {
@@ -22670,11 +22688,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_hint_del_optype_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aho-", rz_analysis_hint_del_optype_handler, &analysis_hint_del_optype_help);
 	rz_warn_if_fail(analysis_hint_del_optype_cd);
 
-	RzCmdDesc *analysis_hint_set_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi", rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help);
-	rz_warn_if_fail(analysis_hint_set_immbase_cd);
-
-	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
+	RzCmdDesc *ahi_cd = rz_cmd_desc_group_modes_new(core->rcmd, ah_cd, "ahi", RZ_OUTPUT_MODE_STANDARD, rz_analysis_hint_set_immbase_handler, &analysis_hint_set_immbase_help, &ahi_help);
+	rz_warn_if_fail(ahi_cd);
+	RzCmdDesc *analysis_hint_del_immbase_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahi-", rz_analysis_hint_del_immbase_handler, &analysis_hint_del_immbase_help);
 	rz_warn_if_fail(analysis_hint_del_immbase_cd);
+
+	RzCmdDesc *analysis_hint_set_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie", rz_analysis_hint_set_enum_handler, &analysis_hint_set_enum_help);
+	rz_warn_if_fail(analysis_hint_set_enum_cd);
+
+	RzCmdDesc *analysis_hint_del_enum_cd = rz_cmd_desc_argv_new(core->rcmd, ahi_cd, "ahie-", rz_analysis_hint_del_enum_handler, &analysis_hint_del_enum_help);
+	rz_warn_if_fail(analysis_hint_del_enum_cd);
 
 	RzCmdDesc *analysis_hint_set_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht", rz_analysis_hint_set_offset_handler, &analysis_hint_set_offset_help);
 	rz_warn_if_fail(analysis_hint_set_offset_cd);
@@ -23409,12 +23432,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
 	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
 
-	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_state_new(core->rcmd, dm_cd, "dm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
 	rz_warn_if_fail(cmd_debug_map_current_cd);
 
 	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
 	rz_warn_if_fail(dmm_cd);
-	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
+	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
 	rz_warn_if_fail(cmd_debug_current_modules_cd);
 
 	RzCmdDesc *cmd_debug_deallocate_map_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm-", rz_cmd_debug_deallocate_map_handler, &cmd_debug_deallocate_map_help);
@@ -23428,34 +23451,61 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
 	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
 
-	RzCmdDesc *dmh_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
+	RzCmdDesc *dmh_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmh", NULL, NULL, &dmh_help);
 	rz_warn_if_fail(dmh_cd);
-	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_arena_print_handler, &cmd_arena_print_help);
+	RzCmdDesc *dmhg_cd = rz_cmd_desc_group_state_new(core->rcmd, dmh_cd, "dmhg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmhg_help);
+	rz_warn_if_fail(dmhg_cd);
+	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhga", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
 	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
 
-	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
+	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
 	rz_warn_if_fail(cmd_heap_chunk_print_cd);
 
-	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
+	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
 	rz_warn_if_fail(cmd_heap_arena_bins_print_cd);
 
-	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print_handler, &cmd_heap_fastbins_print_help);
+	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgf", rz_cmd_heap_fastbins_print_handler, &cmd_heap_fastbins_print_help);
 	rz_warn_if_fail(cmd_heap_fastbins_print_cd);
 
-	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
+	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
 	rz_warn_if_fail(cmd_heap_chunks_graph_cd);
 
-	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
+	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
 	rz_warn_if_fail(cmd_heap_info_print_cd);
 
-	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
 	rz_warn_if_fail(cmd_main_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
+	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgt", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
 	rz_warn_if_fail(cmd_heap_tcache_print_cd);
+
+	RzCmdDesc *dmhw_cd = rz_cmd_desc_group_modes_new(core->rcmd, dmh_cd, "dmhw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heaps_handler, &cmd_debug_process_heaps_help, &dmhw_help);
+	rz_warn_if_fail(dmhw_cd);
+	RzCmdDesc *cmd_debug_process_heap_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhw_cd, "dmhwb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heap_block_handler, &cmd_debug_process_heap_block_help);
+	rz_warn_if_fail(cmd_debug_process_heap_block_cd);
+
+	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmhw_cd, "dmhwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
+	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
+
+	RzCmdDesc *dmhj_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhj", NULL, NULL, &dmhj_help);
+	rz_warn_if_fail(dmhj_cd);
+	RzCmdDesc *cmd_debug_heap_jemalloc_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhja", rz_cmd_debug_heap_jemalloc_a_handler, &cmd_debug_heap_jemalloc_a_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_a_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_b_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjb", rz_cmd_debug_heap_jemalloc_b_handler, &cmd_debug_heap_jemalloc_b_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_b_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhje", rz_cmd_debug_heap_jemalloc_e_handler, &cmd_debug_heap_jemalloc_e_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_e_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);
@@ -23474,44 +23524,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
 
-	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
 	rz_warn_if_fail(cmd_debug_dmS_cd);
-
-	RzCmdDesc *dmw_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heaps_handler, &cmd_debug_process_heaps_help, &dmw_help);
-	rz_warn_if_fail(dmw_cd);
-	RzCmdDesc *cmd_debug_process_heap_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmw_cd, "dmwb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_process_heap_block_handler, &cmd_debug_process_heap_block_help);
-	rz_warn_if_fail(cmd_debug_process_heap_block_cd);
-
-	RzCmdDesc *cmd_debug_heap_block_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dmw_cd, "dmwbf", rz_cmd_debug_heap_block_flag_handler, &cmd_debug_heap_block_flag_help);
-	rz_warn_if_fail(cmd_debug_heap_block_flag_cd);
-
-	RzCmdDesc *dmu_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmu", NULL, NULL, &dmu_help);
-	rz_warn_if_fail(dmu_cd);
-	RzCmdDesc *cmd_debug_heap_musl_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmuc", rz_cmd_debug_heap_musl_c_handler, &cmd_debug_heap_musl_c_help);
-	rz_warn_if_fail(cmd_debug_heap_musl_c_cd);
-
-	RzCmdDesc *cmd_debug_heap_musl_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmua", rz_cmd_debug_heap_musl_a_handler, &cmd_debug_heap_musl_a_help);
-	rz_warn_if_fail(cmd_debug_heap_musl_a_cd);
-
-	RzCmdDesc *cmd_debug_heap_musl_m_cd = rz_cmd_desc_argv_new(core->rcmd, dmu_cd, "dmum", rz_cmd_debug_heap_musl_m_handler, &cmd_debug_heap_musl_m_help);
-	rz_warn_if_fail(cmd_debug_heap_musl_m_cd);
-
-	RzCmdDesc *dmx_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmx", NULL, NULL, &dmx_help);
-	rz_warn_if_fail(dmx_cd);
-	RzCmdDesc *cmd_debug_heap_jemalloc_a_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxa", rz_cmd_debug_heap_jemalloc_a_handler, &cmd_debug_heap_jemalloc_a_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_a_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_b_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxb", rz_cmd_debug_heap_jemalloc_b_handler, &cmd_debug_heap_jemalloc_b_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_b_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_c_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxc", rz_cmd_debug_heap_jemalloc_c_handler, &cmd_debug_heap_jemalloc_c_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_c_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_e_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxe", rz_cmd_debug_heap_jemalloc_e_handler, &cmd_debug_heap_jemalloc_e_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_e_cd);
-
-	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmx_cd, "dmxei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
-	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
 	RzCmdDesc *dp_cd = rz_cmd_desc_group_state_new(core->rcmd, d_cd, "dp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_cmd_debug_pid_list_handler, &cmd_debug_pid_list_help, &dp_help);
 	rz_warn_if_fail(dp_cd);
@@ -23963,6 +23977,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *ic_cd = rz_cmd_desc_group_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_info_classes_handler, &cmd_info_classes_help, &ic_help);
 	rz_warn_if_fail(ic_cd);
 	rz_cmd_desc_set_default_mode(ic_cd, RZ_OUTPUT_MODE_TABLE);
+	RzCmdDesc *cmd_info_class_apply_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ica", rz_cmd_info_class_apply_handler, &cmd_info_class_apply_help);
+	rz_warn_if_fail(cmd_info_class_apply_cd);
+
 	RzCmdDesc *cmd_info_class_as_source_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "icc", rz_cmd_info_class_as_source_handler, &cmd_info_class_as_source_help);
 	rz_warn_if_fail(cmd_info_class_as_source_cd);
 
@@ -23973,6 +23990,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_info_class_methods_cd = rz_cmd_desc_argv_state_new(core->rcmd, ic_cd, "icm", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST | RZ_OUTPUT_MODE_JSON, rz_cmd_info_class_methods_handler, &cmd_info_class_methods_help);
 	rz_warn_if_fail(cmd_info_class_methods_cd);
 	rz_cmd_desc_set_default_mode(cmd_info_class_methods_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_classes_to_struct_cd = rz_cmd_desc_argv_new(core->rcmd, ic_cd, "ics", rz_cmd_info_classes_to_struct_handler, &cmd_info_classes_to_struct_help);
+	rz_warn_if_fail(cmd_info_classes_to_struct_cd);
 
 	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_info_signature_handler, &cmd_info_signature_help);
 	rz_warn_if_fail(cmd_info_signature_cd);
@@ -24507,6 +24527,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_format_delete_all_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pf-*", rz_cmd_print_format_delete_all_handler, &cmd_print_format_delete_all_help);
 	rz_warn_if_fail(cmd_print_format_delete_all_cd);
+
+	RzCmdDesc *cmd_print_format_apply_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfa", rz_cmd_print_format_apply_handler, &cmd_print_format_apply_help);
+	rz_warn_if_fail(cmd_print_format_apply_cd);
 
 	RzCmdDesc *cmd_print_format_c_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfc", rz_cmd_print_format_c_handler, &cmd_print_format_c_help);
 	rz_warn_if_fail(cmd_print_format_c_cd);

@@ -1118,6 +1118,9 @@ static void print_hint_h_format(HintNode *node) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				rz_cons_printf(" val=0x%08" PFMT64x, record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				rz_cons_printf(" enum='%s'", rz_str_get(record->enum_name));
+				break;
 			}
 		}
 		break;
@@ -1198,6 +1201,9 @@ static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 					break;
 				case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 					pj_kn(pj, "val", record->val);
+					break;
+				case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+					pj_ks(pj, "enum", rz_str_get(record->enum_name));
 					break;
 				}
 			}

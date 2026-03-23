@@ -1848,6 +1848,11 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				pj_kn(j, "val", record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				if (!RZ_STR_ISEMPTY(record->enum_name)) {
+					pj_ks(j, "enum", record->enum_name);
+				}
+				break;
 			}
 		}
 	}
@@ -1884,7 +1889,8 @@ enum {
 	HINTS_FIELD_TYPE_OFFSET,
 	HINTS_FIELD_ESIL,
 	HINTS_FIELD_HIGH,
-	HINTS_FIELD_VAL
+	HINTS_FIELD_VAL,
+	HINTS_FIELD_ENUM
 };
 
 typedef struct {
@@ -2015,6 +2021,12 @@ static bool hints_load_cb(void *user, const SdbKv *kv) {
 			}
 			rz_analysis_hint_set_val(analysis, addr, child->num.u_value);
 			break;
+		case HINTS_FIELD_ENUM:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			rz_analysis_hint_set_enum(analysis, addr, child->str_value);
+			break;
 		default:
 			break;
 	})
@@ -2054,6 +2066,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
 	rz_key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
 	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
+	rz_key_parser_add(ctx.parser, "enum", HINTS_FIELD_ENUM);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
 		RZ_SERIALIZE_ERR(res, "hints parsing failed");

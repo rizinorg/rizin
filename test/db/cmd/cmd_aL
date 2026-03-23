@@ -4,7 +4,7 @@ CMDS=aL
 EXPECT=<<EOF
 _dAeI 8 16       6502        LGPL3   6502/NES/C64/Tamagotchi/T-1000 CPU
 adAeI 8          8051        PD      Intel 8051 disassembler
-_dA__ 64         alpha       LGPL3   DEC Alpha Capstone-based disassembler
+_dA__ 32 64      alpha       LGPL3   DEC Alpha Capstone-based disassembler
 _dA__ 32         amd29k      LGPL3   AMD 29k RISC disassembler (by deroad)
 _dA__ 16 32      arc         GPL3    Argonaut RISC Core
 adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler

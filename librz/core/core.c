@@ -28,6 +28,34 @@ static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 };
 
 extern bool rz_core_is_project(RzCore *core, const char *name);
+RZ_IPI bool rz_core_cmd_has_push(const char *s);
+
+static void hist_drop_push(RzLine *line) {
+	RzLineHistory *hist = &line->history;
+	if (!hist->data) {
+		return;
+	}
+	int top = hist->top;
+	int j = 0;
+	for (int i = 0; i < top; i++) {
+		char *s = hist->data[i];
+		if (!s) {
+			continue;
+		}
+		if (rz_core_cmd_has_push(s)) {
+			free(s);
+			continue;
+		}
+		hist->data[j++] = s;
+	}
+	for (int i = j; i < top; i++) {
+		hist->data[i] = NULL;
+	}
+	hist->top = j;
+	if (hist->index > hist->top) {
+		hist->index = hist->top;
+	}
+}
 
 /**
  * \brief  Prints a message definining the beginning of a task
@@ -1662,6 +1690,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 #endif
 		char *history = rz_path_home_history();
 		rz_line_hist_load(core->cons->line, history);
+		hist_drop_push(core->cons->line);
 		free(history);
 	}
 	core->print->cons = core->cons;

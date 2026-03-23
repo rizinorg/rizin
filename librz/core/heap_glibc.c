@@ -16,7 +16,7 @@
 #include "core_private.h"
 
 void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *pj, const RzHeapConfig *config);
-static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
+static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end);
 static inline bool init_glibc_config(RzCore *core, RzHeapConfig *config);
 static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map);
 static bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzHeapConfig *config);
@@ -150,6 +150,10 @@ static inline ut64 rz_heap_get_next_pointer(RzCore *core, ut64 pos, ut64 next, c
 		: next;
 }
 
+RZ_IPI bool rz_heap_is_map_name_libc(const char *map_name) {
+	return map_name && (strstr(map_name, "/libc-") || strstr(map_name, "/libc."));
+}
+
 static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map) {
 	rz_return_val_if_fail(core && map, UT64_MAX);
 	ut64 base_addr = map->addr;
@@ -204,6 +208,24 @@ static ut64 rz_heap_get_main_arena_with_symbol(RzCore *core, RzDebugMap *map) {
 beach:
 	free(path);
 	return main_arena;
+}
+
+static ut64 rz_heap_get_main_arena_with_symbol_core_dump(RzCore *core, RzIOMap *map) {
+	rz_return_val_if_fail(core && map, UT64_MAX);
+	ut64 base_addr = map->itv.addr;
+	rz_return_val_if_fail(base_addr != UT64_MAX, UT64_MAX);
+
+	ut64 main_arena = UT64_MAX;
+	ut64 off = UT64_MAX;
+	const char *path = rz_core_io_map_file_path_or_relative(map);
+	if (path && rz_file_exists(path)) {
+		off = rz_heap_get_va_symbol(core, path, "main_arena");
+		if (off != UT64_MAX) {
+			main_arena = base_addr + off;
+			return main_arena;
+		}
+	}
+	return UT64_MAX;
 }
 
 static ut8 *get_glibc_banner(RzCore *core, const char *section_name,
@@ -507,7 +529,116 @@ bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState 
 	return true;
 }
 
-static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+/**
+ * \brief Check if an IOMap corresponds to an anonymous LOAD segment.
+ *
+ * An anonymous LOAD segment is a memory mapping that is not backed by a
+ * named file. It is identified by a name starting with "LOAD" followed only
+ * by digits.
+ *
+ * \param map RzIOMap instance
+ * \return true if the map is an anonymous LOAD segment, false otherwise
+ */
+static bool io_map_is_anonymous_load(const RzIOMap *map) {
+	const char *name = rz_core_io_map_strip_prefix(map);
+	if (!name) {
+		return false;
+	}
+	if (!rz_str_startswith(name, "LOAD")) {
+		return false;
+	}
+	const char *p = name + 4;
+	if (*p == '\0') {
+		return false;
+	}
+	while (*p) {
+		if (*p < '0' || *p > '9') {
+			return false;
+		}
+		p++;
+	}
+	return true;
+}
+
+/**
+ * In debug mode, we can locate the heap by the `[heap]` label:
+ *  [0xaaaaea80094c]> dm
+ * 0x0000aaaaea800000 - 0x0000aaaaea801000 * usr     4K s r-x /rizin/test/bins/heap/segfault-heap-aarch64 /rizin/test/bins/heap/segfault-heap-aarch64 ; rizin_test_bins_heap_segfault_heap_aarch64.r_x
+ * 0x0000aaaaea81f000 - 0x0000aaaaea820000 - usr     4K s r-- /rizin/test/bins/heap/segfault-heap-aarch64 /rizin/test/bins/heap/segfault-heap-aarch64 ; rizin_test_bins_heap_segfault_heap_aarch64.rw
+ * 0x0000aaaaea820000 - 0x0000aaaaea821000 - usr     4K s rw- /rizin/test/bins/heap/segfault-heap-aarch64 /rizin/test/bins/heap/segfault-heap-aarch64 ; loc.__data_start
+ * 0x0000aaab0f265000 - 0x0000aaab0f286000 - usr   132K s rw- [heap] [heap]
+ * 0x0000ffff9ac40000 - 0x0000ffff9add9000 - usr   1.6M s r-x /usr/lib/aarch64-linux-gnu/libc.so.6 /usr/lib/aarch64-linux-gnu/libc.so.6
+ * 0x0000ffff9add9000 - 0x0000ffff9aded000 - usr    80K s --- /usr/lib/aarch64-linux-gnu/libc.so.6 /usr/lib/aarch64-linux-gnu/libc.so.6
+ * But in core dumps, the [heap] label doesn't exist:
+ *  [0x00000840]> dm
+ *  1 fd: 4 +0x00000000 0xaaaae3c60000 - 0xaaaae3c60fff r-x mmap./run/host_virtiofs/Users/bubblepipe/repo/rizin/test/bins/heap/segfault-heap-aarch64
+ *  2 fd: 3 +0x00002000 0xaaaae3c7f000 - 0xaaaae3c7ffff r-- fmap./run/host_virtiofs/Users/bubblepipe/repo/rizin/test/bins/heap/segfault-heap-aarch64
+ *  3 fd: 3 +0x00003000 0xaaaae3c80000 - 0xaaaae3c80fff r-- fmap./run/host_virtiofs/Users/bubblepipe/repo/rizin/test/bins/heap/segfault-heap-aarch64
+ *  4 fd: 3 +0x00004000 0xaaab126cd000 - 0xaaab126edfff r-- fmap.LOAD3
+ *  5 fd: 5 +0x00000000 0xffff9a5d0000 - 0xffff9a768fff r-x mmap./usr/lib/aarch64-linux-gnu/libc.so.6
+ * We identify the brk heap as the first anonymous LOAD segment after the main executable's last mapping.
+ * This works because the kernel places the brk region right after the program's
+ * data segment, while other regions are placed at a much higher address range.
+ *
+ * Source: https://man7.org/linux/man-pages/man2/brk.2.html
+ * "brk() and sbrk() change the location of the program break, which
+ * defines the end of the process's data segment (i.e., the program
+ * break is the first location after the end of the uninitialized
+ * data segment).  Increasing the program break has the effect of
+ * allocating memory to the process; decreasing the break deallocates
+ * memory."
+ */
+static bool rz_heap_get_brks_core_dump(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
+	RzPVector *maps = rz_io_maps(core->io);
+	if (!maps) {
+		return false;
+	}
+
+	// identify the main executable's file path:
+	// the first file-backed mapping (low address) that
+	// is not a special region like [stack], [vdso], etc.
+	const char *exe_path = NULL;
+	ut64 lowest_addr = UT64_MAX;
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *path = rz_core_io_map_file_path_or_relative(map);
+		if (path && map->itv.addr < lowest_addr) {
+			lowest_addr = map->itv.addr;
+			exe_path = path;
+		}
+	}
+
+	if (!exe_path) {
+		return false;
+	}
+
+	// find the end of all mappings belonging to the executable
+	ut64 exe_end = 0;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *path = rz_core_io_map_file_path_or_relative(map);
+		if (path && !strcmp(path, exe_path)) {
+			ut64 end = map->itv.addr + map->itv.size;
+			if (end > exe_end) {
+				exe_end = end;
+			}
+		}
+	}
+
+	// find the first anonymous LOAD segment after the executable
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		if (map->itv.addr > exe_end && io_map_is_anonymous_load(map)) {
+			*brk_start = map->itv.addr;
+			*brk_end = map->itv.addr + map->itv.size;
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
 		RzListIter *iter;
 		RzDebugMap *map;
@@ -517,7 +648,7 @@ static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 				if (strstr(map->name, "[heap]")) {
 					*brk_start = map->addr;
 					*brk_end = map->addr_end;
-					break;
+					return true;
 				}
 			}
 		}
@@ -530,11 +661,13 @@ static void rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 				if (strstr(map->name, "[heap]")) {
 					*brk_start = map->itv.addr;
 					*brk_end = map->itv.addr + map->itv.size;
-					break;
+					return true;
 				}
 			}
 		}
+		return rz_heap_get_brks_core_dump(core, brk_start, brk_end);
 	}
+	return false;
 }
 
 static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, int format, const RzHeapConfig *config) {
@@ -661,10 +794,6 @@ static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_aren
 	PRINT_GA("}\n\n");
 }
 
-RZ_IPI bool rz_heap_is_map_name_libc(const char *map_name) {
-	return strstr(map_name, "/libc-") || strstr(map_name, "/libc.");
-}
-
 /**
  * \brief Store the base address of main arena at m_arena
  * \param core RzCore pointer
@@ -704,6 +833,31 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 				break;
 			}
 		}
+	} else if (rz_core_is_core_dump(core)) {
+		void **it;
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			if (map->name && strstr(map->name, "arena")) {
+				libc_addr_sta = map->itv.addr;
+				libc_addr_end = map->itv.addr + map->itv.size;
+				break;
+			}
+			/* Try to find the main arena address using the glibc's symbols. */
+			if (rz_heap_is_map_name_libc(map->name) && first_libc && main_arena_sym == UT64_MAX) {
+				first_libc = false;
+				main_arena_sym = rz_heap_get_main_arena_with_symbol_core_dump(core, map);
+			}
+			if (rz_heap_is_map_name_libc(map->name)) {
+				if (map->itv.addr < libc_addr_sta) {
+					libc_addr_sta = map->itv.addr;
+				}
+				ut64 end = map->itv.addr + map->itv.size;
+				if (end > libc_addr_end) {
+					libc_addr_end = end;
+				}
+			}
+		}
 	} else {
 		void **it;
 		RzPVector *maps = rz_io_maps(core->io);
@@ -717,7 +871,7 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 		}
 	}
 
-	if (libc_addr_sta == UT64_MAX || libc_addr_end == UT64_MAX) {
+	if (libc_addr_sta == UT64_MAX || libc_addr_end == 0) {
 		if (rz_config_get_b(core->config, "cfg.debug")) {
 			RZ_LOG_WARN("core: Can't find glibc mapped in memory (see dm)\n");
 		} else {
@@ -726,8 +880,7 @@ RZ_API bool rz_heap_resolve_main_arena(RzCore *core, ut64 *m_arena) {
 		return false;
 	}
 
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return false;
 	}
@@ -894,7 +1047,7 @@ static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig
 RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
 	RzDebug *dbg = core->dbg;
 
-	if (dbg->threads) {
+	if (rz_config_get_b(core->config, "cfg.debug") && dbg->threads) {
 		resolve_tcache_perthread(core, config);
 		return true;
 	}
@@ -1233,8 +1386,7 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 		return -1;
 	}
 
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		RZ_LOG_ERROR("core: no heap section\n");
 		return -1;
 	}
@@ -1333,10 +1485,9 @@ RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, in
 	if (!next) {
 		return heap_bin;
 	}
-
-	rz_heap_get_brks(core, &brk_start, &brk_end);
 	heap_bin->fd = next;
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return heap_bin;
 	}
 
@@ -1486,8 +1637,7 @@ RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content_internal(RzCore *core, ut64 are
 	}
 
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX;
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return NULL;
 	}
 
@@ -1713,8 +1863,7 @@ RzHeapBin *rz_heap_bin_content_internal(RzCore *core, MallocState *arena, int bi
 	}
 
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX, initial_brk = UT64_MAX;
-	rz_heap_get_brks(core, &brk_start, &brk_end);
-	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
+	if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
 		return bin;
 	}
 
@@ -1822,7 +1971,7 @@ static int print_bin_content(RzCore *core, MallocState *main_arena, int bin_num,
 }
 
 /**
- * \brief Prints unsorted bin description for an arena (used for `dmhd` command)
+ * \brief Prints unsorted bin description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena MallocState struct for the arena in which bin are
@@ -1847,7 +1996,7 @@ static void print_unsortedbin_description(RzCore *core, ut64 m_arena, MallocStat
 }
 
 /**
- * \brief Prints small bins description for an arena (used for `dmhd` command)
+ * \brief Prints small bins description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
@@ -1881,7 +2030,7 @@ static void print_smallbin_description(RzCore *core, ut64 m_arena, MallocState *
 }
 
 /**
- * \brief Prints large bins description for an arena (used for `dmhd` command)
+ * \brief Prints large bins description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
@@ -1915,7 +2064,7 @@ static void print_largebin_description(RzCore *core, ut64 m_arena, MallocState *
 }
 
 /**
- * \brief Prints description of bins for main arena for `dmhd` command
+ * \brief Prints description of bins for main arena for `dmhgd` command
  * \param core RzCore pointer
  * \param m_arena Offset of main arena in memory
  * \param main_arena Pointer to Malloc state struct for main arena
@@ -2052,12 +2201,12 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (m_arena == m_state) {
-		rz_heap_get_brks(core, &brk_start, &brk_end);
+		if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
+			return chunks;
+		}
 		if (tcache) {
 			initial_brk = ((brk_start >> 12) << 12) + config->chunk_hdr_size;
-			if (rz_config_get_b(core->config, "cfg.debug")) {
-				tcache_initial_brk = initial_brk;
-			}
+			tcache_initial_brk = initial_brk;
 			initial_brk += config->tcache.struct_size;
 		} else {
 			initial_brk = (brk_start >> 12) << 12;
@@ -2112,8 +2261,8 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 		if (fastbin) {
 			int i = (size_tmp / (ptr_size * 2)) - 2;
 			ut64 idx = (ut64)main_arena->fastbinsY[i];
-			if (!rz_glibc_read_chunk(core->io, idx, &cnk, config)) {
-				continue;
+			if (!idx || !rz_glibc_read_chunk(core->io, idx, &cnk, config)) {
+				goto skip_fastbin;
 			}
 			ut64 next = rz_heap_get_next_pointer(core, idx, cnk.fd, config);
 			if (prev_chunk == idx && idx && !next) {
@@ -2127,7 +2276,7 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 						break;
 					}
 					if (!rz_glibc_read_chunk(core->io, next, &cnk_next, config)) {
-						continue;
+						break;
 					}
 					ut64 next_node = rz_heap_get_next_pointer(core, next, cnk_next.fd, config);
 					// avoid triple while?
@@ -2137,7 +2286,7 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 							break;
 						}
 						if (!rz_glibc_read_chunk(core->io, next_node, &cnk_next, config)) {
-							continue;
+							break;
 						}
 						next_node = rz_heap_get_next_pointer(core, next_node, cnk_next.fd, config);
 					}
@@ -2146,10 +2295,11 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 					}
 				}
 				if (!rz_glibc_read_chunk(core->io, next, &cnk, config)) {
-					continue;
+					break;
 				}
 				next = rz_heap_get_next_pointer(core, next, cnk.fd, config);
 			}
+		skip_fastbin:
 			if (double_free) {
 				PRINT_RA(" Double free in simple-linked list detected ");
 				break;
@@ -2323,8 +2473,9 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 	}
 	ut64 brk_start = 0, brk_end = 0;
 	if (m_arena == m_state) {
-		rz_heap_get_brks(core, &brk_start, &brk_end);
-
+		if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
 		brk_start = ((m_state >> 16) << 16);
 		brk_end = brk_start + main_arena->system_mem;
@@ -2662,7 +2813,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, 
 	}
 
 	bool json = false;
-	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhdj
+	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhgdj
 		json = true;
 	}
 	RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;

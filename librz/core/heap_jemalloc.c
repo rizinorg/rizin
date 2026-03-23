@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "core/core_private.h"
 #include <rz_core.h>
 #include <rz_heap_jemalloc.h>
 #include <stdio.h>
@@ -49,9 +50,52 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 	return vaddr;
 }
 
+static bool resolve_jemalloc_core_dump(RzCore *core, const char *symname, ut64 *symbol) {
+	void **it;
+	RzPVector *io_maps = rz_io_maps(core->io);
+	rz_pvector_foreach (io_maps, it) {
+		RzIOMap *io_map = *it;
+		const char *path = rz_core_io_map_file_path_or_relative(io_map);
+
+		if (!rz_file_exists(path)) {
+			continue;
+		}
+
+		// find the lowest map address for this file, for base_addr
+		bool already_processed = false;
+		ut64 base_addr = io_map->itv.addr;
+		void **it2;
+		rz_pvector_foreach (io_maps, it2) {
+			RzIOMap *m2 = *it2;
+			const char *p2 = rz_core_io_map_file_path_or_relative(m2);
+			if (!RZ_STR_EQ(p2, path)) {
+				continue;
+			}
+			if (it2 < it) {
+				already_processed = true;
+				break;
+			}
+			if (m2->itv.addr < base_addr) {
+				base_addr = m2->itv.addr;
+			}
+		}
+		if (already_processed) {
+			continue;
+		}
+
+		bool is_pie = false;
+		ut64 vaddr = je_get_va_symbol(core, path, symname, &is_pie);
+		if (vaddr != UT64_MAX) {
+			*symbol = is_pie ? (base_addr + vaddr) : vaddr;
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol) {
 	RzListIter *iter;
-	RzDebugMap *map;
+	RzDebugMap *debug_map;
 	const char *jemalloc_path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 	const char *binary_path = NULL;
@@ -60,20 +104,25 @@ static bool rz_resolve_jemalloc(RzCore *core, const char *symname, ut64 *symbol)
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
-	rz_debug_map_sync(core->dbg);
 
-	rz_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr(map->name, "libjemalloc.")) {
-			if (jemalloc_addr == UT64_MAX || map->addr < jemalloc_addr) {
-				jemalloc_addr = map->addr;
-				jemalloc_path = map->name;
+	if (rz_core_is_core_dump(core)) {
+		return resolve_jemalloc_core_dump(core, symname, symbol);
+	}
+
+	// for debug mode
+	rz_debug_map_sync(core->dbg);
+	rz_list_foreach (core->dbg->maps, iter, debug_map) {
+		if (strstr(debug_map->name, "libjemalloc.")) {
+			if (jemalloc_addr == UT64_MAX || debug_map->addr < jemalloc_addr) {
+				jemalloc_addr = debug_map->addr;
+				jemalloc_path = debug_map->name;
 			}
 		}
-		if (!strstr(map->name, ".so") && !strstr(map->name, "lib") &&
-			!strstr(map->name, "[") && strlen(map->name) > 0) {
-			if (binary_addr == UT64_MAX || map->addr < binary_addr) {
-				binary_addr = map->addr;
-				binary_path = map->name;
+		if (!strstr(debug_map->name, ".so") && !strstr(debug_map->name, "lib") &&
+			!strstr(debug_map->name, "[") && strlen(debug_map->name) > 0) {
+			if (binary_addr == UT64_MAX || debug_map->addr < binary_addr) {
+				binary_addr = debug_map->addr;
+				binary_path = debug_map->name;
 			}
 		}
 	}
@@ -312,7 +361,7 @@ static void jemalloc_print_narenas_450(RzCore *core, bool has_specified_addr, ut
 
 	if (!has_specified_addr) {
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
-			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
+			if (!read_ptr_at(core->io, symaddr, &narenas, 4)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
 				return;
 			}
@@ -449,10 +498,10 @@ static void jemalloc_get_bins_450(RzCore *core, bool has_specified_addr, ut64 ad
 		}
 		PRINT_GA("}\n");
 	} else {
-		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
+		// Static mode - requires two arguments: dmhjb <arena_addr> <bin_info_addr>
 		arena_addr = addr;
 		if (!has_bin_info) {
-			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			RZ_LOG_ERROR("Usage: dmhjb <arena_addr> <bin_info_addr>\n");
 			return;
 		}
 
@@ -738,7 +787,7 @@ static void jemalloc_find_extent_530(RzCore *core, bool has_specified_addr, ut64
 
 static void jemalloc_extent_info_530(RzCore *core, bool has_specified_addr, ut64 edata_addr, const RzJemallocConfig530 *config) {
 	if (!has_specified_addr) {
-		RZ_LOG_ERROR("Usage: dmxei <edata_addr>\n");
+		RZ_LOG_ERROR("Usage: dmhjei <edata_addr>\n");
 		return;
 	}
 
@@ -807,10 +856,10 @@ static void jemalloc_get_bins_530(RzCore *core, bool has_specified_addr, ut64 ad
 		}
 		PRINT_GA("}\n");
 	} else {
-		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
+		// Static mode - requires two arguments: dmhjb <arena_addr> <bin_info_addr>
 		arena_addr = addr;
 		if (!has_bin_info) {
-			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			RZ_LOG_ERROR("Usage: dmhjb <arena_addr> <bin_info_addr>\n");
 			return;
 		}
 
@@ -830,11 +879,15 @@ static void jemalloc_print_narenas_530(RzCore *core, bool has_specified_addr, ut
 
 	if (!has_specified_addr) { // no args, list all arenas
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
-			if (!read_ptr_at(core->io, symaddr, &narenas, config->ptr_size)) {
+			RZ_LOG_DEBUG("symaddr : %" PFMT64d "\n", symaddr);
+			if (!read_ptr_at(core->io, symaddr, &narenas, 4)) {
 				RZ_LOG_ERROR("Failed to read narenas_total\n");
 				return;
 			}
 			PRINTF_GA("narenas : %" PFMT64d "\n", narenas);
+		} else {
+			RZ_LOG_ERROR("narena_total not resolved\n");
+			return;
 		}
 		if (narenas == 0) {
 			RZ_LOG_ERROR("No arenas allocated.\n");
