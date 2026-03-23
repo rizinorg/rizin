@@ -1398,15 +1398,17 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
 static bool should_perform_split(RzCore *core, RzAnalysisFunction *fcn, int reftype, ut64 at, ut64 from) {
-	if (reftype == RZ_ANALYSIS_XREF_TYPE_CALL && from != UT64_MAX) {
-		ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
-		if (at < fcn->addr || at > fcn_end) {
-			RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
-			bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
-			if (is_valid_sym) {
-				return true;
-			}
-		}
+	if (reftype != RZ_ANALYSIS_XREF_TYPE_CALL || from == UT64_MAX) {
+		return false;
+	}
+	ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
+	if (at >= fcn->addr && at <= fcn_end) {
+		return false;
+	}
+	RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+	bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+	if (is_valid_sym) {
+		return true;
 	}
 	return false;
 }
