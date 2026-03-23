@@ -20,6 +20,7 @@
  */
 
 #include "murmur3.h"
+#include "rz_types.h"
 #include "rz_types_base.h"
 #include <string.h>
 
@@ -35,7 +36,8 @@ static RZ_INLINE uint64_t rotl64(uint64_t x, int8_t r) {
  * \brief Block read - if your platform needs to do endian-swapping or can only
  * handle aligned reads, do the conversion here
  */
-#define getblock(p, i) (p[i])
+#define getblock(p, i) \
+	(sizeof(*(p)) == 8 ? rz_read_le64(p + i) : rz_read_le32(p + i))
 
 /*
  * \brief Finalization mix - force all bits of a hash block to avalanche
@@ -60,7 +62,7 @@ static RZ_INLINE uint64_t fmix64(uint64_t k) {
 	return k;
 }
 
-void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
+RZ_IPI void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
 	const int nblocks = len / 4;
 	int i;
@@ -108,7 +110,7 @@ void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
 	*(uint32_t *)out = h1;
 }
 
-void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out) {
+RZ_IPI void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
 	const int nblocks = len / 16;
 	int i;
@@ -271,7 +273,7 @@ void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out)
 	((uint32_t *)out)[3] = h4;
 }
 
-void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, void *out) {
+RZ_IPI void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
 	const int nblocks = len / 16;
 	int i;
