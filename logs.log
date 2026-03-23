@@ -1,0 +1,368 @@
+Your checklist for this pull request
+
+ [x] I've read the guidelines for contributing to this repository.
+ [x] I made sure to follow the project's coding style.
+ [x] I've documented every RZ_API function and struct this PR changes.
+ [] I've added tests that prove my changes are effective (required for changes to RZ_API).
+ [] I've updated the Rizin book with the relevant information (if needed).
+ [] I've used AI tools to generate fully or partially these code changes and I'm sure the changes are not copyrighted by somebody else.
+ 
+ [x] I've test the project after and befor the fix and the result was similar
+- befor the fix :
+    $ meson setup build --prefix=/goinfre/jbahmida/my_rizin 
+    $ meson compile -C build 
+    we have the issue :
+    {run in my local machine}
+    ╭─jbahmida@e1r6p15 ~/goinfre/my_rizin ‹fix_issues_#2205› 
+╰─$ ./build/binrz/rizin/rizin -a arm -b 32 ../rizin-2205-issue-binary
+[0x000105f0]> aa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[0x000105f0]> aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls
+[x] find and analyze function preludes
+[x] Analyze len bytes of instructions for references
+[x] Finding xrefs in noncode section with analysis.in=io.maps
+[x] Analyze value pointers (aav)
+[x] Value from 0x00010000 to 0x0001147c (aav)
+[x] 0x00010000-0x0001147c in 0x10000-0x1147c (aav)
+[x] Emulate functions to find computed references
+[x] Analyze local variables and arguments
+[x] Type matching analysis for all functions
+[x] Applied 0 FLIRT signatures via sigdb
+[x] Propagate noreturn information
+[x] Check for classes
+[x] Integrate dwarf function information.
+[x] Resolve pointers to data sections
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x000105f0]> s sym.CWE190_Integer_Overflow__char_fscanf_add_01_bad
+[0x000106e0]> pdf
+            ; CALL XREF from main @ 0x10798
+┌ sym.CWE190_Integer_Overflow__char_fscanf_add_01_bad();
+│           ; var unknown_t var_eh @ stack - 0xe
+│           ; var unknown_t var_dh @ stack - 0xd
+│           ; var unknown_t var_ch @ stack - 0xc
+│           0x000106e0      push  {fp, lr}
+│           0x000106e4      add   fp, sp, 4
+│           0x000106e8      sub   sp, sp, 8
+│           0x000106ec      ldr   r3, [aav.aav.0x000113b0]             ; [data.0001075c:4]=0x113b0 aav.0x000113b0
+│           0x000106f0      ldr   r3, [r3]                             ; 0x113b0
+│                                                                      ; aav.0x000113b0
+│           0x000106f4      str   r3, [var_ch]                         ; 8
+│           0x000106f8      mov   r3, 0
+│           0x000106fc      mov   r3, 0x20
+│           0x00010700      strb  r3, [var_eh]                         ; 0xa ; 10
+│           0x00010704      ldr   r3, [obj.stdin]                      ; [data.00010760:4]=0x22060 obj.stdin__GLIBC_2.4 ; "` \U00000002"
+│           0x00010708      ldr   r3, [r3]                             ; 0x22060
+│                                                                      ; obj.stdin__GLIBC_2.4
+│           0x0001070c      sub   r2, fp, 0xa
+│           0x00010710      ldr   r1, [aav.aav.0x000113ac]             ; [data.00010764:4]=0x113ac aav.0x000113ac
+│           0x00010714      mov   r0, r3
+│           0x00010718      bl    sym.imp.__isoc99_fscanf              ; sym.imp.__isoc99_fscanf
+│           0x0001071c      ldrb  r3, [var_eh]                         ; 0xa ; 10
+│           0x00010720      add   r3, r3, 1
+│           0x00010724      strb  r3, [var_dh]                         ; 0x9 ; 9
+│           0x00010728      ldrb  r3, [var_dh]                         ; 0x9 ; 9
+│           0x0001072c      mov   r0, r3
+│           0x00010730      bl    sym.printHexCharLine                 ; sym.printHexCharLine
+│           0x00010734      mov   r0, r0
+│           0x00010738      ldr   r3, [aav.aav.0x000113b0]             ; [data.0001075c:4]=0x113b0 aav.0x000113b0
+│           0x0001073c      ldr   r2, [r3]                             ; 0x113b0
+│                                                                      ; aav.0x000113b0
+│           0x00010740      ldr   r3, [var_ch]                         ; 8
+│           0x00010744      eors  r2, r3, r2
+│           0x00010748      mov   r3, 0
+│       ┌─< 0x0001074c      beq   0x10754
+│       │   0x00010750      bl    sym.imp.__stack_chk_fail             ; sym.imp.__stack_chk_fail
+│       └─> 0x00010754      sub   sp, fp, 4
+└           0x00010758      pop   {fp, pc}
+[0x000106e0]> q
+╭─jbahmida@e1r6p15 ~/goinfre/my_rizin ‹fix_issues_#2205› 
+╰─$ 
+
+the problem is with the ldr (load register) instraction from the address aav.aav.0x000113b0 
+the name should not be an auto address value
+
+    -then i runed :
+        $ meson test -C build | tee before_fix.log
+    this command logs the test on the rizin in the file before_fix.log
+
+ROOT causer of the issue :
+    When multiple flags exist at the same offset, auto-generated aav flags could be preferred over more meaningful symbol/import names.
+        Also, operand-string rendering did not fully apply the same dereference hop logic already used in comment resolution.
+how i addressed the issue:
+my fix provide :
+        Updated preferred flag resolution in flag.c:439-465:
+        Detect auto aav flags.
+        Prefer a non-aav fallback when available at the same address.
+        Added operand post-processing in disasm.c:885-955:
+        Detect aav.aav.0x... patterns.
+        Dereference using analysis refptr width.
+        Resolve and substitute with a better non-aav symbol when found.
+        Hooked this resolver in op-string build flow in disasm.c:1132.
+-after fix :
+    $ meson compile -C build
+then
+    - i test with valgrind to check for a leak or a memory miss usage
+    - i performed the same test provided by the issue 
+and i got this result :
+╭─jbahmida@e1r6p15 ~/goinfre/my_rizin ‹fix_issues_#2205●› 
+╰─$ ./build/binrz/rizin/rizin -a arm -b 32 ../rizin-2205-issue-binary
+[0x000105f0]> aa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[0x000105f0]> aaa
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[x] Analyze function calls
+[x] find and analyze function preludes
+[x] Analyze len bytes of instructions for references
+[x] Finding xrefs in noncode section with analysis.in=io.maps
+[x] Analyze value pointers (aav)
+[x] Value from 0x00010000 to 0x0001147c (aav)
+[x] 0x00010000-0x0001147c in 0x10000-0x1147c (aav)
+[x] Emulate functions to find computed references
+[x] Analyze local variables and arguments
+[x] Type matching analysis for all functions
+[x] Applied 0 FLIRT signatures via sigdb
+[x] Propagate noreturn information
+[x] Check for classes
+[x] Integrate dwarf function information.
+[x] Resolve pointers to data sections
+[x] Use -AA or aaaa to perform additional experimental analysis.
+[0x000105f0]> s sym.CWE190_Integer_Overflow__char_fscanf_add_01_bad
+[0x000106e0]> pdf
+            ; CALL XREF from main @ 0x10798
+┌ sym.CWE190_Integer_Overflow__char_fscanf_add_01_bad();
+│           ; var unknown_t var_eh @ stack - 0xe
+│           ; var unknown_t var_dh @ stack - 0xd
+│           ; var unknown_t var_ch @ stack - 0xc
+│           0x000106e0      push  {fp, lr}
+│           0x000106e4      add   fp, sp, 4
+│           0x000106e8      sub   sp, sp, 8
+│           0x000106ec      ldr   r3, [obj.__stack_chk_guard]          ; data.0001075c
+│                                                                      ; [0x1075c:4]=0x113b0 aav.0x000113b0
+│           0x000106f0      ldr   r3, [r3]                             ; 0x113b0
+│                                                                      ; aav.0x000113b0
+│           0x000106f4      str   r3, [var_ch]                         ; 8
+│           0x000106f8      mov   r3, 0
+│           0x000106fc      mov   r3, 0x20
+│           0x00010700      strb  r3, [var_eh]                         ; 0xa ; 10
+│           0x00010704      ldr   r3, [obj.stdin]                      ; [data.00010760:4]=0x22060 obj.stdin__GLIBC_2.4 ; "` \U00000002"
+│           0x00010708      ldr   r3, [r3]                             ; 0x22060
+│                                                                      ; obj.stdin__GLIBC_2.4
+│           0x0001070c      sub   r2, fp, 0xa
+│           0x00010710      ldr   r1, [aav.aav.0x000113ac]             ; [data.00010764:4]=0x113ac aav.0x000113ac
+│           0x00010714      mov   r0, r3
+│           0x00010718      bl    sym.imp.__isoc99_fscanf              ; sym.imp.__isoc99_fscanf
+│           0x0001071c      ldrb  r3, [var_eh]                         ; 0xa ; 10
+│           0x00010720      add   r3, r3, 1
+│           0x00010724      strb  r3, [var_dh]                         ; 0x9 ; 9
+│           0x00010728      ldrb  r3, [var_dh]                         ; 0x9 ; 9
+│           0x0001072c      mov   r0, r3
+│           0x00010730      bl    sym.printHexCharLine                 ; sym.printHexCharLine
+│           0x00010734      mov   r0, r0
+│           0x00010738      ldr   r3, [obj.__stack_chk_guard]          ; data.0001075c
+│                                                                      ; [0x1075c:4]=0x113b0 aav.0x000113b0
+│           0x0001073c      ldr   r2, [r3]                             ; 0x113b0
+│                                                                      ; aav.0x000113b0
+│           0x00010740      ldr   r3, [var_ch]                         ; 8
+│           0x00010744      eors  r2, r3, r2
+│           0x00010748      mov   r3, 0
+│       ┌─< 0x0001074c      beq   0x10754
+│       │   0x00010750      bl    sym.imp.__stack_chk_fail             ; sym.imp.__stack_chk_fail
+│       └─> 0x00010754      sub   sp, fp, 4
+└           0x00010758      pop   {fp, pc}
+[0x000106e0]> q
+╭─jbahmida@e1r6p15 ~/goinfre/my_rizin ‹fix_issues_#2205●› 
+╰─$ 
+
+    - then i runed :
+    $ meson test -C build | tee after_fix.log
+    $ diff -y before_fix.log after_fix.log
+ninja: Entering directory `/goinfre/jbahmida/my_rizin/build'	ninja: Entering directory `/goinfre/jbahmida/my_rizin/build'
+ninja: no work to do.						ninja: no work to do.
+  1/146 unit - rizin:addr_interval                         OK |	  1/146 unit - rizin:addr_interval                         OK
+  2/146 unit - rizin:analysis_cc                           OK |	  2/146 unit - rizin:agraph                                OK
+  3/146 unit - rizin:agraph                                OK |	  3/146 unit - rizin:analysis_cc                           OK
+  4/146 unit - rizin:analysis_class_graph                  OK |	  4/146 unit - rizin:analysis_block                        OK
+  5/146 unit - rizin:analysis_coverage                     OK |	  5/146 unit - rizin:analysis_class_graph                  OK
+  6/146 unit - rizin:analysis_function                     OK |	  6/146 unit - rizin:analysis_coverage                     OK
+  7/146 unit - rizin:analysis_block                        OK |	  7/146 unit - rizin:analysis_hints                        OK
+  8/146 unit - rizin:analysis_hints                        OK |	  8/146 unit - rizin:analysis_function                     OK
+  9/146 unit - rizin:analysis_meta                         OK |	  9/146 unit - rizin:analysis_meta                         OK
+ 10/146 unit - rizin:analysis_xrefs                        OK |	 10/146 unit - rizin:analysis_xrefs                        OK
+ 11/146 unit - rizin:annotated_code                        OK |	 11/146 unit - rizin:annotated_code                        OK
+ 12/146 unit - rizin:base16                                OK |	 12/146 unit - rizin:base16                                OK
+ 13/146 unit - rizin:analysis_var                          OK |	 13/146 unit - rizin:base32                                OK
+ 14/146 unit - rizin:base32                                OK |	 14/146 unit - rizin:analysis_var                          OK
+ 15/146 unit - rizin:base36                                OK |	 15/146 unit - rizin:base36                                OK
+ 16/146 unit - rizin:base64                                OK |	 16/146 unit - rizin:base64                                OK
+ 17/146 unit - rizin:base85                                OK |	 17/146 unit - rizin:base85                                OK
+ 18/146 unit - rizin:bin_mach0                             OK |	 18/146 unit - rizin:bin_mach0                             OK
+ 19/146 unit - rizin:bitvector                             OK |	 19/146 unit - rizin:bitvector                             OK
+ 20/146 unit - rizin:bits                                  OK |	 20/146 unit - rizin:bits                                  OK
+ 21/146 unit - rizin:marks                                 OK |	 21/146 unit - rizin:marks                                 OK
+ 22/146 unit - rizin:cmd                                   OK |	 22/146 unit - rizin:cmd                                   OK
+ 23/146 unit - rizin:bin_lines                             OK |	 23/146 unit - rizin:bin_lines                             OK
+ 24/146 unit - rizin:config                                OK |	 24/146 unit - rizin:config                                OK
+ 25/146 unit - rizin:compare                               OK |	 25/146 unit - rizin:compare                               OK
+ 26/146 unit - rizin:cons                                  OK |	 26/146 unit - rizin:cons                                  OK
+ 27/146 unit - rizin:cons_bar                              OK |	 27/146 unit - rizin:cons_bar                              OK
+ 28/146 unit - rizin:cons_canvas                           OK |	 28/146 unit - rizin:buf                                   OK
+ 29/146 unit - rizin:cons_grep                             OK |	 29/146 unit - rizin:cons_canvas                           OK
+ 30/146 unit - rizin:cons_histogram                        OK |	 30/146 unit - rizin:cons_grep                             OK
+ 31/146 unit - rizin:cons_html                             OK |	 31/146 unit - rizin:cons_histogram                        OK
+ 32/146 unit - rizin:cons_hud                              OK |	 32/146 unit - rizin:cons_html                             OK
+ 33/146 unit - rizin:cons_line                             OK |	 33/146 unit - rizin:cons_hud                              OK
+ 34/146 unit - rizin:cons_pal                              OK |	 34/146 unit - rizin:cons_line                             OK
+ 35/146 unit - rizin:cons_pager                            OK |	 35/146 unit - rizin:cons_pal                              OK
+ 36/146 unit - rizin:cons_pipe                             OK |	 36/146 unit - rizin:cons_pager                            OK
+ 37/146 unit - rizin:cons_rgb                              OK |	 37/146 unit - rizin:cons_pipe                             OK
+ 38/146 unit - rizin:contrbtree                            OK |	 38/146 unit - rizin:big                                   OK
+ 39/146 unit - rizin:buf                                   OK |	 39/146 unit - rizin:cons_rgb                              OK
+ 40/146 unit - rizin:core_analysis_stats                   OK |	 40/146 unit - rizin:contrbtree                            OK
+ 41/146 unit - rizin:core_addr                             OK |	 41/146 unit - rizin:core_addr                             OK
+ 42/146 unit - rizin:core_cmd                              OK |	 42/146 unit - rizin:core_analysis_stats                   OK
+ 43/146 unit - rizin:core_seek                             OK |	 43/146 unit - rizin:core_task                             OK
+ 44/146 unit - rizin:crypto                                OK |	 44/146 unit - rizin:core_seek                             OK
+ 45/146 unit - rizin:core_task                             OK |	 45/146 unit - rizin:core_cmd                              OK
+ 46/146 unit - rizin:core_bin                              OK |	 46/146 unit - rizin:crypto                                OK
+ 47/146 unit - rizin:debruijn                              OK |	 47/146 unit - rizin:debruijn                              OK
+ 48/146 unit - rizin:debug                                 OK |	 48/146 unit - rizin:debug                                 OK
+ 49/146 unit - rizin:big                                   OK |	 49/146 unit - rizin:core_bin                              OK
+ 50/146 unit - rizin:debug_session                         OK |	 50/146 unit - rizin:debug_session                         OK
+ 51/146 unit - rizin:diff                                  OK |	 51/146 unit - rizin:diff                                  OK
+ 52/146 unit - rizin:ebcdic                                OK |	 52/146 unit - rizin:ebcdic                                OK
+ 53/146 unit - rizin:endian                                OK |	 53/146 unit - rizin:endian                                OK
+ 54/146 unit - rizin:encodings                             OK |	 54/146 unit - rizin:encodings                             OK
+ 55/146 unit - rizin:event                                 OK |	 55/146 unit - rizin:event                                 OK
+ 56/146 unit - rizin:file                                  OK |	 56/146 unit - rizin:file                                  OK
+ 57/146 unit - rizin:flags                                 OK |	 57/146 unit - rizin:flags                                 OK
+ 58/146 unit - rizin:flirt                                 OK |	 58/146 unit - rizin:flirt                                 OK
+ 59/146 unit - rizin:float                                 OK |	 59/146 unit - rizin:float                                 OK
+ 60/146 unit - rizin:glob                                  OK |	 60/146 unit - rizin:glob                                  OK
+ 61/146 unit - rizin:graph                                 OK |	 61/146 unit - rizin:graph                                 OK
+ 62/146 unit - rizin:hash                                  OK |	 62/146 unit - rizin:hash                                  OK
+ 63/146 unit - rizin:hex                                   OK |	 63/146 unit - rizin:hex                                   OK
+ 64/146 unit - rizin:id_storage                            OK |	 64/146 unit - rizin:id_storage                            OK
+ 65/146 unit - rizin:idpool                                OK |	 65/146 unit - rizin:idpool                                OK
+ 66/146 unit - rizin:idstorage                             OK |	 66/146 unit - rizin:idstorage                             OK
+ 67/146 unit - rizin:il_definitions                        OK |	 67/146 unit - rizin:ht                                    OK
+ 68/146 unit - rizin:inflate_deflate                       OK |	 68/146 unit - rizin:il_definitions                        OK
+ 69/146 unit - rizin:il_reg                                OK |	 69/146 unit - rizin:inflate_deflate                       OK
+ 70/146 unit - rizin:il_validate                           OK |	 70/146 unit - rizin:il_reg                                OK
+ 71/146 unit - rizin:il_vm                                 OK |	 71/146 unit - rizin:il_validate                           OK
+ 72/146 unit - rizin:il_helpers                            OK |	 72/146 unit - rizin:il_vm                                 OK
+ 73/146 unit - rizin:ht                                    OK |	 73/146 unit - rizin:il_helpers                            OK
+ 74/146 unit - rizin:io                                    OK	 74/146 unit - rizin:io                                    OK
+ 75/146 unit - rizin:itv                                   OK	 75/146 unit - rizin:itv                                   OK
+ 76/146 unit - rizin:json                                  OK	 76/146 unit - rizin:json                                  OK
+ 77/146 unit - rizin:leb128                                OK |	 77/146 unit - rizin:list                                  OK
+ 78/146 unit - rizin:list                                  OK |	 78/146 unit - rizin:leb128                                OK
+ 79/146 unit - rizin:log                                   OK |	 79/146 unit - rizin:log                                   OK
+ 80/146 unit - rizin:mem                                   OK |	 80/146 unit - rizin:io_ihex                               OK
+ 81/146 unit - rizin:ovf                                   OK |	 81/146 unit - rizin:mem                                   OK
+ 82/146 unit - rizin:io_ihex                               OK |	 82/146 unit - rizin:intervaltree                          OK
+ 83/146 unit - rizin:intervaltree                          OK |	 83/146 unit - rizin:ovf                                   OK
+ 84/146 unit - rizin:pj                                    OK |	 84/146 unit - rizin:pj                                    OK
+ 85/146 unit - rizin:reg                                   OK |	 85/146 unit - rizin:reg                                   OK
+ 86/146 unit - rizin:regex                                 OK |	 86/146 unit - rizin:regex                                 OK
+ 87/146 unit - rizin:rbtree                                OK |	 87/146 unit - rizin:rbtree                                OK
+ 88/146 unit - rizin:rop                                   OK |	 88/146 unit - rizin:rop                                   OK
+ 89/146 unit - rizin:run                                   OK |	 89/146 unit - rizin:rz_test                               OK
+ 90/146 unit - rizin:rz_test                               OK |	 90/146 unit - rizin:rop_constraint                        OK
+ 91/146 unit - rizin:rop_constraint                        OK |	 91/146 unit - rizin:sdb_array                             OK
+ 92/146 unit - rizin:sdb_array                             OK |	 92/146 unit - rizin:run                                   OK
+ 93/146 unit - rizin:sdb_diff                              OK |	 93/146 unit - rizin:sdb_diff                              OK
+ 94/146 unit - rizin:sdb_util                              OK |	 94/146 unit - rizin:lzma                                  OK
+ 95/146 unit - rizin:serialize_mark                        OK |	 95/146 unit - rizin:sdb_util                              OK
+ 96/146 unit - rizin:serialize_config                      OK |	 96/146 unit - rizin:serialize_mark                        OK
+ 97/146 unit - rizin:serialize_analysis                    OK |	 97/146 unit - rizin:serialize_config                      OK
+ 98/146 unit - rizin:lzma                                  OK |	 98/146 unit - rizin:serialize_analysis                    OK
+ 99/146 unit - rizin:serialize_flag                        OK	 99/146 unit - rizin:serialize_flag                        OK
+100/146 unit - rizin:serialize_spaces                      OK |	100/146 unit - rizin:serialize_debug                       OK
+101/146 unit - rizin:serialize_debug                       OK |	101/146 unit - rizin:serialize_spaces                      OK
+102/146 unit - rizin:serialize_seek                        OK |	102/146 unit - rizin:serialize_seek                        OK
+103/146 unit - rizin:serialize_types                       OK	103/146 unit - rizin:serialize_types                       OK
+104/146 unit - rizin:skiplist                              OK |	104/146 unit - rizin:skiplist                              OK
+105/146 unit - rizin:skyline                               OK |	105/146 unit - rizin:skyline                               OK
+106/146 unit - rizin:spaces                                OK	106/146 unit - rizin:spaces                                OK
+107/146 unit - rizin:sparse                                OK |	107/146 unit - rizin:sparse                                OK
+108/146 unit - rizin:stack                                 OK	108/146 unit - rizin:stack                                 OK
+109/146 unit - rizin:str                                   OK	109/146 unit - rizin:str                                   OK
+110/146 unit - rizin:strbuf                                OK |	110/146 unit - rizin:strbuf                                OK
+111/146 unit - rizin:str_search                            OK	111/146 unit - rizin:str_search                            OK
+112/146 unit - rizin:syscall                               OK	112/146 unit - rizin:syscall                               OK
+113/146 unit - rizin:table                                 OK	113/146 unit - rizin:table                                 OK
+114/146 unit - rizin:task                                  OK	114/146 unit - rizin:task                                  OK
+115/146 unit - rizin:subprocess                            OK |	115/146 unit - rizin:socket                                OK
+116/146 unit - rizin:socket                                OK |	116/146 unit - rizin:subprocess                            OK
+117/146 unit - rizin:tree                                  OK	117/146 unit - rizin:tree                                  OK
+118/146 unit - rizin:tokens                                OK |	118/146 unit - rizin:tokens                                OK
+119/146 unit - rizin:uleb128                               OK	119/146 unit - rizin:uleb128                               OK
+120/146 unit - rizin:unum                                  OK	120/146 unit - rizin:unum                                  OK
+121/146 unit - rizin:util                                  OK	121/146 unit - rizin:util                                  OK
+122/146 unit - rizin:vector                                OK	122/146 unit - rizin:vector                                OK
+123/146 unit - rizin:sdb_sdb                               OK |	123/146 unit - rizin:type                                  OK
+124/146 unit - rizin:type                                  OK |	124/146 unit - rizin:yank                                  OK
+125/146 unit - rizin:yank                                  OK |	125/146 unit - rizin:sdb_sdb                               OK
+126/146 unit - rizin:analysis_op                           OK |	126/146 integration - rizin:analysis_global_var            OK
+127/146 integration - rizin:analysis_global_var            OK |	127/146 unit - rizin:analysis_op                           OK
+128/146 integration - rizin:analysis_il                    FA |	128/146 integration - rizin:analysis_graph                 FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=68 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+129/146 integration - rizin:analysis_graph                 FA |	129/146 integration - rizin:analysis_il                    FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=54 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+130/146 integration - rizin:basefind                       FA |	130/146 integration - rizin:basefind                       FA
+>>> MALLOC_PERTURB_=81 ASAN_OPTIONS=halt_on_error=1:abort_on_ |	>>> MALLOC_PERTURB_=238 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=
+
+131/146 integration - rizin:bin                            FA |	131/146 integration - rizin:bin                            FA
+>>> MALLOC_PERTURB_=61 ASAN_OPTIONS=halt_on_error=1:abort_on_ |	>>> MESON_TEST_ITERATION=1 MALLOC_PERTURB_=107 UBSAN_OPTIONS=
+
+132/146 integration - rizin:bin_symbols                    FA |	132/146 integration - rizin:autocmplt                      FA
+>>> MALLOC_PERTURB_=126 ASAN_OPTIONS=halt_on_error=1:abort_on |	>>> MESON_TEST_ITERATION=1 UBSAN_OPTIONS=halt_on_error=1:abor
+
+133/146 integration - rizin:bin_vfiles                     FA |	133/146 integration - rizin:bin_symbols                    FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MESON_TEST_ITERATION=1 MALLOC_PERTURB_=154 UBSAN_OPTIONS=
+
+134/146 integration - rizin:cpu_platform_profiles          FA |	134/146 integration - rizin:bin_vfiles                     FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=52 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+135/146 integration - rizin:autocmplt                      FA |	135/146 integration - rizin:dwarf                          FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MESON_TEST_ITERATION=1 UBSAN_OPTIONS=halt_on_error=1:abor
+
+136/146 integration - rizin:dwarf                          FA |	136/146 integration - rizin:cpu_platform_profiles          FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MESON_TEST_ITERATION=1 UBSAN_OPTIONS=halt_on_error=1:abor
+
+137/146 integration - rizin:dwarf_info                     FA |	137/146 integration - rizin:dwarf_info                     FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MESON_TEST_ITERATION=1 MALLOC_PERTURB_=245 UBSAN_OPTIONS=
+
+138/146 integration - rizin:glibc_version                  FA |	138/146 integration - rizin:dwarf_integration              FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=53 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+139/146 integration - rizin:dwarf_integration              FA |	139/146 integration - rizin:glibc_version                  FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=21 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+140/146 integration - rizin:open_analyse_save_load_project FA	140/146 integration - rizin:open_analyse_save_load_project FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MESON_TEST_ITERATION=1 MALLOC_PERTURB_=14 UBSAN_OPTIONS=h
+
+141/146 integration - rizin:pdb                            FA |	141/146 integration - rizin:pdb                            FA
+>>> MALLOC_PERTURB_=195 ASAN_OPTIONS=halt_on_error=1:abort_on |	>>> MESON_TEST_ITERATION=1 MALLOC_PERTURB_=150 UBSAN_OPTIONS=
+
+142/146 integration - rizin:rzpipe                         OK |	142/146 integration - rizin:rzpipe                         OK
+143/146 integration - rizin:str_search                     FA	143/146 integration - rizin:str_search                     FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=210 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=
+
+144/146 integration - rizin:project_migrate                FA |	144/146 integration - rizin:project_migrate                FA
+>>> ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summa |	>>> MALLOC_PERTURB_=96 MESON_TEST_ITERATION=1 UBSAN_OPTIONS=h
+
+145/146 integration - rizin:analysis_fcn                   OK |	145/146 integration - rizin:analysis_fcn                   OK
+146/146 unit - rizin:threads                               OK	146/146 unit - rizin:threads                               OK
+
+Ok:                130 						Ok:                130 
+Fail:              16  						Fail:              16  
+
+Full log written to /goinfre/jbahmida/my_rizin/build/meson-lo	Full log written to /goinfre/jbahmida/my_rizin/build/meson-lo
+
+this gives me the same result indicating that the fix targeting the issue #2205
+does not affect the the logic of the main tool
