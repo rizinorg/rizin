@@ -61,8 +61,8 @@
  */
 #define PPC_IL_ROTL32(x, y) LET("rotl32_x", x, \
 	LET("rotl32_y", y, \
- (IN_64BIT_MODE ? PPC_IL_ROTL64(APPEND(VARLP("rotl32_x"), VARLP("rotl32_x")), VARLP("rotl32_y")) \
-              	       : LOGOR(SHIFTL0(VARLP("rotl32_x"), VARLP("rotl32_y")), SHIFTR0(VARLP("rotl32_x"), SUB(U8(32), UNSIGNED(8, VARLP("rotl32_y"))))))))
+		(IN_64BIT_MODE ? PPC_IL_ROTL64(APPEND(VARLP("rotl32_x"), VARLP("rotl32_x")), VARLP("rotl32_y")) \
+			       : LOGOR(SHIFTL0(VARLP("rotl32_x"), VARLP("rotl32_y")), SHIFTR0(VARLP("rotl32_x"), SUB(U8(32), UNSIGNED(8, VARLP("rotl32_y"))))))))
 
 /**
  * \brief Returns a Pure of width \p w with the \p i bit set.
