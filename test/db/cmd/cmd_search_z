@@ -297,7 +297,6 @@ RUN
 NAME=String Search - str.unprintable - single code point
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-/z "placerat ut, eu etiam vitae nam" l ascii
 e str.unprintable=0x20
 /z "placerat ut, eu etiam vitae nam" l ascii
 ps ascii unprintable @ hit.string.ascii.0
@@ -312,7 +311,6 @@ RUN
 NAME=String Search - str.unprintable - multiple code points
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
-/z "placerat ut, eu etiam vitae nam" l ascii
 e str.unprintable=0x20,0x2c
 /z "placerat ut, eu etiam vitae nam" l ascii
 ps ascii unprintable @ hit.string.ascii.0
@@ -327,7 +325,6 @@ RUN
 NAME=String Search - str.unprintable - utf8 code point
 FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
 CMDS=<<EOF
-/z "ا الأوضاع, لم بوابة المب" l utf8
 e str.unprintable=0x629
 /z "ا الأوضاع, لم بوابة المب" l utf8
 b 0x1000
