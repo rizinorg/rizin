@@ -1,0 +1,86 @@
+NAME=ELF_ABI : Pelles C 32 load
+FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
+CMDS=<<EOF
+iI~machine,arch
+EOF
+EXPECT=<<EOF
+arch     x86
+machine  i386
+EOF
+RUN
+
+NAME=ELF_ABI : Pelles C 32 flagspaces
+FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
+ARGS=-A
+CMDS=<<EOF
+fsl
+EOF
+EXPECT=<<EOF
+    0 * classes
+  108 * functions
+   38 * imports
+    0 * platform.ports
+   66 * pointers
+    0 * registers
+    0 * registers.extended
+    0 * registers.mmio
+  916 * relocs
+    4 * sections
+    0 * segments
+  174 * strings
+    1 * symbols
+EOF
+RUN
+
+NAME=ELF_ABI : Pelles C 32 main_entrance
+FILE=bins/abi_bins/pe/compilers/echo_32_pelleC.exe
+ARGS=-A
+CMDS=<<EOF
+pdf~main
+EOF
+EXPECT=
+RUN
+
+NAME=ELF_ABI : Pelles C 64 load
+FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
+CMDS=<<EOF
+iI~machine,arch
+EOF
+EXPECT=<<EOF
+arch     x86
+machine  AMD 64
+EOF
+RUN
+
+NAME=ELF_ABI : Pelles C 64 flagspaces
+FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
+ARGS=-A
+CMDS=<<EOF
+fsl
+EOF
+EXPECT=<<EOF
+    0 * classes
+   86 * functions
+   38 * imports
+    0 * platform.ports
+   80 * pointers
+    0 * registers
+    0 * registers.extended
+    0 * registers.mmio
+  420 * relocs
+    5 * sections
+    0 * segments
+  125 * strings
+    1 * symbols
+EOF
+RUN
+
+NAME=ELF_ABI : Pelles C 64 main_entrance
+FILE=bins/abi_bins/pe/compilers/echo_64_pelleC.exe
+ARGS=-A
+CMDS=<<EOF
+pdf~main
+EOF
+EXPECT=
+RUN
+
