@@ -1836,7 +1836,7 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (stop_at_nil && core->file) {
+	if (stop_at_nil && core->file && !core->tmpseek) {
 		const ut64 str_off = core->offset + offset;
 		const ut64 fd_size = rz_io_fd_size(core->io, core->file->fd);
 		if (fd_size != UT64_MAX && fd_size > str_off) {
