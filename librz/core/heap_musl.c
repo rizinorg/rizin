@@ -137,6 +137,12 @@ MuslAllocator musl_get_allocator_kind(RzCore *core) {
 	return MUSL_OLDMALLOC;
 }
 
+/**
+ * \brief Sets up a RzStructuredData for the mallocng context.
+ * \param addr address for the mallocng context
+ * \param ctx initialized mallocng context struct
+ * \return RzStructureData map containing context data
+ */
 static RzStructuredData *ctx_structured_data(ut64 addr, mallocng_ctx ctx) {
 	RzStructuredData *ctx_data = rz_structured_data_new_map();
 	rz_structured_data_map_add_unsigned(ctx_data, "context address", addr, true);
@@ -161,6 +167,12 @@ static RzStructuredData *ctx_structured_data(ut64 addr, mallocng_ctx ctx) {
 	return ctx_data;
 }
 
+/**
+ * \brief Prints mallocng context in the appropriate format.
+ * \param addr address for the mallocng context
+ * \param config mallocng config struct containing info on the architecture
+ * \return
+ */
 void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
 	ut64 addr, RzMallocngConfig config) {
 	ut64 secret = 0;
@@ -190,6 +202,13 @@ void musl_mallocng_print_context(RzCore *core, bool has_specified_addr,
 	rz_structured_data_free(ctx_data);
 }
 
+/**
+ * \brief Sets up a RzStructuredData for the mallocng meta area.
+ * \param addr address for the mallocng meta area
+ * \param area initialized mallocng meta area struct
+ * \param config mallocng config struct containing info on the architecture
+ * \return RzStructureData map containing meta area data
+ */
 static RzStructuredData *meta_area_structured_data(ut64 addr, mallocng_meta_area area,
 	RzCore *core, RzMallocngConfig config) {
 
@@ -214,6 +233,35 @@ static RzStructuredData *meta_area_structured_data(ut64 addr, mallocng_meta_area
 	return meta_area_data;
 }
 
+ut64 print_meta_area(RzCore *core, ut64 curr_meta, RzMallocngConfig config) {
+	RzStructuredData *area_data;
+
+	mallocng_meta_area area;
+	if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
+		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+		return NULL;
+	}
+
+	area_data = meta_area_structured_data(curr_meta, area, core, config);
+	if (!area_data) {
+		RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
+		return NULL;
+	}
+	char *area_str = rz_structured_data_to_yaml(area_data);
+	if (area_str) {
+		rz_cons_print(area_str);
+		free(area_str);
+	}
+	rz_structured_data_free(area_data);
+	return area.next;
+}
+
+/**
+ * \brief Prints mallocng meta area in the appropriate format.
+ * \param addr address for the mallocng context
+ * \param config mallocng config struct containing info on the architecture
+ * \return
+ */
 void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
 	ut64 addr, RzMallocngConfig config) {
 	ut32 idx = 1;
@@ -221,8 +269,6 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
 	ut64 ctx_addr = 0;
 	ut64 curr_meta = 0;
 	mallocng_ctx ctx;
-	mallocng_meta_area area;
-	RzStructuredData *area_data;
 	if (!has_specified_addr) {
 		if (rz_resolve_musl(core, "__malloc_context", &ctx_addr)) {
 			if (!read_ptr_at(core->io, ctx_addr, &secret, 8)) {
@@ -236,28 +282,12 @@ void musl_mallocng_print_meta_areas(RzCore *core, bool has_specified_addr,
 		}
 
 		curr_meta = ctx.meta_area_head;
+		while (curr_meta) {
+			printf("meta_area #%d:\n", idx++);
+			curr_meta = print_meta_area(core, curr_meta, config);
+		}
 	} else {
-		curr_meta = addr;
-	}
-	while (curr_meta) {
-		if (!read_and_parse_meta_area(core->io, curr_meta, &area, config)) {
-			RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-			return;
-		}
-
-		area_data = meta_area_structured_data(curr_meta, area, core, config);
-		if (!area_data) {
-			RZ_LOG_ERROR("Failed to parse meta_area @ 0x%" PFMT64x "\n", curr_meta);
-			return;
-		}
-		char *area_str = rz_structured_data_to_yaml(area_data);
-		if (area_str) {
-			printf("meta_area #%d: \n", idx++);
-			rz_cons_print(area_str);
-			free(area_str);
-		}
-		rz_structured_data_free(area_data);
-		curr_meta = area.next;
+		print_meta_area(core, addr, config);
 	}
 }
 
@@ -285,6 +315,15 @@ static void print_meta(RzCore *core, ut64 addr, RzMallocngConfig config, ut32 li
 	PRINT_BA("\n");
 }
 
+/**
+ * \brief Prints mallocng meta(s) in the appropriate format.
+ * \param addr address for the mallocng meta
+ * \param config mallocng config struct containing info on the architecture
+ * \param lines integer representing the number of lines shown from group data
+ * \return
+
+	Prints mallocng meta(s) info + the data contained in their group(s)
+ */
 void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, RzMallocngConfig config, ut32 lines) {
 	ut64 secret = 0;
 	ut64 ctx_addr = 0;
@@ -311,6 +350,14 @@ void musl_mallocng_print_meta(RzCore *core, bool has_specified_addr, ut64 addr, 
 	}
 }
 
+/**
+ * \brief Command for showing mallocng context information.
+ * \param addr address for the mallocng context
+ * \return
+
+	Command for showing mallocng context information, if addr is not provided automatic symbol
+	resolution is attempted.
+ */
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
@@ -322,6 +369,14 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_c(RzCore *core, bool has_specified_addr,
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Command for showing meta area(s)
+ * \param addr address for the mallocng meta area
+ * \return
+
+	Command for showing meta area(s), if no addr is provided it will show all the available
+	meta areas.
+ */
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
@@ -333,6 +388,14 @@ RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_a(RzCore *core, bool has_specified_addr,
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Command for showing meta(s).
+ * \param lines integer representing the number of lines shown from group data
+ * \param addr address for the mallocng meta
+ * \return
+
+	Command for showing meta(s), if no addr is provided it will show all the available metas.
+ */
 RZ_IPI RzCmdStatus rz_heap_mallocng_cmd_m(RzCore *core, bool has_specified_addr, ut64 addr, ut32 lines) {
 	const int bits = rz_config_get_i(core->config, "asm.bits");
 	if (musl_get_allocator_kind(core) != MUSL_MALLOCNG) {
