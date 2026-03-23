@@ -6,6 +6,7 @@ e asm.bits=64
 e analysis.arch=x86
 e esil.stats=true
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528
+aek-
 aei
 aeim
 aeip
@@ -18,10 +19,4 @@ EXPECT=<<EOF
 1
 0
 EOF
-RUN
-
-NAME=aek- - crash
-FILE==
-CMDS=aek-
-EXPECT=
 RUN
