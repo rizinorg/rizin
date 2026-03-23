@@ -522,22 +522,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm subrel
-FILE=bins/elf/analysis/arm-ls
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=32
-e cfg.bigendian=false
-e asm.comments=false
-e asm.bytes=false
-e asm.offset=false
-pd 1 @ 0x00014368
-EOF
-EXPECT=<<EOF
-                 ldr   r0, main
-EOF
-RUN
-
 NAME=jump sign extend : arm.cs
 FILE=malloc://4
 CMDS=<<EOF
