@@ -64,7 +64,7 @@ RZ_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 }
 
 static const char *sdb_anext2(const char *str, const char **next) {
-	char *nxt, *p = strchr(str, SDB_RS);
+	const char *nxt, *p = (const char *)strchr(str, SDB_RS);
 	if (p) {
 		nxt = p + 1;
 	} else {
