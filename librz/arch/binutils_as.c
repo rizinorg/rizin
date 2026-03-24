@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "binutils_as.h"
+#include "asm_private.h"
 
 int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt) {
 	char *user_as = rz_sys_getenv(env);

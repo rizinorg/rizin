@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <i8080/i8080dis.h>
 
 static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {

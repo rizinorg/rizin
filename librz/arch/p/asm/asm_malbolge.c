@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_types.h>
 #include <rz_lib.h>
-#include <string.h>
 
 static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
 	if (len) {

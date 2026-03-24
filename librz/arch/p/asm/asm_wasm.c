@@ -4,11 +4,10 @@
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include <wasm/wasm.h>
 

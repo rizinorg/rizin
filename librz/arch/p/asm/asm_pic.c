@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 
 #include "pic/pic_baseline.h"
@@ -24,7 +25,7 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 		}
 		return op->size;
 	} else if (is_pic_highend(a->cpu)) {
-		return pic_highend_disassemble(a, op, b, l);
+		return pic_highend_disassemble(op, a->pc, b, l);
 	}
 	return -1;
 }

@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
-#include <string.h>
+#include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "mcs96/mcs96.h"
 #include "rz_analysis.h"
-#include "rz_util/rz_pj.h"
 
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;

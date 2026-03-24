@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: 2023 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <string.h>
-
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <capstone/capstone.h>
 
 #define TRICORE_LONGEST_INSTRUCTION  4

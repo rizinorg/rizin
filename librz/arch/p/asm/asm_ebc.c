@@ -2,11 +2,10 @@
 // SPDX-FileCopyrightText: 2012-2018 fedor sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <ebc/ebc_disas.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {

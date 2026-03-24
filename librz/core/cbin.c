@@ -4740,10 +4740,8 @@ RZ_API int rz_core_bin_update_arch_bits(RzCore *r) {
 		return 0;
 	}
 	if (r->rasm) {
-		bits = r->rasm->bits;
-		if (r->rasm->cur) {
-			arch = r->rasm->cur->arch;
-		}
+		bits = rz_asm_get_bits(r->rasm);
+		arch = rz_asm_get_arch(r->rasm);
 	}
 	binfile = rz_bin_cur(r->bin);
 	name = binfile ? binfile->file : NULL;

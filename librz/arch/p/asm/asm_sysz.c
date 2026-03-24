@@ -4,6 +4,7 @@
 // instruction set : http://www.tachyonsoft.com/inst390m.htm
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 
 #include "cs_helper.h"

@@ -6,6 +6,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include "pyc/pyc_dis.h"
 

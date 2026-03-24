@@ -1,13 +1,11 @@
 // SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <dcpu16/dcpu16.h>
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {

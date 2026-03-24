@@ -5,6 +5,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "sh/disassembler.h"
 #include "sh/assembler.h"
 

@@ -177,12 +177,12 @@ static void autocmplt_at_op(RzCore *core, RzLineNSCompletionResult *res, const c
 	res->end_string = "";
 }
 
-static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	int bits = plugin->bits;
-	int i;
-	char sbits[5];
-	for (i = 1; i <= bits; i <<= 1) {
-		if (i & bits && !strncmp(rz_strf(sbits, "%d", i), s, len)) {
+static void autocmplt_bits_plugin(const RzAsmPlugin *plugin, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char sbits[16];
+	ut32 bits = plugin->bits;
+	for (ut32 i = 1; i <= bits; i <<= 1) {
+		rz_strf(sbits, "%u", i);
+		if (i & bits && !strncmp(sbits, s, len)) {
 			rz_line_ns_completion_result_add(res, sbits);
 		}
 	}
@@ -191,8 +191,7 @@ static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult 
 static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	rz_return_if_fail(core->rasm);
 
-	HtSP *asm_plugins = rz_asm_get_plugins(core->rasm);
-	RzIterator *it = ht_sp_as_iter(asm_plugins);
+	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
 	RzAsmPlugin **val;
 
 	// @a: can either be used with @a:arch or @a:arch:bits
@@ -222,9 +221,9 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 }
 
 static void autocmplt_bits(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	rz_return_if_fail(core->rasm && core->rasm->cur);
-
-	autocmplt_bits_plugin(core->rasm->cur, res, s, len);
+	rz_return_if_fail(core->rasm);
+	const RzAsmPlugin *plugin = rz_asm_plugin_current(core->rasm);
+	autocmplt_bits_plugin(plugin, res, s, len);
 }
 
 static void autocmplt_flag_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {

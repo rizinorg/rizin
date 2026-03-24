@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
+#include "asm_private.h"
 #include "../binutils_as.h"
 
 #define ASSEMBLER "RZ_PPC_AS"

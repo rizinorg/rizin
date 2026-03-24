@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <xtensa/xtensa.h>
 
 static int asm_xtensa_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {

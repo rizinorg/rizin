@@ -3,6 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "../binutils_as.h"
 
 #define ASSEMBLER "RZ_X86_AS"

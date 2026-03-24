@@ -4,6 +4,7 @@
 
 #include <rz_analysis.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;

@@ -3,6 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char *ipath, *opath;

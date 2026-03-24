@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <i.matveychikov@milabs.ru>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <tms320/tms320_dasm.h>
 #include <tms320/c64x/c64x.h>
 

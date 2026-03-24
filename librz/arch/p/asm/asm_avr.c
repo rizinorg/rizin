@@ -1,14 +1,11 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include "avr/assembler.h"
 #include "avr/disassembler.h"

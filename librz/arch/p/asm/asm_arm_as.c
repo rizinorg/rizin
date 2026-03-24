@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "../binutils_as.h"
 
 #define ASSEMBLER32 "RZ_ARM32_AS"

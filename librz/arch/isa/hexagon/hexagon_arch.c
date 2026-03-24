@@ -9,15 +9,15 @@
 // Do not edit. Repository of code generator:
 // https://github.com/rizinorg/rz-hexagon
 
-#include "rz_types.h"
-#include <rz_util/rz_log.h>
-#include <rz_util/rz_buf.h>
+#include <rz_types.h>
+#include <rz_util.h>
 #include <rz_list.h>
-#include <rz_util/rz_assert.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_vector.h>
+#include "asm_private.h"
+
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>

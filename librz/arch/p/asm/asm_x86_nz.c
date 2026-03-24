@@ -6,10 +6,9 @@
 #include <rz_flag.h>
 #include <rz_core.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <rz_types.h>
-#include <stdio.h>
-#include <string.h>
 
 static ut64 getnum(RzAsm *a, const char *s);
 
@@ -1885,9 +1884,6 @@ static int opmov(RzAsm *a, ut8 *data, const Opcode *op) {
 	ut64 immediate = 0;
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (!op->operands[1].is_good_flag) {
-			return -1;
-		}
-		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -5077,22 +5073,7 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 			return nextpos;
 		}
 		if (op->reg == X86R_UNDEFINED) {
-			op->is_good_flag = false;
-			if (a->num && a->num->value == 0) {
-				return nextpos;
-			}
-			op->type = OT_CONSTANT;
-			RzCore *core = a->num ? (RzCore *)(a->num->userptr) : NULL;
-			if (core && rz_flag_get(core->flags, str)) {
-				op->is_good_flag = true;
-			}
-
-			char *p = strchr(str, '-');
-			if (p) {
-				op->sign = -1;
-				str = ++p;
-			}
-			op->immediate = getnum(a, str);
+			return nextpos;
 		} else if (op->reg < X86R_UNDEFINED) {
 			strncpy(op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -5163,7 +5144,7 @@ static ut64 getnum(RzAsm *a, const char *s) {
 	if (*s == '$') {
 		s++;
 	}
-	return rz_num_math(a->num, s);
+	return rz_num_math(NULL, s);
 }
 
 static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {

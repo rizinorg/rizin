@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "lm32/lm32_isa.h"
 
 #define LM32_UNUSED 0

@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2009-2014 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 static int arch_xap_disasm(RzStrBuf *asm_buf, const unsigned char *buf, ut64 addr) {
 	xap_state_t s = { 0 };
