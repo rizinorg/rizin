@@ -62,10 +62,10 @@ static RZ_INLINE uint64_t fmix64(uint64_t k) {
 	return k;
 }
 
-RZ_IPI void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out) {
+RZ_IPI void MurmurHash3_x86_32(const void *key, RzRef len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
-	const int nblocks = len / 4;
-	int i;
+	const RzRef nblocks = len / 4;
+	RzRef i;
 
 	uint32_t h1 = seed;
 
@@ -110,10 +110,10 @@ RZ_IPI void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out)
 	*(uint32_t *)out = h1;
 }
 
-RZ_IPI void MurmurHash3_x86_128(const void *key, const int len, size_t seed, void *out) {
+RZ_IPI void MurmurHash3_x86_128(const void *key, const RzRef len, size_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
-	const int nblocks = len / 16;
-	int i;
+	const RzRef nblocks = len / 16;
+	RzRef i;
 
 	size_t h1 = seed;
 	size_t h2 = seed;
@@ -273,10 +273,10 @@ RZ_IPI void MurmurHash3_x86_128(const void *key, const int len, size_t seed, voi
 	((uint32_t *)out)[3] = h4;
 }
 
-RZ_IPI void MurmurHash3_x64_128(const void *key, const int len, const uint64_t seed, void *out) {
+RZ_IPI void MurmurHash3_x64_128(const void *key, const RzRef len, const uint64_t seed, void *out) {
 	const uint8_t *data = (const uint8_t *)key;
-	const int nblocks = len / 16;
-	int i;
+	const RzRef nblocks = len / 16;
+	RzRef i;
 
 	uint64_t h1 = seed;
 	uint64_t h2 = seed;

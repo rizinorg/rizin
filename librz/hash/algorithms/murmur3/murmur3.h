@@ -15,8 +15,8 @@
 #define ROTL32_Murmur3(x, y) rotl32(x, y)
 #define ROTL64_Murmur3(x, y) rotl64(x, y)
 
-RZ_IPI void MurmurHash3_x86_32(const void *key, int len, size_t seed, void *out);
-RZ_IPI void MurmurHash3_x86_128(const void *key, int len, size_t seed, void *out);
-RZ_IPI void MurmurHash3_x64_128(const void *key, int len, uint64_t seed, void *out);
+RZ_IPI void MurmurHash3_x86_32(const void *key, RzRef len, size_t seed, void *out);
+RZ_IPI void MurmurHash3_x86_128(const void *key, RzRef len, size_t seed, void *out);
+RZ_IPI void MurmurHash3_x64_128(const void *key, RzRef len, uint64_t seed, void *out);
 
 #endif // _MURMURHASH3_H_
