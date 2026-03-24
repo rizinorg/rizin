@@ -2750,10 +2750,9 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 	rz_table_set_columnsf(t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
 	const int options = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_ESIL;
-	const int addrbytes = core->io->addrbytes;
 	ut64 offset = addr;
 	ut64 inc = 0;
-	for (int i = 0, j = 0; rz_disasm_check_end(n_instrs, i, n_bytes, j * addrbytes); i++, offset += inc, j += inc) {
+	for (int i = 0, j = 0; rz_disasm_check_end(n_instrs, i, n_bytes, j); i++, offset += inc, j += inc) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, offset, options);
 		if (!op || op->size < 1) {
 			i += minopsz;

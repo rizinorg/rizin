@@ -788,7 +788,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:rqnhvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnhvVZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -797,9 +797,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 				RZ_LOG_ERROR("Alignment must only have one bit set.\n");
 				return 1;
 			}
-			break;
-		case 'r':
-			ro.rad = true;
 			break;
 		case 'i':
 			ro.identify = true;
