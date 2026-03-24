@@ -1377,52 +1377,13 @@ NAME=String search - warn if |search literal| < search.str.min_length (prompt ve
 FILE==
 CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -e search.show_progress=false -c "< \n/z ab\nq\n" -1 =
 EXPECT=<<EOF
-[2K
-
-[0x00000000]>
-[0x00000000]> [2K
-
-[0x00000000]>
-[2K
-
-[0x00000000]>
-[0x00000000]> [2K
-[2K
-
-[0x00000000]> /
-[0x00000000]> /[2K
-[2K
-
-[0x00000000]> /z
-[0x00000000]> /z[2K
-[2K
-
-[0x00000000]> /z
-[0x00000000]> /z [2K
-[2K
-
-[0x00000000]> /z a
-[0x00000000]> /z a[2K
-[2K
-
-[0x00000000]> /z ab
-[0x00000000]> /z ab[2K
-
-[0x00000000]> /z ab
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> /[0x00000000]> /[2K[2K[0x00000000]> /z[0x00000000]> /z[2K[2K[0x00000000]> /z [0x00000000]> /z [2K[2K[0x00000000]> /z a[0x00000000]> /z a[2K[2K[0x00000000]> /z ab[0x00000000]> /z ab[2K[0x00000000]> /z ab
 WARNING: The string encoding for the search is set to "guess".
 The search will consume vastly more resources and the guessing is unreliable.
 You can set a specific encoding with 'e str.encoding=<encoding>'.
 WARNING: |ab| < search.str.min_length so some search hits may be hidden. Set search.str.min_length to 2 to see them.
-[2K
-
-[0x00000000]>
-[0x00000000]> [2K
-[2K
-
-[0x00000000]> q
-[0x00000000]> q[2K
-
-[0x00000000]> q
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
 EOF
 RUN
 
@@ -1561,7 +1522,6 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
-
 NAME=String Search - str.unprintable - single code point
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
@@ -1600,7 +1560,7 @@ ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0 43
-ا الأوضاع, لم بواب
+ا الأوضاع, لم بوابة المب
 EOF
 EXPECT_ERR=
 RUN

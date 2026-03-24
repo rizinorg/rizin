@@ -361,7 +361,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		bool user_defined_unprintable = is_user_defined_unprintable(opt, ucp);
-		if (rz_unicode_code_point_is_printable(ucp) && !is_user_defined_unprintable(opt, ucp) && ucp != '\\') {
+		if (rz_unicode_code_point_is_printable(ucp) && !user_defined_unprintable && ucp != '\\') {
 			char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			char_count++;
 		} else if (!user_defined_unprintable && ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
