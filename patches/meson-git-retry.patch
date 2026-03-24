@@ -1,0 +1,27 @@
+diff --git a/mesonbuild/utils/universal.py b/mesonbuild/utils/universal.py
+index e251695dd..0507066f3 100644
+--- a/mesonbuild/utils/universal.py
++++ b/mesonbuild/utils/universal.py
+@@ -205,9 +205,19 @@ GIT = shutil.which('git')
+ def git(cmd: T.List[str], workingdir: StrOrBytesPath, check: bool = False, **kwargs: T.Any) -> T.Tuple[subprocess.Popen[str], str, str]:
+     assert GIT is not None, 'Callers should make sure it exists'
+     cmd = [GIT, *cmd]
+-    p, o, e = Popen_safe(cmd, cwd=workingdir, **kwargs)
+-    if check and p.returncode != 0:
+-        raise GitException('Git command failed: ' + str(cmd), e)
++    retries = 0
++    while True:
++        try:
++            p, o, e = Popen_safe(cmd, cwd=workingdir, **kwargs)
++            if check and p.returncode != 0:
++                raise GitException('Git command failed: ' + str(cmd), e)
++            break
++        except GitException:
++            if retries == 5:
++                raise
++            else:
++                retries += 1
++                mlog.warning(f'Retry {retries} for {str(cmd)}')
+     return p, o, e
+ 
+ def quiet_git(cmd: T.List[str], workingdir: StrOrBytesPath, check: bool = False) -> T.Tuple[bool, str]:
