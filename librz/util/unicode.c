@@ -1028,13 +1028,13 @@ RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c) {
 		!rz_unicode_code_point_is_private(c);
 }
 
-RZ_API bool rz_unicode_code_point_is_printable_user(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count) {
+RZ_API bool rz_unicode_code_point_is_user_unprintable(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count) {
 	for (size_t i = 0; user_unprintable && i < user_unprintable_count; i++) {
 		if (user_unprintable[i] == c) {
-			return false;
+			return true;
 		}
 	}
-	return rz_unicode_code_point_is_printable(c);
+	return false;
 }
 
 static RzUnicodeCaseMapping bin_search_case_mapping(const RzUnicodeCaseMap map, size_t n, RzCodePoint key) {

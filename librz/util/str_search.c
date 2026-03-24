@@ -361,7 +361,7 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 		}
 
 		bool user_defined_unprintable = is_user_defined_unprintable(opt, ucp);
-		if (rz_unicode_code_point_is_printable_user(ucp, opt->user_unprintable, opt->user_unprintable_count) && ucp != '\\') {
+		if (rz_unicode_code_point_is_printable(ucp) && !is_user_defined_unprintable(opt, ucp) && ucp != '\\') {
 			char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			char_count++;
 		} else if (!user_defined_unprintable && ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
@@ -605,7 +605,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &code_points[i]);
-					if (!rz_unicode_code_point_is_printable_user(code_points[i], opt->user_unprintable, opt->user_unprintable_count)) {
+					if (!rz_unicode_code_point_is_printable(code_points[i]) || is_user_defined_unprintable(opt, code_points[i])) {
 						break;
 					}
 				}

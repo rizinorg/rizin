@@ -233,8 +233,9 @@ bool test_rz_scan_strings_user_unprintable(void) {
 }
 
 bool test_rz_scan_strings_user_unprintable_utf8(void) {
+	// UTF-8 bytes for U+00E9 (latin small letter e with acute) between "ab" and "cd".
 	static const unsigned char str[] = { 'a', 'b', 0xC3, 0xA9, 'c', 'd', 0x00 };
-	static RzCodePoint user_unprintable[] = { 0x00e9 };
+	static RzCodePoint user_unprintable[] = { 0x00e9 }; // U+00E9 (latin small letter e with acute)
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 	RzUtilStrScanOptions opt = g_opt;
 	opt.user_unprintable = user_unprintable;

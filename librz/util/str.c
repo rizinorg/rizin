@@ -4176,8 +4176,12 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 }
 
 static inline bool is_user_defined_unprintable(const RzStrStringifyOpt *option, RzCodePoint cp) {
-	for (size_t i = 0; option && option->user_unprintable && i < option->user_unprintable_count; i++) {
-		if (option->user_unprintable[i] == cp) {
+	if (!option || !option->user_unprintable) {
+		return false;
+	}
+	const RzCodePoint *user_unprintable = (const RzCodePoint *)rz_vector_head(option->user_unprintable);
+	for (size_t i = 0, count = rz_vector_len(option->user_unprintable); i < count; i++) {
+		if (user_unprintable[i] == cp) {
 			return true;
 		}
 	}
@@ -4262,10 +4266,10 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		}
 
 		if (rsize == 0) {
-			if (option->stop_at_unprintable) {
+			if (stringification_has_incomplete_tail(buf, buflen, i, enc)) {
 				break;
 			}
-			if (option->json && stringification_has_incomplete_tail(buf, buflen, i, enc)) {
+			if (option->stop_at_unprintable) {
 				break;
 			}
 			switch (enc) {
@@ -4351,18 +4355,20 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 		} else {
 			if (code_point == '\\') {
 				rz_strbuf_appendf(&sb, "\\\\");
-			} else if ((code_point == '\n' && !option->escape_nl && !is_user_defined_unprintable(option, code_point)) ||
-				rz_unicode_code_point_is_printable_user(code_point, option->user_unprintable, option->user_unprintable_count)) {
-				char tmp[5] = { 0 };
-				rz_utf8_encode((ut8 *)tmp, code_point);
-				rz_strbuf_appendf(&sb, "%s", tmp);
-			} else if (option->stop_at_unprintable) {
-				break;
 			} else {
-				ut8 tmp[4];
-				int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
-				for (int j = 0; j < n_enc; ++j) {
-					rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+				const bool user_unprintable = is_user_defined_unprintable(option, code_point);
+				if (((code_point == '\n' && !option->escape_nl) || rz_unicode_code_point_is_printable(code_point)) && !user_unprintable) {
+					char tmp[5] = { 0 };
+					rz_utf8_encode((ut8 *)tmp, code_point);
+					rz_strbuf_appendf(&sb, "%s", tmp);
+				} else if (option->stop_at_unprintable) {
+					break;
+				} else {
+					ut8 tmp[4];
+					int n_enc = rz_utf8_encode((ut8 *)tmp, code_point);
+					for (int j = 0; j < n_enc; ++j) {
+						rz_strbuf_appendf(&sb, "\\x%02x", tmp[j]);
+					}
 				}
 			}
 		}

@@ -994,6 +994,7 @@ static bool cb_str_unprintable(void *user, void *data) {
 		rz_cons_printf("  e str.unprintable=0x09,0x0a,0x0d,0x1b\n");
 		rz_cons_printf("  e str.unprintable=0x200B\n");
 		rz_cons_printf("  e str.unprintable=\n");
+		rz_cons_printf("    -- reset the list to empty.\n");
 		return false;
 	}
 
