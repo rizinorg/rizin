@@ -63,7 +63,6 @@ typedef struct rz_io_t {
 	int va; // all of this config stuff must be in 1 int
 	int ff;
 	int Oxff;
-	size_t addrbytes;
 	int aslr;
 	int autofd;
 	int cached;

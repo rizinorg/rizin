@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.9.0',
   license: 'LGPL-3.0-only',
-  meson_version: '>=0.57.0',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',

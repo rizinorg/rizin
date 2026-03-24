@@ -498,10 +498,10 @@ static void jemalloc_get_bins_450(RzCore *core, bool has_specified_addr, ut64 ad
 		}
 		PRINT_GA("}\n");
 	} else {
-		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
+		// Static mode - requires two arguments: dmhjb <arena_addr> <bin_info_addr>
 		arena_addr = addr;
 		if (!has_bin_info) {
-			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			RZ_LOG_ERROR("Usage: dmhjb <arena_addr> <bin_info_addr>\n");
 			return;
 		}
 
@@ -787,7 +787,7 @@ static void jemalloc_find_extent_530(RzCore *core, bool has_specified_addr, ut64
 
 static void jemalloc_extent_info_530(RzCore *core, bool has_specified_addr, ut64 edata_addr, const RzJemallocConfig530 *config) {
 	if (!has_specified_addr) {
-		RZ_LOG_ERROR("Usage: dmxei <edata_addr>\n");
+		RZ_LOG_ERROR("Usage: dmhjei <edata_addr>\n");
 		return;
 	}
 
@@ -856,10 +856,10 @@ static void jemalloc_get_bins_530(RzCore *core, bool has_specified_addr, ut64 ad
 		}
 		PRINT_GA("}\n");
 	} else {
-		// Static mode - requires two arguments: dmxb <arena_addr> <bin_info_addr>
+		// Static mode - requires two arguments: dmhjb <arena_addr> <bin_info_addr>
 		arena_addr = addr;
 		if (!has_bin_info) {
-			RZ_LOG_ERROR("Usage: dmxb <arena_addr> <bin_info_addr>\n");
+			RZ_LOG_ERROR("Usage: dmhjb <arena_addr> <bin_info_addr>\n");
 			return;
 		}
 

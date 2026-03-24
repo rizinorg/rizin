@@ -602,6 +602,35 @@ bool test_cfile_close_manual_cfile_map_multiple(void) {
 	mu_end;
 }
 
+bool test_bin_set_export_info(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+
+	bool r = rz_core_bin_load(core, NULL, 0);
+	mu_assert_true(r, "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	Sdb *sdb = sdb_ns(bf->sdb, "info", 0);
+
+	sdb_set(sdb, "my_item.offset", "0x200");
+	sdb_set(sdb, "my_item.format", "test_struct");
+	sdb_set(sdb, "my_item.size", "8");
+
+	rz_core_bin_set_export_info(core);
+
+	rz_flag_space_set(core->flags, "format");
+	RzFlagItem *fi = rz_flag_get(core->flags, "my_item");
+	mu_assert_notnull(fi, "flag 'my_item' should exist");
+	mu_assert_eq(fi->offset, 0x200, "flag offset");
+	mu_assert_eq(fi->size, 8, "flag size");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -611,6 +640,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_fd);
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
+	mu_run_test(test_bin_set_export_info);
 	return tests_passed != tests_run;
 }
 

@@ -4,12 +4,12 @@ ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.32.so -d
 CMDS=<<EOF
 db @ 0x004011fa
 dc
-dmht~?0xffffffffffff
-dmht~?Items: 7
+dmhgt~?0xffffffffffff
+dmhgt~?Items: 7
 dc
-dmht~?Items: 6
+dmhgt~?Items: 6
 dc
-dmht~?Items: 5
+dmhgt~?Items: 5
 EOF
 EXPECT=<<EOF
 0
@@ -25,11 +25,11 @@ ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF
 db @ 0x004011fa
 dc
-dmht~?Items: 7
+dmhgt~?Items: 7
 dc
-dmht~?Items: 6
+dmhgt~?Items: 6
 dc
-dmht~?Items: 5
+dmhgt~?Items: 5
 EOF
 EXPECT=<<EOF
 1
@@ -44,11 +44,11 @@ ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.27.so -d
 CMDS=<<EOF
 db @ 0x004011fa
 dc
-dmht~?Items: 7
+dmhgt~?Items: 7
 dc
-dmht~?Items: 6
+dmhgt~?Items: 6
 dc
-dmht~?Items: 5
+dmhgt~?Items: 5
 EOF
 EXPECT=<<EOF
 1

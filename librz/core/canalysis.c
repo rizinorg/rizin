@@ -1118,6 +1118,9 @@ static void print_hint_h_format(HintNode *node) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				rz_cons_printf(" val=0x%08" PFMT64x, record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				rz_cons_printf(" enum='%s'", rz_str_get(record->enum_name));
+				break;
 			}
 		}
 		break;
@@ -1198,6 +1201,9 @@ static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 					break;
 				case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 					pj_kn(pj, "val", record->val);
+					break;
+				case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+					pj_ks(pj, "enum", rz_str_get(record->enum_name));
 					break;
 				}
 			}
@@ -5658,7 +5664,6 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports_only) {
 	RzAnalysisOp op = { 0 };
 	int depth = rz_config_get_i(core->config, "analysis.depth");
-	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
 	int bufi = 0;
 	int bufi_max = bsz - 16;
@@ -5740,7 +5745,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 			op.size = minop;
 		}
 		addr += op.size;
-		bufi += addrbytes * op.size;
+		bufi += op.size;
 		rz_analysis_op_fini(&op);
 	}
 	rz_cons_break_pop();
