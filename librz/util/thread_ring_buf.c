@@ -33,8 +33,8 @@ struct rz_th_ring_buf_t {
 	size_t elem_size; ///< Size of one element in the buffer.
 	size_t n; ///< Number of elements the buffer can hold.
 
-	void *w; ///< Write location pointer.
-	void *r; ///< Read location pointer.
+	size_t w; ///< Write index.
+	size_t r; ///< Read index.
 
 	bool closed; ///< Set if ring buffer is closed (no reads/writes allowed).
 
@@ -59,8 +59,8 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size, Rz
 	}
 	rbuf->n = n;
 	rbuf->elem_size = elem_size;
-	rbuf->w = rbuf->buf;
-	rbuf->r = NULL;
+	rbuf->w = 0;
+	rbuf->r = 0;
 
 	rbuf->lock = rz_th_lock_new(false);
 	if (!rbuf->lock) {
@@ -106,7 +106,6 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 	return RZ_THREAD_RING_BUF_OK;
 }
 
-
 /**
  * \brief Clear all elements from the ring buffer.
  *
@@ -118,15 +117,40 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
 	ENTER_RBUF()
-	rbuf->w = rbuf->buf;
-	rbuf->r = NULL;
+	rbuf->w = 0;
+	rbuf->r = 0;
 	rbuf->to_read = 0;
 	LEAVE_RBUF()
 	return RZ_THREAD_RING_BUF_OK;
 }
 
+/**
+ * \brief Places the given element into the ring buffer.
+ *
+ * \param rbuf The ring buffer to write into.
+ * \param elem The element to copy.
+ *
+ * \return RZ_THREAD_RING_BUF_OK If the write succeeded.
+ * \return RZ_THREAD_RING_BUF_FAIL Only returned if the ring buffer was full and
+ *         the ring buffer mode == RZ_THREAD_RING_BUF_BLOCK.
+ * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
+ */
 RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, void *elem) {
 	rz_return_val_if_fail(rbuf && elem, RZ_THREAD_RING_BUF_CLOSED);
+
+	ENTER_RBUF();
+	bool write_overflows = rbuf->to_read == rbuf->n;
+	if (write_overflows && rbuf->mode == RZ_THREAD_RING_BUF_BLOCK) {
+		LEAVE_RBUF();
+		return RZ_THREAD_RING_BUF_FAIL;
+	}
+	memcpy((ut8 *)rbuf->buf + (rbuf->w * rbuf->elem_size), elem, rbuf->elem_size);
+	rbuf->w = (rbuf->w + 1) % rbuf->n;
+	if (!write_overflows) {
+		rbuf->to_read++;
+	}
+
+	LEAVE_RBUF();
 	return RZ_THREAD_RING_BUF_OK;
 }
 
@@ -142,6 +166,16 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRin
  */
 RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem) {
 	rz_return_val_if_fail(rbuf && elem, RZ_THREAD_RING_BUF_CLOSED);
+
+	ENTER_RBUF();
+	if (rbuf->to_read == 0) {
+		LEAVE_RBUF();
+		return RZ_THREAD_RING_BUF_FAIL;
+	}
+	memcpy(elem, (ut8 *)rbuf->buf + (rbuf->r * rbuf->elem_size), rbuf->elem_size);
+	rbuf->r = (rbuf->r + 1) % rbuf->n;
+	rbuf->to_read--;
+	LEAVE_RBUF();
 	return RZ_THREAD_RING_BUF_OK;
 }
 

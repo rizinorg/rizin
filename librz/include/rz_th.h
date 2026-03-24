@@ -29,7 +29,7 @@ typedef enum {
 
 typedef enum {
 	RZ_THREAD_RING_BUF_BLOCK = 0, ///< The ring buffer blocks writes when it is full.
-	RZ_THREAD_RING_BUF_OVERFLOW, ///< The ring buffer overwrites the oldest element (starting at index 0) when full.
+	RZ_THREAD_RING_BUF_OVERFLOW, ///< The ring buffer overwrites the oldest element when full.
 } RzThreadRingBufMode;
 
 typedef enum {
