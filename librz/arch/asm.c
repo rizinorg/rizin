@@ -851,9 +851,8 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	RzStrBuf *buf_asm;
 	RzAsmCode *acode;
 	ut64 pc = a->pc;
-	ut64 idx;
-	size_t ret;
-	const size_t addrbytes = a->core ? ((RzCore *)a->core)->io->addrbytes : 1;
+	ssize_t ret = 0;
+	ut64 idx = 0;
 
 	if (!(acode = rz_asm_code_new())) {
 		return NULL;
@@ -866,7 +865,7 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 		return rz_asm_code_free(acode);
 	}
 	RzAsmOp op = { 0 };
-	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
+	for (idx = 0; idx < len; idx += ret) {
 		rz_asm_set_pc(a, pc + idx);
 		rz_asm_op_init(&op);
 		ret = rz_asm_disassemble(a, &op, buf + idx, len - idx);
