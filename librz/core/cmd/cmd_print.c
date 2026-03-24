@@ -1828,48 +1828,52 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 }
 
 static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
-RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
-RzStrStringifyOpt opt = { 0 };
-RzBuffer *buf = rz_buf_new_with_io(&core->print->iob);
-ut64 max_len = core->blocksize;
+	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
+	RzStrStringifyOpt opt = { 0 };
+	ut64 len = 0;
+	RzBuffer *buf = rz_buf_new_with_pointers(core->block, core->blocksize, false);
 
-if (!buf) {
-return RZ_CMD_STATUS_ERROR;
-}
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 
-if (stop_at_nil && core->io && !core->fixedblock && !core->tmpseek) {
-const ut64 str_off = core->offset + offset;
-const ut64 io_size = rz_io_size(core->io);
-if (io_size != UT64_MAX && io_size > str_off) {
-max_len = io_size - str_off;
-}
-}
-max_len = RZ_MIN(max_len, (ut64)UT32_MAX);
+	if (offset < core->blocksize) {
+		len = core->blocksize - offset;
+	}
 
-if (encoding == RZ_STRING_ENC_GUESS) {
-encoding = rz_str_guess_encoding_from_buffer(core->block + offset, core->blocksize - offset);
-}
+	if (stop_at_nil && core->io && !core->fixedblock && !core->tmpseek) {
+		const ut64 str_off = core->offset + offset;
+		const ut64 io_size = rz_io_size(core->io);
+		if (io_size != UT64_MAX && io_size > str_off) {
+			len = RZ_MIN(len, io_size - str_off);
+		}
+	}
+	len = RZ_MIN(len, (ut64)UT32_MAX);
 
-switch (mode) {
-case RZ_OUTPUT_MODE_STANDARD:
-opt.buffer = buf;
-opt.offset = core->offset + offset;
-opt.length = (ut32)max_len;
-	opt.encoding = encoding;
-	opt.stop_at_nil = stop_at_nil;
-	opt.stop_at_unprintable = stop_at_unprintable;
-	core_print_raw_buffer(&opt);
-	break;
+	if (encoding == RZ_STRING_ENC_GUESS) {
+		encoding = len ? rz_str_guess_encoding_from_buffer(core->block + offset, (ut32)len) : RZ_STRING_ENC_8BIT;
+	}
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		opt.buffer = buf;
+		opt.offset = offset;
+		opt.length = (ut32)len;
+		opt.encoding = encoding;
+		opt.stop_at_nil = stop_at_nil;
+		opt.stop_at_unprintable = stop_at_unprintable;
+		core_print_raw_buffer(&opt);
+		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buf, core->offset + offset, (ut32)max_len, encoding, stop_at_nil, stop_at_unprintable);
+		print_json_string(core, buf, offset, (ut32)len, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
 		rz_buf_free(buf);
 		return RZ_CMD_STATUS_ERROR;
 	}
-rz_buf_free(buf);
-return RZ_CMD_STATUS_OK;
+	rz_buf_free(buf);
+	return RZ_CMD_STATUS_OK;
 }
 
 // "ps"
