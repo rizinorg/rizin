@@ -874,17 +874,15 @@ ehdr
 EOF
 RUN
 
-NAME=rz-bin -x pemixed.exe
-BROKEN=1
-FILE=bins/pe/pemixed.exe
+NAME=rz-bin -x a.out
+FILE=bins/mach0/a.out
 CMDS=<<EOF
-!rz-bin -x bins/pe/pemixed.exe
-!rm -r pemixed.exe.fat
+!rz-bin -x bins/mach0/a.out
+!rm -r a.out.fat
 EOF
 EXPECT=<<EOF
-pemixed.exe.fat/pemixed.exe.unknown_0.0 created (248)
-pemixed.exe.fat/pemixed.exe.unknown_0.1 created (35328)
-pemixed.exe.fat/pemixed.exe.unknown_0.2 created (35328)
+a.out.fat/a.out.arm_32.0 created (49424)
+a.out.fat/a.out.arm_64.1 created (49420)
 EOF
 RUN
 

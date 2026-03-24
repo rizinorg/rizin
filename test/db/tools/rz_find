@@ -125,12 +125,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-find -E 
-FILE==
-BROKEN=1
-CMDS=!rz-find -E "134513440,eip,4,esp,-=,esp,=[],eip,=" bins/elf/ioli/crackme0x00
+NAME=rz-find -E
+TOOL=rz-find
+ARGS=-E echo -s Password bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-1
+bins/elf/ioli/crackme0x00
+bins/elf/ioli/crackme0x00
+bins/elf/ioli/crackme0x00
+0x581
+0x59e
+0x5a9
 EOF
 RUN
 
