@@ -143,7 +143,7 @@ static int cbpf_arch_info(RzAnalysis *a, RzAnalysisInfoType query) {
 static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	BPFContext *ctx = (BPFContext *)a->plugin_data;
 	cs_insn *insn;
-	int n, ret;
+	int n;
 
 	cs_mode mode = CS_MODE_BPF_CLASSIC | (a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN);
 	if (mode != ctx->omode) {
@@ -154,9 +154,9 @@ static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 	}
 	op->size = 8;
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
-		if (ret) {
-			return ret;
+		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
+		if (err != CS_ERR_OK) {
+			return -1;
 		}
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
@@ -176,7 +176,7 @@ static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		return -1;
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		op->mnemonic = rz_str_newf("%s %s", insn->mnemonic, insn->op_str);
+		op->mnemonic = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		op->opex = cbpf_opex(ctx->handle, insn);
@@ -257,7 +257,7 @@ static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 	default:
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		op->type = RZ_ANALYSIS_OP_TYPE_NULL;
 		break;
 	}
 	cs_free(insn, n);

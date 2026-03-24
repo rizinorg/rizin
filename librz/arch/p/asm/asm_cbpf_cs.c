@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "capstone.h"
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(cbpf_asm);
@@ -9,7 +10,7 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(cbpf_asm);
 static int cbpf_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
-	int n, ret = -1;
+	int n;
 	cs_mode mode = CS_MODE_BPF_CLASSIC | (a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN);
 	memset(op, 0, sizeof(RzAsmOp));
 	op->size = 8;
@@ -19,9 +20,9 @@ static int cbpf_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		ctx->omode = -1;
 	}
 	if (!ctx->handle) {
-		ret = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
-		if (ret) {
-			return ret;
+		cs_err err = cs_open(CS_ARCH_BPF, mode, &ctx->handle);
+		if (err != CS_ERR_OK) {
+			return -1;
 		}
 		ctx->omode = mode;
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
@@ -30,24 +31,21 @@ static int cbpf_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
-		ret = -1;
 		cs_free(insn, n);
-		return ret;
+		return -1;
 	}
 	if (insn->size != 8) {
 		cs_free(insn, n);
-		ret = -1;
-		return ret;
+		return -1;
 	}
 	op->size = insn->size;
-	ret = op->size;
 	if (insn->op_str[0]) {
 		rz_asm_op_setf_asm(op, "%s %s", insn->mnemonic, insn->op_str);
 	} else {
 		rz_asm_op_set_asm(op, insn->mnemonic);
 	}
 	cs_free(insn, n);
-	return ret;
+	return op->size;
 }
 
 RzAsmPlugin rz_asm_plugin_cbpf_cs = {
