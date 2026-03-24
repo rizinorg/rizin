@@ -178,10 +178,55 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+bool test_rz_core_print_disasm_resolve_aav_symbols() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new failed");
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://0x20000", RZ_PERM_RWX, 0644, 0, NULL), "io open failed");
+	rz_core_set_asm_configs(core, "x86", 32, 0);
+	rz_config_set_i(core->config, "scr.color", 0);
+	rz_config_set_b(core->config, "asm.sub.names", true);
+	rz_config_set_b(core->config, "asm.sub.rel", true);
+	rz_config_set_i(core->config, "asm.sub.varmin", 0);
+
+	ut8 code[] = { 0xa1, 0x20, 0x00, 0x01, 0x00 }; // mov eax, dword [0x10020]
+	ut8 ptr[] = { 0x40, 0x00, 0x01, 0x00 }; // *(0x10020) = 0x10040
+	rz_io_write_at(core->io, 0x10020, ptr, sizeof(ptr));
+
+	rz_flag_space_set(core->flags, "symbols");
+	rz_flag_set(core->flags, "aav.0x00010020", 0x10020, 4);
+	rz_flag_set(core->flags, "obj.__stack_chk_guard", 0x10040, 4);
+
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
+	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
+	RzCoreDisasmOptions options = {
+		.vec = vec,
+		.cbytes = 1,
+	};
+	rz_core_print_disasm(core, 0, code, sizeof(code), sizeof(code), NULL, &options);
+
+	mu_assert_true(rz_pvector_len(vec) >= 1, "rz_core_print_disasm should produce at least one line");
+	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
+	mu_assert_notnull(t, "first disasm line");
+	char *insn = rz_str_dup(t->text);
+	mu_assert_notnull(insn, "instruction line copy");
+	char *comment = strchr(insn, ';');
+	if (comment) {
+		*comment = '\0';
+	}
+	mu_assert_notnull(strstr(insn, "obj.__stack_chk_guard"), "aav.aav symbol should be resolved to preferred symbol");
+	mu_assert_null(strstr(insn, "aav.aav."), "aav.aav symbol should not be present in instruction operand");
+	free(insn);
+
+	rz_core_free(core);
+	rz_pvector_free(vec);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_op_val);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_print_disasm);
+	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	return tests_passed != tests_run;
 }
 
