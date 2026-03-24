@@ -13,7 +13,7 @@
 #define ENTER_RBUF() \
 	rbuf->threads_awaiting++; \
 	rz_th_lock_enter(rbuf->lock); \
-	if (rbuf->closed) { \
+	if (RZ_UNLIKELY(rbuf->closed)) { \
 		LEAVE_RBUF(); \
 		return RZ_THREAD_RING_BUF_CLOSED; \
 	}
