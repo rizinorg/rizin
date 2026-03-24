@@ -199,7 +199,6 @@ static int rasm_show_help(int v) {
 		"-O",       "file",             "Output file name (rz-asm -Bf a.asm -O a)",
 		"-p",       "",                 "Run SPP over input for assembly",
 		"-q",       "",                 "Quiet mode",
-		"-r",       "",                 "Output in rizin commands",
 		"-s",       "syntax",           "Select syntax (intel, att)",
 		"-v",       "",                 "Show version information",
 		"-x",       "",                 "Use hex dwords instead of hex pairs when assembling.",
@@ -404,11 +403,6 @@ static void print_buf(RzAsmState *as, char *str) {
 	}
 }
 
-static bool print_label(void *user, const char *k, const char *v) {
-	printf("f label.%s @ %s\n", k, v);
-	return true;
-}
-
 static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool hexwords) {
 	RzAsmCode *acode;
 	int i, j, ret = 0;
@@ -494,22 +488,8 @@ static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
 }
 
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
-	int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
-	if (rad) {
-		printf("e asm.arch=%s\n", arch ? arch : RZ_SYS_ARCH);
-		printf("e asm.bits=%d\n", bits);
-		if (offset) {
-			printf("s 0x%" PFMT64x "\n", offset);
-		}
-		printf("wx ");
-	}
-	int ret = rasm_asm(as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
-	if (rad) {
-		printf("f entry @ $$\n");
-		printf("f label.main @ $$ + 1\n");
-		ht_ss_foreach(as->a->flags, print_label, NULL);
-	}
-	return ret;
+	int bin, bool use_spp, bool hexwords, const char *arch) {
+	return rasm_asm(as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
 }
 
 static void __load_plugins(RzAsmState *as) {
@@ -552,7 +532,6 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	const char *filters = NULL;
 	const char *file = NULL;
 	bool isbig = false;
-	bool rad = false;
 	bool use_spp = false;
 	bool hexwords = false;
 	ut64 offset = 0;
@@ -580,7 +559,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqrs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqs:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -685,9 +664,6 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			break;
 		case 'q':
 			as->quiet = true;
-			break;
-		case 'r':
-			rad = true;
 			break;
 		case 's':
 			if (*opt.arg == '?') {
@@ -816,7 +792,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				ret = show_analinfo(as, (const char *)buf, offset);
 			} else {
 				ret = print_assembly_output(as, (char *)buf, offset, len,
-					as->a->bits, bin, use_spp, rad, hexwords, arch);
+					as->a->bits, bin, use_spp, hexwords, arch);
 			}
 			ret = !ret;
 			free(buf);
@@ -844,7 +820,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 						ret = show_analinfo(as, (const char *)content, offset);
 					} else {
 						ret = print_assembly_output(as, content, offset, length,
-							as->a->bits, bin, use_spp, rad, hexwords, arch);
+							as->a->bits, bin, use_spp, hexwords, arch);
 					}
 					ret = !ret;
 				}
@@ -923,19 +899,13 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			if (!strncmp(usrstr, "0x", 2)) {
 				memmove(usrstr, usrstr + 2, strlen(usrstr + 2) + 1);
 			}
-			if (rad) {
-				as->oneliner = true;
-				printf("e asm.arch=%s\n", arch ? arch : RZ_SYS_ARCH);
-				printf("e asm.bits=%d\n", bits);
-				printf("\"wa ");
-			}
 			ret = rasm_disasm(as, offset, (char *)usrstr, len, as->a->bits, bin, dis);
 			free(usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo(as, (const char *)opt.argv[opt.ind], offset);
 		} else {
 			ret = print_assembly_output(as, opt.argv[opt.ind], offset, len, as->a->bits,
-				bin, use_spp, rad, hexwords, arch);
+				bin, use_spp, hexwords, arch);
 		}
 		ret = !ret;
 	}
