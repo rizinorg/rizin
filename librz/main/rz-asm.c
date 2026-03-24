@@ -568,7 +568,6 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 
 	RzAsmState *as = __as_new();
 
-	// TODO set addrbytes
 	char *rz_arch = rz_sys_getenv("RZ_ARCH");
 	if (rz_arch) {
 		arch = rz_arch;
