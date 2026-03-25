@@ -712,15 +712,6 @@ if not libzstd_dep.found()
   meson.override_dependency('zstd', libzstd_dep)
 endif
 
-# handle mpc dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-mpc_proj = subproject('mpc', default_options: ['default_library=static'])
-mpc_dep = mpc_proj.get_variable('mpc_dep')
-
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
