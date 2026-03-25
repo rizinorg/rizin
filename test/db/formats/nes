@@ -22,3 +22,22 @@ EXPECT=<<EOF
  3 fd: 3 +0x00000010 0x0000c000 - 0x0000ffff r-x fmap.ROM_MIRROR
 EOF
 RUN
+
+NAME=NES: Pong - iH
+FILE=bins/nes/Pong.nes
+CMDS=iH
+EXPECT=<<EOF
+nes:
+  magic: 4e45531a
+  prg_pages: 1
+  chr_pages: 0
+  prg_size: 0x4000
+  chr_size: 0x0
+  mapper: 0x0
+  mirror: true
+  battery: false
+  trainer: false
+  four_screen: false
+  ram_banks: 0
+EOF
+RUN
