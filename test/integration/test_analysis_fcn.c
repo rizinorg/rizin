@@ -7,6 +7,69 @@
 #include "rz_config.h"
 #include "rz_types_base.h"
 
+typedef struct {
+	int new_count;
+	int del_count;
+	int rename_count;
+	ut64 last_new_addr;
+	ut64 last_del_addr;
+	char *last_old_name;
+} FunctionEventTracker;
+
+static void function_event_cb(RzEvent *ev, int type, void *user, void *data) {
+	FunctionEventTracker *tracker = user;
+	switch (type) {
+	case RZ_EVENT_FCN_NEW: {
+		RzEventAnalysisFunction *event = data;
+		tracker->new_count++;
+		tracker->last_new_addr = event->fcn->addr;
+		break;
+	}
+	case RZ_EVENT_FCN_DEL: {
+		RzEventAnalysisFunctionDel *event = data;
+		tracker->del_count++;
+		tracker->last_del_addr = event->addr;
+		break;
+	}
+	case RZ_EVENT_FCN_RENAME: {
+		RzEventAnalysisFunctionRename *event = data;
+		tracker->rename_count++;
+		free(tracker->last_old_name);
+		tracker->last_old_name = rz_str_dup(event->old_name);
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static bool test_analysis_fcn_events() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new failed");
+	FunctionEventTracker tracker = { 0 };
+	mu_assert_notnull(core->analysis, "analysis is null");
+	mu_assert_notnull(core->analysis->ev, "analysis event bus is null");
+	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_NEW, function_event_cb, &tracker);
+	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_DEL, function_event_cb, &tracker);
+	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_RENAME, function_event_cb, &tracker);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "event_src", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+	mu_assert_eq(tracker.new_count, 1, "new event count");
+	mu_assert_eq(tracker.last_new_addr, 0x100, "new event addr");
+
+	mu_assert_true(rz_analysis_function_rename(fcn, "event_dst"), "rename function");
+	mu_assert_eq(tracker.rename_count, 1, "rename event count");
+	mu_assert_streq(tracker.last_old_name, "event_src", "rename old name");
+
+	mu_assert_true(rz_analysis_function_delete(fcn), "delete function");
+	mu_assert_eq(tracker.del_count, 1, "delete event count");
+	mu_assert_eq(tracker.last_del_addr, 0x100, "delete event addr");
+
+	free(tracker.last_old_name);
+	rz_core_free(core);
+	mu_end;
+}
+
 /**
  * Test the function analysis on >64K function.
  */
@@ -97,6 +160,7 @@ static bool test_analysis_xrefs_comment() {
 
 bool all_tests() {
 	mu_run_test(test_analysis_fcn_large);
+	mu_run_test(test_analysis_fcn_events);
 	mu_run_test(test_analysis_xrefs_comment);
 	return tests_passed != tests_run;
 }
