@@ -24,11 +24,11 @@
 #include "rz_types_base.h"
 #include <string.h>
 
-static RZ_INLINE uint32_t rotl32(uint32_t x, int8_t r) {
+static RZ_INLINE ut32 rotl32(ut32 x, int8_t r) {
 	return (x << r) | (x >> (32 - r));
 }
 
-static RZ_INLINE uint64_t rotl64(uint64_t x, int8_t r) {
+static RZ_INLINE ut64 rotl64(ut64 x, int8_t r) {
 	return (x << r) | (x >> (64 - r));
 }
 
@@ -42,7 +42,7 @@ static RZ_INLINE uint64_t rotl64(uint64_t x, int8_t r) {
 /*
  * \brief Finalization mix - force all bits of a hash block to avalanche
  */
-static RZ_INLINE uint32_t fmix32(uint32_t h) {
+static RZ_INLINE ut32 fmix32(ut32 h) {
 	h ^= h >> 16;
 	h *= 0x85ebca6b;
 	h ^= h >> 13;
@@ -52,7 +52,7 @@ static RZ_INLINE uint32_t fmix32(uint32_t h) {
 	return h;
 }
 
-static RZ_INLINE uint64_t fmix64(uint64_t k) {
+static RZ_INLINE ut64 fmix64(ut64 k) {
 	k ^= k >> 33;
 	k *= BIG_CONSTANT(0xff51afd7ed558ccd);
 	k ^= k >> 33;
@@ -63,18 +63,18 @@ static RZ_INLINE uint64_t fmix64(uint64_t k) {
 }
 
 RZ_IPI void MurmurHash3_x86_32(const void *key, RzRef len, size_t seed, void *out) {
-	const uint8_t *data = (const uint8_t *)key;
+	const ut8 *data = (const ut8 *)key;
 	const RzRef nblocks = len / 4;
 	RzRef i;
 
-	uint32_t h1 = seed;
+	ut32 h1 = seed;
 
-	uint32_t c1 = 0xcc9e2d51;
-	uint32_t c2 = 0x1b873593;
-	const uint32_t *blocks = (const uint32_t *)(data + nblocks * 4);
+	ut32 c1 = 0xcc9e2d51;
+	ut32 c2 = 0x1b873593;
+	const ut32 *blocks = (const ut32 *)(data + nblocks * 4);
 
 	for (i = -nblocks; i; i++) {
-		uint32_t k1 = getblock(blocks, i);
+		ut32 k1 = getblock(blocks, i);
 
 		k1 *= c1;
 		k1 = ROTL32_Murmur3(k1, 15);
@@ -85,9 +85,9 @@ RZ_IPI void MurmurHash3_x86_32(const void *key, RzRef len, size_t seed, void *ou
 		h1 = h1 * 5 + 0xe6546b64;
 	}
 
-	const uint8_t *tail = (const uint8_t *)(data + nblocks * 4);
+	const ut8 *tail = (const ut8 *)(data + nblocks * 4);
 
-	uint32_t k1 = 0;
+	ut32 k1 = 0;
 
 	switch (len & 3) {
 	case 3:
@@ -107,11 +107,11 @@ RZ_IPI void MurmurHash3_x86_32(const void *key, RzRef len, size_t seed, void *ou
 	// finalization
 	h1 ^= len;
 	h1 = fmix32(h1);
-	*(uint32_t *)out = h1;
+	*(ut32 *)out = h1;
 }
 
 RZ_IPI void MurmurHash3_x86_128(const void *key, const RzRef len, size_t seed, void *out) {
-	const uint8_t *data = (const uint8_t *)key;
+	const ut8 *data = (const ut8 *)key;
 	const RzRef nblocks = len / 16;
 	RzRef i;
 
@@ -125,13 +125,13 @@ RZ_IPI void MurmurHash3_x86_128(const void *key, const RzRef len, size_t seed, v
 	const size_t c3 = 0x38b34ae5;
 	const size_t c4 = 0xa1e38b93;
 
-	const uint32_t *blocks = (const uint32_t *)(data + nblocks * 16);
+	const ut32 *blocks = (const ut32 *)(data + nblocks * 16);
 
 	for (i = -nblocks; i; i++) {
-		uint32_t k1 = getblock(blocks, i * 4 + 0);
-		uint32_t k2 = getblock(blocks, i * 4 + 1);
-		uint32_t k3 = getblock(blocks, i * 4 + 2);
-		uint32_t k4 = getblock(blocks, i * 4 + 3);
+		ut32 k1 = getblock(blocks, i * 4 + 0);
+		ut32 k2 = getblock(blocks, i * 4 + 1);
+		ut32 k3 = getblock(blocks, i * 4 + 2);
+		ut32 k4 = getblock(blocks, i * 4 + 3);
 
 		k1 *= c1;
 		k1 = ROTL32_Murmur3(k1, 15);
@@ -170,12 +170,12 @@ RZ_IPI void MurmurHash3_x86_128(const void *key, const RzRef len, size_t seed, v
 		h4 = h4 * 5 + 0x32ac3b17;
 	}
 
-	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
+	const ut8 *tail = (const ut8 *)(data + nblocks * 16);
 
-	uint32_t k1 = 0;
-	uint32_t k2 = 0;
-	uint32_t k3 = 0;
-	uint32_t k4 = 0;
+	ut32 k1 = 0;
+	ut32 k2 = 0;
+	ut32 k3 = 0;
+	ut32 k4 = 0;
 
 	switch (len & 15) {
 	case 15:
@@ -267,28 +267,28 @@ RZ_IPI void MurmurHash3_x86_128(const void *key, const RzRef len, size_t seed, v
 	h3 += h1;
 	h4 += h1;
 
-	((uint32_t *)out)[0] = h1;
-	((uint32_t *)out)[1] = h2;
-	((uint32_t *)out)[2] = h3;
-	((uint32_t *)out)[3] = h4;
+	((ut32 *)out)[0] = h1;
+	((ut32 *)out)[1] = h2;
+	((ut32 *)out)[2] = h3;
+	((ut32 *)out)[3] = h4;
 }
 
-RZ_IPI void MurmurHash3_x64_128(const void *key, const RzRef len, const uint64_t seed, void *out) {
-	const uint8_t *data = (const uint8_t *)key;
+RZ_IPI void MurmurHash3_x64_128(const void *key, const RzRef len, const ut64 seed, void *out) {
+	const ut8 *data = (const ut8 *)key;
 	const RzRef nblocks = len / 16;
 	RzRef i;
 
-	uint64_t h1 = seed;
-	uint64_t h2 = seed;
+	ut64 h1 = seed;
+	ut64 h2 = seed;
 
-	const uint64_t c1 = BIG_CONSTANT(0x87c37b91114253d5);
-	const uint64_t c2 = BIG_CONSTANT(0x4cf5ad432745937f);
+	const ut64 c1 = BIG_CONSTANT(0x87c37b91114253d5);
+	const ut64 c2 = BIG_CONSTANT(0x4cf5ad432745937f);
 
-	const uint64_t *blocks = (const uint64_t *)(data);
+	const ut64 *blocks = (const ut64 *)(data);
 
 	for (i = 0; i < nblocks; i++) {
-		uint64_t k1 = getblock(blocks, i * 2 + 0);
-		uint64_t k2 = getblock(blocks, i * 2 + 1);
+		ut64 k1 = getblock(blocks, i * 2 + 0);
+		ut64 k2 = getblock(blocks, i * 2 + 1);
 
 		k1 *= c1;
 		k1 = ROTL64_Murmur3(k1, 31);
@@ -309,60 +309,60 @@ RZ_IPI void MurmurHash3_x64_128(const void *key, const RzRef len, const uint64_t
 		h2 = h2 * 5 + 0x38495ab5;
 	}
 
-	const uint8_t *tail = (const uint8_t *)(data + nblocks * 16);
+	const ut8 *tail = (const ut8 *)(data + nblocks * 16);
 
-	uint64_t k1 = 0;
-	uint64_t k2 = 0;
+	ut64 k1 = 0;
+	ut64 k2 = 0;
 
 	switch (len & 15) {
 	case 15:
-		k2 ^= (uint64_t)(tail[14]) << 48;
+		k2 ^= (ut64)(tail[14]) << 48;
 		/* fall through */
 	case 14:
-		k2 ^= (uint64_t)(tail[13]) << 40;
+		k2 ^= (ut64)(tail[13]) << 40;
 		/* fall through */
 	case 13:
-		k2 ^= (uint64_t)(tail[12]) << 32;
+		k2 ^= (ut64)(tail[12]) << 32;
 		/* fall through */
 	case 12:
-		k2 ^= (uint64_t)(tail[11]) << 24;
+		k2 ^= (ut64)(tail[11]) << 24;
 		/* fall through */
 	case 11:
-		k2 ^= (uint64_t)(tail[10]) << 16;
+		k2 ^= (ut64)(tail[10]) << 16;
 		/* fall through */
 	case 10:
-		k2 ^= (uint64_t)(tail[9]) << 8;
+		k2 ^= (ut64)(tail[9]) << 8;
 		/* fall through */
 	case 9:
-		k2 ^= (uint64_t)(tail[8]) << 0;
+		k2 ^= (ut64)(tail[8]) << 0;
 		k2 *= c2;
 		k2 = ROTL64_Murmur3(k2, 33);
 		k2 *= c1;
 		h2 ^= k2;
 	/* fall through */
 	case 8:
-		k1 ^= (uint64_t)(tail[7]) << 56;
+		k1 ^= (ut64)(tail[7]) << 56;
 		/* fall through */
 	case 7:
-		k1 ^= (uint64_t)(tail[6]) << 48;
+		k1 ^= (ut64)(tail[6]) << 48;
 		/* fall through */
 	case 6:
-		k1 ^= (uint64_t)(tail[5]) << 40;
+		k1 ^= (ut64)(tail[5]) << 40;
 		/* fall through */
 	case 5:
-		k1 ^= (uint64_t)(tail[4]) << 32;
+		k1 ^= (ut64)(tail[4]) << 32;
 		/* fall through */
 	case 4:
-		k1 ^= (uint64_t)(tail[3]) << 24;
+		k1 ^= (ut64)(tail[3]) << 24;
 		/* fall through */
 	case 3:
-		k1 ^= (uint64_t)(tail[2]) << 16;
+		k1 ^= (ut64)(tail[2]) << 16;
 		/* fall through */
 	case 2:
-		k1 ^= (uint64_t)(tail[1]) << 8;
+		k1 ^= (ut64)(tail[1]) << 8;
 		/* fall through */
 	case 1:
-		k1 ^= (uint64_t)(tail[0]) << 0;
+		k1 ^= (ut64)(tail[0]) << 0;
 		k1 *= c1;
 		k1 = ROTL64_Murmur3(k1, 31);
 		k1 *= c2;
@@ -381,6 +381,6 @@ RZ_IPI void MurmurHash3_x64_128(const void *key, const RzRef len, const uint64_t
 	h1 += h2;
 	h2 += h1;
 
-	((uint64_t *)out)[0] = h1;
-	((uint64_t *)out)[1] = h2;
+	((ut64 *)out)[0] = h1;
+	((ut64 *)out)[1] = h2;
 }
