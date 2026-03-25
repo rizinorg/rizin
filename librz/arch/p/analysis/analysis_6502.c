@@ -1824,7 +1824,7 @@ static int _6502_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	return op->size;
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *_6502_get_reg_profile(RzAnalysis *analysis) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -1849,7 +1849,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int esil_6502_init(RzAnalysisEsil *esil) {
+static int _6502_esil_init(RzAnalysisEsil *esil) {
 	if (esil->analysis && esil->analysis->reg) { // initial values
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "pc", -1), 0x0000);
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xff);
@@ -1861,11 +1861,11 @@ static int esil_6502_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int esil_6502_fini(RzAnalysisEsil *esil) {
+static int _6502_esil_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int address_bits(RzAnalysis *analysis, int bits) {
+static int _6502_address_bits(RzAnalysis *analysis, int bits) {
 	return 16;
 }
 
@@ -1880,18 +1880,35 @@ static RzAnalysisILConfig *_6502_il_config(RzAnalysis *analysis) {
 	return rz_analysis_il_config_new(16, false, 16);
 }
 
+static int _6502_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
 	.arch = "6502",
 	.bits = 8,
-	.address_bits = address_bits,
+	.address_bits = _6502_address_bits,
 	.op = &_6502_op,
-	.get_reg_profile = &get_reg_profile,
+	.get_reg_profile = &_6502_get_reg_profile,
 	.esil = true,
-	.esil_init = esil_6502_init,
-	.esil_fini = esil_6502_fini,
-	.il_config = _6502_il_config
-
+	.esil_init = _6502_esil_init,
+	.esil_fini = _6502_esil_fini,
+	.il_config = _6502_il_config,
+	.archinfo = _6502_archinfo,
 };
