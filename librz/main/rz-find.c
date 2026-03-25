@@ -795,6 +795,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.align = rz_num_math(NULL, opt.arg);
 			if (rz_bits_count_ones_ut64(ro.align) != 1) {
 				RZ_LOG_ERROR("Alignment must only have one bit set.\n");
+				rz_list_free(ro.keywords);
 				return 1;
 			}
 			break;
@@ -857,6 +858,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			size_t data_size;
 			char *data = rz_file_slurp(opt.arg, &data_size);
 			if (!data) {
+				rz_list_free(ro.keywords);
 				eprintf("Cannot slurp '%s'\n", opt.arg);
 				return 1;
 			}
@@ -887,16 +889,19 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'v': {
 			RzPath *sys_path = rz_path_new();
 			if (!sys_path) {
+				rz_list_free(ro.keywords);
 				return show_help(argv[0], 1);
 			}
 			size_t print_val = rz_main_version_print(sys_path, "rz-find");
 			rz_path_free(sys_path);
+			rz_list_free(ro.keywords);
 			return print_val;
 		}
 		case 'V':
 			ro.verbose = true;
 			break;
 		case 'h':
+			rz_list_free(ro.keywords);
 			return show_help(argv[0], 0);
 		case 'z':
 			ro.mode = RZ_SEARCH_STRING;
@@ -905,10 +910,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.showstr = true;
 			break;
 		default:
+			rz_list_free(ro.keywords);
 			return show_help(argv[0], 1);
 		}
 	}
 	if (opt.ind == argc) {
+		rz_list_free(ro.keywords);
 		return show_help(argv[0], 1);
 	}
 	/* Enable quiet mode if searching just a single file */
