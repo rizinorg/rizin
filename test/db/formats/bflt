@@ -317,9 +317,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  unknown
-minopsz  1
+maxopsz  4
+minopsz  2
 os       Linux
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   uClinux
 stripped false
