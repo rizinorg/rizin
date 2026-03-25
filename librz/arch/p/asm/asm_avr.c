@@ -10,7 +10,7 @@
 #include "avr/assembler.h"
 #include "avr/disassembler.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	AVROp aop = { 0 };
 	op->size = avr_disassembler(buf, len, a->pc, a->big_endian, &aop, &op->buf_asm);
 	if (!op->size) {
@@ -20,7 +20,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	st32 slen = strlen(str);
 
 	ut8 buffer[16];

@@ -8,7 +8,7 @@
 
 #include <v850/v850_disas.h>
 
-static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int v850_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	V850_Inst inst = { 0 };
 	inst.addr = a->pc;
 	if (len < 2) {

@@ -8,7 +8,7 @@
 
 static mcore_handle handle = { 0 };
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	mcore_t *instr = NULL;
 	char tmp[256];
 	if (!op || mcore_init(&handle, buf, len)) {

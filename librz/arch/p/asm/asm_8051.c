@@ -11,7 +11,7 @@
 #include <8051/8051_ass.h>
 #include <8051/8051_disas.h>
 
-static int _8051_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int _8051_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = 0;
 	char *s = rz_8051_disas(a->pc, buf, len, &dlen);
 	if (dlen < 0) {
@@ -25,7 +25,7 @@ static int _8051_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return dlen;
 }
 
-static int _8051_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int _8051_assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	return assemble_8051(op, a->pc, buf);
 }
 

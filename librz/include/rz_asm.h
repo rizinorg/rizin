@@ -105,14 +105,14 @@ typedef struct rz_asm_plugin_t {
 	int endian;
 	bool (*init)(void **user);
 	bool (*fini)(void *user);
-	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
-	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
-	char *(*mnemonics)(RzAsm *a, int id, bool json);
+	int (*disassemble)(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
+	int (*assemble)(const RzAsm *a, RzAsmOp *op, const char *buf);
+	char *(*mnemonics)(const RzAsm *a, int id, bool json);
 	RZ_OWN RzConfig *(*get_config)(void *plugin_data);
 	const char *features;
 	const char *platforms;
 	char **(*get_cpu_desc)();
-	bool (*sw_breakpoint)(RzAsm *a, RzAsmOp *op);
+	bool (*sw_breakpoint)(const RzAsm *a, RzAsmOp *op);
 } RzAsmPlugin;
 
 /**

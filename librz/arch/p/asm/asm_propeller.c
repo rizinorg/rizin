@@ -8,7 +8,7 @@
 
 #include <propeller/propeller_disas.h>
 
-static int propeller_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int propeller_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a && op && buf && len >= 4, -1);
 	struct propeller_cmd cmd;
 	int ret = propeller_decode_command(buf, &cmd);

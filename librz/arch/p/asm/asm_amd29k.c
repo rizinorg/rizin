@@ -7,7 +7,7 @@
 #include "asm_private.h"
 #include "amd29k/amd29k.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !op || !buf || len < 4) {
 		return -1;
 	}

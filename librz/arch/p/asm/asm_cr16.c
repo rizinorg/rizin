@@ -7,7 +7,7 @@
 #include "asm_private.h"
 #include <cr16/cr16_disas.h>
 
-static int cr16_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int cr16_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd = { 0 };
 	int ret = cr16_decode_command(buf, &cmd, len);
 	if (ret > -1) {

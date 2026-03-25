@@ -7,7 +7,7 @@
 
 #define ASSEMBLER "RZ_PPC_AS"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 #if __powerpc__
 	char *as = "as";
 #else

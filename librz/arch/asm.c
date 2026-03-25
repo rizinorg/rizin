@@ -854,7 +854,7 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
-typedef int (*Ase)(RzAsm *a, RzAsmOp *op, const char *buf);
+typedef int (*Ase)(const RzAsm *a, RzAsmOp *op, const char *buf);
 
 static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 	if (!a || !h->arch || !h->assemble || !has_bits(h, a->bits)) {

@@ -8,7 +8,7 @@
 #include "asm_private.h"
 #include <ebc/ebc_disas.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ebc_command_t cmd = { { 0 }, { 0 } };
 	int ret = ebc_decode_command(buf, len, &cmd);
 	if (cmd.operands[0]) {

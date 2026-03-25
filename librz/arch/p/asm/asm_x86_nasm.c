@@ -5,7 +5,7 @@
 #include <rz_asm.h>
 #include "asm_private.h"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	if (a->syntax != RZ_ASM_SYNTAX_INTEL) {
 		RZ_LOG_ERROR("assembler: x86.nasm: the assembler does not support non-intel syntax\n");

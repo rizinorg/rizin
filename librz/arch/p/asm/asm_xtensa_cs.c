@@ -6,7 +6,7 @@
 #include "asm_private.h"
 #include <xtensa/xtensa.h>
 
-static int asm_xtensa_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int asm_xtensa_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	XtensaContext *ctx = a->plugin_data;
 	if (!xtensa_open(ctx, a->cpu, a->big_endian)) {
 		goto beach;

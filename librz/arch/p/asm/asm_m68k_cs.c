@@ -13,7 +13,7 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
 // Size of the longest instruction in bytes
 #define M68K_LONGEST_INSTRUCTION 10
 
-static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		return -1;
 	}

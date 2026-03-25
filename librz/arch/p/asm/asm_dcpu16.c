@@ -8,7 +8,7 @@
 #include "asm_private.h"
 #include <dcpu16/dcpu16.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char buf_asm[96];
 	if (len < 2) {
 		return -1; // at least 2 bytes!
@@ -18,7 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	int len = dcpu16_assemble((ut8 *)rz_strbuf_get(&op->buf), buf);
 	op->buf.len = len;
 	return len;

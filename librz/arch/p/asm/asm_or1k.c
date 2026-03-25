@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <or1k/or1k_disas.h>
 
-static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_str(const RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = { 0 };
 	char *name;
 	insn_type_t type = type_of_opcode(descr, extra);
@@ -93,7 +93,7 @@ static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra
 	return 4;
 }
 
-static int or1k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int or1k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
 	char *line = NULL;

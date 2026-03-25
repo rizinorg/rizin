@@ -9,7 +9,7 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(xcore_asm);
 
-static int xcore_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int xcore_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
 	int n, ret = -1;

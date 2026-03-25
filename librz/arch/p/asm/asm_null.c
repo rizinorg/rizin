@@ -6,14 +6,14 @@
 #include <rz_asm.h>
 #include "asm_private.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int opsz = 0;
 	rz_strbuf_set(&op->buf_asm, "");
 	op->size = opsz;
 	return opsz;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	return 0;
 }
 

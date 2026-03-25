@@ -8,7 +8,7 @@
 
 #include <msp430/msp430_disas.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
 	int ret = msp430_decode_command(buf, len, &cmd);
 	if (ret < 1) {

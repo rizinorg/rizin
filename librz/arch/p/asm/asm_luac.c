@@ -4,7 +4,7 @@
 #include "asm_private.h"
 #include <luac/lua_arch.h>
 
-int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
+int rz_luac_disasm(const RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	LuaOpNameList oplist = NULL;
 	int r = 0;
 
@@ -29,7 +29,7 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	return r;
 }
 
-int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
+int rz_luac_asm(const RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	int str_len = strlen(str);
 	ut32 instruction = 0;
 	ut8 buffer[4];

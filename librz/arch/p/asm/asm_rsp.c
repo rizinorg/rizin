@@ -13,7 +13,7 @@
 
 #include <rsp/rsp_idec.h>
 
-static int rsp_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int rsp_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rsp_instruction rz_instr;
 	int i;
 

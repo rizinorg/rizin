@@ -11,7 +11,7 @@
 #define ASSEMBLER32 "RZ_ARM32_AS"
 #define ASSEMBLER64 "RZ_ARM64_AS"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	int bits = a->bits;
 	char *as = "";
 #if __arm__

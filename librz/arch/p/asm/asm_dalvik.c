@@ -10,7 +10,7 @@
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int)buf[0];
@@ -523,7 +523,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 // TODO
-static int dalvik_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int dalvik_assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	ut8 temp[4];
 	for (ut32 i = 0; i < 256; i++) {
 		if (strcmp(dalvik_opcodes[i].name, buf)) {

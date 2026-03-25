@@ -10,7 +10,7 @@
 #include <rz_lib.h>
 #include <6502/6502dis.h>
 
-static int _6520_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int _6520_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = disass_6502(a->pc, op, buf, len);
 	return op->size = RZ_MAX(dlen, 0);
 }

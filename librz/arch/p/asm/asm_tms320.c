@@ -13,7 +13,7 @@ typedef struct tms_cs_context_t {
 	tms320_dasm_t engine;
 } TmsContext;
 
-static int tms320_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	TmsContext *ctx = (TmsContext *)a->plugin_data;
 	if (a->cpu && rz_str_casecmp(a->cpu, "c54x") == 0) {
 		tms320_f_set_cpu(&ctx->engine, TMS320_F_CPU_C54X);
@@ -53,7 +53,7 @@ static bool tms320_fini(void *user) {
 	return true;
 }
 
-static char *tms320_mnemonics(RzAsm *a, int id, bool json) {
+static char *tms320_mnemonics(const RzAsm *a, int id, bool json) {
 	TmsContext *ctx = (TmsContext *)a->plugin_data;
 	if (!a->cpu || rz_str_casecmp(a->cpu, "c64x")) {
 		return NULL;

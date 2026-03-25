@@ -7,7 +7,7 @@
 #include <rz_lib.h>
 #include <lh5801/lh5801.h>
 
-static int disassemble(RzAsm *as, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *as, RzAsmOp *op, const ut8 *buf, int len) {
 	struct lh5801_insn insn = { 0 };
 	if (!op) {
 		return 0;

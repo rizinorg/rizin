@@ -12,7 +12,7 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
-static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int sysz_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	int n, ret;
 	ut64 off = a->pc;

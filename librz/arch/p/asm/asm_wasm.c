@@ -11,7 +11,7 @@
 
 #include <wasm/wasm.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	WasmOp wop = { { 0 } };
 	int ret = wasm_dis(&wop, buf, len);
 	rz_asm_op_set_asm(op, wop.txt);
@@ -20,7 +20,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	ut8 *opbuf = (ut8 *)rz_strbuf_get(&op->buf);
 	op->size = wasm_asm(buf, opbuf, 32); // XXX hardcoded opsize
 	return op->size;

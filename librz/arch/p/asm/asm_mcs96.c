@@ -311,7 +311,7 @@ static bool mcs96_fini(void *u) {
 	return true;
 }
 
-static int mcs96_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int mcs96_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}

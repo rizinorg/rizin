@@ -32,7 +32,7 @@ typedef struct asm_arm_cs_context_t {
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
-static bool check_features(RzAsm *a, cs_insn *insn) {
+static bool check_features(const RzAsm *a, cs_insn *insn) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 	int i;
 	if (!insn || !insn->detail) {
@@ -67,7 +67,7 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	return true;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 
 	bool disp_hash = a->immdisp;
@@ -178,7 +178,7 @@ beach:
 	return ret;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	const bool is_thumb = (a->bits == 16);
 	int opsize;
 	ut32 opcode;
@@ -249,7 +249,7 @@ static bool arm_fini(void *user) {
 	return true;
 }
 
-static char *mnemonics(RzAsm *a, int id, bool json) {
+static char *mnemonics(const RzAsm *a, int id, bool json) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 	int i;
 	a->cur->disassemble(a, NULL, NULL, -1);
@@ -298,7 +298,7 @@ static char **arm_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool arm_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool arm_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
 	if (a->bits == 64) {
 		// arm64/aarch64
 		// { 64, 4, 0, "\x00\x00\x20\xd4" }, // le - arm64 brk0

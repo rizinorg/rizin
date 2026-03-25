@@ -10,7 +10,7 @@
 #include "pic/pic_midrange.h"
 #include "pic/pic_highend.h"
 
-static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
+static int asm_pic_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	if (is_pic_baseline_or_pic_midrange(a->cpu)) {
 		PicMidrangeOp x = { 0 };
 		if (!(is_pic_baseline(a->cpu) ? pic_baseline_decode_op : pic_midrange_decode_op)(&x, a->pc, b, l)) {

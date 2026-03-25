@@ -11,7 +11,7 @@
 #define TRICORE_LONGEST_INSTRUCTION  4
 #define TRICORE_SHORTEST_INSTRUCTION 2
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf || len < TRICORE_SHORTEST_INSTRUCTION || !a->plugin_data) {
 		return -1;
 	}

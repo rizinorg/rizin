@@ -9,7 +9,7 @@
 #include <rz_lib.h>
 #include <i4004/i4004dis.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return i4004dis(op, buf, len);
 }
 
