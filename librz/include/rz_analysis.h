@@ -400,6 +400,20 @@ typedef struct rz_analysis_callbacks_t {
 	bool (*read_at)(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len);
 } RzAnalysisCallbacks;
 
+typedef struct rz_event_analysis_function_t {
+	RzAnalysisFunction *fcn;
+} RzEventAnalysisFunction;
+
+typedef struct rz_event_analysis_function_del_t {
+	ut64 addr;
+	const char *name;
+} RzEventAnalysisFunctionDel;
+
+typedef struct rz_event_analysis_function_rename_t {
+	RzAnalysisFunction *fcn;
+	const char *old_name;
+} RzEventAnalysisFunctionRename;
+
 #define RZ_ANALYSIS_ESIL_GOTO_LIMIT 4096
 
 typedef struct rz_analysis_options_t {

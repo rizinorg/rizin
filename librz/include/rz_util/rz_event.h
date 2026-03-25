@@ -32,6 +32,9 @@ typedef enum {
 	RZ_EVENT_META_SET, // RzEventMeta
 	RZ_EVENT_META_DEL, // RzEventMeta
 	RZ_EVENT_META_CLEAR, // RzEventMeta
+	RZ_EVENT_FCN_NEW, // RzEventAnalysisFunction
+	RZ_EVENT_FCN_DEL, // RzEventAnalysisFunctionDel
+	RZ_EVENT_FCN_RENAME, // RzEventAnalysisFunctionRename
 	RZ_EVENT_CLASS_NEW, // RzEventClass
 	RZ_EVENT_CLASS_DEL, // RzEventClass
 	RZ_EVENT_CLASS_RENAME, // RzEventClassRename
