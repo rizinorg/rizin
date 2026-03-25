@@ -1522,6 +1522,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
 NAME=String Search - str.unprintable - single code point
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
 CMDS=<<EOF
@@ -1560,7 +1561,7 @@ ps utf8 unprintable @ hit.string.utf8.0
 EOF
 EXPECT=<<EOF
 0x00000116 43 hit.string.utf8.0 43
-ا الأوضاع, لم بوابة المب
+ا الأوضاع, لم بواب
 EOF
 EXPECT_ERR=
 RUN
