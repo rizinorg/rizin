@@ -28,13 +28,13 @@ typedef enum {
 } RzThreadQueueSize;
 
 typedef enum {
-	RZ_THREAD_RING_BUF_OK = 0, ///< The operation on the ring buffer succeeded.
-	RZ_THREAD_RING_BUF_FAIL, ///< The operation on the ring buffer failed.
 	/**
 	 * \brief The operation on the ring buffer is invalid because it is closed.
 	 * Subsequent operations MUST NOT be performed on the ring buffer.
 	 */
-	RZ_THREAD_RING_BUF_CLOSED,
+	RZ_THREAD_RING_BUF_CLOSED = 0,
+	RZ_THREAD_RING_BUF_OK, ///< The operation on the ring buffer succeeded.
+	RZ_THREAD_RING_BUF_FAIL, ///< The operation on the ring buffer failed.
 } RzThreadRingBufResult;
 
 typedef struct rz_th_sem_t RzThreadSemaphore;
@@ -119,11 +119,12 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size);
 RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
-RZ_API RzThreadRingBufResult rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, void *elem);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem);
-RZ_API RzThreadRingBufResult rz_th_ring_buf_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
-RZ_API RzThreadRingBufResult rz_th_ring_buf_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API bool rz_th_ring_buf_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 
 #endif /* RZ_API */
 

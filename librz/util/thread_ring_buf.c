@@ -207,15 +207,20 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRi
 /**
  * \brief Checks if the ring buffer is open.
  *
- * \return RZ_THREAD_RING_BUF_OK If the ring buffer is open.
- * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
+ * \return True If the ring buffer is open.
+ * \return False The ring buffer was closed. Any subsequent operations on it are undefined!
  */
-RZ_API RzThreadRingBufResult rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
-	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
-	ENTER_RBUF()
+RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+	rz_return_val_if_fail(rbuf, false);
+	rbuf->threads_awaiting++;
+	rz_th_lock_enter(rbuf->lock);
+
 	bool closed = rbuf->closed;
-	LEAVE_RBUF();
-	return closed ? RZ_THREAD_RING_BUF_CLOSED : RZ_THREAD_RING_BUF_OK;
+
+	rz_th_lock_leave(rbuf->lock);
+	rbuf->threads_awaiting--;
+
+	return !closed;
 }
 
 /**
@@ -225,7 +230,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThrea
  * \return RZ_THREAD_RING_BUF_FAIL If the ring buffer was not empty.
  * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
  */
-RZ_API RzThreadRingBufResult rz_th_ring_buf_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
 	ENTER_RBUF();
 	bool empty = rbuf->to_read == 0;
@@ -240,12 +245,24 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_empty(RZ_BORROW RZ_NONNULL RzThreadR
  * \return RZ_THREAD_RING_BUF_FAIL If the ring buffer was not full.
  * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
  */
-RZ_API RzThreadRingBufResult rz_th_ring_buf_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
 	ENTER_RBUF();
 	bool full = rbuf->n == rbuf->to_read;
 	LEAVE_RBUF();
 	return full ? RZ_THREAD_RING_BUF_OK : RZ_THREAD_RING_BUF_FAIL;
+}
+
+/**
+ * \brief Checks if the buffer is empty.
+ * This function is not thread safe!
+ *
+ * \return True If the buffer was empty.
+ * \return False If the buffer was not empty.
+ */
+RZ_API bool rz_th_ring_buf_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+	rz_return_val_if_fail(rbuf, true);
+	return rbuf->to_read == 0;
 }
 
 #undef ENTER_RBUF
