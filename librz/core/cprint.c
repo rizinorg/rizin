@@ -491,7 +491,7 @@ RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 add
 	}
 
 	const int ocols = core->print->cols;
-	int bitsize = core->rasm->bits;
+	int bitsize = rz_asm_get_bits(core->rasm);
 	/* Thumb is 16bit arm but handles 32bit data */
 	if (bitsize == 16) {
 		bitsize = 32;
@@ -540,10 +540,10 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 }
 
 static void core_handle_call(RzCore *core, char *line, char **str) {
-	rz_return_if_fail(core && line && str && core->rasm && core->rasm->cur);
-	if (strstr(core->rasm->cur->arch, "x86")) {
+	rz_return_if_fail(core && line && str && core->rasm);
+	if (rz_asm_is_arch(core->rasm, "x86")) {
 		*str = strstr(line, "call ");
-	} else if (strstr(core->rasm->cur->arch, "arm")) {
+	} else if (rz_asm_is_arch(core->rasm, "arm")) {
 		*str = strstr(line, " b ");
 		if (*str && strstr(*str, " 0x")) {
 			/*
@@ -972,7 +972,7 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
 	if (rz_config_get_b(core->config, "stack.bytes")) {
 		return "px";
 	}
-	switch (core->rasm->bits) {
+	switch (rz_asm_get_bits(core->rasm)) {
 	case 64: return "pxq"; break;
 	case 32: return "pxw"; break;
 	}

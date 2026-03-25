@@ -7,7 +7,7 @@
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(cbpf_asm);
 
-static int cbpf_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int cbpf_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	cs_insn *insn;
 	int n;

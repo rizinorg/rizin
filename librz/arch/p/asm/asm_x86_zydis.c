@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 
 #if USE_SYS_ZYDIS
@@ -39,7 +40,7 @@ static bool x86_zydis_asm_fini(void *p) {
 	return true;
 }
 
-static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
+static char *x86_zydis_asm_mnemonics(const RzAsm *a, int id, bool json) {
 	rz_return_val_if_fail(a && a->cur, NULL);
 	if (!a->plugin_data) {
 		return NULL;
@@ -78,7 +79,7 @@ static char *x86_zydis_asm_mnemonics(RzAsm *a, int id, bool json) {
 	return rz_strbuf_drain(buf);
 }
 
-static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int x86_zydis_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a, 0);
 	ZydisContext *zydx = (ZydisContext *)a->plugin_data;
 	ut64 off = a->pc;
@@ -141,7 +142,7 @@ static int x86_zydis_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	return op->size;
 }
 
-static bool x86_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool x86_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
 	// { 0, 1, 0, "\xcc" }, // valid for 16, 32, 64
 	// { 0, 2, 0, "\xcd\x03" },
 	rz_asm_op_set_buf(op, (const ut8 *)"\xcc", 1);

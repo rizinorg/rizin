@@ -11,6 +11,7 @@ aezsu 0x400238
 ps @ obj.seckrit
 EOF
 EXPECT=<<EOF
+            ; UNKNOWN XREF from section..text @ +0x8
             ; DATA XREF from entry0 @ 0x4000d1
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ a2

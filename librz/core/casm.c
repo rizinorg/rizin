@@ -201,9 +201,8 @@ RZ_API RzCmdStatus rz_core_asm_cpu_plugin_print(RZ_NONNULL RZ_BORROW RzCore *cor
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 
-	bool found = false;
-	RzAsmPlugin *plugin = ht_sp_find(a->plugins, arch_name, &found);
-	if (!found || !plugin) {
+	const RzAsmPlugin *plugin = rz_asm_plugin_find(a, arch_name);
+	if (!plugin) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 
@@ -216,7 +215,7 @@ RZ_API RzCmdStatus rz_core_asm_cpu_plugin_print(RZ_NONNULL RZ_BORROW RzCore *cor
 
 	const char *name;
 	RzListIter *it;
-	RzList *list = rz_str_split_duplist_n(plugin->cpus, ",", 0, true);
+	RzList *list = rz_str_split_duplist(plugin->cpus, ",", true);
 	if (!list) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -245,7 +244,7 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 	rz_return_val_if_fail(core && state, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
 
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator *iter = rz_asm_plugin_iterator(a);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
 	if (!plugin_list) {
 		rz_iterator_free(iter);
@@ -276,7 +275,7 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *plugin) {
 	rz_return_val_if_fail(core && plugin && core->rasm, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator *iter = rz_asm_plugin_iterator(a);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
 	if (!plugin_list) {
 		rz_iterator_free(iter);

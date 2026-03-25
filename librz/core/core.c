@@ -637,7 +637,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		break;
 	case '[': {
 		ut64 n = 0LL;
-		int refsz = core->rasm->bits / 8;
+		int refsz = rz_asm_get_bits(core->rasm) / 8;
 		const char *p = NULL;
 		if (strlen(str) > 5) {
 			p = strchr(str + 5, ':');
@@ -1052,8 +1052,9 @@ static void update_sdb(RzCore *core) {
 	// sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	// sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	// SDB// syscall/
-	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
+	RzSyscall *syscall = rz_asm_get_syscall(core->rasm);
+	if (core->rasm && syscall && syscall->db) {
+		sdb_ns_set(DB, "syscall", syscall->db);
 	}
 	d = sdb_ns(DB, "debug", 1);
 	if (core->dbg->sgnls) {
@@ -1129,7 +1130,7 @@ static char *getvalue(ut64 value, int bits) {
  * no json support
 */
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth) {
-	const int bits = core->rasm->bits;
+	const int bits = rz_asm_get_bits(core->rasm);
 	const bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	rz_return_val_if_fail(core, NULL);
 	RzStrBuf *s = rz_strbuf_new(NULL);
@@ -1705,8 +1706,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_lang_define(core->lang, "RzCore", "core", core);
 	rz_lang_set_user_ptr(core->lang, core);
 	core->rasm = rz_asm_new();
-	core->rasm->num = core->num;
-	core->rasm->core = core;
+	rz_asm_set_core(core->rasm, core);
 	// initialize path
 	core->sys_path = rz_path_new();
 	char *sdb_types_path = rz_path_system(core->sys_path, RZ_SDB_TYPES);
@@ -1720,7 +1720,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_new = on_fcn_new;
 	core->analysis->cb.on_fcn_delete = on_fcn_delete;
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
-	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
+	rz_asm_set_syscall(core->rasm, rz_syscall_ref(core->analysis->syscall)); // BIND syscall analysis/asm
 	core->analysis->core = core;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
@@ -1753,8 +1753,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	}
 	core->hash = rz_hash_new();
 
-	rz_bin_bind(core->bin, &(core->rasm->binb));
-	rz_bin_bind(core->bin, &(core->analysis->binb));
+	rz_bin_bind(core->bin, rz_asm_get_bin_bind(core->rasm));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 
 	rz_io_bind(core->io, &(core->search->iob));
@@ -2247,7 +2246,7 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	}
 
 	// bits check
-	switch (core->rasm->bits) {
+	switch (rz_asm_get_bits(core->rasm)) {
 	case 32:
 		if (strcmp(name, "setup") && !num) {
 			RZ_LOG_ERROR("core: syscall not found!\n");

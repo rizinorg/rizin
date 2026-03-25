@@ -1098,15 +1098,12 @@ static void search_similar_pattern(RzCore *core, int count, struct search_parame
 }
 
 static bool isArm(RzCore *core) {
-	RzAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->cur->arch) {
-		if (rz_str_startswith(as->cur->arch, "arm")) {
-			if (as->cur->bits < 64) {
-				return true;
-			}
-		}
+	if (!core || !core->rasm) {
+		return false;
 	}
-	return false;
+
+	return rz_asm_is_arch(core->rasm, "arm") &&
+		rz_asm_get_bits(core->rasm) < 64;
 }
 
 void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
@@ -1443,7 +1440,7 @@ reread:
 			int ochunksize;
 			int i, len, chunksize = rz_config_get_i(core->config, "search.chunk");
 			if (chunksize < 1) {
-				chunksize = core->rasm->bits / 8;
+				chunksize = rz_asm_get_bits(core->rasm) / 8;
 			}
 			len = rz_str_unescape(str);
 			ochunksize = chunksize = RZ_MIN(len, chunksize);
@@ -1746,10 +1743,6 @@ RZ_IPI RzCmdStatus rz_cmd_search_str_chunk_handler(RzCore *core, int argc, const
 // "/a"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && core->rasm, RZ_CMD_STATUS_ERROR);
-	if (!core->rasm->cur) {
-		RZ_LOG_ERROR("Not RzArch plugin set up.\n");
-		return RZ_CMD_STATUS_ERROR;
-	}
 
 	RzAsmCode *acode;
 	if (!(acode = rz_asm_massemble(core->rasm, argv[1]))) {

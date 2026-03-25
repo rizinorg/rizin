@@ -425,14 +425,6 @@ static ut64 findClassBounds(RzCore *core, int *len) {
 	return 0;
 }
 
-RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int segoff) {
-	rz_config_set(core->config, "asm.arch", arch);
-	rz_config_set_i(core->config, "asm.bits", bits);
-	// XXX - this needs to be done here, because
-	// if arch == x86 and bits == 16, segoff automatically changes
-	rz_config_set_i(core->config, "asm.segoff", segoff);
-}
-
 RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
 	char *date = NULL;
 	const ut8 *block = core->block;
@@ -3324,7 +3316,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, c
 		RZ_LOG_ERROR("the limit value exceeds the max value (1024).\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ut64 asm_bits = core->rasm->bits;
+	ut64 asm_bits = rz_asm_get_bits(core->rasm);
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	bool src_color = rz_config_get_i(core->config, "scr.color") > 0;
 
@@ -3899,15 +3891,15 @@ static bool print_value(RzCore *core, PrintValueOptions *opts, RzCmdStateOutput 
 			break;
 		case 0:
 			v = rz_read_ble64(block, big_endian);
-			opts->size = core->rasm->bits / 8;
-			switch (core->rasm->bits / 8) {
+			opts->size = rz_asm_get_bits(core->rasm) / 8;
+			switch (opts->size) {
 			case 1: v &= UT8_MAX; break;
 			case 2: v &= UT16_MAX; break;
 			case 4: v &= UT32_MAX; break;
 			case 8: v &= UT64_MAX; break;
 			default: break;
 			}
-			block += core->rasm->bits / 8;
+			block += opts->size;
 			break;
 		}
 		print_value_single(core, opts, at, v, state);
@@ -4742,9 +4734,9 @@ static void print_stack(RzCore *core) {
 			return; // TODO: free stuff
 		}
 		rz_cons_print(string);
-	} else if (core->rasm->bits == 64) {
+	} else if (rz_asm_is_bits(core->rasm, 64)) {
 		rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, sp_addr, 8, 128, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
-	} else if (core->rasm->bits == 32) {
+	} else if (rz_asm_is_bits(core->rasm, 32)) {
 		rz_core_print_dump(core, RZ_OUTPUT_MODE_STANDARD, sp_addr, 4, 128, RZ_CORE_PRINT_FORMAT_TYPE_HEXADECIMAL);
 	}
 	rz_cmd_state_output_init(&so, RZ_OUTPUT_MODE_STANDARD, core);
