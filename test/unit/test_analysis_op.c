@@ -181,20 +181,26 @@ bool test_rz_core_print_disasm() {
 bool test_rz_core_print_disasm_resolve_aav_symbols() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "rz_core_new failed");
-	mu_assert_notnull(rz_io_open_at(core->io, "malloc://0x20000", RZ_PERM_RWX, 0644, 0, NULL), "io open failed");
-	rz_core_set_asm_configs(core, "x86", 32, 0);
+	RzIODesc *io_desc = rz_io_open_at(core->io, "malloc://0x200000", RZ_PERM_RWX, 0644, 0, NULL);
+	mu_assert_notnull(io_desc, "io open failed");
+	bool arch_configured = rz_core_arch_configure(core, "x86", 32, NULL, NULL, NULL);
+	mu_assert_true(arch_configured, "rz_core_arch_configure failed");
+	bool analysis_arch_set = rz_analysis_use(core->analysis, "x86");
+	mu_assert_true(analysis_arch_set, "rz_analysis_use failed");
+	bool analysis_bits_set = rz_analysis_set_bits(core->analysis, 32);
+	mu_assert_true(analysis_bits_set, "rz_analysis_set_bits failed");
 	rz_config_set_i(core->config, "scr.color", 0);
 	rz_config_set_b(core->config, "asm.sub.names", true);
 	rz_config_set_b(core->config, "asm.sub.rel", true);
 	rz_config_set_i(core->config, "asm.sub.varmin", 0);
 
-	ut8 code[] = { 0xa1, 0x20, 0x00, 0x01, 0x00 }; // mov eax, dword [0x10020]
-	ut8 ptr[] = { 0x40, 0x00, 0x01, 0x00 }; // *(0x10020) = 0x10040
-	rz_io_write_at(core->io, 0x10020, ptr, sizeof(ptr));
+	ut8 code[] = { 0xa1, 0x20, 0x00, 0x10, 0x00 }; // mov eax, dword [0x100020]
+	ut8 ptr[] = { 0x40, 0x00, 0x10, 0x00 }; // *(0x100020) = 0x100040
+	rz_io_write_at(core->io, 0x100020, ptr, sizeof(ptr));
 
 	rz_flag_space_set(core->flags, "symbols");
-	rz_flag_set(core->flags, "aav.0x00010020", 0x10020, 4);
-	rz_flag_set(core->flags, "obj.__stack_chk_guard", 0x10040, 4);
+	rz_flag_set(core->flags, "aav.0x00100020", 0x100020, 4);
+	rz_flag_set(core->flags, "obj.__stack_chk_guard", 0x100040, 4);
 
 	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
 	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
@@ -204,7 +210,8 @@ bool test_rz_core_print_disasm_resolve_aav_symbols() {
 	};
 	rz_core_print_disasm(core, 0, code, sizeof(code), sizeof(code), NULL, &options);
 
-	mu_assert_true(rz_pvector_len(vec) >= 1, "rz_core_print_disasm should produce at least one line");
+	size_t line_count = rz_pvector_len(vec);
+	mu_assert_true(line_count >= 1, "rz_core_print_disasm should produce at least one line");
 	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
 	mu_assert_notnull(t, "first disasm line");
 	char *insn = rz_str_dup(t->text);
@@ -213,8 +220,9 @@ bool test_rz_core_print_disasm_resolve_aav_symbols() {
 	if (comment) {
 		*comment = '\0';
 	}
-	mu_assert_notnull(strstr(insn, "obj.__stack_chk_guard"), "aav.aav symbol should be resolved to preferred symbol");
-	mu_assert_null(strstr(insn, "aav.aav."), "aav.aav symbol should not be present in instruction operand");
+	mu_assert_strcontains(insn, "obj.__stack_chk_guard", "aav.aav symbol should be resolved to preferred symbol");
+	char *aav_symbol = strstr(insn, "aav.aav.");
+	mu_assert_null(aav_symbol, "aav.aav symbol should not be present in instruction operand");
 	free(insn);
 
 	rz_core_free(core);
