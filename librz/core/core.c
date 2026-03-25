@@ -1706,6 +1706,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_lang_define(core->lang, "RzCore", "core", core);
 	rz_lang_set_user_ptr(core->lang, core);
 	core->rasm = rz_asm_new();
+	rz_asm_set_core(core->rasm, core);
 	// initialize path
 	core->sys_path = rz_path_new();
 	char *sdb_types_path = rz_path_system(core->sys_path, RZ_SDB_TYPES);

@@ -3987,7 +3987,8 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
+	if (!rz_asm_is_arch(core->rasm, "x86") &&
+		!rz_asm_is_arch(core->rasm, "hexagon")) {
 		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_task_yield(&core->tasks);
 		bool pcache = rz_config_get_b(core->config, "io.pcache");

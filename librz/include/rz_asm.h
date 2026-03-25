@@ -147,6 +147,7 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name);
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits);
 RZ_API const char *rz_asm_get_arch(RZ_NONNULL RzAsm *a);
 RZ_API bool rz_asm_is_arch(RZ_NONNULL RzAsm *a, RZ_NONNULL const char *name);
+RZ_DEPRECATE RZ_API void rz_asm_set_core(RZ_NONNULL RzAsm *a, RZ_NULLABLE void *core);
 RZ_DEPRECATE RZ_API RZ_BORROW RzBinBind *rz_asm_get_bin_bind(RzAsm *a);
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits);
 RZ_DEPRECATE RZ_API int rz_asm_get_bits(RZ_NONNULL RzAsm *a);

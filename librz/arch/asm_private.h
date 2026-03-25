@@ -10,7 +10,7 @@
 #include <rz_asm.h>
 
 struct rz_asm_t {
-	void *not_core;
+	void *core; /// should not be used.
 	ut8 ptr_alignment_I;
 	void *plugin_data;
 	ut8 ptr_alignment_II;
