@@ -14,8 +14,8 @@
 
 void *tms320_c64x_new();
 void tms320_c64x_free(void *p);
-int tms320_c64x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len, void *c64x);
-char *tms320_c64x_mnemonics(RzAsm *a, int id, bool json, void *c64x);
+int tms320_c64x_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len, void *c64x);
+char *tms320_c64x_mnemonics(const RzAsm *a, int id, bool json, void *c64x);
 int tms320_c64x_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask, void *c64x);
 
 #else
