@@ -318,11 +318,13 @@ arch_isa_includes = [
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
   # plugins
   arch_plugins_list += [
+    'cbpf_cs',
     'riscv_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
+    'p/arch_cbpf_cs.c',
     'p/arch_riscv_cs.c',
   ]
 endif
@@ -331,13 +333,11 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   # plugins
   arch_plugins_list += [
     'tricore_cs',
-    'cbpf_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_tricore_cs.c',
-    'p/arch_cbpf_cs.c',
   ]
 
   # isa sources

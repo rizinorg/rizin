@@ -1,6 +1,6 @@
 NAME=cbpf analysis
 FILE=bins/bpf/cbpf1_le.bin
-ARGS=-a cbpf
+ARGS=-a cbpf -E little
 CMDS=<<EOF
 af
 pdf
