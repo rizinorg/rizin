@@ -28,11 +28,6 @@ typedef enum {
 } RzThreadQueueSize;
 
 typedef enum {
-	RZ_THREAD_RING_BUF_BLOCK = 0, ///< The ring buffer blocks writes when it is full.
-	RZ_THREAD_RING_BUF_OVERFLOW, ///< The ring buffer overwrites the oldest element when full.
-} RzThreadRingBufMode;
-
-typedef enum {
 	RZ_THREAD_RING_BUF_OK = 0, ///< The operation on the ring buffer succeeded.
 	RZ_THREAD_RING_BUF_FAIL, ///< The operation on the ring buffer failed.
 	/**
@@ -120,7 +115,7 @@ RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user);
 RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user);
 
-RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size, RzThreadRingBufMode mode);
+RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size);
 RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);

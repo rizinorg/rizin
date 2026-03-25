@@ -24,7 +24,8 @@
  * \brief RzThreadQueue is a thread-safe FIFO ring buffer that can be used from multiple threads.
  */
 struct rz_th_ring_buf_t {
-	RzThreadRingBufMode mode;
+	RzThreadCond *writer_wait_cond; ///< The condition for writing threads to signal them they write.
+	size_t writers_waiting; ///< Number of writers waiting.
 
 	RzThreadLock *lock; ///< Lock for buffer access.
 	size_t threads_awaiting; ///< Number of threads awaiting to read/write
@@ -46,7 +47,15 @@ struct rz_th_ring_buf_t {
 	size_t to_read;
 };
 
-RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size, RzThreadRingBufMode mode) {
+/**
+ * \brief Creates a new ring buffer.
+ *
+ * \param n The number of elements the buffer can hold.
+ * \param elem_size Number of bytes each element has.
+ *
+ * \return The new rung buffer or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size) {
 	rz_return_val_if_fail(n > 1, NULL);
 	RzThreadRingBuf *rbuf = RZ_NEW0(RzThreadRingBuf);
 	if (!rbuf) {
@@ -63,7 +72,8 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size, Rz
 	rbuf->r = 0;
 
 	rbuf->lock = rz_th_lock_new(false);
-	if (!rbuf->lock) {
+	rbuf->writer_wait_cond = rz_th_cond_new();
+	if (!rbuf->lock || !rbuf->writer_wait_cond) {
 		goto err_free;
 	}
 
@@ -73,14 +83,17 @@ err_free:
 	rz_warn_if_reached();
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
+	rz_th_cond_free(rbuf->writer_wait_cond);
 	return NULL;
 }
 
 RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf) {
 	rz_return_if_fail(rbuf);
 	rz_th_ring_buf_close(rbuf);
+
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
+	rz_th_cond_free(rbuf->writer_wait_cond);
 	free(rbuf);
 }
 
@@ -98,6 +111,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
 	ENTER_RBUF();
 	rbuf->closed = true;
+	rz_th_cond_signal_all(rbuf->writer_wait_cond);
 	LEAVE_RBUF();
 
 	while (rbuf->threads_awaiting) {
@@ -120,6 +134,11 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadR
 	rbuf->w = 0;
 	rbuf->r = 0;
 	rbuf->to_read = 0;
+	if (rbuf->writers_waiting) {
+		for (size_t i = 0; i < RZ_MIN(rbuf->writers_waiting, rbuf->n); ++i) {
+			rz_th_cond_signal(rbuf->writer_wait_cond);
+		}
+	}
 	LEAVE_RBUF()
 	return RZ_THREAD_RING_BUF_OK;
 }
@@ -131,24 +150,27 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadR
  * \param elem The element to copy.
  *
  * \return RZ_THREAD_RING_BUF_OK If the write succeeded.
- * \return RZ_THREAD_RING_BUF_FAIL Only returned if the ring buffer was full and
- *         the ring buffer mode == RZ_THREAD_RING_BUF_BLOCK.
+ * \return RZ_THREAD_RING_BUF_FAIL If the buffer was full.
  * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
  */
 RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, void *elem) {
 	rz_return_val_if_fail(rbuf && elem, RZ_THREAD_RING_BUF_CLOSED);
 
 	ENTER_RBUF();
-	bool write_overflows = rbuf->to_read == rbuf->n;
-	if (write_overflows && rbuf->mode == RZ_THREAD_RING_BUF_BLOCK) {
-		LEAVE_RBUF();
-		return RZ_THREAD_RING_BUF_FAIL;
+	while (rbuf->to_read == rbuf->n) {
+		// Wait until data was read.
+		rbuf->writers_waiting++;
+		rz_th_cond_wait(rbuf->writer_wait_cond, rbuf->lock);
+		rbuf->writers_waiting--;
+
+		if (rbuf->closed) {
+			LEAVE_RBUF();
+			return RZ_THREAD_RING_BUF_CLOSED;
+		}
 	}
 	memcpy((ut8 *)rbuf->buf + (rbuf->w * rbuf->elem_size), elem, rbuf->elem_size);
 	rbuf->w = (rbuf->w + 1) % rbuf->n;
-	if (!write_overflows) {
-		rbuf->to_read++;
-	}
+	rbuf->to_read++;
 
 	LEAVE_RBUF();
 	return RZ_THREAD_RING_BUF_OK;
@@ -175,6 +197,9 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRi
 	memcpy(elem, (ut8 *)rbuf->buf + (rbuf->r * rbuf->elem_size), rbuf->elem_size);
 	rbuf->r = (rbuf->r + 1) % rbuf->n;
 	rbuf->to_read--;
+	if (rbuf->writers_waiting) {
+		rz_th_cond_signal(rbuf->writer_wait_cond);
+	}
 	LEAVE_RBUF();
 	return RZ_THREAD_RING_BUF_OK;
 }
