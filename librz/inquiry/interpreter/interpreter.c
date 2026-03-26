@@ -220,39 +220,122 @@ RZ_API void rz_interpreter_shared_objects_free(RZ_NULLABLE RZ_OWN RzInterpreterS
 	free(so);
 }
 
+
+static bool setup_queues(
+	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
+	RzInterpreterYieldFilter yield_filter,
+	RZ_OUT RzThreadQueue **il_queue,
+	RZ_OUT RzThreadQueue **io_request_q,
+	RZ_OUT RzThreadQueue **io_result_q,
+	RZ_OUT RzThreadQueue **branch_queue,
+	RZ_OUT HtUP **yield_queues) {
+	*il_queue = NULL;
+	*io_request_q = NULL;
+	*io_result_q = NULL;
+	*branch_queue = NULL;
+	*yield_queues = NULL;
+
+	RzInterpreterYieldQueue *yield_queue = NULL;
+	// The queue to pass the Effects to the interpreter.
+	// This is only one queue for the prototype.
+	// In practice it would be one for each interpreter.
+	*il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
+	if (!il_queue) {
+		goto error_free;
+	}
+
+	// Setup the IO queues. Each interpreter instance needs it's own queue at
+	// for writing IO. Because the writing is done on the IO cache, and each
+	// instance needs its own cache.
+	*io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	*io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
+	if (!io_request_q || !io_result_q) {
+		goto error_free;
+	}
+
+	// The address queue. It is the queue the interpreter can request new Effects.
+	// Of course, currently there is only a single one for the prototype.
+	// In practice there would be one for each interpreter instance.
+	*branch_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, NULL);
+	if (!branch_queue) {
+		goto error_free;
+	}
+
+	// Multiple yield queues can be used by a single interpreter.
+	// E.g. if the interpreter has a complex abstract memory model
+	// for stack, heap and constant values.
+	// Then it can produce three kind of yields.
+	*yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
+	if (!yield_queues) {
+		goto error_free;
+	}
+
+	// These yield queues can be shared between different interpreters.
+	// So we have one yield queue for each yield type.
+
+	// Xref yield queue.
+	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
+	yield_queue = rz_interpreter_yield_queue_new(
+		yield_kind,
+		yield_filter,
+		sections);
+	if (!yield_queue) {
+		goto error_free;
+	}
+	ht_up_insert(*yield_queues, yield_kind, yield_queue);
+
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
+	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
+	if (!yield_queue) {
+		goto error_free;
+	}
+	ht_up_insert(*yield_queues, yield_kind, yield_queue);
+	return true;
+
+error_free:
+	ht_up_free(*yield_queues);
+	rz_th_queue_free(*il_queue);
+	rz_th_queue_free(*io_request_q);
+	rz_th_queue_free(*io_result_q);
+	rz_th_queue_free(*branch_queue);
+	return false;
+}
+
+
 /**
  * \brief Initializes a new RzInterpreterSet and returns it.
  * If it fails, all arguments are freed.
- *
- * \param plugin The interpreter plugin.
- * \param request_il The request queue.
- * \param receive_il The receive queue.
- * \param yield_queues The yield queues.
  */
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *branch_queue,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterILBB *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
+	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
+	RzInterpreterYieldFilter yield_filter,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
-	rz_return_val_if_fail(plugin && state && branch_queue && il_queue && yield_queues && io_request && io_result && is_running_flag && entry_points && ignored_code, NULL);
+	rz_return_val_if_fail(plugin && state && is_running_flag && entry_points && ignored_code, NULL);
 
 	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
 	if (!set) {
 		return false;
 	}
+	RzThreadQueue *io_request_q = NULL;
+	RzThreadQueue *io_result_q = NULL;
+	RzThreadQueue *branch_queue = NULL;
+	RzThreadQueue *il_queue = NULL;
+	HtUP *yield_queues = NULL;
+	if (!setup_queues(sections, yield_filter, &il_queue, &io_request_q, &io_result_q, &branch_queue, &yield_queues)) {
+		return false;
+	}
+
 	set->plugin = plugin;
 	set->state = state;
 	set->il_queue = il_queue;
 	set->branch_queue = branch_queue;
 	set->yield_queues = yield_queues;
-	set->io_request = io_request;
-	set->io_result = io_result;
+	set->io_request = io_request_q;
+	set->io_result = io_result_q;
 	set->is_running_flag = is_running_flag;
 	set->entry_points = entry_points;
 	set->ignored_code = ignored_code;
