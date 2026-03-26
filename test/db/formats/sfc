@@ -26,9 +26,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Super NES / Super Famicom
+maxopsz  4
 minopsz  1
 os       snes
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
@@ -645,9 +647,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Super NES / Super Famicom
+maxopsz  4
 minopsz  1
 os       snes
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false

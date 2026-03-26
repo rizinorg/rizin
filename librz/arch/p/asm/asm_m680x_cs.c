@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "cs_helper.h"
 
@@ -41,7 +42,7 @@ static cs_mode m680x_mode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
-static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m680x_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int n, ret;

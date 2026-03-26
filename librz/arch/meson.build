@@ -58,7 +58,7 @@ arch_plugins_list = [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'x86_zydis'
+  'x86_zydis',
 ]
 
 arch_plugin_sources = [
@@ -116,7 +116,7 @@ arch_plugin_sources = [
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
-  'p/arch_x86_zydis.c'
+  'p/arch_x86_zydis.c',
 ]
 
 arch_esil_sources = [
@@ -318,11 +318,13 @@ arch_isa_includes = [
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
   # plugins
   arch_plugins_list += [
+    'cbpf_cs',
     'riscv_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
+    'p/arch_cbpf_cs.c',
     'p/arch_riscv_cs.c',
   ]
 endif

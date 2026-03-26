@@ -63,7 +63,6 @@ typedef struct rz_io_t {
 	int va; // all of this config stuff must be in 1 int
 	int ff;
 	int Oxff;
-	size_t addrbytes;
 	int aslr;
 	int autofd;
 	int cached;
@@ -459,6 +458,17 @@ RZ_API long rz_io_ptrace(RzIO *io, rz_ptrace_request_t request, pid_t pid, void 
 RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *child_callback_user);
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #endif
+
+#define RZ_IO_BOUNDARIES_PERMS_ANY 0
+#define RZ_IO_BOUNDARIES_MASK_NONE 0
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_raw(RZ_NONNULL RzIO *io, const RzInterval interval);
+#define rz_io_get_boundaries_range rz_io_get_boundaries_all_io_maps
+#define rz_io_get_boundaries_all_io_maps(io, interval) \
+	rz_io_get_boundaries_io_maps(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_maps(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
+#define rz_io_get_boundaries_all_io_skyline(io, interval) \
+	rz_io_get_boundaries_io_skyline(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_skyline(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
 
 #if __WINDOWS__
 RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);

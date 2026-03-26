@@ -1295,7 +1295,7 @@ e search.in=io.maps
 afl~?
 EOF
 EXPECT=<<EOF
-94
+115
 EOF
 RUN
 

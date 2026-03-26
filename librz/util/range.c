@@ -3,8 +3,6 @@
 
 #include <rz_util.h>
 
-// TODO: use rz_list instead of list.h
-// TODO: redesign this api.. why? :)
 // TODO: add tags to ranges
 
 // void (*ranges_new_callback)(struct range_t *r) = NULL;
@@ -223,16 +221,6 @@ __reloop:
 	return 0;
 }
 
-#if 0
-/* TODO: should remove some of them right? */
-RZ_API void rz_range_merge(RRange *rgs, RRange *r) {
-	RzListIter *iter;
-	RRangeItem *r;
-	rz_list_foreach (rgs->ranges, iter, r)
-		rz_range_add (rgs, r->fr, r->to, 0);
-}
-#endif
-
 // int ranges_is_used(ut64 addr)
 RZ_API int rz_range_contains(RRange *rgs, ut64 addr) {
 	RRangeItem *r;
@@ -310,24 +298,6 @@ RZ_API void rz_range_percent(RRange *rgs) {
 	printf("] 0x%08" PFMT64x "\n", to);
 }
 
-// TODO: total can be cached in rgs!!
-RZ_API int rz_range_list(RRange *rgs, int rad) {
-	ut64 total = 0;
-	RRangeItem *r;
-	RzListIter *iter;
-	rz_range_sort(rgs);
-	rz_list_foreach (rgs->ranges, iter, r) {
-		if (rad) {
-			printf("ar+ 0x%08" PFMT64x " 0x%08" PFMT64x "\n", r->fr, r->to);
-		} else {
-			printf("0x%08" PFMT64x " 0x%08" PFMT64x " ; %" PFMT64d "\n", r->fr, r->to, r->to - r->fr);
-		}
-		total += (r->to - r->fr);
-	}
-	eprintf("Total bytes: %" PFMT64d "\n", total);
-	return 0;
-}
-
 RZ_API int rz_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
 	int count = 0;
 	RRangeItem *r;
@@ -367,30 +337,4 @@ RZ_API RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 		rz_range_add(newrgs, fr, to, 1);
 	}
 	return newrgs;
-}
-
-/*
-	return true if overlap
-	in *d
-*/
-// TODO: make it a macro
-// TODO: move to num.c ?
-RZ_API int rz_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d) {
-	// TODO: ensure ranges minmax .. innecesary at runtime?
-	// rz_num_minmax_swap (&a0, &a1);
-	// rz_num_minmax_swap (&b0, &b1);
-	return *d = (b0 - a0), !(a1 < b0 || a0 > b1);
-#if 0
-	// does not overlap
-	// a  |__|           |__|
-	// b      |__|   |__|
-	if (a1<b0 || a0>b1)
-		return 0;
-
-	// a     |____|   |_____|  |____|     |_____|
-	// b  |____|        |_|       |____| |_______|
-	//      b needs    a needs   a needs   b needs
-	// delta required
-	return (b0-a0);
-#endif
 }

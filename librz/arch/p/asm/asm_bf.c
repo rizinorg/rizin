@@ -4,12 +4,13 @@
 
 #include <rz_analysis.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 } BfContext;
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) {
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(const RzAsm *a) {
 	BfContext *ctx = (BfContext *)a->plugin_data;
 	RzPVector *pvec = ctx->token_patterns;
 	if (pvec) {
@@ -51,7 +52,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	return pvec;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = "invalid";
 	ut32 op_type;
 	switch (*buf) {
@@ -120,7 +121,7 @@ static bool _write_asm(RzAsmOp *op, int value, int n) {
 	return false;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
 		buf += 2;
@@ -187,7 +188,7 @@ static bool bf_fini(void *user) {
 	return true;
 }
 
-static bool bf_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool bf_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
 	// { 0, 1, 0, (const ut8 *)"\xff" },
 	// { 0, 1, 0, (const ut8 *)"\x00" },
 	rz_asm_op_set_buf(op, (const ut8 *)"\xff", 1);

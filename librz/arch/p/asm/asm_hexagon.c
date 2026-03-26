@@ -12,8 +12,8 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
-#include <rz_util/rz_print.h>
 #include <rz_vector.h>
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
@@ -170,7 +170,7 @@ RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
  * \param l The size to read from the buffer.
  * \return int Size of the reversed opcode.
  */
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	rz_return_val_if_fail(a && op, -1);
 	if (l < HEX_INSN_SIZE) {
 		return -1;

@@ -150,7 +150,7 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 	}
 }
 
-int gbDisass(RzAsmOp *op, const ut8 *buf, int len) {
+RZ_IPI int gbDisass(RzAsmOp *op, const ut8 *buf, int len) {
 	int foo = gbOpLength(gb_op[buf[0]].type);
 	if (len < foo) {
 		return 0;

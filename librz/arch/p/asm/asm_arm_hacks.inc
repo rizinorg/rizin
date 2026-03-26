@@ -220,7 +220,7 @@ static char *hack_handle_ldst_asm(ut32 insn) {
 	return NULL;
 }
 
-static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int hackyArmAsm(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
 	// Hacky support for ARMv8.5
 	if (a->bits == 64 && len >= 4) {

@@ -33,7 +33,7 @@ void tms320_c64x_free(void *p) {
 	free(ctx);
 }
 
-int tms320_c64x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len, void *c64x) {
+int tms320_c64x_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len, void *c64x) {
 	TMSContext *ctx = (TMSContext *)c64x;
 
 	cs_insn *insn;
@@ -82,7 +82,7 @@ fin:
 	return ret;
 }
 
-char *tms320_c64x_mnemonics(RzAsm *a, int id, bool json, void *c64x) {
+char *tms320_c64x_mnemonics(const RzAsm *a, int id, bool json, void *c64x) {
 	TMSContext *ctx = (TMSContext *)c64x;
 	a->cur->disassemble(a, NULL, NULL, -1);
 	if (id != -1) {
