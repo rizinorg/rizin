@@ -68,8 +68,8 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 			changes_cf = rz_analysis_op_changes_control_flow(&op);
 		}
 		RZ_LOG_DEBUG("\t0x%" PFMT64x "\n", addr);
-		rz_analysis_op_fini(&op);
 		addr += op.size;
+		rz_analysis_op_fini(&op);
 		rz_mem_memzero(buf, max_read_size);
 		if (sparc_add_delayed_insn) {
 			// Instruction was added, now the BB is complete.
