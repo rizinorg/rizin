@@ -1830,6 +1830,21 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		rz_write_le8(buf, val);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 1);
 		break;
+	case R_386_TLS_TPOFF:
+	/* fall-through */
+	case R_386_TLS_DTPMOD32:
+	/* fall-throuhh */
+	case R_386_TLS_DTPOFF32:
+		/* TLS relocations resolved at runtime by the dynamic linker */
+		rz_write_le32(buf, 0);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+	case R_386_GOT32X:
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		val = fs->G + fs->A - fs->GOT;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
 	default:
 		UNHANDL_DEF("x86_32", rel_type);
 		return;
@@ -1945,6 +1960,19 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_X86_64_PLTOFF64:
 		word = 8;
 		val = fs->L - fs->GOT + fs->A;
+		break;
+	case R_X86_64_DTPMOD64:
+	/* fall-through */
+	case R_X86_64_DTPOFF64:
+	/* fall-through */
+	case R_X86_64_TPOFF64:
+		/* TLS relocations resolved at runtime by the dynamic linker */
+		word = 8;
+		val = 0;
+		break;
+	case R_X86_64_IRELATIVE:
+		word = 8;
+		val = fs->B + fs->A;
 		break;
 	default:
 		UNHANDL_DEF("x86_64", rel_type);
