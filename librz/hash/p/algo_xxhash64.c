@@ -42,7 +42,7 @@ static bool plugin_xxhash64_final(void *context, ut8 *digest) {
 	rz_return_val_if_fail(context && digest, false);
 
 	ut64 dgst = XXH64_digest((XXH64_state_t *)context);
-	rz_write_le64(digest, dgst);
+	rz_write_be64(digest, dgst);
 	return true;
 }
 
