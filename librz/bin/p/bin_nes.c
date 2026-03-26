@@ -35,7 +35,7 @@ static void nes_destroy(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
-	RZ_FREE(bf->o->bin_obj);
+	free(bf->o->bin_obj);
 }
 
 static RzBinInfo *nes_info(RzBinFile *bf) {
@@ -209,6 +209,7 @@ static RzPVector /*<RzBinMem *>*/ *nes_mem(RzBinFile *bf) {
 	return ret;
 }
 
+// Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 static RzPVector /*<RzBinAddr *>*/ *nes_entries(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
