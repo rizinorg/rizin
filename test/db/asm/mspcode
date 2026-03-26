@@ -1,0 +1,26 @@
+d "Add" 00
+d "Sub" 01
+d "Mul" 02
+d "Div" 03
+d "Mod" 04
+d "Neg" 05
+d "Not" 06
+d "And" 07
+d "Or" 08
+d "Xor" 09
+d "Eqv" 0a
+d "Imp" 0b
+d "Lt" 0c
+d "Le" 0d
+d "Gt" 0e
+d "Ge" 0f
+d "Eq" 10
+d "Ne" 11
+d "LitI2_Byte 10" 270a
+d "LitI2 0x1234" f43412
+d "LitI4 0x12345678" f578563412
+d "Branch 0x0005" 1b0500
+d "BranchT 0x0006" 1c0600
+d "BranchF 0x0007" 1d0700
+d "End" fc
+d "db 0xff" ff
