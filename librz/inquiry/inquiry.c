@@ -7,14 +7,11 @@
 
 #include "rz_analysis.h"
 #include "rz_bin.h"
-#include "rz_config.h"
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
-#include "rz_il/rz_il_validate.h"
 #include "rz_il/rz_il_vm.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
-#include "rz_io.h"
 #include "rz_th.h"
 #include "rz_types.h"
 #include "rz_util/ht_pp.h"
@@ -216,94 +213,6 @@ static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, 
 		rz_str_bool(io_res->req_ok));
 }
 
-static bool setup_queues(RzCore *core,
-	RZ_OUT RzThreadQueue **il_queue,
-	RZ_OUT RzThreadQueue **io_request_q,
-	RZ_OUT RzThreadQueue **io_result_q,
-	RZ_OUT RzThreadQueue **branch_queue,
-	RZ_OUT HtUP **yield_queues) {
-	*il_queue = NULL;
-	*io_request_q = NULL;
-	*io_result_q = NULL;
-	*branch_queue = NULL;
-	*yield_queues = NULL;
-
-	RzPVector /*<RzBinSection *>*/ *boundaries = NULL;
-	RzInterpreterYieldQueue *yield_queue = NULL;
-	// The queue to pass the Effects to the interpreter.
-	// This is only one queue for the prototype.
-	// In practice it would be one for each interpreter.
-	*il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
-	if (!il_queue) {
-		goto error_free;
-	}
-
-	// Setup the IO queues. Each interpreter instance needs it's own queue at
-	// for writing IO. Because the writing is done on the IO cache, and each
-	// instance needs its own cache.
-	*io_request_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	*io_result_q = rz_th_queue_new(RZ_INTERPRETER_IO_QUEUE_SIZE, NULL);
-	if (!io_request_q || !io_result_q) {
-		goto error_free;
-	}
-
-	// The address queue. It is the queue the interpreter can request new Effects.
-	// Of course, currently there is only a single one for the prototype.
-	// In practice there would be one for each interpreter instance.
-	*branch_queue = rz_th_queue_new(RZ_INTERPRETER_ADDR_QUEUE_SIZE, NULL);
-	if (!branch_queue) {
-		goto error_free;
-	}
-
-	// Multiple yield queues can be used by a single interpreter.
-	// E.g. if the interpreter has a complex abstract memory model
-	// for stack, heap and constant values.
-	// Then it can produce three kind of yields.
-	*yield_queues = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_queue_free);
-	if (!yield_queues) {
-		goto error_free;
-	}
-
-	// Here we build the filter for the yield queue.
-	// The prototype generates constant xrefs.
-	// So the filter checks the generated xrefs, if they are within the IO map
-	// boundaries.
-	boundaries = rz_bin_object_get_sections(core->bin->cur->o);
-	if (!boundaries) {
-		goto error_free;
-	}
-
-	// These yield queues can be shared between different interpreters.
-	// So we have one yield queue for each yield type.
-
-	// Xref yield queue.
-	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
-	yield_queue = rz_interpreter_yield_queue_new(
-		yield_kind,
-		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
-		boundaries);
-	if (!yield_queue) {
-		goto error_free;
-	}
-	ht_up_insert(*yield_queues, yield_kind, yield_queue);
-
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
-	yield_queue = rz_interpreter_yield_queue_new(yield_kind, NULL, NULL);
-	if (!yield_queue) {
-		goto error_free;
-	}
-	ht_up_insert(*yield_queues, yield_kind, yield_queue);
-	return true;
-
-error_free:
-	ht_up_free(*yield_queues);
-	rz_th_queue_free(*il_queue);
-	rz_th_queue_free(*io_request_q);
-	rz_th_queue_free(*io_result_q);
-	rz_th_queue_free(*branch_queue);
-	return false;
-}
-
 RZ_API bool rz_inquiry_get_fcn_symbol_addr(RzCore *core, RZ_OUT RzSetU *symbol_targets) {
 	rz_return_val_if_fail(core && symbol_targets, false);
 	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
@@ -459,15 +368,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzThreadQueue *io_request_q = NULL;
-	RzThreadQueue *io_result_q = NULL;
-	RzThreadQueue *branch_queue = NULL;
-	HtUP *yield_queues = NULL;
 	RzAtomicBool *is_running = rz_atomic_bool_new(true);
 	RzInterpreterAbstrState *abstr_state = NULL;
 	RzInterpreterSet *iset = NULL;
 	HtUP *il_cache = NULL;
-	RzThreadQueue *il_queue = NULL;
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
 	RzAnalysisILVM *analysis_vm = NULL;
@@ -477,8 +381,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 	rz_cons_push();
 
-	if (!setup_queues(core, &il_queue, &io_request_q, &io_result_q, &branch_queue, &yield_queues)) {
-		return_code = false;
+	// Here we build the filter for the yield queue.
+	// The prototype generates constant xrefs.
+	// So the filter checks the generated xrefs, if they are within the IO map
+	// boundaries.
+	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
+	if (!sections) {
 		goto error_free;
 	}
 
@@ -555,11 +463,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		// But in general the whole thing should run without RzCore.
 		prototype->p_interpreter,
 		abstr_state,
-		branch_queue,
-		il_queue,
-		yield_queues,
-		io_request_q,
-		io_result_q,
+		sections,
+		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
 		is_running,
 		rz_vector_clone(entry_points),
 		ignored_code);
@@ -625,8 +530,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						}
 						// Signal interpreter the lifting failed.
 						rz_atomic_bool_set(is_running, false);
-						rz_th_queue_close(io_request_q);
-						rz_th_queue_close(io_result_q);
+						rz_th_queue_close(iset->io_request);
+						rz_th_queue_close(iset->io_result);
 						rz_th_queue_close(iset->branch_queue);
 						rz_th_queue_close(iset->il_queue);
 						bb_decode_failed = true;
@@ -657,9 +562,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// (one for each interpreter instance).
 			// Because this is not yet implemented, there is only one interpreter thread for now.
 			{
-				if (!rz_th_queue_is_empty(io_request_q)) {
+				if (!rz_th_queue_is_empty(iset->io_request)) {
 					RzInterpreterSharedObjects *so = NULL;
-					if (!rz_th_queue_pop(io_request_q, false, (void **)&so) || !so) {
+					if (!rz_th_queue_pop(iset->io_request, false, (void **)&so) || !so) {
 						rz_atomic_bool_set(is_running, false);
 						rz_th_lock_leave(iset->state->shared_obj->received);
 						rz_warn_if_reached();
@@ -671,7 +576,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 					rz_th_lock_leave(so->received);
 
 					rz_th_lock_enter(so->received);
-					rz_th_queue_push(io_result_q, so, true);
+					rz_th_queue_push(iset->io_result, so, true);
 					// Don't leave collection lock. Consumer will unlock it after it collected.
 				}
 			}
@@ -683,15 +588,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// This part plays the role of a yield consumer.
 			// In our prototype it only receives xrefs and call candidates.
 			{
-				if (!handle_yields(core, iset, yield_queues)) {
+				if (!handle_yields(core, iset, iset->yield_queues)) {
 					rz_atomic_bool_set(is_running, false);
 					break;
 				}
 			}
 		}
 
-		rz_th_queue_close(io_request_q);
-		rz_th_queue_close(io_result_q);
+		rz_th_queue_close(iset->io_request);
+		rz_th_queue_close(iset->io_result);
 		rz_th_queue_close(iset->branch_queue);
 		rz_th_queue_close(iset->il_queue);
 		rz_th_lock_leave(iset->state->shared_obj->received);
@@ -714,13 +619,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 		// Open queue again, so the interpretation can start at another
 		// jump target again.
-		rz_th_queue_open(io_request_q);
-		rz_th_queue_open(io_result_q);
+		rz_th_queue_open(iset->io_request);
+		rz_th_queue_open(iset->io_result);
 		rz_th_queue_open(iset->branch_queue);
 		rz_th_queue_open(iset->il_queue);
 		// Clear queues from any left overs of previous runs.
-		rz_list_free(rz_th_queue_pop_all(io_result_q));
-		rz_list_free(rz_th_queue_pop_all(io_request_q));
+		rz_list_free(rz_th_queue_pop_all(iset->io_result));
+		rz_list_free(rz_th_queue_pop_all(iset->io_request));
 		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
 		rz_list_free(rz_th_queue_pop_all(iset->branch_queue));
 
@@ -791,19 +696,19 @@ error_free:
 	rz_set_u_free(branch_targets);
 	rz_buf_free(io_buf);
 	rz_analysis_il_vm_free(analysis_vm);
-	rz_th_queue_close(io_request_q);
-	rz_th_queue_close(io_result_q);
+	rz_th_queue_close(iset->io_request);
+	rz_th_queue_close(iset->io_result);
 	rz_th_queue_close(iset->branch_queue);
 	rz_th_queue_close(iset->il_queue);
 
 	if (!iset) {
 		// Ownership of all those objects wasn't yet passed to the iset.
-		rz_th_queue_free(branch_queue);
-		rz_th_queue_free(il_queue);
-		rz_th_queue_free(io_request_q);
-		rz_th_queue_free(io_result_q);
+		rz_th_queue_free(iset->branch_queue);
+		rz_th_queue_free(iset->il_queue);
+		rz_th_queue_free(iset->io_request);
+		rz_th_queue_free(iset->io_result);
 		// yield_queues frees each individual queue as well.
-		ht_up_free(yield_queues);
+		ht_up_free(iset->yield_queues);
 		rz_atomic_bool_free(is_running);
 		rz_interpreter_abstr_state_free(abstr_state);
 	} else {

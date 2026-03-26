@@ -288,11 +288,8 @@ RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpre
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *branch_queue,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<const RzInterpreterILBB *>*/ *il_queue,
-	RZ_NONNULL RZ_OWN HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RZ_NONNULL RZ_OWN RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
+	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
+	RzInterpreterYieldFilter yield_filter,
 	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
 	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
