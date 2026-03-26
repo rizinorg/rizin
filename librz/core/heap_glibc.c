@@ -34,7 +34,7 @@ RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 
 bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
 
 static inline ut8 rz_heap_ptr_size(RzCore *core) {
-	ut8 bits = (ut8)core->rasm->bits;
+	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
 	if (!bits) {
 		bits = (ut8)core->dbg->bits;
 	}

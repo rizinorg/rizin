@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "cil/cil_dis.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CILOp cilop = { { { 0 } } };
 	if (cil_dis(&cilop, buf, len)) {
 		return 0;

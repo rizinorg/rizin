@@ -6,10 +6,11 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include "pyc/pyc_dis.h"
 
-static int pyc_asm_disassemble(RzAsm *a, RzAsmOp *aop, const ut8 *buf, int len) {
+static int pyc_asm_disassemble(const RzAsm *a, RzAsmOp *aop, const ut8 *buf, int len) {
 	pyc_context_t *ctx = (pyc_context_t *)a->plugin_data;
 	RzList *shared = NULL;
 

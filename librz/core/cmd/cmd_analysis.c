@@ -5315,7 +5315,7 @@ RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char **argv) {
-	sdb_foreach(core->rasm->pair, listOpDescriptions, core);
+	rz_asm_describe_iterate(core->rasm, listOpDescriptions, core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6129,7 +6129,7 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc
 	ut64 end = UT64_MAX;
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
-	int i, wordsize = core->rasm->bits / 8;
+	int i, wordsize = rz_asm_get_bits(core->rasm) / 8;
 	rz_list_sort(core->analysis->fcns, cmpaddr, NULL);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		if (end != UT64_MAX) {

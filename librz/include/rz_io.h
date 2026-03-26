@@ -459,6 +459,17 @@ RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *c
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #endif
 
+#define RZ_IO_BOUNDARIES_PERMS_ANY 0
+#define RZ_IO_BOUNDARIES_MASK_NONE 0
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_raw(RZ_NONNULL RzIO *io, const RzInterval interval);
+#define rz_io_get_boundaries_range rz_io_get_boundaries_all_io_maps
+#define rz_io_get_boundaries_all_io_maps(io, interval) \
+	rz_io_get_boundaries_io_maps(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_maps(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
+#define rz_io_get_boundaries_all_io_skyline(io, interval) \
+	rz_io_get_boundaries_io_skyline(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_skyline(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
+
 #if __WINDOWS__
 RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);
 #endif

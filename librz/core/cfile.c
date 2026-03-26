@@ -83,7 +83,7 @@ RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
 }
 
 static bool __isMips(RzAsm *a) {
-	return a && a->cur && a->cur->arch && strstr(a->cur->arch, "mips");
+	return a && rz_asm_is_arch(a, "mips");
 }
 
 static void loadGP(RzCore *core) {
@@ -288,7 +288,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	core->dbg->main_arena_resolved = false;
 	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	rz_config_set_i(core->config, "asm.bits", bits);
 	rz_config_set_b(core->config, "cfg.debug", true);
 	// Set referer as the original uri so we could return to it with `oo`
@@ -355,7 +355,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	core->dbg->main_arena_resolved = false;
 	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	char *bin_abspath = rz_file_abspath(binpath);
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
 	char *newfile = RZ_STR_ISEMPTY(args) ? rz_str_newf("dbg://%s", escaped_path)
@@ -603,7 +603,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 	rz_sys_setenv("RZ_OFFSET", rz_strf(tmpbuf, "%" PFMT64d, core->offset));
 	rz_sys_setenv("RZ_XOFFSET", rz_strf(tmpbuf, "0x%08" PFMT64x, core->offset));
-	rz_sys_setenv("RZ_ENDIAN", core->rasm->big_endian ? "big" : "little");
+	rz_sys_setenv("RZ_ENDIAN", rz_asm_is_big_endian_set(core->rasm) ? "big" : "little");
 	rz_sys_setenv("RZ_BSIZE", rz_strf(tmpbuf, "%d", core->blocksize));
 
 	// dump current config file so other r2 tools can use the same options
@@ -792,7 +792,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
-		info->bits = r->rasm->bits;
+		info->bits = rz_asm_get_bits(r->rasm);
 		rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
 	} else if (binfile) {
 		RzBinObject *obj = rz_bin_cur_object(r->bin);
@@ -1232,7 +1232,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	if (!flags) {
 		flags = RZ_PERM_R;
 	}
-	r->io->bits = r->rasm->bits; // TODO: we need an api for this
+	r->io->bits = rz_asm_get_bits(r->rasm); // TODO: we need an api for this
 	RzIODesc *fd = rz_io_open_nomap(r->io, file, flags, 0644);
 	if (rz_cons_is_breaked()) {
 		goto beach;

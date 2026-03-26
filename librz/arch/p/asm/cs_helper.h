@@ -48,7 +48,7 @@ typedef struct {
 	}
 
 #define CAPSTONE_PLUGIN_MNEMONICS(name) \
-	static char *name##_mnemonics(RzAsm *a, int id, bool json) { \
+	static char *name##_mnemonics(const RzAsm *a, int id, bool json) { \
 		if (!a->plugin_data) { \
 			return NULL; \
 		} \

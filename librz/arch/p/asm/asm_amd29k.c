@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "amd29k/amd29k.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !op || !buf || len < 4) {
 		return -1;
 	}

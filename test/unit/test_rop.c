@@ -73,7 +73,7 @@ static RzCore *setup_rz_core(char *arch, int bits) {
 		return NULL;
 	}
 	rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL);
-	rz_core_set_asm_configs(core, arch, bits, 0);
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
 	rz_config_set_b(core->config, "asm.lines", false);
 	return core;
 }

@@ -390,6 +390,23 @@ static bool snes_analysis_fini(void *user) {
 	return true;
 }
 
+static int snes_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
@@ -399,4 +416,5 @@ RzAnalysisPlugin rz_analysis_plugin_snes = {
 	.init = snes_analysis_init,
 	.fini = snes_analysis_fini,
 	.op = &snes_anop,
+	.archinfo = snes_archinfo,
 };
