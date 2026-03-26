@@ -1850,6 +1850,11 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	}
 	len = RZ_MIN(len, (ut64)UT32_MAX);
 
+	if (!len) {
+		rz_buf_free(buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = len ? rz_str_guess_encoding_from_buffer(core->block + offset, (ut32)len) : RZ_STRING_ENC_8BIT;
 	}
