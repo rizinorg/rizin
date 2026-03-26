@@ -619,10 +619,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->foldxrefs = rz_config_get_i(core->config, "asm.xrefs.fold");
 	ds->show_lines = rz_config_get_b(core->config, "asm.lines");
 	bool suppress_lines_for_filter = false;
-	if (core->is_pipe) {
-		suppress_lines_for_filter = true;
-	}
-	if (core->cons && core->cons->filter) {
+	if (core->is_pipe || (core->cons && core->cons->filter)) {
 		suppress_lines_for_filter = true;
 	}
 	if (core->cons && core->cons->context) {
