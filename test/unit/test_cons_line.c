@@ -150,6 +150,31 @@ bool test_line_kill_word(void) {
 	mu_end;
 }
 
+bool test_line_ctrl_u(void) {
+	RzCons *cons = rz_cons_new();
+	cons->force_columns = 80;
+	cons->force_rows = 23;
+	RzLine *line = cons->line;
+
+	const char input_cut[] = "abcdef\x01\x06\x06\x06\x15\n";
+	rz_cons_readpush(input_cut, sizeof(input_cut));
+	rz_line_readline(line);
+
+	mu_assert_eq(line->buffer.index, 0, "index moves to the beginning after Ctrl-U");
+	mu_assert_streq(line->buffer.data, "def", "Ctrl-U deletes text before the cursor");
+	mu_assert_streq(line->clipboard, "abc", "Ctrl-U stores deleted text in the clipboard");
+
+	const char input_paste[] = "abcdef\x01\x06\x06\x06\x15\x19\n";
+	rz_cons_readpush(input_paste, sizeof(input_paste));
+	rz_line_readline(line);
+
+	mu_assert_eq(line->buffer.index, 3, "Ctrl-Y restores the deleted prefix at the cursor");
+	mu_assert_streq(line->buffer.data, "abcdef", "Ctrl-Y pastes back the deleted text");
+
+	rz_cons_free();
+	mu_end;
+}
+
 bool test_line_undo(void) {
 	RzCons *cons = rz_cons_new();
 	// Make test reproducible everywhere
@@ -231,6 +256,7 @@ bool all_tests() {
 	mu_run_test(test_line_onecompletion);
 	mu_run_test(test_line_multicompletion);
 	mu_run_test(test_line_kill_word);
+	mu_run_test(test_line_ctrl_u);
 	mu_run_test(test_line_undo);
 	mu_run_test(test_line_misc);
 	mu_run_test(test_line_ns_completion);

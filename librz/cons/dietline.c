@@ -394,6 +394,26 @@ static void unix_word_rubout(RzLine *line) {
 	line->buffer.index = i;
 }
 
+static void backward_kill_line(RzLine *line) {
+	int len;
+	if (line->buffer.index < 1) {
+		return;
+	}
+	if (line->buffer.index > line->buffer.length) {
+		line->buffer.length = line->buffer.index;
+	}
+	len = line->buffer.index;
+	free(line->clipboard);
+	line->clipboard = rz_str_ndup(line->buffer.data, len);
+	rz_line_clipboard_push(line, line->clipboard);
+	undo_add_entry(line, 0, rz_str_ndup(line->clipboard, len), NULL);
+	memmove(line->buffer.data,
+		line->buffer.data + line->buffer.index,
+		line->buffer.length - line->buffer.index + 1);
+	line->buffer.length = strlen(line->buffer.data);
+	line->buffer.index = 0;
+}
+
 static int inithist(RzLine *line) {
 	ZERO_FILL(line->history);
 	if ((line->history.size + 1024) * sizeof(char *) < line->history.size) {
@@ -1727,15 +1747,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			}
 			break;
 		case 21: // ^U - cut
-			free(line->clipboard);
-			line->clipboard = rz_str_dup(line->buffer.data);
-			rz_line_clipboard_push(line, line->clipboard);
-			if (line->buffer.length) {
-				undo_add_entry(line, 0, rz_str_dup(line->clipboard), NULL);
-			}
-			line->buffer.data[0] = '\0';
-			line->buffer.length = 0;
-			line->buffer.index = 0;
+			backward_kill_line(line);
 			break;
 #if __WINDOWS__
 		case 22: // ^V - Paste from windows clipboard
