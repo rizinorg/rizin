@@ -1,11 +1,23 @@
-NAME=analyze preludes
+NAME=analyze preludes & tail-call split
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
+afl~mpsort
+s sym.mpsort
+pd 2 @ sym.mpsort
+pdf~jmp
 EOF
 EXPECT=<<EOF
 459
+0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
+0x000128a0    6 83   -> 75   sym.mpsort
+            ; CALL XREF from fcn.00008cac @ 0x8d43
+/ sym.mpsort(int64_t arg_8h);
+|           ; arg int64_t arg_8h @ stack + 0x8
+|           0x000128a0      endbr64
+|           0x000128a4      push  r12
+\       `=< 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN
 
@@ -4410,29 +4422,5 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_fh @ stack + 0xf
 |           0x001b9b30      push  r15
 |           0x001b9b32      push  r14
-EOF
-RUN
-
-NAME=Function split via tail call
-FILE=bins/elf/fedora_32_bin_ls
-CMDS=<<EOF
-aaa
-afl~mpsort
-s sym.mpsort
-pd 2 @ sym.mpsort
-pdf~jmp
-EOF
-EXPECT=<<EOF
-0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
-0x000128a0    6 83   -> 75   sym.mpsort
-            ; CALL XREF from sym.sort_files @ 0x8d43
-/ sym.mpsort(int64_t arg1, unsigned long arg2, int64_t arg3, int64_t arg_8h);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg unsigned long arg2 @ rsi
-|           ; arg int64_t arg3 @ rdx
-|           ; arg int64_t arg_8h @ stack + 0x8
-|           0x000128a0      endbr64
-|           0x000128a4      push  r12
-\       `=< 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN

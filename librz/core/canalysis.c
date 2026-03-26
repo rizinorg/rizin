@@ -1397,6 +1397,7 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	const RzList *flags = rz_flag_get_list(core->flags, addr);
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
+
 static bool should_perform_split(RzCore *core, RzAnalysisFunction *fcn, int reftype, ut64 at, ut64 from) {
 	if (reftype != RZ_ANALYSIS_XREF_TYPE_CALL || from == UT64_MAX) {
 		return false;
