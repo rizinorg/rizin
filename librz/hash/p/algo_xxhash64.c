@@ -54,7 +54,7 @@ static bool plugin_xxhash64_small_block(const ut8 *data, ut64 size, ut8 **digest
 	}
 
 	ut64 result = XXH64(data, size, 0);
-	rz_write_le64(dgst, result);
+	rz_write_be64(dgst, result);
 
 	*digest = dgst;
 	if (digest_size) {
