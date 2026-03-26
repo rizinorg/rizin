@@ -2018,9 +2018,7 @@ static void classify_extended(ut8 prefix, ut8 sub, RzAnalysisOp *op) {
 	}
 }
 
-// ---------------------------------------------------------------------------
 // Main analysis callback
-// ---------------------------------------------------------------------------
 static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 	const ut8 *b, int len, RzAnalysisOpMask mask) {
 	if (len < 1) {
@@ -2032,9 +2030,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 
 	ut8 opcode = b[0];
 
-	// ------------------------------------------------------------------
 	// Two-byte escape prefix space: 0xFB – 0xFF
-	// ------------------------------------------------------------------
 	if (opcode >= 0xFB) {
 		if (len < 2) {
 			op->size = 1;
@@ -2072,9 +2068,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		return op->size;
 	}
 
-	// ------------------------------------------------------------------
 	// Single-byte opcode space (0x00 – 0xFA)
-	// ------------------------------------------------------------------
 	op->size = (int)op_sizes[opcode];
 	if (op->size == 0) {
 		op->size = 1;
@@ -2082,48 +2076,36 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 
 	switch (opcode) {
 
-	// ------------------------------------------------------------------
 	// IDE markers / debug line info
-	// ------------------------------------------------------------------
 	case 0x00: // IDE beginning of line with imm#1 byte codes
 	case 0x02: // IDE beginning of line with imm#1 byte codes
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push [FC0D134] (load well-known global)
-	// ------------------------------------------------------------------
 	case 0x01:
 	case 0x03:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push arg / Push ptr / Push [SR]+arg
-	// ------------------------------------------------------------------
 	case 0x04: // Push arg
 	case 0x05: // Push ptr
 	case 0x06: // Push [SR]+arg
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push [arg1]+imm#2
-	// ------------------------------------------------------------------
 	case 0x07:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[arg]   (store into SR register)
-	// ------------------------------------------------------------------
 	case 0x08:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// Call instructions (ptr1, check stack, optional push EAX)
-	// ------------------------------------------------------------------
 	case 0x0A: // Call ptr1; check stack (no return value)
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		if (len >= 6) {
@@ -2145,9 +2127,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
 
-	// ------------------------------------------------------------------
 	// Procedure end / return
-	// ------------------------------------------------------------------
 	case 0x13: // end proc (seen in table at 0x13 = idx 13)
 	case 0x14: // end proc
 	case 0x15: // (end proc area)
@@ -2157,30 +2137,22 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[[arg]]  / load through pointer
-	// ------------------------------------------------------------------
 	case 0x19:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push [arg]; Call [[[arg]]+8]; [[arg]]=0 (COM method dispatch)
-	// ------------------------------------------------------------------
 	case 0x1A:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push ptr
-	// ------------------------------------------------------------------
 	case 0x1B:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Conditional branch: If Pop=0
-	// ------------------------------------------------------------------
 	case 0x1C:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len >= 4) {
@@ -2190,9 +2162,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		}
 		break;
 
-	// ------------------------------------------------------------------
 	// Conditional branch: If Pop<>0
-	// ------------------------------------------------------------------
 	case 0x1D:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len >= 4) {
@@ -2202,9 +2172,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		}
 		break;
 
-	// ------------------------------------------------------------------
 	// Unconditional branch: ESI=ProcPC+imm#2
-	// ------------------------------------------------------------------
 	case 0x1E:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		if (len >= 4) {
@@ -2213,24 +2181,18 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		}
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaRecUniToAnsi / vbaRecAnsiToUni
-	// ------------------------------------------------------------------
 	case 0x1F:
 	case 0x20:
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[stack2]
-	// ------------------------------------------------------------------
 	case 0x21:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// SysFreeString family / string moves
-	// ------------------------------------------------------------------
 	case 0x23: // SysFreeString [arg]; [arg]=[stack]
 	case 0x2F: // SysFreeString [arg]; [arg]=0
 	case 0x31: // SysFreeString [arg]; [arg]=Pop
@@ -2238,44 +2200,32 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// [Pop] [SR]
-	// ------------------------------------------------------------------
 	case 0x24:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// Pop [arg+0C]; Push EAX  (return by reference helper)
-	// ------------------------------------------------------------------
 	case 0x26:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// PushVarError 80020004 (missing optional argument marker)
-	// ------------------------------------------------------------------
 	case 0x27:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// PushVarInteger imm2#2
-	// ------------------------------------------------------------------
 	case 0x28:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaStrCat
-	// ------------------------------------------------------------------
 	case 0x2A:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 
-	// ------------------------------------------------------------------
 	// Variable-size free / cleanup ops (size is data-dependent)
-	// ------------------------------------------------------------------
 	case 0x29: // (variable) push/call variant
 	case 0x32: // Do SysFreeString [arg_n] n/2 times
 	case 0x36: // Free imm1#2/2 variants
@@ -2283,271 +2233,199 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->size = 1;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaStrToAnsi
-	// ------------------------------------------------------------------
 	case 0x34:
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 
-	// ------------------------------------------------------------------
 	// PushVarString ptr2
-	// ------------------------------------------------------------------
 	case 0x3A:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// FP exception checks / GetLastError
-	// ------------------------------------------------------------------
 	case 0x39: // check for 64-bit fp exception
 	case 0x3B: // check for 64-bit fp exception
 	case 0x3C: // kernel GetLastError
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push vbaCastObj(Pop, [FUN+imm#2*4])
-	// ------------------------------------------------------------------
 	case 0x3D:
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push#4 [arg]; [arg]=0
-	// ------------------------------------------------------------------
 	case 0x3E:
 	case 0x51: // alias
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaR8Var / vbaI2Var (type conversions)
-	// ------------------------------------------------------------------
 	case 0x42: // vbaR8Var
 	case 0x55: // vbaI2Var
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaLenBstr
-	// ------------------------------------------------------------------
 	case 0x4A:
 		op->type = RZ_ANALYSIS_OP_TYPE_LENGTH;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaLBound
-	// ------------------------------------------------------------------
 	case 0x4C:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 
-	// ------------------------------------------------------------------
 	// [arg]=vbaVarDup(Pop)
-	// ------------------------------------------------------------------
 	case 0x4E:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaMidStmtBstr (string mid-assignment)
-	// ------------------------------------------------------------------
 	case 0x4F:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaI4Str
-	// ------------------------------------------------------------------
 	case 0x50:
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaErase
-	// ------------------------------------------------------------------
 	case 0x5A:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[[arg]]
-	// ------------------------------------------------------------------
 	case 0x48:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[[SR]+imm#2]
-	// ------------------------------------------------------------------
 	case 0x58:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaLsetFixstr
-	// ------------------------------------------------------------------
 	case 0x47:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// vbaVarMove
-	// ------------------------------------------------------------------
 	case 0x57:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push#2 [arg] / Push#4 [arg]
-	// ------------------------------------------------------------------
 	case 0x6B: // Push#2 [arg]
 	case 0x6C: // Push#4 [arg]
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// FPU loads (push long real / push quadword real)
-	// ------------------------------------------------------------------
 	case 0x6E: // fld#4 [arg]
 	case 0x6F: // Fld#8 [arg]
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Integer pop / store
-	// ------------------------------------------------------------------
 	case 0x70: // Pop#2 [arg]
 	case 0x71: // Pop#4 [arg]
 	case 0x75: // Pop [arg]
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 
-	// ------------------------------------------------------------------
 	// FPU stores (pop real / pop quadword)
-	// ------------------------------------------------------------------
 	case 0x73: // Fstp#4 [arg]
 	case 0x74: // Fstp#8 [arg]
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Pop#2 [[SR]+arg*4]
-	// ------------------------------------------------------------------
 	case 0x7A:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push [arg]  (0x80 variant)
-	// ------------------------------------------------------------------
 	case 0x80:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push#2 [[SR]+imm#2] / Push#4 [[SR]+imm#2]
-	// ------------------------------------------------------------------
 	case 0x89: // Push#2 [[SR]+imm#2]
 	case 0x8A: // Push#4 [[SR]+imm#2]
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Pop#2 [[SR]+imm#2]
-	// ------------------------------------------------------------------
 	case 0x8E:
 	case 0x8F:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push#2 [[arg1]+imm#2] / Push#4 [[arg1]+imm#2]
-	// ------------------------------------------------------------------
 	case 0x93:
 	case 0x94:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Pop#2 / Pop#4 [[arg1]+imm#2]
-	// ------------------------------------------------------------------
 	case 0x98:
 	case 0x99:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Integer comparisons: GT(#2), GT(#4), GE
-	// ------------------------------------------------------------------
 	case 0xDA: // Push (Pop1 > Pop2) #2
 	case 0xDB: // Push (Pop1 > Pop2) #4
 	case 0xDC: // Push (Pop1 >= Pop2)
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Verify [stack] high word is 0000
-	// ------------------------------------------------------------------
 	case 0xE4:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push [SR]+arg
-	// ------------------------------------------------------------------
 	case 0x56:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// [SR]=[arg]
-	// ------------------------------------------------------------------
 	case 0x62:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push imm#1  (literal byte)
-	// ------------------------------------------------------------------
 	case 0xF4:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push imm#4  (literal dword)
-	// ------------------------------------------------------------------
 	case 0xF5:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Push imm2; Push imm1  /  PushQWord imm
-	// ------------------------------------------------------------------
 	case 0xF6:
 	case 0xF7:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Fild imm (FPU Load Integer) / Fld imm (FPU Load Real)
-	// ------------------------------------------------------------------
 	case 0xF8:
 	case 0xF9:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Large literal (9 bytes total)
-	// ------------------------------------------------------------------
 	case 0xFA:
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 		break;
 
-	// ------------------------------------------------------------------
 	// Escape prefixes consumed above (0xFB-0xFF) – should not reach here
-	// ------------------------------------------------------------------
 	case 0xFB:
 	case 0xFC:
 	case 0xFD:
@@ -2557,9 +2435,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->size = 1;
 		break;
 
-	// ------------------------------------------------------------------
 	// Everything not explicitly listed
-	// ------------------------------------------------------------------
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		break;
@@ -2568,9 +2444,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 	return op->size;
 }
 
-// ---------------------------------------------------------------------------
 // Plugin descriptor
-// ---------------------------------------------------------------------------
 RzAnalysisPlugin rz_analysis_plugin_mspcode = {
 	.name = "mspcode",
 	.arch = "mspcode",
