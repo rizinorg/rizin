@@ -790,6 +790,23 @@ static bool m68k_fini(void *user) {
 	return true;
 }
 
+static int m68k_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
@@ -801,7 +818,9 @@ RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.op = &m68k_analyze_op,
 	.init = m68k_init,
 	.fini = m68k_fini,
+	.archinfo = m68k_archinfo,
 };
+
 #else
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k (unsupported)",

@@ -437,7 +437,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 	RzRegItem *r;
 	HtUP *db = ht_up_new(NULL, NULL);
 	rz_list_foreach (list, iter, r) {
-		if (r->size != core->rasm->bits) {
+		if (!rz_asm_is_bits(core->rasm, r->size)) {
 			continue;
 		}
 		ut64 value = rz_reg_get_value(reg, r);

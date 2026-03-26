@@ -24,9 +24,6 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	if (len < HEX_INSN_SIZE) {
 		return -1;
 	}
-	if (analysis->pcalign != HEX_PC_ALIGNMENT) {
-		analysis->pcalign = HEX_PC_ALIGNMENT;
-	}
 
 	// Disassemble as many instructions as possible from the buffer.
 	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
@@ -42,7 +39,7 @@ RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	return op->size;
 }
 
-static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {
+static RzAnalysisILConfig *hexagon_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(a, NULL);
 	// Hacky getter for the plugin data until RzArch is implemented
 	RzAsm *rasm = rz_analysis_to_rz_asm(a);
@@ -53,7 +50,7 @@ static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {
 	return rz_analysis_il_config_new(32, a->big_endian, 32);
 }
 
-RZ_API char *get_reg_profile(RzAnalysis *analysis) {
+RZ_API char *hexagon_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	C9\n"
 		"=SP	R29\n"
@@ -743,6 +740,23 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
+static int hexagon_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return HEX_INSN_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return HEX_PC_ALIGNMENT;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.name = "hexagon",
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
@@ -750,7 +764,8 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.arch = "hexagon",
 	.bits = 32,
 	.op = hexagon_v6_op,
+	.archinfo = hexagon_archinfo,
 	.esil = false,
-	.get_reg_profile = get_reg_profile,
-	.il_config = rz_hexagon_il_config,
+	.get_reg_profile = hexagon_get_reg_profile,
+	.il_config = hexagon_il_config,
 };

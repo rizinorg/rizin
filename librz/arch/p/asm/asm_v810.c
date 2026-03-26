@@ -1,15 +1,14 @@
 // SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include "v810/v810_disas.h"
 
-static int v810_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int v810_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct v810_cmd cmd = {
 		.instr = "",
 		.operands = ""

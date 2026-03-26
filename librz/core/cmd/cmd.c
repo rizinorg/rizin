@@ -355,7 +355,9 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_io_read_i(core->io, n, &n, core->rasm->bits / 8, core->print->big_endian)) {
+	const bool big_endian = rz_asm_is_big_endian_set(core->rasm);
+	int arch_bits = rz_asm_get_bits(core->rasm);
+	if (!rz_io_read_i(core->io, n, &n, arch_bits / 8, big_endian)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("0x%" PFMT64x "\n", n);
@@ -381,7 +383,7 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 			return RZ_CMD_STATUS_ERROR;
 		}
 
-		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
+		ok = rz_core_write_value_at(core, addr, value, rz_asm_get_bits(core->rasm) / 8);
 	}
 
 	return bool2status(ok);

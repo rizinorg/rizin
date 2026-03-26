@@ -5,10 +5,11 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "sh/disassembler.h"
 #include "sh/assembler.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	SHOp *dis_op = sh_disassembler(rz_read_ble16(buf, a->big_endian));
 	op->size = 2;
 	if (!dis_op) {
@@ -22,7 +23,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	bool success;
 	ut16 opcode = sh_assembler(str, a->pc, &success);
 	if (!success) {
@@ -35,7 +36,7 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 	return 2;
 }
 
-static bool sh_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool sh_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
 	// 	{ 32, 2, 1, "\xc3\x20" }, // Big endian
 	// 	{ 32, 2, 0, "\x20\xc3" }, // Little endian
 	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xc3\x20" : (const ut8 *)"\x20\xc3", 2);

@@ -24,9 +24,10 @@ static const char *syscallNumberFmt(int n) {
  * \param addr address of the syscall
  */
 RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
-	int i;
-	char str[64];
+	char str[64] = { 0 };
 	char tmpbuf[32] = { 0 };
+	bool is_x86 = rz_asm_is_arch(core->rasm, "x86");
+	int bits = rz_asm_get_bits(core->rasm);
 	st64 N = n;
 	int defVector = rz_syscall_get_swi(core->analysis->syscall);
 	if (defVector > 0) {
@@ -52,11 +53,11 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 	// TODO: move this to rz_syscall
 	const char *cc = rz_analysis_syscc_default(core->analysis);
 	// TODO replace the hardcoded CC with the sdb ones
-	for (i = 0; i < item->args; i++) {
+	for (int i = 0; i < item->args; i++) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp(core->rasm->cur->arch, "x86")) {
+		if (bits == 32 && is_x86) {
 			regidx++;
 		}
 		ut64 arg = rz_core_arg_get(core, cc, regidx); // TODO here

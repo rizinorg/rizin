@@ -1083,7 +1083,8 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val
 			}
 		}
 	}
-	if (core->rasm->bits == 32 && strstr(core->rasm->cur->name, "arm")) {
+
+	if (rz_asm_get_bits(core->rasm) == 32 && rz_asm_is_arch(core->rasm, "arm")) {
 		if ((!(at & 1)) && rz_io_is_valid_offset(analysis->iob.io, at, 0)) { //  !core->analysis->opt.noncode)) {
 			rz_core_add_string_ref(analysis->coreb.core, esil->address, at);
 		}

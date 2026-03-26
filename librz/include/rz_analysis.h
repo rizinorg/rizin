@@ -46,7 +46,6 @@ extern "C" {
 typedef struct {
 	struct rz_analysis_t *analysis;
 	int type;
-	int rad;
 	SdbForeachCallback cb;
 	void *user;
 	int count;

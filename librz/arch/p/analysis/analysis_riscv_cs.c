@@ -781,7 +781,6 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		ctx->omode = mode;
 		ctx->obits = analysis->bits;
 	}
-	analysis->pcalign = 2;
 	op->addr = addr;
 	if (len < 2) {
 		return -1;
