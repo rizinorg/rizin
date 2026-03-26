@@ -1587,6 +1587,36 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		// R_AARCH64_TLSDESC is a relocation type handled by the
 		// dynamic linker. We intentionally do not handle do anything.
 		break;
+	case R_AARCH64_TSTBR14:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(14, 0) << 5);
+		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(14, 0)) << 5));
+		break;
+	case R_AARCH64_CONDBR19:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(19, 0) << 5);
+		val = ((st64)(fs->S + fs->A - fs->P)) >> 2;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(19, 0)) << 5));
+		break;
+	case R_AARCH64_LDST16_ABS_LO12_NC:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+		val = PG_OFFSET(fs->S + fs->A) >> 1;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+		break;
+	case R_AARCH64_LDST32_ABS_LO12_NC:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+		val = PG_OFFSET(fs->S + fs->A) >> 2;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+		break;
+	case R_AARCH64_LDST128_ABS_LO12_NC:
+		keep = rz_read_le32(buf) & ~(RZ_BIT_MASK32(12, 0) << 10);
+		val = PG_OFFSET(fs->S + fs->A) >> 4;
+		rz_write_le32(buf, keep | ((val & RZ_BIT_MASK32(12, 0)) << 10));
+		break;
+	case R_AARCH64_IRELATIVE:
+		val = fs->B + fs->A;
+		rz_write_le64(buf, val);
+		nbytes = 8;
+		break;
 	default:
 		UNHANDL_DEF("AArch64", rel->type);
 		return;
