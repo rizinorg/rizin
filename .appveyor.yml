@@ -65,7 +65,7 @@ init:
 # Required software for building
 install:
   # Install Python 3.10
-  - cmd: if %APPVEYOR_BUILD_WORKER_IMAGE% == "Visual Studio 2017" ( choco install python --version=3.10.11 )
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" ( choco install python --version=3.10.11 )
   # Update environment variables
   - ps: $env:RZ_VERSION = (& (Join-Path $env:PYTHON python.exe) sys\\version.py )
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
@@ -80,7 +80,7 @@ build_script:
   - appveyor AddMessage "Compiling rizin %RZ_VERSION% (%builder%)"
 
   # Meson patched to work around git network issues
-  - cmd: if %APPVEYOR_BUILD_WORKER_IMAGE% == "Visual Studio 2017" ( patch %PYTHON%\Lib\site-packages\mesonbuild\utils\universal.py patches\meson-git-retry.patch )
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" ( patch %PYTHON%\Lib\site-packages\mesonbuild\utils\universal.py patches\meson-git-retry.patch )
 
   - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && %PYTHON%\Scripts\meson setup --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Db_vscrt=static_from_buildtype build && %PYTHON%\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
@@ -97,7 +97,7 @@ for:
         - RUN_TESTS: true
 
     test_script:
-      - if %APPVEYOR_BUILD_WORKER_IMAGE% == "Visual Studio 2017" ( call "%VSVARSALLPATH2017%" x64 )
+      - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" ( call "%VSVARSALLPATH2017%" x64 )
       - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
       - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
@@ -121,7 +121,7 @@ for:
         - TEST_INCLUDE_HEADERS_CPP: true
 
     test_script:
-      - if %APPVEYOR_BUILD_WORKER_IMAGE% == "Visual Studio 2017" ( call "%VSVARSALLPATH2017%" x64 )
+      - if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" ( call "%VSVARSALLPATH2017%" x64 )
       - if %builder% == vs2022_64 ( call "%VSVARSALLPATH2022%" x64 )
       - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
