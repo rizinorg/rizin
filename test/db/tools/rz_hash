@@ -1569,3 +1569,33 @@ EXPECT=<<EOF
 bins/elf/analysis/hello-arm32: 0x00000000-0x0000090c ssdeep: 48:p/701NYJSaSiTBBhd8KHk/MYBWQ3Vtx/J0:p/7EqTBBvI/MYBW+ZJ0
 EOF
 RUN
+
+NAME=djb2 hash of "hello"
+FILE=-
+CMDS=<<EOF
+rz-hash -a djb2 -s "hello"
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000004 djb2: 0xe7ed9c0a
+EOF
+RUN
+
+NAME=djb2 hash of "rizin"
+FILE=-
+CMDS=<<EOF
+rz-hash -a djb2 -s "rizin"
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000004 djb2: 0xc34a9e0b
+EOF
+RUN
+
+NAME=djb2 hash of "test"
+FILE=-
+CMDS=<<EOF
+rz-hash -a djb2 -s "test"
+EOF
+EXPECT=<<EOF
+0x00000000-0x00000003 djb2: 0x33af737c
+EOF
+RUN
