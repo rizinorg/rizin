@@ -267,6 +267,9 @@ static RzSubprocessOutput *run_rz_test(const RunRzTest *rrt, const char *default
 	RzSubprocessOutput *out = rrt->runner(executable, args.v.a, rz_pvector_len(&args), envvars, envvals, env_size, rrt->timeout_ms, rrt->user);
 	rz_pvector_clear(&args);
 
+	free(envvals);
+	free(envvars);
+
 	free(executable);
 #if __WINDOWS__
 	free(wcmds);
