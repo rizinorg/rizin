@@ -574,7 +574,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	ut64 len = RZ_MIN(analysis->opt.bb_max_size, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	ReadAhead read_ahead_cache = { 0 };
 	const int continue_after_jump = analysis->opt.afterjmp;
-	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
 	char *movbasereg = NULL;
 	RzAnalysisBlock *bb = item->block;
@@ -690,7 +689,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
 	ut64 movscale = 0;
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
-	int maxlen = len * addrbytes;
+	int maxlen = len;
 	if (is_dalvik) {
 		bool skipAnalysis = false;
 		if (!strncmp(fcn->name, "sym.", 4)) {
@@ -704,7 +703,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
 	}
-	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+	if ((maxlen - (idx)) > MAX_SCAN_SIZE) {
 		// XXX idx is always 0 here, and maxlen comes from amalysis.bb.maxsize. This makes no sense.
 		RZ_LOG_DEBUG("Skipping large memory region during basic block analysis.\n");
 		maxlen = 0;
@@ -721,7 +720,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 		}
 	repeat:
-		at_delta = addrbytes * idx;
+		at_delta = idx;
 		at = addr + at_delta;
 		if (rz_cons_is_breaked()) {
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
@@ -883,7 +882,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
-				rz_analysis_block_set_size(bb, (ut64)addrbytes * (ut64)delay.after);
+				rz_analysis_block_set_size(bb, (ut64)delay.after);
 				fcn->ninstr--;
 				RZ_LOG_DEBUG("Correct for branch delay @ 0x%08" PFMT64x " bb.addr=0x%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
 					addr + idx - oplen, bb->addr, bb->size, rz_analysis_function_linear_size(fcn));

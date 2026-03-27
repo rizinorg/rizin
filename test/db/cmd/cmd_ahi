@@ -380,3 +380,87 @@ EXPECT=<<EOF
             0x00000000      cmp   rax, 18446744073709551615
 EOF
 RUN
+
+NAME=ahie enum operands
+FILE==
+CMDS=<<EOF
+o malloc://256
+td "enum E { SEVEN = 7, EIGHT = 8, MASK = 0x100, WORD = 0xffc643 };"
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
+s 0
+wx 4180fc07
+ahie E
+pi 1
+ahie-
+pi 1
+wx 4883f803
+ahie E
+pi 1
+s 0x10
+wx c7458843c6ff00
+ahie E 1
+pdq 1
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+s 0x20
+wx 0700a0e3
+ahie E
+pi 1
+e asm.arch=arm
+e asm.bits=64
+s 0x30
+wx e00080d2
+ahie E
+pi 1
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+s 0x40
+wx 38600007
+ahie E
+pi 1
+e asm.arch=mips
+e asm.bits=32
+e cfg.bigendian=true
+s 0x50
+wx 20020007
+ahie E
+pi 1
+e asm.arch=8051
+e asm.bits=8
+s 0x60
+wx 7407
+ahie E
+pi 1
+e asm.arch=tricore
+e asm.bits=32
+e cfg.bigendian=true
+s 0x70
+wx 8f005001
+ahie E
+pi 1
+e asm.arch=hexagon
+e asm.bits=32
+e cfg.bigendian=false
+s 0x80
+wx 01c09da0
+ahie E
+pi 1
+EOF
+EXPECT=<<EOF
+cmp r12b, E.SEVEN
+cmp r12b, 0x07
+cmp rax, 0x03
+0x00000010 mov dword [rbp-0x78], E.WORD
+mov r0, E.SEVEN
+mov x0, E.SEVEN
+li r3, E.SEVEN
+addi v0, zero, E.SEVEN
+mov a, #E.SEVEN
+or d0, d0, #E.MASK
+[   allocframe(SP,#E.EIGHT):raw
+EOF
+RUN

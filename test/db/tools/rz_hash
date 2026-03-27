@@ -280,6 +280,9 @@ ____hm md2            LGPL3      swedenspy                      MD2 cryptographi
 ____hm md4            LGPL3      deroad                         MD4 cryptographic hash
 ____hm md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
 ____h_ mod255         LGPL3      deroad                         Modulo 255 checksum
+____h_ murmur3-x64-128 MIT        Austin Appleby                 MurmurHash3 x64 128-bit non-cryptographic hash
+____h_ murmur3-x86-128 MIT        Austin Appleby                 MurmurHash3 x86 128-bit non-cryptographic hash
+____h_ murmur3-x86-32 MIT        Austin Appleby                 MurmurHash3 x86 32-bit non-cryptographic hash
 ____h_ parity         LGPL3      deroad                         Parity checksum
 ____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 ____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
@@ -753,6 +756,9 @@ string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 mod255: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x64-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one

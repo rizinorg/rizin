@@ -13464,6 +13464,7 @@ maxopsz  4
 minopsz  4
 os       any
 cc       N/A
+pcalign  4
 rpath    N/A
 subsys   any
 stripped true

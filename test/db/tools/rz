@@ -308,7 +308,6 @@ EXPECT=<<EOF
  [32m-O[0m[33m file [0m    [0mOutput file name (rz-asm -Bf a.asm -O a)
  [32m-p[0m          [0mRun SPP over input for assembly
  [32m-q[0m          [0mQuiet mode
- [32m-r[0m          [0mOutput in rizin commands
  [32m-s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
  [32m-v[0m          [0mShow version information
  [32m-x[0m          [0mUse hex dwords instead of hex pairs when assembling.
@@ -521,11 +520,12 @@ NAME=rz-find -h
 TOOL=rz-find
 ARGS=-h
 EXPECT=<<EOF
-[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] -|file|dir ..
+[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
  [32m-a[0m[33m align [0m[0mOnly accept aligned hits
  [32m-b[0m[33m size [0m [0mSet block size
  [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
- [32m-E[0m[33m cmd [0m  [0mExecute command for each file found
+ [32m-E[0m[33m cmd [0m  [0mExecute shell command for each file found.
+ [32m-R[0m[33m cmd [0m  [0mExecute Rizin command for each search hit.
  [32m-f[0m[33m from [0m [0mStart searching from address 'from'
  [32m-F[0m[33m file [0m [0mRead the contents of the file and use it as keyword
  [32m-h[0m       [0mShow this help

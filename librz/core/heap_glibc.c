@@ -34,7 +34,7 @@ RzList /*<RzArenaListItem *>*/ *rz_heap_arenas_list_internal(RzCore *core, ut64 
 bool rz_heap_update_main_arena_internal(RzCore *core, ut64 m_arena, MallocState *main_arena, const RzHeapConfig *config);
 
 static inline ut8 rz_heap_ptr_size(RzCore *core) {
-	ut8 bits = (ut8)core->rasm->bits;
+	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
 	if (!bits) {
 		bits = (ut8)core->dbg->bits;
 	}
@@ -1971,7 +1971,7 @@ static int print_bin_content(RzCore *core, MallocState *main_arena, int bin_num,
 }
 
 /**
- * \brief Prints unsorted bin description for an arena (used for `dmhd` command)
+ * \brief Prints unsorted bin description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena MallocState struct for the arena in which bin are
@@ -1996,7 +1996,7 @@ static void print_unsortedbin_description(RzCore *core, ut64 m_arena, MallocStat
 }
 
 /**
- * \brief Prints small bins description for an arena (used for `dmhd` command)
+ * \brief Prints small bins description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
@@ -2030,7 +2030,7 @@ static void print_smallbin_description(RzCore *core, ut64 m_arena, MallocState *
 }
 
 /**
- * \brief Prints large bins description for an arena (used for `dmhd` command)
+ * \brief Prints large bins description for an arena (used for `dmhgd` command)
  * \param core RzCore pointer
  * \param m_arena Offset of the arena in memory
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
@@ -2064,7 +2064,7 @@ static void print_largebin_description(RzCore *core, ut64 m_arena, MallocState *
 }
 
 /**
- * \brief Prints description of bins for main arena for `dmhd` command
+ * \brief Prints description of bins for main arena for `dmhgd` command
  * \param core RzCore pointer
  * \param m_arena Offset of main arena in memory
  * \param main_arena Pointer to Malloc state struct for main arena
@@ -2813,7 +2813,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, 
 	}
 
 	bool json = false;
-	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhdj
+	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhgdj
 		json = true;
 	}
 	RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;

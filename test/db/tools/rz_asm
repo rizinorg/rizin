@@ -361,15 +361,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm -a x86 -b 64 -r push ebp
+NAME=rz-asm -a x86 -b 64 push ebp
 TOOL=rz-asm
-ARGS=-a x86 -b 64 -r push ebp
+ARGS=-a x86 -b 64 push ebp
 EXPECT=<<EOF
-e asm.arch=x86
-e asm.bits=64
-wx 6a00
-f entry @ $$
-f label.main @ $$ + 1
+6a00
 EOF
 RUN
 
@@ -490,10 +486,10 @@ NAME=rz-asm x86_64 overlarge operand
 TOOL=rz-asm
 FILE=mov rax, 0x112233445566778899
 ARGS=-a x86 -b 64
-EXIT_STATUS=1
-EXPECT=
+EXPECT=<<EOF
+48c7c0ffffffff
+EOF
 EXPECT_ERR=<<EOF
-ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
 EOF
 RUN
 

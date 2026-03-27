@@ -1360,9 +1360,11 @@ intrp    N/A
 laddr    0x00000000
 lang     c
 machine  mc68030
-minopsz  1
+maxopsz  4
+minopsz  2
 os       darwin
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   unknown
 stripped false

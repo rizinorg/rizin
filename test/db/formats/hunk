@@ -25,9 +25,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  68000
-minopsz  1
+maxopsz  4
+minopsz  2
 os       AmigaOS
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   
 stripped false

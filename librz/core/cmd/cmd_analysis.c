@@ -4601,7 +4601,7 @@ RZ_IPI RzCmdStatus rz_analysis_hint_del_optype_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode RZ_UNUSED) {
 	int base = rz_num_base_of_string(core->num, argv[1]);
 	if (argc == 3) {
 		ut64 nword = rz_num_math(core->num, argv[2]);
@@ -4613,6 +4613,20 @@ RZ_IPI RzCmdStatus rz_analysis_hint_set_immbase_handler(RzCore *core, int argc, 
 
 RZ_IPI RzCmdStatus rz_analysis_hint_del_immbase_handler(RzCore *core, int argc, const char **argv) {
 	rz_analysis_hint_unset_immbase(core->analysis, core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_set_enum_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 3) {
+		ut64 nword = rz_num_math(core->num, argv[2]);
+		rz_analysis_hint_set_nword(core->analysis, core->offset, (int)(nword));
+	}
+	rz_analysis_hint_set_enum(core->analysis, core->offset, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_hint_del_enum_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_hint_unset_enum(core->analysis, core->offset);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5301,7 +5315,7 @@ RZ_IPI RzCmdStatus rz_analyze_opcode_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_display_opcode_handler(RzCore *core, int argc, const char **argv) {
-	sdb_foreach(core->rasm->pair, listOpDescriptions, core);
+	rz_asm_describe_iterate(core->rasm, listOpDescriptions, core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6115,7 +6129,7 @@ RZ_IPI RzCmdStatus rz_analysis_data_function_gaps_handler(RzCore *core, int argc
 	ut64 end = UT64_MAX;
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
-	int i, wordsize = core->rasm->bits / 8;
+	int i, wordsize = rz_asm_get_bits(core->rasm) / 8;
 	rz_list_sort(core->analysis->fcns, cmpaddr, NULL);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		if (end != UT64_MAX) {

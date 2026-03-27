@@ -23,36 +23,30 @@
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_ARCH);
-
-	if (core->rasm->cur && RZ_STR_ISNOTEMPTY(core->rasm->cur->name)) {
-		return core->rasm->cur->name;
-	}
-	return CORE_DEFAULT_ARCH;
+	return rz_asm_get_arch(core->rasm);
 }
 
 RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_BITS);
 
-	if (core->rasm->bits > 0) {
-		return core->rasm->bits;
+	ut32 bits = rz_asm_get_bits(core->rasm);
+	if (bits > 0) {
+		return bits;
 	}
 	return CORE_DEFAULT_BITS;
 }
 
 RZ_DEPRECATE RZ_IPI ut32 rz_core_get_pc_align(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, 1);
-
-	if (core->rasm->pcalign > 0) {
-		return core->rasm->pcalign;
-	}
-	return 1;
+	return rz_asm_get_pc_align(core->rasm);
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_ARCH);
 
-	if (RZ_STR_ISNOTEMPTY(core->rasm->cpu)) {
-		return core->rasm->cpu;
+	const char *cpu = rz_asm_get_cpu(core->rasm);
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
+		return cpu;
 	}
 	return rz_core_get_arch(core);
 }
@@ -60,19 +54,13 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core) {
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_PLATFORM);
 
-	if (RZ_STR_ISNOTEMPTY(core->rasm->platforms)) {
-		return core->rasm->platforms;
-	}
-	return CORE_DEFAULT_PLATFORM;
+	return rz_asm_get_platforms(core->rasm);
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core) {
 	rz_return_val_if_fail(core && core->rasm, CORE_DEFAULT_FEATURES);
 
-	if (RZ_STR_ISNOTEMPTY(core->rasm->features)) {
-		return core->rasm->features;
-	}
-	return CORE_DEFAULT_FEATURES;
+	return rz_asm_get_features(core->rasm);
 }
 
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core) {
@@ -98,16 +86,15 @@ RZ_DEPRECATE static void core_update_config_bits_options(RzCore *core, const cha
 	RzConfigNode *node = rz_config_node_get(core->config, name);
 	if (!node) {
 		return;
-	} else if (!core->rasm->cur) {
-		node->options->free = free;
-		rz_list_purge(node->options);
-		return;
 	}
 
 	node->options->free = free;
 	rz_list_purge(node->options);
+	if (!core->rasm) {
+		return;
+	}
 
-	ut32 bits = core->rasm->cur->bits;
+	ut32 bits = rz_asm_get_plugin_bits(core->rasm);
 	for (ut32 i = 1; i <= bits; i <<= 1) {
 		if (i & bits) {
 			rz_list_append(node->options, rz_str_newf("%u", i));
@@ -116,26 +103,14 @@ RZ_DEPRECATE static void core_update_config_bits_options(RzCore *core, const cha
 }
 
 RZ_DEPRECATE static void core_update_config_options(RzConfigNode *node, const char *list_comma_sep) {
-	node->options->free = free;
-	rz_list_purge(node->options);
-
 	if (RZ_STR_ISEMPTY(list_comma_sep)) {
+		node->options->free = free;
+		rz_list_purge(node->options);
 		return;
 	}
 
-	char *c = rz_str_dup(list_comma_sep);
-	if (!c) {
-		return;
-	}
-
-	size_t n = rz_str_split(c, ',');
-	for (size_t i = 0; i < n; i++) {
-		const char *word = rz_str_word_get0(c, i);
-		if (RZ_STR_ISNOTEMPTY(word)) {
-			rz_list_append(node->options, rz_str_dup(word));
-		}
-	}
-	free(c);
+	rz_list_free(node->options);
+	node->options = rz_str_split_duplist(list_comma_sep, ",", true);
 }
 
 // copied from cconfig.c & cleaned
@@ -143,13 +118,14 @@ RZ_DEPRECATE static void core_update_config_cpu_options(RzCore *core, const char
 	RzConfigNode *node = rz_config_node_get(core->config, name);
 	if (!node) {
 		return;
-	} else if (!core->rasm->cur) {
+	} else if (!core->rasm) {
 		node->options->free = free;
 		rz_list_purge(node->options);
 		return;
 	}
 
-	core_update_config_options(node, core->rasm->cur->cpus);
+	const char *list = rz_asm_get_plugin_cpus(core->rasm);
+	core_update_config_options(node, list);
 }
 
 // copied from cconfig.c & cleaned
@@ -157,13 +133,14 @@ static void core_update_config_platform_options(RzCore *core, const char *name) 
 	RzConfigNode *node = rz_config_node_get(core->config, name);
 	if (!node) {
 		return;
-	} else if (!core->rasm->cur) {
+	} else if (!core->rasm) {
 		node->options->free = free;
 		rz_list_purge(node->options);
 		return;
 	}
 
-	core_update_config_options(node, core->rasm->cur->platforms);
+	const char *list = rz_asm_get_plugin_platforms(core->rasm);
+	core_update_config_options(node, list);
 }
 
 // copied from cconfig.c & cleaned
@@ -171,13 +148,14 @@ static void core_update_config_features_options(RzCore *core, const char *name) 
 	RzConfigNode *node = rz_config_node_get(core->config, name);
 	if (!node) {
 		return;
-	} else if (!core->rasm->cur) {
+	} else if (!core->rasm) {
 		node->options->free = free;
 		rz_list_purge(node->options);
 		return;
 	}
 
-	core_update_config_options(node, core->rasm->cur->features);
+	const char *list = rz_asm_get_plugin_features(core->rasm);
+	core_update_config_options(node, list);
 }
 
 RZ_DEPRECATE static const RzBinInfo *core_arch_find_bin_info(RzCore *core, const char *arch) {
@@ -202,7 +180,7 @@ RZ_DEPRECATE static const RzBinInfo *core_arch_find_bin_info(RzCore *core, const
 }
 
 static bool core_arch_default_is_big_endian(RzCore *core) {
-	bool big_endian = core->rasm->big_endian;
+	bool big_endian = rz_asm_is_big_endian_set(core->rasm);
 	const char *arch = rz_core_get_arch(core);
 
 	const RzBinInfo *info = core_arch_find_bin_info(core, arch);
@@ -280,12 +258,12 @@ RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 b
 }
 
 RZ_DEPRECATE static void core_update_text_align(RzCore *core) {
-	int align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
+	ut32 align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
 	if (align < 1) {
 		align = 1;
 	}
 
-	core->rasm->pcalign = align;
+	rz_asm_set_pc_align(core->rasm, align);
 	core->analysis->pcalign = align;
 }
 
@@ -308,8 +286,7 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 	free(cpus_dir);
 
 	if (RZ_STR_ISNOTEMPTY(platform)) {
-		free(core->rasm->platforms);
-		core->rasm->platforms = rz_str_dup(platform);
+		rz_asm_set_platforms(core->rasm, platform);
 	} else {
 		platform = rz_core_get_platform(core);
 	}
@@ -328,23 +305,47 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 static ut32 core_arch_get_default_bits(RzCore *core, const char *arch) {
 	const RzBinInfo *info = core_arch_find_bin_info(core, arch);
 	if (!info || info->bits < 1) {
-		return core->rasm->bits;
+		return rz_asm_get_bits(core->rasm);
 	}
 	return info->bits;
+}
+
+static void core_set_asm_plugin_configs(RZ_BORROW RzCore *core) {
+	rz_return_if_fail(core && core->rasm);
+
+	const char *arch = rz_core_get_arch(core);
+	RzConfig *pcfg = rz_asm_get_new_config(core->rasm);
+	if (!pcfg) {
+		return;
+	}
+
+	rz_config_lock(pcfg, 1);
+	if (!ht_sp_insert(core->plugin_configs, arch, pcfg)) {
+		RZ_LOG_WARN("core: plugin '%s' was already added.\n", arch);
+	}
+}
+
+static void core_remove_asm_plugin_config(RZ_BORROW RzCore *core) {
+	const char *plugin_name = rz_core_get_arch(core);
+	ht_sp_delete(core->plugin_configs, plugin_name);
 }
 
 RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 bits, const char *cpu, const char *os, const char *platform) {
 	char asmparser[32] = { 0 };
 
 	if (RZ_STR_ISNOTEMPTY(arch)) {
+		core_remove_asm_plugin_config(core);
 		rz_strf(asmparser, "%s.pseudo", arch);
 		if (!rz_asm_use(core->rasm, arch)) {
+			core_set_asm_plugin_configs(core);
 			RZ_LOG_ERROR("core: asm.arch: cannot set '%s'\n", arch);
 			return false;
 		} else if (!rz_analysis_use(core->analysis, arch)) {
 			RZ_LOG_INFO("core: analysis.arch: cannot set '%s'\n", arch);
 			// there are some plugins like the m68k which do not have a valid analysis plugin.
 		}
+
+		core_set_asm_plugin_configs(core);
 
 		if (!bits) {
 			bits = core_arch_get_default_bits(core, arch);
@@ -479,7 +480,7 @@ RZ_DEPRECATE static void core_update_config_from_arch(RzCore *core, bool new_arc
 	core_update_config_s(core, "analysis.arch", arch);
 	core_update_config_s(core, "analysis.cpu", cpu);
 	core_update_config_i(core, "analysis.bits", bits);
-	core_update_config_b(core, "cfg.bigendian", core->rasm->big_endian);
+	core_update_config_b(core, "cfg.bigendian", rz_asm_is_big_endian_set(core->rasm));
 
 	if (new_arch) {
 		core_update_config_bits_options(core, "asm.bits");
@@ -582,6 +583,6 @@ RZ_DEPRECATE RZ_API bool rz_core_set_endianness(RZ_NONNULL RzCore *core, bool bi
 	}
 
 	core_set_endianness(core, big_endian);
-	core_update_config_b(core, "cfg.bigendian", core->rasm->big_endian);
+	core_update_config_b(core, "cfg.bigendian", rz_asm_is_big_endian_set(core->rasm));
 	return true;
 }

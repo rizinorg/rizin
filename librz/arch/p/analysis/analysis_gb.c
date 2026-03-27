@@ -1963,7 +1963,7 @@ static int gb_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
 */
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *gb_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -2005,7 +2005,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int esil_gb_init(RzAnalysisEsil *esil) {
+static int gb_esil_init(RzAnalysisEsil *esil) {
 	GBUser *user = RZ_NEW0(GBUser);
 	rz_analysis_esil_set_op(esil, "daa", gb_custom_daa, 1, 1, RZ_ANALYSIS_ESIL_OP_TYPE_MATH | RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
@@ -2028,7 +2028,7 @@ static int esil_gb_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int esil_gb_fini(RzAnalysisEsil *esil) {
+static int gb_esil_fini(RzAnalysisEsil *esil) {
 	RZ_FREE(esil->cb.user);
 	return true;
 }
@@ -2037,10 +2037,27 @@ static const char *gb_regs_bound[] = {
 	"a", "b", "c", "d", "e", "h", "l", "sp", "Z", "N", "H", "C", "ime", NULL
 };
 
-static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
+static RzAnalysisILConfig *gb_il_config(RzAnalysis *analysis) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, false, 16);
 	r->reg_bindings = gb_regs_bound;
 	return r;
+}
+
+static int gb_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
 }
 
 RzAnalysisPlugin rz_analysis_plugin_gb = {
@@ -2051,8 +2068,9 @@ RzAnalysisPlugin rz_analysis_plugin_gb = {
 	.esil = true,
 	.bits = 16,
 	.op = &gb_anop,
-	.get_reg_profile = &get_reg_profile,
-	.esil_init = esil_gb_init,
-	.esil_fini = esil_gb_fini,
-	.il_config = il_config
+	.get_reg_profile = &gb_get_reg_profile,
+	.esil_init = gb_esil_init,
+	.esil_fini = gb_esil_fini,
+	.il_config = gb_il_config,
+	.archinfo = gb_archinfo,
 };

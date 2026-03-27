@@ -1330,7 +1330,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-// "dmxa"
+// "dmhja"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 
@@ -1349,7 +1349,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, 
 	return rz_heap_jemalloc_cmd_a(core, has_specified_arena, 0);
 }
 
-// "dmxb"
+// "dmhjb"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 	bool has_bin_info = argc > 2 && RZ_STR_ISNOTEMPTY(argv[2]);
@@ -1381,7 +1381,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, 
 	return rz_heap_jemalloc_cmd_b(core, has_specified_arena, 0, has_bin_info, 0);
 }
 
-// "dmxc"
+// "dmhjc"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv) {
 	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 
@@ -1400,7 +1400,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, 
 	return rz_heap_jemalloc_cmd_c(core, has_specified_arena, 0);
 }
 
-// "dmxe" - Find extent for malloc address
+// "dmhje" - Find extent for malloc address
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, const char **argv) {
 	bool has_addr = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 
@@ -1419,7 +1419,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, 
 	return rz_heap_jemalloc_cmd_e(core, has_addr, 0);
 }
 
-// "dmxei" - Display extent info
+// "dmhjei" - Display extent info
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_ei_handler(RzCore *core, int argc, const char **argv) {
 	bool has_addr = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
 	ut64 extent_addr = 0;
@@ -2322,9 +2322,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int 
 // dbh
 RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
-	RzAsm *a = core->rasm;
-
-	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzIterator *iter = rz_asm_plugin_iterator(core->rasm);
 	RzList *plugin_list = rz_list_new_from_iterator(iter);
 	if (!plugin_list) {
 		rz_iterator_free(iter);
@@ -2333,7 +2331,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const 
 
 	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
 	RzListIter *it;
-	RzAsmPlugin *ap;
+	const RzAsmPlugin *ap;
 
 	rz_list_foreach (plugin_list, it, ap) {
 		if (!ap->sw_breakpoint) {

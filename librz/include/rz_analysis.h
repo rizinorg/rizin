@@ -46,7 +46,6 @@ extern "C" {
 typedef struct {
 	struct rz_analysis_t *analysis;
 	int type;
-	int rad;
 	SdbForeachCallback cb;
 	void *user;
 	int count;
@@ -571,7 +570,8 @@ typedef enum rz_analysis_addr_hint_type_t {
 	RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET,
 	RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL,
 	RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH,
-	RZ_ANALYSIS_ADDR_HINT_TYPE_VAL
+	RZ_ANALYSIS_ADDR_HINT_TYPE_VAL,
+	RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM
 } RzAnalysisAddrHintType;
 
 typedef struct rz_analysis_addr_hint_record_t {
@@ -592,6 +592,7 @@ typedef struct rz_analysis_addr_hint_record_t {
 		ut64 size;
 		ut64 stackframe;
 		ut64 val;
+		char *enum_name;
 	};
 } RzAnalysisAddrHintRecord;
 
@@ -615,6 +616,7 @@ typedef struct rz_analysis_hint_t {
 	bool high; // highlight hint
 	int nword;
 	ut64 stackframe;
+	char *enum_name;
 } RzAnalysisHint;
 
 typedef RzAnalysisFunction *(*RzAnalysisGetFcnIn)(RzAnalysis *analysis, ut64 addr, int type);
@@ -2179,6 +2181,7 @@ RZ_API void rz_analysis_hint_set_newbits(RzAnalysis *a, ut64 addr, int bits);
 RZ_API void rz_analysis_hint_set_nword(RzAnalysis *a, ut64 addr, int nword);
 RZ_API void rz_analysis_hint_set_offset(RzAnalysis *a, ut64 addr, const char *typeoff);
 RZ_API void rz_analysis_hint_set_immbase(RzAnalysis *a, ut64 addr, int base);
+RZ_API void rz_analysis_hint_set_enum(RzAnalysis *a, ut64 addr, const char *enum_name);
 RZ_API void rz_analysis_hint_set_size(RzAnalysis *a, ut64 addr, ut64 size);
 RZ_API void rz_analysis_hint_set_opcode(RzAnalysis *a, ut64 addr, const char *str);
 RZ_API void rz_analysis_hint_set_esil(RzAnalysis *a, ut64 addr, const char *str);
@@ -2192,6 +2195,7 @@ RZ_API void rz_analysis_hint_set_bits(RzAnalysis *a, ut64 addr, int bits); // bi
 RZ_API void rz_analysis_hint_unset_val(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_hint_unset_high(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_hint_unset_immbase(RzAnalysis *a, ut64 addr);
+RZ_API void rz_analysis_hint_unset_enum(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_hint_unset_nword(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_hint_unset_size(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_hint_unset_type(RzAnalysis *a, ut64 addr);

@@ -4072,7 +4072,7 @@ e io.cache=true
 $orig_end=echo `omlt:va_end:quiet`
 omr 1 `omlt:size:quiet`+2
 s `$orig_end`
-wa "jmp entry0"
+wa "jmp 0x08048054"
 aF
 aae
 agf

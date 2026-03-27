@@ -95,6 +95,10 @@ cs_files = [
   'arch/Xtensa/XtensaInstPrinter.c',
   'arch/Xtensa/XtensaMapping.c',
   'arch/Xtensa/XtensaModule.c',
+  'arch/BPF/BPFDisassembler.c',
+  'arch/BPF/BPFInstPrinter.c',
+  'arch/BPF/BPFMapping.c',
+  'arch/BPF/BPFModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -130,6 +134,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_XTENSA',
   '-DCAPSTONE_HAS_RISCV',
+  '-DCAPSTONE_HAS_BPF',
 ]
 
 if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')

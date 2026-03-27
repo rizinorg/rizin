@@ -1604,6 +1604,7 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
  * NOTE: Some relocation symbols are not yet implemented
+ * https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html#RELOC-TYPE
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
@@ -1638,6 +1639,16 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	case R_PPC64_ADDR16_LO:
 		word = 2;
 		val = (fs->S + fs->A) & 0xffff;
+		break;
+	case R_PPC64_RELATIVE:
+		// R_PPC64_RELATIVE          22       doubleword64  B + A
+		word = 8;
+		val = (fs->B + fs->A);
+		break;
+	case R_PPC64_ADDR64:
+		// R_PPC64_ADDR64            38       doubleword64  S + A
+		word = 8;
+		val = (fs->S + fs->A);
 		break;
 	case R_PPC64_REL16_LO:
 		word = 2;
@@ -1686,6 +1697,10 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		case 4:
 			rz_write_ble32(buf, val, big_endian);
 			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+			break;
+		case 8:
+			rz_write_ble64(buf, val, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 			break;
 		default:
 			RZ_LOG_WARN("PowerPC 64: Unhandled patching case for relocation %d with word size %u.\n", rel_type, word);
