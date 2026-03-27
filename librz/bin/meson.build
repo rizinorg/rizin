@@ -312,11 +312,25 @@ rz_bin_sources = [
   'dwarf/dwarf.c',
 ]
 
+# Try to get the rz_svd dependency from the subproject
+rz_svd_proj = subproject('rz-svd', required: true)
+rz_svd_dep = rz_svd_proj.get_variable('rz_svd_dep')
+rz_svd_srcdir  = rz_svd_proj.get_variable('rz_svd_srcdir')
+rz_svd_datadir = rz_svd_proj.get_variable('rz_svd_datadir')
+rz_svd_userdir = rz_svd_proj.get_variable('rz_svd_userdir')
+
+rz_bin_c_args = [
+  '-DRZ_API_BIN_ONLY=1',
+  '-DRZ_SVD_SRCDIR="'  + rz_svd_srcdir  + '"',
+  '-DRZ_SVD_DATADIR="' + rz_svd_datadir + '"',
+  '-DRZ_SVD_USERDIR="' + rz_svd_userdir + '"',
+]
+
 rz_bin_inc = [platform_inc, include_directories('format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
-  c_args: ['-DRZ_API_BIN_ONLY=1'],
+  c_args: rz_bin_c_args,
   dependencies: [
     lz4_dep,
     libzstd_dep,
@@ -333,6 +347,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_crypto_dep,
     rz_type_dep,
     libmspack_dep,
+    rz_svd_dep,
   ],
   install: true,
   implicit_include_directories: false,

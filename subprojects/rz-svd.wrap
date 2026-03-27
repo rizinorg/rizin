@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/Muqeet-Salam/rz-svd
+revision = de9951bbb56829a0341d7e1017f9c2f45e644eb6
+directory = rz-svd
+depth = 1
