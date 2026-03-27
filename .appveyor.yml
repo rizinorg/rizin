@@ -18,7 +18,6 @@ environment:
       PYTHON: 'C:\\Python310'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      BUILD_DIR: build
       RUN_TESTS: false
       TEST_INCLUDE_HEADERS_CPP: false
     # VS2022 64
@@ -26,7 +25,6 @@ environment:
       PYTHON: 'C:\\Python38-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
-      BUILD_DIR: build
       RUN_TESTS: true
       TEST_INCLUDE_HEADERS_CPP: true
     # VS2017 64 (Dynamic linking)
@@ -34,7 +32,6 @@ environment:
       PYTHON: 'C:\\Python310'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 5'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      BUILD_DIR: build
       RUN_TESTS: false
       TEST_INCLUDE_HEADERS_CPP: false
     # Clang-cl 64 (Dynamic linking)
@@ -42,7 +39,6 @@ environment:
       PYTHON: 'C:\\Python38'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      BUILD_DIR: build
       RUN_TESTS: true
       TEST_INCLUDE_HEADERS_CPP: false
 
@@ -71,9 +67,9 @@ install:
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
-  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install --upgrade pip)
-  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install --upgrade certifi pip-system-certs)
-  - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson==1.10.2 ninja PyYAML tomli)
+  - cmd: %PYTHON%\python.exe -m pip install --upgrade pip
+  - cmd: %PYTHON%\python.exe -m pip install --upgrade certifi pip-system-certs
+  - cmd: %PYTHON%\python.exe -m pip install meson==1.10.2 ninja PyYAML tomli
 
 # Build scripts
 build_script:
