@@ -36,6 +36,11 @@
 // Floating point register layout.
 #define ARCH_LEN (FP_LAYOUT | 0xf)
 
+#define RISCV_32    10
+#define RISCV_64    11
+#define RISCV_32_FP (FP_LAYOUT | RISCV_32)
+#define RISCV_64_FP (FP_LAYOUT | RISCV_64)
+
 // See elf.c::elfcore_grok_solaris_note_impl() of binutil's bfd
 // https://sourceware.org/git/?p=binutils-gdb.git;a=blob;f=bfd/elf.c;h=6ef603010918f14eda69f0d0dc1637b4d51e8157;hb=HEAD#l11777
 // OR
@@ -136,6 +141,16 @@
 #define MIPS_GPR32_STATUS_OFFSET (96)
 #define MIPS_GPR64_STATUS_OFFSET (112)
 
+// RISCV number of registers.
+#define RISCV_32_REGS_SIZE     (4 * 32)
+#define RISCV_64_REGS_SIZE     (8 * 32)
+#define RISCV_32_REG_OFFSET    (72)
+#define RISCV_64_REG_OFFSET    (112)
+#define RISCV_FP32_REGS_SIZE   (4 * 32) // F
+#define RISCV_FP64_REGS_SIZE   (8 * 32) // D
+#define RISCV_32_REG_OFFSET_SP (8)
+#define RISCV_64_REG_OFFSET_SP (16)
+
 static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 	[X86] = { 160, 0x48, 32, 0x3c },
 	[X86_64] = { 216, 0x70, 64, 0x98 },
@@ -161,6 +176,9 @@ static RzBinElfPrStatusLayout prstatus_layouts[ARCH_LEN] = {
 
 	[MIPS_FP32] = { MIPS_FP32_REGS_SIZE, 4, 0, 0 },
 	[MIPS_FP64] = { MIPS_FP64_REGS_SIZE, 8, 0, 0 },
+
+	[RISCV_32] = { RISCV_32_REGS_SIZE, RISCV_32_REG_OFFSET, 32, RISCV_32_REG_OFFSET_SP },
+	[RISCV_64] = { RISCV_64_REGS_SIZE, RISCV_64_REG_OFFSET, 64, RISCV_64_REG_OFFSET_SP },
 };
 
 static bool parse_register_note(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf_(Nhdr) * note_segment_header, ut64 offset, size_t n_type) {
@@ -390,6 +408,8 @@ RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNUL
 		return prstatus_layouts + SPARC_V8PLUS;
 	case EM_SPARCV9:
 		return prstatus_layouts + SPARC_V9;
+	case EM_RISCV:
+		return prstatus_layouts + ((bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64) ? RISCV_64 : RISCV_32);
 	case EM_MIPS:
 		/* fall-thru */
 	case EM_MIPS_RS3_LE:

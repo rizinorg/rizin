@@ -11,6 +11,7 @@
 #include <rz_socket.h>
 #include <rz_cmp.h>
 #include <rz_util.h>
+#include <asm_private.h>
 #if __UNIX__
 #include <signal.h>
 #endif
