@@ -1,5 +1,4 @@
 NAME=ELF: m68k.elf
-BROKEN=1
 FILE=bins/elf/analysis/busybox.m68k
 CMDS=<<EOF
 # This test is broken. The reason is that Rizin can't distinguish
