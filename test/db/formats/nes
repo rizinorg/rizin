@@ -31,7 +31,7 @@ nes:
   mirror: true
   battery: false
   trainer: false
-  four_screen: false
+  alternative_nametable_layout: false
   ram_banks: 0
 EOF
 RUN

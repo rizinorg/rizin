@@ -248,11 +248,11 @@ static RzStructuredData *nes_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(nes, "chr_pages", hdr->chr_page_count_8k, false);
 	rz_structured_data_map_add_unsigned(nes, "prg_size", (ut64)hdr->prg_page_count_16k * PRG_PAGE_SIZE, true);
 	rz_structured_data_map_add_unsigned(nes, "chr_size", (ut64)hdr->chr_page_count_8k * CHR_PAGE_SIZE, true);
-	rz_structured_data_map_add_unsigned(nes, "mapper", ((hdr->rom_control_byte_1 & 0xF0) | (hdr->rom_control_byte_0 >> 4)), true);
-	rz_structured_data_map_add_boolean(nes, "mirror", (hdr->rom_control_byte_0 & 1) != 0);
-	rz_structured_data_map_add_boolean(nes, "battery", (hdr->rom_control_byte_0 & 2) != 0);
-	rz_structured_data_map_add_boolean(nes, "trainer", (hdr->rom_control_byte_0 & 4) != 0);
-	rz_structured_data_map_add_boolean(nes, "four_screen", (hdr->rom_control_byte_0 & 8) != 0);
+	rz_structured_data_map_add_unsigned(nes, "mapper", INES_MAPPER(hdr->rom_control_byte_0, hdr->rom_control_byte_1), true);
+	rz_structured_data_map_add_boolean(nes, "mirror", INES_MIRROR(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_boolean(nes, "battery", INES_BATTERY(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_boolean(nes, "trainer", INES_TRAINER(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_boolean(nes, "alternative_nametable_layout", INES_ALT_NAMETABLE(hdr->rom_control_byte_0) != 0);
 	rz_structured_data_map_add_unsigned(nes, "ram_banks", hdr->ram_bank_count_8k, false);
 	return info;
 }

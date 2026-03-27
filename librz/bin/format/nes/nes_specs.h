@@ -12,6 +12,12 @@
 #define CHR_PAGE_SIZE 0x2000
 #define INES_HDR_SIZE 16
 
+#define INES_MAPPER(cb0, cb1)        (((cb1) & 0xF0) | ((cb0) >> 4))
+#define INES_MIRROR(cb0)             ((cb0) & 1)
+#define INES_BATTERY(cb0)            ((cb0) & 2)
+#define INES_TRAINER(cb0)            ((cb0) & 4)
+#define INES_ALT_NAMETABLE(cb0)      ((cb0) & 8)
+
 #define RAM_START_ADDRESS 0x0000
 #define RAM_SIZE          0x0800
 
