@@ -67,9 +67,9 @@ install:
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
-  - cmd: ( %PYTHON%\python.exe -m pip install --upgrade pip )
-  - cmd: ( %PYTHON%\python.exe -m pip install --upgrade certifi pip-system-certs )
-  - cmd: ( %PYTHON%\python.exe -m pip install meson==1.10.2 ninja PyYAML tomli )
+  - cmd: python -m pip install --upgrade pip
+  - cmd: python -m pip install --upgrade certifi pip-system-certs
+  - cmd: python -m pip install meson==1.10.2 ninja PyYAML tomli
 
 # Build scripts
 build_script:
