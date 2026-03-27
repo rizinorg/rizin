@@ -1,0 +1,35 @@
+NAME=rz-asm -a arm.as -b 16 "wfe"
+TOOL=rz-asm
+FILE=wfe
+ARGS=-a arm.as -b 16
+EXPECT=<<EOF
+20bf
+EOF
+RUN
+
+NAME=rz-asm -a arm.as -b 32 "add fp, sp, 0"
+TOOL=rz-asm
+FILE=add fp, sp, 0
+ARGS=-a arm.as -b 32
+EXPECT=<<EOF
+00b08de2
+EOF
+RUN
+
+NAME=rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
+TOOL=rz-asm
+FILE=ldr fp, [sp], 4
+ARGS=-a arm.as -b 32 -e
+EXPECT=<<EOF
+e49db004
+EOF
+RUN
+
+NAME=rz-asm -a arm.as -b 64 "sub sp, sp, 16"
+TOOL=rz-asm
+FILE=sub sp, sp, 16
+ARGS=-a arm.as -b 64
+EXPECT=<<EOF
+ff4300d1
+EOF
+RUN

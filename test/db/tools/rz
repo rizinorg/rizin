@@ -24,8 +24,7 @@ RUN
 
 NAME=rz --
 FILE=bins/elf/bomb
-ARGS=-s main -qcs bins/elf/bomb
-CMDS=
+CMDS=!rizin -s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0
 EOF
