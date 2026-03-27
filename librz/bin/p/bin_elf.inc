@@ -695,6 +695,11 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 				}
 			}
 		}
+		if(reloc->mode == DT_REL){
+			if(!Elf_(rz_bin_elf_reloc_get_addend)(bin, reloc)){
+				RZ_LOG_ERROR("Failed to fetch addend for relocation at %llx\n", reloc->paddr);
+			}
+		}
 		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
 		reloc->target_vaddr = sym_addr;
 	}

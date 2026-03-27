@@ -196,6 +196,8 @@ rz_bin_sources = [
   'format/elf/elf64_notes.c',
   'format/elf/elf_parser.c',
   'format/elf/elf64_parser.c',
+  'format/elf/elf_relocs_addend.c',
+  'format/elf/elf64_relocs_addend.c',
   'format/elf/elf_relocs.c',
   'format/elf/elf64_relocs.c',
   'format/elf/elf_relocs_conversion.c',
