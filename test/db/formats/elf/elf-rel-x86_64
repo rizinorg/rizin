@@ -2,7 +2,6 @@ NAME=ELF: x86_64 relocs patching test
 FILE=bins/elf/x86_64_relocs.o
 CMDS=<<EOF
 ir
-echo ---
 pd 10 @ 0x08000048
 EOF
 EXPECT=<<EOF
@@ -18,7 +17,6 @@ EXPECT=<<EOF
 0x0800005e 0x0000005e 0x08000042 R_X86_64_PC32    target - 0x0800005e
 0x08000062 0x00000062 0x08000042 R_X86_64_PC64    target - 0x08000062
 0x0800006a 0x0000006a 0x08000042 R_X86_64_GOTPC32 GOT - 0x0800006a
----
             ;-- section..reloc_test:
             ;-- target:
             ;-- abs8:

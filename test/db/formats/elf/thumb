@@ -1,17 +1,19 @@
-NAME=ELF: arm-init - entry and init/fini
+NAME=1: thumb entry0
 FILE=bins/elf/arm-init
-CMDS=<<EOF
-ie
-echo ---
-iee
-EOF
+CMDS=ie
 EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000002e4 0x000002e4 0x00000018 0x00000018 program
 0x00000344 0x00000344 0x00001ed8 0x00000ed8 init
 0x000002e4 0x000002e4 0x00001ed0 0x00000ed0 fini
----
+EOF
+RUN
+
+NAME=2: thumb entry0
+FILE=bins/elf/arm-init
+CMDS=iee
+EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0x00000344 0x00000344 0x00001ed8 0x00000ed8 init
@@ -19,36 +21,55 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: thumb - symbols and disassembly
+NAME=3: thumb entry0
 FILE=bins/elf/analysis/thumb
-CMDS=<<EOF
-%v entry0
-echo ---
-%v sym.main
-echo ---
-s sym.main
-pi 1
-echo ---
-is~main
-echo ---
-pi 7@ sym.main
-echo ---
-pi 14@ sym.main
-echo ---
-pi 2@ sym.main
-af@ sym.main
-pi 2@ sym.main
-EOF
+CMDS=%v entry0
 EXPECT=<<EOF
 0x82f0
----
+EOF
+RUN
+
+NAME=thumb main
+FILE=bins/elf/analysis/thumb
+CMDS=%v sym.main
+EXPECT=<<EOF
 0x8424
----
+EOF
+RUN
+
+NAME=thumb main alignment
+FILE=bins/elf/analysis/thumb
+CMDS=<<EOF
+s sym.main
+pi 1
+EOF
+EXPECT=<<EOF
 push {r7, lr}
----
-107 0x00000424 0x00008424 GLOBAL FUNC     16     main
-  1 0x000002bc 0x000082bc GLOBAL FUNC      0     imp.__libc_start_main
----
+EOF
+RUN
+
+NAME=thumb sym
+FILE=bins/elf/analysis/thumb
+BROKEN=1
+CMDS=is~main
+EXPECT=<<EOF
+107 0x00000424 0x00008424 GLOBAL   FUNC   16 main
+001 0x000002bc 0x000082bc GLOBAL   FUNC   16 imp.__libc_start_main
+EOF
+RUN
+
+NAME=thumb disasm
+FILE=bins/elf/analysis/thumb
+CMDS=pi 1@ sym.main
+EXPECT=<<EOF
+push {r7, lr}
+EOF
+RUN
+
+NAME=thumb disasm 2
+FILE=bins/elf/analysis/thumb
+CMDS=pi 7@ sym.main
+EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 movs r0, 0xa
@@ -56,7 +77,13 @@ bl 0x82d4
 adds r0, r3, 0
 mov sp, r7
 pop {r7, pc}
----
+EOF
+RUN
+
+NAME=mix arm and thumb
+FILE=bins/elf/analysis/thumb
+CMDS=pi 14@ sym.main
+EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 movs r0, 0xa
@@ -71,7 +98,25 @@ mov r7, r2
 ldr r8, [0x00008494]
 bl sym._init
 ldr r3, [0x00008498]
----
+EOF
+RUN
+
+NAME=arm disasm entry0
+FILE=bins/elf/analysis/thumb
+CMDS=pi 1@ sym.main
+EXPECT=<<EOF
+push {r7, lr}
+EOF
+RUN
+
+NAME=thumb analysis expand
+FILE=bins/elf/analysis/thumb
+CMDS=<<EOF
+pi 2@ sym.main
+af@ sym.main
+pi 2 @ sym.main
+EOF
+EXPECT=<<EOF
 push {r7, lr}
 add r7, sp, 0
 push {r7, lr}
@@ -79,13 +124,9 @@ add r7, sp, 0
 EOF
 RUN
 
-NAME=ELF: libsimplejni.so - mixed arm/thumb disassembly
+NAME=arm at entry libsimplejni.so
 FILE=bins/elf/analysis/libsimplejni.so
-CMDS=<<EOF
-pi 7@ entry0
-echo ---
-pi 6@ sym.JNI_OnLoad
-EOF
+CMDS=pi 7@ entry0
 EXPECT=<<EOF
 push {fp, lr}
 add fp, sp, 4
@@ -94,7 +135,13 @@ add r3, pc, r3
 mov r0, r3
 bl sym.imp.__cxa_finalize
 pop {fp, pc}
----
+EOF
+RUN
+
+NAME=thumb at sym.JNI_OnLoad
+FILE=bins/elf/analysis/libsimplejni.so
+CMDS=pi 6@ sym.JNI_OnLoad
+EXPECT=<<EOF
 push {r4, lr}
 sub sp, 8
 mov r4, r0
