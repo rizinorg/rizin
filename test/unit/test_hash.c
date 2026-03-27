@@ -125,6 +125,7 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "xor8", .expected = "1f" },
 	{ INDATA("password"), .algo = "xor16", .expected = "740f" },
 	{ INDATA("password"), .algo = "xxhash32", .expected = "ed6c6c10" },
+	{ INDATA("password"), .algo = "xxhash64", .expected = "90007daf3980ef1f" },
 	{ INDATA("password"), .algo = "parity", .expected = "01" },
 	{ INDATA("password"), .algo = "entropy", .expected = "2.75000000" },
 	{ INDATA("password"), .algo = "entropy_fract", .expected = "0.91666667" },
