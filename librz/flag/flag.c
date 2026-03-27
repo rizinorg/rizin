@@ -440,7 +440,19 @@ static bool is_auto_aav_flag(const RzFlagItem *flag) {
 	return flag && !RZ_STR_ISEMPTY(flag->name) && rz_str_startswith(flag->name, "aav.");
 }
 
-RZ_API RzFlagItem *rz_flag_get_preferred_item(RzFlag *f, ut64 off) {
+/**
+ * \brief Get the preferred flag item at an offset.
+ *
+ * The preferred item follows the standard space priority and avoids returning
+ * auto-generated `aav.*` entries when a non-`aav.*` fallback exists at the
+ * same offset.
+ *
+ * \param f The flag instance.
+ * \param off The offset to query.
+ *
+ * \return The preferred flag item, or NULL if none exists.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_preferred_item(RZ_NONNULL RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzFlagItem *preferred = rz_flag_get_by_spaces(f, off,

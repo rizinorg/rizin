@@ -878,7 +878,7 @@ static void __replaceImports(RzDisasmState *ds) {
 }
 
 static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds) {
-	if (!ds->opstr || !ds->core || !ds->core->flags || !ds->core->io) {
+	if (!ds->opstr || !ds->core || !ds->core->flags || !ds->core->io || !ds->analysis_op.refptr) {
 		return;
 	}
 	RzCore *core = ds->core;
@@ -907,9 +907,6 @@ static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds) {
 
 	RzFlagItem *f1 = rz_flag_get_preferred_item(core->flags, aav_addr);
 	if (!f1 || !rz_str_startswith(f1->name, "aav.")) {
-		return;
-	}
-	if (!ds->analysis_op.refptr) {
 		return;
 	}
 
