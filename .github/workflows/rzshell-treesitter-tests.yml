@@ -2,9 +2,6 @@ name: Rizin CI tree-sitter test
 
 on:
   pull_request:
-    # Temp, remove before PR merge
-    branches-ignore:
-      - '**'
     paths:
       - 'subprojects/tree-sitter.wrap'
       - 'subprojects/rizin-shell-parser/*'

@@ -2,9 +2,6 @@ name: "Code scanning"
 
 on:
   push:
-    # Temp, remove before PR merge
-    branches-ignore:
-      - '**'
     branches:
     - 'master'
     - 'dev'

@@ -2,9 +2,6 @@ name: "Mixed linter and checks"
 
 on:
   push:
-    # Temp, remove before PR merge
-    branches-ignore:
-      - '**'
     branches:
     - 'master'
     - 'dev'
