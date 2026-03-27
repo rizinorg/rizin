@@ -1,11 +1,23 @@
-NAME=analyze preludes
+NAME=analyze preludes & tail-call split
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
+afl~mpsort
+s sym.mpsort
+pd 2 @ sym.mpsort
+pdf~jmp
 EOF
 EXPECT=<<EOF
-458
+459
+0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
+0x000128a0    6 83   -> 75   sym.mpsort
+            ; CALL XREF from fcn.00008cac @ 0x8d43
+/ sym.mpsort(int64_t arg_8h);
+|           ; arg int64_t arg_8h @ stack + 0x8
+|           0x000128a0      endbr64
+|           0x000128a4      push  r12
+\       `=< 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN
 
@@ -4367,5 +4379,48 @@ aoj~{[0].opex.operands[1].value}
 EOF
 EXPECT=<<EOF
 214
+EOF
+RUN
+
+NAME=aac creates function at syn_start_line
+FILE=bins/elf/vim
+CMDS=<<EOF
+aac
+s 0x001b8420
+afl.
+pdf @ sym.syn_start_line
+pd 2 @ sym.syntax_start
+EOF
+EXPECT=<<EOF
+0x001b8420 sym.syn_start_line
+            ; CALL XREFS from sym.syntax_start @ 0x1b9f10, 0x1b9fca, 0x1ba458
+/ sym.syn_start_line();
+|           0x001b8420      sub   rsp, 0x08
+|           0x001b8424      mov   eax, dword [0x004b3d90]              ; [0x4b3d90:4]=0
+|           0x001b842a      mov   dword [0x004b3da8], 0x00             ; [0x4b3da8:4]=0
+|           0x001b8434      mov   dword [0x004b3db0], 0x00             ; [0x4b3db0:4]=0
+|           0x001b843e      test  eax, eax
+|       ,=< 0x001b8440      jle   0x1b8451
+|       |   0x001b8442      mov   edi, 0x01
+|       |   0x001b8447      call  sym.syn_update_ends
+|       |   0x001b844c      call  sym.check_state_ends
+|       `-> 0x001b8451      mov   dword [0x004b3e18], 0xffffffff       ; [0x4b3e18:4]=0
+|           0x001b845b      add   dword [0x004b3d74], 0x01             ; [0x4b3d74:4]=0
+|           0x001b8462      add   rsp, 0x08
+\           0x001b8466      ret
+            ; CALL XREFS from sym.win_line @ 0x181983, 0x185a31
+            ; CALL XREF from sym.syn_get_foldlevel @ 0x1ba870
+            ; CALL XREF from sym.syn_get_id @ 0x1baad1
+/ sym.syntax_start(int64_t arg_fh);
+|           ; var int64_t var_70h @ stack - 0x70
+|           ; var int64_t var_64h @ stack - 0x64
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; arg int64_t arg_fh @ stack + 0xf
+|           0x001b9b30      push  r15
+|           0x001b9b32      push  r14
 EOF
 RUN
