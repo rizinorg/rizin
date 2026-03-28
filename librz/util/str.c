@@ -4178,8 +4178,10 @@ RZ_API RzStrEnc rz_str_guess_encoding_from_buffer(RZ_NONNULL const ut8 *buffer, 
 static inline bool code_point_fits_in_buf_tail(const ut8 *buf, ut32 buflen, ut32 i, RzStrEnc enc) {
 	const size_t remaining = buflen - i;
 	switch (enc) {
-	case RZ_STRING_ENC_UTF8:
-		return rz_utf8_size(buf + i) > remaining;
+	case RZ_STRING_ENC_UTF8: {
+		ut32 sz = rz_utf8_size(buf + i);
+		return sz > 0 && sz > remaining;
+	}
 	case RZ_STRING_ENC_UTF16LE:
 	case RZ_STRING_ENC_UTF16BE:
 		return remaining < 2;
@@ -4272,7 +4274,7 @@ RZ_API RZ_OWN char *rz_str_stringify_raw_buffer(RzStrStringifyOpt *option, RZ_NU
 			if (option->stop_at_unprintable) {
 				break;
 			}
-			if (option->json && code_point_fits_in_buf_tail(buf, buflen, i, enc)) {
+			if (option->json && code_point_fits_in_buf_tail(buf, fetch_size, 0, enc)) {
 				break;
 			}
 			switch (enc) {
