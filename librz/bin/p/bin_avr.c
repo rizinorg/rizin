@@ -91,8 +91,6 @@ typedef struct {
 // Helper functions for AVR SVD loader
 static char *avr_legacy_device_name(const char *name);
 static char *avr_best_family_device(const char *name);
-static void avr_fixup_device_name_suffix(char *device_name);
-static void avr_fixup_xmega_name(char *device_name);
 static char *avr_fixup_device_name(const char *match, size_t devlen);
 static char *avr_detect_device_name(RzBinFile *bf);
 static RzAvrSvdDevice *avr_svd_create_dummy_device(const char *name);
@@ -195,32 +193,6 @@ static char *avr_best_family_device(const char *name) {
 	return rz_str_dup(name);
 }
 
-static void avr_fixup_device_name_suffix(char *device_name) {
-	size_t dlen = strlen(device_name);
-	// Uppercase trailing 'p' after a digit (e.g., "atmega328p" -> "ATmega328P")
-	if (dlen > 1 && device_name[dlen - 1] == 'p' &&
-		IS_DIGIT(device_name[dlen - 2])) {
-		device_name[dlen - 1] = 'P';
-	}
-	// Uppercase 'u' between two digits (e.g., "atmega16u4" -> "ATmega16U4")
-	char *u_suffix = strrchr(device_name, 'u');
-	if (u_suffix && u_suffix > device_name &&
-		IS_DIGIT(*(u_suffix - 1)) &&
-		IS_DIGIT(*(u_suffix + 1))) {
-		*u_suffix = 'U';
-	}
-}
-
-static void avr_fixup_xmega_name(char *device_name) {
-	// Uppercase letter suffix after a digit (e.g., "atxmega128a4u" -> "ATxmega128A4U")
-	for (char *p = device_name + 7; *p; p++) {
-		if ((IS_UPPER(*p) || IS_LOWER(*p)) &&
-			IS_DIGIT(*(p - 1))) {
-			*p = toupper((unsigned char)*p);
-		}
-	}
-}
-
 static char *avr_fixup_device_name(const char *match, size_t devlen) {
 	char *device_name = rz_str_ndup(match, devlen);
 	if (!device_name) {
@@ -229,10 +201,6 @@ static char *avr_fixup_device_name(const char *match, size_t devlen) {
 	// Uppercase the first two chars (e.g., "at" -> "AT")
 	device_name[0] = toupper((unsigned char)device_name[0]);
 	device_name[1] = toupper((unsigned char)device_name[1]);
-	avr_fixup_device_name_suffix(device_name);
-	if (strncmp(device_name + 2, "xmega", 5) == 0) {
-		avr_fixup_xmega_name(device_name);
-	}
 	return device_name;
 }
 
