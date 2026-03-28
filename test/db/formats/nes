@@ -28,7 +28,7 @@ nes:
   prg_size: 0x4000
   chr_size: 0x0
   mapper: 0x0
-  mirroring: horizontal
+  mirroring: "horizontal"
   battery: false
   trainer: false
   alternative_nametable_layout: false
