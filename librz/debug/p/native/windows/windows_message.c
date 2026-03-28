@@ -500,7 +500,6 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, con
 		free(name);
 		return false;
 	}
-	char *cond;
 	if (window_id) {
 		char *reg;
 		if (!strcmp(dbg->arch, "arm")) {
