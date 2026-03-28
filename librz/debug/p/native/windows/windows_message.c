@@ -422,7 +422,6 @@ static DWORD get_msg_type(char *name) {
 	if (!msg_types) {
 		init_msg_types(&msg_types);
 	}
-	ut32 found;
 	const char *type_str = sdb_const_get(msg_types, name);
 	if (type_str) {
 		int type = rz_num_get(NULL, type_str);
