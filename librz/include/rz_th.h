@@ -121,6 +121,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadR
 RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, void *elem);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_take_blocking(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_is_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);

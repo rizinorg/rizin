@@ -27,6 +27,9 @@ struct rz_th_ring_buf_t {
 	RzThreadCond *writer_wait_cond; ///< The condition for writing threads to signal them they write.
 	size_t writers_waiting; ///< Number of writers waiting.
 
+	RzThreadCond *reader_wait_cond; ///< The condition for reading threads to signal them they read.
+	size_t readers_waiting; ///< Number of readers waiting.
+
 	RzThreadLock *lock; ///< Lock for buffer access.
 	size_t threads_awaiting; ///< Number of threads awaiting to read/write
 
@@ -73,7 +76,8 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size) {
 
 	rbuf->lock = rz_th_lock_new(false);
 	rbuf->writer_wait_cond = rz_th_cond_new();
-	if (!rbuf->lock || !rbuf->writer_wait_cond) {
+	rbuf->reader_wait_cond = rz_th_cond_new();
+	if (!rbuf->lock || !rbuf->writer_wait_cond || !rbuf->reader_wait_cond) {
 		goto err_free;
 	}
 
@@ -84,6 +88,7 @@ err_free:
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
 	rz_th_cond_free(rbuf->writer_wait_cond);
+	rz_th_cond_free(rbuf->reader_wait_cond);
 	return NULL;
 }
 
@@ -94,6 +99,7 @@ RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf) {
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
 	rz_th_cond_free(rbuf->writer_wait_cond);
+	rz_th_cond_free(rbuf->reader_wait_cond);
 	free(rbuf);
 }
 
@@ -112,6 +118,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 	ENTER_RBUF();
 	rbuf->closed = true;
 	rz_th_cond_signal_all(rbuf->writer_wait_cond);
+	rz_th_cond_signal_all(rbuf->reader_wait_cond);
 	LEAVE_RBUF();
 
 	while (rbuf->threads_awaiting) {
@@ -171,6 +178,9 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRin
 	memcpy((ut8 *)rbuf->buf + (rbuf->w * rbuf->elem_size), elem, rbuf->elem_size);
 	rbuf->w = (rbuf->w + 1) % rbuf->n;
 	rbuf->to_read++;
+	if (rbuf->readers_waiting) {
+		rz_th_cond_signal(rbuf->reader_wait_cond);
+	}
 
 	LEAVE_RBUF();
 	return RZ_THREAD_RING_BUF_OK;
@@ -193,6 +203,41 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRi
 	if (rbuf->to_read == 0) {
 		LEAVE_RBUF();
 		return RZ_THREAD_RING_BUF_FAIL;
+	}
+	memcpy(elem, (ut8 *)rbuf->buf + (rbuf->r * rbuf->elem_size), rbuf->elem_size);
+	rbuf->r = (rbuf->r + 1) % rbuf->n;
+	rbuf->to_read--;
+	if (rbuf->writers_waiting) {
+		rz_th_cond_signal(rbuf->writer_wait_cond);
+	}
+	LEAVE_RBUF();
+	return RZ_THREAD_RING_BUF_OK;
+}
+
+/**
+ * \brief Takes the next element from the ring buffer.
+ * If the ring buffer is empty, it blocks until data was written or it was closed.
+ *
+ * \param rbuf The ring buffer to read from.
+ * \param elem Location to copy the element data into.
+ *
+ * \return RZ_THREAD_RING_BUF_OK If the read succeeded.
+ * \return RZ_THREAD_RING_BUF_CLOSED The ring buffer was closed. Any subsequent operations on it are undefined!
+ */
+RZ_API RzThreadRingBufResult rz_th_ring_buf_take_blocking(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem) {
+	rz_return_val_if_fail(rbuf && elem, RZ_THREAD_RING_BUF_CLOSED);
+
+	ENTER_RBUF();
+	while (rbuf->to_read == 0) {
+		// Wait until data was written.
+		rbuf->readers_waiting++;
+		rz_th_cond_wait(rbuf->reader_wait_cond, rbuf->lock);
+		rbuf->readers_waiting--;
+
+		if (rbuf->closed) {
+			LEAVE_RBUF();
+			return RZ_THREAD_RING_BUF_CLOSED;
+		}
 	}
 	memcpy(elem, (ut8 *)rbuf->buf + (rbuf->r * rbuf->elem_size), rbuf->elem_size);
 	rbuf->r = (rbuf->r + 1) % rbuf->n;

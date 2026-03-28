@@ -372,7 +372,7 @@ bool test_thread_ring_buf_writer_cond(void) {
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	mu_assert_eq(out, in_3, "Take mismatch");
 
-	// Check writiers values
+	// Check writers values
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	if (out == 97) {
 		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
@@ -540,6 +540,107 @@ bool test_thread_ring_buf_writer_close(void) {
 	mu_end;
 }
 
+utptr thread_rbuf_take_blocking_1(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	assert(out == 1 && "wrong val taken");
+	return (utptr)r;
+}
+
+utptr thread_rbuf_take_blocking_2(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	assert(out == 2 && "wrong val taken");
+	return (utptr)r;
+}
+
+utptr thread_rbuf_take_blocking(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	return (utptr)r;
+}
+
+bool test_thread_ring_buf_reader_cond(void) {
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+
+	RzThread *rblock_1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_1, rbuf);
+	mu_assert_notnull(rblock_1, "rz_th_new 1 null check");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	rz_sys_sleep(1);
+	mu_assert_true(rz_th_terminated(rblock_1), "Didn't terminated");
+	mu_assert_eq(rz_th_get_retv(rblock_1), RZ_THREAD_RING_BUF_OK, "Wrong return code");
+
+	RzThread *rblock_2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_2, rbuf);
+	mu_assert_notnull(rblock_2, "rz_th_new 2 null check");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	rz_sys_sleep(1);
+	mu_assert_true(rz_th_terminated(rblock_2), "Didn't terminated");
+	mu_assert_eq(rz_th_get_retv(rblock_2), RZ_THREAD_RING_BUF_OK, "Wrong return code");
+
+	// Spawn many
+	RzThread *rblock_n1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n3 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n4 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *ths[] = { rblock_n1, rblock_n2, rblock_n3, rblock_n4 };
+
+	// Write two
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+
+	rz_sys_sleep(1);
+
+	size_t n_term = 0;
+	if (rz_th_terminated(rblock_n1)) {
+		printf("rblock_n1 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n1), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[0] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n2)) {
+		printf("rblock_n2 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n2), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[1] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n3)) {
+		printf("rblock_n3 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n3), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[2] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n4)) {
+		printf("rblock_n4 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n4), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[3] = NULL;
+		n_term++;
+	}
+	mu_assert_eq(n_term, 2, "two should have terminated, two still waiting.");
+
+	rz_th_ring_buf_close(rbuf);
+	rz_sys_sleep(1);
+
+	for (size_t i = 0; i < 4; ++i) {
+		if (!ths[i]) {
+			continue;
+		}
+		mu_assert_true(rz_th_terminated(ths[i]), "Should have terminated after close.");
+		mu_assert_eq(rz_th_get_retv(ths[i]), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value.");
+	}
+
+	rz_th_ring_buf_free(rbuf);
+	rz_th_free(rblock_1);
+	rz_th_free(rblock_2);
+	rz_th_free(rblock_n1);
+	rz_th_free(rblock_n2);
+	rz_th_free(rblock_n3);
+	rz_th_free(rblock_n4);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_thread_limit);
 	mu_run_test(test_thread_pool_cores);
@@ -551,6 +652,7 @@ int all_tests() {
 	mu_run_test(test_thread_ring_buf_writer_cond);
 	mu_run_test(test_thread_ring_buf_writer_clear);
 	mu_run_test(test_thread_ring_buf_writer_close);
+	mu_run_test(test_thread_ring_buf_reader_cond);
 	return tests_passed != tests_run;
 }
 
