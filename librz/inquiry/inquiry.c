@@ -28,7 +28,6 @@
 #include <rz_list.h>
 #include <rz_types_base.h>
 #include <rz_util/rz_assert.h>
-#include <string.h>
 
 RZ_LIB_VERSION(rz_inquiry);
 
@@ -186,7 +185,7 @@ RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL co
 	return false;
 }
 
-static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, const RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
+static void handle_io_request(RzCore *core, RzPVector /*<RzILMem *>*/ *il_mems, RzInterpreterIORequest *io_req, RZ_OUT RzInterpreterIOResult *io_res) {
 	RZ_LOG_DEBUG("INQUIRY: Received IO %s request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
 		io_req->type == RZ_INTERPRETER_IO_WRITE ? "write" : "read",
 		io_req->mem_idx,
@@ -275,36 +274,26 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 	return true;
 }
 
-static bool handle_yields(RzCore *core, RzInterpreterSet *iset, HtUP *yield_queues) {
+static bool handle_yields(RzCore *core, HtUP *yield_queues) {
 	RzInterpreterYieldQueue *q_xrefs = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 	if (!rz_th_queue_is_empty(q_xrefs->yield_queue)) {
-		RzInterpreterSharedObjects *so = NULL;
-		if (!rz_th_queue_pop(q_xrefs->yield_queue, false, (void **)&so) || !so) {
-			rz_th_lock_leave(iset->state->shared_obj->received);
+		RzAnalysisXRef *xref = NULL;
+		if (!rz_th_queue_pop(q_xrefs->yield_queue, false, (void **)&xref) || !xref) {
 			return false;
 		}
-		rz_inquiry_add_xref(core->inquiry, &so->xref);
-		rz_analysis_xrefs_set(core->analysis, so->xref.from, so->xref.to, so->xref.type);
-		RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", so->xref.from, so->xref.to, rz_analysis_ref_type_tostring(so->xref.type));
-		rz_th_lock_leave(so->received);
+		rz_inquiry_add_xref(core->inquiry, xref);
+		rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, xref->type);
+		RZ_LOG_DEBUG("Added xref: 0x%" PFMT64x " -> 0x%" PFMT64x " (%s)\n", xref->from, xref->to, rz_analysis_ref_type_tostring(xref->type));
 	}
 
 	RzInterpreterYieldQueue *q_calls = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
 	if (!rz_th_queue_is_empty(q_calls->yield_queue)) {
-		RzInterpreterSharedObjects *so = NULL;
-		if (!rz_th_queue_pop(q_calls->yield_queue, false, (void **)&so) || !so) {
-			rz_th_lock_leave(iset->state->shared_obj->received);
+		RzAnalysisCallCandidate *cc = NULL;
+		if (!rz_th_queue_pop(q_calls->yield_queue, false, (void **)&cc) || !cc) {
 			return false;
 		}
 		RzAnalysisCallCandidate *cc_clone = RZ_NEW0(RzAnalysisCallCandidate);
-		if (ht_up_find(core->inquiry->call_candidates, cc_clone->bb_addr, NULL)) {
-			rz_th_lock_leave(iset->state->shared_obj->received);
-			return true;
-		}
-
-		memcpy(cc_clone, &so->call_cand, sizeof(RzAnalysisCallCandidate));
-		rz_th_lock_leave(iset->state->shared_obj->received);
-
+		memcpy(cc_clone, cc, sizeof(RzAnalysisCallCandidate));
 		if (ht_up_update(core->inquiry->call_candidates, cc_clone->bb_addr, cc_clone)) {
 			RZ_LOG_DEBUG("Overwrote a call candidate located at 0x%" PFMT64x "\n", cc_clone->candidate_addr);
 		} else {
@@ -448,6 +437,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			analysis_vm->reg_binding);
 	}
 
+	RZ_LOG_DEBUG("INQUIRY: Enforce enabling IO cache.\n");
+	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
+	rz_config_set(core->config, "io.cache", "true");
+
 	// Bundle all the queues into one object to pass it to the thread.
 	// Later we would pass a unique iset to each interpreter with
 	// the required queues only.
@@ -481,6 +474,10 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
 		interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
+		// Poor man's shared memory.
+		RzInterpreterIOResult _io_res = { 0 };
+		RzInterpreterIOResult *io_res = &_io_res;
+
 		// From here on, the code plays the role of the cache, IO handler,
 		// and yield consumer.
 		// - Waiting for new Effects to be requested and sending them.
@@ -506,25 +503,24 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// caches them.
 			{
 				if (!rz_th_queue_is_empty(iset->branch_queue)) {
-					RzInterpreterSharedObjects *so = NULL;
-					if (!rz_th_queue_pop(iset->branch_queue, false, (void **)&so) || !so) {
-						rz_th_lock_leave(iset->state->shared_obj->received);
+					RzInterpreterBranch *branch = NULL;
+					if (!rz_th_queue_pop(iset->branch_queue, false, (void **)&branch) || !branch) {
 						rz_warn_if_reached();
 						break;
 					}
-					ut64 alt_addr = so->branch.alt_target;
+					ut64 alt_addr = branch->alt_target;
 					if (alt_addr) {
-						so->branch.alt_target = 0;
+						branch->alt_target = 0;
 					}
-					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x " (alt: 0x%" PFMT64x ")\n", so->branch.target_addr, alt_addr);
-					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, alt_addr ? alt_addr : so->branch.target_addr);
+					RZ_LOG_DEBUG("INQUIRY: Received IL request: 0x%" PFMT64x " (alt: 0x%" PFMT64x ")\n", branch->target_addr, alt_addr);
+					const RzInterpreterILBB *bb = get_il_bb(core, il_cache, alt_addr ? alt_addr : branch->target_addr);
 					if (!bb) {
 						// Delete the address from the branch targets.
 						// This is currently necessary as a work around, because if the interpreter
 						// fails before interpreting the address, it is added again as next entry point.
 						// Giving an endless loop.
 						// One of the design thingies to fix in the proper implementation.
-						rz_set_u_delete(branch_targets, so->branch.target_addr);
+						rz_set_u_delete(branch_targets, branch->target_addr);
 						if (alt_addr) {
 							rz_set_u_delete(branch_targets, alt_addr);
 						}
@@ -535,19 +531,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						rz_th_queue_close(iset->branch_queue);
 						rz_th_queue_close(iset->il_queue);
 						bb_decode_failed = true;
-						rz_th_lock_leave(so->received);
 						break;
 					}
 					rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, bb->bb_addr, bb->size);
 					if (alt_addr) {
 						// Add a dummy basic block at the address the call originally jumped to.
 						// This is the basic block for the imported function.
-						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, so->branch.target_addr, 1);
-						rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, so->branch.branching_bb_addr, so->branch.target_addr);
+						rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
+						rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 					}
-					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, so->branch.branching_bb_addr, so->branch.target_addr);
-					rz_th_lock_leave(so->received);
-
+					rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 					rz_th_queue_push(iset->il_queue, (void *)bb, true);
 				}
 			}
@@ -563,21 +556,14 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// Because this is not yet implemented, there is only one interpreter thread for now.
 			{
 				if (!rz_th_queue_is_empty(iset->io_request)) {
-					RzInterpreterSharedObjects *so = NULL;
-					if (!rz_th_queue_pop(iset->io_request, false, (void **)&so) || !so) {
+					RzInterpreterIORequest *io_req = NULL;
+					if (!rz_th_queue_pop(iset->io_request, false, (void **)&io_req) || !io_req) {
 						rz_atomic_bool_set(is_running, false);
-						rz_th_lock_leave(iset->state->shared_obj->received);
 						rz_warn_if_reached();
 						break;
 					}
-					handle_io_request(core,
-					                  &analysis_vm->vm->vm_memory,
-					                  &so->io_req, &so->io_res);
-					rz_th_lock_leave(so->received);
-
-					rz_th_lock_enter(so->received);
-					rz_th_queue_push(iset->io_result, so, true);
-					// Don't leave collection lock. Consumer will unlock it after it collected.
+					handle_io_request(core, &analysis_vm->vm->vm_memory, io_req, io_res);
+					rz_th_queue_push(iset->io_result, io_res, true);
 				}
 			}
 
@@ -588,7 +574,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// This part plays the role of a yield consumer.
 			// In our prototype it only receives xrefs and call candidates.
 			{
-				if (!handle_yields(core, iset, iset->yield_queues)) {
+				if (!handle_yields(core, iset->yield_queues)) {
 					rz_atomic_bool_set(is_running, false);
 					break;
 				}
@@ -599,7 +585,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_th_queue_close(iset->io_result);
 		rz_th_queue_close(iset->branch_queue);
 		rz_th_queue_close(iset->il_queue);
-		rz_th_lock_leave(iset->state->shared_obj->received);
 
 		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
 		rz_th_wait(interpr_th);
@@ -613,10 +598,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			}
 			break;
 		}
-
-		rz_th_lock_enter(iset->state->shared_obj->received);
-		rz_interpreter_shared_objects_fini(iset->state->shared_obj);
-
+		// Clear shared objects to not have any left overs in the next run.
+		memset((ut8 *)iset->state->shared_obj, 0, sizeof(RzInterpreterSharedObjects));
 		// Open queue again, so the interpretation can start at another
 		// jump target again.
 		rz_th_queue_open(iset->io_request);
@@ -688,6 +671,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	rz_vector_free(insn_to_insn_edges);
 
 	RZ_LOG_DEBUG("INQUIRY: Done\n");
+
+	rz_config_set(core->config, "io.cache", io_cache_opt);
 
 	// Wait for thread to finish before cleaning.
 error_free:
