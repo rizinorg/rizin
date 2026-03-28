@@ -66,52 +66,40 @@ static inline RZ_OWN ProtoIntrprAbstrData *adata_new() {
 }
 
 void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src);
-void write_var_to_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
-bool read_var_from_state(RzInterpreterAbstrState *state, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
-bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data);
+void write_var_to_state(RzInterpreterSet *iset, RzILVarKind kind, ut64 var_id, const ProtoIntrprAbstrData *data);
+bool read_var_from_state(RzInterpreterSet *iset, RzILVarKind kind, ut64 var_id, RZ_OUT ProtoIntrprAbstrData *data);
+bool abstr_is_true(const RzInterpreterSet *iset, const ProtoIntrprAbstrData *data);
 bool store_abstr_data(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
-	const ProtoIntrprAbstrData *src,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result);
+	const ProtoIntrprAbstrData *src);
 bool load_abstr_data(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
-	RZ_OUT ProtoIntrprAbstrData *out,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result);
+	RZ_OUT ProtoIntrprAbstrData *out);
 
-RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
+RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 	const RzILOpEffect *effect,
 	size_t nop_pc_inc,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data);
 RZ_IPI bool interpreter_prototype_eval_pure(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	const RzILOpPure *pure,
 	RZ_OUT ProtoIntrprAbstrData *out,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data);
 
 bool report_yield_xref(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type);
 
 bool report_yield_call_candiate(
-	RzInterpreterAbstrState *state,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzInterpreterSet *iset,
 	ProtoIntrprPluginData *plugin_data);
 
 bool set_pc(RzInterpreterAbstrState *state, ut64 pc,

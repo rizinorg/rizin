@@ -370,7 +370,6 @@ typedef struct {
 } SuccessorState;
 
 static bool choose_next_pc(RzInterpreterSet *iset,
-	RzInterpreterAbstrState *out_state,
 	ut64 out_hash,
 	RzVector *tmp_succ_addr,
 	RzVector *succ_states,
@@ -388,7 +387,7 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	bool has_succsessor = true;
 
 	// Determine successors and increase the reference counts for the current out state.
-	if (!iset->plugin->successors(out_state, tmp_succ_addr, plugin_data)) {
+	if (!iset->plugin->successors(iset->state, tmp_succ_addr, plugin_data)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -482,11 +481,9 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
-	RzInterpreterAbstrState *in_state = iset->state;
 #if RZ_BUILD_DEBUG
-	ut64 in_hash = plugin->hash_state(in_state, plugin_data);
+	ut64 in_hash = plugin->hash_state(iset->state, plugin_data);
 #endif
-	RzInterpreterAbstrState *out_state = NULL;
 	ut64 out_hash = 0;
 
 	rz_th_queue_push(iset->branch_queue, iset->state->shared_obj, true);
@@ -509,18 +506,16 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		iset->state->bb_addr = il_bb->bb_addr;
 		iset->state->bb_size = il_bb->size;
 		// Evaluate the effect on the input state.
-		if (!plugin->eval(in_state, il_bb, iset->yield_queues, iset->io_request, iset->io_result, plugin_data)) {
+		if (!plugin->eval(iset, il_bb, plugin_data)) {
 			RZ_LOG_DEBUG("Eval failed\n");
 			goto in_loop_error;
 		}
-		// The input state was (almost always) manipulated by eval(). Rename to clarify.
-		out_state = in_state;
-		out_hash = plugin->hash_state(out_state, plugin_data);
+		out_hash = plugin->hash_state(iset->state, plugin_data);
 #if RZ_BUILD_DEBUG
 		RZ_LOG_DEBUG("in_hash = 0x%llx, out_hash = 0x%llx\n", in_hash, out_hash);
 #endif
 
-		// Add out_state hash to the reachable states and
+		// Add output state hash to the reachable states and
 		// set a flag if it was a new state.
 		size_t psize = rz_set_u_size(reachable_states);
 		rz_set_u_add(reachable_states, out_hash);
@@ -528,7 +523,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 		// Determine the successor effects to evaluate.
 		// Only newly reached states are allowed to add successors.
-		if (!(new_state_reached && choose_next_pc(iset, out_state, out_hash, tmp_succ_addr, succ_states, il_bb, plugin_data))) {
+		if (!(new_state_reached && choose_next_pc(iset, out_hash, tmp_succ_addr, succ_states, il_bb, plugin_data))) {
 			// No new state or address means we can stop interpreting.
 			// Note, that we can't use the queues as cancel condition because they
 			// are asynchronous and checking them would introduces race conditions.
@@ -547,7 +542,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			// pointed to an unmapped region.
 			goto in_loop_error;
 		}
-		if (!plugin->set_pc(in_state, next.addr, plugin_data)) {
+		if (!plugin->set_pc(iset->state, next.addr, plugin_data)) {
 			rz_warn_if_reached();
 			// Some error occurred lifting this basic block. Or updating the PC.
 			// Abort execution.

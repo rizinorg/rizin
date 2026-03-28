@@ -7,23 +7,20 @@
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_str.h"
 
-static bool value_indicates_ret_addr_write(RzInterpreterAbstrState *state, ProtoIntrprAbstrData *val) {
+static bool value_indicates_ret_addr_write(RzInterpreterSet *iset, ProtoIntrprAbstrData *val) {
 	return val->is_concrete &&
-		(rz_bv_to_ut64(val->bv) == state->bb_addr + state->bb_size ||
+		(rz_bv_to_ut64(val->bv) == iset->state->bb_addr + iset->state->bb_size ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(state->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv)));
+			(rz_str_startswith(iset->state->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(iset->state->pc->abstr_data)->bv)));
 }
 
-RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
+RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 	const RzILOpEffect *effect,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 	ProtoIntrprPluginData *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
-	ProtoIntrprAbstrData *pc = AD(state->pc->abstr_data);
+	ProtoIntrprAbstrData *pc = AD(iset->state->pc->abstr_data);
 
 	switch (effect->code) {
 	default:
@@ -53,32 +50,32 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		break;
 	}
 	case RZ_IL_OP_SEQ: {
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.x, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(iset, effect->op.seq.x, insn_pkt_size, plugin_data)) {
 			goto error;
 		}
-		if (!interpreter_prototype_eval_effect(state, effect->op.seq.y, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(iset, effect->op.seq.y, insn_pkt_size, plugin_data)) {
 			goto error;
 		}
 		break;
 	}
 	case RZ_IL_OP_SET: {
 		ut64 vhash = effect->op.set.hash;
-		if (!interpreter_prototype_eval_pure(state, effect->op.set.x, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(iset, effect->op.set.x, &eval_out, plugin_data)) {
 			goto error;
 		}
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
-		write_var_to_state(state, kind, vhash, &eval_out);
-		if (value_indicates_ret_addr_write(state, &eval_out) &&
+		write_var_to_state(iset, kind, vhash, &eval_out);
+		if (value_indicates_ret_addr_write(iset, &eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
 			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
-			plugin_data->call_cand.npc = state->bb_addr + state->bb_size;
-			plugin_data->call_cand.bb_addr = state->bb_addr;
+			plugin_data->call_cand.npc = iset->state->bb_addr + iset->state->bb_size;
+			plugin_data->call_cand.bb_addr = iset->state->bb_addr;
 			plugin_data->call_cand.in_mem = false;
 		}
 		break;
 	}
 	case RZ_IL_OP_JMP: {
-		if (!interpreter_prototype_eval_pure(state, effect->op.jmp.dst, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(iset, effect->op.jmp.dst, &eval_out, plugin_data)) {
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
@@ -93,21 +90,21 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		if (eval_out.is_concrete) {
 			// NOTE: This prototype can't classify into call or jump.
 			// Everything is just a jump for it at this point.
-			report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
+			report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &eval_out, RZ_ANALYSIS_XREF_TYPE_CODE);
 		}
 		if (plugin_data->call_cand.store_addr && eval_out.is_concrete) {
 			// An instruction in this basic block stored the next PC.
 			// Report a call candidate.
 			plugin_data->call_cand.candidate_addr = rz_bv_to_ut64(pc->bv);
 			plugin_data->call_cand.target = rz_bv_to_ut64(eval_out.bv);
-			report_yield_call_candiate(state, yield_queues, plugin_data);
+			report_yield_call_candiate(iset, plugin_data);
 		}
 		memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
-		copy_abstr_data(state->pc->abstr_data, &eval_out);
+		copy_abstr_data(iset->state->pc->abstr_data, &eval_out);
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
-		if (!interpreter_prototype_eval_pure(state, effect->op.branch.condition, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(iset, effect->op.branch.condition, &eval_out, plugin_data)) {
 			goto error;
 		}
 		if (!eval_out.is_concrete) {
@@ -116,12 +113,12 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			break;
 		}
 
-		if (abstr_is_true(state, &eval_out)) {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.true_eff, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+		if (abstr_is_true(iset, &eval_out)) {
+			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.true_eff, insn_pkt_size, plugin_data)) {
 				goto error;
 			}
 		} else {
-			if (!interpreter_prototype_eval_effect(state, effect->op.branch.false_eff, insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+			if (!interpreter_prototype_eval_effect(iset, effect->op.branch.false_eff, insn_pkt_size, plugin_data)) {
 				goto error;
 			}
 		}
@@ -132,7 +129,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		STACK_ABSTR_DATA_OUT(st_addr);
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
 		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
-		if (!interpreter_prototype_eval_pure(state, key, &st_addr, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(iset, key, &st_addr, plugin_data)) {
 			RZ_LOG_ERROR("prototype: STORE/STOREW key failed to evaluate.\n");
 			rz_bv_fini(st_addr.bv);
 			goto error;
@@ -152,7 +149,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 		}
 
 		RzILOpPure *pval = effect->code == RZ_IL_OP_STORE ? effect->op.store.value : effect->op.storew.value;
-		if (!interpreter_prototype_eval_pure(state, pval, &eval_out, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_pure(iset, pval, &eval_out, plugin_data)) {
 			RZ_LOG_ERROR("prototype: SUB x failed to evaluate.\n");
 			rz_bv_fini(st_addr.bv);
 			goto error;
@@ -161,14 +158,14 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterAbstrState *state,
 			rz_bv_fini(st_addr.bv);
 			break;
 		}
-		if (value_indicates_ret_addr_write(state, &eval_out)) {
+		if (value_indicates_ret_addr_write(iset, &eval_out)) {
 			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
-			plugin_data->call_cand.npc = state->bb_addr + state->bb_size;
-			plugin_data->call_cand.bb_addr = state->bb_addr;
+			plugin_data->call_cand.npc = iset->state->bb_addr + iset->state->bb_size;
+			plugin_data->call_cand.bb_addr = iset->state->bb_addr;
 			plugin_data->call_cand.in_mem = true;
 		}
-		report_yield_xref(state, insn_pkt_size, yield_queues, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
-		if (!store_abstr_data(state, mem_idx, &st_addr, &eval_out, io_request, io_result)) {
+		report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+		if (!store_abstr_data(iset, mem_idx, &st_addr, &eval_out)) {
 			rz_bv_fini(st_addr.bv);
 			goto error;
 		}

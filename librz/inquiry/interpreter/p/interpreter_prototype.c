@@ -11,11 +11,8 @@
 
 #define MAX_INVOCATIONS_PER_BB 3
 
-static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
+static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	RZ_NONNULL const RzInterpreterILBB *il_bb,
-	RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request,
-	RZ_NONNULL RZ_BORROW RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result,
 	void *plugin_data) {
 	ProtoIntrprPluginData *pdata = plugin_data;
 
@@ -28,7 +25,7 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	} else if (ic_pc > MAX_INVOCATIONS_PER_BB) {
 		// TODO: Make it configurable
 		RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->bb_addr)
-		set_pc(state, il_bb->bb_addr + il_bb->size, plugin_data);
+		set_pc(iset->state, il_bb->bb_addr + il_bb->size, plugin_data);
 		return true;
 	}
 	ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, ic_pc + 1);
@@ -40,15 +37,15 @@ static bool eval(RZ_NONNULL RzInterpreterAbstrState *state,
 	// Now execute the actual effects of the BB.
 	void **it;
 	rz_pvector_foreach (il_bb->il_ops, it) {
-		ut64 pc = rz_bv_to_ut64(AD(state->pc->abstr_data)->bv);
+		ut64 pc = rz_bv_to_ut64(AD(iset->state->pc->abstr_data)->bv);
 		RZ_LOG_DEBUG("Eval PC = 0x%" PFMT64x "\n", pc);
 		RzInterpreterInsnPkt *pkt = *it;
-		if (!interpreter_prototype_eval_effect(state, pkt->effect, pkt->insn_pkt_size, yield_queues, io_request, io_result, plugin_data)) {
+		if (!interpreter_prototype_eval_effect(iset, pkt->effect, pkt->insn_pkt_size, plugin_data)) {
 			return false;
 		}
-		if (pc == rz_bv_to_ut64(AD(state->pc->abstr_data)->bv) && AD(state->pc->abstr_data)->is_concrete) {
+		if (pc == rz_bv_to_ut64(AD(iset->state->pc->abstr_data)->bv) && AD(iset->state->pc->abstr_data)->is_concrete) {
 			// Instruction did not manipulate the PC. Set it to the next instruction (packet).
-			set_pc(state, pc + pkt->insn_pkt_size, plugin_data);
+			set_pc(iset->state, pc + pkt->insn_pkt_size, plugin_data);
 		}
 	}
 	// TODO: Clean up local variables.
