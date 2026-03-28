@@ -249,7 +249,7 @@ static RzStructuredData *nes_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(nes, "prg_size", (ut64)hdr->prg_page_count_16k * PRG_PAGE_SIZE, true);
 	rz_structured_data_map_add_unsigned(nes, "chr_size", (ut64)hdr->chr_page_count_8k * CHR_PAGE_SIZE, true);
 	rz_structured_data_map_add_unsigned(nes, "mapper", INES_MAPPER(hdr->rom_control_byte_0, hdr->rom_control_byte_1), true);
-	rz_structured_data_map_add_boolean(nes, "mirror", INES_MIRROR(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_string(nes, "mirroring", INES_MIRROR(hdr->rom_control_byte_0) ? "vertical" : "horizontal");
 	rz_structured_data_map_add_boolean(nes, "battery", INES_BATTERY(hdr->rom_control_byte_0) != 0);
 	rz_structured_data_map_add_boolean(nes, "trainer", INES_TRAINER(hdr->rom_control_byte_0) != 0);
 	rz_structured_data_map_add_boolean(nes, "alternative_nametable_layout", INES_ALT_NAMETABLE(hdr->rom_control_byte_0) != 0);
