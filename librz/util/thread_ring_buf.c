@@ -56,7 +56,7 @@ struct rz_th_ring_buf_t {
  * \return The new rung buffer or NULL in case of failure.
  */
 RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size) {
-	rz_return_val_if_fail(n > 1, NULL);
+	rz_return_val_if_fail(n > 1 && elem_size > 1, NULL);
 	RzThreadRingBuf *rbuf = RZ_NEW0(RzThreadRingBuf);
 	if (!rbuf) {
 		rz_warn_if_reached();
