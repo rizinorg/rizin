@@ -493,6 +493,7 @@ bool test_thread_ring_buf_writer_close(void) {
 	ut64 out;
 	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
 	mu_assert_true(rz_th_ring_buf_is_open(rbuf), "is open");
+	mu_assert_eq(rz_th_ring_buf_open(rbuf), RZ_THREAD_RING_BUF_FAIL, "already open");
 
 	// Test wake up of writers.
 	// Fill buffer.
@@ -530,6 +531,12 @@ bool test_thread_ring_buf_writer_close(void) {
 	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_CLOSED, "full check");
 	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_CLOSED, "empty");
 	mu_assert_false(rz_th_ring_buf_is_open(rbuf), "is open");
+
+	mu_assert_eq(rz_th_ring_buf_open(rbuf), RZ_THREAD_RING_BUF_OK, "opens");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	mu_assert_eq(out, in_1, "Wrong element taken");
+	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_OK, "close");
 
 	rz_th_free(th_97);
 	rz_th_free(th_98);

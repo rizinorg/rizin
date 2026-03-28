@@ -127,6 +127,37 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 	return RZ_THREAD_RING_BUF_OK;
 }
 
+static void reset_buf(RzThreadRingBuf *rbuf) {
+	rbuf->w = 0;
+	rbuf->r = 0;
+	rbuf->to_read = 0;
+}
+
+/**
+ * \brief Clears the ring buffer and opens it again.
+ *
+ * \param rbuf The ring buffer to close.
+ *
+ * \return RZ_THREAD_RING_BUF_OK If the ring buffer was opened.
+ * \return RZ_THREAD_RING_BUF_FAIL If the ring buffer was already open.
+ * \return RZ_THREAD_RING_BUF_CLOSED If there was an error condition. The buffer should not be used.
+ */
+RZ_API RzThreadRingBufResult rz_th_ring_buf_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
+	rbuf->threads_awaiting++;
+	rz_th_lock_enter(rbuf->lock);
+
+	if (!rbuf->closed) {
+		LEAVE_RBUF();
+		return RZ_THREAD_RING_BUF_FAIL;
+	}
+	reset_buf(rbuf);
+	rbuf->closed = false;
+
+	LEAVE_RBUF();
+	return RZ_THREAD_RING_BUF_OK;
+}
+
 /**
  * \brief Clear all elements from the ring buffer.
  *
@@ -138,9 +169,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadR
 RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
 	ENTER_RBUF()
-	rbuf->w = 0;
-	rbuf->r = 0;
-	rbuf->to_read = 0;
+	reset_buf(rbuf);
 	if (rbuf->writers_waiting) {
 		for (size_t i = 0; i < RZ_MIN(rbuf->writers_waiting, rbuf->n); ++i) {
 			rz_th_cond_signal(rbuf->writer_wait_cond);
