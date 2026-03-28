@@ -124,7 +124,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRi
 RZ_API RzThreadRingBufResult rz_th_ring_buf_is_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
-RZ_API bool rz_th_ring_buf_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API bool rz_th_ring_buf_is_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 
 #endif /* RZ_API */
 

@@ -260,7 +260,7 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThrea
  * \return True If the buffer was empty.
  * \return False If the buffer was not empty.
  */
-RZ_API bool rz_th_ring_buf_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
+RZ_API bool rz_th_ring_buf_is_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, true);
 	return rbuf->to_read == 0;
 }
