@@ -109,3 +109,293 @@ d "[   l2fetch(R19,R1:0)" 00c093a6
 d "[   l2cleanidx(R20)" 00c034a6
 d "[   R12 = ctlbw(R7:6,R6)" 0cc6c66c
 d "[   l2fetch(R24,R13)" 00cd18a6
+
+# HMX
+
+d "[   mxclracc" 11c0e0a6
+d "[   mxclracc.hf" 13c0e0a6
+d "[   mxmem(R0,LR):after:sat.uh = acc:2x1" 0affe0a6
+d "[   mxmem(LR,R0):after:sat.uh = acc:2x1" 0ae0ffa6
+d "[   mxmem(R0,LR):after:retain:sat.uh = acc:2x1" 0effe0a6
+d "[   mxmem(LR,R0):after:retain:sat.uh = acc:2x1" 0ee0ffa6
+d "[   mxmem(R0,LR):after.uh = acc:2x1" 0bffe0a6
+d "[   mxmem(LR,R0):after.uh = acc:2x1" 0be0ffa6
+d "[   mxmem(R0,LR):after:retain.uh = acc:2x1" 0fffe0a6
+d "[   mxmem(LR,R0):after:retain.uh = acc:2x1" 0fe0ffa6
+d "[   mxmem(R0,LR):before:sat.uh = acc:2x1" 02ffe0a6
+d "[   mxmem(LR,R0):before:sat.uh = acc:2x1" 02e0ffa6
+d "[   mxmem(R0,LR):before:retain:sat.uh = acc:2x1" 06ffe0a6
+d "[   mxmem(LR,R0):before:retain:sat.uh = acc:2x1" 06e0ffa6
+d "[   mxmem(R0,LR):before.uh = acc:2x1" 03ffe0a6
+d "[   mxmem(LR,R0):before.uh = acc:2x1" 03e0ffa6
+d "[   mxmem(R0,LR):before:retain.uh = acc:2x1" 07ffe0a6
+d "[   mxmem(LR,R0):before:retain.uh = acc:2x1" 07e0ffa6
+d "[   mxmem(R0,LR):before:cm:sat.ub = acc" 01dfe0a6
+d "[   mxmem(LR,R0):before:cm:sat.ub = acc" 01c0ffa6
+d "[   mxmem(R0,LR):before:retain:cm:sat.ub = acc" 09dfe0a6
+d "[   mxmem(LR,R0):before:retain:cm:sat.ub = acc" 09c0ffa6
+d "[   mxmem(R0,LR):before:cm.ub = acc" 03dfe0a6
+d "[   mxmem(LR,R0):before:cm.ub = acc" 03c0ffa6
+d "[   mxmem(R0,LR):before:retain:cm.ub = acc" 0bdfe0a6
+d "[   mxmem(LR,R0):before:retain:cm.ub = acc" 0bc0ffa6
+d "[   mxmem(R0,LR):before.hf = acc" 00ffe0a6
+d "[   mxmem(LR,R0):before.hf = acc" 00e0ffa6
+d "[   mxmem(R0,LR):before:retain.hf = acc" 08ffe0a6
+d "[   mxmem(LR,R0):before:retain.hf = acc" 08e0ffa6
+d "[   mxmem(R0,LR):before:pos.hf = acc" 01ffe0a6
+d "[   mxmem(LR,R0):before:pos.hf = acc" 01e0ffa6
+d "[   mxmem(R0,LR):before:retain:pos.hf = acc" 05ffe0a6
+d "[   mxmem(LR,R0):before:retain:pos.hf = acc" 05e0ffa6
+d "[   mxmem(R0,LR):before:sat.ub = acc" 00dfe0a6
+d "[   mxmem(LR,R0):before:sat.ub = acc" 00c0ffa6
+d "[   mxmem(R0,LR):before:retain:sat.ub = acc" 08dfe0a6
+d "[   mxmem(LR,R0):before:retain:sat.ub = acc" 08c0ffa6
+d "[   mxmem(R0,LR):before.ub = acc" 02dfe0a6
+d "[   mxmem(LR,R0):before.ub = acc" 02c0ffa6
+d "[   mxmem(R0,LR):before:retain.ub = acc" 0adfe0a6
+d "[   mxmem(LR,R0):before:retain.ub = acc" 0ac0ffa6
+d "[   mxmem(R0,LR):after:cm:sat.ub = acc" 05dfe0a6
+d "[   mxmem(LR,R0):after:cm:sat.ub = acc" 05c0ffa6
+d "[   mxmem(R0,LR):after:retain:cm:sat.ub = acc" 0ddfe0a6
+d "[   mxmem(LR,R0):after:retain:cm:sat.ub = acc" 0dc0ffa6
+d "[   mxmem(R0,LR):after:cm.ub = acc" 07dfe0a6
+d "[   mxmem(LR,R0):after:cm.ub = acc" 07c0ffa6
+d "[   mxmem(R0,LR):after:retain:cm.ub = acc" 0fdfe0a6
+d "[   mxmem(LR,R0):after:retain:cm.ub = acc" 0fc0ffa6
+d "[   mxmem(R0,LR):after.hf = acc" 04ffe0a6
+d "[   mxmem(LR,R0):after.hf = acc" 04e0ffa6
+d "[   mxmem(R0,LR):after:retain.hf = acc" 0cffe0a6
+d "[   mxmem(LR,R0):after:retain.hf = acc" 0ce0ffa6
+d "[   mxmem(R0,LR):after:pos.hf = acc" 09ffe0a6
+d "[   mxmem(LR,R0):after:pos.hf = acc" 09e0ffa6
+d "[   mxmem(R0,LR):after:retain:pos.hf = acc" 0dffe0a6
+d "[   mxmem(LR,R0):after:retain:pos.hf = acc" 0de0ffa6
+d "[   mxmem(R0,LR):after:sat.ub = acc" 04dfe0a6
+d "[   mxmem(LR,R0):after:sat.ub = acc" 04c0ffa6
+d "[   mxmem(R0,LR):after:retain:sat.ub = acc" 0cdfe0a6
+d "[   mxmem(LR,R0):after:retain:sat.ub = acc" 0cc0ffa6
+d "[   mxmem(R0,LR):after.ub = acc" 06dfe0a6
+d "[   mxmem(LR,R0):after.ub = acc" 06c0ffa6
+d "[   mxmem(R0,LR):after:retain.ub = acc" 0edfe0a6
+d "[   mxmem(LR,R0):after:retain.ub = acc" 0ec0ffa6
+d "[   bias = mxmem2(R0)" fec30092
+d "[   bias = mxmem2(LR)" fec31f92
+d "[   mxmem2(R0) = bias" 16c0e0a6
+d "[   mxmem2(LR) = bias" 16c0ffa6
+d "[   bias = mxmem(R0)" ffc30092
+d "[   bias = mxmem(LR)" ffc31f92
+d "[   mxmem(R0) = bias" 10c0e0a6
+d "[   mxmem(LR) = bias" 10c0ffa6
+d "[   mxswapacc" 14c0e0a6
+d "[   mxswapacc" 14c0e0a6
+d "[   mxswapacc.hf" 15c0e0a6
+d "[   mxswapacc.hf" 15c0e0a6
+d "[   mxmem(R0,LR):after:sat.uh = acc:2x2" 1affe0a6
+d "[   mxmem(LR,R0):after:sat.uh = acc:2x2" 1ae0ffa6
+d "[   mxmem(R0,LR):after:retain:sat.uh = acc:2x2" 1effe0a6
+d "[   mxmem(LR,R0):after:retain:sat.uh = acc:2x2" 1ee0ffa6
+d "[   mxmem(R0,LR):after.uh = acc:2x2" 1bffe0a6
+d "[   mxmem(LR,R0):after.uh = acc:2x2" 1be0ffa6
+d "[   mxmem(R0,LR):after:retain.uh = acc:2x2" 1fffe0a6
+d "[   mxmem(LR,R0):after:retain.uh = acc:2x2" 1fe0ffa6
+d "[   mxmem(R0,LR):before:sat.uh = acc:2x2" 12ffe0a6
+d "[   mxmem(LR,R0):before:sat.uh = acc:2x2" 12e0ffa6
+d "[   mxmem(R0,LR):before:retain:sat.uh = acc:2x2" 16ffe0a6
+d "[   mxmem(LR,R0):before:retain:sat.uh = acc:2x2" 16e0ffa6
+d "[   mxmem(R0,LR):before.uh = acc:2x2" 13ffe0a6
+d "[   mxmem(LR,R0):before.uh = acc:2x2" 13e0ffa6
+d "[   mxmem(R0,LR):before:retain.uh = acc:2x2" 17ffe0a6
+d "[   mxmem(LR,R0):before:retain.uh = acc:2x2" 17e0ffa6
+d "[   cvt.hf = acc(R0)" 10dae0a6
+d "[   cvt.hf = acc(LR)" 10daffa6
+d "[   cvt.ub = acc(R0)" 10d7e0a6
+d "[   cvt.ub = acc(LR)" 10d7ffa6
+d "[   cvt.ub = acc(R0):sc0" 10dce0a6
+d "[   cvt.ub = acc(LR):sc0" 10dcffa6
+d "[   cvt.ub = acc(R0):sc1" 10dde0a6
+d "[   cvt.ub = acc(LR):sc1" 10ddffa6
+d "[   cvt.uh = acc(R0):2x1" 10d8e0a6
+d "[   cvt.uh = acc(LR):2x1" 10d8ffa6
+d "[   cvt.uh = acc(R0):2x2" 10d9e0a6
+d "[   cvt.uh = acc(LR):2x2" 10d9ffa6
+d "[   mxmem(R0,LR) = cvt" 18dfe0a6
+d "[   mxmem(LR,R0) = cvt" 18c0ffa6
+d "[   mxmem(R0,LR):2x2 = cvt" 1adfe0a6
+d "[   mxmem(LR,R0):2x2 = cvt" 1ac0ffa6
+d "[   mxmem(R0,LR):cm = cvt" 19dfe0a6
+d "[   mxmem(LR,R0):cm = cvt" 19c0ffa6
+d "[   mxmem(R0,LR):cm:deep = cvt" 1cdfe0a6
+d "[   mxmem(LR,R0):cm:deep = cvt" 1cc0ffa6
+d "[   mxmem(R0,LR):deep = cvt" 1bdfe0a6
+d "[   mxmem(LR,R0):deep = cvt" 1bc0ffa6
+d "[   cvt.f8 = acc(R0)" 10dbe0a6
+d "[   cvt.f8 = acc(LR)" 10dbffa6
+d "[   mxmem(R0,LR):deep.f8 = cvt" 1edfe0a6
+d "[   mxmem(LR,R0):deep.f8 = cvt" 1ec0ffa6
+
+# HMX Activate instruction tests
+d "/   activation.ub = mxmem(R0,LR):cm;\   weight.b = mxmem(R8,R10)" ed5f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):cm;\   weight.b = mxmem(R8,R10)" ed401f92e0ea0892
+d "/   activation.hf = mxmem(R0,LR);\   weight.b = mxmem(R8,R10)" e45f0092e0ea0892
+d "/   activation.hf = mxmem(LR,R0);\   weight.b = mxmem(R8,R10)" e4401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR);\   weight.b = mxmem(R8,R10)" ec5f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0);\   weight.b = mxmem(R8,R10)" ec401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):deep:cm;\   weight.b = mxmem(R8,R10)" e15f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):deep:cm;\   weight.b = mxmem(R8,R10)" e1401f92e0ea0892
+d "/   activation.hf = mxmem(R0,LR):deep;\   weight.b = mxmem(R8,R10)" e25f0092e0ea0892
+d "/   activation.hf = mxmem(LR,R0):deep;\   weight.b = mxmem(R8,R10)" e2401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):deep;\   weight.b = mxmem(R8,R10)" e05f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):deep;\   weight.b = mxmem(R8,R10)" e0401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):dilate:cm;\   weight.b = mxmem(R8,R10)" e95f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):dilate:cm;\   weight.b = mxmem(R8,R10)" e9401f92e0ea0892
+d "/   activation.hf = mxmem(R0,LR):dilate;\   weight.b = mxmem(R8,R10)" fa5f0092e0ea0892
+d "/   activation.hf = mxmem(LR,R0):dilate;\   weight.b = mxmem(R8,R10)" fa401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):dilate;\   weight.b = mxmem(R8,R10)" e85f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):dilate;\   weight.b = mxmem(R8,R10)" e8401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):single:cm;\   weight.b = mxmem(R8,R10)" f15f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):single:cm;\   weight.b = mxmem(R8,R10)" f1401f92e0ea0892
+d "/   activation.hf = mxmem(R0,LR):single;\   weight.b = mxmem(R8,R10)" f85f0092e0ea0892
+d "/   activation.hf = mxmem(LR,R0):single;\   weight.b = mxmem(R8,R10)" f8401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):single;\   weight.b = mxmem(R8,R10)" f05f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):single;\   weight.b = mxmem(R8,R10)" f0401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):above:cm;\   weight.b = mxmem(R8,R10)" ef5f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):above:cm;\   weight.b = mxmem(R8,R10)" ef401f92e0ea0892
+d "/   activation.hf = mxmem(R0,LR):above;\   weight.b = mxmem(R8,R10)" e65f0092e0ea0892
+d "/   activation.hf = mxmem(LR,R0):above;\   weight.b = mxmem(R8,R10)" e6401f92e0ea0892
+d "/   activation.ub = mxmem(R0,LR):above;\   weight.b = mxmem(R8,R10)" ee5f0092e0ea0892
+d "/   activation.ub = mxmem(LR,R0):above;\   weight.b = mxmem(R8,R10)" ee401f92e0ea0892
+d "/   activation.f8 = mxmem(R0,LR);\   weight.b = mxmem(R8,R10)" e55f0092e0ea0892
+d "/   activation.f8 = mxmem(LR,R0);\   weight.b = mxmem(R8,R10)" e5401f92e0ea0892
+d "/   activation.f8 = mxmem(R0,LR):deep;\   weight.b = mxmem(R8,R10)" e35f0092e0ea0892
+d "/   activation.f8 = mxmem(LR,R0):deep;\   weight.b = mxmem(R8,R10)" e3401f92e0ea0892
+d "/   activation.f8 = mxmem(R0,LR):dilate;\   weight.b = mxmem(R8,R10)" fb5f0092e0ea0892
+d "/   activation.f8 = mxmem(LR,R0):dilate;\   weight.b = mxmem(R8,R10)" fb401f92e0ea0892
+d "/   activation.f8 = mxmem(R0,LR):single;\   weight.b = mxmem(R8,R10)" f95f0092e0ea0892
+d "/   activation.f8 = mxmem(LR,R0):single;\   weight.b = mxmem(R8,R10)" f9401f92e0ea0892
+d "/   activation.f8 = mxmem(R0,LR):above;\   weight.b = mxmem(R8,R10)" e75f0092e0ea0892
+d "/   activation.f8 = mxmem(LR,R0):above;\   weight.b = mxmem(R8,R10)" e7401f92e0ea0892
+
+# HMX Weight instruction tests
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR)" ed4a0892e0ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0)" ed4a0892e0e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR)" ed4a0892e3ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0)" ed4a0892e3e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR)" ed4a0892e2ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0)" ed4a0892e2e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR)" ed4a0892efff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0)" ed4a0892efe01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR)" ed4a0892e1ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0)" ed4a0892e1e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR)" ed4a0892e4ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0)" ed4a0892e4e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR)" ed4a0892f0ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0)" ed4a0892f0e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR)" ed4a0892f1ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0)" ed4a0892f1e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR):after" ed4a0892e9ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0):after" ed4a0892e9e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR):after" ed4a0892c8ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0):after" ed4a0892c8e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR):after" ed4a0892fcff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0):after" ed4a0892fce01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR):after" ed4a0892f5ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0):after" ed4a0892f5e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):after" ed4a0892f7ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):after" ed4a0892f7e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR):after" ed4a0892cdff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0):after" ed4a0892cde01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR):after" ed4a0892c3ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0):after" ed4a0892c3e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR):after" ed4a0892d2ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0):after" ed4a0892d2e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR):dilate" ed4a0892ebff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0):dilate" ed4a0892ebe01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR):dilate" ed4a0892c9ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0):dilate" ed4a0892c9e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR):dilate" ed4a0892fdff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0):dilate" ed4a0892fde01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR):dilate" ed4a0892f6ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0):dilate" ed4a0892f6e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):dilate" ed4a0892f8ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):dilate" ed4a0892f8e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR):dilate" ed4a0892ceff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0):dilate" ed4a0892cee01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR):dilate" ed4a0892c4ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0):dilate" ed4a0892c4e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR):dilate" ed4a0892d3ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0):dilate" ed4a0892d3e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR):deep" ed4a0892e8ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0):deep" ed4a0892e8e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR):deep" ed4a0892c7ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0):deep" ed4a0892c7e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR):deep" ed4a0892fbff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0):deep" ed4a0892fbe01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR):deep" ed4a0892f4ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0):deep" ed4a0892f4e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):deep" ed4a0892eeff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):deep" ed4a0892eee01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR):deep" ed4a0892ccff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0):deep" ed4a0892cce01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR):deep" ed4a0892c2ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0):deep" ed4a0892c2e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR):deep" ed4a0892d1ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0):deep" ed4a0892d1e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR):drop" ed4a0892e7ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0):drop" ed4a0892e7e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR):drop" ed4a0892c6ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0):drop" ed4a0892c6e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR):drop" ed4a0892faff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0):drop" ed4a0892fae01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR):drop" ed4a0892f3ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0):drop" ed4a0892f3e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):drop" ed4a0892edff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):drop" ed4a0892ede01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR):drop" ed4a0892cbff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0):drop" ed4a0892cbe01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR):drop" ed4a0892c1ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0):drop" ed4a0892c1e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR):drop" ed4a0892d0ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0):drop" ed4a0892d0e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(R0,LR):single" ed4a0892e6ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.b = mxmem(LR,R0):single" ed4a0892e6e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(R0,LR):single" ed4a0892c5ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.ubit = mxmem(LR,R0):single" ed4a0892c5e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(R0,LR):single" ed4a0892f9ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.c = mxmem(LR,R0):single" ed4a0892f9e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(R0,LR):single" ed4a0892f2ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.hf = mxmem(LR,R0):single" ed4a0892f2e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):single" ed4a0892ecff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):single" ed4a0892ece01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(R0,LR):single" ed4a0892caff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sbit = mxmem(LR,R0):single" ed4a0892cae01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(R0,LR):single" ed4a0892c0ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sc = mxmem(LR,R0):single" ed4a0892c0e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(R0,LR):single" ed4a0892cfff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.sm = mxmem(LR,R0):single" ed4a0892cfe01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x" ed4a089246ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x" ed4a089246e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x:after" ed4a089245ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x:after" ed4a089245e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x:dilate" ed4a089244ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x:dilate" ed4a089244e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x:deep" ed4a089243ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x:deep" ed4a089243e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x:drop" ed4a089242ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x:drop" ed4a089242e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(R0,LR):2x:single" ed4a089241ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.n = mxmem(LR,R0):2x:single" ed4a089241e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR)" ed4a089247ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0)" ed4a089247e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR):after" ed4a08924bff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0):after" ed4a08924be01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR):dilate" ed4a08924cff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0):dilate" ed4a08924ce01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR):deep" ed4a08924aff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0):deep" ed4a08924ae01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR):drop" ed4a089249ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0):drop" ed4a089249e01f92
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(R0,LR):single" ed4a089248ff0092
+d "/   activation.ub = mxmem(R8,R10):cm;\   weight.f8 = mxmem(LR,R0):single" ed4a089248e01f92
+
+# HMX v77 only
+d "[   acc = mxshl(acc,#16)" 17c0e0a6

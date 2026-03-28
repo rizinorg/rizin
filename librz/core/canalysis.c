@@ -1398,6 +1398,22 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
 
+static bool should_perform_split(RzCore *core, RzAnalysisFunction *fcn, int reftype, ut64 at, ut64 from) {
+	if (reftype != RZ_ANALYSIS_XREF_TYPE_CALL || from == UT64_MAX) {
+		return false;
+	}
+	ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
+	if (at >= fcn->addr && at <= fcn_end) {
+		return false;
+	}
+	RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+	bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+	if (is_valid_sym) {
+		return true;
+	}
+	return false;
+}
+
 // XXX: This function takes sometimes forever
 /* analyze a RzAnalysisFunction at the address 'at'.
  * If the function has been already analyzed, it adds a
@@ -1437,6 +1453,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 		return false;
 	}
 	fcn = rz_analysis_get_fcn_in(core->analysis, at, 0);
+
 	if (fcn) {
 		if (fcn->addr == at) {
 			// if the function was already analyzed as a "loc.",
@@ -1449,6 +1466,10 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return 0; // already analyzed function
 		}
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
+			if (should_perform_split(core, fcn, reftype, at, from)) {
+				goto perform_split;
+			}
+
 			RzList *l = rz_analysis_xrefs_get_to(core->analysis, from);
 			if (l && !rz_list_empty(l)) {
 				rz_list_free(l);
@@ -1463,6 +1484,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return true;
 		}
 	}
+perform_split:
 	if (__core_analysis_fcn(core, at, from, reftype, depth - 1)) {
 		// split function if overlaps
 		if (fcn) {
@@ -1775,11 +1797,9 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	RzAnalysisOp op = { 0 };
 	ut64 at;
 	int arch = -1;
-	if (core->rasm->bits == 64) {
+	if (rz_asm_is_arch(core->rasm, "arm") && rz_asm_is_bits(core->rasm, 64)) {
 		// speedup search
-		if (!strncmp(core->rasm->cur->name, "arm", 3)) {
-			arch = RZ_ARCH_ARM64;
-		}
+		arch = RZ_ARCH_ARM64;
 	}
 	if (core->file) {
 		rz_io_use_fd(core->io, core->file->fd);
@@ -2241,11 +2261,11 @@ static bool isSkippable(RzBinSymbol *s) {
 }
 
 static bool arch_is(RzCore *core, const char *x) {
-	RzAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->bits <= 32 && as->cur->name) {
-		return strstr(as->cur->name, x);
+	if (!core || !core->rasm || rz_asm_get_bits(core->rasm) > 32) {
+		return false;
 	}
-	return false;
+
+	return rz_asm_is_arch(core->rasm, x);
 }
 
 static bool archIsThumbable(RzCore *core) {
@@ -2367,7 +2387,8 @@ RZ_API void rz_core_analysis_data(RZ_NONNULL RzCore *core, ut64 addr, ut32 count
 	ut32 old_len = core->blocksize;
 	ut64 old_offset = core->offset;
 	rz_core_seek_arch_bits(core, addr);
-	int word = wordsize ? wordsize : core->rasm->bits / 8;
+	int bits = rz_asm_get_bits(core->rasm);
+	int word = wordsize ? wordsize : bits / 8;
 	char *str = NULL;
 	RzConsPrintablePalette *pal = rz_config_get_i(core->config, "scr.color") ? &rz_cons_singleton()->context->pal : NULL;
 
@@ -3600,8 +3621,7 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	// Processing every reference calls rz_analysis_op() which sometimes changes the
 	// state of `asm.bits` variable, thus we save it to restore after the processing
 	// is finished.
-	int bits1 = core->analysis->bits;
-	int bits2 = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	// find known noreturn functions to propagate
 	RzList *noretl = rz_analysis_noreturn_functions(core->analysis);
 	// List of the potentially noreturn functions
@@ -3609,8 +3629,8 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	struct core_noretl u = { core, noretl, todo };
 	ht_up_foreach(core->analysis->ht_xrefs_to, process_refs_cb, &u);
 	rz_list_free(noretl);
-	core->analysis->bits = bits1;
-	core->rasm->bits = bits2;
+	rz_asm_set_bits(core->rasm, bits);
+	core->analysis->bits = bits;
 	// For every function in todo list analyze if it's potentially become noreturn
 	ht_up_foreach(todo, reanalyze_fcns_cb, core);
 	rz_set_u_free(todo);
@@ -3989,7 +4009,8 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		return false;
 	}
 
-	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
+	if (!rz_asm_is_arch(core->rasm, "x86") &&
+		!rz_asm_is_arch(core->rasm, "hexagon")) {
 		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_task_yield(&core->tasks);
 		bool pcache = rz_config_get_b(core->config, "io.pcache");
@@ -4684,7 +4705,8 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
 	}
 
 	int vsize = 4; // 32bit dword
-	if (core->rasm->bits == 64) {
+	int bits = rz_asm_get_bits(core->rasm);
+	if (bits == 64) {
 		vsize = 8;
 	}
 
@@ -4787,7 +4809,7 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 
 RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	rz_return_if_fail(core && core->analysis);
-	int bits = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
@@ -5664,9 +5686,9 @@ RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core,
 static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports_only) {
 	RzAnalysisOp op = { 0 };
 	int depth = rz_config_get_i(core->config, "analysis.depth");
-	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
 	int bufi = 0;
+	int archbits = rz_asm_get_bits(core->rasm);
 	int bufi_max = bsz - 16;
 	if (addr_end - addr > UT32_MAX) {
 		return;
@@ -5706,7 +5728,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 			setBits = hint->bits;
 		}
 		rz_analysis_hint_free(hint);
-		if (setBits != core->rasm->bits) {
+		if (setBits != archbits) {
 			rz_config_set_i(core->config, "asm.bits", setBits);
 		}
 		rz_analysis_op_init(&op);
@@ -5746,7 +5768,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool imports
 			op.size = minop;
 		}
 		addr += op.size;
-		bufi += addrbytes * op.size;
+		bufi += op.size;
 		rz_analysis_op_fini(&op);
 	}
 	rz_cons_break_pop();

@@ -113,7 +113,6 @@ RZ_API RzIO *rz_io_new(void) {
 
 RZ_API RzIO *rz_io_init(RzIO *io) {
 	rz_return_val_if_fail(io, NULL);
-	io->addrbytes = 1;
 	rz_io_desc_init(io);
 	rz_skyline_init(&io->map_skyline);
 	rz_io_map_init(io);

@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -12,88 +12,75 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
-#include <rz_util/rz_print.h>
 #include <rz_vector.h>
 #include <hexagon/hexagon.h>
 #include <hexagon/hexagon_insn.h>
 #include <hexagon/hexagon_arch.h>
 
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = strdup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
+
 static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	RzPVector *pvec = rz_pvector_new(rz_asm_token_pattern_free);
 
-	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_META;
-	pat->pattern = rz_str_dup(
-		"^[\\[\\?\\/\\|\\\\\\{┌│└]|" // Packet prefix
-		"(∎|[<\\}])[\\s:]endloop[01]{1,2}" // Endloop markers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(META,
+		// Packet prefix
+		"^[\\[\\?\\/\\|\\\\\\{┌│└]|"
+		// Endloop markers
+		"(∎|[<\\}])[\\s:]endloop[01]{1,2}");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_META;
-	pat->pattern = rz_str_dup(
-		"\\#{1,2}|\\}$|" // Immediate prefix, Closing packet bracket
-		"\\.new|:n?t|:raw|<err>" // .new and jump hints
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(META,
+		// Immediate prefix, Closing packet bracket
+		"\\#{1,2}|\\}$|"
+		// .new and jump hints
+		"\\.new|:n?t|:raw|<err>|"
+		":after|:before|:single|:above|:retain|:deep|:dilate|:drop");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = rz_str_dup(
-		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|(GP|HTID|UGP|LR|FP|SP|([A-Z]{2,}[0-9]{,1}))" // Registers and double registers
-	);
-	rz_pvector_push(pvec, pat);
+	// Special registers
+	TOKEN(REGISTER,
+		"\\b([A-Z]{2,}|acc|activation|weight|cvt|activation|bias|z)\\b");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_NUMBER;
-	pat->pattern = rz_str_dup(
-		"0x(\\d|[abcdef])+" // Hexadecimal numbers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(REGISTER,
+		"[CNPRMQVO]\\d{1,2}(:\\d{1,2})?(in)?|"
+		// Registers and double registers
+		"([A-Z]{2,}[0-9]{1})");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = rz_str_dup(
-		"\\w+_\\w+|[a-zA-Z]+\\d+[a-zA-Z]*" // Mnemonics with a decimal number in the name.
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(NUMBER,
+		// Hexadecimal numbers
+		"0x(\\d|[abcdef])+");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_NUMBER;
-	pat->pattern = rz_str_dup(
-		"\\d+" // Decimal numbers
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(MNEMONIC,
+		// Mnemonics with a decimal number in the name.
+		"\\w+_\\w+|[a-zA-Z]+\\d+[a-zA-Z]*");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_SEPARATOR;
-	pat->pattern = rz_str_dup(
-		"\\s+|" // Spaces and tabs
-		"[,;\\.\\(\\)\\{\\}:]" // Brackets and others
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(NUMBER,
+		// Decimal numbers
+		"\\d+");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = rz_str_dup(
-		"[+*&+?=!^\\/|~\\-]{1,2}" // +,-,=,],[, ! (not the packet prefix)
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(SEPARATOR,
+		// Spaces and tabs
+		"\\s+|"
+		// Brackets and others
+		"[,;\\.\\(\\)\\{\\}:]");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = rz_str_dup(
-		"\\]|\\[|<{1,2}|>{1,2}" // +,-,=,],[, ! (not the packet prefix)
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(OPERATOR,
+		// +,-,=,],[, ! (not the packet prefix)
+		"[+*&+?=!^\\/|~\\-]{1,2}");
 
-	pat = RZ_NEW0(RzAsmTokenPattern);
-	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = rz_str_dup(
-		"\\w+" // Alphanumeric mnemonics
-	);
-	rz_pvector_push(pvec, pat);
+	TOKEN(OPERATOR,
+		// +,-,=,],[, ! (not the packet prefix)
+		"\\]|\\[|<{1,2}|>{1,2}");
+
+	TOKEN(MNEMONIC,
+		// Alphanumeric mnemonics
+		"\\w+");
 
 	return pvec;
 }
@@ -170,7 +157,7 @@ RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
  * \param l The size to read from the buffer.
  * \return int Size of the reversed opcode.
  */
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
 	rz_return_val_if_fail(a && op, -1);
 	if (l < HEX_INSN_SIZE) {
 		return -1;
@@ -187,8 +174,8 @@ RzAsmPlugin rz_asm_plugin_hexagon = {
 	.arch = "hexagon",
 	.author = "Rot127",
 	.license = "LGPL3",
-	.cpus = "v79llvm",
-	.features = "HVX",
+	.cpus = "v81llvm",
+	.features = "HVX,HMX",
 	.bits = 32,
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
 	.init = &hexagon_init,

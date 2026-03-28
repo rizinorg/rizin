@@ -115,7 +115,8 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			}
 			size_t print_val = rz_main_version_print(sys_path, "rz-sign");
 			rz_path_free(sys_path);
-			return print_val;
+			ret = print_val;
+			goto rz_sign_end;
 		}
 		case 'h':
 			rz_sign_show_help();

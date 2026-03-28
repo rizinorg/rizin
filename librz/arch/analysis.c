@@ -403,9 +403,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	free(analysis->cpu);
 	analysis->cpu = rz_str_dup(cpu);
 	int v = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	if (v > 0) {
-		analysis->pcalign = v;
-	}
+	analysis->pcalign = RZ_MAX(1, v);
 	rz_analysis_set_reg_profile(analysis);
 	if (RZ_STR_EQ(cpu, analysis->typedb->target->cpu)) {
 		return;
@@ -550,6 +548,10 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) 
 	rz_return_val_if_fail(analysis && query < RZ_ANALYSIS_ARCHINFO_ENUM_SIZE, -1);
 	if (!analysis->cur || !analysis->cur->archinfo) {
 		switch (query) {
+		case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+			/* fall-thru */
+		case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+			/* fall-thru */
 		case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 			return 1;
 		case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
@@ -561,6 +563,10 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) 
 
 	int value = analysis->cur->archinfo(analysis, query);
 	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		/* fall-thru */
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		/* fall-thru */
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		// Always consume at least 1 byte
 		return value > 0 ? value : 1;

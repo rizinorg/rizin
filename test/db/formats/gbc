@@ -21,9 +21,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  GameBoy
+maxopsz  3
 minopsz  1
 os       any
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false

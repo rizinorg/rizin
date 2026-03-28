@@ -6,12 +6,11 @@
 #include <rz_flag.h>
 #include <rz_core.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <rz_types.h>
-#include <stdio.h>
-#include <string.h>
 
-static ut64 getnum(RzAsm *a, const char *s);
+static ut64 getnum(const RzAsm *a, const char *s);
 
 #define ENCODING_SHIFT 0
 #define OPTYPE_SHIFT   6
@@ -216,9 +215,9 @@ static int is_al_reg(const Operand *op) {
 	return 0;
 }
 
-static int oprep(RzAsm *a, ut8 *data, const Opcode *op);
+static int oprep(const RzAsm *a, ut8 *data, const Opcode *op);
 
-static int process_16bit_group_1(RzAsm *a, ut8 *data, const Opcode *op, int op1) {
+static int process_16bit_group_1(const RzAsm *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers(op);
 	int l = 0;
 	int immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -243,7 +242,7 @@ static int process_16bit_group_1(RzAsm *a, ut8 *data, const Opcode *op, int op1)
 	return l;
 }
 
-static int process_group_1(RzAsm *a, ut8 *data, const Opcode *op) {
+static int process_group_1(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int modrm = 0;
@@ -337,7 +336,7 @@ static int process_group_1(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int process_group_2(RzAsm *a, ut8 *data, const Opcode *op) {
+static int process_group_2(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int modrm = 0;
@@ -414,7 +413,7 @@ static int process_group_2(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int process_1byte_op(RzAsm *a, ut8 *data, const Opcode *op, int op1) {
+static int process_1byte_op(const RzAsm *a, ut8 *data, const Opcode *op, int op1) {
 	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
@@ -561,7 +560,7 @@ static int process_1byte_op(RzAsm *a, ut8 *data, const Opcode *op, int op1) {
 	return l;
 }
 
-static int opadc(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opadc(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -574,7 +573,7 @@ static int opadc(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x10);
 }
 
-static int opadd(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opadd(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -587,7 +586,7 @@ static int opadd(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x00);
 }
 
-static int opand(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opand(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -600,7 +599,7 @@ static int opand(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x20);
 }
 
-static int opcmp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opcmp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -613,7 +612,7 @@ static int opcmp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x38);
 }
 
-static int opsub(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsub(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -626,7 +625,7 @@ static int opsub(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x28);
 }
 
-static int opor(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opor(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -639,7 +638,7 @@ static int opor(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x08);
 }
 
-static int opxadd(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opxadd(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int i = 0;
 	if (op->operands_count < 2) {
@@ -664,7 +663,7 @@ static int opxadd(RzAsm *a, ut8 *data, const Opcode *op) {
 	return i;
 }
 
-static int opxor(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opxor(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	if (op->operands_count < 2) {
 		return -1;
@@ -687,7 +686,7 @@ static int opxor(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x30);
 }
 
-static int opneg(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opneg(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 
@@ -709,17 +708,17 @@ static int opneg(RzAsm *a, ut8 *data, const Opcode *op) {
 	return -1;
 }
 
-static int endbr64(RzAsm *a, ut8 *data, const Opcode *op) {
+static int endbr64(const RzAsm *a, ut8 *data, const Opcode *op) {
 	memcpy(data, "\xf3\x0f\x1e\xfa", 4);
 	return 4;
 }
 
-static int endbr32(RzAsm *a, ut8 *data, const Opcode *op) {
+static int endbr32(const RzAsm *a, ut8 *data, const Opcode *op) {
 	memcpy(data, "\xf3\x0f\x1e\xfb", 4);
 	return 4;
 }
 
-static int opnot(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opnot(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 
@@ -752,7 +751,7 @@ static int opnot(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsbb(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsbb(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (op->operands[0].type & OT_GPREG &&
 			op->operands[0].type & OT_WORD) {
@@ -765,7 +764,7 @@ static int opsbb(RzAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op(a, data, op, 0x18);
 }
 
-static int opbs(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opbs(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (a->bits >= 32 && op->operands[1].type & OT_MEMORY && op->operands[1].reg_size & OT_WORD) {
 		return -1;
@@ -806,7 +805,7 @@ static int opbs(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opbswap(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opbswap(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_REGALL) {
 		is_valid_registers(op);
@@ -835,7 +834,7 @@ static int opbswap(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcall(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opcall(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int immediate = 0;
@@ -886,7 +885,7 @@ static int opcall(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcmov(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opcmov(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
@@ -1015,7 +1014,7 @@ static int opcmov(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opmovx(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opmovx(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int word = 0;
@@ -1042,7 +1041,7 @@ static int opmovx(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opaam(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opaam(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int immediate = op->operands[0].immediate * op->operands[0].sign;
@@ -1055,7 +1054,7 @@ static int opaam(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opaad(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opaad(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int immediate = op->operands[0].immediate * op->operands[0].sign;
@@ -1069,7 +1068,7 @@ static int opaad(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opdec(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opdec(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
 		return -1;
@@ -1216,7 +1215,7 @@ static int opdec(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opidiv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opidiv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 
@@ -1245,7 +1244,7 @@ static int opidiv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opdiv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opdiv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 
@@ -1274,7 +1273,7 @@ static int opdiv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opimul(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opimul(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
@@ -1414,7 +1413,7 @@ static int opimul(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opin(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opin(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	st32 immediate = 0;
@@ -1456,7 +1455,7 @@ static int opin(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opclflush(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opclflush(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
@@ -1486,7 +1485,7 @@ static int opclflush(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opinc(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opinc(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
 		RZ_LOG_ERROR("assembler: x86.nz: %s: invalid operands\n", op->mnemonic);
 		return -1;
@@ -1632,7 +1631,7 @@ static int opinc(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opint(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opint(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[0].type & OT_CONSTANT) {
 		st32 immediate = op->operands[0].immediate * op->operands[0].sign;
@@ -1644,7 +1643,7 @@ static int opint(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opjc(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opjc(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	bool is_short = op->is_short;
@@ -1775,7 +1774,7 @@ static int opjc(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oplea(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
@@ -1840,7 +1839,7 @@ static int oplea(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oples(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oples(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
@@ -1876,7 +1875,7 @@ static int oples(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opmov(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opmov(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	st64 offset = 0;
 	int mod = 0;
@@ -1885,9 +1884,6 @@ static int opmov(RzAsm *a, ut8 *data, const Opcode *op) {
 	ut64 immediate = 0;
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (!op->operands[1].is_good_flag) {
-			return -1;
-		}
-		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -2386,7 +2382,7 @@ static int opmov(RzAsm *a, ut8 *data, const Opcode *op) {
 }
 
 // Only for MOV r64, imm64
-static int opmovabs(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opmovabs(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (!(a->bits == 64 && (op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY) &&
 		    (op->operands[0].type & OT_QWORD) && (op->operands[1].type & OT_CONSTANT))) {
 		return -1;
@@ -2407,7 +2403,7 @@ static int opmovabs(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opmul(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opmul(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 
@@ -2436,7 +2432,7 @@ static int opmul(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oppop(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oppop(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int offset = 0;
@@ -2489,7 +2485,7 @@ static int oppop(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oppush(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oppush(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int mod = 0;
@@ -2558,7 +2554,7 @@ static int oppush(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opout(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opout(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	st32 immediate = 0;
@@ -2598,7 +2594,7 @@ static int opout(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oploop(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oploop(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	data[l++] = 0xe2;
@@ -2607,7 +2603,7 @@ static int oploop(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opret(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opret(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int immediate = 0;
 	if (a->bits == 16) {
@@ -2625,7 +2621,7 @@ static int opret(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opretf(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opretf(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	st32 immediate = 0;
 	if (op->operands[0].type & OT_CONSTANT) {
@@ -2639,7 +2635,7 @@ static int opretf(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstos(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opstos(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	if (!strcmp(op->mnemonic, "stosw")) {
@@ -2655,7 +2651,7 @@ static int opstos(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opset(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opset(const RzAsm *a, ut8 *data, const Opcode *op) {
 	if (!(op->operands[0].type & (OT_GPREG | OT_BYTE))) {
 		return -1;
 	}
@@ -2721,7 +2717,7 @@ static int opset(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int optest(RzAsm *a, ut8 *data, const Opcode *op) {
+static int optest(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
@@ -2787,7 +2783,7 @@ static int optest(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opxchg(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opxchg(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	int mod_byte = 0;
@@ -2884,7 +2880,7 @@ static int opxchg(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opcdqe(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opcdqe(const RzAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers(op);
 	int l = 0;
 	if (a->bits == 64) {
@@ -2894,7 +2890,7 @@ static int opcdqe(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfcmov(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfcmov(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	char *fcmov = op->mnemonic + strlen("fcmov");
 	switch (op->operands_count) {
@@ -2938,7 +2934,7 @@ static int opfcmov(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opffree(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opffree(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2955,7 +2951,7 @@ static int opffree(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfrstor(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfrstor(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -2972,7 +2968,7 @@ static int opfrstor(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxch(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfxch(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -2993,7 +2989,7 @@ static int opfxch(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfucom(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfucom(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3014,7 +3010,7 @@ static int opfucom(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfucomp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfucomp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3035,7 +3031,7 @@ static int opfucomp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfaddp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfaddp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 2:
@@ -3057,7 +3053,7 @@ static int opfaddp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfiadd(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfiadd(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3081,7 +3077,7 @@ static int opfiadd(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfadd(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfadd(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3118,7 +3114,7 @@ static int opfadd(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opficom(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opficom(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3142,7 +3138,7 @@ static int opficom(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opficomp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opficomp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3166,7 +3162,7 @@ static int opficomp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfild(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfild(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3193,7 +3189,7 @@ static int opfild(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfldcw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfldcw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3211,7 +3207,7 @@ static int opfldcw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfldenv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfldenv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3228,7 +3224,7 @@ static int opfldenv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfbld(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfbld(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3246,7 +3242,7 @@ static int opfbld(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfbstp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfbstp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3264,7 +3260,7 @@ static int opfbstp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxrstor(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfxrstor(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3282,7 +3278,7 @@ static int opfxrstor(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfxsave(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfxsave(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3300,7 +3296,7 @@ static int opfxsave(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfist(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfist(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3324,7 +3320,7 @@ static int opfist(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfistp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfistp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3351,7 +3347,7 @@ static int opfistp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisttp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfisttp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3378,7 +3374,7 @@ static int opfisttp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstenv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfstenv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3396,7 +3392,7 @@ static int opfstenv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstenv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstenv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3413,7 +3409,7 @@ static int opfnstenv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdiv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfdiv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3450,7 +3446,7 @@ static int opfdiv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3472,7 +3468,7 @@ static int opfdivp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfidiv(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfidiv(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3496,7 +3492,7 @@ static int opfidiv(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3533,7 +3529,7 @@ static int opfdivr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfdivrp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfdivrp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3555,7 +3551,7 @@ static int opfdivrp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfidivr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfidivr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3579,7 +3575,7 @@ static int opfidivr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfmul(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfmul(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3616,7 +3612,7 @@ static int opfmul(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfmulp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfmulp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3638,7 +3634,7 @@ static int opfmulp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfimul(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfimul(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3662,7 +3658,7 @@ static int opfimul(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsub(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfsub(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3699,7 +3695,7 @@ static int opfsub(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3721,7 +3717,7 @@ static int opfsubp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisub(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfisub(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3745,7 +3741,7 @@ static int opfisub(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3782,7 +3778,7 @@ static int opfsubr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsubrp(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfsubrp(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 0:
@@ -3804,7 +3800,7 @@ static int opfsubrp(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfisubr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfisubr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3828,7 +3824,7 @@ static int opfisubr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstcw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstcw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3846,7 +3842,7 @@ static int opfnstcw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstcw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfstcw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3865,7 +3861,7 @@ static int opfstcw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnstsw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfnstsw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3888,7 +3884,7 @@ static int opfnstsw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfstsw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfstsw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3913,7 +3909,7 @@ static int opfstsw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfnsave(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfnsave(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3931,7 +3927,7 @@ static int opfnsave(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opfsave(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opfsave(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3950,7 +3946,7 @@ static int opfsave(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplldt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oplldt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3972,7 +3968,7 @@ static int oplldt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplmsw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oplmsw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -3994,7 +3990,7 @@ static int oplmsw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplgdt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oplgdt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4012,7 +4008,7 @@ static int oplgdt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplidt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oplidt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4030,7 +4026,7 @@ static int oplidt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsgdt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsgdt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4048,7 +4044,7 @@ static int opsgdt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstmxcsr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opstmxcsr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4067,7 +4063,7 @@ static int opstmxcsr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opstr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opstr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4091,7 +4087,7 @@ static int opstr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsidt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsidt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4109,7 +4105,7 @@ static int opsidt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsldt(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsldt(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4130,7 +4126,7 @@ static int opsldt(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opsmsw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opsmsw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4151,7 +4147,7 @@ static int opsmsw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opverr(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opverr(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4173,7 +4169,7 @@ static int opverr(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opverw(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opverw(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4195,7 +4191,7 @@ static int opverw(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmclear(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opvmclear(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4215,7 +4211,7 @@ static int opvmclear(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmon(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opvmon(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4235,7 +4231,7 @@ static int opvmon(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmptrld(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opvmptrld(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4254,7 +4250,7 @@ static int opvmptrld(RzAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int opvmptrst(RzAsm *a, ut8 *data, const Opcode *op) {
+static int opvmptrst(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	switch (op->operands_count) {
 	case 1:
@@ -4276,7 +4272,7 @@ static int opvmptrst(RzAsm *a, ut8 *data, const Opcode *op) {
 typedef struct lookup_t {
 	char mnemonic[12];
 	int only_x32;
-	int (*opdo)(RzAsm *, ut8 *, const Opcode *);
+	int (*opdo)(const RzAsm *, ut8 *, const Opcode *);
 	ut64 opcode;
 	int size;
 } LookupTable;
@@ -4724,7 +4720,7 @@ static bool is_st_register(const char *token) {
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
-static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
+static Register parseReg(const RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	int i;
 	// Must be the same order as in enum register_t
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "eip", NULL };
@@ -4803,23 +4799,18 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 		for (i = 0; regs64[i]; i++) {
 			if (!rz_str_ncasecmp(regs64[i], token, length)) {
 				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
-				a->bits = 64;
 				return i;
 			}
 		}
 		for (i = 0; regs64ext[i]; i++) {
 			if (!rz_str_ncasecmp(regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
-				a->bits = 64;
 				return i + 9;
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
 			if (!rz_str_ncasecmp(regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG(i)) | OT_DWORD;
-				if (a->bits < 32) {
-					a->bits = 32;
-				}
 				return i + 9;
 			}
 		}
@@ -4868,7 +4859,7 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	return X86R_UNDEFINED;
 }
 
-static void parse_segment_offset(RzAsm *a, const char *str, size_t *pos,
+static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 	Operand *op, int reg_index) {
 	int nextpos = *pos;
 	char *c = strchr(str + nextpos, ':');
@@ -4893,7 +4884,7 @@ static void parse_segment_offset(RzAsm *a, const char *str, size_t *pos,
 	}
 }
 // Parse operand
-static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
+static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;
 	x86newTokenType last_type;
 	int size_token = 1;
@@ -5077,22 +5068,7 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 			return nextpos;
 		}
 		if (op->reg == X86R_UNDEFINED) {
-			op->is_good_flag = false;
-			if (a->num && a->num->value == 0) {
-				return nextpos;
-			}
-			op->type = OT_CONSTANT;
-			RzCore *core = a->num ? (RzCore *)(a->num->userptr) : NULL;
-			if (core && rz_flag_get(core->flags, str)) {
-				op->is_good_flag = true;
-			}
-
-			char *p = strchr(str, '-');
-			if (p) {
-				op->sign = -1;
-				str = ++p;
-			}
-			op->immediate = getnum(a, str);
+			return nextpos;
 		} else if (op->reg < X86R_UNDEFINED) {
 			strncpy(op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -5112,7 +5088,7 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 	return nextpos;
 }
 
-static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
+static int parseOpcode(const RzAsm *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
 	bool isrepop = false;
 	if (!strncmp(op, "bnd ", 4)) {
@@ -5156,17 +5132,17 @@ static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 	return 0;
 }
 
-static ut64 getnum(RzAsm *a, const char *s) {
+static ut64 getnum(const RzAsm *a, const char *s) {
 	if (!s) {
 		return 0;
 	}
 	if (*s == '$') {
 		s++;
 	}
-	return rz_num_math(a->num, s);
+	return rz_num_math(NULL, s);
 }
 
-static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {
+static int oprep(const RzAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	LookupTable *lt_ptr;
 	int retval;
@@ -5220,7 +5196,7 @@ static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {
 	return -1;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	ut8 __data[32] = { 0 };
 	ut8 *data = __data;
 	char op[128];

@@ -92,70 +92,63 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b,
 }
 
 static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
+	if (!core || !node) {
+		return;
+	}
+
 	RzAsmPlugin **val;
-	if (core && node && core->rasm) {
-		rz_list_purge(node->options);
-		rz_iterator_foreach(it, val) {
-			RzAsmPlugin *h = *val;
-			SETOPTIONS(node, h->name, NULL);
-		}
+	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
+	rz_list_purge(node->options);
+	rz_iterator_foreach(it, val) {
+		RzAsmPlugin *h = *val;
+		SETOPTIONS(node, h->name, NULL);
 	}
 	rz_iterator_free(it);
 }
 
 static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
-	if (core && core->rasm && core->rasm->cur && node) {
-		int bits = core->rasm->cur->bits;
-		int i;
-		node->options->free = free;
-		rz_list_purge(node->options);
-		for (i = 1; i <= bits; i <<= 1) {
-			if (i & bits) {
-				SETOPTIONS(node, rz_str_newf("%d", i), NULL);
-			}
+	if (!core || !node) {
+		return;
+	}
+
+	int bits = rz_asm_get_plugin_bits(core->rasm);
+	node->options->free = free;
+	rz_list_purge(node->options);
+	for (int i = 1; i <= bits; i <<= 1) {
+		if (i & bits) {
+			SETOPTIONS(node, rz_str_newf("%d", i), NULL);
 		}
 	}
 }
 
 static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
-	int i, argc;
-
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->features) {
-			char *features = rz_str_dup(core->rasm->cur->features);
-			rz_list_purge(node->options);
-			argc = rz_str_split(features, ',');
-			for (i = 0; i < argc; i++) {
-				node->options->free = free;
-				const char *feature = rz_str_word_get0(features, i);
-				if (feature) {
-					rz_list_append(node->options, rz_str_dup(feature));
-				}
-			}
-			free(features);
-		}
+	if (!core || !node) {
+		return;
 	}
+
+	const char *features = rz_asm_get_plugin_features(core->rasm);
+	if (RZ_STR_ISEMPTY(features)) {
+		rz_list_purge(node->options);
+		return;
+	}
+
+	rz_list_free(node->options);
+	node->options = rz_str_split_duplist(features, ",", true);
 }
 
 static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
-	int i, argc;
-
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->platforms) {
-			char *platforms = rz_str_dup(core->rasm->cur->platforms);
-			rz_list_purge(node->options);
-			argc = rz_str_split(platforms, ',');
-			for (i = 0; i < argc; i++) {
-				node->options->free = free;
-				const char *feature = rz_str_word_get0(platforms, i);
-				if (feature) {
-					rz_list_append(node->options, rz_str_dup(feature));
-				}
-			}
-			free(platforms);
-		}
+	if (!core || !node) {
+		return;
 	}
+
+	const char *platforms = rz_asm_get_plugin_platforms(core->rasm);
+	if (RZ_STR_ISEMPTY(platforms)) {
+		rz_list_purge(node->options);
+		return;
+	}
+
+	rz_list_free(node->options);
+	node->options = rz_str_split_duplist(platforms, ",", true);
 }
 
 static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
@@ -172,29 +165,14 @@ static void update_asmparser_options(RzCore *core, RzConfigNode *node) {
 static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	rz_return_if_fail(core && core->rasm);
 
-	RzIterator *it = ht_sp_as_iter(core->rasm->plugins);
-	RzAsmPlugin **val;
-	const char *arch = rz_config_get(core->config, "asm.arch");
-	if (!arch || !*arch) {
+	const char *cpus = rz_asm_get_plugin_cpus(core->rasm);
+	if (RZ_STR_ISEMPTY(cpus)) {
+		rz_list_purge(node->options);
 		return;
 	}
-	rz_list_purge(node->options);
-	rz_iterator_foreach(it, val) {
-		RzAsmPlugin *h = *val;
-		if (h->cpus && !strcmp(arch, h->name)) {
-			char *c = rz_str_dup(h->cpus);
-			int i, n = rz_str_split(c, ',');
-			for (i = 0; i < n; i++) {
-				const char *word = rz_str_word_get0(c, i);
-				if (word && *word) {
-					node->options->free = free;
-					SETOPTIONS(node, rz_str_dup(word), NULL);
-				}
-			}
-			free(c);
-		}
-	}
-	rz_iterator_free(it);
+
+	rz_list_free(node->options);
+	node->options = rz_str_split_duplist(cpus, ",", true);
 }
 
 static bool cb_search_case_sensitive(void *_core, void *_node) {
@@ -249,10 +227,7 @@ static bool cb_asm_features_set(void *user, void *data) {
 		print_node_options(node);
 		return 0;
 	}
-	RZ_FREE(core->rasm->features);
-	if (node->value[0]) {
-		core->rasm->features = rz_str_dup(node->value);
-	}
+	rz_asm_set_features(core->rasm, node->value);
 	return 1;
 }
 
@@ -543,7 +518,7 @@ static bool cb_scr_wideoff(void *user, void *data) {
 static bool cb_asmpseudo(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->pseudo = node->i_value;
+	rz_asm_set_pseudo(core->rasm, node->i_value);
 	return true;
 }
 
@@ -628,14 +603,14 @@ static bool cb_emuskip(void *user, void *data) {
 static bool cb_asm_immhash(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->immdisp = node->i_value ? true : false;
+	rz_asm_set_show_immediate_hashtag(core->rasm, node->i_value ? true : false);
 	return true;
 }
 
 static bool cb_asm_invhex(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->invhex = node->i_value;
+	rz_asm_set_invalid_as_hex_flag(core->rasm, node->i_value);
 	return true;
 }
 
@@ -647,7 +622,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 		RZ_LOG_ERROR("Alignment is only defined for '>0' and 'n^2'. Is = %" PFMT64d "\n", node->i_value);
 		return false;
 	}
-	core->rasm->pcalign = align;
+	rz_asm_set_pc_align(core->rasm, align);
 	core->analysis->pcalign = align;
 	return true;
 }
@@ -2213,7 +2188,7 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->seggrn = node->i_value;
+	rz_asm_set_segment_granularity(core->rasm, node->i_value);
 	core->analysis->seggrn = node->i_value;
 	core->print->seggrn = node->i_value;
 	return true;
@@ -2270,7 +2245,7 @@ static bool cb_tracetag(void *user, void *data) {
 static bool cb_utf8(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->rasm->utf8 = (bool)node->i_value;
+	rz_asm_set_utf8(core->rasm, (bool)node->i_value);
 	rz_cons_set_utf8((bool)node->i_value);
 	return true;
 }

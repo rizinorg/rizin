@@ -231,4 +231,12 @@ typedef struct _utX {
 #define RZ_STR_DEF(s) RZ_STR(s)
 #define RZ_STR(s)     #s
 
+#ifdef __GNUC__
+#define RZ_INLINE __attribute__((always_inline)) inline
+#else
+#define RZ_INLINE inline
+#endif
+
+#define BIG_CONSTANT(x) (x##LLU)
+
 #endif // RZ_TYPES_BASE_H

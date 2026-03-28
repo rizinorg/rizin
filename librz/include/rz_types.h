@@ -25,13 +25,6 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
-// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
-#define RZ_MODE_PRINT    0x000
-#define RZ_MODE_SET      0x002
-#define RZ_MODE_SIMPLE   0x004
-#define RZ_MODE_JSON     0x008
-#define RZ_MODE_SIMPLEST 0x020
-
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
@@ -752,7 +745,7 @@ static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnaly
  * \brief The hacky way to get the RzAnalysis pointer from RzAsm.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<RzAsm>*/ *rz_asm) {
+static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL const void /*<RzAsm>*/ *rz_asm) {
 	assert(rz_asm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_asm_t *rasm = (struct dummy_rz_asm_t *)rz_asm;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)rasm->core;

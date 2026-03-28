@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
+#include "asm_private.h"
 #include "../binutils_as.h"
 
 #define ASSEMBLER "RZ_PPC_AS"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 #if __powerpc__
 	char *as = "as";
 #else

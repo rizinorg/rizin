@@ -35,9 +35,11 @@ intrp    N/A
 laddr    0x00000000
 lang     c
 machine  Renesas RX family
+maxopsz  8
 minopsz  1
 os       linux
 cc       N/A
+pcalign  1
 rpath    NONE
 subsys   linux
 stripped false

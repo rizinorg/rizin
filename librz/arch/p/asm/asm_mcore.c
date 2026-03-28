@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "mcore/mcore.h"
 
 static mcore_handle handle = { 0 };
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	mcore_t *instr = NULL;
 	char tmp[256];
 	if (!op || mcore_init(&handle, buf, len)) {

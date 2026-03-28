@@ -30,6 +30,7 @@ maxopsz  4
 minopsz  4
 os       Mac OS
 cc       N/A
+pcalign  4
 rpath    N/A
 subsys   
 stripped false
