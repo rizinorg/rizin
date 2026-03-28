@@ -1398,6 +1398,22 @@ static bool is_skippable_addr(RzCore *core, ut64 addr) {
 	return !(flags && rz_list_find(flags, fcn, find_sym_flag, NULL));
 }
 
+static bool should_perform_split(RzCore *core, RzAnalysisFunction *fcn, int reftype, ut64 at, ut64 from) {
+	if (reftype != RZ_ANALYSIS_XREF_TYPE_CALL || from == UT64_MAX) {
+		return false;
+	}
+	ut64 fcn_end = fcn->addr + rz_analysis_function_linear_size(fcn);
+	if (at >= fcn->addr && at <= fcn_end) {
+		return false;
+	}
+	RzFlagItem *item = rz_flag_get_at(core->flags, at, true);
+	bool is_valid_sym = (item && item->name && !strncmp(item->name, "sym.", 4));
+	if (is_valid_sym) {
+		return true;
+	}
+	return false;
+}
+
 // XXX: This function takes sometimes forever
 /* analyze a RzAnalysisFunction at the address 'at'.
  * If the function has been already analyzed, it adds a
@@ -1437,6 +1453,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 		return false;
 	}
 	fcn = rz_analysis_get_fcn_in(core->analysis, at, 0);
+
 	if (fcn) {
 		if (fcn->addr == at) {
 			// if the function was already analyzed as a "loc.",
@@ -1449,6 +1466,10 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return 0; // already analyzed function
 		}
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
+			if (should_perform_split(core, fcn, reftype, at, from)) {
+				goto perform_split;
+			}
+
 			RzList *l = rz_analysis_xrefs_get_to(core->analysis, from);
 			if (l && !rz_list_empty(l)) {
 				rz_list_free(l);
@@ -1463,6 +1484,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return true;
 		}
 	}
+perform_split:
 	if (__core_analysis_fcn(core, at, from, reftype, depth - 1)) {
 		// split function if overlaps
 		if (fcn) {
