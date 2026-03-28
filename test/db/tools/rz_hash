@@ -1579,6 +1579,7 @@ EOF
 RUN
 
 NAME=djb2 hash of "hello"
+TOOL=rz-bin
 FILE=-
 CMDS=<<EOF
 rz-hash -a djb2 -s "hello"
@@ -1589,6 +1590,7 @@ EOF
 RUN
 
 NAME=djb2 hash of "rizin"
+TOOL=rz-bin
 FILE=-
 CMDS=<<EOF
 rz-hash -a djb2 -s "rizin"
@@ -1599,6 +1601,7 @@ EOF
 RUN
 
 NAME=djb2 hash of "test"
+TOOL=rz-bin
 FILE=-
 CMDS=<<EOF
 rz-hash -a djb2 -s "test"
