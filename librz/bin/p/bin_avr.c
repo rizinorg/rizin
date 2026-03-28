@@ -5,20 +5,6 @@
 #include <rz_lib.h>
 #include <rz_svd.h>
 
-#ifndef RZ_SVD_SRCDIR
-#error "RZ_SVD_SRCDIR must be defined by the build system"
-#endif
-
-#ifndef RZ_SVD_DATADIR
-#error "RZ_SVD_DATADIR must be defined by the build system"
-#endif
-
-#ifndef RZ_SVD_USERDIR
-#if !defined(_WIN32)
-#error "RZ_SVD_USERDIR must be defined by the build system"
-#endif
-#endif
-
 /** \file bin_avr.c
  * This plugin detects the usermode rom in AVR binaries.
  *
@@ -352,41 +338,7 @@ static RzAvrSvdDevice *avr_svd_extract_device(const char *device_name, ut8 pc_wi
 		return NULL;
 	}
 
-	char *svd_file = NULL;
-
-	// Try various search paths for SVD files
-	// 1. Check RZ_SVD_DIR environment variable
-	const char *svd_dir = getenv("RZ_SVD_DIR");
-	if (svd_dir) {
-		svd_file = rz_svd_find_file(svd_dir, device_name);
-	}
-
-	// 2. Check source directory (for development/testing)
-	if (!svd_file) {
-		svd_file = rz_svd_find_file(RZ_SVD_SRCDIR, device_name);
-	}
-
-	// 3. Check user home directory
-	if (!svd_file) {
-#if defined(_WIN32)
-		const char *appdata = getenv("APPDATA");
-		if (appdata) {
-			char *home_dir = rz_str_newf("%s/rizin/svd", appdata);
-			if (home_dir) {
-				svd_file = rz_svd_find_file(home_dir, device_name);
-				free(home_dir);
-			}
-		}
-#else
-		char *expanded = rz_path_home_prefix(RZ_SVD_USERDIR);
-		if (expanded) {
-			svd_file = rz_svd_find_file(expanded, device_name);
-			free(expanded);
-		}
-#endif
-	}
-
-	// 4. Check compile-time defined data directory
+	char *svd_file = rz_svd_find_file(RZ_SVD_SRCDIR, device_name);
 	if (!svd_file) {
 		svd_file = rz_svd_find_file(RZ_SVD_DATADIR, device_name);
 	}
