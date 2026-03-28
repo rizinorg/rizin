@@ -11,13 +11,12 @@
 #include <rz_util/rz_bitvector.h>
 
 bool report_yield_xref(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	size_t insn_pkt_size,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type) {
-	RzInterpreterYieldQueue *queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+	RzInterpreterYieldQueue *queue = ht_up_find(iset->yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
 	if (!queue) {
 		rz_warn_if_reached();
 		return false;
@@ -27,7 +26,7 @@ bool report_yield_xref(
 		return true;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(state->arch_name, "hexagon") &&
+		RZ_STR_EQ(iset->state->arch_name, "hexagon") &&
 		from + insn_pkt_size == rz_bv_to_ut64(to->bv)) {
 		// Ugly work around.
 		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
@@ -41,10 +40,10 @@ bool report_yield_xref(
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
-		rz_th_lock_enter(state->shared_obj->received);
+		rz_th_lock_enter(iset->state->shared_obj->received);
 
-		RzAnalysisXRef *xref = &state->shared_obj->xref;
-		xref->bb_addr = state->bb_addr;
+		RzAnalysisXRef *xref = &iset->state->shared_obj->xref;
+		xref->bb_addr = iset->state->bb_addr;
 		xref->from = from;
 		xref->to = to_addr;
 		xref->type = type;
@@ -52,7 +51,7 @@ bool report_yield_xref(
 		// before the previous one was handled.
 		// But this is fine for the prototype. Real implementation needs some kind
 		// of shared memory anyways.
-		rz_th_queue_push(queue->yield_queue, state->shared_obj, true);
+		rz_th_queue_push(queue->yield_queue, iset->state->shared_obj, true);
 		// Don't leave collection lock. Consumer will unlock it after it collected.
 	}
 	return true;
@@ -62,19 +61,18 @@ bool report_yield_xref(
  * \brief Report the store of the next PC and report it as possible return point.
  */
 bool report_yield_call_candiate(
-	RzInterpreterAbstrState *state,
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
+	RzInterpreterSet *iset,
 	ProtoIntrprPluginData *plugin_data) {
-	RzInterpreterYieldQueue *cc_queue = ht_up_find(yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	RzInterpreterYieldQueue *cc_queue = ht_up_find(iset->yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
 	if (!cc_queue) {
 		rz_warn_if_reached();
 		return false;
 	}
 
-	rz_th_lock_enter(state->shared_obj->received);
-	RzAnalysisCallCandidate *cc = &state->shared_obj->call_cand;
+	rz_th_lock_enter(iset->state->shared_obj->received);
+	RzAnalysisCallCandidate *cc = &iset->state->shared_obj->call_cand;
 	memcpy(cc, &plugin_data->call_cand, sizeof(plugin_data->call_cand));
-	rz_th_queue_push(cc_queue->yield_queue, state->shared_obj, true);
+	rz_th_queue_push(cc_queue->yield_queue, iset->state->shared_obj, true);
 	// Don't leave collection lock. Consumer will unlock it after it collected.
 	return true;
 }
@@ -86,7 +84,7 @@ void copy_abstr_data(ProtoIntrprAbstrData *dst, const ProtoIntrprAbstrData *src)
 	dst->is_concrete = src->is_concrete;
 }
 
-void write_var_to_state(RzInterpreterAbstrState *state,
+void write_var_to_state(RzInterpreterSet *iset,
 	RzILVarKind kind,
 	ut64 var_id,
 	const ProtoIntrprAbstrData *data) {
@@ -96,13 +94,13 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 		rz_warn_if_reached();
 		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = state->globals;
+		ht_vals = iset->state->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = state->locals;
+		ht_vals = iset->state->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = state->lets;
+		ht_vals = iset->state->lets;
 		break;
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -120,7 +118,7 @@ void write_var_to_state(RzInterpreterAbstrState *state,
 	copy_abstr_data(av->abstr_data, data);
 }
 
-bool read_var_from_state(RzInterpreterAbstrState *state,
+bool read_var_from_state(RzInterpreterSet *iset,
 	RzILVarKind kind,
 	ut64 var_id,
 	RZ_OUT ProtoIntrprAbstrData *data) {
@@ -130,13 +128,13 @@ bool read_var_from_state(RzInterpreterAbstrState *state,
 		rz_warn_if_reached();
 		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = state->globals;
+		ht_vals = iset->state->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = state->locals;
+		ht_vals = iset->state->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = state->lets;
+		ht_vals = iset->state->lets;
 		break;
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -156,7 +154,7 @@ bool read_var_from_state(RzInterpreterAbstrState *state,
 // TODO: The assumption that true != 0 is invalid.
 // It depends on the architecture and must be decided by the RzArch plugin.
 // State is passed due to this here as well. To make later refactoring easier.
-bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrData *data) {
+bool abstr_is_true(const RzInterpreterSet *iset, const ProtoIntrprAbstrData *data) {
 	if (!data->is_concrete) {
 		return false;
 	}
@@ -164,21 +162,19 @@ bool abstr_is_true(const RzInterpreterAbstrState *state, const ProtoIntrprAbstrD
 }
 
 bool store_abstr_data(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
-	const ProtoIntrprAbstrData *src,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result) {
+	const ProtoIntrprAbstrData *src) {
 	if (!src->is_concrete) {
 		// Really don't write?
 		return true;
 	}
-	rz_th_lock_enter(state->shared_obj->received);
-	RzInterpreterIORequest *io_req = &state->shared_obj->io_req;
+	rz_th_lock_enter(iset->state->shared_obj->received);
+	RzInterpreterIORequest *io_req = &iset->state->shared_obj->io_req;
 	io_req->n_bits = rz_bv_len(src->bv);
 	io_req->mem_idx = mem_idx;
-	io_req->big_endian = state->il_config->big_endian;
+	io_req->big_endian = iset->state->il_config->big_endian;
 
 	io_req->type = RZ_INTERPRETER_IO_WRITE;
 	io_req->addr = addr->bv;
@@ -188,13 +184,13 @@ bool store_abstr_data(
 	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req->addr), bytes);
 	free(bytes);
 
-	rz_th_queue_push(io_request, state->shared_obj, true);
+	rz_th_queue_push(iset->io_request, iset->state->shared_obj, true);
 	// Don't leave collection lock. Consumer will unlock it after it collected.
 
 	// Wait for write being done.
 	RzInterpreterSharedObjects *so = NULL;
-	if (!rz_th_queue_pop(io_result, false, (void **)&so) || !so) {
-		rz_th_lock_leave(state->shared_obj->received);
+	if (!rz_th_queue_pop(iset->io_result, false, (void **)&so) || !so) {
+		rz_th_lock_leave(iset->state->shared_obj->received);
 		return false;
 	};
 	bool write_ok = so->io_res.req_ok;
@@ -204,32 +200,30 @@ bool store_abstr_data(
 }
 
 bool load_abstr_data(
-	RzInterpreterAbstrState *state,
+	RzInterpreterSet *iset,
 	RzILMemIndex mem_idx,
 	const ProtoIntrprAbstrData *addr,
 	size_t n_bits,
-	RZ_OUT ProtoIntrprAbstrData *out,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-	RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result) {
+	RZ_OUT ProtoIntrprAbstrData *out) {
 
-	rz_th_lock_enter(state->shared_obj->received);
-	RzInterpreterIORequest *io_req = &state->shared_obj->io_req;
+	rz_th_lock_enter(iset->state->shared_obj->received);
+	RzInterpreterIORequest *io_req = &iset->state->shared_obj->io_req;
 	rz_bv_cast_inplace(out->bv, n_bits, 0);
 	io_req->type = RZ_INTERPRETER_IO_READ;
 	io_req->addr = addr->bv;
 	io_req->ld_data = out->bv;
 	io_req->mem_idx = mem_idx;
 	io_req->n_bits = n_bits;
-	io_req->big_endian = state->il_config->big_endian;
+	io_req->big_endian = iset->state->il_config->big_endian;
 	ut64 req_addr = rz_bv_to_ut64(io_req->addr);
 
-	rz_th_queue_push(io_request, state->shared_obj, true);
+	rz_th_queue_push(iset->io_request, iset->state->shared_obj, true);
 	// Don't leave collection lock. Consumer will unlock it after it collected.
 
 	// Wait for load being done.
 	RzInterpreterSharedObjects *so = NULL;
-	if (!rz_th_queue_pop(io_result, false, (void **)&so) || !so) {
-		rz_th_lock_leave(state->shared_obj->received);
+	if (!rz_th_queue_pop(iset->io_result, false, (void **)&so) || !so) {
+		rz_th_lock_leave(iset->state->shared_obj->received);
 		return false;
 	}
 	if (!so->io_res.req_ok) {

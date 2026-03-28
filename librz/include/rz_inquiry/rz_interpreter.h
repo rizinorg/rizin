@@ -174,6 +174,8 @@ typedef struct {
 	size_t insn_pkt_size; ///< The size of the instruction packet. Used to increment the PC if no JMP occurred.
 } RzInterpreterInsnPkt;
 
+typedef struct rz_interpreter_set RzInterpreterSet;
+
 typedef struct {
 	const char *name;
 	const char *author;
@@ -210,11 +212,8 @@ typedef struct {
 	/**
 	 * \brief Evaluates an effect with the mutable state.
 	 */
-	bool (*eval)(RZ_NONNULL RzInterpreterAbstrState *state,
+	bool (*eval)(RZ_NONNULL RzInterpreterSet *iset,
 		RZ_NONNULL const RzInterpreterILBB *il_bb,
-		RZ_NONNULL RZ_BORROW HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues,
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_request,
-		RZ_NONNULL RZ_BORROW RzThreadQueue /*<RZ_LIFETIME(RzInquiry) RzInterpreterSharedObject *>*/ *io_result,
 		void *plugin_data);
 	/**
 	 * \brief Determines the next successor addresses from state.
@@ -247,7 +246,7 @@ typedef struct {
  * \brief The set of required queues for an interpreter to run.
  */
 RZ_LIFETIME(RzInquiry)
-typedef struct {
+struct rz_interpreter_set {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
 	// TODO: We need to decide how to distribute the yield.
 	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
@@ -263,7 +262,7 @@ typedef struct {
 	 */
 	RzVector /*<ut64>*/ *entry_points;
 	RzInterpreterPlugin *plugin;
-} RzInterpreterSet;
+};
 
 RZ_API RZ_OWN RzInterpreterSharedObjects *rz_interpreter_shared_objects_new(size_t instance_id);
 RZ_API void rz_interpreter_shared_objects_fini(RZ_NULLABLE RZ_BORROW RzInterpreterSharedObjects *so);
