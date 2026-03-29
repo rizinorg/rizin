@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2026 shessaanand
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_hash.h>
@@ -6,6 +6,10 @@
 
 #include "../algorithms/jenkins/jenkins.h"
 #include <rz_lib.h>
+
+#define RZ_HASH_JENKINS_DIGEST_SIZE 4
+#define RZ_HASH_JENKINS_BLOCK_LENGTH 0
+
 
 static void *plugin_jenkins_context_new() {
 	return RZ_NEW0(RzJenkins);
@@ -51,10 +55,10 @@ static bool plugin_jenkins_small_block(const ut8 *data, ut64 size, ut8 **digest,
 		return false;
 	}
 
-	RzJenkins ctx;
-	rz_jenkins_init(&ctx);
-	rz_jenkins_update(&ctx, data, size);
-	rz_jenkins_final(dgst, &ctx);
+	RzJenkins ctx={ 0 };
+	jenkins_init(&ctx);
+	jenkins_update(&ctx, data, size);
+	jenkins_final(dgst, &ctx);
 
 	*digest = dgst;
 	if (digest_size) {

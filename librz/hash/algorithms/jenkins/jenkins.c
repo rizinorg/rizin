@@ -4,13 +4,13 @@
 #include "jenkins.h"
 #include <rz_util.h>
 
-bool rz_jenkins_init(RzJenkins *ctx) {
+static bool rz_jenkins_init(RzJenkins *ctx) {
 	rz_return_val_if_fail(ctx, false);
 	*ctx = 0;
 	return true;
 }
 
-bool rz_jenkins_update(RzJenkins *ctx,const ut8 *data,size_t len) {
+static bool rz_jenkins_update(RzJenkins *ctx,const ut8 *data,size_t len) {
 	rz_return_val_if_fail(ctx&&data, false);
 
 	ut32 hash = *ctx;
@@ -25,7 +25,7 @@ bool rz_jenkins_update(RzJenkins *ctx,const ut8 *data,size_t len) {
 	return true;
 }
 
-bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
+static bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
 	rz_return_val_if_fail(digest && ctx, false);
 
 	ut32 hash= *ctx;
