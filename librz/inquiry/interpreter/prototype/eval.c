@@ -16,11 +16,6 @@ bool report_yield_xref(
 	ut64 from,
 	const ProtoIntrprAbstrData *to,
 	RzAnalysisXRefType type) {
-	RzInterpreterYieldQueue *queue = ht_up_find(iset->yield_queues, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
-	if (!queue) {
-		rz_warn_if_reached();
-		return false;
-	}
 	if (!to->is_concrete || rz_bv_len(to->bv) > 64) {
 		// Isn't reported
 		return true;
@@ -38,18 +33,19 @@ bool report_yield_xref(
 		return true;
 	}
 
+	RzInterpreterYieldRBuf *yrbuf = ht_up_find(iset->yield_rbufs, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+	rz_return_val_if_fail(yrbuf, false);
+
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
-	if (queue->filter(&to_addr, queue->filter_data->io_boundaries)) {
-		RzAnalysisXRef *xref = &iset->state->shared_obj->xref;
-		xref->bb_addr = iset->state->bb_addr;
-		xref->from = from;
-		xref->to = to_addr;
-		xref->type = type;
-		// TODO: Possible race condition here, if the interpreter pushes a new xref
-		// before the previous one was handled.
-		// But this is fine for the prototype. Real implementation needs some kind
-		// of shared memory anyways.
-		rz_th_queue_push(queue->yield_queue, xref, true);
+	if (yrbuf->filter(&to_addr, yrbuf->filter_data->io_boundaries)) {
+		RzAnalysisXRef xref = { 0 };
+		xref.bb_addr = iset->state->bb_addr;
+		xref.from = from;
+		xref.to = to_addr;
+		xref.type = type;
+		if (rz_th_ring_buf_put(yrbuf->rbuf, &xref) != RZ_THREAD_RING_BUF_OK) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -60,15 +56,14 @@ bool report_yield_xref(
 bool report_yield_call_candiate(
 	RzInterpreterSet *iset,
 	ProtoIntrprPluginData *plugin_data) {
-	RzInterpreterYieldQueue *cc_queue = ht_up_find(iset->yield_queues, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
-	if (!cc_queue) {
-		rz_warn_if_reached();
+	RzInterpreterYieldRBuf *cc_rbuf = ht_up_find(iset->yield_rbufs, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	rz_return_val_if_fail(cc_rbuf, false);
+
+	RzAnalysisCallCandidate cc = { 0 };
+	memcpy(&cc, &plugin_data->call_cand, sizeof(plugin_data->call_cand));
+	if (rz_th_ring_buf_put(cc_rbuf->rbuf, &cc) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
-
-	RzAnalysisCallCandidate *cc = &iset->state->shared_obj->call_cand;
-	memcpy(cc, &plugin_data->call_cand, sizeof(plugin_data->call_cand));
-	rz_th_queue_push(cc_queue->yield_queue, cc, true);
 	return true;
 }
 
@@ -178,11 +173,15 @@ bool store_abstr_data(
 	RZ_LOG_DEBUG("Prototype: STORE @ mem:%" PFMT32d " 0x%" PFMT64x " : %s\n", mem_idx, rz_bv_to_ut64(io_req.addr), bytes);
 	free(bytes);
 
-	rz_th_queue_push(iset->io_request, &io_req, true);
-	// Wait for write being done.
-	RzInterpreterIOResult *io_res = NULL;
-	rz_th_queue_pop(iset->io_result, false, (void **)&io_res);
-	return io_res ? io_res->req_ok : false;
+	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+
+	RzInterpreterIOResult io_res = { 0 };
+	if (rz_th_ring_buf_take_blocking(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+	return io_res.req_ok;
 }
 
 bool load_abstr_data(
@@ -199,13 +198,14 @@ bool load_abstr_data(
 	io_req.mem_idx = mem_idx;
 	io_req.n_bits = n_bits;
 	io_req.big_endian = iset->state->il_config->big_endian;
-	rz_th_queue_push(iset->io_request, &io_req, true);
-	// Wait for load being done.
-	RzInterpreterIOResult *io_res = NULL;
-	if (!rz_th_queue_pop(iset->io_result, false, (void **)&io_res) || !io_res) {
+	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}
-	if (!io_res->req_ok) {
+	RzInterpreterIOResult io_res = { 0 };
+	if (rz_th_ring_buf_take_blocking(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
+		return false;
+	}
+	if (!io_res.req_ok) {
 		RZ_LOG_WARN("Prototype: Failed to read correct number of bytes. Requested: 0x%" PFMTSZx
 			    " Received: 0x%" PFMT32x " bits.\n",
 			n_bits, rz_bv_len(out->bv));
