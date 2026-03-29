@@ -169,11 +169,68 @@ bool test_rz_flag_set_next() {
 	mu_end;
 }
 
+bool test_rz_flag_get_preferred_item() {
+	RzFlag *flags = rz_flag_new();
+	mu_assert_notnull(flags, "rz_flag_new() failed");
+
+	ut64 off = 0x1337;
+	rz_flag_space_set(flags, "symbols");
+	rz_flag_set(flags, "sym.real_name", off, 0);
+	rz_flag_space_set(flags, "custom");
+	rz_flag_set(flags, "custom.name", off, 0);
+
+	RzFlagItem *fi = rz_flag_get_preferred_item(flags, off);
+	mu_assert_notnull(fi, "preferred flag should exist");
+	mu_assert_streq(fi->name, "sym.real_name", "must prefer symbol space item");
+
+	rz_flag_free(flags);
+	mu_end;
+}
+
+bool test_rz_flag_get_preferred_item_fallback_non_aav() {
+	RzFlag *flags = rz_flag_new();
+	mu_assert_notnull(flags, "rz_flag_new() failed");
+
+	ut64 off = 0x4242;
+	rz_flag_space_set(flags, "symbols");
+	rz_flag_set(flags, "aav.0x00004242", off, 0);
+	rz_flag_space_set(flags, "custom");
+	rz_flag_set(flags, "obj.__stack_chk_guard", off, 0);
+
+	RzFlagItem *fi = rz_flag_get_preferred_item(flags, off);
+	mu_assert_notnull(fi, "preferred flag should exist");
+	mu_assert_streq(fi->name, "obj.__stack_chk_guard", "must fallback to non-aav item");
+
+	rz_flag_free(flags);
+	mu_end;
+}
+
+bool test_rz_flag_get_preferred_item_keep_aav_when_only_aav() {
+	RzFlag *flags = rz_flag_new();
+	mu_assert_notnull(flags, "rz_flag_new() failed");
+
+	ut64 off = 0x5151;
+	rz_flag_space_set(flags, "symbols");
+	rz_flag_set(flags, "aav.0x00005151", off, 0);
+	rz_flag_space_set(flags, "custom");
+	rz_flag_set(flags, "aav.0x0000beef", off, 0);
+
+	RzFlagItem *fi = rz_flag_get_preferred_item(flags, off);
+	mu_assert_notnull(fi, "preferred flag should exist");
+	mu_assert_streq(fi->name, "aav.0x00005151", "must keep preferred aav when no non-aav fallback exists");
+
+	rz_flag_free(flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test(test_rz_flag_get_set);
 	mu_run_test(test_rz_flag_by_spaces);
 	mu_run_test(test_rz_flag_get_at);
 	mu_run_test(test_rz_flag_set_next);
+	mu_run_test(test_rz_flag_get_preferred_item);
+	mu_run_test(test_rz_flag_get_preferred_item_fallback_non_aav);
+	mu_run_test(test_rz_flag_get_preferred_item_keep_aav_when_only_aav);
 	return tests_passed != tests_run;
 }
 

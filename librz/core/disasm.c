@@ -319,6 +319,7 @@ static char *ds_esc_str(RzDisasmState *ds, const char *str, int len, const char 
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx);
 static void ds_print_str(RzDisasmState *ds, const char *str, int len, ut64 refaddr);
 static void ds_opstr_sub_jumps(RzDisasmState *ds);
+static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds);
 static void ds_start_line_highlight(RzDisasmState *ds);
 static void ds_end_line_highlight(RzDisasmState *ds);
 static bool line_highlighted(RzDisasmState *ds);
@@ -876,6 +877,54 @@ static void __replaceImports(RzDisasmState *ds) {
 	}
 }
 
+static void ds_opstr_resolve_aav_symbols(RzDisasmState *ds) {
+	if (!ds->opstr || !ds->core || !ds->core->flags || !ds->core->io || !ds->analysis_op.refptr) {
+		return;
+	}
+	RzCore *core = ds->core;
+	const char *pattern = "aav.aav.";
+	char *pos = strstr(ds->opstr, pattern);
+	if (!pos) {
+		return;
+	}
+
+	char *addr_start = pos + strlen(pattern);
+	char *addr_end = addr_start;
+	while (*addr_end == 'x' || IS_HEXCHAR(*addr_end)) {
+		addr_end++;
+	}
+	if (addr_end == addr_start) {
+		return;
+	}
+
+	char addr_str[32] = { 0 };
+	const size_t addr_len = RZ_MIN((size_t)(addr_end - addr_start), sizeof(addr_str) - 1);
+	memcpy(addr_str, addr_start, addr_len);
+	ut64 aav_addr = rz_num_get(NULL, addr_str);
+	if (!aav_addr || aav_addr < ds->min_ref_addr) {
+		return;
+	}
+
+	RzFlagItem *f1 = rz_flag_get_preferred_item(core->flags, aav_addr);
+	if (!f1 || !rz_str_startswith(f1->name, "aav.")) {
+		return;
+	}
+
+	ut8 hop_buf[sizeof(ut64)] = { 0 };
+	if (!rz_io_read_at_mapped(core->io, aav_addr, hop_buf, ds->analysis_op.refptr)) {
+		return;
+	}
+	ut64 dereferenced = rz_read_ble(hop_buf, core->print->big_endian, ds->analysis_op.refptr * 8);
+	RzFlagItem *f2 = rz_flag_get_preferred_item(core->flags, dereferenced);
+	if (!f2 || rz_str_startswith(f2->name, "aav.")) {
+		return;
+	}
+
+	char pattern_to_replace[64] = { 0 };
+	rz_strf(pattern_to_replace, "aav.aav.%s", addr_str);
+	ds->opstr = rz_str_replace(ds->opstr, pattern_to_replace, f2->name, 1);
+}
+
 static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	bool colorize_asm = print_color && ds->show_color && ds->colorop;
 	if (!colorize_asm) {
@@ -1054,6 +1103,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		core->parser->flagspace = ofs;
 		free(ds->opstr);
 		ds->opstr = rz_str_dup(ds->str);
+		ds_opstr_resolve_aav_symbols(ds);
 	} else {
 		ds_opstr_try_colorize(ds, print_color);
 	}
