@@ -203,6 +203,10 @@ IL_LIFTER(add) {
 IL_LIFTER(and) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+
 	RzILOpEffect *and = SETL("and_", LOGAND(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("and_"));
@@ -1501,6 +1505,10 @@ IL_LIFTER(not) {
 IL_LIFTER(or) {
 	RzILOpPure *op1 = x86_il_get_op(0);
 	RzILOpPure *op2 = x86_il_get_op(1);
+	if (ins->operands[0].size != ins->operands[1].size) {
+		op2 = CAST(ins->operands[0].size * BITS_PER_BYTE, IL_FALSE, op2);
+	}
+
 	RzILOpEffect * or = SETL("_or", LOGOR(op1, op2));
 
 	RzILOpEffect *set_dest = x86_il_set_op(0, VARL("_or"));
