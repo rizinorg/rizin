@@ -649,16 +649,16 @@ RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
-	rz_return_val_if_fail(list, NULL);
-	for (RzListIter *it = list->head; it; it = it->next) {
-		if (RZ_UNLIKELY(it->next)) {
-			RZ_PREFETCH(it->next, 0, 1);
-		}
-		if (it->val == val) {
-			return it;
-		}
-	}
-	return NULL;
+    rz_return_val_if_fail(list, NULL);
+    for (RzListIter *it = list->head; it; it = it->next) {
+        if (RZ_UNLIKELY(it->next)) {
+            RZ_PREFETCH(it->next);
+        }
+        if (it->val == val) {
+            return it;
+        }
+    }
+    return NULL;
 }
 
 /**
