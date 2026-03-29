@@ -93,7 +93,9 @@ err_free:
 }
 
 RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf) {
-	rz_return_if_fail(rbuf);
+	if (!rbuf) {
+		return;
+	}
 	rz_th_ring_buf_close(rbuf);
 
 	free(rbuf->buf);
