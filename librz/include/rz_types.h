@@ -25,6 +25,27 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
+// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
+#define RZ_MODE_PRINT    0x000
+#define RZ_MODE_SET      0x002
+#define RZ_MODE_SIMPLE   0x004
+#define RZ_MODE_JSON     0x008
+#define RZ_MODE_SIMPLEST 0x020
+
+#if HAVE___BUILTIN_EXPECT
+#define RZ_LIKELY(x)   __builtin_expect(x, 1)
+#define RZ_UNLIKELY(x) __builtin_expect(x, 0)
+#else
+#define RZ_LIKELY(x)   (x)
+#define RZ_UNLIKELY(x) (x)
+#endif
+
+#if HAVE___BUILTIN_PREFETCH
+#define RZ_PREFETCH(addr, rw, locality) __builtin_prefetch(addr, rw, locality)
+#else
+#define RZ_PREFETCH(addr, rw, locality) ((void)(addr))
+#endif
+
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */

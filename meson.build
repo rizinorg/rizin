@@ -513,6 +513,8 @@ foreach it : ccs
       ['__builtin_bswap64', '', []],
       ['__builtin_clzll', '', []],
       ['__builtin_ctzll', '', []],
+      ['__builtin_expect', '', []],
+      ['__builtin_prefetch', '', []],
       ['posix_memalign', '#include <stdlib.h>', []],
       ['_aligned_malloc', '#include <malloc.h>', []],
     ]
