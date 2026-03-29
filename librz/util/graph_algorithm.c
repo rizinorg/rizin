@@ -7,11 +7,14 @@
 #include <rz_util/rz_iterator.h>
 #include <rz_util/rz_stack.h>
 
-enum {
-	WHITE_COLOR = 0,
-	GRAY_COLOR,
-	BLACK_COLOR
-};
+/**
+ * \brief DFS traversal colors.
+ */
+typedef enum {
+	WHITE_COLOR = 0, ///< Node not visited yet.
+	GRAY_COLOR, ///< Node discovered, not finished.
+	BLACK_COLOR ///< Node fully processed.
+} DfsColor;
 
 typedef struct {
 	RzGraphNode *from;
@@ -230,8 +233,8 @@ static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor, bo
  * tree_edge: called when a tree edge is found (to a WHITE node)
  * back_edge: called when a back edge is found (to a GRAY node)
  * fcross_edge: called when a forward or cross edge is found (to a BLACK node)
- * @param g graph
- * @param vis callback
+ * \param g graph
+ * \param vis callback
  */
 RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, true);
@@ -245,8 +248,8 @@ RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitor *vis) {
  * tree_edge: called when a tree edge is found (to a WHITE node)
  * back_edge: called when a back edge is found (to a GRAY node)
  * fcross_edge: called when a forward or cross edge is found (to a BLACK node)
- * @param g graph
- * @param vis callback
+ * \param g graph
+ * \param vis callback
  */
 RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, false);
@@ -261,8 +264,8 @@ RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitor *vis) {
  * tree_edge: called when a tree edge is found (to a WHITE node)
  * back_edge: called when a back edge is found (to a GRAY node)
  * fcross_edge: called when a forward or cross edge is found (to a BLACK node)
- * @param g graph
- * @param visitor callback
+ * \param g graph
+ * \param visitor callback
  */
 RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor) {
 	dfs_impl(g, start, visitor, true);
@@ -277,8 +280,8 @@ RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisito
  * tree_edge: called when a tree edge is found (to a WHITE node)
  * back_edge: called when a back edge is found (to a GRAY node)
  * fcross_edge: called when a forward or cross edge is found (to a BLACK node)
- * @param g graph
- * @param vis callback
+ * \param g graph
+ * \param vis callback
  */
 RZ_API void rz_graph_dfs_reverse_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *vis) {
 	dfs_impl(g, start, vis, false);
