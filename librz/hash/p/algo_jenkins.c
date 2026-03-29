@@ -4,12 +4,48 @@
 #include <rz_hash.h>
 #include <rz_util/rz_assert.h>
 
-#include "../algorithms/jenkins/jenkins.h"
 #include <rz_lib.h>
+
+typedef ut32 RzJenkins;
 
 #define RZ_HASH_JENKINS_DIGEST_SIZE 4
 #define RZ_HASH_JENKINS_BLOCK_LENGTH 0
 
+static bool rz_jenkins_init(RzJenkins *ctx) {
+	rz_return_val_if_fail(ctx, false);
+	*ctx = 0;
+	return true;
+}
+
+static bool rz_jenkins_update(RzJenkins *ctx,const ut8 *data,size_t len) {
+	rz_return_val_if_fail(ctx && data, false);
+
+	ut32 hash = *ctx;
+
+	for (size_t i = 0;i<len;++i) {
+		hash+= data[i];
+		hash+= (hash << 10);
+		hash^= (hash >> 6);
+	}
+
+	*ctx = hash;
+	return true;
+}
+
+static bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
+	rz_return_val_if_fail(digest && ctx, false);
+
+	ut32 hash= *ctx;
+
+	hash+=(hash<<3);
+	hash^=(hash>>11);
+	hash += (hash<<15);
+
+
+	rz_write_be32(digest,hash);
+
+	return true;
+}
 
 static void *plugin_jenkins_context_new() {
 	return RZ_NEW0(RzJenkins);
@@ -55,10 +91,10 @@ static bool plugin_jenkins_small_block(const ut8 *data, ut64 size, ut8 **digest,
 		return false;
 	}
 
-	RzJenkins ctx={ 0 };
-	jenkins_init(&ctx);
-	jenkins_update(&ctx, data, size);
-	jenkins_final(dgst, &ctx);
+	RzJenkins ctx={0};
+	rz_jenkins_init(&ctx);
+	rz_jenkins_update(&ctx, data, size);
+	rz_jenkins_final(dgst, &ctx);
 
 	*digest = dgst;
 	if (digest_size) {
