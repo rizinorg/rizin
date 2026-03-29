@@ -12,31 +12,7 @@
 typedef ut32 LuaJITInstructions;
 
 /* Opcode name */
-typedef char **LuaJITOpNameList;
-
-/* Common */
-LuaJITInstructions luajit_build_instruction(const ut8 *buf);
-st32 luajitop_get_value(ut32 instr);
-LuaJITOpNameList get_luajit_opnames(void);
-
-/* Analysis */
-int luajit_analysis_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
-
-/* Asm */
-int luajit_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaJITOpNameList oplist);
-char *luajitop_new_str_3arg(char *opname, int a, int b, int c);
-char *luajitop_new_str_2arg(char *opname, int a, int b);
-char *luajitop_new_str_1arg(char *opname, int a);
-char *luajitop_new_str_reg_reg(const char *opname, ut32 a, ut32 d);
-char *luajitop_new_str_reg_const(const char *opname, ut32 a, st32 d);
-
-#define cast(x, y) ((x)(y))
-
-#define LUAJIT_GET_OPCODE(i) (cast(int, (i) & 0xFF))
-#define LUAJIT_GET_A(i)      (cast(int, ((i) >> 8) & 0xFF)) /*Get A*/
-#define LUAJIT_GET_C(i)      (cast(int, ((i) >> 16) & 0xFF)) /*Get B*/
-#define LUAJIT_GET_B(i)      (cast(int, ((i) >> 24) & 0xFF)) /*Get C*/
-#define LUAJIT_GET_D(i)      (cast(int, (i) >> 16)) /*Get D*/
+typedef char *LuaJITOpName;
 
 typedef enum {
 	// Reference: https://github.com/aerospike/luajit/blob/master/src/lj_bc.h
@@ -163,6 +139,29 @@ typedef enum {
 	/* The maximum opcode */
 	OP__MAX
 } LuaJITOpCode;
+
+/* Common */
+st32 luajitop_get_value(ut32 instr);
+LuaJITOpName luajit_get_opname(LuaJITOpCode opcode);
+
+/* Analysis */
+int luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, LuaJITInstructions instr);
+
+/* Asm */
+int luajit_disasm(RzAsmOp *op, int len, LuaJITOpName opname, LuaJITInstructions instr, LuaJITOpCode opcode);
+char *luajitop_new_str_3arg(char *opname, int a, int b, int c);
+char *luajitop_new_str_2arg(char *opname, int a, int b);
+char *luajitop_new_str_1arg(char *opname, int a);
+char *luajitop_new_str_reg_reg(const char *opname, ut32 a, ut32 d);
+char *luajitop_new_str_reg_const(const char *opname, ut32 a, st32 d);
+
+#define cast(x, y) ((x)(y))
+
+#define LUAJIT_GET_OPCODE(i) (cast(int, (i) & 0xFF))
+#define LUAJIT_GET_A(i)      (cast(int, ((i) >> 8) & 0xFF)) /*Get A*/
+#define LUAJIT_GET_C(i)      (cast(int, ((i) >> 16) & 0xFF)) /*Get B*/
+#define LUAJIT_GET_B(i)      (cast(int, ((i) >> 24) & 0xFF)) /*Get C*/
+#define LUAJIT_GET_D(i)      (cast(int, (i) >> 16)) /*Get D*/
 
 #define LUAJIT_NUM_OPCODES ((int)(OP__MAX) + 1)
 

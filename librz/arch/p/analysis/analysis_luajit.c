@@ -4,7 +4,8 @@
 #include "luajit/arch_2.1.h"
 
 int rz_luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	return luajit_analysis_op(analysis, op, addr, data, len);
+	LuaJITInstructions instr = rz_read_ble32(data, analysis->big_endian);
+	return luajit_analysis_op(analysis, op, addr, data, len, instr);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_luajit = {
@@ -12,7 +13,7 @@ RzAnalysisPlugin rz_analysis_plugin_luajit = {
 	.desc = "Luajit bytecode analysis plugin",
 	.license = "LGPL3",
 	.arch = "luajit",
-	.bits = 8,
+	.bits = 32,
 	.op = &rz_luajit_analysis_op,
 	.esil = false
 };

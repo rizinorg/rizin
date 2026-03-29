@@ -15,7 +15,7 @@ static void luajit_build_info_free(LuaJITBinInfo *bin_info) {
 	rz_list_free(bin_info->strings);
 	rz_pvector_free(bin_info->sections);
 	rz_list_free(bin_info->symbol_list);
-	RZ_FREE(bin_info);
+	free(bin_info);
 }
 
 static void luajit_destroy(RzBinFile *bf) {
@@ -48,14 +48,14 @@ void luajit_add_entry(RzPVector /*<RzBinAddr *>*/ *entry_vec, ut64 offset, int e
 	rz_pvector_push(entry_vec, entry);
 }
 
-static void luajit_add_strings(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset) {
+static void luajit_add_strings(RzList /*<RzBinString *>*/ *string_list, char *string, ut64 offset, ut64 baddr) {
 	RzBinString *bin_string = RZ_NEW0(RzBinString);
 	if (!bin_string || !string) {
 		return;
 	}
 
 	bin_string->paddr = offset;
-	bin_string->vaddr = offset;
+	bin_string->vaddr = offset + baddr;
 	bin_string->size = rz_str_ansi_len(string);
 	bin_string->length = rz_str_ansi_len(string);
 	bin_string->string = rz_str_dup(string);
@@ -65,17 +65,16 @@ static void luajit_add_strings(RzList /*<RzBinString *>*/ *string_list, char *st
 }
 
 void luajit_add_section(RzPVector /*<RzBinSection *>*/ *section_vec, char *name, ut64 offset, ut32 size, bool is_data, bool has_strings) {
-	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
-	if (!bin_sec || !name) {
-		free(bin_sec);
+	if (RZ_STR_ISEMPTY(name)) {
 		return;
 	}
+	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
 
-	bin_sec->name = rz_str_dup(name);
+	bin_sec->name = name;
 	bin_sec->vaddr = bin_sec->paddr = offset;
 	bin_sec->size = bin_sec->vsize = size;
 	bin_sec->is_data = is_data;
-	bin_sec->bits = !is_data ? 32 : 8;
+	bin_sec->bits = 32;
 	bin_sec->has_strings = has_strings;
 	bin_sec->arch = "luajit";
 
@@ -96,7 +95,7 @@ void luajit_add_symbol(RzList /*<RzBinSymbol *>*/ *symbol_list, char *name, ut64
 		return;
 	}
 
-	bin_sym->name = rz_str_dup(name);
+	bin_sym->name = name;
 	bin_sym->vaddr = bin_sym->paddr = offset;
 	bin_sym->size = size;
 	bin_sym->type = type;
@@ -108,7 +107,7 @@ static void free_rz_addr(RzBinAddr *addr) {
 	if (!addr) {
 		return;
 	}
-	RZ_FREE(addr);
+	free(addr);
 }
 
 static LuaJITBinInfo *luajit_build_info_new() {
@@ -195,10 +194,10 @@ char *get_symbol_const_name(char *proto_name, LuaJITConstEntry *const_entry) {
 
 	switch (tag) {
 	case LUAJIT_TINT:
-		ret = rz_str_newf("%s_const_%d", proto_name, *(int *)const_entry->constant_val);
+		ret = rz_str_newf("%s_const_%d", proto_name, const_entry->val.int_val);
 		break;
 	case LUAJIT_TFLT:
-		ret = rz_str_newf("%s_const_%f", proto_name, *(double *)const_entry->constant_val);
+		ret = rz_str_newf("%s_const_%f", proto_name, const_entry->val.flt_val);
 		break;
 	default:
 		ret = rz_str_newf("%s_const_0x%" PFMT64x, proto_name, const_entry->offset);
@@ -252,7 +251,7 @@ static const char *get_tag_string(LuaJITValueType tag, bool is_const) {
 
 void add_table_string(LuaJITBinInfo *bi, LuaJITValue *val) {
 	if (val->type > 5) {
-		luajit_add_strings(bi->strings, val->data, val->offset);
+		luajit_add_strings(bi->strings, val->data, val->offset, bi->baddr);
 	}
 }
 
@@ -268,12 +267,11 @@ char *get_kgc_symbol_type(LuaJITKGCTypes type) {
 		return "KGC_NUM";
 	} else if (type == LUAJIT_KGCCMPLX) {
 		return "KGC_CMPLX";
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
-static void _build_kgc_objects(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+static void build_kgc_objects(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
 	rz_return_if_fail(proto_loc);
 	if (rz_list_empty(proto->kgc_obj)) {
 		return;
@@ -308,20 +306,18 @@ static void _build_kgc_objects(LuaJITProto *proto, LuaJITBinInfo *info, char *pr
 			break;
 		default:
 			if (kgc_obj->type >= LUAJIT_KGCSTR && kgc_obj->data) {
-				luajit_add_strings(info->strings, kgc_obj->data, kgc_obj->offset);
+				luajit_add_strings(info->strings, kgc_obj->data, kgc_obj->offset, info->baddr);
 			}
 			break;
 		}
 
 		if (symbol_name) {
 			luajit_add_symbol(info->symbol_list, symbol_name, kgc_obj->offset, kgc_obj->size, symbol_type);
-			RZ_FREE(symbol_name);
 		}
 	}
-	RZ_FREE(section_name);
 }
 
-static void _build_constant_entries(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+static void build_constant_entries(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
 	if (rz_list_empty(proto->constant_entries)) {
 		return;
 	}
@@ -339,26 +335,23 @@ static void _build_constant_entries(LuaJITProto *proto, LuaJITBinInfo *info, cha
 		char *symbol_name = get_symbol_const_name(proto_loc, constant_entry);
 		if (symbol_name) {
 			luajit_add_symbol(info->symbol_list, symbol_name, constant_entry->offset, constant_entry->size, get_tag_string(constant_entry->type, true));
-			RZ_FREE(symbol_name);
 		}
-	}
-	RZ_FREE(section_name);
-}
-
-void _build_table_val(LuaJITBinInfo *info, LuaJITValue *_val, char *proto_loc) {
-	char *symbol_name = NULL;
-	if (_val->type < LUAJIT_TSTR) {
-		symbol_name = get_value_symbol_name(proto_loc, _val);
-		if (symbol_name) {
-			luajit_add_symbol(info->symbol_list, symbol_name, _val->offset, _val->size, get_tag_string(_val->type, false));
-			RZ_FREE(symbol_name);
-		}
-	} else {
-		add_table_string(info, _val);
 	}
 }
 
-static void _build_tables(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
+void build_table_val(LuaJITBinInfo *info, LuaJITValue *val, char *proto_loc) {
+	if (val->type >= LUAJIT_TSTR) {
+		add_table_string(info, val);
+		return;
+	}
+
+	char *symbol_name = get_value_symbol_name(proto_loc, val);
+	if (symbol_name) {
+		luajit_add_symbol(info->symbol_list, symbol_name, val->offset, val->size, get_tag_string(val->type, false));
+	}
+}
+
+static void build_tables(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_loc) {
 	if (rz_list_empty(proto->table)) {
 		return;
 	}
@@ -374,27 +367,26 @@ static void _build_tables(LuaJITProto *proto, LuaJITBinInfo *info, char *proto_l
 
 	rz_list_foreach (proto->table, iter, table) {
 		RzListIter *i;
-		LuaJITValue *_val;
+		LuaJITValue *val;
 
 		if (table->narray > 0) {
-			rz_list_foreach (table->array_items, i, _val) {
-				_build_table_val(info, _val, proto_loc);
+			rz_list_foreach (table->array_items, i, val) {
+				build_table_val(info, val, proto_loc);
 			}
 		}
 
 		if (table->nhash > 0) {
-			rz_list_foreach (table->hash_keys, i, _val) {
-				_build_table_val(info, _val, proto_loc);
+			rz_list_foreach (table->hash_keys, i, val) {
+				build_table_val(info, val, proto_loc);
 			}
-			rz_list_foreach (table->hash_values, i, _val) {
-				_build_table_val(info, _val, proto_loc);
+			rz_list_foreach (table->hash_values, i, val) {
+				build_table_val(info, val, proto_loc);
 			}
 		}
 	}
-	RZ_FREE(section_name);
 }
 
-static void _build_local_vars(LuaJITProto *proto, LuaJITBinInfo *info, const char *proto_loc) {
+static void build_local_vars(LuaJITProto *proto, LuaJITBinInfo *info, const char *proto_loc) {
 	if (rz_list_empty(proto->local_var_entry)) {
 		return;
 	}
@@ -408,13 +400,12 @@ static void _build_local_vars(LuaJITProto *proto, LuaJITBinInfo *info, const cha
 	if (section_name) {
 		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
 		rz_list_foreach (proto->local_var_entry, iter, local_var) {
-			luajit_add_strings(info->strings, local_var->varname, local_var->offset);
+			luajit_add_strings(info->strings, local_var->varname, local_var->offset, info->baddr);
 		}
-		RZ_FREE(section_name);
 	}
 }
 
-static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
+static void luajit_build_info_cb(LuaJITProto *proto, LuaJITBinInfo *info) {
 	RzListIter *iter;
 	char *section_name;
 	char *proto_loc;
@@ -429,7 +420,6 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 	section_name = rz_str_newf("%s.header", proto_loc);
 	rz_return_if_fail(section_name);
 	luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
-	RZ_FREE(section_name);
 
 	if (proto->hdr_dbg != NULL) {
 		section_name = rz_str_newf("%s.hdr_debug", proto_loc);
@@ -437,7 +427,6 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		current_offset = proto->hdr_dbg->offset;
 		current_size = proto->hdr_dbg->size;
 		luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
-		RZ_FREE(section_name);
 	}
 
 	if (proto->num_istr_cnt > 0) {
@@ -447,7 +436,6 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		current_size = proto->num_istr_cnt * 4;
 		luajit_add_section(info->sections, section_name, current_offset, current_size, false, false);
 		luajit_add_entry(info->entry_vec, current_offset, RZ_BIN_ENTRY_TYPE_PROGRAM);
-		RZ_FREE(section_name);
 	}
 
 	if (proto->num_up_val > 0) {
@@ -456,16 +444,15 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		section_name = rz_str_newf("%s.upvalueinstr", proto_loc);
 		rz_return_if_fail(section_name);
 		luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
-		RZ_FREE(section_name);
 	}
 
-	_build_kgc_objects(proto, info, proto_loc);
+	build_kgc_objects(proto, info, proto_loc);
 
-	_build_constant_entries(proto, info, proto_loc);
+	build_constant_entries(proto, info, proto_loc);
 
-	_build_tables(proto, info, proto_loc);
+	build_tables(proto, info, proto_loc);
 
-	_build_local_vars(proto, info, proto_loc);
+	build_local_vars(proto, info, proto_loc);
 
 	if (!rz_list_empty(proto->up_val_info)) {
 		LuaJITUpValue *up_val_info = rz_list_first_val(proto->up_val_info);
@@ -473,18 +460,16 @@ static void _luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *info) {
 		current_size = luajit_get_section_size(proto->up_val_info, LUAJIT_STUPVALINFO);
 		section_name = rz_str_newf("%s.upvalnames", proto_loc);
 		luajit_add_section(info->sections, section_name, current_offset, current_size, true, true);
-		RZ_FREE(section_name);
 	}
 
 	current_offset = proto->debug_info_offset;
 	current_size = proto->dbg_info_size;
 	section_name = rz_str_newf("%s.debug", proto_loc);
 	luajit_add_section(info->sections, section_name, current_offset, current_size, true, false);
-	RZ_FREE(section_name);
 
 	LuaJITProto *sub_proto;
 	rz_list_foreach (proto->proto_entries, iter, sub_proto) {
-		_luajit_build_info(sub_proto, info);
+		luajit_build_info_cb(sub_proto, info);
 	}
 
 	free(proto_loc);
@@ -500,10 +485,10 @@ LuaJITBinInfo *luajit_build_info(LuaJITProto *proto, LuaJITBinInfo *ret) {
 		return NULL;
 	}
 	if (ret->file_name) {
-		luajit_add_strings(ret->strings, ret->file_name, ret->header_end - rz_str_ansi_len(ret->file_name));
+		luajit_add_strings(ret->strings, ret->file_name, ret->header_end - rz_str_ansi_len(ret->file_name), ret->baddr);
 	}
 
-	_luajit_build_info(proto, ret);
+	luajit_build_info_cb(proto, ret);
 
 	return ret;
 }
@@ -520,6 +505,7 @@ static bool luajit_load_buffer(RzBinFile *b, RzBinObject *obj, RzBuffer *buf, Sd
 
 	bin_info_obj = luajit_build_info_new();
 	if (!bin_info_obj) {
+		rz_list_free(proto_list);
 		return false;
 	}
 
@@ -535,11 +521,12 @@ static bool luajit_load_buffer(RzBinFile *b, RzBinObject *obj, RzBuffer *buf, Sd
 		RZ_LOG_ERROR("luaJIT 2.%c not supported\n", version);
 		break;
 	}
-	bin_info_obj->version = rz_str_newf("2.%c", version + '0');
+	bin_info_obj->baddr = obj->opts.baseaddr;
 	bin_info_obj = luajit_build_info(proto_info, bin_info_obj);
 	if (bin_info_obj == NULL) {
 		luajit_free_proto_entry(proto_info);
 		rz_bin_info_free(bin_info);
+		rz_list_free(proto_list);
 		return false;
 	}
 	bin_info_obj->general_bin_info = bin_info;
@@ -567,9 +554,7 @@ static RzPVector /*<RzBinString *>*/ *luajit_strings(RzBinFile *bf) {
 	RzListIter *iter;
 	RzBinString *str;
 	rz_list_foreach (bin_info_obj->strings, iter, str) {
-		if (str) {
-			rz_pvector_push(pvec, str);
-		}
+		rz_pvector_push(pvec, str);
 	}
 	RzListFree free_cb = bin_info_obj->strings->free;
 	bin_info_obj->strings->free = NULL;
@@ -602,9 +587,7 @@ static RzPVector /*<RzBinSymbol *>*/ *luajit_symbols(RzBinFile *bf) {
 	RzBinSymbol *sym;
 	RzPVector *vec = rz_pvector_new(NULL);
 	rz_list_foreach (bin_info_obj->symbol_list, iter, sym) {
-		if (vec != NULL) {
-			rz_pvector_push(vec, sym);
-		}
+		rz_pvector_push(vec, sym);
 	}
 	return vec;
 }

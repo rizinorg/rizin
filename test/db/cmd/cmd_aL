@@ -32,8 +32,7 @@ _d___ 8          lh5801      LGPL3   SHARP LH5801 disassembler
 _d___ 32         lm32        BSD     Lattice Micro 32 ISA disassembler (by Felix Held)
 _dA__ 32 64      loongarch   LGPL3   Loongson LoongArch disassembler
 adA__ 32         luac        LGPL3   Lua bytecode (LUAC) disassembler
-adA__ 8          luac        LGPL3   Lua bytecode (LUAC) disassembler
-_dA__ 8          luajit      LGPL3   luajit bytecode (LuaJIT) disassembler
+_dA__ 32         luajit      LGPL3   luajit bytecode (LuaJIT) disassembler
 _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
 _dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)

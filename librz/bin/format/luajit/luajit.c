@@ -38,20 +38,15 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 	info->bclass = rz_str_dup("luajit compiled file");
 	info->rclass = rz_str_dup("luajit");
 	info->arch = rz_str_newf("luajit");
-	info->bits = 8;
+	info->bits = 32;
 	info->cpu = rz_str_newf("2.%d", min);
-	info->lang = rz_str_dup("lua");
+	info->lang = "lua";
 	info->compiler = rz_str_newf("luajit 2.%d compiler", min);
 
 	ut64 flag = luajit_get_flag(r_buffer, LUAJIT_FLAG_OFFSET_AT);
 
-	if (IS_FLAG(flag, LUAJIT_BCDUMP_F_BE)) {
-		info->big_endian = 1;
-	} else {
-		info->big_endian = 0;
-	}
+	info->big_endian = IS_FLAG(flag, LUAJIT_BCDUMP_F_BE);
 	bin_info->hdr_flags = flag;
-	bin_info->version = rz_str_newf("2.%c", min + '0');
 	bin_info->header_end = LUAJIT_FILE_LEN_START;
 
 	char *file_name = NULL;
@@ -67,10 +62,12 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 		if (file_name) {
 			luajit_parse_filename(r_buffer, file_name, LUAJIT_FILE_LEN_START + end_len, (st32)name_len);
 			info->guid = rz_str_dup(file_name);
+			info->dbg_info |= (RZ_BIN_DBG_LINENUMS | RZ_BIN_DBG_SYMS);
 			bin_info->file_name = rz_str_dup(file_name);
 		} else {
-			info->guid = "stripped";
-			bin_info->file_name = "stripped";
+			info->dbg_info |= RZ_BIN_DBG_STRIPPED;
+			info->guid = rz_str_dup("stripped");
+			bin_info->file_name = rz_str_dup("stripped");
 		}
 		// Header is not fixed size due to (ULEB128)
 		bin_info->header_end = LUAJIT_FILE_LEN_START + end_len + name_len; // File Len start + uleb128 len of name length + name length
@@ -79,9 +76,9 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 	return info;
 }
 
-static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *_value, ut64 offset, LuaJITValueType type) {
-	_value->offset = offset;
-	_value->type = type;
+static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *value, ut64 offset, LuaJITValueType type) {
+	value->offset = offset;
+	value->type = type;
 
 	ut64 _val, lo_val, hi_val, combined;
 	int end_len;
@@ -89,54 +86,54 @@ static ut64 handle_value_type(RzBuffer *buff, LuaJITValue *_value, ut64 offset, 
 	case LUAJIT_TNILL: // nil
 	case LUAJIT_TTRUE: // true
 	case LUAJIT_TFALSE: // false
-		_value->size += 1;
+		value->size += 1;
 		break;
 	case LUAJIT_TINT:
 		end_len = rz_buf_uleb128_at(buff, offset, &_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(_value);
+			free_luajit_value(value);
 			return offset;
 		}
 		offset += end_len;
-		_value->size += end_len;
+		value->size += end_len;
 
 		ut64 *heap_int = RZ_NEW(ut64);
 		if (heap_int) {
 			*heap_int = _val;
-			_value->data = heap_int;
+			value->data = heap_int;
 		}
 		break;
 
 	case LUAJIT_TFLT:
 		end_len = rz_buf_uleb128_at(buff, offset, &lo_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(_value);
+			free_luajit_value(value);
 			return offset;
 		}
 		offset += end_len;
-		_value->size += end_len;
+		value->size += end_len;
 
 		end_len = rz_buf_uleb128_at(buff, offset, &hi_val);
 		if (check_malformed_ULEB128(end_len)) {
-			free_luajit_value(_value);
+			free_luajit_value(value);
 			return offset;
 		}
 		offset += end_len;
-		_value->size += end_len;
+		value->size += end_len;
 
 		double *heap_double = RZ_NEW(double);
 		if (heap_double) {
 			combined = (hi_val << 32) | (lo_val & 0xFFFFFFFF);
 			memcpy(heap_double, &combined, sizeof(double));
-			_value->data = heap_double;
+			value->data = heap_double;
 		}
 		break;
 	default:
-		_value->type = type;
+		value->type = type;
 		char *ret = NULL;
 		offset = luajit_parse_string(buff, offset, type, &ret);
-		_value->data = ret;
-		_value->size += (type - 5);
+		value->data = ret;
+		value->size += (type - 5);
 		break;
 	}
 	return offset;
@@ -217,6 +214,33 @@ static ut64 luajit_parse_table(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuff
 	return offset;
 }
 
+static ut64 read_split_64(RzBuffer *buf, ut64 offset, LuaJITKgcObj *kgc_obj, ut64 *out_val) {
+	ut64 lo_val, hi_val;
+	int len;
+
+	len = rz_buf_uleb128_at(buf, offset, &lo_val);
+	if (check_malformed_ULEB128(len)) {
+		luajit_free_kgc_obj(kgc_obj);
+		return offset;
+	}
+	offset += len;
+	kgc_obj->size += len;
+
+	len = rz_buf_uleb128_at(buf, offset, &hi_val);
+	if (check_malformed_ULEB128(len)) {
+		luajit_free_kgc_obj(kgc_obj);
+		return offset;
+	}
+	offset += len;
+	kgc_obj->size += len;
+
+	if (out_val) {
+		*out_val = (hi_val << 32) | (lo_val & 0xFFFFFFFF);
+	}
+
+	return offset;
+}
+
 static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer *buf, RzList /*<LuaJITProto *>*/ *proto_stack, ut64 offset, LuaJITKGCTypes type) {
 	kgc_obj->type = type;
 
@@ -237,7 +261,7 @@ static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer 
 	case LUAJIT_KGCINT:
 	case LUAJIT_KGCFLT: {
 		ut64 combined;
-		READ_SPLIT_64(combined);
+		offset = read_split_64(buf, offset, kgc_obj, &combined);
 
 		ut64 *num_val = RZ_NEW(ut64);
 		if (num_val) {
@@ -249,8 +273,8 @@ static ut64 handle_kgc_type(LuaJITProto *proto, LuaJITKgcObj *kgc_obj, RzBuffer 
 	case LUAJIT_KGCCMPLX: {
 		ut64 r_combined, i_combined;
 
-		READ_SPLIT_64(r_combined);
-		READ_SPLIT_64(i_combined);
+		offset = read_split_64(buf, offset, kgc_obj, &r_combined);
+		offset = read_split_64(buf, offset, kgc_obj, &i_combined);
 
 		memcpy(&(kgc_obj->cmplx.r_bits), &r_combined, sizeof(double));
 		memcpy(&(kgc_obj->cmplx.i_bits), &i_combined, sizeof(double));
@@ -307,18 +331,11 @@ static ut64 parse_constant_entries(RzBuffer *buf, LuaJITProto *proto, ut64 offse
 
 		if ((ret & 1) == 0) {
 			constant->type = LUAJIT_TINT;
-			ut32 *int_val = RZ_NEW(ut32);
-			if (!int_val) {
-				RZ_FREE(constant);
-				return offset;
-			}
-			*int_val = (ut32)(ret >> 1);
-			constant->constant_val = int_val;
+			constant->val.int_val = (ut32)(ret >> 1);
 		} else {
 			constant->type = LUAJIT_TFLT;
 			ut32 lo = (ut32)(ret >> 1);
 			ut64 hi_val;
-
 			end_len = rz_buf_uleb128_at(buf, offset, &hi_val);
 			if (check_malformed_ULEB128(end_len)) {
 				RZ_FREE(constant);
@@ -326,16 +343,10 @@ static ut64 parse_constant_entries(RzBuffer *buf, LuaJITProto *proto, ut64 offse
 			}
 			offset += end_len;
 			constant->size += end_len;
-
-			ut32 hi = (ut32)hi_val;
-			ut64 *float_val = RZ_NEW(ut64);
-			if (!float_val) {
-				RZ_FREE(constant);
-				return offset;
-			}
-
-			*float_val = ((ut64)hi << 32) | (ut64)lo;
-			constant->constant_val = float_val;
+			ut64 raw_bits = ((ut64)hi_val << 32) | (ut64)lo;
+			double real_float;
+			memcpy(&real_float, &raw_bits, sizeof(double));
+			constant->val.flt_val = real_float;
 		}
 		rz_list_append(proto->constant_entries, constant);
 	}
@@ -345,8 +356,15 @@ static ut64 parse_constant_entries(RzBuffer *buf, LuaJITProto *proto, ut64 offse
 static void parse_debug_info(RzBuffer *buf, LuaJITProto *proto, ut64 offset) {
 	ut64 curr = offset;
 	proto->debug_info_offset = offset;
-	int width = (proto->hdr_dbg->lines_covered < 256) ? 1 : (proto->hdr_dbg->lines_covered < 65536) ? 2
-													: 4;
+
+	int width;
+	if (proto->hdr_dbg->lines_covered < 256) {
+		width = 1;
+	} else if (proto->hdr_dbg->lines_covered < 65536) {
+		width = 2;
+	} else {
+		width = 4;
+	}
 
 	int iter = 0;
 	if (curr >= proto->end_offset) {
@@ -450,6 +468,9 @@ RZ_IPI LuaJITProto *luajit_parse_proto(RzBuffer *buff, RzList /*<LuaJITProto *>*
 	}
 	proto->hdr_size += end_len;
 	bytes_read_rem = bytes_read_rem - (U_ret + end_len); // reamaining_bytes_to_read - (size_of_proto + number of bytes holding size)
+	if (bytes_read_rem < 0) {
+		return NULL;
+	}
 	proto->size = U_ret;
 	proto->end_offset = proto->start_offset + proto->size + end_len;
 	offset += end_len;

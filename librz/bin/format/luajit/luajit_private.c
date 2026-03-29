@@ -7,17 +7,13 @@ void luajit_free_proto_entry(LuaJITProto *proto) {
 	if (!proto) {
 		return;
 	}
-
 	rz_list_free(proto->proto_entries);
-	free(proto->hdr_dbg);
-
 	rz_list_free(proto->kgc_obj);
 	rz_list_free(proto->table);
-
 	rz_list_free(proto->constant_entries);
 	rz_list_free(proto->local_var_entry);
 	rz_list_free(proto->up_val_info);
-
+	RZ_FREE(proto->hdr_dbg);
 	free(proto);
 }
 
@@ -28,7 +24,7 @@ void free_luajit_value(LuaJITValue *value) {
 	if (value->data) {
 		RZ_FREE(value->data);
 	}
-	RZ_FREE(value);
+	free(value);
 }
 
 void luajit_free_kgc_obj(LuaJITKgcObj *kgc_obj) {
@@ -38,8 +34,7 @@ void luajit_free_kgc_obj(LuaJITKgcObj *kgc_obj) {
 	if (kgc_obj->data) {
 		RZ_FREE(kgc_obj->data);
 	}
-
-	RZ_FREE(kgc_obj);
+	free(kgc_obj);
 }
 
 void luajit_free_table(LuaJITTable *table) {
@@ -49,8 +44,7 @@ void luajit_free_table(LuaJITTable *table) {
 	rz_list_free(table->array_items);
 	rz_list_free(table->hash_keys);
 	rz_list_free(table->hash_values);
-
-	RZ_FREE(table);
+	free(table);
 }
 
 void luajit_free_local_var(LuaJITLocalVar *local_var_entry) {
@@ -58,8 +52,7 @@ void luajit_free_local_var(LuaJITLocalVar *local_var_entry) {
 		return;
 	}
 	RZ_FREE(local_var_entry->varname);
-
-	RZ_FREE(local_var_entry);
+	free(local_var_entry);
 }
 
 void luajit_free_upval_info(LuaJITUpValue *up_val_entry) {
@@ -67,8 +60,7 @@ void luajit_free_upval_info(LuaJITUpValue *up_val_entry) {
 		return;
 	}
 	RZ_FREE(up_val_entry->uv_name);
-
-	RZ_FREE(up_val_entry);
+	free(up_val_entry);
 }
 
 // Parsing Section
@@ -84,9 +76,8 @@ RZ_IPI bool check_malformed_ULEB128(int val) {
 	if (val == -1) {
 		RZ_LOG_ERROR("malformed ULEB128\n");
 		return true;
-	} else {
-		return false;
 	}
+	return false;
 }
 
 /**
@@ -101,6 +92,7 @@ RZ_IPI bool check_malformed_ULEB128(int val) {
  */
 RZ_IPI ut64 luajit_parse_string(RzBuffer *buf, ut64 offset, ut32 type, char **dest) {
 	ut64 len = type - LUAJIT_TSTR;
+	rz_return_val_if_fail(dest, offset + len);
 	char *str = RZ_NEWS(char, len + 1);
 
 	if (!str) {
@@ -124,7 +116,7 @@ RZ_IPI ut64 luajit_parse_string(RzBuffer *buf, ut64 offset, ut32 type, char **de
  *
  * \return Newly allocated LuaJITTable instance.
  */
-RZ_IPI RZ_BORROW LuaJITTable *luajit_new_table() {
+RZ_IPI RZ_OWN LuaJITTable *luajit_new_table() {
 	LuaJITTable *new_table = RZ_NEW0(LuaJITTable);
 	if (!new_table) {
 		return NULL;
@@ -146,7 +138,7 @@ RZ_IPI RZ_BORROW LuaJITTable *luajit_new_table() {
  *
  * \return Newly allocated LuaJITValue instance.
  */
-RZ_IPI RZ_BORROW LuaJITValue *luajit_new_val() {
+RZ_IPI RZ_OWN LuaJITValue *luajit_new_val() {
 	LuaJITValue *new_value = RZ_NEW0(LuaJITValue);
 	return new_value;
 }
@@ -156,7 +148,7 @@ RZ_IPI RZ_BORROW LuaJITValue *luajit_new_val() {
  *
  * \return Newly allocated LuaJITKgcObj instance.
  */
-RZ_IPI RZ_BORROW LuaJITKgcObj *luajit_kgc_obj_new() {
+RZ_IPI RZ_OWN LuaJITKgcObj *luajit_kgc_obj_new() {
 	LuaJITKgcObj *new_kgc_obj = RZ_NEW0(LuaJITKgcObj);
 	return new_kgc_obj;
 }
@@ -166,7 +158,7 @@ RZ_IPI RZ_BORROW LuaJITKgcObj *luajit_kgc_obj_new() {
  *
  * \return Newly allocated LuaJITConstEntry instance.
  */
-RZ_IPI RZ_BORROW LuaJITConstEntry *luajit_new_constant() {
+RZ_IPI RZ_OWN LuaJITConstEntry *luajit_new_constant() {
 	LuaJITConstEntry *constant_entry = RZ_NEW0(LuaJITConstEntry);
 	if (!constant_entry) {
 		return NULL;
@@ -179,7 +171,7 @@ RZ_IPI RZ_BORROW LuaJITConstEntry *luajit_new_constant() {
  *
  * \return Newly allocated LuaJITLocalVar instance.
  */
-RZ_IPI RZ_BORROW LuaJITLocalVar *luajit_new_localvar() {
+RZ_IPI RZ_OWN LuaJITLocalVar *luajit_new_localvar() {
 	LuaJITLocalVar *localvar = RZ_NEW0(LuaJITLocalVar);
 	if (!localvar) {
 		return NULL;
@@ -192,7 +184,7 @@ RZ_IPI RZ_BORROW LuaJITLocalVar *luajit_new_localvar() {
  *
  * \return Newly allocated LuaJITUpValue instance.
  */
-RZ_IPI RZ_BORROW LuaJITUpValue *luajit_new_upvalue() {
+RZ_IPI RZ_OWN LuaJITUpValue *luajit_new_upvalue() {
 	LuaJITUpValue *up_val = RZ_NEW0(LuaJITUpValue);
 	if (!up_val) {
 		return NULL;
@@ -205,7 +197,7 @@ RZ_IPI RZ_BORROW LuaJITUpValue *luajit_new_upvalue() {
  *
  * \return Newly allocated LuaJITProto instance.
  */
-RZ_IPI RZ_BORROW LuaJITProto *luajit_new_proto() {
+RZ_IPI RZ_OWN LuaJITProto *luajit_new_proto() {
 	LuaJITProto *new_proto = RZ_NEW0(LuaJITProto);
 	if (!new_proto) {
 		RZ_LOG_ERROR("Cannot allocate LuaJITProto.\n");

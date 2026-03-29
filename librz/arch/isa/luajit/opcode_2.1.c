@@ -3,131 +3,128 @@
 
 #include "arch_2.1.h"
 
-LuaJITOpNameList get_luajit_opnames(void) {
-	LuaJITOpNameList list = RZ_NEWS(char *, LUAJIT_NUM_OPCODES + 1);
-	if (list == NULL) {
-		RZ_LOG_ERROR("Cannot allocate luajit opcode list.\n");
-		return NULL;
-	}
-
-	// --- Comparison Ops ---
-	list[OP_ISLT] = "islt";
-	list[OP_ISGE] = "isge";
-	list[OP_ISLE] = "isle";
-	list[OP_ISGT] = "isgt";
-	list[OP_ISEQV] = "iseqv";
-	list[OP_ISNEV] = "isnev";
-	list[OP_ISEQS] = "iseqs";
-	list[OP_ISNES] = "isnes";
-	list[OP_ISEQN] = "iseqn";
-	list[OP_ISNEN] = "isnen";
-	list[OP_ISEQP] = "iseqp";
-	list[OP_ISNEP] = "isnep";
+static char *luajit_opname[LUAJIT_NUM_OPCODES] = {
+	[OP_ISLT] = "islt",
+	[OP_ISGE] = "isge",
+	[OP_ISLE] = "isle",
+	[OP_ISGT] = "isgt",
+	[OP_ISEQV] = "iseqv",
+	[OP_ISNEV] = "isnev",
+	[OP_ISEQS] = "iseqs",
+	[OP_ISNES] = "isnes",
+	[OP_ISEQN] = "iseqn",
+	[OP_ISNEN] = "isnen",
+	[OP_ISEQP] = "iseqp",
+	[OP_ISNEP] = "isnep",
 
 	// --- Test and Copy Ops ---
-	list[OP_ISTC] = "istc";
-	list[OP_ISFC] = "isfc";
-	list[OP_IST] = "ist";
-	list[OP_ISF] = "isf";
-	list[OP_ISTYPE] = "istype";
-	list[OP_ISNUM] = "isnum";
+	[OP_ISTC] = "istc",
+	[OP_ISFC] = "isfc",
+	[OP_IST] = "ist",
+	[OP_ISF] = "isf",
+	[OP_ISTYPE] = "istype",
+	[OP_ISNUM] = "isnum",
 
 	// --- Unary Ops ---
-	list[OP_MOV] = "mov";
-	list[OP_NOT] = "not";
-	list[OP_UNM] = "unm";
-	list[OP_LEN] = "len";
+	[OP_MOV] = "mov",
+	[OP_NOT] = "not",
+	[OP_UNM] = "unm",
+	[OP_LEN] = "len",
 
 	// --- Binary Math Ops (VN = Var/Num, NV = Num/Var, VV = Var/Var) ---
-	list[OP_ADDVN] = "addvn";
-	list[OP_SUBVN] = "subvn";
-	list[OP_MULVN] = "mulvn";
-	list[OP_DIVVN] = "divvn";
-	list[OP_MODVN] = "modvn";
-	list[OP_ADDNV] = "addnv";
-	list[OP_SUBNV] = "subnv";
-	list[OP_MULNV] = "mulnv";
-	list[OP_DIVNV] = "divnv";
-	list[OP_MODNV] = "modnv";
-	list[OP_ADDVV] = "addvv";
-	list[OP_SUBVV] = "subvv";
-	list[OP_MULVV] = "mulvv";
-	list[OP_DIVVV] = "divvv";
-	list[OP_MODVV] = "modvv";
-	list[OP_POW] = "pow";
-	list[OP_CAT] = "cat";
+	[OP_ADDVN] = "addvn",
+	[OP_SUBVN] = "subvn",
+	[OP_MULVN] = "mulvn",
+	[OP_DIVVN] = "divvn",
+	[OP_MODVN] = "modvn",
+	[OP_ADDNV] = "addnv",
+	[OP_SUBNV] = "subnv",
+	[OP_MULNV] = "mulnv",
+	[OP_DIVNV] = "divnv",
+	[OP_MODNV] = "modnv",
+	[OP_ADDVV] = "addvv",
+	[OP_SUBVV] = "subvv",
+	[OP_MULVV] = "mulvv",
+	[OP_DIVVV] = "divvv",
+	[OP_MODVV] = "modvv",
+	[OP_POW] = "pow",
+	[OP_CAT] = "cat",
 
 	// --- Constant Ops ---
-	list[OP_KSTR] = "kstr";
-	list[OP_KCDATA] = "kcdata";
-	list[OP_KSHORT] = "kshort";
-	list[OP_KNUM] = "knum";
-	list[OP_KPRI] = "kpri";
-	list[OP_KNIL] = "knil";
+	[OP_KSTR] = "kstr",
+	[OP_KCDATA] = "kcdata",
+	[OP_KSHORT] = "kshort",
+	[OP_KNUM] = "knum",
+	[OP_KPRI] = "kpri",
+	[OP_KNIL] = "knil",
 
 	// --- Upvalue and Function Ops ---
-	list[OP_UGET] = "uget";
-	list[OP_USETV] = "usetv";
-	list[OP_USETS] = "usets";
-	list[OP_USETN] = "usetn";
-	list[OP_USETP] = "usetp";
-	list[OP_UCLO] = "uclo";
-	list[OP_FNEW] = "fnew";
+	[OP_UGET] = "uget",
+	[OP_USETV] = "usetv",
+	[OP_USETS] = "usets",
+	[OP_USETN] = "usetn",
+	[OP_USETP] = "usetp",
+	[OP_UCLO] = "uclo",
+	[OP_FNEW] = "fnew",
 
 	// --- Table Ops ---
-	list[OP_TNEW] = "tnew";
-	list[OP_TDUP] = "tdup";
-	list[OP_GGET] = "gget";
-	list[OP_GSET] = "gset";
-	list[OP_TGETV] = "tgetv";
-	list[OP_TGETS] = "tgets";
-	list[OP_TGETB] = "tgetb";
-	list[OP_TGETR] = "tgetr";
-	list[OP_TSETV] = "tsetv";
-	list[OP_TSETS] = "tsets";
-	list[OP_TSETB] = "tsetb";
-	list[OP_TSETM] = "tsetm";
-	list[OP_TSETR] = "tsetr";
+	[OP_TNEW] = "tnew",
+	[OP_TDUP] = "tdup",
+	[OP_GGET] = "gget",
+	[OP_GSET] = "gset",
+	[OP_TGETV] = "tgetv",
+	[OP_TGETS] = "tgets",
+	[OP_TGETB] = "tgetb",
+	[OP_TGETR] = "tgetr",
+	[OP_TSETV] = "tsetv",
+	[OP_TSETS] = "tsets",
+	[OP_TSETB] = "tsetb",
+	[OP_TSETM] = "tsetm",
+	[OP_TSETR] = "tsetr",
 
 	// --- Calls and Returns ---
-	list[OP_CALLM] = "callm";
-	list[OP_CALL] = "call";
-	list[OP_CALLMT] = "callmt";
-	list[OP_CALLT] = "callt";
-	list[OP_ITERC] = "iterc";
-	list[OP_ITERN] = "itern";
-	list[OP_VARG] = "varg";
-	list[OP_ISNEXT] = "isnext";
-	list[OP_RETM] = "retm";
-	list[OP_RET] = "ret";
-	list[OP_RET0] = "ret0";
-	list[OP_RET1] = "ret1";
+	[OP_CALLM] = "callm",
+	[OP_CALL] = "call",
+	[OP_CALLMT] = "callmt",
+	[OP_CALLT] = "callt",
+	[OP_ITERC] = "iterc",
+	[OP_ITERN] = "itern",
+	[OP_VARG] = "varg",
+	[OP_ISNEXT] = "isnext",
+	[OP_RETM] = "retm",
+	[OP_RET] = "ret",
+	[OP_RET0] = "ret0",
+	[OP_RET1] = "ret1",
 
 	// --- Loops and Branches ---
-	list[OP_FORI] = "fori";
-	list[OP_JFORI] = "jfori";
-	list[OP_FORL] = "forl";
-	list[OP_IFORL] = "iforl";
-	list[OP_JFORL] = "jforl";
-	list[OP_ITERL] = "iterl";
-	list[OP_IITERL] = "iiterl";
-	list[OP_JITERL] = "jiterl";
-	list[OP_LOOP] = "loop";
-	list[OP_ILOOP] = "iloop";
-	list[OP_JLOOP] = "jloop";
-	list[OP_JMP] = "jmp";
+	[OP_FORI] = "fori",
+	[OP_JFORI] = "jfori",
+	[OP_FORL] = "forl",
+	[OP_IFORL] = "iforl",
+	[OP_JFORL] = "jforl",
+	[OP_ITERL] = "iterl",
+	[OP_IITERL] = "iiterl",
+	[OP_JITERL] = "jiterl",
+	[OP_LOOP] = "loop",
+	[OP_ILOOP] = "iloop",
+	[OP_JLOOP] = "jloop",
+	[OP_JMP] = "jmp",
 
 	// --- Function Headers ---
-	list[OP_FUNCF] = "funcf";
-	list[OP_IFUNCF] = "ifuncf";
-	list[OP_JFUNCF] = "jfuncf";
-	list[OP_FUNCV] = "funcv";
-	list[OP_IFUNCV] = "ifuncv";
-	list[OP_JFUNCV] = "jfuncv";
-	list[OP_FUNCC] = "funcc";
-	list[OP_FUNCCW] = "funccw";
+	[OP_FUNCF] = "funcf",
+	[OP_IFUNCF] = "ifuncf",
+	[OP_JFUNCF] = "jfuncf",
+	[OP_FUNCV] = "funcv",
+	[OP_IFUNCV] = "ifuncv",
+	[OP_JFUNCV] = "jfuncv",
+	[OP_FUNCC] = "funcc",
+	[OP_FUNCCW] = "funccw",
 
-	list[LUAJIT_NUM_OPCODES] = NULL;
+};
 
-	return list;
+LuaJITOpName luajit_get_opname(LuaJITOpCode opcode) {
+	if (opcode < 0 || opcode >= LUAJIT_NUM_OPCODES) {
+		return "unknown";
+	}
+	return luajit_opname[opcode];
 }

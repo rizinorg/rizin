@@ -67,10 +67,10 @@ typedef enum {
  * \brief Store the global binary info (majority recieved from header)
  */
 typedef struct LuaJIT_binInfo {
-	char *version; /*version*/
 	ut64 hdr_flags; ///< bitmasked header flag
 	char *file_name; ///< Source
 	ut64 header_end; ///< End offset of the header
+	ut64 baddr; ///< address wher the linker maps the binary in memory
 	RzPVector /*<RzBinSection *>*/ *sections; ///< list of sections
 	RzList /*<RzBinSymbol *>*/ *symbol_list; ///< list of symbols
 	RzPVector /*<RzBinAddr *>*/ *entry_vec; ///< list of entries
@@ -197,10 +197,13 @@ typedef struct luajit_up_val {
  * \brief Stores the Constants info
  */
 typedef struct luajit_constant_entry {
-	void *constant_val; ///< Constant data
 	ut64 offset; ///< offset of the constant
 	int type; ///< type of constant (e.g: LUAJIT_DOUBLE, LUAJIT_INT)
 	int size; ///< Size of the constant section.
+	union {
+		st32 int_val; ///< LUAJIT_TINT
+		double flt_val; ///< LUAJIT_TFLT
+	} val;
 } LuaJITConstEntry;
 
 /* Plugin */
@@ -211,13 +214,13 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 RZ_IPI bool check_malformed_ULEB128(int val);
 RZ_IPI ut64 luajit_parse_string(RzBuffer *buf, ut64 offset, ut32 type, char **dest);
 
-RZ_IPI RZ_BORROW LuaJITKgcObj *luajit_kgc_obj_new();
-RZ_IPI RZ_BORROW LuaJITValue *luajit_new_val();
-RZ_IPI RZ_BORROW LuaJITProto *luajit_new_proto();
-RZ_IPI RZ_BORROW LuaJITTable *luajit_new_table();
-RZ_IPI RZ_BORROW LuaJITConstEntry *luajit_new_constant();
-RZ_IPI RZ_BORROW LuaJITLocalVar *luajit_new_localvar();
-RZ_IPI RZ_BORROW LuaJITUpValue *luajit_new_upvalue();
+RZ_IPI RZ_OWN LuaJITKgcObj *luajit_kgc_obj_new();
+RZ_IPI RZ_OWN LuaJITValue *luajit_new_val();
+RZ_IPI RZ_OWN LuaJITProto *luajit_new_proto();
+RZ_IPI RZ_OWN LuaJITTable *luajit_new_table();
+RZ_IPI RZ_OWN LuaJITConstEntry *luajit_new_constant();
+RZ_IPI RZ_OWN LuaJITLocalVar *luajit_new_localvar();
+RZ_IPI RZ_OWN LuaJITUpValue *luajit_new_upvalue();
 
 void luajit_free_proto_entry(LuaJITProto *proto);
 void luajit_free_kgc_obj(LuaJITKgcObj *kgc_obj);
@@ -228,25 +231,5 @@ void luajit_free_table(LuaJITTable *table);
 	if ((p) == NULL) { \
 		return ret; \
 	}
-
-#define READ_SPLIT_64(out_val) \
-	do { \
-		ut64 _lo_val, _hi_val; \
-		int _len = rz_buf_uleb128_at(buf, offset, &_lo_val); \
-		if (check_malformed_ULEB128(_len)) { \
-			luajit_free_kgc_obj(kgc_obj); \
-			return offset; \
-		} \
-		offset += _len; \
-		kgc_obj->size += _len; \
-		_len = rz_buf_uleb128_at(buf, offset, &_hi_val); \
-		if (check_malformed_ULEB128(_len)) { \
-			luajit_free_kgc_obj(kgc_obj); \
-			return offset; \
-		} \
-		offset += _len; \
-		kgc_obj->size += _len; \
-		(out_val) = (_hi_val << 32) | (_lo_val & 0xFFFFFFFF); \
-	} while (0)
 
 #endif

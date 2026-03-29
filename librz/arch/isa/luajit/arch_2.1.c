@@ -3,15 +3,6 @@
 
 #include "arch_2.1.h"
 
-LuaJITInstructions luajit_build_instruction(const ut8 *buf) {
-	LuaJITInstructions ret = 0;
-	ret |= buf[3] << 24;
-	ret |= buf[2] << 16;
-	ret |= buf[1] << 8;
-	ret |= buf[0];
-	return ret;
-}
-
 st32 luajitop_get_value(ut32 instr) {
 	ut32 d = LUAJIT_GET_D(instr);
 	st32 offset = 0;

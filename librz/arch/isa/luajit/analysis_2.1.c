@@ -3,7 +3,7 @@
 
 #include "arch_2.1.h"
 
-int luajit_analysis_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
+int luajit_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, LuaJITInstructions instr) {
 	if (len < 4) {
 		return 0;
 	}
@@ -13,7 +13,6 @@ int luajit_analysis_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 
 	op->fail = UT64_MAX;
 	op->ptr = UT64_MAX;
 	op->val = UT64_MAX;
-	const ut32 instr = luajit_build_instruction(data);
 
 	st32 jump_offset = (st32)LUAJIT_GET_D(instr) - 0x8000;
 	op->addr = addr;

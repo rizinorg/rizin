@@ -10,19 +10,7 @@ guid     @dumb_code_2.1.lua
 EOF
 RUN
 
-NAME=LUAJIT: sections
-FILE=bins/luaJIT/bin/dumb_code_2.1.ljbc
-CMDS=<<EOF
-iS~header
-EOF
-EXPECT=<<EOF
-0x00000071  0xc 0x00000071   0xc   0x0 -r-- fcn.0x71.header            
-0x00000048  0xb 0x00000048   0xb   0x0 -r-- fcn.0x48.header            
-0x00000018  0xb 0x00000018   0xb   0x0 -r-- fcn.0x18.header            
-EOF
-RUN
-
-NAME=LUAJIT: Big file
+NAME=LUAJIT: Symbols and sections
 FILE=bins/luaJIT/bin/interpolation_search_2.1.ljbc
 CMDS=<<EOF
 iS~kgc
@@ -229,8 +217,7 @@ features N/A
 baddr    ----------
 binsz    0x000007b4
 bintype  luajit
-bits     8
-retguard false
+bits     32
 class    luajit compiled file
 compiler luajit 2.1 compiler
 dbg_file N/A
@@ -248,17 +235,15 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
-linenum  false
-lsyms    false
+linenum  true
+lsyms    true
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 EOF
 RUN
 
