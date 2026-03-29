@@ -227,7 +227,7 @@ aae
 aflc
 EOF
 EXPECT=<<EOF
-440
+433
 EOF
 RUN
 
@@ -756,7 +756,7 @@ fcn.8060b550(int32_t arg1, int32_t arg2);
 0x8060b56c      0800e003   jr    ra
 0x8060b570      000080a0   sb    zero, (arg1)
 0x8060b574      00000000   nop
-fcn.8060b574();
+fcn.8060b578();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -827,7 +827,7 @@ EXPECT=<<EOF
 | 0x8060b56c      0800e003   jr    ra
 \ 0x8060b570      000080a0   sb    zero, (arg1)
   0x8060b574      00000000   nop
-/ fcn.8060b574();
+/ fcn.8060b578();
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal   fcn.8060b550
 | 0x8060b580      00000000   nop
@@ -1564,7 +1564,7 @@ EXPECT=<<EOF
 .-----------------------------------------.
 |  0x400820                               |
 | ; [13] -r-x section size 272 named .plt |
-|   ; XREFS(23)                           |
+|   ; XREFS(26)                           |
 |   ;-- section..plt:                     |
 |   ;-- .plt:                             |
 | sym._PROCEDURE_LINKAGE_TABLE();         |
