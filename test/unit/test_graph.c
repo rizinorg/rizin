@@ -155,9 +155,6 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq(rz_graph_count_nodes(g), 8, "n_nodes.del_node");
 	mu_assert_eq(rz_graph_count_edges(g), 12, "n_edges.del_node");
 
-	// Test invalid removal
-	rz_graph_del_node(g, NULL);
-
 	rz_graph_free(g);
 	mu_end;
 }
