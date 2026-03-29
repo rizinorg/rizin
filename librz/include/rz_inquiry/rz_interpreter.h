@@ -19,10 +19,10 @@
 /**
  * \brief Only one IO request at a time is possible (currently).
  */
-#define RZ_INTERPRETER_IO_QUEUE_SIZE    1
-#define RZ_INTERPRETER_IL_QUEUE_SIZE    128
-#define RZ_INTERPRETER_ADDR_QUEUE_SIZE  1024
-#define RZ_INTERPRETER_YIELD_QUEUE_SIZE 4096
+#define RZ_INTERPRETER_IO_RBUF_SIZE    128
+#define RZ_INTERPRETER_IL_QUEUE_SIZE   128
+#define RZ_INTERPRETER_ADDR_RBUF_SIZE  1024
+#define RZ_INTERPRETER_YIELD_RBUF_SIZE 128
 
 /**
  * \brief The abstractions this module supports.
@@ -68,25 +68,6 @@ typedef struct {
 	ut64 alt_target;
 } RzInterpreterBranch;
 
-/**
- * objects the interpreter should use to send over the queues.
- *
- * TODO: Race conditions ahead, if one party is faster in overwriting one value
- * than the other using it.
- * Shouldn't happen though as long as there is only one interpreter
- * and one RzInquiry managing everything.
- */
-typedef struct {
-	RZ_LIFETIME(RzInquiry)
-	RzInterpreterBranch branch; ///< The branch object passed to an IL cache for BB requests.
-
-	RZ_LIFETIME(RzInquiry)
-	RzAnalysisXRef xref; ///< The xref object passed over the queue.
-
-	RZ_LIFETIME(RzInquiry)
-	RzAnalysisCallCandidate call_cand; ///< The stores next pc info passed over the queue.
-} RzInterpreterSharedObjects;
-
 typedef struct {
 	RzInterpreterAbstraction kinds; ///< The abstractions of the state.
 	HtUP *var_name_hashes; ///< Map of DJB2 hashes to variable names.
@@ -96,12 +77,6 @@ typedef struct {
 	RzInterpreterAbstrVal *pc; ///< In our RzIL implementation the PC is not part of the register file.
 	RzAnalysisILConfig *il_config; ///< The IL configuration of the RzArch plugin.
 	const char *arch_name; ///< Name of architecture. Used by work-arounds until we have RzArch.
-	/**
-	 * \brief Shared objects. Pointers to the members are passed over the queue.
-	 * TODO: This is obviously not the final solution. Just some poor man's shared memory.
-	 */
-	RZ_LIFETIME(RzInquiry)
-	RzInterpreterSharedObjects *shared_obj;
 	ut64 bb_addr;
 	ut64 bb_size;
 } RzInterpreterAbstrState;
@@ -124,7 +99,7 @@ typedef enum {
 
 /**
  * \brief A filter for abstract values to decide if they should be pushed into
- * the yield queue or not.
+ * the yield ring buffer or not.
  */
 typedef bool (*RzInterpreterYieldFilter)(const void *element, const void *filter_data);
 
@@ -133,14 +108,14 @@ typedef struct {
 } RzInterpreterYieldFilterData;
 
 /**
- * \brief A queue to push interpretation yields into.
+ * \brief A ring buffer to push interpretation yields into.
  */
 typedef struct {
 	RzInterpreterYieldKind kind;
 	RzInterpreterYieldFilter filter;
 	RzInterpreterYieldFilterData *filter_data;
-	RzThreadQueue *yield_queue;
-} RzInterpreterYieldQueue;
+	RzThreadRingBuf *rbuf;
+} RzInterpreterYieldRBuf;
 
 typedef struct {
 	RzPVector *il_ops; ///< The sequence of IL operations of this basic block.
@@ -241,17 +216,16 @@ typedef struct {
 } RzInterpreterIOResult;
 
 /**
- * \brief The set of required queues for an interpreter to run.
+ * \brief The set of required objects for an interpreter to run.
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
-	RzThreadQueue /*<const RzInterpreterBranch *>*/ *branch_queue; ///< The queue to send requests to the cache what address to get the next IL op from.
 	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
-	// TODO: We need to decide how to distribute the yield.
-	HtUP /*<RzInterpreterYieldQueue *>*/ *yield_queues; ///< The queues to push the yield of interpretation into.
-	RzThreadQueue /*<const RzInterpreterIORequest *>*/ *io_request; ///< The queue for read/write requests to the IO layer.
-	RzThreadQueue /*<const RzInterpreterIOResult *>*/ *io_result; ///< The queue for the read/write requests' answers.
+	RzThreadRingBuf /*<RzInterpreterBranch>*/ *branch_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
+	RzThreadRingBuf /*<RzInterpreterIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
+	RzThreadRingBuf /*<const RzInterpreterIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldRBuf *>*/ *yield_rbufs; ///< The ring buffers to push the yield of interpretation into.
 	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
 	const RzVector /*<RzInterval>*/ *ignored_code;
 	/**
@@ -265,7 +239,7 @@ struct rz_interpreter_set {
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
 
-RZ_API void rz_interpreter_yield_queue_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldQueue *yield_queue);
+RZ_API void rz_interpreter_yield_rbuf_free(RZ_OWN RZ_NULLABLE RzInterpreterYieldRBuf *yield_rbuf);
 
 RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	const char *arch_name,
@@ -274,7 +248,7 @@ RZ_API RZ_OWN RzInterpreterAbstrState *rz_interpreter_abstr_state_new(
 	RZ_NULLABLE const RzILRegBinding *reg_bindings);
 RZ_API void rz_interpreter_abstr_state_free(RZ_OWN RZ_NULLABLE RzInterpreterAbstrState *state);
 
-RZ_API RZ_OWN RzInterpreterYieldQueue *rz_interpreter_yield_queue_new(RzInterpreterYieldKind kind,
+RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterpreterYieldKind kind,
 	RzInterpreterYieldFilter filter,
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
@@ -289,6 +263,6 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points);
 
-RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *queue_set);
+RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset);
 
 #endif // RZ_INTERPRETER

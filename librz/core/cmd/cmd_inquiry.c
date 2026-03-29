@@ -69,12 +69,14 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	bool success = rz_inquiry_interpreter(core, entry_points, ignored_code_regions);
 	eprintf("Finished reference recovery: %s\n", success ? "OK" : "FAIL");
 	if (!success) {
+		rz_vector_free(ignored_code_regions);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	eprintf("Perform function deduction: ");
 
 	RzSetU *symbol_addresses = rz_set_u_new();
 	if (!rz_inquiry_get_fcn_symbol_addr(core, symbol_addresses)) {
+		rz_vector_free(ignored_code_regions);
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_ERROR;
 	}
