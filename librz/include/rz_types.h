@@ -40,12 +40,6 @@ extern "C" {
 #define RZ_UNLIKELY(x) (x)
 #endif
 
-#if HAVE___BUILTIN_PREFETCH
-#define RZ_PREFETCH(addr, rw, locality) __builtin_prefetch(addr, rw, locality)
-#else
-#define RZ_PREFETCH(addr, rw, locality) ((void)(addr))
-#endif
-
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
