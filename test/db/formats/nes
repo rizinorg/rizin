@@ -22,12 +22,12 @@ os       nes
  3 fd: 3 +0x00000010 0x0000c000 - 0x0000ffff r-x fmap.ROM_MIRROR
 ---
 nes:
-  magic: 4e45531a
+  magic: "4e45531a"
   prg_pages: 1
-  chr_pages: 0
+  chr_pages: 1
   prg_size: 0x4000
-  chr_size: 0x0
-  mapper: 0x0
+  chr_size: 0x2000
+  mapper: 0x1
   mirroring: "horizontal"
   battery: false
   trainer: false
