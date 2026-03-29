@@ -1589,11 +1589,13 @@ FILE=malloc://32
 ARGS=-a mips -b 32
 CMDS=<<EOF
 e cfg.bigendian=true
-wx 03e00008
+wx 03e00008 # jr ra
+pi 1
 aa
 ao~type
 EOF
 EXPECT=<<EOF
+jr ra
 type: ret
     - type: "reg"
 EOF
@@ -1604,11 +1606,13 @@ FILE=malloc://32
 ARGS=-a mips -b 64
 CMDS=<<EOF
 e cfg.bigendian=true
-wx 03e00008
+wx 03e00008 # jr ra
+pi 1
 aa
 ao~type
 EOF
 EXPECT=<<EOF
+jr ra
 type: ret
     - type: "reg"
 EOF
@@ -1619,13 +1623,15 @@ FILE=malloc://32
 ARGS=-a mips -b 32
 CMDS=<<EOF
 e cfg.bigendian=true
-wx 27bdff80
+wx 27bdff80 # addiu sp, sp, -0x80
+pi 1
 aa
 ao~type
 ao~stackop
 ao~stackptr
 EOF
 EXPECT=<<EOF
+addiu sp, sp, -0x80
 type: add
     - type: "reg"
     - type: "reg"
@@ -1640,13 +1646,15 @@ FILE=malloc://32
 ARGS=-a mips -b 64 -e asm.cpu=mips64
 CMDS=<<EOF
 e cfg.bigendian=true
-wx 67bdff80
+wx 67bdff80 # daddiu sp, sp, -0x80
+pi 1
 aa
 ao~type
 ao~stackop
 ao~stackptr
 EOF
 EXPECT=<<EOF
+daddiu sp, sp, -0x80
 type: add
     - type: "reg"
     - type: "reg"
@@ -1661,13 +1669,14 @@ FILE=malloc://32
 ARGS=-a mips -b 32
 CMDS=<<EOF
 e cfg.bigendian=true
-ar gp=0x100000
 wx 8f848000 # lw a0, -0x8000(gp)
+pi 1
 aa
 ao~type
 ao~ptr
 EOF
 EXPECT=<<EOF
+lw a0, -0x8000(gp)
 type: load
     - type: "reg"
     - type: "mem"
@@ -1681,13 +1690,14 @@ FILE=malloc://32
 ARGS=-a mips -b 64 -e asm.cpu=mips64
 CMDS=<<EOF
 e cfg.bigendian=true
-ar gp=0x100000
 wx df848000 # ld a0, -0x8000(gp)
+pi 1
 aa
 ao~type
 ao~ptr
 EOF
 EXPECT=<<EOF
+ld a0, -0x8000(gp)
 type: load
     - type: "reg"
     - type: "mem"
