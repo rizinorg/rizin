@@ -33,5 +33,6 @@ nes:
   trainer: false
   alternative_nametable_layout: false
   ram_banks: 0
+
 EOF
 RUN
