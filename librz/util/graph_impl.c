@@ -45,10 +45,7 @@ static RzGraphEdge *edge_new(RzGraphNode *from, RzGraphNode *to, void *data) {
  * \param e edge to free
  */
 // user data free by graph not edge_free
-static void edge_free(RzGraphEdge *e) {
-	if (!e) {
-		return;
-	}
+static inline void edge_free(RzGraphEdge *e) {
 	free(e);
 }
 
@@ -58,7 +55,7 @@ static void edge_free(RzGraphEdge *e) {
  * \param edge_data_free optional free callback for edge user data
  * \return A new RzPVector or NULL on failure
  */
-static RZ_OWN RzPVector *edge_vec_new(RzGraphEdgeDataFree edge_data_free) {
+static inline RZ_OWN RzPVector *edge_vec_new(RzGraphEdgeDataFree edge_data_free) {
 	return rz_pvector_new(edge_data_free);
 }
 
@@ -343,7 +340,7 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph *g, RzGraphNod
  * \param node node to add
  * \return always true
  */
-static RZ_OWN bool rz_graph_list_impl_add_node(RzGraph *g, RzGraphNode *node) {
+static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	// no explicit node in list-based
 	// all leaved to graph to manage nodes
@@ -465,9 +462,7 @@ static void rz_graph_list_impl_fini(void *impl) {
  */
 static void edge_vec_free_cb(void *value) {
 	RzPVector *vec = (RzPVector *)value;
-	if (vec) {
-		rz_pvector_free(vec);
-	}
+	rz_pvector_free(vec);
 }
 
 /**
@@ -1339,11 +1334,12 @@ static void *neighbour_iter_next(RzIterator *it) {
  */
 static void neighbour_iter_free(void *user_data) {
 	RzNeighbourIterState *state = (RzNeighbourIterState *)user_data;
-	if (state) {
-		rz_iterator_free(state->edge_iter);
-		state->edge_iter = NULL;
-		free(state);
+	if (!state) {
+		return;
 	}
+	rz_iterator_free(state->edge_iter);
+	state->edge_iter = NULL;
+	free(state);
 }
 
 /**
