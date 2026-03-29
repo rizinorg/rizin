@@ -34,7 +34,8 @@ bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
 	hash^=(hash>>11);
 	hash += (hash<<15);
 
-	rz_write_le32(digest,hash);
+
+	rz_write_be32(digest,hash);
 
 	return true;
 }
