@@ -147,7 +147,6 @@ rz_hash_sources = [
   'algorithms/temperature/temperature.c',
   'algorithms/adler32/adler32.c',
   'algorithms/crc/crca.c',
-  'algorithms/jenkins/jenkins.c',
   'algorithms/xor/xor.c',
   'algorithms/fletcher/fletcher.c',
   'algorithms/ssdeep/ssdeep.c',
