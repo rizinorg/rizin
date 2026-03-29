@@ -8,12 +8,12 @@
 #include <mips/mips_internal.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
- 
+
 #if CS_NEXT_VERSION >= 6
-#define IS_REG_RA(r) ((r) == MIPS_REG_RA || (r) == MIPS_REG_RA_64)
-#define IS_REG_GP(r) ((r) == MIPS_REG_GP || (r) == MIPS_REG_GP_64)
-#define IS_REG_SP(r) ((r) == MIPS_REG_SP || (r) == MIPS_REG_SP_64)
-#define IS_REG_T9(r) ((r) == MIPS_REG_T9 || (r) == MIPS_REG_T9_64)
+#define IS_REG_RA(r) ((r) == MIPS_REG_RA || (r) == MIPS_REG_RA_64 || (r) == MIPS_REG_RA_NM)
+#define IS_REG_GP(r) ((r) == MIPS_REG_GP || (r) == MIPS_REG_GP_64 || (r) == MIPS_REG_GP_NM)
+#define IS_REG_SP(r) ((r) == MIPS_REG_SP || (r) == MIPS_REG_SP_64 || (r) == MIPS_REG_SP_NM)
+#define IS_REG_T9(r) ((r) == MIPS_REG_T9 || (r) == MIPS_REG_T9_64 || (r) == MIPS_REG_T9_NM)
 #else
 #define IS_REG_RA(r) ((r) == MIPS_REG_RA)
 #define IS_REG_GP(r) ((r) == MIPS_REG_GP)
