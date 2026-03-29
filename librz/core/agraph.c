@@ -154,6 +154,7 @@ typedef struct rz_agraph_edge_data {
 	int nth;
 	int kind;
 	ut64 creation_order;
+	bool tmp_reversed_added;
 } AGraphEdgeData;
 
 static void rz_agraph_edge_data_free(void *data) {
@@ -172,6 +173,7 @@ static AGraphEdgeData *agraph_edge_data_new(int nth, int kind, ut64 creation_ord
 		d->nth = nth;
 		d->kind = kind;
 		d->creation_order = creation_order;
+		d->tmp_reversed_added = false;
 	}
 	return d;
 }
@@ -195,6 +197,19 @@ static ut64 get_edge_creation_order(const RzGraphEdge *e) {
 		return ((AGraphEdgeData *)e->data)->creation_order;
 	}
 	return UT64_MAX;
+}
+
+static void set_edge_tmp_reversed_added(RzGraphEdge *e, bool added) {
+	if (e && e->data) {
+		((AGraphEdgeData *)e->data)->tmp_reversed_added = added;
+	}
+}
+
+static bool get_edge_tmp_reversed_added(const RzGraphEdge *e) {
+	if (e && e->data) {
+		return ((AGraphEdgeData *)e->data)->tmp_reversed_added;
+	}
+	return false;
 }
 
 /** Ensure edge has an AGraphEdgeData struct, allocating a default one if needed. */
@@ -1083,8 +1098,13 @@ static void remove_cycles(RzAGraph *g) {
 		RzANode *to = e->to ? get_anode(e->to) : NULL;
 		if (from && to) {
 			agraph_del_graph_edge(g, from->gnode, to->gnode);
-			(void)agraph_add_graph_edge_ex(g, to->gnode, from->gnode,
+			if (from->gnode == to->gnode) {
+				set_edge_tmp_reversed_added((RzGraphEdge *)e, false);
+				continue;
+			}
+			const bool reversed_added = agraph_add_graph_edge_ex(g, to->gnode, from->gnode,
 				get_edge_nth(e), get_edge_kind(e), get_edge_creation_order(e));
+			set_edge_tmp_reversed_added((RzGraphEdge *)e, reversed_added);
 		}
 	}
 }
@@ -2719,9 +2739,14 @@ static void set_layout(RzAGraph *g) {
 	rz_list_foreach (g->back_edges, it, e) {
 		RzANode *from = e->from ? get_anode(e->from) : NULL;
 		RzANode *to = e->to ? get_anode(e->to) : NULL;
-		fix_back_edge_dummy_nodes(g, from, to);
-		rz_agraph_del_edge(g, to, from);
-		(void)agraph_add_graph_edge(g, from->gnode, to->gnode, get_edge_nth(e), get_edge_kind(e));
+		if (!from || !to) {
+			continue;
+		}
+		if (get_edge_tmp_reversed_added(e)) {
+			fix_back_edge_dummy_nodes(g, from, to);
+			rz_agraph_del_edge(g, to, from);
+		}
+		(void)agraph_add_graph_edge_ex(g, from->gnode, to->gnode, get_edge_nth(e), get_edge_kind(e), get_edge_creation_order(e));
 	}
 
 	switch (g->layout) {
