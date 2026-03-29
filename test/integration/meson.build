@@ -60,6 +60,7 @@ if get_option('enable_tests') and cli_enabled
         rz_hash_dep,
         rz_crypto_dep,
         rz_magic_dep,
+        rzheap_dep,
         lrt,
       ],
       install: false,
