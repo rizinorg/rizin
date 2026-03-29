@@ -12,9 +12,7 @@ on:
     - 'test/**'
     - '.github/workflows/muon.yml'
     branches:
-    - 'dev'
-    - 'stable'
-    - 'container-*'
+    - "**"
   pull_request:
     paths:
     - '**.c'
