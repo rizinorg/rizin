@@ -40,9 +40,9 @@ static bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
 
 	ut32 hash= *ctx;
 
-	hash += (hash<<3);
-	hash ^= (hash>>11);
-	hash += (hash<<15);
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
 
 
 	rz_write_be32(digest,hash);
