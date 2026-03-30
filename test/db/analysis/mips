@@ -1606,7 +1606,7 @@ wx 03e00008 # jr ra
 pi 1
 aa
 ao~type
-e asm.bits=32
+e asm.cpu=mips32
 s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
