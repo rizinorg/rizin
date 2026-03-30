@@ -1589,11 +1589,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips32 jr ra as ret
+NAME=mips jr ra as ret
 FILE=malloc://32
-ARGS=-a mips -b 32
+ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
+e asm.bits=32
+wx 03e00008 # jr ra
+pi 1
+aa
+ao~type
+e asm.bits=64
 wx 03e00008 # jr ra
 pi 1
 aa
@@ -1603,31 +1609,25 @@ EXPECT=<<EOF
 jr ra
 type: ret
     - type: "reg"
-EOF
-RUN
-
-NAME=mips64 jr ra as ret
-FILE=malloc://32
-ARGS=-a mips -b 64
-CMDS=<<EOF
-e cfg.bigendian=true
-wx 03e00008 # jr ra
-pi 1
-aa
-ao~type
-EOF
-EXPECT=<<EOF
 jr ra
 type: ret
     - type: "reg"
 EOF
 RUN
 
-NAME=mips32 stack accounting
+NAME=mips stack accounting
 FILE=malloc://32
-ARGS=-a mips -b 32
+ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
+e asm.bits=32
+wx 27bdff80 # addiu sp, sp, -0x80
+pi 1
+aa
+ao~type
+ao~stackop
+ao~stackptr
+e asm.bits=64
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
 aa
@@ -1643,23 +1643,7 @@ type: add
     - type: "imm"
 stackop: inc
 stackptr: 128
-EOF
-RUN
-
-NAME=mips64 stack accounting
-FILE=malloc://32
-ARGS=-a mips -b 64 -e asm.cpu=mips64
-CMDS=<<EOF
-e cfg.bigendian=true
-wx 67bdff80 # daddiu sp, sp, -0x80
-pi 1
-aa
-ao~type
-ao~stackop
-ao~stackptr
-EOF
-EXPECT=<<EOF
-daddiu sp, sp, -0x80
+addiu sp, sp, -0x80
 type: add
     - type: "reg"
     - type: "reg"
@@ -1669,12 +1653,19 @@ stackptr: 128
 EOF
 RUN
 
-NAME=mips32 gp tracking
+NAME=mips gp tracking
 FILE=malloc://32
-ARGS=-a mips -b 32
+ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
+e asm.bits=32
 wx 8f848000 # lw a0, -0x8000(gp)
+pi 1
+aa
+ao~type
+ao~ptr
+e asm.bits=64
+wx df848000 # ld a0, -0x8000(gp)
 pi 1
 aa
 ao~type
@@ -1687,21 +1678,6 @@ type: load
     - type: "mem"
 ptr: 0xffffffffffff8000
 refptr: 4
-EOF
-RUN
-
-NAME=mips64 gp tracking
-FILE=malloc://32
-ARGS=-a mips -b 64 -e asm.cpu=mips64
-CMDS=<<EOF
-e cfg.bigendian=true
-wx df848000 # ld a0, -0x8000(gp)
-pi 1
-aa
-ao~type
-ao~ptr
-EOF
-EXPECT=<<EOF
 ld a0, -0x8000(gp)
 type: load
     - type: "reg"
