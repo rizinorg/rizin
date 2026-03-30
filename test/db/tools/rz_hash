@@ -203,11 +203,11 @@ ERROR: rz-hash: error, input string is not a number
 EOF
 RUN
 
-NAME=rz-hash -a jenkins -s "pixelated kisses"
+NAME=rz-hash -a jenkins -s jenkinshash
 TOOL=rz-hash
-ARGS=-a jenkins -s "pixelated kisses"
+ARGS=-a jenkins -s jenkinshash
 EXPECT=<<EOF
-string: 0x00000000-0x00000010 jenkins: b78090e7
+string: 0x00000000-0x0000000b jenkins: c652f619
 EOF
 RUN
 
