@@ -8,7 +8,7 @@
 
 typedef ut32 RzJenkins;
 
-#define RZ_HASH_JENKINS_DIGEST_SIZE 4
+#define RZ_HASH_JENKINS_DIGEST_SIZE  4
 #define RZ_HASH_JENKINS_BLOCK_LENGTH 0
 
 static void *plugin_jenkins_context_new() {
@@ -58,7 +58,7 @@ static bool plugin_jenkins_final(void *context, ut8 *digest) {
 	rz_return_val_if_fail(context && digest, false);
 
 	RzJenkins *ctx = (RzJenkins *)context;
-	ut32 hash= *ctx;
+	ut32 hash = *ctx;
 
 	hash += (hash << 3);
 	hash ^= (hash >> 11);
@@ -78,7 +78,7 @@ static bool plugin_jenkins_small_block(const ut8 *data, ut64 size, ut8 **digest,
 		return false;
 	}
 
-	RzJenkins ctx = {0};
+	RzJenkins ctx = { 0 };
 	plugin_jenkins_init(&ctx);
 	plugin_jenkins_update(&ctx, data, size);
 	plugin_jenkins_final(&ctx, dgst);
