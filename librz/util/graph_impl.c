@@ -107,7 +107,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNo
 
 	// no output, cold boot to build output
 	if (!found) {
-		out_vec = edge_vec_new(NULL);
+		out_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!out_vec) {
 			return false;
 		}
@@ -122,7 +122,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNo
 	// check input
 	RzPVector *in_vec = ht_up_find(impl->in_edges, to->hash_id, &found);
 	if (!found) {
-		in_vec = edge_vec_new(NULL);
+		in_vec = edge_vec_new((RzGraphEdgeDataFree)edge_free);
 		if (!in_vec) {
 			return false;
 		}
@@ -389,10 +389,12 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 			// NOTE: do not remove from out_vec here — the entire out_vec is freed by
 			// ht_up_delete below; pvector removing elements mid-iteration shifts the array
 			// and causes the foreach pointer to skip the next element.
+			// Null out the slot so the pvector's element free callback skips it.
 			if (g->edge_data_free && node_to_dest_as_oe->data) {
 				g->edge_data_free(node_to_dest_as_oe->data);
 			}
 			edge_free(node_to_dest_as_oe);
+			*it = NULL;
 
 			g->n_edges -= 1;
 		}
@@ -425,7 +427,9 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 			// NOTE: do not remove from in_vec here — the entire in_vec is freed by
 			// ht_up_delete below; removing elements mid-iteration shifts the array
 			// and causes the foreach pointer to skip the next element.
+			// Null out the slot so the pvector's element free callback skips it.
 			edge_free(src_to_node_as_ie);
+			*it = NULL;
 			g->n_edges -= 1;
 		}
 		ht_up_delete(impl->in_edges, node->hash_id);
