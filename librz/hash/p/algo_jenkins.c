@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 shessaanand
+// SPDX-FileCopyrightText: 2026 shessaanand <shessaasiva@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_hash.h>
