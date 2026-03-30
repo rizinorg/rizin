@@ -1589,38 +1589,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips jr ra as ret
-FILE=malloc://32
+NAME=mips and nanomips tests for capstone6+
+FILE==
 ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
 e asm.bits=32
+s 0
 wx 03e00008 # jr ra
 pi 1
 aa
 ao~type
 e asm.bits=64
+s 0
 wx 03e00008 # jr ra
 pi 1
 aa
 ao~type
-EOF
-EXPECT=<<EOF
-jr ra
-type: ret
-    - type: "reg"
-jr ra
-type: ret
-    - type: "reg"
-EOF
-RUN
-
-NAME=mips stack accounting
-FILE=malloc://32
-ARGS=-a mips
-CMDS=<<EOF
-e cfg.bigendian=true
 e asm.bits=32
+s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
 aa
@@ -1628,50 +1615,68 @@ ao~type
 ao~stackop
 ao~stackptr
 e asm.bits=64
+s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
 aa
 ao~type
 ao~stackop
 ao~stackptr
-EOF
-EXPECT=<<EOF
-addiu sp, sp, -0x80
-type: add
-    - type: "reg"
-    - type: "reg"
-    - type: "imm"
-stackop: inc
-stackptr: 128
-addiu sp, sp, -0x80
-type: add
-    - type: "reg"
-    - type: "reg"
-    - type: "imm"
-stackop: inc
-stackptr: 128
-EOF
-RUN
-
-NAME=mips gp tracking
-FILE=malloc://32
-ARGS=-a mips
-CMDS=<<EOF
-e cfg.bigendian=true
 e asm.bits=32
+s 0
 wx 8f848000 # lw a0, -0x8000(gp)
 pi 1
 aa
 ao~type
 ao~ptr
 e asm.bits=64
+s 0
 wx df848000 # ld a0, -0x8000(gp)
 pi 1
 aa
 ao~type
 ao~ptr
+e asm.cpu=nanomips
+e asm.bits=32
+e cfg.bigendian=false
+s 0
+wx e0db # jrc ra
+pi 1
+aa
+ao~type
+s 0
+wx 40413200 # lw a6, 0x30(gp)
+pi 1
+aa
+ao~esil
+s 0
+wx 3d2050ea # and sp, sp, at
+pi 1
+aa
+ao~type
+ao~esil
 EOF
 EXPECT=<<EOF
+jr ra
+type: ret
+    - type: "reg"
+jr ra
+type: ret
+    - type: "reg"
+addiu sp, sp, -0x80
+type: add
+    - type: "reg"
+    - type: "reg"
+    - type: "imm"
+stackop: inc
+stackptr: 128
+addiu sp, sp, -0x80
+type: add
+    - type: "reg"
+    - type: "reg"
+    - type: "imm"
+stackop: inc
+stackptr: 128
 lw a0, -0x8000(gp)
 type: load
     - type: "reg"
@@ -1684,54 +1689,11 @@ type: load
     - type: "mem"
 ptr: 0xffffffffffff8000
 refptr: 8
-EOF
-RUN
-
-NAME=nanomips jrc ra as ret
-FILE=malloc://32
-ARGS=-a mips -b 32 -e asm.cpu=nanomips
-CMDS=<<EOF
-e cfg.bigendian=false
-wx e0db # jrc ra
-pi 1
-aa
-ao~type
-EOF
-EXPECT=<<EOF
 jrc ra
 type: ret
     - type: "reg"
-EOF
-RUN
-
-NAME=nanomips gp tracking
-FILE=malloc://32
-ARGS=-a mips -b 32 -e asm.cpu=nanomips
-CMDS=<<EOF
-e cfg.bigendian=false
-wx 40413200 # lw a6, 0x30(gp)
-pi 1
-aa
-ao~esil
-EOF
-EXPECT=<<EOF
 lw a6, 0x30(gp)
 esil: 0x30,gp,+,[4],a6,=
-EOF
-RUN
-
-NAME=nanomips sp stack alignment
-FILE=malloc://32
-ARGS=-a mips -b 32 -e asm.cpu=nanomips
-CMDS=<<EOF
-e cfg.bigendian=false
-wx 3d2050ea # and sp, sp, at
-pi 1
-aa
-ao~type
-ao~esil
-EOF
-EXPECT=<<EOF
 and sp, sp, at
 type: and
     - type: "reg"
