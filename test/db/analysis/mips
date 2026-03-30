@@ -1594,7 +1594,7 @@ FILE==
 ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
-e asm.bits=32
+e asm.cpu=mips32
 s 0
 wx 03e00008 # jr ra
 pi 1
