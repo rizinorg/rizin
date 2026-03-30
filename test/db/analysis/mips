@@ -1614,7 +1614,7 @@ aa
 ao~type
 ao~stackop
 ao~stackptr
-e asm.bits=64
+e asm.cpu=mips64
 s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
