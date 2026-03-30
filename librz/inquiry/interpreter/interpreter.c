@@ -171,34 +171,48 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->io_result_rbuf) {
 		rz_th_ring_buf_free(iset->io_result_rbuf);
 	}
-	if (iset->is_running_flag) {
-		rz_atomic_bool_free(iset->is_running_flag);
+	if (iset->emulating) {
+		rz_atomic_bool_free(iset->emulating);
+	}
+	if (iset->on_duty) {
+		rz_atomic_bool_free(iset->on_duty);
 	}
 	if (iset->state) {
 		rz_interpreter_abstr_state_free(iset->state);
+	}
+	if (iset->il_vm) {
+		rz_analysis_il_vm_free(iset->il_vm);
 	}
 	if (iset->yield_rbufs) {
 		ht_up_free(iset->yield_rbufs);
 	}
 	if (iset->entry_points) {
-		rz_vector_free(iset->entry_points);
+		rz_th_ring_buf_free(iset->entry_points);
+	}
+	if (iset->inq_intrpr_lock) {
+		rz_th_lock_free(iset->inq_intrpr_lock);
+	}
+	if (iset->inq_intrpr_sync) {
+		rz_th_cond_free(iset->inq_intrpr_sync);
 	}
 	free(iset);
 }
 
-static bool setup_queues(
+static bool setup_ipc_objects(
 	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
 	RzInterpreterYieldFilter yield_filter,
 	RZ_OUT RzThreadQueue **il_queue,
 	RZ_OUT RzThreadRingBuf **io_request_rbuf,
 	RZ_OUT RzThreadRingBuf **io_result_rbuf,
 	RZ_OUT RzThreadRingBuf **branch_rbuf,
+	RZ_OUT RzThreadRingBuf **entry_points_rbuf,
 	RZ_OUT HtUP **yield_rbufs) {
 	*il_queue = NULL;
 	*io_request_rbuf = NULL;
 	*io_result_rbuf = NULL;
 	*branch_rbuf = NULL;
 	*yield_rbufs = NULL;
+	*entry_points_rbuf = NULL;
 
 	RzInterpreterYieldRBuf *rbuf = NULL;
 	// The queue to pass the Effects to the interpreter.
@@ -222,11 +236,18 @@ static bool setup_queues(
 		goto error_free;
 	}
 
-	// The branch ring buffer. It is the ring buffer the interpreter can request new Effects.
-	// Of course, currently there is only a single one for the prototype.
-	// In practice there would be one for each interpreter instance.
+	// The branch ring buffer. It is the ring buffer the interpreter can request new Effects over.
 	*branch_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_ADDR_RBUF_SIZE, sizeof(RzInterpreterBranch));
 	if (!*branch_rbuf) {
+		rz_warn_if_reached();
+		rz_pvector_free(sections);
+		goto error_free;
+	}
+
+	// The entry_points ring buffer. It is the ring buffer the interpreter gets
+	// new entry points passed over.
+	*entry_points_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_IL_QUEUE_SIZE, sizeof(ut64));
+	if (!*entry_points_rbuf) {
 		rz_warn_if_reached();
 		rz_pvector_free(sections);
 		goto error_free;
@@ -281,48 +302,78 @@ error_free:
  * If it fails, all arguments are freed.
  */
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
+	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
-	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
+	RzInterpreterAbstraction abstraction,
 	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
 	RzInterpreterYieldFilter yield_filter,
-	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
-	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
-	rz_return_val_if_fail(plugin && state && is_running_flag && entry_points && ignored_code, NULL);
+	rz_return_val_if_fail(plugin && ignored_code && analysis, NULL);
 
-	RzInterpreterSet *set = RZ_NEW0(RzInterpreterSet);
-	if (!set) {
-		rz_vector_free(entry_points);
+	if (abstraction != (plugin->supported_abstractions & abstraction)) {
+		RZ_LOG_ERROR("Plugin does not support all required abstractions.\n");
+		return NULL;
+	}
+
+	RzInterpreterSet *iset = RZ_NEW0(RzInterpreterSet);
+	if (!iset) {
 		rz_pvector_free(sections);
 		return NULL;
 	}
-	RzThreadRingBuf *io_request_rbuf = NULL;
-	RzThreadRingBuf *io_result_rbuf = NULL;
-	RzThreadRingBuf *branch_rbuf = NULL;
-	RzThreadQueue *il_queue = NULL;
-	HtUP *yield_rbufs = NULL;
-	if (!setup_queues(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, &yield_rbufs)) {
-		rz_vector_free(entry_points);
-		free(set);
+
+	// Perform the RzAnalysisILVM and abstract state setup procedure.
+	// This prototype won't use the RzAnalysisILVM directly but its components.
+	// That is because the prototypes doesn't handle the VM tasks (track PC, handle IO)
+	// in one VM object, but in separated modules.
+	// So analysis_vm->vm->vm_memorys is used for handling IO requests and
+	// analysis_vm->reg_binding is used for the abstract state setup.
+	//
+	// TODO: Is it a good idea to separate these tasks into different modules?
+	// It allows the IO handler to buffer reads in r-- sections for multiple interpreters.
+	// Possibly allows to optimize the IO access, because there is only module accessing it (not every interpreter).
+	// But is there any other advantage?
+	RzAnalysisILVM *il_vm = rz_analysis_il_vm_new(analysis, analysis->reg);
+	if (!il_vm) {
+		free(iset);
+		RZ_LOG_ERROR("Failed during RzAnalysisILVM setup.\n");
 		return NULL;
 	}
 
-	set->plugin = plugin;
-	set->state = state;
-	set->il_queue = il_queue;
-	set->branch_rbuf = branch_rbuf;
-	set->yield_rbufs = yield_rbufs;
-	set->io_request_rbuf = io_request_rbuf;
-	set->io_result_rbuf = io_result_rbuf;
-	set->is_running_flag = is_running_flag;
-	set->entry_points = entry_points;
-	set->ignored_code = ignored_code;
-	if (state->kinds != (plugin->supported_abstractions & state->kinds)) {
-		RZ_LOG_ERROR("Abstract state doesn't fit to interpreter.\n");
-		rz_interpreter_set_free(set);
+	RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
+	RzInterpreterAbstrState *state = rz_interpreter_abstr_state_new(
+		analysis->cur->arch,
+		abstraction,
+		config,
+		il_vm->reg_binding);
+
+	RzThreadRingBuf *io_request_rbuf = NULL;
+	RzThreadRingBuf *io_result_rbuf = NULL;
+	RzThreadRingBuf *branch_rbuf = NULL;
+	RzThreadRingBuf *entry_points = NULL;
+	RzThreadQueue *il_queue = NULL;
+	HtUP *yield_rbufs = NULL;
+	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, &entry_points, &yield_rbufs)) {
+		free(iset);
+		rz_analysis_il_vm_free(il_vm);
 		return NULL;
 	}
-	return set;
+
+	iset->plugin = plugin;
+	iset->state = state;
+	iset->il_vm = il_vm;
+	iset->il_queue = il_queue;
+	iset->branch_rbuf = branch_rbuf;
+	iset->yield_rbufs = yield_rbufs;
+	iset->io_request_rbuf = io_request_rbuf;
+	iset->io_result_rbuf = io_result_rbuf;
+	iset->emulating = rz_atomic_bool_new(true);
+	iset->on_duty = rz_atomic_bool_new(true);
+	iset->inq_intrpr_lock = rz_th_lock_new(false);
+	iset->inq_intrpr_sync = rz_th_cond_new();
+	iset->intrp_waits_to_run = false;
+	iset->entry_points = entry_points;
+	iset->ignored_code = ignored_code;
+	return iset;
 }
 
 static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
@@ -336,12 +387,6 @@ static bool jumps_to_ignored_code(const RzVector *v, ut64 jump_target) {
 	return false;
 }
 
-RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points) {
-	rz_return_if_fail(iset && entry_points);
-	rz_vector_clear(iset->entry_points);
-	rz_vector_clone_intof(iset->entry_points, entry_points, NULL);
-}
-
 typedef struct {
 	ut64 addr;
 	ut64 in_state_hash;
@@ -351,18 +396,17 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	ut64 out_hash,
 	RzVector *tmp_succ_addr,
 	RzVector *succ_states,
-	const RzInterpreterILBB *il_bb,
-	void *plugin_data) {
+	const RzInterpreterILBB *il_bb) {
 	// Debug printing whole state of VM.
 	//
-	// plugin->state_as_str(out_state, state_str, plugin_data);
+	// plugin->state_as_str(out_state, state_str, iset->intrpr_priv);
 	// char *s = rz_strbuf_drain_nofree(state_str);
 	// RZ_LOG_DEBUG("%s", s);
 	// free(s);
 	bool has_succsessor = true;
 
 	// Determine successors and increase the reference counts for the current out state.
-	if (!iset->plugin->successors(iset->state, tmp_succ_addr, plugin_data)) {
+	if (!iset->plugin->successors(iset->state, tmp_succ_addr, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -402,27 +446,25 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	return has_succsessor;
 }
 
-static bool pre_loop_setup(
+static bool setup_intrpr_state(
 	RzInterpreterSet *iset,
+	ut64 entry_point,
 	const RzInterpreterILBB **il_bb,
 	RzVector **tmp_succ_addr,
 	RzSetU **reachable_states,
-	RzVector **succ_states,
-	void *plugin_data) {
-	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
-	// For now let's just ignore them.
-	if (rz_vector_len(iset->entry_points) > 1) {
-		RZ_LOG_ERROR("More than one entry point is not yet supported by the prototype.\n");
-		return false;
+	RzVector **succ_states) {
+
+	if (iset->plugin->init) {
+		iset->plugin->init(&iset->intrpr_priv);
 	}
 
-	RzInterpreterBranch branch = { 0 };
-	rz_vector_pop_front(iset->entry_points, &branch.target_addr);
-	if (!iset->plugin->init_state(iset->state, branch.target_addr, plugin_data)) {
+	if (!iset->plugin->init_state(iset->state, entry_point, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		return false;
 	}
 
+	RzInterpreterBranch branch = { 0 };
+	branch.target_addr = entry_point;
 	if (rz_th_ring_buf_put(iset->branch_rbuf, &branch) != RZ_THREAD_RING_BUF_OK) {
 		rz_warn_if_reached();
 		return false;
@@ -451,7 +493,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			iset->branch_rbuf &&
 			iset->il_queue &&
 			iset->yield_rbufs &&
-			iset->is_running_flag &&
+			iset->emulating &&
 			iset->plugin &&
 			iset->plugin->eval &&
 			iset->plugin->successors &&
@@ -463,12 +505,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 
 	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
 	RzInterpreterPlugin *plugin = iset->plugin;
-
-	void *priv_ptr = NULL;
-	if (iset->plugin->init) {
-		iset->plugin->init(&priv_ptr);
-	}
-	void *plugin_data = priv_ptr ? priv_ptr : NULL;
 
 	//
 	// Start interpretation
@@ -483,76 +519,89 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	RzVector *succ_states = NULL;
 	const RzInterpreterILBB *il_bb = NULL;
 
-	if (!pre_loop_setup(iset, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states, plugin_data)) {
-		rz_warn_if_reached();
-		goto pre_loop_error;
+	while (rz_atomic_bool_get(iset->on_duty)) {
+		ut64 entry_point;
+		if (rz_th_ring_buf_take_blocking(iset->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
+			rz_atomic_bool_set(iset->on_duty, false);
+			rz_atomic_bool_set(iset->on_duty, false);
+			return true;
+		}
+
+		// Initializes the current interpreter's private data and its state.
+		if (!setup_intrpr_state(iset, entry_point, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states)) {
+			goto pre_emu_loop_error;
+		}
+
+		rz_atomic_bool_set(iset->emulating, true);
+		ut64 out_hash = 0;
+		while (rz_atomic_bool_get(iset->emulating)) {
+			iset->state->bb_addr = il_bb->bb_addr;
+			iset->state->bb_size = il_bb->size;
+			// Evaluate the effect on the input state.
+			if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
+				RZ_LOG_DEBUG("Eval failed\n");
+				goto emu_done;
+			}
+			out_hash = plugin->hash_state(iset->state, iset->intrpr_priv);
+
+			// Add output state hash to the reachable states and
+			// set a flag if it was a new state.
+			size_t psize = rz_set_u_size(reachable_states);
+			rz_set_u_add(reachable_states, out_hash);
+			bool new_state_reached = psize < rz_set_u_size(reachable_states);
+
+			// Determine the successor effects to evaluate.
+			// Only newly reached states are allowed to add successors.
+			if (!(new_state_reached && choose_next_pc(iset, out_hash, tmp_succ_addr, succ_states, il_bb))) {
+				// No new state or address means we can stop interpreting.
+				// Note, that we can't use the queues as cancel condition because they
+				// are asynchronous and checking them would introduces race conditions.
+				// TODO: This doesn't work if the interpreter can produce multiple out states.
+				goto emu_done;
+			}
+
+			// Set effect and state for next evaluation.
+			SuccessorState next = { 0 };
+			rz_vector_pop_front(succ_states, &next);
+			if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+				RZ_LOG_DEBUG("Getting il bb failed\n");
+				// The il op lifting failed. Likely because the PC
+				// pointed to an unmapped region.
+				goto emu_done;
+			}
+			if (!plugin->set_pc(iset->state, next.addr, iset->intrpr_priv)) {
+				rz_warn_if_reached();
+				goto emu_done;
+			}
+		}
+	emu_done:
+		rz_atomic_bool_set(iset->emulating, false);
+		RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
+		RZ_FREE_CUSTOM(succ_states, rz_vector_free);
+		RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
+		if (iset->plugin->fini) {
+			iset->plugin->fini(iset->intrpr_priv);
+		}
+		iset->plugin->fini_state(iset->state, iset->intrpr_priv);
+
+		// Wait until RzInquiry asks to start again.
+		rz_th_lock_enter(iset->inq_intrpr_lock);
+		iset->intrp_waits_to_run = true;
+		rz_th_cond_wait(iset->inq_intrpr_sync, iset->inq_intrpr_lock);
+		iset->intrp_waits_to_run = false;
+		rz_th_lock_leave(iset->inq_intrpr_lock);
 	}
-
-	ut64 out_hash = 0;
-	while (rz_atomic_bool_get(iset->is_running_flag)) {
-		iset->state->bb_addr = il_bb->bb_addr;
-		iset->state->bb_size = il_bb->size;
-		// Evaluate the effect on the input state.
-		if (!plugin->eval(iset, il_bb, plugin_data)) {
-			RZ_LOG_DEBUG("Eval failed\n");
-			goto in_loop_error;
-		}
-		out_hash = plugin->hash_state(iset->state, plugin_data);
-
-		// Add output state hash to the reachable states and
-		// set a flag if it was a new state.
-		size_t psize = rz_set_u_size(reachable_states);
-		rz_set_u_add(reachable_states, out_hash);
-		bool new_state_reached = psize < rz_set_u_size(reachable_states);
-
-		// Determine the successor effects to evaluate.
-		// Only newly reached states are allowed to add successors.
-		if (!(new_state_reached && choose_next_pc(iset, out_hash, tmp_succ_addr, succ_states, il_bb, plugin_data))) {
-			// No new state or address means we can stop interpreting.
-			// Note, that we can't use the queues as cancel condition because they
-			// are asynchronous and checking them would introduces race conditions.
-			// TODO: This doesn't work if the interpreter can produce multiple out states.
-			break;
-		}
-
-		// Set effect and state for next evaluation.
-		SuccessorState next = { 0 };
-		rz_vector_pop_front(succ_states, &next);
-		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
-			// The il op lifting failed. Likely because the PC
-			// pointed to an unmapped region.
-			goto in_loop_error;
-		}
-		if (!plugin->set_pc(iset->state, next.addr, plugin_data)) {
-			rz_warn_if_reached();
-			// Some error occurred lifting this basic block. Or updating the PC.
-			// Abort execution.
-			goto in_loop_error;
-		}
-	}
-
-loop_cleanup:
-	rz_vector_free(tmp_succ_addr);
-	rz_vector_free(succ_states);
-	rz_set_u_free(reachable_states);
-	iset->plugin->fini_state(iset->state, plugin_data);
-	if (iset->plugin->fini) {
-		iset->plugin->fini(plugin_data);
-	}
-	rz_atomic_bool_set(iset->is_running_flag, false);
+	rz_atomic_bool_set(iset->on_duty, false);
 	return success;
 
-in_loop_error:
-	RZ_LOG_DEBUG("in_loop_error\n");
-	success = false;
-	goto loop_cleanup;
-
-pre_loop_error:
+pre_emu_loop_error:
 	RZ_LOG_DEBUG("pre_loop_error\n");
+	rz_warn_if_reached();
+	rz_atomic_bool_set(iset->on_duty, false);
 	success = false;
-	goto loop_cleanup;
+	goto emu_done;
 
 entry_assert_error:
-	rz_atomic_bool_set(iset->is_running_flag, false);
+	rz_atomic_bool_set(iset->on_duty, false);
 	return false;
 }

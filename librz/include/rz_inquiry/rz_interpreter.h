@@ -221,19 +221,50 @@ typedef struct {
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
 	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
+	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
+
 	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
 	RzThreadRingBuf /*<RzInterpreterBranch>*/ *branch_rbuf; ///< The ring buffer to send requests to the cache what address to get the next IL op from.
 	RzThreadRingBuf /*<RzInterpreterIORequest>*/ *io_request_rbuf; ///< The ring buffer for read/write requests to the IO layer.
 	RzThreadRingBuf /*<const RzInterpreterIOResult *>*/ *io_result_rbuf; ///< The ring buffer for the read/write requests' answers.
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldRBuf *>*/ *yield_rbufs; ///< The ring buffers to push the yield of interpretation into.
-	RzAtomicBool *is_running_flag; ///< Flag for the interpreter thread to toggle when done.
+
+	/**
+	 * \brief The ring buffers to push the yield of interpretation into.
+	 * These ring buffers are shared with other interpreter sets.
+	 */
+	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldRBuf *>*/ *yield_rbufs;
+	/**
+	 * \brief This flag signals if an interpreter is executing IL ops for.
+	 * With the exception of an error state, this flag should
+	 * only be toggled by the interpreter itself.
+	 */
+	RzAtomicBool *emulating;
+	/**
+	 * \brief This flag signals if an should stand by for entry points to start interpeting from.
+	 * With the exception of an error state, this flag should
+	 * only be toggled by the inquiry module.
+	 */
+	RzAtomicBool *on_duty;
+	/**
+	 * \brief Ignored address ranges.
+	 */
 	const RzVector /*<RzInterval>*/ *ignored_code;
 	/**
 	 * \brief The entry points for the interpreters.
-	 * Each address has its lifted IL op in the il_queue at the same index.
 	 */
-	RzVector /*<ut64>*/ *entry_points;
+	RzThreadRingBuf /*<ut64>*/ *entry_points;
+
+	RzThreadCond *inq_intrpr_sync; ///< Condition to let interpreter wait until inquiry set up everything.
+	RzThreadLock *inq_intrpr_lock; ///< Lock for task_sync condition.
+	bool intrp_waits_to_run;
+	/**
+	 * \brief The interpreter plugin.
+	 */
 	RzInterpreterPlugin *plugin;
+	/**
+	 * \brief The private data of a single interpreter thread.
+	 */
+	RZ_BORROW void *intrpr_priv;
 };
 
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
@@ -253,15 +284,13 @@ RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterprete
 	RZ_OWN RZ_NULLABLE void *filter_data);
 
 RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
+	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
-	RZ_NONNULL RZ_OWN RzInterpreterAbstrState *state,
+	RzInterpreterAbstraction abstraction,
 	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
 	RzInterpreterYieldFilter yield_filter,
-	RZ_NONNULL RZ_OWN RzAtomicBool *is_running_flag,
-	RZ_NONNULL RZ_OWN RzVector /*<ut64>*/ *entry_points,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
-RZ_API void rz_interpreter_set_add_entry_points(RZ_NONNULL RzInterpreterSet *iset, const RzVector /*<ut64>*/ *entry_points);
 
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset);
 

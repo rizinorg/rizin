@@ -23,6 +23,7 @@
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_set.h"
 #include "rz_util/rz_str.h"
+#include "rz_util/rz_sys.h"
 #include "rz_vector.h"
 #include <rz_il.h>
 #include <rz_list.h>
@@ -60,9 +61,6 @@ RZ_API bool rz_inquiry_plugin_add(RZ_BORROW RZ_NONNULL RzInquiry *inquiry, RZ_OW
 	if (!ht_sp_insert(inquiry->plugins_data, plugin->p_interpreter->name, p_data)) {
 		rz_warn_if_reached();
 		return false;
-	}
-	if (plugin->p_interpreter->init) {
-		plugin->p_interpreter->init(ht_sp_find(inquiry->plugins_data, plugin->p_interpreter->name, NULL));
 	}
 	return true;
 }
@@ -359,7 +357,7 @@ static const RzInterpreterILBB *get_il_bb(RzCore *core, HtUP *il_cache, ut64 add
 }
 
 static bool send_next_il_bb(RzCore *core,
-	RzInterpreterSet *iset,
+	RzThreadQueue *il_queue,
 	HtUP *il_cache,
 	RzSetU *branch_targets,
 	RzInterpreterBranch *branch) {
@@ -389,8 +387,76 @@ static bool send_next_il_bb(RzCore *core,
 		rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
 	}
 	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
-	rz_th_queue_push(iset->il_queue, (void *)bb, true);
+	rz_th_queue_push(il_queue, (void *)bb, true);
 	return true;
+}
+
+// TODO: il_cache should be passed here.
+static bool add_entry_point(
+	RzInterpreterSet *iset,
+	HtUP *il_cache,
+	RZ_BORROW RzVector /*<ut64>*/ *entry_points,
+	RzSetU *branch_targets) {
+	// Add the next entry point we need to check for executable regions the interpreters did not cover.
+	// For this we simply delete all jump targets from our set, which point
+	// into the already handled basic blocks.
+	// Then add a few addresses as new entry point.
+	// The addresses we add are jump targets from jump/call instructions in the binary.
+
+	rz_vector_clear(entry_points);
+	RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
+	RzIterator *ct_iter = rz_set_u_as_iter(branch_targets);
+	ut64 *ct;
+	rz_iterator_foreach(ct_iter, ct) {
+		if (ht_up_find(il_cache, *ct, NULL)) {
+			// This call target was interpreted before (hence is in the IL cache).
+			rz_vector_push(covered_jump_targets, ct);
+			continue;
+		}
+		rz_vector_push(entry_points, ct);
+	}
+	rz_iterator_free(ct_iter);
+	if (rz_vector_empty(entry_points)) {
+		rz_vector_free(covered_jump_targets);
+		return false;
+	}
+
+	// TODO: Push entrypoints evenly to other interpreters
+	ut64 entry_point = 0;
+	rz_vector_pop(entry_points, &entry_point);
+	rz_th_ring_buf_put(iset->entry_points, &entry_point);
+
+	ut64 *ep;
+	rz_vector_foreach (covered_jump_targets, ep) {
+		// Delete the selected ones from the jump target set.
+		// So they are not requested again.
+		rz_set_u_delete(branch_targets, *ep);
+	}
+	rz_vector_free(covered_jump_targets);
+	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
+		eprintf(RZ_CONS_CLEAR_LINE "\rBranch targets left: %" PFMT32d, rz_set_u_size(branch_targets));
+		fflush(stdout);
+	}
+	return true;
+}
+
+static void close_reset_ipc_obj(RzInterpreterSet *iset) {
+	// Close and clear all the IPC objects of this interpreter.
+	// This also clears the buffer and queues
+	rz_th_ring_buf_close(iset->io_request_rbuf);
+	rz_th_ring_buf_close(iset->io_result_rbuf);
+	rz_th_ring_buf_close(iset->branch_rbuf);
+	rz_th_queue_close(iset->il_queue);
+	rz_list_free(rz_th_queue_pop_all(iset->il_queue));
+}
+
+static void open_ipc_obj(RzInterpreterSet *iset) {
+	// Open queue again, so the interpretation can start at another
+	// jump target again.
+	rz_th_ring_buf_open(iset->io_request_rbuf);
+	rz_th_ring_buf_open(iset->io_result_rbuf);
+	rz_th_ring_buf_open(iset->branch_rbuf);
+	rz_th_queue_open(iset->il_queue);
 }
 
 /**
@@ -402,28 +468,16 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzAtomicBool *is_running = rz_atomic_bool_new(true);
-	RzInterpreterAbstrState *abstr_state = NULL;
 	RzInterpreterSet *iset = NULL;
 	HtUP *il_cache = NULL;
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
-	RzAnalysisILVM *analysis_vm = NULL;
 	RzSetU *branch_targets = rz_set_u_new();
 	RzSetU *symbol_targets = rz_set_u_new();
 	bool user_sent_signal = false;
 	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = NULL;
 
 	rz_cons_push();
-
-	// Here we build the filter for the yield queue.
-	// The prototype generates constant xrefs.
-	// So the filter checks the generated xrefs, if they are within the IO map
-	// boundaries.
-	RzPVector /*<RzBinSection *>*/ *sections = rz_bin_object_get_sections(core->bin->cur->o);
-	if (!sections) {
-		goto error_free;
-	}
 
 	// The pseudo cache of IL effects.
 	// This is only a vector so we can simulate the ownership separation
@@ -456,33 +510,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 
-	// Perform the RzAnalysisILVM and abstract state setup procedure.
-	// This prototype won't use the RzAnalysisILVM directly but its components.
-	// That is because the prototypes doesn't handle the VM tasks (track PC, handle IO)
-	// in one VM object, but in separated modules.
-	// So analysis_vm->vm->vm_memorys is used for handling IO requests and
-	// analysis_vm->reg_binding is used for the abstract state setup.
-	//
-	// TODO: Is it a good idea to separate these tasks into different modules?
-	// It allows the IO handler to buffer reads in r-- sections for multiple interpreters.
-	// Possibly allows to optimize the IO access, because there is only module accessing it (not every interpreter).
-	// But is there any other advantage?
-	{
-		analysis_vm = rz_analysis_il_vm_new(core->analysis, core->analysis->reg);
-		if (!analysis_vm) {
-			RZ_LOG_ERROR("Failed during RzAnalysisILVM setup.\n");
-			return_code = false;
-			goto error_free;
-		}
-
-		RzAnalysisILConfig *config = core->analysis->cur->il_config(core->analysis);
-		abstr_state = rz_interpreter_abstr_state_new(
-			core->analysis->cur->arch,
-			RZ_INTERPRETER_ABSTRACTION_CONST,
-			config,
-			analysis_vm->reg_binding);
-	}
-
 	RZ_LOG_DEBUG("INQUIRY: Enforce enabling IO cache.\n");
 	const char *io_cache_opt = rz_config_get(core->config, "io.cache");
 	rz_config_set(core->config, "io.cache", "true");
@@ -498,27 +525,27 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		goto error_free;
 	}
 	iset = rz_interpreter_set_new(
-		// TODO: Maybe use the pointer from RzCore.
-		// But in general the whole thing should run without RzCore.
+		core->analysis,
 		prototype->p_interpreter,
-		abstr_state,
-		sections,
+		RZ_INTERPRETER_ABSTRACTION_CONST,
+		rz_bin_object_get_sections(core->bin->cur->o),
 		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
-		is_running,
-		rz_vector_clone(entry_points),
 		ignored_code);
+	ut64 entry_point = 0;
+	rz_vector_pop(entry_points, &entry_point);
+	rz_th_ring_buf_put(iset->entry_points, &entry_point);
+
 	if (!iset) {
 		return_code = false;
 		rz_warn_if_reached();
 		goto error_free;
 	}
 
-	do {
-		bool bb_decode_failed = false;
+	// Dispatch prototype interpreter into a thread.
+	RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
+	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
-		// Dispatch prototype interpreter into a thread.
-		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
-		interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	while (rz_atomic_bool_get(iset->on_duty)) {
 
 		// From here on, the code plays the role of the cache, IO handler,
 		// and yield consumer.
@@ -528,13 +555,12 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		// In the final implementation each of those roles would be split into
 		// two or more separated modules running in parallel.
 		RZ_LOG_DEBUG("INQUIRY: Start IL providing loop.\n");
-		rz_atomic_bool_set(is_running, true);
-
-		while (rz_atomic_bool_get(is_running)) {
-			if (rz_th_terminated(interpr_th) || rz_cons_is_breaked()) {
-				rz_atomic_bool_set(is_running, false);
-				user_sent_signal = rz_cons_is_breaked();
-				break;
+		while (rz_atomic_bool_get(iset->emulating)) {
+			if (rz_cons_is_breaked()) {
+				rz_atomic_bool_set(iset->emulating, false);
+				rz_atomic_bool_set(iset->on_duty, false);
+				user_sent_signal = true;
+				goto end_interpretation;
 			}
 
 			// =========
@@ -551,14 +577,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						rz_warn_if_reached();
 						break;
 					} else if (r == RZ_THREAD_RING_BUF_OK) {
-						if (!send_next_il_bb(core, iset, il_cache, branch_targets, &branch)) {
+						if (!send_next_il_bb(core, iset->il_queue, il_cache, branch_targets, &branch)) {
 							// Signal interpreter the lifting failed.
-							rz_atomic_bool_set(is_running, false);
-							rz_th_ring_buf_close(iset->io_request_rbuf);
-							rz_th_ring_buf_close(iset->io_result_rbuf);
-							rz_th_ring_buf_close(iset->branch_rbuf);
-							rz_th_queue_close(iset->il_queue);
-							bb_decode_failed = true;
+							rz_atomic_bool_set(iset->emulating, false);
 							break;
 						}
 					}
@@ -583,7 +604,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						break;
 					} else if (r == RZ_THREAD_RING_BUF_OK) {
 						RzInterpreterIOResult io_res = { 0 };
-						handle_io_request(core, &analysis_vm->vm->vm_memory, &io_req, &io_res);
+						handle_io_request(core, &iset->il_vm->vm->vm_memory, &io_req, &io_res);
 						if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 							rz_warn_if_reached();
 							break;
@@ -600,78 +621,57 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			// In our prototype it only receives xrefs and call candidates.
 			{
 				if (!handle_yields(core, iset->yield_rbufs)) {
-					rz_atomic_bool_set(is_running, false);
+					rz_warn_if_reached();
+					rz_atomic_bool_set(iset->emulating, false);
+					rz_atomic_bool_set(iset->on_duty, false);
 					break;
 				}
 			}
 		}
 
-		rz_th_ring_buf_close(iset->io_request_rbuf);
-		rz_th_ring_buf_close(iset->io_result_rbuf);
-		rz_th_ring_buf_close(iset->branch_rbuf);
-		rz_th_queue_close(iset->il_queue);
+		// =================
+		// CLEAR IPC OBJECTS
+		// =================
+		close_reset_ipc_obj(iset);
 
-		RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
-		rz_th_wait(interpr_th);
-		bool interpr_ret = rz_th_get_retv(interpr_th);
-		rz_th_free(interpr_th);
-		if ((!interpr_ret && !bb_decode_failed) || user_sent_signal) {
-			if (!user_sent_signal) {
-				RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
-			} else {
-				RZ_LOG_ERROR("User sent signal.\n");
-			}
-			break;
-		}
-		// Open queue again, so the interpretation can start at another
-		// jump target again.
-		rz_th_ring_buf_open(iset->io_request_rbuf);
-		rz_th_ring_buf_open(iset->io_result_rbuf);
-		rz_th_ring_buf_open(iset->branch_rbuf);
-		rz_th_queue_open(iset->il_queue);
-		rz_list_free(rz_th_queue_pop_all(iset->il_queue));
+		// busy wait until the interpreter waits to take the next emulation task.
+		RZ_LOG_DEBUG("INQUIRY: Wait until interpreter thread is ready.\n");
+		bool intrp_waits_to_run = false;
+		do {
+			rz_th_lock_enter(iset->inq_intrpr_lock);
+			intrp_waits_to_run = iset->intrp_waits_to_run;
+			rz_th_lock_leave(iset->inq_intrpr_lock);
+		} while (!intrp_waits_to_run);
+		RZ_LOG_DEBUG("INQUIRY: Interpreter thread is ready.\n");
 
-		// At this point the interpreter is finished and returned.
-		// Now we need to check for executable regions it did not cover.
-		// For this we simply delete all jump targets from our set, which point
-		// into the already handled basic blocks.
-		// Then add a few addresses as new entry point.
-		// The addresses we add are jump targets from jump/call instructions in the binary.
-		{
-			rz_vector_clear(entry_points);
-			RzVector *covered_jump_targets = rz_vector_new(sizeof(ut64), NULL, NULL);
-			RzIterator *ct_iter = rz_set_u_as_iter(branch_targets);
-			size_t x = 0;
-			ut64 *ct;
-			rz_iterator_foreach(ct_iter, ct) {
-				if (ht_up_find(il_cache, *ct, NULL)) {
-					// This call target was interpreted before (hence is in the IL cache).
-					rz_vector_push(covered_jump_targets, ct);
-					continue;
-				}
-				x++;
-				rz_vector_push(entry_points, ct);
-				// Experiment how many new entry points we add.
-				if (x >= 1) {
-					break;
-				}
-			}
-			rz_iterator_free(ct_iter);
-			rz_interpreter_set_add_entry_points(iset, entry_points);
+		// TODO: This syncro thingy doesn't work as nicely as I wish.
+		open_ipc_obj(iset);
 
-			ut64 *ep;
-			rz_vector_foreach (covered_jump_targets, ep) {
-				// Delete the selected ones from the jump target set.
-				// So they are not requested again.
-				rz_set_u_delete(branch_targets, *ep);
-			}
-			rz_vector_free(covered_jump_targets);
+		// At this point the interpreter is finished and is waiting for the next emulation task.
+		if (!add_entry_point(iset, il_cache, entry_points, branch_targets)) {
+			// Non left.
+			rz_atomic_bool_set(iset->on_duty, false);
 		}
-		if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
-			eprintf(RZ_CONS_CLEAR_LINE "\rBranch targets left: %" PFMT32d, rz_set_u_size(branch_targets));
-			fflush(stdout);
+		rz_atomic_bool_set(iset->emulating, true);
+		rz_th_cond_signal_all(iset->inq_intrpr_sync);
+	}
+
+end_interpretation:
+
+	RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
+	rz_atomic_bool_set(iset->on_duty, false);
+	close_reset_ipc_obj(iset);
+	rz_th_wait(interpr_th);
+	bool interpr_ret = rz_th_get_retv(interpr_th);
+	rz_th_free(interpr_th);
+	if (!interpr_ret || user_sent_signal) {
+		return_code = false;
+		if (!user_sent_signal) {
+			RZ_LOG_ERROR("Interpreter failed with an error. Abort.\n");
+		} else {
+			RZ_LOG_ERROR("User sent signal.\n");
 		}
-	} while (!rz_vector_empty(entry_points));
+	}
 
 	if (rz_log_get_level() > RZ_LOGLVL_INFO && rz_cons_is_interactive()) {
 		eprintf("\n");
@@ -698,14 +698,9 @@ error_free:
 	rz_vector_free(entry_points);
 	rz_set_u_free(branch_targets);
 	rz_buf_free(io_buf);
-	rz_analysis_il_vm_free(analysis_vm);
 	rz_vector_free(insn_to_insn_edges);
 
-	if (!iset) {
-		// Ownership of all those objects wasn't yet passed to the iset.
-		rz_atomic_bool_free(is_running);
-		rz_interpreter_abstr_state_free(abstr_state);
-	} else {
+	if (iset) {
 		// Ownership was passed to iset
 		rz_interpreter_set_free(iset);
 	}
