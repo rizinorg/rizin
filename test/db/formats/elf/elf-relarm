@@ -30,22 +30,27 @@ BROKEN=1
 FILE=bins/elf/r2pay-arm32.so
 CMDS=<<EOF
 ir~?
+# ARM_RELATIVE
 s 0xb58c0
 pf bbbb
 pd 1
 echo ---
+# ARM_ABS32
 s 0xb58c4
 pf bbbb
 pd 1
 echo ---
+# ARM_ABS32
 s 0xb58d8
 pf bbbb
 pd 1
 echo ---
+ARM_GLOB_DAT
 s 0xb5dbc
 pf bbbb
 pd 1
 echo ---
+# ARM_JUMP_SLOT
 s 0xb5e08
 pf bbbb
 pd 1
@@ -118,6 +123,7 @@ NAME=ELF: arm thumb relocs 1
 FILE=bins/elf/mbedtls-bignum-thumb-interwork.so
 CMDS=<<EOF
 ir~?
+# ARM_THM_PC22
 s 0x08000b82
 pf bbbb
 pd 1

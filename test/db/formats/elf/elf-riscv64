@@ -1,4 +1,4 @@
-NAME=ELF: riscv64: analysis
+NAME=ELF: riscv64: entry points and symbols
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
 ie

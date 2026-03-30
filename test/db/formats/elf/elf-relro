@@ -1,6 +1,7 @@
 NAME=ELF: arm64 relocs crashing - rz-bin strings
 FILE==
-CMDS=!!rz-bin -qzz bins/elf/librsjni_androix.so~?
+TOOL=rz-bin
+ARGS=-qzz bins/elf/librsjni_androix.so~?
 EXPECT=<<EOF
 562
 EOF
