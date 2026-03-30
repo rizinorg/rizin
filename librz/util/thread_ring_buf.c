@@ -7,11 +7,15 @@
 #include <rz_util/rz_sys.h>
 
 #define LEAVE_RBUF() \
-	rz_th_lock_leave(rbuf->lock); \
-	rbuf->threads_awaiting--;
+	rz_th_lock_enter(rbuf->counter_lock); \
+	rbuf->threads_awaiting--; \
+	rz_th_lock_leave(rbuf->counter_lock); \
+	rz_th_lock_leave(rbuf->lock);
 
 #define ENTER_RBUF() \
+	rz_th_lock_enter(rbuf->counter_lock); \
 	rbuf->threads_awaiting++; \
+	rz_th_lock_leave(rbuf->counter_lock); \
 	rz_th_lock_enter(rbuf->lock); \
 	if (RZ_UNLIKELY(rbuf->closed)) { \
 		LEAVE_RBUF(); \
@@ -31,7 +35,9 @@ struct rz_th_ring_buf_t {
 	size_t readers_waiting; ///< Number of readers waiting.
 
 	RzThreadLock *lock; ///< Lock for buffer access.
+
 	size_t threads_awaiting; ///< Number of threads awaiting to read/write
+	RzThreadLock *counter_lock; ///< Lock for threads_awaiting counter.
 
 	void *buf; ///< Stored data
 	size_t elem_size; ///< Size of one element in the buffer.
@@ -75,9 +81,10 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size) {
 	rbuf->r = 0;
 
 	rbuf->lock = rz_th_lock_new(false);
+	rbuf->counter_lock = rz_th_lock_new(false);
 	rbuf->writer_wait_cond = rz_th_cond_new();
 	rbuf->reader_wait_cond = rz_th_cond_new();
-	if (!rbuf->lock || !rbuf->writer_wait_cond || !rbuf->reader_wait_cond) {
+	if (!rbuf->lock || !rbuf->counter_lock || !rbuf->writer_wait_cond || !rbuf->reader_wait_cond) {
 		goto err_free;
 	}
 
@@ -87,6 +94,7 @@ err_free:
 	rz_warn_if_reached();
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
+	rz_th_lock_free(rbuf->counter_lock);
 	rz_th_cond_free(rbuf->writer_wait_cond);
 	rz_th_cond_free(rbuf->reader_wait_cond);
 	return NULL;
@@ -100,6 +108,7 @@ RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf) {
 
 	free(rbuf->buf);
 	rz_th_lock_free(rbuf->lock);
+	rz_th_lock_free(rbuf->counter_lock);
 	rz_th_cond_free(rbuf->writer_wait_cond);
 	rz_th_cond_free(rbuf->reader_wait_cond);
 	free(rbuf);
@@ -146,7 +155,11 @@ static void reset_buf(RzThreadRingBuf *rbuf) {
  */
 RZ_API RzThreadRingBufResult rz_th_ring_buf_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, RZ_THREAD_RING_BUF_CLOSED);
+
+	rz_th_lock_enter(rbuf->counter_lock);
 	rbuf->threads_awaiting++;
+	rz_th_lock_leave(rbuf->counter_lock);
+
 	rz_th_lock_enter(rbuf->lock);
 
 	if (!rbuf->closed) {
@@ -288,7 +301,10 @@ RZ_API RzThreadRingBufResult rz_th_ring_buf_take_blocking(RZ_BORROW RZ_NONNULL R
  */
 RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf) {
 	rz_return_val_if_fail(rbuf, false);
+	rz_th_lock_enter(rbuf->counter_lock);
 	rbuf->threads_awaiting++;
+	rz_th_lock_leave(rbuf->counter_lock);
+
 	rz_th_lock_enter(rbuf->lock);
 
 	bool closed = rbuf->closed;
