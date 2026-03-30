@@ -368,11 +368,11 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 	bool found = false;
 	RZ_BORROW RzPVector *out_vec = ht_up_find(impl->out_edges, node->hash_id, &found);
 	if (found && out_vec) {
-		void **it;
-		rz_pvector_foreach (out_vec, it) {
-			RzGraphEdge *node_to_dest_as_oe = (RzGraphEdge *)(*it);
+		ut64 i = rz_pvector_len(out_vec);
+		while (i-- > 0) {
+			RzGraphEdge *node_to_dest_as_oe = (RzGraphEdge *)rz_pvector_at(out_vec, i);
 			RzGraphNode *dest_node = node_to_dest_as_oe->to;
-			// remove related neighbour nodes' in-edges
+			// remove related neighbour (mirror) nodes' in-edges
 			RzPVector *in_edges_of_dest = ht_up_find(impl->in_edges, dest_node->hash_id, &found);
 			if (found && in_edges_of_dest) {
 				// find id of node_to_dest_as_ie
@@ -386,15 +386,13 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 			}
 
 			// clean and delete edge struct
-			// NOTE: do not remove from out_vec here — the entire out_vec is freed by
-			// ht_up_delete below; pvector removing elements mid-iteration shifts the array
-			// and causes the foreach pointer to skip the next element.
-			// Null out the slot so the pvector's element free callback skips it.
+			// NOTE: reverse iteration allows safe rz_pvector_remove_at —
+			// removing from the tail does not shift earlier indices.
 			if (g->edge_data_free && node_to_dest_as_oe->data) {
 				g->edge_data_free(node_to_dest_as_oe->data);
 			}
 			edge_free(node_to_dest_as_oe);
-			*it = NULL;
+			rz_pvector_remove_at(out_vec, i);
 
 			g->n_edges -= 1;
 		}
@@ -404,11 +402,11 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 	// remove all src -> node
 	RzPVector *in_vec = ht_up_find(impl->in_edges, node->hash_id, &found);
 	if (found && in_vec) {
-		void **it;
-		rz_pvector_foreach (in_vec, it) {
-			RzGraphEdge *src_to_node_as_ie = (RzGraphEdge *)(*it);
+		ut64 i = rz_pvector_len(in_vec);
+		while (i-- > 0) {
+			RzGraphEdge *src_to_node_as_ie = (RzGraphEdge *)rz_pvector_at(in_vec, i);
 			RzGraphNode *src_node = src_to_node_as_ie->from;
-			// remove related neighbour nodes' out-edges
+			// remove related neighbour (mirror) nodes' out-edges
 			RzPVector *out_edges_of_src = ht_up_find(impl->out_edges, src_node->hash_id, &found);
 			if (found && out_edges_of_src) {
 				// find src_to_node_as_oe in out edge vec of src node
@@ -424,12 +422,10 @@ static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
 			}
 
 			// free struct
-			// NOTE: do not remove from in_vec here — the entire in_vec is freed by
-			// ht_up_delete below; removing elements mid-iteration shifts the array
-			// and causes the foreach pointer to skip the next element.
-			// Null out the slot so the pvector's element free callback skips it.
+			// NOTE: reverse iteration allows safe rz_pvector_remove_at —
+			// removing from the tail does not shift earlier indices.
 			edge_free(src_to_node_as_ie);
-			*it = NULL;
+			rz_pvector_remove_at(in_vec, i);
 			g->n_edges -= 1;
 		}
 		ht_up_delete(impl->in_edges, node->hash_id);
