@@ -9,46 +9,7 @@
 typedef ut32 RzJenkins;
 
 #define RZ_HASH_JENKINS_DIGEST_SIZE 4
-#define RZ_HASH_JENKINS_BLOCK_LENGTH 1
-
-static bool rz_jenkins_init(RzJenkins *ctx) {
-	rz_return_val_if_fail(ctx, false);
-	*ctx = 0;
-	return true;
-}
-
-static bool rz_jenkins_update(RzJenkins *ctx, const ut8 *data, size_t len) {
-	rz_return_val_if_fail(ctx, false);
-	if (len > 0) {
-		rz_return_val_if_fail(data, false);
-	}
-
-	ut32 hash = *ctx;
-
-	for (size_t i = 0;i < len; ++i) {
-		hash += data[i];
-		hash += (hash << 10);
-		hash ^= (hash >> 6);
-	}
-
-	*ctx = hash;
-	return true;
-}
-
-static bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx) {
-	rz_return_val_if_fail(digest && ctx, false);
-
-	ut32 hash= *ctx;
-
-	hash += (hash << 3);
-	hash ^= (hash >> 11);
-	hash += (hash << 15);
-
-
-	rz_write_be32(digest,hash);
-
-	return true;
-}
+#define RZ_HASH_JENKINS_BLOCK_LENGTH 0
 
 static void *plugin_jenkins_context_new() {
 	return RZ_NEW0(RzJenkins);
@@ -69,7 +30,9 @@ static RzHashSize plugin_jenkins_block_size(void *context) {
 static bool plugin_jenkins_init(void *context) {
 	rz_return_val_if_fail(context, false);
 
-	rz_jenkins_init((RzJenkins *)context);
+	RzJenkins *ctx = (RzJenkins *)context;
+	*ctx = 0;
+
 	return true;
 }
 
@@ -78,15 +41,30 @@ static bool plugin_jenkins_update(void *context, const ut8 *data, ut64 size) {
 	if (size > 0) {
 		rz_return_val_if_fail(data, false);
 	}
+	RzJenkins *ctx = (RzJenkins *)context;
+	ut32 hash = *ctx;
 
-	rz_jenkins_update((RzJenkins *)context, data, size);
+	for (ut64 i = 0; i < size; ++i) {
+		hash += data[i];
+		hash += (hash << 10);
+		hash ^= (hash >> 6);
+	}
+
+	*ctx = hash;
 	return true;
 }
 
 static bool plugin_jenkins_final(void *context, ut8 *digest) {
 	rz_return_val_if_fail(context && digest, false);
 
-	rz_jenkins_final(digest, (RzJenkins *)context);
+	RzJenkins *ctx = (RzJenkins *)context;
+	ut32 hash= *ctx;
+
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
+
+	rz_write_be32(digest, hash);
 	return true;
 }
 
@@ -95,15 +73,15 @@ static bool plugin_jenkins_small_block(const ut8 *data, ut64 size, ut8 **digest,
 	if (size > 0) {
 		rz_return_val_if_fail(data, false);
 	}
-	ut8 *dgst=malloc (RZ_HASH_JENKINS_DIGEST_SIZE);
+	ut8 *dgst = malloc(RZ_HASH_JENKINS_DIGEST_SIZE);
 	if (!dgst) {
 		return false;
 	}
 
 	RzJenkins ctx = {0};
-	rz_jenkins_init(&ctx);
-	rz_jenkins_update(&ctx, data, size);
-	rz_jenkins_final(dgst, &ctx);
+	plugin_jenkins_init(&ctx);
+	plugin_jenkins_update(&ctx, data, size);
+	plugin_jenkins_final(&ctx, dgst);
 
 	*digest = dgst;
 	if (digest_size) {
@@ -116,7 +94,7 @@ RzHashPlugin rz_hash_plugin_jenkins = {
 	.name = "jenkins",
 	.license = "LGPL3",
 	.author = "shessaanand",
-	.description = "Jenkins one-at-a-time hash",
+	.description = "Jenkins non-cryptographic hash",
 	.support_hmac = false,
 	.context_new = plugin_jenkins_context_new,
 	.context_free = plugin_jenkins_context_free,
