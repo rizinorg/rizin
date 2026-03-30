@@ -1594,74 +1594,68 @@ FILE==
 ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
+echo ---
 e asm.cpu=mips32
-s 0
 wx 03e00008 # jr ra
 pi 1
-aa
 ao~type
+echo ---
 e asm.cpu=mips64
-s 0
 wx 03e00008 # jr ra
 pi 1
-aa
 ao~type
+echo ---
 e asm.cpu=mips32
-s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
-aa
 ao~type
 ao~stackop
 ao~stackptr
+echo ---
 e asm.cpu=mips64
-s 0
 wx 27bdff80 # addiu sp, sp, -0x80
 pi 1
-aa
 ao~type
 ao~stackop
 ao~stackptr
+echo ---
 e asm.cpu=mips32
-s 0
 wx 8f848000 # lw a0, -0x8000(gp)
 pi 1
-aa
 ao~type
 ao~ptr
+echo ---
 e asm.cpu=mips64
-s 0
 wx df848000 # ld a0, -0x8000(gp)
 pi 1
-aa
 ao~type
 ao~ptr
+echo ---
 e asm.cpu=nanomips
 e cfg.bigendian=false
-s 0
 wx e0db # jrc ra
 pi 1
-aa
 ao~type
-s 0
+echo ---
 wx 40413200 # lw a6, 0x30(gp)
 pi 1
-aa
 ao~esil
-s 0
+echo ---
 wx 3d2050ea # and sp, sp, at
 pi 1
-aa
 ao~type
 ao~esil
 EOF
 EXPECT=<<EOF
+---
 jr ra
 type: ret
     - type: "reg"
+---
 jr ra
 type: ret
     - type: "reg"
+---
 addiu sp, sp, -0x80
 type: add
     - type: "reg"
@@ -1669,6 +1663,7 @@ type: add
     - type: "imm"
 stackop: inc
 stackptr: 128
+---
 addiu sp, sp, -0x80
 type: add
     - type: "reg"
@@ -1676,23 +1671,28 @@ type: add
     - type: "imm"
 stackop: inc
 stackptr: 128
+---
 lw a0, -0x8000(gp)
 type: load
     - type: "reg"
     - type: "mem"
 ptr: 0xffffffffffff8000
 refptr: 4
+---
 ld a0, -0x8000(gp)
 type: load
     - type: "reg"
     - type: "mem"
 ptr: 0xffffffffffff8000
 refptr: 8
+---
 jrc ra
 type: ret
     - type: "reg"
+---
 lw a6, 0x30(gp)
 esil: 0x30,gp,+,[4],a6,=
+---
 and sp, sp, at
 type: and
     - type: "reg"
