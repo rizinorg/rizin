@@ -9,7 +9,7 @@
 typedef ut32 RzJenkins;
 
 static bool rz_jenkins_init(RzJenkins *ctx);
-static bool rz_jenkins_update(RzJenkins *ctx,const ut8 *data, size_t len);
+static bool rz_jenkins_update(RzJenkins *ctx, const ut8 *data, size_t len);
 static bool rz_jenkins_final(ut8 *digest, RzJenkins *ctx);
 
 #endif
