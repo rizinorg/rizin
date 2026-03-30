@@ -402,6 +402,46 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	return has_succsessor;
 }
 
+static bool pre_loop_setup(
+	RzInterpreterSet *iset,
+	const RzInterpreterILBB **il_bb,
+	RzVector **tmp_succ_addr,
+	RzSetU **reachable_states,
+	RzVector **succ_states,
+	void *plugin_data) {
+	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
+	// For now let's just ignore them.
+	if (rz_vector_len(iset->entry_points) > 1) {
+		RZ_LOG_ERROR("More than one entry point is not yet supported by the prototype.\n");
+		return false;
+	}
+
+	RzInterpreterBranch branch = { 0 };
+	rz_vector_pop_front(iset->entry_points, &branch.target_addr);
+	if (!iset->plugin->init_state(iset->state, branch.target_addr, plugin_data)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	if (rz_th_ring_buf_put(iset->branch_rbuf, &branch) != RZ_THREAD_RING_BUF_OK) {
+		rz_warn_if_reached();
+		return false;
+	}
+	if (!rz_th_queue_pop(iset->il_queue, false, (void **)il_bb) || !*il_bb) {
+		rz_warn_if_reached();
+		return false;
+	}
+
+	*tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
+	*succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
+	*reachable_states = rz_set_u_new();
+	if (!tmp_succ_addr || !succ_states || !*il_bb || !reachable_states) {
+		rz_warn_if_reached();
+		return false;
+	}
+	return true;
+}
+
 /**
  * Main interpretation.
  */
@@ -434,8 +474,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// Start interpretation
 	//
 
-	RzStrBuf *state_str = rz_strbuf_new("");
-
 	// A vector for the plugin to push the determined successors into.
 	RzVector *tmp_succ_addr = NULL;
 	// The set of reachable states.
@@ -443,41 +481,14 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// The successor states to evaluate.
 	// This vector must have the same order as the elements pushed into branch_queue.
 	RzVector *succ_states = NULL;
-
-	// TODO: Add support for multiple entry points by spawning an interpreter for each of them.
-	// For now let's just ignore them.
-	if (rz_vector_len(iset->entry_points) > 1) {
-		RZ_LOG_ERROR("More than one entry point is not yet supported by the prototype.\n");
-		goto pre_loop_error;
-	}
-
-	RzInterpreterBranch branch = { 0 };
-	rz_vector_pop_front(iset->entry_points, &branch.target_addr);
-	if (!plugin->init_state(iset->state, branch.target_addr, plugin_data)) {
-		rz_warn_if_reached();
-		goto pre_loop_error;
-	}
-#if RZ_BUILD_DEBUG
-	ut64 in_hash = plugin->hash_state(iset->state, plugin_data);
-#endif
-	ut64 out_hash = 0;
-
-	if (rz_th_ring_buf_put(iset->branch_rbuf, &branch) != RZ_THREAD_RING_BUF_OK) {
-		goto pre_loop_error;
-	}
 	const RzInterpreterILBB *il_bb = NULL;
-	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
-		goto pre_loop_error;
-	}
 
-	tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
-	succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
-	reachable_states = rz_set_u_new();
-	if (!tmp_succ_addr || !succ_states || !il_bb || !reachable_states) {
+	if (!pre_loop_setup(iset, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states, plugin_data)) {
 		rz_warn_if_reached();
 		goto pre_loop_error;
 	}
 
+	ut64 out_hash = 0;
 	while (rz_atomic_bool_get(iset->is_running_flag)) {
 		iset->state->bb_addr = il_bb->bb_addr;
 		iset->state->bb_size = il_bb->size;
@@ -487,9 +498,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			goto in_loop_error;
 		}
 		out_hash = plugin->hash_state(iset->state, plugin_data);
-#if RZ_BUILD_DEBUG
-		RZ_LOG_DEBUG("in_hash = 0x%llx, out_hash = 0x%llx\n", in_hash, out_hash);
-#endif
 
 		// Add output state hash to the reachable states and
 		// set a flag if it was a new state.
@@ -510,9 +518,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		// Set effect and state for next evaluation.
 		SuccessorState next = { 0 };
 		rz_vector_pop_front(succ_states, &next);
-#if RZ_BUILD_DEBUG
-		in_hash = next.in_state_hash;
-#endif
 		if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
 			// The il op lifting failed. Likely because the PC
 			// pointed to an unmapped region.
@@ -527,7 +532,6 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	}
 
 loop_cleanup:
-	rz_strbuf_free(state_str);
 	rz_vector_free(tmp_succ_addr);
 	rz_vector_free(succ_states);
 	rz_set_u_free(reachable_states);

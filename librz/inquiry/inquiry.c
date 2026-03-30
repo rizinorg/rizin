@@ -520,9 +520,6 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
 		interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
 
-		// Poor man's shared memory.
-		RzInterpreterIOResult io_res = { 0 };
-
 		// From here on, the code plays the role of the cache, IO handler,
 		// and yield consumer.
 		// - Waiting for new Effects to be requested and sending them.
@@ -585,6 +582,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 						rz_warn_if_reached();
 						break;
 					} else if (r == RZ_THREAD_RING_BUF_OK) {
+						RzInterpreterIOResult io_res = { 0 };
 						handle_io_request(core, &analysis_vm->vm->vm_memory, &io_req, &io_res);
 						if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 							rz_warn_if_reached();
