@@ -1637,7 +1637,6 @@ aa
 ao~type
 ao~ptr
 e asm.cpu=nanomips
-e asm.bits=32
 e cfg.bigendian=false
 s 0
 wx e0db # jrc ra
