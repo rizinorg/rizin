@@ -1600,7 +1600,7 @@ wx 03e00008 # jr ra
 pi 1
 aa
 ao~type
-e asm.bits=64
+e asm.cpu=mips64
 s 0
 wx 03e00008 # jr ra
 pi 1
