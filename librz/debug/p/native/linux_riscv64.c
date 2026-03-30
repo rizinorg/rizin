@@ -6,6 +6,7 @@
 #include <sys/uio.h>
 
 #include "linux/linux_debug.h"
+#include "linux/linux_coredump.h"
 
 #ifndef NT_PRSTATUS
 #define NT_PRSTATUS 1
@@ -85,8 +86,8 @@ static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 }
 
 static bool rz_debug_gcore(RzDebug *dbg, char *path, RzBuffer *dest) {
-	RZ_LOG_ERROR("gcore: unsupported on this platform\n");
-	return false;
+	(void)path;
+	return linux_generate_corefile(dbg, dest);
 }
 
 RzDebugPlugin rz_debug_plugin_native = {

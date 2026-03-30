@@ -82,7 +82,7 @@ if has_debugger
     rz_debug_sources += ['p/native/linux/linux_debug.c']
   endif
   if host_machine.system() == 'linux'
-    if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64' or host_machine.cpu_family() == 'arm' or host_machine.cpu_family() == 'aarch64'
+    if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64' or host_machine.cpu_family() == 'arm' or host_machine.cpu_family() == 'aarch64' or host_machine.cpu_family() == 'riscv64' or host_machine.cpu_family() == 'riscv32'
       rz_debug_sources += ['p/native/linux/linux_coredump.c']
     endif
   endif
