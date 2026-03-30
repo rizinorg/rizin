@@ -5984,7 +5984,7 @@ RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzG
  * Intended for unit-testing the layout stages without requiring a canvas or
  * interactive rendering context.
  */
-RZ_API void rz_agraph_compute_layout(RzAGraph *g) {
+RZ_API void rz_agraph_compute_layout(RZ_NONNULL RzAGraph *g) {
 	rz_return_if_fail(g);
 	set_layout(g);
 }
