@@ -148,7 +148,8 @@ static bool rz_rop_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 
 static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
 	RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
-	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop->type);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 	rz_asm_parse_param_free(param);
 	rz_strbuf_free(bw_str);
@@ -300,7 +301,8 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *co
 		reg_info->is_var_write = true;
 		name = evt->data.var_write.variable;
 	}
-	const RzList *head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const RzList *head = rz_reg_get_list(rreg, RZ_REG_TYPE_GPR);
 	if (!head) {
 		free(reg_info);
 		return NULL;
@@ -320,7 +322,7 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *co
 	}
 	reg_info->init_val = init_val;
 	reg_info->new_val = new_val;
-	reg_info->bits = core->analysis->bits;
+	reg_info->bits = rz_asm_get_bits(core->rasm);
 	reg_info->value_transformations = NULL; // Fill this as you need
 	return reg_info;
 }
@@ -621,8 +623,10 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_na
 }
 
 static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *evt, RzRopRegInfo *reg_info) {
-	rz_return_if_fail(core && core->analysis && core->analysis->reg);
-	if (!reg_info) {
+	rz_return_if_fail(core && core->analysis);
+
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	if (!reg_info || !rreg) {
 		return;
 	}
 	RzRopRegInfo *reg_info_dup = rz_core_rop_reg_info_dup(reg_info);
@@ -660,7 +664,7 @@ static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInf
 			break;
 		}
 		reg_info_dup->new_val = rz_bv_to_ut64(new_val);
-		if (rz_reg_is_role(core->analysis->reg, reg_info->name, RZ_REG_NAME_SP)) {
+		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP)) {
 			gadget_info->stack_change += rz_bv_to_ut64(new_val) - rz_bv_to_ut64(init_val);
 		}
 		rz_bv_free(init_val);
@@ -706,7 +710,8 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 	if (!gadget_info) {
 		return false;
 	}
-	const RzList *head = rz_reg_get_list(core->analysis->reg, RZ_REG_TYPE_GPR);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const RzList *head = rz_reg_get_list(rreg, RZ_REG_TYPE_GPR);
 	if (!head) {
 		return false;
 	}
@@ -736,7 +741,7 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 				break;
 			}
 			// Stack reads during pop, push
-			if (rz_reg_is_role(core->analysis->reg, var_read->variable, RZ_REG_NAME_SP)) {
+			if (rz_reg_is_role(rreg, var_read->variable, RZ_REG_NAME_SP)) {
 				is_stack_evt = true;
 				var_read_add_reg_info(core, event, var_read, &reg_info);
 			}
@@ -832,14 +837,16 @@ static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzRopGadgetInf
 	const ut64 old_addr = core->offset;
 	rz_core_seek(core, hit->addr, true);
 	rz_core_analysis_il_reinit(core);
-	rz_config_set(core->config, "io.cache", "true");
-	rz_core_il_step(core, 1);
-
-	if (!core->analysis->il_vm) {
+	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
+	if (!il_vm) {
 		ret = false;
 		goto cleanup;
 	}
-	RzILVM *vm = core->analysis->il_vm->vm;
+
+	rz_config_set(core->config, "io.cache", "true");
+	rz_core_il_step(core, 1);
+
+	RzILVM *vm = il_vm->vm;
 	if (!vm) {
 		ret = false;
 		goto cleanup;
@@ -863,7 +870,11 @@ cleanup:
 }
 
 static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info) {
-	rz_return_if_fail(core && core->analysis && core->analysis->reg && gadget_info);
+	rz_return_if_fail(core && core->analysis && gadget_info);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	if (!rreg) {
+		return;
+	}
 
 	rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
 	rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
@@ -880,8 +891,8 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 	rz_cons_printf("Register dependencies:\n");
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (rz_reg_is_role(core->analysis->reg, reg_info->name, RZ_REG_NAME_SP) ||
-			rz_reg_is_role(core->analysis->reg, reg_info->name, RZ_REG_NAME_BP)) {
+		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP) ||
+			rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_BP)) {
 			continue;
 		}
 		if (reg_info->is_var_write) {
@@ -904,6 +915,10 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, PJ *pj) {
 	rz_return_if_fail(gadget_info && pj);
 
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	if (!rreg) {
+		return;
+	}
 	pj_o(pj);
 	pj_kn(pj, "address", gadget_info->address);
 	pj_kn(pj, "stack_change", gadget_info->stack_change);
@@ -925,8 +940,8 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_a(pj);
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (rz_reg_is_role(core->analysis->reg, reg_info->name, RZ_REG_NAME_SP) ||
-			rz_reg_is_role(core->analysis->reg, reg_info->name, RZ_REG_NAME_BP)) {
+		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP) ||
+			rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_BP)) {
 			continue;
 		}
 		pj_o(pj);
@@ -1401,15 +1416,17 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzRopGadgetInfo *rop_gadget_info = NULL;
 
-	if (!core->analysis->ht_rop_semantics) {
-		core->analysis->ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_rop_gadget_info_free);
+	HtUP *ht_rop_semantics = rz_analysis_get_rop_semantics(core->analysis);
+	if (!ht_rop_semantics) {
+		ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_rop_gadget_info_free);
+		rz_analysis_set_rop_semantics(core->analysis, ht_rop_semantics);
 	}
 	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last_val(hitlist);
 	if (!is_ret_gadget(core, hit_last, crop)) {
 		return rop_gadget_info;
 	}
 	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first_val(hitlist))->addr;
-	rop_gadget_info = ht_up_find(core->analysis->ht_rop_semantics, addr_start, NULL);
+	rop_gadget_info = ht_up_find(ht_rop_semantics, addr_start, NULL);
 	if (rop_gadget_info) {
 		return rop_gadget_info;
 	}
@@ -1419,8 +1436,6 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	if (!rop_gadget_info) {
 		return NULL;
 	}
-	const bool is_rop_analysis = core->analysis->is_rop_analysis;
-	core->analysis->is_rop_analysis = true;
 	ut32 rop_gadget_size = 0;
 	rz_list_foreach (hitlist, iter, hit) {
 		if (!analyze_gadget(core, hit, rop_gadget_info)) {
@@ -1429,8 +1444,7 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 		rop_gadget_size += hit->len;
 	}
 	rop_gadget_info->size = rop_gadget_size;
-	core->analysis->is_rop_analysis = is_rop_analysis;
-	ht_up_insert(core->analysis->ht_rop_semantics, addr_start, rop_gadget_info);
+	ht_up_insert(ht_rop_semantics, addr_start, rop_gadget_info);
 	return rop_gadget_info;
 }
 
@@ -1540,7 +1554,7 @@ static void set_increment_based_on_arch(const RzCore *core, const char *arch, in
 	} else if (RZ_STR_EQ(arch, "avr")) { // AVR is halfword aligned.
 		*increment = 2;
 	} else if (RZ_STR_EQ(arch, "riscv")) {
-		*increment = core->analysis->pcalign;
+		*increment = rz_analysis_get_pc_align(core->analysis);
 	}
 }
 
@@ -1966,9 +1980,7 @@ cleanup:
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context) {
 	rz_return_val_if_fail(core && core->analysis && context, RZ_CMD_STATUS_ERROR);
 
-	if (!core->analysis->ht_rop_semantics) {
-		// TODO: resolve this logic later.
-	}
+	// TODO: resolve this logic later.
 	RzCmdStatus status = rz_core_rop_search(core, context);
 	rz_core_rop_search_context_free(context);
 	return status;

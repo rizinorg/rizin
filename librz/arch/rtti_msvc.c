@@ -3,7 +3,8 @@
 // SPDX-FileCopyrightText: 2009-2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
+#include "analysis_private.h"
+#include <rz_core.h>
 
 #define NAME_BUF_SIZE    64
 #define BASE_CLASSES_MAX 32

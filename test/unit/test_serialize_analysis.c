@@ -6,6 +6,7 @@
 #include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
+#include "analysis_private.h"
 
 #include "test_analysis_block_invars.inl"
 

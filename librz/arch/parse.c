@@ -3,8 +3,6 @@
 // SPDX-FileCopyrightText: 2009-2020 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-
 #include <rz_types.h>
 #include <rz_arch.h>
 #include <rz_lib.h>

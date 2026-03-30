@@ -13,8 +13,7 @@
  * Used by : analysis_tp.c, debug/trace.c
  **/
 
-#include <rz_util.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 /**
  * create and init a trace structure for an instruction at address

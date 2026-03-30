@@ -4,7 +4,7 @@
 
 #include "arch_54.h"
 
-LuaOpNameList get_lua54_opnames(void) {
+RZ_IPI LuaOpNameList get_lua54_opnames(void) {
 	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES54 + 1);
 	if (list == NULL) {
 		RZ_LOG_ERROR("Cannot allocate lua54 opcode list.\n");
@@ -100,7 +100,7 @@ LuaOpNameList get_lua54_opnames(void) {
 	return list;
 }
 
-ut8 get_lua54_opcode_by_name(const char *name, int limit) {
+RZ_IPI ut8 get_lua54_opcode_by_name(const char *name, int limit) {
 	lua_strcase("move") return OP_MOVE;
 	lua_strcase("loadi") return OP_LOADI;
 	lua_strcase("loadf") return OP_LOADF;
@@ -212,7 +212,7 @@ ut8 get_lua54_opcode_by_name(const char *name, int limit) {
 	return OP_EXTRAARG + 1; // invalid
 }
 
-char *get_lua_tagnames(LuaTMS54 tms) {
+RZ_IPI char *get_lua_tagnames(LuaTMS54 tms) {
 	switch (tms) {
 	case TM_INDEX: return "__index";
 	case TM_NEWINDEX: return "__newindex";

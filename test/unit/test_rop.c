@@ -3,6 +3,7 @@
 
 #include "minunit.h"
 #include <rz_core.h>
+#include "analysis_private.h"
 #include <rz_rop.h>
 
 // Only one gadget is added once for each test case.

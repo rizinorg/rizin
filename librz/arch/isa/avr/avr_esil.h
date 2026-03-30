@@ -3,7 +3,7 @@
 
 #ifndef RZ_AVR_ESIL_H
 #define RZ_AVR_ESIL_H
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 RZ_IPI int rz_avr_esil_init(RzAnalysisEsil *esil);
 RZ_IPI int rz_avr_esil_fini(RzAnalysisEsil *esil);

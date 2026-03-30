@@ -518,7 +518,8 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 		free(filename);
 		return false;
 	}
-	rz_core_pdb_info_print(core, core->analysis->typedb, pdb, state);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_core_pdb_info_print(core, typedb, pdb, state);
 	rz_bin_pdb_free(pdb);
 	free(filename);
 	return RZ_CMD_STATUS_OK;

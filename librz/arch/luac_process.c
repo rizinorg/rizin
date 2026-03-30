@@ -17,7 +17,12 @@ static bool luac_integrate_function(void *user, const ut64 k, const void *value)
  */
 RZ_API void rz_analysis_luac_integrate_functions(RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
-	ht_up_foreach(analysis->debug_info->function_by_addr, luac_integrate_function, analysis);
+	RzAnalysisDebugInfo *debug_info = rz_analysis_get_debug_info(analysis);
+	if (!debug_info) {
+		return;
+	}
+
+	ht_up_foreach(debug_info->function_by_addr, luac_integrate_function, analysis);
 }
 
 static int line_sample_cmp(const void *a, const void *b, void *user) {
@@ -71,10 +76,12 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 	rz_return_val_if_fail(bi, false);
 
 	LuacBinInfo *luac_obj = (LuacBinInfo *)binfile->o->bin_obj;
-	luac_obj->typedb = core->analysis->typedb;
-	rz_type_db_format_set(core->analysis->typedb, "LuaConstant", "bX type value");
-	rz_type_db_format_set(core->analysis->typedb, "LuaUpvalue", "bbbz instack idx kind nam");
-	rz_type_db_format_set(core->analysis->typedb, "LuaLocalVar", "ziIIq name len start end off");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+
+	rz_type_db_format_set(typedb, "LuaConstant", "bX type value");
+	rz_type_db_format_set(typedb, "LuaUpvalue", "bbbz instack idx kind nam");
+	rz_type_db_format_set(typedb, "LuaLocalVar", "ziIIq name len start end off");
 
 	uint64_t meta_addr = METATABLES_VOFFSET;
 	for (int i = 0; i < 25; i++) {
@@ -138,16 +145,16 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 			const int reg_idx = start_register + i;
 			const char *reg_name = rz_str_newf("r%d", reg_idx);
 
-			const RzRegItem *ri = rz_reg_get(core->analysis->reg, reg_name, RZ_REG_TYPE_ANY);
+			const RzRegItem *ri = rz_reg_get(rreg, reg_name, RZ_REG_TYPE_ANY);
 			rz_return_val_if_fail(ri && ri->name, false);
 
-			RzType *var_type = rz_type_identifier_of_base_type_str(luac_obj->typedb, "int");
+			RzType *var_type = rz_type_identifier_of_base_type_str(typedb, "int");
 
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_reg(&stor, ri->name);
 			// RzStackAddr stack_off; rz_analysis_var_storage_init_stack(&stor, stack_off);
 
-			const int instruction_size = core->analysis->bits / 8;
+			const int instruction_size = rz_asm_get_bits(core->rasm) / 8;
 			const ut64 start_addr = PROTO_VADDRESS(proto->index) + (var->start_pc * instruction_size);
 			const ut64 end_addr = PROTO_VADDRESS(proto->index) + (var->end_pc * instruction_size);
 			(void)end_addr;
@@ -178,7 +185,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 				proto->index, proto->offset, upvalue->idx, upvalue->offset, upvalue->voffset, upvalue->instack, upvalue->kind,
 				(char *)upvalue->upvalue_name, upvalue->name_offset, upvalue->name_len);
 			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, upvalue->voffset, sizeof(upvalue), "LuaUpvalue");
-			core->analysis->flb.set(core->analysis->flb.f, upvalue->upvalue_name ? (char *)upvalue->upvalue_name : "unk", upvalue->name_offset, 2);
+			rz_flag_set(core->flags, upvalue->upvalue_name ? (char *)upvalue->upvalue_name : "unk", upvalue->name_offset, 2);
 		}
 	}
 

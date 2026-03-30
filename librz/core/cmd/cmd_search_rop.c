@@ -64,7 +64,8 @@ static char *parse_register(const RzCore *core, const char *str, ut64 *idx) {
 	}
 
 	// Check if the register is correct for the given architecture.
-	if (rz_analysis_is_reg_in_profile(core->analysis, reg)) {
+	RzReg *areg = rz_analysis_get_reg(core->analysis);
+	if (rz_reg_get(areg, reg, RZ_REG_TYPE_ANY)) {
 		return rz_str_dup(reg);
 	}
 

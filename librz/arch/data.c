@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
+#include "analysis_private.h"
 
 static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrEnc encoding, bool big_endian) {
 	if (!buf || size < 1) {

@@ -66,8 +66,9 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core) {
 RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core) {
 	rz_return_val_if_fail(core && core->analysis, CORE_DEFAULT_OS);
 
-	if (RZ_STR_ISNOTEMPTY(core->analysis->os)) {
-		return core->analysis->os;
+	const char *os = rz_analysis_get_os(core->analysis);
+	if (RZ_STR_ISNOTEMPTY(os)) {
+		return os;
 	}
 	return CORE_DEFAULT_OS;
 }
@@ -214,7 +215,8 @@ RZ_DEPRECATE static void core_set_endianness(RzCore *core, bool big_endian) {
 	// be cases when it isn't availble for the chosen analysis
 	// plugin but types and printing commands still need the
 	// corresponding endianness. Thus we set these explicitly:
-	rz_type_db_set_endian(core->analysis->typedb, big_endian);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_set_endian(typedb, big_endian);
 	core->print->big_endian = big_endian;
 
 	// the big endian should also be assigned to dbg->bp->endian
@@ -230,8 +232,9 @@ RZ_DEPRECATE static void core_update_endianness(RzCore *core) {
 
 // most of this code is a copy from cconfig
 RZ_DEPRECATE static void core_update_syscall_db(RzCore *core) {
-	if (core->analysis->syscall->db) {
-		sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	if (sysc->db) {
+		sdb_ns_set(core->sdb, "syscall", sysc->db);
 	} else {
 		sdb_ns_unset(core->sdb, "syscall", NULL);
 	}
@@ -249,7 +252,8 @@ RZ_DEPRECATE static bool core_arch_set_os(RzCore *core, const char *arch, ut32 b
 		cpu = rz_core_get_cpu(core);
 	}
 
-	rz_syscall_setup(core->analysis->syscall, core->sys_path, arch, bits, cpu, os);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	rz_syscall_setup(sysc, core->sys_path, arch, bits, cpu, os);
 	core_update_syscall_db(core);
 	core_update_asm_segoff(core, arch, bits);
 
@@ -264,7 +268,7 @@ RZ_DEPRECATE static void core_update_text_align(RzCore *core) {
 	}
 
 	rz_asm_set_pc_align(core->rasm, align);
-	core->analysis->pcalign = align;
+	rz_analysis_set_pc_align(core->analysis, align);
 }
 
 RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const char *cpu, const char *platform) {
@@ -282,7 +286,8 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 		RZ_LOG_WARN("core: failed to get " RZ_SDB_ARCH_CPUS " via sys path\n");
 		return false;
 	}
-	rz_platform_profiles_init(core->analysis->arch_target, cpu, arch, cpus_dir);
+	RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
+	rz_platform_profiles_init(arch_target, cpu, arch, cpus_dir);
 	free(cpus_dir);
 
 	if (RZ_STR_ISNOTEMPTY(platform)) {
@@ -297,7 +302,8 @@ RZ_DEPRECATE static bool core_arch_set_cpu(RzCore *core, const char *arch, const
 		return false;
 	}
 
-	rz_platform_target_index_init(core->analysis->platform_target, arch, cpu, platform, platforms_dir);
+	RzPlatformTargetIndex *platform_target = rz_analysis_get_platform_target(core->analysis);
+	rz_platform_target_index_init(platform_target, arch, cpu, platform, platforms_dir);
 	free(platforms_dir);
 	return true;
 }
@@ -392,8 +398,8 @@ RZ_DEPRECATE static bool core_update_arch(RzCore *core, const char *arch, ut32 b
 	// changing asm.arch changes analysis.arch
 	// changing analysis.arch sets types db
 	// so resetting is redundant and may lead to bugs
-	// 1 case this is usefull is when types is null
-	if (!core->analysis->typedb) {
+	// 1 case this is useful is when types is null
+	if (!rz_analysis_get_type_db(core->analysis)) {
 		rz_core_analysis_type_init(core);
 	}
 

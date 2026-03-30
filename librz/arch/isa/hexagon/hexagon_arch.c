@@ -12,8 +12,8 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
+#include "asm_private.h"
+#include "analysis_private.h"
 #include <rz_util.h>
 #include <rz_vector.h>
 #include "asm_private.h"

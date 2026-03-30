@@ -2,13 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_list.h>
-#include <rz_util/rz_assert.h>
-#include <rz_util/rz_path.h>
-#include <rz_arch.h>
-#include <rz_lib.h>
+#include "analysis_private.h"
 
 /**
  * \brief Returns the default size byte width of memory access operations.
@@ -27,17 +21,43 @@ RZ_API ut32 rz_analysis_guessed_mem_access_width(RZ_NONNULL const RzAnalysis *an
 	return analysis->bits / 8;
 }
 
-RZ_API void rz_analysis_set_limits(RzAnalysis *analysis, ut64 from, ut64 to) {
-	free(analysis->limit);
-	analysis->limit = RZ_NEW0(RzAnalysisRange);
-	if (analysis->limit) {
-		analysis->limit->from = from;
-		analysis->limit->to = to;
+RZ_API void rz_analysis_set_limits(RZ_NONNULL RzAnalysis *analysis, ut64 from, ut64 to) {
+	rz_return_if_fail(analysis);
+	analysis->limit.addr = from;
+	analysis->limit.size = to - from;
+}
+
+RZ_API void rz_analysis_get_limits(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE ut64 *from, RZ_NULLABLE ut64 *to) {
+	rz_return_if_fail(analysis);
+	if (from) {
+		*from = rz_itv_begin(analysis->limit);
+	}
+	if (to) {
+		*to = rz_itv_end(analysis->limit);
 	}
 }
 
-RZ_API void rz_analysis_unset_limits(RzAnalysis *analysis) {
-	RZ_FREE(analysis->limit);
+RZ_API bool rz_analysis_is_within_limits(RZ_NONNULL RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, false);
+	if (rz_itv_size(analysis->limit) < 1) {
+		return false;
+	}
+
+	return rz_itv_contain(analysis->limit, addr);
+}
+
+RZ_API bool rz_analysis_is_beyond_limits(RZ_NONNULL RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, false);
+	if (rz_itv_size(analysis->limit) < 1) {
+		return false;
+	}
+
+	return !rz_itv_contain(analysis->limit, addr);
+}
+
+RZ_API bool rz_analysis_has_valid_limits(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	return rz_itv_size(analysis->limit) > 0;
 }
 
 static void meta_unset_for(RzEvent *ev, int type, void *user, void *data) {
@@ -103,7 +123,6 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	analysis->ht_addr_fun = ht_up_new(NULL, NULL);
 	analysis->ht_name_fun = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	analysis->os = rz_str_dup(RZ_SYS_OS);
-	analysis->esil_goto_limit = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	analysis->opt.nopskip = true; // skip nops in code analysis
 	analysis->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	analysis->gp = 0LL;
@@ -119,6 +138,7 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, meta_item_free);
+	rz_analysis_unset_limits(analysis);
 	analysis->typedb = rz_type_db_new();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
@@ -152,7 +172,6 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	analysis->ht_global_var = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_analysis_var_global_free);
 	analysis->ht_rop_semantics = NULL;
 	analysis->ht_rop = NULL;
-	analysis->is_rop_analysis = false;
 	analysis->global_var_tree = NULL;
 	analysis->il_vm = NULL;
 	analysis->hash = rz_hash_new();
@@ -220,6 +239,32 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	return NULL;
 }
 
+RZ_DEPRECATE RZ_API bool rz_analysis_plugin_support_esil(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	if (!analysis->cur) {
+		return false;
+	}
+	return analysis->cur->esil;
+}
+
+RZ_DEPRECATE RZ_API bool rz_analysis_plugin_is_arch(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *arch) {
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(arch), false);
+	if (!analysis->cur) {
+		return false;
+	}
+	return RZ_STR_EQ(analysis->cur->arch, arch);
+}
+
+RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->cur;
+}
+
+RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return ht_sp_as_iter(analysis->plugins);
+}
+
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
 	rz_return_val_if_fail(analysis && p, false);
 	if (!ht_sp_insert(analysis->plugins, p->name, p)) {
@@ -271,12 +316,6 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 	return false;
 }
 
-RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
-	return (analysis && analysis->cur && analysis->cur->get_reg_profile)
-		? analysis->cur->get_reg_profile(analysis)
-		: NULL;
-}
-
 /**
  * \brief Check if a register is in the analysis profile.
  * \param analysis Pointer to the RzAnalysis object.
@@ -302,15 +341,372 @@ RZ_API bool rz_analysis_is_reg_in_profile(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 	return false;
 }
 
-RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
-	bool ret = false;
+RZ_API bool rz_analysis_set_reg_profile(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+
 	char *p = rz_analysis_get_reg_profile(analysis);
-	if (p) {
-		rz_reg_set_profile_string(analysis->reg, p);
-		ret = true;
+	if (!p) {
+		return false;
 	}
+
+	rz_reg_set_profile_string(analysis->reg, p);
 	free(p);
-	return ret;
+	return true;
+}
+
+RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	RzAnalysisPlugin *cur = analysis->cur;
+	if (cur && cur->get_reg_profile) {
+		return cur->get_reg_profile(analysis);
+	}
+	return NULL;
+}
+
+RZ_API void rz_analysis_set_gnu_thumb1_case_uqi_addr(RZ_NONNULL RzAnalysis *analysis, ut64 addr) {
+	rz_return_if_fail(analysis);
+	analysis->gnu_thumb1_case_uqi_addr = addr;
+}
+
+RZ_API ut64 rz_analysis_get_gnu_thumb1_case_uqi_addr(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, UT64_MAX);
+	return analysis->gnu_thumb1_case_uqi_addr;
+}
+
+RZ_API void rz_analysis_set_pc_align(RZ_NONNULL RzAnalysis *a, ut32 pc_align) {
+	rz_return_if_fail(a);
+	if (pc_align < 2) {
+		pc_align = 1;
+	}
+	a->pcalign = pc_align;
+}
+
+RZ_API ut32 rz_analysis_get_pc_align(RZ_NONNULL RzAnalysis *a) {
+	rz_return_val_if_fail(a, 1);
+	if (a->pcalign < 2) {
+		return 1;
+	}
+	return a->pcalign;
+}
+
+RZ_API RZ_BORROW RzIOBind *rz_analysis_get_io_bind(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->iob;
+}
+
+RZ_API RZ_BORROW RzCoreBind *rz_analysis_get_core_bind(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->coreb;
+}
+
+RZ_API RZ_BORROW RzFlagBind *rz_analysis_get_flag_bind(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->flb;
+}
+
+RZ_API RZ_BORROW RzBinBind *rz_analysis_get_bin_bind(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->binb;
+}
+
+RZ_API RZ_BORROW RzTypeDB *rz_analysis_get_type_db(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->typedb;
+}
+
+RZ_API RZ_BORROW RzReg *rz_analysis_get_reg(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->reg;
+}
+
+RZ_API RZ_BORROW Sdb *rz_analysis_get_sdb_formats(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->sdb_fmts;
+}
+
+RZ_API RZ_BORROW Sdb *rz_analysis_get_sdb_cc(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->sdb_cc;
+}
+
+RZ_API RZ_BORROW Sdb *rz_analysis_get_sdb_root(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->sdb;
+}
+
+RZ_API RZ_BORROW RzPlatformTarget *rz_analysis_get_arch_target(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->arch_target;
+}
+
+RZ_API RZ_BORROW RzPlatformTargetIndex *rz_analysis_get_platform_target(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->platform_target;
+}
+
+RZ_API RZ_BORROW RBTree *rz_analysis_get_global_var_tree(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->global_var_tree;
+}
+
+RZ_API RZ_BORROW RBTree *rz_analysis_get_bb_tree(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->bb_tree;
+}
+
+RZ_API RZ_BORROW RzIntervalTree *rz_analysis_get_meta(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->meta;
+}
+
+RZ_API RZ_BORROW RzSpaces *rz_analysis_get_meta_spaces(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->meta_spaces;
+}
+
+RZ_API const char *rz_analysis_get_sdb_types_path(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->sdb_types_path;
+}
+
+RZ_API RZ_BORROW RzAnalysisDebugInfo *rz_analysis_get_debug_info(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->debug_info;
+}
+
+RZ_API void rz_analysis_set_debug_info(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisDebugInfo *debug_info) {
+	rz_return_if_fail(analysis);
+	analysis->debug_info = debug_info;
+}
+
+RZ_API RZ_BORROW RzAnalysisILVM *rz_analysis_get_il_vm(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->il_vm;
+}
+
+RZ_API void rz_analysis_set_il_vm(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisILVM *il_vm) {
+	rz_return_if_fail(analysis);
+	analysis->il_vm = il_vm;
+}
+
+RZ_API RZ_BORROW RzAnalysisOptions *rz_analysis_get_options(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->opt;
+}
+
+RZ_API RZ_BORROW HtSP *rz_analysis_get_virtual_xrefs(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->ht_virtual_xrefs;
+}
+
+RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->ht_xrefs_from;
+}
+
+RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from) {
+	rz_return_if_fail(analysis);
+	analysis->ht_xrefs_from = xrefs_from;
+}
+
+RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->ht_xrefs_to;
+}
+
+RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to) {
+	rz_return_if_fail(analysis);
+	analysis->ht_xrefs_to = xrefs_to;
+}
+
+RZ_API RZ_BORROW HtUP *rz_analysis_get_rop_semantics(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->ht_rop_semantics;
+}
+
+RZ_API void rz_analysis_set_rop_semantics(RZ_NONNULL RzAnalysis *analysis, HtUP *rop_semantics) {
+	rz_return_if_fail(analysis);
+	analysis->ht_rop_semantics = rop_semantics;
+}
+
+RZ_API RZ_BORROW RzAnalysisCallbacks *rz_analysis_get_callbacks(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->cb;
+}
+
+RZ_API const char *rz_analysis_get_os(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->os;
+}
+
+RZ_API void rz_analysis_set_syscall(RZ_NONNULL RzAnalysis *analysis, RzSyscall *sysc) {
+	rz_return_if_fail(analysis);
+	analysis->syscall = sysc;
+}
+
+RZ_API RZ_BORROW RzSyscall *rz_analysis_get_syscall(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->syscall;
+}
+
+RZ_API void rz_analysis_set_column_sort(RZ_NONNULL RzAnalysis *analysis, RzListComparator column_sort) {
+	rz_return_if_fail(analysis);
+	analysis->column_sort = column_sort;
+}
+
+RZ_API RZ_BORROW RzListComparator rz_analysis_get_column_sort(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->column_sort;
+}
+
+RZ_API void rz_analysis_set_sleep(RZ_NONNULL RzAnalysis *analysis, ut64 usecs) {
+	rz_return_if_fail(analysis);
+	analysis->sleep = usecs;
+}
+
+RZ_API ut64 rz_analysis_get_sleep(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->sleep;
+}
+
+RZ_API void rz_analysis_set_segment_granularity(RZ_NONNULL RzAnalysis *analysis, int seggrn) {
+	rz_return_if_fail(analysis);
+	analysis->seggrn = seggrn;
+}
+
+RZ_API int rz_analysis_get_segment_granularity(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->seggrn;
+}
+
+RZ_API void rz_analysis_set_imports(RZ_NONNULL RzAnalysis *analysis, RzList /*<char *>*/ *imports) {
+	rz_return_if_fail(analysis);
+	analysis->imports = imports;
+}
+
+RZ_API RzList /*<char *>*/ *rz_analysis_get_imports(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->imports;
+}
+
+RZ_API void rz_analysis_set_reflines(RZ_NONNULL RzAnalysis *analysis, RzPVector /*<RzAnalysisRefline *>*/ *reflines) {
+	rz_return_if_fail(analysis);
+	analysis->reflines = reflines;
+}
+
+RZ_API RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_get_reflines(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->reflines;
+}
+
+RZ_API void rz_analysis_set_max_reflines(RZ_NONNULL RzAnalysis *analysis, int maxreflines) {
+	rz_return_if_fail(analysis);
+	analysis->maxreflines = maxreflines;
+}
+
+RZ_API int rz_analysis_get_max_reflines(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->maxreflines;
+}
+
+RZ_API void rz_analysis_set_lines_width(RZ_NONNULL RzAnalysis *analysis, int lineswidth) {
+	rz_return_if_fail(analysis);
+	analysis->lineswidth = lineswidth;
+}
+
+RZ_API int rz_analysis_get_lines_width(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->lineswidth;
+}
+
+RZ_API void rz_analysis_set_gp(RZ_NONNULL RzAnalysis *analysis, ut64 new_gp) {
+	rz_return_if_fail(analysis);
+	analysis->gp = new_gp;
+}
+
+RZ_API RZ_BORROW ut64 rz_analysis_get_gp(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->gp;
+}
+
+RZ_API void rz_analysis_set_cpp_abi(RZ_NONNULL RzAnalysis *analysis, RzAnalysisCPPABI cpp_abi) {
+	rz_return_if_fail(analysis);
+	analysis->cpp_abi = cpp_abi;
+}
+
+RZ_API RZ_BORROW RzAnalysisCPPABI rz_analysis_get_cpp_abi(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->cpp_abi;
+}
+
+RZ_API void rz_analysis_set_recursive_noreturn(RZ_NONNULL RzAnalysis *analysis, bool enable) {
+	rz_return_if_fail(analysis);
+	analysis->recursive_noreturn = enable;
+}
+
+RZ_API RZ_BORROW bool rz_analysis_get_recursive_noreturn(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->recursive_noreturn;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsilInterState *rz_analysis_get_esil_inter_state(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->esilinterstate;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_esil_inter_state(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsilInterState *esilinterstate) {
+	rz_return_if_fail(analysis);
+	analysis->esilinterstate = esilinterstate;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_core(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE void *core) {
+	rz_return_if_fail(analysis);
+	analysis->core = core;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_event(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzEvent *ev) {
+	rz_return_if_fail(analysis);
+	analysis->ev = ev;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->esil;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil) {
+	rz_return_if_fail(analysis);
+	analysis->esil = esil;
+}
+
+RZ_DEPRECATE RZ_API const char *rz_analysis_get_arch(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, RZ_SYS_ARCH);
+	return analysis->cur ? analysis->cur->name : RZ_SYS_ARCH;
+}
+
+RZ_DEPRECATE RZ_API int rz_analysis_get_bits(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, 0);
+	return analysis->bits;
+}
+
+RZ_DEPRECATE RZ_API bool rz_analysis_is_big_endian_set(RZ_NONNULL const RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	return analysis->big_endian;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_last_disasm_reg(RZ_NONNULL RzAnalysis *analysis, ut8 *last_disasm_reg) {
+	rz_return_if_fail(analysis);
+	analysis->last_disasm_reg = last_disasm_reg;
+}
+
+RZ_DEPRECATE RZ_API ut8 *rz_analysis_get_last_disasm_reg(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->last_disasm_reg;
+}
+
+RZ_DEPRECATE RZ_API RzStrConstPool *rz_analysis_get_const_pool(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->constpool;
 }
 
 static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
@@ -330,9 +726,9 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	return true;
 }
 
-RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const char *arch, int bits) {
+RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, RZ_NULLABLE const char *os, RZ_NULLABLE const char *arch, int bits) {
 	rz_return_val_if_fail(analysis, false);
-	if (!arch || !*arch) {
+	if (RZ_STR_ISEMPTY(arch)) {
 		arch = analysis->cur ? analysis->cur->arch : RZ_SYS_ARCH;
 	}
 	if (bits < 1) {
@@ -343,8 +739,8 @@ RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const 
 	return rz_analysis_use(analysis, arch);
 }
 
-RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os) {
-	return rz_analysis_set_triplet(analysis, os, NULL, -1);
+RZ_API void rz_analysis_set_os(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *os) {
+	rz_analysis_set_triplet(analysis, os, NULL, -1);
 }
 
 static bool is_arm_thumb_hack(RzAnalysis *analysis, int bits) {
@@ -772,7 +1168,7 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 			return true;
 		}
 	}
-	RzFlagItem *fi = analysis->flag_get(analysis->flb.f, addr);
+	RzFlagItem *fi = analysis->cb.flag_get(analysis->flb.f, addr);
 	if (fi) {
 		if (rz_analysis_noreturn_at_name(analysis, fi->realname ? fi->realname : fi->name)) {
 			return true;

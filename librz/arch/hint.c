@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 // Common base-struct for hints which affect an entire range as opposed to only one single address
 // They are saved in a RBTree per hint type.

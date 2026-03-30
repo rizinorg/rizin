@@ -11,11 +11,6 @@
  *	http://vice-emu.sourceforge.net/
  */
 
-#include <string.h>
-#include <rz_types.h>
-#include <rz_lib.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
 #include "snes/snes_op_table.h"
 #include "6502/6502_il.inc"
 #include <6502/6502dis.h>
@@ -1874,7 +1869,8 @@ static RzAnalysisILConfig *_6502_il_config(RzAnalysis *analysis) {
 	if (!analysis->plugin_data && analysis->core) {
 		RzAsm *rasm = rz_analysis_to_rz_asm(analysis);
 		if (rasm && rasm->plugin_data) {
-			analysis->plugin_data = rasm->plugin_data;
+			// to be removed
+			((RzAnalysis *)analysis)->plugin_data = rasm->plugin_data;
 		}
 	}
 	return rz_analysis_il_config_new(16, false, 16);

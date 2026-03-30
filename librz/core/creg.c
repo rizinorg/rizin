@@ -15,7 +15,7 @@
  * to do with it.
  */
 RZ_API RzReg *rz_core_reg_default(RzCore *core) {
-	return rz_core_is_debug(core) ? core->dbg->reg : core->analysis->reg;
+	return rz_core_is_debug(core) ? core->dbg->reg : rz_analysis_get_reg(core->analysis);
 }
 
 /**
@@ -27,7 +27,8 @@ RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name) {
 		// call this instead of rz_reg_getv_... directly because it also syncs
 		return rz_debug_reg_get(core->dbg, name);
 	}
-	return rz_reg_getv_by_role_or_name(core->analysis->reg, name);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	return rz_reg_getv_by_role_or_name(rreg, name);
 }
 
 /**
@@ -43,11 +44,12 @@ RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64
 		// call this instead of rz_reg_set... directly because it also syncs
 		ret = rz_debug_reg_set(core->dbg, name, num);
 	} else {
-		RzRegItem *ri = rz_reg_get_by_role_or_name(core->analysis->reg, name);
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		RzRegItem *ri = rz_reg_get_by_role_or_name(rreg, name);
 		if (!ri) {
 			return false;
 		}
-		ret = rz_reg_set_value(core->analysis->reg, ri, num);
+		ret = rz_reg_set_value(rreg, ri, num);
 	}
 	if (ret && rz_spaces_get(&core->flags->spaces, RZ_FLAGS_FS_REGISTERS)) {
 		rz_core_reg_update_flags(core);

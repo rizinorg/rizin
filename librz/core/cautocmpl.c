@@ -362,7 +362,8 @@ static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, iter, fcn) {
 		if (fcn->name && !strncmp(fcn->name, s, len)) {
 			rz_line_ns_completion_result_add(res, fcn->name);
 		}
@@ -372,7 +373,8 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_enum_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_enum_names(typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -384,7 +386,8 @@ static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *
 static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_struct_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_struct_names(typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -396,7 +399,8 @@ static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult
 static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_union_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_union_names(typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -408,7 +412,8 @@ static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_typedef_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_typedef_names(typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -420,7 +425,8 @@ static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_any_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_all(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *list = rz_type_db_all(typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -444,7 +450,7 @@ static void autocmplt_cmd_arg_global_var(RzCore *core, RzLineNSCompletionResult 
 
 static void autocmplt_cmd_arg_reg_filter(RzCore *core, const RzCmdDesc *cd, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	bool is_analysis = cd->name && cd->name[0] == 'a';
-	RzReg *reg = is_analysis ? core->analysis->reg : core->dbg->reg;
+	RzReg *reg = is_analysis ? rz_analysis_get_reg(core->analysis) : core->dbg->reg;
 	if (!reg) {
 		return;
 	}

@@ -113,7 +113,8 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	int size; // , sz = sizeof (buf);
 
 	int fd = core->file->fd;
-	RzBuffer *b = rz_buf_new_with_io_fd(&core->analysis->iob, fd);
+	RzIOBind *iob = rz_analysis_get_io_bind(core->analysis);
+	RzBuffer *b = rz_buf_new_with_io_fd(iob, fd);
 	rz_cons_break_push(NULL, NULL);
 	while (from < to) {
 		if (rz_cons_is_breaked()) {
@@ -462,6 +463,9 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	RzAnalysisEsil *esil;
 	int align = core->search->align;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	int bits = rz_asm_get_bits(core->rasm);
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -484,11 +488,11 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	ut64 oldoff = core->offset;
 	int syscallNumber = 0;
 	rz_cons_break_push(NULL, NULL);
-	const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
+	const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 	char *esp = rz_str_newf("%s,=", a0);
 	char *esp32 = NULL;
-	if (core->analysis->bits == 64) {
-		const char *reg = rz_reg_64_to_32(core->analysis->reg, a0);
+	if (bits == 64) {
+		const char *reg = rz_reg_64_to_32(rreg, a0);
 		if (reg) {
 			esp32 = rz_str_newf("%s,=", reg);
 		}
@@ -538,7 +542,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 				int scNumber = 0; // r0/eax/...
 				scNumber = syscallNumber;
 				scVector = (aop.val > 0) ? aop.val : -1; // int 0x80 (aop.val = 0x80)
-				RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, scNumber, scVector);
+				RzSyscallItem *item = rz_syscall_get(sysc, scNumber, scVector);
 				if (item) {
 					rz_cons_printf("0x%08" PFMT64x " %s\n", at, item->name);
 				}
@@ -662,7 +666,8 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 			case 's': { // "/als"
 				RzListIter *iter;
 				RzSyscallItem *si;
-				RzList *list = rz_syscall_list(core->analysis->syscall);
+				RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+				RzList *list = rz_syscall_list(sysc);
 				rz_list_foreach (list, iter, si) {
 					if (si->num > SYSCALL_HEX_LIMIT) {
 						rz_cons_printf("%s = 0x%02x.%x\n", si->name, si->swi, si->num);

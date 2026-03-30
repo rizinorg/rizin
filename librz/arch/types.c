@@ -1,10 +1,7 @@
 // SPDX-FileCopyrightText: 2021-2023 Anton Kochkov <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util.h>
-#include <rz_type.h>
-#include <rz_analysis.h>
-#include <string.h>
+#include "analysis_private.h"
 
 static RZ_OWN RzList /*<RzTypePathTuple *>*/ *var_global_type_paths(RzAnalysis *analysis, RzAnalysisVarGlobal *gv, ut64 addr, unsigned int depth) {
 	rz_return_val_if_fail(gv, false);
