@@ -252,17 +252,46 @@ static bool bin_coff_init_opt_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 		rz_buf_read_ble32_offset(b, offset, &obj->opt_hdr.data_start, obj->big_endian);
 }
 
-static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian) {
-	return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+static bool coff_init_scn_hdr(RzBuffer *b, ut64 *offset, struct coff_scn_hdr *scn, bool big_endian, ut16 magic) {
+	if (magic == COFF_FILE_MACHINE_TI_1) {
+		return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian);
+	} else if (magic == COFF_FILE_MACHINE_TI_2) {
+		return rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_nreloc, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_nlnno, big_endian) &&
+			rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian) &&
+			rz_buf_read_ble16_offset(b, offset, &scn->s_reserved, big_endian) &&
+			rz_buf_read_ble16_offset(b, offset, &scn->s_page, big_endian);
+	}
+
+	ut16 nreloc, nlnno;
+	bool res = rz_buf_read_offset(b, offset, (ut8 *)scn->s_name, sizeof(scn->s_name)) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_paddr, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_vaddr, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_size, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_scnptr, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_relptr, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_lnnoptr, big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &scn->s_nreloc, big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &scn->s_nlnno, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &nreloc, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &nlnno, big_endian) &&
 		rz_buf_read_ble32_offset(b, offset, &scn->s_flags, big_endian);
+	if (res) {
+		scn->s_nreloc = nreloc;
+		scn->s_nlnno = nlnno;
+	}
+	return res;
 }
 
 static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64 *offset) {
@@ -273,7 +302,7 @@ static bool bin_coff_init_scn_hdr(RzBuffer *b, struct rz_bin_coff_obj *obj, ut64
 
 	for (size_t i = 0; i < obj->hdr.f_nscns; ++i) {
 		struct coff_scn_hdr scn = { 0 };
-		if (!coff_init_scn_hdr(b, offset, &scn, obj->big_endian)) {
+		if (!coff_init_scn_hdr(b, offset, &scn, obj->big_endian, obj->hdr.f_magic)) {
 			return false;
 		}
 		rz_vector_push(obj->scn_hdrs, &scn);
@@ -366,6 +395,15 @@ RZ_API struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf) {
 		RZ_LOG_ERROR("failed to init symtable\n");
 		rz_bin_coff_free(obj);
 		return NULL;
+	}
+
+	obj->reloc_size = COFF_RELOC_SIZE;
+	if (coff_is_ti_machine(obj)) {
+		if (obj->target_id == COFF_FILE_TARGET_TI_TMS320C5400 ||
+			obj->target_id == COFF_FILE_TARGET_TI_TMS320C5500 ||
+			obj->target_id == COFF_FILE_TARGET_TI_TMS320C5500_PLUS) {
+			obj->reloc_size = COFF_TI_RELOC_SIZE;
+		}
 	}
 
 	return obj;
