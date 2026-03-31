@@ -112,8 +112,6 @@ static void RngList_free(RzBinDwarfRngList *self) {
 	free(self);
 }
 
-Ht_FREE_IMPL(UP, RngList, RngList_free);
-
 RZ_IPI void RngLists_free(RzBinDwarfRngLists *self) {
 	if (!self) {
 		return;
@@ -278,7 +276,7 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
 	RET_NULL_IF_FAIL(self);
 	self->rnglists = rnglists;
 	self->ranges = ranges;
-	self->by_offset = ht_up_new(NULL, HtUP_RngList_free, NULL);
+	self->by_offset = ht_up_new(NULL, (HtUPFreeValue)RngList_free);
 	return self;
 }
 
@@ -288,11 +286,10 @@ RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
  * \param dw the RzBinDWARF instance
  * \return the RzBinDwarfRngListTable instance on success, NULL otherwise
  */
-RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	RET_NULL_IF_FAIL(bf);
-	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists", is_dwo);
-	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges", is_dwo);
+	RzBinEndianReader *rnglists = RzBinEndianReader_from_file(bf, ".debug_rnglists");
+	RzBinEndianReader *ranges = RzBinEndianReader_from_file(bf, ".debug_ranges");
 	if (!(rnglists || ranges)) {
 		R_free(rnglists);
 		R_free(ranges);
@@ -345,7 +342,7 @@ RZ_API void rz_bin_dwarf_rnglists_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfRngLists *rnglists,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(rnglists && rnglists->by_offset && sb);
-	if (rnglists->by_offset->count > 0) {
+	if (ht_up_size(rnglists->by_offset) > 0) {
 		rz_strbuf_append(sb, ".debug_loclists content:\n");
 	}
 	ht_up_foreach(rnglists->by_offset, cb_rnglist_dump, sb);

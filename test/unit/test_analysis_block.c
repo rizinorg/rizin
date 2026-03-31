@@ -23,7 +23,7 @@ static size_t blocks_count(RzAnalysis *analysis) {
 }
 
 bool test_rz_analysis_block_create() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	mu_assert_eq(blocks_count(analysis), 0, "initial count");
@@ -72,7 +72,7 @@ bool test_rz_analysis_block_contains() {
 }
 
 bool test_rz_analysis_block_sp() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	ut64 base = 0xfa1afe1;
@@ -220,7 +220,7 @@ bool test_rz_analysis_block_sp() {
 }
 
 bool test_rz_analysis_block_split() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x1337, 42);
@@ -294,7 +294,7 @@ bool test_rz_analysis_block_split() {
 }
 
 bool test_rz_analysis_block_split_in_function() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -328,7 +328,7 @@ bool test_rz_analysis_block_split_in_function() {
 }
 
 bool test_rz_analysis_block_merge() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *first = rz_analysis_create_block(analysis, 0x1337, 42);
@@ -376,7 +376,7 @@ bool test_rz_analysis_block_merge() {
 }
 
 bool test_rz_analysis_block_merge_in_function() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -409,7 +409,7 @@ bool test_rz_analysis_block_merge_in_function() {
 }
 
 bool test_rz_analysis_block_delete() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -437,7 +437,7 @@ bool test_rz_analysis_block_delete() {
 }
 
 bool test_rz_analysis_block_set_size() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -476,7 +476,7 @@ bool test_rz_analysis_block_set_size() {
 }
 
 bool test_rz_analysis_block_relocate() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "bbowner", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -541,7 +541,7 @@ bool test_rz_analysis_block_relocate() {
 }
 
 bool test_rz_analysis_block_query() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 #define N       200
@@ -658,7 +658,7 @@ bool addr_list_cb(ut64 addr, void *user) {
 }
 
 bool test_rz_analysis_block_successors() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *blocks[10];
@@ -741,7 +741,7 @@ bool test_rz_analysis_block_successors() {
 bool test_rz_analysis_block_automerge() {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
-		RzAnalysis *analysis = rz_analysis_new();
+		RzAnalysis *analysis = rz_analysis_new(NULL);
 		assert_block_invariants(analysis);
 
 		RzAnalysisBlock *a = rz_analysis_create_block(analysis, 0x100, 0x10);
@@ -818,7 +818,7 @@ bool test_rz_analysis_block_automerge() {
 }
 
 bool test_rz_analysis_block_chop_noreturn(void) {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_block_invariants(analysis);
 
 	RzAnalysisBlock *a = rz_analysis_create_block(analysis, 0x100, 0x10);
@@ -851,7 +851,7 @@ static const uint8_t example_code[0x18] = {
 };
 
 bool test_rz_analysis_block_analyze_ops(void) {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
@@ -928,7 +928,7 @@ static const uint8_t example_code_sp[0xa] = {
 };
 
 bool test_rz_analysis_block_analyze_ops_sp(void) {
-	RzAnalysis *a = rz_analysis_new();
+	RzAnalysis *a = rz_analysis_new(NULL);
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
@@ -998,7 +998,7 @@ int all_tests() {
 
 int main(int argc, char **argv) {
 	struct timeval tv;
-	rz_time_gettimeofday(&tv, NULL);
+	rz_time_gettimeofday(&tv);
 	unsigned int seed = argc > 1 ? strtoul(argv[1], NULL, 0) : tv.tv_sec + tv.tv_usec;
 	printf("seed for test_analysis_block: %u\n", seed);
 	return all_tests();

@@ -1,19 +1,24 @@
  <!-- Filling this template is mandatory -->
 
 **Your checklist for this pull request**
-- [ ] I've read the [guidelines for contributing](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md) to this repository
-- [ ] I made sure to follow the project's [coding style](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md#code-style)
-- [ ] I've documented or updated the documentation of every function and struct this PR changes. If not so I've explained why.
-- [ ] I've added tests that prove my fix is effective or that my feature works (if possible)
-- [ ] I've updated the [rizin book](https://github.com/rizinorg/book) with the relevant information (if needed)
+- [ ] I've read the [guidelines for contributing](https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md) to this repository.
+- [ ] I made sure to follow the project's [coding style](https://github.com/rizinorg/rizin/blob/dev/DEVELOPERS.md#code-style).
+- [ ] I've documented every `RZ_API` function and struct this PR changes.
+- [ ] I've added tests that prove my changes are effective (required for changes to `RZ_API`).
+- [ ] I've updated the [Rizin book](https://github.com/rizinorg/book) with the relevant information (if needed).
+- [ ] I've used AI tools to generate fully or partially these code changes and I'm sure the changes are not copyrighted by somebody else.
 
 **Detailed description**
 
-<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request. -->
+<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request.
+If you have used AI tools to generate these code changes, please disclose software used, model name. -->
 
 ...
 
 **Test plan**
+
+<!-- THIS IS A HARD REQUIREMENT FOR NEW CONTRIBUTORS! -->
+<!-- Please refer to CONTRIBUTING.md for more details. -->
 
 <!-- What steps should the reviewer take to test your pull request? Demonstrate the code is solid. Example: The exact commands you ran and their output, screenshots/videos. This is your time to re-check that everything works and that you covered all the edge cases -->
 

@@ -9,7 +9,7 @@ pyc_opcodes *opcode_39(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_39;
+	ret->version_sig = (opcode_func)opcode_39;
 
 	// These are removed since 3.8...
 	rm_op(.op_obj = ret->opcodes, .op_name = "BEGIN_FINALLY", .op_code = 53);
@@ -24,6 +24,13 @@ pyc_opcodes *opcode_39(void) {
 	def_op(.op_obj = ret->opcodes, .op_name = "RERAISE", .op_code = 48, .pop = 0, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "WITH_EXCEPT_START", .op_code = 49, .pop = 3, .push = 0);
 	def_op(.op_obj = ret->opcodes, .op_name = "LOAD_ASSERTION_ERROR", .op_code = 74, .pop = 0, .push = 1);
+
+	def_op(.op_obj = ret->opcodes, .op_name = "DICT_UPDATE", .op_code = 165, .pop = 1, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "DICT_MERGE", .op_code = 164, .pop = 1, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "SET_UPDATE", .op_code = 163, .pop = 1, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "IS_OP", .op_code = 117, .pop = 0, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "CONTAINS_OP", .op_code = 118, .pop = 0, .push = 0);
+	def_op(.op_obj = ret->opcodes, .op_name = "LIST_EXTEND", .op_code = 162, .pop = 0, .push = 0);
 
 	rz_list_purge(ret->opcode_arg_fmt);
 	add_arg_fmt(ret, "CALL_FUNCTION_KW", format_CALL_FUNCTION_KW_36);

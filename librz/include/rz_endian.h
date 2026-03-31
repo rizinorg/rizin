@@ -215,9 +215,15 @@ static inline ut32 rz_read_be32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
 	}
+#if RZ_HOST_IS_BIG_ENDIAN
+	ut32 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[2]) << 8) | (((ut32)s[3]) << 0);
+#endif
 }
 
 /**
@@ -241,8 +247,12 @@ static inline ut32 rz_read_at_be32(const void *src, size_t offset) {
  * \param val The written 32-bit value.
  */
 static inline void rz_write_be32(void *dest, ut32 val) {
+#if RZ_HOST_IS_BIG_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_be16(dest, val >> 16);
 	rz_write_at_be16(dest, val, sizeof(ut16));
+#endif
 }
 
 /**
@@ -266,9 +276,15 @@ static inline ut64 rz_read_be64(const void *src) {
 	if (!src) {
 		return UT64_MAX;
 	}
+#if RZ_HOST_IS_BIG_ENDIAN
+	ut64 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	ut64 val = ((ut64)(rz_read_be32(src))) << 32;
 	val |= rz_read_at_be32(src, sizeof(ut32));
 	return val;
+#endif
 }
 
 /**
@@ -292,8 +308,12 @@ static inline ut64 rz_read_at_be64(const void *src, size_t offset) {
  * \param val The written 64-bit value.
  */
 static inline void rz_write_be64(void *dest, ut64 val) {
+#if RZ_HOST_IS_BIG_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_be32(dest, val >> 32);
 	rz_write_at_be32(dest, (ut32)val, sizeof(ut32));
+#endif
 }
 
 /**
@@ -638,9 +658,15 @@ static inline ut32 rz_read_le32(const void *src) {
 	if (!src) {
 		return UT32_MAX;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	ut32 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	const ut8 *s = (const ut8 *)src;
 	return (((ut32)s[3]) << 24) | (((ut32)s[2]) << 16) |
 		(((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
+#endif
 }
 
 /**
@@ -664,8 +690,12 @@ static inline ut32 rz_read_at_le32(const void *src, size_t offset) {
  * \param val The written 32-bit value.
  */
 static inline void rz_write_le32(void *dest, ut32 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le16(dest, val);
 	rz_write_at_le16(dest, val >> 16, sizeof(ut16));
+#endif
 }
 
 /**
@@ -689,9 +719,15 @@ static inline ut64 rz_read_le64(const void *src) {
 	if (!src) {
 		return UT64_MAX;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	ut64 val = 0;
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	ut64 val = ((ut64)(rz_read_at_le32(src, sizeof(ut32)))) << 32;
 	val |= rz_read_le32(src);
 	return val;
+#endif
 }
 
 /**
@@ -715,8 +751,12 @@ static inline ut64 rz_read_at_le64(const void *src, size_t offset) {
  * \param val The written 64-bit value.
  */
 static inline void rz_write_le64(void *dest, ut64 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le32(dest, (ut32)val);
 	rz_write_at_le32(dest, val >> 32, sizeof(ut32));
+#endif
 }
 
 /**
@@ -744,9 +784,14 @@ static inline ut128 rz_read_le128(const void *src) {
 		val.Low = UT64_MAX;
 		return val;
 	}
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(&val, src, sizeof(val));
+	return val;
+#else
 	val.High = rz_read_at_le64(src, sizeof(ut64));
 	val.Low = rz_read_le64(src);
 	return val;
+#endif
 }
 
 /**
@@ -774,8 +819,12 @@ static inline ut128 rz_read_at_le128(const void *src, size_t offset) {
  * \param val The written 128-bit value.
  */
 static inline void rz_write_le128(void *dest, ut128 val) {
+#if RZ_HOST_IS_LITTLE_ENDIAN
+	memcpy(dest, &val, sizeof(val));
+#else
 	rz_write_le64(dest, val.Low);
 	rz_write_at_le64(dest, val.High, sizeof(ut64));
+#endif
 }
 
 /**
@@ -1813,6 +1862,60 @@ static inline ut64 rz_swap_ut64(ut64 val) {
 }
 #endif
 
+/**
+ * \def rz_swap_2b_ut64
+ * \brief Swaps pairs of 2 bytes in a 64bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0x8899AABBCCDDEEFF;
+ * ut32 result = 0x9988BBAADDCCFFEE;
+ * assert(rz_swap_2b_ut64(x) == result);
+ * \endcode
+ */
+static inline ut64 rz_swap_2b_ut64(ut64 val) {
+	val = ((val & 0xff00ff00ff00ff00) >> 8) | ((val & 0x00ff00ff00ff00ff) << 8);
+	return val;
+}
+
+/**
+ * \def rz_swap_4b_ut64
+ * \brief Swaps pairs of 4 bytes in a 64bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0x8899AABBCCDDEEFF;
+ * ut32 result = 0xBBAA9988FFEEDDCC;
+ * assert(rz_swap_4b_ut64(x) == result);
+ * \endcode
+ */
+static inline ut64 rz_swap_4b_ut64(ut64 val) {
+	val = ((val & 0xff000000ff000000) >> 24) |
+		((val & 0x00ff000000ff0000) >> 8) |
+		((val & 0x0000ff000000ff00) << 8) |
+		((val & 0x000000ff000000ff) << 24);
+	return val;
+}
+
+/**
+ * \def rz_swap_2b_ut32
+ * \brief Swaps pairs of 2 bytes in a 32bit value
+ *
+ * # Example
+ *
+ * \code{.c}
+ * ut32 x =      0xCCDDEEFF;
+ * ut32 result = 0xDDCCFFEE;
+ * assert(rz_swap_2b_ut32(x) == result);
+ * \endcode
+ */
+static inline ut32 rz_swap_2b_ut32(ut32 val) {
+	val = ((val & 0xff00ff00) >> 8) | ((val & 0x00ff00ff) << 8);
+	return val;
+}
+
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 
 /**
@@ -2058,6 +2161,47 @@ static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
 	}
 	return 1;
 }
+
+#define DEFINE_RZ_READ_OFFSET_BLE(size) \
+	static inline ut##size rz_read_be##size##_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) { \
+		const ut8 *s = (const ut8 *)src + *offset; \
+		ut##size ret = rz_read_be##size(s); \
+		*offset += sizeof(ret); \
+		return ret; \
+	} \
+	static inline ut##size rz_read_le##size##_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) { \
+		const ut8 *s = (const ut8 *)src + *offset; \
+		ut##size ret = rz_read_le##size(s); \
+		*offset += sizeof(ret); \
+		return ret; \
+	}
+
+/**
+ * \brief Read a ut8 at the specified offset in the buffer and shifts the offset.
+ * \param src The pointer from which the value is read.
+ * \param offset The pointer to offset at which the value is read.
+ * \return Return the value of the operation.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
+ */
+static inline ut8 rz_read_le8_offset(RZ_NONNULL const void *src, RZ_NONNULL RZ_INOUT size_t *offset) {
+	ut8 ret = rz_read_at_le8(src, *offset);
+	*offset += sizeof(ret);
+	return ret;
+}
+
+/**
+ * \brief Read a big endian or little endian (ut16, ut32, ut64, ut128) at the specified offset in the buffer and shifts the offset.
+ * \param src The pointer from which the value is read.
+ * \param offset The pointer to offset at which the value is read.
+ * \return Return the value of the operation.
+ * \attention If \p src is \c NULL then \c UT16_MAX is returned.
+ */
+DEFINE_RZ_READ_OFFSET_BLE(16)
+DEFINE_RZ_READ_OFFSET_BLE(32)
+DEFINE_RZ_READ_OFFSET_BLE(64)
+DEFINE_RZ_READ_OFFSET_BLE(128)
+
+#define rz_read8_offset(b, offset) rz_read_le8_offset(b, offset)
 
 #ifdef __cplusplus
 }

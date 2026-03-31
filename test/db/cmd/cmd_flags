@@ -40,15 +40,13 @@ RUN
 NAME=no flags
 FILE==
 CMDS=f
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no flags*
 FILE==
 CMDS=f*
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=1: fs *
@@ -282,8 +280,7 @@ f a
 f-*
 fl
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=f.
@@ -304,7 +301,6 @@ RUN
 
 NAME=f.lj
 FILE=bins/elf/analysis/main
-ARGS=-e log.level=4
 CMDS=<<EOF
 af
 f. patata
@@ -331,7 +327,6 @@ RUN
 
 NAME=f.-
 FILE=bins/elf/analysis/main
-ARGS=-e log.level=4
 CMDS=<<EOF
 af
 f. patata
@@ -507,16 +502,15 @@ f direct1 1 verbatim @ 0
 f direct2 1 base64:ImJhc2U2NCBhcm1vcmVkIg== @ 16
 f indirect @ 32
 fC indirect base64:d29ya3MgdG9v
-fl*
+flt
 flj
 EOF
 EXPECT=<<EOF
-fs *
-f direct1 1 0x00000000 base64:dmVyYmF0aW0=
-fs *
-f direct2 1 0x00000010 base64:ImJhc2U2NCBhcm1vcmVkIg==
-fs *
-f indirect 1 0x00000020 base64:d29ya3MgdG9v
+      addr size space name     realname 
+----------------------------------------
+0x00000000    1       direct1  direct1
+0x00000010    1       direct2  direct2
+0x00000020    1       indirect indirect
 [{"name":"direct1","realname":"direct1","size":1,"offset":0,"comment":"verbatim"},{"name":"direct2","realname":"direct2","size":1,"offset":16,"comment":"\"base64 armored\""},{"name":"indirect","realname":"indirect","size":1,"offset":32,"comment":"works too"}]
 EOF
 RUN
@@ -547,41 +541,41 @@ ftll
 ftn bla
 EOF
 EXPECT=<<EOF
-fs
-env
-string
-threads
-network
-dylib
-alloc
 time
-process
+fs
 stdout
-["fs":[],"env":[],"string":[],"threads":[],"network":[],"dylib":[],"alloc":[],"time":[],"process":[],"stdout":[]]
+string
+process
+alloc
+network
+env
+threads
+dylib
+["time":[],"fs":[],"stdout":[],"string":[],"process":[],"alloc":[],"network":[],"env":[],"threads":[],"dylib":[]]
+time:
 fs:
-env:
+stdout:
 string:
+process:
+alloc:
+network:
+env:
 threads:
-network:
 dylib:
-alloc:
-time:
-process:
-stdout:
 bla
-fs:
-dylib:
-process:
-stdout:
-network:
-alloc:
-env:
-string:
 time:
+fs:
+stdout:
+string:
+process:
+alloc:
+network:
+env:
 bla:
 0x00400410  foo
 0x00400506  goo
 threads:
+dylib:
 0x00400410  foo
 0x00400506  goo
 EOF
@@ -630,15 +624,15 @@ EOF
 EXPECT=<<EOF
 0x0000000b 10 blah
 [{"name":"blah","realname":"blah","size":10,"offset":11}]
-addr       size space name realname 
+      addr size space name realname 
 ------------------------------------
-0x0000000b 10         blah blah
+0x0000000b   10       blah blah
 blah
 0x00000002 3 bloh
 [{"name":"bloh","realname":"bloh","size":3,"offset":2}]
-addr       size space name realname 
+      addr size space name realname 
 ------------------------------------
-0x00000002 3          bloh bloh
+0x00000002    3       bloh bloh
 bloh
 EOF
 RUN
@@ -699,8 +693,8 @@ pd 1 @ 0x000011ef @e:asm.flags.real=true
 pd 1 @ 0x000011ef @e:asm.flags.real=false
 EOF
 EXPECT=<<EOF
-            0x000011ef      call  std::vector<int, std::allocator<int> >::vector() ; method.std::vector_int__std::allocator_int___.vector
-            0x000011ef      call  method.std::vector_int__std::allocator_int___.vector
+            0x000011ef      call  std::vector<int, std::allocator<int>>::vector() ; method.std::vector_int__std::allocator_int__.vector
+            0x000011ef      call  method.std::vector_int__std::allocator_int__.vector
 EOF
 RUN
 
@@ -709,6 +703,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 s 0x100
 wx f80202a9
 f flag_name
@@ -727,7 +722,33 @@ EXPECT=<<EOF
             ;-- (🎈️):
             0x00000100      stp   x24, x0, [x23, 0x20]
 0x00000100 1 flag_name
-[{"name":"flag_name","realname":"(🎈\ufe0f)","size":1,"offset":256}]
+[{"name":"flag_name","realname":"(🎈️)","size":1,"offset":256}]
 0x00000100 1 (🎈️)
+EOF
+RUN
+
+NAME=fO Fix #4829
+FILE==
+CMDS=<<EOF
+fO
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Wrong number of arguments passed to `fO`, see its help with `fO?`
+
+ERROR: Usage: fO <glob>   # Flag as ordinals (sym.* func.* method.*)
+EOF
+RUN
+
+NAME=fC for overlapping flags
+FILE==
+CMDS=<<EOF
+f foo 0x10 first
+f+ bar 0x20 second
+fC foo
+EOF
+EXPECT=<<EOF
+first
 EOF
 RUN

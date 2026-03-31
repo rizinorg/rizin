@@ -281,21 +281,21 @@ static window *window_from_handle(HANDLE hwnd) {
 	win->name = rz_utf16_to_utf8(tmp);
 	free(tmp);
 	if (!win->name) {
-		win->name = strdup("");
+		win->name = rz_str_dup("");
 	}
 	return win;
 }
 
 static RzTable *create_window_table(void) {
-	RzTable *tbl = rz_table_new();
-	if (!tbl) {
+	RzTable *t = rz_table_new();
+	if (!t) {
 		return NULL;
 	}
-	rz_table_add_column(tbl, rz_table_type("number"), "Handle", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("number"), "PID", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("number"), "TID", ST32_MAX);
-	rz_table_add_column(tbl, rz_table_type("string"), "Class Name", ST32_MAX);
-	return tbl;
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "Handle");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "PID");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "TID");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "Class Name");
+	return t;
 }
 
 static void add_window_to_table(RzTable *tbl, window *win) {
@@ -423,8 +423,8 @@ static DWORD get_msg_type(char *name) {
 		init_msg_types(&msg_types);
 	}
 	ut32 found;
-	const char *type_str = sdb_const_get(msg_types, name, &found);
-	if (found) {
+	const char *type_str = sdb_const_get(msg_types, name);
+	if (type_str) {
 		int type = rz_num_get(NULL, type_str);
 		return type;
 	}
@@ -461,7 +461,7 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 
 RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, const char *window_id) {
 	rz_return_val_if_fail(dbg && msg_name, false);
-	char *name = strdup(msg_name);
+	char *name = rz_str_dup(msg_name);
 	rz_str_trim(name);
 
 	DWORD type = get_msg_type(name);

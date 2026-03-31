@@ -24,7 +24,6 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	bool colorBits = false;
 	int i, j, x = 0;
-	RzAsmOp asmop;
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	bool bitsInLine = false;
@@ -41,6 +40,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	for (;;) {
 		rz_cons_clear00();
 		bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
+		RzAsmOp asmop = { 0 };
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
 		aop.type = -1;
 		rz_analysis_op_init(&aop);
@@ -278,6 +278,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			rz_cons_clear();
 		} break;
 		}
+		rz_asm_op_fini(&asmop);
 	}
 	return true;
 }

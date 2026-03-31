@@ -177,7 +177,7 @@ static void event_file_del_cb(RzEvent *ev, int type, void *user, void *data) {
 		return;
 	}
 	RzEventBinFileDel *bev = data;
-	RzListIter *it = rz_list_find_ptr(tracker->expect, bev->bf);
+	RzListIter *it = rz_list_find_val(tracker->expect, bev->bf);
 	if (!it) {
 		tracker->failed_unexpected = true;
 		return;

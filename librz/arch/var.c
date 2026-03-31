@@ -34,7 +34,7 @@ RZ_API int rz_analysis_var_storage_cmp(
 	case RZ_ANALYSIS_VAR_STORAGE_COMPOSITE: {
 		RzAnalysisVarStoragePiece *ap = NULL;
 		ut32 i = 0;
-		rz_vector_enumerate(a->composite, ap, i) {
+		rz_vector_enumerate (a->composite, ap, i) {
 			RzAnalysisVarStoragePiece *bp = rz_vector_index_ptr(b->composite, i);
 			int xcmp = ap->offset_in_bits - bp->offset_in_bits;
 			if (xcmp != 0) {
@@ -157,7 +157,7 @@ static void composite_dump_pj(
 	RZ_NONNULL RZ_BORROW const RzVector /*<RzAnalysisVarStoragePiece>*/ *composite) {
 	pj_a(pj);
 	RzAnalysisVarStoragePiece *piece = NULL;
-	rz_vector_foreach(composite, piece) {
+	rz_vector_foreach (composite, piece) {
 		pj_o(pj);
 		pj_kn(pj, "offset_in_bits", piece->offset_in_bits);
 		pj_kn(pj, "size_in_bits", piece->size_in_bits);
@@ -217,7 +217,7 @@ RZ_API void rz_analysis_var_storage_poolify(
 			return;
 		}
 		RzAnalysisVarStoragePiece *piece = NULL;
-		rz_vector_foreach(stor->composite, piece) {
+		rz_vector_foreach (stor->composite, piece) {
 			rz_analysis_var_storage_poolify(analysis, piece->storage);
 		}
 	}
@@ -282,7 +282,7 @@ static RZ_OWN RzType *var_type_default(RzAnalysis *analysis, int size) {
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
-	type->identifier.name = strdup(typestr);
+	type->identifier.name = rz_str_dup(typestr);
 	if (!type->identifier.name) {
 		free(type);
 		return NULL;
@@ -370,7 +370,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 		RZ_FREE(var->name);
 	}
 
-	var->name = strdup(name);
+	var->name = rz_str_dup(name);
 	var->storage = *stor;
 	rz_analysis_var_storage_poolify(fcn->analysis, &var->storage);
 	if (type) {
@@ -735,7 +735,7 @@ RZ_API RZ_NULLABLE char *rz_analysis_function_var_expr_for_reg_access_at(RzAnaly
 	// var found, create string
 	RzList *paths = rz_type_path_by_offset(fcn->analysis->typedb, var->type, var_offset, 1);
 	if (paths && !rz_list_empty(paths)) {
-		RzTypePath *path = rz_list_first(paths);
+		RzTypePath *path = rz_list_first_val(paths);
 		char *r = rz_str_newf("%s%s", var->name, path->path);
 		rz_list_free(paths);
 		return r;
@@ -744,7 +744,7 @@ RZ_API RZ_NULLABLE char *rz_analysis_function_var_expr_for_reg_access_at(RzAnaly
 	if (var_offset) {
 		return rz_str_newf("%s + 0x%" PFMT64x, var->name, var_offset);
 	} else {
-		return strdup(var->name);
+		return rz_str_dup(var->name);
 	}
 }
 
@@ -764,7 +764,7 @@ RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, boo
 		}
 		return false;
 	}
-	char *nn = strdup(new_name);
+	char *nn = rz_str_dup(new_name);
 	if (!nn) {
 		return false;
 	}
@@ -802,7 +802,7 @@ RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 
 RZ_API RZ_BORROW RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_get_vars_used_at(RzAnalysisFunction *fcn, ut64 op_addr) {
 	rz_return_val_if_fail(fcn, NULL);
-	return ht_up_find(fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
+	return ht_up_find(fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
 
 RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis *analysis, ut64 addr) {
@@ -827,7 +827,7 @@ RZ_DEPRECATE RZ_API RzAnalysisVar *rz_analysis_get_used_function_var(RzAnalysis 
 RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 	rz_return_val_if_fail(var, NULL);
 	RzAnalysisVarAccess *acc;
-	rz_vector_foreach(&var->accesses, acc) {
+	rz_vector_foreach (&var->accesses, acc) {
 		if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_READ)) {
 			continue;
 		}
@@ -850,7 +850,7 @@ RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 
 RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64 access_addr, int access_type, st64 reg_addend) {
 	rz_return_if_fail(var);
-	st64 offset = (st64)access_addr - (st64)var->fcn->addr;
+	st64 offset = access_addr - var->fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
 	size_t index;
@@ -885,7 +885,7 @@ RZ_API void rz_analysis_var_set_access(RzAnalysisVar *var, const char *reg, ut64
 
 RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 	rz_return_if_fail(var);
-	st64 offset = (st64)address - (st64)var->fcn->addr;
+	st64 offset = address - var->fcn->addr;
 	size_t index;
 	rz_vector_lower_bound(&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {
@@ -905,7 +905,7 @@ RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	if (fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			RzPVector *inst_accesses = ht_up_find(fcn->inst_vars, (ut64)acc->offset, NULL);
 			if (!inst_accesses) {
 				continue;
@@ -918,7 +918,7 @@ RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 
 RZ_API RzAnalysisVarAccess *rz_analysis_var_get_access_at(RzAnalysisVar *var, ut64 addr) {
 	rz_return_val_if_fail(var, NULL);
-	st64 offset = (st64)addr - (st64)var->fcn->addr;
+	st64 offset = addr - var->fcn->addr;
 	size_t index;
 	rz_vector_lower_bound(&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {
@@ -1126,7 +1126,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (!op_esil) {
 			return;
 		}
-		esil_buf = strdup(op_esil);
+		esil_buf = rz_str_dup(op_esil);
 		if (!esil_buf) {
 			return;
 		}
@@ -1235,7 +1235,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 					}
 					if (sum_sz == stack_off) {
 						vartype = tp;
-						varname = strdup(rz_type_func_args_name(analysis->typedb, fname, i));
+						varname = rz_str_dup(rz_type_func_args_name(analysis->typedb, fname, i));
 						break;
 					}
 					ut64 bit_sz = rz_type_db_get_bitsize(analysis->typedb, tp);
@@ -1451,7 +1451,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				}
 				if (found_arg) {
 					type = found_arg->type;
-					vname = name = strdup(found_arg->name);
+					vname = name = rz_str_dup(found_arg->name);
 				}
 			}
 			if (!vname) {
@@ -1515,7 +1515,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	if (selfreg) {
 		bool is_used_like_an_arg = is_used_like_arg(selfreg, opsreg, opdreg, op, analysis);
 		if (reg_set[i] != 2 && is_used_like_an_arg) {
-			char *vname = strdup("self");
+			char *vname = rz_str_dup("self");
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_reg(&stor, selfreg);
 			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, &stor, NULL, size, vname);
@@ -1536,7 +1536,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 	const char *errorreg = rz_analysis_cc_error(analysis, fcn->cc);
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL(opdreg, errorreg)) {
-			char *vname = strdup("error");
+			char *vname = rz_str_dup("error");
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_reg(&stor, errorreg);
 			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, &stor, NULL, size, vname);
@@ -1768,7 +1768,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		size_t tmp_len = strlen(vartype);
 		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
 			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-			var->name, rz_list_iter_has_next(iter) ? ", " : "");
+			var->name, rz_list_has_next(iter) ? ", " : "");
 		free(vartype);
 	}
 
@@ -1821,12 +1821,12 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 			RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned);
 			if (arg) {
 				rz_type_callable_arg_add(callable, arg);
-			} else {
-				rz_type_free(cloned);
 			}
 		}
 	}
-	rz_type_func_save(analysis->typedb, callable);
+	if (!rz_type_func_save(analysis->typedb, callable)) {
+		rz_type_callable_free(callable);
+	}
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }
 

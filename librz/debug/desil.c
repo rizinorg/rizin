@@ -29,7 +29,7 @@ RzList *esil_watchpoints = NULL;
 #define ESIL dbg->analysis->esil
 
 static int exprmatch(RzDebug *dbg, ut64 addr, const char *expr) {
-	char *e = strdup(expr);
+	char *e = rz_str_dup(expr);
 	if (!e) {
 		return 0;
 	}
@@ -142,7 +142,7 @@ static int exprtoken(RzDebug *dbg, char *s, const char *sep, char **o) {
 static int exprmatchreg(RzDebug *dbg, const char *regname, const char *expr) {
 	int ret = 0;
 	char *p;
-	char *s = strdup(expr);
+	char *s = rz_str_dup(expr);
 	if (!s) {
 		return 0;
 	}
@@ -323,7 +323,7 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 	}
 	ew->rwx = rwx;
 	ew->dev = dev;
-	ew->expr = strdup(expr);
+	ew->expr = rz_str_dup(expr);
 	rz_list_append(EWPS, ew);
 }
 

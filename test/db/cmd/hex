@@ -5,10 +5,11 @@ wx 2f @ 0x100
 wx 2f @ 0x110
 wx 2f @ 0x120
 /x 2f > /dev/null
+s hit.bytes.0
 %vi $?
 EOF
 EXPECT=<<EOF
-3
+256
 EOF
 RUN
 
@@ -17,10 +18,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01020304
-%v hit0_0
+s hit.bytes.0
+%v hit.bytes.0
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 01020304
+0x00000100 4 hit.bytes.0
 0x100
 EOF
 RUN
@@ -29,11 +31,12 @@ NAME=spaces
 FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
-/x 01 02 03 04
-%v hit0_0
+/x 01020304
+s hit.bytes.0
+%v hit.bytes.0
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 01020304
+0x00000100 4 hit.bytes.0
 0x100
 EOF
 RUN
@@ -43,23 +46,11 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
 /x 01020304:ffffffff
-%v hit0_0
+s hit.bytes.0
+%v hit.bytes.0
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 01020304
-0x100
-EOF
-RUN
-
-NAME=binmask spaces
-FILE=malloc://1024
-CMDS=<<EOF
-wx 01020304 @ 0x100
-/x 01 02 03 04
-%v hit0_0
-EOF
-EXPECT=<<EOF
-0x00000100 hit0_0 01020304
+0x00000100 4 hit.bytes.0
 0x100
 EOF
 RUN
@@ -72,12 +63,13 @@ e scr.color=false
 wx 2080998f00000000d4a22527
 e search.from=0
 e search.to=12
-s/x 00002027:0000f0ff
+/x 00002027:0000f0ff
+s hit.bytes.0
 %v $$
 q
 EOF
 EXPECT=<<EOF
-0x00000008 hit0_0 d4a22527
+0x00000008 4 hit.bytes.0
 0x8
 EOF
 RUN
@@ -90,12 +82,13 @@ e scr.color=false
 wx 2080998f00000000d4a22527
 e search.from=0
 e search.to=12
-s/x 2027:f0ff
+/x 2027:f0ff
+s hit.bytes.0
 %v $$
 q
 EOF
 EXPECT=<<EOF
-0x0000000a hit0_0 2527
+0x0000000a 2 hit.bytes.0
 0xa
 EOF
 RUN
@@ -108,9 +101,9 @@ w AAAA @ 0x100
 /x 4141
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 4141
-0x00000101 hit0_1 4141
-0x00000102 hit0_2 4141
+0x00000100 2 hit.bytes.0
+0x00000101 2 hit.bytes.1
+0x00000102 2 hit.bytes.2
 EOF
 RUN
 
@@ -122,8 +115,8 @@ w AAAA @ 0x100
 /x 4141
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 4141
-0x00000102 hit0_1 4141
+0x00000100 2 hit.bytes.0
+0x00000102 2 hit.bytes.1
 EOF
 RUN
 
@@ -135,6 +128,16 @@ b 2
 /x .1.2.3.4
 EOF
 EXPECT=<<EOF
-0x00000100 hit0_0 41424344
+0x00000100 4 hit.bytes.0
+EOF
+RUN
+
+NAME=invalid @x: hexpair
+FILE==
+CMDS=px @x:abcdefgh
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: Invalid hexpair for @x:
+ERROR: core: Error while executing command: px @x:abcdefgh
 EOF
 RUN

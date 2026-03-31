@@ -127,7 +127,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens();
-	char *_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
+	char *_cmd = io->args ? rz_str_appendf(rz_str_dup(cmd), " %s", io->args) : rz_str_dup(cmd);
 	char **argv = rz_str_argv(_cmd, NULL);
 	char *cmdline = NULL;
 	// We need to build a command line with quoted argument and escaped quotes
@@ -197,7 +197,7 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 		rz_run_free(rp);
 		return NULL;
 	}
-	rp->_program = strdup(argv[0]);
+	rp->_program = rz_str_dup(argv[0]);
 
 	rp->_dodebug = true;
 	if (RZ_STR_ISNOTEMPTY(io->runprofile)) {
@@ -413,7 +413,7 @@ static int fork_and_ptraceme_for_unix(RzIO *io, int bits, const char *cmd) {
 
 static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	// Before calling the platform implementation, append arguments to the command if they have been provided
-	char *eff_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
+	char *eff_cmd = io->args ? rz_str_appendf(rz_str_dup(cmd), " %s", io->args) : rz_str_dup(cmd);
 	if (!eff_cmd) {
 		return -1;
 	}
@@ -531,7 +531,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		if (ret) {
 			ret->plugin = _plugin;
-			ret->referer = strdup(file); // kill this
+			ret->referer = rz_str_dup(file); // kill this
 		}
 	}
 	return ret;

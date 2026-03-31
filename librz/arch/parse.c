@@ -74,7 +74,7 @@ RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 		}
 		p->cur = NULL;
 	}
-	return rz_list_delete_data(p->parsers, plugin);
+	return rz_list_delete_val(p->parsers, plugin);
 }
 
 RZ_API bool rz_parse_use(RzParse *p, const char *name) {
@@ -94,7 +94,7 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name) {
 // this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
 // and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str) {
-	char *in = strdup(str);
+	char *in = rz_str_dup(str);
 	bool ret = false;
 	char *s, *o;
 

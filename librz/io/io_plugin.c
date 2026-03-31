@@ -6,6 +6,8 @@
 #include <stdio.h>
 
 #include "rz_io_plugins.h"
+#include "rz_util/ht_sp.h"
+#include "rz_util/rz_iterator.h"
 
 static volatile RzIOPlugin *default_plugin = NULL;
 
@@ -13,7 +15,9 @@ static RzIOPlugin *io_static_plugins[] = { RZ_IO_STATIC_PLUGINS };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(io->plugins, plugin, RzIOPlugin);
+	if (!ht_sp_insert(io->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
@@ -29,7 +33,7 @@ static bool close_if_plugin(void *user, void *data, ut32 id) {
 RZ_API bool rz_io_plugin_del(RzIO *io, RZ_NONNULL RZ_BORROW RzIOPlugin *plugin) {
 	rz_return_val_if_fail(io && plugin, false);
 	rz_id_storage_foreach(io->files, close_if_plugin, plugin);
-	return rz_list_delete_data(io->plugins, plugin);
+	return ht_sp_delete(io->plugins, plugin->name);
 }
 
 RZ_API bool rz_io_plugin_init(RzIO *io) {
@@ -37,7 +41,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = rz_list_new();
+	io->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (i = 0; i < RZ_ARRAY_SIZE(io_static_plugins); i++) {
 		if (!io_static_plugins[i]->name) {
 			continue;
@@ -55,27 +59,35 @@ RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool
 }
 
 RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool many) {
-	RzListIter *iter;
-	RzIOPlugin *ret;
-	rz_list_foreach (io->plugins, iter, ret) {
+	rz_return_val_if_fail(io && filename, NULL);
+	RzIterator *iter = ht_sp_as_iter(io->plugins);
+	RzIOPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzIOPlugin *ret = *val;
 		if (!ret || !ret->check) {
 			continue;
 		}
 		if (ret->check(io, filename, many)) {
+			rz_iterator_free(iter);
 			return ret;
 		}
 	}
+	rz_iterator_free(iter);
 	return rz_io_plugin_get_default(io, filename, many);
 }
 
 RZ_API RzIOPlugin *rz_io_plugin_byname(RzIO *io, const char *name) {
-	RzListIter *iter;
-	RzIOPlugin *iop;
-	rz_list_foreach (io->plugins, iter, iop) {
+	rz_return_val_if_fail(io && name, NULL);
+	RzIterator *iter = ht_sp_as_iter(io->plugins);
+	RzIOPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzIOPlugin *iop = *val;
 		if (!strcmp(name, iop->name)) {
+			rz_iterator_free(iter);
 			return iop;
 		}
 	}
+	rz_iterator_free(iter);
 	return rz_io_plugin_get_default(io, name, false);
 }
 

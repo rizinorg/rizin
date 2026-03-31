@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "common.h"
@@ -7,7 +8,7 @@
 /**
  * \brief x86 registers
  */
-const char *x86_registers[X86_REG_ENDING] = {
+const char *x86_registers[X86_REG_MAX_VALUE] = {
 	[X86_REG_AH] = "ah",
 	[X86_REG_AL] = "al",
 	[X86_REG_AX] = "ax",
@@ -34,11 +35,10 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_EDX] = "edx",
 	[X86_REG_EFLAGS] = "eflags",
 	[X86_REG_EIP] = "eip",
-	[X86_REG_EIZ] = "eiz",
 	[X86_REG_ES] = "es",
 	[X86_REG_ESI] = "esi",
 	[X86_REG_ESP] = "esp",
-	[X86_REG_FPSW] = "swd",
+	[X86_REG_X87STATUS] = "swd",
 	[X86_REG_FS] = "fs",
 	[X86_REG_GS] = "gs",
 	[X86_REG_IP] = "ip",
@@ -49,7 +49,6 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_RDI] = "rdi",
 	[X86_REG_RDX] = "rdx",
 	[X86_REG_RIP] = "rip",
-	[X86_REG_RIZ] = "riz",
 	[X86_REG_RSI] = "rsi",
 	[X86_REG_RSP] = "rsp",
 	[X86_REG_SI] = "si",
@@ -89,14 +88,6 @@ const char *x86_registers[X86_REG_ENDING] = {
 	[X86_REG_DR13] = "dr13",
 	[X86_REG_DR14] = "dr14",
 	[X86_REG_DR15] = "dr15",
-	[X86_REG_FP0] = "fp0",
-	[X86_REG_FP1] = "fp1",
-	[X86_REG_FP2] = "fp2",
-	[X86_REG_FP3] = "fp3",
-	[X86_REG_FP4] = "fp4",
-	[X86_REG_FP5] = "fp5",
-	[X86_REG_FP6] = "fp6",
-	[X86_REG_FP7] = "fp7",
 	[X86_REG_K0] = "k0",
 	[X86_REG_K1] = "k1",
 	[X86_REG_K2] = "k2",
@@ -272,12 +263,12 @@ const X86Reg gpr_hregs[] = {
 	X86_REG_BH, // rbx
 	X86_REG_CH, // rcx
 	X86_REG_DH, // rdx
-	X86_REG_INVALID, // rbp
-	X86_REG_INVALID, // rdi
-	X86_REG_INVALID, // rip
-	X86_REG_INVALID, // riz
-	X86_REG_INVALID, // rsi
-	X86_REG_INVALID // rsp
+	X86_REG_NONE, // rbp
+	X86_REG_NONE, // rdi
+	X86_REG_NONE, // rip
+	X86_REG_NONE, // riz
+	X86_REG_NONE, // rsi
+	X86_REG_NONE // rsp
 };
 
 const X86Reg gpr_lregs[] = {
@@ -287,8 +278,8 @@ const X86Reg gpr_lregs[] = {
 	X86_REG_DL, // rdx
 	X86_REG_BPL, // rbp
 	X86_REG_DIL, // rdi
-	X86_REG_INVALID, // rip
-	X86_REG_INVALID, // riz
+	X86_REG_NONE, // rip
+	X86_REG_NONE, // riz
 	X86_REG_SIL, // rsi
 	X86_REG_SPL, // rsp
 };
@@ -301,7 +292,7 @@ const X86Reg gpr_xregs[] = {
 	X86_REG_BP, // rbp
 	X86_REG_DI, // rdi
 	X86_REG_IP, // rip
-	X86_REG_INVALID, // riz
+	X86_REG_NONE, // riz
 	X86_REG_SI, // rsi
 	X86_REG_SP, // rsp
 };
@@ -314,7 +305,7 @@ const X86Reg gpr_eregs[] = {
 	X86_REG_EBP, // rbp
 	X86_REG_EDI, // rdi
 	X86_REG_EIP, // rip
-	X86_REG_EIZ, // riz
+	X86_REG_NONE, // riz
 	X86_REG_ESI, // rsi
 	X86_REG_ESP, // rsp
 };
@@ -327,7 +318,7 @@ const X86Reg gpr_rregs[] = {
 	X86_REG_RBP,
 	X86_REG_RDI,
 	X86_REG_RIP,
-	X86_REG_RIZ,
+	X86_REG_NONE,
 	X86_REG_RSI,
 	X86_REG_RSP
 };
@@ -498,7 +489,7 @@ RzILOpEffect *x86_il_set_gpr64(X86Reg reg, RzILOpPure *val, int bits) {
  */
 X86Reg get_bitness_reg(unsigned int index, int bits) {
 	if (index >= GPR_FAMILY_COUNT) {
-		return X86_REG_INVALID;
+		return X86_REG_NONE;
 	}
 	if (bits == 16) {
 		return gpr_xregs[index];
@@ -544,8 +535,6 @@ const struct gpr_lookup_helper_t gpr_lookup_table[] = {
 	[X86_REG_DI] = { 5, x86_il_get_gpr16, x86_il_set_gpr16 },
 	[X86_REG_EDI] = { 5, x86_il_get_gpr32, x86_il_set_gpr32 },
 	[X86_REG_RDI] = { 5, x86_il_get_gpr64, x86_il_set_gpr64 },
-	[X86_REG_EIZ] = { 7, x86_il_get_gpr32, x86_il_set_gpr32 },
-	[X86_REG_RIZ] = { 7, x86_il_get_gpr64, x86_il_set_gpr64 },
 	[X86_REG_SIL] = { 8, x86_il_get_gprl, x86_il_set_gprl },
 	[X86_REG_SI] = { 8, x86_il_get_gpr16, x86_il_set_gpr16 },
 	[X86_REG_ESI] = { 8, x86_il_get_gpr32, x86_il_set_gpr32 },
@@ -673,13 +662,13 @@ RZ_IPI RzILOpEffect *x86_il_set_reg_bits(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpPur
  */
 RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, int bits, ut64 pc) {
 	RzILOpPure *offset = NULL;
-	if (mem.base != X86_REG_INVALID) {
+	if (mem.base != X86_REG_NONE) {
 		offset = x86_il_get_reg_bits(mem.base, bits, pc);
 		if (x86_il_get_reg_size(mem.base) != bits) {
 			offset = UNSIGNED(bits, offset);
 		}
 	}
-	if (mem.index != X86_REG_INVALID) {
+	if (mem.index != X86_REG_NONE) {
 		RzILOpPure *reg = x86_il_get_reg_bits(mem.index, bits, pc);
 		if (x86_il_get_reg_size(mem.index) != bits) {
 			reg = UNSIGNED(bits, reg);
@@ -691,19 +680,21 @@ RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 		}
 	}
 	if (!offset) {
-		offset = UN(bits, mem.disp);
+		offset = UN(bits, mem.disp.value);
 	} else {
-		offset = ADD(offset, UN(bits, mem.disp));
+		offset = ADD(offset, UN(bits, mem.disp.value));
 	}
 
 	/* Segmentation not present in x86-64 */
-	if (bits != 64 && segment != X86_REG_INVALID) {
+	if (bits != 64 && segment != X86_REG_NONE) {
 		// TODO: Implement segmentation
 		/* Currently the segmentation is only implemented for real mode
 		 Address = Segment * 0x10 + Offset */
 
 		/* Assuming real mode */
-		offset = ADD(offset, SHIFTL0(UNSIGNED(bits, x86_il_get_reg_bits(segment, bits, pc)), U8(4)));
+		if (segment != X86_REG_DS) {
+			offset = ADD(offset, SHIFTL0(UNSIGNED(bits, x86_il_get_reg_bits(segment, bits, pc)), U8(4)));
+		}
 	}
 
 	return offset;
@@ -727,21 +718,21 @@ RZ_IPI RzILOpEffect *x86_il_set_mem_bits(X86Mem mem, RZ_OWN RZ_NONNULL RzILOpPur
  * \param op
  * \param analysis_bits bitness
  */
-RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size) {
+RZ_IPI RzILOpPure *x86_il_get_operand_bits(X86Op op, int analysis_bits, ut64 pc, int implicit_size, const X86ILIns *ins) {
 	switch (op.type) {
-	case X86_OP_INVALID:
-		if (implicit_size) {
-			return SN(implicit_size * BITS_PER_BYTE, 1);
-		}
-		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered\n");
-		return NULL;
 	case X86_OP_REG:
-		return x86_il_get_reg_bits(op.reg, analysis_bits, pc);
+		return x86_il_get_reg_bits(op.reg.value, analysis_bits, pc);
 	case X86_OP_IMM:
 		/* Immediate values are always sign extended */
-		return SN(op.size * BITS_PER_BYTE, op.imm);
+		return SN((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, imm_value(op, pc));
 	case X86_OP_MEM:
-		return LOADW(BITS_PER_BYTE * op.size, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
+		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, x86_il_get_memaddr_bits(op.mem, analysis_bits, pc));
+	case X86_OP_PTR: {
+		RzILOpPure *offset = UN(analysis_bits, op.ptr.offset);
+		RzILOpPure *segment = UN(analysis_bits, op.ptr.segment);
+		offset = ADD(offset, SHIFTL0(UNSIGNED(analysis_bits, segment), U8(4)));
+		return LOADW((op.size != 0 ? op.size : implicit_size) * BITS_PER_BYTE, offset);
+	}
 	default:
 		return NULL;
 	}
@@ -762,7 +753,7 @@ RZ_IPI RzILOpEffect *x86_il_set_operand_bits(X86Op op, RZ_OWN RZ_NONNULL RzILOpP
 	RzILOpEffect *ret = NULL;
 	switch (op.type) {
 	case X86_OP_REG:
-		ret = x86_il_set_reg_bits(op.reg, val, bits);
+		ret = x86_il_set_reg_bits(op.reg.value, val, bits);
 		break;
 	case X86_OP_MEM:
 		ret = x86_il_set_mem_bits(op.mem, val, bits, pc);
@@ -802,10 +793,10 @@ RZ_IPI RzILOpBool *x86_il_is_add_carry(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OWN
 	RzILOpBool *xr = AND(DUP(xmsb), DUP(nres));
 
 	// bit = xy | ry | xr
-	RzILOpBool * or = OR(xy, ry);
+	RzILOpBool *or = OR(xy, ry);
 	or = OR(or, xr);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -833,10 +824,10 @@ RZ_IPI RzILOpBool *x86_il_is_sub_borrow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_OW
 	RzILOpBool *rnx = AND(DUP(resmsb), DUP(nx));
 
 	// bit = nxy | rny | rnx
-	RzILOpBool * or = OR(nxy, rny);
+	RzILOpBool *or = OR(nxy, rny);
 	or = OR(or, rnx);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -859,9 +850,9 @@ RZ_IPI RzILOpBool *x86_il_is_add_overflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ_
 	// res & !x & !y
 	RzILOpBool *rnxny = AND(AND(DUP(resmsb), INV(DUP(xmsb))), INV(DUP(ymsb)));
 	// or = nrxy | rnxny
-	RzILOpBool * or = OR(nrxy, rnxny);
+	RzILOpBool *or = OR(nrxy, rnxny);
 
-	return or ;
+	return or;
 }
 
 /**
@@ -884,41 +875,26 @@ RZ_IPI RzILOpBool *x86_il_is_sub_underflow(RZ_OWN RZ_NONNULL RzILOpPure *res, RZ
 	// res & !x & y
 	RzILOpBool *rnxy = AND(AND(DUP(resmsb), INV(DUP(xmsb))), DUP(ymsb));
 	// or = nrxny | rnxy
-	RzILOpBool * or = OR(nrxny, rnxy);
+	RzILOpBool *or = OR(nrxny, rnxy);
 
-	return or ;
+	return or;
 }
-
-struct x86_parity_helper_t {
-	RzILOpBool *val; ///< value of parity
-	RzILOpEffect *eff; ///< RzILOpEffect used to find the parity
-};
 
 /**
  * \brief Find the parity of lower 8 bits of \p val
  *
  * \param val
  */
-struct x86_parity_helper_t x86_il_get_parity(RZ_OWN RzILOpPure *val) {
+RzILOpBool *x86_il_get_parity(RZ_OWN RzILOpPure *val) {
 	// assumed that val is an 8-bit wide value
-	RzILOpEffect *setvar = SETL("_popcnt", U8(0));
-	setvar = SEQ2(setvar, SETL("_val", val));
 
-	/* We can stop shifting the "_val" once it is zero,
-	since the value of "_popcnt" wouldn't change any further */
-	RzILOpBool *condition = NON_ZERO(VARL("_val"));
-
-	RzILOpEffect *popcnt = SETL("_popcnt", ADD(VARL("_popcnt"), BOOL_TO_BV(LSB(VARL("_val")), 8)));
-	popcnt = SEQ2(popcnt, SETL("_val", SHIFTR0(VARL("_val"), U8(1))));
-
-	RzILOpEffect *repeat_eff = REPEAT(condition, popcnt);
-
-	struct x86_parity_helper_t ret = {
-		.val = IS_ZERO(MOD(VARL("_popcnt"), U8(2))),
-		.eff = SEQ2(setvar, repeat_eff)
-	};
-
-	return ret;
+	// A parity calculation can be reduced to nested shift-right and xor operations.
+	// see https://github.com/BinaryAnalysisPlatform/bap/blob/master/plugins/x86/x86_lifter.ml#L215
+	RzILOpPure *accumulate = LET("_val", val,
+		LET("_c4", LOGXOR(VARLP("_val"), SHIFTR0(VARLP("_val"), U8(4))),
+			LET("_c2", LOGXOR(VARLP("_c4"), SHIFTR0(VARLP("_c4"), U8(2))),
+				LOGXOR(VARLP("_c2"), SHIFTR0(VARLP("_c2"), U8(1))))));
+	return INV(LSB(accumulate));
 }
 
 /**
@@ -928,12 +904,12 @@ RZ_IPI RzILOpEffect *x86_il_set_result_flags_bits(RZ_OWN RZ_NONNULL RzILOpPure *
 	rz_return_val_if_fail(result, NULL);
 
 	RzILOpEffect *set = SETL("_result", result);
-	struct x86_parity_helper_t pf = x86_il_get_parity(UNSIGNED(8, VARL("_result")));
+	RzILOpBool *pf = x86_il_get_parity(UNSIGNED(8, VARL("_result")));
 	RzILOpBool *zf = IS_ZERO(VARL("_result"));
 	RzILOpBool *sf = MSB(VARL("_result"));
 
-	return SEQ5(set, pf.eff,
-		SETG(EFLAGS(PF), pf.val),
+	return SEQ4(set,
+		SETG(EFLAGS(PF), pf),
 		SETG(EFLAGS(ZF), zf),
 		SETG(EFLAGS(SF), sf));
 }
@@ -1278,8 +1254,7 @@ RZ_IPI ILPureEffectPair x86_il_fsub_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat
  * \brief Subtract \p y from \p x (reverse of \ref x86_il_fsub_with_rmode)
  */
 RZ_IPI ILPureEffectPair x86_il_fsubr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
-	rz_return_val_if_fail(x && y && ctx, ret);
+	rz_return_val_if_fail(x && y && ctx, ((ILPureEffectPair){ .val = NULL, .eff = NULL }));
 	return x86_il_fsub_with_rmode(y, x);
 }
 
@@ -1307,8 +1282,7 @@ RZ_IPI ILPureEffectPair x86_il_fdiv_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat
  * \brief Divide \p y from \p x (reverse of \ref x86_il_fdiv_with_rmode)
  */
 RZ_IPI ILPureEffectPair x86_il_fdivr_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
-	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
-	rz_return_val_if_fail(x && y && ctx, ret);
+	rz_return_val_if_fail(x && y && ctx, ((ILPureEffectPair){ .val = NULL, .eff = NULL }));
 	return x86_il_fdiv_with_rmode(y, x);
 }
 
@@ -1360,7 +1334,7 @@ RZ_IPI RzILOpEffect *x86_il_set_st_reg_ctx(X86Reg reg, RZ_OWN RZ_NONNULL RzILOpF
  * \return RzILOpPure* Bitvector of length 3
  */
 RZ_IPI RzILOpPure *x86_il_get_fpu_stack_top() {
-	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_FPSW, 0, 0);
+	RzILOpPure *status_word = x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0);
 	return UNSIGNED(3, SHIFTR0(status_word, UN(8, 11)));
 }
 
@@ -1379,8 +1353,8 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_stack_top(RZ_OWN RZ_NONNULL RzILOpPure *top)
 	/* 0x3800 only has the 12, 13 & 14 bits set, so we take its negation for the
 	 * mask. */
 	RzILOpPure *mask = UN(16, ~(0x3800));
-	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
-	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGOR(shifted_top, LOGAND(mask, x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
 #define ST_MOVE_RIGHT(l, r) x86_il_set_st_reg(X86_REG_ST##r, x86_il_get_st_reg(X86_REG_ST##l), RZ_FLOAT_IEEE754_BIN_80)
@@ -1454,7 +1428,7 @@ RZ_IPI ILPureEffectPair x86_il_st_pop_with_val() {
 }
 
 RZ_IPI RzILOpBool *x86_il_get_fpu_flag(X86FPUFlags flag) {
-	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(8, flag));
+	RzILOpPure *shifted_fpsw = SHIFTR0(x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0), UN(8, flag));
 	return NON_ZERO(UNSIGNED(1, shifted_fpsw));
 }
 
@@ -1463,8 +1437,8 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzI
 
 	RzILOpPure *zero_mask = UN(16, ~(1 << flag));
 	RzILOpPure *value_mask = SHIFTL0(BOOL_TO_BV(value, 16), UN(8, flag));
-	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_FPSW, 0, 0)));
-	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGOR(value_mask, LOGAND(zero_mask, x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0)));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
 #define FLOATING_OP_MEM_WIDTH_CASE(n) \
@@ -1487,10 +1461,10 @@ RZ_IPI RzILOpEffect *x86_il_set_fpu_flag(X86FPUFlags flag, RZ_OWN RZ_NONNULL RzI
 RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc) {
 	switch (op.type) {
 	case X86_OP_REG:
-		if (x86_il_is_st_reg(op.reg)) {
-			return x86_il_get_st_reg(op.reg);
+		if (x86_il_is_st_reg(op.reg.value)) {
+			return x86_il_get_st_reg(op.reg.value);
 		} else {
-			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg);
+			RZ_LOG_ERROR("x86: RzIL: Invalid register passed as a floating point operand: %d\n", op.reg.value);
 		}
 		break;
 	case X86_OP_MEM:
@@ -1503,7 +1477,6 @@ RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int bits, ut64 pc)
 			RZ_LOG_ERROR("x86: RzIL: Invalid memory operand width for a floating point operand: %d\n", op.size);
 		}
 		break;
-	case X86_OP_INVALID:
 	case X86_OP_IMM:
 	default:
 		RZ_LOG_ERROR("x86: RzIL: Invalid param type encountered: %d\n", op.type);
@@ -1560,7 +1533,7 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NO
 
 	switch (op.type) {
 	case X86_OP_REG:
-		return x86_il_set_st_reg(op.reg, val, val_format);
+		return x86_il_set_st_reg(op.reg.value, val, val_format);
 	case X86_OP_MEM: {
 		ut64 required_format = x86_width_to_format(op.size * BITS_PER_BYTE);
 
@@ -1591,8 +1564,8 @@ RZ_IPI RzILOpEffect *x86_il_set_floating_operand_bits_ctx(X86Op op, RZ_OWN RZ_NO
 }
 
 RZ_IPI RzILOpEffect *x86_il_clear_fpsw_flags() {
-	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(X86_REG_FPSW, 0, 0), UN(16, 0x3f80));
-	return x86_il_set_reg_bits(X86_REG_FPSW, new_fpsw, 0);
+	RzILOpPure *new_fpsw = LOGAND(x86_il_get_reg_bits(X86_REG_X87STATUS, 0, 0), UN(16, 0x3f80));
+	return x86_il_set_reg_bits(X86_REG_X87STATUS, new_fpsw, 0);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

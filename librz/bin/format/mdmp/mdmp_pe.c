@@ -16,19 +16,19 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzPVector 
 
 	do {
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
-		paddr = sdb_num_get(bin->kv, key, 0);
+		paddr = sdb_num_get(bin->kv, key);
 		if (!paddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
-		vaddr = sdb_num_get(bin->kv, key, 0);
+		vaddr = sdb_num_get(bin->kv, key);
 		if (!vaddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
-		haddr = sdb_num_get(bin->kv, key, 0);
+		haddr = sdb_num_get(bin->kv, key);
 		if (!haddr) {
 			break;
 		}
@@ -70,8 +70,7 @@ RzPVector /*<RzBinAddr *>*/ *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bi
 		rz_pvector_push(ret, ptr);
 	}
 
-	PE_(add_tls_callbacks)
-	(pe_bin->bin, ret);
+	PE_(add_tls_callbacks)(pe_bin->bin, ret);
 
 	free(entry);
 
@@ -90,55 +89,30 @@ static void filter_import(ut8 *n) {
 
 RzPVector /*<RzBinImport *>*/ *PE_(rz_bin_mdmp_pe_get_imports)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
-	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
 	RzBinImport *ptr = NULL;
-	RzBinReloc *rel;
 	RzPVector *ret;
-	RzPVector *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports)(pe_bin->bin);
 	ret = rz_pvector_new(NULL);
-	relocs = rz_pvector_new(free);
 
-	if (!imports || !ret || !relocs) {
+	if (!imports || !ret) {
 		free(imports);
 		free(ret);
-		free(relocs);
 		return NULL;
 	}
 
-	pe_bin->bin->relocs = relocs;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
 		}
 		filter_import(imports[i].name);
-		ptr->name = strdup((const char *)imports[i].name);
-		ptr->libname = *imports[i].libname ? strdup((const char *)imports[i].libname) : NULL;
+		ptr->name = rz_str_dup((const char *)imports[i].name);
+		ptr->libname = RZ_STR_ISNOTEMPTY(imports[i].libname) ? rz_str_dup((const char *)imports[i].libname) : NULL;
 		ptr->bind = "NONE";
 		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
 		rz_pvector_push(ret, ptr);
-
-		if (!(rel = RZ_NEW0(RzBinReloc))) {
-			break;
-		}
-#ifdef RZ_BIN_PE64
-		rel->type = RZ_BIN_RELOC_64;
-#else
-		rel->type = RZ_BIN_RELOC_32;
-#endif
-		offset = imports[i].vaddr;
-		if (offset > pe_bin->vaddr) {
-			offset -= pe_bin->vaddr;
-		}
-		rel->additive = 0;
-		rel->import = ptr;
-		rel->addend = 0;
-		rel->vaddr = offset + pe_bin->vaddr;
-		rel->paddr = imports[i].paddr + pe_bin->paddr;
-		rz_pvector_push(relocs, rel);
 	}
 	free(imports);
 
@@ -160,16 +134,15 @@ RzPVector /*<RzBinSection *>*/ *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_b
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)
-	(pe_bin->bin, &sections);
+	PE_(rz_bin_pe_check_sections)(pe_bin->bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			ptr->name = strdup((char *)sections[i].name);
+			ptr->name = rz_str_dup((char *)sections[i].name);
 		} else {
-			ptr->name = strdup("");
+			ptr->name = rz_str_dup("");
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > pe_bin->bin->size) {
@@ -222,6 +195,9 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
+	if (!pe_bin->bin) {
+		return ret;
+	}
 
 	/* TODO: Load symbol table from pdb file */
 	if ((symbols = PE_(rz_bin_pe_get_exports)(pe_bin->bin))) {
@@ -233,8 +209,8 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = strdup((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
+			ptr->name = rz_str_dup((char *)symbols[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(symbols[i].libname) ? rz_str_dup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&rbin->constpool, (char *)symbols[i].forwarder);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;
@@ -257,8 +233,8 @@ RzList /*<RzBinSymbol *>*/ *PE_(rz_bin_mdmp_pe_get_symbols)(RzBin *rbin, struct 
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
 			}
-			ptr->name = strdup((const char *)imports[i].name);
-			ptr->libname = *imports[i].libname ? strdup((const char *)imports[i].libname) : NULL;
+			ptr->name = rz_str_dup((const char *)imports[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(imports[i].libname) ? rz_str_dup((const char *)imports[i].libname) : NULL;
 			ptr->is_imported = true;
 			ptr->bind = "NONE";
 			ptr->type = RZ_BIN_TYPE_FUNC_STR;

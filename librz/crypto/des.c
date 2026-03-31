@@ -253,7 +253,7 @@ RZ_API void rz_des_pc2(RZ_OUT ut32 *keylo, RZ_OUT ut32 *keyhi, RZ_IN ut32 deslo,
 		((deslo << 2) & 0x00020000) | ((deslo >> 10) & 0x00010000) |
 		((deshi >> 13) & 0x00002000) | ((deshi >> 4) & 0x00001000) |
 		((deshi << 6) & 0x00000800) | ((deshi >> 1) & 0x00000400) |
-		((deshi >> 14) & 0x00000200) | ((deshi)&0x00000100) |
+		((deshi >> 14) & 0x00000200) | ((deshi) & 0x00000100) |
 		((deshi >> 5) & 0x00000020) | ((deshi >> 10) & 0x00000010) |
 		((deshi >> 3) & 0x00000008) | ((deshi >> 18) & 0x00000004) |
 		((deshi >> 26) & 0x00000002) | ((deshi >> 24) & 0x00000001);
@@ -266,7 +266,7 @@ RZ_API void rz_des_pc2(RZ_OUT ut32 *keylo, RZ_OUT ut32 *keyhi, RZ_IN ut32 deslo,
 		((deslo << 15) & 0x00020000) | ((deslo >> 4) & 0x00010000) |
 		((deshi >> 2) & 0x00002000) | ((deshi << 8) & 0x00001000) |
 		((deshi >> 14) & 0x00000808) | ((deshi >> 9) & 0x00000400) |
-		((deshi)&0x00000200) | ((deshi << 7) & 0x00000100) |
+		((deshi) & 0x00000200) | ((deshi << 7) & 0x00000100) |
 		((deshi >> 7) & 0x00000020) | ((deshi >> 3) & 0x00000011) |
 		((deshi << 2) & 0x00000004) | ((deshi >> 21) & 0x00000002);
 }

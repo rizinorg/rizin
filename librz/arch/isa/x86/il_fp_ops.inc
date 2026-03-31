@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
@@ -26,7 +27,7 @@ IL_LIFTER(fninit) {
 	RzILOpEffect *set_cw = SETG(X86_REG_FPU_CW, UN(16, 0x37f));
 	/* No need to set C0-C3 flags to zero, since we are setting the FPSW to 0,
 	 * so all the flag bits will also be set to 0. */
-	RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_FPSW, UN(16, 0x0));
+	RzILOpEffect *set_sw = x86_il_set_reg(X86_REG_X87STATUS, UN(16, 0x0));
 	RzILOpEffect *set_tw = SETG(X86_REG_FPU_TW, UN(16, 0xffff));
 	RzILOpEffect *set_ip = SETG(X86_REG_FPU_IP, UN(32, 0x0));
 	RzILOpEffect *set_dp = SETG(X86_REG_FPU_DP, UN(32, 0x0));
@@ -55,7 +56,7 @@ IL_LIFTER(fnstcw) {
  * Store x87 FPU Status Word
  */
 IL_LIFTER(fnstsw) {
-	return x86_il_set_op(0, x86_il_get_reg(X86_REG_FPSW));
+	return x86_il_set_op(0, x86_il_get_reg(X86_REG_X87STATUS));
 }
 
 /**
@@ -64,8 +65,8 @@ IL_LIFTER(fnstsw) {
  */
 IL_LIFTER(fnclex) {
 	/* Zero out the 15th bit and 0-7 bits. */
-	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_FPSW), UN(16, 0x7f00));
-	return SEQ2(x86_il_set_reg(X86_REG_FPSW, new_sw), x86_il_clear_fpsw_flags());
+	RzILOpPure *new_sw = LOGAND(x86_il_get_reg(X86_REG_X87STATUS), UN(16, 0x7f00));
+	return SEQ2(x86_il_set_reg(X86_REG_X87STATUS, new_sw), x86_il_clear_fpsw_flags());
 }
 
 /**
@@ -74,7 +75,7 @@ IL_LIFTER(fnclex) {
  */
 IL_LIFTER(fld) {
 	return x86_il_st_push(x86_il_get_floating_op(0),
-		x86_width_to_format(ins->structure->operands[0].size * BITS_PER_BYTE));
+		x86_width_to_format(ins->operands[0].size * BITS_PER_BYTE));
 }
 
 /**
@@ -202,11 +203,11 @@ IL_LIFTER(fldln2) {
 IL_LIFTER(fxch) {
 	X86Reg reg;
 
-	if (ins->structure->op_count == 0) {
+	if (ins->structure->operand_count_visible == 0) {
 		/* Use ST1 as the default reg in case no operand is provided. */
 		reg = X86_REG_ST1;
 	} else {
-		reg = ins->structure->operands[1].reg;
+		reg = ins->operands[0].reg.value;
 	}
 
 	/* TODO: The IL generated from the following code is too verbose because of
@@ -235,7 +236,7 @@ IL_LIFTER(fild) {
  * Store float in ST(0) after rounding to integer
  */
 IL_LIFTER(fist) {
-	ILPureEffectPair int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
+	ILPureEffectPair int_val = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->operands[0].size * BITS_PER_BYTE);
 	return SEQ2(int_val.eff, x86_il_set_op(0, int_val.val));
 }
 
@@ -245,7 +246,7 @@ IL_LIFTER(fist) {
  */
 IL_LIFTER(fistp) {
 	ILPureEffectPair pop = x86_il_st_pop_with_val();
-	ILPureEffectPair int_val = x86_il_int_from_floating(pop.val, ins->structure->operands[0].size * BITS_PER_BYTE);
+	ILPureEffectPair int_val = x86_il_int_from_floating(pop.val, ins->operands[0].size * BITS_PER_BYTE);
 	return SEQ3(int_val.eff, x86_il_set_op(0, int_val.val), pop.eff);
 }
 
@@ -257,7 +258,7 @@ IL_LIFTER(fistp) {
 IL_LIFTER(fbld) {
 	ut8 mem_size = analysis->bits;
 
-	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->structure->operands[0].mem));
+	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->operands[0].mem));
 	RzILOpEffect *i_init = SETL("i", UN(mem_size, 8));
 	RzILOpEffect *val_init = SETL("val", UN(64, 0));
 
@@ -307,7 +308,7 @@ IL_LIFTER(fbstp) {
 	RzILOpEffect *sgn_init = SETL("sgn", MSB(VARL("val")));
 	RzILOpEffect *val_abs = SETL("val", ITE(VARL("sgn"), NEG(VARL("val")), VARL("val")));
 
-	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->structure->operands[0].mem));
+	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->operands[0].mem));
 	RzILOpEffect *i_init = SETL("i", UN(mem_size, 0));
 	RzILOpPure *byte_mem = ADD(VARL("mem"), VARL("i"));
 
@@ -361,7 +362,7 @@ IL_LIFTER(fabs) {
 \
 		/* TODO: Check whether all the enumerated cases here are correct, through \
 		 * code coverage. */ \
-		switch (ins->structure->op_count) { \
+		switch (ins->structure->operand_count_visible) { \
 		case 1: \
 			/* Need to convert a 32-bit or 64-bit memory operand */ \
 			dest_reg = X86_REG_ST0; \
@@ -369,11 +370,14 @@ IL_LIFTER(fabs) {
 			src = resized.val; \
 			src_eff = resized.eff; \
 			break; \
-		case 2: \
+		case 2: { \
 			/* ST(i) operand, so no need for resizing */ \
-			dest_reg = ins->structure->operands[0].reg; \
-			src = x86_il_get_floating_op(0); \
+			dest_reg = ins->operands[0].reg.value; \
+			ILPureEffectPair resized = x86_il_resize_floating(x86_il_get_floating_op(1), RZ_FLOAT_IEEE754_BIN_80); \
+			src = resized.val; \
+			src_eff = resized.eff; \
 			break; \
+		} \
 		default: \
 			rz_warn_if_reached(); \
 			return NULL; \
@@ -392,9 +396,9 @@ IL_LIFTER(fabs) {
 	do { \
 		X86Reg dest_reg = X86_REG_ST1; \
 \
-		if (ins->structure->op_count == 2) { \
+		if (ins->structure->operand_count_visible == 2) { \
 			/* Destination register passed in as the first operand */ \
-			dest_reg = ins->structure->operands[0].reg; \
+			dest_reg = ins->operands[0].reg.value; \
 		} \
 \
 		ILPureEffectPair result = x86_il_##op##_with_rmode(x86_il_get_st_reg(X86_REG_ST0), x86_il_get_st_reg(dest_reg)); \
@@ -415,7 +419,7 @@ IL_LIFTER(fabs) {
 IL_LIFTER(fadd) {
 	/* Have a unified IL lifter for FADD and FADDP since Capstone has removed the
 	 * distinction after version 4, which I think is a terrible thing. */
-	if (ins->structure->opcode[0] == 0xde) {
+	if (ins->structure->opcode == 0xde) {
 		// FADDP
 		FLOATING_ARITHMETIC_POP_IL(fadd);
 	} else {
@@ -558,11 +562,14 @@ RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, Rz
 
 	if (op1_override) {
 		op1 = op1_override;
-	} else if (ins->structure->op_count == 0) {
+	} else if (ins->structure->operand_count_visible == 0) {
 		/* ST(1) is the default operand */
 		op1 = x86_il_get_st_reg(X86_REG_ST1);
-	} else {
+	} else if (ins->structure->operand_count_visible == 1) {
 		op1 = x86_il_get_floating_op(0);
+	} else {
+		st0 = x86_il_get_floating_op(0);
+		op1 = x86_il_get_floating_op(1);
 	}
 
 	// TODO: Set the C0, C2, C3 bits depending on invalid arithmetic operand exception (#IA).
@@ -636,16 +643,6 @@ IL_LIFTER(fcomi) {
 	return fcomi_helper(ins, pc, analysis);
 }
 
-#if CS_API_MAJOR > 4
-/**
- * FCOMIP
- * Compare ST(0) and ST(i), set the EFLAGS accordingly and pop the stack
- */
-IL_LIFTER(fcomip) {
-	return SEQ2(fcomi_helper(ins, pc, analysis), x86_il_st_pop());
-}
-#endif
-
 /**
  * FCHS
  * Change the sign of ST(0)
@@ -699,7 +696,7 @@ IL_LIFTER(fnop) {
  * Round ST(0) to an integer (using RZ_FLOAT_RMODE_RTZ), store the integer in the memory operand and pop the stack
  */
 IL_LIFTER(fisttp) {
-	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->structure->operands[0].size * BITS_PER_BYTE);
+	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->operands[0].size * BITS_PER_BYTE);
 	return SEQ3(int_from_float.eff, x86_il_set_op(0, int_from_float.val), x86_il_st_pop());
 }
 

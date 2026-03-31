@@ -16,11 +16,12 @@ typedef struct main_entry_t {
 
 static MainEntry main_prog[] = {
 	{ "rizin", rz_main_rizin },
+	{ "rz-ar", rz_main_rz_ar },
 	{ "rz-asm", rz_main_rz_asm },
 	{ "rz-ax", rz_main_rz_ax },
 	{ "rz-bin", rz_main_rz_bin },
 	{ "rz-diff", rz_main_rz_diff },
-	{ "rz-find", rz_main_rz_ax },
+	{ "rz-find", rz_main_rz_find },
 	{ "rz-gg", rz_main_rz_gg },
 	{ "rz-hash", rz_main_rz_hash },
 	{ "rz-run", rz_main_rz_run },
@@ -36,8 +37,9 @@ RZ_API RzMainCallback rz_main_find(const char *name) {
 	return NULL;
 }
 
-RZ_API int rz_main_version_print(const char *progname) {
-	char *s = rz_version_str(progname);
+RZ_API int rz_main_version_print(RZ_BORROW RZ_NONNULL RzPath *sys_path, const char *progname) {
+	rz_return_val_if_fail(sys_path, -1);
+	char *s = rz_version_str(sys_path, progname);
 	printf("%s\n", s);
 	free(s);
 	return 0;

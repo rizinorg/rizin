@@ -7,6 +7,7 @@
 #include <rz_util/rz_strbuf.h>
 #include <rz_util/rz_str.h>
 #include <rz_vector.h>
+#include <rz_platform.h>
 
 bool exec_regex(RzRegex *regex, const char *str, RzRegexMatch **out) {
 	RzPVector *matches = rz_regex_match_all_not_grouped(regex, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
@@ -19,7 +20,7 @@ bool exec_regex(RzRegex *regex, const char *str, RzRegexMatch **out) {
 }
 
 bool test_rz_regex_all_match(void) {
-	RzRegex *reg = rz_regex_new("push", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("push", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "push", &match), "Regex match failed");
@@ -32,7 +33,7 @@ bool test_rz_regex_all_match(void) {
 }
 
 bool test_rz_regex_posix_blank(void) {
-	RzRegex *reg = rz_regex_new("[[:blank:]]", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("[[:blank:]]", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "push\tpush", &match), "Regex match failed");
@@ -45,7 +46,7 @@ bool test_rz_regex_posix_blank(void) {
 }
 
 bool test_rz_regex_extend_space(void) {
-	RzRegex *reg = rz_regex_new("push esi", RZ_REGEX_DEFAULT, 0);
+	RzRegex *reg = rz_regex_new("push esi", RZ_REGEX_DEFAULT, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_notnull(reg, "Regex was NULL");
@@ -59,7 +60,7 @@ bool test_rz_regex_extend_space(void) {
 }
 
 bool test_rz_regex_all_to_str(void) {
-	RzRegex *reg = rz_regex_new("123", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("123", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzStrBuf *res = rz_regex_full_match_str("(123)", "123 123 123", RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, "\n");
 	char *str = rz_strbuf_drain(res);
@@ -81,7 +82,7 @@ bool test_rz_regex_all_to_str(void) {
 
 bool test_rz_reg_exec(void) {
 	const char *p = "abc|123";
-	RzRegex *reg = rz_regex_new(p, RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new(p, RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	RzRegexMatch *match = NULL;
 	mu_assert_true(exec_regex(reg, "abc", &match), "Regex match failed");
@@ -116,7 +117,7 @@ bool test_rz_reg_exec(void) {
 	free(match);
 	rz_regex_free(reg);
 	const char *p_big = "\\d+(([abc]*d[efg])+|[123]4[567]+)*|[zyx]+(test)+[mnb]";
-	reg = rz_regex_new(p_big, RZ_REGEX_EXTENDED, 0);
+	reg = rz_regex_new(p_big, RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_true(exec_regex(reg, "z1abcde123z", &match), "Regex match failed");
 	mu_assert_notnull(match, "match was not set");
 	mu_assert_eq(match->start, 1, "Start of match is not 1");
@@ -134,7 +135,7 @@ bool test_rz_reg_exec(void) {
 bool test_rz_regex_capture(void) {
 	char *str = "abcd PrefixHello42s xyz";
 
-	RzRegex *re = rz_regex_new("[a-zA-Z]*(H[a-z]+)([0-9]*)s", RZ_REGEX_EXTENDED, 0);
+	RzRegex *re = rz_regex_new("[a-zA-Z]*(H[a-z]+)([0-9]*)s", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(re, "regex_new");
 
 	RzPVector *matches = rz_regex_match_all_not_grouped(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
@@ -180,7 +181,7 @@ bool test_rz_regex_find(void) {
 }
 
 bool test_rz_regex_named_matches(void) {
-	RzRegex *reg = rz_regex_new("(?<proto>^\\w+)(:\\/\\/)(?<domain>\\w+)\\.(?<tdomain>\\w+)", RZ_REGEX_EXTENDED, 0);
+	RzRegex *reg = rz_regex_new("(?<proto>^\\w+)(:\\/\\/)(?<domain>\\w+)\\.(?<tdomain>\\w+)", RZ_REGEX_EXTENDED, 0, NULL);
 	mu_assert_notnull(reg, "Regex was NULL");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 1), "proto", "proto name not set.");
 	mu_assert_streq((char *)rz_regex_get_match_name(reg, 3), "domain", "domain name not set.");
@@ -211,6 +212,193 @@ bool test_rz_regex_named_matches(void) {
 	mu_end;
 }
 
+bool test_rz_regex_match_all_native_utf8(void) {
+	RzPVector *match_groups = NULL;
+	RzRegexMatch *match = NULL;
+
+	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
+
+	RzRegex *re = rz_regex_new("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re, "Regex was NULL");
+	RzPVector *matches = rz_regex_match_all(re, utf8, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 2, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 21, "match.start wrong");
+	mu_assert_eq(match->len, 6, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 32, "match.start wrong");
+	mu_assert_eq(match->len, 12, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	// Overlap
+	matches = rz_regex_match_all_overlap(re, utf8, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 4, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 21, "match.start wrong");
+	mu_assert_eq(match->len, 6, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 32, "match.start wrong");
+	mu_assert_eq(match->len, 12, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 2);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 36, "match.start wrong");
+	mu_assert_eq(match->len, 11, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 3);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 40, "match.start wrong");
+	mu_assert_eq(match->len, 10, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	rz_regex_free(re);
+	mu_end;
+}
+
+bool test_rz_regex_match_all_native_utf16(void) {
+	RzPVector *match_groups = NULL;
+	RzRegexMatch *match = NULL;
+
+	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
+	// Encode to host endianess UTF-16/32
+	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_IS_BIG_ENDIAN);
+
+	RzRegex16 *re = rz_regex_new_16("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re, "Regex was NULL");
+	RzPVector *matches = rz_regex_match_all_16(re, utf16_he, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 2, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 17, "match.start wrong");
+	mu_assert_eq(match->len, 4, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 26, "match.start wrong");
+	mu_assert_eq(match->len, 6, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	// Overlap
+	matches = rz_regex_match_all_overlap_16(re, utf16_he, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 4, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 17, "match.start wrong");
+	mu_assert_eq(match->len, 4, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 26, "match.start wrong");
+	mu_assert_eq(match->len, 6, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 2);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 28, "match.start wrong");
+	mu_assert_eq(match->len, 5, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 3);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 30, "match.start wrong");
+	mu_assert_eq(match->len, 4, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	rz_regex_free(re);
+	mu_end;
+}
+
+bool test_rz_regex_match_all_native_utf32(void) {
+	RzPVector *match_groups = NULL;
+	RzRegexMatch *match = NULL;
+
+	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
+	// Encode to host endianess UTF-32/32
+	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_IS_BIG_ENDIAN);
+
+	RzRegex32 *re = rz_regex_new_32("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re, "Regex was NULL");
+	RzPVector *matches = rz_regex_match_all_32(re, (ut32 *)utf32_he, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 2, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 15, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 23, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	// Overlap
+	matches = rz_regex_match_all_overlap_32(re, utf32_he, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "matches was not set");
+	mu_assert_eq(rz_pvector_len(matches), 4, "matches len was wrong");
+
+	match_groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 15, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 1);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 23, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 2);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 24, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	match_groups = rz_pvector_at(matches, 3);
+	mu_assert_eq(rz_pvector_len(match_groups), 1, "num of match groups was wrong");
+	match = rz_pvector_at(match_groups, 0);
+	mu_assert_eq(match->start, 25, "match.start wrong");
+	mu_assert_eq(match->len, 3, "match.len wrong");
+
+	rz_pvector_free(matches);
+
+	rz_regex_free(re);
+	mu_end;
+}
+
 int main() {
 	mu_run_test(test_rz_regex_all_match);
 	mu_run_test(test_rz_regex_extend_space);
@@ -220,4 +408,7 @@ int main() {
 	mu_run_test(test_rz_regex_named_matches);
 	mu_run_test(test_rz_regex_posix_blank);
 	mu_run_test(test_rz_regex_find);
+	mu_run_test(test_rz_regex_match_all_native_utf8);
+	mu_run_test(test_rz_regex_match_all_native_utf16);
+	mu_run_test(test_rz_regex_match_all_native_utf32);
 }

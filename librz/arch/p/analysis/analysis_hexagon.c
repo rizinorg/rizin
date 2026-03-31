@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -20,45 +20,37 @@
 #include <hexagon/hexagon_il.h>
 
 RZ_API int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(analysis && op && buf, -1);
+	rz_return_val_if_fail(analysis && op, -1);
 	if (len < HEX_INSN_SIZE) {
 		return -1;
 	}
-	if (analysis->pcalign == 0) {
-		analysis->pcalign = HEX_PC_ALIGNMENT;
-	}
 
 	// Disassemble as many instructions as possible from the buffer.
-	ut32 buf_offset = 0;
-	while (buf_offset + HEX_INSN_SIZE <= len && buf_offset <= HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT) {
-		const ut32 buf_ptr = rz_read_at_le32(buf, buf_offset);
-		if (buf_offset > 0 && (buf_ptr == HEX_INVALID_INSN_0 || buf_ptr == HEX_INVALID_INSN_F)) {
-			// Do not disassemble invalid instructions, if we already have a valid one.
-			break;
-		}
-
-		HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL };
-		hexagon_reverse_opcode(NULL, &rev, buf + buf_offset, addr + buf_offset, false);
-		buf_offset += HEX_INSN_SIZE;
+	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL, .state = NULL, .pkt_fully_decoded = false, .bytes_buf = buf, .bytes_buf_len = len };
+	hexagon_reverse_opcode(&rev, addr, NULL, analysis);
+	HexPkt *p = hex_get_pkt(rev.state, addr);
+	if (p) {
+		rev.pkt_fully_decoded = p->is_valid;
 	}
-	// Copy operation actually requested.
-	HexReversedOpcode rev = { .action = HEXAGON_ANALYSIS, .ana_op = op, .asm_op = NULL };
-	hexagon_reverse_opcode(NULL, &rev, buf, addr, true);
-	bool decoded_packet = len > HEX_INSN_SIZE;
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-		op->il_op = hex_get_il_op(addr, decoded_packet);
+		op->il_op = hex_get_il_op(addr, rev.pkt_fully_decoded, rev.state);
 	}
 
-	return HEX_INSN_SIZE;
+	return op->size;
 }
 
-static RzAnalysisILConfig *rz_hexagon_il_config(RzAnalysis *a) {
-	HexState *state = hexagon_state(false);
+static RzAnalysisILConfig *hexagon_il_config(RzAnalysis *a) {
+	rz_return_val_if_fail(a, NULL);
+	// Hacky getter for the plugin data until RzArch is implemented
+	RzAsm *rasm = rz_analysis_to_rz_asm(a);
+
+	HexState *state = rasm->plugin_data;
+	rz_return_val_if_fail(state, NULL);
 	state->just_init = true;
 	return rz_analysis_il_config_new(32, a->big_endian, 32);
 }
 
-RZ_API char *get_reg_profile(RzAnalysis *analysis) {
+RZ_API char *hexagon_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	C9\n"
 		"=SP	R29\n"
@@ -745,7 +737,24 @@ RZ_API char *get_reg_profile(RzAnalysis *analysis) {
 		"sys	S77:76_tmp	.64	220096	0\n"
 		"sys	S79:78	.64	220160	0\n"
 		"sys	S79:78_tmp	.64	220224	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
+}
+
+static int hexagon_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return HEX_INSN_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return HEX_INSN_SIZE * HEX_MAX_INSN_PER_PKT;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return HEX_PC_ALIGNMENT;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
 }
 
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
@@ -755,7 +764,8 @@ RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.arch = "hexagon",
 	.bits = 32,
 	.op = hexagon_v6_op,
+	.archinfo = hexagon_archinfo,
 	.esil = false,
-	.get_reg_profile = get_reg_profile,
-	.il_config = rz_hexagon_il_config,
+	.get_reg_profile = hexagon_get_reg_profile,
+	.il_config = hexagon_il_config,
 };

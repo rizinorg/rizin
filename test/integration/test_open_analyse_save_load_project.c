@@ -11,11 +11,13 @@ bool test_open_analyse_save() {
 	// 1. Open the file
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
-	ut64 loadaddr = 0;
-	const char *fpath = "bins/elf/ls";
-	RzCoreFile *file = rz_core_file_open(core, fpath, RZ_PERM_R, loadaddr);
+	const char *fpath = "bins/elf/dectest32";
+	RzCoreFile *file = rz_core_file_open(core, fpath, RZ_PERM_R, 0);
 	mu_assert_notnull(file, "open file");
-	rz_core_bin_load(core, fpath, loadaddr);
+	rz_core_bin_load(core, fpath, UT64_MAX);
+
+	ut64 loadaddr = rz_config_get_i(core->config, "bin.baddr");
+	mu_assert_eq(loadaddr, 0x08048000, "base address");
 
 	// 2. Analyse the file
 	rz_core_analysis_all(core);
@@ -23,10 +25,9 @@ bool test_open_analyse_save() {
 
 	RzList *functionsold = rz_analysis_function_list(core->analysis);
 	mu_assert_notnull(functionsold, "export functions list");
-	eprintf("functions count = %d\n", rz_list_length(functionsold));
 
 	// 3. Remove the function
-	const char *fcnname = "fcn.0000ebe0";
+	const char *fcnname = "sym.Aeropause";
 	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(core->analysis, fcnname);
 	mu_assert_notnull(fcn, "find function");
 	rz_analysis_function_delete(fcn);

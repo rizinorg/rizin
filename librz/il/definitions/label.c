@@ -8,7 +8,7 @@ RZ_API RzILEffectLabel *rz_il_effect_label_new(RZ_NONNULL const char *name, RzIL
 	if (!lbl) {
 		return NULL;
 	}
-	lbl->label_id = strdup(name);
+	lbl->label_id = rz_str_dup(name);
 	lbl->type = type;
 	return lbl;
 }

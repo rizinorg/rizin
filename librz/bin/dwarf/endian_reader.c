@@ -6,7 +6,28 @@
 #include "dwarf_private.h"
 #include "../format/elf/elf.h"
 
-RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo) {
+typedef struct {
+	const char *name;
+	const char *alias[8];
+} SectionAlias;
+
+static const SectionAlias section_alias[] = {
+	{ .name = ".debug_str_offsets", .alias = { ".__DWARF.__debug_str_offs", ".debug_str_offsets.dwo", NULL } },
+	{ .name = ".debug_str", .alias = { ".debug_str.dwo", NULL } },
+	{ .name = ".debug_addr", .alias = { ".debug_addr.dwo", NULL } },
+	{ .name = ".debug_line_str", .alias = { ".debug_line_str.dwo", NULL } },
+	{ .name = ".debug_aranges", .alias = { ".debug_aranges.dwo", NULL } },
+	{ .name = ".debug_loclists", .alias = { ".debug_loclists.dwo", NULL } },
+	{ .name = ".debug_loc", .alias = { ".debug_loc.dwo", NULL } },
+	{ .name = ".debug_rnglists", .alias = { ".debug_rnglists.dwo", NULL } },
+	{ .name = ".debug_ranges", .alias = { ".debug_ranges.dwo", NULL } },
+	{ .name = ".debug_abbrev", .alias = { ".debug_abbrev.dwo", NULL } },
+	{ .name = ".debug_info", .alias = { ".debug_info.dwo", NULL } },
+	{ .name = ".debug_line", .alias = { ".debug_line.dwo", NULL } },
+
+};
+
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn) {
 	rz_return_val_if_fail(binfile && sn, NULL);
 	void **iter = NULL;
 	RzBinSection *section = NULL;
@@ -15,22 +36,34 @@ RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char
 	if (!o || !o->sections || RZ_STR_ISEMPTY(sn)) {
 		return NULL;
 	}
-	char *name = is_dwo ? rz_str_newf("%s.dwo", sn) : rz_str_dup(sn);
-	if (!name) {
-		return NULL;
-	}
 	rz_pvector_foreach (o->sections, iter) {
 		section = *iter;
 		if (!section->name) {
 			continue;
 		}
-		if (RZ_STR_EQ(section->name, name) ||
-			rz_str_endswith(section->name, name + 1)) {
-			result_section = section;
-			break;
+		if (!rz_str_endswith(section->name, sn + 1)) {
+			continue;
+		}
+		result_section = section;
+		goto beach;
+	}
+	for (int i = 0; i < RZ_ARRAY_SIZE(section_alias); ++i) {
+		const SectionAlias *alias = section_alias + i;
+		if (RZ_STR_NE(sn, alias->name)) {
+			continue;
+		}
+		rz_pvector_foreach (o->sections, iter) {
+			section = *iter;
+			for (const char **x = (const char **)alias->alias; RZ_STR_ISNOTEMPTY(*x); ++x) {
+				if (rz_str_endswith(section->name, *x)) {
+					result_section = section;
+					goto beach;
+				}
+			}
 		}
 	}
-	free(name);
+
+beach:
 	return result_section;
 }
 
@@ -78,9 +111,10 @@ RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 	ut64 src_len = len - Chdr_size;
 	ut64 uncompressed_len = 0;
 	ut8 *uncompressed = NULL;
-	RZ_LOG_VERBOSE("Section %s is compressed\n", section->name);
+	RZ_LOG_VERBOSE("Section %s is compressed, type %d%s\n", section->name, ch_type,
+		is_zlib_gnu ? " (GNU)" : "");
 	if (ch_type == ELFCOMPRESS_ZLIB) {
-		int len_tmp;
+		int len_tmp = 0;
 		uncompressed = rz_inflate(
 			src, (int)src_len, NULL, &len_tmp);
 		uncompressed_len = len_tmp;
@@ -106,7 +140,7 @@ RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 		RZ_LOG_WARN("Unsupported compression type: %d\n", ch_type);
 	}
 
-	if (!uncompressed || uncompressed_len <= 0) {
+	if (!uncompressed || uncompressed_len == 0) {
 		RZ_LOG_ERROR("section [%s] uncompress failed\n", section->name);
 		goto err;
 	}
@@ -139,14 +173,14 @@ static inline void add_relocations(
 	}
 }
 
-RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name, bool is_dwo) {
+RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const char *sect_name) {
 	rz_return_val_if_fail(binfile && sect_name, NULL);
-	RzBinSection *section = rz_bin_dwarf_section_by_name(binfile, sect_name, is_dwo);
+	RzBinSection *section = rz_bin_dwarf_section_by_name(binfile, sect_name);
 	OK_OR(section, return NULL);
 	RzBinEndianReader *R = rz_bin_dwarf_section_reader(binfile, section);
 	OK_OR(R, return NULL);
 
-	HtUP *relocations = ht_up_new0();
+	HtUP *relocations = ht_up_new(NULL, NULL);
 	OK_OR(relocations, R_free(R); return NULL);
 	add_relocations(binfile, relocations, section);
 
@@ -155,6 +189,10 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const 
 }
 
 RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value) {
+	rz_return_val_if_fail(R, value);
+	if (!R->relocations) {
+		return value;
+	}
 	const RzBinReloc *reloc = ht_up_find(R->relocations, offset, NULL);
 	if (reloc) {
 		RZ_LOG_DEBUG("Relocating 0x%" PFMT64x "\n", offset);

@@ -1,0 +1,6 @@
+[wrap-file]
+source_url = https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/capstone-6.0.0-Alpha7.tar.xz 
+source_filename = capstone-6.0.0-Alpha7.tar.xz
+source_hash = 6864bf6cff06f2698fd30854cc2097b6d41cd10b5454be67e8b56ad0cfc686ec
+directory = capstone-6.0.0-Alpha7
+patch_directory = capstone-6.0.0-alpha7

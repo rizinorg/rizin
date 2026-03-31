@@ -3,31 +3,14 @@
 
 #include <rz_core.h>
 
+typedef bool (*hack_cb_t)(RzCore *core, const char *op, const RzAnalysisOp *aop);
+
 /* We can not use some kind of structure type with
  * a string for each case, because some architectures (like ARM)
  * have several modes/alignment requirements.
  */
 
-RZ_API void rz_core_hack_help(const RzCore *core) {
-	const char *help_msg[] = {
-		"wao", " [op]", "performs a modification on current opcode",
-		"wao", " nop", "nop current opcode",
-		"wao", " jinf", "assemble an infinite loop",
-		"wao", " jz", "make current opcode conditional (zero)",
-		"wao", " jnz", "make current opcode conditional (not zero)",
-		"wao", " ret1", "make the current opcode return 1",
-		"wao", " ret0", "make the current opcode return 0",
-		"wao", " retn", "make the current opcode return -1",
-		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
-		"wao", " trap", "make the current opcode a trap",
-		"wao", " recj", "reverse (swap) conditional branch instruction",
-		"WIP:", "", "not all archs are supported and not all commands work on all archs",
-		NULL
-	};
-	rz_core_cmd_help(core, help_msg);
-}
-
-RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *aop) {
+static bool core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	if (!strcmp(op, "nop")) {
 		rz_core_write_hexpair(core, core->offset, "0000");
 	} else if (!strcmp(op, "ret2")) {
@@ -45,7 +28,7 @@ RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp
 	return true;
 }
 
-RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp *aop) {
+static bool core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	if (!strcmp(op, "nop")) {
 		rz_core_write_hexpair(core, core->offset, "1f2003d5");
 	} else if (!strcmp(op, "ret")) {
@@ -67,13 +50,13 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp 
 	return true;
 }
 
-RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *aop) {
-	const int bits = core->rasm->bits;
+static bool core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *aop) {
+	const bool is_thumb = rz_asm_is_bits(core->rasm, 16);
 	const ut8 *b = core->block;
 
 	if (!strcmp(op, "nop")) {
-		const int nopsize = (bits == 16) ? 2 : 4;
-		const char *nopcode = (bits == 16) ? "00bf" : "0000a0e1";
+		const int nopsize = is_thumb ? 2 : 4;
+		const char *nopcode = is_thumb ? "00bf" : "0000a0e1";
 		const int len = aop->size;
 		char *str;
 		int i;
@@ -94,11 +77,11 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		rz_core_write_hexpair(core, core->offset, str);
 		free(str);
 	} else if (!strcmp(op, "jinf")) {
-		rz_core_write_hexpair(core, core->offset, (bits == 16) ? "fee7" : "feffffea");
+		rz_core_write_hexpair(core, core->offset, is_thumb ? "fee7" : "feffffea");
 	} else if (!strcmp(op, "trap")) {
-		rz_core_write_hexpair(core, core->offset, (bits == 16) ? "bebe" : "fedeffe7");
+		rz_core_write_hexpair(core, core->offset, is_thumb ? "bebe" : "fedeffe7");
 	} else if (!strcmp(op, "jz")) {
-		if (bits == 16) {
+		if (is_thumb) {
 			switch (b[1]) {
 			case 0xb9: // CBNZ
 				rz_core_write_hexpair(core, core->offset + 1, "b1"); // CBZ
@@ -118,7 +101,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 			return false;
 		}
 	} else if (!strcmp(op, "jnz")) {
-		if (bits == 16) {
+		if (is_thumb) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
 				rz_core_write_hexpair(core, core->offset + 1, "b9"); // CBNZ
@@ -139,7 +122,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		}
 	} else if (!strcmp(op, "nocj")) {
 		// TODO: drop conditional bit instead of that hack
-		if (bits == 16) {
+		if (is_thumb) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
 			case 0xb3: // CBZ
@@ -161,19 +144,19 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 		RZ_LOG_ERROR("core: hack: please, use jnz or jz\n");
 		return false;
 	} else if (!strcmp(op, "ret1")) {
-		if (bits == 16) {
+		if (is_thumb) {
 			rz_core_write_hexpair(core, core->offset, "01207047"); // mov r0, 1; bx lr
 		} else {
 			rz_core_write_hexpair(core, core->offset, "0100b0e31eff2fe1"); // movs r0, 1; bx lr
 		}
 	} else if (!strcmp(op, "ret0")) {
-		if (bits == 16) {
+		if (is_thumb) {
 			rz_core_write_hexpair(core, core->offset, "00207047"); // mov r0, 0; bx lr
 		} else {
 			rz_core_write_hexpair(core, core->offset, "0000a0e31eff2fe1"); // movs r0, 0; bx lr
 		}
 	} else if (!strcmp(op, "retn")) {
-		if (bits == 16) {
+		if (is_thumb) {
 			rz_core_write_hexpair(core, core->offset, "ff207047"); // mov r0, -1; bx lr
 		} else {
 			rz_core_write_hexpair(core, core->offset, "ff00a0e31eff2fe1"); // movs r0, -1; bx lr
@@ -185,7 +168,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *a
 	return true;
 }
 
-RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *aop) {
+static bool core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *aop) {
 	const ut8 *b = core->block;
 	int i, size = aop->size;
 	if (!strcmp(op, "nop")) {
@@ -268,37 +251,32 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *a
 RZ_API bool rz_core_hack(RzCore *core, const char *op) {
 	// TODO: op should not be an unstructered string
 	// TODO: asm/analysis plugins should provide the operations, instead of doing this here
-	bool (*hack)(RzCore *core, const char *op, const RzAnalysisOp *aop) = NULL;
-	const char *asmarch = rz_config_get(core->config, "asm.arch");
-	const int asmbits = core->rasm->bits;
+	hack_cb_t hack = NULL;
 
-	if (!asmarch) {
+	if (rz_asm_is_arch(core->rasm, "x86")) {
+		hack = core_hack_x86;
+	} else if (rz_asm_is_arch(core->rasm, "dalvik")) {
+		hack = core_hack_dalvik;
+	} else if (rz_asm_is_arch(core->rasm, "arm")) {
+		if (rz_asm_is_bits(core->rasm, 64)) {
+			hack = core_hack_arm64;
+		} else {
+			hack = core_hack_arm;
+		}
+	}
+	if (!hack) {
 		return false;
 	}
-	if (strstr(asmarch, "x86")) {
-		hack = rz_core_hack_x86;
-	} else if (strstr(asmarch, "dalvik")) {
-		hack = rz_core_hack_dalvik;
-	} else if (strstr(asmarch, "arm")) {
-		if (asmbits == 64) {
-			hack = rz_core_hack_arm64;
-		} else {
-			hack = rz_core_hack_arm;
-		}
-	} else {
-		RZ_LOG_ERROR("core: hack: write hacks are only supported on x86 arch\n");
-	}
-	if (hack) {
-		RzAnalysisOp aop = { 0 };
-		rz_analysis_op_init(&aop);
-		if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
-			rz_analysis_op_fini(&aop);
-			RZ_LOG_ERROR("core: hack: analysis op fail\n");
-			return false;
-		}
-		bool ret = hack(core, op, &aop);
+
+	RzAnalysisOp aop = { 0 };
+	rz_analysis_op_init(&aop);
+	if (rz_analysis_op(core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 		rz_analysis_op_fini(&aop);
-		return ret;
+		RZ_LOG_ERROR("core: hack: analysis op fail\n");
+		return false;
 	}
-	return false;
+
+	bool ret = hack(core, op, &aop);
+	rz_analysis_op_fini(&aop);
+	return ret;
 }

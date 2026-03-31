@@ -93,57 +93,77 @@ RZ_IPI void rz_bin_process_cxx(RzBinObject *o, char *demangled, ut64 paddr, ut64
 	*name = ':';
 }
 
-#if WITH_SWIFT_DEMANGLER
-// this process function does not work with the Apple demangler.
-static char *get_swift_field(const char *demangled, const char *classname) {
-	if (!demangled || !classname) {
+static char *find_swift_methodname(RZ_NONNULL char *demangled) {
+	// methods can be main.Tost.deinit or main.Tost.init() -> main.Tost
+	// so we will return after second dot
+	char *dot = strchr(demangled, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
 		return NULL;
 	}
-
-	char *p = strstr(demangled, ".getter_");
-	if (!p) {
-		p = strstr(demangled, ".setter_");
-		if (!p) {
-			p = strstr(demangled, ".method_");
-		}
+	char *methodname = dot + 1;
+	if (RZ_STR_ISEMPTY(methodname)) {
+		return NULL;
 	}
-	if (p) {
-		char *q = strstr(demangled, classname);
-		if (q && q[strlen(classname)] == '.') {
-			q = strdup(q + strlen(classname) + 1);
-			char *r = strchr(q, '.');
-			if (r) {
-				*r = 0;
-			}
-			return q;
-		}
-	}
-	return NULL;
+	return methodname;
 }
 
-RZ_IPI void rz_bin_process_swift(RzBinObject *o, char *classname, char *demangled, ut64 paddr, ut64 vaddr) {
-	if (!classname) {
+static void bin_process_metaclass(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
+		return;
+	}
+	char *no_classname = strstr(symbol->dname, "full type metadata for ");
+	char *classname = strstr(symbol->dname, "type metadata for ");
+	if (!classname || no_classname) { // only for "type metadata for class"
+		return;
+	}
+	rz_bin_object_add_field(o, classname + strlen("type metadata for "), symbol->dname, symbol->paddr, symbol->vaddr);
+}
+
+// This function is used to process Swift methods.
+static void bin_process_swift_class_method(RzBinObject *o, RzBinSymbol *symbol) {
+	// Before the second dot, we have the class name
+	char *dot = strchr(symbol->dname, '.');
+	dot = dot ? strchr(dot + 1, '.') : NULL;
+	if (!dot) {
+		return;
+	}
+	char *classname = rz_str_ndup(symbol->dname, dot - symbol->dname);
+	// classname should not have any spaces or ( or )
+	if (strchr(classname, ' ') || strchr(classname, '(') || strchr(classname, ')')) {
+		free(classname);
+		return;
+	}
+	symbol->classname = classname;
+	char *methodname = find_swift_methodname(symbol->dname);
+
+	if (!methodname) {
+		free(classname);
 		return;
 	}
 
-	char *name = get_swift_field(demangled, classname);
-	if (name) {
-		rz_bin_object_add_field(o, classname, name, paddr, vaddr);
-		free(name);
+	rz_bin_object_add_class(o, classname, NULL, UT64_MAX);
+	rz_bin_object_add_method(o, classname, methodname, symbol->paddr, symbol->vaddr);
+}
+
+// this process function does not work with the Apple demangler.
+RZ_IPI void rz_bin_process_swift(RzBinObject *o, RzBinSymbol *symbol) {
+	if (RZ_STR_ISEMPTY(symbol->dname)) {
 		return;
 	}
+	bin_process_metaclass(o, symbol);
+	bin_process_swift_class_method(o, symbol);
 }
-#endif /* WITH_SWIFT_DEMANGLER */
 
 /**
- * \brief      Reset and initialize the data of the given RzBinObject using the defined RzBinPlugin
+ * \brief      Initialize the data of the given RzBinObject using the defined RzBinPlugin
  *
  * \param      bf    The RzBinFile to use
  * \param      o     The RzBinObject to initialize
  *
  * \return     On success returns true
  */
-RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
+RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzBinObject *o) {
 	rz_return_val_if_fail(bf && bf->rbin && o && o->plugin, false);
 	const RzDemanglerPlugin *demangler = NULL;
 
@@ -153,18 +173,25 @@ RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_set_imports_from_plugin(bf, o);
 	rz_bin_set_symbols_from_plugin(bf, o);
 	rz_bin_set_and_process_sections(bf, o);
-	rz_bin_set_and_process_strings(bf, o);
 	rz_bin_set_and_process_fields(bf, o);
 	rz_bin_set_and_process_classes(bf, o);
 
 	// we need to detect the language of the binary
 	// one way can be based on the compiler.
-	if (o->info && RZ_STR_ISEMPTY(o->info->compiler)) {
-		free(o->info->compiler);
-		o->info->compiler = rz_bin_file_golang_compiler(bf);
-		if (o->info->compiler) {
+	if (o->info) {
+		char *go_compiler = rz_bin_file_golang_compiler(bf);
+		if (go_compiler) {
 			o->info->lang = "go";
 			o->lang = RZ_BIN_LANGUAGE_GO;
+			if (RZ_STR_ISNOTEMPTY(o->info->compiler)) {
+				char *merge = rz_str_newf("%s %s", go_compiler, o->info->compiler);
+				free(o->info->compiler);
+				free(go_compiler);
+				o->info->compiler = merge;
+			} else {
+				free(o->info->compiler);
+				o->info->compiler = go_compiler;
+			}
 		}
 	}
 
@@ -172,6 +199,9 @@ RZ_API bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	if (RZ_BIN_LANGUAGE_MASK(o->lang) == RZ_BIN_LANGUAGE_UNKNOWN) {
 		o->lang = rz_bin_language_detect(bf);
 	}
+	// Process strings after the language was set,
+	// because some languages imply a specific encoding.
+	rz_bin_set_and_process_strings(bf, o);
 
 	// now we can process the data.
 	RzDemanglerFlag flags = rz_demangler_get_flags(bf->rbin->demangler);

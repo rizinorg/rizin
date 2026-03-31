@@ -1,18 +1,23 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
+#include <capstone/capstone.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(riscv_asm);
 
-static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int riscv_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int ret = -1;
 	cs_insn *insn;
 	cs_mode mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	mode |= mode_from_arch_string(a->cpu);
+	mode |= resolve_features_from_list(a->features);
 	op->size = 4;
 	if (ctx->omode != mode) {
 		cs_close(&ctx->handle);
@@ -26,13 +31,7 @@ static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		ctx->omode = mode;
 		// cs_option (ctx->handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-#if 0
-	if (a->syntax == RZ_ASM_SYNTAX_REGNUM) {
-		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else {
-		cs_option (ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
-	}
-#endif
+
 	int n = cs_disasm(ctx->handle, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		rz_asm_op_set_asm(op, "invalid");
@@ -55,11 +54,12 @@ fin:
 }
 
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
-	.name = "riscv.cs",
-	.desc = "Capstone RISCV disassembler",
+	.name = "riscv",
+	.desc = "RISC-V Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "riscv",
-	.cpus = "",
+	.cpus = ARCH_RISCV_CPUS,
+	.features = ARCH_RISCV_FEATURES,
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = riscv_asm_init,

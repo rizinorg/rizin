@@ -52,7 +52,6 @@ commands:
         cname: flag_local_list
         summary: List the local flags for the function
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -62,7 +61,6 @@ commands:
         cname: flag_local_list_all
         summary: List the local flags for all functions
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -107,10 +105,8 @@ commands:
     cname: flag_graph
     summary: Show the flag graph
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
     args:
       - name: name
         type: RZ_CMD_ARG_TYPE_FLAG
@@ -119,10 +115,8 @@ commands:
     cname: flag_range
     summary: Show the flags in the block or custom range
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
@@ -134,10 +128,8 @@ commands:
     cname: flag_list
     summary: List all flags
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
@@ -146,10 +138,8 @@ commands:
     cname: flag_list_at
     summary: List all flags at the current offset
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
-    default_mode: RZ_OUTPUT_MODE_STANDARD
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
       - RZ_OUTPUT_MODE_QUIET
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_TABLE
@@ -203,18 +193,18 @@ commands:
         cname: flag_describe
         summary: Describe flag + delta for the current offset
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: fd.
         cname: flag_describe_at
         summary: Describe flags for the current offset
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: fdw
@@ -235,7 +225,6 @@ commands:
     args:
       - name: glob
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
   - name: fr
     cname: flag_rename
     summary: Rename flag
@@ -268,7 +257,6 @@ commands:
         cname: flag_space_list
         summary: Display flagspaces
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
@@ -311,7 +299,6 @@ commands:
             cname: flag_space_stack_list
             summary: Display flagspace stack
             type: RZ_CMD_DESC_TYPE_ARGV_STATE
-            default_mode: RZ_OUTPUT_MODE_STANDARD
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -331,7 +318,6 @@ commands:
         cname: flag_tag_list
         summary: List all flag tags
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_LONG
@@ -370,7 +356,6 @@ commands:
         cname: flag_zone_list
         summary: List all flag zones
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
-        default_mode: RZ_OUTPUT_MODE_STANDARD
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

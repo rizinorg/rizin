@@ -20,10 +20,6 @@ static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegO
 	return rz_analysis_il_trace_add_reg(instr_trace, reg);
 }
 
-static void htup_vector_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
-}
-
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
@@ -31,12 +27,12 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace) {
 		return NULL;
 	}
-	trace->registers = ht_up_new(NULL, htup_vector_free, NULL);
+	trace->registers = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->registers) {
 		RZ_LOG_ERROR("esil: Cannot allocate hashmap for trace registers\n");
 		goto error;
 	}
-	trace->memory = ht_up_new(NULL, htup_vector_free, NULL);
+	trace->memory = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->memory) {
 		RZ_LOG_ERROR("esil: Cannot allocate hashmap for trace memory\n");
 		goto error;

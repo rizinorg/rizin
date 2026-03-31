@@ -13,7 +13,7 @@ NAME=rop search without maxhits
 FILE=bins/elf/varsub
 CMDS=/Rq pop r15~?
 EXPECT=<<EOF
-4
+7
 EOF
 RUN
 
@@ -39,27 +39,71 @@ e asm.bits=32
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 15
 
-  0x000000b5     80b801000000b9  cmp byte [eax + 1], 0xb9
+  0x000000b5     80b801000000b9  cmp byte [eax+0x01], 0xb9
   0x000000bc               0000  add byte [eax], al
   0x000000be               0000  add byte [eax], al
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 14
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
 
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 12
 
   0x000000b8               0000  add byte [eax], al
   0x000000ba       00b900000000  add byte [ecx], bh
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 11
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000bc               0000  add byte [eax], al
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 7
+
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 5
+
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 3
+
+  0x000000c2                 c3  ret
+Gadget size: 1
 
 EOF
 RUN
@@ -74,16 +118,35 @@ e asm.bits=32
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
 
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 12
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -97,10 +160,18 @@ e asm.bits=32
 /Rq
 EOF
 EXPECT=<<EOF
-0x000000b4: int 0x80; mov eax, 1; mov ecx, 0; int 0x80; ret;
-0x000000b5: cmp byte [eax + 1], 0xb9; add byte [eax], al; add byte [eax], al; int 0x80; ret;
-0x000000b7: add dword [eax], eax; add byte [eax], al; mov ecx, 0; int 0x80; ret;
+0x000000b4: int 0x80; mov eax, 0x01; mov ecx, 0x00; int 0x80; ret;
+0x000000b5: cmp byte [eax+0x01], 0xb9; add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x000000b6: mov eax, 0x01; mov ecx, 0x00; int 0x80; ret;
+0x000000b7: add dword [eax], eax; add byte [eax], al; mov ecx, 0x00; int 0x80; ret;
 0x000000b8: add byte [eax], al; add byte [ecx], bh; int 0x80; ret;
+0x000000b9: add byte [eax], al; mov ecx, 0x00; int 0x80; ret;
+0x000000ba: add byte [ecx], bh; int 0x80; ret;
+0x000000bb: mov ecx, 0x00; int 0x80; ret;
+0x000000bc: add byte [eax], al; add byte [eax], al; int 0x80; ret;
+0x000000be: add byte [eax], al; int 0x80; ret;
+0x000000c0: int 0x80; ret;
+0x000000c2: ret;
 EOF
 RUN
 
@@ -114,21 +185,46 @@ e asm.bits=32
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
 
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 12
 
   0x000000b8               0000  add byte [eax], al
   0x000000ba       00b900000000  add byte [ecx], bh
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 11
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -142,7 +238,7 @@ e asm.bits=32
 /Rj ecx
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11}]
+[{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 0x01","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0x00","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":182,"size":5,"opcode":"mov eax, 0x01","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0x00","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":13},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0x00","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11},{"opcodes":[{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0x00","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":10},{"opcodes":[{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":9},{"opcodes":[{"offset":187,"size":5,"opcode":"mov ecx, 0x00","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":8}]
 EOF
 RUN
 
@@ -152,31 +248,68 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"/R/ (ecx|eax)"
+/R/ "(ecx|eax)"
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
-  0x000000b6         b801000000  mov eax, 1
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 15
 
-  0x000000b5     80b801000000b9  cmp byte [eax + 1], 0xb9
+  0x000000b5     80b801000000b9  cmp byte [eax+0x01], 0xb9
   0x000000bc               0000  add byte [eax], al
   0x000000be               0000  add byte [eax], al
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 14
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
 
   0x000000b7               0100  add dword [eax], eax
   0x000000b9               0000  add byte [eax], al
-  0x000000bb         b900000000  mov ecx, 0
+  0x000000bb         b900000000  mov ecx, 0x00
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 12
 
   0x000000b8               0000  add byte [eax], al
   0x000000ba       00b900000000  add byte [ecx], bh
   0x000000c0               cd80  int 0x80
   0x000000c2                 c3  ret
+Gadget size: 11
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000ba       00b900000000  add byte [ecx], bh
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 9
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000bc               0000  add byte [eax], al
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 7
+
+  0x000000be               0000  add byte [eax], al
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 5
 
 EOF
 RUN
@@ -188,7 +321,7 @@ e asm.bits=32
 e rop.len=15
 e search.from=0x08048340
 e search.to=0x08048400
-"/R push esp"
+/R push esp
 EOF
 EXPECT=<<EOF
   0x08048350               fff4  push esp
@@ -201,19 +334,32 @@ EXPECT=<<EOF
   0x0804835e               6690  nop
   0x08048360             8b1c24  mov ebx, dword [esp]
   0x08048363                 c3  ret
+Gadget size: 20
 
 EOF
 RUN
 
 NAME=search rop with sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS="/R push esi;push ebx"
+CMDS=/R "push esi;push ebx"
 EXPECT=<<EOF
   0x08048421                 57  push edi
   0x08048422               31ff  xor edi, edi
   0x08048424                 56  push esi
   0x08048425                 53  push ebx
   0x08048426         e805ffffff  call 0x8048330
+Gadget size: 10
+
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
 
 EOF
 RUN
@@ -222,7 +368,7 @@ NAME=search rop with regex sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bits=32
-"/R/ push esi;push ebx"
+/R/ "push esi;push ebx"
 EOF
 EXPECT=<<EOF
   0x08048421                 57  push edi
@@ -230,6 +376,18 @@ EXPECT=<<EOF
   0x08048424                 56  push esi
   0x08048425                 53  push ebx
   0x08048426         e805ffffff  call 0x8048330
+Gadget size: 10
+
+  0x08048422               31ff  xor edi, edi
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 9
+
+  0x08048424                 56  push esi
+  0x08048425                 53  push ebx
+  0x08048426         e805ffffff  call 0x8048330
+Gadget size: 7
 
 EOF
 RUN
@@ -238,6 +396,7 @@ NAME=search rop for AVR
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 e scr.color=false
 wx 11241fbecfefd8e0debfcdbf12e0a0e0b1e0e6e3f4e302c005900d92a431b107d9f722e0a4e1b2e001c01d92ae3cb207e1f710e0c2e6d0e004c02197fe010e94041ac136d107c9f70e944f090c9456160c940000ef92ff920f931f93cf93df93cdb7deb7c054d1090fb6f894debf0fbecdbf6ce071e08fe192e00e946b04ce0101967c018e010f5c1f4ffc011192e017f107e1f720e330e0a7016ae08fe192e00e94d8080297f8f0c801d701fd01ee19ff092d91222321f0fc012193cf01f6cfe00ff11f108260e071e0c8010e949816892b49f46de171e08fe192e00e946b0481e090e008c066e471e08fe192e00e946b0480e090e0c05cdf4f0fb6f894debf0fbecdbfdf91cf911f910f91ff90ef9008956de671e08fe192e00e946b0485b1805885b908956fe771e08fe192e00e946b048bb180588bb908956de671e08fe192e00e946b0485b1805885b985b1805885b985b1805885b908956fe771e08fe192e00e946b048bb180588bb98bb180588bb98bb180588bb908950f931f93cf93df93cdb7deb727970fb6f894debf0fbecdbf9c018e010f5f1f4fd801ad01401b510bf90191919f01992311f09d93f6cffa01e00ff11f10826fe871e0c8010e949816892b81f40e948c00892bf9f027960fb6f894debf0fbecdbfdf91cf911f910f910c940f0163e971e0c8010e949816892b61f427960fb6f894debf0fbecdbf
 /R ldi
@@ -249,85 +408,3121 @@ EXPECT=<<EOF
   0x00000012               e6e3  ldi r30, 0x36
   0x00000014               f4e3  ldi r31, 0x34
   0x00000016               02c0  rjmp 0x1c
+Gadget size: 10
+
+  0x00000010               b1e0  ldi r27, 0x01
+  0x00000012               e6e3  ldi r30, 0x36
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 8
+
+  0x00000012               e6e3  ldi r30, 0x36
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 6
+
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+Gadget size: 4
 
   0x00000020               d9f7  brne 0x18
   0x00000022               22e0  ldi r18, 0x02
   0x00000024               a4e1  ldi r26, 0x14
   0x00000026               b2e0  ldi r27, 0x02
   0x00000028               01c0  rjmp 0x2c
+Gadget size: 10
+
+  0x00000022               22e0  ldi r18, 0x02
+  0x00000024               a4e1  ldi r26, 0x14
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 8
+
+  0x00000024               a4e1  ldi r26, 0x14
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 6
+
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+Gadget size: 4
 
   0x00000030               e1f7  brne 0x2a
   0x00000032               10e0  ldi r17, 0x00
   0x00000034               c2e6  ldi r28, 0x62
   0x00000036               d0e0  ldi r29, 0x00
   0x00000038               04c0  rjmp 0x42
+Gadget size: 10
+
+  0x00000032               10e0  ldi r17, 0x00
+  0x00000034               c2e6  ldi r28, 0x62
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 8
+
+  0x00000034               c2e6  ldi r28, 0x62
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 6
+
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+Gadget size: 4
 
   0x00000072               6ce0  ldi r22, 0x0c
   0x00000074               71e0  ldi r23, 0x01
   0x00000076               8fe1  ldi r24, 0x1f
   0x00000078               92e0  ldi r25, 0x02
   0x0000007a           0e946b04  call 0x8d6
+Gadget size: 12
+
+  0x00000074               71e0  ldi r23, 0x01
+  0x00000076               8fe1  ldi r24, 0x1f
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 10
+
+  0x00000076               8fe1  ldi r24, 0x1f
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 8
+
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+Gadget size: 6
 
   0x00000098               a701  movw r20, r14
   0x0000009a               6ae0  ldi r22, 0x0a
   0x0000009c               8fe1  ldi r24, 0x1f
   0x0000009e               92e0  ldi r25, 0x02
   0x000000a0           0e94d808  call 0x11b0
+Gadget size: 12
+
+  0x0000009a               6ae0  ldi r22, 0x0a
+  0x0000009c               8fe1  ldi r24, 0x1f
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 10
+
+  0x0000009c               8fe1  ldi r24, 0x1f
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 8
+
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+Gadget size: 6
 
   0x000000c4               1082  st Z, r1
   0x000000c6               60e0  ldi r22, 0x00
   0x000000c8               71e0  ldi r23, 0x01
   0x000000ca               c801  movw r24, r16
   0x000000cc           0e949816  call 0x2d30
+Gadget size: 12
+
+  0x000000c6               60e0  ldi r22, 0x00
+  0x000000c8               71e0  ldi r23, 0x01
+  0x000000ca               c801  movw r24, r16
+  0x000000cc           0e949816  call 0x2d30
+Gadget size: 10
+
+  0x000000c8               71e0  ldi r23, 0x01
+  0x000000ca               c801  movw r24, r16
+  0x000000cc           0e949816  call 0x2d30
+Gadget size: 8
 
   0x000000d4               6de1  ldi r22, 0x1d
   0x000000d6               71e0  ldi r23, 0x01
   0x000000d8               8fe1  ldi r24, 0x1f
   0x000000da               92e0  ldi r25, 0x02
   0x000000dc           0e946b04  call 0x8d6
+Gadget size: 12
 
   0x000000de               6b04  cpc r6, r11
   0x000000e0               81e0  ldi r24, 0x01
   0x000000e2               90e0  ldi r25, 0x00
   0x000000e4               08c0  rjmp 0xf6
+Gadget size: 8
+
+  0x000000e0               81e0  ldi r24, 0x01
+  0x000000e2               90e0  ldi r25, 0x00
+  0x000000e4               08c0  rjmp 0xf6
+Gadget size: 6
+
+  0x000000e2               90e0  ldi r25, 0x00
+  0x000000e4               08c0  rjmp 0xf6
+Gadget size: 4
 
   0x000000e6               66e4  ldi r22, 0x46
   0x000000e8               71e0  ldi r23, 0x01
   0x000000ea               8fe1  ldi r24, 0x1f
   0x000000ec               92e0  ldi r25, 0x02
   0x000000ee           0e946b04  call 0x8d6
+Gadget size: 12
 
   0x00000112               6de6  ldi r22, 0x6d
   0x00000114               71e0  ldi r23, 0x01
   0x00000116               8fe1  ldi r24, 0x1f
   0x00000118               92e0  ldi r25, 0x02
   0x0000011a           0e946b04  call 0x8d6
+Gadget size: 12
 
   0x00000126               6fe7  ldi r22, 0x7f
   0x00000128               71e0  ldi r23, 0x01
   0x0000012a               8fe1  ldi r24, 0x1f
   0x0000012c               92e0  ldi r25, 0x02
   0x0000012e           0e946b04  call 0x8d6
-
-  0x0000013a               6de6  ldi r22, 0x6d
-  0x0000013c               71e0  ldi r23, 0x01
-  0x0000013e               8fe1  ldi r24, 0x1f
-  0x00000140               92e0  ldi r25, 0x02
-  0x00000142           0e946b04  call 0x8d6
-
-  0x0000015a               6fe7  ldi r22, 0x7f
-  0x0000015c               71e0  ldi r23, 0x01
-  0x0000015e               8fe1  ldi r24, 0x1f
-  0x00000160               92e0  ldi r25, 0x02
-  0x00000162           0e946b04  call 0x8d6
+Gadget size: 12
 
   0x000001b6               1082  st Z, r1
   0x000001b8               6fe8  ldi r22, 0x8f
   0x000001ba               71e0  ldi r23, 0x01
   0x000001bc               c801  movw r24, r16
   0x000001be           0e949816  call 0x2d30
+Gadget size: 12
+
+  0x000001b8               6fe8  ldi r22, 0x8f
+  0x000001ba               71e0  ldi r23, 0x01
+  0x000001bc               c801  movw r24, r16
+  0x000001be           0e949816  call 0x2d30
+Gadget size: 10
+
+  0x000001e4               0f01  movw r0, r30
+  0x000001e6               63e9  ldi r22, 0x93
+  0x000001e8               71e0  ldi r23, 0x01
+  0x000001ea               c801  movw r24, r16
+  0x000001ec           0e949816  call 0x2d30
+Gadget size: 12
+
+  0x000001e6               63e9  ldi r22, 0x93
+  0x000001e8               71e0  ldi r23, 0x01
+  0x000001ea               c801  movw r24, r16
+  0x000001ec           0e949816  call 0x2d30
+Gadget size: 10
 
 EOF
-EXPECT_ERR=<<EOF
+EXPECT_ERR=
+RUN
+
+
+NAME=search rop gadgets given the detailed stack change (=0)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rs "=0"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed stack change (<0x2000)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rs "<0x2000"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed stack change (<=0x2000)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rs "<=0x2000"
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed stack change (>0x1)
+FILE=bins/arm/elf/hello-linux-arm64
+CMDS=<<EOF
+/Rs ">0x1"
+EOF
+EXPECT=<<EOF
+Gadget 0x401a1c
+Stack change: 0x4b0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a20
+Stack change: 0x4b0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a24
+Stack change: 0x4b0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a28
+Stack change: 0x4b0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x402438
+Stack change: 0x970
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x40243c
+Stack change: 0x970
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x402440
+Stack change: 0x970
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x402444
+Stack change: 0x970
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x403d94
+Stack change: 0x600
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403d98
+Stack change: 0x600
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403d9c
+Stack change: 0x600
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403da0
+Stack change: 0x600
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x405c5c
+Stack change: 0x2180
+Changed registers: x19 x20 x12 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c60
+Stack change: 0x2180
+Changed registers: x12 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c64
+Stack change: 0x2180
+Changed registers: x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c68
+Stack change: 0x2180
+Changed registers: sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098e8
+Stack change: 0x2180
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098ec
+Stack change: 0x2180
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098f0
+Stack change: 0x2180
+Changed registers: x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x412714
+Stack change: 0x460
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x20
+
+Gadget 0x412718
+Stack change: 0x460
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x41271c
+Stack change: 0x460
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x412720
+Stack change: 0x460
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4128f4
+Stack change: 0x470
+Changed registers: x19 x20 x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128f8
+Stack change: 0x470
+Changed registers: x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128fc
+Stack change: 0x470
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x412900
+Stack change: 0x470
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4129a8
+Stack change: 0x1030
+Changed registers: x29 x30 x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129ac
+Stack change: 0x1030
+Changed registers: x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129b0
+Stack change: 0x1030
+Changed registers: x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x413234
+Stack change: 0x470
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x413238
+Stack change: 0x470
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x41323c
+Stack change: 0x470
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ecc
+Stack change: 0xb0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed0
+Stack change: 0xb0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed4
+Stack change: 0xb0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed8
+Stack change: 0xb0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4236e8
+Stack change: 0x250
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236ec
+Stack change: 0x250
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f0
+Stack change: 0x250
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f4
+Stack change: 0x250
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x423ee0
+Stack change: 0xc0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee4
+Stack change: 0xc0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee8
+Stack change: 0xc0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423eec
+Stack change: 0xc0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4249c4
+Stack change: 0x7c0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249c8
+Stack change: 0x7c0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249cc
+Stack change: 0x7c0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249d0
+Stack change: 0x7c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x425aa8
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x425aac
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x434d0c
+Stack change: 0x870
+Changed registers: x23 x24 x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d10
+Stack change: 0x870
+Changed registers: x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d14
+Stack change: 0x870
+Changed registers: x27 sp 
+Register dependencies:
+
+Gadget 0x434d18
+Stack change: 0x870
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x435dc0
+Stack change: 0x8a0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc4
+Stack change: 0x8a0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc8
+Stack change: 0x8a0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dcc
+Stack change: 0x8a0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43bfe4
+Stack change: 0x420
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfe8
+Stack change: 0x420
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfec
+Stack change: 0x420
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bff0
+Stack change: 0x420
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43ce34
+Stack change: 0x110
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce38
+Stack change: 0x110
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce3c
+Stack change: 0x110
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce40
+Stack change: 0x110
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43d72c
+Stack change: 0x110
+Changed registers: x27 x28 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d730
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d734
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43e850
+Stack change: 0x11233
+Changed registers: x29 x30 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e854
+Stack change: 0x11233
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e8f4
+Stack change: 0x11233
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x21
+Var Read: x12
+
+Gadget 0x43ea9c
+Stack change: 0x490
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa0
+Stack change: 0x490
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa4
+Stack change: 0x490
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa8
+Stack change: 0x490
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43f618
+Stack change: 0x2e0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f61c
+Stack change: 0x2e0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f620
+Stack change: 0x2e0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f624
+Stack change: 0x2e0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4422d0
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Memory Read: x0 Value: 0x7
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d4
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d8
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422dc
+Stack change: 0x10
+Changed registers: x1 sp 
+Register dependencies:
+
+Gadget 0x4472f4
+Stack change: 0x5f0
+Changed registers: x21 x22 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472f8
+Stack change: 0x5f0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472fc
+Stack change: 0x5f0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x447300
+Stack change: 0x5f0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4492dc
+Stack change: 0x8280
+Changed registers: x12 x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e0
+Stack change: 0x8280
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e4
+Stack change: 0x8280
+Changed registers: x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x44bf40
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf44
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf48
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf4c
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x450520
+Stack change: 0x520
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450524
+Stack change: 0x520
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450528
+Stack change: 0x520
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x45052c
+Stack change: 0x520
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x451ff4
+Stack change: 0x260
+Changed registers: x21 x22 x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ff8
+Stack change: 0x260
+Changed registers: x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ffc
+Stack change: 0x260
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x452000
+Stack change: 0x260
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45243c
+Stack change: 0x260
+Changed registers: x29 x30 x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452440
+Stack change: 0x260
+Changed registers: x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452848
+Stack change: 0x450
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0xffffffffffffffff New Value: 0x0
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0x0
+
+Gadget 0x45284c
+Stack change: 0x450
+Changed registers: x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452850
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452854
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4538c0
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Memory Write: x21 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Memory Write: x19 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4538c4
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538c8
+Stack change: 0x6d0
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538cc
+Stack change: 0x6d0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453b0c
+Stack change: 0x6c0
+Changed registers: x19 x20 x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b10
+Stack change: 0x6c0
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b14
+Stack change: 0x6c0
+Changed registers: x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b18
+Stack change: 0x6c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453c44
+Stack change: 0x6d0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c48
+Stack change: 0x6d0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c4c
+Stack change: 0x6d0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453ec0
+Stack change: 0xa70
+Changed registers: x29 x30 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec4
+Stack change: 0xa70
+Changed registers: x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec8
+Stack change: 0xa70
+Changed registers: x21 sp 
+Register dependencies:
+
+Gadget 0x453ecc
+Stack change: 0xa70
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453ef4
+Stack change: 0xa70
+Changed registers: x0 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x45400c
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454010
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454014
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454148
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x45414c
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454150
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454450
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454454
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454458
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45445c
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4570d4
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570d8
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570dc
+Stack change: 0x2f75a
+Changed registers: x29 x30 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed stack change (>=0x1)
+FILE=bins/arm/elf/hello-linux-arm64
+CMDS=<<EOF
+/Rs ">=0x1"
+EOF
+EXPECT=<<EOF
+Gadget 0x401a1c
+Stack change: 0x4b0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a20
+Stack change: 0x4b0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a24
+Stack change: 0x4b0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x401a28
+Stack change: 0x4b0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x402438
+Stack change: 0x970
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x40243c
+Stack change: 0x970
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x402440
+Stack change: 0x970
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x402444
+Stack change: 0x970
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x403d94
+Stack change: 0x600
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403d98
+Stack change: 0x600
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403d9c
+Stack change: 0x600
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x403da0
+Stack change: 0x600
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x405c5c
+Stack change: 0x2180
+Changed registers: x19 x20 x12 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c60
+Stack change: 0x2180
+Changed registers: x12 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c64
+Stack change: 0x2180
+Changed registers: x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x405c68
+Stack change: 0x2180
+Changed registers: sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098e8
+Stack change: 0x2180
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098ec
+Stack change: 0x2180
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4098f0
+Stack change: 0x2180
+Changed registers: x27 x28 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x412714
+Stack change: 0x460
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x20
+
+Gadget 0x412718
+Stack change: 0x460
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x41271c
+Stack change: 0x460
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x412720
+Stack change: 0x460
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4128f4
+Stack change: 0x470
+Changed registers: x19 x20 x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128f8
+Stack change: 0x470
+Changed registers: x21 x22 x25 sp 
+Register dependencies:
+
+Gadget 0x4128fc
+Stack change: 0x470
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x412900
+Stack change: 0x470
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4129a8
+Stack change: 0x1030
+Changed registers: x29 x30 x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129ac
+Stack change: 0x1030
+Changed registers: x12 x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4129b0
+Stack change: 0x1030
+Changed registers: x19 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x413234
+Stack change: 0x470
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x413238
+Stack change: 0x470
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x41323c
+Stack change: 0x470
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ecc
+Stack change: 0xb0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed0
+Stack change: 0xb0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed4
+Stack change: 0xb0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x421ed8
+Stack change: 0xb0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4236e8
+Stack change: 0x250
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236ec
+Stack change: 0x250
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f0
+Stack change: 0x250
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4236f4
+Stack change: 0x250
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x423ee0
+Stack change: 0xc0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee4
+Stack change: 0xc0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423ee8
+Stack change: 0xc0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x423eec
+Stack change: 0xc0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4249c4
+Stack change: 0x7c0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249c8
+Stack change: 0x7c0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249cc
+Stack change: 0x7c0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4249d0
+Stack change: 0x7c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x425aa8
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x425aac
+Stack change: 0x4b0
+Changed registers: x29 x30 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x434d0c
+Stack change: 0x870
+Changed registers: x23 x24 x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d10
+Stack change: 0x870
+Changed registers: x25 x26 x27 sp 
+Register dependencies:
+
+Gadget 0x434d14
+Stack change: 0x870
+Changed registers: x27 sp 
+Register dependencies:
+
+Gadget 0x434d18
+Stack change: 0x870
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x435dc0
+Stack change: 0x8a0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc4
+Stack change: 0x8a0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dc8
+Stack change: 0x8a0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x435dcc
+Stack change: 0x8a0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43bfe4
+Stack change: 0x420
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfe8
+Stack change: 0x420
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bfec
+Stack change: 0x420
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43bff0
+Stack change: 0x420
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43ce34
+Stack change: 0x110
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce38
+Stack change: 0x110
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce3c
+Stack change: 0x110
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43ce40
+Stack change: 0x110
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43d72c
+Stack change: 0x110
+Changed registers: x27 x28 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d730
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43d734
+Stack change: 0x110
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x43e850
+Stack change: 0x11233
+Changed registers: x29 x30 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e854
+Stack change: 0x11233
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x43e8f4
+Stack change: 0x11233
+Changed registers: x0 x19 x20 x21 x22 sp 
+Register dependencies:
+Var Read: x21
+Var Read: x12
+
+Gadget 0x43ea9c
+Stack change: 0x490
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa0
+Stack change: 0x490
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa4
+Stack change: 0x490
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43eaa8
+Stack change: 0x490
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x43f618
+Stack change: 0x2e0
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f61c
+Stack change: 0x2e0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f620
+Stack change: 0x2e0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x43f624
+Stack change: 0x2e0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4422d0
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Memory Read: x0 Value: 0x7
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d4
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422d8
+Stack change: 0x10
+Changed registers: x0 x1 sp 
+Register dependencies:
+Var Read: x1
+Var Read: x0
+
+Gadget 0x4422dc
+Stack change: 0x10
+Changed registers: x1 sp 
+Register dependencies:
+
+Gadget 0x4472f4
+Stack change: 0x5f0
+Changed registers: x21 x22 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472f8
+Stack change: 0x5f0
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x4472fc
+Stack change: 0x5f0
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x447300
+Stack change: 0x5f0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4492dc
+Stack change: 0x8280
+Changed registers: x12 x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e0
+Stack change: 0x8280
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x4492e4
+Stack change: 0x8280
+Changed registers: x23 x24 sp 
+Register dependencies:
+Var Read: x12
+
+Gadget 0x44bf40
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf44
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf48
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x44bf4c
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x450520
+Stack change: 0x520
+Changed registers: x23 x24 x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450524
+Stack change: 0x520
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+
+Gadget 0x450528
+Stack change: 0x520
+Changed registers: x27 x28 sp 
+Register dependencies:
+
+Gadget 0x45052c
+Stack change: 0x520
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x451ff4
+Stack change: 0x260
+Changed registers: x21 x22 x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ff8
+Stack change: 0x260
+Changed registers: x23 x24 x25 sp 
+Register dependencies:
+
+Gadget 0x451ffc
+Stack change: 0x260
+Changed registers: x25 sp 
+Register dependencies:
+
+Gadget 0x452000
+Stack change: 0x260
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45243c
+Stack change: 0x260
+Changed registers: x29 x30 x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452440
+Stack change: 0x260
+Changed registers: x0 sp 
+Register dependencies:
+Var Read: x3
+
+Gadget 0x452848
+Stack change: 0x450
+Changed registers: x25 x26 x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0xffffffffffffffff New Value: 0x0
+Memory Write: x1 Initial Value: 0xffffffffffffffff New Value: 0x0
+
+Gadget 0x45284c
+Stack change: 0x450
+Changed registers: x27 x28 sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452850
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+Memory Write: x0 Initial Value: 0x0 New Value: 0x0
+Memory Write: x1 Initial Value: 0x0 New Value: 0x0
+
+Gadget 0x452854
+Stack change: 0x450
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4538c0
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+Memory Write: x21 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+Memory Write: x19 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4538c4
+Stack change: 0x6d0
+Changed registers: x19 x20 x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538c8
+Stack change: 0x6d0
+Changed registers: x21 x22 sp 
+Register dependencies:
+
+Gadget 0x4538cc
+Stack change: 0x6d0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453b0c
+Stack change: 0x6c0
+Changed registers: x19 x20 x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b10
+Stack change: 0x6c0
+Changed registers: x21 x22 x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b14
+Stack change: 0x6c0
+Changed registers: x23 x24 sp 
+Register dependencies:
+
+Gadget 0x453b18
+Stack change: 0x6c0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453c44
+Stack change: 0x6d0
+Changed registers: x21 x22 x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c48
+Stack change: 0x6d0
+Changed registers: x23 x24 x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453c4c
+Stack change: 0x6d0
+Changed registers: x25 x26 sp 
+Register dependencies:
+
+Gadget 0x453ec0
+Stack change: 0xa70
+Changed registers: x29 x30 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec4
+Stack change: 0xa70
+Changed registers: x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x453ec8
+Stack change: 0xa70
+Changed registers: x21 sp 
+Register dependencies:
+
+Gadget 0x453ecc
+Stack change: 0xa70
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x453ef4
+Stack change: 0xa70
+Changed registers: x0 x19 x20 x21 sp 
+Register dependencies:
+
+Gadget 0x45400c
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454010
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454014
+Stack change: 0xebf
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454148
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x45414c
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454150
+Stack change: 0x84f
+Changed registers: sp 
+Register dependencies:
+Var Read: x4
+
+Gadget 0x454450
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454454
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x454458
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x45445c
+Stack change: 0xae0
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4570d4
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570d8
+Stack change: 0x2f73a
+Changed registers: sp x29 x30 
+Register dependencies:
+Memory Write: x30 Initial Value: 0xffffffffffffffff New Value: 0xffffffffffffffff
+
+Gadget 0x4570dc
+Stack change: 0x2f75a
+Changed registers: x29 x30 sp 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (=4)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rl "=4"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x00000934
+echo "================================"
+/R | grep -A 8 0x00000c10
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x00000934           7bb9d1e9  ldmib r1, {r0, r1, r3, r4, r5, r6, r8, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x0000093c           200182fa  blx 0xfe080dc4
+Gadget size: 4
+
+  0x00000950           8cf3002b  blhs 0x3d788
+Gadget size: 4
+
+================================
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00000c40           40f18380  addhi pc, r3, r0, asr 2
+Gadget size: 4
+
+  0x00000c44           4745c346  strbmi r4, [r3], r7, asr 10
+  0x00000c48           c0f0ab80  adchi pc, fp, r0, asr 1
+Gadget size: 8
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rl "<10"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x00000934
+echo "================================"
+/R | grep -A 8 0x00000c0c
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x00000934           7bb9d1e9  ldmib r1, {r0, r1, r3, r4, r5, r6, r8, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x0000093c           200182fa  blx 0xfe080dc4
+Gadget size: 4
+
+  0x00000950           8cf3002b  blhs 0x3d788
+Gadget size: 4
+
+================================
+  0x00000c0c           e7d10020  andhs sp, r0, r7, ror 3
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00000c10           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00000c40           40f18380  addhi pc, r3, r0, asr 2
+Gadget size: 4
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (<=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rl "<=10"
+echo "================================"
+/R | grep -A 8 0x00000900
+echo "================================"
+/R | grep -A 8 0x000010d8
+echo "================================"
+/R | grep -A 8 0x00001edc
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+Gadget 0x934
+Stack change: 0x0
+Changed registers: r0 r1 r3 r4 r5 r6 r8 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x80007ab
+
+Gadget 0xc0c
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0xc10
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d8
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1120
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1894
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed8
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1edc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x00000900           4bbbd1e9  ldmib r1, {r0, r1, r3, r6, r8, sb, fp, ip, sp, pc} ^
+Gadget size: 4
+
+  0x00000904           022382fa  blx 0xfe089514
+Gadget size: 4
+
+  0x0000090c           0800a4fa  blx 0xfe900934
+Gadget size: 4
+
+================================
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00001118           01025a60  subsvs r0, sl, r1, lsl 4
+  0x0000111c           00f05efb  blx 0x17bd126
+Gadget size: 8
+
+  0x0000111c           00f05efb  blx 0x17bd126
+================================
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 20
+
+  0x00001ed0           b1f90c00  strheq pc, [ip], -r1
+  0x00001ed4           08b902b0  andlt fp, r2, r8, lsl 18
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 16
+
+  0x00001ed4           08b902b0  andlt fp, r2, r8, lsl 18
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 12
+
+  0x00001ed8           10bd2046  qadd16mi fp, r0, r0
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 8
+
+  0x00001edc           02b0bde8  pop {r1, ip, sp, pc}
+Gadget size: 4
+
+  0x00001ee8           fef742fe  mcr2 p7, 2, pc, c2, c14, 7
+  0x00001eec           0199efe7  strb sb, [pc, r1, lsl 18]!
+  0x00001ef0           20b1054b  blmi 0x16e378
+Gadget size: 12
+
+  0x00001eec           0199efe7  strb sb, [pc, r1, lsl 18]!
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rl ">10"
+echo "================================"
+/R | grep -A 8 0x000010cc
+echo "================================"
+/R | grep -A 8 0x000010d0
+echo "================================"
+/R | grep -A 8 0x000010d4
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x000010cc           204603b0  andlt r4, r3, r0, lsr 12
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+================================
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+================================
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+EOF
+RUN
+
+NAME=search rop gadgets given the detailed gadget size (>=10)
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+/Rl ">=10"
+echo "================================"
+/R | grep -A 8 0x000010cc
+echo "================================"
+/R | grep -A 8 0x000010d0
+echo "================================"
+/R | grep -A 8 0x000010d4
+EOF
+EXPECT=<<EOF
+Gadget 0x10cc
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d0
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x10d4
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1890
+Stack change: 0x0
+Changed registers: r0 r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ecc
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed0
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+Gadget 0x1ed4
+Stack change: 0x0
+Changed registers: r1 r12 sp 
+Register dependencies:
+
+================================
+  0x000010cc           204603b0  andlt r4, r3, r0, lsr 12
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+================================
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+================================
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 20
+
+  0x000010d0           bde8f08f  svchi 0xf0e8bd
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 16
+
+  0x000010d4           00240c23  movwhs r2, 0xc400
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 12
+
+  0x000010d8           20462b60  eorvs r4, fp, r0, lsr 12
+  0x000010dc           03b0bde8  pop {r0, r1, ip, sp, pc}
+Gadget size: 8
+
+EOF
+RUN
+
+NAME=/Rk constraint filtering
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Rk eax=1
+/Rk ecx=0
+/Rk eax=1,ecx=0
+echo "Expected no results for eax=0"
+/Rk eax=0
+echo "Testing MOV_OP_CONST"
+/Rk eax+=1
+echo "Testing MOV_OP_REG"
+/Rk eax=ebx+ecx
+/Rk invalidconstraint
+EOF
+EXPECT=<<EOF
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+  0x000000b7               0100  add dword [eax], eax
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 12
+
+  0x000000b9               0000  add byte [eax], al
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 10
+
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 8
+
+  0x000000b4               cd80  int 0x80
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 15
+
+  0x000000b6         b801000000  mov eax, 0x01
+  0x000000bb         b900000000  mov ecx, 0x00
+  0x000000c0               cd80  int 0x80
+  0x000000c2                 c3  ret
+Gadget size: 13
+
+Expected no results for eax=0
+Testing MOV_OP_CONST
+Testing MOV_OP_REG
+EOF
+RUN
+
+NAME=/Rgl test
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+aaa
+/Rgl
+EOF
+EXPECT=<<EOF
+Gadget 0x8048275 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048275  6f               outsd         | Stack change: 0x4
+  0x08048276  6e               outsb         | Modified regs: edi esp
+  0x08048277  5f               pop edi       | Dependencies:  esp esp
+  0x08048278  7374             jnb 0x80482ee | 
+  0x0804827a  61               popad         | 
+
+Gadget 0x8048276 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048276  6e               outsb         | Stack change: 0x4
+  0x08048277  5f               pop edi       | Modified regs: edi esp
+  0x08048278  7374             jnb 0x80482ee | Dependencies:  esp esp
+  0x0804827a  61               popad         | 
+
+Gadget 0x8048277 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048277  5f               pop edi       | Stack change: 0x4
+  0x08048278  7374             jnb 0x80482ee | Modified regs: edi esp
+  0x0804827a  61               popad         | Dependencies:  esp esp
+
+Gadget 0x8048278 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048278  7374             jnb 0x80482ee | Stack change: 0x0
+  0x0804827a  61               popad         | Modified regs: 
+
+Gadget 0x804827a (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804827a  61               popad | Stack change: 0x0
+
+Gadget 0x8048292 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048292  7363             jnb 0x80482f7 | Stack change: 0x0
+  0x08048294  61               popad         | Modified regs: 
+
+Gadget 0x80482b0 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b0  62635f           bound esp, qword [ebx+0x5f] | Stack change: 0x0
+  0x080482b3  7374             jnb 0x8048329               | Modified regs: 
+  0x080482b5  61               popad                       | Dependencies:  ebx esp ebx
+
+Gadget 0x80482af (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482af  6962635f737461   imul esp, dword [edx+0x63], 0x6174735f | Stack change: 0x4
+  0x080482b6  7274             jb 0x804832c                           | Modified regs: esp edi
+  0x080482b8  5f               pop edi                                | Dependencies:  edx edx esp esp
+  0x080482b9  6d               insd                                   | 
+  0x080482ba  61               popad                                  | 
+
+Gadget 0x80482b4 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b4  7461             jz 0x8048317 | Stack change: 0x4
+  0x080482b6  7274             jb 0x804832c | Modified regs: edi esp
+  0x080482b8  5f               pop edi      | Dependencies:  esp esp
+  0x080482b9  6d               insd         | 
+  0x080482ba  61               popad        | 
+
+Gadget 0x80482b6 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b6  7274             jb 0x804832c | Stack change: 0x4
+  0x080482b8  5f               pop edi      | Modified regs: edi esp
+  0x080482b9  6d               insd         | Dependencies:  esp esp
+  0x080482ba  61               popad        | 
+
+Gadget 0x80482b7 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b7  745f             jz 0x8048318 | Stack change: 0x0
+  0x080482b9  6d               insd         | Modified regs: 
+  0x080482ba  61               popad        | Dependencies:  
+
+Gadget 0x80482b8 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b8  5f               pop edi | Stack change: 0x4
+  0x080482b9  6d               insd    | Modified regs: edi esp
+  0x080482ba  61               popad   | Dependencies:  esp esp
+
+Gadget 0x80482b9 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080482b9  6d               insd  | Stack change: 0x0
+  0x080482ba  61               popad | Modified regs: 
+
+Gadget 0x8048349 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048349  0100             add dword [eax], eax | Stack change: 0x0
+  0x0804834b  00e8             add al, ch           | Modified regs: eax
+  0x0804834d  cf               iretd                | Dependencies:  eax eax eax eax ecx
+
+Gadget 0x804834b (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834b  00e8             add al, ch | Stack change: 0x0
+  0x0804834d  cf               iretd      | Modified regs: eax
+
+Gadget 0x804834d (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834d  cf               iretd | Stack change: 0x0
+
+Gadget 0x804834e (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834e  0200             add al, byte [eax] | Stack change: 0x4
+  0x08048350  00c9             add cl, cl         | Modified regs: eax ecx esp
+  0x08048352  c3               ret                | Dependencies:  eax eax eax ecx esp esp
+
+Gadget 0x804834f (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804834f  0000             add byte [eax], al | Stack change: 0x8
+  0x08048351  c9               leave              | Modified regs: esp ebp
+  0x08048352  c3               ret                | Dependencies:  eax eax eax ebp esp esp esp esp
+
+Gadget 0x8048350 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048350  00c9             add cl, cl | Stack change: 0x4
+  0x08048352  c3               ret        | Modified regs: ecx esp
+
+Gadget 0x8048351 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048351  c9               leave | Stack change: 0xffffffff00000008
+  0x08048352  c3               ret   | Modified regs: esp ebp
+
+Gadget 0x8048352 (size 1 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048352  c3               ret | Stack change: 0x4
+
+Gadget 0x80483fa (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080483fa  0000             add byte [eax], al      | Stack change: 0x4
+  0x080483fc  005b81           add byte [ebx-0x7f], bl | Modified regs: esp
+  0x080483ff  c3               ret                     | Dependencies:  eax eax eax ebx ebx ebx esp esp
+
+Gadget 0x80483fc (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080483fc  005b81           add byte [ebx-0x7f], bl | Stack change: 0x4
+  0x080483ff  c3               ret                     | Modified regs: esp
+
+Gadget 0x804840a (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840a  ff85c07402ff     inc dword [ebp-0xfd8b40]  | Stack change: 0xffffffff00000008
+  0x08048410  d0585b           rcr byte [eax+0x5b], 0x01 | Modified regs: esp ebp
+  0x08048413  c9               leave                     | Dependencies:  ebp ebp eax eax ebp esp esp esp esp
+  0x08048414  c3               ret                       | 
+
+Gadget 0x804840c (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840c  c07402ffd0       shl byte [edx+eax*1-0x01], 0xd0 | Stack change: 0xffffffff00000010
+  0x08048411  58               pop eax                         | Modified regs: eax esp ebx ebp
+  0x08048412  5b               pop ebx                         | Dependencies:  eax edx eax edx esp esp esp esp ebp esp esp esp esp
+  0x08048413  c9               leave                           | 
+  0x08048414  c3               ret                             | 
+
+Gadget 0x804840e (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804840e  02ff             add bh, bh                | Stack change: 0xffffffff00000008
+  0x08048410  d0585b           rcr byte [eax+0x5b], 0x01 | Modified regs: ebx esp ebp
+  0x08048413  c9               leave                     | Dependencies:  ebx eax eax ebp esp esp esp esp
+  0x08048414  c3               ret                       | 
+
+Gadget 0x8048410 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048410  d0585b           rcr byte [eax+0x5b], 0x01 | Stack change: 0xffffffff00000008
+  0x08048413  c9               leave                     | Modified regs: esp ebp
+  0x08048414  c3               ret                       | Dependencies:  eax eax ebp esp esp esp esp
+
+Gadget 0x8048411 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048411  58               pop eax | Stack change: 0xffffffff00000010
+  0x08048412  5b               pop ebx | Modified regs: eax esp ebx ebp
+  0x08048413  c9               leave   | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x08048414  c3               ret     | 
+
+Gadget 0x8048412 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048412  5b               pop ebx | Stack change: 0xffffffff0000000c
+  0x08048413  c9               leave   | Modified regs: ebx esp ebp
+  0x08048414  c3               ret     | Dependencies:  esp esp ebp esp esp esp esp
+
+Gadget 0x8048441 (size 14 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048441  1085d275ebc6     adc byte [ebp-0x39148a2e], al | Stack change: 0x4
+  0x08048447  0524a00408       add eax, 0x804a024            | Modified regs: eax ecx esp
+  0x0804844c  01c9             add ecx, ecx                  | Dependencies:  ebp ebp eax eax ecx esp esp
+  0x0804844e  c3               ret                           | 
+
+Gadget 0x8048442 (size 13 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048442  85d2             test edx, edx              | Stack change: 0xffffffff00000008
+  0x08048444  75eb             jnz 0x8048431              | Modified regs: esp ebp
+  0x08048446  c60524a0040801   mov byte [0x804a024], 0x01 | Dependencies:  ebp esp esp esp esp
+  0x0804844d  c9               leave                      | 
+  0x0804844e  c3               ret                        | 
+
+Gadget 0x8048443 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048443  d275eb           shl byte [ebp-0x15], cl    | Stack change: 0xffffffff00000008
+  0x08048446  c60524a0040801   mov byte [0x804a024], 0x01 | Modified regs: esp ebp
+  0x0804844d  c9               leave                      | Dependencies:  ebp ebp ecx ebp esp esp esp esp
+  0x0804844e  c3               ret                        | 
+
+Gadget 0x8048444 (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048444  75eb             jnz 0x8048431              | Stack change: 0xffffffff00000008
+  0x08048446  c60524a0040801   mov byte [0x804a024], 0x01 | Modified regs: esp ebp
+  0x0804844d  c9               leave                      | Dependencies:  ebp esp esp esp esp
+  0x0804844e  c3               ret                        | 
+
+Gadget 0x8048446 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048446  c60524a0040801   mov byte [0x804a024], 0x01 | Stack change: 0xffffffff00000008
+  0x0804844d  c9               leave                      | Modified regs: esp ebp
+  0x0804844e  c3               ret                        | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x8048447 (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048447  0524a00408       add eax, 0x804a024 | Stack change: 0x4
+  0x0804844c  01c9             add ecx, ecx       | Modified regs: eax ecx esp
+  0x0804844e  c3               ret                | Dependencies:  eax ecx esp esp
+
+Gadget 0x8048448 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048448  24a0             and al, 0xa0 | Stack change: 0x4
+  0x0804844a  0408             add al, 0x08 | Modified regs: eax ecx esp
+  0x0804844c  01c9             add ecx, ecx | Dependencies:  eax eax eax ecx esp esp
+  0x0804844e  c3               ret          | 
+
+Gadget 0x8048449 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048449  a0040801c9       mov al, byte [0xc9010804] | Stack change: 0x4
+  0x0804844e  c3               ret                       | Modified regs: eax esp
+
+Gadget 0x804844a (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844a  0408             add al, 0x08 | Stack change: 0x4
+  0x0804844c  01c9             add ecx, ecx | Modified regs: eax ecx esp
+  0x0804844e  c3               ret          | Dependencies:  eax ecx esp esp
+
+Gadget 0x804844b (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844b  0801             or byte [ecx], al | Stack change: 0xffffffff00000008
+  0x0804844d  c9               leave             | Modified regs: esp ebp
+  0x0804844e  c3               ret               | Dependencies:  ecx ecx eax ebp esp esp esp esp
+
+Gadget 0x804844c (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804844c  01c9             add ecx, ecx | Stack change: 0x4
+  0x0804844e  c3               ret          | Modified regs: ecx esp
+
+Gadget 0x8048471 (size 17 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048471  7bfb             jnp 0x804846e                   | Stack change: 0x4
+  0x08048473  f78db6000000008dbf00 test dword [ebp+0xb6], 0xbf8d00 | Modified regs: ecx esp
+  0x0804847d  0000             add byte [eax], al              | Dependencies:  ebp eax eax eax ecx esp esp
+  0x0804847f  00c9             add cl, cl                      | 
+  0x08048481  c3               ret                             | 
+
+Gadget 0x8048472 (size 16 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048472  fb               sti                             | Stack change: 0x4
+  0x08048473  f78db6000000008dbf00 test dword [ebp+0xb6], 0xbf8d00 | Modified regs: ecx esp
+  0x0804847d  0000             add byte [eax], al              | Dependencies:  ebp eax eax eax ecx esp esp
+  0x0804847f  00c9             add cl, cl                      | 
+  0x08048481  c3               ret                             | 
+
+Gadget 0x8048473 (size 15 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048473  f78db6000000008dbf00 test dword [ebp+0xb6], 0xbf8d00 | Stack change: 0x4
+  0x0804847d  0000             add byte [eax], al              | Modified regs: ecx esp
+  0x0804847f  00c9             add cl, cl                      | Dependencies:  ebp eax eax eax ecx esp esp
+  0x08048481  c3               ret                             | 
+
+Gadget 0x8048474 (size 14 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048474  8db600000000     lea esi, dword [esi] | Stack change: 0xffffffff00000008
+  0x0804847a  8dbf00000000     lea edi, dword [edi] | Modified regs: esi edi esp ebp
+  0x08048480  c9               leave                | Dependencies:  esi edi ebp esp esp esp esp
+  0x08048481  c3               ret                  | 
+
+Gadget 0x8048475 (size 13 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048475  b600             mov dh, 0x00            | Stack change: 0x4
+  0x08048477  0000             add byte [eax], al      | Modified regs: edx ecx esp
+  0x08048479  008dbf000000     add byte [ebp+0xbf], cl | Dependencies:  edx eax eax eax ebp ebp ecx ecx esp esp
+  0x0804847f  00c9             add cl, cl              | 
+  0x08048481  c3               ret                     | 
+
+Gadget 0x8048476 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048476  0000             add byte [eax], al   | Stack change: 0xffffffff00000008
+  0x08048478  0000             add byte [eax], al   | Modified regs: edi esp ebp
+  0x0804847a  8dbf00000000     lea edi, dword [edi] | Dependencies:  eax eax eax eax eax eax edi ebp esp esp esp esp
+  0x08048480  c9               leave                | 
+  0x08048481  c3               ret                  | 
+
+Gadget 0x8048477 (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048477  0000             add byte [eax], al      | Stack change: 0x4
+  0x08048479  008dbf000000     add byte [ebp+0xbf], cl | Modified regs: ecx esp
+  0x0804847f  00c9             add cl, cl              | Dependencies:  eax eax eax ebp ebp ecx ecx esp esp
+  0x08048481  c3               ret                     | 
+
+Gadget 0x8048478 (size 10 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048478  0000             add byte [eax], al   | Stack change: 0xffffffff00000008
+  0x0804847a  8dbf00000000     lea edi, dword [edi] | Modified regs: edi esp ebp
+  0x08048480  c9               leave                | Dependencies:  eax eax eax edi ebp esp esp esp esp
+  0x08048481  c3               ret                  | 
+
+Gadget 0x8048479 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048479  008dbf000000     add byte [ebp+0xbf], cl | Stack change: 0x4
+  0x0804847f  00c9             add cl, cl              | Modified regs: ecx esp
+  0x08048481  c3               ret                     | Dependencies:  ebp ebp ecx ecx esp esp
+
+Gadget 0x804847a (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847a  8dbf00000000     lea edi, dword [edi] | Stack change: 0xffffffff00000008
+  0x08048480  c9               leave                | Modified regs: edi esp ebp
+  0x08048481  c3               ret                  | Dependencies:  edi ebp esp esp esp esp
+
+Gadget 0x804847b (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847b  bf00000000       mov edi, 0x00 | Stack change: 0xffffffff00000008
+  0x08048480  c9               leave         | Modified regs: edi esp ebp
+  0x08048481  c3               ret           | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x804847c (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847c  0000             add byte [eax], al | Stack change: 0xffffffff00000008
+  0x0804847e  0000             add byte [eax], al | Modified regs: esp ebp
+  0x08048480  c9               leave              | Dependencies:  eax eax eax eax eax eax ebp esp esp esp esp
+  0x08048481  c3               ret                | 
+
+Gadget 0x804847d (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804847d  0000             add byte [eax], al | Stack change: 0x4
+  0x0804847f  00c9             add cl, cl         | Modified regs: ecx esp
+  0x08048481  c3               ret                | Dependencies:  eax eax eax ecx esp esp
+
+Gadget 0x80484c5 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080484c5  ffc9             dec ecx | Stack change: 0x4
+  0x080484c7  c3               ret     | Modified regs: ecx esp
+
+Gadget 0x8048595 (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048595  b800000000       mov eax, 0x00 | Stack change: 0xffffffff00000008
+  0x0804859a  c9               leave         | Modified regs: eax esp ebp
+  0x0804859b  c3               ret           | Dependencies:  ebp esp esp esp esp
+
+Gadget 0x80485a6 (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485a6  f653e8           not byte [ebx-0x18] | Stack change: 0x4
+  0x080485a9  6800000081       push 0x81000000     | Modified regs: esp
+  0x080485ae  c3               ret                 | Dependencies:  ebx ebx esp esp esp
+
+Gadget 0x80485a9 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485a9  6800000081       push 0x81000000 | Stack change: 0x4
+  0x080485ae  c3               ret             | Modified regs: esp
+
+Gadget 0x80485fa (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fa  da83c41c5b5e     fiadd dword [ebx+0x5e5b1cc4] | Stack change: 0xffffffff0000000c
+  0x08048600  5f               pop edi                      | Modified regs: edi esp ebp
+  0x08048601  c9               leave                        | Dependencies:  esp esp ebp esp esp esp esp
+  0x08048602  c3               ret                          | 
+
+Gadget 0x80485fc (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fc  c41c5b           les ebx, fword [ebx+ebx*2] | Stack change: 0x10
+  0x080485ff  5e               pop esi                    | Modified regs: ebx esi esp edi ebp
+  0x08048600  5f               pop edi                    | Dependencies:  ebx esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9               leave                      | 
+  0x08048602  c3               ret                        | 
+
+Gadget 0x80485fd (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fd  1c5b             sbb al, 0x5b | Stack change: 0xffffffff00000010
+  0x080485ff  5e               pop esi      | Modified regs: eax esi esp edi ebp
+  0x08048600  5f               pop edi      | Dependencies:  eax esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9               leave        | 
+  0x08048602  c3               ret          | 
+
+Gadget 0x80485fe (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485fe  5b               pop ebx | Stack change: 0x14
+  0x080485ff  5e               pop esi | Modified regs: ebx esp esi edi ebp
+  0x08048600  5f               pop edi | Dependencies:  esp esp esp esp esp esp ebp esp esp esp esp
+  0x08048601  c9               leave   | 
+  0x08048602  c3               ret     | 
+
+Gadget 0x80485ff (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x080485ff  5e               pop esi | Stack change: 0xffffffff00000010
+  0x08048600  5f               pop edi | Modified regs: esi esp edi ebp
+  0x08048601  c9               leave   | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x08048602  c3               ret     | 
+
+Gadget 0x8048600 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048600  5f               pop edi | Stack change: 0xc
+  0x08048601  c9               leave   | Modified regs: edi esp ebp
+  0x08048602  c3               ret     | Dependencies:  esp esp ebp esp esp esp esp
+
+Gadget 0x8048609 (size 12 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048609  8dbc2700000000   lea edi, dword [edi] | Stack change: 0xffffffff8100000d
+  0x08048610  55               push ebp             | Modified regs: edi esp ebp
+  0x08048611  89e5             mov ebp, esp         | Dependencies:  edi ebp esp esp ebp esp esp esp esp
+  0x08048613  c9               leave                | 
+  0x08048614  c3               ret                  | 
+
+Gadget 0x804860a (size 11 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860a  bc27000000       mov esp, 0x27           | Stack change: 0x4
+  0x0804860f  005589           add byte [ebp-0x77], dl | Modified regs: esp
+  0x08048612  e5c9             in eax, 0xc9            | Dependencies:  ebp ebp edx esp esp
+  0x08048614  c3               ret                     | 
+
+Gadget 0x804860d (size 8 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860d  0000             add byte [eax], al      | Stack change: 0x4
+  0x0804860f  005589           add byte [ebp-0x77], dl | Modified regs: esp
+  0x08048612  e5c9             in eax, 0xc9            | Dependencies:  eax eax eax ebp ebp edx esp esp
+  0x08048614  c3               ret                     | 
+
+Gadget 0x804860e (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860e  0000             add byte [eax], al | Stack change: 0xffffffff00000034
+  0x08048610  55               push ebp           | Modified regs: esp ebp
+  0x08048611  89e5             mov ebp, esp       | Dependencies:  eax eax eax ebp esp esp ebp esp esp esp esp
+  0x08048613  c9               leave              | 
+  0x08048614  c3               ret                | 
+
+Gadget 0x804860f (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804860f  005589           add byte [ebp-0x77], dl | Stack change: 0x4
+  0x08048612  e5c9             in eax, 0xc9            | Modified regs: esp
+  0x08048614  c3               ret                     | Dependencies:  ebp ebp edx esp esp
+
+Gadget 0x8048610 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048610  55               push ebp     | Stack change: 0xffffffff0000003c
+  0x08048611  89e5             mov ebp, esp | Modified regs: esp ebp
+  0x08048613  c9               leave        | Dependencies:  ebp esp esp ebp esp esp esp esp
+  0x08048614  c3               ret          | 
+
+Gadget 0x8048611 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048611  89e5             mov ebp, esp | Stack change: 0xffffffff00000044
+  0x08048613  c9               leave        | Modified regs: ebp esp
+  0x08048614  c3               ret          | Dependencies:  esp ebp esp esp esp esp
+
+Gadget 0x8048612 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048612  e5c9             in eax, 0xc9 | Stack change: 0x4
+  0x08048614  c3               ret          | Modified regs: esp
+
+Gadget 0x8048615 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048615  8b1c24           mov ebx, dword [esp] | Stack change: 0x4
+  0x08048618  c3               ret                  | Modified regs: ebx esp
+
+Gadget 0x8048616 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048616  1c24             sbb al, 0x24 | Stack change: 0x4
+  0x08048618  c3               ret          | Modified regs: eax esp
+
+Gadget 0x8048639 (size 10 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048639  0383f8ff75f4     add eax, dword [ebx-0xb8a0008] | Stack change: 0x10
+  0x0804863f  58               pop eax                        | Modified regs: eax esp ebx ebp
+  0x08048640  5b               pop ebx                        | Dependencies:  ebx eax esp esp esp esp esp esp esp esp
+  0x08048641  5d               pop ebp                        | 
+  0x08048642  c3               ret                            | 
+
+Gadget 0x804863c (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863c  ff75f4           push dword [ebp-0x0c] | Stack change: 0x10
+  0x0804863f  58               pop eax               | Modified regs: esp eax ebx ebp
+  0x08048640  5b               pop ebx               | Dependencies:  ebp esp esp esp esp esp esp esp esp esp
+  0x08048641  5d               pop ebp               | 
+  0x08048642  c3               ret                   | 
+
+Gadget 0x804863d (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863d  75f4             jnz 0x8048633 | Stack change: 0x10
+  0x0804863f  58               pop eax       | Modified regs: eax esp ebx ebp
+  0x08048640  5b               pop ebx       | Dependencies:  esp esp esp esp esp esp esp esp
+  0x08048641  5d               pop ebp       | 
+  0x08048642  c3               ret           | 
+
+Gadget 0x804863f (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804863f  58               pop eax | Stack change: 0x10
+  0x08048640  5b               pop ebx | Modified regs: eax esp ebx ebp
+  0x08048641  5d               pop ebp | Dependencies:  esp esp esp esp esp esp esp esp
+  0x08048642  c3               ret     | 
+
+Gadget 0x8048640 (size 3 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048640  5b               pop ebx | Stack change: 0xc
+  0x08048641  5d               pop ebp | Modified regs: ebx esp ebp
+  0x08048642  c3               ret     | Dependencies:  esp esp esp esp esp esp
+
+Gadget 0x8048641 (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048641  5d               pop ebp | Stack change: 0x8
+  0x08048642  c3               ret     | Modified regs: ebp esp
+
+Gadget 0x804865a (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804865a  59               pop ecx | Stack change: 0xffffffff00000010
+  0x0804865b  5b               pop ebx | Modified regs: ecx esp ebx ebp
+  0x0804865c  c9               leave   | Dependencies:  esp esp esp esp ebp esp esp esp esp
+  0x0804865d  c3               ret     | 
+
+Gadget 0x804866b (size 2 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804866b  50               push eax | Stack change: 0x0
+  0x0804866c  61               popad    | Modified regs: esp
+
+Gadget 0x8048677 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048677  0a00             or al, byte [eax] | Stack change: 0x0
+  0x08048679  50               push eax          | Modified regs: eax esp
+  0x0804867a  61               popad             | Dependencies:  eax eax eax eax esp
+
+Gadget 0x804868d (size 9 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804868d  00494f           add byte [ecx+0x4f], cl | Stack change: 0xffffffffffffffff
+  0x08048690  4c               dec esp                 | Modified regs: esp ecx
+  0x08048691  49               dec ecx                 | Dependencies:  ecx ecx ecx esp ecx ebx ebx eax
+  0x08048692  204372           and byte [ebx+0x72], al | 
+  0x08048695  61               popad                   | 
+
+Gadget 0x804868f (size 7 bytes)
+------------------------------------------------------------------------------------------------------
+  0x0804868f  4f               dec edi                 | Stack change: 0xffffffffffffffff
+  0x08048690  4c               dec esp                 | Modified regs: edi esp ecx
+  0x08048691  49               dec ecx                 | Dependencies:  edi esp ecx ebx ebx eax
+  0x08048692  204372           and byte [ebx+0x72], al | 
+  0x08048695  61               popad                   | 
+
+Gadget 0x8048690 (size 6 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048690  4c               dec esp                 | Stack change: 0xffffffffffffffff
+  0x08048691  49               dec ecx                 | Modified regs: esp ecx
+  0x08048692  204372           and byte [ebx+0x72], al | Dependencies:  esp ecx ebx ebx eax
+  0x08048695  61               popad                   | 
+
+Gadget 0x8048691 (size 5 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048691  49               dec ecx                 | Stack change: 0x0
+  0x08048692  204372           and byte [ebx+0x72], al | Modified regs: ecx
+  0x08048695  61               popad                   | Dependencies:  ecx ebx ebx eax
+
+Gadget 0x8048692 (size 4 bytes)
+------------------------------------------------------------------------------------------------------
+  0x08048692  204372           and byte [ebx+0x72], al | Stack change: 0x0
+  0x08048695  61               popad                   | Modified regs: 
+
 EOF
 RUN

@@ -34,8 +34,8 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 
 RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file) {
 	char projver[32];
-	sdb_set(prj, RZ_PROJECT_KEY_TYPE, RZ_PROJECT_TYPE, 0);
-	sdb_set(prj, RZ_PROJECT_KEY_VERSION, rz_strf(projver, "%u", RZ_PROJECT_VERSION), 0);
+	sdb_set(prj, RZ_PROJECT_KEY_TYPE, RZ_PROJECT_TYPE);
+	sdb_set(prj, RZ_PROJECT_KEY_VERSION, rz_strf(projver, "%u", RZ_PROJECT_VERSION));
 	rz_serialize_core_save(sdb_ns(prj, "core", true), core, file);
 	return RZ_PROJECT_ERR_SUCCESS;
 }
@@ -133,11 +133,11 @@ RZ_API void rz_project_free(RzProject *prj) {
 
 RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_io, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
 	rz_return_val_if_fail(core && prj, RZ_PROJECT_ERR_UNKNOWN);
-	const char *type = sdb_const_get(prj, RZ_PROJECT_KEY_TYPE, 0);
+	const char *type = sdb_const_get(prj, RZ_PROJECT_KEY_TYPE);
 	if (!type || strcmp(type, RZ_PROJECT_TYPE) != 0) {
 		return RZ_PROJECT_ERR_INVALID_TYPE;
 	}
-	const char *version_str = sdb_const_get(prj, RZ_PROJECT_KEY_VERSION, 0);
+	const char *version_str = sdb_const_get(prj, RZ_PROJECT_KEY_VERSION);
 	if (!version_str) {
 		return RZ_PROJECT_ERR_INVALID_VERSION;
 	}

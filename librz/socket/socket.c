@@ -254,7 +254,7 @@ RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) 
 	const int port = 2000 + rz_num_rand32(2000);
 	int childPid = rz_sys_fork();
 	if (childPid == 0) {
-		char *a = rz_str_replace(strdup(cmd), "\\", "\\\\", true);
+		char *a = rz_str_replace(rz_str_dup(cmd), "\\", "\\\\", true);
 		int res = rz_sys_cmdf("rz-run system=\"%s\" listen=%d", a, port);
 		free(a);
 #if 0

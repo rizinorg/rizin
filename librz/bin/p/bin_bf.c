@@ -6,6 +6,9 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
+#define BF_DATA_AREA_VADDR 0x10000
+#define BF_DATA_AREA_SIZE  30000
+
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	return true;
 }
@@ -28,14 +31,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file ? strdup(bf->file) : NULL;
-	ret->type = strdup("brainfuck");
-	ret->bclass = strdup("1.0");
-	ret->rclass = strdup("program");
-	ret->os = strdup("any");
-	ret->subsystem = strdup("unknown");
-	ret->machine = strdup("brainfuck");
-	ret->arch = strdup("bf");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("brainfuck");
+	ret->bclass = rz_str_dup("1.0");
+	ret->rclass = rz_str_dup("program");
+	ret->os = rz_str_dup("any");
+	ret->subsystem = rz_str_dup("unknown");
+	ret->machine = rz_str_dup("brainfuck");
+	ret->arch = rz_str_dup("bf");
 	ret->has_va = 1;
 	ret->bits = 64; // RzIL emulation of bf uses 64bit values
 	ret->big_endian = 0;
@@ -129,7 +132,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->psize = bf->size;
 	map->vsize = bf->size;
 	map->perm = RZ_PERM_RWX;
-	map->name = strdup("code");
+	map->name = rz_str_dup("code");
 	rz_pvector_push(ret, map);
 
 	map = RZ_NEW0(RzBinMap);
@@ -138,19 +141,113 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		return NULL;
 	}
 	map->paddr = 0;
-	map->vaddr = 0x10000;
+	map->vaddr = BF_DATA_AREA_VADDR;
 	map->psize = 0;
-	map->vsize = 30000;
+	map->vsize = BF_DATA_AREA_SIZE;
 	map->perm = RZ_PERM_RW;
-	map->name = strdup("mem");
+	map->name = rz_str_dup("mem");
 	rz_pvector_push(ret, map);
 	return ret;
 }
 
+typedef struct {
+	ut64 increment;
+	ut64 decrement;
+	ut64 move_right;
+	ut64 move_left;
+	ut64 loop_start;
+	ut64 loop_end;
+	ut64 input;
+	ut64 output;
+} BfInstrStats;
+
+static void bf_count_instructions(RzBinFile *bf, BfInstrStats *stats) {
+	if (!bf->buf) {
+		return;
+	}
+
+	ut64 size = rz_buf_size(bf->buf);
+	for (ut64 i = 0; i < size; i++) {
+		ut8 c;
+		if (rz_buf_read_at(bf->buf, i, &c, 1) != 1) {
+			break;
+		}
+		switch (c) {
+		case '+': stats->increment++; break;
+		case '-': stats->decrement++; break;
+		case '>': stats->move_right++; break;
+		case '<': stats->move_left++; break;
+		case '[': stats->loop_start++; break;
+		case ']': stats->loop_end++; break;
+		case ',': stats->input++; break;
+		case '.': stats->output++; break;
+		default: break;
+		}
+	}
+}
+
+static void bf_structure_add_instructions(RzStructuredData *parent, const BfInstrStats *stats) {
+	RzStructuredData *instr = rz_structured_data_map_add_map(parent, "instructions");
+	if (!instr) {
+		return;
+	}
+
+	rz_structured_data_map_add_unsigned(instr, "increment", stats->increment, false);
+	rz_structured_data_map_add_unsigned(instr, "decrement", stats->decrement, false);
+	rz_structured_data_map_add_unsigned(instr, "move_right", stats->move_right, false);
+	rz_structured_data_map_add_unsigned(instr, "move_left", stats->move_left, false);
+	rz_structured_data_map_add_unsigned(instr, "loop_start", stats->loop_start, false);
+	rz_structured_data_map_add_unsigned(instr, "loop_end", stats->loop_end, false);
+	rz_structured_data_map_add_unsigned(instr, "input", stats->input, false);
+	rz_structured_data_map_add_unsigned(instr, "output", stats->output, false);
+}
+
+static void bf_structure_add_memory_layout(RzStructuredData *parent) {
+	RzStructuredData *mem = rz_structured_data_map_add_map(parent, "memory");
+	if (!mem) {
+		return;
+	}
+
+	rz_structured_data_map_add_unsigned(mem, "data_area", BF_DATA_AREA_VADDR, true);
+	rz_structured_data_map_add_unsigned(mem, "data_size", BF_DATA_AREA_SIZE, false);
+}
+
+static RzStructuredData *bf_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_map_add_map(info, "bf");
+	if (!root) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(root, "file_size", bf->size, false);
+	rz_structured_data_map_add_unsigned(root, "entry_point", 0, true);
+
+	BfInstrStats stats = { 0 };
+	bf_count_instructions(bf, &stats);
+
+	ut64 total = stats.increment + stats.decrement + stats.move_right +
+		stats.move_left + stats.loop_start + stats.loop_end +
+		stats.input + stats.output;
+	rz_structured_data_map_add_unsigned(root, "total_instructions", total, false);
+
+	bf_structure_add_instructions(root, &stats);
+	bf_structure_add_memory_layout(root);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_bf = {
 	.name = "bf",
-	.desc = "brainfuck",
+	.desc = "Brainfuck",
 	.license = "LGPL3",
+	.author = "pancake",
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
@@ -160,6 +257,7 @@ RzBinPlugin rz_bin_plugin_bf = {
 	.strings = &strings,
 	.maps = &maps,
 	.info = &info,
+	.bin_structure = &bf_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

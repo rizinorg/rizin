@@ -241,6 +241,7 @@ static bool test_vector_sort(void) {
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 3), "ccc", "sorted strings");
+	mu_assert_false(v->reverse_sorted, "Flag not set.");
 
 	// do dec sort
 	num = 55;
@@ -250,6 +251,55 @@ static bool test_vector_sort(void) {
 	mu_assert_streq(rz_vector_index_ptr(v, 1), "caa", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 2), "abb", "sorted strings");
 	mu_assert_streq(rz_vector_index_ptr(v, 3), "abb", "sorted strings");
+	mu_assert_true(v->reverse_sorted, "Flag not set.");
+
+	rz_vector_free(v);
+	mu_end;
+}
+
+static int uint_cmp(ut64 *a, ut64 *b, void *user) {
+	if (*a > *b) {
+		return 1;
+	} else if (*a < *b) {
+		return -1;
+	}
+	return 0;
+}
+
+static bool test_vector_insert_sorted(void) {
+	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
+	ut64 n[] = { 0, 1, 2, 3, 4, 5 };
+	rz_vector_insert_sorted(v, &n[1], (RzVectorComparator)uint_cmp, NULL);
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 0), 1, "Insert failed");
+
+	rz_vector_insert_sorted(v, &n[0], (RzVectorComparator)uint_cmp, NULL);
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 0), 0, "Insert failed");
+	mu_assert_eq(*(ut64 *)rz_vector_index_ptr(v, 1), 1, "Insert failed");
+
+	rz_vector_push(v, &n[2]);
+	rz_vector_push(v, &n[4]);
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, true, NULL);
+
+	rz_vector_insert_sorted(v, &n[3], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[5], (RzVectorComparator)uint_cmp, NULL);
+
+	size_t i = 5;
+	ut64 *it = NULL;
+	rz_vector_foreach (v, it) {
+		mu_assert_eq(*it, n[i--], "Compare failed");
+	}
+
+	rz_vector_sort(v, (RzVectorComparator)uint_cmp, false, NULL);
+	rz_vector_remove_at(v, 5, NULL);
+	rz_vector_remove_at(v, 1, NULL);
+	rz_vector_remove_at(v, 0, NULL);
+	rz_vector_insert_sorted(v, &n[5], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[0], (RzVectorComparator)uint_cmp, NULL);
+	rz_vector_insert_sorted(v, &n[1], (RzVectorComparator)uint_cmp, NULL);
+	i = 0;
+	rz_vector_foreach (v, it) {
+		mu_assert_eq(*it, n[i++], "Compare failed");
+	}
 
 	rz_vector_free(v);
 	mu_end;
@@ -278,7 +328,10 @@ static bool test_vector_empty(void) {
 }
 
 static bool test_vector_remove_at(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_remove_at(&v, 0, NULL);
+
 	init_test_vector(&v, 5, 0, NULL, NULL);
 
 	ut32 e;
@@ -460,11 +513,20 @@ static bool test_vector_insert_range(void) {
 	mu_assert_eq(*((ut32 *)rz_vector_index_ptr(&v, 5)), 2, "rz_vector_insert_range (resize) => old content");
 	rz_vector_clear(&v);
 
+	init_test_vector(&v, 3, 0, NULL, NULL);
+	rz_vector_insert_range(&v, rz_vector_len(&v), NULL, v.capacity - rz_vector_len(&v));
+	p = (ut32 *)rz_vector_insert_range(&v, rz_vector_len(&v), NULL, 0);
+	mu_assert_ptreq(p, (ut32 *)rz_vector_tail(&v) + 1,
+		"rz_vector_insert_range (0 count at vector end) returned ptr");
+	rz_vector_clear(&v);
+
 	mu_end;
 }
 
 static bool test_vector_pop(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_pop(&v, NULL);
 	init_test_vector(&v, 3, 0, NULL, NULL);
 
 	ut32 e;
@@ -489,7 +551,9 @@ static bool test_vector_pop(void) {
 }
 
 static bool test_vector_pop_front(void) {
-	RzVector v;
+	RzVector v = { 0 };
+	// Check it doesn't read/writes OOB.
+	rz_vector_pop_front(&v, NULL);
 	init_test_vector(&v, 3, 0, NULL, NULL);
 
 	ut32 e;
@@ -639,6 +703,23 @@ static bool test_vector_push_front(void) {
 	mu_end;
 }
 
+static bool test_vector_contains(void) {
+	RzVector v;
+	init_test_vector(&v, 6, 0, NULL, NULL);
+	ut32 a = 0;
+	ut32 b = 5;
+	ut32 c = 6;
+	mu_assert_true(rz_vector_contains(&v, &a), "Should contain");
+	mu_assert_true(rz_vector_contains(&v, &b), "Should contain");
+	mu_assert_false(rz_vector_contains(&v, &c), "Should not contain");
+	rz_vector_pop(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &b), "Should contain");
+	rz_vector_pop_front(&v, NULL);
+	mu_assert_false(rz_vector_contains(&v, &a), "Should contain");
+	rz_vector_clear(&v);
+	mu_end;
+}
+
 static bool test_vector_swap(void) {
 	RzVector v;
 	init_test_vector(&v, 3, 0, NULL, NULL);
@@ -742,7 +823,7 @@ static bool test_vector_foreach(void) {
 	int i = 1;
 	ut32 *it;
 	int acc[5] = { 0 };
-	rz_vector_foreach(&v, it) {
+	rz_vector_foreach (&v, it) {
 		mu_assert_eq(acc[*it], 0, "unset acc element");
 		acc[*it] = i++;
 	}
@@ -753,7 +834,7 @@ static bool test_vector_foreach(void) {
 
 	int acc_prev[5] = { 0 };
 	i = 5;
-	rz_vector_foreach_prev(&v, it) {
+	rz_vector_foreach_prev (&v, it) {
 		mu_assert_eq(acc_prev[*it], 0, "unset acc_prev element");
 		acc_prev[*it] = i++;
 	}
@@ -918,6 +999,25 @@ static bool test_pvector_find(void) {
 	void **p = rz_pvector_find(&v, &e_val, compare_int, &num);
 	mu_assert_eq(*p, e, "find");
 	mu_assert_eq(num, 44, "ensure user is passed");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+static bool test_pvector_find_index(void) {
+	RzPVector v;
+	init_test_pvector(&v, 5, 0);
+	int num = 77;
+	ut32 e_val0 = 0;
+	ut32 e_val2 = 2;
+	ut32 e_val6 = 6;
+	size_t index = rz_pvector_find_index(&v, &e_val2, compare_int, &num);
+	mu_assert_eq(index, 2, "find index");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	index = rz_pvector_find_index(&v, &e_val6, compare_int, &num);
+	mu_assert_eq(index, SZT_MAX, "not found index");
+	index = rz_pvector_find_index(&v, &e_val0, compare_int, &num);
+	mu_assert_eq(index, 0, "find index 0");
+	rz_pvector_clear(&v);
 	mu_end;
 }
 
@@ -929,6 +1029,8 @@ static bool test_pvector_join(void) {
 	rz_pvector_join(&m, &n);
 	mu_assert_eq(rz_pvector_len(&m), 8, "length is 8 after join");
 	mu_assert_eq(*((ut32 *)rz_pvector_at(&m, 6)), 1, "m[6] = n[1]");
+	rz_pvector_clear(&m);
+	rz_pvector_clear(&n);
 	mu_end;
 }
 
@@ -1295,6 +1397,13 @@ static bool test_pvector_foreach(void) {
 		mu_assert_eq(acc_prev[i], 10 - i - 1, "acc_prev");
 	}
 
+	int idx;
+	rz_pvector_enumerate (&v, it, idx) {
+		void *e = *it;
+		int ev = (int)((size_t)e);
+		mu_assert_eq(ev, idx, "rz_pvector_enumerate index");
+	}
+
 	rz_pvector_clear(&v);
 
 	mu_end;
@@ -1368,6 +1477,24 @@ static bool test_pvector_tips(void) {
 	mu_end;
 }
 
+static bool test_pvector_uniq(void) {
+	RzPVector v;
+	int num = 77;
+	int arr[10] = { 42, 43, 44, 42, 43, 44, 45, 48, 49, 49 };
+	rz_pvector_init(&v, NULL);
+	for (int i = 0; i < 10; i++) {
+		rz_pvector_push(&v, (void *)&arr[i]);
+	}
+	RzPVector *uv = rz_pvector_uniq(&v, compare_int, &num);
+	mu_assert_eq(uv->v.capacity, 8, "uniq values capacity before shrink");
+	rz_pvector_shrink(uv);
+	mu_assert_eq(uv->v.capacity, 6, "uniq values capacity after shrink");
+	mu_assert_eq(rz_pvector_len(uv), 6, "uniq values count");
+	rz_pvector_clear(&v);
+	rz_pvector_free(uv);
+	mu_end;
+}
+
 static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 	size_t i;
 	for (i = 0; i < count; i++) {
@@ -1434,10 +1561,12 @@ static int all_tests(void) {
 	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
+	mu_run_test(test_vector_insert_sorted);
 	mu_run_test(test_vector_pop);
 	mu_run_test(test_vector_pop_front);
 	mu_run_test(test_vector_push);
 	mu_run_test(test_vector_push_front);
+	mu_run_test(test_vector_contains);
 	mu_run_test(test_vector_swap);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);
@@ -1453,6 +1582,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_at);
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
+	mu_run_test(test_pvector_find_index);
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
@@ -1467,6 +1597,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_foreach);
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
+	mu_run_test(test_pvector_uniq);
 
 	mu_run_test(test_array_bounds_fuzz);
 

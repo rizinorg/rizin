@@ -55,12 +55,7 @@ int current_tty(void) {
 #else
 	int fd;
 	const char *dev = ttyname(STDERR_FILENO);
-#if 0
-	if (!dev)
-		dev = ttyname(STDIN_FILENO);
-	if (!dev)
-		dev = ttyname(STDERR_FILENO);
-#endif
+
 	if (!dev) {
 		errno = ENOTTY;
 		return -1;

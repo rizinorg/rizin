@@ -109,20 +109,7 @@ static void rz_hash_show_help(bool usage_only) {
 		"",       "",       "If 's:' prefix is specified",
 		// clang-format on
 	};
-	size_t maxOptionAndArgLength = 0;
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		size_t optionLength = strlen(options[i]);
-		size_t argLength = strlen(options[i + 1]);
-		size_t totalLength = optionLength + argLength;
-		if (totalLength > maxOptionAndArgLength) {
-			maxOptionAndArgLength = totalLength;
-		}
-	}
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-		}
-	}
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 }
 
 static void rz_hash_show_algorithms(RzHashContext *ctx) {
@@ -130,11 +117,21 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	printf("flags  algorithm      license    author\n");
 
-	const RzHashPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
-		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
-		printf("%6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
+	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
 	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
+	RzListIter *it;
+	const RzHashPlugin *rmdp;
+	rz_list_foreach (plugin_list, it, rmdp) {
+		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
+		printf("%6s %-14s %-10s %-30s %s\n", flags, rmdp->name, rmdp->license, rmdp->author, rmdp->description);
+	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 
 	const RzCryptoPlugin *rcp;
 	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(ctx->rc, i)); i++) {
@@ -147,14 +144,14 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		} else {
 			snprintf(flags, sizeof(flags), "ED____");
 		}
-		printf("%6s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
+		printf("%6s %-14s %-10s %-30s %s\n", flags, rcp->name, rcp->license, rcp->author, rcp->description);
 	}
 	printf(
 		"\n"
 		"flags legenda:\n"
 		"    E = encryption, D = decryption\n"
 		"    e = encoding, d = encoding\n"
-		"    h = hash, m = hmac\n");
+		"    h = hash/crc, m = hmac\n");
 }
 
 #define rz_hash_bool_error(x, o, f, ...) \
@@ -228,7 +225,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 		if ((x)->k) { \
 			rz_hash_error(x, RZ_HASH_OP_UNKNOWN, "invalid combination of arguments for '-%c'\n", c); \
 		} else if (h || strlen(s) < 1) { \
-			(x)->k = strdup(s); \
+			(x)->k = rz_str_dup(s); \
 		} else { \
 			(x)->k = rz_str_newf("s:%s", s); \
 		} \
@@ -236,7 +233,7 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 #define rz_hash_ctx_set_mode(x, m)   rz_hash_ctx_set_val(x, mode, RZ_HASH_MODE_STANDARD, m)
 #define rz_hash_ctx_set_op(x, o)     rz_hash_ctx_set_val(x, operation, RZ_HASH_OP_UNKNOWN, o)
-#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, strdup(s))
+#define rz_hash_ctx_set_str(x, k, s) rz_hash_ctx_set_val(x, k, NULL, rz_str_dup(s))
 
 static bool hash_parse_string(const char *option, const char *string, ut8 **buffer, size_t *bufsize) {
 	char *sstdin = NULL;
@@ -406,9 +403,6 @@ static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) 
 			if (IS_NULLSTR(argv[i])) {
 				rz_hash_error(ctx, RZ_HASH_OP_ERROR, "cannot open a file without a name.\n");
 			}
-			if (rz_file_is_directory(argv[i])) {
-				rz_hash_error(ctx, RZ_HASH_OP_ERROR, "cannot open directories (%s).\n", argv[i]);
-			}
 			ctx->files[ctx->nfiles++] = argv[i];
 		}
 	}
@@ -506,6 +500,7 @@ static void hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) 
 }
 
 static void hash_context_fini(RzHashContext *ctx) {
+	free(ctx->key.buf);
 	free(ctx->algorithm);
 	free(ctx->compare);
 	free(ctx->iv);
@@ -654,6 +649,10 @@ static bool hash_context_run(RzHashContext *ctx, RzHashRun run) {
 		}
 	} else {
 		for (ut32 i = 0; i < ctx->nfiles; ++i) {
+			if (rz_file_is_directory(ctx->files[i])) {
+				eprintf("rz-hash: %s: Is a directory\n", ctx->files[i]);
+				continue;
+			}
 			desc = rz_io_open_nomap(io, ctx->files[i], RZ_PERM_R, 0);
 			if (!desc) {
 				RZ_LOG_ERROR("rz-hash: error, cannot open file '%s'\n", ctx->files[i]);
@@ -803,18 +802,29 @@ static void hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, boo
 }
 
 static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
-	if (!strcmp(ctx->algorithm, "all")) {
-		const RzHashPlugin *plugin;
-		RzList *list = rz_list_newf(NULL);
-		if (!list) {
-			return NULL;
-		}
-		for (ut64 i = 0; (plugin = rz_hash_plugin_by_index(ctx->rh, i)); ++i) {
-			rz_list_append(list, (void *)plugin->name);
-		}
-		return list;
+	if (strcmp(ctx->algorithm, "all")) {
+		return rz_str_split_list(ctx->algorithm, ",", 0);
 	}
-	return rz_str_split_list(ctx->algorithm, ",", 0);
+
+	RzList *list = rz_list_newf(NULL);
+	if (!list) {
+		return NULL;
+	}
+	RzIterator *iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return NULL;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);
+	RzListIter *it;
+	const RzHashPlugin *rmdp;
+	rz_list_foreach (plugin_list, it, rmdp) {
+		rz_list_append(list, (void *)rmdp->name);
+	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
+	return list;
 }
 
 static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
@@ -1201,15 +1211,22 @@ static void hash_load_plugins(RzHashContext *ctx) {
 	if (!RZ_STR_ISEMPTY(path)) {
 		rz_lib_opendir(rl, path, false);
 	}
-
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		free(path);
+		rz_lib_free(rl);
+		free(tmp);
+		return;
+	}
 	char *homeplugindir = rz_path_home_prefix(RZ_PLUGINS);
-	char *sysplugindir = rz_path_system(RZ_PLUGINS);
-	char *extraplugindir = rz_path_system(RZ_PLUGINS);
+	char *sysplugindir = rz_path_system(sys_path, RZ_PLUGINS);
+	char *extraplugindir = rz_path_system(sys_path, RZ_PLUGINS);
 	rz_lib_opendir(rl, homeplugindir, false);
 	rz_lib_opendir(rl, sysplugindir, false);
 	if (extraplugindir) {
 		rz_lib_opendir(rl, extraplugindir, false);
 	}
+	rz_path_free(sys_path);
 	free(homeplugindir);
 	free(sysplugindir);
 	free(extraplugindir);
@@ -1252,9 +1269,15 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 			goto rz_main_rz_hash_end;
 		}
 		break;
-	case RZ_HASH_OP_VERSION:
-		rz_main_version_print("rz-hash");
+	case RZ_HASH_OP_VERSION: {
+		RzPath *sys_path = rz_path_new();
+		if (!sys_path) {
+			goto rz_main_rz_hash_end;
+		}
+		rz_main_version_print(sys_path, "rz-hash");
+		rz_path_free(sys_path);
 		break;
+	}
 	case RZ_HASH_OP_USAGE:
 		rz_hash_show_help(true);
 		goto rz_main_rz_hash_end;

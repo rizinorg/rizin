@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -240,7 +240,7 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 
 static bool set_pkt_il_ops(RZ_INOUT HexPkt *p) {
 	rz_return_val_if_fail(p, false);
-	hex_reset_il_pkt_stats(&p->il_op_stats);
+	hex_il_pkt_stats_reset(&p->il_op_stats);
 	// This function is a lot of unnecessary overhead so:
 	// TODO The assignment of IL instructions to their actual instructions should be done in the instruction template.
 	// But with the current separation between Asm and Analysis plugins this is not possible.
@@ -347,13 +347,8 @@ static inline bool pkt_at_addr_is_emu_ready(const HexPkt *pkt, const ut32 addr) 
  * If false, the behavior is as documented above.
  * \return RzILOpEffect* Sequence of operations to emulate the packet.
  */
-RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op) {
-	static bool might_has_jumped = false;
-	HexState *state = hexagon_state(false);
-	if (!state) {
-		RZ_LOG_WARN("Failed to get hexagon plugin state data!\n");
-		return NULL;
-	}
+RZ_IPI RZ_OWN RzILOpEffect *hex_get_il_op(const ut32 addr, bool get_pkt_op, RZ_NONNULL HexState *state) {
+	rz_return_val_if_fail(state, NULL);
 	HexPkt *p = hex_get_pkt(state, addr);
 	if (!p) {
 		RZ_LOG_WARN("Packet was NULL although it should have been disassembled at this point.\n");
@@ -366,13 +361,14 @@ RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op) {
 	if (hic->identifier == HEX_INS_INVALID_DECODE) {
 		return NULL;
 	}
-	if (state->just_init || might_has_jumped) {
+	if (state->just_init || state->might_have_jumped) {
 		// Assume that the instruction at the address the VM was initialized is the first instruction.
 		// Also make it valid if a jump let to this packet.
 		p->is_valid = true;
+		get_pkt_op = true;
 		hic->pkt_info.first_insn = true;
 		state->just_init = false;
-		might_has_jumped = false;
+		state->might_have_jumped = false;
 	}
 
 	if (!get_pkt_op && !hic->pkt_info.last_insn) {
@@ -386,7 +382,7 @@ RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op) {
 	}
 
 	if (!rz_pvector_empty(p->il_ops)) {
-		check_for_jumps(p, &might_has_jumped);
+		check_for_jumps(p, &state->might_have_jumped);
 		return hex_pkt_to_il_seq(p);
 	}
 
@@ -414,7 +410,7 @@ RZ_IPI RzILOpEffect *hex_get_il_op(const ut32 addr, const bool get_pkt_op) {
 	// Add a jump to the next packet.
 	rz_pvector_push(p->il_ops, &hex_next_jump_to_next_pkt);
 
-	check_for_jumps(p, &might_has_jumped);
+	check_for_jumps(p, &state->might_have_jumped);
 
 	return hex_pkt_to_il_seq(p);
 }
@@ -592,6 +588,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, co
 	case HEX_REG_CLASS_GENERAL_SUB_REGS:
 		low_name = hex_get_reg_in_class(HEX_REG_CLASS_INT_REGS, reg_num, false, true, true);
 		if (!low_name) {
+			rz_il_op_pure_free(high_val);
 			return NULL;
 		}
 		low_val = CAST(HEX_GPR_WIDTH, IL_FALSE, val);
@@ -613,6 +610,7 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, co
 		if (hex_ctr_immut_masks[reg_num] != HEX_IMMUTABLE_REG) {
 			low_name = hex_get_reg_in_class(HEX_REG_CLASS_CTR_REGS, reg_num, false, true, true);
 			if (!low_name) {
+				rz_il_op_pure_free(high_val);
 				return NULL;
 			}
 			low_val = CAST(HEX_GPR_WIDTH, IL_FALSE, val);
@@ -817,6 +815,8 @@ RZ_IPI RZ_OWN RzILOpPure *hex_read_reg(RZ_BORROW HexPkt *pkt, const HexOp *op, b
 	}
 	if (read_cond_faulty(low_val, high_val, val_width)) {
 		rz_warn_if_reached();
+		rz_il_op_pure_free(high_val);
+		rz_il_op_pure_free(low_val);
 		return NULL;
 	}
 	log_reg_read(pkt, reg_num, op->class, tmp_reg);
@@ -855,7 +855,10 @@ RzILOpPure *hex_get_corresponding_cs(RZ_BORROW HexPkt *pkt, const HexOp *Mu) {
 	return NULL;
 }
 
-RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
+RZ_IPI void hex_il_pkt_stats_fini(HexILExecData *stats) {
+	if (!stats) {
+		return;
+	}
 	rz_bv_free(stats->slot_cancelled);
 	rz_bv_free(stats->ctr_written);
 	rz_bv_free(stats->gpr_written);
@@ -866,6 +869,10 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	rz_bv_free(stats->ctr_tmp_read);
 	rz_bv_free(stats->gpr_tmp_read);
 	rz_bv_free(stats->pred_tmp_read);
+}
+
+RZ_IPI void hex_il_pkt_stats_init(HexILExecData *stats) {
+	rz_return_if_fail(stats);
 	stats->slot_cancelled = rz_bv_new(64);
 	stats->ctr_written = rz_bv_new(64);
 	stats->gpr_written = rz_bv_new(64);
@@ -876,6 +883,11 @@ RZ_IPI void hex_reset_il_pkt_stats(HexILExecData *stats) {
 	stats->ctr_tmp_read = rz_bv_new(64);
 	stats->gpr_tmp_read = rz_bv_new(64);
 	stats->pred_tmp_read = rz_bv_new(32);
+}
+
+RZ_IPI void hex_il_pkt_stats_reset(HexILExecData *stats) {
+	hex_il_pkt_stats_fini(stats);
+	hex_il_pkt_stats_init(stats);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

@@ -12,9 +12,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/labeler@v4
+    - uses: actions/checkout@v6
+    - uses: actions/labeler@v6
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
   

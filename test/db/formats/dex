@@ -14,9 +14,230 @@ RUN
 
 NAME=loading DEX file
 FILE=bins/dex/Hello.dex
-CMDS=iZ
+CMDS=<<EOF
+iZ
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 1000
+---
+dex:
+  identity:
+    header_offset: 0x0
+    magic: "64 65 78 0a                                     |dex.            |"
+    version: "30 33 35 00                                     |035.            |"
+    checksum: 455047605
+    checksum_offset: 0x8
+    signature: |
+      3c 99 81 7d cd 0c c2 d8 e8 7b 30 c4 93 59 49 c5 |<..}.....{0..YI.|
+      32 99 7f 13                                     |2...            |
+    signature_offset: 0xc
+  file_info:
+    file_size: 1000
+    header_size: 112
+    endian_tag: 0x12345678
+  offsets_and_sizes:
+    link_size: 0
+    link_offset: 0x0
+    map_offset: 0x348
+    string_ids_size: 22
+    string_ids_offset: 0x70
+    type_ids_size: 8
+    type_ids_offset: 0xc8
+    proto_ids_size: 5
+    proto_ids_offset: 0xe8
+    field_ids_size: 2
+    field_ids_offset: 0x124
+    method_ids_size: 8
+    method_ids_offset: 0x134
+    class_defs_size: 1
+    class_defs_offset: 0x174
+    data_size: 596
+    data_offset: 0x194
+  strings_detail:
+    - size: 6
+      offset: 0x22e
+    - size: 6
+      offset: 0x236
+    - size: 10
+      offset: 0x23e
+    - size: 1
+      offset: 0x24a
+    - size: 7
+      offset: 0x24d
+    - size: 2
+      offset: 0x256
+    - size: 21
+      offset: 0x25a
+    - size: 18
+      offset: 0x271
+    - size: 18
+      offset: 0x285
+    - size: 25
+      offset: 0x299
+    - size: 18
+      offset: 0x2b4
+    - size: 1
+      offset: 0x2c8
+    - size: 2
+      offset: 0x2cb
+    - size: 5
+      offset: 0x2cf
+    - size: 19
+      offset: 0x2d6
+    - size: 6
+      offset: 0x2eb
+    - size: 4
+      offset: 0x2f3
+    - size: 3
+      offset: 0x2f9
+    - size: 7
+      offset: 0x2fe
+    - size: 3
+      offset: 0x307
+    - size: 8
+      offset: 0x30c
+    - size: 3
+      offset: 0x316
+  proto_ids_detail:
+    - shorty_idx: 3
+      return_type_idx: 3
+      type_list_size: 0
+      offset: 0xe8
+    - shorty_idx: 5
+      return_type_idx: 4
+      type_list_size: 1
+      offset: 0xf4
+      type_list:
+        - 3
+    - shorty_idx: 11
+      return_type_idx: 6
+      type_list_size: 0
+      offset: 0x100
+    - shorty_idx: 12
+      return_type_idx: 6
+      type_list_size: 1
+      offset: 0x10c
+      type_list:
+        - 3
+    - shorty_idx: 12
+      return_type_idx: 6
+      type_list_size: 1
+      offset: 0x118
+      type_list:
+        - 7
+  field_ids_detail:
+    - class_idx: 0
+      type_idx: 3
+      name_idx: 21
+      offset: 0x124
+    - class_idx: 5
+      type_idx: 1
+      name_idx: 17
+      offset: 0x12c
+  method_ids_detail:
+    - class_idx: 0
+      proto_idx: 3
+      name_idx: 0
+      offset: 0x134
+      code_offset: 0x1a4
+      code_size: 12
+    - class_idx: 0
+      proto_idx: 4
+      name_idx: 16
+      offset: 0x13c
+      code_offset: 0x1c0
+      code_size: 22
+    - class_idx: 0
+      proto_idx: 2
+      name_idx: 19
+      offset: 0x144
+      code_offset: 0x1e8
+      code_size: 54
+    - class_idx: 1
+      proto_idx: 3
+      name_idx: 18
+      offset: 0x14c
+      code_offset: 0x8000000000
+      code_size: 2
+    - class_idx: 2
+      proto_idx: 2
+      name_idx: 0
+      offset: 0x154
+      code_offset: 0x8000000002
+      code_size: 2
+    - class_idx: 4
+      proto_idx: 2
+      name_idx: 0
+      offset: 0x15c
+      code_offset: 0x8000000004
+      code_size: 2
+    - class_idx: 4
+      proto_idx: 1
+      name_idx: 15
+      offset: 0x164
+      code_offset: 0x8000000006
+      code_size: 2
+    - class_idx: 4
+      proto_idx: 0
+      name_idx: 20
+      offset: 0x16c
+      code_offset: 0x8000000008
+      code_size: 2
+  class_defs_detail:
+    - class_idx: 0
+      access_flags: 1
+      superclass_idx: 2
+      interfaces_offset: 0x0
+      source_file_idx: 2
+      annotations_offset: 0x0
+      class_data_offset: 0x332
+      static_values_offset: 0x0
+      offset: 0x174
+      static_fields: []
+      instance_fields:
+        - offset: 0x336
+          field_idx: 0
+          access_flags: 2
+      direct_methods:
+        - offset: 0x338
+          method_idx: 0
+          access_flags: 65537
+          registers_size: 2
+          ins_size: 2
+          outs_size: 1
+          tries_size: 0
+          debug_info_offset: 0x31b
+          code_size: 12
+          code_offset: 0x1a4
+        - offset: 0x33e
+          method_idx: 1
+          access_flags: 9
+          registers_size: 3
+          ins_size: 1
+          outs_size: 2
+          tries_size: 0
+          debug_info_offset: 0x323
+          code_size: 22
+          code_offset: 0x1c0
+      virtual_methods:
+        - offset: 0x342
+          method_idx: 2
+          access_flags: 1
+          registers_size: 4
+          ins_size: 1
+          outs_size: 2
+          tries_size: 0
+          debug_info_offset: 0x32a
+          code_size: 54
+          code_offset: 0x1e8
+  relocs_detail:
+    relocs_offset: 0x8000000000
+    relocs_size: 10
+    relocs_code: "0e 00 0e 00 0e 00 0e 00 0e 00                   |..........      |"
+    relocs_buffer: "0e 00 0e 00 0e 00 0e 00 0e 00                   |..........      |"
+
 EOF
 RUN
 
@@ -44,7 +265,7 @@ NAME=DEX dex38.dex ie command
 FILE=bins/dex/dex38.dex
 CMDS=ie
 EXPECT=<<EOF
-vaddr       paddr      hvaddr     haddr      type    
+      vaddr      paddr     hvaddr      haddr type    
 -----------------------------------------------------
 0x100000f70 0x00000f70 ---------- ---------- program
 0x1000010b8 0x000010b8 ---------- ---------- program
@@ -82,17 +303,17 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address    min         max         name  super  
+   address         min         max name  super  
 ------------------------------------------------
 0x00000174 0x1000001a4 0x10000021e Hello Object
-address     index class flags name type   
+    address index class flags name type   
 ------------------------------------------
-0x100000336 0     Hello P     who  String
-address     index class flags name                
+0x100000336     0 Hello P     who  String
+    address index class flags name                
 --------------------------------------------------
-0x1000001a4 0     Hello pC    void <init>(String)
-0x1000001c0 1     Hello sp    void main(String[])
-0x1000001e8 2     Hello p     void say()
+0x1000001a4     0 Hello pC    void <init>(String)
+0x1000001c0     1 Hello sp    void main(String[])
+0x1000001e8     2 Hello p     void say()
 EOF
 RUN
 
@@ -103,14 +324,14 @@ icf 'Hello'
 icm 'Hello'
 EOF
 EXPECT=<<EOF
-address     index class flags name type   
+    address index class flags name type   
 ------------------------------------------
-0x100000336 0     Hello P     who  String
-address     index class flags name                
+0x100000336     0 Hello P     who  String
+    address index class flags name                
 --------------------------------------------------
-0x1000001a4 0     Hello pC    void <init>(String)
-0x1000001c0 1     Hello sp    void main(String[])
-0x1000001e8 2     Hello p     void say()
+0x1000001a4     0 Hello pC    void <init>(String)
+0x1000001c0     1 Hello sp    void main(String[])
+0x1000001e8     2 Hello p     void say()
 EOF
 RUN
 
@@ -131,14 +352,6 @@ EOF
 EXPECT=<<EOF
 static
 public
-EOF
-RUN
-
-NAME=DEX Hello.dex method flags (r2 commands) (ic*)
-FILE=bins/dex/Hello.dex
-CMDS=ic*~main
-EXPECT=<<EOF
-f method.public.static.Hello.void_main_String @ 0x1000001c0
 EOF
 RUN
 
@@ -235,16 +448,16 @@ ARGS=-e bin.demangle.flags=all
 FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind type  lib                     name                         
+nth      vaddr bind type  lib                     name                         
 -------------------------------------------------------------------------------
-0   ---------- WEAK FIELD java.lang.System        out
-1   ---------- WEAK FUNC  java.io.PrintStream     void println(String)
-2   ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
-3   ---------- WEAK FUNC  java.lang.Integer       String toString()
-4   ---------- WEAK FUNC  java.lang.Object        void <init>()
-5   ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
-6   ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
-7   ---------- WEAK FUNC  java.lang.StringBuilder String toString()
+  0 ---------- WEAK FIELD java.lang.System        out
+  1 ---------- WEAK FUNC  java.io.PrintStream     void println(String)
+  2 ---------- WEAK FUNC  java.lang.Integer       void <init>(int)
+  3 ---------- WEAK FUNC  java.lang.Integer       String toString()
+  4 ---------- WEAK FUNC  java.lang.Object        void <init>()
+  5 ---------- WEAK FUNC  java.lang.StringBuilder void <init>()
+  6 ---------- WEAK FUNC  java.lang.StringBuilder StringBuilder append(String)
+  7 ---------- WEAK FUNC  java.lang.StringBuilder String toString()
 EOF
 RUN
 
@@ -252,10 +465,10 @@ NAME=DEX HelloWorld.dex exports (iE command)
 FILE=bins/dex/HelloWorld.dex
 CMDS=iE
 EXPECT=<<EOF
-nth paddr      vaddr       bind   type  size lib   name                
+nth      paddr       vaddr bind   type  size lib   name                
 -----------------------------------------------------------------------
-1   0x000004f0 0x1000004f0 GLOBAL FIELD 0    Hello localVar2
-2   0x0000025c 0x10000025c GLOBAL METH  34   Hello void main(String[])
+  1 0x000004f0 0x1000004f0 GLOBAL FIELD    0 Hello localVar2
+  2 0x0000025c 0x10000025c GLOBAL METH    34 Hello void main(String[])
 EOF
 RUN
 
@@ -1441,17 +1654,17 @@ icf 'com.stericson.RootTools.Installer'
 icm 'com.stericson.RootTools.Installer'
 EOF
 EXPECT=<<EOF
-address     index class                             flags name            type                    
+    address index class                             flags name            type                    
 --------------------------------------------------------------------------------------------------
-0x10000a4b2 0     com.stericson.RootTools.Installer sPf   BOGUS_FILE_NAME String
-0x10000a4b5 1     com.stericson.RootTools.Installer sPf   LOG_TAG         String
-0x10000a4b7 2     com.stericson.RootTools.Installer P     context         android.content.Context
-0x10000a4ba 3     com.stericson.RootTools.Installer P     filesPath       String
-address     index class                             flags name                                       
+0x10000a4b2     0 com.stericson.RootTools.Installer sPf   BOGUS_FILE_NAME String
+0x10000a4b5     1 com.stericson.RootTools.Installer sPf   LOG_TAG         String
+0x10000a4b7     2 com.stericson.RootTools.Installer P     context         android.content.Context
+0x10000a4ba     3 com.stericson.RootTools.Installer P     filesPath       String
+    address index class                             flags name                                       
 -----------------------------------------------------------------------------------------------------
-0x100011410 0     com.stericson.RootTools.Installer pC    void <init>(android.content.Context)
-0x100011440 1     com.stericson.RootTools.Installer r     boolean installBinary(int, String, String)
-0x100011814 2     com.stericson.RootTools.Installer r     boolean isBinaryInstalled(String)
+0x100011410     0 com.stericson.RootTools.Installer pC    void <init>(android.content.Context)
+0x100011440     1 com.stericson.RootTools.Installer r     boolean installBinary(int, String, String)
+0x100011814     2 com.stericson.RootTools.Installer r     boolean isBinaryInstalled(String)
 EOF
 RUN
 

@@ -11,26 +11,26 @@ EXPECT=<<EOF
   ;-- main:
   ;-- entry0:
   ;-- func.100001058:
-  0x100001058      pushq %rbp
-  0x100001059      movq  %rsp, %rbp
-  0x10000105c      pushq %r15
-  0x10000105e      pushq %r14
-  0x100001060      pushq %r13
-  0x100001062      pushq %r12
-  0x100001064      pushq %rbx
-  0x100001065      subq  $0x648, %rsp
-  0x10000106c      movq  %rsi, %rbx
-  0x10000106f      movl  %edi, %r14d
-  0x100001072      leaq  -0x640(%rbp), %rax
+  0x100001058      push  %rbp
+  0x100001059      mov   %rsp, %rbp
+  0x10000105c      push  %r15
+  0x10000105e      push  %r14
+  0x100001060      push  %r13
+  0x100001062      push  %r12
+  0x100001064      push  %rbx
+  0x100001065      sub   $0x648, %rsp
+  0x10000106c      mov   %rsi, %rbx
+  0x10000106f      mov   %edi, %r14d
+  0x100001072      lea   -0x640(%rbp), %rax
   0x100001079      movq  %rax, -0x648(%rbp)
-  0x100001080      testl %r14d, %r14d
-  0x100001083      jg    0x10000108a
-  0x100001085      callq sym.func.100004401
-  0x10000108a      leaq  section.4.__TEXT.__cstring, %rsi
-  0x100001091      xorl  %edi, %edi
-  0x100001093      callq sym.imp.setlocale
-  0x100001098      movl  $1, %r13d
-  0x10000109e      movl  $1, %edi
+  0x100001080      test  %r14d, %r14d
+  0x100001083      jnle  0x10000108a
+  0x100001085      call  sym.func.100004401
+  0x10000108a      lea   section.4.__TEXT.__cstring, %rsi
+  0x100001091      xor   %edi, %edi
+  0x100001093      call  sym.imp.setlocale
+  0x100001098      mov   $0x01, %r13d
+  0x10000109e      mov   $0x01, %edi
 EOF
 RUN
 
@@ -49,26 +49,26 @@ EXPECT=<<EOF
   ;-- entry0:
   ;-- func.100001058:
 / int main(int argc, char **argv, char **envp);
-| 0x100001058      pushq %rbp
-| 0x100001059      movq  %rsp, %rbp
-| 0x10000105c      pushq %r15
-| 0x10000105e      pushq %r14
-| 0x100001060      pushq %r13
-| 0x100001062      pushq %r12
-| 0x100001064      pushq %rbx
-| 0x100001065      subq  $0x648, %rsp
-| 0x10000106c      movq  %rsi, %rbx
-| 0x10000106f      movl  %edi, %r14d
-| 0x100001072      leaq  var_648h, %rax
+| 0x100001058      push  %rbp
+| 0x100001059      mov   %rsp, %rbp
+| 0x10000105c      push  %r15
+| 0x10000105e      push  %r14
+| 0x100001060      push  %r13
+| 0x100001062      push  %r12
+| 0x100001064      push  %rbx
+| 0x100001065      sub   $0x648, %rsp
+| 0x10000106c      mov   %rsi, %rbx
+| 0x10000106f      mov   %edi, %r14d
+| 0x100001072      lea   var_648h, %rax
 | 0x100001079      movq  %rax, var_650h
-| 0x100001080      testl %r14d, %r14d
-| 0x100001083      jg    0x10000108a
-| 0x100001085      callq sym.func.100004401
-| 0x10000108a      leaq  section.4.__TEXT.__cstring, %rsi
-| 0x100001091      xorl  %edi, %edi
-| 0x100001093      callq sym.imp.setlocale
-| 0x100001098      movl  $1, %r13d
-| 0x10000109e      movl  $1, %edi
+| 0x100001080      test  %r14d, %r14d
+| 0x100001083      jnle  0x10000108a
+| 0x100001085      call  sym.func.100004401
+| 0x10000108a      lea   section.4.__TEXT.__cstring, %rsi
+| 0x100001091      xor   %edi, %edi
+| 0x100001093      call  sym.imp.setlocale
+| 0x100001098      mov   $0x01, %r13d
+| 0x10000109e      mov   $0x01, %edi
 EOF
 RUN
 
@@ -85,8 +85,8 @@ pdf
 EOF
 EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
-| 0x004004a6      pushq %rbp
-| 0x004004a7      movq  %rsp, %rbp
+| 0x004004a6      push  %rbp
+| 0x004004a7      mov   %rsp, %rbp
 | 0x004004aa      movq  var_10h + 0x10, %rax
 | 0x004004af      movq  var_10h, %rax
 | 0x004004b4      movq  var_10h + 0x10, %rax
@@ -96,7 +96,7 @@ EXPECT=<<EOF
 | 0x004004c6      movq  arg_10h, %rax
 | 0x004004ca      movq  var_20h, %rax
 | 0x004004ce      leave
-\ 0x004004cf      retq
+\ 0x004004cf      ret
 EOF
 RUN
 
@@ -114,8 +114,8 @@ pdf
 EOF
 EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
-| 0x004004a6      pushq %rbp
-| 0x004004a7      movq  %rsp, %rbp
+| 0x004004a6      push  %rbp
+| 0x004004a7      mov   %rsp, %rbp
 | 0x004004aa      movq  var_10h + 0x10(%rsp), %rax
 | 0x004004af      movq  var_10h(%rsp), %rax
 | 0x004004b4      movq  var_10h + 0x10(%rbp), %rax
@@ -125,6 +125,6 @@ EXPECT=<<EOF
 | 0x004004c6      movq  arg_10h(%rbp), %rax
 | 0x004004ca      movq  var_20h(%rbp), %rax
 | 0x004004ce      leave
-\ 0x004004cf      retq
+\ 0x004004cf      ret
 EOF
 RUN

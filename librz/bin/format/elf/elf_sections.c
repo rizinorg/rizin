@@ -74,7 +74,7 @@ static bool create_section_from_phdr(ELFOBJ *bin, RzVector /*<RzBinElfSection>*/
 
 	section.rva = addr;
 	section.size = sz;
-	section.name = strdup(name);
+	section.name = rz_str_dup(name);
 	if (!section.name) {
 		return false;
 	}
@@ -335,7 +335,7 @@ static RzVector /*<RzBinElfSection>*/ *convert_sections_from_shdr(ELFOBJ *bin, R
 
 	size_t i;
 	Elf_(Shdr) * section;
-	rz_vector_enumerate(sections, section, i) {
+	rz_vector_enumerate (sections, section, i) {
 		RzBinElfSection tmp = convert_elf_section(bin, options, section, i);
 		if (!rz_vector_push(result, &tmp)) {
 			rz_vector_free(result);

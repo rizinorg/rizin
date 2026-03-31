@@ -8,9 +8,7 @@
 #include <capstone/capstone.h>
 
 #include <tricore/tricore.inc>
-
-RZ_IPI RzAnalysisLiftedILOp tricore_il_op(RzAsmTriCoreContext *ctx, RzAnalysis *a);
-RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis);
+#include "tricore/tricore_il.h"
 
 #define TRICORE_REG_SP TRICORE_REG_A10
 
@@ -241,18 +239,22 @@ static char *tricore_reg_profile(RzAnalysis *_) {
 		"drx	FPU_TRAP_OPC	.32	812	0\n"
 		"drx	FPU_TRAP_SRC1	.32	816	0\n"
 		"drx	FPU_TRAP_SRC2	.32	820	0\n"
-		"drx	FPU_TRAP_SRC3	.32	824	0\n";
-	return strdup(p);
+		"drx	FPU_TRAP_SRC3	.32	824	0\n"
+		"drx	set_FI	.1	900	0\n"
+		"drx	set_FV	.1	901	0\n"
+		"drx	set_FZ	.1	902	0\n"
+		"drx	set_FU	.1	903	0\n"
+		"drx	set_FX	.1	904	0\n";
+	return rz_str_dup(p);
 }
 
-static void tricore_opex(RzAsmTriCoreContext *ctx, RzStrBuf *sb);
+static RzStructuredData *tricore_opex(RzAsmTriCoreContext *ctx);
 
 static void tricore_fillvals(RzAsmTriCoreContext *ctx, RzAnalysis *a, RzAnalysisOp *op);
 
 static void tricore_op_set_type(RzAsmTriCoreContext *ctx, RzAnalysisOp *op);
 
-static int
-tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+static int tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (!(a && op && data && len > 0)) {
 		return 0;
 	}
@@ -272,7 +274,7 @@ tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,
 	if (ctx->count <= 0 || !ctx->insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 		goto beach;
 	}
@@ -286,7 +288,7 @@ tricore_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,
 	op->addr = ctx->insn->address;
 	tricore_op_set_type(ctx, op);
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		tricore_opex(ctx, &op->opex);
+		op->opex = tricore_opex(ctx);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		tricore_fillvals(ctx, a, op);
@@ -1191,47 +1193,50 @@ static void tricore_fillvals(RzAsmTriCoreContext *ctx, RzAnalysis *a, RzAnalysis
 	}
 }
 
-static void tricore_opex(RzAsmTriCoreContext *ctx, RzStrBuf *sb) {
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *tricore_opex(RzAsmTriCoreContext *ctx) {
+	if (!ctx->insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_tricore *tc = &ctx->insn->detail->tricore;
 	for (st32 i = 0; i < tc->op_count; i++) {
 		cs_tricore_op *op = tc->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case TRICORE_OP_INVALID: {
-			pj_ks(pj, "type", "invalid");
+		case TRICORE_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(ctx->h, op->reg));
+			break;
+		case TRICORE_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
+			break;
+		case TRICORE_OP_MEM:
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			if (op->mem.base != TRICORE_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(ctx->h, op->mem.base));
+			}
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			break;
+		default:
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		case TRICORE_OP_REG: {
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(ctx->h, op->reg));
-			break;
-		}
-		case TRICORE_OP_IMM: {
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
-			break;
-		}
-		case TRICORE_OP_MEM: {
-			pj_ks(pj, "type", "mem");
-			pj_ks(pj, "base", cs_reg_name(ctx->h, op->mem.base));
-			pj_ki(pj, "disp", op->mem.disp);
-			break;
-		}
-		}
-		pj_end(pj);
 	}
-	pj_end(pj);
-	pj_end(pj);
 
-	rz_strbuf_init(sb);
-	rz_strbuf_append(sb, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int tricore_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

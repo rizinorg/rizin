@@ -1,0 +1,197 @@
+NAME=/ce check entropy limit
+FILE=
+CMDS=<<EOF
+/ce 0 10.0
+/ce 0 -2.0
+/ce -2.0
+/ce 6.5 7.8 0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: search: cannot add fractional entropy range when max value is greater than 8
+ERROR: Failed to perform search.
+ERROR: search: cannot add entropy range when max value is less than min (max -2.0000 < 0.0000 min)
+ERROR: Failed to perform search.
+ERROR: search: cannot add entropy range when min value is less than 0
+ERROR: Failed to perform search.
+ERROR: search: bad block size (0).
+ERROR: Wrong number of arguments passed to `/ce`, see its help with `/ce?`
+
+ERROR: Usage: /ce[jqt] <min_entropy> <max_entropy>=8.0 <block_size>=256   # Search for blocks above an entropy level.
+| /ce <min_entropy> <max_entropy>=8.0 <block_size>=256       # Search for blocks above an entropy level.
+| /cej <min_entropy> <max_entropy>=8.0 <block_size>=256      # Search for blocks above an entropy level. (JSON mode)
+| /ceq <min_entropy> <max_entropy>=8.0 <block_size>=256      # Search for blocks above an entropy level. (quiet mode)
+| /cet <min_entropy> <max_entropy>=8.0 <block_size>=256      # Search for blocks above an entropy level. (table mode)
+
+Usage example:
+| /ce 2.5 7.4 512 # Find 512 byte long blocks with an entropy between 2.5 and 7.4 (inclusive min & max).
+EOF
+RUN
+
+NAME=/cef check fractional entropy limit
+FILE=
+CMDS=<<EOF
+/cef 0 2.0
+/cef 0 -2.0
+/cef -2.0
+/cef 0.5 0.8 0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: search: cannot add fractional entropy range when max value is greater than 1
+ERROR: Failed to perform search.
+ERROR: search: cannot add entropy range when max value is less than min (max -2.0000 < 0.0000 min)
+ERROR: Failed to perform search.
+ERROR: search: cannot add entropy range when min value is less than 0
+ERROR: Failed to perform search.
+ERROR: search: bad block size (0).
+ERROR: Wrong number of arguments passed to `/cef`, see its help with `/cef?`
+
+ERROR: Usage: /cef[jqt] <min_entropy> <max_entropy>=1.0 <block_size>=256   # Search for blocks above an fractional entropy level.
+| /cef <min_entropy> <max_entropy>=1.0 <block_size>=256       # Search for blocks above an fractional entropy level.
+| /cefj <min_entropy> <max_entropy>=1.0 <block_size>=256      # Search for blocks above an fractional entropy level. (JSON mode)
+| /cefq <min_entropy> <max_entropy>=1.0 <block_size>=256      # Search for blocks above an fractional entropy level. (quiet mode)
+| /ceft <min_entropy> <max_entropy>=1.0 <block_size>=256      # Search for blocks above an fractional entropy level. (table mode)
+
+Usage example:
+| /cef 0.3 0.8 512 # Find 512 byte long blocks with a fractional entropy between 0.3 and 0.8 (inclusive min & max).
+EOF
+RUN
+
+NAME=/ch check errors & limits
+FILE=
+CMDS=<<EOF
+/ch asdasd aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+/ch md5 aaaaaaaaaaaaaaaaaaaaaaaaa
+/ch md5 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 13
+/ch md5 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 0
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: msg digest: 'asdasd' does not exists.
+ERROR: search: invalid hash algorithm 'asdasd'.
+ERROR: Failed to perform search.
+ERROR: search: invalid digest size. Expected: 16, got: 6.
+ERROR: Failed to perform search.
+ERROR: search: odd or zero block sizes are not allowed.
+ERROR: Failed to perform search.
+ERROR: search: bad block size (0).
+ERROR: Wrong number of arguments passed to `/ch`, see its help with `/ch?`
+
+ERROR: Usage: /ch[jqt] <algo> <hash> <block_size>=256   # Search for blocks that have the same hash.
+| /ch <algo> <hash> <block_size>=256       # Search for blocks that have the same hash.
+| /chj <algo> <hash> <block_size>=256      # Search for blocks that have the same hash. (JSON mode)
+| /chq <algo> <hash> <block_size>=256      # Search for blocks that have the same hash. (quiet mode)
+| /cht <algo> <hash> <block_size>=256      # Search for blocks that have the same hash. (table mode)
+
+Usage example:
+| /ch md5 0bc8f8c426b74ffaedac8330a7464014 512 # MD5 hash search within blocks of 512 bytes.
+
+Tip:
+|  # The command 'Lh' gives you a list of supported hash plugins.
+|  # Use /ce and /cef for entropy search.
+EOF
+RUN
+
+NAME=/ce /cef aligned
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e search.align=0x20
+echo ----entropy any----
+/ce 0.0
+echo ----entropy 0x20 block size----
+/ce 0.0 8.0 0x20
+echo ----entropy above 2.1----
+/ce 2.1 8.0 0x20
+echo ----entropy above 2.1 (json)----
+/cej 2.1 8.0 0x20
+echo ----entropy_fract any----
+/cef 0.0
+echo ----entropy_fract 0x20 block size----
+/cef 0.0 0.7 0x20
+echo ----entropy_fract above 0.5----
+/cef 0.5 1.0 0x20
+echo ----entropy_fract above 0.5 json----
+/cefj 0.5 1.0 0x20
+EOF
+EXPECT=<<EOF
+----entropy any----
+0x08048000 114 hit.entropy.0 2.4731
+0x08048020 82 hit.entropy.1 2.2024
+----entropy 0x20 block size----
+0x08048000 32 hit.entropy.0 2.5785
+0x08048020 32 hit.entropy.1 2.0550
+0x08048040 32 hit.entropy.2 1.3095
+0x08048060 18 hit.entropy.3 2.3244
+----entropy above 2.1----
+0x08048000 32 hit.entropy.0 2.5785
+0x08048060 18 hit.entropy.1 2.3244
+----entropy above 2.1 (json)----
+[{"address":134512640,"size":32,"flag":"hit.entropy.0","detail":2.578535},{"address":134512736,"size":18,"flag":"hit.entropy.1","detail":2.324409}]
+----entropy_fract any----
+0x08048000 114 hit.entropy_fract.0 0.3619
+0x08048020 82 hit.entropy_fract.1 0.3464
+----entropy_fract 0x20 block size----
+0x08048000 32 hit.entropy_fract.0 0.5157
+0x08048020 32 hit.entropy_fract.1 0.4110
+0x08048040 32 hit.entropy_fract.2 0.2619
+0x08048060 18 hit.entropy_fract.3 0.5574
+----entropy_fract above 0.5----
+0x08048000 32 hit.entropy_fract.0 0.5157
+0x08048060 18 hit.entropy_fract.1 0.5574
+----entropy_fract above 0.5 json----
+[{"address":134512640,"size":32,"flag":"hit.entropy_fract.0","detail":0.515707},{"address":134512736,"size":18,"flag":"hit.entropy_fract.1","detail":0.557422}]
+EOF
+RUN
+
+NAME=/ch aligned
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e search.align=0x20
+/ch md5 9a6ac4a8af377cad7a2dde1ff70b3744 0x10
+/chj md5 9a6ac4a8af377cad7a2dde1ff70b3744 0x10
+EOF
+EXPECT=<<EOF
+0x08048060 16 hit.md5.0
+[{"address":134512736,"size":16,"flag":"hit.md5.0"}]
+EOF
+RUN
+
+NAME=error - search unmapped region
+CMDS=<<EOF
+e search.from=0xf0000000000
+e search.to=0xf0000000020
+/cef 0.0 1.0 12
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: The range [0xf0000000000, 0xf0000000020] doesn't overlap with a mapped memory region or
+the region is not included in search.in.
+ERROR: core: Setting up search from core failed.
+ERROR: Failed to perform search.
+EOF
+RUN
+
+NAME=search hit detail output
+FILE==
+CMDS=<<EOF
+e search.from=0
+e search.to=0x10
+ws "hello world!"
+/cef 0.0 1.0 16
+/cefq 0.0 1.0 16
+/cefj 0.0 1.0 16
+/ceft 0.0 1.0 16
+EOF
+EXPECT=<<EOF
+0x00000000 16 hit.entropy_fract.0 0.8202
+0x00000001 15 hit.entropy_fract.1 0.8036
+0x00000000
+0x00000001
+[{"address":0,"size":16,"flag":"hit.entropy_fract.0","detail":0.820160},{"address":1,"size":15,"flag":"hit.entropy_fract.1","detail":0.803599}]
+offset       size flag                detail 
+---------------------------------------------
+   0x0 0x00000010 hit.entropy_fract.0 0.8202
+   0x1 0x0000000f hit.entropy_fract.1 0.8036
+EOF
+RUN

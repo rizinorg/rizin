@@ -22,6 +22,7 @@ extern "C" {
 #include <rz_vector.h>
 #include <sdb.h>
 #include <rz_util/ht_up.h>
+#include <rz_util/ht_pp.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -167,11 +168,15 @@ enum {
 };
 #endif
 
-enum { ALPHA_RESET = 0x00,
+enum {
+	ALPHA_RESET = 0x00,
 	ALPHA_FG = 0x01,
 	ALPHA_BG = 0x02,
-	ALPHA_FGBG = 0x03 };
-enum { RZ_CONS_ATTR_BOLD = 1u << 1,
+	ALPHA_FGBG = 0x03
+};
+
+enum {
+	RZ_CONS_ATTR_BOLD = 1u << 1,
 	RZ_CONS_ATTR_DIM = 1u << 2,
 	RZ_CONS_ATTR_ITALIC = 1u << 3,
 	RZ_CONS_ATTR_UNDERLINE = 1u << 4,
@@ -486,6 +491,7 @@ typedef struct rz_cons_context_t {
 	bool lastMode;
 	bool lastEnabled;
 	bool is_interactive;
+	bool last_interactive_option; ///< To be deprecated for a push/pop behavior
 	bool pageable;
 	bool noflush;
 
@@ -517,7 +523,6 @@ typedef enum {
 typedef struct rz_cons_t {
 	RzConsContext *context;
 	RzConsInputContext *input;
-	char *lastline;
 	bool is_html;
 	bool was_html;
 	int lines;
@@ -548,6 +553,7 @@ typedef struct rz_cons_t {
 	RzConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RzCore*>
+	int oldraw; ///< To be deprecated for a push/pop behavior
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
@@ -589,6 +595,7 @@ typedef struct rz_cons_t {
 	int click_x;
 	int click_y;
 	bool show_vals; // show which section in Vv
+	RzStrBuf *echobuf;
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
 
@@ -761,8 +768,8 @@ typedef struct rz_cons_t {
 #define Colors_PLAIN \
 	{ \
 		Color_BLACK, Color_RED, Color_WHITE, \
-			Color_GREEN, Color_MAGENTA, Color_YELLOW, \
-			Color_CYAN, Color_BLUE, Color_GRAY \
+		Color_GREEN, Color_MAGENTA, Color_YELLOW, \
+		Color_CYAN, Color_BLUE, Color_GRAY \
 	}
 
 enum {
@@ -829,6 +836,7 @@ typedef struct rz_cons_canvas_line_style_t {
 typedef struct rz_histogram_options_t {
 	bool unicode; //<< Use Unicode characters instead of ASCII
 	bool thinline; //<< Use thin lines instead of block lines
+	bool ruler; //<< Show ruler
 	bool legend; //<< Show axes and legend
 	bool offset; //<< Show offsets
 	ut64 offpos; //<< Starting offset value
@@ -939,7 +947,7 @@ RZ_API void rz_cons_highlight(const char *word);
 RZ_API void rz_cons_clear(void);
 RZ_API void rz_cons_clear_buffer(void);
 RZ_API void rz_cons_clear00(void);
-RZ_API void rz_cons_clear_line(int err);
+RZ_API void rz_cons_clear_line(FILE *stream);
 RZ_API void rz_cons_fill_line(void);
 RZ_API void rz_cons_gotoxy(int x, int y);
 RZ_API int rz_cons_get_cur_line(void);
@@ -1000,7 +1008,9 @@ RZ_API const char *rz_cons_pal_get_name(int index);
 RZ_API int rz_cons_pal_len(void);
 RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-RZ_API void rz_cons_pal_list(int rad, const char *arg);
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj);
+RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix);
+RZ_API void rz_cons_pal_list_visual(void);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);

@@ -1,0 +1,340 @@
+// SPDX-FileCopyrightText: 2010-2011 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include <rz_egg.h>
+#define attsyntax 0
+
+#define EMIT_NAME emit_arm
+#define RZ_ARCH   "arm"
+#define RZ_SZ     8
+#define RZ_SP     "sp"
+#define RZ_BP     "fp"
+#define RZ_AX     "r7"
+#define RZ_GP \
+	{ "r0", "r1", "r2", "r3", "r4" }
+#define RZ_TMP "r9"
+#define RZ_NGP 5
+
+// no attsyntax for arm
+static char *regs[] = RZ_GP;
+
+typedef struct emit_arm_arg {
+	int lastarg;
+	char lastargs[16][32];
+} EmitArmArg;
+
+static void emit_begin(RzEgg *egg) {
+	/* TODO */
+}
+
+static void emit_init(RzEgg *egg) {
+	egg->remit->emit_context = RZ_NEW0(EmitArmArg);
+}
+
+static void emit_fini(RzEggEmit *egg_emit) {
+	if (!egg_emit) {
+		return;
+	}
+	EmitArmArg *emit_arm_data = egg_emit->emit_context;
+	free(emit_arm_data);
+}
+
+static char *emit_syscall(RzEgg *egg, int num) {
+	int svc = 0;
+	switch (egg->os) {
+	case RZ_EGG_OS_DARWIN:
+	case RZ_EGG_OS_OSX:
+	case RZ_EGG_OS_IOS:
+	case RZ_EGG_OS_MACOS:
+		svc = 0x80;
+		break;
+	case RZ_EGG_OS_WATCHOS:
+		svc = 0x8000;
+		break;
+	case RZ_EGG_OS_LINUX:
+		svc = 0;
+		break;
+	}
+	return rz_str_newf(": mov " RZ_AX ", `.arg`\n: svc 0x%x\n", svc);
+}
+
+static void emit_frame(RzEgg *egg, int sz) {
+	rz_egg_printf(egg, "  push {fp,lr}\n");
+	if (sz > 0) {
+		rz_egg_printf(egg,
+			// "  mov "RZ_BP", "RZ_SP"\n"
+			"  add fp, sp, $4\n" // size of arguments
+			"  sub sp, %d\n",
+			sz); // size of stackframe 8, 16, ..
+	}
+}
+
+static void emit_frame_end(RzEgg *egg, int sz, int ctx) {
+	if (sz > 0) {
+		rz_egg_printf(egg, "  add sp, fp, %d\n", sz);
+	}
+	if (ctx > 0) {
+		rz_egg_printf(egg, "  pop {fp,pc}\n");
+	}
+}
+
+static void emit_comment(RzEgg *egg, const char *fmt, ...) {
+	va_list ap;
+	char buf[1024];
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	rz_egg_printf(egg, "# %s\n", buf);
+	va_end(ap);
+}
+
+static void emit_equ(RzEgg *egg, const char *key, const char *value) {
+	rz_egg_printf(egg, ".equ %s, %s\n", key, value);
+}
+
+static void emit_syscall_args(RzEgg *egg, int nargs) {
+	int j, k;
+	for (j = 0; j < nargs; j++) {
+		k = j * RZ_SZ;
+		rz_egg_printf(egg, "  ldr %s, [sp, %d]\n",
+			regs[j + 1], k ? k + 4 : k + 8);
+	}
+}
+
+static void emit_set_string(RzEgg *egg, const char *dstvar, const char *str, int j) {
+	int rest, off = 0;
+	off = strlen(str) + 1;
+	rest = (off % 4);
+	if (rest) {
+		rest = 4 - rest;
+	}
+	off += rest - 4;
+	rz_egg_printf(egg, "  add pc, %d\n", (off));
+	// XXX: does not handle \n and so on.. must use rz_util
+	// use rz_str_escape to handle \n
+	// do not forget mem leak
+	rz_egg_printf(egg, ".string \"%s\"\n", str = rz_str_escape(str));
+	free((char *)str);
+	if (rest) {
+		rz_egg_printf(egg, ".fill %d, 1, 0\n", (rest));
+	}
+	rz_egg_printf(egg, "  sub r0, pc, %d\n", off + 12);
+	{
+		char str[32], *p = rz_egg_lang_mkvar(egg, str, dstvar, 0);
+		// rz_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
+		rz_egg_printf(egg, "  str r0, [%s]\n", p);
+		free(p);
+	}
+}
+
+static void emit_jmp(RzEgg *egg, const char *str, int atr) {
+	if (atr) {
+		rz_egg_printf(egg, "  ldr r0, %s", str);
+		rz_egg_printf(egg, "  bx r0\n");
+	} else {
+		rz_egg_printf(egg, "  b %s\n", str);
+	}
+}
+
+static void emit_call(RzEgg *egg, const char *str, int atr) {
+	int i;
+	EmitArmArg *emit_arm_data = egg->remit->emit_context;
+	// rz_egg_printf (egg, " ARGS=%d CALL(%s,%d)\n", lastarg, str, atr);
+	for (i = 0; i < emit_arm_data->lastarg; i++) {
+		rz_egg_printf(egg, "  ldr r%d, [%s]\n", emit_arm_data->lastarg - 1 - i, emit_arm_data->lastargs[i]);
+		emit_arm_data->lastargs[i][0] = 0;
+	}
+
+	if (atr) {
+		rz_egg_printf(egg, "  ldr r0, %s", str);
+		rz_egg_printf(egg, "  blx r0\n");
+	} else {
+		rz_egg_printf(egg, "  bl %s\n", str);
+	}
+}
+
+static void emit_arg(RzEgg *egg, int xs, int num, const char *str) {
+	EmitArmArg *emit_arm_data = egg->remit->emit_context;
+	int d = atoi(str);
+	if (!attsyntax && (*str == '$')) {
+		str++;
+	}
+	emit_arm_data->lastarg = num;
+	switch (xs) {
+	case 0:
+		if (strchr(str, ',')) {
+			// rz_egg_printf (egg, ".  str r0, [%s]\n", str);
+			strncpy(emit_arm_data->lastargs[num - 1], str, sizeof(emit_arm_data->lastargs[0]) - 1);
+		} else {
+			if (!atoi(str)) {
+				eprintf("WARNING: probably a bug?\n");
+			}
+			rz_egg_printf(egg, "  mov r0, %s\n", str);
+			snprintf(emit_arm_data->lastargs[num - 1], sizeof(emit_arm_data->lastargs[0]), "sp, %d", 8 + (num * 4));
+			rz_egg_printf(egg, "  str r0, [%s]\n", emit_arm_data->lastargs[num - 1]);
+		}
+		break;
+	case '*':
+		rz_egg_printf(egg, "  push {%s}\n", str);
+		break;
+	case '&':
+		if (d) {
+			rz_egg_printf(egg, "  add " RZ_BP ", %d\n", d);
+		}
+		rz_egg_printf(egg, "  push {" RZ_BP "}\n");
+		if (d) {
+			rz_egg_printf(egg, "  sub " RZ_BP ", %d\n", d);
+		}
+		break;
+	}
+}
+
+static void emit_get_result(RzEgg *egg, const char *ocn) {
+	rz_egg_printf(egg, "  mov %s, r0\n", ocn);
+}
+
+static void emit_restore_stack(RzEgg *egg, int size) {
+	// XXX: must die.. or add emit_store_stack. not needed by ARM
+	// rz_egg_printf (egg, "  add sp, %d\n", size);
+}
+
+static void emit_get_while_end(RzEgg *egg, char *str, const char *ctxpush, const char *label) {
+	sprintf(str, "  push {%s}\n  b %s\n", ctxpush, label);
+}
+
+static void emit_while_end(RzEgg *egg, const char *labelback) {
+	rz_egg_printf(egg,
+		"  pop " RZ_AX "\n"
+		"  cmp " RZ_AX ", " RZ_AX "\n" // XXX MUST SUPPORT != 0 COMPARE HERE
+		"  beq %s\n",
+		labelback);
+}
+
+static void emit_get_var(RzEgg *egg, int type, char *out, int idx) {
+	switch (type) {
+	case 0: sprintf(out, "sp, %d", idx - 1); break; /* variable */
+	case 1:
+		sprintf(out, "r%d", idx);
+		break; /* registers */
+		// sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
+	}
+}
+
+static void emit_trap(RzEgg *egg) {
+	rz_egg_printf(egg, "  udf 16\n");
+}
+
+static void emit_load_ptr(RzEgg *egg, const char *dst) {
+	rz_egg_printf(egg, "  ldr r0, [fp, %d]\n", atoi(dst));
+}
+
+static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+	char *p, str[64];
+	char *arg = NULL;
+	char *op = "beq";
+	/* NOTE that jb/ja are inverted to fit cmp opcode */
+	if (b) {
+		*b = '\0';
+		op = e ? "bge" : "bgt";
+		arg = b + 1;
+	} else if (g) {
+		*g = '\0';
+		op = e ? "ble" : "blt";
+		arg = g + 1;
+	}
+	if (!arg) {
+		if (e) {
+			arg = e + 1;
+			op = "bne";
+		} else {
+			arg = "0";
+			op = n ? "bne" : "beq";
+		}
+	}
+
+	if (*arg == '=') {
+		arg++; /* for <=, >=, ... */
+	}
+	p = rz_egg_lang_mkvar(egg, str, arg, 0);
+	rz_egg_printf(egg, "  pop " RZ_AX "\n"); /* TODO: add support for more than one arg get arg0 */
+	rz_egg_printf(egg, "  cmp %s, " RZ_AX "\n", p);
+	// if (context>0)
+	rz_egg_printf(egg, "  %s %s\n", op, dst);
+	free(p);
+}
+
+static void emit_load(RzEgg *egg, const char *dst, int sz) {
+	switch (sz) {
+	case 'l':
+		rz_egg_printf(egg, "  mov " RZ_AX ", %s\n", dst);
+		rz_egg_printf(egg, "  mov " RZ_AX ", [" RZ_AX "]\n");
+		break;
+	case 'b':
+		rz_egg_printf(egg, "  mov " RZ_AX ", %s\n", dst);
+		rz_egg_printf(egg, "  movz " RZ_AX ", [" RZ_AX "]\n");
+		break;
+	default:
+		// TODO: unhandled?!?
+		rz_egg_printf(egg, "  mov " RZ_AX ", %s\n", dst);
+		rz_egg_printf(egg, "  mov " RZ_AX ", [" RZ_AX "]\n");
+	}
+}
+
+static void emit_mathop(RzEgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
+	char *op;
+	switch (ch) {
+	case '^': op = "eor"; break;
+	case '&': op = "and"; break;
+	case '|': op = "orr"; break;
+	case '-': op = "sub"; break;
+	case '+': op = "add"; break;
+	case '*': op = "mul"; break;
+	case '/': op = "div"; break;
+	default: op = "mov"; break;
+	}
+	if (!eq) {
+		eq = RZ_AX;
+	}
+	if (!p) {
+		p = RZ_AX;
+	}
+
+	if (type == '*') {
+		rz_egg_printf(egg, "  %s %s, [%s]\n", op, p, eq);
+	} else {
+		rz_egg_printf(egg, "  %s %s, %s\n", op, p, eq);
+	}
+}
+
+static const char *emit_regs(RzEgg *egg, int idx) {
+	return regs[idx % RZ_NGP];
+}
+
+RzEggEmit EMIT_NAME = {
+	.arch = RZ_ARCH,
+	.size = RZ_SZ,
+	.jmp = emit_jmp,
+	.call = emit_call,
+	.init = emit_init,
+	.begin = emit_begin,
+	.fini = emit_fini,
+	.equ = emit_equ,
+	.regs = emit_regs,
+	// .sc = emit_sc,
+	.trap = emit_trap,
+	.frame = emit_frame,
+	.frame_end = emit_frame_end,
+	.comment = emit_comment,
+	.push_arg = emit_arg,
+	.restore_stack = emit_restore_stack,
+	.get_result = emit_get_result,
+	.syscall_args = emit_syscall_args,
+	.set_string = emit_set_string,
+	.get_var = emit_get_var,
+	.while_end = emit_while_end,
+	.get_while_end = emit_get_while_end,
+	.branch = emit_branch,
+	.load = emit_load,
+	.load_ptr = emit_load_ptr,
+	.mathop = emit_mathop,
+	.syscall = emit_syscall,
+};

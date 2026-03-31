@@ -13,33 +13,20 @@ enum rz_sign_option {
 
 static void rz_sign_show_help(void) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-sign [options] [file]\n");
+	printf("rz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)\n");
 	const char *options[] = {
 		// clang-format off
 		"-h",       "",                         "Show this help",
-		"-a",       "[-a]",                     "Add extra 'a' to analysis command (available only with -o option)",
-		"-e",       "[k=v]",                    "Set an evaluable config variable (available only with -o option)",
-		"-c",       "[output.pat] [input.sig]", "Parse a FLIRT signature and convert it to its other format",
-		"-o",       "[output.sig] [input.bin]", "Perform an analysis on the binary and generate the FLIRT signature",
-		"-d",       "[flirt.sig]",              "Parse a FLIRT signature and dump its content",
+		"-a, -aa",  "",                         "Add extra 'a' to analysis command (available only with -o option)",
+		"-e",       "k=v",                      "Set an evaluable config variable (available only with -o option)",
+		"-c",       "output.pat input.sig",     "Parse a FLIRT signature and convert it to its other format",
+		"-o",       "output.sig input.bin",     "Perform an analysis on the binary and generate the FLIRT signature",
+		"-d",       "flirt.sig",                "Parse a FLIRT signature and dump its content",
 		"-q",       "",                         "Quiet mode",
 		"-v",       "",                         "Show version information",
 		// clang-format on
 	};
-	size_t maxOptionAndArgLength = 0;
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		size_t optionLength = strlen(options[i]);
-		size_t argLength = strlen(options[i + 1]);
-		size_t totalLength = optionLength + argLength;
-		if (totalLength > maxOptionAndArgLength) {
-			maxOptionAndArgLength = totalLength;
-		}
-	}
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-		}
-	}
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf("Examples:\n"
 	       "  rz-sign -d signature.sig\n"
 	       "  rz-sign -c new_signature.pat old_signature.sig\n"
@@ -120,8 +107,17 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		case 'q':
 			quiet = true;
 			break;
-		case 'v':
-			return rz_main_version_print("rz-sign");
+		case 'v': {
+			RzPath *sys_path = rz_path_new();
+			if (!sys_path) {
+				ret = -1;
+				goto rz_sign_end;
+			}
+			size_t print_val = rz_main_version_print(sys_path, "rz-sign");
+			rz_path_free(sys_path);
+			ret = print_val;
+			goto rz_sign_end;
+		}
 		case 'h':
 			rz_sign_show_help();
 			goto rz_sign_end;

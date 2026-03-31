@@ -20,10 +20,10 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 	bool no_key_mode = !strcmp("base64", algo) || !strcmp("base91", algo) || !strcmp("punycode", algo);
 	ut8 *binkey = NULL;
 	if (!strncmp(key, "s:", 2)) {
-		binkey = (ut8 *)strdup(key + 2);
+		binkey = (ut8 *)rz_str_dup(key + 2);
 		keylen = strlen(key + 2);
 	} else {
-		binkey = (ut8 *)strdup(key);
+		binkey = (ut8 *)rz_str_dup(key);
 		keylen = rz_hex_str2bin(key, binkey);
 	}
 	if (!no_key_mode && keylen < 1) {
@@ -77,7 +77,7 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 	ut8 buf[sizeof(ut64)];
 	ut64 ret, orig;
 	// used to set/unset bit in current address
-	if (!rz_io_read_at(core->io, core->offset, buf, sizeof(buf))) {
+	if (!rz_io_read_at_mapped(core->io, core->offset, buf, sizeof(buf))) {
 		cmd_write_fail(core);
 		return;
 	}
@@ -100,7 +100,7 @@ static void cmd_write_bits(RzCore *core, int set, ut64 val) {
 static RzCmdStatus common_write_value_handler(RzCore *core, const char *valstr, size_t sz) {
 	ut64 value = rz_num_math(core->num, valstr);
 	if (core->num->nc.errors) {
-		RZ_LOG_ERROR("Could not convert argument to number");
+		RZ_LOG_ERROR("Could not convert argument to number\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -140,7 +140,7 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 	if (len > 0) {
 		ut8 *buf = calloc(1, len);
 		if (buf) {
-			if (rz_io_read_at(core->io, src, buf, len)) {
+			if (rz_io_read_at_mapped(core->io, src, buf, len)) {
 				if (rz_io_write_at(core->io, dst, buf, len)) {
 					rz_core_block_read(core);
 					ret = true;
@@ -148,7 +148,7 @@ static bool ioMemcpy(RzCore *core, ut64 dst, ut64 src, int len) {
 					RZ_LOG_ERROR("core: rz_io_write_at failed at 0x%08" PFMT64x "\n", dst);
 				}
 			} else {
-				RZ_LOG_ERROR("core: rz_io_read_at failed at 0x%08" PFMT64x "\n", src);
+				RZ_LOG_ERROR("core: rz_io_read_at_mapped failed at 0x%08" PFMT64x "\n", src);
 			}
 			free(buf);
 		}
@@ -177,7 +177,7 @@ RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const c
 	}
 
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	if (!rz_io_read_at(core->io, dst, buf, len)) {
+	if (!rz_io_read_at_mapped(core->io, dst, buf, len)) {
 		RZ_LOG_ERROR("core: cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
 		goto err;
 	}
@@ -245,7 +245,7 @@ err:
 
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
-	char *address = strdup(argv[1]);
+	char *address = rz_str_dup(argv[1]);
 	ut64 sz = argc > 2 ? rz_num_math(core->num, argv[2]) : core->blocksize;
 
 	size_t n_split = rz_str_split(address, ':');
@@ -312,7 +312,7 @@ RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **ar
 	ut64 len = rz_num_math(core->num, argv[1]);
 	ut8 *buf = RZ_NEWS0(ut8, len);
 	if (!buf) {
-		RZ_LOG_ERROR("Cannot allocate %" PFMT64d " bytes", len);
+		RZ_LOG_ERROR("Cannot allocate %" PFMT64d " bytes\n", len);
 		return RZ_CMD_STATUS_ERROR;
 	}
 

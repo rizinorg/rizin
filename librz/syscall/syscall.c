@@ -6,7 +6,7 @@
 #include <rz_syscall.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <sdb.h>
 RZ_LIB_VERSION(rz_syscall);
 
 RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
@@ -26,12 +26,8 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	}
 	sysregitem->comment = NULL;
 	sysregitem->type = NULL;
-	sysregitem->name = name ? strdup(name) : NULL;
+	sysregitem->name = rz_str_dup(name);
 	return sysregitem;
-}
-
-static void free_port_kv(HtUPKv *kv) {
-	rz_sysreg_item_free(kv->value);
 }
 
 /**
@@ -42,7 +38,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	if (!sysregdb) {
 		return NULL;
 	}
-	sysregdb->port = ht_up_new(NULL, free_port_kv, NULL);
+	sysregdb->port = ht_up_new(NULL, (HtUPFreeValue)rz_sysreg_item_free);
 	if (!sysregdb->port) {
 		free(sysregdb);
 		return NULL;
@@ -104,9 +100,12 @@ RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 	free(s);
 }
 
-static bool load_sdb(Sdb **db, const char *name) {
-	rz_return_val_if_fail(db, false);
-	char *sdb_path = rz_path_system(RZ_SDB);
+static bool load_sdb(Sdb **db, RZ_BORROW RZ_NONNULL RzPath *sys_path, const char *name) {
+	rz_return_val_if_fail(db && sys_path, false);
+	char *sdb_path = rz_path_system(sys_path, RZ_SDB);
+	if (!sdb_path) {
+		return false;
+	}
 	char *file_name = rz_str_newf("%s.sdb", name);
 	char *file = rz_file_path_join(sdb_path, file_name);
 	free(file_name);
@@ -147,21 +146,20 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 
 static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_return_val_if_fail(sysregdb && sdb, false);
-	RzSysregItem *sysregitem;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	char *argument_key, *comment, *name;
-	ls_foreach (l, iter, kv) {
+
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
-			name = sdbkv_key(kv);
-			sysregitem = rz_sysreg_item_new(name);
-			argument_key = rz_str_newf("%s.address", name);
+			const char *name = sdbkv_key(kv);
+			RzSysregItem *sysregitem = rz_sysreg_item_new(name);
+			char *argument_key = rz_str_newf("%s.address", name);
 			if (!argument_key) {
 				rz_sysreg_item_free(sysregitem);
 				return false;
 			}
-			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
 			if (!address) {
 				rz_sysreg_item_free(sysregitem);
@@ -169,15 +167,15 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			}
 
 			argument_key = rz_str_newf("%s.comment", name);
-			comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key);
 			free(argument_key);
-			sysregitem->type = strdup(sdbkv_value(kv));
+			sysregitem->type = sdbkv_dup_value(kv);
 			sysregitem->comment = comment;
 
 			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	return true;
 }
 
@@ -231,7 +229,8 @@ RZ_API bool rz_sysreg_set_arch(RzSyscall *s, RZ_NONNULL const char *arch, RZ_NON
 }
 
 // TODO: should be renamed to rz_syscall_use();
-RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
+RZ_API bool rz_syscall_setup(RzSyscall *s, RZ_BORROW RZ_NONNULL RzPath *sys_path, const char *arch, int bits, const char *cpu, const char *os) {
+	rz_return_val_if_fail(sys_path, false);
 	bool syscall_changed, sysregs_changed;
 
 	if (!os || !*os) {
@@ -247,13 +246,13 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	sysregs_changed = sysregs_reload_needed(s, arch, bits, cpu);
 
 	free(s->os);
-	s->os = strdup(os);
+	s->os = rz_str_dup(os);
 
 	free(s->cpu);
-	s->cpu = strdup(cpu);
+	s->cpu = rz_str_dup(cpu);
 
 	free(s->arch);
-	s->arch = strdup(arch);
+	s->arch = rz_str_dup(arch);
 
 	s->bits = bits;
 
@@ -267,7 +266,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("syscall", "%s-%s-%d"),
 			os, arch, bits);
 		if (dbName) {
-			if (!load_sdb(&s->db, dbName)) {
+			if (!load_sdb(&s->db, sys_path, dbName)) {
 				sdb_free(s->db);
 				s->db = NULL;
 			}
@@ -276,7 +275,11 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (sysregs_changed) {
-		char *regs_dir = rz_path_system(RZ_SDB_REG);
+		char *regs_dir = rz_path_system(sys_path, RZ_SDB_REG);
+		if (!regs_dir) {
+			free(regs_dir);
+			return false;
+		}
 		rz_sysreg_set_arch(s, arch, regs_dir);
 		free(regs_dir);
 	}
@@ -293,7 +296,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 	if (!name || !s) {
 		return NULL;
 	}
-	o = strdup(s);
+	o = rz_str_dup(s);
 	int cols = rz_str_split(o, ',');
 	if (cols < 3) {
 		free(o);
@@ -305,7 +308,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 		free(o);
 		return NULL;
 	}
-	si->name = strdup(name);
+	si->name = rz_str_dup(name);
 	si->swi = (int)rz_num_get(NULL, rz_str_word_get0(o, 0));
 	si->num = (int)rz_num_get(NULL, rz_str_word_get0(o, 1));
 	si->args = (int)rz_num_get(NULL, rz_str_word_get0(o, 2));
@@ -339,7 +342,7 @@ static int getswi(RzSyscall *s, int swi) {
 }
 
 RZ_API int rz_syscall_get_swi(RzSyscall *s) {
-	return (int)sdb_num_get(s->db, "_", NULL);
+	return (int)sdb_num_get(s->db, "_");
 }
 
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
@@ -355,35 +358,47 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 	} else {
 		key = rz_strf(tmpbuf, "0x%02x.%d", swi, num);
 	}
-	ret = sdb_const_get(s->db, key, 0);
+	ret = sdb_const_get(s->db, key);
 	if (!ret) {
 		key = rz_strf(tmpbuf, "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
-		ret = sdb_const_get(s->db, key, 0);
+		ret = sdb_const_get(s->db, key);
 		if (!ret) {
 			key = rz_strf(tmpbuf, "0x%02x.%d", num, swi); // Workaround until Syscall SDB is fixed
-			ret = sdb_const_get(s->db, key, 0);
+			ret = sdb_const_get(s->db, key);
 			if (!ret) {
 				return NULL;
 			}
 		}
 	}
-	ret2 = sdb_const_get(s->db, ret, 0);
+	ret2 = sdb_const_get(s->db, ret);
 	if (!ret2) {
 		return NULL;
 	}
 	return rz_syscall_item_new_from_string(ret, ret2);
 }
 
-RZ_API int rz_syscall_get_num(RzSyscall *s, const char *str) {
-	rz_return_val_if_fail(s && str, -1);
+/**
+ * \brief Retrieves the syscall number for a given syscall name.
+ *
+ * \param s Reference to RzSyscall instance containing the syscall database.
+ * \param str Syscall name whose number should be retrieved.
+ * \param num Reference where the resolved syscall number will be stored.
+ *
+ * \return True, if syscall is successfully fetched from the db, false otherwise.
+ */
+RZ_API bool rz_syscall_get_num(RZ_NONNULL RZ_BORROW RzSyscall *s, RZ_NONNULL const char *str, RZ_OUT RZ_NULLABLE int *num) {
+	rz_return_val_if_fail(s && str && num, false);
 	if (!s->db) {
 		return -1;
 	}
-	int sn = (int)sdb_array_get_num(s->db, str, 1, NULL);
-	if (sn == 0) {
-		return (int)sdb_array_get_num(s->db, str, 0, NULL);
+	const char *v = sdb_const_get(s->db, "_");
+	int idx = (v && atoi(v) >= 0) ? 1 : 0;
+	ut64 sn = 0;
+	if (!sdb_array_get_num(s->db, str, idx, &sn)) {
+		return false;
 	}
-	return sn;
+	*num = (int)sn;
+	return true;
 }
 
 RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
@@ -394,13 +409,13 @@ RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
 	char foo[32];
 	swi = getswi(s, swi);
 	snprintf(foo, sizeof(foo), "0x%x.%d", swi, num);
-	return sdb_const_get(s->db, foo, 0);
+	return sdb_const_get(s->db, foo);
 }
 
-static bool callback_list(void *u, const char *k, const char *v) {
+static bool callback_list(void *u, const SdbKv *kv) {
 	RzList *list = (RzList *)u;
-	if (!strchr(k, '.')) {
-		RzSyscallItem *si = rz_syscall_item_new_from_string(k, v);
+	if (!strchr(sdbkv_key(kv), '.')) {
+		RzSyscallItem *si = rz_syscall_item_new_from_string(sdbkv_key(kv), sdbkv_value(kv));
 		if (!si) {
 			return true;
 		}

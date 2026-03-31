@@ -4,8 +4,7 @@ CMDS=<<EOF
 e asm.arch=8051
 e asm.bits=8
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=8051: checking bitness writing (asm.bits)

@@ -1,8 +1,7 @@
 NAME=PE: corkami dll-dynld.exe - open
 FILE=bins/pe/dll-dynld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dll-dynld.exe - entrypoint

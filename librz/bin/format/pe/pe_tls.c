@@ -27,13 +27,13 @@ static void bin_pe_store_tls_callbacks(RzBinPEObj *bin, PE_DWord callbacks) {
 			}
 		}
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
-		sdb_num_set(bin->kv, key, addressOfTLSCallback, 0);
+		sdb_num_set(bin->kv, key, addressOfTLSCallback);
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
 		paddr = PE_(bin_pe_rva_to_paddr)(bin, PE_(bin_pe_va_to_rva)(bin, (PE_DWord)addressOfTLSCallback));
-		sdb_num_set(bin->kv, key, paddr, 0);
+		sdb_num_set(bin->kv, key, paddr);
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
-		sdb_num_set(bin->kv, key, haddr, 0);
+		sdb_num_set(bin->kv, key, haddr);
 		count++;
 		callbacks += sizeof(addressOfTLSCallback);
 	}

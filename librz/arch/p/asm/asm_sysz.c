@@ -4,13 +4,15 @@
 // instruction set : http://www.tachyonsoft.com/inst390m.htm
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 
 #include "cs_helper.h"
+#include <rz_util/rz_log.h>
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(sysz);
 
-static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int sysz_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	int n, ret;
 	ut64 off = a->pc;
@@ -25,6 +27,7 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!ctx->handle) {
 		ret = cs_open(CS_ARCH_SYSZ, mode, &ctx->handle);
 		if (ret) {
+			RZ_LOG_ERROR("Failed to initialize Capstone: '%s'\n", cs_strerror(ret));
 			return -1;
 		}
 		ctx->omode = mode;
@@ -56,7 +59,7 @@ static int sysz_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_sysz = {
 	.name = "sysz",
-	.desc = "SystemZ CPU disassembler",
+	.desc = "IBM SystemZ (S/390) Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32 | 64,

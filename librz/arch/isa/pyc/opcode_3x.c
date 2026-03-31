@@ -9,7 +9,7 @@ pyc_opcodes *opcode_3x(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_3x;
+	ret->version_sig = (opcode_func)opcode_3x;
 
 	def_op00(.op_obj = ret->opcodes, .op_name = "STOP_CODE", .op_code = 0, .pop = 0, .push = 0, .fallthrough = false);
 	def_op(.op_obj = ret->opcodes, .op_name = "POP_TOP", .op_code = 1, .pop = 1, .push = 0);

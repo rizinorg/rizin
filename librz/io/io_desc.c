@@ -8,7 +8,7 @@
 #include <string.h>
 
 // shall be used by plugins for creating descs
-RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, int mode, void *data) {
+RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int perm, void *data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
 	if (!io || !plugin || !uri) {
@@ -27,7 +27,7 @@ RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, i
 		desc->data = data;
 		desc->perm = perm;
 		// because the uri-arg may live on the stack
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	return desc;
 }
@@ -121,10 +121,10 @@ RZ_API RzIODesc *rz_io_desc_open(RzIO *io, const char *uri, int perm, int mode) 
 	}
 	// for none static callbacks, those that cannot use rz_io_desc_new
 	if (!desc->name) {
-		desc->name = strdup(uri);
+		desc->name = rz_str_dup(uri);
 	}
 	if (!desc->uri) {
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	if (!desc->plugin) {
 		desc->plugin = plugin;
@@ -150,10 +150,10 @@ RZ_API RzIODesc *rz_io_desc_open_plugin(RzIO *io, RzIOPlugin *plugin, const char
 		desc->plugin = plugin;
 	}
 	if (!desc->uri) {
-		desc->uri = strdup(uri);
+		desc->uri = rz_str_dup(uri);
 	}
 	if (!desc->name) {
-		desc->name = strdup(uri);
+		desc->name = rz_str_dup(uri);
 	}
 	if (!rz_io_desc_add(io, desc)) {
 		rz_io_desc_free(desc);
@@ -202,7 +202,7 @@ RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, size_t len) {
 	ut64 seek = rz_io_desc_seek(desc, 0LL, RZ_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && rz_io_cache_at(desc->io, seek)) {
-			return rz_io_cache_read(desc->io, seek, buf, len);
+			return rz_io_cache_read(desc->io, seek, buf, len, NULL);
 		}
 	}
 	int ret = rz_io_plugin_read(desc, buf, len);

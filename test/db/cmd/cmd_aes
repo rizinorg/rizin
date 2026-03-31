@@ -19,8 +19,7 @@ CMDS=<<EOF
 wx b8010000000f34b801000000cd80ebfe
 10aes
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=aes without initialize

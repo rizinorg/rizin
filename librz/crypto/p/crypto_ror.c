@@ -5,17 +5,15 @@
 #include <rz_crypto.h>
 #include <rz_util.h>
 
-#define NAME "ror"
-
-enum { MAX_ror_KEY_SIZE = 32768 };
+#define MAX_ROR_KEY_SIZE 32768
 
 struct ror_state {
-	ut8 key[MAX_ror_KEY_SIZE];
+	ut8 key[MAX_ROR_KEY_SIZE];
 	int key_size;
 };
 
 static bool ror_init_state(struct ror_state *const state, const ut8 *key, int keylen) {
-	if (!state || !key || keylen < 1 || keylen > MAX_ror_KEY_SIZE) {
+	if (!state || !key || keylen < 1 || keylen > MAX_ROR_KEY_SIZE) {
 		return false;
 	}
 	int i;
@@ -51,7 +49,7 @@ static int ror_get_key_size(RzCrypto *cry) {
 }
 
 static bool ror_use(const char *algo) {
-	return !strcmp(algo, NAME);
+	return !strcmp(algo, "ror");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
@@ -87,9 +85,10 @@ static bool ror_fini(RzCrypto *cry) {
 }
 
 RzCryptoPlugin rz_crypto_plugin_ror = {
-	.name = NAME,
+	.name = "ror",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "Rotate Right symmetric-key block cipher",
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.use = ror_use,

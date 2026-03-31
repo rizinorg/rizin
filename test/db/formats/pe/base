@@ -1,8 +1,7 @@
 NAME=PE: corkami base.exe - open
 FILE=bins/pe/base.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Relocs

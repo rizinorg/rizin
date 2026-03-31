@@ -1,7 +1,6 @@
 io_plugins_list = [
   'ar',
   'fd',
-  'bfdbg',
   'bochs',
   'debug',
   'default',
@@ -16,13 +15,11 @@ io_plugins_list = [
   'null',
   'procpid',
   'ptrace',
-  'rzpipe',
-  'rzweb',
-  'rap',
   'self',
   'shm',
   'sparse',
   'tcp',
+  'titxt',
   'winkd',
   'winedbg',
   'zip'
@@ -48,6 +45,7 @@ io_plugins = {
 
 rz_io_sources = [
   'io.c',
+  'io_bounds.c',
   'io_fd.c',
   'io_map.c',
   'io_memory.c',
@@ -59,7 +57,6 @@ rz_io_sources = [
   'serialize_io.c',
   'p/io_ar.c',
   'p/io_fd.c',
-  'p/io_bfdbg.c',
   'p/io_bochs.c',
   'p/io_debug.c',
   'p/io_dmp.c',
@@ -73,9 +70,6 @@ rz_io_sources = [
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',
-  'p/io_rzpipe.c',
-  'p/io_rzweb.c',
-  'p/io_rap.c',
   'p/io_self.c',
   'p/io_shm.c',
   'p/io_sparse.c',
@@ -84,6 +78,7 @@ rz_io_sources = [
   'p/io_winkd.c',
   'p/io_winedbg.c',
   'p/io_zip.c',
+  'p/io_titxt.c',
 ]
 
 if host_machine.system() == 'windows'
@@ -108,6 +103,14 @@ rz_io_deps = [
   rz_cons_dep,
   platform_deps,
 ]
+
+if host_machine.system() == 'sunos'
+  rz_io_deps += [
+    cc.find_library('socket'),
+    cc.find_library('nsl'),
+    cc.find_library('proc'),
+  ]
+endif
 
 if get_option('use_gpl')
   rz_io_deps += dependency('rzqnx')

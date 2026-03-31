@@ -2,6 +2,7 @@ NAME=avr DISasm: [0e940b10 => 0x00002016] (ANAL)
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0e940b10 @ 0x2d0
 s 0x2d0
 ao 1~^jump[1]
@@ -15,6 +16,7 @@ NAME=avr DISasm: [0e940b10 => call] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2d0
 wx 0e940b10
 ao 1~jump
@@ -28,6 +30,7 @@ NAME=avr adiw/sbiw
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 2a961a97
 pd 2
 EOF
@@ -41,6 +44,7 @@ NAME=avr ld/ldd
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx a984fc91a184
 pd 3
 EOF
@@ -55,12 +59,12 @@ NAME=avr DISasm: [sts] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2d0
 wx 9093c007
 ao 1~jump
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=avr DISasm: negative baddr
@@ -81,6 +85,7 @@ NAME=avr DISasm: opcode size
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0e941122
 ao~size[1]
 EOF
@@ -91,8 +96,48 @@ RUN
 
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
-CMDS=pd 13 @ 0x00000282
+CMDS=<<EOF
+iI
+pd 13 @ 0x00000282
+EOF
 EXPECT=<<EOF
+arch     avr
+cpu      ATmega8
+features N/A
+baddr    ----------
+binsz    0x00003722
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  ATmel (unknown)
+maxopsz  4
+minopsz  2
+os       avr usermode
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
             0x00000282      in    r24, 0x12                            ; IO Output pins/pullups address for port D
             0x00000284      subi  r24, 0x80
             0x00000286      out   0x12, r24                            ; IO Output pins/pullups address for port D
@@ -118,21 +163,25 @@ pd 5 @ 0x0
 fsl~reg
 EOF
 EXPECT=<<EOF
-        ,=< 0x00000000  ~   jmp   entry0
-        |   ;-- PINB:
-        |   0x00000003      unaligned
+            ;-- vector.RESET:
+|           ;-- (0x00000003) PINB:
+/ entry0();
+\       ,=< 0x00000000  ~   jmp   main
+        |   ;-- vector.unknown_2:
         |   ;-- DDRB:
-       ,==< 0x00000004  ~   jmp   0x1b6
+       ,==< 0x00000004  ~   jmp   sym.__bad_interrupt
        ||   ;-- PORTB:
        ||   0x00000005      unaligned
        ||   ;-- PINC:
        ||   0x00000006  ~   invalid
+       ||   ;-- DDRC:
+       ||   0x00000007      unaligned
    37 * registers.extended
    41 * registers.mmio
 EOF
 RUN
 
-NAME=test changing CPUs and loading new profiles 
+NAME=test changing CPUs and loading new profiles
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.cpu=ATTiny48
@@ -147,19 +196,22 @@ EXPECT=<<EOF
             0x00000015      unaligned
             ;-- TIFR1:
             0x00000016      invalid
-        ,=< 0x00000018  ~   jmp   0x1b6
+            ;-- vector.unknown_c:
+        ,=< 0x00000018  ~   jmp   sym.__bad_interrupt
         |   ;-- PCIFR:
         |   0x0000001b      unaligned
+        |   ;-- vector.unknown_e:
         |   ;-- EIFR:
-       ,==< 0x0000001c  ~   jmp   0x1b6
+       ,==< 0x0000001c  ~   jmp   sym.__bad_interrupt
             ;-- PORTC:
             0x00000015      unaligned
             ;-- PINB:
             0x00000016  ~   invalid
             ;-- DDRB:
             0x00000017      unaligned
+            ;-- vector.unknown_c:
             ;-- PORTB:
-        ,=< 0x00000018  ~   jmp   0x1b6
+        ,=< 0x00000018  ~   jmp   sym.__bad_interrupt
         |   ;-- PINA:
         |   0x00000019      unaligned
 EOF
@@ -173,14 +225,16 @@ aa
 pd 5 @ 0x03c
 EOF
 EXPECT=<<EOF
-        ,=< 0x0000003c  ~   jmp   0x1b6
+            ;-- vector.unknown_1e:
+        ,=< 0x0000003c  ~   jmp   sym.__bad_interrupt
         |   ;-- SPL:
         |   0x0000003d      unaligned
         |   ;-- SPH:
         |   0x0000003e  ~   invalid
         |   ;-- SREG:
         |   0x0000003f      unaligned
-       ,==< 0x00000040      jmp   0x3f8
+        |   ;-- vector.unknown_20:
+       ,==< 0x00000040      jmp   sym.handler.unknown_20
 EOF
 RUN
 
@@ -192,7 +246,7 @@ aaa
 iS~.rom
 EOF
 EXPECT=<<EOF
-0x00001fff 0x4000 0x00001fff 0x4000 0x0   -r-x .rom      NULL     
+0x00001fff 0x4000 0x00001fff 0x4000   0x0 -r-x .rom      NULL     
 EOF
 RUN
 
@@ -201,6 +255,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 61f0 @ 0x136
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 pi 1 @ 0x136
 ao 1 @ 0x136 ~^jump[1]
@@ -216,6 +271,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx e1f7 @ 0x14a
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 ao 1 @ 0x14a ~^jump[1]
 EOF
@@ -229,6 +285,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx f0cf @ 0x14e
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 s 0x14e
 ao 1 @ 0x14e ~^jump[1]
@@ -243,6 +300,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 0c941234 @ 0x15e
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega8
 ao 1 @ 0x15e~^jump[1]
 EOF
@@ -256,6 +314,7 @@ FILE=malloc://16384
 ARGS=-s 0x3434 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega8
+e cfg.bigendian=false
 wx ffcf
 pi 1
 ao 1~^jump[1]
@@ -271,6 +330,7 @@ FILE=malloc://8192
 ARGS=-s 0x1000 -a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4
@@ -292,6 +352,7 @@ FILE=malloc://8192
 ARGS=-a avr
 CMDS=<<EOF
 e asm.cpu=ATmega1280
+e cfg.bigendian=false
 wx 00c8 01c8 7ec8 7fc8 80c8 81c8
 aoe 4
 pi 4
@@ -322,6 +383,7 @@ wx fec5 ffc5 00c6 01c6 7ec6 7fc6 80c6 81c6
 wx fec6 ffc6 00c7 01c7 7ec7 7fc7 80c7 81c7
 wx fec7 ffc7
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega640
 aoe 66 @ 0
 EOF
@@ -407,6 +469,7 @@ wx 00cd 01cd 7ecd 7fcd 80cd 81cd fecd ffcd @ 0x1050
 wx 00ce 01ce 7ece 7fce 80ce 81ce fece ffce @ 0x1060
 wx 00cf 01cf 7ecf 7fcf 80cf 81cf fecf ffcf @ 0x1070
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega640
 aoe 64 @ 0x1000
 EOF
@@ -482,6 +545,7 @@ NAME=avr functions 1
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 axt @ 0x28a
 EOF
@@ -494,6 +558,7 @@ NAME=avr functions 2
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 1895
 ao 1~fam[1]
 af
@@ -542,7 +607,6 @@ NAME=Search rop gadgets for in command
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
-e search.align=2
 /R in r24
 EOF
 EXPECT=<<EOF
@@ -551,26 +615,43 @@ EXPECT=<<EOF
   0x00000284               8058  subi r24, 0x80
   0x00000286               82bb  out 0x12, r24
   0x00000288               0895  ret
+Gadget size: 10
+
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 8
 
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
   0x00000298               8058  subi r24, 0x80
   0x0000029a               88bb  out 0x18, r24
   0x0000029c               0895  ret
+Gadget size: 10
+
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 8
 
   0x000005c6               8fb5  in r24, 0x2f
   0x000005c8               8f77  andi r24, 0x7f
   0x000005ca               02c0  rjmp 0x5d0
+Gadget size: 6
 
   0x000005cc               8fb5  in r24, 0x2f
   0x000005ce               8f7d  andi r24, 0xdf
   0x000005d0               8fbd  out 0x2f, r24
   0x000005d2               0895  ret
+Gadget size: 8
 
   0x000005d4               85b5  in r24, 0x25
   0x000005d6               8f7d  andi r24, 0xdf
   0x000005d8               85bd  out 0x25, r24
   0x000005da               0895  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -588,26 +669,43 @@ EXPECT=<<EOF
   0x00000284               8058  subi r24, 0x80
   0x00000286               82bb  out 0x12, r24
   0x00000288               0895  ret
+Gadget size: 10
+
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 8
 
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
   0x00000298               8058  subi r24, 0x80
   0x0000029a               88bb  out 0x18, r24
   0x0000029c               0895  ret
+Gadget size: 10
+
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 8
 
   0x000005c6               8fb5  in r24, 0x2f
   0x000005c8               8f77  andi r24, 0x7f
   0x000005ca               02c0  rjmp 0x5d0
+Gadget size: 6
 
   0x000005cc               8fb5  in r24, 0x2f
   0x000005ce               8f7d  andi r24, 0xdf
   0x000005d0               8fbd  out 0x2f, r24
   0x000005d2               0895  ret
+Gadget size: 8
 
   0x000005d4               85b5  in r24, 0x25
   0x000005d6               8f7d  andi r24, 0xdf
   0x000005d8               85bd  out 0x25, r24
   0x000005da               0895  ret
+Gadget size: 8
 
 EOF
 RUN
@@ -623,22 +721,31 @@ pd 5
 EOF
 EXPECT=<<EOF
 0x00000296   # 2: in r24, 0x18
-        ,=< 0x00000000      0c94ac00       jmp   entry0
-       ,==< 0x00000004      0c94db00       jmp   0x1b6
-      ,===< 0x00000008      0c94db00       jmp   0x1b6
-     ,====< 0x0000000c      0c94db00       jmp   0x1b6
-    ,=====< 0x00000010      0c94db00       jmp   0x1b6
+            ;-- entry0:
+            ;-- vector.RESET:
+        ,=< 0x00000000      0c94ac00       jmp   main
+        |   ;-- vector.unknown_2:
+       ,==< 0x00000004      0c94db00       jmp   sym.__bad_interrupt
+       ||   ;-- vector.unknown_4:
+      ,===< 0x00000008      0c94db00       jmp   sym.__bad_interrupt
+      |||   ;-- vector.unknown_6:
+     ,====< 0x0000000c      0c94db00       jmp   sym.__bad_interrupt
+     ||||   ;-- vector.unknown_8:
+    ,=====< 0x00000010      0c94db00       jmp   sym.__bad_interrupt
 EOF
 RUN
 
 NAME=entry point and bin format - arduino
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
-%v $$
+ie
 i~arch[1]
 EOF
 EXPECT=<<EOF
-0x158
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00000000 0x00000000 ---------- ---------- program
+0x00000158 0x00000158 0x00000158 0x00000158 init
 avr
 EOF
 RUN
@@ -646,11 +753,14 @@ RUN
 NAME=entry point and bin format - jumpy
 FILE=bins/firmware/jumpy.bin
 CMDS=<<EOF
-%v $$
+ie
 i~arch[1]
 EOF
 EXPECT=<<EOF
-0x8a
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00000000 0x00000000 ---------- ---------- program
+0x0000008a 0x0000008a 0x0000008a 0x0000008a init
 avr
 EOF
 RUN
@@ -659,6 +769,7 @@ NAME=avr search
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 /ad call 0x4ec
 EOF
@@ -671,6 +782,7 @@ NAME=avr search - XXX dupped hit
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 /ad call 0x4ec
 EOF
@@ -683,6 +795,7 @@ NAME=avr search 2
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aac @ 0
 axt @ 0x4ec
 EOF
@@ -695,6 +808,7 @@ NAME=avr search 3
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 axt @ 0x4ec
 EOF
@@ -707,16 +821,21 @@ NAME=detect false xrefs
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.bytes=true
 e asm.lines=false
 aar
 pd 4 @ 4
 EOF
 EXPECT=<<EOF
-0x00000004      0c94db00       jmp   0x1b6
-0x00000008      0c94db00       jmp   0x1b6
-0x0000000c      0c94db00       jmp   0x1b6
-0x00000010      0c94db00       jmp   0x1b6
+;-- vector.unknown_2:
+0x00000004      0c94db00       jmp   sym.__bad_interrupt
+;-- vector.unknown_4:
+0x00000008      0c94db00       jmp   sym.__bad_interrupt
+;-- vector.unknown_6:
+0x0000000c      0c94db00       jmp   sym.__bad_interrupt
+;-- vector.unknown_8:
+0x00000010      0c94db00       jmp   sym.__bad_interrupt
 EOF
 RUN
 
@@ -739,39 +858,79 @@ NAME=avr no warnings
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 s 0x2ee8
 af
 aae
 EOF
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT=
+EXPECT_ERR=
 RUN
 
 NAME=avr stop analysis when invalid instruction is found
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 aaa
 fl
 EOF
 EXPECT=<<EOF
+0x00000000 4 entry0
+0x00000000 0 sym.vector.RESET
 0x00000000 2 x
 0x00000000 2 z
+0x00000000 2 pcl
 0x00000000 2 pch
+0x00000004 0 sym.vector.unknown_2
+0x00000008 0 sym.vector.unknown_4
+0x0000000c 0 sym.vector.unknown_6
+0x00000010 0 sym.vector.unknown_8
+0x00000014 0 sym.vector.unknown_a
+0x00000018 0 sym.vector.unknown_c
+0x0000001c 0 sym.vector.unknown_e
+0x00000020 0 sym.vector.unknown_10
+0x00000024 0 sym.vector.unknown_12
+0x00000028 0 sym.vector.unknown_14
+0x0000002c 0 sym.vector.unknown_16
+0x00000030 0 sym.vector.unknown_18
+0x00000034 0 sym.vector.unknown_1a
 0x00000037 1 SPMCSR
+0x00000038 0 sym.vector.unknown_1c
+0x0000003c 0 sym.vector.unknown_1e
 0x0000003d 1 SPL
 0x0000003e 1 SPH
 0x0000003f 1 SREG
+0x00000040 0 sym.vector.unknown_20
+0x00000044 0 sym.vector.unknown_22
+0x00000048 0 sym.vector.unknown_24
+0x0000004c 0 sym.vector.unknown_26
+0x00000050 0 sym.vector.unknown_28
+0x00000054 0 sym.vector.unknown_2a
+0x00000058 0 sym.vector.unknown_2c
+0x0000005c 0 sym.vector.unknown_2e
+0x00000060 0 sym.vector.unknown_30
+0x00000064 0 sym.vector.unknown_32
 0x00000066 4 aav.0x00000066
-0x00000158 13478 entry0
-0x00000158 2 pcl
+0x00000068 0 sym.vector.unknown_34
+0x0000006c 0 sym.vector.unknown_36
+0x00000070 0 sym.vector.unknown_38
+0x00000074 0 sym.vector.unknown_3a
+0x00000078 0 sym.vector.unknown_3c
+0x0000007c 0 sym.vector.unknown_3e
+0x00000080 0 sym.vector.unknown_40
+0x00000084 0 sym.vector.unknown_42
+0x00000088 0 sym.vector.unknown_44
+0x00000158 13478 main
+0x00000158 1 entry.init0
+0x00000158 0 sym.handler.RESET
+0x000001b6 0 sym.__bad_interrupt
 0x000001ba 188 fcn.000001ba
 0x0000029e 164 fcn.0000029e
 0x00000342 5256 fcn.00000342
 0x00000360 152 fcn.00000360
 0x00000390 4 aav.0x00000390
+0x000003f8 0 sym.handler.unknown_20
 0x0000048c 24 fcn.0000048c
 0x000004a4 72 fcn.000004a4
 0x000004ec 76 fcn.000004ec
@@ -802,7 +961,11 @@ EXPECT=<<EOF
 0x000012fc 26 fcn.000012fc
 0x00001316 32 fcn.00001316
 0x00001438 2 fcn.00001438
+0x0000143a 0 sym.handler.unknown_24
+0x000014b0 0 sym.handler.unknown_3c
 0x0000152c 34 fcn.0000152c
+0x0000154e 0 sym.handler.unknown_26
+0x000015c2 0 sym.handler.unknown_3e
 0x00001b0c 36 fcn.00001b0c
 0x00001b30 52 fcn.00001b30
 0x00001b64 56 fcn.00001b64
@@ -877,6 +1040,7 @@ FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e analysis.jmp.cref=true
 e asm.arch=avr
+e cfg.bigendian=false
 e asm.cpu=ATmega168
 aaa
 s fcn.000005a2
@@ -954,6 +1118,7 @@ NAME=avr regs
 FILE=
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 ar
 EOF
 EXPECT=<<EOF
@@ -1008,6 +1173,7 @@ NAME=avr rjmp test
 FILE==
 CMDS=<<EOF
 e asm.arch=avr
+e cfg.bigendian=false
 wx 0f94db6e8091bc1988231fc04090b4195090b5196090b6197090b7190f94e0514616
 om 3 0x0003755c 64 0 rwx test_map
 pd 10 @ 0x0003755c

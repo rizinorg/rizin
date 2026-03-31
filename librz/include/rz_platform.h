@@ -46,11 +46,11 @@ typedef struct rz_platform_target_index_t {
 
 RZ_API RZ_OWN RzPlatformProfile *rz_platform_profile_new();
 RZ_API RZ_OWN RzPlatformTarget *rz_platform_target_new();
-RZ_API void rz_platform_profile_free(RzPlatformProfile *profile);
-RZ_API void rz_platform_target_free(RzPlatformTarget *target);
-RZ_API bool rz_platform_profiles_init(RzPlatformTarget *c, const char *cpu, const char *arch, const char *cpus_dir);
-RZ_API void rz_platform_profile_add_flag_every_io(RzPlatformProfile *profile, RzFlag *flags);
-RZ_API bool rz_platform_load_profile_sdb(RzPlatformTarget *t, const char *path);
+RZ_API void rz_platform_profile_free(RZ_NULLABLE RzPlatformProfile *profile);
+RZ_API void rz_platform_target_free(RZ_NULLABLE RzPlatformTarget *target);
+RZ_API bool rz_platform_profiles_init(RZ_NULLABLE RzPlatformTarget *c, RZ_NULLABLE const char *cpu, RZ_NULLABLE const char *arch, RZ_NULLABLE const char *cpus_dir);
+RZ_API void rz_platform_profile_add_flag_every_io(RZ_NONNULL RzPlatformProfile *profile, RZ_NONNULL RzFlag *flags);
+RZ_API bool rz_platform_load_profile_sdb(RZ_NONNULL RzPlatformTarget *t, RZ_NONNULL const char *path);
 RZ_API RZ_BORROW const char *rz_platform_profile_resolve_mmio(RZ_NONNULL RzPlatformProfile *profile, ut64 address);
 RZ_API RZ_BORROW const char *rz_platform_profile_resolve_extended_register(RZ_NONNULL RzPlatformProfile *profile, ut64 address);
 

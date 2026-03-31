@@ -35,14 +35,14 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 
 	rz_list_foreach (all, it, arfp) {
 		char *uri_name = rz_str_newf("%s//%s", file, arfp->name);
-		RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_ar, uri_name, perm, mode, arfp);
+		RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_ar, uri_name, perm, arfp);
 		free(uri_name);
 		if (!desc) {
 			rz_list_free(all);
 			rz_list_free(list_fds);
 			return NULL;
 		}
-		desc->name = strdup(arfp->name);
+		desc->name = rz_str_dup(arfp->name);
 		if (!rz_list_append(list_fds, desc)) {
 			rz_list_free(all);
 			rz_list_free(list_fds);
@@ -57,7 +57,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	rz_return_val_if_fail(io && file, NULL);
 	RzIODesc *res = NULL;
-	char *uri = strdup(file);
+	char *uri = rz_str_dup(file);
 	if (!uri) {
 		return NULL;
 	}
@@ -78,11 +78,11 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	if (!arf) {
 		goto err;
 	}
-	res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, mode, arf);
+	res = rz_io_desc_new(io, &rz_io_plugin_ar, filename, perm, arf);
 	if (!res) {
 		goto err;
 	}
-	res->name = strdup(filename);
+	res->name = rz_str_dup(filename);
 err:
 	free(uri);
 	return res;

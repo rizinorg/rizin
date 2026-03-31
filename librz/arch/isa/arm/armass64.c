@@ -1007,7 +1007,7 @@ static ut32 bitfield(ArmOp *op, int k) {
 }
 
 static bool parseOperands(char *str, ArmOp *op) {
-	char *t = strdup(str);
+	char *t = rz_str_dup(str);
 	int operand = 0;
 	char *token = t;
 	char *x;
@@ -1294,7 +1294,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 }
 
 static bool parseOpcode(const char *str, ArmOp *op) {
-	char *in = strdup(str);
+	char *in = rz_str_dup(str);
 	char *space = strchr(in, ' ');
 	if (!space) {
 		op->operands[0].type = ARM_NOTYPE;

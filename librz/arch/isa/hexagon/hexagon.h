@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: b6f51787f6c8e77143f0aef6b58ddc7c55741d5c
-// LLVM commit date: 2023-11-15 07:10:59 -0800 (ISO 8601 format)
-// Date of code generation: 2024-03-16 06:22:39-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -266,9 +266,10 @@ typedef struct {
 	bool just_init; ///< Flag indicates if IL VM was just initialized.
 	HexPkt pkts[HEXAGON_STATE_PKTS]; // buffered instructions
 	RzList /*<HexConstExt *>*/ *const_ext_l; // Constant extender values.
-	RzAsm rz_asm; // Copy of RzAsm struct. Holds certain flags of interesed for disassembly formatting.
 	RzConfig *cfg;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns; ///< PVector with token patterns. Priority ordered.
+	bool utf8_enabled; ///< If set, print UTF-8 characters.
+	bool might_have_jumped; ///< Is set if a previous IL packet was a branch. Indicates the next decoded packet is valid.
 } HexState;
 
 /**
@@ -833,7 +834,7 @@ const char *hex_get_sys_regs(int reg_num, bool get_alias, bool get_new, bool reg
 const char *hex_get_sys_regs64(int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
 RZ_API const char *hex_get_reg_in_class(HexRegClass cls, int reg_num, bool get_alias, bool get_new, bool reg_num_is_enum);
 
-RZ_API RZ_BORROW RzConfig *hexagon_get_config();
+RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data);
 RZ_API void hex_extend_op(HexState *state, RZ_INOUT HexOp *op, const bool set_new_extender, const ut32 addr);
 int resolve_n_register(const int reg_num, const ut32 addr, const HexPkt *p);
 int hexagon_disasm_instruction(HexState *state, const ut32 hi_u32, RZ_INOUT HexInsnContainer *hi, HexPkt *pkt);

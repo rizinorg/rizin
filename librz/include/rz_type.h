@@ -28,15 +28,22 @@ typedef struct rz_type_target_t {
 
 typedef struct rz_type_parser_t RzTypeParser;
 
+RZ_DEPRECATE typedef struct rz_format_data_internal_t {
+	int slide;
+	int oldslide;
+	int ident;
+} RzFormatDataInternal;
+
 typedef struct rz_type_db_t {
 	void *user;
-	HtPP /*<char *, RzBaseType *>*/ *types; //< name -> base type
-	HtPP /*<char *, char *>*/ *formats; //< name -> `pf` format
-	HtPP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
+	HtSP /*<char *, RzBaseType *>*/ *types; //< name -> base type
+	HtSS /*<char *, char *>*/ *formats; //< name -> `pf` format
+	HtSP /*<char *, RzCallable *>*/ *callables; //< name -> RzCallable (function type)
 	RzTypeTarget *target;
 	RzTypeParser *parser;
 	RzNum *num;
 	RzIOBind iob; // for RzIO in formats
+	RZ_DEPRECATE RzFormatDataInternal *format_internal_data; // for rz_type_format_data_internal state
 } RzTypeDB;
 
 // All types in RzTypeDB module are either concrete,
@@ -333,7 +340,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
-RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables);
+RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables);
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);
 
@@ -403,7 +410,7 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *type);
 RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n);
-RZ_API RZ_OWN char *rz_type_format_data(const RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
 RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
@@ -441,7 +448,7 @@ RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
-RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, bool zero_vla);
 
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name);

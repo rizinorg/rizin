@@ -4,12 +4,13 @@
 
 #include <rz_analysis.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 } BfContext;
 
-static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) {
+static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(const RzAsm *a) {
 	BfContext *ctx = (BfContext *)a->plugin_data;
 	RzPVector *pvec = ctx->token_patterns;
 	if (pvec) {
@@ -22,21 +23,21 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	// Mnemonic pattern
 	RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_MNEMONIC;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"^(while|inc|dec|out|in|trap|nop|invalid|loop)");
 	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_REGISTER;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"ptr");
 	rz_pvector_push(pvec, pat);
 
 	// reference pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_OPERATOR;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"\\[|\\]" // Matches a single bracket
 	);
 	rz_pvector_push(pvec, pat);
@@ -44,14 +45,14 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns(RzAsm *a) 
 	// Separator pattern
 	pat = RZ_NEW0(RzAsmTokenPattern);
 	pat->type = RZ_ASM_TOKEN_SEPARATOR;
-	pat->pattern = strdup(
+	pat->pattern = rz_str_dup(
 		"\\s+");
 	rz_pvector_push(pvec, pat);
 
 	return pvec;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = "invalid";
 	ut32 op_type;
 	switch (*buf) {
@@ -103,6 +104,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RzPVector *token_patterns = get_token_patterns(a);
 	op->asm_toks = rz_asm_tokenize_asm_regex(&op->buf_asm, token_patterns);
 	op->asm_toks->op_type = op_type;
+	rz_pvector_free(token_patterns);
 
 	op->size = 1;
 	return op->size;
@@ -119,7 +121,7 @@ static bool _write_asm(RzAsmOp *op, int value, int n) {
 	return false;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
 		buf += 2;
@@ -186,6 +188,13 @@ static bool bf_fini(void *user) {
 	return true;
 }
 
+static bool bf_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+	// { 0, 1, 0, (const ut8 *)"\xff" },
+	// { 0, 1, 0, (const ut8 *)"\x00" },
+	rz_asm_op_set_buf(op, (const ut8 *)"\xff", 1);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_bf = {
 	.name = "bf",
 	.author = "pancake, nibble",
@@ -198,5 +207,6 @@ RzAsmPlugin rz_asm_plugin_bf = {
 	.init = bf_init,
 	.fini = bf_fini,
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.sw_breakpoint = bf_sw_breakpoint,
 };

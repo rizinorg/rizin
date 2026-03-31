@@ -1,0 +1,52 @@
+NAME=ELF: x86_64 relocs patching test
+FILE=bins/elf/x86_64_relocs.o
+CMDS=<<EOF
+ir
+pd 10 @ 0x08000048
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type             name                
+----------------------------------------------------------------------
+0x08000048 0x00000048 0x08000042 R_X86_64_8       target
+0x08000049 0x00000049 0x08000042 R_X86_64_16      target
+0x0800004b 0x0000004b 0x08000042 R_X86_64_32      target
+0x0800004f 0x0000004f 0x08000042 R_X86_64_32S     target
+0x08000053 0x00000053 0x08000042 R_X86_64_64      target
+0x0800005b 0x0000005b 0x08000042 R_X86_64_PC8     target - 0x0800005b
+0x0800005c 0x0000005c 0x08000042 R_X86_64_PC16    target - 0x0800005c
+0x0800005e 0x0000005e 0x08000042 R_X86_64_PC32    target - 0x0800005e
+0x08000062 0x00000062 0x08000042 R_X86_64_PC64    target - 0x08000062
+0x0800006a 0x0000006a 0x08000042 R_X86_64_GOTPC32 GOT - 0x0800006a
+            ;-- section..reloc_test:
+            ;-- target:
+            ;-- abs8:
+            0x08000048      .byte 0x42                                 ; RELOC 8 target @ 0x08000042 ; [04] -r-- section size 38 named .reloc_test
+            ;-- target:
+            ;-- abs16:
+            0x08000049      .word 0x0042                               ; RELOC 16 target @ 0x08000042
+            ;-- target:
+            ;-- abs32:
+            0x0800004b      .dword 0x08000042 ; reloc.target.target ; loc.target; RELOC 32 target @ 0x08000042
+            ;-- target:
+            ;-- abs32s:
+            0x0800004f      .dword 0x08000042 ; reloc.target.target ; loc.target; RELOC 32 target @ 0x08000042
+            ;-- target:
+            ;-- abs64:
+            0x08000053      .qword 0x0000000008000042 ; reloc.target.target ; loc.target; RELOC 64 target @ 0x08000042
+            ;-- target:
+            ;-- pc8:
+            0x0800005b      .byte 0xe7                                 ; RELOC 8 target @ 0x08000042 - 0x800005b
+            ;-- target:
+            ;-- pc16:
+            0x0800005c      .word 0xffe6                               ; RELOC 16 target @ 0x08000042 - 0x800005c
+            ;-- target:
+            ;-- pc32:
+            0x0800005e      .dword 0xffffffe4                          ; RELOC 32 target @ 0x08000042 - 0x800005e
+            ;-- target:
+            ;-- pc64:
+            0x08000062      .qword 0xffffffffffffffe0                  ; RELOC 64 target @ 0x08000042 - 0x8000062
+            ;-- target:
+            ;-- gotpc32:
+            0x0800006a      .dword 0xf7ffff96                          ; RELOC 32 target @ 0x08000042 - 0x800006a
+EOF
+RUN

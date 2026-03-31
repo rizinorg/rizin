@@ -112,8 +112,8 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 	len = strlen(kwbuf);
 	str = malloc((len + 1) * 2);
 	for (p2 = kwbuf, p = str; *p2;) {
-		RzRune ch;
-		int num_utf8_bytes = rz_utf8_decode((const ut8 *)p2, kwbuf + len - p2, &ch);
+		RzCodePoint ch;
+		int num_utf8_bytes = rz_utf8_decode((const ut8 *)p2, kwbuf + len - p2, &ch, true);
 		if (num_utf8_bytes < 1) {
 			eprintf("WARNING: Malformed UTF8 at pos %td\n", p2 - kwbuf);
 			p[0] = *p2;
@@ -125,7 +125,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 		if (ignore_case && ch <= 0xff) {
 			ch = tolower(ch);
 		}
-		int num_wide_bytes = rz_utf16le_encode((ut8 *)p, ch);
+		int num_wide_bytes = rz_utf16_encode((ut8 *)p, ch, false);
 		rz_warn_if_fail(num_wide_bytes != 0);
 		p2 += num_utf8_bytes;
 		p += num_wide_bytes;
@@ -189,7 +189,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const c
 		kw = malloc(len + 4);
 		bm = malloc(len + 4);
 		if (kw != NULL && bm != NULL) {
-			len = rz_hex_str2binmask(kwstr, (ut8 *)kw, (ut8 *)bm);
+			len = rz_hex_str2bin_mask(kwstr, (ut8 *)kw, (ut8 *)bm, true);
 			if (len < 0) {
 				len = -len - 1;
 			}

@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include "nes/nes_specs.h"
 
-static bool check_buffer(RzBuffer *b) {
+static bool nes_check_buffer(RzBuffer *b) {
 	if (rz_buf_size(b) > 4) {
 		ut8 buf[4];
 		rz_buf_read_at(b, 0, buf, sizeof(buf));
@@ -14,27 +14,40 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	return check_buffer(buf);
+static bool nes_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	ines_hdr *hdr = RZ_NEW0(ines_hdr);
+	if (!hdr) {
+		return false;
+	}
+	if (rz_buf_read_at(buf, 0, (ut8 *)hdr, INES_HDR_SIZE) != INES_HDR_SIZE) {
+		free(hdr);
+		return false;
+	}
+	if (memcmp(hdr->id, INES_MAGIC, 4)) {
+		free(hdr);
+		return false;
+	}
+	obj->bin_obj = hdr;
+	return true;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret = NULL;
-	ines_hdr ihdr;
-	memset(&ihdr, 0, INES_HDR_SIZE);
-	int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&ihdr, INES_HDR_SIZE);
-	if (reat != INES_HDR_SIZE) {
-		RZ_LOG_ERROR("Truncated Header\n");
+static void nes_destroy(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return;
+	}
+	free(bf->o->bin_obj);
+}
+
+static RzBinInfo *nes_info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(ret = RZ_NEW0(RzBinInfo))) {
-		return NULL;
-	}
-	ret->file = strdup(bf->file);
-	ret->type = strdup("ROM");
-	ret->machine = strdup("Nintendo NES");
-	ret->os = strdup("nes");
-	ret->arch = strdup("6502");
+	ret->file = rz_str_dup(bf->file);
+	ret->type = rz_str_dup("ROM");
+	ret->machine = rz_str_dup("Nintendo NES");
+	ret->os = rz_str_dup("nes");
+	ret->arch = rz_str_dup("6502");
 	ret->bits = 8;
 	ret->has_va = 1;
 	return ret;
@@ -45,14 +58,14 @@ static void addsym(RzPVector /*<RzBinSymbol *>*/ *ret, const char *name, ut64 ad
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup(name ? name : "");
+	ptr->name = rz_str_dup(name ? name : "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
 	ptr->ordinal = 0;
 	rz_pvector_push(ret, ptr);
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *nes_symbols(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
 		return NULL;
@@ -82,37 +95,34 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzPVector *ret = NULL;
-	RzBinSection *ptr = NULL;
-	ines_hdr ihdr;
-	memset(&ihdr, 0, INES_HDR_SIZE);
-	int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&ihdr, INES_HDR_SIZE);
-	if (reat != INES_HDR_SIZE) {
-		RZ_LOG_ERROR("Truncated Header\n");
+static RzPVector /*<RzBinSection *>*/ *nes_sections(RzBinFile *bf) {
+	const ines_hdr *hdr = bf->o->bin_obj;
+	if (!hdr) {
 		return NULL;
 	}
-	if (!(ret = rz_pvector_new(NULL))) {
+	RzPVector *ret = rz_pvector_new(NULL);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
+	RzBinSection *ptr = RZ_NEW0(RzBinSection);
+	if (!ptr) {
 		return ret;
 	}
-	ptr->name = strdup("ROM");
+	ptr->name = rz_str_dup("ROM");
 	ptr->paddr = INES_HDR_SIZE;
-	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
-	bool mirror = ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS; // not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
+	ptr->size = hdr->prg_page_count_16k * PRG_PAGE_SIZE;
+	bool mirror = ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS;
 	ptr->vaddr = ROM_START_ADDRESS;
-	ptr->vsize = mirror ? ROM_MIRROR_ADDRESS - ROM_START_ADDRESS : ROM_SIZE; // make sure the ROM zero excess does not overlap the mirror
+	ptr->vsize = mirror ? ROM_MIRROR_ADDRESS - ROM_START_ADDRESS : ROM_SIZE;
 	ptr->perm = RZ_PERM_RX;
 	rz_pvector_push(ret, ptr);
 	if (mirror) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup("ROM_MIRROR");
+		ptr->name = rz_str_dup("ROM_MIRROR");
 		ptr->paddr = INES_HDR_SIZE;
-		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+		ptr->size = hdr->prg_page_count_16k * PRG_PAGE_SIZE;
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
 		ptr->perm = RZ_PERM_RX;
@@ -121,7 +131,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
+static RzPVector /*<RzBinMem *>*/ *nes_mem(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinMem *m, *n;
 	if (!(ret = rz_pvector_new(rz_bin_mem_free))) {
@@ -131,7 +141,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("RAM");
+	m->name = rz_str_dup("RAM");
 	m->addr = RAM_START_ADDRESS;
 	m->size = RAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -140,7 +150,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		return ret;
 	}
 	m->mirrors = rz_pvector_new(rz_bin_mem_free);
-	n->name = strdup("RAM_MIRROR_2");
+	n->name = rz_str_dup("RAM_MIRROR_2");
 	n->addr = RAM_MIRROR_2_ADDRESS;
 	n->size = RAM_MIRROR_2_SIZE;
 	n->perms = rz_str_rwx("rwx");
@@ -150,7 +160,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		m->mirrors = NULL;
 		return ret;
 	}
-	n->name = strdup("RAM_MIRROR_3");
+	n->name = rz_str_dup("RAM_MIRROR_3");
 	n->addr = RAM_MIRROR_3_ADDRESS;
 	n->size = RAM_MIRROR_3_SIZE;
 	n->perms = rz_str_rwx("rwx");
@@ -159,7 +169,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("PPU_REG");
+	m->name = rz_str_dup("PPU_REG");
 	m->addr = PPU_REG_ADDRESS;
 	m->size = PPU_REG_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -182,7 +192,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("APU_AND_IOREGS");
+	m->name = rz_str_dup("APU_AND_IOREGS");
 	m->addr = APU_AND_IOREGS_START_ADDRESS;
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -191,7 +201,7 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	m->name = strdup("SRAM");
+	m->name = rz_str_dup("SRAM");
 	m->addr = SRAM_START_ADDRESS;
 	m->size = SRAM_SIZE;
 	m->perms = rz_str_rwx("rwx");
@@ -199,7 +209,8 @@ static RzPVector /*<RzBinMem *>*/ *mem(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+// Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzPVector /*<RzBinAddr *>*/ *nes_entries(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_pvector_new(NULL))) {
@@ -214,24 +225,54 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) { // Should be 3 offs
 	return ret;
 }
 
-static ut64 baddr(RzBinFile *bf) {
-	// having this we make rz -B work, otherwise it doesnt works :??
+static ut64 nes_baddr(RzBinFile *bf) {
 	return 0;
+}
+
+static RzStructuredData *nes_structure(RzBinFile *bf) {
+	const ines_hdr *hdr = bf->o->bin_obj;
+	if (!hdr) {
+		return NULL;
+	}
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+	RzStructuredData *nes = rz_structured_data_map_add_map(info, "nes");
+	if (!nes) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+	rz_structured_data_map_add_bytes(nes, "magic", (const ut8 *)hdr->id, sizeof(hdr->id), RZ_STRUCTURED_DATA_FORMAT_DEFAULT);
+	rz_structured_data_map_add_unsigned(nes, "prg_pages", hdr->prg_page_count_16k, false);
+	rz_structured_data_map_add_unsigned(nes, "chr_pages", hdr->chr_page_count_8k, false);
+	rz_structured_data_map_add_unsigned(nes, "prg_size", (ut64)hdr->prg_page_count_16k * PRG_PAGE_SIZE, true);
+	rz_structured_data_map_add_unsigned(nes, "chr_size", (ut64)hdr->chr_page_count_8k * CHR_PAGE_SIZE, true);
+	rz_structured_data_map_add_unsigned(nes, "mapper", INES_MAPPER(hdr->rom_control_byte_0, hdr->rom_control_byte_1), true);
+	rz_structured_data_map_add_string(nes, "mirroring", INES_MIRROR(hdr->rom_control_byte_0) ? "vertical" : "horizontal");
+	rz_structured_data_map_add_boolean(nes, "battery", INES_BATTERY(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_boolean(nes, "trainer", INES_TRAINER(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_boolean(nes, "alternative_nametable_layout", INES_ALT_NAMETABLE(hdr->rom_control_byte_0) != 0);
+	rz_structured_data_map_add_unsigned(nes, "ram_banks", hdr->ram_bank_count_8k, false);
+	return info;
 }
 
 RzBinPlugin rz_bin_plugin_nes = {
 	.name = "nes",
-	.desc = "NES",
+	.desc = "Nintendo NES",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.baddr = &baddr,
-	.check_buffer = &check_buffer,
-	.entries = &entries,
+	.author = "maijin",
+	.load_buffer = &nes_load_buffer,
+	.baddr = &nes_baddr,
+	.check_buffer = &nes_check_buffer,
+	.entries = &nes_entries,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = sections,
-	.symbols = &symbols,
-	.info = &info,
-	.mem = &mem,
+	.sections = &nes_sections,
+	.symbols = &nes_symbols,
+	.info = &nes_info,
+	.mem = &nes_mem,
+	.destroy = &nes_destroy,
+	.bin_structure = &nes_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

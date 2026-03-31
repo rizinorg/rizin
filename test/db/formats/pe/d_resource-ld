@@ -1,8 +1,7 @@
 NAME=PE: corkami d_resource-ld.exe - open
 FILE=bins/pe/d_resource-ld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami d_resource-ld.exe - entrypoint
@@ -20,6 +19,6 @@ e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF
-push 2
+push 0x02
 EOF
 RUN

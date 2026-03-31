@@ -36,17 +36,13 @@ static void array_add(RzCoreObjc *o, ut64 va, ut64 xrefs_to) {
 		ht_up_insert(o->up, va, vec);
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		if (xrefs_to == *addr) {
 			return;
 		}
 	}
 	// extend vector and insert new element
 	rz_vector_push(vec, &xrefs_to);
-}
-
-static void kv_array_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
 }
 
 static inline bool isValid(ut64 addr) {
@@ -68,13 +64,13 @@ static inline bool inBetween(RzBinSection *s, ut64 addr) {
 
 static ut32 readDword(RzCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[4];
-	*success = rz_io_read_at(objc->core->io, addr, buf, sizeof(buf));
+	*success = rz_io_read_at_mapped(objc->core->io, addr, buf, sizeof(buf));
 	return rz_read_le32(buf);
 }
 
 static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[8] = { 0 };
-	*success = rz_io_read_at(objc->core->io, addr, buf, sizeof(buf));
+	*success = rz_io_read_at_mapped(objc->core->io, addr, buf, sizeof(buf));
 	return rz_read_le64(buf);
 }
 
@@ -110,7 +106,7 @@ static ut64 getRefPtr(RzCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 		return false;
 	}
 	ut64 *addr;
-	rz_vector_foreach(vec, addr) {
+	rz_vector_foreach (vec, addr) {
 		const ut64 at = *addr;
 		if (inBetween(o->_selrefs, at)) {
 			isMsgRef = false;
@@ -145,22 +141,22 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 		return false;
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
-	if (!rz_io_read_at(objc->core->io, objc->_const->vaddr, buf, ss_const)) {
+	if (!rz_io_read_at_mapped(objc->core->io, objc->_const->vaddr, buf, ss_const)) {
 		RZ_LOG_ERROR("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
-	for (off = 0; off + word_size < ss_const; off += word_size) {
+	for (off = 0; off + word_size < ss_const && (off + 8) < maxsize; off += word_size) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = rz_read_le64(buf + off);
 		if (isValid(xrefs_to)) {
 			array_add(objc, va, xrefs_to);
 		}
 	}
-	if (!rz_io_read_at(objc->core->io, va_selrefs, buf, ss_selrefs)) {
+	if (!rz_io_read_at_mapped(objc->core->io, va_selrefs, buf, ss_selrefs)) {
 		RZ_LOG_ERROR("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
-	for (off = 0; off + word_size < ss_selrefs; off += word_size) {
+	for (off = 0; off + word_size < ss_selrefs && (off + 8) < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
 		ut64 xrefs_to = rz_read_le64(buf + off);
 		if (isValid(xrefs_to)) {
@@ -179,7 +175,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	}
 	RzCoreObjc *o = RZ_NEW0(RzCoreObjc);
 	o->core = core;
-	o->word_size = (core->rasm->bits == 64) ? 8 : 4;
+	o->word_size = rz_asm_is_bits(core->rasm, 64) ? 8 : 4;
 	if (o->word_size != 8) {
 		RZ_LOG_WARN("aao is experimental on 32bit binaries\n");
 	}
@@ -199,11 +195,11 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 			o->_const = s;
 		}
 	}
-	if (!o->_const || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
+	if (!o->_const || !o->_selrefs || ((o->_selrefs || o->_msgrefs) && !(o->_data && o->_const))) {
 		free(o);
 		return NULL;
 	}
-	o->up = ht_up_new(NULL, kv_array_free, NULL);
+	o->up = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 
 	return o;
 }
@@ -237,7 +233,7 @@ static bool objc_find_refs(RzCore *core) {
 		}
 
 		ut64 va = objc->_data->vaddr + off;
-		// XXX do a single rz_io_read_at() and just rz_read_le64() here
+		// XXX do a single rz_io_read_at_mapped() and just rz_read_le64() here
 		ut64 classRoVA = readQword(objc, va + objc2ClassInfoOffs, &readSuccess);
 		if (!readSuccess || isInvalid(classRoVA)) {
 			continue;
@@ -282,6 +278,7 @@ static bool objc_find_refs(RzCore *core) {
 					total_xrefs++;
 				}
 			}
+			rz_list_free(list);
 		}
 	}
 	rz_core_notify_done(core, "%s", notify);
@@ -609,7 +606,7 @@ RZ_API void rz_core_analysis_objc_stubs(RzCore *core) {
 			goto found;
 		}
 	}
-	RZ_LOG_ERROR("__objc_stubs section not found for analysis");
+	RZ_LOG_ERROR("__objc_stubs section not found for analysis\n");
 	return;
 found:
 	analyze_objc_stubs(core, stubs_section->vaddr, stubs_section->vsize);

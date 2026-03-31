@@ -34,7 +34,7 @@ typedef struct rz_basefind_info_t {
 typedef bool (*RzBaseFindThreadInfoCb)(const RzBaseFindThreadInfo *th_info, void *user);
 
 typedef struct rz_basefind_options_t {
-	size_t max_threads; ///< Max requested number of threads (not guaranteed).
+	RzThreadNCores max_threads; ///< Max requested number of threads (not guaranteed).
 	ut32 pointer_size; ///< Pointer size in bits (32 or 64)
 	ut64 start_address; ///< Start search address
 	ut64 end_address; ///< End search address

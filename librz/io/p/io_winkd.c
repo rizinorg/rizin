@@ -97,7 +97,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		free(ctx);
 		return NULL;
 	}
-	c->fd = rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, mode, ctx);
+	c->fd = rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, ctx);
 	if (!c->fd) {
 		free(c);
 		free(ctx);

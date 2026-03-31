@@ -5,14 +5,13 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 
-static void interrupt_free(HtUPKv *kv) {
-	RzAnalysisEsilInterrupt *i = (RzAnalysisEsilInterrupt *)kv->value;
+static void interrupt_free(RzAnalysisEsilInterrupt *i) {
 	rz_analysis_esil_interrupt_free(i->esil, i);
 }
 
 RZ_API void rz_analysis_esil_interrupts_init(RzAnalysisEsil *esil) {
 	rz_return_if_fail(esil);
-	esil->interrupts = ht_up_new(NULL, interrupt_free, NULL);
+	esil->interrupts = ht_up_new(NULL, (HtUPFreeValue)interrupt_free);
 }
 
 RZ_API RzAnalysisEsilInterrupt *rz_analysis_esil_interrupt_new(RzAnalysisEsil *esil, ut32 src_id, RzAnalysisEsilInterruptHandler *ih) {
@@ -59,12 +58,6 @@ RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) 
 		return false;
 	}
 	RzAnalysisEsilInterrupt *intr = ht_up_find(esil->interrupts, intr_num, NULL);
-#if 0
-	// we don't want this warning
-	if (!intr) {
-		RZ_LOG_WARN("no interrupt handler registered for 0x%x\n", intr_num);
-	}
-#endif
 	return (intr && intr->handler && intr->handler->cb) ? intr->handler->cb(esil, intr_num, intr->user) : false;
 }
 
@@ -80,7 +73,7 @@ RZ_API bool rz_analysis_esil_load_interrupts(RzAnalysisEsil *esil, RzAnalysisEsi
 			return false;
 		}
 		if (!rz_analysis_esil_set_interrupt(esil, intr)) {
-			free(intr);
+			rz_analysis_esil_interrupt_free(esil, intr);
 		}
 		i++;
 	}

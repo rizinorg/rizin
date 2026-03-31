@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2024 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_interactive
+commands:
+  - name: V
+    cname: interactive_visual
+    summary: Enter interactive visual mode
+    description: >
+      Use Rizin (mostly) without shell.
+      Scrolling disassembly, debugging, searching or graph views.
+      All with a few keyboard shortcuts.
+    args:
+      - name: key-sequence
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+    details:
+      - name: Parameters
+        entries:
+          - text: "V"
+            arg_str: " <key_sequence>"
+            comment: >
+              The <key-sequence> argument is a string of keys to press directly after entering the visual mode.
+              See 'VH' or 'VHH' for a full list of valid keys.
+  - name: VH
+    cname: interactive_visual_help
+    summary: Show most common keys shortcuts of the visual mode.
+    args: []
+  - name: VHH
+    cname: interactive_visual_help_detail
+    summary: Show all keys shortcuts of the visual mode.
+    args: []
+  - name: Vp
+    cname: interactive_visual_disas
+    summary: Enter interactive visual mode and select next mode (alias for 'V p').
+    args: []
+  - name: Vpp
+    cname: interactive_visual_emu
+    summary: Enter interactive visual mode and select the mode after next (alias for 'V pp').
+    args: []
+  - name: Vv
+    cname: interactive_visual_management
+    summary: Enter interactive visual mode and select the view management (alias for 'V v').
+    args: []
+  - name: Ve
+    cname: interactive_visual_config
+    summary: Enter interactive visual mode and select the configurations toggle (alias for 'V e').
+    args: []
+  - name: VV
+    cname: interactive_visual_graph
+    summary: Enter interactive visual mode and select the function graph (alias for 'V V').
+    args: []

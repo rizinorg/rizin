@@ -2,18 +2,16 @@
 // SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_print.h"
-#include <rz_vector.h>
-#include <rz_util/rz_strbuf.h>
-#include <rz_util/rz_regex.h>
-#include <rz_util/rz_assert.h>
-#include <rz_list.h>
-#include <stdio.h>
+#include <rz_asm.h>
 #include <rz_core.h>
+#include <rz_lib.h>
+#include <rz_list.h>
 #include <rz_types.h>
 #include <rz_util.h>
-#include <rz_lib.h>
-#include <rz_asm.h>
+#include <rz_util.h>
+#include <rz_vector.h>
+#include "asm_private.h"
+
 #define USE_RZ_UTIL 1
 #include <spp.h>
 
@@ -75,7 +73,7 @@ static bool is_register(const char *name, RZ_BORROW const RzRegSet *regset) {
 	bool found = false;
 	for (ut32 i = 0; i < RZ_REG_TYPE_LAST; ++i) {
 		if (regset[i].ht_regs) {
-			ht_pp_find(regset[i].ht_regs, name, &found);
+			ht_sp_find(regset[i].ht_regs, name, &found);
 			if (found) {
 				return true;
 			}
@@ -279,12 +277,17 @@ RZ_API RzAsm *rz_asm_new(void) {
 	if (!a) {
 		return NULL;
 	}
-	a->dataalign = 1;
-	a->bits = RZ_SYS_BITS;
+	a->bits = RZ_SYS_BITS << 3;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_new();
+	a->sdb_opcodes_path = rz_path_new();
+	if (!a->sdb_opcodes_path) {
+		free(a);
+		return NULL;
+	}
+	a->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!a->plugins) {
+		rz_path_free(a->sdb_opcodes_path);
 		free(a);
 		return NULL;
 	}
@@ -338,14 +341,15 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	}
 	plugin_fini(a);
 	if (a->plugins) {
-		rz_list_free(a->plugins);
+		ht_sp_free(a->plugins);
 		a->plugins = NULL;
 	}
 	rz_syscall_free(a->syscall);
 	free(a->cpu);
 	free(a->features);
 	sdb_free(a->pair);
-	ht_pp_free(a->flags);
+	ht_ss_free(a->flags);
+	rz_path_free(a->sdb_opcodes_path);
 	a->pair = NULL;
 	free(a);
 }
@@ -358,7 +362,9 @@ RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (rz_asm_is_valid(a, p->name)) {
 		return false;
 	}
-	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, p, RzAsmPlugin);
+	if (!ht_sp_insert(a->plugins, p->name, p)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", p->name);
+	}
 	return true;
 }
 
@@ -371,76 +377,113 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *p) {
 	if (a->acur == p) {
 		a->acur = NULL;
 	}
-	return rz_list_delete_data(a->plugins, p);
+	return ht_sp_delete(a->plugins, p->name);
+}
+
+RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->cur;
+}
+
+RZ_API RZ_OWN RzIterator *rz_asm_plugin_iterator(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return ht_sp_as_iter(a->plugins);
+}
+
+RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL RzAsm *a, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(a && RZ_STR_ISNOTEMPTY(name), NULL);
+	bool found = false;
+	RzAsmPlugin *plugin = ht_sp_find(a->plugins, name, &found);
+	if (found) {
+		return plugin;
+	}
+	return NULL;
 }
 
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
 	if (!name || !*name) {
 		return false;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (!strcmp(h->name, name)) {
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 
 RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	if (a) {
-		if (name && *name) {
-			rz_list_foreach (a->plugins, iter, h) {
-				if (h->assemble && !strcmp(h->name, name)) {
-					a->acur = h;
-					return true;
-				}
-			}
-		}
+	if (!a) {
+		return false;
+	}
+	if (!(name && *name)) {
 		a->acur = NULL;
 	}
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
+		if (h->assemble && RZ_STR_EQ(h->name, name)) {
+			a->acur = h;
+			rz_iterator_free(iter);
+			return true;
+		}
+	}
+	rz_iterator_free(iter);
+	a->acur = NULL;
 	return false;
 }
 
-/**
- * \brief Copies all config nodes in \p pcfg to the config in \p rz_asm.
- *
- * \param rz_asm Pointer to RzAsm struct.
- * \param pcfg Pointer to the plugins RzConfig struct.
- */
-static void set_plugin_configs(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg) {
-	rz_return_if_fail(pcfg && rz_asm);
-
-	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
-	RzConfigNode *n;
-	RzListIter *it;
-	rz_list_foreach (pcfg->nodes, it, n) {
-		if (!rz_config_add_node(conf, rz_config_node_clone(n))) {
-			RZ_LOG_WARN("Failed to add \"%s\" to the global config.\n", n->name)
-		}
+static ut32 asm_get_first_default_bits(RzAsmPlugin *h) {
+	if (!h) {
+		return RZ_SYS_BITS << 3;
 	}
+
+	if (h->bits & 32) {
+		return 32;
+	} else if (h->bits & 64) {
+		return 64;
+	} else if (h->bits & 16) {
+		return 16;
+	} else if (h->bits & 8) {
+		return 8;
+	}
+
+	return RZ_SYS_BITS << 3;
 }
 
 /**
- * \brief Deletes all copies of \p pcfg nodes in the RzConfig from \p rz_asm.
+ * \brief      Returns the RzConfig of the arch
  *
- * \param rz_asm Pointer to RzAsm struct.
- * \param pcfg Pointer to the plugins RzConfig struct.
+ * \param      RzAsm  The RzAsm struct to use
+ *
+ * \return     If the get_config callback is set, then must return a non-NULL value
  */
-static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pcfg) {
-	rz_return_if_fail(pcfg && rz_asm && rz_asm->core);
-
-	RzConfig *conf = ((RzCore *)(rz_asm->core))->config;
-	RzConfigNode *n;
-	RzListIter *it;
-	rz_list_foreach (pcfg->nodes, it, n) {
-		if (!rz_config_rm(conf, n->name)) {
-			RZ_LOG_WARN("Failed to remove \"%s\" from the global config.", n->name)
-		}
+RZ_API RZ_OWN RzConfig *rz_asm_get_new_config(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	if (!a->cur || !a->cur->get_config) {
+		return NULL;
 	}
+	return a->cur->get_config(a->plugin_data);
+}
+
+/**
+ * \brief      Returns the opcode path of the arch
+ *
+ * \param      a     The RzAsm struct to use
+ * \param      path  The requested sys path
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
+RZ_API RZ_OWN char *rz_asm_get_sys_opcode_path(RZ_NONNULL RzAsm *a, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(a && path, NULL);
+	return rz_path_system(a->sdb_opcodes_path, path);
 }
 
 // TODO: this can be optimized using rz_str_hash()
@@ -452,21 +495,26 @@ static void unset_plugins_config(RZ_BORROW RzAsm *rz_asm, RZ_BORROW RzConfig *pc
  * \return true Put Asm plugin successfully in use.
  * \return false Asm plugin failed to be enabled.
  */
-RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	if (!a || !name) {
+RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
+	rz_return_val_if_fail(a, false);
+	if (!name) {
 		return false;
 	}
-	RzCore *core = a->core;
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
-				char *opcodes_dir = rz_path_system(RZ_SDB_OPCODES);
+				char *opcodes_dir = rz_path_system(a->sdb_opcodes_path, RZ_SDB_OPCODES);
+				if (!opcodes_dir) {
+					rz_iterator_free(iter);
+					return false;
+				}
 				char *file = rz_str_newf("%s/%s.sdb", opcodes_dir, h->arch);
 				if (file) {
 					rz_asm_set_cpu(a, NULL);
@@ -476,39 +524,154 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				}
 				free(opcodes_dir);
 			}
+
+			rz_asm_set_cpu(a, NULL);
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
+				rz_iterator_free(iter);
 				return false;
 			}
-
-			if (a->cur && a->cur->get_config && core) {
-				rz_config_lock(core->config, false);
-				unset_plugins_config(a, a->cur->get_config());
-				rz_config_lock(core->config, true);
-			}
-			if (h->get_config && core) {
-				rz_config_lock(core->config, false);
-				set_plugin_configs(a, h->get_config());
-				rz_config_lock(core->config, true);
-			}
 			a->cur = h;
+			rz_iterator_free(iter);
+			RZ_FREE(a->features);
+			RZ_FREE(a->platforms);
+			a->bits = asm_get_first_default_bits(h);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	sdb_free(a->pair);
 	a->pair = NULL;
 	return false;
 }
 
 RZ_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu) {
-	if (a) {
-		free(a->cpu);
-		a->cpu = cpu ? strdup(cpu) : NULL;
+	if (!a) {
+		return;
 	}
+
+	free(a->cpu);
+	a->cpu = rz_str_dup(cpu);
+}
+
+RZ_API const char *rz_asm_get_cpu(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, "");
+	return a->cpu;
+}
+
+RZ_API const char *rz_asm_get_platforms(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, "");
+	return rz_str_get(a->platforms);
+}
+
+RZ_API void rz_asm_set_platforms(RZ_NONNULL RzAsm *a, RZ_NULLABLE const char *platforms) {
+	rz_return_if_fail(a);
+
+	free(a->platforms);
+	a->platforms = rz_str_dup(platforms);
+}
+
+RZ_API void rz_asm_set_features(RZ_NONNULL RzAsm *a, RZ_NULLABLE const char *features) {
+	rz_return_if_fail(a);
+
+	free(a->features);
+	a->features = rz_str_dup(features);
+}
+
+RZ_API const char *rz_asm_get_features(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, "");
+	return rz_str_get(a->features);
+}
+
+RZ_API void rz_asm_set_pseudo(RZ_NONNULL RzAsm *a, bool enable) {
+	rz_return_if_fail(a);
+
+	a->pseudo = enable;
+}
+
+RZ_API bool rz_asm_get_pseudo(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, "");
+	return a->pseudo;
+}
+
+RZ_API void rz_asm_set_utf8(RZ_NONNULL RzAsm *a, bool utf8) {
+	rz_return_if_fail(a);
+	a->utf8 = utf8;
+}
+
+RZ_API bool rz_asm_get_utf8(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->utf8;
+}
+
+RZ_API void rz_asm_set_segment_granularity(RZ_NONNULL RzAsm *a, int seggrn) {
+	rz_return_if_fail(a);
+	a->seggrn = seggrn;
+}
+
+RZ_API int rz_asm_get_segment_granularity(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->seggrn;
+}
+
+RZ_API void rz_asm_set_pc_align(RZ_NONNULL RzAsm *a, ut32 pc_align) {
+	rz_return_if_fail(a);
+	if (pc_align < 2) {
+		pc_align = 1;
+	}
+	a->pcalign = pc_align;
+}
+
+RZ_API ut32 rz_asm_get_pc_align(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, 1);
+	if (a->pcalign < 2) {
+		return 1;
+	}
+	return a->pcalign;
+}
+
+RZ_API void rz_asm_set_syscall(RZ_NONNULL RzAsm *a, RzSyscall *syscall) {
+	rz_return_if_fail(a);
+	a->syscall = syscall;
+}
+
+RZ_API RzSyscall *rz_asm_get_syscall(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return a->syscall;
+}
+
+RZ_API void rz_asm_set_invalid_as_hex_flag(RZ_NONNULL RzAsm *a, bool invhex) {
+	rz_return_if_fail(a);
+	a->invhex = invhex;
+}
+
+RZ_API bool rz_asm_get_invalid_as_hex_flag(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->invhex;
+}
+
+RZ_API void rz_asm_set_show_immediate_hashtag(RZ_NONNULL RzAsm *a, bool show) {
+	rz_return_if_fail(a);
+	a->immdisp = show;
+}
+
+RZ_API bool rz_asm_get_show_immediate_hashtag(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->immdisp;
 }
 
 static bool has_bits(RzAsmPlugin *h, int bits) {
 	return (h && h->bits && (bits & h->bits));
+}
+
+RZ_DEPRECATE RZ_API void rz_asm_set_core(RZ_NONNULL RzAsm *a, RZ_NULLABLE void *core) {
+	rz_return_if_fail(a);
+	a->core = core;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzBinBind *rz_asm_get_bin_bind(RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return &a->binb;
 }
 
 RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
@@ -519,6 +682,57 @@ RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
 		return true;
 	}
 	return false;
+}
+
+RZ_DEPRECATE RZ_API int rz_asm_get_bits(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, 0);
+	return a->bits;
+}
+
+RZ_DEPRECATE RZ_API bool rz_asm_is_bits(RzAsm *a, int bits) {
+	rz_return_val_if_fail(a, false);
+	return a->bits == bits;
+}
+
+RZ_DEPRECATE RZ_API int rz_asm_get_plugin_bits(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, 0);
+	return a->cur ? a->cur->bits : 0;
+}
+
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_cpus(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return a->cur ? rz_str_get(a->cur->cpus) : "";
+}
+
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_platforms(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return a->cur ? rz_str_get(a->cur->platforms) : "";
+}
+
+RZ_DEPRECATE RZ_API const char *rz_asm_get_plugin_features(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return a->cur ? rz_str_get(a->cur->features) : "";
+}
+
+RZ_API ut32 rz_asm_get_endianness(RzAsm *a) {
+	rz_return_val_if_fail(a && a->cur, RZ_SYS_ENDIAN_NONE);
+	return a->cur->endian;
+}
+
+RZ_API bool rz_asm_is_big_endian_set(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	return a->big_endian;
+}
+
+RZ_API bool rz_asm_support_endianness(RzAsm *a, ut32 endian) {
+	rz_return_val_if_fail(a && a->cur, false);
+
+	if (a->cur->endian == RZ_SYS_ENDIAN_NONE || a->cur->endian == RZ_SYS_ENDIAN_BI) {
+		// always return what the bin or default endianness of the system
+		return true;
+	}
+
+	return endian & a->cur->endian;
 }
 
 RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
@@ -543,24 +757,29 @@ RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
 	return a->big_endian;
 }
 
-RZ_API bool rz_asm_set_syntax(RzAsm *a, int syntax) {
-	// TODO: move into rz_arch ?
-	switch (syntax) {
-	case RZ_ASM_SYNTAX_REGNUM:
-	case RZ_ASM_SYNTAX_INTEL:
-	case RZ_ASM_SYNTAX_MASM:
-	case RZ_ASM_SYNTAX_ATT:
-	case RZ_ASM_SYNTAX_JZ:
-		a->syntax = syntax;
-		return true;
-	default:
-		return false;
-	}
+RZ_API void rz_asm_set_syntax(RZ_NONNULL RzAsm *a, RzAsmSyntax syntax) {
+	rz_return_if_fail(a && syntax < RZ_ASM_ENUM_SIZE);
+	a->syntax = syntax;
 }
 
-RZ_API int rz_asm_set_pc(RzAsm *a, ut64 pc) {
+RZ_API RzAsmSyntax rz_asm_get_syntax(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, RZ_ASM_SYNTAX_NONE);
+	return a->syntax;
+}
+
+RZ_API bool rz_asm_is_syntax(RZ_NONNULL RzAsm *a, RzAsmSyntax syntax) {
+	rz_return_val_if_fail(a, false);
+	return a->syntax == syntax;
+}
+
+RZ_API ut64 rz_asm_get_pc(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, 0);
+	return a->pc;
+}
+
+RZ_API void rz_asm_set_pc(RZ_NONNULL RzAsm *a, ut64 pc) {
+	rz_return_if_fail(a);
 	a->pc = pc;
-	return true;
 }
 
 static bool __isInvalid(RzAsmOp *op) {
@@ -569,17 +788,17 @@ static bool __isInvalid(RzAsmOp *op) {
 }
 
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	rz_asm_op_init(op);
 	rz_return_val_if_fail(a && buf && op, -1);
 	if (len < 1) {
 		return 0;
 	}
+	rz_asm_op_init(op);
 
 	int ret = op->payload = 0;
 	op->size = 4;
 	op->bitsize = 0;
 	rz_asm_op_set_asm(op, "");
-	if (a->pcalign) {
+	if (a->pcalign > 1) {
 		const int mod = a->pc % a->pcalign;
 		if (mod) {
 			op->size = a->pcalign - mod;
@@ -635,7 +854,7 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
-typedef int (*Ase)(RzAsm *a, RzAsmOp *op, const char *buf);
+typedef int (*Ase)(const RzAsm *a, RzAsmOp *op, const char *buf);
 
 static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 	if (!a || !h->arch || !h->assemble || !has_bits(h, a->bits)) {
@@ -646,15 +865,17 @@ static bool assemblerMatches(RzAsm *a, RzAsmPlugin *h) {
 
 static Ase findAssembler(RzAsm *a, const char *kw) {
 	Ase ase = NULL;
-	RzAsmPlugin *h;
-	RzListIter *iter;
+	RzIterator *iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	if (a->acur && a->acur->assemble) {
 		return a->acur->assemble;
 	}
-	rz_list_foreach (a->plugins, iter, h) {
+	rz_iterator_foreach(iter, val) {
+		RzAsmPlugin *h = *val;
 		if (assemblerMatches(a, h)) {
 			if (kw) {
 				if (strstr(h->name, kw)) {
+					rz_iterator_free(iter);
 					return h->assemble;
 				}
 			} else {
@@ -662,6 +883,7 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 			}
 		}
 	}
+	rz_iterator_free(iter);
 	return ase;
 }
 
@@ -721,11 +943,30 @@ RZ_API void rz_asm_list_directives(void) {
 	}
 }
 
+/**
+ * \brief      Returns the software breakpoint instruction (binary encoded) of the current selected arch
+ *
+ * \param      a     The RzAsm structure to use
+ * \param      op    The RzAsmOp to fill.
+ *
+ * \return     On success true, otherwise false.
+ */
+RZ_API bool rz_asm_software_breakpoint(RZ_NONNULL RzAsm *a, RZ_NONNULL RzAsmOp *op) {
+	rz_return_val_if_fail(a && op, false);
+	memset(op, 0, sizeof(RzAsmOp));
+
+	if (a->cur && a->cur->sw_breakpoint) {
+		return a->cur->sw_breakpoint(a, op);
+	}
+
+	return false;
+}
+
 // returns instruction size
 RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	rz_return_val_if_fail(a && op && buf, 0);
 	int ret = 0;
-	char *b = strdup(buf);
+	char *b = rz_str_dup(buf);
 	if (!b) {
 		return 0;
 	}
@@ -779,9 +1020,8 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	RzStrBuf *buf_asm;
 	RzAsmCode *acode;
 	ut64 pc = a->pc;
-	ut64 idx;
-	size_t ret;
-	const size_t addrbytes = a->core ? ((RzCore *)a->core)->io->addrbytes : 1;
+	ssize_t ret = 0;
+	ut64 idx = 0;
 
 	if (!(acode = rz_asm_code_new())) {
 		return NULL;
@@ -793,10 +1033,10 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = rz_strbuf_new(NULL))) {
 		return rz_asm_code_free(acode);
 	}
-	RzAsmOp op;
-	rz_asm_op_init(&op);
-	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
+	RzAsmOp op = { 0 };
+	for (idx = 0; idx < len; idx += ret) {
 		rz_asm_set_pc(a, pc + idx);
+		rz_asm_op_init(&op);
 		ret = rz_asm_disassemble(a, &op, buf + idx, len - idx);
 		if (ret < 1) {
 			ret = 1;
@@ -806,8 +1046,8 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 		}
 		rz_strbuf_append(buf_asm, rz_strbuf_get(&op.buf_asm));
 		rz_strbuf_append(buf_asm, "\n");
+		rz_asm_op_fini(&op);
 	}
-	rz_asm_op_fini(&op);
 	acode->assembly = rz_strbuf_drain(buf_asm);
 	acode->len = idx;
 	return acode;
@@ -835,15 +1075,6 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 	return ret;
 }
 
-static void __flag_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
-}
-
-static void *__dup_val(const void *v) {
-	return (void *)strdup((char *)v);
-}
-
 RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 	int num, stage, ret, idx, ctr, i, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
@@ -862,8 +1093,8 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		free(tokens);
 		return NULL;
 	}
-	ht_pp_free(a->flags);
-	if (!(a->flags = ht_pp_new(__dup_val, __flag_free_kv, NULL))) {
+	ht_ss_free(a->flags);
+	if (!(a->flags = ht_ss_new(HT_STR_DUP, HT_STR_DUP))) {
 		free(tokens);
 		return NULL;
 	}
@@ -880,8 +1111,8 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		free(tokens);
 		return rz_asm_code_free(acode);
 	}
-	lbuf = strdup(assembly);
-	acode->code_align = 0;
+	lbuf = rz_str_dup(assembly);
+	acode->code_align = 1;
 
 	/* consider ,, an alias for a newline */
 	lbuf = rz_str_replace(lbuf, ",,", "\n", true);
@@ -909,9 +1140,11 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 			if (sp) {
 				char osp = *sp;
 				*sp = 0;
-				aa = strdup(p);
+				aa = rz_str_dup(p);
 				*sp = osp;
-				num = rz_syscall_get_num(a->syscall, aa + 5);
+				if (!rz_syscall_get_num(a->syscall, aa + 5, &num)) {
+					goto fail;
+				}
 				snprintf(val, sizeof(val), "%d", num);
 				lbuf = rz_str_replace(lbuf, aa, val, 1);
 				free(aa);
@@ -1031,13 +1264,13 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					// if (stage != 2) {
 					if (ptr_start[1] && ptr_start[1] != ' ') {
 						*ptr = 0;
-						char *p = strdup(ptr_start);
+						char *p = rz_str_dup(ptr_start);
 						*ptr = ':';
-						if (acode->code_align) {
+						if (acode->code_align > 1) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char *food = rz_str_newf("0x%" PFMT64x, off);
-						ht_pp_insert(a->flags, ptr_start, food);
+						ht_ss_insert(a->flags, ptr_start, food);
 						rz_asm_code_set_equ(acode, p, food);
 						free(p);
 						free(food);
@@ -1069,7 +1302,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					ret = rz_asm_pseudo_string(&op, ptr + 8, 1);
 				} else if (!strncmp(ptr, ".string ", 8)) {
 					rz_str_trim(ptr + 8);
-					char *str = strdup(ptr + 8);
+					char *str = rz_str_dup(ptr + 8);
 					ret = rz_asm_pseudo_string(&op, str, 1);
 					free(str);
 				} else if (!strncmp(ptr, ".ascii", 6)) {
@@ -1091,11 +1324,11 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				} else if (!strncmp(ptr, ".fill ", 6)) {
 					ret = rz_asm_pseudo_fill(&op, ptr + 6);
 				} else if (!strncmp(ptr, ".kernel ", 8)) {
-					rz_syscall_setup(a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 8);
+					rz_syscall_setup(a->syscall, a->sdb_opcodes_path, a->cur->arch, a->bits, asmcpu, ptr + 8);
 				} else if (!strncmp(ptr, ".cpu ", 5)) {
 					rz_asm_set_cpu(a, ptr + 5);
 				} else if (!strncmp(ptr, ".os ", 4)) {
-					rz_syscall_setup(a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
+					rz_syscall_setup(a->syscall, a->sdb_opcodes_path, a->cur->arch, a->bits, asmcpu, ptr + 4);
 				} else if (!strncmp(ptr, ".hex ", 5)) {
 					ret = rz_asm_op_set_hex(&op, ptr + 5);
 				} else if ((!strncmp(ptr, ".int16 ", 7)) || !strncmp(ptr, ".short ", 7)) {
@@ -1160,7 +1393,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					if (!*ptr_start) {
 						continue;
 					}
-					str = rz_asm_code_equ_replace(acode, strdup(ptr_start));
+					str = rz_asm_code_equ_replace(acode, rz_str_dup(ptr_start));
 					rz_asm_op_fini(&op);
 					rz_asm_op_init(&op);
 					ret = rz_asm_assemble(a, &op, str);
@@ -1218,15 +1451,31 @@ RZ_API int rz_asm_get_offset(RzAsm *a, int type, int idx) { // link to rbin
 }
 
 RZ_API char *rz_asm_describe(RzAsm *a, const char *str) {
-	return (a && a->pair) ? sdb_get(a->pair, str, 0) : NULL;
+	return (a && a->pair) ? sdb_get(a->pair, str) : NULL;
 }
 
-RZ_API RzList /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RzAsm *a) {
+RZ_API void rz_asm_describe_iterate(RZ_NONNULL RzAsm *a, RZ_NONNULL SdbForeachCallback cb, RZ_NULLABLE void *user) {
+	rz_return_if_fail(a);
+	sdb_foreach(a->pair, cb, user);
+}
+
+RZ_API RZ_BORROW HtSP /*<RzAsmPlugin *>*/ *rz_asm_get_plugins(RZ_BORROW RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
 	return a->plugins;
 }
 
 RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits) {
 	return rz_asm_use(a, name) ? rz_asm_set_bits(a, bits) : false;
+}
+
+RZ_API const char *rz_asm_get_arch(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, RZ_SYS_ARCH);
+	return a->cur ? a->cur->name : RZ_SYS_ARCH;
+}
+
+RZ_API bool rz_asm_is_arch(RZ_NONNULL RzAsm *a, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(a && RZ_STR_ISNOTEMPTY(name), false);
+	return a->cur && RZ_STR_EQ(a->cur->name, name);
 }
 
 /* to ease the use of the native bindings (not used in rizin) */
@@ -1302,7 +1551,7 @@ RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name) {
 
 RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) {
 	rz_return_val_if_fail(a && buf, NULL);
-	char *lbuf = strdup(buf);
+	char *lbuf = rz_str_dup(buf);
 	if (!lbuf) {
 		return NULL;
 	}
@@ -1318,7 +1567,8 @@ RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) 
 		lbuf = replace_directives(lbuf);
 		spp_eval(lbuf, &out);
 		free(lbuf);
-		lbuf = strdup(rz_strbuf_get(out.cout));
+		lbuf = rz_str_dup(rz_strbuf_get(out.cout));
+		rz_strbuf_free(out.cout);
 	}
 	acode = rz_asm_massemble(a, lbuf);
 	free(lbuf);
@@ -1330,7 +1580,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_new(const char *asm_str) {
 	if (!s) {
 		return NULL;
 	}
-	s->tokens = rz_vector_new(sizeof(RzAsmToken), NULL, NULL);
+	s->tokens = rz_pvector_new(free);
 	s->str = rz_strbuf_new(asm_str);
 	if (!s->tokens || !s->str) {
 		rz_asm_token_string_free(s);
@@ -1344,8 +1594,13 @@ RZ_API void rz_asm_token_string_free(RZ_OWN RzAsmTokenString *toks) {
 		return;
 	}
 	rz_strbuf_free(toks->str);
-	rz_vector_free(toks->tokens);
+	rz_pvector_free(toks->tokens);
 	free(toks);
+}
+
+static void clone_asm_token(RzAsmToken *dst, RzAsmToken *src) {
+	rz_return_if_fail(dst && src);
+	memcpy(dst, src, sizeof(RzAsmToken));
 }
 
 RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAsmTokenString *toks) {
@@ -1353,14 +1608,15 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_token_string_clone(RZ_OWN RZ_NONNULL RzAs
 
 	RzAsmTokenString *newt = RZ_NEW0(RzAsmTokenString);
 	if (!newt) {
+		rz_asm_token_string_free(toks);
 		return NULL;
 	}
-	newt->tokens = rz_vector_clone(toks->tokens);
+	newt->tokens = rz_pvector_clonef(toks->tokens, (RzPVectorItemCpyFunc)clone_asm_token);
 	newt->str = rz_strbuf_new(rz_strbuf_get(toks->str));
 	newt->op_type = toks->op_type;
 
 	if (!(newt->tokens && newt->str)) {
-		free(newt);
+		rz_asm_token_string_free(newt);
 		return NULL;
 	}
 	return newt;
@@ -1423,8 +1679,7 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
 		return;
 	}
 
-	rz_vector_push(toks->tokens, t);
-	free(t);
+	rz_pvector_push(toks->tokens, t);
 }
 
 /**
@@ -1436,13 +1691,14 @@ static void add_token(RZ_OUT RzAsmTokenString *toks, const size_t i, const size_
  * \return true Overlaps with token from token vector.
  * \return false Does not overap with other token.
  */
-static bool overlaps_with_token(RZ_BORROW RzVector /*<RzAsmTokenString>*/ *toks, const size_t s, const size_t e) {
+static bool overlaps_with_token(RZ_BORROW RzPVector /*<RzAsmTokenString *>*/ *toks, const size_t s, const size_t e) {
 	rz_return_val_if_fail(toks, false);
 	size_t x, y; // Other tokens start/end
-	RzAsmToken *it;
-	rz_vector_foreach(toks, it) {
-		x = it->start;
-		y = it->start + it->len - 1;
+	void **it;
+	rz_pvector_foreach (toks, it) {
+		RzAsmToken *tok = *it;
+		x = tok->start;
+		y = tok->start + tok->len - 1;
 		if (!(s > y || e < x)) { // s:e not outside of x:y
 			return true;
 		}
@@ -1494,18 +1750,20 @@ static const char *token_str(RzAsmToken *t) {
  *
  * \param toks The token string to check.
  */
-static void check_token_coverage(RzAsmTokenString *toks) {
-	rz_return_if_fail(toks);
-	if (rz_vector_len(toks->tokens) == 0) {
+static bool check_token_coverage(RzAsmTokenString *toks) {
+	rz_return_val_if_fail(toks, false);
+	if (rz_pvector_len(toks->tokens) == 0) {
 		RZ_LOG_WARN("No tokens given.\n");
-		return;
+		return false;
 	}
 	bool error = false;
 	// Check if all characters belong to a token.
-	RzAsmToken *cur, *prev = NULL;
+	RzAsmToken *prev = NULL;
+	void **it;
 	int i = 0;
 	ut32 ci, cj, pi, pj; // Current and previous token indices.
-	rz_vector_foreach(toks->tokens, cur) {
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *cur = *it;
 		if (i == cur->start) {
 			prev = cur;
 			i = cur->start + cur->len;
@@ -1523,6 +1781,7 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 			RZ_LOG_WARN("i = %" PFMT32d ", Part of asm string is not covered by a token."
 				    " Empty range between token[%s] %" PFMT32d ":%" PFMT32d " and token[%s] %" PFMT32d ":%" PFMT32d "\n",
 				i, token_str(prev), pi, pj, token_str(cur), ci, cj);
+			RZ_LOG_WARN("This can happen if two token patterns match the same characters and overlap.\n");
 			error = true;
 		}
 		i = cur->start + cur->len;
@@ -1531,6 +1790,7 @@ static void check_token_coverage(RzAsmTokenString *toks) {
 	if (error) {
 		RZ_LOG_WARN("Parsing errors in asm str: %s\n", rz_strbuf_get(toks->str));
 	}
+	return !error;
 }
 
 /**
@@ -1545,7 +1805,7 @@ RZ_API void rz_asm_compile_token_patterns(RZ_INOUT RzPVector /*<RzAsmTokenPatter
 	rz_pvector_foreach (patterns, it) {
 		RzAsmTokenPattern *pat = *it;
 		if (!pat->regex) {
-			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0);
+			pat->regex = rz_regex_new(pat->pattern, RZ_REGEX_EXTENDED, 0, NULL);
 			if (!pat->regex) {
 				RZ_LOG_WARN("Did not compile regex pattern %s.\n", pat->pattern);
 				rz_warn_if_reached();
@@ -1579,6 +1839,7 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 			// Pattern was not compiled.
 			rz_asm_compile_token_patterns(patterns);
 			if (!pattern->regex) {
+				rz_asm_token_string_free(toks);
 				rz_warn_if_reached();
 				return NULL;
 			}
@@ -1611,8 +1872,11 @@ RZ_API RZ_OWN RzAsmTokenString *rz_asm_tokenize_asm_regex(RZ_BORROW RzStrBuf *as
 		rz_pvector_free(match_sets);
 	}
 
-	rz_vector_sort(toks->tokens, (RzVectorComparator)cmp_tokens, false, NULL);
-	check_token_coverage(toks);
+	rz_pvector_sort(toks->tokens, (RzPVectorComparator)cmp_tokens, false);
+	if (!check_token_coverage(toks)) {
+		rz_asm_token_string_free(toks);
+		return NULL;
+	}
 
 	return toks;
 }

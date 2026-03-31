@@ -194,6 +194,7 @@ block    0x100
 type     JAVA CLASS
 arch     java
 cpu      N/A
+features N/A
 baddr    0x00000000
 binsz    0x00000400
 bintype  class
@@ -213,7 +214,7 @@ maxopsz  16
 minopsz  1
 os       any
 cc       N/A
-pcalign  0
+pcalign  1
 rpath    N/A
 subsys   any
 stripped false
@@ -1680,8 +1681,7 @@ NAME=Crash on analysis
 FILE=bins/java/fba022731cfdd80bc65a899afefead1e
 CMDS=e scr.prompt=false ; aaa
 REGEXP_FILTER_OUT=ignoreme
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Java Regs

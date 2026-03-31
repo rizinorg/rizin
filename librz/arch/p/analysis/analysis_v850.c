@@ -415,7 +415,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	ov  .1 152.29 0\n" // overflow
 		"flg	s   .1 152.30 0\n" // signed result
 		"flg	z   .1 152.31 0\n"; // zero result
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 /**
@@ -464,7 +464,7 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		return 2;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
-		return 0;
+		return 1;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
 		return true;
 	default:

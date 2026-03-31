@@ -1,28 +1,29 @@
-project('pcre2', 'c', version: '10.43')
+project('pcre2', 'c', version: '10.47')
 
 cc = meson.get_compiler('c')
 
-conf_data = configuration_data()
+if cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 pcre2_chartables = configure_file(input : 'src/pcre2_chartables.c.dist',
   output : 'pcre2_chartables.c',
-  configuration : conf_data)
+  copy : true)
 
 pcre2_h = configure_file(input : 'src/pcre2.h.generic',
   output : 'pcre2.h',
-  configuration : conf_data)
+  copy : true)
 
 config_h = configure_file(input : 'src/config.h.generic',
   output : 'config.h',
-  configuration : conf_data)
+  copy : true)
 
 libpcre2_c_args = [
   '-DHAVE_CONFIG_H', # Default values from config.h
-  '-DPCRE2_CODE_UNIT_WIDTH=8',
   '-DHAVE_MEMMOVE',
-  '-DSUPPORT_PCRE2_8',
   '-DSUPPORT_UNICODE',
   '-fvisibility=default',
+  '-DPCRE2_SYMVERS',
 ]
 
 pcre2_files = [
@@ -30,6 +31,8 @@ pcre2_files = [
   pcre2_chartables,
   'src/pcre2_chkdint.c',
   'src/pcre2_compile.c',
+  'src/pcre2_compile_cgroup.c',
+  'src/pcre2_compile_class.c',
   'src/pcre2_config.c',
   'src/pcre2_context.c',
   'src/pcre2_convert.c',
@@ -40,6 +43,7 @@ pcre2_files = [
   'src/pcre2_maketables.c',
   'src/pcre2_match.c',
   'src/pcre2_match_data.c',
+  'src/pcre2_match_next.c',
   'src/pcre2_newline.c',
   'src/pcre2_ord2utf.c',
   'src/pcre2_pattern_info.c',
@@ -60,7 +64,7 @@ cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv
 # tcc doesn't support the MSVC asm syntax PCRE2 uses (`__asm { ... }`).
 # Darwin kernel not as well, because of forbidden wx memory.
 # It is used in the JIT compiler code.
-if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() != 'darwin'
+if cc.get_id() != 'tcc' and target_machine.cpu_family() in cpu_jit_supported and target_machine.system() not in ['darwin', 'serenity']
   libpcre2_c_args += ['-DSUPPORT_JIT']
   pcre2_files += ['src/pcre2_jit_compile.c']
 endif
@@ -78,13 +82,25 @@ pcre2_includes = [
   include_directories('src/'),
 ]
 
-libpcre2 = static_library('pcre2', pcre2_files,
-  c_args: libpcre2_c_args,
+libpcre2_8 = static_library('pcre2_8', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=8', '-DSUPPORT_PCRE2_8'],
+  include_directories: pcre2_includes,
+  install: false,
+)
+
+libpcre2_16 = static_library('pcre2_16', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=16', '-DSUPPORT_PCRE2_16'],
+  include_directories: pcre2_includes,
+  install: false,
+)
+
+libpcre2_32 = static_library('pcre2_32', pcre2_files,
+  c_args: libpcre2_c_args + ['-DPCRE2_CODE_UNIT_WIDTH=32', '-DSUPPORT_PCRE2_32'],
   include_directories: pcre2_includes,
   install: false,
 )
 
 pcre2_dep = declare_dependency(
-  link_with: libpcre2,
+  link_with: [ libpcre2_8, libpcre2_16, libpcre2_32 ],
   include_directories: pcre2_includes
 )

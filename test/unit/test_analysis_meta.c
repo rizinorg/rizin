@@ -6,7 +6,7 @@
 #include "minunit.h"
 
 bool test_meta_set() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "summer of love");
@@ -134,7 +134,7 @@ bool test_meta_set() {
 }
 
 bool test_meta_get_at() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -172,7 +172,7 @@ bool test_meta_get_at() {
 }
 
 bool test_meta_get_in() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -213,7 +213,7 @@ bool test_meta_get_in() {
 }
 
 bool test_meta_get_all_at() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -253,7 +253,7 @@ bool test_meta_get_all_at() {
 }
 
 bool test_meta_get_all_in() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -315,7 +315,7 @@ bool test_meta_get_all_in() {
 }
 
 bool test_meta_get_all_intersect() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -379,7 +379,7 @@ bool test_meta_get_all_intersect() {
 }
 
 bool test_meta_del() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -444,7 +444,7 @@ bool test_meta_del() {
 }
 
 bool test_meta_rebase() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x200, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x200, "summer of love");
@@ -494,7 +494,7 @@ bool test_meta_rebase() {
 }
 
 bool test_meta_spaces() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	rz_meta_set(analysis, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, 0x100, "summer of love");

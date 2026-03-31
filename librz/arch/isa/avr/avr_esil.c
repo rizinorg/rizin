@@ -52,8 +52,8 @@ static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 #define CPU_MODEL_DECL(model, pc, consts) \
 	{ \
 		model, \
-			pc, \
-			consts \
+		pc, \
+		consts \
 	}
 #define MASK(bits)       ((bits) == 32 ? 0xffffffff : (~((~((ut32)0)) << (bits))))
 #define CPU_PC_MASK(cpu) MASK((cpu)->pc)

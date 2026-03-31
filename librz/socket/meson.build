@@ -5,8 +5,6 @@ rz_socket_sources = [
   'socket_serial.c',
   'socket_proc.c',
   'rzpipe.c',
-  'socket_rap_client.c',
-  'socket_rap_server.c',
   'run.c',
 ]
 
@@ -20,6 +18,13 @@ endif
 if host_machine.system() == 'haiku'
   dependencies += [
     cc.find_library('network')
+  ]
+endif
+
+if host_machine.system() == 'sunos'
+  dependencies += [
+    cc.find_library('socket'),
+    cc.find_library('nsl')
   ]
 endif
 

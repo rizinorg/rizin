@@ -345,5 +345,5 @@ RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	if (r == 0xff && g == 0x00 && b == 0xff) {
 		str = "magenta";
 	}
-	return str ? strdup(str) : rz_str_newf("#%02x%02x%02x", r, g, b);
+	return str ? rz_str_dup(str) : rz_str_newf("#%02x%02x%02x", r, g, b);
 }

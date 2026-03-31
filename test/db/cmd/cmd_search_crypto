@@ -1,0 +1,935 @@
+
+NAME=search crypto AES256 expanded key (no overlap)
+FILE=bins/other/aes.dump
+CMDS=<<EOF
+e search.overlap=false
+/cmt
+px @ hit.aes256.0 @!40
+EOF
+EXPECT=<<EOF
+offset       size flag         detail 
+--------------------------------------
+  0x1e 0x00000020 hit.aes256.0 
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000001e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000003e  6263 6363 6263 6363                      bcccbccc
+EOF
+RUN
+
+NAME=search crypto AES256 expanded key (overlap)
+FILE=bins/other/aes.dump
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+px @ hit.aes256.0 @!40
+px @ hit.aes192.1 @!32
+px @ hit.aes128.2 @!24
+EOF
+EXPECT=<<EOF
+offset       size flag         detail 
+--------------------------------------
+  0x1e 0x00000020 hit.aes256.0 
+  0x26 0x00000018 hit.aes192.1 
+  0x2e 0x00000010 hit.aes128.2 
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000001e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000003e  6263 6363 6263 6363                      bcccbccc
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000026  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x00000036  0000 0000 0000 0000 6263 6363 6263 6363  ........bcccbccc
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000002e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000003e  6263 6363 6263 6363                      bcccbccc
+EOF
+RUN
+
+NAME=search crypto SM4 expanded key
+FILE=bins/other/sm4_key_schedule.bin
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+px @ hit.sm4.le.0 @!16
+fC hit.sm4.le.0
+EOF
+EXPECT=<<EOF
+offset       size flag         detail                           
+----------------------------------------------------------------
+  0xff 0x00000010 hit.sm4.le.0 0123456789abcdef123456789abcdef0
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000000ff  f986 21f1 612b 6641 db28 e447 57db e32c  ..!.a+fA.(.GW..,
+0123456789abcdef123456789abcdef0
+EOF
+RUN
+
+NAME=search crypto AES192
+FILE=bins/other/aes_192.dump
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+px @ hit.aes192.0 @!0x18
+EOF
+EXPECT=<<EOF
+offset       size flag         detail 
+--------------------------------------
+  0xfa 0x00000018 hit.aes192.0 
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000000fa  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0x0000010a  1011 1213 1415 1617                      ........
+EOF
+RUN
+
+NAME=search crypto rsa4096
+FILE=bins/other/rsa-private-4096.key
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+pFa @ hit.rsa.0 @!0x92c
+EOF
+EXPECT=<<EOF
+offset       size flag      detail 
+-----------------------------------
+   0xd 0x0000092c hit.rsa.0 
+   0  2344: 0: cons SEQUENCE            : 
+   4     1: 1: prim INTEGER             : 00
+   7   513: 1: prim INTEGER             : 00 c0 79 f2 4b 04 27 87 e4 89 6d b4 11 fa 76 47 |..y.K.'...m...vG|
+                                        : e3 bb 62 c8 87 96 fa 97 9f 12 6c 57 5f 21 1e 80 |..b.......lW_!..|
+                                        : ee da f8 01 cd e9 1a 39 79 08 39 58 88 d7 96 5c |.......9y.9X...\|
+                                        : f4 3d 17 12 e4 f5 75 08 63 c7 a4 e1 39 1c e3 a5 |.=....u.c...9...|
+                                        : 17 ce b2 c2 16 81 b1 79 92 fa 79 13 65 74 9b 2d |.......y..y.et.-|
+                                        : d6 e9 8a 85 f6 37 8b 24 36 7e 46 90 8e 51 f0 8c |.....7.$6~F..Q..|
+                                        : 64 93 db 49 e0 d9 36 9d 0c 35 3b 9f 47 fc 0e dc |d..I..6..5;.G...|
+                                        : c9 02 33 34 b8 5a c7 19 63 49 f1 eb d7 ab d9 fb |..34.Z..cI......|
+                                        : e8 f6 48 f5 fb 32 c2 f6 a3 99 8a 09 ea 84 59 18 |..H..2........Y.|
+                                        : b3 04 48 b7 60 8b 2c 56 4d 71 73 79 23 00 e7 84 |..H.`.,VMqsy#...|
+                                        : 43 69 a0 0c 0b c7 e5 8f 30 fc b8 b3 56 f3 f7 30 |Ci......0...V..0|
+                                        : 1b 6b 01 03 28 4d 95 86 54 89 a3 d2 88 6b 9a 08 |.k..(M..T....k..|
+                                        : b5 2f 29 e4 f9 e5 a2 e5 df 90 7f 0b f7 35 83 23 |./)..........5.#|
+                                        : ca 69 b8 b2 5a a2 21 12 d2 14 35 d1 55 70 01 2d |.i..Z.!...5.Up.-|
+                                        : f9 b0 6e 19 d2 3e 22 1e 8b 0c a6 b3 3e 0c 9c e2 |..n..>".....>...|
+                                        : b3 d3 be 5a db 93 dd f7 37 7f 30 b2 16 0e a4 be |...Z....7.0.....|
+                                        : ac c7 6e 0d 83 1d b4 91 77 a5 a8 59 03 74 4b 4f |..n.....w..Y.tKO|
+                                        : 18 ef 2f 01 07 70 1b 41 ed 93 98 01 08 4a ca 78 |../..p.A.....J.x|
+                                        : ff 08 25 38 a8 b8 e6 4a 34 4e db 4c 28 15 37 eb |..%8...J4N.L(.7.|
+                                        : 26 d8 4d e9 36 57 dd f6 fd 33 b7 4b a9 0e a8 f3 |&.M.6W...3.K....|
+                                        : 7b 9f bf c0 0b ee 16 7d 59 60 b7 f3 59 37 70 b5 |{......}Y`..Y7p.|
+                                        : 71 7f 1a fe b2 0b 3a 0a c3 fa 7a 58 22 33 43 0e |q.....:...zX"3C.|
+                                        : d4 bc 40 e2 e2 9e c0 f0 c2 8c ce ae 8b 26 a7 e4 |..@..........&..|
+                                        : 0d fe 5b 7e f9 04 03 13 b9 07 66 f1 be 37 ce 48 |..[~......f..7.H|
+                                        : 42 28 de f4 c6 fa 88 63 6e f0 51 25 21 c8 35 3f |B(.....cn.Q%!.5?|
+                                        : d6 f9 9b 2e 09 c7 8e f6 7d c4 13 c0 1d 09 9e 94 |........}.......|
+                                        : 2a 3c 2c 35 1e ad 9c bb fc 5e fb eb cc 43 02 f7 |*<,5.....^...C..|
+                                        : 71 f3 2f 22 4b 84 2b 26 8d c4 48 cf 43 12 f5 1d |q./"K.+&..H.C...|
+                                        : c0 2e 16 80 89 ba 9d 35 17 ef 00 a9 90 ae 20 48 |.......5...... H|
+                                        : 64 31 4f 09 c7 6b 46 65 be b1 2b 9f bf 0c 41 9f |d1O..kFe..+...A.|
+                                        : dc 08 00 58 ab 48 4c e1 54 87 3e 9a 56 3f e3 3c |...X.HL.T.>.V?.<|
+                                        : 3c a9 ea 9d 00 3a f4 e9 56 6d 41 38 30 75 1c 57 |<....:..VmA80u.W|
+                                        : 85                                              |.               |
+ 524     3: 1: prim INTEGER             : 010001
+ 529   513: 1: prim INTEGER             : 00 ad 93 cb db b6 ed 67 71 c4 35 f8 b4 55 e9 21 |.......gq.5..U.!|
+                                        : 3f d0 97 6f 3c 47 fd c9 8a 9c f4 b3 7e 88 c1 97 |?..o<G......~...|
+                                        : 88 d0 53 e4 5c ab a1 08 bf 8b 99 1b ac 9c af 6f |..S.\..........o|
+                                        : 38 9b 77 19 84 fd 8f 03 77 e8 6d 5a e7 44 94 4f |8.w.....w.mZ.D.O|
+                                        : 28 3f 31 9a 32 ed d6 fd 4a 7d 33 7f 38 79 86 10 |(?1.2...J}3.8y..|
+                                        : 3a c5 f6 34 85 2c e6 00 4c 5c 68 8a a8 ae 60 7e |:..4.,..L\h...`~|
+                                        : 5b 9d b3 9e d6 75 4c f9 28 2f 41 8b 8d 41 54 ad |[....uL.(/A..AT.|
+                                        : eb 60 5e 89 66 d0 06 c9 70 6f 19 0a 95 3e d7 a0 |.`^.f...po...>..|
+                                        : 84 20 c6 ff 7d ff f3 2e b5 af 1b 7b 81 d0 c5 00 |. ..}......{....|
+                                        : af 40 67 cb 67 f7 5a 8e a1 dc 74 44 84 3a a6 8e |.@g.g.Z...tD.:..|
+                                        : f2 b4 68 af 34 58 9b 3f 1c f0 6c 28 df 7b b8 29 |..h.4X.?..l(.{.)|
+                                        : dc 30 0d 83 a9 6e fe 2f 5c 41 9c 49 9a d9 5e da |.0...n./\A.I..^.|
+                                        : 07 7b 77 0e 96 06 6f 77 5a bc 56 b6 95 c3 de 76 |.{w...owZ.V....v|
+                                        : 02 6e 81 2f e6 e8 5b 67 3b a9 1a 37 a4 13 14 1d |.n./..[g;..7....|
+                                        : 40 15 c9 d4 e3 73 41 15 c6 54 2c 69 6c c5 b7 1e |@....sA..T,il...|
+                                        : 03 0a 2b 9a 88 76 bb 2f dd 0e 88 fd b1 42 97 73 |..+..v./.....B.s|
+                                        : 93 90 8c c5 3f a9 50 01 90 c5 21 1c 8d e7 1d fd |....?.P...!.....|
+                                        : ac 26 02 a4 5a 53 e7 cf be 80 d7 93 e9 34 f0 5b |.&..ZS.......4.[|
+                                        : db 89 9a 7b e8 f0 7e 18 19 00 48 f8 45 9c 6a 19 |...{..~...H.E.j.|
+                                        : bf 6c 32 04 eb 82 8a 0f 7a 0c 54 db 91 e1 29 5c |.l2.....z.T...)\|
+                                        : f4 c8 fe ef aa a6 1d c8 95 35 fe 40 79 1d d2 7c |.........5.@y..||
+                                        : e8 6d b5 03 23 5a fa 5f 89 06 eb 3c 63 72 ae b2 |.m..#Z._...<cr..|
+                                        : b6 bb 74 91 c0 9f a0 0a 6a 7b cc 45 1f 83 b3 7d |..t.....j{.E...}|
+                                        : 1f 7d d1 79 63 9a 1d 37 9f fc 6c 5c bf 86 f4 ab |.}.yc..7..l\....|
+                                        : c5 cc 9a 90 d9 9c b5 09 6f c1 17 03 cb 49 d2 13 |........o....I..|
+                                        : e7 73 0c e2 90 7d 39 24 c2 03 d2 53 2e 3f 06 84 |.s...}9$...S.?..|
+                                        : d9 70 ed 61 ad 90 9a c3 e5 51 21 95 b0 7a 9f aa |.p.a.....Q!..z..|
+                                        : 0e 3d ac 64 4f 44 62 6b 51 a1 9e 28 f2 3a de 45 |.=.dODbkQ..(.:.E|
+                                        : ed b7 a4 95 3a aa 38 1d 0d 32 54 4f 77 5f 71 b0 |....:.8..2TOw_q.|
+                                        : 2f c7 8c ee da 77 00 7d ad 21 f6 dd 26 37 ef 88 |/....w.}.!..&7..|
+                                        : 5c b1 7e 86 f3 44 01 ce 6c f4 1d 05 5e a6 3c 03 |\.~..D..l...^.<.|
+                                        : fd 9c 4e 5e 9b 50 1c 49 26 15 27 b3 77 68 20 ee |..N^.P.I&.'.wh .|
+                                        : 81                                              |.               |
+1046   257: 1: prim INTEGER             : 00 e9 7b c6 d2 ff 46 90 1e fa 11 71 cb a6 92 5e |..{...F....q...^|
+                                        : 0f 8d 68 c6 85 74 e3 49 98 48 2a 75 fd 42 8b 69 |..h..t.I.H*u.B.i|
+                                        : 61 f0 77 71 c7 af 8e 41 05 2d 16 ff c4 8d 55 31 |a.wq...A.-....U1|
+                                        : 8c a3 40 fa 5c 02 3f d5 a8 ae 4c 6d 48 0c ad e3 |..@.\.?...LmH...|
+                                        : d0 4f 40 9f fa ed ee 1f cc 23 75 ab 3e c5 a3 d1 |.O@......#u.>...|
+                                        : 87 a3 ed 85 96 9a 55 26 21 72 cb e8 09 c5 78 0a |......U&!r....x.|
+                                        : e6 da d0 2f 0c da cb 07 8d 77 a4 14 6c 72 2a f8 |.../.....w..lr*.|
+                                        : 7e 82 6d fe 9e 8f 7f db 7d f8 3b 1d 8e 13 f1 a4 |~.m.....}.;.....|
+                                        : 82 d6 10 e6 07 85 4e 0c f7 95 2d 59 28 a4 e1 85 |......N...-Y(...|
+                                        : 21 b8 9b 30 64 ac ff 2b 25 b3 5c 97 85 75 bc 46 |!..0d..+%.\..u.F|
+                                        : e5 0b ae f5 3d c3 6b 9b f2 ec 54 51 ab e5 50 8f |....=.k...TQ..P.|
+                                        : 3f 32 25 d0 19 2f d4 78 bf f6 4a d2 07 38 36 54 |?2%../.x..J..86T|
+                                        : 3f 19 6d 6f 0a 8b aa d7 a6 7c 8f 26 f6 c6 f4 58 |?.mo.....|.&...X|
+                                        : 0c 9e 67 02 11 6d d5 05 23 ad 79 60 4a 4d 33 cf |..g..m..#.y`JM3.|
+                                        : 82 89 96 87 e3 f4 5f 5f 68 c2 d6 56 ca 40 2d d4 |......__h..V.@-.|
+                                        : 7a d8 66 7c 17 5e 5f 53 80 a5 ce 0c f4 89 31 34 |z.f|.^_S......14|
+                                        : 55                                              |U               |
+1307   257: 1: prim INTEGER             : 00 d3 09 c9 d1 59 00 6a 25 d9 a4 76 4f 10 ad db |.....Y.j%..vO...|
+                                        : b0 c0 94 23 37 a9 11 20 71 03 7f ae 1f f3 1c 4a |...#7.. q......J|
+                                        : ff b6 dc 74 85 c2 f1 a7 73 c2 29 83 ac 68 d8 ef |...t....s.)..h..|
+                                        : 64 97 9c 9c ce c7 c5 92 9d 98 24 96 15 45 d0 b0 |d.........$..E..|
+                                        : a4 eb de 56 59 ba 33 c1 15 cc d7 74 d0 d3 3e 4d |...VY.3....t..>M|
+                                        : 90 37 b1 2e 77 1c bb fe 2f 44 57 c4 85 9f 08 67 |.7..w.../DW....g|
+                                        : 66 6f 1e 28 02 5b 48 66 57 8b 0a 5a b9 a1 5f 81 |fo.(.[HfW..Z.._.|
+                                        : 78 22 1d 45 c5 00 dd e5 73 5c 1d 47 54 0c a9 5a |x".E....s\.GT..Z|
+                                        : 01 86 3e 81 6d 82 09 a2 41 5b 79 6f 6c d7 b1 79 |..>.m...A[yol..y|
+                                        : 04 c4 71 2a 6f 6f fd 30 cc c7 7c 59 8f be d4 ef |..q*oo.0..|Y....|
+                                        : 75 7c 8e 2e dc 40 be 0d 6f e6 8d 8c 84 3f b8 eb |u|...@..o....?..|
+                                        : 2c a5 d7 2e 05 7c 9f 73 06 7b 87 b1 91 cf 38 a7 |,....|.s.{....8.|
+                                        : 94 7a 9f 5c ad 6f fe 66 ac 16 e9 92 48 56 47 4e |.z.\.o.f....HVGN|
+                                        : 8b b5 77 f6 c4 c9 7a 66 b9 25 57 e5 90 6d b3 6e |..w...zf.%W..m.n|
+                                        : 7d d1 7e aa 59 ba 6c 71 c5 15 aa 8e 27 6a 23 a4 |}.~.Y.lq....'j#.|
+                                        : 0f d1 95 e4 73 b5 7d 6f a3 6b 79 d1 c2 06 c1 46 |....s.}o.ky....F|
+                                        : 71                                              |q               |
+1568   256: 1: prim INTEGER             : 66 53 5a d5 ca 0e f0 c6 c2 ad b6 83 9c 22 f5 9a |fSZ.........."..|
+                                        : 37 4d 3e 03 eb 30 59 66 a5 ea 05 ff d2 94 2a c1 |7M>..0Yf......*.|
+                                        : 43 93 f5 87 a0 46 e5 f4 10 c8 cd 9b 24 9d bb b3 |C....F......$...|
+                                        : 79 30 d7 08 4f ec 0e 05 79 2e 01 8e dc 0f b1 91 |y0..O...y.......|
+                                        : ef c9 d0 d3 36 47 70 24 15 3e 52 a8 96 11 af 98 |....6Gp$.>R.....|
+                                        : 94 9d 5a 38 a0 b6 c4 99 50 28 51 2f 47 1d cf 19 |..Z8....P(Q/G...|
+                                        : 51 b8 7f 86 50 b5 3e 40 1f b9 07 42 67 de b1 3d |Q...P.>@...Bg..=|
+                                        : 30 88 68 58 b1 67 45 98 b5 9b a2 de 4b 9b 51 90 |0.hX.gE.....K.Q.|
+                                        : 0d a5 26 4b 11 7f 1d 6b bc 33 3d a9 f4 68 e9 e1 |..&K...k.3=..h..|
+                                        : d7 78 1c 03 63 56 09 60 e2 74 a7 eb 53 a8 0a 22 |.x..cV.`.t..S.."|
+                                        : 03 b6 cf c0 1b cf 23 6f 99 67 72 cb b5 1a 53 4d |......#o.gr...SM|
+                                        : 4c fb 09 72 a0 65 ab ed e5 50 f1 2f 3c d1 82 a6 |L..r.e...P./<...|
+                                        : 8c cc 4b 28 02 02 03 b4 f1 4e 03 b3 8f 8a 32 b4 |..K(.....N....2.|
+                                        : 85 0f 7b f6 8b 7e 1a 5c 82 80 79 54 d6 f4 e7 f2 |..{..~.\..yT....|
+                                        : bb bd ff 1c 46 53 2e 0b 49 a8 8a 2c e5 67 b0 81 |....FS..I..,.g..|
+                                        : 8e 29 8c 24 e9 b5 39 71 5e 39 29 b0 5a 17 f8 69 |.).$..9q^9).Z..i|
+1828   256: 1: prim INTEGER             : 42 26 bc 53 5a 01 ae 44 45 0f af 62 23 49 4c 27 |B&.SZ..DE..b#IL'|
+                                        : 00 86 ae ef 60 98 94 c1 b8 26 0a af cb 25 e0 40 |....`....&...%.@|
+                                        : 7d d2 66 d8 12 fe 6a cd f7 5b ca 01 7e 30 1a 02 |}.f...j..[..~0..|
+                                        : 3f 20 01 6b 33 e5 b3 8a a0 c9 3f 1e 55 ef 0f 9f |? .k3.....?.U...|
+                                        : f2 ab 94 07 b6 3d 48 d6 0b 8a b1 fc 4f 6b 25 27 |.....=H.....Ok%'|
+                                        : 02 be 10 61 97 e9 39 c9 19 34 25 ce f8 c5 ca 9b |...a..9..4%.....|
+                                        : aa 53 1a 99 7a 81 9c 4a ee b3 85 32 d0 e9 be 0c |.S..z..J...2....|
+                                        : a9 2c e1 d4 d9 eb b4 63 cf c9 01 b5 cf ee 39 df |.,.....c......9.|
+                                        : 66 74 2b 5f e7 36 1b dd 3e ce 36 e6 38 4a 52 33 |ft+_.6..>.6.8JR3|
+                                        : f3 5b c1 c0 82 ab 2b e3 d4 d8 1e be d7 43 a9 f7 |.[....+......C..|
+                                        : fa de 1a c4 41 ab 11 4d 35 48 c3 76 24 ff 53 00 |....A..M5H.v$.S.|
+                                        : 80 cf 8d 86 7c c5 02 6a 52 c8 7b 19 c8 89 ea c5 |....|..jR.{.....|
+                                        : b9 16 41 17 c0 96 4f 1a bc 67 e4 c9 b5 f9 ce 1e |..A...O..g......|
+                                        : 2e f8 f6 aa 42 b9 92 7f 90 bc 17 a2 89 30 88 7e |....B........0.~|
+                                        : f9 ef 29 78 cc dd f7 5f 9e e6 02 7f 4a 5e f7 ab |..)x..._....J^..|
+                                        : 59 b8 11 8f 4f a1 8d 1f fd ad 86 d9 ba 02 55 91 |Y...O.........U.|
+2088   256: 1: prim INTEGER             : 59 ea 60 2e b7 01 f6 b1 e9 c4 97 32 db 52 9b 6b |Y.`........2.R.k|
+                                        : 3f f5 28 0e ff 8e 7f 77 db 86 ec 02 2c a3 de 19 |?.(....w....,...|
+                                        : 19 88 0e d9 3a 96 a5 b3 e7 a5 3a 6d 23 28 82 2b |....:.....:m#(.+|
+                                        : a0 a6 06 ba 2c c6 95 d3 3c 23 ec 85 1d d0 f3 82 |....,...<#......|
+                                        : dc a4 85 39 a1 8c a2 b3 06 77 b1 87 18 90 1c 04 |...9.....w......|
+                                        : 1d 4d 74 c3 e9 64 3e cb 89 fc e8 1a 98 bc 97 52 |.Mt..d>........R|
+                                        : 84 3d a8 9d 44 05 62 b2 87 da 2a 5a aa d5 e1 df |.=..D.b...*Z....|
+                                        : 7c aa 2e ca c5 29 49 ca 90 66 13 90 90 ae 66 20 ||....)I..f....f |
+                                        : 10 ac 10 e2 a7 0d 1b f7 74 d3 3d 4d 16 22 3e cb |........t.=M.">.|
+                                        : 4f 3a 82 e0 dd 04 1c b1 1a 67 b2 0a cb 02 5e 6c |O:.......g....^l|
+                                        : 75 7c dd cf c9 a2 40 74 51 bc 1a 55 19 3e ba b8 |u|....@tQ..U.>..|
+                                        : 9a 26 39 a9 13 8b 13 b7 3f b5 2d 31 16 8f 65 f0 |.&9.....?.-1..e.|
+                                        : bc ea a3 f3 5a 9e d7 23 51 76 c1 06 27 31 8c 63 |....Z..#Qv..'1.c|
+                                        : cb 5d 79 1d 63 9a 63 53 63 c0 6c cb 83 44 88 ae |.]y.c.cSc.l..D..|
+                                        : 83 c8 90 87 99 cf 05 01 f0 9b f1 55 78 75 a4 79 |...........Uxu.y|
+                                        : 5a 57 6d 59 7f 04 3a b5 33 ca f7 97 03 b4 d1 21 |ZWmY..:.3......!|
+EOF
+RUN
+
+NAME=search crypto ed448
+FILE=bins/other/ed448-private.key
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+pFa @ hit.pkcs8_pkey.0 @!0x49
+pF8 @ hit.pkcs8_pkey.0 @!0x49
+pF8j @ hit.pkcs8_pkey.0 @!0x49 ~{}
+EOF
+EXPECT=<<EOF
+offset       size flag             detail 
+------------------------------------------
+  0xf5 0x00000049 hit.pkcs8_pkey.0 ed448
+   0    71: 0: cons SEQUENCE            : 
+   2     1: 1: prim INTEGER             : 00
+   5     5: 1: cons SEQUENCE            : 
+   7     3: 2: prim OBJECT_IDENTIFIER   : ed448 (1.3.101.113)
+  12    59: 1: prim OCTET_STRING        : 
+  14    57: 2: prim OCTET_STRING        : 17 64 49 16 8e c8 fc 66 d9 e6 7d 37 5d 1e a3 10 |.dI....f..}7]...|
+                                        : b1 42 7e 8c 17 8b 2f 83 9c af 90 9b 0c a8 f6 55 |.B~.../........U|
+                                        : 10 d1 f4 33 af d2 ce 6e 69 00 63 1a 0e 0b f4 38 |...3...ni.c....8|
+                                        : 85 7c 56 d3 c7 97 8e 8b c9                      |.|V......       |
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "ed448 (1.3.101.113)"
+  privateKey: |
+    04 39 17 64 49 16 8e c8 fc 66 d9 e6 7d 37 5d 1e .9.dI....f..}7].
+    a3 10 b1 42 7e 8c 17 8b 2f 83 9c af 90 9b 0c a8 ...B~.../.......
+    f6 55 10 d1 f4 33 af d2 ce 6e 69 00 63 1a 0e 0b .U...3...ni.c...
+    f4 38 85 7c 56 d3 c7 97 8e 8b c9                .8.|V......
+
+{
+  "PrivateKeyInfo": {
+    "privateKeyAlgorithm": {
+      "algorithm": "ed448 (1.3.101.113)"
+    },
+    "privateKey": "04 39 17 64 49 16 8e c8 fc 66 d9 e6 7d 37 5d 1e .9.dI....f..}7].\na3 10 b1 42 7e 8c 17 8b 2f 83 9c af 90 9b 0c a8 ...B~.../.......\nf6 55 10 d1 f4 33 af d2 ce 6e 69 00 63 1a 0e 0b .U...3...ni.c...\nf4 38 85 7c 56 d3 c7 97 8e 8b c9                .8.|V......"
+  }
+}
+EOF
+RUN
+
+NAME=search crypto certificate
+FILE=bins/other/certificate.ber
+CMDS=<<EOF
+e search.overlap=true
+/cmt
+pFx @ hit.x509.0 @!0x34d
+EOF
+EXPECT=<<EOF
+offset       size flag       detail 
+------------------------------------
+  0x2f 0x0000034d hit.x509.0 
+tbsCertificate:
+  version: 3
+  serialNumber: "53:2a:e3:b1:e9:ef:4e:87:2a:ea:c3:5b:32:8f:7d:95:71:16:bd:39"
+  signature:
+    algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+  issuer:
+    - oid: "countryName (2.5.4.6)"
+      value: "ZA"
+    - oid: "stateOrProvinceName (2.5.4.8)"
+      value: "Some-State"
+    - oid: "organizationName (2.5.4.10)"
+      value: "Radare2"
+  validity:
+    notBefore: "27/11/2019 18:09:20 GMT"
+    notAfter: "26/11/2020 18:09:20 GMT"
+  subject:
+    - oid: "countryName (2.5.4.6)"
+      value: "ZA"
+    - oid: "stateOrProvinceName (2.5.4.8)"
+      value: "Some-State"
+    - oid: "organizationName (2.5.4.10)"
+      value: "Radare2"
+  subjectPublicKeyInfo:
+    algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+    subjectPublicKey:
+      exponent: |
+        00 d3 ef ec 08 5a 38 90 10 80 e6 9e 2a 6e 36 ab .....Z8.....*n6.
+        f3 a4 d1 e8 17 55 60 30 40 40 55 44 80 3d c0 c2 .....U`0@@UD.=..
+        f1 31 2c a4 f5 25 ef 4e f5 68 de a1 15 31 7d 72 .1,..%.N.h...1}r
+        0d 40 e9 2c f3 a6 56 2c 2a f9 a9 bf 4c 8a 64 0f .@.,..V,*...L.d.
+        05 55 67 4a 93 3d 5a d6 0f 44 69 0b c7 24 78 0a .UgJ.=Z..Di..$x.
+        e4 c3 4a 83 ec 65 81 11 1d a7 18 d0 28 05 ea c2 ..J..e......(...
+        f3 b6 34 d6 90 7b a8 28 fe 3c a6 7f 7c a7 1a 1e ..4..{.(.<..|...
+        99 90 84 c2 97 9e b9 4f 59 a9 5b 9a 3c f9 15 77 .......OY.[.<..w
+        84 19 b2 19 6f c8 f6 4c bc 2d 8b 0b e3 3c 59 a6 ....o..L.-...<Y.
+        0f 15 0d 08 95 ce 82 8f df e4 58 3d 34 35 62 6c ..........X=45bl
+        71 8d 26 40 39 4e 4d b0 3c 0b f2 42 e4 b8 92 23 q.&@9NM.<..B...#
+        f4 33 63 bf ee 18 d2 b8 c7 de dd a6 27 cb 7c 01 .3c.........'.|.
+        68 a8 56 f7 f7 d8 69 7b 4a 65 7d 19 f1 ce 21 97 h.V...i{Je}...!.
+        3b df a3 21 84 9b fa e8 8c 51 0d 8c 23 06 f6 b8 ;..!.....Q..#...
+        6e 37 60 9d b7 ba 43 59 c8 af 51 f4 5f d3 39 82 n7`...CY..Q._.9.
+        4f e3 92 46 67 e0 20 24 1a 72 fd ca dd 32 ba 8f O..Fg. $.r...2..
+      module: "01:00:01"
+  extensions:
+    - extnID: "subjectKeyIdentifier (2.5.29.14)"
+      extnValue:
+        type: "OCTET_STRING"
+        value: |
+          ee 47 24 5c f5 07 df c6 28 ef 02 2b f3 b5 88 a8 .G$\....(..+....
+          d5 cd 9f a8                                     ....
+    - extnID: "authorityKeyIdentifier (2.5.29.35)"
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "Context [0]"
+            value: |
+              ee 47 24 5c f5 07 df c6 28 ef 02 2b f3 b5 88 a8 .G$\....(..+....
+              d5 cd 9f a8                                     ....
+    - extnID: "basicConstraints (2.5.29.19)"
+      critical: true
+      extnValue:
+        type: "SEQUENCE"
+        value:
+          - type: "BOOLEAN"
+            value: "true"
+algorithmIdentifier:
+  algorithm: "sha256WithRSAEncryption (1.2.840.113549.1.1.11)"
+signature: |
+  c0 a9 ff 81 60 9b d3 c3 ed 45 3e 9b 8c 8a dd 91 ....`....E>.....
+  9d e8 72 62 a8 30 ed 01 54 96 20 76 54 e2 9f 01 ..rb.0..T. vT...
+  9f 05 e0 7b 84 7e 50 26 c6 4d fa 0d b4 de c1 5c ...{.~P&.M.....\
+  62 d3 5f 75 e6 71 ce 39 94 c7 d9 38 0b 69 d0 12 b._u.q.9...8.i..
+  ab 16 b8 b8 cb e1 57 83 e3 04 3b 36 c9 eb 92 89 ......W...;6....
+  f4 ed 27 69 f3 5a ee b0 10 03 c0 92 47 39 7e 7e ..'i.Z......G9~~
+  71 21 a0 d6 6a 70 30 26 0c e3 df ac f3 bc 59 f9 q!..jp0&......Y.
+  18 c7 8e 93 b8 18 45 ba 4f e8 04 4f 5f 92 6e 79 ......E.O..O_.ny
+  56 1a 08 cd 04 28 a5 db 14 32 39 a6 3a ed 63 25 V....(...29.:.c%
+  f3 e0 df 45 ee 5b 30 dd 11 4f ad aa 46 06 6b 6e ...E.[0..O..F.kn
+  05 17 a5 9b 26 d6 11 81 c6 8c 7e ec ad 99 2b f2 ....&.....~...+.
+  00 c9 e1 20 ad 4c 27 27 e9 b4 1d a7 c9 4c 52 17 ... .L''.....LR.
+  3b 6a 1b 4c 5d 59 55 46 8a b5 46 f2 30 10 56 25 ;j.L]YUF..F.0.V%
+  8b 62 ae 40 65 ba 0f ae 5f 17 eb 72 d6 c2 de a2 .b.@e..._..r....
+  8e d2 8f a5 06 a9 54 d3 9e 02 47 9a c9 6b c3 38 ......T...G..k.8
+  aa 79 14 35 74 de 3a 7a 59 05 dc d0 69 57 88 93 .y.5t.:zY...iW..
+
+EOF
+RUN
+
+NAME=search crypto dump
+FILE=bins/other/pkcs8.keys.bin
+CMDS=<<EOF
+# ml-dsa-87 exceeds the default chunk size
+e search.chunk=0x4000
+/cmt
+b 0x4000
+echo alg-ml-kem-512
+pF8 @ hit.pkcs8_pkey.0
+echo rsaEncryption
+pF8 @ hit.pkcs8_pkey.1
+echo secp256k1
+pF8 @ hit.pkcs8_pkey.2
+echo secp384r1
+pF8 @ hit.pkcs8_pkey.3
+echo ml-dsa-87
+pF8 @ hit.pkcs8_pkey.4
+echo secp521r1
+pF8 @ hit.pkcs8_pkey.5
+EOF
+EXPECT=<<EOF
+offset       size flag             detail         
+--------------------------------------------------
+  0x4b 0x000006c2 hit.pkcs8_pkey.0 alg-ml-kem-512
+ 0x72a 0x00000279 hit.pkcs8_pkey.1 rsaEncryption
+ 0xcf5 0x00000087 hit.pkcs8_pkey.2 secp256k1
+ 0xd8c 0x000000b9 hit.pkcs8_pkey.3 secp384r1
+ 0xebe 0x00001362 hit.pkcs8_pkey.4 ml-dsa-87
+0x2253 0x000000f1 hit.pkcs8_pkey.5 secp521r1
+alg-ml-kem-512
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "alg-ml-kem-512 (2.16.840.1.101.3.4.4.1)"
+  privateKey: |
+    30 82 06 a6 04 40 af 26 0a e5 15 7c e6 02 17 e7 0....@.&...|....
+    a0 5f c2 58 69 af 47 6a 07 ef 33 70 4e 0c 94 b9 ._.Xi.Gj..3pN...
+    bb 96 41 2f bb fa 95 dd 22 f5 c9 bc 1b 87 76 27 ..A/....".....v'
+    23 2f cc 69 9b 37 66 83 95 f4 40 e6 92 88 56 32 #/.i.7f...@...V2
+    5c 52 52 f6 08 b1 04 82 06 60 19 ac 2b 61 e5 99 \RR......`..+a..
+    21 d3 46 3d 66 04 b6 70 6d 87 5a b4 1e b4 1a a8 !.F=f..pm.Z.....
+    54 56 92 3c 27 4e 4b 24 3c d2 a5 c1 23 5e c9 47 TV.<'NK$<...#^.G
+    3e 17 97 aa 52 09 a0 ab e9 50 69 50 9c 73 00 24 >...R....PiP.s.$
+    01 fb b2 82 90 69 07 19 23 e4 89 9a 92 02 80 49 .....i..#......I
+    dc 14 3a e4 66 fa 24 bb 6c ea 3a dc f8 69 31 ca ..:.f.$.l.:..i1.
+    8f d7 0a 77 d7 99 a3 4e b5 6b ee 6a 04 89 92 7d ...w...N.k.j...}
+    9e c6 15 aa 65 3f ca dc 60 6b 69 92 3e 7a 6b c0 ....e?..`ki.>zk.
+    5a 20 7b b3 0a 1e 50 3b 9e a2 85 21 27 c0 14 69 Z {...P;...!'..i
+    22 10 64 81 94 b0 1a e3 11 89 c6 d3 74 d8 a2 cc ".d.........t...
+    00 0c 85 34 98 4f 0e f6 b8 2b 45 80 0d ba 02 74 ...4.O...+E....t
+    8b 1c fe ac 9e 51 6c b3 53 91 a0 64 8a a8 27 e1 .....Ql.S..d..'.
+    5f a0 e9 a6 0a 54 5b b7 db 66 8d b7 9a 94 5a cc _....T[..f....Z.
+    3c b7 a9 bd 52 af ec 7b 96 81 b7 49 06 39 66 f3 <...R..{...I.9f.
+    d7 66 81 ea 74 69 eb b5 33 01 64 2a e4 9f e0 6c .f..ti..3.d*...l
+    37 49 78 b6 fe f1 a5 32 30 1c 78 4b b7 76 92 9a 7Ix....20.xK.v..
+    c7 68 3c 5f 70 1c 6b a6 be 82 a7 cd f7 f1 9b b2 .h<_p.k.........
+    7b 0b a5 a2 6d 06 c6 65 47 5a 71 0e 18 5b e7 73 {...m..eGZq..[.s
+    40 56 38 1c 1c 21 8d 74 39 c7 5d ba 0f 74 34 80 @V8..!.t9.]..t4.
+    0d 1b 30 0b 29 89 ea 00 1d dc e5 7f 56 52 ac 8a ..0.).......VR..
+    55 52 62 52 65 f9 73 76 52 44 4d ec 4b 5d 27 2c URbRe.svRDM.K]',
+    0f 1b 6b 6b 24 26 cd fc 87 77 25 32 84 4a 42 bb ..kk$&...w%2.JB.
+    18 d5 0a 14 61 b7 c4 24 9b f7 bc 50 f9 db 41 69 ....a..$...P..Ai
+    c6 27 97 6b a5 e5 4a 90 c8 68 29 f5 eb 4e 8d a2 .'.k..J..h)..N..
+    ca 64 35 26 7b d0 cf e3 15 3e 7f 90 6b bb 20 0b .d5&{....>..k. .
+    f0 f1 50 68 dc 99 01 57 18 d4 72 97 a7 c8 be 44 ..Ph...W..r....D
+    7c 2a 2d a8 07 34 f9 a3 62 52 8d 49 81 c5 e7 64 |*-..4..bR.I...d
+    1c ad 22 0e 3b 46 6e 3e 39 3b b6 9b 25 e6 d3 6d ..".;Fn>9;..%..m
+    d4 31 37 62 b8 a3 1e 49 82 52 b2 41 3e 19 80 ae .17b...I.R.A>...
+    b0 38 c6 e0 11 f1 2b b1 80 fb 6a 98 74 95 81 90 .8....+...j.t...
+    3b d2 05 5d 6f 40 52 9d 9b 72 aa b7 a0 a4 e2 5d ;..]o@R..r.....]
+    cb bb 27 99 13 07 7e 39 40 1a d6 83 50 72 57 36 ..'...~9@...PrW6
+    72 60 5b 08 ca db 55 6e 76 a9 6d b1 e8 17 5e 82 r`[...Unv.m...^.
+    68 a8 89 9a 2a a7 6d 0e 52 8d be c9 9e 10 4b 7c h...*.m.R.....K|
+    79 e5 41 da 55 2c 7c b8 01 00 04 92 0d d5 ac 31 y.A.U,|........1
+    58 0b 96 bb 1d ce cc 8f 2f da cb bb 62 65 49 26 X......./...beI&
+    7b 18 95 86 ba 56 61 e9 15 b0 65 43 8c 6f cc 0f {....Va...eC.o..
+    3f 87 89 9f 1c c5 2f 72 ad e1 fb 6d db 3b 3b ea ?...../r...m.;;.
+    e2 83 0c 47 3a f7 e6 44 5e ba 71 cb 06 6b e5 26 ...G:..D^.q..k.&
+    85 65 b4 78 b9 34 7f 98 69 6d fe 56 ab 2e a2 5f .e.x.4..im.V..._
+    40 01 bd 16 c4 85 82 d4 98 3b 73 7c 2c 33 82 a6 @........;s|,3..
+    a6 8e c2 0b 9e c9 d5 3a c7 60 7e 07 d3 4c ab bc .......:.`~..L..
+    99 bb 2c 5a 7e 83 77 94 79 6f c2 41 b5 76 89 ac ..,Z~.w.yo.A.v..
+    8d 35 70 8c c7 39 20 20 8e 4e 00 7c e9 47 c5 42 .5p..9  .N.|.G.B
+    c0 9c c7 4b 6a 14 50 0a 2f 4a 3c 9d e0 2c 2e 47 ...Kj.P./J<..,.G
+    83 95 90 2a 1f a5 c9 8e e1 1d cf 13 7b 88 b0 42 ...*........{..B
+    58 fb 1d 8c d1 14 f4 bc 47 8d 12 ba 6b 26 c5 fd X.......G...k&..
+    d3 a1 52 d5 c2 29 18 66 f1 c5 80 b6 db 64 40 c8 ..R..).f.....d@.
+    01 c8 ac c7 ea 4b 64 f6 6c 2a f5 9c 80 e8 64 54 .....Kd.l*....dT
+    c4 1b 3e 4d c4 95 f7 76 40 54 58 7b 31 18 37 6f ..>M...v@TX{1.7o
+    15 a0 7d 55 42 bf 25 1b 01 9b 08 27 8b 17 85 d2 ..}UB.%....'....
+    10 95 bc a2 6e a1 ab d1 30 5b 7d 17 37 55 d6 97 ....n...0[}.7U..
+    34 68 c4 be 21 0d 37 e4 a0 ea e2 35 0a d0 59 37 4h..!.7....5..Y7
+    f1 b9 66 d6 76 d8 3a 87 14 42 8e f2 1b c6 45 89 ..f.v.:..B....E.
+    98 1a 7c 13 ef f4 68 8d 68 7f 09 da 67 fd 16 3f ..|...h.h...g..?
+    c3 f6 71 66 e3 5b 38 61 28 ab ab 24 b0 90 20 81 ..qf.[8a(..$.. .
+    19 6d 22 a3 b6 be b0 5d 9b 18 bd 24 55 5f be fa .m"....]...$U_..
+    68 b7 71 38 80 da 61 a6 08 cf 9c e3 59 6e 5a 42 h.q8..a.....YnZB
+    b2 f8 80 c8 58 1c df 56 27 b3 20 4e 55 4c 2d bd ....X..V'. NUL-.
+    98 5b 7f 32 90 86 33 cf 83 56 56 9f 42 23 04 c1 .[.2..3..VV.B#..
+    06 67 97 66 4c f9 cd 10 cb 5a f6 54 8a 0f c6 3f .g.fL....Z.T...?
+    53 e8 40 63 cc c7 44 9a c3 2e 56 8c fd 59 4c 2d S.@c..D...V..YL-
+    17 ca 55 bb 75 e7 c3 c6 40 dc 74 cf 73 26 45 0b ..U.u...@.t.s&E.
+    9a 87 f2 6c 04 e2 b7 4d ca 56 1d 99 10 63 8c c1 ...l...M.V...c..
+    d4 98 93 a5 f2 ac f9 d9 88 c5 3b 0b b7 b4 97 6e ..........;....n
+    27 c5 10 ca bd f6 92 2b a7 b8 43 f3 a0 4b 2f e5 '......+..C..K/.
+    aa 0b 94 8e 2f aa 80 4c b3 77 59 51 78 36 f6 3f ..../..L.wYQx6.?
+    71 6a 88 91 46 97 3d eb 3f 44 52 4e 5f 08 5a c0 qj..F.=.?DRN_.Z.
+    a5 16 87 7a 02 90 40 a5 1e 25 3b 5a 54 1c ac 65 ...z..@..%;ZT..e
+    66 19 96 4f fc 84 4d 5d 86 18 3d d0 04 14 0b 0a f..O..M]..=.....
+    6a 05 c3 07 21 9a c8 cb 49 64 85 b6 db 19 60 c7 j...!...Id....`.
+    57 bc 2f 8c b6 82 d7 6b 9a 41 a2 93 00 6b b4 9b W./....k.A...k..
+    c0 95 38 88 88 45 73 02 cb 7e 7f aa c5 6f e4 ba ..8..Es..~...o..
+    6f 88 24 1c 1b 9d 30 0b 05 78 6b 5b e8 00 06 0c o.$...0..xk[....
+    17 bd e9 39 b4 92 e6 56 4c 88 cf b0 c1 7c fe b3 ...9...VL....|..
+    0d b8 c4 a5 1d a6 9b 5a b4 9a 9e 52 84 85 e4 7d .......Z...R...}
+    f4 a5 cf ac 18 a3 d9 c0 00 ff 59 74 b1 83 28 23 ..........Yt..(#
+    c4 6b c7 fc 06 41 51 7b 52 55 a4 be 67 bb 36 76 .k...AQ{RU..g.6v
+    8f dd d8 82 9c aa 9d e3 36 3d 5b 23 b0 75 36 0f ........6=[#.u6.
+    30 b6 a4 cc 5a 15 8b 48 c1 79 28 10 48 a9 1b 94 0...Z..H.y(.H...
+    22 9e 2a 2a 6e 46 c2 30 76 a5 93 15 d8 78 ec 6a ".**nF.0v....x.j
+    a9 c7 0c 0c 82 1a 21 cd 54 bc b2 27 09 4c 17 0c ......!.T..'.L..
+    f7 d7 92 56 b5 b5 6a 42 74 75 e6 74 22 da 29 e5 ...V..jBtu.t".).
+    b6 75 32 2b 41 5f 98 0c 73 58 29 fe e3 1e d2 46 .u2+A_..sX)....F
+    aa 14 ea 95 8c 75 29 db 5a 0c 6a 02 6d 46 37 52 .....u).Z.j.mF7R
+    49 cc 3d 5f ba 99 78 38 cd 0a 21 3d bd b1 01 d9 I.=_..x8..!=....
+    16 c9 8f 33 c1 0a e9 2a b1 e2 94 3b e1 ae d4 83 ...3...*...;....
+    14 bb 0b 99 37 e6 a6 87 72 b4 85 03 44 20 a6 c5 ....7...r...D ..
+    8e e2 67 7d 53 71 31 e5 5b 67 cb c2 ab 47 11 33 ..g}Sq1.[g...G.3
+    95 30 b0 d0 52 3f 88 30 72 4a 3e d5 32 9d bd 84 .0..R?.0rJ>.2...
+    a6 ce 4b 0c 7a d8 ba 20 27 a9 75 e5 b3 ac 84 09 ..K.z.. '.u.....
+    de f6 cc 2b c5 2d 6f 69 88 c5 4a 6c 26 a3 4a 4a ...+.-oi..Jl&.JJ
+    a2 90 bd 04 44 8d 70 0c ce 65 cd a4 00 3d 66 e7 ....D.p..e...=f.
+    7f 7e 9a b0 49 42 7b be 8a 86 18 7a 9e f3 e3 2d .~..IB{....z...-
+    cd 58 91 a5 0b 01 77 12 b0 01 a8 3e 39 92 40 83 .X....w....>9.@.
+    c2 24 70 e9 3a fc 8b 31 a7 7b 34 c7 74 13 a1 a8 .$p.:..1.{4.t...
+    cb c0 80 4d c7 61 8f e9 76 36 73 59 4d 95 7d 6d ...M.a..v6sYM.}m
+    d3 84 f5 f9 a0 ec bb bf 96 f6 b5 e6 04 25 d1 39 .............%.9
+    41 5f 4e bc d7 29 67 ad 2e e3 e1 cd b4 d7 dc 59 A_N..)g........Y
+    cf 70 66 75 67 16 7d ec 57 3c f7 28 db 27 30 eb .pfug.}.W<.(.'0.
+    5b df b0 8b df 79 d8 3c c1 17 95 dd 22 f5 c9 bc [....y.<...."...
+
+rsaEncryption
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "rsaEncryption (1.2.840.113549.1.1.1)"
+  privateKey: |
+    30 82 02 5b 02 01 00 02 81 81 00 88 1f 6f 8e 2a 0..[.........o.*
+    85 4a d6 29 b8 14 77 21 74 1d c4 8a e7 44 f6 d4 .J.)..w!t....D..
+    24 da 42 3a 32 a1 c4 40 57 b1 e5 ec af fe b2 31 $.B:2..@W......1
+    8b 02 24 31 a8 56 ea bf da 37 81 c4 01 56 7c 4d ..$1.V...7...V|M
+    02 00 dd 82 26 ed 09 03 85 72 ad 3b 74 e0 ce 2c ....&....r.;t..,
+    00 c4 52 f0 7a 05 ee d3 c2 63 16 11 98 64 41 f0 ..R.z....c...dA.
+    e4 e2 c8 24 a1 c7 3d 1a 50 25 8a e1 18 b8 a1 1f ...$..=.P%......
+    8b 16 4e b1 a1 c9 1f 1f b9 23 79 43 89 02 c9 c5 ..N......#yC....
+    24 ef 05 7d 43 e3 d6 e4 9d 22 3d 02 03 01 00 01 $..}C...."=.....
+    02 81 80 13 81 65 ab da 7d f5 26 51 1e 16 98 a7 .....e..}.&Q....
+    8b 8b 04 71 df 07 eb d2 a4 61 3e 22 36 c5 25 69 ...q.....a>"6.%i
+    0e e7 e8 09 8d 82 92 a8 34 c2 1e cb 9a d2 b1 9a ........4.......
+    c2 3b 37 f6 0d 37 06 62 c6 89 b7 34 02 3d ef 0f .;7..7.b...4.=..
+    b9 1c a0 6d 8e b9 e3 99 22 3c a5 1f 77 bc f1 60 ...m...."<..w..`
+    9f e2 70 8b 0b 3f 7d 93 df 69 d8 99 fa 19 71 93 ..p..?}..i....q.
+    8b ec 77 1d 68 b1 58 fd 21 2f 74 72 16 a0 79 56 ..w.h.X.!/tr..yV
+    82 fb 5b 28 fa c3 5d 20 f8 73 d8 08 ea 22 f8 ee ..[(..] .s..."..
+    a5 3b 21 02 41 00 e4 86 02 64 94 9a c7 18 e3 ec .;!.A....d......
+    fa 6e 63 af 27 d6 40 62 ab d9 09 a3 1e d5 54 bc .nc.'.@b......T.
+    2b d1 d8 35 b3 15 45 6a 33 19 e9 dc 49 b4 6e a4 +..5..Ej3...I.n.
+    53 70 81 a1 c4 27 aa fd c2 ce e0 ee da 3e 0c 98 Sp...'.......>..
+    29 f8 a4 de b7 e5 02 41 00 98 7d 51 71 01 6a e6 )......A..}Qq.j.
+    eb 0b ca 9d 49 2a 80 06 61 55 82 4e 89 40 50 e7 ....I*..aU.N.@P.
+    08 29 5f 72 cf 69 88 fc 95 e3 37 b3 86 53 09 88 .)_r.i....7..S..
+    45 7e be 09 8a c5 56 51 d2 33 38 57 ac 0b c6 f2 E~....VQ.38W....
+    56 12 5f 90 75 47 d5 eb 79 02 40 5a 22 45 25 58 V._.uG..y.@Z"E%X
+    bb a7 95 b8 a8 8a aa 29 a5 37 48 39 42 f1 d6 fc .......).7H9B...
+    07 1b ad 36 eb b5 38 e2 57 63 d8 1a f5 e5 4b ee ...6..8.Wc....K.
+    42 95 cb 95 ec 38 80 e2 90 64 66 e4 f9 8b f1 bf B....8...df.....
+    24 56 6e 2c d7 83 8e 6f b0 ec c5 02 40 23 a8 fa $Vn,...o....@#..
+    c8 b0 8a 2d 62 3e 29 ad ca 94 73 c8 0a 2f 13 00 ...-b>)...s../..
+    06 bc d1 ae 95 8c 07 54 34 08 fc 0e 05 87 53 59 .......T4.....SY
+    5a 4a 44 ea 67 46 12 6e ec d2 e5 32 d1 33 45 33 ZJD.gF.n...2.3E3
+    cb 7a 1d 96 42 66 9d 8e 8c be b5 da 11 02 40 62 .z..Bf........@b
+    60 45 ff 8b f9 ed 3e c3 43 08 d8 b4 5f b4 69 6a `E....>.C..._.ij
+    27 7c 0b f8 78 84 40 a2 b3 7b 63 47 40 2d 5b 13 '|..x.@..{cG@-[.
+    9e 76 fd aa 86 1e c5 cb 39 13 98 c3 58 dc ce 5c .v......9...X..\
+
+secp256k1
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "ecPublicKey (1.2.840.10045.2.1)"
+    parameters: "secp256k1 (1.3.132.0.10)"
+  privateKey: |
+    30 6b 02 01 01 04 20 9b e8 af aa 90 04 7d af d7 0k.... ......}..
+    ca 45 0a 88 51 f6 97 8c a4 45 79 b3 77 c1 bc 04 .E..Q....Ey.w...
+    96 df 12 16 21 53 05 a1 44 03 42 00 04 75 71 5b ....!S..D.B..uq[
+    6d 80 e7 da 5f 40 97 67 33 4c e4 e7 e8 10 b5 f4 m..._@.g3L......
+    cd 39 8c 9e e6 dc 8e 2b 66 35 60 d2 5c a6 5a ff .9.....+f5`.\.Z.
+    bf ec 80 3b 7c 37 3a 2c 65 44 c8 e8 df df f6 fe ...;|7:,eD......
+    ed 99 8a ce 1e 99 b7 a4 d7 0f                   .........
+
+secp384r1
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "ecPublicKey (1.2.840.10045.2.1)"
+    parameters: "secp384r1 (1.3.132.0.34)"
+  privateKey: |
+    30 81 9b 02 01 01 04 30 55 46 d1 54 e5 bc c8 5d 0......0UF.T...]
+    b6 b5 01 02 2d 78 db 8f a4 52 49 9b e2 1c cb 2b ....-x...RI....+
+    4a 2f 9d eb 2e c0 c2 4d 59 b7 ed 88 53 af e9 2d J/.....MY...S..-
+    c3 79 99 78 8c 7e d8 4d a1 64 03 62 00 04 7b b5 .y.x.~.M.d.b..{.
+    2e f0 66 09 52 e7 a1 bf fa ce cd f5 98 a1 a4 19 ..f.R...........
+    2c 05 c2 e8 40 45 92 dc df 53 24 56 2c 7a 32 95 ,...@E...S$V,z2.
+    04 e4 f3 fe b0 3d 2b 8c cd 38 e6 bc 0b 29 6d 49 .....=+..8...)mI
+    6e 6e ee a7 a0 db 33 c5 52 62 0b a8 8e b8 47 ec nn....3.Rb....G.
+    d1 a5 44 47 30 2c 22 3b 57 1f a1 7c 96 9b d4 23 ..DG0,";W..|...#
+    ba 00 38 01 36 60 74                            ..8.6`
+
+ml-dsa-87
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "ml-dsa-87 (2.16.840.1.101.3.4.3.19)"
+  privateKey: |
+    30 82 13 46 04 20 41 47 34 e0 ba bb 43 6b db 44 0..F. AG4...Ck.D
+    9d f1 e0 c8 69 3e ee 5c a8 59 d5 2b 40 28 43 ec ....i>.\.Y.+@(C.
+    99 71 d1 b4 e7 10 04 82 13 20 0d fd d2 89 6c 01 .q....... ....l.
+    55 ac 73 88 03 84 51 7c f5 65 1b 82 e9 48 21 f1 U.s...Q|.e...H!.
+    60 98 a8 ce 3c f4 b5 bd ee 5b 50 c2 4c a6 c8 1f `...<....[P.L...
+    aa b6 74 a2 e9 80 4d fe 86 25 c0 21 cc 7f ba a5 ..t...M..%.!....
+    fa d9 94 e7 3c af 15 21 ff be 33 45 34 28 98 7c ....<..!..3E4(.|
+    e3 c6 a2 67 0c 62 53 94 74 3c 68 6a b1 80 ce 70 ...g.bS.t<hj...p
+    e6 e4 73 ef 39 7c 50 61 a1 c8 9d 15 dc 79 c6 1d ..s.9|Pa.....y..
+    98 89 77 a7 fb b3 c0 62 fe df 2f 56 34 99 dd 0f ..w....b../V4...
+    b0 62 30 9e f4 17 e0 c9 40 eb 8b 88 11 c8 86 2c .b0.....@......,
+    0c 92 0d a1 a8 69 21 12 65 00 30 52 d4 92 24 db .....i!.e.0R..$.
+    a2 2d 1c 25 12 d3 20 52 20 92 50 10 27 84 9b 48 .-.%.. R .P.'..H
+    46 91 00 92 81 32 70 90 22 72 e2 c0 51 e2 10 21 F....2p."r..Q..!
+    c0 a6 60 0a 29 90 13 26 48 0c 44 08 02 13 20 d1 ..`.)..&H.D... .
+    20 40 e0 48 06 a1 28 10 a4 00 62 e3 04 4a 24 21  @.H..(...b..J$!
+    00 03 14 05 24 a4 91 61 40 4e 41 30 91 cb 28 2d ....$..a@NA0..(-
+    1a 32 30 49 a4 91 42 46 26 44 40 05 5c b0 4d 48 .20I..BF&D@.\.MH
+    48 62 c1 46 86 8c 80 51 54 08 24 52 b4 01 e4 22 Hb.F...QT.$R..."
+    41 20 13 49 18 38 8c 01 35 29 20 13 31 c3 12 49 A .I.8..5) .1..I
+    db 96 09 42 44 6a 50 92 09 23 15 2e 89 82 50 c0 ...BDjP..#....P.
+    04 80 44 42 2a 18 34 6d 89 82 28 c3 20 30 d4 30 ..DB*.4m..(. 0.0
+    6e 5c 98 01 c3 12 69 8b 10 51 02 09 51 9c 04 0c n\....i..Q..Q...
+    e1 b8 49 0c 44 50 24 20 71 40 02 42 18 34 21 19 ..I.DP$ q@.B.4!.
+    84 60 d9 98 01 db 10 12 1b 13 42 8a 02 6d 22 84 .`........B..m".
+    05 48 06 88 1a a0 01 db b2 6c 03 18 6a 60 c6 0d .H.......l..j`..
+    11 05 80 e4 b2 68 0c 34 28 21 83 24 12 40 62 43 .....h.4(!.$.@bC
+    22 40 43 18 28 01 14 30 5c 98 29 53 b0 21 22 10 "@C.(..0\.)S.!".
+    72 82 30 11 62 b0 31 92 20 69 db b8 68 a0 a8 88 r.0.b.1. i..h...
+    83 22 24 21 32 12 20 05 4a 14 42 8c 02 b9 65 90 ."$!2. .J.B...e.
+    08 20 24 b9 61 e1 b2 91 d8 b0 2c 5b a8 91 d8 12 . $.a.....,[....
+    0d 0c 41 86 84 38 8c 18 c2 29 20 22 90 0c c6 20 ..A..8...) "... 
+    21 27 65 a3 40 66 22 c6 4c c9 04 44 20 21 01 1c !'e.@f".L..D !..
+    32 6e 18 b5 48 90 16 0c 02 38 42 1b b1 01 d3 20 2n..H....8B.... 
+    6d 93 12 6d 24 21 0c 5b 44 69 80 18 64 54 96 24 m..m$!.[Di..dT.$
+    4b b6 8d 52 b6 48 d4 48 65 21 17 72 1a 26 29 81 K..R.H.He!.r.&).
+    18 8a 9a 92 50 43 a6 4d 13 b3 71 83 40 60 01 c0 ....PC.M..q.@`..
+    29 63 34 66 1c 09 72 02 91 28 dc 36 52 4c 44 0e )c4f..r..(.6RLD.
+    03 43 05 23 a3 08 94 80 80 c8 46 12 89 28 11 14 .C.#......F..(..
+    26 70 40 36 00 cc a0 60 12 82 2c a0 30 29 d8 26 &p@6...`..,.0).&
+    44 20 42 2a 4c a8 08 91 92 40 53 c2 4d e4 12 70 D B*L....@S.M..p
+    59 04 89 59 26 11 64 00 26 89 42 01 54 32 64 00 Y..Y&.d.&.B.T2d.
+    12 60 18 97 90 9b 34 0a 49 24 10 0c 29 20 09 09 .`....4.I$..) ..
+    00 0a 10 02 02 23 26 d4 20 0c 09 48 0a c8 88 48 .....#&. ..H...H
+    5a 06 82 a3 16 80 01 17 46 12 b9 89 00 49 82 dc Z.......F....I..
+    94 68 d2 88 91 5b 06 46 19 32 84 9b b6 29 a4 36 .h...[.F.2...).6
+    4c a2 c2 49 09 23 25 08 18 6c a3 18 65 5b 98 84 L..I.#%..l..e[..
+    62 22 20 e2 16 4d 5b b8 0d a0 02 31 d0 c8 29 88 b" ..M[....1..).
+    a6 71 02 c9 09 a0 36 24 01 02 40 1a 11 4a 18 10 .q....6$..@..J..
+    66 92 b4 88 0b 35 2c dc b8 0c 80 b4 65 89 14 06 f....5,.....e...
+    9a 20 48 09 16 22 0b 96 2d dc c2 89 02 28 6c 88 . H.."..-....(l.
+    86 4c 02 90 10 91 84 0d 9c 44 85 20 b8 0d 23 39 .L.......D. ..#9
+    82 04 c2 85 40 30 05 22 a8 8d a2 06 08 a2 b6 2c ....@0.".......,
+    5b b2 64 49 98 8d 21 95 50 e4 00 62 02 a8 05 11 [.dI..!.P..b....
+    92 25 50 30 88 84 82 50 a3 86 30 12 32 02 21 97 .%P0...P..0.2.!.
+    68 1a 96 11 0b 83 41 1a c2 6c d8 02 68 8c c8 0d h.....A..l..h...
+    20 96 40 1b a3 45 d0 90 11 4a 86 4c 1a 17 71 82  .@..E...J.L..q.
+    42 30 18 42 84 4b 46 48 09 35 2a c9 30 86 49 42 B0.B.KFH.5*.0.IB
+    52 90 10 04 24 a9 70 c2 32 81 84 16 09 20 40 05 R...$.p.2.... @.
+    41 30 46 59 24 88 c9 b2 29 d4 36 29 23 84 25 92 A0FY$...).6)#.%.
+    02 0e 22 b4 30 e0 96 8d 20 86 84 ca 48 01 9a 36 ..".0... ...H..6
+    4e 62 02 32 d9 b0 48 09 c9 51 5a 36 91 c4 00 92 Nb.2..H..QZ6....
+    03 85 48 ca 38 69 20 41 80 e4 c2 68 d9 90 4c da ..H.8i A...h..L.
+    b2 80 1a 36 29 9c 22 25 09 83 10 13 a5 09 a3 c8 ...6)."%........
+    6d c9 28 65 01 33 6e 61 18 24 63 10 6d 01 46 24 m.(e.3na.$c.m.F$
+    4a 22 05 1b c8 90 dc 16 85 04 38 28 9b 44 81 c3 J"........8(.D..
+    a0 30 98 a6 90 1a 13 04 13 96 64 0a 32 24 d3 32 .0........d.2$.2
+    52 8b b8 05 da a0 30 01 20 64 01 32 12 d0 98 09 R.....0. d.2....
+    58 06 60 08 80 61 04 47 71 a1 86 05 93 88 69 c0 X.`..a.Gq.....i.
+    38 04 0c 26 6d 59 40 2c d4 84 01 08 96 70 a2 a6 8..&mY@,.....p..
+    60 e0 c8 70 99 16 81 04 00 10 89 a4 68 8c 10 08 `..p........h...
+    00 02 02 93 04 06 23 02 29 20 31 12 c1 90 30 c8 ......#.) 1...0.
+    20 12 52 82 69 12 a5 25 49 00 0d 40 a2 51 92 02  .R.i..%I..@.Q..
+    4e d1 42 50 0c 85 25 49 08 10 db 44 8c 92 28 88 N.BP..%I...D..(.
+    04 23 2d c9 26 68 19 84 28 a4 40 88 11 41 32 22 .#-.&h..(.@..A2"
+    39 0d a3 08 66 11 47 2d 84 a2 8c 91 80 2c 08 37 9...f.G-.....,.7
+    48 42 46 32 93 c0 60 5a 30 04 89 92 6d d4 86 2d HBF2..`Z0...m..-
+    1b 24 09 c2 32 60 09 28 60 42 20 89 49 b6 69 91 .$..2`.(`B .I.i.
+    98 21 1b 42 40 e1 32 60 4a c6 84 01 20 70 a0 10 .!.B@.2`J... p..
+    09 81 30 6d 89 84 90 ca 20 24 20 18 0d da 44 21 ..0m.... $ ...D!
+    0c c6 60 08 21 0c 90 48 82 d0 40 51 49 10 32 c1 ..`.!..H..@QI.2.
+    12 42 1c 48 4d e0 06 4a cc 20 4c 1c 82 29 cb 32 .B.HM..J. L..).2
+    89 59 12 30 52 22 8a d4 04 29 d0 44 80 cc 88 05 .Y.0R"...).D....
+    18 40 49 c4 42 08 20 36 09 0b 14 88 10 27 46 04 .@I.B. 6.....'F.
+    30 8d 64 a6 0d 0a 17 62 62 34 42 1a 82 69 04 97 0.d....bb4B..i..
+    68 80 02 72 0c 08 61 12 86 24 14 89 50 14 46 02 h..r..a..$..P.F.
+    04 02 0c 98 16 0e 23 a5 30 8c a4 8c 23 13 52 21 ......#.0...#.R!
+    a1 31 1a 98 21 22 c9 90 12 01 00 10 09 2e 54 82 .1..!"........T.
+    68 5a b4 41 18 b8 8c 22 95 60 14 86 48 a3 14 00 hZ.A...".`..H...
+    11 19 31 9c 22 2c c1 a8 61 90 14 04 61 b2 6c 10 ..1.",..a...a.l.
+    31 51 84 c6 50 01 29 04 19 20 69 10 03 41 9b 00 1Q..P.).. i..A..
+    12 91 c8 80 12 86 08 83 a2 65 64 22 2d ca b2 4d .........ed"-..M
+    11 a5 11 c2 a0 4c e0 18 88 09 96 44 13 25 68 a4 .....L.....D.%h.
+    44 29 d9 c0 25 a2 26 20 43 94 80 11 40 8e c0 36 D)..%.& C...@..6
+    11 0b a9 68 9c 48 04 10 99 30 8b a0 01 d2 22 22 ...h.H...0....""
+    c0 a0 51 93 18 20 14 10 2c 53 48 20 00 c8 69 82 ..Q.. ..,SH ..i.
+    44 71 a4 00 90 db 04 86 d4 12 20 23 42 91 02 31 Dq........ #B..1
+    80 48 16 51 99 a0 0d 58 16 6a d2 18 81 c8 42 68 .H.Q...X.j....Bh
+    1a 04 44 63 92 61 98 16 49 9b 24 92 21 a7 8d a2 ..Dc.a..I.$.!...
+    c2 31 42 30 45 62 30 6d 13 23 70 48 96 84 63 38 .1B0Eb0m.#pH..c8
+    0a 9c 44 48 a2 c6 65 c2 a4 65 2e fa 2e 90 8e 74 ..DH..e..e.....t
+    6b a5 8e 78 e3 76 2e ca a8 0f 3e 8b c0 1e 7b 77 k..x.v....>...{w
+    7c a1 8b 71 c3 6c 59 ac f5 ea 6f 95 3d d2 e0 90 |..q.lY...o.=...
+    ec 53 ac 1e df 8a a8 97 75 f1 c2 3d 0f 0c fe a3 .S......u..=....
+    7b 92 07 73 74 f4 56 2b 01 21 23 01 ff d0 7f ef {..st.V+.!#.....
+    93 e3 a4 70 61 da f4 98 49 a1 74 a9 67 7d 82 87 ...pa...I.t.g}..
+    a7 0f 2e 24 81 fa 1e 9b f4 cb 52 56 28 44 5e 8a ...$......RV(D^.
+    d1 5c c9 a2 29 b9 3d 5e 87 72 07 5e ba f6 b9 2d .\..).=^.r.^...-
+    bf c7 72 14 f8 85 60 bc 01 72 48 84 d0 ea 54 7b ..r...`..rH...T{
+    ba bc 73 af 1e 01 4b dd fe 32 75 85 39 45 fe 20 ..s...K..2u.9E. 
+    fc b1 cd 1e ad d5 44 fe fa 0e b2 c7 16 84 73 35 ......D.......s5
+    7d 27 51 cd 68 68 19 c5 d9 58 33 c2 6d 7d 54 ae }'Q.hh...X3.m}T.
+    75 93 70 52 e2 3d 05 11 c7 37 db 16 7a 47 a1 53 u.pR.=...7..zG.S
+    25 9c ad f6 18 fd ae c0 3d fc 44 50 3d 81 f4 0a %.......=.DP=...
+    c7 fa 5d 92 79 62 87 41 22 1d 4b 2b 17 fe 7f 72 ..].yb.A".K+...r
+    b3 d0 7a f3 2b eb 06 ac e2 9d 3d 03 c4 12 9b 96 ..z.+.....=.....
+    6c 32 55 0b aa 07 5e b7 5c 9b bb b8 83 e8 2c 01 l2U...^.\.....,.
+    39 4b d5 74 92 50 5d d4 2a 20 5d e2 2e 52 5d 65 9K.t.P].* ]..R]e
+    07 3a 28 81 e1 94 2f 70 f0 24 44 f2 13 4a 52 0a .:(.../p.$D..JR.
+    86 c1 0c cf 98 1a f2 78 ed d2 fb 73 53 ec 7f fa .......x...sS...
+    3e fd fe 54 59 8c f0 e4 b6 4b 81 86 79 bd dc 9e >..TY....K..y...
+    8f de 9c 38 0b a4 74 ab c1 73 b7 7d 75 34 a5 7f ...8..t..s.}u4..
+    0c d2 fe fa 75 0b bf 42 d9 fe 73 4c 3e cb 22 1f ....u..B..sL>.".
+    7a 2c c0 0f 17 63 6e 3d 4d 92 df 95 5a ec 1c a5 z,...cn=M...Z...
+    6b 3a cf 22 59 7c 08 a3 90 b1 62 2f fc 9c 8e f3 k:."Y|....b/....
+    07 24 8e c5 75 7a 71 8b b5 80 bd b7 f2 16 e2 b8 .$..uzq.........
+    67 1e f4 12 56 4b f0 2a 41 5f d3 da 53 74 57 1a g...VK.*A_..StW.
+    22 a1 00 f8 6e bb c0 00 b2 b9 9f 47 ba a2 87 b3 "...n......G....
+    0d cc 65 fe d5 23 ee 9b db 49 59 fd 6b 60 72 d6 ..e..#...IY.k`r.
+    39 4d 03 a1 0f 96 46 7a 38 c7 67 54 31 ad 2f f2 9M....Fz8.gT1./.
+    09 27 25 9d bc 65 b6 f5 fd fe dd 36 6c 33 d7 91 .'%..e.....6l3..
+    9f 49 6d 53 90 86 9e 78 12 5a 90 f4 61 29 19 0b .ImS...x.Z..a)..
+    ef 5a fe 4c ed 05 27 7f 2b a5 55 ca fa 74 91 07 .Z.L..'.+.U..t..
+    c4 0a 81 71 0a 99 e8 b9 c4 da 8d 2f 81 3b 98 f8 ...q......./.;..
+    56 4b 80 6e 5f 17 cb 8d cd b0 96 ff c0 c5 5a 6c VK.n_.........Zl
+    4c 75 b3 dd a1 84 47 1d 38 14 a2 6b 3d 80 ba f8 Lu....G.8..k=...
+    b3 49 be 8e fe 34 d0 07 a6 39 ee cd 40 81 c9 6b .I...4...9..@..k
+    18 c9 d3 df 98 a8 c9 dc 42 58 14 ee bd 67 5b 85 ........BX...g[.
+    16 b5 05 52 63 3c c1 f2 8a 03 c3 c2 2d 2e e7 e8 ...Rc<......-...
+    27 f7 ba d3 1d 46 28 e5 05 cf 49 a8 b0 6d e4 0e '....F(...I..m..
+    55 ce ff 87 cb 81 70 bd 96 a5 8f 19 78 51 b7 52 U.....p.....xQ.R
+    38 7a be 52 f6 25 26 e9 57 89 37 82 a2 2e 3c 22 8z.R.%&.W.7...<"
+    11 a0 8f 02 f6 16 32 2c da 02 00 b3 0f 50 b0 ac ......2,.....P..
+    3b 46 cc 0a 4a 07 25 63 f6 f5 74 9b eb d9 8b 90 ;F..J.%c..t.....
+    c7 08 85 ee 29 03 f7 ab dc f5 d7 1b 95 45 d5 ab ....)........E..
+    b3 21 4e b2 0d 3d 1f 72 60 45 d9 ce 22 df 77 43 .!N..=.r`E..".wC
+    62 6a dd f0 c7 4c 13 fc 81 75 42 08 58 4d 0d 7f bj...L...uB.XM..
+    f1 5c 22 e8 f1 bc 12 90 db 7d 60 78 6f f2 c3 05 .\"......}`xo...
+    75 46 8f 8f 15 44 db 03 b2 00 49 b8 95 64 c5 d1 uF...D....I..d..
+    ab 75 68 b2 ac ca 45 9a 79 5d 8e 6f 83 9e e9 41 .uh...E.y].o...A
+    29 bb 20 4a 5f 92 2c f0 e5 a4 da 6f 5e a1 3d 53 ). J_.,....o^.=S
+    14 70 fa 76 1f 11 6a a0 21 9e a5 51 8f ee f8 6c .p.v..j.!..Q...l
+    8b c4 48 1f 22 3a 49 32 f1 4b 2e 50 36 e8 82 e5 ..H.":I2.K.P6...
+    81 dc 28 7b 2c e6 c1 9a 97 1d 1f 30 4e d0 9c 0a ..({,......0N...
+    11 95 9f 73 3e 4c 05 a9 09 2a e5 7d 2d ec 6b ab ...s>L...*.}-.k.
+    0a f0 dc 00 d3 21 2f ef 19 01 90 ef c0 78 e5 54 .....!/......x.T
+    1f 71 76 bd 97 e2 6d f6 49 74 98 23 72 53 aa fe .qv...m.It.#rS..
+    18 50 e3 7c d5 b0 2f 25 6b 52 6d 77 74 70 29 92 .P.|../%kRmwtp).
+    69 c2 17 00 63 94 a7 d3 96 e2 c0 71 14 67 eb 31 i...c......q.g.1
+    0b 45 36 8e 5c 63 6d e3 06 d8 85 36 da b6 61 e9 .E6.\cm....6..a.
+    14 cf 54 85 0c 41 6c e4 9c d1 21 46 2a f3 b2 75 ..T..Al...!F*..u
+    c7 a1 c1 23 cf 63 66 6f 2a d1 97 46 85 40 0d 27 ...#.cfo*..F.@.'
+    89 19 40 87 0c 12 3e a5 c8 62 aa 15 83 02 5f 44 ..@...>..b...._D
+    bc 03 83 cf dd cf a4 f7 1f 6a 7b 02 a1 ab 06 f3 .........j{.....
+    99 0f f6 5e 7f e4 ec e3 30 dc 34 97 d0 fa ee f3 ...^....0.4.....
+    23 57 06 ed 7a 70 8e 47 86 30 63 4b 3c 21 22 c9 #W..zp.G.0cK<!".
+    cc 35 9c 3a 77 21 28 17 ac c5 de 35 76 06 8c ea .5.:w!(....5v...
+    d8 bb a0 c0 7f 14 de 3d fd c9 2d 2c 94 b3 7a 63 .......=..-,..zc
+    6a b0 b9 41 c9 fc 9d 31 01 29 15 29 59 13 f1 d0 j..A...1.).)Y...
+    ad 12 c0 0e ba a3 00 c4 5d 74 3b 0e 00 eb a4 28 ........]t;....(
+    2e de 35 b1 c6 ed 02 1b 46 91 26 ce c6 75 d0 15 ..5.....F.&..u..
+    f7 6e 57 2f 64 ed cc 56 e2 d2 2d 2c 18 fd f8 d2 .nW/d..V..-,....
+    84 3a bd ac 99 86 f1 de 03 4e 2e 76 6e e6 5e d6 .:.......N.vn.^.
+    a1 9c 63 22 0a cd d1 28 79 e2 f7 52 21 56 d9 5e ..c"...(y..R!V.^
+    1d 8d 77 15 db 34 25 3c ac e0 73 19 f9 8b 2e 87 ..w..4%<..s.....
+    f6 de 1e e1 bd cd c0 8b b9 eb 6f 53 0f 47 38 bf ..........oS.G8.
+    bd 88 a3 6b 9b 2a 01 f3 ae 9b 6a a9 3f 90 c1 ee ...k.*....j.?...
+    dc 5f 23 0c 5e b2 e5 17 ff c3 76 6e 60 f5 9b 8e ._#.^.....vn`...
+    47 aa 77 e7 ec ed 51 fb 1a a8 8e fa 1a 67 d6 81 G.w...Q......g..
+    58 20 69 23 b7 f7 e3 8a 16 55 51 b1 c7 86 e6 7a X i#.....UQ....z
+    55 16 df fb e9 15 05 0a 16 29 71 bb 54 d3 32 a4 U........)q.T.2.
+    e8 c1 ca 66 48 3d 43 34 4e 83 f4 80 79 46 00 9b ...fH=C4N...yF..
+    e9 e2 e8 6f 26 37 40 3a 35 14 20 e0 eb f4 29 86 ...o&7@:5. ...).
+    ce ac d8 03 cc d3 87 c7 67 8a 55 ad a0 0b f3 41 ........g.U....A
+    5f 0b be 8d 44 4c 4f d1 b3 2b b6 90 3d a5 9c 29 _...DLO..+..=..)
+    33 77 da fd 14 92 eb 78 99 8f cc d7 f9 53 c3 18 3w.....x.....S..
+    02 29 d3 95 2d 41 34 4c c0 5b d8 76 43 42 88 85 .)..-A4L.[.vCB..
+    40 30 d0 1f c7 74 6e 71 04 b6 d1 34 fb 76 cb 1a @0...tnq...4.v..
+    fd ed 95 bb 5e 62 34 0a 19 b1 08 a4 1e 5d 94 53 ....^b4......].S
+    37 b2 ac 60 52 be 93 82 50 1c bb 89 93 99 b3 2a 7..`R...P......*
+    28 f0 6e 24 59 22 28 82 5b 21 8a 8d da 80 db db (.n$Y"(.[!......
+    18 29 7e 73 62 a0 d7 c5 9c 2c ad bb ca c5 07 e6 .)~sb....,......
+    44 94 30 bc cd 07 65 6e 6c 21 0a 15 30 c1 38 76 D.0...enl!..0.8v
+    28 65 03 1f c1 34 ba a8 4d 29 2b c3 df 80 94 53 (e...4..M)+....S
+    b0 8c 29 74 51 33 46 13 f0 22 9c 6a e5 4d be ac ..)tQ3F..".j.M..
+    34 48 a3 db f8 b2 86 78 15 15 8d 44 8a d8 44 1b 4H.....x...D..D.
+    d4 00 f8 e9 19 62 aa 1e 8d 94 84 0a 28 30 96 66 .....b......(0.f
+    af a1 92 66 ee c4 8f 4b a8 87 0c 1f f0 0a 93 ec ...f...K........
+    7b c6 6d f4 e7 76 55 da f8 b8 38 fd c9 bc c2 c7 {.m..vU...8.....
+    7f fe ab c2 39 94 0a aa 2f b3 80 c1 30 14 57 2b ....9.../...0.W+
+    73 7e 21 7a 41 30 04 84 ad d4 e9 2c fe 83 7b 4b s~!zA0.....,..{K
+    fa ff 59 c3 a8 df 80 52 49 ef a3 8e 98 0d 59 26 ..Y....RI.....Y&
+    0d 34 28 3a e1 66 d2 b1 1c 03 ed 22 6f 65 f6 07 .4(:.f....."oe..
+    16 2e aa 23 3a bc b1 cf 4b 0c ac b0 07 30 d0 bf ...#:...K....0..
+    3d aa 07 a6 e7 e6 c0 83 b0 10 e1 5f 31 72 34 93 =.........._1r4.
+    27 19 93 c5 ed 01 4d 46 58 90 5f fb cb 96 79 30 '.....MFX._...y0
+    84 78 98 1a 4f 55 92 46 04 2e d6 cd 42 f4 ce 57 .x..OU.F....B..W
+    89 03 40 4f ef 1b f3 2f ed 23 d3 a2 6d 54 c9 4b ..@O.../.#..mT.K
+    1c eb 0c 36 ec b6 42 ff 26 27 8e 77 10 06 92 ee ...6..B.&'.w....
+    19 6e 93 e2 02 e7 76 e1 63 2c b0 01 7d 96 d9 a0 .n....v.c,..}...
+    e4 a5 b0 4b ba 00 ac 1b 1b 07 60 08 f2 78 b3 d7 ...K......`..x..
+    0e e3 9d 45 27 b1 85 f4 ca df d0 6a 68 97 4a 65 ...E'......jh.Je
+    4d 65 a9 32 04 8f ec 81 7a de 11 f5 43 2a fb 3d Me.2....z...C*.=
+    53 46 30 a0 5a 99 48 41 26 31 a6 6e 1d cf 82 00 SF0.Z.HA&1.n....
+    6f 4c 3c 54 3b 22 d1 a5 1e ff 73 c7 23 4a 8a 3d oL<T;"....s.#J.=
+    bf f2 b9 db e0 aa 1a 10 c5 37 29 68 32 72 d0 0c .........7)h2r..
+    08 d5 09 72 bf ad d4 43 87 9e d7 e8 05 08 ff c6 ...r...C........
+    9b 65 3b b3 e7 b8 7b b7 9e e9 23 5f 8c 07 5f 19 .e;...{...#_.._.
+    b9 ff 64 3f a3 1d fc 31 0c 8b 18 bb ae 08 75 9d ..d?...1......u.
+    97 25 d2 c0 b3 82 4d 06 92 f1 32 ac 6b 08 fc 60 .%....M...2.k..`
+    34 41 51 72 b4 d7 51 40 62 f7 97 ed 74 82 11 cb 4AQr..Q@b...t...
+    15 d0 4b a3 1f ff 9e a5 21 c6 63 38 2d 17 5b 48 ..K.....!.c8-.[H
+    45 2e 84 1c 6f 68 67 ee b8 71 c8 6e ec 3f 33 0f E...ohg..q.n.?3.
+    61 46 32 f4 4b 90 ba 3a 9f 4e ad 33 a7 59 d6 04 aF2.K..:.N.3.Y..
+    26 3c 90 9c 5c 69 88 d1 ef 2a 68 21 b7 a5 67 b6 &<..\i...*h!..g.
+    8b 5e 62 9f 7d 08 fe 26 93 b9 6b bc 49 ad ec 70 .^b.}..&..k.I..p
+    6d c6 27 aa 21 89 5f 80 bc f5 ec 37 09 30 8e 38 m.'.!._....7.0.8
+    f2 3f 16 e9 f6 7e 67 5d bf 19 37 ff 7a e5 f5 d9 .?...~g]..7.z...
+    b2 7a 50 62 ef 9c 1f 6a 90 6a ba 35 2e 41 b1 da .zPb...j.j.5.A..
+    ea 79 42 57 00 9c 3d d8 12 25 da 9c db 00 81 be .yBW..=..%......
+    ae 0c 61 b8 dd cc 73 cb 61 76 27 f9 71 76 8c fd ..a...s.av'.qv..
+    98 bd 23 34 da b3 b5 6d 02 8d af f4 1f a3 b2 bf ..#4...m........
+    f1 44 df e0 ba 8e 99 0e 7d ed 24 05 f7 f1 e1 d6 .D......}.$.....
+    fe d6 f4 50 38 d1 93 4a d7 c5 ba 51 ab 84 79 c7 ...P8..J...Q..y.
+    8a b4 c2 3e 10 9a 26 7d 90 4f 32 86 61 fd 2b 35 ...>..&}.O2.a.+5
+    46 d5 54 29 94 02 fa 1e 96 fe 71 48 6e 2b d5 99 F.T)......qHn+..
+    2b 1a c1 5a 45 66 9b 83 a8 ee f9 b6 6a f0 0b d7 +..ZEf......j...
+    07 4b bd 42 98 ab f2 22 09 bf ee e6 e4 3c 0c 90 .K.B...".....<..
+    44 42 51 0f bf 5a 3d 55 22 90 02 49 57 df 74 6f DBQ..Z=U"..IW.to
+    34 4d e9 02 21 3e 2d 77 9d 24 ae 00 0d bb bf dd 4M..!>-w.$......
+    95 e6 be 8b 06 9a 8e 0a d9 d5 4d c3 cc 56 2e d1 ..........M..V..
+    66 b0 45 95 79 8d b0 7c 8d 1b 7e 36 bb d8 de 91 f.E.y..|..~6....
+    2c b2 30 2d dd 76 26 76 ef 7a d0 34 72 7d 1e bb ,.0-.v&v.z.4r}..
+    a3 20 74 4a 0f 9a 0b 66 a2 42 43 5f 1c 36 38 87 . tJ...f.BC_.68.
+    1c bb 26 9f 60 7f fa f9 5f e1 c1 f4 bd b5 88 10 ..&.`..._.......
+    27 b7 d3 b7 12 40 7d 53 0d ac e8 5b 26 4b dc fe '....@}S...[&K..
+    d5 9c 20 43 71 80 fc ee 91 19 be 5b 80 d0 78 c4 .. Cq......[..x.
+    d1 c7 d5 e3 ec 27 81 8f 72 af c9 b1 11 b7 38 7c .....'..r.....8|
+    94 59 e1 6d 49 97 8d 7f d0 06 96 3f f3 d9 8e e4 .Y.mI......?....
+    5b 43 ef 71 5e 94 44 05 11 e7 07 0c 4a 66 c2 47 [C.q^.D.....Jf.G
+    5f cc 5c 74 fa 4d a2 0d 40 6c bf ed 6d 01 17 7f _.\t.M..@l..m...
+    12 75 b7 ce d8 7b 6e c4 6f 71 b8 0d 20 91 78 41 .u...{n.oq.. .xA
+    71 ad a0 b7 6a bd 24 63 cf 07 42 a7 09 6d 98 01 q...j.$c..B..m..
+    11 7b 31 ee 35 dc 87 75 5f 5a 39 b1 83 2d 44 de .{1.5..u_Z9..-D.
+    90 35 02 6a 5f bd 38 98 31 e7 72 78 d5 c9 b9 5c .5.j_.8.1.rx...\
+    53 00 b2 62 e3 94 a2 94 a6 3a 6b d6 14 4d 6a 7d S..b.....:k..Mj}
+    1e 30 50 7a 9b f9 91 1b 09 61 35 71 b3 f1 a2 45 .0Pz.....a5q...E
+    51 6b b2 4c d4 52 2e 6d 5d ba 6c c6 1f b8 25 e2 Qk.L.R.m].l...%.
+    37 a3 69 ce 10 05 15 f0 05 8f 3a ac 60 3b 71 54 7.i.......:.`;qT
+    5c ce a1 4f bc 6d 18 6c c7 4b 7e 29 02 6f 5a 6a \..O.m.l.K~).oZj
+    5c c5 b3 4d 94 1f 17 23 13 2b eb f0 fa fb 2c 10 \..M...#.+....,.
+    8f 5d d4 f2 8a 4c 8c 8d 76 92 71 58 8e 3f 52 86 .]...L..v.qX.?R.
+    f2 ea 45 b2 00 fa fa 26 d0 f5 78 de 81 05 57 ce ..E....&..x...W.
+    0f d2 ef b0 43 c8 7f 59 b0 49 f5 88 39 94 68 0e ....C..Y.I..9.h.
+    38 0e 67 1c 27 83 f9 9a b0 3d 51 47 6a e2 03 46 8.g.'....=QGj..F
+    ae 8e 91 53 70 82 7c a9 7a 82 6d 3c 27 9b 47 1f ...Sp.|.z.m<'.G.
+    f2 db 2b a6 94 03 fd 92 18 fb 4b 07 26 8e 28 6a ..+.......K.&.(j
+    ba 9f 4a 1f 66 c5 43 08 38 75 40 5b f1 a1 c3 9a ..J.f.C.8u@[....
+    3e 79 a1 5f 2f 4f ef ec bc cf 6b d9 cf 93 bc 16 >y._/O....k.....
+    8e a6 dc 7b 59 99 53 a4 a2 58 f3 8e cb b8 ce 6f ...{Y.S..X.....o
+    68 17 16 fd e9 a5 60 af fb 7b b5 fc a5 92 fe 05 h.....`..{......
+    d2 14 ea e9 0f c2 f3 75 7f b6 27 c9 a9 9b a0 d4 .......u..'.....
+    d1 f9 0e 08 a6 46 d0 f8 6d 9a b4 4a 03 99 dd 7c .....F..m..J...|
+    40 0e fb c7 60 86 3c a8 4c ad dd 74 a8 5c 36 1a @...`.<.L..t.\6.
+    7b 6d 28 86 15 3d af 04 0a 64 01 07 b7 2b ac ae {m(..=...d...+..
+    34 23 cb 2a 54 ac 72 e7 fb bc fb 55 05 ad fd d7 4#.*T.r....U....
+    b7 5e 56 5e e8 ee 92 27 30 3b af 7f b8 94 29 d3 .^V^...'0;....).
+    aa e4 ef ad ec 71 15 37 40 ec 7d c1 92 7e 27 b3 .....q.7@.}..~'.
+    ec 85 c2 51 47 d9 b1 40 41 45 0f 2c 4a 1e e0 c6 ...QG..@AE.,J...
+    fd 4a 88 83 d4 52 2a de c0 a6 71 d3 01 74 48 5e .J...R*...q..tH^
+    44 6b d9 64 6d 41 c2 84 f4 27 bb 28 f1 fa f4 5b Dk.dmA...'.(...[
+    bd 42 0d 7d 93 73 66 e9 22 65 96 ef f6 3c 08 a6 .B.}.sf."e...<..
+    1b b4 17 de 5f 8c ad 0e 3e 69 75 78 cc 4d 92 c8 ...._...>iux.M..
+    c1 78 ee 1a 03 13 9c c8 0e 24 48 70 3d 1d 21 e8 .x.......$Hp=.!.
+    86 a1 27 3c b3 dc 47 92 64 e2 21 31 88 2d 5a 2f ..'<..G.d.!1.-Z/
+    78 9e 46 cf cf cd 1e 7c f9 08 27 a2 c4 cc 7c a1 x.F....|..'...|.
+    8b 2c 00 a2 d0 d3 6e d0 a6 5c 63 db 99 a4 e9 16 .,....n..\c.....
+    6c 84 18 ff af 02 98 ae a9 d7 c0 50 b4 01 12 f7 l..........P....
+    e6 f0 37 eb 37 b8 5f b8 8b 9c 7d b5 4e 62 62 68 ..7.7._...}.Nbbh
+    6e f3 e5 a6 eb 29 f4 49 55 fb e4 c5 b9 62 88 44 n....).IU....b.D
+    89 ce e0 6e 15 5d c0 34 32 fb 22 40 00 9f 71 ce ...n.].42."@..q.
+    89 13 aa f1 ec 6b 02 89 99 f3 32 e7 ce 01 b4 bd .....k....2.....
+    bf 1f fd 65 20 ba 65 ec 5e 15 39 83 bf 48 f9 1f ...e .e.^.9..H..
+    d6 b5 c5 50 a8 28 69 5a 09 4f 83 09 0c 95 be d1 ...P.(iZ.O......
+    22 fd cb 26 9d 10 db c4 b5 c6 2f 5e cb d8 a7 7d "..&....../^...}
+    ce d8 8b b5 8f 58 30 0d a4 ca 92 4b a0 80 12 72 .....X0....K...r
+    e7 f6 10 6d 85 37 ce da 1a 8a 57 6c cf 94 a0 a8 ...m.7....Wl....
+    6f c7 7c b0 09 66 33 33 f8 45 aa e3 69 74 c5 e9 o.|..f33.E..it..
+    4b bd ad d8 56 66 9f cf a3 f7 e5 05 99 71 4d a3 K...Vf.......qM.
+    68 8a 03 f3 dd 40 65 c4 9d 2d 96 37 67 94 f5 07 h....@e..-.7g...
+    d7 77 42 b0 6e 45 96 c7 7d cd 9e fa 3b 33 52 35 .wB.nE..}...;3R5
+    1f af c9 c3 10 61 c2 4e 8c d0 2a 54 23 91 65 02 .....a.N..*T#.e.
+    8c e4 84 84 e7 93 23 9c 79 b0 2a a1 23 3a 64 3a ......#.y.*.#:d:
+    c6 88 2e 41 c3 56 f1 71 19 de 1a 7e 4d 23 6b e6 ...A.V.q...~M#k.
+
+secp521r1
+PrivateKeyInfo:
+  privateKeyAlgorithm:
+    algorithm: "ecPublicKey (1.2.840.10045.2.1)"
+    parameters: "secp521r1 (1.3.132.0.35)"
+  privateKey: |
+    30 81 d3 02 01 01 04 42 00 95 85 e5 9c 1f e8 d9 0......B........
+    a0 bd 13 c7 de 61 c6 ea 39 09 2b 5e f5 26 f5 f2 .....a..9.+^.&..
+    90 27 ca 32 29 82 57 81 31 8d 10 5d 63 b9 6a ee .'.2).W.1..]c.j.
+    26 fb b3 75 87 c9 7f fd 03 b7 ab 65 19 a6 fa 0d &..u.......e....
+    35 a7 25 d0 4f 55 9e ba f1 fc a1 81 89 03 81 86 5.%.OU..........
+    00 04 00 ef c1 58 b1 36 8c f7 79 1b a1 21 34 6d .....X.6..y..!4m
+    43 28 7d a6 d6 8f 1f d1 dc 0f ff 84 72 c6 5f 4d C(}.........r._M
+    1b 64 4f 56 9e 62 bd 69 43 03 35 7b a3 dc 69 94 .dOV.b.iC.5{..i.
+    85 5c b5 65 1b 4e 86 f8 9b 51 21 54 7c b3 2f 7e .\.e.N...Q!T|./~
+    95 a9 34 5f 00 40 a9 4f 22 90 24 e5 f0 9e ae 41 ..4_.@.O".$....A
+    7a 6c 5d 0b 28 6c 0a 5d ee bd 7b 46 6e 09 62 4d zl].(l.]..{Fn.bM
+    8a 8e f9 73 15 15 50 ed b9 f0 74 9a d1 3d 00 ac ...s..P...t..=..
+    73 ef f3 e8 e7 f8 f1 38 72 20 8d f4 ff 1c 71 62 s......8r ....qb
+    75 e5 b6                                        u.
+
+EOF
+RUN

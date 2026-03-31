@@ -49,11 +49,9 @@ static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 			} else {
 				ch = rz_cons_readchar();
 			}
-#if 0
-TODO:
- i   insert hex/string/asm
- 0-9 follow jumps
-#endif
+			// TODO:
+			//  i   insert hex/string/asm
+			//  0-9 follow jumps
 			switch (ch) {
 			case '?':
 				rz_cons_clear00();

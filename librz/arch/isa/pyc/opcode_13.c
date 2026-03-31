@@ -9,7 +9,7 @@ pyc_opcodes *opcode_13(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_13;
+	ret->version_sig = (opcode_func)opcode_13;
 
 	// 1.3 - 1.4 bytecodes differences
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_POWER", .op_code = 19);

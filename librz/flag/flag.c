@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2007-2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <sdb.h>
 #include <rz_flag.h>
 #include <rz_util.h>
 #include <rz_cons.h>
@@ -20,7 +21,7 @@ static const char *str_callback(RzNum *user, ut64 off, int *ok) {
 	}
 	if (f) {
 		const RzList *list = rz_flag_get_list(f, off);
-		RzFlagItem *item = rz_list_last(list);
+		RzFlagItem *item = rz_list_last_val(list);
 		if (item) {
 			if (ok) {
 				*ok = true;
@@ -50,7 +51,7 @@ static ut64 num_callback(RzNum *user, const char *name, int *ok) {
 	if (ok) {
 		*ok = 0;
 	}
-	RzFlagItem *item = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *item = ht_sp_find(f->ht_name, name, NULL);
 	if (item) {
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias) {
@@ -92,7 +93,7 @@ static void remove_offsetmap(RzFlag *f, RzFlagItem *item) {
 	rz_return_if_fail(f && item);
 	RzFlagsAtOffset *flags = rz_flag_get_nearest_list(f, item->offset, 0);
 	if (flags) {
-		rz_list_delete_data(flags->flags, item);
+		rz_list_delete_val(flags->flags, item);
 		if (rz_list_empty(flags->flags)) {
 			rz_skiplist_delete(f->by_off, flags);
 		}
@@ -123,7 +124,7 @@ static RzFlagsAtOffset *flags_at_offset(RzFlag *f, ut64 off) {
 }
 
 static char *filter_item_name(const char *name) {
-	char *res = strdup(name);
+	char *res = rz_str_dup(name);
 	if (!res) {
 		return NULL;
 	}
@@ -171,19 +172,14 @@ static bool update_flag_item_name(RzFlag *f, RzFlagItem *item, const char *newna
 		return false;
 	}
 	bool res = (item->name)
-		? ht_pp_update_key(f->ht_name, item->name, fname)
-		: ht_pp_insert(f->ht_name, fname, item);
+		? ht_sp_update_key(f->ht_name, item->name, fname)
+		: ht_sp_insert(f->ht_name, fname, item);
 	if (res) {
 		set_name(item, fname);
 		return true;
 	}
 	free(fname);
 	return false;
-}
-
-static void ht_free_flag(HtPPKv *kv) {
-	free(kv->key);
-	rz_flag_item_free(kv->value);
 }
 
 static bool count_flags(RzFlagItem *fi, void *user) {
@@ -229,7 +225,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->zones = NULL;
 	f->tags = sdb_new0();
-	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	f->by_off = rz_skiplist_new(flag_skiplist_free, flag_skiplist_cmp);
 	rz_list_free(f->zones);
 	new_spaces(f);
@@ -270,7 +266,7 @@ RZ_API void rz_flag_item_free(RzFlagItem *item) {
 RZ_API RzFlag *rz_flag_free(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	rz_skiplist_free(f->by_off);
-	ht_pp_free(f->ht_name);
+	ht_sp_free(f->ht_name);
 	sdb_free(f->tags);
 	rz_spaces_fini(&f->spaces);
 	rz_num_free(f->num);
@@ -308,15 +304,61 @@ RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, u
  * Otherwise, NULL is returned. */
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f, NULL);
-	RzFlagItem *r = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *r = ht_sp_find(f->ht_name, name, NULL);
 	return r ? evalFlag(f, r) : NULL;
+}
+
+/**
+ * \brief Resets all flag spaces associated with object files.
+ * These are:
+ * - classes
+ * - imports
+ * - relocs
+ * - sections
+ * - segments
+ * - strings
+ * - symbols
+ * - globals
+ * - maps
+ *
+ * \param flags The RzFlag instance to use.
+ * \param backup_filename If not NULL, the RzFlag instance will
+ * be backed up into the file before the reset.
+ *
+ * \return True on success, false othewise.
+ */
+RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLABLE const char *backup_filename) {
+	rz_return_val_if_fail(flags, false);
+	bool backup_succeeded = !backup_filename;
+	if (backup_filename) {
+		Sdb *sdb = sdb_new0();
+		if (!sdb) {
+			return false;
+		}
+		rz_serialize_flag_save(sdb, flags);
+		backup_succeeded = sdb_text_save(sdb, backup_filename, false);
+	}
+	if (!backup_succeeded) {
+		RZ_LOG_WARN("Could not backup RzFlag before resetting flag space. Abort flag space reset.\n");
+		return false;
+	}
+	rz_flag_unset_all_in_space(flags, "classes");
+	rz_flag_unset_all_in_space(flags, "imports");
+	rz_flag_unset_all_in_space(flags, "relocs");
+	rz_flag_unset_all_in_space(flags, "sections");
+	rz_flag_unset_all_in_space(flags, "segments");
+	rz_flag_unset_all_in_space(flags, "strings");
+	rz_flag_unset_all_in_space(flags, "symbols");
+	rz_flag_unset_all_in_space(flags, "globals");
+	rz_flag_unset_all_in_space(flags, "maps");
+	return true;
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, NULL);
 	const RzList *list = rz_flag_get_list(f, off);
-	return list ? evalFlag(f, rz_list_last(list)) : NULL;
+	return list ? evalFlag(f, rz_list_last_val(list)) : NULL;
 }
 
 /* return the first flag that matches an offset ordered by the order of
@@ -340,7 +382,7 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 		goto beach;
 	}
 	if (rz_list_length(list) == 1) {
-		ret = rz_list_last(list);
+		ret = rz_list_last_val(list);
 		goto beach;
 	}
 
@@ -392,6 +434,47 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 beach:
 	va_end(ap);
 	return ret ? evalFlag(f, ret) : NULL;
+}
+
+static bool is_auto_aav_flag(const RzFlagItem *flag) {
+	return flag && !RZ_STR_ISEMPTY(flag->name) && rz_str_startswith(flag->name, "aav.");
+}
+
+/**
+ * \brief Get the preferred flag item at an offset.
+ *
+ * The preferred item follows the standard space priority and avoids returning
+ * auto-generated `aav.*` entries when a non-`aav.*` fallback exists at the
+ * same offset.
+ *
+ * \param f The flag instance.
+ * \param off The offset to query.
+ *
+ * \return The preferred flag item, or NULL if none exists.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_preferred_item(RZ_NONNULL RzFlag *f, ut64 off) {
+	rz_return_val_if_fail(f, NULL);
+
+	RzFlagItem *preferred = rz_flag_get_by_spaces(f, off,
+		"symbols",
+		"imports",
+		"relocs",
+		"symbols.sections",
+		"functions",
+		"globals",
+		"strings",
+		"resources",
+		"sections",
+		"segments",
+		NULL);
+	if (!preferred || !is_auto_aav_flag(preferred)) {
+		return preferred;
+	}
+	RzFlagItem *fallback = rz_flag_get_i(f, off);
+	if (fallback && !is_auto_aav_flag(fallback)) {
+		return fallback;
+	}
+	return preferred;
 }
 
 static bool isFunctionFlag(const char *n) {
@@ -573,7 +656,7 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off) {
 	char *p = NULL;
 	rz_list_foreach (list, iter, fi) {
 		p = rz_str_appendf(p, "%s%s",
-			fi->realname, rz_list_iter_has_next(iter) ? "," : "");
+			fi->realname, rz_list_has_next(iter) ? "," : "");
 	}
 	return p;
 }
@@ -671,28 +754,28 @@ err:
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias) {
 	rz_return_if_fail(item);
 	free(item->alias);
-	item->alias = RZ_STR_ISEMPTY(alias) ? NULL : strdup(alias);
+	item->alias = RZ_STR_ISEMPTY(alias) ? NULL : rz_str_dup(alias);
 }
 
 /* add/replace/remove the comment of a flag item */
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 	rz_return_if_fail(item);
 	free(item->comment);
-	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : strdup(comment);
+	item->comment = RZ_STR_ISEMPTY(comment) ? NULL : rz_str_dup(comment);
 }
 
 /* add/replace/remove the realname of a flag item */
 RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
 	free_item_realname(item);
-	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : strdup(realname);
+	item->realname = RZ_STR_ISEMPTY(realname) ? NULL : rz_str_dup(realname);
 }
 
 /* add/replace/remove the color of a flag item */
 RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color) {
 	rz_return_val_if_fail(item, NULL);
 	free(item->color);
-	item->color = (color && *color) ? strdup(color) : NULL;
+	item->color = STRDUP_OR_NULL(color);
 	return item->color;
 }
 
@@ -711,7 +794,7 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
-	ht_pp_delete(f->ht_name, item->name);
+	ht_sp_delete(f->ht_name, item->name);
 	return true;
 }
 
@@ -733,7 +816,7 @@ struct unset_off_foreach_t {
 	ut64 offset;
 };
 
-static bool unset_off_foreach(void *user, const void *k, const void *v) {
+static bool unset_off_foreach(void *user, const char *k, const void *v) {
 	struct unset_off_foreach_t *u = (struct unset_off_foreach_t *)user;
 	RzFlagItem *fi = (RzFlagItem *)v;
 	if (u->offset == fi->offset) {
@@ -749,7 +832,7 @@ static bool unset_off_foreach(void *user, const void *k, const void *v) {
 RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, false);
 	struct unset_off_foreach_t u = { f, off };
-	ht_pp_foreach(f->ht_name, unset_off_foreach, &u);
+	ht_sp_foreach(f->ht_name, unset_off_foreach, &u);
 	return true;
 }
 
@@ -783,15 +866,15 @@ RZ_API int rz_flag_unset_glob(RzFlag *f, const char *glob) {
  * returns true if the item is found and unset, false otherwise. */
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name) {
 	rz_return_val_if_fail(f, false);
-	RzFlagItem *item = ht_pp_find(f->ht_name, name, NULL);
+	RzFlagItem *item = ht_sp_find(f->ht_name, name, NULL);
 	return item && rz_flag_unset(f, item);
 }
 
 /* unset all flag items in the RzFlag f */
 RZ_API void rz_flag_unset_all(RzFlag *f) {
 	rz_return_if_fail(f);
-	ht_pp_free(f->ht_name);
-	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
+	ht_sp_free(f->ht_name);
+	f->ht_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_flag_item_free);
 	rz_skiplist_purge(f->by_off);
 	rz_spaces_fini(&f->spaces);
 	new_spaces(f);

@@ -91,6 +91,7 @@ RzCryptoPlugin rz_crypto_plugin_xor = {
 	.name = "xor",
 	.author = "pancake",
 	.license = "LGPL-3",
+	.description = "XOR symmetric-key block cipher",
 	.set_key = xor_set_key,
 	.get_key_size = xor_get_key_size,
 	.use = xor_use,

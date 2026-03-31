@@ -54,7 +54,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_RIZIN
       - name: shr
         cname: seek_redo
         summary: Go to position before the last undo (forward in history)
@@ -67,10 +66,6 @@ commands:
         cname: seek_undo_reset
         summary: Clear seek history
         args: []
-  - name: s/
-    cname: seek_search
-    summary: Seek to the first hit of a search
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: sa
     cname: seek_asz
     summary: Seek to current offset (or <addr>) aligned to <align>

@@ -16,13 +16,13 @@ bool test_spaces_save(void) {
 	rz_serialize_spaces_save(db, spaces);
 
 	Sdb *expected = sdb_new0();
-	sdb_set(expected, "name", "myspaces", 0);
-	sdb_set(expected, "spacestack", "[\"*\"]", 0);
+	sdb_set(expected, "name", "myspaces");
+	sdb_set(expected, "spacestack", "[\"*\"]");
 	Sdb *expected_spaces = sdb_ns(expected, "spaces", true);
-	sdb_set(expected_spaces, "a", "s", 0);
-	sdb_set(expected_spaces, "b", "s", 0);
-	sdb_set(expected_spaces, "c", "s", 0);
-	sdb_set(expected_spaces, PERTURBATOR, "s", 0);
+	sdb_set(expected_spaces, "a", "s");
+	sdb_set(expected_spaces, "b", "s");
+	sdb_set(expected_spaces, "c", "s");
+	sdb_set(expected_spaces, PERTURBATOR, "s");
 
 	assert_sdb_eq(db, expected, "spaces save (no current, empty stack)");
 	sdb_free(db);
@@ -31,7 +31,7 @@ bool test_spaces_save(void) {
 	db = sdb_new0();
 	rz_serialize_spaces_save(db, spaces);
 
-	sdb_set(expected, "spacestack", "[\"" PERTURBATOR_JSON "\"]", 0);
+	sdb_set(expected, "spacestack", "[\"" PERTURBATOR_JSON "\"]");
 
 	assert_sdb_eq(db, expected, "spaces save (current, empty stack)");
 	sdb_free(db);
@@ -41,7 +41,7 @@ bool test_spaces_save(void) {
 	db = sdb_new0();
 	rz_serialize_spaces_save(db, spaces);
 
-	sdb_set(expected, "spacestack", "[\"" PERTURBATOR_JSON "\",\"a\",\"b\"]", 0);
+	sdb_set(expected, "spacestack", "[\"" PERTURBATOR_JSON "\",\"a\",\"b\"]");
 	assert_sdb_eq(db, expected, "spaces save (current, stack)");
 
 	sdb_free(db);
@@ -52,13 +52,13 @@ bool test_spaces_save(void) {
 
 bool test_spaces_load_noname_nostack(void) {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "name", "myspaces", 0);
-	sdb_set(db, "spacestack", "[\"*\"]", 0);
+	sdb_set(db, "name", "myspaces");
+	sdb_set(db, "spacestack", "[\"*\"]");
 	Sdb *db_spaces = sdb_ns(db, "spaces", true);
-	sdb_set(db_spaces, "a", "s", 0);
-	sdb_set(db_spaces, "b", "s", 0);
-	sdb_set(db_spaces, "c", "s", 0);
-	sdb_set(db_spaces, PERTURBATOR, "s", 0);
+	sdb_set(db_spaces, "a", "s");
+	sdb_set(db_spaces, "b", "s");
+	sdb_set(db_spaces, "c", "s");
+	sdb_set(db_spaces, PERTURBATOR, "s");
 
 	RzSpaces *spaces = rz_spaces_new("fixed name");
 	bool loaded = rz_serialize_spaces_load(db, spaces, false, NULL);
@@ -97,13 +97,13 @@ bool test_spaces_load_noname_nostack(void) {
 
 bool test_spaces_load_name_stack(void) {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "name", "myspaces", 0);
-	sdb_set(db, "spacestack", "[\"a\",\"*\",\"" PERTURBATOR_JSON "\",\"b\",\"" PERTURBATOR_JSON "\"]", 0);
+	sdb_set(db, "name", "myspaces");
+	sdb_set(db, "spacestack", "[\"a\",\"*\",\"" PERTURBATOR_JSON "\",\"b\",\"" PERTURBATOR_JSON "\"]");
 	Sdb *db_spaces = sdb_ns(db, "spaces", true);
-	sdb_set(db_spaces, "a", "s", 0);
-	sdb_set(db_spaces, "b", "s", 0);
-	sdb_set(db_spaces, "c", "s", 0);
-	sdb_set(db_spaces, PERTURBATOR, "s", 0);
+	sdb_set(db_spaces, "a", "s");
+	sdb_set(db_spaces, "b", "s");
+	sdb_set(db_spaces, "c", "s");
+	sdb_set(db_spaces, PERTURBATOR, "s");
 
 	RzSpaces *spaces = rz_spaces_new("");
 	bool loaded = rz_serialize_spaces_load(db, spaces, true, NULL);

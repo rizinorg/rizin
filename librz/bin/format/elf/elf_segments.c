@@ -35,18 +35,22 @@ static bool verify_phdr_entry(ELFOBJ *bin, RzBinObjectLoadOptions *options, Elf_
 
 	Elf_(Off) end_off;
 	if (!Elf_(rz_bin_elf_add_off)(&end_off, entry->p_offset, entry->p_filesz) || end_off > bin->size) {
+		RZ_LOG_WARN("phdr entry: p_offset is invalid for p_filesz.\n");
 		return false;
 	}
 
 	if (!Elf_(rz_bin_elf_add_addr)(NULL, entry->p_vaddr, entry->p_memsz)) {
+		RZ_LOG_WARN("phdr entry: p_vaddr is invalid for p_memsz.\n");
 		return false;
 	}
 
 	if (entry->p_flags == PT_LOAD && (!entry->p_memsz || entry->p_filesz > entry->p_memsz)) {
+		RZ_LOG_WARN("phdr entry: p_memsz and/or p_filesz are invalid for a PT_LOAD segment.\n");
 		return false;
 	}
 
 	if (entry->p_align && entry->p_offset % entry->p_align != entry->p_vaddr % entry->p_align) {
+		RZ_LOG_WARN("phdr entry: p_offset and p_vaddr are not congruent for p_align.\n");
 		return false;
 	}
 

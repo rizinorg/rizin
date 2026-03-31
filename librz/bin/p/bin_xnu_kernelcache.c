@@ -54,7 +54,7 @@ typedef struct _RKmodInfo {
 
 #define KEXT_SHORT_NAME_FROM_SECTION(io_section) ({ \
 	char *result = NULL; \
-	char *clone = strdup(io_section->name); \
+	char *clone = rz_str_dup(io_section->name); \
 	char *cursor = strstr(clone, "__"); \
 	if (cursor) { \
 		cursor--; \
@@ -65,7 +65,7 @@ typedef struct _RKmodInfo {
 			*cursor = 0; \
 			cursor = strrchr(cursor, '.'); \
 			if (cursor) { \
-				result = strdup(cursor + 1); \
+				result = rz_str_dup(cursor + 1); \
 				RZ_FREE(clone); \
 			} \
 		} \
@@ -104,7 +104,7 @@ static void handle_data_sections(RzBinSection *sect);
 static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_(obj_t) * mach0, RzBinFile *bf, ut64 paddr, int ordinal);
 static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut64 enosys_addr);
 static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *obj);
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtUP /*<ut64, char *>*/ *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) * mach0, ut64 paddr, RzXNUKernelCacheObj *obj);
 static int prot2perm(int x);
 
@@ -519,7 +519,7 @@ static RzList /*<RKext *>*/ *carve_kexts(RzXNUKernelCacheObj *obj) {
 				continue;
 			}
 
-			kext->name = strdup(all_infos[j].name);
+			kext->name = rz_str_dup(all_infos[j].name);
 			kext->own_name = true;
 			break;
 		}
@@ -623,7 +623,7 @@ static RzList /*<RKext *>*/ *kexts_from_load_commands(RzXNUKernelCacheObj *obj) 
 		kext->vaddr = K_PPTR(kext->vaddr);
 		kext->pa2va_exec = obj->pa2va_exec;
 		kext->pa2va_data = obj->pa2va_data;
-		kext->name = strdup(padded_name);
+		kext->name = rz_str_dup(padded_name);
 		kext->own_name = true;
 		free(padded_name);
 		rz_list_push(kexts, kext);
@@ -999,7 +999,7 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		}
 		vf->buf = kobj->patched_buf;
 		vf->buf_owned = false;
-		vf->name = strdup(VFILE_NAME_PATCHED);
+		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(ret, vf);
 	}
 	return ret;
@@ -1038,7 +1038,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 			map->vaddr = map->paddr;
 		}
 		map->perm = prot2perm(seg->initprot);
-		map->vfile_name = kobj->patched_buf ? strdup(VFILE_NAME_PATCHED) : NULL;
+		map->vfile_name = kobj->patched_buf ? rz_str_dup(VFILE_NAME_PATCHED) : NULL;
 		rz_pvector_push(ret, map);
 	}
 
@@ -1134,7 +1134,9 @@ static void sections_from_mach0(RzPVector /*<RzBinSection *>*/ *ret, struct MACH
 		}
 		if (strstr(ptr->name, "la_symbol_ptr")) {
 			int len = sections[i].size / 8;
-			ptr->format = rz_str_newf("Cd %d %d", 8, len);
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = 8;
+			ptr->layout.count = len;
 		}
 		handle_data_sections(ptr);
 		ptr->size = sections[i].size;
@@ -1177,21 +1179,19 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 	symbols_from_mach0(ret, obj->mach0, bf, 0, 0);
 
-	HtPP *kernel_syms_by_addr = sdb_ht_new();
+	HtUP *kernel_syms_by_addr = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!kernel_syms_by_addr) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
 
-	char tmpbuf[32];
 	RzListIter *iter;
 	void **it;
 	RzBinSymbol *sym;
 	ut64 enosys_addr = 0;
 	rz_pvector_foreach (ret, it) {
 		sym = *it;
-		const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-		sdb_ht_insert(kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
+		ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr(sym->name, "enosys")) {
 			enosys_addr = sym->vaddr;
 		}
@@ -1200,8 +1200,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *syscalls = resolve_syscalls(obj, enosys_addr);
 	if (syscalls) {
 		rz_list_foreach (syscalls, iter, sym) {
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		syscalls->free = NULL;
@@ -1211,8 +1210,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	RzList *subsystem = resolve_mig_subsystem(obj);
 	if (subsystem) {
 		rz_list_foreach (subsystem, iter, sym) {
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, sym->vaddr);
-			sdb_ht_insert(kernel_syms_by_addr, key, sym->name);
+			ht_up_insert(kernel_syms_by_addr, sym->vaddr, sym->name);
 			rz_pvector_push(ret, sym);
 		}
 		subsystem->free = NULL;
@@ -1243,10 +1241,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 	}
 
-	RZ_FREE(inits);
-	RZ_FREE(terms);
-
-	sdb_ht_free(kernel_syms_by_addr);
+	free(inits);
+	free(terms);
+	ht_up_free(kernel_syms_by_addr);
 
 	return ret;
 }
@@ -1265,7 +1262,7 @@ static void symbols_from_mach0(RzPVector /*<RzBinSymbol *>*/ *ret, struct MACH0_
 		if (!sym) {
 			break;
 		}
-		sym->name = strdup(symbols[i].name);
+		sym->name = rz_str_dup(symbols[i].name);
 		sym->vaddr = symbols[i].addr;
 		sym->forwarder = "NONE";
 		sym->bind = (symbols[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL) ? "LOCAL" : "GLOBAL";
@@ -1367,7 +1364,12 @@ static RzList /*<RzBinSymbol *>*/ *resolve_syscalls(RzXNUKernelCacheObj *obj, ut
 	if (!syscall) {
 		goto beach;
 	}
-	rz_syscall_setup(syscall, "arm", 64, NULL, "ios");
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		goto beach;
+	}
+	rz_syscall_setup(syscall, sys_path, "arm", 64, NULL, "ios");
+	rz_path_free(sys_path);
 	if (!syscall->db) {
 		goto beach;
 	}
@@ -1433,17 +1435,16 @@ beach:
 #define K_MIG_ROUTINE_SIZE   (5 * 8)
 #define K_MIG_MAX_ROUTINES   100
 
-static HtPP *mig_hash_new(void) {
-	HtPP *hash = sdb_ht_new();
+static HtUP /*<ut64, const char *>*/ *mig_hash_new(void) {
+	HtUP *hash = ht_up_new(NULL, NULL);
 	if (!hash) {
 		return NULL;
 	}
 
-	int i;
-	for (i = 0; i < RZ_MIG_INDEX_LEN; i += 2) {
-		const char *num = mig_index[i];
+	for (size_t i = 0; i < RZ_MIG_INDEX_LEN; i += 2) {
+		ut64 num = strtoull(mig_index[i], NULL, 10);
 		const char *name = mig_index[i + 1];
-		sdb_ht_insert(hash, num, name);
+		ht_up_insert(hash, num, (void *)name);
 	}
 
 	return hash;
@@ -1455,7 +1456,7 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		return NULL;
 	}
 
-	HtPP *mig_hash = NULL;
+	HtUP *mig_hash = NULL;
 	RzList *subsystem = NULL;
 	ut8 *data_const = NULL;
 	ut64 data_const_offset = 0, data_const_size = 0, data_const_vaddr = 0;
@@ -1500,7 +1501,6 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		goto beach;
 	}
 
-	char tmpbuf[32];
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
 	while (cursor + sizeof(ut64) * 2 <= end) {
@@ -1560,10 +1560,8 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 				}
 
 				int num = idx + subs_min_idx;
-				bool found = false;
-				const char *key = rz_strf(tmpbuf, "%d", num);
-				const char *name = sdb_ht_find(mig_hash, key, &found);
-				if (found && name && *name) {
+				const char *name = ht_up_find(mig_hash, (ut64)num, NULL);
+				if (RZ_STR_ISNOTEMPTY(name)) {
 					sym->name = rz_str_newf("mig.%d.%s", num, name);
 				} else {
 					sym->name = rz_str_newf("mig.%d", num);
@@ -1586,20 +1584,16 @@ static RzList /*<RzBinSymbol *>*/ *resolve_mig_subsystem(RzXNUKernelCacheObj *ob
 		RZ_FREE(routines);
 	}
 
-	sdb_ht_free(mig_hash);
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	ht_up_free(mig_hash);
+	free(data_const);
+	free(sections);
 	return subsystem;
 
 beach:
-	if (subsystem) {
-		rz_list_free(subsystem);
-	}
-	if (mig_hash) {
-		sdb_ht_free(mig_hash);
-	}
-	RZ_FREE(data_const);
-	RZ_FREE(sections);
+	rz_list_free(subsystem);
+	ht_up_free(mig_hash);
+	free(data_const);
+	free(sections);
 	return NULL;
 }
 
@@ -1616,12 +1610,11 @@ static ut64 extract_addr_from_code(ut8 *arm64_code, ut64 vaddr) {
 	return addr;
 }
 
-static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
+static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtUP /*<ut64, char *>*/ *kernel_syms_by_addr, RzXNUKernelCacheObj *obj, RzBinFile *bf, RKext *kext, int ordinal) {
 	RStubsInfo *stubs_info = get_stubs_info(kext->mach0, kext->range.offset, obj);
 	if (!stubs_info) {
 		return;
 	}
-	char tmpbuf[32];
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
@@ -1654,8 +1647,7 @@ static void symbols_from_stubs(RzPVector /*<RzBinSymbol *>*/ *ret, HtPP *kernel_
 				target_addr = addr;
 			}
 
-			const char *key = rz_strf(tmpbuf, "%" PFMT64x, addr);
-			const char *name = sdb_ht_find(kernel_syms_by_addr, key, &found);
+			const char *name = ht_up_find(kernel_syms_by_addr, addr, &found);
 
 			if (found) {
 				RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
@@ -1768,14 +1760,14 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("kernelcache");
-	ret->rclass = strdup("ios");
-	ret->os = strdup("iOS");
-	ret->arch = strdup("arm"); // XXX
-	ret->machine = strdup(ret->arch);
-	ret->subsystem = strdup("xnu");
-	ret->type = strdup("kernel-cache");
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("kernelcache");
+	ret->rclass = rz_str_dup("ios");
+	ret->os = rz_str_dup("iOS");
+	ret->arch = rz_str_dup("arm"); // XXX
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("xnu");
+	ret->type = rz_str_dup("kernel-cache");
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = big_endian;
@@ -1926,8 +1918,9 @@ static void rz_rebase_info_free(RzXNUKernelCacheRebaseInfo *info) {
 
 RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.name = "kernelcache",
-	.desc = "kernelcache bin plugin",
+	.desc = "Apple Kernelcache",
 	.license = "LGPL3",
+	.author = "mrmacete",
 	.destroy = &destroy,
 	.load_buffer = &load_buffer,
 	.entries = &entries,

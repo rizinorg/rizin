@@ -23,12 +23,12 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 		ut64 load_align = rz_config_get_i(core->config, "file.loadalign");
 		yankdesc = rz_io_open_nomap(core->io, filename, RZ_PERM_R, 0644);
 		// map the file in for IO operations.
-		if (yankdesc && load_align) {
+		if (yankdesc && load_align > 1) {
 			yank_file_sz = rz_io_size(core->io);
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
 			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
 			if (!map || map->itv.addr == -1) {
-				RZ_LOG_ERROR("core: Unable to map the opened file: %s", filename);
+				RZ_LOG_ERROR("Unable to map the opened file: %s\n", filename);
 				rz_io_desc_close(yankdesc);
 				yankdesc = NULL;
 			}
@@ -48,15 +48,15 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
 			buf = malloc(actual_len);
-			rz_io_read_at(core->io, addr, buf, actual_len);
+			rz_io_read_at_mapped(core->io, addr, buf, actual_len);
 			rz_core_yank_set(core, RZ_CORE_FOREIGN_ADDR, buf, len);
 		} else if (res != addr) {
-			eprintf(
-				"ERROR: Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", res, addr,
+			RZ_LOG_ERROR(
+				"Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", res, addr,
 				yank_file_sz);
 		} else if (actual_len == 0) {
-			eprintf(
-				"ERROR: Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", addr + len,
+			RZ_LOG_ERROR(
+				"Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", addr + len,
 				yank_file_sz);
 		}
 		rz_io_desc_close(yankdesc);
@@ -127,7 +127,7 @@ RZ_API bool rz_core_yank(RzCore *core, ut64 addr, ut64 len) {
 	if (addr != core->offset) {
 		rz_core_seek(core, addr, true);
 	}
-	rz_io_read_at(core->io, addr, buf, len);
+	rz_io_read_at_mapped(core->io, addr, buf, len);
 	rz_core_yank_set(core, addr, buf, len);
 	if (curseek != addr) {
 		rz_core_seek(core, curseek, true);
@@ -155,7 +155,7 @@ RZ_API bool rz_core_yank_string(RzCore *core, ut64 addr, ut64 maxlen) {
 		return false;
 	}
 	buf[core->blocksize] = 0;
-	rz_io_read_at(core->io, addr, buf, core->blocksize);
+	rz_io_read_at_mapped(core->io, addr, buf, core->blocksize);
 	if (maxlen == 0) {
 		maxlen = rz_str_nlen((const char *)buf, core->blocksize);
 	} else if (maxlen > core->blocksize) {
@@ -244,10 +244,6 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, RzCmdStateOutput *state) {
 		pj_end(pj);
 		break;
 	}
-	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("wx %s", str);
-		rz_cons_newline();
-		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_printf("0x%08" PFMT64x " %" PFMT64d " ",
 			core->yank_addr + pos,
@@ -363,7 +359,7 @@ RZ_API bool rz_core_yank_hexpair(RzCore *core, const char *str) {
 	if (RZ_STR_ISEMPTY(str)) {
 		return false;
 	}
-	char *out = strdup(str);
+	char *out = rz_str_dup(str);
 	int len = rz_hex_str2bin(str, (ut8 *)str);
 	if (len > 0) {
 		rz_core_yank_set(core, core->offset, (ut8 *)out, len);

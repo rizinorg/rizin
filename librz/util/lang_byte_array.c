@@ -229,7 +229,7 @@ RZ_API RZ_OWN char *rz_lang_byte_array(RZ_NONNULL const ut8 *buffer, size_t size
 	rz_strbuf_init(&sb);
 
 	if (size <= 0) {
-		RZ_LOG_ERROR("Length must be greater 0");
+		RZ_LOG_ERROR("Length must be greater than 0\n");
 		return rz_strbuf_drain_nofree(&sb);
 	}
 

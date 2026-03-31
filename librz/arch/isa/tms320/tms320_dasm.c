@@ -1184,7 +1184,7 @@ int tms320_dasm_init(tms320_dasm_t *dasm) {
 		return 0;
 	}
 
-	dasm->map = ht_up_new0();
+	dasm->map = ht_up_new(NULL, NULL);
 	if (!dasm->map) {
 		return 0;
 	}

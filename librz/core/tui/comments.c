@@ -37,7 +37,7 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 				from = addr;
 				size = 1; // XXX: remove this thing size for comments is useless d->size;
 				free(p);
-				p = strdup(str);
+				p = rz_str_dup(str);
 				rz_cons_printf("  >  %s\n", str);
 			} else {
 				rz_cons_printf("     %s\n", str);

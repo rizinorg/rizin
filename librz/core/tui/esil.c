@@ -39,7 +39,6 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	const int nbits = sizeof(ut64) * 8;
 	char *word = NULL;
 	int x = 0;
-	RzAsmOp asmop;
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -54,6 +53,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	rz_analysis_esil_set_pc(esil, core->offset);
 	for (;;) {
 		rz_cons_clear00();
+		RzAsmOp asmop = { 0 };
 		// bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void)rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(ut64));
 		rz_analysis_op_init(&aop);
@@ -174,6 +174,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 			rz_cons_clear();
 		} break;
 		}
+		rz_asm_op_fini(&asmop);
 	}
 beach:
 	rz_analysis_esil_free(esil);

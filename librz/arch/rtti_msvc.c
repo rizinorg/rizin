@@ -403,7 +403,7 @@ RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, 
 	if (ret && *ret) {
 		char *n = strchr(ret, ' ');
 		if (n && *(++n)) {
-			char *tmp = strdup(n);
+			char *tmp = rz_str_dup(n);
 			free(ret);
 			ret = tmp;
 		} else {
@@ -792,7 +792,7 @@ RecoveryTypeDescriptor *recovery_analysis_type_descriptor(RRTTIMSVCAnalContext *
 
 static char *unique_class_name(RzAnalysis *analysis, const char *original_name) {
 	if (!rz_analysis_class_exists(analysis, original_name)) {
-		return strdup(original_name);
+		return rz_str_dup(original_name);
 	}
 
 	char *name = NULL;
@@ -825,7 +825,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	rz_analysis_class_vtable_fini(&vtable);
 
 	RVTableMethodInfo *vmeth;
-	rz_vector_foreach(&vtable_info->methods, vmeth) {
+	rz_vector_foreach (&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
 		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
 			meth.addr = vmeth->addr;
@@ -856,7 +856,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 
 static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *class_name, RzVector /*<RecoveryBaseDescriptor>*/ *base_descs) {
 	RecoveryBaseDescriptor *base_desc;
-	rz_vector_foreach(base_descs, base_desc) {
+	rz_vector_foreach (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
 		if (!base_td->valid) {
 			RZ_LOG_WARN("Base td is invalid!\n");
@@ -879,7 +879,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 		RzAnalysisBaseClass base;
 		base.id = NULL;
 		base.offset = (ut64)base_desc->bcd->where.mdisp;
-		base.class_name = strdup(base_class_name);
+		base.class_name = rz_str_dup(base_class_name);
 		rz_analysis_class_base_set(context->vt_context->analysis, class_name, &base);
 		rz_analysis_class_base_fini(&base);
 	}
@@ -905,7 +905,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	char *name = rz_analysis_rtti_msvc_demangle_class_name(context->vt_context, col->td->td.name);
 	if (!name) {
 		RZ_LOG_DEBUG("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
-		name = strdup(col->td->td.name);
+		name = rz_str_dup(col->td->td.name);
 		if (!name) {
 			return NULL;
 		}
@@ -942,7 +942,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	char *name = rz_analysis_rtti_msvc_demangle_class_name(context->vt_context, td->td.name);
 	if (!name) {
 		RZ_LOG_DEBUG("Failed to demangle a class name: \"%s\"\n", td->td.name);
-		name = strdup(td->td.name);
+		name = rz_str_dup(td->td.name);
 		if (!name) {
 			return NULL;
 		}
@@ -961,21 +961,17 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
 	rz_pvector_init(&context.vtables, (RzPVectorFree)rz_analysis_vtable_info_free);
 
 	rz_pvector_init(&context.complete_object_locators, (RzPVectorFree)recovery_complete_object_locator_free);
-	context.addr_col = ht_up_new0();
+	context.addr_col = ht_up_new(NULL, NULL);
 	rz_pvector_init(&context.type_descriptors, (RzPVectorFree)recovery_type_descriptor_free);
-	context.addr_td = ht_up_new0();
+	context.addr_td = ht_up_new(NULL, NULL);
 
-	context.col_td_classes = ht_up_new(NULL, (HtUPKvFreeFunc)str_value_free, (HtUPCalcSizeV)strlen);
+	context.col_td_classes = ht_up_new(NULL, free);
 
 	RzListIter *vtableIter;
 	RVTableInfo *table;

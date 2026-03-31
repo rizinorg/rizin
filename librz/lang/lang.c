@@ -23,6 +23,11 @@ RZ_API RzLang *rz_lang_new(void) {
 	if (!lang) {
 		return NULL;
 	}
+	lang->sys_path = rz_path_new();
+	if (!lang->sys_path) {
+		free(lang);
+		return NULL;
+	}
 	lang->user = NULL;
 	lang->langs = rz_list_new();
 	if (!lang->langs) {
@@ -57,6 +62,7 @@ RZ_API void rz_lang_free(RzLang *lang) {
 	rz_lang_undef(lang, NULL);
 	rz_list_free(lang->langs);
 	rz_list_free(lang->defs);
+	rz_path_free(lang->sys_path);
 	free(lang);
 }
 
@@ -81,8 +87,8 @@ RZ_API bool rz_lang_define(RzLang *lang, const char *type, const char *name, voi
 	if (!def) {
 		return false;
 	}
-	def->type = strdup(type);
-	def->name = strdup(name);
+	def->type = rz_str_dup(type);
+	def->name = rz_str_dup(name);
 	def->value = value;
 	rz_list_append(lang->defs, def);
 	return true;
@@ -135,7 +141,7 @@ RZ_API bool rz_lang_plugin_del(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin) {
 	if (!plugin_fini(lang, plugin)) {
 		return false;
 	}
-	return rz_list_delete_data(lang->langs, plugin);
+	return rz_list_delete_val(lang->langs, plugin);
 }
 
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {
@@ -234,7 +240,7 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 	RzLineHistory histnull = { 0 };
 	RzLineCompletion oc = line->completion;
 	RzLineCompletion ocnull = { 0 };
-	char *prompt = strdup(line->prompt);
+	char *prompt = rz_str_dup(line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 

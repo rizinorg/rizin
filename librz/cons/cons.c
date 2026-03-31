@@ -73,7 +73,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 		if (data->grep) {
 			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
 			if (CTX(grep).str) {
-				data->grep->str = strdup(CTX(grep).str);
+				data->grep->str = rz_str_dup(CTX(grep).str);
 			}
 		}
 		if (recreate && CTX(buffer_sz) > 0) {
@@ -141,6 +141,14 @@ static void cons_context_deinit(RzConsContext *context) {
 	rz_stack_free(context->break_stack);
 	context->break_stack = NULL;
 	rz_cons_pal_free(context);
+	cons_grep_reset(&context->grep);
+	free(context->buffer);
+	context->buffer = NULL;
+	context->buffer_sz = 0;
+	context->buffer_len = 0;
+	free(context->lastOutput);
+	context->lastOutput = NULL;
+	context->lastLength = 0;
 }
 
 static void __break_signal(int sig) {
@@ -252,7 +260,7 @@ RZ_API void rz_cons_strcat_justify(const char *str, int j, char c) {
 			len = 0;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_memcat(str + o, len);
 	}
 }
@@ -288,7 +296,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 			rows++;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
 		rz_cons_gotoxy(x, y + rows);
 		rz_cons_memcat(str + o, len);
 	}
@@ -616,6 +624,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.fdout = 1;
 	I.break_lines = false;
 	I.lines = 0;
+	I.oldraw = -1;
 
 	I.input = RZ_NEW0(RzConsInputContext);
 	I.input->bufactive = true;
@@ -678,11 +687,11 @@ RZ_API RzCons *rz_cons_free(void) {
 	}
 	RZ_FREE(I.input->readbuffer);
 	RZ_FREE(I.input);
-	RZ_FREE(CTX(buffer));
 	RZ_FREE(I.break_word);
 	cons_context_deinit(I.context);
-	RZ_FREE(CTX(lastOutput));
-	CTX(lastLength) = 0;
+	I.context = NULL;
+	rz_strbuf_free(I.echobuf);
+	I.echobuf = NULL;
 	RZ_FREE(I.pager);
 	return NULL;
 }
@@ -759,10 +768,15 @@ RZ_API void rz_cons_fill_line(void) {
 	}
 }
 
-RZ_API void rz_cons_clear_line(int std_err) {
+/**
+ * \brief Print on `stream` the ANSI escape sequence to clear the current line.
+ * \param stream Either stdout or stderr. Only 2 possible stream values are accepted.
+ */
+RZ_API void rz_cons_clear_line(FILE *stream) {
+	rz_return_if_fail(stream == stdout || stream == stderr);
 #if __WINDOWS__
 	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+		fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset(&white, ' ', sizeof(white));
@@ -773,12 +787,12 @@ RZ_API void rz_cons_clear_line(int std_err) {
 		} else {
 			white[sizeof(white) - 1] = 0; // HACK
 		}
-		fprintf(std_err ? stderr : stdout, "\r%s\r", white);
+		fprintf(stream, "\r%s\r", white);
 	}
 #else
-	fprintf(std_err ? stderr : stdout, "%s", RZ_CONS_CLEAR_LINE);
+	fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 #endif
-	fflush(std_err ? stderr : stdout);
+	fflush(stream);
 }
 
 RZ_API void rz_cons_clear00(void) {
@@ -816,7 +830,6 @@ RZ_API void rz_cons_reset(void) {
 	}
 	CTX(buffer_len) = 0;
 	I.lines = 0;
-	I.lastline = CTX(buffer);
 	cons_grep_reset(&CTX(grep));
 	CTX(pageable) = true;
 	ctx_rowcol_calc_reset();
@@ -835,7 +848,7 @@ RZ_API const char *rz_cons_get_buffer(void) {
  */
 RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
 	const char *s = rz_cons_get_buffer();
-	return s ? strdup(s) : NULL;
+	return rz_str_dup(s);
 }
 
 RZ_API int rz_cons_get_buffer_len(void) {
@@ -946,20 +959,21 @@ static bool lastMatters(void) {
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
-	static RzStrBuf *echodata = NULL; // TODO: move into RzConsInstance? maybe nope
+	RzCons *cons = rz_cons_singleton();
+
 	if (msg) {
-		if (echodata) {
-			rz_strbuf_append(echodata, msg);
-			rz_strbuf_append(echodata, "\n");
+		if (cons->echobuf) {
+			rz_strbuf_append(cons->echobuf, msg);
+			rz_strbuf_append(cons->echobuf, "\n");
 		} else {
-			echodata = rz_strbuf_new(msg);
+			cons->echobuf = rz_strbuf_new(msg);
 		}
 	} else {
-		if (echodata) {
-			char *data = rz_strbuf_drain(echodata);
+		if (cons->echobuf) {
+			char *data = rz_strbuf_drain(cons->echobuf);
 			rz_cons_strcat(data);
 			rz_cons_newline();
-			echodata = NULL;
+			cons->echobuf = NULL;
 			free(data);
 		}
 	}
@@ -1094,7 +1108,7 @@ RZ_API void rz_cons_visual_flush(void) {
 }
 
 static int real_strlen(const char *ptr, int len) {
-	int utf8len = rz_str_len_utf8(ptr);
+	int utf8len = rz_str_utf8_cols(ptr);
 	int ansilen = rz_str_ansi_len(ptr);
 	int diff = len - utf8len;
 	if (diff > 0) {
@@ -1287,10 +1301,10 @@ RZ_API void rz_cons_newline(void) {
 		rz_cons_strcat("\n");
 	}
 #if 0
-This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function rz_cons_w32_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+	// This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
+	// and break json output appending extra chars.
+	// this code now is managed into output.c:118 at function rz_cons_w32_print
+	// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
 #if __WINDOWS__
 	rz_cons_reset_colors();
@@ -1666,9 +1680,8 @@ RZ_API void rz_cons_show_cursor(int cursor) {
  *
  */
 RZ_API void rz_cons_set_raw(bool is_raw) {
-	static int oldraw = -1;
-	if (oldraw != -1) {
-		if (is_raw == oldraw) {
+	if (I.oldraw != -1) {
+		if (is_raw == I.oldraw) {
 			return;
 		}
 	}
@@ -1703,7 +1716,7 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #warning No raw console supported for this platform
 #endif
 	fflush(stdout);
-	oldraw = is_raw;
+	I.oldraw = is_raw;
 }
 
 RZ_API void rz_cons_set_utf8(bool b) {
@@ -1769,16 +1782,13 @@ RZ_API void rz_cons_column(int c) {
 	free(b);
 }
 
-//  XXX deprecate must be push/pop context state
-static bool lasti = false; /* last interactive mode */
-
 RZ_API void rz_cons_set_interactive(bool x) {
-	lasti = rz_cons_singleton()->context->is_interactive;
+	rz_cons_singleton()->context->last_interactive_option = rz_cons_singleton()->context->is_interactive;
 	rz_cons_singleton()->context->is_interactive = x;
 }
 
 RZ_API void rz_cons_set_last_interactive(void) {
-	rz_cons_singleton()->context->is_interactive = lasti;
+	rz_cons_singleton()->context->is_interactive = rz_cons_singleton()->context->last_interactive_option;
 }
 
 RZ_API void rz_cons_set_title(const char *str) {
@@ -1830,10 +1840,10 @@ RZ_API void rz_cons_highlight(const char *word) {
 		if (I.highlight) {
 			if (strcmp(word, I.highlight)) {
 				free(I.highlight);
-				I.highlight = strdup(word);
+				I.highlight = rz_str_dup(word);
 			}
 		} else {
-			I.highlight = strdup(word);
+			I.highlight = rz_str_dup(word);
 		}
 		rword = malloc(word_len + linv[0] + linv[1] + 1);
 		if (!rword) {
@@ -1936,7 +1946,7 @@ RZ_API char *rz_cons_swap_ground(const char *col) {
 		/* is foreground */
 		return rz_str_newf("\x1b[4%s", col + 3);
 	}
-	return strdup(col);
+	return rz_str_dup(col);
 }
 
 RZ_API bool rz_cons_drop(int n) {
@@ -1990,7 +2000,7 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch) {
 RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
 	free(I.break_word);
 	if (s) {
-		I.break_word = strdup(s);
+		I.break_word = rz_str_dup(s);
 		I.break_word_len = strlen(s);
 	} else {
 		I.break_word = NULL;

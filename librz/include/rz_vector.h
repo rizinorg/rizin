@@ -48,6 +48,7 @@ typedef struct rz_vector_t {
 	size_t len;
 	size_t capacity;
 	size_t elem_size;
+	bool reverse_sorted;
 	RzVectorFree free;
 	void *free_user;
 } RzVector;
@@ -85,17 +86,15 @@ RZ_API bool rz_vector_clone_into(
 RZ_API RZ_OWN RzVector *rz_vector_clone(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec);
 
-static inline bool rz_vector_empty(const RzVector *vec) {
-	rz_return_val_if_fail(vec, false);
-	return vec->len == 0;
+static inline bool rz_vector_empty(RZ_NULLABLE const RzVector *vec) {
+	return vec ? vec->len == 0 : true;
 }
 
 RZ_API void rz_vector_clear(RzVector *vec);
 
 // returns the length of the vector
-static inline size_t rz_vector_len(const RzVector *vec) {
-	rz_return_val_if_fail(vec, 0);
-	return vec->len;
+static inline size_t rz_vector_len(RZ_NULLABLE const RzVector *vec) {
+	return vec ? vec->len : 0;
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.
@@ -113,6 +112,9 @@ static inline void *rz_vector_head(const RzVector *vec) {
 // returns a pointer to the last element of the vector
 static inline void *rz_vector_tail(RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->len < 1) {
+		return NULL;
+	}
 	return (char *)vec->a + vec->elem_size * (vec->len - 1);
 }
 
@@ -139,7 +141,9 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x);
 
 // insert count values of size vec->elem_size into vec starting at the given index.
-RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, void *first, size_t count);
+RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE void *first, size_t count);
+
+RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user);
 
 // like rz_vector_remove_at for the last element
 RZ_API void rz_vector_pop(RzVector *vec, void *into);
@@ -152,6 +156,8 @@ RZ_API void *rz_vector_push(RzVector *vec, void *x);
 
 // like rz_vector_insert for the beginning of vec
 RZ_API void *rz_vector_push_front(RzVector *vec, void *x);
+
+RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem);
 
 /**
  * \brief Swap two elements of the vector
@@ -292,12 +298,18 @@ static inline void **rz_pvector_data(RzPVector *vec) {
 // returns the first element of the vector
 static inline void *rz_pvector_head(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[0];
 }
 
 // returns the last element of the vector
 static inline void *rz_pvector_tail(RzPVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->v.len < 1) {
+		return NULL;
+	}
 	return ((void **)vec->v.a)[vec->v.len - 1];
 }
 
@@ -306,6 +318,9 @@ RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x);
 
 // find the element in the vec based on cmparator
 RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp, void *user);
+
+// find the element index in the vec based on cmparator
+RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp, void *user);
 
 // join two pvector into one, pvec1 should free the joined element in pvec2
 RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2);
@@ -347,6 +362,9 @@ static inline void **rz_pvector_push_front(RzPVector *vec, void *x) {
 // sort vec using quick sort.
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user);
 
+// Returns a new RzPVector which contains only unique values
+RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user);
+
 static inline void **rz_pvector_reserve(RzPVector *vec, size_t capacity) {
 	return (void **)rz_vector_reserve(&vec->v, capacity);
 }
@@ -377,6 +395,13 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 #define rz_pvector_foreach_prev(vec, it) \
 	if (!rz_pvector_empty(vec)) \
 		for (it = ((vec)->v.len == 0 ? NULL : (void **)(vec)->v.a + (vec)->v.len - 1); it && it != (void **)(vec)->v.a - 1; it--)
+
+/**
+ * \brief Like rz_pvector_foreach() but with index
+ */
+#define rz_pvector_enumerate(vec, it, idx) \
+	if (!rz_pvector_empty(vec)) \
+		for (it = (void **)(vec)->v.a, idx = 0; idx < (vec)->v.len; it++, idx++)
 
 /*
  * \brief Find the index of the least element greater than or equal to the lower bound x using binary search

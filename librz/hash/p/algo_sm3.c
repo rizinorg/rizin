@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_sm3 = {
 	.name = "sm3",
 	.license = "LGPL2",
 	.author = "FSF/deroad",
+	.description = "ShangMi 3 (SM3) cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_sm3_context_new,
 	.context_free = plugin_sm3_context_free,

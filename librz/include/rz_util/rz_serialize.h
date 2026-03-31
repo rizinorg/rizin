@@ -5,6 +5,7 @@
 #define RZ_SERIALIZE_H
 
 #include <rz_util/rz_json.h>
+#include <rz_util/ht_sp.h>
 #include <rz_list.h>
 
 /**
@@ -43,18 +44,18 @@ static inline void rz_serialize_result_info_free(RzSerializeResultInfo *info) {
  * This enables string values to be used in a switch/case-like
  * fashion.
  */
-typedef HtPP RzKeyParser;
+typedef HtSP RzKeyParser;
 
 static inline RzKeyParser *rz_key_parser_new(void) {
-	return ht_pp_new0();
+	return ht_sp_new(HT_STR_DUP, NULL, NULL);
 }
 
 static inline void rz_key_parser_free(RzKeyParser *parser) {
-	ht_pp_free(parser);
+	ht_sp_free(parser);
 }
 
 static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int val) {
-	ht_pp_insert(parser, key, (void *)(size_t)val);
+	ht_sp_insert(parser, key, (void *)(size_t)val);
 }
 
 #define RZ_KEY_PARSER_UNKNOWN -1
@@ -66,7 +67,7 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
  */
 #define RZ_KEY_PARSER_SWITCH(parser, key) \
 	bool key_parser_found = false; \
-	int key_parser_v = (int)(size_t)ht_pp_find(parser, key, &key_parser_found); \
+	int key_parser_v = (int)(size_t)ht_sp_find(parser, key, &key_parser_found); \
 	if (!key_parser_found) { \
 		key_parser_v = RZ_KEY_PARSER_UNKNOWN; \
 	} \

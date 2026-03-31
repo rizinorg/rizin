@@ -61,18 +61,17 @@ RUN
 
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
-BROKEN=1
+ARGS=-a x86 -b 32
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
+p8 7 @ 0
 waf bins/other/asm/multiline_prefix.asm
-p8 7@0
+p8 7 @ 0
 EOF
 EXPECT=<<EOF
-9090e8fbffffff
+00000000000000
+9090e803000000
 EOF
 RUN
-
 
 NAME=wa
 FILE=malloc://1024
@@ -95,7 +94,7 @@ wa "je 0x33" @ 0x10
 pi 1 @ 0x10
 EOF
 EXPECT=<<EOF
-je 0x33
+jz 0x33
 EOF
 RUN
 
@@ -148,6 +147,7 @@ NAME=wao nop (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao nop
@@ -169,6 +169,7 @@ NAME=wao trap (arm)
 FILE=malloc://1024
 ARGS=-a arm -b 32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 24c09fe500b0a0e304109de40d20a0e1
 pi 4
 wao trap
@@ -251,8 +252,9 @@ RUN
 NAME=endian tests: wv
 FILE==
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wv4 3
 p8 4
 e cfg.bigendian=true
@@ -268,7 +270,7 @@ RUN
 NAME=wv endian
 FILE=malloc://1024
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wv4 0x1234
 p8 2
 wv4 0x12345678
@@ -280,40 +282,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx 0x should behave like wv? imho nope
+NAME=wx 0x
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
-e cfg.bigendian=false
+e asm.arch=x86
 wx 0x1234
 p8 2
 wx 0x12345678
 p8 4
 EOF
 EXPECT=<<EOF
-3412
-78563412
+1234
+12345678
 EOF
 RUN
 
 NAME=wci should commit the changes to the file
 FILE=malloc://1024
-BROKEN=1
 CMDS=<<EOF
 mkdir .tmp
-cp -f bins/pe/b.exe .tmp/.b.exe.orig
-cp -f bins/pe/b.exe .tmp/.b.exe.new
+cp bins/pe/b.exe .tmp/.b.exe.orig
+cp bins/pe/b.exe .tmp/.b.exe.new
 o+ .tmp/.b.exe.new
 wx ff
 wci
-e.src.null=true
-!!rz-diff .tmp/.b.exe.orig .tmp/.b.exe.new
+!!rz-diff -C -t command -0 "px 10" -1 "px 10" .tmp/.b.exe.orig .tmp/.b.exe.new
 o--
 rm .tmp/.b.exe.orig
 rm .tmp/.b.exe.new
 EOF
 EXPECT=<<EOF
-File size
+--- .tmp/.b.exe.orig
++++ .tmp/.b.exe.new
+@@ --1,4 +-1,4 @@
+ - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+-0x00401280  5589 e583 ec08 c704 2401                 U.......$.
++0x00401280  ff89 e583 ec08 c704 2401                 ........$.
+
 EOF
 RUN
 
@@ -335,9 +340,7 @@ RUN
 
 NAME=wx pcache
 FILE=bins/pe/b.exe
-
 CMDS=<<EOF
-
 e io.va=0
 e io.pcache=true
 s 0
@@ -363,9 +366,9 @@ w 0123456789abcde
 w a\57b\0
 w 1\0532\0 @ 0x4
 w 0\1741\0 @ 0x8
-ps @e:str.search.encoding=utf8
-ps @ 0x4 @e:str.search.encoding=utf8
-ps @ 0x8 @e:str.search.encoding=utf8
+ps @e:str.encoding=utf8
+ps @ 0x4 @e:str.encoding=utf8
+ps @ 0x8 @e:str.encoding=utf8
 EOF
 EXPECT=<<EOF
 a/b
@@ -442,7 +445,7 @@ izz~0x0
 px 16~0x0
 EOF
 EXPECT=<<EOF
-0   0x00000000 0x00000000 13  14           ascii \a\b\t\n\v\f\r\e\\@\a\r~
+0x00000000 0x00000000  13   14         ascii \a\b\t\n\v\f\r\e\\@\a\r~
 0x00000000  0708 090a 0b0c 0d1b 5c40 070d 7e00 0000  ........\@..~...
 EOF
 RUN
@@ -453,12 +456,17 @@ CMDS=<<EOF
 b 16
 $addr=$0
 $new_addr=%v \`$addr\`+16
-(wz16 str; wz ${str} @ `$addr`; px~:1 @ `$addr`; $addr=$`$new_addr`)
+(wz_px str; wz ${str}; px~:1)
+(wz16 str; .(wz_px ${str}) @ `$addr`; $addr=$`$new_addr`)
 .(wz16 \\)
 .(wz16 \\\\)
 .(wz16 \\a)
 .(wz16 "a \\ b")
 .(wz16 a\\)
+.(wz16 "c `%vi 123+1` d")
+.(wz16 \`)
+.(wz16 "e \` f")
+..(wz16 \# "g \# h" "i \" j")
 EOF
 EXPECT=<<EOF
 0x00000000  5c00 0000 0000 0000 0000 0000 0000 0000  \...............
@@ -466,7 +474,14 @@ EXPECT=<<EOF
 0x00000020  5c61 0000 0000 0000 0000 0000 0000 0000  \a..............
 0x00000030  6120 5c20 6200 0000 0000 0000 0000 0000  a \ b...........
 0x00000040  615c 0000 0000 0000 0000 0000 0000 0000  a\..............
+0x00000050  6320 3132 3420 6400 0000 0000 0000 0000  c 124 d.........
+0x00000060  6000 0000 0000 0000 0000 0000 0000 0000  `...............
+0x00000070  6520 6020 6600 0000 0000 0000 0000 0000  e ` f...........
+0x00000080  2300 0000 0000 0000 0000 0000 0000 0000  #...............
+0x00000090  6720 2320 6800 0000 0000 0000 0000 0000  g # h...........
+0x000000a0  6920 2220 6a00 0000 0000 0000 0000 0000  i " j...........
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=Automatically reanalyze function control flow after a write
@@ -491,7 +506,7 @@ EOF
 EXPECT=<<EOF
 / fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
-| 0x00000002      7502           jne   6
+| 0x00000002      7502           jnz   0x6
 | ----------- true: 0x00000006  false: 0x00000004
 | 0x00000004      0000           add   byte [rax], al
 | ----------- true: 0x00000006
@@ -500,9 +515,9 @@ EXPECT=<<EOF
 
 / fcn.00000000();
 | 0x00000000      0000           add   byte [rax], al
-| 0x00000002      7502           jne   6
+| 0x00000002      7502           jnz   0x6
 | ----------- true: 0x00000006  false: 0x00000004
-| 0x00000004      7502           jne   8
+| 0x00000004      7502           jnz   0x8
 | ----------- true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 | ----------- true: 0x00000008
@@ -511,7 +526,7 @@ EXPECT=<<EOF
 / fcn.00000000();
 | ; var int64_t var_4h @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [var_4h]
-| 0x00000004      7502           jne   8
+| 0x00000004      7502           jnz   0x8
 | ----------- true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 | ----------- true: 0x00000008
@@ -520,7 +535,7 @@ EXPECT=<<EOF
 / fcn.00000000();
 | ; var int64_t test @ stack - 0x4
 | 0x00000000      488b45fc       mov   rax, qword [test]
-| 0x00000004      75fa           jne   fcn.00000000
+| 0x00000004      75fa           jnz   fcn.00000000
 | ----------- true: 0x00000000  false: 0x00000006
 | 0x00000006      0000           add   byte [rax], al
 \ 0x00000008      c3             ret
@@ -543,31 +558,31 @@ pdr
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-| 0x00000000      e802000000     call  7
-| 0x00000005      7502           jne   9
+| 0x00000000      e802000000     call  0x7
+| 0x00000005      7502           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000007
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
 / fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
-| 0x00000000      7507           jne   9
+| 0x00000000      7507           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000002
 | 0x00000002      0000           add   byte [rax], al
 | 0x00000004      007502         add   byte [arg_2h], dh
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
 / fcn.00000000(int64_t arg_2h);
 | ; arg int64_t arg_2h @ stack + 0x2
-| 0x00000000      e802000000     call  7
-| 0x00000005      7502           jne   9
+| 0x00000000      e802000000     call  0x7
+| 0x00000005      7502           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000007
-| ; CALL XREF from fcn.00000000 @ 
+| ; CALL XREF from fcn.00000000 @
 | 0x00000007      0000           add   byte [rax], al
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
@@ -620,29 +635,29 @@ pdr
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-| 0x00000000      eb04           jmp   6
+| 0x00000000      eb04           jmp   0x6
 | ----------- true: 0x00000006
-| 0x00000002      eb02           jmp   6
+| 0x00000002      eb02           jmp   0x6
 | ----------- true: 0x00000006
 | ; CODE XREFS from fcn.00000000 @ , 0x2
-| 0x00000006      75fa           jne   2
+| 0x00000006      75fa           jnz   0x2
 | ----------- true: 0x00000002  false: 0x00000008
 \ 0x00000008      c3             ret
 
 / fcn.00000000();
-| 0x00000000      eb02           jmp   4
+| 0x00000000      eb02           jmp   0x4
 | ----------- true: 0x00000004
-| ; CODE XREF from fcn.00000000 @ 
+| ; CODE XREF from fcn.00000000 @
 | 0x00000004      eb04           jmp   0xa
 | ----------- true: 0x0000000a
-| ; CODE XREF from fcn.00000000 @ 
+| ; CODE XREF from fcn.00000000 @
 | ; CODE XREF from fcn.00000000 @ +0x2
 | 0x00000006      0000           add   byte [rax], al
 | ; CODE XREF from fcn.00000000 @ 0x4
 | 0x00000008      eb02           jmp   0xc
 | ----------- true: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x4
-| 0x0000000a      75fa           jne   6
+| 0x0000000a      75fa           jnz   0x6
 | ----------- true: 0x00000006  false: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x8
 \ 0x0000000c      c3             ret

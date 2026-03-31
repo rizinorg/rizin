@@ -7,7 +7,7 @@
 # This script is necessary to make sure people notice a subproject has been
 # changed and need to be updated. Meson does not warn you now (0.56.0)
 
-""" Portable python script to check if subproject is up-to-date and warn if not """
+"""Portable python script to check if subproject is up-to-date and warn if not"""
 
 import filecmp
 import os

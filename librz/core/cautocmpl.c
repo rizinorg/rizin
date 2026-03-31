@@ -6,8 +6,6 @@
 #include <rz_cons.h>
 #include <rz_cmd.h>
 
-#include "core_private.h"
-
 /**
  * Describe what needs to be autocompleted.
  */
@@ -15,7 +13,7 @@ enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
 	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
-	AUTOCMPLT_AT_STMT, ///< A temporary modifier operator like `@ `, `@a:`, `@v:` or a iter operator like `@@.`, `@@`, `@@i`, etc.
+	AUTOCMPLT_AT_OP, ///< A temporary modifier operator like `@ `, `@a:`, `@v:` or a iter operator like `@@.`, `@@`, `@@i`, etc.
 	AUTOCMPLT_RZNUM, ///< A expression that can be parsed by RzNum (e.g. "flag+3")
 	AUTOCMPLT_ARCH, ///< An architecture supported by Rizin (e.g. x86, arm, etc.)
 	AUTOCMPLT_BITS, ///< A bits value supported by the currently selected architecture (e asm.bits=?)
@@ -123,8 +121,8 @@ static void autocmplt_cmdidentifier(RzCore *core, RzLineNSCompletionResult *res,
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, do_autocmplt_cmdidentifier, &u);
 }
 
-static void autocmplt_at_stmt(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	const char *stmts[] = {
+static void autocmplt_at_op(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	const char *ops[] = {
 		"@ ",
 		"@!",
 		"@(",
@@ -170,21 +168,21 @@ static void autocmplt_at_stmt(RzCore *core, RzLineNSCompletionResult *res, const
 		"@@s:",
 		NULL,
 	};
-	const char **stmt;
-	for (stmt = stmts; *stmt; stmt++) {
-		if (!strncmp(*stmt, s, len)) {
-			rz_line_ns_completion_result_add(res, *stmt);
+	const char **op;
+	for (op = ops; *op; op++) {
+		if (!strncmp(*op, s, len)) {
+			rz_line_ns_completion_result_add(res, *op);
 		}
 	}
 	res->end_string = "";
 }
 
-static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	int bits = plugin->bits;
-	int i;
-	char sbits[5];
-	for (i = 1; i <= bits; i <<= 1) {
-		if (i & bits && !strncmp(rz_strf(sbits, "%d", i), s, len)) {
+static void autocmplt_bits_plugin(const RzAsmPlugin *plugin, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char sbits[16];
+	ut32 bits = plugin->bits;
+	for (ut32 i = 1; i <= bits; i <<= 1) {
+		rz_strf(sbits, "%u", i);
+		if (i & bits && !strncmp(sbits, s, len)) {
 			rz_line_ns_completion_result_add(res, sbits);
 		}
 	}
@@ -193,16 +191,16 @@ static void autocmplt_bits_plugin(RzAsmPlugin *plugin, RzLineNSCompletionResult 
 static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	rz_return_if_fail(core->rasm);
 
-	RzList *asm_plugins = rz_asm_get_plugins(core->rasm);
-	RzListIter *it;
-	RzAsmPlugin *plugin;
+	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
+	RzAsmPlugin **val;
 
 	// @a: can either be used with @a:arch or @a:arch:bits
 	// Check for `:` to determine where we are
 	const char *delim = rz_sub_str_rchr(s, 0, len, ':');
 	if (!delim) {
 		// We autocomplete just the architecture part
-		rz_list_foreach (asm_plugins, it, plugin) {
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, len)) {
 				rz_line_ns_completion_result_add(res, plugin->name);
 			}
@@ -211,19 +209,21 @@ static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const ch
 	} else {
 		// We autocomplete the bits part
 		res->start += delim + 1 - s;
-		rz_list_foreach (asm_plugins, it, plugin) {
+		rz_iterator_foreach(it, val) {
+			RzAsmPlugin *plugin = *val;
 			if (!strncmp(plugin->name, s, delim - s)) {
 				autocmplt_bits_plugin(plugin, res, delim + 1, len - (delim + 1 - s));
 				break;
 			}
 		}
 	}
+	rz_iterator_free(it);
 }
 
 static void autocmplt_bits(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	rz_return_if_fail(core->rasm && core->rasm->cur);
-
-	autocmplt_bits_plugin(core->rasm->cur, res, s, len);
+	rz_return_if_fail(core->rasm);
+	const RzAsmPlugin *plugin = rz_asm_plugin_current(core->rasm);
+	autocmplt_bits_plugin(plugin, res, s, len);
 }
 
 static void autocmplt_flag_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -253,58 +253,54 @@ static void autocmplt_reg(RzCore *core, RzLineNSCompletionResult *res, const cha
 	}
 }
 
-static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
-	char *input = rz_str_ndup(s, len);
-	if (!input) {
-		return;
-	}
+static void autocmplt_file_folder_entries_cb(RzLineNSCompletionResult *res, const char *s, size_t len, RzCmdArgType arg_type) {
+	char *path_from_user = rz_str_ndup(s, len);
 
-	if (RZ_STR_ISEMPTY(input)) {
-		free(input);
-		input = strdup(".");
-	} else if (!rz_file_is_abspath(input) && !rz_str_startswith(input, ".")) {
-		const char *fmt = ".%s%s";
-#if __WINDOWS__
-		if (strchr(input, ':')) {
-			fmt = "%.0s%s";
-		}
-#endif
-		char *tmp = rz_str_newf(fmt, RZ_SYS_DIR, input);
-		free(input);
-		if (!tmp) {
-			return;
-		}
-		input = tmp;
-	}
-	char *einput = rz_path_home_expand(input);
-	free(input);
+	char *expanded_path = rz_path_normalize_expand(path_from_user, len);
+	free(path_from_user);
 
-	char *basedir = rz_file_dirname(einput);
-	const char *basename = rz_file_basename(einput + 1);
+	char *basedir = rz_file_dirname(expanded_path);
+	const char *basename = rz_file_basename(expanded_path + 1);
 #if __WINDOWS__
 	rz_str_replace_ch(basedir, '/', '\\', true);
 #endif
 
 	RzList *l = rz_sys_dir(basedir);
 	RzListIter *iter;
-	char *filename;
-	rz_list_foreach (l, iter, filename) {
-		if (!strcmp(filename, ".") || !strcmp(filename, "..")) {
+	char *file_or_folder_name;
+	rz_list_foreach (l, iter, file_or_folder_name) {
+		if (RZ_STR_EQ(file_or_folder_name, ".") || RZ_STR_EQ(file_or_folder_name, "..")) {
 			continue;
 		}
-		if (!strncmp(filename, basename, strlen(basename))) {
-			// TODO: only show/autocomplete the last part of the path, not the whole path
-			char *tmpfilename = rz_file_path_join(basedir, filename);
-			if (rz_file_is_directory(tmpfilename)) {
-				res->end_string = RZ_SYS_DIR;
+		char *tmp_filename_foldername = rz_file_path_join(basedir, file_or_folder_name);
+		if (arg_type == RZ_CMD_ARG_TYPE_FILE) {
+			if (!strncmp(file_or_folder_name, basename, strlen(basename))) {
+				if (rz_file_is_directory(tmp_filename_foldername)) {
+					res->end_string = RZ_SYS_DIR;
+				}
+				rz_line_ns_completion_result_add(res, tmp_filename_foldername);
 			}
-			rz_line_ns_completion_result_add(res, tmpfilename);
-			free(tmpfilename);
+		} else if (arg_type == RZ_CMD_ARG_TYPE_FOLDER) {
+			if (rz_str_startswith_icase(file_or_folder_name, basename)) {
+
+				if (rz_file_is_directory(tmp_filename_foldername)) {
+					rz_line_ns_completion_result_add(res, tmp_filename_foldername);
+				}
+			}
 		}
+		free(tmp_filename_foldername);
 	}
 	rz_list_free(l);
 	free(basedir);
-	free(einput);
+	free(expanded_path);
+}
+
+static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
+	autocmplt_file_folder_entries_cb(res, s, len, RZ_CMD_ARG_TYPE_FILE);
+}
+
+static void autocmplt_cmd_arg_folder(RzLineNSCompletionResult *res, const char *s, size_t len) {
+	autocmplt_file_folder_entries_cb(res, s, len, RZ_CMD_ARG_TYPE_FOLDER);
 }
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -312,7 +308,7 @@ static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, 
 	res->end_string = "";
 	for (env = rz_sys_get_environ(); *env; env++) {
 		const char *eq = strchr(*env, '=');
-		char *envkey = eq ? rz_str_ndup(*env, eq - *env) : strdup(*env);
+		char *envkey = eq ? rz_str_ndup(*env, eq - *env) : rz_str_dup(*env);
 		if (!strncmp(envkey, s, len)) {
 			rz_line_ns_completion_result_add(res, envkey);
 		}
@@ -555,6 +551,16 @@ static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *r
 			rz_line_ns_completion_result_add(res, bt->name);
 		}
 	}
+	RzConfig **plugin_cfg;
+	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
+	rz_iterator_foreach(it, plugin_cfg) {
+		rz_list_foreach ((*plugin_cfg)->nodes, iter, bt) {
+			if (!strncmp(bt->name, s, len)) {
+				rz_line_ns_completion_result_add(res, bt->name);
+			}
+		}
+	}
+	rz_iterator_free(it);
 }
 
 static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -738,6 +744,8 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	case RZ_CMD_ARG_TYPE_REG_TYPE:
 		autocmplt_cmd_arg_reg_type(core, cd, res, s, len);
 		break;
+	case RZ_CMD_ARG_TYPE_FOLDER:
+		autocmplt_cmd_arg_folder(res, s, len);
 	default:
 		break;
 	}
@@ -782,10 +790,10 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 
 /**
  * Fill the \p ad structure with all the data required to autocomplete a tmp
- * stmt (@, @(, @a:, etc.) or a iter stmt (@@, @@., @@i, etc.)
+ * op (@, @(, @a:, etc.) or an iter op (@@, @@., @@i, etc.)
  */
-static bool fill_autocmplt_data_at_stmt(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
-	return fill_autocmplt_data(ad, AUTOCMPLT_AT_STMT, start, end);
+static bool fill_autocmplt_data_at_op(struct autocmplt_data_t *ad, ut32 start, ut32 end) {
+	return fill_autocmplt_data(ad, AUTOCMPLT_AT_OP, start, end);
 }
 
 static bool find_autocmplt_type_newcmd_or_arg(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
@@ -826,7 +834,7 @@ static TSNode get_arg_parent(TSNode node) {
 	return node;
 }
 
-static bool is_arg_identifier_in_tmp_stmt(TSNode node) {
+static bool is_arg_identifier_in_at_op(TSNode node) {
 	if (!is_arg_type(ts_node_type(node))) {
 		return false;
 	}
@@ -835,11 +843,12 @@ static bool is_arg_identifier_in_tmp_stmt(TSNode node) {
 		return false;
 	}
 	const char *node_type = ts_node_type(node);
-	bool is_iter_or_tmp = rz_str_startswith(node_type, "tmp_") || rz_str_startswith(node_type, "iter_");
-	return is_iter_or_tmp && rz_str_endswith(node_type, "_stmt");
+	bool is_tmp = rz_str_startswith(node_type, "tmp_") && rz_str_endswith(node_type, "_op");
+	bool is_iter = rz_str_startswith(node_type, "iter_") && rz_str_endswith(node_type, "_stmt");
+	return is_tmp || is_iter;
 }
 
-static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
+static bool find_autocmplt_type_at_op(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf) {
 	bool res = false;
 	if (buf->index > 1 && buf->data[buf->index - 1] == '@' && buf->data[buf->index - 2] == '@') {
 		struct guess_data_t *g = guess_next_autocmplt_token(core, buf, "=a", 1);
@@ -851,8 +860,8 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 				start--;
 				node_start--;
 			}
-			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 3) {
-				res = fill_autocmplt_data_at_stmt(ad, start, node_end - 2);
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 3) {
+				res = fill_autocmplt_data_at_op(ad, start, node_end - 2);
 			}
 			guess_data_free(g);
 		}
@@ -861,8 +870,8 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
-			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 2) {
-				res = fill_autocmplt_data_at_stmt(ad, node_start - 2, node_end - 2);
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 2) {
+				res = fill_autocmplt_data_at_op(ad, node_start - 2, node_end - 2);
 			}
 			guess_data_free(g);
 		}
@@ -890,8 +899,8 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 		buf->data[buf->index - 1] = last_char;
 		buf->index = idx;
 		if (g) {
-			if (is_arg_identifier_in_tmp_stmt(g->node)) {
-				res = fill_autocmplt_data_at_stmt(ad, p - buf->data - 3, buf->index);
+			if (is_arg_identifier_in_at_op(g->node)) {
+				res = fill_autocmplt_data_at_op(ad, p - buf->data - 3, buf->index);
 			}
 			guess_data_free(g);
 		}
@@ -907,7 +916,7 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 		if (g) {
 			const char *node_type = ts_node_type(g->node);
 			if (!strcmp(node_type, "iter_dbta_stmt")) {
-				res = fill_autocmplt_data_at_stmt(ad, p - buf->data - 2, buf->index);
+				res = fill_autocmplt_data_at_op(ad, p - buf->data - 2, buf->index);
 			}
 			guess_data_free(g);
 		}
@@ -917,8 +926,8 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 		if (g) {
 			ut32 node_start = ts_node_start_byte(g->node);
 			ut32 node_end = ts_node_end_byte(g->node);
-			if (is_arg_identifier_in_tmp_stmt(g->node) && node_start > 3 && node_end > 2) {
-				res = fill_autocmplt_data_at_stmt(ad, node_start - 3, node_end - 2);
+			if (is_arg_identifier_in_at_op(g->node) && node_start > 3 && node_end > 2) {
+				res = fill_autocmplt_data_at_op(ad, node_start - 3, node_end - 2);
 			}
 			guess_data_free(g);
 		}
@@ -927,7 +936,7 @@ static bool find_autocmplt_type_at_stmt(struct autocmplt_data_t *ad, RzCore *cor
 }
 
 static bool find_autocmplt_type_at_stmt_op(struct autocmplt_data_t *ad, RzCore *core, RzLineBuffer *buf,
-	const char *tmp_op, const char *newtext, enum autocmplt_type_t ad_type) {
+	const char *at_op, const char *newtext, enum autocmplt_type_t ad_type) {
 	bool res = false;
 	struct guess_data_t *g = guess_next_autocmplt_token(core, buf, newtext, 0);
 	if (g) {
@@ -937,7 +946,7 @@ static bool find_autocmplt_type_at_stmt_op(struct autocmplt_data_t *ad, RzCore *
 		TSNode parent = get_arg_parent(g->node);
 		if (!ts_node_is_null(parent)) {
 			const char *parent_type = ts_node_type(parent);
-			if (!strcmp(node_type, "arg_identifier") && !strcmp(parent_type, tmp_op)) {
+			if (!strcmp(node_type, "arg_identifier") && !strcmp(parent_type, at_op)) {
 				res = fill_autocmplt_data(ad, ad_type, node_start, node_end - 1);
 			}
 		}
@@ -963,21 +972,21 @@ static bool find_autocmplt_type_quoted_arg(struct autocmplt_data_t *ad, RzCore *
 
 static bool find_autocmplt_type_arg_identifier(struct autocmplt_data_t *ad, RzCore *core, TSNode root, RzLineBuffer *buf, ut32 lstart, ut32 lend) {
 	TSNode parent = get_arg_parent(root);
-	if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_seek_stmt")) {
+	if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_seek_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fromto_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_RZNUM, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_arch_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_ARCH, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_bits_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_bits_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_BITS, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_file_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_file_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_FILE, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fs_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_fs_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_FLAG_SPACE, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_reg_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_reg_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_REG, lstart, lend);
-	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_eval_stmt")) {
+	} else if (!ts_node_is_null(parent) && !strcmp(ts_node_type(parent), "tmp_eval_op")) {
 		return fill_autocmplt_data(ad, AUTOCMPLT_EVAL_FULL, lstart, lend);
 	} else {
 		return fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
@@ -1038,21 +1047,21 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	} else if (find_autocmplt_type_quoted_arg(ad, core, buf, "'", "single_quoted_arg")) {
 		ad->res->end_string = "' ";
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_seek_stmt", "a", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_seek_op", "a", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fromto_stmt", "a b)", AUTOCMPLT_RZNUM)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fromto_op", "a b)", AUTOCMPLT_RZNUM)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_arch_stmt", "a", AUTOCMPLT_ARCH)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_arch_op", "a", AUTOCMPLT_ARCH)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_bits_stmt", "1", AUTOCMPLT_BITS)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_bits_op", "1", AUTOCMPLT_BITS)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_file_stmt", "a", AUTOCMPLT_FILE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_file_op", "a", AUTOCMPLT_FILE)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fs_stmt", "a", AUTOCMPLT_FLAG_SPACE)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_fs_op", "a", AUTOCMPLT_FLAG_SPACE)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_reg_stmt", "a", AUTOCMPLT_REG)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_reg_op", "a", AUTOCMPLT_REG)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_eval_stmt", "a", AUTOCMPLT_EVAL_FULL)) {
+	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "tmp_eval_op", "a", AUTOCMPLT_EVAL_FULL)) {
 		return true;
 	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_offsets_stmt", "a", AUTOCMPLT_RZNUM)) {
 		return true;
@@ -1064,7 +1073,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 		return true;
 	} else if (find_autocmplt_type_at_stmt_op(ad, core, buf, "iter_function_stmt", "a", AUTOCMPLT_FUNCTION)) {
 		return true;
-	} else if (find_autocmplt_type_at_stmt(ad, core, buf)) {
+	} else if (find_autocmplt_type_at_op(ad, core, buf)) {
 		return true;
 	}
 	return false;
@@ -1118,8 +1127,8 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLi
 		case AUTOCMPLT_CMD_ARG:
 			autocmplt_cmd_arg(core, ad.res, ad.cd, ad.i_arg, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
-		case AUTOCMPLT_AT_STMT:
-			autocmplt_at_stmt(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
+		case AUTOCMPLT_AT_OP:
+			autocmplt_at_op(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);
 			break;
 		case AUTOCMPLT_RZNUM:
 			autocmplt_cmd_arg_rznum(core, ad.res, buf->data + ad.res->start, ad.res->end - ad.res->start);

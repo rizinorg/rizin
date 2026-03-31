@@ -30,7 +30,7 @@
 # $ rizin -d /bin/true
 #
 
-FROM debian:10
+FROM debian:11
 
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
@@ -66,13 +66,13 @@ RUN apt-get install -y --no-install-recommends \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu}
 
-RUN pip3 install meson
+RUN pip3 install meson tomli
 
 # Build rizin in a volume to minimize space used by build
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+RUN meson setup --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
 	meson compile -C /tmp/build && \
 	meson install --destdir /tmp/rizin-install -C /tmp/build
 
@@ -85,7 +85,7 @@ RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/ri
 WORKDIR /tmp/rz-ghidra
 RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
 
-FROM debian:10
+FROM debian:11
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}

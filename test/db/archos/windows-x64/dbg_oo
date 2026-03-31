@@ -4,6 +4,5 @@ CMDS=<<EOF
 (reopen; ood > $_; doc > $_)
 4 .(reopen)
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

@@ -2,7 +2,7 @@ NAME=intreg $$
 FILE==
 CMDS=<<EOF
 s 10
-"ae $$,0,+"
+ae "$$,0,+"
 EOF
 EXPECT=<<EOF
 0xa
@@ -13,7 +13,7 @@ NAME=intreg $$
 FILE==
 CMDS=<<EOF
 s 10
-"ae 0,$$,+"
+ae "0,$$,+"
 EOF
 EXPECT=<<EOF
 0xa

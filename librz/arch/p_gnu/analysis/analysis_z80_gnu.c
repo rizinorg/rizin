@@ -408,7 +408,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	mbcram	.16	16	0\n"
 
 		"gpr	ime	.1	18	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

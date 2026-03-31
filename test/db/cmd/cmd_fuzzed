@@ -4,8 +4,7 @@ CMDS=<<EOF
 e scr.null=true
 ibbbbbbbk
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=AFL - crash #3
@@ -14,8 +13,7 @@ CMDS=<<EOF
 e scr.null =true
 .dd dd)ddd dddr{G
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=AFL - crash #4
@@ -24,8 +22,7 @@ CMDS=<<EOF
 e scr.null=true
 *455%R*:**************
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=AFL - crash #5
@@ -34,8 +31,7 @@ CMDS=<<EOF
 e scr.null =true
 (((((((,(*;(((($(($(((((*<((()(((d
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=AFL - crash #7
@@ -44,8 +40,7 @@ CMDS=<<EOF
 e scr.null =true
 22.22.22ddd d do@
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Escaping crash
@@ -54,8 +49,7 @@ CMDS=<<EOF
 e scr.null=true
 \
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=Escaping crash #2
@@ -64,6 +58,5 @@ CMDS=<<EOF
 e scr.null=true
 af \\
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

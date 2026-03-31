@@ -32,7 +32,7 @@ RZ_IPI RZ_OWN char *rz_core_visual_tab_string(RzCore *core, const char *kolor) {
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int scr_color = rz_config_get_i(core->config, "scr.color");
 	if (hex_cols < 4) {
-		return strdup("");
+		return rz_str_dup("");
 	}
 	int i = 0;
 	char *str = NULL;
@@ -236,7 +236,7 @@ RZ_IPI void rz_core_visual_closetab(RzCore *core) {
 	}
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
-		rz_list_delete_data(visual->tabs, tab);
+		rz_list_delete_val(visual->tabs, tab);
 		const int tabsCount = rz_list_length(visual->tabs);
 		if (tabsCount > 0) {
 			if (visual->tab > 0) {

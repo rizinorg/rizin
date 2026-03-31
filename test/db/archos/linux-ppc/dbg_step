@@ -1,0 +1,23 @@
+NAME=Step instruction
+FILE=bins/elf/ppc64le/dbg_basic_test
+ARGS=-a ppc -d
+CMDS=<<EOF
+db @ sym.calculate_sum
+dc
+dr r9
+dr r10
+7ds
+dr r9
+2ds
+dr r10
+2ds
+dr r9
+EOF
+EXPECT=<<EOF
+r9 = 0x0000000000000034
+r10 = 0x00000000000000c8
+r9 = 0x00000000000000c8
+r10 = 0x0000000000000034
+r9 = 0x00000000000000fc
+EOF
+RUN

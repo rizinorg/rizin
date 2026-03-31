@@ -1,4 +1,15 @@
-project('capstone', 'c', version: '5.0.1', meson_version: '>=0.55.0')
+project('capstone', 'c',
+  version: '5.0.1',
+  meson_version: '>=0.55.0',
+)
+
+cc = meson.get_compiler('c')
+
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c'])
+endif
 
 cs_files = [
   'arch/AArch64/AArch64BaseInfo.c',
@@ -76,7 +87,6 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_POWERPC',
   '-DCAPSTONE_HAS_SPARC',
   '-DCAPSTONE_HAS_SYSZ',
-  '-DCAPSTONE_HAS_X86',
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
   '-DCAPSTONE_HAS_TRICORE',

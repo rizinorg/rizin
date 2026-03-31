@@ -8,7 +8,7 @@ RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char sta
 	if (!p) {
 		return NULL;
 	}
-	p->path = strdup(path);
+	p->path = rz_str_dup(path);
 	p->pid = pid;
 	p->uid = uid;
 	p->status = status;
@@ -35,24 +35,6 @@ RZ_API int rz_debug_pid_parent(RzDebugPid *pid) {
 	// fork in child
 	return 0;
 }
-
-#if 0
-RZ_API int rz_debug_pid_del(struct rz_debug_t *dbg) {
-	// kill da child
-	return true;
-}
-
-/* threads */
-RZ_API int rz_debug_pid_add_thread(struct rz_debug_t *dbg) {
-	// create a thread in process
-	return true;
-}
-
-RZ_API int rz_debug_pid_del_thread(struct rz_debug_t *dbg) {
-	// kill a thread in process
-	return true;
-}
-#endif
 
 /* status */
 RZ_API int rz_debug_pid_set_state(struct rz_debug_t *dbg, int status) {

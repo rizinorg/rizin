@@ -14,7 +14,7 @@ RZ_API RZ_OWN RzDebugMap *rz_debug_map_new(RZ_NULLABLE char *name, ut64 begin, u
 	if (!map) {
 		return NULL;
 	}
-	map->name = strdup(name ? name : "");
+	map->name = rz_str_dup(name ? name : "");
 	map->addr = begin;
 	map->addr_end = end;
 	map->size = end - begin;

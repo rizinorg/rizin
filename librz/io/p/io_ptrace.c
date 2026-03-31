@@ -256,7 +256,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 	riop->pid = riop->tid = pid;
 	open_pidmem(riop);
-	desc = rz_io_desc_new(io, &rz_io_plugin_ptrace, file, rw | RZ_PERM_X, mode, riop);
+	desc = rz_io_desc_new(io, &rz_io_plugin_ptrace, file, rw | RZ_PERM_X, riop);
 	desc->name = rz_sys_pid_to_path(pid);
 
 	return desc;
@@ -305,7 +305,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strcmp(cmd, "help")) {
-		eprintf("Usage: R!cmd args\n"
+		eprintf("Usage: R!<cmd> [args]\n"
 			" R!ptrace   - use ptrace io\n"
 			" R!mem      - use /proc/pid/mem io if possible\n"
 			" R!pid      - show targeted pid\n"

@@ -288,6 +288,8 @@ typedef struct rz_pdb_t {
 	RzPdbOmapStream *s_omap;
 	RzPdbPeStream *s_pe;
 	RzPVector /*<PDBModuleInfo *>*/ *module_infos;
+	size_t RtlpHpHeapGlobalsOffset; ///< Related to windows heap
+	size_t RtlpLFHKeyOffset; ///< Related to windows heap
 } RzPdb;
 
 typedef struct {
@@ -372,8 +374,8 @@ RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_file(RZ_NONNULL const char *filename)
 RZ_API RZ_OWN RzPdb *rz_bin_pdb_parse_from_buf(RZ_NONNULL const RzBuffer *buf);
 RZ_API void rz_bin_pdb_free(RzPdb *pdb);
 RZ_API bool rz_pdb_all_symbols_foreach(
-	RZ_BORROW RZ_NONNULL const RzPdb *pdb,
-	RZ_BORROW RZ_NONNULL bool (*f)(const RzPdb *, const PDBSymbol *, void *),
+	RZ_BORROW RZ_NONNULL RzPdb *pdb,
+	RZ_BORROW RZ_NONNULL bool (*f)(RzPdb *, const PDBSymbol *, void *),
 	RZ_BORROW RZ_NULLABLE void *u);
 
 // TPI

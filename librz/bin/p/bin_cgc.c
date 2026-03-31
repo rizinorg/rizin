@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define RZ_BIN_CGC 1
-#include "bin_elf.inc"
+#include "../format/elf/elf_parser.h"
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 
@@ -11,6 +10,13 @@ static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
 	return r > SCGCMAG && !memcmp(tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
+}
+
+static RzStructuredData *cgc_info_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	ELFOBJ *bin = (ELFOBJ *)bf->o->bin_obj;
+	return elf_structure(bin);
 }
 
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
@@ -102,29 +108,32 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 
 RzBinPlugin rz_bin_plugin_cgc = {
 	.name = "cgc",
-	.desc = "CGC format rz_bin plugin",
+	.desc = "CGC (Cyber Grand Challenge)",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
-	.load_buffer = load_buffer,
+	.author = "ret2libc",
+	.get_sdb = &elf_get_sdb,
+
+	.load_buffer = elf_load_buffer,
 	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.boffset = &boffset,
-	.binsym = &binsym,
-	.entries = &entries,
-	.virtual_files = &virtual_files,
-	.maps = &maps,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
-	.info = &info,
-	.fields = &fields,
-	.size = &size,
-	.libs = &libs,
-	.relocs = &relocs,
+	.baddr = &elf_baddr,
+	.boffset = &elf_boffset,
+	.binsym = &elf_binsym,
+	.entries = &elf_entries,
+	.virtual_files = &elf_virtual_files,
+	.maps = &elf_maps,
+	.sections = &elf_sections,
+	.symbols = &elf_symbols,
+	.imports = &elf_imports,
+	.info = &elf_info,
+	.bin_structure = &cgc_info_structure,
+	.fields = &elf_fields,
+	.size = &elf_size,
+	.libs = &elf_libs,
+	.relocs = &elf_relocs,
 	.create = &create,
-	.file_type = get_file_type,
-	.regstate = regstate,
+	.file_type = elf_get_file_type,
+	.regstate = elf_regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
-	.destroy = destroy
+	.destroy = elf_destroy
 };

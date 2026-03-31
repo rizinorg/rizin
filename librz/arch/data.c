@@ -10,8 +10,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 	}
 
 	RzUtilStrScanOptions opt = {
-		.buf_size = size,
-		.max_uni_blocks = 4,
+		.max_str_length = size,
 		.min_str_length = 4,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
@@ -253,7 +252,7 @@ RZ_API RZ_OWN RzAnalysisData *rz_analysis_data(RZ_NONNULL RzAnalysis *analysis, 
 	ut64 dst = 0;
 	RzDetectedString *dstr = NULL;
 	bool big_endian = analysis->big_endian;
-	RzStrEnc encoding = RZ_STRING_ENC_GUESS;
+	RzStrEnc encoding = analysis->core ? analysis->coreb.cfggeti(analysis->core, "str.encoding") : RZ_STRING_ENC_GUESS;
 	int n = 0;
 	int bits = analysis->bits;
 	int word = wordsize > 0 ? wordsize : RZ_MIN(8, bits / 8);

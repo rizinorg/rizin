@@ -10,17 +10,13 @@
  * 	Frees the hashtables used for MMIO and extended
  * 	registers
  */
-RZ_API void rz_platform_profile_free(RzPlatformProfile *p) {
+RZ_API void rz_platform_profile_free(RZ_NULLABLE RzPlatformProfile *p) {
 	if (!p) {
 		return;
 	}
 	ht_up_free(p->registers_mmio);
 	ht_up_free(p->registers_extended);
 	free(p);
-}
-
-static void free_mmio_kv(HtUPKv *kv) {
-	free(kv->value);
 }
 
 /**
@@ -31,12 +27,12 @@ RZ_API RZ_OWN RzPlatformProfile *rz_platform_profile_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->registers_mmio = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
+	profile->registers_mmio = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!profile->registers_mmio) {
 		free(profile);
 		return NULL;
 	}
-	profile->registers_extended = ht_up_new((HtUPDupValue)strdup, free_mmio_kv, (HtUPCalcSizeV)strlen);
+	profile->registers_extended = ht_up_new((HtUPDupValue)rz_str_dup, free);
 	if (!profile->registers_extended) {
 		ht_up_free(profile->registers_mmio);
 		free(profile);
@@ -66,7 +62,7 @@ RZ_API RZ_OWN RzPlatformTarget *rz_platform_target_new() {
  *
  *	Frees the pointer to the SDB and the RzPlatformProfile
  */
-RZ_API void rz_platform_target_free(RzPlatformTarget *t) {
+RZ_API void rz_platform_target_free(RZ_NULLABLE RzPlatformTarget *t) {
 	if (!t) {
 		return;
 	}
@@ -103,14 +99,15 @@ static inline bool cpu_reload_needed(RzPlatformTarget *c, const char *cpu, const
 
 static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
-	SdbKv *kv;
-	SdbListIter *iter;
+
 	RzPlatformProfile *c = rz_platform_profile_new();
 	if (!c) {
 		return false;
 	}
-	SdbList *l = sdb_foreach_list(sdb, false);
-	ls_foreach (l, iter, kv) {
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_key(kv), "PC")) {
 			c->pc = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "EEPROM_SIZE")) {
@@ -131,21 +128,21 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 			c->ram_size = rz_num_math(NULL, sdbkv_value(kv));
 		}
 		if (!strcmp(sdbkv_value(kv), "io")) {
-			char *io_name = sdbkv_key(kv);
+			const char *io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", io_name);
-			ut64 io_address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 io_address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
-			ht_up_insert(c->registers_mmio, io_address, io_name);
+			ht_up_insert(c->registers_mmio, io_address, (char *)io_name);
 		}
 		if (!strcmp(sdbkv_value(kv), "ext_io")) {
-			char *ext_io_name = sdbkv_key(kv);
+			const char *ext_io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", ext_io_name);
-			ut64 ext_io_address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 ext_io_address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
-			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
+			ht_up_insert(c->registers_extended, ext_io_address, (char *)ext_io_name);
 		}
 	}
-	ls_free(l);
+	rz_pvector_free(items);
 	rz_platform_profile_free(t->profile);
 	t->profile = c;
 	return true;
@@ -165,48 +162,12 @@ static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzPlatformTarget *t, const 
  * \param t reference to RzPlatformTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_platform_load_profile_sdb(RzPlatformTarget *t, const char *path) {
+RZ_API bool rz_platform_load_profile_sdb(RZ_NONNULL RzPlatformTarget *t, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(t && path, false);
 	if (!rz_file_exists(path)) {
 		return false;
 	}
 	return sdb_load_arch_profile_by_path(t, path);
-}
-
-static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
-	RzList *files = rz_sys_dir(cpu_dir);
-	if (!files) {
-		return false;
-	}
-	RzListIter *it;
-	char *filename = NULL;
-	char *arch_cpu = NULL;
-
-	rz_list_foreach (files, it, filename) {
-		char *cpu_name = NULL;
-		if (!strcmp(filename, "..") || !strcmp(filename, "..")) {
-			continue;
-		}
-		arch_cpu = rz_str_ndup(filename, strlen(filename) - 4);
-		if (!arch_cpu) {
-			continue;
-		}
-		cpu_name = strchr(arch_cpu, '-');
-		if (!cpu_name) {
-			free(arch_cpu);
-			continue;
-		}
-		cpu_name[0] = '\0';
-		if (!strcmp(cpu_name + 1, cpu)) {
-			rz_list_free(files);
-			free(arch_cpu);
-			return true;
-		}
-
-		free(arch_cpu);
-	}
-
-	rz_list_free(files);
-	return false;
 }
 
 /**
@@ -218,28 +179,34 @@ static bool is_cpu_valid(const char *cpu_dir, const char *cpu) {
  * \param arch reference to the selected architecture (value of `asm.arch`)
  * \param cpus_dir reference to the directory containing cpu files
  */
-RZ_API bool rz_platform_profiles_init(RzPlatformTarget *t, const char *cpu, const char *arch, const char *cpus_dir) {
+RZ_API bool rz_platform_profiles_init(RZ_NULLABLE RzPlatformTarget *t, RZ_NULLABLE const char *cpu, RZ_NULLABLE const char *arch, RZ_NULLABLE const char *cpus_dir) {
+	if (!t || !arch || !cpu || !cpus_dir) {
+		return false;
+	}
 	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
-	if (!cpus_dir || !arch || !cpu) {
-		return false;
+
+	if (cpu && RZ_STR_EQ(cpu, "avr")) {
+		cpu = "ATmega8";
 	}
+
+	if (t->arch && RZ_STR_EQ(t->arch, arch) &&
+		t->cpu && RZ_STR_EQ(t->cpu, cpu)) {
+		// already loaded.
+		return true;
+	}
+
 	char buf[50];
 	char *path = rz_file_path_join(cpus_dir, rz_strf(buf, "%s-%s.sdb", arch, cpu));
 	if (!path) {
 		return false;
 	}
-	if (!is_cpu_valid(cpus_dir, cpu)) {
-		if (!strcmp(arch, "avr")) {
-			free(path);
-			path = rz_file_path_join(cpus_dir, "avr-ATmega8.sdb");
-		}
-	}
+
 	free(t->cpu);
 	free(t->arch);
-	t->cpu = strdup(cpu);
-	t->arch = strdup(arch);
+	t->cpu = rz_str_dup(cpu);
+	t->arch = rz_str_dup(arch);
 	rz_platform_load_profile_sdb(t, path);
 	free(path);
 	return true;

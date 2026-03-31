@@ -21,35 +21,42 @@
 #define RZ_BIN_ELF_PART_RELRO 1
 #define RZ_BIN_ELF_FULL_RELRO 2
 
+/**
+ * \brief This is the minimum number of bytes required for a functional ELF header.
+ * Empirically it was determined in:
+ * https://www.muppetlabs.com/~breadbox/software/tiny/teensy.html
+ */
+#define RZ_BIN_ELF_TINY_SIZE 45
+
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
 #define rz_bin_elf_foreach_segments(bin, segment) \
 	if (Elf_(rz_bin_elf_has_segments)(bin)) \
-	rz_vector_foreach((bin)->segments, segment)
+		rz_vector_foreach ((bin)->segments, segment)
 
 #define rz_bin_elf_foreach_sections(bin, section) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
-	rz_vector_foreach((bin)->sections, section)
+		rz_vector_foreach ((bin)->sections, section)
 
 #define rz_bin_elf_enumerate_sections(bin, section, i) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
-	rz_vector_enumerate((bin)->sections, section, i)
+		rz_vector_enumerate ((bin)->sections, section, i)
 
 #define rz_bin_elf_foreach_relocs(bin, reloc) \
 	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
-	rz_vector_foreach((bin)->relocs, reloc)
+		rz_vector_foreach ((bin)->relocs, reloc)
 
 #define rz_bin_elf_foreach_notes_segment(bin, notes) \
 	if (Elf_(rz_bin_elf_has_notes)(bin)) \
-	rz_vector_foreach((bin)->notes, notes)
+		rz_vector_foreach ((bin)->notes, notes)
 
 #define rz_bin_elf_foreach_symbols(bin, symbol) \
 	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
-	rz_vector_foreach(bin->symbols, symbol)
+		rz_vector_foreach (bin->symbols, symbol)
 
 #define rz_bin_elf_foreach_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
-	rz_vector_foreach(bin->imports, import)
+		rz_vector_foreach (bin->imports, import)
 
 struct gnu_hash_table { // DT_GNU_HASH
 	Elf_(Word) nbuckets;
@@ -112,23 +119,22 @@ typedef struct prstatus_layout_t {
 } RzBinElfPrStatusLayout;
 
 typedef struct rz_bin_elf_section_t {
-	ut32 flags;
-	ut32 info;
-	ut32 link;
-	ut32 type;
-	ut64 align;
-	ut64 offset;
-	ut64 rva;
-	ut64 size;
-	char *name;
-	bool is_valid;
+	ut32 flags; ///< sh_flags: One bit flags.
+	ut32 info; ///< sh_info: Section dependent additional information.
+	ut32 link; ///< sh_link: This member holds a section header table index link.
+	ut32 type; ////< sh_type: The section type.
+	ut64 align; ///< sh_align: The section alignment.
+	ut64 offset; ///< sh_offset: The offset into the binary where the section starts.
+	ut64 rva; ///< sh_addr: The section base virtual address.
+	ut64 size; ///< sh_size: Size of the section in bytes.
+	char *name; ///< sh_name: Section name.
+	bool is_valid; ///< True if section is valid. False if information is inconsistent.
 } RzBinElfSection;
 
 typedef struct Elf_(rz_bin_elf_segment_t) {
 	Elf_(Phdr) data;
 	bool is_valid;
-}
-RzBinElfSegment;
+} RzBinElfSegment;
 
 typedef struct rz_bin_elf_symbol_t {
 	ut64 paddr;
@@ -147,10 +153,15 @@ typedef struct rz_bin_elf_reloc_t {
 	st64 addend; ///< exact addend value taken from the ELF, meaning depends on type
 	ut64 offset; ///< exact offset value taken from the ELF, meaning depends on the binary type
 	ut64 paddr; ///< absolute paddr in the file, calculated from offset, or UT64_MAX if no such addr exists
-	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
+	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset. This is the address the patch is applied.
 	ut64 target_vaddr; ///< after patching, the target that this reloc points to
 	ut16 section;
+	ut64 info; ///< The r_info field from Elf32_Rel/ELF32_Rela/ELF64_Rel/ELF64_Rela.
 	ut64 sto;
+	/**
+	 * \brief Sparc specific ELF relocation value.
+	 */
+	ut64 sparc_secondary_addend;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
@@ -161,10 +172,12 @@ typedef struct Elf_(rz_bin_elf_note_file_t) {
 	Elf_(Addr) end_vaddr;
 	Elf_(Addr) file_off;
 	char *file;
-}
-RzBinElfNoteFile;
+} RzBinElfNoteFile;
 
-/// Parsed PT_NOTE of type NT_PRSTATUS
+/**
+ * \brief Parsed PT_NOTE of type NT_PRSTATUS.
+ * This struct is also used by the NT_OPENBSD_*REG notes.
+ */
 typedef struct rz_bin_elf_note_prstatus_t {
 	size_t regstate_size;
 	ut8 *regstate;
@@ -178,10 +191,21 @@ typedef struct Elf_(rz_bin_elf_note_t) {
 		RzBinElfNoteFile file; //< for type == NT_FILE
 		RzBinElfNotePrStatus prstatus; //< for type = NT_PRSTATUS
 	};
-}
-RzBinElfNote;
+} RzBinElfNote;
 
 typedef struct rz_bin_elf_strtab RzBinElfStrtab;
+
+#define RZ_BIN_ELF_DEFAULT_BADDR_RELOC 0x08000000
+
+typedef struct Elf_(rz_bin_elf_context_t) {
+	Elf_(Addr) got_addr; // DT_PLTGOT
+	Elf_(Addr) jmprel; // DT_JMPREL
+	Elf_(Addr) pltrelsz; // DT_PLTRELSZ
+	Elf_(Addr) mips_got_addr; // DT_MIPS_PLTGOT
+
+	RzBinElfSection *plt_got; // .plt.got section
+	RzBinElfSection *plt_sec; // .plt.sec section
+} RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	RzBuffer *b;
@@ -201,6 +225,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	Elf_(Ehdr) ehdr;
 
+	RzElfCtx *elfctx;
 	RzVector /*<RzBinElfSegment>*/ *segments; // should be use with elf_segments.c
 	RzVector /*<RzBinElfSection>*/ *sections; // should be use with elf_sections.c
 
@@ -220,7 +245,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 // elf.c
 RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, RZ_NONNULL RzBinObjectLoadOptions *options);
-void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
+void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
@@ -260,7 +285,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_e_shstrndx_as_string)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_e_type_as_string)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_e_version_as_string)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_get_ehdr)(RZ_NONNULL ELFOBJ *bin);
-bool Elf_(rz_bin_elf_print_ehdr)(ELFOBJ *bin, RZ_NONNULL PrintfCallback cb);
+RzStructuredData *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin);
 
 // elf_hash.c
 bool Elf_(rz_bin_elf_get_gnu_hash_table)(RZ_NONNULL ELFOBJ *bin, RzBinElfGnuHashTable *result);
@@ -300,7 +325,7 @@ bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nobtcfi)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin, RZ_NULLABLE RzBinObjectLoadOptions *opts);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin);
@@ -309,6 +334,7 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_notes.c
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_regset_layout)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) n_type);
 RZ_OWN RzVector /*<RzVector<RzBinElfNote>>*/ *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 
@@ -341,6 +367,15 @@ RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFO
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin);
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_relocs_patching.c
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL);
+RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id);
+
+// elf_relocs_conversion.c
+RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *elf_symbol);
+RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *elf_symbol);
+RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 GOT);
 
 // elf_segments.c
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);

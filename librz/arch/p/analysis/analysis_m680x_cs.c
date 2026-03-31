@@ -12,15 +12,17 @@ static int m680xmode(const char *str) {
 		return CS_MODE_M680X_6800;
 	}
 	// replace this with the asm.features?
-	if (str && strstr(str, "6800")) {
+	if (str && (strstr(str, "6800") || strstr(str, "6802") || strstr(str, "6808"))) {
 		return CS_MODE_M680X_6800;
 	}
-	if (str && strstr(str, "6801")) {
+	if (str && (strstr(str, "6801") || strstr(str, "6803"))) {
 		return CS_MODE_M680X_6801;
 	} else if (str && strstr(str, "6805")) {
 		return CS_MODE_M680X_6805;
-	} else if (str && strstr(str, "6808")) {
+	} else if (str && strstr(str, "68HC08")) {
 		return CS_MODE_M680X_6808;
+	} else if (strstr(str, "6808")) {
+		return CS_MODE_M680X_6800;
 	} else if (str && strstr(str, "6809")) {
 		return CS_MODE_M680X_6809;
 	} else if (str && strstr(str, "6811")) {
@@ -524,7 +526,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"
 		"gpr	a1	.16	48	0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static bool m680x_analysis_fini(void *user) {

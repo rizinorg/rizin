@@ -15,7 +15,6 @@ commands:
     type: RZ_CMD_DESC_TYPE_ARGV_STATE
     modes:
       - RZ_OUTPUT_MODE_STANDARD
-      - RZ_OUTPUT_MODE_RIZIN
     args: []
   - name: "(-"
     cname: macros_remove

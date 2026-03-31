@@ -2,7 +2,7 @@ NAME=sidbug1
 FILE=bins/other/pvm2-indiecito.sid
 CMDS=/x 01010102
 EXPECT=<<EOF
-0x000011fe hit0_0 01010102
+0x000011fe 4 hit.bytes.0
 EOF
 RUN
 
@@ -17,6 +17,6 @@ wx 0101010102
 /x 01010102
 EOF
 EXPECT=<<EOF
-0x00000001 hit0_0 01010102
+0x00000001 4 hit.bytes.0
 EOF
 RUN

@@ -1,0 +1,8 @@
+[wrap-git]
+url = https://github.com/rizinorg/softfloat
+revision = 537d18e71a51aea70f6b54334854f7014c6458c7
+directory = softfloat
+depth = 1
+
+[provide]
+softfloat=softfloat_dep

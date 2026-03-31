@@ -13,7 +13,7 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
 		bool found = false;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			if (acc->offset == (st64)k) {
 				found = true;
 				break;
@@ -31,7 +31,7 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			RzPVector *iaccs = ht_up_find(fcn->inst_vars, acc->offset, NULL);
 			mu_assert("var refs instr but instr does not ref var", rz_pvector_contains(iaccs, var));
 		}
@@ -61,7 +61,7 @@ static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, RzAnalysisVarStorage 
 }
 
 bool test_rz_analysis_var() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
@@ -224,7 +224,7 @@ bool test_rz_analysis_var() {
 }
 
 bool test_rz_analysis_function_get_stack_var_in() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 
@@ -288,7 +288,7 @@ bool test_rz_analysis_function_get_stack_var_in() {
 }
 
 bool test_rz_analysis_function_var_expr_for_reg_access_at() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
 	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);

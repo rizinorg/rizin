@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_sha1 = {
 	.name = "sha1",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "SHA-1 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_sha1_context_new,
 	.context_free = plugin_sha1_context_free,

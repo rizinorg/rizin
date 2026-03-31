@@ -1,8 +1,7 @@
 NAME=PE: corkami normal.exe - open
 FILE=bins/pe/normal.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami normal.exe - bits 32

@@ -12,7 +12,7 @@ static int null_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 }
 
 static char *null_get_reg_profile(RzAnalysis *analysis) {
-	return strdup("");
+	return rz_str_dup("");
 }
 
 RzAnalysisPlugin rz_analysis_plugin_null = {

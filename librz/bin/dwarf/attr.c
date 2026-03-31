@@ -134,7 +134,7 @@ RZ_IPI bool RzBinDwarfAttr_parse(
 	/// offset into .debug_str_offsets section
 	case DW_FORM_strx:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
-		RET_FALSE_IF_FAIL(R_read_offset(R, &value->u64, is_64bit));
+		ULE128_OR_RET_FALSE(value->u64);
 		break;
 	case DW_FORM_strx1:
 		value->kind = RzBinDwarfAttr_StrOffsetIndex;
@@ -232,7 +232,7 @@ RZ_API const char *rz_bin_dwarf_attr_string(
 	} else if (v->kind == RzBinDwarfAttr_StrOffsetIndex && dw) {
 		orig = rz_bin_dwarf_str_offsets_get(dw->str, dw->str_offsets, str_offsets_base, v->u64);
 	} else if (v->kind == RzBinDwarfAttr_LineStrRef && dw) {
-		orig = rz_bin_dwarf_line_str_get(dw->line_str, v->u64);
+		orig = rz_bin_dwarf_line_str_get(rz_bin_dwarf_line_str(dw), v->u64);
 	}
 	return orig;
 }
@@ -265,11 +265,11 @@ RZ_API void rz_bin_dwarf_attr_dump(
 
 	switch (attr->at) {
 	case DW_AT_language:
-		rz_strbuf_append(sb, rz_bin_dwarf_lang(attr->value.u64));
+		rz_strbuf_append(sb, rz_str_get_null(rz_bin_dwarf_lang(attr->value.u64)));
 		rz_strbuf_append(sb, ", raw: ");
 		break;
 	case DW_AT_encoding:
-		rz_strbuf_append(sb, rz_bin_dwarf_ate(attr->value.u64));
+		rz_strbuf_append(sb, rz_str_get_null(rz_bin_dwarf_ate(attr->value.u64)));
 		rz_strbuf_append(sb, ", raw: ");
 		break;
 	default: break;

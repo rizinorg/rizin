@@ -13,33 +13,30 @@
 
 #include "rz_io_plugins.h"
 
-typedef struct {
-	libgdbr_t desc;
-} RzIOGdb;
-
 #define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
 static int __close(RzIODesc *fd);
-static libgdbr_t *desc = NULL;
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
 	return (!strncmp(file, "gdb://", 6));
 }
 
-static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
-	if (sz < 1 || addr >= UT64_MAX || !desc) {
+static int debug_gdb_read_at(RzIODesc *fd, ut8 *buf, int sz, ut64 addr) {
+	if (sz < 1 || addr >= UT64_MAX || !fd || !fd->data) {
 		return -1;
 	}
+	libgdbr_t *desc = fd->data;
 	return gdbr_read_memory(desc, addr, buf, sz);
 }
 
-static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_write_at(RzIODesc *fd, const ut8 *buf, int sz, ut64 addr) {
 	ut32 x, size_max;
 	ut32 packets;
 	ut32 last;
-	if (sz < 1 || addr >= UT64_MAX || !desc) {
+	if (sz < 1 || addr >= UT64_MAX || !fd || !fd->data) {
 		return -1;
 	}
+	libgdbr_t *desc = fd->data;
 	size_max = desc->read_max;
 	packets = sz / size_max;
 	last = sz % size_max;
@@ -55,7 +52,7 @@ static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	RzIODesc *riogdb = NULL;
-	RzIOGdb *riog;
+	libgdbr_t *desc = NULL;
 	char host[128], *port, *pid;
 	int i_port = -1;
 	bool isdev = false;
@@ -102,15 +99,12 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		i_port = atoi(port);
 	}
 
-	if (!(riog = RZ_NEW0(RzIOGdb))) {
-		return NULL;
-	}
-	gdbr_init(&riog->desc, false);
+	desc = RZ_NEW(libgdbr_t);
+	gdbr_init(desc, false);
 
-	if (gdbr_connect(&riog->desc, host, i_port) == 0) {
+	if (gdbr_connect(desc, host, i_port) == 0) {
 		__close(NULL);
 		// RZ_FREE (desc);
-		desc = &riog->desc;
 		if (pid > 0) { // FIXME this is here for now because RzDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
 			if (gdbr_attach(desc, i_pid) < 0) {
@@ -120,24 +114,30 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = rz_io_desc_new(io, &rz_io_plugin_gdb, file, RZ_PERM_RWX, mode, riog);
+		riogdb = rz_io_desc_new(io, &rz_io_plugin_gdb, file, RZ_PERM_RWX, desc);
 	}
 	// Get name
 	if (riogdb) {
 		riogdb->name = gdbr_exec_file_read(desc, i_pid);
 	} else {
 		eprintf("gdb.io.open: Cannot connect to host.\n");
-		free(riog);
+		gdbr_disconnect(desc);
+		gdbr_cleanup(desc);
+		RZ_FREE(desc);
 	}
 	return riogdb;
 }
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	ut64 addr = io->off;
-	if (!desc || !desc->data) {
+	if (!fd || !fd->data) {
 		return -1;
 	}
-	return debug_gdb_write_at(buf, count, addr);
+	libgdbr_t *desc = fd->data;
+	if (!desc->data) {
+		return -1;
+	}
+	return debug_gdb_write_at(fd, buf, count, addr);
 }
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
@@ -158,26 +158,30 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!io || !fd || !buf || count < 1) {
 		return -1;
 	}
+	libgdbr_t *desc = fd->data;
 	memset(buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc || !desc->data) {
 		return -1;
 	}
-	return debug_gdb_read_at(buf, count, addr);
+	return debug_gdb_read_at(fd, buf, count, addr);
 }
 
 static int __close(RzIODesc *fd) {
-	if (fd) {
-		RZ_FREE(fd->name);
+	if (!fd) {
+		return 0;
 	}
+	libgdbr_t *desc = fd->data;
 	gdbr_disconnect(desc);
 	gdbr_cleanup(desc);
 	RZ_FREE(desc);
+	RZ_FREE(fd->name);
 	return -1;
 }
 
 static int __getpid(RzIODesc *fd) {
 	// XXX don't use globals
+	libgdbr_t *desc = fd->data;
 	return desc ? desc->pid : -1;
 #if 0
 	// dupe for ? rz_io_desc_get_pid (desc);
@@ -196,6 +200,7 @@ static int __getpid(RzIODesc *fd) {
 }
 
 static int __gettid(RzIODesc *fd) {
+	libgdbr_t *desc = fd->data;
 	return desc ? desc->tid : -1;
 }
 
@@ -203,14 +208,14 @@ extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
-	if (!desc) {
+	if (!fd || !fd->data) {
 		return NULL;
 	}
 	if (!*cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp(cmd, "help")) {
-		eprintf("Usage: R!cmd args\n"
+		eprintf("Usage: R!<cmd> [args]\n"
 			" R!pid             - show targeted pid\n"
 			" R!pkt s           - send packet 's'\n"
 			" R!rd              - show reverse debugging availability\n"
@@ -226,6 +231,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			" current/specified pid\n");
 		return NULL;
 	}
+	libgdbr_t *desc = fd->data;
 	if (rz_str_startswith(cmd, "pktsz")) {
 		const char *ptr = rz_str_trim_head_ro(cmd + 5);
 		if (!isdigit((ut8)*ptr)) {

@@ -87,7 +87,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			}
 			riop->pid = pid;
 			riop->fd = fd;
-			RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_procpid, file, true, 0, riop);
+			RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_procpid, file, true, riop);
 			d->name = rz_sys_pid_to_path(riop->pid);
 			return d;
 		}

@@ -47,7 +47,7 @@ static bool check_buffer(RzBuffer *b) {
 #endif
 }
 
-// TODO RzBufferify
+// TODO RzBufferify
 static RzList /*<RzBinXtrData *>*/ *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	// extract dos componenent first
 	RzBinXtrData *data = oneshot(bin, buf, size, SUB_BIN_DOS);
@@ -105,7 +105,7 @@ static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_
 
 RzBinXtrPlugin rz_bin_xtr_plugin_pemixed = {
 	.name = "xtr.pemixed",
-	.desc = "Extract sub-binaries in PE files",
+	.desc = "PE mixed binary extractor",
 	.load = NULL, // not yet implemented
 	.extract = NULL, // not yet implemented
 	.extractall = NULL, // not yet implemented

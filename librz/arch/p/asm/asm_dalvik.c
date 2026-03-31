@@ -3,16 +3,14 @@
 // SPDX-FileCopyrightText: 2009-2019 h4ng3r
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
-
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rz_return_val_if_fail(a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int)buf[0];
@@ -20,7 +18,6 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char str[1024], *strasm = NULL;
 	ut64 offset = 0;
 	char *flag_str = NULL;
-	a->dataalign = 2;
 
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
@@ -73,7 +70,7 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	strasm = NULL;
 	if (size <= len) {
-		strasm = strdup(dalvik_opcodes[i].name);
+		strasm = rz_str_dup(dalvik_opcodes[i].name);
 		size = dalvik_opcodes[i].len;
 		switch (dalvik_opcodes[i].fmt) {
 		case fmtop: break;
@@ -333,17 +330,18 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
-		case fmtopvAAtBBBBBBBB:
+		case fmtopvAAtBBBBBBBB: {
 			vA = (int)buf[1];
-			vB = (int)(buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
+			ut32 vB = (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
 			offset = RZ_ASM_GET_OFFSET(a, 's', vB);
 			if (offset == UT64_MAX) {
-				rz_strf(str, " v%i, string+%i", vA, vB);
+				rz_strf(str, " v%i, string+%u", vA, vB);
 			} else {
 				rz_strf(str, " v%i, 0x%" PFMT64x, vA, offset);
 			}
 			strasm = rz_str_append(strasm, str);
 			break;
+		}
 		case fmtopvCCCCmBBBB:
 			vA = (int)buf[1];
 			vB = (buf[3] << 8) | buf[2];
@@ -525,22 +523,19 @@ static int dalvik_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 }
 
 // TODO
-static int dalvik_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	int i;
-	char *p = strchr(buf, ' ');
-	if (p) {
-		*p = 0;
-	}
-	// TODO: use a hashtable here
-	for (i = 0; i < 256; i++) {
-		if (!strcmp(dalvik_opcodes[i].name, buf)) {
-			ut8 buf[4];
-			rz_write_ble32(buf, i, a->big_endian);
-			rz_strbuf_setbin(&op->buf, buf, sizeof(buf));
-			op->size = dalvik_opcodes[i].len;
-			return op->size;
+static int dalvik_assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
+	ut8 temp[4];
+	for (ut32 i = 0; i < 256; i++) {
+		if (strcmp(dalvik_opcodes[i].name, buf)) {
+			continue;
 		}
+
+		rz_write_ble32(temp, i, a->big_endian);
+		rz_strbuf_setbin(&op->buf, temp, sizeof(temp));
+		op->size = dalvik_opcodes[i].len;
+		return op->size;
 	}
+
 	return 0;
 }
 
@@ -548,7 +543,7 @@ RzAsmPlugin rz_asm_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
 	.license = "LGPL3",
-	.desc = "AndroidVM Dalvik",
+	.desc = "Dalvik (Android VM) bytecode disassembler",
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &dalvik_disassemble,

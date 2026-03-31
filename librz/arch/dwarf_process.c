@@ -8,13 +8,6 @@
 #include <rz_bin_dwarf.h>
 #include <string.h>
 
-#define Ht_FREE_IMPL(V, T, f) \
-	static void Ht##V##_##T##_free(Ht##V##Kv *kv) { \
-		if (!kv) \
-			return; \
-		f(kv->value); \
-	}
-
 typedef struct {
 	char *c_str;
 	ut64 length;
@@ -28,8 +21,6 @@ static void String_free(String *str) {
 	free(str);
 }
 
-Ht_FREE_IMPL(UP, String, String_free);
-
 typedef struct dwarf_context_t {
 	RzAnalysis *analysis;
 	RzBinDwarfCompUnit *unit;
@@ -41,7 +32,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size,
-	RZ_BORROW RZ_IN RZ_NONNULL SetU *visited);
+	RZ_BORROW RZ_IN RZ_NONNULL RzSetU *visited);
 
 static RZ_OWN RzType *type_parse_from_offset(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
@@ -477,7 +468,8 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 }
 
 #define KASE(_num, _reg) \
-	case _num: return #_reg;
+	case _num: \
+		return #_reg;
 
 #include <arm/arm_dwarf_regnum_table.h>
 #include <hexagon/hexagon_dwarf_reg_num_table.inc>
@@ -488,6 +480,9 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #include <sh/sh_dwarf_regnum_table.h>
 #include <tricore/tricore_dwarf_regnum_table.h>
 #include <x86/x86_dwarf_regnum_table.h>
+#include <xtensa/xtensa_dwarf_regnum_table.h>
+#include <alpha/alpha_dwarf_regnum_table.h>
+#include <h8300/h8300_dwarf_regnum_table.h>
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -495,7 +490,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
  * \param bits The architecture bitness
  * \return The function that maps a DWARF register number to a register name
  */
-static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch, int bits) {
+static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char *arch, int bits) {
 	if (RZ_STR_EQ(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg;
@@ -555,6 +550,20 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL char *arch,
 	if (RZ_STR_EQ(arch, "rx")) {
 		return map_dwarf_reg_to_rx_reg;
 	}
+	if (RZ_STR_EQ(arch, "xtensa")) {
+		return xtensa_register_name;
+	}
+	if (RZ_STR_EQ(arch, "alpha")) {
+		return map_dwarf_reg_to_alpha_reg;
+	}
+
+	if (RZ_STR_EQ(arch, "h8300")) {
+		return h8300_register_name;
+	}
+	if (RZ_STR_EQ(arch, "h8300h")) {
+		return h8300h_register_name;
+	}
+
 	RZ_LOG_ERROR("No DWARF register mapping function defined for %s %d bits\n", arch, bits);
 	return map_dwarf_register_dummy;
 }
@@ -717,7 +726,7 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 	}
 
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_specification: {
 			RzBinDwarfDie *decl = ht_up_find(ctx->dw->info->die_by_offset, rz_bin_dwarf_attr_udata(attr), NULL);
@@ -762,10 +771,11 @@ static RzBaseType *RzBaseType_from_die(DwContext *ctx, const RzBinDwarfDie *die)
 			btype->name, die->offset);
 	}
 
-	RzPVector *btypes = ht_pp_find(ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
+	RzPVector *btypes = ht_sp_find(
+		ctx->analysis->debug_info->base_types_by_name, btype->name, NULL);
 	if (!btypes) {
 		btypes = rz_pvector_new(NULL);
-		ht_pp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
+		ht_sp_insert(ctx->analysis->debug_info->base_types_by_name, btype->name, btypes);
 		rz_pvector_push(btypes, btype);
 	} else {
 		void **it;
@@ -803,7 +813,7 @@ static ut64 array_count_parse(DwContext *ctx, RzBinDwarfDie *die) {
 			continue;
 		}
 		RzBinDwarfAttr *attr;
-		rz_vector_foreach(&child_die->attrs, attr) {
+		rz_vector_foreach (&child_die->attrs, attr) {
 			switch (attr->at) {
 			case DW_AT_upper_bound:
 			case DW_AT_count:
@@ -831,7 +841,7 @@ static RzType *type_parse_from_die_internal(
 	RzBinDwarfDie *die,
 	bool allow_void,
 	RZ_NULLABLE ut64 *size,
-	RZ_NONNULL SetU *visited) {
+	RZ_NONNULL RzSetU *visited) {
 	RzBinDwarfAttr *attr = rz_bin_dwarf_die_get_attr(die, DW_AT_type);
 	if (!attr) {
 		if (!allow_void) {
@@ -876,16 +886,16 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size,
-	RZ_BORROW RZ_IN RZ_NONNULL SetU *visited) {
+	RZ_BORROW RZ_IN RZ_NONNULL RzSetU *visited) {
 	RzType *type = ht_up_find(ctx->analysis->debug_info->type_by_offset, offset, NULL);
 	if (type) {
 		return rz_type_clone(type);
 	}
 
-	if (set_u_contains(visited, offset)) {
+	if (rz_set_u_contains(visited, offset)) {
 		return NULL;
 	}
-	set_u_add(visited, offset);
+	rz_set_u_add(visited, offset);
 
 	RzBinDwarfDie *die = ht_up_find(ctx->dw->info->die_by_offset, offset, NULL);
 	if (!die) {
@@ -1027,7 +1037,7 @@ static RZ_OWN RzType *type_parse_from_offset_internal(
 	}
 
 end:
-	set_u_delete(visited, offset);
+	rz_set_u_delete(visited, offset);
 	return type;
 }
 
@@ -1035,12 +1045,12 @@ static RZ_OWN RzType *type_parse_from_offset(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	ut64 offset,
 	RZ_BORROW RZ_OUT RZ_NULLABLE ut64 *size) {
-	SetU *visited = set_u_new();
+	RzSetU *visited = rz_set_u_new();
 	if (!visited) {
 		return NULL;
 	}
 	RzType *type = type_parse_from_offset_internal(ctx, offset, size, visited);
-	set_u_free(visited);
+	rz_set_u_free(visited);
 	if (!type) {
 		RZ_LOG_VERBOSE("DWARF Type failed at 0x%" PFMT64x "\n", offset);
 	}
@@ -1061,7 +1071,7 @@ static RzType *type_parse_from_abstract_origin(DwContext *ctx, ut64 offset, char
 	char *linkname = NULL;
 	RzType *type = NULL;
 	const RzBinDwarfAttr *attr;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = at_string_escaped(attr, ctx);
@@ -1103,7 +1113,7 @@ static RzTypeStructMember *struct_member_parse(
 	ut64 offset = 0;
 	ut64 size = 0;
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = at_string_escaped(attr, ctx);
@@ -1267,7 +1277,7 @@ err:
 
 static void function_apply_specification(DwContext *ctx, const RzBinDwarfDie *die, RzAnalysisDwarfFunction *fn) {
 	RzBinDwarfAttr *attr = NULL;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			if (fn->name) {
@@ -1344,13 +1354,9 @@ static RzBinDwarfLocation *location_list_parse(
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_EMPTY);
 			continue;
 		}
-		if (!rz_bin_dwarf_block_valid(entry->expression)) {
-			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
-			continue;
-		}
 		entry->location = rz_bin_dwarf_location_from_block(entry->expression, ctx->dw, ctx->unit, fn);
 		if (!entry->location) {
-			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, entry->range);
+			RzBinDwarfBlock_log(ctx, entry->expression, loclist->offset, &entry->range);
 			entry->location = RzBinDwarfLocation_with_kind(RzBinDwarfLocationKind_DECODE_ERROR);
 			continue;
 		}
@@ -1376,7 +1382,7 @@ static RzBinDwarfLocation *location_parse(
 			return NULL;
 		}
 		ut64 offset = rz_bin_dwarf_attr_udata(attr);
-		RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(ctx->dw->loclists, ctx->dw->addr, ctx->unit, offset);
+		RzBinDwarfLocList *loclist = rz_bin_dwarf_loclists_get(ctx->dw->loclists, rz_bin_dwarf_addr(ctx->dw), ctx->unit, offset);
 		if (!loclist) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			goto err_find;
 		}
@@ -1410,6 +1416,7 @@ static bool function_var_parse(
 	const RzBinDwarfDie *var_die,
 	bool *has_unspecified_parameters) {
 	v->offset = var_die->offset;
+	v->cu_index = ctx->unit->index;
 	switch (var_die->tag) {
 	case DW_TAG_formal_parameter:
 		v->kind = RZ_ANALYSIS_VAR_KIND_FORMAL_PARAMETER;
@@ -1431,7 +1438,7 @@ static bool function_var_parse(
 
 	bool has_location = false;
 	const RzBinDwarfAttr *attr;
-	rz_vector_foreach(&var_die->attrs, attr) {
+	rz_vector_foreach (&var_die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			v->name = at_string_escaped(attr, ctx);
@@ -1512,8 +1519,8 @@ static bool function_children_parse(
 				ctx->analysis->typedb, v.prefer_name, rz_type_clone(v.type));
 			rz_type_callable_arg_add(callable, arg);
 		}
-		rz_vector_push(&fn->variables, &v);
-		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, &v);
+		RzAnalysisDwarfVariable *ptr = rz_vector_push(&fn->variables, &v);
+		ht_up_insert(ctx->analysis->debug_info->variable_by_offset, v.offset, ptr);
 		continue;
 	loop_end:
 		variable_fini(&v);
@@ -1555,7 +1562,7 @@ static bool function_from_die(
 	fcn->offset = die->offset;
 	RZ_LOG_DEBUG("DWARF function parsing [0x%" PFMT64x "]\n", die->offset);
 	RzBinDwarfAttr *attr;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			fcn->name = at_string_escaped(attr, ctx);
@@ -1636,6 +1643,7 @@ static bool function_from_die(
 		fcn->prefer_name, fcn->low_pc, die->offset);
 	if (!ht_up_update(ctx->analysis->debug_info->callable_by_offset, die->offset, callable)) {
 		RZ_LOG_ERROR("DWARF callable saving failed [0x%" PFMT64x "]\n", die->offset);
+		rz_type_callable_free(callable);
 		goto cleanup;
 	}
 	if (!ht_up_update(ctx->analysis->debug_info->function_by_offset, die->offset, fcn)) {
@@ -1667,37 +1675,60 @@ static bool variable_exist_global(RzAnalysis *a, RzAnalysisDwarfVariable *v) {
 	return false;
 }
 
+static bool try_create_var_global(
+	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
+	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die,
+	RzAnalysisDwarfVariable *v) {
+
+	bool result = false;
+	if (!(v->type && v->location->kind == RzBinDwarfLocationKind_ADDRESS)) {
+		goto beach;
+	}
+	if (variable_exist_global(ctx->analysis, v)) {
+		goto beach;
+	}
+
+	RzBinDwarfAttr *attr = NULL;
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_file);
+	RzBinDwarfLine *dw_line = rz_bin_dwarf_line(ctx->dw);
+	RzBinDwarfLineUnit *lu = ctx->unit && dw_line ? rz_pvector_at(dw_line->units, ctx->unit->index) : NULL;
+	ut64 file_index = attr ? rz_bin_dwarf_attr_udata(attr) : UT64_MAX;
+	const char *file = file_index != 0 && lu ? rz_bin_dwarf_file_path(ctx->dw, lu, file_index) : NULL;
+
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_line);
+	ut32 line = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
+
+	attr = rz_bin_dwarf_die_get_attr(die, DW_AT_decl_column);
+	ut32 column = attr ? rz_bin_dwarf_attr_udata(attr) : UT32_MAX;
+
+	result = rz_analysis_var_global_create_with_sourceline(
+		ctx->analysis, v->prefer_name, v->type, v->location->address,
+		file, line, column);
+
+	v->type = NULL;
+beach:
+	return result;
+}
+
 static bool variable_from_die(
 	RZ_BORROW RZ_IN RZ_NONNULL DwContext *ctx,
 	RZ_BORROW RZ_IN RZ_NONNULL const RzBinDwarfDie *die) {
 	RzAnalysisDwarfVariable v = { 0 };
+	bool res = false;
 	if (!function_var_parse(ctx, NULL, NULL, &v, die, NULL)) {
-		variable_fini(&v);
-		return false;
+		goto beach;
 	}
-	if (!(v.type && v.location->kind == RzBinDwarfLocationKind_ADDRESS)) {
-		variable_fini(&v);
-		return false;
-	}
-
-	if (variable_exist_global(ctx->analysis, &v)) {
-		variable_fini(&v);
-		return false;
-	}
-
-	bool result = rz_analysis_var_global_create(
-		ctx->analysis, v.prefer_name, v.type, v.location->address);
-
-	v.type = NULL;
+	res = try_create_var_global(ctx, die, &v);
+beach:
 	variable_fini(&v);
-	return result;
+	return res;
 }
 
 static void die_parse(DwContext *ctx, RzBinDwarfDie *die) {
-	if (set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
+	if (rz_set_u_contains(ctx->analysis->debug_info->visited, die->offset)) {
 		return;
 	}
-	set_u_add(ctx->analysis->debug_info->visited, die->offset);
+	rz_set_u_add(ctx->analysis->debug_info->visited, die->offset);
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
@@ -1742,18 +1773,18 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
 	RZ_NONNULL RZ_BORROW RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
-	if (!dw->info) {
+	if (!dw->info || !analysis->cur) {
 		return;
 	}
-	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cpu, analysis->bits);
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cur->name, analysis->bits);
 	DwContext ctx = {
 		.analysis = analysis,
 		.dw = dw,
-		.str_escaped = ht_up_new(NULL, HtUP_String_free, NULL),
+		.str_escaped = ht_up_new(NULL, (HtUPFreeValue)String_free),
 		.unit = NULL,
 	};
 	RzBinDwarfCompUnit *unit;
-	rz_vector_foreach(&dw->info->units, unit) {
+	rz_vector_foreach (&dw->info->units, unit) {
 		if (rz_vector_empty(&unit->dies)) {
 			continue;
 		}
@@ -1797,13 +1828,13 @@ static void db_save_renamed(RzTypeDB *db, RzBaseType *b, char *name) {
 	rz_type_db_update_base_type(db, b);
 }
 
-static bool store_base_type(void *u, const void *k, const void *v) {
+static bool store_base_type(void *u, const char *k, const void *v) {
 	RzAnalysis *analysis = u;
 	const char *name = k;
 	RzPVector *types = (RzPVector *)v;
 	const ut32 len = rz_pvector_len(types);
 	if (len == 0) {
-		RZ_LOG_WARN("BaseType %s has nothing", name);
+		RZ_LOG_WARN("BaseType %s has nothing\n", name);
 	} else if (len == 1) {
 		RzBaseType *t = rz_pvector_head(types);
 		update_base_type(analysis->typedb, t);
@@ -1822,16 +1853,15 @@ static bool store_base_type(void *u, const void *k, const void *v) {
 			RZ_LOG_WARN("BaseType: type of typedef [%s] is not RZ_TYPE_KIND_IDENTIFIER\n", name);
 			goto beach;
 		}
-		if (RZ_STR_NE(a->type->identifier.name, name)) {
-			RZ_LOG_WARN("BaseType: type name [%s] of typedef [%s] is not valid\n",
-				a->type->identifier.name, name);
-			goto beach;
-		}
-		free(a->type->identifier.name);
 		char *newname = rz_str_newf("%s_0", name);
-		a->type->identifier.name = rz_str_dup(newname);
-		update_base_type(analysis->typedb, a);
-
+		// typedef a and type b have the same name
+		// 1. b is not the target of a, so rename b.
+		// 2. b is the target of a, so rename b and a->type->identifier.name
+		if (RZ_STR_EQ(a->type->identifier.name, name)) {
+			free(a->type->identifier.name);
+			a->type->identifier.name = rz_str_dup(newname);
+			update_base_type(analysis->typedb, a);
+		}
 		db_save_renamed(analysis->typedb, rz_base_type_clone(b), newname);
 	} else {
 		RZ_LOG_WARN("BaseType: same name [%s] type count is more than 3\n", name);
@@ -1859,7 +1889,7 @@ static bool store_callable(void *u, ut64 k, const void *v) {
 RZ_API void rz_analysis_dwarf_process_info(RzAnalysis *analysis, RzBinDWARF *dw) {
 	rz_return_if_fail(analysis && dw);
 	rz_analysis_dwarf_preprocess_info(analysis, dw);
-	ht_pp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
+	ht_sp_foreach(analysis->debug_info->base_types_by_name, store_base_type, (void *)analysis);
 	ht_up_foreach(analysis->debug_info->callable_by_offset, store_callable, (void *)analysis);
 }
 
@@ -1923,7 +1953,7 @@ static RzBinDwarfLocation *location_by_biggest_range(const RzBinDwarfLocList *lo
 	void **it;
 	rz_pvector_foreach (&loclist->entries, it) {
 		RzBinDwarfLocListEntry *entry = *it;
-		ut64 range = entry->range->begin - entry->range->end;
+		ut64 range = entry->range.begin - entry->range.end;
 		if (range > biggest_range && entry->location &&
 			(entry->location->kind == RzBinDwarfLocationKind_REGISTER_OFFSET ||
 				entry->location->kind == RzBinDwarfLocationKind_REGISTER ||
@@ -1955,11 +1985,17 @@ static bool RzBinDwarfLocation_as_RzAnalysisVarStorage(
 		break;
 	}
 	case RzBinDwarfLocationKind_ADDRESS: {
-		if (variable_exist_global(a, dw_var)) {
+		RzBinDwarfDie *die = ht_up_find(a->debug_info->dw->info->die_by_offset, dw_var->offset, NULL);
+		if (!die) {
 			return false;
 		}
-		rz_analysis_var_global_create(a, dw_var->prefer_name,
-			rz_type_clone(dw_var->type), loc->address);
+		DwContext context = {
+			.analysis = a,
+			.dw = a->debug_info->dw,
+			.unit = rz_vector_index_ptr(&a->debug_info->dw->info->units, dw_var->cu_index),
+			.str_escaped = NULL
+		};
+		try_create_var_global(&context, die, dw_var);
 		rz_analysis_var_fini(var);
 		return false;
 	}
@@ -1976,7 +2012,7 @@ static bool RzBinDwarfLocation_as_RzAnalysisVarStorage(
 			return false;
 		}
 		RzBinDwarfPiece *piece = NULL;
-		rz_vector_foreach(loc->composite, piece) {
+		rz_vector_foreach (loc->composite, piece) {
 			RzAnalysisVarStorage *sto = RZ_NEW0(RzAnalysisVarStorage);
 			if (!sto) {
 				goto clean_composite;
@@ -2021,7 +2057,7 @@ static bool RzAnalysisDwarfVariable_as_RzAnalysisVar(RzAnalysis *a, RzAnalysisFu
 		return false;
 	}
 	var->type = DW_var->type ? rz_type_clone(DW_var->type) : rz_type_new_default(a->typedb);
-	var->name = strdup(DW_var->prefer_name ? DW_var->prefer_name : "");
+	var->name = rz_str_dup(DW_var->prefer_name ? DW_var->prefer_name : "");
 	var->kind = DW_var->kind;
 	var->fcn = f;
 	var->origin.kind = RZ_ANALYSIS_VAR_ORIGIN_DWARF;
@@ -2043,7 +2079,7 @@ static bool dwarf_integrate_function(void *user, const ut64 k, const void *value
 	}
 
 	RzAnalysisDwarfVariable *dw_var;
-	rz_vector_foreach(&dw_fn->variables, dw_var) {
+	rz_vector_foreach (&dw_fn->variables, dw_var) {
 		RzAnalysisVar *var = RZ_NEW0(RzAnalysisVar);
 		rz_analysis_var_init(var);
 		if (!RzAnalysisDwarfVariable_as_RzAnalysisVar(analysis, fn, dw_var, var)) {
@@ -2072,19 +2108,6 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 	ht_up_foreach(analysis->debug_info->function_by_addr, dwarf_integrate_function, analysis);
 }
 
-Ht_FREE_IMPL(UP, RzType, rz_type_free);
-Ht_FREE_IMPL(UP, RzBaseType, rz_type_base_type_free);
-Ht_FREE_IMPL(UP, RzAnalysisDwarfFunction, function_free);
-Ht_FREE_IMPL(UP, RzCallable, rz_type_callable_free);
-
-static void HtPP_RzPVector_free(HtPPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	free(kv->key);
-	rz_pvector_free(kv->value);
-}
-
 /**
  * \brief Create a new debug info
  * \return RzAnalysisDebugInfo pointer
@@ -2094,14 +2117,14 @@ RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new() {
 	if (!debug_info) {
 		return NULL;
 	}
-	debug_info->function_by_offset = ht_up_new(NULL, HtUP_RzAnalysisDwarfFunction_free, NULL);
-	debug_info->function_by_addr = ht_up_new0();
-	debug_info->variable_by_offset = ht_up_new0();
-	debug_info->type_by_offset = ht_up_new(NULL, HtUP_RzType_free, NULL);
-	debug_info->callable_by_offset = ht_up_new(NULL, HtUP_RzCallable_free, NULL);
-	debug_info->base_type_by_offset = ht_up_new(NULL, HtUP_RzBaseType_free, NULL);
-	debug_info->base_types_by_name = ht_pp_new(NULL, HtPP_RzPVector_free, NULL);
-	debug_info->visited = set_u_new();
+	debug_info->function_by_offset = ht_up_new(NULL, (HtUPFreeValue)function_free);
+	debug_info->function_by_addr = ht_up_new(NULL, NULL);
+	debug_info->variable_by_offset = ht_up_new(NULL, NULL);
+	debug_info->type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_free);
+	debug_info->callable_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_callable_free);
+	debug_info->base_type_by_offset = ht_up_new(NULL, (HtUPFreeValue)rz_type_base_type_free);
+	debug_info->base_types_by_name = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
+	debug_info->visited = rz_set_u_new();
 	return debug_info;
 }
 
@@ -2119,8 +2142,8 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo) {
 	ht_up_free(debuginfo->type_by_offset);
 	ht_up_free(debuginfo->callable_by_offset);
 	ht_up_free(debuginfo->base_type_by_offset);
-	ht_pp_free(debuginfo->base_types_by_name);
+	ht_sp_free(debuginfo->base_types_by_name);
 	rz_bin_dwarf_free(debuginfo->dw);
-	set_u_free(debuginfo->visited);
+	rz_set_u_free(debuginfo->visited);
 	free(debuginfo);
 }

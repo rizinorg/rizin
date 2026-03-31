@@ -12,8 +12,8 @@
 #include <lzma.h>
 #endif
 
-// set a maximum output buffer of 50MB
-#define MAXOUT 50000000
+// set a maximum output buffer of 5000MB
+#define MAXOUT 5000000000
 
 /**
  * \brief inflate zlib compressed or gzipped, automatically accepts either the zlib or gzip format, and use MAX_WBITS as the window size logarithm.
@@ -66,7 +66,7 @@ RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 	rz_return_val_if_fail(srcLen > 0, NULL);
 
 	int err = 0;
-	int out_size = 0;
+	ut64 out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;
@@ -87,11 +87,13 @@ RZ_API ut8 *rz_inflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 		if (stream.avail_out == 0) {
 			tmp_ptr = realloc(dst, stream.total_out + srcLen * 2);
 			if (!tmp_ptr) {
+				RZ_LOG_ERROR("inflate: not enough memory\n");
 				goto err_exit;
 			}
 			dst = tmp_ptr;
 			out_size += srcLen * 2;
 			if (out_size > MAXOUT) {
+				RZ_LOG_ERROR("inflate: output size is bigger than maximum allowed\n");
 				goto err_exit;
 			}
 			stream.next_out = dst + stream.total_out;
@@ -134,7 +136,7 @@ RZ_API ut8 *rz_deflatew(RZ_NONNULL const ut8 *src, int srcLen, int *srcConsumed,
 	rz_return_val_if_fail(srcLen > 0, NULL);
 
 	int err = 0;
-	int out_size = 0;
+	ut64 out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;

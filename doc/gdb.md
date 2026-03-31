@@ -15,7 +15,7 @@ Connecting from rizin
 
 Supported implementations
 =========================
-rizin have support for connecting to remote GDB instances:
+rizin has support for connecting to remote GDB instances:
 
                 x86-32   x86-64   arm    arm64   sh
     winedbg       x        x       -      -      -
@@ -45,7 +45,7 @@ Supported Commands
   The second one is the G packet, that writes the whole register Profile at once.
   The implementation first tries to use the newer P packet and if it receives a $00# packet (that says not implemented), it tries to write through the G packet.
 
-- stepping (but this is still the softstep mode and for an unknown reason it sill does not call th gdb_write_register function)
+-- stepping (but this is still the softstep mode and for an unknown reason it still does not call the gdb_write_register function)
 
 Supported Packets:
 
@@ -60,7 +60,7 @@ TODO
 ----
 
 - Implement GDBserver to allow other apps use rizin debugger 
-- Fix that usese the gdb internal stepping version
+- Fix that uses the gdb internal stepping version
 - Fix softstep, that it finally recoils correct (it just have to reset the eip/rip)
 - Add Breakpoints (should be an easy add of the function, because its already implemented in the gdb lib)
 

@@ -22,9 +22,9 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	const bool isdir = rz_file_is_directory(n);
 	if (isdir) {
-		nn = rz_str_append(strdup(fpath), "/");
+		nn = rz_str_append(rz_str_dup(fpath), "/");
 	} else {
-		nn = strdup(fpath);
+		nn = rz_str_dup(fpath);
 	}
 	if (!*nn) {
 		free(nn);
@@ -46,7 +46,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		uid = sb.st_uid;
 		gid = sb.st_gid;
 		perm = sb.st_mode & 0777;
-		if (!(u_rwx = strdup(rz_str_rwx_i(perm >> 6)))) {
+		if (!(u_rwx = rz_str_dup(rz_str_rwx_i(perm >> 6)))) {
 			free(nn);
 			return res;
 		}
@@ -68,7 +68,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		}
 	}
 #else
-	u_rwx = strdup("-");
+	u_rwx = rz_str_dup("-");
 	fch = isdir ? 'd' : '-';
 #endif
 	if (printfmt == 'q') {
@@ -177,13 +177,13 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 			}
 			memcpy(d, path, off);
 			path = (const char *)d;
-			pattern = strdup(p + 1);
+			pattern = rz_str_dup(p + 1);
 		} else {
-			pattern = strdup(path);
+			pattern = rz_str_dup(path);
 			path = ".";
 		}
 	} else {
-		pattern = strdup("*");
+		pattern = rz_str_dup("*");
 	}
 	if (rz_file_is_regular(path)) {
 		res = showfile(res, 0, path, path, printfmt);
@@ -195,17 +195,17 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	files = rz_sys_dir(path);
 
 	if (path[strlen(path) - 1] == '/') {
-		dir = strdup(path);
+		dir = rz_str_dup(path);
 	} else {
-		dir = rz_str_append(strdup(path), "/");
+		dir = rz_str_append(rz_str_dup(path), "/");
 	}
 	int nth = 0;
 	if (printfmt == FMT_JSON) {
-		res = strdup("[");
+		res = rz_str_dup("[");
 	}
 	needs_newline = 0;
 	rz_list_foreach (files, iter, name) {
-		char *n = rz_str_append(strdup(dir), name);
+		char *n = rz_str_append(rz_str_dup(dir), name);
 		if (!n) {
 			break;
 		}
@@ -231,63 +231,11 @@ static char *syscmd_ls(RZ_NONNULL const int argc, const char **argv) {
 	return res;
 }
 
-static const char *findBreakChar(const char *s) {
-	while (*s) {
-		if (!rz_name_validate_char(*s, true)) {
-			break;
-		}
-		s++;
-	}
-	return s;
-}
-
-static char *filterFlags(RzCore *core, const char *msg) {
-	const char *dollar, *end;
-	char *word, *buf = NULL;
-	for (;;) {
-		dollar = strchr(msg, '$');
-		if (!dollar) {
-			break;
-		}
-		buf = rz_str_appendlen(buf, msg, dollar - msg);
-		if (dollar[1] == '{') {
-			// find }
-			end = strchr(dollar + 2, '}');
-			if (end) {
-				word = rz_str_newlen(dollar + 2, end - dollar - 2);
-				end++;
-			} else {
-				msg = dollar + 1;
-				buf = rz_str_append(buf, "$");
-				continue;
-			}
-		} else {
-			end = findBreakChar(dollar + 1);
-			if (!end) {
-				end = dollar + strlen(dollar);
-			}
-			word = rz_str_newlen(dollar + 1, end - dollar - 1);
-		}
-		if (end && word) {
-			ut64 val = rz_num_math(core->num, word);
-			char num[32];
-			snprintf(num, sizeof(num), "0x%" PFMT64x, val);
-			buf = rz_str_append(buf, num);
-			msg = end;
-		} else {
-			break;
-		}
-		free(word);
-	}
-	buf = rz_str_append(buf, msg);
-	return buf;
-}
-
 static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
 	// XXX anything like "x.xx.x" will break the parsing
 	// XXX -git is ignored, maybe we should shift for it
-	char *a = strdup(s);
+	char *a = rz_str_dup(s);
 	a = rz_str_replace(a, ".", "0", 1);
 	char *dash = strchr(a, '-');
 	if (dash) {
@@ -363,6 +311,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char
 
 // uniq
 RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
+	}
 	char *res = rz_syscmd_uniq(argv[1]);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
@@ -391,12 +342,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char **argv) {
 	if (argc >= 2) {
 		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
-		// TODO: replace all ${flagname} by its value in hexa
-		char *newmsg = filterFlags(core, output);
-		rz_str_unescape(newmsg);
-		rz_cons_print(newmsg);
+		rz_str_unescape(output);
+		rz_cons_print(output);
 		free(output);
-		free(newmsg);
 	}
 	rz_cons_newline();
 	return RZ_CMD_STATUS_OK;
@@ -504,11 +452,15 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char *
 
 // sort
 RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char **argv) {
-	char *res = rz_syscmd_sort(argv[1]);
-	if (res) {
-		rz_cons_print(res);
-		free(res);
+	if (argc < 2) {
+		return RZ_CMD_STATUS_OK;
 	}
+	char *res = rz_syscmd_sort(argv[1]);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(res);
+	free(res);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -614,7 +566,7 @@ RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
-		char *v = rz_version_str(NULL);
+		char *v = rz_version_str(core->sys_path, NULL);
 		rz_cons_printf("%s\n", v);
 		free(v);
 		break;
@@ -771,7 +723,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 		msg = space + 1;
 	}
 	const char *f;
-	int msglen = rz_str_len_utf8(msg);
+	int msglen = rz_str_utf8_cols(msg);
 	char *s = rz_str_pad(' ', msglen);
 	char *l;
 

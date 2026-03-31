@@ -9,7 +9,7 @@ pyc_opcodes *opcode_21(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_21;
+	ret->version_sig = (opcode_func)opcode_21;
 
 	// 2.1 bytecodes changes from 2.2
 	rm_op(.op_obj = ret->opcodes, .op_name = "BINARY_FLOOR_DIVIDE", .op_code = 26);

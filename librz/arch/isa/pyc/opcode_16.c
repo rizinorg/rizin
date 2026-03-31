@@ -9,7 +9,7 @@ pyc_opcodes *opcode_16(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_16;
+	ret->version_sig = (opcode_func)opcode_16;
 
 	// 1.6 Bytecodes not in 1.5
 	nargs_op(.op_obj = ret->opcodes, .op_name = "CALL_FUNCTION_VAR", .op_code = 140, .pop = -1, .push = 1); // #args + (#kwargs << 8)

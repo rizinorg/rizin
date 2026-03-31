@@ -27,14 +27,14 @@ RZ_DEPRECATE RZ_API ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) 
 				sp += 8; // skip return address, assume we are inside the call
 				sp += 8 * num;
 				// FIXME: honor endianness of platform
-				rz_io_read_at(core->io, sp, (ut8 *)&n64, sizeof(ut64));
+				rz_io_read_at_mapped(core->io, sp, (ut8 *)&n64, sizeof(ut64));
 				return (ut64)n64;
 			} else {
 				sp += 4; // skip return address, assume we are inside the call
 				sp += 4 * num;
 				ut32 n32;
 				// FIXME: honor endianness of platform
-				rz_io_read_at(core->io, sp, (ut8 *)&n32, sizeof(ut32));
+				rz_io_read_at_mapped(core->io, sp, (ut8 *)&n32, sizeof(ut32));
 				return (ut64)n32;
 			}
 		}
@@ -87,14 +87,14 @@ RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
 	if (rz_type_func_exist(analysis->typedb, func_name)) {
-		return strdup(func_name);
+		return rz_str_dup(func_name);
 	}
 	while ((str = strchr(str, '.'))) {
 		name = str + 1;
 		str++;
 	}
 	if (rz_type_func_exist(analysis->typedb, name)) {
-		return strdup(name);
+		return rz_str_dup(name);
 	}
 	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
@@ -137,12 +137,12 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " --> ", bval);
 		}
-		rz_io_read_at(core->io, bval, buf, bsize);
+		rz_io_read_at_mapped(core->io, bval, buf, bsize);
 	}
 	if (onstack) { // Fetch value from stack
 		bval = get_buf_val(buf, endian, width);
 		if (opt != 'd' && opt != 'x') {
-			rz_io_read_at(core->io, bval, buf, bsize); // update buf with val from stack
+			rz_io_read_at_mapped(core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
 	rz_cons_print(color ? Color_BGREEN : "");
@@ -289,7 +289,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 		rz_list_free(list);
 		return NULL;
 	}
-	char *cc = strdup(rz_analysis_cc_func(core->analysis, key));
+	char *cc = rz_str_dup(rz_analysis_cc_func(core->analysis, key));
 	const char *src = rz_analysis_cc_arg(core->analysis, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention

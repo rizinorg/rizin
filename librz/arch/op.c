@@ -21,18 +21,19 @@ RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void) {
 }
 
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
-	if (op) {
-		memset(op, 0, sizeof(*op));
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->refptr = 0;
-		op->val = UT64_MAX;
-		op->disp = UT64_MAX;
-		op->mmio_address = UT64_MAX;
-		op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
+	if (!op) {
+		return;
 	}
+	memset(op, 0, sizeof(*op));
+	op->addr = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->refptr = 0;
+	op->val = UT64_MAX;
+	op->disp = UT64_MAX;
+	op->mmio_address = UT64_MAX;
+	op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
 }
 
 RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
@@ -49,7 +50,8 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op) {
 	op->dst = NULL;
 	rz_list_free(op->access);
 	op->access = NULL;
-	rz_strbuf_fini(&op->opex);
+	rz_structured_data_free(op->opex);
+	op->opex = NULL;
 	rz_strbuf_fini(&op->esil);
 	rz_analysis_switch_op_free(op->switch_op);
 	op->switch_op = NULL;
@@ -118,7 +120,7 @@ RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *
 		if (analysis && analysis->coreb.archbits) {
 			analysis->coreb.archbits(analysis->coreb.core, addr);
 		}
-		if (analysis->pcalign && addr % analysis->pcalign) {
+		if (analysis->pcalign > 1 && addr % analysis->pcalign) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 			op->addr = addr;
 			// RZ_LOG_DEBUG("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", analysis->bits, addr);
@@ -162,7 +164,7 @@ RZ_API RzAnalysisOp *rz_analysis_op_copy(RzAnalysisOp *op) {
 	}
 	*nop = *op;
 	if (op->mnemonic) {
-		nop->mnemonic = strdup(op->mnemonic);
+		nop->mnemonic = rz_str_dup(op->mnemonic);
 		if (!nop->mnemonic) {
 			free(nop);
 			return NULL;
@@ -356,16 +358,16 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	char *a0 = rz_analysis_value_to_string(op->src[0]);
 	char *a1 = rz_analysis_value_to_string(op->src[1]);
 	if (!r0) {
-		r0 = strdup("?");
+		r0 = rz_str_dup("?");
 	}
 	if (!a0) {
-		a0 = strdup("?");
+		a0 = rz_str_dup("?");
 	}
 	if (!a1) {
-		a1 = strdup("?");
+		a1 = rz_str_dup("?");
 	}
 
-	switch (op->type) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 		snprintf(ret, sizeof(ret), "%s = %s", r0, a0);
 		break;
@@ -532,7 +534,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	free(r0);
 	free(a0);
 	free(a1);
-	return strdup(ret);
+	return rz_str_dup(ret);
 }
 
 RZ_API const char *rz_analysis_stackop_tostring(int s) {
@@ -581,7 +583,7 @@ RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *
 	case RZ_ANALYSIS_STACK_INC:
 		return rz_str_newf("%c= %" PFMT64d, op->stackptr > 0 ? '-' : '+', RZ_ABS(op->stackptr));
 	case RZ_ANALYSIS_STACK_RESET:
-		return strdup(":= 0");
+		return rz_str_dup(":= 0");
 	default:
 		return NULL;
 	}
@@ -658,7 +660,7 @@ RZ_API int rz_analysis_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint) {
 		if (hint->opcode) {
 			/* XXX: this is not correct */
 			free(op->mnemonic);
-			op->mnemonic = strdup(hint->opcode);
+			op->mnemonic = rz_str_dup(hint->opcode);
 			changes++;
 		}
 		if (hint->esil) {

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2025 Billow <billow.fun@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+# linter: update clang-format installation to version 20 (#5451)
+7a77b8f7bd5e7d19e21f730f5c8c9ac8c7e3a4fa
+# ci: use clang-format from LLVM 16 (#3696)
+3278ec77d0e138dc76d37d0f441af1c9c64bdc3c
+# Use clang-format 15 instead of 14
+cc18d675e669689acc0cc1b46159d2e1ae07905d
+# Use clang-format 14 instead of 13 (#2846)
+2205f3623faa7da10a04a66e6f80503e2bc5a932
+# Format according to `clang-format-13`
+34d345d884a83d8fbf9f2dd0b6d9276f1bf0095c
+# Run clang-format
+a0be4e2e645d55c718cfb14f33c0163d25960260

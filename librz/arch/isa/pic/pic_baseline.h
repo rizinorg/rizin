@@ -4,8 +4,15 @@
 #ifndef PIC_BASELINE_H
 #define PIC_BASELINE_H
 
-#include <rz_types.h>
-#include <rz_asm.h>
+#include "pic_midrange.h"
+
+static inline bool is_pic_baseline(const char *x) {
+	return RZ_STR_EQ(x, "baseline");
+}
+
+static inline bool is_pic_baseline_or_pic_midrange(const char *x) {
+	return is_pic_baseline(x) || is_pic_midrange(x);
+}
 
 typedef enum {
 	PIC_BASELINE_OP_ARGS_NONE = 0,
@@ -77,6 +84,6 @@ typedef enum {
 
 PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
-int pic_baseline_disassemble(RzAsmOp *op, const ut8 *b, int l);
+bool pic_baseline_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l);
 
 #endif // PIC_BASELINE_H

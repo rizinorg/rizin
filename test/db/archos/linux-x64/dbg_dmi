@@ -2,18 +2,16 @@ NAME=dmi ld
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
-dmiqq ld | grep 'exception\|error' | sort
-dmiqq ld _dl_rtld_di_serinfo
+dmiQ ld | grep 'exception' | sort
+dmiQ ld _dl_signal_error
 EOF
 EXPECT=<<EOF
-_dl_catch_error
 _dl_catch_exception
 _dl_exception_create
 _dl_exception_create_format
 _dl_exception_free
-_dl_signal_error
 _dl_signal_exception
-_dl_rtld_di_serinfo
+_dl_signal_error
 EOF
 RUN
 
@@ -21,23 +19,10 @@ NAME=dmia ld
 FILE=/bin/ls
 ARGS=-d
 CMDS=<<EOF
-dmiaqq ld~la_activity
+dmiaQ ld~la_activity
 EOF
 EXPECT=<<EOF
 la_activity
-EOF
-RUN
-
-NAME=dmias ld
-FILE=/bin/ls
-ARGS=-d
-CMDS=<<EOF
-dmias ld
-s sym._dl_rtld_di_serinfo
-fN
-EOF
-EXPECT=<<EOF
-_dl_rtld_di_serinfo
 EOF
 RUN
 

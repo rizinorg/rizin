@@ -1,8 +1,7 @@
 NAME=PE: corkami aslr-ld.exe - open
 FILE=bins/pe/aslr-ld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami aslr-ld.exe - entrypoint

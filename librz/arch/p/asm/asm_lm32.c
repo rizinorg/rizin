@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "lm32/lm32_isa.h"
 
 #define LM32_UNUSED 0
@@ -408,37 +409,17 @@ static int rz_asm_lm32_stringify(RzAsmLm32Instruction *instr, char *str) {
 	return 0;
 }
 
-#if 0
-
-static int rz_asm_lm32_destringify(const char *string, RzAsmLm32Instruction *instr) {
-	//TODO
-	return -1;
-}
-
-static int rz_asm_lm32_encode(RzAsmLm32Instruction *instr, ut32 *val) {
-	//TODO
-	return -1;
-}
-
-static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
-	//TODO
-	return -1;
-}
-#endif
-
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RzAsmLm32Instruction instr = { 0 };
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 	instr.addr = a->pc;
 	if (rz_asm_lm32_decode(&instr)) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
-		a->invhex = 1;
 		return -1;
 	}
 	// op->buf_asm is 256 chars long, which is more than sufficient
 	if (rz_asm_lm32_stringify(&instr, rz_strbuf_get(&op->buf_asm))) {
 		rz_strbuf_set(&op->buf_asm, "invalid");
-		a->invhex = 1;
 		return -1;
 	}
 	return 4;
@@ -447,7 +428,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
-	.desc = "disassembly plugin for Lattice Micro 32 ISA",
+	.desc = "Lattice Micro 32 ISA disassembler",
 	.author = "Felix Held",
 	.license = "BSD",
 	.bits = 32,

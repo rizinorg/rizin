@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
@@ -11,7 +12,7 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(x86_asm);
 
 #include "asm_x86_vm.c"
 
-static bool check_features(RzAsm *a, cs_insn *insn) {
+static bool check_features(const RzAsm *a, cs_insn *insn) {
 	if (RZ_STR_ISEMPTY(a->features)) {
 		return true;
 	}
@@ -43,7 +44,7 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	return true;
 }
 
-static int x86_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int x86_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 	int ret, n;
 	ut64 off = a->pc;
@@ -131,9 +132,16 @@ static int x86_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static bool x86_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+	// { 0, 1, 0, "\xcc" }, // valid for 16, 32, 64
+	// { 0, 2, 0, "\xcd\x03" },
+	rz_asm_op_set_buf(op, (const ut8 *)"\xcc", 1);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.name = "x86",
-	.desc = "Capstone X86 disassembler",
+	.desc = "X86/X86_64 Capstone-based disassembler",
 	.license = "BSD",
 	.cpus = "generic",
 	.platforms = "generic",
@@ -144,6 +152,7 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.fini = x86_asm_fini,
 	.mnemonics = x86_asm_mnemonics,
 	.disassemble = &x86_disassemble,
+	.sw_breakpoint = x86_sw_breakpoint,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
 		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
 		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"

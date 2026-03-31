@@ -32,6 +32,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_NUM, ///< Argument is a number
 	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
+	RZ_CMD_ARG_TYPE_RAW, ///< Like RZ_CMD_ARG_TYPE_STRING, but unescaping and quote unwrapping is not done
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
@@ -52,6 +53,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_GLOBAL_VAR, ///< Argument is a user defined global variable
 	RZ_CMD_ARG_TYPE_REG_FILTER, ///< Argument is a register name, size, type or "all"
 	RZ_CMD_ARG_TYPE_REG_TYPE, ///< Argument is a register type/arena like "gpr"
+	RZ_CMD_ARG_TYPE_FOLDER, ///< Argument is a directory or path
 } RzCmdArgType;
 
 /**
@@ -83,14 +85,27 @@ typedef enum rz_cmd_escape_t {
 typedef enum {
 	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
 	RZ_OUTPUT_MODE_JSON = 1 << 1,
-	RZ_OUTPUT_MODE_RIZIN = 1 << 2,
-	RZ_OUTPUT_MODE_QUIET = 1 << 3,
-	RZ_OUTPUT_MODE_SDB = 1 << 4,
-	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
-	RZ_OUTPUT_MODE_TABLE = 1 << 7,
-	RZ_OUTPUT_MODE_QUIETEST = 1 << 8,
+	RZ_OUTPUT_MODE_QUIET = 1 << 2,
+	RZ_OUTPUT_MODE_SDB = 1 << 3,
+	RZ_OUTPUT_MODE_LONG = 1 << 4,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 5,
+	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+	RZ_OUTPUT_MODE_QUIETEST = 1 << 7,
+	RZ_OUTPUT_MODE_GRAPH = 1 << 8,
+	RZ_OUTPUT_MODE_STR_BUF = 1 << 9,
 } RzOutputMode;
+
+RZ_OWN RZ_OUT typedef char *(*pipe_fn)(const char *, int *);
+/**
+ * \brief List of fallback pipe handlers for specific commands.
+ *
+ * Each entry maps a command name to the internal implementation used
+ * when no external binary is available in the system PATH.
+ */
+typedef struct pipe_fallbacks {
+	const char *command;
+	pipe_fn fallback_fn;
+} PipeFallbacks;
 
 /**
  * \brief Represent the output state of a command handler.
@@ -110,6 +125,7 @@ typedef struct rz_cmd_state_output_t {
 	union {
 		PJ *pj;
 		RzTable *t;
+		RzStrBuf *sbuf;
 	} d;
 } RzCmdStateOutput;
 
@@ -343,16 +359,11 @@ typedef struct rz_cmd_desc_help_t {
 
 typedef enum rz_cmd_desc_type_t {
 	/**
-	 * For old handlers that parse their own input and accept a single string.
-	 * Mainly used for legacy reasons with old command handlers.
-	 */
-	RZ_CMD_DESC_TYPE_OLDINPUT = 0,
-	/**
 	 * For handlers that accept argc/argv. It cannot have children. Use
 	 * RZ_CMD_DESC_TYPE_GROUP if you need a command that can be both
 	 * executed and has sub-commands.
 	 */
-	RZ_CMD_DESC_TYPE_ARGV,
+	RZ_CMD_DESC_TYPE_ARGV = 0,
 	/**
 	 * For cmd descriptors that are parent of other sub-commands, even if
 	 * they may also have a sub-command with the same name. For example,
@@ -363,7 +374,7 @@ typedef enum rz_cmd_desc_type_t {
 	/**
 	 * For cmd descriptors that are just used to group together related
 	 * sub-commands. Do not use this if the command can be used by itself or
-	 * if it's necessary to show its help, because this descriptor is not
+	 * if it's necessary to show its help. Because this descriptor is not
 	 * stored in the hashtable and cannot be retrieved except by listing the
 	 * children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
 	 */
@@ -406,8 +417,8 @@ typedef enum rz_cmd_desc_type_t {
 typedef struct rz_cmd_desc_t {
 	/**
 	 * Type of the command descriptor. There are several types of commands:
-	 * those that are still using the old-style and parses the input string
-	 * themselves, those that accept argc/argv, etc.
+	 * groups, fake and inner have no handlers; argv, mode and state can
+	 * have handlers and get arguments via int argc, char **argv.
 	 */
 	RzCmdDescType type;
 	/**
@@ -442,9 +453,6 @@ typedef struct rz_cmd_desc_t {
 	 */
 	union {
 		struct {
-			RzCmdCb cb;
-		} oldinput_data;
-		struct {
 			RzCmdArgvCb cb;
 			int min_argc;
 			int max_argc;
@@ -474,11 +482,11 @@ typedef struct rz_cmd_t {
 	RzCmdNullCb nullcallback;
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdAlias aliases;
-	HtPP *macros; ///< Map of macros (char *)name -> RzCmdMacro
+	HtSP *macros; ///< Map of macros (char *)name -> RzCmdMacro
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
 	RzCmdDesc *root_cmd_desc;
-	HtPP *ht_cmds;
+	HtSP *ht_cmds;
 	/**
 	 * True if a rz_cons_instance exists. When used from RzCore this is
 	 * commonly true. However, it can be used in tests to avoid access to
@@ -517,9 +525,9 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args);
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd);
 RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
 RZ_API RzCmdDesc *rz_cmd_get_desc_best(RzCmd *cmd, const char *cmd_identifier);
-RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color);
+RZ_API RZ_OWN char *rz_cmd_get_help(RZ_BORROW RzCmd *cmd, RZ_BORROW RzCmdParsedArgs *args, bool use_color, int gutter_size);
 RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
-RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb);
+RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb, int gutter_size);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
 	if (v == -2) {
@@ -554,7 +562,6 @@ RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_state_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvStateCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
-RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
@@ -564,7 +571,8 @@ RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);
 RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(const RzCmdDesc *cd, size_t i);
 
-#define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
+#define rz_cmd_desc_children_foreach(root, it_cd)          rz_pvector_foreach (&root->children, it_cd)
+#define rz_cmd_desc_children_foreach_idx(root, it_cd, idx) rz_pvector_enumerate (&root->children, it_cd, idx)
 
 RZ_API void rz_cmd_desc_details_free(RzCmdDescDetail *details);
 
@@ -586,7 +594,8 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape escape);
 RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char *fmt, ...);
-RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode);
+RZ_API void rz_cmd_state_output_set_color_selector(RzCmdStateOutput *state, RzTableColorSelector color_cb, void *user);
+RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode, RZ_NULLABLE const RzCore *core);
 RZ_API void rz_cmd_state_output_fini(RZ_NONNULL RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_free(RZ_NONNULL RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state);

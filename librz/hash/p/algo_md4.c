@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_md4 = {
 	.name = "md4",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "MD4 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_md4_context_new,
 	.context_free = plugin_md4_context_free,

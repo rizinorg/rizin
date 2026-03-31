@@ -1,0 +1,155 @@
+NAME=di + dp
+FILE=bins/elf/hello-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+di~hello
+dp~[5]
+EOF
+EXPECT=<<EOF
+exe=hello-freebsd-x64
+hello-freebsd-x64
+EOF
+RUN
+
+NAME=spawn + attach and suspend
+FILE=bins/elf/hello-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+!sleep 0.5
+dm @ rip~*~[8]
+EOF
+EXPECT=<<EOF
+/libexec/ld-elf.so.1
+EOF
+RUN
+
+NAME=dcu + read
+FILE=bins/elf/hello-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+pi 10 @ rip
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+sub rsp, 0x10
+mov dword [rbp-0x04], 0x00
+mov rdi, str.Hello_World
+mov al, 0x00
+call sym.imp.printf
+xor eax, eax
+add rsp, 0x10
+pop rbp
+EOF
+RUN
+
+NAME=maps
+FILE=bins/elf/hello-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+dm~hello~[3-]
+EOF
+#REGEXP_FILTER_OUT=([a-zA-Z0-9_\.-]+\s+)
+EXPECT=<<EOF
+- usr 4K s r-- /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.r
+- usr 4K s r-x /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.r_x
+- usr 4K s rwx /home/build/rizin-testbins/elf/hello-freebsd-x64 /home/build/rizin-testbins/elf/hello-freebsd-x64 home_build_rizin_testbins_elf_hello_freebsd_x64.rwx
+EOF
+RUN
+
+NAME=maps as flags
+FILE=bins/elf/hello-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+fl@F:maps~hello~[1-]
+dmt:name/cols/perms/size~hello
+EOF
+EXPECT=<<EOF
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.r_x
+4096 home_build_rizin_testbins_elf_hello_freebsd_x64.rwx
+/home/build/rizin-testbins/elf/hello-freebsd-x64 r--   4K
+/home/build/rizin-testbins/elf/hello-freebsd-x64 r-x   4K
+/home/build/rizin-testbins/elf/hello-freebsd-x64 rwx   4K
+EOF
+RUN
+
+NAME=step and check pc
+FILE=bins/elf/calculate-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+5 ds
+dr rip
+ds
+dr rip
+EOF
+EXPECT=<<EOF
+rip = 0x00000000002018a8
+rip = 0x00000000002018ac
+EOF
+RUN
+
+NAME=break multiple times and check regs
+FILE=bins/elf/calculate-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+db @ main
+db @ main + 20
+db @ main + 24
+dc
+dr rip
+dc
+dr rip
+dr rax
+dc
+dr rip
+dr rax
+EOF
+EXPECT=<<EOF
+rip = 0x0000000000201890
+rip = 0x00000000002018a4
+rax = 0x0000000000000000
+rip = 0x00000000002018a8
+rax = 0x0000000000000064
+EOF
+RUN
+
+NAME=write gpr
+FILE=bins/elf/calculate-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+db @ main + 66
+dc
+dr rax
+dr rax=1337
+dc
+EOF
+EXPECT=<<EOF
+rax = 0x000000000000002a
+Result = 1337
+EOF
+RUN
+
+NAME=Step over
+FILE=bins/elf/calculate-freebsd-x64
+ARGS=-d
+CMDS=<<EOF
+e dbg.follow=1
+db @ main + 86
+dc
+pd 2
+dso
+pd 1
+dc
+EOF
+EXPECT=<<EOF
+            ;-- rip:
+            0x002018e6 b    call  sym.imp.printf
+            0x002018eb      xor   eax, eax
+            ;-- rip:
+            0x002018eb      xor   eax, eax
+Result = 42
+EOF
+RUN

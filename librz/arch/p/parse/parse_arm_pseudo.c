@@ -268,7 +268,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 		return tstr;
 	}
 
-	RzRegex *var_re = rz_regex_new(re_str, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	RzRegex *var_re = rz_regex_new(re_str, RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0, NULL);
 	if (!var_re) {
 		return tstr;
 	}
@@ -337,7 +337,7 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 static bool subvar(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len) {
 	const ut64 addr = op->addr;
 	const int oplen = op->size;
-	char *tstr = strdup(data);
+	char *tstr = rz_str_dup(data);
 	if (!tstr) {
 		return false;
 	}

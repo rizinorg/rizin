@@ -29,10 +29,6 @@ RZ_API ut8 sdb_hash_byte(const char *s) {
 	return h[0] ^ h[1] ^ h[2] ^ h[3];
 }
 
-RZ_API const char *sdb_itoca(ut64 n) {
-	return sdb_itoa(n, sdb_fmt(NULL), 16);
-}
-
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
 RZ_API char *sdb_itoa(ut64 n, char *s, int base) {

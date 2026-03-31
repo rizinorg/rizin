@@ -3,7 +3,6 @@
 
 #include <rz_debug.h>
 
-#if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
@@ -11,7 +10,7 @@
 #include "linux_ptrace.h"
 
 /* For compatibility */
-#if __x86_64__ || __arm64__
+#if __x86_64__ || __aarch64__
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
 typedef Elf64_Phdr elf_phdr_t;
@@ -79,7 +78,7 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 
 	p = RZ_NEW0(prpsinfo_t);
 	if (!p) {
-		eprintf("Couldn't allocate memory for prpsinfo_t\n");
+		RZ_LOG_ERROR("Couldn't allocate memory for prpsinfo_t\n");
 		return NULL;
 	}
 
@@ -88,11 +87,11 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 	file = rz_strf(tmpbuf, "/proc/%d/cmdline", mypid);
 	buffer = rz_file_slurp(file, &len);
 	if (!buffer) {
-		eprintf("buffer NULL\n");
+		RZ_LOG_ERROR("buffer NULL\n");
 		goto error;
 	}
 	buffer[len] = 0;
-	pfname = strdup(buffer);
+	pfname = rz_str_dup(buffer);
 	if (!pfname) {
 		goto error;
 	}
@@ -223,8 +222,13 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 	p->pr_cstime.tv_sec = proc_data->per_thread->cstime / 1000;
 	p->pr_cstime.tv_usec = (proc_data->per_thread->cstime % 1000) / 1000;
 
+#if __aarch64__
+	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, tid, (void *)NT_PRSTATUS, &regs) < 0) {
+		perror("PTRACE_GETREGSET & NT_PRSTATUS");
+#else
 	if (rz_debug_ptrace(dbg, PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror("PTRACE_GETREGS");
+#endif
 		RZ_FREE(proc_data->per_thread);
 		free(p);
 		return NULL;
@@ -236,15 +240,20 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 
 static elf_fpregset_t *linux_get_fp_regset(RzDebug *dbg, int pid) {
 	elf_fpregset_t *p = RZ_NEW0(elf_fpregset_t);
-	if (p) {
-		if (rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
-			perror("PTRACE_GETFPREGS");
-			free(p);
-			return NULL;
-		}
-		return p;
+	if (!p) {
+		return NULL;
 	}
-	return NULL;
+#if __aarch64__
+	if (rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)NT_PRFPREG, p) < 0) {
+		perror("PTRACE_GETREGSET & NT_PRFREG");
+#else
+	if (rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
+		perror("PTRACE_GETFPREGS");
+#endif
+		free(p);
+		return NULL;
+	}
+	return p;
 }
 
 static siginfo_t *linux_get_siginfo(RzDebug *dbg, int pid) {
@@ -299,7 +308,7 @@ static char *isAnonymousKeyword(const char *pp) {
 static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr, unsigned long end_addr) {
 	char *pp, *extern_tok = NULL, *keyw = NULL;
 	char *identity = rz_str_newf(fmt_addr, start_addr, end_addr);
-	char *str = strdup(buff_smaps);
+	char *str = rz_str_dup(buff_smaps);
 	char *p = strtok_r(str, "\n", &extern_tok);
 	for (; p; p = strtok_r(NULL, "\n", &extern_tok)) {
 		if (strstr(p, identity)) {
@@ -334,7 +343,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 		free(identity);
 		return false;
 	}
-	aux = strdup(buff_smaps);
+	aux = rz_str_dup(buff_smaps);
 	if (!aux) {
 		free(identity);
 		return false;
@@ -507,7 +516,7 @@ static linux_map_entry_t *linux_get_mapped_files(RzDebug *dbg, ut8 filter_flags)
 		pmentry->end_addr = map->addr_end;
 		pmentry->offset = map->offset;
 		pmentry->name = strncmp(map->name, "unk", strlen("unk"))
-			? strdup(map->name)
+			? rz_str_dup(map->name)
 			: NULL;
 		pmentry->perms = map->perm;
 		pmentry->shared = map->shared;
@@ -527,7 +536,7 @@ static linux_map_entry_t *linux_get_mapped_files(RzDebug *dbg, ut8 filter_flags)
 			pmentry->file_backed = true;
 		}
 		pmentry->dumpeable = dump_this_map(buff_smaps, pmentry, filter_flags);
-		eprintf(fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
+		rz_cons_printf(fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
 			pmentry->start_addr, pmentry->end_addr,
 			pmentry->anonymous, pmentry->kernel_mapping,
 			pmentry->file_backed, pmentry->dumpeable);
@@ -602,7 +611,7 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_ident[EI_MAG1] = ELFMAG1;
 	h->e_ident[EI_MAG2] = ELFMAG2;
 	h->e_ident[EI_MAG3] = ELFMAG3;
-#if __x86_64__ || __arm64__
+#if __x86_64__ || __aarch64__
 	h->e_ident[EI_CLASS] = ELFCLASS64; /*64bits */
 #elif __i386__ || __arm__
 	h->e_ident[EI_CLASS] = ELFCLASS32;
@@ -622,7 +631,7 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_machine = EM_386;
 #elif __arm__
 	h->e_machine = EM_ARM;
-#elif __arm64__
+#elif __aarch64__
 	h->e_machine = EM_AARCH64;
 #endif
 	h->e_version = EV_CURRENT;
@@ -753,7 +762,7 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 	size_t size;
 	bool ret;
 
-	eprintf("dump_elf_map_content starting\n\n");
+	rz_cons_printf("dump_elf_map_content starting\n\n");
 
 	for (p = head; p; p = p->n) {
 		if (!p->dumpeable) {
@@ -766,16 +775,16 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 		}
 		ret = dbg->iob.read_at(dbg->iob.io, p->start_addr, map_content, size);
 		if (!ret) {
-			eprintf("Problems reading %" PFMTSZd " bytes at %" PFMT64x "\n", size, (ut64)p->start_addr);
+			RZ_LOG_ERROR("Problems reading %" PFMTSZd " bytes at %" PFMT64x "\n", size, (ut64)p->start_addr);
 		} else {
 			ret = rz_buf_append_bytes(dest, (const ut8 *)map_content, size);
 			if (!ret) {
-				eprintf("rz_buf_append_bytes - failed\n");
+				RZ_LOG_ERROR("rz_buf_append_bytes - failed\n");
 			}
 		}
 		free(map_content);
 	}
-	eprintf("dump_elf_map_content - done\n");
+	rz_cons_printf("dump_elf_map_content - done\n");
 	return true;
 }
 
@@ -816,7 +825,7 @@ static proc_per_process_t *get_proc_process_content(RzDebug *dbg) {
 	}
 	if (!p->num_threads || p->num_threads < 1) {
 		free(p);
-		eprintf("Warning: number of threads is < 1\n");
+		RZ_LOG_WARN("number of threads is < 1\n");
 		return NULL;
 	}
 	file = rz_strf(tmpbuf, "/proc/%d/status", dbg->pid);
@@ -944,7 +953,7 @@ void *linux_get_xsave_data(RzDebug *dbg, int tid, ut32 size) {
 }
 #endif
 
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 void *linux_get_arm_vfp_data(RzDebug *dbg, int tid) {
 #ifdef PTRACE_GETVFPREGS
 	char *vfp_data = calloc(ARM_VFPREGS_SIZE + 1, 1);
@@ -1005,7 +1014,7 @@ void write_note_hdr(note_type_t type, ut8 **note_data) {
 		note_type = NT_X86_XSTATE;
 		nhdr.n_descsz = note_info[type].size;
 		break;
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	case NT_ARM_VFP_T:
 		note_type = NT_ARM_VFP;
 		nhdr.n_descsz = note_info[type].size;
@@ -1095,7 +1104,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 #endif
 #if __i386__ || __x86_64__
 	bool xsave_flag = false;
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	bool vfp_flag = false;
 #endif
 
@@ -1159,7 +1168,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 			n_notes++;
 		}
 #endif
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 		type = NT_ARM_VFP_T;
 		if (note_info[type].size) {
 			vfp_flag = true;
@@ -1225,7 +1234,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 					goto fail;
 				}
 			}
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 			if (vfp_flag) {
 				elf_proc_note->thread_note->arm_vfp_data = linux_get_arm_vfp_data(dbg, thread_id[i]);
 				if (!elf_proc_note->thread_note->arm_vfp_data) {
@@ -1264,7 +1273,7 @@ static ut8 *build_note_section(RzDebug *dbg, elf_proc_note_t *elf_proc_note, pro
 			memcpy(note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 
-#if __arm__ || __arm64
+#if __arm__ || __aarch64__
 			if (vfp_flag) {
 				type = NT_ARM_VFP_T;
 				write_note_hdr(type, &note_data);
@@ -1321,7 +1330,7 @@ fail:
 #endif
 #if __i386__ || __x86_64__
 		free(elf_proc_note->thread_note->xsave_data);
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 		free(elf_proc_note->thread_note->arm_vfp_data);
 #endif
 	}
@@ -1375,7 +1384,7 @@ static int get_i386_fpx_size(void) {
 }
 #endif
 
-#if __arm__ || __arm64__
+#if __arm__ || __aarch64__
 static int get_arm_vfpregs_size(void) {
 #ifdef PTRACE_GETVFPREGS
 	return ARM_VFPREGS_SIZE;
@@ -1441,7 +1450,7 @@ static void init_note_info_structure(RzDebug *dbg, int pid, size_t auxv_size) {
 	note_info[type].size_roundedup = round_up(note_info[type].size);
 	note_info[type].size_name = len_name_linux;
 	strncpy(note_info[type].name, "LINUX", sizeof(note_info[type].name));
-#elif __arm__ || __arm64__
+#elif __arm__ || __aarch64__
 	/* NT_ARM_VFP_T */
 	type = NT_ARM_VFP_T;
 	note_info[type].size = get_arm_vfpregs_size();
@@ -1540,4 +1549,3 @@ cleanup:
 	free(note_data);
 	return !error;
 }
-#endif

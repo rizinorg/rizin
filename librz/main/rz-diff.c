@@ -8,7 +8,6 @@
 #include <rz_util.h>
 #include <rz_main.h>
 
-#define MEGABYTE(x)        (x << 20)
 #define SAFE_STR_DEF(x, y) (x ? x : y)
 #define SAFE_STR(x)        (x ? x : "")
 #define IF_STRCMP_S(ret, x, y) \
@@ -84,6 +83,7 @@ typedef struct diff_context_t {
 	const char *input_b;
 	const char *file_a;
 	const char *file_b;
+	const char *theme_name;
 	DiffScreen screen;
 	RzList /*<char *>*/ *evars;
 } DiffContext;
@@ -203,67 +203,54 @@ static void rz_diff_show_help(bool usage_only) {
 	}
 	const char *options[] = {
 		// clang-format off
-		"-a",       "[arch]",       "Specify architecture plugin to use (x86, arm, ..)",
-		"-b",       "[bits]",       "Specify register size for arch (16 (thumb), 32, 64, ..)",
-		"-d",       "[algo]",       "Compute edit distance based on the chosen algorithm:",
-		"",         "",             "   myers  | Eugene W. Myers' O(ND) algorithm (no substitution)",
-		"",         "",             "   leven  | Levenshtein O(N^2) algorithm (with substitution)",
-		"",         "",             "   ssdeep | Context triggered piecewise hashing comparison",
+		"-a",       "arch",         "Specify architecture plugin to use (x86, arm, ..)",
+		"-b",       "bits",         "Specify register size for arch (16 (thumb), 32, 64, ..)",
+		"-d",       "myers",        "Compute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)",
+		"-d",       "leven",        "Compute edit distance using Levenshtein O(N^2) algorithm (with substitution)",
+		"-d",       "ssdeep",       "Compute edit distance using Context triggered piecewise hashing comparison",
 		"-i",       "",             "Use command line arguments instead of files (only for -d)",
 		"-H",       "",             "Hexadecimal visual mode",
 		"-h",       "",             "Show this help",
 		"-j",       "",             "JSON output",
-		"-q",       "",             "Quite output",
-		"-V",       "",             "Show version information",
-		"-v",       "",             "Be more verbose (stderr output)",
-		"-e",       "[k=v]",        "Set an evaluable config variable",
+		"-q",       "",             "Quiet output",
+		"-v",       "",             "Show version information",
+		"-V",       "",             "Be more verbose (stderr output)",
+		"-K",       "theme",        "Set a give color theme (see rizin 'eco' command)",
+		"-e",       "k=v",          "Set an evaluable config variable",
 		"-A",       "",             "Compare virtual and physical addresses",
 		"-B",       "",             "Run 'aaa' when loading the bin",
 		"-C",       "",             "Disable colors",
 		"-T",       "",             "Show timestamp information",
-		"-S",       "[WxH]",        "Set the width and height of the terminal for visual mode",
-		"-0",       "[cmd]",        "Input for file0 when option -t 'commands' is given.",
+		"-S",       "WxH",          "Set the width and height of the terminal for visual mode",
+		"-0",       "cmd",          "Input for file0 when option -t 'commands' is given.",
 		"",         "",             "The same value will be set for file1, if -1 is not set.",
-		"-1",       "[cmd]",        "Input for file1 when option -t 'commands' is given.",
-		"-t",       "[type]",       "Compute the difference between two files based on its type:",
-		"",         "",             "   bytes      | compare raw bytes in the files (only for small files)",
-		"",         "",             "   lines      | compare text files",
-		"",         "",             "   functions  | compare functions found in the files",
-		"",         "",             "   classes    | compare classes found in the files",
-		"",         "",             "   command    | compare command output returned when executed in both files",
-		"",         "",             "              | require -0 <cmd> and -1 <cmd> is optional",
-		"",         "",             "   entries    | compare entries found in the files",
-		"",         "",             "   fields     | compare fields found in the files",
-		"",         "",             "   graphs     | compare 2 functions and outputs in graphviz/dot format",
-		"",         "",             "              | require -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
-		"",         "",             "   imports    | compare imports found in the files",
-		"",         "",             "   libraries  | compare libraries found in the files",
-		"",         "",             "   sections   | compare sections found in the files",
-		"",         "",             "   strings    | compare strings found in the files",
-		"",         "",             "   symbols    | compare symbols found in the files",
+		"-1",       "cmd",          "Input for file1 when option -t 'commands' is given.",
+		"-t",       "bytes",        "Compare raw bytes in the files (only for small files)",
+		"-t",       "lines",        "Compare text files",
+		"-t",       "functions",    "Compare functions found in the files",
+		"",         "",             "optional -0 <fcn name|offset> to compare only one function",
+		"-t",       "classes",      "Compare classes found in the files",
+		"-t",       "command",      "Compare command output returned when executed in both files",
+		"",         "",             "requires -0 <cmd> and -1 <cmd> is optional",
+		"-t",       "entries",      "Compare entries found in the files",
+		"-t",       "fields",       "Compare fields found in the files",
+		"-t",       "graphs",       "Compare 2 functions and outputs in graphviz/dot format",
+		"",         "",             "requires -0 <fcn name|offset> and -1 <fcn name|offset> is optional",
+		"-t",       "imports",      "Compare imports found in the files",
+		"-t",       "libraries",    "Compare libraries found in the files",
+		"-t",       "sections",     "Compare sections found in the files",
+		"-t",       "strings",      "Compare strings found in the files",
+		"-t",       "symbols",      "Compare symbols found in the files",
 		// clang-format on
 	};
-	size_t maxOptionAndArgLength = 0;
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		size_t optionLength = strlen(options[i]);
-		size_t argLength = strlen(options[i + 1]);
-		size_t totalLength = optionLength + argLength;
-		if (totalLength > maxOptionAndArgLength) {
-			maxOptionAndArgLength = totalLength;
-		}
-	}
-	for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-		if (i + 1 < sizeof(options) / sizeof(options[0])) {
-			rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-		}
-	}
-
+	rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	printf(
-		"palette colors can be changed by adding the following lines\n"
-		"inside the $HOME/.rizinrc file\n"
-		"ec diff.unknown blue   | offset color\n"
-		"ec diff.match   green  | match color\n"
-		"ec diff.unmatch red    | mismatch color\n");
+		"Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file\n"
+		"  ec diff.unknown blue  | offset color\n"
+		"  ec diff.match   green | match color\n"
+		"  ec diff.unmatch red   | mismatch color\n"
+		"Environment variables\n"
+		"  RZ_COLOR              | enables/disables colors support\n");
 }
 
 static bool rz_diff_is_file(const char *file) {
@@ -276,12 +263,22 @@ static bool rz_diff_is_file(const char *file) {
 	return true;
 }
 
+static bool diff_env_get_bool(const char *key, bool def_value) {
+	bool value = def_value;
+	char *tmp = rz_sys_getenv(key);
+	if (RZ_STR_ISNOTEMPTY(tmp)) {
+		value = rz_num_get(NULL, tmp) != 0;
+	}
+	free(tmp);
+	return value;
+}
+
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
-	ctx->colors = true;
+	ctx->colors = diff_env_get_bool("RZ_COLOR", true);
 	ctx->evars = rz_list_newf(free);
 
 	if (!ctx->evars) {
@@ -291,14 +288,14 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:e:d:t:0:1:S:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvViABCTa:b:K:e:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
 		case 'B': rz_diff_ctx_set_def(ctx, analyze_all, false, true); break;
-		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
+		case 'C': rz_diff_ctx_set_def(ctx, colors, ctx->colors, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
 		case 'b': rz_diff_ctx_set_unsigned(ctx, arch_bits, opt.arg); break;
@@ -308,11 +305,12 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'j': rz_diff_ctx_set_mode(ctx, DIFF_MODE_JSON); break;
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
-		case 'V': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
-		case 'v': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
+		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'V': rz_diff_ctx_set_def(ctx, verbose, false, true); break;
 		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
 		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 		case 'e': rz_diff_ctx_add_evar(ctx, opt.arg); break;
+		case 'K': rz_diff_set_def(ctx->theme_name, NULL, opt.arg); break;
 		default:
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "unknown flag '%c'\n", c);
 		}
@@ -365,9 +363,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
-			if (ctx->input_a) {
-				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -0.\n", type);
-			} else if (ctx->input_b) {
+			if (ctx->input_b) {
 				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' does not support -1.\n", type);
 			}
 			ctx->option = DIFF_OPT_GRAPH;
@@ -489,11 +485,6 @@ static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 		goto rz_diff_slurp_file_end;
 	}
 
-	if (dio->filesize > MEGABYTE(5)) {
-		rz_diff_error("cannot open file '%s' because its size is above 5Mb\n", file);
-		goto rz_diff_slurp_file_end;
-	}
-
 	buffer = malloc(dio->filesize + 1);
 	if (!buffer) {
 		rz_diff_error("cannot allocate buffer\n");
@@ -525,11 +516,11 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	double similarity = 0.0;
 
 	if (ctx->command_line) {
-		if (!(a_buffer = (ut8 *)strdup(ctx->file_a))) {
+		if (!(a_buffer = (ut8 *)rz_str_dup(ctx->file_a))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		a_size = strlen((const char *)a_buffer);
-		if (!(b_buffer = (ut8 *)strdup(ctx->file_b))) {
+		if (!(b_buffer = (ut8 *)rz_str_dup(ctx->file_b))) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		b_size = strlen((const char *)b_buffer);
@@ -1548,14 +1539,14 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 		goto exit;
 	}
 
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	opcodes = strdup(retstr);
+	opcodes = rz_str_dup(retstr);
 exit:
 	rz_cons_pop();
 	rz_cons_echo(NULL);
@@ -1873,7 +1864,7 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 }
 
 static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
-	rz_cons_clear_line(true);
+	rz_cons_clear_line(stderr);
 	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
 	return !rz_cons_is_breaked();
 }
@@ -1899,7 +1890,7 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 
 	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
-		pair = (RzAnalysisMatchPair *)rz_list_first(result->matches);
+		pair = (RzAnalysisMatchPair *)rz_list_first_val(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
 	}
 
@@ -2013,7 +2004,7 @@ static void diff_similarity_as_json(RzAnalysisFunction *fcn_a, RzAnalysisFunctio
 	pj_end(pj); // } -- match object end
 }
 
-static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, bool color, bool no_name, RzTable *table) {
+static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFunction *fcn_b, double similarity, bool no_name, RzTable *table) {
 	char tmp[128];
 	const char *type_s = NULL;
 	const char *type_n = NULL;
@@ -2024,18 +2015,18 @@ static void diff_similarity_as_table(RzAnalysisFunction *fcn_a, RzAnalysisFuncti
 	if (similarity > 0.0 && fcn_a && fcn_b) {
 		type_n = tmp;
 		if (similarity >= 1.0) {
-			rz_strf(tmp, color ? Color_BGREEN "%.6f" Color_RESET : "%.6f", similarity);
-			type_s = color ? Color_BGREEN "COMPLETE" Color_RESET : "COMPLETE";
+			rz_strf(tmp, "%.6f", similarity);
+			type_s = "COMPLETE";
 		} else if (similarity >= RZ_ANALYSIS_SIMILARITY_THRESHOLD) {
-			rz_strf(tmp, color ? Color_BYELLOW "%.6f" Color_RESET : "%.6f", similarity);
-			type_s = color ? Color_BYELLOW "PARTIAL " Color_RESET : "PARTIAL ";
+			rz_strf(tmp, "%.6f", similarity);
+			type_s = "PARTIAL";
 		} else {
-			rz_strf(tmp, color ? Color_BRED "%.4f" Color_RESET : "%.4f", similarity);
-			type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+			rz_strf(tmp, "%.4f", similarity);
+			type_s = "UNLIKE";
 		}
 	} else {
-		type_n = color ? Color_BRED "0.000000" Color_RESET : "0.000000";
-		type_s = color ? Color_BRED "UNLIKE  " Color_RESET : "UNLIKE  ";
+		type_n = "0.000000";
+		type_s = "UNLIKE";
 	}
 
 	if (no_name) {
@@ -2065,6 +2056,29 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
+static const char *diff_table_color_selector(const char *value, const char *column, const size_t column_n, const RzTableColumnType type, void *user) {
+	if (!column || !value) {
+		return NULL;
+	}
+	const RzConsContext *ctx = (const RzConsContext *)user;
+	if (RZ_STR_EQ(column, "type")) {
+		if (RZ_STR_EQ(value, "COMPLETE")) {
+			return ctx->pal.diff_match;
+		} else if (RZ_STR_EQ(value, "PARTIAL")) {
+			return ctx->pal.diff_unmatch;
+		}
+		return ctx->pal.diff_unknown;
+	}
+	if (RZ_STR_EQ(column, "similarity")) {
+		return ctx->pal.cjmp;
+	} else if (rz_str_startswith(column, "size")) {
+		return ctx->pal.num;
+	} else if (rz_str_startswith(column, "addr")) {
+		return ctx->pal.offset;
+	}
+	return ctx->pal.label;
+}
+
 /**
  * \brief Performs function matching and shows the result in a table.
  *
@@ -2072,7 +2086,7 @@ static int comparePairFunctions(const RzAnalysisMatchPair *ma, const RzAnalysisM
  * Then the scores are shown in a table (when in quiet mode, the table
  * is headerless)
  * */
-static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool verbose) {
+static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, DiffMode mode, bool verbose) {
 	rz_return_if_fail(core_a && core_b);
 
 	char *output = NULL;
@@ -2085,8 +2099,22 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
 	RzListIter *iter = NULL;
 	bool color = false, no_name = false;
-
-	fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
+	if (RZ_STR_ISEMPTY(addr_a)) {
+		fcns_a = rz_list_clone(rz_analysis_function_list(core_a->analysis));
+	} else {
+		fcns_a = rz_list_new();
+		if (!fcns_a) {
+			RZ_LOG_ERROR("rz-diff: failed to create new list.\n");
+			goto fail;
+		}
+		ut64 addr = rz_num_get(core_a->num, addr_a);
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core_a->analysis, addr);
+		if (!fcn) {
+			RZ_LOG_ERROR("rz-diff: failed to find %s in file0.\n", addr_a);
+			goto fail;
+		}
+		rz_list_append(fcns_a, fcn);
+	}
 	if (rz_list_empty(fcns_a)) {
 		RZ_LOG_ERROR("rz-diff: No functions found in file0.\n");
 		goto fail;
@@ -2147,7 +2175,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(fcn_a, fcn_b, pair->similarity, pj);
 		} else {
-			diff_similarity_as_table(fcn_a, fcn_b, pair->similarity, color, no_name, table);
+			diff_similarity_as_table(fcn_a, fcn_b, pair->similarity, no_name, table);
 		}
 	}
 
@@ -2159,7 +2187,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(fcn_a, NULL, 0.0, pj);
 		} else {
-			diff_similarity_as_table(fcn_a, NULL, 0.0, color, no_name, table);
+			diff_similarity_as_table(fcn_a, NULL, 0.0, no_name, table);
 		}
 	}
 
@@ -2171,7 +2199,18 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 		if (mode == DIFF_MODE_JSON) {
 			diff_similarity_as_json(NULL, fcn_b, 0.0, pj);
 		} else {
-			diff_similarity_as_table(NULL, fcn_b, 0.0, color, no_name, table);
+			diff_similarity_as_table(NULL, fcn_b, 0.0, no_name, table);
+		}
+	}
+
+	if (table) {
+		if (color) {
+			rz_table_set_color_selector(table, diff_table_color_selector, core_a->cons->context);
+		}
+		if (core_a->cons->use_utf8_curvy) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+		} else if (core_a->cons->use_utf8) {
+			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8);
 		}
 	}
 
@@ -2188,7 +2227,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, DiffMode mode, bool v
 		break;
 	default: // DIFF_MODE_QUIET
 		rz_table_align(table, 0, RZ_TABLE_ALIGN_RIGHT);
-		rz_table_hide_header(table);
+		rz_table_show_header(table, false);
 		output = rz_table_tosimplestring(table);
 		rz_cons_printf("%s", output);
 		break;
@@ -2296,7 +2335,10 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		if (ctx->verbose) {
 			fprintf(stderr, "rz-diff: start diffing.\n");
 		}
-		core_diff_show(a->core, b->core, ctx->mode, ctx->verbose);
+		if (ctx->colors) {
+			rz_core_theme_load(a->core, ctx->theme_name ? ctx->theme_name : "default");
+		}
+		core_diff_show(a->core, b->core, ctx->input_a, ctx->mode, ctx->verbose);
 	}
 
 	success = true;
@@ -2658,13 +2700,13 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	char buf[1024];
 	rz_cons_gotoxy(0, hview->screen.height);
-	rz_cons_clear_line(0);
+	rz_cons_clear_line(stdout);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
 	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {
-		return strdup(buf);
+		return rz_str_dup(buf);
 	}
 	return NULL;
 }
@@ -3087,10 +3129,17 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	case DIFF_OPT_HEX_VISUAL:
 		success = rz_diff_hex_visual(&ctx);
 		break;
-	case DIFF_OPT_VERSION:
-		rz_main_version_print("rz-diff");
+	case DIFF_OPT_VERSION: {
+		RzPath *sys_path = rz_path_new();
+		if (!sys_path) {
+			rz_diff_show_help(false);
+			break;
+		}
+		rz_main_version_print(sys_path, "rz-diff");
+		rz_path_free(sys_path);
 		success = true;
 		break;
+	}
 	case DIFF_OPT_USAGE:
 		rz_diff_show_help(true);
 		break;

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 imbillow <billow.fun@gmail.com>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
-// SPDX-FileCopyrightText: 2023 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2023 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -22,7 +22,7 @@ static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 
 static inline char *core_flag_name(const RzCore *core, ut64 addr) {
 	RzFlagItem *item = rz_flag_get_i(core->flags, addr);
-	return item ? strdup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
+	return item ? rz_str_dup(item->name) : rz_str_newf("0x%08" PFMT64x, addr);
 }
 
 static inline void core_graph_dataref(RzCore *core, RzAnalysisFunction *fcn, RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
@@ -252,14 +252,14 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 		return NULL;
 	}
 	rz_cons_push();
-	rz_io_read_at(core->io, b->addr, block, b->size);
+	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *retstr = rz_str_get(rz_cons_get_buffer());
-	char *opcodes = strdup(retstr);
+	char *opcodes = rz_str_dup(retstr);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);
@@ -355,7 +355,7 @@ static RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function_bbs(RZ_NON
 	if (!hc) {
 		goto fail;
 	}
-	cache = ht_up_new0();
+	cache = ht_up_new(NULL, NULL);
 	if (!cache) {
 		goto fail;
 	}
@@ -890,7 +890,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzC
 		return NULL;
 	}
 
-	HtUU *graph_idx = ht_uu_new0();
+	HtUU *graph_idx = ht_uu_new();
 	RzListIter *it;
 	const RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, it, fcn) {
@@ -1040,7 +1040,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCo
 	}
 
 	// Visited instructions. Indexed by instruction address, value is index in graph.
-	HtUU *nodes_visited = ht_uu_new0();
+	HtUU *nodes_visited = ht_uu_new();
 	// Addresses to visit.
 	RzVector *to_visit = rz_vector_new(sizeof(ut64), NULL, NULL);
 

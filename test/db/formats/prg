@@ -8,6 +8,7 @@ EOF
 EXPECT=<<EOF
 arch     6502
 cpu      N/A
+features N/A
 baddr    0x00000801
 binsz    0x00000026
 bintype  N/A
@@ -23,9 +24,11 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Commodore 64
+maxopsz  4
 minopsz  1
 os       c64
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false

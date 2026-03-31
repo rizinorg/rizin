@@ -42,8 +42,8 @@ static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, 
 	const char *color_beg = color ? Color_RANGE : "";
 	const char *color_end = color ? Color_RESET : "";
 
-	RzDiffOp *first = rz_list_first(opcodes);
-	RzDiffOp *last = rz_list_last(opcodes);
+	RzDiffOp *first = rz_list_first_val(opcodes);
+	RzDiffOp *last = rz_list_last_val(opcodes);
 	st32 a_len = last->a_end - first->a_beg;
 	st32 b_len = last->b_end - first->b_beg;
 
@@ -51,8 +51,8 @@ static inline void diff_unified_append_ranges(RzList /*<RzDiffOp *>*/ *opcodes, 
 }
 
 static inline void diff_unified_json_ranges(RzList /*<RzDiffOp *>*/ *opcodes, PJ *pj) {
-	RzDiffOp *first = rz_list_first(opcodes);
-	RzDiffOp *last = rz_list_last(opcodes);
+	RzDiffOp *first = rz_list_first_val(opcodes);
+	RzDiffOp *last = rz_list_last_val(opcodes);
 	st32 a_len = last->a_end - first->a_beg;
 	st32 b_len = last->b_end - first->b_beg;
 

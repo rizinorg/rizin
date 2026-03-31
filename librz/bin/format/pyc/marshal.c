@@ -88,7 +88,7 @@ static pyc_object *get_none_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_NONE;
-	ret->data = strdup("None");
+	ret->data = rz_str_dup("None");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -101,7 +101,7 @@ static pyc_object *get_false_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_FALSE;
-	ret->data = strdup("False");
+	ret->data = rz_str_dup("False");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -114,7 +114,7 @@ static pyc_object *get_true_object(void) {
 		return NULL;
 	}
 	ret->type = TYPE_TRUE;
-	ret->data = strdup("True");
+	ret->data = rz_str_dup("True");
 	if (!ret->data) {
 		RZ_FREE(ret);
 	}
@@ -189,7 +189,7 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 		neg = true;
 	}
 	if (ndigits == 0) {
-		ret->data = strdup("0x0");
+		ret->data = rz_str_dup("0x0");
 	} else {
 		// the explicit cast is safe since ndigits is positive
 		size = (size_t)ndigits * 15;
@@ -238,7 +238,7 @@ static pyc_object *get_stringref_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_st32(buffer, &error);
 	if (n >= rz_list_length(pyc->interned_table)) {
-		RZ_LOG_ERROR("bad marshal data (string ref out of range)");
+		RZ_LOG_ERROR("bad marshal data (string ref out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -405,7 +405,7 @@ static pyc_object *get_string_object(RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -436,7 +436,6 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->paddr = string->vaddr = addr;
 	string->size = size;
 	string->length = length;
-	string->ordinal = 0;
 	string->type = type;
 	string->string = rz_str_dup(data);
 	if (!rz_pvector_push(pyc->strings_cache, string)) {
@@ -452,7 +451,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (unicode size out of range)");
+		RZ_LOG_ERROR("bad marshal data (unicode size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -467,7 +466,7 @@ static pyc_object *get_unicode_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		return NULL;
 	}
 
-	if (!add_string_to_cache(pyc, addr, ret->data, n, rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
+	if (!add_string_to_cache(pyc, addr, ret->data, n, (ut32)rz_utf8_strlen(ret->data), RZ_STRING_ENC_UTF8)) {
 		RZ_FREE(ret);
 		return NULL;
 	}
@@ -481,7 +480,7 @@ static pyc_object *get_interned_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	n = get_ut32(buffer, &error);
 	if (n > ST32_MAX) {
-		RZ_LOG_ERROR("bad marshal data (string size out of range)");
+		RZ_LOG_ERROR("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -652,6 +651,27 @@ static pyc_object *get_set_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ret->type = TYPE_SET;
 	return ret;
+}
+
+static pyc_object *get_slice_object(RzBinPycObj *pyc, RzBuffer *buffer) {
+	pyc_object *ret = NULL;
+	bool error = false;
+	ut32 n = 3; // start, stop, step
+
+	// n = get_ut32(buffer, &error);
+	if (n > ST32_MAX) {
+		RZ_LOG_ERROR("bad marshal data (list size out of range)\n");
+		return NULL;
+	}
+	if (error) {
+		return NULL;
+	}
+	ret = get_array_object_generic(pyc, buffer, n);
+	if (ret) {
+		ret->type = TYPE_SLICE;
+		return ret;
+	}
+	return NULL;
 }
 
 static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, ut32 size, bool interned) {
@@ -831,7 +851,7 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_SHORT_ASCII:
 	case TYPE_ASCII_INTERNED:
 	case TYPE_SHORT_ASCII_INTERNED:
-		copy->data = strdup(object->data);
+		copy->data = rz_str_dup(object->data);
 		break;
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
@@ -844,12 +864,22 @@ static pyc_object *copy_object(pyc_object *object) {
 		dst->code = copy_object(src->code);
 		dst->consts = copy_object(src->consts);
 		dst->names = copy_object(src->names);
-		dst->varnames = copy_object(src->varnames);
-		dst->freevars = copy_object(src->freevars);
-		dst->cellvars = copy_object(src->cellvars);
+		dst->localsplusnames = copy_object(src->localsplusnames);
+		dst->localspluskinds = copy_object(src->localspluskinds);
+		if (src->varnames) {
+			dst->varnames = copy_object(src->varnames);
+		}
+		if (src->freevars) {
+			dst->freevars = copy_object(src->freevars);
+		}
+		if (src->cellvars) {
+			dst->cellvars = copy_object(src->cellvars);
+		}
 		dst->filename = copy_object(src->filename);
 		dst->name = copy_object(src->name);
 		dst->lnotab = copy_object(src->lnotab);
+		dst->qualname = copy_object(src->qualname);
+		dst->exceptiontable = copy_object(src->exceptiontable);
 		copy->data = dst;
 	} break;
 	case TYPE_REF:
@@ -882,6 +912,66 @@ static pyc_object *copy_object(pyc_object *object) {
 	return copy;
 }
 
+// populate varnames, freevars, cellvars version >=3.11.0
+
+static void extract_variables_from_localplus(
+	pyc_object *localplusnames,
+	pyc_object *localpluskinds,
+	pyc_object **varnames,
+	pyc_object **freevars,
+	pyc_object **cellvars,
+	bool *error) {
+	if (!localplusnames || !localpluskinds) {
+		*error = true;
+		return;
+	}
+
+	RzList *names_list = (RzList *)localplusnames->data;
+	ut8 *kinds_list = (ut8 *)localpluskinds->data;
+
+	*varnames = RZ_NEW0(pyc_object);
+	*freevars = RZ_NEW0(pyc_object);
+	*cellvars = RZ_NEW0(pyc_object);
+
+	if (!*varnames || !*cellvars || !*freevars) {
+		free(*varnames);
+		free(*cellvars);
+		free(*freevars);
+		*error = true;
+		return;
+	}
+
+	(*varnames)->data = rz_list_new();
+	(*freevars)->data = rz_list_new();
+	(*cellvars)->data = rz_list_new();
+
+	(*varnames)->type = localplusnames->type;
+	(*freevars)->type = localplusnames->type;
+	(*cellvars)->type = localplusnames->type;
+
+	RzListIter *iter;
+	pyc_object *name;
+	int offset = 0;
+
+	rz_list_foreach (names_list, iter, name) {
+		ut8 kind = kinds_list[offset];
+
+		if (kind & RZ_PYC_CO_FAST_LOCAL) {
+			rz_list_append((*varnames)->data, name);
+		}
+
+		if (kind & RZ_PYC_CO_FAST_CELL) {
+			rz_list_append((*cellvars)->data, name);
+		}
+
+		if (kind & RZ_PYC_CO_FAST_FREE) {
+			rz_list_append((*freevars)->data, name);
+		}
+
+		offset++;
+	}
+}
+
 static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool error = false;
 
@@ -902,8 +992,9 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	bool v11_to_14 = magic_int_within(pyc->magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
 	bool v15_to_22 = magic_int_within(pyc->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
 	bool v13_to_20 = magic_int_within(pyc->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
+	bool v311_to_latest = magic_int_within(pyc->magic_int, 3495, 3627, &error); // 3.11a1 - latest;
 	// bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3491, &error); // v3.8.0a4 - latest
+	bool has_posonlyargcount = magic_int_within(pyc->magic_int, 3410, 3627, &error); // v3.8.0a4 - latest
 	if (error) {
 		free(ret);
 		free(cobj);
@@ -934,6 +1025,8 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		cobj->nlocals = get_ut16(buffer, &error);
 	} else if (v10_to_12) {
 		cobj->nlocals = 0;
+	} else if (v311_to_latest) {
+		cobj->nlocals = 0;
 	} else {
 		cobj->nlocals = get_ut32(buffer, &error);
 	}
@@ -959,19 +1052,28 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	if (!pyc->refs) {
 		return ret; // return for entried part to get the root object of this file
 	}
+
 	cobj->code = get_object(pyc, buffer);
 	cobj->end_offset = rz_buf_tell(buffer);
 
 	cobj->consts = get_object(pyc, buffer);
 	cobj->names = get_object(pyc, buffer);
 
-	if (v10_to_12) {
+	if (v10_to_12 || v311_to_latest) {
 		cobj->varnames = NULL;
 	} else {
 		cobj->varnames = get_object(pyc, buffer);
 	}
 
-	if (!(v10_to_12 || v13_to_20)) {
+	if (v311_to_latest) {
+		cobj->localsplusnames = get_object(pyc, buffer);
+		cobj->localspluskinds = get_object(pyc, buffer);
+	} else {
+		cobj->localsplusnames = NULL;
+		cobj->localspluskinds = NULL;
+	}
+
+	if (!(v10_to_12 || v13_to_20 || v311_to_latest)) {
 		cobj->freevars = get_object(pyc, buffer);
 		cobj->cellvars = get_object(pyc, buffer);
 	} else {
@@ -981,6 +1083,12 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 
 	cobj->filename = get_object(pyc, buffer);
 	cobj->name = get_object(pyc, buffer);
+
+	if (v311_to_latest) {
+		cobj->qualname = get_object(pyc, buffer);
+	} else {
+		cobj->qualname = NULL;
+	}
 
 	if (v15_to_22) {
 		cobj->firstlineno = get_ut16(buffer, &error);
@@ -996,6 +1104,22 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		cobj->lnotab = get_object(pyc, buffer);
 	}
 
+	if (v311_to_latest) {
+		cobj->exceptiontable = get_object(pyc, buffer);
+	} else {
+		cobj->exceptiontable = NULL;
+	}
+
+	if (v311_to_latest) {
+		extract_variables_from_localplus(
+			cobj->localsplusnames,
+			cobj->localspluskinds,
+			&cobj->varnames,
+			&cobj->freevars,
+			&cobj->cellvars,
+			&error);
+	}
+
 	if (error) {
 		free_object(cobj->code);
 		free_object(cobj->consts);
@@ -1006,6 +1130,10 @@ static pyc_object *get_code_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		free_object(cobj->filename);
 		free_object(cobj->name);
 		free_object(cobj->lnotab);
+		free_object(cobj->localsplusnames);
+		free_object(cobj->localspluskinds);
+		free_object(cobj->qualname);
+		free_object(cobj->exceptiontable);
 		free(cobj);
 		RZ_FREE(ret);
 		return NULL;
@@ -1142,6 +1270,9 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	case TYPE_ELLIPSIS:
 		ret = RZ_NEW0(pyc_object);
 		break;
+	case TYPE_SLICE:
+		ret = get_slice_object(pyc, buffer);
+		break;
 	case TYPE_UNKNOWN:
 		RZ_LOG_ERROR("Get not implemented for type 0x%x\n", type);
 		return NULL;
@@ -1151,7 +1282,7 @@ static pyc_object *get_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 
 	if (flag && ref_idx) {
-		void *p = rz_list_iter_get_data(ref_idx);
+		void *p = rz_list_val(ref_idx);
 		free_object(p);
 		p = copy_object(ret);
 		rz_list_iter_set_data(ref_idx, p);
@@ -1186,7 +1317,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	if (!prefix || !section || !symbol) {
 		goto fail;
 	}
-	section->name = strdup(prefix);
+	section->name = rz_str_dup(prefix);
 	if (!section->name) {
 		goto fail;
 	}
@@ -1200,7 +1331,7 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	}
 	section = NULL;
 	// start building symbol
-	symbol->name = strdup(prefix);
+	symbol->name = rz_str_dup(prefix);
 	// symbol->bind;
 	symbol->type = RZ_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;

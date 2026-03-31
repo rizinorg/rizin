@@ -33,12 +33,8 @@ str x8, [sp, 0x10]
 EOF
 REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until
-c88
-
 hit breakpoint at:
 c88
-
 EOF
 RUN
 
@@ -90,9 +86,9 @@ ARGS=-d
 CMDS=<<EOF
 fl@F:maps~hello~[1-]
 echo --
-dm*~hello~[0-2]
+dmt:name/cols/perms/size~hello
 EOF
-REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|[f-].+\n)
+REGEXP_FILTER_OUT=([0-9]+ [a-zA-Z0-9_-]+\.[\.rwx_]+|--\n|hello-macos-arm64.+)
 EXPECT=<<EOF
 16384 hello_macos_arm64.r_x
 16384 hello_macos_arm64.rw
@@ -100,13 +96,10 @@ EXPECT=<<EOF
 16384 hello_macos_arm64.r
 --
 
-f+ map.hello_macos_arm64.r_x 0x00004000
-
-f+ map.hello_macos_arm64.rw 0x00004000
-
-f+ map.hello_macos_arm64.rw 0x00004000
-
-f+ map.hello_macos_arm64.r 0x00004000
+hello-macos-arm64 r-x   16K
+hello-macos-arm64 rw-   16K
+hello-macos-arm64 rw-   16K
+hello-macos-arm64 r--   16K
 EOF
 RUN
 
@@ -134,12 +127,8 @@ x8 = 0x0000000000000064
 EOF
 REGEXP_FILTER_ERR=(((Continue\suntil)|(hit\sbreakpoint\sat:)|[0-9a-f][0-9a-f][0-9a-f]\n))
 EXPECT_ERR=<<EOF
-Continue until
-f30
-
 hit breakpoint at:
 f30
-
 EOF
 RUN
 
@@ -182,7 +171,6 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN
 
@@ -193,7 +181,7 @@ CMDS=<<EOF
 db @ main + 64
 dc
 dr x8
-dr x8 = 1337
+dr x8=1337
 dc
 EOF
 EXPECT=<<EOF
@@ -246,6 +234,5 @@ f44
 
 hit breakpoint at:
 f48
-
 EOF
 RUN

@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: 2020-2021 ret2libc <sirmy15@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-CD_TYPE_OLDINPUT = "RZ_CMD_DESC_TYPE_OLDINPUT"
 CD_TYPE_GROUP = "RZ_CMD_DESC_TYPE_GROUP"
 CD_TYPE_ARGV = "RZ_CMD_DESC_TYPE_ARGV"
 CD_TYPE_ARGV_MODES = "RZ_CMD_DESC_TYPE_ARGV_MODES"
@@ -11,7 +10,6 @@ CD_TYPE_FAKE = "RZ_CMD_DESC_TYPE_FAKE"
 CD_TYPE_INNER = "RZ_CMD_DESC_TYPE_INNER"
 
 CD_VALID_TYPES = [
-    CD_TYPE_OLDINPUT,
     CD_TYPE_GROUP,
     CD_TYPE_ARGV,
     CD_TYPE_ARGV_MODES,
@@ -61,8 +59,5 @@ def compute_cname(name):
     return name
 
 
-def get_handler_cname(ty, handler, cname):
-    if ty == CD_TYPE_OLDINPUT:
-        return "rz_" + (handler or cname)
-
+def get_handler_cname(handler, cname):
     return "rz_" + (handler or cname) + "_handler"

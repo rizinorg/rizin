@@ -66,12 +66,10 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->addrmod = 4;
 	p->flags =
 		RZ_PRINT_FLAGS_COLOR |
 		RZ_PRINT_FLAGS_OFFSET |
-		RZ_PRINT_FLAGS_HEADER |
-		RZ_PRINT_FLAGS_ADDRMOD;
+		RZ_PRINT_FLAGS_HEADER;
 	p->seggrn = 4;
 	p->zoom = RZ_NEW0(RzPrintZoom);
 	p->reg = NULL;
@@ -152,12 +150,6 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 		}
 	} while (--len);
 	return false;
-}
-
-RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set) {
-	if (rz_print_have_cursor(p, cur, len)) {
-		p->cb_printf("%s", RZ_CONS_INVERT(set, 1));
-	}
 }
 
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
@@ -302,14 +294,11 @@ static bool isAllZeros(const ut8 *buf, int len) {
 RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback)rp->cb_printf;
 	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_0xff = c ? (Pal(rp, b0xff)
-					     : Color_RED)
+	const char *color_0xff = c ? (Pal(rp, b0xff) : Color_RED)
 				   : "";
-	const char *color_text = c ? (Pal(rp, btext)
-					     : Color_MAGENTA)
+	const char *color_text = c ? (Pal(rp, btext) : Color_MAGENTA)
 				   : "";
-	const char *color_other = c ? (Pal(rp, other)
-					      : Color_WHITE)
+	const char *color_other = c ? (Pal(rp, other) : Color_WHITE)
 				    : "";
 	const char *color_reset = c ? Color_RESET : "";
 	int i, j;
@@ -337,15 +326,17 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 				p("   ");
 			} else if (ch == 0xff) {
 				p("%s ##%s", color_0xff, color_reset);
-			} else if (IS_PRINTABLE(ch)) {
+			} else if (IS_PRINTABLE(ch) && !(rp->flags & RZ_PRINT_FLAGS_NODOT)) {
 				p("%s .%c%s", color_text, ch, color_reset);
+			} else if (IS_PRINTABLE(ch) && (rp->flags & RZ_PRINT_FLAGS_NODOT)) {
+				p("%s  %c%s", color_text, ch, color_reset);
 			} else {
 				p("%s %02x%s", color_other, ch, color_reset);
 			}
 		}
 		p("\n");
 	}
-	p("%8" PFMT64x " ]\n", addr + i);
+	p("%8" PFMT64x ": ]\n", addr + i);
 }
 
 /**
@@ -394,8 +385,7 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 	bool use_segoff = p ? (p->flags & RZ_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
 	bool dec = p ? (p->flags & RZ_PRINT_FLAGS_ADDRDEC) : false;
-	bool mod = p ? (p->flags & RZ_PRINT_FLAGS_ADDRMOD) : false;
-	char ch = p ? ((p->addrmod && mod) ? ((addr % p->addrmod) ? ' ' : ',') : ' ') : ' ';
+	char ch = ' ';
 	if (p && p->flags & RZ_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
@@ -1394,7 +1384,7 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
 		pj_n(j, word);
 	}
 	pj_end(j);
-	char *str = strdup(pj_string(j));
+	char *str = rz_str_dup(pj_string(j));
 	pj_free(j);
 	return str;
 }
@@ -1423,8 +1413,9 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	rz_return_val_if_fail(out, NULL);
 
 	const char *color;
-	RzAsmToken *tok;
-	rz_vector_foreach(toks->tokens, tok) {
+	void **it;
+	rz_pvector_foreach (toks->tokens, it) {
+		RzAsmToken *tok = *it;
 		switch (tok->type) {
 		default:
 			rz_strbuf_free(out);
@@ -1462,16 +1453,100 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	return out;
 }
 
-// Prints a help option with the option/arg strings colorized and aligned to a max length.
-RZ_API void rz_print_colored_help_option(const char *option, const char *arg, const char *description, size_t maxOptionAndArgLength) {
-	size_t optionWidth = strlen(option);
-	size_t maxSpaces = maxOptionAndArgLength + 2;
-	printf(Color_GREEN " %-.*s" Color_RESET, (int)optionWidth, option);
-	size_t remainingSpaces = maxSpaces - optionWidth;
-	if (RZ_STR_ISNOTEMPTY(arg)) {
-		printf(Color_YELLOW " %-s " Color_RESET, arg);
-		remainingSpaces -= strlen(arg) + 2;
+/**
+ * \brief Returns the maximum flag+arg length in \p options, and optionally the maximum description length.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p max_desc_len.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param max_desc_len If not NULL, this will contain the maximum description length in \p options, and function will
+ *        assume that there are 4 strings per option.
+ * \return The maximum flag+arg length in \p options.
+ */
+static size_t options_get_max_len(const char **options, size_t options_len, RZ_NULLABLE size_t *max_desc_len) {
+	int items_per_opt = max_desc_len ? 4 : 3;
+	size_t max_flag_n_arg_len = 0;
+	if (max_desc_len) {
+		*max_desc_len = 0;
 	}
-	printf("%-*.*s", (int)remainingSpaces, (int)remainingSpaces, "");
-	printf(Color_RESET "%s\n", description);
+	for (int i = 0; i < options_len; i += items_per_opt) {
+		size_t flag_len = options[i] ? strlen(options[i]) : 0;
+		size_t arg_len = options[i + 1] ? strlen(options[i + 1]) : 0;
+		size_t flag_n_arg_len = flag_len + arg_len;
+		if (flag_n_arg_len > max_flag_n_arg_len) {
+			max_flag_n_arg_len = flag_n_arg_len;
+		}
+		if (max_desc_len) {
+			size_t desc_len = strlen(options[i + 2]);
+			if (desc_len > *max_desc_len) {
+				*max_desc_len = desc_len;
+			}
+		}
+	}
+	return max_flag_n_arg_len;
+}
+
+/**
+ * \brief Prints a help option with example, with the option flag and arg strings colorized, and both description and
+ *        example aligned to columns.
+ *
+ * \param flag Option flag, will be colored green.
+ * \param arg Option arg, will be colored yellow.
+ * \param desc Option description, will be aligned in the third column unless both \p flag and \p arg are NULL. If so,
+ *        it will be aligned at the first column.
+ * \param max_flag_n_arg_len Width of column containing \p flag and \p arg. It needs to be calculated beforehand as the
+ *        max over all options, perhaps via options_get_max_len().
+ * \param example Optional option example, will be aligned in a column after the description and prefixed with ";  ".
+ * \param max_desc_len Width of column containing \p desc. It needs to be calculated beforehand as the max over all
+ *        descriptions, perhaps via options_get_max_len().
+ */
+static void print_colored_help_option(RZ_NULLABLE const char *flag, RZ_NULLABLE const char *arg, const char *desc,
+	size_t max_flag_n_arg_len, RZ_NULLABLE const char *example, size_t max_desc_len) {
+
+	rz_return_if_fail(desc);
+	bool desc_start = !flag && !arg;
+	size_t max_opt_spaces = max_flag_n_arg_len + 2;
+	printf(" ");
+	if (!desc_start) {
+		if (!flag) {
+			flag = "";
+		}
+		if (!arg) {
+			arg = "";
+		}
+		printf(Color_GREEN "%s" Color_RESET, flag);
+		size_t remaining_spaces = max_opt_spaces - strlen(flag);
+		if (RZ_STR_ISNOTEMPTY(arg)) {
+			printf(Color_YELLOW " %s " Color_RESET, arg);
+			remaining_spaces -= strlen(arg) + 2;
+			if (arg[0] == '\b') {
+				remaining_spaces += 2;
+			}
+		}
+		printf("%*s", (int)remaining_spaces, "");
+	}
+	printf(Color_RESET "%s", desc);
+	if (example) {
+		size_t max_desc_spaces = (desc_start ? max_opt_spaces : 0) + max_desc_len;
+		size_t remaining_spaces = max_desc_spaces - strlen(desc);
+		printf("%*s ;  %s", (int)remaining_spaces, "", example);
+	}
+	printf("\n");
+}
+
+/**
+ * \brief Print colored help from \p options.
+ *
+ * \param options Options string array, with 3 (default) or 4 strings per option depending on \p have_examples.
+ * \param options_len Length of \p options in strings, should be RZ_ARRAY_SIZE(options).
+ * \param have_examples If false, there are 3 strings per option: flag, argument and description. If true, there is a
+ *        4th string for each option that contains an example.
+ */
+RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples) {
+	rz_return_if_fail(options_len % (have_examples ? 4 : 3) == 0);
+	size_t max_desc_len = 0;
+	size_t max_flag_n_arg_len = options_get_max_len(options, options_len, have_examples ? &max_desc_len : NULL);
+	for (int i = 0; i < options_len; i += have_examples ? 4 : 3) {
+		print_colored_help_option(options[i], options[i + 1], options[i + 2], max_flag_n_arg_len,
+			have_examples ? options[i + 3] : NULL, max_desc_len);
+	}
 }

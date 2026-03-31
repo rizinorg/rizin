@@ -4,33 +4,33 @@
 #include <rz_analysis.h>
 
 static int hook_flag_read(RzAnalysisEsil *esil, const char *flag, ut64 *num) {
-	sdb_array_add(esil->stats, "flg.read", flag, 0);
+	sdb_array_add(esil->stats, "flg.read", flag);
 	return 0;
 }
 
 static int hook_command(RzAnalysisEsil *esil, const char *op) {
-	sdb_array_add(esil->stats, "ops.list", op, 0);
+	sdb_array_add(esil->stats, "ops.list", op);
 	return 0;
 }
 
 static int hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
-	sdb_array_add_num(esil->stats, "mem.read", addr, 0);
+	sdb_array_add_num(esil->stats, "mem.read", addr);
 	return 0;
 }
 
 static int hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	sdb_array_add_num(esil->stats, "mem.write", addr, 0);
+	sdb_array_add_num(esil->stats, "mem.write", addr);
 	return 0;
 }
 
 static int hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	const char *key = (*name >= '0' && *name <= '9') ? "num.load" : "reg.read";
-	sdb_array_add(esil->stats, key, name, 0);
+	sdb_array_add(esil->stats, key, name);
 	return 0;
 }
 
 static int hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
-	sdb_array_add(esil->stats, "reg.write", name, 0);
+	sdb_array_add(esil->stats, "reg.write", name);
 	return 0;
 }
 

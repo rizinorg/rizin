@@ -1,0 +1,2481 @@
+// SPDX-FileCopyrightText: 2024 deroad <deroad@kumo.xn--q9jyb4c>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include <string.h>
+#include <rz_types.h>
+#include <rz_lib.h>
+#include <rz_asm.h>
+#include <rz_analysis.h>
+
+// https://loongson.github.io/LoongArch-Documentation/LoongArch-ELF-ABI-EN.html
+static char *loongarch_get_reg_profile(RzAnalysis *analysis) {
+	const char *p = NULL;
+	switch (analysis->bits) {
+	default:
+	case 32:
+		p =
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	fp\n"
+			"=SN	a0\n"
+			"=A0	a0\n"
+			"=A1	a1\n"
+			"=A2	a2\n"
+			"=A3	a3\n"
+			"=A4	a4\n"
+			"=A5	a5\n"
+			"=A6	a6\n"
+			"=A7	a7\n"
+			"=R0    a0\n"
+			"=R1    a1\n"
+			"gpr	zero	.32	?	0\n" // Always zero
+			"gpr	ra	.32	4	0\n" // Return address
+			"gpr	tp	.32	8	0\n" // Thread pointer
+			"gpr	sp	.32	12	0\n" // Stack pointer
+			"gpr	a0	.32	16	0\n" // Argument registers / return value registers
+			"gpr	a1	.32	20	0\n" // Argument registers / return value registers
+			"gpr	a2	.32	24	0\n" // Argument registers / return value registers
+			"gpr	a3	.32	28	0\n" // Argument registers / return value registers
+			"gpr	a4	.32	32	0\n" // Argument registers / return value registers
+			"gpr	a5	.32	36	0\n" // Argument registers / return value registers
+			"gpr	a6	.32	40	0\n" // Argument registers / return value registers
+			"gpr	a7	.32	44	0\n" // Argument registers / return value registers
+			"gpr	t0	.32	48	0\n" // Temporary registers
+			"gpr	t1	.32	52	0\n" // Temporary registers
+			"gpr	t2	.32	56	0\n" // Temporary registers
+			"gpr	t3	.32	60	0\n" // Temporary registers
+			"gpr	t4	.32	64	0\n" // Temporary registers
+			"gpr	t5	.32	68	0\n" // Temporary registers
+			"gpr	t6	.32	72	0\n" // Temporary registers
+			"gpr	t7	.32	76	0\n" // Temporary registers
+			"gpr	t8	.32	80	0\n" // Temporary registers
+			"gpr	u0	.32	84	0\n" // Percpu base address (unused)
+			"gpr	fp	.32	88	0\n" // Frame pointer / Static registers (s9)
+			"gpr	s0	.32	92	0\n" // Static registers
+			"gpr	s1	.32	96	0\n" // Static registers
+			"gpr	s2	.32	100	0\n" // Static registers
+			"gpr	s3	.32	104	0\n" // Static registers
+			"gpr	s4	.32	108	0\n" // Static registers
+			"gpr	s5	.32	112	0\n" // Static registers
+			"gpr	s6	.32	116	0\n" // Static registers
+			"gpr	s7	.32	120	0\n" // Static registers
+			"gpr	s8	.32	124	0\n" // Static registers
+			"gpr	s8	.32	128	0\n" // Static registers
+			"gpr	pc	.32	132	0\n";
+		break;
+	case 64:
+		p =
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	fp\n"
+			"=SN	a0\n"
+			"=A0	a0\n"
+			"=A1	a1\n"
+			"=A2	a2\n"
+			"=A3	a3\n"
+			"=A4	a4\n"
+			"=A5	a5\n"
+			"=A6	a6\n"
+			"=A7	a7\n"
+			"=R0    a0\n"
+			"=R1    a1\n"
+			"gpr	zero	.64	?	0\n" // Always zero
+			"gpr	ra	.64	8	0\n" // Return address
+			"gpr	tp	.64	16	0\n" // Thread pointer
+			"gpr	sp	.64	24	0\n" // Stack pointer
+			"gpr	a0	.64	32	0\n" // Argument registers / return value registers
+			"gpr	a1	.64	40	0\n" // Argument registers / return value registers
+			"gpr	a2	.64	48	0\n" // Argument registers / return value registers
+			"gpr	a3	.64	56	0\n" // Argument registers / return value registers
+			"gpr	a4	.64	64	0\n" // Argument registers / return value registers
+			"gpr	a5	.64	72	0\n" // Argument registers / return value registers
+			"gpr	a6	.64	80	0\n" // Argument registers / return value registers
+			"gpr	a7	.64	88	0\n" // Argument registers / return value registers
+			"gpr	t0	.64	96	0\n" // Temporary registers
+			"gpr	t1	.64	104	0\n" // Temporary registers
+			"gpr	t2	.64	112	0\n" // Temporary registers
+			"gpr	t3	.64	120	0\n" // Temporary registers
+			"gpr	t4	.64	128	0\n" // Temporary registers
+			"gpr	t5	.64	136	0\n" // Temporary registers
+			"gpr	t6	.64	144	0\n" // Temporary registers
+			"gpr	t7	.64	152	0\n" // Temporary registers
+			"gpr	t8	.64	160	0\n" // Temporary registers
+			"gpr	u0	.64	168	0\n" // Percpu base address (unused)
+			"gpr	fp	.64	176	0\n" // Frame pointer / Static registers (s9)
+			"gpr	s0	.64	184	0\n" // Static registers
+			"gpr	s1	.64	192	0\n" // Static registers
+			"gpr	s2	.64	200	0\n" // Static registers
+			"gpr	s3	.64	208	0\n" // Static registers
+			"gpr	s4	.64	216	0\n" // Static registers
+			"gpr	s5	.64	224	0\n" // Static registers
+			"gpr	s6	.64	232	0\n" // Static registers
+			"gpr	s7	.64	240	0\n" // Static registers
+			"gpr	s8	.64	248	0\n" // Static registers
+			"gpr	s8	.64	256	0\n" // Static registers
+			"gpr	pc	.64	264	0\n";
+		break;
+	}
+	return strdup(p);
+}
+
+static inline void fill_from_loongarch_op(RzReg *rz_reg, csh handle, RzAnalysisValue *av, cs_loongarch_op *op) {
+	switch (op->type) {
+	case LOONGARCH_OP_INVALID:
+	default:
+		av->type = RZ_ANALYSIS_VAL_UNK;
+		break;
+	case LOONGARCH_OP_IMM:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = op->imm;
+		break;
+	case LOONGARCH_OP_REG:
+		av->type = RZ_ANALYSIS_VAL_REG;
+		av->reg = rz_reg_get(rz_reg, cs_reg_name(handle, op->reg), RZ_REG_TYPE_ANY);
+		break;
+	}
+}
+
+static void loongarch_fillval(RzAsmLoongArchContext *ctx, RzAnalysis *a, RzAnalysisOp *op) {
+	if (!ctx->insn->detail) {
+		return;
+	}
+	uint8_t srci = 0;
+	cs_loongarch *al = &ctx->insn->detail->loongarch;
+	if (!al) {
+		return;
+	}
+	for (uint8_t i = 0; i < al->op_count; ++i) {
+		cs_loongarch_op *loongarchop = &al->operands[i];
+		RzAnalysisValue *av = rz_analysis_value_new();
+		fill_from_loongarch_op(a->reg, ctx->h, av, loongarchop);
+		if (loongarchop->access & CS_AC_READ) {
+			av->access |= RZ_ANALYSIS_ACC_R;
+			op->src[srci++] = av;
+		}
+		if (loongarchop->access & CS_AC_WRITE) {
+			av->access |= RZ_ANALYSIS_ACC_W;
+			if (loongarchop->access & CS_AC_READ) {
+				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
+			}
+			op->dst = av;
+		}
+	}
+}
+
+static RzStructuredData *loongarch_opex(RzAsmLoongArchContext *ctx) {
+	if (!ctx->insn->detail) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
+	cs_loongarch *al = &ctx->insn->detail->loongarch;
+	for (st32 i = 0; i < al->op_count; i++) {
+		cs_loongarch_op *op = al->operands + i;
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
+		switch (op->type) {
+		case LOONGARCH_OP_MEM:
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			if (op->mem.base != LOONGARCH_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(ctx->h, op->mem.base));
+			}
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			break;
+		case LOONGARCH_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(ctx->h, op->reg));
+			break;
+		case LOONGARCH_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
+			break;
+		default:
+			rz_structured_data_map_add_string(operand, "type", "invalid");
+			break;
+		}
+	}
+
+	return root;
+}
+
+static void loongarch_op_set_type(RzAsmLoongArchContext *ctx, RzAnalysisOp *op) {
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+
+	switch (ctx->insn->id) {
+	case LOONGARCH_INS_CALL36:
+		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		op->fail = op->addr + op->size;
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_LA_ABS:
+	case LOONGARCH_INS_LA_GOT:
+	case LOONGARCH_INS_LA_PCREL:
+	case LOONGARCH_INS_LA_TLS_GD:
+	case LOONGARCH_INS_LA_TLS_IE:
+	case LOONGARCH_INS_LA_TLS_LD:
+	case LOONGARCH_INS_LA_TLS_LE:
+		break;
+	case LOONGARCH_INS_LI_D:
+	case LOONGARCH_INS_LI_W:
+		op->val = loongarch_op_as_imm(ctx, 1);
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		break;
+	case LOONGARCH_INS_TAIL36:
+		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		op->fail = op->addr + op->size;
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_VREPLI_B:
+	case LOONGARCH_INS_VREPLI_D:
+	case LOONGARCH_INS_VREPLI_H:
+	case LOONGARCH_INS_VREPLI_W:
+	case LOONGARCH_INS_XVREPLI_B:
+	case LOONGARCH_INS_XVREPLI_D:
+	case LOONGARCH_INS_XVREPLI_H:
+	case LOONGARCH_INS_XVREPLI_W:
+		break;
+	case LOONGARCH_INS_ADDI_D:
+	case LOONGARCH_INS_ADDI_W:
+	case LOONGARCH_INS_ADDU12I_D:
+	case LOONGARCH_INS_ADDU12I_W:
+	case LOONGARCH_INS_ADDU16I_D:
+		op->val = loongarch_op_as_imm(ctx, 2);
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case LOONGARCH_INS_ADC_B:
+	case LOONGARCH_INS_ADC_D:
+	case LOONGARCH_INS_ADC_H:
+	case LOONGARCH_INS_ADC_W:
+	case LOONGARCH_INS_ADD_D:
+	case LOONGARCH_INS_ADD_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case LOONGARCH_INS_ALSL_D:
+	case LOONGARCH_INS_ALSL_W:
+	case LOONGARCH_INS_ALSL_WU:
+	case LOONGARCH_INS_AMADD_B:
+	case LOONGARCH_INS_AMADD_D:
+	case LOONGARCH_INS_AMADD_H:
+	case LOONGARCH_INS_AMADD_W:
+	case LOONGARCH_INS_AMADD_DB_B:
+	case LOONGARCH_INS_AMADD_DB_D:
+	case LOONGARCH_INS_AMADD_DB_H:
+	case LOONGARCH_INS_AMADD_DB_W:
+	case LOONGARCH_INS_AMAND_D:
+	case LOONGARCH_INS_AMAND_W:
+	case LOONGARCH_INS_AMAND_DB_D:
+	case LOONGARCH_INS_AMAND_DB_W:
+	case LOONGARCH_INS_AMCAS_B:
+	case LOONGARCH_INS_AMCAS_D:
+	case LOONGARCH_INS_AMCAS_H:
+	case LOONGARCH_INS_AMCAS_W:
+	case LOONGARCH_INS_AMCAS_DB_B:
+	case LOONGARCH_INS_AMCAS_DB_D:
+	case LOONGARCH_INS_AMCAS_DB_H:
+	case LOONGARCH_INS_AMCAS_DB_W:
+	case LOONGARCH_INS_AMMAX_D:
+	case LOONGARCH_INS_AMMAX_DU:
+	case LOONGARCH_INS_AMMAX_W:
+	case LOONGARCH_INS_AMMAX_WU:
+	case LOONGARCH_INS_AMMAX_DB_D:
+	case LOONGARCH_INS_AMMAX_DB_DU:
+	case LOONGARCH_INS_AMMAX_DB_W:
+	case LOONGARCH_INS_AMMAX_DB_WU:
+	case LOONGARCH_INS_AMMIN_D:
+	case LOONGARCH_INS_AMMIN_DU:
+	case LOONGARCH_INS_AMMIN_W:
+	case LOONGARCH_INS_AMMIN_WU:
+	case LOONGARCH_INS_AMMIN_DB_D:
+	case LOONGARCH_INS_AMMIN_DB_DU:
+	case LOONGARCH_INS_AMMIN_DB_W:
+	case LOONGARCH_INS_AMMIN_DB_WU:
+	case LOONGARCH_INS_AMOR_D:
+	case LOONGARCH_INS_AMOR_W:
+	case LOONGARCH_INS_AMOR_DB_D:
+	case LOONGARCH_INS_AMOR_DB_W:
+	case LOONGARCH_INS_AMSWAP_B:
+	case LOONGARCH_INS_AMSWAP_D:
+	case LOONGARCH_INS_AMSWAP_H:
+	case LOONGARCH_INS_AMSWAP_W:
+	case LOONGARCH_INS_AMSWAP_DB_B:
+	case LOONGARCH_INS_AMSWAP_DB_D:
+	case LOONGARCH_INS_AMSWAP_DB_H:
+	case LOONGARCH_INS_AMSWAP_DB_W:
+	case LOONGARCH_INS_AMXOR_D:
+	case LOONGARCH_INS_AMXOR_W:
+	case LOONGARCH_INS_AMXOR_DB_D:
+	case LOONGARCH_INS_AMXOR_DB_W:
+		break;
+	case LOONGARCH_INS_AND:
+	case LOONGARCH_INS_ANDI:
+	case LOONGARCH_INS_ANDN:
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		break;
+	case LOONGARCH_INS_ARMADC_W:
+	case LOONGARCH_INS_ARMADD_W:
+	case LOONGARCH_INS_ARMAND_W:
+	case LOONGARCH_INS_ARMMFFLAG:
+	case LOONGARCH_INS_ARMMOVE:
+	case LOONGARCH_INS_ARMMOV_D:
+	case LOONGARCH_INS_ARMMOV_W:
+	case LOONGARCH_INS_ARMMTFLAG:
+	case LOONGARCH_INS_ARMNOT_W:
+	case LOONGARCH_INS_ARMOR_W:
+	case LOONGARCH_INS_ARMROTRI_W:
+	case LOONGARCH_INS_ARMROTR_W:
+	case LOONGARCH_INS_ARMRRX_W:
+	case LOONGARCH_INS_ARMSBC_W:
+	case LOONGARCH_INS_ARMSLLI_W:
+	case LOONGARCH_INS_ARMSLL_W:
+	case LOONGARCH_INS_ARMSRAI_W:
+	case LOONGARCH_INS_ARMSRA_W:
+	case LOONGARCH_INS_ARMSRLI_W:
+	case LOONGARCH_INS_ARMSRL_W:
+	case LOONGARCH_INS_ARMSUB_W:
+	case LOONGARCH_INS_ARMXOR_W:
+	case LOONGARCH_INS_ASRTGT_D:
+	case LOONGARCH_INS_ASRTLE_D:
+	case LOONGARCH_INS_BITREV_4B:
+	case LOONGARCH_INS_BITREV_8B:
+	case LOONGARCH_INS_BITREV_D:
+	case LOONGARCH_INS_BITREV_W:
+		break;
+	case LOONGARCH_INS_B:
+		op->delay = 1;
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		op->jump = loongarch_op_as_imm(ctx, 0);
+		break;
+	case LOONGARCH_INS_BL:
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		op->jump = loongarch_op_as_imm(ctx, 0);
+		op->fail = op->addr + op->size;
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_BGE:
+	case LOONGARCH_INS_BGEU:
+	case LOONGARCH_INS_BLT:
+	case LOONGARCH_INS_BLTU:
+	case LOONGARCH_INS_BEQ:
+	case LOONGARCH_INS_BNE:
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->jump = loongarch_op_as_imm(ctx, 2);
+		op->fail = op->addr + op->size;
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_BCEQZ:
+	case LOONGARCH_INS_BCNEZ:
+	case LOONGARCH_INS_BEQZ:
+	case LOONGARCH_INS_BNEZ:
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->jump = loongarch_op_as_imm(ctx, 1);
+		op->fail = op->addr + op->size;
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_BREAK:
+	case LOONGARCH_INS_BSTRINS_D:
+	case LOONGARCH_INS_BSTRINS_W:
+	case LOONGARCH_INS_BSTRPICK_D:
+	case LOONGARCH_INS_BSTRPICK_W:
+	case LOONGARCH_INS_BYTEPICK_D:
+	case LOONGARCH_INS_BYTEPICK_W:
+	case LOONGARCH_INS_CACOP:
+	case LOONGARCH_INS_CLO_D:
+	case LOONGARCH_INS_CLO_W:
+	case LOONGARCH_INS_CLZ_D:
+	case LOONGARCH_INS_CLZ_W:
+	case LOONGARCH_INS_CPUCFG:
+	case LOONGARCH_INS_CRCC_W_B_W:
+	case LOONGARCH_INS_CRCC_W_D_W:
+	case LOONGARCH_INS_CRCC_W_H_W:
+	case LOONGARCH_INS_CRCC_W_W_W:
+	case LOONGARCH_INS_CRC_W_B_W:
+	case LOONGARCH_INS_CRC_W_D_W:
+	case LOONGARCH_INS_CRC_W_H_W:
+	case LOONGARCH_INS_CRC_W_W_W:
+	case LOONGARCH_INS_CSRRD:
+	case LOONGARCH_INS_CSRWR:
+	case LOONGARCH_INS_CSRXCHG:
+	case LOONGARCH_INS_CTO_D:
+	case LOONGARCH_INS_CTO_W:
+	case LOONGARCH_INS_CTZ_D:
+	case LOONGARCH_INS_CTZ_W:
+	case LOONGARCH_INS_DBAR:
+	case LOONGARCH_INS_DBCL:
+		break;
+	case LOONGARCH_INS_DIV_D:
+	case LOONGARCH_INS_DIV_DU:
+	case LOONGARCH_INS_DIV_W:
+	case LOONGARCH_INS_DIV_WU:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
+	case LOONGARCH_INS_ERTN:
+	case LOONGARCH_INS_EXT_W_B:
+	case LOONGARCH_INS_EXT_W_H:
+	case LOONGARCH_INS_FABS_D:
+	case LOONGARCH_INS_FABS_S:
+	case LOONGARCH_INS_FADD_D:
+	case LOONGARCH_INS_FADD_S:
+	case LOONGARCH_INS_FCLASS_D:
+	case LOONGARCH_INS_FCLASS_S:
+	case LOONGARCH_INS_FCMP_CAF_D:
+	case LOONGARCH_INS_FCMP_CAF_S:
+	case LOONGARCH_INS_FCMP_CEQ_D:
+	case LOONGARCH_INS_FCMP_CEQ_S:
+	case LOONGARCH_INS_FCMP_CLE_D:
+	case LOONGARCH_INS_FCMP_CLE_S:
+	case LOONGARCH_INS_FCMP_CLT_D:
+	case LOONGARCH_INS_FCMP_CLT_S:
+	case LOONGARCH_INS_FCMP_CNE_D:
+	case LOONGARCH_INS_FCMP_CNE_S:
+	case LOONGARCH_INS_FCMP_COR_D:
+	case LOONGARCH_INS_FCMP_COR_S:
+	case LOONGARCH_INS_FCMP_CUEQ_D:
+	case LOONGARCH_INS_FCMP_CUEQ_S:
+	case LOONGARCH_INS_FCMP_CULE_D:
+	case LOONGARCH_INS_FCMP_CULE_S:
+	case LOONGARCH_INS_FCMP_CULT_D:
+	case LOONGARCH_INS_FCMP_CULT_S:
+	case LOONGARCH_INS_FCMP_CUNE_D:
+	case LOONGARCH_INS_FCMP_CUNE_S:
+	case LOONGARCH_INS_FCMP_CUN_D:
+	case LOONGARCH_INS_FCMP_CUN_S:
+	case LOONGARCH_INS_FCMP_SAF_D:
+	case LOONGARCH_INS_FCMP_SAF_S:
+	case LOONGARCH_INS_FCMP_SEQ_D:
+	case LOONGARCH_INS_FCMP_SEQ_S:
+	case LOONGARCH_INS_FCMP_SLE_D:
+	case LOONGARCH_INS_FCMP_SLE_S:
+	case LOONGARCH_INS_FCMP_SLT_D:
+	case LOONGARCH_INS_FCMP_SLT_S:
+	case LOONGARCH_INS_FCMP_SNE_D:
+	case LOONGARCH_INS_FCMP_SNE_S:
+	case LOONGARCH_INS_FCMP_SOR_D:
+	case LOONGARCH_INS_FCMP_SOR_S:
+	case LOONGARCH_INS_FCMP_SUEQ_D:
+	case LOONGARCH_INS_FCMP_SUEQ_S:
+	case LOONGARCH_INS_FCMP_SULE_D:
+	case LOONGARCH_INS_FCMP_SULE_S:
+	case LOONGARCH_INS_FCMP_SULT_D:
+	case LOONGARCH_INS_FCMP_SULT_S:
+	case LOONGARCH_INS_FCMP_SUNE_D:
+	case LOONGARCH_INS_FCMP_SUNE_S:
+	case LOONGARCH_INS_FCMP_SUN_D:
+	case LOONGARCH_INS_FCMP_SUN_S:
+	case LOONGARCH_INS_FCOPYSIGN_D:
+	case LOONGARCH_INS_FCOPYSIGN_S:
+	case LOONGARCH_INS_FCVT_D_LD:
+	case LOONGARCH_INS_FCVT_D_S:
+	case LOONGARCH_INS_FCVT_LD_D:
+	case LOONGARCH_INS_FCVT_S_D:
+	case LOONGARCH_INS_FCVT_UD_D:
+	case LOONGARCH_INS_FDIV_D:
+	case LOONGARCH_INS_FDIV_S:
+	case LOONGARCH_INS_FFINT_D_L:
+	case LOONGARCH_INS_FFINT_D_W:
+	case LOONGARCH_INS_FFINT_S_L:
+	case LOONGARCH_INS_FFINT_S_W:
+	case LOONGARCH_INS_FLDGT_D:
+	case LOONGARCH_INS_FLDGT_S:
+	case LOONGARCH_INS_FLDLE_D:
+	case LOONGARCH_INS_FLDLE_S:
+	case LOONGARCH_INS_FLDX_D:
+	case LOONGARCH_INS_FLDX_S:
+	case LOONGARCH_INS_FLD_D:
+	case LOONGARCH_INS_FLD_S:
+	case LOONGARCH_INS_FLOGB_D:
+	case LOONGARCH_INS_FLOGB_S:
+	case LOONGARCH_INS_FMADD_D:
+	case LOONGARCH_INS_FMADD_S:
+	case LOONGARCH_INS_FMAXA_D:
+	case LOONGARCH_INS_FMAXA_S:
+	case LOONGARCH_INS_FMAX_D:
+	case LOONGARCH_INS_FMAX_S:
+	case LOONGARCH_INS_FMINA_D:
+	case LOONGARCH_INS_FMINA_S:
+	case LOONGARCH_INS_FMIN_D:
+	case LOONGARCH_INS_FMIN_S:
+	case LOONGARCH_INS_FMOV_D:
+	case LOONGARCH_INS_FMOV_S:
+	case LOONGARCH_INS_FMSUB_D:
+	case LOONGARCH_INS_FMSUB_S:
+	case LOONGARCH_INS_FMUL_D:
+	case LOONGARCH_INS_FMUL_S:
+	case LOONGARCH_INS_FNEG_D:
+	case LOONGARCH_INS_FNEG_S:
+	case LOONGARCH_INS_FNMADD_D:
+	case LOONGARCH_INS_FNMADD_S:
+	case LOONGARCH_INS_FNMSUB_D:
+	case LOONGARCH_INS_FNMSUB_S:
+	case LOONGARCH_INS_FRECIPE_D:
+	case LOONGARCH_INS_FRECIPE_S:
+	case LOONGARCH_INS_FRECIP_D:
+	case LOONGARCH_INS_FRECIP_S:
+	case LOONGARCH_INS_FRINT_D:
+	case LOONGARCH_INS_FRINT_S:
+	case LOONGARCH_INS_FRSQRTE_D:
+	case LOONGARCH_INS_FRSQRTE_S:
+	case LOONGARCH_INS_FRSQRT_D:
+	case LOONGARCH_INS_FRSQRT_S:
+	case LOONGARCH_INS_FSCALEB_D:
+	case LOONGARCH_INS_FSCALEB_S:
+	case LOONGARCH_INS_FSEL:
+	case LOONGARCH_INS_FSQRT_D:
+	case LOONGARCH_INS_FSQRT_S:
+	case LOONGARCH_INS_FSTGT_D:
+	case LOONGARCH_INS_FSTGT_S:
+	case LOONGARCH_INS_FSTLE_D:
+	case LOONGARCH_INS_FSTLE_S:
+	case LOONGARCH_INS_FSTX_D:
+	case LOONGARCH_INS_FSTX_S:
+	case LOONGARCH_INS_FST_D:
+	case LOONGARCH_INS_FST_S:
+	case LOONGARCH_INS_FSUB_D:
+	case LOONGARCH_INS_FSUB_S:
+	case LOONGARCH_INS_FTINTRM_L_D:
+	case LOONGARCH_INS_FTINTRM_L_S:
+	case LOONGARCH_INS_FTINTRM_W_D:
+	case LOONGARCH_INS_FTINTRM_W_S:
+	case LOONGARCH_INS_FTINTRNE_L_D:
+	case LOONGARCH_INS_FTINTRNE_L_S:
+	case LOONGARCH_INS_FTINTRNE_W_D:
+	case LOONGARCH_INS_FTINTRNE_W_S:
+	case LOONGARCH_INS_FTINTRP_L_D:
+	case LOONGARCH_INS_FTINTRP_L_S:
+	case LOONGARCH_INS_FTINTRP_W_D:
+	case LOONGARCH_INS_FTINTRP_W_S:
+	case LOONGARCH_INS_FTINTRZ_L_D:
+	case LOONGARCH_INS_FTINTRZ_L_S:
+	case LOONGARCH_INS_FTINTRZ_W_D:
+	case LOONGARCH_INS_FTINTRZ_W_S:
+	case LOONGARCH_INS_FTINT_L_D:
+	case LOONGARCH_INS_FTINT_L_S:
+	case LOONGARCH_INS_FTINT_W_D:
+	case LOONGARCH_INS_FTINT_W_S:
+	case LOONGARCH_INS_GCSRRD:
+	case LOONGARCH_INS_GCSRWR:
+	case LOONGARCH_INS_GCSRXCHG:
+	case LOONGARCH_INS_GTLBFLUSH:
+	case LOONGARCH_INS_HVCL:
+	case LOONGARCH_INS_IBAR:
+	case LOONGARCH_INS_IDLE:
+	case LOONGARCH_INS_INVTLB:
+	case LOONGARCH_INS_IOCSRRD_B:
+	case LOONGARCH_INS_IOCSRRD_D:
+	case LOONGARCH_INS_IOCSRRD_H:
+	case LOONGARCH_INS_IOCSRRD_W:
+	case LOONGARCH_INS_IOCSRWR_B:
+	case LOONGARCH_INS_IOCSRWR_D:
+	case LOONGARCH_INS_IOCSRWR_H:
+	case LOONGARCH_INS_IOCSRWR_W:
+		break;
+	case LOONGARCH_INS_JIRL:
+		if (loongarch_op_count(ctx->insn) < 1) {
+			op->type = RZ_ANALYSIS_OP_TYPE_RET;
+			op->stackop = RZ_ANALYSIS_STACK_GET;
+			op->stackptr = op->size;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+		}
+		op->fail = op->addr + op->size;
+		op->delay = 0; // not delayed.
+		break;
+	case LOONGARCH_INS_JISCR0:
+		// PC = SCR[0] + imm;
+	case LOONGARCH_INS_JISCR1:
+		// PC = SCR[1] + imm;
+		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
+		op->val = (ut32)loongarch_op_as_imm(ctx, 0);
+		op->delay = 1;
+		break;
+	case LOONGARCH_INS_LDDIR:
+	case LOONGARCH_INS_LDGT_B:
+	case LOONGARCH_INS_LDGT_D:
+	case LOONGARCH_INS_LDGT_H:
+	case LOONGARCH_INS_LDGT_W:
+	case LOONGARCH_INS_LDLE_B:
+	case LOONGARCH_INS_LDLE_D:
+	case LOONGARCH_INS_LDLE_H:
+	case LOONGARCH_INS_LDLE_W:
+	case LOONGARCH_INS_LDL_D:
+	case LOONGARCH_INS_LDL_W:
+	case LOONGARCH_INS_LDPTE:
+	case LOONGARCH_INS_LDPTR_D:
+	case LOONGARCH_INS_LDPTR_W:
+	case LOONGARCH_INS_LDR_D:
+	case LOONGARCH_INS_LDR_W:
+	case LOONGARCH_INS_LDX_B:
+	case LOONGARCH_INS_LDX_BU:
+	case LOONGARCH_INS_LDX_D:
+	case LOONGARCH_INS_LDX_H:
+	case LOONGARCH_INS_LDX_HU:
+	case LOONGARCH_INS_LDX_W:
+	case LOONGARCH_INS_LDX_WU:
+	case LOONGARCH_INS_LD_B:
+	case LOONGARCH_INS_LD_BU:
+	case LOONGARCH_INS_LD_D:
+	case LOONGARCH_INS_LD_H:
+	case LOONGARCH_INS_LD_HU:
+	case LOONGARCH_INS_LD_W:
+	case LOONGARCH_INS_LD_WU:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case LOONGARCH_INS_LLACQ_D:
+	case LOONGARCH_INS_LLACQ_W:
+	case LOONGARCH_INS_LL_D:
+	case LOONGARCH_INS_LL_W:
+		break;
+	case LOONGARCH_INS_LU12I_W:
+	case LOONGARCH_INS_LU32I_D:
+		op->val = loongarch_op_as_imm(ctx, 1);
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case LOONGARCH_INS_LU52I_D:
+		op->val = loongarch_op_as_imm(ctx, 2);
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case LOONGARCH_INS_MASKEQZ:
+	case LOONGARCH_INS_MASKNEZ:
+		break;
+	case LOONGARCH_INS_MOD_D:
+	case LOONGARCH_INS_MOD_DU:
+	case LOONGARCH_INS_MOD_W:
+	case LOONGARCH_INS_MOD_WU:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOD;
+		break;
+	case LOONGARCH_INS_MOVCF2FR:
+	case LOONGARCH_INS_MOVCF2GR:
+	case LOONGARCH_INS_MOVFCSR2GR:
+	case LOONGARCH_INS_MOVFR2CF:
+	case LOONGARCH_INS_MOVFR2GR_D:
+	case LOONGARCH_INS_MOVFR2GR_S:
+	case LOONGARCH_INS_MOVFRH2GR_S:
+	case LOONGARCH_INS_MOVGR2CF:
+	case LOONGARCH_INS_MOVGR2FCSR:
+	case LOONGARCH_INS_MOVGR2FRH_W:
+	case LOONGARCH_INS_MOVGR2FR_D:
+	case LOONGARCH_INS_MOVGR2FR_W:
+	case LOONGARCH_INS_MOVGR2SCR:
+	case LOONGARCH_INS_MOVSCR2GR:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		break;
+	case LOONGARCH_INS_MULH_D:
+	case LOONGARCH_INS_MULH_DU:
+	case LOONGARCH_INS_MULH_W:
+	case LOONGARCH_INS_MULH_WU:
+	case LOONGARCH_INS_MULW_D_W:
+	case LOONGARCH_INS_MULW_D_WU:
+	case LOONGARCH_INS_MUL_D:
+	case LOONGARCH_INS_MUL_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		break;
+	case LOONGARCH_INS_NOR:
+		op->type = RZ_ANALYSIS_OP_TYPE_NOR;
+		break;
+	case LOONGARCH_INS_OR:
+	case LOONGARCH_INS_ORI:
+	case LOONGARCH_INS_ORN:
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		break;
+	case LOONGARCH_INS_PCADDI:
+		op->val = op->addr;
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 2);
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		break;
+	case LOONGARCH_INS_PCADDU12I:
+		op->val = op->addr;
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 12);
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		break;
+	case LOONGARCH_INS_PCADDU18I:
+		op->val = op->addr;
+		op->val += ((ut64)loongarch_op_as_imm(ctx, 1) << 18);
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		break;
+	case LOONGARCH_INS_PCALAU12I: {
+		ut64 tmp = op->addr & 0xFFFFFFFFFFFF0000ull;
+		tmp |= ((ut64)loongarch_op_as_imm(ctx, 1) << 12);
+		op->val = tmp - op->addr;
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		break;
+	}
+	case LOONGARCH_INS_PRELD:
+	case LOONGARCH_INS_PRELDX:
+	case LOONGARCH_INS_RCRI_B:
+	case LOONGARCH_INS_RCRI_D:
+	case LOONGARCH_INS_RCRI_H:
+	case LOONGARCH_INS_RCRI_W:
+	case LOONGARCH_INS_RCR_B:
+	case LOONGARCH_INS_RCR_D:
+	case LOONGARCH_INS_RCR_H:
+	case LOONGARCH_INS_RCR_W:
+	case LOONGARCH_INS_RDTIMEH_W:
+	case LOONGARCH_INS_RDTIMEL_W:
+	case LOONGARCH_INS_RDTIME_D:
+	case LOONGARCH_INS_REVB_2H:
+	case LOONGARCH_INS_REVB_2W:
+	case LOONGARCH_INS_REVB_4H:
+	case LOONGARCH_INS_REVB_D:
+	case LOONGARCH_INS_REVH_2W:
+	case LOONGARCH_INS_REVH_D:
+	case LOONGARCH_INS_ROTRI_B:
+	case LOONGARCH_INS_ROTRI_D:
+	case LOONGARCH_INS_ROTRI_H:
+	case LOONGARCH_INS_ROTRI_W:
+	case LOONGARCH_INS_ROTR_B:
+	case LOONGARCH_INS_ROTR_D:
+	case LOONGARCH_INS_ROTR_H:
+	case LOONGARCH_INS_ROTR_W:
+	case LOONGARCH_INS_SBC_B:
+	case LOONGARCH_INS_SBC_D:
+	case LOONGARCH_INS_SBC_H:
+	case LOONGARCH_INS_SBC_W:
+	case LOONGARCH_INS_SCREL_D:
+	case LOONGARCH_INS_SCREL_W:
+	case LOONGARCH_INS_SC_D:
+	case LOONGARCH_INS_SC_Q:
+	case LOONGARCH_INS_SC_W:
+	case LOONGARCH_INS_SETARMJ:
+	case LOONGARCH_INS_SETX86J:
+	case LOONGARCH_INS_SETX86LOOPE:
+	case LOONGARCH_INS_SETX86LOOPNE:
+	case LOONGARCH_INS_SLLI_D:
+	case LOONGARCH_INS_SLLI_W:
+	case LOONGARCH_INS_SLL_D:
+	case LOONGARCH_INS_SLL_W:
+	case LOONGARCH_INS_SLT:
+	case LOONGARCH_INS_SLTI:
+	case LOONGARCH_INS_SLTU:
+	case LOONGARCH_INS_SLTUI:
+	case LOONGARCH_INS_SRAI_D:
+	case LOONGARCH_INS_SRAI_W:
+	case LOONGARCH_INS_SRA_D:
+	case LOONGARCH_INS_SRA_W:
+	case LOONGARCH_INS_SRLI_D:
+	case LOONGARCH_INS_SRLI_W:
+	case LOONGARCH_INS_SRL_D:
+	case LOONGARCH_INS_SRL_W:
+		break;
+	case LOONGARCH_INS_STGT_B:
+	case LOONGARCH_INS_STGT_D:
+	case LOONGARCH_INS_STGT_H:
+	case LOONGARCH_INS_STGT_W:
+	case LOONGARCH_INS_STLE_B:
+	case LOONGARCH_INS_STLE_D:
+	case LOONGARCH_INS_STLE_H:
+	case LOONGARCH_INS_STLE_W:
+	case LOONGARCH_INS_STL_D:
+	case LOONGARCH_INS_STL_W:
+	case LOONGARCH_INS_STPTR_D:
+	case LOONGARCH_INS_STPTR_W:
+	case LOONGARCH_INS_STR_D:
+	case LOONGARCH_INS_STR_W:
+	case LOONGARCH_INS_STX_B:
+	case LOONGARCH_INS_STX_D:
+	case LOONGARCH_INS_STX_H:
+	case LOONGARCH_INS_STX_W:
+	case LOONGARCH_INS_ST_B:
+	case LOONGARCH_INS_ST_D:
+	case LOONGARCH_INS_ST_H:
+	case LOONGARCH_INS_ST_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		break;
+	case LOONGARCH_INS_SUB_D:
+	case LOONGARCH_INS_SUB_W:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		break;
+	case LOONGARCH_INS_SYSCALL:
+	case LOONGARCH_INS_TLBCLR:
+	case LOONGARCH_INS_TLBFILL:
+	case LOONGARCH_INS_TLBFLUSH:
+	case LOONGARCH_INS_TLBRD:
+	case LOONGARCH_INS_TLBSRCH:
+	case LOONGARCH_INS_TLBWR:
+	case LOONGARCH_INS_VABSD_B:
+	case LOONGARCH_INS_VABSD_BU:
+	case LOONGARCH_INS_VABSD_D:
+	case LOONGARCH_INS_VABSD_DU:
+	case LOONGARCH_INS_VABSD_H:
+	case LOONGARCH_INS_VABSD_HU:
+	case LOONGARCH_INS_VABSD_W:
+	case LOONGARCH_INS_VABSD_WU:
+	case LOONGARCH_INS_VADDA_B:
+	case LOONGARCH_INS_VADDA_D:
+	case LOONGARCH_INS_VADDA_H:
+	case LOONGARCH_INS_VADDA_W:
+	case LOONGARCH_INS_VADDI_BU:
+	case LOONGARCH_INS_VADDI_DU:
+	case LOONGARCH_INS_VADDI_HU:
+	case LOONGARCH_INS_VADDI_WU:
+	case LOONGARCH_INS_VADDWEV_D_W:
+	case LOONGARCH_INS_VADDWEV_D_WU:
+	case LOONGARCH_INS_VADDWEV_D_WU_W:
+	case LOONGARCH_INS_VADDWEV_H_B:
+	case LOONGARCH_INS_VADDWEV_H_BU:
+	case LOONGARCH_INS_VADDWEV_H_BU_B:
+	case LOONGARCH_INS_VADDWEV_Q_D:
+	case LOONGARCH_INS_VADDWEV_Q_DU:
+	case LOONGARCH_INS_VADDWEV_Q_DU_D:
+	case LOONGARCH_INS_VADDWEV_W_H:
+	case LOONGARCH_INS_VADDWEV_W_HU:
+	case LOONGARCH_INS_VADDWEV_W_HU_H:
+	case LOONGARCH_INS_VADDWOD_D_W:
+	case LOONGARCH_INS_VADDWOD_D_WU:
+	case LOONGARCH_INS_VADDWOD_D_WU_W:
+	case LOONGARCH_INS_VADDWOD_H_B:
+	case LOONGARCH_INS_VADDWOD_H_BU:
+	case LOONGARCH_INS_VADDWOD_H_BU_B:
+	case LOONGARCH_INS_VADDWOD_Q_D:
+	case LOONGARCH_INS_VADDWOD_Q_DU:
+	case LOONGARCH_INS_VADDWOD_Q_DU_D:
+	case LOONGARCH_INS_VADDWOD_W_H:
+	case LOONGARCH_INS_VADDWOD_W_HU:
+	case LOONGARCH_INS_VADDWOD_W_HU_H:
+	case LOONGARCH_INS_VADD_B:
+	case LOONGARCH_INS_VADD_D:
+	case LOONGARCH_INS_VADD_H:
+	case LOONGARCH_INS_VADD_Q:
+	case LOONGARCH_INS_VADD_W:
+	case LOONGARCH_INS_VANDI_B:
+	case LOONGARCH_INS_VANDN_V:
+	case LOONGARCH_INS_VAND_V:
+	case LOONGARCH_INS_VAVGR_B:
+	case LOONGARCH_INS_VAVGR_BU:
+	case LOONGARCH_INS_VAVGR_D:
+	case LOONGARCH_INS_VAVGR_DU:
+	case LOONGARCH_INS_VAVGR_H:
+	case LOONGARCH_INS_VAVGR_HU:
+	case LOONGARCH_INS_VAVGR_W:
+	case LOONGARCH_INS_VAVGR_WU:
+	case LOONGARCH_INS_VAVG_B:
+	case LOONGARCH_INS_VAVG_BU:
+	case LOONGARCH_INS_VAVG_D:
+	case LOONGARCH_INS_VAVG_DU:
+	case LOONGARCH_INS_VAVG_H:
+	case LOONGARCH_INS_VAVG_HU:
+	case LOONGARCH_INS_VAVG_W:
+	case LOONGARCH_INS_VAVG_WU:
+	case LOONGARCH_INS_VBITCLRI_B:
+	case LOONGARCH_INS_VBITCLRI_D:
+	case LOONGARCH_INS_VBITCLRI_H:
+	case LOONGARCH_INS_VBITCLRI_W:
+	case LOONGARCH_INS_VBITCLR_B:
+	case LOONGARCH_INS_VBITCLR_D:
+	case LOONGARCH_INS_VBITCLR_H:
+	case LOONGARCH_INS_VBITCLR_W:
+	case LOONGARCH_INS_VBITREVI_B:
+	case LOONGARCH_INS_VBITREVI_D:
+	case LOONGARCH_INS_VBITREVI_H:
+	case LOONGARCH_INS_VBITREVI_W:
+	case LOONGARCH_INS_VBITREV_B:
+	case LOONGARCH_INS_VBITREV_D:
+	case LOONGARCH_INS_VBITREV_H:
+	case LOONGARCH_INS_VBITREV_W:
+	case LOONGARCH_INS_VBITSELI_B:
+	case LOONGARCH_INS_VBITSEL_V:
+	case LOONGARCH_INS_VBITSETI_B:
+	case LOONGARCH_INS_VBITSETI_D:
+	case LOONGARCH_INS_VBITSETI_H:
+	case LOONGARCH_INS_VBITSETI_W:
+	case LOONGARCH_INS_VBITSET_B:
+	case LOONGARCH_INS_VBITSET_D:
+	case LOONGARCH_INS_VBITSET_H:
+	case LOONGARCH_INS_VBITSET_W:
+	case LOONGARCH_INS_VBSLL_V:
+	case LOONGARCH_INS_VBSRL_V:
+	case LOONGARCH_INS_VCLO_B:
+	case LOONGARCH_INS_VCLO_D:
+	case LOONGARCH_INS_VCLO_H:
+	case LOONGARCH_INS_VCLO_W:
+	case LOONGARCH_INS_VCLZ_B:
+	case LOONGARCH_INS_VCLZ_D:
+	case LOONGARCH_INS_VCLZ_H:
+	case LOONGARCH_INS_VCLZ_W:
+	case LOONGARCH_INS_VDIV_B:
+	case LOONGARCH_INS_VDIV_BU:
+	case LOONGARCH_INS_VDIV_D:
+	case LOONGARCH_INS_VDIV_DU:
+	case LOONGARCH_INS_VDIV_H:
+	case LOONGARCH_INS_VDIV_HU:
+	case LOONGARCH_INS_VDIV_W:
+	case LOONGARCH_INS_VDIV_WU:
+	case LOONGARCH_INS_VEXT2XV_DU_BU:
+	case LOONGARCH_INS_VEXT2XV_DU_HU:
+	case LOONGARCH_INS_VEXT2XV_DU_WU:
+	case LOONGARCH_INS_VEXT2XV_D_B:
+	case LOONGARCH_INS_VEXT2XV_D_H:
+	case LOONGARCH_INS_VEXT2XV_D_W:
+	case LOONGARCH_INS_VEXT2XV_HU_BU:
+	case LOONGARCH_INS_VEXT2XV_H_B:
+	case LOONGARCH_INS_VEXT2XV_WU_BU:
+	case LOONGARCH_INS_VEXT2XV_WU_HU:
+	case LOONGARCH_INS_VEXT2XV_W_B:
+	case LOONGARCH_INS_VEXT2XV_W_H:
+	case LOONGARCH_INS_VEXTH_DU_WU:
+	case LOONGARCH_INS_VEXTH_D_W:
+	case LOONGARCH_INS_VEXTH_HU_BU:
+	case LOONGARCH_INS_VEXTH_H_B:
+	case LOONGARCH_INS_VEXTH_QU_DU:
+	case LOONGARCH_INS_VEXTH_Q_D:
+	case LOONGARCH_INS_VEXTH_WU_HU:
+	case LOONGARCH_INS_VEXTH_W_H:
+	case LOONGARCH_INS_VEXTL_QU_DU:
+	case LOONGARCH_INS_VEXTL_Q_D:
+	case LOONGARCH_INS_VEXTRINS_B:
+	case LOONGARCH_INS_VEXTRINS_D:
+	case LOONGARCH_INS_VEXTRINS_H:
+	case LOONGARCH_INS_VEXTRINS_W:
+	case LOONGARCH_INS_VFADD_D:
+	case LOONGARCH_INS_VFADD_S:
+	case LOONGARCH_INS_VFCLASS_D:
+	case LOONGARCH_INS_VFCLASS_S:
+	case LOONGARCH_INS_VFCMP_CAF_D:
+	case LOONGARCH_INS_VFCMP_CAF_S:
+	case LOONGARCH_INS_VFCMP_CEQ_D:
+	case LOONGARCH_INS_VFCMP_CEQ_S:
+	case LOONGARCH_INS_VFCMP_CLE_D:
+	case LOONGARCH_INS_VFCMP_CLE_S:
+	case LOONGARCH_INS_VFCMP_CLT_D:
+	case LOONGARCH_INS_VFCMP_CLT_S:
+	case LOONGARCH_INS_VFCMP_CNE_D:
+	case LOONGARCH_INS_VFCMP_CNE_S:
+	case LOONGARCH_INS_VFCMP_COR_D:
+	case LOONGARCH_INS_VFCMP_COR_S:
+	case LOONGARCH_INS_VFCMP_CUEQ_D:
+	case LOONGARCH_INS_VFCMP_CUEQ_S:
+	case LOONGARCH_INS_VFCMP_CULE_D:
+	case LOONGARCH_INS_VFCMP_CULE_S:
+	case LOONGARCH_INS_VFCMP_CULT_D:
+	case LOONGARCH_INS_VFCMP_CULT_S:
+	case LOONGARCH_INS_VFCMP_CUNE_D:
+	case LOONGARCH_INS_VFCMP_CUNE_S:
+	case LOONGARCH_INS_VFCMP_CUN_D:
+	case LOONGARCH_INS_VFCMP_CUN_S:
+	case LOONGARCH_INS_VFCMP_SAF_D:
+	case LOONGARCH_INS_VFCMP_SAF_S:
+	case LOONGARCH_INS_VFCMP_SEQ_D:
+	case LOONGARCH_INS_VFCMP_SEQ_S:
+	case LOONGARCH_INS_VFCMP_SLE_D:
+	case LOONGARCH_INS_VFCMP_SLE_S:
+	case LOONGARCH_INS_VFCMP_SLT_D:
+	case LOONGARCH_INS_VFCMP_SLT_S:
+	case LOONGARCH_INS_VFCMP_SNE_D:
+	case LOONGARCH_INS_VFCMP_SNE_S:
+	case LOONGARCH_INS_VFCMP_SOR_D:
+	case LOONGARCH_INS_VFCMP_SOR_S:
+	case LOONGARCH_INS_VFCMP_SUEQ_D:
+	case LOONGARCH_INS_VFCMP_SUEQ_S:
+	case LOONGARCH_INS_VFCMP_SULE_D:
+	case LOONGARCH_INS_VFCMP_SULE_S:
+	case LOONGARCH_INS_VFCMP_SULT_D:
+	case LOONGARCH_INS_VFCMP_SULT_S:
+	case LOONGARCH_INS_VFCMP_SUNE_D:
+	case LOONGARCH_INS_VFCMP_SUNE_S:
+	case LOONGARCH_INS_VFCMP_SUN_D:
+	case LOONGARCH_INS_VFCMP_SUN_S:
+	case LOONGARCH_INS_VFCVTH_D_S:
+	case LOONGARCH_INS_VFCVTH_S_H:
+	case LOONGARCH_INS_VFCVTL_D_S:
+	case LOONGARCH_INS_VFCVTL_S_H:
+	case LOONGARCH_INS_VFCVT_H_S:
+	case LOONGARCH_INS_VFCVT_S_D:
+	case LOONGARCH_INS_VFDIV_D:
+	case LOONGARCH_INS_VFDIV_S:
+	case LOONGARCH_INS_VFFINTH_D_W:
+	case LOONGARCH_INS_VFFINTL_D_W:
+	case LOONGARCH_INS_VFFINT_D_L:
+	case LOONGARCH_INS_VFFINT_D_LU:
+	case LOONGARCH_INS_VFFINT_S_L:
+	case LOONGARCH_INS_VFFINT_S_W:
+	case LOONGARCH_INS_VFFINT_S_WU:
+	case LOONGARCH_INS_VFLOGB_D:
+	case LOONGARCH_INS_VFLOGB_S:
+	case LOONGARCH_INS_VFMADD_D:
+	case LOONGARCH_INS_VFMADD_S:
+	case LOONGARCH_INS_VFMAXA_D:
+	case LOONGARCH_INS_VFMAXA_S:
+	case LOONGARCH_INS_VFMAX_D:
+	case LOONGARCH_INS_VFMAX_S:
+	case LOONGARCH_INS_VFMINA_D:
+	case LOONGARCH_INS_VFMINA_S:
+	case LOONGARCH_INS_VFMIN_D:
+	case LOONGARCH_INS_VFMIN_S:
+	case LOONGARCH_INS_VFMSUB_D:
+	case LOONGARCH_INS_VFMSUB_S:
+	case LOONGARCH_INS_VFMUL_D:
+	case LOONGARCH_INS_VFMUL_S:
+	case LOONGARCH_INS_VFNMADD_D:
+	case LOONGARCH_INS_VFNMADD_S:
+	case LOONGARCH_INS_VFNMSUB_D:
+	case LOONGARCH_INS_VFNMSUB_S:
+	case LOONGARCH_INS_VFRECIPE_D:
+	case LOONGARCH_INS_VFRECIPE_S:
+	case LOONGARCH_INS_VFRECIP_D:
+	case LOONGARCH_INS_VFRECIP_S:
+	case LOONGARCH_INS_VFRINTRM_D:
+	case LOONGARCH_INS_VFRINTRM_S:
+	case LOONGARCH_INS_VFRINTRNE_D:
+	case LOONGARCH_INS_VFRINTRNE_S:
+	case LOONGARCH_INS_VFRINTRP_D:
+	case LOONGARCH_INS_VFRINTRP_S:
+	case LOONGARCH_INS_VFRINTRZ_D:
+	case LOONGARCH_INS_VFRINTRZ_S:
+	case LOONGARCH_INS_VFRINT_D:
+	case LOONGARCH_INS_VFRINT_S:
+	case LOONGARCH_INS_VFRSQRTE_D:
+	case LOONGARCH_INS_VFRSQRTE_S:
+	case LOONGARCH_INS_VFRSQRT_D:
+	case LOONGARCH_INS_VFRSQRT_S:
+	case LOONGARCH_INS_VFRSTPI_B:
+	case LOONGARCH_INS_VFRSTPI_H:
+	case LOONGARCH_INS_VFRSTP_B:
+	case LOONGARCH_INS_VFRSTP_H:
+	case LOONGARCH_INS_VFSQRT_D:
+	case LOONGARCH_INS_VFSQRT_S:
+	case LOONGARCH_INS_VFSUB_D:
+	case LOONGARCH_INS_VFSUB_S:
+	case LOONGARCH_INS_VFTINTH_L_S:
+	case LOONGARCH_INS_VFTINTL_L_S:
+	case LOONGARCH_INS_VFTINTRMH_L_S:
+	case LOONGARCH_INS_VFTINTRML_L_S:
+	case LOONGARCH_INS_VFTINTRM_L_D:
+	case LOONGARCH_INS_VFTINTRM_W_D:
+	case LOONGARCH_INS_VFTINTRM_W_S:
+	case LOONGARCH_INS_VFTINTRNEH_L_S:
+	case LOONGARCH_INS_VFTINTRNEL_L_S:
+	case LOONGARCH_INS_VFTINTRNE_L_D:
+	case LOONGARCH_INS_VFTINTRNE_W_D:
+	case LOONGARCH_INS_VFTINTRNE_W_S:
+	case LOONGARCH_INS_VFTINTRPH_L_S:
+	case LOONGARCH_INS_VFTINTRPL_L_S:
+	case LOONGARCH_INS_VFTINTRP_L_D:
+	case LOONGARCH_INS_VFTINTRP_W_D:
+	case LOONGARCH_INS_VFTINTRP_W_S:
+	case LOONGARCH_INS_VFTINTRZH_L_S:
+	case LOONGARCH_INS_VFTINTRZL_L_S:
+	case LOONGARCH_INS_VFTINTRZ_LU_D:
+	case LOONGARCH_INS_VFTINTRZ_L_D:
+	case LOONGARCH_INS_VFTINTRZ_WU_S:
+	case LOONGARCH_INS_VFTINTRZ_W_D:
+	case LOONGARCH_INS_VFTINTRZ_W_S:
+	case LOONGARCH_INS_VFTINT_LU_D:
+	case LOONGARCH_INS_VFTINT_L_D:
+	case LOONGARCH_INS_VFTINT_WU_S:
+	case LOONGARCH_INS_VFTINT_W_D:
+	case LOONGARCH_INS_VFTINT_W_S:
+	case LOONGARCH_INS_VHADDW_DU_WU:
+	case LOONGARCH_INS_VHADDW_D_W:
+	case LOONGARCH_INS_VHADDW_HU_BU:
+	case LOONGARCH_INS_VHADDW_H_B:
+	case LOONGARCH_INS_VHADDW_QU_DU:
+	case LOONGARCH_INS_VHADDW_Q_D:
+	case LOONGARCH_INS_VHADDW_WU_HU:
+	case LOONGARCH_INS_VHADDW_W_H:
+	case LOONGARCH_INS_VHSUBW_DU_WU:
+	case LOONGARCH_INS_VHSUBW_D_W:
+	case LOONGARCH_INS_VHSUBW_HU_BU:
+	case LOONGARCH_INS_VHSUBW_H_B:
+	case LOONGARCH_INS_VHSUBW_QU_DU:
+	case LOONGARCH_INS_VHSUBW_Q_D:
+	case LOONGARCH_INS_VHSUBW_WU_HU:
+	case LOONGARCH_INS_VHSUBW_W_H:
+	case LOONGARCH_INS_VILVH_B:
+	case LOONGARCH_INS_VILVH_D:
+	case LOONGARCH_INS_VILVH_H:
+	case LOONGARCH_INS_VILVH_W:
+	case LOONGARCH_INS_VILVL_B:
+	case LOONGARCH_INS_VILVL_D:
+	case LOONGARCH_INS_VILVL_H:
+	case LOONGARCH_INS_VILVL_W:
+	case LOONGARCH_INS_VINSGR2VR_B:
+	case LOONGARCH_INS_VINSGR2VR_D:
+	case LOONGARCH_INS_VINSGR2VR_H:
+	case LOONGARCH_INS_VINSGR2VR_W:
+	case LOONGARCH_INS_VLD:
+	case LOONGARCH_INS_VLDI:
+	case LOONGARCH_INS_VLDREPL_B:
+	case LOONGARCH_INS_VLDREPL_D:
+	case LOONGARCH_INS_VLDREPL_H:
+	case LOONGARCH_INS_VLDREPL_W:
+	case LOONGARCH_INS_VLDX:
+	case LOONGARCH_INS_VMADDWEV_D_W:
+	case LOONGARCH_INS_VMADDWEV_D_WU:
+	case LOONGARCH_INS_VMADDWEV_D_WU_W:
+	case LOONGARCH_INS_VMADDWEV_H_B:
+	case LOONGARCH_INS_VMADDWEV_H_BU:
+	case LOONGARCH_INS_VMADDWEV_H_BU_B:
+	case LOONGARCH_INS_VMADDWEV_Q_D:
+	case LOONGARCH_INS_VMADDWEV_Q_DU:
+	case LOONGARCH_INS_VMADDWEV_Q_DU_D:
+	case LOONGARCH_INS_VMADDWEV_W_H:
+	case LOONGARCH_INS_VMADDWEV_W_HU:
+	case LOONGARCH_INS_VMADDWEV_W_HU_H:
+	case LOONGARCH_INS_VMADDWOD_D_W:
+	case LOONGARCH_INS_VMADDWOD_D_WU:
+	case LOONGARCH_INS_VMADDWOD_D_WU_W:
+	case LOONGARCH_INS_VMADDWOD_H_B:
+	case LOONGARCH_INS_VMADDWOD_H_BU:
+	case LOONGARCH_INS_VMADDWOD_H_BU_B:
+	case LOONGARCH_INS_VMADDWOD_Q_D:
+	case LOONGARCH_INS_VMADDWOD_Q_DU:
+	case LOONGARCH_INS_VMADDWOD_Q_DU_D:
+	case LOONGARCH_INS_VMADDWOD_W_H:
+	case LOONGARCH_INS_VMADDWOD_W_HU:
+	case LOONGARCH_INS_VMADDWOD_W_HU_H:
+	case LOONGARCH_INS_VMADD_B:
+	case LOONGARCH_INS_VMADD_D:
+	case LOONGARCH_INS_VMADD_H:
+	case LOONGARCH_INS_VMADD_W:
+	case LOONGARCH_INS_VMAXI_B:
+	case LOONGARCH_INS_VMAXI_BU:
+	case LOONGARCH_INS_VMAXI_D:
+	case LOONGARCH_INS_VMAXI_DU:
+	case LOONGARCH_INS_VMAXI_H:
+	case LOONGARCH_INS_VMAXI_HU:
+	case LOONGARCH_INS_VMAXI_W:
+	case LOONGARCH_INS_VMAXI_WU:
+	case LOONGARCH_INS_VMAX_B:
+	case LOONGARCH_INS_VMAX_BU:
+	case LOONGARCH_INS_VMAX_D:
+	case LOONGARCH_INS_VMAX_DU:
+	case LOONGARCH_INS_VMAX_H:
+	case LOONGARCH_INS_VMAX_HU:
+	case LOONGARCH_INS_VMAX_W:
+	case LOONGARCH_INS_VMAX_WU:
+	case LOONGARCH_INS_VMINI_B:
+	case LOONGARCH_INS_VMINI_BU:
+	case LOONGARCH_INS_VMINI_D:
+	case LOONGARCH_INS_VMINI_DU:
+	case LOONGARCH_INS_VMINI_H:
+	case LOONGARCH_INS_VMINI_HU:
+	case LOONGARCH_INS_VMINI_W:
+	case LOONGARCH_INS_VMINI_WU:
+	case LOONGARCH_INS_VMIN_B:
+	case LOONGARCH_INS_VMIN_BU:
+	case LOONGARCH_INS_VMIN_D:
+	case LOONGARCH_INS_VMIN_DU:
+	case LOONGARCH_INS_VMIN_H:
+	case LOONGARCH_INS_VMIN_HU:
+	case LOONGARCH_INS_VMIN_W:
+	case LOONGARCH_INS_VMIN_WU:
+	case LOONGARCH_INS_VMOD_B:
+	case LOONGARCH_INS_VMOD_BU:
+	case LOONGARCH_INS_VMOD_D:
+	case LOONGARCH_INS_VMOD_DU:
+	case LOONGARCH_INS_VMOD_H:
+	case LOONGARCH_INS_VMOD_HU:
+	case LOONGARCH_INS_VMOD_W:
+	case LOONGARCH_INS_VMOD_WU:
+	case LOONGARCH_INS_VMSKGEZ_B:
+	case LOONGARCH_INS_VMSKLTZ_B:
+	case LOONGARCH_INS_VMSKLTZ_D:
+	case LOONGARCH_INS_VMSKLTZ_H:
+	case LOONGARCH_INS_VMSKLTZ_W:
+	case LOONGARCH_INS_VMSKNZ_B:
+	case LOONGARCH_INS_VMSUB_B:
+	case LOONGARCH_INS_VMSUB_D:
+	case LOONGARCH_INS_VMSUB_H:
+	case LOONGARCH_INS_VMSUB_W:
+	case LOONGARCH_INS_VMUH_B:
+	case LOONGARCH_INS_VMUH_BU:
+	case LOONGARCH_INS_VMUH_D:
+	case LOONGARCH_INS_VMUH_DU:
+	case LOONGARCH_INS_VMUH_H:
+	case LOONGARCH_INS_VMUH_HU:
+	case LOONGARCH_INS_VMUH_W:
+	case LOONGARCH_INS_VMUH_WU:
+	case LOONGARCH_INS_VMULWEV_D_W:
+	case LOONGARCH_INS_VMULWEV_D_WU:
+	case LOONGARCH_INS_VMULWEV_D_WU_W:
+	case LOONGARCH_INS_VMULWEV_H_B:
+	case LOONGARCH_INS_VMULWEV_H_BU:
+	case LOONGARCH_INS_VMULWEV_H_BU_B:
+	case LOONGARCH_INS_VMULWEV_Q_D:
+	case LOONGARCH_INS_VMULWEV_Q_DU:
+	case LOONGARCH_INS_VMULWEV_Q_DU_D:
+	case LOONGARCH_INS_VMULWEV_W_H:
+	case LOONGARCH_INS_VMULWEV_W_HU:
+	case LOONGARCH_INS_VMULWEV_W_HU_H:
+	case LOONGARCH_INS_VMULWOD_D_W:
+	case LOONGARCH_INS_VMULWOD_D_WU:
+	case LOONGARCH_INS_VMULWOD_D_WU_W:
+	case LOONGARCH_INS_VMULWOD_H_B:
+	case LOONGARCH_INS_VMULWOD_H_BU:
+	case LOONGARCH_INS_VMULWOD_H_BU_B:
+	case LOONGARCH_INS_VMULWOD_Q_D:
+	case LOONGARCH_INS_VMULWOD_Q_DU:
+	case LOONGARCH_INS_VMULWOD_Q_DU_D:
+	case LOONGARCH_INS_VMULWOD_W_H:
+	case LOONGARCH_INS_VMULWOD_W_HU:
+	case LOONGARCH_INS_VMULWOD_W_HU_H:
+	case LOONGARCH_INS_VMUL_B:
+	case LOONGARCH_INS_VMUL_D:
+	case LOONGARCH_INS_VMUL_H:
+	case LOONGARCH_INS_VMUL_W:
+	case LOONGARCH_INS_VNEG_B:
+	case LOONGARCH_INS_VNEG_D:
+	case LOONGARCH_INS_VNEG_H:
+	case LOONGARCH_INS_VNEG_W:
+	case LOONGARCH_INS_VNORI_B:
+	case LOONGARCH_INS_VNOR_V:
+	case LOONGARCH_INS_VORI_B:
+	case LOONGARCH_INS_VORN_V:
+	case LOONGARCH_INS_VOR_V:
+	case LOONGARCH_INS_VPACKEV_B:
+	case LOONGARCH_INS_VPACKEV_D:
+	case LOONGARCH_INS_VPACKEV_H:
+	case LOONGARCH_INS_VPACKEV_W:
+	case LOONGARCH_INS_VPACKOD_B:
+	case LOONGARCH_INS_VPACKOD_D:
+	case LOONGARCH_INS_VPACKOD_H:
+	case LOONGARCH_INS_VPACKOD_W:
+	case LOONGARCH_INS_VPCNT_B:
+	case LOONGARCH_INS_VPCNT_D:
+	case LOONGARCH_INS_VPCNT_H:
+	case LOONGARCH_INS_VPCNT_W:
+	case LOONGARCH_INS_VPERMI_W:
+	case LOONGARCH_INS_VPICKEV_B:
+	case LOONGARCH_INS_VPICKEV_D:
+	case LOONGARCH_INS_VPICKEV_H:
+	case LOONGARCH_INS_VPICKEV_W:
+	case LOONGARCH_INS_VPICKOD_B:
+	case LOONGARCH_INS_VPICKOD_D:
+	case LOONGARCH_INS_VPICKOD_H:
+	case LOONGARCH_INS_VPICKOD_W:
+	case LOONGARCH_INS_VPICKVE2GR_B:
+	case LOONGARCH_INS_VPICKVE2GR_BU:
+	case LOONGARCH_INS_VPICKVE2GR_D:
+	case LOONGARCH_INS_VPICKVE2GR_DU:
+	case LOONGARCH_INS_VPICKVE2GR_H:
+	case LOONGARCH_INS_VPICKVE2GR_HU:
+	case LOONGARCH_INS_VPICKVE2GR_W:
+	case LOONGARCH_INS_VPICKVE2GR_WU:
+	case LOONGARCH_INS_VREPLGR2VR_B:
+	case LOONGARCH_INS_VREPLGR2VR_D:
+	case LOONGARCH_INS_VREPLGR2VR_H:
+	case LOONGARCH_INS_VREPLGR2VR_W:
+	case LOONGARCH_INS_VREPLVEI_B:
+	case LOONGARCH_INS_VREPLVEI_D:
+	case LOONGARCH_INS_VREPLVEI_H:
+	case LOONGARCH_INS_VREPLVEI_W:
+	case LOONGARCH_INS_VREPLVE_B:
+	case LOONGARCH_INS_VREPLVE_D:
+	case LOONGARCH_INS_VREPLVE_H:
+	case LOONGARCH_INS_VREPLVE_W:
+	case LOONGARCH_INS_VROTRI_B:
+	case LOONGARCH_INS_VROTRI_D:
+	case LOONGARCH_INS_VROTRI_H:
+	case LOONGARCH_INS_VROTRI_W:
+	case LOONGARCH_INS_VROTR_B:
+	case LOONGARCH_INS_VROTR_D:
+	case LOONGARCH_INS_VROTR_H:
+	case LOONGARCH_INS_VROTR_W:
+	case LOONGARCH_INS_VSADD_B:
+	case LOONGARCH_INS_VSADD_BU:
+	case LOONGARCH_INS_VSADD_D:
+	case LOONGARCH_INS_VSADD_DU:
+	case LOONGARCH_INS_VSADD_H:
+	case LOONGARCH_INS_VSADD_HU:
+	case LOONGARCH_INS_VSADD_W:
+	case LOONGARCH_INS_VSADD_WU:
+	case LOONGARCH_INS_VSAT_B:
+	case LOONGARCH_INS_VSAT_BU:
+	case LOONGARCH_INS_VSAT_D:
+	case LOONGARCH_INS_VSAT_DU:
+	case LOONGARCH_INS_VSAT_H:
+	case LOONGARCH_INS_VSAT_HU:
+	case LOONGARCH_INS_VSAT_W:
+	case LOONGARCH_INS_VSAT_WU:
+	case LOONGARCH_INS_VSEQI_B:
+	case LOONGARCH_INS_VSEQI_D:
+	case LOONGARCH_INS_VSEQI_H:
+	case LOONGARCH_INS_VSEQI_W:
+	case LOONGARCH_INS_VSEQ_B:
+	case LOONGARCH_INS_VSEQ_D:
+	case LOONGARCH_INS_VSEQ_H:
+	case LOONGARCH_INS_VSEQ_W:
+	case LOONGARCH_INS_VSETALLNEZ_B:
+	case LOONGARCH_INS_VSETALLNEZ_D:
+	case LOONGARCH_INS_VSETALLNEZ_H:
+	case LOONGARCH_INS_VSETALLNEZ_W:
+	case LOONGARCH_INS_VSETANYEQZ_B:
+	case LOONGARCH_INS_VSETANYEQZ_D:
+	case LOONGARCH_INS_VSETANYEQZ_H:
+	case LOONGARCH_INS_VSETANYEQZ_W:
+	case LOONGARCH_INS_VSETEQZ_V:
+	case LOONGARCH_INS_VSETNEZ_V:
+	case LOONGARCH_INS_VSHUF4I_B:
+	case LOONGARCH_INS_VSHUF4I_D:
+	case LOONGARCH_INS_VSHUF4I_H:
+	case LOONGARCH_INS_VSHUF4I_W:
+	case LOONGARCH_INS_VSHUF_B:
+	case LOONGARCH_INS_VSHUF_D:
+	case LOONGARCH_INS_VSHUF_H:
+	case LOONGARCH_INS_VSHUF_W:
+	case LOONGARCH_INS_VSIGNCOV_B:
+	case LOONGARCH_INS_VSIGNCOV_D:
+	case LOONGARCH_INS_VSIGNCOV_H:
+	case LOONGARCH_INS_VSIGNCOV_W:
+	case LOONGARCH_INS_VSLEI_B:
+	case LOONGARCH_INS_VSLEI_BU:
+	case LOONGARCH_INS_VSLEI_D:
+	case LOONGARCH_INS_VSLEI_DU:
+	case LOONGARCH_INS_VSLEI_H:
+	case LOONGARCH_INS_VSLEI_HU:
+	case LOONGARCH_INS_VSLEI_W:
+	case LOONGARCH_INS_VSLEI_WU:
+	case LOONGARCH_INS_VSLE_B:
+	case LOONGARCH_INS_VSLE_BU:
+	case LOONGARCH_INS_VSLE_D:
+	case LOONGARCH_INS_VSLE_DU:
+	case LOONGARCH_INS_VSLE_H:
+	case LOONGARCH_INS_VSLE_HU:
+	case LOONGARCH_INS_VSLE_W:
+	case LOONGARCH_INS_VSLE_WU:
+	case LOONGARCH_INS_VSLLI_B:
+	case LOONGARCH_INS_VSLLI_D:
+	case LOONGARCH_INS_VSLLI_H:
+	case LOONGARCH_INS_VSLLI_W:
+	case LOONGARCH_INS_VSLLWIL_DU_WU:
+	case LOONGARCH_INS_VSLLWIL_D_W:
+	case LOONGARCH_INS_VSLLWIL_HU_BU:
+	case LOONGARCH_INS_VSLLWIL_H_B:
+	case LOONGARCH_INS_VSLLWIL_WU_HU:
+	case LOONGARCH_INS_VSLLWIL_W_H:
+	case LOONGARCH_INS_VSLL_B:
+	case LOONGARCH_INS_VSLL_D:
+	case LOONGARCH_INS_VSLL_H:
+	case LOONGARCH_INS_VSLL_W:
+	case LOONGARCH_INS_VSLTI_B:
+	case LOONGARCH_INS_VSLTI_BU:
+	case LOONGARCH_INS_VSLTI_D:
+	case LOONGARCH_INS_VSLTI_DU:
+	case LOONGARCH_INS_VSLTI_H:
+	case LOONGARCH_INS_VSLTI_HU:
+	case LOONGARCH_INS_VSLTI_W:
+	case LOONGARCH_INS_VSLTI_WU:
+	case LOONGARCH_INS_VSLT_B:
+	case LOONGARCH_INS_VSLT_BU:
+	case LOONGARCH_INS_VSLT_D:
+	case LOONGARCH_INS_VSLT_DU:
+	case LOONGARCH_INS_VSLT_H:
+	case LOONGARCH_INS_VSLT_HU:
+	case LOONGARCH_INS_VSLT_W:
+	case LOONGARCH_INS_VSLT_WU:
+	case LOONGARCH_INS_VSRAI_B:
+	case LOONGARCH_INS_VSRAI_D:
+	case LOONGARCH_INS_VSRAI_H:
+	case LOONGARCH_INS_VSRAI_W:
+	case LOONGARCH_INS_VSRANI_B_H:
+	case LOONGARCH_INS_VSRANI_D_Q:
+	case LOONGARCH_INS_VSRANI_H_W:
+	case LOONGARCH_INS_VSRANI_W_D:
+	case LOONGARCH_INS_VSRAN_B_H:
+	case LOONGARCH_INS_VSRAN_H_W:
+	case LOONGARCH_INS_VSRAN_W_D:
+	case LOONGARCH_INS_VSRARI_B:
+	case LOONGARCH_INS_VSRARI_D:
+	case LOONGARCH_INS_VSRARI_H:
+	case LOONGARCH_INS_VSRARI_W:
+	case LOONGARCH_INS_VSRARNI_B_H:
+	case LOONGARCH_INS_VSRARNI_D_Q:
+	case LOONGARCH_INS_VSRARNI_H_W:
+	case LOONGARCH_INS_VSRARNI_W_D:
+	case LOONGARCH_INS_VSRARN_B_H:
+	case LOONGARCH_INS_VSRARN_H_W:
+	case LOONGARCH_INS_VSRARN_W_D:
+	case LOONGARCH_INS_VSRAR_B:
+	case LOONGARCH_INS_VSRAR_D:
+	case LOONGARCH_INS_VSRAR_H:
+	case LOONGARCH_INS_VSRAR_W:
+	case LOONGARCH_INS_VSRA_B:
+	case LOONGARCH_INS_VSRA_D:
+	case LOONGARCH_INS_VSRA_H:
+	case LOONGARCH_INS_VSRA_W:
+	case LOONGARCH_INS_VSRLI_B:
+	case LOONGARCH_INS_VSRLI_D:
+	case LOONGARCH_INS_VSRLI_H:
+	case LOONGARCH_INS_VSRLI_W:
+	case LOONGARCH_INS_VSRLNI_B_H:
+	case LOONGARCH_INS_VSRLNI_D_Q:
+	case LOONGARCH_INS_VSRLNI_H_W:
+	case LOONGARCH_INS_VSRLNI_W_D:
+	case LOONGARCH_INS_VSRLN_B_H:
+	case LOONGARCH_INS_VSRLN_H_W:
+	case LOONGARCH_INS_VSRLN_W_D:
+	case LOONGARCH_INS_VSRLRI_B:
+	case LOONGARCH_INS_VSRLRI_D:
+	case LOONGARCH_INS_VSRLRI_H:
+	case LOONGARCH_INS_VSRLRI_W:
+	case LOONGARCH_INS_VSRLRNI_B_H:
+	case LOONGARCH_INS_VSRLRNI_D_Q:
+	case LOONGARCH_INS_VSRLRNI_H_W:
+	case LOONGARCH_INS_VSRLRNI_W_D:
+	case LOONGARCH_INS_VSRLRN_B_H:
+	case LOONGARCH_INS_VSRLRN_H_W:
+	case LOONGARCH_INS_VSRLRN_W_D:
+	case LOONGARCH_INS_VSRLR_B:
+	case LOONGARCH_INS_VSRLR_D:
+	case LOONGARCH_INS_VSRLR_H:
+	case LOONGARCH_INS_VSRLR_W:
+	case LOONGARCH_INS_VSRL_B:
+	case LOONGARCH_INS_VSRL_D:
+	case LOONGARCH_INS_VSRL_H:
+	case LOONGARCH_INS_VSRL_W:
+	case LOONGARCH_INS_VSSRANI_BU_H:
+	case LOONGARCH_INS_VSSRANI_B_H:
+	case LOONGARCH_INS_VSSRANI_DU_Q:
+	case LOONGARCH_INS_VSSRANI_D_Q:
+	case LOONGARCH_INS_VSSRANI_HU_W:
+	case LOONGARCH_INS_VSSRANI_H_W:
+	case LOONGARCH_INS_VSSRANI_WU_D:
+	case LOONGARCH_INS_VSSRANI_W_D:
+	case LOONGARCH_INS_VSSRAN_BU_H:
+	case LOONGARCH_INS_VSSRAN_B_H:
+	case LOONGARCH_INS_VSSRAN_HU_W:
+	case LOONGARCH_INS_VSSRAN_H_W:
+	case LOONGARCH_INS_VSSRAN_WU_D:
+	case LOONGARCH_INS_VSSRAN_W_D:
+	case LOONGARCH_INS_VSSRARNI_BU_H:
+	case LOONGARCH_INS_VSSRARNI_B_H:
+	case LOONGARCH_INS_VSSRARNI_DU_Q:
+	case LOONGARCH_INS_VSSRARNI_D_Q:
+	case LOONGARCH_INS_VSSRARNI_HU_W:
+	case LOONGARCH_INS_VSSRARNI_H_W:
+	case LOONGARCH_INS_VSSRARNI_WU_D:
+	case LOONGARCH_INS_VSSRARNI_W_D:
+	case LOONGARCH_INS_VSSRARN_BU_H:
+	case LOONGARCH_INS_VSSRARN_B_H:
+	case LOONGARCH_INS_VSSRARN_HU_W:
+	case LOONGARCH_INS_VSSRARN_H_W:
+	case LOONGARCH_INS_VSSRARN_WU_D:
+	case LOONGARCH_INS_VSSRARN_W_D:
+	case LOONGARCH_INS_VSSRLNI_BU_H:
+	case LOONGARCH_INS_VSSRLNI_B_H:
+	case LOONGARCH_INS_VSSRLNI_DU_Q:
+	case LOONGARCH_INS_VSSRLNI_D_Q:
+	case LOONGARCH_INS_VSSRLNI_HU_W:
+	case LOONGARCH_INS_VSSRLNI_H_W:
+	case LOONGARCH_INS_VSSRLNI_WU_D:
+	case LOONGARCH_INS_VSSRLNI_W_D:
+	case LOONGARCH_INS_VSSRLN_BU_H:
+	case LOONGARCH_INS_VSSRLN_B_H:
+	case LOONGARCH_INS_VSSRLN_HU_W:
+	case LOONGARCH_INS_VSSRLN_H_W:
+	case LOONGARCH_INS_VSSRLN_WU_D:
+	case LOONGARCH_INS_VSSRLN_W_D:
+	case LOONGARCH_INS_VSSRLRNI_BU_H:
+	case LOONGARCH_INS_VSSRLRNI_B_H:
+	case LOONGARCH_INS_VSSRLRNI_DU_Q:
+	case LOONGARCH_INS_VSSRLRNI_D_Q:
+	case LOONGARCH_INS_VSSRLRNI_HU_W:
+	case LOONGARCH_INS_VSSRLRNI_H_W:
+	case LOONGARCH_INS_VSSRLRNI_WU_D:
+	case LOONGARCH_INS_VSSRLRNI_W_D:
+	case LOONGARCH_INS_VSSRLRN_BU_H:
+	case LOONGARCH_INS_VSSRLRN_B_H:
+	case LOONGARCH_INS_VSSRLRN_HU_W:
+	case LOONGARCH_INS_VSSRLRN_H_W:
+	case LOONGARCH_INS_VSSRLRN_WU_D:
+	case LOONGARCH_INS_VSSRLRN_W_D:
+	case LOONGARCH_INS_VSSUB_B:
+	case LOONGARCH_INS_VSSUB_BU:
+	case LOONGARCH_INS_VSSUB_D:
+	case LOONGARCH_INS_VSSUB_DU:
+	case LOONGARCH_INS_VSSUB_H:
+	case LOONGARCH_INS_VSSUB_HU:
+	case LOONGARCH_INS_VSSUB_W:
+	case LOONGARCH_INS_VSSUB_WU:
+	case LOONGARCH_INS_VST:
+	case LOONGARCH_INS_VSTELM_B:
+	case LOONGARCH_INS_VSTELM_D:
+	case LOONGARCH_INS_VSTELM_H:
+	case LOONGARCH_INS_VSTELM_W:
+	case LOONGARCH_INS_VSTX:
+	case LOONGARCH_INS_VSUBI_BU:
+	case LOONGARCH_INS_VSUBI_DU:
+	case LOONGARCH_INS_VSUBI_HU:
+	case LOONGARCH_INS_VSUBI_WU:
+	case LOONGARCH_INS_VSUBWEV_D_W:
+	case LOONGARCH_INS_VSUBWEV_D_WU:
+	case LOONGARCH_INS_VSUBWEV_H_B:
+	case LOONGARCH_INS_VSUBWEV_H_BU:
+	case LOONGARCH_INS_VSUBWEV_Q_D:
+	case LOONGARCH_INS_VSUBWEV_Q_DU:
+	case LOONGARCH_INS_VSUBWEV_W_H:
+	case LOONGARCH_INS_VSUBWEV_W_HU:
+	case LOONGARCH_INS_VSUBWOD_D_W:
+	case LOONGARCH_INS_VSUBWOD_D_WU:
+	case LOONGARCH_INS_VSUBWOD_H_B:
+	case LOONGARCH_INS_VSUBWOD_H_BU:
+	case LOONGARCH_INS_VSUBWOD_Q_D:
+	case LOONGARCH_INS_VSUBWOD_Q_DU:
+	case LOONGARCH_INS_VSUBWOD_W_H:
+	case LOONGARCH_INS_VSUBWOD_W_HU:
+	case LOONGARCH_INS_VSUB_B:
+	case LOONGARCH_INS_VSUB_D:
+	case LOONGARCH_INS_VSUB_H:
+	case LOONGARCH_INS_VSUB_Q:
+	case LOONGARCH_INS_VSUB_W:
+	case LOONGARCH_INS_VXORI_B:
+	case LOONGARCH_INS_VXOR_V:
+	case LOONGARCH_INS_X86ADC_B:
+	case LOONGARCH_INS_X86ADC_D:
+	case LOONGARCH_INS_X86ADC_H:
+	case LOONGARCH_INS_X86ADC_W:
+	case LOONGARCH_INS_X86ADD_B:
+	case LOONGARCH_INS_X86ADD_D:
+	case LOONGARCH_INS_X86ADD_DU:
+	case LOONGARCH_INS_X86ADD_H:
+	case LOONGARCH_INS_X86ADD_W:
+	case LOONGARCH_INS_X86ADD_WU:
+	case LOONGARCH_INS_X86AND_B:
+	case LOONGARCH_INS_X86AND_D:
+	case LOONGARCH_INS_X86AND_H:
+	case LOONGARCH_INS_X86AND_W:
+	case LOONGARCH_INS_X86CLRTM:
+	case LOONGARCH_INS_X86DECTOP:
+	case LOONGARCH_INS_X86DEC_B:
+	case LOONGARCH_INS_X86DEC_D:
+	case LOONGARCH_INS_X86DEC_H:
+	case LOONGARCH_INS_X86DEC_W:
+	case LOONGARCH_INS_X86INCTOP:
+	case LOONGARCH_INS_X86INC_B:
+	case LOONGARCH_INS_X86INC_D:
+	case LOONGARCH_INS_X86INC_H:
+	case LOONGARCH_INS_X86INC_W:
+	case LOONGARCH_INS_X86MFFLAG:
+	case LOONGARCH_INS_X86MFTOP:
+	case LOONGARCH_INS_X86MTFLAG:
+	case LOONGARCH_INS_X86MTTOP:
+	case LOONGARCH_INS_X86MUL_B:
+	case LOONGARCH_INS_X86MUL_BU:
+	case LOONGARCH_INS_X86MUL_D:
+	case LOONGARCH_INS_X86MUL_DU:
+	case LOONGARCH_INS_X86MUL_H:
+	case LOONGARCH_INS_X86MUL_HU:
+	case LOONGARCH_INS_X86MUL_W:
+	case LOONGARCH_INS_X86MUL_WU:
+	case LOONGARCH_INS_X86OR_B:
+	case LOONGARCH_INS_X86OR_D:
+	case LOONGARCH_INS_X86OR_H:
+	case LOONGARCH_INS_X86OR_W:
+	case LOONGARCH_INS_X86RCLI_B:
+	case LOONGARCH_INS_X86RCLI_D:
+	case LOONGARCH_INS_X86RCLI_H:
+	case LOONGARCH_INS_X86RCLI_W:
+	case LOONGARCH_INS_X86RCL_B:
+	case LOONGARCH_INS_X86RCL_D:
+	case LOONGARCH_INS_X86RCL_H:
+	case LOONGARCH_INS_X86RCL_W:
+	case LOONGARCH_INS_X86RCRI_B:
+	case LOONGARCH_INS_X86RCRI_D:
+	case LOONGARCH_INS_X86RCRI_H:
+	case LOONGARCH_INS_X86RCRI_W:
+	case LOONGARCH_INS_X86RCR_B:
+	case LOONGARCH_INS_X86RCR_D:
+	case LOONGARCH_INS_X86RCR_H:
+	case LOONGARCH_INS_X86RCR_W:
+	case LOONGARCH_INS_X86ROTLI_B:
+	case LOONGARCH_INS_X86ROTLI_D:
+	case LOONGARCH_INS_X86ROTLI_H:
+	case LOONGARCH_INS_X86ROTLI_W:
+	case LOONGARCH_INS_X86ROTL_B:
+	case LOONGARCH_INS_X86ROTL_D:
+	case LOONGARCH_INS_X86ROTL_H:
+	case LOONGARCH_INS_X86ROTL_W:
+	case LOONGARCH_INS_X86ROTRI_B:
+	case LOONGARCH_INS_X86ROTRI_D:
+	case LOONGARCH_INS_X86ROTRI_H:
+	case LOONGARCH_INS_X86ROTRI_W:
+	case LOONGARCH_INS_X86ROTR_B:
+	case LOONGARCH_INS_X86ROTR_D:
+	case LOONGARCH_INS_X86ROTR_H:
+	case LOONGARCH_INS_X86ROTR_W:
+	case LOONGARCH_INS_X86SBC_B:
+	case LOONGARCH_INS_X86SBC_D:
+	case LOONGARCH_INS_X86SBC_H:
+	case LOONGARCH_INS_X86SBC_W:
+	case LOONGARCH_INS_X86SETTAG:
+	case LOONGARCH_INS_X86SETTM:
+	case LOONGARCH_INS_X86SLLI_B:
+	case LOONGARCH_INS_X86SLLI_D:
+	case LOONGARCH_INS_X86SLLI_H:
+	case LOONGARCH_INS_X86SLLI_W:
+	case LOONGARCH_INS_X86SLL_B:
+	case LOONGARCH_INS_X86SLL_D:
+	case LOONGARCH_INS_X86SLL_H:
+	case LOONGARCH_INS_X86SLL_W:
+	case LOONGARCH_INS_X86SRAI_B:
+	case LOONGARCH_INS_X86SRAI_D:
+	case LOONGARCH_INS_X86SRAI_H:
+	case LOONGARCH_INS_X86SRAI_W:
+	case LOONGARCH_INS_X86SRA_B:
+	case LOONGARCH_INS_X86SRA_D:
+	case LOONGARCH_INS_X86SRA_H:
+	case LOONGARCH_INS_X86SRA_W:
+	case LOONGARCH_INS_X86SRLI_B:
+	case LOONGARCH_INS_X86SRLI_D:
+	case LOONGARCH_INS_X86SRLI_H:
+	case LOONGARCH_INS_X86SRLI_W:
+	case LOONGARCH_INS_X86SRL_B:
+	case LOONGARCH_INS_X86SRL_D:
+	case LOONGARCH_INS_X86SRL_H:
+	case LOONGARCH_INS_X86SRL_W:
+	case LOONGARCH_INS_X86SUB_B:
+	case LOONGARCH_INS_X86SUB_D:
+	case LOONGARCH_INS_X86SUB_DU:
+	case LOONGARCH_INS_X86SUB_H:
+	case LOONGARCH_INS_X86SUB_W:
+	case LOONGARCH_INS_X86SUB_WU:
+	case LOONGARCH_INS_X86XOR_B:
+	case LOONGARCH_INS_X86XOR_D:
+	case LOONGARCH_INS_X86XOR_H:
+	case LOONGARCH_INS_X86XOR_W:
+		break;
+	case LOONGARCH_INS_XOR:
+	case LOONGARCH_INS_XORI:
+		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
+		break;
+	case LOONGARCH_INS_XVABSD_B:
+	case LOONGARCH_INS_XVABSD_BU:
+	case LOONGARCH_INS_XVABSD_D:
+	case LOONGARCH_INS_XVABSD_DU:
+	case LOONGARCH_INS_XVABSD_H:
+	case LOONGARCH_INS_XVABSD_HU:
+	case LOONGARCH_INS_XVABSD_W:
+	case LOONGARCH_INS_XVABSD_WU:
+	case LOONGARCH_INS_XVADDA_B:
+	case LOONGARCH_INS_XVADDA_D:
+	case LOONGARCH_INS_XVADDA_H:
+	case LOONGARCH_INS_XVADDA_W:
+	case LOONGARCH_INS_XVADDI_BU:
+	case LOONGARCH_INS_XVADDI_DU:
+	case LOONGARCH_INS_XVADDI_HU:
+	case LOONGARCH_INS_XVADDI_WU:
+	case LOONGARCH_INS_XVADDWEV_D_W:
+	case LOONGARCH_INS_XVADDWEV_D_WU:
+	case LOONGARCH_INS_XVADDWEV_D_WU_W:
+	case LOONGARCH_INS_XVADDWEV_H_B:
+	case LOONGARCH_INS_XVADDWEV_H_BU:
+	case LOONGARCH_INS_XVADDWEV_H_BU_B:
+	case LOONGARCH_INS_XVADDWEV_Q_D:
+	case LOONGARCH_INS_XVADDWEV_Q_DU:
+	case LOONGARCH_INS_XVADDWEV_Q_DU_D:
+	case LOONGARCH_INS_XVADDWEV_W_H:
+	case LOONGARCH_INS_XVADDWEV_W_HU:
+	case LOONGARCH_INS_XVADDWEV_W_HU_H:
+	case LOONGARCH_INS_XVADDWOD_D_W:
+	case LOONGARCH_INS_XVADDWOD_D_WU:
+	case LOONGARCH_INS_XVADDWOD_D_WU_W:
+	case LOONGARCH_INS_XVADDWOD_H_B:
+	case LOONGARCH_INS_XVADDWOD_H_BU:
+	case LOONGARCH_INS_XVADDWOD_H_BU_B:
+	case LOONGARCH_INS_XVADDWOD_Q_D:
+	case LOONGARCH_INS_XVADDWOD_Q_DU:
+	case LOONGARCH_INS_XVADDWOD_Q_DU_D:
+	case LOONGARCH_INS_XVADDWOD_W_H:
+	case LOONGARCH_INS_XVADDWOD_W_HU:
+	case LOONGARCH_INS_XVADDWOD_W_HU_H:
+	case LOONGARCH_INS_XVADD_B:
+	case LOONGARCH_INS_XVADD_D:
+	case LOONGARCH_INS_XVADD_H:
+	case LOONGARCH_INS_XVADD_Q:
+	case LOONGARCH_INS_XVADD_W:
+	case LOONGARCH_INS_XVANDI_B:
+	case LOONGARCH_INS_XVANDN_V:
+	case LOONGARCH_INS_XVAND_V:
+	case LOONGARCH_INS_XVAVGR_B:
+	case LOONGARCH_INS_XVAVGR_BU:
+	case LOONGARCH_INS_XVAVGR_D:
+	case LOONGARCH_INS_XVAVGR_DU:
+	case LOONGARCH_INS_XVAVGR_H:
+	case LOONGARCH_INS_XVAVGR_HU:
+	case LOONGARCH_INS_XVAVGR_W:
+	case LOONGARCH_INS_XVAVGR_WU:
+	case LOONGARCH_INS_XVAVG_B:
+	case LOONGARCH_INS_XVAVG_BU:
+	case LOONGARCH_INS_XVAVG_D:
+	case LOONGARCH_INS_XVAVG_DU:
+	case LOONGARCH_INS_XVAVG_H:
+	case LOONGARCH_INS_XVAVG_HU:
+	case LOONGARCH_INS_XVAVG_W:
+	case LOONGARCH_INS_XVAVG_WU:
+	case LOONGARCH_INS_XVBITCLRI_B:
+	case LOONGARCH_INS_XVBITCLRI_D:
+	case LOONGARCH_INS_XVBITCLRI_H:
+	case LOONGARCH_INS_XVBITCLRI_W:
+	case LOONGARCH_INS_XVBITCLR_B:
+	case LOONGARCH_INS_XVBITCLR_D:
+	case LOONGARCH_INS_XVBITCLR_H:
+	case LOONGARCH_INS_XVBITCLR_W:
+	case LOONGARCH_INS_XVBITREVI_B:
+	case LOONGARCH_INS_XVBITREVI_D:
+	case LOONGARCH_INS_XVBITREVI_H:
+	case LOONGARCH_INS_XVBITREVI_W:
+	case LOONGARCH_INS_XVBITREV_B:
+	case LOONGARCH_INS_XVBITREV_D:
+	case LOONGARCH_INS_XVBITREV_H:
+	case LOONGARCH_INS_XVBITREV_W:
+	case LOONGARCH_INS_XVBITSELI_B:
+	case LOONGARCH_INS_XVBITSEL_V:
+	case LOONGARCH_INS_XVBITSETI_B:
+	case LOONGARCH_INS_XVBITSETI_D:
+	case LOONGARCH_INS_XVBITSETI_H:
+	case LOONGARCH_INS_XVBITSETI_W:
+	case LOONGARCH_INS_XVBITSET_B:
+	case LOONGARCH_INS_XVBITSET_D:
+	case LOONGARCH_INS_XVBITSET_H:
+	case LOONGARCH_INS_XVBITSET_W:
+	case LOONGARCH_INS_XVBSLL_V:
+	case LOONGARCH_INS_XVBSRL_V:
+	case LOONGARCH_INS_XVCLO_B:
+	case LOONGARCH_INS_XVCLO_D:
+	case LOONGARCH_INS_XVCLO_H:
+	case LOONGARCH_INS_XVCLO_W:
+	case LOONGARCH_INS_XVCLZ_B:
+	case LOONGARCH_INS_XVCLZ_D:
+	case LOONGARCH_INS_XVCLZ_H:
+	case LOONGARCH_INS_XVCLZ_W:
+	case LOONGARCH_INS_XVDIV_B:
+	case LOONGARCH_INS_XVDIV_BU:
+	case LOONGARCH_INS_XVDIV_D:
+	case LOONGARCH_INS_XVDIV_DU:
+	case LOONGARCH_INS_XVDIV_H:
+	case LOONGARCH_INS_XVDIV_HU:
+	case LOONGARCH_INS_XVDIV_W:
+	case LOONGARCH_INS_XVDIV_WU:
+	case LOONGARCH_INS_XVEXTH_DU_WU:
+	case LOONGARCH_INS_XVEXTH_D_W:
+	case LOONGARCH_INS_XVEXTH_HU_BU:
+	case LOONGARCH_INS_XVEXTH_H_B:
+	case LOONGARCH_INS_XVEXTH_QU_DU:
+	case LOONGARCH_INS_XVEXTH_Q_D:
+	case LOONGARCH_INS_XVEXTH_WU_HU:
+	case LOONGARCH_INS_XVEXTH_W_H:
+	case LOONGARCH_INS_XVEXTL_QU_DU:
+	case LOONGARCH_INS_XVEXTL_Q_D:
+	case LOONGARCH_INS_XVEXTRINS_B:
+	case LOONGARCH_INS_XVEXTRINS_D:
+	case LOONGARCH_INS_XVEXTRINS_H:
+	case LOONGARCH_INS_XVEXTRINS_W:
+	case LOONGARCH_INS_XVFADD_D:
+	case LOONGARCH_INS_XVFADD_S:
+	case LOONGARCH_INS_XVFCLASS_D:
+	case LOONGARCH_INS_XVFCLASS_S:
+	case LOONGARCH_INS_XVFCMP_CAF_D:
+	case LOONGARCH_INS_XVFCMP_CAF_S:
+	case LOONGARCH_INS_XVFCMP_CEQ_D:
+	case LOONGARCH_INS_XVFCMP_CEQ_S:
+	case LOONGARCH_INS_XVFCMP_CLE_D:
+	case LOONGARCH_INS_XVFCMP_CLE_S:
+	case LOONGARCH_INS_XVFCMP_CLT_D:
+	case LOONGARCH_INS_XVFCMP_CLT_S:
+	case LOONGARCH_INS_XVFCMP_CNE_D:
+	case LOONGARCH_INS_XVFCMP_CNE_S:
+	case LOONGARCH_INS_XVFCMP_COR_D:
+	case LOONGARCH_INS_XVFCMP_COR_S:
+	case LOONGARCH_INS_XVFCMP_CUEQ_D:
+	case LOONGARCH_INS_XVFCMP_CUEQ_S:
+	case LOONGARCH_INS_XVFCMP_CULE_D:
+	case LOONGARCH_INS_XVFCMP_CULE_S:
+	case LOONGARCH_INS_XVFCMP_CULT_D:
+	case LOONGARCH_INS_XVFCMP_CULT_S:
+	case LOONGARCH_INS_XVFCMP_CUNE_D:
+	case LOONGARCH_INS_XVFCMP_CUNE_S:
+	case LOONGARCH_INS_XVFCMP_CUN_D:
+	case LOONGARCH_INS_XVFCMP_CUN_S:
+	case LOONGARCH_INS_XVFCMP_SAF_D:
+	case LOONGARCH_INS_XVFCMP_SAF_S:
+	case LOONGARCH_INS_XVFCMP_SEQ_D:
+	case LOONGARCH_INS_XVFCMP_SEQ_S:
+	case LOONGARCH_INS_XVFCMP_SLE_D:
+	case LOONGARCH_INS_XVFCMP_SLE_S:
+	case LOONGARCH_INS_XVFCMP_SLT_D:
+	case LOONGARCH_INS_XVFCMP_SLT_S:
+	case LOONGARCH_INS_XVFCMP_SNE_D:
+	case LOONGARCH_INS_XVFCMP_SNE_S:
+	case LOONGARCH_INS_XVFCMP_SOR_D:
+	case LOONGARCH_INS_XVFCMP_SOR_S:
+	case LOONGARCH_INS_XVFCMP_SUEQ_D:
+	case LOONGARCH_INS_XVFCMP_SUEQ_S:
+	case LOONGARCH_INS_XVFCMP_SULE_D:
+	case LOONGARCH_INS_XVFCMP_SULE_S:
+	case LOONGARCH_INS_XVFCMP_SULT_D:
+	case LOONGARCH_INS_XVFCMP_SULT_S:
+	case LOONGARCH_INS_XVFCMP_SUNE_D:
+	case LOONGARCH_INS_XVFCMP_SUNE_S:
+	case LOONGARCH_INS_XVFCMP_SUN_D:
+	case LOONGARCH_INS_XVFCMP_SUN_S:
+	case LOONGARCH_INS_XVFCVTH_D_S:
+	case LOONGARCH_INS_XVFCVTH_S_H:
+	case LOONGARCH_INS_XVFCVTL_D_S:
+	case LOONGARCH_INS_XVFCVTL_S_H:
+	case LOONGARCH_INS_XVFCVT_H_S:
+	case LOONGARCH_INS_XVFCVT_S_D:
+	case LOONGARCH_INS_XVFDIV_D:
+	case LOONGARCH_INS_XVFDIV_S:
+	case LOONGARCH_INS_XVFFINTH_D_W:
+	case LOONGARCH_INS_XVFFINTL_D_W:
+	case LOONGARCH_INS_XVFFINT_D_L:
+	case LOONGARCH_INS_XVFFINT_D_LU:
+	case LOONGARCH_INS_XVFFINT_S_L:
+	case LOONGARCH_INS_XVFFINT_S_W:
+	case LOONGARCH_INS_XVFFINT_S_WU:
+	case LOONGARCH_INS_XVFLOGB_D:
+	case LOONGARCH_INS_XVFLOGB_S:
+	case LOONGARCH_INS_XVFMADD_D:
+	case LOONGARCH_INS_XVFMADD_S:
+	case LOONGARCH_INS_XVFMAXA_D:
+	case LOONGARCH_INS_XVFMAXA_S:
+	case LOONGARCH_INS_XVFMAX_D:
+	case LOONGARCH_INS_XVFMAX_S:
+	case LOONGARCH_INS_XVFMINA_D:
+	case LOONGARCH_INS_XVFMINA_S:
+	case LOONGARCH_INS_XVFMIN_D:
+	case LOONGARCH_INS_XVFMIN_S:
+	case LOONGARCH_INS_XVFMSUB_D:
+	case LOONGARCH_INS_XVFMSUB_S:
+	case LOONGARCH_INS_XVFMUL_D:
+	case LOONGARCH_INS_XVFMUL_S:
+	case LOONGARCH_INS_XVFNMADD_D:
+	case LOONGARCH_INS_XVFNMADD_S:
+	case LOONGARCH_INS_XVFNMSUB_D:
+	case LOONGARCH_INS_XVFNMSUB_S:
+	case LOONGARCH_INS_XVFRECIPE_D:
+	case LOONGARCH_INS_XVFRECIPE_S:
+	case LOONGARCH_INS_XVFRECIP_D:
+	case LOONGARCH_INS_XVFRECIP_S:
+	case LOONGARCH_INS_XVFRINTRM_D:
+	case LOONGARCH_INS_XVFRINTRM_S:
+	case LOONGARCH_INS_XVFRINTRNE_D:
+	case LOONGARCH_INS_XVFRINTRNE_S:
+	case LOONGARCH_INS_XVFRINTRP_D:
+	case LOONGARCH_INS_XVFRINTRP_S:
+	case LOONGARCH_INS_XVFRINTRZ_D:
+	case LOONGARCH_INS_XVFRINTRZ_S:
+	case LOONGARCH_INS_XVFRINT_D:
+	case LOONGARCH_INS_XVFRINT_S:
+	case LOONGARCH_INS_XVFRSQRTE_D:
+	case LOONGARCH_INS_XVFRSQRTE_S:
+	case LOONGARCH_INS_XVFRSQRT_D:
+	case LOONGARCH_INS_XVFRSQRT_S:
+	case LOONGARCH_INS_XVFRSTPI_B:
+	case LOONGARCH_INS_XVFRSTPI_H:
+	case LOONGARCH_INS_XVFRSTP_B:
+	case LOONGARCH_INS_XVFRSTP_H:
+	case LOONGARCH_INS_XVFSQRT_D:
+	case LOONGARCH_INS_XVFSQRT_S:
+	case LOONGARCH_INS_XVFSUB_D:
+	case LOONGARCH_INS_XVFSUB_S:
+	case LOONGARCH_INS_XVFTINTH_L_S:
+	case LOONGARCH_INS_XVFTINTL_L_S:
+	case LOONGARCH_INS_XVFTINTRMH_L_S:
+	case LOONGARCH_INS_XVFTINTRML_L_S:
+	case LOONGARCH_INS_XVFTINTRM_L_D:
+	case LOONGARCH_INS_XVFTINTRM_W_D:
+	case LOONGARCH_INS_XVFTINTRM_W_S:
+	case LOONGARCH_INS_XVFTINTRNEH_L_S:
+	case LOONGARCH_INS_XVFTINTRNEL_L_S:
+	case LOONGARCH_INS_XVFTINTRNE_L_D:
+	case LOONGARCH_INS_XVFTINTRNE_W_D:
+	case LOONGARCH_INS_XVFTINTRNE_W_S:
+	case LOONGARCH_INS_XVFTINTRPH_L_S:
+	case LOONGARCH_INS_XVFTINTRPL_L_S:
+	case LOONGARCH_INS_XVFTINTRP_L_D:
+	case LOONGARCH_INS_XVFTINTRP_W_D:
+	case LOONGARCH_INS_XVFTINTRP_W_S:
+	case LOONGARCH_INS_XVFTINTRZH_L_S:
+	case LOONGARCH_INS_XVFTINTRZL_L_S:
+	case LOONGARCH_INS_XVFTINTRZ_LU_D:
+	case LOONGARCH_INS_XVFTINTRZ_L_D:
+	case LOONGARCH_INS_XVFTINTRZ_WU_S:
+	case LOONGARCH_INS_XVFTINTRZ_W_D:
+	case LOONGARCH_INS_XVFTINTRZ_W_S:
+	case LOONGARCH_INS_XVFTINT_LU_D:
+	case LOONGARCH_INS_XVFTINT_L_D:
+	case LOONGARCH_INS_XVFTINT_WU_S:
+	case LOONGARCH_INS_XVFTINT_W_D:
+	case LOONGARCH_INS_XVFTINT_W_S:
+	case LOONGARCH_INS_XVHADDW_DU_WU:
+	case LOONGARCH_INS_XVHADDW_D_W:
+	case LOONGARCH_INS_XVHADDW_HU_BU:
+	case LOONGARCH_INS_XVHADDW_H_B:
+	case LOONGARCH_INS_XVHADDW_QU_DU:
+	case LOONGARCH_INS_XVHADDW_Q_D:
+	case LOONGARCH_INS_XVHADDW_WU_HU:
+	case LOONGARCH_INS_XVHADDW_W_H:
+	case LOONGARCH_INS_XVHSELI_D:
+	case LOONGARCH_INS_XVHSUBW_DU_WU:
+	case LOONGARCH_INS_XVHSUBW_D_W:
+	case LOONGARCH_INS_XVHSUBW_HU_BU:
+	case LOONGARCH_INS_XVHSUBW_H_B:
+	case LOONGARCH_INS_XVHSUBW_QU_DU:
+	case LOONGARCH_INS_XVHSUBW_Q_D:
+	case LOONGARCH_INS_XVHSUBW_WU_HU:
+	case LOONGARCH_INS_XVHSUBW_W_H:
+	case LOONGARCH_INS_XVILVH_B:
+	case LOONGARCH_INS_XVILVH_D:
+	case LOONGARCH_INS_XVILVH_H:
+	case LOONGARCH_INS_XVILVH_W:
+	case LOONGARCH_INS_XVILVL_B:
+	case LOONGARCH_INS_XVILVL_D:
+	case LOONGARCH_INS_XVILVL_H:
+	case LOONGARCH_INS_XVILVL_W:
+	case LOONGARCH_INS_XVINSGR2VR_D:
+	case LOONGARCH_INS_XVINSGR2VR_W:
+	case LOONGARCH_INS_XVINSVE0_D:
+	case LOONGARCH_INS_XVINSVE0_W:
+	case LOONGARCH_INS_XVLD:
+	case LOONGARCH_INS_XVLDI:
+	case LOONGARCH_INS_XVLDREPL_B:
+	case LOONGARCH_INS_XVLDREPL_D:
+	case LOONGARCH_INS_XVLDREPL_H:
+	case LOONGARCH_INS_XVLDREPL_W:
+	case LOONGARCH_INS_XVLDX:
+	case LOONGARCH_INS_XVMADDWEV_D_W:
+	case LOONGARCH_INS_XVMADDWEV_D_WU:
+	case LOONGARCH_INS_XVMADDWEV_D_WU_W:
+	case LOONGARCH_INS_XVMADDWEV_H_B:
+	case LOONGARCH_INS_XVMADDWEV_H_BU:
+	case LOONGARCH_INS_XVMADDWEV_H_BU_B:
+	case LOONGARCH_INS_XVMADDWEV_Q_D:
+	case LOONGARCH_INS_XVMADDWEV_Q_DU:
+	case LOONGARCH_INS_XVMADDWEV_Q_DU_D:
+	case LOONGARCH_INS_XVMADDWEV_W_H:
+	case LOONGARCH_INS_XVMADDWEV_W_HU:
+	case LOONGARCH_INS_XVMADDWEV_W_HU_H:
+	case LOONGARCH_INS_XVMADDWOD_D_W:
+	case LOONGARCH_INS_XVMADDWOD_D_WU:
+	case LOONGARCH_INS_XVMADDWOD_D_WU_W:
+	case LOONGARCH_INS_XVMADDWOD_H_B:
+	case LOONGARCH_INS_XVMADDWOD_H_BU:
+	case LOONGARCH_INS_XVMADDWOD_H_BU_B:
+	case LOONGARCH_INS_XVMADDWOD_Q_D:
+	case LOONGARCH_INS_XVMADDWOD_Q_DU:
+	case LOONGARCH_INS_XVMADDWOD_Q_DU_D:
+	case LOONGARCH_INS_XVMADDWOD_W_H:
+	case LOONGARCH_INS_XVMADDWOD_W_HU:
+	case LOONGARCH_INS_XVMADDWOD_W_HU_H:
+	case LOONGARCH_INS_XVMADD_B:
+	case LOONGARCH_INS_XVMADD_D:
+	case LOONGARCH_INS_XVMADD_H:
+	case LOONGARCH_INS_XVMADD_W:
+	case LOONGARCH_INS_XVMAXI_B:
+	case LOONGARCH_INS_XVMAXI_BU:
+	case LOONGARCH_INS_XVMAXI_D:
+	case LOONGARCH_INS_XVMAXI_DU:
+	case LOONGARCH_INS_XVMAXI_H:
+	case LOONGARCH_INS_XVMAXI_HU:
+	case LOONGARCH_INS_XVMAXI_W:
+	case LOONGARCH_INS_XVMAXI_WU:
+	case LOONGARCH_INS_XVMAX_B:
+	case LOONGARCH_INS_XVMAX_BU:
+	case LOONGARCH_INS_XVMAX_D:
+	case LOONGARCH_INS_XVMAX_DU:
+	case LOONGARCH_INS_XVMAX_H:
+	case LOONGARCH_INS_XVMAX_HU:
+	case LOONGARCH_INS_XVMAX_W:
+	case LOONGARCH_INS_XVMAX_WU:
+	case LOONGARCH_INS_XVMINI_B:
+	case LOONGARCH_INS_XVMINI_BU:
+	case LOONGARCH_INS_XVMINI_D:
+	case LOONGARCH_INS_XVMINI_DU:
+	case LOONGARCH_INS_XVMINI_H:
+	case LOONGARCH_INS_XVMINI_HU:
+	case LOONGARCH_INS_XVMINI_W:
+	case LOONGARCH_INS_XVMINI_WU:
+	case LOONGARCH_INS_XVMIN_B:
+	case LOONGARCH_INS_XVMIN_BU:
+	case LOONGARCH_INS_XVMIN_D:
+	case LOONGARCH_INS_XVMIN_DU:
+	case LOONGARCH_INS_XVMIN_H:
+	case LOONGARCH_INS_XVMIN_HU:
+	case LOONGARCH_INS_XVMIN_W:
+	case LOONGARCH_INS_XVMIN_WU:
+	case LOONGARCH_INS_XVMOD_B:
+	case LOONGARCH_INS_XVMOD_BU:
+	case LOONGARCH_INS_XVMOD_D:
+	case LOONGARCH_INS_XVMOD_DU:
+	case LOONGARCH_INS_XVMOD_H:
+	case LOONGARCH_INS_XVMOD_HU:
+	case LOONGARCH_INS_XVMOD_W:
+	case LOONGARCH_INS_XVMOD_WU:
+	case LOONGARCH_INS_XVMSKGEZ_B:
+	case LOONGARCH_INS_XVMSKLTZ_B:
+	case LOONGARCH_INS_XVMSKLTZ_D:
+	case LOONGARCH_INS_XVMSKLTZ_H:
+	case LOONGARCH_INS_XVMSKLTZ_W:
+	case LOONGARCH_INS_XVMSKNZ_B:
+	case LOONGARCH_INS_XVMSUB_B:
+	case LOONGARCH_INS_XVMSUB_D:
+	case LOONGARCH_INS_XVMSUB_H:
+	case LOONGARCH_INS_XVMSUB_W:
+	case LOONGARCH_INS_XVMUH_B:
+	case LOONGARCH_INS_XVMUH_BU:
+	case LOONGARCH_INS_XVMUH_D:
+	case LOONGARCH_INS_XVMUH_DU:
+	case LOONGARCH_INS_XVMUH_H:
+	case LOONGARCH_INS_XVMUH_HU:
+	case LOONGARCH_INS_XVMUH_W:
+	case LOONGARCH_INS_XVMUH_WU:
+	case LOONGARCH_INS_XVMULWEV_D_W:
+	case LOONGARCH_INS_XVMULWEV_D_WU:
+	case LOONGARCH_INS_XVMULWEV_D_WU_W:
+	case LOONGARCH_INS_XVMULWEV_H_B:
+	case LOONGARCH_INS_XVMULWEV_H_BU:
+	case LOONGARCH_INS_XVMULWEV_H_BU_B:
+	case LOONGARCH_INS_XVMULWEV_Q_D:
+	case LOONGARCH_INS_XVMULWEV_Q_DU:
+	case LOONGARCH_INS_XVMULWEV_Q_DU_D:
+	case LOONGARCH_INS_XVMULWEV_W_H:
+	case LOONGARCH_INS_XVMULWEV_W_HU:
+	case LOONGARCH_INS_XVMULWEV_W_HU_H:
+	case LOONGARCH_INS_XVMULWOD_D_W:
+	case LOONGARCH_INS_XVMULWOD_D_WU:
+	case LOONGARCH_INS_XVMULWOD_D_WU_W:
+	case LOONGARCH_INS_XVMULWOD_H_B:
+	case LOONGARCH_INS_XVMULWOD_H_BU:
+	case LOONGARCH_INS_XVMULWOD_H_BU_B:
+	case LOONGARCH_INS_XVMULWOD_Q_D:
+	case LOONGARCH_INS_XVMULWOD_Q_DU:
+	case LOONGARCH_INS_XVMULWOD_Q_DU_D:
+	case LOONGARCH_INS_XVMULWOD_W_H:
+	case LOONGARCH_INS_XVMULWOD_W_HU:
+	case LOONGARCH_INS_XVMULWOD_W_HU_H:
+	case LOONGARCH_INS_XVMUL_B:
+	case LOONGARCH_INS_XVMUL_D:
+	case LOONGARCH_INS_XVMUL_H:
+	case LOONGARCH_INS_XVMUL_W:
+	case LOONGARCH_INS_XVNEG_B:
+	case LOONGARCH_INS_XVNEG_D:
+	case LOONGARCH_INS_XVNEG_H:
+	case LOONGARCH_INS_XVNEG_W:
+	case LOONGARCH_INS_XVNORI_B:
+	case LOONGARCH_INS_XVNOR_V:
+	case LOONGARCH_INS_XVORI_B:
+	case LOONGARCH_INS_XVORN_V:
+	case LOONGARCH_INS_XVOR_V:
+	case LOONGARCH_INS_XVPACKEV_B:
+	case LOONGARCH_INS_XVPACKEV_D:
+	case LOONGARCH_INS_XVPACKEV_H:
+	case LOONGARCH_INS_XVPACKEV_W:
+	case LOONGARCH_INS_XVPACKOD_B:
+	case LOONGARCH_INS_XVPACKOD_D:
+	case LOONGARCH_INS_XVPACKOD_H:
+	case LOONGARCH_INS_XVPACKOD_W:
+	case LOONGARCH_INS_XVPCNT_B:
+	case LOONGARCH_INS_XVPCNT_D:
+	case LOONGARCH_INS_XVPCNT_H:
+	case LOONGARCH_INS_XVPCNT_W:
+	case LOONGARCH_INS_XVPERMI_D:
+	case LOONGARCH_INS_XVPERMI_Q:
+	case LOONGARCH_INS_XVPERMI_W:
+	case LOONGARCH_INS_XVPERM_W:
+	case LOONGARCH_INS_XVPICKEV_B:
+	case LOONGARCH_INS_XVPICKEV_D:
+	case LOONGARCH_INS_XVPICKEV_H:
+	case LOONGARCH_INS_XVPICKEV_W:
+	case LOONGARCH_INS_XVPICKOD_B:
+	case LOONGARCH_INS_XVPICKOD_D:
+	case LOONGARCH_INS_XVPICKOD_H:
+	case LOONGARCH_INS_XVPICKOD_W:
+	case LOONGARCH_INS_XVPICKVE2GR_D:
+	case LOONGARCH_INS_XVPICKVE2GR_DU:
+	case LOONGARCH_INS_XVPICKVE2GR_W:
+	case LOONGARCH_INS_XVPICKVE2GR_WU:
+	case LOONGARCH_INS_XVPICKVE_D:
+	case LOONGARCH_INS_XVPICKVE_W:
+	case LOONGARCH_INS_XVREPL128VEI_B:
+	case LOONGARCH_INS_XVREPL128VEI_D:
+	case LOONGARCH_INS_XVREPL128VEI_H:
+	case LOONGARCH_INS_XVREPL128VEI_W:
+	case LOONGARCH_INS_XVREPLGR2VR_B:
+	case LOONGARCH_INS_XVREPLGR2VR_D:
+	case LOONGARCH_INS_XVREPLGR2VR_H:
+	case LOONGARCH_INS_XVREPLGR2VR_W:
+	case LOONGARCH_INS_XVREPLVE0_B:
+	case LOONGARCH_INS_XVREPLVE0_D:
+	case LOONGARCH_INS_XVREPLVE0_H:
+	case LOONGARCH_INS_XVREPLVE0_Q:
+	case LOONGARCH_INS_XVREPLVE0_W:
+	case LOONGARCH_INS_XVREPLVE_B:
+	case LOONGARCH_INS_XVREPLVE_D:
+	case LOONGARCH_INS_XVREPLVE_H:
+	case LOONGARCH_INS_XVREPLVE_W:
+	case LOONGARCH_INS_XVROTRI_B:
+	case LOONGARCH_INS_XVROTRI_D:
+	case LOONGARCH_INS_XVROTRI_H:
+	case LOONGARCH_INS_XVROTRI_W:
+	case LOONGARCH_INS_XVROTR_B:
+	case LOONGARCH_INS_XVROTR_D:
+	case LOONGARCH_INS_XVROTR_H:
+	case LOONGARCH_INS_XVROTR_W:
+	case LOONGARCH_INS_XVSADD_B:
+	case LOONGARCH_INS_XVSADD_BU:
+	case LOONGARCH_INS_XVSADD_D:
+	case LOONGARCH_INS_XVSADD_DU:
+	case LOONGARCH_INS_XVSADD_H:
+	case LOONGARCH_INS_XVSADD_HU:
+	case LOONGARCH_INS_XVSADD_W:
+	case LOONGARCH_INS_XVSADD_WU:
+	case LOONGARCH_INS_XVSAT_B:
+	case LOONGARCH_INS_XVSAT_BU:
+	case LOONGARCH_INS_XVSAT_D:
+	case LOONGARCH_INS_XVSAT_DU:
+	case LOONGARCH_INS_XVSAT_H:
+	case LOONGARCH_INS_XVSAT_HU:
+	case LOONGARCH_INS_XVSAT_W:
+	case LOONGARCH_INS_XVSAT_WU:
+	case LOONGARCH_INS_XVSEQI_B:
+	case LOONGARCH_INS_XVSEQI_D:
+	case LOONGARCH_INS_XVSEQI_H:
+	case LOONGARCH_INS_XVSEQI_W:
+	case LOONGARCH_INS_XVSEQ_B:
+	case LOONGARCH_INS_XVSEQ_D:
+	case LOONGARCH_INS_XVSEQ_H:
+	case LOONGARCH_INS_XVSEQ_W:
+	case LOONGARCH_INS_XVSETALLNEZ_B:
+	case LOONGARCH_INS_XVSETALLNEZ_D:
+	case LOONGARCH_INS_XVSETALLNEZ_H:
+	case LOONGARCH_INS_XVSETALLNEZ_W:
+	case LOONGARCH_INS_XVSETANYEQZ_B:
+	case LOONGARCH_INS_XVSETANYEQZ_D:
+	case LOONGARCH_INS_XVSETANYEQZ_H:
+	case LOONGARCH_INS_XVSETANYEQZ_W:
+	case LOONGARCH_INS_XVSETEQZ_V:
+	case LOONGARCH_INS_XVSETNEZ_V:
+	case LOONGARCH_INS_XVSHUF4I_B:
+	case LOONGARCH_INS_XVSHUF4I_D:
+	case LOONGARCH_INS_XVSHUF4I_H:
+	case LOONGARCH_INS_XVSHUF4I_W:
+	case LOONGARCH_INS_XVSHUF_B:
+	case LOONGARCH_INS_XVSHUF_D:
+	case LOONGARCH_INS_XVSHUF_H:
+	case LOONGARCH_INS_XVSHUF_W:
+	case LOONGARCH_INS_XVSIGNCOV_B:
+	case LOONGARCH_INS_XVSIGNCOV_D:
+	case LOONGARCH_INS_XVSIGNCOV_H:
+	case LOONGARCH_INS_XVSIGNCOV_W:
+	case LOONGARCH_INS_XVSLEI_B:
+	case LOONGARCH_INS_XVSLEI_BU:
+	case LOONGARCH_INS_XVSLEI_D:
+	case LOONGARCH_INS_XVSLEI_DU:
+	case LOONGARCH_INS_XVSLEI_H:
+	case LOONGARCH_INS_XVSLEI_HU:
+	case LOONGARCH_INS_XVSLEI_W:
+	case LOONGARCH_INS_XVSLEI_WU:
+	case LOONGARCH_INS_XVSLE_B:
+	case LOONGARCH_INS_XVSLE_BU:
+	case LOONGARCH_INS_XVSLE_D:
+	case LOONGARCH_INS_XVSLE_DU:
+	case LOONGARCH_INS_XVSLE_H:
+	case LOONGARCH_INS_XVSLE_HU:
+	case LOONGARCH_INS_XVSLE_W:
+	case LOONGARCH_INS_XVSLE_WU:
+	case LOONGARCH_INS_XVSLLI_B:
+	case LOONGARCH_INS_XVSLLI_D:
+	case LOONGARCH_INS_XVSLLI_H:
+	case LOONGARCH_INS_XVSLLI_W:
+	case LOONGARCH_INS_XVSLLWIL_DU_WU:
+	case LOONGARCH_INS_XVSLLWIL_D_W:
+	case LOONGARCH_INS_XVSLLWIL_HU_BU:
+	case LOONGARCH_INS_XVSLLWIL_H_B:
+	case LOONGARCH_INS_XVSLLWIL_WU_HU:
+	case LOONGARCH_INS_XVSLLWIL_W_H:
+	case LOONGARCH_INS_XVSLL_B:
+	case LOONGARCH_INS_XVSLL_D:
+	case LOONGARCH_INS_XVSLL_H:
+	case LOONGARCH_INS_XVSLL_W:
+	case LOONGARCH_INS_XVSLTI_B:
+	case LOONGARCH_INS_XVSLTI_BU:
+	case LOONGARCH_INS_XVSLTI_D:
+	case LOONGARCH_INS_XVSLTI_DU:
+	case LOONGARCH_INS_XVSLTI_H:
+	case LOONGARCH_INS_XVSLTI_HU:
+	case LOONGARCH_INS_XVSLTI_W:
+	case LOONGARCH_INS_XVSLTI_WU:
+	case LOONGARCH_INS_XVSLT_B:
+	case LOONGARCH_INS_XVSLT_BU:
+	case LOONGARCH_INS_XVSLT_D:
+	case LOONGARCH_INS_XVSLT_DU:
+	case LOONGARCH_INS_XVSLT_H:
+	case LOONGARCH_INS_XVSLT_HU:
+	case LOONGARCH_INS_XVSLT_W:
+	case LOONGARCH_INS_XVSLT_WU:
+	case LOONGARCH_INS_XVSRAI_B:
+	case LOONGARCH_INS_XVSRAI_D:
+	case LOONGARCH_INS_XVSRAI_H:
+	case LOONGARCH_INS_XVSRAI_W:
+	case LOONGARCH_INS_XVSRANI_B_H:
+	case LOONGARCH_INS_XVSRANI_D_Q:
+	case LOONGARCH_INS_XVSRANI_H_W:
+	case LOONGARCH_INS_XVSRANI_W_D:
+	case LOONGARCH_INS_XVSRAN_B_H:
+	case LOONGARCH_INS_XVSRAN_H_W:
+	case LOONGARCH_INS_XVSRAN_W_D:
+	case LOONGARCH_INS_XVSRARI_B:
+	case LOONGARCH_INS_XVSRARI_D:
+	case LOONGARCH_INS_XVSRARI_H:
+	case LOONGARCH_INS_XVSRARI_W:
+	case LOONGARCH_INS_XVSRARNI_B_H:
+	case LOONGARCH_INS_XVSRARNI_D_Q:
+	case LOONGARCH_INS_XVSRARNI_H_W:
+	case LOONGARCH_INS_XVSRARNI_W_D:
+	case LOONGARCH_INS_XVSRARN_B_H:
+	case LOONGARCH_INS_XVSRARN_H_W:
+	case LOONGARCH_INS_XVSRARN_W_D:
+	case LOONGARCH_INS_XVSRAR_B:
+	case LOONGARCH_INS_XVSRAR_D:
+	case LOONGARCH_INS_XVSRAR_H:
+	case LOONGARCH_INS_XVSRAR_W:
+	case LOONGARCH_INS_XVSRA_B:
+	case LOONGARCH_INS_XVSRA_D:
+	case LOONGARCH_INS_XVSRA_H:
+	case LOONGARCH_INS_XVSRA_W:
+	case LOONGARCH_INS_XVSRLI_B:
+	case LOONGARCH_INS_XVSRLI_D:
+	case LOONGARCH_INS_XVSRLI_H:
+	case LOONGARCH_INS_XVSRLI_W:
+	case LOONGARCH_INS_XVSRLNI_B_H:
+	case LOONGARCH_INS_XVSRLNI_D_Q:
+	case LOONGARCH_INS_XVSRLNI_H_W:
+	case LOONGARCH_INS_XVSRLNI_W_D:
+	case LOONGARCH_INS_XVSRLN_B_H:
+	case LOONGARCH_INS_XVSRLN_H_W:
+	case LOONGARCH_INS_XVSRLN_W_D:
+	case LOONGARCH_INS_XVSRLRI_B:
+	case LOONGARCH_INS_XVSRLRI_D:
+	case LOONGARCH_INS_XVSRLRI_H:
+	case LOONGARCH_INS_XVSRLRI_W:
+	case LOONGARCH_INS_XVSRLRNI_B_H:
+	case LOONGARCH_INS_XVSRLRNI_D_Q:
+	case LOONGARCH_INS_XVSRLRNI_H_W:
+	case LOONGARCH_INS_XVSRLRNI_W_D:
+	case LOONGARCH_INS_XVSRLRN_B_H:
+	case LOONGARCH_INS_XVSRLRN_H_W:
+	case LOONGARCH_INS_XVSRLRN_W_D:
+	case LOONGARCH_INS_XVSRLR_B:
+	case LOONGARCH_INS_XVSRLR_D:
+	case LOONGARCH_INS_XVSRLR_H:
+	case LOONGARCH_INS_XVSRLR_W:
+	case LOONGARCH_INS_XVSRL_B:
+	case LOONGARCH_INS_XVSRL_D:
+	case LOONGARCH_INS_XVSRL_H:
+	case LOONGARCH_INS_XVSRL_W:
+	case LOONGARCH_INS_XVSSRANI_BU_H:
+	case LOONGARCH_INS_XVSSRANI_B_H:
+	case LOONGARCH_INS_XVSSRANI_DU_Q:
+	case LOONGARCH_INS_XVSSRANI_D_Q:
+	case LOONGARCH_INS_XVSSRANI_HU_W:
+	case LOONGARCH_INS_XVSSRANI_H_W:
+	case LOONGARCH_INS_XVSSRANI_WU_D:
+	case LOONGARCH_INS_XVSSRANI_W_D:
+	case LOONGARCH_INS_XVSSRAN_BU_H:
+	case LOONGARCH_INS_XVSSRAN_B_H:
+	case LOONGARCH_INS_XVSSRAN_HU_W:
+	case LOONGARCH_INS_XVSSRAN_H_W:
+	case LOONGARCH_INS_XVSSRAN_WU_D:
+	case LOONGARCH_INS_XVSSRAN_W_D:
+	case LOONGARCH_INS_XVSSRARNI_BU_H:
+	case LOONGARCH_INS_XVSSRARNI_B_H:
+	case LOONGARCH_INS_XVSSRARNI_DU_Q:
+	case LOONGARCH_INS_XVSSRARNI_D_Q:
+	case LOONGARCH_INS_XVSSRARNI_HU_W:
+	case LOONGARCH_INS_XVSSRARNI_H_W:
+	case LOONGARCH_INS_XVSSRARNI_WU_D:
+	case LOONGARCH_INS_XVSSRARNI_W_D:
+	case LOONGARCH_INS_XVSSRARN_BU_H:
+	case LOONGARCH_INS_XVSSRARN_B_H:
+	case LOONGARCH_INS_XVSSRARN_HU_W:
+	case LOONGARCH_INS_XVSSRARN_H_W:
+	case LOONGARCH_INS_XVSSRARN_WU_D:
+	case LOONGARCH_INS_XVSSRARN_W_D:
+	case LOONGARCH_INS_XVSSRLNI_BU_H:
+	case LOONGARCH_INS_XVSSRLNI_B_H:
+	case LOONGARCH_INS_XVSSRLNI_DU_Q:
+	case LOONGARCH_INS_XVSSRLNI_D_Q:
+	case LOONGARCH_INS_XVSSRLNI_HU_W:
+	case LOONGARCH_INS_XVSSRLNI_H_W:
+	case LOONGARCH_INS_XVSSRLNI_WU_D:
+	case LOONGARCH_INS_XVSSRLNI_W_D:
+	case LOONGARCH_INS_XVSSRLN_BU_H:
+	case LOONGARCH_INS_XVSSRLN_B_H:
+	case LOONGARCH_INS_XVSSRLN_HU_W:
+	case LOONGARCH_INS_XVSSRLN_H_W:
+	case LOONGARCH_INS_XVSSRLN_WU_D:
+	case LOONGARCH_INS_XVSSRLN_W_D:
+	case LOONGARCH_INS_XVSSRLRNI_BU_H:
+	case LOONGARCH_INS_XVSSRLRNI_B_H:
+	case LOONGARCH_INS_XVSSRLRNI_DU_Q:
+	case LOONGARCH_INS_XVSSRLRNI_D_Q:
+	case LOONGARCH_INS_XVSSRLRNI_HU_W:
+	case LOONGARCH_INS_XVSSRLRNI_H_W:
+	case LOONGARCH_INS_XVSSRLRNI_WU_D:
+	case LOONGARCH_INS_XVSSRLRNI_W_D:
+	case LOONGARCH_INS_XVSSRLRN_BU_H:
+	case LOONGARCH_INS_XVSSRLRN_B_H:
+	case LOONGARCH_INS_XVSSRLRN_HU_W:
+	case LOONGARCH_INS_XVSSRLRN_H_W:
+	case LOONGARCH_INS_XVSSRLRN_WU_D:
+	case LOONGARCH_INS_XVSSRLRN_W_D:
+	case LOONGARCH_INS_XVSSUB_B:
+	case LOONGARCH_INS_XVSSUB_BU:
+	case LOONGARCH_INS_XVSSUB_D:
+	case LOONGARCH_INS_XVSSUB_DU:
+	case LOONGARCH_INS_XVSSUB_H:
+	case LOONGARCH_INS_XVSSUB_HU:
+	case LOONGARCH_INS_XVSSUB_W:
+	case LOONGARCH_INS_XVSSUB_WU:
+	case LOONGARCH_INS_XVST:
+	case LOONGARCH_INS_XVSTELM_B:
+	case LOONGARCH_INS_XVSTELM_D:
+	case LOONGARCH_INS_XVSTELM_H:
+	case LOONGARCH_INS_XVSTELM_W:
+	case LOONGARCH_INS_XVSTX:
+	case LOONGARCH_INS_XVSUBI_BU:
+	case LOONGARCH_INS_XVSUBI_DU:
+	case LOONGARCH_INS_XVSUBI_HU:
+	case LOONGARCH_INS_XVSUBI_WU:
+	case LOONGARCH_INS_XVSUBWEV_D_W:
+	case LOONGARCH_INS_XVSUBWEV_D_WU:
+	case LOONGARCH_INS_XVSUBWEV_H_B:
+	case LOONGARCH_INS_XVSUBWEV_H_BU:
+	case LOONGARCH_INS_XVSUBWEV_Q_D:
+	case LOONGARCH_INS_XVSUBWEV_Q_DU:
+	case LOONGARCH_INS_XVSUBWEV_W_H:
+	case LOONGARCH_INS_XVSUBWEV_W_HU:
+	case LOONGARCH_INS_XVSUBWOD_D_W:
+	case LOONGARCH_INS_XVSUBWOD_D_WU:
+	case LOONGARCH_INS_XVSUBWOD_H_B:
+	case LOONGARCH_INS_XVSUBWOD_H_BU:
+	case LOONGARCH_INS_XVSUBWOD_Q_D:
+	case LOONGARCH_INS_XVSUBWOD_Q_DU:
+	case LOONGARCH_INS_XVSUBWOD_W_H:
+	case LOONGARCH_INS_XVSUBWOD_W_HU:
+	case LOONGARCH_INS_XVSUB_B:
+	case LOONGARCH_INS_XVSUB_D:
+	case LOONGARCH_INS_XVSUB_H:
+	case LOONGARCH_INS_XVSUB_Q:
+	case LOONGARCH_INS_XVSUB_W:
+	case LOONGARCH_INS_XVXORI_B:
+	case LOONGARCH_INS_XVXOR_V:
+	default:
+		break;
+	}
+}
+
+static int loongarch_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	if (!(a && op && data && len > 0)) {
+		return -1;
+	}
+
+	RzAsmLoongArchContext *ctx = a->plugin_data;
+	if (!loongarch_setup_cs_handle(ctx, a->bits == 64, a->big_endian)) {
+		return -1;
+	}
+
+	op->size = 4;
+	ctx->insn = NULL;
+	ctx->count = cs_disasm(ctx->h, (const ut8 *)data, len, addr, 1, &ctx->insn);
+	if (ctx->count <= 0) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = strdup("invalid");
+		}
+		return op->size;
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+		op->mnemonic = rz_str_newf("%s%s%s", ctx->insn->mnemonic, ctx->insn->op_str[0] ? " " : "", ctx->insn->op_str);
+	}
+
+	op->size = ctx->insn->size;
+	op->id = (int)ctx->insn->id;
+	op->addr = ctx->insn->address;
+	loongarch_op_set_type(ctx, op);
+
+	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+		op->opex = loongarch_opex(ctx);
+	}
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
+		loongarch_fillval(ctx, a, op);
+	}
+
+	cs_free(ctx->insn, ctx->count);
+	return op->size;
+}
+
+static int loongarch_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+	default:
+		return -1;
+	}
+}
+
+static RzList /*<RzSearchKeyword *>*/ *loongarch_analysis_preludes(RzAnalysis *analysis) {
+#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, ds, (const ut8 *)m, ms, NULL))
+	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+	// addi.d sp, sp, -offset
+	KW("\x63\x00\xe0\x02", 4, "\xff\x03\x1f\xff", 0);
+	return l;
+}
+
+static bool loongarch_analysis_init(void **u) {
+	if (!u) {
+		return false;
+	}
+	RzAsmLoongArchContext *ctx = RZ_NEW0(RzAsmLoongArchContext);
+	if (!ctx) {
+		return false;
+	}
+	*u = ctx;
+	return true;
+}
+
+static bool loongarch_analysis_fini(void *u) {
+	if (!u) {
+		return true;
+	}
+	RzAsmLoongArchContext *ctx = u;
+	cs_close(&ctx->h);
+	free(u);
+	return true;
+}
+
+RzAnalysisPlugin rz_analysis_plugin_loongarch_cs = {
+	.name = "loongarch",
+	.desc = "Capstone LoongArch analysis plugin",
+	.license = "LGPL3",
+	.arch = "loongarch",
+	.bits = 32 | 64,
+	.get_reg_profile = loongarch_get_reg_profile,
+	.preludes = loongarch_analysis_preludes,
+	.archinfo = loongarch_archinfo,
+	.op = loongarch_analysis_op,
+	.init = loongarch_analysis_init,
+	.fini = loongarch_analysis_fini,
+};
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_ANALYSIS,
+	.data = &rz_analysis_plugin_loongarch_cs,
+	.version = RZ_VERSION
+};
+#endif

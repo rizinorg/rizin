@@ -2,6 +2,5 @@ NAME=PE: corkami truncatedlast.exe - open
 FILE=bins/pe/truncatedlast.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

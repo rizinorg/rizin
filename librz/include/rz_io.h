@@ -63,7 +63,6 @@ typedef struct rz_io_t {
 	int va; // all of this config stuff must be in 1 int
 	int ff;
 	int Oxff;
-	size_t addrbytes;
 	int aslr;
 	int autofd;
 	int cached;
@@ -77,7 +76,7 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzList /*<RzIOPlugin *>*/ *plugins;
+	HtSP /*<RzIOPlugin *>*/ *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
@@ -120,7 +119,6 @@ typedef struct rz_io_plugin_t {
 	void *widget;
 	const char *uris;
 	int (*listener)(RzIODesc *io);
-	int (*init)(void);
 	bool isdbg;
 	// int (*is_file_opened)(RzIO *io, RzIODesc *fd, const char *);
 	char *(*system)(RzIO *io, RzIODesc *fd, const char *);
@@ -195,7 +193,7 @@ typedef ut64 (*RzIODescSize)(RzIODesc *desc);
 typedef RzIODesc *(*RzIOOpen)(RzIO *io, const char *uri, int flags, int mode);
 typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 typedef bool (*RzIOClose)(RzIO *io, int fd);
-typedef bool (*RzIOReadAt)(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+typedef bool (*RzIOReadAt)(RzIO *io, ut64 addr, ut8 *buf, size_t req_len);
 typedef bool (*RzIOWriteAt)(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
 typedef char *(*RzIOSystem)(RzIO *io, const char *cmd);
 typedef int (*RzIOFdOpen)(RzIO *io, const char *uri, int flags, int mode);
@@ -270,6 +268,20 @@ typedef struct rz_io_bind_t {
 #endif
 } RzIOBind;
 
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_io_plugin_cmp(RZ_NULLABLE const RzIOPlugin *a, RZ_NULLABLE const RzIOPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
+
 // map.c
 RZ_API RzIOMap *rz_io_map_new(RzIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 RZ_API void rz_io_map_init(RzIO *io);
@@ -324,16 +336,16 @@ RZ_API int rz_io_close_all(RzIO *io);
 RZ_API int rz_io_pread_at(RzIO *io, ut64 paddr, ut8 *buf, size_t len);
 RZ_API int rz_io_pwrite_at(RzIO *io, ut64 paddr, const ut8 *buf, size_t len);
 RZ_API bool rz_io_vread_at_mapped(RzIO *io, ut64 vaddr, ut8 *buf, size_t len);
-RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
-RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, size_t len);
-RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_API bool rz_io_read_at_mapped(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len);
+RZ_API int rz_io_nread_at(RZ_NONNULL RzIO *io, ut64 addr, RZ_OUT RZ_NONNULL ut8 *buf, size_t len);
+RZ_API RZ_OWN RzBuffer *rz_io_nread_at_new_buf(RZ_NONNULL RzIO *io, ut64 addr, size_t len);
 RZ_API bool rz_io_write_at(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
 RZ_API bool rz_io_read(RzIO *io, ut8 *buf, size_t len);
 RZ_API bool rz_io_write(RzIO *io, const ut8 *buf, size_t len);
 RZ_API ut64 rz_io_size(RzIO *io);
 RZ_API bool rz_io_is_listener(RzIO *io);
 RZ_API char *rz_io_system(RzIO *io, const char *cmd);
-RZ_API bool rz_io_resize(RzIO *io, ut64 newsize);
+RZ_API bool rz_io_resize(RZ_NONNULL RzIO *io, ut64 newsize);
 RZ_API bool rz_io_extend_at(RzIO *io, ut64 addr, ut64 size);
 RZ_API bool rz_io_set_write_mask(RzIO *io, const ut8 *mask, size_t len);
 RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd);
@@ -354,7 +366,7 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
 
 // desc.c
-RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
+RZ_API RzIODesc *rz_io_desc_new(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, void *data);
 RZ_API RzIODesc *rz_io_desc_open(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_desc_open_plugin(RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode);
 RZ_API bool rz_io_desc_close(RzIODesc *desc);
@@ -390,7 +402,12 @@ RZ_API void rz_io_cache_init(RzIO *io);
 RZ_API void rz_io_cache_fini(RzIO *io);
 RZ_API void rz_io_cache_reset(RzIO *io, int set);
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
-RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, size_t len);
+RZ_API bool rz_io_cache_read(
+	RZ_BORROW RZ_NONNULL RzIO *io,
+	ut64 addr,
+	RZ_OUT RZ_NONNULL ut8 *buf,
+	size_t len,
+	RZ_OUT RZ_NULLABLE size_t *copied);
 
 /* io/p_cache.c */
 RZ_API bool rz_io_desc_cache_init(RzIODesc *desc);
@@ -441,6 +458,17 @@ RZ_API long rz_io_ptrace(RzIO *io, rz_ptrace_request_t request, pid_t pid, void 
 RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *child_callback_user);
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #endif
+
+#define RZ_IO_BOUNDARIES_PERMS_ANY 0
+#define RZ_IO_BOUNDARIES_MASK_NONE 0
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_raw(RZ_NONNULL RzIO *io, const RzInterval interval);
+#define rz_io_get_boundaries_range rz_io_get_boundaries_all_io_maps
+#define rz_io_get_boundaries_all_io_maps(io, interval) \
+	rz_io_get_boundaries_io_maps(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_maps(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
+#define rz_io_get_boundaries_all_io_skyline(io, interval) \
+	rz_io_get_boundaries_io_skyline(io, interval, RZ_IO_BOUNDARIES_PERMS_ANY, RZ_IO_BOUNDARIES_MASK_NONE)
+RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_io_get_boundaries_io_skyline(RZ_NONNULL RzIO *io, const RzInterval interval, int perms, int perms_mask);
 
 #if __WINDOWS__
 RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);

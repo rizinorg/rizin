@@ -8,7 +8,6 @@ libsdb_sources = files(
   'disk.c',
   'fmt.c',
   'lock.c',
-  'ls.c',
   'match.c',
   'ns.c',
   'num.c',
@@ -25,7 +24,6 @@ include_files = files(
   'buffer.h',
   'cdb.h',
   'cdb_make.h',
-  'ls.h',
   'sdb.h',
   'sdbht.h',
 )

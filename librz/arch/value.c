@@ -84,7 +84,7 @@ RZ_API char *rz_analysis_value_to_string(RzAnalysisValue *value) {
 				out = rz_str_append(out, "[");
 			}
 			if (value->mul) {
-				out = rz_str_appendf(out, "%d*", value->mul);
+				out = rz_str_appendf(out, "%" PFMT64d "*", value->mul);
 			}
 			if (value->reg) {
 				out = rz_str_appendf(out, "%s", value->reg->name);

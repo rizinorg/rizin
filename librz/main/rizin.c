@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#define USE_THREADS       1
-#define ALLOW_THREADED    0
 #define UNCOLORIZE_NONTTY 0
 
 #include <rz_core.h>
@@ -10,6 +8,7 @@
 #include <rz_project.h>
 #include <rz_flirt.h>
 #include <rz_socket.h>
+#include <locale.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -45,7 +44,6 @@ static int rz_main_version_verify(int show) {
 		{ "rz_flag", rz_flag_version },
 		{ "rz_core", rz_core_version },
 		{ "rz_crypto", rz_crypto_version },
-		{ "rz_bp", rz_bp_version },
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
 		{ "rz_hash", rz_hash_version },
@@ -87,8 +85,8 @@ static int rz_main_version_verify(int show) {
 	return ret;
 }
 
-static int main_help(int line) {
-
+static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
+	rz_return_val_if_fail(core, 1);
 	if (line < 2) {
 		printf("%s%s", Color_CYAN, "Usage: ");
 		printf(Color_RESET "rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
@@ -98,44 +96,42 @@ static int main_help(int line) {
 		const char *options[] = {
 			// clang-format off
 			"--",          "",          "Run rizin without opening any file",
-			"=",           "",          "Same as 'rizin malloc://512",
+			"=",           "",          "Same as 'rizin malloc://512'",
 			"- ",          "",          "Read file from stdin",
 			"-=",          "",          "Perform R=! command to run all commands remotely",
 			"-0",          "",          "Print \\x00 after init and every command",
+			"-1",          "",          "Redirect stderr to stdout",
 			"-2",          "",          "Close stderr file descriptor (silent warning messages)",
-			"-a",          "[arch]",    "Set asm.arch",
+			"-a",          "arch",      "Set asm.arch",
 			"-A",          "",          "Run 'aaa' command to analyze all referenced code",
-			"-b",          "[bits]",    "Set asm.bits",
-			"-B",          "[baddr]",   "Set base address for PIE binaries",
-			"-c 'cmd..'",  "",          "Execute rizin command",
+			"-b",          "bits",      "Set asm.bits",
+			"-B",          "baddr",     "Set base address for PIE binaries",
+			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
-			"-d",          "",          "Debug the executable 'file' or running process 'pid",
-			"-D",          "[backend]", "Enable debug mode (e cfg.debug=true)",
-			"-e k=v",      "",          "Evaluate config var",
+			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
+			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
+			"-e",          "k=v",       "Evaluate config var",
+			"-E",          "endian",    "Endianness -E big or -E little",
 			"-f",          "",          "Block size = file size",
-			"-F",          "[binplug]", "Force to use that rbin plugin",
+			"-F",          "binplug",   "Force to use that rbin plugin",
 			"-h, -hh",     "",          "Show help message, -hh for long",
-			"-H",          "([var])",   "Display variable",
-			"-i",          "[file]",    "Run script file",
-			"-I",          "[file]",    "Run script file before the file is opened",
-			"-k",          "[OS/kern]", "Set asm.os (linux, macos, w32, netbsd, ...)",
-			"-l",          "[lib]",     "Load plugin file",
+			"-H",          "[var]",     "Display variable",
+			"-i",          "file",      "Run script file",
+			"-I",          "file",      "Run script file before the file is opened",
+			"-k",          "OS/kern",   "Set asm.os (linux, macos, w32, netbsd, ...)",
+			"-l",          "lib",       "Load plugin file",
 			"-L",          "",          "List supported IO plugins",
-			"-m",          "[addr]",    "Map file at given address (loadaddr)",
+			"-m",          "addr",      "Map file at given address (loadaddr)",
 			"-M",          "",          "Do not demangle symbol names",
 			"-n, -nn",     "",          "Do not load RzBin info (-nn only load bin structures)",
 			"-N",          "",          "Do not load user settings and scripts",
 			"-NN",         "",          "Do not load any script or plugin",
-			"-q",          "",          "Quiet mode (no prompt) and quit after -i",
-			"-qq",         "",          "Quit after running all -c and -i",
-			"-Q",          "",          "Quiet mode (no prompt) and quit faster (quickLeak=true)",
-			"-p",          "[p.rzdb]",  "Load project file",
-			"-r",          "[rz-run]",  "Specify rz-run profile to load (same as -e dbg.profile=X)",
-			"-R",          "[rule]",    "Specify custom rz-run directive",
-			"-s",          "[addr]",    "Initial seek",
-		#if USE_THREADS && ALLOW_THREADED
-			"-t",          "",          "load rz-bin info in thread",
-		#endif
+			"-q",          "",          "Quiet mode (no prompt) and quit after -i and -c",
+			"-qq",         "",          "Quiet mode (no prompt) and force quit",
+			"-p",          "p.rzdb",    "Load project file",
+			"-r",          "rz-run",    "Specify rz-run profile to load (same as -e dbg.profile=X)",
+			"-R",          "rule",      "Specify custom rz-run directive",
+			"-s",          "addr",      "Initial seek",
 			"-T",          "",          "Do not compute file hashes",
 			"-u",          "",          "Set bin.filter=false to get raw sym/sec/cls names",
 			"-v, -V",      "",          "Show rizin version (-V show lib versions)",
@@ -145,38 +141,25 @@ static int main_help(int line) {
 			"-z, -zz",     "",          "Do not load strings or load them even in raw",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	if (line == 2) {
 		char *datahome = rz_path_home_prefix(RZ_DATADIR);
-		char *incdir = rz_path_incdir();
-		char *libdir = rz_path_libdir();
+		char *incdir = rz_path_incdir(core->sys_path);
+		char *libdir = rz_path_libdir(core->sys_path);
 		char *home_rc = rz_path_home_rc();
 		char *home_config_rc = rz_path_home_config_rc();
 		char *home_config_rcdir = rz_path_home_config_rcdir();
-		char *system_rc = rz_path_system_rc();
+		char *system_rc = rz_path_system_rc(core->sys_path);
 		char *binrc_dir = rz_path_home_prefix(RZ_BINRC);
 		char *binrc = rz_file_path_join(binrc_dir, "bin-<format>");
-		char *system_magic = rz_path_system(RZ_SDB_MAGIC);
+		char *system_magic = rz_path_system(core->sys_path, RZ_SDB_MAGIC);
 		char *home_plugins = rz_path_home_prefix(RZ_PLUGINS);
-		char *system_plugins = rz_path_system(RZ_PLUGINS);
+		char *system_plugins = rz_path_system(core->sys_path, RZ_PLUGINS);
 		char *extra_plugins = rz_path_extra(RZ_PLUGINS);
-		char *system_sigdb = rz_path_system(RZ_SIGDB);
+		char *system_sigdb = rz_path_system(core->sys_path, RZ_SIGDB);
 		char *extra_sigdb = rz_path_extra(RZ_SIGDB);
-		char *dirPrefix = rz_path_prefix(NULL);
+		const char *dirPrefix = rz_path_prefix(core->sys_path);
 		char *extra_prefix = rz_path_extra(NULL);
 		// clang-format off
 		printf(
@@ -185,18 +168,33 @@ static int main_help(int line) {
 			" user         %s %s (and %s)\n"
 			" file         ${filename}.rz\n"
 			"Plugins:\n"
-			" binrc        %s (elf, elf64, mach0, ..)\n"
-			" RZ_USER_PLUGINS %s\n"
-			" RZ_LIB_PLUGINS %s\n"
+			" binrc            %s (elf, elf64, mach0, ..)\n"
+			" RZ_USER_PLUGINS  %s\n"
+			" RZ_LIB_PLUGINS   %s\n"
 			" RZ_EXTRA_PLUGINS %s\n"
 			"Environment:\n"
-			" RZ_DEBUG      if defined, show error messages and crash signal\n"
-			" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-			" RZ_MAGICPATH %s\n"
-			" RZ_NOPLUGINS do not load rizin shared plugins\n"
-			" RZ_RCFILE    %s (user preferences, batch script)\n"
-			" RZ_DATAHOME %s\n"
-			" RZ_VERSION   contains the current version of rizin\n"
+			" ANSICON             ansicon's W & H of the buffer and w & h of the window in the form of: \"WxH (wxh)\"\n"
+			" DEBUGINFOD_URLS     e bin.dbginfo.debuginfod_urls - use alternative debuginfod server\n"
+			" COLUMNS             terminal columns to use\n"
+			" RZ_ABORTLEVEL       target log level/severity when to abort (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
+			" RZ_CURL             whether to use curl (for SSL support)\n"
+			" RZ_DEBUG            if defined, show error messages and crash signal\n"
+			" RZ_DEBUG_ASSERT     set a breakpoint when hitting an assert\n"
+			" RZ_DEBUG_TOOL       debug tool to use when showing error messages and crash signal\n"
+			" RZ_DYLDCACHE_FILTER dyld cache filter (MacOS dynamic libraries location(s) at runtime)\n"
+			" RZ_HTTP_AUTHFILE    HTTP Authentification user file\n"
+			" RZ_LOGCOLORS        should the log output use colors\n"
+			" RZ_LOGFILE          logging output filename/path\n"
+			" RZ_LOGLEVEL         target log level/severity (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)\n"
+			" RZ_LOGSHOWSOURCES   should the log output contain src info (filename:lineno)\n"
+			" RZ_PIPE_IN          rzpipe cmd input (file descriptor)\n"
+			" RZ_PIPE_OUT         rzpipe cmd output (file descriptor)\n"
+			" RZ_MAGICPATH        %s\n"
+			" RZ_NOPLUGINS        do not load rizin shared plugins\n"
+			" RZ_RCFILE           %s (user preferences, batch script)\n"
+			" RZ_DATAHOME         %s\n"
+			" RZ_VERSION          contains the current version of rizin\n"
+			" SFLIBPATH           SFLib syscall library path\n"
 			"Paths:\n"
 			" RZ_PREFIX       %s\n"
 			" RZ_EXTRA_PREFIX %s\n"
@@ -236,27 +234,27 @@ static int main_help(int line) {
 		free(extra_plugins);
 		free(system_sigdb);
 		free(extra_sigdb);
-		free(dirPrefix);
 		free(extra_prefix);
 	}
 	return 0;
 }
 
-static int main_print_var(const char *var_name) {
+static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_name) {
+	rz_return_val_if_fail(core, 1);
 	int i = 0;
-	char *prefix = rz_path_prefix(NULL);
+	const char *prefix = rz_path_prefix(core->sys_path);
 	char *extra_prefix = rz_path_extra(NULL);
-	char *incdir = rz_path_incdir();
-	char *libdir = rz_path_libdir();
+	char *incdir = rz_path_incdir(core->sys_path);
+	char *libdir = rz_path_libdir(core->sys_path);
 	char *confighome = rz_path_home_config();
 	char *datahome = rz_path_home_prefix(RZ_DATADIR);
 	char *cachehome = rz_path_home_cache();
 	char *homeplugins = rz_path_home_prefix(RZ_PLUGINS);
-	char *sigdbdir = rz_path_system(RZ_SIGDB);
+	char *sigdbdir = rz_path_system(core->sys_path, RZ_SIGDB);
 	char *extrasigdbdir = rz_path_extra(RZ_SIGDB);
-	char *plugins = rz_path_system(RZ_PLUGINS);
+	char *plugins = rz_path_system(core->sys_path, RZ_PLUGINS);
 	char *extraplugins = rz_path_extra(RZ_PLUGINS);
-	char *magicpath = rz_path_system(RZ_SDB_MAGIC);
+	char *magicpath = rz_path_system(core->sys_path, RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
@@ -310,7 +308,6 @@ static int main_print_var(const char *var_name) {
 	free(plugins);
 	free(magicpath);
 	free(extra_prefix);
-	free(prefix);
 	return 0;
 }
 
@@ -438,8 +435,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *customRarunProfile = NULL;
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
-	bool quietLeak = false;
 	int is_gdb = false;
+	ut32 endianness = RZ_SYS_ENDIAN_NONE;
 	const char *s_seek = NULL;
 	bool compute_hashes = true;
 	RzList *cmds = rz_list_new();
@@ -447,6 +444,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *files = rz_list_new();
 	RzList *prefiles = rz_list_new();
 	RzCmdStateOutput state = { 0 };
+
+	setlocale(LC_CTYPE, "");
 
 #define LISTS_FREE() \
 	{ \
@@ -456,6 +455,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_list_free(prefiles); \
 	}
 
+	bool stderr2stdout = false;
 	bool noStderr = false;
 
 #ifdef __UNIX
@@ -469,20 +469,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	// Create rz-run profile with startup environ
 	char **env = rz_sys_get_environ();
 	char *envprofile = rz_run_get_environ_profile(env);
-
-	if (rz_sys_getenv_asbool("RZ_DEBUG")) {
-		char *sysdbg = rz_sys_getenv("RZ_DEBUG_TOOL");
-		char *fmt = (sysdbg && *sysdbg)
-			? rz_str_newf("%s %%d", sysdbg)
-#if __APPLE__
-			: rz_str_newf("lldb -p %%d");
-#else
-			: rz_str_newf("gdb --pid %%d");
-#endif
-		rz_sys_crash_handler(fmt);
-		free(fmt);
-		free(sysdbg);
-	}
 
 	r = rz_core_new();
 	if (!r) {
@@ -511,17 +497,17 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	// -H option without argument
 	if (argc == 2 && !strcmp(argv[1], "-H")) {
-		main_print_var(NULL);
+		main_print_var(r, NULL);
 		LISTS_FREE();
 		return 0;
 	}
 
 	set_color_default(r);
 	bool load_l = true;
-	char *debugbackend = strdup("native");
+	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -531,7 +517,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
-			r->cmdremote = strdup("");
+			r->cmdremote = rz_str_dup("");
+			break;
+		case '1':
+			stderr2stdout = true;
 			break;
 		case '2':
 			noStderr = true;
@@ -581,9 +570,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'D': {
 			debug = 2;
 			free(debugbackend);
-			debugbackend = strdup(opt.arg);
+			debugbackend = rz_str_dup(opt.arg);
 			RzCmdStateOutput state = { 0 };
-			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET);
+			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, r);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
 				rz_cmd_state_output_print(&state);
@@ -597,9 +586,36 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'e':
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
+			} else if (rz_str_startswith(opt.arg, "asm.arch")) {
+				RZ_LOG_ERROR("use -a argument for setting the arch name\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.bits")) {
+				RZ_LOG_ERROR("use -b argument for setting the arch bits\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.os")) {
+				RZ_LOG_ERROR("use -k argument for setting the OS/kern\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "cfg.bigendian")) {
+				RZ_LOG_ERROR("use -E argument for setting the endianness\n");
+				ret = 1;
+				goto beach;
 			} else {
-				rz_config_eval(r->config, opt.arg);
+				rz_config_eval(r->config, (void *)opt.arg);
 				rz_list_append(evals, (void *)opt.arg);
+			}
+			break;
+		case 'E':
+			if (RZ_STR_EQ(opt.arg, "big")) {
+				endianness = RZ_SYS_ENDIAN_BIG;
+			} else if (RZ_STR_EQ(opt.arg, "little")) {
+				endianness = RZ_SYS_ENDIAN_LITTLE;
+			} else {
+				RZ_LOG_ERROR("Invalid endianness value '%s'\n", opt.arg);
+				ret = 1;
+				goto beach;
 			}
 			break;
 		case 'f':
@@ -612,7 +628,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			help++;
 			break;
 		case 'H':
-			main_print_var(opt.arg);
+			main_print_var(r, opt.arg);
 			LISTS_FREE();
 			return 0;
 		case 'i':
@@ -667,10 +683,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'p':
 			prj = *opt.arg ? opt.arg : NULL;
 			break;
-		case 'Q':
-			quiet = true;
-			quietLeak = true;
-			break;
 		case 'q':
 			rz_config_set(r->config, "scr.interactive", "false");
 			rz_config_set(r->config, "scr.prompt", "false");
@@ -695,15 +707,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 's':
 			s_seek = opt.arg;
 			break;
-#if USE_THREADS
-		case 't':
-#if ALLOW_THREADED
-			threaded = true;
-#else
-			eprintf("WARNING: -t is temporarily disabled!\n");
-#endif
-			break;
-#endif
 		case 'T':
 			compute_hashes = false;
 			break;
@@ -719,7 +722,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return rz_main_version_print("rizin");
+				return rz_main_version_print(r->sys_path, "rizin");
 			}
 		case 'V':
 			return rz_main_version_verify(1);
@@ -734,9 +737,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			help++;
 		}
 	}
+	if (stderr2stdout && -1 == dup2(1, 2)) {
+		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
+		LISTS_FREE();
+		RZ_FREE(debugbackend);
+		return 1;
+	}
 	if (noStderr) {
 		if (-1 == close(2)) {
-			RZ_LOG_ERROR("Failed to close stderr");
+			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
@@ -744,20 +753,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
 		if (-1 == new_stderr) {
-			RZ_LOG_ERROR("Failed to open %s", nul);
+			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
-				RZ_LOG_ERROR("Failed to dup2 stderr");
+				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
 			}
 			if (-1 == close(new_stderr)) {
-				RZ_LOG_ERROR("Failed to close %s", nul);
+				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				return 1;
@@ -779,16 +788,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					if (p) {
 						*p = 0;
-						pfile = strdup(program);
+						pfile = rz_str_dup(program);
 					}
 				}
 				free(msg);
 			} else {
 				eprintf("Cannot read dbg.profile '%s'\n", dbg_profile);
-				pfile = NULL; // strdup ("");
+				pfile = NULL; // rz_str_dup ("");
 			}
 		} else {
-			pfile = argv[opt.ind] ? strdup(argv[opt.ind]) : NULL;
+			pfile = rz_str_dup(argv[opt.ind]);
 		}
 	}
 
@@ -804,10 +813,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
-		if (quietLeak) {
-			exit(0);
-		}
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
+		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
 		rz_cmd_state_output_fini(&state);
@@ -822,7 +828,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		LISTS_FREE();
 		free(pfile);
 		RZ_FREE(debugbackend);
-		return main_help(help > 1 ? 2 : 0);
+		return main_help(r, help > 1 ? 2 : 0);
 	}
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
@@ -843,14 +849,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
-			char *uri = strdup(src);
+			char *uri = rz_str_dup(src);
 			if (uri) {
 				char *p = strstr(uri, "://");
 				if (p) {
 					*p = 0;
 					// TODO: this must be specified by the io plugin, not hardcoded here
 					if (!strcmp(uri, "winedbg")) {
-						debugbackend = strdup("io");
+						debugbackend = rz_str_dup("io");
 					} else {
 						debugbackend = uri;
 						uri = NULL;
@@ -936,7 +942,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #if __WINDOWS__
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
-			RZ_LOG_ERROR("Cannot set stdin to binary mode");
+			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
 			return 1;
 		}
 #endif
@@ -973,6 +979,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_block_read(r);
 			free(buf);
 			free(path);
+			if (asmarch) {
+				rz_config_set(r->config, "asm.arch", asmarch);
+			}
+			if (asmbits) {
+				rz_config_set(r->config, "asm.bits", asmbits);
+			}
+			if (asmos) {
+				rz_config_set(r->config, "asm.os", asmos);
+			}
+			if (endianness != RZ_SYS_ENDIAN_NONE) {
+				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+			}
 			// TODO: load rbin thing
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
@@ -1001,7 +1019,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
-						pfile = strdup(argv[opt.ind++]);
+						pfile = rz_str_dup(argv[opt.ind++]);
 					}
 					// If plugin is winkd we should keep RWX permission to be able to write to the fd
 					if (strcmp(debugbackend, "winkd")) {
@@ -1055,7 +1073,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
 				is_gdb = (!memcmp(f, "gdb://", RZ_MIN(f ? strlen(f) : 0, 6)));
 				if (!is_gdb) {
-					pfile = strdup("dbg://");
+					pfile = rz_str_dup("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
@@ -1063,11 +1081,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					char *path, *escaped_path;
 					if (strchr(f, '/')) {
 						// f is a path
-						path = strdup(f);
+						path = rz_str_dup(f);
 					} else {
 						// f is a filename
 						if (rz_file_exists(f)) {
-							path = rz_str_prepend(strdup(f), "./");
+							path = rz_str_prepend(rz_str_dup(f), "./");
 						} else {
 							path = rz_file_path(f);
 						}
@@ -1106,7 +1124,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
 		if (!debug || debug == 2) {
 			const char *dbg_profile = rz_config_get(r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
@@ -1124,7 +1144,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (opt.ind < argc) {
 				RZ_FREE(pfile);
 				while (opt.ind < argc) {
-					pfile = strdup(argv[opt.ind++]);
+					pfile = rz_str_dup(argv[opt.ind++]);
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
 						perms |= RZ_PERM_CREAT;
@@ -1255,10 +1275,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->info && r->bin->cur->o->info->rclass && !strcmp("fs", r->bin->cur->o->info->rclass)) {
-			const char *fstype = r->bin->cur->o->info->bclass;
-			rz_core_cmdf(r, "m /root %s @ 0", fstype);
-		}
 		// initalize io subsystem
 		char *res = rz_io_system(r->io, NULL);
 		if (res) {
@@ -1270,10 +1286,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
 		}
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1283,7 +1295,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
+		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
 		if (debug) {
@@ -1292,24 +1310,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_FREE(debugbackend);
 		RzBinObject *o = rz_bin_cur_object(r->bin);
 		if (!debug && o && !o->regstate) {
-			RzFlagItem *fi = rz_flag_get(r->flags, "entry0");
-			if (fi) {
-				rz_core_seek(r, fi->offset, true);
+			const RzFlagItem *entry0 = rz_flag_get(r->flags, "entry0");
+			if (entry0) {
+				rz_core_seek(r, entry0->offset, true);
 			} else {
-				if (o) {
-					RzBinObject *obj = rz_bin_cur_object(r->bin);
-					const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
-					void **iter;
-					RzBinSection *s;
-					rz_pvector_foreach (sections, iter) {
-						s = *iter;
-						if (s->perm & RZ_PERM_X) {
-							ut64 addr = s->vaddr ? s->vaddr : s->paddr;
-							rz_core_seek(r, addr, true);
-							break;
-						}
-					}
-				}
+				rz_core_seek(r, rz_bin_get_first_entrypoint(o), true);
 			}
 		}
 		if (o && o->info && compute_hashes) {
@@ -1337,7 +1342,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* check if file.path has changed */
 		if (iod && !strstr(iod->uri, "://")) {
 			const char *npath;
-			char *path = strdup(rz_config_get(r->config, "file.path"));
+			char *path = rz_str_dup(rz_config_get(r->config, "file.path"));
 			iod = r->io ? rz_io_desc_get(r->io, fh->fd) : NULL;
 			npath = rz_config_get(r->config, "file.path");
 			if (!quiet && path && *path && npath && strcmp(path, npath)) {
@@ -1370,10 +1375,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	} else {
 		rz_core_block_read(r);
 
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1383,9 +1384,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
+		}
 	}
 	{
-		char *global_rc = rz_path_system_rc();
+		char *global_rc = rz_path_system_rc(r->sys_path);
 		if (rz_file_exists(global_rc)) {
 			(void)rz_core_run_script(r, global_rc);
 		}
@@ -1397,7 +1405,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 1: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_SIMPLE); break;
 		case 2: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_DEEP); break;
 		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
-		default: rz_core_cmd_show_analysis_help(r); break;
+		default: break;
 		}
 		rz_cons_flush();
 	}
@@ -1534,10 +1542,6 @@ beach:
 		// Always detach properly if still attached, even if we already killed the process,
 		// otherwise there will be a zombie on macOS!
 		rz_debug_detach(r->dbg, r->dbg->pid);
-	}
-	if (quietLeak) {
-		exit(ret);
-		return ret;
 	}
 
 	rz_core_task_sync_end(&r->tasks);

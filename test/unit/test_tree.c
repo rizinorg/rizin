@@ -18,10 +18,12 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 	do { \
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
-		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
-			int a = (int)(intptr_t)rz_list_iter_get(ita); \
-			int e = (int)(intptr_t)rz_list_iter_get(ite); \
+		while (ita && ite) { \
+			int a = (int)(intptr_t)rz_list_val(ita); \
+			int e = (int)(intptr_t)rz_list_val(ite); \
 			mu_assert_eq(a, e, descr); \
+			ita = rz_list_next(ita); \
+			ite = rz_list_next(ite); \
 		} \
 		mu_assert("lists must have same elements", (!ita && !ite)); \
 	} while (0)
@@ -30,10 +32,12 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 	do { \
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
-		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
-			char *a = rz_list_iter_get(ita); \
-			char *e = rz_list_iter_get(ite); \
+		while (ita && ite) { \
+			char *a = rz_list_val(ita); \
+			char *e = rz_list_val(ite); \
 			mu_assert_streq(a, e, descr); \
+			ita = rz_list_next(ita); \
+			ite = rz_list_next(ite); \
 		} \
 		mu_assert("lists must have same elements", (!ita && !ite)); \
 	} while (0)

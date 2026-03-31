@@ -15,13 +15,16 @@ RZ_API ut64 rz_coff_get_reloc_targets_map_base(struct rz_bin_coff_obj *obj) {
 		return 0;
 	}
 	ut64 max = 0;
-	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
-		struct coff_scn_hdr *hdr = &obj->scn_hdrs[i];
+
+	size_t i = 0;
+	CoffScnHdr *hdr;
+	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
 		ut64 val = obj->scn_va[i] + hdr->s_size;
 		if (val > max) {
 			max = val;
 		}
 	}
+
 	max += 8;
 	max += rz_num_align_delta(max, RZ_COFF_RELOC_TARGET_SIZE);
 	obj->reloc_targets_map_base = max;
@@ -35,15 +38,124 @@ RZ_API ut64 rz_coff_import_index_addr(struct rz_bin_coff_obj *obj, ut64 imp_inde
 
 typedef void (*RelocsForeachCb)(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patch_buf_sz, void *user);
 
+static size_t reloc_general_arch_rel32_common(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, const char *print_name) {
+	reloc->print_name = print_name;
+	reloc->type = RZ_BIN_RELOC_32;
+	reloc->additive = 1;
+	ut32 data;
+	if (!rz_buf_read_le32_at(bin->b, reloc->paddr, &data)) {
+		return 0;
+	}
+	reloc->addend = data;
+	data += sym_vaddr - reloc->vaddr - 4;
+	rz_write_le32(patch_buf, (st32)data);
+
+	return 4;
+}
+
+static size_t reloc_arm_branches_common(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, const char *print_name) {
+	reloc->print_name = print_name;
+	reloc->type = RZ_BIN_RELOC_32;
+	ut16 hiword;
+	if (!rz_buf_read_le16_at(bin->b, reloc->paddr, &hiword)) {
+		return 0;
+	}
+	ut16 loword;
+	if (!rz_buf_read_le16_at(bin->b, reloc->paddr + 2, &loword)) {
+		return 0;
+	}
+	ut64 dst = sym_vaddr - reloc->vaddr - 4;
+	if (dst & 1) {
+		return 0;
+	}
+	loword |= (ut16)(dst >> 1) & 0x7ff;
+	hiword |= (ut16)(dst >> 12) & 0x7ff;
+	rz_write_le16(patch_buf, hiword);
+	rz_write_le16(patch_buf + 2, loword);
+
+	return 4;
+}
+
+static ut8 handle_i386_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
+	switch (reloc_type) {
+	case COFF_REL_I386_DIR32:
+		reloc->type = RZ_BIN_RELOC_32;
+		rz_write_le32(patch_buf, (ut32)sym_vaddr);
+		reloc->print_name = "IMAGE_REL_I386_32";
+		return 4;
+	case COFF_REL_I386_REL32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_I386_REL32");
+		// TODO: Missing handling of other relocation types
+	default:
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF i386 relocation type: %d\n", reloc_type);
+		break;
+	}
+
+	return 0;
+}
+
+static ut8 handle_amd64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
+	switch (reloc_type) {
+	case COFF_REL_AMD64_REL32:
+		return reloc_general_arch_rel32_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_AMD64_REL32");
+		// TODO: Missing handling of other relocation types
+	default:
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF AMD64 relocation type: %d\n", reloc_type);
+		break;
+	}
+
+	return 0;
+}
+
+static ut8 handle_arm_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
+	switch (reloc_type) {
+	case COFF_REL_ARM_BRANCH24T:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BRANCH24T");
+	case COFF_REL_ARM_BLX23T:
+		return reloc_arm_branches_common(bin, reloc, sym_vaddr, patch_buf, "IMAGE_REL_ARM_BLX23T");
+		// TODO: Missing handling of other relocation types
+	default:
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM relocation type: %d\n", reloc_type);
+		break;
+	}
+
+	return 0;
+}
+
+static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, ut64 sym_vaddr, ut8 *patch_buf, ut16 reloc_type) {
+	switch (reloc_type) {
+	case COFF_REL_ARM64_BRANCH26:
+		reloc->type = RZ_BIN_RELOC_32;
+		ut32 data;
+		if (!rz_buf_read_le32_at(bin->b, reloc->paddr, &data)) {
+			break;
+		}
+		ut64 dst = sym_vaddr - reloc->vaddr;
+		data |= (ut32)((dst >> 2) & 0x3ffffffULL);
+		rz_write_le32(patch_buf, data);
+		reloc->print_name = "IMAGE_REL_ARM64_BRANCH26";
+		return 4;
+		// TODO: Missing handling of other relocation types
+	default:
+		RZ_LOG_DEBUG("Unimplemented/unknown COFF ARM64 relocation type: %d\n", reloc_type);
+		break;
+	}
+
+	return 0;
+}
+
 static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void *user) {
 	if (!bin->scn_hdrs) {
 		return;
 	}
-	for (size_t i = 0; i < bin->hdr.f_nscns; i++) {
-		if (!bin->scn_hdrs[i].s_nreloc) {
+
+	size_t i = 0;
+	CoffScnHdr *scn_hdr = NULL;
+	rz_vector_enumerate (bin->scn_hdrs, scn_hdr, i) {
+		if (!scn_hdr->s_nreloc) {
 			continue;
 		}
-		int size = bin->scn_hdrs[i].s_nreloc * sizeof(struct coff_reloc);
+		int size = scn_hdr->s_nreloc * sizeof(struct coff_reloc);
 		if (size < 0) {
 			break;
 		}
@@ -51,14 +163,14 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		if (!rel) {
 			break;
 		}
-		if (bin->scn_hdrs[i].s_relptr > bin->size ||
-			bin->scn_hdrs[i].s_relptr + size > bin->size) {
+		if (scn_hdr->s_relptr > bin->size ||
+			scn_hdr->s_relptr + size > bin->size) {
 			free(rel);
 			break;
 		}
-		ut64 offset = bin->scn_hdrs[i].s_relptr;
+		ut64 offset = scn_hdr->s_relptr;
 		bool read_success = false;
-		for (size_t j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+		for (size_t j = 0; j < scn_hdr->s_nreloc; j++) {
 			struct coff_reloc *coff_rel = rel + j;
 			read_success = rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_vaddr) &&
 				rz_buf_read_le32_offset(bin->b, &offset, &coff_rel->rz_symndx) &&
@@ -71,7 +183,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			free(rel);
 			break;
 		}
-		for (size_t j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+		for (size_t j = 0; j < scn_hdr->s_nreloc; j++) {
 			RzBinSymbol *symbol = (RzBinSymbol *)ht_up_find(bin->sym_ht, (ut64)rel[j].rz_symndx, NULL);
 			if (!symbol) {
 				continue;
@@ -79,7 +191,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			RzBinReloc reloc = { 0 };
 
 			reloc.symbol = symbol;
-			reloc.paddr = bin->scn_hdrs[i].s_scnptr + rel[j].rz_vaddr;
+			reloc.paddr = scn_hdr->s_scnptr + rel[j].rz_vaddr;
 			if (bin->scn_va) {
 				reloc.vaddr = bin->scn_va[i] + rel[j].rz_vaddr;
 			}
@@ -97,82 +209,21 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 			ut8 patch_buf[8];
 			if (sym_vaddr) {
 				switch (bin->hdr.f_magic) {
+				// TODO: Missing handling of MIPS architecture
 				case COFF_FILE_MACHINE_I386:
-					switch (rel[j].rz_type) {
-					case COFF_REL_I386_DIR32:
-						reloc.type = RZ_BIN_RELOC_32;
-						rz_write_le32(patch_buf, (ut32)sym_vaddr);
-						plen = 4;
-						break;
-					case COFF_REL_I386_REL32:
-						reloc.type = RZ_BIN_RELOC_32;
-						reloc.additive = 1;
-						ut32 data;
-						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
-							break;
-						}
-						reloc.addend = data;
-						data += sym_vaddr - reloc.vaddr - 4;
-						rz_write_le32(patch_buf, (st32)data);
-						plen = 4;
-						break;
-					}
+					plen = handle_i386_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
 					break;
 				case COFF_FILE_MACHINE_AMD64:
-					switch (rel[j].rz_type) {
-					case COFF_REL_AMD64_REL32:
-						reloc.type = RZ_BIN_RELOC_32;
-						reloc.additive = 1;
-						ut32 data;
-						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
-							break;
-						}
-						reloc.addend = data;
-						data += sym_vaddr - reloc.vaddr - 4;
-						rz_write_le32(patch_buf, (st32)data);
-						plen = 4;
-						break;
-					}
+					plen = handle_amd64_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
 					break;
 				case COFF_FILE_MACHINE_ARMNT:
-					switch (rel[j].rz_type) {
-					case COFF_REL_ARM_BRANCH24T:
-					case COFF_REL_ARM_BLX23T:
-						reloc.type = RZ_BIN_RELOC_32;
-						ut16 hiword;
-						if (!rz_buf_read_le16_at(bin->b, reloc.paddr, &hiword)) {
-							break;
-						}
-						ut16 loword;
-						if (!rz_buf_read_le16_at(bin->b, reloc.paddr + 2, &loword)) {
-							break;
-						}
-						ut64 dst = sym_vaddr - reloc.vaddr - 4;
-						if (dst & 1) {
-							break;
-						}
-						loword |= (ut16)(dst >> 1) & 0x7ff;
-						hiword |= (ut16)(dst >> 12) & 0x7ff;
-						rz_write_le16(patch_buf, hiword);
-						rz_write_le16(patch_buf + 2, loword);
-						plen = 4;
-						break;
-					}
+					plen = handle_arm_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
 					break;
 				case COFF_FILE_MACHINE_ARM64:
-					switch (rel[j].rz_type) {
-					case COFF_REL_ARM64_BRANCH26:
-						reloc.type = RZ_BIN_RELOC_32;
-						ut32 data;
-						if (!rz_buf_read_le32_at(bin->b, reloc.paddr, &data)) {
-							break;
-						}
-						ut64 dst = sym_vaddr - reloc.vaddr;
-						data |= (ut32)((dst >> 2) & 0x3ffffffULL);
-						rz_write_le32(patch_buf, data);
-						plen = 4;
-						break;
-					}
+					plen = handle_arm64_relocs(bin, &reloc, sym_vaddr, patch_buf, rel[j].rz_type);
+					break;
+				default:
+					RZ_LOG_DEBUG("Unimplemented/unknown COFF architecture type: %d\n", bin->hdr.f_magic);
 					break;
 				}
 			}
@@ -205,7 +256,7 @@ RZ_API RzPVector /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *
 /// size of the artificial reloc target vfile
 RZ_API ut64 rz_coff_get_reloc_targets_vfile_size(struct rz_bin_coff_obj *obj) {
 	rz_return_val_if_fail(obj, 0);
-	ut64 count = obj->imp_index ? obj->imp_index->count : 0;
+	ut64 count = obj->imp_index ? ht_uu_size(obj->imp_index) : 0;
 	return count * RZ_COFF_RELOC_TARGET_SIZE;
 }
 

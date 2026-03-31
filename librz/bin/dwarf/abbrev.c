@@ -35,13 +35,6 @@ static void RzBinDwarfAbbrevTable_free(RzBinDwarfAbbrevTable *table) {
 	free(table);
 }
 
-static void htup_RzBinDwarfAbbrevTable_free(HtUPKv *kv) {
-	if (!kv) {
-		return;
-	}
-	RzBinDwarfAbbrevTable_free(kv->value);
-}
-
 static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
 	ht_up_free(abbrevs->by_offset);
 	R_free(abbrevs->R);
@@ -51,7 +44,7 @@ static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {
 	if (!abbrevs) {
 		return false;
 	}
-	abbrevs->by_offset = ht_up_new(NULL, htup_RzBinDwarfAbbrevTable_free, NULL);
+	abbrevs->by_offset = ht_up_new(NULL, (HtUPFreeValue)RzBinDwarfAbbrevTable_free);
 	if (!abbrevs->by_offset) {
 		goto beach;
 	}
@@ -175,9 +168,9 @@ RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinE
  * \return RzBinDwarfAbbrevs object
  */
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo) {
+	RZ_BORROW RZ_NONNULL RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
-	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev", is_dwo);
+	RzBinEndianReader *r = RzBinEndianReader_from_file(bf, ".debug_abbrev");
 	RET_NULL_IF_FAIL(r);
 	return rz_bin_dwarf_abbrev_new(r);
 }
@@ -229,7 +222,7 @@ static void abbrev_decl_dump(
 	rz_strbuf_appendf(sb, "(0x%" PFMT64x ")\n", decl->offset);
 
 	RzBinDwarfAttrSpec *def = NULL;
-	rz_vector_foreach(&decl->defs, def) {
+	rz_vector_foreach (&decl->defs, def) {
 		rz_strbuf_appendf(sb, "\t%s\t%s\n",
 			rz_bin_dwarf_attr(def->at), rz_bin_dwarf_form(def->form));
 	}
@@ -247,7 +240,7 @@ static bool cb_abbrev_table_dump(void *user, ut64 k, const void *v) {
 	}
 
 	void *itdecl;
-	rz_vector_foreach(&table->abbrevs, itdecl) {
+	rz_vector_foreach (&table->abbrevs, itdecl) {
 		if (!itdecl) {
 			continue;
 		}
@@ -260,7 +253,7 @@ RZ_API void rz_core_bin_dwarf_abbrevs_dump(
 	RZ_NONNULL RZ_BORROW const RzBinDwarfAbbrev *abbrevs,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb) {
 	rz_return_if_fail(abbrevs && sb);
-	if (abbrevs->by_offset->count > 0) {
+	if (ht_up_size(abbrevs->by_offset) > 0) {
 		rz_strbuf_append(sb, ".debug_abbrevs content:\n");
 	}
 	ht_up_foreach(abbrevs->by_offset, cb_abbrev_table_dump, sb);

@@ -200,7 +200,7 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	}
 
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 }
 
@@ -235,10 +235,10 @@ typedef struct {
 	RzKeyParser *parser;
 } BlockLoadCtx;
 
-static bool block_load_cb(void *user, const char *k, const char *v) {
+static bool block_load_cb(void *user, const SdbKv *kv) {
 	BlockLoadCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -359,7 +359,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	free(json_str);
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno || proto.size == UT64_MAX || (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
 		goto error;
 	}
@@ -450,7 +450,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	if (!rz_vector_empty(&var->accesses)) {
 		pj_ka(j, "accs");
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			pj_o(j);
 			pj_kn(j, "off", acc->offset);
 			switch (acc->type) {
@@ -479,7 +479,7 @@ RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalys
 	if (!rz_vector_empty(&var->constraints)) {
 		pj_ka(j, "constrs");
 		RzTypeConstraint *constr;
-		rz_vector_foreach(&var->constraints, constr) {
+		rz_vector_foreach (&var->constraints, constr) {
 			pj_i(j, (int)constr->cond);
 			pj_n(j, constr->val);
 		}
@@ -710,7 +710,7 @@ RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
 		if (!ret) {
 			goto beach;
 		}
-		ret->name = strdup(name);
+		ret->name = rz_str_dup(name);
 		ret->type = vartype;
 		ret->fcn = fcn;
 		rz_mem_copy(&ret->storage, sizeof(RzAnalysisVarStorage), &storage, sizeof(RzAnalysisVarStorage));
@@ -727,14 +727,14 @@ RZ_API RZ_OWN RzAnalysisVar *rz_serialize_analysis_var_load(
 	ret->kind = k;
 	if (comment) {
 		free(ret->comment);
-		ret->comment = strdup(comment);
+		ret->comment = rz_str_dup(comment);
 	}
 	RzAnalysisVarAccess *acc;
-	rz_vector_foreach(&accesses, acc) {
+	rz_vector_foreach (&accesses, acc) {
 		rz_analysis_var_set_access(ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->reg_addend);
 	}
 	RzTypeConstraint *constr;
-	rz_vector_foreach(&constraints, constr) {
+	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_add_constraint(ret, constr);
 	}
 
@@ -911,7 +911,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		if (!rz_vector_empty(&var->constraints)) {
 			pj_ka(j, "constrs");
 			RzTypeConstraint *constr;
-			rz_vector_foreach(&var->constraints, constr) {
+			rz_vector_foreach (&var->constraints, constr) {
 				pj_i(j, (int)constr->cond);
 				pj_n(j, constr->val);
 			}
@@ -919,7 +919,7 @@ RZ_API void rz_serialize_analysis_global_var_save(RZ_NONNULL Sdb *db, RZ_NONNULL
 		}
 		pj_end(j);
 
-		sdb_set(db, addr, pj_string(j), 0);
+		sdb_set(db, addr, pj_string(j));
 		pj_reset(j);
 	}
 	pj_free(j);
@@ -953,10 +953,10 @@ typedef struct {
 	RzKeyParser *parser;
 } GlobalVarCtx;
 
-static bool global_var_load_cb(void *user, const char *k, const char *v) {
+static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	GlobalVarCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1047,7 +1047,7 @@ static bool global_var_load_cb(void *user, const char *k, const char *v) {
 	rz_analysis_var_global_set_type(glob, vartype);
 
 	RzTypeConstraint *constr;
-	rz_vector_foreach(&constraints, constr) {
+	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_global_add_constraint(glob, constr);
 	}
 	return rz_analysis_var_global_add(ctx->analysis, glob);
@@ -1141,14 +1141,14 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 		pj_end(j);
 	}
 
-	if (function->labels->count) {
+	if (ht_up_size(function->labels)) {
 		pj_ko(j, "labels");
 		ht_up_foreach(function->labels, store_label_cb, j);
 		pj_end(j);
 	}
 
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 }
 
@@ -1182,10 +1182,10 @@ enum {
 	FUNCTION_FIELD_LABELS
 };
 
-static bool function_load_cb(void *user, const char *k, const char *v) {
+static bool function_load_cb(void *user, const SdbKv *kv) {
 	RzSerializeAnalysisFunctionLoadCtx *ctx = user;
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1209,7 +1209,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			if (function->name) {
 				free(function->name);
 			}
-			function->name = strdup(child->str_value);
+			function->name = rz_str_dup(child->str_value);
 			break;
 		case FUNCTION_FIELD_BITS:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -1297,7 +1297,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 				if (baby->type != RZ_JSON_STRING) {
 					continue;
 				}
-				char *import = strdup(baby->str_value);
+				char *import = rz_str_dup(baby->str_value);
 				if (!import) {
 					break;
 				}
@@ -1338,7 +1338,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 
 	bool ret = true;
 	errno = 0;
-	function->addr = strtoull(k, NULL, 0);
+	function->addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno || !function->name || !rz_analysis_add_function(ctx->analysis, function)) {
 		rz_analysis_function_free(function);
 		ret = false;
@@ -1396,6 +1396,7 @@ beach:
 	rz_key_parser_free(ctx.parser);
 	rz_serialize_analysis_var_parser_free(ctx.var_parser);
 	rz_key_parser_free(ctx.storage_parser);
+	rz_key_parser_free(ctx.piece_parser);
 	return ret;
 }
 
@@ -1434,7 +1435,7 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
 	ht_up_foreach(ht, store_xref_cb, j);
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 	return true;
 }
@@ -1443,16 +1444,16 @@ RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	ht_up_foreach(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
 }
 
-static bool xrefs_load_cb(void *user, const char *k, const char *v) {
+static bool xrefs_load_cb(void *user, const SdbKv *kv) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
-	ut64 from = strtoull(k, NULL, 0);
+	ut64 from = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1533,7 +1534,7 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 #define FLUSH \
 	pj_end(j); \
 	if (snprintf(key, sizeof(key), "0x%" PFMT64x, addr) >= 0) { \
-		sdb_set(db, key, pj_string(j), 0); \
+		sdb_set(db, key, pj_string(j)); \
 	}
 
 	rz_interval_tree_foreach (&analysis->meta, it, meta) {
@@ -1556,37 +1557,8 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 			pj_kn(j, "size", size);
 		}
 		char type_str[2] = { 0 };
-		switch (meta->type) {
-		case RZ_META_TYPE_DATA:
-			type_str[0] = 'd';
-			break;
-		case RZ_META_TYPE_CODE:
-			type_str[0] = 'c';
-			break;
-		case RZ_META_TYPE_STRING:
-			type_str[0] = 's';
-			break;
-		case RZ_META_TYPE_FORMAT:
-			type_str[0] = 'f';
-			break;
-		case RZ_META_TYPE_MAGIC:
-			type_str[0] = 'm';
-			break;
-		case RZ_META_TYPE_HIDE:
-			type_str[0] = 'h';
-			break;
-		case RZ_META_TYPE_COMMENT:
-			type_str[0] = 'C';
-			break;
-		case RZ_META_TYPE_HIGHLIGHT:
-			type_str[0] = 'H';
-			break;
-		case RZ_META_TYPE_VARTYPE:
-			type_str[0] = 't';
-			break;
-		default:
-			break;
-		}
+		type_str[0] = rz_meta_type_as_char(meta->type);
+
 		pj_ks(j, "type", type_str);
 		if (meta->subtype) {
 			pj_ki(j, "subtype", meta->subtype);
@@ -1606,16 +1578,16 @@ RZ_API void rz_serialize_analysis_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	pj_free(j);
 }
 
-static bool meta_load_cb(void *user, const char *k, const char *v) {
+static bool meta_load_cb(void *user, const SdbKv *kv) {
 	RzAnalysis *analysis = user;
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -1713,7 +1685,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 		item->type = type;
 		item->subtype = subtype;
 		item->space = space_name ? rz_spaces_get(&analysis->meta_spaces, space_name) : NULL;
-		item->str = str ? strdup(str) : NULL;
+		item->str = rz_str_dup(str);
 		if (str && !item->str) {
 			free(item);
 			continue;
@@ -1758,10 +1730,6 @@ typedef struct {
 	bool arch_set;
 	bool bits_set;
 } HintsAtAddr;
-
-static void hints_at_addr_kv_free(HtUPKv *kv) {
-	free(kv->value);
-}
 
 static HintsAtAddr *hints_at_addr(HtUP *acc, ut64 addr) {
 	HintsAtAddr *h = ht_up_find(acc, addr, NULL);
@@ -1830,7 +1798,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 	}
 	if (h->addr_hints) {
 		RzAnalysisAddrHintRecord *record;
-		rz_vector_foreach(h->addr_hints, record) {
+		rz_vector_foreach (h->addr_hints, record) {
 			switch (record->type) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 				pj_ki(j, "immbase", record->immbase);
@@ -1880,17 +1848,22 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				pj_kn(j, "val", record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				if (!RZ_STR_ISEMPTY(record->enum_name)) {
+					pj_ks(j, "enum", record->enum_name);
+				}
+				break;
 			}
 		}
 	}
 	pj_end(j);
-	sdb_set(db, key, pj_string(j), 0);
+	sdb_set(db, key, pj_string(j));
 	pj_free(j);
 	return true;
 }
 
 RZ_API void rz_serialize_analysis_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	HtUP /*<HintsAtAddr *>*/ *acc = ht_up_new(NULL, hints_at_addr_kv_free, NULL);
+	HtUP /*<HintsAtAddr *>*/ *acc = ht_up_new(NULL, free);
 	rz_analysis_addr_hints_foreach(analysis, addr_hint_acc_cb, acc);
 	rz_analysis_arch_hints_foreach(analysis, arch_hint_acc_cb, acc);
 	rz_analysis_bits_hints_foreach(analysis, bits_hint_acc_cb, acc);
@@ -1916,7 +1889,8 @@ enum {
 	HINTS_FIELD_TYPE_OFFSET,
 	HINTS_FIELD_ESIL,
 	HINTS_FIELD_HIGH,
-	HINTS_FIELD_VAL
+	HINTS_FIELD_VAL,
+	HINTS_FIELD_ENUM
 };
 
 typedef struct {
@@ -1924,17 +1898,17 @@ typedef struct {
 	RzKeyParser *parser;
 } HintsLoadCtx;
 
-static bool hints_load_cb(void *user, const char *k, const char *v) {
+static bool hints_load_cb(void *user, const SdbKv *kv) {
 	HintsLoadCtx *ctx = user;
 	RzAnalysis *analysis = ctx->analysis;
 
 	errno = 0;
-	ut64 addr = strtoull(k, NULL, 0);
+	ut64 addr = strtoull(sdbkv_key(kv), NULL, 0);
 	if (errno) {
 		return false;
 	}
 
-	char *json_str = strdup(v);
+	char *json_str = sdbkv_dup_value(kv);
 	if (!json_str) {
 		return true;
 	}
@@ -2047,6 +2021,12 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 			}
 			rz_analysis_hint_set_val(analysis, addr, child->num.u_value);
 			break;
+		case HINTS_FIELD_ENUM:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			rz_analysis_hint_set_enum(analysis, addr, child->str_value);
+			break;
 		default:
 			break;
 	})
@@ -2086,6 +2066,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
 	rz_key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
 	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
+	rz_key_parser_add(ctx.parser, "enum", HINTS_FIELD_ENUM);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
 		RZ_SERIALIZE_ERR(res, "hints parsing failed");
@@ -2130,12 +2111,12 @@ RZ_API void rz_serialize_analysis_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 	RzListIter *it;
 	const char *imp;
 	rz_list_foreach (analysis->imports, it, imp) {
-		sdb_set(db, imp, "i", 0);
+		sdb_set(db, imp, "i");
 	}
 }
 
-static bool import_load_cb(void *user, const char *k, const char *v) {
-	rz_analysis_add_import(user, k);
+static bool import_load_cb(void *user, const SdbKv *kv) {
+	rz_analysis_add_import(user, sdbkv_key(kv));
 	return true;
 }
 

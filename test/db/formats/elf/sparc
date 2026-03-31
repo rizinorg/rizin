@@ -1,0 +1,124 @@
+NAME=Sparc64 - v9
+FILE=bins/elf/sparc/sparc64_insn_jmp.bin
+CMDS=<<EOF
+e asm.cpu
+e asm.bits
+EOF
+EXPECT=<<EOF
+v9
+64
+EOF
+RUN
+
+NAME=Sparc32 v8
+FILE=bins/elf/sparc/sparc32_insn_all.bin
+CMDS=<<EOF
+e asm.cpu
+e asm.bits
+EOF
+EXPECT=<<EOF
+v8
+32
+EOF
+RUN
+
+NAME=sparc relocation tests I
+FILE=bins/elf/sparc/relocs
+CMDS=<<EOF
+pi 20
+px 0x40 @ section..rodata
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Unhandled conversion of ELF reloc 7 (R_SPARC_WDISP30)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 50 (R_SPARC_H44)
+WARNING: Unhandled conversion of ELF reloc 51 (R_SPARC_M44)
+WARNING: Unhandled conversion of ELF reloc 52 (R_SPARC_L44)
+WARNING: Unhandled conversion of ELF reloc 34 (R_SPARC_HH22)
+WARNING: Unhandled conversion of ELF reloc 35 (R_SPARC_HM10)
+WARNING: Unhandled conversion of ELF reloc 36 (R_SPARC_LM22)
+WARNING: Unhandled conversion of ELF reloc 48 (R_SPARC_HIX22)
+WARNING: Unhandled conversion of ELF reloc 49 (R_SPARC_LOX10)
+WARNING: Unhandled conversion of ELF reloc 82 (R_SPARC_GOTDATA_OP_HIX22)
+WARNING: Unhandled conversion of ELF reloc 83 (R_SPARC_GOTDATA_OP_LOX10)
+WARNING: Unhandled conversion of ELF reloc 84 (R_SPARC_GOTDATA_OP)
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+call reloc.target.foo
+or g1, 0x40, g3
+sethi 0x20000, l0
+sethi 0x20, l0
+or g1, 0, g3
+or g1, 0x40, g3
+sethi 0, l0
+or g1, 0, g3
+sethi 0x20000, l0
+or g1, 0x40, g3
+or g1, 0x44, g3
+sethi 0x3dffff, g1
+xor g1, -0x3c0, g1
+sethi 0, l1
+or l1, 8, l1
+ldx [l7+l1], l2
+nop
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x080000a0  0000 0040 0000 0000 0000 0000 0000 0000  ...@............
+0x080000b0  0000 0040 0000 0000 0000 0000 0000 0000  ...@............
+0x080000c0  0800 0040 0000 0000 0000 0000 0000 0000  ...@............
+0x080000d0  0000 0000 0800 0040 ffff ffff ffff ffff  .......@........
+EOF
+RUN
+
+NAME=sparc relocation tests II
+FILE=bins/elf/sparc/relocs
+CMDS=<<EOF
+# Compared to llvm-objdump -r test/bins/elf/sparc/relocs
+ir
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Unhandled conversion of ELF reloc 7 (R_SPARC_WDISP30)
+WARNING: Unhandled conversion of ELF reloc 12 (R_SPARC_LO10)
+WARNING: Unhandled conversion of ELF reloc 9 (R_SPARC_HI22)
+WARNING: Unhandled conversion of ELF reloc 50 (R_SPARC_H44)
+WARNING: Unhandled conversion of ELF reloc 51 (R_SPARC_M44)
+WARNING: Unhandled conversion of ELF reloc 52 (R_SPARC_L44)
+WARNING: Unhandled conversion of ELF reloc 34 (R_SPARC_HH22)
+WARNING: Unhandled conversion of ELF reloc 35 (R_SPARC_HM10)
+WARNING: Unhandled conversion of ELF reloc 36 (R_SPARC_LM22)
+WARNING: Unhandled conversion of ELF reloc 48 (R_SPARC_HIX22)
+WARNING: Unhandled conversion of ELF reloc 49 (R_SPARC_LOX10)
+WARNING: Unhandled conversion of ELF reloc 82 (R_SPARC_GOTDATA_OP_HIX22)
+WARNING: Unhandled conversion of ELF reloc 83 (R_SPARC_GOTDATA_OP_LOX10)
+WARNING: Unhandled conversion of ELF reloc 84 (R_SPARC_GOTDATA_OP)
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type                     name                  
+--------------------------------------------------------------------------------
+0x0800004c 0x0000004c 0x08000408 R_SPARC_WDISP30          foo
+0x08000050 0x00000050 0x08000040 R_SPARC_LO10             test_sym
+0x08000054 0x00000054 0x08000040 R_SPARC_HI22             test_sym
+0x08000058 0x00000058 0x08000040 R_SPARC_H44              test_sym
+0x0800005c 0x0000005c 0x08000040 R_SPARC_M44              test_sym
+0x08000060 0x00000060 0x08000040 R_SPARC_L44              test_sym
+0x08000064 0x00000064 0x08000040 R_SPARC_HH22             test_sym
+0x08000068 0x00000068 0x08000040 R_SPARC_HM10             test_sym
+0x0800006c 0x0000006c 0x08000040 R_SPARC_LM22             test_sym
+0x08000070 0x00000070 0x08000040 R_SPARC_13               test_sym
+0x08000074 0x00000074 0x08000040 R_SPARC_13               test_sym + 0x00000004
+0x08000078 0x00000078 0x08000040 R_SPARC_HIX22            test_sym
+0x0800007c 0x0000007c 0x08000040 R_SPARC_LOX10            test_sym
+0x08000080 0x00000080 0x08000408 R_SPARC_GOTDATA_OP_HIX22 foo
+0x08000084 0x00000084 0x08000408 R_SPARC_GOTDATA_OP_LOX10 foo
+0x08000088 0x00000088 0x08000408 R_SPARC_GOTDATA_OP       foo
+0x08000090 0x00000090 0x08000040 R_SPARC_64               test_sym
+0x08000098 0x00000098 0x08000408 R_SPARC_64               foo
+0x080000a0 0x000000a0 0x08000040 R_SPARC_8                test_sym
+0x080000b0 0x000000b0 0x08000040 R_SPARC_16               test_sym
+0x080000c0 0x000000c0 0x08000040 R_SPARC_32               test_sym
+0x080000d0 0x000000d0 0x08000040 R_SPARC_64               test_sym
+EOF
+RUN

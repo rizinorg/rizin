@@ -100,6 +100,31 @@ typedef struct rz_float_t {
 	RzFloatException exception; ///< exception of float operations
 } RzFloat;
 
+static inline bool rz_float_is_neg_zero_f32(float zero) {
+	if (zero == 0.0f) {
+		return 1.0f / zero == F32_NINF;
+	}
+	return false;
+}
+
+static inline bool rz_float_is_neg_zero_f64(double zero) {
+	if (zero == 0.0) {
+		return 1.0 / zero == F64_NINF;
+	}
+	return false;
+}
+
+static inline bool rz_float_is_neg_zero_long_double(long double zero) {
+	if (zero == 0.0l) {
+		return 1.0l / zero == F128_NINF;
+	}
+	return false;
+}
+
+#define IS_NEG_ZERO32(z) rz_float_is_neg_zero_f32(z)
+#define IS_NEG_ZERO64(z) rz_float_is_neg_zero_f64(z)
+#define IS_NEG_ZEROLD(z) rz_float_is_neg_zero_long_double(z)
+
 RZ_API ut32 rz_float_get_format_info(RzFloatFormat format, RzFloatInfo which_info);
 RZ_API void rz_float_fini(RZ_NONNULL RzFloat *f);
 RZ_API void rz_float_free(RZ_NULLABLE RzFloat *f);
@@ -170,7 +195,7 @@ RZ_API bool rz_float_set_from_zero(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_set_from_qnan(RZ_NONNULL RzFloat *f);
 RZ_API bool rz_float_set_from_snan(RZ_NONNULL RzFloat *f);
 RZ_API RZ_OWN RzFloat *rz_float_new_inf(RzFloatFormat format, bool is_negative);
-RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format);
+RZ_API RZ_OWN RzFloat *rz_float_new_zero(RzFloatFormat format, bool negative);
 RZ_API RZ_OWN RzFloat *rz_float_new_qnan(RzFloatFormat format);
 RZ_API RZ_OWN RzFloat *rz_float_new_snan(RzFloatFormat format);
 

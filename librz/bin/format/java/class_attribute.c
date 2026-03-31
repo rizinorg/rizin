@@ -114,6 +114,7 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 				!rz_buf_read_be16(buf, &ac->exceptions[i].end_pc) ||
 				!rz_buf_read_be16(buf, &ac->exceptions[i].handler_pc) ||
 				!rz_buf_read_be16(buf, &ac->exceptions[i].catch_type)) {
+				free(ac->exceptions);
 				free(ac);
 				return false;
 			}

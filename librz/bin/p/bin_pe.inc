@@ -10,7 +10,7 @@
 #include "../i/private.h"
 #include "pe/pe.h"
 
-static Sdb *get_sdb(RzBinFile *bf) {
+static Sdb *pe_get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	if (!o || !o->bin_obj) {
@@ -20,7 +20,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin ? bin->kv : NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+static bool pe_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf)(buf, bf->rbin->verbose);
 	if (res) {
@@ -31,16 +31,15 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return false;
 }
 
-static void destroy(RzBinFile *bf) {
-	PE_(rz_bin_pe_free)
-	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
+static void pe_destroy(RzBinFile *bf) {
+	PE_(rz_bin_pe_free)((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj);
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 pe_baddr(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_image_base)(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+static RzBinAddr *pe_binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	struct rz_bin_pe_addr_t *peaddr = NULL;
 	RzBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
@@ -70,19 +69,19 @@ static void add_tls_callbacks(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *vec) {
 
 	do {
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
-		paddr = sdb_num_get(bin->kv, key, 0);
+		paddr = sdb_num_get(bin->kv, key);
 		if (!paddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
-		vaddr = sdb_num_get(bin->kv, key, 0);
+		vaddr = sdb_num_get(bin->kv, key);
 		if (!vaddr) {
 			break;
 		}
 
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
-		haddr = sdb_num_get(bin->kv, key, 0);
+		haddr = sdb_num_get(bin->kv, key);
 		if (!haddr) {
 			break;
 		}
@@ -97,7 +96,7 @@ static void add_tls_callbacks(RzBinFile *bf, RzPVector /*<RzBinAddr *>*/ *vec) {
 	} while (vaddr);
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *pe_entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
 	RzPVector *ret;
@@ -140,7 +139,7 @@ static ut32 perm_of_section_perm(ut64 perm) {
 	return r;
 }
 
-static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
+static RzPVector /*<RzBinMap *>*/ *pe_maps(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
 	struct rz_bin_pe_section_t *sections = NULL;
 	if (!bin || !(sections = bin->sections)) {
@@ -150,12 +149,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	RzBinMap *map = RZ_NEW0(RzBinMap);
 	if (!map) {
 		return ret;
 	}
-	map->name = strdup("header");
+	map->name = rz_str_dup("header");
 	map->paddr = 0;
 	ut32 aligned_hdr_size = UT32_MAX;
 	if (bin->nt_headers->optional_header.FileAlignment != 0) {
@@ -166,15 +165,14 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	map->vsize = RZ_ROUND(map->psize, 4096);
 	map->perm = RZ_PERM_R;
 	rz_pvector_push(ret, map);
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (size_t i = 0; !sections[i].last; i++) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			break;
 		}
 		map->paddr = sections[i].paddr;
-		map->name = strdup((char *)sections[i].name);
+		map->name = rz_str_dup((char *)sections[i].name);
 		map->psize = sections[i].size;
 		if (map->psize > bin->size) {
 			if (sections[i].vsize < bin->size) {
@@ -195,12 +193,12 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *pe_sections(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	int n_nonzero = 0;
 	int i;
 	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
@@ -210,13 +208,12 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
-	PE_(rz_bin_pe_check_sections)
-	(bin, &sections);
+	PE_(rz_bin_pe_check_sections)(bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = strdup((char *)sections[i].name);
+		ptr->name = rz_str_dup((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->flags = sections[i].flags;
@@ -242,8 +239,8 @@ static void find_pe_overlay(RzBinFile *bf) {
 	ut64 pe_overlay_size;
 	ut64 pe_overlay_offset = PE_(bin_pe_get_overlay)(bf->o->bin_obj, &pe_overlay_size);
 	if (pe_overlay_offset) {
-		sdb_num_set(bf->sdb, "pe_overlay.offset", pe_overlay_offset, 0);
-		sdb_num_set(bf->sdb, "pe_overlay.size", pe_overlay_size, 0);
+		sdb_num_set(bf->sdb, "pe_overlay.offset", pe_overlay_offset);
+		sdb_num_set(bf->sdb, "pe_overlay.size", pe_overlay_size);
 	}
 }
 
@@ -287,7 +284,7 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	if (!sections) {
 		return 0;
 	}
-	ut64 ba = baddr(bf);
+	ut64 ba = pe_baddr(bf);
 	for (int i = 0; !sections[i].last; i++) {
 		if (!strstr((char *)sections[i].name, "data")) {
 			continue;
@@ -317,7 +314,7 @@ static ut64 find_go_pclntab(RzBinFile *bf, ut32 *size, ut64 *vaddr) {
 	return 0;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *pe_symbols(RzBinFile *bf) {
 	RzPVector *ret = NULL;
 	ut64 go_pclntab_paddr = 0;
 	ut64 go_pclntab_vaddr = 0;
@@ -337,8 +334,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 				break;
 			}
-			ptr->name = strdup((char *)symbols[i].name);
-			ptr->libname = *symbols[i].libname ? strdup((char *)symbols[i].libname) : NULL;
+			ptr->name = rz_str_dup((char *)symbols[i].name);
+			ptr->libname = RZ_STR_ISNOTEMPTY(symbols[i].libname) ? rz_str_dup((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get(&bf->rbin->constpool, (char *)symbols[i].forwarder);
 			// strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
@@ -363,7 +360,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			return ret;
 		}
-		ptr->name = strdup("gopclntab");
+		ptr->name = rz_str_dup("gopclntab");
 		ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		ptr->type = RZ_BIN_TYPE_NOTYPE_STR;
 		ptr->size = go_pclntab_size;
@@ -379,8 +376,8 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 				break;
 			}
 			// strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
-			ptr->name = strdup((const char *)imports[i].name);
-			ptr->libname = strdup((const char *)imports[i].libname);
+			ptr->name = rz_str_dup((const char *)imports[i].name);
+			ptr->libname = rz_str_dup((const char *)imports[i].libname);
 			ptr->is_imported = true;
 			// strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
@@ -421,42 +418,32 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
-	RzPVector *relocs = NULL;
+static RzPVector /*<RzBinImport *>*/ *pe_imports(RzBinFile *bf) {
 	RzBinImport *ptr = NULL;
-	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
+	RzBinPEObj *bin = (RzBinPEObj *)bf->o->bin_obj;
+	bin->has_canary = false;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
 
-	// XXX: has_canary is causing problems! thus we need to check and clean here until it is fixed!
-	if (((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs) {
-		rz_pvector_free(((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs);
-	}
-
-	if (!(relocs = rz_pvector_new(free))) {
-		rz_pvector_free(ret);
-		return NULL;
-	}
-	((struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj)->relocs = relocs;
-
-	if (!(imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
+	if (!(imports = PE_(rz_bin_pe_get_imports)(bin))) {
 		return ret;
 	}
+	bool has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
 		}
 		filter_import(imports[i].name);
-		ptr->name = strdup((char *)imports[i].name);
-		ptr->libname = strdup((char *)imports[i].libname);
+		ptr->name = rz_str_dup((char *)imports[i].name);
+		ptr->libname = rz_str_dup((char *)imports[i].libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
 		ptr->ordinal = imports[i].ordinal;
@@ -465,59 +452,148 @@ static RzPVector /*<RzBinImport *>*/ *imports(RzBinFile *bf) {
 		// ptr->hint = imports[i].hint;
 		rz_pvector_push(ret, ptr);
 
-		if (!(rel = RZ_NEW0(RzBinReloc))) {
-			break;
+		// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
+		// initiliazes the stack canary. So if the function is imported, we can
+		// conclude the binary uses stack canary.
+		if (!has_canary && !strcmp(ptr->name, "__security_init_cookie")) {
+			has_canary = true;
 		}
-#ifdef RZ_BIN_PE64
-		rel->type = RZ_BIN_RELOC_64;
-#else
-		rel->type = RZ_BIN_RELOC_32;
-#endif
-		rel->additive = 0;
-		rel->import = ptr;
-		rel->addend = 0;
-		{
-			ut8 addr[4];
-			rz_buf_read_at(bf->buf, imports[i].paddr, addr, 4);
-			ut64 newaddr = (ut64)rz_read_le32(&addr);
-			rel->vaddr = newaddr;
-		}
-		rel->paddr = imports[i].paddr;
-		rz_pvector_push(relocs, rel);
 	}
+	bin->has_canary = has_canary;
 	free(imports);
 	return ret;
 }
 
-static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
-	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
-	if (obj) {
-		return obj->relocs;
+static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_type) {
+	switch (reloc_type) {
+	case PE_IMAGE_REL_BASED_ABSOLUTE:
+		return "IMAGE_REL_BASED_ABSOLUTE";
+	case PE_IMAGE_REL_BASED_HIGH:
+		return "IMAGE_REL_BASED_HIGH";
+	case PE_IMAGE_REL_BASED_LOW:
+		return "IMAGE_REL_BASED_LOW";
+	case PE_IMAGE_REL_BASED_HIGHLOW:
+		return "IMAGE_REL_BASED_HIGHLOW";
+	case PE_IMAGE_REL_BASED_HIGHADJ:
+		return "IMAGE_REL_BASED_HIGHADJ";
+	case PE_IMAGE_REL_BASED_MIPS_JMPADDR_ARM_MOV32_RISCV_HIGH20:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		case PE_IMAGE_FILE_MACHINE_R4000:
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+			return "IMAGE_REL_BASED_MIPS_JMPADDR";
+		case PE_IMAGE_FILE_MACHINE_ARM:
+		case PE_IMAGE_FILE_MACHINE_ARM64:
+		case PE_IMAGE_FILE_MACHINE_ARMNT:
+		case PE_IMAGE_FILE_MACHINE_THUMB:
+			return "IMAGE_REL_BASED_ARM_MOV32";
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_HIGH20";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+
+	case PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_THUMB:
+			return "IMAGE_REL_BASED_THUMB_MOV32";
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_LOW12I";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_RISCV_LOW12S_LOONGARCH32_MARK_LA:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_RISCV32:
+		case PE_IMAGE_FILE_MACHINE_RISCV64:
+		case PE_IMAGE_FILE_MACHINE_RISCV128:
+			return "IMAGE_REL_BASED_RISCV_LOW12S";
+		case PE_IMAGE_FILE_MACHINE_LOONGARCH32:
+		case PE_IMAGE_FILE_MACHINE_LOONGARCH64:
+			return "IMAGE_REL_BASED_LOONGARCH32_MARK_LA";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_MIPS_JMPADDR16:
+		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU:
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
+		case PE_IMAGE_FILE_MACHINE_R4000:
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
+			return "IMAGE_REL_BASED_MIPS_JMPADDR16";
+		default:
+			RZ_LOG_WARN("Unknown machine type for PE relocation type number: %d\n", reloc_type);
+			return "IMAGE_REL_BASED_UNKNOWN";
+		}
+	case PE_IMAGE_REL_BASED_DIR64:
+		return "IMAGE_REL_BASED_DIR64";
+	default:
+		RZ_LOG_WARN("Unknown PE relocation type number: %d\n", reloc_type);
+		return "IMAGE_REL_BASED_UNKNOWN";
 	}
-	return NULL;
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	RzPVector *ret = NULL;
-	char *ptr = NULL;
-	int i;
+// NOTE: No patching is needed because base relocations (as their name suggests) patch relocations based off the delta
+// between the executable expected load address, and the actual load address. And since Rizin always loads
+// the binaries at their preferred base address, the delta is always 0 and so no patching is needed.
+static RzPVector /*<RzBinReloc *>*/ *pe_relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinPEObj *bin = bf->o->bin_obj;
 
-	if (!(ret = rz_pvector_new(free))) {
+	if (!bin->relocs) {
 		return NULL;
 	}
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return ret;
+
+	RzPVector *ret = NULL;
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free))) {
+		return NULL;
 	}
-	for (i = 0; !libs[i].last; i++) {
-		ptr = strdup(libs[i].name);
-		rz_pvector_push(ret, ptr);
+
+	if (!PE_(bin_pe_has_base_relocs)(bin)) {
+		rz_pvector_free(ret);
+		return NULL;
 	}
-	free(libs);
+
+	RzBinPeRelocEnt *pe_reloc;
+	rz_vector_foreach (bin->relocs, pe_reloc) {
+		RzBinReloc *general_reloc = RZ_NEW0(RzBinReloc);
+		if (!general_reloc) {
+			RZ_LOG_ERROR("Failed to allocate PE RzBinReloc\n");
+			return ret;
+		}
+
+		general_reloc->vaddr = PE_RELOC_ENT_OFFSET(pe_reloc->raw_val) + pe_reloc->page_rva;
+		general_reloc->paddr = PE_(bin_pe_rva_to_paddr(bin, general_reloc->vaddr));
+		general_reloc->type = PE_RELOC_ENT_TYPE(pe_reloc->raw_val);
+		general_reloc->print_name = get_reloc_type_name(PE_RELOC_ENT_TYPE(pe_reloc->raw_val), bin->nt_headers->file_header.Machine);
+
+		// Allocating symbol just so we can have a name for the reloc
+		general_reloc->symbol = RZ_NEW0(RzBinSymbol);
+		general_reloc->symbol->name = rz_str_newf("pe_%08" PFMT64x, general_reloc->vaddr);
+
+		rz_pvector_push(ret, general_reloc);
+	}
+
+	rz_vector_free(bin->relocs);
+
 	return ret;
 }
 
-static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *pe_libs(RzBinFile *bf) {
+	return PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
+}
+
+static RzPVector /*<RzBinResource *>*/ *pe_resources(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) *obj = bf->o->bin_obj;
 	if (!obj) {
 		return NULL;
@@ -537,24 +613,25 @@ static RzPVector /*<RzBinResource *>*/ *resources(RzBinFile *bf) {
 		}
 
 		br->index = index++;
-		br->name = strdup(rs->name);
+		br->name = rz_str_dup(rs->name);
 		if (!br->name) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
-		br->time = strdup(rs->timestr);
+		br->time = rz_str_dup(rs->timestr);
 		if (!br->time) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
 		br->vaddr = PE_(rz_bin_pe_get_image_base)(obj) + rs->data->OffsetToData;
+		br->paddr = PE_(bin_pe_rva_to_paddr)(obj, rs->data->OffsetToData);
 		br->size = rs->data->Size;
-		br->type = strdup(rs->type);
+		br->type = rz_str_dup(rs->type);
 		if (!br->type) {
 			rz_bin_resource_free(br);
 			goto err;
 		}
-		br->language = strdup(rs->language);
+		br->language = rz_str_dup(rs->language);
 		if (!br->language) {
 			rz_bin_resource_free(br);
 			goto err;
@@ -569,74 +646,15 @@ err:
 	return NULL;
 }
 
-static bool is_dot_net(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	int i;
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp(libs[i].name, "mscoree.dll")) {
-			free(libs);
-			return true;
-		}
-	}
-	free(libs);
-	return false;
-}
-
-static bool is_vb6(RzBinFile *bf) {
-	struct rz_bin_pe_lib_t *libs = NULL;
-	int i;
-	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
-		return false;
-	}
-	for (i = 0; !libs[i].last; i++) {
-		if (!strcmp(libs[i].name, "msvbvm60.dll")) {
-			free(libs);
-			return true;
-		}
-	}
-	free(libs);
-	return false;
-}
-
-static int has_canary(RzBinFile *bf) {
-	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
-	// TODO: use O(1) when imports sdbized
-	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
-	void **it;
-	if (bin) {
-		const RzPVector *relocs_vec = bin->relocs;
-		RzBinReloc *rel;
-		if (relocs_vec) {
-			rz_pvector_foreach (relocs_vec, it) {
-				rel = *it;
-				if (!strcmp(rel->import->name, "__security_init_cookie")) {
-					return true;
-				}
-			}
-		}
-	} else { // rz_bin needs this as it will not initialise bin
-		const RzPVector *imports_vec = imports(bf);
-		RzBinImport *imp;
-		if (imports_vec) {
-			rz_pvector_foreach (imports_vec, it) {
-				imp = *it;
-				if (!strcmp(imp->name, "__security_init_cookie")) {
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
 static inline bool haschr(const struct PE_(rz_bin_pe_obj_t) * bin, ut16 dllCharacteristic) {
 	return bin->nt_headers->optional_header.DllCharacteristics & dllCharacteristic;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static int compare_strings(const void *a, const void *b, RZ_UNUSED void *user) {
+	return strcmp((const char *)a, (const char *)b);
+}
+
+static RzBinInfo *pe_info(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	SDebugInfo di = { { 0 } };
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
@@ -646,33 +664,38 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	ret->file = strdup(bf->file);
+	ret->file = rz_str_dup(bf->file);
 	ret->bclass = PE_(rz_bin_pe_get_class)(bf->o->bin_obj);
-	ret->rclass = strdup("pe");
+	ret->rclass = rz_str_dup("pe");
 	ret->os = PE_(rz_bin_pe_get_os)(bf->o->bin_obj);
 	ret->arch = PE_(rz_bin_pe_get_arch)(bf->o->bin_obj);
+	ret->cpu = PE_(rz_bin_pe_get_cpu)(bf->o->bin_obj);
 	ret->machine = PE_(rz_bin_pe_get_machine)(bf->o->bin_obj);
 	ret->subsystem = PE_(rz_bin_pe_get_subsystem)(bf->o->bin_obj);
 	ret->default_cc = PE_(rz_bin_pe_get_cc)(bf->o->bin_obj);
-	if (is_dot_net(bf)) {
+	ret->compiler = PE_(rz_bin_pe_get_compiler)(bf->o->bin_obj);
+
+	RzPVector *libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj);
+	if (libs && rz_pvector_find(libs, "mscoree.dll", compare_strings, NULL)) {
 		ret->lang = "cil";
 	}
-	if (is_vb6(bf)) {
+	if (libs && rz_pvector_find(libs, "msvbvm60.dll", compare_strings, NULL)) {
 		ret->lang = "vb";
 	}
+	rz_pvector_free(libs);
 
 	if (PE_(rz_bin_pe_is_dll)(bf->o->bin_obj)) {
-		ret->type = strdup("DLL (Dynamic Link Library)");
+		ret->type = rz_str_dup("DLL (Dynamic Link Library)");
 	} else {
-		ret->type = strdup("EXEC (Executable file)");
+		ret->type = rz_str_dup("EXEC (Executable file)");
 	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum)(bf->o->bin_obj);
 	actual_checksum = PE_(bin_pe_get_actual_checksum)(bf->o->bin_obj);
-	pe_overlay = sdb_num_get(bf->sdb, "pe_overlay.size", 0);
+	pe_overlay = sdb_num_get(bf->sdb, "pe_overlay.size");
 	ret->bits = PE_(rz_bin_pe_get_bits)(bf->o->bin_obj);
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_canary = has_canary(bf);
+	ret->has_canary = PE_(rz_bin_pe_has_canary)(bf->o->bin_obj);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
@@ -680,22 +703,22 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
-	sdb_bool_set(db, "canary", has_canary(bf), 0);
-	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
-	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE), 0);
-	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY), 0);
-	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT), 0);
-	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION), 0);
-	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH), 0);
-	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND), 0);
-	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER), 0);
-	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER), 0);
-	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
-	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
-	sdb_num_set(db, "bits", ret->bits, 0);
-	sdb_set(db, "claimed_checksum", ret->claimed_checksum, 0);
-	sdb_set(db, "actual_checksum", ret->actual_checksum, 0);
-	sdb_bool_set(db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid)(bf->o->bin_obj), 0);
+	sdb_bool_set(db, "canary", ret->has_canary);
+	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA));
+	sdb_bool_set(db, "aslr", haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE));
+	sdb_bool_set(db, "forceintegrity", haschr(bin, IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY));
+	sdb_bool_set(db, "nx", haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT));
+	sdb_bool_set(db, "isolation", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION));
+	sdb_bool_set(db, "seh", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_SEH));
+	sdb_bool_set(db, "bind", !haschr(bin, IMAGE_DLLCHARACTERISTICS_NO_BIND));
+	sdb_bool_set(db, "appcontainer", haschr(bin, IMAGE_DLLCHARACTERISTICS_APPCONTAINER));
+	sdb_bool_set(db, "wdmdriver", haschr(bin, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER));
+	sdb_bool_set(db, "guardcf", haschr(bin, IMAGE_DLLCHARACTERISTICS_GUARD_CF));
+	sdb_bool_set(db, "terminalserveraware", haschr(bin, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE));
+	sdb_num_set(db, "bits", ret->bits);
+	sdb_set(db, "claimed_checksum", ret->claimed_checksum);
+	sdb_set(db, "actual_checksum", ret->actual_checksum);
+	sdb_bool_set(db, "is_authhash_valid", PE_(bin_pe_is_authhash_valid)(bf->o->bin_obj));
 
 	ret->has_va = true;
 
@@ -724,18 +747,18 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 pe_get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
+static RzPVector /*<RzBinFileHash *>*/ *pe_compute_hashes(RzBinFile *bf) {
 	RzPVector *file_hashes = rz_pvector_new((RzPVectorFree)rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_get_authentihash)(bf->o->bin_obj);
 	if (authentihash) {
 		RzBinFileHash *authhash = RZ_NEW0(RzBinFileHash);
 		if (authhash) {
-			authhash->type = strdup("authentihash");
-			authhash->hex = strdup(authentihash);
+			authhash->type = rz_str_dup("authentihash");
+			authhash->hex = rz_str_dup(authentihash);
 			rz_pvector_push(file_hashes, authhash);
 		}
 	}
@@ -747,7 +770,7 @@ static RzPVector /*<RzBinFileHash *>*/ *compute_hashes(RzBinFile *bf) {
  * Currently only used by CIL plugin to resolve `call` and `jmp` targets
  * \returns offset on success, UT64_MAX on fail
  */
-static ut64 get_offset(RzBinFile *bf, int type, int idx) {
+static ut64 pe_get_offset(RzBinFile *bf, int type, int idx) {
 	struct PE_(rz_bin_pe_obj_t) * bin;
 	Pe_image_clr *clr;
 
@@ -763,4 +786,25 @@ static ut64 get_offset(RzBinFile *bf, int type, int idx) {
 	}
 
 	return UT64_MAX;
+}
+
+static RzPVector /*<RzBinString *>*/ *pe_strings(RzBinFile *bf) {
+	RzBinStringSearchOpt opt;
+	rz_bin_string_search_opt_init(&opt);
+	opt.mode = RZ_BIN_STRING_SEARCH_MODE_AUTO;
+	opt.min_length = RZ_BIN_STRING_SEARCH_MIN_STRING;
+	// Sticking with string guessing for now.
+	// PE doesn't specifiy the encoding, but commonly it is UTF-8 for symbol names
+	// and such, but UTF-16-le for Windows strings.
+	// Doing two searches here is easily possible
+	// but breaks a few tests which need investigation.
+	// So it should be done in a separated PR.
+	opt.string_encoding = RZ_STRING_ENC_GUESS;
+
+	RzPVector *strings = rz_bin_file_strings(bf, &opt);
+	if (!strings) {
+		RZ_LOG_ERROR("Failed to search for strings. Abort.\n");
+		return NULL;
+	}
+	return strings;
 }

@@ -12,7 +12,7 @@ RZ_API RZ_OWN RzPlatformItem *rz_platform_item_new(RZ_NULLABLE const char *name)
 	if (!item) {
 		return NULL;
 	}
-	item->name = name ? strdup(name) : NULL;
+	item->name = rz_str_dup(name);
 	item->comment = NULL;
 	return item;
 }
@@ -25,7 +25,7 @@ RZ_API RZ_OWN RzPlatformTargetIndex *rz_platform_target_index_new() {
 	if (!target) {
 		return NULL;
 	}
-	target->platforms = ht_up_new0();
+	target->platforms = ht_up_new(NULL, (HtUPFreeValue)rz_platform_item_free);
 	if (!target->platforms) {
 		free(target);
 		return NULL;
@@ -59,29 +59,29 @@ RZ_API void rz_platform_item_free(RzPlatformItem *item) {
 
 static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, false);
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
-	char *argument_key, *comment, *name;
-	ls_foreach (l, iter, kv) {
+
+	void **iter;
+	RzPVector *items = sdb_get_items(sdb, false);
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "name")) {
-			name = sdbkv_key(kv);
+			const char *name = sdbkv_key(kv);
 
 			RzPlatformItem *item = rz_platform_item_new(name);
 
-			argument_key = rz_str_newf("%s.address", item->name);
+			char *argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
 				rz_platform_item_free(item);
 				return false;
 			}
-			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			ut64 address = sdb_num_get(sdb, argument_key);
 			if (!address) {
 				rz_platform_item_free(item);
 				return false;
 			}
 
 			argument_key = rz_str_newf("%s.comment", item->name);
-			comment = sdb_get(sdb, argument_key, NULL);
+			char *comment = sdb_get(sdb, argument_key);
 			if (comment) {
 				item->comment = comment;
 			}
@@ -91,8 +91,8 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 	return true;
 }
 
-static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NONNULL const char *path) {
-	rz_return_val_if_fail(t && path, false);
+static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NULLABLE const char *path) {
+	rz_return_val_if_fail(t, false);
 	if (!path) {
 		return false;
 	}
@@ -128,8 +128,7 @@ RZ_API bool rz_platform_target_index_load_sdb(RZ_NONNULL RzPlatformTargetIndex *
  * \param platform reference to the selected platform (value of `asm.platform`)
  * \param platforms_dir reference to the directory containing platform files
  */
-RZ_API bool rz_platform_target_index_init(RzPlatformTargetIndex *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
-	const char *platform, RZ_NONNULL const char *platforms_dir) {
+RZ_API bool rz_platform_target_index_init(RzPlatformTargetIndex *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu, const char *platform, RZ_NONNULL const char *platforms_dir) {
 	if (RZ_STR_ISEMPTY(platform)) {
 		return true;
 	}

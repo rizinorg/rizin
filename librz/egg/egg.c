@@ -61,6 +61,9 @@ RZ_API RzEgg *rz_egg_new(void) {
 		goto beach;
 	}
 	egg->remit = &emit_x86;
+	if (egg->remit->init) {
+		egg->remit->init(egg);
+	}
 	egg->syscall = rz_syscall_new();
 	if (!egg->syscall) {
 		goto beach;
@@ -79,10 +82,11 @@ RZ_API RzEgg *rz_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = rz_list_new();
+	egg->plugins = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	for (i = 0; i < RZ_ARRAY_SIZE(egg_static_plugins); i++) {
 		rz_egg_plugin_add(egg, egg_static_plugins[i]);
 	}
+	egg->sys_path = rz_path_new();
 	return egg;
 
 beach:
@@ -92,13 +96,15 @@ beach:
 
 RZ_API bool rz_egg_plugin_add(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin && plugin->name, false);
-	RZ_PLUGIN_CHECK_AND_ADD(a->plugins, plugin, RzEggPlugin);
+	if (!ht_sp_insert(a->plugins, plugin->name, plugin)) {
+		RZ_LOG_WARN("Plugin '%s' was already added.\n", plugin->name);
+	}
 	return true;
 }
 
 RZ_API bool rz_egg_plugin_del(RzEgg *a, RZ_NONNULL RzEggPlugin *plugin) {
 	rz_return_val_if_fail(a && plugin, false);
-	return rz_list_delete_data(a->plugins, plugin);
+	return ht_sp_delete(a->plugins, plugin->name);
 }
 
 RZ_API char *rz_egg_to_string(RzEgg *egg) {
@@ -109,13 +115,19 @@ RZ_API void rz_egg_free(RzEgg *egg) {
 	if (!egg) {
 		return;
 	}
+
+	if (egg->remit && egg->remit->fini) {
+		egg->remit->fini(egg->remit);
+	}
+
+	rz_path_free(egg->sys_path);
 	rz_buf_free(egg->src);
 	rz_buf_free(egg->buf);
 	rz_buf_free(egg->bin);
 	rz_asm_free(egg->rasm);
 	rz_syscall_free(egg->syscall);
 	sdb_free(egg->db);
-	rz_list_free(egg->plugins);
+	ht_sp_free(egg->plugins);
 	rz_list_free(egg->patches);
 	rz_egg_lang_free(egg);
 	free(egg);
@@ -134,6 +146,9 @@ RZ_API void rz_egg_reset(RzEgg *egg) {
 
 RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os) {
 	const char *asmcpu = NULL; // TODO
+	if (egg->remit && egg->remit->fini) {
+		egg->remit->fini(egg->remit);
+	}
 	egg->remit = NULL;
 
 	egg->os = os ? rz_str_djb2_hash(os) : RZ_EGG_OS_DEFAULT;
@@ -141,12 +156,12 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 		egg->arch = RZ_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_x86;
 			egg->bits = bits;
 			break;
 		case 64:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_x64;
 			egg->bits = bits;
 			break;
@@ -157,8 +172,19 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 		case 16:
 		case 32:
 		case 64:
-			rz_syscall_setup(egg->syscall, arch, bits, asmcpu, os);
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->remit = &emit_arm;
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		}
+	} else if (!strcmp(arch, "mips")) {
+		egg->arch = RZ_SYS_ARCH_MIPS;
+		switch (bits) {
+		case 16:
+		case 32:
+		case 64:
+			rz_syscall_setup(egg->syscall, egg->sys_path, arch, bits, asmcpu, os);
 			egg->bits = bits;
 			egg->endian = endian;
 			break;
@@ -170,6 +196,9 @@ RZ_API bool rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, con
 		egg->endian = endian;
 	} else {
 		return false;
+	}
+	if (egg->remit && egg->remit->init) {
+		egg->remit->init(egg);
 	}
 	return true;
 }
@@ -212,11 +241,11 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 	// We have to reset the RzEgg state first
 	rz_egg_reset(egg);
 	if (rz_str_endswith(file, ".c")) {
-		char *fileSanitized = strdup(file);
+		char *fileSanitized = rz_str_dup(file);
 		rz_str_sanitize(fileSanitized);
 		const char *arch = rz_sys_arch_str(egg->arch);
 		const char *os = rz_egg_os_as_string(egg->os);
-		char *textFile = rz_egg_Cfile_parser(fileSanitized, arch, os, egg->bits);
+		char *textFile = rz_egg_compile_c_source(fileSanitized, arch, os, egg->bits, egg->sys_path);
 		if (!textFile) {
 			RZ_LOG_ERROR("egg: failure while parsing '%s'\n", fileSanitized);
 			free(fileSanitized);
@@ -249,8 +278,12 @@ RZ_API bool rz_egg_load_file(RzEgg *egg, const char *file) {
 }
 
 RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
+	int num = 0;
+	if (!rz_syscall_get_num(egg->syscall, arg, &num)) {
+		return;
+	}
 	RzSyscallItem *item = rz_syscall_get(egg->syscall,
-		rz_syscall_get_num(egg->syscall, arg), -1);
+		num, -1);
 	if (!strcmp(arg, "close")) {
 		// egg->remit->syscall_args ();
 	}
@@ -261,17 +294,8 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
 	rz_syscall_item_free(item);
 }
 
-RZ_API void rz_egg_alloc(RzEgg *egg, int n) {
-	// add esp, n
-}
-
 RZ_API void rz_egg_label(RzEgg *egg, const char *name) {
 	rz_egg_printf(egg, "%s:\n", name);
-}
-
-RZ_API void rz_egg_math(RzEgg *egg) { //, char eq, const char *vs, char type, const char *sr
-	// TODO
-	// e->mathop (egg, op, type, eq, p);
 }
 
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len) {
@@ -322,11 +346,6 @@ static int rz_egg_append_bytes(RzEgg *egg, const ut8 *b, int len) {
 	}
 
 	return true;
-}
-
-// rz_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
-RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v) {
-	//	egg->depth++;
 }
 
 RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) {
@@ -421,8 +440,6 @@ RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg) {
 	return egg->bin;
 }
 
-// RZ_API int rz_egg_dump (RzEgg *egg, const char *file) { }
-
 RZ_API char *rz_egg_get_source(RzEgg *egg) {
 	return rz_buf_to_string(egg->src);
 }
@@ -468,7 +485,7 @@ static inline char *eon(char *n) {
 RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 	int number;
 	ut8 *buf, padding_byte;
-	char *p, *o = strdup(pad);
+	char *p, *o = rz_str_dup(pad);
 
 	for (p = o; *p;) { // parse pad string
 		const char f = *p++;
@@ -519,53 +536,59 @@ RZ_API int rz_egg_padding(RzEgg *egg, const char *pad) {
 	return true;
 }
 
-RZ_API void rz_egg_fill(RzEgg *egg, int pos, int type, int argc, int length) {
-	// TODO
-}
-
 RZ_API void rz_egg_option_set(RzEgg *egg, const char *key, const char *val) {
-	sdb_set(egg->db, key, val, 0);
+	sdb_set(egg->db, key, val);
 }
 
 RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
-	return sdb_get(egg->db, key, NULL);
+	return sdb_get(egg->db, key);
 }
 
-RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
-	RzListIter *iter;
+RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
+	rz_return_val_if_fail(egg && name, false);
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
 				RZ_LOG_ERROR("egg: %s Shellcode has failed\n", p->name);
+				rz_iterator_free(iter);
 				return false;
 			}
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data(b, &tmpsz);
 			rz_egg_raw(egg, tmp, tmpsz);
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 
-RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
-	RzEggPlugin *p;
-	RzListIter *iter;
+RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
+	rz_return_val_if_fail(egg && name, false);
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzEggPlugin **val;
 	RzBuffer *b;
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_iterator_foreach(iter, val) {
+		RzEggPlugin *p = *val;
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp(name, p->name)) {
 			b = p->build(egg);
 			if (!b) {
+				rz_iterator_free(iter);
 				return false;
 			}
 			rz_buf_free(egg->bin);
 			egg->bin = b;
+			rz_iterator_free(iter);
 			return true;
 		}
 	}
+	rz_iterator_free(iter);
 	return false;
 }
 

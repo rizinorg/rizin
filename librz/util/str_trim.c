@@ -76,7 +76,7 @@ RZ_API char *rz_str_trim_lines(char *str) {
 }
 
 RZ_API char *rz_str_trim_dup(const char *str) {
-	char *a = strdup(str);
+	char *a = rz_str_dup(str);
 	rz_str_trim(a);
 	return a;
 }
@@ -93,7 +93,7 @@ RZ_API const char *rz_str_trim_head_ro(RZ_NONNULL const char *str) {
 	return str;
 }
 
-/* \brief Returns a pointer to the first non-whitespace character of \p str
+/* \brief Returns a pointer to the first whitespace character of \p str
  *
  * It considers only space and TAB as the whitespace
  */
@@ -126,9 +126,9 @@ RZ_API void rz_str_trim_head(RZ_NONNULL RZ_INOUT char *str) {
  * The string is changed in place.
  *
  * \param str The string to trim.
- * \return The edited string.
+ * \return The `str` pointer.
  */
-RZ_API RZ_BORROW char *rz_str_trim_tail(RZ_NONNULL char *str) {
+RZ_API RZ_INOUT char *rz_str_trim_tail(RZ_NONNULL RZ_INOUT char *str) {
 	rz_return_val_if_fail(str, NULL);
 	size_t length = strlen(str);
 	while (length-- > 0) {

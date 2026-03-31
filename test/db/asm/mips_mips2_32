@@ -1,0 +1,5 @@
+d "lwc3 0, 0(zero)" 000000cc
+d "swc3 0, 0(zero)" 000000ec
+d "addi t8, t8, 0x700" 00071823 4 (set t8 (cast 32 (msb (+ (var t8) (bv 32 0x700))) (+ (var t8) (bv 32 0x700))))
+d "move ra, zero" 21f80000 4 (set ra (bv 32 0x0))
+d "negu v1, a3" 23180700 4 (set v1 (- (bv 32 0x0) (var a3)))

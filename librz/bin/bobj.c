@@ -33,7 +33,7 @@ RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 	free(bstr->string);
 	bstr->string = decoded;
 	bstr->length = strlen(decoded);
-	bstr->type = RZ_STRING_ENC_BASE64;
+	bstr->type = RZ_STRING_ENC_UTF8;
 }
 
 RZ_API void rz_bin_mem_free(RZ_NULLABLE void *data) {
@@ -98,6 +98,7 @@ static int reloc_target_cmp(const void *a, const void *b, void *user) {
 RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinReloc *>*/ *relocs) {
 	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
 	if (!ret) {
+		rz_pvector_free(relocs);
 		return NULL;
 	}
 	RzPVector sorter;
@@ -115,6 +116,7 @@ RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzPVector /*<RzBinRelo
 			rz_pvector_push(&target_sorter, reloc);
 		}
 	}
+	ret->relocs_free = relocs->v.free_user;
 	relocs->v.free = NULL; // ownership of relocs transferred
 	rz_pvector_free(relocs);
 	rz_pvector_sort(&sorter, reloc_cmp, NULL);
@@ -132,8 +134,10 @@ RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
 	if (!storage) {
 		return;
 	}
-	for (size_t i = 0; i < storage->relocs_count; i++) {
-		rz_bin_reloc_free(storage->relocs[i]);
+	if (storage->relocs_free) {
+		for (size_t i = 0; i < storage->relocs_count; i++) {
+			storage->relocs_free(storage->relocs[i]);
+		}
 	}
 	free(storage->relocs);
 	free(storage->target_relocs);
@@ -184,12 +188,13 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 		return;
 	}
 	free(o->regstate);
-	ht_pp_free(o->glue_to_class_field);
-	ht_pp_free(o->glue_to_class_method);
-	ht_pp_free(o->name_to_class_object);
-	ht_pp_free(o->import_name_symbols);
+	ht_sp_free(o->glue_to_class_field);
+	ht_sp_free(o->glue_to_class_method);
+	ht_sp_free(o->name_to_class_object);
+	ht_sp_free(o->import_name_symbols);
 	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
+	rz_structured_data_free(o->structured_data);
 	rz_bin_reloc_storage_free(o->relocs);
 	rz_bin_source_line_info_free(o->lines);
 	rz_bin_string_database_free(o->strings);
@@ -220,7 +225,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
  */
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_find_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(o && name, NULL);
-	return ht_pp_find(o->name_to_class_object, name, NULL);
+	return ht_sp_find(o->name_to_class_object, name, NULL);
 }
 
 static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *super, ut64 address) {
@@ -229,7 +234,7 @@ static RzBinClass *bin_class_new(RzBinObject *o, const char *name, const char *s
 		return NULL;
 	}
 
-	c->name = strdup(name);
+	c->name = rz_str_dup(name);
 	c->super = rz_str_dup(super);
 	c->methods = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	c->fields = rz_list_newf((RzListFree)rz_bin_class_field_free);
@@ -298,10 +303,10 @@ static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void 
 RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, RZ_NONNULL const char *name, RZ_NULLABLE const char *super, ut64 vaddr) {
 	rz_return_val_if_fail(o && RZ_STR_ISNOTEMPTY(name), NULL);
 
-	RzBinClass *oclass = ht_pp_find(o->name_to_class_object, name, NULL);
+	RzBinClass *oclass = ht_sp_find(o->name_to_class_object, name, NULL);
 	if (oclass) {
 		if (super && !oclass->super) {
-			oclass->super = strdup(super);
+			oclass->super = rz_str_dup(super);
 		}
 		if (oclass->addr == UT64_MAX) {
 			oclass->addr = vaddr;
@@ -316,7 +321,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 
 	rz_pvector_push(o->classes, oclass);
 	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
-	ht_pp_insert(o->name_to_class_object, name, oclass);
+	ht_sp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }
 
@@ -336,7 +341,7 @@ RZ_API RzBinSymbol *rz_bin_object_find_method(RZ_NONNULL RzBinObject *o, RZ_NONN
 	if (!key) {
 		return NULL;
 	}
-	RzBinSymbol *sym = (RzBinSymbol *)ht_pp_find(o->glue_to_class_method, key, NULL);
+	RzBinSymbol *sym = (RzBinSymbol *)ht_sp_find(o->glue_to_class_method, key, NULL);
 	free(key);
 	return sym;
 }
@@ -401,7 +406,7 @@ RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_add_method(RZ_NONNULL RzBinObject *o
 
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, method);
 	if (key) {
-		ht_pp_insert(o->glue_to_class_method, key, symbol);
+		ht_sp_insert(o->glue_to_class_method, key, symbol);
 		free(key);
 	}
 
@@ -428,7 +433,7 @@ RZ_API RzBinClassField *rz_bin_object_find_field(RZ_NONNULL RzBinObject *o, RZ_N
 	if (!key) {
 		return NULL;
 	}
-	RzBinClassField *sym = (RzBinClassField *)ht_pp_find(o->glue_to_class_field, key, NULL);
+	RzBinClassField *sym = (RzBinClassField *)ht_sp_find(o->glue_to_class_field, key, NULL);
 	free(key);
 	return sym;
 }
@@ -478,7 +483,7 @@ RZ_API RZ_BORROW RzBinClassField *rz_bin_object_add_field(RZ_NONNULL RzBinObject
 	rz_list_add_sorted(c->fields, field, (RzListComparator)bin_compare_class_field, NULL);
 	char *key = rz_str_newf(RZ_BIN_FMT_CLASS_HT_GLUE, klass, name);
 	if (key) {
-		ht_pp_insert(o->glue_to_class_field, key, field);
+		ht_sp_insert(o->glue_to_class_field, key, field);
 		free(key);
 	}
 	return field;
@@ -521,7 +526,8 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 	// the object is created from. The reason for this is to prevent
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
-	rz_bin_file_set_obj(bf->rbin, bf, o);
+	rz_bin_file_set_obj(bf, o);
+	rz_bin_set_cur_binfile(bf->rbin, bf);
 	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_process_plugin_data(bf, o);
 
@@ -569,7 +575,7 @@ RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImpo
 	if (!o->import_name_symbols) {
 		return NULL;
 	}
-	return ht_pp_find(o->import_name_symbols, imp->name, NULL);
+	return ht_sp_find(o->import_name_symbols, imp->name, NULL);
 }
 
 RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name) {
@@ -593,14 +599,15 @@ RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin) {
 	return bin->cur->o;
 }
 
-RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, const char *arch, int bits, const char *name) {
-	rz_return_val_if_fail(bf && arch && name, NULL);
+RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *machine, RZ_NULLABLE const char *filename) {
+	rz_return_val_if_fail(bf && arch, NULL);
 	if (bf->o) {
 		RzBinInfo *info = bf->o->info;
 		if (info && info->arch && info->file &&
 			(bits == info->bits) &&
 			!strcmp(info->arch, arch) &&
-			!strcmp(info->file, name)) {
+			(!filename || RZ_STR_EQ(info->file, filename)) &&
+			(!machine || RZ_STR_EQ(info->machine, machine))) {
 			return bf->o;
 		}
 	}
@@ -648,8 +655,7 @@ RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
 /**
  * \brief Return the \p RzBinAddr structure representing the special symbol \p sym
  */
-RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
-	rz_return_val_if_fail(o, NULL);
+RZ_API RZ_BORROW const RzBinAddr *rz_bin_object_get_special_symbol(RZ_NULLABLE RzBinObject *o, RzBinSpecialSymbol sym) {
 	if (sym < 0 || sym >= RZ_BIN_SPECIAL_SYMBOL_LAST) {
 		return NULL;
 	}
@@ -686,6 +692,11 @@ RZ_API const RzPVector /*<RzBinImport *>*/ *rz_bin_object_get_imports(RZ_NONNULL
 RZ_API const RzBinInfo *rz_bin_object_get_info(RZ_NONNULL RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->info;
+}
+
+RZ_API const RzStructuredData *rz_bin_object_get_structured_data(RZ_BORROW RZ_NONNULL RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->structured_data;
 }
 
 /**
@@ -977,8 +988,8 @@ RZ_API RZ_OWN RzBinStrDb *rz_bin_string_database_new(RZ_NULLABLE RZ_OWN RzPVecto
 	}
 
 	db->pvec = pvector ? pvector : rz_pvector_new((RzPVectorFree)rz_bin_string_free);
-	db->phys = ht_up_new0();
-	db->virt = ht_up_new0();
+	db->phys = ht_up_new(NULL, NULL);
+	db->virt = ht_up_new(NULL, NULL);
 	if (!db->pvec || !db->phys || !db->virt) {
 		RZ_LOG_ERROR("rz_bin: Cannot allocate RzBinStrDb internal data structure.\n");
 		goto fail;

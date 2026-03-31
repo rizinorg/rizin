@@ -40,9 +40,9 @@ concurrency:
 jobs:
   build:
     name: ubuntu-tcc-test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Checkout TinyCC repository
       run: |
@@ -74,7 +74,7 @@ jobs:
           sudo python3 setup.py install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins

@@ -58,8 +58,8 @@ RZ_API bool rz_config_hold_s(RzConfigHold *h, ...) {
 		}
 		RzConfigHoldChar *hc = RZ_NEW0(RzConfigHoldChar);
 		if (hc) {
-			hc->key = strdup(key);
-			hc->value = strdup(val);
+			hc->key = rz_str_dup(key);
+			hc->value = rz_str_dup(val);
 			rz_list_append(h->list_char, hc);
 		}
 	}
@@ -99,7 +99,7 @@ RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
 		if (!hc) {
 			continue;
 		}
-		hc->key = strdup(key);
+		hc->key = rz_str_dup(key);
 		hc->value = rz_config_get_i(h->cfg, key);
 		rz_list_append(h->list_num, hc);
 	}

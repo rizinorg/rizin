@@ -82,13 +82,13 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	c->io = io;
-	c->fd = rz_io_desc_new(io, &rz_io_plugin_dmp, file, rw, mode, ctx);
+	c->fd = rz_io_desc_new(io, &rz_io_plugin_dmp, file, rw, ctx);
 	if (!c->fd) {
 		free(c);
 		free(ctx);
 		return NULL;
 	}
-	c->fd->name = strdup(file + 6);
+	c->fd->name = rz_str_dup(file + 6);
 	ctx->windctx.user = c;
 	return c->fd;
 }

@@ -145,42 +145,162 @@ static version_opcode version_op[] = {
 	{ "v3.9.10", opcode_39 },
 	{ "v3.9.11", opcode_39 },
 	{ "v3.9.12", opcode_39 },
+	{ "v3.9.13", opcode_39 },
+	{ "v3.9.14", opcode_39 },
+	{ "v3.9.15", opcode_39 },
+	{ "v3.9.16", opcode_39 },
+	{ "v3.9.17", opcode_39 },
+	{ "v3.9.18", opcode_39 },
+	{ "v3.9.19", opcode_39 },
+	{ "v3.9.20", opcode_39 },
+	{ "v3.9.21", opcode_39 },
+	{ "v3.10.0a1", opcode_310 },
+	{ "v3.10.0a2", opcode_310 },
+	{ "v3.10.0a3", opcode_310 },
+	{ "v3.10.0a4", opcode_310 },
+	{ "v3.10.0a5", opcode_310 },
+	{ "v3.10.0a6", opcode_310 },
+	{ "v3.10.0a7", opcode_310 },
+	{ "v3.10.0ab1", opcode_310 },
+	{ "v3.10.0b2", opcode_310 },
+	{ "v3.10.0b3", opcode_310 },
+	{ "v3.10.0b4", opcode_310 },
+	{ "v3.10.0rc1", opcode_310 },
+	{ "v3.10.0rc2", opcode_310 },
 	{ "v3.10.0", opcode_310 },
-	{ NULL, NULL },
+	{ "v3.10.1", opcode_310 },
+	{ "v3.10.2", opcode_310 },
+	{ "v3.10.3", opcode_310 },
+	{ "v3.10.4", opcode_310 },
+	{ "v3.10.5", opcode_310 },
+	{ "v3.10.6", opcode_310 },
+	{ "v3.10.7", opcode_310 },
+	{ "v3.10.8", opcode_310 },
+	{ "v3.10.9", opcode_310 },
+	{ "v3.10.10", opcode_310 },
+	{ "v3.10.11", opcode_310 },
+	{ "v3.10.12", opcode_310 },
+	{ "v3.10.13", opcode_310 },
+	{ "v3.10.14", opcode_310 },
+	{ "v3.10.15", opcode_310 },
+	{ "v3.10.16", opcode_310 },
+	{ "v3.11.0a1", opcode_311 },
+	{ "v3.11.0a2", opcode_311 },
+	{ "v3.11.0a3", opcode_311 },
+	{ "v3.11.0a4", opcode_311 },
+	{ "v3.11.0a5", opcode_311 },
+	{ "v3.11.0a6", opcode_311 },
+	{ "v3.11.0a7", opcode_311 },
+	{ "v3.11.0b1", opcode_311 },
+	{ "v3.11.0b2", opcode_311 },
+	{ "v3.11.0b3", opcode_311 },
+	{ "v3.11.0b4", opcode_311 },
+	{ "v3.11.0b5", opcode_311 },
+	{ "v3.11.0rc1", opcode_311 },
+	{ "v3.11.0rc2", opcode_311 },
+	{ "v3.11.0", opcode_311 },
+	{ "v3.11.1", opcode_311 },
+	{ "v3.11.2", opcode_311 },
+	{ "v3.11.3", opcode_311 },
+	{ "v3.11.4", opcode_311 },
+	{ "v3.11.5", opcode_311 },
+	{ "v3.11.6", opcode_311 },
+	{ "v3.11.7", opcode_311 },
+	{ "v3.11.8", opcode_311 },
+	{ "v3.11.9", opcode_311 },
+	{ "v3.11.10", opcode_311 },
+	{ "v3.11.11", opcode_311 },
+	{ "v3.12.0a1", opcode_312 },
+	{ "v3.12.0a2", opcode_312 },
+	{ "v3.12.0a3", opcode_312 },
+	{ "v3.12.0a4", opcode_312 },
+	{ "v3.12.0a5", opcode_312 },
+	{ "v3.12.0a6", opcode_312 },
+	{ "v3.12.0a7", opcode_312 },
+	{ "v3.12.0b1", opcode_312 },
+	{ "v3.12.0b2", opcode_312 },
+	{ "v3.12.0b3", opcode_312 },
+	{ "v3.12.0b4", opcode_312 },
+	{ "v3.12.0rc1", opcode_312 },
+	{ "v3.12.0rc2", opcode_312 },
+	{ "v3.12.0rc3", opcode_312 },
+	{ "v3.12.0", opcode_312 },
+	{ "v3.12.1", opcode_312 },
+	{ "v3.12.2", opcode_312 },
+	{ "v3.12.3", opcode_312 },
+	{ "v3.12.4", opcode_312 },
+	{ "v3.12.5", opcode_312 },
+	{ "v3.12.6", opcode_312 },
+	{ "v3.12.7", opcode_312 },
+	{ "v3.12.8", opcode_312 },
+	{ "v3.12.9", opcode_312 },
+	{ "v3.13.0a1", opcode_313 },
+	{ "v3.13.0a2", opcode_313 },
+	{ "v3.13.0a3", opcode_313 },
+	{ "v3.13.0a4", opcode_313 },
+	{ "v3.13.0a5", opcode_313 },
+	{ "v3.13.0a6", opcode_313 },
+	{ "v3.13.0b1", opcode_313 },
+	{ "v3.13.0b2", opcode_313 },
+	{ "v3.13.0b3", opcode_313 },
+	{ "v3.13.0b4", opcode_313 },
+	{ "v3.13.0rc1", opcode_313 },
+	{ "v3.13.0rc2", opcode_313 },
+	{ "v3.13.0rc3", opcode_313 },
+	{ "v3.13.0", opcode_313 },
+	{ "v3.13.1", opcode_313 },
+	{ "v3.13.2", opcode_313 },
+	{ "v3.14.0a1", opcode_314 },
+	{ "v3.14.0a2", opcode_314 },
+	{ "v3.14.0a3", opcode_314 },
+	{ "v3.14.0a4", opcode_314 },
+	{ "v3.14.0a5", opcode_314 },
+	{ "v3.14.0a6", opcode_314 },
+	{ "v3.14.0a7", opcode_314 },
+	{ "v3.14.0b1", opcode_314 },
+	{ "v3.14.0b2", opcode_314 },
+	{ "v3.14.0b3", opcode_314 },
+	{ "v3.14.0b4", opcode_314 },
+	{ "v3.14.0rc1", opcode_314 },
+	{ "v3.14.0rc2", opcode_314 },
+	{ "v3.14.0rc3", opcode_314 },
+	{ "v3.14.0", opcode_314 },
+	{ "v3.14.1", opcode_314 },
+	{ "v3.14.2", opcode_314 },
 };
 
-bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
-	if (version == NULL || op == NULL) {
-		return false;
-	}
-	version_opcode *vop = version_op;
-
-	while (vop->version) {
-		if (!strcmp(vop->version, version)) {
-			if (vop->opcode_func == (pyc_opcodes * (*)())(op->version_sig)) {
-				return true;
-			}
-		}
-		vop++;
+void pyc_context_free(pyc_context_t *ctx) {
+	if (!ctx) {
+		return;
 	}
 
-	return false;
+	free_opcode(ctx->cache);
+	free(ctx);
 }
 
-pyc_opcodes *get_opcode_by_version(char *version) {
-	if (version == NULL) {
-		return NULL;
+bool pyc_context_set_opcode_by_version(const char *version, pyc_context_t *ctx) {
+	if (!version) {
+		return false;
 	}
-	version_opcode *vop = version_op;
 
-	while (vop->version) {
-		if (!strcmp(vop->version, version)) {
-			return vop->opcode_func();
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(version_op); ++i) {
+		version_opcode *vop = &version_op[i];
+		if (RZ_STR_NE(vop->version, version)) {
+			continue;
 		}
-		vop++;
+
+		free_opcode(ctx->cache);
+		ctx->cache = vop->opcode_func();
+		if (!ctx->cache) {
+			// fail to alloc
+			return false;
+		}
+		ctx->version = vop->version;
+		return true;
 	}
 
-	return NULL; // No match version
+	// No match version
+	return false;
 }
 
 pyc_opcodes *new_pyc_opcodes() {
@@ -217,14 +337,11 @@ pyc_opcodes *new_pyc_opcodes() {
 }
 
 void free_opcode(pyc_opcodes *opcodes) {
-	size_t i;
-	if (opcodes == NULL || opcodes->opcodes == NULL) {
+	if (!opcodes) {
 		return;
 	}
-	for (i = 0; i < 256; i++) {
-		if (opcodes->opcodes[i].op_name) {
-			free(opcodes->opcodes[i].op_name);
-		}
+	for (size_t i = 0; i < 256 && opcodes->opcodes; i++) {
+		free(opcodes->opcodes[i].op_name);
 	}
 	free(opcodes->opcodes);
 	if (opcodes->opcode_arg_fmt) {
@@ -245,7 +362,7 @@ void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 
 
 void(def_opN)(struct op_parameter par) {
 	free(par.op_obj[par.op_code].op_name);
-	par.op_obj[par.op_code].op_name = strdup(par.op_name);
+	par.op_obj[par.op_code].op_name = rz_str_dup(par.op_name);
 	par.op_obj[par.op_code].op_code = par.op_code;
 	par.op_obj[par.op_code].op_pop = par.pop;
 	par.op_obj[par.op_code].op_push = par.push;
@@ -333,6 +450,6 @@ void(rm_op)(struct op_parameter par) {
 		op_obj->op_name = rz_str_newf("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
-		RZ_LOG_ERROR("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
+		RZ_LOG_ERROR("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s\n", par.op_code, par.op_name);
 	}
 }

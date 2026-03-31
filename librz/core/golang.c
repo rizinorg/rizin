@@ -248,6 +248,7 @@ static void add_new_library_from_name(RzCore *core, const char *name) {
 
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o) {
+		free(libname);
 		return;
 	}
 
@@ -324,7 +325,7 @@ static ut32 core_recover_golang_functions_go_1_18_plus(RzCore *core, GoPcLnTab *
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -402,7 +403,7 @@ static ut32 core_recover_golang_functions_go_1_16(RzCore *core, GoPcLnTab *pclnt
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -491,7 +492,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 		RZ_LOG_INFO("Recovered symbol at 0x%08" PFMT64x " with name '%s'\n", func_ptr, name);
 
 		add_new_library_from_name(core, name);
-		if (rz_str_len_utf8_ansi(name) > 0) {
+		if (rz_str_utf8_ansi_cols(name) > 0) {
 			// always add it before filtering the name.
 			add_new_func_symbol(core, name, func_ptr);
 			rz_name_filter(name, 0, true);
@@ -642,7 +643,6 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 }
 
 static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
-	ut32 ordinal = 0;
 	RzBinString *bstr;
 	RzBin *bin = core->bin;
 	RzBinFile *bf = rz_bin_cur(bin);
@@ -657,9 +657,6 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 		return true;
 	}
 
-	const RzPVector *strings = rz_bin_object_get_strings(bf->o);
-	ordinal = rz_pvector_len(strings);
-
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
 
 	bstr = RZ_NEW0(RzBinString);
@@ -670,7 +667,6 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
-	bstr->ordinal = ordinal;
 	bstr->length = bstr->size = size;
 	bstr->string = string;
 	bstr->type = RZ_STRING_ENC_UTF8;
@@ -705,7 +701,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	char *flag = malloc(str_size + n_prefix + 1);
 	char *raw = malloc(str_size + 1);
 	if (!flag || !raw) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.");
+		RZ_LOG_ERROR("Cannot allocate buffer to read string.\n");
 		free(flag);
 		free(raw);
 		return false;
@@ -724,7 +720,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		free(flag);
 		free(raw);
 		return false;
-	} else if (rz_str_len_utf8_ansi(raw) != str_size) {
+	} else if (rz_str_utf8_ansi_cols(raw) != str_size) {
 		free(flag);
 		free(raw);
 		return false;
@@ -735,7 +731,7 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	rz_name_filter(flag + n_prefix, str_size, true);
 
 	// verify is a valid flag.
-	if (rz_str_len_utf8_ansi(flag) < 5) {
+	if (rz_str_utf8_ansi_cols(flag) < 5) {
 		free(flag);
 		free(raw);
 		return false;
@@ -1870,6 +1866,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_x64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "arm")) {
@@ -1881,6 +1878,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_arm64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "mips")) {
@@ -1892,6 +1890,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_mips64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "riscv")) {
@@ -1900,6 +1899,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_riscv64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "ppc")) {
@@ -1908,6 +1908,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			recover_cb = &golang_recover_string_ppc64;
 			break;
 		default:
+			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
 			break;
 		}
 	} else if (!strcmp(asm_arch, "sysz")) {

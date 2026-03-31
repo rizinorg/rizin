@@ -1,0 +1,175 @@
+ad "add t1, t1, t3" 20482b01 0x4
+ad "addi t0, t1, 0x1234" 34122821 0x4
+ad "addiu t0, t1, 0x1234" 34122825 0x4
+ad "addu t1, t1, t3" 21482b01 0x4
+ad "and t1, t1, t3" 24482b01 0x4
+ad "andi t0, t1, 0x1234" 34122831 0x4
+ad "beq t0, t1, 0x10" 02000911 0x4
+ad "bgez t0, 8" 00000105 0x4
+ad "bgezal t0, 8" 00001105 0x4
+ad "bgtz t0, 8" 0000001d 0x4
+ad "blez t0, 8" 00000019 0x4
+ad "bltz t0, 8" 00000005 0x4
+ad "bltzal t0, 8" 00001005 0x4
+ad "bne t0, t1, 0x10" 02000915 0x4
+ad "break 0, 0x1e2" 8d780000 0x4
+ad "break 0x30e, 0x1e2" 8d780e03 0x4
+ad "break" 0d000000 0x4
+ad "div zero, t1, t1" 1a002901 0x4
+ad "divu zero, t1, t1" 1b002901 0x4
+ad "eret" 18000042
+ad "j 0x123454" 158d0408 0x4
+ad "jal 0x123454" 158d040c 0x4
+ad "jalr t0, t1" 09402001 0x4
+ad "jalr t1" 09f82001 0x4
+ad "jr t0" 08000001 0x4
+ad "lb ra, -0x64(s3)" 9cff7f82
+ad "lb ra, 8(s3)" 08007f82
+ad "lbu ra, -0x64(s3)" 9cff7f92
+ad "lbu ra, 8(s3)" 08007f92
+ad "lh ra, -0x64(s3)" 9cff7f86
+ad "lh ra, 8(s3)" 08007f86
+ad "lhu ra, -0x64(s3)" 9cff7f96
+ad "lhu ra, 8(s3)" 08007f96
+ad "lui t0, 0x1234" 3412083c 0x4
+ad "lw ra, -0x64(s3)" 9cff7f8e
+ad "lw ra, 8(s3)" 08007f8e
+ad "lwl ra, -0x64(s3)" 9cff7f8a
+ad "lwl ra, 8(s3)" 08007f8a
+ad "lwr ra, -0x64(s3)" 9cff7f9a
+ad "lwr ra, 8(s3)" 08007f9a
+ad "mfhi s4" 10a00000 0x4
+ad "mflo s4" 12a00000 0x4
+ad "mthi t0" 11000001 0x4
+ad "mtlo t0" 13000001 0x4
+ad "mult t1, t1" 18002901 0x4
+ad "multu t1, t1" 19002901 0x4
+ad "nop" 00000000
+ad "nor t1, t2, t3" 27484b01 0x4
+ad "or t1, t1, t3" 25482b01 0x4
+ad "ori t0, t1, 0x1234" 34122835 0x4
+ad "sb ra, -0x64(s3)" 9cff7fa2
+ad "sb ra, 8(s3)" 08007fa2
+ad "sh ra, -0x64(s3)" 9cff7fa6
+ad "sh ra, 8(s3)" 08007fa6
+ad "sll t1, t0, 2" 80480800 0x4
+ad "sllv t2, s0, t2" 04505001 0x4
+ad "slti t0, t1, 0x1234" 34122829 0x4
+ad "sltiu t0, t1, 0x1234" 3412282d 0x4
+ad "sra t1, t0, 2" 83480800 0x4
+ad "srav t2, s0, t2" 07505001 0x4
+ad "srl t1, t0, 2" 82480800 0x4
+ad "srlv t2, t1, t2" 06504901 0x4
+ad "sub t1, t1, t3" 22482b01 0x4
+ad "subu t1, t1, t3" 23482b01 0x4
+ad "sw ra, -0x64(s3)" 9cff7fae
+ad "sw ra, 8(s3)" 08007fae
+ad "swl ra, -0x64(s3)" 9cff7faa
+ad "swl ra, 8(s3)" 08007faa
+ad "swr ra, -0x64(s3)" 9cff7fba
+ad "swr ra, 8(s3)" 08007fba
+ad "syscall" 0c000000
+ad "teq t2, t1" 34004901 0x4
+ad "teqi t0, 8" 08000c05 0x4
+ad "tge t2, t1" 30004901 0x4
+ad "tgei t0, 8" 08000805 0x4
+ad "tgeiu t0, 8" 08000905 0x4
+ad "tgeu t2, t1" 31004901 0x4
+ad "tlt t2, t1" 32004901 0x4
+ad "tlti t0, 8" 08000a05 0x4
+ad "tltiu t0, 8" 08000b05 0x4
+ad "tltu t2, t1" 33004901 0x4
+ad "tne t2, t1" 36004901 0x4
+ad "tnei t0, 8" 08000e05 0x4
+ad "xor t1, t1, t3" 26482b01 0x4
+ad "xori t0, at, 0x1234" 34122838 0x4
+
+adE "add t1, t1, t3" 012b4820 0x4
+adE "addi t0, t1, 0x1234" 21281234 0x4
+adE "addiu t0, t1, 0x1234" 25281234 0x4
+adE "addu t1, t1, t3" 012b4821 0x4
+adE "and t1, t1, t3" 012b4824 0x4
+adE "andi t0, t1, 0x1234" 31281234 0x4
+adE "beq t0, t1, 0x10" 11090002 0x4
+adE "bgez t0, 8" 05010000 0x4
+adE "bgezal t0, 8" 05110000 0x4
+adE "bgtz t0, 8" 1d000000 0x4
+adE "blez t0, 8" 19000000 0x4
+adE "bltz t0, 8" 05000000 0x4
+adE "bltzal t0, 8" 05100000 0x4
+adE "bne t0, t1, 0x10" 15090002 0x4
+adE "break 0, 0x1e2" 0000788d 0x4
+adE "break 0x30e, 0x1e2" 030e788d 0x4
+adE "break" 0000000d 0x4
+adE "div zero, t1, t1" 0129001a 0x4
+adE "divu zero, t1, t1" 0129001b 0x4
+adE "eret" 42000018
+adE "j 0x123454" 08048d15 0x4
+adE "j 0xffcfffc" 0bff3fff 0x7fffff0
+adE "j 0xfffaffc" 0bffebff 0x400
+adE "j 0xffffff8" 0bfffffe 0
+adE "j 0xffffffc" 0bffffff 0
+adE "jal 0x123454" 0c048d15 0x4
+adE "jalr t0, t1" 01204009 0x4
+adE "jalr t1" 0120f809 0x4
+adE "jr t0" 01000008 0x4
+adE "lb ra, -0x64(s3)" 827fff9c
+adE "lb ra, 8(s3)" 827f0008
+adE "lbu ra, -0x64(s3)" 927fff9c
+adE "lbu ra, 8(s3)" 927f0008
+adE "lh ra, -0x64(s3)" 867fff9c
+adE "lh ra, 8(s3)" 867f0008
+adE "lhu ra, -0x64(s3)" 967fff9c
+adE "lhu ra, 8(s3)" 967f0008
+adE "lui t0, 0x1234" 3c081234 0x4
+adE "lw ra, -0x64(s3)" 8e7fff9c
+adE "lw ra, 8(s3)" 8e7f0008
+adE "lwl ra, -0x64(s3)" 8a7fff9c
+adE "lwl ra, 8(s3)" 8a7f0008
+adE "lwr ra, -0x64(s3)" 9a7fff9c
+adE "lwr ra, 8(s3)" 9a7f0008
+adE "mfhi s4" 0000a010 0x4
+adE "mflo s4" 0000a012 0x4
+adE "mthi t0" 01000011 0x4
+adE "mtlo t0" 01000013 0x4
+adE "mult t1, t1" 01290018 0x4
+adE "multu t1, t1" 01290019 0x4
+adE "nop" 00000000
+adE "nor t1, t2, t3" 014b4827 0x4
+adE "or t1, t1, t3" 012b4825 0x4
+adE "ori t0, t1, 0x1234" 35281234 0x4
+adE "sb ra, -0x64(s3)" a27fff9c
+adE "sb ra, 8(s3)" a27f0008
+adE "sh ra, -0x64(s3)" a67fff9c
+adE "sh ra, 8(s3)" a67f0008
+adE "sll t1, t0, 3" 000848c0 0x4
+adE "sllv t2, s0, t2" 01505004 0x4
+adE "slti t0, t1, 0x1234" 29281234 0x4
+adE "sltiu t0, t1, 0x1234" 2d281234 0x4
+adE "sra t1, t0, 3" 000848c3 0x4
+adE "srav t2, s0, t2" 01505007 0x4
+adE "srl t1, t0, 3" 000848c2 0x4
+adE "srlv t2, t1, t2" 01495006 0x4
+adE "sub t1, t1, t3" 012b4822 0x4
+adE "subu t1, t1, t3" 012b4823 0x4
+adE "sw ra, -0x64(s3)" ae7fff9c
+adE "sw ra, 8(s3)" ae7f0008
+adE "swl ra, -0x64(s3)" aa7fff9c
+adE "swl ra, 8(s3)" aa7f0008
+adE "swr ra, -0x64(s3)" ba7fff9c
+adE "swr ra, 8(s3)" ba7f0008
+adE "syscall" 0000000c
+adE "teq t2, t1" 01490034 0x4
+adE "teqi t0, 8" 050c0008 0x4
+adE "tge t2, t1" 01490030 0x4
+adE "tgei t0, 8" 05080008 0x4
+adE "tgeiu t0, 8" 05090008 0x4
+adE "tgeu t2, t1" 01490031 0x4
+adE "tlt t2, t1" 01490032 0x4
+adE "tlti t0, 8" 050a0008 0x4
+adE "tltiu t0, 8" 050b0008 0x4
+adE "tltu t2, t1" 01490033 0x4
+adE "tne t2, t1" 01490036 0x4
+adE "tnei t0, 8" 050e0008 0x4
+adE "xor t1, t1, t3" 012b4826 0x4
+adE "xori t0, at, 0x1234" 38281234 0x4

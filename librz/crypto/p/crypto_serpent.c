@@ -125,6 +125,7 @@ RzCryptoPlugin rz_crypto_plugin_serpent = {
 	.name = "serpent-ecb",
 	.author = "NicsTr",
 	.license = "LGPL-3",
+	.description = "Serpent symmetric-key block cipher (ECB block mode)",
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
 	.use = serpent_use,

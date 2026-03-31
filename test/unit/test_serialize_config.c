@@ -7,9 +7,9 @@
 
 Sdb *ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "somestring", "somevalue", 0);
-	sdb_set(db, "someint", "42", 0);
-	sdb_set(db, "somebiggerint", "0x00001337", 0);
+	sdb_set(db, "somestring", "somevalue");
+	sdb_set(db, "someint", "42");
+	sdb_set(db, "somebiggerint", "0x00001337");
 	return db;
 }
 
@@ -39,7 +39,7 @@ bool test_config_load() {
 	rz_config_lock(config, true);
 
 	Sdb *db = ref_db();
-	sdb_set(db, "sneaky", "not part of config", 0);
+	sdb_set(db, "sneaky", "not part of config");
 	bool loaded = rz_serialize_config_load(db, config, NULL, NULL);
 	sdb_free(db);
 	mu_assert("load success", loaded);

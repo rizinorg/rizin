@@ -8,7 +8,7 @@ aaa
 afx
 EOF
 EXPECT=<<EOF
-c 0x00005124 -> 0x00005128 ?   jump 0x5128
+c 0x00005124 -> 0x00005128 [   jump 0x5128
 c 0x00005130 -> 0x00005134 [   if (P0) jump:nt 0x5154
 c 0x00005130 -> 0x00005154 [   if (P0) jump:nt 0x5154
 c 0x00005134 -> 0x00005138 [   jump 0x5138
@@ -29,12 +29,12 @@ s 0x0000539c
 pi 4
 EOF
 EXPECT=<<EOF
-?   immext(##0xb0c0)
-?   R0 = ##loc._MSG_BASE
-?   immext(##0xd180)
-?   R2 = ##0xd1ac
-?   immext(##0xfe105000)
-?   R3 = ##-0x1efb000
+/   immext(##0xb0c0)
+\   R0 = ##loc._MSG_BASE
+/   immext(##0xd180)
+|   R2 = ##0xd1ac
+|   immext(##0xfe105000)
+\   R3 = ##-0x1efb000
 EOF
 RUN
 
@@ -102,7 +102,6 @@ RUN
 
 NAME=hexagon extended immediate search
 FILE=bins/elf/analysis/hexagon-hello-loop
-BROKEN=1
 CMDS=<<EOF
 b 0x100000
 aar
@@ -110,12 +109,12 @@ aar
 /ai sym.coredump
 EOF
 EXPECT=<<EOF
-0x000051d4   # 4: ?   R1 = ##0x5410
-0x00000b70   # 4: ?   jump sym.coredump
-0x00000b7c   # 4: ?   jump sym.coredump
-0x00000b8c   # 4: ?   jump sym.coredump
-0x00000f48   # 4: ?   jump sym.coredump
-0x000051f0   # 4: ?   R28 = ##sym.coredump
+0x000051d4   # 4: \   R1 = ##sym.sys_TLSFreeAll
+0x00000b70   # 4: [   jump sym.coredump
+0x00000b7c   # 4: [   jump sym.coredump
+0x00000b8c   # 4: [   jump sym.coredump
+0x00000f48   # 4: [   jump sym.coredump
+0x000051f0   # 4: |   R28 = ##sym.coredump
 EOF
 RUN
 
@@ -128,7 +127,7 @@ e analysis.arch=hexagon
 pi 4
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 /   immext(##0x1e417000)
 |   R3 = memw(GP+##0x1e417004)
 \   if (!cmp.eq(R3.new,R2)) jump:t 0x38
@@ -144,7 +143,7 @@ e analysis.arch=hexagon
 pi 5
 EOF
 EXPECT=<<EOF
-?   PKTCOUNT = LR:FP
+[   PKTCOUNT = LR:FP
 [   loop0(0x8,#0x10)
 [   nop
 /   nop
@@ -161,7 +160,7 @@ e analysis.arch=hexagon
 pi 13
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop0(0x8,#0x3)
 /   P0 = R13
 |   immext(##0x0)
@@ -186,7 +185,7 @@ e analysis.arch=hexagon
 pi 12
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop1(0x8,#0x3)
 /   P0 = R13
 |   immext(##0x0)
@@ -210,7 +209,7 @@ e analysis.arch=hexagon
 pi 7
 EOF
 EXPECT=<<EOF
-?   R5:4 = combine(#0x0,##0x28)
+[   R5:4 = combine(#0x0,##0x28)
 /   loop0(0x14,#0x4)
 |   P1 = cmp.gt(R1,##0x2)
 |   P2 = cmp.eq(R1,##0x1)
@@ -230,7 +229,7 @@ e analysis.arch=hexagon
 pi 46
 EOF
 EXPECT=<<EOF
-?   invalid
+[   invalid
 /   R0 = ##0x1
 |   R1 = and(R16,##0xff)
 |   R2 = and(R16,##0xff)
@@ -289,7 +288,7 @@ e plugins.hexagon.imm.hash=false
 pi 13
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   loop0(0x8,0x3)
 /   P0 = R13
 |   immext(0x0)
@@ -369,7 +368,7 @@ pd 8
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       R14 = and(R5,##0x20)
+|           0x00000000      [   R14 = and(R5,##0x20)
 |       ,=< 0x00000004      [   loop0(0x8,R15)
 |       |   ; CODE XREFS from fcn.00000000 @ 0x4, 0x18
 |      .`-> 0x00000008      /       R7:6 = valignb(R11:10,R13:12,P2)
@@ -392,10 +391,10 @@ pd 0xd
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       P1 = !cmp.eq(R2,##0x0)
-|           0x00000004      ?       P1 = !cmp.eq(R1,R0)
-|           0x00000008      ?       R14 = or(R1,R0)
-|           0x0000000c      ?       P0 = cmp.gtu(R2,##0x17)
+|           0x00000000      /       P1 = !cmp.eq(R2,##0x0)
+|           0x00000004      |       P1 = !cmp.eq(R1,R0)
+|           0x00000008      |       R14 = or(R1,R0)
+|           0x0000000c      \       P0 = cmp.gtu(R2,##0x17)
 |           0x00000010      /       R9 = lsr(R2,#0x3)
 |           0x00000014      |       if (!P1) jumpr:nt LR
 |           0x00000018      |       P3 = cmp.gtu(R2,##0x5f)
@@ -420,9 +419,9 @@ pd 0x12
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       immext(##0xc400)
-|           0x00000004      ?       R2 = memw(GP+##0xc420)
-|       ,=< 0x00000008      ?       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
+|           0x00000000      /       immext(##0xc400)
+|           0x00000004      |       R2 = memw(GP+##0xc420)
+|       ,=< 0x00000008      \       if (cmp.eq(R2.new,#0x0)) jump:nt 0x40
 |       |   0x0000000c      [   memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
 |       |   0x00000010      /       call 0xc60
 |       |   0x00000014      \       memw(R29+#0x0) = R0 ; memw(R29+#0x4) = R1
@@ -452,7 +451,7 @@ EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ R0
-|           0x00005110      ?       allocframe(SP,#0x8):raw
+|           0x00005110      [   allocframe(SP,#0x8):raw
 EOF
 RUN
 
@@ -469,7 +468,7 @@ EXPECT=<<EOF
           |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
           | int main(int argc, char **argv, char **envp);     |
           | ; arg int argc @ R0                               |
-          | ?   allocframe(SP,#0x8):raw                       |
+          | [   allocframe(SP,#0x8):raw                       |
           | [   R2 = add(FP,##-0x4)                           |
           | [   memw(R2+#0x0) = ##0x0                         |
           | [   R2 = add(FP,##-0x8)                           |
@@ -496,7 +495,7 @@ EXPECT=<<EOF
 |.------------------------------------.    .-----------------.
 ||  0x5154                            |    |  0x5134         |
 || ; DATA XREF from main @ 0x5130     |    | [   jump 0x5138 |
-|| ?   R0 = ##0x0                     |    `-----------------'
+|| [   R0 = ##0x0                     |    `-----------------'
 || [   LR:FP = dealloc_return(FP):raw |        v
 |`------------------------------------'        |
 |                                              |
@@ -536,8 +535,8 @@ pd 12
 EOF
 EXPECT=<<EOF
 / sym.thread_join();
-|           0x00005200      ?       R1 = HTID
-|           0x00005204      ?       R3 = ##0x1
+|           0x00005200      /       R1 = HTID
+|           0x00005204      \       R3 = ##0x1
 |           0x00005208      [   R1 = asl(R3,R1)
 |           0x0000520c      [   R1 = sub(##-0x1,R1)
 |           0x00005210      [   R0 = and(R0,R1)
@@ -565,7 +564,7 @@ pd 11
 EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls();
-|           0x00005344      ?       R2 = UGP
+|           0x00005344      [   R2 = UGP
 |           0x00005348      /       immext(##loc.CoreDump)             ; 0x1100
 |           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)        ; 0x1110
 |           0x00005350      |       immext(##loc.CoreDump)             ; 0x1100
@@ -588,7 +587,7 @@ s 0x00005abc
 pd 22
 EOF
 EXPECT=<<EOF
-|       ,=< 0x00005abc      ?       if (P3) jump:nt 0x5b1c
+|       ,=< 0x00005abc      [   if (P3) jump:nt 0x5b1c
 |       |   ; CODE XREF from sym.memcpy @ 0x5abc
 |      ,==< 0x00005ac0      /       loop0(0x5acc,R4)
 |      ||   0x00005ac4      |       P0 = cmp.gtu(R4,##0x1)
@@ -625,11 +624,11 @@ s 0x00008df4
 axt
 EOF
 EXPECT=<<EOF
-sym._Mbtowcx 0x8df0 [CODE] ?   loop0(0x8df4,R2)
-sym._Mbtowcx 0x8e3c [CODE] ?   R6 = ##0x1 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e54 [CODE] ?   R6 = ##0x2 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e70 [CODE] ?   R6 = ##0x3 ; R7 = add(R7,#1)
-sym._Mbtowcx 0x8e98 [CODE] ?   nop
+sym._Mbtowcx 0x8df0 [CODE] [   loop0(0x8df4,R2)
+sym._Mbtowcx 0x8e3c [CODE] \   R6 = ##0x1 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e54 [CODE] \   R6 = ##0x2 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e70 [CODE] \   R6 = ##0x3 ; R7 = add(R7,#1)     < endloop0
+sym._Mbtowcx 0x8e98 [CODE] \   nop     < endloop0
 EOF
 RUN
 
@@ -644,8 +643,8 @@ pd 4
 EOF
 EXPECT=<<EOF
 / fcn.00000000();
-|           0x00000000      ?       immext(##0x1734a600)
-|       ,=< 0x00000004      ?       jump 0x1734a60c
+|           0x00000000      /       immext(##0x1734a600)
+|       ,=< 0x00000004      \       jump 0x1734a60c
 |       |   0x00000008      /       R2 = +mpyi(R0,##0x3c)
 |       |   0x0000000c      |       R16 = R0
 EOF
@@ -665,7 +664,7 @@ fs strings
 fl
 EOF
 EXPECT=<<EOF
-            0x00000000      ?       R1 = ##str.Where_is_Wally          ; 0xc ; "Where is Wally?"
+            0x00000000      [   R1 = ##str.Where_is_Wally              ; 0xc ; "Where is Wally?"
             0x00000004      [   memw(R17+#0x0) = ##str.There_is_Wally  ; 0x1c ; "There is Wally!"
 0x0000000c 16 str.Where_is_Wally
 0x0000001c 16 str.There_is_Wally
@@ -682,7 +681,7 @@ e plugins.hexagon.sdk=true
 pi 25
 EOF
 EXPECT=<<EOF
-?   nop
+{   nop }
 {   loop0(0x8,#0x3) }
 {   P0 = R13
     immext(##0x0)
@@ -1400,7 +1399,7 @@ s loc.r_hex_32
 px 16~[1-8]
 EOF
 EXPECT=<<EOF
-?   nop
+[   nop
 [   nop
 [   nop
 [   nop
@@ -1432,5 +1431,233 @@ EXPECT=<<EOF
 \   R0 = memw(R0+##loc.test_sym)
 offset - 0 1 2 3 4 5
 3400 0008 3400 0000 3400 0000 7cff ffff
+EOF
+RUN
+
+NAME=hexagon relocation tests II
+FILE=bins/elf/hexagon/relocs
+CMDS=<<EOF
+ir
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type                name                  
+---------------------------------------------------------------------------
+0x08000048 0x00000048 0x08000034 R_HEX_B15_PCREL     test_sym - 0x08000048
+0x0800004c 0x0000004c 0x08000034 R_HEX_B7_PCREL      test_sym - 0x0800004c
+0x08000050 0x00000050 0x08000034 R_HEX_LO16          test_sym
+0x08000054 0x00000054 0x08000034 R_HEX_HI16          test_sym
+0x08000058 0x00000058 0x08000034 R_HEX_B13_PCREL     test_sym - 0x08000058
+0x0800005c 0x0000005c 0x08000034 R_HEX_B9_PCREL      test_sym - 0x0800005c
+0x08000060 0x00000060 0x08000034 R_HEX_B32_PCREL_X   test_sym - 0x08000060
+0x08000064 0x00000064 0x08000034 R_HEX_B22_PCREL_X   test_sym - 0x08000060
+0x08000068 0x00000068 0x08000034 R_HEX_32_6_X        test_sym
+0x0800006c 0x0000006c 0x08000034 R_HEX_16_X          test_sym
+0x08000070 0x00000070 0x08000034 R_HEX_B32_PCREL_X   test_sym - 0x08000070
+0x08000074 0x00000074 0x08000034 R_HEX_B22_PCREL_X   test_sym - 0x08000070
+0x08000078 0x00000078 0x08000034 R_HEX_B32_PCREL_X   test_sym - 0x08000078
+0x0800007c 0x0000007c 0x08000034 R_HEX_B15_PCREL_X   test_sym - 0x08000078
+0x08000080 0x00000080 0x08000034 R_HEX_B32_PCREL_X   test_sym - 0x08000080
+0x08000084 0x00000084 0x08000034 R_HEX_B7_PCREL_X    test_sym - 0x08000080
+0x08000088 0x00000088 0x08000034 R_HEX_PLT_B22_PCREL test_sym
+0x0800008c 0x0000008c 0x08000034 R_HEX_B32_PCREL_X   test_sym - 0x0800008c
+0x08000090 0x00000090 0x08000034 R_HEX_6_PCREL_X     test_sym - 0x0800008c
+0x08000094 0x00000094 0x08000034 R_HEX_DTPREL_32_6_X test_sym
+0x08000098 0x00000098 0x08000034 R_HEX_DTPREL_16_X   test_sym
+0x0800009c 0x0000009c 0x08000034 R_HEX_DTPREL_32_6_X test_sym
+0x080000a0 0x000000a0 0x08000034 R_HEX_DTPREL_16_X   test_sym
+0x080000a4 0x000000a4 0x08000034 R_HEX_DTPREL_32_6_X test_sym
+0x080000a8 0x000000a8 0x08000034 R_HEX_DTPREL_11_X   test_sym
+0x080000ac 0x000000ac 0x08000034 R_HEX_32            test_sym
+0x080000b0 0x000000b0 0x08000034 R_HEX_16            test_sym
+0x080000b4 0x000000b4 0x08000034 R_HEX_8             test_sym
+0x080000b8 0x000000b8 0x08000034 R_HEX_32_PCREL      test_sym - 0x080000b8
+EOF
+RUN
+
+NAME=hexagon tail calls
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+s 0x00008f04
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ sym._Mbtowc();
+|           0x00008f04      /       R17:16 = combine(R2,R3)
+|           0x00008f08      \       memd(R29+#-0x10) = R17:16 ; allocframe(#0x10)
+|           0x00008f0c      [   R4 = memw(GP+##0x18)
+|           0x00008f10      /       R19:18 = combine(R0,R1)
+|           0x00008f14      \       memd(SP+##0x0) = R19:18
+|       ,=< 0x00008f18      [   P0 = cmp.eq(R4,#0x0); if (P0.new) jump:nt 0x8f20
+|       |   0x00008f1c      [   callr R4
+|       `-> 0x00008f20      /       R1:0 = combine(R18,R19)
+|           0x00008f24      |       R3:2 = combine(R16,R17)
+|           0x00008f28      |       immext(##0xd980)
+|           0x00008f2c      \       R4 = ##obj._Mbstate
+|           0x00008f30      [   R17:16 = memd(R29+#0x8) ; R19:18 = memd(R29+#0x0)
+|           0x00008f34      /       jump sym._Mbtowcx
+\           0x00008f38      \       LR:FP = deallocframe(FP):raw
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr.
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# Check if the instruction packet is disassembled correctly,
+# Although, they are decoded in a chaotic order (not from low to high address).
+pi 1 @ 0x000053cc # instr. 1
+pi 1 @ 0x000053d4 # instr. 3
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+aoi @ 0x000053c8
+EOF
+EXPECT=<<EOF
+|   R4 = add(R4,##0x4)
+\   if (P0.new) R16 = ##0xb
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+EOF
+RUN
+
+NAME=hexagon instructions buffer edge cases. 4 instr. Rev
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+# Check if the instruction packet is disassembled correctly,
+# Although, they are decoded in a chaotic order (not from low to high address).
+pi 1 @ 0x000053d4 # instr. 3
+pi 1 @ 0x000053cc # instr. 1
+pi 5 @ 0x000053c4 # instr 0 - 3 and one before
+aoi @ 0x000053c8
+EOF
+EXPECT=<<EOF
+\   if (P0.new) R16 = ##0xb
+|   R4 = add(R4,##0x4)
+?   R2 = add(R2,##0x18) ; R3 = add(R3,#1)
+/   if (!P0.new) jump:t 0x53b4
+|   R4 = add(R4,##0x4)
+|   P0 = cmp.gtu(R5,##0x3f)
+\   if (P0.new) R16 = ##0xb
+0x53c8 (seq empty (set jump_flag false) (set jump_target (bv 32 0xffffffff)) (set s (bv 32 0x4)) (set R4_tmp (cast 32 false (cast 32 false (+ (var R4) (var s))))) (set u (bv 32 0x3f)) (set P0_tmp (cast 8 false (cast 8 (msb (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))) (ite (! (ule (cast 32 false (var R5)) (var u))) (bv 32 0xff) (bv 32 0x0))))) (set s (bv 32 0xb)) (branch (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1)))) (set R16_tmp (cast 32 false (cast 32 false (var s)))) nop) (set r (bv 32 0xffffffec)) (branch (! (! (is_zero (& (cast 32 (msb (var P0_tmp)) (var P0_tmp)) (bv 32 0x1))))) (seq (set r (& (var r) (bv 32 0xfffffffc))) (set jump_flag true) (set jump_target (+ (bv 32 0x53c8) (cast 32 false (var r))))) empty) empty (set R4 (var R4_tmp)) (set R16 (var R16_tmp)) (set P0 (var P0_tmp)) (branch (var jump_flag) (jmp (var jump_target)) (jmp (bv 32 0x53d8))))
+EOF
+RUN
+
+NAME=hexagon missig first instruction issue
+FILE=bins/elf/hexagon/hexagon_discover_recurse
+CMDS=<<EOF
+pi 3
+EOF
+EXPECT=<<EOF
+[   allocframe(SP,#0x8):raw
+[   R0 = add(FP,##-0x4)
+[   memw(R0+#0x0) = ##-0x1
+EOF
+RUN
+
+# Tests that an instruction at the border of an IOMap decodes the
+# IL op on the first try.
+NAME=hexagon first instruction at map border has to decode on first try.
+FILE=bins/elf/hexagon/hexagon_discover_recurse
+CMDS=<<EOF
+aoip
+pi 1
+EOF
+EXPECT=<<EOF
+0x8000040
+(seq
+  empty
+  (set jump_flag
+    false)
+  (set jump_target
+    (bv 32 0xffffffff))
+  (set u
+    (bv 32 0x8))
+  (set EA
+    (cast 32
+      false
+      (+
+        (var R29)
+        (bv 32 0xfffffff8))))
+  (storew 0
+    (var EA)
+    (cast 64
+      false
+      (^
+        (|
+          (<<
+            (cast 64
+              false
+              (var R31))
+            (bv 32 0x20)
+            false)
+          (cast 64
+            false
+            (var R30_tmp)))
+        (<<
+          (cast 64
+            false
+            (var C17))
+          (bv 32 0x20)
+          false))))
+  (set R30_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (var EA))))
+  (set R29_tmp
+    (cast 32
+      false
+      (cast 32
+        false
+        (cast 32
+          false
+          (-
+            (var EA)
+            (var u))))))
+  empty
+  (set R29
+    (var R29_tmp))
+  (set R30
+    (var R30_tmp))
+  (branch
+    (var jump_flag)
+    (jmp
+      (var jump_target))
+    (jmp
+      (bv 32 0x8000044))))
+[   allocframe(SP,#0x8):raw
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=hexagon asm token patterns
+FILE==
+ARGS=-a hexagon
+CMDS=<<EOF
+wx 2040006400401d67104000672a4002673c40006d0a408c9e6ed0879a14c032630040000005ff3f8c0fe0ffa602ffe0a610dae0a6e7401f92e0ea0892
+pi 16
+EOF
+EXPECT=<<EOF
+?   CSwi(R0)
+?   SGP0 = SP
+?   EVB = R0
+?   ISDBEN = R2
+?   S61:60 = R1:0
+?   R11:10 = memb_fifo(R12++M0:brev)
+?   R15:14 = memb_fifo(R7=##0x3)
+[   C21:20 = R19:18
+/   immext(##0x0)
+\   R5 = add(clb(LR),#0x3f)
+[   mxmem(LR,R0):after:retain.uh = acc:2x1
+[   mxmem(R0,LR):before:sat.uh = acc:2x1
+[   cvt.hf = acc(R0)
+/   activation.f8 = mxmem(LR,R0):above
+\   weight.b = mxmem(R8,R10)
+[   invalid
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN

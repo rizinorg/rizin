@@ -1,6 +1,7 @@
 NAME=wB
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 e cfg.bigendian=false
 wB 0x55
 pv1
@@ -38,7 +39,7 @@ RUN
 
 NAME=w[1234]
 FILE==
-ARGS=-e cfg.bigendian=false
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 0022
 w1+ 1
@@ -94,8 +95,7 @@ NAME=wu
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wr
@@ -104,16 +104,14 @@ CMDS=<<EOF
 wr 4
 pv4~0x00000000
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wA
 FILE==
 CMDS=<<EOF
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=wc
@@ -124,7 +122,6 @@ wx 010203
 wc
 wx 555555 @ 2
 wc
-wc*
 wci
 wc
 EOF
@@ -132,8 +129,6 @@ EXPECT=<<EOF
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (not written)
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (not written)
 idx=1 addr=0x00000002 size=3 030000 -> 555555 (not written)
-wx 010203 @ 0x00000000 # replaces: 000000
-wx 555555 @ 0x00000002 # replaces: 030000
 idx=0 addr=0x00000000 size=3 000000 -> 010203 (written)
 idx=1 addr=0x00000002 size=3 030000 -> 555555 (written)
 EOF
@@ -239,6 +234,36 @@ nop
 EOF
 RUN
 
+NAME=wai
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.bytes=true
+wx 488d850678563412
+p8 7
+wai "mov rax, rbx"
+pD 7
+p8 7
+wx 488d850678563412
+wai "mov rax, rbx" "mov rcx, rdx"
+pD 7
+p8 7
+EOF
+EXPECT=<<EOF
+488d8506785634
+            0x00000000      4889d8         mov   rax, rbx
+            0x00000003      90             nop
+            0x00000004      90             nop
+            0x00000005      90             nop
+            0x00000006      90             nop
+4889d890909090
+            0x00000000      4889d8         mov   rax, rbx
+            0x00000003      4889d1         mov   rcx, rdx
+            0x00000006      90             nop
+4889d84889d190
+EOF
+RUN
+
 NAME=wb
 FILE==
 CMDS=<<EOF
@@ -265,6 +290,7 @@ RUN
 NAME=wv
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
 wv1 0x55
 pv4
 wv2 0x7733
@@ -327,8 +353,7 @@ FILE==
 CMDS=<<EOF
 wv8\@10
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Command 'wv8@10' does not exist.
 ERROR: Displaying the help of command 'wv8'.

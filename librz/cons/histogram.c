@@ -8,7 +8,7 @@
 #define ZOOM_DEFAULT  1
 
 /**
- * \brief Create the string buffer with the horisontal histogram
+ * \brief Create the string buffer with the horizontal histogram
  *
  *		 █    ██      █             █                                        █
  *		 █    ██      █             █                                       ██
@@ -42,15 +42,18 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 	const char *vline = opts->unicode ? RUNE_LINE_VERT : "|";
 	const char *block = opts->unicode ? UTF_BLOCK : "#";
 	const char *kol[5];
-	kol[0] = opts->pal->call;
-	kol[1] = opts->pal->jmp;
-	kol[2] = opts->pal->cjmp;
-	kol[3] = opts->pal->mov;
-	kol[4] = opts->pal->nop;
 	if (opts->color) {
+		kol[0] = opts->pal->call;
+		kol[1] = opts->pal->jmp;
+		kol[2] = opts->pal->cjmp;
+		kol[3] = opts->pal->mov;
+		kol[4] = opts->pal->nop;
 		for (i = 0; i < rows; i++) {
 			size_t threshold = i * (0xff / rows);
 			size_t koli = i * 5 / rows;
+			if (opts->ruler) {
+				rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
+			}
 			for (j = 0; j < cols; j++) {
 				int realJ = j * width / cols;
 				if (255 - data[realJ] < threshold || (i + 1 == rows)) {
@@ -70,13 +73,20 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_horizontal(RZ_NONNULL RzHistogramOptions *o
 
 	for (i = 0; i < rows; i++) {
 		size_t threshold = i * (0xff / rows);
+		if (opts->ruler) {
+			rz_strbuf_appendf(buf, " %3zu%s", (255 - threshold), vline);
+		}
 		for (j = 0; j < cols; j++) {
 			size_t realJ = j * width / cols;
 			if (255 - data[realJ] < threshold) {
 				if (opts->thinline) {
 					rz_strbuf_append(buf, vline);
 				} else {
-					rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					if (opts->color) {
+						rz_strbuf_appendf(buf, "%s%s%s", Color_BGGRAY, block, Color_RESET);
+					} else {
+						rz_strbuf_append(buf, block);
+					}
 				}
 			} else if (i + 1 == rows) {
 				rz_strbuf_append(buf, "_");
@@ -265,7 +275,7 @@ RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist) {
 }
 
 /**
- * \brief Create the string buffer with the horisontal histogram
+ * \brief Create the string buffer with the horizontal histogram
  *
  *		 █    ██      █             █                                        █
  *		 █    ██      █             █                                       ██

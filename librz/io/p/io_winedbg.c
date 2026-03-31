@@ -181,7 +181,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			int rw = 7;
 			free(reply);
 			eprintf("Wine-dbg is ready to go!\n");
-			return rz_io_desc_new(io, &rz_io_plugin_winedbg, pathname, rw, mode, gs);
+			return rz_io_desc_new(io, &rz_io_plugin_winedbg, pathname, rw, gs);
 		}
 		eprintf("Can't find the Wine-dbg prompt\n");
 	}
@@ -297,7 +297,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			"flg	nt	.1	.201	0\n"
 			"flg	rf	.1	.202	0\n"
 			"flg	vm	.1	.203	0\n";
-		return strdup(msg);
+		return rz_str_dup(msg);
 	} else if (!strncmp(cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState();
 		io->cb_printf("f eip @ 0x%08x\n", r.eip);

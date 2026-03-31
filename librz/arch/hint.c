@@ -49,13 +49,12 @@ static void addr_hint_record_fini(void *element, void *user) {
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
 		free(record->esil);
 		break;
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+		free(record->enum_name);
+		break;
 	default:
 		break;
 	}
-}
-
-static void addr_hint_record_ht_free(HtUPKv *kv) {
-	rz_vector_free(kv->value);
 }
 
 static void bits_hint_record_free_rb(RBNode *node, void *user) {
@@ -70,7 +69,7 @@ static void arch_hint_record_free_rb(RBNode *node, void *user) {
 
 // used in analysis.c, but no API needed
 void rz_analysis_hint_storage_init(RzAnalysis *a) {
-	a->addr_hints = ht_up_new(NULL, addr_hint_record_ht_free, NULL);
+	a->addr_hints = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	a->arch_hints = NULL;
 	a->bits_hints = NULL;
 }
@@ -164,7 +163,7 @@ static RzAnalysisAddrHintRecord *ensure_addr_hint_record(RzAnalysis *analysis, R
 		ht_up_insert(analysis->addr_hints, addr, records);
 	}
 	void *pos;
-	rz_vector_foreach(records, pos) {
+	rz_vector_foreach (records, pos) {
 		RzAnalysisAddrHintRecord *record = pos;
 		if (record->type == type) {
 			return record;
@@ -202,8 +201,8 @@ static RzAnalysisRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, u
 
 RZ_API void rz_analysis_hint_set_offset(RzAnalysis *a, ut64 addr, const char *typeoff) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET,
-		 free(r->type_offset);
-		 r->type_offset = strdup(typeoff););
+		free(r->type_offset);
+		r->type_offset = rz_str_dup(typeoff););
 }
 
 RZ_API void rz_analysis_hint_set_nword(RzAnalysis *a, ut64 addr, int nword) {
@@ -234,6 +233,16 @@ RZ_API void rz_analysis_hint_set_immbase(RzAnalysis *a, ut64 addr, int base) {
 	}
 }
 
+RZ_API void rz_analysis_hint_set_enum(RzAnalysis *a, ut64 addr, const char *enum_name) {
+	if (RZ_STR_ISEMPTY(enum_name)) {
+		rz_analysis_hint_unset_enum(a, addr);
+		return;
+	}
+	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM,
+		free(r->enum_name);
+		r->enum_name = rz_str_dup(enum_name););
+}
+
 RZ_API void rz_analysis_hint_set_pointer(RzAnalysis *a, ut64 addr, ut64 ptr) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
 }
@@ -244,20 +253,20 @@ RZ_API void rz_analysis_hint_set_ret(RzAnalysis *a, ut64 addr, ut64 val) {
 
 RZ_API void rz_analysis_hint_set_syntax(RzAnalysis *a, ut64 addr, const char *syn) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX,
-		 free(r->syntax);
-		 r->syntax = strdup(syn););
+		free(r->syntax);
+		r->syntax = rz_str_dup(syn););
 }
 
 RZ_API void rz_analysis_hint_set_opcode(RzAnalysis *a, ut64 addr, const char *opcode) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE,
-		 free(r->opcode);
-		 r->opcode = strdup(opcode););
+		free(r->opcode);
+		r->opcode = rz_str_dup(opcode););
 }
 
 RZ_API void rz_analysis_hint_set_esil(RzAnalysis *a, ut64 addr, const char *esil) {
 	SET_HINT(RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL,
-		 free(r->esil);
-		 r->esil = strdup(esil););
+		free(r->esil);
+		r->esil = rz_str_dup(esil););
 }
 
 RZ_API void rz_analysis_hint_set_type(RzAnalysis *a, ut64 addr, int type) {
@@ -282,7 +291,7 @@ RZ_API void rz_analysis_hint_set_arch(RzAnalysis *a, ut64 addr, RZ_NULLABLE cons
 		return;
 	}
 	free(record->arch);
-	record->arch = arch ? strdup(arch) : NULL;
+	record->arch = rz_str_dup(arch);
 }
 
 RZ_API void rz_analysis_hint_set_bits(RzAnalysis *a, ut64 addr, int bits) {
@@ -314,6 +323,10 @@ RZ_API void rz_analysis_hint_unset_high(RzAnalysis *a, ut64 addr) {
 
 RZ_API void rz_analysis_hint_unset_immbase(RzAnalysis *a, ut64 addr) {
 	unset_addr_hint_record(a, RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE, addr);
+}
+
+RZ_API void rz_analysis_hint_unset_enum(RzAnalysis *a, ut64 addr) {
+	unset_addr_hint_record(a, RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_nword(RzAnalysis *a, ut64 addr) {
@@ -375,6 +388,7 @@ RZ_API void rz_analysis_hint_free(RzAnalysisHint *h) {
 		free(h->opcode);
 		free(h->syntax);
 		free(h->offset);
+		free(h->enum_name);
 		free(h);
 	}
 }
@@ -480,25 +494,29 @@ static void hint_merge(RzAnalysisHint *hint, RzAnalysisAddrHintRecord *record) {
 		hint->size = record->size;
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX:
-		hint->syntax = record->syntax ? strdup(record->syntax) : NULL;
+		hint->syntax = rz_str_dup(record->syntax);
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE:
 		hint->type = record->optype;
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE:
-		hint->opcode = record->opcode ? strdup(record->opcode) : NULL;
+		hint->opcode = rz_str_dup(record->opcode);
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET:
-		hint->offset = record->type_offset ? strdup(record->type_offset) : NULL;
+		hint->offset = rz_str_dup(record->type_offset);
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
-		hint->esil = record->esil ? strdup(record->esil) : NULL;
+		hint->esil = rz_str_dup(record->esil);
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH:
 		hint->high = true;
 		break;
 	case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 		hint->val = record->val;
+		break;
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+		free(hint->enum_name);
+		hint->enum_name = rz_str_dup(record->enum_name);
 		break;
 	}
 }
@@ -517,12 +535,12 @@ RZ_API RzAnalysisHint *rz_analysis_hint_get(RzAnalysis *a, ut64 addr) {
 	const RzVector *records = rz_analysis_addr_hints_at(a, addr);
 	if (records) {
 		RzAnalysisAddrHintRecord *record;
-		rz_vector_foreach(records, record) {
+		rz_vector_foreach (records, record) {
 			hint_merge(hint, record);
 		}
 	}
 	const char *arch = rz_analysis_hint_arch_at(a, addr, NULL);
-	hint->arch = arch ? strdup(arch) : NULL;
+	hint->arch = rz_str_dup(arch);
 	hint->bits = rz_analysis_hint_bits_at(a, addr, NULL);
 	if ((!records || rz_vector_empty(records)) && !hint->arch && !hint->bits) {
 		// no hints found

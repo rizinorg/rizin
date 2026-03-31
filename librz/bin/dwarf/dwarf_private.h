@@ -23,12 +23,12 @@ typedef RzBinDwarfLocation Location;
 
 RZ_IPI bool ListsHdr_parse(RzBinDwarfListsHdr *hdr, RzBinEndianReader *R);
 
-RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn, bool is_dwo);
+RZ_IPI RzBinSection *rz_bin_dwarf_section_by_name(RzBinFile *binfile, const char *sn);
 
 RZ_IPI bool RzBinDwarfAttr_parse(RzBinEndianReader *R, RzBinDwarfAttr *attr, AttrOption *opt);
 
 RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(
-	RzBinFile *binfile, const char *sect_name, bool is_dwo);
+	RzBinFile *binfile, const char *sect_name);
 
 static inline bool bf_bigendian(RzBinFile *bf) {
 	return bf->o && bf->o->info && bf->o->info->big_endian;
@@ -58,9 +58,10 @@ static inline char *str_escape_utf8_copy(const char *p) {
 		.dot_nl = true,
 		.esc_bslash = true,
 		.esc_double_quotes = true,
-		.show_asciidot = false
+		.show_asciidot = false,
+		.keep_printable = true
 	};
-	return rz_str_escape_utf8_keep_printable(p, &opt);
+	return rz_str_escape_utf8(p, &opt);
 }
 
 static inline void strbuf_append_string_own(RzStrBuf *b, char *own) {

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2011-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_iterator.h"
 #include <rz_egg.h>
 #include <rz_bin.h>
 #include <rz_main.h>
@@ -15,73 +16,71 @@ static int usage(int v) {
 	if (v) {
 		const char *options[] = {
 			// clang-format off
-			"-a",		"[arch]"        ,"Select architecture (x86, mips, arm)",
-			"-b",		"[bits]"        ,"Set Register size (32, 64, ..)",
-			"-B",		"[hexpairs]"    ,"Append some hexpair bytes",
-			"-c",		"[k=v]"         ,"Set configuration options",
-			"-C",		"[file]"        ,"Append contents of file",
-			"-d",		"[off:dword]"   ,"Patch dword (4 bytes) at given offset",
-			"-D",		"[off:qword]"   ,"Patch qword (8 bytes) at given offset",
-			"-e",		"[encoder]"     ,"Use specific encoder. see -L",
-			"-f",		"[format]"      ,"Output format (raw, c, pe, elf, mach0, python, javascript)",
+			"-a",		"arch"          ,"Select architecture (x86, mips, arm)",
+			"-b",		"bits"          ,"Set Register size (32, 64, ..)",
+			"-B",		"hexpairs"      ,"Append some hexpair bytes",
+			"-c",		"k=v"           ,"Set configuration options",
+			"-C",		"file"          ,"Append contents of file",
+			"-d",		"off:dword"     ,"Patch dword (4 bytes) at given offset",
+			"-D",		"off:qword"     ,"Patch qword (8 bytes) at given offset",
+			"-e",		"encoder"       ,"Use specific encoder. see -L",
+			"-f",		"format"        ,"Output format (raw, c, pe, elf, mach0, python, javascript)",
 			"-F",		""              ,"Output native format (osx=mach0, linux=elf, ..)",
 			"-h",		""              ,"Show this help",
-			"-i",		"[shellcode]"   ,"Include shellcode plugin, uses options. see -L",
-			"-I",		"[path]"        ,"Add include path",
-			"-k",		"[kernel]"      ,"Operating system's kernel (linux,bsd,osx,w32)",
+			"-i",		"shellcode"     ,"Include shellcode plugin, uses options. see -L",
+			"-I",		"path"          ,"Add include path",
+			"-k",		"kernel"        ,"Operating system's kernel (linux,bsd,osx,w32)",
 			"-L",		""              ,"List all plugins (shellcodes and encoders)",
-			"-n",		"[dword]"       ,"Append 32bit number (4 bytes)",
-			"-N",		"[dword]"       ,"Append 64bit number (8 bytes)",
-			"-o",		"[file]"        ,"Output file",
+			"-n",		"dword"         ,"Append 32bit number (4 bytes)",
+			"-N",		"qword"         ,"Append 64bit number (8 bytes)",
+			"-o",		"file"          ,"Output file",
 			"-O",		""              ,"Use default output file (filename without extension or a.out)",
-			"-p",		"[padding]"     ,"Add padding after compilation (padding=n10s32)",
+			"-p",		"padding"       ,"Add padding after compilation (padding=n10s32)",
 			"",			""              ,"ntas : begin nop, trap, 'a', sequence",
 			"",			""              ,"NTAS : same as above, but at the end",
-			"-P",		"[size]"        ,"Prepend debruijn sequence of given length",
-			"-q",		"[fragment]"    ,"Debruijn pattern offset",
+			"-P",		"size"          ,"Prepend debruijn sequence of given length",
+			"-q",		"fragment"      ,"Debruijn pattern offset",
 			"-r",		""              ,"Show raw bytes instead of hexpairs",
 			"-s",		""              ,"Show assembler",
-			"-S",		"[string]"      ,"Append a string",
+			"-S",		"string"        ,"Append a string",
 			"-v",		""              ,"Show version information",
-			"-w",		"[off:hex]"     ,"Patch hexpairs at given offset",
+			"-V",		""              ,"Increase the verbosity",
+			"-w",		"off:hex"       ,"Patch hexpairs at given offset",
 			"-x",		""              ,"Execute",
-			"-X",		"[hexpairs]"    ,"Execute rop chain, using the stack provided",
+			"-X",		""              ,"Execute rop chain, using the stack provided",
 			"-z",		""              ,"Output in C string syntax",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	return 1;
 }
 
 static void list(RzEgg *egg) {
-	RzListIter *iter;
-	RzEggPlugin *p;
 	printf("shellcodes:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	RzIterator *iter = ht_sp_as_iter(egg->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
+	RzListIter *it;
+	RzEggPlugin *p;
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+
 	printf("encoders:\n");
-	rz_list_foreach (egg->plugins, iter, p) {
+	rz_list_foreach (plugin_list, it, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf("%10s : %s\n", p->name, p->desc);
 		}
 	}
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 }
 
 static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
@@ -165,7 +164,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	RzEgg *egg = rz_egg_new();
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	rz_getopt_init(&opt, argc, argv, "n:N:he:a:b:f:o:sVxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -192,7 +191,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			contents = opt.arg;
 			break;
 		case 'w': {
-			char *arg = strdup(opt.arg);
+			char *arg = rz_str_dup(opt.arg);
 			char *p = strchr(arg, ':');
 			if (p) {
 				int len, off;
@@ -320,16 +319,21 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			rz_egg_free(egg);
 			free(sequence);
 			return usage(1);
-		case 'v':
+		case 'v': {
+			size_t print_val = rz_main_version_print(egg->sys_path, "rz-gg");
 			free(sequence);
 			rz_egg_free(egg);
-			return rz_main_version_print("rz-gg");
+			return print_val;
+		}
+		case 'V':
+			rz_log_set_level(RZ_LOGLVL_DEBUG);
+			break;
 		case 'z':
 			show_str = 1;
 			break;
 		case 'q':
 			get_offset = 1;
-			sequence = strdup(opt.arg);
+			sequence = rz_str_dup(opt.arg);
 			break;
 		default:
 			goto fail;
@@ -455,7 +459,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	/* set output (create output file if needed) */
 	if (ofileauto) {
 		if (file) {
-			char *o, *q, *p = strdup(file);
+			char *o, *q, *p = rz_str_dup(file);
 			if ((o = strchr(p, '.'))) {
 				while ((q = strchr(o + 1, '.'))) {
 					o = q;

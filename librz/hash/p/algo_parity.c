@@ -66,6 +66,7 @@ RzHashPlugin rz_hash_plugin_parity = {
 	.name = "parity",
 	.license = "LGPL3",
 	.author = "deroad",
+	.description = "Parity checksum",
 	.support_hmac = false,
 	.context_new = plugin_parity_context_new,
 	.context_free = plugin_parity_context_free,

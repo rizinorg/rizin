@@ -1,0 +1,34 @@
+NAME=uniq pipelining
+FILE==
+CMDS=<<EOF
+echo "a\na\nb" | uniq
+EOF
+EXPECT=<<EOF
+a
+b
+EOF
+RUN
+
+NAME=sort pipelining
+FILE==
+CMDS=<<EOF
+echo "3\n2\n1" | sort
+EOF
+EXPECT=<<EOF
+1
+2
+3
+EOF
+RUN
+
+NAME=uniq, sort pipelining
+FILE==
+CMDS=<<EOF
+echo "3\n3\n2\n2\n1" | sort | uniq
+EOF
+EXPECT=<<EOF
+1
+2
+3
+EOF
+RUN

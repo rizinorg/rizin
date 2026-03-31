@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "cs_helper.h"
 
@@ -12,15 +13,17 @@ static cs_mode m680x_mode(const char *str) {
 		return CS_MODE_M680X_6800;
 	}
 	// replace this with the asm.features?
-	if (strstr(str, "6800")) {
+	if (strstr(str, "6800") || strstr(str, "6802") || strstr(str, "6808")) {
 		return CS_MODE_M680X_6800;
 	}
-	if (strstr(str, "6801")) {
+	if (strstr(str, "6801") || strstr(str, "6803")) {
 		return CS_MODE_M680X_6801;
 	} else if (strstr(str, "6805")) {
 		return CS_MODE_M680X_6805;
-	} else if (strstr(str, "6808")) {
+	} else if (strstr(str, "68HC08")) {
 		return CS_MODE_M680X_6808;
+	} else if (strstr(str, "6808")) {
+		return CS_MODE_M680X_6800;
 	} else if (strstr(str, "6809")) {
 		return CS_MODE_M680X_6809;
 	} else if (strstr(str, "6811")) {
@@ -39,7 +42,7 @@ static cs_mode m680x_mode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
-static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m680x_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int n, ret;
@@ -79,10 +82,30 @@ static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char **m680x_cpu_descriptions() {
+	static char *cpu_desc[] = {
+		"6800", "Motorola 6800: 8-bit microprocessor launched in 1974",
+		"6801", "Motorola 6801: Enhanced version of the 6800 with additional features like on-chip RAM and timers.",
+		"6802", "Motorola 6802: Enhanced version of the 6800 with 128 bytes of on-chip RAM and internal clock",
+		"6803", "Motorola 6803: Version of 6801 without internal ROM",
+		"6805", "Motorola 68HC05: 8-bit microcontroller",
+		"6808", "Motorola 6808: Variant of the 6800 microprocessor",
+		"68HC08", "Motorola 68HC08: 8-bit microcontroller (abbreviated as HC08)",
+		"6809", "Motorola 6809: Advanced 8-bit microprocessor",
+		"6811", "Motorola 68HC11: 8-bit microcontroller (also abbreviated as 6811 or HC11)",
+		"cpu12", "Motorola 68HC12: 16-bit microcontroller (also abbreviated as 6812 or HC12)",
+		"6301", "Hitachi 6301: 8-bit microcontroller, CMOS version of 6800",
+		"6309", "Hitachi 6309: CMOS version of 6809",
+		"hcs08", "Freescale HCS08: 8-bit microcontroller family",
+		NULL
+	};
+	return cpu_desc;
+}
+
 RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.name = "m680x",
-	.cpus = "6800,6801,6805,6808,6809,6811,cpu12,6301,6309,hcs08",
-	.desc = "Capstone M680X Disassembler",
+	.cpus = "6800,6801,6802,6803,6805,6808,68HC08,6809,6811,cpu12,6301,6309,hcs08",
+	.desc = "Motorola 680X Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "m680x",
 	.bits = 8 | 32,
@@ -91,6 +114,7 @@ RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.fini = m680x_asm_fini,
 	.disassemble = &m680x_disassemble,
 	.mnemonics = m680x_asm_mnemonics,
+	.get_cpu_desc = m680x_cpu_descriptions,
 };
 
 #ifndef RZ_PLUGIN_INCORE

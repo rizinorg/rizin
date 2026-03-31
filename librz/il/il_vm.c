@@ -13,18 +13,14 @@
 extern RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX];
 extern RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT_MAX];
 
-static void free_label_kv(HtPPKv *kv) {
-	free(kv->key);
-	rz_il_effect_label_free(kv->value);
-}
-
 /**
  * initiate an empty VM
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
+ * \param halt_exc The exceptions the VM should halt for if encountered.
  */
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian) {
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
 	rz_return_val_if_fail(vm, false);
 
 	if (!rz_il_var_set_init(&vm->global_vars)) {
@@ -41,18 +37,7 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	}
 	rz_pvector_init(&vm->vm_memory, (RzPVectorFree)rz_il_mem_free);
 
-	// Key : string
-	// Val : RzILEffectLabel
-	// Do not dump it since its single signed here, and will be free in `close`
-	HtPPOptions lbl_options = { 0 };
-	lbl_options.cmp = (HtPPListComparator)strcmp;
-	lbl_options.hashfn = (HtPPHashFunction)sdb_hash;
-	lbl_options.dupkey = (HtPPDupKey)strdup;
-	lbl_options.dupvalue = NULL;
-	lbl_options.freefn = (HtPPKvFreeFunc)free_label_kv;
-	lbl_options.elem_size = sizeof(HtPPKv);
-	lbl_options.calcsizeK = (HtPPCalcSizeK)strlen;
-	vm->vm_global_label_table = ht_pp_new_opt(&lbl_options);
+	vm->vm_global_label_table = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_il_effect_label_free);
 	if (!vm->vm_global_label_table) {
 		RZ_LOG_ERROR("RzIL: cannot allocate VM label hashmap\n");
 		rz_il_vm_fini(vm);
@@ -76,6 +61,8 @@ RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_
 	vm->val_count = 0;
 	vm->addr_size = addr_size;
 	vm->big_endian = big_endian;
+	vm->halt_exceptions = halt_exc;
+	vm->halt = false;
 
 	vm->events = rz_pvector_new((RzPVectorFree)rz_il_event_free);
 	if (!vm->events) {
@@ -97,7 +84,7 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
 
 	rz_pvector_fini(&vm->vm_memory);
 
-	ht_pp_free(vm->vm_global_label_table);
+	ht_sp_free(vm->vm_global_label_table);
 	vm->vm_global_label_table = NULL;
 
 	free(vm->op_handler_pure_table);
@@ -117,13 +104,14 @@ RZ_API void rz_il_vm_fini(RzILVM *vm) {
  * \param vm RzILVM, pointer to an empty VM
  * \param start_addr ut64, initiation pc address
  * \param addr_size  ut32, size of the address in VM
+ * \param halt_exc The exceptions the VM should halt for if encountered.
  */
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian) {
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc) {
 	RzILVM *vm = RZ_NEW0(RzILVM);
 	if (!vm) {
 		return NULL;
 	}
-	rz_il_vm_init(vm, start_addr, addr_size, big_endian);
+	rz_il_vm_init(vm, start_addr, addr_size, big_endian, halt_exc);
 	return vm;
 }
 
@@ -152,7 +140,7 @@ RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm) {
  */
 RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem) {
 	if (index < rz_pvector_len(&vm->vm_memory)) {
-		rz_mem_free(rz_pvector_at(&vm->vm_memory, index));
+		rz_il_mem_free(rz_pvector_at(&vm->vm_memory, index));
 	}
 	rz_pvector_reserve(&vm->vm_memory, index + 1);
 	// Fill up with NULLs until the given index
@@ -275,7 +263,7 @@ RZ_API RZ_BORROW RzILVal *rz_il_vm_get_var_value(RZ_NONNULL RzILVM *vm, RzILVarK
 RZ_API RZ_BORROW RzBitVector *rz_il_hash_find_addr_by_lblname(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name) {
 	rz_return_val_if_fail(vm && lbl_name, NULL);
 	bool found = false;
-	RzILEffectLabel *label = ht_pp_find(vm->vm_global_label_table, lbl_name, &found);
+	RzILEffectLabel *label = ht_sp_find(vm->vm_global_label_table, lbl_name, &found);
 	if (!found) {
 		return NULL;
 	}
@@ -290,12 +278,12 @@ RZ_API RZ_BORROW RzBitVector *rz_il_hash_find_addr_by_lblname(RZ_NONNULL RzILVM 
  */
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_find_label_by_name(RZ_NONNULL RzILVM *vm, RZ_NONNULL const char *lbl_name) {
 	rz_return_val_if_fail(vm && lbl_name, NULL);
-	return ht_pp_find(vm->vm_global_label_table, lbl_name, NULL);
+	return ht_sp_find(vm->vm_global_label_table, lbl_name, NULL);
 }
 
 RZ_API void rz_il_vm_add_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL RzILEffectLabel *label) {
 	rz_return_if_fail(vm && label);
-	ht_pp_update(vm->vm_global_label_table, label->label_id, label);
+	ht_sp_update(vm->vm_global_label_table, label->label_id, label);
 }
 
 /**
@@ -335,7 +323,7 @@ RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_create_label_lazy(RZ_NONNULL RzILVM *
  */
 RZ_API RZ_BORROW RzILEffectLabel *rz_il_vm_update_label(RZ_NONNULL RzILVM *vm, RZ_NONNULL char *name, RZ_NONNULL RZ_BORROW RzBitVector *addr) {
 	rz_return_val_if_fail(vm && name && addr, NULL);
-	RzILEffectLabel *lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
+	RzILEffectLabel *lbl = ht_sp_find(vm->vm_global_label_table, name, NULL);
 	if (lbl->addr) {
 		rz_bv_free(lbl->addr);
 	}

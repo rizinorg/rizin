@@ -2,21 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-#ifdef CAPSTONE_M68K_H
-#define CAPSTONE_HAS_M68K 1
-#else
-#define CAPSTONE_HAS_M68K 0
-#ifdef _MSC_VER
-#pragma message("Cannot find capstone-m68k support")
-#else
-#warning Cannot find capstone-m68k support
-#endif
-#endif
-
-#if CAPSTONE_HAS_M68K
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
@@ -24,7 +13,7 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
 // Size of the longest instruction in bytes
 #define M68K_LONGEST_INSTRUCTION 10
 
-static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		return -1;
 	}
@@ -32,7 +21,7 @@ static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = 0;
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr(a->cpu, "68000")) {
@@ -115,9 +104,22 @@ beach:
 	return ret;
 }
 
+static char **m68k_cpu_descriptions() {
+	static char *cpu_desc[] = {
+		"68000", "Motorola 68000: 16/32-bit CISC microprocessor",
+		"68010", "Motorola 68010: 16/32-bit microprocessors. Successor to Motoroloa 68000",
+		"68020", "Motorola 68020: 32-bit microprocessor with added instructions and additional addressing modes",
+		"68030", "Motorola 68030: Enhanced 32-bit microprocessor with integrated MMU",
+		"68040", "Motorola 68040: High-performance 32-bit microprocessor with integrated FPU",
+		"68060", "Motorola 68060: 32-bit microprocessor, highest performer in m68k series",
+		NULL
+	};
+	return cpu_desc;
+}
+
 RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.name = "m68k",
-	.desc = "Capstone M68K disassembler",
+	.desc = "Motorola 68K Capstone-based disassembler",
 	.cpus = "68000,68010,68020,68030,68040,68060",
 	.license = "BSD",
 	.arch = "m68k",
@@ -127,6 +129,7 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.fini = m68k_asm_fini,
 	.disassemble = &m68k_disassemble,
 	.mnemonics = &m68k_asm_mnemonics,
+	.get_cpu_desc = m68k_cpu_descriptions,
 };
 
 #ifndef RZ_PLUGIN_INCORE
@@ -135,25 +138,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_asm_plugin_m68k_cs,
 	.version = RZ_VERSION
 };
-#endif
-
-#else
-RzAsmPlugin rz_asm_plugin_m68k_cs = {
-	.name = "m68k.cs (unsupported)",
-	.desc = "Capstone M68K disassembler (unsupported)",
-	.license = "BSD",
-	.author = "pancake",
-	.arch = "m68k",
-	.bits = 32,
-	.endian = RZ_SYS_ENDIAN_BIG,
-};
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ASM,
-	.data = &rz_asm_plugin_m68k_cs,
-	.version = RZ_VERSION
-};
-#endif
-
 #endif

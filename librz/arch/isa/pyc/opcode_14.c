@@ -9,7 +9,7 @@ pyc_opcodes *opcode_14(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_14;
+	ret->version_sig = (opcode_func)opcode_14;
 
 	// 1.4 Bytecodes not in 1.5
 	def_op(.op_obj = ret->opcodes, .op_name = "UNARY_CALL", .op_code = 14);

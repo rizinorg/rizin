@@ -1,0 +1,10 @@
+NAME=MZ: chkdsk.exe - open
+FILE=bins/mz/chkdsk.exe
+ARGS=-A
+CMDS=ir
+EXPECT=<<EOF
+     vaddr      paddr type   name 
+----------------------------------
+0x0000a309 0x0000a329 SET_16 
+EOF
+RUN

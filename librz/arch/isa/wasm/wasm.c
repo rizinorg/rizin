@@ -328,6 +328,7 @@ static WasmOpDef opcodes_simd[256] = {
 	[WASM_OP_I8X16NEG] = { "i8x16.neg", 2, 6 },
 	[WASM_OP_I8X16ANYTRUE] = { "i8x16.any_true", 2, 6 },
 	[WASM_OP_I8X16ALLTRUE] = { "i8x16.all_true", 2, 6 },
+	[WASM_OP_I8X16BITMASK] = { "i8x16.bitmask", 2, 6 },
 	[WASM_OP_I8X16SHL] = { "i8x16.shl", 2, 6 },
 	[WASM_OP_I8X16SHRS] = { "i8x16.shr_s", 2, 6 },
 	[WASM_OP_I8X16SHRU] = { "i8x16.shr_u", 2, 6 },
@@ -429,6 +430,7 @@ static WasmOpDef opcodes_simd[256] = {
 	[WASM_OP_I16X8AVGRU] = { "i16x8.avgr_u", 2, 6 },
 	[WASM_OP_I8X16ABS] = { "i8x16.abs", 2, 6 },
 	[WASM_OP_I16X8ABS] = { "i16x8.abs", 2, 6 },
+	[WASM_OP_I32X4ABS] = { "i32x4.abs", 2, 6 },
 };
 
 #ifndef WASM_NO_ASM
@@ -466,9 +468,9 @@ RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 		}
 	}
 	// Abort
-	if (len == 0)
+	if (len == 0) {
 		goto err;
-	// TODO: parse immediates
+	}
 	return len;
 err:
 	return -1;
@@ -973,6 +975,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I8X16NEG:
 		case WASM_OP_I8X16ANYTRUE:
 		case WASM_OP_I8X16ALLTRUE:
+		case WASM_OP_I8X16BITMASK:
 		case WASM_OP_I8X16SHL:
 		case WASM_OP_I8X16SHRS:
 		case WASM_OP_I8X16SHRU:
@@ -1142,4 +1145,21 @@ err:
 	rz_strbuf_set(sb, "invalid");
 	op->txt = rz_strbuf_drain(sb);
 	return op->len;
+}
+
+RZ_IPI bool wasm_init(void **user) {
+	WasmContext *ctx = RZ_NEW0(WasmContext);
+	if (!ctx) {
+		return false;
+	}
+	ctx->scope_hint = UT64_MAX;
+	ctx->addr_old = UT64_MAX;
+	*user = ctx;
+	return true;
+}
+
+RZ_IPI bool wasm_fini(void *user) {
+	WasmContext *ctx = user;
+	free(ctx);
+	return true;
 }

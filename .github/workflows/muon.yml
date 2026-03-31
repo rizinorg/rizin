@@ -38,9 +38,9 @@ concurrency:
 jobs:
   build:
     name: ubuntu-muon
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install dependencies
       run: |
           sudo apt-get --assume-yes update
@@ -55,7 +55,7 @@ jobs:
       working-directory: muon
       run: |
           ./bootstrap.sh build
-          build/muon setup build
+          build/muon-bootstrap setup build
           ninja -C build
           sudo cp build/muon /usr/bin/muon
 
@@ -65,7 +65,7 @@ jobs:
       run: ninja -C build && sudo muon -C build install
 
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins

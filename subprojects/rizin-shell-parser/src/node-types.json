@@ -168,10 +168,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -184,67 +180,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -433,10 +369,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -453,67 +385,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -743,10 +615,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -759,67 +627,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -977,10 +785,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -993,67 +797,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -1185,10 +929,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -1201,67 +941,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -1393,10 +1073,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1409,67 +1085,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -1604,10 +1220,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1620,67 +1232,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -1811,10 +1363,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -1827,67 +1375,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -2018,10 +1506,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2034,67 +1518,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -2225,10 +1649,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2241,67 +1661,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -2432,10 +1792,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2448,67 +1804,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -2643,10 +1939,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2659,67 +1951,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -2854,10 +2086,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -2870,67 +2098,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -3065,10 +2233,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3081,67 +2245,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -3272,10 +2376,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3288,67 +2388,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -3479,10 +2519,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3495,67 +2531,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -3686,10 +2662,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3702,67 +2674,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -3893,10 +2805,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -3909,67 +2817,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -4100,10 +2948,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4116,67 +2960,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -4307,10 +3091,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4323,67 +3103,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -4518,10 +3238,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4534,67 +3250,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -4729,10 +3385,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4745,67 +3397,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -4936,10 +3528,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -4952,67 +3540,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -5143,10 +3671,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5159,67 +3683,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -5350,10 +3814,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5366,67 +3826,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -5561,10 +3961,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5577,67 +3973,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -5768,10 +4104,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5784,67 +4116,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -5975,10 +4247,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -5991,67 +4259,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -6182,10 +4390,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -6198,76 +4402,11 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
     }
-  },
-  {
-    "type": "legacy_quoted_stmt",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "macro_body",
@@ -6394,10 +4533,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -6414,67 +4549,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -6696,10 +4771,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -6712,67 +4783,7 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
@@ -6913,10 +4924,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -6929,67 +4936,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -7153,10 +5100,6 @@
             "named": true
           },
           {
-            "type": "legacy_quoted_stmt",
-            "named": true
-          },
-          {
             "type": "macro_stmt",
             "named": true
           },
@@ -7169,67 +5112,7 @@
             "named": true
           },
           {
-            "type": "tmp_arch_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_bits_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_blksz_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_eval_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fd_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_file_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fromto_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_fs_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_hex_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_kuery_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_nthi_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reg_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_reli_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_seek_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_string_stmt",
-            "named": true
-          },
-          {
-            "type": "tmp_value_stmt",
+            "type": "tmp_stmt",
             "named": true
           }
         ]
@@ -7259,6 +5142,7 @@
   {
     "type": "statements",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -7381,10 +5265,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -7401,3038 +5281,230 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "tmp_stmt",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_arch_stmt",
+    "type": "tmp_arch_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_bits_stmt",
+    "type": "tmp_bits_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_blksz_stmt",
+    "type": "tmp_blksz_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_eval_stmt",
+    "type": "tmp_eval_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_fd_stmt",
+    "type": "tmp_fd_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_file_stmt",
+    "type": "tmp_file_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_fromto_stmt",
+    "type": "tmp_fromto_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_fs_stmt",
+    "type": "tmp_fs_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_hex_stmt",
+    "type": "tmp_hex_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_kuery_stmt",
+    "type": "tmp_kuery_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_nthi_stmt",
+    "type": "tmp_nthi_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_reg_stmt",
+    "type": "tmp_reg_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_reli_stmt",
+    "type": "tmp_reli_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_seek_stmt",
+    "type": "tmp_seek_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
-        {
-          "type": "arged_stmt",
-          "named": true
-        },
         {
           "type": "args",
           "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
-          "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_string_stmt",
+    "type": "tmp_stmt",
     "named": true,
     "fields": {},
     "children": {
       "multiple": true,
       "required": true,
       "types": [
-        {
-          "type": "arg",
-          "named": true
-        },
         {
           "type": "arged_stmt",
           "named": true
@@ -10550,10 +5622,6 @@
           "named": true
         },
         {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
           "type": "macro_stmt",
           "named": true
         },
@@ -10566,278 +5634,101 @@
           "named": true
         },
         {
-          "type": "tmp_arch_stmt",
+          "type": "tmp_arch_op",
           "named": true
         },
         {
-          "type": "tmp_bits_stmt",
+          "type": "tmp_bits_op",
           "named": true
         },
         {
-          "type": "tmp_blksz_stmt",
+          "type": "tmp_blksz_op",
           "named": true
         },
         {
-          "type": "tmp_eval_stmt",
+          "type": "tmp_eval_op",
           "named": true
         },
         {
-          "type": "tmp_fd_stmt",
+          "type": "tmp_fd_op",
           "named": true
         },
         {
-          "type": "tmp_file_stmt",
+          "type": "tmp_file_op",
           "named": true
         },
         {
-          "type": "tmp_fromto_stmt",
+          "type": "tmp_fromto_op",
           "named": true
         },
         {
-          "type": "tmp_fs_stmt",
+          "type": "tmp_fs_op",
           "named": true
         },
         {
-          "type": "tmp_hex_stmt",
+          "type": "tmp_hex_op",
           "named": true
         },
         {
-          "type": "tmp_kuery_stmt",
+          "type": "tmp_kuery_op",
           "named": true
         },
         {
-          "type": "tmp_nthi_stmt",
+          "type": "tmp_nthi_op",
           "named": true
         },
         {
-          "type": "tmp_reg_stmt",
+          "type": "tmp_reg_op",
           "named": true
         },
         {
-          "type": "tmp_reli_stmt",
+          "type": "tmp_reli_op",
           "named": true
         },
         {
-          "type": "tmp_seek_stmt",
+          "type": "tmp_seek_op",
           "named": true
         },
         {
-          "type": "tmp_string_stmt",
+          "type": "tmp_stmt",
           "named": true
         },
         {
-          "type": "tmp_value_stmt",
+          "type": "tmp_string_op",
+          "named": true
+        },
+        {
+          "type": "tmp_value_op",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "tmp_value_stmt",
+    "type": "tmp_string_op",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "arg",
           "named": true
-        },
+        }
+      ]
+    }
+  },
+  {
+    "type": "tmp_value_op",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
         {
-          "type": "arged_stmt",
-          "named": true
-        },
-        {
-          "type": "grep_stmt",
-          "named": true
-        },
-        {
-          "type": "help_stmt",
-          "named": true
-        },
-        {
-          "type": "html_disable_stmt",
-          "named": true
-        },
-        {
-          "type": "html_enable_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_bbs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_comment_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbgmap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbta_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbtb_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_dbts_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_file_lines_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_flags_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_function_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_hit_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_import_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_instrs_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_interpret_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_iomap_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsets_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_offsetssizes_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_register_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_sections_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_segments_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_step_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_string_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_symbol_stmt",
-          "named": true
-        },
-        {
-          "type": "iter_threads_stmt",
-          "named": true
-        },
-        {
-          "type": "legacy_quoted_stmt",
-          "named": true
-        },
-        {
-          "type": "macro_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_stmt",
-          "named": true
-        },
-        {
-          "type": "repeat_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_arch_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_bits_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_blksz_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_eval_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fd_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_file_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fromto_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_fs_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_hex_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_kuery_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_nthi_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reg_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_reli_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_seek_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_string_stmt",
-          "named": true
-        },
-        {
-          "type": "tmp_value_stmt",
+          "type": "arg",
           "named": true
         }
       ]
@@ -11077,6 +5968,10 @@
   },
   {
     "type": "`",
+    "named": false
+  },
+  {
+    "type": "env",
     "named": false
   },
   {

@@ -1,0 +1,49 @@
+NAME=Search file error - no file
+FILE=bins/elf/analysis/x86-jmpeax
+CMDS=<<EOF
+aaa
+pdf @ 0x08048380
+pdf @ 0x08048310
+echo --No calls--
+/g 0x08048380 0x0804839c
+echo --Follow calls--
+/gg 0x08048380 0x08048339
+EOF
+EXPECT=<<EOF
+/ entry.fini0();
+|           0x08048380      cmp   byte [section..bss], 0x00            ; [0x8049648:1]=0
+|       ,=< 0x08048387      jnz   0x804839c
+|       |   0x08048389      push  ebp
+|       |   0x0804838a      mov   ebp, esp
+|       |   0x0804838c      sub   esp, 0x08
+|       |   0x0804838f      call  fcn.08048310
+|       |   0x08048394      mov   byte [section..bss], 0x01            ; [0x8049648:1]=0
+|       |   0x0804839b      leave
+\       `-> 0x0804839c      ret
+            ; CALL XREF from entry.fini0 @ 0x804838f
+/ fcn.08048310();
+|           0x08048310      mov   eax, data.0804964b                   ; 0x804964b
+|           0x08048315      sub   eax, section..bss                    ; 0x8049648
+|           0x0804831a      cmp   eax, 0x06                            ; 6
+|       ,=< 0x0804831d      jbe   0x8048339
+|       |   0x0804831f      mov   eax, 0x00
+|       |   0x08048324      test  eax, eax
+|      ,==< 0x08048326      jz    0x8048339
+|      ||   0x08048328      push  ebp
+|      ||   0x08048329      mov   ebp, esp
+|      ||   0x0804832b      sub   esp, 0x14
+|      ||   0x0804832e      push  section..bss                         ; 0x8049648
+|      ||   0x08048333      call  eax
+|      ||   0x08048335      add   esp, 0x10
+|      ||   0x08048338      leave
+\      ``-> 0x08048339      ret
+--No calls--
+pdb @@= 0x08048380 0x0804839c 
+pdb @@= 0x08048380 0x08048389 0x0804839c 
+--Follow calls--
+pdb @@= 0x08048380 0x08048389 0x08048310 0x08048339 
+pdb @@= 0x08048380 0x08048389 0x08048310 0x0804831f 0x08048339 
+pdb @@= 0x08048380 0x08048389 0x08048310 0x0804831f 0x08048328 0x08048339 
+EOF
+RUN
+

@@ -26,7 +26,11 @@ char *PE_(bin_pe_compute_authentihash)(RzBinPEObj *bin) {
 		return NULL;
 	}
 
-	char *hashtype = strdup(bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string);
+	const char *algorithm = bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string;
+
+	// algorithm is now: "<name> (<oid>)""
+	const char *space = rz_str_trim_head_wp(algorithm);
+	char *hashtype = rz_str_ndup(algorithm, space - algorithm);
 	rz_str_replace_char(hashtype, '-', 0);
 
 	RzHashCfg *md = rz_hash_cfg_new_with_algo2(bin->hash, hashtype);
@@ -109,7 +113,7 @@ int PE_(bin_pe_init_security)(RzBinPEObj *bin) {
 		}
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
-			RZ_LOG_INFO("Invalid certificate entry");
+			RZ_LOG_INFO("Invalid certificate entry\n");
 			RZ_FREE(cert);
 			return false;
 		}

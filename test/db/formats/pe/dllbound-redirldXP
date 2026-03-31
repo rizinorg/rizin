@@ -1,8 +1,7 @@
 NAME=PE: corkami dllbound-redirldXP.exe - open
 FILE=bins/pe/dllbound-redirldXP.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dllbound-redirldXP.exe - entrypoint

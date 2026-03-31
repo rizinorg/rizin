@@ -15,8 +15,7 @@ CMDS=<<EOF
 %= 33
 %! echo win
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=condition 0%%
@@ -25,8 +24,7 @@ CMDS=<<EOF
 %= 0
 %% echo win
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=condition 0%!
@@ -51,8 +49,7 @@ RUN
 NAME=oneline condition 33%!
 FILE==
 CMDS=%= 33;%! echo win
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=oneline condition 0%!
@@ -66,6 +63,5 @@ RUN
 NAME=oneline condition 0%%
 FILE==
 CMDS=%= 0;%% echo win
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

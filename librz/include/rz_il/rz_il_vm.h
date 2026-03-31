@@ -9,6 +9,7 @@
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_il/rz_il_events.h>
 #include <rz_il/rz_il_reg.h>
+#include <rz_util/ht_sp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,19 +42,21 @@ struct rz_il_vm_t {
 	RzPVector /*<RzILMem *>*/ vm_memory; ///< Memories available in the VM, by their index. May be sparse (contain NULLs).
 	ut32 val_count, lab_count; ///< count for VM predefined things
 	ut32 addr_size; ///< size of address space
-	HtPP *vm_global_label_table; ///< Hashtable to maintain the label and address
-	HtPP *vm_local_label_table; ///< Hashtable to maintain the label and address
+	HtSP *vm_global_label_table; ///< Hashtable to maintain the label and address
+	HtSP *vm_local_label_table; ///< Hashtable to maintain the label and address
 	RzBitVector *pc; ///< Program Counter of VM
 	RzILOpPureHandler *op_handler_pure_table; ///< Array of Handler, handler can be indexed by opcode
 	RzILOpEffectHandler *op_handler_effect_table; ///< Array of Handler, handler can be indexed by opcode
 	RzPVector /*<RzILEvent *>*/ *events; ///< List of events that has happened in the last step
 	bool big_endian; ///< Sets the endianness of the memory reads/writes operations
+	RzILEventException halt_exceptions; ///< The exceptions the VM should halt if encountered.
+	bool halt; ///< If set the VM should halt and notify the user.
 };
 
 // VM high level operations
-RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API RzILVM *rz_il_vm_new(ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc);
 RZ_API void rz_il_vm_free(RzILVM *vm);
-RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian);
+RZ_API bool rz_il_vm_init(RzILVM *vm, ut64 start_addr, ut32 addr_size, bool big_endian, RzILEventException halt_exc);
 RZ_API void rz_il_vm_fini(RzILVM *vm);
 
 RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm);

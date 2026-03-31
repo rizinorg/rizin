@@ -110,7 +110,7 @@ RZ_API RZ_OWN char *rz_bin_demangle(RZ_NULLABLE RzBin *bin, RZ_NULLABLE const ch
 		break;
 	}
 
-	if (!bin) {
+	if (!bin || RZ_STR_ISEMPTY(language)) {
 		return NULL;
 	}
 

@@ -7,16 +7,10 @@
 
 #include "ht_inc.c"
 
-RZ_API HtName_(Ht) * Ht_(new0)(void) {
-	HT_(Options)
-	opt = {
-		.cmp = NULL,
-		.hashfn = NULL,
-		.dupkey = NULL,
-		.dupvalue = NULL,
-		.calcsizeK = NULL,
-		.calcsizeV = NULL,
-		.freefn = NULL
-	};
+/**
+ * \brief Create a new hash table that has ut64 as key and ut64 as value.
+ */
+RZ_API RZ_OWN HtName_(Ht) *Ht_(new)(void) {
+	HT_(Options) opt = { 0 };
 	return Ht_(new_opt)(&opt);
 }

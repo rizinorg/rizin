@@ -214,8 +214,9 @@ RZ_API void rz_reg_arena_swap(RzReg *reg, int copy) {
 		if (rz_list_length(reg->regset[i].pool) > 1) {
 			RzListIter *ia = reg->regset[i].cur;
 			RzListIter *ib = reg->regset[i].pool->head;
+			rz_break_if_fail(ia && ib);
 			rz_list_iter_swap_data(ia, ib);
-			reg->regset[i].arena = rz_list_iter_get_data(ia);
+			reg->regset[i].arena = rz_list_val(ia);
 		} else {
 			break;
 		}
@@ -234,7 +235,7 @@ RZ_API void rz_reg_arena_pop(RzReg *reg) {
 		}
 		a = rz_list_pop(reg->regset[i].pool);
 		rz_reg_arena_free(a);
-		a = rz_list_last(reg->regset[i].pool);
+		a = rz_list_last_val(reg->regset[i].pool);
 		if (a) {
 			reg->regset[i].arena = a;
 			reg->regset[i].cur = rz_list_tail(reg->regset[i].pool);

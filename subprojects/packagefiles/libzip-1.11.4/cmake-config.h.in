@@ -1,0 +1,69 @@
+#ifndef HAD_CONFIG_H
+#define HAD_CONFIG_H
+#ifndef _HAD_ZIPCONF_H
+#include "zipconf.h"
+#endif
+/* BEGIN DEFINES */
+// clang-format off
+#mesondefine ENABLE_FDOPEN
+#mesondefine HAVE___PROGNAME
+#mesondefine HAVE__CLOSE
+#mesondefine HAVE__DUP
+#mesondefine HAVE__FDOPEN
+#mesondefine HAVE__FILENO
+#mesondefine HAVE__SETMODE
+#mesondefine HAVE__SNPRINTF
+#mesondefine HAVE__SNWPRINTF_S
+#mesondefine HAVE__STRDUP
+#mesondefine HAVE__STRICMP
+#mesondefine HAVE__STRTOI64
+#mesondefine HAVE__STRTOUI64
+#mesondefine HAVE__UMASK
+#mesondefine HAVE__UNLINK
+#mesondefine HAVE_ARC4RANDOM
+#mesondefine HAVE_CLONEFILE
+#mesondefine HAVE_COMMONCRYPTO
+#mesondefine HAVE_CRYPTO
+#mesondefine HAVE_FICLONERANGE
+#mesondefine HAVE_FILENO
+#mesondefine HAVE_FSEEKO
+#mesondefine HAVE_FTELLO
+#mesondefine HAVE_GETPROGNAME
+#mesondefine HAVE_GNUTLS
+#mesondefine HAVE_LIBBZ2
+#mesondefine HAVE_LIBLZMA
+#mesondefine HAVE_LOCALTIME_R
+#mesondefine HAVE_MBEDTLS
+#mesondefine HAVE_MEMCPY_S
+#mesondefine HAVE_MKSTEMP
+#mesondefine HAVE_NULLABLE
+#mesondefine HAVE_OPENSSL
+#mesondefine HAVE_SETMODE
+#mesondefine HAVE_SNPRINTF
+#mesondefine HAVE_STRCASECMP
+#mesondefine HAVE_STRDUP
+#mesondefine HAVE_STRERROR_S
+#mesondefine HAVE_STRICMP
+#mesondefine HAVE_STRNCPY
+#mesondefine HAVE_STRNCPY_S
+#mesondefine HAVE_STRTOLL
+#mesondefine HAVE_STRTOULL
+#mesondefine HAVE_STRUCT_TM_TM_ZONE
+#mesondefine HAVE_STDBOOL_H
+#mesondefine HAVE_STRINGS_H
+#mesondefine HAVE_UNISTD_H
+#mesondefine HAVE_WINDOWS_CRYPTO
+#mesondefine SIZEOF_OFF_T
+#mesondefine SIZEOF_SIZE_T
+#mesondefine HAVE_DIRENT_H
+#mesondefine HAVE_FTS_H
+#mesondefine HAVE_NDIR_H
+#mesondefine HAVE_SYS_DIR_H
+#mesondefine HAVE_SYS_NDIR_H
+#mesondefine WORDS_BIGENDIAN
+#mesondefine HAVE_SHARED
+/* END DEFINES */
+#define PACKAGE "@CMAKE_PROJECT_NAME@"
+#define VERSION "@CMAKE_PROJECT_VERSION@"
+// clang-format on
+# endif /* HAD_CONFIG_H */

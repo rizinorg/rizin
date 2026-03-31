@@ -139,7 +139,7 @@ static RZ_OWN RzBitVector *get_exp(RZ_NONNULL RzBitVector *bv, RzFloatFormat for
 		RZ_LOG_ERROR("rz_float : failed to create bitvector");
 		return NULL;
 	}
-	rz_bv_copy_nbits(bv, man_len, res, 0, exp_len);
+	rz_bv_copy_nbits(res, 0, bv, man_len, exp_len);
 
 	return res;
 }
@@ -160,7 +160,7 @@ static RZ_OWN RzBitVector *get_man(RZ_NONNULL RzBitVector *bv, RzFloatFormat for
 		RZ_LOG_ERROR("rz_float : failed to create bitvector");
 		return NULL;
 	}
-	rz_bv_copy_nbits(bv, 0, res, 0, man_len);
+	rz_bv_copy_nbits(res, 0, bv, 0, man_len);
 
 	return res;
 }
@@ -181,7 +181,7 @@ static RZ_OWN RzBitVector *get_man_stretched(RZ_NONNULL RzBitVector *bv, RzFloat
 		RZ_LOG_ERROR("rz_float : failed to create bitvector");
 		return NULL;
 	}
-	rz_bv_copy_nbits(bv, 0, res, 0, man_len);
+	rz_bv_copy_nbits(res, 0, bv, 0, man_len);
 
 	return res;
 }
@@ -202,7 +202,7 @@ static RZ_OWN RzBitVector *get_exp_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
 		RZ_LOG_ERROR("rz_float : failed to create bitvector");
 		return NULL;
 	}
-	rz_bv_copy_nbits(bv, man_len, res, 0, exp_len);
+	rz_bv_copy_nbits(res, 0, bv, man_len, exp_len);
 
 	return res;
 }
@@ -222,7 +222,7 @@ static RZ_OWN RzBitVector *get_man_squashed(RZ_NONNULL RzBitVector *bv, RzFloatF
 		RZ_LOG_ERROR("rz_float : failed to create bitvector");
 		return NULL;
 	}
-	rz_bv_copy_nbits(bv, 0, res, 0, man_len);
+	rz_bv_copy_nbits(res, 0, bv, 0, man_len);
 	return res;
 }
 
@@ -247,26 +247,6 @@ static bool rz_make_fabs(RzFloat *f) {
 }
 
 /**
- * get the half value of a float (by decreasing exponent value)
- * \param f float
- * \return half value of a float
- */
-static RzFloat *rz_half_float(RzFloat *f) {
-	ut32 total = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_TOTAL_LEN);
-	ut32 exp_start = rz_float_get_format_info(f->r, RZ_FLOAT_INFO_MAN_LEN);
-
-	// for exp sub 1
-	RzBitVector *sub = rz_bv_new(total);
-	rz_bv_set(sub, exp_start, true);
-	RzFloat *half = rz_float_new(f->r);
-	rz_bv_free(half->s);
-	half->s = rz_bv_sub(f->s, sub, NULL);
-
-	rz_bv_free(sub);
-	return half;
-}
-
-/**
  * Pack sign, exponent, and significant together to float bv
  * \param sign sign of float
  * \param exp exponent part, can be squashed or normal
@@ -281,7 +261,7 @@ static RZ_OWN RzBitVector *pack_float_bv(bool sign, RZ_BORROW RZ_NONNULL const R
 	RzBitVector *ret = rz_bv_new(total);
 
 	// copy exp to ret
-	rz_bv_copy_nbits(exp, 0, ret, man_len, exp_len);
+	rz_bv_copy_nbits(ret, man_len, exp, 0, exp_len);
 
 	if (format == RZ_FLOAT_IEEE754_BIN_80) {
 		/* 80-bit floats have a special bit at position 63 (man_len) which is
@@ -289,9 +269,9 @@ static RZ_OWN RzBitVector *pack_float_bv(bool sign, RZ_BORROW RZ_NONNULL const R
 		 * branching here. See https://en.wikipedia.org/wiki/Extended_precision
 		 * for more. */
 		rz_bv_set(ret, man_len - 1, true);
-		rz_bv_copy_nbits(sig, 1, ret, 0, man_len - 1);
+		rz_bv_copy_nbits(ret, 0, sig, 1, man_len - 1);
 	} else {
-		rz_bv_copy_nbits(sig, 0, ret, 0, man_len);
+		rz_bv_copy_nbits(ret, 0, sig, 0, man_len);
 	}
 
 	rz_bv_set(ret, total - 1, sign);
@@ -329,7 +309,7 @@ static RzBitVector *round_significant(bool sign, RzBitVector *sig, ut32 precisio
 		// 1. copy bv from sig to ret
 		// 2. align `ret` to `1 MM..M 000` form by shifting left
 		ret = rz_bv_new(ret_len);
-		rz_bv_copy_nbits(sig, 0, ret, ret_len - sig_len, sig_len);
+		rz_bv_copy_nbits(ret, ret_len - sig_len, sig, 0, sig_len);
 	} else {
 		// if it's greater than `ret`, right shift and cut
 		// use jammed version of right shift to get sticky bit

@@ -1,0 +1,70 @@
+NAME=Proper loading check
+FILE=/home/build/bin/rz-asm
+ARGS=-d
+CMDS=<<EOF
+is~main~[3-]
+EOF
+EXPECT=<<EOF
+LOCAL FUNC 14 main
+GLOBAL FUNC 16 imp.rz_main_rz_asm
+EOF
+RUN
+
+NAME=breakpoint, continue and PC check
+FILE=/home/build/bin/rz-asm
+ARGS=-d
+CMDS=<<EOF
+db @ main
+dc
+pd 3~[1-]
+EOF
+EXPECT=<<EOF
+main:
+rip:
+b endbr64
+push rbp
+mov rbp rsp
+EOF
+RUN
+
+NAME=step and step over check
+FILE=/home/build/bin/rz-asm
+ARGS=-d
+CMDS=<<EOF
+e dbg.follow=1
+db @ main + 20
+dc
+pd 2~[1-]
+ds
+pd 1~[1-]
+dso
+pd 1~[1-]
+EOF
+REGEXP_FILTER_OUT=\b(?!0x[0-9a-fA-F]+\b)\w+\b
+EXPECT=<<EOF
+rip
+b
+sub
+rsp
+call
+rip
+call
+rip
+add
+rsp
+EOF
+RUN
+
+NAME=write gpr
+FILE=/home/build/bin/rz-asm
+ARGS=-d
+CMDS=<<EOF
+db @ main
+dc
+dr rip=1
+dr rip
+EOF
+EXPECT=<<EOF
+rip = 0x0000000000000001
+EOF
+RUN

@@ -380,3 +380,182 @@ EXPECT=<<EOF
 HELLO FROM RZIL
 EOF
 RUN
+
+NAME=Illegal Opcodes
+FILE=malloc://0x10000
+ARGS=-a 6502
+CMDS=<<EOF
+# SHA zp,y
+wx ff @ 0xc201
+wx ffc0 @ 0xf0
+wx 93f0
+aezi
+ar a=0xff
+ar x=0xff
+ar y=0x02
+aezs
+p8 1 @ 0xc101
+# Reset and SHA abs,y
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx ff @ 0xc201
+wx 9fffc0
+aezi
+ar a=0xff
+ar x=0xff
+ar y=0x02
+aezs
+p8 1 @ 0xc101
+# Reset and ANC
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx 0b7f
+aezi
+ar a=0xff
+aezs
+ar~a
+# Reset and SHX abs,y
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx 9e3412
+aezi
+ar x=0xff
+ar y=0x10
+aezs
+p8 1 @ 0x1244
+# Reset and SHY abs,x
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx 9c3412
+aezi
+ar y=0xff
+ar x=0x10
+aezs
+p8 1 @ 0x1244
+# Reset and TAS abs,y
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx 9b3412
+aezi
+ar x=0xff
+ar y=0x10
+ar a=0x11
+aezs
+p8 1 @ 0x1244
+# Reset and ANE
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx 8b0f
+aezi
+ar a=0x12
+ar x=0xff
+aezs
+ar
+# Reset and LAX imm
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx ab0f
+aezi
+ar a=0x12
+aezs
+ar
+# Reset and JAM
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx f2
+aezi
+aezs
+ar
+# Reset and SBC imm
+wx eb20
+aezi
+ar a=0x50
+ar flags=0x01
+aezs
+ar
+# Reset and LAX imm with config
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx ab0f
+aezi
+ar a=0x12
+e plugins.6502.magic=255
+aezs
+ar
+EOF
+EXPECT=<<EOF
+c2
+c2
+a = 0x7f
+flags = 0x00
+13
+13
+11
+a = 0x0e
+x = 0xff
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0x0002
+a = 0x0e
+x = 0x0e
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0x0002
+a = 0x00
+x = 0x00
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0x0001
+a = 0x30
+x = 0x00
+y = 0x00
+flags = 0x01
+sp = 0x00
+pc = 0x0001
+a = 0x0f
+x = 0x0f
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0x0002
+EOF
+RUN

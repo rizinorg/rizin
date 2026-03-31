@@ -7,6 +7,7 @@
 #define RZ_IL_VARIABLE_H
 
 #include <rz_util/rz_bitvector.h>
+#include <rz_util/ht_sp.h>
 #include <rz_il/definitions/value.h>
 
 #ifdef __cplusplus
@@ -29,8 +30,8 @@ RZ_API void rz_il_variable_free(RZ_NULLABLE RzILVar *var);
  * This is meant only as a low-level container to be used in RzILVM.
  */
 typedef struct rz_il_var_set_t {
-	HtPP /*<char *, RzILVar *>*/ *vars;
-	HtPP /*<char *, RzILVal *>*/ *contents;
+	HtSP /*<char *, RzILVar *>*/ *vars;
+	HtSP /*<char *, RzILVal *>*/ *contents;
 } RzILVarSet;
 
 RZ_API bool rz_il_var_set_init(RzILVarSet *vs);
@@ -49,7 +50,7 @@ typedef enum {
 	RZ_IL_VAR_KIND_LOCAL_PURE ///< local pure var, bound only by let expressions, scope is limited to the let's pure body, thus it's immutable.
 } RzILVarKind;
 
-const char *rz_il_var_kind_name(RzILVarKind kind);
+RZ_API const char *rz_il_var_kind_name(RzILVarKind kind);
 
 #ifdef __cplusplus
 }

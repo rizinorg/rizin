@@ -1,8 +1,62 @@
 NAME=SMS: Open/iI
 FILE=bins/sms/demo.sms
-CMDS=iI~?SEGA
+CMDS=iH;iI
 EXPECT=<<EOF
-1
+sms_rom:
+  offset: 0x7ff0
+  reserved0: 255
+  reserved1: 255
+  checksum: 0x0
+  product_code: "000000"
+  version: 0
+  console: ""
+  region: "Unknown"
+  size_kb: 256
+  sdsc:
+    offset: 0x7fe0
+    version: "01.00\n"
+    date: "2001-07-30\n"
+    author: ""
+    name: "64-Color Palette Test Program"
+    description: "Author: Charles MacDonald"
+
+arch     z80
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00008000
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  SEGA MasterSystem/GameGear
+maxopsz  1
+minopsz  1
+os       sms
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 
@@ -13,3 +67,59 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x00000000 * 0x00007fff r-x 
 EOF
 RUN
+
+NAME=SMS: maps
+FILE=bins/sms/colorcheck.sms
+CMDS=iH;iI
+EXPECT=<<EOF
+sms_rom:
+  offset: 0x7ff0
+  reserved0: 0
+  reserved1: 0
+  checksum: 0x5e2a
+  product_code: "000000"
+  version: 0
+  console: ""
+  region: "Unknown"
+  size_kb: 256
+
+arch     z80
+cpu      N/A
+features N/A
+baddr    ----------
+binsz    0x00008000
+bintype  N/A
+bits     8
+retguard false
+class    N/A
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  SEGA MasterSystem/GameGear
+maxopsz  1
+minopsz  1
+os       sms
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+EOF
+RUN
+

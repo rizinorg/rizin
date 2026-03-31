@@ -1,0 +1,15 @@
+NAME=Read and Write in registers
+FILE=bins/elf/ppc64le/dbg_basic_test
+ARGS=-a ppc -d
+CMDS=<<EOF
+db @ sym.main+92
+dc
+dr r10
+dr r10=0x34
+dr r10
+EOF
+EXPECT=<<EOF
+r10 = 0x00000000000000c8
+r10 = 0x0000000000000034
+EOF
+RUN

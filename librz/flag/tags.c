@@ -6,23 +6,23 @@
 RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words) {
 	rz_return_if_fail(f && name && words);
 	char tmpbuf[256];
-	sdb_set(f->tags, rz_strf(tmpbuf, "tag.%s", name), words, -1);
+	sdb_set(f->tags, rz_strf(tmpbuf, "tag.%s", name), words);
 }
 
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f) {
 	rz_return_val_if_fail(f, NULL);
 	RzList *res = rz_list_newf(free);
-	SdbList *o = sdb_foreach_list(f->tags, false);
-	SdbListIter *iter;
-	SdbKv *kv;
-	ls_foreach (o, iter, kv) {
+	RzPVector *items = sdb_get_items(f->tags, false);
+	void **iter;
+	rz_pvector_foreach (items, iter) {
+		SdbKv *kv = *iter;
 		const char *tag = sdbkv_key(kv);
 		if (strlen(tag) < 5) {
 			continue;
 		}
-		rz_list_append(res, (void *)strdup(tag + 4));
+		rz_list_append(res, (void *)rz_str_dup(tag + 4));
 	}
-	ls_free(o);
+	rz_pvector_free(items);
 	return res;
 }
 
@@ -54,7 +54,7 @@ RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RzFlag *f, const char *name) 
 	rz_return_val_if_fail(f && name, NULL);
 	char tmpbuf[256];
 	RzList *res = rz_list_newf(NULL);
-	char *words = sdb_get(f->tags, rz_strf(tmpbuf, "tag.%s", name), NULL);
+	char *words = sdb_get(f->tags, rz_strf(tmpbuf, "tag.%s", name));
 	if (words) {
 		RzList *list = rz_str_split_list(words, " ", 0);
 		struct iter_glob_flag_t u = { .res = res, .words = list };

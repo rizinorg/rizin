@@ -1,15 +1,14 @@
 // SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include <v850/v850_disas.h>
 
-static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int v850_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	V850_Inst inst = { 0 };
 	inst.addr = a->pc;
 	if (len < 2) {
@@ -27,7 +26,7 @@ static int v850_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_v850 = {
 	.name = "v850",
 	.license = "LGPL3",
-	.desc = "v850 disassembly plugin",
+	.desc = "NEC/Renesas V850 disassembler",
 	.arch = "v850",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

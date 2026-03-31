@@ -1,0 +1,89 @@
+NAME=empty.img
+FILE=bins/bootimg/empty.img
+CMDS=<<EOF
+iI
+echo ---
+iH
+echo ---
+ik
+echo ---
+iS
+EOF
+EXPECT=<<EOF
+arch     arm
+cpu      N/A
+features N/A
+baddr    0x40200000
+binsz    0x00001800
+bintype  bootimg
+bits     32
+retguard false
+class    Android Boot Image (v0)
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  arm
+maxopsz  4
+minopsz  4
+os       android
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   unknown
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+bootimg:
+  magic: "41 4e 44 52 4f 49 44 21                         |ANDROID!        |"
+  kernel_size: 128
+  kernel_addr: 0x40200000
+  ramdisk_size: 0
+  ramdisk_addr: 0x41200000
+  second_size: 0
+  second_addr: 0x41100000
+  tags_addr: 0x40200100
+  page_size: 2048
+  unused: 0x0
+  os_version: 0x0
+  name: "d1-nezha"
+  cmdline: ""
+  id:
+    - 0xbd563c5
+    - 0x697b3fe8
+    - 0x262502ad
+    - 0xa2d21d53
+    - 0x813eafa8
+    - 0x0
+    - 0x0
+    - 0x0
+  extra_cmdline: ""
+
+---
+cmdline=(empty)
+extra_cmdline=(empty)
+header_version=0
+id=0xbd563c5,0x697b3fe8,0x262502ad,0xa2d21d53,0x813eafa8,0,0,0
+name=d1-nezha
+---
+     paddr  size      vaddr vsize align perm name   type flags 
+---------------------------------------------------------------
+0x00000000 0x660 0x00000000 0x800   0x0 -r-- header      
+0x00000800  0x80 0x40200000 0x100   0x0 -r-- kernel      
+EOF
+RUN
+

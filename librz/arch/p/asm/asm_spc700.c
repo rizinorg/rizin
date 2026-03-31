@@ -5,10 +5,11 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <spc700/spc700dis.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
 	size_t dlen = spc700_disas(&rz_op->buf_asm, a->pc, buf, len);
 	rz_op->size = dlen;
 	return (int)dlen;
@@ -16,7 +17,7 @@ static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_spc700 = {
 	.name = "spc700",
-	.desc = "spc700, snes' sound-chip",
+	.desc = "Sony SPC700 (Nintendo SuperNES sound-chip) disassembler",
 	.arch = "spc700",
 	.license = "LGPL3",
 	.bits = 16,

@@ -1,498 +1,714 @@
 rizin:
-  - binrz/rizin/*
-  - librz/main/rizin.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rizin/*
+    - librz/main/rizin.c
 
 rz-bin:
-  - binrz/rz-bin/*
-  - librz/main/rz-bin.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-bin/*
+    - librz/main/rz-bin.c
 
 rz-diff:
-  - binrz/rz-diff/*
-  - librz/main/rz-diff.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-diff/*
+    - librz/main/rz-diff.c
 
 rz-find:
-  - binrz/rz-find/*
-  - librz/main/rz-find.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-find/*
+    - librz/main/rz-find.c
 
 rz-gg:
-  - binrz/rz-gg/*
-  - librz/main/rz-gg.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-gg/*
+    - librz/main/rz-gg.c
 
 rz-hash:
-  - binrz/rz-hash/*
-  - librz/main/rz-hash.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-hash/*
+    - librz/main/rz-hash.c
 
 rz-run:
-  - binrz/rz-run/*
-  - librz/main/rz-run.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-run/*
+    - librz/main/rz-run.c
 
 rz-asm:
-  - binrz/rz-asm/*
-  - librz/main/rz-asm.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-asm/*
+    - librz/main/rz-asm.c
 
 rz-ax:
-  - binrz/rz-ax/*
-  - librz/main/rz-ax.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-ax/*
+    - librz/main/rz-ax.c
 
 rz-sign:
-  - binrz/rz-sign/*
-  - librz/main/rz-sign.c
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-sign/*
+    - librz/main/rz-sign.c
 
 RzAnalysis:
-  - librz/arch/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/**/*
 
 RzAsm-Assembler:
-  - librz/arch/**/*ass*
-  - librz/arch/p/asm/asm_x86_nz.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/**/*ass*
+    - librz/arch/p/asm/asm_x86_nz.c
 
 RzAsm-Disassembler:
-  - librz/arch/**/*dis*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/**/*dis*
 
 RzBin:
-  - librz/bin/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/**/*
 
 RzBreakpoint:
-  - librz/bp/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bp/**/*
 
 RzConfig:
-  - librz/config/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/config/**/*
 
 RzCons:
-  - librz/cons/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/cons/**/*
 
 RzCore:
-  - librz/core/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/core/**/*
 
 RzCrypto:
-  - librz/crypto/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/crypto/**/*
 
 RzDebug:
-  - librz/debug/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/debug/**/*
 
 RzEgg:
-  - librz/egg/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/egg/**/*
 
 RzFlag:
-  - librz/flag/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/flag/**/*
 
 RzHash:
-  - librz/hash/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/hash/**/*
 
 RzIO:
-  - librz/io/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/io/**/*
 
 RzLang:
-  - librz/lang/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/lang/**/*
 
 RzMagic:
-  - librz/magic/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/magic/**/*
 
 RzParse:
-  - librz/arch/p/parse/**/*
-  - librz/arch/p_gnu/parse/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/parse/**/*
+    - librz/arch/p_gnu/parse/**/*
 
 RzDiff:
-  - librz/diff/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/diff/**/*
 
 RzReg:
-  - librz/reg/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/reg/**/*
 
 RzSearch:
-  - librz/search/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/search/**/*
 
 RzSocket:
-  - librz/socket/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/socket/**/*
 
 RzSyscall:
-  - librz/syscall/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/syscall/**/*
 
 RzType:
-  - librz/type/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/type/**/*
 
 RzUtil:
-  - librz/util/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/util/**/*
 
 API:
-  - librz/include/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/include/**/*
 
 buildsystem:
-  - sys/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - sys/**/*
 
 command:
-  - librz/core/cmd*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/core/cmd*
 
 documentation:
-  - doc/**/*
-  - binrz/man/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - doc/**/*
+    - binrz/man/**/*
 
 RZIL:
-  - librz/arch/il/*
-  - librz/arch/isa/**/*_il*
-  - librz/il/**/*
-  - librz/include/rz_il/**/*
-  - librz/include/rz_il.h
-  - librz/core/cil.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/il/*
+    - librz/arch/isa/**/*_il*
+    - librz/il/**/*
+    - librz/include/rz_il/**/*
+    - librz/include/rz_il.h
+    - librz/core/cil.c
 
 FLIRT:
-  - librz/signature/*
-  - librz/include/rz_sign.h
-  - librz/core/csign.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/signature/*
+    - librz/include/rz_sign.h
+    - librz/core/csign.c
 
 infrastructure:
-  - .appveyor.yml
-  - .travis.yml
-  - .lgtm.yml
-  - .builds/**/*
-  - .github/workflows/*
+- changed-files:
+  - any-glob-to-any-file:
+    - .appveyor.yml
+    - .travis.yml
+    - .lgtm.yml
+    - .builds/**/*
+    - .github/workflows/*
 
 rz-test:
-  - binrz/rz-test/*
-  - test/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - binrz/rz-test/*
+    - test/**/*
 
 visual:
-  - librz/core/tui/*
-  - librz/core/visual.c
-  - librz/core/visual_tabs.inc
-  - librz/core/vmenus.c
-  - librz/core/vmenus_graph.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/core/tui/*
+    - librz/core/visual.c
+    - librz/core/visual_tabs.inc
+    - librz/core/vmenus.c
+    - librz/core/vmenus_graph.c
 
 panel:
-  - librz/core/tui/*
-  - librz/core/panels.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/core/tui/*
+    - librz/core/panels.c
 
 dietline:
-  - librz/cons/dietline.c
-  - librz/cons/line.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/cons/dietline.c
+    - librz/cons/line.c
 
 ELF:
-  - librz/bin/format/elf/**/*
-  - librz/bin/p/bin_elf*
-  - librz/bin/p/bin_cgc.*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/format/elf/**/*
+    - librz/bin/p/bin_elf*
+    - librz/bin/p/bin_cgc.*
 
 PE:
-  - librz/bin/format/pe/**/*
-  - librz/bin/format/mdmp/**/*
-  - librz/bin/p/bin_pe*
-  - librz/bin/p/bin_mdmp.*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/format/pe/**/*
+    - librz/bin/format/mdmp/**/*
+    - librz/bin/p/bin_pe*
+    - librz/bin/p/bin_mdmp.*
 
 Mach-O:
-  - librz/bin/format/mach0/**/*
-  - librz/bin/p/bin_mach0*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/format/mach0/**/*
+    - librz/bin/p/bin_mach0*
 
 DEX:
-  - librz/bin/format/dex/**/*
-  - librz/bin/p/bin_dex.*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/format/dex/**/*
+    - librz/bin/p/bin_dex.*
 
 java:
-  - librz/bin/format/java/**/*
-  - librz/bin/p/bin_java.*
-  - librz/core/p/core_java.*
-  - librz/arch/is*/java/**/*
-  - librz/arch/p/asm/_*java*_
-  - librz/arch/p/analysis/_*java*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/format/java/**/*
+    - librz/bin/p/bin_java.*
+    - librz/core/p/core_java.*
+    - librz/arch/is*/java/**/*
+    - librz/arch/p/asm/_*java*_
+    - librz/arch/p/analysis/_*java*_
 
 X86:
-  - librz/arch/is*/x86/**/*
-  - librz/arch/p/asm/*_x86_*
-  - librz/arch/p/analysis/*_x86_*
-  - librz/bp/p/bp_x86.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/x86/**/*
+    - librz/arch/p/asm/*_x86_*
+    - librz/arch/p/analysis/*_x86_*
+    - librz/bp/p/bp_x86.c
 
 ARM:
-  - librz/arch/is*/arm/**/*
-  - librz/arch/p/asm/*_arm_*
-  - librz/arch/p/analysis/*_arm_*
-  - librz/debug/p/native/arm.c
-  - librz/bp/p/bp_arm.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/arm/**/*
+    - librz/arch/p/asm/*_arm_*
+    - librz/arch/p/analysis/*_arm_*
+    - librz/debug/p/native/arm.c
+    - librz/bp/p/bp_arm.c
 
 MSP430:
-  - librz/arch/isa/msp430/**/*
-  - librz/arch/p/asm/*_msp430_*
-  - librz/arch/p/analysis/*_msp430_*
-  - librz/arch/p/arch_msp430.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/isa/msp430/**/*
+    - librz/arch/p/asm/*_msp430_*
+    - librz/arch/p/analysis/*_msp430_*
+    - librz/arch/p/arch_msp430.c
 
 MIPS:
-  - librz/arch/isa/mips/**/*
-  - librz/arch/isa_gnu/mips/**/*
-  - librz/arch/p/asm/*_mips_*
-  - librz/arch/p/analysis/*_mips_*
-  - librz/bp/p/bp_mips.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/isa/mips/**/*
+    - librz/arch/isa_gnu/mips/**/*
+    - librz/arch/p/asm/*_mips_*
+    - librz/arch/p/analysis/*_mips_*
+    - librz/bp/p/bp_mips.c
 
 Hexagon:
-  - librz/arch/isa/hexagon/**/*
-  - librz/arch/p/asm/*_hexagon_*
-  - librz/arch/p/analysis/*_hexagon_*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/isa/hexagon/**/*
+    - librz/arch/p/asm/*_hexagon_*
+    - librz/arch/p/analysis/*_hexagon_*
 
 PPC:
-  - librz/arch/is*/ppc/**/*
-  - librz/arch/p/asm/*_ppc_*
-  - librz/arch/p/analysis/*_ppc_*
-  - librz/bp/p/bp_ppc.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/ppc/**/*
+    - librz/arch/p/asm/*_ppc_*
+    - librz/arch/p/analysis/*_ppc_*
+    - librz/bp/p/bp_ppc.c
 
 6502:
-  - librz/arch/is*/6502/**/*
-  - librz/arch/p/asm/_*6502*_
-  - librz/arch/p/analysis/_*6502*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/6502/**/*
+    - librz/arch/p/asm/_*6502*_
+    - librz/arch/p/analysis/_*6502*_
 
 8051:
-  - librz/arch/is*/8051/**/*
-  - librz/arch/p/asm/_*8051*_
-  - librz/arch/p/analysis/_*8051*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/8051/**/*
+    - librz/arch/p/asm/_*8051*_
+    - librz/arch/p/analysis/_*8051*_
 
 Am29k:
-  - librz/arch/is*/amd29k/**/*
-  - librz/arch/p/asm/_*amd29k*_
-  - librz/arch/p/analysis/_*amd29k*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/amd29k/**/*
+    - librz/arch/p/asm/_*amd29k*_
+    - librz/arch/p/analysis/_*amd29k*_
 
 AVR:
-  - librz/arch/is*/avr/**/*
-  - librz/arch/p/asm/_*avr*_
-  - librz/arch/p/analysis/_*avr*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/avr/**/*
+    - librz/arch/p/asm/_*avr*_
+    - librz/arch/p/analysis/_*avr*_
 
 CIL:
-  - librz/arch/is*/cil/**/*
-  - librz/arch/p/asm/_*cil*_
-  - librz/arch/p/analysis/_*cil*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/cil/**/*
+    - librz/arch/p/asm/_*cil*_
+    - librz/arch/p/analysis/_*cil*_
 
 CR16:
-  - librz/arch/is*/cr16/**/*
-  - librz/arch/p/asm/_*cr16*_
-  - librz/arch/p/analysis/_*cr16*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/cr16/**/*
+    - librz/arch/p/asm/_*cr16*_
+    - librz/arch/p/analysis/_*cr16*_
 
 Dalvik:
-  - librz/arch/is*/dalvik/**/*
-  - librz/arch/p/asm/_*dalvik*_
-  - librz/arch/p/analysis/_*dalvik*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/dalvik/**/*
+    - librz/arch/p/asm/_*dalvik*_
+    - librz/arch/p/analysis/_*dalvik*_
 
 DCPU16:
-  - librz/arch/is*/dcpu16/**/*
-  - librz/arch/p/asm/_*dcpu16*_
-  - librz/arch/p/analysis/_*dcpu16*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/dcpu16/**/*
+    - librz/arch/p/asm/_*dcpu16*_
+    - librz/arch/p/analysis/_*dcpu16*_
 
 EBC:
-  - librz/arch/is*/ebc/**/*
-  - librz/arch/p/asm/_*ebc*_
-  - librz/arch/p/analysis/_*ebc*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/ebc/**/*
+    - librz/arch/p/asm/_*ebc*_
+    - librz/arch/p/analysis/_*ebc*_
 
 Gameboy:
-  - librz/arch/is*/gb/**/*
-  - librz/arch/p/asm/_*gb*_
-  - librz/arch/p/analysis/_*gb*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/gb/**/*
+    - librz/arch/p/asm/_*gb*_
+    - librz/arch/p/analysis/_*gb*_
 
 H8300:
-  - librz/arch/is*/h8300/**/*
-  - librz/arch/p/asm/_*h8300*_
-  - librz/arch/p/analysis/_*h8300*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/h8300/**/*
+    - librz/arch/p/asm/_*h8300*_
+    - librz/arch/p/analysis/_*h8300*_
 
 i4004:
-  - librz/arch/is*/i4004/**/*
-  - librz/arch/p/asm/_*i4004*_
-  - librz/arch/p/analysis/_*i4004*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/i4004/**/*
+    - librz/arch/p/asm/_*i4004*_
+    - librz/arch/p/analysis/_*i4004*_
 
 i8080:
-  - librz/arch/is*/i8080/**/*
-  - librz/arch/p/asm/_*i8080*_
-  - librz/arch/p/analysis/_*i8080*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/i8080/**/*
+    - librz/arch/p/asm/_*i8080*_
+    - librz/arch/p/analysis/_*i8080*_
 
 LH5801:
-  - librz/arch/is*/lh5801/**/*
-  - librz/arch/p/asm/_*lh5801*_
-  - librz/arch/p/analysis/_*lh5801*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/lh5801/**/*
+    - librz/arch/p/asm/_*lh5801*_
+    - librz/arch/p/analysis/_*lh5801*_
 
 LM32:
-  - librz/arch/is*/lm32/**/*
-  - librz/arch/p/asm/_*lm32*_
-  - librz/arch/p/analysis/_*lm32*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/lm32/**/*
+    - librz/arch/p/asm/_*lm32*_
+    - librz/arch/p/analysis/_*lm32*_
 
 LUA:
-  - librz/arch/is*/luac/**/*
-  - librz/arch/p/asm/_*luac*_
-  - librz/arch/p/analysis/_*luac*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/luac/**/*
+    - librz/arch/p/asm/_*luac*_
+    - librz/arch/p/analysis/_*luac*_
 
 MCORE:
-  - librz/arch/is*/mcore/**/*
-  - librz/arch/p/asm/_*mcore*_
-  - librz/arch/p/analysis/_*mcore*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/mcore/**/*
+    - librz/arch/p/asm/_*mcore*_
+    - librz/arch/p/analysis/_*mcore*_
 
 MCS96:
-  - librz/arch/is*/mcs96/**/*
-  - librz/arch/p/asm/_*mcs96*_
-  - librz/arch/p/analysis/_*mcs96*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/mcs96/**/*
+    - librz/arch/p/asm/_*mcs96*_
+    - librz/arch/p/analysis/_*mcs96*_
 
 OR1K:
-  - librz/arch/is*/or1k/**/*
-  - librz/arch/p/asm/_*or1k*_
-  - librz/arch/p/analysis/_*or1k*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/or1k/**/*
+    - librz/arch/p/asm/_*or1k*_
+    - librz/arch/p/analysis/_*or1k*_
 
 PIC:
-  - librz/arch/is*/pic/**/*
-  - librz/arch/p/asm/_*pic*_
-  - librz/arch/p/analysis/_*pic*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/pic/**/*
+    - librz/arch/p/asm/_*pic*_
+    - librz/arch/p/analysis/_*pic*_
 
 Propeller:
-  - librz/arch/is*/propeller/**/*
-  - librz/arch/p/asm/_*propeller*_
-  - librz/arch/p/analysis/_*propeller*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/propeller/**/*
+    - librz/arch/p/asm/_*propeller*_
+    - librz/arch/p/analysis/_*propeller*_
 
 PYC:
-  - librz/arch/is*/pyc/**/*
-  - librz/arch/p/asm/_*pyc*_
-  - librz/arch/p/analysis/_*pyc*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/pyc/**/*
+    - librz/arch/p/asm/_*pyc*_
+    - librz/arch/p/analysis/_*pyc*_
 
 RL78:
-  - librz/arch/is*/rl78/**/*
-  - librz/arch/p/asm/_*rl78*_
-  - librz/arch/p/analysis/_*rl78*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/rl78/**/*
+    - librz/arch/p/asm/_*rl78*_
+    - librz/arch/p/analysis/_*rl78*_
 
 RSP:
-  - librz/arch/is*/rsp/**/*
-  - librz/arch/p/asm/_*rsp*_
-  - librz/arch/p/analysis/_*rsp*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/rsp/**/*
+    - librz/arch/p/asm/_*rsp*_
+    - librz/arch/p/analysis/_*rsp*_
 
 RX:
-  - librz/arch/is*/rx/**/*
-  - librz/arch/p/asm/_*rx*_
-  - librz/arch/p/analysis/_*rx*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/rx/**/*
+    - librz/arch/p/asm/_*rx*_
+    - librz/arch/p/analysis/_*rx*_
 
 SH:
-  - librz/arch/is*/sh/**/*
-  - librz/arch/p/asm/_*sh*_
-  - librz/arch/p/analysis/_*sh*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/sh/**/*
+    - librz/arch/p/asm/_*sh*_
+    - librz/arch/p/analysis/_*sh*_
 
 SNES:
-  - librz/arch/is*/snes/**/*
-  - librz/arch/p/asm/_*snes*_
-  - librz/arch/p/analysis/_*snes*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/snes/**/*
+    - librz/arch/p/asm/_*snes*_
+    - librz/arch/p/analysis/_*snes*_
 
 SPC700:
-  - librz/arch/is*/spc700/**/*
-  - librz/arch/p/asm/_*spc700*_
-  - librz/arch/p/analysis/_*spc700*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/spc700/**/*
+    - librz/arch/p/asm/_*spc700*_
+    - librz/arch/p/analysis/_*spc700*_
 
 TMS320:
-  - librz/arch/is*/tms320/**/*
-  - librz/arch/p/asm/_*tms320*_
-  - librz/arch/p/analysis/_*tms320*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/tms320/**/*
+    - librz/arch/p/asm/_*tms320*_
+    - librz/arch/p/analysis/_*tms320*_
 
 TriCore:
-  - librz/arch/is*/tricore/**/*
-  - librz/arch/p/asm/_*tricore*_
-  - librz/arch/p/analysis/_*tricore*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/tricore/**/*
+    - librz/arch/p/asm/_*tricore*_
+    - librz/arch/p/analysis/_*tricore*_
 
 V810:
-  - librz/arch/is*/v810/**/*
-  - librz/arch/p/asm/_*v810*_
-  - librz/arch/p/analysis/_*v810*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/v810/**/*
+    - librz/arch/p/asm/_*v810*_
+    - librz/arch/p/analysis/_*v810*_
 
 V850:
-  - librz/arch/is*/v850/**/*
-  - librz/arch/p/asm/_*v850*_
-  - librz/arch/p/analysis/_*v850*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/v850/**/*
+    - librz/arch/p/asm/_*v850*_
+    - librz/arch/p/analysis/_*v850*_
 
 WASM:
-  - librz/arch/is*/wasm/**/*
-  - librz/arch/p/asm/_*wasm*_
-  - librz/arch/p/analysis/_*wasm*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/wasm/**/*
+    - librz/arch/p/asm/_*wasm*_
+    - librz/arch/p/analysis/_*wasm*_
 
 XAP:
-  - librz/arch/is*/xap/**/*
-  - librz/arch/p/asm/_*xap*_
-  - librz/arch/p/analysis/_*xap*_
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/is*/xap/**/*
+    - librz/arch/p/asm/_*xap*_
+    - librz/arch/p/analysis/_*xap*_
 
 ARC:
-  - librz/arch/p/asm/_*arc*_
-  - librz/arch/p/analysis/_*arc*_
-  - librz/arch/is*/arc/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*arc*_
+    - librz/arch/p/analysis/_*arc*_
+    - librz/arch/is*/arc/**/*
 
 CRIS:
-  - librz/arch/p/asm/_*cris*_
-  - librz/arch/p/analysis/_*cris*_
-  - librz/arch/is*/cris/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*cris*_
+    - librz/arch/p/analysis/_*cris*_
+    - librz/arch/is*/cris/**/*
 
 HPPA:
-  - librz/arch/p/asm/_*hppa*_
-  - librz/arch/p/analysis/_*hppa*_
-  - librz/arch/is*/hppa/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*hppa*_
+    - librz/arch/p/analysis/_*hppa*_
+    - librz/arch/is*/hppa/**/*
 
 LANAI:
-  - librz/arch/p/asm/_*lanai*_
-  - librz/arch/p/analysis/_*lanai*_
-  - librz/arch/is*/lanai/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*lanai*_
+    - librz/arch/p/analysis/_*lanai*_
+    - librz/arch/is*/lanai/**/*
 
 NIOS:
-  - librz/arch/p/asm/_*nios*_
-  - librz/arch/p/analysis/_*nios*_
-  - librz/arch/is*/nios/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*nios*_
+    - librz/arch/p/analysis/_*nios*_
+    - librz/arch/is*/nios/**/*
 
 RISC-V:
-  - librz/arch/p/asm/_*riscv*_
-  - librz/arch/p/analysis/_*riscv*_
-  - librz/arch/is*/riscv/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*riscv*_
+    - librz/arch/p/analysis/_*riscv*_
+    - librz/arch/is*/riscv/**/*
 
 SPARC:
-  - librz/arch/p/asm/_*sparc*_
-  - librz/arch/p/analysis/_*sparc*_
-  - librz/arch/is*/sparc/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*sparc*_
+    - librz/arch/p/analysis/_*sparc*_
+    - librz/arch/is*/sparc/**/*
 
 VAX:
-  - librz/arch/p/asm/_*vax*_
-  - librz/arch/p/analysis/_*vax*_
-  - librz/arch/is*/vax/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*vax*_
+    - librz/arch/p/analysis/_*vax*_
+    - librz/arch/is*/vax/**/*
 
 Xtensa:
-  - librz/arch/p/asm/_*xtensa*_
-  - librz/arch/p/analysis/_*xtensa*_
-  - librz/arch/is*/xtensa/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*xtensa*_
+    - librz/arch/p/analysis/_*xtensa*_
+    - librz/arch/is*/xtensa/**/*
 
 Z80:
-  - librz/arch/p/asm/_*z80*_
-  - librz/arch/p/analysis/_*z80*_
-  - librz/arch/is*/z80/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/p/asm/_*z80*_
+    - librz/arch/p/analysis/_*z80*_
+    - librz/arch/is*/z80/**/*
 
 ESIL:
-  - librz/arch/esil/*
-  - librz/debug/p/debug_esil.c
-  - librz/debug/desil.c
-  - librz/core/cil.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/esil/*
+    - librz/debug/p/debug_esil.c
+    - librz/debug/desil.c
+    - librz/core/cil.c
 
 DWARF:
-  - librz/bin/dwarf/*
-  - librz/arch/dwarf_process.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/dwarf/*
+    - librz/arch/dwarf_process.c
 
 PDB:
-  - librz/bin/pdb/**/*
-  - librz/include/rz_pdb.h
-  - librz/arch/type_pdb.c
-  - librz/core/cpdb.c
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/bin/pdb/**/*
+    - librz/include/rz_pdb.h
+    - librz/arch/type_pdb.c
+    - librz/core/cpdb.c
 
 GDB:
-  - subprojects/rzgdb/**/*
-  - librz/io/p/io_gdb.c
-  - librz/debug/p/debug_gdb.c
+- changed-files:
+  - any-glob-to-any-file:
+    - subprojects/rzgdb/**/*
+    - librz/io/p/io_gdb.c
+    - librz/debug/p/debug_gdb.c
 
 WinDbg:
-  - subprojects/rzwinkd/**/*
-  - librz/io/p/io_winkd.c
-  - librz/io/p/io_windbg.c
-  - librz/debug/p/debug_winkd.c
-  - librz/debug/p/debug_windbg.c
+- changed-files:
+  - any-glob-to-any-file:
+    - subprojects/rzwinkd/**/*
+    - librz/io/p/io_winkd.c
+    - librz/io/p/io_windbg.c
+    - librz/debug/p/debug_winkd.c
+    - librz/debug/p/debug_windbg.c
 
 BSD:
-  - librz/debug/p/native/bsd/**/*
-  - librz/debug/p/native/reg/*bsd*
-  - librz/syscall/d/*bsd*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/debug/p/native/bsd/**/*
+    - librz/debug/p/native/reg/*bsd*
+    - librz/syscall/d/*bsd*
 
 Windows:
-  - librz/arch/d/*windows*
-  - librz/io/p/io_rzk_windows.*
-  - librz/debug/p/native/windows/**/*
-  - librz/debug/p/native/maps/windows*
-  - librz/debug/p/native/reg/windows*
-  - librz/core/windows_heap.c
-  - librz/syscall/d/windows*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/d/*windows*
+    - librz/io/p/io_rzk_windows.*
+    - librz/debug/p/native/windows/**/*
+    - librz/debug/p/native/maps/windows*
+    - librz/debug/p/native/reg/windows*
+    - librz/core/windows_heap.c
+    - librz/syscall/d/windows*
 
 MacOS:
-  - librz/arch/d/*macos*
-  - librz/debug/p/native/xnu/**/*
-  - librz/debug/p/native/maps/darwin.c
-  - librz/debug/p/native/darwin.c
-  - librz/syscall/d/darwin*
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/arch/d/*macos*
+    - librz/debug/p/native/xnu/**/*
+    - librz/debug/p/native/maps/darwin.c
+    - librz/debug/p/native/darwin.c
+    - librz/syscall/d/darwin*

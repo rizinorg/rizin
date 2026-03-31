@@ -1,9 +1,9 @@
 [wrap-file]
-directory = zstd-1.5.5
-source_url = https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-1.5.5.tar.gz
-source_filename = zstd-1.5.5.tar.gz
-source_hash = 9c4396cc829cfae319a6e2615202e82aad41372073482fce286fac78646d3ee4
-patch_directory = zstd-1.5.5
+directory = zstd-1.5.7
+source_url = https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
+source_filename = zstd-1.5.7.tar.gz
+source_hash = eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3
+patch_directory = zstd-1.5.7
 
 [provide]
 zstd = libzstd_dep

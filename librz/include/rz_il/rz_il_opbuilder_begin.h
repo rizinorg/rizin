@@ -81,6 +81,8 @@
 #define FORDER(flx, fly)           rz_il_op_new_forder(flx, fly)
 #define FROUND(rmode, fl)          rz_il_op_new_fround(rmode, fl)
 #define FSQRT(rmode, fl)           rz_il_op_new_fsqrt(rmode, fl)
+#define FRSQRT(rmode, fl)          rz_il_op_new_frsqrt(rmode, fl)
+#define FEXCEPT(e, fl)             rz_il_op_new_fexcept(e, fl)
 #define FADD(rmode, flx, fly)      rz_il_op_new_fadd(rmode, flx, fly)
 #define FSUB(rmode, flx, fly)      rz_il_op_new_fsub(rmode, flx, fly)
 #define FMUL(rmode, flx, fly)      rz_il_op_new_fmul(rmode, flx, fly)
@@ -88,6 +90,9 @@
 #define FMOD(rmode, flx, fly)      rz_il_op_new_fdiv(rmode, flx, fly)
 #define FPOW(rmode, flx, fly)      rz_il_op_new_fpow(rmode, flx, fly)
 #define FMAD(rmode, flx, fly, flz) rz_il_op_new_fmad(rmode, flx, fly, flz)
+
+#define IL_FQNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_qnan(f))
+#define IL_FSNAN(f) rz_il_op_new_float_from_rz_float(rz_float_new_snan(f))
 
 // TODO: add `feq` as prime operator in fbasic
 // https://smtlib.cs.uiowa.edu/theories-FloatingPoint.shtml
@@ -99,12 +104,12 @@
 #define AND(x, y) rz_il_op_new_bool_and(x, y)
 #define OR(x, y)  rz_il_op_new_bool_or(x, y)
 
-#define FNEQ(flx, fly) rz_il_op_new_fneq(flx, fly)
-#define FEQ(flx, fly)  rz_il_op_new_feq(flx, fly)
-#define FLT(flx, fly)  rz_il_op_new_flt(flx, fly)
-#define FLE(flx, fly)  rz_il_op_new_fle(flx, fly)
-#define FGT(flx, fly)  rz_il_op_new_fgt(flx, fly)
-#define FGE(flx, fly)  rz_il_op_new_fge(flx, fly)
+#define FNE(flx, fly) rz_il_op_new_fneq(flx, fly)
+#define FEQ(flx, fly) rz_il_op_new_feq(flx, fly)
+#define FLT(flx, fly) rz_il_op_new_flt(flx, fly)
+#define FLE(flx, fly) rz_il_op_new_fle(flx, fly)
+#define FGT(flx, fly) rz_il_op_new_fgt(flx, fly)
+#define FGE(flx, fly) rz_il_op_new_fge(flx, fly)
 
 #define UNSIGNED(n, x)    rz_il_op_new_unsigned(n, x)
 #define SIGNED(n, x)      rz_il_op_new_signed(n, x)
@@ -133,6 +138,7 @@
 #define MSB(x)      rz_il_op_new_msb(x)
 #define LSB(x)      rz_il_op_new_lsb(x)
 #define EQ(x, y)    rz_il_op_new_eq(x, y)
+#define NE(x, y)    rz_il_op_new_ne(x, y)
 #define ULT(x, y)   rz_il_op_new_ult(x, y)
 #define ULE(x, y)   rz_il_op_new_ule(x, y)
 #define UGT(x, y)   rz_il_op_new_ugt(x, y)
@@ -142,10 +148,12 @@
 #define SGT(x, y)   rz_il_op_new_sgt(x, y)
 #define SGE(x, y)   rz_il_op_new_sge(x, y)
 
-#define LOAD(addr)        rz_il_op_new_load(0, addr)
-#define LOADW(n, addr)    rz_il_op_new_loadw(0, addr, n)
-#define STORE(addr, val)  rz_il_op_new_store(0, addr, val)
-#define STOREW(addr, val) rz_il_op_new_storew(0, addr, val)
+#define LOAD(addr)            rz_il_op_new_load(0, addr)
+#define LOADW(n, addr)        rz_il_op_new_loadw(0, addr, n)
+#define LOADWI(i, n, addr)    rz_il_op_new_loadw(i, addr, n)
+#define STORE(addr, val)      rz_il_op_new_store(0, addr, val)
+#define STOREW(addr, val)     rz_il_op_new_storew(0, addr, val)
+#define STOREWI(i, addr, val) rz_il_op_new_storew(i, addr, val)
 
 #define VARG(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_GLOBAL)
 #define VARL(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL)
@@ -173,7 +181,7 @@
 
 #define NOT_IMPLEMENTED \
 	do { \
-		RZ_LOG_INFO("IL instruction not implemented."); \
+		RZ_LOG_INFO("IL instruction not implemented.\n"); \
 		return NULL; \
 	} while (0)
 
@@ -186,6 +194,5 @@
 #define BSWAP16(t)                                rz_il_bswap16(t)
 #define BSWAP32(t)                                rz_il_bswap32(t)
 #define BSWAP64(t)                                rz_il_bswap64(t)
-#define NE(x, y)                                  rz_il_op_new_ne(x, y)
 
 #endif

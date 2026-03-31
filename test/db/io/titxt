@@ -1,0 +1,170 @@
+NAME=correct-empty.titxt
+FILE=titxt://bins/titxt/correct-empty.titxt
+CMDS=<<EOF
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=correct-1-section.titxt
+FILE=titxt://bins/titxt/correct-1-section.titxt
+CMDS=<<EOF
+s 0x1000
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001000  01ff ffff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=correct-3-sections.titxt
+FILE=titxt://bins/titxt/correct-3-sections.titxt
+CMDS=<<EOF
+s 0xF0F0
+px 64
+s 0xFBF0
+px 64
+s 0xFFF0
+px 16
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000f0f0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000f100  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+0x0000f110  aabb ccdd eeff 0a0b 0c0d 0e0f 0011 2233  .............."3
+0x0000f120  1234 5678 ffff ffff ffff ffff ffff ffff  .4Vx............
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fbf0  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000fc00  0123 4567 0800 dead beef ffff ffff ffff  .#Eg............
+0x0000fc10  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x0000fc20  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fff0  ffff ffff ffff ffff ffff ffff ffff f00f  ................
+EOF
+RUN
+
+NAME=incorrect-invalid-address.titxt
+FILE=titxt://bins/titxt/incorrect-invalid-address.titxt
+BROKEN=1
+CMDS=<<EOF
+px 4 @ 0x1000f0
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): invalid address format
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 6
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-invalid-address.titxt'
+EOF
+RUN
+
+NAME=incorrect-invalid-data-bytes.titxt
+FILE=titxt://bins/titxt/incorrect-invalid-data-bytes.titxt
+BROKEN=1
+CMDS=<<EOF
+px 16 @ 0xffff0010
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): invalid hex digit
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 2, column 15
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-invalid-data-bytes.titxt'
+EOF
+RUN
+
+NAME=incorrect-missing-section-prefix.titxt
+FILE=titxt://bins/titxt/incorrect-missing-section-prefix.titxt
+BROKEN=1
+CMDS=<<EOF
+px 16 @ 0xffff0010
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): expected whitespace / newline after byte
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 5, column 3
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-missing-section-prefix.titxt'
+EOF
+RUN
+
+NAME=incorrect-empty-section.titxt
+FILE=titxt://bins/titxt/incorrect-empty-section.titxt
+BROKEN=1
+CMDS=<<EOF
+px 16 @ 0xffff0010
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): invalid hex digit
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 6, column 2
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-empty-section.titxt'
+EOF
+RUN
+
+NAME=incorrect-missing-eof-marker.titxt
+FILE=titxt://bins/titxt/incorrect-missing-eof-marker.titxt
+BROKEN=1
+CMDS=<<EOF
+px 16 @ 0xffff0010
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): expected whitespace / newline after byte
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 8, column 6
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-missing-eof-marker.titxt'
+EOF
+RUN
+
+NAME=incorrect-only-data-bytes.titxt
+FILE=titxt://bins/titxt/incorrect-only-data-bytes.titxt
+BROKEN=1
+CMDS=<<EOF
+px 16 @ 0xffff0010
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): section prefix missing
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 1
+ERROR: [r] Cannot open 'titxt://bins/titxt/incorrect-only-data-bytes.titxt'
+EOF
+RUN
+
+NAME=titxt-incorrect-long-section-address
+FILE=--
+CMDS=<<EOF
+mkdir tmp
+echo "@0123456789abcdef0\n00\nq" >> ./tmp/titxt-incorrect-long-section-address.titxt
+o titxt://./tmp/titxt-incorrect-long-section-address.titxt
+o--
+rm ./tmp/titxt-incorrect-long-section-address.titxt
+EOF
+EXPECT_ERR=<<EOF
+ERROR: titxt:parse_section(): invalid address format
+ERROR: titxt:parse(): failed to parse section in TI-TXT file at line 1, column 10
+ERROR: Cannot open file 'titxt://./tmp/titxt-incorrect-long-section-address.titxt'
+EOF
+RUN
+
+NAME=titxt-write
+FILE=--
+CMDS=<<EOF
+mkdir tmp
+echo q >> ./tmp/titxt-write-test.titxt
+o titxt://./tmp/titxt-write-test.titxt
+oo+
+r 0x10000
+w hello @ 0x10
+w test-messages-more-than-16-bytes-- @ 0xF000
+o--
+cat ./tmp/titxt-write-test.titxt
+rm ./tmp/titxt-write-test.titxt
+EOF
+REGEXP_FILTER_OUT=([^\r\n]+)
+EXPECT=<<EOF
+@0010
+68 65 6C 6C 6F
+@F000
+74 65 73 74 2D 6D 65 73 73 61 67 65 73 2D 6D 6F
+72 65 2D 74 68 61 6E 2D 31 36 2D 62 79 74 65 73
+2D 2D
+@FFFF
+FF
+q
+EOF
+RUN

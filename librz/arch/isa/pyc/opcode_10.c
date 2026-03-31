@@ -9,7 +9,7 @@ pyc_opcodes *opcode_10(void) {
 		return NULL;
 	}
 
-	ret->version_sig = (void *(*)())opcode_10;
+	ret->version_sig = (opcode_func)opcode_10;
 
 	// 1.0 - 1.1 bytecodes differences
 	rm_op(.op_obj = ret->opcodes, .op_name = "LOAD_GLOBALS", .op_code = 84);

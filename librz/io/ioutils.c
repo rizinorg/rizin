@@ -42,7 +42,7 @@ RZ_API bool rz_io_read_i(RzIO *io, ut64 addr, ut64 *val, int size, bool endian) 
 	ut8 buf[8];
 	rz_return_val_if_fail(io && val, false);
 	size = RZ_DIM(size, 1, 8);
-	if (!rz_io_read_at(io, addr, buf, size)) {
+	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
 		return false;
 	}
 	// size says the number of bytes to read transform to bits for rz_read_ble

@@ -4,7 +4,19 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <limits.h>
+
+#if defined(_MSC_VER)
+// required to forbid the declaration
+// of __ucrt_int_to_float which is
+// included from 10.0.25182.0, where
+// `math.h` includes `corecrt_math.h`
+#define __midl
+#endif
 #include <math.h>
+#if defined(_MSC_VER)
+// remove __midl
+#undef __midl
+#endif
 
 #define cut8  const unsigned char
 #define ut64  unsigned long long
@@ -15,6 +27,7 @@
 #define st16  short
 #define ut8   unsigned char
 #define st8   signed char
+#define utptr uintptr_t
 #define boolt int
 
 #if defined(_MSC_VER)
@@ -112,13 +125,14 @@ typedef struct _utX {
 #define UT32_ALIGN(x) (x + (x - (x % sizeof(ut32))))
 #define UT16_ALIGN(x) (x + (x - (x % sizeof(ut16))))
 
-#define UT32_LO(x) ((ut32)((x)&UT32_MAX))
+#define UT32_LO(x) ((ut32)((x) & UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x)) >> 32) & UT32_MAX)
 
-#define RZ_BETWEEN(x, y, z) (((y) >= (x)) && ((y) <= (z)))
-#define RZ_ROUND(x, y)      ((x) % (y)) ? (x) + ((y) - ((x) % (y))) : (x)
-#define RZ_DIM(x, y, z)     (((x) < (y)) ? (y) : ((x) > (z)) ? (z) \
-							     : (x))
+#define RZ_BETWEEN(x, y, z)      (((y) >= (x)) && ((y) <= (z)))
+#define RZ_BETWEEN_EXCL(x, y, z) (((y) >= (x)) && ((y) < (z)))
+#define RZ_ROUND(x, y)           ((x) % (y)) ? (x) + ((y) - ((x) % (y))) : (x)
+#define RZ_DIM(x, y, z)          (((x) < (y)) ? (y) : ((x) > (z)) ? (z) \
+								  : (x))
 #ifndef RZ_MAX_DEFINED
 #define RZ_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define RZ_MAX_DEFINED
@@ -135,7 +149,7 @@ typedef struct _utX {
 /* copied from bithacks.h */
 #define B_IS_SET(x, n) (((x) & (1ULL << (n))) ? 1 : 0)
 #define B_SET(x, n)    ((x) |= (1ULL << (n)))
-#define B_EVEN(x)      (((x)&1) == 0)
+#define B_EVEN(x)      (((x) & 1) == 0)
 #define B_ODD(x)       (!B_EVEN((x)))
 #define B_UNSET(x, n)  ((x) &= ~(1ULL << (n)))
 #define B_TOGGLE(x, n) ((x) ^= (1ULL << (n)))
@@ -216,5 +230,13 @@ typedef struct _utX {
 
 #define RZ_STR_DEF(s) RZ_STR(s)
 #define RZ_STR(s)     #s
+
+#ifdef __GNUC__
+#define RZ_INLINE __attribute__((always_inline)) inline
+#else
+#define RZ_INLINE inline
+#endif
+
+#define BIG_CONSTANT(x) (x##LLU)
 
 #endif // RZ_TYPES_BASE_H

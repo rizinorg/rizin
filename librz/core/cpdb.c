@@ -35,7 +35,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeStructMember *memb;
-			rz_vector_foreach(&type->struct_data.members, memb) {
+			rz_vector_foreach (&type->struct_data.members, memb) {
 				pj_o(pj);
 				char *typ = rz_type_as_string(db, memb->type);
 				pj_ks(pj, "member_type", typ);
@@ -55,7 +55,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			pj_kn(pj, "size", type->size);
 			pj_ka(pj, "members");
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&type->union_data.members, memb) {
+			rz_vector_foreach (&type->union_data.members, memb) {
 				pj_o(pj);
 				char *typ = rz_type_as_string(db, memb->type);
 				pj_ks(pj, "member_type", typ);
@@ -77,7 +77,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 			RZ_FREE(typ);
 			pj_ka(pj, "cases");
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&type->enum_data.cases, cas) {
+			rz_vector_foreach (&type->enum_data.cases, cas) {
 				pj_o(pj);
 				pj_ks(pj, "enum_name", cas->name);
 				pj_kn(pj, "enum_val", cas->val);
@@ -120,7 +120,7 @@ typedef struct {
 	RzCmdStateOutput *state;
 } PDBDumpContext;
 
-static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+static bool symbol_dump(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	PDBDumpContext *ctx = u;
 	PJ *pj = ctx->state->d.pj;
 	if (symbol->kind == PDB_Public) {
@@ -138,7 +138,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		}
 
 		char *name = rz_demangler_msvc(public->name, RZ_DEMANGLER_FLAG_BASE);
-		name = (name) ? name : strdup(public->name);
+		name = (name) ? name : rz_str_dup(public->name);
 
 		switch (ctx->state->mode) {
 		case RZ_OUTPUT_MODE_JSON: // JSON
@@ -171,7 +171,7 @@ static bool symbol_dump(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
  * \return char *
  */
 RZ_API char *rz_core_bin_pdb_gvars_as_string(
-	RZ_NONNULL const RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+	RZ_NONNULL RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(pdb && state, NULL);
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	if (!buf) {
@@ -201,7 +201,7 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(
 	return rz_strbuf_drain(buf);
 }
 
-static void rz_core_bin_pdb_gvars_print(const RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_gvars_print(RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_if_fail(pdb && state);
 	char *str = rz_core_bin_pdb_gvars_as_string(pdb, baddr, state);
 	// We don't need to print the output of JSON because the RzCmdStateOutput will handle it.
@@ -217,7 +217,7 @@ typedef struct {
 	const char *file;
 } PDBLoadContext;
 
-static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	if (!symbol) {
 		return true;
 	}
@@ -230,7 +230,7 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		}
 
 		char *name = rz_demangler_msvc(public->name, dflags);
-		name = (name) ? name : strdup(public->name);
+		name = (name) ? name : rz_str_dup(public->name);
 		char *filtered_name = rz_name_filter2(name, true);
 		char *fname = rz_str_newf("pdb.%s.%s", ctx->file, filtered_name);
 
@@ -285,7 +285,7 @@ static bool symbol_load(const RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 }
 
 static void pdb_symbols_load(
-	const RzCore *core, const RzPdb *pdb, const char *pdbfile) {
+	const RzCore *core, RzPdb *pdb, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	if (!(pdb->s_pe && pdb->s_gdata)) {
 		return;
@@ -295,7 +295,7 @@ static void pdb_symbols_load(
 		baddr = rz_config_get_i(core->config, "bin.baddr");
 		RZ_LOG_WARN("core: cannot find base address, flags will probably be misplaced\n");
 	}
-	char *file = rz_str_replace(strdup(pdbfile), ".pdb", "", 0);
+	char *file = rz_str_replace(rz_str_dup(pdbfile), ".pdb", "", 0);
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	PDBLoadContext ctx = {

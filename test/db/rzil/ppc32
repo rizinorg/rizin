@@ -186,7 +186,7 @@ FILE=bins/elf/ppc/emulateme-ppc32be
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000
@@ -203,7 +203,10 @@ EXPECT=<<EOF
 QSMwX\x14Q_El\x17\x7fnx\x7f\x1c
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Fetching registers from core file not supported for this architecture.
+WARNING: Fetching registers from core file not supported for this architecture.
+EOF
 RUN
 
 NAME=emulateme-little-endian
@@ -211,7 +214,7 @@ FILE=bins/elf/ppc/emulateme-ppc32le
 TIMEOUT=30
 CMDS=<<EOF
 s sym.decrypt
-e str.search.encoding=utf8
+e str.encoding=utf8
 ps @ obj.seckrit
 aezi
 o malloc://0x1000 0x400000

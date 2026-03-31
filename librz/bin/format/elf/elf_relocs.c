@@ -59,17 +59,17 @@ static ut64 get_size_rel_mode(ut64 mode) {
 }
 
 static bool read_reloc_entry_aux(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
-	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->rz_offset) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->rz_info)) {
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->r_offset) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->r_info)) {
 		return false;
 	}
 
 	if (mode == DT_REL) {
-		reloc->rz_addend = 0;
+		reloc->r_addend = 0;
 		return true;
 	}
 
-	return Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->rz_addend);
+	return Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->r_addend);
 }
 
 static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
@@ -81,17 +81,40 @@ static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 
 	return true;
 }
 
+/**
+ * In mipsel64 objects r_info isn't really a le64 value
+ * it has a le32 symbol index followed by 4 byte fields.
+ *
+ * this function reorders the information field accordingly.
+ */
+static void fix_elf_rel_mipsel64(ELFOBJ *bin, Elf_(Rela) * tmp) {
+	if (bin->ehdr.e_machine != EM_MIPS ||
+		bin->ehdr.e_ident[EI_CLASS] != ELFCLASS64 ||
+		bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB) {
+		// ignore if not MIPS64 little endian
+		return;
+	}
+
+	ut64 info = tmp->r_info;
+	info = (((info & 0xffffffffull) << 32) | ((info >> 56) & 0xffull) | ((info >> 40) & 0xff00ull) | ((info >> 24) & 0xff0000ull) | ((info >> 8) & 0xff000000ull));
+	tmp->r_info = info;
+}
+
 static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64 mode) {
 	Elf_(Rela) tmp;
 	if (!read_reloc_entry(bin, &tmp, offset, mode)) {
 		return false;
 	}
 
+	fix_elf_rel_mipsel64(bin, &tmp);
+
 	reloc->mode = mode;
-	reloc->offset = tmp.rz_offset;
-	reloc->sym = ELF_R_SYM(tmp.rz_info);
-	reloc->type = ELF_R_TYPE(tmp.rz_info);
-	reloc->addend = tmp.rz_addend;
+	reloc->offset = tmp.r_offset;
+	reloc->sym = ELF_R_SYM(tmp.r_info);
+	reloc->type = ELF_R_TYPE(tmp.r_info);
+	reloc->addend = tmp.r_addend;
+	reloc->info = tmp.r_info;
+	reloc->sparc_secondary_addend = ELF64_SPARC_R_TYPE_DATA(tmp.r_info);
 
 	return true;
 }
@@ -206,7 +229,7 @@ static bool get_relocs_entry_from_sections(ELFOBJ *bin, RzVector /*<RzBinElfRelo
 RZ_OWN RzVector /*<RzBinElfReloc>*/ *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	HtUU *set = ht_uu_new0();
+	HtUU *set = ht_uu_new();
 	if (!set) {
 		return NULL;
 	}

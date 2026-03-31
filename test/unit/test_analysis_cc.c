@@ -8,36 +8,36 @@
 
 static Sdb *ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "cc.sectarian.ret", "rax", 0);
-	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
-	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
-	sdb_set(db, "cc.sectarian.argn", "stack", 0);
-	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
-	sdb_set(db, "sectarian", "cc", 0);
+	sdb_set(db, "cc.sectarian.ret", "rax");
+	sdb_set(db, "cc.sectarian.arg1", "rcx");
+	sdb_set(db, "cc.sectarian.arg0", "rdx");
+	sdb_set(db, "cc.sectarian.argn", "stack");
+	sdb_set(db, "cc.sectarian.maxargs", "2");
+	sdb_set(db, "sectarian", "cc");
 	return db;
 }
 
 static Sdb *ref_db_self_err() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "cc.sectarian.ret", "rax", 0);
-	sdb_set(db, "cc.sectarian.self", "rsi", 0);
-	sdb_set(db, "cc.sectarian.error", "rdi", 0);
-	sdb_set(db, "cc.sectarian.arg1", "rcx", 0);
-	sdb_set(db, "cc.sectarian.arg0", "rdx", 0);
-	sdb_set(db, "cc.sectarian.argn", "stack", 0);
-	sdb_set(db, "cc.sectarian.maxargs", "2", 0);
-	sdb_set(db, "sectarian", "cc", 0);
+	sdb_set(db, "cc.sectarian.ret", "rax");
+	sdb_set(db, "cc.sectarian.self", "rsi");
+	sdb_set(db, "cc.sectarian.error", "rdi");
+	sdb_set(db, "cc.sectarian.arg1", "rcx");
+	sdb_set(db, "cc.sectarian.arg0", "rdx");
+	sdb_set(db, "cc.sectarian.argn", "stack");
+	sdb_set(db, "cc.sectarian.maxargs", "2");
+	sdb_set(db, "sectarian", "cc");
 	return db;
 }
 
 static RzAnalysis *ref_analysis() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 	return analysis;
 }
 
 static RzAnalysis *ref_analysis_self_err() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_cc_set(analysis, "rax sectarian(rdx, rcx, stack)");
 	rz_analysis_cc_set_self(analysis, "sectarian", "rsi");
 	rz_analysis_cc_set_error(analysis, "sectarian", "rdi");

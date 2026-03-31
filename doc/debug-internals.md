@@ -24,10 +24,9 @@ example, spawning processes under a debugger.
 ## librz/reg
 
 The "reg" module provides functionality for reading and writing registers as
-well as setting up profiles. (??profiles??)
+well as setting up profiles.
 
 The functionality lives in the following files:
-(?? why so many files? can this be simplified??)
 
     librz/reg/arena.c        // ?? used by analysis and debugger
     librz/reg/cond.c         // condition registers
@@ -50,11 +49,11 @@ Rizin supports a multitude of different types of breakpoints.
 (`??` is there a list? sw, hw, and trace? anything else??)
 
     librz/bp/bp.c            // main breakpoint management code
-    librz/bp/io.c            // setting and resetting(??) breakpoints
-    librz/bp/parser.h        // header for breakpoint parser (??)
-    librz/bp/parser.c        // code for breakpoint parser (??)
+    librz/bp/io.c            // setting and resetting breakpoints
+    librz/bp/parser.h        // header for breakpoint parser
+    librz/bp/parser.c        // code for breakpoint parser
     librz/bp/plugin.c        // breakpoint plugin management
-    librz/bp/traptrace.c     // traptrace (??)
+    librz/bp/traptrace.c     // traptrace
     librz/bp/watch.c         // watch points (mostly not implemented)
 
 For architecture specific-handling, "bp" delegates various functionality to
@@ -76,9 +75,9 @@ The main top-level debugger functionality lives here. It aims to abstract away
 the common code flow and integration into Rizin while delegating more nuanced
 system interactions to plug-ins.
 
-    librz/debug/arg.c        // used by the analysis engine (??)
+    librz/debug/arg.c        // used by the analysis engine
     librz/debug/desc.c       // code for handling file descriptors inside an inferior
-    librz/debug/esil.c       // ESIL related debugging code (??)
+    librz/debug/esil.c       // ESIL related debugging code
     librz/debug/map.c        // top-level API for dealing with memory maps
     librz/debug/pid.c        // top-level API for dealing with processes
     librz/debug/plugin.c     // top-level debugger plugin API handling
@@ -160,7 +159,7 @@ following files:
     librz/debug/p/native/linux/linux_debug.c         // main linux-specific debugging code
     librz/debug/p/native/linux/linux_debug.h         // including cute penguin ascii art
     
-    // architecture-specific register handling on Linux (?? what is this format??)
+    // architecture-specific register handling on Linux
     librz/debug/p/native/linux/reg/linux-arm.h
     librz/debug/p/native/linux/reg/linux-arm64.h
     librz/debug/p/native/linux/reg/linux-mips.h
@@ -180,13 +179,13 @@ following files:
     librz/debug/p/native/maps/darwin.c               // platform-specific memory map handling
     librz/debug/p/native/xnu/xnu_debug.c             // main XNU-specific debugging code
     librz/debug/p/native/xnu/xnu_debug.h             // including cute apple ascii art
-    librz/debug/p/native/xnu/trap_arm.c              // ARM family hardware bps (??)
-    librz/debug/p/native/xnu/trap_x86.c              // x86 family hardware bps (??)
+    librz/debug/p/native/xnu/trap_arm.c              // ARM family hardware bps
+    librz/debug/p/native/xnu/trap_x86.c              // x86 family hardware bps
     librz/debug/p/native/xnu/xnu_excthreads.c        // additional XNU thread handling
     librz/debug/p/native/xnu/xnu_threads.c           // XNU thread and register handling
     librz/debug/p/native/xnu/xnu_threads.h
     
-    // architecture-specific register handling on XNU (?? what is this format??)
+    // architecture-specific register handling on XNU
     librz/debug/p/native/xnu/reg/darwin-x86.h
     librz/debug/p/native/xnu/reg/darwin-arm.h
     librz/debug/p/native/xnu/reg/darwin-ppc.h
@@ -202,17 +201,17 @@ following files:
 
 A debugger plug-in that enables debugging code natively on QNX systems. Corresponding
 IO plugin is located in librz/io/p/io_qnx.c
-See doc/qnx
+<!-- TODO: Add qnx documentation -->
 
 ### librz/debug/p/debug_rap.c
 
-See doc/rap
+<!-- TODO: Add rap documentation -->
 
 ### librz/debug/p/debug_winkd.c
 
 A debugger plugin that enables debugging code remotely via WinDbg protocol.
 WinDbg protocol parser is located in subprojects/rzwinkd. Corresponding IO
-plugin located in librz/io/p/io_winkd.c See doc/winkd.
+plugin located in librz/io/p/io_winkd.c <!-- TODO: Add winkd documentation -->
 
 ## Conclusion
 

@@ -10,6 +10,55 @@
 static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri);
 static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
+/**
+ * \brief Check whether the current file is a core dump
+ * \param core RzCore instance
+ * \return true if the current file is a core dump, false otherwise
+ */
+RZ_IPI bool rz_core_is_core_dump(RzCore *core) {
+	if (!core || !core->io || !core->bin) {
+		return false;
+	}
+	int cur_fd = rz_io_fd_get_current(core->io);
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, cur_fd);
+	if (!bf) {
+		// Fallback for cases where there is no binfile bound to the current fd.
+		bf = rz_bin_cur(core->bin);
+	}
+	RzBinPlugin *plugin = bf ? rz_bin_file_cur_plugin(bf) : NULL;
+	return plugin && plugin->file_type && plugin->file_type(bf) == RZ_BIN_TYPE_CORE;
+}
+
+/**
+ * \brief Strip `[fmv]map.` prefix of a given IOMap name
+ * \param map RzIOMap instance
+ * \return the name without the prefix or the same name if no prefix is found.
+ *         NULL if map or map->name is NULL.
+ */
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map) {
+	if (!map || !map->name) {
+		return NULL;
+	}
+	const char *name = map->name;
+	if (rz_str_startswith(name, "fmap.") ||
+		rz_str_startswith(name, "mmap.") ||
+		rz_str_startswith(name, "vmap.")) {
+		return name + 5;
+	}
+	return NULL;
+}
+
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map) {
+	const char *name = rz_core_io_map_strip_prefix(map);
+	return (name && *name == '/') ? name : NULL;
+}
+
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map) {
+	const char *name = rz_core_io_map_strip_prefix(map);
+	// Both "/abs/path" and "rel/path" contain a '/'; LOAD0, [stack] etc. do not.
+	return (name && strchr(name, '/')) ? name : NULL;
+}
+
 static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	RzCoreFile *r = RZ_NEW0(RzCoreFile);
 	if (!r) {
@@ -34,7 +83,7 @@ RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
 }
 
 static bool __isMips(RzAsm *a) {
-	return a && a->cur && a->cur->arch && strstr(a->cur->arch, "mips");
+	return a && rz_asm_is_arch(a, "mips");
 }
 
 static void loadGP(RzCore *core) {
@@ -74,8 +123,7 @@ static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) 
 			break;
 		}
 		*old_sec = *sec;
-		old_sec->name = strdup(sec->name);
-		old_sec->format = NULL;
+		old_sec->name = rz_str_dup(sec->name);
 		rz_pvector_push(old_sections, old_sec);
 	}
 	return old_sections;
@@ -240,12 +288,12 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, const char *uri, ut64
 	core->dbg->main_arena_resolved = false;
 	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	rz_config_set_i(core->config, "asm.bits", bits);
 	rz_config_set_b(core->config, "cfg.debug", true);
 	// Set referer as the original uri so we could return to it with `oo`
 	desc->referer = desc->uri;
-	desc->uri = strdup(uri);
+	desc->uri = rz_str_dup(uri);
 
 	if ((file = rz_core_file_open(core, uri, RZ_PERM_R | RZ_PERM_W, addr))) {
 		fd = file->fd;
@@ -293,10 +341,10 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	}
 
 	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, ofile->fd);
-	char *binpath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	char *binpath = (bf && bf->file) ? rz_str_dup(bf->file) : NULL;
 	if (!binpath) {
 		if (rz_file_exists(desc->name)) {
-			binpath = strdup(desc->name);
+			binpath = rz_str_dup(desc->name);
 		}
 	}
 	if (!binpath) {
@@ -307,7 +355,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	core->dbg->main_arena_resolved = false;
 	RzPVector *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
-	int bits = core->rasm->bits;
+	int bits = rz_asm_get_bits(core->rasm);
 	char *bin_abspath = rz_file_abspath(binpath);
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
 	char *newfile = RZ_STR_ISEMPTY(args) ? rz_str_newf("dbg://%s", escaped_path)
@@ -336,7 +384,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	RzBinFile *bf = ofile ? rz_bin_file_find_by_fd(core->bin, ofile->fd)
 			      : NULL;
 	RzIODesc *odesc = (core->io && ofile) ? rz_io_desc_get(core->io, ofile->fd) : NULL;
-	char *ofilepath = NULL, *obinfilepath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	char *ofilepath = NULL, *obinfilepath = (bf && bf->file) ? rz_str_dup(bf->file) : NULL;
 	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -381,7 +429,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		}
 	}
 	if (!ofilepath) {
-		RZ_LOG_ERROR("Unknown file path");
+		RZ_LOG_ERROR("Unknown file path\n");
 		free(obinfilepath);
 		return false;
 	}
@@ -389,9 +437,9 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	// HACK: move last mapped address to higher place
 	// XXX - why does this hack work?
 	// when the new memory maps are created.
-	path = strdup(ofilepath);
+	path = rz_str_dup(ofilepath);
 	free(obinfilepath);
-	obinfilepath = strdup(ofilepath);
+	obinfilepath = rz_str_dup(ofilepath);
 
 	// rz_str_trim (path);
 	file = rz_core_file_open(core, path, perm, laddr);
@@ -446,7 +494,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 			ret = rz_core_bin_load(core, obinfilepath, baddr);
 			rz_core_bin_update_arch_bits(core);
 			if (!ret) {
-				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'", path);
+				RZ_LOG_ERROR("Error: Failed to reload rbin for: '%s'\n", path);
 			}
 			origoff = rz_num_math(core->num, "entry0");
 		}
@@ -555,7 +603,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 	rz_sys_setenv("RZ_OFFSET", rz_strf(tmpbuf, "%" PFMT64d, core->offset));
 	rz_sys_setenv("RZ_XOFFSET", rz_strf(tmpbuf, "0x%08" PFMT64x, core->offset));
-	rz_sys_setenv("RZ_ENDIAN", core->rasm->big_endian ? "big" : "little");
+	rz_sys_setenv("RZ_ENDIAN", rz_asm_is_big_endian_set(core->rasm) ? "big" : "little");
 	rz_sys_setenv("RZ_BSIZE", rz_strf(tmpbuf, "%d", core->blocksize));
 
 	// dump current config file so other r2 tools can use the same options
@@ -587,8 +635,9 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 	ut64 b = 0LL;
 
 	rz_debug_map_sync(core->dbg); // update process memory maps
+	// Find the base address of the process,usually the first map entry with at least read permission, this is set to bin.baddr.
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if ((map->perm & 5) == 5) {
+		if (map->perm & RZ_PERM_R) {
 			// TODO: make this more flexible
 			// XXX - why "copy/" here?
 			if (map->name && strstr(map->name, "copy/")) {
@@ -605,8 +654,9 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 		}
 	}
 	// fallback resolution copied from cmd_debug.c:rz_debug_get_baddr
+	// Find the base address of the process,usually the first map entry with at least read permission, this is set to bin.baddr.
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if (map->perm == 5) { // r-x
+		if (map->perm & RZ_PERM_R) { // r--
 			return map->addr;
 		}
 	}
@@ -742,7 +792,7 @@ static bool core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
-		info->bits = r->rasm->bits;
+		info->bits = rz_asm_get_bits(r->rasm);
 		rz_core_bin_set_arch_bits(r, binfile->file, info->arch, info->bits);
 	} else if (binfile) {
 		RzBinObject *obj = rz_bin_cur_object(r->bin);
@@ -769,7 +819,7 @@ static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {
 
 RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = rz_config_get(core->config, "dir.libs");
-	char *libdir = rz_path_libdir();
+	char *libdir = rz_path_libdir(core->sys_path);
 	if (!dirlibs || !*dirlibs) {
 		dirlibs = "." RZ_SYS_DIR;
 	}
@@ -810,25 +860,6 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	}
 	free(libdir);
 	return ret;
-}
-
-/**
- * \brief      Rebase the current RzBinFile and its RzBinObject
- *
- * \param[in]  RzCore  The RzCore structure to use
- * \param[in]  baddr   The new base address
- *
- * \return     On success returns true, otherwise false.
- */
-RZ_API bool rz_core_bin_rebase(RZ_NONNULL RzCore *core, ut64 baddr) {
-	rz_return_val_if_fail(core && core->bin && core->bin->cur, false);
-	if (baddr == UT64_MAX) {
-		return false;
-	}
-	RzBinFile *bf = core->bin->cur;
-	bf->o->opts.baseaddr = baddr;
-	bf->o->opts.loadaddr = baddr;
-	return rz_bin_object_process_plugin_data(bf, bf->o);
 }
 
 static void load_scripts_for(RzCore *core, const char *name) {
@@ -938,6 +969,15 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	return true;
 }
 
+/**
+ * \brief Load the binary specified by the \p filenameuri URI using \p baddr base address
+ *
+ * \param core A pointer to the `RzCore` object used for opening file into
+ * \param filenameuri A file name/path or any other URI supported by Rizin
+ * \param baddr The base address to use for loading. UT64_MAX value enables autodetection
+ *
+ * \return true if loading successfully completed, false otherwise.
+ */
 RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filenameuri, ut64 baddr) {
 	rz_return_val_if_fail(r, false);
 
@@ -1170,7 +1210,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NUL
 	}
 
 	rz_list_free(list_fds);
-	return rz_list_first(r->files);
+	return rz_list_first_val(r->files);
 }
 
 /**
@@ -1192,7 +1232,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	if (!flags) {
 		flags = RZ_PERM_R;
 	}
-	r->io->bits = r->rasm->bits; // TODO: we need an api for this
+	r->io->bits = rz_asm_get_bits(r->rasm); // TODO: we need an api for this
 	RzIODesc *fd = rz_io_open_nomap(r->io, file, flags, 0644);
 	if (rz_cons_is_breaked()) {
 		goto beach;
@@ -1214,7 +1254,6 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		}
 	}
 	if (rz_io_is_listener(r->io)) {
-		rz_core_serve(r, fd);
 		rz_io_desc_free(fd);
 		goto beach;
 	}
@@ -1239,7 +1278,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	r->file = fh;
 	rz_io_use_fd(r->io, fd->fd);
 
-	if (!rz_list_find_ptr(r->files, fh)) {
+	if (!rz_list_find_val(r->files, fh)) {
 		rz_list_append(r->files, fh);
 	}
 	if (rz_config_get_b(r->config, "cfg.debug")) {
@@ -1262,10 +1301,52 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
-	rz_core_cmd0(r, "R!");
 beach:
 	r->times->file_open_time = rz_time_now_mono() - prev;
 	return fh;
+}
+
+/**
+ * Allocates the memory chunk of \p len size, copies the contents at the current offset, and opens it as a file.
+ * \param core RzCore instanced
+ * \param len Size of the chunk to be created and copied
+ * \param offset Offset from where to copy bytes
+ * \return true on success, false otherwise
+ */
+RZ_API bool rz_core_file_malloc_copy_chunk(RzCore *core, size_t len, ut64 offset) {
+	rz_return_val_if_fail(core && len, false);
+
+	bool res = false;
+	ut8 *data = RZ_NEWS(ut8, len);
+	if (!data) {
+		return false;
+	}
+	if (!rz_io_read_at_mapped(core->io, offset, data, len)) {
+		RZ_LOG_ERROR("Cannot read %zu bytes from offset 0x%" PFMT64x ".\n", len, offset);
+		goto err;
+	}
+
+	char uri[100];
+	rz_strf(uri, "malloc://%zu", len);
+	RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RWX, 0);
+	if (!cfile) {
+		RZ_LOG_ERROR("Cannot open '%s'.\n", uri);
+		goto err;
+	}
+
+	if (!rz_core_bin_load(core, uri, 0)) {
+		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
+		goto err;
+	}
+
+	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+	rz_warn_if_fail(desc);
+	rz_io_desc_write_at(desc, 0, data, len);
+	res = true;
+
+err:
+	free(data);
+	return res;
 }
 
 RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc) {
@@ -1299,7 +1380,7 @@ RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf) {
 RZ_API void rz_core_file_close(RzCoreFile *fh) {
 	rz_return_if_fail(fh && fh->core);
 	RzCore *r = fh->core;
-	RzListIter *fh_it = rz_list_find_ptr(r->files, fh);
+	RzListIter *fh_it = rz_list_find_val(r->files, fh);
 	rz_return_if_fail(fh_it);
 	RzIODesc *desc = rz_io_desc_get(r->io, fh->fd);
 	if (desc) {
@@ -1374,8 +1455,6 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	RzCoreFile *f;
 	RzIODesc *desc;
 	ut64 from;
-	RzListIter *it;
-	RzBinFile *bf;
 	RzListIter *iter;
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -1404,23 +1483,6 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 			pj_end(pj);
 			break;
 		}
-		case RZ_OUTPUT_MODE_RIZIN:
-			// TODO: use a getter
-			{
-				bool fileHaveBin = false;
-				char *absfile = rz_file_abspath(desc->uri);
-				rz_list_foreach (core->bin->binfiles, it, bf) {
-					if (bf->fd == f->fd) {
-						rz_cons_printf("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
-						fileHaveBin = true;
-					}
-				}
-				if (!fileHaveBin && !strstr(absfile, "://")) {
-					rz_cons_printf("o %s 0x%" PFMT64x "\n", absfile, (ut64)from);
-				}
-				free(absfile);
-			}
-			break;
 		default: {
 			ut64 sz = rz_io_desc_size(desc);
 			const char *fmt;
@@ -1453,7 +1515,8 @@ RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 bfid) {
 	RzBinFile *bf = rz_list_get_n(bin->binfiles, bfid);
 	bool res = false;
 	if (bf) {
-		res = rz_bin_file_set_cur_binfile(bin, bf);
+		res = rz_bin_file_set_obj(bf, bf->o);
+		res &= rz_bin_set_cur_binfile(bin, bf);
 		if (res) {
 			rz_io_use_fd(core->io, bf->fd);
 		}
@@ -1512,7 +1575,7 @@ RZ_API bool rz_core_file_close_fd(RzCore *core, int fd) {
 	RzListIter *iter;
 	if (fd == -1) {
 		while (!rz_list_empty(core->files)) {
-			rz_core_file_close(rz_list_first(core->files));
+			rz_core_file_close(rz_list_first_val(core->files));
 		}
 		return true;
 	}

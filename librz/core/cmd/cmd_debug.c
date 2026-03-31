@@ -1,19 +1,19 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_cmd.h>
+#include <rz_util/rz_log.h>
+#include <rz_util/rz_num.h>
 #include <rz_util/rz_regex.h>
 #include <rz_core.h>
 #include <rz_debug.h>
 #include <sdb.h>
+#include <cmd_descs.h>
+
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%" PFMT64u
 
-#include "rz_heap_glibc.h"
-
-#if HAVE_JEMALLOC
 #include "rz_heap_jemalloc.h"
-#include "../linux_heap_jemalloc.c"
-#endif
 
 #include "../core_private.h"
 
@@ -24,25 +24,6 @@
 			return RZ_CMD_STATUS_ERROR; \
 		} \
 	} while (0)
-
-static const char *help_msg_dcu[] = {
-	"Usage:", "dcu", " Continue until address",
-	"dcu.", "", "Alias for dcu $$ (continue until current address",
-	"dcu", " address", "Continue until address",
-	"dcu", " [..tail]", "Continue until the range",
-	"dcu", " [from] [to]", "Continue until the range",
-	NULL
-};
-
-static const char *help_msg_dmi[] = {
-	"Usage: dmi", "", " # List/Load Symbols",
-	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
-	"dmia", "[j|q|*] [libname]", "List all info of target lib",
-	"dmi*", "", "List symbols of target lib in rizin commands",
-	"dmi.", "", "List closest symbol to the current address",
-	"dmiv", "", "Show address of given symbol for given lib",
-	NULL
-};
 
 struct dot_trace_ght {
 	RzGraph /*<struct trace_node *>*/ *graph;
@@ -56,7 +37,7 @@ struct trace_node {
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void set_profile_string(RzCore *core, const char *str) {
-	char *file = strdup(rz_config_get(core->config, "dbg.profile"));
+	char *file = rz_str_dup(rz_config_get(core->config, "dbg.profile"));
 	if (RZ_STR_ISEMPTY(file)) {
 		free(file);
 		file = rz_file_temp("rz-run");
@@ -72,7 +53,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 	int i, *syscalls = NULL;
 	int count = 0;
 	if (_str && *_str) {
-		char *str = strdup(_str);
+		char *str = rz_str_dup(_str);
 		count = rz_str_word_set0(str);
 		syscalls = calloc(sizeof(int), count);
 		for (i = 0; i < count; i++) {
@@ -81,8 +62,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 			if (sig == -1) { // trace ALL syscalls
 				syscalls[i] = -1;
 			} else if (sig == 0) {
-				sig = rz_syscall_get_num(core->analysis->syscall, sysnumstr);
-				if (sig == -1) {
+				if (!rz_syscall_get_num(core->analysis->syscall, sysnumstr, &sig)) {
 					RZ_LOG_ERROR("core: Unknown syscall number\n");
 					free(str);
 					free(syscalls);
@@ -110,10 +90,10 @@ static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *>*/ *g, Sd
 	char tn_key[TN_KEY_LEN];
 
 	snprintf(tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
-	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key, NULL);
+	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key);
 	if (!gn) {
 		gn = rz_graph_add_node(g, tn);
-		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn, 0);
+		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn);
 	}
 	return gn;
 }
@@ -286,7 +266,6 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		RZ_LOG_ERROR("wrong debugger state\n");
 		return false;
 	}
-	RzAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
@@ -310,21 +289,25 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 		/* TODO: disassemble instruction and strstr */
 		rz_asm_set_pc(core->rasm, pc);
 		// TODO: speedup if instructions are in the same block as the previous
-		rz_io_read_at(core->io, pc, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, pc, buf, sizeof(buf));
+		RzAsmOp asmop = { 0 };
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
 		rz_cons_printf("0x%08" PFMT64x " %d %s\n", pc, ret, rz_asm_op_get_asm(&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
 			const char *buf_asm = rz_asm_op_get_asm(&asmop);
 			if (regex) {
 				if (rz_regex_contains(instr, buf_asm, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT)) {
-					RZ_LOG_ERROR("core: esil: stop.\n");
+					rz_asm_op_fini(&asmop);
 					break;
 				}
 			} else {
 				if (strstr(buf_asm, instr)) {
+					rz_asm_op_fini(&asmop);
 					break;
 				}
 			}
+		} else {
+			rz_asm_op_fini(&asmop);
 		}
 	}
 	rz_core_reg_update_flags(core);
@@ -382,7 +365,7 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			pc = rz_reg_getv(core->analysis->reg, "PC");
 		}
-		rz_io_read_at(core->io, pc, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, pc, buf, sizeof(buf));
 		rz_analysis_op_init(&op);
 		if (rz_analysis_op(core->dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			RZ_LOG_ERROR("rz_analysis_op failed\n");
@@ -518,7 +501,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 			oaddr = addr;
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
-			rz_io_read_at(core->io, addr, buf, 32); // XXX longer opcodes?
+			rz_io_read_at_mapped(core->io, addr, buf, 32); // XXX longer opcodes?
 			rz_analysis_op_fini(&aop);
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
@@ -534,57 +517,102 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 	RzListIter *iter;
 	rz_debug_map_sync(core->dbg); // update process memory maps
 	ut64 addr = core->offset;
-	int do_dump = false;
 	int ret = !rz_list_empty(core->dbg->maps);
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		do_dump = false;
 		if (perm == -1) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				do_dump = true;
+			if (addr < map->addr || addr >= map->addr_end) {
+				continue;
 			}
-		} else if (perm == 0) {
-			do_dump = true;
-		} else if (perm == (map->perm & perm)) {
-			do_dump = true;
+		} else if (perm != 0 && perm != (map->perm & perm)) {
+			continue;
 		}
-		if (do_dump) {
-			ut8 *buf = malloc(map->size);
-			// TODO: use mmap here. we need a portable implementation
-			if (!buf) {
-				RZ_LOG_ERROR("core: Cannot allocate 0x%08" PFMT64x " bytes\n", map->size);
-				free(buf);
-				/// XXX: TODO: read by blocks!!1
-				continue;
-			}
-			if (map->size > MAX_MAP_SIZE) {
-				RZ_LOG_ERROR("core: map size is too big to be dumped (0x%08" PFMT64x " > 0x%08x)\n", map->addr, MAX_MAP_SIZE);
-				free(buf);
-				continue;
-			}
-			rz_io_read_at(core->io, map->addr, buf, map->size);
-			char *file = filename
-				? strdup(filename)
-				: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
-					  map->addr, map->addr_end, rz_str_rwx_i(map->perm));
-			if (!rz_file_dump(file, buf, map->size, 0)) {
-				RZ_LOG_ERROR("core: Cannot write '%s'\n", file);
-				ret = 0;
-			} else {
-				RZ_LOG_WARN("core: Dumped %d byte(s) into %s\n", (int)map->size, file);
-			}
-			free(file);
+
+		ut8 *buf = RZ_NEWS(ut8, map->size);
+		// TODO: use mmap here. we need a portable implementation
+		if (!buf) {
+			RZ_LOG_ERROR("core: Cannot allocate 0x%08" PFMT64x " bytes\n", map->size);
 			free(buf);
+			/// XXX: TODO: read by blocks!!1
+			continue;
 		}
+		if (map->size > MAX_MAP_SIZE) {
+			RZ_LOG_ERROR("core: map size is too big to be dumped (0x%08" PFMT64x " > 0x%08x)\n", map->addr, MAX_MAP_SIZE);
+			free(buf);
+			continue;
+		}
+		rz_io_read_at_mapped(core->io, map->addr, buf, map->size);
+		char *file = filename
+			? rz_str_dup(filename)
+			: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
+				  map->addr, map->addr_end, rz_str_rwx_i(map->perm));
+		if (!rz_file_dump(file, buf, map->size, 0)) {
+			RZ_LOG_ERROR("core: Cannot write '%s'\n", file);
+			ret = 0;
+		} else {
+			RZ_LOG_WARN("core: Dumped %d byte(s) into %s\n", (int)map->size, file);
+		}
+		free(file);
+		free(buf);
 	}
 	// eprintf ("No debug region found here\n");
 	return ret;
 }
 
-static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm"
+#define MAX_MAP_SIZE (1024 * 1024 * 512)
+static int dump_io_maps(RzCore *core, int perm, const char *filename) {
+	RzPVector *maps = rz_io_maps(core->io);
+	ut64 addr = core->offset;
+	int ret = !rz_pvector_empty(maps);
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		ut64 map_addr = map->itv.addr;
+		ut64 map_size = map->itv.size;
+		ut64 map_end = map_addr + map_size;
+
+		if (perm == -1) {
+			if (addr < map_addr || addr >= map_end) {
+				continue;
+			}
+		} else if (perm != 0 && perm != (map->perm & perm)) {
+			continue;
+		}
+
+		ut8 *buf = RZ_NEWS(ut8, map_size);
+		if (!buf) {
+			RZ_LOG_ERROR("core: Cannot allocate 0x%08" PFMT64x " bytes\n", map_size);
+			continue;
+		}
+		if (map_size > MAX_MAP_SIZE) {
+			RZ_LOG_ERROR("core: map size is too big to be dumped (0x%08" PFMT64x " > 0x%08x)\n", map_addr, MAX_MAP_SIZE);
+			free(buf);
+			continue;
+		}
+		rz_io_read_at_mapped(core->io, map_addr, buf, map_size);
+		char *file = filename
+			? rz_str_dup(filename)
+			: rz_str_newf("0x%08" PFMT64x "-0x%08" PFMT64x "-%s.dmp",
+				  map_addr, map_end, rz_str_rwx_i(map->perm));
+		if (!rz_file_dump(file, buf, map_size, 0)) {
+			RZ_LOG_ERROR("core: Cannot write '%s'\n", file);
+			ret = 0;
+		} else {
+			RZ_LOG_WARN("core: Dumped %d byte(s) into %s\n", (int)map_size, file);
+		}
+		free(file);
+		free(buf);
+	}
+	return ret;
+}
+
+static void cmd_debug_current_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 	ut64 addr = core->offset;
 	RzDebugMap *map;
 	RzList *list;
 	RzListIter *iter;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
+	rz_cmd_state_output_array_start(state);
 	list = rz_debug_modules_list(core->dbg);
 	rz_list_foreach (list, iter, map) {
 		if (!(addr >= map->addr && addr < map->addr_end)) {
@@ -592,18 +620,15 @@ static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm
 		}
 		if (mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
-		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			/* Escape backslashes (e.g. for Windows). */
-			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = strdup(map->name);
-			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
-				filtered_name, map->addr);
-			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
-			free(escaped_path);
-			free(filtered_name);
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
+			pj_o(pj);
+			pj_kn(pj, "addr", map->addr);
+			pj_kn(pj, "addr_end", map->addr_end);
+			pj_ks(pj, "file", map->file);
+			pj_end(pj);
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
 }
 
@@ -626,20 +651,95 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 			pj_ks(pj, "file", map->file);
 			pj_ks(pj, "name", map->name);
 			pj_end(pj);
-		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			/* Escape backslashes (e.g. for Windows). */
-			char *escaped_path = rz_str_escape(map->file);
-			char *filtered_name = strdup(map->name);
-			rz_name_filter(filtered_name, 0, true);
-			rz_cons_printf("f mod.%s @ 0x%08" PFMT64x "\n",
-				filtered_name, map->addr);
-			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
-			free(escaped_path);
-			free(filtered_name);
 		}
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
+}
+
+static RZ_OWN RzPVector /*<RzIOMap *>*/ *io_map_list(RzCore *core) { // "dmm"
+	RzPVector *maps = rz_io_maps(core->io);
+	RzPVector *ret = rz_pvector_new(NULL);
+	if (!ret) {
+		return NULL;
+	}
+	char *lastname = NULL;
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (!file) {
+			continue;
+		}
+		if (!RZ_STR_EQ(lastname, file)) {
+			rz_pvector_push(ret, map);
+			free(lastname);
+			lastname = rz_str_dup(file);
+		}
+	}
+	free(lastname);
+	return ret;
+}
+
+static void cmd_io_current_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
+	ut64 addr = core->offset;
+	RzPVector *maps = io_map_list(core);
+	void **it;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
+	rz_cmd_state_output_array_start(state);
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		ut64 map_addr = map->itv.addr;
+		ut64 map_end = map_addr + map->itv.size;
+		if (!(addr >= map_addr && addr < map_end)) {
+			continue;
+		}
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (!file) {
+			file = map->name;
+		}
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map_addr, map_end, file);
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
+			pj_o(pj);
+			pj_kn(pj, "addr", map_addr);
+			pj_kn(pj, "addr_end", map_end);
+			pj_ks(pj, "file", file);
+			pj_end(pj);
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_pvector_free(maps);
+}
+
+static void cmd_io_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
+	RzPVector *maps;
+	void **it;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
+	rz_cmd_state_output_array_start(state);
+
+	maps = io_map_list(core);
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (!file) {
+			file = map->name;
+		}
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->itv.addr, map->itv.addr + map->itv.size, file);
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
+			/* Escape backslashes (e.g. for Windows). */
+			pj_o(pj);
+			pj_kn(pj, "addr", map->itv.addr);
+			pj_kn(pj, "addr_end", map->itv.addr + map->itv.size);
+			pj_ks(pj, "name", file);
+			pj_end(pj);
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	rz_pvector_free(maps);
 }
 
 static ut64 addroflib(RzCore *core, const char *libname) {
@@ -683,26 +783,53 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-static RzOutputMode rad2mode(int mode) {
-	switch (mode) {
-	case RZ_MODE_PRINT:
-	default:
-		return RZ_OUTPUT_MODE_STANDARD;
-	case RZ_MODE_JSON:
-		return RZ_OUTPUT_MODE_JSON;
-	case RZ_MODE_SIMPLE:
-		return RZ_OUTPUT_MODE_QUIET;
-	case RZ_MODE_SIMPLEST:
-		return RZ_OUTPUT_MODE_QUIETEST;
-	case RZ_MODE_RIZINCMD:
-		return RZ_OUTPUT_MODE_RIZIN;
+static RzIOMap *get_io_map_from_lib_name(RzCore *core, const char *lib_name) {
+	if (!core || !lib_name) {
+		return NULL;
 	}
+	const char *basename = rz_file_basename(lib_name);
+	if (!basename) {
+		return NULL;
+	}
+	RzIOMap *result = NULL;
+	RzPVector *maps = io_map_list(core);
+	void **it;
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (file && strstr(rz_file_basename(file), basename)) {
+			result = map;
+			break;
+		}
+	}
+	rz_pvector_free(maps);
+	if (result) {
+		return result;
+	}
+	// Fall back to all IO maps
+	maps = rz_io_maps(core->io);
+	rz_pvector_foreach (maps, it) {
+		RzIOMap *map = *it;
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (file && strstr(rz_file_basename(file), basename)) {
+			return map;
+		}
+	}
+	RZ_LOG_ERROR("Unknown library '%s' not found\n", lib_name);
+	return NULL;
 }
 
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj,
-	int mode, bool symbols_only, RzCoreBinFilter *filter) {
+/**
+ * \brief Hacky way to get the binary information of a file.
+ * It opens \p file into the current core->bin (backing up the previous pointer)
+ * and reads the information.
+ * Then closes it again and restores the old core-bin pointer.
+ */
+static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr,
+	RzCmdStateOutput *state, int action, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
+		RZ_LOG_ERROR("Failed to open file: %s\n", file);
 		return false;
 	}
 	RzBinOptions opt = { 0 };
@@ -715,40 +842,36 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj,
 	RzBinFile *obf = rz_bin_cur(core->bin);
 	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 	if (!bf) {
+		RZ_LOG_ERROR("Failed to create RzBinFile for: %s\n", file);
 		rz_io_fd_close(core->io, fd);
 		return false;
 	}
-	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
-	if (symbols_only || filter->name) {
-		action = RZ_CORE_BIN_ACC_SYMBOLS;
-	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
-		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN & ~RZ_CORE_BIN_ACC_MAPS;
-	}
-	if (mode == RZ_MODE_SET) {
-		rz_core_bin_apply_info(core, core->bin->cur, action);
-	} else {
-		RzCmdStateOutput state;
-		rz_cmd_state_output_init(&state, rad2mode(mode));
-		rz_core_bin_print(core, bf, action, filter, &state, NULL);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
-	}
+	rz_core_bin_print(core, bf, action, filter, state, NULL);
 	rz_bin_file_delete(core->bin, bf);
-	rz_bin_file_set_cur_binfile(core->bin, obf);
+	rz_bin_file_set_obj(obf, obf->o);
+	rz_bin_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
 	return true;
 }
 
 // dm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	// dm is oml when file is a core dump
+	if (rz_core_is_core_dump(core)) {
+		return rz_open_maps_list_handler(core, argc, argv, state);
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_debug_map_sync(core->dbg); // update process memory maps
 	rz_core_debug_map_print(core, core->offset, state);
 	return RZ_CMD_STATUS_OK;
 }
 
-// dma
+// dm+
 RZ_IPI RzCmdStatus rz_cmd_debug_allocate_maps_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		RZ_LOG_ERROR("Cannot allocate maps in core dump mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	ut64 addr = core->offset;
 	int size = (int)rz_num_math(core->num, argv[1]);
@@ -758,20 +881,32 @@ RZ_IPI RzCmdStatus rz_cmd_debug_allocate_maps_handler(RzCore *core, int argc, co
 
 // dmm
 RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (rz_core_is_core_dump(core)) {
+		cmd_io_modules(core, state);
+		return RZ_CMD_STATUS_OK;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	cmd_debug_modules(core, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmm.
-RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (rz_core_is_core_dump(core)) {
+		cmd_io_current_modules(core, state);
+		return RZ_CMD_STATUS_OK;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
-	cmd_debug_current_modules(core, mode);
+	cmd_debug_current_modules(core, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dm-
 RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		RZ_LOG_ERROR("Cannot deallocate maps in core dump mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	RzListIter *iter;
 	RzDebugMap *map;
@@ -789,6 +924,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 
 // dm=
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **argv) {
+	// dm= is oml= when file is a core dump
+	if (rz_core_is_core_dump(core)) {
+		return rz_open_maps_list_ascii_handler(core, argc, argv);
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_debug_map_sync(core->dbg);
 	rz_debug_map_list_visual(core->dbg, core->offset, argv[0] + 2,
@@ -797,21 +936,33 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, 
 }
 
 // dm.
-RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	// dm. is oml. when file is a core dump
+	if (rz_core_is_core_dump(core)) {
+		return rz_open_maps_list_cur_handler(core, argc, argv, state);
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
-	RzCmdStateOutput state = { 0 };
-	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_LONG);
-	rz_core_debug_map_print(core, addr, &state);
-	rz_cmd_state_output_print(&state);
-	rz_cmd_state_output_fini(&state);
+	rz_cmd_state_output_init(state, RZ_OUTPUT_MODE_LONG, core);
+	rz_core_debug_map_print(core, addr, state);
+	rz_cmd_state_output_print(state);
+	rz_cmd_state_output_fini(state);
 	rz_cons_flush();
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmd
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **argv) {
+
+	if (rz_core_is_core_dump(core)) {
+		if (argc == 2) {
+			dump_io_maps(core, -1, argv[1]);
+		} else if (argc == 1) {
+			dump_io_maps(core, -1, NULL);
+		}
+		return RZ_CMD_STATUS_OK;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	if (argc == 2) {
 		dump_maps(core, -1, argv[1]);
@@ -823,6 +974,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 
 // dmda
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		dump_io_maps(core, 0, NULL);
+		return RZ_CMD_STATUS_OK;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	dump_maps(core, 0, NULL);
 	return RZ_CMD_STATUS_OK;
@@ -830,186 +985,178 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, co
 
 // dmdw
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		dump_io_maps(core, RZ_PERM_RW, NULL);
+		return RZ_CMD_STATUS_OK;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	dump_maps(core, RZ_PERM_RW, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
-// dmi
-RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+static RzDebugMap *get_debug_map_from_lib_name(RzCore *core, const char *lib_name) {
+	ut64 addr = addroflib(core, rz_file_basename(lib_name));
+	if (addr == UT64_MAX) {
+		RZ_LOG_ERROR("Unknown library '%s' not found\n", lib_name);
+		return NULL;
+	}
+
+	RzDebugMap *map = get_closest_map(core, addr);
+	if (!map) {
+		RZ_LOG_ERROR("Didn't find library map at 0x%" PFMT64x "\n", addr);
+		return NULL;
+	}
+	return map;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+
+	if (argc == 1) {
+		// Effectively an alias for 'dmm'
+		if (rz_core_is_core_dump(core)) {
+			cmd_io_modules(core, state);
+			return RZ_CMD_STATUS_OK;
+		}
+		CMD_CHECK_DEBUG_DEAD(core);
+		cmd_debug_modules(core, state);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	const char *lib_name = argc >= 2 ? argv[1] : NULL;
+	const char *sym_name = argc == 3 ? argv[2] : NULL;
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = sym_name };
+	int action = RZ_CORE_BIN_ACC_SYMBOLS;
+
+	if (rz_core_is_core_dump(core)) {
+		RzIOMap *map = get_io_map_from_lib_name(core, lib_name);
+		if (!map) {
+			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (!file) {
+			file = map->name;
+		}
+		if (!get_bin_info(core, file, map->itv.addr, state, action, &filter)) {
+			RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		return RZ_CMD_STATUS_OK;
+	}
+
 	CMD_CHECK_DEBUG_DEAD(core);
-	RzDebugMap *map;
-	ut64 addr = core->offset;
-	switch (input[0]) {
-	case '\0': // "dmi" alias of "dmm"
-	{
-		RzCmdStateOutput state = { 0 };
-		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-		cmd_debug_modules(core, &state);
-		rz_cmd_state_output_print(&state);
-		rz_cmd_state_output_fini(&state);
+	RzDebugMap *map = get_debug_map_from_lib_name(core, lib_name);
+	if (!map) {
+		RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const char *file = map->file ? map->file : map->name;
+	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (argc == 1) {
+		// Effectively an alias for 'dmm'
+		if (rz_core_is_core_dump(core)) {
+			cmd_io_modules(core, state);
+			rz_cmd_state_output_print(state);
+			rz_cons_flush();
+			return RZ_CMD_STATUS_OK;
+		}
+		CMD_CHECK_DEBUG_DEAD(core);
+		cmd_debug_modules(core, state);
+		rz_cmd_state_output_print(state);
 		rz_cons_flush();
-		break;
+		return RZ_CMD_STATUS_OK;
 	}
-	case ' ': // "dmi "
-	case '*': // "dmi*"
-	case 'v': // "dmiv"
-	case 'j': // "dmij"
-	case 'q': // "dmiq"
-	case 'a': // "dmia"
-	{
-		const char *libname = NULL, *symname = NULL, *a0;
-		int mode;
-		ut64 baddr = 0LL;
-		char *ptr;
-		int i = 1;
-		bool symbols_only = true;
-		if (input[0] == 'a') {
-			symbols_only = false;
-			input++;
-		}
-		PJ *pj = NULL;
-		switch (input[0]) {
-		case 's':
-			mode = RZ_MODE_SET;
-			break;
-		case '*':
-			mode = RZ_MODE_RIZINCMD;
-			break;
-		case 'j':
-			mode = RZ_MODE_JSON;
-			pj = pj_new();
-			if (!pj) {
-				return false;
-			}
-			break;
-		case 'q':
-			mode = input[1] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
-			break;
-		default:
-			mode = RZ_MODE_PRINT;
-			break;
-		}
-		ptr = strdup(input[0] ? rz_str_trim_head_ro(input + 1) : "");
-		if (!ptr || !*ptr) {
-			rz_core_cmd(core, "dmm", 0);
-			free(ptr);
-			pj_free(pj);
-			break;
-		}
-		if (symbols_only) {
-			i = rz_str_word_set0(ptr);
-		}
-		switch (i) {
-		case 2:
-			symname = rz_str_word_get0(ptr, 1);
-			// fall through
-		case 1:
-			a0 = rz_str_word_get0(ptr, 0);
-			addr = rz_num_get(core->num, a0);
-			if (!addr || addr == UT64_MAX) {
-				libname = rz_str_word_get0(ptr, 0);
-			}
-			break;
-		}
-		if (libname && !addr) {
-			addr = addroflib(core, rz_file_basename(libname));
-			if (addr == UT64_MAX) {
-				RZ_LOG_ERROR("core: Unknown library, or not found in dm\n");
-			}
-		}
-		map = get_closest_map(core, addr);
-		if (map) {
-			RzCoreBinFilter filter;
-			filter.offset = UT64_MAX;
-			filter.name = (char *)symname;
-			baddr = map->addr;
+	const char *lib_name = argv[1];
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = NULL };
+	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
 
-			if (libname) {
-				const char *file = map->file ? map->file : map->name;
-				char *newfile = NULL;
-				if (!rz_file_exists(file)) {
-					newfile = rz_file_temp("memlib");
-					if (newfile) {
-						file = newfile;
-						rz_core_dump(core, file, baddr, map->size, false);
-					}
-				}
-				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
-				if (newfile) {
-					if (!rz_file_rm(newfile)) {
-						RZ_LOG_ERROR("core: Error when removing %s\n", newfile);
-					}
-					free(newfile);
-				}
-			} else {
-				RzBinFile *bf = rz_bin_cur(core->bin);
-				if (bf) {
-					rz_bin_set_baddr(core->bin, map->addr);
-					RzCmdStateOutput state;
-					rz_cmd_state_output_init(&state, rad2mode(mode));
-					rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-					rz_cmd_state_output_print(&state);
-					rz_cmd_state_output_fini(&state);
-					rz_bin_set_baddr(core->bin, baddr);
-				}
-			}
+	if (rz_core_is_core_dump(core)) {
+		RzIOMap *map = get_io_map_from_lib_name(core, lib_name);
+		if (!map) {
+			RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+			return RZ_CMD_STATUS_ERROR;
 		}
-		if (mode == RZ_MODE_JSON) {
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
+		const char *file = rz_core_io_map_file_path_or_relative(map);
+		if (!file) {
+			file = map->name;
 		}
-		free(ptr);
-	} break;
-	case '.': // "dmi."
-	{
-		map = get_closest_map(core, addr);
-		if (map) {
-			ut64 closest_addr = UT64_MAX;
-			RzBinObject *o = rz_bin_cur_object(core->bin);
-			RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
-			RzBinSymbol *symbol, *closest_symbol = NULL;
-			void **iter;
-
-			rz_pvector_foreach (symbols, iter) {
-				symbol = *iter;
-				if (symbol->vaddr > addr) {
-					if (symbol->vaddr - addr < closest_addr) {
-						closest_addr = symbol->vaddr - addr;
-						closest_symbol = symbol;
-					}
-				} else {
-					if (addr - symbol->vaddr < closest_addr) {
-						closest_addr = addr - symbol->vaddr;
-						closest_symbol = symbol;
-					}
-				}
-			}
-			RzBinFile *bf = rz_bin_cur(core->bin);
-			if (closest_symbol && bf) {
-				RzCoreBinFilter filter;
-				filter.offset = UT64_MAX;
-				filter.name = (char *)closest_symbol->name;
-
-				rz_bin_set_baddr(core->bin, map->addr);
-				RzCmdStateOutput state;
-				rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD);
-				rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, &state, NULL);
-				rz_cmd_state_output_print(&state);
-				rz_cmd_state_output_fini(&state);
-			}
+		if (!get_bin_info(core, file, map->itv.addr, state, action, &filter)) {
+			RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+			return RZ_CMD_STATUS_ERROR;
 		}
-	} break;
-	default:
-		rz_core_cmd_help(core, help_msg_dmi);
-		break;
+		return RZ_CMD_STATUS_OK;
 	}
+
+	CMD_CHECK_DEBUG_DEAD(core);
+	RzDebugMap *map = get_debug_map_from_lib_name(core, lib_name);
+	if (!map) {
+		RZ_LOG_ERROR("Failed to get map from %s\n", lib_name);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const char *file = map->file ? map->file : map->name;
+	if (!get_bin_info(core, file, map->addr, state, action, &filter)) {
+		RZ_LOG_ERROR("Failed to get binary information for map: '%s' in file: '%s'\n", map->name, file);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmi_closest_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
+		RZ_LOG_ERROR("No object present.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
+	if (!symbols) {
+		RZ_LOG_ERROR("Failed to get symbols from object.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = core->offset;
+	ut64 closest_addr = UT64_MAX;
+	RzBinSymbol *symbol, *closest_symbol = NULL;
+	void **iter;
+	rz_pvector_foreach (symbols, iter) {
+		symbol = *iter;
+		if (symbol->vaddr > addr) {
+			if (symbol->vaddr - addr < closest_addr) {
+				closest_addr = symbol->vaddr - addr;
+				closest_symbol = symbol;
+			}
+		} else {
+			if (addr - symbol->vaddr < closest_addr) {
+				closest_addr = addr - symbol->vaddr;
+				closest_symbol = symbol;
+			}
+		}
+	}
+	if (!closest_symbol) {
+		RZ_LOG_ERROR("Did not found any symbol close to 0x%" PFMT64x "\n", addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		RZ_LOG_ERROR("Failed to get current binary file.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = closest_symbol->name };
+	rz_core_bin_print(core, bf, RZ_CORE_BIN_ACC_SYMBOLS, &filter, state, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmp
 RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		RZ_LOG_ERROR("Cannot change memory permissions in core dump mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	RzListIter *iter;
 	RzDebugMap *map;
@@ -1039,16 +1186,39 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {
-	CMD_CHECK_DEBUG_DEAD(core);
-	RzListIter *iter;
-	RzDebugMap *map;
-	ut64 addr;
-	const char *libname = NULL, *sectname = NULL, *mode = "";
-	ut64 baddr = 0LL;
-	if (m == RZ_OUTPUT_MODE_RIZIN) {
-		mode = "-r ";
+static void rz_cmd_debug_dmS_handler_printer(ut64 baddr, const char *file, const char *sectname, RzOutputMode mode) {
+	char *res;
+	char *name = rz_str_escape((char *)rz_file_basename(file));
+	char *filesc = rz_str_escape(file);
+	char *old_prefix = rz_sys_getenv("RZ_BIN_PREFIX");
+	rz_sys_setenv("RZ_BIN_PREFIX", name);
+
+	const char *json_flag = (mode == RZ_OUTPUT_MODE_JSON) ? " -j" : "";
+
+	if (sectname && mode != RZ_OUTPUT_MODE_JSON) {
+		char *sect = rz_str_escape(sectname);
+		res = rz_sys_cmd_strf("rz-bin%s -B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", json_flag, baddr, filesc, sect);
+		free(sect);
+	} else {
+		res = rz_sys_cmd_strf("rz-bin%s -B 0x%08" PFMT64x " -S \"%s\"", json_flag, baddr, filesc);
 	}
+	if (res) {
+		rz_str_remove_char(res, '\r');
+	}
+	rz_sys_setenv("RZ_BIN_PREFIX", old_prefix);
+	free(old_prefix);
+	free(filesc);
+	if (res) {
+		rz_cons_println(res);
+	}
+	free(name);
+	free(res);
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {
+	ut64 addr;
+	const char *libname = NULL, *sectname = NULL;
+	ut64 baddr = 0LL;
 	addr = UT64_MAX;
 	if (argc == 3) {
 		sectname = argv[2];
@@ -1064,6 +1234,35 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 			libname = argv[1];
 		}
 	}
+
+	if (rz_core_is_core_dump(core)) {
+		RzPVector *maps = io_map_list(core);
+		void **it;
+		rz_pvector_foreach (maps, it) {
+			RzIOMap *map = *it;
+			ut64 map_addr = map->itv.addr;
+			ut64 map_end = map_addr + map->itv.size;
+			if ((!libname ||
+				    (addr != UT64_MAX && (addr >= map_addr && addr < map_end)) ||
+				    (libname != NULL && (strstr(map->name, libname))))) {
+				baddr = map_addr;
+				const char *file = rz_core_io_map_file_path_or_relative(map);
+				if (!file) {
+					file = map->name;
+				}
+				rz_cmd_debug_dmS_handler_printer(baddr, file, sectname, m);
+				if (libname || addr != UT64_MAX) { // only single match requested
+					break;
+				}
+			}
+		}
+		rz_pvector_free(maps);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	CMD_CHECK_DEBUG_DEAD(core);
+	RzDebugMap *map;
+	RzListIter *iter;
 	rz_debug_map_sync(core->dbg); // update process memory maps
 	RzList *list = rz_debug_modules_list(core->dbg);
 	rz_list_foreach (list, iter, map) {
@@ -1071,22 +1270,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 			    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
 			    (libname != NULL && (strstr(map->name, libname))))) {
 			baddr = map->addr;
-			char *res;
 			const char *file = map->file ? map->file : map->name;
-			char *name = rz_str_escape((char *)rz_file_basename(file));
-			char *filesc = rz_str_escape(file);
-			/* TODO: do not spawn. use RzBin API */
-			if (sectname) {
-				char *sect = rz_str_escape(sectname);
-				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
-				free(sect);
-			} else {
-				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
-			}
-			free(filesc);
-			rz_cons_println(res);
-			free(name);
-			free(res);
+			rz_cmd_debug_dmS_handler_printer(baddr, file, sectname, m);
 			if (libname || addr != UT64_MAX) { // only single match requested
 				break;
 			}
@@ -1094,8 +1279,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 	}
 	return RZ_CMD_STATUS_OK;
 }
+
 // dml
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		RZ_LOG_ERROR("Cannot load into memory in core dump mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	RzListIter *iter;
 	RzDebugMap *map;
@@ -1127,6 +1317,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 
 // dmL
 RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_core_is_core_dump(core)) {
+		RZ_LOG_ERROR("Cannot allocate maps in core dump mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	CMD_CHECK_DEBUG_DEAD(core);
 	int size;
 	ut64 addr;
@@ -1136,18 +1330,110 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-// dmx
-RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-#if HAVE_JEMALLOC
-	if (core->rasm->bits == 64) {
-		return cmd_dbg_map_jemalloc_64(core, input);
-	} else {
-		return cmd_dbg_map_jemalloc_32(core, input);
+// "dmhja"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_a_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+
+	if (has_specified_arena) {
+		if (!rz_num_is_valid_input(core->num, argv[1])) {
+			RZ_LOG_ERROR("Invalid arena address '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		ut64 arena_addr = rz_num_math(core->num, argv[1]);
+		return rz_heap_jemalloc_cmd_a(core, has_specified_arena, arena_addr);
 	}
-#endif
-	return RZ_CMD_STATUS_ERROR;
+
+	if (!rz_core_is_core_dump(core)) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
+	return rz_heap_jemalloc_cmd_a(core, has_specified_arena, 0);
+}
+
+// "dmhjb"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_b_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	bool has_bin_info = argc > 2 && RZ_STR_ISNOTEMPTY(argv[2]);
+
+	if (has_specified_arena) {
+		ut64 arena_addr = 0;
+		ut64 bin_info_addr = 0;
+		if (!has_bin_info) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (!rz_num_is_valid_input(core->num, argv[1])) {
+			RZ_LOG_ERROR("Invalid arena address '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (!rz_num_is_valid_input(core->num, argv[2])) {
+			RZ_LOG_ERROR("Invalid bin info address '%s'\n", argv[2]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		arena_addr = rz_num_math(core->num, argv[1]);
+		bin_info_addr = rz_num_math(core->num, argv[2]);
+
+		return rz_heap_jemalloc_cmd_b(core, has_specified_arena, arena_addr, has_bin_info, bin_info_addr);
+	}
+
+	if (!rz_core_is_core_dump(core)) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
+
+	return rz_heap_jemalloc_cmd_b(core, has_specified_arena, 0, has_bin_info, 0);
+}
+
+// "dmhjc"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_c_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_arena = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+
+	if (has_specified_arena) {
+		if (!rz_num_is_valid_input(core->num, argv[1])) {
+			RZ_LOG_ERROR("Invalid arena address '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		ut64 arena_addr = rz_num_math(core->num, argv[1]);
+		return rz_heap_jemalloc_cmd_c(core, has_specified_arena, arena_addr);
+	}
+
+	if (!rz_core_is_core_dump(core)) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
+	return rz_heap_jemalloc_cmd_c(core, has_specified_arena, 0);
+}
+
+// "dmhje" - Find extent for malloc address
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_e_handler(RzCore *core, int argc, const char **argv) {
+	bool has_addr = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+
+	if (has_addr) {
+		if (!rz_num_is_valid_input(core->num, argv[1])) {
+			RZ_LOG_ERROR("Invalid address '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		ut64 lookup_addr = rz_num_math(core->num, argv[1]);
+		return rz_heap_jemalloc_cmd_e(core, has_addr, lookup_addr);
+	}
+
+	if (!rz_core_is_core_dump(core)) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	}
+	return rz_heap_jemalloc_cmd_e(core, has_addr, 0);
+}
+
+// "dmhjei" - Display extent info
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_jemalloc_ei_handler(RzCore *core, int argc, const char **argv) {
+	bool has_addr = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	ut64 extent_addr = 0;
+
+	if (!has_addr) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid extent address '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	extent_addr = rz_num_math(core->num, argv[1]);
+
+	return rz_heap_jemalloc_cmd_ei(core, has_addr, extent_addr);
 }
 
 static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
@@ -1172,34 +1458,15 @@ static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 		rz_reg_setv(r, bp, s);
 		rz_reg_setv(r, sp, b);
 		//////////
-		char flagdesc[1024], flagdesc2[1024];
-		RzFlagItem *fi = rz_flag_get_at(core->flags, f->addr, true);
-		flagdesc[0] = flagdesc2[0] = 0;
-		if (fi) {
-			if (fi->offset != f->addr) {
-				int delta = (int)(f->addr - fi->offset);
-				if (delta > 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s+%d", fi->name, delta);
-				} else if (delta < 0) {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s%d", fi->name, delta);
-				} else {
-					snprintf(flagdesc, sizeof(flagdesc),
-						"%s", fi->name);
-				}
-			} else {
-				snprintf(flagdesc, sizeof(flagdesc),
-					"%s", fi->name);
-			}
-		}
+		char *flagdesc = rz_core_addr_get_flag_offset(core->flags, f->addr);
 		//////////
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
 		rz_cons_printf("%d  0x%08" PFMT64x " sp: 0x%08" PFMT64x " %-5d"
-			       "[%s]  %s %s\n",
+			       "[%s]  %s\n",
 			n, f->addr, f->sp, (int)f->size,
-			fcn ? fcn->name : "??", flagdesc, flagdesc2);
+			fcn ? fcn->name : "??", flagdesc ? flagdesc : "");
+		free(flagdesc);
 		rz_cons_push();
 		char *res = rz_core_analysis_all_vars_display(core, fcn, true);
 		rz_cons_pop();
@@ -1299,7 +1566,7 @@ RZ_IPI void rz_core_debug_bp_add(RzCore *core, ut64 addr, const char *arg_perm, 
 			rz_bp_item_set_name(bpi, name);
 			free(name);
 		} else {
-			bpi->name = strdup(f->name);
+			bpi->name = rz_str_dup(f->name);
 		}
 	} else {
 		char *name = rz_str_newf("0x%08" PFMT64x, addr);
@@ -1326,7 +1593,6 @@ static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 
 static RzCore *_core = NULL;
 
 static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
-	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
 	if (!tn)
@@ -1334,13 +1600,12 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	for (i = 0; i < n->depth - 1; i++) {
 		rz_cons_printf("  ");
 	}
+	char *name = NULL;
 	if (_core) {
-		RzFlagItem *f = rz_flag_get_at(_core->flags, tn->addr, true);
-		if (f) {
-			name = f->name;
-		}
+		name = rz_core_addr_get_flag_offset(_core->flags, tn->addr);
 	}
-	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name);
+	rz_cons_printf(" 0x%08" PFMT64x " refs %d %s\n", tn->addr, tn->refs, name ? name : "");
+	free(name);
 }
 
 static void trace_traverse(RTree *t) {
@@ -1354,8 +1619,7 @@ static void trace_traverse(RTree *t) {
 }
 
 static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
-	bool trace_libs = rz_config_get_i(core->config, "dbg.trace.libs");
-	bool shallow_trace = rz_config_get_i(core->config, "dbg.trace.inrange");
+	bool shallow_trace = rz_config_get_b(core->config, "dbg.trace.inrange");
 	HtUP *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RzDebug *dbg = core->dbg;
@@ -1363,13 +1627,6 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 	RTreeNode *cur;
 	ut64 addr = 0;
 	int n = 0;
-
-	if (!trace_libs) {
-#if NOOP
-		RzList *bounds = rz_core_get_boundaries_prot(core, -1, "dbg.program", "search");
-		rz_list_free(bounds);
-#endif
-	}
 
 	/* set root if not already present */
 	rz_tree_add_node(tr, NULL, NULL);
@@ -1403,7 +1660,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		}
 		addr_in_range = addr >= from && addr < to;
 
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		eprintf("%d %" PFMT64x "\r", n++, addr);
@@ -1461,7 +1718,7 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	int t = core->dbg->trace->enabled;
 
 	if (rz_debug_is_dead(core->dbg)) {
-		RZ_LOG_ERROR("core: No process to debug.");
+		RZ_LOG_ERROR("core: No process to debug.\n");
 		return;
 	}
 	core->dbg->trace->enabled = 0;
@@ -1482,69 +1739,6 @@ static void debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr)
 	trace_traverse(core->dbg->tree);
 	core->dbg->trace->enabled = t;
 	rz_cons_break_pop();
-}
-
-static bool cmd_dcu(RzCore *core, const char *input) {
-	const char *ptr = NULL;
-	ut64 from, to, pc;
-	bool dcu_range = false;
-	bool invalid = (!input[0] || !input[1] || !input[2]);
-	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		rz_core_cmd_help(core, help_msg_dcu);
-		return false;
-	}
-	to = UT64_MAX;
-	if (input[2] == '.') {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_tail(core->num, core->offset, input + 2);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_tail(core->num, core->offset, input + 2);
-		}
-	} else {
-		ptr = strchr(input + 3, ' ');
-		if (ptr) { // TODO: put '\0' in *ptr to avoid
-			from = rz_num_math(core->num, input + 3);
-			if (ptr[1] == '.') {
-				to = rz_num_tail(core->num, core->offset, ptr + 2);
-			} else {
-				to = rz_num_math(core->num, ptr + 1);
-			}
-			dcu_range = true;
-		} else {
-			from = rz_num_math(core->num, input + 3);
-		}
-	}
-	if (core->num->nc.errors && rz_cons_is_interactive()) {
-		RZ_LOG_ERROR("core: Cannot continue until unknown address '%s'\n", core->num->nc.calc_buf);
-		return false;
-	}
-	if (to == UT64_MAX) {
-		to = from;
-	}
-	if (dcu_range) {
-		rz_cons_break_push(NULL, NULL);
-		do {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			rz_debug_step(core->dbg, 1);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, "PC");
-			RZ_LOG_WARN("core: Continue 0x%08" PFMT64x " > 0x%08" PFMT64x " < 0x%08" PFMT64x "\n",
-				from, pc, to);
-		} while (pc < from || pc > to);
-		rz_cons_break_pop();
-	} else {
-		return rz_core_debug_continue_until(core, from, to);
-	}
-	return true;
 }
 
 // dsu
@@ -1662,13 +1856,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_reset_handler(RzCore *core, int argc, con
 	rz_debug_tracenodes_reset(core->dbg);
 	core->dbg->trace = rz_debug_trace_new();
 	return RZ_CMD_STATUS_OK;
-}
-
-// dta
-RZ_IPI int rz_cmd_debug_trace_addr(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	rz_debug_trace_at(core->dbg, input);
-	return 0;
 }
 
 // dtc
@@ -1855,13 +2042,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_bp_handler(RzCore *core, int argc, const ch
 				rz_str_rwx_i(b->perm), b->hw ? "hw" : "sw", b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled", rz_bp_is_valid(core->dbg->bp, b) ? "valid" : "invalid",
 				rz_str_get(b->data), rz_str_get(b->cond), rz_str_get(b->name), rz_str_get(b->module_name));
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			if (b->module_name) {
-				rz_cons_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
-			} else {
-				rz_cons_printf("db @ 0x%08" PFMT64x "\n", b->addr);
-			}
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
@@ -2141,24 +2321,27 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int 
 
 // dbh
 RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_bp_plugin_list(core->dbg->bp);
-	} else if (argc == 2) {
-		if (!rz_bp_use(core->dbg->bp, argv[1])) {
-			RZ_LOG_ERROR("Failed to set breakpoint plugin handler to %s\n", argv[1]);
-			return RZ_CMD_STATUS_ERROR;
-		}
+	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
+	RzIterator *iter = rz_asm_plugin_iterator(core->rasm);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return RZ_CMD_STATUS_OK;
-}
 
-// dbh-
-RZ_IPI RzCmdStatus rz_cmd_debug_remove_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
-		if (!rz_bp_plugin_del_byname(core->dbg->bp, argv[i])) {
-			RZ_LOG_ERROR("Failed to delete breakpoint plugin handler: %s\n", argv[i]);
+	rz_list_sort(plugin_list, (RzListComparator)rz_asm_plugin_cmp, NULL);
+	RzListIter *it;
+	const RzAsmPlugin *ap;
+
+	rz_list_foreach (plugin_list, it, ap) {
+		if (!ap->sw_breakpoint) {
+			continue;
 		}
+		rz_cons_printf("%s\n", ap->name);
 	}
+
+	rz_list_free(plugin_list);
+	rz_iterator_free(iter);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2170,28 +2353,21 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzOutputMode mode = state->mode;
-	if (mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_list_reverse(list);
-		rz_cons_printf("f-bt.*\n");
-	}
 
 	int i = 0;
 	RzListIter *iter;
 	RzBacktrace *bt;
 	PJ *pj = state->d.pj;
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "dxxdss", "idx", "pc", "sp", "frame_size", "fname", "desc");
 	rz_list_foreach (list, iter, bt) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
 			rz_cons_printf("%d  %s sp: %s  %-5d"
-				       "[%s]  %s %s\n",
-				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??", rz_str_get(bt->flagdesc), rz_str_get(bt->flagdesc2));
-			break;
-		}
-		case RZ_OUTPUT_MODE_RIZIN: {
-			rz_cons_printf("f bt.frame%d @ 0x%08" PFMT64x "\n", i, bt->frame->addr);
-			rz_cons_printf("f bt.frame%d.stack %d @ 0x%08" PFMT64x "\n", i, bt->frame->size, bt->frame->sp);
-			i++;
+				       "[%s]%s%s%s%s\n",
+				i++, bt->pcstr, bt->spstr, bt->frame->size, bt->fcn ? bt->fcn->name : "??",
+				bt->flagdesc ? "  " : "", rz_str_get(bt->flagdesc),
+				bt->flagdesc2 ? " " : "", rz_str_get(bt->flagdesc2));
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
@@ -2203,6 +2379,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_display_bt_handler(RzCore *core, int argc, const
 			pj_ks(pj, "fname", bt->fcn ? bt->fcn->name : "");
 			pj_ks(pj, "desc", bt->desc);
 			pj_end(pj);
+			i++;
+			break;
+		}
+		case RZ_OUTPUT_MODE_TABLE: {
+			rz_table_add_rowf(state->d.t, "dxxdss", i, bt->frame->addr, bt->frame->sp, bt->frame->size,
+				bt->fcn ? bt->fcn->name : "", bt->desc);
 			i++;
 			break;
 		}
@@ -2558,22 +2740,15 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_syscall_handler(RzCore *core, int argc,
 }
 
 // dcu
-RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_until_handler(RzCore *core, int argc, const char **argv) {
 	CMD_CHECK_DEBUG_DEAD(core);
 	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
-	if (input[0] == '?') {
-		rz_core_cmd_help(core, help_msg_dcu);
-	} else if (input[0] == '.' || input[0] == '\0') {
-		cmd_dcu(core, "cu $$");
-	} else {
-		char *tmpinp = rz_str_newf("cu %s", input + 1);
-		cmd_dcu(core, tmpinp);
-		free(tmpinp);
-	}
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	RZ_LOG_INFO("Continue until 0x%" PFMT64x "\n", addr);
+	bool success = rz_core_debug_continue_until(core, addr);
 	rz_cons_break_pop();
 	rz_core_dbg_follow_seek_register(core);
-	return RZ_CMD_STATUS_OK;
+	return success ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_handler_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -2711,7 +2886,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_prog_handler(RzCore *core, int argc, const 
 	for (int i = 0; i < times; i++) {
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
 		ut64 addr = rz_debug_reg_get(core->dbg, "PC");
-		rz_io_read_at(core->io, addr, buf, sizeof(buf));
+		rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 		RzAnalysisOp aop = { 0 };
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
@@ -2834,20 +3009,6 @@ RZ_IPI RzCmdStatus rz_debug_info_handler(RzCore *core, int argc, const char **ar
 		if (stop != -1) {
 			rz_cons_printf("stopreason=%d\n", stop);
 		}
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		if (!rdi) {
-			break;
-		}
-		rz_cons_printf("f dbg.signal @ %d\n", core->dbg->reason.signum);
-		rz_cons_printf("f dbg.sigpid @ %d\n", core->dbg->reason.tid);
-		rz_cons_printf("f dbg.inbp @ %d\n", core->dbg->reason.bp_addr ? 1 : 0);
-		rz_cons_printf("f dbg.sigaddr @ 0x%" PFMT64x "\n", core->dbg->reason.addr);
-		rz_cons_printf("f dbg.baddr @ 0x%" PFMT64x "\n", rz_debug_get_baddr(core->dbg, NULL));
-		rz_cons_printf("f dbg.pid @ %d\n", rdi->pid);
-		rz_cons_printf("f dbg.tid @ %d\n", rdi->tid);
-		rz_cons_printf("f dbg.uid @ %d\n", rdi->uid);
-		rz_cons_printf("f dbg.gid @ %d\n", rdi->gid);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -3129,7 +3290,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_core_dump_generate_handler(RzCore *core, int arg
 		RZ_LOG_ERROR("core: Not debugging, can't write core file.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	char *corefile = argc > 1 ? strdup(argv[1]) : rz_str_newf("core.%u", core->dbg->pid);
+	char *corefile = argc > 1 ? rz_str_dup(argv[1]) : rz_str_newf("core.%u", core->dbg->pid);
 	RZ_LOG_WARN("core: Writing to file '%s'\n", corefile);
 	rz_file_rm(corefile);
 	RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);

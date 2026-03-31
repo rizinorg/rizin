@@ -51,13 +51,13 @@ E.g.: `Bug fix did not change the general behavior of the function. No documenta
 In order to contribute with patches or plugins, we encourage you to use the same
 coding style as the rest of the code base.
 
-* Use git-clang-format 16 to format your code. If clang-format-16 is not available on
+* Use git-clang-format-20 to format your code. If clang-format-20 is not available on
   your Debian-based distribution, you can install it from https://apt.llvm.org/.
   You should invoke it as below (after making sure that your local copy of `dev`
   is up-to-date and your branch is up-to-date with `dev`):
 
 ```bash
-git-clang-format-16 --extensions c,cpp,h,hpp,inc --style file dev
+git-clang-format-20 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
   There is a script available to run on all source files; you will need python and
@@ -199,9 +199,80 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * Add a single space after the `//` when writing inline comments:
 
+* Don't overuse macros!
+  Moving syntactically repetitive code patterns up to 3 lines into a macro is fine.
+  But anything that hides non-trivial semantics is not allowed.
+  It makes debugging really hard, hides code logic, and screws test coverage reports.
+
+  Examples:
+  ```c
+  // OK: If the member `ops` is very often accessed in the code,
+  // it is fine to simplify the syntax with a macro.
+  #define GET_OP_N(n) insn->details->ops[n]
+  ```
+
+  ```c
+  // OK: Repetitive but **simple** initialization patterns.
+  #define TOKEN(_type, _pat) \
+  	do { \
+  		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+  		pat->type = RZ_ASM_TOKEN_##_type; \
+  		pat->pattern = rz_str_dup(_pat); \
+  		rz_pvector_push(pvec, pat); \
+  	} while (0)
+
+  // [...]
+  void set_tokens() {
+    RzVector *pvec = rz_pvector_new();
+  	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
+  	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
+  	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
+  }
+  ```
+
+  ```c
+  // OK: Repetitive but **simple** function definitions implemented for each **type**.
+  // This case is rare!
+  //
+  // In C++ or other languages this would be done with templates or generics.
+  // C doesn't have this, so macros are fine in this case.
+  #define DEF_TEMPLATE_FCN(T) \
+  T template_like_function() { \
+    return (T) (sizeof(T) * sizeof(T)); \
+  }
+  DEF_TEMPLATE_FCN(ut8);
+  DEF_TEMPLATE_FCN(ut16);
+  DEF_TEMPLATE_FCN(ut32);
+  DEF_TEMPLATE_FCN(ut64);
+  ```
+
+  ```c
+  // NOT OK: This hides semantics.
+  // Implement the case in a static function instead and call it.
+  #define REPETITIVE_CASE(n) \
+    int i = some_fcn(n); \
+    i <<= 8; \
+    i &= 0x80000; \
+    ret = i * other_fcn(n); \
+    break;
+
+  // [...]
+  switch(x) {
+  case 1:
+    REPETITIVE_CASE(1)
+  case 2:
+    REPETITIVE_CASE(2)
+  case 3:
+    REPETITIVE_CASE(3)
+  }
+  ```
+
 ```c
 int sum = 0; // set sum to 0
 ```
+
+* If you want to iterate over values of your struct, implement `RzIterator *mystruct_as_iter()` and `RzIterator *mystruct_as_iter_mut()` for them.
+  See `rz_iterator.h` for details about the iterator.
 
 * If you need bitmaps, do not shift and OR the bits manually on `ut32`. Use bit vectors from `rz_bitvector.h` instead.
 
@@ -354,13 +425,13 @@ Rizin is trying to comply with the Software Package Data Exchange® (SPDX®),
 an open standard to communicate in a clear way licenses and copyrights, among
 other things, of a software. All files in the repository should either have
 an header specifying the copyright and the license that apply or an entry in
-.reuse/dep5 file. All pieces of code copied from other projects should have
-a license/copyright entry as well.
+the [REUSE.toml](REUSE.toml) file. All pieces of code copied from other projects
+should have a license/copyright entry as well.
 
 In particular, the SPDX header may look like:
 ```C
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-License-Identifier: LPGL-3.0-only
+// SPDX-License-Identifier: LGPL-3.0-only
 ```
 
 You can use the [REUSE Software](https://reuse.software/) to check the
@@ -368,33 +439,47 @@ compliance of the project and get the licenses/copyright of each file.
 
 # Custom Pointer Modifiers
 
-In Rizin code there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
+In Rizin code, there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
 
 ```c
 #define RZ_IN        /* do not use, implicit */
 #define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written */
+#define RZ_INOUT     /* parameter is read and written / return value is copy of RZ_INOUT parameter */
 #define RZ_OWN       /* pointer ownership is transferred */
 #define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL   /* pointer can not be null */
+#define RZ_NONNULL   /* pointer cannot be null */
 #define RZ_NULLABLE  /* pointer can be null */
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 ```
 
-Most of them are easy to understand and you can see brief explanation in the comments. But `RZ_OWN` and `RZ_BORROW` may be a little tricky to new developers.
+### Usage of Modifiers
 
-Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not. Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership so you don't have to read complicated function definitions to know whether they should still free objects or not.
+Most of these modifiers are self-explanatory, and you can see brief explanations in the comments. However, `RZ_OWN` and `RZ_BORROW` can be a bit tricky for new developers.
 
-You can use the two modifiers in two places and their explanations are as below:
+Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not.
+Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership,
+so you don't have to read complicated function definitions to know whether they should still free objects or not.
 
-- before the return type of function
-  - `RZ_OWN`: the ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
-  - `RZ_BORROW`: the ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
-- before the parameter of function.
-  - `RZ_OWN`: the ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
-  - `RZ_BORROW`: the ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+You can use the two modifiers in two places, and their explanations are as follows:
 
-Examples:
+- **Before the return type of a function**:
+  - `RZ_OWN`: The ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
+  - `RZ_BORROW`: The ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
+- **Before the parameter of a function**:
+  - `RZ_OWN`: The ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
+  - `RZ_BORROW`: The ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+
+### Guidelines for Functions
+
+#### Functions Returning Pointers
+- **Arguments (Pointers)**: Must have both ownership and nullability definitions specified.
+- **Return Value**: Must have ownership defined and, unless otherwise specified, it is assumed to be `RZ_NULLABLE`.
+
+#### Functions Handling `NULL` Pointers
+- **Arguments (Pointers)**: Must be marked with `RZ_NULLABLE`.
+- **Assertions**: There should not be any assertions on these arguments as the function is expected to handle `NULL` pointers.
+
+### Examples:
 
 ```c
 RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
@@ -405,9 +490,9 @@ RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
 }
 
 int main() {
-  char *s = strdup("Hello World");
+  char *s = rz_str_dup("Hello World");
   MyString *m = capitalize_str(s);
-  // s was RZ_BORROW, so main still need to free it
+  // s was RZ_BORROW, so main MUST free it
   free(s);
   // ... use m ....
   // m was RZ_OWN, so main now has to free it

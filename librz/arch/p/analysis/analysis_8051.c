@@ -1067,7 +1067,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	_sfr	.32	28 0\n"
 		"gpr	_xdata	.32 32 0\n"
 		"gpr	_pdata	.32	36 0\n";
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static ut32 map_direct_addr(RzAnalysis *analysis, ut8 addr) {

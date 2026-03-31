@@ -4,9 +4,9 @@ CMDS=<<EOF
 flt:size/sum
 EOF
 EXPECT=<<EOF
-size  
+ size 
 ------
-12.9K
+13.1K
 EOF
 RUN
 
@@ -18,50 +18,50 @@ EOF
 EXPECT=<<EOF
 size 
 -----
-0
-1
-2
-3
-4
-6
-8
-9
-13
-16
-21
-23
-24
-26
-28
-32
-36
-42
-43
-52
-56
-62
-64
-66
-68
-80
-88
-96
-101
-104
-124
-158
-176
-203
-240
-256
-272
-432
-448
-464
-497
-512
-540
-978
+   0
+   1
+   2
+   3
+   4
+   6
+   8
+   9
+  13
+  16
+  21
+  23
+  24
+  26
+  28
+  32
+  36
+  42
+  43
+  52
+  56
+  62
+  64
+  66
+  68
+  80
+  88
+  96
+ 101
+ 104
+ 124
+ 158
+ 176
+ 203
+ 240
+ 256
+ 272
+ 432
+ 448
+ 464
+ 497
+ 512
+ 540
+ 978
 1160
 4132
 EOF
@@ -74,6 +74,7 @@ flt:size/ne/0:addr/ne/0x00000000:/head/10:csv~:..20
 flt:space/eq/relocs:addr/cols/name:/head/3:json~{}
 flt:/head/10:/tail/4:space/cols/name
 flt:/page/2/10:sort/cols/space/size/name:name/sort/inc:fancy
+iSt:csv
 EOF
 EXPECT=<<EOF
 addr,size,space,name,realname
@@ -111,18 +112,50 @@ segments         segment.NOTE
 .------------------------------------------------------.
 | space            | size | name                       |
 )------------------------------------------------------(
-| sections         | 497  | section..dynstr            |
-| sections         | 432  | section..dynsym            |
-| sections         | 56   | section..gnu.hash          |
-| sections         | 36   | section..gnu.version       |
-| sections         | 36   | section..note.gnu.build_id |
-| segments         | 68   | segment.NOTE               |
-| symbols.sections | 0    | sym..dynstr                |
-| symbols.sections | 0    | sym..dynsym                |
-| symbols.sections | 0    | sym..gnu.hash              |
-| symbols.sections | 0    | sym..note.ABI_tag          |
-| symbols.sections | 0    | sym..note.gnu.build_id     |
+| sections         |  497 | section..dynstr            |
+| sections         |  432 | section..dynsym            |
+| sections         |   56 | section..gnu.hash          |
+| sections         |   36 | section..gnu.version       |
+| sections         |   36 | section..note.gnu.build_id |
+| segments         |   68 | segment.NOTE               |
+| symbols.sections |    0 | sym..dynstr                |
+| symbols.sections |    0 | sym..dynsym                |
+| symbols.sections |    0 | sym..gnu.hash              |
+| symbols.sections |    0 | sym..note.ABI_tag          |
+| symbols.sections |    0 | sym..note.gnu.build_id     |
 `------------------------------------------------------'
+paddr,size,vaddr,vsize,align,perm,name,type,flags
+0x00000000,0x0,----------,0x0,0x0,----,,NULL,
+0x00000200,0x1c,0x00400200,0x1c,0x0,-r--,.interp,PROGBITS,alloc
+0x0000021c,0x20,0x0040021c,0x20,0x0,-r--,.note.ABI-tag,NOTE,alloc
+0x0000023c,0x24,0x0040023c,0x24,0x0,-r--,.note.gnu.build-id,NOTE,alloc
+0x00000260,0x38,0x00400260,0x38,0x0,-r--,.gnu.hash,GNU_HASH,alloc
+0x00000298,0x1b0,0x00400298,0x1b0,0x0,-r--,.dynsym,DYNSYM,alloc
+0x00000448,0x1f1,0x00400448,0x1f1,0x0,-r--,.dynstr,STRTAB,alloc
+0x0000063a,0x24,0x0040063a,0x24,0x0,-r--,.gnu.version,VERSYM,alloc
+0x00000660,0x50,0x00400660,0x50,0x0,-r--,.gnu.version_r,VERNEED,alloc
+0x000006b0,0x60,0x004006b0,0x60,0x0,-r--,.rela.dyn,RELA,alloc
+0x00000710,0xf0,0x00400710,0xf0,0x0,-r--,.rela.plt,RELA,"alloc,info"
+0x00000800,0x1a,0x00400800,0x1a,0x0,-r-x,.init,PROGBITS,"alloc,execute"
+0x00000820,0xb0,0x00400820,0xb0,0x0,-r-x,.plt,PROGBITS,"alloc,execute"
+0x000008d0,0x8,0x004008d0,0x8,0x0,-r-x,.plt.got,PROGBITS,"alloc,execute"
+0x000008e0,0x3d2,0x004008e0,0x3d2,0x0,-r-x,.text,PROGBITS,"alloc,execute"
+0x00000cb4,0x9,0x00400cb4,0x9,0x0,-r-x,.fini,PROGBITS,"alloc,execute"
+0x00000cc0,0xcb,0x00400cc0,0xcb,0x0,-r--,.rodata,PROGBITS,alloc
+0x00000d8c,0x7c,0x00400d8c,0x7c,0x0,-r--,.eh_frame_hdr,PROGBITS,alloc
+0x00000e08,0x21c,0x00400e08,0x21c,0x0,-r--,.eh_frame,PROGBITS,alloc
+0x00001028,0x10,0x00601028,0x10,0x0,-rw-,.init_array,INIT_ARRAY,"write,alloc"
+0x00001038,0x8,0x00601038,0x8,0x0,-rw-,.fini_array,FINI_ARRAY,"write,alloc"
+0x00001040,0x8,0x00601040,0x8,0x0,-rw-,.jcr,PROGBITS,"write,alloc"
+0x00001048,0x200,0x00601048,0x200,0x0,-rw-,.dynamic,DYNAMIC,"write,alloc"
+0x00001248,0x8,0x00601248,0x8,0x0,-rw-,.got,PROGBITS,"write,alloc"
+0x00001250,0x68,0x00601250,0x68,0x0,-rw-,.got.plt,PROGBITS,"write,alloc"
+0x000012b8,0x10,0x006012b8,0x10,0x0,-rw-,.data,PROGBITS,"write,alloc"
+0x000012c8,0x0,0x006012e0,0x1d0,0x0,-rw-,.bss,NOBITS,"write,alloc"
+0x000012c8,0x11,----------,0x11,0x0,----,.comment,PROGBITS,"merge,strings"
+0x0000213f,0x10c,----------,0x10c,0x0,----,.shstrtab,STRTAB,
+0x000012e0,0x978,----------,0x978,0x0,----,.symtab,SYMTAB,
+0x00001c58,0x4e7,----------,0x4e7,0x0,----,.strtab,STRTAB,
 EOF
 RUN
 
@@ -134,15 +167,15 @@ af
 aflt:simple
 EOF
 EXPECT=<<EOF
-addr       name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
+      addr name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
 -----------------------------------------------------------------------------------
-0x00000630 sym.imp.free   6    1       1         0     1    0     1  3    false
-0x00000640 sym.imp.strcpy 6    1       1         0     1    0     1  3    false
-0x00000650 sym.imp.puts   6    1       1         0     1    0     1  3    false
-0x00000660 sym.imp.strlen 6    2       1         0     1    0     1  3    false
-0x00000670 sym.imp.malloc 6    1       1         0     1    0     1  3    false
-0x00000680 sym.imp.strcat 6    1       1         0     1    0     1  3    false
-0x000007aa main           157  0       9         6     3    3     2  61   false
+0x00000630 sym.imp.free      6       1         1     0    1     0  1    3 false
+0x00000640 sym.imp.strcpy    6       1         1     0    1     0  1    3 false
+0x00000650 sym.imp.puts      6       1         1     0    1     0  1    3 false
+0x00000660 sym.imp.strlen    6       2         1     0    1     0  1    3 false
+0x00000670 sym.imp.malloc    6       1         1     0    1     0  1    3 false
+0x00000680 sym.imp.strcat    6       1         1     0    1     0  1    3 false
+0x000007aa main            157       0         9     6    3     3  2   61 false
 EOF
 RUN
 
@@ -156,23 +189,23 @@ afbt:fancy
 afbt:size/sort/inc:simple
 EOF
 EXPECT=<<EOF
-addr  size jump  fail  
+ addr size  jump  fail 
 -----------------------
-0x7aa 92   0x844 0x806
-0x806 62   0x844 -1
-0x844 3    -1    -1
+0x7aa   92 0x844 0x806
+0x806   62 0x844    -1
+0x844    3    -1    -1
 .------------------------------.
-| addr  | size | jump  | fail  |
+|  addr | size |  jump |  fail |
 )------------------------------(
-| 0x7aa | 92   | 0x844 | 0x806 |
-| 0x806 | 62   | 0x844 | -1    |
-| 0x844 | 3    | -1    | -1    |
+| 0x7aa |   92 | 0x844 | 0x806 |
+| 0x806 |   62 | 0x844 |    -1 |
+| 0x844 |    3 |    -1 |    -1 |
 `------------------------------'
-addr  size jump  fail  
+ addr size  jump  fail 
 -----------------------
-0x844 3    -1    -1
-0x806 62   0x844 -1
-0x7aa 92   0x844 0x806
+0x844    3    -1    -1
+0x806   62 0x844    -1
+0x7aa   92 0x844 0x806
 EOF
 RUN
 
@@ -189,26 +222,26 @@ omlt:size/lt/0x3480:size/cols:quiet
 EOF
 EXPECT=<<EOF
 .---------.
-| size    |
+|    size |
 )---------(
-| 0x3480  |
+|  0x3480 |
 | 0x12791 |
-| 0x87c0  |
+|  0x87c0 |
 `---------'
 
 .---------.
-| size    |
+|    size |
 )---------(
 | 0x12791 |
-| 0x87c0  |
+|  0x87c0 |
 `---------'
 
-0x9b8
+ 0x9b8
 0x3480
 0x12f0
 0x1218
 
-0x9b8
+ 0x9b8
 0x12f0
 0x1218
 EOF

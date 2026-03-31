@@ -1,8 +1,7 @@
 NAME=PE: corkami bottomsecttbl.exe - open
 FILE=bins/pe/bottomsecttbl.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami bottomsecttbl.exe - entrypoint

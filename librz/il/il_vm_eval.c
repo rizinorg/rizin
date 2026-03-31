@@ -82,6 +82,7 @@ void *rz_il_handler_forder(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fround(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_frsqrt(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
+void *rz_il_handler_fexcept(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fadd(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fsub(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
 void *rz_il_handler_fdiv(RzILVM *vm, RzILOpPure *op, RzILTypePure *type);
@@ -152,6 +153,7 @@ RZ_IPI RzILOpPureHandler rz_il_op_handler_pure_table_default[RZ_IL_OP_PURE_MAX] 
 	[RZ_IL_OP_FROUND] = rz_il_handler_fround,
 	[RZ_IL_OP_FSQRT] = rz_il_handler_fsqrt,
 	[RZ_IL_OP_FRSQRT] = rz_il_handler_pure_unimplemented,
+	[RZ_IL_OP_FEXCEPT] = rz_il_handler_fexcept,
 	[RZ_IL_OP_FADD] = rz_il_handler_fadd,
 	[RZ_IL_OP_FSUB] = rz_il_handler_fsub,
 	[RZ_IL_OP_FMUL] = rz_il_handler_fmul,
@@ -202,7 +204,7 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_load(mem, key);
-	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(index, key, value));
 	return value;
 }
 
@@ -223,7 +225,7 @@ RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key,
 	}
 	RzBitVector *old_value = rz_il_mem_load(mem, key);
 	rz_il_mem_store(mem, key, value);
-	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(index, key, old_value, value));
 	rz_bv_free(old_value);
 }
 
@@ -241,7 +243,7 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
 		return NULL;
 	}
 	RzBitVector *value = rz_il_mem_loadw(mem, key, n_bits, vm->big_endian);
-	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(key, value));
+	rz_il_vm_event_add(vm, rz_il_event_mem_read_new(index, key, value));
 	return value;
 }
 
@@ -249,6 +251,7 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
  * an RZ_IL_EVENT_MEM_WRITE event
+ * \param  index RzILMemIndex, index of the memory to store data
  * \param  vm    RzILVM* pointer to VM
  * \param  key   RzBitVector, aka address, a key to store data from memory
  * \param  value RzBitVector, aka value to store in memory
@@ -261,8 +264,12 @@ RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key
 		return;
 	}
 	RzBitVector *old_value = rz_il_mem_loadw(mem, key, rz_bv_len(value), vm->big_endian);
-	rz_il_mem_storew(mem, key, value, vm->big_endian);
-	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(key, old_value, value));
+	if (!rz_il_mem_storew(mem, key, value, vm->big_endian)) {
+		RZ_LOG_ERROR("StoreW mem %u 0x%llx failed\n", (unsigned int)index, rz_bv_to_ut64(key));
+		goto end;
+	}
+	rz_il_vm_event_add(vm, rz_il_event_mem_write_new(index, key, old_value, value));
+end:
 	rz_bv_free(old_value);
 }
 
@@ -276,6 +283,10 @@ RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 	if (!rz_pvector_push(vm->events, evt)) {
 		rz_warn_if_reached();
 		rz_il_event_free(evt);
+	}
+	if (evt->type == RZ_IL_EVENT_EXCEPTION && (vm->halt_exceptions & evt->data.exception)) {
+		RZ_LOG_WARN("Reached exception '%s'. Requesting VM to halt.\n", rz_il_event_exception_msg(evt->data.exception));
+		vm->halt = true;
 	}
 }
 
@@ -298,12 +309,23 @@ RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
 	rz_il_vm_clear_events(vm);
 
 	// Set the successor pc **before** evaluating. Any jmp/goto may then overwrite it again.
+	ut64 old_pc = rz_bv_to_ut64(vm->pc);
 	RzBitVector *next_pc = rz_bv_new_from_ut64(vm->pc->len, fallthrough_addr);
 	rz_il_vm_event_add(vm, rz_il_event_pc_write_new(vm->pc, next_pc));
 	rz_bv_free(vm->pc);
 	vm->pc = next_pc;
 
 	bool succ = rz_il_evaluate_effect(vm, op);
+	if (vm->halt) {
+		RZ_LOG_WARN("Halting VM at 0x%" PFMT64x "!\n", old_pc);
+		// Reset PC to halting instruction.
+		RzBitVector *prev_pc = rz_bv_new_from_ut64(vm->pc->len, old_pc);
+		rz_bv_free(vm->pc);
+		vm->pc = prev_pc;
+		// Don't reset vm->halt flag.
+		// User should re-init VM.
+		return false;
+	}
 
 	// remove any local defined variable (local pure vars are unbound automatically)
 	rz_il_var_set_reset(&vm->local_vars);

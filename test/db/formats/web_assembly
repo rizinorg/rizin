@@ -1,15 +1,101 @@
-NAME=WASM: Wasm - open
+NAME=iI and iH for WASM
 FILE=bins/wasm/basic.wasm
-CMDS=q!
-EXPECT=<<EOF
+CMDS=<<EOF
+iI
+echo ---
+iH
 EOF
-RUN
-
-NAME=WASM: Wasm - detection
-FILE=bins/wasm/basic.wasm
-CMDS=iI~os
 EXPECT=<<EOF
+arch     wasm
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x00000026
+bintype  wasm
+bits     32
+retguard false
+class    module
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  wasm
+maxopsz  1
+minopsz  1
 os       WebAssembly
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   wasm
+stripped false
+crypto   false
+havecode true
+va       false
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
+wasm:
+  size: 38
+  entrypoint: 0x0
+  sections:
+    - id: 1
+      size: 5
+      name_len: 4
+      offset: 0xa
+      payload_data: 0xb
+      payload_len: 4
+      count: 1
+    - id: 3
+      size: 2
+      name_len: 8
+      offset: 0x11
+      payload_data: 0x12
+      payload_len: 1
+      count: 1
+    - id: 7
+      size: 8
+      name_len: 6
+      offset: 0x15
+      payload_data: 0x16
+      payload_len: 7
+      count: 1
+    - id: 10
+      size: 7
+      name_len: 4
+      offset: 0x1f
+      payload_data: 0x20
+      payload_len: 6
+      count: 1
+  types:
+    - form: 96
+      param_count: 0
+      return_count: 1
+      return_type: 127
+  imports: []
+  tables: []
+  memories: []
+  globals: []
+  exports:
+    - field_len: 4
+      kind: 0
+      index: 0
+  codes:
+    - body_size: 5
+      local_count: 0
+      code: 0x22
+      len: 4
+  datas: []
+
 EOF
 RUN
 
@@ -25,12 +111,12 @@ NAME=WASM: Wasm - sections
 FILE=bins/wasm/binary.wasm
 CMDS=iS
 EXPECT=<<EOF
-paddr      size  vaddr      vsize align perm name     type flags 
+     paddr  size      vaddr vsize align perm name     type flags 
 -----------------------------------------------------------------
-0x0000000a 0x10  0x0000000a 0x10  0x0   ---- type          
-0x0000001d 0x2c  0x0000001d 0x2c  0x0   ---- function      
-0x0000004d 0x1dc 0x0000004d 0x1dc 0x0   ---- export        
-0x0000022d 0x1f6 0x0000022d 0x1f6 0x0   ---- code          
+0x0000000a  0x10 0x0000000a  0x10   0x0 ---- type          
+0x0000001d  0x2c 0x0000001d  0x2c   0x0 ---- function      
+0x0000004d 0x1dc 0x0000004d 0x1dc   0x0 ---- export        
+0x0000022d 0x1f6 0x0000022d 0x1f6   0x0 ---- code          
 EOF
 RUN
 
@@ -43,5 +129,13 @@ EXPECT=<<EOF
  3 fd: 3 +0x0000004d 0x0000004d - 0x00000228 --- fmap.export
  4 fd: 3 +0x0000022d 0x0000022d - 0x00000422 --- fmap.code
  5 fd: 3 +0x00000000 0x00000000 * 0x00000423 r-x 
+EOF
+RUN
+
+NAME=WASM dotnet with long names
+FILE=bins/wasm/dotnet.wasm
+CMDS=isQ~__cxx_atomic_compare_exchange_strong
+EXPECT=<<EOF
+bool std::__2::__cxx_atomic_compare_exchange_strong<icu::numparse::impl::NumberParserImpl*>(std::__2::__cxx_atomic_base_impl<icu::numparse::impl::NumberParserImpl*>*, icu::numparse::impl::NumberParserImpl**, icu::numparse::impl::NumberParserImpl*, std::__2::memory_order, std::__2::memory_order)
 EOF
 RUN

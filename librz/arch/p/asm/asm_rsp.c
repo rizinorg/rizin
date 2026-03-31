@@ -5,6 +5,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 
 #include <stdarg.h>
@@ -12,7 +13,7 @@
 
 #include <rsp/rsp_idec.h>
 
-static int rsp_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int rsp_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	rsp_instruction rz_instr;
 	int i;
 
@@ -88,7 +89,7 @@ static int rsp_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 RzAsmPlugin rz_asm_plugin_rsp = {
 	.name = "rsp",
-	.desc = "Reality Signal Processor",
+	.desc = "Nintendo N64 Reality Signal Processor disassembler",
 	.arch = "rsp",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_BI, /* For conveniance, we don't force BIG endian but allow both to be used */

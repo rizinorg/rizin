@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_types.h>
 #include <rz_lib.h>
-#include <string.h>
 
 static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
 	if (len) {
@@ -23,14 +23,14 @@ static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
 	return NULL;
 }
 
-static int __disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int __disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *opstr = mal_dis(a->pc, buf, len);
 	return op->size = opstr ? 1 : 0;
 }
 
 RzAsmPlugin rz_asm_plugin_malbolge = {
 	.name = "malbolge",
-	.desc = "Malbolge Ternary VM",
+	.desc = "Malbolge Ternary VM bytecode disassembler",
 	.arch = "malbolge",
 	.author = "condret",
 	.license = "LGPL3",

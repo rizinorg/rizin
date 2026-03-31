@@ -208,8 +208,8 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_diff_str(RZ_NONNULL RzCore *core, ut64
 
 	RZ_LOG_VERBOSE("print hexdump diff 0x%" PFMT64x " 0x%" PFMT64x " with len:%" PFMT64d "\n", aa, ba, len);
 
-	rz_io_read_at(core->io, aa, a, (int)len);
-	rz_io_read_at(core->io, ba, b, (int)len);
+	rz_io_read_at_mapped(core->io, aa, a, (int)len);
+	rz_io_read_at_mapped(core->io, ba, b, (int)len);
 	int col = core->cons->columns > 123;
 	char *pstr = rz_print_hexdiff_str(core->print, aa, a,
 		ba, b, (int)len, col);
@@ -297,7 +297,7 @@ RZ_API RZ_OWN char *rz_core_print_dump_str(RZ_NONNULL RzCore *core, RzOutputMode
 	}
 
 	char *string = NULL;
-	rz_io_read_at(core->io, addr, buffer, len);
+	rz_io_read_at_mapped(core->io, addr, buffer, len);
 	RzPrint *print = core->print;
 	rz_print_init_rowoffsets(print);
 	bool old_use_comments = print->use_comments;
@@ -356,7 +356,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 		if (!buffer) {
 			return NULL;
 		}
-		rz_io_read_at(core->io, addr, buffer, len);
+		rz_io_read_at_mapped(core->io, addr, buffer, len);
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			string = rz_print_hexdump_str(core->print, rz_core_pava(core, addr), buffer, len, 16, 1, 1);
@@ -375,7 +375,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_or_hexdiff_str(RZ_NONNULL RzCore *core
 			string = rz_core_print_hexdump_diff_str(core, addr, addr + to - from, len);
 			break;
 		default:
-			RZ_LOG_ERROR("Hexdiff not supported in JSON");
+			RZ_LOG_ERROR("Hexdiff not supported in JSON\n");
 			return NULL;
 		}
 	}
@@ -428,14 +428,13 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		return NULL;
 	}
 
-	rz_io_read_at(core->io, addr, buffer, len);
+	rz_io_read_at_mapped(core->io, addr, buffer, len);
 	const int round_len = len - (len % size);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	for (int i = 0; i < round_len; i += size) {
 		const char *a, *b;
 		char *fn;
 		RzPrint *p = core->print;
-		RzFlagItem *f;
 		ut64 v = rz_read_ble(buffer + i, p->big_endian, size * 8);
 		if (p->colorfor) {
 			a = p->colorfor(p->user, v, true);
@@ -447,18 +446,7 @@ RZ_API RZ_OWN char *rz_core_print_hexdump_byline_str(RZ_NONNULL RzCore *core, bo
 		} else {
 			a = b = "";
 		}
-		f = rz_flag_get_at(core->flags, v, true);
-		fn = NULL;
-		if (f) {
-			st64 delta = (st64)(v - f->offset);
-			if (delta >= 0 && delta < 8192) {
-				if (v == f->offset) {
-					fn = strdup(f->name);
-				} else {
-					fn = rz_str_newf("%s+%" PFMT64d, f->name, v - f->offset);
-				}
-			}
-		}
+		fn = rz_core_addr_get_flag_offset(core->flags, v);
 		char *vstr = ut64_to_hex(v, size * 2);
 		if (vstr) {
 			if (hex_offset) {
@@ -503,14 +491,14 @@ RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 add
 	}
 
 	const int ocols = core->print->cols;
-	int bitsize = core->rasm->bits;
+	int bitsize = rz_asm_get_bits(core->rasm);
 	/* Thumb is 16bit arm but handles 32bit data */
 	if (bitsize == 16) {
 		bitsize = 32;
 	}
 	core->print->cols = 1;
 	core->print->flags |= RZ_PRINT_FLAGS_REFS;
-	rz_io_read_at(core->io, address, buffer, len);
+	rz_io_read_at_mapped(core->io, address, buffer, len);
 	char *hexdump_str = rz_print_hexdump_str(core->print, address, buffer,
 		len, wordsize * 8, bitsize / 8, 1);
 	core->print->flags &= ~RZ_PRINT_FLAGS_REFS;
@@ -552,10 +540,10 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 }
 
 static void core_handle_call(RzCore *core, char *line, char **str) {
-	rz_return_if_fail(core && line && str && core->rasm && core->rasm->cur);
-	if (strstr(core->rasm->cur->arch, "x86")) {
+	rz_return_if_fail(core && line && str && core->rasm);
+	if (rz_asm_is_arch(core->rasm, "x86")) {
 		*str = strstr(line, "call ");
-	} else if (strstr(core->rasm->cur->arch, "arm")) {
+	} else if (rz_asm_is_arch(core->rasm, "arm")) {
 		*str = strstr(line, " b ");
 		if (*str && strstr(*str, " 0x")) {
 			/*
@@ -601,7 +589,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	}
 
 	if (rz_io_nread_at(core->io, addr, block, byte_len) == -1) {
-		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".", addr);
+		RZ_LOG_ERROR("Fail to read from 0x%" PFMT64x ".\n", addr);
 		free(block);
 		return NULL;
 	}
@@ -614,7 +602,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 	rz_core_print_disasm(core, addr, block, byte_len, inst_len, NULL, &disasm_options);
 	rz_cons_filter();
 	const char *cons_str = rz_str_get(rz_cons_get_buffer());
-	char *ret = strdup(cons_str);
+	char *ret = rz_str_dup(cons_str);
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	free(block);
@@ -818,7 +806,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 				string2 = rz_str_ndup(str + 1, qoe - str - 1);
 			} else {
 				free(string2);
-				string2 = strdup(str + 1);
+				string2 = rz_str_dup(str + 1);
 			}
 			if (string2) {
 				RZ_FREE(string);
@@ -843,7 +831,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 			}
 		}
 		if (str) {
-			string2 = mark_malloc ? str : strdup(str);
+			string2 = mark_malloc ? str : rz_str_dup(str);
 			linecolor = RZ_CONS_COLOR(call);
 		}
 		if (!string && string2) {
@@ -872,7 +860,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 					}
 					if (rz_str_startswith(comment, "switch table")) {
 						free(switchcmp);
-						switchcmp = strdup(comment);
+						switchcmp = rz_str_dup(comment);
 					}
 					RZ_FREE(comment);
 				}
@@ -984,7 +972,7 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
 	if (rz_config_get_b(core->config, "stack.bytes")) {
 		return "px";
 	}
-	switch (core->rasm->bits) {
+	switch (rz_asm_get_bits(core->rasm)) {
 	case 64: return "pxq"; break;
 	case 32: return "pxw"; break;
 	}

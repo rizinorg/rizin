@@ -80,6 +80,7 @@ NAME=arm cmp
 FILE=malloc://0x100
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 0f0053e3
 aezi
 ar r3=0
@@ -130,7 +131,7 @@ RUN
 
 NAME=emulateme
 FILE=bins/elf/emulateme.arm32
-TIMEOUT=30
+TIMEOUT=60
 CMDS=<<EOF
 s sym.decrypt
 e asm.bits=32
@@ -155,6 +156,7 @@ NAME=arm sdiv
 FILE=malloc://0x100
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 10f110e7
 aezi
 ar r0=42
@@ -213,6 +215,7 @@ NAME=arm udiv
 FILE=malloc://0x100
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 10f130e7
 aezi
 ar r0=42
@@ -265,12 +268,11 @@ r0 = 0x3333332a
 -- -42 / -5
 r0 = 0x00000000
 EOF
-TIMEOUT=10
 RUN
 
 NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
-TIMEOUT=30
+TIMEOUT=60
 CMDS=<<EOF
 o malloc://0x1000 0x40000
 o malloc://0x10 0x50000

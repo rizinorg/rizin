@@ -42,5 +42,5 @@ char *get_hex_str(ut32 hex_num) {
 	aux[1] = hex_str[hex_num & 0xF];
 	aux[0] = hex_str[(hex_num >> 4) & 0xF];
 
-	return strdup(aux);
+	return rz_str_dup(aux);
 }

@@ -9,6 +9,7 @@
 #include <rz_util/rz_regex.h>
 #include <rz_types.h>
 #include <rz_arch.h>
+#include <rz_type.h>
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -32,7 +33,7 @@ static char *findEnd(const char *s) {
 		s++;
 		// also skip ansi escape codes here :?
 	}
-	return strdup(s);
+	return rz_str_dup(s);
 }
 
 static void insert(char *dst, const char *src) {
@@ -40,6 +41,39 @@ static void insert(char *dst, const char *src) {
 	strcpy(dst, src);
 	strcpy(dst + strlen(src), endNum);
 	free(endNum);
+}
+
+static void replace_number_token(char *out, size_t out_len, char *data, char *num_start, char *num_end, const char *value) {
+	*num_start = 0;
+	snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "");
+}
+
+static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, size_t out_len, char *num_start, char *num_end) {
+	if (RZ_STR_ISEMPTY(hint->enum_name) || !p->analb.analysis || !p->analb.analysis->typedb) {
+		return false;
+	}
+
+	const char *member = rz_type_db_enum_member_by_val(
+		p->analb.analysis->typedb, hint->enum_name, off);
+	if (!member) {
+		return false;
+	}
+
+	char ename[512] = "";
+	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
+	if (ename_len <= sizeof(ename)) {
+		rz_strf(ename, "%s.%s", hint->enum_name, member);
+		replace_number_token(out, out_len, data, num_start, num_end, ename);
+		return true;
+	}
+
+	char *ename_dyn = rz_str_newf("%s.%s", hint->enum_name, member);
+	if (!ename_dyn) {
+		return false;
+	}
+	replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
+	free(ename_dyn);
+	return true;
 }
 
 static int parse_number(const char *str) {
@@ -103,7 +137,7 @@ static char *find_next_number(char *str) {
 				   // (e.g. case labels like: case.<switch-address>.<case-number>).
 			// See: https://github.com/rizinorg/rizin/issues/4238 for more details of this problem.
 			"(([^\\w.*]|^)(?<number>(0x[a-fA-F0-9]+)|\\d+))");
-	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT);
+	RzRegex *re = rz_regex_new(search, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT, NULL);
 	RzPVector *match = rz_regex_match_first(re, str, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
 	if (rz_pvector_empty(match)) {
 		rz_pvector_free(match);
@@ -130,7 +164,7 @@ static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
 		}
 		if (x86 && *k == 'r') {
 			replaceWords(s, k, v);
-			char *reg32 = strdup(k);
+			char *reg32 = rz_str_dup(k);
 			*reg32 = 'e';
 			replaceWords(s, reg32, v);
 		} else {
@@ -152,7 +186,7 @@ static bool is_lea(const char *asm_str) {
 	if (!colored) {
 		return strlen(asm_str) > 4 && rz_str_startswith_icase(asm_str, "lea") && asm_str[3] == ' ';
 	}
-	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0);
+	RzRegex *re = rz_regex_new("(^\x1b\\[\\d{1,3}mlea\x1b\\[0m.+)", RZ_REGEX_EXTENDED | RZ_REGEX_CASELESS, 0, NULL);
 	if (!re) {
 		return false;
 	}
@@ -405,6 +439,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 		}
 		if (hint) {
+			char *num_start = ptr;
+			char *num_end = ptr2;
 			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
@@ -414,11 +450,13 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			char num[256] = { 0 }, *pnum, *tmp;
 			int tmp_count;
 			if (hint->offset) {
-				*ptr = 0;
-				snprintf(str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
+				replace_number_token(str, len, data, num_start, num_end, hint->offset);
 				return true;
 			}
-			strncpy(num, ptr, sizeof(num) - 2);
+			if (replace_enum_hint(p, hint, off, data, str, len, num_start, num_end)) {
+				return true;
+			}
+			strncpy(num, num_start, sizeof(num) - 2);
 			pnum = num + parse_number(num);
 			*pnum = 0;
 			switch (immbase) {
@@ -427,9 +465,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = data; tmp < num_start; tmp++) {
 					if (*tmp == 0x1b) {
-						while (tmp < ptr - 1 && *tmp != 'm') {
+						while (tmp < num_start - 1 && *tmp != 'm') {
 							tmp++;
 						}
 						continue;
@@ -545,8 +583,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			*ptr = 0;
-			snprintf(str, len, "%s%s%s", data, num, (ptr != ptr2) ? ptr2 : "");
+			replace_number_token(str, len, data, num_start, num_end, num);
 			return true;
 		}
 		ptr = ptr2;
@@ -576,7 +613,7 @@ RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hi
 // easier to use, should replace rz_parse_filter(), but its not using rflag, analhint, endian, etc
 RZ_API char *rz_parse_filter_dup(RzParse *p, ut64 addr, const char *opstr) {
 	const size_t out_len = 256;
-	char *in = strdup(opstr);
+	char *in = rz_str_dup(opstr);
 	char *out = calloc(out_len, 1);
 	if (!rz_parse_filter(p, addr, NULL, NULL, in, out, out_len, false)) {
 		free(out);

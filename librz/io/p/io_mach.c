@@ -44,6 +44,9 @@ static int __get_pid(RzIODesc *desc);
 
 typedef struct {
 	task_t task;
+	task_t old_task;
+	int old_pid;
+	vm_size_t pagesize;
 } RzIOMach;
 /*
 #define RzIOMACH_PID(x) (x ? ((RzIOMach*)(x))->pid : -1)
@@ -109,30 +112,29 @@ static task_t task_for_pid_ios9pangu(int pid) {
 
 static task_t pid_to_task(RzIODesc *fd, int pid) {
 	task_t task = 0;
-	static task_t old_task = 0;
-	static int old_pid = -1;
 	kern_return_t kr;
 
 	RzIODescData *iodd = fd ? (RzIODescData *)fd->data : NULL;
 	RzIOMach *riom = NULL;
-	if (iodd) {
+	if (iodd && iodd->data) {
 		riom = iodd->data;
-		if (riom && riom->task) {
-			old_task = riom->task;
+		if (riom->task) {
+			riom->old_task = riom->task;
 			riom->task = 0;
-			old_pid = iodd->pid;
+			riom->old_pid = iodd->pid;
 		}
-	}
-	if (old_task != 0) {
-		if (old_pid == pid) {
-			return old_task;
-		}
-		// we changed the process pid so deallocate a ref from the old_task
-		// since we are going to get a new task
-		kr = mach_port_deallocate(mach_task_self(), old_task);
-		if (kr != KERN_SUCCESS) {
-			eprintf("pid_to_task: fail to deallocate port\n");
-			return 0;
+
+		if (riom->old_task != 0) {
+			if (riom->old_pid == pid) {
+				return riom->old_task;
+			}
+			// we changed the process pid so deallocate a ref from the old_task
+			// since we are going to get a new task
+			kr = mach_port_deallocate(mach_task_self(), riom->old_task);
+			if (kr != KERN_SUCCESS) {
+				RZ_LOG_ERROR("pid_to_task: fail to deallocate port\n");
+				return 0;
+			}
 		}
 	}
 	int err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
@@ -147,8 +149,13 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 			}
 		}
 	}
-	old_task = task;
-	old_pid = pid;
+	if (iodd) {
+		riom = iodd->data;
+		if (riom) {
+			riom->old_task = task;
+			riom->old_pid = pid;
+		}
+	}
 	return task;
 }
 
@@ -207,9 +214,7 @@ static ut64 find_next_readable_region(task_t task, ut64 min_addr, ut64 *size_out
 }
 
 static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t len) {
-	rz_return_val_if_fail(io && desc && buf && len >= 0, -1);
-	RzIODescData *dd = (RzIODescData *)desc->data;
-	rz_return_val_if_fail(dd, -1);
+	rz_return_val_if_fail(io && desc && desc->data && buf && len >= 0, -1);
 	ut64 base_addr = io->off;
 	if (UT64_ADD_OVFCHK(base_addr, len)) {
 		return -1;
@@ -266,12 +271,16 @@ static int tsk_getperm(RzIO *io, task_t task, vm_address_t addr) {
 static int tsk_pagesize(RzIODesc *desc) {
 	int tid = __get_pid(desc);
 	task_t task = pid_to_task(desc, tid);
-	static vm_size_t pagesize = 0;
-	return pagesize
-		? pagesize
-		: (host_page_size(task, &pagesize) == KERN_SUCCESS)
-		? pagesize
-		: 4096;
+	RzIODescData *iodd = desc->data;
+	if (iodd && iodd->data) {
+		RzIOMach *riom = iodd->data;
+		return riom->pagesize
+			? riom->pagesize
+			: (host_page_size(task, &riom->pagesize) == KERN_SUCCESS)
+			? riom->pagesize
+			: 4096;
+	}
+	return 4096;
 }
 
 static vm_address_t tsk_getpagebase(RzIODesc *desc, ut64 addr) {
@@ -399,18 +408,26 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	riom->task = task;
+	if (task != -1) {
+		riom->old_task = task;
+		riom->old_pid = pid;
+	} else {
+		riom->old_task = 0;
+		riom->old_pid = -1;
+	}
+	riom->pagesize = 0;
 	iodd->magic = rz_str_djb2_hash("mach");
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid
 		? rz_sys_pid_to_path(pid)
-		: strdup("kernel");
+		: rz_str_dup("kernel");
 	if (!strncmp(file, "smach://", 8)) {
 		ret = rz_io_desc_new(io, &rz_io_plugin_mach, &file[1],
-			rw | RZ_PERM_X, mode, iodd);
+			rw | RZ_PERM_X, iodd);
 	} else {
 		ret = rz_io_desc_new(io, &rz_io_plugin_mach, file,
-			rw | RZ_PERM_X, mode, iodd);
+			rw | RZ_PERM_X, iodd);
 	}
 	ret->name = pidpath;
 	return ret;

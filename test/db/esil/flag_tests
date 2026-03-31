@@ -3,7 +3,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 1,-1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
+ae "1,-1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
 ar cf
 ar sf
 ar of
@@ -22,7 +22,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae -1,1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
+ae "-1,1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
 ar cf
 ar sf
 ar of
@@ -41,7 +41,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 0x80000000,eax,:=,0x80000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
+ae "0x80000000,eax,:=,0x80000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 ar cf
 ar sf
 ar of
@@ -60,7 +60,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 0x70000000,eax,:=,0x90000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
+ae "0x70000000,eax,:=,0x90000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 ar cf
 ar sf
 ar of
@@ -79,7 +79,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 0x90000000,eax,:=,0x70000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
+ae "0x90000000,eax,:=,0x70000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 ar cf
 ar sf
 ar of
@@ -98,7 +98,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 2,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,^,zf,|,!,==,$z,NUM"
+ae "2,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,^,zf,|,!,==,$z,NUM"
 EOF
 EXPECT=<<EOF
 0x1
@@ -110,7 +110,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae 2,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,!=,==,$z,NUM"
+ae "2,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,!=,==,$z,NUM"
 EOF
 EXPECT=<<EOF
 0x1
@@ -122,7 +122,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae -1,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,zf,|,!,==,$z,NUM"
+ae "-1,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,zf,|,!,==,$z,NUM"
 EOF
 EXPECT=<<EOF
 0x0
@@ -134,7 +134,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-"ae -1,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,==,$z,NUM"
+ae "-1,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,==,$z,NUM"
 EOF
 EXPECT=<<EOF
 0x0
@@ -144,10 +144,10 @@ RUN
 NAME=signed division traps
 FILE==
 CMDS=<<EOF
-"ae 32,0,/"
-"ae 0,32,/"
-"ae -1,0x8000000000000000,~/"
-"ae -1,0x8000000000000000,~%"
+ae "32,0,/"
+ae "0,32,/"
+ae "-1,0x8000000000000000,~/"
+ae "-1,0x8000000000000000,~%"
 EOF
 EXPECT=<<EOF
 0x0

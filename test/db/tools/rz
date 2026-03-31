@@ -1,1 +1,667 @@
-NAME=rz =FILE==CMDS=e file.pathEXPECT=<<EOFEOFRUNNAME=rz =FILE==CMDS=e file.lastpathEXPECT=<<EOFEOFRUNNAME=rz --FILE=--CMDS=e file.pathEXPECT=<<EOFEOFRUNNAME=rz --FILE=bins/elf/bombBROKEN=1CMDS=rizin -s main -qcs bins/elf/bombEXPECT=<<EOF0x400da0EOFRUNNAME=seek undo/redoFILE==CMDS=<<EOFwx 01s 1shushrpb 8EOFEXPECT=<<EOF00000000EOFRUNNAME=seek undo/redoFILE==CMDS=wx 01; s 1; shu; shr; pb 8EXPECT=<<EOF00000000EOFRUNNAME=rizin -VFILE==CMDS=!!rizin -V~rz_bin?EXPECT=<<EOF1EOFRUNNAME=rizin -hFILE==CMDS=!!rizin -h~Usage?EXPECT=<<EOF1EOFRUNNAME=rizin -hhFILE==CMDS=!!rizin -hh~RZ_USER_PLUGINS?EXPECT=<<EOF1EOFRUNNAME=rizin -LFILE==CMDS=!!rizin -L~default?EXPECT=<<EOF1EOFRUNNAME=rizin shortcutFILE==CMDS=<<EOF%= `!!rizin -h~Usage?`%+ %vi $?%! echo `!!rizin.bat -h~Usage?`EOFEXPECT=<<EOF1EOFRUNNAME=no-nl-at-eof scriptFILE==CMDS=!rizin -i scripts/no-nl-at-eof.rz -NQ =EXPECT=<<EOF1EOFEXPECT_ERR=<<EOFEOFRUNNAME=rizin -i -Q with missing scriptFILE==CMDS=<<EOF# Should not hang!rizin -i script/missing.rz -NQ =EOFEXPECT=<<EOFEOFEXPECT_ERR=<<EOFERROR: Script 'script/missing.rz' not found.EOFRUNNAME=rizin empty -iFILE==CMDS=!rizin -i "" =EXPECT_ERR=<<EOFERROR: Cannot open empty script pathEOFRUNNAME=rizin empty -IFILE==CMDS=!rizin -I "" =EXPECT_ERR=<<EOFERROR: Cannot open empty script pathEOFRUNNAME=rizin empty -RFILE==CMDS=!rizin -R ""EXPECT_ERR=<<EOFEOFRUNNAME=rizin project with explicit fileFILE==CMDS=<<EOF!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00echo Same project, different file!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "ol; pdq 3 @ easy" bins/elf/ioli/crackme0x01!rm .crackme.rzdbEOFEXPECT=<<EOFSame project, different file 3 * r-x 0x00001d4b bins/elf/ioli/crackme0x01 4 - r-x 0x00000010 vfile://0/reloc-targets 5 - rw- 0x00000004 null://40x080483fe   easy:0x080483fe                 29c4  sub esp, eax0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x010x08048407           e810ffffff  call sym.imp.printf_0x804831cEOFRUNNAME=rizin project with implicit fileFILE==CMDS=<<EOF!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00echo Reload project including file!rizin -escr.utf8=0 -escr.color=0 -easm.bytes=1 -escr.interactive=0 -N -p .crackme2.rzdb -Qc "pdq 3 @ easy"!rm .crackme2.rzdbEOFEXPECT=<<EOFReload project including file0x080483fe   easy:0x080483fe                 08e8  or al, ch0x08048400                   fc  cld0x08048401                 7bfb  jnp 0x80483feEOFRUNNAME=b/w promptFILE==CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \nq\n" =EXPECT=<<EOF[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> [2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> qEOFRUNNAME=prompt settingsFILE==CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n" ./bins/elf/hello_worldEXPECT=<<EOF[2K[0x000006a0]> [0x000006a0]> [2K[0x000006a0]> [2K[0x000006a0]> [0x000006a0]> [2K[2K[0x000006a0]> e[0x000006a0]> e[2K[2K[0x000006a0]> e [0x000006a0]> e [2K[2K[0x000006a0]> e s[0x000006a0]> e s[2K[2K[0x000006a0]> e sc[0x000006a0]> e sc[2K[2K[0x000006a0]> e scr[0x000006a0]> e scr[2K[2K[0x000006a0]> e scr.[0x000006a0]> e scr.[2K[2K[0x000006a0]> e scr.p[0x000006a0]> e scr.p[2K[2K[0x000006a0]> e scr.pr[0x000006a0]> e scr.pr[2K[2K[0x000006a0]> e scr.pro[0x000006a0]> e scr.pro[2K[2K[0x000006a0]> e scr.prom[0x000006a0]> e scr.prom[2K[2K[0x000006a0]> e scr.promp[0x000006a0]> e scr.promp[2K[2K[0x000006a0]> e scr.prompt[0x000006a0]> e scr.prompt[2K[2K[0x000006a0]> e scr.prompt.[0x000006a0]> e scr.prompt.[2K[2K[0x000006a0]> e scr.prompt.f[0x000006a0]> e scr.prompt.f[2K[2K[0x000006a0]> e scr.prompt.fi[0x000006a0]> e scr.prompt.fi[2K[2K[0x000006a0]> e scr.prompt.fil[0x000006a0]> e scr.prompt.fil[2K[2K[0x000006a0]> e scr.prompt.file[0x000006a0]> e scr.prompt.file[2K[2K[0x000006a0]> e scr.prompt.file=[0x000006a0]> e scr.prompt.file=[2K[2K[0x000006a0]> e scr.prompt.file=t[0x000006a0]> e scr.prompt.file=t[2K[2K[0x000006a0]> e scr.prompt.file=tr[0x000006a0]> e scr.prompt.file=tr[2K[2K[0x000006a0]> e scr.prompt.file=tru[0x000006a0]> e scr.prompt.file=tru[2K[2K[0x000006a0]> e scr.prompt.file=true[0x000006a0]> e scr.prompt.file=true[2K[0x000006a0]> e scr.prompt.file=true[2K[hello_world:0x000006a0]> [hello_world:0x000006a0]> [2K[2K[hello_world:0x000006a0]> e[hello_world:0x000006a0]> e[2K[2K[hello_world:0x000006a0]> e [hello_world:0x000006a0]> e [2K[2K[hello_world:0x000006a0]> e s[hello_world:0x000006a0]> e s[2K[2K[hello_world:0x000006a0]> e sc[hello_world:0x000006a0]> e sc[2K[2K[hello_world:0x000006a0]> e scr[hello_world:0x000006a0]> e scr[2K[2K[hello_world:0x000006a0]> e scr.[hello_world:0x000006a0]> e scr.[2K[2K[hello_world:0x000006a0]> e scr.p[hello_world:0x000006a0]> e scr.p[2K[2K[hello_world:0x000006a0]> e scr.pr[hello_world:0x000006a0]> e scr.pr[2K[2K[hello_world:0x000006a0]> e scr.pro[hello_world:0x000006a0]> e scr.pro[2K[2K[hello_world:0x000006a0]> e scr.prom[hello_world:0x000006a0]> e scr.prom[2K[2K[hello_world:0x000006a0]> e scr.promp[hello_world:0x000006a0]> e scr.promp[2K[2K[hello_world:0x000006a0]> e scr.prompt[hello_world:0x000006a0]> e scr.prompt[2K[2K[hello_world:0x000006a0]> e scr.prompt.[hello_world:0x000006a0]> e scr.prompt.[2K[2K[hello_world:0x000006a0]> e scr.prompt.f[hello_world:0x000006a0]> e scr.prompt.f[2K[2K[hello_world:0x000006a0]> e scr.prompt.fl[hello_world:0x000006a0]> e scr.prompt.fl[2K[2K[hello_world:0x000006a0]> e scr.prompt.fla[hello_world:0x000006a0]> e scr.prompt.fla[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag[hello_world:0x000006a0]> e scr.prompt.flag[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=[hello_world:0x000006a0]> e scr.prompt.flag=[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=t[hello_world:0x000006a0]> e scr.prompt.flag=t[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tr[hello_world:0x000006a0]> e scr.prompt.flag=tr[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tru[hello_world:0x000006a0]> e scr.prompt.flag=tru[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=true[hello_world:0x000006a0]> e scr.prompt.flag=true[2K[hello_world:0x000006a0]> e scr.prompt.flag=true[2K[hello_world:entry0:0x000006a0]> [hello_world:entry0:0x000006a0]> [2K[2K[hello_world:entry0:0x000006a0]> s[hello_world:entry0:0x000006a0]> s[2K[2K[hello_world:entry0:0x000006a0]> sd[hello_world:entry0:0x000006a0]> sd[2K[2K[hello_world:entry0:0x000006a0]> sd [hello_world:entry0:0x000006a0]> sd [2K[2K[hello_world:entry0:0x000006a0]> sd 1[hello_world:entry0:0x000006a0]> sd 1[2K[hello_world:entry0:0x000006a0]> sd 1[2K[hello_world:entry0 + 1:0x000006a1]> [hello_world:entry0 + 1:0x000006a1]> [2K[2K[hello_world:entry0 + 1:0x000006a1]> e[hello_world:entry0 + 1:0x000006a1]> e[2K[2K[hello_world:entry0 + 1:0x000006a1]> e [hello_world:entry0 + 1:0x000006a1]> e [2K[2K[hello_world:entry0 + 1:0x000006a1]> e s[hello_world:entry0 + 1:0x000006a1]> e s[2K[2K[hello_world:entry0 + 1:0x000006a1]> e sc[hello_world:entry0 + 1:0x000006a1]> e sc[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr[hello_world:entry0 + 1:0x000006a1]> e scr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.[hello_world:entry0 + 1:0x000006a1]> e scr.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.p[hello_world:entry0 + 1:0x000006a1]> e scr.p[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pr[hello_world:entry0 + 1:0x000006a1]> e scr.pr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pro[hello_world:entry0 + 1:0x000006a1]> e scr.pro[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prom[hello_world:entry0 + 1:0x000006a1]> e scr.prom[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.promp[hello_world:entry0 + 1:0x000006a1]> e scr.promp[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[2K[hello_world:entry0 + 1]> [hello_world:entry0 + 1]> [2K[2K[hello_world:entry0 + 1]> e[hello_world:entry0 + 1]> e[2K[2K[hello_world:entry0 + 1]> e [hello_world:entry0 + 1]> e [2K[2K[hello_world:entry0 + 1]> e s[hello_world:entry0 + 1]> e s[2K[2K[hello_world:entry0 + 1]> e sc[hello_world:entry0 + 1]> e sc[2K[2K[hello_world:entry0 + 1]> e scr[hello_world:entry0 + 1]> e scr[2K[2K[hello_world:entry0 + 1]> e scr.[hello_world:entry0 + 1]> e scr.[2K[2K[hello_world:entry0 + 1]> e scr.p[hello_world:entry0 + 1]> e scr.p[2K[2K[hello_world:entry0 + 1]> e scr.pr[hello_world:entry0 + 1]> e scr.pr[2K[2K[hello_world:entry0 + 1]> e scr.pro[hello_world:entry0 + 1]> e scr.pro[2K[2K[hello_world:entry0 + 1]> e scr.prom[hello_world:entry0 + 1]> e scr.prom[2K[2K[hello_world:entry0 + 1]> e scr.promp[hello_world:entry0 + 1]> e scr.promp[2K[2K[hello_world:entry0 + 1]> e scr.prompt[hello_world:entry0 + 1]> e scr.prompt[2K[2K[hello_world:entry0 + 1]> e scr.prompt.[hello_world:entry0 + 1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1]> e scr.prompt.s[hello_world:entry0 + 1]> e scr.prompt.s[2K[2K[hello_world:entry0 + 1]> e scr.prompt.se[hello_world:entry0 + 1]> e scr.prompt.se[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sec[hello_world:entry0 + 1]> e scr.prompt.sec[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect[hello_world:entry0 + 1]> e scr.prompt.sect[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=[hello_world:entry0 + 1]> e scr.prompt.sect=[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=t[hello_world:entry0 + 1]> e scr.prompt.sect=t[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tr[hello_world:entry0 + 1]> e scr.prompt.sect=tr[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tru[hello_world:entry0 + 1]> e scr.prompt.sect=tru[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true[hello_world:entry0 + 1]> e scr.prompt.sect=true[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true[2K[hello_world:.text:entry0 + 1]> [hello_world:.text:entry0 + 1]> [2K[2K[hello_world:.text:entry0 + 1]> q[hello_world:.text:entry0 + 1]> q[2K[hello_world:.text:entry0 + 1]> qEOFRUNNAME=color promptFILE==CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -N -c "< \nq\n" =EXPECT=<<EOF[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m [2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m qEOFRUNNAME=read from stdinFILE=--CMDS=echo \r\n | rizin -N -e scr.color=0 -qc "px 16" -EXPECT=<<EOF- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................EOFRUN
+NAME=rz =
+FILE==
+CMDS=e file.path
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=rz =
+FILE==
+CMDS=e file.lastpath
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=rz --
+FILE=--
+CMDS=e file.path
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=rz --
+FILE=bins/elf/bomb
+BROKEN=1
+CMDS=rizin -s main -qcs bins/elf/bomb
+EXPECT=<<EOF
+0x400da0
+EOF
+RUN
+
+NAME=seek undo/redo
+FILE==
+CMDS=<<EOF
+wx 01
+s 1
+shu
+shr
+pb 8
+EOF
+EXPECT=<<EOF
+00000000
+EOF
+RUN
+
+NAME=seek undo/redo
+FILE==
+CMDS=wx 01; s 1; shu; shr; pb 8
+EXPECT=<<EOF
+00000000
+EOF
+RUN
+
+NAME=rizin -V
+FILE==
+CMDS=<<EOF
+!!rizin -V~rz_arch?
+!!rizin -h~Usage?
+!!rizin -hh~RZ_USER_PLUGINS?
+!!rizin -L~default?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=rizin shortcut
+FILE==
+CMDS=<<EOF
+%= `!!rizin -h~Usage?`
+%+ %vi $?
+%! echo `!!rizin.bat -h~Usage?`
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=no-nl-at-eof script
+FILE==
+CMDS=!rizin -i scripts/no-nl-at-eof.rz -Nq =
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rizin -i -Q with missing script
+FILE==
+CMDS=<<EOF
+# Should not hang
+!rizin -i script/missing.rz -Nq =
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Script 'script/missing.rz' not found.
+EOF
+RUN
+
+NAME=rizin empty -i
+FILE==
+CMDS=!rizin -i "" =
+EXPECT_ERR=<<EOF
+ERROR: Cannot open empty script path
+EOF
+RUN
+
+NAME=rizin empty -I
+FILE==
+CMDS=!rizin -I "" =
+EXPECT_ERR=<<EOF
+ERROR: Cannot open empty script path
+EOF
+RUN
+
+NAME=rizin empty -R
+FILE==
+CMDS=!rizin -R ""
+EXPECT_ERR=
+RUN
+
+NAME=rizin project with explicit file
+FILE==
+CMDS=<<EOF
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
+echo Same project, different file
+!rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -qc "ol; pdq 3 @ easy" bins/elf/ioli/crackme0x01
+!rm .crackme.rzdb
+EOF
+EXPECT=<<EOF
+Same project, different file
+ 3 * r-x 0x00001d4b bins/elf/ioli/crackme0x01
+ 4 - r-x 0x00000010 vfile://0/reloc-targets
+ 5 - rw- 0x00000004 null://4
+0x080483fe   easy:
+0x080483fe                 29c4  sub esp, eax
+0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01
+0x08048407           e810ffffff  call sym.imp.printf_0x804831c
+EOF
+RUN
+
+NAME=rizin project with implicit file
+FILE==
+CMDS=<<EOF
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
+echo Reload project including file
+!rizin -escr.utf8=0 -escr.color=0 -easm.bytes=1 -escr.interactive=0 -N -p .crackme2.rzdb -qc "pdq 3 @ easy"
+!rm .crackme2.rzdb
+EOF
+EXPECT=<<EOF
+Reload project including file
+0x080483fe   easy:
+0x080483fe                 08e8  or al, ch
+0x08048400                   fc  cld
+0x08048401                 7bfb  jnp 0x80483fe
+EOF
+RUN
+
+NAME=b/w prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=0 -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0x00000000]> [0x00000000]> [2K[0x00000000]> 
+[2K[0x00000000]> [0x00000000]> [2K[2K[0x00000000]> q[0x00000000]> q[2K[0x00000000]> q
+EOF
+RUN
+
+NAME=rizin load arm elf with thumb entry
+FILE==
+CMDS=!rizin -qq bins/arm/elf/hello_world-linaro-201902
+EXPECT=
+EXPECT_ERR=
+RUN
+
+NAME=prompt settings
+TOOL=rizin
+FILE=bins/elf/hello_world
+CMDS=< \ne scr.prompt.file=true\ne scr.prompt.flag=true\nsd 1\ne scr.prompt.flag.only=true\ne scr.prompt.sect=true\nq\n
+ARGS=-e cfg.fortunes=0 -e scr.color=0
+EXPECT=<<EOF
+[2K[0x000006a0]> [0x000006a0]> [2K[0x000006a0]> 
+[2K[0x000006a0]> [0x000006a0]> [2K[2K[0x000006a0]> e[0x000006a0]> e[2K[2K[0x000006a0]> e [0x000006a0]> e [2K[2K[0x000006a0]> e s[0x000006a0]> e s[2K[2K[0x000006a0]> e sc[0x000006a0]> e sc[2K[2K[0x000006a0]> e scr[0x000006a0]> e scr[2K[2K[0x000006a0]> e scr.[0x000006a0]> e scr.[2K[2K[0x000006a0]> e scr.p[0x000006a0]> e scr.p[2K[2K[0x000006a0]> e scr.pr[0x000006a0]> e scr.pr[2K[2K[0x000006a0]> e scr.pro[0x000006a0]> e scr.pro[2K[2K[0x000006a0]> e scr.prom[0x000006a0]> e scr.prom[2K[2K[0x000006a0]> e scr.promp[0x000006a0]> e scr.promp[2K[2K[0x000006a0]> e scr.prompt[0x000006a0]> e scr.prompt[2K[2K[0x000006a0]> e scr.prompt.[0x000006a0]> e scr.prompt.[2K[2K[0x000006a0]> e scr.prompt.f[0x000006a0]> e scr.prompt.f[2K[2K[0x000006a0]> e scr.prompt.fi[0x000006a0]> e scr.prompt.fi[2K[2K[0x000006a0]> e scr.prompt.fil[0x000006a0]> e scr.prompt.fil[2K[2K[0x000006a0]> e scr.prompt.file[0x000006a0]> e scr.prompt.file[2K[2K[0x000006a0]> e scr.prompt.file=[0x000006a0]> e scr.prompt.file=[2K[2K[0x000006a0]> e scr.prompt.file=t[0x000006a0]> e scr.prompt.file=t[2K[2K[0x000006a0]> e scr.prompt.file=tr[0x000006a0]> e scr.prompt.file=tr[2K[2K[0x000006a0]> e scr.prompt.file=tru[0x000006a0]> e scr.prompt.file=tru[2K[2K[0x000006a0]> e scr.prompt.file=true[0x000006a0]> e scr.prompt.file=true[2K[0x000006a0]> e scr.prompt.file=true
+[2K[hello_world:0x000006a0]> [hello_world:0x000006a0]> [2K[2K[hello_world:0x000006a0]> e[hello_world:0x000006a0]> e[2K[2K[hello_world:0x000006a0]> e [hello_world:0x000006a0]> e [2K[2K[hello_world:0x000006a0]> e s[hello_world:0x000006a0]> e s[2K[2K[hello_world:0x000006a0]> e sc[hello_world:0x000006a0]> e sc[2K[2K[hello_world:0x000006a0]> e scr[hello_world:0x000006a0]> e scr[2K[2K[hello_world:0x000006a0]> e scr.[hello_world:0x000006a0]> e scr.[2K[2K[hello_world:0x000006a0]> e scr.p[hello_world:0x000006a0]> e scr.p[2K[2K[hello_world:0x000006a0]> e scr.pr[hello_world:0x000006a0]> e scr.pr[2K[2K[hello_world:0x000006a0]> e scr.pro[hello_world:0x000006a0]> e scr.pro[2K[2K[hello_world:0x000006a0]> e scr.prom[hello_world:0x000006a0]> e scr.prom[2K[2K[hello_world:0x000006a0]> e scr.promp[hello_world:0x000006a0]> e scr.promp[2K[2K[hello_world:0x000006a0]> e scr.prompt[hello_world:0x000006a0]> e scr.prompt[2K[2K[hello_world:0x000006a0]> e scr.prompt.[hello_world:0x000006a0]> e scr.prompt.[2K[2K[hello_world:0x000006a0]> e scr.prompt.f[hello_world:0x000006a0]> e scr.prompt.f[2K[2K[hello_world:0x000006a0]> e scr.prompt.fl[hello_world:0x000006a0]> e scr.prompt.fl[2K[2K[hello_world:0x000006a0]> e scr.prompt.fla[hello_world:0x000006a0]> e scr.prompt.fla[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag[hello_world:0x000006a0]> e scr.prompt.flag[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=[hello_world:0x000006a0]> e scr.prompt.flag=[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=t[hello_world:0x000006a0]> e scr.prompt.flag=t[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tr[hello_world:0x000006a0]> e scr.prompt.flag=tr[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=tru[hello_world:0x000006a0]> e scr.prompt.flag=tru[2K[2K[hello_world:0x000006a0]> e scr.prompt.flag=true[hello_world:0x000006a0]> e scr.prompt.flag=true[2K[hello_world:0x000006a0]> e scr.prompt.flag=true
+[2K[hello_world:entry0:0x000006a0]> [hello_world:entry0:0x000006a0]> [2K[2K[hello_world:entry0:0x000006a0]> s[hello_world:entry0:0x000006a0]> s[2K[2K[hello_world:entry0:0x000006a0]> sd[hello_world:entry0:0x000006a0]> sd[2K[2K[hello_world:entry0:0x000006a0]> sd [hello_world:entry0:0x000006a0]> sd [2K[2K[hello_world:entry0:0x000006a0]> sd 1[hello_world:entry0:0x000006a0]> sd 1[2K[hello_world:entry0:0x000006a0]> sd 1
+[2K[hello_world:entry0 + 1:0x000006a1]> [hello_world:entry0 + 1:0x000006a1]> [2K[2K[hello_world:entry0 + 1:0x000006a1]> e[hello_world:entry0 + 1:0x000006a1]> e[2K[2K[hello_world:entry0 + 1:0x000006a1]> e [hello_world:entry0 + 1:0x000006a1]> e [2K[2K[hello_world:entry0 + 1:0x000006a1]> e s[hello_world:entry0 + 1:0x000006a1]> e s[2K[2K[hello_world:entry0 + 1:0x000006a1]> e sc[hello_world:entry0 + 1:0x000006a1]> e sc[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr[hello_world:entry0 + 1:0x000006a1]> e scr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.[hello_world:entry0 + 1:0x000006a1]> e scr.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.p[hello_world:entry0 + 1:0x000006a1]> e scr.p[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pr[hello_world:entry0 + 1:0x000006a1]> e scr.pr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.pro[hello_world:entry0 + 1:0x000006a1]> e scr.pro[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prom[hello_world:entry0 + 1:0x000006a1]> e scr.prom[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.promp[hello_world:entry0 + 1:0x000006a1]> e scr.promp[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[hello_world:entry0 + 1:0x000006a1]> e scr.prompt[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.f[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.fla[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.o[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.on[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.onl[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=t[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tr[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=tru[2K[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true[2K[hello_world:entry0 + 1:0x000006a1]> e scr.prompt.flag.only=true
+[2K[hello_world:entry0 + 1]> [hello_world:entry0 + 1]> [2K[2K[hello_world:entry0 + 1]> e[hello_world:entry0 + 1]> e[2K[2K[hello_world:entry0 + 1]> e [hello_world:entry0 + 1]> e [2K[2K[hello_world:entry0 + 1]> e s[hello_world:entry0 + 1]> e s[2K[2K[hello_world:entry0 + 1]> e sc[hello_world:entry0 + 1]> e sc[2K[2K[hello_world:entry0 + 1]> e scr[hello_world:entry0 + 1]> e scr[2K[2K[hello_world:entry0 + 1]> e scr.[hello_world:entry0 + 1]> e scr.[2K[2K[hello_world:entry0 + 1]> e scr.p[hello_world:entry0 + 1]> e scr.p[2K[2K[hello_world:entry0 + 1]> e scr.pr[hello_world:entry0 + 1]> e scr.pr[2K[2K[hello_world:entry0 + 1]> e scr.pro[hello_world:entry0 + 1]> e scr.pro[2K[2K[hello_world:entry0 + 1]> e scr.prom[hello_world:entry0 + 1]> e scr.prom[2K[2K[hello_world:entry0 + 1]> e scr.promp[hello_world:entry0 + 1]> e scr.promp[2K[2K[hello_world:entry0 + 1]> e scr.prompt[hello_world:entry0 + 1]> e scr.prompt[2K[2K[hello_world:entry0 + 1]> e scr.prompt.[hello_world:entry0 + 1]> e scr.prompt.[2K[2K[hello_world:entry0 + 1]> e scr.prompt.s[hello_world:entry0 + 1]> e scr.prompt.s[2K[2K[hello_world:entry0 + 1]> e scr.prompt.se[hello_world:entry0 + 1]> e scr.prompt.se[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sec[hello_world:entry0 + 1]> e scr.prompt.sec[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect[hello_world:entry0 + 1]> e scr.prompt.sect[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=[hello_world:entry0 + 1]> e scr.prompt.sect=[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=t[hello_world:entry0 + 1]> e scr.prompt.sect=t[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tr[hello_world:entry0 + 1]> e scr.prompt.sect=tr[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=tru[hello_world:entry0 + 1]> e scr.prompt.sect=tru[2K[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true[hello_world:entry0 + 1]> e scr.prompt.sect=true[2K[hello_world:entry0 + 1]> e scr.prompt.sect=true
+[2K[hello_world:.text:entry0 + 1]> [hello_world:.text:entry0 + 1]> [2K[2K[hello_world:.text:entry0 + 1]> q[hello_world:.text:entry0 + 1]> q[2K[hello_world:.text:entry0 + 1]> q
+EOF
+RUN
+
+NAME=color prompt
+FILE==
+CMDS=!rizin -e cfg.fortunes=0 -e scr.color=1 -N -c "< \nq\n" =
+EXPECT=<<EOF
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[33m[0x00000000]>[0m 
+[2K[0m[33m[0x00000000]>[0m [33m[0x00000000]>[0m [2K[2K[0m[33m[0x00000000]>[0m q[33m[0x00000000]>[0m q[2K[33m[0x00000000]>[0m q
+EOF
+RUN
+
+NAME=read from stdin
+FILE=--
+CMDS=echo \r\n | rizin -N -e scr.color=0 -qc "px 16" -
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  0d0a 0aff ffff ffff ffff ffff ffff ffff  ................
+EOF
+RUN
+
+NAME=honor -a -b on stdin bin
+FILE=--
+CMDS=<<EOF
+(catbin arch bit; !cat bins/flat/=.bin | rizin -N -e scr.color=0 -a ${arch} -b ${bit} -qc "s 4;pd 1" -)
+.(catbin x86 64)
+.(catbin x86 32)
+.(catbin mips 64)
+EOF
+EXPECT=<<EOF
+            0x00000004      add   byte [rax], al
+            0x00000004      add   byte [eax], al
+            0x00000004      nop
+EOF
+RUN
+
+NAME=rizin -h
+TOOL=rizin
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
+             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
+ [32m--[0m         [0mRun rizin without opening any file
+ [32m=[0m          [0mSame as 'rizin malloc://512'
+ [32m- [0m         [0mRead file from stdin
+ [32m-=[0m         [0mPerform R=! command to run all commands remotely
+ [32m-0[0m         [0mPrint \x00 after init and every command
+ [32m-1[0m         [0mRedirect stderr to stdout
+ [32m-2[0m         [0mClose stderr file descriptor (silent warning messages)
+ [32m-a[0m[33m arch [0m   [0mSet asm.arch
+ [32m-A[0m         [0mRun 'aaa' command to analyze all referenced code
+ [32m-b[0m[33m bits [0m   [0mSet asm.bits
+ [32m-B[0m[33m baddr [0m  [0mSet base address for PIE binaries
+ [32m-c[0m[33m 'cmd..' [0m[0mExecute rizin command
+ [32m-C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
+ [32m-d[0m         [0mDebug the executable 'file' or running process 'pid'
+ [32m-D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
+ [32m-e[0m[33m k=v [0m    [0mEvaluate config var
+ [32m-E[0m[33m endian [0m [0mEndianness -E big or -E little
+ [32m-f[0m         [0mBlock size = file size
+ [32m-F[0m[33m binplug [0m[0mForce to use that rbin plugin
+ [32m-h, -hh[0m    [0mShow help message, -hh for long
+ [32m-H[0m[33m [var] [0m  [0mDisplay variable
+ [32m-i[0m[33m file [0m   [0mRun script file
+ [32m-I[0m[33m file [0m   [0mRun script file before the file is opened
+ [32m-k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
+ [32m-l[0m[33m lib [0m    [0mLoad plugin file
+ [32m-L[0m         [0mList supported IO plugins
+ [32m-m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
+ [32m-M[0m         [0mDo not demangle symbol names
+ [32m-n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
+ [32m-N[0m         [0mDo not load user settings and scripts
+ [32m-NN[0m        [0mDo not load any script or plugin
+ [32m-q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
+ [32m-qq[0m        [0mQuiet mode (no prompt) and force quit
+ [32m-p[0m[33m p.rzdb [0m [0mLoad project file
+ [32m-r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
+ [32m-R[0m[33m rule [0m   [0mSpecify custom rz-run directive
+ [32m-s[0m[33m addr [0m   [0mInitial seek
+ [32m-T[0m         [0mDo not compute file hashes
+ [32m-u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
+ [32m-v, -V[0m     [0mShow rizin version (-V show lib versions)
+ [32m-w[0m         [0mOpen file in write mode
+ [32m-x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
+ [32m-X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
+ [32m-z, -zz[0m    [0mDo not load strings or load them even in raw
+EOF
+RUN
+
+NAME=rz-asm -h
+TOOL=rz-asm
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-m plugin] [-o addr] [-s syntax]
+             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-
+ [32m-a[0m[33m arch [0m    [0mSet architecture to assemble/disassemble (see -L)
+ [32m-A[0m          [0mShow Analysis information from given hexpairs
+ [32m-b[0m[33m bits [0m    [0mSet cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)
+ [32m-B[0m          [0mBinary input/output (-l is mandatory for binary input)
+ [32m-c[0m[33m cpu [0m     [0mSelect specific CPU (depends on arch)
+ [32m-C[0m          [0mOutput in C format
+ [32m-d, -D[0m      [0mDisassemble from hexpair bytes (-D show hexpairs)
+ [32m-e[0m          [0mUse big endian instead of little endian
+ [32m-I[0m          [0mDisplay lifted RzIL code (same input as in -d, IL is also validated)
+ [32m-E[0m          [0mDisplay ESIL expression (same input as in -d)
+ [32m-f[0m[33m file [0m    [0mRead data from file
+ [32m-F[0m[33m in:out [0m  [0mSpecify input and/or output filters (att2intel, x86.pseudo, ...)
+ [32m-h, -hh[0m     [0mShow this help, -hh for long
+ [32m-i[0m[33m len [0m     [0mIgnore N bytes of the input buffer
+ [32m-j[0m          [0mOutput in JSON format
+ [32m-k[0m[33m kernel [0m  [0mSelect operating system (linux, windows, darwin, ..)
+ [32m-l[0m[33m len [0m     [0mInput/Output length
+ [32m-L[0m          [0mList Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL, I=RzIL)
+ [32m-m[0m[33m plugin [0m  [0mList supported CPUs for the chosen plugin
+ [32m-o, -@[0m[33m addr [0m[0mSet start address for code (default 0)
+ [32m-O[0m[33m file [0m    [0mOutput file name (rz-asm -Bf a.asm -O a)
+ [32m-p[0m          [0mRun SPP over input for assembly
+ [32m-q[0m          [0mQuiet mode
+ [32m-s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
+ [32m-v[0m          [0mShow version information
+ [32m-x[0m          [0mUse hex dwords instead of hex pairs when assembling.
+ [32m-w[0m          [0mDescribe opcode
+ If '-l' value is greater than output length, output is padded with nops
+ If the last argument is '-' reads from stdin
+Environment:
+ RZ_ARCH      e asm.arch # architecture to assemble/disassemble (same as rz-asm -a)
+ RZ_ASM_ARCH             # architecture to assemble/disassemble (same as rz-asm -a)
+ RZ_ASM_BITS             # cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+ RZ_BITS      e asm.bits # cpu register size (8, 16, 32, 64) (same as rz-asm -b)
+ RZ_DEBUG                # if defined, show error messages and crash signal
+ RZ_NOPLUGINS            # do not load shared plugins (speedup loading)
+EOF
+RUN
+
+NAME=rz-ax -h
+TOOL=rz-ax
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage:[0m rz-ax [options] [expr ...]
+If expr is not provided, reads from stdin
+ [0mint     ->  hex               ;  rz-ax 10
+ [0mhex     ->  int               ;  rz-ax 0xa
+ [0m-int    ->  hex               ;  rz-ax -77
+ [0m-hex    ->  int               ;  rz-ax 0xffffffb3
+ [0mint     ->  bin               ;  rz-ax b30
+ [0mint     ->  ternary           ;  rz-ax t42
+ [0mbin     ->  int               ;  rz-ax 1010d
+ [0mternary ->  int               ;  rz-ax 1010dt
+ [0mfloat   ->  hex               ;  rz-ax 3.33f
+ [0mhex     ->  float             ;  rz-ax Fx40551ed8
+ [0moct     ->  hex               ;  rz-ax 35o
+ [0mhex     ->  oct               ;  rz-ax Ox12 (O is a letter)
+ [0mbin     ->  hex               ;  rz-ax 1100011b
+ [0mhex     ->  bin               ;  rz-ax Bx63
+ [0mternary ->  hex               ;  rz-ax 212t
+ [0mhex     ->  ternary           ;  rz-ax Tx23
+ [0mraw     ->  hex               ;  rz-ax [32m-S[0m < /binfile
+ [0mhex     ->  raw               ;  rz-ax [32m-s[0m 414141
+ [32m=[0m[33m base [0m  [0m                      ;  rz-ax [32m=[33m10[0m 0x46 -> output in base 10
+ [32m-l[0m      [0m                      ;  append newline to output (for [32m-E[0m/[32m-D[0m/[32m-r[0m/..
+ [32m-a[0m      [0mshow ascii table      ;  rz-ax [32m-a[0m
+ [32m-b[0m      [0mbin -> str            ;  rz-ax [32m-b[0m 01000101 01110110
+ [32m-B[0m      [0mstr -> bin            ;  rz-ax [32m-B[0m hello
+ [32m-d[0m      [0mforce integer         ;  rz-ax [32m-d[0m 3 -> 3 instead of 0x3
+ [32m-e[0m      [0mswap endianness       ;  rz-ax [32m-e[0m 0x33
+ [32m-D[0m      [0mbase64 decode
+ [32m-E[0m      [0mbase64 encode
+ [32m-f[0m      [0mfloating point        ;  rz-ax [32m-f[0m 6.3+2.1
+ [32m-F[0m      [0mstdin slurp code hex  ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
+ [32m-h[0m      [0mshow this help        ;  rz-ax [32m-h[0m
+ [32m-i[0m      [0mdump as C byte array  ;  rz-ax [32m-i[0m < bytes
+ [32m-I[0m      [0mIP address <-> LONG   ;  rz-ax [32m-I[0m 3530468537
+ [32m-k[0m      [0mkeep base             ;  rz-ax [32m-k[0m 33+3 -> 36
+ [32m-L[0m      [0mbin -> hex(bignum)    ;  rz-ax [32m-L[0m 111111111 # 0x1ff
+ [32m-n[0m      [0mint value -> hexpairs ;  rz-ax [32m-n[0m 0x1234 # 34120000
+ [32m-o[0m      [0moctalstr -> raw       ;  rz-ax [32m-o[0m \162 \172 # rz
+ [32m-N[0m      [0mbinary number         ;  rz-ax [32m-N[0m 0x1234 # \x34\x12\x00\x00
+ [32m-r[0m      [0mrz style output       ;  rz-ax [32m-r[0m 0x1234
+ [32m-s[0m      [0mhexstr -> raw         ;  rz-ax [32m-s[0m 43 4a 50
+ [32m-S[0m      [0mraw -> hexstr         ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
+ [32m-t[0m      [0mUnix tstamp -> str    ;  rz-ax [32m-t[0m 1234567890
+ [32m-m[0m      [0mMS-DOS tstamp -> str  ;  rz-ax [32m-m[0m 1234567890
+ [32m-W[0m      [0mWin32 tstamp -> str   ;  rz-ax [32m-W[0m 1234567890
+ [32m-x[0m      [0mhash string           ;  rz-ax [32m-x[0m linux osx
+ [32m-u[0m      [0munits                 ;  rz-ax [32m-u[0m 389289238 # 317.0M
+ [32m-w[0m      [0msigned word           ;  rz-ax [32m-w[0m 16 0xffff
+ [32m-v[0m      [0mversion               ;  rz-ax [32m-v[0m
+ [32m-p[0m      [0mposition of set bits  ;  rz-ax [32m-p[0m 0xb3
+EOF
+RUN
+
+NAME=rz-bin -h
+TOOL=rz-bin
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]
+              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P pdb]
+              [-o str] [-O str] [-k query] [-D lang symname] file
+ [32m-@[0m[33m addr [0m     [0mShow section, symbol, or import at the given address
+ [32m-A[0m           [0mList sub-binaries and their arch-bits pairs
+ [32m-a[0m[33m arch [0m     [0mSet arch (x86, arm, .. or <arch>_<bits>)
+ [32m-b[0m[33m bits [0m     [0mSet bits (32, 64 ...)
+ [32m-B[0m[33m addr [0m     [0mOverride base address (pie bins)
+ [32m-c[0m           [0mList classes
+ [32m-cc[0m          [0mList classes in header format
+ [32m-C[0m[33m fmt:C:D [0m  [0mCreate [elf,mach0,pe] with Code and Data hexpairs (see -a)
+ [32m-d[0m           [0mShow debug/dwarf information
+ [32m-dd[0m          [0mLoad debug/dwarf information from debuginfod server
+ [32m-D[0m[33m lang name [0m[0mDemangle symbol name (-D all for bin.demangle=true)
+ [32m-e[0m           [0mEntrypoint
+ [32m-ee[0m          [0mConstructor/destructor entrypoints
+ [32m-E[0m           [0mGlobally exportable symbols
+ [32m-f[0m[33m mach [0m     [0mSelect sub-binary for the machine [mach].
+ [32m-F[0m[33m binfmt [0m   [0mForce to use that bin plugin (ignore header check)
+ [32m-g[0m           [0mSame as -SMZIHVResizcld -SS -SSS -ee (show all info)
+ [32m-G[0m[33m addr [0m     [0mLoad address . offset to header
+ [32m-h[0m           [0mShow this help
+ [32m-H[0m           [0mHeader fields
+ [32m-i[0m           [0mImport (symbols imported from libraries)
+ [32m-I[0m           [0mBinary info
+ [32m-j[0m           [0mOutput in JSON
+ [32m-k[0m[33m sdb-query [0m[0mRun sdb query. for example: '*'
+ [32m-K[0m[33m algo [0m     [0mCalculate checksums (md5, sha1, ..)
+ [32m-l[0m           [0mLinked libraries
+ [32m-L[0m[33m [plugin] [0m [0mList supported bin plugins or plugin details
+ [32m-m[0m[33m addr [0m     [0mShow source line at addr
+ [32m-M[0m           [0mMain (show address of main symbol)
+ [32m-n[0m[33m str [0m      [0mShow section, symbol or import named str
+ [32m-N[0m[33m min:max [0m  [0mForce min:max number of chars per string (see -z and -zz)
+ [32m-o[0m[33m str [0m      [0mOutput file/folder for write operations (out by default)
+ [32m-O[0m[33m str [0m      [0mWrite/extract operations (-O help)
+ [32m-p[0m           [0mShow physical addresses
+ [32m-P[0m           [0mShow debug/pdb information
+ [32m-PP[0m          [0mDownload pdb file for binary
+ [32m-q[0m           [0mQuiet mode, just show fewer data
+ [32m-qq[0m          [0mShow less info (no offset/size for -z for ex.)
+ [32m-Q[0m           [0mShow load address used by dlopen (non-aslr libs)
+ [32m-r[0m           [0mShow output in rizin format
+ [32m-R[0m           [0mShow relocations
+ [32m-s[0m           [0mSymbols
+ [32m-S[0m           [0mSections
+ [32m-SS[0m          [0mSegments
+ [32m-SSS[0m         [0mSections mapping to segments
+ [32m-T[0m           [0mDisplay file signature
+ [32m-u[0m           [0mUnfiltered (no rename duplicated symbols/sections)
+ [32m-U[0m           [0mResources
+ [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mShow binary version information
+ [32m-w[0m           [0mDisplay try/catch blocks
+ [32m-x[0m           [0mExtract bins contained in file
+ [32m-Y[0m           [0mCalculate all the possibles base address candidates of a firmware bin
+ [32m-z[0m           [0mShow strings (from data section)
+ [32m-zz[0m          [0mShow strings (from raw strings from bin)
+ [32m-zzz[0m         [0mDump raw strings to stdout (for huge files)
+ [32m-Z[0m           [0mGuess size of binary program
+Environment:
+ RZ_BIN_CODESIGN_VERBOSE:                               # make code signatures verbose
+ RZ_BIN_DEBUGINFOD_URLS:  e bin.dbginfo.debuginfod_urls # use alternative debuginfod server
+ RZ_BIN_DEMANGLE=0:       e bin.demangle                # do not demangle symbols
+ RZ_BIN_LANG:             e bin.lang                    # assume lang for demangling
+ RZ_BIN_MAXSTRBUF:        e search.str.max_length       # specify maximum buffer size
+ RZ_BIN_PDBSERVER:        e pdb.server                  # use alternative PDB server
+ RZ_BIN_PREFIX:           e bin.prefix                  # prefix symbols/sections/relocs with a specific string
+ RZ_BIN_STRFILTER:        e bin.str.filter              # rizin -qc 'e bin.str.filter=??' -
+ RZ_BIN_STRPURGE:         e bin.str.purge               # try to purge false positives
+ RZ_BIN_SYMSTORE:         e pdb.symstore                # path to downstream PDB symbol store
+ RZ_CONFIG:                                             # config file
+ RZ_COLOR:                                              # enables/disables colors support
+ RZ_UTF8:                                               # enables/disables utf8 support
+ RZ_NOPLUGINS:                                          # do not load plugins
+EOF
+RUN
+
+NAME=rz-diff -h
+TOOL=rz-diff
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-diff [options] <file0> <file1>
+ [32m-a[0m[33m arch [0m     [0mSpecify architecture plugin to use (x86, arm, ..)
+ [32m-b[0m[33m bits [0m     [0mSpecify register size for arch (16 (thumb), 32, 64, ..)
+ [32m-d[0m[33m myers [0m    [0mCompute edit distance using Eugene W. Myers' O(ND) algorithm (no substitution)
+ [32m-d[0m[33m leven [0m    [0mCompute edit distance using Levenshtein O(N^2) algorithm (with substitution)
+ [32m-d[0m[33m ssdeep [0m   [0mCompute edit distance using Context triggered piecewise hashing comparison
+ [32m-i[0m           [0mUse command line arguments instead of files (only for -d)
+ [32m-H[0m           [0mHexadecimal visual mode
+ [32m-h[0m           [0mShow this help
+ [32m-j[0m           [0mJSON output
+ [32m-q[0m           [0mQuiet output
+ [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mBe more verbose (stderr output)
+ [32m-K[0m[33m theme [0m    [0mSet a give color theme (see rizin 'eco' command)
+ [32m-e[0m[33m k=v [0m      [0mSet an evaluable config variable
+ [32m-A[0m           [0mCompare virtual and physical addresses
+ [32m-B[0m           [0mRun 'aaa' when loading the bin
+ [32m-C[0m           [0mDisable colors
+ [32m-T[0m           [0mShow timestamp information
+ [32m-S[0m[33m WxH [0m      [0mSet the width and height of the terminal for visual mode
+ [32m-0[0m[33m cmd [0m      [0mInput for file0 when option -t 'commands' is given.
+ [32m[0m             [0mThe same value will be set for file1, if -1 is not set.
+ [32m-1[0m[33m cmd [0m      [0mInput for file1 when option -t 'commands' is given.
+ [32m-t[0m[33m bytes [0m    [0mCompare raw bytes in the files (only for small files)
+ [32m-t[0m[33m lines [0m    [0mCompare text files
+ [32m-t[0m[33m functions [0m[0mCompare functions found in the files
+ [32m[0m             [0moptional -0 <fcn name|offset> to compare only one function
+ [32m-t[0m[33m classes [0m  [0mCompare classes found in the files
+ [32m-t[0m[33m command [0m  [0mCompare command output returned when executed in both files
+ [32m[0m             [0mrequires -0 <cmd> and -1 <cmd> is optional
+ [32m-t[0m[33m entries [0m  [0mCompare entries found in the files
+ [32m-t[0m[33m fields [0m   [0mCompare fields found in the files
+ [32m-t[0m[33m graphs [0m   [0mCompare 2 functions and outputs in graphviz/dot format
+ [32m[0m             [0mrequires -0 <fcn name|offset> and -1 <fcn name|offset> is optional
+ [32m-t[0m[33m imports [0m  [0mCompare imports found in the files
+ [32m-t[0m[33m libraries [0m[0mCompare libraries found in the files
+ [32m-t[0m[33m sections [0m [0mCompare sections found in the files
+ [32m-t[0m[33m strings [0m  [0mCompare strings found in the files
+ [32m-t[0m[33m symbols [0m  [0mCompare symbols found in the files
+Palette colors can be changed by adding the following lines inside the $HOME/.rizinrc file
+  ec diff.unknown blue  | offset color
+  ec diff.match   green | match color
+  ec diff.unmatch red   | mismatch color
+Environment variables
+  RZ_COLOR              | enables/disables colors support
+EOF
+RUN
+
+NAME=rz-find -h
+TOOL=rz-find
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
+ [32m-a[0m[33m align [0m[0mOnly accept aligned hits
+ [32m-b[0m[33m size [0m [0mSet block size
+ [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
+ [32m-E[0m[33m cmd [0m  [0mExecute shell command for each file found.
+ [32m-R[0m[33m cmd [0m  [0mExecute Rizin command for each search hit.
+ [32m-f[0m[33m from [0m [0mStart searching from address 'from'
+ [32m-F[0m[33m file [0m [0mRead the contents of the file and use it as keyword
+ [32m-h[0m       [0mShow this help
+ [32m-i[0m       [0mIdentify filetype (magic signatures)
+ [32m-j[0m       [0mOutput in JSON
+ [32m-m[0m       [0mMagic search, file-type carver
+ [32m-M[0m[33m str [0m  [0mSet a binary mask to be applied on keywords
+ [32m-n[0m       [0mDo not stop on read errors
+ [32m-r[0m       [0mPrint using rizin commands
+ [32m-s[0m[33m str [0m  [0mSearch for a specific string (can be used multiple times)
+ [32m-w[0m[33m str [0m  [0mSearch for a specific wide string (can be used multiple times). Assumes str is UTF-8.
+ [32m-I[0m[33m str [0m  [0mSearch for an entry in import table.
+ [32m-S[0m[33m str [0m  [0mSearch for a symbol in symbol table.
+ [32m-t[0m[33m to [0m   [0mStop search at address 'to'
+ [32m-q[0m       [0mQuiet - do not show headings (filenames) above matching contents (default for searching a single file)
+ [32m-v[0m       [0mShow version information
+ [32m-V[0m       [0mVerbose: prints each file scanned
+ [32m-x[0m[33m hex [0m  [0mSearch for hexpair string (909090) (can be used multiple times)
+ [32m-X[0m       [0mShow hexdump of search results
+ [32m-z[0m       [0mSearch for zero-terminated strings
+ [32m-Z[0m       [0mShow string found on each search hit
+EOF
+RUN
+
+NAME=rz-gg -h
+TOOL=rz-gg
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-gg [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]
+             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]
+             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-
+ [32m-a[0m[33m arch [0m     [0mSelect architecture (x86, mips, arm)
+ [32m-b[0m[33m bits [0m     [0mSet Register size (32, 64, ..)
+ [32m-B[0m[33m hexpairs [0m [0mAppend some hexpair bytes
+ [32m-c[0m[33m k=v [0m      [0mSet configuration options
+ [32m-C[0m[33m file [0m     [0mAppend contents of file
+ [32m-d[0m[33m off:dword [0m[0mPatch dword (4 bytes) at given offset
+ [32m-D[0m[33m off:qword [0m[0mPatch qword (8 bytes) at given offset
+ [32m-e[0m[33m encoder [0m  [0mUse specific encoder. see -L
+ [32m-f[0m[33m format [0m   [0mOutput format (raw, c, pe, elf, mach0, python, javascript)
+ [32m-F[0m           [0mOutput native format (osx=mach0, linux=elf, ..)
+ [32m-h[0m           [0mShow this help
+ [32m-i[0m[33m shellcode [0m[0mInclude shellcode plugin, uses options. see -L
+ [32m-I[0m[33m path [0m     [0mAdd include path
+ [32m-k[0m[33m kernel [0m   [0mOperating system's kernel (linux,bsd,osx,w32)
+ [32m-L[0m           [0mList all plugins (shellcodes and encoders)
+ [32m-n[0m[33m dword [0m    [0mAppend 32bit number (4 bytes)
+ [32m-N[0m[33m qword [0m    [0mAppend 64bit number (8 bytes)
+ [32m-o[0m[33m file [0m     [0mOutput file
+ [32m-O[0m           [0mUse default output file (filename without extension or a.out)
+ [32m-p[0m[33m padding [0m  [0mAdd padding after compilation (padding=n10s32)
+ [32m[0m             [0mntas : begin nop, trap, 'a', sequence
+ [32m[0m             [0mNTAS : same as above, but at the end
+ [32m-P[0m[33m size [0m     [0mPrepend debruijn sequence of given length
+ [32m-q[0m[33m fragment [0m [0mDebruijn pattern offset
+ [32m-r[0m           [0mShow raw bytes instead of hexpairs
+ [32m-s[0m           [0mShow assembler
+ [32m-S[0m[33m string [0m   [0mAppend a string
+ [32m-v[0m           [0mShow version information
+ [32m-V[0m           [0mIncrease the verbosity
+ [32m-w[0m[33m off:hex [0m  [0mPatch hexpairs at given offset
+ [32m-x[0m           [0mExecute
+ [32m-X[0m           [0mExecute rop chain, using the stack provided
+ [32m-z[0m           [0mOutput in C string syntax
+EOF
+RUN
+
+NAME=rz-hash -h
+TOOL=rz-hash
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
+ [32m-v[0m        [0mShow version information
+ [32m-h[0m        [0mShow this help
+ [32m-[0m         [0mInput read from stdin instead from a file
+ [32m-a[0m[33m algo [0m  [0mHash algorithm to use and you can specify multiple ones by
+ [32m[0m          [0mAppending a comma (example: sha1,md4,md5,sha256)
+ [32m-B[0m        [0mOutput the calculated value for each block
+ [32m-b[0m[33m size [0m  [0mSet the block size
+ [32m-c[0m[33m value [0m [0mCompare calculated value with a given one (hexadecimal)
+ [32m-e[0m[33m endian [0m[0mSet the endianness (default: 'big' accepted: 'big' or 'little')
+ [32m-D[0m[33m algo [0m  [0mDecrypt the given input; use -S to set key and -I to set IV (if needed)
+ [32m-E[0m[33m algo [0m  [0mEncrypt the given input; use -S to set key and -I to set IV (if needed)
+ [32m-f[0m[33m from [0m  [0mStart the calculation at given offset
+ [32m-t[0m[33m to [0m    [0mStop the calculation at given offset
+ [32m-I[0m[33m iv [0m    [0mSet the initialization vector (IV)
+ [32m-i[0m[33m times [0m [0mRepeat the calculation N times
+ [32m-j[0m        [0mOutput the result as a JSON structure
+ [32m-k[0m        [0mOutput the calculated value using openssh's randomkey algorithm
+ [32m-L[0m        [0mList all algorithms
+ [32m-q[0m        [0mSet quiet mode (use -qq to get only the calculated value)
+ [32m-S[0m[33m seed [0m  [0mSet the seed for -a, use '^' to append it before the input, use '@'
+ [32m[0m          [0mPrefix to load it from a file and '-' from read it
+ [32m-K[0m[33m key [0m   [0mSet the hmac key for -a and the key for -E/-D, use '@' prefix to
+ [32m[0m          [0mLoad it from a file and '-' from read it
+ [32m[0m          [0mFrom stdin (you can combine them)
+ [32m-s[0m[33m string [0m[0mInput read from a zero-terminated string instead from a file
+ [32m-x[0m[33m hex [0m   [0mInput read from a hexadecimal value instead from a file
+ [32m[0m          [0m
+ [32m[0m          [0mAll the input (besides -s/-x/-c) can be hexadecimal or strings
+ [32m[0m          [0mIf 's:' prefix is specified
+EOF
+RUN
+
+NAME=rz-run -h
+TOOL=rz-run
+ARGS=-h
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-run [directives | script.rz] [-- program [args]]
+ [32m-h[0m                [0mShow this help
+ [32m-l[0m                [0mShow profile directives
+ [32m-t[0m                [0mOutput template profile
+ [32m-v[0m                [0mShow version information
+ [32m-w[0m                [0mWait for incoming terminal process
+ [32m--[0m[33m program [args] [0m[0mRun program
+EOF
+RUN
+
+NAME=rz-sign -h
+TOOL=rz-sign
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-sign [-aqv] [-e k=v] (-c pat sig | -o sig bin | -d sig)
+ [32m-h[0m                      [0mShow this help
+ [32m-a, -aa[0m                 [0mAdd extra 'a' to analysis command (available only with -o option)
+ [32m-e[0m[33m k=v [0m                 [0mSet an evaluable config variable (available only with -o option)
+ [32m-c[0m[33m output.pat input.sig [0m[0mParse a FLIRT signature and convert it to its other format
+ [32m-o[0m[33m output.sig input.bin [0m[0mPerform an analysis on the binary and generate the FLIRT signature
+ [32m-d[0m[33m flirt.sig [0m           [0mParse a FLIRT signature and dump its content
+ [32m-q[0m                      [0mQuiet mode
+ [32m-v[0m                      [0mShow version information
+Examples:
+  rz-sign -d signature.sig
+  rz-sign -c new_signature.pat old_signature.sig
+  rz-sign -o libc.sig libc.so.6
+EOF
+RUN

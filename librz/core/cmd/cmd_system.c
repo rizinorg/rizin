@@ -44,7 +44,7 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 	}
 
 	if (!*alloc_str) {
-		*alloc_str = strdup(arg);
+		*alloc_str = rz_str_dup(arg);
 	}
 
 	*alloc_str = rz_str_replace(*alloc_str, env, value, 1);
@@ -64,7 +64,7 @@ static int system_exec(RzCore *core, int argc, const char **argv, char **output,
 	const char *io_va = rz_config_get(core->config, "io.va");
 	const char *pdb_server = rz_config_get(core->config, "pdb.server");
 	const char *scr_color = rz_config_get(core->config, "scr.color");
-	const char *endian = rz_str_bool(core->rasm->big_endian);
+	const char *endian = rz_str_bool(rz_asm_is_big_endian_set(core->rasm));
 	char *cfg_path = config_path(core);
 
 	rz_strf(file_size, "%" PFMT64u, core->file ? rz_io_fd_size(core->io, core->file->fd) : 0);

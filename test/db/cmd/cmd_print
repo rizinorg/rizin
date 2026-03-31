@@ -13,56 +13,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p= 0xff 0x00
-FILE==
-BROKEN=1
-CMDS=<<EOF
-b 2
-wx 0xff
-p= 2@0
-EOF
-EXPECT=<<EOF
-         ___________________________________________________
-00 00ff | __________________________________________________|
-01 0000 ||
-EOF
-RUN
-
-NAME=p= 0xff 0x00
-FILE==
-CMDS=<<EOF
-b 2
-wx 0xff
-e zoom.in=raw
-p= 2 2@ 0
-EOF
-EXPECT=<<EOF
-0x00000000 000 00ff |###################################################
-0x00000001 001 0000 |#
-EOF
-RUN
-
-NAME=p= - crash
+NAME=p= various tests with malloc:// 
 FILE==
 CMDS=<<EOF
 e zoom.in=block
 p=p" 1 " 1 EN
+echo -------
+b 2
+wx 0xff
+e zoom.in=block
+p= 2 2@ 0
 EOF
 EXPECT=<<EOF
 0x00000000 000 0000 |#
-EOF
-RUN
-
-NAME=p=d
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=p=d @!10 @ 0
-EXPECT=<<EOF
-min:              0  0x0
-max:              127  0x7f
-unique (count):   6  0x6
-range (max-min):  127  0x7f
-size (of block):  10  0xa
+-------
+0x00000000 000 00ff |###################################################
+0x00000001 001 0000 |#
 EOF
 RUN
 
@@ -78,56 +44,47 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p=e 5 0x100
+NAME=p= tests
 FILE=bins/elf/arm1.bin
 ARGS=-n
 CMDS=<<EOF
+p=d @!10 @ 0
+echo -------
+p=r
+echo -------
+p=r 0.73 0.06
+echo -------
+p=rj 0.73 0.06
+echo -------
+p=rq 0.73 0.06
+echo -------
+p=rl 0.73 0.06
+echo -------
+p=rt 0.73 0.06
+echo -------
+p=p 5@ 0
+echo -------
 e zoom.in=block
 p=e 5 0x100
-EOF
-EXPECT=<<EOF
-0x00000000 000 007f |#########################
-0x00000033 001 006b |###
-0x00000066 002 007a |#########################
-0x00000099 003 006a |#####################
-0x000000cc 004 005f |###################
-EOF
-RUN
-
-NAME=p=e 5 0x100 1
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
+echo -------
 e zoom.in=block
 p=e 5 0x100 1
+echo -------
+e zoom.in=block
+p=p 5 0x100
+echo -------
+e zoom.in=block
+p=p 5 0x100 1
 EOF
 EXPECT=<<EOF
-0x00000000 000 006b |###
-0x00000033 001 007a |#########################
-0x00000066 002 006a |#####################
-0x00000099 003 005f |###################
-0x000000cc 004 0059 |##################
-EOF
-RUN
-
-NAME=p=r
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=r
-EOF
-EXPECT=<<EOF
+min:              0  0x0
+max:              127  0x7f
+unique (count):   6  0x6
+range (max-min):  127  0x7f
+size (of block):  10  0xa
+-------
 0x00000000 Falling entropy edge
-EOF
-RUN
-
-NAME=p=r 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=r 0.73 0.06
-EOF
-EXPECT=<<EOF
+-------
 0x00010a00 Rising entropy edge
 0x00017200 Rising entropy edge
 0x00017f00 Rising entropy edge
@@ -139,27 +96,9 @@ EXPECT=<<EOF
 0x00070200 Rising entropy edge
 0x00073200 Falling entropy edge
 0x00074300 Falling entropy edge
-EOF
-RUN
-
-NAME=p=rj 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rj 0.73 0.06
-EOF
-EXPECT=<<EOF
+-------
 [{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.730819},{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.730736},{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.733761},{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.730632},{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.757028},{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.042506},{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.058047},{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.760109},{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.024685}]
-EOF
-RUN
-
-NAME=p=rq 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rq 0.73 0.06
-EOF
-EXPECT=<<EOF
+-------
 0x00010a00
 0x00017200
 0x00017f00
@@ -171,16 +110,7 @@ EXPECT=<<EOF
 0x00070200
 0x00073200
 0x00074300
-EOF
-RUN
-
-NAME=p=rl 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rl 0.73 0.06
-EOF
-EXPECT=<<EOF
+-------
 0x00010a00 10a Rising entropy edge (0.730819)
 0x00017200 172 Rising entropy edge (0.730736)
 0x00017f00 17f Rising entropy edge (0.733761)
@@ -192,74 +122,65 @@ EXPECT=<<EOF
 0x00070200 702 Rising entropy edge (0.760109)
 0x00073200 732 Falling entropy edge (0.000000)
 0x00074300 743 Falling entropy edge (0.024685)
-EOF
-RUN
-
-NAME=p=rt 0.73 0.06
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-p=rt 0.73 0.06
-EOF
-EXPECT=<<EOF
-addr    index edge_type            entropy_value 
+-------
+   addr index edge_type            entropy_value 
 -------------------------------------------------
-0x10a00 266   rising entropy edge  0.730819
-0x17200 370   rising entropy edge  0.730736
-0x17f00 383   rising entropy edge  0.733761
-0x4a800 1192  rising entropy edge  0.730632
-0x5f000 1520  rising entropy edge  0.757028
-0x63d00 1597  falling entropy edge 0.042506
-0x64000 1600  falling entropy edge 0.000000
-0x6cd00 1741  falling entropy edge 0.058047
-0x70200 1794  rising entropy edge  0.760109
-0x73200 1842  falling entropy edge 0.000000
-0x74300 1859  falling entropy edge 0.024685
-EOF
-RUN
-
-NAME=p=p 5
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=p=p 5@ 0
-EXPECT=<<EOF
+0x10a00   266 rising entropy edge       0.730819
+0x17200   370 rising entropy edge       0.730736
+0x17f00   383 rising entropy edge       0.733761
+0x4a800  1192 rising entropy edge       0.730632
+0x5f000  1520 rising entropy edge       0.757028
+0x63d00  1597 falling entropy edge      0.042506
+0x64000  1600 falling entropy edge      0.000000
+0x6cd00  1741 falling entropy edge      0.058047
+0x70200  1794 rising entropy edge       0.760109
+0x73200  1842 falling entropy edge      0.000000
+0x74300  1859 falling entropy edge      0.024685
+-------
 0x00000000 000 0032 |##########
 0x0001bec1 001 0031 |#
 0x00037d82 002 0035 |###
 0x00053c43 003 0040 |###########
 0x0006fb04 004 0076 |########################
-EOF
-RUN
-
-NAME=p=p 5 0x100
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in=block
-p=p 5 0x100
-EOF
-EXPECT=<<EOF
+-------
+0x00000000 000 007f |#########################
+0x00000033 001 006b |###
+0x00000066 002 007a |#########################
+0x00000099 003 006a |#####################
+0x000000cc 004 005f |###################
+-------
+0x00000000 000 006b |###
+0x00000033 001 007a |#########################
+0x00000066 002 006a |#####################
+0x00000099 003 005f |###################
+0x000000cc 004 0059 |##################
+-------
 0x00000000 000 0032 |#########
 0x00000033 001 0019 |#
 0x00000066 002 001e |#
 0x00000099 003 001e |##
 0x000000cc 004 0028 |########
-EOF
-RUN
-
-NAME=p=p 5 0x100 1
-FILE=bins/elf/arm1.bin
-ARGS=-n
-CMDS=<<EOF
-e zoom.in=block
-p=p 5 0x100 1
-EOF
-EXPECT=<<EOF
+-------
 0x00000000 000 0019 |#
 0x00000033 001 001e |#
 0x00000066 002 001e |##
 0x00000099 003 0028 |#######
 0x000000cc 004 001e |######
+EOF
+RUN
+
+NAME=ppd/ endianness
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e cfg.bigendian=false
+ppd/ 0x41574141
+e cfg.bigendian=true
+ppd/ 0x41574141
+EOF
+EXPECT=<<EOF
+64
+65
 EOF
 RUN
 
@@ -280,9 +201,28 @@ wx b8010000004839ca7f
 pi 3
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
+EOF
+RUN
+
+NAME=pia output
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+pia 10
+EOF
+EXPECT=<<EOF
+xor ebp, ebp
+in eax, dx
+mov r9, rdx
+mov ecx, edx
+rcr dword [rsi+0x48], 0x01
+pop rsi
+mov rdx, rsp
+mov edx, esp
+loop 0x400462
+invalid
 EOF
 RUN
 
@@ -295,7 +235,7 @@ wx b8010000004839ca7f
 pdj 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 0x01","disasm":"mov eax, 0x01","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jnle 0xa","disasm":"jnle 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -308,12 +248,12 @@ wx b8010000004839ca7f00b8010000004839ca7f00
 pi 6
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
-mov eax, 1
+jnle 0xa
+mov eax, 0x01
 cmp rdx, rcx
-jg 0x14
+jnle 0x14
 EOF
 RUN
 
@@ -323,21 +263,12 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 pi -5 @ 0x0040050f
-EOF
-EXPECT=<<EOF
-pop rbp
-jmp sym.register_tm_clones
-push rbp
-mov rbp, rsp
-mov edi, str.Hello_World
-EOF
-RUN
-
-NAME=pi -5 @ 0x0040050f (analysis)
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
+echo -------
+pdj -3 @ 0x0040050f
+echo -------
+s 0x0040050f
+pi -5
+echo -------
 aaa
 pi -5 @ 0x0040050f
 EOF
@@ -347,30 +278,15 @@ jmp sym.register_tm_clones
 push rbp
 mov rbp, rsp
 mov edi, str.Hello_World
-EOF
-RUN
-
-NAME=pdj -5 @ 0x0040050f
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-pdj -3 @ 0x0040050f
-EOF
-EXPECT=<<EOF
+-------
 [{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-EOF
-RUN
-
-NAME=pi -5
-FILE=bins/elf/analysis/main
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-s 0x0040050f
-pi -5
-EOF
-EXPECT=<<EOF
+-------
+pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+-------
 pop rbp
 jmp sym.register_tm_clones
 push rbp
@@ -451,9 +367,9 @@ wx b8010000004839ca7f
 pi 3
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
 EOF
 RUN
 
@@ -466,7 +382,7 @@ wx b8010000004839ca7f
 pdj 3
 EOF
 EXPECT=<<EOF
-[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","disasm":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","disasm":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+[{"offset":0,"val":1,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 0x01","disasm":"mov eax, 0x01","bytes":"b801000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rcx,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","disasm":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jnle 0xa","disasm":"jnle 0xa","bytes":"7f00","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
 EOF
 RUN
 
@@ -479,12 +395,12 @@ wx b8010000004839ca7f00b8010000004839ca7f00
 pi 6
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
-mov eax, 1
+jnle 0xa
+mov eax, 0x01
 cmp rdx, rcx
-jg 0x14
+jnle 0x14
 EOF
 RUN
 
@@ -497,9 +413,9 @@ wx b8010000004839ca7f00
 pi -3 @ 10
 EOF
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 cmp rdx, rcx
-jg 0xa
+jnle 0xa
 EOF
 RUN
 
@@ -521,8 +437,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 5,
-    "opcode": "mov eax, 1",
-    "disasm": "mov eax, 1",
+    "opcode": "mov eax, 0x01",
+    "disasm": "mov eax, 0x01",
     "bytes": "b801000000",
     "family": "cpu",
     "type": "mov",
@@ -553,8 +469,8 @@ EXPECT=<<EOF
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
-    "opcode": "jg 0xa",
-    "disasm": "jg 0xa",
+    "opcode": "jnle 0xa",
+    "disasm": "jnle 0xa",
     "bytes": "7f00",
     "family": "cpu",
     "type": "cjmp",
@@ -631,50 +547,58 @@ e asm.arch=x86
 e asm.bits=64
 p8 1 @b:32
 e asm.bits
-EOF
-EXPECT=<<EOF
-00
-64
-EOF
-RUN
-
-NAME=tmpbits
-FILE==
-CMDS=<<EOF
-e asm.arch=x86
 e asm.bits=32
 p8 1 @b:64
 e asm.bits
 EOF
 EXPECT=<<EOF
 00
+64
+00
 32
 EOF
+RUN
+
+NAME=pm olf
+FILE=bins/elf/ioli/crackme0x00
+ARGS=-n
+CMDS=pm bins/src/olf.magic
+EXPECT=<<EOF
+0x00000000 OLF 32-bit LSB
+EOF
+RUN
+
+NAME=pm lzma
+FILE=bins/other/hello-world.lzma
+CMDS=<<EOF
+pm
+pmj
+EOF
+EXPECT=<<EOF
+0x00000000 LZMA BE compressed data dictionary size: 32768 bytes,
+[{"address":0,"magic":"LZMA BE compressed data dictionary size: 32768 bytes,"}]
+EOF
+EXPECT_ERR=
 RUN
 
 NAME=pm hello.c
 FILE=bins/src/hello.c
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 C source code
+0x00000000 C source code
 EOF
 RUN
 
 NAME=pm elf/main
 FILE=bins/elf/analysis/main
 ARGS=-n
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
+CMDS=<<EOF
+pm
+pmj
 EOF
-RUN
-
-NAME=pmj elf/main
-FILE=bins/elf/analysis/main
-ARGS=-n
-CMDS=pmj
 EXPECT=<<EOF
-{"offset":0,"depth":1,"info":"ELF 64-bit LSB executable, x86-64, version 1"}
+0x00000000 ELF 64-bit LSB executable, x86-64, version 1
+[{"address":0,"magic":"ELF 64-bit LSB executable, x86-64, version 1"}]
 EOF
 RUN
 
@@ -683,7 +607,31 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Fat-Mach-O
+0x00000000 Fat-Mach-O version 3.0 Mach-O fat file with 3 architectures
+0x00001000 Mach-O
+0x00003140 MacOS Deteched Code Signature
+0x00005000 Mach-O
+0x00007120 MacOS Deteched Code Signature
+0x00009000 Mach-O
+0x0000b060 MacOS Deteched Code Signature
+EOF
+RUN
+
+NAME=pm perl/exam.pm
+FILE=bins/perl/exam.pm
+ARGS=-n
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 Perl5 module source text
+EOF
+RUN
+
+NAME=pm perl/exam.pl
+FILE=bins/perl/exam.pl
+ARGS=-n
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 Perl script text executable
 EOF
 RUN
 
@@ -692,7 +640,7 @@ FILE=bins/java/Hello.class
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 Java CLASS
+0x00000000 Java CLASS
 EOF
 RUN
 
@@ -701,15 +649,18 @@ FILE=bins/pe/a.exe
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 PE  for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 
-NAME=pib from beginning of bb
+NAME=pib from beginning of bb & inside bb
 FILE=bins/elf/analysis/x64-loop
 CMDS=<<EOF
 s main
 af
+pib
+echo -------
+so 2
 pib
 EOF
 EXPECT=<<EOF
@@ -718,24 +669,13 @@ mov rbp, rsp
 sub rsp, 0x20
 mov dword [var_1ch], edi
 mov qword [var_28h], rsi
-mov dword [var_ch], 0
+mov dword [var_ch], 0x00
 jmp 0x400523
-EOF
-RUN
-
-NAME=pib inside bb
-FILE=bins/elf/analysis/x64-loop
-CMDS=<<EOF
-s main
-af
-so 2
-pib
-EOF
-EXPECT=<<EOF
+-------
 sub rsp, 0x20
 mov dword [var_1ch], edi
 mov qword [var_28h], rsi
-mov dword [var_ch], 0
+mov dword [var_ch], 0x00
 jmp 0x400523
 EOF
 RUN
@@ -763,28 +703,17 @@ nop
 EOF
 RUN
 
-NAME=psW 32 utf32le
+NAME=psW 32 utf32le & psM 32 utf32be
 FILE=bins/elf/crackme0x00b
-CMDS=psW @ obj.pass.1964
+CMDS=<<EOF
+psW @ obj.pass.1964
+echo --------
+psM @ 0x0804a03d
+EOF
 EXPECT=<<EOF
 w0wgreat
-EOF
-RUN
-
-NAME=psM 32 utf32be
-FILE=bins/elf/crackme0x00b
-CMDS=psM @ 0x0804a03d
-EXPECT=<<EOF
+--------
 w0wgreat
-EOF
-RUN
-
-NAME=ps leading zeros
-BROKEN=1
-FILE=bins/elf/crackme0x00b
-CMDS=ps @ 0x0804a03e
-EXPECT=<<EOF
-w
 EOF
 RUN
 
@@ -949,5 +878,110 @@ pxA 10
 EOF
 EXPECT=<<EOF
 ++++++    _|  10
+EOF
+RUN
+
+NAME=pxf
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aaa
+pxf
+EOF
+EXPECT=<<EOF
+0x00400410  31ed 4989 d15e 4889 e248 83e4 f050 5449  1.I..^H..H...PTI
+0x00400420  c7c0 b005 4000 48c7 c120 0540 0048 c7c7  ....@.H.. .@.H..
+EOF
+RUN
+
+
+NAME=p== horizontal histogram ruler
+FILE=malloc://8
+CMDS=<<EOF
+wx ff00ff00ff00ff00
+e scr.color=0
+e scr.hist.ruler=true
+e scr.utf8=false
+p== 8
+echo ---
+e scr.utf8=true
+p== 8
+EOF
+EXPECT=<<EOF
+ 255|                                                                              
+ 237|##########          ##########         ##########          ##########         
+ 219|##########          ##########         ##########          ##########         
+ 201|##########          ##########         ##########          ##########         
+ 183|##########          ##########         ##########          ##########         
+ 165|##########          ##########         ##########          ##########         
+ 147|##########          ##########         ##########          ##########         
+ 129|##########          ##########         ##########          ##########         
+ 111|##########          ##########         ##########          ##########         
+  93|##########          ##########         ##########          ##########         
+  75|##########          ##########         ##########          ##########         
+  57|##########          ##########         ##########          ##########         
+  39|##########          ##########         ##########          ##########         
+  21|##########__________##########_________##########__________##########_________
+---
+ 255│                                                                              
+ 237│██████████          ██████████         ██████████          ██████████         
+ 219│██████████          ██████████         ██████████          ██████████         
+ 201│██████████          ██████████         ██████████          ██████████         
+ 183│██████████          ██████████         ██████████          ██████████         
+ 165│██████████          ██████████         ██████████          ██████████         
+ 147│██████████          ██████████         ██████████          ██████████         
+ 129│██████████          ██████████         ██████████          ██████████         
+ 111│██████████          ██████████         ██████████          ██████████         
+  93│██████████          ██████████         ██████████          ██████████         
+  75│██████████          ██████████         ██████████          ██████████         
+  57│██████████          ██████████         ██████████          ██████████         
+  39│██████████          ██████████         ██████████          ██████████         
+  21│██████████__________██████████_________██████████__________██████████_________
+EOF
+RUN
+
+NAME=p== horizontal histogram ruler complex
+FILE=malloc://182
+CMDS=<<EOF
+wx 31ed4989d15e4889e24883e4f050544531c031c9488d3d85e4ffffff1517080200f4662e0f1f8400000000000f1f4000488d3de90a0200488d05e20a02004839f87415488b05f60702004885c07409ffe00f1f8000000000c30f1f8000000000488d3db90a0200488d35b20a02004829fe4889f048c1ee3f48c1f8034801c648d1fe7414488b05f50702004885c07408ffe0660f1f440000c30f1f8000000000f30f1efa803dbd0a020000752b5548833dd2070200004889e5740c488b3de6070200e801dfffffe864ffffffc605950a0200015dc30f1f00c30f1f8000000000f30f1efae977ffffff662e0f1f840000000000662e0f1f840000000000662e0f
+e scr.color=0
+e scr.hist.ruler=true
+e scr.utf8=false
+p== 80
+echo ---
+e scr.utf8=true
+p== 80
+EOF
+EXPECT=<<EOF
+ 255|                                                                              
+ 237|            #            ###     #                             #     #        
+ 219| #      #  ##           ####     #                #      #     #     #        
+ 201| #  #   #  ##           ####     #                #      #     #     #        
+ 183| #  #   #  ##    # #    ####     #                #      #     #     #     #  
+ 165| #  #   #  ##    # #    ####     #                #      #     #     #     #  
+ 147| #  #   #  ##    # #    ####     #                #      #     #     #     #  
+ 129| # ##  ## ###    # # # #####     #    #         # #    # #     #   # #    ##  
+ 111| # ##  ## ###    # # # #####     #    #         # #    # #     ##  # #    ### 
+  93| # ### ## ###    # # # #####     ##   #         # #    # #     ##  # #    ### 
+  75| # ### ## #####  # # # #####     ##   #         # #    # #     ##  # #    ### 
+  57| ############### # #########     ##   #      # ####   ## #   # ## ## #   #### 
+  39|############################     ###  #      # ####   ## #   #### ## #   #### 
+  21|############################_#___###_##_____##_####___##_#___####_##_#___####_
+---
+ 255│                                                                              
+ 237│            █            ███     █                             █     █        
+ 219│ █      █  ██           ████     █                █      █     █     █        
+ 201│ █  █   █  ██           ████     █                █      █     █     █        
+ 183│ █  █   █  ██    █ █    ████     █                █      █     █     █     █  
+ 165│ █  █   █  ██    █ █    ████     █                █      █     █     █     █  
+ 147│ █  █   █  ██    █ █    ████     █                █      █     █     █     █  
+ 129│ █ ██  ██ ███    █ █ █ █████     █    █         █ █    █ █     █   █ █    ██  
+ 111│ █ ██  ██ ███    █ █ █ █████     █    █         █ █    █ █     ██  █ █    ███ 
+  93│ █ ███ ██ ███    █ █ █ █████     ██   █         █ █    █ █     ██  █ █    ███ 
+  75│ █ ███ ██ █████  █ █ █ █████     ██   █         █ █    █ █     ██  █ █    ███ 
+  57│ ███████████████ █ █████████     ██   █      █ ████   ██ █   █ ██ ██ █   ████ 
+  39│████████████████████████████     ███  █      █ ████   ██ █   ████ ██ █   ████ 
+  21│████████████████████████████_█___███_██_____██_████___██_█___████_██_█___████_
 EOF
 RUN

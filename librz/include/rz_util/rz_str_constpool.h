@@ -2,7 +2,7 @@
 #define RZ_STR_CONSTPOOL_H
 
 #include <rz_types.h>
-#include <sdbht.h>
+#include <rz_util/ht_sp.h>
 
 #include <stdbool.h>
 
@@ -16,7 +16,7 @@ extern "C" {
  */
 
 typedef struct rz_str_constpool_t {
-	HtPP *ht;
+	HtSP *ht;
 } RzStrConstPool;
 
 RZ_API bool rz_str_constpool_init(RzStrConstPool *pool);

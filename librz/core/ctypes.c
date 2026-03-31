@@ -43,13 +43,6 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 			free(ccexpr);
 		}
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		rz_list_foreach (list, iter, cc) {
-			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			rz_cons_printf("tcc \"%s\"\n", ccexpr);
-			free(ccexpr);
-		}
-	} break;
 	case RZ_OUTPUT_MODE_SDB:
 		rz_core_kuery_print(core, "analysis/cc/*");
 		break;
@@ -75,7 +68,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 			pj_k(pj, "values");
 			pj_o(pj);
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				pj_kn(pj, cas->name, cas->val);
 			}
 			pj_end(pj);
@@ -86,7 +79,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 	case RZ_OUTPUT_MODE_STANDARD: {
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
-			rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_vector_foreach (&btype->enum_data.cases, cas) {
 				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
@@ -162,7 +155,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 			pj_k(pj, "members");
 			pj_o(pj);
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				pj_ks(pj, memb->name, mtype);
 				free(mtype);
@@ -176,7 +169,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 		rz_cons_printf("union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
-			rz_vector_foreach(&btype->union_data.members, memb) {
+			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
@@ -255,7 +248,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		pj_k(pj, "members");
 		pj_o(pj);
 		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
+		rz_vector_foreach (&btype->struct_data.members, memb) {
 			char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 			pj_ks(pj, memb->name, mtype);
 			free(mtype);
@@ -269,7 +262,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			ut64 offset = 0;
-			rz_vector_foreach(&btype->struct_data.members, memb) {
+			rz_vector_foreach (&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
@@ -506,12 +499,17 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 	free(ret);
 }
 
+static int compare_function_names(const char *a, const char *b, RZ_UNUSED void *user) {
+	return strcmp(a, b);
+}
+
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 	RzList *l = rz_type_function_names(core->analysis->typedb);
+	rz_list_sort(l, (RzListComparator)compare_function_names, NULL);
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (l, iter, name) {
@@ -566,11 +564,20 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 // Type formatting
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
-	char *fmt = rz_type_format(core->analysis->typedb, name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	char *fmt = rz_type_format(typedb, name);
+	if (!fmt) {
+		RZ_LOG_ERROR("core: cannot find '%s' type's format\n", name);
+		return;
+	}
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!fmt) {
 		RZ_LOG_ERROR("core: cannot find '%s' type\n", name);
 		return;
 	}
+	ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
+	const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+
 	// Simply skip types with empty format
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_WARN("core: '%s' type has empty format\n", name);
@@ -586,19 +593,21 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		}
 		pj_o(pj);
 		pj_ks(pj, "name", name);
+		pj_ks(pj, "kind", kind);
 		pj_ks(pj, "format", fmt);
+		pj_ki(pj, "size", type_size);
 		pj_end(pj);
 		rz_cons_printf("%s", pj_string(pj));
 		pj_free(pj);
 	} break;
-	case RZ_OUTPUT_MODE_RIZIN: {
-		rz_cons_printf("pfn \"%s\" \"%s\"\n", name, fmt);
-	} break;
-	case RZ_OUTPUT_MODE_STANDARD: {
+	case RZ_OUTPUT_MODE_LONG:
+		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
 		// FIXME: Not really a standard format
 		// We should think about better representation by default here
 		rz_cons_printf("pf \"%s\"\n", fmt);
-	} break;
+		break;
 	default:
 		break;
 	}
@@ -611,7 +620,7 @@ RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (structlist, it, btype) {
-		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_STANDARD);
 	}
 	rz_list_free(structlist);
 }
@@ -622,7 +631,7 @@ RZ_IPI void rz_core_types_union_print_format_all(RzCore *core) {
 	RzListIter *it;
 	RzBaseType *btype;
 	rz_list_foreach (unionlist, it, btype) {
-		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_STANDARD);
 	}
 	rz_list_free(unionlist);
 }
@@ -658,14 +667,14 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? strdup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
+	char *cmt = (offimm == 0) ? rz_str_dup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
 		// possible member offset and the global variable at the laddr
 		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
 		if (paths && rz_list_length(paths)) {
-			RzTypePathTuple *match = rz_list_last(paths);
+			RzTypePathTuple *match = rz_list_last_val(paths);
 			rz_analysis_hint_set_offset(core->analysis, at, match->path->path);
 		}
 		rz_list_free(paths);
@@ -693,7 +702,7 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 
 	// TODO: Handle register based arg for types offset/path propagation
 	if (vtpaths && rz_list_length(vtpaths) && ctx->var && ctx->var->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK) {
-		RzTypePathTuple *vtpath = rz_list_last(vtpaths);
+		RzTypePathTuple *vtpath = rz_list_last_val(vtpaths);
 		// if a var addr matches with compound type, change its type and name
 		// var int local_e0h --> var struct foo
 		if (!*resolved) {
@@ -706,10 +715,10 @@ static void resolve_global_var_types(RzCore *core, ut64 at, struct GVTAnalysisCo
 			vtpath->root = NULL;
 		}
 	} else if (stpaths && rz_list_length(stpaths)) {
-		RzTypePathTuple *stpath = rz_list_last(stpaths);
+		RzTypePathTuple *stpath = rz_list_last_val(stpaths);
 		set_offset_hint(core, ctx->aop, stpath, ctx->src_addr, at - ret, ctx->src_imm);
 	} else if (dtpaths && rz_list_length(dtpaths)) {
-		RzTypePathTuple *dtpath = rz_list_last(dtpaths);
+		RzTypePathTuple *dtpath = rz_list_last_val(dtpaths);
 		set_offset_hint(core, ctx->aop, dtpath, ctx->dst_addr, at - ret, ctx->dst_imm);
 	}
 	rz_list_free(stpaths);
@@ -790,7 +799,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 				i = 0;
 			}
 			if (!i) {
-				rz_io_read_at(core->io, at, buf, bsize);
+				rz_io_read_at_mapped(core->io, at, buf, bsize);
 			}
 			rz_analysis_op_init(&aop);
 			ret = rz_analysis_op(core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_VAL);
@@ -884,12 +893,17 @@ beach:
 	free(buf);
 }
 
+static int compare_base_types(const RzBaseType *a, const RzBaseType *b, RZ_UNUSED void *user) {
+	return strcmp(a->name, b->name);
+}
+
 // Everything
 
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *it;
 	RzBaseType *btype;
 	RzList *types = rz_type_db_get_base_types(core->analysis->typedb);
+	rz_list_sort(types, (RzListComparator)compare_base_types, NULL);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();
@@ -898,10 +912,13 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		}
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
 			pj_o(pj);
 			// rz_str_trim(format_s);
 			pj_ks(pj, "type", btype->name);
-			pj_ki(pj, "size", btype->size);
+			pj_ks(pj, "kind", kind);
+			pj_ki(pj, "size", type_size);
 			// pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
@@ -915,15 +932,11 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 			rz_cons_println(btype->name);
 		}
 		break;
-	case RZ_OUTPUT_MODE_RIZIN:
+	case RZ_OUTPUT_MODE_LONG:
 		rz_list_foreach (types, it, btype) {
-			char *fmt = rz_type_format(core->analysis->typedb, btype->name);
-			if (RZ_STR_ISNOTEMPTY(fmt)) {
-				rz_cons_printf("pfn \"%s\" \"%s\"\n", btype->name, fmt);
-			} else {
-				RZ_LOG_WARN("core: '%s' type has empty format\n", btype->name);
-			}
-			free(fmt);
+			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
+			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
 		}
 		break;
 	default:

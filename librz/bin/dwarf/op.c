@@ -504,6 +504,8 @@ RZ_IPI bool Operation_parse(Operation *self, RzBinEndianReader *R, const RzBinDw
 		}
 		break;
 	}
+	case DW_OP_GNU_uninit:
+	case DW_OP_GNU_encoded_addr:
 	case DW_OP_hi_user:
 	default:
 		RZ_LOG_WARN("Unsupported opcode %s 0x%" PFMT32x "\n",
@@ -606,7 +608,7 @@ static RzBinDwarfValueType ValueType_from_die(
 	ut8 byte_size = 0;
 	const char *name = NULL;
 	DW_ATE ate = 0;
-	rz_vector_foreach(&die->attrs, attr) {
+	rz_vector_foreach (&die->attrs, attr) {
 		switch (attr->at) {
 		case DW_AT_name:
 			name = rz_bin_dwarf_attr_string(attr, (RzBinDWARF *)dw, 0);
@@ -1021,7 +1023,7 @@ static bool Evaluation_evaluate_one_operation(
 	}
 	case OPERATION_KIND_NOP: break;
 	case OPERATION_KIND_PUSH_OBJECT_ADDRESS: {
-		OK_OR_ERR(self->object_address, RZ_LOG_ERROR("object address not set"));
+		OK_OR_ERR(self->object_address, RZ_LOG_ERROR("object address not set\n"));
 		RzBinDwarfValue v = {
 			.type = RzBinDwarfValueType_GENERIC,
 			.generic = *self->object_address,
@@ -1117,7 +1119,7 @@ static bool Evaluation_evaluate_one_operation(
 	}
 	case OPERATION_KIND_ADDRESS_INDEX: {
 		ut64 addr = 0;
-		if (self->dw && self->unit && rz_bin_dwarf_addr_get(self->dw->addr, &addr, self->unit->hdr.encoding.address_size, self->unit->addr_base, operation.address_index.index)) {
+		if (self->dw && self->unit && rz_bin_dwarf_addr(self->dw) && rz_bin_dwarf_addr_get(rz_bin_dwarf_addr(self->dw), &addr, self->unit->hdr.encoding.address_size, self->unit->addr_base, operation.address_index.index)) {
 			out->kind = OperationEvaluationResult_COMPLETE;
 			out->complete.kind = RzBinDwarfLocationKind_ADDRESS;
 			out->complete.address = addr;
@@ -1356,7 +1358,7 @@ RZ_API RZ_BORROW RzVector /*<RzBinDwarfPiece>*/ *rz_bin_dwarf_evaluation_result(
 	if (self->state.kind == EVALUATION_STATE_COMPLETE) {
 		return &self->result;
 	}
-	RZ_LOG_ERROR("Called `Evaluation::result` on an `Evaluation` that has not been completed");
+	RZ_LOG_ERROR("Called `Evaluation::result` on an `Evaluation` that has not been completed\n");
 	return NULL;
 }
 
@@ -1421,8 +1423,6 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 
 	if (rz_bin_dwarf_block_empty(block)) {
 		loc->kind = RzBinDwarfLocationKind_EMPTY;
-	} else if (!rz_bin_dwarf_block_valid(block)) {
-		loc->kind = RzBinDwarfLocationKind_DECODE_ERROR;
 	} else {
 		RzBinDwarfEvaluationResult *result = RZ_NEW0(RzBinDwarfEvaluationResult);
 		RET_NULL_IF_FAIL(result);
@@ -1592,7 +1592,7 @@ RZ_API void rz_bin_dwarf_expression_dump(
 	Operation *op = NULL;
 	ut32 i;
 	const ut32 end = rz_vector_len(exprs) - 1;
-	rz_vector_enumerate(exprs, op, i) {
+	rz_vector_enumerate (exprs, op, i) {
 		rz_strbuf_append(sb, rz_str_get(opt->expr_indent));
 		Operation_dump(op, sb);
 		if (i < end) {
@@ -1639,7 +1639,7 @@ RZ_API void rz_bin_dwarf_loclist_dump(
 	rz_pvector_foreach (&loclist->entries, it) {
 		const RzBinDwarfLocListEntry *entry = *it;
 		rz_strbuf_appendf(sb, "%s(0x%" PFMT64x ", %" PFMT64d "):",
-			rz_str_get(opt->loclist_indent), entry->range->begin, entry->range->end - entry->range->begin);
+			rz_str_get(opt->loclist_indent), entry->range.begin, entry->range.end - entry->range.begin);
 
 		if (entry->location) {
 			rz_strbuf_append(sb, " ");
@@ -1671,7 +1671,7 @@ RZ_API void rz_bin_dwarf_location_composite_dump(
 	ut32 i = 0;
 	const ut32 end = rz_vector_len(composite) - 1;
 	RzBinDwarfPiece *piece = NULL;
-	rz_vector_enumerate(composite, piece, i) {
+	rz_vector_enumerate (composite, piece, i) {
 		rz_strbuf_append(sb, rz_str_get(opt->composite_indent));
 		rz_strbuf_appendf(sb, "(.%" PFMT64u ", %" PFMT64u "): ", piece->bit_offset, piece->size_in_bits);
 

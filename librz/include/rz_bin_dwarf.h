@@ -720,6 +720,8 @@ typedef enum {
 
 	// GNU extensions
 	DW_OP_GNU_push_tls_address = 0xe0,
+	DW_OP_GNU_uninit = 0xf0,
+	DW_OP_GNU_encoded_addr = 0xf1,
 	DW_OP_GNU_implicit_pointer = 0xf2,
 	DW_OP_GNU_entry_value = 0xf3,
 	DW_OP_GNU_const_type = 0xf4,
@@ -1074,6 +1076,7 @@ typedef struct {
 
 typedef struct rz_bin_dwarf_comp_unit_t {
 	ut64 offset;
+	ut64 index;
 	RzBinDwarfCompUnitHdr hdr;
 	RzVector /*<RzBinDwarfDie>*/ dies;
 	const char *name;
@@ -1101,7 +1104,7 @@ typedef struct {
 	 * representing the DW_AT_comp_dir attribute of the compilation unit
 	 * that references this particular line information.
 	 */
-	HtUP /*<ut64, char *>*/ *offset_comp_dir;
+	HtUP /*<ut64, char *>*/ *comp_dir_by_offset;
 	HtUP /*<ut64, const RzBinDwarfEncoding*>*/ *location_encoding;
 } RzBinDwarfInfo;
 
@@ -1208,7 +1211,7 @@ typedef struct {
  */
 typedef struct {
 	RzBinEndianReader *R;
-	RzList /*<RzBinDwarfLineUnit *>*/ *units;
+	RzPVector /*<RzBinDwarfLineUnit *>*/ *units;
 	RzBinSourceLineInfo *lines;
 } RzBinDwarfLine;
 
@@ -1403,7 +1406,7 @@ typedef struct {
 struct rz_bin_dwarf_location_t;
 
 typedef struct {
-	RzBinDwarfRange *range;
+	RzBinDwarfRange range;
 	const RzBinDwarfBlock *expression;
 	struct rz_bin_dwarf_location_t *location;
 } RzBinDwarfLocListEntry;
@@ -1440,6 +1443,19 @@ typedef struct rz_core_bin_dwarf_t {
 	RzBinDwarfLineStr *line_str;
 } RzBinDWARF;
 
+#define DWARF_FIELD_IMPL(T, F) \
+	static inline T *rz_bin_dwarf_##F( \
+		RZ_BORROW RZ_NONNULL const RzBinDWARF *dw) { \
+		rz_return_val_if_fail(dw, NULL); \
+		return dw->F ? dw->F : (dw->parent ? dw->parent->F : NULL); \
+	}
+
+DWARF_FIELD_IMPL(RzBinDwarfAddr, addr);
+DWARF_FIELD_IMPL(RzBinDwarfLine, line);
+DWARF_FIELD_IMPL(RzBinDwarfLineStr, line_str);
+
+#undef DWARF_FIELD_IMPL
+
 RZ_API const char *rz_bin_dwarf_tag(DW_TAG tag);
 RZ_API const char *rz_bin_dwarf_attr(DW_AT attr_code);
 RZ_API const char *rz_bin_dwarf_form(DW_FORM form_code);
@@ -1455,7 +1471,7 @@ RZ_API const char *rz_bin_dwarf_ate(DW_ATE op);
 
 /// .debug_str
 RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
-RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
+RZ_API RZ_OWN RzBinDwarfStr *rz_bin_dwarf_str_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
 RZ_API void rz_bin_dwarf_str_free(RZ_NULLABLE RzBinDwarfStr *str);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_get(RZ_NONNULL RZ_BORROW RzBinDwarfStr *str, ut64 offset);
 
@@ -1466,8 +1482,7 @@ RZ_API RZ_BORROW const char *rz_bin_dwarf_line_str_get(RZ_NONNULL RZ_BORROW RzBi
 
 /// .debug_str_offsets
 RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_new(RZ_NONNULL RZ_OWN RzBinEndianReader *R);
-RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(
-	RZ_NONNULL RZ_BORROW RzBinFile *bf, bool is_dwo);
+RZ_API RZ_OWN RzBinDwarfStrOffsets *rz_bin_dwarf_str_offsets_from_file(RZ_NONNULL RZ_BORROW RzBinFile *bf);
 RZ_API void rz_bin_dwarf_str_offsets_free(RZ_NULLABLE RzBinDwarfStrOffsets *str_offsets);
 RZ_API RZ_BORROW const char *rz_bin_dwarf_str_offsets_get(
 	RZ_NONNULL RZ_BORROW RzBinDwarfStr *str,
@@ -1485,8 +1500,7 @@ RZ_API void rz_bin_dwarf_aranges_dump(
 
 /// .debug_abbrev
 RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_new(RZ_OWN RZ_NONNULL RzBinEndianReader *R);
-RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
+RZ_API RZ_OWN RzBinDwarfAbbrev *rz_bin_dwarf_abbrev_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 RZ_API void rz_bin_dwarf_abbrev_free(RZ_OWN RZ_NULLABLE RzBinDwarfAbbrev *abbrevs);
 RZ_API size_t rz_bin_dwarf_abbrev_count(RZ_BORROW RZ_NONNULL const RzBinDwarfAbbrev *da);
@@ -1503,9 +1517,8 @@ RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_buf(
 	RZ_OWN RZ_NONNULL RzBinEndianReader *R,
 	RZ_BORROW RZ_NONNULL RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfInfo *rz_bin_dwarf_info_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf,
-	RZ_BORROW RZ_NONNULL RzBinDWARF *dw,
-	bool is_dwo);
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
+	RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_bin_dwarf_info_free(RZ_OWN RZ_NULLABLE RzBinDwarfInfo *info);
 RZ_API RZ_BORROW RzBinDwarfAttr *rz_bin_dwarf_die_get_attr(
 	RZ_BORROW RZ_NONNULL const RzBinDwarfDie *die, DW_AT name);
@@ -1520,18 +1533,20 @@ RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_new(
 	RZ_BORROW RZ_NONNULL RzBinDwarfEncoding *encoding,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw);
 RZ_API RZ_OWN RzBinDwarfLine *rz_bin_dwarf_line_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf,
 	RZ_BORROW RZ_NULLABLE RzBinDWARF *dw,
-	bool is_dwo);
+	RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 RZ_API void rz_bin_dwarf_line_units_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfLine *line,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
+RZ_API char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *lu, ut64 index);
 
 /// dwarf
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_from_path(
-	RZ_BORROW RZ_NONNULL const char *filepath, bool is_dwo);
+	RZ_BORROW RZ_NONNULL const char *filepath,
+	RZ_BORROW RZ_NULLABLE RzBinDWARF *parent);
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_load_dsym(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 RZ_API RZ_OWN RzBinDWARF *rz_bin_dwarf_search_debug_file_directory(
 	RZ_BORROW RZ_NONNULL RzBinFile *bf,
@@ -1802,8 +1817,7 @@ RZ_API RzBinDwarfLocList *rz_bin_dwarf_loclists_get(
 	ut64 offset);
 RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new(
 	RzBinEndianReader *loclists, RzBinEndianReader *loc);
-RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
+RZ_API RZ_OWN RzBinDwarfLocLists *rz_bin_dwarf_loclists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 RZ_API RzBinDwarfRngList *rz_bin_dwarf_rnglists_get(
 	RZ_BORROW RZ_NONNULL RzBinDwarfRngLists *self,
@@ -1816,12 +1830,10 @@ RZ_API void rz_bin_dwarf_rnglists_dump(
 /// rnglists
 RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new(
 	RZ_OWN RZ_NULLABLE RzBinEndianReader *rnglists, RZ_OWN RZ_NULLABLE RzBinEndianReader *ranges);
-RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(
-	RZ_BORROW RZ_NONNULL RzBinFile *bf, bool is_dwo);
+RZ_API RZ_OWN RzBinDwarfRngLists *rz_bin_dwarf_rnglists_new_from_file(RZ_BORROW RZ_NONNULL RzBinFile *bf);
 
 /// Block
-RZ_API bool rz_bin_dwarf_block_valid(RZ_NONNULL const RzBinDwarfBlock *self);
-RZ_API bool rz_bin_dwarf_block_empty(RZ_NONNULL const RzBinDwarfBlock *self);
+RZ_API bool rz_bin_dwarf_block_empty(RZ_NULLABLE const RzBinDwarfBlock *self);
 RZ_API void rz_bin_dwarf_block_dump(RZ_NONNULL const RzBinDwarfBlock *self, RZ_NONNULL RzStrBuf *sb);
 RZ_API RZ_BORROW const ut8 *rz_bin_dwarf_block_data(RZ_NONNULL const RzBinDwarfBlock *self);
 
@@ -1852,16 +1864,13 @@ static inline ut64 rz_bin_dwarf_attr_addr(
 	const RzBinDwarfAttrValue *v = &attr->value;
 	if (v->kind == RzBinDwarfAttr_Addr) {
 		return attr->value.u64;
-	} else if (v->kind == RzBinDwarfAttr_AddrIndex) {
+	} else if (v->kind == RzBinDwarfAttr_AddrIndex && rz_bin_dwarf_addr(dw)) {
 		ut64 addr = 0;
-		if (dw && rz_bin_dwarf_addr_get(dw->addr, &addr, addr_size, base, attr->value.u64)) {
+		if (dw && rz_bin_dwarf_addr_get(rz_bin_dwarf_addr(dw), &addr, addr_size, base, attr->value.u64)) {
 			return addr;
 		}
-		rz_warn_if_reached();
 	} else if (v->kind == RzBinDwarfAttr_UConstant) {
 		return attr->value.u64;
-	} else {
-		rz_warn_if_reached();
 	}
 	return attr->value.u64;
 }

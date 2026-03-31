@@ -187,7 +187,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_llimit(analysis, addr, op->jump);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("while [ptr]");
+			op->mnemonic = rz_str_dup("while [ptr]");
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr + 1;
@@ -199,7 +199,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_rlimit(analysis, addr, op->jump);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("loop");
+			op->mnemonic = rz_str_dup("loop");
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
@@ -209,7 +209,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_right_arrow();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("inc ptr");
+			op->mnemonic = rz_str_dup("inc ptr");
 		}
 		break;
 	case '<':
@@ -218,7 +218,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_left_arrow();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("dec ptr");
+			op->mnemonic = rz_str_dup("dec ptr");
 		}
 		break;
 	case '+':
@@ -227,7 +227,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_inc();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("inc [ptr]");
+			op->mnemonic = rz_str_dup("inc [ptr]");
 		}
 		break;
 	case '-':
@@ -236,7 +236,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_dec();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("dec [ptr]");
+			op->mnemonic = rz_str_dup("dec [ptr]");
 		}
 		break;
 	case '.':
@@ -244,7 +244,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_out();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("out [ptr]");
+			op->mnemonic = rz_str_dup("out [ptr]");
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
@@ -253,7 +253,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = bf_in();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("in [ptr]");
+			op->mnemonic = rz_str_dup("in [ptr]");
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
@@ -261,7 +261,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	case 0xff:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("trap");
+			op->mnemonic = rz_str_dup("trap");
 		}
 		break;
 	default:
@@ -270,7 +270,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 			op->il_op = rz_il_op_new_nop();
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("nop");
+			op->mnemonic = rz_str_dup("nop");
 		}
 		break;
 	}
@@ -278,7 +278,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	return strdup(
+	return rz_str_dup(
 		"=PC	pc\n"
 		"=BP	ptr\n"
 		"=SP	ptr\n"

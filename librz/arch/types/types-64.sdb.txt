@@ -51,6 +51,36 @@ type.id_t=q
 type.id_t.size=64
 type.id_t.typeclass=Integral
 
+long=type
+type.long=q
+type.long.size=64
+type.long.typeclass=Signed Integral
+
+long int=type
+type.long int=q
+type.long int.size=64
+type.long int.typeclass=Signed Integral
+
+unsigned long=type
+type.unsigned long=q
+type.unsigned long.size=64
+type.unsigned long.typeclass=Unsigned Integral
+
+long unsigned=type
+type.long unsigned=q
+type.long unsigned.size=64
+type.long unsigned.typeclass=Unsigned Integral
+
+unsigned long int=type
+type.unsigned long int=q
+type.unsigned long int.size=64
+type.unsigned long int.typeclass=Unsigned Integral
+
+long unsigned int=type
+type.long unsigned int=q
+type.long unsigned int.size=64
+type.long unsigned int.typeclass=Unsigned Integral
+
 unknown_t=type
 type.unknown_t=q
 type.unknown_t.size=64

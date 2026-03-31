@@ -1,90 +1,54 @@
-NAME=ELF_ABI : vs2008 debug flagspaces
+NAME=ELF_ABI : vs2008 debug
 FILE=bins/abi_bins/pe/compilers/ooex_vs2008_dbg.exe
 ARGS=-A
 CMDS=<<EOF
 fsl~relocs
-EOF
-EXPECT=<<EOF
-   60 * relocs
-EOF
-RUN
-
-NAME=ELF_ABI : vs2008 debug symbols
-FILE=bins/abi_bins/pe/compilers/ooex_vs2008_dbg.exe
-CMDS=<<EOF
 is~KERNEL?
 EOF
 EXPECT=<<EOF
+  350 * relocs
 26
 EOF
 RUN
 
-
-NAME=ELF_ABI : vs2008 release flagspaces
+NAME=ELF_ABI : vs2008 release
 FILE=bins/abi_bins/pe/compilers/ooex_vs2008_release.exe
 CMDS=<<EOF
 fsl~relocs
-EOF
-EXPECT=<<EOF
-   43 * relocs
-EOF
-RUN
-
-NAME=ELF_ABI : vs2008 release symbols
-FILE=bins/abi_bins/pe/compilers/ooex_vs2008_release.exe
-CMDS=<<EOF
 is~KERNEL?
 EOF
 EXPECT=<<EOF
+  158 * relocs
 13
 EOF
 RUN
 
-
-NAME=ELF_ABI : vs2010 release flagspaces
-FILE=bins/abi_bins/pe/compilers/ooex_vs2010_release.exe
-ARGS=-A
-CMDS=<<EOF
-fsl~relocs
-EOF
-EXPECT=<<EOF
-   43 * relocs
-EOF
-RUN
-
-NAME=ELF_ABI : vs2010 release symbols
-FILE=bins/abi_bins/pe/compilers/ooex_vs2010_release.exe
-CMDS=<<EOF
-is~KERNEL?
-EOF
-EXPECT=<<EOF
-16
-EOF
-RUN
-
-
-NAME=ELF_ABI : vs2010 debug flagspaces
+NAME=ELF_ABI : vs2010 debug
 FILE=bins/abi_bins/pe/compilers/ooex_vs2010_dbg.exe
 CMDS=<<EOF
 fsl~relocs
-EOF
-EXPECT=<<EOF
-   59 * relocs
-EOF
-RUN
-
-NAME=ELF_ABI : vs2010 debug symbols
-FILE=bins/abi_bins/pe/compilers/ooex_vs2010_dbg.exe
-CMDS=<<EOF
 is~KERNEL?
 EOF
 EXPECT=<<EOF
+  348 * relocs
 28
 EOF
 RUN
 
+NAME=ELF_ABI : vs2010 release
+FILE=bins/abi_bins/pe/compilers/ooex_vs2010_release.exe
+ARGS=-A
+CMDS=<<EOF
+fsl~relocs
+is~KERNEL?
+EOF
+EXPECT=<<EOF
+  160 * relocs
+16
+EOF
+RUN
 
-NAME=ELF_ABI : vs2017 debug symbols
+NAME=ELF_ABI : vs2017 debug
 FILE=bins/abi_bins/pe/compilers/echo_vs2017_dbg.exe
 CMDS=<<EOF
 is~KERNEL?
@@ -94,8 +58,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=ELF_ABI : vs2017 release symbols
+NAME=ELF_ABI : vs2017 release
 FILE=bins/abi_bins/pe/compilers/echo_vs2017_release.exe
 CMDS=<<EOF
 is~KERNEL?

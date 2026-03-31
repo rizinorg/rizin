@@ -19,8 +19,8 @@ typedef union arm_cs_itcond_t {
 } ArmCSITCond;
 
 RZ_API void rz_arm_it_context_init(RzArmITContext *ctx) {
-	ctx->ht_itcond = ht_uu_new0();
-	ctx->ht_itblock = ht_uu_new0();
+	ctx->ht_itcond = ht_uu_new();
+	ctx->ht_itblock = ht_uu_new();
 }
 
 RZ_API void rz_arm_it_context_fini(RzArmITContext *ctx) {

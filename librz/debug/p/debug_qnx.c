@@ -12,7 +12,7 @@ RZ_API RzDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut6
 	if (!p) {
 		return NULL;
 	}
-	p->path = strdup(path);
+	p->path = rz_str_dup(path);
 	p->pid = pid;
 	p->status = status;
 	p->runnable = true;
@@ -227,7 +227,7 @@ static const char *rz_debug_qnx_reg_profile(RzDebug *dbg) {
 	int bits = dbg->analysis->bits;
 	switch (arch) {
 	case RZ_SYS_ARCH_X86:
-		return strdup(
+		return rz_str_dup(
 			"=PC	eip\n"
 			"=SP	esp\n"
 			"=BP	ebp\n"
@@ -256,7 +256,7 @@ static const char *rz_debug_qnx_reg_profile(RzDebug *dbg) {
 		);
 	case RZ_SYS_ARCH_ARM:
 		if (bits == 32) {
-			return strdup(
+			return rz_str_dup(
 				"=PC	r15\n"
 				"=SP	r14\n" // XXX
 				"=A0	r0\n"

@@ -7,6 +7,10 @@
 #include <rz_asm.h>
 #include <rz_types.h>
 
+static inline bool is_pic_midrange(const char *x) {
+	return RZ_STR_EQ(x, "midrange");
+}
+
 typedef enum {
 	PIC_MIDRANGE_OP_ARGS_NONE = 0,
 	PIC_MIDRANGE_OP_ARGS_2F,
@@ -39,7 +43,7 @@ typedef enum {
 typedef struct _pic_midrange_op {
 	const char *mnemonic;
 	PicMidrangeOpArgs args;
-} PicMidrangeOpInfo;
+} PicMidrangeOpAsmInfo;
 
 typedef enum {
 	PIC_MIDRANGE_OPCODE_NOP = 0,
@@ -48,9 +52,10 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_OPTION,
 	PIC_MIDRANGE_OPCODE_SLEEP,
 	PIC_MIDRANGE_OPCODE_CLRWDT,
+	PIC_MIDRANGE_OPCODE_CLRF,
+	PIC_MIDRANGE_OPCODE_CLRW,
 	PIC_MIDRANGE_OPCODE_TRIS,
 	PIC_MIDRANGE_OPCODE_MOVWF,
-	PIC_MIDRANGE_OPCODE_CLR,
 	PIC_MIDRANGE_OPCODE_SUBWF,
 	PIC_MIDRANGE_OPCODE_DECF,
 	PIC_MIDRANGE_OPCODE_IORWF,
@@ -97,8 +102,41 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_INVALID
 } PicMidrangeOpcode;
 
+typedef struct _pic_midrange_op_args_val {
+	ut16 f;
+	st16 k;
+	ut8 d;
+	ut8 m;
+	ut8 n;
+	ut8 b;
+} PicMidrangeOpArgsVal;
+
+static inline st16 pic_midrange_op_args_k_for_op(RZ_NONNULL PicMidrangeOpArgsVal *val, PicMidrangeOpcode op) {
+	// We emulate 12-bit or 14-bit instructions by using two bytes, so program addresses need to be doubled.
+	return op == PIC_MIDRANGE_OPCODE_GOTO || op == PIC_MIDRANGE_OPCODE_CALL ? val->k << 1 : val->k;
+}
+
+typedef struct pic_midrange_op_t {
+	const char *mnemonic;
+	char operands[32];
+	PicMidrangeOpArgsVal args;
+	ut64 addr;
+	PicMidrangeOpcode opcode;
+	ut32 size;
+	ut16 instr;
+} PicMidrangeOp;
+
+// decoding
+
 PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr);
-const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
-int pic_midrange_disassemble(RzAsmOp *op, const ut8 *b, int l);
+const PicMidrangeOpAsmInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
+bool pic_midrange_decode_op(RZ_OUT RZ_NONNULL PicMidrangeOp *op, ut64 addr, RZ_NONNULL const ut8 *b, ut64 l);
+
+// analysis
+
+int pic_midrange_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op,
+	RZ_OUT RZ_NONNULL PicMidrangeOp *pic_op, RzAnalysisOpMask mask);
+char *pic_midrange_get_reg_profile(RzAnalysis *a);
+RzAnalysisILConfig *pic_midrange_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 #endif // PIC_MIDRANGE_H

@@ -1,9 +1,10 @@
 #ifndef RZ_CRYPTO_H
 #define RZ_CRYPTO_H
 
-#include "rz_types.h"
-#include "rz_list.h"
-#include "rz_crypto/rz_des.h"
+#include <rz_types.h>
+#include <rz_util/ht_sp.h>
+#include <rz_crypto/rz_des.h>
+#include <rz_util/rz_str.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,13 +35,14 @@ typedef struct rz_crypto_t {
 	int output_size;
 	int dir;
 	void *user;
-	RzList /*<RzCryptoPlugin *>*/ *plugins;
+	HtSP /*<RzCryptoPlugin *>*/ *plugins;
 } RzCrypto;
 
 typedef struct rz_crypto_plugin_t {
 	const char *name;
 	const char *license;
 	const char *author;
+	const char *description;
 	int (*get_key_size)(RzCrypto *cry);
 	bool (*set_iv)(RzCrypto *cry, const ut8 *iv, int ivlen);
 	bool (*set_key)(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
@@ -52,6 +54,20 @@ typedef struct rz_crypto_plugin_t {
 } RzCryptoPlugin;
 
 typedef ut64 RzCryptoSelector;
+
+/**
+ * \brief Compare plugins by name (via strcmp).
+ */
+static inline int rz_crypto_plugin_cmp(RZ_NULLABLE const RzCryptoPlugin *a, RZ_NULLABLE const RzCryptoPlugin *b) {
+	if (!a && !b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	}
+	return rz_str_cmp(a->name, b->name, -1);
+}
 
 #ifdef RZ_API
 RZ_API bool rz_crypto_plugin_add(RZ_NONNULL RzCrypto *cry, RZ_NONNULL RzCryptoPlugin *h);
@@ -92,6 +108,10 @@ RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCr
 #define RZ_CODEC_B64      1ULL
 #define RZ_CODEC_B91      1ULL << 1
 #define RZ_CODEC_PUNYCODE 1ULL << 2
+#define RZ_CODEC_B85      1ULL << 3
+#define RZ_CODEC_B36      1ULL << 4
+#define RZ_CODEC_B32      1ULL << 5
+#define RZ_CODEC_B16      1ULL << 6
 #define RZ_CODEC_ALL      0xFFFF
 
 #ifdef __cplusplus

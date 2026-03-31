@@ -302,7 +302,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 			rz_cons_printf(")");
 		}
 		rz_cons_printf("%04X:%s", func->offset, func->name);
-		if (rz_list_iter_has_next(pub_func_it)) {
+		if (rz_list_has_next(pub_func_it)) {
 			rz_cons_printf(" ");
 		}
 	}
@@ -315,7 +315,7 @@ static void flirt_print_module(const RzFlirtModule *module) {
 		rz_cons_printf(" (REF ");
 		rz_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
 			rz_cons_printf("%04X: %s", ref_func->offset, ref_func->name);
-			if (rz_list_iter_has_next(ref_func_it)) {
+			if (rz_list_has_next(ref_func_it)) {
 				rz_cons_printf(" ");
 			}
 		}
@@ -384,7 +384,7 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 	RzBuffer *buffer = NULL;
 	RzFlirtNode *node = NULL;
 
-	if (!(buffer = rz_buf_new_slurp(flirt_file))) {
+	if (!(buffer = rz_buf_new_file(flirt_file, O_RDONLY, 0))) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", flirt_file);
 		return false;
 	} else if (!strcmp(extension, ".pat")) {
@@ -539,7 +539,7 @@ RZ_API bool rz_core_flirt_convert_file(RZ_NONNULL RzCore *core, RZ_NONNULL const
 		return false;
 	}
 
-	if (!(buffer = rz_buf_new_slurp(input_file))) {
+	if (!(buffer = rz_buf_new_file(input_file, O_RDONLY, 0))) {
 		RZ_LOG_ERROR("FLIRT: cannot open %s (read mode)\n", input_file);
 		return false;
 	} else if (!strcmp(in_extension, ".pat")) {

@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_set.h>
 #include "pe.h"
 
 static inline int is_thumb(RzBinPEObj *bin) {
@@ -20,9 +21,13 @@ static inline int is_arm(RzBinPEObj *bin) {
 	return 0;
 }
 
+bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin) {
+	return bin->has_canary;
+}
+
 // TODO: make it const! like in elf
 char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
-	char *machine = NULL;
+	const char *machine = NULL;
 
 	if (bin && bin->nt_headers) {
 		switch (bin->nt_headers->file_header.Machine) {
@@ -63,7 +68,25 @@ char *PE_(rz_bin_pe_get_machine)(RzBinPEObj *bin) {
 		default: machine = "unknown";
 		}
 	}
-	return machine ? strdup(machine) : NULL;
+	return rz_str_dup(machine);
+}
+
+char *PE_(rz_bin_pe_get_cpu)(RzBinPEObj *bin) {
+	const char *cpu = NULL;
+
+	if (bin && bin->nt_headers) {
+		switch (bin->nt_headers->file_header.Machine) {
+		case PE_IMAGE_FILE_MACHINE_MIPS16: cpu = "mips16"; break;
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU: cpu = "mips2"; break;
+		case PE_IMAGE_FILE_MACHINE_MIPSFPU16: cpu = "mips16"; break;
+		case PE_IMAGE_FILE_MACHINE_R10000: cpu = "r10000"; break;
+		case PE_IMAGE_FILE_MACHINE_R3000: cpu = "r3000"; break;
+		case PE_IMAGE_FILE_MACHINE_R4000: cpu = "r4000"; break;
+		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: cpu = "mips2"; break; // ISA MIPS32
+		default: return NULL;
+		}
+	}
+	return rz_str_dup(cpu);
 }
 
 // TODO: make it const! like in elf
@@ -74,28 +97,28 @@ char *PE_(rz_bin_pe_get_os)(RzBinPEObj *bin) {
 	}
 	switch (bin->nt_headers->optional_header.Subsystem) {
 	case PE_IMAGE_SUBSYSTEM_NATIVE:
-		os = strdup("native");
+		os = rz_str_dup("native");
 		break;
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		os = strdup("windows");
+		os = rz_str_dup("windows");
 		break;
 	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		os = strdup("posix");
+		os = rz_str_dup("posix");
 		break;
 	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
 	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-		os = strdup("efi");
+		os = rz_str_dup("efi");
 		break;
 	case PE_IMAGE_SUBSYSTEM_XBOX:
-		os = strdup("xbox");
+		os = rz_str_dup("xbox");
 		break;
 	default:
 		// XXX: this is unknown
-		os = strdup("windows");
+		os = rz_str_dup("windows");
 	}
 	return os;
 }
@@ -104,9 +127,9 @@ char *PE_(rz_bin_pe_get_os)(RzBinPEObj *bin) {
 char *PE_(rz_bin_pe_get_class)(RzBinPEObj *bin) {
 	if (bin && bin->nt_headers) {
 		switch (bin->nt_headers->optional_header.Magic) {
-		case PE_IMAGE_FILE_TYPE_PE32: return strdup("PE32");
-		case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("PE32+");
-		default: return strdup("Unknown");
+		case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("PE32");
+		case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("PE32+");
+		default: return rz_str_dup("Unknown");
 		}
 	}
 	return NULL;
@@ -115,45 +138,48 @@ char *PE_(rz_bin_pe_get_class)(RzBinPEObj *bin) {
 char *PE_(rz_bin_pe_get_arch)(RzBinPEObj *bin) {
 	char *arch;
 	if (!bin || !bin->nt_headers) {
-		return strdup("x86");
+		return rz_str_dup("x86");
 	}
 	switch (bin->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA:
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = strdup("alpha");
+		arch = rz_str_dup("alpha");
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_ARMNT:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
-		arch = strdup("arm");
+		arch = rz_str_dup("arm");
 		break;
 	case PE_IMAGE_FILE_MACHINE_M68K:
-		arch = strdup("m68k");
+		arch = rz_str_dup("m68k");
 		break;
 	case PE_IMAGE_FILE_MACHINE_MIPS16:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case PE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = strdup("mips");
+	case PE_IMAGE_FILE_MACHINE_R10000:
+	case PE_IMAGE_FILE_MACHINE_R3000:
+	case PE_IMAGE_FILE_MACHINE_R4000:
+		arch = rz_str_dup("mips");
 		break;
 	case PE_IMAGE_FILE_MACHINE_POWERPC:
 	case PE_IMAGE_FILE_MACHINE_POWERPCFP:
 	case PE_IMAGE_FILE_MACHINE_POWERPCBE:
-		arch = strdup("ppc");
+		arch = rz_str_dup("ppc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_EBC:
-		arch = strdup("ebc");
+		arch = rz_str_dup("ebc");
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM64:
-		arch = strdup("arm");
+		arch = rz_str_dup("arm");
 		break;
 	case PE_IMAGE_FILE_MACHINE_RISCV32:
 	case PE_IMAGE_FILE_MACHINE_RISCV64:
 	case PE_IMAGE_FILE_MACHINE_RISCV128:
-		arch = strdup("riscv");
+		arch = rz_str_dup("riscv");
 		break;
 	default:
-		arch = strdup("x86");
+		arch = rz_str_dup("x86");
 	}
 	return arch;
 }
@@ -197,25 +223,37 @@ char *PE_(rz_bin_pe_get_subsystem)(RzBinPEObj *bin) {
 			break;
 		}
 	}
-	return subsystem ? strdup(subsystem) : NULL;
+	return rz_str_dup(subsystem);
 }
 
 char *PE_(rz_bin_pe_get_cc)(RzBinPEObj *bin) {
 	if (bin && bin->nt_headers) {
 		if (is_arm(bin)) {
 			if (is_thumb(bin)) {
-				return strdup("arm16");
+				return rz_str_dup("arm16");
 			}
 			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: return strdup("arm32");
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("arm64");
+			case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("arm32");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("arm64");
 			}
 		} else {
 			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: return strdup("cdecl");
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: return strdup("ms");
+			case PE_IMAGE_FILE_TYPE_PE32: return rz_str_dup("cdecl");
+			case PE_IMAGE_FILE_TYPE_PE32PLUS: return rz_str_dup("ms");
 			}
 		}
+	}
+	return NULL;
+}
+
+char *PE_(rz_bin_pe_get_compiler)(RzBinPEObj *bin) {
+	if (!bin || !bin->nt_headers) {
+		return NULL;
+	}
+	int major = (int)bin->nt_headers->optional_header.MajorLinkerVersion;
+	int minor = (int)bin->nt_headers->optional_header.MinorLinkerVersion;
+	if (major || minor) {
+		return rz_str_newf("Linker %02d.%02d", major, minor);
 	}
 	return NULL;
 }
@@ -306,19 +344,29 @@ int PE_(bin_pe_get_actual_checksum)(RzBinPEObj *bin) {
 }
 
 int PE_(rz_bin_pe_get_bits)(RzBinPEObj *bin) {
-	int bits = 32;
-	if (bin && bin->nt_headers) {
-		if (is_arm(bin) && is_thumb(bin)) {
-			bits = 16;
-		} else {
-			switch (bin->nt_headers->optional_header.Magic) {
-			case PE_IMAGE_FILE_TYPE_PE32: bits = 32; break;
-			case PE_IMAGE_FILE_TYPE_PE32PLUS: bits = 64; break;
-			default: bits = -1;
-			}
-		}
+	if (!(bin && bin->nt_headers)) {
+		return 32;
 	}
-	return bits;
+	switch (bin->nt_headers->file_header.Machine) {
+	case PE_IMAGE_FILE_MACHINE_ARM: return is_thumb(bin) ? 16 : 32; // Arm32
+	case PE_IMAGE_FILE_MACHINE_ARM64: return 64; // Aarch64
+	case PE_IMAGE_FILE_MACHINE_ARMNT: return 16; // ARM Thumb-2
+	case PE_IMAGE_FILE_MACHINE_THUMB: return 16; // ARM Thumb/Thumb-2
+	case PE_IMAGE_FILE_MACHINE_MIPS16: return 32;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU: return 32;
+	case PE_IMAGE_FILE_MACHINE_MIPSFPU16: return 32;
+	case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: return 32; // MIPS WCE v2
+	case PE_IMAGE_FILE_MACHINE_R10000: return 64;
+	case PE_IMAGE_FILE_MACHINE_R3000: return 32;
+	case PE_IMAGE_FILE_MACHINE_R4000: return 64;
+	default: break;
+	}
+	switch (bin->nt_headers->optional_header.Magic) {
+	case PE_IMAGE_FILE_TYPE_PE32: return 32;
+	case PE_IMAGE_FILE_TYPE_PE32PLUS: return 64;
+	default: break;
+	}
+	return 32;
 }
 
 #define HASCHR(x) (bin->nt_headers->file_header.Characteristics & (x))
@@ -385,125 +433,79 @@ int PE_(rz_bin_pe_is_stripped_debug)(RzBinPEObj *bin) {
 	return HASCHR(PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 
-struct rz_bin_pe_lib_t *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
+static inline bool bin_buf_contains(const RzBinPEObj *bin, ut64 offset, ut64 nbytes) {
+	if (UT64_ADD_OVFCHK(offset, nbytes)) {
+		return false;
+	}
+	return offset + nbytes <= bin->size;
+}
+
+/**
+ * Check whether an directory entry is empty (filled with zeroes)
+ */
+static inline bool image_import_directory_is_empty(const PE_(image_import_directory) * dir) {
+	return !(dir->FirstThunk || dir->Name || dir->TimeDateStamp || dir->Characteristics || dir->ForwarderChain);
+}
+
+RzPVector /*<char *>*/ *PE_(rz_bin_pe_get_libs)(RzBinPEObj *bin) {
 	if (!bin) {
 		return NULL;
 	}
-	struct rz_bin_pe_lib_t *libs = NULL;
-	struct rz_bin_pe_lib_t *new_libs = NULL;
+	if (!bin_buf_contains(bin, bin->import_directory_offset, bin->import_directory_size)) {
+		return NULL;
+	}
 	PE_(image_import_directory)
 	curr_import_dir;
 	PE_(image_delay_import_directory)
 	curr_delay_import_dir;
-	PE_DWord name_off = 0;
-	HtPP *lib_map = NULL;
-	ut64 off; // cache value
-	int index = 0;
-	int len = 0;
-	int max_libs = 20;
-	libs = calloc(max_libs + 1, sizeof(struct rz_bin_pe_lib_t));
+
+	RzSetS *libs = rz_set_s_new(HT_STR_DUP);
 	if (!libs) {
-		rz_sys_perror("malloc (libs)");
 		return NULL;
 	}
-
-	if (bin->import_directory_offset + bin->import_directory_size > bin->size) {
-		RZ_LOG_INFO("import directory offset bigger than file\n");
-		goto out_error;
-	}
-	lib_map = sdb_ht_new();
-	off = bin->import_directory_offset;
-	if (off < bin->size && off > 0) {
-		ut64 last;
-		int iidi = 0;
-		// normal imports
-		if (off + sizeof(PE_(image_import_directory)) > bin->size) {
-			goto out_error;
-		}
-		int r = PE_(read_image_import_directory)(bin->b, off + iidi * sizeof(curr_import_dir),
-			&curr_import_dir);
-		last = off + bin->import_directory_size;
-		while (r == sizeof(curr_import_dir) && off + (iidi + 1) * sizeof(curr_import_dir) <= last && (curr_import_dir.FirstThunk || curr_import_dir.Name || curr_import_dir.TimeDateStamp || curr_import_dir.Characteristics || curr_import_dir.ForwarderChain)) {
-			name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_import_dir.Name);
-			len = rz_buf_read_at(bin->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
-			if (!libs[index].name[0]) { // minimum string length
-				goto next;
-			}
-			if (len < 2 || libs[index].name[0] == 0) { // minimum string length
-				RZ_LOG_INFO("read (libs - import dirs) %d\n", len);
+	char lib_name[PE_STRING_LENGTH];
+	ut64 dir_off = bin->import_directory_offset;
+	if (dir_off != 0 && dir_off < bin->size) {
+		const ut64 end_off = dir_off + bin->import_directory_size;
+		for (; dir_off < end_off; dir_off += sizeof(curr_import_dir)) {
+			if (PE_(read_image_import_directory)(bin->b, dir_off, &curr_import_dir) < 0) {
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			rz_str_case(libs[index].name, 0);
-			if (!sdb_ht_find(lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert(lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc(libs, (max_libs * 2) * sizeof(struct rz_bin_pe_lib_t));
-					if (!new_libs) {
-						rz_sys_perror("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
-			}
-		next:
-			iidi++;
-			r = PE_(read_image_import_directory)(bin->b, off + iidi * sizeof(curr_import_dir),
-				&curr_import_dir);
-		}
-	}
-	off = bin->delay_import_directory_offset;
-	if (off < bin->size && off > 0) {
-		ut64 did = 0;
-		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
-			goto out_error;
-		}
-		int r = PE_(read_image_delay_import_directory)(bin->b, off, &curr_delay_import_dir);
-		if (r != sizeof(curr_delay_import_dir)) {
-			goto out_error;
-		}
-		while (r == sizeof(curr_delay_import_dir) &&
-			curr_delay_import_dir.Name != 0 && curr_delay_import_dir.DelayImportNameTable != 0) {
-			name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_delay_import_dir.Name);
-			if (name_off > bin->size || name_off + PE_STRING_LENGTH > bin->size) {
-				goto out_error;
-			}
-			len = rz_buf_read_at(bin->b, name_off, (ut8 *)libs[index].name, PE_STRING_LENGTH);
-			if (len != PE_STRING_LENGTH) {
-				RZ_LOG_INFO("read (libs - delay import dirs)\n");
+			if (image_import_directory_is_empty(&curr_import_dir)) {
 				break;
 			}
-			libs[index].name[len - 1] = '\0';
-			rz_str_case(libs[index].name, 0);
-			if (!sdb_ht_find(lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert(lib_map, libs[index].name, "a");
-				libs[index++].last = 0;
-				if (index >= max_libs) {
-					new_libs = realloc(libs, (max_libs * 2) * sizeof(struct rz_bin_pe_lib_t));
-					if (!new_libs) {
-						rz_sys_perror("realloc (libs)");
-						goto out_error;
-					}
-					libs = new_libs;
-					new_libs = NULL;
-					max_libs *= 2;
-				}
+			PE_DWord name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_import_dir.Name);
+			st64 len = rz_buf_read_at(bin->b, name_off, (ut8 *)lib_name, PE_STRING_LENGTH);
+			if (len < 2 || !lib_name[0]) {
+				break;
 			}
-			did++;
-			r = PE_(read_image_delay_import_directory)(bin->b, off + did * sizeof(curr_delay_import_dir),
-				&curr_delay_import_dir);
+			lib_name[len - 1] = '\0';
+			rz_str_case(lib_name, 0);
+			rz_set_s_add(libs, lib_name);
 		}
 	}
-	sdb_ht_free(lib_map);
-	libs[index].last = 1;
-	return libs;
-out_error:
-	sdb_ht_free(lib_map);
-	free(libs);
-	return NULL;
+	dir_off = bin->delay_import_directory_offset;
+	if (dir_off != 0 && dir_off < bin->size) {
+		for (;; dir_off += sizeof(curr_delay_import_dir)) {
+			if (PE_(read_image_delay_import_directory)(bin->b, dir_off, &curr_delay_import_dir) < 0) {
+				break;
+			}
+			if (curr_delay_import_dir.Name == 0 || curr_delay_import_dir.DelayImportNameTable == 0) {
+				break;
+			}
+			PE_DWord name_off = PE_(bin_pe_rva_to_paddr)(bin, curr_delay_import_dir.Name);
+			st64 len = rz_buf_read_at(bin->b, name_off, (ut8 *)lib_name, PE_STRING_LENGTH);
+			if (len < 2 || !lib_name[0]) {
+				break;
+			}
+			lib_name[len - 1] = '\0';
+			rz_str_case(lib_name, 0);
+			rz_set_s_add(libs, lib_name);
+		}
+	}
+	RzPVector *vec = rz_set_s_to_vector(libs);
+	rz_set_s_free(libs);
+	return vec;
 }
 
 int PE_(rz_bin_pe_get_image_size)(RzBinPEObj *bin) {

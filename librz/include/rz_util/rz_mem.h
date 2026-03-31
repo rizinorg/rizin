@@ -1,6 +1,7 @@
 #ifndef RZ_MEM_H
 #define RZ_MEM_H
 
+#include <rz_util/rz_bits.h>
 #include <rz_types.h>
 
 #ifdef __cplusplus
@@ -36,6 +37,42 @@ RZ_API const ut8 *rz_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *n
 RZ_API int rz_mem_count(const ut8 **addr);
 RZ_API bool rz_mem_is_printable(const ut8 *a, int la);
 RZ_API bool rz_mem_is_zero(const ut8 *b, int l);
+RZ_API ut64 rz_mem_align_padding(const ut64 address, ut64 alignment);
+RZ_API RZ_OWN ut8 *rz_mem_copy_offset(const ut8 *buf, size_t buf_size, size_t offset);
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_size);
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2_inplace(RZ_OUT RZ_NONNULL ut8 *buf, size_t buf_size);
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_size);
+RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4_inplace(RZ_OUT RZ_NONNULL ut8 *buf, size_t buf_size);
+
+/**
+ * \brief Returns the alignment of the \p ptr.
+ *
+ * \param ptr The pointer to get the alignment for.
+ *
+ * \return Returns the pointer alignment or UT64_MAX if \p ptr == NULL or ((utptr) ptr) == 0.
+ */
+static inline ut64 rz_mem_ptr_alignment(RZ_NONNULL const void *ptr) {
+	if (ptr == NULL || ((utptr)ptr) == 0) {
+		return UT64_MAX;
+	}
+	return 1ull << rz_bits_trailing_zeros((utptr)ptr);
+}
+
+/**
+ * \brief Reverses the byte order of an arbitrary sized byte array. There are no alignment requirements for \p bytes.
+ * \param bytes The byte array.
+ * \param n Length of the byte array.
+ */
+static inline RZ_OWN ut8 *rz_mem_swap_bytes_n_inplace(RZ_NONNULL RZ_INOUT ut8 *bytes, ut32 n) {
+	rz_return_val_if_fail(bytes, NULL);
+	for (ut32 i = 0; i < n / 2; i++) {
+		ut32 j = n - i - 1;
+		ut8 tmp = bytes[i];
+		bytes[i] = bytes[j];
+		bytes[j] = tmp;
+	}
+	return bytes;
+}
 
 #ifdef __cplusplus
 }

@@ -111,7 +111,7 @@ static RzFlirtModule *flirt_module_new(RzAnalysis *analysis, RzAnalysisFunction 
 
 	module->length = rz_analysis_function_size_from_entry(func);
 
-	if (tail_bytes) {
+	if (tail_bytes && buffer) {
 		for (ut32 i = module->crc_length, k = 0; i < b_size && k < 0xFF; ++i, ++k) {
 			if (mask[i] != 0xff) {
 				continue;
@@ -237,8 +237,8 @@ static int flirt_compare_module(const RzFlirtModule *a, const RzFlirtModule *b) 
 	} else if (a->crc_length != b->crc_length) {
 		return a->crc_length - b->crc_length;
 	}
-	const RzFlirtFunction *af = rz_list_first(a->public_functions);
-	const RzFlirtFunction *bf = rz_list_first(b->public_functions);
+	const RzFlirtFunction *af = rz_list_first_val(a->public_functions);
+	const RzFlirtFunction *bf = rz_list_first_val(b->public_functions);
 	return strcmp(af->name, bf->name);
 }
 
@@ -494,7 +494,8 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_node_new(RZ_NONNULL RzAnalysis *analysi
 
 		RzFlirtNode *child = flirt_create_child_from_function(analysis, func, tail_bytes);
 		if (!child) {
-			goto fail;
+			// do not fail immediately, maybe is just a bad function
+			continue;
 		} else if (!rz_list_append(root->child_list, child)) {
 			RZ_LOG_ERROR("FLIRT: cannot append child to root list.\n");
 			rz_sign_flirt_node_free(child);

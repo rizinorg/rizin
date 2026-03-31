@@ -82,7 +82,7 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 		const char *only = __isOnlySon(core, flags, kw);
 		if (only) {
 			free(kw);
-			kw = strdup(only);
+			kw = rz_str_dup(only);
 		} else {
 			const char *fname = NULL;
 			size_t fname_len = 0;
@@ -132,9 +132,6 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, const char *name, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
-	if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISEMPTY(name)) {
-		rz_cons_printf("agn root\n");
-	}
 	if (rz_flag_get(core->flags, name)) {
 		return;
 	}
@@ -144,15 +141,10 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 		if (!strcmp(fn, name)) {
 			continue;
 		}
-		if (mode == RZ_OUTPUT_MODE_RIZIN) {
-			rz_cons_printf("agn %s %s\n", fn, fn + name_len);
-			rz_cons_printf("age %s %s\n", RZ_STR_ISNOTEMPTY(name) ? name : "root", fn);
-		} else {
-			char *pad = rz_str_pad(' ', name_len);
-			rz_cons_printf("%s %s\n", pad, fn + name_len);
-			free(pad);
-		}
-		// rz_cons_printf (".fg %s\n", fn);
+		char *pad = rz_str_pad(' ', name_len);
+		rz_cons_printf("%s %s\n", pad, fn + name_len);
+		free(pad);
+
 		__printRecursive(core, flags, fn, mode, depth + 1);
 	}
 	rz_list_free(children);
@@ -279,7 +271,7 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 	RzListIter *it;
 	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		if (!fcn->labels->count) {
+		if (!ht_up_size(fcn->labels)) {
 			continue;
 		}
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {
@@ -330,6 +322,8 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 		return;
 	}
 	PJ *pj = state->d.pj;
+	rz_cmd_state_output_set_columnsf(state, "ssXXds", "name", "realname",
+		"vaddr", "paddr", "size", "comment");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -341,6 +335,21 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 		}
 		pj_end(pj);
 		break;
+	case RZ_OUTPUT_MODE_TABLE: {
+		// Print realname if exists and asm.flags.real is enabled
+		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
+		ut64 paddr = rz_io_v2p(core->io, addr);
+		if (f->offset != addr) {
+			char *descr_name = rz_str_newf("%s + %d", name, (int)(addr - f->offset));
+			rz_table_add_rowf(state->d.t, "ssXXds", f->name, descr_name,
+				addr, paddr, f->size, f->comment);
+			free(descr_name);
+		} else {
+			rz_table_add_rowf(state->d.t, "ssXXds", f->name, name, addr,
+				paddr, f->size, f->comment);
+		}
+		break;
+	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		// Print realname if exists and asm.flags.real is enabled
 		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
@@ -369,6 +378,8 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 	}
 	PJ *pj = state->d.pj;
 	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "ssXXds", "name", "realname",
+		"vaddr", "paddr", "size", "comment");
 	RzFlagItem *flag;
 	RzListIter *iter;
 	// Sometimes an address has multiple flags assigned to, show them all
@@ -385,7 +396,15 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 			}
 			pj_end(pj);
 			break;
-		case RZ_OUTPUT_MODE_STANDARD:
+		case RZ_OUTPUT_MODE_TABLE: {
+			// Print realname if exists and asm.flags.real is enabled
+			const char *name = core->flags->realnames && flag->realname ? flag->realname : flag->name;
+			ut64 paddr = rz_io_v2p(core->io, flag->offset);
+			rz_table_add_rowf(state->d.t, "ssXXds", flag->name, name,
+				flag->offset, paddr, flag->size, flag->comment);
+			break;
+		}
+		case RZ_OUTPUT_MODE_STANDARD: {
 			// Print realname if exists and asm.flags.real is enabled
 			if (core->flags->realnames && flag->realname) {
 				rz_cons_println(flag->realname);
@@ -393,6 +412,8 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 				rz_cons_println(flag->name);
 			}
 			break;
+		}
+
 		default:
 			rz_warn_if_reached();
 			break;
@@ -656,7 +677,7 @@ static bool rename_flag_ordinal(RzFlagItem *fi, void *user) {
 }
 
 static void flag_ordinals(RzCore *core, const char *glob) {
-	char *pfx = strdup(glob);
+	char *pfx = rz_str_dup(glob);
 	char *p = strchr(pfx, '*');
 	if (p) {
 		*p = 0;
@@ -852,12 +873,12 @@ RZ_IPI RzCmdStatus rz_flag_comment_handler(RzCore *core, int argc, const char **
 		}
 		return bool2status(flag_set_comment(item, argv[2]));
 	} else {
-		item = rz_flag_get_i(core->flags, rz_num_math(core->num, argv[1]));
-		if (item && item->comment) {
-			rz_cons_println(item->comment);
-		} else {
+		item = rz_flag_get(core->flags, argv[1]);
+		if (!item) {
 			RZ_LOG_ERROR("Cannot find the flag\n");
 			return RZ_CMD_STATUS_ERROR;
+		} else if (item->comment) {
+			rz_cons_println(item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;

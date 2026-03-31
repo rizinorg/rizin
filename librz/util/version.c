@@ -19,8 +19,9 @@
  *
  * \return The saved git commit hash as a string, or NULL if it's not available.
  */
-RZ_API RZ_OWN char *rz_version_gittip() {
-	char *datadir = rz_path_system(RZ_DATADIR);
+RZ_API RZ_OWN char *rz_version_gittip(RZ_BORROW RZ_NONNULL RzPath *sys_path) {
+	rz_return_val_if_fail(sys_path, NULL);
+	char *datadir = rz_path_system(sys_path, RZ_DATADIR);
 	if (!datadir) {
 		return NULL;
 	}
@@ -44,11 +45,12 @@ RZ_API RZ_OWN char *rz_version_gittip() {
  * Returns a version string containing the program version and the OS that the
  * program is compiled against, and the program name, packager information and
  * git commit hash if available.
- *
+ * \param sys_path RzPath *
  * \param program The program name, or NULL if it's not needed.
  * \return The version string.
  */
-RZ_API RZ_OWN char *rz_version_str(const char *program) {
+RZ_API RZ_OWN char *rz_version_str(RZ_BORROW RZ_NONNULL RzPath *sys_path, RZ_NULLABLE const char *program) {
+	rz_return_val_if_fail(sys_path, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (program) {
 		rz_strbuf_appendf(sb, "%s ", program);
@@ -58,7 +60,7 @@ RZ_API RZ_OWN char *rz_version_str(const char *program) {
 	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
 		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
 	}
-	char *gittip = rz_version_gittip();
+	char *gittip = rz_version_gittip(sys_path);
 	if (gittip) {
 		rz_strbuf_append(sb, "\n");
 		rz_strbuf_appendf(sb, "commit: %s", gittip);

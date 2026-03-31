@@ -11,8 +11,8 @@
 #include <windows.h>
 #endif
 
-RZ_API const char *sdb_lock_file(const char *f) {
-	static char buf[128];
+RZ_API RZ_OWN char *sdb_lock_file(const char *f) {
+	char *buf = calloc(128, sizeof(char));
 	size_t len;
 	if (!f || !*f) {
 		return NULL;

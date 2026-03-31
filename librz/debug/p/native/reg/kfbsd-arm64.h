@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // NGREG 34
-return strdup(
+return rz_str_dup(
 	"=PC	pc\n"
 	"=BP	x29\n"
 	"=SP	sp\n"

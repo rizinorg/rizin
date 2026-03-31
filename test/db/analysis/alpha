@@ -1,0 +1,60 @@
+NAME=Alpha
+FILE=bins/alpha/test-instr_alpha
+CMDS=<<EOF
+af @ sym.strlen
+pdf @ sym.strlen
+ao @ 0x12001b33c
+EOF
+EXPECT=<<EOF
+/ size_t sym.strlen(const char *s);
+|           0x12001b320      ldq_u $1,0($23)
+|           0x12001b324      lda   $2,0xffff($31)
+|           0x12001b328      insqh $2,$23,$2
+|           0x12001b32c      bic   $23,7,$0
+|           0x12001b330      bis   $2,$1,$1
+|           0x12001b334      bis   $31,$31,$31
+|           0x12001b338      cmpbge $31,$1,$2
+|       ,=< 0x12001b33c      bne   $2,0x12001b350
+|      .--> 0x12001b340      ldq   $1,8($0)
+|      :|   0x12001b344      addq  $0,8,$0
+|      :|   0x12001b348      cmpbge $31,$1,$2
+|      `==< 0x12001b34c      beq   $2,0x12001b340
+|       `-> 0x12001b350      subq  $31,$2,$3
+|           0x12001b354      and   $2,$3,$2
+|           0x12001b358      and   $2,0xf0,$3
+|           0x12001b35c      and   $2,0xcc,$4
+|           0x12001b360      and   $2,0xaa,$5
+|           0x12001b364      cmovne $3,4,$3
+|           0x12001b368      cmovne $4,2,$4
+|           0x12001b36c      cmovne $5,1,$5
+|           0x12001b370      addq  $3,$4,$3
+|           0x12001b374      addq  $0,$5,$0
+|           0x12001b378      addq  $0,$3,$0
+|           0x12001b37c      bis   $31,$31,$31
+|           0x12001b380      subq  $0,$23,$0
+\           0x12001b384      ret   $31,($26),1
+address: 0x12001b33c
+opcode: bne $2,0x12001b350
+disasm: bne $2,0x12001b350
+mnemonic: bne
+mask: ff000000
+prefix: 0
+id: 15
+bytes: 040040f4
+refptr: 0
+size: 4
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "$2"
+    - type: "imm"
+      value: 4831949648
+jump: 0x12001b350
+fail: 0x12001b340
+cond: al
+family: cpu
+EOF
+RUN

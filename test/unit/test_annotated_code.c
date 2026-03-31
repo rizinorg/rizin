@@ -117,7 +117,7 @@ static RzAnnotatedCode *get_hello_world(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_annotations_for_hello_world();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -191,7 +191,7 @@ static bool test_rz_annotated_code_add_annotation(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -215,7 +215,7 @@ static bool test_rz_annotated_code_annotations_in(void) {
 	test_annotations = get_some_annotations_for_in();
 
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -244,7 +244,7 @@ static bool test_rz_annotated_code_annotations_range(void) {
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach(test_annotations, annotation) {
+	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation(code, annotation);
 	}
 
@@ -371,8 +371,8 @@ static bool test_rz_core_annotated_code_print(void) {
 static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	RzAnnotatedCode *code = get_hello_world();
 	char *actual;
-	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
-			 "CCu base64:cmV0dXJu @ 0x115f\n";
+	char *expected = "CCu base64:cmV0dXJu @ 0x115f\n"
+			 "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n";
 	rz_cons_new();
 	rz_cons_push();
 	rz_core_annotated_code_print_comment_cmds(code);

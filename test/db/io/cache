@@ -163,6 +163,5 @@ wx 90
 wc-*
 wx 90
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN

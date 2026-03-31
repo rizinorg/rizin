@@ -31,126 +31,16 @@ enum {
 	JC_RESET,
 };
 
-static const char *origColors[] = {
+/**
+ * \brief Default colors for json printing.
+ */
+static const char *default_colors[] = {
 	"\x1b[31m",
 	"\x1b[32m",
 	"\x1b[33m",
 	"\x1b[34m",
 	"\x1b[0m",
 };
-// static const char colors
-
-RZ_API char *rz_print_json_path(const char *s, int pos) {
-	int indent = 0;
-#define DSZ 128
-	const char *words[DSZ] = { NULL };
-	int lengths[DSZ] = { 0 };
-	int indexs[DSZ] = { 0 };
-	int instr = 0;
-	bool isarr = false;
-	if (!s) {
-		return NULL;
-	}
-	int arrpos = 0;
-	const char *os = s;
-	int osz = (1 + strlen(s)) * 20;
-	if (osz < 1) {
-		return NULL;
-	}
-
-	const char *str_a = NULL;
-	for (; *s; s++) {
-		if (instr) {
-			if (s[0] == '"') {
-				instr = 0;
-				ut64 cur = str_a - os;
-				if (cur > pos) {
-					break;
-				}
-				if (indent < DSZ) {
-					words[indent - 1] = str_a;
-					lengths[indent - 1] = s - str_a;
-					indexs[indent - 1] = 0;
-				}
-			}
-			continue;
-		}
-
-		if (s[0] == '"') {
-			instr = 1;
-			str_a = s + 1;
-		}
-		if (*s == '\n' || *s == '\r' || *s == '\t' || *s == ' ') {
-			continue;
-		}
-		switch (*s) {
-		case ':':
-			break;
-		case ',':
-			if (isarr) {
-				arrpos++;
-				if (indent < DSZ) {
-					indexs[indent - 1] = arrpos;
-					lengths[indent - 1] = (s - os);
-				}
-			}
-			break;
-		case '{':
-		case '[':
-			if (*s == '[') {
-				isarr = true;
-				arrpos = 0;
-			}
-			if (indent > 128) {
-				eprintf("JSON indentation is too deep\n");
-				indent = 0;
-			} else {
-				indent++;
-			}
-			break;
-		case '}':
-		case ']':
-			if (*s == ']') {
-				isarr = false;
-			}
-			indent--;
-			break;
-		}
-	}
-	int i;
-	ut64 opos = 0;
-	for (i = 0; i < DSZ && i < indent; i++) {
-		if ((int)(size_t)words[i] < DSZ) {
-			ut64 cur = lengths[i];
-			if (cur < opos) {
-				continue;
-			}
-			opos = cur;
-			if (cur > pos) {
-				break;
-			}
-			eprintf("0x%08" PFMT64x "  %d  [%d]\n", cur, i, indexs[i]);
-		} else {
-			ut64 cur = words[i] - os - 1;
-			if (cur < opos) {
-				continue;
-			}
-			opos = cur;
-			if (cur > pos) {
-				break;
-			}
-			char *a = rz_str_ndup(words[i], lengths[i]);
-			char *q = strchr(a, '"');
-			if (q) {
-				*q = 0;
-			}
-			eprintf("0x%08" PFMT64x "  %d  %s\n", cur, i, a);
-			free(a);
-		}
-	}
-	// TODO return something
-	return NULL;
-}
 
 RZ_API char *rz_print_json_human(const char *s) {
 	int indent = 0;
@@ -251,7 +141,18 @@ RZ_API char *rz_print_json_human(const char *s) {
 	return O;
 }
 
-RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **palette) {
+/**
+ * \brief Formats the JSON string at \p s with indentation.
+ *
+ * \param s The JSON string to format.
+ * \param color Format with color?
+ * \param tab The string to use as indentation tab.
+ * \param palette The color palette to use. If NULL and \p color == true, a default color palatte is used.
+ *
+ * \return The formatted JSON string or NULL in case of failure.
+ */
+RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, const char *tab, RZ_NULLABLE const char **palette) {
+	rz_return_val_if_fail(tab, NULL);
 	int indent = 0;
 	const int indentSize = strlen(tab);
 	int instr = 0;
@@ -260,13 +161,13 @@ RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, co
 	if (!s) {
 		return NULL;
 	}
-	const char **colors = palette ? palette : origColors;
+	const char **colors = palette ? palette : default_colors;
 	int osz = (1 + strlen(s)) * 20;
 	if (osz < 1) {
 		return NULL;
 	}
 
-	char *O = malloc(osz);
+	char *O = RZ_NEWS0(char, osz);
 	if (!O) {
 		return NULL;
 	}

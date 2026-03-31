@@ -10,10 +10,6 @@ typedef struct rz_event_callback_hook_t {
 	int handle;
 } RzEventCallbackHook;
 
-static void ht_callback_free(HtUPKv *kv) {
-	rz_vector_free((RzVector *)kv->value);
-}
-
 RZ_API RzEvent *rz_event_new(void *user) {
 	RzEvent *ev = RZ_NEW0(RzEvent);
 	if (!ev) {
@@ -22,7 +18,7 @@ RZ_API RzEvent *rz_event_new(void *user) {
 
 	ev->user = user;
 	ev->next_handle = 0;
-	ev->callbacks = ht_up_new(NULL, ht_callback_free, NULL);
+	ev->callbacks = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!ev->callbacks) {
 		goto err;
 	}
@@ -83,7 +79,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	RzEventCallbackHook *hook;
 	size_t i;
 	rz_return_val_if_fail(cbs, false);
-	rz_vector_enumerate(cbs, hook, i) {
+	rz_vector_enumerate (cbs, hook, i) {
 		if (hook->handle == handle) {
 			rz_vector_remove_at(cbs, i, NULL);
 			break;
@@ -118,7 +114,7 @@ RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
 
 	// send to both the per-type callbacks and to the all_callbacks
 	ev->incall = true;
-	rz_vector_foreach(&ev->all_callbacks, hook) {
+	rz_vector_foreach (&ev->all_callbacks, hook) {
 		hook->cb(ev, type, hook->user, data);
 	}
 	ev->incall = false;
@@ -126,14 +122,14 @@ RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
 	RzVector *cbs = ht_up_find(ev->callbacks, (ut64)type, NULL);
 	if (cbs) {
 		ev->incall = true;
-		rz_vector_foreach(cbs, hook) {
+		rz_vector_foreach (cbs, hook) {
 			hook->cb(ev, type, hook->user, data);
 		}
 		ev->incall = false;
 	}
 
 	RzEventCallbackHandle *unhook_handle;
-	rz_vector_foreach(&ev->pending_unhook, unhook_handle) {
+	rz_vector_foreach (&ev->pending_unhook, unhook_handle) {
 		rz_event_unhook(ev, *unhook_handle);
 	}
 	rz_vector_clear(&ev->pending_unhook);

@@ -19,7 +19,7 @@ RZ_API RZ_OWN RzType *rz_type_identifier_of_base_type(const RzTypeDB *typedb, RZ
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
-	type->identifier.name = strdup(btype->name);
+	type->identifier.name = rz_str_dup(btype->name);
 	type->identifier.is_const = is_const;
 	switch (btype->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
@@ -177,6 +177,7 @@ RZ_API RZ_OWN RzType *rz_type_callable(RZ_NONNULL RZ_OWN RzCallable *callable) {
 	rz_return_val_if_fail(callable, NULL);
 	RzType *newtype = RZ_NEW0(RzType);
 	if (!newtype) {
+		rz_type_callable_free(callable);
 		return NULL;
 	}
 	newtype->kind = RZ_TYPE_KIND_CALLABLE;

@@ -71,7 +71,8 @@ static bool is_declarator(const char *declarator) {
 		!strcmp(declarator, "array_declarator") ||
 		!strcmp(declarator, "function_declarator") ||
 		!strcmp(declarator, "identifier") ||
-		!strcmp(declarator, "field_identifier");
+		!strcmp(declarator, "field_identifier") ||
+		!strcmp(declarator, "parenthesized_declarator");
 }
 
 static bool is_function_declarator(const char *declarator) {
@@ -113,6 +114,12 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		free(real_type);
 		return 0;
 	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *type_pair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!type_pair) {
@@ -146,6 +153,12 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 	// At first we search if the type is already presented in the state
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
+		free(real_type);
+		return 0;
+	}
+	if ((*tpair = c_parser_get_typedef(state, real_type))) {
+		(*tpair)->type->identifier.is_const = is_const;
+		parser_debug(state, "Fetched type alias: \"%s\"\n", real_type);
 		free(real_type);
 		return 0;
 	}
@@ -1502,6 +1515,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", name);
 			return -1;
 		}
+		result = 0;
 	}
 	return result;
 }
@@ -1717,7 +1731,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
 		}
-		naked_callable->callable->name = strdup(*identifier);
+		naked_callable->callable->name = rz_str_dup(*identifier);
 		// Preserve the parent callable type
 		parent_type = (*tpair)->type;
 		// Then override with the naked callable type to proceed with parameter parsing
@@ -1733,6 +1747,19 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", *identifier);
 			return -1;
 		}
+	} else if (!strcmp(node_type, "parenthesized_declarator")) {
+		char *real_ident = ts_node_sub_string(node, text);
+		parser_debug(state, "parenthesized declarator: %s\n", real_ident);
+
+		TSNode declarator = ts_node_named_child(node, 0);
+		if (ts_node_is_null(declarator)) {
+			parser_error(state, "ERROR: Parenthesized declarator AST should contain at least one inner declarator!\n");
+			node_malformed_error(state, node, text, "parenthesized declarator");
+			free(real_ident);
+			return -1;
+		}
+
+		result = parse_type_declarator_node(state, declarator, text, tpair, identifier);
 	}
 	return result;
 }

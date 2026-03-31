@@ -9,7 +9,6 @@ static bool macro_print_cb(RzCmd *cmd, const RzCmdMacro *macro, void *user) {
 	RzCmdStateOutput *state = (RzCmdStateOutput *)user;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-	case RZ_OUTPUT_MODE_RIZIN:
 		rz_cons_printf("(%s", macro->name);
 		for (int i = 0; i < macro->nargs; i++) {
 			rz_cons_printf(" %s", macro->args[i]);

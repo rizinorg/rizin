@@ -1,5 +1,6 @@
 name: Coverity Scan
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 18 * * 2,4' # Bi-weekly at 18:00 UTC on Tuesday and Thursday
 
@@ -10,13 +11,13 @@ concurrency:
 
 jobs:
   latest:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Determine current repository
         id: "determine-repo"
         run: echo "repo=${GITHUB_REPOSITORY}" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizinorg%2Frizin" -O cov-analysis-linux64.tar.gz

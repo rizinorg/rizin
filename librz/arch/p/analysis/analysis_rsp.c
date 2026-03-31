@@ -630,7 +630,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr    $vcc	.128	724	0\n"
 		"gpr    $vce	.128	740	0\n";
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {

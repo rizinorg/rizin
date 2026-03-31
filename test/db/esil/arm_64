@@ -3,6 +3,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar sp=4
 wx f91740f9
@@ -21,6 +22,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar sp=0x2c
 wx f9835df8
@@ -39,6 +41,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar sp=4
 wx f91740f9
@@ -57,6 +60,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar sp=4
 wx ec1f40b9
@@ -74,6 +78,7 @@ NAME=ldrsw x9, [x8, 0x468]
 FILE=malloc://0x200
 ARGS=-a arm -b 64 -m 0x464
 CMDS=<<EOF
+e cfg.bigendian=false
 wx 096984b9@ 0x464
 wx 8877665544332211cacacacacaca@ 0x468
 aei
@@ -92,6 +97,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x16=4
 wx 0a024039
@@ -109,6 +115,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x16=4
 wx 0c064039
@@ -126,6 +133,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x19=4
 ar x23=2
@@ -144,6 +152,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x8=4
 wx 170140f9
@@ -161,6 +170,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x15=4
 wx e80140b9
@@ -178,6 +188,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x10=4
 ar x9=2
@@ -196,6 +207,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x11=4
 ar w10=2
@@ -214,6 +226,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x13=4
 ar x9=4
@@ -232,6 +245,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x13=4
 ar x9=4
@@ -250,6 +264,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 wx 0c008012
 aes
@@ -265,6 +280,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w15=0xaabbccdd
 ar w13=0x000000ff
@@ -282,6 +298,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w15=0xaabbccdd
 ar w12=0xffffffff
@@ -299,6 +316,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w11=4
 wx 6b7d8b4a
@@ -315,6 +333,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w11=-4
 wx 6b7d8b4a
@@ -331,6 +350,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x21=-4
 wx b4fe95ca
@@ -347,6 +367,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w11=-4
 wx 6b010152
@@ -363,6 +384,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w11=-4
 ar w13=0x11223344
@@ -380,6 +402,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w11=0xffeeddcc
 ar w15=0x7ffffffc
@@ -397,6 +420,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x14=0xf982834129348123
 wx cdb52eca
@@ -413,6 +437,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 wx ed1f0032
 aes
@@ -428,6 +453,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar w0=0xffffffff
 wx 1f000153
@@ -444,6 +470,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x14=0xf982834129348123
 ar x19=0xf982834129348123
@@ -461,6 +488,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 wx 000000915c000014
 2aes
@@ -476,6 +504,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 wx 400080d2210080d21f0001eb4d000054
 4aes
@@ -486,31 +515,12 @@ pc = 0x0000000000000010
 EOF
 RUN
 
-NAME=subs x0, x0, x1; csel x0, x2, x3, mi
-FILE=malloc://0x200
-BROKEN=1
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=64
-ar > /dev/null
-ar x0=0
-ar x1=1
-ar x2=0x100
-ar x3=0x200
-wx 000001eb4040839a
-2aes
-ar x0
-EOF
-EXPECT=<<EOF
-0x0000000000000100
-EOF
-RUN
-
 NAME=stp tests
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x0=0
 ar x1=1
@@ -538,6 +548,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar > /dev/null
 ar x8=0x140
 wx 0415ffa8020dffa9000540a9061d7fa9
@@ -565,6 +576,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 7f010c6bea179f1aaf090a0bea158f1a
 ar w11=0x20
 ar w12=0x20
@@ -583,11 +595,38 @@ w10 = 0x00000001
 EOF
 RUN
 
+NAME=tst, csel
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
+wx 3f1d00720000811a
+ar w9=0x0
+ar w0=0x1337
+ar w1=0x0
+aeip
+2 aes
+ar w0
+ar w9=0xff
+ar w0=0x0
+ar w1=0x1337
+aeip
+2 aes
+ar w0
+EOF
+EXPECT=<<EOF
+w0 = 0x00001337
+w0 = 0x00001337
+EOF
+RUN
+
 NAME=csel tests
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 7f010c6bee138a1aef038a1af0b38a1af3c38a1a
 ar w10=1
 ar w11=0x20
@@ -634,6 +673,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx ea7bbd52caff9772eaceac722a2dcdf2
 ar w10=0x11223344aabbccdd
 aeip
@@ -659,6 +699,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar x11=0xffffffffffffffff
 ar x10=0
 ar x8=0
@@ -677,6 +718,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar x11=0x45
 ar x10=0x3
 ar x9=0xa
@@ -696,6 +738,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ar x11=3
 wx eb030bcb
 aeip
@@ -712,6 +755,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 ara0
 ar tmp=0xbebeef
 ar~bebeef
@@ -726,6 +770,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 1ffc0371 # cmp w0, 0xff
 ar w0=0x55
 %v pstate & 0xf0000000
@@ -781,6 +826,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 4a012b8a #bic x10, x11
 ar x10=0x1122334455667788
 ar x11=0xff
@@ -797,6 +843,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 4a012b0a #bic w10, w11
 ar x10=0x12345678
 ar x11=0xf
@@ -813,6 +860,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 200cc0da #rev x0, x1
 ar x1=0x1122334455667788
 aes
@@ -828,6 +876,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 2008c05a  #rev w0, w1
 ar w1=0x11223344
 aes
@@ -843,6 +892,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 2004c0da  #rev16 x0, x1
 ar x1=0x1122334455667788
 aes
@@ -858,6 +908,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 2004c05a  #rev16 w0, w1
 ar w1=0x11223344
 aes
@@ -873,6 +924,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 02000094 # bl 8
 aes
 ar lr
@@ -889,6 +941,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 000940d3 # ubfx x0, x8, 0, 3
 aeip
 ar x8=5
@@ -905,6 +958,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 16b4000f # orr   v22.4h, 0, lsl 8
 pd 1
 pie 1
@@ -920,6 +974,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 wx 0x0074006f # bic	v0.4s, #0, lsl #24
 pie 1
 EOF

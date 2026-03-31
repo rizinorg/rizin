@@ -1,8 +1,7 @@
 NAME=PE: corkami cfgbogus.exe - open
 FILE=bins/pe/cfgbogus.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami cfgbogus.exe - entrypoint

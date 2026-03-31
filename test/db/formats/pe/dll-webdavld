@@ -1,8 +1,7 @@
 NAME=PE: corkami dll-webdavld.exe - open
 FILE=bins/pe/dll-webdavld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami dll-webdavld.exe - entrypoint

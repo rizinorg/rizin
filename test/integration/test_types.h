@@ -7,7 +7,7 @@
 static inline bool has_enum_val(RzBaseType *btype, const char *name, int val) {
 	int result = -1;
 	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
+	rz_vector_foreach (&btype->enum_data.cases, cas) {
 		if (!strcmp(cas->name, name)) {
 			result = cas->val;
 			break;
@@ -18,7 +18,7 @@ static inline bool has_enum_val(RzBaseType *btype, const char *name, int val) {
 
 static inline bool has_enum_case(RzBaseType *btype, const char *name) {
 	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
+	rz_vector_foreach (&btype->enum_data.cases, cas) {
 		if (!strcmp(cas->name, name)) {
 			return true;
 		}
@@ -28,7 +28,7 @@ static inline bool has_enum_case(RzBaseType *btype, const char *name) {
 
 static inline bool has_struct_member(RzBaseType *btype, const char *name) {
 	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, name)) {
 			return true;
 		}
@@ -38,7 +38,7 @@ static inline bool has_struct_member(RzBaseType *btype, const char *name) {
 
 static inline bool has_union_member(RzBaseType *btype, const char *name) {
 	RzTypeUnionMember *memb;
-	rz_vector_foreach(&btype->union_data.members, memb) {
+	rz_vector_foreach (&btype->union_data.members, memb) {
 		if (!strcmp(memb->name, name)) {
 			return true;
 		}
@@ -48,7 +48,7 @@ static inline bool has_union_member(RzBaseType *btype, const char *name) {
 
 static inline bool has_union_member_type(const RzTypeDB *typedb, RzBaseType *btype, const char *name, const char *type) {
 	RzTypeUnionMember *memb;
-	rz_vector_foreach(&btype->union_data.members, memb) {
+	rz_vector_foreach (&btype->union_data.members, memb) {
 		if (!strcmp(memb->name, name)) {
 			if (!strcmp(type, rz_type_as_string(typedb, memb->type))) {
 				return true;
@@ -60,7 +60,7 @@ static inline bool has_union_member_type(const RzTypeDB *typedb, RzBaseType *bty
 
 static inline bool has_struct_member_type(const RzTypeDB *typedb, RzBaseType *btype, const char *name, const char *type) {
 	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
+	rz_vector_foreach (&btype->struct_data.members, memb) {
 		if (!strcmp(memb->name, name)) {
 			if (!strcmp(type, rz_type_as_string(typedb, memb->type))) {
 				return true;

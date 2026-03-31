@@ -1,8 +1,7 @@
 NAME=ELF: negative vnext crash
 FILE=bins/elf/analysis/6921737e-08e3-11e6-998c-a8ddd566ab1c.jpg
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=pseudo-crash
@@ -32,4 +31,20 @@ CMDS=<<EOF
 aaa
 EOF
 EXPECT=
+RUN
+
+NAME=ELF: malformed verdef vd_next zero no hang
+FILE=bins/elf/analysis/elf_verdef_vd_next_zero
+CMDS=<<EOF
+ii
+is
+iV
+EOF
+EXPECT=<<EOF
+nth vaddr bind type lib name 
+-----------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+EOF
+TIMEOUT=5
 RUN

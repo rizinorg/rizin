@@ -2,8 +2,7 @@ NAME=PE: corkami winver.exe - open
 FILE=bins/pe/winver.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami winver.exe - entrypoint

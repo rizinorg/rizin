@@ -1,6 +1,5 @@
 NAME=PE: corkami dllnoreloc.dll - open
 FILE=bins/pe/dllnoreloc.dll
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

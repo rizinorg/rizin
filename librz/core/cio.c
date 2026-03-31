@@ -35,10 +35,10 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 				/* do nothing here */
 			} else if (!strcmp(bep, "entry")) {
 				address = rz_num_math(r->num, "entry0");
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			} else {
 				address = rz_num_math(r->num, bep);
-				rz_core_debug_continue_until(r, address, address);
+				rz_core_debug_continue_until(r, address);
 			}
 		}
 	}
@@ -80,7 +80,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		if ((i + bs) > size) {
 			bs = size - i;
 		}
-		rz_io_read_at(core->io, addr + i, buf, bs);
+		rz_io_read_at_mapped(core->io, addr + i, buf, bs);
 		if (fwrite(buf, bs, 1, fd) < 1) {
 			RZ_LOG_ERROR("core: cannot write to buffer\n");
 			break;
@@ -233,7 +233,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 		res = false;
 	} else {
 		rz_io_use_fd(core->io, core->file->fd);
-		rz_io_read_at(core->io, addr, shift_buf, b_size);
+		rz_io_read_at_mapped(core->io, addr, shift_buf, b_size);
 		rz_io_write_at(core->io, addr + dist, shift_buf, b_size);
 		res = true;
 	}
@@ -244,7 +244,7 @@ RZ_API bool rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist)
 
 RZ_API int rz_core_block_read(RzCore *core) {
 	if (core && core->block) {
-		return rz_io_read_at(core->io, core->offset, core->block, core->blocksize);
+		return rz_io_read_at_mapped(core->io, core->offset, core->block, core->blocksize);
 	}
 	return -1;
 }
@@ -422,7 +422,7 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 
 		if (plugin->uris) {
 			char *uri;
-			char *uris = strdup(plugin->uris);
+			char *uris = rz_str_dup(plugin->uris);
 			RzList *plist = rz_str_split_list(uris, ",", 0);
 			RzListIter *piter;
 			pj_k(pj, "uris");
@@ -478,17 +478,29 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  * \param io Reference to RzIO instance
  * \param state Specify how plugins shall be printed
  */
-RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
-	RzIOPlugin *plugin;
-	RzListIter *iter;
+RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmdStateOutput *state) {
+	rz_return_val_if_fail(io && state, RZ_CMD_STATUS_ERROR);
+
 	if (!io) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "perm", "license", "name", "uri", "description");
-	rz_list_foreach (io->plugins, iter, plugin) {
+
+	RzIterator *iter = ht_sp_as_iter(io->plugins);
+	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	if (!plugin_list) {
+		rz_iterator_free(iter);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_io_plugin_cmp, NULL);
+	RzListIter *it;
+	RzIOPlugin *plugin;
+	rz_list_foreach (plugin_list, it, plugin) {
 		rz_core_io_plugin_print(plugin, state);
 	}
+	rz_iterator_free(iter);
+	rz_list_free(plugin_list);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -506,7 +518,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
 RZ_API bool rz_core_write_value_at(RzCore *core, ut64 addr, ut64 value, int sz) {
 	rz_return_val_if_fail(sz == 0 || sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	core->num->value = 0;
 	if (sz == 0) {
@@ -552,7 +564,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 	rz_return_val_if_fail(sz == 1 || sz == 2 || sz == 4 || sz == 8, false);
 
 	ut8 buf[sizeof(ut64)];
-	bool be = rz_config_get_i(core->config, "cfg.bigendian");
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	if (!rz_io_read_at_mapped(core->io, addr, buf, sz)) {
 		return false;
@@ -605,7 +617,7 @@ RZ_API bool rz_core_write_value_inc_at(RzCore *core, ut64 addr, st64 value, int 
 RZ_API bool rz_core_write_string_at(RzCore *core, ut64 addr, RZ_NONNULL const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -631,7 +643,7 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	rz_return_val_if_fail(core && s, false);
 
 	bool res = false;
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -655,9 +667,11 @@ RZ_API bool rz_core_write_string_wide_at(RzCore *core, ut64 addr, const char *s)
 	if (!rz_core_write_at(core, addr, (const ut8 *)tmp, len * 2)) {
 		RZ_LOG_ERROR("Could not write wide string '%s' at %" PFMT64x "\n", s, addr);
 		free(str);
+		free(tmp);
 		return false;
 	}
 	res = true;
+	free(tmp);
 str_err:
 	free(str);
 	return res;
@@ -673,7 +687,7 @@ str_err:
 RZ_API bool rz_core_write_length_string_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}
@@ -830,18 +844,6 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 			pj_kb(state->d.pj, "written", c->written);
 			pj_end(state->d.pj);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->data[i] & 0xff));
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x, rz_itv_begin(c->itv));
-			rz_cons_printf(" # replaces: ");
-			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", (ut8)(c->odata[i] & 0xff));
-			}
-			rz_cons_printf("\n");
-			break;
 		default:
 			rz_warn_if_reached();
 			break;
@@ -859,9 +861,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 	RzListIter *iter;
 	RzIOCache *c;
 
-	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
-		rz_cons_printf("e io.va = false\n");
-	}
 	rz_list_foreach (caches, iter, c) {
 		const int cacheSize = rz_itv_size(c->itv);
 		int i;
@@ -878,13 +877,6 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 				rz_cons_printf("%02x", c->data[i]);
 			}
 			rz_cons_printf("\n");
-			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("wx %02x", c->data[0]);
-			for (i = 1; i < cacheSize; i++) {
-				rz_cons_printf("%02x", c->data[i]);
-			}
-			rz_cons_printf(" @ 0x%08" PFMT64x " \n", rz_itv_begin(c->itv));
 			break;
 		default:
 			rz_warn_if_reached();
@@ -905,7 +897,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 RZ_API bool rz_core_write_string_zero_at(RzCore *core, ut64 addr, const char *s) {
 	rz_return_val_if_fail(core && s, false);
 
-	char *str = strdup(s);
+	char *str = rz_str_dup(s);
 	if (!str) {
 		return false;
 	}

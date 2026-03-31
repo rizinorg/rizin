@@ -1,0 +1,17 @@
+a "movf s3, t0" 01980001 0x4
+a "movt s3, t0" 01980101 0x4
+ad "movf s3, t0, fcc0" 01980001 0x4
+ad "movf s3, t0, fcc3" 01980c01 0x4
+ad "movf s3, t0, fcc5" 01981401 0x4
+ad "movt s3, t0, fcc0" 01980101 0x4
+ad "movt s3, t0, fcc3" 01980d01 0x4
+ad "movt s3, t0, fcc5" 01981501 0x4
+
+aE "movf s3, t0" 01009801 0x4
+aE "movt s3, t0" 01019801 0x4
+adE "movf s3, t0, fcc0" 01009801 0x4
+adE "movf s3, t0, fcc3" 010c9801 0x4
+adE "movf s3, t0, fcc5" 01149801 0x4
+adE "movt s3, t0, fcc0" 01019801 0x4
+adE "movt s3, t0, fcc3" 010d9801 0x4
+adE "movt s3, t0, fcc5" 01159801 0x4

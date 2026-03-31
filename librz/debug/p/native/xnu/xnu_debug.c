@@ -155,12 +155,12 @@ int xnu_attach(RzDebug *dbg, int pid) {
 
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
-		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d", pid);
+		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d\n", pid);
 	}
 
 	// First start listening to exceptions, which will also deliver signals to us
 	if (!xnu_create_exception_thread(dbg)) {
-		RZ_LOG_ERROR("Failed to start listening to mach exceptions");
+		RZ_LOG_ERROR("Failed to start listening to mach exceptions\n");
 		return -1;
 	}
 
@@ -168,7 +168,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	int r = rz_debug_ptrace(dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (r < 0) {
 		perror("ptrace(PT_ATTACHEXC)");
-		RZ_LOG_ERROR("Failed to attach to process");
+		RZ_LOG_ERROR("Failed to attach to process\n");
 		return -1;
 	}
 
@@ -176,7 +176,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
 	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
 	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
-		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed");
+		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed\n");
 		xnu_stop(dbg, pid);
 	}
 
@@ -279,33 +279,6 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		eprintf("xnu_continue: Warning: Failed to resume task\n");
 	}
 	return true;
-}
-
-char *xnu_reg_profile(RzDebug *dbg) {
-#if __POWERPC__
-#include "reg/darwin-ppc.h"
-#else
-	RzXnuDebug *ctx = dbg->plugin_data;
-	if (!ctx || !ctx->cpu) {
-		// not yet attached, arch still unknown
-		return NULL;
-	}
-#if __i386__ || __x86_64__
-	if (ctx->cpu == CPU_TYPE_X86_64) {
-#include "reg/darwin-x64.h"
-	} else {
-#include "reg/darwin-x86.h"
-	}
-#elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	if (ctx->cpu == CPU_TYPE_ARM64) {
-#include "reg/darwin-arm64.h"
-	} else {
-#include "reg/darwin-arm.h"
-	}
-#else
-#error "Unsupported Apple architecture"
-#endif
-#endif
 }
 
 // rz_debug_select
@@ -464,7 +437,7 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 	file_path_len = proc_pidpath(rdi->pid, file_path, sizeof(file_path));
 	if (file_path_len > 0) {
 		file_path[file_path_len] = 0;
-		rdi->exe = strdup(file_path);
+		rdi->exe = rz_str_dup(file_path);
 	}
 	if (proc_pidinfo(rdi->pid, PROC_PIDTBSDINFO, 0,
 		    &proc, PROC_PIDTBSDINFO_SIZE) == PROC_PIDTBSDINFO_SIZE) {
@@ -524,14 +497,6 @@ RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	}
 	return list;
 }
-
-#if 0
-static vm_prot_t unix_prot_to_darwin(int prot) {
-		return ((prot & 1 << 4) ? VM_PROT_READ : 0 |
-				(prot & 1 << 2) ? VM_PROT_WRITE : 0 |
-				(prot & 1 << 1) ? VM_PROT_EXECUTE : 0);
-}
-#endif
 
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
@@ -770,10 +735,6 @@ static int xnu_write_mem_maps_to_buffer(RzXnuDebug *ctx, RzBuffer *buffer, RzLis
 		}
 
 		/* Acording to osxbook, the check should be like this: */
-#if 0
-		if ((maxprot & VM_PROT_READ) == VM_PROT_READ &&
-			(vbr.user_tag != VM_MEMORY_IOKIT)) {
-#endif
 		if ((curr_map->perm & VM_PROT_READ) == VM_PROT_READ) {
 			vm_map_size_t tmp_size = curr_map->size;
 
@@ -837,7 +798,6 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	struct thread_command *tc;
 	vm_offset_t header;
 	ut64 hoffset;
-	int i;
 
 	header = tir->header;
 	hoffset = tir->hoffset;
@@ -849,8 +809,8 @@ static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	tc->cmdsize = sizeof(struct thread_command) + tir->tstate_size;
 	hoffset += sizeof(struct thread_command);
 
-	for (i = 0; i < coredump_nflavors; i++) {
-		eprintf("[DEBUG] %d/%d\n", i + 1, coredump_nflavors);
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
+		eprintf("[DEBUG] %zu/%d\n", i + 1, COREDUMP_FLAVORS_ARRAY_SIZE);
 		*(coredump_thread_state_flavor_t *)(header + hoffset) = flavors[i];
 		hoffset += sizeof(coredump_thread_state_flavor_t);
 		xnu_get_thread_status(port, flavors[i].flavor,
@@ -884,7 +844,7 @@ static uid_t uidFromPid(pid_t pid) {
 bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	RzXnuDebug *ctx = dbg->plugin_data;
-	int error = 0, i;
+	int error = 0;
 	int tstate_size;
 	int segment_count;
 	int command_size;
@@ -916,7 +876,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	memcpy(thread_flavor_array, &flavors, sizeof(thread_flavor_array));
 	tstate_size = 0;
 
-	for (i = 0; i < coredump_nflavors; i++) {
+	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
 		tstate_size += sizeof(coredump_thread_state_flavor_t) +
 			(flavors[i].count * sizeof(int));
 	}
@@ -969,16 +929,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 	char *curr_arg, *start_args, *iter_args, *end_args;
 	char *procargs = NULL;
 	char psname[4096];
-#if 0
-	/* Get the maximum process arguments size. */
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_ARGMAX;
-	size = sizeof(argmax);
-	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
-		return NULL;
-	}
-#endif
 	uid = uidFromPid(pid);
 
 	/* Allocate space for the arguments. */
@@ -1019,13 +969,6 @@ RzDebugPid *xnu_get_pid(int pid) {
 		return NULL;
 	}
 
-	// TODO: save the environment variables to envlist as well
-	//  Skip over the exec_path and '\0' characters.
-	//  XXX: fix parsing
-#if 0
-	while (iter_args < end_args && *iter_args != '\0') { iter_args++; }
-	while (iter_args < end_args && *iter_args == '\0') { iter_args++; }
-#endif
 	if (iter_args == end_args) {
 		free(procargs);
 		return NULL;
@@ -1241,7 +1184,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 			eprintf("Cannot create rz_debug_map_new\n");
 			break;
 		}
-		mr->file = strdup(file_path);
+		mr->file = rz_str_dup(file_path);
 		mr->shared = true;
 		rz_list_append(list, mr);
 	}
@@ -1277,10 +1220,10 @@ static RzDebugMap *rz_debug_map_clone(RzDebugMap *m) {
 	RzDebugMap *map = RZ_NEWCOPY(RzDebugMap, m);
 	// memcpy (map, m, sizeof (RzDebugMap));
 	if (m->name) {
-		map->name = strdup(m->name);
+		map->name = rz_str_dup(m->name);
 	}
 	if (m->file) {
-		map->file = strdup(m->file);
+		map->file = rz_str_dup(m->file);
 	}
 	return map;
 }
@@ -1313,13 +1256,6 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 	size = osize = 16384;
 #else
 	size = osize = 4096;
-#endif
-#if 0
-	if (dbg->pid == 0) {
-		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
-		return NULL;
-	}
 #endif
 	RzList *list = rz_list_new();
 	if (!list) {
@@ -1373,10 +1309,10 @@ RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules) {
 			}
 			RzDebugMap *rdm = moduleAt(modules, address);
 			if (rdm) {
-				mr->file = strdup(rdm->name);
+				mr->file = rz_str_dup(rdm->name);
 			} else {
 				if (*module_name) {
-					mr->file = strdup(module_name);
+					mr->file = rz_str_dup(module_name);
 				}
 			}
 			if (mr->file) {

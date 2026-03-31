@@ -1,0 +1,15 @@
+NAME=Memory Read and Write
+FILE=bins/elf/ppc64le/dbg_basic_test
+ARGS=-a ppc -d
+CMDS=<<EOF
+db @ sym.main
+dc
+pxw~[1-] @ obj.array_data | grep '^0x0000000a'
+wx 0x1234 @ obj.array_data+8
+pxw~[1-] @ obj.array_data | grep '^0x0000000a'
+EOF
+EXPECT=<<EOF
+0x0000000a 0x00000014 0x0000001e 0x00000028 ............(...
+0x0000000a 0x00000014 0x00003412 0x00000028 .........4..(...
+EOF
+RUN

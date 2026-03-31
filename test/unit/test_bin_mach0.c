@@ -42,7 +42,8 @@ static void memset_rand(ut8 *dst, size_t size) {
 \
 			/* Parse with our endian-independent function */ \
 			struct name s; \
-			ut##size *s_direct = (ut##size *)&s; \
+			/* some compilers incorrectly optimized the following without volatile */ \
+			volatile ut##size *s_direct = (ut##size *)&s; \
 			*s_direct = rand_ut64(); /* init with garbage */ \
 			name##_read(&s, raw_val); \
 \

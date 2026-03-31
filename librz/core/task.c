@@ -83,29 +83,33 @@ RZ_API int rz_core_task_running_tasks_count(RzCoreTaskScheduler *scheduler) {
 	return count;
 }
 
-static void task_join(RzCoreTask *task) {
+static bool task_join(RzCoreTask *task) {
 	RzThreadSemaphore *sem = task->running_sem;
 	if (!sem) {
-		return;
+		return false;
 	}
 
 	rz_th_sem_wait(sem);
 	rz_th_sem_post(sem);
+	return true;
 }
 
-RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
+RZ_API RzCoreTaskJoinErr rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id) {
+	RzCoreTaskJoinErr ret = RZ_CORE_TASK_JOIN_ERR_SUCCESS;
 	if (current && id == current->id) {
-		return;
+		return RZ_CORE_TASK_JOIN_ERR_CURRENT;
 	}
 	if (id >= 0) {
 		RzCoreTask *task = rz_core_task_get_incref(scheduler, id);
 		if (!task) {
-			return;
+			return RZ_CORE_TASK_JOIN_ERR_NO_TASK;
 		}
 		if (current) {
 			rz_core_task_sleep_begin(current);
 		}
-		task_join(task);
+		if (!task_join(task)) {
+			ret = RZ_CORE_TASK_JOIN_ERR_ONE_NO_SEM;
+		}
 		if (current) {
 			rz_core_task_sleep_end(current);
 		}
@@ -131,7 +135,9 @@ RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *curren
 			if (current) {
 				rz_core_task_sleep_begin(current);
 			}
-			task_join(task);
+			if (!task_join(task)) {
+				ret = RZ_CORE_TASK_JOIN_ERR_ALL_NO_SEM;
+			}
 			if (current) {
 				rz_core_task_sleep_end(current);
 			}
@@ -139,6 +145,7 @@ RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *curren
 		}
 		rz_list_free(tasks);
 	}
+	return ret;
 }
 
 static void task_free(RzCoreTask *task) {
@@ -378,10 +385,7 @@ RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *tas
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter(scheduler, &old_sigset);
 	if (!task->running_sem) {
-		task->running_sem = rz_th_sem_new(1);
-	}
-	if (task->running_sem) {
-		rz_th_sem_wait(task->running_sem);
+		task->running_sem = rz_th_sem_new(0);
 	}
 	rz_list_append(scheduler->tasks, task);
 	task->thread = rz_th_new((RzThreadFunction)task_run_thread, task);
@@ -582,7 +586,7 @@ static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd, RzCoreCmdTask
 		free(ctx);
 		return NULL;
 	}
-	ctx->cmd = strdup(cmd);
+	ctx->cmd = rz_str_dup(cmd);
 	ctx->cmd_log = false;
 	ctx->res = NULL;
 	ctx->finished_cb = finished_cb;
@@ -755,8 +759,9 @@ RZ_API const char *rz_core_task_status(RzCoreTask *task) {
 	}
 }
 
-RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) {
-	rz_return_if_fail(mode != 'j' || j);
+RZ_IPI void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode, PJ *j) {
+	rz_return_if_fail(task);
+
 	if (task != core->tasks.main_task && task->runner != cmd_task_runner) {
 		// don't print tasks that are custom function-runners, which come from internal code.
 		// only main and command ones, which should be user-visible.
@@ -767,7 +772,7 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 		cmd = ((CmdTaskCtx *)task->runner_user)->cmd;
 	}
 	switch (mode) {
-	case 'j': {
+	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(j);
 		pj_ki(j, "id", task->id);
 		const char *state;
@@ -808,11 +813,11 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 	}
 }
 
-RZ_API void rz_core_task_list(RzCore *core, int mode) {
+RZ_IPI void rz_core_tasks_print(RzCore *core, RzOutputMode mode) {
 	RzListIter *iter;
 	RzCoreTask *task;
 	PJ *j = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		j = pj_new();
 		pj_a(j);
 	}

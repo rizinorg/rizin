@@ -574,7 +574,7 @@ static char *bochs_reg_profile(RzDebug *dbg) {
 	int bits = dbg->analysis->bits;
 
 	if (bits == 16 || bits == 32 || bits == 64) {
-		return strdup(
+		return rz_str_dup(
 			"=PC	rip\n"
 			"=SP	rsp\n"
 			"=BP	rbp\n"

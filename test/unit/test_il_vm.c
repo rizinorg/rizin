@@ -4,16 +4,18 @@
 #include <rz_il.h>
 #include <rz_util.h>
 #include "minunit.h"
+#include "rz_il/rz_il_events.h"
+#include "rz_il/rz_il_opcodes.h"
 
 static bool test_rzil_vm_init() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 	mu_assert_eq(vm->addr_size, 8, "VM Init");
 	rz_il_vm_free(vm);
 	mu_end;
 }
 
 static bool test_rzil_vm_global_vars() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 
 	// 1. create variables
 	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bool());
@@ -60,7 +62,7 @@ static bool test_rzil_vm_global_vars() {
 }
 
 static bool test_rzil_vm_labels() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 	// create label
 	RzBitVector *addr = rz_bv_new_from_ut64(16, 233);
 	RzILEffectLabel *blackhole = rz_il_vm_create_label(vm, "blackhole", addr);
@@ -100,7 +102,7 @@ static bool test_rzil_vm_labels() {
 }
 
 static bool test_rzil_vm_root_evaluation() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	// (ite (add 23 19)
 	//	true
@@ -132,7 +134,7 @@ static bool test_rzil_vm_root_evaluation() {
 }
 
 static bool test_rzil_vm_step() {
-	RzILVM *vm = rz_il_vm_new(0, 16, false);
+	RzILVM *vm = rz_il_vm_new(0, 16, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
 	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
@@ -164,8 +166,57 @@ static bool test_rzil_vm_step() {
 	mu_end;
 }
 
+static bool test_rzil_vm_halt_on_exc() {
+	ut64 expected_last_pc = 0x332; // The PC of the halting (div 0) instruction
+	RzILEventException halt_for = RZ_IL_EVENT_EXC_DIV_ZERO;
+	do {
+		RzILVM *vm = rz_il_vm_new(0, 16, false, halt_for);
+
+		RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
+		RzILVar *var_r2 = rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
+
+		RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
+		bool succ = rz_il_vm_step(vm, op, 0x331);
+		rz_il_op_effect_free(op);
+		mu_assert_true(succ, "success set r1");
+
+		op = rz_il_op_new_set("r2", false, rz_il_op_new_bitv_from_ut64(32, 0));
+		succ = rz_il_vm_step(vm, op, 0x332);
+		rz_il_op_effect_free(op);
+		mu_assert_true(succ, "success set r2");
+
+		RzILOpPure *r1 = rz_il_op_new_var(var_r1->name, RZ_IL_VAR_KIND_GLOBAL);
+		mu_assert_notnull(r1, "get val");
+		RzILOpPure *r2 = rz_il_op_new_var(var_r2->name, RZ_IL_VAR_KIND_GLOBAL);
+		mu_assert_notnull(r2, "get val");
+
+		op = rz_il_op_new_set("r2", false, rz_il_op_new_div(r1, r2));
+		succ = rz_il_vm_step(vm, op, 0x333);
+		rz_il_op_effect_free(op);
+
+		if (halt_for == RZ_IL_EVENT_EXC_DIV_ZERO) {
+			mu_assert_false(succ, "VM did not halt after div0.");
+			mu_assert_true(vm->halt, "VM halt flag not set.");
+		} else {
+			mu_assert_true(succ, "VM did halt after div0, but should not have.");
+			mu_assert_false(vm->halt, "VM halt flag is set.");
+		}
+		RzBitVector *pc = vm->pc;
+		mu_assert_notnull(pc, "pc");
+		mu_assert_eq(rz_bv_to_ut64(pc), expected_last_pc, "VM pc doesn't match.");
+
+		rz_il_vm_free(vm);
+
+		// Do it again, this time don't halt on div 0
+		// Expected PC is now one past div0 instruction (fallthrough address).
+		expected_last_pc++;
+		halt_for = RZ_IL_EVENT_EXC_NONE;
+	} while (expected_last_pc == 0x334);
+
+	mu_end;
+}
 static bool test_rzil_vm_op_let() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	// simple case:
 	//   let preanswer = 41 in preanswer + 1
@@ -214,7 +265,7 @@ static bool test_rzil_vm_op_let() {
 }
 
 static bool test_rzil_vm_op_cast() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	// 8 -> 8
 	RzILOpPure *op = rz_il_op_new_cast(8, rz_il_op_new_b0(), rz_il_op_new_bitv_from_ut64(8, 0x42));
@@ -259,7 +310,7 @@ static bool test_rzil_vm_op_cast() {
 }
 
 static bool test_rzil_vm_op_unsigned() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	// msb not set, filled with 0
 	RzILOpPure *op = rz_il_op_new_unsigned(13, rz_il_op_new_bitv_from_ut64(8, 0x42));
@@ -286,7 +337,7 @@ static bool test_rzil_vm_op_unsigned() {
 }
 
 static bool test_rzil_vm_op_signed() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	// msb not set, filled with 0
 	RzILOpPure *op = rz_il_op_new_signed(13, rz_il_op_new_bitv_from_ut64(8, 0x42));
@@ -313,7 +364,7 @@ static bool test_rzil_vm_op_signed() {
 }
 
 static bool test_rzil_vm_op_set() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
 	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
@@ -401,7 +452,7 @@ static bool test_rzil_vm_op_set() {
 }
 
 static bool test_rzil_vm_op_jmp() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzILOpEffect *op = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(8, 0x42));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -414,7 +465,7 @@ static bool test_rzil_vm_op_jmp() {
 }
 
 static bool test_rzil_vm_op_goto_addr() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x42);
 	rz_il_vm_create_label(vm, "beach", dst);
@@ -431,7 +482,7 @@ static bool test_rzil_vm_op_goto_addr() {
 }
 
 static bool test_rzil_vm_op_blk() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzILVar *var = rz_il_vm_create_global_var(vm, "leetbap", rz_il_sort_pure_bv(8));
 	rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 0x42)));
@@ -475,7 +526,7 @@ static bool test_rzil_vm_op_blk() {
  * In the end, leetbap == 30618
  */
 static bool test_rzil_vm_op_repeat() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	RzILVar *var = rz_il_vm_create_global_var(vm, "leetbap", rz_il_sort_pure_bv(16));
 	rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(16, 42)));
@@ -515,7 +566,7 @@ static void hook_test(RzILVM *vm, RzILOpEffect *op) {
 }
 
 static bool test_rzil_vm_op_goto_hook() {
-	RzILVM *vm = rz_il_vm_new(0, 8, false);
+	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
 	rz_il_vm_create_global_var(vm, "myvar", rz_il_sort_pure_bv(32));
 
@@ -541,11 +592,10 @@ static bool test_rzil_vm_op_goto_hook() {
 
 static bool test_rzil_vm_op_load() {
 	const ut8 data[] = { 0x10, 0x11, 0x12, 0x42, 0x14, 0x15 };
-	RzILVM *vm = rz_il_vm_new(0, 12, false);
+	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_load(0, rz_il_op_new_bitv_from_ut64(16, 3));
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -591,10 +641,9 @@ static bool test_rzil_vm_op_load() {
 
 static bool test_rzil_vm_op_store() {
 	ut8 data[] = { 0x10, 0x11, 0x12, 0x42, 0x14, 0x15 };
-	RzILVM *vm = rz_il_vm_new(0, 12, false);
+	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_store(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(8, 0xab));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -622,11 +671,10 @@ static bool test_rzil_vm_op_store() {
 
 static bool test_rzil_vm_op_loadw_le() {
 	const ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
-	RzILVM *vm = rz_il_vm_new(0, 12, false);
+	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -653,10 +701,9 @@ static bool test_rzil_vm_op_loadw_le() {
 
 static bool test_rzil_vm_op_storew_le() {
 	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
-	RzILVM *vm = rz_il_vm_new(0, 12, false);
+	RzILVM *vm = rz_il_vm_new(0, 12, false, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -684,11 +731,10 @@ static bool test_rzil_vm_op_storew_le() {
 
 static bool test_rzil_vm_op_loadw_be() {
 	const ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
-	RzILVM *vm = rz_il_vm_new(0, 12, true);
+	RzILVM *vm = rz_il_vm_new(0, 12, true, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
 	rz_buf_set_overflow_byte(buf, 0xaa);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpPure *op = rz_il_op_new_loadw(0, rz_il_op_new_bitv_from_ut64(16, 3), 16);
 	RzBitVector *res = rz_il_evaluate_bitv(vm, op);
@@ -715,10 +761,9 @@ static bool test_rzil_vm_op_loadw_be() {
 
 static bool test_rzil_vm_op_storew_be() {
 	ut8 data[] = { 0x0, 0x1, 0x2, 0x42, 0x4, 0x5 };
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 	RzBuffer *buf = rz_buf_new_with_pointers(data, sizeof(data), false);
-	rz_il_vm_add_mem(vm, 0, rz_il_mem_new(buf, 16));
-	rz_buf_free(buf);
+	rz_il_vm_add_mem(vm, 0, rz_il_mem_new_owned(buf, 16));
 
 	RzILOpEffect *op = rz_il_op_new_storew(0, rz_il_op_new_bitv_from_ut64(16, 2), rz_il_op_new_bitv_from_ut64(16, 0xabcd));
 	bool succ = rz_il_evaluate_effect(vm, op);
@@ -745,7 +790,7 @@ static bool test_rzil_vm_op_storew_be() {
 }
 
 static bool test_rzil_vm_op_append() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 
 	RzILOpPure *op = rz_il_op_new_append(rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(8, 0xee));
 	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
@@ -760,7 +805,7 @@ static bool test_rzil_vm_op_append() {
 }
 
 static bool test_rzil_vm_op_shiftr() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 
 	RzILOpPure *op = rz_il_op_new_shiftr(rz_il_op_new_b0(),
 		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
@@ -785,7 +830,7 @@ static bool test_rzil_vm_op_shiftr() {
 }
 
 static bool test_rzil_vm_op_shiftl() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 
 	RzILOpPure *op = rz_il_op_new_shiftl(rz_il_op_new_b0(),
 		rz_il_op_new_bitv_from_ut64(16, 0xc0ff), rz_il_op_new_bitv_from_ut64(4, 3));
@@ -810,7 +855,7 @@ static bool test_rzil_vm_op_shiftl() {
 }
 
 static bool test_rzil_vm_op_compare() {
-	RzILVM *vm = rz_il_vm_new(0, 8, true);
+	RzILVM *vm = rz_il_vm_new(0, 8, true, RZ_IL_EVENT_EXC_NONE);
 #define TEST_COMPARE(sign, name, lv, rv, expect) \
 	do { \
 		RzILOpBool *op = rz_il_op_new_##sign##name(rz_il_op_new_bitv_from_##sign##t64(32, lv), rz_il_op_new_bitv_from_##sign##t64(32, rv)); \
@@ -869,7 +914,7 @@ static bool test_rzil_vm_op_compare() {
 }
 
 static bool test_rzil_vm_op_float() {
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 
 	// let f = 2.14 in
 	//   (ite (is_fneg f)
@@ -918,7 +963,7 @@ static bool test_rzil_vm_op_float() {
 	// test float -> bool operations
 	RzFloat *pinf = rz_float_new_inf(RZ_FLOAT_IEEE754_BIN_64, false);
 	RzFloat *nan = rz_float_new_qnan(RZ_FLOAT_IEEE754_BIN_64);
-	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64);
+	RzFloat *zero = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_64, false);
 
 	// bind value to var, ownership transfered
 	rz_il_vm_create_global_var(vm, "inf", rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_64));
@@ -946,7 +991,7 @@ static bool test_rzil_vm_op_float() {
 
 static bool test_rzil_vm_op_fcast() {
 	// cast of float
-	RzILVM *vm = rz_il_vm_new(0, 64, false);
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
 	RzFloat *act_float;
 	RzFloat *expect_float;
 
@@ -1019,6 +1064,73 @@ static bool test_rzil_vm_op_fcast() {
 	mu_end;
 }
 
+static bool test_rzil_vm_op_fexcept() {
+	/**
+	 * test for execute fexcept op in rzil vm
+	 * 1. div by zero
+	 * 2. overflow
+	 * 3. underflow
+	 * 4. inexact result
+	 */
+
+	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+	RzFloat *result;
+	RzILBool *e;
+	RzILOpFloat *op;
+	RzILOpBool *eop;
+
+	// 1. Test division by zero
+	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1.0),
+		rz_il_op_new_float_from_f64(0.0));
+	result = rz_il_evaluate_float(vm, op);
+
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_DIV_ZERO, op);
+	e = rz_il_evaluate_bool(vm, eop);
+
+	mu_assert_true(rz_float_is_inf(result), "div by zero should result in infinity");
+	mu_assert_true(e->b, "div by zero exception should be set");
+	rz_float_free(result);
+	rz_il_op_pure_free(eop);
+
+	// 2. Test overflow
+	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1e308),
+		rz_il_op_new_float_from_f64(1e308));
+	result = rz_il_evaluate_float(vm, op);
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_OVERFLOW, op);
+	e = rz_il_evaluate_bool(vm, eop);
+
+	mu_assert_true(rz_float_is_inf(result), "overflow should result in infinity");
+	mu_assert_true(e->b, "overflow exception should be set");
+	rz_float_free(result);
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	// 3. Test underflow
+	op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1e-308),
+		rz_il_op_new_float_from_f64(1e-308));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_UNDERFLOW, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "underflow exception should be set");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	// 4. Test inexact result
+	op = rz_il_op_new_fdiv(RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f64(1.0),
+		rz_il_op_new_float_from_f64(3.0));
+	eop = rz_il_op_new_fexcept(RZ_FLOAT_E_INEXACT, op);
+	e = rz_il_evaluate_bool(vm, eop);
+	mu_assert_true(e->b, "inexact exception should be set");
+	rz_il_op_pure_free(eop);
+	rz_il_bool_free(e);
+
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rzil_vm_init);
 	mu_run_test(test_rzil_vm_global_vars);
@@ -1047,6 +1159,8 @@ bool all_tests() {
 	mu_run_test(test_rzil_vm_op_compare);
 	mu_run_test(test_rzil_vm_op_float);
 	mu_run_test(test_rzil_vm_op_fcast);
+	mu_run_test(test_rzil_vm_op_fexcept);
+	mu_run_test(test_rzil_vm_halt_on_exc);
 	return tests_passed != tests_run;
 }
 

@@ -1,0 +1,74 @@
+NAME=Search file error - no file
+FILE=malloc://64
+CMDS=<<EOF
+/F doesnt_exist
+EOF
+EXPECT_ERR=<<EOF
+ERROR: File 'doesnt_exist' does not exist.
+EOF
+RUN
+
+NAME=Search file error - INT_MAX+ len
+FILE=malloc://64
+CMDS=<<EOF
+/F bins/other/rz-diff/rz-diff_c_2 0x0 0xffffffff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: File sizes larger than INT_MAX are not supported currently.
+EOF
+RUN
+
+NAME=Search file error - Offset > file size
+FILE=malloc://64
+CMDS=<<EOF
+/F bins/other/rz-diff/rz-diff_c_2 0xfff
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Given offset 4095 exceeds file size 1.
+EOF
+RUN
+
+NAME=search by whole file
+FILE=malloc://64
+CMDS=<<EOF
+wx 90 @ 0x10
+/F bins/other/rz-diff/rz-diff_c_2
+EOF
+EXPECT=<<EOF
+0x00000010 1 hit.keyword_file.0
+EOF
+RUN
+
+NAME=search by rest of file
+FILE==
+CMDS=<<EOF
+wx 210a @ 0x10
+/F bins/elf/analysis/hello.raw 48
+EOF
+EXPECT=<<EOF
+0x00000010 2 hit.keyword_file.0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=search by rest of file dec/dec
+FILE==
+CMDS=<<EOF
+wx 0e @ 0x10
+/F bins/elf/analysis/hello.raw 1 1
+EOF
+EXPECT=<<EOF
+0x00000010 1 hit.keyword_file.0
+EOF
+RUN
+
+NAME=search by part of file dec/hex
+FILE==
+CMDS=<<EOF
+wx 8048 @ 0x10
+/F bins/elf/analysis/hello.raw 0x1c 0x2
+EOF
+EXPECT=<<EOF
+0x00000010 2 hit.keyword_file.0
+EOF
+RUN

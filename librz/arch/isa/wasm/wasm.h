@@ -385,6 +385,7 @@ typedef enum {
 	WASM_OP_I8X16NEG = 0x61,
 	WASM_OP_I8X16ANYTRUE = 0x62,
 	WASM_OP_I8X16ALLTRUE = 0x63,
+	WASM_OP_I8X16BITMASK = 0x64,
 	WASM_OP_I8X16NARROWI16X8S = 0x65,
 	WASM_OP_I8X16NARROWI16X8U = 0x66,
 	WASM_OP_I8X16SHL = 0x6b,
@@ -499,6 +500,13 @@ typedef struct {
 	size_t min, max;
 } WasmOpDef;
 
+typedef struct wasm_context_t {
+	ut64 scope_hint;
+	ut64 addr_old;
+} WasmContext;
+
+RZ_IPI bool wasm_init(void **user); ///< initialize a context of type WasmContext
+RZ_IPI bool wasm_fini(void *user); ///< free WasmContext*
 RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
 

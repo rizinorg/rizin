@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_mark.h>
+#include <rz_util/rz_str.h>
+#include <rz_config.h>
+#include <rz_util/ht_sp.h>
 #include <rz_util/rz_regex.h>
 #include <rz_vector.h>
 #include <rz_core.h>
@@ -24,6 +28,34 @@ static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 };
 
 extern bool rz_core_is_project(RzCore *core, const char *name);
+RZ_IPI bool rz_core_cmd_has_push(const char *s);
+
+static void hist_drop_push(RzLine *line) {
+	RzLineHistory *hist = &line->history;
+	if (!hist->data) {
+		return;
+	}
+	int top = hist->top;
+	int j = 0;
+	for (int i = 0; i < top; i++) {
+		char *s = hist->data[i];
+		if (!s) {
+			continue;
+		}
+		if (rz_core_cmd_has_push(s)) {
+			free(s);
+			continue;
+		}
+		hist->data[j++] = s;
+	}
+	for (int i = j; i < top; i++) {
+		hist->data[i] = NULL;
+	}
+	hist->top = j;
+	if (hist->index > hist->top) {
+		hist->index = hist->top;
+	}
+}
 
 /**
  * \brief  Prints a message definining the beginning of a task
@@ -104,6 +136,72 @@ RZ_API void rz_core_notify_error(RZ_NONNULL RzCore *core, RZ_NONNULL const char 
 		fprintf(stderr, "\n");
 	}
 	va_end(args);
+}
+
+/**
+ * \brief  Prints a message definining the beginning of a task
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_begin_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_begin(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which succeeded
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_done_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_done(core, "%s", text);
+}
+
+/**
+ * \brief  Prints a message definining the end of a task which errored
+ *
+ * \param  core The RzCore to use
+ * \param  text The message to notify
+ */
+RZ_API void rz_core_notify_error_str(RZ_NONNULL RzCore *core, RZ_NONNULL const char *text) {
+	rz_core_notify_error(core, "%s", text);
+}
+
+/**
+ * \brief  Internal logging function used by preprocessor macros
+ * \param  core     The RzCore to use
+ * \param  funcname Contains the function name of the calling function
+ * \param  filename Contains the filename that funcname is defined in
+ * \param  lineno   The line number that this log call is being made from in filename
+ * \param  level    Logging level for output
+ * \param  fmtstr   A printf like string
+
+  This function is used by the RZ_LOG_*_AFTER preprocessor macro for logging.
+*/
+RZ_API void rz_core_log_after(RZ_NONNULL RzCore *core, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *fmtstr, ...) {
+	va_list args;
+	const char *msg;
+
+	rz_return_if_fail(core);
+	va_start(args, fmtstr);
+	rz_vlog(funcname, filename, lineno, level, "", &msg, fmtstr, args);
+	va_end(args);
+	if (level == RZ_LOGLVL_WARN) {
+		rz_list_append(core->warnings_after, (char *)msg);
+	} else {
+		RZ_LOG_ERROR("rz_core_log_after: Not implemented");
+	}
+}
+
+RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core) {
+	rz_return_if_fail(core);
+	for (ut32 i = 0; i < rz_list_length(core->warnings_after); i++) {
+		char *warn_str = rz_list_pop_head(core->warnings_after);
+		RZ_LOG_WARN("%s", warn_str);
+		free(warn_str);
+	}
 }
 
 static int on_fcn_new(RzAnalysis *_analysis, void *_user, RzAnalysisFunction *fcn) {
@@ -271,7 +369,7 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr) {
 			return NULL;
 		}
 		rz_core_set_asmqjmps(core, t, sizeof(t), i);
-		return strdup(t);
+		return rz_str_dup(t);
 	}
 	return NULL;
 }
@@ -326,17 +424,7 @@ static const char *getName(RzCore *core, ut64 addr) {
 }
 
 static char *getNameDelta(RzCore *core, ut64 addr) {
-	RzFlagItem *item = rz_flag_get_at(core->flags, addr, true);
-	if (item) {
-		if (item->offset != addr) {
-			const char *name = core->flags->realnames
-				? item->realname
-				: item->name;
-			return rz_str_newf("%s+%" PFMT64u, name, addr - item->offset);
-		}
-		return strdup(item->name);
-	}
-	return NULL;
+	return rz_core_addr_get_flag_offset(core->flags, addr);
 }
 
 static void archbits(RzCore *core, ut64 addr) {
@@ -549,7 +637,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		break;
 	case '[': {
 		ut64 n = 0LL;
-		int refsz = core->rasm->bits / 8;
+		int refsz = rz_asm_get_bits(core->rasm) / 8;
 		const char *p = NULL;
 		if (strlen(str) > 5) {
 			p = strchr(str + 5, ':');
@@ -561,7 +649,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 		// push state
 		if (str[0] && str[1]) {
 			const char *q;
-			char *o = strdup(str + 1);
+			char *o = rz_str_dup(str + 1);
 			if (o) {
 				q = rz_num_calc_index(core->num, NULL);
 				if (q) {
@@ -604,7 +692,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				RZ_LOG_ERROR("core: expected '{' after 'k'.\n");
 				break;
 			}
-			bptr = strdup(str + 3);
+			bptr = rz_str_dup(str + 3);
 			ptr = strchr(bptr, '}');
 			if (!ptr) {
 				// invalid json
@@ -625,7 +713,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			free(out);
 			return ret;
 		case '{': // ${ev} eval var
-			bptr = strdup(str + 2);
+			bptr = rz_str_dup(str + 2);
 			ptr = strchr(bptr, '}');
 			if (ptr) {
 				ptr[0] = '\0';
@@ -640,7 +728,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return rz_cons_get_size(NULL);
 		case 'r': // $r
 			if (str[2] == '{') {
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					free(bptr);
@@ -658,7 +746,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			break;
 		case 'e': // $e
 			if (str[2] == '{') { // $e{flag} flag off + size
-				char *flagName = strdup(str + 3);
+				char *flagName = rz_str_dup(str + 3);
 				int flagLength = strlen(flagName);
 				if (flagLength > 0) {
 					flagName[flagLength - 1] = 0;
@@ -717,7 +805,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 			return core->blocksize;
 		case 's': // $s file size
 			if (str[2] == '{') { // $s{flag} flag size
-				bptr = strdup(str + 3);
+				bptr = rz_str_dup(str + 3);
 				ptr = strchr(bptr, '}');
 				if (!ptr) {
 					// invalid json
@@ -811,14 +899,7 @@ static ut64 num_callback(RzNum *userptr, const char *str, int *ok) {
 				}
 				return fcn->addr;
 			}
-#if 0
-			ut64 addr = rz_analysis_fcn_label_get (core->analysis, core->offset, str);
-			if (addr != 0) {
-				ret = addr;
-			} else {
-				...
-			}
-#endif
+
 			if ((flag = rz_flag_get(core->flags, str))) {
 				ret = flag->offset;
 				if (ok) {
@@ -894,10 +975,39 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	return rz_str_ncpy(buf, ptr, len - 1);
 }
 
+static void append_marks(RzStrBuf *sb, RzList /*<RzMarkItem *>*/ *list, ut64 addr, bool is_start) {
+	RzListIter *it;
+	RzMarkItem *bi;
+	bool first = (rz_strbuf_length(sb) == 0);
+
+	rz_list_foreach (list, it, bi) {
+		if ((is_start && addr == bi->from) || (!is_start && addr == bi->to)) {
+			if (!first)
+				rz_strbuf_append(sb, "  ; ");
+			rz_strbuf_appendf(sb, is_start ? "[s] %s [0x%" PFMT64x "-0x%" PFMT64x "]" : "[e] %s [0x%" PFMT64x "-0x%" PFMT64x "]",
+				bi->name, bi->from, bi->to);
+			first = false;
+		}
+	}
+}
+
 static const char *rz_core_print_offname(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
-	RzFlagItem *item = rz_flag_get_i(c->flags, addr);
-	return item ? item->name : NULL;
+	RzStrBuf *sb = rz_strbuf_new("");
+	RzList *all = rz_mark_get_all_off(c->marks, addr);
+
+	append_marks(sb, all, addr, true);
+	append_marks(sb, all, addr, false);
+
+	rz_list_free(all);
+
+	if (rz_strbuf_length(sb) == 0) {
+		RzFlagItem *item = rz_flag_get_i(c->flags, addr);
+		if (item)
+			rz_strbuf_set(sb, item->name);
+	}
+
+	return rz_strbuf_drain(sb);
 }
 
 static int rz_core_print_offsize(void *p, ut64 addr) {
@@ -942,8 +1052,9 @@ static void update_sdb(RzCore *core) {
 	// sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	// sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	// SDB// syscall/
-	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
+	RzSyscall *syscall = rz_asm_get_syscall(core->rasm);
+	if (core->rasm && syscall && syscall->db) {
+		sdb_ns_set(DB, "syscall", syscall->db);
 	}
 	d = sdb_ns(DB, "debug", 1);
 	if (core->dbg->sgnls) {
@@ -957,9 +1068,8 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 	}
 
 	RzUtilStrScanOptions opt = {
-		.buf_size = size,
-		.max_uni_blocks = 4,
-		.min_str_length = 4,
+		.max_str_length = size,
+		.min_str_length = RZ_BIN_STRING_SEARCH_MIN_STRING,
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = false,
 	};
@@ -971,9 +1081,9 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 	return *dstr;
 }
 
-RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
+RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, RzOutputMode mode) {
 	if (mode) {
-		PJ *pj = (mode == 'j') ? pj_new() : NULL;
+		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 		const int hex_depth = 1; // r_config_get_i (core->config, "hex.depth");
 		char *res = rz_core_analysis_hasrefs_to_depth(core, value, pj, hex_depth);
 		if (pj) {
@@ -983,7 +1093,7 @@ RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode) {
 		return res;
 	}
 	RzFlagItem *fi = rz_flag_get_i(core->flags, value);
-	return fi ? strdup(fi->name) : NULL;
+	return fi ? rz_str_dup(fi->name) : NULL;
 }
 
 static char *getvalue(ut64 value, int bits) {
@@ -1020,7 +1130,7 @@ static char *getvalue(ut64 value, int bits) {
  * no json support
 */
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth) {
-	const int bits = core->rasm->bits;
+	const int bits = rz_asm_get_bits(core->rasm);
 	const bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	rz_return_val_if_fail(core, NULL);
 	RzStrBuf *s = rz_strbuf_new(NULL);
@@ -1164,14 +1274,15 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				rz_strbuf_appendf(s, "%sW%s ", c, cend);
 			}
 			if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
-				RzAsmOp op;
+				RzAsmOp op = { 0 };
 				ut8 buf[32];
 				rz_strbuf_appendf(s, "%sX%s ", c, cend);
 				/* instruction disassembly */
-				rz_io_read_at(core->io, value, buf, sizeof(buf));
+				rz_io_read_at_mapped(core->io, value, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, value);
 				rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
 				rz_strbuf_appendf(s, "'%s' ", rz_asm_op_get_asm(&op));
+				rz_asm_op_fini(&op);
 				/* get library name */
 				{ // NOTE: dup for mapname?
 					RzDebugMap *map;
@@ -1187,7 +1298,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 				}
 			} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 				ut8 buf[8];
-				if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
+				if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf))) {
 					ut64 n = rz_read_ble(buf, big_endian, bits);
 					rz_strbuf_appendf(s, "0x%" PFMT64x " ", n);
 				}
@@ -1203,7 +1314,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 		const char *c = rz_config_get_i(core->config, "scr.color") ? core->cons->context->pal.ai_ascii : "";
 		const char *cend = (c && *c) ? Color_RESET : "";
 		RzDetectedString *dstr = NULL;
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf)) &&
+		if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf)) &&
 			get_string(buf, sizeof(buf), &dstr, encoding, big_endian)) {
 			if (pj) {
 				pj_ks(pj, "string", dstr->string);
@@ -1216,7 +1327,7 @@ RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj,
 	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[8];
-		if (rz_io_read_at(core->io, value, buf, sizeof(buf))) {
+		if (rz_io_read_at_mapped(core->io, value, buf, sizeof(buf))) {
 			ut64 n = rz_read_ble(buf, big_endian, bits);
 			if (n != value) {
 				if (pj) {
@@ -1248,10 +1359,10 @@ RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr) {
 			return rz_str_newf("%s %s", type, cmt);
 		}
 		if (type) {
-			return strdup(type);
+			return rz_str_dup(type);
 		}
 		if (cmt) {
-			return strdup(cmt);
+			return rz_str_dup(cmt);
 		}
 	}
 	return NULL;
@@ -1298,7 +1409,7 @@ static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 }
 
 static bool rz_core_analysis_read_at(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len) {
-	return rz_io_read_at(analysis->iob.io, addr, buf, len);
+	return rz_io_read_at_mapped(analysis->iob.io, addr, buf, len);
 }
 
 static void rz_core_break(RzCore *core) {
@@ -1323,7 +1434,7 @@ static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return rz_core_analysis_optype_colorfor((RzCore *)user, addr, verbose);
 }
 
-static char *hasrefs_cb(void *user, ut64 addr, int mode) {
+static char *hasrefs_cb(void *user, ut64 addr, RzOutputMode mode) {
 	return rz_core_analysis_hasrefs((RzCore *)user, addr, mode);
 }
 
@@ -1411,11 +1522,52 @@ static void bp_maps_sync(void *user) {
 	}
 }
 
-static int bp_bits_at(ut64 addr, void *user) {
-	RzCore *core = user;
-	int r = 0;
-	rz_core_arch_bits_at(core, addr, &r, NULL);
-	return r ? r : core->analysis->bits;
+static void core_set_rz_asm_by_hint(RzCore *core, ut64 addr) {
+	int bits = 0;
+	const char *arch = NULL;
+	rz_core_arch_bits_at(core, addr, &bits, &arch);
+	rz_asm_set_arch(core->rasm, arch, bits);
+}
+
+static void core_set_rz_asm_by_config(RzCore *core) {
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	int bits = rz_config_get_i(core->config, "asm.bits");
+	rz_asm_set_arch(core->rasm, arch, bits);
+}
+
+static RzStrBuf *bp_get_sw_breakpoint_at(ut64 addr, void *user) {
+	RzCore *core = (RzCore *)user;
+	RzStrBuf *opcode = NULL;
+	RzAsmOp op = { 0 };
+
+	core_set_rz_asm_by_hint(core, addr);
+
+	rz_asm_op_init(&op);
+	if (rz_asm_software_breakpoint(core->rasm, &op) &&
+		(opcode = rz_strbuf_new(NULL))) {
+		rz_strbuf_copy(opcode, &op.buf);
+	}
+	rz_asm_op_fini(&op);
+
+	core_set_rz_asm_by_config(core);
+	return opcode;
+}
+
+static size_t bp_get_sw_breakpoint_size_at(ut64 addr, void *user) {
+	RzCore *core = (RzCore *)user;
+	size_t length = 0;
+	RzAsmOp op = { 0 };
+
+	core_set_rz_asm_by_hint(core, addr);
+
+	rz_asm_op_init(&op);
+	if (rz_asm_software_breakpoint(core->rasm, &op)) {
+		length = rz_strbuf_length(&op.buf);
+	}
+	rz_asm_op_fini(&op);
+
+	core_set_rz_asm_by_config(core);
+	return length;
 }
 
 static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
@@ -1471,11 +1623,12 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_seek_reset(core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
-	core->curtheme = strdup("default");
+	core->curtheme = rz_str_dup("default");
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
+	core->plugin_configs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_config_free);
 	core->http_up = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
@@ -1515,6 +1668,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 	core->crypto = rz_crypto_new();
+	core->warnings_after = rz_list_newf((RzListFree)free);
 
 	core->fixedarch = false;
 	core->fixedbits = false;
@@ -1537,6 +1691,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 #endif
 		char *history = rz_path_home_history();
 		rz_line_hist_load(core->cons->line, history);
+		hist_drop_push(core->cons->line);
 		free(history);
 	}
 	core->print->cons = core->cons;
@@ -1551,17 +1706,21 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_lang_define(core->lang, "RzCore", "core", core);
 	rz_lang_set_user_ptr(core->lang, core);
 	core->rasm = rz_asm_new();
-	core->rasm->num = core->num;
-	core->rasm->core = core;
-	core->analysis = rz_analysis_new();
-	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
+	rz_asm_set_core(core->rasm, core);
+	// initialize path
+	core->sys_path = rz_path_new();
+	char *sdb_types_path = rz_path_system(core->sys_path, RZ_SDB_TYPES);
+	core->analysis = rz_analysis_new(sdb_types_path);
+	if (sdb_types_path) {
+		free(sdb_types_path);
+	}
 	core->analysis->ev = core->ev;
 	core->analysis->read_at = rz_core_analysis_read_at;
 	core->analysis->flag_get = rz_core_flag_get_by_spaces;
 	core->analysis->cb.on_fcn_new = on_fcn_new;
 	core->analysis->cb.on_fcn_delete = on_fcn_delete;
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
-	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
+	rz_asm_set_syscall(core->rasm, rz_syscall_ref(core->analysis->syscall)); // BIND syscall analysis/asm
 	core->analysis->core = core;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
@@ -1582,6 +1741,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->ff = 1;
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();
+	core->marks = rz_mark_new();
 	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
@@ -1593,8 +1753,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	}
 	core->hash = rz_hash_new();
 
-	rz_bin_bind(core->bin, &(core->rasm->binb));
-	rz_bin_bind(core->bin, &(core->analysis->binb));
+	rz_bin_bind(core->bin, rz_asm_get_bin_bind(core->rasm));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 
 	rz_io_bind(core->io, &(core->search->iob));
@@ -1623,7 +1782,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 		.user = core,
 		.is_mapped = bp_is_mapped,
 		.maps_sync = bp_maps_sync,
-		.bits_at = bp_bits_at
+		.get_sw_breakpoint_at = bp_get_sw_breakpoint_at,
+		.get_sw_breakpoint_size_at = bp_get_sw_breakpoint_size_at,
 	};
 	core->dbg = rz_debug_new(&bp_ctx);
 
@@ -1658,10 +1818,9 @@ RZ_API bool rz_core_init(RzCore *core) {
 		}
 	}
 	rz_config_set(core->config, "asm.arch", RZ_SYS_ARCH);
-	rz_bp_use(core->dbg->bp, RZ_SYS_ARCH);
 	update_sdb(core);
 	{
-		char *a = rz_path_system(RZ_FLAGS);
+		char *a = rz_path_system(core->sys_path, RZ_FLAGS);
 		if (a) {
 			char *file = rz_file_path_join(a, "tags.rz");
 			(void)rz_core_run_script(core, file);
@@ -1716,7 +1875,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->stkcmd);
 	RZ_FREE(c->block);
 
-	RZ_FREE_CUSTOM(c->gadgets, rz_list_free);
 	RZ_FREE_CUSTOM(c->num, rz_num_free);
 	RZ_FREE(c->table_query);
 	RZ_FREE_CUSTOM(c->io, rz_io_free);
@@ -1751,7 +1909,10 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_seek_free(c);
 	RZ_FREE(c->rtr_host);
 	RZ_FREE(c->curtheme);
-	rz_core_visual_free(c->visual);
+	RZ_FREE_CUSTOM(c->visual, rz_core_visual_free);
+	RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
+	RZ_FREE_CUSTOM(c->sys_path, rz_path_free);
+	RZ_FREE_CUSTOM(c->marks, rz_mark_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {
@@ -1809,13 +1970,10 @@ static bool prompt_add_offset(RzCore *core, RzStrBuf *sb, bool add_sep) {
 		rz_strbuf_append(sb, ":");
 	}
 	if (rz_config_get_b(core->config, "scr.prompt.flag")) {
-		const RzFlagItem *f = rz_flag_get_at(core->flags, core->offset, true);
-		if (f) {
-			if (f->offset < core->offset) {
-				rz_strbuf_appendf(sb, "%s + %" PFMT64u, f->name, core->offset - f->offset);
-			} else {
-				rz_strbuf_appendf(sb, "%s", f->name);
-			}
+		char *flag_desc = rz_core_addr_get_flag_offset_prompt(core->flags, core->offset);
+		if (flag_desc) {
+			rz_strbuf_append(sb, flag_desc);
+			free(flag_desc);
 			if (rz_config_get_b(core->config, "scr.prompt.flag.only")) {
 				return true;
 			}
@@ -1894,10 +2052,7 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 		return rz_core_prompt_exec(r);
 	}
 	free(r->cmdqueue);
-	r->cmdqueue = strdup(line);
-	if (r->scr_gadgets && *line && *line != 'q') {
-		rz_core_gadget_print(r);
-	}
+	r->cmdqueue = rz_str_dup(line);
 	r->num->value = r->rc;
 	return true;
 }
@@ -1911,6 +2066,7 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		rz_cons_zero();
 	}
+	rz_core_print_warnings_after(r);
 	return ret;
 }
 
@@ -1940,9 +2096,9 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	RzAsmOp op = { 0 };
 	ut8 buf[64];
 	rz_asm_set_pc(core->rasm, addr);
-	rz_io_read_at(core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 	int ret = rz_asm_disassemble(core->rasm, &op, buf, sizeof(buf));
-	char *str = (ret > 0) ? strdup(rz_strbuf_get(&op.buf_asm)) : NULL;
+	char *str = (ret > 0) ? rz_str_dup(rz_strbuf_get(&op.buf_asm)) : NULL;
 	rz_asm_op_fini(&op);
 	return str;
 }
@@ -1950,275 +2106,9 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
 	RzAnalysisOp *op = rz_analysis_op_new();
-	rz_io_read_at(core->io, addr, buf, sizeof(buf));
+	rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf));
 	rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), mask);
 	return op;
-}
-
-typedef struct {
-	RzSocket *fd;
-	RzSocket *client;
-	bool listener;
-} RzIORap;
-
-static void rap_break(void *u) {
-	RzIORap *rior = (RzIORap *)u;
-	if (u) {
-		rz_socket_close(rior->fd);
-		rior->fd = NULL;
-	}
-}
-
-// TODO: PLEASE move into core/io/rap? */
-// TODO: use static buffer instead of mallocs all the time. it's network!
-RZ_API bool rz_core_serve(RzCore *core, RzIODesc *file) {
-	// TODO: use rz_socket_rap_server API instead of duplicating the logic
-	ut8 cmd, flg, *ptr = NULL, buf[1024];
-	int i, pipefd = -1;
-	ut64 x;
-
-	RzIORap *rior = (RzIORap *)file->data;
-	if (!rior || !rior->fd) {
-		RZ_LOG_ERROR("core: rap: cannot listen.\n");
-		return false;
-	}
-	RzSocket *fd = rior->fd;
-	RZ_LOG_WARN("RAP Server started (rap.loop=%s)\n",
-		rz_config_get(core->config, "rap.loop"));
-	rz_cons_break_push(rap_break, rior);
-reaccept:
-	while (!rz_cons_is_breaked()) {
-		RzSocket *c = rz_socket_accept(fd);
-		if (!c) {
-			break;
-		}
-		if (rz_cons_is_breaked()) {
-			goto out_of_function;
-		}
-		if (!c) {
-			RZ_LOG_ERROR("core: rap: cannot accept\n");
-			rz_socket_free(c);
-			goto out_of_function;
-		}
-		RZ_LOG_INFO("core: rap: client connected\n");
-		for (; !rz_cons_is_breaked();) {
-			if (!rz_socket_read_block(c, &cmd, 1)) {
-				RZ_LOG_ERROR("core: rap: connection closed\n");
-				if (rz_config_get_i(core->config, "rap.loop")) {
-					RZ_LOG_INFO("core: rap: waiting for new connection\n");
-					rz_socket_free(c);
-					goto reaccept;
-				}
-				goto out_of_function;
-			}
-			switch (cmd) {
-			case RAP_PACKET_OPEN:
-				rz_socket_read_block(c, &flg, 1); // flags
-				RZ_LOG_DEBUG("open (%d): ", cmd);
-				rz_socket_read_block(c, &cmd, 1); // len
-				pipefd = -1;
-				if (UT8_ADD_OVFCHK(cmd, 1)) {
-					goto out_of_function;
-				}
-				ptr = malloc((size_t)cmd + 1);
-				if (!ptr) {
-					RZ_LOG_ERROR("core: rap: cannot malloc in rmt-open len = %d\n", cmd);
-				} else {
-					ut64 baddr = rz_config_get_i(core->config, "bin.laddr");
-					rz_socket_read_block(c, ptr, cmd);
-					ptr[cmd] = 0;
-					ut32 perm = RZ_PERM_R;
-					if (flg & RZ_PERM_W) {
-						perm |= RZ_PERM_W;
-					}
-					if (rz_core_file_open(core, (const char *)ptr, perm, 0)) {
-						int fd = rz_io_fd_get_current(core->io);
-						rz_core_bin_load(core, NULL, baddr);
-						rz_io_map_add(core->io, fd, perm, 0, 0, rz_io_fd_size(core->io, fd));
-						if (core->file) {
-							pipefd = fd;
-						} else {
-							pipefd = -1;
-						}
-						RZ_LOG_DEBUG("(flags: %d) len: %d filename: '%s'\n",
-							flg, cmd, ptr); // config.file);
-					} else {
-						RZ_LOG_ERROR("core: rap: cannot open file (%s)\n", ptr);
-						rz_socket_close(c);
-						if (rz_config_get_i(core->config, "rap.loop")) {
-							RZ_LOG_INFO("core: rap: waiting for new connection\n");
-							rz_socket_free(c);
-							goto reaccept;
-						}
-						goto out_of_function; // XXX: Close connection and goto accept
-					}
-				}
-				buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
-				rz_write_be32(buf + 1, pipefd);
-				rz_socket_write(c, buf, 5);
-				rz_socket_flush(c);
-				RZ_FREE(ptr);
-				break;
-			case RAP_PACKET_READ:
-				rz_socket_read_block(c, (ut8 *)&buf, 4);
-				i = rz_read_be32(buf);
-				ptr = (ut8 *)malloc(i + core->blocksize + 5);
-				if (ptr) {
-					rz_core_block_read(core);
-					ptr[0] = RAP_PACKET_READ | RAP_PACKET_REPLY;
-					if (i > RAP_PACKET_MAX) {
-						i = RAP_PACKET_MAX;
-					}
-					if (i > core->blocksize) {
-						rz_core_block_size(core, i);
-					}
-					if (i + 128 < core->blocksize) {
-						rz_core_block_size(core, i);
-					}
-					rz_write_be32(ptr + 1, i);
-					memcpy(ptr + 5, core->block, i); // core->blocksize);
-					rz_socket_write(c, ptr, i + 5);
-					rz_socket_flush(c);
-					RZ_FREE(ptr);
-				} else {
-					RZ_LOG_ERROR("core: rap: cannot read %d byte(s)\n", i);
-					rz_socket_free(c);
-					// TODO: reply error here
-					goto out_of_function;
-				}
-				break;
-			case RAP_PACKET_CMD: {
-				char *cmd = NULL, *cmd_output = NULL;
-				char bufr[8], *bufw = NULL;
-				ut32 cmd_len = 0;
-				int i;
-
-				/* read */
-				rz_socket_read_block(c, (ut8 *)&bufr, 4);
-				i = rz_read_be32(bufr);
-				if (i > 0 && i < RAP_PACKET_MAX) {
-					if ((cmd = malloc(i + 1))) {
-						rz_socket_read_block(c, (ut8 *)cmd, i);
-						cmd[i] = '\0';
-						int scr_interactive = rz_config_get_i(core->config, "scr.interactive");
-						rz_config_set_i(core->config, "scr.interactive", 0);
-						cmd_output = rz_core_cmd_str(core, cmd);
-						rz_config_set_i(core->config, "scr.interactive", scr_interactive);
-						free(cmd);
-					} else {
-						RZ_LOG_ERROR("core: rap: cannot allocate %u bytes\n", (i + 1));
-					}
-				} else {
-					RZ_LOG_ERROR("core: rap: invalid length '%u'\n", i);
-				}
-				/* write */
-				if (cmd_output) {
-					cmd_len = strlen(cmd_output) + 1;
-				} else {
-					cmd_output = strdup("");
-					cmd_len = 0;
-				}
-				bufw = malloc(cmd_len + 5);
-				bufw[0] = (ut8)(RAP_PACKET_CMD | RAP_PACKET_REPLY);
-				rz_write_be32(bufw + 1, cmd_len);
-				memcpy(bufw + 5, cmd_output, cmd_len);
-				rz_socket_write(c, bufw, cmd_len + 5);
-				rz_socket_flush(c);
-				free(bufw);
-				free(cmd_output);
-				break;
-			}
-			case RAP_PACKET_WRITE:
-				rz_socket_read_block(c, buf, 4);
-				x = rz_read_at_be32(buf, 0);
-				ptr = malloc(x);
-				rz_socket_read_block(c, ptr, x);
-				int ret = rz_core_write_at(core, core->offset, ptr, x);
-				buf[0] = RAP_PACKET_WRITE | RAP_PACKET_REPLY;
-				rz_write_be32(buf + 1, ret);
-				rz_socket_write(c, buf, 5);
-				rz_socket_flush(c);
-				RZ_FREE(ptr);
-				break;
-			case RAP_PACKET_SEEK:
-				rz_socket_read_block(c, buf, 9);
-				x = rz_read_at_be64(buf, 1);
-				if (buf[0] == 2) {
-					if (core->file) {
-						x = rz_io_fd_size(core->io, core->file->fd);
-					} else {
-						x = 0;
-					}
-				} else {
-					if (buf[0] == 0) {
-						rz_core_seek(core, x, true); // buf[0]);
-					}
-					x = core->offset;
-				}
-				buf[0] = RAP_PACKET_SEEK | RAP_PACKET_REPLY;
-				rz_write_be64(buf + 1, x);
-				rz_socket_write(c, buf, 9);
-				rz_socket_flush(c);
-				break;
-			case RAP_PACKET_CLOSE:
-				// XXX : proper shutdown
-				rz_socket_read_block(c, buf, 4);
-				i = rz_read_be32(buf);
-				{
-					// FIXME: Use rz_socket_close
-					int ret = close(i);
-					rz_write_be32(buf + 1, ret);
-					buf[0] = RAP_PACKET_CLOSE | RAP_PACKET_REPLY;
-					rz_socket_write(c, buf, 5);
-					rz_socket_flush(c);
-				}
-				break;
-			default:
-				if (cmd == 'G') {
-					// silly http emulation over rap://
-					char line[256] = { 0 };
-					rz_socket_read_block(c, (ut8 *)line, sizeof(line));
-					if (!strncmp(line, "ET /cmd/", 8)) {
-						char *cmd = line + 8;
-						char *http = strstr(cmd, "HTTP");
-						if (http) {
-							*http = 0;
-							http--;
-							if (*http == ' ') {
-								*http = 0;
-							}
-						}
-						rz_str_uri_decode(cmd);
-						char *res = rz_core_cmd_str(core, cmd);
-						if (res) {
-							rz_socket_printf(c, "HTTP/1.0 %d %s\r\n%s"
-									    "Connection: close\r\nContent-Length: %d\r\n\r\n",
-								200, "OK", "", -1); // strlen (res));
-							rz_socket_write(c, res, strlen(res));
-							free(res);
-						}
-						rz_socket_flush(c);
-						rz_socket_close(c);
-					}
-				} else {
-					RZ_LOG_ERROR("core: rap: unknown command 0x%02x\n", cmd);
-					rz_socket_close(c);
-					RZ_FREE(ptr);
-				}
-				if (rz_config_get_i(core->config, "rap.loop")) {
-					RZ_LOG_INFO("core: rap: waiting for new connection\n");
-					rz_socket_free(c);
-					goto reaccept;
-				}
-				goto out_of_function;
-			}
-		}
-		RZ_LOG_INFO("core: rap: client disconnected\n");
-		rz_socket_free(c);
-	}
-out_of_function:
-	rz_cons_break_pop();
-	return false;
 }
 
 RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallback cb) {
@@ -2233,7 +2123,7 @@ RZ_API int rz_core_search_cb(RzCore *core, ut64 from, ut64 to, RzCoreSearchCallb
 		if (delta < len) {
 			len = (int)delta;
 		}
-		if (!rz_io_read_at(core->io, from, buf, len)) {
+		if (!rz_io_read_at_mapped(core->io, from, buf, len)) {
 			RZ_LOG_ERROR("core: cannot read at 0x%" PFMT64x "\n", from);
 			break;
 		}
@@ -2259,7 +2149,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	const char *editor = rz_config_get(core->config, "cfg.editor");
 	if (RZ_STR_ISEMPTY(editor)) {
-		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor");
+		RZ_LOG_ERROR("core: please set \"cfg.editor\" to run the editor\n");
 		return NULL;
 	}
 	char *name = NULL, *ret = NULL;
@@ -2267,7 +2157,7 @@ RZ_API RZ_OWN char *rz_core_editor(const RzCore *core, RZ_NULLABLE const char *f
 
 	bool readonly = false;
 	if (file && *file != '*') {
-		name = strdup(file);
+		name = rz_str_dup(file);
 		fd = rz_sys_open(file, O_RDWR, 0644);
 		if (fd == -1) {
 			fd = rz_sys_open(file, O_RDWR | O_CREAT, 0644);
@@ -2351,11 +2241,12 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 		RZ_LOG_ERROR("architecture '%s' is not yet supported!\n", core->analysis->cur->arch);
 		return 0;
 	}
-
-	num = rz_syscall_get_num(core->analysis->syscall, name);
+	if (!rz_syscall_get_num(core->analysis->syscall, name, &num)) {
+		return 0;
+	}
 
 	// bits check
-	switch (core->rasm->bits) {
+	switch (rz_asm_get_bits(core->rasm)) {
 	case 32:
 		if (strcmp(name, "setup") && !num) {
 			RZ_LOG_ERROR("core: syscall not found!\n");
@@ -2394,30 +2285,47 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 
 RZ_API RzTable *rz_core_table(RzCore *core) {
 	RzTable *table = rz_table_new();
-	if (table) {
-		table->cons = core->cons;
+	if (!table || !core->cons) {
+		return table;
+	}
+	if (core->cons->use_utf8_curvy) {
+		rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
+	} else if (core->cons->use_utf8) {
+		rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8);
 	}
 	return table;
 }
 
-RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state, const char *license) {
+static RzCmdStatus core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state) {
+	const char *name = rz_str_get(cp->name);
+	const char *desc = rz_str_get(cp->desc);
+	const char *author = rz_str_get(cp->author);
+	const char *version = rz_str_get(cp->version);
+	const char *license = rz_str_get(cp->license);
+
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(state->d.t, "sssss", name, license, author, version, desc);
+		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
-		pj_ks(pj, "name", cp->name);
-		pj_ks(pj, "description", cp->desc);
-		pj_ks(pj, "author", cp->author);
-		pj_ks(pj, "version", cp->version);
+		pj_ks(pj, "name", name);
+		pj_ks(pj, "description", desc);
+		pj_ks(pj, "author", author);
+		pj_ks(pj, "version", version);
 		pj_ks(pj, "license", license);
 		pj_end(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_cons_printf("%s: %s (Made by %s, v%s, %s)\n",
-			cp->name, cp->desc, cp->author, cp->version, license);
+			name, desc, author, version, license);
 		break;
 	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(name);
+		break;
 	default: {
 		rz_warn_if_reached();
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -2427,22 +2335,22 @@ RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput 
 }
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
-	RzListIter *iter;
-	RzCorePlugin *cp;
+	RzIterator *iter = ht_sp_as_iter(core->plugins);
+	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->plugins, iter, cp) {
-		const char *license = cp->license
-			? cp->license
-			: "???";
-		status = rz_core_core_plugin_print(cp, state, license);
+	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "author", "version", "description");
+	rz_iterator_foreach(iter, val) {
+		RzCorePlugin *cp = *val;
+		status = core_core_plugin_print(cp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
+	rz_iterator_free(iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

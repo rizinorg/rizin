@@ -6,6 +6,7 @@
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_bitvector.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/ht_sp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,7 +137,7 @@ typedef struct rz_reg_set_t {
 	RzRegArena *arena;
 	RzList /*<RzRegArena *>*/ *pool; ///< RzRegArena
 	RzList /*<RzRegItem *>*/ *regs; ///< RzRegItem
-	HtPP *ht_regs; ///< name:RzRegItem
+	HtSP *ht_regs; ///< name:RzRegItem
 	RzListIter /*<RzRegArena *>*/ *cur;
 	ut32 maskregstype; ///< which type of regs has this register set (logic mask with 1 << RZ_REG_TYPE_XXX)
 } RzRegSet;
@@ -184,14 +185,15 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name);
 RZ_API ut64 rz_reg_getv_by_role_or_name(RzReg *reg, const char *name);
 RZ_API ut64 rz_reg_setv(RzReg *reg, const char *name, ut64 val);
 RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32);
+RZ_API bool rz_reg_is_role(const RzReg *reg, const char *name, RzRegisterId id);
 RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64);
 RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *name);
 RZ_API const char *rz_reg_get_type(int idx);
-RZ_API const char *rz_reg_get_name(RzReg *reg, int kind);
+RZ_API const char *rz_reg_get_name(const RzReg *reg, int kind);
 RZ_API RzRegItem *rz_reg_get_by_role(RzReg *reg, RzRegisterId role);
 RZ_API const char *rz_reg_get_role(int role);
 RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str);
-RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
+RZ_API RzRegItem *rz_reg_get(const RzReg *reg, const char *name, int type);
 RZ_API RzRegItem *rz_reg_get_by_role_or_name(RzReg *reg, const char *name);
 RZ_API const RzList /*<RzRegItem *>*/ *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);

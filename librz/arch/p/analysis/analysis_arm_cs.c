@@ -4,6 +4,16 @@
 #include <rz_analysis.h>
 #include <rz_lib.h>
 #include <rz_util/ht_uu.h>
+
+#if CC_SUPPORTS_W_ENUM_COMPARE
+#pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
+#pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <rz_util/rz_assert.h>
@@ -93,8 +103,10 @@ static const char *shift_type_name(arm_shifter type) {
 		return "lsr_reg";
 	case ARM_SFT_ROR_REG:
 		return "ror_reg";
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
 		return "rrx_reg";
+#endif
 	default:
 		return "";
 	}
@@ -181,249 +193,254 @@ static const char *vector_data_type_name(arm_vectordata_type type) {
 	}
 }
 
-static bool cc_holds_cond(CS_aarch64_cc() cc) {
+static bool cc_holds_cond(arm64_cc cc) {
 #if CS_NEXT_VERSION >= 6
-	return (cc != CS_AARCH64CC(_Invalid) && cc != CS_AARCH64CC(_AL) && cc != CS_AARCH64CC(_NV));
+	return (cc != ARM64CC_Invalid && cc != ARM64CC_AL && cc != ARM64CC_NV);
 #else
-	return (cc != CS_AARCH64CC(_INVALID) && cc != CS_AARCH64CC(_AL) && cc != CS_AARCH64CC(_NV));
+	return (cc != ARM64_CC_INVALID && cc != ARM64_CC_AL && cc != ARM64_CC_NV);
 #endif
 }
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *arm_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_arm *x = &insn->detail->arm;
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_arm_op *op = x->operands + i;
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case ARM_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case ARM_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base != ARM_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
 			if (op->mem.index != ARM_REG_INVALID) {
-				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
+				rz_structured_data_map_add_string(operand, "index", cs_reg_name(handle, op->mem.index));
 			}
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_ki(pj, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
 		case ARM_OP_FP:
-			pj_ks(pj, "type", "fp");
-			pj_kd(pj, "value", op->fp);
+			rz_structured_data_map_add_string(operand, "type", "fp");
+			rz_structured_data_map_add_double(operand, "value", op->fp);
 			break;
 		case ARM_OP_CIMM:
-			pj_ks(pj, "type", "cimm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "cimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_PIMM:
-			pj_ks(pj, "type", "pimm");
-			pj_ki(pj, "value", op->imm);
+			rz_structured_data_map_add_string(operand, "type", "pimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 		case ARM_OP_SETEND:
-			pj_ks(pj, "type", "setend");
+			rz_structured_data_map_add_string(operand, "type", "setend");
 			switch (op->setend) {
 			case ARM_SETEND_BE:
-				pj_ks(pj, "value", "be");
+				rz_structured_data_map_add_string(operand, "value", "be");
 				break;
 			case ARM_SETEND_LE:
-				pj_ks(pj, "value", "le");
+				rz_structured_data_map_add_string(operand, "value", "le");
 				break;
 			default:
-				pj_ks(pj, "value", "invalid");
+				rz_structured_data_map_add_string(operand, "value", "invalid");
 				break;
 			}
 			break;
 		case ARM_OP_SYSREG: {
-			pj_ks(pj, "type", "sysreg");
+			rz_structured_data_map_add_string(operand, "type", "sysreg");
 			const char *reg = cs_reg_name(handle, op->reg);
 			if (reg) {
-				pj_ks(pj, "value", reg);
+				rz_structured_data_map_add_string(operand, "value", reg);
 			}
 			break;
 		}
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM_SFT_INVALID) {
-			pj_ko(pj, "shift");
+			RzStructuredData *shift = rz_structured_data_map_add_map(operand, "shift");
 			switch (op->shift.type) {
 			case ARM_SFT_ASR:
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSR:
 			case ARM_SFT_ROR:
 			case ARM_SFT_RRX:
-				pj_ks(pj, "type", shift_type_name(op->shift.type));
-				pj_kn(pj, "value", (ut64)op->shift.value);
+				rz_structured_data_map_add_string(shift, "type", shift_type_name(op->shift.type));
+				rz_structured_data_map_add_unsigned(shift, "value", (ut64)op->shift.value, false);
 				break;
 			case ARM_SFT_ASR_REG:
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 			case ARM_SFT_RRX_REG:
-				pj_ks(pj, "type", shift_type_name(op->shift.type));
-				pj_ks(pj, "value", cs_reg_name(handle, op->shift.value));
+#endif
+				rz_structured_data_map_add_string(shift, "type", shift_type_name(op->shift.type));
+				rz_structured_data_map_add_string(shift, "value", cs_reg_name(handle, op->shift.value));
 				break;
 			default:
 				break;
 			}
-			pj_end(pj); /* o shift */
 		}
 		if (op->vector_index != -1) {
-			pj_ki(pj, "vector_index", op->vector_index);
+			rz_structured_data_map_add_signed(operand, "vector_index", op->vector_index);
 		}
 		if (op->subtracted) {
-			pj_kb(pj, "subtracted", true);
+			rz_structured_data_map_add_boolean(operand, "subtracted", true);
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
 	if (x->usermode) {
-		pj_kb(pj, "usermode", true);
+		rz_structured_data_map_add_boolean(opex, "usermode", true);
 	}
 	if (x->update_flags) {
-		pj_kb(pj, "update_flags", true);
+		rz_structured_data_map_add_boolean(opex, "update_flags", true);
 	}
 #if CS_NEXT_VERSION >= 6
 	if (insn->detail->writeback) {
 #else
 	if (x->writeback) {
 #endif
-		pj_kb(pj, "writeback", true);
+		rz_structured_data_map_add_boolean(opex, "writeback", true);
 	}
 	if (x->vector_size) {
-		pj_ki(pj, "vector_size", x->vector_size);
+		rz_structured_data_map_add_signed(opex, "vector_size", x->vector_size);
 	}
 	if (x->vector_data != ARM_VECTORDATA_INVALID) {
-		pj_ks(pj, "vector_data", vector_data_type_name(x->vector_data));
+		rz_structured_data_map_add_string(opex, "vector_data", vector_data_type_name(x->vector_data));
 	}
 	if (x->cps_mode != ARM_CPSMODE_INVALID) {
-		pj_ki(pj, "cps_mode", x->cps_mode);
+		rz_structured_data_map_add_signed(opex, "cps_mode", x->cps_mode);
 	}
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
-		pj_ki(pj, "cps_flag", x->cps_flag);
+		rz_structured_data_map_add_signed(opex, "cps_flag", x->cps_flag);
 	}
 #if CS_NEXT_VERSION >= 6
 	if (x->cc != ARMCC_UNDEF && x->cc != ARMCC_AL) {
-		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", ARMCondCodeToString(x->cc));
 	}
 #else
 	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
-		pj_ks(pj, "cc", ARMCondCodeToString(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", ARMCondCodeToString(x->cc));
 	}
 #endif
 	if (x->mem_barrier != ARM_MB_RESERVED_0) {
-		pj_ki(pj, "mem_barrier", x->mem_barrier - 1);
+		rz_structured_data_map_add_signed(opex, "mem_barrier", x->mem_barrier - 1);
 	}
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
-static const char *cc_name64(CS_aarch64_cc() cc) {
+static const char *cc_name64(arm64_cc cc) {
 	switch (cc) {
-	case CS_AARCH64CC(_EQ): // Equal
+	case ARM64_CC_EQ: // Equal
 		return "eq";
-	case CS_AARCH64CC(_NE): // Not equal:                 Not equal, or unordered
+	case ARM64_CC_NE: // Not equal:                 Not equal, or unordered
 		return "ne";
-	case CS_AARCH64CC(_HS): // Unsigned higher or same:   >, ==, or unordered
+	case ARM64_CC_HS: // Unsigned higher or same:   >, ==, or unordered
 		return "hs";
-	case CS_AARCH64CC(_LO): // Unsigned lower or same:    Less than
+	case ARM64_CC_LO: // Unsigned lower or same:    Less than
 		return "lo";
-	case CS_AARCH64CC(_MI): // Minus, negative:           Less than
+	case ARM64_CC_MI: // Minus, negative:           Less than
 		return "mi";
-	case CS_AARCH64CC(_PL): // Plus, positive or zero:    >, ==, or unordered
+	case ARM64_CC_PL: // Plus, positive or zero:    >, ==, or unordered
 		return "pl";
-	case CS_AARCH64CC(_VS): // Overflow:                  Unordered
+	case ARM64_CC_VS: // Overflow:                  Unordered
 		return "vs";
-	case CS_AARCH64CC(_VC): // No overflow:               Ordered
+	case ARM64_CC_VC: // No overflow:               Ordered
 		return "vc";
-	case CS_AARCH64CC(_HI): // Unsigned higher:           Greater than, or unordered
+	case ARM64_CC_HI: // Unsigned higher:           Greater than, or unordered
 		return "hi";
-	case CS_AARCH64CC(_LS): // Unsigned lower or same:    Less than or equal
+	case ARM64_CC_LS: // Unsigned lower or same:    Less than or equal
 		return "ls";
-	case CS_AARCH64CC(_GE): // Greater than or equal:     Greater than or equal
+	case ARM64_CC_GE: // Greater than or equal:     Greater than or equal
 		return "ge";
-	case CS_AARCH64CC(_LT): // Less than:                 Less than, or unordered
+	case ARM64_CC_LT: // Less than:                 Less than, or unordered
 		return "lt";
-	case CS_AARCH64CC(_GT): // Signed greater than:       Greater than
+	case ARM64_CC_GT: // Signed greater than:       Greater than
 		return "gt";
-	case CS_AARCH64CC(_LE): // Signed less than or equal: <, ==, or unordered
+	case ARM64_CC_LE: // Signed less than or equal: <, ==, or unordered
 		return "le";
 	default:
 		return "";
 	}
 }
 
-static const char *extender_name(CS_aarch64_extender() extender) {
+static const char *extender_name(arm64_extender extender) {
 	switch (extender) {
-	case CS_AARCH64(_EXT_UXTB):
+	case ARM64_EXT_UXTB:
 		return "uxtb";
-	case CS_AARCH64(_EXT_UXTH):
+	case ARM64_EXT_UXTH:
 		return "uxth";
-	case CS_AARCH64(_EXT_UXTW):
+	case ARM64_EXT_UXTW:
 		return "uxtw";
-	case CS_AARCH64(_EXT_UXTX):
+	case ARM64_EXT_UXTX:
 		return "uxtx";
-	case CS_AARCH64(_EXT_SXTB):
+	case ARM64_EXT_SXTB:
 		return "sxtb";
-	case CS_AARCH64(_EXT_SXTH):
+	case ARM64_EXT_SXTH:
 		return "sxth";
-	case CS_AARCH64(_EXT_SXTW):
+	case ARM64_EXT_SXTW:
 		return "sxtw";
-	case CS_AARCH64(_EXT_SXTX):
+	case ARM64_EXT_SXTX:
 		return "sxtx";
 	default:
 		return "";
 	}
 }
 
-static const char *vas_name(CS_aarch64_vas() vas) {
+static const char *vas_name(arm64_vas vas) {
 	switch (vas) {
-	case CS_AARCH64_VL_(8B):
+	case ARM64_VAS_8B:
 		return "8b";
-	case CS_AARCH64_VL_(16B):
+	case ARM64_VAS_16B:
 		return "16b";
-	case CS_AARCH64_VL_(4H):
+	case ARM64_VAS_4H:
 		return "4h";
-	case CS_AARCH64_VL_(8H):
+	case ARM64_VAS_8H:
 		return "8h";
-	case CS_AARCH64_VL_(2S):
+	case ARM64_VAS_2S:
 		return "2s";
-	case CS_AARCH64_VL_(4S):
+	case ARM64_VAS_4S:
 		return "4s";
-	case CS_AARCH64_VL_(2D):
+	case ARM64_VAS_2D:
 		return "2d";
-	case CS_AARCH64_VL_(1D):
+	case ARM64_VAS_1D:
 		return "1d";
-	case CS_AARCH64_VL_(1Q):
+	case ARM64_VAS_1Q:
 		return "1q";
 #if CS_API_MAJOR > 4 && CS_NEXT_VERSION < 6
-	case CS_AARCH64_VL_(1B):
+	case ARM64_VAS_1B:
 		return "8b";
-	case CS_AARCH64_VL_(4B):
+	case ARM64_VAS_4B:
 		return "8b";
-	case CS_AARCH64_VL_(2H):
+	case ARM64_VAS_2H:
 		return "2h";
-	case CS_AARCH64_VL_(1H):
+	case ARM64_VAS_1H:
 		return "1h";
-	case CS_AARCH64_VL_(1S):
+	case ARM64_VAS_1S:
 		return "1s";
 #endif
 	default:
@@ -448,187 +465,235 @@ static const char *vess_name(arm64_vess vess) {
 }
 #endif
 
-static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *aarch64_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
-	pj_ka(pj, "operands");
-	CS_cs_aarch64() *x = &insn->detail->CS_aarch64_;
-	for (i = 0; i < x->op_count; i++) {
-		CS_aarch64_op() *op = x->operands + i;
-		pj_o(pj);
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
+	cs_arm64 *x = &insn->detail->arm64;
+	for (st32 i = 0; i < x->op_count; i++) {
+		cs_arm64_op *op = x->operands + i;
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
-		case CS_AARCH64(_OP_REG):
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+		case ARM64_OP_REG:
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
-		case CS_AARCH64(_OP_REG_MRS):
-			pj_ks(pj, "type", "reg_mrs");
+		case ARM64_OP_REG_MRS:
+			rz_structured_data_map_add_string(operand, "type", "reg_mrs");
 			// TODO value
 			break;
-		case CS_AARCH64(_OP_REG_MSR):
-			pj_ks(pj, "type", "reg_msr");
+		case ARM64_OP_REG_MSR:
+			rz_structured_data_map_add_string(operand, "type", "reg_msr");
 			// TODO value
 			break;
-		case CS_AARCH64(_OP_IMM):
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", op->imm);
+		case ARM64_OP_IMM:
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
-		case CS_AARCH64(_OP_MEM):
-			pj_ks(pj, "type", "mem");
-			if (op->mem.base != CS_AARCH64(_REG_INVALID)) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+		case ARM64_OP_MEM:
+			rz_structured_data_map_add_string(operand, "type", "mem");
+			if (op->mem.base != ARM64_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "base", cs_reg_name(handle, op->mem.base));
 			}
-			if (op->mem.index != CS_AARCH64(_REG_INVALID)) {
-				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
+			if (op->mem.index != ARM64_REG_INVALID) {
+				rz_structured_data_map_add_string(operand, "index", cs_reg_name(handle, op->mem.index));
 			}
-			pj_ki(pj, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
 			break;
-		case CS_AARCH64(_OP_FP):
-			pj_ks(pj, "type", "fp");
-			pj_kd(pj, "value", op->fp);
+		case ARM64_OP_FP:
+			rz_structured_data_map_add_string(operand, "type", "fp");
+			rz_structured_data_map_add_double(operand, "value", op->fp);
 			break;
-		case CS_AARCH64(_OP_CIMM):
-			pj_ks(pj, "type", "cimm");
-			pj_kN(pj, "value", op->imm);
+		case ARM64_OP_CIMM:
+			rz_structured_data_map_add_string(operand, "type", "cimm");
+			rz_structured_data_map_add_signed(operand, "value", op->imm);
 			break;
 #if CS_NEXT_VERSION < 6
 		case ARM64_OP_PSTATE:
-			pj_ks(pj, "type", "pstate");
+			rz_structured_data_map_add_string(operand, "type", "pstate");
 			switch (op->pstate) {
 			case ARM64_PSTATE_SPSEL:
-				pj_ks(pj, "value", "spsel");
+				rz_structured_data_map_add_string(operand, "value", "spsel");
 				break;
 			case ARM64_PSTATE_DAIFSET:
-				pj_ks(pj, "value", "daifset");
+				rz_structured_data_map_add_string(operand, "value", "daifset");
 				break;
 			case ARM64_PSTATE_DAIFCLR:
-				pj_ks(pj, "value", "daifclr");
+				rz_structured_data_map_add_string(operand, "value", "daifclr");
 				break;
 			default:
-				pj_ki(pj, "value", op->pstate);
+				rz_structured_data_map_add_unsigned(operand, "value", op->pstate, true);
 			}
 			break;
 		case ARM64_OP_SYS:
-			pj_ks(pj, "type", "sys");
-			pj_kn(pj, "value", (ut64)op->sys);
+			rz_structured_data_map_add_string(operand, "type", "sys");
+			rz_structured_data_map_add_unsigned(operand, "value", (ut64)op->sys, false);
 			break;
 		case ARM64_OP_PREFETCH:
-			pj_ks(pj, "type", "prefetch");
-			pj_ki(pj, "value", op->prefetch - 1);
+			rz_structured_data_map_add_string(operand, "type", "prefetch");
+			rz_structured_data_map_add_unsigned(operand, "value", op->prefetch - 1, false);
 			break;
 		case ARM64_OP_BARRIER:
-			pj_ks(pj, "type", "prefetch");
-			pj_ki(pj, "value", op->barrier - 1);
+			rz_structured_data_map_add_string(operand, "type", "prefetch");
+			rz_structured_data_map_add_unsigned(operand, "value", op->barrier - 1, false);
 			break;
 #else
-		case AArch64_OP_SYSALIAS:
+		case AARCH64_OP_SYSREG: {
+			rz_structured_data_map_add_string(operand, "type", "sysreg");
+			rz_structured_data_map_add_unsigned(operand, "sysreg", op->sysop.reg.sysreg, true);
+			rz_structured_data_map_add_unsigned(operand, "tlbi", op->sysop.reg.tlbi, true);
+			rz_structured_data_map_add_unsigned(operand, "ic", op->sysop.reg.ic, true);
+			break;
+		}
+		case AARCH64_OP_SYSIMM: {
+			rz_structured_data_map_add_string(operand, "type", "sysimm");
+			switch (op->sysop.imm.dbnxs) {
+			case AARCH64_DBNXS_ISHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "ishnxs");
+				break;
+			case AARCH64_DBNXS_NSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "nshnxs");
+				break;
+			case AARCH64_DBNXS_OSHNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "oshnxs");
+				break;
+			case AARCH64_DBNXS_SYNXS:
+				rz_structured_data_map_add_string(operand, "dbnxs", "synxs");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "dbnxs", op->sysop.imm.dbnxs, true);
+				break;
+			}
+			switch (op->sysop.imm.exactfpimm) {
+			case AARCH64_EXACTFPIMM_HALF:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "half");
+				break;
+			case AARCH64_EXACTFPIMM_ONE:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "one");
+				break;
+			case AARCH64_EXACTFPIMM_TWO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "two");
+				break;
+			case AARCH64_EXACTFPIMM_ZERO:
+				rz_structured_data_map_add_string(operand, "exactfpimm", "zero");
+				break;
+			default:
+				rz_structured_data_map_add_unsigned(operand, "exactfpimm", op->sysop.imm.exactfpimm, true);
+				break;
+			}
+			break;
+		}
+		case AARCH64_OP_SYSALIAS:
 			switch (op->sysop.sub_type) {
 			default:
-				pj_ks(pj, "type", "sys");
-				pj_kn(pj, "value", op->sysop.alias.raw_val);
+				rz_structured_data_map_add_string(operand, "type", "sys");
+				rz_structured_data_map_add_unsigned(operand, "value", op->sysop.alias.raw_val, false);
 				break;
-			case AArch64_OP_PSTATEIMM0_1:
-				pj_ks(pj, "type", "pstate");
-				pj_ki(pj, "value", op->sysop.alias.pstateimm0_1);
+			case AARCH64_OP_PSTATEIMM0_1:
+				rz_structured_data_map_add_string(operand, "type", "pstate");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.pstateimm0_1);
 				break;
-			case AArch64_OP_PSTATEIMM0_15:
-				pj_ks(pj, "type", "pstate");
+			case AARCH64_OP_PSTATEIMM0_15:
+				rz_structured_data_map_add_string(operand, "type", "pstate");
 				switch (op->sysop.alias.pstateimm0_15) {
-				case AArch64_PSTATEIMM0_15_SPSEL:
-					pj_ks(pj, "value", "spsel");
+				case AARCH64_PSTATEIMM0_15_SPSEL:
+					rz_structured_data_map_add_string(operand, "value", "spsel");
 					break;
-				case AArch64_PSTATEIMM0_15_DAIFSET:
-					pj_ks(pj, "value", "daifset");
+				case AARCH64_PSTATEIMM0_15_DAIFSET:
+					rz_structured_data_map_add_string(operand, "value", "daifset");
 					break;
-				case AArch64_PSTATEIMM0_15_DAIFCLR:
-					pj_ks(pj, "value", "daifclr");
+				case AARCH64_PSTATEIMM0_15_DAIFCLR:
+					rz_structured_data_map_add_string(operand, "value", "daifclr");
 					break;
 				default:
-					pj_ki(pj, "value", op->sysop.alias.pstateimm0_15);
+					rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.pstateimm0_15);
 				}
 				break;
-			case AArch64_OP_PRFM:
-				pj_ks(pj, "type", "prefetch");
-				pj_ki(pj, "value", op->sysop.alias.prfm);
+			case AARCH64_OP_PRFM:
+				rz_structured_data_map_add_string(operand, "type", "prefetch");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.prfm);
 				break;
-			case AArch64_OP_DB:
-				pj_ks(pj, "type", "prefetch");
-				pj_ki(pj, "value", op->sysop.alias.db);
+			case AARCH64_OP_DB:
+				rz_structured_data_map_add_string(operand, "type", "prefetch");
+				rz_structured_data_map_add_signed(operand, "value", op->sysop.alias.db);
 				break;
 			}
 			break;
 #endif
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		if (op->shift.type != CS_AARCH64(_SFT_INVALID)) {
-			pj_ko(pj, "shift");
+		if (op->shift.type != ARM64_SFT_INVALID) {
+			RzStructuredData *shift = rz_structured_data_map_add_map(operand, "shift");
 			switch (op->shift.type) {
-			case CS_AARCH64(_SFT_LSL):
-				pj_ks(pj, "type", "lsl");
+			case ARM64_SFT_LSL:
+				rz_structured_data_map_add_string(shift, "type", "lsl");
 				break;
-			case CS_AARCH64(_SFT_MSL):
-				pj_ks(pj, "type", "msl");
+			case ARM64_SFT_MSL:
+				rz_structured_data_map_add_string(shift, "type", "msl");
 				break;
-			case CS_AARCH64(_SFT_LSR):
-				pj_ks(pj, "type", "lsr");
+			case ARM64_SFT_LSR:
+				rz_structured_data_map_add_string(shift, "type", "lsr");
 				break;
-			case CS_AARCH64(_SFT_ASR):
-				pj_ks(pj, "type", "asr");
+			case ARM64_SFT_ASR:
+				rz_structured_data_map_add_string(shift, "type", "asr");
 				break;
-			case CS_AARCH64(_SFT_ROR):
-				pj_ks(pj, "type", "ror");
+			case ARM64_SFT_ROR:
+				rz_structured_data_map_add_string(shift, "type", "ror");
 				break;
 			default:
 				break;
 			}
-			pj_kn(pj, "value", (ut64)op->shift.value);
-			pj_end(pj);
+			rz_structured_data_map_add_unsigned(shift, "value", (ut64)op->shift.value, false);
 		}
-		if (op->ext != CS_AARCH64(_EXT_INVALID)) {
-			pj_ks(pj, "ext", extender_name(op->ext));
+		if (op->ext != ARM64_EXT_INVALID) {
+			rz_structured_data_map_add_string(operand, "ext", extender_name(op->ext));
 		}
 		if (op->vector_index != -1) {
-			pj_ki(pj, "vector_index", op->vector_index);
+			rz_structured_data_map_add_signed(operand, "vector_index", op->vector_index);
 		}
 #if CS_NEXT_VERSION < 6
-		if (op->vas != CS_AARCH64_VL_(INVALID)) {
+		if (op->vas != ARM64_VAS_INVALID) {
 #else
-		if (op->vas != AArch64Layout_Invalid) {
+		if (op->vas != AARCH64LAYOUT_INVALID) {
 #endif
-			pj_ks(pj, "vas", vas_name(op->vas));
+			rz_structured_data_map_add_string(operand, "vas", vas_name(op->vas));
 		}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
-			pj_ks(pj, "vess", vess_name(op->vess));
+			rz_structured_data_map_add_string(operand, "vess", vess_name(op->vess));
 		}
 #endif
-		pj_end(pj);
 	}
-	pj_end(pj);
 	if (x->update_flags) {
-		pj_kb(pj, "update_flags", true);
+		rz_structured_data_map_add_boolean(opex, "update_flags", true);
 	}
 #if CS_NEXT_VERSION < 6
 	if (x->writeback) {
 #else
 	if (insn->detail->writeback) {
 #endif
-		pj_kb(pj, "writeback", true);
+		rz_structured_data_map_add_boolean(opex, "writeback", true);
 	}
 	if (cc_holds_cond(x->cc)) {
-		pj_ks(pj, "cc", cc_name64(x->cc));
+		rz_structured_data_map_add_string(opex, "cc", cc_name64(x->cc));
 	}
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int cond_cs2rz_32(int cc) {
@@ -660,27 +725,27 @@ static int cond_cs2rz_32(int cc) {
 }
 
 static int cond_cs2rz_64(int cc) {
-	if (cc == CS_AARCH64CC(_AL) || cc < 0) {
+	if (cc == ARM64_CC_AL || cc < 0) {
 		cc = RZ_TYPE_COND_AL;
 	} else {
 		switch (cc) {
-		case CS_AARCH64CC(_EQ): cc = RZ_TYPE_COND_EQ; break;
-		case CS_AARCH64CC(_NE): cc = RZ_TYPE_COND_NE; break;
-		case CS_AARCH64CC(_HS): cc = RZ_TYPE_COND_HS; break;
-		case CS_AARCH64CC(_LO): cc = RZ_TYPE_COND_LO; break;
-		case CS_AARCH64CC(_MI): cc = RZ_TYPE_COND_MI; break;
-		case CS_AARCH64CC(_PL): cc = RZ_TYPE_COND_PL; break;
-		case CS_AARCH64CC(_VS): cc = RZ_TYPE_COND_VS; break;
-		case CS_AARCH64CC(_VC): cc = RZ_TYPE_COND_VC; break;
-		case CS_AARCH64CC(_HI): cc = RZ_TYPE_COND_HI; break;
-		case CS_AARCH64CC(_LS): cc = RZ_TYPE_COND_LS; break;
-		case CS_AARCH64CC(_GE): cc = RZ_TYPE_COND_GE; break;
-		case CS_AARCH64CC(_LT): cc = RZ_TYPE_COND_LT; break;
-		case CS_AARCH64CC(_GT): cc = RZ_TYPE_COND_GT; break;
-		case CS_AARCH64CC(_LE): cc = RZ_TYPE_COND_LE; break;
-		case CS_AARCH64CC(_NV): cc = RZ_TYPE_COND_AL; break;
+		case ARM64_CC_EQ: cc = RZ_TYPE_COND_EQ; break;
+		case ARM64_CC_NE: cc = RZ_TYPE_COND_NE; break;
+		case ARM64_CC_HS: cc = RZ_TYPE_COND_HS; break;
+		case ARM64_CC_LO: cc = RZ_TYPE_COND_LO; break;
+		case ARM64_CC_MI: cc = RZ_TYPE_COND_MI; break;
+		case ARM64_CC_PL: cc = RZ_TYPE_COND_PL; break;
+		case ARM64_CC_VS: cc = RZ_TYPE_COND_VS; break;
+		case ARM64_CC_VC: cc = RZ_TYPE_COND_VC; break;
+		case ARM64_CC_HI: cc = RZ_TYPE_COND_HI; break;
+		case ARM64_CC_LS: cc = RZ_TYPE_COND_LS; break;
+		case ARM64_CC_GE: cc = RZ_TYPE_COND_GE; break;
+		case ARM64_CC_LT: cc = RZ_TYPE_COND_LT; break;
+		case ARM64_CC_GT: cc = RZ_TYPE_COND_GT; break;
+		case ARM64_CC_LE: cc = RZ_TYPE_COND_LE; break;
 #if CS_NEXT_VERSION >= 6
-		case CS_AARCH64CC(_Invalid): cc = RZ_TYPE_COND_AL; break;
+		case ARM64CC_NV: cc = RZ_TYPE_COND_AL; break;
+		case ARM64CC_Invalid: cc = RZ_TYPE_COND_AL; break;
 #endif
 		}
 	}
@@ -689,23 +754,23 @@ static int cond_cs2rz_64(int cc) {
 
 #if CS_NEXT_VERSION >= 6
 static bool is_system_hint(const cs_insn *insn) {
-	rz_return_val_if_fail(insn && insn->id == AArch64_INS_HINT, false);
+	rz_return_val_if_fail(insn && insn->id == AARCH64_INS_HINT, false);
 	switch (insn->alias_id) {
 	default:
 		return false;
-	case AArch64_INS_ALIAS_PACIA1716:
-	case AArch64_INS_ALIAS_PACIASP:
-	case AArch64_INS_ALIAS_PACIAZ:
-	case AArch64_INS_ALIAS_PACIB1716:
-	case AArch64_INS_ALIAS_PACIBSP:
-	case AArch64_INS_ALIAS_PACIBZ:
-	case AArch64_INS_ALIAS_AUTIA1716:
-	case AArch64_INS_ALIAS_AUTIASP:
-	case AArch64_INS_ALIAS_AUTIAZ:
-	case AArch64_INS_ALIAS_AUTIB1716:
-	case AArch64_INS_ALIAS_AUTIBSP:
-	case AArch64_INS_ALIAS_AUTIBZ:
-	case AArch64_INS_ALIAS_XPACLRI:
+	case AARCH64_INS_ALIAS_PACIA1716:
+	case AARCH64_INS_ALIAS_PACIASP:
+	case AARCH64_INS_ALIAS_PACIAZ:
+	case AARCH64_INS_ALIAS_PACIB1716:
+	case AARCH64_INS_ALIAS_PACIBSP:
+	case AARCH64_INS_ALIAS_PACIBZ:
+	case AARCH64_INS_ALIAS_AUTIA1716:
+	case AARCH64_INS_ALIAS_AUTIASP:
+	case AARCH64_INS_ALIAS_AUTIAZ:
+	case AARCH64_INS_ALIAS_AUTIB1716:
+	case AARCH64_INS_ALIAS_AUTIBSP:
+	case AARCH64_INS_ALIAS_AUTIBZ:
+	case AARCH64_INS_ALIAS_XPACLRI:
 		return true;
 	}
 }
@@ -732,34 +797,34 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	}
 #else
 	/* grab family */
-	if (cs_insn_group(handle, insn, AArch64_FEATURE_HasAES)) {
+	if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASAES)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasCRC)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASCRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, AArch64_GRP_PRIVILEGE)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasNEON)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasMTE)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASMTE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
-	} else if (cs_insn_group(handle, insn, AArch64_FEATURE_HasFPARMv8)) {
+	} else if (cs_insn_group(handle, insn, AARCH64_FEATURE_HASFPARMV8)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	}
 #endif
 
-	op->cond = cond_cs2rz_64(insn->detail->CS_aarch64_.cc);
+	op->cond = cond_cs2rz_64(insn->detail->arm64.cc);
 	if (op->cond == RZ_TYPE_COND_NV) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return;
 	}
 
-	switch (insn->detail->CS_aarch64_.cc) {
-	case CS_AARCH64CC(_GE):
-	case CS_AARCH64CC(_GT):
-	case CS_AARCH64CC(_LE):
-	case CS_AARCH64CC(_LT):
+	switch (insn->detail->arm64.cc) {
+	case ARM64_CC_GE:
+	case ARM64_CC_GT:
+	case ARM64_CC_LE:
+	case ARM64_CC_LT:
 		op->sign = true;
 		break;
 	default:
@@ -768,58 +833,58 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 
 	switch (insn->id) {
 #if CS_API_MAJOR > 4
-	case CS_AARCH64(_INS_PACDA):
-	case CS_AARCH64(_INS_PACDB):
-	case CS_AARCH64(_INS_PACDZA):
-	case CS_AARCH64(_INS_PACDZB):
-	case CS_AARCH64(_INS_PACGA):
-	case CS_AARCH64(_INS_PACIA):
-	case CS_AARCH64(_INS_PACIB):
+	case ARM64_INS_PACDA:
+	case ARM64_INS_PACDB:
+	case ARM64_INS_PACDZA:
+	case ARM64_INS_PACDZB:
+	case ARM64_INS_PACGA:
+	case ARM64_INS_PACIA:
+	case ARM64_INS_PACIB:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_PACIA1716):
-	case CS_AARCH64(_INS_PACIASP):
-	case CS_AARCH64(_INS_PACIAZ):
-	case CS_AARCH64(_INS_PACIB1716):
-	case CS_AARCH64(_INS_PACIBSP):
-	case CS_AARCH64(_INS_PACIBZ):
+	case ARM64_INS_PACIA1716:
+	case ARM64_INS_PACIASP:
+	case ARM64_INS_PACIAZ:
+	case ARM64_INS_PACIB1716:
+	case ARM64_INS_PACIBSP:
+	case ARM64_INS_PACIBZ:
 #endif
-	case CS_AARCH64(_INS_PACIZA):
-	case CS_AARCH64(_INS_PACIZB):
-	case CS_AARCH64(_INS_AUTDA):
-	case CS_AARCH64(_INS_AUTDB):
-	case CS_AARCH64(_INS_AUTDZA):
-	case CS_AARCH64(_INS_AUTDZB):
-	case CS_AARCH64(_INS_AUTIA):
-	case CS_AARCH64(_INS_AUTIB):
+	case ARM64_INS_PACIZA:
+	case ARM64_INS_PACIZB:
+	case ARM64_INS_AUTDA:
+	case ARM64_INS_AUTDB:
+	case ARM64_INS_AUTDZA:
+	case ARM64_INS_AUTDZB:
+	case ARM64_INS_AUTIA:
+	case ARM64_INS_AUTIB:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_AUTIA1716):
-	case CS_AARCH64(_INS_AUTIASP):
-	case CS_AARCH64(_INS_AUTIAZ):
-	case CS_AARCH64(_INS_AUTIB1716):
-	case CS_AARCH64(_INS_AUTIBSP):
-	case CS_AARCH64(_INS_AUTIBZ):
-	case CS_AARCH64(_INS_XPACLRI):
+	case ARM64_INS_AUTIA1716:
+	case ARM64_INS_AUTIASP:
+	case ARM64_INS_AUTIAZ:
+	case ARM64_INS_AUTIB1716:
+	case ARM64_INS_AUTIBSP:
+	case ARM64_INS_AUTIBZ:
+	case ARM64_INS_XPACLRI:
 #endif
-	case CS_AARCH64(_INS_AUTIZA):
-	case CS_AARCH64(_INS_AUTIZB):
-	case CS_AARCH64(_INS_XPACD):
-	case CS_AARCH64(_INS_XPACI):
+	case ARM64_INS_AUTIZA:
+	case ARM64_INS_AUTIZB:
+	case ARM64_INS_XPACD:
+	case ARM64_INS_XPACI:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		break;
 #endif
-	case CS_AARCH64(_INS_SVC):
+	case ARM64_INS_SVC:
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->val = IMM64(0);
 		break;
-	case CS_AARCH64(_INS_ADRP):
-	case CS_AARCH64(_INS_ADR):
+	case ARM64_INS_ADRP:
+	case ARM64_INS_ADR:
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		op->ptr = IMM64(1);
 		break;
-	case CS_AARCH64(_INS_HINT):
+	case ARM64_INS_HINT:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_NOP):
+	case ARM64_INS_NOP:
 #else
 		if (is_system_hint(insn)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
@@ -830,13 +895,13 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
-	case CS_AARCH64(_INS_SUB):
-		if (ISREG64(0) && REGID64(0) == CS_AARCH64(_REG_SP)) {
+	case ARM64_INS_SUB:
+		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
 				// sub sp, 0x54
 				op->stackptr = IMM(1);
-			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == CS_AARCH64(_REG_SP)) {
+			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
 				// sub sp, sp, 0x10
 				op->stackptr = IMM64(2);
 			}
@@ -844,31 +909,31 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		op->cycles = 1;
 		/* fallthru */
-	case CS_AARCH64(_INS_MSUB):
+	case ARM64_INS_MSUB:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
-	case CS_AARCH64(_INS_FDIV):
-	case CS_AARCH64(_INS_SDIV):
-	case CS_AARCH64(_INS_UDIV):
+	case ARM64_INS_FDIV:
+	case ARM64_INS_SDIV:
+	case ARM64_INS_UDIV:
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
-	case CS_AARCH64(_INS_MUL):
-	case CS_AARCH64(_INS_SMULL):
-	case CS_AARCH64(_INS_FMUL):
-	case CS_AARCH64(_INS_UMULL):
+	case ARM64_INS_MUL:
+	case ARM64_INS_SMULL:
+	case ARM64_INS_FMUL:
+	case ARM64_INS_UMULL:
 		/* TODO: if next instruction is also a MUL, cycles are /=2 */
 		/* also known as Register Indexing Addressing */
 		op->cycles = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
-	case CS_AARCH64(_INS_ADD):
-		if (ISREG64(0) && REGID64(0) == CS_AARCH64(_REG_SP)) {
+	case ARM64_INS_ADD:
+		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (ISIMM64(1)) {
 				// add sp, 0x54
 				op->stackptr = -(st64)IMM(1);
-			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == CS_AARCH64(_REG_SP)) {
+			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
 				// add sp, sp, 0x10
 				op->stackptr = -(st64)IMM64(2);
 			}
@@ -878,24 +943,24 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		op->cycles = 1;
 		/* fallthru */
-	case CS_AARCH64(_INS_ADC):
-	// case CS_AARCH64(_INS_ADCS):
-	case CS_AARCH64(_INS_UMADDL):
-	case CS_AARCH64(_INS_SMADDL):
-	case CS_AARCH64(_INS_FMADD):
-	case CS_AARCH64(_INS_MADD):
+	case ARM64_INS_ADC:
+	// case ARM64_INS_ADCS:
+	case ARM64_INS_UMADDL:
+	case ARM64_INS_SMADDL:
+	case ARM64_INS_FMADD:
+	case ARM64_INS_MADD:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
-	case CS_AARCH64(_INS_CSEL):
-	case CS_AARCH64(_INS_FCSEL):
+	case ARM64_INS_CSEL:
+	case ARM64_INS_FCSEL:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_CSET):
-	case CS_AARCH64(_INS_CINC):
+	case ARM64_INS_CSET:
+	case ARM64_INS_CINC:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
-	case CS_AARCH64(_INS_MOV):
-		if (REGID64(0) == CS_AARCH64(_REG_SP)) {
+	case ARM64_INS_MOV:
+		if (REGID64(0) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_RESET;
 			op->stackptr = 0;
 		}
@@ -904,106 +969,106 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		op->cycles = 1;
 		/* fallthru */
-	case CS_AARCH64(_INS_MOVI):
-	case CS_AARCH64(_INS_MOVK):
-	case CS_AARCH64(_INS_MOVN):
-	case CS_AARCH64(_INS_SMOV):
-	case CS_AARCH64(_INS_UMOV):
-	case CS_AARCH64(_INS_FMOV):
-	case CS_AARCH64(_INS_UBFM):
-	case CS_AARCH64(_INS_BIC):
+	case ARM64_INS_MOVI:
+	case ARM64_INS_MOVK:
+	case ARM64_INS_MOVN:
+	case ARM64_INS_SMOV:
+	case ARM64_INS_UMOV:
+	case ARM64_INS_FMOV:
+	case ARM64_INS_UBFM:
+	case ARM64_INS_BIC:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_SBFX):
-	case CS_AARCH64(_INS_UBFX):
-	case CS_AARCH64(_INS_SBFIZ):
-	case CS_AARCH64(_INS_UBFIZ):
-	case CS_AARCH64(_INS_BFI):
-	case CS_AARCH64(_INS_BFXIL):
+	case ARM64_INS_SBFX:
+	case ARM64_INS_UBFX:
+	case ARM64_INS_SBFIZ:
+	case ARM64_INS_UBFIZ:
+	case ARM64_INS_BFI:
+	case ARM64_INS_BFXIL:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case CS_AARCH64(_INS_MRS):
-	case CS_AARCH64(_INS_MSR):
+	case ARM64_INS_MRS:
+	case ARM64_INS_MSR:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
-	case CS_AARCH64(_INS_MOVZ):
+	case ARM64_INS_MOVZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 8;
 		op->val = IMM64(1);
 		break;
-	case CS_AARCH64(_INS_UXTB):
-	case CS_AARCH64(_INS_SXTB):
+	case ARM64_INS_UXTB:
+	case ARM64_INS_SXTB:
 		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
 		op->ptr = 0LL;
 		op->ptrsize = 1;
 		break;
-	case CS_AARCH64(_INS_UXTH):
-	case CS_AARCH64(_INS_SXTH):
+	case ARM64_INS_UXTH:
+	case ARM64_INS_SXTH:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
-	case CS_AARCH64(_INS_UXTW):
-	case CS_AARCH64(_INS_SXTW):
+	case ARM64_INS_UXTW:
+	case ARM64_INS_SXTW:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 4;
 		break;
-	case CS_AARCH64(_INS_BRK):
-	case CS_AARCH64(_INS_HLT):
+	case ARM64_INS_BRK:
+	case ARM64_INS_HLT:
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		// hlt stops the process, not skips some cycles like in x86
 		break;
-	case CS_AARCH64(_INS_DMB):
-	case CS_AARCH64(_INS_DSB):
-	case CS_AARCH64(_INS_ISB):
+	case ARM64_INS_DMB:
+	case ARM64_INS_DSB:
+	case ARM64_INS_ISB:
 		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD;
 #if CS_NEXT_VERSION < 6
 		// intentional fallthrough
-	case CS_AARCH64(_INS_IC): // instruction cache invalidate
-	case CS_AARCH64(_INS_DC): // data cache invalidate
+	case ARM64_INS_IC: // instruction cache invalidate
+	case ARM64_INS_DC: // data cache invalidate
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_SYNC; // or cache
 		break;
 	//  XXX unimplemented instructions
-	case CS_AARCH64(_INS_DUP):
-	case CS_AARCH64(_INS_XTN):
-	case CS_AARCH64(_INS_XTN2):
-	case CS_AARCH64(_INS_REV64):
-	case CS_AARCH64(_INS_EXT):
-	case CS_AARCH64(_INS_INS):
+	case ARM64_INS_DUP:
+	case ARM64_INS_XTN:
+	case ARM64_INS_XTN2:
+	case ARM64_INS_REV64:
+	case ARM64_INS_EXT:
+	case ARM64_INS_INS:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case CS_AARCH64(_INS_LSL):
+	case ARM64_INS_LSL:
 		op->cycles = 1;
 		/* fallthru */
-	case CS_AARCH64(_INS_SHL):
-	case CS_AARCH64(_INS_USHLL):
+	case ARM64_INS_SHL:
+	case ARM64_INS_USHLL:
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
-	case CS_AARCH64(_INS_LSR):
+	case ARM64_INS_LSR:
 		op->cycles = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
-	case CS_AARCH64(_INS_ASR):
+	case ARM64_INS_ASR:
 		op->cycles = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		break;
-	case CS_AARCH64(_INS_NEG):
+	case ARM64_INS_NEG:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_NEGS):
+	case ARM64_INS_NEGS:
 #endif
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
 		break;
-	case CS_AARCH64(_INS_FCMP):
-	case CS_AARCH64(_INS_CCMP):
-	case CS_AARCH64(_INS_CCMN):
+	case ARM64_INS_FCMP:
+	case ARM64_INS_CCMP:
+	case ARM64_INS_CCMN:
 #if CS_NEXT_VERSION < 6
-	case CS_AARCH64(_INS_CMP):
-	case CS_AARCH64(_INS_CMN):
-	case CS_AARCH64(_INS_TST):
+	case ARM64_INS_CMP:
+	case ARM64_INS_CMN:
+	case ARM64_INS_TST:
 #endif
 		if (ISIMM64(1)) {
 			op->val = IMM64(1);
@@ -1011,8 +1076,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 #if CS_NEXT_VERSION >= 6
-	case CS_AARCH64(_INS_ADDS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_CMN)) {
+	case ARM64_INS_ADDS:
+		if (is_alias64(insn, AARCH64_INS_ALIAS_CMN)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
@@ -1021,8 +1086,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->val = IMM64(1);
 		}
 		break;
-	case CS_AARCH64(_INS_SUBS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_CMP)) {
+	case ARM64_INS_SUBS:
+		if (is_alias64(insn, AARCH64_INS_ALIAS_CMP)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
@@ -1031,8 +1096,8 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->val = IMM64(1);
 		}
 		break;
-	case CS_AARCH64(_INS_ANDS):
-		if (is_alias64(insn, AArch64_INS_ALIAS_TST)) {
+	case ARM64_INS_ANDS:
+		if (is_alias64(insn, AARCH64_INS_ALIAS_TST)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_AND;
@@ -1041,88 +1106,88 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->val = IMM64(1);
 		}
 		break;
-	case CS_AARCH64(_INS_ADDG):
+	case ARM64_INS_ADDG:
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		if (ISIMM64(1)) {
 			op->val = IMM64(1);
 		}
 		break;
-	case CS_AARCH64(_INS_IRG):
+	case ARM64_INS_IRG:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
-	case CS_AARCH64(_INS_SUBG):
+	case ARM64_INS_SUBG:
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		if (ISIMM64(1)) {
 			op->val = IMM64(1);
 		}
 		break;
 #endif
-	case CS_AARCH64(_INS_ROR):
+	case ARM64_INS_ROR:
 		op->cycles = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		break;
-	case CS_AARCH64(_INS_AND):
+	case ARM64_INS_AND:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case CS_AARCH64(_INS_ORR):
-	case CS_AARCH64(_INS_ORN):
+	case ARM64_INS_ORR:
+	case ARM64_INS_ORN:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		if (ISIMM64(2)) {
 			op->val = IMM64(2);
 		}
 		break;
-	case CS_AARCH64(_INS_EOR):
-	case CS_AARCH64(_INS_EON):
+	case ARM64_INS_EOR:
+	case ARM64_INS_EON:
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
-	case CS_AARCH64(_INS_STRB):
-	case CS_AARCH64(_INS_STURB):
-	case CS_AARCH64(_INS_STUR):
-	case CS_AARCH64(_INS_STR):
-	case CS_AARCH64(_INS_STP):
-	case CS_AARCH64(_INS_STNP):
-	case CS_AARCH64(_INS_STXR):
-	case CS_AARCH64(_INS_STXRH):
-	case CS_AARCH64(_INS_STLXR):
-	case CS_AARCH64(_INS_STLXRH):
-	case CS_AARCH64(_INS_STXRB):
+	case ARM64_INS_STRB:
+	case ARM64_INS_STURB:
+	case ARM64_INS_STUR:
+	case ARM64_INS_STR:
+	case ARM64_INS_STP:
+	case ARM64_INS_STNP:
+	case ARM64_INS_STXR:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STLXR:
+	case ARM64_INS_STLXRH:
+	case ARM64_INS_STXRB:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		if (ISPREINDEX64() && REGBASE64(2) == CS_AARCH64(_REG_SP)) {
+		if (ISPREINDEX64() && REGBASE64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(2);
-		} else if (ISPOSTINDEX64() && REGID64(2) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPOSTINDEX64() && REGID64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(3);
-		} else if (ISPREINDEX64() && REGBASE64(1) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPREINDEX64() && REGBASE64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(1);
-		} else if (ISPOSTINDEX64() && REGID64(1) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPOSTINDEX64() && REGID64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(2);
 		}
 		break;
-	case CS_AARCH64(_INS_LDUR):
-	case CS_AARCH64(_INS_LDURB):
-	case CS_AARCH64(_INS_LDRSW):
-	case CS_AARCH64(_INS_LDRSB):
-	case CS_AARCH64(_INS_LDRSH):
-	case CS_AARCH64(_INS_LDR):
-	case CS_AARCH64(_INS_LDURSW):
-	case CS_AARCH64(_INS_LDP):
-	case CS_AARCH64(_INS_LDNP):
-	case CS_AARCH64(_INS_LDPSW):
-	case CS_AARCH64(_INS_LDRH):
-	case CS_AARCH64(_INS_LDRB):
-		if (ISPREINDEX64() && REGBASE64(2) == CS_AARCH64(_REG_SP)) {
+	case ARM64_INS_LDUR:
+	case ARM64_INS_LDURB:
+	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDRSH:
+	case ARM64_INS_LDR:
+	case ARM64_INS_LDURSW:
+	case ARM64_INS_LDP:
+	case ARM64_INS_LDNP:
+	case ARM64_INS_LDPSW:
+	case ARM64_INS_LDRH:
+	case ARM64_INS_LDRB:
+		if (ISPREINDEX64() && REGBASE64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(2);
-		} else if (ISPOSTINDEX64() && REGID64(2) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPOSTINDEX64() && REGID64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(3);
-		} else if (ISPREINDEX64() && REGBASE64(1) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPREINDEX64() && REGBASE64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(1);
-		} else if (ISPOSTINDEX64() && REGID64(1) == CS_AARCH64(_REG_SP)) {
+		} else if (ISPOSTINDEX64() && REGID64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 #if CS_NEXT_VERSION >= 6
 			op->stackptr = -MEMDISP64(1);
@@ -1140,14 +1205,14 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		}
 		switch (insn->id) {
-		case CS_AARCH64(_INS_LDPSW):
-		case CS_AARCH64(_INS_LDRSW):
-		case CS_AARCH64(_INS_LDRSH):
-		case CS_AARCH64(_INS_LDRSB):
+		case ARM64_INS_LDPSW:
+		case ARM64_INS_LDRSW:
+		case ARM64_INS_LDRSH:
+		case ARM64_INS_LDRSB:
 			op->sign = true;
 			break;
 		}
-		if (REGBASE64(1) == CS_AARCH64(_REG_X29)) {
+		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = RZ_ANALYSIS_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = MEMDISP64(1);
@@ -1164,73 +1229,73 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		break;
 #if CS_API_MAJOR > 4
-	case CS_AARCH64(_INS_BLRAA):
-	case CS_AARCH64(_INS_BLRAAZ):
-	case CS_AARCH64(_INS_BLRAB):
-	case CS_AARCH64(_INS_BLRABZ):
+	case ARM64_INS_BLRAA:
+	case ARM64_INS_BLRAAZ:
+	case ARM64_INS_BLRAB:
+	case ARM64_INS_BLRABZ:
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		break;
-	case CS_AARCH64(_INS_BRAA):
-	case CS_AARCH64(_INS_BRAAZ):
-	case CS_AARCH64(_INS_BRAB):
-	case CS_AARCH64(_INS_BRABZ):
+	case ARM64_INS_BRAA:
+	case ARM64_INS_BRAAZ:
+	case ARM64_INS_BRAB:
+	case ARM64_INS_BRABZ:
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 		break;
-	case CS_AARCH64(_INS_LDRAA):
-	case CS_AARCH64(_INS_LDRAB):
+	case ARM64_INS_LDRAA:
+	case ARM64_INS_LDRAB:
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
-	case CS_AARCH64(_INS_RETAA):
-	case CS_AARCH64(_INS_RETAB):
-	case CS_AARCH64(_INS_ERETAA):
-	case CS_AARCH64(_INS_ERETAB):
+	case ARM64_INS_RETAA:
+	case ARM64_INS_RETAB:
+	case ARM64_INS_ERETAA:
+	case ARM64_INS_ERETAB:
 		op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 #endif
-	case CS_AARCH64(_INS_ERET):
+	case ARM64_INS_ERET:
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
-	case CS_AARCH64(_INS_RET):
+	case ARM64_INS_RET:
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
-	case CS_AARCH64(_INS_BL): // bl 0x89480
+	case ARM64_INS_BL: // bl 0x89480
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = IMM64(0);
 		op->fail = addr + 4;
 		break;
-	case CS_AARCH64(_INS_BLR): // blr x0
+	case ARM64_INS_BLR: // blr x0
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		op->reg = cs_reg_name(handle, REGID64(0));
 		op->fail = addr + 4;
 		// op->jump = IMM64(0);
 		break;
-	case CS_AARCH64(_INS_CBZ):
-	case CS_AARCH64(_INS_CBNZ):
+	case ARM64_INS_CBZ:
+	case ARM64_INS_CBNZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = IMM64(1);
 		op->fail = addr + op->size;
 		break;
-	case CS_AARCH64(_INS_TBZ):
-	case CS_AARCH64(_INS_TBNZ):
+	case ARM64_INS_TBZ:
+	case ARM64_INS_TBNZ:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = IMM64(2);
 		op->fail = addr + op->size;
 		break;
-	case CS_AARCH64(_INS_BR):
+	case ARM64_INS_BR:
 		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 		op->reg = cs_reg_name(handle, REGID64(0));
 		op->eob = true;
 		break;
-	case CS_AARCH64(_INS_B):
+	case ARM64_INS_B:
 		// BX LR == RET
-		if (insn->detail->CS_aarch64_.operands[0].reg == CS_AARCH64(_REG_LR)) {
+		if (insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		} else if (cc_holds_cond(insn->detail->CS_aarch64_.cc)) {
+		} else if (cc_holds_cond(insn->detail->arm64.cc)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
@@ -1240,7 +1305,7 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		}
 		break;
 #if CS_NEXT_VERSION >= 6
-	case CS_AARCH64(_INS_UDF):
+	case ARM64_INS_UDF:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;
 #endif
@@ -1278,20 +1343,20 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 
 	/* grab family */
 #if CS_NEXT_VERSION >= 6
-	if (cs_insn_group(handle, insn, ARM_FEATURE_HasAES)) {
+	if (cs_insn_group(handle, insn, ARM_FEATURE_HASAES)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasCRC)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASCRC)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group(handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasVirtualization)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASVIRTUALIZATION)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_VIRT;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasNEON)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASNEON)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasFPARMv8)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASFPARMV8)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
-	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HasDSP) &&
-		cs_insn_group(handle, insn, ARM_FEATURE_HasDSP)) {
+	} else if (cs_insn_group(handle, insn, ARM_FEATURE_HASDSP) &&
+		cs_insn_group(handle, insn, ARM_FEATURE_HASDSP)) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 	} else {
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
@@ -1657,7 +1722,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 #endif
 		// 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (INSOP(1).mem.scale != -1) {
-			op->scale = INSOP(1).mem.scale << LSHIFT(1);
+			op->scale = (ut64)INSOP(1).mem.scale << LSHIFT(1);
 		}
 		op->ireg = cs_reg_name(handle, REGBASE(1));
 		op->disp = MEMDISP(1);
@@ -1850,8 +1915,8 @@ static int parse_reg_name(RzReg *reg, RzRegItem **reg_base, RzRegItem **reg_delt
 	return 0;
 }
 
-static bool is_valid64(CS_aarch64_reg() reg) {
-	return reg != CS_AARCH64(_REG_INVALID);
+static bool is_valid64(arm64_reg reg) {
+	return reg != ARM64_REG_INVALID;
 }
 
 static char *reg_list[] = {
@@ -1865,12 +1930,12 @@ static char *reg_list[] = {
 };
 
 static int parse_reg64_name(RzReg *reg, RzRegItem **reg_base, RzRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
-	CS_aarch64_op() armop = INSOP64(reg_num);
+	cs_arm64_op armop = INSOP64(reg_num);
 	switch (armop.type) {
-	case CS_AARCH64(_OP_REG):
+	case ARM64_OP_REG:
 		*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.reg), RZ_REG_TYPE_ANY);
 		break;
-	case CS_AARCH64(_OP_MEM):
+	case ARM64_OP_MEM:
 		if (is_valid64(armop.mem.base) && is_valid64(armop.mem.index)) {
 			*reg_base = rz_reg_get(reg, cs_reg_name(handle, armop.mem.base), RZ_REG_TYPE_ANY);
 			*reg_delta = rz_reg_get(reg, cs_reg_name(handle, armop.mem.index), RZ_REG_TYPE_ANY);
@@ -1915,7 +1980,7 @@ static void set_opdir(RzAnalysisOp *op) {
 
 static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP(x);
-	CS_aarch64_op() arm64op = INSOP64(x);
+	cs_arm64_op arm64op = INSOP64(x);
 	if (bits == 64) {
 		parse_reg64_name(reg, &val->reg, &val->regdelta, *handle, insn, x);
 	} else {
@@ -1923,14 +1988,14 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 	}
 	if (bits == 64) {
 		switch (arm64op.type) {
-		case CS_AARCH64(_OP_REG):
+		case ARM64_OP_REG:
 			val->type = RZ_ANALYSIS_VAL_REG;
 			break;
-		case CS_AARCH64(_OP_MEM):
+		case ARM64_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
 			val->delta = arm64op.mem.disp;
 			break;
-		case CS_AARCH64(_OP_IMM):
+		case ARM64_OP_IMM:
 			val->type = RZ_ANALYSIS_VAL_IMM;
 			val->imm = arm64op.imm;
 			break;
@@ -1944,7 +2009,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 			break;
 		case ARM_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
-			val->mul = armop.mem.scale << armop.mem.lshift;
+			val->mul = (ut64)armop.mem.scale << armop.shift.value;
 #if CS_NEXT_VERSION >= 6
 			val->delta = MEMDISP(x);
 #else
@@ -1971,7 +2036,7 @@ static void create_src_dst(RzAnalysisOp *op) {
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst(op);
 	int i, j;
-	int count = bits == 64 ? insn->detail->CS_aarch64_.op_count : insn->detail->arm.op_count;
+	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 	case RZ_ANALYSIS_OP_TYPE_CMP:
@@ -1995,7 +2060,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	case RZ_ANALYSIS_OP_TYPE_CAST:
 		for (i = 1; i < count; i++) {
 			if (bits == 64) {
-				CS_aarch64_op() arm64op = INSOP64(i);
+				cs_arm64_op arm64op = INSOP64(i);
 				if (arm64op.access == CS_AC_WRITE) {
 					continue;
 				}
@@ -2016,8 +2081,8 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 		if (count > 2) {
 			if (bits == 64) {
-				CS_aarch64_op() arm64op = INSOP64(count - 1);
-				if (arm64op.type == CS_AARCH64(_OP_IMM)) {
+				cs_arm64_op arm64op = INSOP64(count - 1);
+				if (arm64op.type == ARM64_OP_IMM) {
 					count--;
 				}
 			} else {
@@ -2084,7 +2149,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	op->size = (a->bits == 16) ? 2 : 4;
 	op->addr = addr;
 	if (ctx->handle == 0) {
-		ret = (a->bits == 64) ? cs_open(CS_AARCH64pre(CS_ARCH_), mode, &ctx->handle) : cs_open(CS_ARCH_ARM, mode, &ctx->handle);
+		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &ctx->handle) : cs_open(CS_ARCH_ARM, mode, &ctx->handle);
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_NEXT_VERSION >= 6
 		cs_option(ctx->handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_CS_REG_ALIAS);
@@ -2106,7 +2171,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-			op->mnemonic = strdup("invalid");
+			op->mnemonic = rz_str_dup("invalid");
 		}
 	} else {
 #if CS_NEXT_VERSION < 6
@@ -2125,7 +2190,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		if (a->bits == 64) {
 			anop64(ctx, op, insn);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex64(&op->opex, ctx->handle, insn);
+				op->opex = aarch64_opex(ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_64_esil(a, op, addr, buf, len, &ctx->handle, insn);
@@ -2136,7 +2201,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		} else {
 			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex(&op->opex, ctx->handle, insn);
+				op->opex = arm_opex(ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 				rz_arm_cs_analysis_op_32_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
@@ -2541,7 +2606,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	q15	.128	308	0\n"
 			"flg    fpscr .32   324 0\n";
 	}
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
@@ -2602,47 +2667,47 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 			case 4:
 				if (analysis->bits == 64) {
 					switch (op->id) {
-					case CS_AARCH64(_INS_LDP):
-					case CS_AARCH64(_INS_LDXP):
-					case CS_AARCH64(_INS_LDXR):
-					case CS_AARCH64(_INS_LDXRB):
-					case CS_AARCH64(_INS_LDXRH):
-					case CS_AARCH64(_INS_LDPSW):
-					case CS_AARCH64(_INS_LDNP):
-					case CS_AARCH64(_INS_LDTR):
-					case CS_AARCH64(_INS_LDTRB):
-					case CS_AARCH64(_INS_LDTRH):
-					case CS_AARCH64(_INS_LDTRSB):
-					case CS_AARCH64(_INS_LDTRSH):
-					case CS_AARCH64(_INS_LDTRSW):
-					case CS_AARCH64(_INS_LDUR):
-					case CS_AARCH64(_INS_LDURB):
-					case CS_AARCH64(_INS_LDURH):
-					case CS_AARCH64(_INS_LDURSB):
-					case CS_AARCH64(_INS_LDURSH):
-					case CS_AARCH64(_INS_LDURSW):
-					case CS_AARCH64(_INS_STP):
-					case CS_AARCH64(_INS_STNP):
-					case CS_AARCH64(_INS_STXR):
-					case CS_AARCH64(_INS_STXRB):
-					case CS_AARCH64(_INS_STXRH):
+					case ARM64_INS_LDP:
+					case ARM64_INS_LDXP:
+					case ARM64_INS_LDXR:
+					case ARM64_INS_LDXRB:
+					case ARM64_INS_LDXRH:
+					case ARM64_INS_LDPSW:
+					case ARM64_INS_LDNP:
+					case ARM64_INS_LDTR:
+					case ARM64_INS_LDTRB:
+					case ARM64_INS_LDTRH:
+					case ARM64_INS_LDTRSB:
+					case ARM64_INS_LDTRSH:
+					case ARM64_INS_LDTRSW:
+					case ARM64_INS_LDUR:
+					case ARM64_INS_LDURB:
+					case ARM64_INS_LDURH:
+					case ARM64_INS_LDURSB:
+					case ARM64_INS_LDURSH:
+					case ARM64_INS_LDURSW:
+					case ARM64_INS_STP:
+					case ARM64_INS_STNP:
+					case ARM64_INS_STXR:
+					case ARM64_INS_STXRB:
+					case ARM64_INS_STXRH:
 						rz_write_ble(ret + idx, 0xffffffff, analysis->big_endian, 32);
 						break;
-					case CS_AARCH64(_INS_STRB):
-					case CS_AARCH64(_INS_STURB):
-					case CS_AARCH64(_INS_STURH):
-					case CS_AARCH64(_INS_STUR):
-					case CS_AARCH64(_INS_STR):
-					case CS_AARCH64(_INS_STTR):
-					case CS_AARCH64(_INS_STTRB):
-					case CS_AARCH64(_INS_STRH):
-					case CS_AARCH64(_INS_STTRH):
-					case CS_AARCH64(_INS_LDR):
-					case CS_AARCH64(_INS_LDRB):
-					case CS_AARCH64(_INS_LDRH):
-					case CS_AARCH64(_INS_LDRSB):
-					case CS_AARCH64(_INS_LDRSW):
-					case CS_AARCH64(_INS_LDRSH): {
+					case ARM64_INS_STRB:
+					case ARM64_INS_STURB:
+					case ARM64_INS_STURH:
+					case ARM64_INS_STUR:
+					case ARM64_INS_STR:
+					case ARM64_INS_STTR:
+					case ARM64_INS_STTRB:
+					case ARM64_INS_STRH:
+					case ARM64_INS_STTRH:
+					case ARM64_INS_LDR:
+					case ARM64_INS_LDRB:
+					case ARM64_INS_LDRH:
+					case ARM64_INS_LDRSB:
+					case ARM64_INS_LDRSW:
+					case ARM64_INS_LDRSH: {
 						bool is_literal = (opcode & 0x38000000) == 0x18000000;
 						if (is_literal) {
 							rz_write_ble(ret + idx, 0xff000000, analysis->big_endian, 32);
@@ -2651,22 +2716,22 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 						}
 						break;
 					}
-					case CS_AARCH64(_INS_B):
-					case CS_AARCH64(_INS_BL):
-					case CS_AARCH64(_INS_CBZ):
-					case CS_AARCH64(_INS_CBNZ):
+					case ARM64_INS_B:
+					case ARM64_INS_BL:
+					case ARM64_INS_CBZ:
+					case ARM64_INS_CBNZ:
 						if (op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
 							rz_write_ble(ret + idx, 0xff00001f, analysis->big_endian, 32);
 						} else {
 							rz_write_ble(ret + idx, 0xfc000000, analysis->big_endian, 32);
 						}
 						break;
-					case CS_AARCH64(_INS_TBZ):
-					case CS_AARCH64(_INS_TBNZ):
+					case ARM64_INS_TBZ:
+					case ARM64_INS_TBNZ:
 						rz_write_ble(ret + idx, 0xfff8001f, analysis->big_endian, 32);
 						break;
-					case CS_AARCH64(_INS_ADR):
-					case CS_AARCH64(_INS_ADRP):
+					case ARM64_INS_ADR:
+					case ARM64_INS_ADRP:
 						rz_write_ble(ret + idx, 0xff00001f, analysis->big_endian, 32);
 						break;
 					default:

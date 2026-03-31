@@ -24,7 +24,8 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList /*<pyc_code_object 
 	}
 
 	if (cobj) {
-		/* TODO: adding line number and offset */
+
+		/* TODO: adding line number and offset and exception table*/
 		RzList *varnames = cobj->varnames->data;
 		RzList *consts = cobj->consts->data;
 		RzList *names = cobj->names->data;

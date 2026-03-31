@@ -1,8 +1,7 @@
 NAME=PE: corkami ctxt-ld.exe - open
 FILE=bins/pe/ctxt-ld.exe
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami ctxt-ld.exe - entrypoint

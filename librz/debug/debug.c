@@ -8,7 +8,6 @@
 #include <rz_drx.h>
 #include <rz_core.h>
 #include <rz_windows.h>
-#include <signal.h>
 
 RZ_LIB_VERSION(rz_debug);
 
@@ -322,13 +321,13 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & RZ_PERM_X)) {
-					eprintf("WARNING: setting bp within mapped memory without exec perm\n");
+					RZ_LOG_WARN("setting bp within mapped memory without exec perm\n");
 				}
 				break;
 			}
 		}
 		if (!valid) {
-			eprintf("WARNING: module's base addr + delta is not a valid address\n");
+			RZ_LOG_WARN("module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}
@@ -352,7 +351,7 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_debug_bp_add(RZ_NONNULL RzDebug *dbg, ut64
 	}
 	if (bpi) {
 		if (module_name) {
-			bpi->module_name = strdup(module_name);
+			bpi->module_name = rz_str_dup(module_name);
 			bpi->name = rz_str_newf("%s+0x%" PFMT64x, module_name, m_delta);
 		}
 		bpi->module_delta = m_delta;
@@ -366,10 +365,6 @@ static const char *rz_debug_str_callback(RzNum *userptr, ut64 off, int *ok) {
 	return NULL;
 }
 
-void free_tracenodes_kv(HtUPKv *kv) {
-	free(kv->value);
-}
-
 RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp_ctx) {
 	rz_return_val_if_fail(bp_ctx, NULL);
 	RzDebug *dbg = RZ_NEW0(RzDebug);
@@ -377,7 +372,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 		return NULL;
 	}
 	// RZ_SYS_ARCH
-	dbg->arch = strdup(RZ_SYS_ARCH);
+	dbg->arch = rz_str_dup(RZ_SYS_ARCH);
 	dbg->bits = RZ_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
@@ -394,7 +389,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -424,36 +419,36 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
 	ht_up_free(dbg->tracenodes);
-	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
+	dbg->tracenodes = ht_up_new(NULL, free);
 }
 
-RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
-	if (dbg) {
-		rz_hash_free(dbg->hash);
-		rz_bp_free(dbg->bp);
-		free(dbg->snap_path);
-		rz_list_free(dbg->maps);
-		rz_list_free(dbg->maps_user);
-		rz_list_free(dbg->threads);
-		rz_num_free(dbg->num);
-		sdb_free(dbg->sgnls);
-		rz_tree_free(dbg->tree);
-		ht_up_free(dbg->tracenodes);
-		rz_list_free(dbg->plugins);
-		rz_list_free(dbg->call_frames);
-		free(dbg->btalgo);
-		rz_debug_trace_free(dbg->trace);
-		rz_debug_session_free(dbg->session);
-		rz_analysis_op_free(dbg->cur_op);
-		dbg->trace = NULL;
-		rz_egg_free(dbg->egg);
-		rz_reg_free(dbg->reg);
-		free(dbg->arch);
-		free(dbg->glob_libs);
-		free(dbg->glob_unlibs);
-		free(dbg);
+RZ_API void rz_debug_free(RzDebug *dbg) {
+	if (!dbg) {
+		return;
 	}
-	return NULL;
+	rz_hash_free(dbg->hash);
+	rz_bp_free(dbg->bp);
+	free(dbg->snap_path);
+	rz_list_free(dbg->maps);
+	rz_list_free(dbg->maps_user);
+	rz_list_free(dbg->threads);
+	rz_num_free(dbg->num);
+	sdb_free(dbg->sgnls);
+	rz_tree_free(dbg->tree);
+	ht_up_free(dbg->tracenodes);
+	ht_sp_free(dbg->plugins);
+	rz_list_free(dbg->call_frames);
+	free(dbg->btalgo);
+	rz_debug_trace_free(dbg->trace);
+	rz_debug_session_free(dbg->session);
+	rz_analysis_op_free(dbg->cur_op);
+	dbg->trace = NULL;
+	rz_egg_free(dbg->egg);
+	rz_reg_free(dbg->reg);
+	free(dbg->arch);
+	free(dbg->glob_libs);
+	free(dbg->glob_unlibs);
+	free(dbg);
 }
 
 RZ_API int rz_debug_attach(RzDebug *dbg, int pid) {
@@ -515,7 +510,7 @@ RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits) {
 			}
 		}
 		free(dbg->arch);
-		dbg->arch = strdup(arch);
+		dbg->arch = rz_str_dup(arch);
 		return true;
 	}
 	return false;
@@ -728,7 +723,6 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			rz_debug_stop(dbg);
 		}
 #endif
-
 		/* propagate errors from the plugin */
 		if (reason == RZ_DEBUG_REASON_ERROR) {
 			return RZ_DEBUG_REASON_ERROR;
@@ -1172,7 +1166,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 		RzRegItem *ripc = rz_reg_get(dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
 		RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 		RzDebugChangeReg *reg;
-		rz_vector_foreach_prev(vreg, reg) {
+		rz_vector_foreach_prev (vreg, reg) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
@@ -1475,7 +1469,7 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg) {
 		return false;
 	}
 	RzDebugChangeReg *reg;
-	rz_vector_foreach_prev(vreg, reg) {
+	rz_vector_foreach_prev (vreg, reg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}
@@ -1568,12 +1562,6 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		if (reason == RZ_DEBUG_REASON_DEAD || rz_debug_is_dead(dbg)) {
 			break;
 		}
-#if 0
-		if (reason != RZ_DEBUG_REASON_STEP) {
-			eprintf ("astep\n");
-			break;
-		}
-#endif
 		if (!rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false)) {
 			eprintf("--> cannot sync regs, process is probably dead\n");
 			return -1;
@@ -1739,7 +1727,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 	}
 #endif
 	if (!abspath && file) {
-		abspath = strdup(file);
+		abspath = rz_str_dup(file);
 	}
 	if (abspath) {
 		rz_list_foreach (dbg->maps, iter, map) {
@@ -1782,7 +1770,7 @@ RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
 	rz_return_if_fail(debug);
 	RzList *threads = rz_debug_pids(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first(threads);
+		RzDebugPid *th = rz_list_first_val(threads);
 		rz_debug_select(debug, debug->pid, th->pid);
 	}
 	rz_list_free(threads);
@@ -1802,5 +1790,5 @@ RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) 
 	if (!it) {
 		return NULL;
 	}
-	return (RzDebugPid *)rz_list_iter_get_data(it);
+	return (RzDebugPid *)rz_list_val(it);
 }

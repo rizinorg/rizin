@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "cil/cil_dis.h"
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CILOp cilop = { { { 0 } } };
 	if (cil_dis(&cilop, buf, len)) {
 		return 0;
@@ -17,7 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_cil = {
 	.name = "cil",
 	.arch = "cil",
-	.desc = ".NET Common Intermediate Language",
+	.desc = ".NET CIL/MSIL (Common Intermediate Language) bytecode disassembler",
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
 	.disassemble = &disassemble,

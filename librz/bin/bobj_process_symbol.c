@@ -37,12 +37,12 @@ static void process_cxx_symbol(RzBinObject *o, RzBinSymbol *symbol) {
 	rz_bin_process_cxx(o, symbol->dname, symbol->paddr, symbol->vaddr);
 }
 
-#if WITH_SWIFT_DEMANGLER
-// this process function does not work with the Apple demangler.
 static void process_swift_symbol(RzBinObject *o, RzBinSymbol *symbol) {
-	rz_bin_process_swift(o, symbol->classname, symbol->dname, symbol->paddr, symbol->vaddr);
+	if (!symbol->dname) {
+		return;
+	}
+	rz_bin_process_swift(o, symbol);
 }
-#endif
 
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o) {
 	switch (o->lang) {
@@ -52,11 +52,8 @@ RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o) {
 		return (RzBinProcessLanguage)process_cxx_symbol;
 	case RZ_BIN_LANGUAGE_OBJC:
 		return (RzBinProcessLanguage)process_objc_symbol;
-#if WITH_SWIFT_DEMANGLER
-	// this process function does not work with the Apple demangler.
 	case RZ_BIN_LANGUAGE_SWIFT:
 		return (RzBinProcessLanguage)process_swift_symbol;
-#endif
 	default:
 		return NULL;
 	}
@@ -72,8 +69,8 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 
 	// add symbol to the 'import' map[name]symbol
 	if (symbol->is_imported && RZ_STR_ISNOTEMPTY(symbol->name)) {
-		if (!ht_pp_find(o->import_name_symbols, symbol->name, NULL)) {
-			ht_pp_insert(o->import_name_symbols, symbol->name, symbol);
+		if (!ht_sp_find(o->import_name_symbols, symbol->name, NULL)) {
+			ht_sp_insert(o->import_name_symbols, symbol->name, symbol);
 		}
 	}
 
@@ -94,8 +91,8 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 		return;
 	}
 
-	ht_pp_free(o->import_name_symbols);
-	o->import_name_symbols = ht_pp_new0();
+	ht_sp_free(o->import_name_symbols);
+	o->import_name_symbols = ht_sp_new(HT_STR_DUP, NULL, NULL);
 
 	RzBinProcessLanguage language_cb = rz_bin_process_language_symbol(o);
 

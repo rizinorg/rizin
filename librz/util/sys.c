@@ -91,6 +91,7 @@ extern char **environ;
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
 #include <psapi.h>
+#include <dbghelp.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
 #endif /* _MSC_VER */
@@ -129,8 +130,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leaq %0, %%rsp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #elif __i386__
 #ifdef _MSC_VER
@@ -142,8 +143,8 @@ RZ_LIB_VERSION(rz_util);
 #else
 #define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__("leal %0, %%esp; ret" \
-			     : \
-			     : "m"(*bufptr));
+		: \
+		: "m"(*bufptr));
 #endif
 #else
 #define RZ_SYS_ASM_START_ROP() \
@@ -176,7 +177,6 @@ static const struct {
 	{ "lm32", RZ_SYS_ARCH_LM32 },
 	{ "v850", RZ_SYS_ARCH_V850 },
 	{ "tricore", RZ_SYS_ARCH_TRICORE },
-	{ NULL, 0 }
 };
 
 #if __WINDOWS__
@@ -307,7 +307,7 @@ RZ_API RzList /*<char *>*/ *rz_sys_dir(const char *path) {
 		if (list) {
 			list->free = free;
 			while ((entry = readdir(dir))) {
-				rz_list_append(list, strdup(entry->d_name));
+				rz_list_append(list, rz_str_dup(entry->d_name));
 			}
 		}
 		closedir(dir);
@@ -354,7 +354,53 @@ RZ_API void rz_sys_backtrace(void) {
 	}
 #else
 #ifdef _MSC_VER
-#pragma message("TODO: rz_sys_backtrace : unimplemented")
+	SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
+
+	HANDLE process = GetCurrentProcess();
+
+	if (!SymInitialize(process, NULL, TRUE)) {
+		eprintf("SymInitialize() failed (%d), no backtrace will be generated\n", GetLastError());
+		return;
+	}
+
+	void *stack[64];
+	ut16 frame_count = CaptureStackBackTrace(0, 64, stack, NULL);
+	eprintf("Tracing %" PFMT32u " stack frames:\n", frame_count);
+
+	ut8 *buffer = malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
+
+	if (!buffer) {
+		eprintf("malloc failed, no backtrace will be generated\n");
+		SymCleanup(process);
+		return;
+	}
+
+	SYMBOL_INFO *symbol = (SYMBOL_INFO *)buffer;
+	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+	symbol->MaxNameLen = MAX_SYM_NAME;
+
+	for (ut16 i = 0; i < frame_count; i++) {
+		ut64 offset_from_sym = 0;
+		ut32 line_displacement = 0;
+		IMAGEHLP_LINE64 line = { .SizeOfStruct = sizeof(IMAGEHLP_LINE64) };
+
+		if (!SymFromAddr(process, (utptr)(stack[i]), &offset_from_sym, symbol)) {
+			// Print only symbol name + pc/rip address
+			eprintf("  [%" PFMT32u "]: 0x%" PFMT64x "\n", i, (ut64)(stack[i]));
+			continue;
+		}
+
+		if (SymGetLineFromAddr64(process, (utptr)(stack[i]), &line_displacement, &line)) {
+			// Source file and line details available
+			eprintf("  [%" PFMT32u "]: %s() at %s:%" PFMT32u "\n", i, symbol->Name, line.FileName, line.LineNumber);
+		} else {
+			// Print only symbol name + offset from symbol
+			eprintf("  [%" PFMT32u "]: %s()+0x%" PFMT64x "\n", i, symbol->Name, offset_from_sym);
+		}
+	}
+
+	free(buffer);
+	SymCleanup(process);
 #else
 #warning TODO: rz_sys_backtrace : unimplemented
 #endif
@@ -494,56 +540,6 @@ RZ_API int rz_sys_setenv(const char *key, const char *value) {
 #endif
 }
 
-#if __UNIX__
-static char *crash_handler_cmd = NULL;
-
-static void signal_handler(int signum) {
-	char cmd[1024];
-	if (!crash_handler_cmd) {
-		return;
-	}
-	snprintf(cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid());
-	rz_sys_backtrace();
-	exit(rz_sys_system(cmd));
-}
-
-static int checkcmd(const char *c) {
-	char oc = 0;
-	for (; *c; c++) {
-		if (oc == '%') {
-			if (*c != 'd' && *c != '%') {
-				return 0;
-			}
-		}
-		oc = *c;
-	}
-	return 1;
-}
-#endif
-
-RZ_API int rz_sys_crash_handler(const char *cmd) {
-#ifndef __WINDOWS__
-	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
-
-	if (!checkcmd(cmd)) {
-		return false;
-	}
-#if HAVE_BACKTRACE
-	void *array[1];
-	/* call this outside of the signal handler to init it safely */
-	backtrace(array, 1);
-#endif
-
-	free(crash_handler_cmd);
-	crash_handler_cmd = strdup(cmd);
-
-	rz_sys_sigaction(sig, signal_handler);
-#else
-#pragma message("rz_sys_crash_handler : unimplemented for this platform")
-#endif
-	return true;
-}
-
 /**
  * \brief Get the value of an environment variable named \p key or NULL if none exists.
  */
@@ -568,7 +564,7 @@ RZ_API char *rz_sys_getenv(const char *key) {
 		return NULL;
 	}
 	b = getenv(key);
-	return b ? strdup(b) : NULL;
+	return rz_str_dup(b);
 #endif
 }
 
@@ -869,31 +865,6 @@ RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API int rz_sys_cmdbg(const char *str) {
-#if __UNIX__
-	int ret, pid = rz_sys_fork();
-	if (pid == -1) {
-		return -1;
-	}
-	if (pid) {
-		return pid;
-	}
-	char *bin_sh = rz_file_binsh();
-	ret = rz_sys_execl(bin_sh, "sh", "-c", str, (const char *)NULL);
-	free(bin_sh);
-	eprintf("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
-	exit(0);
-	return -1;
-#else
-#ifdef _MSC_VER
-#pragma message("rz_sys_cmdbg is not implemented for this platform")
-#else
-#warning rz_sys_cmdbg is not implemented for this platform
-#endif
-	return -1;
-#endif
-}
-
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
 	if (rz_sys_cmd_str_full(cmd, input, &output, len, NULL)) {
@@ -919,7 +890,7 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 RZ_API bool rz_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = RZ_SYS_DIR[0];
-	char *path = strdup(dir), *ptr = path;
+	char *path = rz_str_dup(dir), *ptr = path;
 	if (!path) {
 		RZ_LOG_ERROR("rz_sys_mkdirp: Unable to allocate memory\n");
 		return false;
@@ -1001,8 +972,7 @@ RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
 }
 
 RZ_API int rz_sys_arch_id(const char *arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
 		if (!strcmp(arch, arch_bit_array[i].name)) {
 			return arch_bit_array[i].bit;
 		}
@@ -1011,9 +981,8 @@ RZ_API int rz_sys_arch_id(const char *arch) {
 }
 
 RZ_API const char *rz_sys_arch_str(int arch) {
-	int i;
-	for (i = 0; arch_bit_array[i].name; i++) {
-		if (arch & arch_bit_array[i].bit) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
+		if (arch == arch_bit_array[i].bit) {
 			return arch_bit_array[i].name;
 		}
 	}
@@ -1207,7 +1176,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 						RZ_LOG_ERROR("rz_sys_pid_to_path: Error calling rz_str_newf\n");
 						return NULL;
 					}
-					result = strdup(tmp);
+					result = rz_str_dup(tmp);
 					break;
 				}
 				free(dvc);
@@ -1227,14 +1196,13 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	if (ret <= 0) {
 		return NULL;
 	}
-	return strdup(pathbuf);
+	return rz_str_dup(pathbuf);
 #else
-	int ret;
 #if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
 	size_t pathbufl = sizeof(pathbuf);
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid };
-	ret = sysctl(mib, 4, pathbuf, &pathbufl, NULL, 0);
+	int ret = sysctl(mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
 	}
@@ -1245,7 +1213,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	size_t len;
 
 	pathbuf[0] = '\0';
-	ret = sysctl(mib, 4, NULL, &len, NULL, 0);
+	int ret = sysctl(mib, 4, NULL, &len, NULL, 0);
 	if (ret < 0) {
 		return NULL;
 	}
@@ -1264,7 +1232,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 		}
 	} else {
 		char *sp;
-		char *xpath = strdup(getenv("PATH"));
+		char *xpath = rz_str_dup(getenv("PATH"));
 		char *path = strtok_r(xpath, ":", &sp);
 		struct stat st;
 
@@ -1310,13 +1278,13 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 #else
 	char buf[128], pathbuf[1024];
 	snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
-	ret = readlink(buf, pathbuf, sizeof(pathbuf) - 1);
+	int ret = readlink(buf, pathbuf, sizeof(pathbuf) - 1);
 	if (ret < 1) {
 		return NULL;
 	}
 	pathbuf[ret] = 0;
 #endif
-	return strdup(pathbuf);
+	return rz_str_dup(pathbuf);
 #endif
 }
 
@@ -1373,7 +1341,7 @@ RZ_API char *rz_sys_whoami(char *buf) {
 		buf = _buf;
 	}
 	sprintf(buf, "pid%d", pid);
-	return hasbuf ? buf : strdup(buf);
+	return hasbuf ? buf : rz_str_dup(buf);
 }
 
 RZ_API int rz_sys_getpid(void) {
@@ -1393,11 +1361,11 @@ RZ_API RSysInfo *rz_sys_info(void) {
 	if (uname(&un) != -1) {
 		RSysInfo *si = RZ_NEW0(RSysInfo);
 		if (si) {
-			si->sysname = strdup(un.sysname);
-			si->nodename = strdup(un.nodename);
-			si->release = strdup(un.release);
-			si->version = strdup(un.version);
-			si->machine = strdup(un.machine);
+			si->sysname = rz_str_dup(un.sysname);
+			si->nodename = rz_str_dup(un.nodename);
+			si->release = rz_str_dup(un.release);
+			si->version = rz_str_dup(un.version);
+			si->machine = rz_str_dup(un.machine);
 			return si;
 		}
 	}
@@ -1426,7 +1394,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 		type != REG_SZ) {
 		goto beach;
 	}
-	si->sysname = strdup(tmp);
+	si->sysname = rz_str_dup(tmp);
 
 	size = sizeof(major);
 	if (RegQueryValueExA(key, "CurrentMajorVersionNumber", NULL, &type,
@@ -1455,7 +1423,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 		type != REG_SZ) {
 		goto beach;
 	}
-	si->release = strdup(tmp);
+	si->release = rz_str_dup(tmp);
 beach:
 	RegCloseKey(key);
 	return si;
@@ -1572,7 +1540,7 @@ static bool is_child = false;
 RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
 static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(false);
-	fd2close = ht_uu_new0();
+	fd2close = ht_uu_new();
 }
 
 #ifdef RZ_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
@@ -1805,7 +1773,7 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	}
 	va_end(count_args);
 	char **argv = RZ_NEWS0(char *, argc + 2);
-	argv[0] = strdup(pathname);
+	argv[0] = rz_str_dup(pathname);
 	for (i = 1; i <= argc; i++) {
 		argv[i] = va_arg(args, char *);
 	}
@@ -1826,7 +1794,7 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	}
 	va_end(count_args);
 	char **argv = RZ_NEWS0(char *, argc + 2);
-	argv[0] = strdup(pathname);
+	argv[0] = rz_str_dup(pathname);
 	for (i = 1; i <= argc; i++) {
 		argv[i] = va_arg(args, char *);
 	}
@@ -1863,7 +1831,7 @@ RZ_API int rz_sys_system(const char *command) {
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
 	int argc;
-	char *cmd = strdup(command);
+	char *cmd = rz_str_dup(command);
 	char **argv = rz_str_argv(cmd, &argc);
 	if (argv) {
 		char *argv0 = rz_file_path(argv[0]);
@@ -1878,7 +1846,7 @@ RZ_API int rz_sys_system(const char *command) {
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
 	if (!strchr(command, '|')) {
-		char **argv, *cmd = strdup(command);
+		char **argv, *cmd = rz_str_dup(command);
 		int rc, pid, argc;
 		char *isbg = strchr(cmd, '&');
 		// XXX this is hacky

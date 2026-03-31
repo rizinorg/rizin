@@ -232,7 +232,10 @@ struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(RzBinPEObj *bin) {
 			sec_name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 			int idx = atoi(sec_name + 1);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
-			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			st64 num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			if (ST32_MUL_OVFCHK(num_symbols, COFF_SYMBOL_SIZE)) {
+				continue;
+			}
 			st64 off = num_symbols * COFF_SYMBOL_SIZE;
 			if (off > 0 && sym_tbl_off &&
 				sym_tbl_off + off + idx < bin->size &&
@@ -317,44 +320,44 @@ int PE_(bin_pe_init_sections)(RzBinPEObj *bin) {
 			goto out_error;
 		}
 	}
-#if 0
-	Each symbol table entry includes a name, storage class, type, value and section number.Short names (8 characters or fewer) are stored directly in the symbol table;
-	longer names are stored as an paddr into the string table at the end of the COFF object.
+	/*
+	 * Each symbol table entry includes a name, storage class, type, value and section number.Short names (8 characters or fewer) are stored directly in the symbol table;
+	 * longer names are stored as an paddr into the string table at the end of the COFF object.
+	 *
+	 * ================================================================
+	 * COFF SYMBOL TABLE RECORDS (18 BYTES)
+	 * ================================================================
+	 * record
+	 * paddr
+	 *
+	 * struct symrec {
+	 * 	union {
+	 * 		char string[8]; // short name
+	 * 		struct {
+	 * 			ut32 seros;
+	 * 			ut32 stridx;
+	 * 		} stridx;
+	 * 	} name;
+	 * 	ut32 value;
+	 * 	ut16 secnum;
+	 * 	ut16 symtype;
+	 * 	ut8 symclass;
+	 * 	ut8 numaux;
+	 * }
+	 * ------------------------------------------------------ -
+	 * 0 | 8 - char symbol name |
+	 * | or 32 - bit zeroes followed by 32 - bit |
+	 * | index into string table |
+	 * ------------------------------------------------------ -
+	 * 8 | symbol value |
+	 * ------------------------------------------------------ -
+	 * 0Ch | section number | symbol type |
+	 * ------------------------------------------------------ -
+	 * 10h | sym class | num aux |
+	 * -------------------------- -
+	 * 12h
+	 */
 
-	================================================================
-	COFF SYMBOL TABLE RECORDS (18 BYTES)
-	================================================================
-	record
-	paddr
-
-	struct symrec {
-		union {
-			char string[8]; // short name
-			struct {
-				ut32 seros;
-				ut32 stridx;
-			} stridx;
-		} name;
-		ut32 value;
-		ut16 secnum;
-		ut16 symtype;
-		ut8 symclass;
-		ut8 numaux;
-	}
-	------------------------------------------------------ -
-	0 | 8 - char symbol name |
-	| or 32 - bit zeroes followed by 32 - bit |
-	| index into string table |
-	------------------------------------------------------ -
-	8 | symbol value |
-	------------------------------------------------------ -
-	0Ch | section number | symbol type |
-	------------------------------------------------------ -
-	10h | sym class | num aux |
-	-------------------------- -
-	12h
-
-#endif
 	return true;
 out_error:
 	bin->num_sections = 0;

@@ -53,59 +53,63 @@ static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k 
 	op->fail = make_64bits_address(addr + op->size);
 }
 
-static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
-	int i;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
+	if (!insn->detail) {
+		return NULL;
 	}
-	pj_o(pj);
+
+	RzStructuredData *root = rz_structured_data_new_map();
+	if (!root) {
+		return NULL;
+	}
+
+	RzStructuredData *opex = rz_structured_data_map_add_map(root, "opex");
+	if (!opex) {
+		rz_structured_data_free(root);
+		return NULL;
+	}
+
+	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
 	cs_m68k *x = &insn->detail->m68k;
-	pj_ka(pj, "operands");
-	for (i = 0; i < x->op_count; i++) {
+	for (st32 i = 0; i < x->op_count; i++) {
 		cs_m68k_op *op = &x->operands[i];
-		pj_o(pj);
+		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case M68K_OP_REG:
-			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			rz_structured_data_map_add_string(operand, "type", "reg");
+			rz_structured_data_map_add_string(operand, "value", cs_reg_name(handle, op->reg));
 			break;
 		case M68K_OP_IMM:
-			pj_ks(pj, "type", "imm");
-			pj_kN(pj, "value", (st64)op->imm);
+			rz_structured_data_map_add_string(operand, "type", "imm");
+			rz_structured_data_map_add_signed(operand, "value", (st64)op->imm);
 			break;
 		case M68K_OP_MEM:
-			pj_ks(pj, "type", "mem");
+			rz_structured_data_map_add_string(operand, "type", "mem");
 			if (op->mem.base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "base_reg", cs_reg_name(handle, op->mem.base_reg));
+				rz_structured_data_map_add_string(operand, "base_reg", cs_reg_name(handle, op->mem.base_reg));
 			}
 			if (op->mem.index_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "index_reg", cs_reg_name(handle, op->mem.index_reg));
+				rz_structured_data_map_add_string(operand, "index_reg", cs_reg_name(handle, op->mem.index_reg));
 			}
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
-				pj_ks(pj, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
+				rz_structured_data_map_add_string(operand, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
 			}
-			pj_kN(pj, "in_disp", op->mem.in_disp);
-			pj_kN(pj, "out_disp", op->mem.out_disp);
-			pj_ki(pj, "disp", op->mem.disp);
-			pj_ki(pj, "scale", op->mem.scale);
-			pj_ki(pj, "bitfield", op->mem.bitfield);
-			pj_ki(pj, "width", op->mem.width);
-			pj_ki(pj, "offset", op->mem.offset);
-			pj_ki(pj, "index_size", op->mem.index_size);
+			rz_structured_data_map_add_signed(operand, "in_disp", op->mem.in_disp);
+			rz_structured_data_map_add_signed(operand, "out_disp", op->mem.out_disp);
+			rz_structured_data_map_add_signed(operand, "disp", op->mem.disp);
+			rz_structured_data_map_add_signed(operand, "scale", op->mem.scale);
+			rz_structured_data_map_add_signed(operand, "bitfield", op->mem.bitfield);
+			rz_structured_data_map_add_signed(operand, "width", op->mem.width);
+			rz_structured_data_map_add_signed(operand, "offset", op->mem.offset);
+			rz_structured_data_map_add_signed(operand, "index_size", op->mem.index_size);
 			break;
 		default:
-			pj_ks(pj, "type", "invalid");
+			rz_structured_data_map_add_string(operand, "type", "invalid");
 			break;
 		}
-		pj_end(pj); /* o operand */
 	}
-	pj_end(pj); /* a operands */
-	pj_end(pj);
 
-	rz_strbuf_init(buf);
-	rz_strbuf_append(buf, pj_string(pj));
-	pj_free(pj);
+	return root;
 }
 
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
@@ -176,14 +180,14 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh handle, cs_insn *ins
 	}
 }
 
-static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	M68KContext *ctx = (M68KContext *)a->plugin_data;
 	int n, ret, opsize = -1;
 	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = 0;
 
 	// mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != ctx->omode || a->bits != ctx->obits) {
@@ -238,7 +242,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex(&op->opex, ctx->handle, insn);
+		op->opex = mk68_opex(ctx->handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
@@ -719,7 +723,7 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnalysis *analysis) {
+static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -728,53 +732,53 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=A1    a1\n"
 		"=A2    a2\n"
 		"=A3    a3\n"
-		"gpr	d0	.32	0	0\n"
-		"gpr	d1	.32	4	0\n"
-		"gpr	d2	.32	8	0\n"
-		"gpr	d3	.32	12	0\n"
-		"gpr	d4	.32	16	0\n"
-		"gpr	d5	.32	20	0\n"
-		"gpr	d6	.32	24	0\n"
-		"gpr	d7	.32	28	0\n"
-		"gpr	a0	.32	32	0\n"
-		"gpr	a1	.32	36	0\n"
-		"gpr	a2 	.32	40	0\n"
-		"gpr	a3 	.32	44	0\n"
-		"gpr	a4 	.32	48	0\n"
-		"gpr	a5	.32	52	0\n"
-		"gpr	a6 	.32	56	0\n"
-		"gpr	a7 	.32	60	0\n"
-		"gpr	fp0	.32	64	0\n" // FPU register 0, 96bits to write and read max
-		"gpr	fp1	.32	68	0\n" // FPU register 1, 96bits to write and read max
-		"gpr	fp2	.32	72	0\n" // FPU register 2, 96bits to write and read max
-		"gpr	fp3 	.32	76	0\n" // FPU register 3, 96bits to write and read max
-		"gpr	fp4 	.32	80	0\n" // FPU register 4, 96bits to write and read max
-		"gpr	fp5 	.32	84	0\n" // FPU register 5, 96bits to write and read max
-		"gpr	fp6 	.32	88	0\n" // FPU register 6, 96bits to write and read max
-		"gpr	fp7 	.32	92	0\n" // FPU register 7, 96bits to write and read max
-		"gpr	pc 	.32	96	0\n"
-		"gpr	sr 	.32	100	0\n" // only available for read and write access during supervisor mode 16bit
-		"gpr	ccr 	.32	104	0\n" // subset of the SR, available from any mode
-		"gpr	sfc 	.32	108	0\n" // source function code register
-		"gpr	dfc	.32	112	0\n" // destination function code register
-		"gpr	usp	.32	116	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
-		"gpr	vbr	.32	120	0\n" // vector base register, this is a Address pointer
-		"gpr	cacr	.32	124	0\n" // cache control register, implementation specific
-		"gpr	caar	.32	128	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
-		"gpr	msp	.32	132	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
-		"gpr	isp	.32	136	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
-		"gpr	tc	.32	140	0\n"
-		"gpr	itt0	.32	144	0\n" // in 68EC040 this is IACR0
-		"gpr	itt1	.32	148	0\n" // in 68EC040 this is IACR1
-		"gpr	dtt0	.32	156	0\n" // in 68EC040 this is DACR0
-		"gpr	dtt1	.32	160	0\n" // in 68EC040 this is DACR1
-		"gpr	mmusr	.32	164	0\n"
-		"gpr	urp	.32	168	0\n"
-		"gpr	srp	.32	172	0\n"
-		"gpr	fpcr	.32	176	0\n"
-		"gpr	fpsr	.32	180	0\n"
-		"gpr	fpiar	.32	184	0\n";
-	return strdup(p);
+		"gpr	d0		.32	0	0\n"
+		"gpr	d1		.32	4	0\n"
+		"gpr	d2		.32	8	0\n"
+		"gpr	d3		.32	12	0\n"
+		"gpr	d4		.32	16	0\n"
+		"gpr	d5		.32	20	0\n"
+		"gpr	d6		.32	24	0\n"
+		"gpr	d7		.32	28	0\n"
+		"gpr	a0		.32	32	0\n"
+		"gpr	a1		.32	36	0\n"
+		"gpr	a2 		.32	40	0\n"
+		"gpr	a3 		.32	44	0\n"
+		"gpr	a4 		.32	48	0\n"
+		"gpr	a5		.32	52	0\n"
+		"gpr	a6 		.32	56	0\n"
+		"gpr	a7 		.32	60	0\n"
+		"gpr	pc 		.32	64	0\n"
+		"gpr	ccr 	.8	68	0\n" // subset of the SR, available from any mode
+		"gpr	fp0		.32	69	0\n" // FPU register 0, 96bits to write and read max
+		"gpr	fp1		.32	73	0\n" // FPU register 1, 96bits to write and read max
+		"gpr	fp2		.32	77	0\n" // FPU register 2, 96bits to write and read max
+		"gpr	fp3 	.32	81	0\n" // FPU register 3, 96bits to write and read max
+		"gpr	fp4 	.32	85	0\n" // FPU register 4, 96bits to write and read max
+		"gpr	fp5 	.32	89	0\n" // FPU register 5, 96bits to write and read max
+		"gpr	fp6 	.32	93	0\n" // FPU register 6, 96bits to write and read max
+		"gpr	fp7 	.32	97	0\n" // FPU register 7, 96bits to write and read max
+		"gpr	fpcr	.32	101	0\n"
+		"gpr	fpsr	.32	105	0\n"
+		"gpr	fpiar	.32	109	0\n"
+		"gpr	sr 		.32	113	0\n" // only available for read and write access during supervisor mode 16bit
+		"gpr	sfc 	.32	117	0\n" // source function code register
+		"gpr	dfc		.32	121	0\n" // destination function code register
+		"gpr	usp		.32	125	0\n" // user stack point this is an shadow register of A7 user mode, SR bit 0xD is 0
+		"gpr	vbr		.32	129	0\n" // vector base register, this is a Address pointer
+		"gpr	cacr	.32	133	0\n" // cache control register, implementation specific
+		"gpr	caar	.32	137	0\n" // cache address register, 68020, 68EC020, 68030 and 68EC030 only.
+		"gpr	msp		.32	141	0\n" // master stack pointer, this is an shadow register of A7 supervisor mode, SR bits 0xD && 0xC are set
+		"gpr	isp		.32	145	0\n" // interrupt stack pointer, this is an shadow register of A7  supervisor mode, SR bit 0xD is set, 0xC is not.
+		"gpr	tc		.32	149	0\n"
+		"gpr	itt0	.32	153	0\n" // in 68EC040 this is IACR0
+		"gpr	itt1	.32	157	0\n" // in 68EC040 this is IACR1
+		"gpr	dtt0	.32	161	0\n" // in 68EC040 this is DACR0
+		"gpr	dtt1	.32	165	0\n" // in 68EC040 this is DACR1
+		"gpr	mmusr	.32	169	0\n"
+		"gpr	urp		.32	173	0\n"
+		"gpr	srp		.32	177	0\n";
+	return rz_str_dup(p);
 }
 
 static bool m68k_fini(void *user) {
@@ -786,18 +790,37 @@ static bool m68k_fini(void *user) {
 	return true;
 }
 
+static int m68k_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 2;
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
+	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
+	default:
+		return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",
-	.get_reg_profile = &get_reg_profile,
+	.get_reg_profile = &m68k_get_reg_profile,
 	.bits = 32,
-	.op = &analyze_op,
+	.op = &m68k_analyze_op,
 	.init = m68k_init,
 	.fini = m68k_fini,
+	.archinfo = m68k_archinfo,
 };
+
 #else
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {
 	.name = "m68k (unsupported)",

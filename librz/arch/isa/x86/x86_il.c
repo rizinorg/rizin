@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Dhruv Maroo <dhruvmaru007@gmail.com>
+// SPDX-FileCopyrightText: 2024-2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "x86_il.h"
@@ -46,7 +47,6 @@ const char *x86_bound_regs_16[] = {
 	"bx", /* X86_REG_BX */
 	"cx", /* X86_REG_CX */
 	"dx", /* X86_REG_DX */
-	// "ip", /* X86_REG_IP */
 	"sp", /* X86_REG_SP */
 	"bp", /* X86_REG_BP */
 	"si", /* X86_REG_SI */
@@ -63,7 +63,6 @@ const char *x86_bound_regs_32[] = {
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
 	"edx", /* X86_REG_EDX */
-	// "eip", /* X86_REG_EIP */
 	"esp", /* X86_REG_ESP */
 	"ebp", /* X86_REG_EBP */
 	"esi", /* X86_REG_ESI */
@@ -87,7 +86,6 @@ const char *x86_bound_regs_64[] = {
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
 	"rdx", /* X86_REG_RDX */
-	// "rip", /* X86_REG_RIP */
 	"rsp", /* X86_REG_RSP */
 	"rbp", /* X86_REG_RBP */
 	"rsi", /* X86_REG_RSI */
@@ -116,7 +114,7 @@ typedef RzILOpEffect *(*x86_il_ins)(const X86ILIns *, ut64, RzAnalysis *, X86ILC
 /**
  * \brief RzIL handlers for x86 instructions
  */
-x86_il_ins x86_ins[X86_INS_ENDING] = {
+x86_il_ins x86_ins[X86_INS_MAX_VALUE] = {
 	[X86_INS_INVALID] = x86_il_invalid,
 	[X86_INS_AAA] = x86_il_aaa,
 	[X86_INS_AAD] = x86_il_aad,
@@ -133,16 +131,16 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_CLI] = x86_il_cli,
 	[X86_INS_CMC] = x86_il_cmc,
 	[X86_INS_CMP] = x86_il_cmp,
-	[X86_INS_CMOVA] = x86_il_cmov,
-	[X86_INS_CMOVAE] = x86_il_cmov,
+	[X86_INS_CMOVNBE] = x86_il_cmov,
+	[X86_INS_CMOVNB] = x86_il_cmov,
 	[X86_INS_CMOVB] = x86_il_cmov,
 	[X86_INS_CMOVBE] = x86_il_cmov,
-	[X86_INS_CMOVE] = x86_il_cmov,
-	[X86_INS_CMOVG] = x86_il_cmov,
-	[X86_INS_CMOVGE] = x86_il_cmov,
+	[X86_INS_CMOVZ] = x86_il_cmov,
+	[X86_INS_CMOVNLE] = x86_il_cmov,
+	[X86_INS_CMOVNL] = x86_il_cmov,
 	[X86_INS_CMOVL] = x86_il_cmov,
 	[X86_INS_CMOVLE] = x86_il_cmov,
-	[X86_INS_CMOVNE] = x86_il_cmov,
+	[X86_INS_CMOVNZ] = x86_il_cmov,
 	[X86_INS_CMOVNO] = x86_il_cmov,
 	[X86_INS_CMOVNP] = x86_il_cmov,
 	[X86_INS_CMOVNS] = x86_il_cmov,
@@ -196,7 +194,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_LOOPE] = x86_il_loope,
 	[X86_INS_LOOPNE] = x86_il_loopne,
 	[X86_INS_MOV] = x86_il_mov,
-	[X86_INS_MOVABS] = x86_il_mov,
 	[X86_INS_MOVSB] = x86_il_movsb,
 	[X86_INS_MOVSW] = x86_il_movsw,
 	[X86_INS_MOVSD] = x86_il_movsd,
@@ -218,15 +215,13 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_PUSHF] = x86_il_pushf,
 	[X86_INS_PUSHFD] = x86_il_pushfd,
 	[X86_INS_PUSHFQ] = x86_il_pushfq,
-	[X86_INS_PUSHAW] = x86_il_pushaw,
-	[X86_INS_PUSHAL] = x86_il_pushal,
+	[X86_INS_PUSHAD] = x86_il_pushaw,
 	[X86_INS_RCL] = x86_il_rcl,
 	[X86_INS_RCR] = x86_il_rcr,
 	[X86_INS_ROL] = x86_il_rol,
 	[X86_INS_ROR] = x86_il_ror,
 	[X86_INS_RET] = x86_il_ret,
 	[X86_INS_SAHF] = x86_il_sahf,
-	[X86_INS_SAL] = x86_il_sal,
 	[X86_INS_SAR] = x86_il_sar,
 	[X86_INS_SHL] = x86_il_shl,
 	[X86_INS_SHR] = x86_il_shr,
@@ -245,9 +240,9 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_STOSW] = x86_il_stosw,
 	[X86_INS_SUB] = x86_il_sub,
 	[X86_INS_TEST] = x86_il_test,
-	[X86_INS_WAIT] = x86_il_wait,
+	[X86_INS_FWAIT] = x86_il_fwait,
 	[X86_INS_XCHG] = x86_il_xchg,
-	[X86_INS_XLATB] = x86_il_xlatb,
+	[X86_INS_XLAT] = x86_il_xlat,
 	[X86_INS_XOR] = x86_il_xor,
 	[X86_INS_BOUND] = x86_il_bound,
 	[X86_INS_ENTER] = x86_il_enter,
@@ -302,10 +297,7 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 	[X86_INS_FCOMPP] = x86_il_fcompp,
 	[X86_INS_FICOMP] = x86_il_ficomp,
 	[X86_INS_FCOMI] = x86_il_fcomi,
-#if CS_API_MAJOR > 4
-	[X86_INS_FCOMPI] = x86_il_fcomip,
-	[X86_INS_FUCOMPI] = x86_il_fcomip,
-#endif
+
 	/* Using the same FCOM & FCOMI family IL lifters for FUCOM & FUCOMI family instructions
 	 * since we don't support invalid arithmetic operand exceptions (#IA) anyways. */
 	[X86_INS_FUCOM] = x86_il_fcom,
@@ -321,8 +313,6 @@ x86_il_ins x86_ins[X86_INS_ENDING] = {
 
 	/* unimplemented instructions */
 	[X86_INS_IRET] = x86_il_unimpl,
-	[X86_INS_RETF] = x86_il_unimpl,
-	[X86_INS_RETFQ] = x86_il_unimpl,
 	[X86_INS_INSB] = x86_il_unimpl,
 	[X86_INS_INSW] = x86_il_unimpl,
 	[X86_INS_OUTSB] = x86_il_unimpl,
@@ -339,8 +329,8 @@ void label_port(RzILVM *vm, RzILOpEffect *op);
 
 RZ_IPI bool rz_x86_il_opcode(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *aop, ut64 pc, RZ_BORROW RZ_NONNULL const X86ILIns *ins) {
 	rz_return_val_if_fail(analysis && aop && ins && ins->ins_size > 0, false);
-	if (ins->mnem >= X86_INS_ENDING) {
-		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d", ins->mnem);
+	if (ins->mnem >= X86_INS_MAX_VALUE) {
+		RZ_LOG_ERROR("RzIL: x86: Invalid instruction type %d\n", ins->mnem);
 		return false;
 	}
 

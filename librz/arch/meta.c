@@ -122,7 +122,7 @@ static bool meta_set(RzAnalysis *a, RzAnalysisMetaType type, int subtype, ut64 f
 	if (is_string_with_zeroes(type, subtype)) {
 		item->str = rz_str_ndup(str, item->size);
 	} else {
-		item->str = str ? strdup(str) : NULL;
+		item->str = rz_str_dup(str);
 	}
 	if (str && !item->str) {
 		if (!node) { // If we just created this
@@ -192,6 +192,32 @@ RZ_API void rz_meta_del(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 
 RZ_API bool rz_meta_set(RzAnalysis *a, RzAnalysisMetaType type, ut64 addr, ut64 size, const char *str) {
 	int subtype = type == RZ_META_TYPE_STRING ? RZ_STRING_ENC_UTF8 : 0;
 	return rz_meta_set_with_subtype(a, type, subtype, addr, size, str);
+}
+
+RZ_DEPRECATE RZ_API char rz_meta_type_as_char(RzAnalysisMetaType type) {
+	switch (type) {
+	case RZ_META_TYPE_DATA:
+		return 'd';
+	case RZ_META_TYPE_CODE:
+		return 'c';
+	case RZ_META_TYPE_STRING:
+		return 's';
+	case RZ_META_TYPE_FORMAT:
+		return 'f';
+	case RZ_META_TYPE_MAGIC:
+		return 'm';
+	case RZ_META_TYPE_HIDE:
+		return 'h';
+	case RZ_META_TYPE_COMMENT:
+		return 'C';
+	case RZ_META_TYPE_HIGHLIGHT:
+		return 'H';
+	case RZ_META_TYPE_VARTYPE:
+		return 't';
+	default:
+		rz_warn_if_reached();
+		return '\0';
+	}
 }
 
 RZ_API bool rz_meta_set_with_subtype(RzAnalysis *m, RzAnalysisMetaType type, int subtype, ut64 addr, ut64 size, const char *str) {

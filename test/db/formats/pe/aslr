@@ -28,6 +28,6 @@ NAME=PE: corkami aslr.dll - pi 1
 FILE=bins/pe/aslr.dll
 CMDS=pi 1
 EXPECT=<<EOF
-mov eax, 1
+mov eax, 0x01
 EOF
 RUN

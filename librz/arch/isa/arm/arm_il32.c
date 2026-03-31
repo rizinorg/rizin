@@ -3,6 +3,16 @@
 
 #include <rz_analysis.h>
 #include <rz_util/rz_assert.h>
+
+#if CC_SUPPORTS_W_ENUM_COMPARE
+#pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
+#pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
+#define CAPSTONE_AARCH64_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 #include "arm_cs.h"
@@ -122,6 +132,11 @@ static bool is_vec_signed(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I16:
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+	case ARM_VECTORDATA_F32:
+	case ARM_VECTORDATA_F64:
+#endif
 		return true;
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_U16:
@@ -196,23 +211,37 @@ static inline ut32 arm_data_width(arm_vectordata_type vec_type) {
 	case ARM_VECTORDATA_I32:
 	case ARM_VECTORDATA_U32:
 	case ARM_VECTORDATA_S32:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F32:
+#endif
+#if CS_VERSION_MAJOR > 5
+	case ARM_VECTORDATA_P16: // 16x16 over 32 bits
+#endif
 		return 32;
 	case ARM_VECTORDATA_I8:
 	case ARM_VECTORDATA_U8:
 	case ARM_VECTORDATA_S8:
 		return 8;
 	case ARM_VECTORDATA_I16:
+#if CS_VERSION_MAJOR > 4
+	case ARM_VECTORDATA_F16:
+#endif
 	case ARM_VECTORDATA_S16:
 	case ARM_VECTORDATA_U16:
+#if CS_VERSION_MAJOR > 5
+	case ARM_VECTORDATA_P8: // 8x8 over 16 bits
+#endif
 		return 16;
 	case ARM_VECTORDATA_I64:
+#if CS_VERSION_MAJOR > 4
 	case ARM_VECTORDATA_F64:
+#endif
 	case ARM_VECTORDATA_U64:
 	case ARM_VECTORDATA_S64:
 		return 64;
 	case ARM_VECTORDATA_INVALID:
 	default:
+		eprintf("vec_type: %u\n", vec_type);
 		rz_warn_if_reached();
 		return 0;
 	}
@@ -348,7 +377,9 @@ static bool is_reg_shift(arm_shifter type) {
 	case ARM_SFT_LSL_REG:
 	case ARM_SFT_LSR_REG:
 	case ARM_SFT_ROR_REG:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		return true;
 	default:
 		return false;
@@ -401,7 +432,9 @@ shift(RzILOpBitVector *val, RZ_NULLABLE RzILOpBool **carry_out, arm_shifter type
 			SHIFTR0(val, dist),
 			SHIFTL0(DUP(val), NEG(DUP(dist))));
 	case ARM_SFT_RRX:
+#if CS_NEXT_VERSION < 6
 	case ARM_SFT_RRX_REG:
+#endif
 		if (carry_out) {
 			*carry_out = LSB(DUP(val));
 		}
@@ -429,6 +462,7 @@ static RzILOpBitVector *replicated_val(ut32 val_width, ut32 dreg_width, RZ_OWN R
 	ut32 repeat_times = dreg_width / val_width;
 	if (dreg_width % val_width != 0) {
 		rz_warn_if_reached();
+		rz_il_op_pure_free(val);
 		return NULL;
 	}
 
@@ -1933,10 +1967,10 @@ static RzILOpEffect *revsh(cs_insn *insn, bool is_thumb) {
  * ARM: rfeda, rfedb, rfaia, rfeib
  */
 static RzILOpEffect *rfe(cs_insn *insn, bool is_thumb) {
-	if (!ISREG(0)) {
+	if (!ISMEM(0)) {
 		return NULL;
 	}
-	RzILOpBitVector *base = REG(0);
+	RzILOpBitVector *base = MEMBASE(0);
 	if (!base) {
 		return NULL;
 	}
@@ -2952,7 +2986,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 			RzILOpFloat *l_elem = BV2F(RZ_FLOAT_IEEE754_BIN_32,
 				read_reg_lane(REGID(1), i, vec_size));
 			RzILOpFloat *r_elem = ISIMM(2) ? F32(0.0f) : BV2F(RZ_FLOAT_IEEE754_BIN_32, read_reg_lane(REGID(2), i, vec_size));
-			RzILOpBool *cond;
+			RzILOpBool *cond = NULL;
 			switch (insn->id) {
 			case ARM_INS_VCEQ:
 				cond = FEQ(l_elem, r_elem);
@@ -2976,7 +3010,6 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 				cond = FORDER(FABS(r_elem), FABS(l_elem));
 				break;
 			default:
-				cond = NULL;
 				rz_il_op_pure_free(l_elem);
 				rz_il_op_pure_free(r_elem);
 				rz_il_op_effect_free(eff);
@@ -2997,7 +3030,7 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
 		RzILOpBitVector *r_elem = ISIMM(2) ? UN(vec_size, 0) : read_reg_lane(REGID(2), i, vec_size);
 
-		RzILOpBool *cond;
+		RzILOpBool *cond = NULL;
 		bool as_signed = is_vec_signed(VVEC_DT(insn));
 		switch (insn->id) {
 		case ARM_INS_VCEQ:
@@ -3016,7 +3049,6 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 			cond = as_signed ? SLT(l_elem, r_elem) : SLE(l_elem, r_elem);
 			break;
 		default:
-			cond = NULL;
 			rz_il_op_pure_free(l_elem);
 			rz_il_op_pure_free(r_elem);
 			rz_il_op_effect_free(eff);
@@ -3609,12 +3641,12 @@ RZ_IPI bool rz_arm_cs_is_float_insn(const cs_insn *insn) {
 		switch (group_it) {
 		default:
 			break;
-		case ARM_FEATURE_HasNEON:
-		case ARM_FEATURE_HasVFP2:
-		case ARM_FEATURE_HasVFP3:
-		case ARM_FEATURE_HasVFP4:
-		case ARM_FEATURE_HasDPVFP:
-		case ARM_FEATURE_HasMVEFloat:
+		case ARM_FEATURE_HASNEON:
+		case ARM_FEATURE_HASVFP2:
+		case ARM_FEATURE_HASVFP3:
+		case ARM_FEATURE_HASVFP4:
+		case ARM_FEATURE_HASDPVFP:
+		case ARM_FEATURE_HASMVEFLOAT:
 			return true;
 		}
 		group_it = insn->detail->groups[++i];
@@ -3639,7 +3671,7 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 	ut32 fl_sz = rz_float_get_format_info(is_f2i ? from_fmt : to_fmt, RZ_FLOAT_INFO_TOTAL_LEN);
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3876,7 +3908,7 @@ static RzILOpEffect *vadd(cs_insn *insn, bool is_thumb) {
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3927,7 +3959,7 @@ static RzILOpEffect *vsub(cs_insn *insn, bool is_thumb) {
 	bool is_float_vec = fmt == RZ_FLOAT_UNK ? false : true;
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif
@@ -3976,7 +4008,7 @@ static RzILOpEffect *vmul(cs_insn *insn, bool is_thumb) {
 	RzFloatFormat fmt = dt2fmt(dt);
 
 #if CS_NEXT_VERSION >= 6
-	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HasNEON)) {
+	if (!rz_arm_cs_is_group_member(insn, ARM_FEATURE_HASNEON)) {
 #else
 	if (!rz_arm_cs_is_group_member(insn, ARM_GRP_NEON)) {
 #endif

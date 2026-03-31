@@ -1,11 +1,23 @@
-NAME=got switch cases
+NAME=analyze preludes & tail-call split
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
 aap
 aflc
+afl~mpsort
+s sym.mpsort
+pd 2 @ sym.mpsort
+pdf~jmp
 EOF
 EXPECT=<<EOF
 459
+0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
+0x000128a0    6 83   -> 75   sym.mpsort
+            ; CALL XREF from fcn.00008cac @ 0x8d43
+/ sym.mpsort(int64_t arg_8h);
+|           ; arg int64_t arg_8h @ stack + 0x8
+|           0x000128a0      endbr64
+|           0x000128a4      push  r12
+\       `=< 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN
 
@@ -69,9 +81,9 @@ EXPECT=<<EOF
 0x000048f4 0x00004901 00:0000 13 j 0x000045b1 f 0x00004901
 0x00004901 0x0000491a 00:0000 25 j 0x000045ba f 0x0000491a
 
-|           0x000039c2      mov   dword [data.0021f558], 2             ; [0x21f558:4]=1
+|           0x000039c2      mov   dword [data.0021f558], 0x02          ; [0x21f558:4]=1
 |           0x000039cc      call  fcn.00015960
-|           0x000039d1      mov   byte [data.00220618], 1              ; [0x220618:1]=0
+|           0x000039d1      mov   byte [data.00220618], 0x01           ; [0x220618:1]=0
 EOF
 RUN
 
@@ -100,63 +112,40 @@ FILE=bins/mach0/FMS.uu
 CMDS=<<EOF
 s sym._checkinput
 af
-afi*
+afi
 EOF
 EXPECT=<<EOF
-"f sym._checkinput 288 @ 0x100000da0"
-"af+ sym._checkinput f @ 0x100000da0"
-afb+ 0x100000da0 0x100000da0 22 0x100000db6 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e99 5 0x100000e9e 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e9e 24 0x100000db6 0x100000eb6
-afb+ 0x100000da0 0x100000db6 26 0x100000e99 0x100000dd0
-afb+ 0x100000da0 0x100000eb6 4 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000dd0 20 0xffffffffffffffff 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000eba 6 0xffffffffffffffff 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e54 16 0x100000e82 0x100000e64
-afb+ 0x100000da0 0x100000e82 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e64 16 0x100000e82 0x100000e74
-afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e2a 16 0x100000e46 0x100000e3a
-afb+ 0x100000da0 0x100000e46 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e3a 12 0x100000e4f 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e4f 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e00 16 0x100000e1c 0x100000e10
-afb+ 0x100000da0 0x100000e1c 9 0x100000eba 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e10 12 0x100000e25 0xffffffffffffffff
-afb+ 0x100000da0 0x100000e25 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000de4 16 0x100000dfb 0x100000df4
-afb+ 0x100000da0 0x100000dfb 5 0x100000e99 0xffffffffffffffff
-afb+ 0x100000da0 0x100000df4 7 0x100000dfb 0xffffffffffffffff
-afB 64 @ 0x100000da0
-afc amd64 @ 0x100000da0
-afvs -48 var_30h int64_t @ 0x100000da0
-afvs -40 var_28h int64_t @ 0x100000da0
-afvs -32 var_20h int64_t @ 0x100000da0
-afvs -28 var_1ch int64_t @ 0x100000da0
-afvs -24 var_18h int64_t @ 0x100000da0
-afvs -9 var_9h int64_t @ 0x100000da0
-afvr rdi arg1 int64_t @ 0x100000da0
-axd 0x100000ec0 @ 0x100000dd0
-axc 0x100000de4 @ 0x100000de2
-axc 0x100000e00 @ 0x100000de2
-axc 0x100000e2a @ 0x100000de2
-axc 0x100000e54 @ 0x100000de2
-axc 0x100000e90 @ 0x100000de2
-axc 0x100000e99 @ 0x100000dfb
-axc 0x100000e25 @ 0x100000e17
-axc 0x100000eba @ 0x100000e20
-axc 0x100000e99 @ 0x100000e25
-axc 0x100000e4f @ 0x100000e41
-axc 0x100000eba @ 0x100000e4a
-axc 0x100000e99 @ 0x100000e4f
-axc 0x100000e8b @ 0x100000e7d
-axc 0x100000eba @ 0x100000e86
-axc 0x100000e99 @ 0x100000e8b
-axc 0x100000eba @ 0x100000e94
-axc 0x100000e9e @ 0x100000e99
-afS 8 @ 0x100000da0
+offset: 0x100000da0
+name: sym._checkinput
+size: 288
+is-pure: false
+realsz: 288
+stackframe: 8
+call-convention: amd64
+cyclomatic-cost: 91
+cyclomatic-complexity: 17
+loops: 1
+bits: 64
+type: fcn
+num-bbs: 24
+edges: 29
+end-bbs: 2
+call-refs: 0x100000de4 J 0x100000e00 J 0x100000e2a J 0x100000e54 J 0x100000e90 J 0x100000e99 J 0x100000e25 J 0x100000eba J 0x100000e99 J 0x100000e4f J 0x100000eba J 0x100000e99 J 0x100000e8b J 0x100000eba J 0x100000e99 J 0x100000eba J 0x100000e9e J
+data-refs: 0x100000ec0
+code-xrefs: 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000de2 J 0x100000dfb J 0x100000e17 J 0x100000e20 J 0x100000e25 J 0x100000e41 J 0x100000e4a J 0x100000e4f J 0x100000e7d J 0x100000e86 J 0x100000e8b J 0x100000e94 J 0x100000e99 J
+noreturn: false
+in-degree: 17
+out-degree: 0
+data-xrefs:
+locals: 6
+args: 1
+arg int64_t arg1 @ rdi
+var int64_t var_30h @ stack - 0x30
+var int64_t var_28h @ stack - 0x28
+var int64_t var_20h @ stack - 0x20
+var int64_t var_1ch @ stack - 0x1c
+var int64_t var_18h @ stack - 0x18
+var int64_t var_9h @ stack - 0x9
 EOF
 RUN
 
@@ -484,7 +473,7 @@ EXPECT=<<EOF
 |           0x00003ec4      jmp   rax                                  ; switch table (275 cases) at 0x172d8
 |           ; CODE XREF from main @ 0x3ec4
 |           ;-- case 110:                                              ; from 0x3ec4
-|           0x00003ec6      mov   byte [0x00021260], 1                 ; [0x21260:1]=0
+|           0x00003ec6      mov   byte [0x00021260], 0x01              ; [0x21260:1]=0
 EOF
 RUN
 
@@ -519,30 +508,30 @@ afvd
 EOF
 EXPECT=<<EOF
 / fcn.00487350();
-| 0x00487350      8b8710030000   mov   eax, dword [rdi + 0x310]
-| 0x00487356      48b900000000.  movabs rcx, 0x200000000
-| 0x00487360      8d50ff         lea   edx, [rax - 1]
-| 0x00487363      48b8ffffffff.  movabs rax, 0x3ffffffff
-| 0x0048736d      899710030000   mov   dword [rdi + 0x310], edx
-| 0x00487373      482387100300.  and   rax, qword [rdi + 0x310]
+| 0x00487350      8b8710030000   mov   eax, dword [rdi+0x310]
+| 0x00487356      48b900000000.  mov   rcx, 0x200000000
+| 0x00487360      8d50ff         lea   edx, qword [rax-0x01]
+| 0x00487363      48b8ffffffff.  mov   rax, 0x3ffffffff
+| 0x0048736d      899710030000   mov   dword [rdi+0x310], edx
+| 0x00487373      482387100300.  and   rax, qword [rdi+0x310]
 | 0x0048737a      4839c8         cmp   rax, rcx
-| 0x0048737d      7411           je    0x487390
+| 0x0048737d      7411           jz    0x487390
 | ----------- true: 0x00487390  false: 0x0048737f
 | 0x0048737f      f605d2542300.  test  byte [0x006bc858], 0x40
-| 0x00487386      7525           jne   0x4873ad
+| 0x00487386      7525           jnz   0x4873ad
 | ----------- true: 0x004873ad  false: 0x00487388
-| 0x00487388      f3c3           repz  ret
+| 0x00487388      f3c3           ret
 
 | 0x00487390      8b05ea4d2300   mov   eax, dword [0x006bc180]
 | 0x00487396      85c0           test  eax, eax
-| 0x00487398      7426           je    0x4873c0
+| 0x00487398      7426           jz    0x4873c0
 | ----------- true: 0x004873c0  false: 0x0048739a
 | 0x0048739a      f605b7542300.  test  byte [0x006bc858], 0x40
-| 0x004873a1      c705d54d2300.  mov   dword [0x006bc180], 2
-| 0x004873ab      74db           je    0x487388
+| 0x004873a1      c705d54d2300.  mov   dword [0x006bc180], 0x02
+| 0x004873ab      74db           jz    0x487388
 | ----------- true: 0x00487388  false: 0x004873ad
-| 0x004873ad      488b7708       mov   rsi, qword [rdi + 8]
-| 0x004873b1      488d3dd03502.  lea   rdi, str.closing_file__s__direct_opencount__u
+| 0x004873ad      488b7708       mov   rsi, qword [rdi+0x08]
+| 0x004873b1      488d3dd03502.  lea   rdi, qword str.closing_file__s__direct_opencount__u
 | 0x004873b8      31c0           xor   eax, eax
 | 0x004873ba      e9b16cffff     jmp   fcn.0047e070
 | ----------- true: 0x0047e070
@@ -650,8 +639,7 @@ CMDS=<<EOF
 aa > /dev/null
 afl~sym.__mh_execute_header[0]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 
@@ -744,8 +732,7 @@ aa
 af-*
 afl
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=iS. and iSj. implementation
@@ -759,9 +746,9 @@ s 0x760
 iS.j
 EOF
 EXPECT=<<EOF
-paddr      size vaddr      vsize align perm name               type flags 
+     paddr size      vaddr vsize align perm name               type flags 
 --------------------------------------------------------------------------
-0x00000188 0x24 0x08048188 0x24  0x0   -r-- .note.gnu.build-id NOTE alloc
+0x00000188 0x24 0x08048188  0x24   0x0 -r-- .note.gnu.build-id NOTE alloc
 paddr size vaddr vsize align perm name type flags 
 --------------------------------------------------
 [{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}]
@@ -778,9 +765,9 @@ sd +5
 is.j
 EOF
 EXPECT=<<EOF
-nth paddr      vaddr      bind   type size lib name    
+nth      paddr      vaddr bind   type size lib name    
 -------------------------------------------------------
-22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
+ 22 0x000009b7 0x080489b7 GLOBAL FUNC  189     decrypt
 [{"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false,"lib":""}]
 EOF
 RUN
@@ -880,16 +867,14 @@ RUN
 NAME=ahe
 FILE=malloc://512
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
-ao~?
+e asm.bits=64
+ao~esil
 ahe test
 ao~esil
 EOF
 EXPECT=<<EOF
-19
-esilcost: 0
+esil: al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=
 esil: test
 EOF
 RUN
@@ -901,7 +886,6 @@ ahe test
 ao~^esil
 EOF
 EXPECT=<<EOF
-esilcost: 0
 esil: test
 EOF
 RUN
@@ -956,38 +940,38 @@ s 0x000113bd
 pd 28
 EOF
 EXPECT=<<EOF
-|       ,=< 0x000113bd      je    0x1144e
+|       ,=< 0x000113bd      jz    0x1144e
 |       |   0x000113c3      mov   esi, 0x2f                            ; '/' ; int c
 |       |   0x000113c8      call  sym.imp.strrchr                      ; char *strrchr(const char *s, int c)
 |       |   0x000113cd      test  rax, rax
-|      ,==< 0x000113d0      je    0x11424
-|      ||   0x000113d2      lea   rdx, [rax + 1]
+|      ,==< 0x000113d0      jz    0x11424
+|      ||   0x000113d2      lea   rdx, qword [rax+0x01]
 |      ||   0x000113d6      mov   rcx, rdx
 |      ||   0x000113d9      sub   rcx, rbx
-|      ||   0x000113dc      cmp   rcx, 6
+|      ||   0x000113dc      cmp   rcx, 0x06
 |     ,===< 0x000113e0      jle   0x11424
-|     |||   0x000113e2      lea   rsi, [rax - 6]
-|     |||   0x000113e6      mov   ecx, 7
-|     |||   0x000113eb      lea   rdi, [rip + 0x7ebb]                  ; str..libs
+|     |||   0x000113e2      lea   rsi, qword [rax-0x06]
+|     |||   0x000113e6      mov   ecx, 0x07
+|     |||   0x000113eb      lea   rdi, qword [rip+0x7ebb]              ; str..libs
 |     |||                                                              ; 0x192ad ; "/.libs/"
-|     |||   0x000113f2      repe  cmpsb byte [rsi], byte ptr [rdi]
-|    ,====< 0x000113f4      jne   0x11424
-|    ||||   0x000113f6      mov   ecx, 3
+|     |||   0x000113f2      repe  cmpsb
+|    ,====< 0x000113f4      jnz   0x11424
+|    ||||   0x000113f6      mov   ecx, 0x03
 |    ||||   0x000113fb      mov   rsi, rdx
 |    ||||   0x000113fe      mov   rbx, rdx
-|    ||||   0x00011401      lea   rdi, [rip + 0x7ead]                  ; data.000192b5
+|    ||||   0x00011401      lea   rdi, qword [rip+0x7ead]              ; data.000192b5
 |    ||||                                                              ; 0x192b5 ; "lt-"
-|    ||||   0x00011408      repe  cmpsb byte [rsi], byte ptr [rdi]
-|    ||||   0x0001140a      seta  sil
+|    ||||   0x00011408      repe  cmpsb
+|    ||||   0x0001140a      setnbe sil
 |    ||||   0x0001140e      setb  cl
 |    ||||   0x00011411      cmp   sil, cl
-|   ,=====< 0x00011414      jne   0x11424
-|   |||||   0x00011416      lea   rbx, [rax + 4]
-|   |||||   0x0001141a      mov   rax, qword [rip + 0xdeaf]            ; reloc.program_invocation_short_name
+|   ,=====< 0x00011414      jnz   0x11424
+|   |||||   0x00011416      lea   rbx, qword [rax+0x04]
+|   |||||   0x0001141a      mov   rax, qword [rip+0xdeaf]              ; reloc.program_invocation_short_name
 |   |||||                                                              ; [0x1f2d0:8]=0x21ba0 reloc.target.program_invocation_short_name
 |   |||||   0x00011421      mov   qword [rax], rbx
 |   |||||   ; CODE XREFS from fcn.00011390 @ 0x113d0, 0x113e0, 0x113f4, 0x11414
-|   ````--> 0x00011424      mov   rax, qword [rip + 0xde3d]            ; data.0001f268
+|   ````--> 0x00011424      mov   rax, qword [rip+0xde3d]              ; data.0001f268
 |       |                                                              ; [0x1f268:8]=0x21680
 EOF
 RUN
@@ -1007,33 +991,33 @@ s 0x00003ca6
 pd 19
 EOF
 EXPECT=<<EOF
-|           0x00003ca6      cmp   eax, 2
-|       ,=< 0x00003ca9      je    0x45ec
-|       |   0x00003caf      cmp   eax, 3
-|      ,==< 0x00003cb2      je    0x3ce3
-|      ||   0x00003cb4      sub   eax, 1
-|     ,===< 0x00003cb7      je    0x3cbe
+|           0x00003ca6      cmp   eax, 0x02
+|       ,=< 0x00003ca9      jz    0x45ec
+|       |   0x00003caf      cmp   eax, 0x03
+|      ,==< 0x00003cb2      jz    0x3ce3
+|      ||   0x00003cb4      sub   eax, 0x01
+|     ,===< 0x00003cb7      jz    0x3cbe
 |     |||   ; CODE XREFS from main @ 0x58bc, 0x58d2
 |     |||   ;-- default:                                               ; from 0x58d2
 |     |||   0x00003cb9      call  sym.imp.abort                        ; void abort(void)
 |     |||   ; CODE XREF from main @ 0x3cb7
-|     `---> 0x00003cbe      mov   edi, 1                               ; int fd
+|     `---> 0x00003cbe      mov   edi, 0x01                            ; int fd
 |      ||   0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |      ||   0x00003cc8      test  eax, eax
-|     ,===< 0x00003cca      je    0x4c2e
-|     |||   0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|     ,===< 0x00003cca      jz    0x4c2e
+|     |||   0x00003cd0      mov   dword [rip+0x1d626], 0x02            ; data.00021300
 |     |||                                                              ; [0x21300:4]=0
-|     |||   0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|     |||   0x00003cda      mov   byte [rip+0x1d33f], 0x01             ; data.00021020
 |     |||                                                              ; [0x21020:1]=0
 |    ,====< 0x00003ce1      jmp   0x3cf9
 |    ||||   ; CODE XREF from main @ 0x3cb2
-|    ||`--> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
+|    ||`--> 0x00003ce3      mov   esi, 0x05                            ; int64_t arg2
 |    || |   0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|    || |   0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|    || |   0x00003cea      mov   dword [rip+0x1d60c], 0x00            ; data.00021300
 |    || |                                                              ; [0x21300:4]=0
 |    || |   0x00003cf4      call  fcn.00012740
 |    || |   ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
-|    `----> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE
+|    `----> 0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
 |     | |                                                              ; 0x18cb4 ; "QUOTING_STYLE" ; const char *name
 EOF
 RUN
@@ -1054,33 +1038,33 @@ s 0x00003ca6
 pd 19
 EOF
 EXPECT=<<EOF
-|           0x00003ca6      cmp   eax, 2
-|      ,==< 0x00003ca9      je    0x45ec
-|      |    0x00003caf      cmp   eax, 3
-|    ,====< 0x00003cb2      je    0x3ce3
-|    | |    0x00003cb4      sub   eax, 1
-|  ,======< 0x00003cb7      je    0x3cbe
+|           0x00003ca6      cmp   eax, 0x02
+|      ,==< 0x00003ca9      jz    0x45ec
+|      |    0x00003caf      cmp   eax, 0x03
+|    ,====< 0x00003cb2      jz    0x3ce3
+|    | |    0x00003cb4      sub   eax, 0x01
+|  ,======< 0x00003cb7      jz    0x3cbe
 |  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    ;-- default:                                               ; from 0x58d2
 |  | | |    0x00003cb9      call  sym.imp.abort                        ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
-|  `------> 0x00003cbe      mov   edi, 1                               ; int fd
+|  `------> 0x00003cbe      mov   edi, 0x01                            ; int fd
 |    | |    0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |    | |    0x00003cc8      test  eax, eax
-|  ,======< 0x00003cca      je    0x4c2e
-|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|  ,======< 0x00003cca      jz    0x4c2e
+|  | | |    0x00003cd0      mov   dword [rip+0x1d626], 0x02            ; data.00021300
 |  | | |                                                               ; [0x21300:4]=0
-|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|  | | |    0x00003cda      mov   byte [rip+0x1d33f], 0x01             ; data.00021020
 |  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
-|  | `----> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
+|  | `----> 0x00003ce3      mov   esi, 0x05                            ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|  |   |    0x00003cea      mov   dword [rip+0x1d60c], 0x00            ; data.00021300
 |  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
-| --------> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE
+| --------> 0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
 |  |   |                                                               ; 0x18cb4 ; "QUOTING_STYLE" ; const char *name
 EOF
 RUN
@@ -1100,33 +1084,33 @@ s 0x00003ca6
 pd 19
 EOF
 EXPECT=<<EOF
-|           0x00003ca6      cmp   eax, 2
-|      ,==< 0x00003ca9      je    0x45ec
-|      |    0x00003caf      cmp   eax, 3
-|    ,====< 0x00003cb2      je    0x3ce3
-|    | |    0x00003cb4      sub   eax, 1
-|  ,======< 0x00003cb7      je    0x3cbe
+|           0x00003ca6      cmp   eax, 0x02
+|      ,==< 0x00003ca9      jz    0x45ec
+|      |    0x00003caf      cmp   eax, 0x03
+|    ,====< 0x00003cb2      jz    0x3ce3
+|    | |    0x00003cb4      sub   eax, 0x01
+|  ,======< 0x00003cb7      jz    0x3cbe
 |  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    ;-- default:                                               ; from 0x58d2
 |  | | |    0x00003cb9      call  sym.imp.abort                        ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
-|  `------> 0x00003cbe      mov   edi, 1                               ; int fd
+|  `------> 0x00003cbe      mov   edi, 0x01                            ; int fd
 |    | |    0x00003cc3      call  sym.imp.isatty                       ; int isatty(int fd)
 |    | |    0x00003cc8      test  eax, eax
-|  ,======< 0x00003cca      je    0x4c2e
-|  | | |    0x00003cd0      mov   dword [rip + 0x1d626], 2             ; data.00021300
+|  ,======< 0x00003cca      jz    0x4c2e
+|  | | |    0x00003cd0      mov   dword [rip+0x1d626], 0x02            ; data.00021300
 |  | | |                                                               ; [0x21300:4]=0
-|  | | |    0x00003cda      mov   byte [rip + 0x1d33f], 1              ; data.00021020
+|  | | |    0x00003cda      mov   byte [rip+0x1d33f], 0x01             ; data.00021020
 |  | | |                                                               ; [0x21020:1]=0
 | ========< 0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
-|  | `----> 0x00003ce3      mov   esi, 5                               ; int64_t arg2
+|  | `----> 0x00003ce3      mov   esi, 0x05                            ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
-|  |   |    0x00003cea      mov   dword [rip + 0x1d60c], 0             ; data.00021300
+|  |   |    0x00003cea      mov   dword [rip+0x1d60c], 0x00            ; data.00021300
 |  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
-| --------> 0x00003cf9      lea   rdi, [rip + 0x14fb4]                 ; str.QUOTING_STYLE
+| --------> 0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
 |  |   |                                                               ; 0x18cb4 ; "QUOTING_STYLE" ; const char *name
 EOF
 RUN
@@ -1153,18 +1137,18 @@ EXPECT=<<EOF
 |           0x00012740      push  rbp
 |           0x00012741      mov   rbp, rsp
 |           0x00012744      sub   rsp, 0x1030
-|           0x0001274b      or    qword [rsp], 0
+|           0x0001274b      or    qword [rsp], 0x00
 |           0x00012750      add   rsp, 0x1020
 |           0x00012757      mov   rax, qword fs:[0x28]
 |           0x00012760      mov   qword [var_10h], rax
 |           0x00012764      xor   eax, eax
-|           0x00012766      lea   rax, [rip + 0xf033]
+|           0x00012766      lea   rax, qword [rip+0xf033]
 |           0x0001276d      test  rdi, rdi
-|           0x00012770      cmovne rax, rdi
+|           0x00012770      cmovnz rax, rdi
 |           0x00012774      mov   dword [rax], esi
 |           0x00012776      mov   rax, qword [var_10h]
 |           0x0001277a      xor   rax, qword fs:[0x28]
-|      ,==< 0x00012783      jne   0x12787
+|      ,==< 0x00012783      jnz   0x12787
 |      |    0x00012785      leave
 |      |    0x00012786      ret
 \      `--> 0x00012787      call  sym.imp.__stack_chk_fail
@@ -1187,7 +1171,7 @@ EXPECT=<<EOF
         ╎   ; CALL XREF from main @ 0x400406
 ┌ int sym.imp.puts(const char *s);
 └       ╎   0x004003f0      jmp   qword [reloc.puts]                   ; [0x601018:8]=0x4003f6
-        ╎   0x004003f6      push  0
+        ╎   0x004003f6      push  0x00
         └─< 0x004003fb      jmp   sym..plt
 EOF
 RUN
@@ -1211,8 +1195,8 @@ pdr~0x100003b44
 pdr~0x100003b46
 EOF
 EXPECT=<<EOF
-0x100003b27  -104            add   rsi, 0xc
-0x100003b27  -104            add   rsi, 0xc
+0x100003b27  -104            add   rsi, 0x0c
+0x100003b27  -104            add   rsi, 0x0c
 0x100003b3d   -48 += 8       pop   rbx
 0x100003b3e   -40 += 8       pop   r12
 0x100003b40   -32 += 8       pop   r13
@@ -1240,7 +1224,7 @@ pd 1
 EOF
 EXPECT=<<EOF
   ; [0x1048:8]=0x500 "Hello"
-  0x00000000      mov rsi, qword [rip + 0x1041]
+  0x00000000      mov rsi, qword [rip+0x1041]
 EOF
 RUN
 
@@ -1262,7 +1246,7 @@ pd 1
 EOF
 EXPECT=<<EOF
   ; [0x1048:8]=0x500 "Hello"
-  0x00000000      mov rsi, qword [rip + 0x1041]
+  0x00000000      mov rsi, qword [rip+0x1041]
 EOF
 RUN
 
@@ -1301,14 +1285,14 @@ EXPECT=<<EOF
 |           ; var DWORD dwFlagsAndAttributes @ stack - 0x20
 |           ; var HANDLE hTemplateFile @ stack - 0x18
 |           0x14000b54c      4883ec48       sub   rsp, 0x48
-|           0x14000b550      488364243000   and   qword [hTemplateFile], 0 ; HANDLE hTemplateFile
-|           0x14000b556      488d0da37300.  lea   rcx, str.CONOUT      ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
-|           0x14000b55d      8364242800     and   dword [dwFlagsAndAttributes], 0 ; DWORD dwFlagsAndAttributes
-|           0x14000b562      41b803000000   mov   r8d, 3               ; DWORD dwShareMode
+|           0x14000b550      488364243000   and   qword [hTemplateFile], 0x00 ; HANDLE hTemplateFile
+|           0x14000b556      488d0da37300.  lea   rcx, qword str.CONOUT ; 0x140012900 ; u"CONOUT$" ; LPCWSTR lpFileName
+|           0x14000b55d      8364242800     and   dword [dwFlagsAndAttributes], 0x00 ; DWORD dwFlagsAndAttributes
+|           0x14000b562      41b803000000   mov   r8d, 0x03            ; DWORD dwShareMode
 |           0x14000b568      4533c9         xor   r9d, r9d             ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
 |           0x14000b56b      4489442420     mov   dword [dwCreationDisposition], r8d ; DWORD dwCreationDisposition
 |           0x14000b570      ba00000040     mov   edx, 0x40000000      ; DWORD dwDesiredAccess
-|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [sym.imp.KERNEL32.dll_CreateFileW:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [0x14000d208:8]=0x1579e ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 |           0x14000b57b      4889057eb400.  mov   qword [0x140016a00], rax ; [0x140016a00:8]=-2
 |           0x14000b582      4883c448       add   rsp, 0x48
 \           0x14000b586      c3             ret
@@ -1358,8 +1342,7 @@ tfc CRTStartup THE_CC_THAT_NEVER_EXISTED
 aei
 aeim
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=2: Wrong calling convention
@@ -1567,7 +1550,7 @@ fastcall
 |           0x0804844e      83c410         add   esp, 0x10
 |           0x08048451      90             nop
 |           0x08048452      c9             leave
-\           0x08048453      c20800         ret   8
+\           0x08048453      c20800         ret   0x08
 EOF
 RUN
 
@@ -1622,16 +1605,15 @@ af
 afvr-*
 afvr-*
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=analysis vars crash 2
 FILE==
 CMDS=<<EOF
 e asm.bytes=true
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 e analysis.arch=x86
 e asm.calls=false
 wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
@@ -1663,31 +1645,16 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvs* & afvn
-FILE=bins/efi/bootia32.efi
-CMDS=<<EOF
-af
-afvn ImageHandle arg_4h
-afvn SystemTable arg_8h
-afvs*~?ImageHandle
-afvs*~?SystemTable
-EOF
-EXPECT=<<EOF
-1
-1
-EOF
-RUN
-
 NAME=afvs idx... & afvn
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 td "typedef void * EFI_HANDLE;"
 af
 afvs -0x10 ImageHandle EFI_HANDLE @ 0x10002d8d
-afvs*~ImageHandle
+afvs~ImageHandle
 EOF
 EXPECT=<<EOF
-afvs -16 ImageHandle EFI_HANDLE @ 0x10002d8d
+var EFI_HANDLE ImageHandle @ stack - 0x10
 EOF
 RUN
 
@@ -1738,8 +1705,8 @@ FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
 af
 afvr esi myreg int @ 0x10002d8d
-afvr*~?myreg
-afvr*~?int
+afvr~?myreg
+afvr~?int
 EOF
 EXPECT=<<EOF
 1
@@ -1852,7 +1819,7 @@ axd 0x260 @ str.hello
 pd 1 @ 0x260
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from str.hello @ 
+            ; DATA XREF from str.hello @
             0x00000260      80e0           ldi   r24, 0x00
 EOF
 RUN
@@ -1923,7 +1890,7 @@ e asm.sub.rel=true
 axt @ sym.imp.msvcrt.dll_printf
 EOF
 EXPECT=<<EOF
-entry0 0xffffffffffff100a [CALL] call qword [rip + 0xd8]
+entry0 0xffffffffffff100a [CALL] call qword [rip+0xd8]
 entry0 0xffffffffffff100a [CALL] call qword [sym.imp.msvcrt.dll_printf]
 EOF
 RUN
@@ -2005,8 +1972,8 @@ RUN
 NAME=x86 ref issue
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
+e asm.bits=64
 wx c7052a44000050000000
 ao~^ptr[1]
 EOF
@@ -2458,25 +2425,24 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 612,
+    "id": 668,
     "opex": {
       "operands": [
         {
-          "size": 8,
-          "rw": 1,
           "type": "reg",
-          "value": "rflags"
+          "value": "eflags",
+          "read": true,
+          "nbits": 64
         }
       ]
     },
     "addr": 0,
     "bytes": "669c",
     "size": 2,
-    "type": "upush",
-    "esilcost": 24,
+    "type": "rpush",
     "scale": 0,
     "refptr": 0,
-    "cycles": 2,
+    "cycles": 1,
     "failcycles": 0,
     "delay": 0,
     "stack": "inc",
@@ -2502,13 +2468,13 @@ axt @ 0x00001df4
 axt @ 0x00001e09
 EOF
 EXPECT=<<EOF
-main 0x1457 [STRING] lea eax, str.Take_the_Red_Pill
-main 0x148e [STRING] lea eax, str.use:_._exploit1_PILL
-main 0x14eb [STRING] lea eax, str.Red_Pill__0x50444552
-main 0x1502 [STRING] lea eax, str.Your_Pill_0x_08x
-main 0x1523 [STRING] lea eax, str.Red_Pill
-main 0x1557 [STRING] lea eax, str.fwhibbit
-main 0x161d [STRING] lea eax, str.Blue_Pill
+main 0x1457 [STRING] lea eax, dword str.Take_the_Red_Pill
+main 0x148e [STRING] lea eax, dword str.use:_._exploit1_PILL
+main 0x14eb [STRING] lea eax, dword str.Red_Pill__0x50444552
+main 0x1502 [STRING] lea eax, dword str.Your_Pill_0x_08x
+main 0x1523 [STRING] lea eax, dword str.Red_Pill
+main 0x1557 [STRING] lea eax, dword str.fwhibbit
+main 0x161d [STRING] lea eax, dword str.Blue_Pill
 EOF
 RUN
 
@@ -2552,7 +2518,7 @@ aae
 axt @ 0x80484e0
 EOF
 EXPECT=<<EOF
-main 0x8048432 [STRING] lea eax, str.Hello_PIC
+main 0x8048432 [STRING] lea eax, dword str.Hello_PIC
 EOF
 RUN
 
@@ -2572,13 +2538,13 @@ axt @ 0x00001df4
 axt @ 0x00001e09
 EOF
 EXPECT=<<EOF
-main 0x1457 [STRING] lea eax, [esi - 0x2277]
-main 0x148e [STRING] lea eax, [esi - 0x2260]
-main 0x14eb [STRING] lea eax, [esi - 0x2249]
-main 0x1502 [STRING] lea eax, [esi - 0x222f]
-main 0x1523 [STRING] lea eax, [esi - 0x2218]
-main 0x1557 [STRING] lea eax, [esi - 0x220c]
-main 0x161d [STRING] lea eax, [esi - 0x21f7]
+main 0x1457 [STRING] lea eax, dword [esi-0x2277]
+main 0x148e [STRING] lea eax, dword [esi-0x2260]
+main 0x14eb [STRING] lea eax, dword [esi-0x2249]
+main 0x1502 [STRING] lea eax, dword [esi-0x222f]
+main 0x1523 [STRING] lea eax, dword [esi-0x2218]
+main 0x1557 [STRING] lea eax, dword [esi-0x220c]
+main 0x161d [STRING] lea eax, dword [esi-0x21f7]
 EOF
 RUN
 
@@ -2592,7 +2558,7 @@ aae
 axt @ 0x80484e0
 EOF
 EXPECT=<<EOF
-main 0x8048432 [STRING] lea eax, [ebx - 0x1b20]
+main 0x8048432 [STRING] lea eax, dword [ebx-0x1b20]
 EOF
 RUN
 
@@ -2606,7 +2572,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-|           0x08048432      8d83e0e4ffff   lea   eax, str.Hello_PIC    ; 0x80484e0 ; "Hello PIC!"
+|           0x08048432      8d83e0e4ffff   lea   eax, dword str.Hello_PIC ; 0x80484e0 ; "Hello PIC!"
 EOF
 RUN
 
@@ -2622,7 +2588,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-[36m|[0m           [32m0x08048432[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [33mstr.Hello_PIC[0m[0m[0m
+[36m|[0m           [32m0x08048432[0m      [37mlea[0m[37m   [0m[36meax[0m[37m, [0m[37mdword[0m[37m [33mstr.Hello_PIC[0m[0m[0m
 EOF
 RUN
 
@@ -2652,9 +2618,9 @@ EOF
 EXPECT=<<EOF
 ; DATA XREF from entry0 @ +0xf
 ;-- __libc_csu_fini:
-0x00400730      f3c3           repz  ret
+0x00400730      f3c3           ret
 ; CODE XREF from sym.__do_global_ctors_aux @ +0x2d
-0x004007f0      4883eb08       sub   rbx, 8
+0x004007f0      4883eb08       sub   rbx, 0x08
 ; CALL XREF from section..fini @ +0x4
 ;-- __do_global_dtors_aux:
 0x00400610      55             push  rbp
@@ -2677,9 +2643,9 @@ EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x4005cf
 sym.__libc_csu_fini();
-0x00400730      f3c3           repz  ret
+0x00400730      f3c3           ret
 ; CODE XREF from sym.__do_global_ctors_aux @ 0x4007fd
-0x004007f0      4883eb08       sub   rbx, 8
+0x004007f0      4883eb08       sub   rbx, 0x08
   ; CALL XREF from sym._fini @ 0x40080c
 sym.__do_global_dtors_aux();
 0x00400610      55             push  rbp
@@ -2698,7 +2664,7 @@ aar
 pd 1 @ _idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from unk @ 
+; DATA XREF from unk @
 0x1000002e      00             nop
 EOF
 RUN
@@ -2716,7 +2682,7 @@ afr
 pd 1 @ _idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from fcn.00000000 @ 
+; DATA XREF from fcn.00000000 @
 0x1000002e      00             nop
 EOF
 RUN
@@ -2738,8 +2704,7 @@ CMDS=<<EOF
 aaa
 fl~strlen~390
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=no function split without overlapping blocks
@@ -2794,7 +2759,7 @@ is-pure: true
 realsz: 7
 stackframe: 0
 call-convention: amd64
-cyclomatic-cost: 4
+cyclomatic-cost: 2
 cyclomatic-complexity: 0
 loops: 0
 bits: 64
@@ -2822,7 +2787,7 @@ args: 0
 
 / fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
-\       `=< 0x00000005      ebfd           jmp   4
+\       `=< 0x00000005      ebfd           jmp   0x4
 EOF
 RUN
 
@@ -2875,7 +2840,7 @@ args: 0
 
 / fcn.00000000();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
-| 0x00000005      ebfd           jmp   4
+| 0x00000005      ebfd           jmp   0x4
 | ----------- true: 0x00000004
 | ; CODE XREF from fcn.00000000 @ 0x5
 | 0x00000004      c1ebfd         shr   ebx, 0xfd
@@ -2888,7 +2853,7 @@ args: 0
         | fcn.00000000();     |
         | ; '!'               |
         | mov eax, 0xc1000021 |
-        | jmp 4               |
+        | jmp 0x4             |
         `---------------------'
             v
             |
@@ -2912,7 +2877,7 @@ args: 0
 
 / fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
-|       `=< 0x00000005      ebfd           jmp   4
+|       `=< 0x00000005      ebfd           jmp   0x4
 |           0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \           0x0000000c      cc             int3
 
@@ -2946,12 +2911,12 @@ args: 0
 
 / fcn.00000000();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
-| 0x00000005      ebfd           jmp   4
+| 0x00000005      ebfd           jmp   0x4
 | ----------- true: 0x00000004
 | ; CODE XREFS from fcn.00000000 @ 0x5, 0xc
 | 0x00000004      c1ebfd         shr   ebx, 0xfd
 | 0x00000007      bb2c000000     mov   ebx, 0x2c                       ; ','
-\ 0x0000000c      ebf6           jmp   4
+\ 0x0000000c      ebf6           jmp   0x4
 | ----------- true: 0x00000004
 
             .---------------------.
@@ -2959,7 +2924,7 @@ args: 0
             | fcn.00000000();     |
             | ; '!'               |
             | mov eax, 0xc1000021 |
-            | jmp 4               |
+            | jmp 0x4             |
             `---------------------'
                 v
                 |
@@ -2976,7 +2941,7 @@ args: 0
 || shr ebx, 0xfd                             |
 || ; ','                                     |
 || mov ebx, 0x2c                             |
-|| jmp 4                                     |
+|| jmp 0x4                                   |
 |`-------------------------------------------'
 |    v
 |    |
@@ -2987,13 +2952,13 @@ args: 0
 |           ; CODE XREFS from fcn.00000000 @ 0x5, 0xc
 |      ..-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
-\       `=< 0x0000000c      ebf6           jmp   4
+\       `=< 0x0000000c      ebf6           jmp   0x4
 
 / fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
-|      `==< 0x00000005      ebfd           jmp   4
+|      `==< 0x00000005      ebfd           jmp   0x4
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
-\       `=< 0x0000000c      ebf6           jmp   4
+\       `=< 0x0000000c      ebf6           jmp   0x4
 
 offset: 0x00000000
 name: fcn.00000000
@@ -3030,10 +2995,10 @@ args: 0
 | ; CODE XREF from fcn.00000000 @ 0x5
 | 0x00000004      c1ebfd         shr   ebx, 0xfd
 | 0x00000007      bb2c000000     mov   ebx, 0x2c                       ; ','
-\ 0x0000000c      ebf7           jmp   5
+\ 0x0000000c      ebf7           jmp   0x5
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0xc
-| 0x00000005      ebfd           jmp   4
+| 0x00000005      ebfd           jmp   0x4
 | ----------- true: 0x00000004
 
          .---------------------.
@@ -3050,7 +3015,7 @@ args: 0
 |.-------------------------------------.
 ||  0x5                                |
 || ; CODE XREF from fcn.00000000 @ 0xc |
-|| jmp 4                               |
+|| jmp 0x4                             |
 |`-------------------------------------'
 |    v
 |    |
@@ -3061,7 +3026,7 @@ args: 0
 || shr ebx, 0xfd                       |
 || ; ','                               |
 || mov ebx, 0x2c                       |
-|| jmp 5                               |
+|| jmp 0x5                             |
 |`-------------------------------------'
 |    v
 |    |
@@ -3072,16 +3037,16 @@ args: 0
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004  ~   c1ebfd         shr   ebx, 0xfd
 |       |   ; CODE XREF from fcn.00000000 @ 0xc
-|      .`=< 0x00000005      ebfd           jmp   4
+|      .`=< 0x00000005      ebfd           jmp   0x4
 |      :    0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
-\      `==< 0x0000000c      ebf7           jmp   5
+\      `==< 0x0000000c      ebf7           jmp   0x5
 
 / fcn.00000000();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       |   ; CODE XREF from fcn.00000000 @ 0xc
-|      .`=< 0x00000005      ebfd           jmp   4
+|      .`=< 0x00000005      ebfd           jmp   0x4
 |      :    0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
-\      `==< 0x0000000c      ebf7           jmp   5
+\      `==< 0x0000000c      ebf7           jmp   0x5
 
 offset: 0x00000000
 name: fcn.00000000
@@ -3114,35 +3079,35 @@ args: 0
 0x00000009 0x00000013 00:0000 10 j 0x00000003
 
 / fcn.00000000();
-| 0x00000000      0f1f440000     nop   dword [rax + rax]
+| 0x00000000      0f1f440000     nop   dword [rax+rax*1], eax
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x11
 | 0x00000003      0000           add   byte [rax], al
 | ----------- true: 0x00000005
 | 0x00000005      b8210000c1     mov   eax, 0xc1000021                 ; '!'
-| 0x0000000a      ebfd           jmp   9
+| 0x0000000a      ebfd           jmp   0x9
 | ----------- true: 0x00000009
 | ; CODE XREF from fcn.00000000 @ 0xa
 | 0x00000009      c1ebfd         shr   ebx, 0xfd
 | 0x0000000c      bb2c000000     mov   ebx, 0x2c                       ; ','
-\ 0x00000011      ebf0           jmp   3
+\ 0x00000011      ebf0           jmp   0x3
 | ----------- true: 0x00000003
 
-         .-----------------------.
-         |  0x0                  |
-         | fcn.00000000();       |
-         | nop dword [rax + rax] |
-         `-----------------------'
-             v
-             |
-             '--.
+      .----------------------------.
+      |  0x0                       |
+      | fcn.00000000();            |
+      | nop dword [rax+rax*1], eax |
+      `----------------------------'
+          v
+          |
+          '-----.
 .-----------------.
 |               | |
 |         .---------------------.
 |         |  0x5                |
 |         | ; '!'               |
 |         | mov eax, 0xc1000021 |
-|         | jmp 9               |
+|         | jmp 0x9             |
 |         `---------------------'
 |             v
 |             |
@@ -3154,7 +3119,7 @@ args: 0
 | | shr ebx, 0xfd                       |
 | | ; ','                               |
 | | mov ebx, 0x2c                       |
-| | jmp 3                               |
+| | jmp 0x3                             |
 | `-------------------------------------'
 |     v
 |     |
@@ -3170,21 +3135,21 @@ args: 0
 `----'
 
 / fcn.00000000();
-|           0x00000000  ~   0f1f440000     nop   dword [rax + rax]
+|           0x00000000  ~   0f1f440000     nop   dword [rax+rax*1], eax
 |           ; CODE XREF from fcn.00000000 @ 0x11
 |       .-> 0x00000003      0000           add   byte [rax], al
 |       :   0x00000005  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       :   ; CODE XREF from fcn.00000000 @ 0xa
 |      .--> 0x00000009      c1ebfd         shr   ebx, 0xfd
 |       :   0x0000000c      bb2c000000     mov   ebx, 0x2c             ; ','
-\       `=< 0x00000011      ebf0           jmp   3
+\       `=< 0x00000011      ebf0           jmp   0x3
 
 / fcn.00000000();
-|           0x00000000      0f1f440000     nop   dword [rax + rax]
+|           0x00000000      0f1f440000     nop   dword [rax+rax*1], eax
 |       :   0x00000005      b8210000c1     mov   eax, 0xc1000021       ; '!'
-|      `==< 0x0000000a      ebfd           jmp   9
+|      `==< 0x0000000a      ebfd           jmp   0x9
 |       :   0x0000000c      bb2c000000     mov   ebx, 0x2c             ; ','
-\       `=< 0x00000011      ebf0           jmp   3
+\       `=< 0x00000011      ebf0           jmp   0x3
 EOF
 RUN
 
@@ -3241,7 +3206,7 @@ args: 0
 / fcn.00000003();
 | 0x00000003      0010           add   byte [rax], dl
 | ----------- true: 0x00000005
-| 0x00000005      ebf9           jmp   0
+| 0x00000005      ebf9           jmp   0x0
 | ----------- true: 0x00000000
 
 .----.
@@ -3259,7 +3224,7 @@ args: 0
 |                                    | |
 |                              .-----------.
 |                              |  0x5      |
-|                              | jmp 0     |
+|                              | jmp 0x0   |
 |                              `-----------'
 |                                  v
 |                                  |
@@ -3267,18 +3232,18 @@ args: 0
 
 / fcn.00000003();
 |           0x00000003      0010           add   byte [rax], dl
-|           0x00000005      ebf9           jmp   0
+|           0x00000005      ebf9           jmp   0x0
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           ;-- (0x00000003) fcn.00000003:
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-|           0x00000005      ebf9           jmp   0
+|           0x00000005      ebf9           jmp   0x0
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 / fcn.00000003();
 |           0x00000003      0010           add   byte [rax], dl
-|           0x00000005      ebf9           jmp   0
+|           0x00000005      ebf9           jmp   0x0
 EOF
 RUN
 
@@ -3307,7 +3272,7 @@ EXPECT=<<EOF
 / fcn.00000003();
 | 0x00000003      0010           add   byte [rax], dl
 | ----------- true: 0x00000005
-| 0x00000005      ebf9           jmp   0
+| 0x00000005      ebf9           jmp   0x0
 | ----------- true: 0x00000000
 
 .----.
@@ -3325,15 +3290,15 @@ EXPECT=<<EOF
 |                                    | |
 |                              .-----------.
 |                              |  0x5      |
-|                              | jmp 0     |
+|                              | jmp 0x0   |
 |                              `-----------'
 |                                  v
 |                                  |
 `----------------------------------'
 
-addr       name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn min bound  range max bound  locals args frame loops 
+      addr name         size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn  min bound range  max bound locals args frame loops 
 -------------------------------------------------------------------------------------------------------------------------------------
-0x00000003 fcn.00000003 9    1       1         0     3    3     0  4    false    0x00000000 7     0x00000007 0      0    0     1
+0x00000003 fcn.00000003    9       1         1     0    3     3  0    4 false    0x00000000     7 0x00000007      0    0     0     1
 EOF
 RUN
 
@@ -3370,14 +3335,13 @@ EOF
 EXPECT=<<EOF
 address: 0x0
 opcode: push rbp
-esilcost: 24
 disasm: push rbp
 pseudo: push rbp
 mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
 prefix: 0
-id: 609
+id: 665
 bytes: 55
 refptr: 0
 size: 1
@@ -3386,6 +3350,12 @@ type: rpush
 cycles: 1
 esil: rbp,8,rsp,-,=[8],8,rsp,-=
 rzil: (seq (set final (- (var rsp) (bv 64 0x8))) (storew 0 (var final) (cast 64 false (var rbp))) (set rsp (var final)))
+opex:
+  operands:
+    - type: "reg"
+      value: "rbp"
+      read: true
+      nbits: 64
 family: cpu
 stackop: inc
 stackptr: 8
@@ -3521,19 +3491,19 @@ af
 pif
 EOF
 EXPECT=<<EOF
-lea rdi, loc._edata
-lea rax, [0x0021d28f]
+lea rdi, qword loc._edata
+lea rax, qword [0x0021d28f]
 push rbp
 sub rax, rdi
 mov rbp, rsp
-cmp rax, 0xe
+cmp rax, 0x0e
 jbe 0x5c80
 mov rax, qword [reloc._ITM_deregisterTMCloneTable]
 test rax, rax
-je 0x5c80
+jz 0x5c80
 pop rbp
 jmp rax
-nop word [rax + rax]
+nop word [rax+rax*1], ax
 pop rbp
 ret
 EOF
@@ -3805,41 +3775,39 @@ e asm.lines=false
 pdf~case
 EOF
 EXPECT=<<EOF
-0x140001012      0f871a010000   ja    case.0x140001034.3
+0x140001012      0f871a010000   jnbe  case.0x140001034.3
 0x140001034      ffe1           jmp   rcx                              ; switch table (99 cases) at 0x140001148
 ;-- case 1:                                                            ; from 0x140001034
-0x140001036      488d0dd31100.  lea   rcx, str.case_1                  ; 0x140002210 ; "case 1"
+0x140001036      488d0dd31100.  lea   rcx, qword str.case_1            ; 0x140002210 ; "case 1"
 ;-- case 2:                                                            ; from 0x140001034
-0x14000104b      488d0dc61100.  lea   rcx, str.case_2                  ; 0x140002218 ; "case 2"
+0x14000104b      488d0dc61100.  lea   rcx, qword str.case_2            ; 0x140002218 ; "case 2"
 ;-- case 11:                                                           ; from 0x140001034
-0x140001060      488d0db91100.  lea   rcx, str.case_11                 ; 0x140002220 ; "case 11"
+0x140001060      488d0db91100.  lea   rcx, qword str.case_11           ; 0x140002220 ; "case 11"
 ;-- case 13:                                                           ; from 0x140001034
-0x140001075      488d0dac1100.  lea   rcx, str.case_13                 ; 0x140002228 ; "case 13"
+0x140001075      488d0dac1100.  lea   rcx, qword str.case_13           ; 0x140002228 ; "case 13"
 ;-- case 15...16:                                                      ; from 0x140001034
-0x14000108a      488d0d9f1100.  lea   rcx, str.case_15_and_16          ; 0x140002230 ; "case 15 and 16"
+0x14000108a      488d0d9f1100.  lea   rcx, qword str.case_15_and_16    ; 0x140002230 ; "case 15 and 16"
 ;-- case 19:                                                           ; from 0x140001034
-0x14000109f      488d0d9a1100.  lea   rcx, str.case_19                 ; 0x140002240 ; "case 19"
+0x14000109f      488d0d9a1100.  lea   rcx, qword str.case_19           ; 0x140002240 ; "case 19"
 ;-- case 50:                                                           ; from 0x140001034
-0x1400010b4      488d0d8d1100.  lea   rcx, str.case_50                 ; 0x140002248 ; "case 50"
+0x1400010b4      488d0d8d1100.  lea   rcx, qword str.case_50           ; 0x140002248 ; "case 50"
 ;-- case 30:                                                           ; from 0x140001034
-0x1400010c9      488d0d801100.  lea   rcx, str.case_30                 ; 0x140002250 ; "case 30"
+0x1400010c9      488d0d801100.  lea   rcx, qword str.case_30           ; 0x140002250 ; "case 30"
 ;-- case 20:                                                           ; from 0x140001034
-0x1400010de      488d0d731100.  lea   rcx, str.case_20                 ; 0x140002258 ; "case 20"
+0x1400010de      488d0d731100.  lea   rcx, qword str.case_20           ; 0x140002258 ; "case 20"
 ;-- case 10:                                                           ; from 0x140001034
-0x1400010f3      488d0d661100.  lea   rcx, str.case_10                 ; 0x140002260 ; "case 10"
+0x1400010f3      488d0d661100.  lea   rcx, qword str.case_10           ; 0x140002260 ; "case 10"
 ;-- case 99:                                                           ; from 0x140001034
-0x140001108      488d0d591100.  lea   rcx, str.case_99                 ; 0x140002268 ; "case 99"
+0x140001108      488d0d591100.  lea   rcx, qword str.case_99           ; 0x140002268 ; "case 99"
 ;-- case 97:                                                           ; from 0x140001034
-0x14000111d      488d0d4c1100.  lea   rcx, str.case_97                 ; 0x140002270 ; "case 97"
+0x14000111d      488d0d4c1100.  lea   rcx, qword str.case_97           ; 0x140002270 ; "case 97"
 ;-- case 3...9:                                                        ; from 0x140001034
 ;-- case 12:                                                           ; from 0x140001034
 ;-- case 14:                                                           ; from 0x140001034
-;-- case 18:                                                           ; from 0x140001034
-;-- case 22...29:                                                      ; from 0x140001034
-;-- case 31:                                                           ; from 0x140001034
-;-- case 32...49:                                                      ; from 0x140001034
-;-- case 51:                                                           ; from 0x140001034
-;-- case 52...96:                                                      ; from 0x140001034
+;-- case 17...18:                                                      ; from 0x140001034
+;-- case 21...29:                                                      ; from 0x140001034
+;-- case 31...49:                                                      ; from 0x140001034
+;-- case 51...96:                                                      ; from 0x140001034
 ;-- case 98:                                                           ; from 0x140001034
 EOF
 RUN
@@ -3988,31 +3956,6 @@ outputs: 11
 EOF
 RUN
 
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-afr
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
-NAME=./noncode
-FILE=bins/mach0/ls-osx-x86_64
-CMDS=<<EOF
-e analysis.noncode=false
-e analysis.calls=true
-af
-afl~?str.
-EOF
-EXPECT=<<EOF
-0
-EOF
-RUN
-
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
@@ -4043,7 +3986,7 @@ EXPECT=<<EOF
 |           0x140001096      57             push  rdi
 |           0x140001097      4883ec30       sub   rsp, 0x30
 |           0x14000109b      488bf9         mov   rdi, rcx
-|           0x14000109e      488d742458     lea   rsi, [var_10h]
+|           0x14000109e      488d742458     lea   rsi, qword [var_10h]
 |           0x1400010a3      33c9           xor   ecx, ecx
 |           0x1400010a5      ff15cd100000   call  qword [sym.imp.api_ms_win_crt_stdio_l1_1_0.dll___acrt_iob_func]
 |           0x1400010ab      488bd8         mov   rbx, rax
@@ -4102,8 +4045,7 @@ s 0x780
 af
 pdr~- case[2]
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=lea pseudo improvements (pseudo disabled)
@@ -4127,23 +4069,23 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_4h @ stack + 0x4
 |           0x00000000      54             push  rsp
 |           0x00000001      4889e5         mov   rbp, rsp
-|           0x00000004      b402           mov   ah, 2
+|           0x00000004      b402           mov   ah, 0x02
 |           0x00000006      66b83333       mov   ax, 0x3333
 |           0x0000000a      b855554444     mov   eax, 0x44445555
-|           0x0000000f      48b8bebafeca.  movabs rax, 0xdeadbeefcafebabe
+|           0x0000000f      48b8bebafeca.  mov   rax, 0xdeadbeefcafebabe
 |           0x00000019      4889d8         mov   rax, rbx
-|           0x0000001c      488d03         lea   rax, [rbx]
-|           0x0000001f      488b4308       mov   rax, qword [rbx + 8]
-|           0x00000023      488d4308       lea   rax, [rbx + 8]
-|           0x00000027      488d041b       lea   rax, [rbx + rbx]
-|           0x0000002b      488d441b0a     lea   rax, [rbx + rbx + 0xa]
-|           0x00000030      488d430a       lea   rax, [rbx + 0xa]
-|           0x00000034      488d44240c     lea   rax, [arg_4h]
-|           0x00000039      488d450b       lea   rax, [arg_3h]
-|           0x0000003d      488d45f5       lea   rax, [var_13h]
-|           0x00000041      488d442404     lea   rax, [var_4h]
-|           0x00000046      488d4508       lea   rax, [var_4h + 0x4]
-|           0x0000004a      488d45f8       lea   rax, [var_10h]
+|           0x0000001c      488d03         lea   rax, qword [rbx]
+|           0x0000001f      488b4308       mov   rax, qword [rbx+0x08]
+|           0x00000023      488d4308       lea   rax, qword [rbx+0x08]
+|           0x00000027      488d041b       lea   rax, qword [rbx+rbx*1]
+|           0x0000002b      488d441b0a     lea   rax, qword [rbx+rbx*1+0x0a]
+|           0x00000030      488d430a       lea   rax, qword [rbx+0x0a]
+|           0x00000034      488d44240c     lea   rax, qword [arg_4h]
+|           0x00000039      488d450b       lea   rax, qword [arg_3h]
+|           0x0000003d      488d45f5       lea   rax, qword [var_13h]
+|           0x00000041      488d442404     lea   rax, qword [var_4h]
+|           0x00000046      488d4508       lea   rax, qword [var_4h + 0x4]
+|           0x0000004a      488d45f8       lea   rax, qword [var_10h]
 EOF
 RUN
 
@@ -4168,23 +4110,23 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_4h @ stack + 0x4
 |           0x00000000      54             push rsp
 |           0x00000001      4889e5         rbp = rsp
-|           0x00000004      b402           ah = 2
+|           0x00000004      b402           ah = 0x02
 |           0x00000006      66b83333       ax = 0x3333
 |           0x0000000a      b855554444     eax = 0x44445555
 |           0x0000000f      48b8bebafeca.  rax = 0xdeadbeefcafebabe
 |           0x00000019      4889d8         rax = rbx
-|           0x0000001c      488d03         rax = rbx
-|           0x0000001f      488b4308       rax = qword [rbx + 8]
-|           0x00000023      488d4308       rax = rbx + 8
-|           0x00000027      488d041b       rax = rbx + rbx
-|           0x0000002b      488d441b0a     rax = rbx + rbx + 0xa
-|           0x00000030      488d430a       rax = rbx + 0xa
-|           0x00000034      488d44240c     rax = arg_4h
-|           0x00000039      488d450b       rax = arg_3h
-|           0x0000003d      488d45f5       rax = var_13h
-|           0x00000041      488d442404     rax = var_4h
-|           0x00000046      488d4508       rax = var_4h + 0x4
-|           0x0000004a      488d45f8       rax = var_10h
+|           0x0000001c      488d03         rax = qword rbx
+|           0x0000001f      488b4308       rax = qword [rbx+0x08]
+|           0x00000023      488d4308       rax = qword rbx+0x08
+|           0x00000027      488d041b       rax = qword rbx+rbx*1
+|           0x0000002b      488d441b0a     rax = qword rbx+rbx*1+0x0a
+|           0x00000030      488d430a       rax = qword rbx+0x0a
+|           0x00000034      488d44240c     rax = qword arg_4h
+|           0x00000039      488d450b       rax = qword arg_3h
+|           0x0000003d      488d45f5       rax = qword var_13h
+|           0x00000041      488d442404     rax = qword var_4h
+|           0x00000046      488d4508       rax = qword var_4h + 0x4
+|           0x0000004a      488d45f8       rax = qword var_10h
 EOF
 RUN
 
@@ -4271,8 +4213,7 @@ FILE=bins/elf/dwarf_attr_check
 CMDS=<<EOF
 aaa
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=x86_64 int64_t variable overlapping removal
@@ -4311,10 +4252,10 @@ arg int64_t arg2 @ rsi
 void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
 var const char *s2 @ stack - 0xc8
 var void *s1 @ stack - 0xc0
-var uint64_t var_b8h @ stack - 0xb8
+var unsigned long var_b8h @ stack - 0xb8
 var int64_t var_b0h @ stack - 0xb0
 var int64_t var_a8h @ stack - 0xa8
-var uint64_t var_98h @ stack - 0x98
+var unsigned long var_98h @ stack - 0x98
 var int64_t var_94h @ stack - 0x94
 var int64_t var_90h @ stack - 0x90
 var int64_t var_88h @ stack - 0x88
@@ -4341,10 +4282,10 @@ EOF
 EXPECT=<<EOF
 addr size jump fail 
 --------------------
-0x0  2    0x23 0x2
-0x2  2    0x1e -1
-0x1e 5    0x23 -1
-0x23 7    -1   -1
+ 0x0    2 0x23  0x2
+ 0x2    2 0x1e   -1
+0x1e    5 0x23   -1
+0x23    7   -1   -1
 EOF
 RUN
 
@@ -4356,39 +4297,39 @@ af
 afbt
 EOF
 EXPECT=<<EOF
-addr    size jump    fail    
+   addr size    jump    fail 
 -----------------------------
-0xa3a20 17   0xa3b4b 0xa3a31
-0xa3a31 10   0xa3b9a 0xa3a3b
-0xa3a3b 17   -1      -1
-0xa3b4a 1    -1      -1
-0xa3b4b 5    0xa3b62 0xa3b50
-0xa3b50 5    0xa3b73 0xa3b55
-0xa3b55 5    0xa3b80 0xa3b5a
-0xa3b5a 2    0xa3b61 0xa3b5c
-0xa3b5c 5    0xa3b61 -1
-0xa3b61 1    -1      -1
-0xa3b62 17   -1      -1
-0xa3b73 13   -1      -1
-0xa3b80 17   -1      -1
-0xa3b9a 9    0xa3c13 0xa3ba3
-0xa3ba3 6    0xa3bf0 0xa3ba9
-0xa3ba9 71   -1      -1
-0xa3bf0 35   -1      -1
-0xa3c13 9    0xa3ca8 0xa3c1c
-0xa3c1c 6    0xa3b4a 0xa3c22
-0xa3c22 65   0xa3d2f 0xa3c63
-0xa3c63 48   0xa3c63 0xa3c93
-0xa3c93 21   -1      -1
-0xa3ca8 63   0xa3d96 0xa3ce7
-0xa3ce7 52   0xa3ce7 0xa3d1b
-0xa3d1b 20   -1      -1
-0xa3d2f 13   0xa3c63 0xa3d3c
-0xa3d3c 66   0xa3d3c 0xa3d7e
-0xa3d7e 24   -1      -1
-0xa3d96 13   0xa3ce7 0xa3da3
-0xa3da3 67   0xa3da3 0xa3de6
-0xa3de6 23   -1      -1
+0xa3a20   17 0xa3b4b 0xa3a31
+0xa3a31   10 0xa3b9a 0xa3a3b
+0xa3a3b   17      -1      -1
+0xa3b4a    1      -1      -1
+0xa3b4b    5 0xa3b62 0xa3b50
+0xa3b50    5 0xa3b73 0xa3b55
+0xa3b55    5 0xa3b80 0xa3b5a
+0xa3b5a    2 0xa3b61 0xa3b5c
+0xa3b5c    5 0xa3b61      -1
+0xa3b61    1      -1      -1
+0xa3b62   17      -1      -1
+0xa3b73   13      -1      -1
+0xa3b80   17      -1      -1
+0xa3b9a    9 0xa3c13 0xa3ba3
+0xa3ba3    6 0xa3bf0 0xa3ba9
+0xa3ba9   71      -1      -1
+0xa3bf0   35      -1      -1
+0xa3c13    9 0xa3ca8 0xa3c1c
+0xa3c1c    6 0xa3b4a 0xa3c22
+0xa3c22   65 0xa3d2f 0xa3c63
+0xa3c63   48 0xa3c63 0xa3c93
+0xa3c93   21      -1      -1
+0xa3ca8   63 0xa3d96 0xa3ce7
+0xa3ce7   52 0xa3ce7 0xa3d1b
+0xa3d1b   20      -1      -1
+0xa3d2f   13 0xa3c63 0xa3d3c
+0xa3d3c   66 0xa3d3c 0xa3d7e
+0xa3d7e   24      -1      -1
+0xa3d96   13 0xa3ce7 0xa3da3
+0xa3da3   67 0xa3da3 0xa3de6
+0xa3de6   23      -1      -1
 EOF
 RUN
 
@@ -4415,3 +4356,71 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=axf string false positive
+FILE=bins/elf/echo
+CMDS=<<EOF
+# make sure none of the analysis produces incorrect redundant xref see rizinorg/rizin#1828
+aaa
+axf @ 0xef8
+EOF
+EXPECT=<<EOF
+d 0x11f4 str.Missing_argument
+EOF
+RUN
+
+NAME=aoj incorrect immediate value
+FILE==
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=64
+wx "c6442428d6"
+aoj~{[0].opex.operands[1].value}
+EOF
+EXPECT=<<EOF
+214
+EOF
+RUN
+
+NAME=aac creates function at syn_start_line
+FILE=bins/elf/vim
+CMDS=<<EOF
+aac
+s 0x001b8420
+afl.
+pdf @ sym.syn_start_line
+pd 2 @ sym.syntax_start
+EOF
+EXPECT=<<EOF
+0x001b8420 sym.syn_start_line
+            ; CALL XREFS from sym.syntax_start @ 0x1b9f10, 0x1b9fca, 0x1ba458
+/ sym.syn_start_line();
+|           0x001b8420      sub   rsp, 0x08
+|           0x001b8424      mov   eax, dword [0x004b3d90]              ; [0x4b3d90:4]=0
+|           0x001b842a      mov   dword [0x004b3da8], 0x00             ; [0x4b3da8:4]=0
+|           0x001b8434      mov   dword [0x004b3db0], 0x00             ; [0x4b3db0:4]=0
+|           0x001b843e      test  eax, eax
+|       ,=< 0x001b8440      jle   0x1b8451
+|       |   0x001b8442      mov   edi, 0x01
+|       |   0x001b8447      call  sym.syn_update_ends
+|       |   0x001b844c      call  sym.check_state_ends
+|       `-> 0x001b8451      mov   dword [0x004b3e18], 0xffffffff       ; [0x4b3e18:4]=0
+|           0x001b845b      add   dword [0x004b3d74], 0x01             ; [0x4b3d74:4]=0
+|           0x001b8462      add   rsp, 0x08
+\           0x001b8466      ret
+            ; CALL XREFS from sym.win_line @ 0x181983, 0x185a31
+            ; CALL XREF from sym.syn_get_foldlevel @ 0x1ba870
+            ; CALL XREF from sym.syn_get_id @ 0x1baad1
+/ sym.syntax_start(int64_t arg_fh);
+|           ; var int64_t var_70h @ stack - 0x70
+|           ; var int64_t var_64h @ stack - 0x64
+|           ; var int64_t var_60h @ stack - 0x60
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; arg int64_t arg_fh @ stack + 0xf
+|           0x001b9b30      push  r15
+|           0x001b9b32      push  r14
+EOF
+RUN

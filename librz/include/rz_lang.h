@@ -22,6 +22,7 @@ typedef struct rz_lang_t {
 	PrintfCallback cb_printf;
 	RzCoreCmdStrCallback cmd_str;
 	RzCoreCmdfCallback cmdf;
+	RzPath *sys_path; ///< pointer to RzPath, contains path prefix of the system
 } RzLang;
 
 typedef struct rz_lang_plugin_t {

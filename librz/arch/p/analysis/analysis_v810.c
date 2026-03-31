@@ -559,7 +559,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	s   .1 152.30 0\n"
 		"flg	z   .1 152.31 0\n";
 
-	return strdup(p);
+	return rz_str_dup(p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_v810 = {

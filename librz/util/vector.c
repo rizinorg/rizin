@@ -36,6 +36,7 @@
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
 	vec->a = NULL;
+	vec->reverse_sorted = false;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
 	vec->free = free;
@@ -185,7 +186,9 @@ RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem) {
 }
 
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	void *p = rz_vector_index_ptr(vec, index);
 	if (into) {
 		rz_vector_assign(vec, into, p);
@@ -224,8 +227,20 @@ RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
 	return p;
 }
 
-RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, void *first, size_t count) {
+/**
+ * \brief Inserts \p count elements from \p first in vector \p vec at index \p index, shifting elements if necessary.
+ *
+ * \param vec The vector to insert in.
+ * \param index The index to insert the new elements. It can be equal to vector length which means insert-at-the-end.
+ * \param first The array containing the new elements. If NULL, \p count empty elements will be inserted.
+ * \param count The number of elements from \p first to be inserted, or number of empty elements if \p first is NULL.
+ * \return A pointer to the inserted elements.
+ */
+RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE void *first, size_t count) {
 	rz_return_val_if_fail(vec && index <= vec->len, NULL);
+	if (count == 0) {
+		return (char *)vec->a + vec->elem_size * index;
+	}
 	if (vec->len + count > vec->capacity) {
 		RESIZE_OR_RETURN_NULL(RZ_MAX(NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
@@ -241,8 +256,45 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, void *first, si
 	return p;
 }
 
+/**
+ * \brief Inserts an element into a sorted vector keeping the order.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the final position of the element is undefined.
+ *
+ * \param vec A sorted vector to insert the element into.
+ * \param elem Pointer to the element to insert into the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Pointer to the position in the vector where the element was placed.
+ * Or NULL in case of failure.
+ */
+RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && elem, NULL);
+	if (rz_vector_empty(vec)) {
+		return rz_vector_push(vec, elem);
+	}
+	size_t i = vec->reverse_sorted ? rz_vector_len(vec) - 1 : 0;
+	int inc = vec->reverse_sorted ? -1 : 1;
+
+	do {
+		void *velem = ((char *)vec->a) + (vec->elem_size * i);
+		if (cmp(velem, elem, user) >= 0) {
+			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
+		}
+		if (i == 0 && inc == -1) {
+			// Overflow is undefined. So lets not depend on it.
+			break;
+		}
+		i += inc;
+	} while (i >= 0 && i < rz_vector_len(vec));
+	return vec->reverse_sorted ? rz_vector_push_front(vec, elem) : rz_vector_push(vec, elem);
+}
+
 RZ_API void rz_vector_pop(RzVector *vec, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	if (into) {
 		rz_vector_assign(vec, into, rz_vector_index_ptr(vec, vec->len - 1));
 	}
@@ -250,7 +302,9 @@ RZ_API void rz_vector_pop(RzVector *vec, void *into) {
 }
 
 RZ_API void rz_vector_pop_front(RzVector *vec, void *into) {
-	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	rz_vector_remove_at(vec, 0, into);
 }
 
@@ -269,6 +323,26 @@ RZ_API void *rz_vector_push(RzVector *vec, void *x) {
 RZ_API void *rz_vector_push_front(RzVector *vec, void *x) {
 	rz_return_val_if_fail(vec, NULL);
 	return rz_vector_insert(vec, 0, x);
+}
+
+/**
+ * \brief Checks if the given element is in the vector.
+ *
+ * \param vec The vector to search in.
+ * \param elem Pointer to the element to search.
+ *
+ * \return True if the vector contains the element, false otherwise.
+ */
+RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem) {
+	rz_return_val_if_fail(vec && elem, false);
+	for (size_t i = 0; i < vec->len; i++) {
+		// Casts to make Windows happy.
+		char *elem_v = ((char *)vec->a) + (vec->elem_size * i);
+		if (memcmp(elem_v, (char *)elem, vec->elem_size) == 0) {
+			return true;
+		}
+	}
+	return false;
 }
 
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
@@ -360,6 +434,10 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
  */
 RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(vec && cmp);
+	vec->reverse_sorted = reverse;
+	if (rz_vector_empty(vec)) {
+		return;
+	}
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
@@ -417,6 +495,14 @@ RZ_API void rz_pvector_free(RzPVector *vec) {
 	free(vec);
 }
 
+/**
+ * \brief Checks if a the pointer \p x is in the vector.
+ *
+ * \param vec The vector to search in.
+ * \param x The pointer to search.
+ *
+ * \return Returns the pointer to the \p x pointer in the vector if found. NULL otherwise.
+ */
 RZ_API void **rz_pvector_contains(RzPVector *vec, const void *x) {
 	rz_return_val_if_fail(vec, NULL);
 	size_t i;
@@ -445,6 +531,26 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 		}
 	}
 	return NULL;
+}
+
+/**
+ * \brief Find the \p element in the \p vec.
+ * \param vec the RzPVector to search in.
+ * \param value the value that elements in pvector compare against by \p cmp.
+ * \param cmp the comparator function.
+ * \return Returns the index of the first matching element, SZT_MAX otherwise.
+ */
+RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *value, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec, SZT_MAX);
+
+	void **iter = NULL;
+	size_t i = 0;
+	rz_pvector_enumerate (vec, iter, i) {
+		if (!cmp(value, *iter, user)) {
+			return i;
+		}
+	}
+	return SZT_MAX;
 }
 
 /**
@@ -484,6 +590,10 @@ RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t in
 	rz_return_val_if_fail(vec && ptr, NULL);
 	void **p = rz_vector_index_ptr(&vec->v, index);
 	if (!p) {
+		if (vec->v.free_user) {
+			RzPVectorFree free_fn = (RzPVectorFree)vec->v.free_user;
+			free_fn(ptr);
+		}
 		return NULL;
 	}
 	void *prev = *p;
@@ -546,5 +656,41 @@ static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) 
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
 	rz_return_if_fail(vec && cmp);
+	if (rz_pvector_empty(vec)) {
+		return;
+	}
 	quick_sort(vec->v.a, vec->v.len, cmp, user);
+}
+
+/**
+ * \brief Find the unique values in the \p vec and push it in a new RzPVector.
+ * \param vec the RzPVector to search in.
+ * \param cmp the comparator function.
+ * \param user the user data for \p cmp function.
+ * \return Returns a new RzPVector which contains only unique values.
+ */
+RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && cmp, NULL);
+
+	RzPVector *npv = rz_pvector_new(NULL);
+	if (!npv) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (vec, it) {
+		bool found = false;
+		void **it2;
+		void *item = *it;
+		rz_pvector_foreach (npv, it2) {
+			void *item2 = *it2;
+			if (cmp(item, item2, user) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			rz_pvector_push(npv, item);
+		}
+	}
+	return npv;
 }

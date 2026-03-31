@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2022 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
@@ -85,10 +85,8 @@ RZ_IPI st32 ppc_get_mem_acc_size(ut32 insn_id) {
 	default:
 		RZ_LOG_INFO("Memory access size for instruction %d requested. But it is not in the switch case.\n", insn_id);
 		return -1;
-#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
-#endif
 		// Doesn't read from memory.
 		return 0;
 	case PPC_INS_LBZ:

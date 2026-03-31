@@ -285,7 +285,7 @@ static const RzBufferMethods buf_methods = {
 
 RZ_API RzBuffer *rz_dyldcache_new_rebasing_buf(RzDyldCache *cache) {
 	rz_return_val_if_fail(cache, NULL);
-	return rz_buf_new_with_methods(&buf_methods, cache);
+	return rz_buf_new_with_methods(&buf_methods, cache, RZ_BUFFER_CUSTOM);
 }
 
 RZ_API bool rz_dyldcache_needs_rebasing(RzDyldCache *cache) {

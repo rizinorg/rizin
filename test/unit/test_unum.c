@@ -169,6 +169,13 @@ bool test_rz_num_bitmask() {
 	mu_end;
 }
 
+bool test_rz_num_abs() {
+	mu_assert_eq(rz_num_abs(ST64_MAX), ST64_MAX, "rz_num_abs(2^63 - 1) = 2^63 - 1");
+	mu_assert_eq(rz_num_abs(0), 0, "rz_num_abs(0) = 0");
+	mu_assert_eq(rz_num_abs(ST64_MIN), UT64_GT0, "rz_num_abs(-2^63) = 2^63");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_num_units);
 	mu_run_test(test_rz_num_minmax_swap_i);
@@ -179,6 +186,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_str_split_list);
 	mu_run_test(test_rz_num_align_delta);
 	mu_run_test(test_rz_num_bitmask);
+	mu_run_test(test_rz_num_abs);
 	return tests_passed != tests_run;
 }
 

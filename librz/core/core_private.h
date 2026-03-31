@@ -8,8 +8,21 @@
 #include <rz_core.h>
 #include <rz_il.h>
 
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core);
+RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
+
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
+RZ_IPI bool rz_core_is_core_dump(RzCore *core);
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
@@ -139,10 +152,15 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state);
 RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state);
 RZ_IPI void rz_core_debug_signal_print(RzDebug *dbg, RzCmdStateOutput *state);
+RZ_IPI void rz_core_debug_listinfo_to_table(RZ_NONNULL RzTable *table, RZ_NULLABLE RzList /*<RzDbgListInfo *>*/ *list, ut64 seek, ut64 len, int width, bool va);
 
 /* cfile.c */
 RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
 RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
+
+/* cmark.c */
+RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state);
+RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
 
 /* cflag.c */
 RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
@@ -164,12 +182,17 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core);
 RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32 byte_len, ut32 inst_len);
 RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address);
 RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address);
+RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len);
 
 /* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 RZ_IPI bool rz_core_seek_bb_instruction(RzCore *core, int index);
+
+/* cmd_task.c */
+RZ_IPI void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode, PJ *j);
+RZ_IPI void rz_core_tasks_print(RzCore *core, RzOutputMode mode);
 
 /* cmd_meta.c */
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
@@ -267,9 +290,9 @@ typedef struct rz_core_visual_tab_t {
 
 typedef int (*RzPanelsMenuCallback)(void *user);
 typedef struct rz_panels_menu_item {
-	int n_sub, selectedIndex;
+	int selectedIndex;
 	char *name;
-	struct rz_panels_menu_item **sub;
+	RzPVector /*<RzPanelsMenuItem *>*/ submenus;
 	RzPanelsMenuCallback cb;
 	RzPanel *p;
 } RzPanelsMenuItem;
@@ -295,7 +318,7 @@ typedef enum {
 	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
 } RzPanelsLayout;
 
-typedef struct rz_panels_t {
+typedef struct rz_panels_tab_t {
 	RzConsCanvas *can;
 	RzPanel **panel;
 	int n_panels;
@@ -307,16 +330,16 @@ typedef struct rz_panels_t {
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
 	RzPanelsMenu *panels_menu;
-	Sdb *db;
-	Sdb *rotate_db;
-	Sdb *almighty_db;
-	HtPP *mht;
+	HtSS *db;
+	HtSP *rotate_db;
+	HtSP *almighty_db;
+	HtSP *mht;
 	RzPanelsMode mode;
 	RzPanelsMode prevMode;
 	RzPanelsLayout layout;
 	char *name;
 	bool first_run;
-} RzPanels;
+} RzPanelsTab;
 
 typedef enum {
 	DEFAULT,
@@ -326,20 +349,48 @@ typedef enum {
 } RzPanelsRootState;
 
 typedef struct rz_panels_root_t {
-	int n_panels;
-	int cur_panels;
-	Sdb *pdc_caches;
-	Sdb *cur_pdc_cache;
-	RzPanels **panels;
+	int cur_tab;
+	RzPVector /*<RzPanelsTab *>*/ tabs;
+	RzPanelsTab *active_tab; // Seems redudant since we have cur_tab index
 	RzPanelsRootState root_state;
+	RzPVector /*<char *>*/ *themes; ///< Available rizin themes
+	bool from_visual;
 } RzPanelsRoot;
+
+typedef struct rz_visual_util_t {
+	RzConfigHold *hold;
+	ut64 oldpc;
+	ut64 oseek;
+	char debugstr_refresh[512];
+	char debugstr_core[512];
+	char numbuf[32];
+	int numbuf_i;
+	int sortMode;
+} RzVisualUtil;
+
+typedef struct rz_core_visual_view_t {
+	int level;
+	st64 delta;
+	ut64 column_nlines;
+	// output is used to store the result of printCmds
+	// and avoid duplicated analysis while j and k is pressed
+	char *output;
+	// output_mode labels which printCmds' result is stored in output
+	int output_mode;
+	int output_addr;
+	int option;
+	int variable_option;
+	int printMode;
+	bool selectPanel;
+	bool hide_legend;
+	bool is_inputing; // whether the user is inputing
+	char *inputing; // for filter on the go in Vv mode
+	char *curtheme; // track current theme to invalidate cache on change
+} RzCoreVisualView;
 
 typedef struct rz_core_visual_t {
 	RzList /*<RzCoreVisualTab *>*/ *tabs;
 	int tab;
-	bool hide_legend;
-	bool is_inputing; // whether the user is inputing
-	char *inputing; // for filter on the go in Vv mode
 	RzCoreVisualMode printidx;
 	/* TODO: Reorganize */
 	int obs;
@@ -363,11 +414,19 @@ typedef struct rz_core_visual_t {
 	int current5format;
 	/* Panels */
 	RzPanelsRoot *panels_root;
-	RzPanels *panels;
+	/* file percentage */
+	float percentage;
+	/* visual view */
+	RzCoreVisualView *view;
+	/* visual util */
+	RzVisualUtil util;
 } RzCoreVisual;
 
 RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new();
 RZ_IPI void rz_core_visual_free(RZ_NULLABLE RzCoreVisual *visual);
+
+RZ_IPI void rz_panels_root_free(RZ_NULLABLE RzPanelsRoot *panels_root);
+RZ_IPI void rz_visual_util_free(RZ_NULLABLE RzVisualUtil *visual_util);
 
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core);
 RZ_IPI void rz_core_visual_toggle_hints(RzCore *core);
@@ -405,9 +464,6 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core);
 RZ_IPI bool rz_core_visual_hudclasses(RzCore *core);
 
-/* tui/rop.c */
-RZ_IPI int rz_core_visual_view_rop(RzCore *core);
-
 /* tui/tabs.c */
 RZ_IPI void rz_core_visual_tab_free(RzCoreVisualTab *tab);
 RZ_IPI int rz_core_visual_tab_count(RzCore *core);
@@ -423,6 +479,9 @@ RZ_IPI void rz_core_visual_nexttab(RzCore *core);
 RZ_IPI void rz_core_visual_prevtab(RzCore *core);
 RZ_IPI void rz_core_visual_closetab(RzCore *core);
 
+RZ_IPI const char **rz_core_visual_get_short_help();
+RZ_IPI const char **rz_core_visual_get_long_help();
+RZ_IPI const char **rz_core_visual_get_fcn_help();
 RZ_IPI int rz_core_visual(RzCore *core, const char *input);
 RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_IPI bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
@@ -450,6 +509,8 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core);
 
 RZ_IPI int rz_line_hist_offset_up(RzLine *line);
 RZ_IPI int rz_line_hist_offset_down(RzLine *line);
+RZ_IPI int rz_line_hist_sdb_up(RzLine *line);
+RZ_IPI int rz_line_hist_sdb_down(RzLine *line);
 
 /* visual marks */
 RZ_IPI void rz_core_visual_mark_seek(RzCore *core, ut8 ch);

@@ -1,15 +1,14 @@
 NAME=loading a BIOS file [64k]
 FILE=bins/firmware/bios_64k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [64k]
 FILE=bins/firmware/bios_64k.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -19,7 +18,7 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_64k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
@@ -48,15 +47,14 @@ RUN
 NAME=loading a BIOS file [128k]
 FILE=bins/firmware/bios_128k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [128k]
 FILE=bins/firmware/bios_128k.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -66,22 +64,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_128k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [256k]
 FILE=bins/firmware/bios_256k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [256k]
 FILE=bins/firmware/bios_256k.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -91,22 +88,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_256k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [512k]
 FILE=bins/firmware/bios_512k.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [512k]
 FILE=bins/firmware/bios_512k.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -116,22 +112,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_512k.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [1M]
 FILE=bins/firmware/bios_1M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [1M]
 FILE=bins/firmware/bios_1M.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -141,22 +136,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_1M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [2M]
 FILE=bins/firmware/bios_2M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [2M]
 FILE=bins/firmware/bios_2M.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -166,22 +160,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_2M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [4M]
 FILE=bins/firmware/bios_4M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [4M]
 FILE=bins/firmware/bios_4M.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -191,22 +184,21 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_4M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
 EOF
 RUN
 
 NAME=loading a BIOS file [8M]
 FILE=bins/firmware/bios_8M.bin
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=entrypoint decoding [8M]
 FILE=bins/firmware/bios_8M.bin
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
 EOF
@@ -216,7 +208,39 @@ NAME=corrupted section data
 FILE=bins/firmware/bios_8M.bin
 CMDS=pi 1
 EXPECT=<<EOF
-ljmp 0xf000:0xffaa
+jmp far 0xf000:0xffaa
+EOF
+RUN
+
+NAME=BIOS iH [64k]
+FILE=bins/firmware/bios_64k.bin
+CMDS=iH
+EXPECT=<<EOF
+bios:
+  entry_point:
+    opcode: 0xea
+    type: "far jump"
+  sections:
+    - name: "bootblk"
+      address: 0xf0000
+      size: 0x10000
+
+EOF
+RUN
+
+NAME=BIOS iH [128k]
+FILE=bins/firmware/bios_128k.bin
+CMDS=iH
+EXPECT=<<EOF
+bios:
+  entry_point:
+    opcode: 0xea
+    type: "far jump"
+  sections:
+    - name: "bootblk"
+      address: 0xf0000
+      size: 0x10000
+
 EOF
 RUN
 
@@ -265,5 +289,89 @@ EXPECT=<<EOF
 0x00000022 CCu "Cyrix Cx486SLC/DLC processor Cache Configuration Registers (0022-0023)"
 0x0000006b CCu "SSGA control registers (006B-006F)"
 0x00000080 CCu "DMA page registers (0080-008F)"
+EOF
+RUN
+
+
+NAME=GNS1: comprehensive validation
+FILE=bins/firmware/gns1_test.bin
+CMDS=<<EOF
+iI~bintype
+iI~arch
+iI~cpu
+iI~baddr
+iI~bits
+iI~endian
+iI~machine
+iI~^os
+iI~^va
+ie~program
+ie~0x10000000
+iS~region?
+iS~region
+iS~region_a_text
+iS~region_b_text
+iS~0x12
+iS~0x15
+iH~num_segments
+iH~base
+iI~binsz
+pd 1 @ 0x10000000
+EOF
+EXPECT=<<EOF
+bintype  firmware
+arch     arc
+cpu      ARC700
+baddr    0x10000000
+bits     16
+endian   LE
+machine  Apple C4000 Baseband
+os       N/A
+va       true
+0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
+0x10000000 0x00000064 ---------- ---------- program
+0x10000000 0x0000007c ---------- ---------- program
+4
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x00000074  0x8 0x10001000   0x8   0x0 -rw- region_a_data_1      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
+0x0000008c  0x8 0x10001000   0x8   0x0 -rw- region_b_data_3      
+0x00000064 0x10 0x10000000  0x10   0x0 -r-x region_a_text_0      
+0x0000007c 0x10 0x10000000  0x10   0x0 -r-x region_b_text_2      
+num_segments: 4
+region_a_base: 0x12000000
+region_b_base: 0x15000000
+internal_base: 0x10000000
+binsz    0x00000094
+            ;-- entry0:
+            ;-- entry1:
+            ;-- section.region_a_text_0:
+            ;-- section.region_b_text_2:
+            0x10000000      mov   r22, 25                              ; [02] -r-x section size 16 named region_b_text_2
+EOF
+RUN
+
+NAME=GNS1: reject file too small
+FILE=bins/firmware/gns1_invalid_small.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject invalid offset
+FILE=bins/firmware/gns1_invalid_offset.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
+EOF
+RUN
+
+NAME=GNS1: reject segment overflow
+FILE=bins/firmware/gns1_invalid_overflow.bin
+CMDS=iI~bintype
+EXPECT=<<EOF
+bintype  N/A
 EOF
 RUN

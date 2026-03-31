@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include "minunit.h"
+#include "rz_util/rz_str.h"
 #include "test_config.h"
 
 #include "test_analysis_block_invars.inl"
@@ -18,24 +19,24 @@ static void setup_types_db(RzTypeDB *typedb) {
 }
 
 static void setup_sdb_for_function(Sdb *res) {
-	sdb_set(res, "ExitProcess", "func", 0);
-	sdb_num_set(res, "func.ExitProcess.args", 0, 0);
-	sdb_set(res, "func.ExitProcess.ret", "void", 0);
-	sdb_set(res, "ReadFile", "func", 0);
-	sdb_num_set(res, "func.ReadFile.args", 0, 0);
-	sdb_set(res, "func.ReadFile.ret", "void", 0);
-	sdb_set(res, "memcpy", "func", 0);
-	sdb_num_set(res, "func.memcpy.args", 0, 0);
-	sdb_set(res, "func.memcpy.ret", "void", 0);
-	sdb_set(res, "strchr", "func", 0);
-	sdb_num_set(res, "func.strchr.args", 0, 0);
-	sdb_set(res, "func.strchr.ret", "void", 0);
-	sdb_set(res, "__stack_chk_fail", "func", 0);
-	sdb_num_set(res, "func.__stack_chk_fail.args", 0, 0);
-	sdb_set(res, "func.__stack_chk_fail.ret", "void", 0);
-	sdb_set(res, "WSAStartup", "func", 0);
-	sdb_num_set(res, "func.WSAStartup.args", 0, 0);
-	sdb_set(res, "func.WSAStartup.ret", "void", 0);
+	sdb_set(res, "ExitProcess", "func");
+	sdb_num_set(res, "func.ExitProcess.args", 0);
+	sdb_set(res, "func.ExitProcess.ret", "void");
+	sdb_set(res, "ReadFile", "func");
+	sdb_num_set(res, "func.ReadFile.args", 0);
+	sdb_set(res, "func.ReadFile.ret", "void");
+	sdb_set(res, "memcpy", "func");
+	sdb_num_set(res, "func.memcpy.args", 0);
+	sdb_set(res, "func.memcpy.ret", "void");
+	sdb_set(res, "strchr", "func");
+	sdb_num_set(res, "func.strchr.args", 0);
+	sdb_set(res, "func.strchr.ret", "void");
+	sdb_set(res, "__stack_chk_fail", "func");
+	sdb_num_set(res, "func.__stack_chk_fail.args", 0);
+	sdb_set(res, "func.__stack_chk_fail.ret", "void");
+	sdb_set(res, "WSAStartup", "func");
+	sdb_num_set(res, "func.WSAStartup.args", 0);
+	sdb_set(res, "func.WSAStartup.ret", "void");
 }
 
 bool ht_up_count(void *user, const ut64 k, const void *v) {
@@ -44,7 +45,7 @@ bool ht_up_count(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-bool ht_pp_count(void *user, const void *k, const void *v) {
+bool ht_sp_count(void *user, const char *k, const void *v) {
 	size_t *count = user;
 	(*count)++;
 	return true;
@@ -59,7 +60,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (analysis->fcns, it, fcn) {
 		mu_assert_ptreq(ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
-		mu_assert_ptreq(ht_pp_find(analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
+		mu_assert_ptreq(ht_sp_find(analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
 	}
 
 	size_t addr_count = 0;
@@ -67,7 +68,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	mu_assert_eq(addr_count, rz_list_length(analysis->fcns), "function addr ht count");
 
 	size_t name_count = 0;
-	ht_pp_foreach(analysis->ht_name_fun, ht_pp_count, &name_count);
+	ht_sp_foreach(analysis->ht_name_fun, ht_sp_count, &name_count);
 	mu_assert_eq(name_count, rz_list_length(analysis->fcns), "function name ht count");
 
 	return true;
@@ -90,7 +91,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 	} while (0)
 
 bool test_rz_analysis_function_relocate() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	assert_invariants(analysis);
 
 	RzAnalysisFunction *fa = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -116,7 +117,7 @@ bool test_rz_analysis_function_relocate() {
 }
 
 bool test_rz_analysis_function_labels() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "do_something", 0x1337, RZ_ANALYSIS_FCN_TYPE_NULL);
 
@@ -324,7 +325,7 @@ bool test_initial_underscore(void) {
 }
 
 bool test_rz_analysis_function_set_type() {
-	RzAnalysis *analysis = rz_analysis_new();
+	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
 	rz_analysis_cc_set(analysis, "eax sectarian(ecx, edx, stack)");
@@ -432,6 +433,123 @@ bool test_rz_analysis_function_set_type() {
 	mu_end;
 }
 
+bool test_noreturn_functions_list() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
+
+	RzList *noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first_val(noret), "0x800800", "Addr");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "0x800800");
+	rz_analysis_noreturn_add(analysis, NULL, 0xdeadbeeff000bad1);
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first_val(noret), "0xdeadbeeff000bad1", "Long addr");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "0xdeadbeeff000bad1");
+	rz_analysis_noreturn_add(analysis, "foobar", UT64_MAX);
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 1, "Num functions");
+	mu_assert_streq(rz_list_first_val(noret), "foobar", "Name");
+	rz_list_free(noret);
+
+	rz_analysis_noreturn_drop(analysis, "foobar");
+
+	noret = rz_analysis_noreturn_functions(analysis);
+	mu_assert_eq(rz_list_length(noret), 0, "Num functions");
+	rz_list_free(noret);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_analysis_function_rename() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+
+	// we know b does not exist, rename a to b
+	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_true(rz_analysis_function_rename(a, "b"), "rename a to b");
+	mu_assert_streq(a->name, "b", "rename a to b failed");
+
+	// we know b does exist, so rename must fail
+	RzAnalysisFunction *c = rz_analysis_create_function(analysis, "c", 0xbbbb, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_false(rz_analysis_function_rename(c, "b"), "rename c to b"); // try renaming
+	mu_assert_streq(c->name, "c", "c rename succeded"); // whether it actually failed
+
+	rz_analysis_free(analysis);
+
+	mu_end;
+}
+
+bool test_analysis_function_force_rename() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+
+	RzAnalysisFunction *a = rz_analysis_create_function(analysis, "a", 0xcafe, RZ_ANALYSIS_FCN_TYPE_FCN);
+	rz_analysis_create_function(analysis, "b", 0xbabe, RZ_ANALYSIS_FCN_TYPE_FCN);
+
+	// rename a to b, but b already exists, so we force rename
+	const char *expected_name = "b_cafe";
+	const char *new_name = rz_analysis_function_force_rename(a, "b");
+	mu_assert_notnull(new_name, "function force rename");
+	mu_assert_streq(new_name, expected_name, "incorrect force rename result");
+	mu_assert_streq(a->name, expected_name, "incorrenct force rename");
+
+	rz_analysis_free(analysis);
+
+	mu_end;
+}
+
+bool test_rz_analysis_function_set_cc() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+
+	rz_analysis_cc_set(analysis, "eax testcc(ecx, edx, stack)");
+	mu_assert_true(rz_analysis_cc_exist(analysis, "testcc"), "testcc should exist");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "testfunc", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function should be created");
+
+	bool ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting valid cc should succeed");
+	mu_assert_streq(fcn->cc, "testcc", "cc should be set to testcc");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "nonexistent");
+	mu_assert_false(ret, "setting invalid cc should fail");
+	mu_assert_streq(fcn->cc, "testcc", "cc should remain unchanged after failed set");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, NULL);
+	mu_assert_true(ret, "setting NULL cc should succeed");
+	mu_assert_null(fcn->cc, "cc should be NULL after clearing");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting cc back to testcc should succeed");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "");
+	mu_assert_true(ret, "setting empty string cc should succeed");
+	mu_assert_null(fcn->cc, "cc should be NULL after setting empty string");
+
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting cc to testcc should succeed");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "testcc");
+	mu_assert_true(ret, "setting same cc again should succeed");
+	mu_assert_streq(fcn->cc, "testcc", "cc should still be testcc");
+
+	rz_analysis_cc_set(analysis, "eax anothercc(edx, stack)");
+	mu_assert_true(rz_analysis_cc_exist(analysis, "anothercc"), "anothercc should exist");
+	ret = rz_analysis_function_set_cc(analysis, fcn, "anothercc");
+	mu_assert_true(ret, "setting cc to anothercc should succeed");
+	mu_assert_streq(fcn->cc, "anothercc", "cc should be set to anothercc");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -441,6 +559,10 @@ int all_tests() {
 	mu_run_test(test_autonames);
 	mu_run_test(test_initial_underscore);
 	mu_run_test(test_rz_analysis_function_set_type);
+	mu_run_test(test_rz_analysis_function_set_cc);
+	mu_run_test(test_noreturn_functions_list);
+	mu_run_test(test_analysis_function_rename);
+	mu_run_test(test_analysis_function_force_rename);
 	return tests_passed != tests_run;
 }
 

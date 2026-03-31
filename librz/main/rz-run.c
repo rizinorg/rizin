@@ -26,31 +26,18 @@ static void rz_run_tty(void) {
 static void rz_run_help(int v) {
 	if (v == 0) {
 		printf(Color_CYAN "Usage: ");
-		printf(Color_RESET "[directives] [script.rz] [--] [program] [args]\n");
+		printf(Color_RESET "rz-run [directives | script.rz] [-- program [args]]\n");
 		const char *options[] = {
 			// clang-format off
 			"-h",       "",                 "Show this help",
-			"-l",       "",                 "Show profile options",
+			"-l",       "",                 "Show profile directives",
 			"-t",       "",                 "Output template profile",
 			"-v",       "",                 "Show version information",
 			"-w",       "",                 "Wait for incoming terminal process",
-			"--",       "[program] [args]", "Run commands",
+			"--",       "program [args]",   "Run program",
 			// clang-format on
 		};
-		size_t maxOptionAndArgLength = 0;
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			size_t optionLength = strlen(options[i]);
-			size_t argLength = strlen(options[i + 1]);
-			size_t totalLength = optionLength + argLength;
-			if (totalLength > maxOptionAndArgLength) {
-				maxOptionAndArgLength = totalLength;
-			}
-		}
-		for (int i = 0; i < sizeof(options) / sizeof(options[0]); i += 3) {
-			if (i + 1 < sizeof(options) / sizeof(options[0])) {
-				rz_print_colored_help_option(options[i], options[i + 1], options[i + 2], maxOptionAndArgLength);
-			}
-		}
+		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
 	}
 	if (v == 1) {
 		// clang-format off
@@ -106,7 +93,7 @@ static void rz_run_help(int v) {
 	}
 	if (v == 2) {
 		// clang-format off
-		printf(Color_CYAN "Supported RzRun profile options:\n"
+		printf(Color_CYAN "Supported RzRun profile directives:\n"
 			Color_RESET
 			"arg[0-511]  Set value for argument N passed to the program\n"
 			"aslr        Enable or disable ASLR\n"
@@ -153,27 +140,68 @@ static void rz_run_help(int v) {
 	}
 }
 
+static RzRunProfile *rz_run_new_from_cmdline(int start, int argc, const char **argv) {
+	bool no_more_directives = false;
+	int directive_index = 0;
+	RzRunProfile *p = rz_run_new(NULL);
+	if (!p) {
+		RZ_LOG_ERROR("Failed to create new RzRunProfile\n");
+		return NULL;
+	}
+	for (int i = start; i < argc; i++) {
+		if (!strcmp(argv[i], "--")) {
+			no_more_directives = true;
+			continue;
+		}
+		if (no_more_directives) {
+			const char *word = argv[i];
+			char *line = directive_index
+				? rz_str_newf("arg%d=%s", directive_index, word)
+				: rz_str_newf("program=%s", word);
+			rz_run_parseline(p, line);
+			directive_index++;
+			free(line);
+		} else if (!rz_run_parseline(p, argv[i])) {
+			goto fail;
+		}
+	}
+	return p;
+
+fail:
+	rz_run_free(p);
+	return NULL;
+}
 
 RZ_API int rz_main_rz_run(int argc, const char **argv) {
-	RzRunProfile *p;
-	int i, ret;
+	int ret = 0;
+	RzRunProfile *p = NULL;
 	if (argc == 1 || !strcmp(argv[1], "-h")) {
 		rz_run_help(0);
-		return 1;
+		ret = 1;
+		goto finish;
 	}
 	if (!strcmp(argv[1], "-v")) {
-		return rz_main_version_print("rz-run");
+		RzPath *sys_path = rz_path_new();
+		if(!sys_path){
+			ret = 1;
+			goto finish;
+		}
+		ret =  rz_main_version_print(sys_path, "rz-run");
+		rz_path_free(sys_path);
+		goto finish;
 	}
 	if (!strcmp(argv[1], "-t")) {
 		rz_run_help(1);
-		return 0;
+		ret = 0;
+		goto finish;
 	}
 	if (!strcmp(argv[1], "-l")) {
 		rz_run_help(2);
-		return 0;
+		ret = 0;
+		goto finish;
 	}
-	const char *file = argv[1];
-	if (!strcmp(file, "-w")) {
+	const char *file = argc > 1 ? argv[1] : "";
+	if (RZ_STR_ISNOTEMPTY(file) && !strcmp(file, "-w")) {
 #if __UNIX__
 		rz_run_tty();
 		return 0;
@@ -182,33 +210,10 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		return 1;
 #endif
 	}
-	if (*file && !strchr(file, '=')) {
+	if (RZ_STR_ISNOTEMPTY(file) && !strchr(file, '=')) {
 		p = rz_run_new(file);
 	} else {
-		bool noMoreDirectives = false;
-		int directiveIndex = 0;
-		p = rz_run_new(NULL);
-		if (!p) {
-			RZ_LOG_ERROR("Failed to create new RzRunProfile\n");
-			return 1;
-		}
-		for (i = *file ? 1 : 2; i < argc; i++) {
-			if (!strcmp(argv[i], "--")) {
-				noMoreDirectives = true;
-				continue;
-			}
-			if (noMoreDirectives) {
-				const char *word = argv[i];
-				char *line = directiveIndex
-					? rz_str_newf("arg%d=%s", directiveIndex, word)
-					: rz_str_newf("program=%s", word);
-				rz_run_parseline(p, line);
-				directiveIndex++;
-				free(line);
-			} else {
-				rz_run_parseline(p, argv[i]);
-			}
-		}
+		p = rz_run_new_from_cmdline(*file ? 1 : 2, argc, argv);
 	}
 	if (!p) {
 		return 1;
@@ -220,6 +225,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		return 1;
 	}
 	ret = rz_run_start(p);
+finish:
 	rz_run_free(p);
 	return ret;
 }

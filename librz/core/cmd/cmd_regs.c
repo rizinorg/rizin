@@ -149,11 +149,12 @@ RZ_API bool rz_core_reg_assign_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *r
  * \param eq_pos index of the '=' in arg
  */
 static RzCmdStatus assign_reg(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, RZ_NONNULL const char *arg, size_t eq_pos) {
-	char *str = strdup(arg);
-	if (!str) {
+	char *str = rz_str_dup(arg);
+	if (RZ_STR_ISEMPTY(arg) || eq_pos == 0 || RZ_STR_ISEMPTY(str)) {
+		free(str);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	str[eq_pos] = 0;
+	str[eq_pos] = '\0';
 	char *val = str + eq_pos + 1;
 	rz_str_trim(str);
 	rz_str_trim(val);
@@ -245,10 +246,6 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 			format_reg_value(reg, item, buf, sizeof(buf));
 			rz_cons_printf("%s\n", buf);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			format_reg_value(reg, item, buf, sizeof(buf));
-			rz_cons_printf("ar %s = %s\n", item->name, buf);
-			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_table_add_rowf(state->d.t, "ssXxs",
 				rz_str_get(get_reg_role_name(reg, item)),
@@ -275,18 +272,37 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 }
 
 RZ_IPI RzCmdStatus rz_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzCmdStateOutput *state) {
-	const char *filter = argc > 1 ? argv[1] : NULL;
+	bool did_assign = false;
+	RzCmdStatus st = RZ_CMD_STATUS_OK;
 
-	// check if the argument is an assignment like reg=0x42
-	if (filter) {
-		char *eq = strchr(filter, '=');
-		if (eq) {
-			return assign_reg(core, reg, sync_cb, filter, eq - filter);
+	for (int i = 1; i < argc; i++) {
+		const char *arg = argv[i];
+		const char *eq = rz_str_strchr(arg, "=");
+		if (!eq) {
+			continue;
+		}
+		did_assign = true;
+		st = assign_reg(core, reg, sync_cb, arg, eq - arg);
+		if (st != RZ_CMD_STATUS_OK) {
+			return st;
 		}
 	}
 
-	// just show
-	return show_regs_handler(core, reg, sync_cb, filter, state);
+	if (did_assign) {
+		return RZ_CMD_STATUS_OK;
+	}
+
+	if (argc <= 1) {
+		return show_regs_handler(core, reg, sync_cb, NULL, state);
+	}
+
+	for (int i = 1; i < argc; i++) {
+		st = show_regs_handler(core, reg, sync_cb, argv[i], state);
+		if (st != RZ_CMD_STATUS_OK) {
+			return st;
+		}
+	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv) {
@@ -362,7 +378,7 @@ static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync syn
 		const char *color = mode == RZ_OUTPUT_MODE_JSON ? NULL : get_reg_color(core, reg, r);
 		char *namestr = rz_str_newf("%s%s%s", rz_str_get(color), r->name, color ? Color_RESET : "");
 		char *valuestr = rz_str_newf("%s0x%" PFMT64x "%s", rz_str_get(color), value, color ? Color_RESET : "");
-		char *rrstr = rz_core_analysis_hasrefs(core, value, true);
+		char *rrstr = rz_core_analysis_hasrefs(core, value, RZ_OUTPUT_MODE_STANDARD);
 		rz_table_add_rowf(t, "ssss", rz_str_get(get_reg_role_name(reg, r)), namestr, valuestr, rz_str_get(rrstr));
 		free(namestr);
 		free(valuestr);
@@ -419,9 +435,9 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 
 	RzListIter *iter;
 	RzRegItem *r;
-	HtUP *db = ht_up_new0();
+	HtUP *db = ht_up_new(NULL, NULL);
 	rz_list_foreach (list, iter, r) {
-		if (r->size != core->rasm->bits) {
+		if (!rz_asm_is_bits(core->rasm, r->size)) {
 			continue;
 		}
 		ut64 value = rz_reg_get_value(reg, r);
@@ -451,7 +467,7 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 			if (use_colors) {
 				rz_cons_strcat(Color_RESET);
 			}
-			char *rrstr = rz_core_analysis_hasrefs(core, *addr, true);
+			char *rrstr = rz_core_analysis_hasrefs(core, *addr, RZ_OUTPUT_MODE_STANDARD);
 			if (rrstr && *rrstr && strchr(rrstr, 'R')) {
 				rz_cons_printf("    ;%s%s", rrstr, use_colors ? Color_RESET : "");
 			}

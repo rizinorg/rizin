@@ -5,5 +5,6 @@
 #include <deprecated_arch_helper.h>
 
 #include "asm/asm_mcs96.c"
+#include "analysis/analysis_mcs96.c"
 
-RZ_ARCH_ASM_ONLY_PLUGIN_DEFINE_DEPRECATED(mcs96);
+RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(mcs96);

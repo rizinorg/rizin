@@ -1127,7 +1127,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return strdup(p16);
+	return rz_str_dup(p16);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arc_gnu = {

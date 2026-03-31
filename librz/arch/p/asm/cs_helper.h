@@ -3,6 +3,16 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+
+#if CC_SUPPORTS_W_ENUM_COMPARE
+#pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#ifdef CC_SUPPORTS_W_ENUM_CONVERION
+#pragma GCC diagnostic ignored "-Wenum-conversion"
+#endif
+
+#define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 typedef struct {
@@ -38,7 +48,7 @@ typedef struct {
 	}
 
 #define CAPSTONE_PLUGIN_MNEMONICS(name) \
-	static char *name##_mnemonics(RzAsm *a, int id, bool json) { \
+	static char *name##_mnemonics(const RzAsm *a, int id, bool json) { \
 		if (!a->plugin_data) { \
 			return NULL; \
 		} \
@@ -50,7 +60,7 @@ typedef struct {
 			if (json) { \
 				return vname ? rz_str_newf("[\"%s\"]\n", vname) : NULL; \
 			} \
-			return vname ? strdup(vname) : NULL; \
+			return rz_str_dup(vname); \
 		} \
 		RzStrBuf *buf = rz_strbuf_new(""); \
 		if (json) { \

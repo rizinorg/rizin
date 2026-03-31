@@ -52,15 +52,19 @@ static char *__read_nonnull_str_at(RzBuffer *buf, ut64 offset) {
 	return str;
 }
 
-static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
+static char *__func_name_from_ord(RZ_BORROW RZ_NONNULL RzPath *sys_path, char *module, ut16 ordinal) {
+	rz_return_val_if_fail(sys_path, NULL);
+	char *formats_dir = rz_path_system(sys_path, RZ_SDB_FORMAT);
+	if (!formats_dir) {
+		return NULL;
+	}
 	char *path = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, module);
 	free(formats_dir);
 	char *ord = rz_str_newf("%d", ordinal);
 	char *name;
 	if (rz_file_exists(path)) {
 		Sdb *sdb = sdb_new(NULL, path, 0);
-		name = sdb_get(sdb, ord, NULL);
+		name = sdb_get(sdb, ord);
 		if (!name) {
 			name = ord;
 		} else {
@@ -116,6 +120,46 @@ static void ne_sanitize_name(char *name, ut16 count) {
 			name[i] = '?';
 		}
 	}
+}
+
+static const char *get_reloc_type_name(const ut8 src_type, const ut8 flag) {
+#define CONCAT_RELOC_STR(a, b) a b
+#define NE_RELOC_TARGET_TYPE(src_type_name, flag) \
+	switch (flag) { \
+	case INTERNAL_REF: \
+		return CONCAT_RELOC_STR(src_type_name, "_INTERNAL_REF"); \
+	case IMPORTED_ORD: \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_ORD"); \
+	case IMPORTED_NAME: \
+		return CONCAT_RELOC_STR(src_type_name, "_IMPORTED_NAME"); \
+	case OSFIXUP: \
+		return CONCAT_RELOC_STR(src_type_name, "_OSFIXUP"); \
+	case ADDITIVE: \
+		return CONCAT_RELOC_STR(src_type_name, "_ADDITIVE"); \
+	default: \
+		RZ_LOG_ERROR("Unknown NE relocation target flag %d\n", flag); \
+		return CONCAT_RELOC_STR(src_type_name, "_UNKNOWN"); \
+	}
+
+	switch (src_type) {
+	case LOBYTE:
+		NE_RELOC_TARGET_TYPE("LOBYTE", flag);
+	case SEL_16:
+		NE_RELOC_TARGET_TYPE("SEL_16", flag);
+	case POI_32:
+		NE_RELOC_TARGET_TYPE("POI_32", flag);
+	case OFF_16:
+		NE_RELOC_TARGET_TYPE("OFF_16", flag);
+	case POI_48:
+		NE_RELOC_TARGET_TYPE("POI_48", flag);
+	case OFF_32:
+		NE_RELOC_TARGET_TYPE("OFF_32", flag);
+	default:
+		RZ_LOG_ERROR("Unknown NE relocation source type %d\n", flag);
+		NE_RELOC_TARGET_TYPE("UNKNOWN", flag);
+	}
+#undef NE_RELOC_TARGET_TYPE
+#undef CONCAT_RELOC_STR
 }
 
 RzPVector /*<RzBinSymbol *>*/ *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
@@ -274,7 +318,7 @@ static char *__resource_type_str(int type) {
 	default:
 		return rz_str_newf("UNKNOWN (%d)", type);
 	}
-	return strdup(typeName);
+	return rz_str_dup(typeName);
 }
 
 static void __free_resource_entry(void *entry) {
@@ -500,6 +544,12 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		free(modref);
 		return NULL;
 	}
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		free(relocs);
+		free(modref);
+		return NULL;
+	}
 
 	ut64 bufsz = rz_buf_size(bin->buf);
 	void **it;
@@ -527,6 +577,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		while (off < start + length * sizeof(NE_image_reloc_item) && off + sizeof(NE_image_reloc_item) <= bufsz) {
 			RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 			if (!reloc) {
+				rz_path_free(sys_path);
 				return NULL;
 			}
 			NE_image_reloc_item rel;
@@ -537,22 +588,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.align1);
 			rz_buf_read_le16_offset(bin->buf, &offset, &rel.func_ord);
 			reloc->paddr = seg->paddr + rel.offset;
-			switch (rel.type) {
-			case LOBYTE:
-				reloc->type = RZ_BIN_RELOC_8;
-				break;
-			case SEL_16:
-			case OFF_16:
-				reloc->type = RZ_BIN_RELOC_16;
-				break;
-			case POI_32:
-			case OFF_32:
-				reloc->type = RZ_BIN_RELOC_32;
-				break;
-			case POI_48:
-				reloc->type = RZ_BIN_RELOC_64;
-				break;
-			}
+			reloc->print_name = get_reloc_type_name(rel.type & NE_RELOC_SRC_MASK, rel.flags & NE_RELOC_TARGET_MASK);
 
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RzBinImport *imp = RZ_NEW0(RzBinImport);
@@ -570,7 +606,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 				}
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
-					imp->name = rz_str_newf("%s.%s", name, __func_name_from_ord(name, rel.func_ord));
+					imp->name = rz_str_newf("%s.%s", name, __func_name_from_ord(sys_path, name, rel.func_ord));
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = __read_nonnull_str_at(bin->buf, offset);
@@ -638,6 +674,7 @@ RzPVector /*<RzBinReloc *>*/ *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		}
 	}
 	free(modref);
+	rz_path_free(sys_path);
 	return relocs;
 }
 

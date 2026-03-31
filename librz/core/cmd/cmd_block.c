@@ -17,9 +17,6 @@ RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, R
 			pj_end(pj);
 			break;
 		}
-		case RZ_OUTPUT_MODE_RIZIN:
-			rz_cons_printf("b 0x%x\n", core->blocksize);
-			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("0x%x\n", core->blocksize);
 			break;

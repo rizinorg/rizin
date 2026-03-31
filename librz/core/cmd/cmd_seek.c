@@ -32,11 +32,6 @@ RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent)
 	if (rz_core_prevop_addr(core, core->offset, numinstr, &addr)) {
 		ret = core->offset - addr;
 	} else {
-#if 0
-		// core_asm_bwdis_len is really buggy and we should remove it. seems like prevop_addr
-		// works as expected, because is the one used from visual
-		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
-#endif
 		addr = core->offset;
 		const int mininstrsize = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
@@ -47,14 +42,15 @@ RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent)
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RzAsmOp op = { 0 };
 			rz_core_seek(core, prev_addr, true);
+			RzAsmOp op = { 0 };
 			rz_asm_disassemble(core->rasm, &op, core->block, 32);
 			if (op.size < mininstrsize) {
 				op.size = mininstrsize;
 			}
 			val += op.size;
 			addr = prev_addr;
+			rz_asm_op_fini(&op);
 		}
 	}
 	rz_core_seek_opt(core, addr, true, !silent);
@@ -166,7 +162,7 @@ RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv) {
 	// NOTE: hack to make it work with local function labels
 	char *ptr;
 	if ((ptr = strstr(argv[1], "+.")) != NULL) {
-		char *dup = strdup(argv[1]);
+		char *dup = rz_str_dup(argv[1]);
 		dup[ptr - argv[1]] = '\x00';
 		core->offset = rz_num_math(core->num, dup);
 		free(dup);
@@ -236,16 +232,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 	rz_cmd_state_output_array_start(state);
 	bool current_met = false;
 	rz_list_foreach (list, iter, undo) {
-		RzFlagItem *f = rz_flag_get_at(core->flags, undo->offset, true);
-		const char *comment;
-		char *name = NULL;
-		if (f) {
-			if (f->offset != undo->offset) {
-				name = rz_str_newf("%s+%" PFMT64d, f->name, undo->offset - f->offset);
-			} else {
-				name = strdup(f->name);
-			}
-		}
+		char *name = rz_core_addr_get_flag_offset(core->flags, undo->offset);
 		current_met |= undo->is_current;
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
@@ -258,8 +245,8 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			pj_kb(pj, "current", undo->is_current);
 			pj_end(pj);
 			break;
-		case RZ_OUTPUT_MODE_STANDARD:
-			comment = "";
+		case RZ_OUTPUT_MODE_STANDARD: {
+			const char *comment = "";
 			if (undo->is_current) {
 				comment = " # current seek";
 			} else if (current_met) {
@@ -267,15 +254,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			}
 			rz_cons_printf("0x%" PFMT64x " %s%s\n", undo->offset, name ? name : "", comment);
 			break;
-		case RZ_OUTPUT_MODE_RIZIN:
-			if (undo->is_current) {
-				rz_cons_printf("# Current seek @ 0x%" PFMT64x "\n", undo->offset);
-			} else if (current_met) {
-				rz_cons_printf("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx - 1), undo->offset);
-			} else {
-				rz_cons_printf("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS(undo->idx + 1), undo->offset);
-			}
-			break;
+		}
 		default:
 			rz_warn_if_reached();
 			break;

@@ -9,12 +9,11 @@ pa call test
 EOF
 EXPECT=<<EOF
 ffd0
-e81c000000
+e8fbffffff
 EOF
 RUN
 
 NAME=asm.assembler
-BROKEN=1
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

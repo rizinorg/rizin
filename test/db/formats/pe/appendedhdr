@@ -2,8 +2,7 @@ NAME=PE: corkami appendedhdr.exe - open
 FILE=bins/pe/appendedhdr.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN
 
 NAME=PE: corkami appendedhdr.exe - entrypoint

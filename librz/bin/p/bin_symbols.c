@@ -170,10 +170,10 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
-			sym->dname = strdup(s->name);
-			sym->name = strdup(s->mangled_name);
+			sym->dname = rz_str_dup(s->name);
+			sym->name = rz_str_dup(s->mangled_name);
 		} else if (s->name) {
-			sym->name = strdup(s->name);
+			sym->name = rz_str_dup(s->name);
 		} else if (s->mangled_name) {
 			sym->name = s->mangled_name;
 		}
@@ -186,7 +186,7 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_OWN char *file_name) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_BORROW char *file_name) {
 	D eprintf("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
@@ -203,31 +203,31 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	int available = rz_buf_read_at(buf, off, b, size);
 	if (available != size) {
 		RZ_LOG_ERROR("bin: symbols: cannot read at 0x%08x\n", off);
+		free(b);
 		return NULL;
 	}
-#if 0
 	// after the list of sections, there's a bunch of unknown
 	// data, brobably dwords, and then the same section list again
 	// this function aims to parse it.
-	0x00000138 |1a2b b2a1 0300 0000 1a2b b2a1 e055 0000| .+.......+...U..
-                         n_segments ----.          .--- how many sections ?
-	0x00000148 |0100 0000 ca55 0000 0400 0000 1800 0000| .....U..........
-	             .---- how many symbols? 0xc7
-	0x00000158 |c700 0000 0000 0000 0000 0000 0104 0000| ................
-	0x00000168 |250b e803 0000 0100 0000 0000 bd55 0000| %............U..
-	0x00000178 |91bb e903 e35a b42c 93a4 340a 8746 9489| .....Z.,..4..F..
-	0x00000188 |0cea 4c40 0c00 0000 0900 0000 0000 0000| ..L@............
-	0x00000198 |0000 0000 0000 0000 0000 0000 0000 0000| ................
-	0x000001a8 |0080 0000 0000 0000 5f5f 5445 5854 0000| ........__TEXT..
-	0x000001b8 |0000 0000 0000 0000 0080 0000 0000 0000| ................
-	0x000001c8 |0040 0000 0000 0000 5f5f 4441 5441 0000| .@......__DATA..
-	0x000001d8 |0000 0000 0000 0000 00c0 0000 0000 0000| ................
-	0x000001e8 |0000 0100 0000 0000 5f5f 4c4c 564d 0000| ........__LLVM..
-	0x000001f8 |0000 0000 0000 0000 00c0 0100 0000 0000| ................
-	0x00000208 |00c0 0000 0000 0000 5f5f 4c49 4e4b 4544| ........__LINKED
-	0x00000218 |4954 0000 0000 0000 0000 0000 d069 0000| IT...........i..
-#endif
+	// 0x00000138 |1a2b b2a1 0300 0000 1a2b b2a1 e055 0000| .+.......+...U..
+	//                      n_segments ----.          .--- how many sections ?
+	// 0x00000148 |0100 0000 ca55 0000 0400 0000 1800 0000| .....U..........
+	//              .---- how many symbols? 0xc7
+	// 0x00000158 |c700 0000 0000 0000 0000 0000 0104 0000| ................
+	// 0x00000168 |250b e803 0000 0100 0000 0000 bd55 0000| %............U..
+	// 0x00000178 |91bb e903 e35a b42c 93a4 340a 8746 9489| .....Z.,..4..F..
+	// 0x00000188 |0cea 4c40 0c00 0000 0900 0000 0000 0000| ..L@............
+	// 0x00000198 |0000 0000 0000 0000 0000 0000 0000 0000| ................
+	// 0x000001a8 |0080 0000 0000 0000 5f5f 5445 5854 0000| ........__TEXT..
+	// 0x000001b8 |0000 0000 0000 0000 0080 0000 0000 0000| ................
+	// 0x000001c8 |0040 0000 0000 0000 5f5f 4441 5441 0000| .@......__DATA..
+	// 0x000001d8 |0000 0000 0000 0000 00c0 0000 0000 0000| ................
+	// 0x000001e8 |0000 0100 0000 0000 5f5f 4c4c 564d 0000| ........__LLVM..
+	// 0x000001f8 |0000 0000 0000 0000 00c0 0100 0000 0000| ................
+	// 0x00000208 |00c0 0000 0000 0000 5f5f 4c49 4e4b 4544| ........__LINKED
+	// 0x00000218 |4954 0000 0000 0000 0000 0000 d069 0000| IT...........i..
 	// eprintf ("Dragon's magic:\n");
+
 	int magicCombo = 0;
 	if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 		magicCombo++;
@@ -240,6 +240,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		available = rz_buf_read_at(buf, off - 8, b, size);
 		if (available != size) {
 			RZ_LOG_WARN("bin: symbols: rz_buf_read_at failed\n");
+			free(b);
 			return NULL;
 		}
 		if (size > 3 && !memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
@@ -257,25 +258,23 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-#if 0
-	SYMBOLS HEADER
+static bool coresyms_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	// 	SYMBOLS HEADER
+	//
+	//  0	MAGIC	02ff01ff
+	//  4	VERSION 1 (little endian)
+	//  8      ffffffff
+	// 16      002b0000 01000000 { 0x2b00, 0x0000 }
+	// 24	UUID    16 bytes
+	// 40	2621 d85b 2100 2000 0000 0000 0000 0000
+	// 56	ffff ffff ffff ff7f 0c00 0000 0900 0000
+	// 72	0400 0000 6800 0000 2f76 6172 2f66 6f6c .... 4, 104 /// 104 length string
+	// 184
+	// 0x000000b8  5f5f 5445 5854 0000 0000 0000 0000 0000 0000 0000 0000 0000 0080 0000 0000 0000  __TEXT..........................
+	// 0x000000d8  5f5f 4441 5441 0000 0000 0000 0000 0000 0080 0000 0000 0000 0040 0000 0000 0000  __DATA...................@......
+	// 0x000000f8  5f5f 4c4c 564d 0000 0000 0000 0000 0000 00c0 0000 0000 0000 0000 0100 0000 0000  __LLVM..........................
+	// 0x00000118  5f5f 4c49 4e4b 4544 4954 0000 0000 0000 00c0 0100 0000 0000 00c0 0000 0000 0000  __LINKEDIT......................
 
- 0	MAGIC	02ff01ff
- 4	VERSION 1 (little endian)
- 8      ffffffff
-16      002b0000 01000000 { 0x2b00, 0x0000 }
-24	UUID    16 bytes
-40	2621 d85b 2100 2000 0000 0000 0000 0000
-56	ffff ffff ffff ff7f 0c00 0000 0900 0000
-72	0400 0000 6800 0000 2f76 6172 2f66 6f6c .... 4, 104 /// 104 length string
-184
-0x000000b8  5f5f 5445 5854 0000 0000 0000 0000 0000 0000 0000 0000 0000 0080 0000 0000 0000  __TEXT..........................
-0x000000d8  5f5f 4441 5441 0000 0000 0000 0000 0000 0080 0000 0000 0000 0040 0000 0000 0000  __DATA...................@......
-0x000000f8  5f5f 4c4c 564d 0000 0000 0000 0000 0000 00c0 0000 0000 0000 0000 0100 0000 0000  __LLVM..........................
-0x00000118  5f5f 4c49 4e4b 4544 4954 0000 0000 0000 00c0 0100 0000 0000 00c0 0000 0000 0000  __LINKEDIT......................
-
-#endif
 	// 0 - magic check, version ...
 	SymbolsHeader sh = parseHeader(buf);
 	if (!sh.valid) {
@@ -300,7 +299,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 	return obj->bin_obj != NULL;
 }
 
-static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinSection *>*/ *coresyms_sections(RzBinFile *bf) {
 	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -322,11 +321,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return res;
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 coresyms_baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
+static RzBinInfo *coresyms_info(RzBinFile *bf) {
 	SymbolsMetadata sm = { 0 };
 	if (!parseMetadata(bf->buf, 0x40, &sm)) {
 		return NULL;
@@ -335,30 +334,30 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup(bf->file);
-	ret->bclass = strdup("symbols");
-	ret->os = strdup("unknown");
-	ret->arch = sm.arch ? strdup(sm.arch) : NULL;
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("symbols");
+	ret->os = rz_str_dup("unknown");
+	ret->arch = rz_str_dup(sm.arch);
 	ret->bits = sm.bits;
-	ret->type = strdup("Symbols file");
-	ret->subsystem = strdup("llvm");
+	ret->type = rz_str_dup("Symbols file");
+	ret->subsystem = rz_str_dup("llvm");
 	ret->has_va = true;
 
 	return ret;
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool coresyms_check_buffer(RzBuffer *b) {
 	ut8 buf[4];
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
 	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *coresyms_symbols(RzBinFile *bf) {
 	RzPVector *res = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
-	HtUU *hash = ht_uu_new0();
+	HtUU *hash = ht_uu_new();
 	if (!hash) {
 		return res;
 	}
@@ -390,53 +389,57 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	return res;
 }
 
-static ut64 size(RzBinFile *bf) {
+static ut64 coresyms_size(RzBinFile *bf) {
 	return UT64_MAX;
 }
 
-static void destroy(RzBinFile *bf) {
+static void coresyms_destroy(RzBinFile *bf) {
 	rz_coresym_cache_element_free(bf->o->bin_obj);
 }
 
-static void header(RzBinFile *bf) {
-	rz_return_if_fail(bf && bf->o);
+static RzStructuredData *coresyms_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
+	char uuidstr[RZ_UUID_LENGTH] = { 0 };
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	if (!element) {
-		return;
+		return NULL;
 	}
 
-	RzBin *bin = bf->rbin;
-	PrintfCallback p = bin->cb_printf;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
 	}
 
-	pj_o(pj);
-	pj_kn(pj, "cs_version", element->hdr->version);
-	pj_kn(pj, "size", element->hdr->size);
-	if (element->file_name) {
-		pj_ks(pj, "name", element->file_name);
+	RzStructuredData *csyms = rz_structured_data_map_add_map(info, "symbols");
+	if (!csyms) {
+		rz_structured_data_free(info);
+		return NULL;
 	}
-	if (element->binary_version) {
-		pj_ks(pj, "version", element->binary_version);
-	}
-	char uuidstr[RZ_UUID_LENGTH];
-	rz_hex_bin2str(element->hdr->uuid, 16, uuidstr);
-	pj_ks(pj, "uuid", uuidstr);
-	pj_kn(pj, "segments", element->hdr->n_segments);
-	pj_kn(pj, "sections", element->hdr->n_sections);
-	pj_kn(pj, "symbols", element->hdr->n_symbols);
-	pj_kn(pj, "lined_symbols", element->hdr->n_lined_symbols);
-	pj_kn(pj, "line_info", element->hdr->n_line_info);
-	pj_end(pj);
 
-	p("%s\n", pj_string(pj));
-	pj_free(pj);
+	rz_structured_data_map_add_unsigned(csyms, "cs_version", element->hdr->version, false);
+	rz_structured_data_map_add_unsigned(csyms, "size", element->hdr->size, false);
+	RzStructuredData *binary = rz_structured_data_map_add_map(csyms, "binary");
+	if (!binary) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+	rz_structured_data_map_add_string(binary, "name", rz_str_get(element->file_name));
+	rz_structured_data_map_add_string(binary, "version", rz_str_get(element->binary_version));
+
+	rz_hex_bin2str(element->hdr->uuid, sizeof(element->hdr->uuid), uuidstr);
+	rz_structured_data_map_add_string(csyms, "uuid", uuidstr);
+
+	rz_structured_data_map_add_unsigned(csyms, "n_segments", element->hdr->n_segments, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_sections", element->hdr->n_sections, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_symbols", element->hdr->n_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_lined_symbols", element->hdr->n_lined_symbols, false);
+	rz_structured_data_map_add_unsigned(csyms, "n_line_info", element->hdr->n_line_info, false);
+
+	return info;
 }
 
-static RzBinSourceLineInfo *lines(RzBinFile *bf) {
+static RzBinSourceLineInfo *coresyms_lines(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	if (!element || !element->hdr) {
@@ -469,17 +472,18 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
 	.license = "MIT",
-	.load_buffer = &load_buffer,
-	.check_buffer = &check_buffer,
-	.symbols = &symbols,
+	.author = "pancake",
+	.load_buffer = &coresyms_load_buffer,
+	.check_buffer = &coresyms_check_buffer,
+	.symbols = &coresyms_symbols,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = &sections,
-	.size = &size,
-	.baddr = &baddr,
-	.info = &info,
-	.header = &header,
-	.destroy = &destroy,
-	.lines = lines
+	.sections = &coresyms_sections,
+	.size = &coresyms_size,
+	.baddr = &coresyms_baddr,
+	.info = &coresyms_info,
+	.bin_structure = &coresyms_structure,
+	.destroy = &coresyms_destroy,
+	.lines = coresyms_lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

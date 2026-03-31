@@ -360,7 +360,7 @@ static bool try_rename_function(RzAnalysis *analysis, RzAnalysisFunction *fcn, c
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
 		// do not rename if is a symbol but check if
 		// another function has the same name
-		return ht_pp_find(analysis->ht_name_fun, name, NULL) == NULL;
+		return ht_sp_find(analysis->ht_name_fun, name, NULL) == NULL;
 	}
 	return rz_analysis_function_rename(fcn, name);
 }
@@ -412,7 +412,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			ut64 flirt_fcn_size = module->length - flirt_func->offset;
 			RzFlirtFunction *next_flirt_func;
 			RzListIter *next_it;
-			rz_list_foreach_iter(rz_list_iter_get_next(it), next_it, next_flirt_func) {
+			rz_list_foreach_iter(rz_list_next(it), next_it, next_flirt_func) {
 				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
 					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
 					break;
@@ -1280,7 +1280,7 @@ RZ_API RZ_OWN RzFlirtNode *rz_sign_flirt_parse_compressed_pattern_from_buffer(RZ
 	if (parse_tree(&ps, node)) {
 		ret = node;
 	} else {
-		free(node);
+		rz_sign_flirt_node_free(node);
 	}
 
 	if (info && ret) {
@@ -1326,7 +1326,7 @@ RZ_API bool rz_sign_flirt_apply(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL cons
 		return false;
 	}
 
-	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
+	if (!(flirt_buf = rz_buf_new_file(flirt_file, O_RDONLY, 0))) {
 		RZ_LOG_ERROR("FLIRT: Can't open %s\n", flirt_file);
 		return false;
 	}
@@ -1545,7 +1545,7 @@ static bool flirt_write_node(RZ_NONNULL const RzFlirtNode *node, RZ_NONNULL RzBu
 		// leaf
 		ut8 flags = 0;
 
-		RzFlirtModule *last = rz_list_last(node->module_list);
+		RzFlirtModule *last = rz_list_last_val(node->module_list);
 		rz_list_foreach (node->module_list, it, module) {
 			bool already_found = !(flags & IDASIG_PARSE_MORE_MODULES_WITH_SAME_CRC);
 			if (last != module) {

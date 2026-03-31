@@ -3,10 +3,11 @@ FILE=bins/pe/tls.exe
 ARGS=-A
 CMDS=ie;iee
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00401000 0x00000200 ---------- 0x00000068 program
-vaddr      paddr      hvaddr     haddr      type 
+0x00401020 0x00000220 ---------- 0x00000384 tls
+     vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0x00401020 0x00000220 ---------- 0x00000384 tls
 EOF
@@ -17,10 +18,11 @@ FILE=bins/pe/tls_hello.exe
 ARGS=-A
 CMDS=ie;iee
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004014c8 0x000008c8 ---------- 0x00000098 program
-vaddr      paddr      hvaddr     haddr      type 
+0x00401618 0x00000a18 ---------- 0x00007fb0 tls
+     vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0x00401618 0x00000a18 ---------- 0x00007fb0 tls
 EOF
@@ -31,9 +33,14 @@ FILE=bins/pe/tls_obfuscation.exe
 ARGS=-A
 CMDS=ie
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type    
+     vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x00401000 0x00000200 ---------- 0x00000068 program
+0x00401016 0x00000216 ---------- 0x00000330 tls
+0x00401001 0x00000201 ---------- 0x00000334 tls
+0x00401006 0x00000206 ---------- 0x00000338 tls
+0x0040100f 0x0000020f ---------- 0x0000033c tls
+0x00401011 0x00000211 ---------- 0x00000340 tls
 EOF
 RUN
 
@@ -42,7 +49,7 @@ FILE=bins/pe/tls_obfuscation.exe
 ARGS=-A
 CMDS=iee
 EXPECT=<<EOF
-vaddr      paddr      hvaddr     haddr      type 
+     vaddr      paddr     hvaddr      haddr type 
 -------------------------------------------------
 0x00401016 0x00000216 ---------- 0x00000330 tls
 0x00401001 0x00000201 ---------- 0x00000334 tls

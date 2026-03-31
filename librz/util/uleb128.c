@@ -73,6 +73,9 @@ RZ_API const ut8 *rz_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut64 s = 0, sum = 0, l = 0;
 	do {
 		c = *(data++) & 0xff;
+		if (s > 63) {
+			break;
+		}
 		sum |= ((ut64)(c & 0x7f) << s);
 		s += 7;
 		l++;
@@ -125,6 +128,9 @@ RZ_API const ut8 *rz_leb128(const ut8 *data, int datalen, st64 *v) {
 		}
 		while (data < data_end) {
 			c = *(data++) & 0x0ff;
+			if (s > 63) {
+				break;
+			}
 			sum |= ((st64)(c & 0x7f) << s);
 			s += 7;
 			if (!(c & 0x80)) {
@@ -152,6 +158,10 @@ RZ_API st64 rz_sleb128(const ut8 **data, const ut8 *end) {
 		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
+		if (offset > 63) {
+			// overflow of st64
+			break;
+		}
 		result |= (chunk << offset);
 		offset += 7;
 	} while (cond = *p & 0x80 && p + 1 < end, p++, cond);

@@ -167,6 +167,7 @@ typedef struct rz_il_op_args_shift_t RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< DJB2 hash of variable name
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -178,6 +179,7 @@ typedef struct rz_il_op_args_set_t {
  */
 typedef struct rz_il_op_args_let_t {
 	const char *name; ///< name of variable
+	ut64 hash; ///< DJB2 hash of variable name
 	RzILOpPure *exp; ///< value/expression to bind the variable to
 	RzILOpPure *body; ///< body in which the variable will be bound and that produces the result
 } RzILOpArgsLet;
@@ -260,6 +262,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
+	ut64 hash; ///< The DJB2 hash of the name.
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
@@ -467,6 +470,11 @@ typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFround;
 typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFsqrt;
 typedef struct rz_il_op_args_float_alg_unop_t RzILOpArgsFrsqrt;
 
+typedef struct rz_il_op_args_float_expect_t {
+	RzFloatException e;
+	RzILOpFloat *x;
+} RzILOpArgsFexcept;
+
 /**
  * \brief op structure for float basic arithmetic operations (binary op with rmode)
  * rmode -> 'f float -> 'f float -> 'f float
@@ -588,6 +596,7 @@ typedef enum {
 	RZ_IL_OP_FROOTN,
 	RZ_IL_OP_FPOWN,
 	RZ_IL_OP_FCOMPOUND,
+	RZ_IL_OP_FEXCEPT,
 	// ...
 
 	// Memory
@@ -667,6 +676,7 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFround fround;
 		RzILOpArgsFsqrt fsqrt;
 		RzILOpArgsFrsqrt frsqrt;
+		RzILOpArgsFexcept fexcept;
 		RzILOpArgsFadd fadd;
 		RzILOpArgsFsub fsub;
 		RzILOpArgsFmul fmul;
@@ -680,6 +690,10 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFhypot fhypot;
 	} op;
 };
+
+typedef RzILOpBool *(rz_il_bool_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
+typedef RzILOpBitVector *(rz_il_pure_3args_op)(RzILOpBitVector *, RzILOpBitVector *, RzILOpBitVector *);
 
 RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
@@ -733,6 +747,7 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_append(RZ_NONNULL RzILOpBitVector *h
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_load(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_loadw(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, ut32 n_bits);
 
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_rz_float(RZ_NONNULL RZ_OWN RzFloat *fl);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f32(float f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_float_from_f64(double f);
@@ -758,6 +773,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONN
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
@@ -840,6 +856,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 
 // Printing/Export
+RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code);
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
 
 RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name);

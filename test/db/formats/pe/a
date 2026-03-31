@@ -2,6 +2,5 @@ NAME=PE: corkami a.exe - open
 FILE=bins/pe/a.exe
 ARGS=-A
 CMDS=q!
-EXPECT=<<EOF
-EOF
+EXPECT=
 RUN

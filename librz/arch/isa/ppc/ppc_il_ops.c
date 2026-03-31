@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Rot127 <unisono@quyllur.org>
+// SPDX-FileCopyrightText: 2022 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ppc_il.h"
@@ -21,9 +21,7 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	const char *rB = cs_reg_name(handle, INSOP(1).mem.offset);
 #endif
 	st64 d = INSOP(1).mem.disp; // RA = base ; D = Disposition
-#if CS_NEXT_VERSION < 6
 	st64 sI = INSOP(1).imm; // liX instructions (alias for addX).
-#endif
 	bool update_ra = ppc_updates_ra_with_ea(id); // Save ea in RA?
 	ut32 mem_acc_size = ppc_get_mem_acc_size(id);
 	RzILOpPure *base;
@@ -49,7 +47,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 	switch (id) {
 	default:
 		NOT_IMPLEMENTED;
-#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI: // RT = sI
 		into_rt = EXTEND(PPC_ARCH_BITS, SN(16, sI));
 		update_ra = false;
@@ -58,7 +55,6 @@ static RzILOpEffect *load_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, cons
 		into_rt = EXTEND(PPC_ARCH_BITS, APPEND(SN(16, sI), U16(0)));
 		update_ra = false;
 		break;
-#endif
 	case PPC_INS_LA: // RT = EA
 		NOT_IMPLEMENTED;
 	case PPC_INS_LBZ:
@@ -1208,7 +1204,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 		} else {
 			n = U8(sH);
 		}
-		r = ROTL32(UNSIGNED(32, VARG(rS)), n);
+		r = PPC_IL_ROTL32(UNSIGNED(32, VARG(rS)), n);
 #if CS_NEXT_VERSION >= 6
 		b = mB + 32;
 		e = mE + 32;
@@ -1258,7 +1254,7 @@ static RzILOpEffect *shift_and_rotate(RZ_BORROW csh handle, RZ_BORROW cs_insn *i
 			n = U8(sH);
 		}
 		n = LOGAND(U8(0x3f), n);
-		r = ROTL64(VARG(rS), n);
+		r = PPC_IL_ROTL64(VARG(rS), n);
 #if CS_NEXT_VERSION >= 6
 		if (id == PPC_INS_RLDICR || id == PPC_INS_RLDCR) {
 			b = 0;
@@ -1492,10 +1488,8 @@ RZ_IPI RzILOpEffect *rz_ppc_cs_get_il_op(RZ_BORROW csh handle, RZ_BORROW cs_insn
 	case PPC_INS_MULLW:
 		lop = div_mul_op(handle, insn, mode);
 		break;
-#if CS_NEXT_VERSION < 6
 	case PPC_INS_LI:
 	case PPC_INS_LIS:
-#endif
 	case PPC_INS_LA:
 	case PPC_INS_LBZ:
 	case PPC_INS_LBZU:

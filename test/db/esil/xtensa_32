@@ -3,6 +3,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 22a0060c7330828030729022c2012b3242a0080c354065c04065d0
 aecu 0x0000001b
 ar~a2,a3,a4,a5,a6,a7,a8
@@ -23,6 +24,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 22a05032a0bb42afff52a0cc7cf6326200425202524208722200829202921202a20208
 aecu 0x00000023
 ar~a2,a3,a4,a5,a6,a7,a8,a9,a10
@@ -42,8 +44,10 @@ RUN
 
 NAME=load relative
 FILE=malloc://0x200
-ARGS=-a xtensa -b 32
 CMDS=<<EOF
+e asm.arch=xtensa
+e asm.bits=32
+e cfg.bigendian=false
 wx ddccbbaa @ 0
 s 0x14
 wx 21fbff31faff41f9ff51f8fff8ff
@@ -65,20 +69,21 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx c5000022a020c00200000000000000008000000000000000000000000000000002a030c00000
 aes
-ar~pc
-ar~a0
+ar~^pc
+ar~^a0
 aes
 aes
 ar~a2
 aes
-ar~pc
-ar~a0
+ar~^pc
+ar~^a0
 aes
 aes
-ar~pc
-ar~a0
+ar~^pc
+ar~^a0
 EOF
 EXPECT=<<EOF
 pc = 0x00000010
@@ -96,14 +101,15 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 22a002e6320526320200000086fdff
 aes
 aes
-ar~pc
+ar~^pc
 aes
-ar~pc
+ar~^pc
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x0000000c
@@ -117,10 +123,11 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 22a002d6920000000000000000000000060000
 aes
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x00000010
@@ -132,12 +139,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 22a00232a00327130627a30300000000060000
 aes
 aes
 aes
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x00000010
@@ -149,13 +157,14 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 00000fff34120fff000000000000000021fcff31fcff2743060000000000000006ffff
 s 0x10
 aeip
 aes
 aes
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x00000020
@@ -167,12 +176,13 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 0000004000000000000000000000000021fcffe7f2090000000000000000000006ffff
 s 0x10
 aeip
 aes
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x00000020
@@ -184,13 +194,14 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 wx 0000000400000000000000000000000021fcff32a01a37d2060000000000000006ffff
 s 0x10
 aeip
 aes
 aes
 aes
-ar~pc
+ar~^pc
 EOF
 EXPECT=<<EOF
 pc = 0x00000020
@@ -202,6 +213,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 e asm.esil=1
 wx ddccbbaa00000000000000000000000021fcff2038f4
 s 0x10
@@ -220,6 +232,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 e asm.esil=1
 wx 4ce87cdb
 s 0x0
@@ -237,6 +250,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e cfg.bigendian=false
 e asm.esil=1
 wx 4ce87cdb
 s 0x0

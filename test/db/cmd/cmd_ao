@@ -9,15 +9,14 @@ aoj~{}
 EOF
 EXPECT=<<EOF
 address: 0x0
-opcode: mov dword [rbp - 0xc], 0
-esilcost: 12
-disasm: mov dword [rbp - 0xc], 0
-pseudo: dword [rbp - 0xc] = 0
+opcode: mov dword [rbp-0x0c], 0x00
+disasm: mov dword [rbp-0x0c], 0x00
+pseudo: dword [rbp-0x0c] = 0x00
 mnemonic: mov
 description: moves data from src to dst
 mask: ffffffffffffff
 prefix: 0
-id: 460
+id: 436
 bytes: c745f400000000
 val: 0x00000000
 disp: 0xfffffffffffffff4
@@ -28,15 +27,30 @@ type: mov
 cycles: 1
 esil: 0,0xc,rbp,-,=[4]
 rzil: (storew 0 (+ (var rbp) (bv 64 0xfffffffffffffff4)) (bv 32 0x0))
+opex:
+  operands:
+    - type: "mem"
+      segment: "ss"
+      base: "rbp"
+      scale: 0
+      disp: -12
+      write: true
+      nbits: 32
+    - type: "imm"
+      value: 0
+      read: true
+      nbits: 32
+  modrm: true
+  disp: -12
 direction: write
 family: cpu
 stackop: set
 stackptr: 8
 [
   {
-    "opcode": "mov dword [rbp - 0xc], 0",
-    "disasm": "mov dword [rbp - 0xc], 0",
-    "pseudo": "dword [rbp - 0xc] = 0",
+    "opcode": "mov dword [rbp-0x0c], 0x00",
+    "disasm": "mov dword [rbp-0x0c], 0x00",
+    "pseudo": "dword [rbp-0x0c] = 0x00",
     "description": "moves data from src to dst",
     "mnemonic": "mov",
     "mask": "ffffffffffffff",
@@ -64,22 +78,23 @@ stackptr: 8
     },
     "sign": false,
     "prefix": 0,
-    "id": 460,
+    "id": 436,
     "opex": {
       "operands": [
         {
-          "size": 4,
-          "rw": 2,
           "type": "mem",
+          "segment": "ss",
           "base": "rbp",
-          "scale": 1,
-          "disp": -12
+          "scale": 0,
+          "disp": -12,
+          "write": true,
+          "nbits": 32
         },
         {
-          "size": 4,
-          "rw": 0,
           "type": "imm",
-          "value": 0
+          "value": 0,
+          "read": true,
+          "nbits": 32
         }
       ],
       "modrm": true,
@@ -91,7 +106,6 @@ stackptr: 8
     "disp": 18446744073709551604,
     "size": 7,
     "type": "mov",
-    "esilcost": 12,
     "scale": 0,
     "refptr": 4,
     "cycles": 1,
@@ -110,6 +124,7 @@ FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 e asm.cpu=cortexA8
 wx 2f6c642d
 aoj~{[0].disasm}
@@ -126,19 +141,52 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-aom 3
+aom 4
 aom aam
+aoma~movnb
 aoma~mova
 EOF
 EXPECT=<<EOF
 aam
-3
-cmova           conditional move - above/not below nor equal (cf=0 and zf=0)
-cmovae          conditional move - above or equal/not below/not carry (cf=0)
-movabs          absolute data moves
+4
+cmovnb          conditional move - not below/above or equal/not carry (cf=0)
+cmovnbe         conditional move - not below nor equal/above (cf=0 and zf=0)
+fcmovnb         fp conditional move - not below (cf=0)
+fcmovnbe        fp conditional move - not below or equal (cf=0 and zf=0)
 movapd          move aligned packed double-fp values
 movaps          move aligned packed single-fp values
 vmovapd         move aligned packed double-precision floating-point values
 vmovaps         move aligned packed single-precision floating-point values
+EOF
+RUN
+
+NAME=ao stackptr neg
+FILE==
+CMDS=<<EOF
+e asm.arch=6502
+wx 60
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: rts
+disasm: rts
+pseudo: return
+mnemonic: rts
+description: return from subroutine
+mask: ff
+prefix: 0
+id: 96
+bytes: 60
+refptr: 0
+size: 1
+sign: false
+type: ret
+cycles: 6
+esil: 0x101,sp,+,[2],pc,=,pc,++=,2,sp,+=
+rzil: (seq (set sp (+ (var sp) (bv 8 0x1))) (set pcl (load 0 (append (bv 8 0x1) (var sp)))) (set sp (+ (var sp) (bv 8 0x1))) (set pch (load 0 (append (bv 8 0x1) (var sp)))) (jmp (+ (append (var pch) (var pcl)) (bv 16 0x1))))
+family: cpu
+stackop: inc
+stackptr: -2
 EOF
 RUN

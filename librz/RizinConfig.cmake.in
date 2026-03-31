@@ -26,7 +26,7 @@
 #  Parse
 #  Reg
 #  Search
-#  Signature
+#  Sign
 #  Socket
 #  Syscall
 #  Type
@@ -72,7 +72,7 @@ set(_supported_components
     Parse
     Reg
     Search
-    Signature
+    Sign
     Socket
     Syscall
     Type

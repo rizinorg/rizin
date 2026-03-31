@@ -43,7 +43,7 @@ int PE_(read_image_delay_import_directory)(RzBuffer *b, ut64 addr, PE_(image_del
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char tmpbuf[32];
-	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal), 0);
+	char *foo = sdb_get(db, rz_strf(tmpbuf, "%d", ordinal));
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -52,11 +52,13 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	return NULL;
 }
 
-static int bin_pe_parse_imports(RzBinPEObj *bin,
+static int bin_pe_parse_imports(RZ_BORROW RZ_NONNULL RzPath *sys_path,
+	RzBinPEObj *bin,
 	struct rz_bin_pe_import_t **importp, int *nimp,
 	const char *dll_name,
 	PE_DWord OriginalFirstThunk,
 	PE_DWord FirstThunk) {
+	rz_return_val_if_fail(sys_path, 0);
 	char import_name[PE_NAME_LENGTH + 1];
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;
@@ -94,7 +96,7 @@ static int bin_pe_parse_imports(RzBinPEObj *bin,
 				free(symdllname);
 				strncpy(name, dll_name, sizeof(name) - 1);
 				name[sizeof(name) - 1] = 0;
-				symdllname = strdup(name);
+				symdllname = rz_str_dup(name);
 
 				// remove the trailling ".dll"
 				size_t len = strlen(symdllname);
@@ -109,13 +111,16 @@ static int bin_pe_parse_imports(RzBinPEObj *bin,
 					}
 					db = NULL;
 					free(sdb_module);
-					sdb_module = strdup(symdllname);
+					sdb_module = rz_str_dup(symdllname);
 					filename = rz_str_newf("%s.sdb", symdllname);
 					if (filename && rz_file_exists(filename)) {
 						db = sdb_new(NULL, filename, 0);
 					} else {
-						char *formats_dir = rz_path_system(RZ_SDB_FORMAT);
 						free(filename);
+						char *formats_dir = rz_path_system(sys_path, RZ_SDB_FORMAT);
+						if (!formats_dir) {
+							goto error;
+						}
 						filename = rz_str_newf(RZ_JOIN_3_PATHS("%s", "dll", "%s.sdb"), formats_dir, symdllname);
 						free(formats_dir);
 						if (rz_file_exists(filename)) {
@@ -219,19 +224,27 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(RzBinPEObj *bin) {
 		return NULL;
 	}
 
+	RzPath *sys_path = rz_path_new();
+	if (!sys_path) {
+		return NULL;
+	}
+
 	off = bin->import_directory_offset;
 	if (off < bin->size && off > 0) {
 		ut64 last;
 		int idi = 0;
 		if (off + sizeof(PE_(image_import_directory)) > bin->size) {
+			rz_path_free(sys_path);
 			return NULL;
 		}
 		int r = PE_(read_image_import_directory)(bin->b, bin->import_directory_offset + idi * sizeof(curr_import_dir), &curr_import_dir);
 		if (r < 0) {
+			rz_path_free(sys_path);
 			return NULL;
 		}
 
 		if (bin->import_directory_size < 1) {
+			rz_path_free(sys_path);
 			return NULL;
 		}
 		if (off + bin->import_directory_size > bin->size) {
@@ -260,7 +273,7 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(RzBinPEObj *bin) {
 				}
 				dll_name[PE_NAME_LENGTH] = '\0';
 			}
-			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name,
+			if (!bin_pe_parse_imports(sys_path, bin, &imports, &nimp, dll_name,
 				    curr_import_dir.Characteristics,
 				    curr_import_dir.FirstThunk)) {
 				break;
@@ -269,6 +282,7 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(RzBinPEObj *bin) {
 			r = PE_(read_image_import_directory)(bin->b, bin->import_directory_offset + idi * sizeof(curr_import_dir), &curr_import_dir);
 			if (r < 0) {
 				free(imports);
+				rz_path_free(sys_path);
 				return NULL;
 			}
 		}
@@ -303,13 +317,14 @@ struct rz_bin_pe_import_t *PE_(rz_bin_pe_get_imports)(RzBinPEObj *bin) {
 				goto beach;
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
-			if (!bin_pe_parse_imports(bin, &imports, &nimp, dll_name, import_func_name_offset,
+			if (!bin_pe_parse_imports(sys_path, bin, &imports, &nimp, dll_name, import_func_name_offset,
 				    curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
 			}
 		}
 	}
 beach:
+	rz_path_free(sys_path);
 	if (nimp) {
 		imps = realloc(imports, (nimp + 1) * sizeof(struct rz_bin_pe_import_t));
 		if (!imps) {

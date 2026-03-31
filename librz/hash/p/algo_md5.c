@@ -79,6 +79,7 @@ RzHashPlugin rz_hash_plugin_md5 = {
 	.name = "md5",
 	.license = "LGPL2",
 	.author = "Alan DeKok",
+	.description = "MD5 cryptographic hash",
 	.support_hmac = true,
 	.context_new = plugin_md5_context_new,
 	.context_free = plugin_md5_context_free,

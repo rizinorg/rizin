@@ -57,6 +57,9 @@ RZ_API int rz_sys_getpid(void);
 #if !HAVE_PIPE || (__UNIX__ && HAVE_PIPE)
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec);
 RZ_API int rz_sys_pipe_close(int fd);
+#elif defined(__serenity__)
+#define rz_sys_pipe       pipe2
+#define rz_sys_pipe_close close
 #else
 #define rz_sys_pipe       pipe
 #define rz_sys_pipe_close close
@@ -88,7 +91,6 @@ RZ_API int rz_sys_system(const char *command);
 #endif
 #define rz_sys_xsystem(cmd) RZ_V_NOT(rz_sys_system(cmd), -1)
 
-RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
 RZ_API int rz_sys_arch_id(const char *arch);
 RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch);
@@ -138,7 +140,6 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode);
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode);
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length);
 RZ_API int rz_sys_truncate(const char *file, int sz);
-RZ_API int rz_sys_cmdbg(const char *cmd);
 RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
 RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
@@ -156,7 +157,9 @@ RZ_API void rz_sys_backtrace(void);
 #ifndef rz_sys_breakpoint
 #if __WINDOWS__
 #define rz_sys_breakpoint() \
-	{ __debugbreak(); }
+	{ \
+		__debugbreak(); \
+	}
 #else
 #if __GNUC__
 #define rz_sys_breakpoint() __builtin_trap()
@@ -201,6 +204,10 @@ RZ_API RZ_OWN char *rz_syscmd_head(RZ_NONNULL const char *file, int count);
 RZ_API RZ_OWN char *rz_syscmd_tail(RZ_NONNULL const char *file, int count);
 RZ_API RZ_OWN char *rz_syscmd_join(RZ_NONNULL const char *file1, RZ_NONNULL const char *file2);
 RZ_API RZ_OWN char *rz_syscmd_sort(RZ_NONNULL const char *file);
+RZ_API RZ_OWN char *rz_syscmd_sort_pipe(RZ_NULLABLE const char *input, int *length);
+RZ_API RZ_OWN char *rz_syscmd_uniq_pipe(RZ_NULLABLE const char *input, int *length);
+RZ_API RZ_OWN char *rz_syscmd_sort_str(RZ_NONNULL const char *input);
+RZ_API RZ_OWN char *rz_syscmd_uniq_str(RZ_NONNULL const char *input);
 
 #ifdef __cplusplus
 }

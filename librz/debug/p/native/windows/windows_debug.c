@@ -101,7 +101,7 @@ static inline PTHREAD_ITEM find_thread(RzDebug *dbg, int tid) {
 		return NULL;
 	}
 	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp, NULL);
-	return it ? rz_list_iter_get_data(it) : NULL;
+	return it ? rz_list_val(it) : NULL;
 }
 
 static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
@@ -772,18 +772,18 @@ static int findlibcmp(void *BaseOfDll, void *lib, void *user) {
 
 static void *find_library(void *BaseOfDll) {
 	RzListIter *it = rz_list_find(lib_list, BaseOfDll, (RzListComparator)findlibcmp, NULL);
-	return it ? rz_list_iter_get_data(it) : NULL;
+	return it ? rz_list_val(it) : NULL;
 }
 
 static void remove_library(PLIB_ITEM library) {
-	rz_list_delete_data(lib_list, library);
+	rz_list_delete_val(lib_list, library);
 }
 
 static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllname) {
 	if (lib_list == NULL) {
 		lib_list = rz_list_newf((RzListFree)libfree);
 		if (!lib_list) {
-			RZ_LOG_ERROR("Failed to allocate memory");
+			RZ_LOG_ERROR("Failed to allocate memory\n");
 			return;
 		}
 	}
@@ -796,20 +796,20 @@ static void add_library(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char *dllna
 	}
 	lib = RZ_NEW0(LIB_ITEM);
 	if (!lib) {
-		RZ_LOG_ERROR("Failed to allocate memory");
+		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 	lib->pid = pid;
 	lib->hFile = hFile;
 	lib->BaseOfDll = lpBaseOfDll;
-	lib->Path = strdup(dllname);
-	lib->Name = strdup(rz_file_basename(dllname));
+	lib->Path = rz_str_dup(dllname);
+	lib->Name = rz_str_dup(rz_file_basename(dllname));
 
 	(void)rz_list_append(lib_list, lib);
 }
 
 static void *last_library(void) {
-	return lib_list ? rz_list_last(lib_list) : NULL;
+	return lib_list ? rz_list_last_val(lib_list) : NULL;
 }
 
 static bool breaked = false;
@@ -1178,7 +1178,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	if (th && th->bFinished) {
-		rz_list_delete_data(dbg->threads, th);
+		rz_list_delete_val(dbg->threads, th);
 	}
 
 	return tid;
@@ -1301,7 +1301,7 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		}
 		if (!path) {
 			// TODO: enum processes to get binary's name
-			path = strdup("???");
+			path = rz_str_dup("???");
 		}
 		int saved_tid = dbg->tid;
 		do {

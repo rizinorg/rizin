@@ -10,7 +10,6 @@ RZ_API RzDebugTrace *rz_debug_trace_new(void) {
 		return NULL;
 	}
 	t->tag = 1; // UT32_MAX;
-	t->addresses = NULL;
 	t->enabled = false;
 	t->traces = rz_list_new();
 	if (!t->traces) {
@@ -18,7 +17,7 @@ RZ_API RzDebugTrace *rz_debug_trace_new(void) {
 		return NULL;
 	}
 	t->traces->free = free;
-	t->ht = ht_pp_new0();
+	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!t->ht) {
 		rz_debug_trace_free(t);
 		return NULL;
@@ -32,7 +31,7 @@ RZ_API void rz_debug_trace_free(RzDebugTrace *trace) {
 	}
 	rz_list_purge(trace->traces);
 	free(trace->traces);
-	ht_pp_free(trace->ht);
+	ht_sp_free(trace->ht);
 	RZ_FREE(trace);
 }
 
@@ -205,36 +204,30 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	oldpc = op->addr;
 }
 
-RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str) {
-	// TODO: parse offsets and so use ut64 instead of strstr()
-	free(dbg->trace->addresses);
-	dbg->trace->addresses = (str && *str) ? strdup(str) : NULL;
-}
-
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr) {
 	char tmpbuf[64];
 	int tag = dbg->trace->tag;
-	return ht_pp_find(dbg->trace->ht,
+	return ht_sp_find(dbg->trace->ht,
 		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), NULL);
 }
 
 static int cmpaddr(const void *_a, const void *_b, void *user) {
-	const RzListInfo *a = _a, *b = _b;
+	const RzDbgListInfo *a = _a, *b = _b;
 	return (rz_itv_begin(a->pitv) > rz_itv_begin(b->pitv)) ? 1 : (rz_itv_begin(a->pitv) < rz_itv_begin(b->pitv)) ? -1
 														     : 0;
 }
 
 /***
  * Get all trace info
- * @param dbg core->dbg
- * @param offset offset of address
- * @return a RzList of RzListInfo
+ * \param dbg core->dbg
+ * \param offset offset of address
+ * \return a RzList of RzDbgListInfo
  */
-RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
+RZ_API RZ_OWN RzList /*<RzDbgListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64 offset) {
 	rz_return_val_if_fail(dbg, NULL);
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
-	RzList *info_list = rz_list_new();
+	RzList *info_list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!info_list) {
 		return NULL;
 	}
@@ -244,7 +237,7 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 		if (trace->tag && !(tag & trace->tag)) {
 			continue;
 		}
-		RzListInfo *info = RZ_NEW0(RzListInfo);
+		RzDbgListInfo *info = RZ_NEW0(RzDbgListInfo);
 		if (!info) {
 			rz_list_free(info_list);
 			return NULL;
@@ -261,25 +254,10 @@ RZ_API RZ_OWN RzList /*<RzListInfo *>*/ *rz_debug_traces_info(RzDebug *dbg, ut64
 	return info_list;
 }
 
-// XXX: find better name, make it public?
-static int rz_debug_trace_is_traceable(RzDebug *dbg, ut64 addr) {
-	if (dbg->trace->addresses) {
-		char addr_str[32];
-		snprintf(addr_str, sizeof(addr_str), "0x%08" PFMT64x, addr);
-		if (!strstr(dbg->trace->addresses, addr_str)) {
-			return false;
-		}
-	}
-	return true;
-}
-
 RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) {
 	RzDebugTracepoint *tp;
 	char tmpbuf[64];
 	int tag = dbg->trace->tag;
-	if (!rz_debug_trace_is_traceable(dbg, addr)) {
-		return NULL;
-	}
 	rz_analysis_trace_bb(dbg->analysis, addr);
 	tp = RZ_NEW0(RzDebugTracepoint);
 	if (!tp) {
@@ -292,7 +270,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 	tp->count = ++dbg->trace->count;
 	tp->times = 1;
 	rz_list_append(dbg->trace->traces, tp);
-	ht_pp_update(dbg->trace->ht,
+	ht_sp_update(dbg->trace->ht,
 		rz_strf(tmpbuf, "trace.%d.%" PFMT64x, tag, addr), tp);
 	return tp;
 }
@@ -300,8 +278,30 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add(RzDebug *dbg, ut64 addr, int size) 
 RZ_API void rz_debug_trace_reset(RzDebug *dbg) {
 	RzDebugTrace *t = dbg->trace;
 	rz_list_purge(t->traces);
-	ht_pp_free(t->ht);
-	t->ht = ht_pp_new0();
+	ht_sp_free(t->ht);
+	t->ht = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	t->traces = rz_list_new();
 	t->traces->free = free;
+}
+
+RZ_API RZ_OWN RzDbgListInfo *rz_debug_listinfo_new(RZ_NULLABLE const char *name, RzInterval pitv, RzInterval vitv, int perm, RZ_NULLABLE const char *extra) {
+	RzDbgListInfo *info = RZ_NEW(RzDbgListInfo);
+	if (!info) {
+		return NULL;
+	}
+	info->name = rz_str_dup(name);
+	info->pitv = pitv;
+	info->vitv = vitv;
+	info->perm = perm;
+	info->extra = rz_str_dup(extra);
+	return info;
+}
+
+RZ_API void rz_debug_listinfo_free(RZ_NULLABLE RzDbgListInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->name);
+	free(info->extra);
+	free(info);
 }

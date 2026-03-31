@@ -1,0 +1,19 @@
+NAME=analysis coverage_test
+FILE=bins/elf/demangle-test-cpp
+CMDS=<<EOF
+aaaa
+aai
+EOF
+EXPECT=<<EOF
+functions:   76
+xrefs:       179
+calls:       130
+strings:     1
+symbols:     102
+imports:     10
+signatures:  0
+coverage:    4816
+code size:   5205
+percentage: 92.53% (coverage on code size)
+EOF
+RUN

@@ -62,6 +62,7 @@ RzHashPlugin rz_hash_plugin_blake3 = {
 	.name = "blake3",
 	.license = "CC0",
 	.author = "Samuel Neves,Jack O'Connor",
+	.description = "BLAKE3 cryptographic hash",
 	.support_hmac = false,
 	.context_new = plugin_blake3_context_new,
 	.context_free = plugin_blake3_context_free,

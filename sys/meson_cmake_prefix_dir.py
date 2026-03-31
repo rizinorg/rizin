@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
 # SPDX-License-Identifier: LGPL-3.0-only
 
-""" Python script to workaround issue mesonbuild/meson#9702
+"""Python script to workaround issue mesonbuild/meson#9702
 (https://github.com/mesonbuild/meson/issues/9702). It returns the relative path
 of the prefixdir from the cmake directory."""
 

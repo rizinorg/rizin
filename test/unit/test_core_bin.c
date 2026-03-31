@@ -171,23 +171,23 @@ bool test_map(void) {
 	mu_assert_eq(info->perm_orig, RZ_PERM_RX, "map info perm");
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0, buf, sizeof(buf));
 	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "unmapped read");
-	r = rz_io_read_at(core->io, 0xfe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0xfe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\x13\x37\xff\xff\xff\xff", 8, "direct map read");
-	r = rz_io_read_at(core->io, 0x1fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x1fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\x13\x37\x00\x00\x00\x00", 8, "direct map read with zeroes");
-	r = rz_io_read_at(core->io, 0x22e, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x22e, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\x00\x00\xff\xff\xff\xff\xff\xff", 8, "direct map read with zeroes end");
 
-	r = rz_io_read_at(core->io, 0x2fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x2fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xffn123\xff\xff", 8, "virtual file read");
-	r = rz_io_read_at(core->io, 0x3fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x3fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xc0\xff\xee\x00\xff\xff", 8, "virtual file read");
 
@@ -198,7 +198,7 @@ bool test_map(void) {
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee", 3, "pre-sanity check buf contents");
 	r = rz_io_write_at(core->io, 0x400, (const ut8 *)"zir", 3);
 	mu_assert_false(r, "io write");
-	r = rz_io_read_at(core->io, 0x3fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x3fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xc0\xff\xee\x00\xff\xff", 8, "virtual file read");
 	red = rz_buf_read_at(vf->buf, 0, buf, 3);
@@ -212,7 +212,7 @@ bool test_map(void) {
 	mu_assert_memeq(buf, (const ut8 *)"rizin123", 8, "pre-sanity check buf contents");
 	r = rz_io_write_at(core->io, 0x301, (const ut8 *)"izi", 3);
 	mu_assert_true(r, "io write");
-	r = rz_io_read_at(core->io, 0x2fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x2fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xffnizi\xff\xff", 8, "virtual file read");
 	red = rz_buf_read_at(vf->buf, 0, buf, 8);
@@ -252,10 +252,10 @@ bool test_cfile_close(void) {
 	rz_list_free(descs);
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0xfe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0xfe, buf, sizeof(buf));
 	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "direct map read after close");
-	r = rz_io_read_at(core->io, 0x22e, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x22e, buf, sizeof(buf));
 	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "direct map read with zeroes end after close");
 
@@ -312,17 +312,17 @@ bool test_cfile_close_multiple(void) {
 	rz_list_free(descs);
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0xfe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0xfe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xee\xc0\xff\xff\xff\xff", 8, "direct map read");
-	r = rz_io_read_at(core->io, 0x22e, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x22e, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\x00\x00\xff\xff\xff\xff\xff\xff", 8, "direct map read with zeroes end");
 
-	r = rz_io_read_at(core->io, 0x2fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x2fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xffn123\xff\xff", 8, "virtual file read");
-	r = rz_io_read_at(core->io, 0x3fe, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x3fe, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xc0\xff\xee\x00\xff\xff", 8, "virtual file read");
 
@@ -398,7 +398,7 @@ bool test_cfile_close_manual_maps(void) {
 	mu_assert_ptreq(rz_pvector_at(&core->io->maps, 0), map3, "remaining manual map");
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x8000, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee\xff\xff\xff\xff\xff", 8, "untouched manual map");
 
@@ -485,7 +485,7 @@ bool test_cfile_close_manual_vfile_fd(void) {
 	int vfd = desc->fd; // remember fd, desc should be freed later
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x8000, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
@@ -497,7 +497,7 @@ bool test_cfile_close_manual_vfile_fd(void) {
 	mu_assert_null(desc, "vfile closed");
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 0, "io maps count");
 
-	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x8000, buf, sizeof(buf));
 	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
@@ -528,7 +528,7 @@ bool test_cfile_close_manual_vfile_map(void) {
 	mu_assert_notnull(map, "map added");
 
 	ut8 buf[8];
-	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x8000, buf, sizeof(buf));
 	mu_assert_true(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xc0\xff\xee\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
@@ -537,7 +537,7 @@ bool test_cfile_close_manual_vfile_map(void) {
 
 	// now everything should be gone, including the vfile map which indirectly pointed into the core file's vfile fd
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 0, "io maps count");
-	r = rz_io_read_at(core->io, 0x8000, buf, sizeof(buf));
+	r = rz_io_read_at_mapped(core->io, 0x8000, buf, sizeof(buf));
 	mu_assert_false(r, "io read");
 	mu_assert_memeq(buf, (const ut8 *)"\xff\xff\xff\xff\xff\xff\xff\xff", 8, "manual vfile map read");
 
@@ -602,6 +602,35 @@ bool test_cfile_close_manual_cfile_map_multiple(void) {
 	mu_end;
 }
 
+bool test_bin_set_export_info(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+
+	bool r = rz_core_bin_load(core, NULL, 0);
+	mu_assert_true(r, "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	Sdb *sdb = sdb_ns(bf->sdb, "info", 0);
+
+	sdb_set(sdb, "my_item.offset", "0x200");
+	sdb_set(sdb, "my_item.format", "test_struct");
+	sdb_set(sdb, "my_item.size", "8");
+
+	rz_core_bin_set_export_info(core);
+
+	rz_flag_space_set(core->flags, "format");
+	RzFlagItem *fi = rz_flag_get(core->flags, "my_item");
+	mu_assert_notnull(fi, "flag 'my_item' should exist");
+	mu_assert_eq(fi->offset, 0x200, "flag offset");
+	mu_assert_eq(fi->size, 8, "flag size");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -611,6 +640,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_fd);
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
+	mu_run_test(test_bin_set_export_info);
 	return tests_passed != tests_run;
 }
 

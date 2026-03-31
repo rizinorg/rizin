@@ -63,7 +63,7 @@ static bool function_name_exists(RzAnalysis *analysis, const char *name, ut64 ad
 		RZ_LOG_INFO("Empty function name, we must auto generate one\n");
 		return true;
 	}
-	RzAnalysisFunction *f = ht_pp_find(analysis->ht_name_fun, name, &found);
+	RzAnalysisFunction *f = ht_sp_find(analysis->ht_name_fun, name, &found);
 	if (f && found) {
 		return true;
 	}
@@ -78,19 +78,6 @@ static bool function_already_defined_at(RzAnalysis *analysis, const char *name, 
 		return true;
 	}
 	return false;
-}
-
-static void inst_vars_kv_free(HtUPKv *kv) {
-	rz_pvector_free(kv->value);
-}
-
-static void labels_kv_free(HtUPKv *kv) {
-	free(kv->value);
-}
-
-static void label_addrs_kv_free(HtPPKv *kv) {
-	free(kv->key);
-	free(kv->value);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
@@ -108,9 +95,9 @@ RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis) {
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
 	rz_pvector_init(&fcn->vars, (RzPVectorFree)rz_analysis_var_free);
-	fcn->inst_vars = ht_up_new(NULL, inst_vars_kv_free, NULL);
-	fcn->labels = ht_up_new(NULL, labels_kv_free, NULL);
-	fcn->label_addrs = ht_pp_new(NULL, label_addrs_kv_free, NULL);
+	fcn->inst_vars = ht_up_new(NULL, (HtUPFreeValue)rz_pvector_free);
+	fcn->labels = ht_up_new(NULL, free);
+	fcn->label_addrs = ht_sp_new(HT_STR_DUP, NULL, free);
 	return fcn;
 }
 
@@ -124,7 +111,7 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	void **it;
 	rz_pvector_foreach (fcn->bbs, it) {
 		block = (RzAnalysisBlock *)*it;
-		rz_list_delete_data(block->fcns, fcn);
+		rz_list_delete_val(block->fcns, fcn);
 		rz_analysis_block_unref(block);
 	}
 	rz_pvector_free(fcn->bbs);
@@ -133,14 +120,14 @@ RZ_API void rz_analysis_function_free(void *_fcn) {
 	if (ht_up_find(analysis->ht_addr_fun, fcn->addr, NULL) == _fcn) {
 		ht_up_delete(analysis->ht_addr_fun, fcn->addr);
 	}
-	if (ht_pp_find(analysis->ht_name_fun, fcn->name, NULL) == _fcn) {
-		ht_pp_delete(analysis->ht_name_fun, fcn->name);
+	if (ht_sp_find(analysis->ht_name_fun, fcn->name, NULL) == _fcn) {
+		ht_sp_delete(analysis->ht_name_fun, fcn->name);
 	}
 
 	rz_pvector_fini(&fcn->vars);
 	ht_up_free(fcn->inst_vars);
 	ht_up_free(fcn->labels);
-	ht_pp_free(fcn->label_addrs);
+	ht_sp_free(fcn->label_addrs);
 	rz_type_free(fcn->ret_type);
 	free(fcn->name);
 	rz_list_free(fcn->imports);
@@ -174,7 +161,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
-	return ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
+	return ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
@@ -188,7 +175,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 	fcn->bits = analysis->bits;
 	if (name) {
 		free(fcn->name);
-		fcn->name = strdup(name);
+		fcn->name = rz_str_dup(name);
 	} else {
 		const char *fcnprefix = analysis->coreb.cfgGet ? analysis->coreb.cfgGet(analysis->coreb.core, "analysis.fcnprefix") : NULL;
 		if (RZ_STR_ISEMPTY(fcnprefix)) {
@@ -204,7 +191,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 }
 
 RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn) {
-	return rz_list_delete_data(fcn->analysis->fcns, fcn);
+	return rz_list_delete_val(fcn->analysis->fcns, fcn);
 }
 
 /**
@@ -245,23 +232,23 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	ht_up_delete(fcn->analysis->ht_addr_fun, fcn->addr);
 
 	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = (st64)addr - (st64)fcn->addr;
+	st64 delta = addr - fcn->addr;
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
 		RzAnalysisVarAccess *acc;
-		rz_vector_foreach(&var->accesses, acc) {
+		rz_vector_foreach (&var->accesses, acc) {
 			acc->offset -= delta;
 		}
 	}
 	InstVarsRelocateCtx ctx = {
-		.inst_vars_new = ht_up_new(NULL, inst_vars_kv_free, NULL),
+		.inst_vars_new = ht_up_new(NULL, (HtUPFreeValue)rz_pvector_free),
 		.delta = delta
 	};
 	if (ctx.inst_vars_new) {
 		ht_up_foreach(fcn->inst_vars, inst_vars_relocate_cb, &ctx);
 		// Do not free the elements of the Ht, because they were moved to ctx.inst_vars_new
-		fcn->inst_vars->opt.freefn = NULL;
+		fcn->inst_vars->opt.finiKV = NULL;
 		ht_up_free(fcn->inst_vars);
 		fcn->inst_vars = ctx.inst_vars_new;
 	}
@@ -271,9 +258,24 @@ RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	return true;
 }
 
-RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *name) {
+/**
+ * \b Rename given function.
+ * This method will fail if a function with same name as `name`
+ * already exists in rizin's analysis.
+ *
+ * \param fcn Rizin analysis function.
+ * \param name A unique name
+ *
+ * \return `true` on success.
+ * \return `false` otherwiese.
+ *
+ * \sa rz_analysis_function_force_rename
+ * */
+RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(fcn && name, false);
+
 	RzAnalysis *analysis = fcn->analysis;
-	RzAnalysisFunction *existing = ht_pp_find(analysis->ht_name_fun, name, NULL);
+	RzAnalysisFunction *existing = ht_sp_find(analysis->ht_name_fun, name, NULL);
 	if (existing) {
 		if (existing == fcn) {
 			// fcn->name == name, nothing to do
@@ -281,18 +283,46 @@ RZ_API bool rz_analysis_function_rename(RzAnalysisFunction *fcn, const char *nam
 		}
 		return false;
 	}
-	char *newname = strdup(name);
+	char *newname = rz_str_dup(name);
 	if (!newname) {
 		return false;
 	}
-	bool in_tree = ht_pp_delete(analysis->ht_name_fun, fcn->name);
+	bool in_tree = ht_sp_delete(analysis->ht_name_fun, fcn->name);
 	free(fcn->name);
 	fcn->name = newname;
 	if (in_tree) {
 		// only re-insert if it really was in the tree before
-		ht_pp_insert(analysis->ht_name_fun, fcn->name, fcn);
+		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn);
 	}
 	return true;
+}
+
+/**
+ * \b Force rename a function.
+ * This will make sure a function with non-unique name gets renamed by
+ * adding a numeric suffix to it.
+ *
+ * \param fcn
+ * \param name
+ *
+ * \return New name on success.
+ * \return `NULL` otherwise.
+ *
+ * \sa rz_analysis_function_rename
+ * */
+RZ_API RZ_BORROW const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(fcn && name, NULL);
+
+	// first attempt to rename normally, if that fails we try force rename
+	if (rz_analysis_function_rename(fcn, name)) {
+		return fcn->name;
+	}
+
+	// {name}_{addr} is guaranteed to be unique
+	const char *new_name = rz_str_newf("%s_%" PFMT64x, name, fcn->addr);
+	bool ok = rz_analysis_function_rename(fcn, new_name);
+	RZ_FREE(new_name);
+	return ok ? fcn->name : NULL;
 }
 
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
@@ -318,7 +348,7 @@ RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBl
 }
 
 RZ_API void rz_analysis_function_remove_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
-	rz_list_delete_data(bb->fcns, fcn);
+	rz_list_delete_val(bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX && (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
 		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate
@@ -422,7 +452,7 @@ static RZ_OWN char *function_name_try_guess(RzTypeDB *typedb, RZ_NONNULL char *n
 		return NULL;
 	}
 	if (rz_type_func_exist(typedb, name)) {
-		return strdup(name);
+		return rz_str_dup(name);
 	}
 	return NULL;
 }
@@ -508,7 +538,7 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 		return result;
 	}
 
-	str = strdup(str);
+	str = rz_str_dup(str);
 	clean_function_name(str);
 
 	if (*str == '_' && (result = function_name_try_guess(typedb, str + 1))) {

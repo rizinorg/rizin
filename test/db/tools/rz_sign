@@ -1,22 +1,6 @@
-NAME=rz-sign version
-FILE==
-CMDS=!!rz-sign -v~?
-EXPECT=<<EOF
-2
-EOF
-RUN
-
-NAME=rz-sign help
-FILE==
-CMDS=!!rz-sign -h~Usage
-EXPECT=<<EOF
-Usage: rz-sign [options] [file]
-EOF
-RUN
-
 NAME=FLIRT dump libc-v7.sig
-FILE==
-CMDS=!rz-sign -d bins/other/sigs/libc-v7.sig
+TOOL=rz-sign
+ARGS=-d bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
 SIG format
 Signature:    , 1 modules
@@ -28,8 +12,8 @@ EOF
 RUN
 
 NAME=FLIRT dump libc-v10.sig
-FILE==
-CMDS=!rz-sign -d bins/other/sigs/libc-v10.sig
+TOOL=rz-sign
+ARGS=-d bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 SIG format
 Signature:    FLIRT v10, 1 modules

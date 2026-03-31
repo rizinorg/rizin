@@ -23,18 +23,6 @@ echo 'This;is.one@string'
     args: (args (arg (single_quoted_arg)))))
 
 
-===========================
-Legacy command - all quoted
-===========================
-
-"echo This;is.one@string"
-
----
-
-(statements
-  (legacy_quoted_stmt))
-
-
 =======================================
 Double quoted arg with cmd substitution
 =======================================

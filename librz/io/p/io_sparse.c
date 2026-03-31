@@ -101,7 +101,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		}
 		if (mal->buf) {
 			return rz_io_desc_new(io, &rz_io_plugin_sparse,
-				pathname, rw, mode, mal);
+				pathname, rw, mal);
 		}
 		rz_buf_free(mal->buf);
 		free(mal);

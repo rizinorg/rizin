@@ -90,13 +90,6 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 #else
 	size = osize = 4096;
 #endif
-#if 0
-	if (dbg->pid == 0) {
-		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
-		return NULL;
-	}
-#endif
 
 	kern_return_t kr;
 	for (;;) {
@@ -161,7 +154,7 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 				eprintf("Cannot create rz_debug_map_new\n");
 				break;
 			}
-			mr->file = strdup(module_name);
+			mr->file = rz_str_dup(module_name);
 			i++;
 			rz_list_append(list, mr);
 		}
@@ -173,159 +166,9 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 	return list;
 }
 
-#if 0
-// TODO: this loop MUST be cleaned up
-static RzList *osx_dbg_maps (RzDebug *dbg) {
-	RzDebugMap *mr;
-	char buf[1024];
-	int i, print;
-	kern_return_t kret;
-	vm_region_basic_info_data_64_t info, prev_info;
-	mach_vm_address_t prev_address;
-	mach_vm_size_t size, prev_size;
-	mach_port_t object_name;
-	mach_msg_type_number_t count;
-	int nsubregions = 0;
-	int num_printed = 0;
-	size_t address = 0;
-	task_t task = pid_to_task (dbg->pid);
-	RzList *list = rz_list_new ();
-	// XXX: wrong for 64bits
-/*
-	count = VM_REGION_BASIC_INFO_COUNT_64;
-	kret = mach_vm_region (pid_to_task (dbg->pid), &address, &size, VM_REGION_BASIC_INFO_64,
-			(vm_region_info_t) &info, &count, &object_name);
-	if (kret != KERN_SUCCESS) {
-		printf("No memory regions.\n");
-		return;
-	}
-	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-*/
-#if __arm64__ || __aarch64__
-	size = 16384; // according to frida
-#else
-	size = 4096;
-#endif
-	memset (&prev_info, 0, sizeof (prev_info));
-	prev_address = address;
-	prev_size = size;
-	nsubregions = 1;
-
-	for (i=0; ; i++) {
-		int done = 0;
-
-		address = prev_address + prev_size;
-		print = 0;
-
-		if (prev_size==0)
-			break;
-		/* Check to see if address space has wrapped around. */
-		if (address == 0)
-			done = 1;
-
-		if (!done) {
-			count = VM_REGION_BASIC_INFO_COUNT_64;
-			kret = mach_vm_region (task, (mach_vm_address_t *)&address,
-					&size, VM_REGION_BASIC_INFO_64,
-					(vm_region_info_t) &info, &count, &object_name);
-			if (kret != KERN_SUCCESS) {
-				size = 0;
-				print = done = 1;
-			}
-		}
-
-		if (address != prev_address + prev_size)
-			print = 1;
-
-		if ((info.protection != prev_info.protection)
-				|| (info.max_protection != prev_info.max_protection)
-				|| (info.inheritance != prev_info.inheritance)
-				|| (info.shared != prev_info.reserved)
-				|| (info.reserved != prev_info.reserved))
-			print = 1;
-
-//#if __OSX_AVAILABLE_STARTING(__MAC_10_5, __IPHONE_2_0)
-		 {
-			char module_name[1024];
-			module_name[0] = 0;
-			int ret = proc_regionfilename (dbg->pid, address, module_name, sizeof (module_name));
-			module_name[ret] = 0;
-
-#define xwrz_testwx(x) ((x & 1) << 2) | (x & 2) | ((x & 4) >> 2)
-		if (print && size>0 && prev_info.inheritance != VM_INHERIT_SHARE) {
-			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s %s",
-					rz_str_rwx_i (xwrz_testwx (prev_info.max_protection)), i,
-					unparse_inheritance (prev_info.inheritance),
-					prev_info.shared ? "shar" : "priv",
-					prev_info.reserved ? "reserved" : "not-reserved",
-					module_name);
-			// TODO: MAPS can have min and max protection rules
-			// :: prev_info.max_protection
-			mr = rz_debug_map_new (buf, prev_address, prev_address+prev_size,
-				xwrz_testwx (prev_info.protection), 0);
-			if (!mr) {
-				eprintf ("Cannot create rz_debug_map_new\n");
-				break;
-			}
-			mr->file = strdup (module_name);
-			rz_list_append (list, mr);
-		}
-}
-#if 0
-		if (1==0 && rest) { /* XXX never pritn this info here */
-			addr = 0LL;
-			addr = (ut64) (ut32) prev_address;
-			if (num_printed == 0)
-				fprintf(stderr, "Region ");
-			else    fprintf(stderr, "   ... ");
-			fprintf(stderr, " 0x%08llx - 0x%08llx %s (%s) %s, %s, %s",
-					addr, addr + prev_size,
-					unparse_protection (prev_info.protection),
-					unparse_protection (prev_info.max_protection),
-					unparse_inheritance (prev_info.inheritance),
-					prev_info.shared ? "shared" : " private",
-					prev_info.reserved ? "reserved" : "not-reserved");
-
-			if (nsubregions > 1)
-				fprintf(stderr, " (%d sub-regions)", nsubregions);
-
-			fprintf(stderr, "\n");
-
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-			nsubregions = 1;
-
-			num_printed++;
-		} else {
-#endif
-#if 0
-			prev_size += size;
-			nsubregions++;
-#else
-			prev_address = address;
-			prev_size = size;
-			memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_64_t));
-			nsubregions = 1;
-
-			num_printed++;
-#endif
-			//              }
-	}
-	return list;
-}
-#endif
-
 static RzList *darwin_dbg_maps(RzDebug *dbg) {
 	// return osx_dbg_maps (dbg);
 	return ios_dbg_maps(dbg);
-#if 0
-	const char *osname = dbg->analysis->syscall->os;
-	if (osname && !strcmp (osname, "ios")) {
-		return ios_dbg_maps (dbg);
-	} 
-	return osx_dbg_maps (dbg);
-#endif
 }
 
 #endif

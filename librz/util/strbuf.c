@@ -25,7 +25,7 @@ RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb) {
 	return sb->len == 0;
 }
 
-RZ_API int rz_strbuf_length(RzStrBuf *sb) {
+RZ_API size_t rz_strbuf_length(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, 0);
 	return sb->len;
 }
@@ -223,12 +223,13 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 		memcpy(sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
 		RZ_FREE(sb->ptr);
+		sb->ptrlen = 0;
 	} else {
 		size_t newlen = sb->len + l + 128;
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
-			p = malloc(newlen);
+			p = calloc(newlen, sizeof(char));
 			if (p && sb->len > 0) {
 				memcpy(p, sb->buf, sb->len);
 			}
@@ -238,6 +239,7 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 			}
 			newlen *= 2;
 			p = realloc(sb->ptr, newlen);
+			memset((char *)p + sb->ptrlen, 0, newlen - sb->ptrlen);
 		} else {
 			allocated = false;
 		}
@@ -301,7 +303,7 @@ RZ_API char *rz_strbuf_get(RzStrBuf *sb) {
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
-RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
+RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, size_t *len) {
 	rz_return_val_if_fail(sb, NULL);
 	if (len) {
 		*len = sb->len;
@@ -310,10 +312,17 @@ RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
 }
 
 static inline char *drain(RzStrBuf *sb) {
-	return sb->ptr ? sb->ptr : strdup(sb->buf);
+	return sb->ptr ? sb->ptr : rz_str_dup(sb->buf);
 }
 
-RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
+/**
+ * \brief Drains the buffer, frees it and returns the drained string.
+ *
+ * \param sb The string buffer to drain.
+ *
+ * \return The string of \p sb.
+ */
+RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	free(sb);

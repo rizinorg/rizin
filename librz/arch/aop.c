@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2018-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "asm_private.h"
 #include <rz_asm.h>
 
 RZ_API RZ_OWN RzAsmOp *rz_asm_op_new(void) {
@@ -27,6 +28,7 @@ RZ_API void rz_asm_op_fini(RZ_NULLABLE RzAsmOp *op) {
 	rz_strbuf_fini(&op->buf_asm);
 	rz_buf_fini(op->buf_inc);
 	rz_asm_token_string_free(op->asm_toks);
+	op->asm_toks = NULL;
 }
 
 // accessors

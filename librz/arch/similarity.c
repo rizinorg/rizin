@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2022 RizinOrg <info@rizin.re>
-// SPDX-FileCopyrightText: 2022 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2022-2025 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -276,7 +276,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	RzAnalysisMatchResult *result = NULL;
 	RzList *unmatch_a = rz_list_newf((RzListFree)free);
 	RzList *unmatch_b = rz_list_clone(list_b);
-	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_POOL_ALL_CORES);
+	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE);
 	RzThread *user_thread = NULL;
 	SharedContext shared = { 0 };
 	MatchUIInfo ui_info = { 0 };
@@ -305,6 +305,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 		}
 	}
 
+	rz_th_queue_close_when_empty(shared.queue);
 	rz_th_pool_wait(pool);
 
 	if (!rz_atomic_bool_get(shared.loop)) {
@@ -330,7 +331,7 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 
 	// there is no need to sort unmatch_b because it is already sorted.
 	rz_list_foreach (result->matches, iter, pair) {
-		rz_list_delete_data(unmatch_b, (void *)pair->pair_b);
+		rz_list_delete_val(unmatch_b, (void *)pair->pair_b);
 	}
 
 	rz_th_pool_free(pool);
@@ -362,6 +363,15 @@ RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *res
 	free(result);
 }
 
+static void *shared_queue_pop(SharedContext *shared) {
+	void *data = NULL;
+	if (!rz_atomic_bool_get(shared->loop) ||
+		!rz_th_queue_pop(shared->queue, false, &data)) {
+		return NULL;
+	}
+	return data;
+}
+
 static void *analysis_match_basic_blocks(SharedContext *shared) {
 	double max_similarity = 0.0, calc_similarity = 0.0;
 	const RzListIter *iter = NULL;
@@ -370,7 +380,7 @@ static void *analysis_match_basic_blocks(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while (rz_atomic_bool_get(shared->loop) && (bb_a = rz_th_queue_pop(shared->queue, false))) {
+	while ((bb_a = shared_queue_pop(shared))) {
 		if (!shared_context_alloc_a(shared, bb_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for block 0x%08" PFMT64x " (A)\n", bb_a->addr);
 			rz_th_queue_push(shared->unmatch, bb_a, true);
@@ -468,7 +478,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 	ut32 size_a = 0, size_b = 0;
 	ut8 *buf_a = NULL, *buf_b = NULL;
 
-	while (rz_atomic_bool_get(shared->loop) && (fcn_a = rz_th_queue_pop(shared->queue, false))) {
+	while ((fcn_a = shared_queue_pop(shared))) {
 		if (!shared_context_alloc_a(shared, fcn_a, &buf_a, &size_a)) {
 			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
 			rz_th_queue_push(shared->unmatch, fcn_a, true);
@@ -513,6 +523,40 @@ static void *analysis_match_functions(SharedContext *shared) {
 	return NULL;
 }
 
+static void *analysis_match_one_function(SharedContext *shared) {
+	RzAnalysisFunction *fcn_a = NULL, *fcn_b = NULL;
+	RzAnalysisMatchPair *pair = NULL;
+	ut32 size_a = 0, size_b = 0;
+	ut8 *buf_a = NULL, *buf_b = NULL;
+
+	fcn_b = rz_list_first_val(shared->list_b);
+	if (!shared_context_alloc_a(shared, fcn_b, &buf_b, &size_b)) {
+		RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (B)\n", fcn_b->name);
+		return NULL;
+	}
+
+	while ((fcn_a = shared_queue_pop(shared))) {
+		if (!shared_context_alloc_b(shared, fcn_a, &buf_a, &size_a)) {
+			RZ_LOG_ERROR("analysis_match: cannot allocate buffer for function %s (A)\n", fcn_a->name);
+			free(buf_b);
+			return NULL;
+		}
+
+		double similarity = calculate_similarity(buf_a, size_a, buf_b, size_b);
+		free(buf_a);
+
+		if (!(pair = match_pair_new(fcn_a, fcn_b, similarity))) {
+			RZ_LOG_ERROR("analysis_match: cannot allocate match pair\n");
+			free(buf_b);
+			return NULL;
+		}
+		rz_th_queue_push(shared->matches, pair, true);
+	}
+
+	free(buf_b);
+	return NULL;
+}
+
 /**
  * \brief      Finds matching functions of 2 given lists of functions using the same RzAnalysis core
  *
@@ -524,5 +568,34 @@ static void *analysis_match_functions(SharedContext *shared) {
  */
 RZ_API RZ_OWN RzAnalysisMatchResult *rz_analysis_match_functions(RzList /*<RzAnalysisFunction *>*/ *list_a, RzList /*<RzAnalysisFunction *>*/ *list_b, RZ_NONNULL RzAnalysisMatchOpt *opt) {
 	rz_return_val_if_fail(opt && opt->analysis_a && opt->analysis_b && list_a && list_b, NULL);
+	if (rz_list_length(list_a) == 1) {
+		return analysis_match_result_new(opt, list_b, list_a, (RzThreadFunction)analysis_match_one_function, (AllocateBuffer)function_data_new);
+	}
 	return analysis_match_result_new(opt, list_a, list_b, (RzThreadFunction)analysis_match_functions, (AllocateBuffer)function_data_new);
+}
+
+/**
+ * \brief Function performs equality check of two functions \p fcn_a and \p fcn_b
+ */
+RZ_API bool rz_analysis_function_eq(RZ_NONNULL RzAnalysisFunction *fcn_a, RZ_NONNULL RzAnalysisFunction *fcn_b) {
+	rz_return_val_if_fail(fcn_a && fcn_b, false);
+	if (rz_pvector_len(fcn_a->bbs) != rz_pvector_len(fcn_b->bbs)) {
+		return false;
+	}
+
+	size_t len = rz_pvector_len(fcn_a->bbs);
+	for (unsigned int i = 0; i < len; i++) {
+		RzAnalysisBlock *bb_a = (RzAnalysisBlock *)rz_pvector_at(fcn_a->bbs, i);
+		RzAnalysisBlock *bb_b = (RzAnalysisBlock *)rz_pvector_at(fcn_b->bbs, i);
+		if (!bb_a || !bb_b) {
+			return false;
+		}
+		if (bb_a->size != bb_b->size && bb_a->ninstr != bb_b->ninstr) {
+			return false;
+		}
+		if (bb_a->bbhash != bb_b->bbhash) {
+			return false;
+		}
+	}
+	return true;
 }
