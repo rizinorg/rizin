@@ -974,6 +974,29 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph *g) {
 		return;
 	}
 
+	// free edge user data before destroying the impl
+	if (g->edge_data_free && g->impl_ops && g->impl && g->node_vec) {
+		void **nit;
+		rz_pvector_foreach (g->node_vec, nit) {
+			RzGraphNode *node = (RzGraphNode *)(*nit);
+			if (!node) {
+				continue;
+			}
+			RzIterator *edge_it = g->impl_ops->get_out_edges(g, node);
+			if (!edge_it) {
+				continue;
+			}
+			RzGraphEdge *e;
+			rz_iterator_foreach(edge_it, e) {
+				if (e->data) {
+					g->edge_data_free(e->data);
+					e->data = NULL;
+				}
+			}
+			rz_iterator_free(edge_it);
+		}
+	}
+
 	// cleaned inner impl data
 	if (g->impl_ops && g->impl) {
 		g->impl_ops->fini(g->impl);
@@ -1019,6 +1042,30 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph *g) {
  */
 RZ_API void rz_graph_reset(RzGraph *g) {
 	rz_return_if_fail(g);
+
+	// free edge user data before destroying the impl
+	if (g->edge_data_free && g->impl_ops && g->impl && g->node_vec) {
+		void **nit;
+		rz_pvector_foreach (g->node_vec, nit) {
+			RzGraphNode *node = (RzGraphNode *)(*nit);
+			if (!node) {
+				continue;
+			}
+			RzIterator *edge_it = g->impl_ops->get_out_edges(g, node);
+			if (!edge_it) {
+				continue;
+			}
+			RzGraphEdge *e;
+			rz_iterator_foreach(edge_it, e) {
+				if (e->data) {
+					g->edge_data_free(e->data);
+					e->data = NULL;
+				}
+			}
+			rz_iterator_free(edge_it);
+		}
+	}
+
 	if (g->impl_ops && g->impl) {
 		g->impl_ops->fini(g->impl);
 		g->impl = NULL;

@@ -640,7 +640,7 @@ static void agraph_node_free(RzANode *n) {
 
 static int agraph_refresh(AGraphContext *grp_ctx);
 
-static void update_node_dimension(const RzAGraph /*<RzANode *>*/ *ag, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
+static void update_node_dimension(const RzAGraph *ag, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
 	RzGraphNode *gn;
 	RzANode *n;
 	RzIterator *it_nodes = agraph_get_nodes(ag);
