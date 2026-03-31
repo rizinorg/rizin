@@ -97,14 +97,13 @@ RUN
 
 NAME=af import
 FILE=bins/mach0/ls-osx-x86_64
-BROKEN=1
 CMDS=<<EOF
 s sym.imp.write
 af
 %v $FS
 EOF
 EXPECT=<<EOF
-before:
+0x6
 EOF
 RUN
 
@@ -298,75 +297,79 @@ RUN
 
 NAME=float args afli
 FILE=bins/elf/float_point
-BROKEN=1
 CMDS=<<EOF
 aa
-afi sym.sum_float
+s sym.sum_float
+afi
 EOF
 EXPECT=<<EOF
-#
 offset: 0x00001119
 name: sym.sum_float
 size: 26
+is-pure: true
 realsz: 26
 stackframe: 8
 call-convention: amd64
-cyclomatic-cost: 11
+cyclomatic-cost: 10
 cyclomatic-complexity: 1
+loops: 0
 bits: 64
-type: sym [new]
+type: sym
 num-bbs: 1
 edges: 0
 end-bbs: 1
 call-refs:
 data-refs:
 code-xrefs: 0x00001165 C
+noreturn: false
 in-degree: 1
 out-degree: 0
 data-xrefs:
 locals: 2
 args: 2
-var int local_8h @ rbp-0x8
-var int local_4h @ rbp-0x4
-arg int arg1 @ xmm0
-arg int arg2 @ xmm1
+arg int64_t arg7 @ xmm0
+arg int64_t arg8 @ xmm1
+var int64_t var_10h @ stack - 0x10
+var int64_t var_ch @ stack - 0xc
 EOF
 RUN
 
 NAME=double args afli
 FILE=bins/elf/float_point
-BROKEN=1
 CMDS=<<EOF
 aa
-afi sym.sum_double
+s sym.sum_double
+afi
 EOF
 EXPECT=<<EOF
-#
 offset: 0x00001133
 name: sym.sum_double
 size: 26
+is-pure: true
 realsz: 26
 stackframe: 8
 call-convention: amd64
-cyclomatic-cost: 11
+cyclomatic-cost: 10
 cyclomatic-complexity: 1
+loops: 0
 bits: 64
-type: sym [new]
+type: sym
 num-bbs: 1
 edges: 0
 end-bbs: 1
 call-refs:
 data-refs:
 code-xrefs: 0x00001181 C
+noreturn: false
 in-degree: 1
 out-degree: 0
 data-xrefs:
 locals: 2
 args: 2
-var int local_10h @ rbp-0x10
-var int local_8h @ rbp-0x8
-arg int arg1 @ xmm0
-arg int arg2 @ xmm1
+arg int64_t arg7 @ xmm0
+arg int64_t arg8 @ xmm1
+var int64_t var_18h @ stack - 0x18
+var int64_t var_10h @ stack - 0x10
 EOF
 RUN
 
