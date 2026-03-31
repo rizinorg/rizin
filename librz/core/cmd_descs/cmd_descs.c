@@ -24634,7 +24634,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_function_rzil_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "plf", rz_print_function_rzil_handler, &print_function_rzil_help);
 	rz_warn_if_fail(print_function_rzil_cd);
 
-	RzCmdDesc *print_function_rzil_enriched_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "pLf", rz_print_function_rzil_enriched_handler, &print_function_rzil_enriched_help);
+	RzCmdDesc *print_function_rzil_enriched_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_rzil_cd, "plF", rz_print_function_rzil_enriched_handler, &print_function_rzil_enriched_help);
 	rz_warn_if_fail(print_function_rzil_enriched_cd);
 
 	RzCmdDesc *pp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pp", NULL, NULL, &pp_help);

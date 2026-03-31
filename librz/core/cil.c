@@ -880,38 +880,38 @@ static bool unicode_colorify_state_is_number(RzILUnicodeColorifyState state) {
 	return state == UNICODE_COLORIFY_STATE_NUMBER;
 }
 
-static bool is_paranthesis(char c) {
+static bool is_paranthesis(RzCodePoint c) {
 	return c == '(' || c == ')';
 }
 
-static bool is_alpha(char c) {
+static bool is_alpha(RzCodePoint c) {
 	return IS_UPPER(c) || IS_LOWER(c);
 }
 
-static bool is_hex(char c) {
+static bool is_hex(RzCodePoint c) {
 	return c == 'x' || c == 'X' || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
-static bool is_varname(RzILUnicodeColorifyState state, char c) {
+static bool is_varname(RzILUnicodeColorifyState state, RzCodePoint c) {
 	const bool is_varname = unicode_colorify_state_is_varname(state);
 	return (c == '_') || is_alpha(c) || (is_varname && IS_DIGIT(c));
 }
 
-static bool is_number(RzILUnicodeColorifyState state, char c) {
+static bool is_number(RzILUnicodeColorifyState state, RzCodePoint c) {
 	const bool is_varname = unicode_colorify_state_is_varname(state);
-	return (IS_DIGIT(c) && !is_varname) || (unicode_colorify_state_is_number(state) && is_hex(c));
+	const bool is_num = unicode_colorify_state_is_number(state);
+	const bool is_subnum = c >= 0x2080 && c <= 0x2089;
+	return (IS_DIGIT(c) && !is_varname) || (is_num && (is_hex(c) || c == '.' || c == 'f' || is_subnum));
 }
 
-RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState state, RZ_NONNULL const char *il_stmt) {
-	rz_return_val_if_fail(il_stmt, UNICODE_COLORIFY_STATE_DEFAULT);
-	const char c = *il_stmt;
+RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState state, RzCodePoint c) {
 	if (is_number(state, c)) {
 		return UNICODE_COLORIFY_STATE_NUMBER;
 	}
 	if (is_varname(state, c)) {
 		return UNICODE_COLORIFY_STATE_VARNAME;
 	}
-	if (is_paranthesis(c)) {
+	if (is_paranthesis(c) || IS_WHITECHAR(c)) {
 		return UNICODE_COLORIFY_STATE_DEFAULT;
 	}
 	return UNICODE_COLORIFY_STATE_IL_OP;
@@ -929,7 +929,9 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 	const char *color = NULL;
 	RzILUnicodeColorifyState prev_state = UNICODE_COLORIFY_STATE_DEFAULT;
 	for (size_t i = 0; i < len;) {
-		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, il_stmt + i);
+		RzCodePoint cp;
+		const size_t utf_size = rz_utf8_decode((const ut8 *)il_stmt + i, len - i, &cp, false);
+		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, cp);
 		if (state != prev_state) {
 			const int plen = i - prev_i;
 			if (color) {
@@ -957,7 +959,6 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 			prev_state = state;
 			prev_i = i;
 		}
-		const int utf_size = rz_utf8_size((const ut8 *)(il_stmt + i));
 		i += utf_size > 0 ? utf_size : 1;
 	}
 	if (prev_i < len) {
@@ -991,7 +992,11 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 
 		rz_strbuf_init(&sb);
 		if (unicode) {
-			rz_il_op_effect_stringify_unicode(op->il_op, &sb);
+			if (!rz_il_op_effect_stringify_unicode(op->il_op, &sb)) {
+				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
+				rz_strbuf_fini(&sb);
+				break;
+			}
 		} else {
 			rz_il_op_effect_stringify(op->il_op, &sb, pretty);
 		}

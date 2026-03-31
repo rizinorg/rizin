@@ -854,7 +854,7 @@ commands:
         summary: Print RzIL of the function
         cname: print_function_rzil
         args: []
-      - name: pLf
+      - name: plF
         summary: Print enriched RzIL of the function
         cname: print_function_rzil_enriched
         args: []
