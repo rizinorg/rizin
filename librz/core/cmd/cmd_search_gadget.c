@@ -7,7 +7,7 @@
 #include "rz_core.h"
 #include "rz_list.h"
 #include "rz_types_base.h"
-#include "rz_rop.h"
+#include "rz_gadget.h"
 
 static void skip_whitespace(const char *str, ut64 *idx) {
 	if (*idx >= strlen(str)) {

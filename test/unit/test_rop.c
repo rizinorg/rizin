@@ -4,7 +4,7 @@
 #include "minunit.h"
 #include <rz_core.h>
 #include "analysis_private.h"
-#include <rz_rop.h>
+#include <rz_gadget.h>
 
 // Only one gadget is added once for each test case.
 #define ROP_GADGET_MAX_SIZE 16

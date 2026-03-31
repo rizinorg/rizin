@@ -3,7 +3,7 @@
 
 #include <rz_core.h>
 #include "minunit.h"
-#include <rz_rop.h>
+#include <rz_gadget.h>
 #include "analysis_private.h"
 
 // Define the register profile string for your architecture

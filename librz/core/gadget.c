@@ -5,7 +5,7 @@
 #include <rz_asm.h>
 #include <rz_util/rz_log.h>
 #include <rz_util/rz_regex.h>
-#include <rz_rop.h>
+#include <rz_gadget.h>
 
 static bool is_cond_end_gadget(const RzAnalysisOp *aop) {
 	switch (aop->type) {

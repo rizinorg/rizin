@@ -9,7 +9,7 @@
 #include <rz_search.h>
 #include <rz_types_base.h>
 
-#include "cmd_search_rop.c"
+#include "cmd_search_gadget.c"
 #include "rz_cons.h"
 #include <rz_config.h>
 #include <rz_flag.h>
