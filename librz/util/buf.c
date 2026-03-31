@@ -53,7 +53,7 @@ static bool buf_fini(RzBuffer *b) {
 	}
 }
 
-static ut64 buf_get_size(RzBuffer *b) {
+static ut64 buf_get_size(const RzBuffer *b) {
 	rz_return_val_if_fail(b, UT64_MAX);
 
 	if (b->type == RZ_BUFFER_BYTES || b->type == RZ_BUFFER_MMAP) {
@@ -1350,7 +1350,7 @@ RZ_API st64 rz_buf_write_at(RZ_NONNULL RzBuffer *b, ut64 addr, RZ_NONNULL const 
  *
  * ...
  */
-RZ_API ut64 rz_buf_size(RZ_NONNULL RzBuffer *b) {
+RZ_API ut64 rz_buf_size(RZ_NONNULL const RzBuffer *b) {
 	rz_return_val_if_fail(b, 0);
 
 	return buf_get_size(b);
