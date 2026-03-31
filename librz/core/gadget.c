@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 MrQuantum1915 <darshanpatelgdh@gmail.com>
 // SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -112,7 +113,7 @@ static bool rz_rop_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 }
 
 static bool rz_rop_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzList /*<RzCoreAsmHit *>*/ *hitlist,
-	ut32 *size, char **asmop_str, char **asmop_hex_str, RzRopSearchContext *context) {
+	ut32 *size, char **asmop_str, char **asmop_hex_str, RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && hitlist, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
@@ -170,7 +171,7 @@ static RZ_OWN char *get_colored_asm(const RzCore *core, RzAsmOp *asmop, RzAnalys
 	return ret_str_asm;
 }
 
-static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
+static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
 	if (!core || !context) {
 		return false;
 	}
@@ -199,7 +200,7 @@ static bool rz_rop_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit,
 	return true;
 }
 
-static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzRopSearchContext *context) {
+static bool rz_rop_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && context, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = NULL;
@@ -277,7 +278,7 @@ static bool rz_rop_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, 
 	return true;
 }
 
-RZ_API void rz_core_rop_reg_info_free(RZ_NULLABLE RzRopRegInfo *reg_info) {
+RZ_API void rz_core_gadget_reg_info_free(RZ_NULLABLE RzGadgetRegInfo *reg_info) {
 	if (!reg_info) {
 		return;
 	}
@@ -286,10 +287,10 @@ RZ_API void rz_core_rop_reg_info_free(RZ_NULLABLE RzRopRegInfo *reg_info) {
 	free(reg_info);
 }
 
-RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *core, RZ_NONNULL const RzILEvent *evt,
+RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_new(RZ_NONNULL const RzCore *core, RZ_NONNULL const RzILEvent *evt,
 	const ut64 init_val, const ut64 new_val) {
 	rz_return_val_if_fail(core && evt, NULL);
-	RzRopRegInfo *reg_info = RZ_NEW0(RzRopRegInfo);
+	RzGadgetRegInfo *reg_info = RZ_NEW0(RzGadgetRegInfo);
 	if (!reg_info) {
 		return NULL;
 	}
@@ -328,14 +329,14 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_new(RZ_NONNULL const RzCore *co
 }
 
 /**
- * \brief Create a new RzRopGadgetInfo object.
- * \param address The address of the ROP gadget.
- * \return RZ_OUT A pointer to the newly created RzRopGadgetInfo object, or NULL if memory allocation fails.
+ * \brief Create a new RzGadgetInfo object.
+ * \param address The address of the gadget.
+ * \return RZ_OUT A pointer to the newly created RzGadgetInfo object, or NULL if memory allocation fails.
  *
- * This function allocates and initializes a new RzRopGadgetInfo object with the given address.
+ * This function allocates and initializes a new RzGadgetInfo object with the given address.
  */
-RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
-	RzRopGadgetInfo *gadget_info = RZ_NEW0(RzRopGadgetInfo);
+RZ_API RZ_OWN RzGadgetInfo *rz_core_gadget_info_new(const ut64 address) {
+	RzGadgetInfo *gadget_info = RZ_NEW0(RzGadgetInfo);
 	if (!gadget_info) {
 		return NULL;
 	}
@@ -345,20 +346,20 @@ RZ_API RZ_OWN RzRopGadgetInfo *rz_core_rop_gadget_info_new(const ut64 address) {
 	gadget_info->curr_pc_val = address;
 	gadget_info->is_pc_write = false;
 	gadget_info->is_syscall = false;
-	gadget_info->modified_registers = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
-	gadget_info->dependencies = rz_list_newf((RzListFree)rz_core_rop_reg_info_free);
+	gadget_info->modified_registers = rz_pvector_new((RzPVectorFree)rz_core_gadget_reg_info_free);
+	gadget_info->dependencies = rz_list_newf((RzListFree)rz_core_gadget_reg_info_free);
 	gadget_info->analysis_cache = NULL;
 	gadget_info->size = 0;
 	return gadget_info;
 }
 
 /**
- * \brief Free an RzRopGadgetInfo object.
- * \param gadget_info RZ_NULLABLE Pointer to the RzRopGadgetInfo object to free.
+ * \brief Free an RzGadgetInfo object.
+ * \param gadget_info RZ_NULLABLE Pointer to the RzGadgetInfo object to free.
  *
- * Frees the memory allocated for an RzRopGadgetInfo object, including its modified registers and dependencies.
+ * Frees the memory allocated for an RzGadgetInfo object, including its modified registers and dependencies.
  */
-RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info) {
+RZ_API void rz_core_gadget_info_free(RZ_NULLABLE RzGadgetInfo *gadget_info) {
 	if (!gadget_info) {
 		return;
 	}
@@ -369,15 +370,15 @@ RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_inf
 }
 
 /**
- * \brief Add a register info to an RzRopGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
- * \param reg_info RZ_NONNULL Pointer to the RzRopRegInfo object.
+ * \brief Add a register info to an RzGadgetInfo object.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param reg_info RZ_NONNULL Pointer to the RzGadgetRegInfo object.
  * \param is_dependency Boolean indicating whether the register is a dependency.
  *
- * Adds the given register info to the modified registers of the RzRopGadgetInfo object if it is not a dependency.
+ * Adds the given register info to the modified registers of the RzGadgetInfo object if it is not a dependency.
  */
-RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGadgetInfo *gadget_info,
-	RZ_NONNULL RzRopRegInfo *reg_info, const bool is_dependency) {
+RZ_API void rz_core_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzGadgetInfo *gadget_info,
+	RZ_NONNULL RzGadgetRegInfo *reg_info, const bool is_dependency) {
 	rz_return_if_fail(gadget_info);
 
 	if (!is_dependency && reg_info) {
@@ -387,18 +388,18 @@ RZ_API void rz_core_rop_gadget_info_add_register(const RZ_NONNULL RZ_OUT RzRopGa
 
 /**
  * \brief Get the modified register info by name.
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
  * \param name RZ_NONNULL Pointer to the name of the register.
- * \return RZ_OUT A pointer to the RzRopRegInfo object if found, or NULL if not found or if gadget_info is NULL.
+ * \return RZ_OUT A pointer to the RzGadgetRegInfo object if found, or NULL if not found or if gadget_info is NULL.
  *
- * Searches the modified registers in the RzRopGadgetInfo object for the register with the given name and returns its info.
+ * Searches the modified registers in the RzGadgetInfo object for the register with the given name and returns its info.
  */
-RZ_API RZ_BORROW RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+RZ_API RZ_BORROW RzGadgetRegInfo *rz_core_gadget_info_get_modified_register(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
 	void **it;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
-		RzRopRegInfo *reg_info = *it;
+		RzGadgetRegInfo *reg_info = *it;
 		if (RZ_STR_EQ(reg_info->name, name)) {
 			return reg_info;
 		}
@@ -407,18 +408,18 @@ RZ_API RZ_BORROW RzRopRegInfo *rz_core_rop_gadget_info_get_modified_register(con
 }
 
 /**
- * \brief Update a register info in the RzRopGadgetInfo object.
- * \param gadget_info Pointer to the RzRopGadgetInfo object.
- * \param new_reg_info Pointer to the new RzRopRegInfo object.
+ * \brief Update a register info in the RzGadgetInfo object.
+ * \param gadget_info Pointer to the RzGadgetInfo object.
+ * \param new_reg_info Pointer to the new RzGadgetRegInfo object.
  * \return void
  *
- * Updates the register info in the RzRopGadgetInfo object with the values from the new register info.
+ * Updates the register info in the RzGadgetInfo object with the values from the new register info.
  * If the register is not already in the modified registers list, it is added.
  */
-RZ_API void rz_core_rop_gadget_info_update_register(const RZ_INOUT RzRopGadgetInfo *gadget_info, RZ_INOUT RZ_NONNULL RzRopRegInfo *new_reg_info) {
+RZ_API void rz_core_gadget_info_update_register(const RZ_INOUT RzGadgetInfo *gadget_info, RZ_INOUT RZ_NONNULL RzGadgetRegInfo *new_reg_info) {
 	rz_return_if_fail(gadget_info && new_reg_info);
 
-	RzRopRegInfo *existing_reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, new_reg_info->name);
+	RzGadgetRegInfo *existing_reg_info = rz_core_gadget_info_get_modified_register(gadget_info, new_reg_info->name);
 	if (existing_reg_info) {
 		existing_reg_info->init_val = new_reg_info->init_val;
 		existing_reg_info->new_val = new_reg_info->new_val;
@@ -432,13 +433,13 @@ RZ_API void rz_core_rop_gadget_info_update_register(const RZ_INOUT RzRopGadgetIn
 }
 
 /**
- * \brief Duplicate the RzRopRegInfo
- * \param src Pointer to RzRopRegInfo
- * \return RzRopRegInfo* on success, NULL on failure
+ * \brief Duplicate the RzGadgetRegInfo
+ * \param src Pointer to RzGadgetRegInfo
+ * \return RzGadgetRegInfo* on success, NULL on failure
  */
-RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopRegInfo *src) {
+RZ_API RZ_OWN RzGadgetRegInfo *rz_core_gadget_reg_info_dup(RZ_BORROW RZ_NONNULL RzGadgetRegInfo *src) {
 	rz_return_val_if_fail(src, NULL);
-	RzRopRegInfo *dup = RZ_NEW0(RzRopRegInfo);
+	RzGadgetRegInfo *dup = RZ_NEW0(RzGadgetRegInfo);
 	if (!dup) {
 		return NULL;
 	}
@@ -456,20 +457,20 @@ RZ_API RZ_OWN RzRopRegInfo *rz_core_rop_reg_info_dup(RZ_BORROW RZ_NONNULL RzRopR
 }
 
 /**
- * \brief Find the ROP Register information for the given register
- * \param gadget_info Pointer to the RzRopGadgetInfo
+ * \brief Find the Gadget Register information for the given register
+ * \param gadget_info Pointer to the RzGadgetInfo
  * \param name Register to filter the dependencies
  *
- * \return Pvector of register rop information
+ * \return Pvector of register gadget information
  */
-RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
+RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_reg_info_find(const RZ_NONNULL RzGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, NULL);
-	RzPVector * /*<RzRopRegInfo *>*/ reg_info_v = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
+	RzPVector * /*<RzGadgetRegInfo *>*/ reg_info_v = rz_pvector_new((RzPVectorFree)rz_core_gadget_reg_info_free);
 	if (!reg_info_v) {
 		return NULL;
 	}
 	RzListIter *iter;
-	RzRopRegInfo *reg_info;
+	RzGadgetRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (RZ_STR_EQ(reg_info->name, name)) {
 			rz_pvector_push(reg_info_v, reg_info);
@@ -479,18 +480,18 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_reg_info_find(const RZ
 }
 
 /**
- * \brief Check if a register with a specific name exists in the modified registers of a RzRopGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
+ * \brief Check if a register with a specific name exists in the modified registers of a RzGadgetInfo object.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
  * \param name RZ_NONNULL Pointer to the name of the register.
  * \return true if a register with the given name exists, false otherwise.
  *
- * Checks the modified registers in the RzRopGadgetInfo object to see if a register with the given name exists.
+ * Checks the modified registers in the RzGadgetInfo object to see if a register with the given name exists.
  */
-RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
+RZ_API bool rz_core_gadget_info_has_register(const RZ_NONNULL RzGadgetInfo *gadget_info, const RZ_NONNULL char *name) {
 	rz_return_val_if_fail(gadget_info && name, false);
 	void **it;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
-		const RzRopRegInfo *reg_info = *it;
+		const RzGadgetRegInfo *reg_info = *it;
 		if (RZ_STR_EQ(reg_info->name, name)) {
 			return true;
 		}
@@ -498,27 +499,27 @@ RZ_API bool rz_core_rop_gadget_info_has_register(const RZ_NONNULL RzRopGadgetInf
 	return false;
 }
 
-static inline bool is_var_read_event(const RzRopRegInfo *reg_info) {
+static inline bool is_var_read_event(const RzGadgetRegInfo *reg_info) {
 	return reg_info->is_var_read && !reg_info->is_mem_read && !reg_info->is_var_write && !reg_info->is_mem_write;
 }
 
-static inline bool is_var_write_event(const RzRopRegInfo *reg_info) {
+static inline bool is_var_write_event(const RzGadgetRegInfo *reg_info) {
 	return reg_info->is_var_write;
 }
 
-static inline bool is_mem_read_event(const RzRopRegInfo *reg_info) {
+static inline bool is_mem_read_event(const RzGadgetRegInfo *reg_info) {
 	return reg_info->is_mem_read;
 }
 
-static inline bool is_mem_write_event(const RzRopRegInfo *reg_info) {
+static inline bool is_mem_write_event(const RzGadgetRegInfo *reg_info) {
 	return reg_info->is_mem_write;
 }
 
-static inline bool is_pc_write_event(const RzRopRegInfo *reg_info) {
+static inline bool is_pc_write_event(const RzGadgetRegInfo *reg_info) {
 	return reg_info->is_pc_write;
 }
 
-rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT] = {
+rz_gadget_event_check_fn rz_gadget_event_functions[RZ_GADGET_EVENT_COUNT] = {
 	is_var_read_event,
 	is_var_write_event,
 	is_mem_read_event,
@@ -528,27 +529,27 @@ rz_rop_event_check_fn rz_rop_event_functions[RZ_ROP_EVENT_COUNT] = {
 
 /**
  * \brief Check if a given event dependency is present for a register
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
- * \param event The RzRopEvent to check.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param event The RzGadgetEvent to check.
  * \param reg_name Name of the register
  * \return True if there is an \p event which uses \p reg_name. False otherwise.
  */
-RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
-	const RzRopEvent event, const RZ_NULLABLE char *reg_name) {
+RZ_API bool rz_core_gadget_reg_info_has_event(const RZ_NONNULL RzGadgetInfo *gadget_info,
+	const RzGadgetEvent event, const RZ_NULLABLE char *reg_name) {
 	rz_return_val_if_fail(gadget_info, false);
-	if (event >= RZ_ROP_EVENT_COUNT) {
+	if (event >= RZ_GADGET_EVENT_COUNT) {
 		return false;
 	}
 	RzListIter *iter;
-	RzRopRegInfo *reg_info;
+	RzGadgetRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (RZ_STR_NE(reg_name, reg_info->name)) {
 			continue;
 		}
-		if (event == RZ_ROP_EVENT_COUNT) {
+		if (event == RZ_GADGET_EVENT_COUNT) {
 			return true;
 		}
-		if (rz_rop_event_functions[event](reg_info)) {
+		if (rz_gadget_event_functions[event](reg_info)) {
 			return true;
 		}
 	}
@@ -556,55 +557,55 @@ RZ_API bool rz_core_rop_gadget_reg_info_has_event(const RZ_NONNULL RzRopGadgetIn
 }
 
 /**
- * \brief Find all dependencies based on a specific event in the dependencies of a RzRopGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
- * \param event The RzRopEvent to check.
- * \return RZ_OUT A pointer to a list of RzRopRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
+ * \brief Find all dependencies based on a specific event in the dependencies of a RzGadgetInfo object.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
+ * \param event The RzGadgetEvent to check.
+ * \return RZ_OUT A pointer to a list of RzGadgetRegInfo objects matching the given event, or NULL if none are found or if gadget_info is NULL.
  */
-RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_gadget_get_reg_info_by_event(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
-	const RzRopEvent event) {
+RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_event(const RZ_NONNULL RzGadgetInfo *gadget_info,
+	const RzGadgetEvent event) {
 	rz_return_val_if_fail(gadget_info, NULL);
-	if (event >= RZ_ROP_EVENT_COUNT) {
+	if (event >= RZ_GADGET_EVENT_COUNT) {
 		return NULL;
 	}
-	RzPVector *matches = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
+	RzPVector *matches = rz_pvector_new((RzPVectorFree)rz_core_gadget_reg_info_free);
 	if (!matches) {
 		return NULL;
 	}
 	RzListIter *iter;
-	RzRopRegInfo *reg_info;
+	RzGadgetRegInfo *reg_info;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
-		if (rz_rop_event_functions[event](reg_info)) {
-			rz_pvector_push(matches, rz_core_rop_reg_info_dup(reg_info));
+		if (rz_gadget_event_functions[event](reg_info)) {
+			rz_pvector_push(matches, rz_core_gadget_reg_info_dup(reg_info));
 		}
 	}
 	return matches;
 }
 
 /**
- * \brief Find all registers with specific names in the modified registers of a RzRopGadgetInfo object.
- * \param gadget_info RZ_NONNULL Pointer to the RzRopGadgetInfo object.
+ * \brief Find all registers with specific names in the modified registers of a RzGadgetInfo object.
+ * \param gadget_info RZ_NONNULL Pointer to the RzGadgetInfo object.
  * \param registers RZ_NONNULL Pointer to a RzPvector of register names.
- * \return RZ_OUT A pointer to a RzPvector of RzRopRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
+ * \return RZ_OUT A pointer to a RzPvector of RzGadgetRegInfo objects matching the given names, or NULL if none are found or if gadget_info is NULL.
  *
- * Searches the modified registers in the RzRopGadgetInfo object for all registers with the given registers and returns their info in a vector.
+ * Searches the modified registers in the RzGadgetInfo object for all registers with the given registers and returns their info in a vector.
  */
-RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_names(const RZ_NONNULL RzRopGadgetInfo *gadget_info,
+RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_reg_names(const RZ_NONNULL RzGadgetInfo *gadget_info,
 	const RZ_NONNULL RzPVector /*<char *>*/ *registers) {
 	rz_return_val_if_fail(gadget_info && registers, NULL);
 
-	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_core_rop_reg_info_free);
+	RzPVector *result = rz_pvector_new((RzPVectorFree)rz_core_gadget_reg_info_free);
 	if (!result) {
 		return NULL;
 	}
 	void **it;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
-		RzRopRegInfo *reg_info = *it;
+		RzGadgetRegInfo *reg_info = *it;
 		void **reg_it;
 		rz_pvector_foreach (registers, reg_it) {
 			const char *reg = *reg_it;
 			if (RZ_STR_EQ(reg_info->name, reg)) {
-				RzRopRegInfo *rop_reg_info_dup = rz_core_rop_reg_info_dup(reg_info);
+				RzGadgetRegInfo *rop_reg_info_dup = rz_core_gadget_reg_info_dup(reg_info);
 				if (!rop_reg_info_dup) {
 					continue;
 				}
@@ -622,14 +623,14 @@ RZ_API RZ_OWN RzPVector /*<RzRopRegInfo *>*/ *rz_core_rop_get_reg_info_by_reg_na
 	return result;
 }
 
-static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *evt, RzRopRegInfo *reg_info) {
+static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzGadgetInfo *gadget_info, const RzILEvent *evt, RzGadgetRegInfo *reg_info) {
 	rz_return_if_fail(core && core->analysis);
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (!reg_info || !rreg) {
 		return;
 	}
-	RzRopRegInfo *reg_info_dup = rz_core_rop_reg_info_dup(reg_info);
+	RzGadgetRegInfo *reg_info_dup = rz_core_gadget_reg_info_dup(reg_info);
 	if (!reg_info_dup) {
 		return;
 	}
@@ -679,13 +680,13 @@ static void rz_rop_gadget_info_add_dependency(const RzCore *core, RzRopGadgetInf
 }
 
 static void var_read_add_reg_info(const RzCore *core, const RzILEvent *event,
-	const RzILEventVarRead *var_read, RZ_OUT RzRopRegInfo **reg_info) {
+	const RzILEventVarRead *var_read, RZ_OUT RzGadgetRegInfo **reg_info) {
 	rz_return_if_fail(core && event && var_read && reg_info);
 	RzBitVector *val = rz_il_value_to_bv(var_read->value);
 	if (!val) {
 		return;
 	}
-	*reg_info = rz_core_rop_reg_info_new(core, event, rz_bv_to_ut64(val), rz_bv_to_ut64(val));
+	*reg_info = rz_core_gadget_reg_info_new(core, event, rz_bv_to_ut64(val), rz_bv_to_ut64(val));
 	if (!*reg_info) {
 		rz_bv_free(val);
 		return;
@@ -694,17 +695,17 @@ static void var_read_add_reg_info(const RzCore *core, const RzILEvent *event,
 }
 
 static bool is_handle_il_event_read(const RzCore *core, const RzILEventVarRead *var_read,
-	RzRopRegInfo *reg_info, RzRopGadgetInfo *gadget_info, const RzILEvent *event, const RzILEvent *curr_event) {
-	if (rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, event->data.var_read.variable)) {
+	RzGadgetRegInfo *reg_info, RzGadgetInfo *gadget_info, const RzILEvent *event, const RzILEvent *curr_event) {
+	if (rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, event->data.var_read.variable)) {
 		return false;
 	}
 	var_read_add_reg_info(core, event, var_read, &reg_info);
 	rz_rop_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
-	rz_core_rop_reg_info_free(reg_info);
+	rz_core_gadget_reg_info_free(reg_info);
 	return true;
 }
 
-static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadget_info, const RzILEvent *curr_event,
+static bool fill_rop_gadget_info_from_events(RzCore *core, RzGadgetInfo *gadget_info, const RzILEvent *curr_event,
 	RzILEvent *event, RzPVector /*<RzILEvent *>*/ *vec, const bool is_dependency) {
 	rz_return_val_if_fail(core, false);
 	if (!gadget_info) {
@@ -718,9 +719,9 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 	switch (event->type) {
 	case RZ_IL_EVENT_VAR_READ: {
 		const RzILEventVarRead *var_read = &event->data.var_read;
-		RzRopRegInfo *reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, var_read->variable);
+		RzGadgetRegInfo *reg_info = rz_core_gadget_info_get_modified_register(gadget_info, var_read->variable);
 		if (reg_info && !is_dependency) {
-			RzRopRegInfo *new_reg_info = rz_core_rop_reg_info_dup(reg_info);
+			RzGadgetRegInfo *new_reg_info = rz_core_gadget_reg_info_dup(reg_info);
 			if (!new_reg_info) {
 				break;
 			}
@@ -729,8 +730,8 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 				break;
 			}
 			new_reg_info->new_val = rz_bv_to_ut64(val);
-			rz_core_rop_gadget_info_update_register(gadget_info, new_reg_info);
-			rz_core_rop_reg_info_free(new_reg_info);
+			rz_core_gadget_info_update_register(gadget_info, new_reg_info);
+			rz_core_gadget_reg_info_free(new_reg_info);
 			rz_pvector_push(vec, event);
 			rz_bv_free(val);
 			break;
@@ -752,7 +753,7 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 			}
 			rz_rop_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
 			if (is_stack_evt) {
-				rz_core_rop_reg_info_free(reg_info);
+				rz_core_gadget_reg_info_free(reg_info);
 			}
 			break;
 		}
@@ -789,7 +790,7 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 			RzILEvent *evt = rz_pvector_pop(vec);
 			fill_rop_gadget_info_from_events(core, gadget_info, event, evt, vec, true);
 		}
-		RzRopRegInfo *reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, var_write->variable);
+		RzGadgetRegInfo *reg_info = rz_core_gadget_info_get_modified_register(gadget_info, var_write->variable);
 		if (!reg_info) {
 			RzBitVector *old_val = rz_il_value_to_bv(var_write->old_value);
 			RzBitVector *new_val = rz_il_value_to_bv(var_write->new_value);
@@ -798,9 +799,9 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 				rz_bv_free(new_val);
 				break;
 			}
-			reg_info = rz_core_rop_reg_info_new(core, event, rz_bv_to_ut64(old_val),
+			reg_info = rz_core_gadget_reg_info_new(core, event, rz_bv_to_ut64(old_val),
 				rz_bv_to_ut64(new_val));
-			rz_core_rop_gadget_info_add_register(gadget_info, reg_info, is_dependency);
+			rz_core_gadget_info_add_register(gadget_info, reg_info, is_dependency);
 			rz_bv_free(old_val);
 			rz_bv_free(new_val);
 		}
@@ -830,7 +831,7 @@ static bool fill_rop_gadget_info_from_events(RzCore *core, RzRopGadgetInfo *gadg
 	return true;
 }
 
-static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzRopGadgetInfo *rop_gadget_info) {
+static bool analyze_gadget(RzCore *core, const RzCoreAsmHit *hit, RzGadgetInfo *rop_gadget_info) {
 	rz_return_val_if_fail(core && core->analysis, false);
 	int ret = true;
 
@@ -869,7 +870,7 @@ cleanup:
 	return ret;
 }
 
-static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info) {
+static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *gadget_info) {
 	rz_return_if_fail(core && core->analysis && gadget_info);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (!rreg) {
@@ -881,7 +882,7 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 
 	rz_cons_printf("Changed registers: ");
 	void **it;
-	RzRopRegInfo *reg_info;
+	RzGadgetRegInfo *reg_info;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
 		reg_info = *it;
 		rz_cons_printf("%s ", reg_info->name);
@@ -912,7 +913,7 @@ static void rz_rop_gadget_print_standard_mode(const RzCore *core, const RzRopGad
 	rz_cons_printf("\n");
 }
 
-static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, PJ *pj) {
+static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj) {
 	rz_return_if_fail(gadget_info && pj);
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
@@ -926,7 +927,7 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_k(pj, "modified_registers");
 	pj_a(pj);
 	void **it;
-	RzRopRegInfo *reg_info;
+	RzGadgetRegInfo *reg_info;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
 		reg_info = *it;
 		pj_o(pj);
@@ -963,13 +964,13 @@ static void rz_rop_gadget_print_json_mode(const RzCore *core, const RzRopGadgetI
 	pj_end(pj);
 }
 
-static void print_modified_reg(const RzRopGadgetInfo *gadget_info) {
+static void print_modified_reg(const RzGadgetInfo *gadget_info) {
 	rz_cons_printf("Modified regs: ");
 	if (gadget_info->modified_registers) {
 		void **it;
 		bool first = true;
 		rz_pvector_foreach (gadget_info->modified_registers, it) {
-			RzRopRegInfo *reg_info = (RzRopRegInfo *)*it;
+			RzGadgetRegInfo *reg_info = (RzGadgetRegInfo *)*it;
 			if (!reg_info || !reg_info->name) {
 				continue;
 			}
@@ -982,11 +983,11 @@ static void print_modified_reg(const RzRopGadgetInfo *gadget_info) {
 	}
 }
 
-static void print_rop_dependencies(const RzRopGadgetInfo *gadget_info) {
+static void print_rop_dependencies(const RzGadgetInfo *gadget_info) {
 	rz_cons_printf("Dependencies:  ");
 	if (gadget_info->dependencies) {
 		RzListIter *iter;
-		RzRopRegInfo *dep_info;
+		RzGadgetRegInfo *dep_info;
 		bool first = true;
 		rz_list_foreach (gadget_info->dependencies, iter, dep_info) {
 			if (!dep_info || !dep_info->name) {
@@ -1001,7 +1002,7 @@ static void print_rop_dependencies(const RzRopGadgetInfo *gadget_info) {
 	}
 }
 
-static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
+static void print_rop_long_info(const RzGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
 	ut32 size = gadget_info->size;
 	size_t instr_count = 0;
 	int pad = 0;
@@ -1040,7 +1041,7 @@ static void print_rop_long_info(const RzRopGadgetInfo *gadget_info, RzVector /*<
 	}
 }
 
-static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
+static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
 	rz_return_if_fail(core && core->analysis);
 
 	ut64 addr = gadget_info->address;
@@ -1107,12 +1108,12 @@ static void rz_rop_gadget_print_long_mode(const RzCore *core, const RzRopGadgetI
 	rz_cons_newline();
 }
 
-static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gadget_info, const RzRopSearchContext *context) {
+static void print_rop_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
 	rz_return_if_fail(gadget_info && context);
 	if (!context->state) {
 		return;
 	}
-	if (RZ_STR_NE(context->greparg, "") && !(context->detail_mask | RZ_ROP_DETAIL_SEARCH_NON)) {
+	if (RZ_STR_NE(context->greparg, "") && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON)) {
 		const ut64 addr = rz_num_math(core->num, context->greparg);
 		if (!addr || gadget_info->address != addr) {
 			return;
@@ -1135,7 +1136,7 @@ static void print_rop_gadget_info(const RzCore *core, const RzRopGadgetInfo *gad
 	}
 }
 
-static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzRopSearchContext *context) {
+static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && hitlist && context, false);
 	RzCmdStateOutput *state = context->state;
 	if (!state) {
@@ -1232,8 +1233,8 @@ static bool print_rop(const RzCore *core, RzList /*<RzCoreAsmHit *>*/ *hitlist, 
 	return true;
 }
 
-static bool handle_rop_list(RzStrBuf *sb, const RzRopSearchContext *context,
-	const RzRopEndListPair *end_gadget, RZ_OWN RzList /*<RzCoreAsmHit *>*/ *hitlist) {
+static bool handle_rop_list(RzStrBuf *sb, const RzGadgetSearchContext *context,
+	const RzGadgetEndListPair *end_gadget, RZ_OWN RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(sb && context && context->unique_hitlists, false);
 	if (end_gadget->delay_size && rz_list_length(hitlist) < 1 + end_gadget->delay_size) {
 		rz_list_free(hitlist);
@@ -1255,7 +1256,7 @@ static bool handle_rop_list(RzStrBuf *sb, const RzRopSearchContext *context,
 	return true;
 }
 
-static void init_grep_context(const RzRopSearchContext *context, char **grep_str,
+static void init_grep_context(const RzGadgetSearchContext *context, char **grep_str,
 	const char **start, const char **end, const RzList /*<char *>*/ *rx_list, char **rx, int *count) {
 	if (context->greparg) {
 		*start = context->greparg;
@@ -1292,7 +1293,7 @@ static bool is_invalid_instruction(const char *opst, const int end_gadget_cnt) {
 		end_gadget_cnt > 1;
 }
 
-static void update_search_context(const RzRopSearchContext *context, const char **start, const char **end,
+static void update_search_context(const RzGadgetSearchContext *context, const char **start, const char **end,
 	char **grep_str, const RzList /*<char *>*/ *rx_list, char **rx, int *count) {
 	if (*end && (*end)[0] == ';') { // fields are semicolon-separated
 		*start = *end + 1; // skip the ;
@@ -1314,13 +1315,13 @@ static void update_search_context(const RzRopSearchContext *context, const char 
 	}
 }
 
-static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut8 *buf, int idx, RzRopSearchContext *context,
-	RzList /*<char *>*/ *rx_list, RzRopEndListPair *end_gadget) {
+static RzList /*<RzCoreAsmHit *>*/ *construct_rop_gadget(RzCore *core, ut8 *buf, int idx, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	const char *start = NULL, *end = NULL;
 	int count = 0;
 	char *rx = NULL;
 	char *grep_str = NULL;
-	bool is_greparg = !(context->mask & (RZ_ROP_GADGET_PRINT_DETAIL | RZ_ROP_GADGET_ANALYZE)) && !(context->detail_mask | RZ_ROP_DETAIL_SEARCH_NON) && context->greparg;
+	bool is_greparg = !(context->mask & (RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE)) && !(context->detail_mask | RZ_GADGET_DETAIL_SEARCH_NON) && context->greparg;
 	if (is_greparg) {
 		init_grep_context(context, &grep_str, &start, &end, rx_list, &rx, &count);
 	}
@@ -1412,13 +1413,13 @@ cleanup:
 	return hitlist;
 }
 
-static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, const RzList /*<RzCoreAsmHit *>*/ *hitlist) {
+static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, const RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
-	RzRopGadgetInfo *rop_gadget_info = NULL;
+	RzGadgetInfo *rop_gadget_info = NULL;
 
 	HtUP *ht_rop_semantics = rz_analysis_get_rop_semantics(core->analysis);
 	if (!ht_rop_semantics) {
-		ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_rop_gadget_info_free);
+		ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_gadget_info_free);
 		rz_analysis_set_rop_semantics(core->analysis, ht_rop_semantics);
 	}
 	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last_val(hitlist);
@@ -1432,7 +1433,7 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 	}
 	RzListIter *iter;
 	RzCoreAsmHit *hit;
-	rop_gadget_info = rz_core_rop_gadget_info_new(addr_start);
+	rop_gadget_info = rz_core_gadget_info_new(addr_start);
 	if (!rop_gadget_info) {
 		return NULL;
 	}
@@ -1449,19 +1450,19 @@ static RzRopGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, co
 }
 
 /**
- * \brief Perform ROP operations based on the given \p context and \p hitlist.
+ * \brief Perform Gadget operations based on the given \p context and \p hitlist.
  * \param core Pointer to the RzCore structure.
- * \param context Pointer to the RzRopSearchContext structure.
- * \param hitlist Pointer to the RzList structure containing the ROP gadgets.
+ * \param context Pointer to the RzGadgetSearchContext structure.
+ * \param hitlist Pointer to the RzList structure containing the gadgets.
  * \return true if the operation was successful, false otherwise.
  *
- * This function performs ROP operations based on the given \p context and \p hitlist.
+ * This function performs Gadget operations based on the given \p context and \p hitlist.
  */
 
-RZ_API bool rz_core_handle_rop_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context,
+RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context,
 	RZ_NONNULL RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist && context, false);
-	if (context->mask & RZ_ROP_GADGET_PRINT) {
+	if (context->mask & RZ_GADGET_PRINT) {
 		if (context->subchain) {
 			do {
 				if (!print_rop(core, hitlist, context)) {
@@ -1476,14 +1477,14 @@ RZ_API bool rz_core_handle_rop_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL 
 		}
 	}
 
-	RzRopGadgetInfo *rop_gadget_info = NULL;
+	RzGadgetInfo *rop_gadget_info = NULL;
 	bool is_analysis = false;
-	if (context->mask & RZ_ROP_GADGET_ANALYZE) {
+	if (context->mask & RZ_GADGET_ANALYZE) {
 		rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
 		is_analysis = true;
 	}
 
-	if (context->mask & RZ_ROP_GADGET_PRINT_DETAIL) {
+	if (context->mask & RZ_GADGET_PRINT_DETAIL) {
 		if (!rop_gadget_info && is_analysis) {
 			return false;
 		}
@@ -1516,8 +1517,8 @@ static bool fetch_search_itv(const RzCore *core, RzInterval *search_itv) {
 	return true;
 }
 
-static RzList /*<RzRopEndListPair *>*/ *compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzRopSearchContext *context) {
-	RzList /*<RzRopEndListPair *>*/ *end_list = rz_list_newf(free);
+static RzList /*<RzGadgetEndListPair *>*/ *compute_end_gadget_list(const RzCore *core, const ut8 *buf, const RzGadgetSearchContext *context) {
+	RzList /*<RzGadgetEndListPair *>*/ *end_list = rz_list_newf(free);
 	const int delta = context->to - context->from;
 
 	for (int i = 0; i < delta; i += context->increment) {
@@ -1531,7 +1532,7 @@ static RzList /*<RzRopEndListPair *>*/ *compute_end_gadget_list(const RzCore *co
 		}
 
 		if (is_end_gadget(&end_gadget, context->crop)) {
-			RzRopEndListPair *epair = RZ_NEW0(RzRopEndListPair);
+			RzGadgetEndListPair *epair = RZ_NEW0(RzGadgetEndListPair);
 			if (epair) {
 				epair->instr_offset = i + (end_gadget.delay ? context->increment : 0);
 				epair->delay_size = end_gadget.delay;
@@ -1566,7 +1567,7 @@ static void set_increment_based_on_arch(const RzCore *core, const char *arch, in
  *
  * This function processes the provided grep argument string and returns a list of tokens.
  */
-RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp) {
+RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_gadget_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp) {
 	if (!greparg || !regexp) {
 		return NULL;
 	}
@@ -1600,10 +1601,10 @@ RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_N
 	return rx_list;
 }
 
-static bool parse_detail_search_arg(RzCore *core, const char *str, RopDetailSearchCmpOp *op, st64 *value) {
+static bool parse_detail_search_arg(RzCore *core, const char *str, RzGadgetDetailSearchCmpOp *op, st64 *value) {
 
 	if (RZ_STR_ISEMPTY(str)) {
-		*op = ROP_DETAIL_CMP_EQ;
+		*op = RZ_GADGET_DETAIL_CMP_EQ;
 		*value = 0;
 		return true;
 	}
@@ -1615,31 +1616,31 @@ static bool parse_detail_search_arg(RzCore *core, const char *str, RopDetailSear
 	}
 
 	if (*p == '\0') {
-		*op = ROP_DETAIL_CMP_EQ;
+		*op = RZ_GADGET_DETAIL_CMP_EQ;
 		*value = 0;
 		return true;
 	}
 
 	if (rz_str_startswith(p, ">=")) {
-		*op = ROP_DETAIL_CMP_GE;
+		*op = RZ_GADGET_DETAIL_CMP_GE;
 		p += 2;
 	} else if (rz_str_startswith(p, "<=")) {
-		*op = ROP_DETAIL_CMP_LE;
+		*op = RZ_GADGET_DETAIL_CMP_LE;
 		p += 2;
 	} else if (rz_str_startswith(p, "==")) {
-		*op = ROP_DETAIL_CMP_EQ;
+		*op = RZ_GADGET_DETAIL_CMP_EQ;
 		p += 2;
 	} else if (p[0] == '>') {
-		*op = ROP_DETAIL_CMP_GT;
+		*op = RZ_GADGET_DETAIL_CMP_GT;
 		p++;
 	} else if (p[0] == '<') {
-		*op = ROP_DETAIL_CMP_LT;
+		*op = RZ_GADGET_DETAIL_CMP_LT;
 		p++;
 	} else if (p[0] == '=') {
-		*op = ROP_DETAIL_CMP_EQ;
+		*op = RZ_GADGET_DETAIL_CMP_EQ;
 		p++;
 	} else {
-		*op = ROP_DETAIL_CMP_EQ;
+		*op = RZ_GADGET_DETAIL_CMP_EQ;
 	}
 
 	// skip possible spaces between operator and number
@@ -1656,23 +1657,23 @@ static bool parse_detail_search_arg(RzCore *core, const char *str, RopDetailSear
 	return true;
 }
 
-static bool match_detail_search(st64 gadget_val, RopDetailSearchCmpOp op, st64 target) {
+static bool match_detail_search(st64 gadget_val, RzGadgetDetailSearchCmpOp op, st64 target) {
 	switch (op) {
-	case ROP_DETAIL_CMP_EQ:
+	case RZ_GADGET_DETAIL_CMP_EQ:
 		return gadget_val == target;
-	case ROP_DETAIL_CMP_GT:
+	case RZ_GADGET_DETAIL_CMP_GT:
 		return gadget_val > target;
-	case ROP_DETAIL_CMP_GE:
+	case RZ_GADGET_DETAIL_CMP_GE:
 		return gadget_val >= target;
-	case ROP_DETAIL_CMP_LT:
+	case RZ_GADGET_DETAIL_CMP_LT:
 		return gadget_val < target;
-	case ROP_DETAIL_CMP_LE:
+	case RZ_GADGET_DETAIL_CMP_LE:
 		return gadget_val <= target;
 	}
 	return false;
 }
 
-static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRopConstraint *constraint) {
+static bool match_rop_constraint(const RzGadgetInfo *gadget_info, const RzGadgetConstraint *constraint) {
 	if (!gadget_info || !constraint) {
 		return false;
 	}
@@ -1682,7 +1683,7 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 		return false;
 	}
 
-	RzRopRegInfo *reg_info = rz_core_rop_gadget_info_get_modified_register(gadget_info, dst_reg);
+	RzGadgetRegInfo *reg_info = rz_core_gadget_info_get_modified_register(gadget_info, dst_reg);
 	if (!reg_info) {
 		return false;
 	}
@@ -1701,7 +1702,7 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 		if (!src_reg) {
 			return false;
 		}
-		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
+		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
 	case MOV_OP_CONST: {
 		const char *src_reg = constraint->args[SRC_REG];
@@ -1709,7 +1710,7 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 		if (!src_reg || !src_const) {
 			return false;
 		}
-		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg);
+		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg);
 	}
 	case MOV_OP_REG: {
 		const char *src_reg = constraint->args[SRC_REG];
@@ -1717,22 +1718,22 @@ static bool match_rop_constraint(const RzRopGadgetInfo *gadget_info, const RzRop
 		if (!src_reg || !src_reg_second) {
 			return false;
 		}
-		return rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg) &&
-			rz_core_rop_gadget_reg_info_has_event(gadget_info, RZ_ROP_EVENT_VAR_READ, src_reg_second);
+		return rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg) &&
+			rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, src_reg_second);
 	}
 	default:
 		return false;
 	}
 }
 
-static bool match_constraints(const RzRopGadgetInfo *gadget_info, const RzPVector /*<RzRopConstraint *>*/ *constraints) {
+static bool match_constraints(const RzGadgetInfo *gadget_info, const RzPVector /*<RzGadgetConstraint *>*/ *constraints) {
 	if (!constraints || rz_pvector_empty(constraints)) {
 		return true;
 	}
 
 	void **it;
 	rz_pvector_foreach (constraints, it) {
-		RzRopConstraint *constraint = *it;
+		RzGadgetConstraint *constraint = *it;
 		if (!match_rop_constraint(gadget_info, constraint)) {
 			return false;
 		}
@@ -1740,8 +1741,8 @@ static bool match_constraints(const RzRopGadgetInfo *gadget_info, const RzPVecto
 	return true;
 }
 
-static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSearchContext *context,
-	RzList /*<char *>*/ *rx_list, RzRopEndListPair *end_gadget) {
+static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetSearchContext *context,
+	RzList /*<char *>*/ *rx_list, RzGadgetEndListPair *end_gadget) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	bool status = false;
 	const int ret = rz_asm_disassemble(core->rasm, asmop, buf + idx, context->to - context->from - idx);
@@ -1756,7 +1757,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 	}
 
 	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzRopGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		RzGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
 		if (!rop_gadget_info || !match_constraints(rop_gadget_info, context->constraints)) {
 			rz_list_free(hitlist);
 			goto fini;
@@ -1764,15 +1765,15 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 	}
 
 	if (context->detail_mask) {
-		RzRopGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		RzGadgetInfo *rop_gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
 		if (!rop_gadget_info) {
 			goto fini;
 		}
-		if (context->detail_mask & (RZ_ROP_DETAIL_SEARCH_STACK | RZ_ROP_DETAIL_SEARCH_SIZE)) {
-			RopDetailSearchCmpOp cmp_op;
+		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_STACK | RZ_GADGET_DETAIL_SEARCH_SIZE)) {
+			RzGadgetDetailSearchCmpOp cmp_op;
 			st64 target;
-			// RZ_ROP_DETAIL_SEARCH_STACK -> stack_change, RZ_ROP_DETAIL_SEARCH_SIZE -> size
-			ut64 gadget_info = context->detail_mask & RZ_ROP_DETAIL_SEARCH_STACK ? rop_gadget_info->stack_change : rop_gadget_info->size;
+			// RZ_GADGET_DETAIL_SEARCH_STACK -> stack_change, RZ_GADGET_DETAIL_SEARCH_SIZE -> size
+			ut64 gadget_info = context->detail_mask & RZ_GADGET_DETAIL_SEARCH_STACK ? rop_gadget_info->stack_change : rop_gadget_info->size;
 			if (!parse_detail_search_arg(core, context->greparg, &cmp_op, &target)) {
 				goto fini;
 			}
@@ -1787,7 +1788,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzRopSear
 		goto fini;
 	}
 
-	if (!rz_core_handle_rop_request_type(core, context, hitlist)) {
+	if (!rz_core_handle_gadget_request_type(core, context, hitlist)) {
 		rz_list_free(hitlist);
 		goto fini;
 	}
@@ -1805,7 +1806,7 @@ fini:
 	return status;
 }
 
-static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end_gadget, const RzRopSearchContext *context) {
+static bool update_end_gadget(int *i, const int ropdepth, RzGadgetEndListPair **end_gadget, const RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(end_gadget && context, false);
 	if (*i > (*end_gadget)->instr_offset) {
 		// We've exhausted the first end-gadget section,
@@ -1813,7 +1814,7 @@ static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end
 		free(*end_gadget);
 
 		if (rz_list_get_n(context->end_list, 0)) {
-			*end_gadget = (RzRopEndListPair *)rz_list_pop(context->end_list);
+			*end_gadget = (RzGadgetEndListPair *)rz_list_pop(context->end_list);
 			*i = (*end_gadget)->instr_offset - ropdepth;
 			if (*i < 0) {
 				*i = 0;
@@ -1826,7 +1827,7 @@ static bool update_end_gadget(int *i, const int ropdepth, RzRopEndListPair **end
 	return true;
 }
 
-static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, RzList /*<char *>*/ *rx_list) {
+static int handle_rop_search_address(RzCore *core, RzGadgetSearchContext *context, RzList /*<char *>*/ *rx_list) {
 	const ut64 delta = context->to - context->from;
 	ut8 *buf = RZ_NEWS0(ut8, delta);
 	if (!buf) {
@@ -1853,7 +1854,7 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
 	if (rz_cons_is_breaked()) {
 		return -2;
 	}
-	RzRopEndListPair *end_gadget = rz_list_pop(context->end_list);
+	RzGadgetEndListPair *end_gadget = rz_list_pop(context->end_list);
 	// Start at just before the first end gadget.
 	const int next = end_gadget->instr_offset;
 	for (int i = 0; i < delta && context->max_count; i += context->increment) {
@@ -1881,17 +1882,17 @@ static int handle_rop_search_address(RzCore *core, RzRopSearchContext *context, 
 }
 
 /**
- * \brief Search for ROP gadgets.
+ * \brief Search for gadgets.
  * \param core Pointer to the RzCore object.
- * \param context Pointer to the RzRopSearchContext object.
+ * \param context Pointer to the RzGadgetSearchContext object.
  * \return true if the search is successful, false otherwise.
  *
- * Searches for ROP gadgets within the address range specified by configuration.
- * Disassembles instructions, identifies end gadgets, constructs ROP gadgets, and
+ * Searches for gadgets within the address range specified by configuration.
+ * Disassembles instructions, identifies end gadgets, constructs gadgets, and
  * filters results based on the grep argument and request mask. Outputs results to
  * the provided state object.
  */
-RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && core->search && context, RZ_CMD_STATUS_ERROR);
 
 	RzInterval search_itv = { 0 };
@@ -1919,7 +1920,7 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopS
 	if (context->ret_val) {
 		context->buf = rz_strbuf_new(NULL);
 	}
-	RzList /*<char *>*/ *rx_list = rz_core_rop_handle_grep_args(context->greparg, context->regexp);
+	RzList /*<char *>*/ *rx_list = rz_core_gadget_handle_grep_args(context->greparg, context->regexp);
 	int status = 0;
 	// If we need to know where to look, perform rop operations here.
 	if (context->to || context->from) {
@@ -1969,31 +1970,31 @@ cleanup:
 }
 
 /**
- * \brief Display ROP gadget information.
+ * \brief Display gadget information.
  * \param core Pointer to the RzCore object.
- * \param context Pointer to the RzRopSearchContext object.
+ * \param context Pointer to the RzGadgetSearchContext object.
  * \return RZ_CMD_STATUS_OK on success.
  *
- * Displays ROP gadgets from the gadgetSdb.
- * If unavailable, performs a ROP search with the input.
+ * Displays gadgets from the gadgetSdb.
+ * If unavailable, performs a gadget search with the input.
  */
-RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context) {
+RZ_API RzCmdStatus rz_core_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && core->analysis && context, RZ_CMD_STATUS_ERROR);
 
 	// TODO: resolve this logic later.
-	RzCmdStatus status = rz_core_rop_search(core, context);
-	rz_core_rop_search_context_free(context);
+	RzCmdStatus status = rz_core_gadget_search(core, context);
+	rz_core_gadget_search_context_free(context);
 	return status;
 }
 
 /**
- * \brief Free an RzRopConstraint object.
- * \param data Pointer to the RzRopConstraint object to free.
+ * \brief Free an RzGadgetConstraint object.
+ * \param data Pointer to the RzGadgetConstraint object to free.
  *
- * Frees the memory allocated for an RzRopConstraint object.
+ * Frees the memory allocated for an RzGadgetConstraint object.
  */
-RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data) {
-	RzRopConstraint *constraint = data;
+RZ_API void rz_core_gadget_constraint_free(RZ_NULLABLE void *data) {
+	RzGadgetConstraint *constraint = data;
 	if (!constraint) {
 		return;
 	}

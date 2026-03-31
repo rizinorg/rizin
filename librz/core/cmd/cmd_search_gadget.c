@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 MrQuantum1915 <darshanpatelgdh@gmail.com>
 // SPDX-FileCopyrightText: 2024 z3phyr <giridh1337@gmail.com>
 // SPDX-FileCopyrightText: 2009-2016 Alexandru Caciulescu <alex.darredevil@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -194,8 +195,8 @@ static bool parse_il_op(const char *str, ut64 *idx, bool *is_compound_op, RzILOp
 	return false;
 }
 
-static bool rop_constraint_set_regs(RzRopConstraint *rc,
-	RzRopILInstructionType il_type,
+static bool rop_constraint_set_regs(RzGadgetConstraint *rc,
+	RzGadgetILInstructionType il_type,
 	RZ_NONNULL const RzRegItem *dst,
 	RZ_NONNULL const RzRegItem *src0,
 	RZ_NULLABLE const RzRegItem *src1) {
@@ -213,7 +214,7 @@ static bool rop_constraint_set_regs(RzRopConstraint *rc,
 	return true;
 }
 
-static bool rop_constraint_set_op(RzRopConstraint *rc, RzILOpPureCode op) {
+static bool rop_constraint_set_op(RzGadgetConstraint *rc, RzILOpPureCode op) {
 	if (op >= RZ_IL_OP_PURE_MAX) {
 		return false;
 	}
@@ -226,8 +227,8 @@ static bool rop_constraint_set_op(RzRopConstraint *rc, RzILOpPureCode op) {
 	return true;
 }
 
-static bool rop_constraint_set_const(RzRopConstraint *rc,
-	RzRopILInstructionType il_type,
+static bool rop_constraint_set_const(RzGadgetConstraint *rc,
+	RzGadgetILInstructionType il_type,
 	RZ_NONNULL const RzRegItem *dst,
 	RZ_NULLABLE const RzRegItem *src0,
 	ut64 const_value) {
@@ -245,7 +246,7 @@ static bool rop_constraint_set_const(RzRopConstraint *rc,
 	return true;
 }
 
-static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstraint *rc) {
+static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	bool inc_dec = false;
@@ -305,7 +306,7 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzRopConstrai
 		rop_constraint_set_op(rc, op);
 }
 
-static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstraint *rc) {
+static bool parse_reg_to_const(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	const RzRegItem *dst_reg = parse_register(core, str, &idx);
@@ -320,7 +321,7 @@ static bool parse_reg_to_const(const RzCore *core, const char *str, RzRopConstra
 	return rop_constraint_set_const(rc, MOV_CONST, dst_reg, NULL, const_value);
 }
 
-static bool parse_reg_to_reg(const RzCore *core, const char *str, RzRopConstraint *rc) {
+static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
 	ut64 idx = 0;
 	const RzRegItem *src_reg = NULL;
 	const RzRegItem *dst_reg = parse_register(core, str, &idx);
@@ -344,7 +345,7 @@ static bool parse_reg_to_reg(const RzCore *core, const char *str, RzRopConstrain
 	return rop_constraint_set_regs(rc, MOV_REG, dst_reg, src_reg, NULL);
 }
 
-static bool parse_reg_op_const(const RzCore *core, const char *str, RzRopConstraint *rc) {
+static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	RzILOpPureCode op = RZ_IL_OP_PURE_MAX;
@@ -367,7 +368,7 @@ compound:
 	return parse_compound_op(core, str, rc);
 }
 
-static bool parse_reg_op_reg(const RzCore *core, const char *str, RzRopConstraint *rc) {
+static bool parse_reg_op_reg(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
 	ut64 idx = 0;
 	RzILOpPureCode op = RZ_IL_OP_PURE_MAX;
 	const RzRegItem *src_reg0 = NULL;
@@ -399,22 +400,22 @@ compound:
 }
 
 /**
- * \brief Create a new RzRopSearchContext object.
+ * \brief Create a new RzGadgetSearchContext object.
  * \param core RZ_NONNULL Pointer to the RzCore structure containing configuration settings.
  * \param greparg RZ_NULLABLE Pointer to a string containing the grep argument.
  * \param regexp Flag specifying whether regular expressions should be used.
- * \param mask ROP request mask specifying the ROP request parameters.
- * \param detail_mask search ROP gadgets given details.
+ * \param mask Gadget request mask specifying the Gadget request parameters.
+ * \param detail_mask search gadgets given details.
  * \param state RZ_BORROW Pointer to the command state output structure.
- * \return RZ_OUT A pointer to the newly created RzRopSearchContext object, or NULL if memory allocation fails.
+ * \return RZ_OUT A pointer to the newly created RzGadgetSearchContext object, or NULL if memory allocation fails.
  *
- * This function allocates and initializes a new RzRopSearchContext object.
+ * This function allocates and initializes a new RzGadgetSearchContext object.
  */
-RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
-	const RzRopRequestMask mask, const RzRopDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
+RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
+	const RzGadgetRequestMask mask, const RzGadgetDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
 
 	rz_return_val_if_fail(core, NULL);
-	RzRopSearchContext *context = RZ_NEW0(RzRopSearchContext);
+	RzGadgetSearchContext *context = RZ_NEW0(RzGadgetSearchContext);
 	if (!context) {
 		return NULL;
 	}
@@ -441,13 +442,13 @@ RZ_API RZ_OWN RzRopSearchContext *rz_core_rop_search_context_new(RZ_NONNULL cons
 }
 
 /**
- * \brief Free an RzRopSearchContext object.
- * \param context RZ_NULLABLE Pointer to the RzRopSearchContext object to free.
+ * \brief Free an RzGadgetSearchContext object.
+ * \param context RZ_NULLABLE Pointer to the RzGadgetSearchContext object to free.
  *
- * Frees the memory allocated for an RzRopSearchContext object.
+ * Frees the memory allocated for an RzGadgetSearchContext object.
  * Note: Other elements must be freed by the caller/callee.
  */
-RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *context) {
+RZ_API void rz_core_gadget_search_context_free(RZ_NULLABLE RzGadgetSearchContext *context) {
 	if (!context) {
 		return;
 	}
@@ -462,16 +463,16 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
  * \brief Analyze and parse a constraint string.
  * \param core Pointer to the RzCore object.
  * \param str The constraint string to analyze.
- * \param rop_constraint Pointer to the RzRopConstraint object to store the parsed result.
+ * \param rop_constraint Pointer to the RzGadgetConstraint object to store the parsed result.
  * \return true if the constraint string is successfully parsed, false otherwise.
  *
  * This function analyzes a given constraint string and attempts to parse it into
- * the provided RzRopConstraint. It tries four different parsing methods:
+ * the provided RzGadgetConstraint. It tries four different parsing methods:
  *
  * The function returns true if any of these parsing methods succeed.
  */
-RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
-	RZ_NULLABLE RZ_OUT RzRopConstraint *rop_constraint) {
+RZ_API bool rz_core_gadget_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
+	RZ_NULLABLE RZ_OUT RzGadgetConstraint *rop_constraint) {
 	rz_return_val_if_fail(core && str, false);
 	if (!rop_constraint) {
 		return false;
@@ -483,22 +484,22 @@ RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const 
 }
 
 /**
- * \brief Parse the given token into a rop constraint
+ * \brief Parse the given token into a gadget constraint
  * \param core Pointer to the RzCore object.
  * \param token Input string in the form `key=value`(Eg: rbx=rdx, r12=1)`
- * \return \p RzRopConstraint if parsing is successful else NULL
+ * \return \p RzGadgetConstraint if parsing is successful else NULL
  *
 
- * The function parses the given token and parses according to the predefined ROP constriant type
+ * The function parses the given token and parses according to the predefined gadget constraint type
  */
-RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
+RZ_API RZ_OWN RzGadgetConstraint *rz_core_gadget_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
 	rz_return_val_if_fail(core && token, NULL);
 
 	if (RZ_STR_ISEMPTY(token)) {
 		return NULL;
 	}
 
-	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
+	RzGadgetConstraint *rop_constraint = RZ_NEW0(RzGadgetConstraint);
 	if (!rop_constraint) {
 		free(rop_constraint);
 		return NULL;
@@ -511,7 +512,7 @@ RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNUL
 		return NULL;
 	}
 
-	if (!rz_core_rop_analyze_constraint(core, token, rop_constraint)) {
+	if (!rz_core_gadget_analyze_constraint(core, token, rop_constraint)) {
 		free(rop_constraint);
 		rz_list_free(l);
 		return NULL;
@@ -522,17 +523,17 @@ RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNUL
 }
 
 /**
- * \brief Parse rop constraint map
+ * \brief Parse gadget constraint map
  * \param core Pointer to the RzCore object.
  * \param argc Number of arguments.
  * \param argv Array of arguments.
- * \return RzPVector of RzRopConstraint objects.
+ * \return RzPVector of RzGadgetConstraint objects.
  *
- * This function parses a list of arguments into a RzPVector of RzRopConstraint objects.
+ * This function parses a list of arguments into a RzPVector of RzGadgetConstraint objects.
  */
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
+RZ_API RZ_OWN RzPVector /*<RzGadgetConstraint *>*/ *rz_core_gadget_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
 	rz_return_val_if_fail(core && argv && RZ_STR_ISNOTEMPTY(argv[0]), false);
-	RzPVector *constr_map = rz_pvector_new((RzPVectorFree)rz_core_rop_constraint_free);
+	RzPVector *constr_map = rz_pvector_new((RzPVectorFree)rz_core_gadget_constraint_free);
 	if (!constr_map) {
 		return NULL;
 	}
@@ -548,9 +549,9 @@ RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_pars
 		RzListIter *it;
 		char *token;
 		rz_list_foreach (l, it, token) {
-			RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, token);
+			RzGadgetConstraint *rop_constraint = rz_core_gadget_constraint_parse_args(core, token);
 			if (!rop_constraint) {
-				continue;
+				continue;	
 			}
 			rz_pvector_push(constr_map, rop_constraint);
 		}
