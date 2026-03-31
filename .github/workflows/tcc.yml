@@ -1,0 +1,104 @@
+name: TinyCC build
+
+on:
+  push:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'subprojects/**'
+    - 'test/**'
+    - '.github/workflows/tcc.yml'
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'container-*'
+  schedule:
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+  pull_request:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'subprojects/**'
+    - 'test/**'
+    - '.github/workflows/tcc.yml'
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'release-*'
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ubuntu-tcc-test
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://github.com/tinycc/tinycc
+          cd tinycc
+          #git checkout mob
+          # Well-tested commit
+          git checkout 5b28165fbf8549c5d92893339e4f6b6181316894
+          chmod +x ./configure
+
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          ./configure --prefix=/usr
+          make
+          sudo make install
+
+    - name: Install dependencies
+      run: |
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools
+          sudo python3 -m pip install ninja
+
+    - name: Checkout meson from ret2libc git
+      run: |
+          git clone https://github.com/ret2libc/meson.git
+          cd meson
+          git checkout tiny-cc
+          python3 setup.py build
+          sudo python3 setup.py install
+
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v6
+      with:
+          repository: rizinorg/rizin-testbins
+          path: test/bins
+
+    - name: Meson setup
+      env:
+          CC: tcc
+      run: meson setup --prefix=/usr build
+    - name: Meson compile and install
+      run: ninja -C build && sudo ninja -C build install
+    - name: Run unit tests
+      run: ninja -C build test
+
+    - name: Install test dependencies
+      run: |
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
+          sudo apt-get update
+          sudo apt-get --assume-yes install libc6 libc6-i386 debuginfod
+
+    - name: Run tests
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        rizin -v
+        rz-test -v
+        cd test
+        rz-test -L -o results.json

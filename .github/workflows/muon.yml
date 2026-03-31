@@ -1,0 +1,77 @@
+name: Muon build
+
+on:
+  push:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'subprojects/**'
+    - 'test/**'
+    - '.github/workflows/muon.yml'
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'container-*'
+  pull_request:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'subprojects/**'
+    - 'test/**'
+    - '.github/workflows/muon.yml'
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'release-*'
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ubuntu-muon
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v6
+    - name: Install dependencies
+      run: |
+          sudo apt-get --assume-yes update
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libpkgconf-dev libarchive-dev
+          sudo python3 -m pip install ninja
+
+    - name: Checkout Muon repository
+      run: |
+          git clone https://git.sr.ht/~lattis/muon
+
+    - name: Compiling and installing Muon
+      working-directory: muon
+      run: |
+          ./bootstrap.sh build
+          build/muon-bootstrap setup build
+          ninja -C build
+          sudo cp build/muon /usr/bin/muon
+
+    - name: Muon setup
+      run: muon setup build
+    - name: Ninja compile and install
+      run: ninja -C build && sudo muon -C build install
+
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v6
+      with:
+          repository: rizinorg/rizin-testbins
+          path: test/bins
+
+    - name: Run unit tests
+      run: muon -C build test
+    - name: Rizin version
+      run: |
+        rizin -v

@@ -1,0 +1,81 @@
+name: "Code scanning"
+
+on:
+  push:
+    branches:
+    - 'master'
+    - 'dev'
+    - 'stable'
+    - 'container-*'
+  pull_request:
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [CodeQL-cpp, CodeQL-python, CodeQL-javascript]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install meson and ninja
+      run: |
+        sudo pip3 install meson ninja PyYAML
+        export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/.local/bin:${PATH}
+
+    - name: Initialize CodeQL - cpp
+      if: matrix.name == 'CodeQL-cpp'
+      uses: github/codeql-action/init@v4
+      with:
+        languages: cpp
+        setup-python-dependencies: false
+
+    - name: Initialize CodeQL - javascript
+      if: matrix.name == 'CodeQL-javascript'
+      uses: github/codeql-action/init@v4
+      with:
+        languages: javascript
+        setup-python-dependencies: false
+
+    - name: Initialize CodeQL - python
+      if: matrix.name == 'CodeQL-python'
+      uses: github/codeql-action/init@v4
+      with:
+        languages: python
+        setup-python-dependencies: false
+
+    - name: Autobuild CodeQL
+      if: matrix.name == 'CodeQL-cpp'
+      uses: github/codeql-action/autobuild@v4
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        output: "reports"
+        upload: false
+
+    - name: Move file to merged.sarif (CodeQL)
+      run: mv reports/*.sarif merged.sarif
+
+    - name: Exclude external lib
+      run: |
+        jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("subprojects/")))' merged.sarif > tmp0.sarif
+        jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > filtered.sarif
+
+    - name: Treat warnings as errors
+      run: |
+        jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: final.sarif

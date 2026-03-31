@@ -1,0 +1,168 @@
+name: "Mixed linter and checks"
+
+on:
+  push:
+    branches:
+    - 'master'
+    - 'dev'
+    - 'stable'
+    - 'container-*'
+  pull_request:
+
+# Automatically cancel any previous workflow on new push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      yaml: ${{ steps.filter.outputs.yaml }}
+      clang-format: ${{ steps.filter.outputs.clang-format }}
+      bindgen-linter: ${{ steps.filter.outputs.bindgen-linter }}
+      prettier: ${{ steps.filter.outputs.prettier }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: dorny/paths-filter@v4
+      id: filter
+      with:
+        filters: |
+          yaml:
+            - '**.yml'
+            - '**.yaml'
+            - '.github/workflows/linter.yml'
+          bindgen-linter:
+            - '**.c'
+            - '**.h'
+            - '**.inc'
+            - '.github/workflows/linter.yml'
+          clang-format:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '.github/workflows/linter.yml'
+            - 'sys/clang-format.py'
+            - '.clang-format'
+          prettier:
+            - '**.js'
+            - '.github/workflows/linter.yml'
+          python:
+            - '**.py'
+            - '.github/workflows/linter.yml'
+            - '.pylintrc'
+
+  cmd_descs_yaml_check:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.yaml == 'true' }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install tools
+        run: sudo apt-get install yamllint python3-yaml
+      - name: Check YamlLint
+        run: |
+          yamllint -d "{rules: {line-length: {max: 120}}}" ./librz/core/cmd_descs/*.yaml
+      - name: Check sync between yaml and C/H files
+        run: |
+          ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
+          diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
+
+  bindgen-linter:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.bindgen-linter == 'true' }}
+    steps:
+      - name: Checkout rizin
+        uses: actions/checkout@v6
+        with:
+          path: rizin
+      - name: Checkout rz-bindgen (stable)
+        if: github.ref == 'refs/heads/stable'
+        run: git clone -b stable https://github.com/rizinorg/rz-bindgen
+      - name: Checkout rz-bindgen (dev)
+        if: github.ref != 'refs/heads/stable'
+        run: git clone -b dev https://github.com/rizinorg/rz-bindgen
+      - name: Install dependencies
+        run: |
+          sudo pip install meson ninja
+          sudo apt update
+          sudo apt install libclang-18-dev
+      - name: Build rizin
+        working-directory: rizin
+        run: |
+          meson setup build
+          ninja -C build
+      - name: Run rz-bindgen linter
+        run: |
+          python3 rz-bindgen/src/lint.py \
+                  --clang-path "/usr/lib/llvm-18/lib" \
+                  --clang-args "-resource-dir=$(clang -print-resource-dir) " \
+                  --rizin-path rizin
+
+  clang-format:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.clang-format == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install clang-format-20
+      run: sudo apt --assume-yes install clang-format-20
+
+    - name: Install gitpython
+      run: sudo pip install gitpython
+
+    - name: Run clang-format
+      run: |
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-20 200
+        clang-format --version
+        python sys/clang-format.py --check --verbose
+
+  prettier:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.prettier == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install prettier
+      run: |
+        sudo apt --assume-yes install npm
+        npm install prettier
+
+    - name: Run prettier
+      run: find . -name "*.js" | grep -v "bindings/node/index.js\|subprojects/tree-sitter" | xargs npx prettier  --print-width 120 --check
+
+  python:
+    needs: changes
+    runs-on: ubuntu-24.04
+    if: ${{ needs.changes.outputs.python == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install pylint, black, isort
+      run: pip install pylint black isort
+
+    - name: Run black
+      run: |
+        export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | xargs black --check
+
+    - name: Run pylint
+      run: |
+        export PATH=${HOME}/Library/Python/3.9/bin:${HOME}/Library/Python/3.10/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs -I % pylint --disable=R1737 '%'
+
+  licenses:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+    - name: REUSE Compliance Check
+      uses: fsfe/reuse-action@v6
