@@ -524,10 +524,8 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 		return true;
 	}
 	ut64 new_cap = impl->capacity;
-	ut64 step = impl->capacity;
-	for (ut32 i = 0; new_cap < required; ++i) {
-		// speed up grow
-		new_cap += step * i;
+	while (new_cap < required) {
+		new_cap *= 2;
 	}
 
 	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
@@ -838,7 +836,7 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 		return NULL;
 	}
 	impl->capacity = capacity ? capacity : MATRIX_DEFAULT_CAPACITY;
-	impl->matrix = RZ_NEWS0(RzGraphEdge *, capacity * capacity);
+	impl->matrix = RZ_NEWS0(RzGraphEdge *, impl->capacity * impl->capacity);
 	if (!impl->matrix) {
 		RZ_LOG_WARN("Failed to init graph matrix with capacity %llu", impl->capacity)
 		rz_matrix_fini(impl);
