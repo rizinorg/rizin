@@ -116,7 +116,7 @@ struct rz_agraph_location {
  * Used by both node and edge iterators so we only need one set of callbacks.
  */
 typedef struct {
-	RzPVector *vec;
+	RzPVector /*<void *>*/ *vec;
 	ut64 idx;
 } PVecOwnedIter;
 
@@ -134,7 +134,7 @@ static void pvec_owned_iter_free(void *u) {
 }
 
 /** Wrap an owned PVector as an RzIterator; frees vec on iterator_free. */
-static RzIterator *pvector_as_owned_iter(RzPVector *vec) {
+static RzIterator *pvector_as_owned_iter(RzPVector /*<void *>*/ *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	PVecOwnedIter *s = RZ_NEW0(PVecOwnedIter);
 	if (!s) {
@@ -303,7 +303,7 @@ static int agraph_in_edge_order_cmp(const void *_a, const void *_b, void *user) 
 
 static RzIterator *agraph_out_neighbors(const RzAGraph *g, const RzGraphNode *node);
 static RzGraphNode *agraph_nth_neighbour(const RzAGraph *g, const RzGraphNode *node, ut64 nth, bool outgoing);
-static RzPVector *agraph_collect_edges(const RzAGraph *g, const RzGraphNode *node, bool outgoing, bool sorted);
+static RzPVector /*<RzGraphEdge *>*/ *agraph_collect_edges(const RzAGraph *g, const RzGraphNode *node, bool outgoing, bool sorted);
 
 /**
  * Determin which node should be drawn first (x-axis)
@@ -379,7 +379,7 @@ static int agraph_callgraph_draw_node_cmp(const void *_a, const void *_b, void *
 	return 0;
 }
 
-static RzPVector *agraph_collect_draw_neighbours(const RzAGraph *g, const RzGraphNode *node) {
+static RzPVector /*<RzGraphNode *>*/ *agraph_collect_draw_neighbours(const RzAGraph *g, const RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, NULL);
 	RzPVector *neighbours = rz_pvector_new(NULL);
 	if (!neighbours) {
@@ -433,7 +433,7 @@ static RzIterator *agraph_get_nodes(const RzAGraph *g) {
  * \param sorted When true, sorts by (nth, creation_order, _vec_id) for
  *               deterministic layout traversal; false returns raw order.
  */
-static RzPVector *agraph_collect_edges(const RzAGraph *g, const RzGraphNode *node, bool outgoing, bool sorted) {
+static RzPVector /*<RzGraphEdge *>*/ *agraph_collect_edges(const RzAGraph *g, const RzGraphNode *node, bool outgoing, bool sorted) {
 	rz_return_val_if_fail(g && node, NULL);
 	RzIterator *it_edges = outgoing
 		? rz_graph_out_edges(g->graph, (RzGraphNode *)node)
@@ -1041,7 +1041,7 @@ static int layer_sweep(const RzAGraph *g, const struct layer_t layers[],
 	return changed;
 }
 
-static void view_dummy(const RzGraphEdge *e, RzList *long_edges) {
+static void view_dummy(const RzGraphEdge *e, RzList /*<RzGraphEdge *>*/ *long_edges) {
 	const RzANode *a = get_anode(e->from);
 	const RzANode *b = get_anode(e->to);
 	if (!a || !b || RZ_ABS(a->layer - b->layer) <= 1) {

@@ -300,7 +300,7 @@ static void find_back_edges_push(RzGraph *g, RzGraphNode *node, RzStack *stack, 
 	}
 
 	if (cmp) {
-		RzPVector *edges_vec = rz_pvector_new(NULL);
+		RzPVector /*<RzGraphEdge *>*/ *edges_vec = rz_pvector_new(NULL);
 		if (!edges_vec) {
 			rz_iterator_free(edge_iter);
 			return;
@@ -348,7 +348,7 @@ static void find_back_edges_push(RzGraph *g, RzGraphNode *node, RzStack *stack, 
 RZ_API RZ_OWN RzList /*<RzGraphEdge *>*/ *rz_graph_find_back_edges(RzGraph *g, RZ_NULLABLE RzGraphEdgeCmp cmp, void *user) {
 	rz_return_val_if_fail(g, NULL);
 
-	RzList *back_edges = rz_list_new(); // borrowed pointers, no element free fn
+	RzList /*<RzGraphEdge *>*/ *back_edges = rz_list_new(); // borrowed pointers, no element free fn
 	if (!back_edges) {
 		return NULL;
 	}
@@ -430,11 +430,11 @@ RZ_API RZ_OWN RzList /*<RzGraphEdge *>*/ *rz_graph_find_back_edges(RzGraph *g, R
  */
 typedef struct {
 	RzGraphNode *node;
-	RzPVector *neighbors; ///< owned snapshot of out-neighbors collected at entry
+	RzPVector /*<RzGraphNode *>*/ *neighbors; ///< owned snapshot of out-neighbors collected at entry
 	ut64 neighbor_idx; ///< next neighbor to process
 } TarjanFrame;
 
-static TarjanFrame *tarjan_frame_new(RzGraphNode *node, RzPVector *neighbors) {
+static TarjanFrame *tarjan_frame_new(RzGraphNode *node, RzPVector /*<RzGraphNode *>*/ *neighbors) {
 	TarjanFrame *f = RZ_NEW0(TarjanFrame);
 	if (!f) {
 		rz_pvector_free(neighbors);
@@ -462,7 +462,7 @@ static void tarjan_frame_free(TarjanFrame *f) {
 RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzGraph *g) {
 	rz_return_val_if_fail(g, NULL);
 
-	RzPVector *sccs = rz_pvector_new((RzPVectorFree)rz_pvector_free);
+	RzPVector /*<RzPVector<RzGraphNode *> *>*/ *sccs = rz_pvector_new((RzPVectorFree)rz_pvector_free);
 	if (!sccs) {
 		return NULL;
 	}
@@ -507,7 +507,7 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 		}
 
 		/* Collect neighbors once and build initial frame */
-		RzPVector *root_nb = rz_pvector_new(NULL);
+		RzPVector /*<RzGraphNode *>*/ *root_nb = rz_pvector_new(NULL);
 		if (!root_nb) {
 			break;
 		}
@@ -539,7 +539,7 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 				}
 				if (disc[v->_vec_id] == UT64_MAX) {
 					/* tree edge: push new frame for v */
-					RzPVector *v_nb = rz_pvector_new(NULL);
+					RzPVector /*<RzGraphNode *>*/ *v_nb = rz_pvector_new(NULL);
 					if (!v_nb) {
 						break;
 					}
@@ -582,7 +582,7 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 
 				if (low[done_node->_vec_id] == disc[done_node->_vec_id]) {
 					/* done_node is SCC root: extract SCC */
-					RzPVector *scc = rz_pvector_new(NULL);
+					RzPVector /*<RzGraphNode *>*/ *scc = rz_pvector_new(NULL);
 					if (!scc) {
 						break;
 					}
