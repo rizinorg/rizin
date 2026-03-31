@@ -1,0 +1,18 @@
+NAME=dmhw / dmhwb / dmhwbf
+FILE=bins/heap/multithreadheap.exe.bin
+CMDS=<<EOF
+e dbg.windows.version=1809
+om 3 0x1f08dc50000 0x10000 0x0 rw- heap
+dmhw~None
+dmhwb~?BUSY
+dmhwb~?FREE
+dmhwbf
+fl~alloc?
+EOF
+EXPECT=<<EOF
+0x1f08dc50000    113   255 None
+109
+4
+113
+EOF
+RUN

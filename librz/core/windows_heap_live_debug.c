@@ -1450,18 +1450,18 @@ RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 
 				// add blocks to list
-				RzWindowsHeapBlock *heap_block = RZ_NEW0(RzWindowsHeapBlock);
+				RzWindowsHeapEntry *heap_block = RZ_NEW0(RzWindowsHeapEntry);
 				if (!heap_block) {
 					rz_list_free(blocks_list);
 					RtlDestroyQueryDebugBuffer(db);
 					return NULL;
 				}
-				heap_block->headerAddress = address;
-				heap_block->userAddress = (ut64)block->dwAddress;
+				heap_block->header_address = address;
+				heap_block->user_address = (ut64)block->dwAddress;
 				heap_block->size = block->dwSize;
-				strcpy(heap_block->type, type);
-				heap_block->unusedBytes = unusedBytes;
-				heap_block->granularity = granularity;
+				heap_block->flags = (ut8)block->dwFlags;
+				heap_block->unused_bytes = (ut8)unusedBytes;
+				heap_block->is_busy = (block->dwFlags & 0xFFFF) == LF32_FIXED;
 
 				rz_list_append(blocks_list, heap_block);
 			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
@@ -1502,10 +1502,8 @@ RZ_IPI RzList *rz_heap_list(RzCore *core) {
 			RtlDestroyQueryDebugBuffer(db);
 			return NULL;
 		}
-		rzHeapInfo->base = (ut64)heap.Base;
-		rzHeapInfo->blockCount = (ut64)heap.BlockCount;
-		rzHeapInfo->allocated = (ut64)heap.Allocated;
-		rzHeapInfo->committed = (ut64)heap.Committed;
+		rzHeapInfo->base_address = (ut64)heap.Base;
+		rzHeapInfo->total_blocks = (ut32)heap.BlockCount;
 
 		rz_list_append(heaps_list, rzHeapInfo);
 

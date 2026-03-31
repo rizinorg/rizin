@@ -1020,8 +1020,7 @@ RZ_API void rz_core_sysenv_end(RzCore *core);
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
 /* cmd_windows_heap.c */
-RZ_API RZ_OWN RzList /*<RzWindowsHeapBlock *>*/ *rz_heap_windows_blocks_list(RzCore *core);
-RZ_API RZ_OWN RzList /*<RzWindowsHeapInfo *>*/ *rz_heap_windows_heap_list(RzCore *core);
+RZ_API RZ_OWN RzList /*<RzWindowsHeapEntry *>*/ *rz_heap_windows_blocks_list(RzCore *core);
 
 // XXX dupe from rz_bin.h
 /* bin.c */
