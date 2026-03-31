@@ -38,8 +38,8 @@ typedef struct {
 	DbgEngContext *idbg;
 } RzIOWindbg;
 
-#define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, __VA_ARGS__)
-#define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, __VA_ARGS__)
+#define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, ##__VA_ARGS__)
+#define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, ##__VA_ARGS__)
 
 #define DECLARE_CALLBACKS_IMPL(Type, IFace) \
 	typedef struct IFace##_impl { \
@@ -497,7 +497,11 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 			if (strcmp(opt.arg, "l")) {
 				target = TARGET_LOCAL_KERNEL;
 			} else if (strcmp(opt.arg, "qm")) {
+#ifdef DEBUG_ENGOPT_KD_QUIET_MODE
 				ITHISCALL(dbgCtrl, AddEngineOptions, DEBUG_ENGOPT_KD_QUIET_MODE);
+#else
+				ITHISCALL(dbgCtrl, AddEngineOptions, 0x00002000);
+#endif
 			} else {
 				target = TARGET_KERNEL;
 				args = opt.arg;

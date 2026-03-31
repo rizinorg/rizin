@@ -8,6 +8,25 @@
 #include <w32dbg_wrap.h>
 #undef WIN32_NO_STATUS
 
+BOOL(WINAPI *w32_ProcessIdToSessionId)(DWORD, DWORD *);
+BOOL(WINAPI *w32_QueryFullProcessImageNameW)(HANDLE, DWORD, LPWSTR, PDWORD);
+// Internal NT functions (winternl.h)
+NTSTATUS(WINAPI *w32_NtQuerySystemInformation)
+(ULONG, PVOID, ULONG, PULONG);
+NTSTATUS(WINAPI *w32_NtQueryInformationThread)
+(HANDLE, ULONG, PVOID, ULONG, PULONG);
+NTSTATUS(WINAPI *w32_NtDuplicateObject)
+(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG);
+NTSTATUS(WINAPI *w32_NtQueryObject)
+(HANDLE, ULONG, PVOID, ULONG, PULONG);
+// fpu access API (Windows 7)
+ut64(WINAPI *w32_GetEnabledXStateFeatures)();
+BOOL(WINAPI *w32_InitializeContext)(PVOID, DWORD, PCONTEXT *, PDWORD);
+BOOL(WINAPI *w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
+PVOID(WINAPI *w32_LocateXStateFeature)
+(PCONTEXT Context, DWORD, PDWORD);
+BOOL(WINAPI *w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64);
+
 const DWORD wait_time = 1000;
 static RzList *lib_list = NULL;
 
@@ -1508,33 +1527,33 @@ RzList *w32_desc_list(int pid) {
 		goto beach;
 	}
 	int i;
-	for (i = 0; i < handleInfo->HandleCount; i++) {
-		SYSTEM_HANDLE handle = handleInfo->Handles[i];
+	for (i = 0; i < handleInfo->Count; i++) {
+		SYSTEM_HANDLE_ENTRY handle = handleInfo->Handle[i];
 		HANDLE dupHandle = NULL;
 		ULONG returnLength;
 		int perms = 0;
-		if (handle.ProcessId != pid) {
+		if (handle.OwnerPid != pid) {
 			continue;
 		}
-		if (w32_NtDuplicateObject(ph, (HANDLE)(size_t)handle.Handle, GetCurrentProcess(), &dupHandle, 0, 0, 0)) {
+		if (w32_NtDuplicateObject(ph, (HANDLE)(size_t)handle.HandleValue, GetCurrentProcess(), &dupHandle, 0, 0, 0)) {
 			continue;
 		}
 		if (w32_NtQueryObject(dupHandle, 2, objectTypeInfo, 0x1000, NULL)) {
 			CloseHandle(dupHandle);
 			continue;
 		}
-		if (wcscmp(objectTypeInfo->Name.Buffer, L"File")) {
+		if (wcscmp(objectTypeInfo->TypeName.Buffer, L"File")) {
 			CloseHandle(dupHandle);
 			continue;
 		}
 		GENERIC_MAPPING *gm = &objectTypeInfo->GenericMapping;
-		if ((handle.GrantedAccess & gm->GenericRead) == gm->GenericRead) {
+		if ((handle.AccessMask & gm->GenericRead) == gm->GenericRead) {
 			perms |= RZ_PERM_R;
 		}
-		if ((handle.GrantedAccess & gm->GenericWrite) == gm->GenericWrite) {
+		if ((handle.AccessMask & gm->GenericWrite) == gm->GenericWrite) {
 			perms |= RZ_PERM_W;
 		}
-		if ((handle.GrantedAccess & gm->GenericExecute) == gm->GenericExecute) {
+		if ((handle.AccessMask & gm->GenericExecute) == gm->GenericExecute) {
 			perms |= RZ_PERM_X;
 		}
 		if (w32_NtQueryObject(dupHandle, 1, objectNameInfo, objectNameInfo_sz, &returnLength)) {
@@ -1551,7 +1570,7 @@ RzList *w32_desc_list(int pid) {
 		PUNICODE_STRING objectName = objectNameInfo;
 		if (objectName->Length) {
 			char *name = rz_utf16_to_utf8_l(objectName->Buffer, objectName->Length / 2);
-			desc = rz_debug_desc_new(handle.Handle, name, perms, '?', 0);
+			desc = rz_debug_desc_new(handle.HandleValue, name, perms, '?', 0);
 			if (!desc) {
 				free(name);
 				break;
@@ -1559,8 +1578,8 @@ RzList *w32_desc_list(int pid) {
 			rz_list_append(ret, desc);
 			free(name);
 		} else {
-			char *name = rz_utf16_to_utf8_l(objectTypeInfo->Name.Buffer, objectTypeInfo->Name.Length / 2);
-			desc = rz_debug_desc_new(handle.Handle, name, perms, '?', 0);
+			char *name = rz_utf16_to_utf8_l(objectTypeInfo->TypeName.Buffer, objectTypeInfo->TypeName.Length / 2);
+			desc = rz_debug_desc_new(handle.HandleValue, name, perms, '?', 0);
 			if (!desc) {
 				free(name);
 				break;

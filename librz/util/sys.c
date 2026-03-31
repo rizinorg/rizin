@@ -89,12 +89,12 @@ extern char **environ;
 #include <VersionHelpers.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
-#ifdef _MSC_VER
+#if __WINDOWS__
 #include <psapi.h>
 #include <dbghelp.h>
 #include <process.h> // to allow getpid under windows msvc compilation
 #include <direct.h> // to allow getcwd under windows msvc compilation
-#endif /* _MSC_VER */
+#endif /* __WINDOWS__ */
 
 typedef BOOL(WINAPI *SetProcessMitigationPolicy_t)(
 	PROCESS_MITIGATION_POLICY mitigation_policy,
@@ -1647,7 +1647,16 @@ RZ_API int rz_sys_pipe_close(int fd) {
 }
 #endif
 
-#if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
+#if __WINDOWS__
+/**
+ * This is a wrap function on Windows to suppress GCC warning when compiled using MinGW GCC.
+ * Microsoft ensures this function exist, so we donot perform a check.
+ */
+RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
+	intptr_t res = _execv(pathname, (const char *const *)argv);
+	return (int)res;
+}
+#elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execv(RZ_NONNULL const char *pathname, RZ_NONNULL char *const argv[]) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(pathname) && argv && RZ_STR_ISNOTEMPTY(argv[0]), -1);
 	parent_lock_enter();
