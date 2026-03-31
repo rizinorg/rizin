@@ -436,6 +436,47 @@ beach:
 	return ret ? evalFlag(f, ret) : NULL;
 }
 
+static bool is_auto_aav_flag(const RzFlagItem *flag) {
+	return flag && !RZ_STR_ISEMPTY(flag->name) && rz_str_startswith(flag->name, "aav.");
+}
+
+/**
+ * \brief Get the preferred flag item at an offset.
+ *
+ * The preferred item follows the standard space priority and avoids returning
+ * auto-generated `aav.*` entries when a non-`aav.*` fallback exists at the
+ * same offset.
+ *
+ * \param f The flag instance.
+ * \param off The offset to query.
+ *
+ * \return The preferred flag item, or NULL if none exists.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_preferred_item(RZ_NONNULL RzFlag *f, ut64 off) {
+	rz_return_val_if_fail(f, NULL);
+
+	RzFlagItem *preferred = rz_flag_get_by_spaces(f, off,
+		"symbols",
+		"imports",
+		"relocs",
+		"symbols.sections",
+		"functions",
+		"globals",
+		"strings",
+		"resources",
+		"sections",
+		"segments",
+		NULL);
+	if (!preferred || !is_auto_aav_flag(preferred)) {
+		return preferred;
+	}
+	RzFlagItem *fallback = rz_flag_get_i(f, off);
+	if (fallback && !is_auto_aav_flag(fallback)) {
+		return fallback;
+	}
+	return preferred;
+}
+
 static bool isFunctionFlag(const char *n) {
 	return (!strncmp(n, "sym.func.", 9) || !strncmp(n, "method.", 7) || !strncmp(n, "sym.", 4) || !strncmp(n, "func.", 5) || !strncmp(n, "fcn.0", 5));
 }
