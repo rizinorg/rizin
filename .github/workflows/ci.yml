@@ -372,7 +372,7 @@ jobs:
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
       - name: Upload coverage to Codecov
         if: matrix.coverage && matrix.enabled
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: build/
