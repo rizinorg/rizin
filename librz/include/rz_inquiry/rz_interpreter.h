@@ -24,6 +24,9 @@
 #define RZ_INTERPRETER_ADDR_RBUF_SIZE  1024
 #define RZ_INTERPRETER_YIELD_RBUF_SIZE 128
 
+typedef struct rz_intp_state RzIntpState;
+typedef enum rz_intp_state_flag RzIntpStateFlag;
+
 /**
  * \brief The abstractions this module supports.
  */
@@ -266,6 +269,11 @@ struct rz_interpreter_set {
 	 */
 	RZ_BORROW void *intrpr_priv;
 };
+
+RZ_API RZ_OWN RzIntpState *rz_intp_state_new();
+RZ_API void rz_intp_state_free(RZ_OWN RZ_NULLABLE RzIntpState *state);
+RZ_API RzIntpStateFlag rz_intp_state_get(RZ_BORROW RZ_NONNULL RzIntpState *state);
+RZ_API void rz_intp_state_set(RZ_BORROW RZ_NONNULL RzIntpState *state, RzIntpStateFlag flag);
 
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
