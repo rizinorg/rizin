@@ -1303,7 +1303,7 @@ bool test_rz_buf_whole_buf(void) {
 	mu_end;
 }
 
-static ut8 *custom_whole_buf(RzBuffer *b, ut64 *sz) {
+static ut8 *custom_whole_buf(const RzBuffer *b, ut64 *sz) {
 	CustomCtx *ctx = b->priv;
 	ut8 *r = malloc(10);
 	ctx->whole_buf = r;
