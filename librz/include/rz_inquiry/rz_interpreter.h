@@ -24,8 +24,14 @@
 #define RZ_INTERPRETER_ADDR_RBUF_SIZE  1024
 #define RZ_INTERPRETER_YIELD_RBUF_SIZE 128
 
-typedef struct rz_intp_state RzIntpState;
-typedef enum rz_intp_state_flag RzIntpStateFlag;
+typedef struct rz_intp_run_state RzIntpRunState;
+
+typedef enum rz_intp_state_flag {
+	RZ_INTP_RUN_STATE_INIT, ///< Initialization state.
+	RZ_INTP_RUN_STATE_EMU, ///< Emulation state.
+	RZ_INTP_RUN_STATE_CLEAN, ///< Cleaning state.
+	RZ_INTP_RUN_STATE_TERM, ///< Termination state.
+} RzIntpRunStateFlag;
 
 /**
  * \brief The abstractions this module supports.
@@ -223,7 +229,15 @@ typedef struct {
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
+	// TODO: Move this one into each plugin?
 	RzInterpreterAbstrState *astate; ///< The abstract state of the interpreter.
+
+	RzIntpRunState *run_state; ///< The state the interpreter is currently in.
+	/**
+	 * \brief The semaphore to sync RzInquiry and the interpreter between the Clean and Init run state.
+	 */
+	RzThreadSemaphore *run_state_sync;
+
 	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
 
 	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
@@ -237,29 +251,9 @@ struct rz_interpreter_set {
 	 */
 	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldRBuf *>*/ *yield_rbufs;
 	/**
-	 * \brief This flag signals if an interpreter is executing IL ops for.
-	 * With the exception of an error state, this flag should
-	 * only be toggled by the interpreter itself.
-	 */
-	RzAtomicBool *emulating;
-	/**
-	 * \brief This flag signals if an should stand by for entry points to start interpeting from.
-	 * With the exception of an error state, this flag should
-	 * only be toggled by the inquiry module.
-	 */
-	RzAtomicBool *on_duty;
-	/**
 	 * \brief Ignored address ranges.
 	 */
 	const RzVector /*<RzInterval>*/ *ignored_code;
-	/**
-	 * \brief The entry points for the interpreters.
-	 */
-	RzThreadRingBuf /*<ut64>*/ *entry_points;
-
-	RzThreadCond *inq_intrpr_sync; ///< Condition to let interpreter wait until inquiry set up everything.
-	RzThreadLock *inq_intrpr_lock; ///< Lock for task_sync condition.
-	bool intrp_waits_to_run;
 	/**
 	 * \brief The interpreter plugin.
 	 */
@@ -270,10 +264,11 @@ struct rz_interpreter_set {
 	RZ_BORROW void *intrpr_priv;
 };
 
-RZ_API RZ_OWN RzIntpState *rz_intp_state_new();
-RZ_API void rz_intp_state_free(RZ_OWN RZ_NULLABLE RzIntpState *state);
-RZ_API RzIntpStateFlag rz_intp_state_get(RZ_BORROW RZ_NONNULL RzIntpState *state);
-RZ_API void rz_intp_state_set(RZ_BORROW RZ_NONNULL RzIntpState *state, RzIntpStateFlag flag);
+RZ_API RZ_OWN RzIntpRunState *rz_intp_run_state_new();
+RZ_API void rz_intp_run_state_free(RZ_OWN RZ_NULLABLE RzIntpRunState *state);
+RZ_API RzIntpRunStateFlag rz_intp_run_state_get(RZ_BORROW RZ_NONNULL RzIntpRunState *state);
+RZ_API void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
+RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
 
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);

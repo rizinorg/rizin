@@ -171,14 +171,14 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->io_result_rbuf) {
 		rz_th_ring_buf_free(iset->io_result_rbuf);
 	}
-	if (iset->emulating) {
-		rz_atomic_bool_free(iset->emulating);
-	}
-	if (iset->on_duty) {
-		rz_atomic_bool_free(iset->on_duty);
+	if (iset->run_state_sync) {
+		rz_th_sem_free(iset->run_state_sync);
 	}
 	if (iset->astate) {
 		rz_interpreter_abstr_state_free(iset->astate);
+	}
+	if (iset->run_state) {
+		rz_intp_run_state_free(iset->run_state);
 	}
 	if (iset->il_vm) {
 		rz_analysis_il_vm_free(iset->il_vm);
@@ -188,12 +188,6 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	}
 	if (iset->entry_points) {
 		rz_th_ring_buf_free(iset->entry_points);
-	}
-	if (iset->inq_intrpr_lock) {
-		rz_th_lock_free(iset->inq_intrpr_lock);
-	}
-	if (iset->inq_intrpr_sync) {
-		rz_th_cond_free(iset->inq_intrpr_sync);
 	}
 	free(iset);
 }
@@ -360,17 +354,14 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 
 	iset->plugin = plugin;
 	iset->astate = state;
+	iset->run_state = rz_intp_run_state_new();
 	iset->il_vm = il_vm;
 	iset->il_queue = il_queue;
 	iset->branch_rbuf = branch_rbuf;
 	iset->yield_rbufs = yield_rbufs;
 	iset->io_request_rbuf = io_request_rbuf;
 	iset->io_result_rbuf = io_result_rbuf;
-	iset->emulating = rz_atomic_bool_new(true);
-	iset->on_duty = rz_atomic_bool_new(true);
-	iset->inq_intrpr_lock = rz_th_lock_new(false);
-	iset->inq_intrpr_sync = rz_th_cond_new();
-	iset->intrp_waits_to_run = false;
+	iset->run_state_sync = rz_th_sem_new(0);
 	iset->entry_points = entry_points;
 	iset->ignored_code = ignored_code;
 	return iset;
@@ -488,19 +479,20 @@ static bool setup_intrpr_state(
  * Main interpretation.
  */
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
-	rz_goto_if_fail(iset &&
+	rz_return_val_if_fail(iset &&
 			iset->astate &&
 			iset->branch_rbuf &&
 			iset->il_queue &&
 			iset->yield_rbufs &&
-			iset->emulating &&
+			iset->run_state_sync &&
 			iset->plugin &&
 			iset->plugin->eval &&
 			iset->plugin->successors &&
 			iset->plugin->init_state &&
 			iset->plugin->fini_state &&
 			iset->plugin->hash_state,
-		entry_assert_error);
+		false);
+
 	bool success = true;
 
 	RZ_LOG_DEBUG("INTERPRETER Main: Hello.\n");
@@ -518,90 +510,107 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	// This vector must have the same order as the elements pushed into branch_queue.
 	RzVector *succ_states = NULL;
 	const RzInterpreterILBB *il_bb = NULL;
+	ut64 astate_hash = 0;
 
-	while (rz_atomic_bool_get(iset->on_duty)) {
-		ut64 entry_point;
-		if (rz_th_ring_buf_take_blocking(iset->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
-			rz_atomic_bool_set(iset->on_duty, false);
-			rz_atomic_bool_set(iset->on_duty, false);
-			return true;
-		}
+// TODO: It is probably better to make the following stuff while-loops.
+// Because otherwise it doesn't make sense without the docs.
+// But while debugging and developing, I keep it this way to separate clearly
+// what the interpreter does in each state.
 
-		// Initializes the current interpreter's private data and its state.
-		if (!setup_intrpr_state(iset, entry_point, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states)) {
-			goto pre_emu_loop_error;
-		}
+INIT: {
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_INIT);
 
-		rz_atomic_bool_set(iset->emulating, true);
-		ut64 out_hash = 0;
-		while (rz_atomic_bool_get(iset->emulating)) {
-			iset->astate->bb_addr = il_bb->bb_addr;
-			iset->astate->bb_size = il_bb->size;
-			// Evaluate the effect on the input state.
-			if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
-				RZ_LOG_DEBUG("Eval failed\n");
-				goto emu_done;
-			}
-			out_hash = plugin->hash_state(iset->astate, iset->intrpr_priv);
-
-			// Add output state hash to the reachable states and
-			// set a flag if it was a new state.
-			size_t psize = rz_set_u_size(reachable_states);
-			rz_set_u_add(reachable_states, out_hash);
-			bool new_state_reached = psize < rz_set_u_size(reachable_states);
-
-			// Determine the successor effects to evaluate.
-			// Only newly reached states are allowed to add successors.
-			if (!(new_state_reached && choose_next_pc(iset, out_hash, tmp_succ_addr, succ_states, il_bb))) {
-				// No new state or address means we can stop interpreting.
-				// Note, that we can't use the queues as cancel condition because they
-				// are asynchronous and checking them would introduces race conditions.
-				// TODO: This doesn't work if the interpreter can produce multiple out states.
-				goto emu_done;
-			}
-
-			// Set effect and state for next evaluation.
-			SuccessorState next = { 0 };
-			rz_vector_pop_front(succ_states, &next);
-			if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
-				RZ_LOG_DEBUG("Getting il bb failed\n");
-				// The il op lifting failed. Likely because the PC
-				// pointed to an unmapped region.
-				goto emu_done;
-			}
-			if (!plugin->set_pc(iset->astate, next.addr, iset->intrpr_priv)) {
-				rz_warn_if_reached();
-				goto emu_done;
-			}
-		}
-	emu_done:
-		rz_atomic_bool_set(iset->emulating, false);
-		RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
-		RZ_FREE_CUSTOM(succ_states, rz_vector_free);
-		RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
-		if (iset->plugin->fini) {
-			iset->plugin->fini(iset->intrpr_priv);
-		}
-		iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
-
-		// Wait until RzInquiry asks to start again.
-		rz_th_lock_enter(iset->inq_intrpr_lock);
-		iset->intrp_waits_to_run = true;
-		rz_th_cond_wait(iset->inq_intrpr_sync, iset->inq_intrpr_lock);
-		iset->intrp_waits_to_run = false;
-		rz_th_lock_leave(iset->inq_intrpr_lock);
+	// Get the next entry point.
+	ut64 entry_point;
+	if (rz_th_ring_buf_take_blocking(iset->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
+		// No entry point to emulate. Interpreter is done.
+		success = true;
+		goto TERM;
 	}
-	rz_atomic_bool_set(iset->on_duty, false);
+
+	// Initializes the current interpreter's private data and its state.
+	if (!setup_intrpr_state(iset, entry_point, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states)) {
+		success = false;
+		goto TERM;
+	}
+
+	goto EMU;
+}
+
+EMU: {
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_EMU);
+
+	iset->astate->bb_addr = il_bb->bb_addr;
+	iset->astate->bb_size = il_bb->size;
+	// Evaluate the effect on the abstract state.
+	if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
+		RZ_LOG_DEBUG("Eval failed\n");
+		goto CLEAN;
+	}
+	astate_hash = plugin->hash_state(iset->astate, iset->intrpr_priv);
+
+	// Add output state hash to the reachable states and
+	// set a flag if it was a new state.
+	size_t psize = rz_set_u_size(reachable_states);
+	rz_set_u_add(reachable_states, astate_hash);
+	bool new_state_reached = psize < rz_set_u_size(reachable_states);
+
+	// Determine the successor effects to evaluate.
+	// Only newly reached states are allowed to add successors.
+	if (!(new_state_reached && choose_next_pc(iset, astate_hash, tmp_succ_addr, succ_states, il_bb))) {
+		// No new state or address means we can stop interpreting.
+		// Note, that we can't use the queues as cancel condition because they
+		// are asynchronous and checking them would introduces race conditions.
+		// TODO: This doesn't work if the interpreter can produce multiple out states.
+		goto CLEAN;
+	}
+
+	// Set effect and state for next evaluation.
+	SuccessorState next = { 0 };
+	rz_vector_pop_front(succ_states, &next);
+	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+		RZ_LOG_DEBUG("Getting il bb failed\n");
+		// The il op lifting failed. Likely because the PC
+		// pointed to an unmapped region.
+		goto CLEAN;
+	}
+	if (!plugin->set_pc(iset->astate, next.addr, iset->intrpr_priv)) {
+		rz_warn_if_reached();
+		goto CLEAN;
+	}
+
+	// Loop back. Interpret next basic block.
+	goto EMU;
+}
+
+CLEAN: {
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_CLEAN);
+
+	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
+	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
+	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
+	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
+	if (iset->plugin->fini) {
+		iset->plugin->fini(iset->intrpr_priv);
+	}
+
+	// Wait until RzInquiry asks to start again.
+	rz_th_sem_wait(iset->run_state_sync);
+
+	// Clean can only transition to Init.
+	goto INIT;
+}
+
+TERM: {
+	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_TERM);
+
+	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
+	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
+	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
+	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
+	if (iset->plugin->fini) {
+		iset->plugin->fini(iset->intrpr_priv);
+	}
 	return success;
-
-pre_emu_loop_error:
-	RZ_LOG_DEBUG("pre_loop_error\n");
-	rz_warn_if_reached();
-	rz_atomic_bool_set(iset->on_duty, false);
-	success = false;
-	goto emu_done;
-
-entry_assert_error:
-	rz_atomic_bool_set(iset->on_duty, false);
-	return false;
+}
 }
