@@ -9,10 +9,10 @@
 
 static bool value_indicates_ret_addr_write(RzInterpreterSet *iset, ProtoIntrprAbstrData *val) {
 	return val->is_concrete &&
-		(rz_bv_to_ut64(val->bv) == iset->state->bb_addr + iset->state->bb_size ||
+		(rz_bv_to_ut64(val->bv) == iset->astate->bb_addr + iset->astate->bb_size ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(iset->state->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(iset->state->pc->abstr_data)->bv)));
+			(rz_str_startswith(iset->astate->arch_name, "sparc") && rz_bv_to_ut64(val->bv) == rz_bv_to_ut64(AD(iset->astate->pc->abstr_data)->bv)));
 }
 
 RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
@@ -20,7 +20,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 	size_t insn_pkt_size,
 	ProtoIntrprPluginData *plugin_data) {
 	STACK_ABSTR_DATA_OUT(eval_out);
-	ProtoIntrprAbstrData *pc = AD(iset->state->pc->abstr_data);
+	ProtoIntrprAbstrData *pc = AD(iset->astate->pc->abstr_data);
 
 	switch (effect->code) {
 	default:
@@ -68,8 +68,8 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 		if (value_indicates_ret_addr_write(iset, &eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
 			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
-			plugin_data->call_cand.npc = iset->state->bb_addr + iset->state->bb_size;
-			plugin_data->call_cand.bb_addr = iset->state->bb_addr;
+			plugin_data->call_cand.npc = iset->astate->bb_addr + iset->astate->bb_size;
+			plugin_data->call_cand.bb_addr = iset->astate->bb_addr;
 			plugin_data->call_cand.in_mem = false;
 		}
 		break;
@@ -100,7 +100,7 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 			report_yield_call_candiate(iset, plugin_data);
 		}
 		memset(&plugin_data->call_cand, 0, sizeof(plugin_data->call_cand));
-		copy_abstr_data(iset->state->pc->abstr_data, &eval_out);
+		copy_abstr_data(iset->astate->pc->abstr_data, &eval_out);
 		break;
 	}
 	case RZ_IL_OP_BRANCH: {
@@ -160,8 +160,8 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 		}
 		if (value_indicates_ret_addr_write(iset, &eval_out)) {
 			plugin_data->call_cand.store_addr = rz_bv_to_ut64(pc->bv);
-			plugin_data->call_cand.npc = iset->state->bb_addr + iset->state->bb_size;
-			plugin_data->call_cand.bb_addr = iset->state->bb_addr;
+			plugin_data->call_cand.npc = iset->astate->bb_addr + iset->astate->bb_size;
+			plugin_data->call_cand.bb_addr = iset->astate->bb_addr;
 			plugin_data->call_cand.in_mem = true;
 		}
 		report_yield_xref(iset, insn_pkt_size, rz_bv_to_ut64(pc->bv), &st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);

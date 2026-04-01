@@ -177,8 +177,8 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->on_duty) {
 		rz_atomic_bool_free(iset->on_duty);
 	}
-	if (iset->state) {
-		rz_interpreter_abstr_state_free(iset->state);
+	if (iset->astate) {
+		rz_interpreter_abstr_state_free(iset->astate);
 	}
 	if (iset->il_vm) {
 		rz_analysis_il_vm_free(iset->il_vm);
@@ -359,7 +359,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	}
 
 	iset->plugin = plugin;
-	iset->state = state;
+	iset->astate = state;
 	iset->il_vm = il_vm;
 	iset->il_queue = il_queue;
 	iset->branch_rbuf = branch_rbuf;
@@ -406,7 +406,7 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	bool has_succsessor = true;
 
 	// Determine successors and increase the reference counts for the current out state.
-	if (!iset->plugin->successors(iset->state, tmp_succ_addr, iset->intrpr_priv)) {
+	if (!iset->plugin->successors(iset->astate, tmp_succ_addr, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -458,7 +458,7 @@ static bool setup_intrpr_state(
 		iset->plugin->init(&iset->intrpr_priv);
 	}
 
-	if (!iset->plugin->init_state(iset->state, entry_point, iset->intrpr_priv)) {
+	if (!iset->plugin->init_state(iset->astate, entry_point, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -489,7 +489,7 @@ static bool setup_intrpr_state(
  */
 RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	rz_goto_if_fail(iset &&
-			iset->state &&
+			iset->astate &&
 			iset->branch_rbuf &&
 			iset->il_queue &&
 			iset->yield_rbufs &&
@@ -535,14 +535,14 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		rz_atomic_bool_set(iset->emulating, true);
 		ut64 out_hash = 0;
 		while (rz_atomic_bool_get(iset->emulating)) {
-			iset->state->bb_addr = il_bb->bb_addr;
-			iset->state->bb_size = il_bb->size;
+			iset->astate->bb_addr = il_bb->bb_addr;
+			iset->astate->bb_size = il_bb->size;
 			// Evaluate the effect on the input state.
 			if (!plugin->eval(iset, il_bb, iset->intrpr_priv)) {
 				RZ_LOG_DEBUG("Eval failed\n");
 				goto emu_done;
 			}
-			out_hash = plugin->hash_state(iset->state, iset->intrpr_priv);
+			out_hash = plugin->hash_state(iset->astate, iset->intrpr_priv);
 
 			// Add output state hash to the reachable states and
 			// set a flag if it was a new state.
@@ -569,7 +569,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 				// pointed to an unmapped region.
 				goto emu_done;
 			}
-			if (!plugin->set_pc(iset->state, next.addr, iset->intrpr_priv)) {
+			if (!plugin->set_pc(iset->astate, next.addr, iset->intrpr_priv)) {
 				rz_warn_if_reached();
 				goto emu_done;
 			}
@@ -582,7 +582,7 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 		if (iset->plugin->fini) {
 			iset->plugin->fini(iset->intrpr_priv);
 		}
-		iset->plugin->fini_state(iset->state, iset->intrpr_priv);
+		iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
 
 		// Wait until RzInquiry asks to start again.
 		rz_th_lock_enter(iset->inq_intrpr_lock);
