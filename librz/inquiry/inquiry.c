@@ -459,6 +459,12 @@ static void open_ipc_obj(RzInterpreterSet *iset) {
 	rz_th_queue_open(iset->il_queue);
 }
 
+struct ituple {
+	RzThread *ithread;
+	RzInterpreterSet *iset;
+	RzIntpRunStateFlag expected_run_state;
+}
+
 /**
  * A function to call the prototype interpreter.
  * Usually these tasks will be split between different caches and yield consumers.
@@ -468,7 +474,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	// All the things we need
 	bool return_code = true;
-	RzInterpreterSet *iset = NULL;
+	RzInterpreterSet *intp_iset = NULL;
 	HtUP *il_cache = NULL;
 	RzThread *interpr_th = NULL;
 	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
@@ -524,7 +530,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	iset = rz_interpreter_set_new(
+	intp_iset = rz_interpreter_set_new(
 		core->analysis,
 		prototype->p_interpreter,
 		RZ_INTERPRETER_ABSTRACTION_CONST,
@@ -533,9 +539,9 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		ignored_code);
 	ut64 entry_point = 0;
 	rz_vector_pop(entry_points, &entry_point);
-	rz_th_ring_buf_put(iset->entry_points, &entry_point);
+	rz_th_ring_buf_put(intp_iset->entry_points, &entry_point);
 
-	if (!iset) {
+	if (!intp_iset) {
 		return_code = false;
 		rz_warn_if_reached();
 		goto error_free;
@@ -543,25 +549,31 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 
 	// Dispatch prototype interpreter into a thread.
 	RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
-	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, iset);
+	interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
+	struct ituple iset_map[] = {
+		{ .ithread = interpr_th,
+			.iset = intp_iset,
+			.expected_run_state = RZ_INTP_RUN_STATE_INIT } };
 
-	while (rz_atomic_bool_get(iset->on_duty)) {
+	// TODO: Add the other threads.
+	for (ut64 i = 0; ; ) {
+		if (rz_cons_is_breaked()) {
+			user_sent_signal = true;
+			goto fatal_error;
+		}
+		RzInterpreterSet *iset = iset_map[i].iset;
+		RzIntpRunStateFlag exp_rs = iset_map[i].expected_run_state;
 
-		// From here on, the code plays the role of the cache, IO handler,
-		// and yield consumer.
-		// - Waiting for new Effects to be requested and sending them.
-		// - Handling IO requests.
-		// - Receiving and adding the found xrefs to RzAnalysis.
-		// In the final implementation each of those roles would be split into
-		// two or more separated modules running in parallel.
-		RZ_LOG_DEBUG("INQUIRY: Start IL providing loop.\n");
-		while (rz_atomic_bool_get(iset->emulating)) {
-			if (rz_cons_is_breaked()) {
-				rz_atomic_bool_set(iset->emulating, false);
-				rz_atomic_bool_set(iset->on_duty, false);
-				user_sent_signal = true;
-				goto end_interpretation;
-			}
+		if (rz_intp_run_state_get(iset->run_state) == RZ_INTP_RUN_STATE_INIT && exp_rs == RZ_INTP_RUN_STATE_INIT) {
+			
+		} else if (rz_intp_run_state_get(iset->run_state) == RZ_INTP_RUN_STATE_EMU && exp_rs == RZ_INTP_RUN_STATE_EMU) {
+			// From here on, the code plays the role of the cache, IO handler,
+			// and yield consumer.
+			// - Waiting for new Effects to be requested and sending them.
+			// - Handling IO requests.
+			// - Receiving and adding the found xrefs to RzAnalysis.
+			// In the final implementation each of those roles would be split into
+			// two or more separated modules running in parallel.
 
 			// =========
 			// IL CACHE
@@ -579,8 +591,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 					} else if (r == RZ_THREAD_RING_BUF_OK) {
 						if (!send_next_il_bb(core, iset->il_queue, il_cache, branch_targets, &branch)) {
 							// Signal interpreter the lifting failed.
-							rz_atomic_bool_set(iset->emulating, false);
-							break;
+							rz_th_queue_close(iset->il_queue);
+							iset_map[i].expected_run_state = RZ_INTP_RUN_STATE_CLEAN;
 						}
 					}
 				}
@@ -601,13 +613,13 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 					RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(iset->io_request_rbuf, &io_req);
 					if (r == RZ_THREAD_RING_BUF_CLOSED) {
 						rz_warn_if_reached();
-						break;
+						goto fatal_error;
 					} else if (r == RZ_THREAD_RING_BUF_OK) {
 						RzInterpreterIOResult io_res = { 0 };
 						handle_io_request(core, &iset->il_vm->vm->vm_memory, &io_req, &io_res);
 						if (rz_th_ring_buf_put(iset->io_result_rbuf, &io_res) != RZ_THREAD_RING_BUF_OK) {
 							rz_warn_if_reached();
-							break;
+							goto fatal_error;
 						}
 					}
 				}
@@ -622,45 +634,32 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			{
 				if (!handle_yields(core, iset->yield_rbufs)) {
 					rz_warn_if_reached();
-					rz_atomic_bool_set(iset->emulating, false);
-					rz_atomic_bool_set(iset->on_duty, false);
-					break;
+					goto fatal_error;
 				}
 			}
 		}
 
-		// =================
-		// CLEAR IPC OBJECTS
-		// =================
 		close_reset_ipc_obj(iset);
 
+	in_clean:
 		// busy wait until the interpreter waits to take the next emulation task.
-		RZ_LOG_DEBUG("INQUIRY: Wait until interpreter thread is ready.\n");
-		bool intrp_waits_to_run = false;
-		do {
-			rz_th_lock_enter(iset->inq_intrpr_lock);
-			intrp_waits_to_run = iset->intrp_waits_to_run;
-			rz_th_lock_leave(iset->inq_intrpr_lock);
-		} while (!intrp_waits_to_run);
-		RZ_LOG_DEBUG("INQUIRY: Interpreter thread is ready.\n");
-
-		// TODO: This syncro thingy doesn't work as nicely as I wish.
+		rz_th_sem_post(iset->run_state_sync);
 		open_ipc_obj(iset);
 
+	in_init:
 		// At this point the interpreter is finished and is waiting for the next emulation task.
 		if (!add_entry_point(iset, il_cache, entry_points, branch_targets)) {
 			// Non left.
-			rz_atomic_bool_set(iset->on_duty, false);
+			goto fatal_error;
 		}
-		rz_atomic_bool_set(iset->emulating, true);
-		rz_th_cond_signal_all(iset->inq_intrpr_sync);
 	}
 
-end_interpretation:
+fatal_error:
 
 	RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
-	rz_atomic_bool_set(iset->on_duty, false);
-	close_reset_ipc_obj(iset);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(iset_map); i++) {
+		close_reset_ipc_obj(iset_map[i].iset);
+	}
 	rz_th_wait(interpr_th);
 	bool interpr_ret = rz_th_get_retv(interpr_th);
 	rz_th_free(interpr_th);

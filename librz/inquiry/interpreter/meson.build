@@ -13,6 +13,7 @@ interpreter_plugins = {
 
 rz_interpreter_sources = [
   'interpreter.c',
+  'state.c',
   'p/interpreter_prototype.c',
   'prototype/eval_effect.c',
   'prototype/eval_pure.c',
