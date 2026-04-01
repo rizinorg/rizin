@@ -122,8 +122,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 		} else {
 			rz_heap_debug_block_win(core, NULL, mode, false);
 		}
+		return RZ_CMD_STATUS_OK;
 	}
-	return RZ_CMD_STATUS_OK;
 #endif
 
 	RzWindowsHeapConfig config;
