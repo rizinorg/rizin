@@ -293,18 +293,19 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
-	char buf[20];
-
-	if (pid > 0) {
-		rz_debug_attach(core->dbg, pid);
-	} else {
-		if (core->file && core->io) {
-			rz_debug_attach(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd));
-		}
+	char uri[64];
+	rz_strf(uri, "dbg://%d", pid);
+	RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+	if (!cfile) {
+		RZ_LOG_ERROR("Failed to open file for pid %d\n", pid);
+		return;
 	}
-	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
-	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
-	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
+	// Create an IO map covering the full address space so memory
+	// reads/writes are routed through this debug descriptor.
+	rz_io_map_add(core->io, cfile->fd, RZ_PERM_RW, 0LL, 0LL, UT64_MAX);
+
+	const char *debugbackend = rz_config_get(core->config, "dbg.backend");
+	rz_core_setup_debugger(core, debugbackend, true);
 }
 
 static void bits_to_string(ut32 bits, char output[32]) {
