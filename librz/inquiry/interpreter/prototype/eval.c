@@ -21,7 +21,7 @@ bool report_yield_xref(
 		return true;
 	}
 	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(iset->state->arch_name, "hexagon") &&
+		RZ_STR_EQ(iset->astate->arch_name, "hexagon") &&
 		from + insn_pkt_size == rz_bv_to_ut64(to->bv)) {
 		// Ugly work around.
 		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
@@ -39,7 +39,7 @@ bool report_yield_xref(
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
 	if (yrbuf->filter(&to_addr, yrbuf->filter_data->io_boundaries)) {
 		RzAnalysisXRef xref = { 0 };
-		xref.bb_addr = iset->state->bb_addr;
+		xref.bb_addr = iset->astate->bb_addr;
 		xref.from = from;
 		xref.to = to_addr;
 		xref.type = type;
@@ -84,13 +84,13 @@ void write_var_to_state(RzInterpreterSet *iset,
 		rz_warn_if_reached();
 		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = iset->state->globals;
+		ht_vals = iset->astate->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = iset->state->locals;
+		ht_vals = iset->astate->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = iset->state->lets;
+		ht_vals = iset->astate->lets;
 		break;
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -118,13 +118,13 @@ bool read_var_from_state(RzInterpreterSet *iset,
 		rz_warn_if_reached();
 		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = iset->state->globals;
+		ht_vals = iset->astate->globals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = iset->state->locals;
+		ht_vals = iset->astate->locals;
 		break;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = iset->state->lets;
+		ht_vals = iset->astate->lets;
 		break;
 	}
 	RzInterpreterAbstrVal *av = ht_up_find(ht_vals, var_id, NULL);
@@ -163,7 +163,7 @@ bool store_abstr_data(
 	RzInterpreterIORequest io_req = { 0 };
 	io_req.n_bits = rz_bv_len(src->bv);
 	io_req.mem_idx = mem_idx;
-	io_req.big_endian = iset->state->il_config->big_endian;
+	io_req.big_endian = iset->astate->il_config->big_endian;
 
 	io_req.type = RZ_INTERPRETER_IO_WRITE;
 	io_req.addr = addr->bv;
@@ -197,7 +197,7 @@ bool load_abstr_data(
 	io_req.ld_data = out->bv;
 	io_req.mem_idx = mem_idx;
 	io_req.n_bits = n_bits;
-	io_req.big_endian = iset->state->il_config->big_endian;
+	io_req.big_endian = iset->astate->il_config->big_endian;
 	if (rz_th_ring_buf_put(iset->io_request_rbuf, &io_req) != RZ_THREAD_RING_BUF_OK) {
 		return false;
 	}

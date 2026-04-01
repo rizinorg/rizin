@@ -220,7 +220,7 @@ typedef struct {
  */
 RZ_LIFETIME(RzInquiry)
 struct rz_interpreter_set {
-	RzInterpreterAbstrState *state; ///< The abstract state of the interpreter.
+	RzInterpreterAbstrState *astate; ///< The abstract state of the interpreter.
 	RzAnalysisILVM *il_vm; ///< The RzAnalysisILVM for memory IO.
 
 	RzThreadQueue /*<const RzInterpreterILOp *>*/ *il_queue; ///< The queue to receive the IL effects.
