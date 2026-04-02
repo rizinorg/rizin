@@ -106,6 +106,28 @@ RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
 	ht_up_insert(set, u, (void *)1);
 }
 
+static bool take_first(void *user, const ut64 k, const void *v) {
+	ut64 *out = user;
+	*out = k;
+	return false;
+}
+
+/**
+ * \brief Take an element from \p set.
+ * The element is removed from it.
+ * There is no indicator what element is taken, because a set is unordered.
+ *
+ * The set must have a size of 1+ elements.
+ * Otherwise a warning is printed and it returns UT64_MAX.
+ */
+RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set && rz_set_u_size(set) > 0, UT64_MAX);
+	ut64 out = UT64_MAX;
+	ht_up_foreach(set, take_first, &out);
+	rz_set_u_delete(set, out);
+	return out;
+}
+
 /**
  * \brief Check if hash set \p set contains element \p u.
  */
