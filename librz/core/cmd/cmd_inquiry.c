@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_set.h"
 #include <rz_io.h>
 #include <rz_vector.h>
 #include <rz_th.h>
@@ -45,7 +46,7 @@ static RzVector /*<RzInterval>*/ *get_ignored_code_regions(
 
 RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core->analysis && core->io && core->bin->cur && core->bin->cur->o, RZ_CMD_STATUS_ERROR);
-	RzVector *entry_points = rz_vector_new(sizeof(ut64), NULL, NULL);
+	RzSetU *entry_points = rz_set_u_new();
 	if (!entry_points) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -54,12 +55,12 @@ RZ_IPI RzCmdStatus rz_inquiry_interpreter_prototype_handler(RzCore *core, int ar
 	if (argc == 1) {
 		// No specific entry point given. Pick the one provided by the bin plugin.
 		entry_point = rz_bin_get_first_entrypoint(core->bin->cur->o);
-		rz_vector_push(entry_points, &entry_point);
+		rz_set_u_add(entry_points, entry_point);
 	} else {
 		// Add all entry points given as arguments.
 		for (size_t i = 1; i < argc; i++) {
 			ut64 entry_point = rz_num_get(core->num, argv[i]);
-			rz_vector_push(entry_points, &entry_point);
+			rz_set_u_add(entry_points, entry_point);
 		}
 	}
 	RzVector *ignored_code_regions = get_ignored_code_regions(

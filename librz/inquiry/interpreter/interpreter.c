@@ -8,6 +8,7 @@
 #include "rz_analysis.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_itv.h"
+#include "rz_util/rz_log.h"
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_inquiry/rz_interpreter.h>
 #include <rz_th.h>
@@ -186,9 +187,6 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->yield_rbufs) {
 		ht_up_free(iset->yield_rbufs);
 	}
-	if (iset->entry_points) {
-		rz_th_ring_buf_free(iset->entry_points);
-	}
 	free(iset);
 }
 
@@ -199,14 +197,12 @@ static bool setup_ipc_objects(
 	RZ_OUT RzThreadRingBuf **io_request_rbuf,
 	RZ_OUT RzThreadRingBuf **io_result_rbuf,
 	RZ_OUT RzThreadRingBuf **branch_rbuf,
-	RZ_OUT RzThreadRingBuf **entry_points_rbuf,
 	RZ_OUT HtUP **yield_rbufs) {
 	*il_queue = NULL;
 	*io_request_rbuf = NULL;
 	*io_result_rbuf = NULL;
 	*branch_rbuf = NULL;
 	*yield_rbufs = NULL;
-	*entry_points_rbuf = NULL;
 
 	RzInterpreterYieldRBuf *rbuf = NULL;
 	// The queue to pass the Effects to the interpreter.
@@ -233,15 +229,6 @@ static bool setup_ipc_objects(
 	// The branch ring buffer. It is the ring buffer the interpreter can request new Effects over.
 	*branch_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_ADDR_RBUF_SIZE, sizeof(RzInterpreterBranch));
 	if (!*branch_rbuf) {
-		rz_warn_if_reached();
-		rz_pvector_free(sections);
-		goto error_free;
-	}
-
-	// The entry_points ring buffer. It is the ring buffer the interpreter gets
-	// new entry points passed over.
-	*entry_points_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_IL_QUEUE_SIZE, sizeof(ut64));
-	if (!*entry_points_rbuf) {
 		rz_warn_if_reached();
 		rz_pvector_free(sections);
 		goto error_free;
@@ -343,10 +330,9 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzThreadRingBuf *io_request_rbuf = NULL;
 	RzThreadRingBuf *io_result_rbuf = NULL;
 	RzThreadRingBuf *branch_rbuf = NULL;
-	RzThreadRingBuf *entry_points = NULL;
 	RzThreadQueue *il_queue = NULL;
 	HtUP *yield_rbufs = NULL;
-	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, &entry_points, &yield_rbufs)) {
+	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, &yield_rbufs)) {
 		free(iset);
 		rz_analysis_il_vm_free(il_vm);
 		return NULL;
@@ -362,7 +348,6 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	iset->io_request_rbuf = io_request_rbuf;
 	iset->io_result_rbuf = io_result_rbuf;
 	iset->run_state_sync = rz_th_sem_new(0);
-	iset->entry_points = entry_points;
 	iset->ignored_code = ignored_code;
 	return iset;
 }
@@ -440,7 +425,6 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 static bool setup_intrpr_state(
 	RzInterpreterSet *iset,
 	ut64 entry_point,
-	const RzInterpreterILBB **il_bb,
 	RzVector **tmp_succ_addr,
 	RzSetU **reachable_states,
 	RzVector **succ_states) {
@@ -454,21 +438,10 @@ static bool setup_intrpr_state(
 		return false;
 	}
 
-	RzInterpreterBranch branch = { 0 };
-	branch.target_addr = entry_point;
-	if (rz_th_ring_buf_put(iset->branch_rbuf, &branch) != RZ_THREAD_RING_BUF_OK) {
-		rz_warn_if_reached();
-		return false;
-	}
-	if (!rz_th_queue_pop(iset->il_queue, false, (void **)il_bb) || !*il_bb) {
-		rz_warn_if_reached();
-		return false;
-	}
-
 	*tmp_succ_addr = rz_vector_new(sizeof(ut64), NULL, NULL);
 	*succ_states = rz_vector_new(sizeof(SuccessorState), NULL, NULL);
 	*reachable_states = rz_set_u_new();
-	if (!tmp_succ_addr || !succ_states || !*il_bb || !reachable_states) {
+	if (!tmp_succ_addr || !succ_states || !reachable_states) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -518,18 +491,17 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 // what the interpreter does in each state.
 
 INIT: {
+	RZ_LOG_DEBUG("Enter INIT\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_INIT);
 
-	// Get the next entry point.
-	ut64 entry_point;
-	if (rz_th_ring_buf_take_blocking(iset->entry_points, &entry_point) != RZ_THREAD_RING_BUF_OK) {
-		// No entry point to emulate. Interpreter is done.
+	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
+		// No more BBs to interpret. Terminate.
 		success = true;
 		goto TERM;
 	}
 
 	// Initializes the current interpreter's private data and its state.
-	if (!setup_intrpr_state(iset, entry_point, &il_bb, &tmp_succ_addr, &reachable_states, &succ_states)) {
+	if (!setup_intrpr_state(iset, il_bb->bb_addr, &tmp_succ_addr, &reachable_states, &succ_states)) {
 		success = false;
 		goto TERM;
 	}
@@ -538,6 +510,7 @@ INIT: {
 }
 
 EMU: {
+	RZ_LOG_DEBUG("Enter EMU\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_EMU);
 
 	iset->astate->bb_addr = il_bb->bb_addr;
@@ -566,6 +539,7 @@ EMU: {
 	}
 
 	// Set effect and state for next evaluation.
+	il_bb = NULL;
 	SuccessorState next = { 0 };
 	rz_vector_pop_front(succ_states, &next);
 	if (!rz_th_queue_pop(iset->il_queue, false, (void **)&il_bb) || !il_bb) {
@@ -574,6 +548,7 @@ EMU: {
 		// pointed to an unmapped region.
 		goto CLEAN;
 	}
+	RZ_LOG_DEBUG("Received il_bb: 0x%llx\n", il_bb->bb_addr);
 	if (!plugin->set_pc(iset->astate, next.addr, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		goto CLEAN;
@@ -584,14 +559,15 @@ EMU: {
 }
 
 CLEAN: {
+	RZ_LOG_DEBUG("Enter CLEAN\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_CLEAN);
 
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
 	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
 	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
 	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
-	if (iset->plugin->fini) {
-		iset->plugin->fini(iset->intrpr_priv);
+	if (iset->plugin->fini && iset->intrpr_priv) {
+		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
 	}
 
 	// Wait until RzInquiry asks to start again.
@@ -602,14 +578,15 @@ CLEAN: {
 }
 
 TERM: {
+	RZ_LOG_DEBUG("Enter TERM\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_TERM);
 
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
 	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
 	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
 	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
-	if (iset->plugin->fini) {
-		iset->plugin->fini(iset->intrpr_priv);
+	if (iset->plugin->fini && iset->intrpr_priv) {
+		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
 	}
 	return success;
 }

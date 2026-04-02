@@ -81,7 +81,7 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments);
 
-RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzVector /*<ut64>*/ *entry_points, RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
+RZ_API bool rz_inquiry_interpreter(RzCore *core, RZ_OWN RzSetU /*<ut64>*/ *entry_points, RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
 RZ_API bool rz_inquiry_function_deduction(RzAnalysis *analysis,
 	RzInquiry *inquiry,
