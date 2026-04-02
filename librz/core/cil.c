@@ -880,28 +880,18 @@ static bool unicode_colorify_state_is_number(RzILUnicodeColorifyState state) {
 	return state == UNICODE_COLORIFY_STATE_NUMBER;
 }
 
-static bool is_paranthesis(RzCodePoint c) {
-	return c == '(' || c == ')';
-}
-
-static bool is_alpha(RzCodePoint c) {
-	return IS_UPPER(c) || IS_LOWER(c);
-}
-
-static bool is_hex(RzCodePoint c) {
-	return c == 'x' || c == 'X' || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-}
-
 static bool is_varname(RzILUnicodeColorifyState state, RzCodePoint c) {
 	const bool is_varname = unicode_colorify_state_is_varname(state);
-	return (c == '_') || is_alpha(c) || (is_varname && IS_DIGIT(c));
+	return (c == '_') || IS_ALPHA(c) || (is_varname && IS_DIGIT(c));
 }
 
 static bool is_number(RzILUnicodeColorifyState state, RzCodePoint c) {
+	const RzCodePoint subscript_0 = 0x2080;
+	const RzCodePoint subscript_9 = 0x2089;
+	const bool is_subscript_num = RZ_BETWEEN(subscript_0, c, subscript_9);
 	const bool is_varname = unicode_colorify_state_is_varname(state);
 	const bool is_num = unicode_colorify_state_is_number(state);
-	const bool is_subnum = c >= 0x2080 && c <= 0x2089;
-	return (IS_DIGIT(c) && !is_varname) || (is_num && (is_hex(c) || c == '.' || c == 'f' || is_subnum));
+	return (IS_DIGIT(c) && !is_varname) || (is_num && (IS_HEXCHAR(c) || c == 'x' || c == 'X' || c == '.' || is_subscript_num));
 }
 
 RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState state, RzCodePoint c) {
@@ -911,7 +901,7 @@ RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState st
 	if (is_varname(state, c)) {
 		return UNICODE_COLORIFY_STATE_VARNAME;
 	}
-	if (is_paranthesis(c) || IS_WHITECHAR(c)) {
+	if (IS_PARANTHESIS(c) || IS_WHITECHAR(c)) {
 		return UNICODE_COLORIFY_STATE_DEFAULT;
 	}
 	return UNICODE_COLORIFY_STATE_IL_OP;
