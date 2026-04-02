@@ -161,6 +161,19 @@ static void rz_agraph_edge_data_free(void *data) {
 	free(data);
 }
 
+/**
+ * Free a heap-allocated RzGraphEdge whose .data field points to an
+ * AGraphEdgeData allocation.  Used as the list-destructor for back_edges and
+ * long_edges, which own both the RzGraphEdge shell and its AGraphEdgeData.
+ */
+static void graph_edge_with_data_free(void *data) {
+	RzGraphEdge *e = data;
+	if (e) {
+		free(e->data);
+		free(e);
+	}
+}
+
 enum {
 	AGRAPH_EDGE_KIND_UNKNOWN = -1,
 	AGRAPH_EDGE_KIND_TRUE = 0,
@@ -1066,7 +1079,7 @@ static void view_dummy(const RzGraphEdge *e, RzList /*<RzGraphEdge *>*/ *long_ed
 static void remove_cycles(RzAGraph *g) {
 	/* back_edges owns copies of the edge metadata; the graph edges themselves
 	 * are mutated (deleted + re-added reversed) below. */
-	g->back_edges = rz_list_newf(free);
+	g->back_edges = rz_list_newf(graph_edge_with_data_free);
 	if (!g->back_edges) {
 		return;
 	}
@@ -1220,7 +1233,7 @@ static void create_dummy_nodes(RzAGraph *g) {
 		return;
 	}
 
-	g->long_edges = rz_list_newf((RzListFree)free);
+	g->long_edges = rz_list_newf(graph_edge_with_data_free);
 	if (!g->long_edges) {
 		return;
 	}
@@ -1937,6 +1950,7 @@ static void place_single(const RzAGraph *g, int l, const RzGraphNode *bm, const 
 		? rz_graph_in_degree(g->graph, v)
 		: rz_graph_out_degree(g->graph, v);
 	if (len == 0) {
+		rz_iterator_free(it_neigh);
 		return;
 	}
 
