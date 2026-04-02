@@ -50,7 +50,7 @@ typedef struct rz_parse_plugin_t {
 #ifdef RZ_API
 
 /* lifecycle */
-RZ_API RzParse *rz_parse_new(void);
+RZ_API RZ_OWN RzParse *rz_parse_new(void);
 RZ_API void rz_parse_free(RzParse *p);
 
 /* plugins */
@@ -60,11 +60,11 @@ RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin);
 RZ_API bool rz_parse_use(RzParse *p, const char *name);
 
 /* action */
-RZ_API char *rz_parse_pseudocode(RzParse *p, const char *data);
+RZ_API RZ_OWN char *rz_parse_pseudocode(RzParse *p, const char *data);
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
 RZ_API bool rz_parse_subvar(RzParse *p, RZ_NULLABLE RzAnalysisFunction *f, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL RZ_IN char *data, RZ_BORROW RZ_NONNULL RZ_OUT char *str, int len);
-RZ_API char *rz_parse_immtrim(char *opstr);
+RZ_API RZ_BORROW char *rz_parse_immtrim(char *opstr);
 
 #endif
 

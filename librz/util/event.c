@@ -10,7 +10,7 @@ typedef struct rz_event_callback_hook_t {
 	int handle;
 } RzEventCallbackHook;
 
-RZ_API RzEvent *rz_event_new(void *user) {
+RZ_API RZ_OWN RzEvent *rz_event_new(void *user) {
 	RzEvent *ev = RZ_NEW0(RzEvent);
 	if (!ev) {
 		return NULL;

@@ -110,7 +110,7 @@ RZ_API ut32 rz_il_mem_value_len(RzILMem *mem) {
  * \param key address (bitvector)
  * \return data (bitvector)
  */
-RZ_API RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
+RZ_API RZ_OWN RzBitVector *rz_il_mem_load(RzILMem *mem, RzBitVector *key) {
 	rz_return_val_if_fail(mem && key, NULL);
 	return_val_if_key_len_wrong(mem, key, NULL);
 	ut8 v = 0;
@@ -180,7 +180,7 @@ static bool write_n_bits(RzBuffer *buf, RzBitVector *key, RzBitVector *value, bo
  * \param n_bits How many bits to read. This also determines the size of the returned bitvector
  * \return data (bitvector)
  */
-RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian) {
+RZ_API RZ_OWN RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits, bool big_endian) {
 	rz_return_val_if_fail(mem && key && n_bits, NULL);
 	return_val_if_key_len_wrong(mem, key, NULL);
 	return read_n_bits(mem->buf, n_bits, key, big_endian);

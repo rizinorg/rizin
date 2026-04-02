@@ -32,7 +32,7 @@ static void reg_binding_item_fini(RzILRegBindingItem *item, void *unused) {
  *
  * If two registers have the same offset and size, the result is currently undefined.
  */
-RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
+RZ_API RZ_OWN RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg) {
 	rz_return_val_if_fail(reg, NULL);
 	RzILRegBinding *rb = RZ_NEW0(RzILRegBinding);
 	if (!rb) {

@@ -26,7 +26,7 @@ typedef struct rz_il_reg_binding_t {
 
 struct rz_il_vm_t;
 
-RZ_API RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg);
+RZ_API RZ_OWN RzILRegBinding *rz_il_reg_binding_derive(RZ_NONNULL RzReg *reg);
 RZ_API RzILRegBinding *rz_il_reg_binding_exactly(RZ_NONNULL RzReg *reg, size_t regs_count, RZ_NONNULL RZ_BORROW const char **regs);
 RZ_API void rz_il_reg_binding_free(RzILRegBinding *rb);
 

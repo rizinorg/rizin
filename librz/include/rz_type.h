@@ -248,7 +248,7 @@ typedef struct rz_type_format_t {
 
 #ifdef RZ_API
 
-RZ_API RzTypeDB *rz_type_db_new();
+RZ_API RZ_OWN RzTypeDB *rz_type_db_new();
 RZ_API void rz_type_db_free(RzTypeDB *typedb);
 RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, RZ_NONNULL const char *path);
 RZ_API bool rz_type_db_load_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str);

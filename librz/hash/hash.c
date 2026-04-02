@@ -714,7 +714,7 @@ RZ_API RZ_OWN char *rz_hash_cfg_calculate_small_block_string(RZ_NONNULL RzHash *
  * Create a new RzHash object where plugins can be registered and specific
  * configurations can be created from.
  */
-RZ_API RzHash *rz_hash_new(void) {
+RZ_API RZ_OWN RzHash *rz_hash_new(void) {
 	RzHash *rh = RZ_NEW0(RzHash);
 	if (!rh) {
 		return NULL;

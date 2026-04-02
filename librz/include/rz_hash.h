@@ -67,7 +67,7 @@ static inline int rz_hash_plugin_cmp(RZ_NULLABLE const RzHashPlugin *a, RZ_NULLA
 
 #ifdef RZ_API
 
-RZ_API RzHash *rz_hash_new(void);
+RZ_API RZ_OWN RzHash *rz_hash_new(void);
 RZ_API void rz_hash_free(RZ_NULLABLE RzHash *rh);
 RZ_API bool rz_hash_plugin_add(RZ_NONNULL RzHash *rh, RZ_NONNULL RZ_OWN RzHashPlugin *plugin);
 RZ_API bool rz_hash_plugin_del(RZ_NONNULL RzHash *rh, RZ_NONNULL RzHashPlugin *plugin);

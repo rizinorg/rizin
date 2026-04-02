@@ -85,7 +85,7 @@ static int line_sample_cmp(const void *a, const void *b, void *user) {
 	return strcmp(sa->file, sb->file);
 }
 
-RZ_API RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBinSourceLineInfoBuilder *builder) {
+RZ_API RZ_OWN RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBinSourceLineInfoBuilder *builder) {
 	RzBinSourceLineInfo *r = RZ_NEW0(RzBinSourceLineInfo);
 	if (!r) {
 		goto err;

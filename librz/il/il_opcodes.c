@@ -1044,7 +1044,7 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL
 /**
  * Duplicate the given op recursively, for example to reuse it multiple times in another op.
  */
-RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
+RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	rz_return_val_if_fail(op, NULL);
 	RzILOpPure *r = RZ_NEW0(RzILOpPure);
 	if (!r) {

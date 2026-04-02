@@ -27,10 +27,10 @@ typedef char *RzILValidateReport;
  */
 typedef struct rz_il_validate_global_context_t RzILValidateGlobalContext;
 
-RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len);
+RZ_API RZ_OWN RzILValidateGlobalContext *rz_il_validate_global_context_new_empty(ut32 pc_len);
 RZ_API void rz_il_validate_global_context_add_var(RzILValidateGlobalContext *ctx, RZ_NONNULL const char *name, RzILSortPure sort);
 RZ_API void rz_il_validate_global_context_add_mem(RzILValidateGlobalContext *ctx, RzILMemIndex idx, ut32 key_len, ut32 val_len);
-RZ_API RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_NONNULL RzILVM *vm);
+RZ_API RZ_OWN RzILValidateGlobalContext *rz_il_validate_global_context_new_from_vm(RZ_NONNULL RzILVM *vm);
 RZ_API void rz_il_validate_global_context_free(RzILValidateGlobalContext *ctx);
 RZ_API bool rz_il_validate_pure(RZ_NULLABLE RzILOpPure *op, RZ_NONNULL RzILValidateGlobalContext *ctx,
 	RZ_NULLABLE RZ_OUT RzILSortPure *sort_out, RZ_NULLABLE RZ_OUT RzILValidateReport *report_out);

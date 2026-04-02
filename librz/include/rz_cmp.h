@@ -41,7 +41,7 @@ typedef struct rz_core_cmpwatch_t {
 
 /* watchers */
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w);
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
+RZ_API RZ_BORROW RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr);
 RZ_API bool rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *cmd);
 RZ_API bool rz_core_cmpwatch_del(RzCore *core, ut64 addr);
 RZ_API bool rz_core_cmpwatch_update(RzCore *core, ut64 addr);

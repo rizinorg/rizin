@@ -81,7 +81,7 @@ typedef struct rz_event_debug_process_finished_t {
 	int pid;
 } RzEventDebugProcessFinished;
 
-RZ_API RzEvent *rz_event_new(void *user);
+RZ_API RZ_OWN RzEvent *rz_event_new(void *user);
 RZ_API void rz_event_free(RzEvent *ev);
 RZ_API RzEventCallbackHandle rz_event_hook(RzEvent *ev, int type, RzEventCallback cb, void *user);
 RZ_API void rz_event_unhook(RzEvent *ev, RzEventCallbackHandle handle);

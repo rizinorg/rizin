@@ -92,7 +92,7 @@ typedef struct rz_ascii_graph_t {
 } RzAGraph;
 
 #ifdef RZ_API
-RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can);
+RZ_API RZ_OWN RzAGraph *rz_agraph_new(RzConsCanvas *can);
 RZ_API void rz_agraph_free(RzAGraph *g);
 RZ_API void rz_agraph_reset(RzAGraph *g);
 RZ_API void rz_agraph_set_title(RzAGraph *g, const char *title);
@@ -106,7 +106,7 @@ RZ_API void rz_agraph_add_edge_at(const RzAGraph *g, RzANode *a, RzANode *b, int
 RZ_API void rz_agraph_del_edge(const RzAGraph *g, RzANode *a, RzANode *b);
 RZ_API void rz_agraph_print(RzAGraph *g);
 RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj);
-RZ_API Sdb *rz_agraph_get_sdb(RzAGraph *g);
+RZ_API RZ_BORROW Sdb *rz_agraph_get_sdb(RzAGraph *g);
 RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user);
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user);
 RZ_API void rz_agraph_set_curnode(RzAGraph *g, RzANode *node);

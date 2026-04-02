@@ -66,7 +66,7 @@ RZ_API void rz_search_keyword_free(RzSearchKeyword *kw) {
 	free(kw);
 }
 
-RZ_API RzSearchKeyword *rz_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
 	RzSearchKeyword *kw;
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
@@ -90,7 +90,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_str(const char *kwbuf, const char 
 	return kw;
 }
 
-RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
 	RzSearchKeyword *kw;
 	int len;
 	const char *p2;
@@ -140,7 +140,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_wide(const char *kwbuf, const char
 	return kw;
 }
 
-RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data) {
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data) {
 	RzSearchKeyword *kw;
 	ut8 *kwbuf, *bmbuf;
 	int kwlen, bmlen = 0;
@@ -181,7 +181,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hex(const char *kwstr, const char 
 	return kw;
 }
 
-RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const char *data) {
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const char *data) {
 	RzSearchKeyword *ks = NULL;
 	ut8 *kw, *bm;
 	if (kwstr != NULL) {
@@ -204,7 +204,7 @@ RZ_API RzSearchKeyword *rz_search_keyword_new_hexmask(const char *kwstr, const c
 }
 
 /* Validate a regexp in the canonical format /<regexp>/<options> */
-RZ_API RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data) {
+RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new_regexp(const char *str, const char *data) {
 	RzSearchKeyword *kw;
 	int i = 0, start, length;
 

@@ -92,7 +92,7 @@ typedef struct rz_annotated_code_t {
  * @param code A deallocatable character array.
  * @return Pointer to the new RzAnnotatedCode structure created.
  */
-RZ_API RzAnnotatedCode *rz_annotated_code_new(char *code);
+RZ_API RZ_OWN RzAnnotatedCode *rz_annotated_code_new(char *code);
 /**
  * @brief Deallocates the dynamically allocated memory for the specified RzAnnotatedCode.
  *

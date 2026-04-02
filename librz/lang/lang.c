@@ -18,7 +18,7 @@ static bool plugin_fini(RzLang *lang, RzLangPlugin *plugin) {
 	return true;
 }
 
-RZ_API RzLang *rz_lang_new(void) {
+RZ_API RZ_OWN RzLang *rz_lang_new(void) {
 	RzLang *lang = RZ_NEW0(RzLang);
 	if (!lang) {
 		return NULL;

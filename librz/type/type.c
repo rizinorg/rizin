@@ -16,7 +16,7 @@
  * hashtables for RzBaseType, RzCallable, type formats.
  * Also initializes default "target" (arch, bits, platform) parameters.
  */
-RZ_API RzTypeDB *rz_type_db_new() {
+RZ_API RZ_OWN RzTypeDB *rz_type_db_new() {
 	RzTypeDB *typedb = RZ_NEW0(RzTypeDB);
 	if (!typedb) {
 		return NULL;

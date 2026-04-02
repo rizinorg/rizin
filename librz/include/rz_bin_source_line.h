@@ -106,7 +106,7 @@ typedef struct {
 RZ_API void rz_bin_source_line_info_builder_init(RzBinSourceLineInfoBuilder *builder);
 RZ_API void rz_bin_source_line_info_builder_fini(RzBinSourceLineInfoBuilder *builder);
 RZ_API void rz_bin_source_line_info_builder_push_sample(RzBinSourceLineInfoBuilder *builder, ut64 address, ut32 line, ut32 column, const char *file);
-RZ_API RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBinSourceLineInfoBuilder *builder);
+RZ_API RZ_OWN RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBinSourceLineInfoBuilder *builder);
 
 RZ_API bool rz_bin_source_line_info_merge(RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *dst, RZ_BORROW RZ_NONNULL RzBinSourceLineInfo *src);
 RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli);

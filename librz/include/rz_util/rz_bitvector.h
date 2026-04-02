@@ -103,7 +103,7 @@ RZ_API ut32 rz_bv_clz(RZ_NONNULL RzBitVector *bv);
 RZ_API ut32 rz_bv_ctz(RZ_NONNULL RzBitVector *bv);
 
 RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
-RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
+RZ_API RZ_OWN RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fill_bit);
 
 // some convert functions
 RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL const RzBitVector *x);

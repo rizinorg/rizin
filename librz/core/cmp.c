@@ -315,7 +315,7 @@ RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
  * \param addr Expected address for the memory watcher to be found
  * \return RzCoreCmpWatcher* Pointer to the found memory watcher; NULL if not found
  */
-RZ_API RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
+RZ_API RZ_BORROW RzCoreCmpWatcher *rz_core_cmpwatch_get(RzCore *core, ut64 addr) {
 	rz_return_val_if_fail(core, NULL);
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;

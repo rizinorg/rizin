@@ -48,7 +48,7 @@ typedef struct rz_lang_def_t {
 } RzLangDef;
 
 #ifdef RZ_API
-RZ_API RzLang *rz_lang_new(void);
+RZ_API RZ_OWN RzLang *rz_lang_new(void);
 RZ_API void rz_lang_free(RzLang *lang);
 RZ_API bool rz_lang_setup(RzLang *lang);
 RZ_API bool rz_lang_plugin_add(RzLang *lang, RZ_NONNULL RzLangPlugin *plugin);
