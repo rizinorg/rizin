@@ -307,7 +307,7 @@ static bool GetHeapGlobalsOffset(RzDebug *dbg, HANDLE h_proc) {
 	RzDebugMap *map;
 	bool found = false;
 	rz_list_foreach (modules, it, map) {
-		if (!strcmp(map->name, "ntdll.dll")) {
+		if (RZ_STR_EQ(map->name, "ntdll.dll")) {
 			found = true;
 			break;
 		}

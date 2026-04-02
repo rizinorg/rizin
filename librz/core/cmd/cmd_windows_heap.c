@@ -20,17 +20,17 @@ void init_heap_config(RzCore *core, RzWindowsHeapConfig *config) {
 	}
 
 	const char *version_cfg = rz_config_get(core->config, "dbg.windows.version");
-	if (version_cfg && strcmp(version_cfg, "auto") != 0) {
-		if (strcmp(version_cfg, "21H1") == 0 || strcmp(version_cfg, "21H2") == 0 ||
-			strcmp(version_cfg, "22H2") == 0) {
+	if (version_cfg && RZ_STR_NE(version_cfg, "auto")) {
+		if (RZ_STR_EQ(version_cfg, "21H1") || RZ_STR_EQ(version_cfg, "21H2") ||
+			RZ_STR_EQ(version_cfg, "22H2")) {
 			build = RZ_W10_BUILD_21H1;
-		} else if (strcmp(version_cfg, "1607") == 0 || strcmp(version_cfg, "1703") == 0 ||
-			strcmp(version_cfg, "1709") == 0 || strcmp(version_cfg, "1803") == 0 ||
-			strcmp(version_cfg, "1809") == 0 || strcmp(version_cfg, "1903") == 0 ||
-			strcmp(version_cfg, "1909") == 0 || strcmp(version_cfg, "2004") == 0 ||
-			strcmp(version_cfg, "20H2") == 0) {
+		} else if (RZ_STR_EQ(version_cfg, "1607") || RZ_STR_EQ(version_cfg, "1703") ||
+			RZ_STR_EQ(version_cfg, "1709") || RZ_STR_EQ(version_cfg, "1803") ||
+			RZ_STR_EQ(version_cfg, "1809") || RZ_STR_EQ(version_cfg, "1903") ||
+			RZ_STR_EQ(version_cfg, "1909") || RZ_STR_EQ(version_cfg, "2004") ||
+			RZ_STR_EQ(version_cfg, "20H2")) {
 			build = RZ_W10_BUILD_1607;
-		} else if (strcmp(version_cfg, "1511") == 0) {
+		} else if (RZ_STR_EQ(version_cfg, "1511")) {
 			build = RZ_W10_BUILD_1511;
 		}
 	}
