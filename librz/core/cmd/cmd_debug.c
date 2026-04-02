@@ -3098,6 +3098,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_thread_list_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_handler(RzCore *core, int argc, const char **argv) {
 	int pid = argc > 1 ? rz_num_math(core->num, argv[1]) : 0;
+	if (pid < 0) {
+		RZ_LOG_ERROR("Invalid PID %d\n", pid);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_debug_attach(core, pid);
 	return RZ_CMD_STATUS_OK;
 }
