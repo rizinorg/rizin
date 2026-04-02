@@ -1931,7 +1931,7 @@ beach:
 		op_fillval(analysis, op, &ctx->hndl, insn);
 	}
 	cs_free(insn, n);
-	// cs_close (&handle);
+	cs_close(&ctx->hndl);
 fin:
 	return opsize;
 }
