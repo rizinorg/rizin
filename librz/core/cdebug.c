@@ -302,7 +302,8 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	}
 	// Create an IO map covering the full address space so memory
 	// reads/writes are routed through this debug descriptor.
-	rz_io_map_add(core->io, cfile->fd, RZ_PERM_RW, 0LL, 0LL, UT64_MAX);
+	RzIODesc *iod = core->io ? rz_io_desc_get(core->io, cfile->fd) : NULL;
+	rz_io_map_new(core->io, iod->fd, iod->perm, 0LL, 0LL, rz_io_desc_size(iod));
 
 	const char *debugbackend = rz_config_get(core->config, "dbg.backend");
 	rz_core_setup_debugger(core, debugbackend, true);

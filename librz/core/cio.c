@@ -4,6 +4,19 @@
 #include "rz_core.h"
 #include "core_private.h"
 
+static void setup_debugger_attach(RzCore *r, int pid) {
+	char buf[20];
+
+	if (pid > 0) {
+		rz_debug_attach(r->dbg, pid);
+	} else if (r->file && r->io) {
+		rz_debug_attach(r->dbg, rz_io_fd_get_pid(r->io, r->file->fd));
+	}
+	rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
+	rz_config_set_i(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
+	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
+}
+
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
@@ -21,18 +34,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	rz_debug_select(r->dbg, pid, r->dbg->tid);
 	r->dbg->main_pid = pid;
 	if (attach) {
-		char buf[20];
-
-		if (pid > 0) {
-			rz_debug_attach(r->dbg, pid);
-		} else {
-			if (r->file && r->io) {
-				rz_debug_attach(r->dbg, rz_io_fd_get_pid(r->io, r->file->fd));
-			}
-		}
-		rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
-		rz_config_set_i(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
-		rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
+		setup_debugger_attach(r, pid);
 	}
 	// this makes to attach twice showing warnings in the output
 	// we get "resource busy" so it seems isn't an issue
