@@ -27,6 +27,11 @@
 typedef struct rz_intp_run_state RzIntpRunState;
 
 typedef enum rz_intp_state_flag {
+	/**
+	 * \brief Interpreter is still outside of its defined loop.
+	 * E.g. shortly after its thread was spawned.
+	 */
+	RZ_INTP_RUN_STATE_OUT_OF_LOOP,
 	RZ_INTP_RUN_STATE_INIT, ///< Initialization state.
 	RZ_INTP_RUN_STATE_EMU, ///< Emulation state.
 	RZ_INTP_RUN_STATE_CLEAN, ///< Cleaning state.
@@ -267,8 +272,9 @@ struct rz_interpreter_set {
 RZ_API RZ_OWN RzIntpRunState *rz_intp_run_state_new();
 RZ_API void rz_intp_run_state_free(RZ_OWN RZ_NULLABLE RzIntpRunState *state);
 RZ_API RzIntpRunStateFlag rz_intp_run_state_get(RZ_BORROW RZ_NONNULL RzIntpRunState *state);
-RZ_API void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
 RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
+
+RZ_IPI void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);
 
 RZ_API void rz_interpreter_il_bb_free(RZ_NULLABLE RZ_OWN RzInterpreterILBB *il_bb);
 RZ_API void rz_interpreter_insn_pkt_free(RZ_NULLABLE RZ_OWN RzInterpreterInsnPkt *pkt);
