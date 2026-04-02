@@ -159,11 +159,16 @@ typedef struct {
 	 */
 	RzInterpreterYieldKind supported_yields;
 	bool (*init)(void **plugin_data);
+	bool (*reset)(void *plugin_data);
 	bool (*fini)(void *plugin_data);
 	/**
 	 * \brief Initializes the abstract state.
 	 */
-	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data);
+	bool (*init_state)(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data);
+	/**
+	 * \brief Reset the abstract state.
+	 */
+	bool (*reset_state)(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data);
 	/**
 	 * \brief Closes the abstract state and frees all its abstract data and sets the pointers to NULL.
 	 */

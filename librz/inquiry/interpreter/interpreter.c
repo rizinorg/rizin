@@ -422,18 +422,18 @@ static bool choose_next_pc(RzInterpreterSet *iset,
 	return has_succsessor;
 }
 
-static bool setup_intrpr_state(
+static bool reset_intrpr_state(
 	RzInterpreterSet *iset,
 	ut64 entry_point,
 	RzVector **tmp_succ_addr,
 	RzSetU **reachable_states,
 	RzVector **succ_states) {
 
-	if (iset->plugin->init) {
-		iset->plugin->init(&iset->intrpr_priv);
+	if (iset->plugin->reset) {
+		iset->plugin->reset(iset->intrpr_priv);
 	}
 
-	if (!iset->plugin->init_state(iset->astate, entry_point, iset->intrpr_priv)) {
+	if (!iset->plugin->reset_state(iset->astate, entry_point, iset->intrpr_priv)) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -485,6 +485,14 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 	const RzInterpreterILBB *il_bb = NULL;
 	ut64 astate_hash = 0;
 
+	if (iset->plugin->init) {
+		iset->plugin->init(&iset->intrpr_priv);
+	}
+	if (!iset->plugin->init_state(iset->astate, iset->intrpr_priv)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
 // TODO: It is probably better to make the following stuff while-loops.
 // Because otherwise it doesn't make sense without the docs.
 // But while debugging and developing, I keep it this way to separate clearly
@@ -501,7 +509,7 @@ INIT: {
 	}
 
 	// Initializes the current interpreter's private data and its state.
-	if (!setup_intrpr_state(iset, il_bb->bb_addr, &tmp_succ_addr, &reachable_states, &succ_states)) {
+	if (!reset_intrpr_state(iset, il_bb->bb_addr, &tmp_succ_addr, &reachable_states, &succ_states)) {
 		success = false;
 		goto TERM;
 	}
@@ -565,10 +573,6 @@ CLEAN: {
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
 	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
 	RZ_FREE_CUSTOM(reachable_states, rz_set_u_free);
-	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
-	if (iset->plugin->fini && iset->intrpr_priv) {
-		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
-	}
 
 	// Wait until RzInquiry asks to start again.
 	rz_th_sem_wait(iset->run_state_sync);
@@ -580,6 +584,10 @@ CLEAN: {
 TERM: {
 	RZ_LOG_DEBUG("Enter TERM\n");
 	rz_intp_run_state_set(iset->run_state, RZ_INTP_RUN_STATE_TERM);
+	iset->plugin->fini_state(iset->astate, iset->intrpr_priv);
+	if (iset->plugin->fini && iset->intrpr_priv) {
+		RZ_FREE_CUSTOM(iset->intrpr_priv, iset->plugin->fini);
+	}
 
 	RZ_FREE_CUSTOM(tmp_succ_addr, rz_vector_free);
 	RZ_FREE_CUSTOM(succ_states, rz_vector_free);
