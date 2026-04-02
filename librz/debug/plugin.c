@@ -54,9 +54,12 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	return true;
 
 err:
+	if (dbg->cur && dbg->cur->fini) {
+		dbg->cur->fini(dbg, dbg->plugin_data);
+	}
 	dbg->plugin_data = NULL;
-	dbg->cur = NULL;
 	dbg->bp->breakpoint = NULL;
+	dbg->cur = NULL;
 	return false;
 }
 
