@@ -21,6 +21,7 @@ if get_option('enable_tests')
     'analysis_meta',
     'analysis_var',
     'analysis_xrefs',
+    'analysis_mspcode',
     'annotated_code',
     'asm_mspcode',
     'base16',

@@ -39,8 +39,41 @@ static bool test_mspcode_disassemble(void) {
 	mu_end;
 }
 
+static bool test_mspcode_disassemble_extended(void) {
+	RzAsm *a = rz_asm_new();
+	mu_assert_notnull(a, "Failed to create RzAsm");
+
+	bool ret = rz_asm_use(a, "mspcode");
+	mu_assert_true(ret, "Failed to use mspcode plugin");
+
+	RzAsmOp op;
+	const ut8 buffer[] = { 0x1B, 0x1C, 0x1D, 0x04 };
+
+	// Test 0x1B
+	rz_asm_op_init(&op);
+	int len = rz_asm_disassemble(a, &op, buffer, 1);
+	mu_assert_true(len > 0, "Instruction length should be > 0");
+	rz_asm_op_fini(&op);
+
+	// Test 0x1C
+	rz_asm_op_init(&op);
+	len = rz_asm_disassemble(a, &op, buffer + 1, 1);
+	mu_assert_true(len > 0, "Instruction length should be > 0");
+	rz_asm_op_fini(&op);
+
+	// Test 0x1D
+	rz_asm_op_init(&op);
+	len = rz_asm_disassemble(a, &op, buffer + 2, 1);
+	mu_assert_true(len > 0, "Instruction length should be > 0");
+	rz_asm_op_fini(&op);
+
+	rz_asm_free(a);
+	mu_end;
+}
+
 static bool all_tests() {
 	mu_run_test(test_mspcode_disassemble);
+	mu_run_test(test_mspcode_disassemble_extended);
 	return tests_passed != tests_run;
 }
 
