@@ -8,6 +8,7 @@
 
 #include "../prototype/eval.h"
 #include "rz_util/ht_uu.h"
+#include "rz_util/rz_bitvector.h"
 
 #define MAX_INVOCATIONS_PER_BB 3
 
@@ -80,9 +81,9 @@ bool successors(RZ_NONNULL const RzInterpreterAbstrState *state,
 	return true;
 }
 
-static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data) {
+static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, void *plugin_data) {
 	state->pc->abstr_data = RZ_NEW0(ProtoIntrprAbstrData);
-	AD(state->pc->abstr_data)->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, entry_point);
+	AD(state->pc->abstr_data)->bv = rz_bv_new_from_ut64(state->il_config->mem_key_size, 0);
 	AD(state->pc->abstr_data)->is_concrete = true;
 	RzIterator *it = ht_up_as_iter_keys(state->globals);
 	ut64 *k;
@@ -114,6 +115,36 @@ static bool init_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_poin
 		}
 	}
 	rz_iterator_free(it);
+	return true;
+}
+
+static bool reset_state(RZ_BORROW RzInterpreterAbstrState *state, ut64 entry_point, void *plugin_data) {
+	rz_bv_set_from_ut64(AD(state->pc->abstr_data)->bv, entry_point);
+	AD(state->pc->abstr_data)->is_concrete = true;
+
+	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	ut64 *k;
+	rz_iterator_foreach(it, k) {
+		ut64 djb2_reg_name = *k;
+		RzInterpreterAbstrVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		rz_bv_set_from_ut64(AD(av->abstr_data)->bv, 0);
+		AD(av->abstr_data)->is_concrete = true;
+		if (state->il_config->init_state) {
+			RzAnalysisILInitStateVar *il_var;
+			rz_vector_foreach (&state->il_config->init_state->vars, il_var) {
+				if (rz_str_djb2_hash(il_var->name) != djb2_reg_name) {
+					continue;
+				}
+				// The RzArch plugin defined a default value for this global.
+				RzBitVector *default_val = rz_il_value_to_bv(il_var->val);
+				rz_bv_copy(AD(av->abstr_data)->bv, default_val);
+				rz_bv_free(default_val);
+			}
+		}
+	}
+	rz_iterator_free(it);
+	state->bb_addr = 0;
+	state->bb_size = 0;
 	return true;
 }
 
@@ -240,6 +271,17 @@ bool fini(void *plugin_data) {
 	return true;
 }
 
+bool reset(void *plugin_data) {
+	if (!plugin_data) {
+		return true;
+	}
+	RZ_LOG_DEBUG("prototype: reset()\n");
+	ProtoIntrprPluginData *pdata = plugin_data;
+	ht_uu_clear(pdata->bb_invocation_count);
+	memset(&pdata->call_cand, 0, sizeof(RzAnalysisCallCandidate));
+	return true;
+}
+
 static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.name = "abstr_int_prototype",
 	.author = "Rot127",
@@ -249,10 +291,12 @@ static RzInterpreterPlugin rz_interpreter_plugin_prototype = {
 	.supported_abstractions = RZ_INTERPRETER_ABSTRACTION_CONST,
 	.supported_yields = RZ_INTERPRETER_YIELD_KIND_XREF | RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE,
 	.init = init,
+	.reset = reset,
 	.fini = fini,
 	.eval = eval,
 	.successors = successors,
 	.init_state = init_state,
+	.reset_state = reset_state,
 	.fini_state = fini_state,
 	.hash_state = hash_state,
 	.set_pc = set_pc,
