@@ -5,17 +5,33 @@
 #include <stdio.h>
 #include <rz_util.h>
 
-static RzListPool rz_list_default_pool = { NULL, NULL };
+static void rz_list_pool_free(RzListPool *pool) {
+	if (pool) {
+		RzListSlab *slab = pool->slabs;
+		while (slab) {
+			RzListSlab *next = slab->next_slab;
+			free(slab);
+			slab = next;
+		}
+		free(pool);
+	}
+}
 
-static RzListPool *rz_list_get_default_pool(void) {
-	return &rz_list_default_pool;
+static inline RzListPool *_pool_of(RzList *list) {
+	if (RZ_UNLIKELY(!list || !list->pool)) {
+		return NULL;
+	}
+	return list->pool;
 }
 
 /**
  * \brief Allocates an RzListIter from the pool, growing by one slab if needed.
  */
 static inline RzListIter *pool_alloc(RzListPool *pool) {
-	if (!pool->freelist) {
+	if (RZ_UNLIKELY(!pool)) {
+		return RZ_NEW0(RzListIter);
+	}
+	if (RZ_UNLIKELY(!pool->freelist)) {
 		RzListSlab *slab = calloc(1, sizeof(RzListSlab));
 		if (!slab) {
 			return NULL;
@@ -40,17 +56,19 @@ static inline RzListIter *pool_alloc(RzListPool *pool) {
  * \brief Returns an RzListIter back to the pool freelist.
  */
 static inline void pool_free(RzListPool *pool, RzListIter *node) {
+	if (RZ_UNLIKELY(!node)) {
+		return;
+	}
+	if (RZ_UNLIKELY(!pool)) {
+		free(node);
+		return;
+	}
 	node->val = NULL;
 	node->prev = NULL;
 	node->next = pool->freelist;
 	pool->freelist = node;
 }
 
-// Helper: resolve the pool for a list (future: list could carry its own pool).
-static inline RzListPool *_pool_of(RzList *list) {
-	(void)list;
-	return rz_list_get_default_pool();
-}
 
 /**
  * \brief Returns the RzListIter at position \p n, traversing from whichever
@@ -170,6 +188,7 @@ RZ_API void rz_list_init(RZ_NONNULL RzList *list) {
 	list->free = NULL;
 	list->length = 0;
 	list->sorted = false;
+	list->pool = calloc(1, sizeof(RzListPool));
 }
 
 /**
@@ -209,10 +228,12 @@ RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
  *
  **/
 RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
-	if (!list) {
+	if (RZ_UNLIKELY(!list)) {
 		return;
 	}
+	RzListPool *pool = list->pool;
 	rz_list_purge(list);
+	rz_list_pool_free(pool);
 	free(list);
 }
 
@@ -407,12 +428,12 @@ RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size) 
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter) {
 	rz_return_val_if_fail(iter, NULL);
 	RzList *l = rz_list_new();
-	if (!l) {
+	if (RZ_UNLIKELY(!l)) {
 		return NULL;
 	}
 	void **val;
 	rz_iterator_foreach(iter, val) {
-		if (!rz_list_append(l, (void *)*val)) {
+		if (RZ_UNLIKELY(!rz_list_append(l, (void *)*val))) {
 			rz_list_free(l);
 			return NULL;
 		}
@@ -425,8 +446,8 @@ RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator 
  *
  **/
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
-	RzListIter *item = pool_alloc(rz_list_get_default_pool());
-	if (item) {
+	RzListIter *item = pool_alloc(NULL);
+	if (RZ_LIKELY(item)) {
 		item->val = data;
 	}
 	return item;
@@ -733,6 +754,9 @@ RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const v
 	void *q;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, q) {
+		if (RZ_UNLIKELY(iter->next != NULL)) {
+			RZ_PREFETCH(iter->next);
+		}
 		if (!cmp(val, q, user)) {
 			return iter;
 		}
@@ -743,6 +767,12 @@ RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const v
 static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user) {
 	RzListIter *next = NULL, *result = NULL, *head = NULL;
 	while (first || second) {
+		if (RZ_UNLIKELY(first && first->next)) {
+			RZ_PREFETCH(first->next);
+		}
+		if (RZ_UNLIKELY(second && second->next)) {
+			RZ_PREFETCH(second->next);
+		}
 		if (!second) {
 			next = first;
 			first = first->next;
@@ -832,7 +862,7 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 	}
 	RzListIter *it, *it2;
 	for (it = list->head; it; it = it->next) {
-		for (it2 = it->next; it2 && it2->val; it2 = it2->next) {
+		for (it2 = it->next; it2; it2 = it2->next) {
 			if (cmp(it->val, it2->val, user) > 0) {
 				void *t = it->val;
 				it->val = it2->val;
@@ -861,14 +891,14 @@ RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cm
  *
  **/
 RZ_API RZ_OWN RzList *rz_list_uniq(RZ_NONNULL const RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
-	RzList *sorted = rz_list_clone(list);
-	if (!sorted) {
+	rz_return_val_if_fail(list && cmp, NULL);
+	RzList *nl = rz_list_clone(list);
+	if (RZ_UNLIKELY(!nl)) {
 		return NULL;
 	}
-
-	rz_list_sort(sorted, cmp, user);
-	rz_list_sorted_uniq(sorted, cmp, user);
-	return sorted;
+	rz_list_sort(nl, cmp, user);
+	rz_list_sorted_uniq(nl, cmp, user);
+	return nl;
 }
 
 /**

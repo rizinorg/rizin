@@ -20,14 +20,6 @@ struct rz_list_iter_t {
 	RzListIter *prev;
 };
 
-typedef struct rz_list_t {
-	RzListIter *head;
-	RzListIter *tail;
-	RzListFree free;
-	ut32 length;
-	bool sorted;
-} RzList;
-
 typedef struct rz_list_slab_t {
 	RzListIter nodes[RZ_LIST_SLAB_SIZE];
 	struct rz_list_slab_t *next_slab;
@@ -37,6 +29,15 @@ typedef struct rz_list_pool_t {
 	RzListSlab *slabs;
 	RzListIter *freelist;
 } RzListPool;
+
+typedef struct rz_list_t {
+	RzListIter *head;
+	RzListIter *tail;
+	RzListFree free;
+	ut32 length;
+	bool sorted;
+	RzListPool *pool;
+} RzList;
 
 // RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
 typedef int (*RzListComparator)(const void *value, const void *list_data, void *user);
