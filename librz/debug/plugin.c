@@ -37,17 +37,27 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 		return true;
 	}
 	if (dbg->analysis && dbg->analysis->cur) {
-		rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits);
+		if (!rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits)) {
+			goto err;
+		}
 	}
 	dbg->bp->breakpoint = dbg->cur->breakpoint;
 	dbg->bp->user = dbg;
-	if (dbg->cur->init) {
-		dbg->cur->init(dbg, &dbg->plugin_data);
+	if (dbg->cur->init && !dbg->cur->init(dbg, &dbg->plugin_data)) {
+		goto err;
 	}
 	// Syncing the reg profile here may fail if the plugin is not ready, but it should
 	// at least clean up the old RzReg contents.
-	rz_debug_reg_profile_sync(dbg);
+	if (!rz_debug_reg_profile_sync(dbg)) {
+		goto err;
+	}
 	return true;
+
+err:
+	dbg->plugin_data = NULL;
+	dbg->cur = NULL;
+	dbg->bp->breakpoint = NULL;
+	return false;
 }
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {
