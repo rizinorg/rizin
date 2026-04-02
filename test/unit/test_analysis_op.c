@@ -116,14 +116,17 @@ bool test_rz_core_analysis_bytes() {
 
 	RzAnalysisBytes *ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
+	free(ab->pseudo);
 
 	ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "mov rbp, rsp", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "rbp = rsp", "rz_core_analysis_bytes pseudo");
+	free(ab->pseudo);
 
 	ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "mov dword [rbp-0x04], edi", "rz_core_analysis_bytes opcode");
 	mu_assert_streq(ab->pseudo, "dword [rbp-0x04] = edi", "rz_core_analysis_bytes pseudo");
+	free(ab->pseudo);
 
 	rz_iterator_free(iter);
 	rz_core_free(core);
