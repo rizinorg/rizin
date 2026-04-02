@@ -5,37 +5,11 @@
 #include <stdio.h>
 #include <rz_util.h>
 
-/**
- * \brief Global default pool shared by all lists that do not carry their own.
- *        Replace with a per-thread pool for lock-free use in threaded contexts.
- */
-#if defined(__TINYC__)
-#include <pthread.h>
-
-static pthread_key_t rz_list_pool_key;
-static pthread_once_t rz_list_pool_once = PTHREAD_ONCE_INIT;
-
-static void rz_list_pool_key_create(void) {
-	pthread_key_create(&rz_list_pool_key, NULL);
-}
-
-static RzListPool *rz_list_get_default_pool(void) {
-	pthread_once(&rz_list_pool_once, rz_list_pool_key_create);
-	RzListPool *pool = pthread_getspecific(rz_list_pool_key);
-	if (!pool) {
-		pool = calloc(1, sizeof(RzListPool));
-		pthread_setspecific(rz_list_pool_key, pool);
-	}
-	return pool;
-}
-
-#else
-static __thread RzListPool rz_list_default_pool = { NULL, NULL };
+static RzListPool rz_list_default_pool = { NULL, NULL };
 
 static RzListPool *rz_list_get_default_pool(void) {
 	return &rz_list_default_pool;
 }
-#endif
 
 /**
  * \brief Allocates an RzListIter from the pool, growing by one slab if needed.
@@ -559,7 +533,11 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 			list->head = list->tail = NULL;
 		} else {
 			list->tail = iter->prev;
-			list->tail->next = NULL;
+			if (list->tail) {
+				list->tail->next = NULL;
+			} else {
+				list->head = NULL;
+			}
 		}
 		data = iter->val;
 		pool_free(_pool_of(list), iter);
@@ -583,7 +561,11 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
 			list->head = list->tail = NULL;
 		} else {
 			list->head = iter->next;
-			list->head->prev = NULL;
+			if (list->head) {
+				list->head->prev = NULL;
+			} else {
+				list->tail = NULL;
+			}
 		}
 		data = iter->val;
 		pool_free(_pool_of(list), iter);
