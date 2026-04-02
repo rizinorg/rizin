@@ -447,7 +447,7 @@ RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator 
  **/
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
 	RzListIter *item = pool_alloc(NULL);
-	if (RZ_LIKELY(item)) {
+	if (RZ_LIKELY(item != NULL)) {
 		item->val = data;
 	}
 	return item;
