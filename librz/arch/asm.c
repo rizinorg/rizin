@@ -669,6 +669,11 @@ RZ_DEPRECATE RZ_API void rz_asm_set_core(RZ_NONNULL RzAsm *a, RZ_NULLABLE void *
 	a->core = core;
 }
 
+RZ_DEPRECATE RZ_API void *rz_asm_get_core(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, NULL);
+	return a->core;
+}
+
 RZ_DEPRECATE RZ_API RZ_BORROW RzBinBind *rz_asm_get_bin_bind(RzAsm *a) {
 	rz_return_val_if_fail(a, NULL);
 	return &a->binb;
