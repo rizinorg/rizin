@@ -1418,7 +1418,7 @@ RZ_API RZ_BORROW const RzBinSourceLineSample *rz_analysis_var_global_sourceline_
 RZ_API void rz_core_sym_name_init(RZ_NONNULL RZ_OUT RzBinSymNames *names, RZ_NONNULL RzBinSymbol *symbol, bool demangle);
 RZ_API void rz_core_sym_name_fini(RZ_NULLABLE RzBinSymNames *names);
 
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty);
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty, bool unicode);
 RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, int limit, RzOutputMode mode,
 	bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf);
 

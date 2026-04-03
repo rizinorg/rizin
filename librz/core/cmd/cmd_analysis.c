@@ -5253,14 +5253,14 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
  * \param num_ops The number of operations to analyze from the beginning of the block, set to 0 to disable it.
  * \param pretty If true, the output will be in a pretty format.
  */
-RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty) {
+RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty, bool unicode) {
 	rz_return_if_fail(core);
 	RzIterator *iter = rz_core_analysis_op_chunk_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
 	if (!iter) {
 		return;
 	}
 
-	rz_core_il_cons_print(core, iter, pretty);
+	rz_core_il_cons_print(core, iter, pretty, unicode);
 	rz_iterator_free(iter);
 }
 
@@ -5275,7 +5275,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const cha
 		count = l;
 	}
 
-	rz_core_analysis_bytes_il(core, 0, count, false);
+	rz_core_analysis_bytes_il(core, 0, count, false, false);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -5290,7 +5290,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_il_pretty_handler(RzCore *core, int argc, co
 		count = l;
 	}
 
-	rz_core_analysis_bytes_il(core, 0, count, true);
+	rz_core_analysis_bytes_il(core, 0, count, true, false);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -14,6 +14,16 @@
 #include <rz_util/rz_graph_drawable.h>
 
 #include "core_private.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_str_util.h"
+#include "rz_util/rz_utf8.h"
+
+typedef enum rz_il_unicode_colorify_state_t {
+	UNICODE_COLORIFY_STATE_DEFAULT,
+	UNICODE_COLORIFY_STATE_VARNAME,
+	UNICODE_COLORIFY_STATE_NUMBER,
+	UNICODE_COLORIFY_STATE_IL_OP
+} RzILUnicodeColorifyState;
 
 static void core_esil_init(RzCore *core) {
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -862,7 +872,97 @@ static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, 
 	rz_cons_newline();
 }
 
-RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty) {
+static bool unicode_colorify_state_is_varname(RzILUnicodeColorifyState state) {
+	return state == UNICODE_COLORIFY_STATE_VARNAME;
+}
+
+static bool unicode_colorify_state_is_number(RzILUnicodeColorifyState state) {
+	return state == UNICODE_COLORIFY_STATE_NUMBER;
+}
+
+static bool is_varname(RzILUnicodeColorifyState state, RzCodePoint c) {
+	const bool is_varname = unicode_colorify_state_is_varname(state);
+	return (c == '_') || IS_ALPHA(c) || (is_varname && IS_DIGIT(c));
+}
+
+static bool is_number(RzILUnicodeColorifyState state, RzCodePoint c) {
+	const RzCodePoint subscript_0 = 0x2080;
+	const RzCodePoint subscript_9 = 0x2089;
+	const bool is_subscript_num = RZ_BETWEEN(subscript_0, c, subscript_9);
+	const bool is_varname = unicode_colorify_state_is_varname(state);
+	const bool is_num = unicode_colorify_state_is_number(state);
+	return (IS_DIGIT(c) && !is_varname) || (is_num && (IS_HEXCHAR(c) || c == 'x' || c == 'X' || c == '.' || is_subscript_num));
+}
+
+RzILUnicodeColorifyState unicode_colorify_state_next(RzILUnicodeColorifyState state, RzCodePoint c) {
+	if (is_number(state, c)) {
+		return UNICODE_COLORIFY_STATE_NUMBER;
+	}
+	if (is_varname(state, c)) {
+		return UNICODE_COLORIFY_STATE_VARNAME;
+	}
+	if (IS_PARANTHESIS(c) || IS_WHITECHAR(c)) {
+		return UNICODE_COLORIFY_STATE_DEFAULT;
+	}
+	return UNICODE_COLORIFY_STATE_IL_OP;
+}
+
+static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	if (RZ_STR_ISEMPTY(il_stmt)) {
+		rz_cons_newline();
+		return;
+	}
+
+	size_t prev_i = 0;
+	const size_t len = strlen(il_stmt);
+	const char *color = NULL;
+	RzILUnicodeColorifyState prev_state = UNICODE_COLORIFY_STATE_DEFAULT;
+	for (size_t i = 0; i < len;) {
+		RzCodePoint cp = 0;
+		const size_t utf_size = rz_utf8_decode((const ut8 *)il_stmt + i, len - i, &cp, false);
+		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, cp);
+		if (state != prev_state) {
+			const int plen = i - prev_i;
+			if (color) {
+				rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+			} else {
+				rz_cons_printf("%.*s", plen, il_stmt + prev_i);
+			}
+
+			switch (state) {
+			default: break;
+			case UNICODE_COLORIFY_STATE_DEFAULT:
+				color = NULL;
+				break;
+			case UNICODE_COLORIFY_STATE_VARNAME:
+				color = ctx->pal.comment;
+				break;
+			case UNICODE_COLORIFY_STATE_NUMBER:
+				color = ctx->pal.num;
+				break;
+			case UNICODE_COLORIFY_STATE_IL_OP:
+				color = ctx->pal.flow;
+				break;
+			}
+
+			prev_state = state;
+			prev_i = i;
+		}
+		i += utf_size > 0 ? utf_size : 1;
+	}
+	if (prev_i < len) {
+		const int plen = len - prev_i;
+		if (color) {
+			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+		} else {
+			rz_cons_printf("%.*s", plen, il_stmt + prev_i);
+		}
+	}
+	rz_cons_newline();
+}
+
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode) {
 	rz_return_if_fail(core && iter);
 	bool colorize = rz_config_get_i(core->config, "scr.color") > 0;
 	const char *il_stmt = NULL;
@@ -881,11 +981,23 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 		}
 
 		rz_strbuf_init(&sb);
-		rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+		if (unicode) {
+			if (!rz_il_op_effect_stringify_unicode(op->il_op, &sb)) {
+				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
+				rz_strbuf_fini(&sb);
+				break;
+			}
+		} else {
+			rz_il_op_effect_stringify(op->il_op, &sb, pretty);
+		}
 
 		il_stmt = rz_strbuf_get(&sb);
 		if (colorize) {
-			core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+			if (unicode) {
+				core_colorify_il_statement_unicode(core->cons->context, il_stmt, delim, op->addr);
+			} else {
+				core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+			}
 		} else {
 			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
 		}
