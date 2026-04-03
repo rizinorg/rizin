@@ -919,7 +919,7 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 	const char *color = NULL;
 	RzILUnicodeColorifyState prev_state = UNICODE_COLORIFY_STATE_DEFAULT;
 	for (size_t i = 0; i < len;) {
-		RzCodePoint cp;
+		RzCodePoint cp = 0;
 		const size_t utf_size = rz_utf8_decode((const ut8 *)il_stmt + i, len - i, &cp, false);
 		RzILUnicodeColorifyState state = unicode_colorify_state_next(prev_state, cp);
 		if (state != prev_state) {
