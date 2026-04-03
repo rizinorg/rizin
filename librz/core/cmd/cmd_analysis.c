@@ -403,25 +403,25 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	if (!iter) {
 		return;
 	}
-
-	RzAnalysisBytes *ab;
-
 	pj_a(pj);
-	rz_iterator_foreach(iter, ab) {
-		if (!ab || !ab->op) {
+
+	RzCoreDecodedBytes *cdb;
+	rz_iterator_foreach(iter, cdb) {
+		if (!cdb) {
 			break;
 		}
-		RzAnalysisOp *op = ab->op;
+
+		RzAnalysisOp *op = &cdb->an_op;
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
-		RzAnalysisHint *hint = ab->hint;
+		RzAnalysisHint *hint = cdb->hint;
 
 		pj_o(pj);
-		PJ_KS(pj, "opcode", ab->opcode);
-		PJ_KS(pj, "disasm", ab->disasm);
-		PJ_KS(pj, "pseudo", ab->pseudo);
-		PJ_KS(pj, "description", ab->description);
-		PJ_KS(pj, "mnemonic", op->mnemonic);
-		PJ_KS(pj, "mask", ab->mask);
+		PJ_KS(pj, "opcode", cdb->opcode);
+		PJ_KS(pj, "disasm", cdb->disasm);
+		PJ_KS(pj, "pseudo", cdb->pseudo);
+		PJ_KS(pj, "description", cdb->description);
+		PJ_KS(pj, "mnemonic", cdb->mnemonic);
+		PJ_KS(pj, "mask", cdb->mask);
 
 		if (hint) {
 			PJ_KS(pj, "ophint", hint->opcode);
@@ -452,7 +452,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 			free(opex_json);
 		}
 		PJ_KN(pj, "addr", op->addr);
-		PJ_KS(pj, "bytes", ab->bytes);
+		PJ_KS(pj, "bytes", cdb->bytes);
 		PJ_KN(pj, "val", op->val);
 		PJ_KN(pj, "disp", op->disp);
 		PJ_KN(pj, "ptr", op->ptr);
@@ -517,26 +517,24 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color = use_color ? core->cons->context->pal.label : "";
 
-	RzAnalysisBytes *ab;
-	rz_iterator_foreach(iter, ab) {
-		if (!ab->op) {
-			break;
-		}
-		RzAnalysisOp *op = ab->op;
+	RzCoreDecodedBytes *cdb;
+	rz_iterator_foreach(iter, cdb) {
+		RzAnalysisOp *op = &cdb->an_op;
+
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
-		RzAnalysisHint *hint = ab->hint;
+		RzAnalysisHint *hint = cdb->hint;
 
 		PRINTF_LN("address", "0x%" PFMT64x "\n", op->addr);
-		PRINTF_LN("opcode", "%s\n", ab->opcode);
-		PRINTF_LN("disasm", "%s\n", ab->disasm);
-		PRINTF_LN_STR("pseudo", ab->pseudo);
-		PRINTF_LN("mnemonic", "%s\n", op->mnemonic);
-		PRINTF_LN_STR("description", ab->description);
-		PRINTF_LN("mask", "%s\n", ab->mask);
+		PRINTF_LN("opcode", "%s\n", cdb->opcode);
+		PRINTF_LN("disasm", "%s\n", cdb->disasm);
+		PRINTF_LN_STR("pseudo", cdb->pseudo);
+		PRINTF_LN("mnemonic", "%s\n", cdb->mnemonic);
+		PRINTF_LN_STR("description", cdb->description);
+		PRINTF_LN("mask", "%s\n", cdb->mask);
 		PRINTF_LN_STR("ophint", hint ? hint->opcode : NULL);
 		PRINTF_LN("prefix", "%u\n", op->prefix);
 		PRINTF_LN("id", "%d\n", op->id);
-		PRINTF_LN_STR("bytes", ab->bytes);
+		PRINTF_LN_STR("bytes", cdb->bytes);
 		PRINTF_LN_NOT("val", "0x%08" PFMT64x "\n", op->val, UT64_MAX);
 		PRINTF_LN_NOT("ptr", "0x%08" PFMT64x "\n", op->ptr, UT64_MAX);
 		PRINTF_LN_NOT("disp", "0x%08" PFMT64x "\n", op->disp, UT64_MAX);

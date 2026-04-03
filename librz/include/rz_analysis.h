@@ -2455,22 +2455,6 @@ RZ_API bool rz_serialize_analysis_var_storage_load(
 	RZ_NONNULL const RzJson *json,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzAnalysisVarStorage *storage);
 
-/**
- * Save useful infomation when analyze and disassemble bytes
- * \see rz_core_analysis_bytes
- */
-typedef struct analysis_bytes_t {
-	RzAnalysisOp *op;
-	RzAnalysisHint *hint;
-	char *opcode;
-	char *disasm;
-	char *pseudo;
-	char *description;
-	char *mask;
-	char *bytes;
-	int oplen;
-} RzAnalysisBytes;
-
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_analysis_function_noreturn_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);

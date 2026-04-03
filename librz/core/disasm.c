@@ -5919,17 +5919,14 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 
 	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
 
-	RzAnalysisBytes *ab;
-	rz_iterator_foreach(iter, ab) {
-		RzAnalysisOp *op = ab->op;
-		if (!op) {
-			continue;
-		}
+	RzCoreDecodedBytes *cdb;
+	rz_iterator_foreach(iter, cdb) {
+		RzAnalysisOp *op = &cdb->an_op;
 		pj_o(pj);
 		pj_kn(pj, "offset", op->addr);
 		if (op->type == RZ_ANALYSIS_OP_TYPE_ILL) {
 			pj_ki(pj, "size", 1);
-			pj_ks(pj, "bytes", ab->bytes);
+			pj_ks(pj, "bytes", cdb->bytes);
 			pj_ks(pj, "opcode", "invalid");
 			pj_end(pj);
 			continue;
@@ -5941,7 +5938,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			pj_kn(pj, "val", op->val);
 		}
 
-		RzAnalysisHint *hint = ab->hint;
+		RzAnalysisHint *hint = cdb->hint;
 		pj_k(pj, "esil"); // split key and value to allow empty strings
 		const char *esil = RZ_STRBUF_SAFEGET(&op->esil);
 		pj_s(pj, hint && hint->esil ? hint->esil : (esil ? esil : ""));
@@ -5950,12 +5947,12 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 
 		RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, op->addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM | RZ_ANALYSIS_FCN_TYPE_LOC);
 		pj_kn(pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - ab->oplen : 0);
+		pj_kn(pj, "fcn_last", f ? rz_analysis_function_max_addr(f) - cdb->oplen : 0);
 		pj_ki(pj, "size", op->size);
-		pj_ks(pj, "opcode", asm_pseudo ? ab->pseudo : ab->opcode);
-		pj_ks(pj, "disasm", ab->disasm);
+		pj_ks(pj, "opcode", asm_pseudo ? cdb->pseudo : cdb->opcode);
+		pj_ks(pj, "disasm", cdb->disasm);
 		pj_k(pj, "bytes");
-		pj_s(pj, ab->bytes);
+		pj_s(pj, cdb->bytes);
 		pj_ks(pj, "family", rz_analysis_op_family_to_string(op->family));
 		pj_ks(pj, "type", rz_analysis_optype_to_string(op->type));
 		// indicate a relocated address

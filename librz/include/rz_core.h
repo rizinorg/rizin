@@ -835,9 +835,26 @@ RZ_API void rz_core_analysis_name_free(RZ_NULLABLE RzCoreAnalysisName *p);
 RZ_API RZ_OWN RzCoreAnalysisName *rz_core_analysis_name(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_API bool rz_core_analysis_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, ut64 addr);
 
-RZ_API void rz_analysis_bytes_free(RZ_NULLABLE void *ptr);
-RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops);
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(RZ_NONNULL RzCore *core, ut64 offset, ut64 len, ut64 nops, RzAnalysisOpMask mask);
+/**
+ * Save useful infomation when analyze and disassemble bytes
+ * \see rz_core_analysis_bytes
+ */
+typedef struct rz_core_decoded_bytes_t {
+	RzAnalysisOp an_op;
+	RzAsmOp as_op;
+	RzAnalysisHint *hint;
+	char *opcode;
+	char *disasm;
+	char *pseudo;
+	char *mnemonic;
+	char *description;
+	char *mask;
+	char *bytes;
+	int oplen;
+} RzCoreDecodedBytes;
+
+RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops);
+RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(RZ_NONNULL RzCore *core, ut64 start_addr, ut64 n_bytes, ut64 max_ops, RzAnalysisOpMask mask);
 RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask);
 RZ_API ut64 rz_core_analysis_ops_size(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops);
 
