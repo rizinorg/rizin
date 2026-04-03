@@ -253,7 +253,7 @@ static st64 buf_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	return rz_buf_write_at(ctx->cache->buf, ctx->off, buf, len);
 }
 
-static ut64 buf_get_size(const RzBuffer *b) {
+static ut64 buf_get_size(RzBuffer *b) {
 	BufCtx *ctx = b->priv;
 	return rz_buf_size(ctx->cache->buf);
 }
@@ -267,7 +267,7 @@ static st64 buf_seek(RzBuffer *b, st64 addr, int whence) {
 	return ctx->off = (ut64)val;
 }
 
-static ut8 *buf_get_whole_buf(const RzBuffer *b, ut64 *sz) {
+static ut8 *buf_get_whole_buf(RzBuffer *b, ut64 *sz) {
 	BufCtx *ctx = b->priv;
 	return (ut8 *)rz_buf_data(ctx->cache->buf, sz);
 }
