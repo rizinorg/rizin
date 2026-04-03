@@ -1744,6 +1744,10 @@ RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
 		return true;
 	}
+	if (value == 0) {
+		memset(bv->bits.large_a, 0, bv->_elem_len);
+		return true;
+	}
 
 	for (ut32 i = 0; i < bv->len; ++i) {
 		rz_bv_set(bv, i, value & 1);
@@ -1762,6 +1766,10 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 	if (bv->len <= 64) {
 		bv->bits.small_u = *((ut64 *)&value);
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
+		return true;
+	}
+	if (value == 0) {
+		memset(bv->bits.large_a, 0, bv->_elem_len);
 		return true;
 	}
 

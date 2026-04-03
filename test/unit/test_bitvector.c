@@ -87,6 +87,17 @@ bool test_rz_bv_init128(void) {
 	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x00000000000000000000000000000064", "string hex value of bv");
 
+	rz_bv_set_from_ut64(bits, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits), 0, "Did not set to zero");
+
+	rz_bv_set(bits, 2, true);
+	rz_bv_set(bits, 5, true);
+	rz_bv_set(bits, 6, true);
+	mu_assert("new from 128", is_equal_bv(bits, bits_cmp));
+
+	rz_bv_set_from_st64(bits, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits), 0, "Did not set to zero");
+
 	rz_bv_free(bits);
 	rz_bv_free(bits_cmp);
 	rz_bv_free(bits_dup);
