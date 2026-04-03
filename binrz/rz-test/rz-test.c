@@ -208,12 +208,6 @@ int rz_test_main(int argc, const char **argv) {
 
 	eprintf("Running rz-test on %s\n", RZ_TEST_ARCH_OS);
 
-	if (!except_dir) {
-		RZ_LOG_ERROR("Fail to create RzPVector\n");
-		ret = -1;
-		goto beach;
-	}
-
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
 	{
@@ -227,6 +221,12 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 #endif
+
+	if (!except_dir) {
+		RZ_LOG_ERROR("Fail to create RzPVector\n");
+		ret = -1;
+		goto beach;
+	}
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
