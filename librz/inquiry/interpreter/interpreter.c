@@ -57,6 +57,9 @@ RZ_API RZ_OWN RzInterpreterYieldRBuf *rz_interpreter_yield_rbuf_new(RzInterprete
 	}
 	RzThreadRingBuf *rbuf = NULL;
 	switch (kind) {
+	default:
+		rz_warn_if_reached();
+		return NULL;
 	case RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE:
 		rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_YIELD_RBUF_SIZE, sizeof(RzAnalysisCallCandidate));
 		break;
@@ -184,12 +187,10 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->il_vm) {
 		rz_analysis_il_vm_free(iset->il_vm);
 	}
-	if (iset->yield_rbufs) {
-		ht_up_free(iset->yield_rbufs);
-	}
+	rz_interpreter_yield_rbuf_free(iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
+	rz_interpreter_yield_rbuf_free(iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
 	free(iset);
 }
-
 static bool setup_ipc_objects(
 	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
 	RzInterpreterYieldFilter yield_filter,
@@ -197,12 +198,13 @@ static bool setup_ipc_objects(
 	RZ_OUT RzThreadRingBuf **io_request_rbuf,
 	RZ_OUT RzThreadRingBuf **io_result_rbuf,
 	RZ_OUT RzThreadRingBuf **branch_rbuf,
-	RZ_OUT HtUP **yield_rbufs) {
+	RZ_OUT RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
 	*il_queue = NULL;
 	*io_request_rbuf = NULL;
 	*io_result_rbuf = NULL;
 	*branch_rbuf = NULL;
-	*yield_rbufs = NULL;
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = NULL;
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = NULL;
 
 	RzInterpreterYieldRBuf *rbuf = NULL;
 	// The queue to pass the Effects to the interpreter.
@@ -234,17 +236,10 @@ static bool setup_ipc_objects(
 		goto error_free;
 	}
 
-	// Multiple yield queues can be used by a single interpreter.
+	// A single interpreter can produce different yields.
 	// E.g. if the interpreter has a complex abstract memory model
 	// for stack, heap and constant values.
 	// Then it can produce three kind of yields.
-	*yield_rbufs = ht_up_new(NULL, (HtUPFreeValue)rz_interpreter_yield_rbuf_free);
-	if (!*yield_rbufs) {
-		rz_warn_if_reached();
-		rz_pvector_free(sections);
-		goto error_free;
-	}
-
 	// These yield queues can be shared between different interpreters.
 	// So we have one yield queue for each yield type.
 
@@ -255,7 +250,7 @@ static bool setup_ipc_objects(
 		rz_pvector_free(sections);
 		goto error_free;
 	}
-	ht_up_insert(*yield_rbufs, yield_kind, rbuf);
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = rbuf;
 
 	yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
 	rbuf = rz_interpreter_yield_rbuf_new(
@@ -266,11 +261,12 @@ static bool setup_ipc_objects(
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	ht_up_insert(*yield_rbufs, yield_kind, rbuf);
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = rbuf;
 	return true;
 
 error_free:
-	ht_up_free(*yield_rbufs);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
 	rz_th_queue_free(*il_queue);
 	rz_th_ring_buf_free(*io_request_rbuf);
 	rz_th_ring_buf_free(*io_result_rbuf);
@@ -331,8 +327,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzThreadRingBuf *io_result_rbuf = NULL;
 	RzThreadRingBuf *branch_rbuf = NULL;
 	RzThreadQueue *il_queue = NULL;
-	HtUP *yield_rbufs = NULL;
-	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, &yield_rbufs)) {
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
+	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, yield_rbufs)) {
 		free(iset);
 		rz_analysis_il_vm_free(il_vm);
 		return NULL;
@@ -344,7 +340,8 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	iset->il_vm = il_vm;
 	iset->il_queue = il_queue;
 	iset->branch_rbuf = branch_rbuf;
-	iset->yield_rbufs = yield_rbufs;
+	iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
+	iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
 	iset->io_request_rbuf = io_request_rbuf;
 	iset->io_result_rbuf = io_result_rbuf;
 	iset->run_state_sync = rz_th_sem_new(0);
@@ -456,7 +453,8 @@ RZ_API bool rz_interpreter_run(RZ_NONNULL RZ_OWN RzInterpreterSet *iset) {
 			iset->astate &&
 			iset->branch_rbuf &&
 			iset->il_queue &&
-			iset->yield_rbufs &&
+			iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] &&
+			iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] &&
 			iset->run_state_sync &&
 			iset->plugin &&
 			iset->plugin->eval &&
