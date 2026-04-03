@@ -791,7 +791,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL);
 	}
 	n = cs_disasm(ctx->hndl, (ut8 *)buf, len, addr, 1, &insn);
 
