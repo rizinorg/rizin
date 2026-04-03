@@ -1101,7 +1101,6 @@ RZ_API RzCmdStatus rz_core_bin_class_apply_print(RZ_NONNULL RzCore *core, RZ_NON
 RZ_API bool rz_core_bin_classes_to_struct(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf);
 RZ_API bool rz_core_bin_signatures_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
-RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode);
 RZ_API bool rz_core_bin_dwarf_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_memory_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state);
 RZ_API bool rz_core_bin_resources_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state, RZ_NULLABLE RzList /*<char *>*/ *hashes);
