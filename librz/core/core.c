@@ -1753,7 +1753,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	}
 	core->hash = rz_hash_new();
 
-	rz_bin_bind(core->bin, rz_asm_get_bin_bind(core->rasm));
+	rz_bin_bind(core->bin, (RzBinBind *)rz_asm_get_bin_bind(core->rasm));
 	rz_bin_bind(core->bin, &(core->analysis->binb));
 
 	rz_io_bind(core->io, &(core->search->iob));
