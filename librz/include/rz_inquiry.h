@@ -15,6 +15,12 @@ extern "C" {
 
 #include <rz_inquiry/rz_interpreter.h>
 
+/**
+ * \brief The number of iterations inquiry checks for a user given signal.
+ * Checking it costs performance, so it is just checked the X iterations.
+ */
+#define RZ_INQUIRY_CHECK_USER_SIGNAL_ITC 1000
+
 typedef struct rz_inquiry_plugin_t {
 	RzInterpreterPlugin *p_interpreter;
 } RzInquiryPlugin;

@@ -528,10 +528,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			.next_run_state = RZ_INTP_RUN_STATE_INIT }
 	};
 	ut64 intpr_terminated = 0;
+	ut64 check_signal = 0;
 
 	// TODO: Add the other threads.
-	for (ut64 i = 0;;) {
-		if (rz_cons_is_breaked()) {
+	for (ut64 i = 0;; check_signal++) {
+		if (check_signal % RZ_INQUIRY_CHECK_USER_SIGNAL_ITC == 0 && rz_cons_is_breaked()) {
 			user_sent_signal = true;
 			break;
 		}
