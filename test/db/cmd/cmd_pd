@@ -1047,6 +1047,7 @@ pd 1 @ 0x004016c0
 e str.encoding=utf16le
 pd 1 @ 0x004016c0
 pd 1 @ 0x004016ca
+pd 1 @ 0x004016d4
 EOF
 EXPECT=<<EOF
             0x004016ac      mov   edi, 0x40224a                        ; 'J"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n"
@@ -1055,6 +1056,7 @@ EXPECT=<<EOF
             0x004016c0      mov   edi, 0x40230c
             0x004016c0      mov   edi, 0x40230c                        ; u"┠╂──╂┨ is a fence with embedded zeros\n"
             0x004016ca      mov   edi, 0x40235a                        ; 'Z#@' ; u"┠╂-─-─╂┨ is a fence with embedded double zeros\n"
+            0x004016d4      mov   edi, str.e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k_e_e_e_e_e_e_e_e_e_k ; u"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
 EOF
 RUN
 
@@ -1074,6 +1076,8 @@ e str.encoding=guess
 pd 1 @ 0x004016ed
 pd 1 @ 0x004016f7
 pd 1 @ 0x00401701
+e str.encoding=utf32le
+pd 1 @ 0x00401701
 EOF
 EXPECT=<<EOF
             0x004016de      mov   esi, str.Linux_wide_esc:___0m        ; u"\t"
@@ -1081,6 +1085,7 @@ EXPECT=<<EOF
             0x004016ed      mov   edi, 0x40258c                        ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n"
             0x004016f7      mov   edi, 0x40266c                        ; U"Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n"
             0x00401701      mov   edi, 0x402730                        ; '0'@' ; "e%"
+            0x00401701      mov   edi, 0x402730                        ; '0'@' ; U"╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥╥╥╥╥╥╥╥╫╥╥�"
 EOF
 RUN
 
