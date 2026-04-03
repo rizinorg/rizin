@@ -277,6 +277,7 @@ struct rz_interpreter_set {
 RZ_API RZ_OWN RzIntpRunState *rz_intp_run_state_new();
 RZ_API void rz_intp_run_state_free(RZ_OWN RZ_NULLABLE RzIntpRunState *state);
 RZ_API RzIntpRunStateFlag rz_intp_run_state_get(RZ_BORROW RZ_NONNULL RzIntpRunState *state);
+RZ_API RzIntpRunStateFlag rz_intp_run_state_get_unsafe(const RZ_NONNULL RzIntpRunState *state);
 RZ_API const char *rz_intp_run_state_flag_str(RzIntpRunStateFlag flag);
 
 RZ_IPI void rz_intp_run_state_set(RZ_BORROW RZ_NONNULL RzIntpRunState *state, RzIntpRunStateFlag flag);

@@ -49,10 +49,15 @@ RZ_API void rz_intp_run_state_free(RZ_OWN RZ_NULLABLE RzIntpRunState *state) {
 
 RZ_API RzIntpRunStateFlag rz_intp_run_state_get(RZ_BORROW RZ_NONNULL RzIntpRunState *state) {
 	rz_return_val_if_fail(state, RZ_INTP_RUN_STATE_TERM);
-	// rz_th_lock_enter(state->lock);
+	rz_th_lock_enter(state->lock);
 	RzIntpRunStateFlag flag = state->flag;
-	// rz_th_lock_leave(state->lock);
+	rz_th_lock_leave(state->lock);
 	return flag;
+}
+
+RZ_API RzIntpRunStateFlag rz_intp_run_state_get_unsafe(const RZ_NONNULL RzIntpRunState *state) {
+	rz_return_val_if_fail(state, RZ_INTP_RUN_STATE_TERM);
+	return state->flag;
 }
 
 /**
