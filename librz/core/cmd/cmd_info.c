@@ -135,6 +135,38 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 	return true;
 }
 
+static bool core_bin_structured_data_print(RZ_NONNULL RzCore *core, RzOutputMode mode) {
+	rz_return_val_if_fail(core, false);
+
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
+	if (!sf) {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			rz_cons_print("{}\n");
+		}
+		return true;
+	}
+
+	char *output = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		output = rz_structured_data_to_json(sf);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		output = rz_structured_data_to_yaml(sf);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+
+	rz_return_val_if_fail(output, false);
+	rz_cons_printf("%s\n", output);
+	free(output);
+
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char **argv) {
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	if (!obj || !obj->kv) {
@@ -418,7 +450,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_fields_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_cmd_info_structured_data_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	GET_CHECK_CUR_BINFILE(core);
-	return bool2status(rz_core_bin_structured_data_print(core, bf, mode));
+	return bool2status(core_bin_structured_data_print(core, mode));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
