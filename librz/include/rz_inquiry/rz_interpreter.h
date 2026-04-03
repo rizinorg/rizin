@@ -99,7 +99,7 @@ typedef enum {
 	/**
 	 * \brief The yield is an cross reference.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_XREF = 1 << 0,
+	RZ_INTERPRETER_YIELD_KIND_XREF = 0,
 
 	/**
 	 * \brief This yield is a simple flag, signaling if the current basic block
@@ -108,7 +108,8 @@ typedef enum {
 	 * If the last branch instruction does not jump to the neighboring basic block
 	 * it is a strong indicator that the jump is a call and the next address a return point.
 	 */
-	RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE = 1 << 1,
+	RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE,
+	RZ_INTERPRETER_YIELD_KIND_NUM,
 } RzInterpreterYieldKind;
 
 /**
@@ -157,7 +158,7 @@ typedef struct {
 	/**
 	 * \brief The yield type this interpreter generates.
 	 */
-	RzInterpreterYieldKind supported_yields;
+	RzInterpreterYieldKind supported_yields[RZ_INTERPRETER_YIELD_KIND_NUM];
 	bool (*init)(void **plugin_data);
 	bool (*reset)(void *plugin_data);
 	bool (*fini)(void *plugin_data);
@@ -259,7 +260,7 @@ struct rz_interpreter_set {
 	 * \brief The ring buffers to push the yield of interpretation into.
 	 * These ring buffers are shared with other interpreter sets.
 	 */
-	HtUP /*<RzInterpreterYieldKind, RzInterpreterYieldRBuf *>*/ *yield_rbufs;
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
 	/**
 	 * \brief Ignored address ranges.
 	 */

@@ -271,8 +271,8 @@ static bool get_branch_targets(RzCore *core, RzSetU *branch_targets, RzVector /*
 	return true;
 }
 
-static bool handle_yields(RzCore *core, HtUP *yield_rbufs) {
-	RzInterpreterYieldRBuf *rbuf_xrefs = ht_up_find(yield_rbufs, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+static bool handle_yields(RzCore *core, RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
+	RzInterpreterYieldRBuf *rbuf_xrefs = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
 	rz_return_val_if_fail(rbuf_xrefs, false);
 
 	RzAnalysisXRef xref = { 0 };
@@ -288,7 +288,7 @@ static bool handle_yields(RzCore *core, HtUP *yield_rbufs) {
 		}
 	}
 
-	RzInterpreterYieldRBuf *rbuf_calls = ht_up_find(yield_rbufs, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	RzInterpreterYieldRBuf *rbuf_calls = yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
 	rz_return_val_if_fail(rbuf_calls, false);
 
 	RzAnalysisCallCandidate cc = { 0 };
@@ -538,7 +538,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		RzInterpreterSet *iset = iset_map[i].iset;
 		RzIntpRunStateFlag expected_rs = iset_map[i].next_run_state;
 
-		switch (rz_intp_run_state_get(iset->run_state)) {
+		switch (rz_intp_run_state_get_unsafe(iset->run_state)) {
 		case RZ_INTP_RUN_STATE_OUT_OF_LOOP:
 			break;
 		case RZ_INTP_RUN_STATE_INIT: {

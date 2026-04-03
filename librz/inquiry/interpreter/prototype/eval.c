@@ -33,7 +33,7 @@ bool report_yield_xref(
 		return true;
 	}
 
-	RzInterpreterYieldRBuf *yrbuf = ht_up_find(iset->yield_rbufs, RZ_INTERPRETER_YIELD_KIND_XREF, NULL);
+	RzInterpreterYieldRBuf *yrbuf = iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF];
 	rz_return_val_if_fail(yrbuf, false);
 
 	ut64 to_addr = rz_bv_to_ut64(to->bv);
@@ -56,7 +56,7 @@ bool report_yield_xref(
 bool report_yield_call_candiate(
 	RzInterpreterSet *iset,
 	ProtoIntrprPluginData *plugin_data) {
-	RzInterpreterYieldRBuf *cc_rbuf = ht_up_find(iset->yield_rbufs, RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE, NULL);
+	RzInterpreterYieldRBuf *cc_rbuf = iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE];
 	rz_return_val_if_fail(cc_rbuf, false);
 
 	RzAnalysisCallCandidate cc = { 0 };
