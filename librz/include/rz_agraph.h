@@ -30,7 +30,7 @@ typedef struct rz_ascii_node_t {
 
 typedef struct rz_core_graph_hits_t {
 	char *old_word;
-	RzVector /*<struct struct rz_agraph_location>*/ word_list;
+	RzVector /*<struct rz_agraph_location>*/ word_list;
 	int word_nth;
 } RzAGraphHits;
 
