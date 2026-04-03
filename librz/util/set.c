@@ -121,7 +121,11 @@ static bool take_first(void *user, const ut64 k, const void *v) {
  * Otherwise a warning is printed and it returns UT64_MAX.
  */
 RZ_API ut64 rz_set_u_take(RZ_NONNULL RzSetU *set) {
-	rz_return_val_if_fail(set && rz_set_u_size(set) > 0, UT64_MAX);
+	rz_return_val_if_fail(set, UT64_MAX);
+	if (rz_set_u_size(set) == 0) {
+		rz_warn_if_reached();
+		return UT64_MAX;
+	}
 	ut64 out = UT64_MAX;
 	ht_up_foreach(set, take_first, &out);
 	rz_set_u_delete(set, out);
