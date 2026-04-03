@@ -45,7 +45,7 @@ s 0xb58d8
 pf bbbb
 pd 1
 echo ---
-ARM_GLOB_DAT
+# ARM_GLOB_DAT
 s 0xb5dbc
 pf bbbb
 pd 1
