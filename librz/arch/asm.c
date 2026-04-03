@@ -401,7 +401,7 @@ RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNU
 }
 
 RZ_API bool rz_asm_is_valid(const RzAsm *a, const char *name) {
-	if (!name || !*name) {
+	if (RZ_STR_ISEMPTY(name)) {
 		return false;
 	}
 
@@ -422,7 +422,7 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 	if (!a) {
 		return false;
 	}
-	if (!(name && *name)) {
+	if (RZ_STR_ISEMPTY(name)) {
 		a->acur = NULL;
 	}
 	RzIterator *iter = ht_sp_as_iter(a->plugins);
