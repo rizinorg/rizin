@@ -74,6 +74,8 @@ FILE=malloc://27
 CMDS=<<EOF
 e scr.utf8=true
 e asm.arch=xtensa
+e asm.bits=32
+e cfg.bigendian=false
 af+ fcn
 afb+ 0x0 0x0 27
 wx 00118a b012fa 6012fa f012ba 1025d2 7014f2 76a4bb 6203c9 32409f
@@ -109,6 +111,8 @@ FILE=malloc://8
 CMDS=<<EOF
 e scr.utf8=true
 e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
 af+ fcn
 afb+ 0x0 0x0 8
 wx e70ab0ee 000000ef
@@ -125,6 +129,8 @@ FILE=malloc://28
 CMDS=<<EOF
 e scr.utf8=true
 e asm.arch=tricore
+e asm.bits=32
+e cfg.bigendian=false
 af+ fcn
 afb+ 0x0 0x0 28
 wx 4b099131 4b036121 0721e333 0b42d020 4b671112 bf80619e 0f00b011
@@ -164,6 +170,8 @@ FILE=malloc://4
 CMDS=<<EOF
 e scr.utf8=true
 e asm.arch=v810
+e asm.bits=32
+e cfg.bigendian=false
 af+ fcn
 afb+ 0x0 0x0 4
 wx 4bf90018
@@ -180,6 +188,8 @@ FILE=malloc://12
 CMDS=<<EOF
 e scr.utf8=true
 e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
 af+ fcn
 afb+ 0x0 0x0 12
 wa fsqrt; so
