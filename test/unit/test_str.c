@@ -43,6 +43,28 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_replace_regex(void) {
+	char *str;
+
+	str = rz_str_replace_regex(strdup("attiny88.elf"), "(attiny|atmega|atxmega)[[:alnum:]]*", "avrdev", 0, false);
+	mu_assert_streq(str, "avrdev.elf", "error, regex replace once failed");
+	free(str);
+
+	str = rz_str_replace_regex(strdup("atmega32 atxmega16 attiny88"), "(attiny|atmega|atxmega)[[:alnum:]]*", "avr", 1, false);
+	mu_assert_streq(str, "avr avr avr", "error, regex replace global failed");
+	free(str);
+
+	str = rz_str_replace_regex(strdup("AtMeGa88"), "atmega[[:alnum:]]*", "avr", false, true);
+	mu_assert_streq(str, "avr", "error, regex replace icase failed"); 
+	free(str);
+
+	str = rz_str_replace_regex(strdup("nomatch"), "atmega[[:alnum:]]*", "avr", 1, false);
+	mu_assert_streq(str, "nomatch", "error, regex replace should keep string when no match");
+	free(str);
+
+	mu_end;
+}
+
 bool test_rz_str_ncpy(void) {
 	char *str = strdup("hello world");
 	char buf[10];
@@ -1013,6 +1035,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_ncat);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
+	mu_run_test(test_rz_str_replace_regex);
 	mu_run_test(test_rz_str_bits64);
 	mu_run_test(test_rz_str_rwx);
 	mu_run_test(test_rz_str_rwx_i);

@@ -1272,6 +1272,84 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 	return str;
 }
 
+RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, const char *val, bool global, bool icase) {
+	rz_return_val_if_fail(str && pattern && val, NULL);
+
+	RzRegexFlags cflags = RZ_REGEX_DEFAULT;
+	if (icase) {
+		cflags |= RZ_REGEX_CASELESS;
+	}
+
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
+	if (!regex) {
+		return str;
+	}
+
+	const size_t str_len = strlen(str);
+	const size_t val_len = strlen(val);
+	const char *src = str;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	RzRegexSize search_off = 0;
+
+	while (search_off <= str_len) {
+		RzPVector *matches = rz_regex_match_first(
+			regex, src, str_len, search_off, RZ_REGEX_DEFAULT
+		);
+
+		if (!matches || rz_pvector_empty(matches)) {
+			rz_pvector_free(matches);
+			break;
+		}
+
+		RzRegexMatch *m = rz_pvector_head(matches);
+		const RzRegexSize match_start = m->start;
+		const RzRegexSize match_len = m->len;
+
+		if (match_start > search_off) {
+			rz_strbuf_append_n(&sb, src + search_off, match_start - search_off);
+		}
+
+		if (val_len > 0) {
+			rz_strbuf_append_n(&sb, val, val_len);
+		}
+
+		rz_pvector_free(matches);
+
+		search_off = match_start + match_len;
+
+		if (!global) {
+			break;
+		}
+
+		if (match_len == 0) {
+			if (search_off < str_len) {
+				rz_strbuf_append_n(&sb, src + search_off, 1);
+				search_off++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	if (search_off < str_len) {
+		rz_strbuf_append_n(&sb, src + search_off, str_len - search_off);
+	}
+
+	rz_regex_free(regex);
+
+	char *res = rz_strbuf_drain_nofree(&sb);
+	if (!res) {
+		free(str);
+		return NULL;
+	}
+
+	free(str);
+	return res;
+}
+
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
 	rz_return_val_if_fail(str && key && val, NULL);
 
