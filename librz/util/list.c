@@ -492,7 +492,7 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 
 	rz_return_if_fail(list);
 
-	for (it = list->head; it; ) {
+	for (it = list->head; it;) {
 		tmp = it->next;
 		it->next = it->prev;
 		it->prev = tmp;
