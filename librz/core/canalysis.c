@@ -5204,6 +5204,7 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 
 	cdb->oplen = rz_asm_op_get_size(&cdb->as_op);
 
+	core->parser->subrel_addr = 0;
 	if (core->parser->subrel) {
 		ut64 subrel_addr = UT64_MAX;
 		if (rz_io_read_i(core->io, cdb->an_op.ptr, &subrel_addr, cdb->an_op.refptr, ctx->big_endian)) {
@@ -5219,7 +5220,7 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 
 	if (ctx->asm_sub_var) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, ctx->current, RZ_ANALYSIS_FCN_TYPE_NULL);
-		rz_parse_subvar(core->parser, fcn, &cdb->an_op, opcode, disasm, opcode_len);
+		rz_parse_subvar(core->parser, fcn, &cdb->an_op, opcode, disasm, sizeof(disasm));
 	}
 
 	if (!*disasm) {
