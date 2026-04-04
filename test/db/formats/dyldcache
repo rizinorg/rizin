@@ -376,8 +376,8 @@ NX       false
 0x18206a0f0 0x18003cfc4 0x18003d788 NSObject                      NSObject
     address index class flags name                  type                
 ------------------------------------------------------------------------
-0x182068038     1 Test        Test::(ivar)someField i
- ----------     0 Test        isa                   struct objc_class *
+0x182068038     0 Test        Test::(ivar)someField i
+ ----------     1 Test        isa                   struct objc_class *
     address index class flags name                         
 -----------------------------------------------------------
 0x1800189f8     0 Test        init
@@ -469,8 +469,8 @@ NX       false
 0x184079160 0x180040eb8 0x180042ac4 NSObject                      NSObject
     address index class flags name                  type                
 ------------------------------------------------------------------------
-0x18206c038     1 Test        Test::(ivar)someField i
- ----------     0 Test        isa                   struct objc_class *
+0x18206c038     0 Test        Test::(ivar)someField i
+ ----------     1 Test        isa                   struct objc_class *
     address index class flags name                         
 -----------------------------------------------------------
 0x180018a14     0 Test        init
