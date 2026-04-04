@@ -989,7 +989,8 @@ commands:
             entries:
               - text: "Float"
                 arg_str: " n.fᵈₙ"
-                comment: "Bitvector literal n interpreted as a float of size n with optional superscript d showing a decimal representation."
+                comment: "Bitvector literal n interpreted as a float of size n \
+                          with optional superscript d showing a decimal representation."
               - text: "Fbits"
                 arg_str: " ꜰʙ x"
                 comment: "Bitvector representation of float x."
