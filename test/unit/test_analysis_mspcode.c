@@ -39,6 +39,31 @@ static bool test_mspcode_analysis(void) {
 	rz_analysis_op(a, op, 0x1000, buf_cjmp, sizeof(buf_cjmp), RZ_ANALYSIS_OP_MASK_BASIC);
 	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_CJMP, "BranchT type mismatch");
 
+	// Test variable-size opcode parsing (0x32, n/2 payload) does not desync decoding.
+	//
+	// Encoding used by the current analysis plugin:
+	//   [0] opcode (0x32)
+	//   [1..2] imm16 little-endian = nbytes
+	//   [3..] nbytes payload
+	//
+	// We follow it with a known fixed-size opcode (0x14 = RET) and ensure the
+	// next decode lands exactly on it.
+	{
+		const ut8 buf_var_and_next[] = {
+			0x32, 0x04, 0x00,  // opcode=0x32, nbytes=4
+			0x11, 0x22, 0x33, 0x44, // payload (4 bytes)
+			0x14 // next opcode: End/RET
+		};
+
+		rz_analysis_op(a, op, 0x2000, buf_var_and_next, sizeof(buf_var_and_next), RZ_ANALYSIS_OP_MASK_BASIC);
+		mu_assert_eq(op->size, 7, "0x32 variable-size op should consume opcode+imm16+payload");
+		mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_UNK, "0x32 type mismatch");
+
+		rz_analysis_op(a, op, 0x2000 + 7, buf_var_and_next + 7, (int)sizeof(buf_var_and_next) - 7, RZ_ANALYSIS_OP_MASK_BASIC);
+		mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "Decode after 0x32 should land on 0x14 RET");
+		mu_assert_eq(op->size, 1, "0x14 RET size mismatch");
+	}
+
 	// Test End (RET) (0x14)
 	const ut8 buf_ret[] = { 0x14 };
 	rz_analysis_op(a, op, 0x1000, buf_ret, sizeof(buf_ret), RZ_ANALYSIS_OP_MASK_BASIC);

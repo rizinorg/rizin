@@ -1036,7 +1036,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 	case 0x1C:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len >= 4) {
-			st16 offset = (st16)rz_read_le16(b + 2);
+			st16 offset = (st16)rz_read_le16(b + 1);
 			op->jump = addr + op->size + offset;
 			op->fail = addr + op->size;
 		}
@@ -1046,7 +1046,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 	case 0x1D:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len >= 4) {
-			st16 offset = (st16)rz_read_le16(b + 2);
+			st16 offset = (st16)rz_read_le16(b + 1);
 			op->jump = addr + op->size + offset;
 			op->fail = addr + op->size;
 		}
@@ -1056,7 +1056,7 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 	case 0x1E:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		if (len >= 4) {
-			st16 offset = (st16)rz_read_le16(b + 2);
+			st16 offset = (st16)rz_read_le16(b + 1);
 			op->jump = addr + op->size + offset;
 		}
 		break;
@@ -1105,12 +1105,29 @@ static int mspcode_op(RzAnalysis *ana, RzAnalysisOp *op, ut64 addr,
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 
-	// Variable-size free / cleanup ops (size is data-dependent)
-	case 0x29: // (variable) push/call variant
+	// Variable-size free / cleanup ops (size is data-dependent).
+	//
+	// According to the opcode table these are "n /2" where n is an imm16 value
+	// and the instruction contains n/2 16-bit argument indices (or similar).
+	// This means we can compute the true width as:
+	//   size = 1 (opcode) + 2 (imm16 count) + (imm16_count) bytes payload
+	//
+	// We keep the op type as UNK for now (semantics are not fully modeled),
+	// but we MUST advance by the correct size to avoid desyncing decoding.
+	case 0x29: // variable size (n/2)
 	case 0x32: // Do SysFreeString [arg_n] n/2 times
 	case 0x36: // Free imm1#2/2 variants
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-		op->size = 1;
+		if (len < 3) {
+			// not enough bytes to read imm16 count
+			op->size = 0;
+			break;
+		}
+		{
+			const ut16 nbytes = rz_read_le16(b + 1);
+			const ut32 total = 1u + 2u + (ut32)nbytes;
+			op->size = (len >= (int)total) ? (int)total : 0;
+		}
 		break;
 
 	// vbaStrToAnsi
