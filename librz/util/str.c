@@ -1306,9 +1306,7 @@ RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, 
 	RzRegexSize search_off = 0;
 
 	while (search_off <= str_len) {
-		RzPVector *matches = rz_regex_match_first(
-			regex, src, str_len, search_off, RZ_REGEX_DEFAULT
-		);
+		RzPVector *matches = rz_regex_match_first(regex, src, str_len, search_off, RZ_REGEX_DEFAULT);
 
 		if (!matches || rz_pvector_empty(matches)) {
 			rz_pvector_free(matches);
