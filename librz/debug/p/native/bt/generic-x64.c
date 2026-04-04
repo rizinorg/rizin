@@ -56,6 +56,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	return list;
 }
 #endif
+
 // XXX: Do this work correctly?
 static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64_analysis(RzDebug *dbg, ut64 at) {
 	int i;
