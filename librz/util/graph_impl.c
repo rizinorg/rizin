@@ -7,8 +7,8 @@
 #include "graph_priv.h"
 
 typedef struct rz_graph_list_edge_impl_t {
-	HtUP /*<RzPVector<RzGraphEdge*>*>*/ *in_edges; ///< maps node hash_id to its incoming edge vector
-	HtUP /*<RzPVector<RzGraphEdge*>*>*/ *out_edges; ///< maps node hash_id to its outgoing edge vector
+	HtUP /*<RzPVector<RzGraphEdge *>*/ *in_edges; ///< maps node hash_id to its incoming edge vector
+	HtUP /*<RzPVector<RzGraphEdge *>*/ *out_edges; ///< maps node hash_id to its outgoing edge vector
 } RzGraphListImpl;
 
 typedef struct rz_graph_matrix_edge_impl_t {
