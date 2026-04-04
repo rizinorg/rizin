@@ -37,26 +37,26 @@ static bool test_graph_nodes(void) {
 
 	// Add nodes with integer data
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(rz_graph_node_get_data(n1), (void *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), (ut8 *)1, "node_data.1");
 
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
 	mu_assert_notnull(n2, "add_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.2");
 
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 	mu_assert_notnull(n3, "add_node.3");
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.3");
 
-	RzGraphNode *found1 = rz_graph_find_node(g, (void *)BASE + 1);
+	RzGraphNode *found1 = rz_graph_find_node(g, (ut8 *)BASE + 1);
 	mu_assert_ptreq(found1, n1, "find_node.1");
 
-	RzGraphNode *found2 = rz_graph_find_node(g, (void *)BASE + 2);
+	RzGraphNode *found2 = rz_graph_find_node(g, (ut8 *)BASE + 2);
 	mu_assert_ptreq(found2, n2, "find_node.2");
 
-	RzGraphNode *found_null = rz_graph_find_node(g, (void *)BASE + 0x42);
+	RzGraphNode *found_null = rz_graph_find_node(g, (ut8 *)BASE + 0x42);
 	mu_assert_null(found_null, "find_node.nonexistent");
 
 	rz_graph_free(g);
@@ -67,9 +67,9 @@ static bool test_graph_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	// Add edges
 	bool success = rz_graph_add_edge(g, n1, n2, NULL);
@@ -102,9 +102,9 @@ static bool test_graph_edge_deletion(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -130,10 +130,10 @@ static bool test_graph_in_out_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -178,9 +178,9 @@ static bool test_graph_in_out_neighbors(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -224,9 +224,9 @@ static bool test_graph_node_deletion(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -242,7 +242,7 @@ static bool test_graph_node_deletion(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.after_del");
 
 	// cannot find now
-	RzGraphNode *found = rz_graph_find_node(g, (void *)2);
+	RzGraphNode *found = rz_graph_find_node(g, (ut8 *)2);
 	mu_assert_null(found, "find_node.deleted");
 
 	// edge n1->n3 still found
@@ -258,9 +258,9 @@ static bool test_graph_reset(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.before_reset");
 
@@ -278,10 +278,10 @@ static bool test_graph_nth_neighbor(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -309,11 +309,11 @@ static bool test_graph_dfs(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
-	RzGraphNode *n5 = rz_graph_add_node(g, (void *)5, (void *)BASE + 5);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
+	RzGraphNode *n5 = rz_graph_add_node(g, (ut8 *)5, (ut8 *)BASE + 5);
 
 	// simple DAG
 	// n1 --> n2 -->n4 --> n5
@@ -346,9 +346,9 @@ static bool test_graph_get_nodes(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	RzIterator *it = rz_graph_get_nodes(g);
 	mu_assert_notnull(it, "get_nodes_iterator");
@@ -370,26 +370,26 @@ static bool test_graph_find_edge(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
-	rz_graph_add_edge(g, n1, n2, (void *)100);
-	rz_graph_add_edge(g, n2, n3, (void *)200);
-	rz_graph_add_edge(g, n2, n1, (void *)400);
+	rz_graph_add_edge(g, n1, n2, (ut8 *)100);
+	rz_graph_add_edge(g, n2, n3, (ut8 *)200);
+	rz_graph_add_edge(g, n2, n1, (ut8 *)400);
 
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)100, "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)400, "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);
@@ -407,7 +407,7 @@ static bool test_graph_complex(void) {
 	ut64 BASE = 0x40000000;
 	RzGraphNode *nodes[10];
 	for (int i = 0; i < 10; i++) {
-		nodes[i] = rz_graph_add_node(g, (void *)(size_t)(i + 1), (void *)(size_t)(BASE + i + 1));
+		nodes[i] = rz_graph_add_node(g, (ut8 *)(size_t)(i + 1), (ut8 *)(size_t)(BASE + i + 1));
 		mu_assert_notnull(nodes[i], "add_node");
 	}
 
@@ -445,26 +445,26 @@ static bool test_graph_nodes_matrix(void) {
 
 	// Add nodes with integer data
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(rz_graph_node_get_data(n1), (void *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), (ut8 *)1, "node_data.1");
 
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
 	mu_assert_notnull(n2, "add_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.2");
 
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 	mu_assert_notnull(n3, "add_node.3");
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.3");
 
-	RzGraphNode *found1 = rz_graph_find_node(g, (void *)BASE + 1);
+	RzGraphNode *found1 = rz_graph_find_node(g, (ut8 *)BASE + 1);
 	mu_assert_ptreq(found1, n1, "find_node.1");
 
-	RzGraphNode *found2 = rz_graph_find_node(g, (void *)BASE + 2);
+	RzGraphNode *found2 = rz_graph_find_node(g, (ut8 *)BASE + 2);
 	mu_assert_ptreq(found2, n2, "find_node.2");
 
-	RzGraphNode *found_null = rz_graph_find_node(g, (void *)BASE + 0x42);
+	RzGraphNode *found_null = rz_graph_find_node(g, (ut8 *)BASE + 0x42);
 	mu_assert_null(found_null, "find_node.nonexistent");
 
 	rz_graph_free(g);
@@ -475,9 +475,9 @@ static bool test_graph_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	// Add edges
 	bool success = rz_graph_add_edge(g, n1, n2, NULL);
@@ -510,9 +510,9 @@ static bool test_graph_edge_deletion_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -538,10 +538,10 @@ static bool test_graph_in_out_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -586,9 +586,9 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -629,9 +629,9 @@ static bool test_graph_node_deletion_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -647,7 +647,7 @@ static bool test_graph_node_deletion_matrix(void) {
 	mu_assert_eq(rz_graph_count_edges(g), 1, "n_edges.after_del");
 
 	// cannot find now
-	RzGraphNode *found = rz_graph_find_node(g, (void *)2);
+	RzGraphNode *found = rz_graph_find_node(g, (ut8 *)2);
 	mu_assert_null(found, "find_node.deleted");
 
 	// edge n1->n3 still found
@@ -663,9 +663,9 @@ static bool test_graph_reset_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	mu_assert_eq(rz_graph_count_nodes(g), 3, "n_nodes.before_reset");
 
@@ -683,10 +683,10 @@ static bool test_graph_nth_neighbor_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
 
 	rz_graph_add_edge(g, n1, n2, NULL);
 	rz_graph_add_edge(g, n1, n3, NULL);
@@ -713,11 +713,11 @@ static bool test_graph_dfs_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
-	RzGraphNode *n4 = rz_graph_add_node(g, (void *)4, (void *)BASE + 4);
-	RzGraphNode *n5 = rz_graph_add_node(g, (void *)5, (void *)BASE + 5);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
+	RzGraphNode *n4 = rz_graph_add_node(g, (ut8 *)4, (ut8 *)BASE + 4);
+	RzGraphNode *n5 = rz_graph_add_node(g, (ut8 *)5, (ut8 *)BASE + 5);
 
 	// simple DAG
 	// n1 --> n2 -->n4 --> n5
@@ -750,9 +750,9 @@ static bool test_graph_get_nodes_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
 	RzIterator *it = rz_graph_get_nodes(g);
 	mu_assert_notnull(it, "get_nodes_iterator");
@@ -774,26 +774,26 @@ static bool test_graph_find_edge_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
 
 	ut64 BASE = 0x40000000;
-	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
-	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
-	RzGraphNode *n3 = rz_graph_add_node(g, (void *)3, (void *)BASE + 3);
+	RzGraphNode *n1 = rz_graph_add_node(g, (ut8 *)1, (ut8 *)BASE + 1);
+	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2, (ut8 *)BASE + 2);
+	RzGraphNode *n3 = rz_graph_add_node(g, (ut8 *)3, (ut8 *)BASE + 3);
 
-	rz_graph_add_edge(g, n1, n2, (void *)100);
-	rz_graph_add_edge(g, n2, n3, (void *)200);
-	rz_graph_add_edge(g, n2, n1, (void *)400);
+	rz_graph_add_edge(g, n1, n2, (ut8 *)100);
+	rz_graph_add_edge(g, n2, n3, (ut8 *)200);
+	rz_graph_add_edge(g, n2, n1, (ut8 *)400);
 
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)100, "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
 	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
 	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
-	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (ut8 *)400, "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);
@@ -811,7 +811,7 @@ static bool test_graph_complex_matrix(void) {
 	ut64 BASE = 0x40000000;
 	RzGraphNode *nodes[10];
 	for (int i = 0; i < 10; i++) {
-		nodes[i] = rz_graph_add_node(g, (void *)(size_t)(i + 1), (void *)(size_t)(BASE + i + 1));
+		nodes[i] = rz_graph_add_node(g, (ut8 *)(size_t)(i + 1), (ut8 *)(size_t)(BASE + i + 1));
 		mu_assert_notnull(nodes[i], "add_node");
 	}
 
@@ -851,8 +851,8 @@ static bool test_graph_impl_equivalence(void) {
 	ut64 BASE = 0x40000000;
 	RzGraphNode *l_nodes[5], *m_nodes[5];
 	for (int i = 0; i < 5; i++) {
-		l_nodes[i] = rz_graph_add_node(g_list, (void *)(size_t)(i + 1), (void *)(size_t)(BASE + i + 1));
-		m_nodes[i] = rz_graph_add_node(g_matrix, (void *)(size_t)(i + 1), (void *)(size_t)(BASE + i + 1));
+		l_nodes[i] = rz_graph_add_node(g_list, (ut8 *)(size_t)(i + 1), (ut8 *)(size_t)(BASE + i + 1));
+		m_nodes[i] = rz_graph_add_node(g_matrix, (ut8 *)(size_t)(i + 1), (ut8 *)(size_t)(BASE + i + 1));
 	}
 
 	mu_assert_eq(rz_graph_count_nodes(g_list), rz_graph_count_nodes(g_matrix), "same node count");
