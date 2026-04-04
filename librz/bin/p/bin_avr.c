@@ -89,6 +89,7 @@ typedef struct {
 } RzAvrSvdLoader;
 
 // Helper functions for AVR SVD loader
+static bool avr_device_in_list(const char *name, const char *const *devices, size_t n_devices);
 static char *avr_legacy_device_name(const char *name);
 static char *avr_best_family_device(const char *name);
 static char *avr_fixup_device_name(const char *match, size_t devlen);
@@ -107,6 +108,55 @@ typedef struct bin_avr_rom {
 	RzVector /*<ut64>*/ *interrupt_handlers; ///< Parsed interrupt handlers addresses
 } BinAvrRom;
 
+static const char *const avr_family_mega640_2561[] = {
+	"ATmega640",
+	"ATmega1280",
+	"ATmega1281",
+	"ATmega2560",
+	"ATmega2561",
+};
+
+static const char *const avr_family_mega16u4_32u4[] = {
+	"ATmega16U4",
+	"ATmega32U4",
+};
+
+static const char *const avr_family_xmega_a4u[] = {
+	"ATxmega128A4U",
+	"ATxmega64A4U",
+	"ATxmega32A4U",
+	"ATxmega16A4U",
+};
+
+static const char *const avr_family_mega88_168[] = {
+	"ATmega88",
+	"ATmega168",
+};
+
+static const char *const avr_family_mega48_48v[] = {
+	"ATmega48",
+	"ATmega48V",
+};
+
+static const char *const avr_family_tiny48_88[] = {
+	"ATTiny48",
+	"ATTiny88",
+};
+
+static bool avr_device_in_list(const char *name, const char *const *devices, size_t n_devices) {
+	if (!name || !devices) {
+		return false;
+	}
+
+	for (size_t i = 0; i < n_devices; ++i) {
+		if (!rz_str_casecmp(name, devices[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /**
  * Helper: Allocate and duplicate a string
  */
@@ -119,30 +169,27 @@ static char *avr_legacy_device_name(const char *name) {
 		return rz_str_dup("ATmega8/L");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega640") || !rz_str_casecmp(name, "ATmega1280") ||
-		!rz_str_casecmp(name, "ATmega1281") || !rz_str_casecmp(name, "ATmega2560") ||
-		!rz_str_casecmp(name, "ATmega2561")) {
+	if (avr_device_in_list(name, avr_family_mega640_2561, RZ_ARRAY_SIZE(avr_family_mega640_2561))) {
 		return rz_str_dup("ATmega640/1280/1281/2560/2561");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega16U4") || !rz_str_casecmp(name, "ATmega32U4")) {
+	if (avr_device_in_list(name, avr_family_mega16u4_32u4, RZ_ARRAY_SIZE(avr_family_mega16u4_32u4))) {
 		return rz_str_dup("ATmega16u4/32u4");
 	}
 
-	if (!rz_str_casecmp(name, "ATxmega128A4U") || !rz_str_casecmp(name, "ATxmega64A4U") ||
-		!rz_str_casecmp(name, "ATxmega32A4U") || !rz_str_casecmp(name, "ATxmega16A4U")) {
+	if (avr_device_in_list(name, avr_family_xmega_a4u, RZ_ARRAY_SIZE(avr_family_xmega_a4u))) {
 		return rz_str_dup("ATxmega128/64/32/16a4u");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega88") || !rz_str_casecmp(name, "ATmega168")) {
+	if (avr_device_in_list(name, avr_family_mega88_168, RZ_ARRAY_SIZE(avr_family_mega88_168))) {
 		return rz_str_dup("ATmega88/168");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega48") || !rz_str_casecmp(name, "ATmega48V")) {
+	if (avr_device_in_list(name, avr_family_mega48_48v, RZ_ARRAY_SIZE(avr_family_mega48_48v))) {
 		return rz_str_dup("ATmega48/V/88/V/168/V");
 	}
 
-	if (!rz_str_casecmp(name, "ATTiny48") || !rz_str_casecmp(name, "ATTiny88")) {
+	if (avr_device_in_list(name, avr_family_tiny48_88, RZ_ARRAY_SIZE(avr_family_tiny48_88))) {
 		return rz_str_dup("ATTiny48/88");
 	}
 
@@ -163,30 +210,27 @@ static char *avr_best_family_device(const char *name) {
 		return NULL;
 	}
 
-	if (!rz_str_casecmp(name, "ATmega640") || !rz_str_casecmp(name, "ATmega1280") ||
-		!rz_str_casecmp(name, "ATmega1281") || !rz_str_casecmp(name, "ATmega2560") ||
-		!rz_str_casecmp(name, "ATmega2561")) {
+	if (avr_device_in_list(name, avr_family_mega640_2561, RZ_ARRAY_SIZE(avr_family_mega640_2561))) {
 		return rz_str_dup("ATmega2561");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega16U4") || !rz_str_casecmp(name, "ATmega32U4")) {
+	if (avr_device_in_list(name, avr_family_mega16u4_32u4, RZ_ARRAY_SIZE(avr_family_mega16u4_32u4))) {
 		return rz_str_dup("ATmega32U4");
 	}
 
-	if (!rz_str_casecmp(name, "ATxmega128A4U") || !rz_str_casecmp(name, "ATxmega64A4U") ||
-		!rz_str_casecmp(name, "ATxmega32A4U") || !rz_str_casecmp(name, "ATxmega16A4U")) {
+	if (avr_device_in_list(name, avr_family_xmega_a4u, RZ_ARRAY_SIZE(avr_family_xmega_a4u))) {
 		return rz_str_dup("ATxmega128A4U");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega88") || !rz_str_casecmp(name, "ATmega168")) {
+	if (avr_device_in_list(name, avr_family_mega88_168, RZ_ARRAY_SIZE(avr_family_mega88_168))) {
 		return rz_str_dup("ATmega168");
 	}
 
-	if (!rz_str_casecmp(name, "ATmega48") || !rz_str_casecmp(name, "ATmega48V")) {
+	if (avr_device_in_list(name, avr_family_mega48_48v, RZ_ARRAY_SIZE(avr_family_mega48_48v))) {
 		return rz_str_dup("ATmega168");
 	}
 
-	if (!rz_str_casecmp(name, "ATTiny48") || !rz_str_casecmp(name, "ATTiny88")) {
+	if (avr_device_in_list(name, avr_family_tiny48_88, RZ_ARRAY_SIZE(avr_family_tiny48_88))) {
 		return rz_str_dup("ATTiny88");
 	}
 
@@ -194,13 +238,19 @@ static char *avr_best_family_device(const char *name) {
 }
 
 static char *avr_fixup_device_name(const char *match, size_t devlen) {
+	if (!match || !devlen) {
+		return NULL;
+	}
+
 	char *device_name = rz_str_ndup(match, devlen);
 	if (!device_name) {
 		return NULL;
 	}
 	// Uppercase the first two chars (e.g., "at" -> "AT")
 	device_name[0] = toupper((unsigned char)device_name[0]);
-	device_name[1] = toupper((unsigned char)device_name[1]);
+	if (devlen > 1) {
+		device_name[1] = toupper((unsigned char)device_name[1]);
+	}
 	return device_name;
 }
 
@@ -240,16 +290,21 @@ static char *avr_detect_device_name(RzBinFile *bf) {
 		if (!match) {
 			continue;
 		}
-		char *end = (char *)match + strlen(patterns[i]);
-		while (end < lower_filename + strlen(lower_filename) &&
-			isalnum((unsigned char)*end)) {
-			end++;
-		}
-		size_t devlen = end - match;
-		if (devlen > 0 && devlen < 32) {
-			device_name = avr_fixup_device_name(match, devlen);
+		char *candidate = rz_str_dup(match);
+		if (!candidate) {
 			break;
 		}
+		candidate = rz_str_replace_regex(candidate, "[^[:alnum:]].*$", "", 0);
+		if (!candidate) {
+			break;
+		}
+		size_t devlen = strlen(candidate);
+		if (devlen > 0 && devlen < 32) {
+			device_name = avr_fixup_device_name(candidate, devlen);
+			free(candidate);
+			break;
+		}
+		free(candidate);
 	}
 
 	free(lower_filename);
