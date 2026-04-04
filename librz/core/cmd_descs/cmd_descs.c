@@ -84,6 +84,7 @@ static const RzCmdDescDetail plugins_asm_print_details[2];
 static const RzCmdDescDetail open_binary_select_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
+static const RzCmdDescDetail print_function_rzil_enriched_details[6];
 static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
@@ -16141,11 +16142,115 @@ static const RzCmdDescHelp print_function_rzil_help = {
 	.args = print_function_rzil_args,
 };
 
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Notation_detail_entries[] = {
+	{ .text = "0xVAL₃₂", .arg_str = NULL, .comment = "Subscript digits denote bitvector width in bits (e.g. 32-bit value)" },
+	{ .text = "⁺", .arg_str = NULL, .comment = "Superscript plus marks the signed variant of an operation" },
+	{ .text = "(x OP y)", .arg_str = NULL, .comment = "Parentheses group a sub-expression" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Bitvector_space_and_space_Boolean_space_Symbols_detail_entries[] = {
+	{ .text = "⊥", .arg_str = NULL, .comment = "Boolean false" },
+	{ .text = "⊤", .arg_str = NULL, .comment = "Boolean true" },
+	{ .text = "¬", .arg_str = NULL, .comment = "Boolean NOT (invert)" },
+	{ .text = "&", .arg_str = NULL, .comment = "Boolean AND" },
+	{ .text = "|", .arg_str = NULL, .comment = "Boolean OR" },
+	{ .text = "^", .arg_str = NULL, .comment = "Boolean XOR" },
+	{ .text = "↑", .arg_str = NULL, .comment = "Most significant bit" },
+	{ .text = "↓", .arg_str = NULL, .comment = "Least significant bit" },
+	{ .text = "x ≡ 0", .arg_str = NULL, .comment = "Is zero test" },
+	{ .text = "−", .arg_str = NULL, .comment = "Arithmetic negation (two's complement)" },
+	{ .text = "~", .arg_str = NULL, .comment = "Bitwise NOT" },
+	{ .text = "+", .arg_str = NULL, .comment = "Addition" },
+	{ .text = "-", .arg_str = NULL, .comment = "Subtraction" },
+	{ .text = "*", .arg_str = NULL, .comment = "Multiplication" },
+	{ .text = "/", .arg_str = NULL, .comment = "Unsigned division" },
+	{ .text = "/⁺", .arg_str = NULL, .comment = "Signed division" },
+	{ .text = "%", .arg_str = NULL, .comment = "Unsigned modulo" },
+	{ .text = "%⁺", .arg_str = NULL, .comment = "Signed modulo" },
+	{ .text = "∧", .arg_str = NULL, .comment = "Bitwise AND" },
+	{ .text = "∨", .arg_str = NULL, .comment = "Bitwise OR" },
+	{ .text = "⊕", .arg_str = NULL, .comment = "Bitwise XOR" },
+	{ .text = "≫", .arg_str = NULL, .comment = "Right shift" },
+	{ .text = "≪", .arg_str = NULL, .comment = "Left shift" },
+	{ .text = "≡", .arg_str = NULL, .comment = "Equality comparison" },
+	{ .text = "≦", .arg_str = NULL, .comment = "Unsigned less-or-equal" },
+	{ .text = "≦⁺", .arg_str = NULL, .comment = "Signed less-or-equal" },
+	{ .text = "≈", .arg_str = NULL, .comment = "Cast (resize bitvector to subscripted width)" },
+	{ .text = "⊚", .arg_str = NULL, .comment = "Append (concatenate two bitvectors)" },
+	{ .text = "=", .arg_str = NULL, .comment = "Let binding (scoped variable definition)" },
+	{ .text = "↠", .arg_str = NULL, .comment = "If-then-else (pure ternary)" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Effect_space_Symbols_detail_entries[] = {
+	{ .text = "←", .arg_str = NULL, .comment = "Set (variable assignment)" },
+	{ .text = "↷", .arg_str = NULL, .comment = "Jump to address" },
+	{ .text = "@ lbl", .arg_str = NULL, .comment = "Goto label" },
+	{ .text = "⅄", .arg_str = NULL, .comment = "Conditional branch (if-then-else effect)" },
+	{ .text = "⟳", .arg_str = NULL, .comment = "Repeat (loop while condition holds)" },
+	{ .text = "∅", .arg_str = NULL, .comment = "No operation (nop)" },
+	{ .text = "{}", .arg_str = NULL, .comment = "Empty effect" },
+	{ .text = "ʟ", .arg_str = NULL, .comment = "Memory load (subscript is memory index)" },
+	{ .text = "ꜱ", .arg_str = NULL, .comment = "Memory store (subscript is memory index)" },
+	{ .text = "ŝ", .arg_str = NULL, .comment = "Memory store wide (subscript is memory index)" },
+	{ .text = "?", .arg_str = NULL, .comment = "Unknown or unimplemented IL operation" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Floating_space_Point_space_Symbols_detail_entries[] = {
+	{ .text = ".f₃₂ .f₆₄", .arg_str = NULL, .comment = "Float format suffix (32, 64, 80, 128 bit IEEE 754)" },
+	{ .text = "ꜰʙ", .arg_str = NULL, .comment = "Float to bitvector" },
+	{ .text = "x < ∞", .arg_str = NULL, .comment = "Is finite" },
+	{ .text = "x ≡ ɴаɴ", .arg_str = NULL, .comment = "Is NaN" },
+	{ .text = "x ≡ ∞", .arg_str = NULL, .comment = "Is infinity" },
+	{ .text = "x ≡ 0", .arg_str = NULL, .comment = "Is float zero" },
+	{ .text = "x < 0", .arg_str = NULL, .comment = "Is negative float" },
+	{ .text = "x > 0", .arg_str = NULL, .comment = "Is positive float" },
+	{ .text = "²√", .arg_str = NULL, .comment = "Square root" },
+	{ .text = "¹/√", .arg_str = NULL, .comment = "Reciprocal square root" },
+	{ .text = "⭂", .arg_str = NULL, .comment = "Round float" },
+	{ .text = "ꜰ≡", .arg_str = NULL, .comment = "Rounding mode equality" },
+	{ .text = "⌊", .arg_str = NULL, .comment = "Float successor" },
+	{ .text = "⌋", .arg_str = NULL, .comment = "Float predecessor" },
+	{ .text = "x < y", .arg_str = NULL, .comment = "Float ordering comparison" },
+	{ .text = "ᴇ", .arg_str = NULL, .comment = "Float exception test" },
+	{ .text = "ꜰ%", .arg_str = NULL, .comment = "Float modulo" },
+	{ .text = "∠", .arg_str = NULL, .comment = "Float hypotenuse" },
+	{ .text = "ᴍᴀ", .arg_str = NULL, .comment = "Float multiply-add" },
+	{ .text = "˰", .arg_str = NULL, .comment = "Float power" },
+	{ .text = "˰ⁿ", .arg_str = NULL, .comment = "Float power (integer exponent)" },
+	{ .text = "ⁿ√", .arg_str = NULL, .comment = "Float nth root" },
+	{ .text = "∪", .arg_str = NULL, .comment = "Float compound" },
+	{ .text = "≅", .arg_str = NULL, .comment = "Float format conversion" },
+	{ .text = "ꜰ≈ɪ", .arg_str = NULL, .comment = "Float to unsigned integer" },
+	{ .text = "ꜰ≈ɪ⁺", .arg_str = NULL, .comment = "Float to signed integer" },
+	{ .text = "ꜰ≈ꜰ", .arg_str = NULL, .comment = "Unsigned integer to float" },
+	{ .text = "ꜰ≈ꜰ⁺", .arg_str = NULL, .comment = "Signed integer to float" },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Examples_detail_entries[] = {
+	{ .text = "(rax ← (32 ʟ₀ (rbp + 0xfffffffc₆₄)))", .arg_str = NULL, .comment = "Set rax to a 32-bit load from memory 0 at address rbp+offset" },
+	{ .text = "(cf ← ((x ≦ y) & ⊤))", .arg_str = NULL, .comment = "Set the carry flag based on unsigned comparison" },
+	{ .text = "↷ 0x00401000₆₄", .arg_str = NULL, .comment = "Jump to address 0x00401000 (64-bit)" },
+	{ 0 },
+};
+static const RzCmdDescDetail print_function_rzil_enriched_details[] = {
+	{ .name = "Notation", .entries = print_function_rzil_enriched_Notation_detail_entries },
+	{ .name = "Bitvector and Boolean Symbols", .entries = print_function_rzil_enriched_Bitvector_space_and_space_Boolean_space_Symbols_detail_entries },
+	{ .name = "Effect Symbols", .entries = print_function_rzil_enriched_Effect_space_Symbols_detail_entries },
+	{ .name = "Floating Point Symbols", .entries = print_function_rzil_enriched_Floating_space_Point_space_Symbols_detail_entries },
+	{ .name = "Examples", .entries = print_function_rzil_enriched_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg print_function_rzil_enriched_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_function_rzil_enriched_help = {
 	.summary = "Print enriched RzIL of the function",
+	.description = "Print the RzIL of the function at the current offset using Unicode symbols. Use 'plf' for plain ASCII output. Requires 'scr.utf8=true'.",
+	.details = print_function_rzil_enriched_details,
 	.args = print_function_rzil_enriched_args,
 };
 
