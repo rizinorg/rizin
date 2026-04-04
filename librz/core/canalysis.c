@@ -5232,8 +5232,9 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	rz_parse_filter(core->parser, ctx->current, core->flags, cdb->hint, tmp, disasm, sizeof(disasm), ctx->big_endian);
 	free(tmp);
 
-	rz_core_asm_bb_middle(core, ctx->current, &cdb->oplen, &ret_as);
-
+	ut8 *amask = rz_analysis_mask(core->analysis, left, ptr, ctx->current);
+	cdb->mask = rz_hex_bin2strdup(amask, cdb->oplen);
+	free(amask);
 	cdb->bytes = rz_hex_bin2strdup(ptr, cdb->oplen);
 
 	// apply pseudo if needed
@@ -5241,9 +5242,8 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	cdb->description = rz_asm_describe(core->rasm, cdb->mnemonic);
 	cdb->disasm = rz_str_ndup(disasm, sizeof(disasm));
 
-	ut8 *amask = rz_analysis_mask(core->analysis, left, ptr, ctx->current);
-	cdb->mask = rz_hex_bin2strdup(amask, cdb->oplen);
-	free(amask);
+	// if the next op is in the middle, then we should shorten oplen.
+	rz_core_asm_bb_middle(core, ctx->current, &cdb->oplen, &ret_as);
 
 	ctx->current += RZ_MAX(cdb->oplen, 1);
 	ctx->ops_count++;
