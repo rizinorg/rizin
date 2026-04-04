@@ -3,7 +3,10 @@ name: "Code scanning"
 on:
   push:
     branches:
-    - "**"
+    - 'master'
+    - 'dev'
+    - 'stable'
+    - 'container-*'
   pull_request:
 
 # Automatically cancel any previous workflow on new push.

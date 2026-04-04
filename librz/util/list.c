@@ -58,7 +58,9 @@ RZ_API bool rz_list_iter_swap_data(RZ_NONNULL RzListIter *iter0, RZ_NONNULL RzLi
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 	return list->head;
 }
 
@@ -75,7 +77,9 @@ RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
  *
  **/
 RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 	return list->head ? list->head->val : NULL;
 }
 
@@ -84,7 +88,9 @@ RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
  *
  **/
 RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 	return list->tail ? list->tail->val : NULL;
 }
 
@@ -113,17 +119,41 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 	return list->length;
 }
 
+static inline RzListIter *rz_list_iter_at(const RzList *list, ut32 n) {
+	if (n >= list->length) {
+		return NULL;
+	}
+	RzListIter *it;
+	if (n < list->length / 2) {
+		it = list->head;
+		for (ut32 i = 0; i < n; i++) {
+			it = it->next;
+		}
+	} else {
+		it = list->tail;
+		for (ut32 i = list->length - 1; i > n; i--) {
+			it = it->prev;
+		}
+	}
+	return it;
+}
+
 /**
  * \brief Empties the list without freeing the list pointer
  *
  **/
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
-	rz_return_if_fail(list);
-
+	if (RZ_UNLIKELY(!list)) {
+		return;
+	}
 	RzListIter *it = list->head;
+	RzListFree fn = list->free;
 	while (it) {
 		RzListIter *next = it->next;
-		rz_list_delete(list, it);
+		if (fn && it->val) {
+			fn(it->val);
+		}
+		free(it);
 		it = next;
 	}
 	list->length = 0;
@@ -147,7 +177,9 @@ RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
  *
  **/
 RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val) {
-	rz_return_val_if_fail(list, false);
+	if (RZ_UNLIKELY(!list)) {
+		return false;
+	}
 	RzListIter *iter = rz_list_find_val(list, val);
 	if (!iter) {
 		return false;
@@ -161,7 +193,9 @@ RZ_API bool rz_list_delete_val(RZ_NONNULL RzList *list, void *val) {
  *
  **/
 RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter *iter) {
-	rz_return_if_fail(list && iter);
+	if (RZ_UNLIKELY(!list || !iter)) {
+		return;
+	}
 	if (list->head == iter) {
 		list->head = iter->next;
 	}
@@ -187,7 +221,9 @@ RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter
  *
  **/
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
-	rz_return_val_if_fail(list1 && list2, 0);
+	if (RZ_UNLIKELY(!list1 || !list2)) {
+		return false;
+	}
 
 	if (!(list2->length)) {
 		return false;
@@ -239,10 +275,10 @@ RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f) {
  **/
 RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
 	RzList *l = rz_list_new();
-	if (!l) {
+	if (RZ_UNLIKELY(!l)) {
 		return NULL;
 	}
-	if (!arr) {
+	if (RZ_UNLIKELY(!arr || !arr_size)) {
 		return l;
 	}
 	size_t i;
@@ -259,9 +295,11 @@ RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size) 
  * \return The produced list. Or NULL in case of failure.
  **/
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter) {
-	rz_return_val_if_fail(iter, NULL);
+	if (RZ_UNLIKELY(!iter)) {
+		return NULL;
+	}
 	RzList *l = rz_list_new();
-	if (!l) {
+	if (RZ_UNLIKELY(!l)) {
 		return NULL;
 	}
 	void **val;
@@ -277,9 +315,10 @@ RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator 
  **/
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
 	RzListIter *item = RZ_NEW0(RzListIter);
-	if (item) {
-		item->val = data;
+	if (RZ_UNLIKELY(!item)) {
+		return NULL;
 	}
+	item->val = data;
 	return item;
 }
 
@@ -290,11 +329,13 @@ RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
 RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL void *data) {
 	RzListIter *item = NULL;
 
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 
 	item = RZ_NEW(RzListIter);
-	if (!item) {
-		return item;
+	if (RZ_UNLIKELY(!item)) {
+		return NULL;
 	}
 	if (list->tail) {
 		list->tail->next = item;
@@ -316,10 +357,12 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data) {
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 
 	RzListIter *item = RZ_NEW0(RzListIter);
-	if (!item) {
+	if (RZ_UNLIKELY(!item)) {
 		return NULL;
 	}
 	if (list->head) {
@@ -333,7 +376,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL
 		list->tail = item;
 	}
 	list->length++;
-	list->sorted = true;
+	list->sorted = false;
 	return item;
 }
 
@@ -342,33 +385,34 @@ RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data) {
-	RzListIter *it, *item;
-	ut32 i;
-
 	rz_return_val_if_fail(list, NULL);
 
 	if (!list->head || !n) {
 		return rz_list_prepend(list, data);
 	}
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			item = RZ_NEW(RzListIter);
-			if (!item) {
-				return NULL;
-			}
-			item->val = data;
-			item->next = it;
-			item->prev = it->prev;
-			if (it->prev) {
-				it->prev->next = item;
-			}
-			it->prev = item;
-			list->length++;
-			list->sorted = true;
-			return item;
-		}
+
+	if (n >= list->length) {
+		return rz_list_append(list, data);
 	}
-	return rz_list_append(list, data);
+
+	RzListIter *it = rz_list_iter_at(list, n);
+
+	RzListIter *item = RZ_NEW(RzListIter);
+	if (RZ_UNLIKELY(!item)) {
+		return NULL;
+	}
+	item->val = data;
+	item->next = it;
+	item->prev = it->prev;
+	if (it->prev) {
+		it->prev->next = item;
+	} else {
+		list->head = item;
+	}
+	it->prev = item;
+	list->length++;
+	list->sorted = false;
+	return item;
 }
 
 /**
@@ -379,7 +423,9 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 	void *data = NULL;
 	RzListIter *iter;
 
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 
 	if (list->tail) {
 		iter = list->tail;
@@ -403,7 +449,9 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
 	void *data = NULL;
 
-	rz_return_val_if_fail(list, NULL);
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 
 	if (list->head) {
 		RzListIter *iter = list->head;
@@ -425,28 +473,12 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
  *
  **/
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
-	RzListIter *it;
-	ut32 i;
-
 	rz_return_val_if_fail(list, false);
 
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			if (!it->prev && !it->next) {
-				list->head = list->tail = NULL;
-			} else if (!it->prev) {
-				it->next->prev = NULL;
-				list->head = it->next;
-			} else if (!it->next) {
-				it->prev->next = NULL;
-				list->tail = it->prev;
-			} else {
-				it->prev->next = it->next;
-				it->next->prev = it->prev;
-			}
-			rz_list_delete(list, it);
-			return true;
-		}
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (it) {
+		rz_list_delete(list, it);
+		return true;
 	}
 	return false;
 }
@@ -460,14 +492,21 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 
 	rz_return_if_fail(list);
 
-	for (it = list->head; it && it->val; it = it->prev) {
-		tmp = it->prev;
-		it->prev = it->next;
-		it->next = tmp;
+	for (it = list->head; it; ) {
+		tmp = it->next;
+		it->next = it->prev;
+		it->prev = tmp;
+		if (!tmp) {
+			break;
+		}
+		it = tmp;
 	}
 	tmp = list->head;
 	list->head = list->tail;
 	list->tail = tmp;
+	if (list->length > 1) {
+		list->sorted = false;
+	}
 }
 
 /**
@@ -475,16 +514,16 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
  *
  **/
 RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list) {
-	RzListIter *iter;
-	void *data;
-
-	rz_return_val_if_fail(list, NULL);
-
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
 	RzList *l = rz_list_new();
-	if (!l) {
+	if (RZ_UNLIKELY(!l)) {
 		return NULL;
 	}
 	l->free = NULL;
+	RzListIter *iter;
+	void *data;
 	rz_list_foreach (list, iter, data) {
 		rz_list_append(l, data);
 	}
@@ -497,10 +536,12 @@ RZ_API RZ_OWN RzList *rz_list_clone(RZ_NONNULL const RzList *list) {
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp, void *user) {
-	rz_return_val_if_fail(list && data && cmp, NULL);
+	if (RZ_UNLIKELY(!list || !data || !cmp)) {
+		return NULL;
+	}
 
 	RzListIter *it, *item = NULL;
-	for (it = list->head; it && it->val && cmp(data, it->val, user) > 0; it = it->next) {
+	for (it = list->head; it && cmp(data, it->val, user) > 0; it = it->next) {
 	}
 	if (it) {
 		item = RZ_NEW0(RzListIter);
@@ -529,19 +570,18 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
  *
  **/
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data) {
-	RzListIter *it;
-	ut32 i;
+	if (RZ_UNLIKELY(!list)) {
+		return false;
+	}
 
-	rz_return_val_if_fail(list, false);
-	for (it = list->head, i = 0; it; it = it->next, i++) {
-		if (i == n) {
-			if (list->free) {
-				list->free(it->val);
-			}
-			it->val = data;
-			list->sorted = false;
-			return true;
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (it) {
+		if (list->free) {
+			list->free(it->val);
 		}
+		it->val = data;
+		list->sorted = false;
+		return true;
 	}
 	return false;
 }
@@ -551,20 +591,14 @@ RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data
  *
  **/
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
-	RzListIter *it;
-	ut32 i;
-
-	rz_return_val_if_fail(list, NULL);
-	if (n >= list->length) {
+	if (RZ_UNLIKELY(!list)) {
 		return NULL;
 	}
-
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			return it->val;
-		}
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (!it) {
+		return NULL;
 	}
-	return NULL;
+	return it->val;
 }
 
 /**
@@ -580,12 +614,16 @@ RZ_API RZ_BORROW bool rz_list_contains(RZ_NONNULL const RzList *list, RZ_NONNULL
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_NONNULL const void *val) {
-	rz_return_val_if_fail(list, NULL);
-	void *p;
-	RzListIter *iter;
-	rz_list_foreach (list, iter, p) {
-		if (val == p) {
-			return iter;
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
+	RzListIter *it;
+	for (it = list->head; it; it = it->next) {
+		if (RZ_UNLIKELY(it->next != NULL)) {
+			RZ_PREFETCH(it->next);
+		}
+		if (it->val == val) {
+			return it;
 		}
 	}
 	return NULL;
@@ -601,12 +639,13 @@ RZ_API RZ_BORROW RzListIter *rz_list_find_val(RZ_NONNULL const RzList *list, RZ_
 RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const void *val,
 	RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_val_if_fail(list && cmp, NULL);
-
-	void *q;
-	RzListIter *iter;
-	rz_list_foreach (list, iter, q) {
-		if (!cmp(val, q, user)) {
-			return iter;
+	RzListIter *it;
+	for (it = list->head; RZ_LIKELY(it != NULL); it = it->next) {
+		if (RZ_UNLIKELY(it->next != NULL)) {
+			RZ_PREFETCH(it->next);
+		}
+		if (!cmp(val, it->val, user)) {
+			return it;
 		}
 	}
 	return NULL;
@@ -622,9 +661,15 @@ static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparato
 			next = second;
 			second = second->next;
 		} else if (cmp(first->val, second->val, user) <= 0) {
+			if (RZ_LIKELY(first->next != NULL)) {
+				RZ_PREFETCH(first->next);
+			}
 			next = first;
 			first = first->next;
 		} else {
+			if (RZ_LIKELY(second->next != NULL)) {
+				RZ_PREFETCH(second->next);
+			}
 			next = second;
 			second = second->next;
 		}
@@ -704,8 +749,8 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 	}
 	RzListIter *it;
 	RzListIter *it2;
-	for (it = list->head; it && it->val; it = it->next) {
-		for (it2 = it->next; it2 && it2->val; it2 = it2->next) {
+	for (it = list->head; it; it = it->next) {
+		for (it2 = it->next; it2; it2 = it2->next) {
 			if (cmp(it->val, it2->val, user) > 0) {
 				void *t = it->val;
 				it->val = it2->val;
