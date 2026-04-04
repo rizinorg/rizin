@@ -6,6 +6,7 @@
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_iterator.h>
 #include <rz_util/rz_stack.h>
+#include "graph_priv.h"
 
 /**
  * \brief DFS traversal colors.

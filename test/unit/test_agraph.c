@@ -32,7 +32,7 @@ bool test_graph_to_agraph() {
 	RzGraphNode *node;
 	int i = 0;
 	rz_iterator_foreach(iter, node) {
-		RzANode *info = node->data;
+		const RzANode *info = rz_graph_node_get_data(node);
 		switch (i++) {
 		case 0:
 			mu_assert_streq(info->title, "A", "Wrong node name");
@@ -43,7 +43,7 @@ bool test_graph_to_agraph() {
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(out_iter, out_node) {
-					RzANode *out_info = out_node->data;
+					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
 						mu_assert_streq(out_info->title, "B", "Wrong node name");
@@ -66,7 +66,7 @@ bool test_graph_to_agraph() {
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(out_iter, out_node) {
-					RzANode *out_info = out_node->data;
+					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
 						mu_assert_streq(out_info->title, "D", "Wrong node name");
@@ -86,7 +86,7 @@ bool test_graph_to_agraph() {
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(out_iter, out_node) {
-					RzANode *out_info = out_node->data;
+					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
 						mu_assert_streq(out_info->title, "D", "Wrong node name");

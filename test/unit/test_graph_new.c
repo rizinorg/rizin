@@ -10,7 +10,7 @@ static ut64 simple_hash(const void *data) {
 
 static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 	RzList *order = (RzList *)vis->visitor_data;
-	rz_list_prepend(order, n->data);
+	rz_list_prepend(order, rz_graph_node_get_data_mut(n));
 }
 
 static bool test_graph_basic(void) {
@@ -40,7 +40,7 @@ static bool test_graph_nodes(void) {
 	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(n1->data, (void *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), (void *)1, "node_data.1");
 
 	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
 	mu_assert_notnull(n2, "add_node.2");
@@ -146,8 +146,8 @@ static bool test_graph_in_out_edges(void) {
 	int count = 0;
 	RzGraphEdge *edge;
 	rz_iterator_foreach(it, edge) {
-		mu_assert_ptreq(edge->from, n1, "out_edge.from");
-		mu_assert_true(edge->to == n2 || edge->to == n3 || edge->to == n4, "out_edge.to");
+		mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "out_edge.from");
+		mu_assert_true(rz_graph_edge_get_to(edge) == n2 || rz_graph_edge_get_to(edge) == n3 || rz_graph_edge_get_to(edge) == n4, "out_edge.to");
 		count++;
 	}
 	mu_assert_eq(count, 3, "out_edges.count");
@@ -161,8 +161,8 @@ static bool test_graph_in_out_edges(void) {
 
 	count = 0;
 	rz_iterator_foreach(it, edge) {
-		mu_assert_ptreq(edge->to, n4, "in_edge.to");
-		mu_assert_true(edge->from == n1 || edge->from == n2 || edge->from == n3, "in_edge.from");
+		mu_assert_ptreq(rz_graph_edge_get_to(edge), n4, "in_edge.to");
+		mu_assert_true(rz_graph_edge_get_from(edge) == n1 || rz_graph_edge_get_from(edge) == n2 || rz_graph_edge_get_from(edge) == n3, "in_edge.from");
 		count++;
 	}
 	mu_assert_eq(count, 3, "in_edges.count");
@@ -267,7 +267,7 @@ static bool test_graph_reset(void) {
 	rz_graph_reset(g);
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.after_reset");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_reset");
-	mu_assert_eq(g->impl_type, RZ_GRAPH_IMPL_LIST, "impl_type_after_reset");
+	mu_assert_eq(rz_graph_get_impl_type(g), RZ_GRAPH_IMPL_LIST, "impl_type_after_reset");
 
 	rz_graph_free(g);
 	mu_end;
@@ -381,15 +381,15 @@ static bool test_graph_find_edge(void) {
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
-	mu_assert_ptreq(edge->from, n1, "edge.from");
-	mu_assert_ptreq(edge->to, n2, "edge.to");
-	mu_assert_ptreq(edge->data, (void *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
+	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)100, "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
-	mu_assert_ptreq(edge->from, n2, "edge.from");
-	mu_assert_ptreq(edge->to, n1, "edge.to");
-	mu_assert_ptreq(edge->data, (void *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
+	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)400, "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);
@@ -448,7 +448,7 @@ static bool test_graph_nodes_matrix(void) {
 	RzGraphNode *n1 = rz_graph_add_node(g, (void *)1, (void *)BASE + 1);
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
-	mu_assert_ptreq(n1->data, (void *)1, "node_data.1");
+	mu_assert_ptreq(rz_graph_node_get_data(n1), (void *)1, "node_data.1");
 
 	RzGraphNode *n2 = rz_graph_add_node(g, (void *)2, (void *)BASE + 2);
 	mu_assert_notnull(n2, "add_node.2");
@@ -554,8 +554,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 	int count = 0;
 	RzGraphEdge *edge;
 	rz_iterator_foreach(it, edge) {
-		mu_assert_ptreq(edge->from, n1, "out_edge.from");
-		mu_assert_true(edge->to == n2 || edge->to == n3 || edge->to == n4, "out_edge.to");
+		mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "out_edge.from");
+		mu_assert_true(rz_graph_edge_get_to(edge) == n2 || rz_graph_edge_get_to(edge) == n3 || rz_graph_edge_get_to(edge) == n4, "out_edge.to");
 		count++;
 	}
 	mu_assert_eq(count, 3, "out_edges.count");
@@ -569,8 +569,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 
 	count = 0;
 	rz_iterator_foreach(it, edge) {
-		mu_assert_ptreq(edge->to, n4, "in_edge.to");
-		mu_assert_true(edge->from == n1 || edge->from == n2 || edge->from == n3, "in_edge.from");
+		mu_assert_ptreq(rz_graph_edge_get_to(edge), n4, "in_edge.to");
+		mu_assert_true(rz_graph_edge_get_from(edge) == n1 || rz_graph_edge_get_from(edge) == n2 || rz_graph_edge_get_from(edge) == n3, "in_edge.from");
 		count++;
 	}
 	mu_assert_eq(count, 3, "in_edges.count");
@@ -672,7 +672,7 @@ static bool test_graph_reset_matrix(void) {
 	rz_graph_reset(g);
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.after_reset");
 	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_reset");
-	mu_assert_eq(g->impl_type, RZ_GRAPH_IMPL_MATRIX, "impl_type_after_reset");
+	mu_assert_eq(rz_graph_get_impl_type(g), RZ_GRAPH_IMPL_MATRIX, "impl_type_after_reset");
 
 	rz_graph_free(g);
 	mu_end;
@@ -785,15 +785,15 @@ static bool test_graph_find_edge_matrix(void) {
 	// can find edge
 	RzGraphEdge *edge = rz_graph_find_edge(g, n1, n2);
 	mu_assert_notnull(edge, "find_edge.1->2");
-	mu_assert_ptreq(edge->from, n1, "edge.from");
-	mu_assert_ptreq(edge->to, n2, "edge.to");
-	mu_assert_ptreq(edge->data, (void *)100, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "edge.from");
+	mu_assert_ptreq(rz_graph_edge_get_to(edge), n2, "edge.to");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)100, "edge.data");
 
 	edge = rz_graph_find_edge(g, n2, n1);
 	mu_assert_notnull(edge, "find_edge.2->1");
-	mu_assert_ptreq(edge->from, n2, "edge.from");
-	mu_assert_ptreq(edge->to, n1, "edge.to");
-	mu_assert_ptreq(edge->data, (void *)400, "edge.data");
+	mu_assert_ptreq(rz_graph_edge_get_from(edge), n2, "edge.from");
+	mu_assert_ptreq(rz_graph_edge_get_to(edge), n1, "edge.to");
+	mu_assert_ptreq(rz_graph_edge_get_data(edge), (void *)400, "edge.data");
 
 	// no such edge
 	edge = rz_graph_find_edge(g, n1, n3);

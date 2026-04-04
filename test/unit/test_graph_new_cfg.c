@@ -329,7 +329,7 @@ static bool test_cfg_edge_data(void) {
 	RzGraphEdge *found_edge = rz_graph_find_edge(cfg, n1, n2);
 	mu_assert_notnull(found_edge, "find edge 1->2");
 
-	EdgeData *data = (EdgeData *)found_edge->data;
+	const EdgeData *data = (const EdgeData *)rz_graph_edge_get_data(found_edge);
 	mu_assert_notnull(data, "edge data not null");
 	mu_assert_eq(data->edge_type, EDGE_TYPE_COND_TRUE, "edge type");
 	mu_assert_streq(data->condition, "x > 0", "edge condition");
@@ -337,7 +337,7 @@ static bool test_cfg_edge_data(void) {
 	found_edge = rz_graph_find_edge(cfg, n1, n3);
 	mu_assert_notnull(found_edge, "find edge 1->3");
 
-	data = (EdgeData *)found_edge->data;
+	data = (const EdgeData *)rz_graph_edge_get_data(found_edge);
 	mu_assert_eq(data->edge_type, EDGE_TYPE_COND_FALSE, "edge type false");
 	mu_assert_streq(data->condition, "x <= 0", "edge condition false");
 
@@ -346,7 +346,7 @@ static bool test_cfg_edge_data(void) {
 }
 
 static void tmp_discover(RzGraphNode *n, RzGraphVisitor *v) {
-	BasicBlockNodeData *bb = (BasicBlockNodeData *)n->data;
+	BasicBlockNodeData *bb = (BasicBlockNodeData *)rz_graph_node_get_data_mut(n);
 	rz_list_append((RzList *)v->visitor_data, (void *)(size_t)bb->bb_id);
 }
 
@@ -413,7 +413,7 @@ static bool test_string_hash_lookup(void) {
 		RzGraphNode *found = rz_graph_find_node(cfg, (void *)names[i]);
 		mu_assert_notnull(found, "find node by name");
 
-		BasicBlockNodeData *data = (BasicBlockNodeData *)found->data;
+		const BasicBlockNodeData *data = (const BasicBlockNodeData *)rz_graph_node_get_data(found);
 		mu_assert_streq(data->bb_name, names[i], "node name matches");
 	}
 

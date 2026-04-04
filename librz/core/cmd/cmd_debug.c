@@ -161,7 +161,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 			gfont);
 	}
 	rz_iterator_foreach(it_nodes, n) {
-		struct trace_node *tn = (struct trace_node *)n->data;
+		const struct trace_node *tn = rz_graph_node_get_data(n);
 		RzGraphNode *w;
 
 		if (!fmt && tn) {
@@ -177,7 +177,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 		}
 
 		rz_iterator_foreach(it_neighbours, w) {
-			struct trace_node *tv = (struct trace_node *)w->data;
+			const struct trace_node *tv = rz_graph_node_get_data(w);
 
 			if (tv && tn) {
 				if (fmt) {

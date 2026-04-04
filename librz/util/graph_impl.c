@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_graph.h>
+#include "graph_priv.h"
 
 typedef struct rz_graph_list_edge_impl_t {
 	HtUP /*<RzPVector<RzGraphEdge*>*>*/ *in_edges; ///< maps node hash_id to its incoming edge vector
@@ -885,6 +886,80 @@ static ut64 rz_graph_node_default_hash(const void *identifier) {
 }
 
 /**
+ * \brief Returns the number nodes the graph has.
+ */
+RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g) {
+	rz_return_val_if_fail(g, 0);
+	return g->n_nodes;
+}
+
+/**
+ * \brief Returns the number edges the graph has.
+ */
+RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g) {
+	rz_return_val_if_fail(g, 0);
+	return g->n_edges;
+}
+
+/**
+ * \brief Returns the implementation type of the graph. Or INT_MAX in case of failure.
+ */
+RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph *g) {
+	rz_return_val_if_fail(g, INT_MAX);
+	return g->impl_type;
+}
+
+/**
+ * \brief Get the data pointer of the node.
+ */
+RZ_API const void *rz_graph_node_get_data(RZ_NONNULL const RzGraphNode *node) {
+	rz_return_val_if_fail(node, NULL);
+	return node->data;
+}
+
+/**
+ * \brief Get the mutable data pointer of the node.
+ */
+RZ_API RZ_BORROW void *rz_graph_node_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphNode *node) {
+	rz_return_val_if_fail(node, NULL);
+	return node->data;
+}
+
+/**
+ * \brief Set the data pointer of the edge.
+ */
+RZ_API void rz_graph_edge_set_data(RZ_NONNULL RZ_BORROW RzGraphEdge *edge, RZ_NULLABLE RZ_OWN void *data) {
+	rz_return_if_fail(edge);
+	edge->data = data;
+}
+
+/**
+ * \brief Get the data pointer of the edge.
+ */
+RZ_API const void *rz_graph_edge_get_data(RZ_NONNULL const RzGraphEdge *edge) {
+	rz_return_val_if_fail(edge, NULL);
+	return edge->data;
+}
+
+/**
+ * \brief Get the mutable data pointer of the edge.
+ */
+RZ_API RZ_BORROW void *rz_graph_edge_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphEdge *edge) {
+	rz_return_val_if_fail(edge, NULL);
+	return edge->data;
+}
+
+RZ_API const RzGraphNode *rz_graph_edge_get_from(RZ_NONNULL const RzGraphEdge *edge) {
+	rz_return_val_if_fail(edge, NULL);
+	return edge->from;
+}
+
+RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edge) {
+	rz_return_val_if_fail(edge, NULL);
+	return edge->to;
+}
+
+/**
  * \brief Create a new RzGraphNew with the specified implementation type.
  *
  * Initializes a graph with either an adjacency list or adjacency matrix
@@ -1556,9 +1631,48 @@ RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id) {
 	return NULL;
 }
 
-RZ_API ut64 rz_graph_adapter_get_node_id(RzGraphNode *node) {
+RZ_API ut64 rz_graph_node_get_id(RZ_NONNULL const RzGraphNode *node) {
+	rz_return_val_if_fail(node, 0);
+	return node->hash_id;
+}
+
+/**
+ * \brief Returns the index of the node in the internal vector.
+ *
+ * DO NOT USE!
+ *
+ * It only exists for compatibility reasons and because refactoring is
+ * more effort than currently acceptable.
+ *
+ * Justification:
+ * The old implementations had exactly two identifiers for nodes.
+ * The pointer to the node itself, or its index into the internal list storing it.
+ * I skip the part how what a not good design decision this was.
+ * But in the new graph this data is considered private (index into lists/hash table)
+ * or are not expected by the graph user to be tracked (the individual node pointers).
+ *
+ * Sadly the json output of the graph still uses the vector indices as "ids".
+ * We can't replace them with the actual hash_id of a node. Because most graphs don't implement a hash function.
+ * For these cases the pointer is used internally as node hash.
+ * And printing it in json output would not be stable.
+ * Hence this hack.
+ */
+RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *node) {
 	rz_return_val_if_fail(node, 0);
 	return node->_vec_id;
+}
+
+/**
+ * \brief Returns the internal node vector of the graph.
+ *
+ * DO NOT USE!
+ *
+ * It only exists for compatibility reasons and because refactoring is
+ * more effort than currently acceptable.
+ */
+RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGraph *g) {
+	rz_return_val_if_fail(g, NULL);
+	return g->node_vec;
 }
 
 RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier) {

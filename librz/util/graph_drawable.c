@@ -4,6 +4,7 @@
 
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
+#include "graph_priv.h"
 
 /**
  * \brief Translates the \p subtype flags of a node to its annotation symbols.

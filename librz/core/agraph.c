@@ -15,7 +15,9 @@
  * - Replace list-based neighbor access with iterator-based APIs from rz_graph.h (graph_impl/graph_algorithm).
  * - Remove all direct RzGraphNode field access (out_nodes/in_nodes/all_neighbours/idx).
  * - Preserve edge ordering semantics (old edge->nth / add_edge_at) via edge->data (AGraphEdgeData) and sort when needed.
+ * - Use graph API instead of accessing the private fields directly.
  */
+#include "../util/graph_priv.h"
 
 static const char *mousemodes[] = {
 	"canvas-y",
@@ -4563,7 +4565,7 @@ RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj) {
 		char *label = rz_str_dup(anode->body);
 		pj_o(pj);
 
-		pj_ki(pj, "id", rz_graph_adapter_get_node_id(anode->gnode));
+		pj_ki(pj, "id", rz_graph_node_get_vec_id(anode->gnode));
 		pj_ks(pj, "title", anode->title);
 		pj_ks(pj, "body", label);
 		pj_k(pj, "out_nodes");
@@ -4573,7 +4575,7 @@ RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj) {
 		if (neighbours) {
 			rz_iterator_foreach(neighbours, neighbour) {
 				// TODO: use accesser mode
-				pj_i(pj, rz_graph_adapter_get_node_id(neighbour));
+				pj_i(pj, rz_graph_node_get_vec_id(neighbour));
 			}
 			rz_iterator_free(neighbours);
 		}

@@ -23,9 +23,9 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.reset");
 
 	RzGraphNode *gn = rz_graph_add_node(g, (void *)1, (void *)1);
-	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, gn->hash_id), gn, "get_node.1");
+	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_id(gn)), gn, "get_node.1");
 	RzGraphNode *gn2 = rz_graph_add_node(g, (void *)2, (void *)2);
-	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, gn2->hash_id), gn2, "get_node.2");
+	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_id(gn2)), gn2, "get_node.2");
 	rz_graph_add_edge(g, gn, gn2, NULL);
 	mu_assert_true(rz_graph_has_edge(g, gn, gn2, NULL), "is_adjacent.1");
 
@@ -177,8 +177,8 @@ static bool test_find_back_edges_simple(void) {
 	mu_assert_notnull(back, "back_edges not null");
 	mu_assert_eq(rz_list_length(back), 1, "one back edge");
 	RzGraphEdge *e = rz_list_get_n(back, 0);
-	mu_assert_ptreq(e->from, c, "back edge from C");
-	mu_assert_ptreq(e->to, a, "back edge to A");
+	mu_assert_ptreq(rz_graph_edge_get_from(e), c, "back edge from C");
+	mu_assert_ptreq(rz_graph_edge_get_to(e), a, "back edge to A");
 	rz_list_free(back);
 
 	rz_graph_free(g);

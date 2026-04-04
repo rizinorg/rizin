@@ -178,7 +178,7 @@ static void agraph_print_node_gml(RzANode *n, void *user) {
 		       "    id  %d\n"
 		       "    label  \"%s\"\n"
 		       "  ]\n",
-		(int)n->gnode->hash_id, n->title);
+		(int)rz_graph_node_get_vec_id(n->gnode), n->title);
 }
 
 static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
@@ -186,7 +186,7 @@ static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
 		       "    source  %d\n"
 		       "    target  %d\n"
 		       "  ]\n",
-		(int)from->gnode->hash_id, (int)to->gnode->hash_id);
+		(int)rz_graph_node_get_vec_id(from->gnode), (int)rz_graph_node_get_vec_id(to->gnode));
 }
 
 RZ_IPI void rz_core_agraph_print_gml(RzCore *core) {
@@ -260,7 +260,7 @@ RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 	}
 	RzGraphNode *gn;
 	rz_iterator_foreach(it, gn) {
-		RzANode *an = gn->data;
+		RzANode *an = rz_graph_node_get_data_mut(gn);
 		rz_core_agraph_add_shortcut(core, ag, an, an->offset, an->title);
 	}
 	rz_iterator_free(it);

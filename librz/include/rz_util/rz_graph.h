@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025-2026 heersin <teablearcher@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_GRAPH_H
 #define RZ_GRAPH_H
 
@@ -23,55 +26,6 @@ typedef enum {
 	RZ_GRAPH_IMPL_LIST,
 	RZ_GRAPH_IMPL_MATRIX
 } RzGraphImplType;
-
-struct rz_graph_node_t_new {
-	ut64 hash_id;
-	ut64 _vec_id; // for matrix graph and DFS, by building hash_id <-> vec_id map
-	void *data;
-};
-
-// wrapper for edge in list-based graph
-struct rz_graph_edge_t_new {
-	RZ_BORROW RzGraphNode *from;
-	RZ_BORROW RzGraphNode *to;
-	void *data;
-};
-
-struct rz_graph_impl_ops_t {
-	// For edges
-	bool (*add_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to, void *user_data);
-	bool (*del_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
-	bool (*has_edge)(RzGraph *graph, RzGraphNode *from, RzGraphNode *to);
-
-	// Extract edge from graph
-	RZ_BORROW RzGraphEdge *(*find_edge)(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
-
-	// Return neighbors as iterator
-	RZ_OWN RzIterator *(*get_out_edges)(RzGraph *graph, RzGraphNode *node);
-	RZ_OWN RzIterator *(*get_in_edges)(RzGraph *graph, RzGraphNode *node);
-
-	bool (*add_node)(RzGraph *graph, RzGraphNode *node);
-	bool (*del_node)(RzGraph *graph, RzGraphNode *node);
-
-	// free manager
-	void (*fini)(void *impl);
-};
-
-struct rz_graph_t_new {
-	ut64 n_nodes;
-	ut64 n_edges;
-
-	HtUP *nodes; // <hash_id, RzGraphNode>
-	RzPVector *node_vec; // <vec_id, RzGraphNode> for DFS
-	const RzGraphImplOps *impl_ops; // graph implementation ops
-	void *impl; // graph implementation specific data
-	RzGraphImplType impl_type;
-
-	// user defined fns
-	RzGraphIdentifierHash hash_func; // hash function can be specified by user
-	RzGraphNodeDataFree node_data_free;
-	RzGraphEdgeDataFree edge_data_free;
-};
 
 // Graph
 RZ_API RZ_OWN RzGraph *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free);
@@ -128,7 +82,22 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *n);
 
 // Node/edge lookup by raw hash_id (ut64)
 RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id);
-RZ_API ut64 rz_graph_adapter_get_node_id(RzGraphNode *node);
+
+// Getters and setters
+RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *node);
+RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGraph *g);
+
+RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph *g);
+RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g);
+RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g);
+RZ_API ut64 rz_graph_node_get_id(RZ_NONNULL const RzGraphNode *node);
+RZ_API const void *rz_graph_node_get_data(RZ_NONNULL const RzGraphNode *node);
+RZ_API RZ_BORROW void *rz_graph_node_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphNode *node);
+RZ_API void rz_graph_edge_set_data(RZ_NONNULL RZ_BORROW RzGraphEdge *edge, RZ_NULLABLE RZ_OWN void *data);
+RZ_API const void *rz_graph_edge_get_data(RZ_NONNULL const RzGraphEdge *edge);
+RZ_API RZ_BORROW void *rz_graph_edge_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphEdge *edge);
+RZ_API const RzGraphNode *rz_graph_edge_get_from(RZ_NONNULL const RzGraphEdge *edge);
+RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edge);
 
 // Node/edge operations by identifier object
 RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier);
