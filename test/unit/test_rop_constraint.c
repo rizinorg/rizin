@@ -5,7 +5,6 @@
 #include <rz_core.h>
 #include "minunit.h"
 #include <rz_gadget.h>
-#include "analysis_private.h"
 
 // Define the register profile string for your architecture
 #define REGISTER_PROFILE_STRING \
@@ -36,7 +35,8 @@
 static void setup_rz_core(RzCore *core) {
 	rz_config_set(core->config, "analysis.arch", "x86");
 	rz_analysis_set_bits(core->analysis, 64);
-	rz_reg_set_profile_string(core->analysis->reg, REGISTER_PROFILE_STRING);
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	rz_reg_set_profile_string(reg, REGISTER_PROFILE_STRING);
 }
 
 bool test_parse_reg_to_const(void) {
@@ -53,7 +53,7 @@ bool test_parse_reg_to_const(void) {
 	mu_assert_null(rop_constraint->args[SRC_REG], "Source register should be NULL");
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "123", "Invalid constant value");
 	rz_core_gadget_constraint_free(rop_constraint);
-	
+
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
 	rop_constraint = rz_core_gadget_constraint_parse_args(core, str2);
@@ -179,7 +179,7 @@ bool test_parse_reg_op_reg(void) {
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ebx", "Invalid destination constant register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
 	rz_core_gadget_constraint_free(rop_constraint);
-	
+
 	rz_core_free(core);
 	mu_end;
 }

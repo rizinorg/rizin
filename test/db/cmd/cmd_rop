@@ -318,7 +318,7 @@ NAME=search rop gadgets with another end gadget as part of it.
 FILE=bins/elf/analysis/unoriginal
 CMDS=<<EOF
 e asm.bits=32
-e rop.len=15
+e gadget.len=15
 e search.from=0x08048340
 e search.to=0x08048400
 /R push esp

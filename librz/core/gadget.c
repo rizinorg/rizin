@@ -21,7 +21,7 @@ static bool is_cond_end_gadget(const RzAnalysisOp *aop) {
 	}
 }
 
-static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8 crop) {
+static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8 allow_conditional) {
 	rz_return_val_if_fail(core && core->analysis && hit, false);
 	bool status = false;
 	RzAnalysisOp aop = { 0 };
@@ -37,7 +37,7 @@ static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8
 	}
 	switch (aop.type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
-		if (crop) {
+		if (allow_conditional) {
 			status = is_cond_end_gadget(&aop);
 			break;
 		}
@@ -51,7 +51,7 @@ static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8
 	return status;
 }
 
-static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
+static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 allow_conditional) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
 	}
@@ -68,7 +68,7 @@ static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
 	case RZ_ANALYSIS_OP_TYPE_IRJMP:
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 	case RZ_ANALYSIS_OP_TYPE_CALL:
-		if (crop) {
+		if (allow_conditional) {
 			return is_cond_end_gadget(aop);
 		}
 		return true;
@@ -208,12 +208,12 @@ static bool rz_gadget_hitlist_print_standard_mode(const RzCore *core, const RzCo
 		return false;
 	}
 
-	const bool rop_comments = rz_config_get_i(core->config, "rop.comments");
+	const bool gadget_comments = rz_config_get_i(core->config, "gadget.comments");
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	bool ret_val = context->ret_val;
 
 	const char *comment = NULL;
-	if (rop_comments) {
+	if (gadget_comments) {
 		comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr);
 	}
 
@@ -1413,21 +1413,21 @@ cleanup:
 	return hitlist;
 }
 
-static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, const RzList /*<RzCoreAsmHit *>*/ *hitlist) {
+static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 allow_conditional, const RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzGadgetInfo *gadget_info = NULL;
 
-	HtUP *ht_rop_semantics = rz_analysis_get_rop_semantics(core->analysis);
-	if (!ht_rop_semantics) {
-		ht_rop_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_gadget_info_free);
-		rz_analysis_set_rop_semantics(core->analysis, ht_rop_semantics);
+	HtUP *ht_gadget_semantics = rz_analysis_get_gadget_semantics(core->analysis);
+	if (!ht_gadget_semantics) {
+		ht_gadget_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_gadget_info_free);
+		rz_analysis_set_gadget_semantics(core->analysis, ht_gadget_semantics);
 	}
 	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_list_last_val(hitlist);
-	if (!is_ret_gadget(core, hit_last, crop)) {
+	if (!is_ret_gadget(core, hit_last, allow_conditional)) {
 		return gadget_info;
 	}
 	const ut64 addr_start = ((RzCoreAsmHit *)rz_list_first_val(hitlist))->addr;
-	gadget_info = ht_up_find(ht_rop_semantics, addr_start, NULL);
+	gadget_info = ht_up_find(ht_gadget_semantics, addr_start, NULL);
 	if (gadget_info) {
 		return gadget_info;
 	}
@@ -1445,7 +1445,7 @@ static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 crop, const
 		gadget_size += hit->len;
 	}
 	gadget_info->size = gadget_size;
-	ht_up_insert(ht_rop_semantics, addr_start, gadget_info);
+	ht_up_insert(ht_gadget_semantics, addr_start, gadget_info);
 	return gadget_info;
 }
 
@@ -1463,7 +1463,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 	RZ_NONNULL RzList /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist && context, false);
 	if (context->mask & RZ_GADGET_PRINT) {
-		if (context->subchain) {
+		if (context->subchains) {
 			do {
 				if (!print_gadget_hitlist(core, hitlist, context)) {
 					return false;
@@ -1480,7 +1480,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 	RzGadgetInfo *gadget_info = NULL;
 	bool is_analysis = false;
 	if (context->mask & RZ_GADGET_ANALYZE) {
-		gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		gadget_info = perform_gadget_analysis(core, context->allow_conditional, hitlist);
 		is_analysis = true;
 	}
 
@@ -1531,7 +1531,7 @@ static RzList /*<RzGadgetEndListPair *>*/ *compute_end_gadget_list(const RzCore 
 			continue;
 		}
 
-		if (is_end_gadget(&end_gadget, context->crop)) {
+		if (is_end_gadget(&end_gadget, context->allow_conditional)) {
 			RzGadgetEndListPair *epair = RZ_NEW0(RzGadgetEndListPair);
 			if (epair) {
 				epair->instr_offset = i + (end_gadget.delay ? context->increment : 0);
@@ -1757,7 +1757,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(core, context->allow_conditional, hitlist);
 		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
 			rz_list_free(hitlist);
 			goto fini;
@@ -1765,7 +1765,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->detail_mask) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(core, context->crop, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(core, context->allow_conditional, hitlist);
 		if (!gadget_info) {
 			goto fini;
 		}
@@ -1901,9 +1901,9 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	}
 
 	if (context->max_instr <= 1) {
-		RZ_LOG_ERROR("core: ROP length (rop.len) must be greater than 1.\n");
+		RZ_LOG_ERROR("core: Gadget length (gadget.len) must be greater than 1.\n");
 		if (context->max_instr == 1) {
-			RZ_LOG_ERROR("core: For rop.len = 1, use /c to search for single "
+			RZ_LOG_ERROR("core: For gadget.len = 1, use /c to search for single "
 				     "instructions. See /c? for help.\n");
 		}
 		return RZ_CMD_STATUS_ERROR;
@@ -1922,7 +1922,7 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	}
 	RzList /*<char *>*/ *rx_list = rz_core_gadget_handle_grep_args(context->greparg, context->regexp);
 	int status = 0;
-	// If we need to know where to look, perform rop operations here.
+	// If specific address range is provided, scan that range for gadgets.
 	if (context->to || context->from) {
 		status = handle_gadget_search_address(core, context, rx_list);
 		goto cleanup;

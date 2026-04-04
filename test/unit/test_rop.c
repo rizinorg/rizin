@@ -4,7 +4,6 @@
 
 #include "minunit.h"
 #include <rz_core.h>
-#include "analysis_private.h"
 #include <rz_gadget.h>
 
 // Only one gadget is added once for each test case.
@@ -135,7 +134,7 @@ bool test_rz_direct_solver() {
 		rz_list_free(hitlist);
 	}
 
-	HtUP *rop_semantics = core->analysis->ht_rop_semantics;
+	HtUP *rop_semantics = rz_analysis_get_gadget_semantics(core->analysis);
 	mu_assert_notnull(rop_semantics, "ROP semantics hashtable is NULL");
 	mu_assert_eq(ht_up_size(rop_semantics), 2, "ROP semantics hashtable count is not 2");
 	ht_up_foreach(rop_semantics, rop_gadget_info_cb, ht_rop_analysis);
