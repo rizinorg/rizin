@@ -55,7 +55,7 @@ bool test_rz_str_replace_regex(void) {
 	free(str);
 
 	str = rz_str_replace_regex(strdup("AtMeGa88"), "atmega[[:alnum:]]*", "avr", false, true);
-	mu_assert_streq(str, "avr", "error, regex replace icase failed"); 
+	mu_assert_streq(str, "avr", "error, regex replace icase failed");
 	free(str);
 
 	str = rz_str_replace_regex(strdup("nomatch"), "atmega[[:alnum:]]*", "avr", 1, false);
