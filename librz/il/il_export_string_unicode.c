@@ -41,7 +41,7 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 #define UCD_CAST         "≈"
 #define UCD_APPEND       "⊚"
 #define UCD_FBITS        "ꜰʙ "
-#define UCD_IS_FINITE    "< ∞"
+#define UCD_IS_FINITE    "≢ ∞"
 #define UCD_IS_NAN       "≡ ɴаɴ"
 #define UCD_IS_INF       "≡ ∞"
 #define UCD_IS_FZERO     "≡ 0"
@@ -57,18 +57,17 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 #define UCD_FSQRT        "²√"
 #define UCD_FRSQRT       "¹/√"
 #define UCD_FROUND       "⭂"
-#define UCD_FREQUAL      "ꜰ≡"
+#define UCD_FREQUAL      "≡"
 #define UCD_FSUCC        "⌊"
 #define UCD_FPRED        "⌋"
-#define UCD_FORDER       "<"
+#define UCD_FORDER       "⋚"
 #define UCD_FEXCEPT      "ᴇ"
 #define UCD_FADD         "+"
 #define UCD_FSUB         "-"
 #define UCD_FMUL         "*"
 #define UCD_FDIV         "/"
-#define UCD_FMOD         "ꜰ%"
+#define UCD_FMOD         "%"
 #define UCD_FHYPOT       "∠"
-#define UCD_FMAD         "ᴍᴀ"
 #define UCD_FPOW         "˰"
 #define UCD_FPOWN        "˰ⁿ"
 #define UCD_FROOTN       "ⁿ√"
@@ -182,17 +181,6 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 		return_false_if_fail(il_op_##sort1##_string_resolve(opx.v1, sb)); \
 		return rz_strbuf_append(sb, ")"); \
 	} while (0);
-
-#define il_op_param_3_with_rmode(sym, opx, v0, sort0, v1, sort1, v2, sort2, vr) \
-	do { \
-		return_false_if_fail(rz_strbuf_appendf(sb, "(%s ", rz_il_float_stringify_rmode(opx.vr))); \
-		return_false_if_fail(il_op_##sort0##_string_resolve(opx.v0, sb)); \
-		return_false_if_fail(rz_strbuf_append(sb, " " sym " ")); \
-		return_false_if_fail(il_op_##sort1##_string_resolve(opx.v1, sb)); \
-		return_false_if_fail(rz_strbuf_append(sb, " ")); \
-		return_false_if_fail(il_op_##sort2##_string_resolve(opx.v2, sb)); \
-		return rz_strbuf_append(sb, ")"); \
-	} while (0)
 
 #define sym_with_float_format(x, y) \
 	(x) == RZ_FLOAT_IEEE754_BIN_32 ? y "₃₂" : (x) == RZ_FLOAT_IEEE754_BIN_64 ? y "₆₄" \
@@ -532,7 +520,16 @@ static bool il_opdmp_fpow(const RzILOpPure *op, RzStrBuf *sb) {
 }
 
 static bool il_opdmp_fmad(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_3_with_rmode(UCD_FMAD, op->op.fmad, x, pure, y, pure, z, pure, rmode);
+	const RzILOpArgsFmad *opx = &op->op.fmad;
+	const char *rmode_str = rz_il_float_stringify_rmode(opx->rmode);
+	return_false_if_fail(rmode_str);
+	return_false_if_fail(rz_strbuf_appendf(sb, "(%s ", rmode_str));
+	return_false_if_fail(il_op_pure_string_resolve(opx->x, sb));
+	return_false_if_fail(rz_strbuf_append(sb, " " UCD_FMUL " "));
+	return_false_if_fail(il_op_pure_string_resolve(opx->y, sb));
+	return_false_if_fail(rz_strbuf_append(sb, " " UCD_FADD " "));
+	return_false_if_fail(il_op_pure_string_resolve(opx->z, sb));
+	return rz_strbuf_append(sb, ")");
 }
 
 static bool il_opdmp_fpown(const RzILOpPure *op, RzStrBuf *sb) {
@@ -540,7 +537,7 @@ static bool il_opdmp_fpown(const RzILOpPure *op, RzStrBuf *sb) {
 }
 
 static bool il_opdmp_frootn(const RzILOpPure *op, RzStrBuf *sb) {
-	il_op_param_2_with_rmode(UCD_FROOTN, op->op.frootn, f, pure, n, pure, rmode);
+	il_op_param_2_with_rmode(UCD_FROOTN, op->op.frootn, n, pure, f, pure, rmode);
 }
 
 static bool il_opdmp_fcompound(const RzILOpPure *op, RzStrBuf *sb) {

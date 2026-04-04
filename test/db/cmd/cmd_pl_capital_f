@@ -138,16 +138,16 @@ plF
 EOF
 EXPECT=<<EOF
 0x0 ((_fa ← (d9 ≅₆₄ rne))
-        (_arg_a ← (tmp = _fa (((¬(tmp ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (tmp < 0x0.f₆₄)) & (¬(tmp ≡ ɴаɴ | 0x3810000000000000.f₆₄ ≡ ɴаɴ) & (0x3810000000000000.f₆₄ < tmp))) ↠ −0x0.f₆₄ (((¬(tmp ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (0x0.f₆₄ < tmp)) & (¬(tmp ≡ ɴаɴ | 0x3810000000000000.f₆₄ ≡ ɴаɴ) & (tmp < 0x3810000000000000.f₆₄))) ↠ 0x0.f₆₄ tmp))))
+        (_arg_a ← (tmp = _fa (((¬(tmp ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (tmp ⋚ 0x0.f₆₄)) & (¬(tmp ≡ ɴаɴ | 0x3810000000000000.f₆₄ ≡ ɴаɴ) & (0x3810000000000000.f₆₄ ⋚ tmp))) ↠ −0x0.f₆₄ (((¬(tmp ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (0x0.f₆₄ ⋚ tmp)) & (¬(tmp ≡ ɴаɴ | 0x3810000000000000.f₆₄ ≡ ɴаɴ) & (tmp ⋚ 0x3810000000000000.f₆₄))) ↠ 0x0.f₆₄ tmp))))
         (_normal_result ← (_mode = (((PSW ≫ 0x18₃₂ ⊥) ∧ 0x3₃₂) ≈₈ ⊥) (_x = (rne ¹/√ _arg_a) ((_mode ≡ 0x0₈) ↠ (_x ≅₃₂ rne) ((_mode ≡ 0x1₈) ↠ (_x ≅₃₂ rna) ((_mode ≡ 0x2₈) ↠ (_x ≅₃₂ rtn) ((_mode ≡ 0x3₈) ↠ (_x ≅₃₂ rtp) ((_mode ≡ 0x4₈) ↠ (_x ≅₃₂ rtz) 0x0.f₃₂))))))))
-        (_result ← (_arg_a ≡ 0 ↠ 0x0.f₃₂ ((¬(_fa ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (_fa < 0x0.f₆₄)) ↠ 0x7f800001.f₃₂ _normal_result)))
+        (_result ← (_arg_a ≡ 0 ↠ 0x0.f₃₂ ((¬(_fa ≡ ɴаɴ | 0x0.f₆₄ ≡ ɴаɴ) & (_fa ⋚ 0x0.f₆₄)) ↠ 0x7f800001.f₃₂ _normal_result)))
         (d3 ← ꜰʙ _result)
         (set_FI ← (_fa ≡ ɴаɴ | _result ≡ ɴаɴ)) (set_FI ⅄ (PSW ← ((PSW ∧ 0xbfffffff₃₂) ∨ ((0x1₃₂ ∧ 0x1₃₂) ≪ 0x1e₃₂ ⊥))) ∅)
         (PSW ← ((PSW ∧ 0x7fffffff₃₂) ∨ (((set_FI ↠ 0x1₃₂ 0x0₃₂) ∧ 0x1₃₂) ≪ 0x1f₃₂ ⊥))))
 0x4 ((_a ← d3)
         (_result ← (_mode = (((PSW ≫ 0x18₃₂ ⊥) ∧ 0x3₃₂) ≈₈ ⊥) (_x = _a ((_mode ≡ 0x0₈) ↠ (_x ꜰ≈ꜰ₃₂ rne) ((_mode ≡ 0x1₈) ↠ (_x ꜰ≈ꜰ₃₂ rna) ((_mode ≡ 0x2₈) ↠ (_x ꜰ≈ꜰ₃₂ rtn) ((_mode ≡ 0x3₈) ↠ (_x ꜰ≈ꜰ₃₂ rtp) ((_mode ≡ 0x4₈) ↠ (_x ꜰ≈ꜰ₃₂ rtz) 0x0.f₃₂))))))))
         (d2 ← ꜰʙ _result)
-        (set_FX ← (((_a ꜰ≈ꜰ⁺₃₂ rne) ≡ ɴаɴ | _result ≡ ɴаɴ) | (((_a ꜰ≈ꜰ⁺₃₂ rne) < _result) | (_result < (_a ꜰ≈ꜰ⁺₃₂ rne))))) (set_FX ⅄ (PSW ← ((PSW ∧ 0xfbffffff₃₂) ∨ ((0x1₃₂ ∧ 0x1₃₂) ≪ 0x1a₃₂ ⊥))) ∅)
+        (set_FX ← (((_a ꜰ≈ꜰ⁺₃₂ rne) ≡ ɴаɴ | _result ≡ ɴаɴ) | (((_a ꜰ≈ꜰ⁺₃₂ rne) ⋚ _result) | (_result ⋚ (_a ꜰ≈ꜰ⁺₃₂ rne))))) (set_FX ⅄ (PSW ← ((PSW ∧ 0xfbffffff₃₂) ∨ ((0x1₃₂ ∧ 0x1₃₂) ≪ 0x1a₃₂ ⊥))) ∅)
         (PSW ← ((PSW ∧ 0x7fffffff₃₂) ∨ (((set_FX ↠ 0x1₃₂ 0x0₃₂) ∧ 0x1₃₂) ≪ 0x1f₃₂ ⊥))))
 0x8 (d3 ← ((¬((d1 ≫ 0x3₃₂ ⊥) ∧ 0x1₃₂) ≡ 0 ^ ¬((d2 ≫ 0x7₃₂ ⊥) ∧ 0x1₃₂) ≡ 0) ↠ 0x1₃₂ 0x0₃₂))
 0xc ((result ← ((d2 + ((PSW ≫ 0x1f₃₂ ⊥) ∧ 0x1₃₂)) - (d4 + 0x1₃₂)))
@@ -179,7 +179,7 @@ plF
 EOF
 EXPECT=<<EOF
 0x0 ((result ← (rne r10 * r11))
-        (PSW ← (((((((¬result > 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x3₃₂ ⊥) ∨ ((⊥ ↠ 0x1₃₂ 0x0₃₂) ≪ 0x2₃₂ ⊥)) ∨ (((¬(result ≡ ɴаɴ | 0x0.f₃₂ ≡ ɴаɴ) & (result < 0x0.f₃₂)) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x1₃₂ ⊥)) ∨ ((result ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x0₃₂ ⊥)) ∨ (((result ≡ ɴаɴ | result ≡ ∞) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x9₃₂ ⊥)) ∨ ((r11 ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x7₃₂ ⊥))) (r10 ← ꜰʙ result))
+        (PSW ← (((((((¬result > 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x3₃₂ ⊥) ∨ ((⊥ ↠ 0x1₃₂ 0x0₃₂) ≪ 0x2₃₂ ⊥)) ∨ (((¬(result ≡ ɴаɴ | 0x0.f₃₂ ≡ ɴаɴ) & (result ⋚ 0x0.f₃₂)) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x1₃₂ ⊥)) ∨ ((result ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x0₃₂ ⊥)) ∨ (((result ≡ ɴаɴ | result ≡ ∞) ↠ 0x1₃₂ 0x0₃₂) ≪ 0x9₃₂ ⊥)) ∨ ((r11 ≡ 0 ↠ 0x1₃₂ 0x0₃₂) ≪ 0x7₃₂ ⊥))) (r10 ← ꜰʙ result))
 EOF
 RUN
 
