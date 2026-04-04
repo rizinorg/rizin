@@ -16250,7 +16250,8 @@ static const RzCmdDescArg print_function_rzil_enriched_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_function_rzil_enriched_help = {
-	.summary = "Print enriched RzIL of the function in unicode characters.",
+	.summary = "Print unicode RzIL of the function at current seek.",
+	.description = "Prints the RzIL of the function at current seek using unicode special characters. This command requires 'scr.utf8=true', use 'plf' for plain ASCII output.",
 	.details = print_function_rzil_enriched_details,
 	.args = print_function_rzil_enriched_args,
 };

@@ -855,7 +855,10 @@ commands:
         cname: print_function_rzil
         args: []
       - name: plF
-        summary: Print enriched RzIL of the function in unicode characters.
+        summary: Print unicode RzIL of the function at current seek.
+        description: >-
+          Prints the RzIL of the function at current seek using unicode special characters.
+          This command requires 'scr.utf8=true', use 'plf' for plain ASCII output.
         cname: print_function_rzil_enriched
         args: []
         details:
