@@ -1272,6 +1272,17 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 	return str;
 }
 
+/**
+ *  Replace regex matches in a string.
+ *
+ * \param str Input string to transform.
+ * \param pattern Regular expression pattern to match.
+ * \param val Replacement string.
+ * \param global If true, replace all matches; otherwise replace only the first.
+ * \param icase If true, perform case-insensitive matching.
+ *
+ * \return New allocated string with replacements. And NULL in case of failure
+ */
 RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, const char *val, bool global, bool icase) {
 	rz_return_val_if_fail(str && pattern && val, NULL);
 
