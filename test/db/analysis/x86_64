@@ -17,7 +17,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_8h @ stack + 0x8
 |           0x000128a0      endbr64
 |           0x000128a4      push  r12
-\       `=< 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
+\ 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
 EOF
 RUN
 

@@ -247,7 +247,7 @@ s 0x0041ed50
 pd 5~IGNORE
 EOF
 EXPECT=<<EOF
-            0x0041ed58      24a54268       addiu a1, a1, 0x4268        ; 0x474268 ; "IGNORE" ; str.IGNORE
+  0x0041ed58      24a54268       addiu a1, a1, 0x4268                  ; 0x474268 ; "IGNORE" ; str.IGNORE
 EOF
 RUN
 

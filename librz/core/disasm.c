@@ -108,6 +108,7 @@ typedef struct {
 	int interactive;
 	bool subjmp;
 	bool subvar;
+	bool suppress_ref_lines;
 	bool show_lines;
 	bool show_lines_bb;
 	bool show_lines_ret;
@@ -369,6 +370,9 @@ static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 }
 
 static void ds_print_ref_lines(char *line, char *line_col, RzDisasmState *ds) {
+	if (ds->suppress_ref_lines) {
+		return;
+	}
 	int i;
 	int len = strlen(line);
 	if (ds->core->cons->use_utf8 || ds->linesopts & RZ_ANALYSIS_REFLINE_TYPE_UTF8) {
@@ -614,7 +618,18 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->asm_types = rz_config_get_i(core->config, "asm.types");
 	ds->foldxrefs = rz_config_get_i(core->config, "asm.xrefs.fold");
 	ds->show_lines = rz_config_get_b(core->config, "asm.lines");
+	bool suppress_lines_for_filter = false;
+	if (core->is_pipe || (core->cons && core->cons->filter)) {
+		suppress_lines_for_filter = true;
+	}
+	if (core->cons && core->cons->context) {
+		RzConsGrep *grep = &core->cons->context->grep;
+		if (grep->str || grep->nstrings > 0 || grep->tokens_used > 0 || grep->line >= 0 || grep->less > 0 || grep->json > 0) {
+			suppress_lines_for_filter = true;
+		}
+	}
 	ds->show_lines_bb = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.bb") : false;
+	ds->suppress_ref_lines = suppress_lines_for_filter;
 	ds->linesright = rz_config_get_b(core->config, "asm.lines.right");
 	ds->show_indent = rz_config_get_b(core->config, "asm.indent");
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");

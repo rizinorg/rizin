@@ -86,7 +86,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call  fcn.00005e50
+  0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
@@ -121,7 +121,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call  fcn.00005e50
+  0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
