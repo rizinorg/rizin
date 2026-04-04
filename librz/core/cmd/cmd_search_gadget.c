@@ -195,7 +195,7 @@ static bool parse_il_op(const char *str, ut64 *idx, bool *is_compound_op, RzILOp
 	return false;
 }
 
-static bool rop_constraint_set_regs(RzGadgetConstraint *rc,
+static bool gadget_constraint_set_regs(RzGadgetConstraint *rc,
 	RzGadgetILInstructionType il_type,
 	RZ_NONNULL const RzRegItem *dst,
 	RZ_NONNULL const RzRegItem *src0,
@@ -214,7 +214,7 @@ static bool rop_constraint_set_regs(RzGadgetConstraint *rc,
 	return true;
 }
 
-static bool rop_constraint_set_op(RzGadgetConstraint *rc, RzILOpPureCode op) {
+static bool gadget_constraint_set_op(RzGadgetConstraint *rc, RzILOpPureCode op) {
 	if (op >= RZ_IL_OP_PURE_MAX) {
 		return false;
 	}
@@ -227,7 +227,7 @@ static bool rop_constraint_set_op(RzGadgetConstraint *rc, RzILOpPureCode op) {
 	return true;
 }
 
-static bool rop_constraint_set_const(RzGadgetConstraint *rc,
+static bool gadget_constraint_set_const(RzGadgetConstraint *rc,
 	RzGadgetILInstructionType il_type,
 	RZ_NONNULL const RzRegItem *dst,
 	RZ_NULLABLE const RzRegItem *src0,
@@ -246,7 +246,7 @@ static bool rop_constraint_set_const(RzGadgetConstraint *rc,
 	return true;
 }
 
-static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
+static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	bool inc_dec = false;
@@ -285,14 +285,14 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConst
 
 	if (constant_status && is_compound_op) {
 		// dst = dst (math op) num
-		return rop_constraint_set_const(rc, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
-			rop_constraint_set_op(rc, op);
+		return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
+			gadget_constraint_set_op(gadget_constraint, op);
 	}
 
 	if (src_reg && is_compound_op) {
 		// dst = dst (math op) src
-		return rop_constraint_set_regs(rc, MOV_OP_REG, dst_reg, dst_reg, src_reg) &&
-			rop_constraint_set_op(rc, op);
+		return gadget_constraint_set_regs(gadget_constraint, MOV_OP_REG, dst_reg, dst_reg, src_reg) &&
+			gadget_constraint_set_op(gadget_constraint, op);
 	}
 
 	if (!inc_dec) {
@@ -302,11 +302,11 @@ static bool parse_compound_op(const RzCore *core, const char *str, RzGadgetConst
 	const_value = 1;
 	// dst (math op)= 1
 
-	return rop_constraint_set_const(rc, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
-		rop_constraint_set_op(rc, op);
+	return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, dst_reg, const_value) &&
+		gadget_constraint_set_op(gadget_constraint, op);
 }
 
-static bool parse_reg_to_const(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
+static bool parse_reg_to_const(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	const RzRegItem *dst_reg = parse_register(core, str, &idx);
@@ -318,10 +318,10 @@ static bool parse_reg_to_const(const RzCore *core, const char *str, RzGadgetCons
 		return false;
 	}
 
-	return rop_constraint_set_const(rc, MOV_CONST, dst_reg, NULL, const_value);
+	return gadget_constraint_set_const(gadget_constraint, MOV_CONST, dst_reg, NULL, const_value);
 }
 
-static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
+static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
 	ut64 idx = 0;
 	const RzRegItem *src_reg = NULL;
 	const RzRegItem *dst_reg = parse_register(core, str, &idx);
@@ -342,10 +342,10 @@ static bool parse_reg_to_reg(const RzCore *core, const char *str, RzGadgetConstr
 		return false;
 	}
 
-	return rop_constraint_set_regs(rc, MOV_REG, dst_reg, src_reg, NULL);
+	return gadget_constraint_set_regs(gadget_constraint, MOV_REG, dst_reg, src_reg, NULL);
 }
 
-static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
+static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
 	ut64 idx = 0;
 	ut64 const_value = 0;
 	RzILOpPureCode op = RZ_IL_OP_PURE_MAX;
@@ -361,14 +361,14 @@ static bool parse_reg_op_const(const RzCore *core, const char *str, RzGadgetCons
 		goto compound;
 	}
 
-	return rop_constraint_set_const(rc, MOV_OP_CONST, dst_reg, src_reg, const_value) &&
-		rop_constraint_set_op(rc, op);
+	return gadget_constraint_set_const(gadget_constraint, MOV_OP_CONST, dst_reg, src_reg, const_value) &&
+		gadget_constraint_set_op(gadget_constraint, op);
 
 compound:
-	return parse_compound_op(core, str, rc);
+	return parse_compound_op(core, str, gadget_constraint);
 }
 
-static bool parse_reg_op_reg(const RzCore *core, const char *str, RzGadgetConstraint *rc) {
+static bool parse_reg_op_reg(const RzCore *core, const char *str, RzGadgetConstraint *gadget_constraint) {
 	ut64 idx = 0;
 	RzILOpPureCode op = RZ_IL_OP_PURE_MAX;
 	const RzRegItem *src_reg0 = NULL;
@@ -392,11 +392,11 @@ static bool parse_reg_op_reg(const RzCore *core, const char *str, RzGadgetConstr
 		goto compound;
 	}
 
-	return rop_constraint_set_regs(rc, MOV_OP_REG, dst_reg, src_reg0, src_reg1) &&
-		rop_constraint_set_op(rc, op);
+	return gadget_constraint_set_regs(gadget_constraint, MOV_OP_REG, dst_reg, src_reg0, src_reg1) &&
+		gadget_constraint_set_op(gadget_constraint, op);
 
 compound:
-	return parse_compound_op(core, str, rc);
+	return parse_compound_op(core, str, gadget_constraint);
 }
 
 /**
@@ -463,7 +463,7 @@ RZ_API void rz_core_gadget_search_context_free(RZ_NULLABLE RzGadgetSearchContext
  * \brief Analyze and parse a constraint string.
  * \param core Pointer to the RzCore object.
  * \param str The constraint string to analyze.
- * \param rop_constraint Pointer to the RzGadgetConstraint object to store the parsed result.
+ * \param gadget_constraint Pointer to the RzGadgetConstraint object to store the parsed result.
  * \return true if the constraint string is successfully parsed, false otherwise.
  *
  * This function analyzes a given constraint string and attempts to parse it into
@@ -472,15 +472,15 @@ RZ_API void rz_core_gadget_search_context_free(RZ_NULLABLE RzGadgetSearchContext
  * The function returns true if any of these parsing methods succeed.
  */
 RZ_API bool rz_core_gadget_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
-	RZ_NULLABLE RZ_OUT RzGadgetConstraint *rop_constraint) {
+	RZ_NULLABLE RZ_OUT RzGadgetConstraint *gadget_constraint) {
 	rz_return_val_if_fail(core && str, false);
-	if (!rop_constraint) {
+	if (!gadget_constraint) {
 		return false;
 	}
-	return parse_reg_to_const(core, str, rop_constraint) ||
-		parse_reg_to_reg(core, str, rop_constraint) ||
-		parse_reg_op_const(core, str, rop_constraint) ||
-		parse_reg_op_reg(core, str, rop_constraint);
+	return parse_reg_to_const(core, str, gadget_constraint) ||
+		parse_reg_to_reg(core, str, gadget_constraint) ||
+		parse_reg_op_const(core, str, gadget_constraint) ||
+		parse_reg_op_reg(core, str, gadget_constraint);
 }
 
 /**
@@ -499,27 +499,27 @@ RZ_API RZ_OWN RzGadgetConstraint *rz_core_gadget_constraint_parse_args(const RZ_
 		return NULL;
 	}
 
-	RzGadgetConstraint *rop_constraint = RZ_NEW0(RzGadgetConstraint);
-	if (!rop_constraint) {
-		free(rop_constraint);
+	RzGadgetConstraint *gadget_constraint = RZ_NEW0(RzGadgetConstraint);
+	if (!gadget_constraint) {
+		free(gadget_constraint);
 		return NULL;
 	}
 
 	RzList *l = rz_str_split_duplist(token, "=", true);
 	if (rz_list_empty(l)) {
 		rz_list_free(l);
-		free(rop_constraint);
+		free(gadget_constraint);
 		return NULL;
 	}
 
-	if (!rz_core_gadget_analyze_constraint(core, token, rop_constraint)) {
-		free(rop_constraint);
+	if (!rz_core_gadget_analyze_constraint(core, token, gadget_constraint)) {
+		free(gadget_constraint);
 		rz_list_free(l);
 		return NULL;
 	}
 
 	rz_list_free(l);
-	return rop_constraint;
+	return gadget_constraint;
 }
 
 /**
@@ -549,11 +549,11 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetConstraint *>*/ *rz_core_gadget_constraint_ma
 		RzListIter *it;
 		char *token;
 		rz_list_foreach (l, it, token) {
-			RzGadgetConstraint *rop_constraint = rz_core_gadget_constraint_parse_args(core, token);
-			if (!rop_constraint) {
-				continue;	
+			RzGadgetConstraint *gadget_constraint = rz_core_gadget_constraint_parse_args(core, token);
+			if (!gadget_constraint) {
+				continue;
 			}
-			rz_pvector_push(constr_map, rop_constraint);
+			rz_pvector_push(constr_map, gadget_constraint);
 		}
 		rz_list_free(l);
 	}
