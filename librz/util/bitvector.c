@@ -2258,8 +2258,13 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 		return true;
 	}
 	if (bv->len <= 64 && to_size <= 64) {
-		rz_bv_set_range(bv, to_size, bv->len - 1, fill_bit);
+		ut32 old_size = bv->len;
 		bv->len = to_size;
+		if (to_size > old_size) {
+			rz_bv_set_range(bv, old_size, to_size - 1, fill_bit);
+		} else {
+			bv->bits.small_u &= (1ULL << to_size) - 1;
+		}
 		return true;
 	}
 	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
