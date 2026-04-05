@@ -1603,6 +1603,31 @@ bool test_rz_bv_cast_inplace(void) {
 
 	rz_bv_free(small);
 	rz_bv_free(large);
+
+	small = rz_bv_new_from_ut64(20, 0xe1234);
+	mu_assert_true(rz_bv_unsigned_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0xe1234", "unsigned cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0x31234);
+	mu_assert_true(rz_bv_unsigned_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x31234", "unsigned cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0xe1234);
+	mu_assert_true(rz_bv_signed_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0xfe1234", "signed cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0x31234);
+	mu_assert_true(rz_bv_signed_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x31234", "signed cast inplace result");
+	rz_bv_free(small);
+
 	mu_end;
 }
 

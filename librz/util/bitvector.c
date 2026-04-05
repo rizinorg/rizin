@@ -2314,12 +2314,32 @@ RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fi
 
 /**
  * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_signed_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
  * \param bv
  * \param to_size cast bitvector length
  * \return new bv with length (to_size)
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size) {
 	return rz_bv_cast(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * unsigned cast of bv, (signed_cast x n) = (cast x n 0)
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_unsigned_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, false);
 }
 
 /**

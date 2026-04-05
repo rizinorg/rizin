@@ -144,7 +144,9 @@ RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x);
 RZ_API RZ_OWN RzBitVector *rz_bv_pred(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzBitVector *rz_bv_succ(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist);
+RZ_API bool rz_bv_signed_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size);
 RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
+RZ_API bool rz_bv_unsigned_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size);
 RZ_API RZ_OWN RzBitVector *rz_bv_unsigned_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
 
 RZ_API bool rz_bv_slt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
