@@ -500,6 +500,7 @@ static const char *get_reloc_type_name(const ut8 reloc_type, const ut32 machine_
 
 	case PE_IMAGE_REL_BASED_THUMB_MOV32_RISCV_LOW12I:
 		switch (machine_type) {
+		case PE_IMAGE_FILE_MACHINE_ARMNT:
 		case PE_IMAGE_FILE_MACHINE_THUMB:
 			return "IMAGE_REL_BASED_THUMB_MOV32";
 		case PE_IMAGE_FILE_MACHINE_RISCV32:
