@@ -32,16 +32,6 @@ RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
 }
 
 /**
- * \brief Sets the value stored in the list iterator and returns true if succeeds
- *
- **/
-RZ_API bool rz_list_iter_set_data(RZ_NONNULL RzListIter *iter, RZ_NULLABLE void *data) {
-	rz_return_val_if_fail(iter, false);
-	iter->val = data;
-	return true;
-}
-
-/**
  * \brief swaps the data held by two iterators and returns true if succeeds
  *
  **/

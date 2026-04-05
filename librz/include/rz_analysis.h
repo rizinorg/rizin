@@ -2404,6 +2404,9 @@ RZ_API bool rz_analysis_function_is_malloc(const RzAnalysisFunction *fcn);
 RZ_API RzType *rz_type_db_pdb_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
 RZ_API void rz_type_db_pdb_load(const RzTypeDB *typedb, const RzPdb *pdb);
 
+/* LUAC */
+RZ_API void rz_analysis_luac_integrate_functions(RzAnalysis *analysis);
+
 /* DWARF */
 RZ_API void rz_analysis_dwarf_preprocess_info(
 	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
@@ -2454,22 +2457,6 @@ RZ_API bool rz_serialize_analysis_var_storage_load(
 	RZ_NONNULL RzSerializeAnalysisFunctionLoadCtx *ctx,
 	RZ_NONNULL const RzJson *json,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzAnalysisVarStorage *storage);
-
-/**
- * Save useful infomation when analyze and disassemble bytes
- * \see rz_core_analysis_bytes
- */
-typedef struct analysis_bytes_t {
-	RzAnalysisOp *op;
-	RzAnalysisHint *hint;
-	char *opcode;
-	char *disasm;
-	char *pseudo;
-	char *description;
-	char *mask;
-	char *bytes;
-	int oplen;
-} RzAnalysisBytes;
 
 RZ_API void rz_serialize_analysis_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);

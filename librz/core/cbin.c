@@ -13,6 +13,7 @@
 #include <rz_util/rz_iterator.h>
 
 #include "../bin/dwarf/dwarf_private.h"
+#include "../bin/format/luac/luac_common.h"
 #include "core_private.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
@@ -203,6 +204,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
 		rz_core_bin_apply_dwarf(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_LUAC_DEBUG) {
+		rz_core_bin_apply_luac_debug(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
 		rz_core_bin_apply_entry(r, binfile, va);
@@ -4338,37 +4342,6 @@ RZ_API bool rz_core_bin_fields_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFi
 		}
 	}
 	rz_cmd_state_output_array_end(state);
-	return true;
-}
-
-RZ_API bool rz_core_bin_structured_data_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RzOutputMode mode) {
-	rz_return_val_if_fail(core && bf, false);
-
-	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
-	if (!sf) {
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			rz_cons_print("{}\n");
-		}
-		return true;
-	}
-
-	char *output = NULL;
-	switch (mode) {
-	case RZ_OUTPUT_MODE_JSON:
-		output = rz_structured_data_to_json(sf);
-		break;
-	case RZ_OUTPUT_MODE_STANDARD:
-		output = rz_structured_data_to_yaml(sf);
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-
-	rz_cons_printf("%s\n", output);
-	free(output);
-
 	return true;
 }
 

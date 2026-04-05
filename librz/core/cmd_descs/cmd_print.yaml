@@ -846,10 +846,18 @@ commands:
     summary: Parse, format and print JSON at current offset.
     cname: print_current_block_json
     args: []
-  - name: plf
-    summary: Print the RzIL of the function
-    cname: print_function_rzil
-    args: []
+  - name: pl
+    summary: Print RzIL
+    cname: cmd_print_rzil
+    subcommands:
+      - name: plf
+        summary: Print RzIL of the function
+        cname: print_function_rzil
+        args: []
+      - name: plF
+        summary: Print enriched RzIL of the function
+        cname: print_function_rzil_enriched
+        args: []
   - name: pp
     summary: Print patterns
     subcommands:

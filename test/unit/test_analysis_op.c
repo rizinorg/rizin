@@ -114,7 +114,7 @@ bool test_rz_core_analysis_bytes() {
 	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
 	mu_assert_notnull(iter, "rz_core_analysis_bytes");
 
-	RzAnalysisBytes *ab = rz_iterator_next(iter);
+	RzCoreDecodedBytes *ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
 
 	ab = rz_iterator_next(iter);
