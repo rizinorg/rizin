@@ -1522,3 +1522,46 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=String Search - str.unprintable - single code point
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e str.unprintable=0x20
+/z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+0x000000fa 31 hit.string.ascii.0 31
+placerat
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - str.unprintable - multiple code points
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e str.unprintable=0x20,0x2c
+/z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+0x000000fa 31 hit.string.ascii.0 31
+placerat
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - str.unprintable - utf8 code point
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
+CMDS=<<EOF
+e str.unprintable=0x629
+/z "ا الأوضاع, لم بوابة المب" l utf8
+b 0x1000
+ps utf8 unprintable @ hit.string.utf8.0
+EOF
+EXPECT=<<EOF
+0x00000116 43 hit.string.utf8.0 43
+ا الأوضاع, لم بواب
+EOF
+EXPECT_ERR=
+RUN

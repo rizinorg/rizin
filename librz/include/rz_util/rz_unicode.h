@@ -51,6 +51,14 @@ typedef struct rz_unicode_case_mapping_t {
 typedef RzUnicodeCaseMapping RzUnicodeCaseMap[];
 
 RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c);
+/**
+ * \brief Returns true if the code point is listed as user-unprintable.
+ *
+ * \param c Code point to check.
+ * \param user_unprintable Array of user-defined non-printable code points.
+ * \param user_unprintable_count Number of user-defined non-printable code points.
+ */
+RZ_API bool rz_unicode_code_point_is_user_unprintable(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count);
 RZ_API bool rz_unicode_code_point_is_defined(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_legal_decode(const RzCodePoint c);
 RZ_API bool rz_unicode_code_point_is_control(const RzCodePoint c);

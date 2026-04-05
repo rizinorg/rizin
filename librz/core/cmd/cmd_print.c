@@ -1748,6 +1748,7 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 	const ut32 length = core->blocksize - offset;
 	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	RzStrStringifyOpt opt = { 0 };
+	RzVector *user_unprintable = NULL;
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
@@ -1760,15 +1761,33 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		opt.encoding = encoding;
 		opt.stop_at_nil = stop_at_nil;
 		opt.stop_at_unprintable = stop_at_unprintable;
+		if (core->bin->str_search_cfg.user_unprintable_count) {
+			user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+			if (!user_unprintable) {
+				RZ_LOG_ERROR("core: cannot allocate str.unprintable vector.\n");
+				return RZ_CMD_STATUS_ERROR;
+			}
+			for (size_t i = 0; i < core->bin->str_search_cfg.user_unprintable_count; i++) {
+				RzCodePoint cp = core->bin->str_search_cfg.user_unprintable[i];
+				if (!rz_vector_push(user_unprintable, &cp)) {
+					RZ_LOG_ERROR("core: cannot append str.unprintable code point.\n");
+					rz_vector_free(user_unprintable);
+					return RZ_CMD_STATUS_ERROR;
+				}
+			}
+			opt.user_unprintable = user_unprintable;
+		}
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
+		rz_vector_free(user_unprintable);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_vector_free(user_unprintable);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -268,6 +268,8 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		.min_str_length = RZ_MAX(re_pattern_len, core->bin->str_search_cfg.min_length),
 		.prefer_big_endian = rz_asm_is_big_endian_set(core->rasm),
 		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,
+		.user_unprintable = core->bin->str_search_cfg.user_unprintable,
+		.user_unprintable_count = core->bin->str_search_cfg.user_unprintable_count,
 	};
 
 	RzList *hits = NULL;
