@@ -2404,6 +2404,9 @@ RZ_API bool rz_analysis_function_is_malloc(const RzAnalysisFunction *fcn);
 RZ_API RzType *rz_type_db_pdb_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
 RZ_API void rz_type_db_pdb_load(const RzTypeDB *typedb, const RzPdb *pdb);
 
+/* LUAC */
+RZ_API void rz_analysis_luac_integrate_functions(RzAnalysis *analysis);
+
 /* DWARF */
 RZ_API void rz_analysis_dwarf_preprocess_info(
 	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
-#include "arch_54.h"
+#include "arch_55.h"
 
 static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start, ut16 flag) {
 	LuaInstruction instruction = 0;
@@ -21,7 +21,7 @@ static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start
 		SETARG_k(instruction, 1);
 	}
 
-	SET_OPCODE54(instruction, opcode);
+	SET_OPCODE55(instruction, opcode);
 	if (has_param_flag(flag, PARAM_A)) {
 		SETARG_A4(instruction, args[cur_cnt++]);
 	}
@@ -49,10 +49,11 @@ static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start
 	if (has_param_flag(flag, PARAM_sJ)) {
 		SETARG_sJ(instruction, args[cur_cnt++]);
 	}
+
 	return instruction;
 }
 
-ut32 get_instruction54(const ut8 opcode, const char *arg_start) {
+ut32 get_instruction55(const ut8 opcode, const char *arg_start) {
 	LuaInstruction instruction = 0x00;
 	/* Encode opcode and args */
 	switch (opcode) {
@@ -151,7 +152,7 @@ ut32 get_instruction54(const ut8 opcode, const char *arg_start) {
 		break;
 	// no arg
 	case OP_RETURN0:
-		SET_OPCODE54(instruction, OP_RETURN0);
+		SET_OPCODE55(instruction, OP_RETURN0);
 		break;
 	// A Bx
 	case OP_LOADK:
@@ -178,8 +179,7 @@ ut32 get_instruction54(const ut8 opcode, const char *arg_start) {
 	default:
 		return LUA_INVALID_INSTRUCTION;
 	}
-
 	return instruction;
 }
 
-ASM(54)
+ASM(55)

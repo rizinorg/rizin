@@ -13,6 +13,7 @@
 #include <rz_util/rz_iterator.h>
 
 #include "../bin/dwarf/dwarf_private.h"
+#include "../bin/format/luac/luac_common.h"
 #include "core_private.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
@@ -203,6 +204,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	}
 	if (mask & RZ_CORE_BIN_ACC_DWARF) {
 		rz_core_bin_apply_dwarf(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_LUAC_DEBUG) {
+		rz_core_bin_apply_luac_debug(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
 		rz_core_bin_apply_entry(r, binfile, va);
