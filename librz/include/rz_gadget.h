@@ -126,8 +126,8 @@ typedef struct rz_gadget_constraint_t {
  */
 typedef struct rz_gadget_search_context_t {
 	ut8 max_instr; ///< Gadget search max length.
-	ut8 subchains; ///< Display every length gadget from gadget.len=X to 2.
-	ut8 allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
+	bool subchains; ///< Display every length gadget from gadget.len=X to 2.
+	bool allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
 	char *greparg; ///< Grep argument string.
 	const char *arch; ///< Architecture of the binary.
 	bool regexp; ///< Regular expression argument flag.
