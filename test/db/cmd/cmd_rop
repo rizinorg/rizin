@@ -3526,3 +3526,50 @@ Gadget 0x8048692 (size 4 bytes)
 
 EOF
 RUN
+
+NAME=subchains test
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa "pop r12; pop r13; pop r14; pop r15; ret"
+e gadget.subchains=false
+/Rq
+echo "===================================================="
+e gadget.subchains=true
+/Rq
+EOF
+EXPECT=<<EOF
+0x00000000: pop r12; pop r13; pop r14; pop r15; ret;
+0x00000001: pop rsp; pop r13; pop r14; pop r15; ret;
+0x00000002: pop r13; pop r14; pop r15; ret;
+0x00000003: pop rbp; pop r14; pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000005: pop rsi; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000007: pop rdi; ret;
+0x00000008: ret;
+====================================================
+0x00000000: pop r12; pop r13; pop r14; pop r15; ret;
+0x00000002: pop r13; pop r14; pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000001: pop rsp; pop r13; pop r14; pop r15; ret;
+0x00000002: pop r13; pop r14; pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000002: pop r13; pop r14; pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000003: pop rbp; pop r14; pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000004: pop r14; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000005: pop rsi; pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000006: pop r15; ret;
+0x00000007: pop rdi; ret;
+0x00000008: ret;
+EOF
+RUN

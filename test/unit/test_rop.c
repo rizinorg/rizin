@@ -34,7 +34,7 @@ static RzCoreAsmHit *setup_rop_hitasm(RzCore *core, int addr, ut8 *buf_str, int 
 	return hit;
 }
 
-static RzList /*<RzCoreAsmHit *>*/ *
+static RzPVector /*<RzCoreAsmHit *>*/ *
 setup_rop_hitlist(RzCore *core, ut8 *buf_str, int addr, int len, HtUP *ht_rop_analysis) {
 	RzAnalysisOp aop = { 0 };
 	rz_analysis_op_init(&aop);
@@ -47,23 +47,23 @@ setup_rop_hitlist(RzCore *core, ut8 *buf_str, int addr, int len, HtUP *ht_rop_an
 		return NULL;
 	}
 
-	RzList /*<RzCoreAsmHit *>*/ *hitlist = rz_list_newf(rz_core_asm_hit_free);
+	RzPVector /*<RzCoreAsmHit *>*/ *hitlist = rz_pvector_new(rz_core_asm_hit_free);
 	if (!hitlist) {
 		return NULL;
 	}
 
 	RzCoreAsmHit *hit = setup_rop_hitasm(core, addr, buf_str, len - 1, ht_rop_analysis);
 	if (!hit) {
-		rz_list_free(hitlist);
+		rz_pvector_free(hitlist);
 		return NULL;
 	}
-	rz_list_append(hitlist, hit);
+	rz_pvector_push(hitlist, hit);
 	hit = setup_rop_hitasm(core, addr + len - 1, buf_str, 1, ht_rop_analysis);
 	if (!hit) {
-		rz_list_free(hitlist);
+		rz_pvector_free(hitlist);
 		return NULL;
 	}
-	rz_list_append(hitlist, hit);
+	rz_pvector_push(hitlist, hit);
 	rz_analysis_op_fini(&aop);
 	return hitlist;
 }
@@ -126,12 +126,12 @@ bool test_rz_direct_solver() {
 		ut8 buf[ROP_GADGET_MAX_SIZE] = { 0 };
 		int len = rz_hex_str2bin(x86_64_buf_str[i], buf);
 		rz_io_write_at(core->io, addr, buf, len);
-		RzList /*<RzCoreAsmHit *>*/ *hitlist =
+		RzPVector /*<RzCoreAsmHit *>*/ *hitlist =
 			setup_rop_hitlist(core, buf, addr, len, ht_rop_analysis);
 		mu_assert_notnull(hitlist, "setup_rop_hitlist failed");
 		rz_core_handle_gadget_request_type(core, context, hitlist);
 		addr += len + 1;
-		rz_list_free(hitlist);
+		rz_pvector_free(hitlist);
 	}
 
 	HtUP *rop_semantics = rz_analysis_get_gadget_semantics(core->analysis);
