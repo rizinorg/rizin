@@ -50,7 +50,7 @@ static bool test_mspcode_analysis(void) {
 	// next decode lands exactly on it.
 	{
 		const ut8 buf_var_and_next[] = {
-			0x32, 0x04, 0x00,  // opcode=0x32, nbytes=4
+			0x32, 0x04, 0x00, // opcode=0x32, nbytes=4
 			0x11, 0x22, 0x33, 0x44, // payload (4 bytes)
 			0x14 // next opcode: End/RET
 		};
