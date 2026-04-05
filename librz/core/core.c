@@ -1483,17 +1483,6 @@ RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off) {
 		NULL);
 }
 
-#if __WINDOWS__
-// XXX move to rcons?
-static int win_eprintf(const char *format, ...) {
-	va_list ap;
-	va_start(ap, format);
-	rz_cons_win_vhprintf(STD_ERROR_HANDLE, false, format, ap);
-	va_end(ap);
-	return 0;
-}
-#endif
-
 static bool bp_is_mapped(ut64 addr, int perm, void *user) {
 	RzCore *core = user;
 	if (rz_core_is_debug(core)) {
