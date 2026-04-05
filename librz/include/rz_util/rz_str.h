@@ -122,7 +122,7 @@ RZ_API RzList /*<char *>*/ *rz_str_split_duplist_n(const char *str, const char *
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_str_split_duplist_n_regex(RZ_NONNULL const char *_str, RZ_NONNULL const char *r, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
 RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char *val, int g);
-RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, const char *val, bool global, bool icase);
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 #define rz_str_cpy(x, y) memmove((x), (y), strlen(y) + 1);

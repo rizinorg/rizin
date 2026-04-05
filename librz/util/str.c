@@ -1283,7 +1283,7 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
  *
  * \return New allocated string with replacements. And NULL in case of failure
  */
-RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, const char *val, bool global, bool icase) {
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase) {
 	rz_return_val_if_fail(str && pattern && val, NULL);
 
 	RzRegexFlags cflags = RZ_REGEX_DEFAULT;
@@ -1293,7 +1293,7 @@ RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, 
 
 	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
 	if (!regex) {
-		return str;
+		return NULL;
 	}
 
 	const size_t str_len = strlen(str);
@@ -1305,7 +1305,7 @@ RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, 
 
 	RzRegexSize search_off = 0;
 
-	while (search_off <= str_len) {
+	while (search_off < str_len) {
 		RzPVector *matches = rz_regex_match_first(regex, src, str_len, search_off, RZ_REGEX_DEFAULT);
 
 		if (!matches || rz_pvector_empty(matches)) {
@@ -1351,11 +1351,8 @@ RZ_API RZ_OWN char *rz_str_replace_regex(RZ_OWN char *str, const char *pattern, 
 
 	char *res = rz_strbuf_drain_nofree(&sb);
 	if (!res) {
-		free(str);
 		return NULL;
 	}
-
-	free(str);
 	return res;
 }
 

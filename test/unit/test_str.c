@@ -46,21 +46,27 @@ bool test_rz_str_replace(void) {
 bool test_rz_str_replace_regex(void) {
 	char *str;
 
-	str = rz_str_replace_regex(strdup("attiny88.elf"), "(attiny|atmega|atxmega)[[:alnum:]]*", "avrdev", 0, false);
+	str = rz_str_replace_regex("attiny88.elf", "(attiny|atmega|atxmega)[[:alnum:]]*", "avrdev", false, false);
 	mu_assert_streq(str, "avrdev.elf", "error, regex replace once failed");
 	free(str);
 
-	str = rz_str_replace_regex(strdup("atmega32 atxmega16 attiny88"), "(attiny|atmega|atxmega)[[:alnum:]]*", "avr", 1, false);
+	str = rz_str_replace_regex("atmega32 atxmega16 attiny88", "(attiny|atmega|atxmega)[[:alnum:]]*", "avr", true, false);
 	mu_assert_streq(str, "avr avr avr", "error, regex replace global failed");
 	free(str);
 
-	str = rz_str_replace_regex(strdup("AtMeGa88"), "atmega[[:alnum:]]*", "avr", false, true);
+	str = rz_str_replace_regex("AtMeGa88", "atmega[[:alnum:]]*", "avr", false, true);
 	mu_assert_streq(str, "avr", "error, regex replace icase failed");
 	free(str);
 
-	str = rz_str_replace_regex(strdup("nomatch"), "atmega[[:alnum:]]*", "avr", 1, false);
+	str = rz_str_replace_regex("nomatch", "atmega[[:alnum:]]*", "avr", true, false);
 	mu_assert_streq(str, "nomatch", "error, regex replace should keep string when no match");
 	free(str);
+
+	RzLogLevel old_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_FATAL);
+	str = rz_str_replace_regex("nomatch", "(", "avr", true, false);
+	rz_log_set_level(old_level);
+	mu_assert_null(str, "error, regex replace should return NULL on invalid regex pattern");
 
 	mu_end;
 }
