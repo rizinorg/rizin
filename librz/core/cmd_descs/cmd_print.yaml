@@ -1064,7 +1064,7 @@ commands:
                 arg_str: " (r x ˰ⁿ n)"
                 comment: "x to the power n using rounding mode r, where n is integer."
               - text: "Forder"
-                arg_str: " (x ⋚ y)"
+                arg_str: " (x ≷ y)"
                 comment: "Float ordering comparison between x and y."
               - text: "Frequal"
                 arg_str: " (r1 ≡ r2)"

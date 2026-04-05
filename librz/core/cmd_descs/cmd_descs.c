@@ -16219,7 +16219,7 @@ static const RzCmdDescDetailEntry print_function_rzil_enriched_Floating_space_Po
 	{ .text = "Frootn", .arg_str = " (r n ⁿ√ x)", .comment = "x to the power 1/n using rounding mode r, where n is integer." },
 	{ .text = "Fpow", .arg_str = " (r x ˰ y)", .comment = "x to the power y using rounding mode r." },
 	{ .text = "Fpown", .arg_str = " (r x ˰ⁿ n)", .comment = "x to the power n using rounding mode r, where n is integer." },
-	{ .text = "Forder", .arg_str = " (x ⋚ y)", .comment = "Float ordering comparison between x and y." },
+	{ .text = "Forder", .arg_str = " (x ≷ y)", .comment = "Float ordering comparison between x and y." },
 	{ .text = "Frequal", .arg_str = " (r1 ≡ r2)", .comment = "Float rounding mode equality check between r1 and r2." },
 	{ .text = "Is_fzero", .arg_str = " x ≡ 0", .comment = "Check if x is zero." },
 	{ .text = "Is_nan", .arg_str = " x ≡ ɴаɴ", .comment = "Check if x is Not-a-Number." },

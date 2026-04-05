@@ -60,7 +60,7 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 #define UCD_FREQUAL      "≡"
 #define UCD_FSUCC        "⌊"
 #define UCD_FPRED        "⌋"
-#define UCD_FORDER       "⋚"
+#define UCD_FORDER       "≷"
 #define UCD_FEXCEPT      "ᴇ"
 #define UCD_FADD         "+"
 #define UCD_FSUB         "-"
