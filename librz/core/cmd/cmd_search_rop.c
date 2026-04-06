@@ -595,11 +595,16 @@ RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const 
 RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
 	rz_return_val_if_fail(core && token, NULL);
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
-	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
 	if (!rop_constraint) {
-		rz_list_free(l);
 		return NULL;
 	}
+
+	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
+	if (!l) {
+		free(rop_constraint);
+		return NULL;
+	}
+
 	if (!rz_core_rop_analyze_constraint(core, token, rop_constraint)) {
 		free(rop_constraint);
 		rz_list_free(l);
