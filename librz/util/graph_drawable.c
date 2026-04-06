@@ -153,7 +153,7 @@ RZ_API RzGraphNodeInfo *rz_graph_create_node_info_icfg(ut64 address, RzGraphNode
 	return data;
 }
 
-RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *graph, const char *title, const char *body, ut64 offset) {
+RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, const char *title, const char *body, ut64 offset) {
 	rz_return_val_if_fail(graph, NULL);
 	RzGraphNodeInfo *data = rz_graph_create_node_info_default(title, body, offset);
 	if (!data) {
@@ -173,7 +173,7 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *>*/ *grap
  * \param node_properties Edge property string, added to the dot graph header.
  * \param edge_properties Node property string, added to the dot graph header.
  */
-RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph,
+RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph,
 	RZ_NULLABLE const char *node_properties, RZ_NULLABLE const char *edge_properties) {
 	rz_return_val_if_fail(graph, NULL);
 	RzGraphNode *node = NULL, *target = NULL;
@@ -293,7 +293,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
  * Node IDs in the output are sequential (0, 1, 2, ...) regardless of
  * deletion history, so the output is deterministic.
  */
-RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL PJ *pj, bool use_offset) {
+RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RZ_NONNULL PJ *pj, bool use_offset) {
 	rz_return_if_fail(graph && pj);
 	RzGraphNode *node = NULL, *neighbour = NULL;
 
@@ -366,7 +366,7 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/
  * \brief Convert \p graph to json string.
  * \param use_offset use offset in json ?
  */
-RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool use_offset) {
+RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool use_offset) {
 	rz_return_val_if_fail(graph, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -389,7 +389,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_json_str(RZ_NONNULL RzGraph /*<RzGraphN
 /**
  * \brief Convert \p graph to rizin cmd string.
  */
-RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph) {
 	rz_return_val_if_fail(graph, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {
@@ -435,7 +435,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 /**
  * \brief Convert \p graph to GML (Graph Modelling Language) string.
  */
-RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph) {
+RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph) {
 	rz_return_val_if_fail(graph, NULL);
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	if (!sb) {

@@ -170,7 +170,7 @@ struct MACH0_(obj_t) {
 	 */
 	RzPVector /*<RzBinImport *>*/ imports_by_ord;
 
-	HtPP *imports_by_name; ///< other imports created only by name
+	HtPP /*<char *, RzBinImport *>*/ *imports_by_name; ///< other imports created only by name
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;

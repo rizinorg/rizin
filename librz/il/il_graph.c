@@ -10,8 +10,8 @@
 #include <rz_util.h>
 #include <rz_util/rz_graph_drawable.h>
 
-static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from);
-static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from);
+static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from);
+static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from);
 
 #define graph_add_node_il(g, d) \
 	rz_graph_add_node_info(g, d, NULL, UT64_MAX)
@@ -90,7 +90,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
 		il_op_##sort2##_graph_resolve(opx.v2, g, to); \
 	} while (0)
 
-static void il_op_graph_var(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_var(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsVar *opx = &op->op.var;
 	char *value = rz_str_newf("var: %s", opx->v);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -98,11 +98,11 @@ static void il_op_graph_var(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, 
 	rz_graph_add_edge(g, from, to, NULL);
 }
 
-static void il_op_graph_ite(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_ite(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_3("ite", op->op.ite, pure, condition, pure, x, pure, y);
 }
 
-static void il_op_graph_let(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_let(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsLet *opx = &op->op.let;
 	char *value = rz_str_newf("let: %s", opx->name);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -112,118 +112,118 @@ static void il_op_graph_let(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, 
 	il_op_pure_graph_resolve(opx->body, g, to);
 }
 
-static void il_op_graph_bool_false(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_false(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_graph_add_edge_s(g, from, "false");
 }
 
-static void il_op_graph_bool_true(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_true(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_graph_add_edge_s(g, from, "true");
 }
 
-static void il_op_graph_bool_inv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_inv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("inv", op->op.boolinv, x);
 }
 
-static void il_op_graph_bool_and(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_and(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("and", op->op.booland, pure, x, pure, y);
 }
 
-static void il_op_graph_bool_or(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_or(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("or", op->op.boolor, pure, x, pure, y);
 }
 
-static void il_op_graph_bool_xor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bool_xor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("xor", op->op.boolxor, pure, x, pure, y);
 }
 
-static void il_op_graph_bitv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_bitv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsBv *opx = &op->op.bitv;
 	char *num = rz_bv_as_hex_string(opx->value, false);
 	il_op_graph_add_edge_f(g, from, "bv: %u %s", opx->value->len, num);
 	free(num);
 }
 
-static void il_op_graph_msb(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_msb(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("msb", op->op.msb, bv);
 }
 
-static void il_op_graph_lsb(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_lsb(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("lsb", op->op.lsb, bv);
 }
 
-static void il_op_graph_is_zero(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_zero(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_zero", op->op.lsb, bv);
 }
 
-static void il_op_graph_neg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_neg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("neg", op->op.neg, bv);
 }
 
-static void il_op_graph_lognot(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_lognot(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("not", op->op.lognot, bv);
 }
 
-static void il_op_graph_add(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_add(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("add", op->op.add, pure, x, pure, y);
 }
 
-static void il_op_graph_sub(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_sub(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("sub", op->op.sub, pure, x, pure, y);
 }
 
-static void il_op_graph_mul(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_mul(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("mul", op->op.mul, pure, x, pure, y);
 }
 
-static void il_op_graph_div(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_div(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("div", op->op.div, pure, x, pure, y);
 }
 
-static void il_op_graph_sdiv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_sdiv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("sdiv", op->op.sdiv, pure, x, pure, y);
 }
 
-static void il_op_graph_mod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_mod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("mod", op->op.mod, pure, x, pure, y);
 }
 
-static void il_op_graph_smod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_smod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("smod", op->op.smod, pure, x, pure, y);
 }
 
-static void il_op_graph_logand(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_logand(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("and", op->op.logand, pure, x, pure, y);
 }
 
-static void il_op_graph_logor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_logor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("or", op->op.logor, pure, x, pure, y);
 }
 
-static void il_op_graph_logxor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_logxor(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("xor", op->op.logxor, pure, x, pure, y);
 }
 
-static void il_op_graph_shiftr(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_shiftr(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_3("shift right", op->op.shiftr, pure, x, pure, y, pure, fill_bit);
 }
 
-static void il_op_graph_shiftl(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_shiftl(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_3("shift left", op->op.shiftl, pure, x, pure, y, pure, fill_bit);
 }
 
-static void il_op_graph_eq(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_eq(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("eq", op->op.ule, pure, x, pure, y);
 }
 
-static void il_op_graph_sle(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_sle(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("sle", op->op.sle, pure, x, pure, y);
 }
 
-static void il_op_graph_ule(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_ule(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("ule", op->op.ule, pure, x, pure, y);
 }
 
-static void il_op_graph_cast(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_cast(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsCast *opx = &op->op.cast;
 	char *value = rz_str_newf("cast: %u", opx->length);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -233,11 +233,11 @@ static void il_op_graph_cast(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g,
 	il_op_pure_graph_resolve(opx->val, g, to);
 }
 
-static void il_op_graph_append(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_append(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("append", op->op.append, pure, high, pure, low);
 }
 
-static void il_op_graph_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFloat *opx = &op->op.float_;
 	char *value = rz_str_newf("float: %d", opx->r);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -246,43 +246,43 @@ static void il_op_graph_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
-static void il_op_graph_fbits(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fbits(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fbits", op->op.fbits, f);
 }
 
-static void il_op_graph_is_finite(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_finite(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_finite", op->op.is_finite, f);
 }
 
-static void il_op_graph_is_nan(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_nan(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_nan", op->op.is_nan, f);
 }
 
-static void il_op_graph_is_inf(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_inf(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_inf", op->op.is_inf, f);
 }
 
-static void il_op_graph_is_fzero(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_fzero(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_fzero", op->op.is_fzero, f);
 }
 
-static void il_op_graph_is_fneg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_fneg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_fneg", op->op.is_fneg, f);
 }
 
-static void il_op_graph_is_fpos(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_is_fpos(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("is_fpos", op->op.is_fpos, f);
 }
 
-static void il_op_graph_fneg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fneg(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fneg", op->op.fneg, f);
 }
 
-static void il_op_graph_fabs(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fabs(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fpos", op->op.fabs, f);
 }
 
-static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastint *opx = &op->op.fcast_int;
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
 	char *value = rz_str_newf("fcast_int: %u %s", opx->length, rmode_str);
@@ -292,7 +292,7 @@ static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
-static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastsint *opx = &op->op.fcast_sint;
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
 	char *value = rz_str_newf("fcast_sint: %u %s", opx->length, rmode_str);
@@ -302,7 +302,7 @@ static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
-static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastfloat *opx = &op->op.fcast_float;
 	const char *format_str = rz_il_float_stringify_format(opx->format);
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
@@ -313,7 +313,7 @@ static void il_op_graph_fcast_float(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
-static void il_op_graph_fcast_sfloat(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fcast_sfloat(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastsfloat *opx = &op->op.fcast_sfloat;
 	const char *format_str = rz_il_float_stringify_format(opx->format);
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
@@ -324,7 +324,7 @@ static void il_op_graph_fcast_sfloat(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	il_op_pure_graph_resolve(opx->bv, g, to);
 }
 
-static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFconvert *opx = &op->op.fconvert;
 	const char *format_str = rz_il_float_stringify_format(opx->format);
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->mode);
@@ -335,7 +335,7 @@ static void il_op_graph_fconvert(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
-static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFround *opx = &op->op.fround;
 	const char *rmode_str = rz_il_float_stringify_rmode(opx->rmode);
 	char *value = rz_str_newf("fround: %s", rmode_str);
@@ -345,7 +345,7 @@ static void il_op_graph_fround(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *
 	il_op_pure_graph_resolve(opx->f, g, to);
 }
 
-static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFrequal *opx = &op->op.frequal;
 	const char *rmode_x = rz_il_float_stringify_rmode(opx->x);
 	const char *rmode_y = rz_il_float_stringify_rmode(opx->y);
@@ -355,70 +355,70 @@ static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ 
 	rz_graph_add_edge(g, from, to, NULL);
 }
 
-static void il_op_graph_fsucc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fsucc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fsucc", op->op.fsucc, f);
 }
-static void il_op_graph_fpred(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fpred(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fpred", op->op.fpred, f);
 }
 
-static void il_op_graph_forder(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_forder(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("<.", op->op.forder, pure, x, pure, y);
 }
 
-static void il_op_graph_fsqrt(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fsqrt(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1_with_rmode("fsqrt", op->op.fsqrt, f, rmode);
 }
 
-static void il_op_graph_frsqrt(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_frsqrt(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1_with_rmode("frsqrt", op->op.frsqrt, f, rmode);
 }
 
-static void il_op_graph_fadd(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fadd(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fadd", op->op.fadd, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fsub(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fsub(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fsub", op->op.fsub, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fmul(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fmul(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fmul", op->op.fmul, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fdiv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fdiv(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fdiv", op->op.fdiv, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fmod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fmod(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fmod", op->op.fmod, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fhypot(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fhypot(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("hypot", op->op.fhypot, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fpow(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fpow(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("pow", op->op.fpow, pure, x, pure, y, rmode);
 }
 
-static void il_op_graph_fmad(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fmad(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_3_with_rmode("fmad", op->op.fmad, pure, x, pure, y, pure, z, rmode);
 }
 
-static void il_op_graph_fpown(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fpown(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fpown", op->op.fpown, pure, f, pure, n, rmode);
 }
 
-static void il_op_graph_frootn(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_frootn(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("frootn", op->op.frootn, pure, f, pure, n, rmode);
 }
 
-static void il_op_graph_fcompound(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_fcompound(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2_with_rmode("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
 }
 
-static void il_op_graph_load(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_load(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	char *value = rz_str_newf("load: %u", opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -427,7 +427,7 @@ static void il_op_graph_load(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g,
 	il_op_pure_graph_resolve(opx->key, g, to);
 }
 
-static void il_op_graph_loadw(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_loadw(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsLoadW *opx = &op->op.loadw;
 	char *value = rz_str_newf("loadw: %u %u", (ut32)opx->mem, (ut32)opx->n_bits);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -436,7 +436,7 @@ static void il_op_graph_loadw(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	il_op_pure_graph_resolve(opx->key, g, to);
 }
 
-static void il_op_graph_store(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_store(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsStore *opx = &op->op.store;
 	char *value = rz_str_newf("store: %u", (ut32)opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -446,7 +446,7 @@ static void il_op_graph_store(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ 
 	il_op_pure_graph_resolve(opx->value, g, to);
 }
 
-static void il_op_graph_storew(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_storew(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsStore *opx = &op->op.store;
 	char *value = rz_str_newf("storew: %u", (ut32)opx->mem);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -456,15 +456,15 @@ static void il_op_graph_storew(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/
 	il_op_pure_graph_resolve(opx->value, g, to);
 }
 
-static void il_op_graph_nop(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_nop(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_0("nop");
 }
 
-static void il_op_graph_empty(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_empty(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_0("empty");
 }
 
-static void il_op_graph_set(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_set(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsSet *opx = &op->op.set;
 	char *value = rz_str_newf("set: %s", opx->v);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -473,11 +473,11 @@ static void il_op_graph_set(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	il_op_pure_graph_resolve(opx->x, g, to);
 }
 
-static void il_op_graph_jmp(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_jmp(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("jmp", op->op.jmp, dst);
 }
 
-static void il_op_graph_goto(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_goto(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsGoto *opx = &op->op.goto_;
 	char *value = rz_str_newf("goto: %s", opx->lbl);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -485,7 +485,7 @@ static void il_op_graph_goto(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *
 	rz_graph_add_edge(g, from, to, NULL);
 }
 
-static void il_op_graph_seq(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_seq(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsSeq *seq = &op->op.seq;
 	if (seq->x->code == RZ_IL_OP_SEQ) {
 		il_op_graph_seq(seq->x, g, from);
@@ -499,7 +499,7 @@ static void il_op_graph_seq(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	}
 }
 
-static void il_op_graph_blk(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_blk(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsBlk *opx = &op->op.blk;
 	char *value = rz_str_newf("blk: %s", opx->label);
 	RzGraphNode *to = graph_add_node_il(g, value);
@@ -509,15 +509,15 @@ static void il_op_graph_blk(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g
 	il_op_effect_graph_resolve(opx->ctrl_eff, g, to);
 }
 
-static void il_op_graph_repeat(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_repeat(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_2("repeat", op->op.repeat, pure, condition, effect, data_eff);
 }
 
-static void il_op_graph_branch(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_graph_branch(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_3("branch", op->op.branch, pure, condition, effect, true_eff, effect, false_eff);
 }
 
-static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	if (!op) {
 		return;
 	}
@@ -731,7 +731,7 @@ static void il_op_pure_graph_resolve(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo 
 	}
 }
 
-static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *>*/ *g, RzGraphNode *from) {
+static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	if (!op) {
 		il_op_graph_add_edge_s(g, from, "nop");
 		return;
@@ -782,7 +782,7 @@ static void il_op_effect_graph_resolve(RzILOpEffect *op, RzGraph /*<RzGraphNodeI
  * \param      op    IL pure statement
  * \return     On success returns a valid pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_pure_graph(RZ_NONNULL RzILOpPure *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
 	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 	if (!graph) {
@@ -799,7 +799,7 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_pure_graph(RZ_NONNULL Rz
  * \param      op    IL effect statement
  * \return     On success returns a valid pointer, otherwise NULL.
  */
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name) {
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *rz_il_op_effect_graph(RZ_NONNULL RzILOpEffect *op, RZ_NULLABLE const char *name) {
 	rz_return_val_if_fail(op, NULL);
 	RzGraph *graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 	if (!graph) {

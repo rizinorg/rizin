@@ -52,7 +52,7 @@ static void dfs_entry_free(DfsEntry *entry) {
  * \param edge_color color array for all nodes, used to determine edge is visited or not, and end point or not
  * \param visitor callbacks
  */
-static void dfs_edge_policy(RzGraph *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitor *visitor) {
+static void dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitor *visitor) {
 	// assert g, from, to, edge_color, visitor NON NULL
 
 	RzGraphEdge edge = {
@@ -87,7 +87,7 @@ static void dfs_edge_policy(RzGraph *g, RzGraphNode *from, RzGraphNode *to, ut8 
 /**
  * Helper function to push neighbours of current node into stack for DFS.
  */
-static void dfs_push_neighbours(RzGraph *g, RzGraphNode *node, RzStack *stack, bool forward, RzGraphVisitor *visitor) {
+static void dfs_push_neighbours(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node, RzStack *stack, bool forward, RzGraphVisitor *visitor) {
 	// assert g, node, stack, visitor NON NULL
 	RzIterator *edge_iter = forward ? g->impl_ops->get_out_edges(g, node) : g->impl_ops->get_in_edges(g, node);
 	if (!edge_iter) {
@@ -118,7 +118,7 @@ static void dfs_push_neighbours(RzGraph *g, RzGraphNode *node, RzStack *stack, b
  * \param stack stack for emulating recursive DFS, each element is a DfsEntry struct to keep track of parent and current node
  * \param forward_search true for normal DFS, false for reverse DFS
  */
-static void dfs_from_entry(RzGraph *g, RzGraphNode *root, RzGraphVisitor *visitor, ut8 *color, RzStack *stack, bool forward_search) {
+static void dfs_from_entry(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *root, RzGraphVisitor *visitor, ut8 *color, RzStack *stack, bool forward_search) {
 	rz_return_if_fail(g && root && visitor && color && stack);
 
 	// build root node as first to start search
@@ -182,7 +182,7 @@ static void dfs_from_entry(RzGraph *g, RzGraphNode *root, RzGraphVisitor *visito
  * \param visitor callbacks
  * \param forward_search true for normal DFS, false for reverse DFS
  */
-static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor, bool forward_search) {
+static void dfs_impl(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *start, RzGraphVisitor *visitor, bool forward_search) {
 	rz_return_if_fail(g && visitor);
 	ut64 n = rz_pvector_len(g->node_vec);
 	if (n == 0) {
@@ -237,7 +237,7 @@ static void dfs_impl(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor, bo
  * \param g graph
  * \param vis callback
  */
-RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitor *vis) {
+RZ_API void rz_graph_dfs(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, true);
 }
 
@@ -252,7 +252,7 @@ RZ_API void rz_graph_dfs(RzGraph *g, RzGraphVisitor *vis) {
  * \param g graph
  * \param vis callback
  */
-RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitor *vis) {
+RZ_API void rz_graph_dfs_reverse(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphVisitor *vis) {
 	dfs_impl(g, NULL, vis, false);
 }
 
@@ -268,7 +268,7 @@ RZ_API void rz_graph_dfs_reverse(RzGraph *g, RzGraphVisitor *vis) {
  * \param g graph
  * \param visitor callback
  */
-RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *visitor) {
+RZ_API void rz_graph_dfs_from_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *start, RzGraphVisitor *visitor) {
 	dfs_impl(g, start, visitor, true);
 }
 
@@ -284,7 +284,7 @@ RZ_API void rz_graph_dfs_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisito
  * \param g graph
  * \param vis callback
  */
-RZ_API void rz_graph_dfs_reverse_from_node(RzGraph *g, RzGraphNode *start, RzGraphVisitor *vis) {
+RZ_API void rz_graph_dfs_reverse_from_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *start, RzGraphVisitor *vis) {
 	dfs_impl(g, start, vis, false);
 }
 
@@ -294,7 +294,7 @@ RZ_API void rz_graph_dfs_reverse_from_node(RzGraph *g, RzGraphNode *start, RzGra
  * \p cmp so that the last pushed (= highest sorted) edge is popped first by
  * the LIFO stack, matching the traversal order used for layout.
  */
-static void find_back_edges_push(RzGraph *g, RzGraphNode *node, RzStack *stack, RzGraphEdgeCmp cmp, void *user) {
+static void find_back_edges_push(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node, RzStack *stack, RzGraphEdgeCmp cmp, void *user) {
 	RzIterator *edge_iter = g->impl_ops->get_out_edges(g, node);
 	if (!edge_iter) {
 		return;
@@ -346,7 +346,7 @@ static void find_back_edges_push(RzGraph *g, RzGraphNode *node, RzStack *stack, 
  * Returns a list of borrowed RzGraphEdge pointers (owned by the graph).
  * Caller must free the list itself but must NOT free the elements.
  */
-RZ_API RZ_OWN RzList /*<RzGraphEdge *>*/ *rz_graph_find_back_edges(RzGraph *g, RZ_NULLABLE RzGraphEdgeCmp cmp, void *user) {
+RZ_API RZ_OWN RzList /*<RzGraphEdge *>*/ *rz_graph_find_back_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeCmp cmp, void *user) {
 	rz_return_val_if_fail(g, NULL);
 
 	RzList /*<RzGraphEdge *>*/ *back_edges = rz_list_new(); // borrowed pointers, no element free fn
@@ -460,7 +460,7 @@ static void tarjan_frame_free(TarjanFrame *f) {
  * Each inner vector is one SCC; SCCs with a single node and no self-loop are trivial.
  * Caller must free the outer vector (and each inner vector); nodes are not freed.
  */
-RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzGraph *g) {
+RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, NULL);
 
 	RzPVector /*<RzPVector<RzGraphNode *> *>*/ *sccs = rz_pvector_new((RzPVectorFree)rz_pvector_free);

@@ -1493,7 +1493,7 @@ static void fini_vertical_nodes_kv(HtPPKv *kv, RZ_UNUSED void *user) {
 /* if v is an original node, L(v) = { v }
  * if v is a dummy node, L(v) is the set of all the dummies node that belongs
  *      to the same long edge */
-static HtPP *compute_vertical_nodes(const RzAGraph *g) {
+static HtPP /*<RzGraphNode *, RzList *>*/ *compute_vertical_nodes(const RzAGraph *g) {
 	HtPPOptions ht_opt = { 0 };
 	ht_opt.finiKV = fini_vertical_nodes_kv;
 	HtPP *res = ht_pp_new_opt(&ht_opt);
@@ -1536,7 +1536,7 @@ static HtPP *compute_vertical_nodes(const RzAGraph *g) {
  * - v E C
  * - w E C => L(v) is a subset of C
  * - w E C, the s+(w) exists and is not in any class yet => s+(w) E C */
-static RzList /*<RzGraphNode *>*/ **compute_classes(const RzAGraph *g, HtPP *v_nodes, int is_left, int *n_classes) {
+static RzList /*<RzGraphNode *>*/ **compute_classes(const RzAGraph *g, HtPP /*<RzGraphNode *, RzList *>*/ *v_nodes, int is_left, int *n_classes) {
 	int i, j, c;
 	RzList **res = RZ_NEWS0(RzList *, g->n_layers);
 	RzGraphNode *gn;
@@ -1736,7 +1736,7 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP *v_nodes, HtPU *res, RzSetU *placed) {
+static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, HtPP /*<RzGraphNode *, RzList *>*/ *v_nodes, HtPU *res, RzSetU *placed) {
 	const RzList *lv = ht_pp_find(v_nodes, gn, NULL);
 	int p = 0, v, is_first = true;
 	const RzGraphNode *gk;
@@ -1780,7 +1780,7 @@ static void place_nodes(const RzAGraph *g, const RzGraphNode *gn, int is_left, H
 }
 
 /* computes the position to the left/right of all the nodes */
-static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP *v_nodes) {
+static HtPU *compute_pos(const RzAGraph *g, int is_left, HtPP /*<RzGraphNode *, RzList *>*/ *v_nodes) {
 	int n_classes, i;
 
 	RzList **classes = compute_classes(g, v_nodes, is_left, &n_classes);
@@ -5869,7 +5869,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
  * \return true In case of success.
  * \return false In case of failure.
  */
-RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail, bool utf8) {
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *g, bool free_on_fail, bool utf8) {
 	rz_return_val_if_fail(ag && g, false);
 	ag->need_reload_nodes = false;
 	// Cache lookup to build edges
@@ -5982,7 +5982,7 @@ failure:
  *
  * \return RzAGraph* The agraph or NULL in case of failure
  */
-RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool utf8) {
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8) {
 	rz_return_val_if_fail(graph, NULL);
 
 	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));

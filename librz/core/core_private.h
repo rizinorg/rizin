@@ -131,10 +131,10 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI bool rz_core_agraph_print(RzCore *core, RzCoreGraphFormat format);
 RZ_IPI bool rz_core_agraph_is_shortcuts(RzCore *core, RzAGraph *g);
 RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, ut64 addr, char *title);
-RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *graph);
 
 /* cgraph.c */
-RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
+RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
 RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
 RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);

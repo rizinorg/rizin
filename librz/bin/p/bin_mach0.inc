@@ -273,7 +273,7 @@ static RzPVector /*<RzBinSymbol *>*/ *mach0_symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
+static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP /*<char *, RzBinImport *>*/ *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
 		RzBinImport *ptr = ht_pp_find(imports_by_name, orig_name, &found);

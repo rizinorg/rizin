@@ -98,7 +98,7 @@ static ut64 edge_vec_find_eid(RzPVector /*<RzGraphEdge *>*/ *vec, RzGraphNode *f
  * \param user_data user data attached to the edge
  * \return true on success, false if edge already exists or on failure
  */
-static bool rz_graph_list_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
@@ -151,7 +151,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNo
  * \param to destination node
  * \return true on success, false if edge not found
  */
-static bool rz_graph_list_impl_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphListImpl *impl = g->impl;
 
@@ -197,7 +197,7 @@ static bool rz_graph_list_impl_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNo
  * \param to destination node
  * \return true if the edge exists, false otherwise
  */
-static bool rz_graph_list_impl_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static bool rz_graph_list_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
@@ -219,7 +219,7 @@ static bool rz_graph_list_impl_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNo
  * \param to destination node
  * \return the edge if found, or NULL if not found
  */
-static RzGraphEdge *rz_graph_list_impl_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static RzGraphEdge *rz_graph_list_impl_find_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
@@ -300,7 +300,7 @@ static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no out-edges
  */
-static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph *g, RzGraphNode *node) {
+static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 	bool found = false;
@@ -319,7 +319,7 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph *g, RzGraphNo
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no in-edges
  */
-static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph *g, RzGraphNode *node) {
+static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 	bool found = false;
@@ -341,7 +341,7 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph *g, RzGraphNod
  * \param node node to add
  * \return always true
  */
-static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph *g, RzGraphNode *node) {
+static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	// no explicit node in list-based
 	// all leaved to graph to manage nodes
@@ -361,7 +361,7 @@ static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph *g, RzGraphNode *n
  * \param node node to delete
  * \return true on success, false on failure
  */
-static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph *g, RzGraphNode *node) {
+static RZ_OWN bool rz_graph_list_impl_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
@@ -559,7 +559,7 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
  * \param user_data user data attached to the edge
  * \return true on success, false if edge already exists or on allocation failure
  */
-static bool rz_graph_matrix_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphMatrixImpl *impl = (RzGraphMatrixImpl *)g->impl;
 	RzGraphEdge **cell = matrix_cell(impl, from->_vec_id, to->_vec_id);
@@ -586,7 +586,7 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph *g, RzGraphNode *from, RzGraph
  * \param to destination node
  * \return true on success, false if no such edge
  */
-static bool rz_graph_matrix_impl_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static bool rz_graph_matrix_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphMatrixImpl *impl = (RzGraphMatrixImpl *)g->impl;
 	RzGraphEdge **cell = matrix_cell(impl, from->_vec_id, to->_vec_id);
@@ -612,7 +612,7 @@ static bool rz_graph_matrix_impl_del_edge(RzGraph *g, RzGraphNode *from, RzGraph
  * \param to destination node
  * \return true if the edge exists, false otherwise
  */
-static bool rz_graph_matrix_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static bool rz_graph_matrix_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphMatrixImpl *impl = g->impl;
 	return *matrix_cell(impl, from->_vec_id, to->_vec_id) != NULL;
@@ -626,14 +626,14 @@ static bool rz_graph_matrix_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode 
  * \param to destination node
  * \return the edge if found, or NULL
  */
-static RzGraphEdge *rz_graph_matrix_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+static RzGraphEdge *rz_graph_matrix_find_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, NULL);
 	RzGraphMatrixImpl *impl = g->impl;
 	return *matrix_cell(impl, from->_vec_id, to->_vec_id);
 }
 
 typedef struct {
-	RZ_BORROW const RzGraph *g;
+	RZ_BORROW const RzGraph /*<NodeType *, EdgeType *>*/ *g;
 	ut64 node_vid;
 	ut32 cur;
 	bool scan_out; // true to scan out edge or in edge
@@ -690,7 +690,7 @@ static void *matrix_edge_iter_next(RzIterator *it) {
  * \param scan_out true for outgoing edges, false for incoming edges
  * \return A new RzIterator, or NULL on failure
  */
-static RzIterator *matrix_edge_as_iter(const RzGraph *g, ut64 node_vid, bool scan_out) {
+static RzIterator *matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 node_vid, bool scan_out) {
 	RzGraphMatrixIterState *state = RZ_NEW0(RzGraphMatrixIterState);
 	if (!state) {
 		return NULL;
@@ -715,7 +715,7 @@ static RzIterator *matrix_edge_as_iter(const RzGraph *g, ut64 node_vid, bool sca
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
-static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph *g, RzGraphNode *node) {
+static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	if (!node) {
 		return NULL;
 	}
@@ -729,7 +729,7 @@ static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph *g, RzGraphNode *no
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
-static RzIterator *rz_graph_matrix_impl_get_out_edges(RzGraph *g, RzGraphNode *node) {
+static RzIterator *rz_graph_matrix_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	if (!node) {
 		return NULL;
 	}
@@ -746,7 +746,7 @@ static RzIterator *rz_graph_matrix_impl_get_out_edges(RzGraph *g, RzGraphNode *n
  * \param node node to add
  * \return true on success, false if capacity growth fails
  */
-static bool rz_graph_matrix_impl_add_node(RzGraph *g, RzGraphNode *node) {
+static bool rz_graph_matrix_impl_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	RzGraphMatrixImpl *impl = g->impl;
 	if (!rz_graph_matrix_impl_require_capacity(impl, node->_vec_id + 1)) {
@@ -765,7 +765,7 @@ static bool rz_graph_matrix_impl_add_node(RzGraph *g, RzGraphNode *node) {
  * \param node node to delete
  * \return true on success, false on failure
  */
-static bool rz_graph_matrix_impl_del_node(RzGraph *g, RzGraphNode *node) {
+static bool rz_graph_matrix_impl_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	RzGraphMatrixImpl *impl = g->impl;
 	ut64 vec_id = node->_vec_id;
@@ -888,7 +888,7 @@ static ut64 rz_graph_node_default_hash(const void *identifier) {
 /**
  * \brief Returns the number nodes the graph has.
  */
-RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g) {
+RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, 0);
 	return g->n_nodes;
 }
@@ -896,7 +896,7 @@ RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g) {
 /**
  * \brief Returns the number edges the graph has.
  */
-RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g) {
+RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, 0);
 	return g->n_edges;
 }
@@ -904,7 +904,7 @@ RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g) {
 /**
  * \brief Returns the implementation type of the graph. Or INT_MAX in case of failure.
  */
-RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph *g) {
+RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, INT_MAX);
 	return g->impl_type;
 }
@@ -972,8 +972,8 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
  * \param edge_free callback to free edge user data, or NULL
  * \return A new RzGraphNew, or NULL on failure
  */
-RZ_API RZ_OWN RzGraph *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free) {
-	RzGraph *g = RZ_NEW0(RzGraph);
+RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free) {
+	RzGraph /*<NodeType *, EdgeType *>*/ *g = RZ_NEW0(RzGraph);
 	if (!g) {
 		return NULL;
 	}
@@ -1042,7 +1042,7 @@ fail_clean:
  *
  * \param g graph to free, or NULL (no-op)
  */
-RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph *g) {
+RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	if (!g) {
 		return;
 	}
@@ -1113,7 +1113,7 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph *g) {
  *
  * \param g graph to reset
  */
-RZ_API void rz_graph_reset(RzGraph *g) {
+RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_if_fail(g);
 
 	// free edge user data before destroying the impl
@@ -1208,7 +1208,7 @@ RZ_API void rz_graph_reset(RzGraph *g) {
  * \param identifier used by the hash function to generate node hash_id, if NULL, use user_data as identifier
  * \return the newly created node (borrowed), or NULL on failure
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_data, const void *identifier) {
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *user_data, const void *identifier) {
 	rz_return_val_if_fail(g, NULL);
 	const void *id = identifier ? identifier : (const void *)user_data;
 
@@ -1266,7 +1266,7 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, RZ_OWN void *user_da
  * \param node node to delete (ownership transferred)
  * \return true on success, false if node not found or impl fails
  */
-RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node) {
+RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, false);
 	bool found = false;
 	ht_up_find(g->nodes, node->hash_id, &found);
@@ -1307,7 +1307,7 @@ RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node) {
  * \param identifier the identifier to search for
  * \return the node if found (borrowed), or NULL
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier) {
+RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && g->hash_func && identifier, NULL);
 	ut64 hash_id = g->hash_func(identifier);
 	return ht_up_find(g->nodes, hash_id, NULL);
@@ -1324,7 +1324,7 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identif
  * \param user_data user data attached to the edge
  * \return true on success, false if edge already exists or on failure
  */
-RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	if (!g->impl_ops->add_edge(g, from, to, user_data)) {
 		return false;
@@ -1344,7 +1344,7 @@ RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, vo
  * \param user_data unused
  * \return true on success, false if edge not found
  */
-RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
+RZ_API bool rz_graph_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	if (!g->impl_ops->del_edge(g, from, to)) {
 		return false;
@@ -1362,7 +1362,7 @@ RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ
  * \param user_data unused
  * \return true if the edge exists, false otherwise
  */
-RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
+RZ_API bool rz_graph_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	return g->impl_ops->has_edge(g, from, to);
 }
@@ -1375,7 +1375,7 @@ RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ
  * \param to destination node
  * \return the edge if found (borrowed), or NULL
  */
-RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to) {
+RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_val_if_fail(g && from && to, NULL);
 	return g->impl_ops->find_edge(g, from, to);
 }
@@ -1389,7 +1389,7 @@ RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, 
  * \param g graph
  * \return A new node iterator, or NULL on failure
  */
-RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g) {
+RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, NULL);
 	RzIterator *iter = pvector_as_iter(g->node_vec);
 	return iter;
@@ -1401,7 +1401,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g) {
  * \param g graph
  * \return node count
  */
-RZ_API ut64 rz_graph_count_nodes(const RzGraph *g) {
+RZ_API ut64 rz_graph_count_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, 0);
 	return g->n_nodes;
 }
@@ -1412,7 +1412,7 @@ RZ_API ut64 rz_graph_count_nodes(const RzGraph *g) {
  * \param g graph
  * \return edge count
  */
-RZ_API ut64 rz_graph_count_edges(const RzGraph *g) {
+RZ_API ut64 rz_graph_count_edges(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, 0);
 	return g->n_edges;
 }
@@ -1496,7 +1496,7 @@ static RZ_OWN RzIterator *as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool u
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph *g, RzGraphNode *n) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
 	rz_return_val_if_fail(g && n, NULL);
 	RzIterator *edge_iter = g->impl_ops->get_out_edges(g, n);
 	if (!edge_iter) {
@@ -1517,7 +1517,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph *g, RzGraphNode *n) {
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
 	rz_return_val_if_fail(g && n, NULL);
 	RzIterator *edge_iter = g->impl_ops->get_in_edges(g, n);
 	if (!edge_iter) {
@@ -1543,9 +1543,9 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n) {
  * \param out_neighbor if true, get outgoing neighbours; otherwise incoming
  * \return the nth neighbour node, or NULL if not enough neighbours
  */
-RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph *g, const RzGraphNode *n, ut64 nth, bool out_neighbor) {
+RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *n, ut64 nth, bool out_neighbor) {
 	rz_return_val_if_fail(g && n, NULL);
-	RzIterator *edge_iter = out_neighbor ? g->impl_ops->get_out_edges((RzGraph *)g, (RzGraphNode *)n) : g->impl_ops->get_in_edges((RzGraph *)g, (RzGraphNode *)n);
+	RzIterator *edge_iter = out_neighbor ? g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n) : g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n);
 	if (!edge_iter) {
 		return NULL;
 	}
@@ -1572,7 +1572,7 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph *g, const RzGraphNode *
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph *g, RzGraphNode *node) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, NULL);
 	return g->impl_ops->get_out_edges(g, node);
 }
@@ -1586,15 +1586,15 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph *g, RzGraphNode *node) {
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges(RzGraph *g, RzGraphNode *node) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, NULL);
 	return g->impl_ops->get_in_edges(g, node);
 }
 
-RZ_API ut64 rz_graph_out_degree(const RzGraph *g, const RzGraphNode *node) {
+RZ_API ut64 rz_graph_out_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, 0);
 	ut32 count = 0;
-	RzIterator *it = g->impl_ops->get_out_edges((RzGraph *)g, (RzGraphNode *)node);
+	RzIterator *it = g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
 	if (it) {
 		RzGraphEdge *e;
 		rz_iterator_foreach(it, e) {
@@ -1605,10 +1605,10 @@ RZ_API ut64 rz_graph_out_degree(const RzGraph *g, const RzGraphNode *node) {
 	return count;
 }
 
-RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *node) {
+RZ_API ut64 rz_graph_in_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, 0);
 	ut32 count = 0;
-	RzIterator *it = g->impl_ops->get_in_edges((RzGraph *)g, (RzGraphNode *)node);
+	RzIterator *it = g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
 	if (it) {
 		RzGraphEdge *e;
 		rz_iterator_foreach(it, e) {
@@ -1619,7 +1619,7 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *node) {
 	return count;
 }
 
-RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id) {
+RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 
 	bool found;
@@ -1670,12 +1670,12 @@ RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *
  * It only exists for compatibility reasons and because refactoring is
  * more effort than currently acceptable.
  */
-RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGraph *g) {
+RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(RZ_NONNULL const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, NULL);
 	return g->node_vec;
 }
 
-RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier) {
+RZ_API bool rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, false);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1684,7 +1684,7 @@ RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier) {
 	return rz_graph_del_node(g, node);
 }
 
-RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *user_data) {
+RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id, void *user_data) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
@@ -1694,7 +1694,7 @@ RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void 
 	return rz_graph_add_edge(g, from, to, user_data);
 }
 
-RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
+RZ_API bool rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
@@ -1704,7 +1704,7 @@ RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void 
 	return rz_graph_del_edge(g, from, to, user_data);
 }
 
-RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
+RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
@@ -1714,7 +1714,7 @@ RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void 
 	return rz_graph_has_edge(g, from, to, user_data);
 }
 
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, const void *from_id, const void *to_id) {
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id) {
 	rz_return_val_if_fail(g && from_id && to_id, NULL);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
@@ -1724,7 +1724,7 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, c
 	return rz_graph_find_edge(g, from, to);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *identifier) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1733,7 +1733,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *ident
 	return rz_graph_out_edges(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identifier) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1742,7 +1742,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identi
 	return rz_graph_in_edges(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, const void *identifier) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1751,7 +1751,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, const void *i
 	return rz_graph_out_neighbors(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, const void *identifier) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1760,27 +1760,27 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, const void *id
 	return rz_graph_in_neighbors(g, node);
 }
 
-RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, const void *identifier) {
+RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, 0);
-	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	RzGraphNode *node = rz_graph_find_node((RzGraph /*<NodeType *, EdgeType *>*/ *)g, identifier);
 	if (!node) {
 		return 0;
 	}
 	return rz_graph_out_degree(g, node);
 }
 
-RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, const void *identifier) {
+RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, 0);
-	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	RzGraphNode *node = rz_graph_find_node((RzGraph /*<NodeType *, EdgeType *>*/ *)g, identifier);
 	if (!node) {
 		return 0;
 	}
 	return rz_graph_in_degree(g, node);
 }
 
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, const void *identifier, ut64 nth, bool out_neighbor) {
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier, ut64 nth, bool out_neighbor) {
 	rz_return_val_if_fail(g && identifier, NULL);
-	RzGraphNode *node = rz_graph_find_node((RzGraph *)g, identifier);
+	RzGraphNode *node = rz_graph_find_node((RzGraph /*<NodeType *, EdgeType *>*/ *)g, identifier);
 	if (!node) {
 		return NULL;
 	}

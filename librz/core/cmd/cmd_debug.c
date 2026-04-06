@@ -26,7 +26,7 @@
 	} while (0)
 
 struct dot_trace_ght {
-	RzGraph /*<struct trace_node *>*/ *graph;
+	RzGraph /*<struct trace_node *, None *>*/ *graph;
 	Sdb *graphnodes;
 };
 
@@ -86,7 +86,7 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 	free(syscalls);
 }
 
-static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *>*/ *g, Sdb *nodes, struct trace_node *tn) {
+static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *, None *>*/ *g, Sdb *nodes, struct trace_node *tn) {
 	RzGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 

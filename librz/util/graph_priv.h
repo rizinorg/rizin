@@ -43,8 +43,8 @@ struct rz_graph_t_new {
 	ut64 n_nodes;
 	ut64 n_edges;
 
-	HtUP *nodes; // <hash_id, RzGraphNode>
-	RzPVector *node_vec; // <vec_id, RzGraphNode> for DFS
+	HtUP /*<hash_id, RzGraphNode>*/ *nodes;
+	RzPVector /*<RzGraphNode *>*/ *node_vec; // Indexed by vec_id for DFS
 	const RzGraphImplOps *impl_ops; // graph implementation ops
 	void *impl; // graph implementation specific data
 	RzGraphImplType impl_type;

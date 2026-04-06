@@ -1269,7 +1269,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
  * \param analysis
  * \return RzGraph* NULL if failure
  */
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
+RZ_API RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzGraph *class_graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
 	if (!class_graph) {
