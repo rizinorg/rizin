@@ -1556,8 +1556,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	int prev_buflen = -1;
 	bool enable_yank_pop = false;
 	bool gcomp_is_rev = true;
-	RzEmacsModeModifyOpts em_opts;
-	rz_emacs_mode_modify_opts_reset(&em_opts);
+	RzEmacsModeOpts em_opts;
+	rz_emacs_mode_opts_reset(&em_opts);
 
 	RzCons *cons = rz_cons_singleton();
 
@@ -1837,7 +1837,13 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			buf[0] = rz_cons_readchar_timeout(50);
 			switch ((signed char)buf[0]) {
 			case 127: // alt+bkspace
-				backward_kill_word(line, MINOR_BREAK);
+				if (!em_opts.move_cursor) {
+					rz_emacs_mode_opts_reset(&em_opts);
+				} else {
+					em_opts.op = EMACS_MODIFY_KILL_WORD_BACKWARD;
+					rz_emacs_mode_action(&em_opts, line);
+					rz_emacs_mode_opts_reset(&em_opts);
+				}
 				break;
 			case -1: // escape key, goto vi mode
 				if (line->enable_vi_mode) {
@@ -1861,56 +1867,57 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				break;
 			case 'B':
 			case 'b':
-				for (i = line->buffer.index - 2; i >= 0; i--) {
-					if (is_word_break_char(line->buffer.data[i], MINOR_BREAK) && !is_word_break_char(line->buffer.data[i + 1], MINOR_BREAK)) {
-						line->buffer.index = i + 1;
-						break;
-					}
-				}
-				if (i < 0) {
-					line->buffer.index = 0;
+				if (!em_opts.move_cursor) {
+					rz_emacs_mode_opts_reset(&em_opts);
+				} else {
+					em_opts.op = EMACS_MOVE_BACKWARD;
+					rz_emacs_mode_action(&em_opts, line);
+					rz_emacs_mode_opts_reset(&em_opts);
 				}
 				break;
 			case 'D':
 			case 'd':
-				kill_word(line, MINOR_BREAK);
+				if (!em_opts.move_cursor) {
+					rz_emacs_mode_opts_reset(&em_opts);
+				} else {
+					em_opts.op = EMACS_MODIFY_KILL_WORD;
+					rz_emacs_mode_action(&em_opts, line);
+					rz_emacs_mode_opts_reset(&em_opts);
+				}
 				break;
 			case 'F':
 			case 'f':
-				// next word
-				for (i = line->buffer.index + 1; i < line->buffer.length; i++) {
-					if (!is_word_break_char(line->buffer.data[i], MINOR_BREAK) && is_word_break_char(line->buffer.data[i - 1], MINOR_BREAK)) {
-						line->buffer.index = i;
-						break;
-					}
-				}
-				if (i >= line->buffer.length) {
-					line->buffer.index = line->buffer.length;
+				if (!em_opts.move_cursor) {
+					rz_emacs_mode_opts_reset(&em_opts);
+				} else {
+					em_opts.op = EMACS_MOVE_FORWARD;
+					rz_emacs_mode_action(&em_opts, line);
+					rz_emacs_mode_opts_reset(&em_opts);
 				}
 				break;
 			case 'C':
 			case 'c':
 				em_opts.op = EMACS_MODIFY_CAPITALIZE;
-				rz_emacs_mode_modify(&em_opts, line);
-				rz_emacs_mode_modify_opts_reset(&em_opts);
+				rz_emacs_mode_action(&em_opts, line);
+				rz_emacs_mode_opts_reset(&em_opts);
 				break;
 			case 'L':
 			case 'l':
 				em_opts.op = EMACS_MODIFY_TOLOWER;
-				rz_emacs_mode_modify(&em_opts, line);
-				rz_emacs_mode_modify_opts_reset(&em_opts);
+				rz_emacs_mode_action(&em_opts, line);
+				rz_emacs_mode_opts_reset(&em_opts);
 				break;
 			case 'U':
 			case 'u':
 				em_opts.op = EMACS_MODIFY_TOUPPER;
-				rz_emacs_mode_modify(&em_opts, line);
-				rz_emacs_mode_modify_opts_reset(&em_opts);
+				rz_emacs_mode_action(&em_opts, line);
+				rz_emacs_mode_opts_reset(&em_opts);
 				break;
 			case '-':
 				em_opts.move_cursor = !em_opts.move_cursor;
 				if (em_opts.word_count_provided) {
 					// word count must be provided after '-'
-					rz_emacs_mode_modify_opts_reset(&em_opts);
+					rz_emacs_mode_opts_reset(&em_opts);
 				}
 				break;
 			case '0':

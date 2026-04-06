@@ -11,20 +11,24 @@
 typedef enum {
 	EMACS_MODIFY_CAPITALIZE,
 	EMACS_MODIFY_TOLOWER,
-	EMACS_MODIFY_TOUPPER
-} RzEmacsModeModifyOp;
+	EMACS_MODIFY_TOUPPER,
+	EMACS_MODIFY_KILL_WORD,
+	EMACS_MODIFY_KILL_WORD_BACKWARD,
+	EMACS_MOVE_FORWARD,
+	EMACS_MOVE_BACKWARD
+} RzEmacsModeOp;
 
 typedef struct {
-	RzEmacsModeModifyOp op;
+	RzEmacsModeOp op;
 	bool move_cursor; ///< if true, cursor is moved to the end of the last word.
 	bool word_count_provided; ///< if true \p word_count is used, else a single word is modified.
 	size_t word_count; ///< number of words to modify.
-} RzEmacsModeModifyOpts;
+} RzEmacsModeOpts;
 
 typedef RzVector /*<RzCodePoint>*/ RzCodePoints;
 typedef RzVector /*<RzUnicodeCaseMapping>*/ RzUnicodeCaseMappings;
 
-RZ_IPI void rz_emacs_mode_modify_opts_reset(RZ_NONNULL RzEmacsModeModifyOpts *opts);
-RZ_IPI bool rz_emacs_mode_modify(RZ_NONNULL RzEmacsModeModifyOpts *opts, RZ_NONNULL RzLine *line);
+RZ_IPI void rz_emacs_mode_opts_reset(RZ_NONNULL RZ_BORROW RzEmacsModeOpts *opts);
+RZ_IPI bool rz_emacs_mode_action(RZ_NONNULL RZ_BORROW const RzEmacsModeOpts *opts, RZ_NONNULL RZ_BORROW RzLine *line);
 
 #endif
