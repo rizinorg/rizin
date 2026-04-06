@@ -193,9 +193,9 @@ RZ_API void plugin_fini(RzAnalysis *analysis) {
 
 void __block_free_rb(RBNode *node, void *user);
 
-RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
+RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	if (!a) {
-		return NULL;
+		return;
 	}
 
 	plugin_fini(a);
@@ -221,10 +221,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_list_free(a->leaddrs);
 	rz_type_db_free(a->typedb);
 	sdb_free(a->sdb);
-	if (a->esil) {
-		rz_analysis_esil_free(a->esil);
-		a->esil = NULL;
-	}
+	rz_analysis_esil_free(a->esil);
 	free(a->esilinterstate);
 	free(a->last_disasm_reg);
 	rz_list_free(a->imports);
@@ -236,7 +233,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	ht_sp_free(a->ht_virtual_xrefs);
 	free(a->sdb_types_path);
 	free(a);
-	return NULL;
 }
 
 RZ_DEPRECATE RZ_API bool rz_analysis_plugin_support_esil(RZ_NONNULL RzAnalysis *analysis) {

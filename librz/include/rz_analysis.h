@@ -1517,7 +1517,7 @@ RZ_DEPRECATE RZ_API bool rz_analysis_le_addr_pair_reset(RZ_NONNULL RzAnalysis *a
 /* analysis.c */
 RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
-RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);
+RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a);
 RZ_DEPRECATE RZ_API bool rz_analysis_plugin_support_esil(RZ_NONNULL RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API bool rz_analysis_plugin_is_arch(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *arch);
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
