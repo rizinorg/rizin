@@ -177,25 +177,25 @@ FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
 / sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
-|           ; arg int32_t arg1 @ ecx
-|           ; arg int32_t arg2 @ edx
-|           ; var int32_t var_24h @ stack - 0x24
-|           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
-|           0x08048421      894de4         mov   dword [var_20h], ecx  ; arg1
-|           0x08048424      8955e0         mov   dword [var_24h], edx  ; arg2
-|           0x08048427      8b55e4         mov   edx, dword [var_20h]
-|           0x0804842a      8b45e0         mov   eax, dword [var_24h]
-|           0x0804842f      8945f4         mov   dword [var_10h], eax
-|           0x08048432      8b45e0         mov   eax, dword [var_24h]
-|           0x08048435      2b450c         sub   eax, dword [arg_8h]
-|           0x08048438      8945f0         mov   dword [var_14h], eax
-|           0x0804843b      ff7508         push  dword [arg_4h]
-|           0x0804843e      ff75f0         push  dword [var_14h]
-|           0x08048441      ff75f4         push  dword [var_10h]
+| ; arg int32_t arg1 @ ecx
+| ; arg int32_t arg2 @ edx
+| ; var int32_t var_24h @ stack - 0x24
+| ; var int32_t var_20h @ stack - 0x20
+| ; var int32_t var_14h @ stack - 0x14
+| ; var int32_t var_10h @ stack - 0x10
+| ; arg int32_t arg_4h @ stack + 0x4
+| ; arg int32_t arg_8h @ stack + 0x8
+| 0x08048421      894de4         mov   dword [var_20h], ecx            ; arg1
+| 0x08048424      8955e0         mov   dword [var_24h], edx            ; arg2
+| 0x08048427      8b55e4         mov   edx, dword [var_20h]
+| 0x0804842a      8b45e0         mov   eax, dword [var_24h]
+| 0x0804842f      8945f4         mov   dword [var_10h], eax
+| 0x08048432      8b45e0         mov   eax, dword [var_24h]
+| 0x08048435      2b450c         sub   eax, dword [arg_8h]
+| 0x08048438      8945f0         mov   dword [var_14h], eax
+| 0x0804843b      ff7508         push  dword [arg_4h]
+| 0x0804843e      ff75f0         push  dword [var_14h]
+| 0x08048441      ff75f4         push  dword [var_10h]
 EOF
 RUN
 

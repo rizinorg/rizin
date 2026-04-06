@@ -8,8 +8,8 @@ db @ main
 pd 1~rip,main
 EOF
 EXPECT=<<EOF
-            ;-- rip:
-            ;-- main:
-            ;-- rip:
+  ;-- rip:
+  ;-- main:
+  ;-- rip:
 EOF
 RUN

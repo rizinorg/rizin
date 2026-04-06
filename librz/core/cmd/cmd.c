@@ -194,7 +194,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
 		char *error_msg = NULL;
-		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		int result = rz_type_parse_file(typedb, file, dir, &error_msg);
 		if (error_msg) {
 			rz_str_trim_tail(error_msg);
 			RZ_LOG_ERROR("core: %s\n", error_msg);
@@ -2355,7 +2356,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *meta;
-	rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
+	RzIntervalTree *meta_tree = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta_tree, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
@@ -2427,7 +2429,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		RzList *list = rz_list_newf(free);
 		RzListIter *iter;
 		rz_list_foreach (head, iter, item) {
-			if (item->size != core->analysis->bits) {
+			if (!rz_asm_is_bits(core->rasm, item->size)) {
 				continue;
 			}
 			if (item->type != i) {
@@ -2622,7 +2624,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *list = core->analysis->fcns;
+	RzList *list = rz_analysis_function_list(core->analysis);
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push(NULL, NULL);

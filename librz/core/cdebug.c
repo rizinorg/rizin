@@ -927,7 +927,8 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 		rz_analysis_op_fini(&aop);
 	}
 	rz_debug_reg_set(core->dbg, "PC", addr);
-	rz_reg_setv(core->analysis->reg, "PC", addr);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	rz_reg_setv(rreg, "PC", addr);
 	rz_core_reg_update_flags(core);
 	if (bpi) {
 		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);

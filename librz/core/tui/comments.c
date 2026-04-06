@@ -20,6 +20,7 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 	int ch, option = 0;
 	int format = 0, i = 0;
 	ut64 addr, from = 0, size = 0;
+	RzIntervalTree *tmeta = rz_analysis_get_meta(core->analysis);
 
 	for (;;) {
 		rz_cons_clear00();
@@ -27,7 +28,7 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 		RzIntervalTreeIter it;
 		RzAnalysisMetaItem *item;
 		i = 0;
-		rz_interval_tree_foreach (&core->analysis->meta, it, item) {
+		rz_interval_tree_foreach (tmeta, it, item) {
 			if (item->type != RZ_META_TYPE_COMMENT) {
 				continue;
 			}

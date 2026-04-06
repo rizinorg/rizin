@@ -1052,6 +1052,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	core->print->reg = rz_core_reg_default(core);
 	core->print->get_register = rz_reg_get;
 	core->print->get_register_value = rz_reg_get_value;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 
 	rz_core_seek(core, address, true);
 
@@ -1060,7 +1061,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	char *fmtname = pf_get_format_name(fmt);
 	if (fmtname) {
 		// To be sure it's the format name, receive the format string
-		const char *format = rz_type_db_format_get(core->analysis->typedb, fmtname);
+		const char *format = rz_type_db_format_get(typedb, fmtname);
 		if (format) {
 			comp = parse_named_pf_string(fmt);
 			// Value was passed not through "="
@@ -1072,9 +1073,9 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	int struct_sz = 0;
 	if (comp) {
 		// If the split into components is finished, use the only format name
-		struct_sz = rz_type_format_struct_size(core->analysis->typedb, comp->name, mode, 0);
+		struct_sz = rz_type_format_struct_size(typedb, comp->name, mode, 0);
 	} else {
-		struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
+		struct_sz = rz_type_format_struct_size(typedb, fmt, mode, 0);
 	}
 	size_t size = RZ_MAX(core->blocksize, struct_sz);
 	// Make sure the whole format will be processed
@@ -1091,10 +1092,10 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	free(fmtname);
 	// Use the component-based data formatting if split was correct
 	if (comp) {
-		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+		result = rz_type_format_data(typedb, core->print, core->offset,
 			buf, size, comp->name, mode, comp->value, comp->field);
 	} else {
-		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+		result = rz_type_format_data(typedb, core->print, core->offset,
 			buf, size, fmt, mode, value, NULL);
 	}
 	free(buf);

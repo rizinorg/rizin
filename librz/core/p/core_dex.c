@@ -30,16 +30,12 @@ static RzBinDex *core_dex_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
 	}
-	RzAnalysis *analysis = core->analysis;
-	if (!analysis || !analysis->binb.bin) {
+	RzBin *bin = core->bin;
+	if (!bin || !bin->cur || !bin->cur->o) {
 		return NULL;
 	}
-	RzBin *b = analysis->binb.bin;
-	if (!b->cur || !b->cur->o) {
-		return NULL;
-	}
-	RzBinPlugin *plugin = b->cur->o->plugin;
-	return plugin && !strcmp(plugin->name, "dex") ? (RzBinDex *)b->cur->o->bin_obj : NULL;
+	RzBinPlugin *plugin = bin->cur->o->plugin;
+	return plugin && !strcmp(plugin->name, "dex") ? (RzBinDex *)bin->cur->o->bin_obj : NULL;
 }
 
 static char *decode_access_flags(ut32 access_flags) {

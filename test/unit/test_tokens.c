@@ -12,6 +12,7 @@
 #include <rz_cons.h>
 #include <rz_util/rz_print.h>
 #include <rz_util/rz_str.h>
+#include "analysis_private.h"
 
 static RzPrint *setup_print() {
 	RzPrint *p = rz_print_new();

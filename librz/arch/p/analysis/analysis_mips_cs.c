@@ -9,6 +9,18 @@
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
+#if CS_NEXT_VERSION >= 6
+#define IS_REG_RA(r) ((r) == MIPS_REG_RA || (r) == MIPS_REG_RA_64 || (r) == MIPS_REG_RA_NM)
+#define IS_REG_GP(r) ((r) == MIPS_REG_GP || (r) == MIPS_REG_GP_64 || (r) == MIPS_REG_GP_NM)
+#define IS_REG_SP(r) ((r) == MIPS_REG_SP || (r) == MIPS_REG_SP_64 || (r) == MIPS_REG_SP_NM)
+#define IS_REG_T9(r) ((r) == MIPS_REG_T9 || (r) == MIPS_REG_T9_64 || (r) == MIPS_REG_T9_NM)
+#else
+#define IS_REG_RA(r) ((r) == MIPS_REG_RA)
+#define IS_REG_GP(r) ((r) == MIPS_REG_GP)
+#define IS_REG_SP(r) ((r) == MIPS_REG_SP)
+#define IS_REG_T9(r) ((r) == MIPS_REG_25)
+#endif
+
 #define SET_VAL(op, i) \
 	if ((i) < OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) { \
 		(op)->val = OPERAND(i).imm; \
@@ -317,28 +329,14 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		}
 		switch (OPERAND(1).type) {
 		case MIPS_OP_MEM:
-#if CS_NEXT_VERSION < 6
-			if (OPERAND(1).mem.base == MIPS_REG_GP) {
+			if (IS_REG_GP(OPERAND(1).mem.base)) {
 				op->ptr = analysis->gp + OPERAND(1).mem.disp;
-				if (REGID(0) == MIPS_REG_T9) {
+				if (IS_REG_T9(REGID(0))) {
 					ctx->t9_pre = op->ptr;
 				}
-			} else if (REGID(0) == MIPS_REG_T9) {
+			} else if (IS_REG_T9(REGID(0))) {
 				ctx->t9_pre = UT64_MAX;
 			}
-#else
-			if (OPERAND(1).mem.base == MIPS_REG_GP ||
-				OPERAND(1).mem.base == MIPS_REG_GP_64) {
-				op->ptr = analysis->gp + OPERAND(1).mem.disp;
-				if (REGID(0) == MIPS_REG_T9 ||
-					REGID(0) == MIPS_REG_T9_64) {
-					ctx->t9_pre = op->ptr;
-				}
-			} else if (REGID(0) == MIPS_REG_T9 ||
-				REGID(0) == MIPS_REG_T9_64) {
-				ctx->t9_pre = UT64_MAX;
-			}
-#endif
 			break;
 		case MIPS_OP_IMM:
 			op->ptr = OPERAND(1).imm;
@@ -380,20 +378,11 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	case MIPS_INS_JALR:
 		op->delay = 1;
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-#if CS_NEXT_VERSION < 6
-		if (REGID(0) == MIPS_REG_25) {
+		if (IS_REG_T9(REGID(0))) {
 			op->jump = ctx->t9_pre;
 			ctx->t9_pre = UT64_MAX;
 			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		}
-#else
-		if (REGID(0) == MIPS_REG_T9 ||
-			REGID(0) == MIPS_REG_T9_64) {
-			op->jump = ctx->t9_pre;
-			ctx->t9_pre = UT64_MAX;
-			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
-		}
-#endif
 		break;
 #if CS_NEXT_VERSION >= 6
 	case MIPS_INS_JRCADDIUSP:
@@ -465,10 +454,10 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		SET_VAL(op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD || insn->id == MIPS_INS_DADD);
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		if (REGID(0) == MIPS_REG_T9) {
+		if (IS_REG_T9(REGID(0))) {
 			ctx->t9_pre += IMM(2);
 		}
-		if (REGID(0) == MIPS_REG_SP) {
+		if (IS_REG_SP(REGID(0))) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM(2);
 		}
@@ -543,7 +532,7 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 	case MIPS_INS_ANDI:
 		SET_VAL(op, 2);
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
-		if (REGID(0) == MIPS_REG_SP) {
+		if (IS_REG_SP(REGID(0))) {
 			op->stackop = RZ_ANALYSIS_STACK_ALIGN;
 		}
 		break;
@@ -806,16 +795,11 @@ static int mips_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, co
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 		// register is $ra, so jmp is a return
-		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
+		if (IS_REG_RA(REGID(0))) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			ctx->t9_pre = UT64_MAX;
 		}
-#if CS_NEXT_VERSION < 6
-		if (REGID(0) == MIPS_REG_25) {
-#else
-		if (REGID(0) == MIPS_REG_T9 ||
-			REGID(0) == MIPS_REG_T9_64) {
-#endif
+		if (IS_REG_T9(REGID(0))) {
 			op->jump = ctx->t9_pre;
 			ctx->t9_pre = UT64_MAX;
 		}

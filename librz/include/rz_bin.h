@@ -865,6 +865,7 @@ typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
+typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -873,6 +874,7 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSections get_sections;
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
+	RzBinGetObject get_bin_object;
 	ut32 visibility;
 } RzBinBind;
 

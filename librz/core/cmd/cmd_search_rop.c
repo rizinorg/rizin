@@ -64,7 +64,8 @@ static char *parse_register(const RzCore *core, const char *str, ut64 *idx) {
 	}
 
 	// Check if the register is correct for the given architecture.
-	if (rz_analysis_is_reg_in_profile(core->analysis, reg)) {
+	RzReg *areg = rz_analysis_get_reg(core->analysis);
+	if (rz_reg_get(areg, reg, RZ_REG_TYPE_ANY)) {
 		return rz_str_dup(reg);
 	}
 
@@ -594,11 +595,16 @@ RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const 
 RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
 	rz_return_val_if_fail(core && token, NULL);
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
-	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
 	if (!rop_constraint) {
-		rz_list_free(l);
 		return NULL;
 	}
+
+	RzList *l = rz_str_split_duplist_n(token, "=", 1, false);
+	if (!l) {
+		free(rop_constraint);
+		return NULL;
+	}
+
 	if (!rz_core_rop_analyze_constraint(core, token, rop_constraint)) {
 		free(rop_constraint);
 		rz_list_free(l);

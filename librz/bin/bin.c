@@ -29,7 +29,7 @@ RZ_LIB_VERSION(rz_bin);
 static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS };
 
-static ut64 __getoffset(RzBin *bin, int type, int idx) {
+static ut64 bin_bind_get_offset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_offset) {
@@ -38,7 +38,7 @@ static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	return UT64_MAX;
 }
 
-static char *__getname(RzBin *bin, int type, int idx) {
+static char *bin_bind_get_name(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_name) {
@@ -952,7 +952,7 @@ RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {
 	bin->user = user;
 }
 
-static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
+static RzBinSection *bin_bind_get_vsection_at(RzBin *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, NULL);
 	if (!bin->cur || !bin->cur->o) {
 		return NULL;
@@ -960,15 +960,24 @@ static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
 	return rz_bin_get_section_at(bin->cur->o, vaddr, true);
 }
 
+static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? bf->o : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
-	if (b) {
-		b->bin = bin;
-		b->get_offset = __getoffset;
-		b->get_name = __getname;
-		b->get_sections = rz_bin_object_get_sections_all;
-		b->get_vsect_at = __get_vsection_at;
-		b->demangle = rz_bin_demangle;
+	if (!b) {
+		return;
 	}
+
+	b->bin = bin;
+	b->get_offset = bin_bind_get_offset;
+	b->get_name = bin_bind_get_name;
+	b->get_sections = rz_bin_object_get_sections_all;
+	b->get_vsect_at = bin_bind_get_vsection_at;
+	b->demangle = rz_bin_demangle;
+	b->get_bin_object = bin_bind_get_bin_object;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,

@@ -41,19 +41,19 @@ pd 1 ~comment
 echo --
 EOF
 EXPECT=<<EOF
-|           ; var uint64_t var_rax @ rax    ; comment for var_rax
-|           ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
-|           ; arg int arg_8h @ stack + 0x8    ; comment for arg_8h
+| ; var uint64_t var_rax @ rax    ; comment for var_rax
+| ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
+| ; arg int arg_8h @ stack + 0x8    ; comment for arg_8h
 --
 var_rax : comment for var_rax
 --
 arg_8h : comment for arg_8h
 var_8h : comment for var_8h
 --
-|           ; var uint64_t var_rax @ rax    ; comment for var_rax
-|           ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
+| ; var uint64_t var_rax @ rax    ; comment for var_rax
+| ; var uint32_t var_8h @ stack - 0x8    ; comment for var_8h
 --
-|           ; var uint64_t var_rax @ rax    ; comment for var_rax
+| ; var uint64_t var_rax @ rax    ; comment for var_rax
 --
 --
 EOF

@@ -5,7 +5,8 @@
 #define RZ_XTENSA_H
 
 #include <capstone/capstone.h>
-#include <rz_asm.h>
+#include "asm_private.h"
+#include "analysis_private.h"
 
 typedef struct {
 	const char *cpu;
