@@ -354,7 +354,7 @@ RZ_API bool rz_analysis_set_reg_profile(RZ_NONNULL RzAnalysis *analysis) {
 	return true;
 }
 
-RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
+RZ_API RZ_OWN char *rz_analysis_get_reg_profile(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, false);
 	RzAnalysisPlugin *cur = analysis->cur;
 	if (cur && cur->get_reg_profile) {
@@ -726,7 +726,7 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	return true;
 }
 
-RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, RZ_NULLABLE const char *os, RZ_NULLABLE const char *arch, int bits) {
+RZ_API bool rz_analysis_set_triplet(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *os, RZ_NULLABLE const char *arch, int bits) {
 	rz_return_val_if_fail(analysis, false);
 	if (RZ_STR_ISEMPTY(arch)) {
 		arch = analysis->cur ? analysis->cur->arch : RZ_SYS_ARCH;

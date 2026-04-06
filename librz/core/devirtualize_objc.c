@@ -270,9 +270,8 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
  *
  * \param core The RzCore instance to work with.
  */
-RZ_API void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core) {
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core) {
 	if (!core) {
-		RZ_LOG_ERROR("devirtualization analysis failed");
 		return;
 	}
 	RzBinFile *bf = rz_bin_cur(core->bin);

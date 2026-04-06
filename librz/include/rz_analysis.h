@@ -1580,10 +1580,10 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_last_disasm_reg(RZ_NONNULL RzAnalysis *
 RZ_DEPRECATE RZ_API ut8 *rz_analysis_get_last_disasm_reg(RZ_NONNULL RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API RzStrConstPool *rz_analysis_get_const_pool(RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_analysis_set_reg_profile(RZ_NONNULL RzAnalysis *analysis);
-RZ_API char *rz_analysis_get_reg_profile(RZ_NONNULL RzAnalysis *analysis);
+RZ_API RZ_OWN char *rz_analysis_get_reg_profile(RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_reg_in_profile(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *name);
-RZ_API void rz_analysis_set_gnu_thumb1_case_uqi_addr(RzAnalysis *analysis, ut64 addr);
-RZ_API ut64 rz_analysis_get_gnu_thumb1_case_uqi_addr(RzAnalysis *analysis);
+RZ_API void rz_analysis_set_gnu_thumb1_case_uqi_addr(RZ_NONNULL RzAnalysis *analysis, ut64 addr);
+RZ_API ut64 rz_analysis_get_gnu_thumb1_case_uqi_addr(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_pc_align(RZ_NONNULL RzAnalysis *analysis, ut32 pc_align);
 RZ_API ut32 rz_analysis_get_pc_align(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_sleep(RZ_NONNULL RzAnalysis *analysis, ut64 usecs);

@@ -912,7 +912,10 @@ static void free_variable_book(RzCppVariableBook *var_book) {
 /**
  * \brief devirtualize virtual calls in cpp
  */
-RZ_API void rz_core_analysis_devirtualize_cxx_methods(RzCore *core) {
+RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core) {
+	if (!core) {
+		return;
+	}
 	// TODO : Generalize for classes
 	RzCppVariableBook *var_book = core_analysis_mark_classes(core);
 	if (!var_book) {
@@ -935,7 +938,9 @@ static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
 /**
  * \brief print xrefs of a virtual function
  */
-RZ_API void rz_core_analysis_virtual_xrefs_print(RzCore *core, const char *vfunc) {
+RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc) {
+	rz_return_if_fail(core && vfunc);
+
 	HtSP *ht_virtual_xrefs = rz_analysis_get_virtual_xrefs(core->analysis);
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
@@ -955,7 +960,9 @@ static bool add_virtual_xref_row(RzTable *table, const ut64 addr, void *val) {
 /**
  * \brief print xrefs of virtual functions as table
  */
-RZ_API void rz_core_analysis_virtual_xrefs_print_table(RzCore *core, const char *vfunc, RzTable *table) {
+RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table) {
+	rz_return_if_fail(core && vfunc && table);
+
 	HtSP *ht_virtual_xrefs = rz_analysis_get_virtual_xrefs(core->analysis);
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);

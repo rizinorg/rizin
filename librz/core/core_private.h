@@ -44,10 +44,10 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzO
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
 
-RZ_API void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
-RZ_API void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
-RZ_IPI void rz_core_analysis_virtual_xrefs_print(RzCore *core, const char *vfunc);
-RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RzCore *core, const char *vfunc, RzTable *table);
+RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
