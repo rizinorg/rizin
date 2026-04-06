@@ -1738,20 +1738,16 @@ pd 1 @a:x86:64
 ahl
 EOF
 EXPECT=<<EOF
-0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
+0x00005c20      31ed4989       ldc   p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
+ 0x00005c20 => arch='arm' bits=16
 0000:5c20     31ed           xor   bp, bp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+ 0x00005c20 => arch='arm' bits=16
 0x00005c20      31ed           xor   ebp, ebp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+ 0x00005c20 => arch='arm' bits=16
 EOF
-BROKEN=1
 RUN
 
 NAME=pd bin.str.filter
@@ -2568,14 +2564,15 @@ e asm.sub.varonly=0
 pdf
 EOF
 EXPECT=<<EOF
-/ sym.varfunc();
+/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      lui   gp, 2
 |           0x00000798      addiu gp, gp, -0x7db4
 |           0x0000079c      addu  gp, gp, t9
@@ -2585,35 +2582,36 @@ EXPECT=<<EOF
 |           0x000007ac      move  fp, sp
 |           0x000007b0      sw    gp, (var_20h)
 |           0x000007b4      addiu v0, zero, 1
-|           0x000007b8      sw    v0, (var_18h)
+|           0x000007b8      sw    v0, (arg_18h)
 |           0x000007bc      addiu v0, zero, 2
-|           0x000007c0      sw    v0, (var_14h)
+|           0x000007c0      sw    v0, (arg_1ch)
 |           0x000007c4      addiu v0, zero, 3
-|           0x000007c8      sw    v0, (var_10h)
+|           0x000007c8      sw    v0, (arg_20h)
 |           0x000007cc      addiu v0, zero, 4
-|           0x000007d0      sw    v0, (var_ch)
+|           0x000007d0      sw    v0, (arg_24h)
 |           0x000007d4      lw    v0, -sym.leaffunc(gp)
 |           0x000007d8      move  t9, v0
 |           0x000007dc      bal   sym.leaffunc
 |           0x000007e0      nop
-|           0x000007e4      lw    gp, (var_20h)
-|           0x000007e8      lw    v0, (var_ch)
-|           0x000007ec      sw    v0, (var_14h)
-|           0x000007f0      lw    v0, (var_18h)
+|           0x000007e4      lw    gp, (arg_10h)
+|           0x000007e8      lw    v0, (arg_24h)
+|           0x000007ec      sw    v0, (arg_1ch)
+|           0x000007f0      lw    v0, (arg_18h)
 |           0x000007f4      move  sp, fp
 |           0x000007f8      lw    ra, (var_4h)
 |           0x000007fc      lw    fp, (var_8h)
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc();
+/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      lui   gp, 2
 |           0x00000798      addiu gp, gp, -0x7db4
 |           0x0000079c      addu  gp, gp, t9
@@ -2623,35 +2621,36 @@ EXPECT=<<EOF
 |           0x000007ac      move  fp, sp
 |           0x000007b0      sw    gp, var_20h(sp)
 |           0x000007b4      addiu v0, zero, 1
-|           0x000007b8      sw    v0, var_18h(fp)
+|           0x000007b8      sw    v0, arg_18h(fp)
 |           0x000007bc      addiu v0, zero, 2
-|           0x000007c0      sw    v0, var_14h(fp)
+|           0x000007c0      sw    v0, arg_1ch(fp)
 |           0x000007c4      addiu v0, zero, 3
-|           0x000007c8      sw    v0, var_10h(fp)
+|           0x000007c8      sw    v0, arg_20h(fp)
 |           0x000007cc      addiu v0, zero, 4
-|           0x000007d0      sw    v0, var_ch(fp)
+|           0x000007d0      sw    v0, arg_24h(fp)
 |           0x000007d4      lw    v0, -sym.leaffunc(gp)
 |           0x000007d8      move  t9, v0
 |           0x000007dc      bal   sym.leaffunc
 |           0x000007e0      nop
-|           0x000007e4      lw    gp, var_20h(fp)
-|           0x000007e8      lw    v0, var_ch(fp)
-|           0x000007ec      sw    v0, var_14h(fp)
-|           0x000007f0      lw    v0, var_18h(fp)
+|           0x000007e4      lw    gp, arg_10h(fp)
+|           0x000007e8      lw    v0, arg_24h(fp)
+|           0x000007ec      sw    v0, arg_1ch(fp)
+|           0x000007f0      lw    v0, arg_18h(fp)
 |           0x000007f4      move  sp, fp
 |           0x000007f8      lw    ra, var_4h(sp)
 |           0x000007fc      lw    fp, var_8h(sp)
 |           0x00000800      addiu sp, sp, 0x30
 |           0x00000804      jr    ra
 \           0x00000808      nop
-/ sym.varfunc();
+/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      gp = 2 << 16
 |           0x00000798      gp = gp - 0x7db4
 |           0x0000079c      gp = gp + t9
@@ -2661,35 +2660,36 @@ EXPECT=<<EOF
 |           0x000007ac      fp = sp
 |           0x000007b0      word [var_20h] = gp
 |           0x000007b4      v0 = 0 + 1
-|           0x000007b8      word [var_18h] = v0
+|           0x000007b8      word [arg_18h] = v0
 |           0x000007bc      v0 = 0 + 2
-|           0x000007c0      word [var_14h] = v0
+|           0x000007c0      word [arg_1ch] = v0
 |           0x000007c4      v0 = 0 + 3
-|           0x000007c8      word [var_10h] = v0
+|           0x000007c8      word [arg_20h] = v0
 |           0x000007cc      v0 = 0 + 4
-|           0x000007d0      word [var_ch] = v0
+|           0x000007d0      word [arg_24h] = v0
 |           0x000007d4      v0 = word [gp - sym.leaffunc]
 |           0x000007d8      t9 = v0
 |           0x000007dc      call sym.leaffunc
 |           0x000007e0      
-|           0x000007e4      gp = word [var_20h]
-|           0x000007e8      v0 = word [var_ch]
-|           0x000007ec      word [var_14h] = v0
-|           0x000007f0      v0 = word [var_18h]
+|           0x000007e4      gp = word [arg_10h]
+|           0x000007e8      v0 = word [arg_24h]
+|           0x000007ec      word [arg_1ch] = v0
+|           0x000007f0      v0 = word [arg_18h]
 |           0x000007f4      sp = fp
 |           0x000007f8      ra = word [var_4h]
 |           0x000007fc      fp = word [var_8h]
 |           0x00000800      sp = var_4h + 0x4
 |           0x00000804      return
 \           0x00000808      
-/ sym.varfunc();
+/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; var int32_t var_18h @ stack - 0x18
-|           ; var int32_t var_14h @ stack - 0x14
-|           ; var int32_t var_10h @ stack - 0x10
-|           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
+|           ; arg int32_t arg_10h @ stack + 0x10
+|           ; arg int32_t arg_18h @ stack + 0x18
+|           ; arg int32_t arg_1ch @ stack + 0x1c
+|           ; arg int32_t arg_20h @ stack + 0x20
+|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      gp = 2 << 16
 |           0x00000798      gp = gp - 0x7db4
 |           0x0000079c      gp = gp + t9
@@ -2699,21 +2699,21 @@ EXPECT=<<EOF
 |           0x000007ac      fp = sp
 |           0x000007b0      word [sp + var_20h] = gp
 |           0x000007b4      v0 = 0 + 1
-|           0x000007b8      word [fp + var_18h] = v0
+|           0x000007b8      word [fp + arg_18h] = v0
 |           0x000007bc      v0 = 0 + 2
-|           0x000007c0      word [fp + var_14h] = v0
+|           0x000007c0      word [fp + arg_1ch] = v0
 |           0x000007c4      v0 = 0 + 3
-|           0x000007c8      word [fp + var_10h] = v0
+|           0x000007c8      word [fp + arg_20h] = v0
 |           0x000007cc      v0 = 0 + 4
-|           0x000007d0      word [fp + var_ch] = v0
+|           0x000007d0      word [fp + arg_24h] = v0
 |           0x000007d4      v0 = word [gp - sym.leaffunc]
 |           0x000007d8      t9 = v0
 |           0x000007dc      call sym.leaffunc
 |           0x000007e0      
-|           0x000007e4      gp = word [fp + var_20h]
-|           0x000007e8      v0 = word [fp + var_ch]
-|           0x000007ec      word [fp + var_14h] = v0
-|           0x000007f0      v0 = word [fp + var_18h]
+|           0x000007e4      gp = word [fp + arg_10h]
+|           0x000007e8      v0 = word [fp + arg_24h]
+|           0x000007ec      word [fp + arg_1ch] = v0
+|           0x000007f0      v0 = word [fp + arg_18h]
 |           0x000007f4      sp = fp
 |           0x000007f8      ra = word [sp + var_4h]
 |           0x000007fc      fp = word [sp + var_8h]
@@ -2721,7 +2721,6 @@ EXPECT=<<EOF
 |           0x00000804      return
 \           0x00000808      
 EOF
-BROKEN=1
 RUN
 
 NAME=Check output pdr and pdrj to be the same
