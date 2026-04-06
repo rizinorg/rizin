@@ -1,52 +1,23 @@
-NAME=ELF: x86_64 relocs patching test
-FILE=bins/elf/x86_64_relocs.o
-CMDS=<<EOF
-ir
-pd 10 @ 0x08000048
-EOF
+NAME=ELF: x86_64 TLS relocations (issue 5259)
+FILE=bins/elf/x86_64/tls_relocs_x86_64.so
+CMDS=ir
 EXPECT=<<EOF
-     vaddr      paddr     target type             name                
-----------------------------------------------------------------------
-0x08000048 0x00000048 0x08000042 R_X86_64_8       target
-0x08000049 0x00000049 0x08000042 R_X86_64_16      target
-0x0800004b 0x0000004b 0x08000042 R_X86_64_32      target
-0x0800004f 0x0000004f 0x08000042 R_X86_64_32S     target
-0x08000053 0x00000053 0x08000042 R_X86_64_64      target
-0x0800005b 0x0000005b 0x08000042 R_X86_64_PC8     target - 0x0800005b
-0x0800005c 0x0000005c 0x08000042 R_X86_64_PC16    target - 0x0800005c
-0x0800005e 0x0000005e 0x08000042 R_X86_64_PC32    target - 0x0800005e
-0x08000062 0x00000062 0x08000042 R_X86_64_PC64    target - 0x08000062
-0x0800006a 0x0000006a 0x08000042 R_X86_64_GOTPC32 GOT - 0x0800006a
-            ;-- section..reloc_test:
-            ;-- target:
-            ;-- abs8:
-            0x08000048      .byte 0x42                                 ; RELOC 8 target @ 0x08000042 ; [04] -r-- section size 38 named .reloc_test
-            ;-- target:
-            ;-- abs16:
-            0x08000049      .word 0x0042                               ; RELOC 16 target @ 0x08000042
-            ;-- target:
-            ;-- abs32:
-            0x0800004b      .dword 0x08000042 ; reloc.target.target ; loc.target; RELOC 32 target @ 0x08000042
-            ;-- target:
-            ;-- abs32s:
-            0x0800004f      .dword 0x08000042 ; reloc.target.target ; loc.target; RELOC 32 target @ 0x08000042
-            ;-- target:
-            ;-- abs64:
-            0x08000053      .qword 0x0000000008000042 ; reloc.target.target ; loc.target; RELOC 64 target @ 0x08000042
-            ;-- target:
-            ;-- pc8:
-            0x0800005b      .byte 0xe7                                 ; RELOC 8 target @ 0x08000042 - 0x800005b
-            ;-- target:
-            ;-- pc16:
-            0x0800005c      .word 0xffe6                               ; RELOC 16 target @ 0x08000042 - 0x800005c
-            ;-- target:
-            ;-- pc32:
-            0x0800005e      .dword 0xffffffe4                          ; RELOC 32 target @ 0x08000042 - 0x800005e
-            ;-- target:
-            ;-- pc64:
-            0x08000062      .qword 0xffffffffffffffe0                  ; RELOC 64 target @ 0x08000042 - 0x8000062
-            ;-- target:
-            ;-- gotpc32:
-            0x0800006a      .dword 0xf7ffff96                          ; RELOC 32 target @ 0x08000042 - 0x800006a
+     vaddr      paddr     target type               name                        
+--------------------------------------------------------------------------------
+0x00003dd0 0x00002dd0 0x00000000 R_X86_64_RELATIVE  BASE 0x00001150
+0x00003dd8 0x00002dd8 0x00000000 R_X86_64_RELATIVE  BASE 0x00001110
+0x00003fa0 0x00002fa0 0x00004040 R_X86_64_DTPMOD64  ext_tls_var
+0x00003fa8 0x00002fa8 0x00004040 R_X86_64_DTPOFF64  ext_tls_var
+0x00003fb0 0x00002fb0 0x00004048 R_X86_64_GLOB_DAT  __cxa_finalize
+0x00003fb8 0x00002fb8 0x00004050 R_X86_64_GLOB_DAT  _ITM_registerTMCloneTable
+0x00003fc0 0x00002fc0 0x00004058 R_X86_64_GLOB_DAT  _ITM_deregisterTMCloneTable
+0x00003fc8 0x00002fc8 0x00004060 R_X86_64_GLOB_DAT  external_var
+0x00003fd0 0x00002fd0 0x00000000 R_X86_64_DTPMOD64  my_tls_var
+0x00003fd8 0x00002fd8 0x00000000 R_X86_64_DTPOFF64  my_tls_var
+0x00003fe0 0x00002fe0 0x00004068 R_X86_64_GLOB_DAT  __gmon_start__
+0x00004000 0x00003000 0x00004030 R_X86_64_JUMP_SLOT external_func
+0x00004008 0x00003008 0x00001168 R_X86_64_JUMP_SLOT my_ifunc
+0x00004010 0x00003010 0x00004038 R_X86_64_JUMP_SLOT __tls_get_addr
+0x00004018 0x00003018 0x00000000 R_X86_64_RELATIVE  BASE 0x00004018
 EOF
 RUN
