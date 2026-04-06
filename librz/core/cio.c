@@ -4,22 +4,10 @@
 #include "rz_core.h"
 #include "core_private.h"
 
-static void setup_debugger_attach(RzCore *r, int pid) {
-	char buf[20];
-
-	if (pid > 0) {
-		rz_debug_attach(r->dbg, pid);
-	} else if (r->file && r->io) {
-		rz_debug_attach(r->dbg, rz_io_fd_get_pid(r->io, r->file->fd));
-	}
-	rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
-	rz_config_set_i(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
-	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
-}
-
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	RzIODesc *fd = r->file ? rz_io_desc_get(r->io, r->file->fd) : NULL;
+	char buf[20];
 
 	p = fd ? fd->data : NULL;
 	if (!p) {
@@ -31,11 +19,18 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	rz_config_set_b(r->config, "io.ff", true);
 	rz_config_set(r->config, "dbg.backend", debugbackend);
 	pid = rz_io_desc_get_pid(fd);
-	rz_debug_select(r->dbg, pid, r->dbg->tid);
+	// NOTE: pid could be negative here, but it must be passed to the debug
+	// plugin as is, so we don't check it here. The plugin should handle it and
+	// return an error if it's invalid.
 	r->dbg->main_pid = pid;
+	rz_debug_select(r->dbg, pid, r->dbg->tid);
 	if (attach) {
-		setup_debugger_attach(r, pid);
+		rz_debug_attach(r->dbg, pid);
+		rz_debug_select(r->dbg, r->dbg->pid, r->dbg->tid);
 	}
+	rz_config_set_i(r->config, "dbg.swstep", (r->dbg->cur && !r->dbg->cur->canstep));
+	rz_io_system(r->io, rz_strf(buf, "pid %d", r->dbg->pid));
+
 	// this makes to attach twice showing warnings in the output
 	// we get "resource busy" so it seems isn't an issue
 	rz_core_reg_update_flags(r);
