@@ -655,7 +655,6 @@ static bool test_migrate_v17_v18_rop_config() {
 	mu_end;
 }
 
-
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -707,8 +706,9 @@ static bool test_load_v1_unknown_type() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 1, "prj/v1-noreturn.rzdb");
 
-	mu_assert_true(rz_type_exists(core->analysis->typedb, "unknown_t"), "has unknown_t");
-	RzBaseType *unknown = rz_type_db_get_base_type(core->analysis->typedb, "unknown_t");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_true(rz_type_exists(typedb, "unknown_t"), "has unknown_t");
+	RzBaseType *unknown = rz_type_db_get_base_type(typedb, "unknown_t");
 	mu_assert_notnull(unknown, "has unknown_t");
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, unknown->kind, "unknown_t is atomic");
 	mu_assert_eq(32, unknown->size, "unknown_t is 32-bit wide");
@@ -724,7 +724,8 @@ static bool test_load_v2_typelink() {
 	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x80484b0);
 	mu_assert_notnull(gv, "typelink converted to a global var");
 	mu_assert_eq(RZ_TYPE_KIND_POINTER, gv->type->kind, "typelink is a pointer");
-	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, gv->type->pointer.type, "char"), "typelink is char *");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, gv->type->pointer.type, "char"), "typelink is char *");
 
 	rz_core_free(core);
 	mu_end;
@@ -739,7 +740,7 @@ static bool test_load_v2_callables() {
 	fcn = rz_analysis_get_function_byname(core->analysis, "main");
 	mu_assert_notnull(fcn, "find \"entry0\" function");
 
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzCallable *chmod = rz_type_func_get(typedb, "chmod");
 	mu_assert_notnull(chmod, "func \"chmod\" callable type");
 	mu_assert_streq(chmod->name, "chmod", "is chmod() function");
@@ -778,7 +779,8 @@ static bool test_load_v3_typelink() {
 
 	RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, 0x08048660);
 	mu_assert_notnull(gv, "typelink converted to a global var");
-	mu_assert_streq_free(rz_type_as_string(core->analysis->typedb, gv->type), "uint32_t", "typelink");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	mu_assert_streq_free(rz_type_as_string(typedb, gv->type), "uint32_t", "typelink");
 
 	rz_core_free(core);
 	mu_end;
@@ -788,7 +790,8 @@ static bool test_load_v4_types() {
 	RzCore *core = rz_core_new();
 	BEGIN_LOAD_TEST(core, 4, "prj/v4-types.rzdb");
 
-	RzBaseType *unk = rz_type_db_get_base_type(core->analysis->typedb, "unknown_t");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *unk = rz_type_db_get_base_type(typedb, "unknown_t");
 	mu_assert_notnull(unk, "unknown_t exists");
 	mu_assert_eq(unk->kind, RZ_BASE_TYPE_KIND_ATOMIC, "unknown_t kind");
 	mu_assert_eq(unk->size, 32, "unknown_t size");

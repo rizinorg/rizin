@@ -3,11 +3,10 @@
 // SPDX-FileCopyrightText: 2010-2020 oddcoder <ahmedsoliman@oddcoder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_cons.h>
+#include "analysis_private.h"
 #include <rz_core.h>
-#include <rz_list.h>
+#include <rz_flag.h>
+#include <rz_cons.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 

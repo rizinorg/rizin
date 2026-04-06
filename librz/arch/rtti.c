@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2009-2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
+#include "analysis_private.h"
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name) {
 	RVTableContext context;

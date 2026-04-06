@@ -4,7 +4,8 @@
 
 /* Universal calling convention implementation based on sdb */
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
+
 #define DB analysis->sdb_cc
 
 #define cc_sdb_unsetf(x, ...) \

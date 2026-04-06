@@ -6,7 +6,7 @@
 #include "v54/arch_54.h"
 #include <luac/luac_common.h>
 
-char *fmt_str(size_t len, char *buffer, const char *fmt, ...) {
+RZ_IPI char *fmt_str(size_t len, char *buffer, const char *fmt, ...) {
 	assert(buffer);
 	assert(fmt);
 	va_list ap;
@@ -16,27 +16,37 @@ char *fmt_str(size_t len, char *buffer, const char *fmt, ...) {
 	return buffer;
 }
 
-RzAnalysisValue *new_reg_item(const RzAnalysis *analysis, ut8 index) {
+RZ_IPI RzAnalysisValue *new_reg_item(RzAnalysis *analysis, ut8 index) {
 	RzAnalysisValue *x = rz_analysis_value_new();
 	rz_return_val_if_fail(x, NULL);
-	char tmp[5] = { 0 };
-	x->reg = rz_reg_get(analysis->reg, rz_strf(tmp, "r%d", index), RZ_REG_TYPE_GPR);
+	if (!x) {
+		return NULL;
+	}
+	char tmp[32] = { 0 };
+	RzReg *areg = rz_analysis_get_reg(analysis);
+	x->reg = rz_reg_get(areg, rz_strf(tmp, "r%d", index), RZ_REG_TYPE_GPR);
 	return x;
 }
 
 RzAnalysisValue *new_imm_item(st64 value) {
 	RzAnalysisValue *x = rz_analysis_value_new();
-	rz_return_val_if_fail(x, NULL);
+	if (!x) {
+		return NULL;
+	}
 	x->imm = value;
 	return x;
 }
 
-LuaConstEntry *get_const_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
-	rz_return_val_if_fail(lbi, NULL);
+static LuaConstEntry *get_const_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
+	if (!lbi) {
+		return NULL;
+	}
+
 	const ut64 proto_base = PROTO_INDEX(addr);
 	const LuaProto *proto = (LuaProto *)rz_pvector_at(lbi->protos_vec, proto_base);
-	rz_return_val_if_fail(proto && proto->const_entries, NULL);
-
+	if (!proto || !proto->const_entries) {
+		return NULL;
+	}
 	LuaConstEntry *const_entrie = (LuaConstEntry *)rz_pvector_at(proto->const_entries, index);
 	if (!const_entrie) {
 		RZ_LOG_DEBUG("const_entrie is null, addr: 0x%" PFMT64x ", index: %d, proto_base: 0x%" PFMT64x "\n", addr, index, proto_base);
@@ -45,11 +55,16 @@ LuaConstEntry *get_const_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
 	return const_entrie;
 }
 
-LuaUpvalueEntry *get_upvalue_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
-	rz_return_val_if_fail(lbi, NULL);
+static LuaUpvalueEntry *get_upvalue_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
+	if (!lbi) {
+		return NULL;
+	}
+
 	const ut64 proto_base = PROTO_INDEX(addr);
 	const LuaProto *proto = (LuaProto *)rz_pvector_at(lbi->protos_vec, proto_base);
-	rz_return_val_if_fail(proto && proto->upvalue_entries, NULL);
+	if (!proto || !proto->upvalue_entries) {
+		return NULL;
+	}
 	LuaUpvalueEntry *upvalue_entrie = (LuaUpvalueEntry *)rz_pvector_at(proto->upvalue_entries, index);
 	if (!upvalue_entrie) {
 		RZ_LOG_DEBUG("upvalue_entrie is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
@@ -58,17 +73,16 @@ LuaUpvalueEntry *get_upvalue_entry(const LuacBinInfo *lbi, ut64 addr, ut32 index
 	return upvalue_entrie;
 }
 
-LuacBinInfo *getLuacBinInfo(const RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis->binb.bin->binfiles, NULL);
-	rz_return_val_if_fail(analysis->binb.bin->binfiles->length > 0, NULL);
-	const RzBinFile *bfile = (RzBinFile *)analysis->binb.bin->binfiles->head->val;
-	rz_return_val_if_fail(bfile && bfile->o, NULL);
-	LuacBinInfo *obj = (LuacBinInfo *)bfile->o->bin_obj;
-	rz_return_val_if_fail(obj, NULL);
-	return obj;
+static const LuacBinInfo *get_luac_bin_info(const RzAnalysis *analysis) {
+	RzBinBind *binb = rz_analysis_get_bin_bind((RzAnalysis *)analysis);
+	const RzBinObject *bobj = binb->get_bin_object(binb->bin);
+	if (!bobj) {
+		return NULL;
+	}
+	return bobj->bin_obj;
 }
 
-char *get_const_string_b(const LuacBinInfo *lbi, ut64 addr, ut32 index, st32 *data_len, char *out_buffer) {
+static char *get_const_string_b(const LuacBinInfo *lbi, ut64 addr, ut32 index, st32 *data_len, char *out_buffer) {
 	LuaConstEntry *const_entrie = get_const_entry(lbi, addr, index);
 	if (!const_entrie) {
 		RZ_LOG_DEBUG("const_entrie is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
@@ -97,8 +111,8 @@ char *get_const_string_b(const LuacBinInfo *lbi, ut64 addr, ut32 index, st32 *da
 	}
 }
 
-char *get_const_string(const RzAnalysis *analysis, ut64 addr, ut32 index, st32 *data_len, char *out_buffer) {
-	const LuacBinInfo *lbi = getLuacBinInfo(analysis);
+RZ_IPI char *get_const_string(const RzAnalysis *analysis, ut64 addr, ut32 index, st32 *data_len, char *out_buffer) {
+	const LuacBinInfo *lbi = get_luac_bin_info(analysis);
 	if (!lbi) {
 		RZ_LOG_DEBUG("LuacBinInfo is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
 		return NULL;
@@ -106,13 +120,13 @@ char *get_const_string(const RzAnalysis *analysis, ut64 addr, ut32 index, st32 *
 	return get_const_string_b(lbi, addr, index, data_len, out_buffer);
 }
 
-char *get_k(const RzAnalysis *analysis, ut64 addr, ut32 index, char *out_buffer) {
+RZ_IPI char *get_k(const RzAnalysis *analysis, ut64 addr, ut32 index, char *out_buffer) {
 	st32 data_len = 0;
 	get_const_string(analysis, addr, index, &data_len, out_buffer);
 	return out_buffer;
 }
 
-ut64 get_const_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
+RZ_IPI ut64 get_const_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
 	LuaConstEntry *const_entrie = get_const_entry(lbi, addr, index);
 	if (!const_entrie) {
 		RZ_LOG_DEBUG("const_entrie is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
@@ -121,7 +135,7 @@ ut64 get_const_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
 	return const_entrie->voffset + 2;
 }
 
-ut64 get_upvalue_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
+static ut64 get_upvalue_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
 	LuaUpvalueEntry *upvalue_entrie = get_upvalue_entry(lbi, addr, index);
 	if (!upvalue_entrie) {
 		RZ_LOG_DEBUG("upvalue_entrie is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
@@ -130,11 +144,11 @@ ut64 get_upvalue_address_b(const LuacBinInfo *lbi, ut64 addr, ut32 index) {
 	return upvalue_entrie->voffset;
 }
 
-ut64 get_metamethod_address(const ut32 index) {
+RZ_IPI ut64 get_metamethod_address(const ut32 index) {
 	return METATABLES_VOFFSET + index * 4;
 }
 
-const char *get_metamethod_name(const ut8 minor, const ut32 index) {
+RZ_IPI const char *get_metamethod_name(const ut8 minor, const ut32 index) {
 	switch (minor) {
 	case 0:
 	case 1:
@@ -149,8 +163,8 @@ const char *get_metamethod_name(const ut8 minor, const ut32 index) {
 	}
 }
 
-ut64 get_const_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
-	const LuacBinInfo *lbi = getLuacBinInfo(analysis);
+RZ_IPI ut64 get_const_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
+	const LuacBinInfo *lbi = get_luac_bin_info(analysis);
 	if (!lbi) {
 		RZ_LOG_DEBUG("LuacBinInfo is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
 		return UT64_MAX;
@@ -158,8 +172,8 @@ ut64 get_const_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
 	return get_const_address_b(lbi, addr, index);
 }
 
-ut64 get_upvalue_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
-	const LuacBinInfo *lbi = getLuacBinInfo(analysis);
+RZ_IPI ut64 get_upvalue_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
+	const LuacBinInfo *lbi = get_luac_bin_info(analysis);
 	if (!lbi) {
 		RZ_LOG_DEBUG("LuacBinInfo is null, addr: 0x%" PFMT64x ", index: %d\n", addr, index);
 		return UT64_MAX;
@@ -167,7 +181,7 @@ ut64 get_upvalue_address(const RzAnalysis *analysis, ut64 addr, ut32 index) {
 	return get_upvalue_address_b(lbi, addr, index);
 }
 
-LuaInstruction lua_build_instruction(const ut8 *buf) {
+RZ_IPI LuaInstruction lua_build_instruction(const ut8 *buf) {
 	LuaInstruction ret = 0;
 	ret |= buf[3] << 24;
 	ret |= buf[2] << 16;
@@ -176,14 +190,14 @@ LuaInstruction lua_build_instruction(const ut8 *buf) {
 	return ret;
 }
 
-void lua_set_instruction(const LuaInstruction instruction, ut8 *data) {
+RZ_IPI void lua_set_instruction(const LuaInstruction instruction, ut8 *data) {
 	data[3] = instruction >> 24;
 	data[2] = instruction >> 16;
 	data[1] = instruction >> 8;
 	data[0] = instruction >> 0;
 }
 
-bool free_lua_opnames(LuaOpNameList list) {
+RZ_IPI bool free_lua_opnames(LuaOpNameList list) {
 	if (list != NULL) {
 		RZ_FREE(list);
 		return true;
@@ -191,7 +205,7 @@ bool free_lua_opnames(LuaOpNameList list) {
 	return false;
 }
 
-int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
+RZ_IPI int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
 	if (!raw_string) {
 		return 0;
 	}
@@ -225,7 +239,7 @@ int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
 	return arg_start - raw_string + arg_len;
 }
 
-bool lua_is_valid_num_value_string(const char *str) {
+RZ_IPI bool lua_is_valid_num_value_string(const char *str) {
 	if (!rz_is_valid_input_num_value(NULL, str)) {
 		RZ_LOG_ERROR("assembler: lua: %s is not a valid number argument\n", str);
 		return false;
@@ -233,11 +247,7 @@ bool lua_is_valid_num_value_string(const char *str) {
 	return true;
 }
 
-int lua_convert_str_to_num(const char *str) {
-	return (int)strtoll(str, NULL, 0);
-}
-
-bool load_args_asm(const char *arg_start, int *args) {
+RZ_IPI bool load_args_asm(const char *arg_start, int *args) {
 	const char *pattern = "(?:[r-]?[0-9]+)";
 	RzRegex *rx = rz_regex_new(pattern, RZ_REGEX_EXTENDED, 0, NULL);
 	if (!rx) {
@@ -269,7 +279,7 @@ bool load_args_asm(const char *arg_start, int *args) {
 	return count;
 }
 
-bool analysis_op_4_5(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, ut16 opcode, ut8 minor) {
+RZ_IPI bool analysis_op_4_5(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, ut16 opcode, ut8 minor) {
 	const LuaInstruction instruction = ctx->instruction;
 	const ut64 addr = ctx->addr;
 	const int a = GETARG_A4(instruction);

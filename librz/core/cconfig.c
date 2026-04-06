@@ -202,13 +202,13 @@ static bool cb_diff_sort(void *_core, void *_node) {
 	RzCore *core = _core;
 	if (column && strcmp(column, "?")) {
 		if (!strcmp(column, "name")) {
-			core->analysis->columnSort = (RzListComparator)compareName;
+			rz_analysis_set_column_sort(core->analysis, (RzListComparator)compareName);
 		} else if (!strcmp(column, "namelen")) {
-			core->analysis->columnSort = (RzListComparator)compareNameLen;
+			rz_analysis_set_column_sort(core->analysis, (RzListComparator)compareNameLen);
 		} else if (!strcmp(column, "addr")) {
-			core->analysis->columnSort = (RzListComparator)compareAddress;
+			rz_analysis_set_column_sort(core->analysis, (RzListComparator)compareAddress);
 		} else if (!strcmp(column, "size")) {
-			core->analysis->columnSort = (RzListComparator)compareSize;
+			rz_analysis_set_column_sort(core->analysis, (RzListComparator)compareSize);
 		} else {
 			goto fail;
 		}
@@ -336,63 +336,72 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 static bool cb_analysis_jmpretpoline(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.retpoline = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->retpoline = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_armthumb(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.armthumb = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->armthumb = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_depth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.depth = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->depth = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_graphdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.graph_depth = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->graph_depth = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_afterjmp(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.afterjmp = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->afterjmp = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_aftertrap(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.aftertrap = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->aftertrap = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_delay(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.delay = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->delay = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_vars(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.vars = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->vars = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_nonull(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.nonull = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->nonull = node->i_value;
 	return true;
 }
 
@@ -408,47 +417,51 @@ static bool cb_analysis_strings(void *user, void *data) {
 static bool cb_analysis_ignbithints(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.ignbithints = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->ignbithints = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_sleep(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->sleep = node->i_value;
+	rz_analysis_set_sleep(core->analysis, node->i_value);
 	return true;
 }
 
 static bool cb_analysis_maxrefs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->maxreflines = node->i_value;
+	rz_analysis_set_max_reflines(core->analysis, node->i_value);
 	return true;
 }
 
 static bool cb_analysis_norevisit(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.norevisit = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->norevisit = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_nopskip(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.nopskip = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->nopskip = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_hpskip(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.hpskip = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->hpskip = node->i_value;
 	return true;
 }
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator *it = ht_sp_as_iter(core->analysis->plugins);
+	RzIterator *it = rz_analysis_plugin_iterator(core->analysis);
 	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
 		rz_list_purge(node->options);
@@ -463,14 +476,16 @@ static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
 static bool cb_analysis_recont(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.recont = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->recont = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_ijmp(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.ijmp = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->ijmp = node->i_value;
 	return true;
 }
 
@@ -571,7 +586,7 @@ static bool cb_flag_realnames(void *user, void *data) {
 static bool cb_asmlineswidth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->lineswidth = node->i_value;
+	rz_analysis_set_lines_width(core->analysis, node->i_value);
 	return true;
 }
 
@@ -623,7 +638,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 		return false;
 	}
 	rz_asm_set_pc_align(core->rasm, align);
-	core->analysis->pcalign = align;
+	rz_analysis_set_pc_align(core->analysis, align);
 	return true;
 }
 
@@ -1283,8 +1298,9 @@ static bool cb_dbgbackend(void *user, void *data) {
 static bool cb_gotolimit(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->analysis->esil) {
-		core->analysis->esil_goto_limit = node->i_value;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->parse_goto_count = node->i_value;
 	}
 	return true;
 }
@@ -1292,8 +1308,9 @@ static bool cb_gotolimit(void *user, void *data) {
 static bool cb_esilverbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core->analysis->esil) {
-		core->analysis->esil->verbose = node->i_value;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->verbose = node->i_value;
 	}
 	return true;
 }
@@ -1532,7 +1549,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->analysis->core;
+		RzCore *core = esil->core;
 		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}
@@ -1684,10 +1701,11 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateO
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_ioer);
-		core->analysis->esil->cmd_ioer = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_ioer);
+		esil->cmd_ioer = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1695,10 +1713,11 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 static bool cb_cmd_esil_todo(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_todo);
-		core->analysis->esil->cmd_todo = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_todo);
+		esil->cmd_todo = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1706,10 +1725,11 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 static bool cb_cmd_esil_intr(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_intr);
-		core->analysis->esil->cmd_intr = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_intr);
+		esil->cmd_intr = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1717,10 +1737,11 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 static bool cb_mdevrange(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->mdev_range);
-		core->analysis->esil->mdev_range = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->mdev_range);
+		esil->mdev_range = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1728,10 +1749,11 @@ static bool cb_mdevrange(void *user, void *data) {
 static bool cb_cmd_esil_step(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_step);
-		core->analysis->esil->cmd_step = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_step);
+		esil->cmd_step = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1739,10 +1761,11 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 static bool cb_cmd_esil_step_out(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_step_out);
-		core->analysis->esil->cmd_step_out = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_step_out);
+		esil->cmd_step_out = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1750,10 +1773,11 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		free(core->analysis->esil->cmd_mdev);
-		core->analysis->esil->cmd_mdev = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		free(esil->cmd_mdev);
+		esil->cmd_mdev = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -1761,9 +1785,10 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 static bool cb_cmd_esil_trap(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	if (core && core->analysis && core->analysis->esil) {
-		core->analysis->esil->cmd = rz_core_esil_cmd;
-		core->analysis->esil->cmd_trap = rz_str_dup(node->value);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->cmd = rz_core_esil_cmd;
+		esil->cmd_trap = rz_str_dup(node->value);
 	}
 	return true;
 }
@@ -2091,8 +2116,9 @@ static bool cb_graphformat(void *user, void *data) {
 static bool cb_exectrap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
-	if (core->analysis && core->analysis->esil) {
-		core->analysis->esil->exectrap = node->i_value;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->exectrap = node->i_value;
 	}
 	return true;
 }
@@ -2100,8 +2126,9 @@ static bool cb_exectrap(void *user, void *data) {
 static bool cb_iotrap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
-	if (core->analysis && core->analysis->esil) {
-		core->analysis->esil->iotrap = node->i_value;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->iotrap = node->i_value;
 	}
 	return true;
 }
@@ -2189,7 +2216,7 @@ static bool cb_seggrn(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	rz_asm_set_segment_granularity(core->rasm, node->i_value);
-	core->analysis->seggrn = node->i_value;
+	rz_analysis_set_segment_granularity(core->analysis, node->i_value);
 	core->print->seggrn = node->i_value;
 	return true;
 }
@@ -2429,7 +2456,8 @@ static bool cb_analysis_in(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] != '?') {
-		core->analysis->opt.noncode = (strchr(node->value, 'x') == NULL);
+		RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+		opt->noncode = (strchr(node->value, 'x') == NULL);
 		return true;
 	} else if (strlen(node->value) > 1 && node->value[1] == '?') {
 		rz_cons_printf("Valid values for analysis.in (depends on .from/.to and io.va):\n");
@@ -2464,9 +2492,10 @@ static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
 }
 
 static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
-	if (core && core->analysis && core->analysis->reg) {
-		rz_list_free(core->analysis->reg->roregs);
-		core->analysis->reg->roregs = rz_str_split_duplist(node->value, ",", true);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	if (rreg) {
+		rz_list_free(rreg->roregs);
+		rreg->roregs = rz_str_split_duplist(node->value, ",", true);
 	}
 	return true;
 }
@@ -2494,7 +2523,7 @@ static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 }
 
 static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
-	core->analysis->gp = node->i_value;
+	rz_analysis_set_gp(core->analysis, node->i_value);
 	return true;
 }
 
@@ -2528,112 +2557,127 @@ static bool cb_analysis_limits(void *user, RzConfigNode *node) {
 
 static bool cb_analysis_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore *)user;
-	core->analysis->recursive_noreturn = node->i_value;
+	rz_analysis_set_recursive_noreturn(core->analysis, node->i_value);
 	return true;
 }
 
 static bool cb_analysis_jmptbl(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmptbl = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmptbl = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_jmptblmax(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmptbl_maxcount = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmptbl_maxcount = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_jmptblmaxoffset(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmptbl_maxoffset = node->i_value > UT32_MAX ? UT32_MAX : node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmptbl_maxoffset = node->i_value > UT32_MAX ? UT32_MAX : node->i_value;
 	return true;
 }
 
 static bool cb_analysis_cjmpref(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.cjmpref = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->cjmpref = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_jmpref(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmpref = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmpref = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_jmpabove(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmpabove = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmpabove = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_loads(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.loads = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->loads = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_followdatarefs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.followdatarefs = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->followdatarefs = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_jmpmid(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.jmpmid = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->jmpmid = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_searchstringrefs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.searchstringrefs = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->searchstringrefs = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_pushret(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.pushret = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->pushret = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_brokenrefs(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.followbrokenfcnsrefs = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->followbrokenfcnsrefs = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_trycatch(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.trycatch = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->trycatch = node->i_value;
 	return true;
 }
 
 static bool cb_analysis_bb_max_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.bb_max_size = RZ_MIN(node->i_value, RZ_ANALYSIS_BLOCK_MAX_SIZE);
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->bb_max_size = RZ_MIN(node->i_value, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	return true;
 }
 
 static bool cb_analysis_fcn_max_size(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->analysis->opt.fcn_max_size = node->i_value;
+	RzAnalysisOptions *opt = rz_analysis_get_options(core->analysis);
+	opt->fcn_max_size = node->i_value;
 	return true;
 }
 
@@ -2648,10 +2692,10 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 
 	if (*node->value) {
 		if (strcmp(node->value, "itanium") == 0) {
-			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_ITANIUM;
+			rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_ITANIUM);
 			return true;
 		} else if (strcmp(node->value, "msvc") == 0) {
-			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_MSVC;
+			rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_MSVC);
 			return true;
 		}
 		RZ_LOG_ERROR("core: analysis.cpp.abi: cannot find '%s'\n", node->value);
@@ -2916,7 +2960,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
-	SETICB("esil.gotolimit", core->analysis->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
+	SETICB("esil.gotolimit", RZ_ANALYSIS_ESIL_GOTO_LIMIT, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 	SETICB("esil.stack.depth", 256, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
 	SETI("esil.stack.size", 0xf0000, "Set stack size in ESIL VM");
 	SETI("esil.stack.addr", 0x100000, "Set stack address in ESIL VM");

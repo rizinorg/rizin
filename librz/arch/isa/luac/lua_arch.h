@@ -355,8 +355,8 @@
 #define FMT(buffer, fmt, ...) \
 	fmt_str(sizeof(buffer), (buffer), (fmt), __VA_ARGS__)
 
-char *fmt_str(size_t len, char *buffer, const char *fmt, ...);
-char *get_k(const RzAnalysis *analysis, ut64 addr, ut32 index, char *out_buffer);
+RZ_IPI char *fmt_str(size_t len, char *buffer, const char *fmt, ...);
+RZ_IPI char *get_k(const RzAnalysis *analysis, ut64 addr, ut32 index, char *out_buffer);
 
 #define SCOPE(x) (x == 0) ? (char *)FMT((char[5]){ 0 }, "%s", "_ENV") : (char *)FMT((char[8]){ 0 }, "r%" PFMT32d, x)
 #define SCOPEa   SCOPE(a)
@@ -556,68 +556,67 @@ typedef enum {
 	TM_N /* number of elements in the enum */
 } LuaTMS54;
 
-char *get_lua_tagnames(LuaTMS54 tms);
+RZ_IPI char *get_lua_tagnames(LuaTMS54 tms);
 
 /* convert a 4-byte ut8 buffer into a lua instruction (ut32) */
-LuaInstruction lua_build_instruction(const ut8 *buf);
-void lua_set_instruction(LuaInstruction instruction, ut8 *data);
-int lua_load_next_arg_start(const char *raw_string, char *recv_buf);
-bool lua_is_valid_num_value_string(const char *str);
-int lua_convert_str_to_num(const char *str);
+RZ_IPI LuaInstruction lua_build_instruction(const ut8 *buf);
+RZ_IPI void lua_set_instruction(LuaInstruction instruction, ut8 *data);
+RZ_IPI int lua_load_next_arg_start(const char *raw_string, char *recv_buf);
+RZ_IPI bool lua_is_valid_num_value_string(const char *str);
 
 /* Free Opname List */
-bool free_lua_opnames(LuaOpNameList list);
+RZ_IPI bool free_lua_opnames(LuaOpNameList list);
 
 /* Lua 5.5 specified */
-int lua55_disasm(RzAsmOp *op, ut32 instruction);
-int lua55_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua55_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua55_opnames(void);
-ut8 get_lua55_opcode_by_name(const char *name, int len);
+RZ_IPI int lua55_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua55_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua55_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua55_opnames(void);
+RZ_IPI ut8 get_lua55_opcode_by_name(const char *name, int len);
 
 /* Lua 5.4 specified */
-int lua54_disasm(RzAsmOp *op, ut32 instruction);
-int lua54_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua54_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua54_opnames(void);
-ut8 get_lua54_opcode_by_name(const char *name, int len);
+RZ_IPI int lua54_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua54_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua54_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua54_opnames(void);
+RZ_IPI ut8 get_lua54_opcode_by_name(const char *name, int len);
 
 /* Lua 5.3 specified */
-int lua53_disasm(RzAsmOp *op, ut32 instruction);
-int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua53_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua53_opnames(void);
-ut8 get_lua53_opcode_by_name(const char *name, int len);
+RZ_IPI int lua53_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua53_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua53_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua53_opnames(void);
+RZ_IPI ut8 get_lua53_opcode_by_name(const char *name, int len);
 
 /* Lua 5.2 specified */
-int lua52_disasm(RzAsmOp *op, ut32 instruction);
-int lua52_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua52_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua52_opnames(void);
-ut8 get_lua52_opcode_by_name(const char *name, int len);
+RZ_IPI int lua52_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua52_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua52_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua52_opnames(void);
+RZ_IPI ut8 get_lua52_opcode_by_name(const char *name, int len);
 
 /* Lua 5.1 specified */
-int lua51_disasm(RzAsmOp *op, ut32 instruction);
-int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua51_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua51_opnames(void);
-ut8 get_lua51_opcode_by_name(const char *name, int len);
+RZ_IPI int lua51_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua51_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua51_opnames(void);
+RZ_IPI ut8 get_lua51_opcode_by_name(const char *name, int len);
 
 /* Lua 5.0 specified */
-int lua50_disasm(RzAsmOp *op, ut32 instruction);
-int lua50_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
-ut32 lua50_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
-LuaOpNameList get_lua50_opnames(void);
-ut8 get_lua50_opcode_by_name(const char *name, int len);
+RZ_IPI int lua50_disasm(RzAsmOp *op, ut32 instruction);
+RZ_IPI int lua50_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, const ut8 *data, int len);
+RZ_IPI ut32 lua50_assembly(const char *arg_start, st32 opcode_len, const char *opcode_start);
+RZ_IPI LuaOpNameList get_lua50_opnames(void);
+RZ_IPI ut8 get_lua50_opcode_by_name(const char *name, int len);
 
-ut64 get_k_vaddr(RzAnalysis *analysis, ut64 addr, int k_idx);
-char *get_const_string(const RzAnalysis *analysis, ut64 addr, ut32 index, st32 *data_len, char *out_buffer);
-ut64 get_const_address(const RzAnalysis *analysis, ut64 addr, ut32 index);
-ut64 get_upvalue_address(const RzAnalysis *analysis, ut64 addr, ut32 index);
-bool load_args_asm(const char *arg_start, int *args);
+RZ_IPI ut64 get_k_vaddr(RzAnalysis *analysis, ut64 addr, int k_idx);
+RZ_IPI char *get_const_string(const RzAnalysis *analysis, ut64 addr, ut32 index, st32 *data_len, char *out_buffer);
+RZ_IPI ut64 get_const_address(const RzAnalysis *analysis, ut64 addr, ut32 index);
+RZ_IPI ut64 get_upvalue_address(const RzAnalysis *analysis, ut64 addr, ut32 index);
+RZ_IPI bool load_args_asm(const char *arg_start, int *args);
 
-RzAnalysisValue *new_reg_item(const RzAnalysis *analysis, ut8 index);
-RzAnalysisValue *new_imm_item(st64 value);
+RZ_IPI RzAnalysisValue *new_reg_item(RzAnalysis *analysis, ut8 index);
+RZ_IPI RzAnalysisValue *new_imm_item(st64 value);
 
-bool analysis_op_4_5(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, ut16 opcode, ut8 minor);
+RZ_IPI bool analysis_op_4_5(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContext *ctx, ut16 opcode, ut8 minor);
 #endif // BUILD_LUA_ARCH_H

@@ -67,8 +67,8 @@ static char *meta_string_escape(RzCore *core, RzAnalysisMetaItem *mi) {
 }
 
 RZ_IPI void rz_core_meta_print(RzCore *core, RzAnalysisMetaItem *d, ut64 start, ut64 size, bool show_full, RzCmdStateOutput *state) {
-	if (rz_spaces_current(&core->analysis->meta_spaces) &&
-		rz_spaces_current(&core->analysis->meta_spaces) != d->space) {
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	if (d->space && d->space != rz_spaces_current(meta_spaces)) {
 		return;
 	}
 	PJ *pj = state->d.pj;
@@ -258,13 +258,14 @@ static RzPVector /*<RzIntervalNode *>*/ *collect_nodes_at(RzAnalysis *analysis, 
 	if (!ctx.result) {
 		return NULL;
 	}
-	rz_interval_tree_all_at(&analysis->meta, addr, collect_nodes_cb, &ctx);
+	RzIntervalTree *meta = rz_analysis_get_meta(analysis);
+	rz_interval_tree_all_at(meta, addr, collect_nodes_cb, &ctx);
 	return ctx.result;
 }
 
 RZ_IPI void rz_core_meta_print_list_at(RzCore *core, ut64 addr, RzCmdStateOutput *state) {
-	RzPVector *nodes = collect_nodes_at(core->analysis, RZ_META_TYPE_ANY,
-		rz_spaces_current(&core->analysis->meta_spaces), addr);
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	RzPVector *nodes = collect_nodes_at(core->analysis, RZ_META_TYPE_ANY, rz_spaces_current(meta_spaces), addr);
 	if (!nodes) {
 		return;
 	}
@@ -288,7 +289,8 @@ static void print_meta_list(RzCore *core, RzAnalysisMetaType type, ut64 addr, Rz
 	}
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *item;
-	rz_interval_tree_foreach (&core->analysis->meta, it, item) {
+	RzIntervalTree *meta = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta, it, item) {
 		RzIntervalNode *node = rz_interval_tree_iter_get(&it);
 		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;

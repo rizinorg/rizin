@@ -16,8 +16,6 @@
 #endif
 #include "core_private.h"
 
-#define DB core->sdb
-
 RZ_LIB_VERSION(rz_core);
 
 static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
@@ -1037,26 +1035,24 @@ static void update_sdb(RzCore *core) {
 		return;
 	}
 	// SDB// analysis/
-	if (core->analysis && core->analysis->sdb) {
-		sdb_ns_set(DB, "analysis", core->analysis->sdb);
+	if (core->analysis && (d = rz_analysis_get_sdb_root(core->analysis))) {
+		sdb_ns_set(core->sdb, "analysis", d);
 	}
 	// SDB// bin/
 	if (core->bin && core->bin->sdb) {
-		sdb_ns_set(DB, "bin", core->bin->sdb);
+		sdb_ns_set(core->sdb, "bin", core->bin->sdb);
 	}
 	// SDB// bin/info
 	o = rz_bin_cur_object(core->bin);
 	if (o) {
-		sdb_ns_set(sdb_ns(DB, "bin", 1), "info", o->kv);
+		sdb_ns_set(sdb_ns(core->sdb, "bin", 1), "info", o->kv);
 	}
-	// sdb_ns_set (core->sdb, "flags", core->flags->sdb);
-	// sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	// SDB// syscall/
 	RzSyscall *syscall = rz_asm_get_syscall(core->rasm);
 	if (core->rasm && syscall && syscall->db) {
-		sdb_ns_set(DB, "syscall", syscall->db);
+		sdb_ns_set(core->sdb, "syscall", syscall->db);
 	}
-	d = sdb_ns(DB, "debug", 1);
+	d = sdb_ns(core->sdb, "debug", 1);
 	if (core->dbg->sgnls) {
 		sdb_ns_set(d, "signals", core->dbg->sgnls);
 	}
@@ -1408,8 +1404,9 @@ static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 	return !!rz_analysis_function_get_var_byname(fcn, str);
 }
 
-static bool rz_core_analysis_read_at(struct rz_analysis_t *analysis, ut64 addr, ut8 *buf, int len) {
-	return rz_io_read_at_mapped(analysis->iob.io, addr, buf, len);
+static bool rz_core_analysis_read_at(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
+	return rz_io_read_at_mapped(iob->io, addr, buf, len);
 }
 
 static void rz_core_break(RzCore *core) {
@@ -1700,17 +1697,21 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->sys_path = rz_path_new();
 	char *sdb_types_path = rz_path_system(core->sys_path, RZ_SDB_TYPES);
 	core->analysis = rz_analysis_new(sdb_types_path);
+	rz_analysis_set_core(core->analysis, core);
 	if (sdb_types_path) {
 		free(sdb_types_path);
 	}
-	core->analysis->ev = core->ev;
-	core->analysis->read_at = rz_core_analysis_read_at;
-	core->analysis->flag_get = rz_core_flag_get_by_spaces;
-	core->analysis->cb.on_fcn_new = on_fcn_new;
-	core->analysis->cb.on_fcn_delete = on_fcn_delete;
-	core->analysis->cb.on_fcn_rename = on_fcn_rename;
-	rz_asm_set_syscall(core->rasm, rz_syscall_ref(core->analysis->syscall)); // BIND syscall analysis/asm
-	core->analysis->core = core;
+	rz_analysis_set_event(core->analysis, core->ev);
+	RzAnalysisCallbacks *acb = rz_analysis_get_callbacks(core->analysis);
+	acb->flg_class_set = core_flg_class_set;
+	acb->flg_class_get = core_flg_class_get;
+	acb->flg_fcn_set = core_flg_fcn_set;
+	acb->read_at = rz_core_analysis_read_at;
+	acb->flag_get = rz_core_flag_get_by_spaces;
+	acb->on_fcn_new = on_fcn_new;
+	acb->on_fcn_delete = on_fcn_delete;
+	acb->on_fcn_rename = on_fcn_rename;
+	rz_asm_set_syscall(core->rasm, rz_syscall_ref(rz_analysis_get_syscall(core->analysis))); // BIND syscall analysis/asm
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
 	core->parser->var_expr_for_reg_access = rz_analysis_function_var_expr_for_reg_access_at;
@@ -1743,22 +1744,23 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->hash = rz_hash_new();
 
 	rz_bin_bind(core->bin, (RzBinBind *)rz_asm_get_bin_bind(core->rasm));
-	rz_bin_bind(core->bin, &(core->analysis->binb));
+	rz_bin_bind(core->bin, (RzBinBind *)rz_analysis_get_bin_bind(core->analysis));
 
 	rz_io_bind(core->io, &(core->search->iob));
 	rz_io_bind(core->io, &(core->print->iob));
-	rz_io_bind(core->io, &(core->analysis->iob));
-	rz_io_bind(core->io, &(core->analysis->typedb->iob));
+	rz_io_bind(core->io, rz_analysis_get_io_bind(core->analysis));
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_io_bind(core->io, &(typedb->iob));
 	rz_io_bind(core->io, &(core->bin->iob));
-	rz_flag_bind(core->flags, &(core->analysis->flb));
-	core->analysis->flg_class_set = core_flg_class_set;
-	core->analysis->flg_class_get = core_flg_class_get;
-	core->analysis->flg_fcn_set = core_flg_fcn_set;
+	rz_flag_bind(core->flags, rz_analysis_get_flag_bind(core->analysis));
+
+	rz_analysis_get_core_bind(core->analysis);
+
 	rz_analysis_bind(core->analysis, &(core->parser->analb));
 	core->parser->flag_get = rz_core_flag_get_by_spaces;
 	core->parser->label_get = rz_analysis_function_get_label_at;
 
-	rz_core_bind(core, &(core->analysis->coreb));
+	rz_core_bind(core, rz_analysis_get_core_bind(core->analysis));
 
 	core->file = NULL;
 	core->files = rz_list_newf((RzListFree)rz_core_file_free);
@@ -2226,11 +2228,14 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 	int num;
 
 	// arch check
-	if (strcmp(core->analysis->cur->arch, "x86")) {
-		RZ_LOG_ERROR("architecture '%s' is not yet supported!\n", core->analysis->cur->arch);
+	if (!rz_asm_is_arch(core->rasm, "x86")) {
+		const char *arch = rz_core_get_arch(core);
+		RZ_LOG_ERROR("architecture '%s' is not yet supported!\n", arch);
 		return 0;
 	}
-	if (!rz_syscall_get_num(core->analysis->syscall, name, &num)) {
+
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	if (!rz_syscall_get_num(sysc, name, &num)) {
 		return 0;
 	}
 

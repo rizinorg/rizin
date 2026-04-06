@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include "analysis_private.h"
 
 #include "minunit.h"
 

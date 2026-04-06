@@ -24,8 +24,6 @@
 #define DS_ANALYSIS_OP_MASK (RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_ESIL | \
 	RZ_ANALYSIS_OP_MASK_VAL | (ds->show_cmt_il ? RZ_ANALYSIS_OP_MASK_IL : 0))
 
-#define ESILISTATE core->analysis->esilinterstate
-
 static const ut8 MAX_OPSIZE = 16;
 static const ut8 MIN_OPSIZE = 1;
 
@@ -531,23 +529,25 @@ static void ds_print_esil_analysis_fini(RzDisasmState *ds) {
 	RzCore *core = ds->core;
 	if (ds->show_emu && ds->esil_regstate) {
 		RzCore *core = ds->core;
-		core->analysis->last_disasm_reg = rz_reg_arena_peek(core->analysis->reg);
-		const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-		RzRegSet *regset = rz_reg_regset_get(ds->core->analysis->reg, RZ_REG_TYPE_GPR);
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		rz_analysis_set_last_disasm_reg(core->analysis, rz_reg_arena_peek(rreg));
+		const char *pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
+		RzRegSet *regset = rz_reg_regset_get(rreg, RZ_REG_TYPE_GPR);
 		if (!regset) {
 			RZ_LOG_ERROR("core: ESIL: fail to get regset\n");
 			RZ_FREE(ds->esil_regstate);
 			return;
 		}
 		if (ds->esil_regstate_size == regset->arena->size) {
-			rz_reg_arena_poke(core->analysis->reg, ds->esil_regstate);
+			rz_reg_arena_poke(rreg, ds->esil_regstate);
 		}
-		rz_reg_setv(core->analysis->reg, pc, ds->esil_old_pc);
+		rz_reg_setv(rreg, pc, ds->esil_old_pc);
 		RZ_FREE(ds->esil_regstate);
 	}
-	if (core && core->analysis && core->analysis->esil) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
 		// make sure to remove reference to ds to avoid UAF
-		core->analysis->esil->user = NULL;
+		esil->user = NULL;
 	}
 }
 
@@ -673,9 +673,11 @@ static RzDisasmState *ds_init(RzCore *core) {
 		// TODO: initialize fake stack in here
 		const char *uri = "malloc://32K";
 		ut64 size = rz_num_get(core->num, "32K");
-		ut64 addr = rz_reg_getv(core->analysis->reg, "SP") - (size / 2);
-		ESILISTATE->emustack_min = addr;
-		ESILISTATE->emustack_max = addr + size;
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
+		ut64 addr = rz_reg_getv(rreg, "SP") - (size / 2);
+		estate->emustack_min = addr;
+		estate->emustack_max = addr + size;
 		ds->stackFd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
 		RzIOMap *map = rz_io_map_add(core->io, ds->stackFd, RZ_PERM_RW, 0LL, addr, size);
 		if (!map) {
@@ -801,10 +803,14 @@ static RzDisasmState *ds_init(RzCore *core) {
 	return ds;
 }
 
+static void ds_reflines_reset(RzDisasmState *ds) {
+	RzPVector *reflines = rz_analysis_get_reflines(ds->core->analysis);
+	rz_analysis_set_reflines(ds->core->analysis, NULL);
+	rz_pvector_free(reflines);
+}
+
 static void ds_reflines_fini(RzDisasmState *ds) {
-	RzAnalysis *analysis = ds->core->analysis;
-	rz_pvector_free(analysis->reflines);
-	analysis->reflines = NULL;
+	ds_reflines_reset(ds);
 	RZ_FREE(ds->refline);
 	RZ_FREE(ds->refline2);
 	RZ_FREE(ds->prev_line_col);
@@ -812,17 +818,15 @@ static void ds_reflines_fini(RzDisasmState *ds) {
 
 static void ds_reflines_init(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
-
+	ds_reflines_reset(ds);
 	// refline info is needed when it is shown as ascii,
 	// or returned as part of a json or C struct representation.
 	if (ds->show_lines_bb || ds->vec || ds->pj) {
 		ds_reflines_fini(ds);
-		analysis->reflines = rz_analysis_reflines_get(analysis,
+		RzPVector *reflines = rz_analysis_reflines_get(analysis,
 			ds->addr, ds->buf, ds->len, ds->nlines,
 			ds->linesout, ds->show_lines_call);
-	} else {
-		rz_pvector_free(analysis->reflines);
-		analysis->reflines = NULL;
+		rz_analysis_set_reflines(analysis, reflines);
 	}
 }
 
@@ -876,10 +880,11 @@ static void ds_highlight_word(RzDisasmState *ds, char *word, char *color) {
 }
 
 static void __replaceImports(RzDisasmState *ds) {
-	if (ds->core->analysis->imports) {
+	RzList *imports = rz_analysis_get_imports(ds->core->analysis);
+	if (imports) {
 		char *imp;
 		RzListIter *iter;
-		rz_list_foreach (ds->core->analysis->imports, iter, imp) {
+		rz_list_foreach (imports, iter, imp) {
 			ds->opstr = rz_str_replace(ds->opstr, imp, ".", 1);
 		}
 	}
@@ -950,7 +955,8 @@ static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	rz_strbuf_init(&bw_asm);
 	rz_strbuf_set(&bw_asm, ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop));
 	core->print->colorize_opts.reset_bg = line_highlighted(ds);
-	RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, ds->analysis_op.type);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzAsmParseParam *param = rz_asm_get_parse_param(rreg, ds->analysis_op.type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&bw_asm, core->print, param, ds->asmop.asm_toks);
 	rz_asm_parse_param_free(param);
 	rz_strbuf_fini(&bw_asm);
@@ -1007,8 +1013,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmio_address);
 
-		RzPlatformTarget *arch_target = core->analysis->arch_target;
-
+		RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
 		const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmio_address);
 		if (resolved) {
 			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
@@ -1019,8 +1024,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.ptr);
 
-		RzPlatformTarget *arch_target = core->analysis->arch_target;
-
+		RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
 		const char *resolved = rz_platform_profile_resolve_extended_register(arch_target->profile, ds->analysis_op.ptr);
 		if (resolved) {
 			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
@@ -1181,9 +1185,10 @@ static RzAnalysisDisasmText *ds_disasm_text(RzDisasmState *ds, RzAnalysisDisasmT
 	t->offset = ds->vat;
 	t->arrow = UT64_MAX;
 	t->text = text;
-	if (ds->core->analysis->reflines) {
+	RzPVector *reflines = rz_analysis_get_reflines(ds->core->analysis);
+	if (reflines) {
 		void **iter;
-		rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+		rz_pvector_foreach (reflines, iter) {
 			RzAnalysisRefline *ref = *iter;
 			if (ref->from == ds->vat) {
 				t->arrow = ref->to;
@@ -1202,10 +1207,11 @@ static void ds_begin_line(RzDisasmState *ds) {
 	if (ds->pj) {
 		pj_o(ds->pj);
 		pj_kn(ds->pj, "offset", ds->vat);
-		if (ds->core->analysis->reflines) {
+		RzPVector *reflines = rz_analysis_get_reflines(ds->core->analysis);
+		if (reflines) {
 			void **iter;
 			// XXX Probably expensive
-			rz_pvector_foreach (ds->core->analysis->reflines, iter) {
+			rz_pvector_foreach (reflines, iter) {
 				RzAnalysisRefline *ref = *iter;
 				if (ref->from == ds->vat) {
 					pj_kn(ds->pj, "arrow", ref->to);
@@ -1819,7 +1825,8 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 	if (!strcmp(ds->fold_var, "none") || rz_analysis_var_is_arg(var)) {
 		return iter_mov;
 	}
-	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(ds->core->analysis);
+	char *vartype = rz_type_as_string(typedb, var->type);
 	RzListIter *temp_it = rz_list_next(iter);
 	ut32 same_type_cnt = 1;
 	while (temp_it) {
@@ -1827,7 +1834,7 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 		if (!temp_var) {
 			break;
 		}
-		char *temp_vartype = rz_type_as_string(core->analysis->typedb, temp_var->type);
+		char *temp_vartype = rz_type_as_string(typedb, temp_var->type);
 		if (!temp_vartype) {
 			break;
 		}
@@ -2039,7 +2046,8 @@ static void ds_show_functions(RzDisasmState *ds) {
 			ds_newline(ds);
 		}
 	}
-	rz_list_foreach (ds->core->analysis->imports, iter, imp) {
+	RzList *aimports = rz_analysis_get_imports(ds->core->analysis);
+	rz_list_foreach (aimports, iter, imp) {
 		ds_print_pre(ds, true);
 		ds_print_lines_left(ds);
 		rz_cons_printf(".globalimport %s", imp);
@@ -2268,6 +2276,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = rz_analysis_get_function_at(ds->core->analysis, ds->at);
+	RzTypeDB *typedb = rz_analysis_get_type_db(ds->core->analysis);
 	const RzList *flaglist = rz_flag_get_list(core->flags, ds->at);
 	RzList *uniqlist = flaglist ? rz_list_uniq(flaglist, flagCmp, NULL) : NULL;
 	int count = 0;
@@ -2384,13 +2393,13 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				} else {
 					const char *case_prev_name = NULL;
 					if (switch_enum_name) {
-						case_prev_name = rz_type_db_enum_member_by_val(core->analysis->typedb, switch_enum_name, case_prev);
+						case_prev_name = rz_type_db_enum_member_by_val(typedb, switch_enum_name, case_prev);
 					}
 					rz_cons_printf(FLAG_PREFIX "case ");
 					if (case_prev != case_start) {
 						const char *case_start_name = NULL;
 						if (switch_enum_name) {
-							case_start_name = rz_type_db_enum_member_by_val(core->analysis->typedb, switch_enum_name, case_start);
+							case_start_name = rz_type_db_enum_member_by_val(typedb, switch_enum_name, case_start);
 						}
 						if (case_start_name) {
 							rz_cons_printf("%s...", case_start_name);
@@ -2535,7 +2544,8 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 		rz_pvector_free(metas);
 	}
 	if (ds->hint && ds->hint->bits) {
-		if (!ds->core->analysis->opt.ignbithints) {
+		const RzAnalysisOptions *opt = rz_analysis_get_options(ds->core->analysis);
+		if (!opt->ignbithints) {
 			rz_config_set_i(core->config, "asm.bits", ds->hint->bits);
 		}
 	}
@@ -2985,10 +2995,12 @@ static void ds_print_trace(RzDisasmState *ds) {
 }
 
 static void ds_adistrick_comments(RzDisasmState *ds) {
-	if (ds->adistrick) {
-		ds->middle = rz_analysis_reflines_middle(ds->core->analysis,
-			ds->core->analysis->reflines, ds->at, ds->analysis_op.size);
+	if (!ds->adistrick) {
+		return;
 	}
+	RzPVector *reflines = rz_analysis_get_reflines(ds->core->analysis);
+	ds->middle = rz_analysis_reflines_middle(ds->core->analysis,
+		reflines, ds->at, ds->analysis_op.size);
 }
 
 // TODO move into RzAnalysis.meta
@@ -3206,7 +3218,8 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 		case RZ_META_TYPE_FORMAT: {
 			rz_cons_printf("pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
 			int len_before = rz_cons_get_buffer_len();
-			char *format = rz_type_format_data(core->analysis->typedb, core->print, ds->at, buf + idx,
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			char *format = rz_type_format_data(typedb, core->print, ds->at, buf + idx,
 				len - idx, mi->str, RZ_PRINT_MUSTSEE, NULL, NULL);
 			if (format) {
 				rz_cons_print(format);
@@ -3448,10 +3461,11 @@ static void ds_print_sysregs(RzDisasmState *ds) {
 	if (!ds->show_comments) {
 		return;
 	}
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
 	switch (ds->analysis_op.type) {
 	case RZ_ANALYSIS_OP_TYPE_IO: {
 		const int imm = (int)ds->analysis_op.val;
-		const char *ioname = rz_sysreg_get(core->analysis->syscall, "mmio", imm);
+		const char *ioname = rz_sysreg_get(sysc, "mmio", imm);
 		if (ioname) {
 			CMT_ALIGN;
 			ds_comment(ds, true, "; IO %s", ioname);
@@ -3464,7 +3478,7 @@ static void ds_print_sysregs(RzDisasmState *ds) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
 	case RZ_ANALYSIS_OP_TYPE_STORE: {
 		const int imm = (int)ds->analysis_op.ptr;
-		const char *sr = rz_sysreg_get(core->analysis->syscall, "reg", imm);
+		const char *sr = rz_sysreg_get(sysc, "reg", imm);
 		if (sr) {
 			CMT_ALIGN;
 			ds_comment(ds, true, "; REG %s - %s", sr, "");
@@ -4282,7 +4296,8 @@ static int mymemwrite1(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len)
 }
 
 static int mymemwrite2(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return (addr >= esil->analysis->esilinterstate->emustack_min && addr < esil->analysis->esilinterstate->emustack_max);
+	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	return (addr >= estate->emustack_min && addr < estate->emustack_max);
 }
 
 static char *ssa_get(RzAnalysisEsil *esil, const char *reg) {
@@ -4317,7 +4332,8 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *siz
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	bool big_endian = esil->analysis ? esil->analysis->big_endian : false;
+	RzCore *core = esil->core;
+	bool big_endian = core ? rz_asm_is_big_endian_set(core->rasm) : false;
 	RzDisasmState *ds = esil->user;
 	if (!ds) {
 		return 0;
@@ -4342,7 +4358,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	if (*val) {
 		bool emu_str_printed = false;
 		char *type = NULL;
-		(void)rz_io_read_at_mapped(esil->analysis->iob.io, *val, (ut8 *)str, sizeof(str) - 1);
+		(void)rz_io_read_at_mapped(core->io, *val, (ut8 *)str, sizeof(str) - 1);
 		str[sizeof(str) - 1] = 0;
 		ds->emuptr = *val;
 		// support cstring here
@@ -4359,15 +4375,15 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 				if (!(*val >> 32)) {
 					addr = addr & UT32_MAX;
 				}
-				(void)rz_io_read_at_mapped(esil->analysis->iob.io, addr,
+				(void)rz_io_read_at_mapped(core->io, addr,
 					(ut8 *)str, sizeof(str) - 1);
 				//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
 				type = rz_str_newf("(cstr 0x%08" PFMT64x ") ", addr);
 				ds->printed_str_addr = mem_2;
-			} else if (rz_io_is_valid_offset(esil->analysis->iob.io, addr, 0)) {
+			} else if (rz_io_is_valid_offset(core->io, addr, 0)) {
 				ds->printed_str_addr = mem_0;
 				type = rz_str_newf("(pstr 0x%08" PFMT64x ") ", addr);
-				(void)rz_io_read_at_mapped(esil->analysis->iob.io, addr,
+				(void)rz_io_read_at_mapped(core->io, addr,
 					(ut8 *)str, sizeof(str) - 1);
 				//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
 			}
@@ -4424,7 +4440,7 @@ static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 		}
 		RZ_FREE(type);
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) && (ds->show_emu_strflag || !emu_str_printed)) {
-			RzFlagItem *fi = rz_flag_get_i(esil->analysis->flb.f, *val);
+			RzFlagItem *fi = rz_flag_get_i(core->flags, *val);
 			if (fi && (!ds->opstr || !strstr(ds->opstr, fi->name))) {
 				msg = rz_str_appendf(msg, "%s%s", msg && *msg ? " " : "", fi->name);
 			}
@@ -4466,7 +4482,8 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 		return;
 	}
 	ut64 base = f->offset;
-	RzAnalysisEsil *esil = ds->core->analysis->esil;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(ds->core->analysis);
+	;
 	int i, end = ds->core->offset - base;
 	int maxemu = 1024 * 1024;
 	RzAnalysisEsilHookRegWriteCB orig_cb = esil->cb.hook_reg_write;
@@ -4493,11 +4510,13 @@ static void ds_pre_emulation(RzDisasmState *ds) {
 
 static void ds_print_esil_analysis_init(RzDisasmState *ds) {
 	RzCore *core = ds->core;
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	const char *pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
 	if (!pc) {
 		return;
 	}
-	ds->esil_old_pc = rz_reg_getv(core->analysis->reg, pc);
+	ds->esil_old_pc = rz_reg_getv(rreg, pc);
 	if (!ds->esil_old_pc || ds->esil_old_pc == UT64_MAX) {
 		ds->esil_old_pc = core->offset;
 	}
@@ -4505,25 +4524,30 @@ static void ds_print_esil_analysis_init(RzDisasmState *ds) {
 		// XXX. stackptr not computed without asm.emu, when its not required
 		return;
 	}
-	if (!core->analysis->esil) {
+	if (!esil) {
 		int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 		int esd = rz_config_get_i(core->config, "esil.stack.depth");
 		unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 
-		if (!(core->analysis->esil = rz_analysis_esil_new(esd, iotrap, addrsize))) {
+		if (!(esil = rz_analysis_esil_new(esd, iotrap, addrsize))) {
 			RZ_FREE(ds->esil_regstate);
 			return;
 		}
-		rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 1);
+		rz_analysis_esil_setup(esil, core->analysis, 0, 0, 1, core);
+		rz_analysis_set_esil(core->analysis, esil);
 	}
-	core->analysis->esil->user = ds;
+	esil->user = ds;
 	free(ds->esil_regstate);
-	RZ_FREE(core->analysis->last_disasm_reg);
-	if (core->analysis->gp) {
-		rz_reg_setv(core->analysis->reg, "gp", core->analysis->gp);
+
+	ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
+	rz_analysis_set_last_disasm_reg(core->analysis, NULL);
+	free(last_disasm_reg);
+	ut64 gp = rz_analysis_get_gp(core->analysis);
+	if (gp) {
+		rz_reg_setv(rreg, "gp", gp);
 	}
-	ds->esil_regstate = rz_reg_arena_peek(core->analysis->reg);
-	RzRegSet *regset = rz_reg_regset_get(core->analysis->reg, RZ_REG_TYPE_GPR);
+	ds->esil_regstate = rz_reg_arena_peek(rreg);
+	RzRegSet *regset = rz_reg_regset_get(rreg, RZ_REG_TYPE_GPR);
 	if (ds->esil_regstate && regset) {
 		ds->esil_regstate_size = regset->arena->size;
 	}
@@ -4574,7 +4598,8 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 	const char *fmt, const ut64 addr,
 	const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
-		char *typestr = rz_type_as_string(core->analysis->typedb, type);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		char *typestr = rz_type_as_string(typedb, type);
 		rz_cons_printf("%s", typestr);
 		free(typestr);
 	}
@@ -4637,7 +4662,8 @@ static void mipsTweak(RzDisasmState *ds) {
 	if (asm_arch && *asm_arch && strstr(asm_arch, "mips")) {
 		if (rz_config_get_b(core->config, "analysis.gpfixed")) {
 			ut64 gp = rz_config_get_i(core->config, "analysis.gp");
-			rz_reg_setv(core->analysis->reg, "gp", gp);
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			rz_reg_setv(rreg, "gp", gp);
 		}
 	}
 }
@@ -4647,7 +4673,7 @@ typedef int (*MemWriteFn)(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int l
 // modifies analysis register state
 static void ds_print_esil_analysis(RzDisasmState *ds) {
 	RzCore *core = ds->core;
-	RzAnalysisEsil *esil = core->analysis->esil;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	const char *pc;
 	MemWriteFn hook_mem_write = NULL;
 	int i, nargs;
@@ -4656,9 +4682,11 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	if (!hc) {
 		return;
 	}
+	RzTypeDB *typedb = rz_analysis_get_type_db(ds->core->analysis);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (!esil) {
 		ds_print_esil_analysis_init(ds);
-		esil = core->analysis->esil;
+		esil = rz_analysis_get_esil(core->analysis);
 	}
 	if (!ds->show_emu) {
 		goto beach;
@@ -4667,10 +4695,10 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 		goto beach;
 	}
 	theme_print_color(comment);
-	esil = core->analysis->esil;
-	pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+
+	pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
 	if (pc) {
-		rz_reg_setv(core->analysis->reg, pc, at + ds->analysis_op.size);
+		rz_reg_setv(rreg, pc, at + ds->analysis_op.size);
 		esil->cb.user = ds;
 		esil->cb.hook_reg_write = myregwrite;
 		esil->cb.hook_reg_read = myregread;
@@ -4736,7 +4764,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			if (pcv == UT64_MAX || !pcv) {
 				rz_analysis_esil_reg_read(esil, "$jt", &pcv, NULL);
 				if (pcv == UT64_MAX || !pcv) {
-					pcv = rz_reg_getv(core->analysis->reg, pc);
+					pcv = rz_reg_getv(rreg, pc);
 				}
 			}
 		}
@@ -4757,15 +4785,15 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 				free(key);
 				break;
 			}
-			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
-			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
+			RzType *fcn_type = rz_type_func_ret(typedb, key);
+			int nargs = rz_type_func_args_count(typedb, key);
 			// remove other comments
 			delete_last_comment(ds);
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", COLOR(ds, comment));
 			char *fcn_type_str = NULL;
 			if (fcn_type) {
-				fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
+				fcn_type_str = rz_type_as_string(typedb, fcn_type);
 			}
 			const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 			ds_comment_middle(ds, "; %s%s%s(",
@@ -4778,10 +4806,10 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 				break;
 			}
 		}
-		ut64 s_width = (core->analysis->bits == 64) ? 8 : 4;
-		const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-		ut64 spv = rz_reg_getv(core->analysis->reg, sp);
-		rz_reg_setv(core->analysis->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
+		ut64 s_width = rz_asm_is_bits(core->rasm, 64) ? 8 : 4;
+		const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+		ut64 spv = rz_reg_getv(rreg, sp);
+		rz_reg_setv(rreg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
 		RzList *list = rz_core_get_func_args(core, fcn_name);
 		if (!rz_list_empty(list)) {
 			bool warning = false;
@@ -4838,7 +4866,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 				ds_comment_end(ds, ")");
 			}
 		}
-		rz_reg_setv(core->analysis->reg, sp, spv); // reset stack ptr
+		rz_reg_setv(rreg, sp, spv); // reset stack ptr
 	} break;
 	}
 	ds_print_color_reset(ds);
@@ -4857,7 +4885,7 @@ static void ds_print_calls_hints(RzDisasmState *ds) {
 		// this is done by ESIL
 		return;
 	}
-	RzAnalysis *analysis = ds->core->analysis;
+	RzTypeDB *typedb = rz_analysis_get_type_db(ds->core->analysis);
 	char *name;
 	char *full_name = NULL;
 	if (ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_CALL) {
@@ -4875,28 +4903,28 @@ static void ds_print_calls_hints(RzDisasmState *ds) {
 	if (!full_name) {
 		return;
 	}
-	if (rz_type_func_exist(analysis->typedb, full_name)) {
+	if (rz_type_func_exist(typedb, full_name)) {
 		name = rz_str_dup(full_name);
-	} else if (!(name = rz_analysis_function_name_guess(analysis->typedb, full_name))) {
+	} else if (!(name = rz_analysis_function_name_guess(typedb, full_name))) {
 		return;
 	}
 	ds_begin_comment(ds);
-	RzType *fcn_type = rz_type_func_ret(analysis->typedb, name);
+	RzType *fcn_type = rz_type_func_ret(typedb, name);
 	char *fcn_type_str = NULL;
 	if (fcn_type) {
-		fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
+		fcn_type_str = rz_type_as_string(typedb, fcn_type);
 	}
 	const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 	char *cmt = rz_str_newf("; %s%s%s(", fcn_type_str ? fcn_type_str : "", sp, name);
-	int i, arg_max = rz_type_func_args_count(analysis->typedb, name);
+	int i, arg_max = rz_type_func_args_count(typedb, name);
 	if (!arg_max) {
 		cmt = rz_str_append(cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			RzType *arg_type = rz_type_func_args_type(analysis->typedb, name, i);
-			const char *tname = rz_type_func_args_name(analysis->typedb, name, i);
+			RzType *arg_type = rz_type_func_args_type(typedb, name, i);
+			const char *tname = rz_type_func_args_name(typedb, name, i);
 			if (arg_type) {
-				char *arg_type_str = rz_type_as_string(analysis->typedb, arg_type);
+				char *arg_type_str = rz_type_as_string(typedb, arg_type);
 				const char *sp = arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", arg_type_str, sp,
 					tname, i == arg_max - 1 ? ")" : ",");
@@ -5233,6 +5261,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	rz_config_hold_i(rch, "asm.bits", NULL);
 
 	// TODO: All those ds must be print flags
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzDisasmState *ds = ds_init(core);
 	ds->cbytes = options ? options->cbytes : 0;
 	ds->print = p;
@@ -5267,7 +5296,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 	//  XXX - is there a better way to reset a the analysis counter so that
 	//  when code is disassembled, it can actually find the correct offsets
 	{ /* used by asm.emu */
-		rz_reg_arena_push(core->analysis->reg);
+		rz_reg_arena_push(rreg);
 	}
 
 	ds_reflines_init(ds);
@@ -5333,7 +5362,7 @@ toro:
 			return 0; // break;
 		}
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
-			if (!core->analysis->iob.is_valid_offset(core->analysis->iob.io, ds->at, 0)) {
+			if (!rz_io_is_valid_offset(core->io, ds->at, 0)) {
 				ds_begin_line(ds);
 				ds_print_labels(ds, f);
 				ds_setup_print_pre(ds, false, false);
@@ -5368,14 +5397,15 @@ toro:
 		ds_show_comments_right(ds);
 		RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, ds->addr + idx);
 		if (gv) {
-			char *fmt = rz_type_as_format_pair(core->analysis->typedb, gv->type);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			char *fmt = rz_type_as_format_pair(typedb, gv->type);
 			const char *typename = rz_type_identifier(gv->type);
 			if (fmt && typename) {
 				rz_cons_printf("(%s %s)\n", typename, gv->name);
 				char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, ds->addr + idx);
 				rz_cons_print(r);
 				free(r);
-				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, gv->type);
+				const ut32 type_bitsize = rz_type_db_get_bitsize(typedb, gv->type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
@@ -5670,7 +5700,7 @@ toro:
 	RZ_FREE(nbuf);
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
-	rz_reg_arena_pop(core->analysis->reg);
+	rz_reg_arena_pop(rreg);
 	return idx; //-ds->lastfail;
 }
 
@@ -5708,6 +5738,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	bool hasanalysis = false;
 	bool alloc_buf = !buf;
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 
 	// set the parameter equaling 0 to a value that won't affect another parameter
 	if (nb_bytes == 0 && nb_opcodes != 0) {
@@ -5721,7 +5752,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		return 0;
 	}
 
-	rz_reg_arena_push(core->analysis->reg);
+	rz_reg_arena_push(rreg);
 
 	ds = ds_init(core);
 	ds->nlines = nb_opcodes;
@@ -5870,7 +5901,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 	}
 	rz_cons_break_pop();
 	ds_free(ds);
-	rz_reg_arena_pop(core->analysis->reg);
+	rz_reg_arena_pop(rreg);
 	if (alloc_buf) {
 		free(buf);
 	}
@@ -6102,7 +6133,8 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 				rz_analysis_op_init(&aop);
 				rz_analysis_op(core->analysis, &aop, addr, buf + i, l - i, RZ_ANALYSIS_OP_MASK_ALL);
 				RzStrBuf *colored_asm;
-				RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+				RzReg *rreg = rz_analysis_get_reg(core->analysis);
+				RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 				colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
 				rz_analysis_op_fini(&aop);
 				rz_asm_parse_param_free(param);
@@ -6345,7 +6377,8 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					rz_analysis_op(core->analysis, &aop, address + i,
 						buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_BASIC);
 					RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(asm_str);
-					RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+					RzReg *rreg = rz_analysis_get_reg(core->analysis);
+					RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 					colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 					rz_asm_parse_param_free(param);
 					rz_cons_printf("%s" Color_RESET "\n", colored_asm ? rz_strbuf_get(colored_asm) : "");
@@ -6391,19 +6424,20 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 	if (nb_opcodes < 1) {
 		return 0;
 	}
-	RzReg *reg = core->analysis->reg;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
 	RzRegItem *pc = rz_reg_get(reg, "PC", RZ_REG_TYPE_ANY);
 	if (!pc) {
 		return -1;
 	}
 	rz_cmd_state_output_array_start(state);
-	if (!core->analysis->esil) {
+	if (!esil) {
 		rz_core_analysis_esil_reinit(core);
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		}
 	}
-	RzAnalysisEsil *esil = core->analysis->esil;
+	esil = rz_analysis_get_esil(core->analysis);
 	RzPVector ocache = core->io->cache;
 	const int ocached = core->io->cached;
 	if (ocache.v.a) {
@@ -6485,7 +6519,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzCmdStateOutput *st
 		if (invalid_instr) {
 			break;
 		}
-		rz_analysis_esil_set_pc(core->analysis->esil, op_addr);
+		rz_analysis_esil_set_pc(esil, op_addr);
 		rz_reg_set_value(reg, pc, op_addr + op.size);
 		const char *e = rz_strbuf_get(&op.esil);
 		if (RZ_STR_ISNOTEMPTY(e)) {
@@ -6610,7 +6644,8 @@ RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 rel
 	free(ba);
 	if (color && has_color) {
 		RzStrBuf *colored_asm, *bw_str = rz_strbuf_new(str);
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, op.type);
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		RzAsmParseParam *param = rz_asm_get_parse_param(rreg, op.type);
 		colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 		rz_strbuf_free(bw_str);
 		rz_asm_parse_param_free(param);
@@ -6665,7 +6700,8 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opco
 		rz_analysis_op_init(&aop);
 		rz_analysis_op(core->analysis, &aop, offset, ptr, length, RZ_ANALYSIS_OP_MASK_ALL);
 		RzStrBuf *bw_str = rz_strbuf_new(op->assembly);
-		RzAsmParseParam *param = rz_asm_get_parse_param(core->analysis->reg, aop.type);
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 		RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asm_op.asm_toks);
 		rz_asm_op_fini(&asm_op);
 		rz_strbuf_free(bw_str);

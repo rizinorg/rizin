@@ -12,7 +12,7 @@
 
 static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
 	ut8 payload_header[8];
-	if (!analysis->read_at || !analysis->read_at(analysis, payload_addr, payload_header, 8)) {
+	if (!analysis->cb.read_at || !analysis->cb.read_at(analysis, payload_addr, payload_header, 8)) {
 		return NULL;
 	}
 
@@ -29,7 +29,7 @@ static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut6
 		return NULL;
 	}
 
-	if (!analysis->read_at(analysis, payload_addr + 8, table, size * 4)) {
+	if (!analysis->cb.read_at(analysis, payload_addr + 8, table, size * 4)) {
 		rz_mem_free(table);
 		return NULL;
 	}
@@ -59,7 +59,7 @@ error:
 
 static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
 	ut8 payload_header[4];
-	if (!analysis->read_at || !analysis->read_at(analysis, payload_addr, payload_header, 4)) {
+	if (!analysis->cb.read_at || !analysis->cb.read_at(analysis, payload_addr, payload_header, 4)) {
 		return NULL;
 	}
 
@@ -74,7 +74,7 @@ static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut6
 		return NULL;
 	}
 
-	if (!analysis->read_at(analysis, payload_addr + 4, table, size * 8)) {
+	if (!analysis->cb.read_at(analysis, payload_addr + 4, table, size * 8)) {
 		rz_mem_free(table);
 		return NULL;
 	}

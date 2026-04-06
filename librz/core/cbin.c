@@ -114,7 +114,7 @@ RZ_API void rz_core_bin_set_export_info(RZ_NONNULL RzCore *core) {
 		if (strstr(dup, ".cparse")) {
 			char *code = rz_str_newf("%s;", v);
 			char *error_msg = NULL;
-			RzTypeDB *typedb = core->analysis->typedb;
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 			int result = rz_type_parse_string_stateless(typedb->parser, code, &error_msg);
 			if (result && error_msg) {
 				rz_str_trim_tail(error_msg);
@@ -133,7 +133,8 @@ RZ_API void rz_core_bin_set_export_info(RZ_NONNULL RzCore *core) {
 		if ((flagname = strstr(dup, ".format"))) {
 			*flagname = 0;
 			flagname = dup;
-			rz_type_db_format_set(core->analysis->typedb, flagname, v);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			rz_type_db_format_set(typedb, flagname, v);
 		}
 		free(dup);
 	}
@@ -418,7 +419,8 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 				rz_cmd_state_output_free(st);
 				return false;
 			}
-			rz_core_pdb_info_print(core, core->analysis->typedb, pdb, st);
+			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+			rz_core_pdb_info_print(core, typedb, pdb, st);
 			rz_bin_pdb_free(pdb);
 			add_footer(state, st);
 		}
@@ -567,7 +569,8 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	char *spath = rz_file_path_join(types_dir, "spec.sdb");
 	free(types_dir);
 	if (spath && rz_file_exists(spath)) {
-		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
+		Sdb *sdb_fmts = rz_analysis_get_sdb_formats(r->analysis);
+		sdb_concat_by_path(sdb_fmts, spath);
 	}
 	free(spath);
 	return true;
@@ -656,17 +659,20 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 
-	rz_type_db_purge(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzAnalysisDebugInfo *debug_info = rz_analysis_get_debug_info(core->analysis);
+	rz_type_db_purge(typedb);
 	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
 	if (!types_dir) {
 		return false;
 	}
-	rz_type_db_reload(core->analysis->typedb, types_dir);
+	rz_type_db_reload(typedb, types_dir);
 	free(types_dir);
 
-	rz_analysis_debug_info_free(core->analysis->debug_info);
-	core->analysis->debug_info = rz_analysis_debug_info_new();
-	core->analysis->debug_info->dw = dw;
+	rz_analysis_debug_info_free(debug_info);
+	debug_info = rz_analysis_debug_info_new();
+	debug_info->dw = dw;
+	rz_analysis_set_debug_info(core->analysis, debug_info);
 	if (dw->info) {
 		rz_analysis_dwarf_process_info(core->analysis, dw);
 	}
@@ -1448,7 +1454,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 
-	rz_spaces_push(&core->analysis->meta_spaces, "bin");
+	RzSpaces *meta_spaces = rz_analysis_get_meta_spaces(core->analysis);
+	rz_spaces_push(meta_spaces, "bin");
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
 
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
@@ -1553,7 +1560,7 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 		}
 	}
 
-	rz_spaces_pop(&core->analysis->meta_spaces);
+	rz_spaces_pop(meta_spaces);
 	rz_flag_space_pop(core->flags);
 	return true;
 }
@@ -1745,9 +1752,12 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
 		return false;
 	}
-
-	RzBinDWARF *dw = (core->analysis && core->analysis->debug_info && core->analysis->debug_info->dw)
-		? core->analysis->debug_info->dw
+	RzAnalysisDebugInfo *debug_info = NULL;
+	if (core->analysis) {
+		debug_info = rz_analysis_get_debug_info(core->analysis);
+	}
+	RzBinDWARF *dw = debug_info && debug_info->dw
+		? debug_info->dw
 		: load_dwarf(core, binfile);
 	if (!dw) {
 		return false;
@@ -1762,7 +1772,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, RzCmdStateOutput *state)
 	if (line && line->lines) {
 		rz_core_bin_print_source_line_info(core, line->lines, state);
 	}
-	if (dw != core->analysis->debug_info->dw) {
+	if (dw != debug_info->dw) {
 		rz_bin_dwarf_free(dw);
 	}
 	return true;

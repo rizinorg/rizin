@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
-#include <rz_util.h>
 
 /**
  * \file no_rtti.c

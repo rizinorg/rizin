@@ -236,7 +236,6 @@ typedef struct luac_bin_info {
 	RzList /*<RzBinString *>*/ *string_list; ///< list of strings
 	RzBinInfo *general_info; ///< general binary info from luac header
 	LuaHeaderInfo *header;
-	RzTypeDB *typedb;
 } LuacBinInfo;
 
 /* ========================================================

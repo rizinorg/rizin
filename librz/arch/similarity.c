@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
+#include "analysis_private.h"
 #include <rz_diff.h>
 
 /** \file similarity.c

@@ -17,6 +17,7 @@ RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	rz_return_val_if_fail(dbg, false);
+	const char *arch = RZ_SYS_ARCH;
 	RzDebugPlugin *new_plugin = NULL;
 	if (name) {
 		bool found = false;
@@ -36,11 +37,12 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	if (!dbg->cur) {
 		return true;
 	}
-	if (dbg->analysis && dbg->analysis->cur) {
-		if (!rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits)) {
-			goto err;
-		}
+
+	if (dbg->analysis) {
+		arch = rz_analysis_get_arch(dbg->analysis);
 	}
+	rz_debug_set_arch(dbg, arch, dbg->bits);
+
 	dbg->bp->breakpoint = dbg->cur->breakpoint;
 	dbg->bp->user = dbg;
 	if (dbg->cur->init && !dbg->cur->init(dbg, &dbg->plugin_data)) {

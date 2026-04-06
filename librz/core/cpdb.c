@@ -275,7 +275,8 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		if (!t) {
 			return true;
 		}
-		RzType *rt = rz_type_db_pdb_parse(ctx->core->analysis->typedb, pdb->s_tpi, t);
+		RzTypeDB *typedb = rz_analysis_get_type_db(ctx->core->analysis);
+		RzType *rt = rz_type_db_pdb_parse(typedb, pdb->s_tpi, t);
 		if (!rt) {
 			return true;
 		}
@@ -324,7 +325,8 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	}
 
 	// Save compound types into types database
-	rz_type_db_pdb_load(core->analysis->typedb, pdb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_pdb_load(typedb, pdb);
 	pdb_symbols_load(core, pdb, rz_file_basename(file));
 	return pdb;
 }
@@ -389,7 +391,8 @@ RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB 
 
 	rz_cmd_state_output_array_start(state);
 	pdb_modules_print(pdb, state);
-	rz_core_bin_pdb_types_print(core->analysis->typedb, pdb, state);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_core_bin_pdb_types_print(typedb, pdb, state);
 	rz_core_bin_pdb_gvars_print(pdb, baddr, state);
 	rz_cmd_state_output_array_end(state);
 }
