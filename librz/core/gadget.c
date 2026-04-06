@@ -208,12 +208,11 @@ static bool rz_gadget_hitlist_print_standard_mode(const RzCore *core, const RzCo
 		return false;
 	}
 
-	const bool gadget_comments = rz_config_get_i(core->config, "gadget.comments");
 	const bool colorize = rz_config_get_i(core->config, "scr.color");
 	bool ret_val = context->ret_val;
 
 	const char *comment = NULL;
-	if (gadget_comments) {
+	if (context->comments) {
 		comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, hit->addr);
 	}
 

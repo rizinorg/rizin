@@ -3573,3 +3573,43 @@ EXPECT=<<EOF
 0x00000008: ret;
 EOF
 RUN
+
+NAME=search rop gadgets with comments
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa "pop r12; ret"
+CC Rizin is Cool! @ 0
+CC Its elegant! @ 2
+/R
+echo "========================================================="
+e gadget.comments=true
+/R
+EOF
+EXPECT=<<EOF
+  0x00000000               415c  pop r12
+  0x00000002                 c3  ret
+Gadget size: 3
+
+  0x00000001                 5c  pop rsp
+  0x00000002                 c3  ret
+Gadget size: 2
+
+  0x00000002                 c3  ret
+Gadget size: 1
+
+=========================================================
+  0x00000000               415c  pop r12 ; Rizin is Cool!
+  0x00000002                 c3  ret ; Its elegant!
+Gadget size: 3
+
+  0x00000001                 5c  pop rsp
+  0x00000002                 c3  ret ; Its elegant!
+Gadget size: 2
+
+  0x00000002                 c3  ret ; Its elegant!
+Gadget size: 1
+
+EOF
+RUN
