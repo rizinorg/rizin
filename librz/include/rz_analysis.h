@@ -35,6 +35,9 @@
 extern "C" {
 #endif
 
+typedef struct rz_analysis_t RzAnalysis;
+typedef struct rz_analysis_bb_t RzAnalysisBlock;
+
 typedef struct {
 	struct rz_analysis_t *analysis;
 	int type;
@@ -383,9 +386,6 @@ typedef struct rz_analysis_switch_obj_t {
 	RzList /*<RzAnalysisCaseOp *>*/ *cases;
 	RzType *enum_type;
 } RzAnalysisSwitchOp;
-
-typedef struct rz_analysis_t RzAnalysis;
-typedef struct rz_analysis_bb_t RzAnalysisBlock;
 
 typedef struct rz_analysis_callbacks_t {
 	int (*on_fcn_new)(RzAnalysis *, void *user, RzAnalysisFunction *fcn);
@@ -2464,9 +2464,9 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif
-#endif
+#endif // RZ_ANALYSIS_H
