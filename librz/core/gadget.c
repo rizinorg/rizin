@@ -21,7 +21,7 @@ static bool is_cond_end_gadget(const RzAnalysisOp *aop) {
 	}
 }
 
-static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8 allow_conditional) {
+static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const bool allow_conditional) {
 	rz_return_val_if_fail(core && core->analysis && hit, false);
 	bool status = false;
 	RzAnalysisOp aop = { 0 };
@@ -51,7 +51,7 @@ static bool is_ret_gadget(const RzCore *core, const RzCoreAsmHit *hit, const ut8
 	return status;
 }
 
-static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 allow_conditional) {
+static bool is_end_gadget(const RzAnalysisOp *aop, const bool allow_conditional) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
 	}
@@ -1414,7 +1414,7 @@ cleanup:
 	return hitlist;
 }
 
-static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const ut8 allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+static RzGadgetInfo *perform_gadget_analysis(RzCore *core, const bool allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzGadgetInfo *gadget_info = NULL;
 
