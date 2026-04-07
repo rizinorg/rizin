@@ -384,10 +384,10 @@ bool test_rz_table_query(void) {
 }
 
 bool test_rz_table_query_regressions(void) {
-	// str filters must not parse string payloads as num, throws rz_num_calc error
+	// book ex 2: length alias should stay str-based for minlen filtering
 	RzTable *t = rz_table_new();
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "string");
-	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "length");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "len");
 
 	rz_table_add_row(t, "abcdefgh", "8", NULL);
 	rz_table_add_row(t, "(([]A\\A])", "9", NULL);
@@ -397,10 +397,10 @@ bool test_rz_table_query_regressions(void) {
 	mu_assert_true(qr, "table filter by string length");
 	char *s = rz_table_tostring(t);
 	mu_assert_streq(s,
-		"string,length\n"
+		"string,len\n"
 		"longer_string,13\n"
 		"(([]A\\A]),9\n",
-		"filter table by string length without parsing strings as math");
+		"book length alias should filter str without parsing them as math");
 	free(s);
 	rz_table_free(t);
 
@@ -442,7 +442,7 @@ bool test_rz_table_query_regressions(void) {
 	free(s);
 	rz_table_free(t);
 
-	// should resolve to the table address col
+	// book ex 3: exact vaddr filters and addr alias sorts by the num addr col
 	t = rz_table_new();
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "nth");
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "vaddr");
@@ -453,12 +453,30 @@ bool test_rz_table_query_regressions(void) {
 	rz_table_add_row(t, "3", "0x1400", "bar_init", NULL);
 	rz_table_add_row(t, "4", "0x2000", "foo_init", NULL);
 
-	qr = rz_table_query(t, "name/uniq:addr/gt/0x1000:name/str/init:addr/sort:json");
+	qr = rz_table_query(t, "name/uniq:vaddr/gt/0x1000:name/str/init:addr/sort:json");
 	mu_assert_true(qr, "table filter by addr alias");
 	s = rz_table_tostring(t);
 	mu_assert_streq(s,
 		"[{\"nth\":3,\"vaddr\":5120,\"name\":\"bar_init\"},{\"nth\":2,\"vaddr\":5376,\"name\":\"foo_init\"}]\n",
-		"resolve addr alias to the vaddr column");
+		"handbook addr alias should sort by the numeric vaddr column");
+	free(s);
+	rz_table_free(t);
+
+	// addr aliases must not bind to str headers when a num addr col exists
+	t = rz_table_new();
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "address");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "paddr");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name");
+
+	rz_table_add_row(t, "alpha", "0x10", "late", NULL);
+	rz_table_add_row(t, "zeta", "0x2", "early", NULL);
+
+	qr = rz_table_query(t, "addr/sort:json");
+	mu_assert_true(qr, "table sort by addr alias should prefer numeric address columns");
+	s = rz_table_tostring(t);
+	mu_assert_streq(s,
+		"[{\"address\":\"zeta\",\"paddr\":2,\"name\":\"early\"},{\"address\":\"alpha\",\"paddr\":16,\"name\":\"late\"}]\n",
+		"addr alias should skip string address headers and use numeric address columns");
 	free(s);
 	rz_table_free(t);
 	mu_end;

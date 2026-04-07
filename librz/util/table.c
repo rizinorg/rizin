@@ -125,6 +125,26 @@ static bool table_index_of_column(RzTable *t, const char *name, size_t *index) {
 	return false;
 }
 
+static bool table_column_is_numeric(const RzTableColumn *col) {
+	// query aliases like addr/length are meant for num cols only.
+	return col && (col->type == RZ_TABLE_COLUMN_TYPE_NUMBER || col->type == RZ_TABLE_COLUMN_TYPE_BOOL);
+}
+
+static bool table_query_index_of_numeric_column(RzTable *t, const char *name, size_t *index) {
+	size_t col = 0;
+	if (!table_index_of_column(t, name, &col)) {
+		return false;
+	}
+	RzTableColumn *column = rz_vector_index_ptr(t->cols, col);
+	if (!table_column_is_numeric(column)) {
+		return false;
+	}
+	if (index) {
+		*index = col;
+	}
+	return true;
+}
+
 static bool table_query_index_of_column(RzTable *t, const char *name, size_t *index) {
 	static const char *const addr_aliases[] = {
 		"vaddr",
@@ -142,14 +162,14 @@ static bool table_query_index_of_column(RzTable *t, const char *name, size_t *in
 	// Keep stable query names working across tables with slightly different headers.
 	if (RZ_STR_EQ(name, "addr")) {
 		for (size_t i = 0; addr_aliases[i]; i++) {
-			if (table_index_of_column(t, addr_aliases[i], index)) {
+			if (table_query_index_of_numeric_column(t, addr_aliases[i], index)) {
 				return true;
 			}
 		}
 	}
 	if (RZ_STR_EQ(name, "length")) {
 		for (size_t i = 0; length_aliases[i]; i++) {
-			if (table_index_of_column(t, length_aliases[i], index)) {
+			if (table_query_index_of_numeric_column(t, length_aliases[i], index)) {
 				return true;
 			}
 		}
