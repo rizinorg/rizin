@@ -310,6 +310,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	}
 
 	rz_core_debug_process_detach(core);
+	rz_debug_use(core->dbg, NULL);
 
 	pid = pid > 0 ? pid : fd_pid;
 	if (pid > 0) {
