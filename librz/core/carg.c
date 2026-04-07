@@ -84,23 +84,6 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	arg->cc_source = rz_analysis_cc_arg(analysis, cc, arg_num);
 }
 
-RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
-	const char *str = func_name;
-	const char *name = func_name;
-	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
-	if (rz_type_func_exist(typedb, func_name)) {
-		return rz_str_dup(func_name);
-	}
-	while ((str = strchr(str, '.'))) {
-		name = str + 1;
-		str++;
-	}
-	if (rz_type_func_exist(typedb, name)) {
-		return rz_str_dup(name);
-	}
-	return rz_analysis_function_name_guess(typedb, (char *)func_name);
-}
-
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 	return (width == 8) ? rz_read_ble64(buf, endian) : (ut64)rz_read_ble32(buf, endian);
 }
@@ -283,7 +266,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 	}
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	char *key = resolve_fcn_name(core->analysis, fcn_name);
+	char *key = rz_analysis_function_name_resolve(core->analysis, fcn_name);
 	if (!key) {
 		return NULL;
 	}

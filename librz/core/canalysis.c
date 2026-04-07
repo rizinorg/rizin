@@ -3445,7 +3445,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 
 		char *key = NULL;
 		if (fcn_name) {
-			key = resolve_fcn_name(core->analysis, fcn_name);
+			key = rz_analysis_function_name_resolve(core->analysis, fcn_name);
 		}
 
 		if (key) {

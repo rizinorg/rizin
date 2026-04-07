@@ -4778,7 +4778,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 			}
 		}
 		if (fcn_name) {
-			key = resolve_fcn_name(core->analysis, fcn_name);
+			key = rz_analysis_function_name_resolve(core->analysis, fcn_name);
 		}
 		if (key) {
 			if (ds->asm_types < 1) {

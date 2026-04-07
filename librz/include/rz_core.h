@@ -732,7 +732,6 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 RZ_DEPRECATE RZ_API ut64 rz_core_arg_get(RzCore *core, const char *cc, int num);
 RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
-RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
 
 /* clang.c */
 RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *state);

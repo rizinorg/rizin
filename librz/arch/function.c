@@ -578,3 +578,22 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 	free(str);
 	return result;
 }
+
+RZ_API RZ_OWN char *rz_analysis_function_name_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *func_name) {
+	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(func_name), NULL);
+
+	const char *str = func_name;
+	const char *name = func_name;
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	if (rz_type_func_exist(typedb, func_name)) {
+		return rz_str_dup(func_name);
+	}
+	while ((str = strchr(str, '.'))) {
+		name = str + 1;
+		str++;
+	}
+	if (rz_type_func_exist(typedb, name)) {
+		return rz_str_dup(name);
+	}
+	return rz_analysis_function_name_guess(typedb, (char *)func_name);
+}
