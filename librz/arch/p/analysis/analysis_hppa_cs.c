@@ -10,8 +10,9 @@
 
 static char *hppa_reg_profile(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
+		// linux/arch/parisc/include/uapi/asm/ptrace.h: struct user_regs_struct (64-bit)
 		const char *p =
-			"=PC	pc\n"
+			"=PC	pcoqh\n"
 			"=SP	r30\n"
 			"=A0	r26\n"
 			"=A1	r25\n"
@@ -58,11 +59,34 @@ static char *hppa_reg_profile(RzAnalysis *analysis) {
 			"ctr	sr5	.64	296	0\n"
 			"ctr	sr6	.64	304	0\n"
 			"ctr	sr7	.64	312	0\n"
-			"flg	psw	.64	320	0\n";
+			"ctr	ioaq0	.64	320	0\n" 
+			"ctr	ioaq1	.64	328	0\n" 
+			"ctr	iosq0	.64	336	0\n" 
+			"ctr	iosq1	.64	344	0\n" 
+			"ctr	sar	.64	352	0\n" // cr11
+			"ctr	iir	.64	360	0\n" // cr19
+			"ctr	isr	.64	368	0\n" // cr20
+			"ctr	ior	.64	376	0\n" // cr21
+			"ctr	ipsw	.64	384	0\n" // cr22
+			"ctr	cr0	.64	392	0\n"
+			"ctr	cr24	.64	400	0\n"
+			"ctr	cr25	.64	408	0\n"
+			"ctr	cr26	.64	416	0\n"
+			"ctr	cr27	.64	424	0\n"
+			"ctr	cr28	.64	432	0\n"
+			"ctr	cr29	.64	440	0\n"
+			"ctr	cr30	.64	448	0\n"
+			"ctr	cr31	.64	456	0\n"
+			"ctr	cr8	.64	464	0\n"
+			"ctr	cr9	.64	472	0\n"
+			"ctr	cr12	.64	480	0\n"
+			"ctr	cr13	.64	488	0\n"
+			"ctr	cr10	.64	496	0\n"
+			"ctr	cr15	.64	504	0\n";
 		return strdup(p);
 	} else {
 		const char *p =
-			"=PC	pc\n"
+			"=PC	ioaq0\n"
 			"=SP	r30\n"
 			"=A0	r26\n"
 			"=A1	r25\n"
@@ -108,7 +132,30 @@ static char *hppa_reg_profile(RzAnalysis *analysis) {
 			"ctr	sr5	.32	148	0\n"
 			"ctr	sr6	.32	152	0\n"
 			"ctr	sr7	.32	156	0\n"
-			"flg	psw	.32	160	0\n";
+			"ctr	ioaq0	.32	160	0\n"
+			"ctr	ioaq1	.32	164	0\n"
+			"ctr	iosq0	.32	168	0\n"
+			"ctr	iosq1	.32	172	0\n"
+			"ctr	sar	.32	176	0\n" // cr11
+			"ctr	iir	.32	180	0\n" // cr19
+			"ctr	isr	.32	184	0\n" // cr20
+			"ctr	ior	.32	188	0\n" // cr21
+			"ctr	ipsw	.32	192	0\n" // cr22
+			"ctr	cr0	.32	196	0\n"
+			"ctr	cr24	.32	200	0\n"
+			"ctr	cr25	.32	204	0\n"
+			"ctr	cr26	.32	208	0\n"
+			"ctr	cr27	.32	212	0\n"
+			"ctr	cr28	.32	216	0\n"
+			"ctr	cr29	.32	220	0\n"
+			"ctr	cr30	.32	224	0\n"
+			"ctr	cr31	.32	228	0\n"
+			"ctr	cr8	.32	232	0\n"
+			"ctr	cr9	.32	236	0\n"
+			"ctr	cr12	.32	240	0\n"
+			"ctr	cr13	.32	244	0\n"
+			"ctr	cr10	.32	248	0\n"
+			"ctr	cr15	.32	252	0\n";
 		return strdup(p);
 	}
 }
