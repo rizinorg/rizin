@@ -300,7 +300,6 @@ RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_N
 	}
 	char *oldname = fcn->name;
 	bool in_tree = ht_sp_delete(analysis->ht_name_fun, fcn->name);
-	// free(fcn->name);
 	fcn->name = newname;
 	if (in_tree) {
 		// only re-insert if it really was in the tree before

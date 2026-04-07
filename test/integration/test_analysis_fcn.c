@@ -48,10 +48,10 @@ static bool test_analysis_fcn_events() {
 	mu_assert_notnull(core, "rz_core_new failed");
 	FunctionEventTracker tracker = { 0 };
 	mu_assert_notnull(core->analysis, "analysis is null");
-	mu_assert_notnull(core->analysis->ev, "analysis event bus is null");
-	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_NEW, function_event_cb, &tracker);
-	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_DEL, function_event_cb, &tracker);
-	rz_event_hook(core->analysis->ev, RZ_EVENT_FCN_RENAME, function_event_cb, &tracker);
+	mu_assert_notnull(core->ev, "core event bus is null");
+	rz_event_hook(core->ev, RZ_EVENT_FCN_NEW, function_event_cb, &tracker);
+	rz_event_hook(core->ev, RZ_EVENT_FCN_DEL, function_event_cb, &tracker);
+	rz_event_hook(core->ev, RZ_EVENT_FCN_RENAME, function_event_cb, &tracker);
 	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "event_src", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
 	mu_assert_notnull(fcn, "create function");
 	mu_assert_eq(tracker.new_count, 1, "new event count");
