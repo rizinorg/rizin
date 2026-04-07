@@ -87,23 +87,11 @@ bool test_rz_bv_init128(void) {
 	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0x00000000000000000000000000000064", "string hex value of bv");
 
-	rz_bv_set_from_ut64(bits, 0);
-	mu_assert_eq(rz_bv_to_ut64(bits), 0, "Did not set to zero");
-
-	rz_bv_set(bits, 2, true);
-	rz_bv_set(bits, 5, true);
-	rz_bv_set(bits, 6, true);
-	mu_assert("new from 128", is_equal_bv(bits, bits_cmp));
-
-	rz_bv_set_from_st64(bits, 0);
-	mu_assert_eq(rz_bv_to_ut64(bits), 0, "Did not set to zero");
-
 	rz_bv_free(bits);
 	rz_bv_free(bits_cmp);
 	rz_bv_free(bits_dup);
 	mu_end;
 }
-
 bool test_rz_bv_init70(void) {
 	char *s = NULL;
 
@@ -184,6 +172,54 @@ bool test_rz_bv_init_signed(void) {
 	s = rz_bv_as_hex_string(bits, true);
 	mu_assert_streq_free(s, "0xffffffffffffffffffffffffffffff9c", "string hex value of bv");
 	rz_bv_free(bits);
+	mu_end;
+}
+
+bool test_rz_bv_set_from(void) {
+	char *s = NULL;
+
+	RzBitVector *bits_128 = rz_bv_new_from_ut64(128, 100);
+	RzBitVector *bits_128_cmp = rz_bv_new(128);
+	rz_bv_set(bits_128_cmp, 2, true);
+	rz_bv_set(bits_128_cmp, 5, true);
+	rz_bv_set(bits_128_cmp, 6, true);
+
+	rz_bv_set_from_ut64(bits_128, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits_128), 0, "Did not set to zero");
+
+	rz_bv_set(bits_128, 2, true);
+	rz_bv_set(bits_128, 5, true);
+	rz_bv_set(bits_128, 6, true);
+	mu_assert("new from 128", is_equal_bv(bits_128, bits_128_cmp));
+
+	rz_bv_set_from_st64(bits_128, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits_128), 0, "Did not set to zero");
+
+	rz_bv_set(bits_128, 2, true);
+	rz_bv_set(bits_128, 67, true);
+	rz_bv_set_from_ut64(bits_128, 0x7766554433221100ull);
+	s = rz_bv_as_hex_string(bits_128, true);
+	mu_assert_streq_free(s, "0x00000000000000007766554433221100", "string hex value of bv");
+
+	rz_bv_set_from_st64(bits_128, (st64)0xffeeddccbbaa9988ull);
+	s = rz_bv_as_hex_string(bits_128, true);
+	mu_assert_streq_free(s, "0xffffffffffffffffffeeddccbbaa9988", "string hex value of bv");
+
+	rz_bv_free(bits_128);
+	rz_bv_free(bits_128_cmp);
+
+	RzBitVector *bits_67 = rz_bv_new_from_st64(67, -1);
+	s = rz_bv_as_hex_string(bits_67, true);
+	mu_assert_streq_free(s, "0x07ffffffffffffffff", "string hex value of bv");
+	rz_bv_cast_inplace(bits_67, 69, rz_bv_msb(bits_67));
+	s = rz_bv_as_hex_string(bits_67, true);
+	mu_assert_streq_free(s, "0x1fffffffffffffffff", "string hex value of bv");
+	rz_bv_set_from_st64(bits_67, 9);
+	s = rz_bv_as_hex_string(bits_67, false);
+	mu_assert_streq_free(s, "0x9", "string hex value of bv");
+
+	rz_bv_free(bits_67);
+
 	mu_end;
 }
 
@@ -1980,6 +2016,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init128);
 	mu_run_test(test_rz_bv_init70);
 	mu_run_test(test_rz_bv_init_signed);
+	mu_run_test(test_rz_bv_set_from);
 	mu_run_test(test_rz_bv_cmp);
 	mu_run_test(test_rz_bv_eq);
 	mu_run_test(test_rz_bv_cast);
