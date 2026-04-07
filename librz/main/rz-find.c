@@ -231,7 +231,7 @@ static int show_help(const char *argv0, int line) {
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
-		"-E",    "cmd",     "Execute shell command for each file found.",
+		"-E",    "cmd",     "Execute system shell command for each search hit (appends the current filename as an argument).",
 		"-R",    "cmd",     "Execute Rizin command for each search hit.",
 		"-f",    "from",    "Start searching from address 'from'",
 		"-F",    "file",    "Read the contents of the file and use it as keyword",

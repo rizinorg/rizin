@@ -1,0 +1,14 @@
+NAME=rz-find -E executes once per hit (filename appended)
+TOOL=rz-find
+ARGS=-s GCC -E echo files/rz_find_exec_input.txt
+REGEXP_FILTER_OUT=rz_find_exec_input.txt
+EXPECT=<<EOF
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+rz_find_exec_input.txt
+EOF
+RUN
