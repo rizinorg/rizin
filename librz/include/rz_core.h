@@ -894,24 +894,24 @@ typedef enum {
 	RZ_CORE_GRAPH_TYPE_UNK ///< Unknown graph
 } RzCoreGraphType;
 
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_importxrefs(RZ_NONNULL RzCore *core);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_function(RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_line(RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph(RzCore *core, RzCoreGraphType type, ut64 addr);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core);
-RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_datarefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_coderefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_codexrefs(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_importxrefs(RZ_NONNULL RzCore *core);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_callgraph(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_function(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_line(RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_il(RZ_NONNULL RzCore *core, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph(RzCore *core, RzCoreGraphType type, ut64 addr);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_icfg(RZ_NONNULL RzCore *core);
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_cfg(RZ_NONNULL RzCore *core, ut64 addr);
 
 RZ_API RzCoreGraphFormat rz_core_graph_format_from_string(RZ_NULLABLE const char *x);
 RZ_API RzCoreGraphType rz_core_graph_type_from_string(RZ_NULLABLE const char *x);
-RZ_API bool rz_core_graph_write_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph, RZ_NONNULL const char *filename);
+RZ_API bool rz_core_graph_write_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RZ_NONNULL const char *filename);
 RZ_API bool rz_core_graph_write(RZ_NONNULL RzCore *core, ut64 addr, RzCoreGraphType type, RZ_NONNULL const char *path);
-RZ_API RZ_OWN char *rz_core_graph_to_dot_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
-RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *>*/ *graph);
+RZ_API RZ_OWN char *rz_core_graph_to_dot_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph);
+RZ_API RZ_OWN char *rz_core_graph_to_sdb_str(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *addr_loop_table);

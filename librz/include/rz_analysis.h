@@ -2369,7 +2369,7 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable);
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id);
 
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
+RZ_API RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_vars(RZ_NONNULL RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *fcn);

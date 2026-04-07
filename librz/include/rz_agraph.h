@@ -30,7 +30,7 @@ typedef struct rz_ascii_node_t {
 
 typedef struct rz_core_graph_hits_t {
 	char *old_word;
-	RzVector /*<struct struct rz_agraph_location>*/ word_list;
+	RzVector /*<struct rz_agraph_location>*/ word_list;
 	int word_nth;
 } RzAGraphHits;
 
@@ -46,7 +46,7 @@ typedef void (*RAEdgeCallback)(RzANode *from, RzANode *to, void *user);
 
 typedef struct rz_ascii_graph_t {
 	RzConsCanvas *can;
-	RzGraph /*<RzANode *>*/ *graph;
+	RzGraph /*<RzANode *, None *>*/ *graph;
 	const RzGraphNode *curnode;
 	char *title;
 	Sdb *db;
@@ -88,6 +88,7 @@ typedef struct rz_ascii_graph_t {
 	unsigned int n_layers;
 	RzList /*<struct dist_t *>*/ *dists;
 	RzList /*<AEdge *>*/ *edges;
+	ut64 next_edge_creation_order;
 	RzAGraphHits ghits;
 } RzAGraph;
 
@@ -101,8 +102,8 @@ RZ_API RzANode *rz_agraph_get_node(const RzAGraph *g, const char *title);
 RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const char *body);
 RZ_API RZ_BORROW RzANode *rz_agraph_add_node_from_node_info(RZ_NONNULL const RzAGraph *g, RZ_NONNULL const RzGraphNodeInfo *info, bool utf8);
 RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title);
-RZ_API void rz_agraph_add_edge(const RzAGraph *g, RzANode *a, RzANode *b);
-RZ_API void rz_agraph_add_edge_at(const RzAGraph *g, RzANode *a, RzANode *b, int nth);
+RZ_API void rz_agraph_add_edge(RzAGraph *g, RzANode *a, RzANode *b);
+RZ_API void rz_agraph_add_edge_at(RzAGraph *g, RzANode *a, RzANode *b, int nth);
 RZ_API void rz_agraph_del_edge(const RzAGraph *g, RzANode *a, RzANode *b);
 RZ_API void rz_agraph_print(RzAGraph *g);
 RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj);
@@ -110,8 +111,9 @@ RZ_API Sdb *rz_agraph_get_sdb(RzAGraph *g);
 RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user);
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user);
 RZ_API void rz_agraph_set_curnode(RzAGraph *g, RzANode *node);
-RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *g, bool free_on_fail, bool utf8);
-RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *>*/ *graph, bool utf8);
+RZ_API bool create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *g, bool free_on_fail, bool utf8);
+RZ_API RZ_OWN RzAGraph *create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8);
+RZ_API void rz_agraph_compute_layout(RZ_NONNULL RzAGraph *g);
 #endif
 
 #endif
