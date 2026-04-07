@@ -13,12 +13,12 @@
 #include <rz_util/rz_assert.h>
 
 RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *analysis, RZ_BORROW RZ_NONNULL RzIO *io, ut64 addr) {
-	rz_return_val_if_fail(analysis && analysis->cur && io, NULL);
+	rz_return_val_if_fail(analysis && rz_analysis_plugin_current(analysis) && io, NULL);
 	RzInterpreterILBB *il_bb = NULL;
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
 	// Estimate a reasonable number of bytes to read.
-	int max_read_size = (analysis->cur->bits / 8) * 16;
+	int max_read_size = (rz_analysis_plugin_current(analysis)->bits / 8) * 16;
 	ut8 *buf = RZ_NEWS0(ut8, max_read_size);
 	if (!max_read_size || !buf) {
 		rz_warn_if_reached();
@@ -75,7 +75,7 @@ RZ_API RZ_OWN RzInterpreterILBB *rz_inquiry_gen_il_bb(RZ_NONNULL RzAnalysis *ana
 			// Instruction was added, now the BB is complete.
 			break;
 		}
-		if (changes_cf && RZ_STR_EQ(analysis->cur->arch, "sparc")) {
+		if (changes_cf && RZ_STR_EQ(rz_analysis_plugin_current(analysis)->arch, "sparc")) {
 			// We need to add the instruction after the branch.
 			// So one more iteration is needed.
 			sparc_add_delayed_insn = true;

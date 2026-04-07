@@ -467,7 +467,8 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	bool return_code = true;
 	RzInterpreterSet *intp_iset = NULL;
 	HtUP *il_cache = NULL;
-	RzBuffer *io_buf = rz_buf_new_with_io(&core->analysis->iob);
+	
+	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
 	bool user_sent_signal = false;
 	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
@@ -486,7 +487,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	}
 
 	// Initialize the abstract state with the architecture's registers.
-	if (!core->analysis->cur->il_config) {
+	if (!rz_analysis_plugin_current(core->analysis)->il_config) {
 		RZ_LOG_ERROR("The RzArch plugin doesn't have il_config() implemented.\n");
 		return_code = false;
 		goto error_free;
