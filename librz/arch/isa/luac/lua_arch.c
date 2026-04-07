@@ -92,7 +92,7 @@ static char *get_const_string_b(const LuacBinInfo *lbi, ut64 addr, ut32 index, s
 	*data_len = const_entrie->data_len;
 	switch (const_entrie->tag) {
 	case LUA_VNUMINT:
-		sprintf(out_buffer, "%d", *(int *)const_entrie->data);
+		sprintf(out_buffer, "%" PFMT64u, *(ut64 *)const_entrie->data);
 		return out_buffer;
 	case LUA_VNUMFLT: {
 		const double r = *(double *)const_entrie->data;

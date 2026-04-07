@@ -81,7 +81,7 @@ int rz_luac_asm(const RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	if (instruction == LUA_INVALID_INSTRUCTION) {
 		return -1;
 	}
-
+	rz_write_le32(&instruction, instruction);
 	rz_strbuf_setbin(&opstruct->buf, (const ut8 *)&instruction, 4);
 	return 4;
 }
