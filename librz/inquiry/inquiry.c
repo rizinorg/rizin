@@ -450,6 +450,39 @@ static bool collect_entry_points(RzCore *core,
 	return true;
 }
 
+static bool setup_yield_rbufs(
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
+	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
+	RzInterpreterYieldFilter yield_filter) {
+	// A single interpreter can produce different yields.
+	// E.g. if the interpreter has a complex abstract memory model
+	// for stack, heap and constant values.
+	// Then it can produce three kind of yields.
+	// These yield queues can be shared between different interpreters.
+	// So we have one yield queue for each yield type.
+
+	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
+	RzInterpreterYieldRBuf *rbuf = NULL;
+	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
+	if (!rbuf) {
+		rz_warn_if_reached();
+		return false;
+	}
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = rbuf;
+
+	yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
+	rbuf = rz_interpreter_yield_rbuf_new(
+		yield_kind,
+		yield_filter,
+		sections);
+	if (!rbuf) {
+		rz_warn_if_reached();
+		return false;
+	}
+	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = rbuf;
+	return true;
+}
+
 struct ituple {
 	RzThread *ithread;
 	RzInterpreterSet *iset;
@@ -467,10 +500,11 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 	bool return_code = true;
 	RzInterpreterSet *intp_iset = NULL;
 	HtUP *il_cache = NULL;
-	
+
 	RzBuffer *io_buf = rz_buf_new_with_io(rz_analysis_get_io_bind(core->analysis));
 	RzSetU *symbol_targets = rz_set_u_new();
 	bool user_sent_signal = false;
+	struct ituple *iset_map = NULL;
 	RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges = rz_vector_new(sizeof(RzAnalysisXRef), NULL, NULL);
 
 	rz_cons_push();
@@ -507,32 +541,42 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 		rz_warn_if_reached();
 		goto error_free;
 	}
-	intp_iset = rz_interpreter_set_new(
-		core->analysis,
-		prototype->p_interpreter,
-		RZ_INTERPRETER_ABSTRACTION_CONST,
-		rz_bin_object_get_sections(core->bin->cur->o),
-		(RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter,
-		ignored_code);
-	if (!intp_iset) {
+	size_t n_threads = 8;
+	iset_map = RZ_NEWS0(struct ituple, n_threads);
+
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM] = { 0 };
+	if (!setup_yield_rbufs(yield_rbufs, rz_bin_object_get_sections(core->bin->cur->o),
+		    (RzInterpreterYieldFilter)rz_inquiry_xref_interpreter_filter)) {
 		return_code = false;
 		rz_warn_if_reached();
 		goto error_free;
 	}
 
-	// Dispatch prototype interpreter into a thread.
-	RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
-	RzThread *interpr_th = interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
-	struct ituple iset_map[] = {
-		{ .ithread = interpr_th,
-			.iset = intp_iset,
-			.next_run_state = RZ_INTP_RUN_STATE_INIT }
-	};
+	for (size_t i = 0; i < n_threads; ++i) {
+		intp_iset = rz_interpreter_set_new(
+			core->analysis,
+			prototype->p_interpreter,
+			RZ_INTERPRETER_ABSTRACTION_CONST,
+			yield_rbufs,
+			ignored_code);
+		if (!intp_iset) {
+			return_code = false;
+			rz_warn_if_reached();
+			goto error_free;
+		}
+
+		// Dispatch prototype interpreter into a thread.
+		RZ_LOG_DEBUG("INQUIRY: Start main interpretation thread.\n");
+		RzThread *interpr_th = interpr_th = rz_th_new((RzThreadFunction)rz_interpreter_run, intp_iset);
+		iset_map[i].ithread = interpr_th;
+		iset_map[i].iset = intp_iset;
+		iset_map[i].next_run_state = RZ_INTP_RUN_STATE_INIT;
+	}
+
 	ut64 intpr_terminated = 0;
 	ut64 check_signal = 0;
 
-	// TODO: Add the other threads.
-	for (ut64 i = 0;; check_signal++) {
+	for (ut64 i = 0;; check_signal++, i = (i + 1) % n_threads) {
 		if (check_signal % RZ_INQUIRY_CHECK_USER_SIGNAL_ITC == 0 && rz_cons_is_breaked()) {
 			user_sent_signal = true;
 			break;
@@ -667,7 +711,7 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 			break;
 		}
 		}
-		if (intpr_terminated == RZ_ARRAY_SIZE(iset_map)) {
+		if (intpr_terminated == n_threads) {
 			break;
 		}
 	}
@@ -675,14 +719,15 @@ RZ_API bool rz_inquiry_interpreter(RzCore *core,
 fatal_error:
 
 	RZ_LOG_DEBUG("INQUIRY: Wait for join\n");
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(iset_map); i++) {
+	for (size_t i = 0; i < n_threads; i++) {
 		close_reset_ipc_obj(iset_map[i].iset);
 		// Open semaphore so the interpreter can transition
 		// EMU -> CLEAN -> INIT -> TERM
 		rz_th_sem_post(iset_map[i].iset->run_state_sync);
 	}
 
-	for (size_t i = 0; i < RZ_ARRAY_SIZE(iset_map); i++) {
+	// Wait for thread to finish before cleaning.
+	for (size_t i = 0; i < n_threads; i++) {
 		rz_th_wait(iset_map[i].ithread);
 		bool interpr_ret = rz_th_get_retv(iset_map[i].ithread);
 		rz_th_free(iset_map[i].ithread);
@@ -714,8 +759,10 @@ fatal_error:
 
 	rz_config_set(core->config, "io.cache", io_cache_opt);
 
-	// Wait for thread to finish before cleaning.
 error_free:
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
+	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
+	free(iset_map);
 	rz_set_u_free(entry_points);
 	rz_buf_free(io_buf);
 	rz_vector_free(insn_to_insn_edges);
