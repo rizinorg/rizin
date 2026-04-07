@@ -92,7 +92,6 @@ bool test_rz_bv_init128(void) {
 	rz_bv_free(bits_dup);
 	mu_end;
 }
-
 bool test_rz_bv_init70(void) {
 	char *s = NULL;
 
