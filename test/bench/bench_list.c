@@ -114,11 +114,6 @@ static void bench_purge_v2_large_no_free(RzTable *t_out) {
     rz_list_free(list);
 }
 
-// --- With free function (heap-allocated elements) ---
-// This is the critical case: v1 calls list->free via rz_list_delete,
-// v2 calls fn directly. Both should call free() the same number of times,
-// but v2 avoids the rz_list_delete overhead.
-
 static void bench_purge_v1_medium_with_free(RzTable *t_out) {
     RzList *list = rz_list_newf(free);
     RZ_BENCH_RUN("purge_v1_100k_with_free", t_out, 100, {
