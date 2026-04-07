@@ -84,19 +84,19 @@ typedef struct rz_bin_wasm_section_t {
 typedef struct rz_bin_wasm_type_t {
 	ut8 form;
 	ut32 param_count;
-	RzBinWasmValueType *param_types;
-	st8 return_count; // MVP = 1
-	RzBinWasmValueType return_type;
+	st8 /* RzBinWasmValueType */ *param_types;
+	ut8 return_count; // MVP = 1
+	st8 /* RzBinWasmValueType */ return_type;
 } RzBinWasmTypeEntry;
 
 // Other Types
 typedef struct rz_bin_wasm_global_type_t {
-	RzBinWasmValueType content_type;
+	st8 /* RzBinWasmValueType */ content_type;
 	ut8 mutability;
 } RzBinWasmGlobalType;
 
 typedef struct rz_bin_wasm_table_type_t {
-	RzBinWasmValueType elem_type;
+	st8 /* RzBinWasmValueType */ elem_type;
 	RzBinWasmResizableLimits limits;
 } RzBinWasmTableType;
 
@@ -124,7 +124,7 @@ typedef struct rz_bin_wasm_function_t {
 } RzBinWasmFunctionEntry;
 
 typedef struct rz_bin_wasm_table_t {
-	ut8 element_type; // only anyfunc
+	st8 element_type; // only anyfunc
 	RzBinWasmResizableLimits limits;
 } RzBinWasmTableEntry;
 
@@ -133,7 +133,7 @@ typedef struct rz_bin_wasm_memory_t {
 } RzBinWasmMemoryEntry;
 
 typedef struct rz_bin_wasm_global_t {
-	RzBinWasmValueType content_type;
+	ut8 /* RzBinWasmValueType */ content_type;
 	ut8 mutability; // 0 if immutable, 1 if mutable
 	RzBinWasmInitExpr init;
 } RzBinWasmGlobalEntry;
@@ -151,7 +151,7 @@ typedef struct rz_bin_wasm_start_t {
 
 typedef struct rz_bin_wasm_local_entry_t {
 	ut32 count;
-	RzBinWasmValueType type;
+	st8 /* RzBinWasmValueType */ type;
 } RzBinWasmLocalEntry;
 
 typedef struct rz_bin_wasm_element_t {
@@ -164,7 +164,7 @@ typedef struct rz_bin_wasm_element_t {
 typedef struct rz_bin_wasm_code_t {
 	ut32 body_size;
 	ut32 local_count; // numer of local entries
-	struct rz_bin_wasm_local_entry_t *locals;
+	RzBinWasmLocalEntry *locals;
 	ut32 code; // offset
 	ut32 len; // real bytecode length
 	ut8 byte; // 0xb, indicating end of the body

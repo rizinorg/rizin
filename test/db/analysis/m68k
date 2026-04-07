@@ -1,19 +1,55 @@
-NAME=M68k jump analysis
-FILE=bins/smd/LiquidSpaceDodgerV3.bin
-CMDS=ao @ 0x00000230~jump[1]
-EXPECT=<<EOF
-0x000009f2
-EOF
-RUN
-
-NAME=M68k pseudo
+NAME=M68k analysis
 FILE=bins/smd/LiquidSpaceDodgerV3.bin
 CMDS=<<EOF
+ao @ 0x00000230~jump[1]
+echo ---
+iI
+echo ---
 e asm.pseudo=true
 af
 pif
 EOF
 EXPECT=<<EOF
+0x000009f2
+---
+arch     m68k
+cpu      N/A
+features N/A
+baddr    0x00000000
+binsz    0x000272f8
+bintype  N/A
+bits     32
+retguard false
+class    SEGA MEGASIS    
+compiler N/A
+dbg_file N/A
+endian   BE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Sega Megadrive
+maxopsz  4
+minopsz  2
+os       smd
+cc       N/A
+pcalign  2
+rpath    N/A
+subsys   
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+---
 d0 = 0xa10001
 d0 &= 0xf
 if (==) goto 0x216
@@ -40,7 +76,7 @@ a5 = 0x3b38
 d4 = 0x11ff
 call 0x9ea
 a5 = 0x5f38
-d4 = section.header
+d4 = section..header
 (a3) = 0x58000000
 call 0x9ea
 a5 = 0x6138

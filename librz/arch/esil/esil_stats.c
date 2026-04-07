@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 static int hook_flag_read(RzAnalysisEsil *esil, const char *flag, ut64 *num) {
 	sdb_array_add(esil->stats, "flg.read", flag);

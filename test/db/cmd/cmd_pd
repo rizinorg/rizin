@@ -36,6 +36,7 @@ NAME=pd V8 and Cortex-M profiles
 FILE=malloc://128
 ARGS=-a arm -b 16
 CMDS=<<EOF
+e cfg.bigendian=false
 echo
 pad fff7c0ea@e:asm.cpu=v8
 pad fff7c0ea@e:asm.cpu=cortexm
@@ -189,22 +190,8 @@ e asm.bytes=true
 e asm.sub.names=1
 e asm.arch=arm
 e asm.bits=64
+e cfg.bigendian=false
 
-wx fa67bba9
-pd 1
-EOF
-EXPECT=<<EOF
-            0x00000000      fa67bba9       stp   x26, x25, [sp, -0x50]!
-EOF
-RUN
-
-NAME=asm.sub.names issue
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.sub.names=0
-e asm.bytes=true
-e asm.arch=arm
-e asm.bits=64
 wx fa67bba9
 pd 1
 EOF
@@ -1543,7 +1530,7 @@ e asm.xrefs.max=0
 pdJ 1
 EOF
 EXPECT=<<EOF
-[{"offset":0,"text":"            ; XREFS: CODE 0x00000001  "},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
+[{"offset":0,"text":"            ; XREFS: CODE 0x00000001"},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
 [{"offset":0,"text":"            ; XREFS(1)"},{"offset":0,"text":"            0x00000000      0000           add   byte [rax], al"}]
 EOF
 RUN
@@ -1886,6 +1873,7 @@ NAME=@b and @addr should coexist
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 pd 1 @b:32 @ 0xc
 EOF
@@ -1898,6 +1886,7 @@ NAME=ahb should not be deleted with @b (#9751)
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 ahb 16 @ 0xc
 ahl
@@ -1915,6 +1904,7 @@ NAME=ahb should not override @b
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=true
 ahb 16 @ 0xc
 pd 5 @b:32
@@ -2297,9 +2287,9 @@ e asm.bits=64
 wx 90905152539090 ; pd 7 ~&5,push
 EOF
 EXPECT=<<EOF
-            0x00000002      51             push  rcx
-            0x00000003      52             push  rdx
-            0x00000004      53             push  rbx
+  0x00000002      51             push  rcx
+  0x00000003      52             push  rdx
+  0x00000004      53             push  rbx
 EOF
 RUN
 

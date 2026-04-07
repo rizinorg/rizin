@@ -39,8 +39,8 @@ f. foobar @ 0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
-|       ,=< 0x10000120f      7f05           jnle  .foobar              ; main.foobar
-|       |    .foobar:
+| 0x10000120f      7f05           jnle  .foobar                        ; main.foobar
+|  .foobar:
 EOF
 RUN
 

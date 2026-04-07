@@ -270,8 +270,9 @@ RZ_IPI RzCmdStatus rz_flag_local_list_all_handler(RzCore *core, int argc, const 
 	RzAnalysisFunction *fcn;
 	RzListIter *it;
 	rz_cmd_state_output_array_start(state);
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
-		if (!fcn->labels->count) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
+		if (!ht_up_size(fcn->labels)) {
 			continue;
 		}
 		if (state->mode == RZ_OUTPUT_MODE_JSON) {

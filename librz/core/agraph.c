@@ -827,7 +827,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 		d.to = b;
 		it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 		if (it) {
-			struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
+			struct dist_t *old = (struct dist_t *)rz_list_val(it);
 			return old->dist;
 		}
 	}
@@ -850,7 +850,7 @@ static int dist_nodes(const RzAGraph *g, const RzGraphNode *a, const RzGraphNode
 				d.to = next;
 				it = rz_list_find(g->dists, &d, (RzListComparator)find_dist, NULL);
 				if (it) {
-					struct dist_t *old = (struct dist_t *)rz_list_iter_get_data(it);
+					struct dist_t *old = (struct dist_t *)rz_list_val(it);
 					res += old->dist;
 					found = true;
 				}
@@ -893,7 +893,7 @@ static void set_dist_nodes(const RzAGraph *g, int l, int cur, int next) {
 	find_el.from = vi;
 	find_el.to = vip;
 	it = rz_list_find(g->dists, &find_el, (RzListComparator)find_dist, NULL);
-	d = it ? (struct dist_t *)rz_list_iter_get_data(it) : RZ_NEW0(struct dist_t);
+	d = it ? (struct dist_t *)rz_list_val(it) : RZ_NEW0(struct dist_t);
 
 	d->from = vi;
 	d->to = vip;
@@ -2179,37 +2179,36 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 }
 
 static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (emu) {
-		core->analysis->gp = saved_gp;
+		rz_analysis_set_gp(core->analysis, saved_gp);
 		if (b->parent_reg_arena) {
-			rz_reg_arena_poke(core->analysis->reg, b->parent_reg_arena);
+			rz_reg_arena_poke(rreg, b->parent_reg_arena);
 			RZ_FREE(b->parent_reg_arena);
-			ut64 gp = rz_reg_getv(core->analysis->reg, "gp");
+			ut64 gp = rz_reg_getv(rreg, "gp");
 			if (gp) {
-				core->analysis->gp = gp;
+				rz_analysis_set_gp(core->analysis, gp);
 			}
 		} else {
-			rz_reg_arena_poke(core->analysis->reg, saved_arena);
+			rz_reg_arena_poke(rreg, saved_arena);
 		}
 	}
 	char *body = get_body(core, b->addr, b->size, opts);
-	if (b->jump != UT64_MAX) {
-		if (b->jump > b->addr) {
-			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
-			if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
-				if (emu && core->analysis->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
-					jumpbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
-				}
+	if (b->jump != UT64_MAX && b->jump > b->addr) {
+		RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
+		if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
+			ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
+			if (emu && last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+				jumpbb->parent_reg_arena = rz_reg_arena_dup(rreg, last_disasm_reg);
 			}
 		}
 	}
-	if (b->fail != UT64_MAX) {
-		if (b->fail > b->addr) {
-			RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
-			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
-				if (emu && core->analysis->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
-					failbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
-				}
+	if (b->fail != UT64_MAX && b->fail > b->addr) {
+		RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
+		if (failbb && rz_list_contains(failbb->fcns, fcn)) {
+			ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
+			if (emu && last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+				failbb->parent_reg_arena = rz_reg_arena_dup(rreg, last_disasm_reg);
 			}
 		}
 	}
@@ -2224,14 +2223,15 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	void **iter;
 	bool emu = rz_config_get_i(core->config, "asm.emu");
-	ut64 saved_gp = core->analysis->gp;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	ut64 saved_gp = rz_analysis_get_gp(core->analysis);
 	ut8 *saved_arena = NULL;
 	char *shortcut = 0;
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
-		saved_arena = rz_reg_arena_peek(core->analysis->reg);
+		saved_arena = rz_reg_arena_peek(rreg);
 	}
 	if (!fcn) {
 		RZ_FREE(saved_arena);
@@ -2269,9 +2269,9 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	}
 
 	if (emu) {
-		core->analysis->gp = saved_gp;
+		rz_analysis_set_gp(core->analysis, saved_gp);
 		if (saved_arena) {
-			rz_reg_arena_poke(core->analysis->reg, saved_arena);
+			rz_reg_arena_poke(rreg, saved_arena);
 			RZ_FREE(saved_arena);
 		}
 	}
@@ -2341,10 +2341,11 @@ static bool isbbfew(RzAnalysisBlock *curbb, RzAnalysisBlock *bb) {
 static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	void **iter;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	bool emu = rz_config_get_i(core->config, "asm.emu");
 	bool few = rz_config_get_i(core->config, "graph.few");
 	int ret = false;
-	ut64 saved_gp = core->analysis->gp;
+	ut64 saved_gp = rz_analysis_get_gp(core->analysis);
 	ut8 *saved_arena = NULL;
 	core->keep_asmqjmps = false;
 
@@ -2352,7 +2353,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		return false;
 	}
 	if (emu) {
-		saved_arena = rz_reg_arena_peek(core->analysis->reg);
+		saved_arena = rz_reg_arena_peek(rreg);
 	}
 	rz_pvector_sort(fcn->bbs, (RzPVectorComparator)bbcmp, NULL);
 	RzAnalysisBlock *curbb = NULL;
@@ -2436,9 +2437,9 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 
 cleanup:
 	if (emu) {
-		core->analysis->gp = saved_gp;
+		rz_analysis_set_gp(core->analysis, saved_gp);
 		if (saved_arena) {
-			rz_reg_arena_poke(core->analysis->reg, saved_arena);
+			rz_reg_arena_poke(rreg, saved_arena);
 			RZ_FREE(saved_arena);
 		}
 	}

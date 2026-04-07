@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2010-2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 RZ_API RzAnalysisCond *rz_analysis_cond_new(void) {
 	return RZ_NEW0(RzAnalysisCond);

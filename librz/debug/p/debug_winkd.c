@@ -207,7 +207,8 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 
 	if (!kdctx->windctx.profile) {
 		RZ_LOG_INFO("Trying to build profile dinamically by using the ntoskrnl.exe's PDB\n");
-		winkd_build_profile(&kdctx->windctx, dbg->analysis->typedb);
+		RzTypeDB *typedb = rz_analysis_get_type_db(dbg->analysis);
+		winkd_build_profile(&kdctx->windctx, typedb);
 	}
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy

@@ -16,11 +16,12 @@ typedef struct main_entry_t {
 
 static MainEntry main_prog[] = {
 	{ "rizin", rz_main_rizin },
+	{ "rz-ar", rz_main_rz_ar },
 	{ "rz-asm", rz_main_rz_asm },
 	{ "rz-ax", rz_main_rz_ax },
 	{ "rz-bin", rz_main_rz_bin },
 	{ "rz-diff", rz_main_rz_diff },
-	{ "rz-find", rz_main_rz_ax },
+	{ "rz-find", rz_main_rz_find },
 	{ "rz-gg", rz_main_rz_gg },
 	{ "rz-hash", rz_main_rz_hash },
 	{ "rz-run", rz_main_rz_run },

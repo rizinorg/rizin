@@ -140,7 +140,7 @@ RZ_API ut32 rz_il_vm_get_pc_len(RzILVM *vm) {
  */
 RZ_API void rz_il_vm_add_mem(RzILVM *vm, RzILMemIndex index, RZ_OWN RzILMem *mem) {
 	if (index < rz_pvector_len(&vm->vm_memory)) {
-		rz_mem_free(rz_pvector_at(&vm->vm_memory, index));
+		rz_il_mem_free(rz_pvector_at(&vm->vm_memory, index));
 	}
 	rz_pvector_reserve(&vm->vm_memory, index + 1);
 	// Fill up with NULLs until the given index

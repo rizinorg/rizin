@@ -48,7 +48,7 @@ static RzList /*<RzIODesc *>*/ *rz_io_ar_open_many(RzIO *io, const char *file, i
 			rz_list_free(list_fds);
 			return NULL;
 		}
-		rz_list_iter_set_data(it, NULL);
+		rz_list_set_val(it, NULL);
 	}
 	rz_list_free(all);
 	return list_fds;

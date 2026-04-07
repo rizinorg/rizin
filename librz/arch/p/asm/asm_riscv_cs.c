@@ -1,18 +1,23 @@
+// SPDX-FileCopyrightText: 2024-2026 moste00 <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
+#include <capstone/capstone.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(riscv_asm);
 
-static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int riscv_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int ret = -1;
 	cs_insn *insn;
 	cs_mode mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	mode |= mode_from_arch_string(a->cpu);
+	mode |= resolve_features_from_list(a->features);
 	op->size = 4;
 	if (ctx->omode != mode) {
 		cs_close(&ctx->handle);
@@ -49,11 +54,12 @@ fin:
 }
 
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
-	.name = "riscv.cs",
+	.name = "riscv",
 	.desc = "RISC-V Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "riscv",
-	.cpus = "",
+	.cpus = ARCH_RISCV_CPUS,
+	.features = ARCH_RISCV_FEATURES,
 	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = riscv_asm_init,

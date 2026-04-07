@@ -3,10 +3,8 @@
 // SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_parse.h>
-#include <rz_util.h>
-#include <rz_list.h>
 #include <rz_types_overflow.h>
 
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
@@ -137,10 +135,9 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 				break;
 			}
 		}
-		if (analysis->limit) {
-			if (jmpptr < analysis->limit->from || jmpptr > analysis->limit->to) {
-				break;
-			}
+
+		if (rz_analysis_is_beyond_limits(analysis, jmpptr)) {
+			break;
 		}
 
 		const ut64 jmpptr_idx_off = params->casetbl_loc + case_idx;
@@ -235,10 +232,8 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 				break;
 			}
 		}
-		if (analysis->limit) {
-			if (jmpptr < analysis->limit->from || jmpptr > analysis->limit->to) {
-				break;
-			}
+		if (rz_analysis_is_beyond_limits(analysis, jmpptr)) {
+			break;
 		}
 		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, (offs / params->entry_size) + params->case_shift, params->jmptbl_loc + offs);
 		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr, params->sp);
@@ -321,6 +316,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 
 		if (foundCmp) {
 			if (tmp_aop.type != RZ_ANALYSIS_OP_TYPE_CJMP) {
+				rz_analysis_op_fini(&tmp_aop);
 				continue;
 			}
 
@@ -330,6 +326,7 @@ RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, R
 
 		ut32 type = tmp_aop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		if (type != RZ_ANALYSIS_OP_TYPE_CMP) {
+			rz_analysis_op_fini(&tmp_aop);
 			continue;
 		}
 		// get the value of the cmp
@@ -447,7 +444,7 @@ RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *anal
  * \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
  */
 RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
-	rz_return_val_if_fail(analysis && analysis->read_at && fcn && block && params, false);
+	rz_return_val_if_fail(analysis && analysis->cb.read_at && fcn && block && params, false);
 	ut8 table_size = 0;
 
 	if (!params->table_count) {
@@ -457,7 +454,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 	for (table_size = 0; table_size < params->table_count; table_size++) {
 		ut8 offs = 0;
 
-		if (!analysis->read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
+		if (!analysis->cb.read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
 			return false;
 		}
 

@@ -328,6 +328,472 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
+static RzStructuredData *wasm_sections_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_sections) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmSection *section;
+
+	rz_list_foreach (bin->g_sections, it, section) {
+		if (!section) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "id", section->id, false);
+		rz_structured_data_map_add_unsigned(m, "size", section->size, false);
+		rz_structured_data_map_add_unsigned(m, "name_len", section->name_len, false);
+		rz_structured_data_map_add_unsigned(m, "offset", section->offset, true);
+		rz_structured_data_map_add_unsigned(m, "payload_data", section->payload_data, true);
+		rz_structured_data_map_add_unsigned(m, "payload_len", section->payload_len, false);
+		rz_structured_data_map_add_unsigned(m, "count", section->count, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_types_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_types) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmTypeEntry *type;
+
+	rz_list_foreach (bin->g_types, it, type) {
+		if (!type) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "form", type->form, false);
+		rz_structured_data_map_add_unsigned(m, "param_count", type->param_count, false);
+		rz_structured_data_map_add_signed(m, "return_count", type->return_count);
+		rz_structured_data_map_add_unsigned(m, "return_type", type->return_type, false);
+
+		if (type->param_types && type->param_count) {
+			RzStructuredData *params = rz_structured_data_new_array();
+			if (!params) {
+				rz_structured_data_free(arr);
+				rz_structured_data_free(m);
+				return NULL;
+			}
+			for (ut32 i = 0; i < type->param_count; i++) {
+				rz_structured_data_array_add_unsigned(params, type->param_types[i], false);
+			}
+			rz_structured_data_map_add(m, "param_types", params);
+		}
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_imports_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_imports) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmImportEntry *import;
+
+	rz_list_foreach (bin->g_imports, it, import) {
+		if (!import) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "module_len", import->module_len, false);
+		rz_structured_data_map_add_unsigned(m, "field_len", import->field_len, false);
+		rz_structured_data_map_add_unsigned(m, "kind", import->kind, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_tables_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_tables) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmTableEntry *table;
+
+	rz_list_foreach (bin->g_tables, it, table) {
+		if (!table) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "element_type", table->element_type, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_memories_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_memories) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmMemoryEntry *memory;
+
+	rz_list_foreach (bin->g_memories, it, memory) {
+		if (!memory) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_globals_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_globals) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmGlobalEntry *global;
+
+	rz_list_foreach (bin->g_globals, it, global) {
+		if (!global) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "content_type", global->content_type, false);
+		rz_structured_data_map_add_unsigned(m, "mutability", global->mutability, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_exports_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_exports) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmExportEntry *export;
+
+	rz_list_foreach (bin->g_exports, it, export) {
+		if (!export) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "field_len", export->field_len, false);
+		rz_structured_data_map_add_unsigned(m, "kind", export->kind, false);
+		rz_structured_data_map_add_unsigned(m, "index", export->index, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_elements_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_elements) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmElementEntry *element;
+
+	rz_list_foreach (bin->g_elements, it, element) {
+		if (!element) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "index", element->index, false);
+		rz_structured_data_map_add_unsigned(m, "num_elem", element->num_elem, false);
+
+		if (element->num_elem) {
+			RzStructuredData *elems = rz_structured_data_new_array();
+			if (!elems) {
+				rz_structured_data_free(arr);
+				rz_structured_data_free(m);
+				return NULL;
+			}
+			for (ut32 i = 0; i < element->num_elem; i++) {
+				rz_structured_data_array_add_unsigned(elems, element->elems[i], false);
+			}
+			rz_structured_data_map_add(m, "elems", elems);
+		}
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_codes_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_codes) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmCodeEntry *code;
+
+	rz_list_foreach (bin->g_codes, it, code) {
+		if (!code) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "body_size", code->body_size, false);
+		rz_structured_data_map_add_unsigned(m, "local_count", code->local_count, false);
+		rz_structured_data_map_add_unsigned(m, "code", code->code, true);
+		rz_structured_data_map_add_unsigned(m, "len", code->len, false);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_datas_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	if (!bin->g_datas) {
+		return NULL;
+	}
+
+	RzStructuredData *arr = rz_structured_data_new_array();
+	if (!arr) {
+		return NULL;
+	}
+
+	RzListIter *it;
+	RzBinWasmDataEntry *data;
+
+	rz_list_foreach (bin->g_datas, it, data) {
+		if (!data) {
+			continue;
+		}
+
+		RzStructuredData *m = rz_structured_data_new_map();
+		if (!m) {
+			rz_structured_data_free(arr);
+			return NULL;
+		}
+
+		rz_structured_data_map_add_unsigned(m, "index", data->index, false);
+		rz_structured_data_map_add_unsigned(m, "size", data->size, false);
+		rz_structured_data_map_add_unsigned(m, "data", data->data, true);
+
+		rz_structured_data_array_add(arr, m);
+	}
+
+	return arr;
+}
+
+static RzStructuredData *wasm_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+
+	RzBinWasmObj *bin = bf->o->bin_obj;
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *wasm_sd = rz_structured_data_map_add_map(info, "wasm");
+	if (!wasm_sd) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(wasm_sd, "size", bin->size, false);
+	rz_structured_data_map_add_unsigned(wasm_sd, "entrypoint", bin->entrypoint, true);
+
+	RzStructuredData *sections = wasm_sections_structure(bf);
+	if (sections) {
+		rz_structured_data_map_add(wasm_sd, "sections", sections);
+	}
+
+	RzStructuredData *types = wasm_types_structure(bf);
+	if (types) {
+		rz_structured_data_map_add(wasm_sd, "types", types);
+	}
+
+	RzStructuredData *imports = wasm_imports_structure(bf);
+	if (imports) {
+		rz_structured_data_map_add(wasm_sd, "imports", imports);
+	}
+
+	RzStructuredData *tables = wasm_tables_structure(bf);
+	if (tables) {
+		rz_structured_data_map_add(wasm_sd, "tables", tables);
+	}
+
+	RzStructuredData *memories = wasm_memories_structure(bf);
+	if (memories) {
+		rz_structured_data_map_add(wasm_sd, "memories", memories);
+	}
+
+	RzStructuredData *globals = wasm_globals_structure(bf);
+	if (globals) {
+		rz_structured_data_map_add(wasm_sd, "globals", globals);
+	}
+
+	RzStructuredData *exports = wasm_exports_structure(bf);
+	if (exports) {
+		rz_structured_data_map_add(wasm_sd, "exports", exports);
+	}
+
+	RzStructuredData *elements = wasm_elements_structure(bf);
+	if (elements) {
+		rz_structured_data_map_add(wasm_sd, "elements", elements);
+	}
+
+	RzStructuredData *codes = wasm_codes_structure(bf);
+	if (codes) {
+		rz_structured_data_map_add(wasm_sd, "codes", codes);
+	}
+
+	RzStructuredData *datas = wasm_datas_structure(bf);
+	if (datas) {
+		rz_structured_data_map_add(wasm_sd, "datas", datas);
+	}
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly",
@@ -348,6 +814,7 @@ RzBinPlugin rz_bin_plugin_wasm = {
 	.libs = &libs,
 	.create = &create,
 	.strings = &strings,
+	.bin_structure = &wasm_structure
 };
 
 #ifndef RZ_PLUGIN_INCORE

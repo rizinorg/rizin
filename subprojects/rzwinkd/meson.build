@@ -31,6 +31,11 @@ if host_machine.system() == 'haiku'
   librzwinkd_deps += [
     cc.find_library('network')
   ]
+elif host_machine.system() == 'sunos'
+  librzwinkd_deps += [
+    cc.find_library('socket'),
+    cc.find_library('nsl')
+  ]
 endif
 
 librzwinkd = static_library('rzwinkd', winkd_files,

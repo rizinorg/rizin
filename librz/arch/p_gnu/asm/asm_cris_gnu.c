@@ -71,7 +71,7 @@ int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info,
 int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
 int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info, void *data);
 
-static int cris_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int cris_gnu_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CrisContext *ctx = (CrisContext *)a->plugin_data;
 	struct disassemble_info disasm_obj;
 	int mode = 2;

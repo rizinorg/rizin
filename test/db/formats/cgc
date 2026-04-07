@@ -1,8 +1,67 @@
 NAME=CGC: Open/iI
 FILE=bins/cgc/CADET_00001
-CMDS=i~?format   cgc
+CMDS=<<EOF
+iI
+iH
+EOF
 EXPECT=<<EOF
-1
+arch     x86
+cpu      N/A
+features N/A
+baddr    0x08048000
+binsz    0x00014a45
+bintype  elf
+bits     32
+class    ELF32
+compiler clang-cgc version 3.4 (10208)
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     c
+machine  Intel 80386
+maxopsz  16
+minopsz  1
+os       linux
+cc       N/A
+pcalign  1
+rpath    NONE
+subsys   linux
+stripped true
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+elf:
+  e_ident:
+    bytes: "7f 43 47 43 01 01 01 43 01 4d 65 72 69 6e 6f 00"
+    ei_class: 1
+    ei_data: 1
+    ei_version: 1
+    ei_osabi: 67
+    ei_abiversion: 1
+  e_machine: 3
+  e_version: 1
+  e_entry: 0x80485fc
+  e_phoff: 0x34
+  e_shoff: 0x14a48
+  e_flags: 0x0
+  e_ehsize: 52
+  e_phentsize: 32
+  e_phnum: 3
+  e_shentsize: 40
+  e_shnum: 6
+  e_shstrndx: 5
+
 EOF
 RUN
 

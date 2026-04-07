@@ -61,7 +61,7 @@ bits     64
 |           0x00007530      move  a4, zero
 |           0x00007534      move  a6, sp
 |           0x00007538      pcalau12i ra, -3
-|           0x0000753c      addi.d t0, zero, 0x340
+|           0x0000753c      addi.d t0, zero, aav.0x00000340
 |           0x00007540      lu32i.d t0, 0
 |           ; DATA XREF from fcn.00016abc @ 0x16abc
 |           0x00007544      lu52i.d t0, t0, 0

@@ -3,6 +3,8 @@ FILE=bins/dol/sqrxz4-gc.dol
 CMDS=<<EOF
 iI
 echo ---
+iH
+echo ---
 iS
 echo ---
 ie
@@ -25,11 +27,12 @@ guid     N/A
 intrp    N/A
 laddr    0x00000000
 lang     N/A
-machine  Nintendo Wii
+machine  Nintendo Wii/GC
 maxopsz  4
 minopsz  4
 os       wii-ios
 cc       N/A
+pcalign  4
 rpath    N/A
 subsys   
 stripped false
@@ -45,14 +48,80 @@ PIE      false
 RELROCS  false
 NX       false
 ---
+dol:
+  text_paddr:
+    - 0x100
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  text_vaddr:
+    - 0x80003100
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  text_size:
+    - 0xcd960
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  data_paddr:
+    - 0xcda80
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  data_vaddr:
+    - 0x800d0a60
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  data_size:
+    - 0x2f200
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+    - 0x0
+  bss_addr: 0x800ffc60
+  bss_size: 0x3468c0
+  entrypoint: 0x80003100
+
+---
      paddr     size      vaddr    vsize align perm name   type flags 
 ---------------------------------------------------------------------
-0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x text_0      
-0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- data_0      
----------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- bss         
+0x00000100  0xcd960 0x80003100  0xcd960   0x0 -r-x .text0      
+0x000cda80  0x2f200 0x800d0a60  0x2f200   0x0 -r-- .data0      
+---------- 0x3468c0 0x800ffc60 0x3468c0   0x0 -rw- .bss        
 ---
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
-0x80003100 ---------- ---------- ---------- program
+0x80003100 0x00000100 ---------- ---------- program
 EOF
 RUN

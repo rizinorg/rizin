@@ -305,7 +305,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strcmp(cmd, "help")) {
-		eprintf("Usage: R!cmd args\n"
+		eprintf("Usage: R!<cmd> [args]\n"
 			" R!ptrace   - use ptrace io\n"
 			" R!mem      - use /proc/pid/mem io if possible\n"
 			" R!pid      - show targeted pid\n"

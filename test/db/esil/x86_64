@@ -103,9 +103,8 @@ RUN
 NAME=esil x86-64 imul
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 wx 69c389000000
 ao~opcode,esil
 EOF
@@ -118,9 +117,8 @@ RUN
 NAME=esil x86-64 imul emu
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 wx 48c7c004000000
 wx 48c7c305000000 @ 7
 wx 69c303000000 @ 14
@@ -341,21 +339,6 @@ esil: rdx,rax,+,rbx,=
 EOF
 RUN
 
-NAME=ldrh instruction
-FILE==
-CMDS=<<EOF
-e asm.arch=arm
-e asm.bits=32
-wx b030dfe10101010141424344
-aes
-ar r3
-EOF
-EXPECT=<<EOF
-r3 = 0x00004241
-EOF
-RUN
-
-
 NAME=x86-64 linux syscall
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF
@@ -401,9 +384,8 @@ RUN
 NAME=cmd.esil.intr set
 FILE==
 CMDS=<<EOF
-e asm.bits=64
 e asm.arch=x86
-e analysis.arch=x86
+e asm.bits=64
 wx b8010000000f34b801000000cd80ebfe
 e cmd.esil.intr="echo SYSCALL"
 10aes

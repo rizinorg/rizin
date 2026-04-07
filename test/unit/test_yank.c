@@ -8,8 +8,16 @@ static RzCore *fake_core_new(void) {
 	RzCore *core = rz_core_new();
 	RzCoreFile *file = rz_core_file_open(core, "malloc://1024", RZ_PERM_RW, 0);
 	mu_assert_notnull(file, "open file");
-	rz_config_set_b(core->config, "cfg.bigendian", false);
+
 	rz_core_bin_load(core, NULL, 0);
+	// the default arch depends by the RZ_SYS_ARCH, and
+	// some archs allows different endianness, like ARM, but
+	// x86 is always LE, s390x is always BE, so we cannot set
+	// the endianness to a value not supported by the arch.
+	// ARM can be LE and BE, so we change the arch first
+	// then change the endianness.
+	rz_config_set(core->config, "asm.arch", "arm");
+	rz_config_set_b(core->config, "cfg.bigendian", false);
 	return core;
 }
 

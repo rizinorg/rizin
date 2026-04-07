@@ -77,13 +77,17 @@ static void dyn_init(void) {
 
 RZ_API RzRunProfile *rz_run_new(const char *str) {
 	RzRunProfile *p = RZ_NEW0(RzRunProfile);
-	if (p) {
-		rz_run_reset(p);
-		if (str) {
-			rz_run_parsefile(p, str);
-		}
+	if (!p) {
+		return NULL;
 	}
-	return p;
+	rz_run_reset(p);
+
+	if (!str || rz_run_parsefile(p, str)) {
+		return p;
+	}
+
+	rz_run_free(p);
+	return NULL;
 }
 
 RZ_API void rz_run_reset(RzRunProfile *p) {
@@ -104,7 +108,10 @@ RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile) {
 		if ((o = strchr(p, '\n'))) {
 			*o++ = 0;
 		}
-		rz_run_parseline(pf, p);
+		if (!rz_run_parseline(pf, p)) {
+			free(str);
+			return false;
+		}
 		p = o;
 	}
 	free(str);
@@ -112,22 +119,23 @@ RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile) {
 }
 
 RZ_API void rz_run_free(RzRunProfile *r) {
-	if (r) {
-		free(r->_system);
-		free(r->_program);
-		free(r->_runlib);
-		free(r->_runlib_fcn);
-		free(r->_stdio);
-		free(r->_stdin);
-		free(r->_stdout);
-		free(r->_stderr);
-		free(r->_chgdir);
-		free(r->_chroot);
-		free(r->_libpath);
-		free(r->_preload);
-		free(r->_input);
-		free(r);
+	if (!r) {
+		return;
 	}
+	free(r->_system);
+	free(r->_program);
+	free(r->_runlib);
+	free(r->_runlib_fcn);
+	free(r->_stdio);
+	free(r->_stdin);
+	free(r->_stdout);
+	free(r->_stderr);
+	free(r->_chgdir);
+	free(r->_chroot);
+	free(r->_libpath);
+	free(r->_preload);
+	free(r->_input);
+	free(r);
 }
 
 #if __UNIX__
@@ -597,7 +605,13 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	} else if (!memcmp(b, "arg", 3)) {
 		int n = atoi(b + 3);
 		if (n >= 0 && n < RZ_RUN_PROFILE_NARGS) {
-			p->_args[n] = resolve_value(value, NULL);
+			char *arg_n = resolve_value(value, NULL);
+			if (!arg_n) {
+				free(key);
+				free(value);
+				return false;
+			}
+			p->_args[n] = arg_n;
 			p->_argc++;
 		} else {
 			RZ_LOG_ERROR("rz-run: out of bounds args index: %d\n", n);

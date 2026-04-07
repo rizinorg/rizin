@@ -4,8 +4,12 @@
 #ifndef RZ_HEAP_JEMALLOC_H
 #define RZ_HEAP_JEMALLOC_H
 
+#include <rz_jemalloc/jemalloc_arch.h>
 #include <rz_jemalloc/jemalloc_450.h>
 #include <rz_jemalloc/jemalloc_530.h>
+#include <rz_cmd.h>
+#include <rz_core.h>
+#include <rz_types.h>
 
 // Undefine any previous definitions from rz_heap_glibc.h
 #undef PRINTF_A
@@ -48,5 +52,11 @@
 #define PRINT_GA(msg) PRINT_A(pal->args, msg)
 #define PRINT_BA(msg) PRINT_A(pal->num, msg)
 #define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_b(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info, ut64 bin_info_addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr);
 
 #endif // RZ_HEAP_JEMALLOC_H

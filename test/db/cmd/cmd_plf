@@ -39,6 +39,7 @@ RUN
 NAME=plf big function
 FILE=malloc://10240
 CMDS=<<EOF
+e asm.arch=x86
 . bins/arm/arm64_rzil_test.rz
 aaa
 plf

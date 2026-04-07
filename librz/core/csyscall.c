@@ -24,24 +24,27 @@ static const char *syscallNumberFmt(int n) {
  * \param addr address of the syscall
  */
 RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
-	int i;
-	char str[64];
+	char str[64] = { 0 };
 	char tmpbuf[32] = { 0 };
+	bool is_x86 = rz_asm_is_arch(core->rasm, "x86");
+	int bits = rz_asm_get_bits(core->rasm);
 	st64 N = n;
-	int defVector = rz_syscall_get_swi(core->analysis->syscall);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+	int defVector = rz_syscall_get_swi(sysc);
 	if (defVector > 0) {
 		n = -1;
 	}
 	if (n == -1 || defVector > 0) {
 		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
 		if (!n || n == -1) {
-			const char *a0 = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
+			const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
 		}
 	}
-	RzSyscallItem *item = rz_syscall_get(core->analysis->syscall, n, defVector);
+	RzSyscallItem *item = rz_syscall_get(sysc, n, defVector);
 	if (!item) {
-		item = rz_syscall_get(core->analysis->syscall, N, -1);
+		item = rz_syscall_get(sysc, N, -1);
 	}
 	if (!item) {
 		const char *syscallnum = rz_strf(tmpbuf, syscallNumberFmt(n), n);
@@ -52,11 +55,11 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 	// TODO: move this to rz_syscall
 	const char *cc = rz_analysis_syscc_default(core->analysis);
 	// TODO replace the hardcoded CC with the sdb ones
-	for (i = 0; i < item->args; i++) {
+	for (int i = 0; i < item->args; i++) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp(core->rasm->cur->arch, "x86")) {
+		if (bits == 32 && is_x86) {
 			regidx++;
 		}
 		ut64 arg = rz_core_arg_get(core, cc, regidx); // TODO here

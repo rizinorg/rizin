@@ -256,7 +256,7 @@ RZ_API RzPVector /*<RzBinReloc *>*/ *rz_coff_get_relocs(struct rz_bin_coff_obj *
 /// size of the artificial reloc target vfile
 RZ_API ut64 rz_coff_get_reloc_targets_vfile_size(struct rz_bin_coff_obj *obj) {
 	rz_return_val_if_fail(obj, 0);
-	ut64 count = obj->imp_index ? obj->imp_index->count : 0;
+	ut64 count = obj->imp_index ? ht_uu_size(obj->imp_index) : 0;
 	return count * RZ_COFF_RELOC_TARGET_SIZE;
 }
 

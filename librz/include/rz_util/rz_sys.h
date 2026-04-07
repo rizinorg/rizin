@@ -57,6 +57,9 @@ RZ_API int rz_sys_getpid(void);
 #if !HAVE_PIPE || (__UNIX__ && HAVE_PIPE)
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec);
 RZ_API int rz_sys_pipe_close(int fd);
+#elif defined(__serenity__)
+#define rz_sys_pipe       pipe2
+#define rz_sys_pipe_close close
 #else
 #define rz_sys_pipe       pipe
 #define rz_sys_pipe_close close

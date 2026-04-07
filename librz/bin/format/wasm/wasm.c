@@ -127,7 +127,7 @@ static size_t consume_locals_r(RzBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
 		if (!(consume_u32_r(b, max, &out->locals[j].count))) {
 			goto beach;
 		}
-		if (!(consume_s7_r(b, max, (st8 *)&out->locals[j].type))) {
+		if (!(consume_s7_r(b, max, &out->locals[j].type))) {
 			goto beach;
 		}
 		j++;
@@ -314,24 +314,24 @@ static void *parse_type_entry(RzBuffer *b, ut64 max) {
 		goto beach;
 	}
 	if (count > 0) {
-		if (!(ptr->param_types = RZ_NEWS0(RzBinWasmValueType, count))) {
+		if (!(ptr->param_types = RZ_NEWS0(st8, count))) {
 			goto beach;
 		}
 	}
 	int j;
 	for (j = 0; j < count; j++) {
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->param_types[j]))) {
+		if (!(consume_s7_r(b, max, &ptr->param_types[j]))) {
 			goto beach;
 		}
 	}
-	if (!(consume_u1_r(b, max, (ut8 *)&ptr->return_count))) {
+	if (!(consume_u1_r(b, max, &ptr->return_count))) {
 		goto beach;
 	}
 	if (ptr->return_count > 1) {
 		goto beach;
 	}
 	if (ptr->return_count == 1) {
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->return_type))) {
+		if (!(consume_s7_r(b, max, &ptr->return_type))) {
 			goto beach;
 		}
 	}
@@ -363,7 +363,7 @@ static void *parse_import_entry(RzBuffer *b, ut64 max) {
 		}
 		break;
 	case RZ_BIN_WASM_EXTERNALKIND_Table:
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->type_t.elem_type))) {
+		if (!(consume_s7_r(b, max, &ptr->type_t.elem_type))) {
 			goto beach;
 		}
 		if (!(consume_limits_r(b, max, &ptr->type_t.limits))) {
@@ -376,10 +376,10 @@ static void *parse_import_entry(RzBuffer *b, ut64 max) {
 		}
 		break;
 	case RZ_BIN_WASM_EXTERNALKIND_Global:
-		if (!(consume_s7_r(b, max, (st8 *)&ptr->type_g.content_type))) {
+		if (!(consume_s7_r(b, max, &ptr->type_g.content_type))) {
 			goto beach;
 		}
-		if (!(consume_u1_r(b, max, (ut8 *)&ptr->type_g.mutability))) {
+		if (!(consume_u1_r(b, max, &ptr->type_g.mutability))) {
 			goto beach;
 		}
 		break;
@@ -614,7 +614,7 @@ static void *parse_table_entry(RzBuffer *b, ut64 max) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_s7_r(b, max, (st8 *)&ptr->element_type))) {
+	if (!(consume_s7_r(b, max, &ptr->element_type))) {
 		goto beach;
 	}
 	if (!(consume_limits_r(b, max, &ptr->limits))) {
@@ -632,7 +632,7 @@ static void *parse_global_entry(RzBuffer *b, ut64 max) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u7_r(b, max, (ut8 *)&ptr->content_type))) {
+	if (!(consume_u7_r(b, max, &ptr->content_type))) {
 		goto beach;
 	}
 	if (!(consume_u1_r(b, max, &ptr->mutability))) {

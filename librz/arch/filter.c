@@ -3,12 +3,10 @@
 // SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-
-#include <rz_util/rz_str.h>
-#include <rz_util/rz_regex.h>
-#include <rz_types.h>
+#include <rz_type.h>
+#include <rz_util.h>
 #include <rz_arch.h>
+#include "analysis_private.h"
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -40,6 +38,39 @@ static void insert(char *dst, const char *src) {
 	strcpy(dst, src);
 	strcpy(dst + strlen(src), endNum);
 	free(endNum);
+}
+
+static void replace_number_token(char *out, size_t out_len, char *data, char *num_start, char *num_end, const char *value) {
+	*num_start = 0;
+	snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "");
+}
+
+static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, size_t out_len, char *num_start, char *num_end) {
+	if (RZ_STR_ISEMPTY(hint->enum_name) || !p->analb.analysis || !p->analb.analysis->typedb) {
+		return false;
+	}
+
+	const char *member = rz_type_db_enum_member_by_val(
+		p->analb.analysis->typedb, hint->enum_name, off);
+	if (!member) {
+		return false;
+	}
+
+	char ename[512] = "";
+	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
+	if (ename_len <= sizeof(ename)) {
+		rz_strf(ename, "%s.%s", hint->enum_name, member);
+		replace_number_token(out, out_len, data, num_start, num_end, ename);
+		return true;
+	}
+
+	char *ename_dyn = rz_str_newf("%s.%s", hint->enum_name, member);
+	if (!ename_dyn) {
+		return false;
+	}
+	replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
+	free(ename_dyn);
+	return true;
 }
 
 static int parse_number(const char *str) {
@@ -405,6 +436,8 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			}
 		}
 		if (hint) {
+			char *num_start = ptr;
+			char *num_end = ptr2;
 			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
@@ -414,11 +447,13 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			char num[256] = { 0 }, *pnum, *tmp;
 			int tmp_count;
 			if (hint->offset) {
-				*ptr = 0;
-				snprintf(str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
+				replace_number_token(str, len, data, num_start, num_end, hint->offset);
 				return true;
 			}
-			strncpy(num, ptr, sizeof(num) - 2);
+			if (replace_enum_hint(p, hint, off, data, str, len, num_start, num_end)) {
+				return true;
+			}
+			strncpy(num, num_start, sizeof(num) - 2);
 			pnum = num + parse_number(num);
 			*pnum = 0;
 			switch (immbase) {
@@ -427,9 +462,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = data; tmp < num_start; tmp++) {
 					if (*tmp == 0x1b) {
-						while (tmp < ptr - 1 && *tmp != 'm') {
+						while (tmp < num_start - 1 && *tmp != 'm') {
 							tmp++;
 						}
 						continue;
@@ -545,8 +580,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			*ptr = 0;
-			snprintf(str, len, "%s%s%s", data, num, (ptr != ptr2) ? ptr2 : "");
+			replace_number_token(str, len, data, num_start, num_end, num);
 			return true;
 		}
 		ptr = ptr2;

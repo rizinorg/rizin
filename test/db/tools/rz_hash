@@ -1,70 +1,70 @@
 NAME=rz-hash -a entropy
-FILE==
-CMDS=!rz-hash -a entropy bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a entropy bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 entropy: 3.27819072
 EOF
 RUN
 
 NAME=rz-hash -a md2
-FILE==
-CMDS=!rz-hash -a md2 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a md2 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 md2: 0ca15db3f70c318f4c73d06b5effacb6
 EOF
 RUN
 
 NAME=rz-hash -a md4
-FILE==
-CMDS=!rz-hash -a md4 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a md4 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 md4: d4d61472a12d59be3a85e07ff9065658
 EOF
 RUN
 
 NAME=rz-hash -a md5
-FILE==
-CMDS=!rz-hash -a md5 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a md5 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 md5: c957bd5bd6204470256bc15248ccafd4
 EOF
 RUN
 
 NAME=rz-hash -a sha1
-FILE==
-CMDS=!rz-hash -a sha1 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a sha1 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha1: 687c82d13cb27f0600d8e57edc784282c1732f56
 EOF
 RUN
 
 NAME=rz-hash -a sha256
-FILE==
-CMDS=!rz-hash -a sha256 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a sha256 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha256: 7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
 EOF
 RUN
 
 NAME=rz-hash -a sha384
-FILE==
-CMDS=!rz-hash -a sha384 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a sha384 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha384: a6fed224b0b5892ab44839b5ae6a12e54fb3393b5f1e1ca174fb5a0032c994f1c492c5b3a090518d8a60875223977ba4
 EOF
 RUN
 
 NAME=rz-hash -a sha512
-FILE==
-CMDS=!rz-hash -a sha512 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a sha512 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sha512: 2640b1ff96870fb78a3d8ae6b51595ca86c37e25443b2e8c5441e77d11cdb3830ece8d791561c22788d37d7f22c99cdabf8f798826c0ff441901e6157890fee6
 EOF
 RUN
 
 NAME=rz-hash -a sm3
-FILE==
-CMDS=!rz-hash -a sm3 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-a sm3 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a36 sm3: 76a9114ffbb126d855c146b37f99b696a3754e1935ac4850f95d15b91a97e8db
 EOF
@@ -78,25 +78,25 @@ Usage: rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O
 EOF
 RUN
 
-NAME=rz-hash -a md5 -s "admin"
-FILE==
-CMDS=!rz-hash -a md5 -s "admin"
+NAME=rz-hash -a md5 -s admin
+TOOL=rz-hash
+ARGS=-a md5 -s admin
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: 21232f297a57a5a743894a0e4a801fc3
 EOF
 RUN
 
-NAME=rz-hash -a md5 -e little -s "admin"
-FILE==
-CMDS=!rz-hash -a md5 -e little -s "admin"
+NAME=rz-hash -a md5 -e little -s admin
+TOOL=rz-hash
+ARGS=-a md5 -e little -s admin
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: c31f804a0e4a8943a7a5577a292f2321
 EOF
 RUN
 
-NAME=rz-hash -a sha1,sha256 -s "admin"
-FILE==
-CMDS=!rz-hash -a sha1,sha256 -s "admin"
+NAME=rz-hash -a sha1,sha256 -s admin
+TOOL=rz-hash
+ARGS=-a sha1,sha256 -s admin
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 sha1: d033e22ae348aeb5660fc2140aec35850c4da997
 string: 0x00000000-0x00000005 sha256: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
@@ -104,69 +104,72 @@ EOF
 RUN
 
 NAME=rz-hash -qqD base64 -s "YWRtaW4="
-FILE==
-CMDS=!rz-hash -qqD base64 -s "YWRtaW4="
+TOOL=rz-hash
+ARGS=-qqD base64 -s YWRtaW4=
 EXPECT=admin
 EXPECT_ERR=
 RUN
 
-NAME=rz-hash -qqE base64 -s "admin"
-FILE==
-CMDS=!rz-hash -qqE base64 -s "admin"
+NAME=rz-hash -qqE base64 -s admin
+TOOL=rz-hash
+ARGS=-qqE base64 -s admin
 EXPECT=YWRtaW4=
 EXPECT_ERR=
 RUN
 
 NAME=rz-hash -qqE base64 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -qqE base64 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-qqE base64 -x 61646d696e
 EXPECT=YWRtaW4=
 EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a md5 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -a md5 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-a md5 -x 61646d696e
 EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000005 md5: 21232f297a57a5a743894a0e4a801fc3
 EOF
 RUN
 
-NAME=rz-hash -a md5 -x "61646d696e" -s "admin"
-FILE==
-CMDS=!rz-hash -a md5 -x "61646d696e" -s "admin"
+NAME=rz-hash -a md5 -x "61646d696e" -s admin
+TOOL=rz-hash
+ARGS=-a md5 -x 61646d696e -s admin
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
 RUN
 
 NAME=rz-hash -a md2 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -a md2 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-a md2 -x 61646d696e
 EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000005 md2: 3e3e6b0e5c1c68644fc5ce3cf060211d
 EOF
 RUN
 
-NAME=rz-hash -a md2 -x "61646d696e" -s "admin"
-FILE==
-CMDS=!rz-hash -a md2 -x "61646d696e" -s "admin"
+NAME=rz-hash -a md2 -x "61646d696e" -s admin
+TOOL=rz-hash
+ARGS=-a md2 -x 61646d696e -s admin
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
 RUN
 
 NAME=rz-hash -a md4 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -a md4 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-a md4 -x 61646d696e
 EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000005 md4: f9d4049dd6a4dc35d40e5265954b2a46
 EOF
 RUN
 
-NAME=rz-hash -a md4 -x "61646d696e" -s "admin"
-FILE==
-CMDS=!rz-hash -a md4 -x "61646d696e" -s "admin"
+NAME=rz-hash -a md4 -x "61646d696e" -s admin
+TOOL=rz-hash
+ARGS=-a md4 -x 61646d696e -s admin
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
@@ -174,8 +177,8 @@ RUN
 
 
 NAME=rz-hash -a luhn -s "5105105105105100"
-FILE==
-CMDS=!rz-hash -a luhn -s "5105105105105100"
+TOOL=rz-hash
+ARGS=-a luhn -s 5105105105105100
 EXPECT=<<EOF
 string: 0x00000000-0x00000010 luhn: 0
 EOF
@@ -183,8 +186,8 @@ EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a luhn -s "4408041234567890"
-FILE==
-CMDS=!rz-hash -a luhn -s "4408041234567890"
+TOOL=rz-hash
+ARGS=-a luhn -s 4408041234567890
 EXPECT=<<EOF
 string: 0x00000000-0x00000010 luhn: 7
 EOF
@@ -192,19 +195,34 @@ EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a luhn -s "1567jdjaskldsa" INVALID
-FILE==
-CMDS=!rz-hash -a luhn -s "1567jdjaskldsa"
+TOOL=rz-hash
+ARGS=-a luhn -s 1567jdjaskldsa
+EXIT_STATUS=1
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, input string is not a number
 EOF
 RUN
 
+NAME=rz-hash -a jenkins -s jenkinshash
+TOOL=rz-hash
+ARGS=-a jenkins -s jenkinshash
+EXPECT=<<EOF
+string: 0x00000000-0x0000000b jenkins: c652f619
+EOF
+RUN
+
 NAME=rz-hash -L
-FILE==
-CMDS=!rz-hash -L
+TOOL=rz-hash
+ARGS=-L
 EXPECT=<<EOF
 flags  algorithm      license    author
 ____h_ adler32        LGPL3      deroad                         Adler-32 checksum
+____h_ blake2b        LGPL3      Farhan-25                      BLAKE2b cryptographic hash
+____h_ blake2bp       LGPL3      Farhan-25                      BLAKE2bp cryptographic hash
+____h_ blake2s        LGPL3      Farhan-25                      BLAKE2s cryptographic hash
+____h_ blake2sp       LGPL3      Farhan-25                      BLAKE2sp cryptographic hash
+____h_ blake2xb       LGPL3      Farhan-25                      BLAKE2xb cryptographic hash
+____h_ blake2xs       LGPL3      Farhan-25                      BLAKE2xs cryptographic hash
 ____h_ blake3         CC0        Samuel Neves,Jack O'Connor     BLAKE3 cryptographic hash
 ____h_ crc15can       LGPL3      deroad                         CRC-15 CAN checksum
 ____h_ crc16          LGPL3      deroad                         CRC-16 IBM/ARC checksum
@@ -263,13 +281,24 @@ ____h_ fletcher16     LGPL3      deroad                         Fletcher16 check
 ____h_ fletcher32     LGPL3      deroad                         Fletcher32 checksum
 ____h_ fletcher64     LGPL3      deroad                         Fletcher64 checksum
 ____h_ fletcher8      LGPL3      deroad                         Fletcher8 checksum
+____h_ jenkins        LGPL3      shessaanand                    Jenkins non-cryptographic hash
+____hm keccak-256     BSD-3      Andrey Jivsov                  KECCAK-256 cryptographic hash
+____hm keccak-384     BSD-3      Andrey Jivsov                  KECCAK-384 cryptographic hash
+____hm keccak-512     BSD-3      Andrey Jivsov                  KECCAK-512 cryptographic hash
 ____hm md2            LGPL3      swedenspy                      MD2 cryptographic hash
 ____hm md4            LGPL3      deroad                         MD4 cryptographic hash
 ____hm md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
 ____h_ mod255         LGPL3      deroad                         Modulo 255 checksum
+____h_ murmur3-x64-128 MIT        Austin Appleby                 MurmurHash3 x64 128-bit non-cryptographic hash
+____h_ murmur3-x86-128 MIT        Austin Appleby                 MurmurHash3 x86 128-bit non-cryptographic hash
+____h_ murmur3-x86-32 MIT        Austin Appleby                 MurmurHash3 x86 32-bit non-cryptographic hash
 ____h_ parity         LGPL3      deroad                         Parity checksum
 ____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 ____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
+____hm sha3-224       BSD-3      Andrey Jivsov                  SHA3-224 cryptographic hash
+____hm sha3-256       BSD-3      Andrey Jivsov                  SHA3-256 cryptographic hash
+____hm sha3-384       BSD-3      Andrey Jivsov                  SHA3-384 cryptographic hash
+____hm sha3-512       BSD-3      Andrey Jivsov                  SHA3-512 cryptographic hash
 ____hm sha384         BSD-3      Aaron D. Gifford               SHA-384 cryptographic hash
 ____hm sha512         BSD-3      Aaron D. Gifford               SHA-512 cryptographic hash
 ____hm sm3            LGPL2      FSF/deroad                     ShangMi 3 (SM3) cryptographic hash
@@ -278,27 +307,28 @@ ____h_ temperature    LGPL3      Seva                           Binary temperatu
 ____h_ xor16          LGPL3      deroad                         XOR-16 checksum
 ____h_ xor8           LGPL3      deroad                         XOR-8 checksum
 ____h_ xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
-ED____ rc4            LGPL-3     pancake                        RC4 symmetric-key block cipher
-ED____ rc6            LGPL-3     rakholiyajenish.07             RC6 symmetric-key block cipher
+____h_ xxhash64       LGPL3      cheese-cakee                   xxHash64 non-cryptographic hash
 _D____ ror            LGPL-3     pancake                        Rotate Right symmetric-key block cipher
-__ed__ base64         LGPL-3     rakholiyajenish.07             Base64 encoder/decoder
-__ed__ base32         LGPL-3     Ahmed Ibrahim                  Base32 encoder/decoder
-ED____ rc2            LGPL-3     lionaneesh                     RC2 symmetric-key block cipher
-ED____ xor            LGPL-3     pancake                        XOR symmetric-key block cipher
-ED____ cps2           LGPL-3     pancake,esanfelix,pof          Capcom Play System 2 (CPS-2) symmetric-key block cipher
-ED____ rot            LGPL-3     pancake                        Caesar symmetric-key cipher
-__ed__ punycode       LGPL-3     pancake                        Punycode encoder/decoder
-ED____ serpent-ecb    LGPL-3     NicsTr                         Serpent symmetric-key block cipher (ECB block mode)
-ED____ sm4-ecb        LGPL-3     0xSh4dy                        ShangMi 4 symmetric-key block cipher (ECB block mode)
-__ed__ base36         LGPL-3     abcSup                         Base36 encoder/decoder
 __ed__ base85         LGPL-3     Ahmed Ibrahim                  Base85 encoder/decoder
-ED____ aes-cbc        LGPL-3     rakholiyajenish.07             AES symmetric-key block cipher (CBC block mode)
 E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
-ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-key block cipher (ECB block mode)
-__ed__ base16         LGPL-3     Ahmed Ibrahim                  Base16 encoder/decoder
+__ed__ base36         LGPL-3     abcSup                         Base36 encoder/decoder
+__ed__ base64         LGPL-3     rakholiyajenish.07             Base64 encoder/decoder
 ED____ des-ecb        LGPL-3     deroad                         DES symmetric-key block cipher (ECB block mode)
-ED____ blowfish       LGPL3      kishorbhat                     Blowfish symmetric-key block cipher
+ED____ sm4-ecb        LGPL-3     0xSh4dy                        ShangMi 4 symmetric-key block cipher (ECB block mode)
+ED____ xor            LGPL-3     pancake                        XOR symmetric-key block cipher
+__ed__ punycode       LGPL-3     pancake                        Punycode encoder/decoder
+__ed__ base16         LGPL-3     Ahmed Ibrahim                  Base16 encoder/decoder
+ED____ rc4            LGPL-3     pancake                        RC4 symmetric-key block cipher
 __ed__ base91         LGPL-3     rakholiyajenish.07             Base91 encoder/decoder
+ED____ blowfish       LGPL3      kishorbhat                     Blowfish symmetric-key block cipher
+ED____ aes-cbc        LGPL-3     rakholiyajenish.07             AES symmetric-key block cipher (CBC block mode)
+ED____ rc6            LGPL-3     rakholiyajenish.07             RC6 symmetric-key block cipher
+ED____ cps2           LGPL-3     pancake,esanfelix,pof          Capcom Play System 2 (CPS-2) symmetric-key block cipher
+ED____ rc2            LGPL-3     lionaneesh                     RC2 symmetric-key block cipher
+ED____ serpent-ecb    LGPL-3     NicsTr                         Serpent symmetric-key block cipher (ECB block mode)
+ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-key block cipher (ECB block mode)
+ED____ rot            LGPL-3     pancake                        Caesar symmetric-key cipher
+__ed__ base32         LGPL-3     Ahmed Ibrahim                  Base32 encoder/decoder
 
 flags legenda:
     E = encryption, D = decryption
@@ -308,96 +338,96 @@ EOF
 RUN
 
 NAME=rz-hash -a md5 -t0x4 -x "61646d696eaa"
-FILE==
-CMDS=!rz-hash -a md5 -t0x4 -x "61646d696eaa"
+TOOL=rz-hash
+ARGS=-a md5 -t0x4 -x 61646d696eaa
 EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000004 md5: 60eb0f73e33ce3ffd4e51d974447db53
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -t0x4 -x "61646d696eaa"
-FILE==
-CMDS=!rz-hash -qqa md5 -t0x4 -x "61646d696eaa"
+TOOL=rz-hash
+ARGS=-qqa md5 -t0x4 -x 61646d696eaa
 EXPECT=<<EOF
 60eb0f73e33ce3ffd4e51d974447db53
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -f0x1 -x "aa61646d696e"
-FILE==
-CMDS=!rz-hash -qqa md5 -f0x1 -x "aa61646d696e"
+TOOL=rz-hash
+ARGS=-qqa md5 -f0x1 -x aa61646d696e
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -i1 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -qqa md5 -i1 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-qqa md5 -i1 -x 61646d696e
 EXPECT=<<EOF
 43442676c74ae59f219c2d87fd6bad52
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -i2 -x "61646d696e"
-FILE==
-CMDS=!rz-hash -qqa md5 -i2 -x "61646d696e"
+TOOL=rz-hash
+ARGS=-qqa md5 -i2 -x 61646d696e
 EXPECT=<<EOF
 9fec80fbcee7632ce78d1586332b299e
 EOF
 RUN
 
 NAME=rz-hash -a md5 -t0x4 -s "admina"
-FILE==
-CMDS=!rz-hash -a md5 -t0x4 -s "admina"
+TOOL=rz-hash
+ARGS=-a md5 -t0x4 -s admina
 EXPECT=<<EOF
 string: 0x00000000-0x00000004 md5: 60eb0f73e33ce3ffd4e51d974447db53
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -t0x4 -s "admina"
-FILE==
-CMDS=!rz-hash -qqa md5 -t0x4 -s "admina"
+TOOL=rz-hash
+ARGS=-qqa md5 -t0x4 -s admina
 EXPECT=<<EOF
 60eb0f73e33ce3ffd4e51d974447db53
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -f0x1 -s "aadmin"
-FILE==
-CMDS=!rz-hash -qqa md5 -f0x1 -s "aadmin"
+TOOL=rz-hash
+ARGS=-qqa md5 -f0x1 -s aadmin
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
 EOF
 RUN
 
-NAME=rz-hash -qqa md5 -i1 -s "admin"
-FILE==
-CMDS=!rz-hash -qqa md5 -i1 -s "admin"
+NAME=rz-hash -qqa md5 -i1 -s admin
+TOOL=rz-hash
+ARGS=-qqa md5 -i1 -s admin
 EXPECT=<<EOF
 43442676c74ae59f219c2d87fd6bad52
 EOF
 RUN
 
-NAME=rz-hash -qqa md5 -i2 -s "admin"
-FILE==
-CMDS=!rz-hash -qqa md5 -i2 -s "admin"
+NAME=rz-hash -qqa md5 -i2 -s admin
+TOOL=rz-hash
+ARGS=-qqa md5 -i2 -s admin
 EXPECT=<<EOF
 9fec80fbcee7632ce78d1586332b299e
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -f0x1 -t0x5 -s "aadmina"
-FILE==
-CMDS=!rz-hash -qqa md5 -f0x1 -t0x5 -s "aadmina"
+TOOL=rz-hash
+ARGS=-qqa md5 -f0x1 -t0x5 -s aadmina
 EXPECT=<<EOF
 60eb0f73e33ce3ffd4e51d974447db53
 EOF
 RUN
 
 NAME=rz-hash -qqa md5 -f0x1 -t0x5 -x "aa61646d696eaa"
-FILE==
-CMDS=!rz-hash -qqa md5 -f0x1 -t0x5 -x "aa61646d696eaa"
+TOOL=rz-hash
+ARGS=-qqa md5 -f0x1 -t0x5 -x aa61646d696eaa
 EXPECT=<<EOF
 60eb0f73e33ce3ffd4e51d974447db53
 EOF
@@ -443,25 +473,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-hash -v~commit?"
-FILE==
-CMDS=!rz-hash -v~commit?
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=rz-hash -qqa md2 -s hello1
-FILE==
-CMDS=!rz-hash -qqa md2 -s hello1
+TOOL=rz-hash
+ARGS=-qqa md2 -s hello1
 EXPECT=<<EOF
 ceb5de925e079ebab8183bc2b83d8740
 EOF
 RUN
 
 NAME=rz-hash -qqa md2 -s hello\x31
-FILE==
-CMDS=!rz-hash -qqa md2 -s "hello\x31"
+TOOL=rz-hash
+ARGS=-qqa md2 -s hello\x31
 EXPECT=<<EOF
 ceb5de925e079ebab8183bc2b83d8740
 EOF
@@ -484,30 +506,31 @@ EOF
 RUN
 
 NAME=rz-hash -c with correct expected hash
-FILE==
-CMDS=!rz-hash -a md2 -s "admin" -c 3e3e6b0e5c1c68644fc5ce3cf060211d
+TOOL=rz-hash
+ARGS=-a md2 -s admin -c 3e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md2: computed hash matches the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with incorrect expected hash
-FILE==
-CMDS=!rz-hash -a md2 -s "admin" -c 4e3e6b0e5c1c68644fc5ce3cf060211d
+TOOL=rz-hash
+ARGS=-a md2 -s admin -c 4e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with correct expected hash and quiet
-FILE==
-CMDS=!rz-hash -qqa md2 -s "admin" -c 3e3e6b0e5c1c68644fc5ce3cf060211d
+TOOL=rz-hash
+ARGS=-qqa md2 -s admin -c 3e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=true
 RUN
 
 NAME=rz-hash -c with missing nibble
-FILE==
-CMDS=!rz-hash -a md2 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
+TOOL=rz-hash
+ARGS=-a md2 -s admin -c 21232f297a57a5a743894a0e4a801fc
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
@@ -515,24 +538,25 @@ EOF
 RUN
 
 NAME=rz-hash -c with incorrect md2 hash length
-FILE==
-CMDS=!rz-hash -a md2 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-a md2 -s admin -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -qqa md4 -s hello1
-FILE==
-CMDS=!rz-hash -qqa md4 -s hello1
+TOOL=rz-hash
+ARGS=-qqa md4 -s hello1
 EXPECT=<<EOF
 a2e1a2c510ebbe66c57e8a3060cd36f8
 EOF
 RUN
 
 NAME=rz-hash -qqa md4 -s hello\x31
-FILE==
-CMDS=!rz-hash -qqa md4 -s "hello\x31"
+TOOL=rz-hash
+FILE=hello\x31
+ARGS=-qqa md4 -s
 EXPECT=<<EOF
 a2e1a2c510ebbe66c57e8a3060cd36f8
 EOF
@@ -545,40 +569,32 @@ EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000000 md4: 31d6cfe0d16ae931b73c59d7e0c089c0
 EOF
 RUN
-
-NAME=rz-hash zero length hashes md4
-FILE==
-CMDS=!rz-hash -a md4 -s ""
-EXPECT=<<EOF
-hexadecimal: 0x00000000-0x00000000 md4: 31d6cfe0d16ae931b73c59d7e0c089c0
-EOF
-RUN
-
 NAME=rz-hash -c with correct expected hash
-FILE==
-CMDS=!rz-hash -a md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a46
+TOOL=rz-hash
+ARGS=-a md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a46
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md4: computed hash matches the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with incorrect expected hash
-FILE==
-CMDS=!rz-hash -a md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a47
+TOOL=rz-hash
+ARGS=-a md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a47
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with correct expected hash and quiet
-FILE==
-CMDS=!rz-hash -qqa md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a46
+TOOL=rz-hash
+ARGS=-qqa md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a46
 EXPECT=true
 RUN
 
 NAME=rz-hash -c with missing nibble
-FILE==
-CMDS=!rz-hash -a md4 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
+TOOL=rz-hash
+ARGS=-a md4 -s admin -c 21232f297a57a5a743894a0e4a801fc
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
@@ -586,16 +602,16 @@ EOF
 RUN
 
 NAME=rz-hash -c with incorrect md4 hash length
-FILE==
-CMDS=!rz-hash -a md4 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-a md4 -s admin -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -s hello1
-FILE==
-CMDS=!rz-hash -qqa md5 -s hello1
+TOOL=rz-hash
+ARGS=-qqa md5 -s hello1
 EXPECT=<<EOF
 203ad5ffa1d7c650ad681fdff3965cd2
 EOF
@@ -618,30 +634,31 @@ EOF
 RUN
 
 NAME=rz-hash -c with correct expected hash
-FILE==
-CMDS=!rz-hash -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
+TOOL=rz-hash
+ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with incorrect expected hash
-FILE==
-CMDS=!rz-hash -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc4
+TOOL=rz-hash
+ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc4
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with correct expected hash and quiet
-FILE==
-CMDS=!rz-hash -qqa md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
+TOOL=rz-hash
+ARGS=-qqa md5 -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=true
 RUN
 
 NAME=rz-hash -c with missing nibble
-FILE==
-CMDS=!rz-hash -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
+TOOL=rz-hash
+ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is not a valid hexadecimal (len is not pair: 31).
@@ -649,24 +666,24 @@ EOF
 RUN
 
 NAME=rz-hash -c with incorrect md5 hash length
-FILE==
-CMDS=!rz-hash -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with incorrect sha1 hash length
-FILE==
-CMDS=!rz-hash -a sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-a sha1 -s admin -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with 2 hash algorithms
-FILE==
-CMDS=!rz-hash -a md5,sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
+TOOL=rz-hash
+ARGS=-a md5,sha1 -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
@@ -674,10 +691,16 @@ EOF
 RUN
 
 NAME=rz-hash -c with all hash algorithms
-FILE==
-CMDS=!rz-hash -a all -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
+TOOL=rz-hash
+ARGS=-a all -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 adler32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2b: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2bp: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2s: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2sp: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2xb: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 blake2xs: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 blake3: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc15can: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc16: computed hash doesn't match the expected one
@@ -736,13 +759,24 @@ string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expect
 string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher64: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 jenkins: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 keccak-256: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 keccak-384: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 keccak-512: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 mod255: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x64-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha3-224: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha3-256: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha3-384: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 sha3-512: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha512: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sm3: computed hash doesn't match the expected one
@@ -751,12 +785,14 @@ string: 0x00000000-0x00000005 temperature: computed hash doesn't match the expec
 string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 xxhash64: computed hash doesn't match the expected one
 EOF
 RUN
 
 NAME=rz-hash -c with custom block size and per-block hash
-FILE==
-CMDS=!rz-hash -a sha256 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-a sha256 -b 1 -B -s admin -c 21232f297a57a5a743894a0e4a801f
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -B is incompatible with -c option.
@@ -764,8 +800,9 @@ EOF
 RUN
 
 NAME=rz-hash -c with base64 encoding
-FILE==
-CMDS=!rz-hash -qqE base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-qqE base64 -s admin -c 21232f297a57a5a743894a0e4a801f
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is incompatible with -E or -D with algorithm base64 or base91.
@@ -773,8 +810,9 @@ EOF
 RUN
 
 NAME=rz-hash -c with base64 decoding
-FILE==
-CMDS=!rz-hash -qqD base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+TOOL=rz-hash
+ARGS=-qqD base64 -s admin -c 21232f297a57a5a743894a0e4a801f
+EXIT_STATUS=1
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, option -c is incompatible with -E or -D with algorithm base64 or base91.
@@ -783,8 +821,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rz-hash of "abc" using sha256
-FILE==
-CMDS=!rz-hash -a sha256 -s "abc"
+TOOL=rz-hash
+ARGS=-a sha256 -s abc
 EXPECT=<<EOF
 string: 0x00000000-0x00000003 sha256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
 EOF
@@ -792,8 +830,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rz-hash of "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" using sha256
-FILE==
-CMDS=!rz-hash -a sha256 -s "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+TOOL=rz-hash
+ARGS=-a sha256 -s abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq
 EXPECT=<<EOF
 string: 0x00000000-0x00000038 sha256: 248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1
 EOF
@@ -801,8 +839,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rz-hash of "abc" using sha512
-FILE==
-CMDS=!rz-hash -a sha512 -s "abc"
+TOOL=rz-hash
+ARGS=-a sha512 -s abc
 EXPECT=<<EOF
 string: 0x00000000-0x00000003 sha512: ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f
 EOF
@@ -810,8 +848,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rz-hash of "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu" using sha512
-FILE==
-CMDS=!rz-hash -a sha512 -s "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+TOOL=rz-hash
+ARGS=-a sha512 -s abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu
 EXPECT=<<EOF
 string: 0x00000000-0x00000070 sha512: 8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018501d289e4900f7e4331b99dec4b5433ac7d329eeb6dd26545e96e55b874be909
 EOF
@@ -819,8 +857,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST3
 NAME=rz-hash of "abc" using sha384
-FILE==
-CMDS=!rz-hash -a sha384 -s "abc"
+TOOL=rz-hash
+ARGS=-a sha384 -s abc
 EXPECT=<<EOF
 string: 0x00000000-0x00000003 sha384: cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7
 EOF
@@ -828,8 +866,8 @@ RUN
 
 # Taken from "Descriptions of SHA-256, SHA-384, and SHA-512" by NIST
 NAME=rz-hash of "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu" using sha384
-FILE==
-CMDS=!rz-hash -a sha384 -s "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+TOOL=rz-hash
+ARGS=-a sha384 -s abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu
 EXPECT=<<EOF
 string: 0x00000000-0x00000070 sha384: 09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039
 EOF
@@ -1057,8 +1095,8 @@ EOF
 RUN
 
 NAME=rz-hash -qqE punycode[1]
-FILE==
-CMDS=!rz-hash -qqE punycode -x f09f918d
+TOOL=rz-hash
+ARGS=-qqE punycode -x f09f918d
 EXPECT=yp8h
 RUN
 
@@ -1221,32 +1259,32 @@ EOF
 RUN
 
 NAME=rz-hash -a fletcher8 -s hello-world
-FILE==
-CMDS=!rz-hash -a fletcher8 -s hello-world
+TOOL=rz-hash
+ARGS=-a fletcher8 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher8: 6d
 EOF
 RUN
 
 NAME=rz-hash -a fletcher16 -s hello-world
-FILE==
-CMDS=!rz-hash -a fletcher16 -s hello-world
+TOOL=rz-hash
+ARGS=-a fletcher16 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher16: 6d68
 EOF
 RUN
 
 NAME=rz-hash -a fletcher32 -s hello-world
-FILE==
-CMDS=!rz-hash -a fletcher32 -s hello-world
+TOOL=rz-hash
+ARGS=-a fletcher32 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher32: 91dbfc5b
 EOF
 RUN
 
 NAME=rz-hash -a fletcher64 -s hello-world
-FILE==
-CMDS=!rz-hash -a fletcher64 -s hello-world
+TOOL=rz-hash
+ARGS=-a fletcher64 -s hello-world
 EXPECT=<<EOF
 string: 0x00000000-0x0000000b fletcher64: 49ff47dc88f79724
 EOF
@@ -1294,16 +1332,16 @@ EOF
 RUN
 
 NAME=rz-hash -j file
-FILE==
-CMDS=!rz-hash -j -a md4,md5 bins/elf/analysis/hello-linux-x86_64
+TOOL=rz-hash
+ARGS=-j -a md4,md5 bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
 {"bins/elf/analysis/hello-linux-x86_64":[{"seed":false,"hmac":false,"from":0,"to":6710,"name":"md4","value":"d4d61472a12d59be3a85e07ff9065658"},{"seed":false,"hmac":false,"from":0,"to":6710,"name":"md5","value":"c957bd5bd6204470256bc15248ccafd4"}]}
 EOF
 RUN
 
 NAME=rz-hash -j -a sha1,sha256 -s 233
-FILE==
-CMDS=!rz-hash -j -a sha1,sha256 -s 233
+TOOL=rz-hash
+ARGS=-j -a sha1,sha256 -s 233
 EXPECT=<<EOF
 {"string":[{"seed":false,"hmac":false,"from":0,"to":3,"name":"sha1","value":"52fdb9f68c503e11d168fe52035901864c0a4861"},{"seed":false,"hmac":false,"from":0,"to":3,"name":"sha256","value":"c0509a487a18b003ba05e505419ebb63e57a29158073e381f57160b5c5b86426"}]}
 EOF
@@ -1318,56 +1356,57 @@ EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "a"
-FILE==
-CMDS=!rz-hash -qa md4 -s "a"
+TOOL=rz-hash
+ARGS=-qa md4 -s a
 EXPECT=<<EOF
 string: md4: bde52cb31de33e46245e05fbdbd6fb24
 EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "abc"
-FILE==
-CMDS=!rz-hash -qa md4 -s "abc"
+TOOL=rz-hash
+ARGS=-qa md4 -s abc
 EXPECT=<<EOF
 string: md4: a448017aaf21d8525fc10ae87aa6729d
 EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "message digest"
-FILE==
-CMDS=!rz-hash -qa md4 -s "message digest"
+TOOL=rz-hash
+FILE=message digest
+ARGS=-qa md4 -s
 EXPECT=<<EOF
 string: md4: d9130a8164549fe818874806e1c7014b
 EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "abcdefghijklmnopqrstuvwxyz"
-FILE==
-CMDS=!rz-hash -qa md4 -s "abcdefghijklmnopqrstuvwxyz"
+TOOL=rz-hash
+ARGS=-qa md4 -s abcdefghijklmnopqrstuvwxyz
 EXPECT=<<EOF
 string: md4: d79e1c308aa5bbcdeea8ed63df412da9
 EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-FILE==
-CMDS=!rz-hash -qa md4 -s "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+TOOL=rz-hash
+ARGS=-qa md4 -s ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 EXPECT=<<EOF
 string: md4: 043f8582f241db351ce627e153e7f0e4
 EOF
 RUN
 
 NAME=rz-hash -qa md4 -s "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
-FILE==
-CMDS=!rz-hash -qa md4 -s "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
+TOOL=rz-hash
+ARGS=-qa md4 -s 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 EXPECT=<<EOF
 string: md4: e33b4ddc9c38f2199c3e7b164fcc0536
 EOF
 RUN
 
 NAME=rz-hash -a sha256 -f 100 -k bins/elf/analysis/x86-helloworld-gcc
-FILE==
-CMDS=!rz-hash -a sha256 -f 100 -k bins/elf/analysis/x86-helloworld-gcc
+TOOL=rz-hash
+ARGS=-a sha256 -f 100 -k bins/elf/analysis/x86-helloworld-gcc
 EXPECT=<<EOF
 sha256
 +--[0x00000064]---+
@@ -1385,8 +1424,8 @@ EOF
 RUN
 
 NAME=rz-hash -a sha256 -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
-FILE==
-CMDS=!rz-hash -a sha256 -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
+TOOL=rz-hash
+ARGS=-a sha256 -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
 EXPECT=<<EOF
 bins/elf/analysis/x86-helloworld-gcc: 0x00000064-0x00000164 sha256: 0b8d5c6f87303e0238c85ad9cccc13ff8573f9b7b7dd282d1d7dbdb815166904
 bins/elf/analysis/x86-helloworld-gcc: 0x00000164-0x00000264 sha256: 295273ab88a894d8e65a872e10ae9b576611865e3da0ea27c33135c9b52af3a8
@@ -1420,17 +1459,17 @@ EOF
 RUN
 
 NAME=rz-hash -a sha256 -j -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
-FILE==
-CMDS=!rz-hash -a sha256 -j -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
+TOOL=rz-hash
+ARGS=-a sha256 -j -B -b 0x100 -f 100 bins/elf/analysis/x86-helloworld-gcc bins/elf/analysis/hello-arm32
 EXPECT=<<EOF
 {"bins/elf/analysis/x86-helloworld-gcc":[{"seed":false,"hmac":false,"from":100,"to":356,"name":"sha256","value":"0b8d5c6f87303e0238c85ad9cccc13ff8573f9b7b7dd282d1d7dbdb815166904"},{"seed":false,"hmac":false,"from":356,"to":612,"name":"sha256","value":"295273ab88a894d8e65a872e10ae9b576611865e3da0ea27c33135c9b52af3a8"},{"seed":false,"hmac":false,"from":612,"to":868,"name":"sha256","value":"076ede3231d785a528e00d38987eff97ca90eb60df8608d2da6c0e70cf642018"},{"seed":false,"hmac":false,"from":868,"to":1124,"name":"sha256","value":"beebf742ac7a70e32892929a00ba06ef88eb27b9f337bd6d51cd4ee44fb84da8"},{"seed":false,"hmac":false,"from":1124,"to":1380,"name":"sha256","value":"6019eb0d4260385b49d86063ffcbda1dd80d673fbe289ab7be78f172884cdf67"},{"seed":false,"hmac":false,"from":1380,"to":1636,"name":"sha256","value":"cb83c8b9c36073ef8fd75a4a5d47b3366215c1790afd5da2ae734959a57dbdb7"},{"seed":false,"hmac":false,"from":1636,"to":1892,"name":"sha256","value":"e8930398fc24b3efb0a849cc23d7990f633b5e9470d96c0c194a5c04b93b4f9b"},{"seed":false,"hmac":false,"from":1892,"to":2148,"name":"sha256","value":"121a702ea0d60548435d3f38cbbc910d24010f9d9f54121d7822c3d58eeb157c"},{"seed":false,"hmac":false,"from":2148,"to":2404,"name":"sha256","value":"6edc1d0777164d8c68907b21b5e979005b98dd0c77f0ceb9a0ae8dd7536d63cb"},{"seed":false,"hmac":false,"from":2404,"to":2660,"name":"sha256","value":"c264a779cb40c628e46bc62d24eb6e824eb36c033dfe0e59823c502510b4bcbe"},{"seed":false,"hmac":false,"from":2660,"to":2916,"name":"sha256","value":"cc4405427287f4ff5058be7449aa636f97c0c470a9d462d33dfadb7ddc7cc756"},{"seed":false,"hmac":false,"from":2916,"to":3172,"name":"sha256","value":"e0b3bbd2c6a0acd17904e165bc337353bdb4800cddd270ec9e24c2c8efebbbdc"},{"seed":false,"hmac":false,"from":3172,"to":3428,"name":"sha256","value":"30725b1f857c730722cdcc713ca52c9680885c5fe1c1f161f358d490c13151de"},{"seed":false,"hmac":false,"from":3428,"to":3684,"name":"sha256","value":"23512f54c2809fccbad6bb5ee95a315aa632be98954032d49d4ce0983bfef8da"},{"seed":false,"hmac":false,"from":3684,"to":3940,"name":"sha256","value":"cd6bbd051bc2e50839de10fb84251ede4a09cef3b345da09ba619809128267e1"},{"seed":false,"hmac":false,"from":3940,"to":4196,"name":"sha256","value":"d4814d9417885afd309e30871fdbfc5144ba770f186555cf7feab14cc8894ec3"},{"seed":false,"hmac":false,"from":4196,"to":4452,"name":"sha256","value":"0a18f2f49980aba95c989c67d066f77beb6f4e9dda26e35cd12c5ef58e4a9021"},{"seed":false,"hmac":false,"from":4452,"to":4708,"name":"sha256","value":"97af6c69453a1f6cdb9518290bbecf4937a12cff16d92a34b83b845167074dff"},{"seed":false,"hmac":false,"from":4708,"to":4964,"name":"sha256","value":"dda93b6fed1d92803de3e13f13be17d417ed239c5dfa49c2fb9df80e121d2aec"}],"bins/elf/analysis/hello-arm32":[{"seed":false,"hmac":false,"from":100,"to":356,"name":"sha256","value":"5ee81d33acf9e19ff131c2d1dc8849fab4112a54fa0fbc128ea20508deebc527"},{"seed":false,"hmac":false,"from":356,"to":612,"name":"sha256","value":"fcfe71210a3aedb32320783196f090f37705f9328bd1d7d86e32e8fc3de5bebc"},{"seed":false,"hmac":false,"from":612,"to":868,"name":"sha256","value":"6e18fdc44c508c636de2b167d3e953deba185ca5df6a66a2b73da3ffafc48aac"},{"seed":false,"hmac":false,"from":868,"to":1124,"name":"sha256","value":"8a820cb6d5febaa7ee0010cf8c35afe49afba086209af4725f87a76308f1d241"},{"seed":false,"hmac":false,"from":1124,"to":1380,"name":"sha256","value":"350fca94f4991728d8cf795ac8e6dc5b8c9e6c7e3b351f8e5f25f302c58f815d"},{"seed":false,"hmac":false,"from":1380,"to":1636,"name":"sha256","value":"c0d431ccbdc94ce6d4369c4631fb424b885b4fccad265f16f3dc49d37a431d62"},{"seed":false,"hmac":false,"from":1636,"to":1892,"name":"sha256","value":"c50e503d15d0f1c657e28ae921068380e78d82b4dd4acaee42a380d04d0a9054"},{"seed":false,"hmac":false,"from":1892,"to":2148,"name":"sha256","value":"2afe2ae8b68dec079b24f232004c088fa7dbd20069ec5e64bdb8b4e5915548c3"},{"seed":false,"hmac":false,"from":2148,"to":2404,"name":"sha256","value":"6cdd4f497ddaf59cf80296114f04b9dd135f9529dbaad1a4f592aa6931ea521d"}]}
 EOF
 RUN
 
 
-NAME=rz-hash hmac md4,md5,sha1,sha256,sha384,sha512 with small key
-FILE==
-CMDS=!rz-hash -qa md4,md5,sha1,sha256,sha384,sha512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
+NAME=rz-hash hmac md4,md5,sha1,sha256,sha384,sha512,sha3-256,sha3-384,sha3-512 with small key
+TOOL=rz-hash
+ARGS=-qa md4,md5,sha1,sha256,sha384,sha512,sha3-224,sha3-256,sha3-384,sha3-512,keccak-256,keccak-384,keccak-512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
 EXPECT=<<EOF
 string: hmac-md4: 5110f44d655399f9e0e9bc0182eac2ff
 string: hmac-md5: d281b8d617a0917ba067048227a94833
@@ -1438,13 +1477,20 @@ string: hmac-sha1: 1c6989f139c68b7f55ecf88c4a288b6a45062894
 string: hmac-sha256: f44d2995b9a376a8bfa5250144e16970f0a4b11684c7dafd8b70718bcbd87bd9
 string: hmac-sha384: 726c71ed3a2f057c71b4c8bc4e2b0c53fa16e93671c45bb9587eb3f30468c3b56b2fe8845e7acf2b49fc68f6e3942040
 string: hmac-sha512: 610c4763276013ae15bdc3896cc9397027d3b69cd6b450e13a872c529750dd135e0ead3b23a3a4bde0e31d851eac33c0eb800dd9741235845c4ac1d8b51d6696
+string: hmac-sha3-224: 1d6f2333df4a435fb48ddb6df3e81a613b8f0b348ea45da6a2465bf3
+string: hmac-sha3-256: 742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614
+string: hmac-sha3-384: 1285af685ffd58fd556260ce5efe4e72e8232abd293a3d46bedb1fc68f8562acd62f5929cfb833390a8499726416e5a4
+string: hmac-sha3-512: 1919c4d0c58ab2375dc9b5aa8170a026db42e15b7d32cd89e3d55f302ddff13913c51fa99b715f7caa8bdb35eb504bbaa60041f0b4ae834648f398a0fd82a74c
+string: hmac-keccak-256: 5f606149b835b63bd33aba780307a8e1e50e7639632889b53af007eee5da2e4e
+string: hmac-keccak-384: bd32febc09355ac121869071c0c7430f8439d6f1b8ceb61e7f63e9b44416d0cced61dc48859da85cb1f33de8c69464c7
+string: hmac-keccak-512: 405a62c2b44156181c8a786a8b7758039f962adb70df5b88061c429856c210373ec9adfae0b7968b4c2d0c87ca6dfe1cd972eae45f765507752e09855b934bb6
 EOF
 RUN
 
 
 NAME=rz-hash hmac md4,md5,sha1,sha256,sha384,sha512 with long key
-FILE==
-CMDS=!rz-hash -qa md4,md5,sha1,sha256,sha384,sha512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
+TOOL=rz-hash
+ARGS=-qa md4,md5,sha1,sha256,sha384,sha512,sha3-256,sha3-384,sha3-512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBadSuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
 EXPECT=<<EOF
 string: hmac-md4: 3d96d0e3c35d001adafaafa628607be0
 string: hmac-md5: 63c83863d65878bb535824ad0cc8a842
@@ -1452,29 +1498,80 @@ string: hmac-sha1: bd9b86f0067d7f4fb37d82d33cf22c639c4a2547
 string: hmac-sha256: 9d655be074e8fc1a17715d4224f49c09f4e13fb5c219b84947841d16932f4427
 string: hmac-sha384: c0b1e30b0933a65d2435d86e1d61f39906c1b5a787d8d1248255e3a6e5670e5bc9d40204979531cf351dbfd38fba5dca
 string: hmac-sha512: 10960d8979a7cabd119098386459877333d322e9aae6a73973e5e031e93fc8dc18fd84a18c9a5ab544440dc0c5e962ae6b9a4b0566c82354a71d4095c1a1214c
+string: hmac-sha3-256: 309197dcfb649b210458102b28535a14bcf68d4a6fd990d606d78d9f1a91b1a1
+string: hmac-sha3-384: 3fb67e5d727decc6089aea76682afeeb45010de43d6e4018465970d5ccf7d3815988b2cc94919b80082637cc048de219
+string: hmac-sha3-512: 8f44e9ddbe08bb3a2e98a0ffcbfd78fcac9ca76f6da1f31b03167ae01b2c75d79827b552d23fdfa4e36f2fdedd659b596b2f9128d7e14a5c0268eea76c8270fc
 EOF
 RUN
 
 
 NAME=rz-hash hmac md4,md5,sha1,sha256,sha384,sha512 with small key (json)
-FILE==
-CMDS=!rz-hash -j -a md4,md5,sha1,sha256,sha384,sha512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
+TOOL=rz-hash
+ARGS=-j -a md4,md5,sha1,sha256,sha384,sha512,sha3-256,sha3-384,sha3-512 -K s:SuperSecretKeyWithSoManyWordsThatCouldBeBad -s HelloWorld
 EXPECT=<<EOF
-{"string":[{"seed":false,"hmac":true,"from":0,"to":10,"name":"md4","value":"5110f44d655399f9e0e9bc0182eac2ff"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"md5","value":"d281b8d617a0917ba067048227a94833"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha1","value":"1c6989f139c68b7f55ecf88c4a288b6a45062894"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha256","value":"f44d2995b9a376a8bfa5250144e16970f0a4b11684c7dafd8b70718bcbd87bd9"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha384","value":"726c71ed3a2f057c71b4c8bc4e2b0c53fa16e93671c45bb9587eb3f30468c3b56b2fe8845e7acf2b49fc68f6e3942040"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha512","value":"610c4763276013ae15bdc3896cc9397027d3b69cd6b450e13a872c529750dd135e0ead3b23a3a4bde0e31d851eac33c0eb800dd9741235845c4ac1d8b51d6696"}]}
+{"string":[{"seed":false,"hmac":true,"from":0,"to":10,"name":"md4","value":"5110f44d655399f9e0e9bc0182eac2ff"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"md5","value":"d281b8d617a0917ba067048227a94833"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha1","value":"1c6989f139c68b7f55ecf88c4a288b6a45062894"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha256","value":"f44d2995b9a376a8bfa5250144e16970f0a4b11684c7dafd8b70718bcbd87bd9"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha384","value":"726c71ed3a2f057c71b4c8bc4e2b0c53fa16e93671c45bb9587eb3f30468c3b56b2fe8845e7acf2b49fc68f6e3942040"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha512","value":"610c4763276013ae15bdc3896cc9397027d3b69cd6b450e13a872c529750dd135e0ead3b23a3a4bde0e31d851eac33c0eb800dd9741235845c4ac1d8b51d6696"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha3-256","value":"742e23a9e17b9a712b283e2d280caa7d43c9e298656f37c4744096c194914614"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha3-384","value":"1285af685ffd58fd556260ce5efe4e72e8232abd293a3d46bedb1fc68f8562acd62f5929cfb833390a8499726416e5a4"},{"seed":false,"hmac":true,"from":0,"to":10,"name":"sha3-512","value":"1919c4d0c58ab2375dc9b5aa8170a026db42e15b7d32cd89e3d55f302ddff13913c51fa99b715f7caa8bdb35eb504bbaa60041f0b4ae834648f398a0fd82a74c"}]}
 EOF
 RUN
 
-NAME=rz-hash -a blake3 -s "admin"
-FILE==
-CMDS=!rz-hash -a blake3 -s "admin"
+NAME=rz-hash -a blake3 -s admin
+TOOL=rz-hash
+ARGS=-a blake3 -s admin
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 blake3: d289b2da9b7051f36b4e396e0af3e069e78cf119a7fdcb6437b685c4875e9f9e
 EOF
 RUN
 
-NAME=rz-hash -a ssdeep -s "admin"
-FILE==
-CMDS=!rz-hash -a ssdeep -s "admin"
+NAME=rz-hash -a blake2b -s hello
+TOOL=rz-hash
+ARGS=-a blake2b -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2b: e4cfa39a3d37be31c59609e807970799caa68a19bfaa15135f165085e01d41a65ba1e1b146aeb6bd0092b49eac214c103ccfa3a365954bbbe52f74a2b3620c94
+EOF
+RUN
+
+NAME=rz-hash -a blake2bp -s hello
+TOOL=rz-hash
+ARGS=-a blake2bp -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2bp: 3d9b524855d3675f3ccbe8e189b3f00a2712ba7301f9b88a7e31aad4916777459953a70f9c98869bc39872591c30e6dfa5b5decbfcf977c909db9f9f7e4441d1
+EOF
+RUN
+
+NAME=rz-hash -a blake2xb -s hello
+TOOL=rz-hash
+ARGS=-a blake2xb -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2xb: e06286c0a7a340b49cc1c1a187ff088349d6ff51c225ca613f7d46a95f158942b7990b33c0caf9f3a1f4bede9f45d929bcfc028b348185c42040b2477b538df1
+EOF
+RUN
+
+NAME=rz-hash -a blake2s -s hello
+TOOL=rz-hash
+ARGS=-a blake2s -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2s: 19213bacc58dee6dbde3ceb9a47cbb330b3d86f8cca8997eb00be456f140ca25
+EOF
+RUN
+
+NAME=rz-hash -a blake2sp -s hello
+TOOL=rz-hash
+ARGS=-a blake2sp -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2sp: 223dfe42565ddf97210b34a384860b603717d5c63c1872c9fc99f1b15de6631b
+EOF
+RUN
+
+NAME=rz-hash -a blake2xs -s hello
+TOOL=rz-hash
+ARGS=-a blake2xs -s hello
+EXPECT=<<EOF
+string: 0x00000000-0x00000005 blake2xs: b80636fc190a0bcfd71bb107167ecc7613cc84fbf96094db27a9f67086dd7b2e
+EOF
+RUN
+
+NAME=rz-hash -a ssdeep -s admin
+TOOL=rz-hash
+ARGS=-a ssdeep -s admin
 EXPECT=<<EOF
 string: 0x00000000-0x00000005 ssdeep: 3:oIKn:oIKn
 EOF
@@ -1482,8 +1579,8 @@ RUN
 
 
 NAME=rz-hash -a ssdeep bins/elf/analysis/hello-arm32
-FILE==
-CMDS=!rz-hash -a ssdeep bins/elf/analysis/hello-arm32
+TOOL=rz-hash
+ARGS=-a ssdeep bins/elf/analysis/hello-arm32
 EXPECT=<<EOF
 bins/elf/analysis/hello-arm32: 0x00000000-0x0000090c ssdeep: 48:p/701NYJSaSiTBBhd8KHk/MYBWQ3Vtx/J0:p/7EqTBBvI/MYBW+ZJ0
 EOF

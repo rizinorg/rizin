@@ -37,6 +37,9 @@ RUN
 NAME=cmd_cb
 FILE=bins/elf/ls
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
 cb 0xf3f3 2
 cb 0xfa1e0ff2 4
 cb 0x8989898989898989 8
@@ -45,7 +48,7 @@ cb 0xf1f2fa1e0ff2 4
 cb 0x1a0ff2 3
 cb 0x33445566778899aa 8
 echo -- be
-e cfg.bigendian=1
+e cfg.bigendian=true
 cb 0x1a0ff2 3
 cb 0x33445566778899aa 8
 EOF
@@ -540,6 +543,9 @@ RUN
 NAME=cmd_cu_num
 FILE=bins/elf/ls
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
 cu1 0x5ad0
 echo --------
 cu2 0x5ad0
@@ -548,7 +554,7 @@ cu4 0x5ad0
 echo --------
 cu8 0x5ad0
 echo -------- be
-cu4 0x5ad0 @e:cfg.bigendian=1
+cu4 0x5ad0 @e:cfg.bigendian=true
 EOF
 EXPECT=<<EOF
 0x00005ae0  0xf3 ! 0x15

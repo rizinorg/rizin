@@ -134,7 +134,6 @@ int test_rz_str_search_single_simple(void) {
 int test_rz_str_search_io_simple(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "NULL check failed");
-	rz_core_init(core);
 	mu_assert_true(rz_core_file_open_load(core, files[1], 0, RZ_PERM_R, false), "Loading file failed");
 
 	// Setup search options. These are _not_ specific for the string search.

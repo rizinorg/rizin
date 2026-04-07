@@ -19,7 +19,6 @@ if get_option('enable_tests')
     'analysis_function',
     'analysis_hints',
     'analysis_meta',
-    'analysis_op',
     'analysis_var',
     'analysis_xrefs',
     'annotated_code',
@@ -89,6 +88,7 @@ if get_option('enable_tests')
     'io_ihex',
     'itv',
     'json',
+    'leb128',
     'list',
     'log',
     'lzma',
@@ -138,6 +138,10 @@ if get_option('enable_tests')
     'yank',
   ]
 
+  if capstone_dep.type_name() == 'internal'
+    tests += 'analysis_op'
+  endif
+
   unit_test_env = environment()
   if test_env_common_path != []
     unit_test_env.prepend('PATH', test_env_common_path)
@@ -168,7 +172,7 @@ if get_option('enable_tests')
         rz_magic_dep,
         rz_il_dep,
         rz_mark_dep,
-        dependency('rzheap'),
+        rzheap_dep,
         lrt,
       ],
       install: false,

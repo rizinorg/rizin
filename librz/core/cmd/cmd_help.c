@@ -194,6 +194,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core,
 	rz_iterator_foreach(it, cfg) {
 		rz_core_config_print_all(*cfg, "", &state);
 	}
+	rz_iterator_free(it);
 
 	// Run it in the hub.
 	free(rz_cons_hud_string(rz_strbuf_get(state.d.sbuf)));

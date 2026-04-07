@@ -58,7 +58,7 @@ arch_plugins_list = [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'x86_zydis'
+  'x86_zydis',
 ]
 
 arch_plugin_sources = [
@@ -116,7 +116,7 @@ arch_plugin_sources = [
   'p/arch_x86_nz.c',
   'p/arch_xap.c',
   'p/arch_xcore_cs.c',
-  'p/arch_x86_zydis.c'
+  'p/arch_x86_zydis.c',
 ]
 
 arch_esil_sources = [
@@ -213,6 +213,18 @@ arch_isa_sources = [
   'isa/java/jvm.c',
   'isa/lh5801/lh5801.c',
   'isa/luac/lua_arch.c',
+  'isa/luac/v50/analysis_50.c',
+  'isa/luac/v50/assembly_50.c',
+  'isa/luac/v50/disassembly_50.c',
+  'isa/luac/v50/opcode_50.c',
+  'isa/luac/v51/analysis_51.c',
+  'isa/luac/v51/assembly_51.c',
+  'isa/luac/v51/disassembly_51.c',
+  'isa/luac/v51/opcode_51.c',
+  'isa/luac/v52/analysis_52.c',
+  'isa/luac/v52/assembly_52.c',
+  'isa/luac/v52/disassembly_52.c',
+  'isa/luac/v52/opcode_52.c',
   'isa/luac/v53/analysis_53.c',
   'isa/luac/v53/assembly_53.c',
   'isa/luac/v53/disassembly_53.c',
@@ -221,6 +233,10 @@ arch_isa_sources = [
   'isa/luac/v54/assembly_54.c',
   'isa/luac/v54/disassembly_54.c',
   'isa/luac/v54/opcode_54.c',
+  'isa/luac/v55/analysis_55.c',
+  'isa/luac/v55/assembly_55.c',
+  'isa/luac/v55/disassembly_55.c',
+  'isa/luac/v55/opcode_55.c',
   'isa/mcore/mcore.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',
@@ -315,16 +331,28 @@ arch_isa_includes = [
   'isa',
 ]
 
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
+  # plugins
+  arch_plugins_list += [
+    'cbpf_cs',
+    'riscv_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_cbpf_cs.c',
+    'p/arch_riscv_cs.c',
+  ]
+endif
+
 if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   # plugins
   arch_plugins_list += [
-    'riscv_cs',
     'tricore_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
-    'p/arch_riscv_cs.c',
     'p/arch_tricore_cs.c',
   ]
 
@@ -338,6 +366,7 @@ if capstone_dep.version() == 'next'
   # plugins
   arch_plugins_list += [
     'alpha_cs',
+    'hppa_cs',
     'loongarch_cs',
     'xtensa_cs',
   ]
@@ -346,6 +375,7 @@ if capstone_dep.version() == 'next'
   arch_plugin_sources += [
     'p/arch_alpha.c',
     'p/arch_loongarch_cs.c',
+    'p/arch_hppa_cs.c',
     'p/arch_xtensa_cs.c',
   ]
 
@@ -362,9 +392,7 @@ if get_option('use_gpl')
   arch_plugins_list += [
     'arc_gnu',
     'cris_gnu',
-    'hppa_gnu',
     'lanai_gnu',
-    'riscv_gnu',
     'vax_gnu',
     'z80_gnu',
   ]
@@ -373,9 +401,7 @@ if get_option('use_gpl')
   arch_plugin_sources += [
     'p_gnu/arch_arc.c',
     'p_gnu/arch_cris.c',
-    'p_gnu/arch_hppa.c',
     'p_gnu/arch_lanai.c',
-    'p_gnu/arch_riscv.c',
     'p_gnu/arch_vax.c',
     'p_gnu/arch_z80.c',
   ]
@@ -388,12 +414,8 @@ if get_option('use_gpl')
     'isa_gnu/arc/arcompact-dis.c',
     'isa_gnu/cris/cris-dis.c',
     'isa_gnu/cris/cris-opc.c',
-    'isa_gnu/hppa/hppa-dis.c',
     'isa_gnu/lanai/lanai-dis.c',
     'isa_gnu/lanai/lanai-opc.c',
-    # 'isa_gnu/riscv/riscv-opc.c',
-    # 'isa_gnu/riscv/riscv.c',
-    'isa_gnu/sparc/sparc-opc.c',
     'isa_gnu/vax/vax-dis.c',
     # 'isa_gnu/z80/expressions.c',
     # 'isa_gnu/z80/z80.c',
@@ -420,6 +442,7 @@ arch_common_sources = [
   'cycles.c',
   'data.c',
   'dwarf_process.c',
+  'luac_process.c',
   'fcn.c',
   'filter.c',
   'function.c',

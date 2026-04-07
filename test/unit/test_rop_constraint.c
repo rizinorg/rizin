@@ -4,6 +4,7 @@
 #include <rz_core.h>
 #include "minunit.h"
 #include <rz_rop.h>
+#include "analysis_private.h"
 
 // Define the register profile string for your architecture
 #define REGISTER_PROFILE_STRING \
@@ -28,7 +29,8 @@
 	"gpr    ebx    .32    40    0\n" \
 	"gpr    bx     .16    40    0\n" \
 	"gpr    bl     .8     40    0\n" \
-	"gpr    bh     .8     41    0\n"
+	"gpr    bh     .8     41    0\n" \
+	"gpr    ecx    .32    44    0\n"
 
 static void setup_rz_core(RzCore *core) {
 	rz_config_set(core->config, "analysis.arch", "x86");

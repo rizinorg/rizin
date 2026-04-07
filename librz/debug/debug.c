@@ -442,6 +442,7 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	rz_debug_trace_free(dbg->trace);
 	rz_debug_session_free(dbg->session);
 	rz_analysis_op_free(dbg->cur_op);
+	rz_debug_use(dbg, NULL);
 	dbg->trace = NULL;
 	rz_egg_free(dbg->egg);
 	rz_reg_free(dbg->reg);
@@ -1496,9 +1497,10 @@ static int show_syscall(RzDebug *dbg, const char *sysreg) {
 	const char *sysname;
 	char regname[32];
 	int reg, i, args;
+	RzSyscall *sysc = rz_analysis_get_syscall(dbg->analysis);
 	RzSyscallItem *si;
 	reg = (int)rz_debug_reg_get(dbg, sysreg);
-	si = rz_syscall_get(dbg->analysis->syscall, reg, -1);
+	si = rz_syscall_get(sysc, reg, -1);
 	if (si) {
 		sysname = si->name ? si->name : "unknown";
 		args = si->args;
@@ -1790,5 +1792,5 @@ RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) 
 	if (!it) {
 		return NULL;
 	}
-	return (RzDebugPid *)rz_list_iter_get_data(it);
+	return (RzDebugPid *)rz_list_val(it);
 }

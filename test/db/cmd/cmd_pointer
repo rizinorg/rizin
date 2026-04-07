@@ -1,6 +1,9 @@
 NAME=pointer read
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
 wv8 0xdeadbeefdeadbeef
 *0
 *0 @e:asm.bits=64
@@ -22,6 +25,9 @@ RUN
 NAME=pointer write value
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
 wx ffffffffffffffff
 *0=0xdeadbeefdeadbeef
 *0 @e:asm.bits=64
@@ -58,6 +64,8 @@ RUN
 NAME=pointer write hex
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.arch=arm
+e cfg.bigendian=false
 wx ffffffffffffffff
 *0+2=addeefbe
 *0 @e:asm.bits=64

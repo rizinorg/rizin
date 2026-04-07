@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 /**
  * \name Config and Init State
@@ -226,7 +226,7 @@ static void setup_vm_from_config(RzAnalysis *analysis, RzAnalysisILVM *vm, RzAna
 		vm->vm = NULL;
 		return;
 	}
-	rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new(vm->io_buf, cfg->mem_key_size));
+	rz_il_vm_add_mem(vm->vm, 0, rz_il_mem_new_borrowed(vm->io_buf, cfg->mem_key_size));
 	void **it;
 	rz_pvector_foreach (&cfg->labels, it) {
 		RzILEffectLabel *lbl = *it;
@@ -288,7 +288,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
-	if (!cur || !analysis->read_at) {
+	if (!cur || !analysis->cb.read_at) {
 		return RZ_ANALYSIS_IL_STEP_RESULT_NOT_SET_UP;
 	}
 
@@ -301,7 +301,7 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 	while (cond(vm, user)) {
 		ut64 addr = rz_bv_to_ut64(vm->vm->pc);
 		ut8 code[32] = { 0 };
-		analysis->read_at(analysis, addr, code, sizeof(code));
+		analysis->cb.read_at(analysis, addr, code, sizeof(code));
 		int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM);
 
 		if (r < 0) {
@@ -447,6 +447,114 @@ RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis) {
 	rz_return_if_fail(analysis);
 	rz_analysis_il_vm_free(analysis->il_vm);
 	analysis->il_vm = NULL;
+}
+
+static bool analysis_il_vm_set(RzAnalysis *analysis, const char *var_name, RzILVal *val) {
+	if (!val) {
+		return false;
+	}
+
+	rz_il_vm_set_global_var(analysis->il_vm->vm, var_name, val);
+	rz_analysis_il_vm_sync_to_reg(analysis->il_vm, analysis->reg);
+	return true;
+}
+
+/**
+ * \brief Set a vm variable to a given unsigned value
+ * \return whether the set succeeded
+ *
+ * Sets the given var, or "PC" to the given value.
+ * The type of the variable is handled dynamically.
+ * This is intended for setting from user input only.
+ */
+RZ_API bool rz_analysis_il_vm_set_unsigned(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, ut64 value) {
+	rz_return_val_if_fail(analysis, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	if (RZ_STR_EQ(var_name, "PC")) {
+		RzILVM *vm = analysis->il_vm->vm;
+		rz_bv_set_from_ut64(vm->pc, value);
+		return true;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_BITVECTOR) {
+		RZ_LOG_ERROR("RzIL: cannot set non-bitvector var with a bitvector\n");
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_bitv(rz_bv_new_from_ut64(var->sort.props.bv.length, value));
+	return analysis_il_vm_set(analysis, var_name, val);
+}
+
+/**
+ * \brief Set a vm variable to a given boolean value
+ * \return whether the set succeeded
+ */
+RZ_API bool rz_analysis_il_vm_set_bool(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, bool value) {
+	rz_return_val_if_fail(analysis && var_name, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_BOOL) {
+		RZ_LOG_ERROR("RzIL: cannot set non-bool var with a bool\n");
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_bool(rz_il_bool_new(value));
+	return analysis_il_vm_set(analysis, var_name, val);
+}
+
+/**
+ * \brief Set a vm variable to a given float value
+ * \return whether the set succeeded
+ */
+RZ_API bool rz_analysis_il_vm_set_float(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, long double value) {
+	rz_return_val_if_fail(analysis && var_name, false);
+	if (!analysis->il_vm || RZ_STR_ISEMPTY(var_name)) {
+		return false;
+	}
+
+	RzILVar *var = rz_il_vm_get_var(analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, var_name);
+	if (!var || var->sort.type != RZ_IL_TYPE_PURE_FLOAT) {
+		RZ_LOG_ERROR("RzIL: cannot set non-float var with a float\n");
+		return false;
+	}
+
+	RzFloat *vfloat = NULL;
+	switch (var->sort.props.f.format) {
+	case RZ_FLOAT_IEEE754_BIN_32:
+		vfloat = rz_float_new_from_f32(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_64:
+		vfloat = rz_float_new_from_f64(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_80:
+		vfloat = rz_float_new_from_f80(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_128:
+		vfloat = rz_float_new_from_f128(value);
+		break;
+	case RZ_FLOAT_IEEE754_BIN_16:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_BIN_16 is not supported\n");
+		return false;
+	case RZ_FLOAT_IEEE754_DEC_64:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_DEC_64 is not supported\n");
+		return false;
+	case RZ_FLOAT_IEEE754_DEC_128:
+		RZ_LOG_ERROR("RzIL: Set float var from RZ_FLOAT_IEEE754_DEC_128 is not supported\n");
+		return false;
+	default:
+		RZ_LOG_ERROR("RzIL: Set float var from %u supported\n", (ut32)var->sort.props.f.format);
+		return false;
+	}
+
+	RzILVal *val = rz_il_value_new_float(vfloat);
+	return analysis_il_vm_set(analysis, var_name, val);
 }
 
 /// @}

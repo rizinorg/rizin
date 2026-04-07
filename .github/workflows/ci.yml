@@ -30,7 +30,7 @@ jobs:
       edited: ${{ steps.filter.outputs.edited }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           base: ${{ github.ref }}
@@ -82,7 +82,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=release --werror
+            meson_options: -Dbuildtype=release -Denable_benchmarks=true --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: -DRZ_ASSERT_STDOUT=1
@@ -372,7 +372,7 @@ jobs:
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
       - name: Upload coverage to Codecov
         if: matrix.coverage && matrix.enabled
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: build/
@@ -380,7 +380,7 @@ jobs:
           verbose: true
       - name: Upload test results
         if: always() && matrix.run_tests && matrix.enabled
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.name }}
           path: test/results.json
@@ -554,12 +554,12 @@ jobs:
         working-directory: rizin
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-static
           path: rizin/test/results.json
       - name: Upload static build
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rizin-static.tar.xz
           path: rizin/rizin-static.tar.xz
@@ -587,7 +587,7 @@ jobs:
           meson dist --include-subprojects --no-tests
           ls -l meson-dist
           mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-src.tar.xz
           path: build/meson-dist/rizin-src.tar.xz
@@ -602,7 +602,7 @@ jobs:
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
         run: sudo pip3 install meson ninja PyYAML
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -630,10 +630,10 @@ jobs:
           ./rizin_cmake_test
         working-directory: rizin
 
-  build-osx-pkg:
-    name: Build OSX package
+  build-macos-pkg:
+    name: Build macOS package
     runs-on: macos-15
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'macos') || contains(github.head_ref, 'mac') || ((contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v6
@@ -641,14 +641,16 @@ jobs:
           fetch-depth: 2
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
       - name: Install ImageMagick
         run: brew install imagemagick
-      - name: Create OSX package
+      - name: Create macOS package
         run: |
-          ./dist/osx/build_osx_package.sh
+          ./dist/macos/build_macos_package.sh
           mv rizin-*.pkg rizin.pkg
       - name: Upload .pkg file
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rizin.pkg
           path: ./rizin.pkg
@@ -691,11 +693,11 @@ jobs:
       - name: Build and create zip/installer
         shell: pwsh
         run: .\dist\windows\build_windows_installer.ps1 ${{ matrix.name }} ${{ matrix.bits }} ${{ matrix.meson_options }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
           path: .\dist\windows\Output\rizin-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: .\dist\windows\Output\rizin.exe
@@ -724,7 +726,7 @@ jobs:
           cd /tmp
           rm -rf android-dir/include android-dir/lib
           tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: rizin-android-${{ matrix.name }}
           path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
@@ -791,7 +793,7 @@ jobs:
     env:
       RZPIPE_TESTS: "rz-pipe-py rz-pipe-go"
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -818,7 +820,7 @@ jobs:
     needs: [ test-tarball ]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin-src.tar.xz
       - name: Extract source tarball
@@ -853,16 +855,16 @@ jobs:
           echo "import rizin" > testimport.py
           python3 testimport.py
 
-  test-osx-pkg:
-    name: Test OSX pkg
+  test-macos-pkg:
+    name: Test macOS pkg
     strategy:
       matrix:
         system:
           - macos-15
     runs-on: ${{ matrix.system }}
-    needs: [ build-osx-pkg ]
+    needs: [ build-macos-pkg ]
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin.pkg
           path: ./
@@ -900,7 +902,7 @@ jobs:
         shell: pwsh
         run: echo "branch=$(python sys/version.py)" >> $Env:GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
           path: ./
@@ -934,6 +936,37 @@ jobs:
           ninja
           .\rizin_cmake_test
 
+  test-riscv-inside-qemu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-riscv64 \
+            gcc-riscv64-linux-gnu \
+            g++-riscv64-linux-gnu \
+            binutils-riscv64-linux-gnu \
+            cpio
+          pip3 install meson ninja
+
+      - name: Setup RISC-V QEMU environment
+        run: |
+          cd ..
+          sh rizin/.github/riscv-qemu-setup-all.sh /rizin -hh
+
+      - name: Run inside RISC-V QEMU
+        run: |
+          cd ..
+          qemu-system-riscv64 \
+            -machine virt -cpu rv64 -m 512M \
+            -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
+            -initrd initrd.cpio.gz \
+            -append "console=ttyS0,115200 earlycon" \
+            -nographic
+
+
   create-release:
     name: Create draft release and upload artifacts
     runs-on: ubuntu-24.04
@@ -946,7 +979,7 @@ jobs:
         build-static,
         build-android,
         build-cpp-linux,
-        test-osx-pkg,
+        test-macos-pkg,
         test-windows-clang_cl,
         build-rzpipe,
       ]
@@ -955,7 +988,7 @@ jobs:
       - name: Extract rizin version
         run: echo "branch=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
       - name: Rename artifacts for release
         run: |
           mv ./rizin-src.tar.xz/rizin-src.tar.xz rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
@@ -1003,22 +1036,22 @@ jobs:
           export PATH=${HOME}/.local/bin:${PATH}
           meson subprojects download
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Publish to Registry
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile

@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #include <rz_type.h>
 #include <rz_pdb.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include "../bin/pdb/pdb.h"
 
 static RzType *pdb_type_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);

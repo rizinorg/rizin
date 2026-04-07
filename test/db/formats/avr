@@ -8,7 +8,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega2561
 features N/A
 baddr    ----------
 binsz    0x00001c52
@@ -344,7 +344,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega2561
 features N/A
 baddr    ----------
 binsz    0x0003e07e
@@ -731,7 +731,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega32u4
 features N/A
 baddr    ----------
 binsz    0x000065a0
@@ -1020,7 +1020,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega168
 features N/A
 baddr    ----------
 binsz    0x00001236
@@ -1227,7 +1227,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega168
 features N/A
 baddr    ----------
 binsz    0x00830001
@@ -1429,7 +1429,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega328p
 features N/A
 baddr    ----------
 binsz    0x000033ea
@@ -1638,7 +1638,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATTiny88
 features N/A
 baddr    ----------
 binsz    0x00000270
@@ -1827,7 +1827,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega16
 features N/A
 baddr    ----------
 binsz    0x00001dac
@@ -2014,7 +2014,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega8
 features N/A
 baddr    ----------
 binsz    0x00000ef2
@@ -2193,7 +2193,7 @@ EOF
 EXPECT=<<EOF
 [Info]
 arch     avr
-cpu      N/A
+cpu      ATmega8
 features N/A
 baddr    ----------
 binsz    0x00003722
@@ -2449,5 +2449,22 @@ paddr vaddr len size section type string
   |||||||   0x000000b8      nop
   |||||||   0x000000ba      nop
   |||||||   0x000000bc      nop
+EOF
+RUN
+
+NAME=ATmega328p iH
+FILE=ihex://bins/avr/grbl_0_51_atmega328p_16mhz_9600.hex
+CMDS=iH
+EXPECT=<<EOF
+avr:
+  board: "ATmega328p"
+  cpu: "ATmega328p"
+  reset_vector:
+    address: 0x0
+    handler: 0x280
+  interrupt_vector_size: 4
+  num_interrupts: 26
+  bad_interrupt: 0x2ba
+
 EOF
 RUN

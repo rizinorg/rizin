@@ -1272,6 +1272,90 @@ RZ_API RZ_OWN char *rz_str_replace(RZ_OWN char *str, const char *key, const char
 	return str;
 }
 
+/**
+ *  Replace regex matches in a string.
+ *
+ * \param str Input string to transform.
+ * \param pattern Regular expression pattern to match.
+ * \param val Replacement string.
+ * \param global If true, replace all matches; otherwise replace only the first.
+ * \param icase If true, perform case-insensitive matching.
+ *
+ * \return New allocated string with replacements. And NULL in case of failure
+ */
+RZ_API RZ_OWN char *rz_str_replace_regex(const char *str, const char *pattern, const char *val, bool global, bool icase) {
+	rz_return_val_if_fail(str && pattern && val, NULL);
+
+	RzRegexFlags cflags = RZ_REGEX_DEFAULT;
+	if (icase) {
+		cflags |= RZ_REGEX_CASELESS;
+	}
+
+	RzRegex *regex = rz_regex_new(pattern, cflags, RZ_REGEX_DEFAULT, NULL);
+	if (!regex) {
+		return NULL;
+	}
+
+	const size_t str_len = strlen(str);
+	const size_t val_len = strlen(val);
+	const char *src = str;
+
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+
+	RzRegexSize search_off = 0;
+
+	while (search_off < str_len) {
+		RzPVector *matches = rz_regex_match_first(regex, src, str_len, search_off, RZ_REGEX_DEFAULT);
+
+		if (!matches || rz_pvector_empty(matches)) {
+			rz_pvector_free(matches);
+			break;
+		}
+
+		RzRegexMatch *m = rz_pvector_head(matches);
+		const RzRegexSize match_start = m->start;
+		const RzRegexSize match_len = m->len;
+
+		if (match_start > search_off) {
+			rz_strbuf_append_n(&sb, src + search_off, match_start - search_off);
+		}
+
+		if (val_len > 0) {
+			rz_strbuf_append_n(&sb, val, val_len);
+		}
+
+		rz_pvector_free(matches);
+
+		search_off = match_start + match_len;
+
+		if (!global) {
+			break;
+		}
+
+		if (match_len == 0) {
+			if (search_off < str_len) {
+				rz_strbuf_append_n(&sb, src + search_off, 1);
+				search_off++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	if (search_off < str_len) {
+		rz_strbuf_append_n(&sb, src + search_off, str_len - search_off);
+	}
+
+	rz_regex_free(regex);
+
+	char *res = rz_strbuf_drain_nofree(&sb);
+	if (!res) {
+		return NULL;
+	}
+	return res;
+}
+
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
 	rz_return_val_if_fail(str && key && val, NULL);
 
@@ -1947,13 +2031,14 @@ RZ_API char *rz_str_escape_mutf8_for_json(const char *buf, int buf_size) {
 RZ_API RZ_OWN char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
-
-	size_t i;
-	for (i = 0; i < argc; i++) {
-		if (i > 0) {
+	for (size_t i = 0; i < argc; i++) {
+		const char *arg = argv[i];
+		if (!arg) {
+			arg = "";
+		}
+		if (!rz_strbuf_is_empty(&sb)) {
 			rz_strbuf_append(&sb, " ");
 		}
-		const char *arg = argv[i];
 		bool must_escape = strchr(arg, '\"') != NULL;
 		bool must_quote = strpbrk(arg, " \t") != NULL || !*arg;
 		if (!must_escape && must_quote && *arg && arg[strlen(arg) - 1] == '\\') {

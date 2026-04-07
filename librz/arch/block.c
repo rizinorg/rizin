@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_hash.h>
-#include <rz_util/ht_uu.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
@@ -529,14 +528,14 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 				cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 			}
 			if (cur_ctx->switch_it) {
-				RzAnalysisCaseOp *cop = rz_list_iter_get_data(cur_ctx->switch_it);
+				RzAnalysisCaseOp *cop = rz_list_val(cur_ctx->switch_it);
 				while (ht_up_find_kv(visited, cop->jump, NULL)) {
 					cur_ctx->switch_it = rz_list_next(cur_ctx->switch_it);
 					if (!cur_ctx->switch_it) {
 						cop = NULL;
 						break;
 					}
-					cop = rz_list_iter_get_data(cur_ctx->switch_it);
+					cop = rz_list_val(cur_ctx->switch_it);
 				}
 				cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
 			} else {

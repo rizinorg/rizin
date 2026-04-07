@@ -194,7 +194,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
 		char *error_msg = NULL;
-		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		int result = rz_type_parse_file(typedb, file, dir, &error_msg);
 		if (error_msg) {
 			rz_str_trim_tail(error_msg);
 			RZ_LOG_ERROR("core: %s\n", error_msg);
@@ -317,7 +318,7 @@ RZ_IPI int rz_line_hist_sdb_up(RzLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = rz_list_next(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
@@ -328,7 +329,7 @@ RZ_IPI int rz_line_hist_sdb_down(RzLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = rz_list_prev(line->sdbshell_hist_iter);
-	strncpy(line->buffer.data, rz_list_iter_get_data(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
+	strncpy(line->buffer.data, rz_list_val(line->sdbshell_hist_iter), RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 	return true;
 }
@@ -355,7 +356,9 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_io_read_i(core->io, n, &n, core->rasm->bits / 8, core->print->big_endian)) {
+	const bool big_endian = rz_asm_is_big_endian_set(core->rasm);
+	int arch_bits = rz_asm_get_bits(core->rasm);
+	if (!rz_io_read_i(core->io, n, &n, arch_bits / 8, big_endian)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_printf("0x%" PFMT64x "\n", n);
@@ -381,7 +384,7 @@ static RzCmdStatus pointer_write(RzCore *core, const char *addr_arg, const char 
 			return RZ_CMD_STATUS_ERROR;
 		}
 
-		ok = rz_core_write_value_at(core, addr, value, core->rasm->bits / 8);
+		ok = rz_core_write_value_at(core, addr, value, rz_asm_get_bits(core->rasm) / 8);
 	}
 
 	return bool2status(ok);
@@ -1197,6 +1200,70 @@ err:
 	return res;
 }
 
+static bool is_push_stmt(TSNode node, const char *in) {
+	if (ts_node_is_null(node) || strcmp(ts_node_type(node), "arged_stmt")) {
+		return false;
+	}
+	TSNode cmd = ts_node_child_by_field_name(node, "command", strlen("command"));
+	if (ts_node_is_null(cmd)) {
+		return false;
+	}
+	TSNode extra = ts_node_child_by_field_name(cmd, "extra", strlen("extra"));
+	char *s = NULL;
+	if (!ts_node_is_null(extra)) {
+		ut32 start = ts_node_start_byte(cmd);
+		ut32 end = ts_node_start_byte(extra);
+		s = rz_str_newf("%.*s", end - start, in + start);
+	} else {
+		s = ts_node_sub_string(cmd, in);
+	}
+	if (!s) {
+		return false;
+	}
+	rz_str_unescape(s);
+	bool ret = !strcmp(s, "<");
+	free(s);
+	return ret;
+}
+
+static bool has_push(TSNode node, const char *in) {
+	if (is_push_stmt(node, in)) {
+		return true;
+	}
+	uint32_t n = ts_node_named_child_count(node);
+	for (uint32_t i = 0; i < n; i++) {
+		if (has_push(ts_node_named_child(node, i), in)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+RZ_IPI bool rz_core_cmd_has_push(const char *cstr) {
+	if (RZ_STR_ISEMPTY(cstr)) {
+		return false;
+	}
+	TSParser *parser = ts_parser_new();
+	if (!parser) {
+		return false;
+	}
+	bool ok = ts_parser_set_language(parser, tree_sitter_rzcmd());
+	if (!ok) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSTree *tree = ts_parser_parse_string(parser, NULL, cstr, strlen(cstr));
+	if (!tree) {
+		ts_parser_delete(parser);
+		return false;
+	}
+	TSNode root = ts_tree_root_node(tree);
+	bool ret = !ts_node_has_error(root) && has_push(root, cstr);
+	ts_tree_delete(tree);
+	ts_parser_delete(parser);
+	return ret;
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(macro_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
 	char *macro_name_str = NULL;
@@ -1562,15 +1629,19 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_op) {
 	bool is_arch_set = false, is_bits_set = false;
 	bool oldfixedarch = core->fixedarch, oldfixedbits = core->fixedbits;
 	int cmd_ignbithints = -1;
+	int bits = -1;
 
 	// change arch and bits
 	char *q = strchr(arg_str, ':');
 	if (q) {
 		*q++ = '\0';
-		int bits = rz_num_math(core->num, q);
-		is_bits_set = set_tmp_bits(core, bits, &tmpbits, &cmd_ignbithints);
+		bits = rz_num_math(core->num, q);
 	}
 	is_arch_set = set_tmp_arch(core, arg_str, &tmparch);
+
+	if (bits > 0) {
+		is_bits_set = set_tmp_bits(core, bits, &tmpbits, &cmd_ignbithints);
+	}
 
 	// execute command or next tmp op with changed settings
 	TSNode next = tmp_get_next_node(node);
@@ -1847,7 +1918,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_op) {
 
 	ut64 v = rz_num_math(core->num, arg_str);
 	ut8 buf[8] = { 0 };
-	int be = rz_config_get_i(core->config, "cfg.bigendian");
+	int be = rz_config_get_b(core->config, "cfg.bigendian");
 	int bi = rz_config_get_i(core->config, "asm.bits");
 
 	rz_write_ble(buf, v, be, bi);
@@ -2285,7 +2356,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *meta;
-	rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
+	RzIntervalTree *meta_tree = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta_tree, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
@@ -2357,7 +2429,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		RzList *list = rz_list_newf(free);
 		RzListIter *iter;
 		rz_list_foreach (head, iter, item) {
-			if (item->size != core->analysis->bits) {
+			if (!rz_asm_is_bits(core->rasm, item->size)) {
 				continue;
 			}
 			if (item->type != i) {
@@ -2552,7 +2624,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *list = core->analysis->fcns;
+	RzList *list = rz_analysis_function_list(core->analysis);
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push(NULL, NULL);
@@ -2864,7 +2936,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
 
-	if (state.log) {
+	if (state.log && !has_push(root, state.input)) {
 		rz_line_hist_add(line, state.input);
 	}
 

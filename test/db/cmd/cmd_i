@@ -92,148 +92,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=i (all) (malloc)
-FILE=malloc://1025
-ARGS=-a x86 -b 64
-CMDS=<<EOF
-i
-iI
-ia
-ii
-ie
-is
-iS
-iz
-EOF
-EXPECT=<<EOF
-fd      3
-file    malloc://1025
-size    0x401
-humansz 1.0K
-mode    rwx
-format  any
-iorw    true
-block   0x100
-type    
-arch     N/A
-cpu      N/A
-features N/A
-baddr    0x00000000
-binsz    0x00000401
-bintype  N/A
-bits     64
-class    N/A
-compiler N/A
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    N/A
-laddr    0x00000000
-lang     N/A
-machine  N/A
-maxopsz  16
-minopsz  1
-os       N/A
-cc       N/A
-pcalign  1
-rpath    N/A
-subsys   
-stripped false
-crypto   false
-havecode false
-va       false
-sanitiz  false
-static   true
-linenum  false
-lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
-[Info]
-arch     N/A
-cpu      N/A
-features N/A
-baddr    0x00000000
-binsz    0x00000401
-bintype  N/A
-bits     64
-class    N/A
-compiler N/A
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    N/A
-laddr    0x00000000
-lang     N/A
-machine  N/A
-maxopsz  16
-minopsz  1
-os       N/A
-cc       N/A
-pcalign  1
-rpath    N/A
-subsys   
-stripped false
-crypto   false
-havecode false
-va       false
-sanitiz  false
-static   true
-linenum  false
-lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
-
-[Imports]
-nth vaddr bind type lib name 
------------------------------
-
-[Entries]
-vaddr paddr hvaddr haddr type 
-------------------------------
-
-[Exports]
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-
-[Classes]
-address min max name super 
----------------------------
-
-[Symbols]
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-
-[Sections]
-paddr size vaddr vsize align perm name type flags 
---------------------------------------------------
-
-[Memory]
-name size address flags mirror 
--------------------------------
-
-[Strings]
-paddr vaddr len size section type string 
------------------------------------------
-
-nth vaddr bind type lib name 
------------------------------
-vaddr paddr hvaddr haddr type 
-------------------------------
-nth paddr vaddr bind type size lib name 
-----------------------------------------
-paddr size vaddr vsize align perm name type flags 
---------------------------------------------------
-paddr vaddr len size section type string 
------------------------------------------
-EOF
-RUN
-
 NAME=i (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=i~!file
@@ -758,6 +616,30 @@ class std::type_info {
 EOF
 RUN
 
+NAME=ica
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+ica Employee @ 0x100000000
+fl@F:classes~method
+EOF
+EXPECT=<<EOF
+0x100000000 0 method.Employee.helloWorld
+0x100000030 0 method.Employee.sayHello
+0x100000060 0 method.Employee.p0
+0x100000080 0 method.Employee.p1
+0x1000000a0 0 method.Employee.p2
+0x1000000c0 0 method.Employee.p3
+0x1000000e0 0 method.Employee.base
+0x100000100 0 method.class.Employee.sayHello
+0x100000130 0 method.Employee.username
+0x100000160 0 method.Employee.setUsername:
+0x1000001a0 0 method.Employee.firstName
+0x1000001d0 0 method.Employee.setFirstName:
+0x100000210 0 method.Employee.shortWord
+0x100000230 0 method.Employee.wideWord
+EOF
+RUN
+
 NAME=iq & iaq
 FILE=bins/elf/libmagic.so
 CMDS=iq;iaq
@@ -1231,12 +1113,12 @@ pthread_mutex_unlock
 0x000149a4 2 typeinfo name for unsigned long
 0x000149a8 3 typeinfo name for unsigned long*
 0x000149ac 4 typeinfo name for unsigned long const*
-0x000149b0 2 typeinfo name for int64_t
-0x000149b4 3 typeinfo name for int64_t*
-0x000149b8 4 typeinfo name for int64_t const*
-0x000149bc 2 typeinfo name for uint64_t
-0x000149c0 3 typeinfo name for uint64_t*
-0x000149c4 4 typeinfo name for uint64_t const*
+0x000149b0 2 typeinfo name for long long
+0x000149b4 3 typeinfo name for long long*
+0x000149b8 4 typeinfo name for long long const*
+0x000149bc 2 typeinfo name for unsigned long long
+0x000149c0 3 typeinfo name for unsigned long long*
+0x000149c4 4 typeinfo name for unsigned long long const*
 0x000149c8 2 typeinfo name for float
 0x000149cc 3 typeinfo name for float*
 0x000149d0 4 typeinfo name for float const*
@@ -1255,13 +1137,13 @@ pthread_mutex_unlock
 0x00014a0c 3 typeinfo name for decimal128
 0x00014a10 4 typeinfo name for decimal128*
 0x00014a14 5 typeinfo name for decimal128 const*
-0x00014a1c 3 typeinfo name for decltype(nullptr)
-0x00014a20 4 typeinfo name for decltype(nullptr)*
-0x00014a24 5 typeinfo name for decltype(nullptr) const*
-0x00016848 16 typeinfo for decltype(nullptr) const*
+0x00014a1c 3 typeinfo name for std::nullptr_t
+0x00014a20 4 typeinfo name for std::nullptr_t*
+0x00014a24 5 typeinfo name for std::nullptr_t const*
+0x00016848 16 typeinfo for std::nullptr_t const*
 0x00016c18 36 vtable for __cxxabiv1::__pointer_type_info
-0x00016868 8 typeinfo for decltype(nullptr)
-0x00016858 16 typeinfo for decltype(nullptr)*
+0x00016868 8 typeinfo for std::nullptr_t
+0x00016858 16 typeinfo for std::nullptr_t*
 0x00016870 16 typeinfo for decimal128 const*
 0x00016890 8 typeinfo for decimal128
 0x00016880 16 typeinfo for decimal128*
@@ -1280,12 +1162,12 @@ pthread_mutex_unlock
 0x00016938 16 typeinfo for float const*
 0x00016958 8 typeinfo for float
 0x00016948 16 typeinfo for float*
-0x00016960 16 typeinfo for uint64_t const*
-0x00016980 8 typeinfo for uint64_t
-0x00016970 16 typeinfo for uint64_t*
-0x00016988 16 typeinfo for int64_t const*
-0x000169a8 8 typeinfo for int64_t
-0x00016998 16 typeinfo for int64_t*
+0x00016960 16 typeinfo for unsigned long long const*
+0x00016980 8 typeinfo for unsigned long long
+0x00016970 16 typeinfo for unsigned long long*
+0x00016988 16 typeinfo for long long const*
+0x000169a8 8 typeinfo for long long
+0x00016998 16 typeinfo for long long*
 0x000169b0 16 typeinfo for unsigned long const*
 0x000169d0 8 typeinfo for unsigned long
 0x000169c0 16 typeinfo for unsigned long*
@@ -3656,6 +3538,7 @@ RUN
 
 NAME=izz and str.encoding
 FILE==
+ARGS=-a x86 -b 32
 CMDS=<<EOF
 wz k\0i\0abcdefgh
 (izzenc enc; e str.encoding=${enc}; izz:quiet)
@@ -4020,17 +3903,17 @@ nth      paddr      vaddr bind   type   size lib name
   7 ---------- ---------- WEAK   NOTYPE    0     imp._ITM_registerTMCloneTable
      vaddr      paddr     target type           name                        
 ----------------------------------------------------------------------------
-0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE 
-0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE 
+0x00001eec 0x00000eec 0x00000000 R_386_RELATIVE BASE
+0x00001ef0 0x00000ef0 0x00000000 R_386_RELATIVE BASE
 0x00001fe8 0x00000fe8 0x00002030 R_386_GLOB_DAT _ITM_deregisterTMCloneTable
 0x00001fec 0x00000fec 0x00002034 R_386_GLOB_DAT __cxa_finalize
 0x00001ff0 0x00000ff0 0x00002038 R_386_GLOB_DAT __gmon_start__
-0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE 
+0x00001ff4 0x00000ff4 0x00000000 R_386_RELATIVE BASE
 0x00001ff8 0x00000ff8 0x0000203c R_386_GLOB_DAT _Jv_RegisterClasses
 0x00001ffc 0x00000ffc 0x00002040 R_386_GLOB_DAT _ITM_registerTMCloneTable
 0x0000200c 0x0000100c 0x00002028 R_386_JMP_SLOT puts
 0x00002010 0x00001010 0x0000202c R_386_JMP_SLOT __libc_start_main
-0x00002018 0x00001018 0x00000000 R_386_RELATIVE 
+0x00002018 0x00001018 0x00000000 R_386_RELATIVE BASE
 0x00000000 1936 segment.LOAD0
 0x00000000 0 segment.GNU_STACK
 0x00000000 52 segment.ehdr
@@ -4315,17 +4198,10 @@ laddr    0x00000000
 EOF
 RUN
 
-NAME=ik-macho
-FILE=bins/mach0/fatmach0-3true
-CMDS=ik mach0.entry.vaddr~?0x100000ef8
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=ik
 FILE=bins/mach0/fatmach0-3true
 CMDS=ik mach0.entry.vaddr
+ARGS=-a ppc -b 64
 EXPECT=<<EOF
 0x100000ef8
 EOF
@@ -4351,6 +4227,7 @@ RUN
 
 NAME=iSq.
 FILE=bins/mach0/fatmach0-3true
+ARGS=-a ppc -b 64
 CMDS=iS.:paddr/cols/vaddr/perm/name
 EXPECT=<<EOF
      paddr       vaddr perm name            
@@ -4369,79 +4246,133 @@ imp.exit
 EOF
 RUN
 
-NAME=iRj
+NAME=iR
 FILE=bins/pe/standard.exe
-CMDS=iRj sha1 md5~{}
+CMDS=<<EOF
+iR sha1 md5
+iRj sha1 md5~{}
+iRt sha1 md5
+EOF
 EXPECT=<<EOF
+Resource 0
+  name: 1576
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x00401180
+  paddr: 0x00000380
+  size: 5.5K
+  type: ICON
+  language: LANG_NEUTRAL
+  sha1: 0641e148e71cb823888894028e5ba9f203181814
+  md5: 87507b293740fb9e8faee28a69237940
+Resource 1
+  name: 10
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x00402a10
+  paddr: 0x00001c10
+  size: 76
+  type: STRING
+  language: LANG_NEUTRAL
+  sha1: 86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da
+  md5: db3c483da9950c7bd46844f03cbd6887
+Resource 2
+  name: 788
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004027b0
+  paddr: 0x000019b0
+  size: 20
+  type: GROUP_ICON
+  language: LANG_NEUTRAL
+  sha1: 7c25f71d5507224c737aca686cbcf4d9a24a5aae
+  md5: e4211b2ef5cc41f9f1c9e676ef9a69be
+Resource 3
+  name: 1
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004027d0
+  paddr: 0x000019d0
+  size: 452
+  type: VERSION
+  language: LANG_NEUTRAL
+  sha1: 7a09fe300081b9cd92bc40261c95f65f23f95dde
+  md5: d8753c8132ba58cc148c14347def9ef4
+Resource 4
+  name: 1
+  timestamp: Thu Jan  1 00:00:00 1970 UTC
+  vaddr: 0x004029a0
+  paddr: 0x00001ba0
+  size: 74
+  type: MANIFEST
+  language: LANG_NEUTRAL
+  sha1: 3d743931c2fe134aee14483fac1625910289c29e
+  md5: a8ce572d4e2ecee820d55df5698c690f
 [
   {
     "name": "1576",
     "index": 0,
     "type": "ICON",
     "vaddr": 4198784,
+    "paddr": 896,
     "size": 5672,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "ead6c27941988470ea241780d5f03bda35ffb023",
-    "md5": "4ca2df93b0862cc601fb4c5df46722aa"
+    "sha1": "0641e148e71cb823888894028e5ba9f203181814",
+    "md5": "87507b293740fb9e8faee28a69237940"
   },
   {
     "name": "10",
     "index": 1,
     "type": "STRING",
     "vaddr": 4205072,
+    "paddr": 7184,
     "size": 76,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "ece05370137621ead05fcf468ba546e2dab83c7a",
-    "md5": "e6b62b76fb2eb2a0e0adde0c067da680"
+    "sha1": "86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da",
+    "md5": "db3c483da9950c7bd46844f03cbd6887"
   },
   {
     "name": "788",
     "index": 2,
     "type": "GROUP_ICON",
     "vaddr": 4204464,
+    "paddr": 6576,
     "size": 20,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "6768033e216468247bd031a0a2d9876d79818f8f",
-    "md5": "441018525208457705bf09a8ee3c1093"
+    "sha1": "7c25f71d5507224c737aca686cbcf4d9a24a5aae",
+    "md5": "e4211b2ef5cc41f9f1c9e676ef9a69be"
   },
   {
     "name": "1",
     "index": 3,
     "type": "VERSION",
     "vaddr": 4204496,
+    "paddr": 6608,
     "size": 452,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6",
-    "md5": "3ce9d74193d28338494362767873ba7b"
+    "sha1": "7a09fe300081b9cd92bc40261c95f65f23f95dde",
+    "md5": "d8753c8132ba58cc148c14347def9ef4"
   },
   {
     "name": "1",
     "index": 4,
     "type": "MANIFEST",
     "vaddr": 4204960,
+    "paddr": 7072,
     "size": 74,
     "lang": "LANG_NEUTRAL",
     "timestamp": "Thu Jan  1 00:00:00 1970 UTC",
-    "sha1": "1dcc0c704303ccc1729abd618f490073331e8b22",
-    "md5": "aa6672fe9e8426f8dd570c81095e1476"
+    "sha1": "3d743931c2fe134aee14483fac1625910289c29e",
+    "md5": "a8ce572d4e2ecee820d55df5698c690f"
   }
 ]
-EOF
-RUN
-
-NAME=iRt
-FILE=bins/pe/standard.exe
-CMDS=iRt:quiet sha1 md5
-EXPECT=<<EOF
-    0 1576 ICON       0x00401180 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ead6c27941988470ea241780d5f03bda35ffb023 4ca2df93b0862cc601fb4c5df46722aa
-    1 10   STRING     0x00402a10   0x4c LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC ece05370137621ead05fcf468ba546e2dab83c7a e6b62b76fb2eb2a0e0adde0c067da680
-    2 788  GROUP_ICON 0x004027b0   0x14 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 6768033e216468247bd031a0a2d9876d79818f8f 441018525208457705bf09a8ee3c1093
-    3 1    VERSION    0x004027d0  0x1c4 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC af9d0faa532f99a1a7e5b8f6bbf5ceaef55e38b6 3ce9d74193d28338494362767873ba7b
-    4 1    MANIFEST   0x004029a0   0x4a LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 1dcc0c704303ccc1729abd618f490073331e8b22 aa6672fe9e8426f8dd570c81095e1476
+index name type            vaddr      paddr   size lang         timestamp                    sha1                                     md5                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    0 1576 ICON       0x00401180 0x00000380 0x1628 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 0641e148e71cb823888894028e5ba9f203181814 87507b293740fb9e8faee28a69237940
+    1 10   STRING     0x00402a10 0x00001c10   0x4c LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 86abc7b4e5b564362fb7fb3e1645aa3f2fd8b8da db3c483da9950c7bd46844f03cbd6887
+    2 788  GROUP_ICON 0x004027b0 0x000019b0   0x14 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 7c25f71d5507224c737aca686cbcf4d9a24a5aae e4211b2ef5cc41f9f1c9e676ef9a69be
+    3 1    VERSION    0x004027d0 0x000019d0  0x1c4 LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 7a09fe300081b9cd92bc40261c95f65f23f95dde d8753c8132ba58cc148c14347def9ef4
+    4 1    MANIFEST   0x004029a0 0x00001ba0   0x4a LANG_NEUTRAL Thu Jan  1 00:00:00 1970 UTC 3d743931c2fe134aee14483fac1625910289c29e a8ce572d4e2ecee820d55df5698c690f
 EOF
 RUN
 
@@ -4454,11 +4385,45 @@ EOF
 RUN
 
 NAME=izx
-FILE=bins/arm/elf/hello_world 
+FILE=bins/arm/elf/ld-uClibc-0.9.28.so_rel_0_3
 CMDS=aaa;izxq
 EXPECT=<<EOF
-0x574 13 12 Hello world!
-0x494 10 10 \bH\tKxD\tJ{D
+0x51c0 16 15 LD_AOUT_PRELOAD
+0x519c 33 32 %s: aborted attempt to load %s!\n
+0x5190 9 8 libc.so.
+0x5164 31 30 %s: can't resolve symbol '%s'\n
+0x515c 7 6 malloc
+0x5154 7 6 atexit
+0x5148 10 9 __environ
+0x5138 16 15 \t%s => %s (%x)\n
+0x5118 29 28 %s: can't load library '%s'\n
+0x5104 18 17 \t%s => not found\n
+0x50ec 24 23 LD_TRACE_LOADED_OBJECTS
+0x50dc 16 15 LD_LIBRARY_PATH
+0x50d0 11 10 LD_PRELOAD
+0x50c4 12 11 LD_BIND_NOW
+0x5098 43 42 Standalone execution is not supported yet\n
+0x507c 28 27 can't handle reloc type %x\n
+0x506c 14 13 symbol '%s': 
+0x5064 6 5 \n%s: 
+0x4fcc 150 149 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/lib:/home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/usr/lib
+0x4fb4 16 15 Out of memory!\n
+0x4f60 82 81 Can't modify %s's text section. Use GCC option -fPIC for shared objects, please.\n
+0x4f38 39 38 %s: '%s' is missing a dynamic section\n
+0x4f24 18 17 %s: can't map %s\n
+0x4ef8 44 43 %s: '%s' has more than one dynamic section\n
+0x4ecc 44 43 %s: '%s' is not an ELF executable for MIPS\n
+0x4eac 29 28 %s: '%s' is not an ELF file\n
+0x4e98 20 19 %s: can't map '%s'\n
+0x4e74 34 33 %s: mmap of a spare page failed!\n
+0x4e58 27 26 %s: cache '%s' is corrupt\n
+0x4e50 6 5 1.7.0
+0x4e48 7 6 ld.so-
+0x4e2c 26 25 %s: can't map cache '%s'\n
+0x4dd4 85 84 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
+0x4d94 63 62 %s: cannot apply additional memory protection after relocation
+0x4d80 10 9 overflow\n
+0x4d70 15 14 ld-uClibc.so.0
 EOF
 RUN
 
@@ -4492,6 +4457,7 @@ RUN
 
 NAME=iT2
 FILE=--
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 mkdir .tmp
 cp bins/mach0/fatmach0-3true .tmp/it2-modfile

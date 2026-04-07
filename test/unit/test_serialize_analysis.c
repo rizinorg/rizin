@@ -6,6 +6,7 @@
 #include "test_config.h"
 #include "minunit.h"
 #include "test_sdb.h"
+#include "analysis_private.h"
 
 #include "test_analysis_block_invars.inl"
 
@@ -181,7 +182,7 @@ Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"bbs\":[1337]}");
 	sdb_set(db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
-	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}");
+	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"year\":1440,\"another\":1450,\"beach\":1400}}");
 	sdb_set(db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
 	sdb_set(db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"bbs\":[]}");
 	sdb_set(db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bbs\":[]}");
@@ -280,7 +281,7 @@ bool test_analysis_function_load() {
 	mu_assert_eq(rz_list_length(f->imports), 2, "imports count");
 	mu_assert_streq(rz_list_get_n(f->imports, 0), "earth", "import");
 	mu_assert_streq(rz_list_get_n(f->imports, 1), "rise", "import");
-	mu_assert_eq(f->labels->count, 3, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 3, "labels count");
 	mu_assert_eq(rz_analysis_function_get_label(f, "beach"), 1400, "label");
 	mu_assert_eq(rz_analysis_function_get_label(f, "another"), 1450, "label");
 	mu_assert_eq(rz_analysis_function_get_label(f, "year"), 1440, "label");
@@ -301,7 +302,7 @@ bool test_analysis_function_load() {
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_eq(f->bp_off, 0, "bp off");
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 4242);
 	mu_assert_notnull(f, "function");
@@ -317,7 +318,7 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", !f->is_noreturn);
 	mu_assert("bp_frame", !f->bp_frame);
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 424242);
 	mu_assert_notnull(f, "function");
@@ -333,31 +334,31 @@ bool test_analysis_function_load() {
 	mu_assert("noreturn", f->is_noreturn);
 	mu_assert("bp_frame", f->bp_frame);
 	mu_assert_null(f->imports, "imports");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xdead);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "agnosie", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_IMP, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xbeef);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "eskapist", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_INT, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0xc0ffee);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "lifnej", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_ROOT, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	f = rz_analysis_get_function_at(analysis, 0x31337);
 	mu_assert_notnull(f, "function");
 	mu_assert_streq(f->name, "aldebaran", "name");
 	mu_assert_eq(f->type, RZ_ANALYSIS_FCN_TYPE_ANY, "type");
-	mu_assert_eq(f->labels->count, 0, "labels count");
+	mu_assert_eq(ht_up_size(f->labels), 0, "labels count");
 
 	assert_block_invariants(analysis);
 	assert_block_leaks(analysis);
@@ -979,6 +980,7 @@ Sdb *hints_ref_db() {
 	sdb_set(db, "0x2b0", "{\"esil\":\"13,29,+\"}");
 	sdb_set(db, "0x2c0", "{\"high\":true}");
 	sdb_set(db, "0x2d0", "{\"val\":54323}");
+	sdb_set(db, "0x2e0", "{\"enum\":\"BLA\"}");
 	return db;
 }
 
@@ -1026,6 +1028,7 @@ bool test_analysis_hints_save() {
 	rz_analysis_hint_set_esil(analysis, 0x2b0, "13,29,+");
 	rz_analysis_hint_set_high(analysis, 0x2c0);
 	rz_analysis_hint_set_val(analysis, 0x2d0, 54323);
+	rz_analysis_hint_set_enum(analysis, 0x2e0, "BLA");
 
 	size_t i;
 	for (i = 0; i < ALL_OPTYPES_COUNT; i++) {
@@ -1070,7 +1073,7 @@ bool test_analysis_hints_load() {
 	rz_analysis_addr_hints_foreach(analysis, addr_hints_count_cb, &count);
 	rz_analysis_arch_hints_foreach(analysis, arch_hints_count_cb, &count);
 	rz_analysis_bits_hints_foreach(analysis, bits_hints_count_cb, &count);
-	mu_assert_eq(count, 19 + ALL_OPTYPES_COUNT, "hints count");
+	mu_assert_eq(count, 20 + ALL_OPTYPES_COUNT, "hints count");
 
 	ut64 addr;
 	const char *arch = rz_analysis_hint_arch_at(analysis, 0x100, &addr);
@@ -1116,6 +1119,7 @@ bool test_analysis_hints_load() {
 	assert_addr_hint(0x2b0, ESIL, mu_assert_streq(record->esil, "13,29,+", "esil hint"));
 	assert_addr_hint(0x2c0, HIGH, );
 	assert_addr_hint(0x2d0, VAL, mu_assert_eq(record->val, 54323, "val hint"));
+	assert_addr_hint(0x2e0, ENUM, mu_assert_streq(record->enum_name, "BLA", "enum hint"));
 
 	size_t i;
 	for (i = 0; i < ALL_OPTYPES_COUNT; i++) {

@@ -16,7 +16,8 @@ bool pdb_info_save_types(RzAnalysis *analysis, const char *file) {
 		return false;
 	}
 
-	rz_type_db_pdb_load(analysis->typedb, pdb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	rz_type_db_pdb_load(typedb, pdb);
 	rz_bin_pdb_free(pdb);
 	return true;
 }
@@ -347,12 +348,14 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzAnalysis *analysis = rz_analysis_new(NULL);
-	rz_type_db_init(analysis->typedb, analysis->sdb_types_path, "x86", 32, "windows");
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	const char *sdb_types_path = rz_analysis_get_sdb_types_path(analysis);
+	rz_type_db_init(typedb, sdb_types_path, "x86", 32, "windows");
 
 	mu_assert_true(pdb_info_save_types(analysis, "bins/pdb/Project1.pdb"), "pdb parsing failed");
 
 	// Check the enum presence and validity
-	RzBaseType *test_enum = rz_type_db_get_base_type(analysis->typedb, "R2_TEST_ENUM");
+	RzBaseType *test_enum = rz_type_db_get_base_type(typedb, "R2_TEST_ENUM");
 	mu_assert_notnull(test_enum, "NULL type");
 	mu_assert_eq(test_enum->kind, RZ_BASE_TYPE_KIND_ENUM, "R2_TEST_ENUM is enum");
 	mu_assert_true(has_enum_val(test_enum, "eENUM1_R2", 0x10), "eNUM1_R2 = 0x10");
@@ -362,17 +365,17 @@ bool test_pdb_type_save(void) {
 	mu_assert_false(has_enum_case(test_enum, "no_case"), "no such enum case");
 
 	// Check the union presence and validity
-	RzBaseType *test_union = rz_type_db_get_base_type(analysis->typedb, "R2_TEST_UNION");
+	RzBaseType *test_union = rz_type_db_get_base_type(typedb, "R2_TEST_UNION");
 	mu_assert_notnull(test_union, "NULL type");
 	mu_assert_eq(test_union->kind, RZ_BASE_TYPE_KIND_UNION, "R2_TEST_UNION is union");
 	mu_assert_true(has_union_member(test_union, "r2_union_var_1"), "r2_union_var_1");
 	mu_assert_true(has_union_member(test_union, "r2_union_var_2"), "r2_union_var_2");
 	// Test member types also
-	mu_assert_true(has_union_member_type(analysis->typedb, test_union, "r2_union_var_1", "int32_t"), "r2_union_var_1 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, test_union, "r2_union_var_2", "double"), "rz_union_var_2 type");
+	mu_assert_true(has_union_member_type(typedb, test_union, "r2_union_var_1", "int32_t"), "r2_union_var_1 type");
+	mu_assert_true(has_union_member_type(typedb, test_union, "r2_union_var_2", "double"), "rz_union_var_2 type");
 	mu_assert_false(has_union_member(test_union, "noSuchMember"), "no such struct member");
 
-	RzBaseType *m64_union = rz_type_db_get_base_type(analysis->typedb, "__m64");
+	RzBaseType *m64_union = rz_type_db_get_base_type(typedb, "__m64");
 	mu_assert_notnull(m64_union, "NULL type");
 	mu_assert_eq(m64_union->kind, RZ_BASE_TYPE_KIND_UNION, "__m64 is union");
 	mu_assert_true(has_union_member(m64_union, "m64_f32"), "m64_f32");
@@ -385,20 +388,20 @@ bool test_pdb_type_save(void) {
 	mu_assert_true(has_union_member(m64_union, "m64_u32"), "m64_u32");
 	mu_assert_true(has_union_member(m64_union, "m64_u64"), "m64_u64");
 	// Test member types also
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u64", "uint64_t"), "m64_u64 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_f32", "float [8]"), "m64_f32 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i8", "char [8]"), "m64_i8 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i32", "int32_t [8]"), "m64_i32 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i16", "int16_t [8]"), "m64_i16 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i64", "int64_t"), "m64_i64 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u8", "unsigned char [8]"), "m64_u8 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u16", "uint16_t [8]"), "m64_u16 type");
-	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u32", "uint32_t [8]"), "m64_u32 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_u64", "uint64_t"), "m64_u64 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_f32", "float [8]"), "m64_f32 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_i8", "char [8]"), "m64_i8 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_i32", "int32_t [8]"), "m64_i32 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_i16", "int16_t [8]"), "m64_i16 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_i64", "int64_t"), "m64_i64 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_u8", "unsigned char [8]"), "m64_u8 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_u16", "uint16_t [8]"), "m64_u16 type");
+	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_u32", "uint32_t [8]"), "m64_u32 type");
 
 	mu_assert_false(has_union_member(m64_union, "noSuchMember"), "no such union member");
 	// We dont handle class integration for now, so disable the following unit test.
 	// Check the structure presence and validity
-	// RzBaseType *test_class = rz_type_db_get_base_type(analysis->typedb, "TEST_CLASS");
+	// RzBaseType *test_class = rz_type_db_get_base_type(typedb, "TEST_CLASS");
 	// mu_assert_eq(test_class->kind, RZ_BASE_TYPE_KIND_STRUCT, "TEST_CLASS is struct");
 	// mu_assert_true(has_struct_member(test_class, "class_var1"), "class_var1");
 	// mu_assert_true(has_struct_member(test_class, "calss_var2"), "calss_var2");
@@ -410,14 +413,14 @@ bool test_pdb_type_save(void) {
 	// Check the structure presence and validity
 
 	// Forward defined structure
-	RzBaseType *localeinfo = rz_type_db_get_base_type(analysis->typedb, "localeinfo_struct");
+	RzBaseType *localeinfo = rz_type_db_get_base_type(typedb, "localeinfo_struct");
 	mu_assert_notnull(localeinfo, "NULL type");
 	mu_assert_eq(localeinfo->kind, RZ_BASE_TYPE_KIND_STRUCT, "localeinfo_struct is struct");
 	mu_assert_true(has_struct_member(localeinfo, "locinfo"), "locinfo");
 	mu_assert_true(has_struct_member(localeinfo, "mbcinfo"), "mbcinfo");
 	// Test member types also
-	mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "locinfo", "struct threadlocaleinfostruct *"), "locinfo type");
-	mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "mbcinfo", "struct threadmbcinfostruct *"), "mbcinfo type");
+	mu_assert_true(has_struct_member_type(typedb, localeinfo, "locinfo", "struct threadlocaleinfostruct *"), "locinfo type");
+	mu_assert_true(has_struct_member_type(typedb, localeinfo, "mbcinfo", "struct threadmbcinfostruct *"), "mbcinfo type");
 
 	mu_assert_false(has_struct_member(localeinfo, "noSuchMember"), "no such struct member");
 

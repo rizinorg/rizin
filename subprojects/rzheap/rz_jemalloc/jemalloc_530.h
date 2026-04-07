@@ -5,82 +5,16 @@
 #ifndef RZ_JEMALLOC_530_H
 #define RZ_JEMALLOC_530_H
 
+#include "jemalloc_arch.h"
 #include <rz_util.h>
 #include <rz_io.h>
+#include <stdio.h>
 
-#define EDATA_SIZE_64                 128
-#define EDATA_SIZE_32                 108
-#define EDATA_SIZE_MAX                128
-#define BIN_INFO_SIZE_64              40
-#define BIN_INFO_SIZE_32              48
-#define BIN_INFO_SIZE_MAX             48
-#define BIN_SIZE_64                   224
-#define BIN_SIZE_32                   172
-#define BIN_SIZE_MAX                  224
-#define ARENA_SIZE_64                 78952
-#define ARENA_SIZE_32                 22004
-#define ARENA_SIZE_MAX                78952
-#define RTREE_NODE_ELM_SIZE_64        8
-#define RTREE_NODE_ELM_SIZE_32        4
-#define RTREE_NODE_ELM_SIZE_MAX       8
-#define RTREE_LEAF_ELM_SIZE_64        8
-#define RTREE_LEAF_ELM_SIZE_32        8
-#define RTREE_LEAF_ELM_SIZE_MAX       8
-#define PHN_LINK_SIZE_64              24
-#define PHN_LINK_SIZE_32              12
-#define PH_SIZE_64                    16
-#define PH_SIZE_32                    8
-#define NSTIME_SIZE_64                8
-#define NSTIME_SIZE_32                8
-#define BITMAP_INFO_SIZE_64           16
-#define BITMAP_INFO_SIZE_32           32
-#define RTREE_SIZE_64                 2097272
-#define RTREE_SIZE_32                 4188
-#define SC_NSIZES                     235
-#define SC_LG_SLAB_MAXREGS            9
-#define MALLOC_MUTEX_SIZE_64          112
-#define MALLOC_MUTEX_SIZE_32          88
-#define BIN_STATS_SIZE_64             80
-#define BIN_STATS_SIZE_32             68
-#define MALLOCX_ARENA_BITS            12
-#define EDATA_ALIGNMENT               128
-#define LG_PAGE_530                   12
-#define JM_NBINS_530                  36
-#define ARENA_LAST_THD_OFFSET_64      16
-#define ARENA_STATS_OFFSET_64         24
-#define ARENA_TCACHE_QL_OFFSET_64     10392
-#define ARENA_CACHE_BIN_ARR_OFFSET_64 10400
-#define ARENA_TCACHE_QL_MTX_OFFSET_64 10408
-#define ARENA_DSS_PREC_OFFSET_64      10520
-#define ARENA_LARGE_OFFSET_64         10528
-#define ARENA_LARGE_MTX_OFFSET_64     10536
-#define ARENA_PA_SHARD_OFFSET_64      10648
-#define ARENA_IND_OFFSET_64           78928
-#define ARENA_BASE_OFFSET_64          78936
-#define ARENA_CREATE_TIME_OFFSET_64   78944
-#define ARENA_BINS_OFFSET_64          78952
-#define ARENA_STATS_OFFSET_32         16
-#define ARENA_TCACHE_QL_OFFSET_32     3960
-#define ARENA_CACHE_BIN_ARR_OFFSET_32 3964
-#define ARENA_TCACHE_QL_MTX_OFFSET_32 3968
-#define ARENA_LARGE_OFFSET_32         4032
-#define ARENA_LARGE_MTX_OFFSET_32     4036
-#define ARENA_PA_SHARD_OFFSET_32      4040
-#define ARENA_DSS_PREC_OFFSET_32      4056
-#define ARENA_IND_OFFSET_32           21988
-#define ARENA_BASE_OFFSET_32          21992
-#define ARENA_CREATE_TIME_OFFSET_32   21996
-#define ARENA_BINS_OFFSET_32          22004
-#define BIN_SLABCUR_OFFSET_64         192
-#define BIN_SLABCUR_OFFSET_32         156
-#define RTREE_NSB_64                  36
-#define RTREE_NSB_32                  20
-#define RTREE_BITS_PER_LEVEL_64       18
-#define RTREE_BITS_PER_LEVEL_32       10
-#define RTREE_MAX_SUBKEYS_64          (1U << RTREE_BITS_PER_LEVEL_64)
-#define RTREE_MAX_SUBKEYS_32          (1U << RTREE_BITS_PER_LEVEL_32)
-#define RTREE_ROOT_OFFSET_64          120
-#define RTREE_ROOT_OFFSET_32          92
+#define BITMAP_MAX_LEVELS_530 6
+#define SC_NSIZES             235
+#define SC_LG_SLAB_MAXREGS    9
+#define MALLOCX_ARENA_BITS    12
+#define EDATA_ALIGNMENT       128
 
 #define MASK(CURRENT_FIELD_WIDTH, CURRENT_FIELD_SHIFT) ((((((ut64)0x1U) << (CURRENT_FIELD_WIDTH)) - 1)) << (CURRENT_FIELD_SHIFT))
 
@@ -112,25 +46,599 @@
 #define EDATA_BITS_STATE_SHIFT (EDATA_BITS_GUARDED_WIDTH + EDATA_BITS_GUARDED_SHIFT)
 #define EDATA_BITS_STATE_MASK  MASK(EDATA_BITS_STATE_WIDTH, EDATA_BITS_STATE_SHIFT)
 
-#define EDATA_BITS_SZIND_WIDTH LG_CEIL(SC_NSIZES)
-#define EDATA_BITS_SZIND_SHIFT (EDATA_BITS_STATE_WIDTH + EDATA_BITS_STATE_SHIFT)
-#define EDATA_BITS_SZIND_MASK  MASK(EDATA_BITS_SZIND_WIDTH, EDATA_BITS_SZIND_SHIFT)
+// ============================================================================
+// jemalloc 5.3.0 configuration
+// ============================================================================
 
-#define EDATA_BITS_NFREE_WIDTH (SC_LG_SLAB_MAXREGS + 1)
-#define EDATA_BITS_NFREE_SHIFT (EDATA_BITS_SZIND_WIDTH + EDATA_BITS_SZIND_SHIFT)
-#define EDATA_BITS_NFREE_MASK  MASK(EDATA_BITS_NFREE_WIDTH, EDATA_BITS_NFREE_SHIFT)
+typedef struct rz_jemalloc_arena_offsets_530_t {
+	ut32 stats;
+	ut32 tcache_ql;
+	ut32 cache_bin_arr;
+	ut32 tcache_ql_mtx;
+	ut32 dss_prec;
+	ut32 large;
+	ut32 large_mtx;
+	ut32 pa_shard;
+	ut32 ind;
+	ut32 base;
+	ut32 create_time;
+	ut32 bins;
+	ut32 last_thd;
+} RzJemallocArenaOffsets530;
 
-#define EDATA_BITS_BINSHARD_WIDTH 6
-#define EDATA_BITS_BINSHARD_SHIFT (EDATA_BITS_NFREE_WIDTH + EDATA_BITS_NFREE_SHIFT)
-#define EDATA_BITS_BINSHARD_MASK  MASK(EDATA_BITS_BINSHARD_WIDTH, EDATA_BITS_BINSHARD_SHIFT)
+typedef struct rz_jemalloc_bin_offsets_530_t {
+	ut32 slabcur;
+} RzJemallocBinOffsets530;
 
-#define EDATA_BITS_IS_HEAD_WIDTH 1
-#define EDATA_BITS_IS_HEAD_SHIFT (EDATA_BITS_BINSHARD_WIDTH + EDATA_BITS_BINSHARD_SHIFT)
-#define EDATA_BITS_IS_HEAD_MASK  MASK(EDATA_BITS_IS_HEAD_WIDTH, EDATA_BITS_IS_HEAD_SHIFT)
+typedef struct rz_jemalloc_rtree_offsets_530_t {
+	ut32 root;
+} RzJemallocRtreeOffsets530;
 
-#define RTREE_LEAF_STATE_WIDTH EDATA_BITS_STATE_WIDTH
-#define RTREE_LEAF_STATE_SHIFT 2
-#define RTREE_LEAF_STATE_MASK  MASK(RTREE_LEAF_STATE_WIDTH, RTREE_LEAF_STATE_SHIFT)
+typedef struct rz_jemalloc_config_530_t {
+	RzJemallocArch arch;
+	ut8 ptr_size;
+	bool is_big_endian;
+
+	ut8 lg_page; // Log2 of page size (12=4K, 14=16K, 16=64K)
+
+	ut32 sc_nbins;
+	ut32 sc_nsizes;
+
+	bool bitmap_use_tree;
+	ut32 bitmap_max_levels;
+
+	ut32 rtree_nsb;
+	ut32 rtree_bits_per_level;
+	ut32 rtree_height;
+	bool rtree_leaf_compact;
+
+	ut32 edata_size;
+	ut32 bin_info_size;
+	ut32 bin_size;
+	ut32 arena_size;
+	ut32 bitmap_info_size;
+	ut32 rtree_node_elm_size;
+	ut32 rtree_leaf_elm_size;
+
+	RzJemallocArenaOffsets530 arena_offsets;
+	RzJemallocBinOffsets530 bin_offsets;
+	RzJemallocRtreeOffsets530 rtree_offsets;
+} RzJemallocConfig530;
+
+static const RzJemallocConfig530 rz_jemalloc_config_amd64_linux_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AMD64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.rtree_nsb = 36,
+	.rtree_bits_per_level = 18,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 128,
+	.bin_info_size = 40,
+	.bin_size = 224,
+	.arena_size = 78952,
+	.bitmap_info_size = 16,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10392,
+		.cache_bin_arr = 10400,
+		.tcache_ql_mtx = 10408,
+		.dss_prec = 10520,
+		.large = 10528,
+		.large_mtx = 10536,
+		.pa_shard = 10648,
+		.ind = 78928,
+		.base = 78936,
+		.create_time = 78944,
+		.bins = 78952,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 192,
+	},
+	.rtree_offsets = {
+		.root = 120,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_amd64_freebsd_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AMD64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.rtree_nsb = 36,
+	.rtree_bits_per_level = 18,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 128,
+	.bin_info_size = 40,
+	.bin_size = 200,
+	.arena_size = 78664,
+	.bitmap_info_size = 16,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10392,
+		.cache_bin_arr = 10400,
+		.tcache_ql_mtx = 10408,
+		.dss_prec = 10496,
+		.large = 10504,
+		.large_mtx = 10512,
+		.pa_shard = 10600,
+		.ind = 78640,
+		.base = 78648,
+		.create_time = 78656,
+		.bins = 78664,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 168,
+	},
+	.rtree_offsets = {
+		.root = 96,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_i386_linux_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_I386,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 104,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 20,
+	.rtree_bits_per_level = 10,
+	.rtree_height = 2,
+	.rtree_leaf_compact = false,
+	.edata_size = 108,
+	.bin_info_size = 48,
+	.bin_size = 172,
+	.arena_size = 22004,
+	.bitmap_info_size = 32,
+	.rtree_node_elm_size = 4,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 16,
+		.tcache_ql = 3960,
+		.cache_bin_arr = 3964,
+		.tcache_ql_mtx = 3968,
+		.dss_prec = 4056,
+		.large = 4060,
+		.large_mtx = 4064,
+		.pa_shard = 4152,
+		.ind = 21988,
+		.base = 21992,
+		.create_time = 21996,
+		.bins = 22004,
+		.last_thd = 12,
+	},
+	.bin_offsets = {
+		.slabcur = 156,
+	},
+	.rtree_offsets = {
+		.root = 92,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_i386_freebsd_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_I386,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 104,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 20,
+	.rtree_bits_per_level = 10,
+	.rtree_height = 2,
+	.rtree_leaf_compact = false,
+	.edata_size = 108,
+	.bin_info_size = 48,
+	.bin_size = 156,
+	.arena_size = 21796,
+	.bitmap_info_size = 32,
+	.rtree_node_elm_size = 4,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 16,
+		.tcache_ql = 3944,
+		.cache_bin_arr = 3948,
+		.tcache_ql_mtx = 3952,
+		.dss_prec = 4024,
+		.large = 4028,
+		.large_mtx = 4032,
+		.pa_shard = 4104,
+		.ind = 21780,
+		.base = 21784,
+		.create_time = 21788,
+		.bins = 21796,
+		.last_thd = 12,
+	},
+	.bin_offsets = {
+		.slabcur = 140,
+	},
+	.rtree_offsets = {
+		.root = 76,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_aarch64_linux_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.rtree_nsb = 36,
+	.rtree_bits_per_level = 18,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 128,
+	.bin_info_size = 40,
+	.bin_size = 232,
+	.arena_size = 79048,
+	.bitmap_info_size = 16,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10392,
+		.cache_bin_arr = 10400,
+		.tcache_ql_mtx = 10408,
+		.dss_prec = 10528,
+		.large = 10536,
+		.large_mtx = 10544,
+		.pa_shard = 10664,
+		.ind = 79024,
+		.base = 79032,
+		.create_time = 79040,
+		.bins = 79048,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 200,
+	},
+	.rtree_offsets = {
+		.root = 128,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_aarch64_linux_16k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 14,
+	.sc_nbins = 44,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 34,
+	.rtree_bits_per_level = 17,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 328,
+	.bin_info_size = 88,
+	.bin_size = 232,
+	.arena_size = 76312,
+	.bitmap_info_size = 64,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10008,
+		.cache_bin_arr = 10016,
+		.tcache_ql_mtx = 10024,
+		.dss_prec = 10144,
+		.large = 10152,
+		.large_mtx = 10160,
+		.pa_shard = 10280,
+		.ind = 76288,
+		.base = 76296,
+		.create_time = 76304,
+		.bins = 76312,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 200,
+	},
+	.rtree_offsets = {
+		.root = 128,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_aarch64_linux_64k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 16,
+	.sc_nbins = 52,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 32,
+	.rtree_bits_per_level = 16,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 1112,
+	.bin_info_size = 88,
+	.bin_size = 232,
+	.arena_size = 73624,
+	.bitmap_info_size = 64,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 9624,
+		.cache_bin_arr = 9632,
+		.tcache_ql_mtx = 9640,
+		.dss_prec = 9760,
+		.large = 9768,
+		.large_mtx = 9776,
+		.pa_shard = 9896,
+		.ind = 73600,
+		.base = 73608,
+		.create_time = 73616,
+		.bins = 73624,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 200,
+	},
+	.rtree_offsets = {
+		.root = 128,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_arm32_linux_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_ARM32,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 39,
+	.sc_nsizes = 107,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 20,
+	.rtree_bits_per_level = 10,
+	.rtree_height = 2,
+	.rtree_leaf_compact = false,
+	.edata_size = 120,
+	.bin_info_size = 48,
+	.bin_size = 184,
+	.arena_size = 24272,
+	.bitmap_info_size = 32,
+	.rtree_node_elm_size = 4,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 16,
+		.tcache_ql = 4296,
+		.cache_bin_arr = 4300,
+		.tcache_ql_mtx = 4304,
+		.dss_prec = 4400,
+		.large = 4404,
+		.large_mtx = 4408,
+		.pa_shard = 4504,
+		.ind = 24256,
+		.base = 24260,
+		.create_time = 24264,
+		.bins = 24272,
+		.last_thd = 12,
+	},
+	.bin_offsets = {
+		.slabcur = 168,
+	},
+	.rtree_offsets = {
+		.root = 104,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_arm32_linux_64k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_ARM32,
+	.ptr_size = 4,
+	.is_big_endian = false,
+	.lg_page = 16,
+	.sc_nbins = 55,
+	.sc_nsizes = 107,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 16,
+	.rtree_bits_per_level = 8,
+	.rtree_height = 2,
+	.rtree_leaf_compact = false,
+	.edata_size = 1112,
+	.bin_info_size = 48,
+	.bin_size = 184,
+	.arena_size = 20384,
+	.bitmap_info_size = 32,
+	.rtree_node_elm_size = 4,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 16,
+		.tcache_ql = 3528,
+		.cache_bin_arr = 3532,
+		.tcache_ql_mtx = 3536,
+		.dss_prec = 3632,
+		.large = 3636,
+		.large_mtx = 3640,
+		.pa_shard = 3736,
+		.ind = 20368,
+		.base = 20372,
+		.create_time = 20376,
+		.bins = 20384,
+		.last_thd = 12,
+	},
+	.bin_offsets = {
+		.slabcur = 168,
+	},
+	.rtree_offsets = {
+		.root = 104,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_riscv64_linux_4k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_RISCV64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 12,
+	.sc_nbins = 36,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = false,
+	.bitmap_max_levels = 0,
+	.rtree_nsb = 52,
+	.rtree_bits_per_level = 17,
+	.rtree_height = 3,
+	.rtree_leaf_compact = false,
+	.edata_size = 128,
+	.bin_info_size = 40,
+	.bin_size = 224,
+	.arena_size = 78952,
+	.bitmap_info_size = 16,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 16,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10392,
+		.cache_bin_arr = 10400,
+		.tcache_ql_mtx = 10408,
+		.dss_prec = 10520,
+		.large = 10528,
+		.large_mtx = 10536,
+		.pa_shard = 10648,
+		.ind = 78928,
+		.base = 78936,
+		.create_time = 78944,
+		.bins = 78952,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 192,
+	},
+	.rtree_offsets = {
+		.root = 120,
+	},
+};
+
+static const RzJemallocConfig530 rz_jemalloc_config_aarch64_darwin_16k_530 = {
+	.arch = RZ_JEMALLOC_ARCH_AARCH64,
+	.ptr_size = 8,
+	.is_big_endian = false,
+	.lg_page = 14,
+	.sc_nbins = 44,
+	.sc_nsizes = 232,
+	.bitmap_use_tree = true,
+	.bitmap_max_levels = 5,
+	.rtree_nsb = 34,
+	.rtree_bits_per_level = 17,
+	.rtree_height = 2,
+	.rtree_leaf_compact = true,
+	.edata_size = 328,
+	.bin_info_size = 88,
+	.bin_size = 184,
+	.arena_size = 75736,
+	.bitmap_info_size = 64,
+	.rtree_node_elm_size = 8,
+	.rtree_leaf_elm_size = 8,
+	.arena_offsets = {
+		.stats = 24,
+		.tcache_ql = 10008,
+		.cache_bin_arr = 10016,
+		.tcache_ql_mtx = 10024,
+		.dss_prec = 10096,
+		.large = 10104,
+		.large_mtx = 10112,
+		.pa_shard = 10184,
+		.ind = 75712,
+		.base = 75720,
+		.create_time = 75728,
+		.bins = 75736,
+		.last_thd = 16,
+	},
+	.bin_offsets = {
+		.slabcur = 152,
+	},
+	.rtree_offsets = {
+		.root = 80,
+	},
+};
+
+static inline const RzJemallocConfig530 *rz_jemalloc_get_config_530(const char *arch, const char *os, int bits, const char *page_size) {
+	if (!arch || !os) {
+		return NULL;
+	}
+
+	// default is_linux
+	bool is_darwin = !strcmp(os, "darwin") || !strcmp(os, "macos") || !strcmp(os, "ios");
+	bool is_freebsd = !strcmp(os, "freebsd");
+	bool is_x86 = !strcmp(arch, "x86") || !strcmp(arch, "x64");
+	bool is_arm = !strcmp(arch, "arm") || !strcmp(arch, "aarch64");
+	bool is_riscv = !strcmp(arch, "riscv");
+
+	bool is_16k = page_size && (!strcmp(page_size, "16k") || !strcmp(page_size, "16K"));
+	bool is_64k = page_size && (!strcmp(page_size, "64k") || !strcmp(page_size, "64K"));
+
+	if (is_darwin && is_arm && bits == 64) {
+		return &rz_jemalloc_config_aarch64_darwin_16k_530;
+	}
+
+	if (is_freebsd && is_x86) {
+		if (bits == 64) {
+			return &rz_jemalloc_config_amd64_freebsd_4k_530;
+		} else {
+			return &rz_jemalloc_config_i386_freebsd_4k_530;
+		}
+	}
+
+	if (is_x86) { // by default is linux
+		if (bits == 64) {
+			return &rz_jemalloc_config_amd64_linux_4k_530;
+		} else {
+			return &rz_jemalloc_config_i386_linux_4k_530;
+		}
+	}
+
+	if (is_arm) {
+		if (bits == 64) {
+			if (is_64k) {
+				return &rz_jemalloc_config_aarch64_linux_64k_530;
+			} else if (is_16k) {
+				return &rz_jemalloc_config_aarch64_linux_16k_530;
+			}
+			return &rz_jemalloc_config_aarch64_linux_4k_530;
+		} else {
+			if (is_64k) {
+				return &rz_jemalloc_config_arm32_linux_64k_530;
+			}
+			return &rz_jemalloc_config_arm32_linux_4k_530;
+		}
+	}
+
+	if (is_riscv && bits == 64) {
+		return &rz_jemalloc_config_riscv64_linux_4k_530;
+	}
+
+	return NULL;
+}
+
+// ============================================================================
+// jemalloc 5.3.0 structs
+// ============================================================================
 
 /*
  * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/ph.h
@@ -184,17 +692,15 @@ typedef struct nstime_t_530 {
 } nstime_t_530;
 
 /*
- * Unified bitmap_info structure
- * 64-bit: nbits(8) + ngroups(8) = 16 bytes (no BITMAP_USE_TREE)
- * 32-bit: nbits(4) + nlevels(4) + levels[6](24) = 32 bytes (BITMAP_USE_TREE)
+ * source: https://github.com/jemalloc/jemalloc/blob/5.3.0/include/jemalloc/internal/bin_info.h
  */
 typedef struct bitmap_info_t_530 {
 	ut64 nbits;
-	// Non-tree format (64-bit)
+	// Non-tree format
 	ut64 ngroups;
-	// Tree format (32-bit)
+	// Tree format
 	ut32 nlevels;
-	ut64 levels[6]; // BITMAP_MAX_LEVELS + 1
+	ut64 levels[BITMAP_MAX_LEVELS_530 + 1];
 } bitmap_info_t_530;
 
 /*
@@ -236,278 +742,329 @@ typedef struct arena_t_530 {
 	ut64 bins_addr;
 } arena_t_530;
 
-static inline size_t rtree_node_elm_size_530(bool is_64bit) {
-	return is_64bit ? RTREE_NODE_ELM_SIZE_64 : RTREE_NODE_ELM_SIZE_32;
-}
+// ============================================================================
+// parser
+// ============================================================================
 
-static inline size_t rtree_leaf_elm_size_530(bool is_64bit) {
-	return is_64bit ? RTREE_LEAF_ELM_SIZE_64 : RTREE_LEAF_ELM_SIZE_32;
-}
-
-static inline size_t edata_size_530(bool is_64bit) {
-	return is_64bit ? EDATA_SIZE_64 : EDATA_SIZE_32;
-}
-
-static inline size_t bin_info_size_530(bool is_64bit) {
-	return is_64bit ? BIN_INFO_SIZE_64 : BIN_INFO_SIZE_32;
-}
-
-static inline size_t bin_size_530(bool is_64bit) {
-	return is_64bit ? BIN_SIZE_64 : BIN_SIZE_32;
-}
-
-static inline size_t arena_size_530(bool is_64bit) {
-	return is_64bit ? ARENA_SIZE_64 : ARENA_SIZE_32;
-}
-
-static inline ut64 bins_offset_530(bool is_64bit) {
-	return is_64bit ? ARENA_BINS_OFFSET_64 : ARENA_BINS_OFFSET_32;
-}
-
-static inline bool read_and_parse_rtree_node_elm_t_530(RzIO *io, ut64 addr, rtree_node_elm_t_530 *out, bool is_64bit) {
-	size_t size = rtree_node_elm_size_530(is_64bit);
-	ut8 buf[RTREE_NODE_ELM_SIZE_MAX];
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
+static inline bool read_and_parse_rtree_node_elm_t_530(RzIO *io, ut64 addr, rtree_node_elm_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->rtree_node_elm_size);
+	if (!buf) {
 		return false;
 	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
+	if (!rz_io_read_at_mapped(io, addr, buf, config->rtree_node_elm_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->rtree_node_elm_size, true);
 	if (!b) {
+		free(buf);
 		return false;
 	}
 	ut64 offset = 0;
-	bool ret;
-	if (is_64bit) {
-		ret = rz_buf_read_le64_offset(b, &offset, &out->child);
+	bool ret = false;
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->child)) {
+			goto cleanup;
+		}
 	} else {
 		ut32 val;
-		ret = rz_buf_read_le32_offset(b, &offset, &val);
-		if (ret) {
-			out->child = val;
+		if (!rz_buf_read_le32_offset(b, &offset, &val)) {
+			goto cleanup;
 		}
+		out->child = val;
 	}
+	ret = true;
+cleanup:
 	rz_buf_free(b);
 	return ret;
 }
 
-static inline bool read_and_parse_rtree_leaf_elm_t_530(RzIO *io, ut64 addr, rtree_leaf_elm_t_530 *out, bool is_64bit) {
-	size_t size = rtree_leaf_elm_size_530(is_64bit);
-	ut8 buf[RTREE_LEAF_ELM_SIZE_MAX];
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
+static inline bool read_and_parse_rtree_leaf_elm_t_530(RzIO *io, ut64 addr, rtree_leaf_elm_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->rtree_leaf_elm_size);
+	if (!buf) {
 		return false;
 	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
+	if (!rz_io_read_at_mapped(io, addr, buf, config->rtree_leaf_elm_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->rtree_leaf_elm_size, true);
 	if (!b) {
+		free(buf);
 		return false;
 	}
 	ut64 offset = 0;
-	bool ret;
-	if (is_64bit) {
-		// 64-bit uses compact format with le_bits
+	bool ret = false;
+	if (config->rtree_leaf_compact) {
+		// Compact format with le_bits (used by x86_64, aarch64)
+		if (!rz_buf_read_le64_offset(b, &offset, &out->le_bits)) {
+			goto cleanup;
+		}
 		out->le_edata = 0;
 		out->le_metadata = 0;
-		ret = rz_buf_read_le64_offset(b, &offset, &out->le_bits);
 	} else {
-		// 32-bit uses non-compact format
-		ut32 edata, metadata;
+		// Non-compact format with separate le_edata and le_metadata
+		// Used by i386, arm32, and riscv64
 		out->le_bits = 0;
-		ret = rz_buf_read_le32_offset(b, &offset, &edata) &&
-			rz_buf_read_le32_offset(b, &offset, &metadata);
-		if (ret) {
+		if (config->ptr_size == 8) {
+			// 64-bit non-compact format (riscv64)
+			if (!rz_buf_read_le64_offset(b, &offset, &out->le_edata) ||
+				!rz_buf_read_le64_offset(b, &offset, &out->le_metadata)) {
+				goto cleanup;
+			}
+		} else {
+			// 32-bit non-compact format (i386, arm32)
+			ut32 edata, metadata;
+			if (!rz_buf_read_le32_offset(b, &offset, &edata) ||
+				!rz_buf_read_le32_offset(b, &offset, &metadata)) {
+				goto cleanup;
+			}
 			out->le_edata = edata;
 			out->le_metadata = metadata;
 		}
 	}
+	ret = true;
+cleanup:
 	rz_buf_free(b);
 	return ret;
 }
 
-static inline bool read_and_parse_edata_t_530(RzIO *io, ut64 addr, edata_t_530 *out, bool is_64bit) {
-	size_t size = edata_size_530(is_64bit);
-	ut8 buf[EDATA_SIZE_MAX];
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
-	bool ret = false;
-	if (!rz_buf_read_le64_offset(b, &offset, &out->e_bits)) {
-		rz_buf_free(b);
-		return ret;
-	}
-	if (is_64bit) {
-		ret = rz_buf_read_le64_offset(b, &offset, &out->e_addr) &&
-			rz_buf_read_le64_offset(b, &offset, &out->e_size_esn) &&
-			rz_buf_read_le64_offset(b, &offset, &out->e_ps) &&
-			rz_buf_read_le64_offset(b, &offset, &out->e_sn);
-	} else {
-		ut32 e_addr, size_esn, ps;
-		if (rz_buf_read_le32_offset(b, &offset, &e_addr) &&
-			rz_buf_read_le32_offset(b, &offset, &size_esn) &&
-			rz_buf_read_le32_offset(b, &offset, &ps)) {
-			out->e_addr = e_addr;
-			out->e_size_esn = size_esn;
-			out->e_ps = ps;
-			ret = rz_buf_read_le64_offset(b, &offset, &out->e_sn);
-		}
-	}
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_bin_info_t_530(RzIO *io, ut64 addr, bin_info_t_530 *out, bool is_64bit) {
-	size_t size = bin_info_size_530(is_64bit);
-	ut8 buf[BIN_INFO_SIZE_MAX];
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
-	if (!b) {
-		return false;
-	}
-	ut64 offset = 0;
-	bool ret = false;
-	if (is_64bit) {
-		if (rz_buf_read_le64_offset(b, &offset, &out->reg_size) &&
-			rz_buf_read_le64_offset(b, &offset, &out->slab_size) &&
-			rz_buf_read_le32_offset(b, &offset, &out->nregs) &&
-			rz_buf_read_le32_offset(b, &offset, &out->n_shards) &&
-			rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) &&
-			rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.ngroups)) {
-			out->bitmap_info.nlevels = 0;
-			ret = true;
-		}
-	} else {
-		ut32 reg_size, slab_size, nbits;
-		if (rz_buf_read_le32_offset(b, &offset, &reg_size) &&
-			rz_buf_read_le32_offset(b, &offset, &slab_size) &&
-			rz_buf_read_le32_offset(b, &offset, &out->nregs) &&
-			rz_buf_read_le32_offset(b, &offset, &out->n_shards) &&
-			rz_buf_read_le32_offset(b, &offset, &nbits) &&
-			rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
-			out->reg_size = reg_size;
-			out->slab_size = slab_size;
-			out->bitmap_info.nbits = nbits;
-			out->bitmap_info.ngroups = 0;
-			ret = true;
-			for (int i = 0; i < 6; i++) {
-				ut32 level;
-				if (!rz_buf_read_le32_offset(b, &offset, &level)) {
-					ret = false;
-					break;
-				}
-				out->bitmap_info.levels[i] = level;
-			}
-		}
-	}
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_bin_t_530(RzIO *io, ut64 addr, bin_t_530 *out, bool is_64bit) {
-	size_t size = bin_size_530(is_64bit);
-	ut8 buf[BIN_SIZE_MAX];
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
-		return false;
-	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
-	if (!b) {
-		return false;
-	}
-	ut64 offset;
-	bool ret;
-	if (is_64bit) {
-		offset = BIN_SLABCUR_OFFSET_64;
-		ret = rz_buf_read_le64_offset(b, &offset, &out->slabcur);
-	} else {
-		offset = BIN_SLABCUR_OFFSET_32;
-		ut32 slabcur;
-		ret = rz_buf_read_le32_offset(b, &offset, &slabcur);
-		if (ret) {
-			out->slabcur = slabcur;
-		}
-	}
-	rz_buf_free(b);
-	return ret;
-}
-
-static inline bool read_and_parse_arena_t_530(RzIO *io, ut64 addr, arena_t_530 *out, bool is_64bit) {
-	size_t size = arena_size_530(is_64bit);
-	ut8 *buf = malloc(size);
+static inline bool read_and_parse_edata_t_530(RzIO *io, ut64 addr, edata_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->edata_size);
 	if (!buf) {
 		return false;
 	}
-	if (!rz_io_read_at_mapped(io, addr, buf, size)) {
+	if (!rz_io_read_at_mapped(io, addr, buf, config->edata_size)) {
 		free(buf);
 		return false;
 	}
-	RzBuffer *b = rz_buf_new_with_bytes(buf, size);
-	free(buf);
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->edata_size, true);
 	if (!b) {
+		free(buf);
 		return false;
 	}
 	ut64 offset = 0;
 	bool ret = false;
 
+	if (!rz_buf_read_le64_offset(b, &offset, &out->e_bits)) {
+		goto cleanup;
+	}
+
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->e_addr) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->e_size_esn) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->e_ps) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->e_sn)) {
+			goto cleanup;
+		}
+	} else {
+		ut32 e_addr, size_esn, ps;
+		if (!rz_buf_read_le32_offset(b, &offset, &e_addr) ||
+			!rz_buf_read_le32_offset(b, &offset, &size_esn) ||
+			!rz_buf_read_le32_offset(b, &offset, &ps) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->e_sn)) {
+			goto cleanup;
+		}
+		out->e_addr = e_addr;
+		out->e_size_esn = size_esn;
+		out->e_ps = ps;
+	}
+	ret = true;
+cleanup:
+	rz_buf_free(b);
+	return ret;
+}
+
+static inline bool read_and_parse_bin_info_t_530(RzIO *io, ut64 addr, bin_info_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->bin_info_size);
+	if (!buf) {
+		return false;
+	}
+	if (!rz_io_read_at_mapped(io, addr, buf, config->bin_info_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->bin_info_size, true);
+	if (!b) {
+		free(buf);
+		return false;
+	}
+	ut64 offset = 0;
+	bool ret = false;
+
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->reg_size) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->slab_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->nregs) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->n_shards)) {
+			goto cleanup;
+		}
+
+		if (config->bitmap_use_tree) {
+			// Tree format: nbits + nlevels + levels[]
+			if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
+				goto cleanup;
+			}
+			out->bitmap_info.ngroups = 0;
+			// Skip levels - we don't need them for basic parsing
+			for (ut32 i = 0; i < config->bitmap_max_levels + 1 && i < BITMAP_MAX_LEVELS_530 + 1; i++) {
+				out->bitmap_info.levels[i] = 0;
+			}
+		} else {
+			// Non-tree format: nbits + ngroups
+			if (!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.nbits) ||
+				!rz_buf_read_le64_offset(b, &offset, &out->bitmap_info.ngroups)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nlevels = 0;
+		}
+	} else {
+		ut32 reg_size, slab_size;
+		if (!rz_buf_read_le32_offset(b, &offset, &reg_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &slab_size) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->nregs) ||
+			!rz_buf_read_le32_offset(b, &offset, &out->n_shards)) {
+			goto cleanup;
+		}
+		out->reg_size = reg_size;
+		out->slab_size = slab_size;
+
+		if (config->bitmap_use_tree) {
+			// Tree format for 32-bit
+			ut32 nbits;
+			if (!rz_buf_read_le32_offset(b, &offset, &nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &out->bitmap_info.nlevels)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nbits = nbits;
+			out->bitmap_info.ngroups = 0;
+			for (ut32 i = 0; i < config->bitmap_max_levels + 1 && i < BITMAP_MAX_LEVELS_530 + 1; i++) {
+				ut32 level;
+				if (!rz_buf_read_le32_offset(b, &offset, &level)) {
+					goto cleanup;
+				}
+				out->bitmap_info.levels[i] = level;
+			}
+		} else {
+			// Non-tree format for 32-bit (unlikely but handle it)
+			ut32 nbits, ngroups;
+			if (!rz_buf_read_le32_offset(b, &offset, &nbits) ||
+				!rz_buf_read_le32_offset(b, &offset, &ngroups)) {
+				goto cleanup;
+			}
+			out->bitmap_info.nbits = nbits;
+			out->bitmap_info.ngroups = ngroups;
+			out->bitmap_info.nlevels = 0;
+		}
+	}
+	ret = true;
+cleanup:
+	rz_buf_free(b);
+	return ret;
+}
+
+static inline bool read_and_parse_bin_t_530(RzIO *io, ut64 addr, bin_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->bin_size);
+	if (!buf) {
+		return false;
+	}
+	if (!rz_io_read_at_mapped(io, addr, buf, config->bin_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->bin_size, true);
+	if (!b) {
+		free(buf);
+		return false;
+	}
+	ut64 offset = config->bin_offsets.slabcur;
+	bool ret = false;
+	if (config->ptr_size == 8) {
+		if (!rz_buf_read_le64_offset(b, &offset, &out->slabcur)) {
+			goto cleanup;
+		}
+	} else {
+		ut32 val;
+		if (!rz_buf_read_le32_offset(b, &offset, &val)) {
+			goto cleanup;
+		}
+		out->slabcur = val;
+	}
+	ret = true;
+cleanup:
+	rz_buf_free(b);
+	return ret;
+}
+
+static inline bool read_and_parse_arena_t_530(RzIO *io, ut64 addr, arena_t_530 *out,
+	const RzJemallocConfig530 *config) {
+	ut8 *buf = RZ_NEWS0(ut8, config->arena_size);
+	if (!buf) {
+		return false;
+	}
+	if (!rz_io_read_at_mapped(io, addr, buf, config->arena_size)) {
+		free(buf);
+		return false;
+	}
+	RzBuffer *b = rz_buf_new_with_pointers(buf, config->arena_size, true);
+	if (!b) {
+		free(buf);
+		return false;
+	}
+	ut64 offset = 0;
+	bool ret = false;
+
+	// Read header fields sequentially
 	if (!rz_buf_read_le32_offset(b, &offset, &out->nthreads[0]) ||
 		!rz_buf_read_le32_offset(b, &offset, &out->nthreads[1]) ||
 		!rz_buf_read_le32_offset(b, &offset, &out->binshard_next)) {
-		rz_buf_free(b);
-		return ret;
+		goto cleanup;
 	}
 
-	if (is_64bit) {
-		offset = ARENA_LAST_THD_OFFSET_64;
-		if (rz_buf_read_le64_offset(b, &offset, &out->last_thd)) {
-			offset = ARENA_DSS_PREC_OFFSET_64;
-			if (rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) {
-				offset = ARENA_IND_OFFSET_64;
-				if (rz_buf_read_le32_offset(b, &offset, &out->ind)) {
-					offset = ARENA_BASE_OFFSET_64;
-					if (rz_buf_read_le64_offset(b, &offset, &out->base) &&
-						rz_buf_read_le64_offset(b, &offset, &out->create_time_ns)) {
-						out->stats_addr = addr + ARENA_STATS_OFFSET_64;
-						out->tcache_ql_addr = addr + ARENA_TCACHE_QL_OFFSET_64;
-						out->cache_bin_array_descriptor_ql_addr = addr + ARENA_CACHE_BIN_ARR_OFFSET_64;
-						out->tcache_ql_mtx_addr = addr + ARENA_TCACHE_QL_MTX_OFFSET_64;
-						out->large_addr = addr + ARENA_LARGE_OFFSET_64;
-						out->large_mtx_addr = addr + ARENA_LARGE_MTX_OFFSET_64;
-						out->pa_shard_addr = addr + ARENA_PA_SHARD_OFFSET_64;
-						out->bins_addr = addr + ARENA_BINS_OFFSET_64;
-						ret = true;
-					}
-				}
-			}
+	const RzJemallocArenaOffsets530 *ao = &config->arena_offsets;
+
+	if (config->ptr_size == 8) {
+		if (((offset = ao->last_thd), !rz_buf_read_le64_offset(b, &offset, &out->last_thd)) ||
+			((offset = ao->dss_prec), !rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) ||
+			((offset = ao->ind), !rz_buf_read_le32_offset(b, &offset, &out->ind)) ||
+			((offset = ao->base), !rz_buf_read_le64_offset(b, &offset, &out->base)) ||
+			!rz_buf_read_le64_offset(b, &offset, &out->create_time_ns)) {
+			goto cleanup;
 		}
 	} else {
-		ut32 last_thd;
-		if (rz_buf_read_le32_offset(b, &offset, &last_thd)) {
-			out->last_thd = last_thd;
-			offset = ARENA_DSS_PREC_OFFSET_32;
-			if (rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) {
-				offset = ARENA_IND_OFFSET_32;
-				ut32 base;
-				if (rz_buf_read_le32_offset(b, &offset, &out->ind) &&
-					rz_buf_read_le32_offset(b, &offset, &base)) {
-					out->base = base;
-					if (rz_buf_read_le64_offset(b, &offset, &out->create_time_ns)) {
-						out->stats_addr = addr + ARENA_STATS_OFFSET_32;
-						out->tcache_ql_addr = addr + ARENA_TCACHE_QL_OFFSET_32;
-						out->cache_bin_array_descriptor_ql_addr = addr + ARENA_CACHE_BIN_ARR_OFFSET_32;
-						out->tcache_ql_mtx_addr = addr + ARENA_TCACHE_QL_MTX_OFFSET_32;
-						out->large_addr = addr + ARENA_LARGE_OFFSET_32;
-						out->large_mtx_addr = addr + ARENA_LARGE_MTX_OFFSET_32;
-						out->pa_shard_addr = addr + ARENA_PA_SHARD_OFFSET_32;
-						out->bins_addr = addr + ARENA_BINS_OFFSET_32;
-						ret = true;
-					}
-				}
-			}
+		ut32 val;
+		if (((offset = ao->last_thd), !rz_buf_read_le32_offset(b, &offset, &val))) {
+			goto cleanup;
+		}
+		out->last_thd = val;
+		if (((offset = ao->dss_prec), !rz_buf_read_le32_offset(b, &offset, &out->dss_prec)) ||
+			((offset = ao->ind), !rz_buf_read_le32_offset(b, &offset, &out->ind)) ||
+			((offset = ao->base), !rz_buf_read_le32_offset(b, &offset, &val))) {
+			goto cleanup;
+		}
+		out->base = val;
+		if (!rz_buf_read_le64_offset(b, &offset, &out->create_time_ns)) {
+			goto cleanup;
 		}
 	}
 
+	out->stats_addr = addr + ao->stats;
+	out->tcache_ql_addr = addr + ao->tcache_ql;
+	out->cache_bin_array_descriptor_ql_addr = addr + ao->cache_bin_arr;
+	out->tcache_ql_mtx_addr = addr + ao->tcache_ql_mtx;
+	out->large_addr = addr + ao->large;
+	out->large_mtx_addr = addr + ao->large_mtx;
+	out->pa_shard_addr = addr + ao->pa_shard;
+	out->bins_addr = addr + ao->bins;
+
+	ret = true;
+cleanup:
 	rz_buf_free(b);
 	return ret;
 }
@@ -530,21 +1087,13 @@ static inline ut64 rtree_leaf_elm_bits_edata_get_530(ut64 bits) {
 	return ptr;
 }
 
-static inline void rtree_params_530(bool is_64bit, ut32 *lg_page, ut32 *rtree_nsb,
-	ut32 *bits_per_level, ut32 *max_subkeys,
-	ut64 *root_offset) {
-	*lg_page = LG_PAGE_530;
-	if (is_64bit) {
-		*rtree_nsb = RTREE_NSB_64;
-		*bits_per_level = RTREE_BITS_PER_LEVEL_64;
-		*max_subkeys = RTREE_MAX_SUBKEYS_64;
-		*root_offset = RTREE_ROOT_OFFSET_64;
-	} else {
-		*rtree_nsb = RTREE_NSB_32;
-		*bits_per_level = RTREE_BITS_PER_LEVEL_32;
-		*max_subkeys = RTREE_MAX_SUBKEYS_32;
-		*root_offset = RTREE_ROOT_OFFSET_32;
-	}
+static inline void rtree_params_530(const RzJemallocConfig530 *config, ut32 *lg_page, ut32 *rtree_nsb,
+	ut32 *bits_per_level, ut32 *max_subkeys, ut64 *root_offset) {
+	*lg_page = config->lg_page;
+	*rtree_nsb = config->rtree_nsb;
+	*bits_per_level = config->rtree_bits_per_level;
+	*max_subkeys = 1U << config->rtree_bits_per_level;
+	*root_offset = config->rtree_offsets.root;
 }
 
 #endif // RZ_JEMALLOC_530_H

@@ -514,6 +514,30 @@ RZ_API size_t rz_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
+/**
+ * \brief Returns the length of a string in UTF8 code points.
+ *
+ * \param str The UTF8 string.
+ * \param maxlen Maximum number of characters to look at.
+ * \return The length of \p str in UTF8 code points.
+ *
+ * NOTE: If `maxlen` cuts a multi-byte character, that character is counted as long
+ * as its leading byte is within `maxlen`.
+ */
+RZ_API size_t rz_utf8_strnlen(RZ_NULLABLE const ut8 *str, size_t maxlen) {
+	if (RZ_STR_ISEMPTY(str)) {
+		return 0;
+	}
+
+	size_t len = 0;
+	for (size_t i = 0; i < maxlen && str[i]; i++) {
+		if ((str[i] & 0xc0) != 0x80) {
+			len++;
+		}
+	}
+	return len;
+}
+
 #if __WINDOWS__
 RZ_API char *rz_utf16_to_utf8_l(const wchar_t *wc, int len) {
 	// -1 is allowed on purpose.
@@ -683,4 +707,26 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		block_freq[*list_ptr] = 0;
 	}
 	return list;
+}
+
+/**
+ * \brief Find the byte length of a unicode code point.
+ *
+ * \param c The unicode code point.
+ * \return Byte length of \p c, always between 1 and 4.
+ *
+ * NOTE: This method does not check for illegal (surrogate/undefined) code points.
+ * See the `rz_unicode_code_point_is_*` methods in `rz_unicode.h`.
+ */
+RZ_API size_t rz_utf8_byte_length(RzCodePoint c) {
+	if (c < RZ_UNICODE_FIRST_2BYTE_CODE_POINT) {
+		return 1;
+	}
+	if (c < RZ_UNICODE_FIRST_3BYTE_CODE_POINT) {
+		return 2;
+	}
+	if (c < RZ_UNICODE_FIRST_4BYTE_CODE_POINT) {
+		return 3;
+	}
+	return 4;
 }

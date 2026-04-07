@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
@@ -12,7 +13,7 @@ CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m68k_asm);
 // Size of the longest instruction in bytes
 #define M68K_LONGEST_INSTRUCTION 10
 
-static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		return -1;
 	}
@@ -20,7 +21,7 @@ static int m68k_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = 0;
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr(a->cpu, "68000")) {

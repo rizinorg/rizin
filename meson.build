@@ -1,7 +1,7 @@
 project('rizin', 'c',
   version: 'v0.9.0',
   license: 'LGPL-3.0-only',
-  meson_version: '>=0.57.0',
+  meson_version: '>=0.58.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
@@ -213,7 +213,7 @@ endif
 
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
-pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() != 'darwin'
+pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']
 if pcre2_jit_supported
   add_project_arguments(['-DSUPPORTS_PCRE2_JIT'], language: 'c')
 endif
@@ -312,14 +312,11 @@ libdemangle_options = [
   'default_library=static',
   'use_swift_demangler=false',
 ]
-if get_option('use_gpl')
-  libdemangle_options += 'use_gpl=true'
-else
-  libdemangle_options += 'use_gpl=false'
-endif
 
 libdemangle_proj = subproject('libdemangle', default_options: libdemangle_options)
 libdemangle_dep = libdemangle_proj.get_variable('libdemangle_dep')
+
+blake2_dep = dependency('libblake2', fallback: ['blake2', 'libblake2_dep'])
 
 # handle blake3 algo
 blake3_dep = dependency('libblake3', required: get_option('use_sys_blake3'), static: is_static_build)
@@ -399,7 +396,7 @@ foreach it : ccs
   if not it_cc.has_function('clock_gettime', prefix: '#include <time.h>') and it_cc.has_header_symbol('features.h', '__GLIBC__')
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
-  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku'].contains(it_machine.system())
+  have_lrt = not ['windows', 'darwin', 'openbsd', 'android', 'haiku', 'serenity'].contains(it_machine.system())
   if have_lrt and not it_lrt.found()
     it_lrt = it_cc.find_library('rt', required: true, static: is_static_build)
   endif
@@ -427,7 +424,6 @@ foreach it : ccs
   it_userconf.set('INCLUDEDIR', rizin_incdir)
   it_userconf.set('DATADIR_RZ', rizin_datdir_rz)
   is_ppc = it_machine.cpu_family() == 'ppc' or it_machine.cpu_family() == 'ppc64'
-  it_userconf.set10('HAVE_JEMALLOC', it_machine.system() != 'windows' and (it_machine.system() != 'darwin' or not is_ppc))
   it_userconf.set('DATADIR', rizin_datdir)
   it_userconf.set('WWWROOT', rizin_wwwroot)
   it_userconf.set('SDB', rizin_sdb)
@@ -524,6 +520,19 @@ foreach it : ccs
     ok = it_cc.has_function(func, prefix: item[1], dependencies: item[2])
     it_userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
   endforeach
+
+  # Try to compile a basic SSE2 code snippet to discover if SSE2 is supported for the target arch
+  sse2_compiler_flag = it_cc.get_id() == 'msvc' ? '/arch:SSE2' : '-msse2'
+  sse2_code = '''#include <emmintrin.h>
+    int main (int argc, char *argv[]) { __m128i v = _mm_set_epi32(2, 3, 0, 1); return 0; }
+  '''
+  has_sse2 = it_cc.compiles(sse2_code, args : [sse2_compiler_flag], name: 'SSE2 code snippet')
+  it_userconf.set10('HAVE_SSE2', has_sse2)
+
+  # Enable SSE2 compiler support since it may not be enabled by default
+  if has_sse2 and it_machine.cpu_family() in ['x86', 'x86_64']
+    add_project_arguments([sse2_compiler_flag], language: 'c', native: it_native)
+  endif
 
   foreach item : [
       ['linux/ashmem.h', '', []],
@@ -680,6 +689,13 @@ if not libzip_dep.found()
   libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
+if host_machine.system() == 'serenity' and libzip_dep.found()
+  zlib_dep = dependency('zlib', required: true, static: is_static_build)
+  libzip_dep = declare_dependency(
+    dependencies: [libzip_dep, zlib_dep]
+  )
+endif
+
 # handle zstd dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -696,15 +712,6 @@ if not libzstd_dep.found()
   meson.override_dependency('zstd', libzstd_dep)
 endif
 
-# handle mpc dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'mpc', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
-  error(subproject_clean_error_msg)
-endif
-
-mpc_proj = subproject('mpc', default_options: ['default_library=static'])
-mpc_dep = mpc_proj.get_variable('mpc_dep')
-
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -713,6 +720,10 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
+
+# handle rzheap dependency
+rzheap_proj = subproject('rzheap', default_options: ['default_library=static'])
+rzheap_dep = rzheap_proj.get_variable('rzheap_dep')
 
 use_rpath = false
 use_rpath_absolute = false
@@ -861,6 +872,7 @@ summary({
   'System zstd library': libzstd_dep.found() and libzstd_dep.type_name() != 'internal',
   'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'System blake3 library': blake3_dep.found() and blake3_dep.type_name() != 'internal',
+  'System blake2 library': blake2_dep.found() and blake2_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': rpath_summary,
 }, section: 'Configuration', bool_yn: true)

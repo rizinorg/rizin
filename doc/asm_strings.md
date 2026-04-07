@@ -153,20 +153,16 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 
 	// Mnemonic pattern
 	TOKEN(RZ_ASM_TOKEN_MNEMONIC, "^((while)|(inc)|(dec)|(trap)|(nop)|(invalid)|(loop))");
-	rz_pvector_push(pvec, pat);
 
 	// ptr pattern
 	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
-	rz_pvector_push(pvec, pat);
 
 	// Reference pattern
 	// Matches a single bracket
 	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
-	rz_pvector_push(pvec, pat);
 
 	// Separator pattern
 	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
-	rz_pvector_push(pvec, pat);
 
 	return pvec;
 }

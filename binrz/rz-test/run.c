@@ -48,6 +48,9 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 
 #if __WINDOWS__
 static char *convert_win_cmds(const char *cmds) {
+	if (RZ_STR_ISEMPTY(cmds)) {
+		return NULL;
+	}
 	char *r = malloc(strlen(cmds) + 1);
 	if (!r) {
 		return NULL;
@@ -112,51 +115,162 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms, const char *cmds, RzList /*<char *>*/ *files, RzList /*<char *>*/ *extra_args, bool load_plugins, RzTestCmdRunner runner, void *user) {
-	RzPVector args;
-	rz_pvector_init(&args, NULL);
-	rz_pvector_push(&args, "-escr.utf8=0");
-	rz_pvector_push(&args, "-escr.color=0");
-	rz_pvector_push(&args, "-escr.interactive=0");
-	rz_pvector_push(&args, "-eflirt.sigdb.load.system=false");
-	rz_pvector_push(&args, "-esearch.show_progress=false");
-	rz_pvector_push(&args, "-eflirt.sigdb.load.home=false");
-	rz_pvector_push(&args, "-N");
-	RzListIter *it;
-	void *extra_arg, *file_arg;
-	rz_list_foreach (extra_args, it, extra_arg) {
-		rz_pvector_push(&args, extra_arg);
+typedef struct run_rz_test_s {
+	RzTestRunConfig *config; ///< Global configuration
+	ut64 timeout_ms; ///< Test timeout in millisec
+	const char *bin_path; ///< Path of the bin directory (can be null)
+	const char *tool; ///< When set executes a different tool rather than the default exe
+	const char *cmds; ///< Rizin command line passed as value of `-c` (-q will be added unless TOOL= is defined)
+	RzList /*<char *>*/ *envs; ///< Additional environment variables
+	RzList /*<char *>*/ *files; ///< Additional files or tool inputs
+	RzList /*<char *>*/ *extra_args; ///< Additional arguments
+	bool load_plugins; ///< When true, allows to load external plugins (RZ_NOPLUGINS=0)
+	bool color; ///< When true sets RZ_COLOR=1, otherwise RZ_COLOR=0 (default)
+	bool utf8; ///< When true sets RZ_UTF8=1, otherwise RZ_UTF8=0 (default)
+	RzTestCmdRunner runner; ///< Function to call to execute the test
+	void *user; ///< Additional user data passed to `runner`.
+} RunRzTest;
+
+static inline bool run_rz_test_is_custom(const RunRzTest *rrt) {
+	return RZ_STR_ISNOTEMPTY(rrt->tool);
+}
+
+static void run_rz_test_add_args_from_list(RzPVector /*<const char *>*/ *args, RzList /*<char *>*/ *list) {
+	RzListIter *it = NULL;
+	char *arg = NULL;
+	rz_list_foreach (list, it, arg) {
+		if (RZ_STR_ISEMPTY(arg)) {
+			continue;
+		}
+		rz_pvector_push(args, arg);
 	}
-	rz_pvector_push(&args, "-qc");
-#if __WINDOWS__
-	char *wcmds = convert_win_cmds(cmds);
-	rz_pvector_push(&args, wcmds);
-#else
-	rz_pvector_push(&args, (void *)cmds);
-#endif
-	rz_list_foreach (files, it, file_arg) {
-		rz_pvector_push(&args, file_arg);
+}
+
+static void run_rz_test_init_args(const RunRzTest *rrt, const char *rizin_cmd, RzPVector /*<const char *>*/ *args) {
+	rz_pvector_init(args, NULL);
+
+	if (run_rz_test_is_custom(rrt)) {
+		// the test runs with custom args and may exec a different tool.
+		run_rz_test_add_args_from_list(args, rrt->extra_args);
+		if (rizin_cmd) {
+			rz_pvector_push(args, "-c");
+			rz_pvector_push(args, (void *)rizin_cmd);
+		}
+		run_rz_test_add_args_from_list(args, rrt->files);
+		return;
 	}
 
-	const char *envvars[] = {
+	// the test runs in a normal rizin test environment.
+	rz_pvector_push(args, "-escr.utf8=0");
+	rz_pvector_push(args, "-escr.color=0");
+	rz_pvector_push(args, "-escr.interactive=0");
+	rz_pvector_push(args, "-eflirt.sigdb.load.system=false");
+	rz_pvector_push(args, "-esearch.show_progress=false");
+	rz_pvector_push(args, "-eflirt.sigdb.load.home=false");
+	rz_pvector_push(args, "-N");
+	run_rz_test_add_args_from_list(args, rrt->extra_args);
+	rz_pvector_push(args, "-qc");
+	rz_pvector_push(args, (void *)rizin_cmd);
+	run_rz_test_add_args_from_list(args, rrt->files);
+}
+
+static void run_rz_test_init_envs(const RunRzTest *rrt, const char ***envvars_o, const char ***envvals_o, size_t *env_size_o) {
+	RzListIter *it = NULL;
+	char *env = NULL;
+	size_t env_size = 0;
+	const size_t reserve = 4 + rz_list_length(rrt->envs);
+	const char **envvars = RZ_NEWS0(const char *, reserve);
+	const char **envvals = RZ_NEWS0(const char *, reserve);
+
+#define RUN_RZ_TEST_ENV_SET(k, v) \
+	do { \
+		envvars[env_size] = k; \
+		envvals[env_size] = v; \
+		env_size++; \
+	} while (0)
+
 #if __WINDOWS__
-		"ANSICON",
+	RUN_RZ_TEST_ENV_SET("ANSICON", "1");
 #endif
-		"RZ_NOPLUGINS"
-	};
-	const char *envvals[] = {
+	RUN_RZ_TEST_ENV_SET("RZ_COLOR", rrt->color ? "1" : "0");
+	RUN_RZ_TEST_ENV_SET("RZ_UTF8", rrt->utf8 ? "1" : "0");
+	if (!rrt->load_plugins) {
+		RUN_RZ_TEST_ENV_SET("RZ_NOPLUGINS", "1");
+	}
+
+	rz_list_foreach (rrt->envs, it, env) {
+		if (RZ_STR_ISEMPTY(env)) {
+			continue;
+		}
+
+		const char *key = env;
+		char *value = strchr(env, '=');
+		if (value) {
+			*value = 0;
+			RUN_RZ_TEST_ENV_SET(key, value + 1);
+		} else {
+			RUN_RZ_TEST_ENV_SET(key, "");
+		}
+	}
+#undef RUN_RZ_TEST_ENV_SET
+
+	*envvars_o = envvars;
+	*envvals_o = envvals;
+	*env_size_o = env_size;
+}
+
+RZ_API RZ_OWN char *rz_test_find_executable(RZ_NULLABLE const char *exec, RZ_NULLABLE const char *bin_path) {
+	if (RZ_STR_ISEMPTY(exec)) {
+		return NULL;
+	} else if (RZ_STR_ISEMPTY(bin_path)) {
+		return rz_file_path(exec);
+	}
+
 #if __WINDOWS__
-		"1",
-#endif
-		"1"
-	};
-#if __WINDOWS__
-	size_t env_size = load_plugins ? 1 : 2;
+	char *exe_path = rz_str_newf(RZ_JOIN_2_PATHS("%s", "%s.exe"), bin_path, exec);
 #else
-	size_t env_size = load_plugins ? 0 : 1;
+	char *exe_path = rz_str_newf(RZ_JOIN_2_PATHS("%s", "%s"), bin_path, exec);
 #endif
-	RzSubprocessOutput *out = runner(config->rz_cmd, args.v.a, rz_pvector_len(&args), envvars, envvals, env_size, timeout_ms, user);
+
+	if (rz_file_exists(exe_path)) {
+		return exe_path;
+	}
+
+	free(exe_path);
+	return rz_str_dup(exec);
+}
+
+static char *run_rz_test_find_executable(const RunRzTest *rrt, const char *default_exe) {
+	const char *exec = default_exe;
+	if (RZ_STR_ISNOTEMPTY(rrt->tool)) {
+		exec = rrt->tool;
+	}
+
+	return rz_test_find_executable(exec, rrt->bin_path);
+}
+
+static RzSubprocessOutput *run_rz_test(const RunRzTest *rrt, const char *default_exe) {
+	const char **envvars = NULL;
+	const char **envvals = NULL;
+	size_t env_size = 0;
+	RzPVector args;
+#if __WINDOWS__
+	char *wcmds = convert_win_cmds(rrt->cmds);
+	run_rz_test_init_args(rrt, wcmds, &args);
+#else
+	run_rz_test_init_args(rrt, rrt->cmds, &args);
+#endif
+
+	run_rz_test_init_envs(rrt, &envvars, &envvals, &env_size);
+	char *executable = run_rz_test_find_executable(rrt, default_exe);
+
+	RzSubprocessOutput *out = rrt->runner(executable, args.v.a, rz_pvector_len(&args), envvars, envvals, env_size, rrt->timeout_ms, rrt->user);
 	rz_pvector_clear(&args);
+
+	free(envvals);
+	free(envvars);
+
+	free(executable);
 #if __WINDOWS__
 	free(wcmds);
 #endif
@@ -166,6 +280,7 @@ static RzSubprocessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms,
 RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *extra_args = test->args.value ? rz_str_split_duplist(test->args.value, " ", true) : NULL;
 	RzList *files = test->file.value ? rz_str_split_duplist(test->file.value, "\n", true) : NULL;
+	RzList *envs = test->envs.value ? rz_str_split_duplist(test->envs.value, "\n", true) : NULL;
 	RzListIter *it;
 	RzListIter *tmpit;
 	char *token;
@@ -179,7 +294,7 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 			rz_list_delete(files, it);
 		}
 	}
-	if (rz_list_empty(files)) {
+	if (rz_list_empty(files) && RZ_STR_ISEMPTY(test->tool.value)) {
 		if (!files) {
 			files = rz_list_new();
 		} else {
@@ -188,9 +303,27 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 		rz_list_push(files, "=");
 	}
 	ut64 timeout_ms = test->timeout.set ? test->timeout.value * 1000 : config->timeout_ms;
-	RzSubprocessOutput *out = run_rz_test(config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
+
+	RunRzTest normal_rrt = {
+		.config = config,
+		.timeout_ms = timeout_ms,
+		.bin_path = config->bin_path,
+		.tool = test->tool.value,
+		.cmds = test->cmds.value,
+		.envs = envs,
+		.files = files,
+		.extra_args = extra_args,
+		.load_plugins = test->load_plugins,
+		.color = test->color.value,
+		.utf8 = test->utf8.value,
+		.runner = runner,
+		.user = user,
+	};
+
+	RzSubprocessOutput *out = run_rz_test(&normal_rrt, "rizin");
 	rz_list_free(extra_args);
 	rz_list_free(files);
+	rz_list_free(envs);
 	return out;
 }
 
@@ -227,7 +360,7 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 }
 
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
-	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
+	if (!out || out->ret != test->exit_status.value || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	const char *expect_out = test->expect.value;
@@ -248,7 +381,8 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 RZ_API bool rz_test_check_jq_available(void) {
 	const char *args[] = { "." };
 	const char *invalid_json = "this is not json lol";
-	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	char *jq_path = rz_file_path(JQ_CMD);
+	RzSubprocess *proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
 	if (proc) {
 		rz_subprocess_stdin_write(proc, (const ut8 *)invalid_json, strlen(invalid_json));
 		rz_subprocess_wait(proc, UT64_MAX);
@@ -257,21 +391,54 @@ RZ_API bool rz_test_check_jq_available(void) {
 	rz_subprocess_free(proc);
 
 	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
-	proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
 	if (proc) {
 		rz_subprocess_stdin_write(proc, (const ut8 *)valid_json, strlen(valid_json));
 		rz_subprocess_wait(proc, UT64_MAX);
 	}
 	bool valid_detected = proc && rz_subprocess_ret(proc) == 0;
 	rz_subprocess_free(proc);
-
+	free(jq_path);
 	return invalid_detected && valid_detected;
+}
+
+RZ_API bool rz_test_check_tool_available(RZ_NULLABLE const char *exec) {
+	if (RZ_STR_ISEMPTY(exec)) {
+		return false;
+	}
+
+	const char *args[] = { "-v" };
+	RzSubprocess *proc = rz_subprocess_start(exec, args, 1, NULL, NULL, 0);
+	if (!proc) {
+		return false;
+	}
+	rz_subprocess_wait(proc, UT64_MAX);
+	bool return_zero = rz_subprocess_ret(proc) == 0;
+	rz_subprocess_free(proc);
+
+	return return_zero;
 }
 
 RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *files = rz_list_new();
 	rz_list_push(files, (void *)config->json_test_file);
-	RzSubprocessOutput *ret = run_rz_test(config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
+
+	RunRzTest json_rrt = {
+		.config = config,
+		.timeout_ms = config->timeout_ms,
+		.bin_path = config->bin_path,
+		.tool = NULL,
+		.cmds = test->cmd,
+		.files = files,
+		.extra_args = NULL,
+		.load_plugins = test->load_plugins,
+		.color = false,
+		.utf8 = false,
+		.runner = runner,
+		.user = user,
+	};
+
+	RzSubprocessOutput *ret = run_rz_test(&json_rrt, "rizin");
 	rz_list_free(files);
 	return ret;
 }
@@ -281,11 +448,13 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 		return false;
 	}
 	const char *args[] = { "." };
-	RzSubprocess *proc = rz_subprocess_start(JQ_CMD, args, 1, NULL, NULL, 0);
+	char *jq_path = rz_file_path(JQ_CMD);
+	RzSubprocess *proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
 	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen((char *)out->out));
 	rz_subprocess_wait(proc, UT64_MAX);
 	bool ret = rz_subprocess_ret(proc) == 0;
 	rz_subprocess_free(proc);
+	free(jq_path);
 	return ret;
 }
 
@@ -295,6 +464,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		return NULL;
 	}
 	out->as_ret = out->disas_ret = out->il_ret = INT_MAX;
+	char *rz_asm_exe = rz_file_path("rz-asm");
 
 	RzPVector args;
 	rz_pvector_init(&args, NULL);
@@ -329,7 +499,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push(&args, test->disasm);
-		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->as_timeout = true;
@@ -367,7 +537,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-d");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->disas_timeout = true;
@@ -397,7 +567,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-I");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->il_timeout = true;
@@ -419,6 +589,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 	}
 
 beach:
+	free(rz_asm_exe);
 	rz_pvector_clear(&args);
 	return out;
 }
@@ -478,7 +649,23 @@ RZ_API RzSubprocessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzz
 		cmd = "?F";
 	}
 #endif
-	RzSubprocessOutput *ret = run_rz_test(config, config->timeout_ms, cmd, files, NULL, false, runner, user);
+
+	RunRzTest fuzzer_rrt = {
+		.config = config,
+		.timeout_ms = config->timeout_ms,
+		.bin_path = config->bin_path,
+		.tool = NULL,
+		.cmds = cmd,
+		.files = files,
+		.extra_args = NULL,
+		.load_plugins = false,
+		.color = false,
+		.utf8 = false,
+		.runner = runner,
+		.user = user,
+	};
+
+	RzSubprocessOutput *ret = run_rz_test(&fuzzer_rrt, "rizin");
 	rz_list_free(files);
 	return ret;
 }
@@ -571,15 +758,6 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	}
 	ret->time_elapsed = rz_time_now_mono() - start_time;
 	bool broken = rz_test_broken(test);
-#if ASAN
-#if !RZ_ASSERT_STDOUT
-#error RZ_ASSERT_STDOUT undefined or 0
-#endif
-	RzSubprocessOutput *out = ret->proc_out;
-	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr(test->path, "/dbg") && (!out->out || (!strstr((char *)out->out, "WARNING:") && !strstr((char *)out->out, "ERROR:") && !strstr((char *)out->out, "FATAL:"))) && (!out->err || (!strstr((char *)out->err, "Sanitizer") && !strstr((char *)out->err, "runtime error:")))) {
-		broken = true;
-	}
-#endif
 	if (!success) {
 		ret->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
 	} else {

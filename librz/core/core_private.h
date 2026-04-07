@@ -8,9 +8,21 @@
 #include <rz_core.h>
 #include <rz_il.h>
 
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_arch(RzCore *core);
+RZ_DEPRECATE RZ_IPI ut32 rz_core_get_bits(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_cpu(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_platform(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_features(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_os(RzCore *core);
+RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
+
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
+RZ_IPI bool rz_core_is_core_dump(RzCore *core);
+RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path(const RzIOMap *map);
+RZ_IPI const char *rz_core_io_map_file_path_or_relative(const RzIOMap *map);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b, void *user);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
@@ -28,10 +40,14 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state);
 
-RZ_IPI bool rz_core_analysis_il_vm_set(RzCore *core, const char *var_name, ut64 value);
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
-RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty);
+RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
+
+RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
+RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);

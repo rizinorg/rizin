@@ -3,6 +3,7 @@
 
 #include "minunit.h"
 #include <rz_core.h>
+#include "analysis_private.h"
 #include <rz_rop.h>
 
 // Only one gadget is added once for each test case.
@@ -73,7 +74,7 @@ static RzCore *setup_rz_core(char *arch, int bits) {
 		return NULL;
 	}
 	rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL);
-	rz_core_set_asm_configs(core, arch, bits, 0);
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
 	rz_config_set_b(core->config, "asm.lines", false);
 	return core;
 }
@@ -105,6 +106,7 @@ static bool rop_gadget_info_cb(void *user, const ut64 k, const void *v) {
 		mu_assert_eq(rz_pvector_len(reg_info_vector), 2, "ROP gadget register item count mismatch");
 		RzRopRegInfo *reg_info_analysis_reg = rz_pvector_at(reg_info_vector, 0);
 		mu_assert_streq(src->reg->name, reg_info_analysis_reg->name, "ROP gadget modified register value mismatch");
+		rz_pvector_free(reg_info_vector);
 	}
 
 	return true;
@@ -134,7 +136,7 @@ bool test_rz_direct_solver() {
 
 	HtUP *rop_semantics = core->analysis->ht_rop_semantics;
 	mu_assert_notnull(rop_semantics, "ROP semantics hashtable is NULL");
-	mu_assert_eq(rop_semantics->count, 2, "ROP semantics hashtable count is not 2");
+	mu_assert_eq(ht_up_size(rop_semantics), 2, "ROP semantics hashtable count is not 2");
 	ht_up_foreach(rop_semantics, rop_gadget_info_cb, ht_rop_analysis);
 	rz_core_rop_search_context_free(context);
 	cleanup_test(core, ht_rop_analysis);

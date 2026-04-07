@@ -421,7 +421,7 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_2(RZ_NONNULL const ut8 *buf, size_t buf_siz
  * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
- * \return A clone of the input buffer with swapped bytes or NULL in case of failure.
+ * \return Returns \p dst or NULL in case of failure.
  *
  * NOTE: This function can be used to change the endianness of 2 byte values
  * in the given buffer.
@@ -525,7 +525,7 @@ RZ_API RZ_OWN ut8 *rz_mem_swap_bytes_4(RZ_NONNULL const ut8 *buf, size_t buf_siz
  * \param buf The input buffer.
  * \param buf_size The size of the input buffer. Must be greater than 0.
  *
- * \return The input buffer with swapped bytes or NULL in case of failure.
+ * \return Returns \p dst or NULL in case of failure.
  *
  * NOTE: This function can be used to change the endianness of 4 byte values
  * in the given buffer.

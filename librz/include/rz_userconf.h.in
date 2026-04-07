@@ -45,7 +45,6 @@
 #define HAVE_STRNLEN                @HAVE_STRNLEN@
 #define WANT_DYLINK                 @WANT_DYLINK@
 #define WITH_GPL                    @WITH_GPL@
-#define HAVE_JEMALLOC               @HAVE_JEMALLOC@
 #define IS_IOS                      @IS_IOS@
 #define RZ_BUILD_DEBUG              @RZ_BUILD_DEBUG@
 #define N_THREAD_LIMIT              @N_THREAD_LIMIT@
@@ -59,6 +58,7 @@
 #define HAVE___BUILTIN_CTZLL        @HAVE___BUILTIN_CTZLL@
 #define HAVE_POSIX_MEMALIGN         @HAVE_POSIX_MEMALIGN@
 #define HAVE__ALIGNED_MALLOC        @HAVE__ALIGNED_MALLOC@
+#define HAVE_SSE2                   @HAVE_SSE2@
 
 #define HAVE_HEADER_LINUX_ASHMEM_H  @HAVE_HEADER_LINUX_ASHMEM_H@
 #define HAVE_HEADER_SYS_SHM_H       @HAVE_HEADER_SYS_SHM_H@

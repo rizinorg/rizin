@@ -1239,9 +1239,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			}
 			break;
 		}
-		if (a->read_at && a->bits != 16) {
+		if (a->cb.read_at && a->bits != 16) {
 			ut8 thunk[4] = { 0 };
-			if (a->read_at(a, (ut64)get_imm_reg_value(&INSOP(0), zydx->addr, zydx->zydecode->length, a->bits), thunk, sizeof(thunk))) {
+			if (a->cb.read_at(a, (ut64)get_imm_reg_value(&INSOP(0), zydx->addr, zydx->zydecode->length, a->bits), thunk, sizeof(thunk))) {
 				/* 8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/

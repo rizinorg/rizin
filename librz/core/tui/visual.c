@@ -355,14 +355,15 @@ RZ_IPI const char **rz_core_visual_get_fcn_help() {
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, core->offset);
-	int bits = hint ? hint->bits : rz_config_get_i(core->config, "asm.bits");
+	int bits = hint ? hint->bits : rz_asm_get_bits(core->rasm);
+	int plugin_bits = rz_asm_get_plugin_bits(core->rasm);
 	int retries = 4;
 	while (retries > 0) {
 		int nb = bits == 64 ? 8 : bits == 32 ? 64
 			: bits == 16                 ? 32
 			: bits == 8                  ? 16
 						     : bits;
-		if ((core->rasm->cur->bits & nb) == nb) {
+		if ((plugin_bits & nb) == nb) {
 			rz_analysis_hint_set_bits(core->analysis, core->offset, nb);
 			break;
 		}

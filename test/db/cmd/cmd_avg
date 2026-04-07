@@ -114,6 +114,8 @@ RUN
 NAME=avgp - print global variable value
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 wx 40102030405050230590909090
 w alfdjsdfgkjdhfgkdghdfgdfg @ 0x20
 avga foo int @ 0x10

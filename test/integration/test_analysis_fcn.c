@@ -46,8 +46,59 @@ static bool test_analysis_fcn_large() {
 	mu_end;
 }
 
+static bool always_valid(RzIO *io, ut64 addr, int r) {
+	return true;
+}
+
+static bool test_analysis_xrefs_comment() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new failed");
+
+	mu_assert_notnull(rz_core_file_open(core, "malloc://1024", RZ_PERM_RWX, 0), "file open failed");
+
+	RzAnalysis *analysis = core->analysis;
+	mu_assert_notnull(analysis, "analysis is null");
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
+	iob->is_valid_offset = always_valid;
+
+	mu_assert_true(rz_analysis_set_bits(analysis, 64), "set bits failed");
+	mu_assert_true(rz_analysis_use(analysis, "x86"), "use x86 failed");
+
+	RzAnalysisFunction *f_src = rz_analysis_create_function(analysis, "src_fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(f_src, "create src function");
+	ut64 target = 0x200;
+
+	rz_analysis_xrefs_set(analysis, 0x100, target, RZ_ANALYSIS_XREF_TYPE_CODE);
+	char *res = rz_core_get_xref_comment(core, target);
+	mu_assert_streq(res, "; CODE XREF from src_fcn @ ", "xref prefix failed");
+	free(res);
+
+	rz_analysis_xrefs_set(analysis, 0x102, target, RZ_ANALYSIS_XREF_TYPE_CODE);
+	res = rz_core_get_xref_comment(core, target);
+	mu_assert_streq(res, "; CODE XREFS from src_fcn @ , +0x2", "xref join failed");
+	free(res);
+
+	rz_analysis_xrefs_set(analysis, 0x104, target, RZ_ANALYSIS_XREF_TYPE_CODE);
+	rz_config_set_i(core->config, "asm.xrefs.max", 2);
+	res = rz_core_get_xref_comment(core, target);
+	mu_assert_streq(res, "; XREFS(3)", "asm.xrefs.max failed");
+	free(res);
+
+	rz_config_set_i(core->config, "asm.xrefs.max", 10);
+	rz_config_set_i(core->config, "asm.xrefs.fold", 2);
+
+	res = rz_core_get_xref_comment(core, target);
+	const char *exp = "; XREFS: CODE 0x00000100  CODE 0x00000102  CODE 0x00000104  ";
+	mu_assert_streq(res, exp, "asm.xrefs.fold failed");
+	free(res);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_analysis_fcn_large);
+	mu_run_test(test_analysis_xrefs_comment);
 	return tests_passed != tests_run;
 }
 

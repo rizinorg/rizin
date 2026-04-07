@@ -25,7 +25,7 @@ jobs:
       python: ${{ steps.filter.outputs.python }}
     steps:
     - uses: actions/checkout@v6
-    - uses: dorny/paths-filter@v3
+    - uses: dorny/paths-filter@v4
       id: filter
       with:
         filters: |
@@ -89,7 +89,7 @@ jobs:
         run: |
           sudo pip install meson ninja
           sudo apt update
-          sudo apt install libclang-14-dev
+          sudo apt install libclang-18-dev
       - name: Build rizin
         working-directory: rizin
         run: |
@@ -98,7 +98,7 @@ jobs:
       - name: Run rz-bindgen linter
         run: |
           python3 rz-bindgen/src/lint.py \
-                  --clang-path "/usr/lib/llvm-14/lib" \
+                  --clang-path "/usr/lib/llvm-18/lib" \
                   --clang-args "-resource-dir=$(clang -print-resource-dir) " \
                   --rizin-path rizin
 

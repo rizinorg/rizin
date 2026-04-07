@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2014-2021 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_bind.h>
@@ -2883,7 +2883,7 @@ loop:
 	esil->parse_stop = 0;
 	// memleak or failing aetr test. wat du
 	//	rz_analysis_esil_stack_free (esil);
-	esil->parse_goto_count = esil->analysis ? esil->analysis->esil_goto_limit : RZ_ANALYSIS_ESIL_GOTO_LIMIT;
+	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
 	wordi = 0;
@@ -3158,11 +3158,12 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 }
 
 /* register callbacks using this analysis module. */
-RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats, int nonull) {
+RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats, int nonull, RzCore *core) {
 	rz_return_val_if_fail(esil, false);
 	// esil->debug = 0;
+	esil->core = core;
 	esil->analysis = analysis;
-	esil->parse_goto_count = analysis->esil_goto_limit;
+	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	esil->trap = 0;
 	esil->trap_code = 0;
 	// esil->user = NULL;

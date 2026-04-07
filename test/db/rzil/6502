@@ -505,6 +505,19 @@ ar a=0x50
 ar flags=0x01
 aezs
 ar
+# Reset and LAX imm with config
+s 0
+ar a=0
+ar x=0
+ar y=0
+ar sp=0
+ar flags=0
+wx ab0f
+aezi
+ar a=0x12
+e plugins.6502.magic=255
+aezs
+ar
 EOF
 EXPECT=<<EOF
 c2
@@ -514,10 +527,10 @@ flags = 0x00
 13
 13
 11
-a = 0x00
+a = 0x0e
 x = 0xff
 y = 0x00
-flags = 0x02
+flags = 0x00
 sp = 0x00
 pc = 0x0002
 a = 0x0e
@@ -538,5 +551,11 @@ y = 0x00
 flags = 0x01
 sp = 0x00
 pc = 0x0001
+a = 0x0f
+x = 0x0f
+y = 0x00
+flags = 0x00
+sp = 0x00
+pc = 0x0002
 EOF
 RUN

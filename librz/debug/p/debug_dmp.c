@@ -14,6 +14,7 @@
 
 static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	RzCore *core = dbg->corebind.core;
+	RzTypeDB *typedb = rz_analysis_get_type_db(dbg->analysis);
 	RzIODesc *desc = core->io->desc;
 	if (!desc) {
 		return false;
@@ -153,7 +154,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 			kernel_pdb = rz_str_dup(rz_file_basename(pdbpath));
 			free(pdbpath);
 			if (!ctx->windctx.profile) {
-				winkd_build_profile(&ctx->windctx, dbg->analysis->typedb);
+				winkd_build_profile(&ctx->windctx, typedb);
 				if (ctx->windctx.profile) {
 					ctx->windctx.profile->build = MinorVersion;
 					ctx->windctx.profile->sp = ServicePackBuild;
@@ -170,11 +171,11 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		return false;
 	}
 
-	ctx->kthread_process_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "Process");
-	ctx->kprcb_context_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KPRCB", "Context");
+	ctx->kthread_process_offset = rz_type_db_struct_member_offset(typedb, "_KTHREAD", "Process");
+	ctx->kprcb_context_offset = rz_type_db_struct_member_offset(typedb, "_KPRCB", "Context");
 	if (ctx->windctx.is_arm) {
-		const ut64 switch_frame_offset = rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KTHREAD", "SwitchFrame");
-		ctx->kthread_switch_frame_offset = switch_frame_offset + rz_type_db_struct_member_offset(dbg->analysis->typedb, "_KSWITCH_FRAME", "Fp");
+		const ut64 switch_frame_offset = rz_type_db_struct_member_offset(typedb, "_KTHREAD", "SwitchFrame");
+		ctx->kthread_switch_frame_offset = switch_frame_offset + rz_type_db_struct_member_offset(typedb, "_KSWITCH_FRAME", "Fp");
 	}
 	char *kpb_flag_name;
 	if (kernel_pdb) {
@@ -873,7 +874,7 @@ RzList /*<RzDebugFrame *>*/ *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 			if (!it) {
 				break;
 			}
-			WindModule *module = rz_list_iter_get_data(it);
+			WindModule *module = rz_list_val(it);
 			char *exepath, *pdbpath;
 			if (!winkd_download_module_and_pdb(module, server, symstore, &exepath, &pdbpath)) {
 				break;

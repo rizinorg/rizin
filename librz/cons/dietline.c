@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include <string.h>
 #include <stdlib.h>
+#include "i/private.h"
 
 #if __WINDOWS__
 #include <windows.h>
@@ -1555,6 +1556,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	int prev_buflen = -1;
 	bool enable_yank_pop = false;
 	bool gcomp_is_rev = true;
+	RzEmacsModeModifyOpts em_opts;
+	rz_emacs_mode_modify_opts_reset(&em_opts);
 
 	RzCons *cons = rz_cons_singleton();
 
@@ -1846,6 +1849,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				if (line->sel_widget) {
 					selection_widget_erase(line);
 				}
+				line->buffer.index = line->buffer.length = line->gcomp = 0;
+				*line->buffer.data = '\0';
+				goto _end;
 				break;
 			case 1: // begin
 				line->buffer.index = 0;
@@ -1882,6 +1888,47 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 					line->buffer.index = line->buffer.length;
 				}
 				break;
+			case 'C':
+			case 'c':
+				em_opts.op = EMACS_MODIFY_CAPITALIZE;
+				rz_emacs_mode_modify(&em_opts, line);
+				rz_emacs_mode_modify_opts_reset(&em_opts);
+				break;
+			case 'L':
+			case 'l':
+				em_opts.op = EMACS_MODIFY_TOLOWER;
+				rz_emacs_mode_modify(&em_opts, line);
+				rz_emacs_mode_modify_opts_reset(&em_opts);
+				break;
+			case 'U':
+			case 'u':
+				em_opts.op = EMACS_MODIFY_TOUPPER;
+				rz_emacs_mode_modify(&em_opts, line);
+				rz_emacs_mode_modify_opts_reset(&em_opts);
+				break;
+			case '-':
+				em_opts.move_cursor = !em_opts.move_cursor;
+				if (em_opts.word_count_provided) {
+					// word count must be provided after '-'
+					rz_emacs_mode_modify_opts_reset(&em_opts);
+				}
+				break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9': {
+				const ut32 d = buf[0] - '0';
+				em_opts.word_count = em_opts.word_count <= (UT32_MAX - d) / 10
+					? em_opts.word_count * 10 + d
+					: UT32_MAX;
+				em_opts.word_count_provided = true;
+			} break;
 			case 63: // ^[? Meta-/
 			case 95: // ^[_ Meta-_
 				if (!line->gcomp && !line->hud && !line->sel_widget) {

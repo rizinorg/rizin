@@ -39,3 +39,24 @@ EXPECT=<<EOF
 -0x00000028  var_28h:   int64_t
 EOF
 RUN
+
+NAME=afv- *
+FILE=bins/elf/vars-complex-x86_64-bp
+CMDS=<<EOF
+aa
+s sym.varfunc
+pdf~:1..4
+echo
+afv- *
+pdf~:1..4
+EOF
+EXPECT=<<EOF
+/ sym.varfunc(int64_t arg1);
+| ; arg int64_t arg1 @ rdi
+| ; var int64_t var_2ch @ stack - 0x2c
+
+/ sym.varfunc();
+| 0x0000115c      push  rbp
+| 0x0000115d      mov   rbp, rsp
+EOF
+RUN

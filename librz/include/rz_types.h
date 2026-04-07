@@ -25,13 +25,6 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
-// TODO: these modes should be dropped when oldshell is removed in favour of RzOutputMode.
-#define RZ_MODE_PRINT    0x000
-#define RZ_MODE_SET      0x002
-#define RZ_MODE_SIMPLE   0x004
-#define RZ_MODE_JSON     0x008
-#define RZ_MODE_SIMPLEST 0x020
-
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
@@ -127,7 +120,7 @@ extern "C" {
 #define __WINDOWS__ 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
 #define __BSD__  0
 #define __UNIX__ 1
 #endif
@@ -601,12 +594,26 @@ typedef enum {
 #define RZ_SYS_OS "freebsd"
 #elif defined(__HAIKU__)
 #define RZ_SYS_OS "haiku"
+#elif defined(__serenity__)
+#define RZ_SYS_OS "serenity"
 #else
 #define RZ_SYS_OS "unknown"
 #endif
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define RZ_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
+#elif defined(_MSC_VER)
+#include <intrin.h>
+/**
+ * \def Prefetch data from a certain memory address to memory cache
+ */
+#define RZ_PREFETCH(addr) _mm_prefetch((const char *)(addr), _MM_HINT_T0)
+#else
+#define RZ_PREFETCH(addr) ((void)0)
 #endif
 
 static inline void rz_run_call1(void *fcn, void *arg1) {
@@ -722,7 +729,7 @@ struct dummy_rz_analysis_t {
  * \brief The hacky way to get the RzAsm pointer from RzAnalysis.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL const void /*<RzAnalysis>*/ *rz_analysis) {
 	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_analysis_t *analysis = (struct dummy_rz_analysis_t *)rz_analysis;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)analysis->core;
@@ -738,7 +745,7 @@ static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnaly
  * \brief The hacky way to get the RzAnalysis pointer from RzAsm.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL void /*<RzAsm>*/ *rz_asm) {
+static inline void /*<RzAnalysis>*/ *rz_asm_to_rz_analysis(RZ_NONNULL const void /*<RzAsm>*/ *rz_asm) {
 	assert(rz_asm && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_asm_t *rasm = (struct dummy_rz_asm_t *)rz_asm;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)rasm->core;

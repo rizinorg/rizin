@@ -45,6 +45,7 @@ io_plugins = {
 
 rz_io_sources = [
   'io.c',
+  'io_bounds.c',
   'io_fd.c',
   'io_map.c',
   'io_memory.c',
@@ -102,6 +103,14 @@ rz_io_deps = [
   rz_cons_dep,
   platform_deps,
 ]
+
+if host_machine.system() == 'sunos'
+  rz_io_deps += [
+    cc.find_library('socket'),
+    cc.find_library('nsl'),
+    cc.find_library('proc'),
+  ]
+endif
 
 if get_option('use_gpl')
   rz_io_deps += dependency('rzqnx')

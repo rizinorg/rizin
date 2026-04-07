@@ -441,8 +441,11 @@ static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+		return 4;
 	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN:
+		return 1;
 	case RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS:
+		return true;
 	default:
 		return -1;
 	}
@@ -475,7 +478,7 @@ RzAnalysisPlugin rz_analysis_plugin_alpha_cs = {
 	.desc = "DEC Alpha Capstone-based disassembler",
 	.license = "LGPL3",
 	.arch = "alpha",
-	.bits = 64,
+	.bits = 32 | 64,
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.op = rz_analysis_alpha_op,

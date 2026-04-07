@@ -8,6 +8,7 @@
 #include <rz_project.h>
 #include <rz_flirt.h>
 #include <rz_socket.h>
+#include <locale.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
@@ -110,6 +111,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
 			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
 			"-e",          "k=v",       "Evaluate config var",
+			"-E",          "endian",    "Endianness -E big or -E little",
 			"-f",          "",          "Block size = file size",
 			"-F",          "binplug",   "Force to use that rbin plugin",
 			"-h, -hh",     "",          "Show help message, -hh for long",
@@ -434,6 +436,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
 	int is_gdb = false;
+	ut32 endianness = RZ_SYS_ENDIAN_NONE;
 	const char *s_seek = NULL;
 	bool compute_hashes = true;
 	RzList *cmds = rz_list_new();
@@ -441,6 +444,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *files = rz_list_new();
 	RzList *prefiles = rz_list_new();
 	RzCmdStateOutput state = { 0 };
+
+	setlocale(LC_CTYPE, "");
 
 #define LISTS_FREE() \
 	{ \
@@ -502,7 +507,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *debugbackend = rz_str_dup("native");
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
@@ -581,9 +586,36 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'e':
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
+			} else if (rz_str_startswith(opt.arg, "asm.arch")) {
+				RZ_LOG_ERROR("use -a argument for setting the arch name\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.bits")) {
+				RZ_LOG_ERROR("use -b argument for setting the arch bits\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "asm.os")) {
+				RZ_LOG_ERROR("use -k argument for setting the OS/kern\n");
+				ret = 1;
+				goto beach;
+			} else if (rz_str_startswith(opt.arg, "cfg.bigendian")) {
+				RZ_LOG_ERROR("use -E argument for setting the endianness\n");
+				ret = 1;
+				goto beach;
 			} else {
-				rz_config_eval(r->config, opt.arg);
+				rz_config_eval(r->config, (void *)opt.arg);
 				rz_list_append(evals, (void *)opt.arg);
+			}
+			break;
+		case 'E':
+			if (RZ_STR_EQ(opt.arg, "big")) {
+				endianness = RZ_SYS_ENDIAN_BIG;
+			} else if (RZ_STR_EQ(opt.arg, "little")) {
+				endianness = RZ_SYS_ENDIAN_LITTLE;
+			} else {
+				RZ_LOG_ERROR("Invalid endianness value '%s'\n", opt.arg);
+				ret = 1;
+				goto beach;
 			}
 			break;
 		case 'f':
@@ -956,6 +988,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (asmos) {
 				rz_config_set(r->config, "asm.os", asmos);
 			}
+			if (endianness != RZ_SYS_ENDIAN_NONE) {
+				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+			}
 			// TODO: load rbin thing
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
@@ -1089,7 +1124,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
 		if (!debug || debug == 2) {
 			const char *dbg_profile = rz_config_get(r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
@@ -1249,10 +1286,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);
 		}
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1262,7 +1295,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
 		}
-
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
+		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
 		if (debug) {
@@ -1336,10 +1375,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	} else {
 		rz_core_block_read(r);
 
-		rz_list_foreach (evals, iter, cmdn) {
-			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
-		}
 		if (asmarch) {
 			rz_config_set(r->config, "asm.arch", asmarch);
 		}
@@ -1348,6 +1383,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		if (asmos) {
 			rz_config_set(r->config, "asm.os", asmos);
+		}
+		if (endianness != RZ_SYS_ENDIAN_NONE) {
+			rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+		}
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn);
+			rz_cons_flush();
 		}
 	}
 	{

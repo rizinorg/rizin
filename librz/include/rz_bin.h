@@ -725,6 +725,25 @@ typedef struct rz_bin_import_t {
 	ut32 visibility;
 } RzBinImport;
 
+/**
+ * \brief Base component used in relocation calculations
+ *
+ * Describes the base address or value in a relocation formula.
+ * For example, "GOT(S) + A" uses RZ_RELOC_BASE_GOT_SYMBOL as the base,
+ * where GOT(S) is the GOT entry address and A is the addend.
+ */
+typedef enum rz_bin_reloc_base {
+	RZ_RELOC_BASE_UNKNOWN = -1,
+	RZ_RELOC_BASE_SYMBOL = 0, // S: Address of the symbol
+	RZ_RELOC_BASE_GOT_SYMBOL, // GOT(S): Address of GOT entry for the symbol
+	RZ_RELOC_BASE_GOT, // GOT: Address of the Global Offset Table
+	RZ_RELOC_BASE_BASE, // B: Base address at which the shared object is loaded into memory
+	RZ_RELOC_BASE_PLT_SYMBOL, // L(S): Address of the PLT entry for the symbol
+	RZ_RELOC_BASE_SYMBOL_SIZE, // Z(S): Size of the symbol
+	// max value
+	RZ_RELOC_BASE_ENUM_SIZE
+} RzRelocBase;
+
 typedef struct rz_bin_reloc_t {
 	RzBinRelocType type;
 	RzBinSymbol *symbol;
@@ -747,6 +766,7 @@ typedef struct rz_bin_reloc_t {
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
+	RzRelocBase reloc_base; ///< Semantic Base for the reloc.
 } RzBinReloc;
 
 RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
@@ -831,6 +851,7 @@ typedef struct rz_bin_resource_t {
 	char *name;
 	char *time;
 	ut64 vaddr;
+	ut64 paddr;
 	ut64 size;
 	char *type;
 	char *language;
@@ -844,6 +865,7 @@ typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
+typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -852,6 +874,7 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSections get_sections;
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
+	RzBinGetObject get_bin_object;
 	ut32 visibility;
 } RzBinBind;
 

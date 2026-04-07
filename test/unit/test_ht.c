@@ -30,6 +30,34 @@ bool test_ht_insert_lookup(void) {
 	mu_assert_streq(sdb_ht_find(ht, "CCCC", NULL), "vCCCC", "CCCC value wrong");
 
 	sdb_ht_free(ht);
+
+#ifdef HT_ENABLE_CUSTOM_ELEM_SIZE
+	typedef struct {
+		HtUUKv base;
+		ut64 extra;
+	} CustomKv;
+
+	HtUUOptions opt = { 0 };
+	opt.elem_size = sizeof(CustomKv);
+	HtUU *ht_u = ht_uu_new_opt(&opt);
+
+	for (size_t i = 0; i < 100; ++i) {
+		CustomKv *tmp = NULL;
+		CustomKv kv = { 0 };
+
+		kv.base.key = 4 * i;
+		kv.base.value = i + 200;
+		kv.extra = i + 300;
+
+		ht_uu_insert_kv_ex(ht_u, (HtUUKv *)&kv, false, (HtUUKv **)&tmp);
+		mu_assert_notnull(tmp, "KV is set after rehashing");
+		mu_assert_eq(tmp->base.value, i + 200, "KV is valid after rehashing");
+		mu_assert_eq(tmp->extra, i + 300, "KV extra value is valid after rehashing");
+	}
+
+	ht_uu_free(ht_u);
+#endif
+
 	mu_end;
 }
 
@@ -293,6 +321,90 @@ bool test_delete(void) {
 	void *r = ht_ss_find(ht, "key1", &found);
 	mu_assert_null(r, "key1 should not be found");
 	mu_assert("found should be false", !found);
+	ht_ss_free(ht);
+	mu_end;
+}
+
+bool test_rehash_on_delete(void) {
+	HtUU *ht = ht_uu_new();
+	ht->opt.hashfn = (HtUUHashFunction)create_collision;
+
+	for (ut32 i = 0; i < 56; i++) {
+		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
+	}
+
+	for (ut32 i = 0; i < 56; i++) {
+		mu_assert_true(ht_uu_delete(ht, i), "failed to delete element");
+	}
+
+	for (ut32 i = 0; i < 56; i++) {
+		mu_assert_true(ht_uu_insert(ht, i, i * 100), "failed to insert element");
+	}
+
+	for (ut32 i = 0; i < 56; i++) {
+		mu_assert_true(ht_uu_update_key(ht, i, i + 1000), "failed to update element key");
+	}
+
+	mu_assert_eq(ht_uu_size(ht), 56, "invalid table size");
+	ht_uu_free(ht);
+	mu_end;
+}
+
+bool test_ht_delete_optimized(void) {
+	// Test case for the "deletion trick" optimization. If the optimized implementation places
+	// incorrect "empty" slot, this would corrupt the hashtable and make some keys unreachable
+	bool found = false;
+
+	for (ut32 size = 1; size <= 32; size++) {
+		for (ut32 delete_key = 0; delete_key < size; delete_key++) {
+			HtUU *ht = ht_uu_new();
+			ht->opt.hashfn = (HtUUHashFunction)create_collision;
+
+			// Insert all
+			for (ut32 i = 0; i < size; i++) {
+				ht_uu_insert(ht, i, i * 100);
+			}
+
+			// Delete 1
+			ht_uu_delete(ht, delete_key);
+
+			// Confirm
+			for (ut32 i = 0; i < size; i++) {
+				HtUUKv *kv = ht_uu_find_kv(ht, i, &found);
+
+				if (i == delete_key) {
+					mu_assert_null(kv, "element expected to be deleted");
+					mu_assert_false(found, "element expected to be deleted");
+				} else {
+					mu_assert_notnull(kv, "key not found");
+					mu_assert_true(found, "key not found");
+					mu_assert_eq(kv->value, i * 100, "incorrect value");
+				}
+			}
+
+			mu_assert_eq(ht_uu_size(ht), size - 1, "invalid table size");
+			ht_uu_free(ht);
+		}
+	}
+
+	mu_end;
+}
+
+bool test_clear(void) {
+	HtSS *ht = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+
+	ht_ss_insert(ht, "key1", "value1");
+	ht_ss_insert(ht, "key2", "value2");
+	ht_ss_insert(ht, "key3", "value3");
+	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
+	ht_ss_clear(ht);
+	mu_assert_eq(ht_ss_size(ht), 0, "Wrong size");
+
+	ht_ss_insert(ht, "key1", "value1");
+	ht_ss_insert(ht, "key2", "value2");
+	ht_ss_insert(ht, "key3", "value3");
+	mu_assert_eq(ht_ss_size(ht), 3, "Wrong size");
+
 	ht_ss_free(ht);
 	mu_end;
 }
@@ -748,6 +860,14 @@ bool test_set_u(void) {
 	rz_iterator_free(it);
 	rz_set_u_add(set_u, 0x53e0);
 	rz_set_u_add(set_u, 0x53bc);
+
+	mu_assert_eq(rz_set_u_size(set_u), 2, "Wrong size");
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Wrong size");
+
+	rz_set_u_add(set_u, 0x53e0);
+	rz_set_u_add(set_u, 0x53bc);
+
 	x = 0;
 	it = rz_set_u_as_iter(set_u);
 	rz_iterator_foreach(it, im_elem) {
@@ -766,7 +886,7 @@ bool test_set_u(void) {
 	// Add an address as key which is far away from the heap addresses.
 	rz_set_u_add(set_u, 100000000);
 	mu_assert_true(rz_set_u_contains(set_u, 100000000), "Not contained.");
-	mu_assert_eq(set_u->count, 5, "count");
+	mu_assert_eq(rz_set_u_size(set_u), 5, "count");
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
@@ -776,6 +896,13 @@ bool test_set_u(void) {
 	}
 	rz_iterator_free(it);
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
+
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_take(set_u), UT64_MAX, "Invalid take should return UT64_MAX");
+	rz_set_u_add(set_u, 100000000);
+	mu_assert_eq(rz_set_u_size(set_u), 1, "Add failed");
+	mu_assert_eq(rz_set_u_take(set_u), 100000000, "Take failed");
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Take did not remove element");
 
 	rz_set_u_free(set_u);
 	mu_end;
@@ -843,6 +970,8 @@ int all_tests() {
 	mu_run_test(test_ht_insert_lookup);
 	mu_run_test(test_ht_update_lookup);
 	mu_run_test(test_ht_delete);
+	mu_run_test(test_ht_delete_optimized);
+	mu_run_test(test_rehash_on_delete);
 	mu_run_test(test_ht_insert_kvp);
 	mu_run_test(test_ht_insert_collision);
 	mu_run_test(test_ht_grow);
@@ -852,6 +981,7 @@ int all_tests() {
 	mu_run_test(test_insert);
 	mu_run_test(test_update);
 	mu_run_test(test_delete);
+	mu_run_test(test_clear);
 	mu_run_test(test_grow_1);
 	mu_run_test(test_grow_2);
 	mu_run_test(test_grow_3);

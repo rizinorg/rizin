@@ -6,7 +6,7 @@ EOF
 EXPECT=<<EOF
  size 
 ------
-12.9K
+13.1K
 EOF
 RUN
 
