@@ -121,9 +121,13 @@ RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
 	RzListIter *it = list->head;
+	RzListFree fn = list->free;
 	while (it) {
 		RzListIter *next = it->next;
-		rz_list_delete(list, it);
+		if (fn && it->val) {
+			fn(it->val);
+		}
+		free(it);
 		it = next;
 	}
 	list->length = 0;
