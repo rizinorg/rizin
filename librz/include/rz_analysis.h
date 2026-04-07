@@ -6,10 +6,6 @@
 #ifndef RZ_ANALYSIS_H
 #define RZ_ANALYSIS_H
 
-/* use old refs and function storage */
-// still required by core in lot of places
-#define USE_VARSUBS 0
-
 #define RZ_ANALYSIS_OP_INVALID_STACKPTR 0
 #define RZ_ANALYSIS_OP_MASK_WILDCARD    0xfffff
 
