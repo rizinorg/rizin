@@ -260,7 +260,7 @@ struct rz_interpreter_set {
 	 * \brief The ring buffers to push the yield of interpretation into.
 	 * These ring buffers are shared with other interpreter sets.
 	 */
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
+	RZ_BORROW RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
 	/**
 	 * \brief Ignored address ranges.
 	 */
@@ -303,8 +303,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RzInterpreterAbstraction abstraction,
-	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
-	RzInterpreterYieldFilter yield_filter,
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset);
 

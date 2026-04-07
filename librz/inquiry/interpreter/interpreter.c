@@ -187,33 +187,25 @@ RZ_API void rz_interpreter_set_free(RZ_OWN RZ_NULLABLE RzInterpreterSet *iset) {
 	if (iset->il_vm) {
 		rz_analysis_il_vm_free(iset->il_vm);
 	}
-	rz_interpreter_yield_rbuf_free(iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
-	rz_interpreter_yield_rbuf_free(iset->yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
 	free(iset);
 }
+
 static bool setup_ipc_objects(
-	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
-	RzInterpreterYieldFilter yield_filter,
 	RZ_OUT RzThreadQueue **il_queue,
 	RZ_OUT RzThreadRingBuf **io_request_rbuf,
 	RZ_OUT RzThreadRingBuf **io_result_rbuf,
-	RZ_OUT RzThreadRingBuf **branch_rbuf,
-	RZ_OUT RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM]) {
+	RZ_OUT RzThreadRingBuf **branch_rbuf) {
 	*il_queue = NULL;
 	*io_request_rbuf = NULL;
 	*io_result_rbuf = NULL;
 	*branch_rbuf = NULL;
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = NULL;
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = NULL;
 
-	RzInterpreterYieldRBuf *rbuf = NULL;
 	// The queue to pass the Effects to the interpreter.
 	// This is only one queue for the prototype.
 	// In practice it would be one for each interpreter.
 	*il_queue = rz_th_queue_new(RZ_INTERPRETER_IL_QUEUE_SIZE, NULL);
 	if (!il_queue) {
 		rz_warn_if_reached();
-		rz_pvector_free(sections);
 		goto error_free;
 	}
 
@@ -224,7 +216,6 @@ static bool setup_ipc_objects(
 	*io_result_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_IO_RBUF_SIZE, sizeof(RzInterpreterIOResult));
 	if (!*io_request_rbuf || !*io_result_rbuf) {
 		rz_warn_if_reached();
-		rz_pvector_free(sections);
 		goto error_free;
 	}
 
@@ -232,41 +223,12 @@ static bool setup_ipc_objects(
 	*branch_rbuf = rz_th_ring_buf_new(RZ_INTERPRETER_ADDR_RBUF_SIZE, sizeof(RzInterpreterBranch));
 	if (!*branch_rbuf) {
 		rz_warn_if_reached();
-		rz_pvector_free(sections);
 		goto error_free;
 	}
 
-	// A single interpreter can produce different yields.
-	// E.g. if the interpreter has a complex abstract memory model
-	// for stack, heap and constant values.
-	// Then it can produce three kind of yields.
-	// These yield queues can be shared between different interpreters.
-	// So we have one yield queue for each yield type.
-
-	RzInterpreterYieldKind yield_kind = RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE;
-	rbuf = rz_interpreter_yield_rbuf_new(yield_kind, NULL, NULL);
-	if (!rbuf) {
-		rz_warn_if_reached();
-		rz_pvector_free(sections);
-		goto error_free;
-	}
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE] = rbuf;
-
-	yield_kind = RZ_INTERPRETER_YIELD_KIND_XREF;
-	rbuf = rz_interpreter_yield_rbuf_new(
-		yield_kind,
-		yield_filter,
-		sections);
-	if (!rbuf) {
-		rz_warn_if_reached();
-		goto error_free;
-	}
-	yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF] = rbuf;
 	return true;
 
 error_free:
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_XREF]);
-	rz_interpreter_yield_rbuf_free(yield_rbufs[RZ_INTERPRETER_YIELD_KIND_CALL_CANDIDATE]);
 	rz_th_queue_free(*il_queue);
 	rz_th_ring_buf_free(*io_request_rbuf);
 	rz_th_ring_buf_free(*io_result_rbuf);
@@ -282,8 +244,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzAnalysis *analysis,
 	RZ_NONNULL RZ_OWN RzInterpreterPlugin *plugin,
 	RzInterpreterAbstraction abstraction,
-	RZ_OWN RzPVector /*<RzBinSection *>*/ *sections,
-	RzInterpreterYieldFilter yield_filter,
+	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM],
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code) {
 	rz_return_val_if_fail(plugin && ignored_code && analysis, NULL);
 
@@ -294,7 +255,6 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 
 	RzInterpreterSet *iset = RZ_NEW0(RzInterpreterSet);
 	if (!iset) {
-		rz_pvector_free(sections);
 		return NULL;
 	}
 
@@ -328,8 +288,7 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	RzThreadRingBuf *io_result_rbuf = NULL;
 	RzThreadRingBuf *branch_rbuf = NULL;
 	RzThreadQueue *il_queue = NULL;
-	RzInterpreterYieldRBuf *yield_rbufs[RZ_INTERPRETER_YIELD_KIND_NUM];
-	if (!setup_ipc_objects(sections, yield_filter, &il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf, yield_rbufs)) {
+	if (!setup_ipc_objects(&il_queue, &io_request_rbuf, &io_result_rbuf, &branch_rbuf)) {
 		free(iset);
 		rz_analysis_il_vm_free(il_vm);
 		return NULL;
