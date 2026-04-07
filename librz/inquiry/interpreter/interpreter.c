@@ -309,16 +309,17 @@ RZ_API RZ_OWN RzInterpreterSet *rz_interpreter_set_new(
 	// It allows the IO handler to buffer reads in r-- sections for multiple interpreters.
 	// Possibly allows to optimize the IO access, because there is only module accessing it (not every interpreter).
 	// But is there any other advantage?
-	RzAnalysisILVM *il_vm = rz_analysis_il_vm_new(analysis, analysis->reg);
+	RzAnalysisILVM *il_vm = rz_analysis_il_vm_new(analysis, rz_analysis_get_reg(analysis));
 	if (!il_vm) {
 		free(iset);
 		RZ_LOG_ERROR("Failed during RzAnalysisILVM setup.\n");
 		return NULL;
 	}
 
-	RzAnalysisILConfig *config = analysis->cur->il_config(analysis);
+	const RzAnalysisPlugin *cur = rz_analysis_plugin_current(analysis);
+	RzAnalysisILConfig *config = cur->il_config(analysis);
 	RzInterpreterAbstrState *state = rz_interpreter_abstr_state_new(
-		analysis->cur->arch,
+		cur->arch,
 		abstraction,
 		config,
 		il_vm->reg_binding);
