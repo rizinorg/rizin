@@ -20,17 +20,19 @@ static bool eval(RZ_NONNULL RzInterpreterSet *iset,
 	// Check invocation count of the current address.
 	// Never execute the same address more than MAX_INVOCATIONS_PER_BB times.
 	bool found = false;
-	ut64 ic_pc = ht_uu_find(pdata->bb_invocation_count, il_bb->bb_addr, &found);
-	if (!found) {
-		ic_pc = 0;
-	} else if (ic_pc > MAX_INVOCATIONS_PER_BB) {
-		// TODO: Make it configurable
-		RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->bb_addr)
-		set_pc(iset->astate, il_bb->bb_addr + il_bb->size, plugin_data);
-		return true;
+	HtUUKv *ic_pc = ht_uu_find_kv(pdata->bb_invocation_count, il_bb->bb_addr, &found);
+	if (found) {
+		ic_pc->value++;
+		RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc->value, il_bb->bb_addr);
+		if (ic_pc->value > MAX_INVOCATIONS_PER_BB) {
+			// TODO: Make it configurable
+			RZ_LOG_DEBUG("Reached maximum number of invocations of basic block at 0x%" PFMT64x ". Skipping it.\n", il_bb->bb_addr)
+			set_pc(iset->astate, il_bb->bb_addr + il_bb->size, plugin_data);
+			return true;
+		}
+	} else {
+		ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, 1);
 	}
-	ht_uu_update(pdata->bb_invocation_count, il_bb->bb_addr, ic_pc + 1);
-	RZ_LOG_DEBUG("Eval BB (ic: %" PFMT64d ") = 0x%" PFMT64x "\n", ic_pc, il_bb->bb_addr);
 
 	// Reset call candidate tracking for each basic block.
 	memset(&pdata->call_cand, 0, sizeof(pdata->call_cand));
