@@ -248,7 +248,7 @@ static ut32 vernum(const char *s) {
 
 // ascii
 RZ_IPI RzCmdStatus rz_cmd_shell_ascii_table_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%s", ret_ascii_table());
+	rz_cons_printf("%s", rz_get_ascii_table());
 	return RZ_CMD_STATUS_OK;
 }
 
