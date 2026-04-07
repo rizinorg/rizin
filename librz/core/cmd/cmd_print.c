@@ -1830,10 +1830,30 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 }
 
 static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
-	const ut8 *buffer = core->block + offset;
-	const ut32 length = core->blocksize - offset;
+	if (core->blocksize_max <= offset) {
+		RZ_LOG_ERROR("core: invalid offset for string printing\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 addr = core->offset + offset;
+	ut32 max_length = core->blocksize_max - offset;
+	ut8 *buffer = RZ_NEWS(ut8, max_length);
+	if (!buffer) {
+		RZ_LOG_ERROR("core: failed to allocate buffer for string printing\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int read = rz_io_nread_at(core->io, addr, buffer, max_length);
+	if (read <= 0) {
+		free(buffer);
+		RZ_LOG_ERROR("core: failed to read bytes for string printing\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const ut32 length = (ut32)read;
 	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
-	RzStrStringifyOpt opt = { 0 };
+	RzStrStringifyOpt opt = (RzStrStringifyOpt){ 0 };
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
 
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
@@ -1849,13 +1869,16 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		core_print_raw_buffer(&opt);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_nil);
+		print_json_string(core, buffer, length, encoding, stop_at_nil, stop_at_unprintable);
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
-		return RZ_CMD_STATUS_ERROR;
+		status = RZ_CMD_STATUS_ERROR;
+		break;
 	}
-	return RZ_CMD_STATUS_OK;
+
+	free(buffer);
+	return status;
 }
 
 // "ps"
