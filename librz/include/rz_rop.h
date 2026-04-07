@@ -183,7 +183,6 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_new(void);
 RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token);
 
 // ROP Gadget Info APIs

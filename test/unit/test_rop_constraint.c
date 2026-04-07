@@ -51,8 +51,8 @@ bool test_parse_reg_to_const(void) {
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
 	mu_assert_null(rop_constraint->args[SRC_REG], "Source register should be NULL");
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "123", "Invalid constant value");
-
 	rz_core_rop_constraint_free(rop_constraint);
+
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
 	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
@@ -101,7 +101,6 @@ bool test_parse_reg_op_const(void) {
 	mu_assert_streq(rop_constraint->args[SRC_REG], "eax", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "3", "Invalid constant value");
-
 	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 2: Invalid format
@@ -161,13 +160,13 @@ bool test_parse_reg_op_reg(void) {
 	mu_assert_streq(rop_constraint->args[SRC_REG], "ebx", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[OP], "sub", "Invalid operator");
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ecx", "Invalid destination constant register");
-
 	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =  eax+ ";
 	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
+	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 3: Valid register operation with register
 	char str3[] = "eax  +=  ebx";
@@ -178,8 +177,8 @@ bool test_parse_reg_op_reg(void) {
 	mu_assert_streq(rop_constraint->args[SRC_REG], "eax", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ebx", "Invalid destination constant register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
-
 	rz_core_rop_constraint_free(rop_constraint);
+
 	rz_core_free(core);
 	mu_end;
 }
