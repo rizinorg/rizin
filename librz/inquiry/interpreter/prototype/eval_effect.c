@@ -33,8 +33,12 @@ RZ_IPI bool interpreter_prototype_eval_effect(RzInterpreterSet *iset,
 			break;
 		}
 		STACK_ABSTR_DATA_OUT(inc);
-		rz_bv_set_from_ut64(inc.bv, insn_pkt_size);
+		// First cast the bitvector, then set it.
+		// This is performance critical. Since the stack allocated bv is >64 bit
+		// the rz_bv_set_from_ut64() will set its whole memory, eating a lot of runtime.
+		// If we cast before, it is simply an assignment to bv->small_bits.
 		rz_bv_cast_inplace(inc.bv, rz_bv_len(pc->bv), false);
+		rz_bv_set_from_ut64(inc.bv, insn_pkt_size);
 #if RZ_BUILD_DEBUG
 		ut64 old_pc = rz_bv_to_ut64(pc->bv);
 #endif
