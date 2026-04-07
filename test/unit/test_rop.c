@@ -118,7 +118,7 @@ bool test_rz_direct_solver() {
 	int size = sizeof(x86_64_buf_str) / sizeof(x86_64_buf_str[0]);
 	int addr = 0;
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(
-		core, NULL, false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON,
+		core, RZ_GADGET_TYPE_ROP, NULL, false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON,
 		NULL);
 	mu_assert_notnull(context, "rz_core_gadget_search_context_new failed");
 	HtUP *ht_rop_analysis = ht_up_new(NULL, (HtUPFreeValue)rz_analysis_op_free);

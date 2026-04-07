@@ -51,6 +51,15 @@ typedef struct rz_gadget_info_t {
 } RzGadgetInfo;
 
 /**
+ * \brief Type of gadget to search for.
+ */
+typedef enum {
+	RZ_GADGET_TYPE_ROP, ///< Return-Oriented Programming.
+	RZ_GADGET_TYPE_JOP, ///< Jump-Oriented Programming.
+	RZ_GADGET_TYPE_COP, ///< Call-Oriented Programming.
+} RzGadgetType;
+
+/**
  * \brief Types of IL instructions for Gadget constraints.
  */
 typedef enum rz_gadget_il_instr_type {
@@ -125,6 +134,7 @@ typedef struct rz_gadget_constraint_t {
  * \brief Structure representing a Gadget search context.
  */
 typedef struct rz_gadget_search_context_t {
+	RzGadgetType type; ///< Type of gadget to search for.
 	ut8 max_instr; ///< Gadget search max length.
 	bool subchains; ///< Display every length gadget from gadget.len=X to 2.
 	bool allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
@@ -179,7 +189,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_gadget_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp);
 
 // Gadget Search Context APIs
-RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, bool regexp,
+RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNULL const RzCore *core, const RzGadgetType gadget_type, RZ_NULLABLE const char *greparg, bool regexp,
 	RzGadgetRequestMask mask, RzGadgetDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state);
 RZ_API void rz_core_gadget_search_context_free(RZ_NULLABLE RzGadgetSearchContext *context);
 

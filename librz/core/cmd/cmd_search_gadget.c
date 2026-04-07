@@ -411,7 +411,7 @@ compound:
  *
  * This function allocates and initializes a new RzGadgetSearchContext object.
  */
-RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNULL const RzCore *core, RZ_NULLABLE const char *greparg, const bool regexp,
+RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNULL const RzCore *core, const RzGadgetType gadget_type, RZ_NULLABLE const char *greparg, const bool regexp,
 	const RzGadgetRequestMask mask, const RzGadgetDetailSearchMask detail_mask, RZ_NULLABLE RZ_BORROW RzCmdStateOutput *state) {
 
 	rz_return_val_if_fail(core, NULL);
@@ -420,6 +420,7 @@ RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNUL
 		return NULL;
 	}
 
+	context->type = gadget_type;
 	context->greparg = rz_str_dup(greparg);
 	context->arch = rz_config_get(core->config, "asm.arch");
 	context->regexp = regexp;
