@@ -579,6 +579,14 @@ RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL
 	return result;
 }
 
+/**
+ * \brief      tries to resolve & guess the function name
+ *
+ * \param      analysis   The RzAnalysis to use
+ * \param[in]  func_name  The function name to resolve
+ *
+ * \return     On success returns a valid pointer, otherwise NULL.
+ */
 RZ_API RZ_OWN char *rz_analysis_function_name_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *func_name) {
 	rz_return_val_if_fail(analysis && RZ_STR_ISNOTEMPTY(func_name), NULL);
 
