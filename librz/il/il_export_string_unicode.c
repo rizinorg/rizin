@@ -71,10 +71,10 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 #define UCD_FPOWN        "˰ⁿ"
 #define UCD_FROOTN       "ⁿ√"
 #define UCD_FCOMPOUND    "∪"
-#define UCD_LOAD         "ʟ"
-#define UCD_LOADW        "ʟ"
-#define UCD_STORE        "ꜱ"
-#define UCD_STOREW       "ŝ"
+#define UCD_LOAD         "ʟᴅ"
+#define UCD_LOADW        "ʟᴅ"
+#define UCD_STORE        "ꜱᴛ"
+#define UCD_STOREW       "ꜱᴛ"
 #define UCD_NOP          "∅"
 #define UCD_EMPTY        "{}"
 #define UCD_SET          "←"
@@ -554,9 +554,9 @@ static bool il_opdmp_load(const RzILOpPure *op, RzStrBuf *sb) {
 
 static bool il_opdmp_loadw(const RzILOpPure *op, RzStrBuf *sb) {
 	const RzILOpArgsLoadW *opx = &op->op.loadw;
-	return_false_if_fail(rz_strbuf_appendf(sb, "(%u " UCD_LOADW, (ut32)opx->n_bits));
+	return_false_if_fail(rz_strbuf_append(sb, "(" UCD_LOADW));
 	return_false_if_fail(append_subscript(sb, opx->mem));
-	return_false_if_fail(rz_strbuf_append(sb, " "));
+	return_false_if_fail(rz_strbuf_appendf(sb, " %u ", opx->n_bits));
 	return_false_if_fail(il_op_pure_string_resolve(opx->key, sb));
 	return rz_strbuf_append(sb, ")");
 }
@@ -566,9 +566,9 @@ static bool il_opdmp_store(const RzILOpEffect *op, RzStrBuf *sb) {
 	return_false_if_fail(rz_strbuf_append(sb, "(" UCD_STORE));
 	return_false_if_fail(append_subscript(sb, opx->mem));
 	return_false_if_fail(rz_strbuf_append(sb, " "));
-	return_false_if_fail(il_op_pure_string_resolve(opx->key, sb));
-	return_false_if_fail(rz_strbuf_append(sb, " "));
 	return_false_if_fail(il_op_pure_string_resolve(opx->value, sb));
+	return_false_if_fail(rz_strbuf_append(sb, " "));
+	return_false_if_fail(il_op_pure_string_resolve(opx->key, sb));
 	return rz_strbuf_append(sb, ")");
 }
 
@@ -577,9 +577,9 @@ static bool il_opdmp_storew(const RzILOpEffect *op, RzStrBuf *sb) {
 	return_false_if_fail(rz_strbuf_append(sb, "(" UCD_STOREW));
 	return_false_if_fail(append_subscript(sb, opx->mem));
 	return_false_if_fail(rz_strbuf_append(sb, " "));
-	return_false_if_fail(il_op_pure_string_resolve(opx->key, sb));
-	return_false_if_fail(rz_strbuf_append(sb, " "));
 	return_false_if_fail(il_op_pure_string_resolve(opx->value, sb));
+	return_false_if_fail(rz_strbuf_append(sb, " "));
+	return_false_if_fail(il_op_pure_string_resolve(opx->key, sb));
 	return rz_strbuf_append(sb, ")");
 }
 

@@ -1096,13 +1096,10 @@ commands:
           - name: Memory
             entries:
               - text: "Load"
-                arg_str: " (n ʟₘ a)"
+                arg_str: " (ʟᴅₘ n a)"
                 comment: "Load n bits from address a of memory index m."
               - text: "Store"
-                arg_str: " (ꜱ₀ a v)"
-                comment: "Store v to address a of memory index m."
-              - text: "Store word"
-                arg_str: " (ŝ₀ a v)"
+                arg_str: " (ꜱᴛₘ v a)"
                 comment: "Store v to address a of memory index m."
   - name: pp
     summary: Print patterns

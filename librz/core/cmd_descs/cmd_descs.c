@@ -16173,8 +16173,8 @@ static const RzCmdDescDetailEntry print_function_rzil_enriched_Bitvector_detail_
 	{ .text = "Sdiv", .arg_str = " (x /⁺ y)", .comment = "Signed division of x and y." },
 	{ .text = "Mod", .arg_str = " (x % y)", .comment = "Unsigned modulo of x and y." },
 	{ .text = "Smod", .arg_str = " (x %⁺ y)", .comment = "Signed modulo of x and y." },
-	{ .text = "Logand", .arg_str = " (x ∧ y)", .comment = "Bitwise AND between x and y." },
-	{ .text = "Logor", .arg_str = " (x ∨ y)", .comment = "Bitwise OR between x and y." },
+	{ .text = "Logand", .arg_str = " (x & y)", .comment = "Bitwise AND between x and y." },
+	{ .text = "Logor", .arg_str = " (x | y)", .comment = "Bitwise OR between x and y." },
 	{ .text = "Logxor", .arg_str = " (x ⊕ y)", .comment = "Bitwise XOR between x and y." },
 	{ .text = "Lshift", .arg_str = " (x ≪ y b)", .comment = "Left shift x by y bits with fill bit b." },
 	{ .text = "Rshift", .arg_str = " (x ≫ y b)", .comment = "Right shift x by y bits with fill bit b." },
@@ -16188,9 +16188,9 @@ static const RzCmdDescDetailEntry print_function_rzil_enriched_Boolean_detail_en
 	{ .text = "False", .arg_str = " ⊥", .comment = "Boolean literal false." },
 	{ .text = "True", .arg_str = " ⊤", .comment = "Boolean literal true." },
 	{ .text = "Boolnot", .arg_str = " ¬x", .comment = "Boolean NOT of x." },
-	{ .text = "Boolor", .arg_str = " (x | y)", .comment = "Boolean OR between x and y." },
-	{ .text = "Booland", .arg_str = " (x & y)", .comment = "Boolean AND between x and y." },
-	{ .text = "Boolxor", .arg_str = " (x ^ y)", .comment = "Boolean XOR between x and y." },
+	{ .text = "Boolor", .arg_str = " (x ∨ y)", .comment = "Boolean OR between x and y." },
+	{ .text = "Booland", .arg_str = " (x ∧ y)", .comment = "Boolean AND between x and y." },
+	{ .text = "Boolxor", .arg_str = " (x ⊻ y)", .comment = "Boolean XOR between x and y." },
 	{ 0 },
 };
 
@@ -16233,9 +16233,8 @@ static const RzCmdDescDetailEntry print_function_rzil_enriched_Floating_space_Po
 };
 
 static const RzCmdDescDetailEntry print_function_rzil_enriched_Memory_detail_entries[] = {
-	{ .text = "Load", .arg_str = " (n ʟₘ a)", .comment = "Load n bits from address a of memory index m." },
-	{ .text = "Store", .arg_str = " (ꜱ₀ a v)", .comment = "Store v to address a of memory index m." },
-	{ .text = "Store word", .arg_str = " (ŝ₀ a v)", .comment = "Store v to address a of memory index m." },
+	{ .text = "Load", .arg_str = " (ʟᴅₘ n a)", .comment = "Load n bits from address a of memory index m." },
+	{ .text = "Store", .arg_str = " (ꜱᴛₘ v a)", .comment = "Store v to address a of memory index m." },
 	{ 0 },
 };
 static const RzCmdDescDetail print_function_rzil_enriched_details[] = {
