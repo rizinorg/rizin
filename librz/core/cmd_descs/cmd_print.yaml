@@ -889,7 +889,7 @@ commands:
                 arg_str: " {}"
                 comment: "Empty RzIL op."
               - text: "NOP"
-                arg_str: " ∅"
+                arg_str: " ɴᴏᴘ"
                 comment: "No operation."
               - text: "Blk"
                 arg_str: " (l: deff ceff)"

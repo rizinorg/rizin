@@ -75,7 +75,7 @@ static const char *const subscript_digits[10] = { "₀", "₁", "₂", "₃", "�
 #define UCD_LOADW        "ʟᴅ"
 #define UCD_STORE        "ꜱᴛ"
 #define UCD_STOREW       "ꜱᴛ"
-#define UCD_NOP          "∅"
+#define UCD_NOP          "ɴᴏᴘ"
 #define UCD_EMPTY        "{}"
 #define UCD_SET          "←"
 #define UCD_JMP          "↷ "

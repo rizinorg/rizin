@@ -16151,7 +16151,7 @@ static const RzCmdDescDetailEntry print_function_rzil_enriched_General_detail_en
 	{ .text = "Branch", .arg_str = " (cond ⅄ true_eff false_eff)", .comment = "Branch (Conditional)." },
 	{ .text = "Repeat", .arg_str = " (cond ⟳ eff)", .comment = "Repeat eff until cond is true." },
 	{ .text = "Empty", .arg_str = " {}", .comment = "Empty RzIL op." },
-	{ .text = "NOP", .arg_str = " ∅", .comment = "No operation." },
+	{ .text = "NOP", .arg_str = " ɴᴏᴘ", .comment = "No operation." },
 	{ .text = "Blk", .arg_str = " (l: deff ceff)", .comment = "A sequence of deff (data effect) and ceff (control effect) with label l." },
 	{ .text = "Unk", .arg_str = " ?", .comment = "Unknown operation, usually represents an error." },
 	{ 0 },
