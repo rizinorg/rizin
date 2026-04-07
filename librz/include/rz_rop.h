@@ -172,7 +172,7 @@ RZ_API RzCmdStatus rz_core_rop_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopS
 RZ_API RzCmdStatus rz_core_rop_gadget_info(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_OWN RzRopSearchContext *context);
 RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *str,
 	RZ_NULLABLE RZ_OUT RzRopConstraint *rop_constraint);
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, int argc, const char **argv);
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_parse(const RZ_NONNULL RzCore *core, int argc, const char **argv);
 RZ_API bool rz_core_handle_rop_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzRopSearchContext *context, RZ_NONNULL RzList /*<RzCoreAsmHit *>*/ *hitlist);
 RZ_API RZ_NULLABLE RZ_OWN RzList /*<char *>*/ *rz_core_rop_handle_grep_args(RZ_NULLABLE const char *greparg, const bool regexp);
 
@@ -184,7 +184,7 @@ RZ_API void rz_core_rop_search_context_free(RZ_NULLABLE RzRopSearchContext *cont
 // ROP Constraint APIs
 RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data);
 RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_new(void);
-RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token);
+RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token);
 
 // ROP Gadget Info APIs
 RZ_API void rz_core_rop_gadget_info_free(RZ_NULLABLE RzRopGadgetInfo *gadget_info);

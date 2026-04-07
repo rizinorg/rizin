@@ -592,7 +592,7 @@ RZ_API bool rz_core_rop_analyze_constraint(const RZ_NONNULL RzCore *core, const 
 
  * The function parses the given token and parses according to the predefined ROP constriant type
  */
-RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
+RZ_API RZ_OWN RzRopConstraint *rz_core_rop_constraint_parse_args(const RZ_NONNULL RzCore *core, const RZ_NONNULL char *token) {
 	rz_return_val_if_fail(core && token, NULL);
 	RzRopConstraint *rop_constraint = RZ_NEW0(RzRopConstraint);
 	if (!rop_constraint) {
@@ -624,7 +624,7 @@ RZ_API RZ_OWN RzRopConstraint *rop_constraint_parse_args(const RZ_NONNULL RzCore
  *
  * This function parses a list of arguments into a RzPVector of RzRopConstraint objects.
  */
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
+RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_map_parse(const RZ_NONNULL RzCore *core, const int argc, const char **argv) {
 	rz_return_val_if_fail(core && argv && RZ_STR_ISNOTEMPTY(argv[0]), false);
 	RzPVector *constr_map = rz_core_rop_constraint_new();
 	if (!constr_map) {
@@ -642,7 +642,7 @@ RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rop_constraint_map_parse(const 
 		RzListIter *it;
 		char *token;
 		rz_list_foreach (l, it, token) {
-			RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, token);
+			RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, token);
 			if (!rop_constraint) {
 				continue;
 			}
