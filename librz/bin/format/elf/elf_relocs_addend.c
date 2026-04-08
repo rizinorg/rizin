@@ -7,10 +7,10 @@ static ut32 arm_rotr32(ut32 val, ut32 n) {
 static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch_addr, bool big_endian) {
 	ut8 b[4] = { 0 };
 	ut32 opcode;
-	ut32 imm12 = 0;
+	ut32 unsigned_imm = 0;
 	ut32 rot = 0;
-	ut32 imm8 = 0;
 	ut32 decoded = 0;
+    st32 signed_imm = 0;
 
 	switch (reloc->type) {
 	case R_ARM_ALU_PC_G0:
@@ -20,10 +20,10 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 	case R_ARM_ALU_PC_G2:
 		rz_buf_read_at(buf, patch_addr, b, 4);
 		opcode = rz_read_ble32(b, big_endian);
-		imm12 = opcode & 0xFFF;
-		rot = (imm12 >> 8) & 0xF;
-		imm8 = imm12 & 0xFF;
-		decoded = arm_rotr32(imm8, rot * 2);
+		unsigned_imm = opcode & 0xFFF;
+		rot = (unsigned_imm >> 8) & 0xF;
+		unsigned_imm = unsigned_imm & 0xFF;
+		decoded = arm_rotr32(unsigned_imm, rot * 2);
 		bool is_sub = (((opcode >> 21) & 0xF) == 0x2);
 		reloc->addend = is_sub ? -(st64)decoded : (st64)decoded;
 		break;
@@ -32,10 +32,20 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 	case R_ARM_LDR_PC_G2:
 		rz_buf_read_at(buf, patch_addr, b, 4);
 		opcode = rz_read_ble32(b, big_endian);
-		imm12 = opcode & 0xFFF;
+		unsigned_imm = opcode & 0xFFF;
 		bool u_bit = (opcode >> 23) & 1;
-		reloc->addend = u_bit ? (st64)imm12 : -(st64)imm12;
+		reloc->addend = u_bit ? (st64)unsigned_imm : -(st64)unsigned_imm;
 		break;
+    case R_ARM_PC24:
+    case R_ARM_CALL:
+    case R_ARM_JUMP24:
+        rz_buf_read_at(buf, patch_addr, b, 4);
+        opcode = rz_read_ble32(b, big_endian);
+        unsigned_imm = opcode & 0X00FFFFFF;
+        signed_imm = (st32)(unsigned_imm << 8) >> 8;
+        reloc->addend = signed_imm << 2;
+        break;
+
 	default:
 		return false;
 	}
