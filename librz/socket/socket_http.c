@@ -77,9 +77,9 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 			goto exit;
 		}
 		p += strlen("Location:");
-		char *end_url = strchr(p, '\n');
+		const char *end_url = strchr(p, '\n');
 		if (end_url) {
-			int url_len = end_url - p;
+			size_t url_len = end_url - p;
 			char *url = rz_str_ndup(p, url_len);
 			rz_str_trim(url);
 			res = socket_http_get_recursive(url, code, rlen, --redirections);
