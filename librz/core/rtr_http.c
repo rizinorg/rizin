@@ -4,7 +4,7 @@
 
 typedef int (*rz_core_rtr_http_handler_ptr)(RzCore *, RzSocketHTTPRequest *, char *);
 typedef rz_core_rtr_http_handler_ptr (*rz_core_rtr_http_handler)();
-static int LOOP_CONTINUE_VALUE = 66;
+#define LOOP_CONTINUE_VALUE 66
 
 static int rz_core_rtr_http_cmd(RzCore *core, RzSocketHTTPRequest *rs, char *cmd, char *out, char *headers) {
 	if ((!strcmp(cmd, "Rh*") ||
@@ -321,8 +321,6 @@ static int rtr_http_stop(RzCore *u) {
 		(void)rz_socket_connect(sock, "localhost", port, RZ_SOCKET_PROTO_TCP, timeout);
 		rz_socket_free(sock);
 	}
-	rz_socket_free(s);
-	s = NULL;
 	return 0;
 }
 
