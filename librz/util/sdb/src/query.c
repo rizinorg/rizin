@@ -166,8 +166,8 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 
 RZ_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	const char *p, *q, *val = NULL;
-	char *eq, *next, *quot, *slash, *res,
+	const char *q, *val = NULL;
+	char *eq, *p, *next, *quot, *slash, *res,
 		*cmd = NULL, *newcmd = NULL, *original_cmd = NULL;
 	StrBuf *out;
 	Sdb *s = r;
@@ -253,7 +253,7 @@ repeat:
 		d = 0;
 	}
 	if (!is_ref) {
-		next = strchr(val ? val : cmd, ';');
+		next = (char *)strchr(val ? val : cmd, ';');
 	}
 	// if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
@@ -340,7 +340,7 @@ repeat:
 			goto fail;
 		}
 		*tp++ = 0;
-		p = (const char *)tp;
+		p = tp;
 	} else {
 		p = cmd;
 	}
