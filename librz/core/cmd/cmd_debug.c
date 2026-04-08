@@ -3102,12 +3102,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_handler(RzCore *core, int argc, const
 		RZ_LOG_ERROR("Invalid PID %d\n", pid);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (rz_core_is_debug(core) || (core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1)) {
-		if (rz_cons_is_interactive()) {
-			if (!rz_cons_yesno('n', "core: A debug session is already active. Do you want to attach to another process? (y/N) ")) {
-				return RZ_CMD_STATUS_ERROR;
-			}
-		}
+	bool has_active_session = rz_core_is_debug(core) ||
+		(core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1);
+	if (has_active_session && rz_cons_is_interactive() &&
+		!rz_cons_yesno('n', "core: A debug session is already active. Do you want to attach to another process? (y/N) ")) {
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_debug_attach(core, pid);
 	return RZ_CMD_STATUS_OK;
