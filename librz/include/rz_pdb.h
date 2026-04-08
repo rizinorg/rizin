@@ -309,8 +309,6 @@ typedef struct {
 	char *name;
 } PDBSData;
 
-RZ_IPI bool PDBSData_parse(RzBuffer *b, PDBSymbolKind kind, PDBSData *sdata);
-
 typedef struct {
 	bool code : 1;
 	bool function : 1;
@@ -319,8 +317,6 @@ typedef struct {
 	PDBSectionOffset offset;
 	char *name;
 } PDBSPublic;
-
-RZ_IPI bool PDBSPublic_parse(RzBuffer *b, PDBSymbolKind kind, PDBSPublic *s);
 
 typedef struct {
 	PDBSymbolIndex index;

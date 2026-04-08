@@ -13,26 +13,6 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER(rz_heap_glibc);
-
-#define PRINTF_A(color, fmt, ...) rz_cons_printf("%s" fmt "%s", \
-	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
-	__VA_ARGS__, \
-	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
-#define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
-#define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
-#define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
-#define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
-
-#define PRINT_A(color, msg) rz_cons_printf("%s%s%s", \
-	rz_config_get_i(core->config, "scr.color") > 0 ? color : "", \
-	msg, \
-	rz_config_get_i(core->config, "scr.color") > 0 ? Color_RESET : "")
-#define PRINT_YA(msg) PRINT_A(pal->offset, msg)
-#define PRINT_GA(msg) PRINT_A(pal->args, msg)
-#define PRINT_BA(msg) PRINT_A(pal->num, msg)
-#define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
-
 RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk *rz_heap_get_chunk_at_addr(RzCore *core, ut64 addr);
 RZ_API RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list(RzCore *core, ut64 m_arena);

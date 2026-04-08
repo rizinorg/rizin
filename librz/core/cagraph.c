@@ -271,7 +271,7 @@ RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NUL
 	if (!(core && core->graph && graph)) {
 		return false;
 	}
-	if (!create_agraph_from_graph_at(core->graph, graph, false, rz_config_get_b(core->config, "scr.utf8"))) {
+	if (!rz_core_create_agraph_from_graph_at(core->graph, graph, false, rz_config_get_b(core->config, "scr.utf8"))) {
 		return false;
 	}
 	if (rz_core_agraph_is_shortcuts(core, core->graph)) {

@@ -75,6 +75,6 @@ static const char *ascii_table =
 	"076   62    3E    >                           176   126   7E    ~\n"
 	"077   63    3F    ?                           177   127   7F    DEL\n";
 
-RZ_API const char *ret_ascii_table(void) {
+RZ_API const char *rz_get_ascii_table(void) {
 	return ascii_table;
 }

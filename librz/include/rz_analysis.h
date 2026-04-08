@@ -1508,6 +1508,7 @@ RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn
 
 RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
 RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
+RZ_API RZ_OWN char *rz_analysis_function_name_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *func_name);
 RZ_DEPRECATE RZ_API bool rz_analysis_le_addr_pair_reset(RZ_NONNULL RzAnalysis *analysis);
 
 /* analysis.c */

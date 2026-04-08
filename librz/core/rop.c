@@ -1997,24 +1997,8 @@ RZ_API void rz_core_rop_constraint_free(RZ_NULLABLE void *data) {
 	if (!constraint) {
 		return;
 	}
-	for (int i = 0; i < NUM_ARGS; i++) {
-		if (constraint->args[i]) {
-			free(constraint->args[i]);
-		}
+	for (size_t i = 0; i < NUM_ARGS; i++) {
+		free(constraint->args[i]);
 	}
 	free(constraint);
-}
-
-/**
- * \brief Create a pvector of RzRopConstraint objects.
- * \return Pointer to the newly created list.
- *
- * Creates a new RzList for RzRopConstraint object.
- */
-RZ_API RZ_OWN RzPVector /*<RzRopConstraint *>*/ *rz_core_rop_constraint_new(void) {
-	RzPVector *v = rz_pvector_new((RzPVectorFree)rz_core_rop_constraint_free);
-	if (!v) {
-		return NULL;
-	}
-	return v;
 }

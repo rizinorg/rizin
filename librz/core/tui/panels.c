@@ -277,6 +277,9 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
+
 /* init */
 static bool __init(RzCore *core, RzPanelsTab *tab, int w, int h);
 static void __init_sdb(RzCore *core);
@@ -4270,6 +4273,15 @@ RZ_OWN RzPanelsMenuItem *rz_panels_menu_item_new(RZ_NULLABLE const char *name, R
 	return item;
 }
 
+static void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
+	if (!panel) {
+		return;
+	}
+	rz_panel_model_free(panel->model);
+	free(panel->view);
+	free(panel);
+}
+
 void rz_panels_menu_item_free(RZ_NULLABLE RzPanelsMenuItem *item) {
 	if (!item) {
 		return;
@@ -6112,15 +6124,6 @@ static void rz_panels_menu_free(RZ_NULLABLE RzPanelsMenu *menu) {
 	free(menu->history);
 	free(menu->refreshPanels);
 	free(menu);
-}
-
-RZ_IPI void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
-	if (!panel) {
-		return;
-	}
-	rz_panel_model_free(panel->model);
-	free(panel->view);
-	free(panel);
 }
 
 void rz_panels_tab_free(RZ_NULLABLE RzPanelsTab *tab) {

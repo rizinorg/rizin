@@ -7,6 +7,36 @@
 #include <rz_heap_jemalloc.h>
 #include <stdio.h>
 
+#define PRINTF_A(color, fmt, ...) \
+	do { \
+		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+			rz_cons_print(color); \
+		} \
+		rz_cons_printf(fmt, __VA_ARGS__); \
+		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+			rz_cons_print(Color_RESET); \
+		} \
+	} while (0)
+#define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
+#define PRINTF_GA(fmt, ...) PRINTF_A(pal->args, fmt, __VA_ARGS__)
+#define PRINTF_BA(fmt, ...) PRINTF_A(pal->num, fmt, __VA_ARGS__)
+#define PRINTF_RA(fmt, ...) PRINTF_A(pal->invalid, fmt, __VA_ARGS__)
+
+#define PRINT_A(color, msg) \
+	do { \
+		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+			rz_cons_print(color); \
+		} \
+		rz_cons_print(msg); \
+		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
+			rz_cons_print(Color_RESET); \
+		} \
+	} while (0)
+#define PRINT_YA(msg) PRINT_A(pal->offset, msg)
+#define PRINT_GA(msg) PRINT_A(pal->args, msg)
+#define PRINT_BA(msg) PRINT_A(pal->num, msg)
+#define PRINT_RA(msg) PRINT_A(pal->invalid, msg)
+
 static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_name, bool *is_pie) {
 	ut64 vaddr = UT64_MAX;
 	RzBin *bin = core->bin;

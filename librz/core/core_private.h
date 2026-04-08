@@ -530,4 +530,12 @@ static inline char *rz_address_str(ut64 addr) {
 
 RZ_IPI void rz_core_prompt_highlight(RzCore *core);
 
+/* heap_jemalloc */
+
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_a(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_b(RzCore *core, bool has_specified_addr, ut64 addr, bool has_bin_info, ut64 bin_info_addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr);
+RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr);
+
 #endif
