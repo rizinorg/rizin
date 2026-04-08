@@ -3942,6 +3942,58 @@ static void core_analysis_analyze_local_var_and_arg(RzCore *core) {
 	}
 }
 
+static bool global_var_exists(RzAnalysis *a, const RzBinSymbol *sym) {
+	return rz_analysis_var_global_get_byaddr_in(a, sym->vaddr) ||
+		rz_analysis_var_global_get_byname(a, sym->name);
+}
+
+static RzType *var_type_from_size(RzTypeDB *typedb, size_t sz) {
+	if (sz > 0) {
+		return rz_type_array_of_base_type_str(typedb, "uint8_t", sz);
+	} else {
+		char *errmsg = NULL;
+		const char *type = "unknown_t";
+		RzType *typ = rz_type_parse_string_single(typedb->parser, type, &errmsg);
+		if (errmsg) {
+			RZ_LOG_ERROR("%s : Error parsing type: \"%s\" message:\n%s\n", __FUNCTION__, type, errmsg);
+			free(errmsg);
+			typ = NULL;
+		}
+		return typ;
+	}
+}
+
+static void core_analysis_analyze_global_var(RzCore *core) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_return_if_fail(typedb);
+	RzBinObject *o = rz_bin_cur_object(core->bin);
+	rz_return_if_fail(o);
+
+	const RzPVector *symbols = rz_bin_object_get_symbols(o);
+	void **it;
+	rz_pvector_foreach (symbols, it) {
+		const RzBinSymbol *sym = *it;
+		if (global_var_exists(core->analysis, sym)) {
+			continue;
+		}
+		if (RZ_STR_NE(sym->type, "OBJ") || RZ_STR_NE(sym->bind, "GLOBAL")) {
+			continue;
+		}
+
+		RzAnalysisVarGlobal *var = rz_analysis_var_global_new(sym->name, sym->vaddr);
+		rz_return_if_fail(var);
+		RzType *typ = var_type_from_size(typedb, sym->size);
+		if (!typ) {
+			return;
+		}
+
+		rz_analysis_var_global_set_type(var, typ);
+		if (!rz_analysis_var_global_add(core->analysis, var)) {
+			rz_analysis_var_global_free(var);
+		}
+	}
+}
+
 /**
  * Runs all the steps of the deep analysis.
  *
@@ -4071,9 +4123,10 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	if (aopts->vars) {
-		notify = "Analyze local variables and arguments";
+		notify = "Analyze local and global variables, and arguments";
 		rz_core_notify_begin(core, "%s", notify);
 		core_analysis_analyze_local_var_and_arg(core);
+		core_analysis_analyze_global_var(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
 	}

@@ -111,6 +111,33 @@ ERROR: Global variable 'foo' does not exist!
 EOF
 RUN
 
+NAME=avgl - print all global variables
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+e scr.color=0
+e scr.utf8=0
+aaa
+avgl
+echo "---"
+avglt
+EOF
+EXPECT=<<EOF
+global uint8_t [4] _IO_stdin_used @ 0x402000
+global unknown_t __dso_handle @ 0x404048
+global uint8_t [4] global_var @ 0x404050
+global uint8_t [8] global_array @ 0x404058
+global unknown_t __TMC_END__ @ 0x404060
+---
+name           type        size  address decl_file decl_line decl_col 
+----------------------------------------------------------------------
+_IO_stdin_used uint8_t [4]  0x4 0x402000 -                -1       -1
+__dso_handle   unknown_t    0x8 0x404048 -                -1       -1
+global_var     uint8_t [4]  0x4 0x404050 -                -1       -1
+global_array   uint8_t [8]  0x8 0x404058 -                -1       -1
+__TMC_END__    unknown_t    0x8 0x404060 -                -1       -1
+EOF
+RUN
+
 NAME=avgp - print global variable value
 FILE==
 CMDS=<<EOF
