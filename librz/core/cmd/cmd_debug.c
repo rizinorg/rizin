@@ -14,6 +14,7 @@
 #define TN_KEY_FMT "%" PFMT64u
 
 #include "rz_heap_jemalloc.h"
+#include "rz_heap_musl.h"
 
 #include "../core_private.h"
 
@@ -1343,6 +1344,68 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	size = (int)rz_num_math(core->num, argv[1]);
 	rz_debug_map_alloc(core->dbg, addr, size, true);
 	return RZ_CMD_STATUS_OK;
+}
+
+// "dmhmc"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_c_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	ut64 ctx_addr = 0;
+	// Only check debug mode when no argument is provided (symbol resolution needed)
+	// With address arguments we can still work in static mode
+	if (!has_specified_ctx) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid context address '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		ctx_addr = rz_num_math(core->num, argv[1]);
+	}
+
+	return rz_heap_mallocng_cmd_c(core, has_specified_ctx, ctx_addr, mode);
+}
+
+// "dmhma"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_a_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	bool has_specified_ctx = argc > 1 && RZ_STR_ISNOTEMPTY(argv[1]);
+	ut64 ctx_addr = 0;
+
+	if (!has_specified_ctx) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	} else if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid context address '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		ctx_addr = rz_num_math(core->num, argv[1]);
+	}
+
+	return rz_heap_mallocng_cmd_a(core, has_specified_ctx, ctx_addr, mode);
+}
+
+// "dmhme"
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_musl_e_handler(RzCore *core, int argc, const char **argv) {
+	bool has_specified_ctx = argc > 2 && RZ_STR_ISNOTEMPTY(argv[2]);
+	ut64 meta_addr = 0;
+	ut32 lines = 32;
+
+	if (!rz_num_is_valid_input(core->num, argv[1])) {
+		RZ_LOG_ERROR("Invalid number of lines '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (lines < 0) {
+		RZ_LOG_ERROR("Invalid number of lines '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	lines = rz_num_math(core->num, argv[1]);
+	if (!has_specified_ctx) {
+		CMD_CHECK_DEBUG_DEAD(core);
+	} else if (!rz_num_is_valid_input(core->num, argv[2])) {
+		RZ_LOG_ERROR("Invalid meta address '%s'\n", argv[2]);
+		return RZ_CMD_STATUS_ERROR;
+	} else {
+		meta_addr = rz_num_math(core->num, argv[2]);
+	}
+
+	return rz_heap_mallocng_cmd_e(core, has_specified_ctx, meta_addr, lines);
 }
 
 // "dmhja"
