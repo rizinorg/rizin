@@ -272,9 +272,9 @@ static bool test_cfg_foo_function(void) {
 	mu_assert_eq(rz_graph_count_edges(cfg), 13, "n_edges");
 
 	// verify some critical one
-	mu_assert_true(rz_graph_has_edge(cfg, n_entry, n_check_n, NULL), "edge: entry->check_n");
-	mu_assert_true(rz_graph_has_edge(cfg, n_loop_inc, n_loop_cond, NULL), "edge: loop_inc->loop_cond (back edge)");
-	mu_assert_true(rz_graph_has_edge(cfg, n_check_sum, n_ret_sum, NULL), "edge: check_sum->ret_sum (break)");
+	mu_assert_true(rz_graph_has_edge(cfg, n_entry, n_check_n), "edge: entry->check_n");
+	mu_assert_true(rz_graph_has_edge(cfg, n_loop_inc, n_loop_cond), "edge: loop_inc->loop_cond (back edge)");
+	mu_assert_true(rz_graph_has_edge(cfg, n_check_sum, n_ret_sum), "edge: check_sum->ret_sum (break)");
 
 	// verify out-neighbors of bb_check_n (should have 2)
 	RzIterator *it = rz_graph_out_neighbors(cfg, n_check_n);

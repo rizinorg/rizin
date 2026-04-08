@@ -551,7 +551,7 @@ static bool agraph_add_graph_edge(RzAGraph *g, RzGraphNode *from, RzGraphNode *t
 
 static void agraph_del_graph_edge(const RzAGraph *g, RzGraphNode *from, RzGraphNode *to) {
 	rz_return_if_fail(g && from && to);
-	rz_graph_del_edge(g->graph, from, to, NULL);
+	rz_graph_del_edge(g->graph, from, to);
 }
 
 static bool is_offset(const RzAGraph *g) {

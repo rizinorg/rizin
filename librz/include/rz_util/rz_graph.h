@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-/**
- * \brief Represents a node in a graph, node should be hashable.
- * and support both list-based graph and matrix-based graph.
- */
 typedef struct rz_graph_t_new RzGraph;
 typedef struct rz_graph_node_t_new RzGraphNode;
 typedef struct rz_graph_edge_t_new RzGraphEdge;
@@ -43,15 +39,15 @@ RZ_API void rz_graph_free(RzGraph *g);
 RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *user_data, RZ_NULLABLE const void *identifier);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *node_data, RZ_NULLABLE const void *identifier);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, RZ_NULLABLE const void *identifier);
 RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier);
 
 // Edges
-RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *user_data);
-RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data);
-RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, RZ_NULLABLE void *user_data);
+RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
+RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
+RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 
 RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph *g, RzGraphNode *node);
@@ -112,9 +108,9 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
 
 // Node/edge operations by identifier object
 RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier);
-RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *user_data);
-RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data);
-RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, RZ_NULLABLE void *user_data);
+RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *edge_data);
+RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
+RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
 RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *identifier);
 RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identifier);
