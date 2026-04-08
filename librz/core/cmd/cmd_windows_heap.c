@@ -30,7 +30,7 @@ void init_heap_config(RzCore *core, RzWindowsHeapConfig *config) {
 			RZ_STR_EQ(version_cfg, "1909") || RZ_STR_EQ(version_cfg, "2004") ||
 			RZ_STR_EQ(version_cfg, "20H2")) {
 			build = RZ_W10_BUILD_1607;
-		} else if (RZ_STR_EQ(version_cfg, "1511")) {
+		} else { // default case 
 			build = RZ_W10_BUILD_1511;
 		}
 	}

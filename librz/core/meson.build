@@ -34,7 +34,6 @@ rz_core_sources = [
   'cflag.c',
   'cgraph.c',
   'chash.c',
-  'heap_jemalloc.c',
   'cil.c',
   'cio.c',
   'clang.c',
