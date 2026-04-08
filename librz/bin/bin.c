@@ -526,7 +526,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
-	free(bin->str_search_cfg.user_unprintable);
+	rz_vector_free(bin->str_search_cfg.user_unprintable);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 

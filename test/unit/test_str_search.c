@@ -208,11 +208,15 @@ bool test_rz_scan_strings_user_unprintable(void) {
 	// With \t (0x09) and \n (0x0a) as user-defined non-printable,
 	// the scanner should produce: "hello", "world", "test"
 	static const unsigned char str[] = "hello\tworld\ntest";
-	static RzCodePoint user_unprintable[] = { 0x09, 0x0a };
+	static RzCodePoint code_points[] = { 0x09, 0x0a };
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
 	opt.user_unprintable = user_unprintable;
-	opt.user_unprintable_count = RZ_ARRAY_SIZE(user_unprintable);
 	opt.min_str_length = 4;
 
 	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
@@ -228,6 +232,7 @@ bool test_rz_scan_strings_user_unprintable(void) {
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
 
 	mu_end;
 }
@@ -235,11 +240,15 @@ bool test_rz_scan_strings_user_unprintable(void) {
 bool test_rz_scan_strings_user_unprintable_utf8(void) {
 	// UTF-8 bytes for U+00E9 (latin small letter e with acute) between "ab" and "cd".
 	static const unsigned char str[] = { 'a', 'b', 0xC3, 0xA9, 'c', 'd', 0x00 };
-	static RzCodePoint user_unprintable[] = { 0x00e9 }; // U+00E9 (latin small letter e with acute)
+	static RzCodePoint code_points[] = { 0x00e9 }; // U+00E9 (latin small letter e with acute)
 	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
 	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
 	opt.user_unprintable = user_unprintable;
-	opt.user_unprintable_count = RZ_ARRAY_SIZE(user_unprintable);
 	opt.min_str_length = 2;
 	opt.check_ascii_freq = false;
 
@@ -254,6 +263,7 @@ bool test_rz_scan_strings_user_unprintable_utf8(void) {
 
 	rz_list_free(str_list);
 	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
 
 	mu_end;
 }

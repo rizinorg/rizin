@@ -90,8 +90,12 @@ static inline bool is_c_escape_sequence(char ch) {
 }
 
 static inline bool is_user_defined_unprintable(const RzUtilStrScanOptions *opt, RzCodePoint cp) {
-	for (size_t i = 0; opt && opt->user_unprintable && i < opt->user_unprintable_count; i++) {
-		if (opt->user_unprintable[i] == cp) {
+	if (!opt || !opt->user_unprintable) {
+		return false;
+	}
+	const RzCodePoint *user_unprintable = (const RzCodePoint *)rz_vector_head(opt->user_unprintable);
+	for (size_t i = 0, count = rz_vector_len(opt->user_unprintable); i < count; i++) {
+		if (user_unprintable[i] == cp) {
 			return true;
 		}
 	}

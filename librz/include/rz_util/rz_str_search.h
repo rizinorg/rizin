@@ -42,8 +42,7 @@ typedef struct {
 	size_t min_str_length; ///< Minimum string length
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
-	RzCodePoint *user_unprintable; ///< User-defined non-printable code points
-	size_t user_unprintable_count; ///< Number of user-defined non-printable code points
+	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);

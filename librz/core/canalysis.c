@@ -82,7 +82,6 @@ static bool find_string_at(RzCore *core, RzBinObject *bobj, ut64 pointer, char *
 		.prefer_big_endian = big_endian,
 		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
 		.user_unprintable = bin->str_search_cfg.user_unprintable,
-		.user_unprintable_count = bin->str_search_cfg.user_unprintable_count,
 	};
 
 	rz_io_pread_at(core->io, pointer, buffer, sizeof(buffer));

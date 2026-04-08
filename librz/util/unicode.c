@@ -1028,6 +1028,13 @@ RZ_API bool rz_unicode_code_point_is_printable(const RzCodePoint c) {
 		!rz_unicode_code_point_is_private(c);
 }
 
+/**
+ * \brief Returns true if the code point is listed as user-unprintable.
+ *
+ * \param c Code point to check.
+ * \param user_unprintable Array of user-defined non-printable code points.
+ * \param user_unprintable_count Number of user-defined non-printable code points.
+ */
 RZ_API bool rz_unicode_code_point_is_user_unprintable(const RzCodePoint c, const RzCodePoint *user_unprintable, size_t user_unprintable_count) {
 	for (size_t i = 0; user_unprintable && i < user_unprintable_count; i++) {
 		if (user_unprintable[i] == c) {
