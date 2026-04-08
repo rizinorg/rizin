@@ -58,7 +58,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 	return f;
 }
 
-static int rz_get_size(RzNum *num, ut8 *buf, int endian, const char *s) {
+static int get_size(RzNum *num, ut8 *buf, int endian, const char *s) {
 	int len = strlen(s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;
@@ -1831,12 +1831,12 @@ beach:
 	return ret;
 }
 
-static char *get_args_offset(const char *arg) {
-	char *args = strchr(arg, ' ');
-	char *sq_bracket = strchr(arg, '[');
+static const char *get_args_offset(const char *arg) {
+	const char *args = strchr(arg, ' ');
+	const char *sq_bracket = strchr(arg, '[');
 	int max = 30;
 	if (args && sq_bracket) {
-		char *csq_bracket = strchr(arg, ']');
+		const char *csq_bracket = strchr(arg, ']');
 		while (args && csq_bracket && csq_bracket > args && max--) {
 			args = strchr(csq_bracket, ' ');
 		}
@@ -1959,11 +1959,11 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = typedb->target->bits;
-	char *args = NULL, *bracket, tmp, last = 0;
+	char *args = NULL, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	char namefmt[32], *field = NULL;
 	const char *arg = NULL;
-	const char *fmt = NULL;
+	const char *fmt = NULL, *bracket = NULL;
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
@@ -2015,13 +2015,14 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 
 	bracket = strchr(arg, '{');
 	if (bracket) {
-		char *end = strchr(arg, '}');
-		if (!end) {
+		const char *end = strchr(arg, '}');
+		if (!end || bracket + 1 == end) {
 			eprintf("No end bracket. Try pf {ecx}b @ esi\n");
 			goto beach;
 		}
-		*end = '\0';
-		times = rz_num_math(NULL, bracket + 1);
+		char *num = rz_str_ndup(bracket + 1, end - (bracket + 1));
+		times = rz_num_math(NULL, num);
+		free(num);
 		arg = end + 1;
 	}
 
@@ -2030,16 +2031,16 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 	}
 
 	/* get args */
-	args = get_args_offset(arg);
-	if (args) {
+	const char *off_args = get_args_offset(arg);
+	if (off_args) {
 		int maxl = 0;
-		argend = args;
-		tmp = *args;
+		argend = off_args;
+		tmp = *off_args;
 		while (tmp == ' ') {
-			args++;
-			tmp = *args;
+			off_args++;
+			tmp = *off_args;
 		}
-		args = rz_str_dup(args);
+		args = rz_str_dup(off_args);
 		nargs = rz_str_word_set0_stack(args);
 		if (nargs == 0) {
 			RZ_FREE(args);
@@ -2123,15 +2124,15 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 			invalid = 0;
 			typedb->target->bits = old_bits;
 			if (arg[0] == '[') {
-				char *end = strchr(arg, ']');
-				if (!end) {
+				const char *end = strchr(arg, ']');
+				if (!end || end == arg + 1) {
 					eprintf("No end bracket.\n");
 					goto beach;
 				}
-				*end = '\0';
-				size = rz_get_size(typedb->num, buf, endian, arg + 1);
+				char *copy = rz_str_ndup(arg + 1, end - (arg + 1));
+				size = get_size(typedb->num, buf, endian, copy);
+				free(copy);
 				arg = end + 1;
-				*end = ']';
 			} else {
 				size = -1;
 			}
@@ -2721,7 +2722,7 @@ static int rz_type_format_data_internal(RZ_BORROW RzTypeDB *typedb, RzPrint *p, 
 			// args from fmt:args the same way we strip fmt BUT only for enums as
 			// nested structs seem to be handled correctly above!
 			if (arg[0] == 'E') {
-				char *end_fmt = strchr(arg, ' ');
+				char *end_fmt = (char *)strchr(arg, ' ');
 				if (!end_fmt) {
 					goto beach;
 				}
