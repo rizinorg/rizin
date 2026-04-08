@@ -317,7 +317,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 		rz_strf(uri, "dbg://%d", pid);
 		RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
 		if (!cfile) {
-			RZ_LOG_ERROR("Failed to open file for pid %d\n", pid);
+			RZ_LOG_ERROR("core: Failed to open file for pid %d\n", pid);
 			return;
 		}
 		// Create an IO map covering the full address space so memory
@@ -325,7 +325,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 		RzIODesc *iod = core->io ? rz_io_desc_get(core->io, cfile->fd) : NULL;
 		rz_io_map_new(core->io, iod->fd, iod->perm, 0LL, 0LL, rz_io_desc_size(iod));
 	} else {
-		RZ_LOG_WARN("No pid provided and not attached to any file descriptor, IO mapping will not be set up\n");
+		RZ_LOG_WARN("core: No pid provided and not attached to any file descriptor, IO mapping will not be set up\n");
 	}
 	const char *debugbackend = rz_config_get(core->config, "dbg.backend");
 	rz_core_setup_debugger(core, debugbackend, true);
