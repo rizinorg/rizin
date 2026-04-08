@@ -41,11 +41,11 @@ RUN
 NAME=dpa cross-process attach reads code (#3397)
 FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
-!sh -c "sleep 30 >/dev/null 2>&1 & echo \$! > /tmp/rzpid3397"
-dpa `!cat /tmp/rzpid3397`
+!sh -c "sleep 100 >/dev/null 2>&1 &"
+dpa $(!pgrep sleep)
 dr pc
 pi 3 @ pc
-!sh -c "kill \$(cat /tmp/rzpid3397) >/dev/null 2>&1 || true; rm -f /tmp/rzpid3397"
+!pkill sleep
 EOF
 REGEXP_FILTER_OUT=((pc\s=)|(0x0000000186f6f308)|(b\.lo\s0x186f6f328)|(pacibsp)|(stp\sfp,\slr,\s\[sp,\s-0x10\]!))
 EXPECT=<<EOF
