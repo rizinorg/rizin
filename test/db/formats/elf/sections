@@ -1,6 +1,10 @@
 NAME=sections list
 FILE=bins/elf/analysis/main_wrong_sect
-CMDS=iS;iSS
+CMDS=<<EOF
+iS
+echo ---
+iSS
+EOF
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
@@ -40,6 +44,7 @@ EXPECT=<<EOF
 0x00000e70 0x156 ---------- 0x156   0x0 ---- .shstrtab          STRTAB     
 0x000018c8 0x6d8 ---------- 0x6d8   0x0 ---- .symtab            SYMTAB     
 0x00001fa0 0x23a ---------- 0x23a   0x0 ---- .strtab            STRTAB     
+---
      paddr  size      vaddr vsize    align perm name         
 -------------------------------------------------------------
 0x00000040 0x1c0 0x00400040 0x1c0      0x8 -r-x PHDR

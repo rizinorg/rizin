@@ -3,6 +3,7 @@ FILE=bins/v850/ired_v850
 CMDS=<<EOF
 e asm.bytes=true
 i
+echo ---
 sd +4
 pd 3
 EOF
@@ -52,6 +53,7 @@ canary   false
 PIE      false
 RELROCS  true
 NX       false
+---
             0x00100004      3506ffff0000   mov   0xffff, r21
             0x0010000a      230600002000   mov   loc._stack, sp
             0x00100010      3e06bc7d1100   mov   obj.__impure_ptr, ep
