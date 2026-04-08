@@ -49,10 +49,10 @@ ut64 get_heap_base(RzIO *io, const RzWindowsHeapConfig *config) {
 	return (ut64)rz_read_le32(buf);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 #if __WINDOWS__
 	if (is_windows_live_debug(core)) {
-		rz_heap_list_w32(core, mode);
+		rz_heap_list_w32(core, state->mode);
 		return RZ_CMD_STATUS_OK;
 	}
 #endif
@@ -69,13 +69,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 	RzList *blocks = rz_w32_heap_blocks_list(core->io, info, &config);
 	ut64 block_count = blocks ? rz_list_length(blocks) : 0;
 
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		PJ *pj = pj_new();
-		if (!pj) {
-			rz_list_free(blocks);
-			RZ_FREE(info);
-			return RZ_CMD_STATUS_ERROR;
-		}
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = state->d.pj;
 		pj_a(pj);
 		pj_o(pj);
 		pj_kN(pj, "address", info->base_address);
@@ -84,15 +79,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 		pj_kN(pj, "signature", info->heap_signature);
 		pj_end(pj);
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 	} else {
-		RzTable *tbl = rz_table_new();
-		if (!tbl) {
-			rz_list_free(blocks);
-			RZ_FREE(info);
-			return RZ_CMD_STATUS_ERROR;
-		}
+		RzTable *tbl = state->d.t;
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Address");
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Blocks");
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Pages");
@@ -105,8 +93,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 		}
 		rz_table_add_rowf(tbl, "xnns", info->base_address, block_count,
 			(ut64)info->number_of_pages, fe_type);
-		rz_cons_println(rz_table_tostring(tbl));
-		rz_table_free(tbl);
 	}
 
 	rz_list_free(blocks);
@@ -114,13 +100,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 #if __WINDOWS__
 	if (is_windows_live_debug(core)) {
 		if (argc == 2) {
-			rz_heap_debug_block_win(core, argv[1], mode, false);
+			rz_heap_debug_block_win(core, argv[1], state->mode, false);
 		} else {
-			rz_heap_debug_block_win(core, NULL, mode, false);
+			rz_heap_debug_block_win(core, NULL, state->mode, false);
 		}
 		return RZ_CMD_STATUS_OK;
 	}
@@ -154,20 +140,18 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 				(target >= block->header_address && target < block->header_address + block->size)) {
 				found = true;
 
-				const char *state = block->is_busy ? "BUSY" : "FREE";
-				if (mode == RZ_OUTPUT_MODE_JSON) {
-					PJ *pj = pj_new();
+				const char *block_state = block->is_busy ? "BUSY" : "FREE";
+				if (state->mode == RZ_OUTPUT_MODE_JSON) {
+					PJ *pj = state->d.pj;
 					pj_o(pj);
 					pj_kN(pj, "header_address", block->header_address);
 					pj_kN(pj, "user_address", block->user_address);
 					pj_kN(pj, "size", block->size);
 					pj_kN(pj, "unused", block->unused_bytes);
-					pj_ks(pj, "type", state);
+					pj_ks(pj, "type", block_state);
 					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					pj_free(pj);
 				} else {
-					RzTable *tbl = rz_table_new();
+					RzTable *tbl = state->d.t;
 					rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "HeaderAddress");
 					rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "UserAddress");
 					rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Size");
@@ -175,9 +159,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 					rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_STRING, "Type");
 					rz_table_add_rowf(tbl, "xxnns", block->header_address,
 						block->user_address, block->size,
-						(ut64)block->unused_bytes, state);
-					rz_cons_println(rz_table_tostring(tbl));
-					rz_table_free(tbl);
+						(ut64)block->unused_bytes, block_state);
 				}
 				break;
 			}
@@ -191,9 +173,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 		return found ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 	}
 
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		PJ *pj = pj_new();
-		pj_a(pj);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = state->d.pj;
 		pj_o(pj);
 		pj_kN(pj, "heap", info->base_address);
 		pj_k(pj, "blocks");
@@ -202,23 +183,21 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 		RzListIter *iter;
 		RzWindowsHeapEntry *block;
 		rz_list_foreach (blocks, iter, block) {
-			const char *state = block->is_busy ? "BUSY" : "FREE";
+			const char *block_state = block->is_busy ? "BUSY" : "FREE";
 			pj_o(pj);
 			pj_kN(pj, "header_address", block->header_address);
 			pj_kN(pj, "user_address", block->user_address);
 			pj_kN(pj, "size", block->size);
 			pj_kN(pj, "unused", block->unused_bytes);
-			pj_ks(pj, "type", state);
+			pj_ks(pj, "type", block_state);
 			pj_end(pj);
 		}
 
 		pj_end(pj);
 		pj_end(pj);
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 	} else {
-		RzTable *tbl = rz_table_new();
+		RzTable *tbl = state->d.t;
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "HeaderAddress");
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "UserAddress");
 		rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Size");
@@ -228,14 +207,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int arg
 		RzListIter *iter;
 		RzWindowsHeapEntry *block;
 		rz_list_foreach (blocks, iter, block) {
-			const char *state = block->is_busy ? "BUSY" : "FREE";
+			const char *block_state = block->is_busy ? "BUSY" : "FREE";
 			rz_table_add_rowf(tbl, "xxnns", block->header_address,
 				block->user_address, block->size,
-				(ut64)block->unused_bytes, state);
+				(ut64)block->unused_bytes, block_state);
 		}
-
-		rz_cons_println(rz_table_tostring(tbl));
-		rz_table_free(tbl);
 	}
 
 	rz_list_free(blocks);
