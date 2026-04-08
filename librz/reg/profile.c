@@ -514,6 +514,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	if (!sb) {
 		return NULL;
 	}
+	char *copy = rz_str_dup(gdb);
 	char *ptr1, *gptr, *gptr1;
 	char name[GDB_NAME_SZ + 1], groups[GDB_GROUPS_SZ + 1], type[GDB_TYPE_SZ + 1];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -521,12 +522,13 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
-	const char *ptr = rz_str_trim_head_ro(gdb);
+	char *ptr = (char *)rz_str_trim_head_ro(copy);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith(ptr, "Name")) {
 		if (!(ptr = strchr(ptr, '\n'))) {
 			rz_strbuf_free(sb);
+			free(copy);
 			return NULL;
 		}
 		ptr++;
@@ -544,6 +546,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 		} else {
 			eprintf("Could not parse line: %s (missing \\n)\n", ptr);
 			rz_strbuf_free(sb);
+			free(copy);
 			return false;
 		}
 		ret = sscanf(ptr, " %" RZ_STR_DEF(GDB_NAME_SZ) "s %d %d %d %d %" RZ_STR_DEF(GDB_TYPE_SZ) "s %" RZ_STR_DEF(GDB_GROUPS_SZ) "s",
@@ -553,6 +556,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			if (*ptr != '*') {
 				eprintf("Could not parse line: %s\n", ptr);
 				rz_strbuf_free(sb);
+				free(copy);
 				return NULL;
 			}
 			ptr = ptr1 + 1;
@@ -629,8 +633,8 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			break;
 		}
 		ptr = ptr1 + 1;
-		continue;
 	}
+	free(copy);
 	return rz_strbuf_drain(sb);
 }
 

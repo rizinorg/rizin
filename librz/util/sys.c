@@ -951,26 +951,6 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 #endif /* __WINDOWS__ */
 }
 
-RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
-	char *ptr;
-	if (!archstr || !arch || !*archstr || !*arch) {
-		return true;
-	}
-	if (!strcmp(archstr, "*") || !strcmp(archstr, "any")) {
-		return true;
-	}
-	if (!strcmp(archstr, arch)) {
-		return true;
-	}
-	if ((ptr = strstr(archstr, arch))) {
-		char p = ptr[strlen(arch)];
-		if (!p || p == ',') {
-			return true;
-		}
-	}
-	return false;
-}
-
 RZ_API int rz_sys_arch_id(const char *arch) {
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(arch_bit_array); i++) {
 		if (!strcmp(arch, arch_bit_array[i].name)) {

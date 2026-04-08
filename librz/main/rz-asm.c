@@ -740,7 +740,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		goto beach;
 	}
 	if (filters) {
-		char *p = strchr(filters, ':');
+		char *p = (char *)strchr(filters, ':');
 		if (p) {
 			*p = 0;
 			if (*filters) {
