@@ -92,13 +92,13 @@ static ut64 edge_vec_find_eid(RzPVector /*<RzGraphEdge *>*/ *vec, RzGraphNode *f
  * Inserts the edge into both the out_edges table of \p from and
  * the in_edges table of \p to. Skips if the edge already exists.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
- * \param user_data user data attached to the edge
+ * \param edge_data The data attached to the edge.
  * \return true on success, false if edge already exists or on failure
  */
-static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *user_data) {
+static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, void *edge_data) {
 	rz_return_val_if_fail(g && from && to, false);
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 
@@ -132,8 +132,8 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 
 	// build out edge and in edge, and maintain the edge table
 	// our view: oe to carry user data, ie carry a ref copy only
-	RzGraphEdge *oe = edge_new(from, to, user_data);
-	RzGraphEdge *ie = edge_new(from, to, user_data);
+	RzGraphEdge *oe = edge_new(from, to, edge_data);
+	RzGraphEdge *ie = edge_new(from, to, edge_data);
 
 	rz_pvector_push(out_vec, oe);
 	rz_pvector_push(in_vec, ie);
@@ -146,7 +146,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
  * Removes the edge from both the out_edges table of \p from and
  * the in_edges table of \p to. Frees edge user data via graph callback.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true on success, false if edge not found
@@ -192,7 +192,7 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 /**
  * \brief Check if a directed edge (from -> to) exists in the adjacency list.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true if the edge exists, false otherwise
@@ -214,7 +214,7 @@ static bool rz_graph_list_impl_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 /**
  * \brief Find and return the edge (from -> to) in the adjacency list.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return the edge if found, or NULL if not found
@@ -296,7 +296,7 @@ static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
 /**
  * \brief Get an iterator over all outgoing edges of \p node (list impl).
  *
- * \param g graph
+ * \param g The graph.
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no out-edges
  */
@@ -315,7 +315,7 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *
 /**
  * \brief Get an iterator over all incoming edges of \p node (list impl).
  *
- * \param g graph
+ * \param g The graph.
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no in-edges
  */
@@ -337,7 +337,7 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *,
  * In the list-based implementation, nodes are managed by the graph itself.
  * An orphan node simply has no edges in the edge table.
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to add
  * \return always true
  */
@@ -357,7 +357,7 @@ static inline RZ_OWN bool rz_graph_list_impl_add_node(RzGraph /*<NodeType *, Edg
  * edges (src -> node), cleaning up the corresponding out-edges of
  * neighbour nodes. Edge user data is freed via graph callback.
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to delete
  * \return true on success, false on failure
  */
@@ -553,7 +553,7 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
  *
  * Sets the matrix cell at [from._vec_id][to._vec_id]. Fails if the edge already exists.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \param edge_data user data attached to the edge
@@ -581,7 +581,7 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
  *
  * Clears the matrix cell and frees edge user data via graph callback.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true on success, false if no such edge
@@ -607,7 +607,7 @@ static bool rz_graph_matrix_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 /**
  * \brief Check if a directed edge (from -> to) exists in the matrix.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true if the edge exists, false otherwise
@@ -621,7 +621,7 @@ static bool rz_graph_matrix_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, Rz
 /**
  * \brief Find and return the edge (from -> to) in the matrix.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return the edge if found, or NULL
@@ -711,7 +711,7 @@ static RzIterator *matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*
 /**
  * \brief Get an iterator over all incoming edges of \p node (matrix impl).
  *
- * \param g graph
+ * \param g The graph.
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
@@ -725,7 +725,7 @@ static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph /*<NodeType *, Edge
 /**
  * \brief Get an iterator over all outgoing edges of \p node (matrix impl).
  *
- * \param g graph
+ * \param g The graph.
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
@@ -742,7 +742,7 @@ static RzIterator *rz_graph_matrix_impl_get_out_edges(RzGraph /*<NodeType *, Edg
  * Ensures the matrix has enough capacity to hold the new node's vec id.
  * May trigger a matrix resize.
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to add
  * \return true on success, false if capacity growth fails
  */
@@ -761,7 +761,7 @@ static bool rz_graph_matrix_impl_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *
  * Zeroes out the entire row (out-edges) and column (in-edges) for \p node,
  * freeing edge user data and edge structs along the way.
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to delete
  * \return true on success, false on failure
  */
@@ -878,7 +878,7 @@ static const RzGraphImplOps matrix_impl_ops = {
  *
  * Simply casts the pointer to ut64 as the hash value.
  *
- * \param identifier the node identifier
+ * \param identifier The node identifier.
  * \return hash value
  */
 static ut64 rz_graph_node_default_hash(const void *identifier) {
@@ -967,12 +967,16 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
  * to the appropriate impl initializer.
  *
  * \param impl_type RZ_GRAPH_IMPL_LIST or RZ_GRAPH_IMPL_MATRIX
- * \param user_hash optional custom hash function for node identifiers, use default hash if NULL
+ * \param id_hash_fcn Hash function to generate the unique id for a node.
+ *                    If it is NULL, then the graph will use the pointers as hash ids.
+ *                    In the common case that the nodes should be identified by integers,
+ *                    the user must initialize the graph with id_hash_fcn == NULL.
+ *                    Then pass `RZ_GRAPH_INT_TO_ID(<node_int_id>)` to the `const void *identifier` parameter of API functions.
  * \param node_free callback to free node user data, or NULL
  * \param edge_free callback to free edge user data, or NULL
- * \return A new RzGraphNew, or NULL on failure
+ * \return A new RzGraphNew, or NULL on failure.
  */
-RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash user_hash, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free) {
+RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType impl_type, RZ_NULLABLE RzGraphIdentifierHash id_hash_fcn, RzGraphNodeDataFree node_free, RzGraphEdgeDataFree edge_free) {
 	RzGraph /*<NodeType *, EdgeType *>*/ *g = RZ_NEW0(RzGraph);
 	if (!g) {
 		return NULL;
@@ -995,11 +999,11 @@ RZ_API RZ_OWN RzGraph /*<NodeType *, EdgeType *>*/ *rz_graph_new(RzGraphImplType
 	}
 
 	// use default hash if hash is NULL
-	if (!user_hash) {
-		user_hash = rz_graph_node_default_hash;
+	if (!id_hash_fcn) {
+		id_hash_fcn = rz_graph_node_default_hash;
 	}
 
-	g->hash_func = user_hash;
+	g->hash_func = id_hash_fcn;
 	g->node_data_free = node_free;
 	g->edge_data_free = edge_free;
 	g->impl_type = impl_type;
@@ -1241,7 +1245,9 @@ static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN
  *
  * \param g The graph.
  * \param node_data Data attached to the node. NULL is considered valid data!
- * \param identifier Used by the hash function to generate the node hash. If NULL, it'll use \p node_data as identifier
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If NULL, it'll use \p node_data as identifier.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
  * \return The previous or new node, or NULL in case of failure.
  */
 RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data, const void *identifier) {
@@ -1265,7 +1271,9 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeT
  *
  * \param g The graph.
  * \param node_data Data attached to the node. NULL is considered valid data!
- * \param identifier Used by the hash function to generate the node hash. If NULL, it'll use \p node_data as identifier
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If NULL, it'll use \p node_data as identifier.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
  * \return The newly created node, or NULL on failure
  */
 RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data, const void *identifier) {
@@ -1287,7 +1295,7 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph /*<NodeType *, EdgeType 
  * Dispatches to the impl backend to clean up edges, then removes the
  * node from the hash table and node vector, and frees node user data.
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to delete (ownership transferred)
  * \return true on success, false if node not found or impl fails
  */
@@ -1328,8 +1336,9 @@ RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN Rz
  *
  * Hashes the \p identifier and looks up the node in the hash table.
  *
- * \param g graph
- * \param identifier the identifier to search for
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
  * \return the node if found (borrowed), or NULL
  */
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
@@ -1343,7 +1352,7 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph /*<NodeType *, EdgeType
  *
  * Dispatches to the impl backend to create the edge.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \param edge_data user data attached to the edge
@@ -1363,7 +1372,7 @@ RZ_API bool rz_graph_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
  *
  * Dispatches to the impl backend to remove the edge and free its data.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true on success, false if edge not found
@@ -1380,7 +1389,7 @@ RZ_API bool rz_graph_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
 /**
  * \brief Check if a directed edge exists between two nodes.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return true if the edge exists, false otherwise
@@ -1393,7 +1402,7 @@ RZ_API bool rz_graph_has_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNo
 /**
  * \brief Find and return the edge between two nodes.
  *
- * \param g graph
+ * \param g The graph.
  * \param from source node
  * \param to destination node
  * \return the edge if found (borrowed), or NULL
@@ -1409,7 +1418,7 @@ RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph /*<NodeType *, EdgeType
  * The iterator walks the node_vec in insertion order. Caller owns
  * the returned iterator and must free it after use.
  *
- * \param g graph
+ * \param g The graph.
  * \return A new node iterator, or NULL on failure
  */
 RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
@@ -1421,7 +1430,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeTy
 /**
  * \brief Return the number of nodes in the graph.
  *
- * \param g graph
+ * \param g The graph.
  * \return node count
  */
 RZ_API ut64 rz_graph_count_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
@@ -1432,7 +1441,7 @@ RZ_API ut64 rz_graph_count_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) 
 /**
  * \brief Return the number of edges in the graph.
  *
- * \param g graph
+ * \param g The graph.
  * \return edge count
  */
 RZ_API ut64 rz_graph_count_edges(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
@@ -1515,7 +1524,7 @@ static RZ_OWN RzIterator *as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool u
 /**
  * \brief Get an iterator over all outgoing neighbour nodes of \p n.
  *
- * \param g graph
+ * \param g The graph.
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
@@ -1536,7 +1545,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType
 /**
  * \brief Get an iterator over all incoming neighbour nodes of \p n.
  *
- * \param g graph
+ * \param g The graph.
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
@@ -1560,7 +1569,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType 
  * Iterates through out-edges or in-edges of \p n and returns the
  * neighbour at position \p nth (0-indexed).
  *
- * \param g graph
+ * \param g The graph.
  * \param n the node
  * \param nth 0-based index of the desired neighbour
  * \param out_neighbor if true, get outgoing neighbours; otherwise incoming
@@ -1591,7 +1600,7 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph /*<NodeType *, EdgeType
  *
  * NOTE: edge iter is owned by caller, caller should free after use
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
@@ -1605,7 +1614,7 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph /*<NodeType *, EdgeType *>*
  *
  * NOTE: edge iter is owned by caller, caller should free after use
  *
- * \param g graph
+ * \param g The graph.
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
@@ -1698,6 +1707,14 @@ RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(R
 	return g->node_vec;
 }
 
+/**
+ * \brief Delete a node in the graph by its identifier.
+ *
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return True if node was deleted. False if no node existed or failure.
+ */
 RZ_API bool rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, false);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
@@ -1707,6 +1724,16 @@ RZ_API bool rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, con
 	return rz_graph_del_node(g, node);
 }
 
+/**
+ * \brief Add an edge in the graph.
+ *
+ * \param g The graph.
+ * \param from_id Used by the hash function to generate the from node hash id.
+ *                If the from_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \param to_id Used by the hash function to generate the to node hash id.
+ *              If the to_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return True if edge was added. False if one of the nodes did not exist or in case of failure.
+ */
 RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id, void *edge_data) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
@@ -1717,6 +1744,16 @@ RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, con
 	return rz_graph_add_edge(g, from, to, edge_data);
 }
 
+/**
+ * \brief Delete an edge in the graph.
+ *
+ * \param g The graph.
+ * \param from_id Used by the hash function to generate the from node hash id.
+ *                If the from_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \param to_id Used by the hash function to generate the to node hash id.
+ *              If the to_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return True if edge was deleted. False if no edge existed or failure.
+ */
 RZ_API bool rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
@@ -1727,6 +1764,16 @@ RZ_API bool rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, con
 	return rz_graph_del_edge(g, from, to);
 }
 
+/**
+ * \brief Checks if the graph contains the edge (from_id, to_id).
+ *
+ * \param g The graph.
+ * \param from_id Used by the hash function to generate the from node hash id.
+ *                If the from_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \param to_id Used by the hash function to generate the to node hash id.
+ *              If the to_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return True if edge exists. False if not or failure.
+ */
 RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id) {
 	rz_return_val_if_fail(g && from_id && to_id, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
@@ -1737,6 +1784,16 @@ RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, con
 	return rz_graph_has_edge(g, from, to);
 }
 
+/**
+ * \brief Finds an edge in the graph.
+ *
+ * \param g The graph.
+ * \param from_id Used by the hash function to generate the from node hash id.
+ *                If the from_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \param to_id Used by the hash function to generate the to node hash id.
+ *              If the to_id is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return The edge data. Or NULL, if the edge has no data or in case of failure.
+ */
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *from_id, const void *to_id) {
 	rz_return_val_if_fail(g && from_id && to_id, NULL);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
@@ -1747,7 +1804,15 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<No
 	return rz_graph_find_edge(g, from, to);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
+/**
+ * \brief Get an iterator over all outgoing edges of a node.
+ *
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return The iterator or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1756,7 +1821,15 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeTy
 	return rz_graph_out_edges(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
+/**
+ * \brief Get an iterator over all incoming edges of a node.
+ *
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return The iterator or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1765,7 +1838,15 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeTyp
 	return rz_graph_in_edges(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
+/**
+ * \brief Get an iterator over all neighbors at outgoing edges of a node.
+ *
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return The iterator or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphNode *>*/ *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
@@ -1774,7 +1855,15 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, Ed
 	return rz_graph_out_neighbors(g, node);
 }
 
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
+/**
+ * \brief Get an iterator over all neighbors at incoming edges of a node.
+ *
+ * \param g The graph.
+ * \param identifier Used by the hash function to generate the node hash id.
+ *                   If the identifier is an integer, the integer should be given as `RZ_GRAPH_INT_TO_ID(<id_int>)`.
+ * \return The iterator or NULL in case of failure.
+ */
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, const void *identifier) {
 	rz_return_val_if_fail(g && identifier, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, identifier);
 	if (!node) {
