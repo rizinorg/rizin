@@ -113,6 +113,26 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 	return list->length;
 }
 
+static void _list_purge_with_free(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	while (it) {
+		RzListIter *next = it->next;
+		fn(it->val);
+		free(it);
+		it = next;
+	}
+}
+
+static void _list_purge_no_free(RzList *list) {
+	RzListIter *it = list->head;
+	while (it) {
+		RzListIter *next = it->next;
+		free(it);
+		it = next;
+	}
+}
+
 /**
  * \brief Empties the list without freeing the list pointer
  *
@@ -120,18 +140,14 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
-	RzListIter *it = list->head;
-	RzListFree fn = list->free;
-	while (it) {
-		RzListIter *next = it->next;
-		if (fn && it->val) {
-			fn(it->val);
-		}
-		free(it);
-		it = next;
+	if (list->free) {
+		_list_purge_with_free(list);
+	} else {
+		_list_purge_no_free(list);
 	}
+	list->head = NULL;
+	list->tail = NULL;
 	list->length = 0;
-	list->head = list->tail = NULL;
 }
 
 /**
