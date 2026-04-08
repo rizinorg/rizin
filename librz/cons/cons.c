@@ -22,11 +22,6 @@ static RzCons rz_cons_instance = { 0 };
 #define I rz_cons_instance
 
 #if __WINDOWS__
-static HANDLE saved_input_handle;
-static HANDLE saved_output_handle;
-static bool saved_input_console;
-static bool saved_output_console;
-
 // restore only the console flags rizin owns instead of replaying the whole host mode word
 #define RZ_CONS_OUTPUT_MODE_MASK (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
 #define RZ_CONS_INPUT_MODE_MASK  (ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_VIRTUAL_TERMINAL_INPUT)
@@ -578,16 +573,16 @@ static void set_console_codepage_to_utf8(void) {
 
 static void save_console_state(void) {
 	// Snapshot the exact std handles and their current console modes before any probing mutates them.
-	saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
-	saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	saved_input_console = GetConsoleMode(saved_input_handle, &I.old_input_mode);
-	saved_output_console = GetConsoleMode(saved_output_handle, &I.old_output_mode);
-	if (saved_output_console) {
+	I.saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
+	I.saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	I.saved_input_console = GetConsoleMode((HANDLE)I.saved_input_handle, &I.old_input_mode);
+	I.saved_output_console = GetConsoleMode((HANDLE)I.saved_output_handle, &I.old_output_mode);
+	if (I.saved_output_console) {
 		if (!(I.old_ocp = GetConsoleOutputCP())) {
 			rz_sys_perror("GetConsoleOutputCP");
 		}
 	}
-	if (saved_input_console) {
+	if (I.saved_input_console) {
 		if (!(I.old_cp = GetConsoleCP())) {
 			rz_sys_perror("GetConsoleCP");
 		}
@@ -600,23 +595,23 @@ static inline DWORD restore_console_mode_bits(DWORD mode, DWORD saved_mode, DWOR
 
 static void restore_console_state(void) {
 	DWORD mode;
-	if (saved_output_console && GetConsoleMode(saved_output_handle, &mode)) {
+	if (I.saved_output_console && GetConsoleMode((HANDLE)I.saved_output_handle, &mode)) {
 		if (!SetConsoleOutputCP(I.old_ocp)) {
 			rz_sys_perror("SetConsoleOutputCP");
 		}
 		// Keep unrelated host-owned bits intact and restore only the output flags we changed.
 		mode = restore_console_mode_bits(mode, I.old_output_mode, RZ_CONS_OUTPUT_MODE_MASK);
-		if (!SetConsoleMode(saved_output_handle, mode)) {
+		if (!SetConsoleMode((HANDLE)I.saved_output_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
-	if (saved_input_console && GetConsoleMode(saved_input_handle, &mode)) {
+	if (I.saved_input_console && GetConsoleMode((HANDLE)I.saved_input_handle, &mode)) {
 		if (!SetConsoleCP(I.old_cp)) {
 			rz_sys_perror("SetConsoleCP");
 		}
 		// Input teardown mirrors output teardown for the subset of flags Rizin manages.
 		mode = restore_console_mode_bits(mode, I.old_input_mode, RZ_CONS_INPUT_MODE_MASK);
-		if (!SetConsoleMode(saved_input_handle, mode)) {
+		if (!SetConsoleMode((HANDLE)I.saved_input_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
@@ -683,7 +678,7 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	if (saved_input_console) {
+	if (I.saved_input_console) {
 		// Raw/buffered mode masks must be derived from the saved console input mode.
 		I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
 		I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
