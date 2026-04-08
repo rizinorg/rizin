@@ -22,9 +22,15 @@ typedef struct rz_graph_node_t_new RzGraphNode;
 typedef struct rz_graph_edge_t_new RzGraphEdge;
 typedef struct rz_graph_impl_ops_t RzGraphImplOps;
 
-typedef ut64 (*RzGraphIdentifierHash)(const void *data);
+typedef ut64 (*RzGraphIdentifierHash)(RZ_NULLABLE const void *data);
 typedef void (*RzGraphNodeDataFree)(void *data);
 typedef void (*RzGraphEdgeDataFree)(void *data);
+
+/**
+ * \brief Macro to cast an integer to a void pointer.
+ * Useful for graphs which use integers as node data.
+ */
+#define RZ_GRAPH_INT_TO_ID(n) ((void *)(utptr)n)
 
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
@@ -37,7 +43,8 @@ RZ_API void rz_graph_free(RzGraph *g);
 RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *user_data, const void *identifier);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *user_data, RZ_NULLABLE const void *identifier);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, RZ_NULLABLE const void *identifier);
 RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier);
 
