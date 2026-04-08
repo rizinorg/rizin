@@ -129,10 +129,13 @@ static int instrGetCycles(const op *o) {
 }
 
 int dcpu16_disasm(char *out, size_t size_out, const ut16 *inp, int len, int *cost) {
-	op o = { { 0 } };
+	op o;
+	memset(&o, 0, sizeof(o));
+
 	int delta = instrGet(inp[0], &o, inp[1], inp[2]);
-	if (cost)
+	if (cost) {
 		*cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc) ? 1 : 0);
+	}
 	instrPrint(out, size_out, &o);
 	// ind = (o.b.opcode >= 0xC);
 	return delta << 1;
