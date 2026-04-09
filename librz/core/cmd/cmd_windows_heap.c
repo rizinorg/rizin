@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 bubblepipe <bubblepipe42@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "analysis_private.h"
 #include <rz_core.h>
 #include <rz_windows_heap.h>
 

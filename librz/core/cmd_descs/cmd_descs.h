@@ -1350,7 +1350,7 @@ RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const
 // "dmhgt"
 RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, const char **argv);
 // "dmhw"
-RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dmhwb"
 RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dmhwbf"
