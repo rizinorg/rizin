@@ -126,6 +126,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 	free(rb->claimed_checksum);
 	free(rb->compiler);
 	free(rb->head_flag);
+	ht_ss_free(rb->extra_dict);
 	free(rb);
 }
 

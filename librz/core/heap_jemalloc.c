@@ -71,7 +71,7 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 
 	// Check if binary is PIE/shared object
 	if (is_pie && o && o->info) {
-		*is_pie = o->info->has_pi;
+		*is_pie = o->info->has_pie;
 	}
 
 	rz_bin_file_delete(bin, libc_bf);
