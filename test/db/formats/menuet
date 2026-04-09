@@ -1,8 +1,22 @@
-NAME=Menuet: Open/iI
+NAME=Menuet: Open/iI/iH
 FILE=bins/menuet/dosbox
-CMDS=iI~?MenuetOS
+CMDS=<<EOF
+iI~?MenuetOS
+iH
+EOF
 EXPECT=<<EOF
 1
+menuet:
+  magic: "4d454e5545543031"
+  version: 1
+  program_start: 0x24
+  image_size: 0x11b000
+  memory_size: 0x1526000
+  header_version: 1
+  stack_pointer: 0x11f000
+  parameters: 0x11f000
+  path: 0x0
+
 EOF
 RUN
 

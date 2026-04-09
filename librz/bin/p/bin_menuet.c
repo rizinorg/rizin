@@ -81,6 +81,69 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
+static RzStructuredData *menuet_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->buf, NULL);
+
+	ut8 hdr[52] = { 0 };
+	const int hdr_size = RZ_MIN(sizeof(hdr), rz_buf_size(bf->buf));
+	if (rz_buf_read_at(bf->buf, 0, hdr, hdr_size) < 36 || memcmp(hdr, "MENUET0", 7)) {
+		return NULL;
+	}
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+	RzStructuredData *menuet = rz_structured_data_map_add_map(info, "menuet");
+	if (!menuet) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	const ut8 version_char = MENUET_VERSION(hdr);
+	const ut64 version = (version_char >= '0' && version_char <= '9') ? (ut64)(version_char - '0') : UT64_MAX;
+	rz_structured_data_map_add_bytes(menuet, "magic", hdr, 8, RZ_STRUCTURED_DATA_FORMAT_DEFAULT);
+	if (version != UT64_MAX) {
+		rz_structured_data_map_add_unsigned(menuet, "version", version, false);
+	}
+
+	rz_structured_data_map_add_unsigned(menuet, "program_start", rz_read_ble32(hdr + 12, false), true);
+	rz_structured_data_map_add_unsigned(menuet, "image_size", rz_read_ble32(hdr + 16, false), true);
+	rz_structured_data_map_add_unsigned(menuet, "memory_size", rz_read_ble32(hdr + 20, false), true);
+
+	switch (version_char) {
+	case '0':
+		rz_structured_data_map_add_unsigned(menuet, "required_os", rz_read_ble32(hdr + 8, false), false);
+		rz_structured_data_map_add_unsigned(menuet, "reserved", rz_read_ble32(hdr + 24, false), true);
+		break;
+	case '1':
+		rz_structured_data_map_add_unsigned(menuet, "header_version", rz_read_ble32(hdr + 8, false), false);
+		rz_structured_data_map_add_unsigned(menuet, "stack_pointer", rz_read_ble32(hdr + 24, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "parameters", rz_read_ble32(hdr + 28, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "path", rz_read_ble32(hdr + 32, false), true);
+		break;
+	case '2':
+		if (hdr_size < 52) {
+			rz_structured_data_map_add_boolean(menuet, "truncated", true);
+			break;
+		}
+		rz_structured_data_map_add_unsigned(menuet, "header_version", rz_read_ble32(hdr + 8, false), false);
+		rz_structured_data_map_add_unsigned(menuet, "stack_pointer", rz_read_ble32(hdr + 24, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "cmdline", rz_read_ble32(hdr + 28, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "path", rz_read_ble32(hdr + 32, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "tls_map", rz_read_ble32(hdr + 36, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "import_start", rz_read_ble32(hdr + 40, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "import_end", rz_read_ble32(hdr + 44, false), true);
+		rz_structured_data_map_add_unsigned(menuet, "entry_point", rz_read_ble32(hdr + 48, false), true);
+		break;
+	default:
+		rz_structured_data_map_add_boolean(menuet, "unknown_version", true);
+		break;
+	}
+
+	return info;
+}
+
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	RzPVector *ret;
 	ut8 buf[64] = { 0 };
@@ -209,6 +272,7 @@ RzBinPlugin rz_bin_plugin_menuet = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
+	.bin_structure = &menuet_structure,
 	.create = &create,
 };
 
