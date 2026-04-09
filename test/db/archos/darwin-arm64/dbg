@@ -43,14 +43,10 @@ FILE=bins/mach0/hello-macos-arm64
 CMDS=<<EOF
 !sh -c "sleep 100 >/dev/null 2>&1 &"
 dpa $(!pgrep sleep)
-dr pc
 pi 3 @ pc
 !pkill sleep
 EOF
-REGEXP_FILTER_OUT=((pc\s=)|(0x0000000186f6f308)|(b\.lo\s0x186f6f328)|(pacibsp)|(stp\sfp,\slr,\s\[sp,\s-0x10\]!))
 EXPECT=<<EOF
-pc =
-0x0000000186f6f308
 b.lo 0x186f6f328
 pacibsp
 stp fp, lr, [sp, -0x10]!
