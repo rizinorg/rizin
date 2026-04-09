@@ -15,8 +15,9 @@ void init_heap_config(RzCore *core, RzWindowsHeapConfig *config) {
 	ut8 ptr_size = 8;
 	int build = RZ_W10_BUILD_21H1;
 
-	if (core->analysis && core->analysis->bits) {
-		ptr_size = (core->analysis->bits == 32) ? 4 : 8;
+	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
+	if (bits) {
+		ptr_size = (bits == 32) ? 4 : 8;
 	}
 
 	const char *version_cfg = rz_config_get(core->config, "dbg.windows.version");
