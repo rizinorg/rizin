@@ -937,42 +937,43 @@ TOOL=rz-bin
 ARGS=-I
 EXPECT=<<EOF
 [Info]
-arch       x86
-cpu        N/A
-features   N/A
-baddr      0x00400000
-binsz      0x001876b7
-bintype    elf
-bits       64
-class      ELF64
-compiler   GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
-dbg_file   N/A
-endian     LE
-hdr.csum   N/A
-guid       N/A
-intrp      /lib64/ld-linux-x86-64.so.2
-laddr      0x00000000
-lang       c++
-machine    AMD x86-64 architecture
-maxopsz    16
-minopsz    1
-os         linux
-cc         N/A
-pcalign    1
-relro      partial
-rpath      NONE
-subsys     linux
-stripped   false
-havecode   true
-va         true
-static     false
-linenum    true
-lsyms      true
-canary     false
-pie        false
-relrocs    true
-nx         true
-sanitizers ubsan,asan
+arch           x86
+cpu            N/A
+features       N/A
+baddr          0x00400000
+binsz          0x001876b7
+bintype        elf
+bits           64
+class          ELF64
+compiler       GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
+dbg_file       N/A
+endian         LE
+hdr.csum       N/A
+guid           N/A
+intrp          /lib64/ld-linux-x86-64.so.2
+laddr          0x00000000
+lang           c++
+machine        AMD x86-64 architecture
+maxopsz        16
+minopsz        1
+os             linux
+cc             N/A
+pcalign        1
+relro          partial
+rpath          NONE
+subsys         linux
+stripped       false
+havecode       true
+va             true
+static         false
+linenum        true
+lsyms          true
+canary         false
+pie            false
+relrocs        true
+nx             true
+fortify_source true
+sanitizers     ubsan,asan
 
 EOF
 RUN
