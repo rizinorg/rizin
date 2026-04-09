@@ -42,17 +42,15 @@ pcalign  2
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       false
+pie      false
+relrocs  true
+nx       false
 ---
             0x00100004      3506ffff0000   mov   0xffff, r21
             0x0010000a      230600002000   mov   loc._stack, sp

@@ -11,7 +11,7 @@ ao~0x @ 0x000804fc
 EOF
 EXPECT=<<EOF
 cpu      mips32
-PIE      true
+pie      true
 features noreorder pic cpic o32 n32
             ;-- section..text:
             ;-- _ftext:

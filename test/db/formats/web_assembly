@@ -13,7 +13,6 @@ baddr    0x00000000
 binsz    0x00000026
 bintype  wasm
 bits     32
-retguard false
 class    module
 compiler N/A
 dbg_file N/A
@@ -31,18 +30,16 @@ cc       N/A
 pcalign  1
 rpath    N/A
 subsys   wasm
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 wasm:
   size: 38

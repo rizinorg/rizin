@@ -201,11 +201,8 @@ struct MACH0_(obj_t) {
 	RzBuffer *b;
 	ut32 platform; ///< MACH0_PLATFORM_*, or an unknown value from the bin, or UT32_MAX if not determined
 	Sdb *kv;
-	int has_crypto;
-	int has_canary;
-	int has_retguard;
-	int has_sanitizers;
-	int has_blocks_ext;
+	bool is_encrypted;
+	bool has_blocks_ext;
 	int dbg_info;
 	const char *lang;
 	int uuidn;

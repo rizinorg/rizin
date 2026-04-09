@@ -19,7 +19,6 @@ baddr    0x00000000
 binsz    0x000272f8
 bintype  N/A
 bits     32
-retguard false
 class    SEGA MEGASIS    
 compiler N/A
 dbg_file N/A
@@ -38,17 +37,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 d0 = 0xa10001
 d0 &= 0xf

@@ -647,17 +647,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 
 [Imports]
 nth      vaddr bind   type   lib name              
@@ -920,17 +918,15 @@ relro    full
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      true
-RELROCS  true
-NX       true
+pie      true
+relrocs  true
+nx       true
 
 EOF
 RUN
@@ -941,43 +937,42 @@ TOOL=rz-bin
 ARGS=-I
 EXPECT=<<EOF
 [Info]
-arch     x86
-cpu      N/A
-features N/A
-baddr    0x00400000
-binsz    0x001876b7
-bintype  elf
-bits     64
-class    ELF64
-compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    /lib64/ld-linux-x86-64.so.2
-laddr    0x00000000
-lang     c++
-machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
-os       linux
-cc       N/A
-pcalign  1
-relro    partial
-rpath    NONE
-subsys   linux
-stripped false
-crypto   false
-havecode true
-va       true
-sanitiz  true
-static   false
-linenum  true
-lsyms    true
-canary   false
-PIE      false
-RELROCS  true
-NX       true
+arch       x86
+cpu        N/A
+features   N/A
+baddr      0x00400000
+binsz      0x001876b7
+bintype    elf
+bits       64
+class      ELF64
+compiler   GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
+dbg_file   N/A
+endian     LE
+hdr.csum   N/A
+guid       N/A
+intrp      /lib64/ld-linux-x86-64.so.2
+laddr      0x00000000
+lang       c++
+machine    AMD x86-64 architecture
+maxopsz    16
+minopsz    1
+os         linux
+cc         N/A
+pcalign    1
+relro      partial
+rpath      NONE
+subsys     linux
+stripped   false
+havecode   true
+va         true
+static     false
+linenum    true
+lsyms      true
+canary     false
+pie        false
+relrocs    true
+nx         true
+sanitizers ubsan,asan
 
 EOF
 RUN
@@ -1013,17 +1008,15 @@ pcalign  1
 rpath    N/A
 subsys   macOS
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 
 EOF
 RUN
@@ -1368,17 +1361,15 @@ pcalign  2
 rpath    N/A
 subsys   unknown
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 EOF
 EXPECT_ERR=

@@ -8,6 +8,5 @@ EOF
 EXPECT=<<EOF
 elf.relro=no
 ---
-NX       false
 EOF
 RUN

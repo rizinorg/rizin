@@ -23,7 +23,6 @@ baddr    0x00400000
 binsz    0x00001e00
 bintype  pe
 bits     16
-retguard false
 class    PE32
 cmp.csum 0x0000584b
 compiled Thu Aug 12 03:57:16 2021 UTC
@@ -43,20 +42,17 @@ overlay  false
 cc       arm16
 pcalign  2
 rpath    N/A
-signed   false
 subsys   Windows CUI
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       true
+pie      true
+relrocs  false
+nx       true
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004011d4 0x000005d4 ---------- 0x00000108 program

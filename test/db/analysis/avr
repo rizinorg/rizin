@@ -108,7 +108,6 @@ baddr    ----------
 binsz    0x00003722
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -127,17 +126,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
             0x00000282      in    r24, 0x12                            ; IO Output pins/pullups address for port D
             0x00000284      subi  r24, 0x80
             0x00000286      out   0x12, r24                            ; IO Output pins/pullups address for port D

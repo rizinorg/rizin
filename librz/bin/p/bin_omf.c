@@ -153,8 +153,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = false;
 	ret->has_va = true;
 	ret->bits = rz_bin_omf_get_bits(bf->o->bin_obj);
-	ret->dbg_info = 0;
-	ret->has_nx = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

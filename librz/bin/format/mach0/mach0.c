@@ -1441,7 +1441,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	bin->uuidn = 0;
 	bin->platform = UT32_MAX;
-	bin->has_crypto = 0;
+	bin->is_encrypted = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
 		bin->hdr.sizeofcmds = bin->size - 128;
@@ -1575,7 +1575,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					eic.cryptsize = rz_read_ble32(&seic[12], bin->big_endian);
 					eic.cryptid = rz_read_ble32(&seic[16], bin->big_endian);
 
-					bin->has_crypto = eic.cryptid;
+					bin->is_encrypted = eic.cryptid;
 					sdb_set(bin->kv, "crypto", "true");
 					sdb_num_set(bin->kv, "cryptid", eic.cryptid);
 					sdb_num_set(bin->kv, "cryptoff", eic.cryptoff);

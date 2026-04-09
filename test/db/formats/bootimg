@@ -17,7 +17,6 @@ baddr    0x40200000
 binsz    0x00001800
 bintype  bootimg
 bits     32
-retguard false
 class    Android Boot Image (v0)
 compiler N/A
 dbg_file N/A
@@ -35,18 +34,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   unknown
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 bootimg:
   magic: "41 4e 44 52 4f 49 44 21                         |ANDROID!        |"

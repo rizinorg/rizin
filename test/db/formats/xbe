@@ -144,7 +144,6 @@ baddr    0x00010000
 binsz    0x0001a000
 bintype  N/A
 bits     32
-retguard false
 class    program
 compiler N/A
 dbg_file N/A
@@ -163,17 +162,15 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 EOF
 RUN
 

@@ -697,11 +697,11 @@ static RzBinInfo *pe_info(RzBinFile *bf) {
 	ret->dbg_info = 0;
 	ret->has_canary = PE_(rz_bin_pe_has_canary)(bf->o->bin_obj);
 	ret->has_nx = haschr(bin, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
-	ret->has_pi = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->has_pie = haschr(bin, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = rz_str_newf("0x%08x", claimed_checksum);
 	ret->actual_checksum = rz_str_newf("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
-	ret->signature = bin ? bin->is_signed : false;
+	ret->is_signed = bin ? bin->is_signed : false;
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", ret->has_canary);
 	sdb_bool_set(db, "highva", haschr(bin, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA));
