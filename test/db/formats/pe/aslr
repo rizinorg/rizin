@@ -61,7 +61,7 @@ va       true
 static   true
 linenum  false
 lsyms    false
-canary   false
+canary   true
 pie      true
 relrocs  false
 nx       false

@@ -49,7 +49,7 @@ va       true
 static   false
 linenum  false
 lsyms    false
-canary   false
+canary   true
 pie      true
 relrocs  false
 nx       true

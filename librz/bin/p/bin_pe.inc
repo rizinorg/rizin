@@ -427,7 +427,6 @@ static RzPVector /*<RzBinImport *>*/ *pe_imports(RzBinFile *bf) {
 		return NULL;
 	}
 	RzBinPEObj *bin = (RzBinPEObj *)bf->o->bin_obj;
-	bin->has_canary = false;
 	RzPVector *ret = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
@@ -436,7 +435,6 @@ static RzPVector /*<RzBinImport *>*/ *pe_imports(RzBinFile *bf) {
 	if (!(imports = PE_(rz_bin_pe_get_imports)(bin))) {
 		return ret;
 	}
-	bool has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			break;
@@ -451,15 +449,7 @@ static RzPVector /*<RzBinImport *>*/ *pe_imports(RzBinFile *bf) {
 		// index for the import. There is no point in exposing it.
 		// ptr->hint = imports[i].hint;
 		rz_pvector_push(ret, ptr);
-
-		// __security_init_cookie is a function imported from msvcrt.dll (libc) that when called
-		// initiliazes the stack canary. So if the function is imported, we can
-		// conclude the binary uses stack canary.
-		if (!has_canary && !strcmp(ptr->name, "__security_init_cookie")) {
-			has_canary = true;
-		}
 	}
-	bin->has_canary = has_canary;
 	free(imports);
 	return ret;
 }
