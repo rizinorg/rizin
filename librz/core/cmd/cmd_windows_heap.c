@@ -16,6 +16,9 @@ void init_heap_config(RzCore *core, RzWindowsHeapConfig *config) {
 	int build = RZ_W10_BUILD_21H1;
 
 	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
+	if (!bits && core->analysis) {
+		bits = (ut8)core->analysis->bits;
+	}
 	if (bits) {
 		ptr_size = (bits == 32) ? 4 : 8;
 	}
