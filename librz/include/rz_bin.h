@@ -296,6 +296,7 @@ typedef struct rz_bin_info_t {
 	ut64 baddr;
 	char *intrp;
 	char *compiler;
+	HtSS *extra_dict;
 } RzBinInfo;
 
 typedef struct rz_bin_file_load_options_t {

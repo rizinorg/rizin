@@ -2931,6 +2931,86 @@ bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
 	return bin->has_pac_sections;
 }
 
+static bool mach0_find_entitlement(const struct MACH0_(obj_t) * bin, const char *key, bool *boolean) {
+	const char *booltag = NULL;
+	char *keytag = rz_str_newf("<key>%s</key>", key);
+	const char *match = strstr((const char *)bin->signature, keytag);
+	if (!match) {
+		free(keytag);
+		return false;
+	}
+
+	match += strlen(keytag);
+	free(keytag);
+
+	booltag = rz_str_trim_head_ro(match);
+
+	*boolean = false;
+	if (!strncmp(booltag, "<true/>", strlen("<true/>"))) {
+		*boolean = true;
+		return true;
+	} else if (!strncmp(booltag, "<false/>", strlen("<false/>"))) {
+		*boolean = false;
+		return true;
+	}
+
+	RZ_LOG_ERROR("expected a boolean but was: %s", booltag);
+	return false;
+}
+
+static const char *mach0_security_features[] = {
+	// Opts into the hardened runtime framework
+	"com.apple.security.hardened-runtime",
+	// Opts into the hardened process framework
+	"com.apple.security.hardened-process",
+	// Enables type-aware memory allocations
+	"com.apple.security.hardened-process.hardened-heap",
+	// Marks memory used for internal platform state as read-only
+	"com.apple.security.hardened-process.dyld-ro",
+	// Enables hardware memory tagging
+	"com.apple.security.hardened-process.checked-allocations",
+	// Logs faults instead of crashing (debug)
+	"com.apple.security.hardened-process.checked-allocations.soft-mode",
+	// Tags memory containing only data
+	"com.apple.security.hardened-process.checked-allocations.enable-pure-data",
+	// Enables whether to prevent receiving tagged memory from other processes
+	"com.apple.security.hardened-process.checked-allocations.no-tagged-receive",
+	// Allows execution of JIT-compiled code
+	"com.apple.security.cs.allow-jit",
+	// Allows Unsigned Executable Memory Entitlement
+	"com.apple.security.cs.allow-unsigned-executable-memory",
+	// Allows DYLD environment variables to inject code in app
+	"com.apple.security.cs.allow-dyld-environment-variables",
+	// Disables Library Validation Entitlement
+	"com.apple.security.cs.disable-library-validation",
+	// Disables all code signing protections while launching an app, and during its execution.
+	"com.apple.security.cs.disable-executable-page-protection",
+	// Enables the app to attach to other processes or get task ports.
+	"com.apple.security.cs.debugger",
+};
+
+HtSS *MACH0_(get_security)(struct MACH0_(obj_t) * bin) {
+	if (RZ_STR_ISEMPTY(bin->signature)) {
+		return NULL;
+	}
+
+	HtSS *security = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	if (!security) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mach0_security_features); ++i) {
+		bool enabled = false;
+		const char *entitlement = mach0_security_features[i];
+		if (!mach0_find_entitlement(bin, entitlement, &enabled)) {
+			continue;
+		}
+		ht_ss_insert(security, entitlement, (char *)rz_str_bool(enabled));
+	}
+
+	return security;
+}
+
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {
 	const char *mhtype = "Unknown";
 	switch (hdr->filetype) {

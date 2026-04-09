@@ -2364,7 +2364,7 @@ static ut64 get_section_addr(RzCore *core, RzBinObject *o, RzBinSection *section
 	return rva(o, section->paddr, section->vaddr, va);
 }
 
-static bool digests_pj_cb(void *user, const char *k, const char *v) {
+static bool map_as_pj_cb(void *user, const char *k, const char *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	PJ *pj = user;
 	pj_ks(pj, k, v);
@@ -2412,7 +2412,7 @@ static void sections_print_json(RzCore *core, PJ *pj, RzBinObject *o, RzBinSecti
 			pj_end(pj);
 			return;
 		}
-		ht_ss_foreach(digests, digests_pj_cb, pj);
+		ht_ss_foreach(digests, map_as_pj_cb, pj);
 		ht_ss_free(digests);
 	}
 	pj_end(pj);
@@ -3224,6 +3224,13 @@ static const char *core_bin_info_color_selector(const char *value, const char *c
 	return column_n ? ctx->pal.diff_match : ctx->pal.label;
 }
 
+static bool map_as_table_row_cb(void *user, const char *k, const char *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	RzTable *t = user;
+	rz_table_add_rowf(t, "ss", k, v);
+	return true;
+}
+
 RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile *bf, RZ_NONNULL RzCmdStateOutput *state) {
 	rz_return_val_if_fail(core && state, false);
 
@@ -3437,6 +3444,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			free(buf);
 			pj_end(pj);
 		}
+		if (info->extra_dict) {
+			ht_ss_foreach(info->extra_dict, map_as_pj_cb, pj);
+		}
 		pj_end(pj);
 
 		break;
@@ -3572,6 +3582,9 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 			char *buf = rz_hex_bin2strdup(h->buf, h->len);
 			rz_table_add_rowf(t, "ss", h->type, buf);
 			free(buf);
+		}
+		if (info->extra_dict) {
+			ht_ss_foreach(info->extra_dict, map_as_table_row_cb, t);
 		}
 		break;
 	default:

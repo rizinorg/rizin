@@ -251,6 +251,7 @@ bool MACH0_(is_big_endian)(RZ_NONNULL RzBuffer *buf);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin);
+HtSS *MACH0_(get_security)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin);
