@@ -201,6 +201,7 @@ struct MACH0_(obj_t) {
 	RzBuffer *b;
 	ut32 platform; ///< MACH0_PLATFORM_*, or an unknown value from the bin, or UT32_MAX if not determined
 	Sdb *kv;
+	bool has_pac_sections;
 	bool is_encrypted;
 	bool has_blocks_ext;
 	int dbg_info;
@@ -249,6 +250,7 @@ int MACH0_(get_bits)(struct MACH0_(obj_t) * bin);
 bool MACH0_(is_big_endian)(RZ_NONNULL RzBuffer *buf);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin);
+bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_platform)(struct MACH0_(obj_t) * bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) * bin);

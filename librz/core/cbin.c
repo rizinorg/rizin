@@ -3391,8 +3391,8 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		if (info->has_objc_arc) {
 			pj_kb(pj, "objc_arc", true);
 		}
-		if (info->has_arm_pac) {
-			pj_kb(pj, "arm_pac", true);
+		if (info->has_ptr_auth) {
+			pj_kb(pj, "ptr_auth", true);
 		}
 		if (info->has_fortify_source) {
 			pj_kb(pj, "fortify_source", true);
@@ -3528,8 +3528,8 @@ RZ_API bool rz_core_bin_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinFile
 		if (info->has_objc_arc) {
 			table_add_row_bool(t, "objc_arc", true);
 		}
-		if (info->has_arm_pac) {
-			table_add_row_bool(t, "arm_pac", true);
+		if (info->has_ptr_auth) {
+			table_add_row_bool(t, "ptr_auth", true);
 		}
 		if (info->has_fortify_source) {
 			table_add_row_bool(t, "fortify_source", true);

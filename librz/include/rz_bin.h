@@ -282,7 +282,7 @@ typedef struct rz_bin_info_t {
 	bool is_signed; ///< Binary is digitally signed
 	bool has_nx; ///< Non-Executable Memory/Bit
 	bool has_objc_arc; ///< Automatic Reference Counting (Objective-C's compile-time memory management)
-	bool has_arm_pac; ///< ARM Pointer Authentication Code
+	bool has_ptr_auth; ///< ARM Pointer Authentication Code
 	bool has_fortify_source; ///< Fortify Source (FORTIFY_SOURCE)
 	bool has_retguard; ///< OpenBSD retguard stack protector
 	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI

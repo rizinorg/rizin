@@ -242,6 +242,12 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	return true;
 }
 
+static bool is_pac_section(const char *name, size_t size) {
+	return !rz_str_cmp(name, "__auth_stubs", size) ||
+		!rz_str_cmp(name, "__auth_got", size) ||
+		!rz_str_cmp(name, "__auth_ptr", size);
+}
+
 static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 	size_t i, j, k, sect, len;
 	ut32 size_sects;
@@ -364,6 +370,11 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 			i += 16;
 			memcpy(&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
+
+			if (is_pac_section(bin->sects[k].sectname, 16) ||
+				is_pac_section(bin->sects[k].segname, 16)) {
+				bin->has_pac_sections = true;
+			}
 
 			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset);
 #if RZ_BIN_MACH064
@@ -2914,6 +2925,10 @@ bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin) {
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE &&
 		bin->hdr.flags & MH_NO_HEAP_EXECUTION);
+}
+
+bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
+	return bin->has_pac_sections;
 }
 
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {

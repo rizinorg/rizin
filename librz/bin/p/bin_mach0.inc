@@ -468,6 +468,7 @@ static RzBinInfo *mach0_info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pie = MACH0_(is_pie)(bin);
 	ret->has_nx = MACH0_(has_nx)(bin);
+	ret->has_ptr_auth = MACH0_(has_ptr_auth)(bin);
 
 	return ret;
 }
