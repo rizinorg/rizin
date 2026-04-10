@@ -84,6 +84,7 @@ static const RzCmdDescDetail plugins_asm_print_details[2];
 static const RzCmdDescDetail open_binary_select_details[2];
 static const RzCmdDescDetail cmd_print_byte_array_details[3];
 static const RzCmdDescDetail pf_details[3];
+static const RzCmdDescDetail print_function_rzil_enriched_details[6];
 static const RzCmdDescDetail print_string_details[2];
 static const RzCmdDescDetail print_hexdump_format_details[4];
 static const RzCmdDescDetail print_rising_and_falling_entropy_details[2];
@@ -16141,11 +16142,116 @@ static const RzCmdDescHelp print_function_rzil_help = {
 	.args = print_function_rzil_args,
 };
 
+static const RzCmdDescDetailEntry print_function_rzil_enriched_General_detail_entries[] = {
+	{ .text = "Set", .arg_str = " x ← y", .comment = "Set (assign) y to x." },
+	{ .text = "Let", .arg_str = " (x = exp body)", .comment = "Let binding (expression-scoped)." },
+	{ .text = "ITE", .arg_str = " (cond ↠ x y)", .comment = "If-Then-Else (ITE)." },
+	{ .text = "Jump", .arg_str = " ↷ dst", .comment = "Jump to dst." },
+	{ .text = "Goto", .arg_str = " @ l", .comment = "Goto label l." },
+	{ .text = "Branch", .arg_str = " (cond ⅄ true_eff false_eff)", .comment = "Branch (Conditional)." },
+	{ .text = "Repeat", .arg_str = " (cond ⟳ eff)", .comment = "Repeat eff until cond is true." },
+	{ .text = "Empty", .arg_str = " {}", .comment = "Empty RzIL op." },
+	{ .text = "NOP", .arg_str = " ɴᴏᴘ", .comment = "No operation." },
+	{ .text = "Blk", .arg_str = " (l: deff ceff)", .comment = "A sequence of deff (data effect) and ceff (control effect) with label l." },
+	{ .text = "Unk", .arg_str = " ?", .comment = "Unknown operation, usually represents an error." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Bitvector_detail_entries[] = {
+	{ .text = "Bitv", .arg_str = " xₙ", .comment = "Bitvector literal x with length n." },
+	{ .text = "Cast", .arg_str = " (x ≈ₙ b)", .comment = "Cast x to length n with fill bit b." },
+	{ .text = "Msb", .arg_str = " ↑x", .comment = "Most significant bit of x." },
+	{ .text = "Lsb", .arg_str = " ↓x", .comment = "Least significant bit of x." },
+	{ .text = "Append", .arg_str = " (hi ⊚ lo)", .comment = "Concatenate (append) hi with lo." },
+	{ .text = "Is_zero", .arg_str = " x ≡ 0", .comment = "Check if x is zero." },
+	{ .text = "Lognot", .arg_str = " ~x", .comment = "Logical NOT of x." },
+	{ .text = "Neg", .arg_str = " −x", .comment = "Arithmetic negation of x." },
+	{ .text = "Add", .arg_str = " (x + y)", .comment = "Arithmetic addition of x and y." },
+	{ .text = "Sub", .arg_str = " (x - y)", .comment = "Arithmetic subtraction of x and y." },
+	{ .text = "Mul", .arg_str = " (x * y)", .comment = "Arithmetic multiplication of x and y." },
+	{ .text = "Div", .arg_str = " (x / y)", .comment = "Arithmetic division of x and y." },
+	{ .text = "Sdiv", .arg_str = " (x /⁺ y)", .comment = "Signed division of x and y." },
+	{ .text = "Mod", .arg_str = " (x % y)", .comment = "Unsigned modulo of x and y." },
+	{ .text = "Smod", .arg_str = " (x %⁺ y)", .comment = "Signed modulo of x and y." },
+	{ .text = "Logand", .arg_str = " (x & y)", .comment = "Bitwise AND between x and y." },
+	{ .text = "Logor", .arg_str = " (x | y)", .comment = "Bitwise OR between x and y." },
+	{ .text = "Logxor", .arg_str = " (x ⊕ y)", .comment = "Bitwise XOR between x and y." },
+	{ .text = "Lshift", .arg_str = " (x ≪ y b)", .comment = "Left shift x by y bits with fill bit b." },
+	{ .text = "Rshift", .arg_str = " (x ≫ y b)", .comment = "Right shift x by y bits with fill bit b." },
+	{ .text = "Eq", .arg_str = " (x ≡ y)", .comment = "x equals y." },
+	{ .text = "Sle", .arg_str = " (x ≦ y)", .comment = "x is less than or equal to y (Unsigned)." },
+	{ .text = "Ule", .arg_str = " (x ≦⁺ y)", .comment = "x is less than or equal to y (Signed)." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Boolean_detail_entries[] = {
+	{ .text = "False", .arg_str = " ⊥", .comment = "Boolean literal false." },
+	{ .text = "True", .arg_str = " ⊤", .comment = "Boolean literal true." },
+	{ .text = "Boolnot", .arg_str = " ¬x", .comment = "Boolean NOT of x." },
+	{ .text = "Boolor", .arg_str = " (x ∨ y)", .comment = "Boolean OR between x and y." },
+	{ .text = "Booland", .arg_str = " (x ∧ y)", .comment = "Boolean AND between x and y." },
+	{ .text = "Boolxor", .arg_str = " (x ⊻ y)", .comment = "Boolean XOR between x and y." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Floating_space_Point_detail_entries[] = {
+	{ .text = "Float", .arg_str = " n.fᵈₙ", .comment = "Bitvector literal n interpreted as a float of size n with optional superscript d showing a decimal representation." },
+	{ .text = "Fbits", .arg_str = " ꜰʙ x", .comment = "Bitvector representation of float x." },
+	{ .text = "Fneg", .arg_str = " −x", .comment = "Floating-point negation of x." },
+	{ .text = "Fadd", .arg_str = " (r x + y)", .comment = "Floating-point addition of x and y with rounding mode r." },
+	{ .text = "Fsub", .arg_str = " (r x - y)", .comment = "Floating-point subtraction of x and y with rounding mode r." },
+	{ .text = "Fmul", .arg_str = " (r x * y)", .comment = "Floating-point multiplication of x and y with rounding mode r." },
+	{ .text = "Fdiv", .arg_str = " (r x / y)", .comment = "Floating-point division x and y with rounding mode r." },
+	{ .text = "Fmod", .arg_str = " (r x % y)", .comment = "Floating-point modulo of x and y with rounding mode r." },
+	{ .text = "Fmad", .arg_str = " (r x * y + z)", .comment = "Floating-point multiply-add of x, y and z with rounding mode r." },
+	{ .text = "Fabs", .arg_str = " |x|", .comment = "Absolute value of x." },
+	{ .text = "Fsucc", .arg_str = " ⌊x", .comment = "Floating-point successor of x." },
+	{ .text = "Fpred", .arg_str = " ⌋x", .comment = "Floating-point predecessor of x." },
+	{ .text = "Fexcept", .arg_str = " e ᴇ x", .comment = "Floating-point exception e on x." },
+	{ .text = "Fcast int", .arg_str = " (x ꜰ≈ɪᵈₙ r)", .comment = "Cast x to unsigned integer of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast sint", .arg_str = " (x ꜰ≈ɪ⁺ᵈₙ r)", .comment = "Cast x to signed integer of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast float", .arg_str = " (x ꜰ≈ꜰᵈₙ r)", .comment = "Cast x to unsigned float of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fcast sfloat", .arg_str = " (x ꜰ≈ꜰ⁺ᵈₙ r)", .comment = "Cast x to signed float of size n with rounding mode r and optional subscript d." },
+	{ .text = "Fconvert", .arg_str = " (x ≅ᵈₙ r)", .comment = "Convert rounding mode of x to r and its size to n." },
+	{ .text = "Fround", .arg_str = " (r ⭂ x)", .comment = "Round x to integral value using rounding mode r and optional subscript d." },
+	{ .text = "Fsqrt", .arg_str = " (r ²√ x)", .comment = "Square root of x using rounding mode r." },
+	{ .text = "Frsqrt", .arg_str = " (r ¹/√ x)", .comment = "Inverse square root of x using rounding mode r." },
+	{ .text = "Frootn", .arg_str = " (r n ⁿ√ x)", .comment = "x to the power 1/n using rounding mode r, where n is integer." },
+	{ .text = "Fpow", .arg_str = " (r x ˰ y)", .comment = "x to the power y using rounding mode r." },
+	{ .text = "Fpown", .arg_str = " (r x ˰ⁿ n)", .comment = "x to the power n using rounding mode r, where n is integer." },
+	{ .text = "Forder", .arg_str = " (x ≷ y)", .comment = "Float ordering comparison between x and y." },
+	{ .text = "Frequal", .arg_str = " (r1 ≡ r2)", .comment = "Float rounding mode equality check between r1 and r2." },
+	{ .text = "Is_fzero", .arg_str = " x ≡ 0", .comment = "Check if x is zero." },
+	{ .text = "Is_nan", .arg_str = " x ≡ ɴаɴ", .comment = "Check if x is Not-a-Number." },
+	{ .text = "Is_inf", .arg_str = " x ≡ ∞", .comment = "Check if x is infine." },
+	{ .text = "Is_finite", .arg_str = " x ≢ ∞", .comment = "Check if x is finite." },
+	{ .text = "Is_fpos", .arg_str = " x > 0", .comment = "Check if x is positive." },
+	{ .text = "Is_fneg", .arg_str = " x < 0", .comment = "Check if x is negative." },
+	{ .text = "Fcompound", .arg_str = " (r x ∪ n)", .comment = "Float compound operator between x and n using rounding mode r, where n is integer." },
+	{ .text = "Fhypot", .arg_str = " (r x ∠ y)", .comment = "Float hypotenuse." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry print_function_rzil_enriched_Memory_detail_entries[] = {
+	{ .text = "Load", .arg_str = " (ʟᴅₘ n a)", .comment = "Load n bits from address a of memory index m." },
+	{ .text = "Store", .arg_str = " (ꜱᴛₘ v a)", .comment = "Store v to address a of memory index m." },
+	{ 0 },
+};
+static const RzCmdDescDetail print_function_rzil_enriched_details[] = {
+	{ .name = "General", .entries = print_function_rzil_enriched_General_detail_entries },
+	{ .name = "Bitvector", .entries = print_function_rzil_enriched_Bitvector_detail_entries },
+	{ .name = "Boolean", .entries = print_function_rzil_enriched_Boolean_detail_entries },
+	{ .name = "Floating Point", .entries = print_function_rzil_enriched_Floating_space_Point_detail_entries },
+	{ .name = "Memory", .entries = print_function_rzil_enriched_Memory_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg print_function_rzil_enriched_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_function_rzil_enriched_help = {
-	.summary = "Print enriched RzIL of the function",
+	.summary = "Print unicode RzIL of the function at current seek.",
+	.description = "Prints the RzIL of the function at current seek using unicode special characters. This command requires 'scr.utf8=true', use 'plf' for plain ASCII output.",
+	.details = print_function_rzil_enriched_details,
 	.args = print_function_rzil_enriched_args,
 };
 

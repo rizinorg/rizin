@@ -961,7 +961,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			name = opt.arg;
 			break;
 		case 'N': {
-			tmp = strchr(opt.arg, ':');
+			const char *tmp = strchr(opt.arg, ':');
 			size_t value = rz_num_math(NULL, opt.arg);
 			rz_config_set_i(core.config, "search.str.min_length", value);
 			if (tmp) {
@@ -1064,7 +1064,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 	if (arch) {
-		ptr = strchr(arch, '_');
+		ptr = (char *)strchr(arch, '_');
 		if (ptr) {
 			*ptr = '\0';
 			bits = rz_num_math(NULL, ptr + 1);

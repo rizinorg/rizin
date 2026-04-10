@@ -281,6 +281,7 @@ ____h_ fletcher16     LGPL3      deroad                         Fletcher16 check
 ____h_ fletcher32     LGPL3      deroad                         Fletcher32 checksum
 ____h_ fletcher64     LGPL3      deroad                         Fletcher64 checksum
 ____h_ fletcher8      LGPL3      deroad                         Fletcher8 checksum
+____h_ fnv1a          LGPL3      cheese-cakee                   FNV-1a 32-bit non-cryptographic hash
 ____h_ jenkins        LGPL3      shessaanand                    Jenkins non-cryptographic hash
 ____hm keccak-256     BSD-3      Andrey Jivsov                  KECCAK-256 cryptographic hash
 ____hm keccak-384     BSD-3      Andrey Jivsov                  KECCAK-384 cryptographic hash
@@ -759,6 +760,7 @@ string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expect
 string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher64: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fnv1a: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 jenkins: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 keccak-256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 keccak-384: computed hash doesn't match the expected one

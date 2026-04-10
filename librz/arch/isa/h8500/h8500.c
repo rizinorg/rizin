@@ -315,7 +315,7 @@ static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
 	return true;
 }
 
-static bool str_replace_once_no_heap(const char *str, const char *key, const char *val, ut64 sz) {
+static bool str_replace_once_no_heap(char *str, const char *key, const char *val, ut64 sz) {
 	rz_return_val_if_fail(str && key && val, false);
 	char *p = strstr(str, key);
 	if (!p) {

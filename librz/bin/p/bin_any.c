@@ -55,7 +55,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->lang = "";
 	ret->file = rz_str_dup(bf->file);
 	ret->type = get_filetype(bf->buf);
-	ret->has_retguard = -1;
+	ret->has_retguard = false;
 	ret->big_endian = ANY_DEFAULT_ENDIANNESS;
 	return ret;
 }

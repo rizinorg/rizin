@@ -21,7 +21,7 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	char *buf_asm = NULL;
 	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = 0;
+	cs_mode mode = CS_MODE_M68K_040;
 
 	// replace this with the asm.features?
 	if (a->cpu && strstr(a->cpu, "68000")) {

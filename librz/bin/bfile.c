@@ -152,7 +152,7 @@ RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
 	o->info->type = rz_str_dup(data->metadata->type);
 	o->info->bits = data->metadata->bits;
 	o->info->big_endian = data->metadata->big_endian;
-	o->info->has_crypto = bf->o->info->has_crypto;
+	o->info->is_encrypted = bf->o->info->is_encrypted;
 	data->loaded = true;
 	return true;
 }

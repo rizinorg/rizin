@@ -44,14 +44,6 @@ static int read8_check_val(RzBuffer *buffer, ut64 *offset, const ut16 val, const
 	read8_check_val(buffer, offset, val, err); \
 	CHECK_SIZE;
 
-static void lua_load_block(RzBuffer *buffer, void *dest, size_t size, ut64 offset, ut64 data_size) {
-	if (offset + size > data_size) {
-		RZ_LOG_ERROR("Truncated load block at 0x%llx\n", offset);
-		return;
-	}
-	rz_buf_read_at(buffer, offset, dest, size);
-}
-
 static ut64 lua_load_integer(RzBuffer *buffer, ut64 offset) {
 	ut64 x = 0;
 	rz_buf_read_le64_at(buffer, offset, &x);
@@ -265,8 +257,9 @@ static ut64 lua_parse_const_entry(const LuaProto *proto, RzBuffer *buffer, int i
 	case LUA_VNUMINT:
 		data_len = sizeof(LUA_NUMBER);
 		recv_data = RZ_NEWS(ut8, data_len);
-		lua_load_block(buffer, recv_data, data_len, offset, data_size);
+		rz_buf_read_le64_at(buffer, offset, (ut64 *)recv_data);
 		if (offset + data_len > data_size) {
+			RZ_FREE(recv_data);
 			return 0;
 		}
 		delta_offset = data_len;
@@ -280,7 +273,7 @@ static ut64 lua_parse_const_entry(const LuaProto *proto, RzBuffer *buffer, int i
 			const double fractionalPart = modf(r, &intPart1);
 			if (fractionalPart == 0.0) {
 				current_entry->tag = LUA_VNUMINT; // keep the same with 5.4 tag
-				rz_write_le64(recv_data, (long long)intPart1);
+				*(ut64 *)recv_data = (ut64)intPart1;
 			} else {
 				current_entry->tag = LUA_VNUMFLT; // keep the same with 5.4 tag
 			}
@@ -303,8 +296,9 @@ static ut64 lua_parse_const_entry(const LuaProto *proto, RzBuffer *buffer, int i
 		}
 #endif
 		recv_data = RZ_NEWS(ut8, data_len);
-		lua_load_block(buffer, recv_data, data_len, offset, data_size);
+		rz_buf_read_le64_at(buffer, offset, (ut64 *)recv_data);
 		if (offset + data_len > data_size) {
+			RZ_FREE(recv_data);
 			return 0;
 		}
 		delta_offset = data_len;

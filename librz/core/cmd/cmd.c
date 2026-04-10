@@ -28,9 +28,6 @@
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
 
-RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
-
 #include "cmd_debug.c"
 #include "cmd_analysis.c"
 #include "cmd_magic.c"
@@ -3076,7 +3073,7 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	char *tmp = NULL;
-	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
+	const char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return rz_core_cmd_str(core, cmd);
 	}

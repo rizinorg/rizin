@@ -14,7 +14,6 @@ baddr    ----------
 binsz    0x00001c52
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -33,17 +32,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -350,7 +347,6 @@ baddr    ----------
 binsz    0x0003e07e
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -369,17 +365,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -737,7 +731,6 @@ baddr    ----------
 binsz    0x000065a0
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -756,17 +749,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -1026,7 +1017,6 @@ baddr    ----------
 binsz    0x00001236
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -1045,17 +1035,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -1233,7 +1221,6 @@ baddr    ----------
 binsz    0x00830001
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -1252,17 +1239,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -1435,7 +1420,6 @@ baddr    ----------
 binsz    0x000033ea
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -1454,17 +1438,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -1644,7 +1626,6 @@ baddr    ----------
 binsz    0x00000270
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -1663,17 +1644,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -1833,7 +1812,6 @@ baddr    ----------
 binsz    0x00001dac
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -1852,17 +1830,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -2020,7 +1996,6 @@ baddr    ----------
 binsz    0x00000ef2
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -2039,17 +2014,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 
@@ -2199,7 +2172,6 @@ baddr    ----------
 binsz    0x00003722
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -2218,17 +2190,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 

@@ -242,6 +242,12 @@ static bool init_hdr(struct MACH0_(obj_t) * bin) {
 	return true;
 }
 
+static bool is_pac_section(const char *name, size_t size) {
+	return !rz_str_cmp(name, "__auth_stubs", size) ||
+		!rz_str_cmp(name, "__auth_got", size) ||
+		!rz_str_cmp(name, "__auth_ptr", size);
+}
+
 static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 	size_t i, j, k, sect, len;
 	ut32 size_sects;
@@ -364,6 +370,11 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 			i += 16;
 			memcpy(&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
+
+			if (is_pac_section(bin->sects[k].sectname, 16) ||
+				is_pac_section(bin->sects[k].segname, 16)) {
+				bin->has_pac_sections = true;
+			}
 
 			sdb_num_set(bin->kv, rz_strf(tmpbuf, "mach0_section_%.16s_%.16s.offset", bin->sects[k].segname, bin->sects[k].sectname), offset);
 #if RZ_BIN_MACH064
@@ -1441,7 +1452,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 
 	bin->uuidn = 0;
 	bin->platform = UT32_MAX;
-	bin->has_crypto = 0;
+	bin->is_encrypted = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
 		bprintf("Warning: chopping hdr.sizeofcmds\n");
 		bin->hdr.sizeofcmds = bin->size - 128;
@@ -1575,7 +1586,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 					eic.cryptsize = rz_read_ble32(&seic[12], bin->big_endian);
 					eic.cryptid = rz_read_ble32(&seic[16], bin->big_endian);
 
-					bin->has_crypto = eic.cryptid;
+					bin->is_encrypted = eic.cryptid;
 					sdb_set(bin->kv, "crypto", "true");
 					sdb_num_set(bin->kv, "cryptid", eic.cryptid);
 					sdb_num_set(bin->kv, "cryptoff", eic.cryptoff);
@@ -2914,6 +2925,90 @@ bool MACH0_(is_pie)(struct MACH0_(obj_t) * bin) {
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE &&
 		bin->hdr.flags & MH_NO_HEAP_EXECUTION);
+}
+
+bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
+	return bin->has_pac_sections;
+}
+
+static bool mach0_find_entitlement(const struct MACH0_(obj_t) * bin, const char *key, bool *boolean) {
+	const char *booltag = NULL;
+	char *keytag = rz_str_newf("<key>%s</key>", key);
+	const char *match = strstr((const char *)bin->signature, keytag);
+	if (!match) {
+		free(keytag);
+		return false;
+	}
+
+	match += strlen(keytag);
+	free(keytag);
+
+	booltag = rz_str_trim_head_ro(match);
+
+	*boolean = false;
+	if (!strncmp(booltag, "<true/>", strlen("<true/>"))) {
+		*boolean = true;
+		return true;
+	} else if (!strncmp(booltag, "<false/>", strlen("<false/>"))) {
+		*boolean = false;
+		return true;
+	}
+
+	RZ_LOG_ERROR("expected a boolean but was: %s", booltag);
+	return false;
+}
+
+static const char *mach0_security_features[] = {
+	// Opts into the hardened runtime framework
+	"com.apple.security.hardened-runtime",
+	// Opts into the hardened process framework
+	"com.apple.security.hardened-process",
+	// Enables type-aware memory allocations
+	"com.apple.security.hardened-process.hardened-heap",
+	// Marks memory used for internal platform state as read-only
+	"com.apple.security.hardened-process.dyld-ro",
+	// Enables hardware memory tagging
+	"com.apple.security.hardened-process.checked-allocations",
+	// Logs faults instead of crashing (debug)
+	"com.apple.security.hardened-process.checked-allocations.soft-mode",
+	// Tags memory containing only data
+	"com.apple.security.hardened-process.checked-allocations.enable-pure-data",
+	// Enables whether to prevent receiving tagged memory from other processes
+	"com.apple.security.hardened-process.checked-allocations.no-tagged-receive",
+	// Allows execution of JIT-compiled code
+	"com.apple.security.cs.allow-jit",
+	// Allows Unsigned Executable Memory Entitlement
+	"com.apple.security.cs.allow-unsigned-executable-memory",
+	// Allows DYLD environment variables to inject code in app
+	"com.apple.security.cs.allow-dyld-environment-variables",
+	// Disables Library Validation Entitlement
+	"com.apple.security.cs.disable-library-validation",
+	// Disables all code signing protections while launching an app, and during its execution.
+	"com.apple.security.cs.disable-executable-page-protection",
+	// Enables the app to attach to other processes or get task ports.
+	"com.apple.security.cs.debugger",
+};
+
+HtSS *MACH0_(get_security)(struct MACH0_(obj_t) * bin) {
+	if (RZ_STR_ISEMPTY(bin->signature)) {
+		return NULL;
+	}
+
+	HtSS *security = ht_ss_new(HT_STR_DUP, HT_STR_DUP);
+	if (!security) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(mach0_security_features); ++i) {
+		bool enabled = false;
+		const char *entitlement = mach0_security_features[i];
+		if (!mach0_find_entitlement(bin, entitlement, &enabled)) {
+			continue;
+		}
+		ht_ss_insert(security, entitlement, (char *)rz_str_bool(enabled));
+	}
+
+	return security;
 }
 
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {

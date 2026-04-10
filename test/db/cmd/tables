@@ -246,3 +246,30 @@ EXPECT=<<EOF
 0x1218
 EOF
 RUN
+
+NAME=tables izz length alias and string minlen
+FILE==
+CMDS=<<EOF
+wx 616263646566676800
+s 0x20
+wx 28285b5d415c415d2900
+s 0x40
+wx 6c6f6e6765725f737472696e6700
+izz:string/minlen/8:length/sort/rev:*/page/0/15:csv
+EOF
+EXPECT=<<EOF
+paddr,vaddr,len,size,section,type,string
+0x00000040,0x00000040,13,14,,ascii,longer_string
+0x00000020,0x00000020,9,10,,ascii,(([]A\A])
+EOF
+RUN
+
+NAME=tables is addr alias
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+is:name/uniq:addr/gt/0x1000:name/str/init:name/sort:json
+EOF
+EXPECT=<<EOF
+[{"nth":11,"paddr":2048,"vaddr":4196352,"bind":"LOCAL","type":"SECT","name":".init"},{"nth":19,"paddr":4136,"vaddr":6295592,"bind":"LOCAL","type":"SECT","name":".init_array"},{"nth":37,"paddr":4136,"vaddr":6295592,"bind":"LOCAL","type":"OBJ","name":"__frame_dummy_init_array_entry"},{"nth":48,"paddr":4152,"vaddr":6295608,"bind":"LOCAL","type":"NOTYPE","name":"__init_array_end"},{"nth":49,"paddr":4136,"vaddr":6295592,"bind":"LOCAL","type":"NOTYPE","name":"__init_array_start"},{"nth":83,"paddr":3136,"vaddr":4197440,"bind":"GLOBAL","type":"FUNC","size":101,"name":"__libc_csu_init"},{"nth":40,"paddr":2676,"vaddr":4196980,"bind":"LOCAL","type":"FUNC","size":62,"name":"__static_initialization_and_destruction_0(int, int)"},{"nth":100,"paddr":2048,"vaddr":4196352,"bind":"GLOBAL","type":"FUNC","name":"_init"},{"nth":39,"paddr":"----------","vaddr":6296745,"bind":"LOCAL","type":"OBJ","size":1,"name":"std::__ioinit"}]
+EOF
+RUN

@@ -22,54 +22,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: asm.flags.middle=0 + local symbols
-FILE=bins/elf/analysis/example.elf
-CMDS=e asm.flags.middle=0;e asm.bytes=true;pd 3 @ 0x356
-EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl    sym.app_uart_get
-        :   0x0000035a      0028           cmp   r0, 0
-        `=< 0x0000035c      fad1           bne   0x354
-EOF
-RUN
-
-NAME=ELF: asm.flags.middle=1 + local symbols
-FILE=bins/elf/analysis/example.elf
-CMDS=e asm.flags.middle=1;e asm.bytes=true;pd 3 @ 0x356
-EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl    sym.app_uart_get
-        :   0x0000035a      0028           cmp   r0, 0
-        `=< 0x0000035c      fad1           bne   0x354
-EOF
-RUN
-
-NAME=ELF: asm.flags.middle + local symbols
-FILE=bins/elf/analysis/example.elf
-CMDS=e asm.bytes=true; pd 3 @ 0x356;
-EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl    sym.app_uart_get
-        :   0x0000035a      0028           cmp   r0, 0
-        `=< 0x0000035c      fad1           bne   0x354
-EOF
-RUN
-
-NAME=ELF: asm.flags.middle2 + local symbols
+NAME=ELF: asm.flags.middle & local symbols
 FILE=bins/elf/analysis/example.elf
 CMDS=<<EOF
-e asm.bytes=true
-e asm.flags.middle=0
-pd 3 @ 0x356
+e asm.flags.middle=0;e asm.bytes=true;pd 3 @ 0x356
+echo ---
+e asm.flags.middle=1;e asm.bytes=true;pd 3 @ 0x356
+echo ---
+e asm.bytes=true; pd 3 @ 0x356;
+echo ---
+e asm.bytes=true;e asm.flags.middle=0;pd 3 @ 0x356
+echo ---
+is*~d_41
 EOF
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl    sym.app_uart_get
         :   0x0000035a      0028           cmp   r0, 0
         `=< 0x0000035c      fad1           bne   0x354
+---
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
+---
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
+---
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
+---
 EOF
-RUN
-
-NAME=ELF: local symbols
-FILE=bins/elf/analysis/example.elf
-CMDS=is*~d_41
-EXPECT=
 RUN
 
 NAME=ELF: phdr override
@@ -105,6 +88,7 @@ NAME=ELF: no symbol overwrite
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
 is~getpid
+echo ---
 fl~getpid
 EOF
 EXPECT=<<EOF
@@ -114,6 +98,7 @@ EXPECT=<<EOF
 3807 0x000c9420 0x000c9420 LOCAL  FUNC      12     __GI_getpid
 6267 0x000c9420 0x000c9420 WEAK   FUNC      12     getpid
 8102 0x000c9420 0x000c9420 GLOBAL FUNC      12     __getpid
+---
 0x000c9420 12 sym.getpid
 0x000c9420 12 sym.__getpid
 0x000c9420 12 sym.__GI___getpid

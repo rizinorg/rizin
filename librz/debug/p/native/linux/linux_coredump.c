@@ -280,7 +280,7 @@ static bool has_map_deleted_part(char *name) {
 	return false;
 }
 
-static bool getAnonymousValue(char *keyw) {
+static bool get_anonymous_value(char *keyw) {
 	if (!keyw) {
 		return false;
 	}
@@ -294,7 +294,7 @@ static bool getAnonymousValue(char *keyw) {
 	return *keyw && *keyw != '0';
 }
 
-static char *isAnonymousKeyword(const char *pp) {
+static char *is_anonymous_keyword(char *pp) {
 	if (!pp) {
 		return NULL;
 	}
@@ -314,8 +314,8 @@ static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr
 		if (strstr(p, identity)) {
 			pp = strtok_r(NULL, "\n", &extern_tok);
 			for (; pp; pp = strtok_r(NULL, "\n", &extern_tok)) {
-				if ((keyw = isAnonymousKeyword(pp))) {
-					bool is_anonymous = getAnonymousValue(keyw);
+				if ((keyw = is_anonymous_keyword(pp))) {
+					bool is_anonymous = get_anonymous_value(keyw);
 					free(identity);
 					free(str);
 					return is_anonymous;

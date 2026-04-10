@@ -122,6 +122,7 @@ extern RzHashPlugin rz_hash_plugin_fletcher8;
 extern RzHashPlugin rz_hash_plugin_fletcher16;
 extern RzHashPlugin rz_hash_plugin_fletcher32;
 extern RzHashPlugin rz_hash_plugin_fletcher64;
+extern RzHashPlugin rz_hash_plugin_fnv1a;
 extern RzHashPlugin rz_hash_plugin_adler32;
 extern RzHashPlugin rz_hash_plugin_mod255;
 extern RzHashPlugin rz_hash_plugin_crca_crc8smbus;

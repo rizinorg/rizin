@@ -391,8 +391,8 @@ RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, size_t len);
 RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, size_t len);
 
 /* lifecycle */
-RZ_IPI bool rz_io_desc_init(RzIO *io);
-RZ_IPI bool rz_io_desc_fini(RzIO *io);
+RZ_API bool rz_io_desc_init(RzIO *io);
+RZ_API bool rz_io_desc_fini(RzIO *io);
 
 /* io/cache.c */
 RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to);

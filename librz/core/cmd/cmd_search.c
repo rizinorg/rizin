@@ -56,7 +56,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzPVector /*<RzRopConstraint *>*/ *constraints = rop_constraint_map_parse(core, argc, argv);
+	RzPVector /*<RzRopConstraint *>*/ *constraints = rz_core_rop_constraint_map_parse(core, argc, argv);
 	if (!constraints) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -829,7 +829,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	bool regexp = input[0] == '/'; // "/c/"
 	bool everyByte = regexp && input[1] == 'a';
 	char tmpbuf[128];
-	char *end_cmd = strchr(input, ' ');
+	const char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[0])) {
 	case 'j':
 		param->outmode = RZ_OUTPUT_MODE_JSON;

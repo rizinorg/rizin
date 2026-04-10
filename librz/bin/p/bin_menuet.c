@@ -150,21 +150,21 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
-	if (ret) {
-		ret->file = rz_str_dup(bf->file);
-		ret->bclass = rz_str_dup("program");
-		ret->rclass = rz_str_dup("menuet");
-		ret->os = rz_str_dup("MenuetOS");
-		ret->arch = rz_str_dup("x86");
-		ret->machine = rz_str_dup(ret->arch);
-		ret->subsystem = rz_str_dup("kolibri");
-		ret->type = rz_str_dup("EXEC");
-		ret->bits = 32;
-		ret->has_va = true;
-		ret->big_endian = 0;
-		ret->dbg_info = 0;
-		ret->dbg_info = 0;
+	if (!ret) {
+		return NULL;
 	}
+	ret->file = rz_str_dup(bf->file);
+	ret->bclass = rz_str_dup("program");
+	ret->rclass = rz_str_dup("menuet");
+	ret->os = rz_str_dup("MenuetOS");
+	ret->arch = rz_str_dup("x86");
+	ret->machine = rz_str_dup(ret->arch);
+	ret->subsystem = rz_str_dup("kolibri");
+	ret->type = rz_str_dup("EXEC");
+	ret->bits = 32;
+	ret->has_va = true;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

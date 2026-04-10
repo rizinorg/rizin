@@ -6,10 +6,6 @@
 #ifndef RZ_ANALYSIS_H
 #define RZ_ANALYSIS_H
 
-/* use old refs and function storage */
-// still required by core in lot of places
-#define USE_VARSUBS 0
-
 #define RZ_ANALYSIS_OP_INVALID_STACKPTR 0
 #define RZ_ANALYSIS_OP_MASK_WILDCARD    0xfffff
 
@@ -34,6 +30,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct rz_analysis_t RzAnalysis;
+typedef struct rz_analysis_bb_t RzAnalysisBlock;
 
 typedef struct {
 	struct rz_analysis_t *analysis;
@@ -383,9 +382,6 @@ typedef struct rz_analysis_switch_obj_t {
 	RzList /*<RzAnalysisCaseOp *>*/ *cases;
 	RzType *enum_type;
 } RzAnalysisSwitchOp;
-
-typedef struct rz_analysis_t RzAnalysis;
-typedef struct rz_analysis_bb_t RzAnalysisBlock;
 
 typedef struct rz_analysis_callbacks_t {
 	int (*on_fcn_new)(RzAnalysis *, void *user, RzAnalysisFunction *fcn);
@@ -1512,6 +1508,7 @@ RZ_API bool rz_analysis_function_was_modified(RZ_NONNULL RzAnalysisFunction *fcn
 
 RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
 RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
+RZ_API RZ_OWN char *rz_analysis_function_name_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *func_name);
 RZ_DEPRECATE RZ_API bool rz_analysis_le_addr_pair_reset(RZ_NONNULL RzAnalysis *analysis);
 
 /* analysis.c */
@@ -2373,7 +2370,7 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable);
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id);
 
-RZ_API RzGraph /*<RzGraphNodeInfo *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
+RZ_API RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_vars(RZ_NONNULL RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *fcn);
@@ -2464,9 +2461,9 @@ RZ_API bool rz_serialize_analysis_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnaly
 RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis);
 RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res);
 
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif
-#endif
+#endif // RZ_ANALYSIS_H

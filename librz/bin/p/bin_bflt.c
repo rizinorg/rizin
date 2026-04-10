@@ -232,9 +232,9 @@ static RzBinInfo *bflt_info(RzBinFile *bf) {
 	info->big_endian = obj->big_endian;
 	info->bits = 32;
 	info->has_va = true;
-	info->dbg_info = 0;
+	info->dbg_info = RZ_BIN_DBG_STRIPPED;
 	info->machine = rz_str_dup("unknown");
-	info->has_pi = true;
+	info->has_pie = true;
 	return info;
 }
 

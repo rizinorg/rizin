@@ -85,7 +85,7 @@ static bool read_xbe_lib(xbe_lib *lib, RzBuffer *b, ut64 off) {
 		rz_buf_read_le16_at(b, off + 8 + sizeof(ut16) * 3, &lib->flags);
 }
 
-static bool check_buffer(RzBuffer *b) {
+static bool xbe_check_buffer(RzBuffer *b) {
 	ut8 magic[4];
 	if (rz_buf_read_at(b, 0, magic, sizeof(magic)) == 4) {
 		return !memcmp(magic, "XBEH", 4);
@@ -93,7 +93,8 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
+static bool xbe_load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
+	ut8 dbg_name[256];
 	rz_bin_xbe_obj_t *obj = RZ_NEW(rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -116,7 +117,10 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 		obj->ep_key = XBE_EP_RETAIL;
 		obj->kt_key = XBE_KP_RETAIL;
 	}
-	o->bin_obj = obj;
+
+	memset(dbg_name, 0, sizeof(dbg_name));
+	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof(dbg_name));
+	obj->dbg_name = rz_str_ndup((char *)dbg_name, sizeof(dbg_name));
 
 	rz_vector_init(&obj->sections, sizeof(xbe_section), NULL, NULL);
 	rz_vector_init(&obj->libs, sizeof(xbe_lib), NULL, NULL);
@@ -141,10 +145,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) 
 		rz_vector_push(&obj->libs, &lib);
 	}
 
+	o->bin_obj = obj;
 	return true;
 }
 
-static void destroy(RzBinFile *bf) {
+static void xbe_destroy(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	if (!obj) {
 		return;
@@ -154,7 +159,7 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+static RzBinAddr *xbe_binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	if (!bf || !bf->buf || type != RZ_BIN_SPECIAL_SYMBOL_MAIN) {
 		return NULL;
 	}
@@ -168,7 +173,7 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return ret;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *xbe_entries(RzBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
 	RzPVector *ret;
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
@@ -188,7 +193,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinAddr *>*/ *sections(RzBinFile *bf) {
+static RzPVector /*<RzBinAddr *>*/ *xbe_sections(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
 	RzPVector *ret = NULL;
@@ -274,7 +279,7 @@ static char *describe_xbe_lib_at(RzBuffer *b, ut64 off, ut64 filesz) {
 	return rz_str_newf("%s %i.%i.%i", name, lib.major, lib.minor, lib.build);
 }
 
-static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
+static RzPVector /*<char *>*/ *xbe_libs(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -301,7 +306,7 @@ static RzPVector /*<char *>*/ *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
+static RzPVector /*<RzBinSymbol *>*/ *xbe_symbols(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h;
 	RzPVector *ret;
@@ -372,36 +377,35 @@ out_error:
 	return NULL;
 }
 
-static RzBinInfo *info(RzBinFile *bf) {
-	rz_bin_xbe_obj_t *obj;
-	RzBinInfo *ret;
-	ut8 dbg_name[256];
+static bool xbe_is_signed(xbe_header *header) {
+	for (size_t i = 0; i < sizeof(header->signature); ++i) {
+		if (header->signature[i] != 0) {
+			return true;
+		}
+	}
+	return false;
+}
 
-	if (!bf || !bf->buf) {
+static RzBinInfo *xbe_info(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 
-	ret = RZ_NEW0(RzBinInfo);
+	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
-	obj = bf->o->bin_obj;
-
-	memset(dbg_name, 0, sizeof(dbg_name));
-	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof(dbg_name));
-	dbg_name[sizeof(dbg_name) - 1] = 0;
-	ret->file = rz_str_dup((char *)dbg_name);
+	ret->file = rz_str_dup(obj->dbg_name);
 	ret->bclass = rz_str_dup("program");
 	ret->machine = rz_str_dup("Microsoft Xbox");
 	ret->os = rz_str_dup("xbox");
 	ret->type = rz_str_dup("Microsoft Xbox executable");
 	ret->arch = rz_str_dup("x86");
-	ret->has_va = 1;
 	ret->bits = 32;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
-	ret->lang = NULL;
+	ret->has_va = true;
+	ret->is_signed = xbe_is_signed(&obj->header);
 	return ret;
 }
 
@@ -617,7 +621,7 @@ static RzStructuredData *xbe_structure(RzBinFile *bf) {
 	return info;
 }
 
-static ut64 baddr(RzBinFile *bf) {
+static ut64 xbe_baddr(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	return obj->header.base;
 }
@@ -627,17 +631,17 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.desc = "Microsoft Xbox XBE (Xbox Executable)",
 	.license = "LGPL3",
 	.author = "LemonBoy",
-	.load_buffer = &load_buffer,
-	.destroy = &destroy,
-	.check_buffer = &check_buffer,
-	.baddr = &baddr,
-	.binsym = &binsym,
-	.entries = &entries,
+	.load_buffer = &xbe_load_buffer,
+	.destroy = &xbe_destroy,
+	.check_buffer = &xbe_check_buffer,
+	.baddr = &xbe_baddr,
+	.binsym = &xbe_binsym,
+	.entries = &xbe_entries,
 	.maps = &rz_bin_maps_of_file_sections,
-	.sections = &sections,
-	.symbols = &symbols,
-	.info = &info,
-	.libs = &libs,
+	.sections = &xbe_sections,
+	.symbols = &xbe_symbols,
+	.info = &xbe_info,
+	.libs = &xbe_libs,
 	.bin_structure = &xbe_structure
 };
 

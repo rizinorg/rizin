@@ -61,7 +61,7 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	if (!uri) {
 		return NULL;
 	}
-	const char *arname = strstr(uri, "://");
+	char *arname = strstr(uri, "://");
 	if (!arname) {
 		goto err;
 	}
