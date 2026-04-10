@@ -1,0 +1,230 @@
+NAME=ebpf analysis
+FILE=bins/bpf/xdp_flowtable.bpf.o
+ARGS=-a bpf -E little
+CMDS=<<EOF
+aaa
+af
+pdf
+ao @ 0x08000338
+ao @ 0x080002e0
+ar
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- section.xdp.frags:
+            ;-- xdp.frags:
+/ int sym.xdp_flowtable_do_lookup(struct xdp_md *ctx);
+|           0x08000040      ldxw  r3, [r1+0x4]                         ; [03] -r-x section size 1192 named xdp.frags
+|           0x08000048      mov   r2, 0x0
+|           0x08000050      stxw  [r10-0x4], r2
+|           0x08000058      mov64 r4, 0x0
+|           0x08000060      stxdw [r10-0x10], r4
+|           0x08000068      stxdw [r10-0x18], r4
+|           0x08000070      stxdw [r10-0x20], r4
+|           0x08000078      stxdw [r10-0x28], r4
+|           0x08000080      stxdw [r10-0x30], r4
+|           0x08000088      stxdw [r10-0x38], r4
+|           0x08000090      stxdw [r10-0x40], r4
+|           0x08000098      stxdw [r10-0x48], r4
+|           0x080000a0      mov64 r4, r10
+|           0x080000a8      add64 r4, 0xffffffb8
+|           0x080000b0      ldxw  r5, [r1+0xc]
+|           0x080000b8      stxw  [r4+0x8], r5
+|           0x080000c0      ldxw  r6, [r1]
+|           0x080000c8      stxw  [r10-0x4c], r2
+|           0x080000d0      mov   r0, 0x1
+|           0x080000d8      mov64 r2, r6
+|           0x080000e0      add64 r2, 0xe
+|       ,=< 0x080000e8      jgt   r2, r3, +0x7e
+|       |   0x080000f0      mov   r0, 0x2
+|       |   0x080000f8      ldxh  r4, [r6+0xc]
+|      ,==< 0x08000100      jeq32 r4, 0xdd86, +0x2c
+|     ,===< 0x08000108      jne32 r4, 0x8, +0x7a
+|     |||   0x08000110      mov64 r4, r6
+|     |||   0x08000118      add64 r4, 0x26
+|    ,====< 0x08000120      jgt   r4, r3, +0x77
+|    ||||   0x08000128      ldxh  r4, [r2+0x6]
+|    ||||   0x08000130      and   r4, 0xff3f
+|   ,=====< 0x08000138      jne32 r4, 0x0, +0x74
+|   |||||   0x08000140      ldxb  r4, [r2]
+|   |||||   0x08000148      and   r4, 0xf
+|  ,======< 0x08000150      jne32 r4, 0x5, +0x71
+|  ||||||   0x08000158      ldxb  r4, [r2+0x8]
+| ,=======< 0x08000160      jlt32 r4, 0x2, +0x6f
+| |||||||   0x08000168      mov64 r4, r6
+| |||||||   0x08000170      add64 r4, 0x22
+| |||||||   0x08000178      ldxb  r5, [r2+0x9]
+| ========< 0x08000180      jne32 r5, 0x6, +0x8
+| |||||||   0x08000188      add64 r6, 0x36
+| ========< 0x08000190      jgt   r6, r3, +0x69
+| |||||||   0x08000198      ldxh  r3, [r4+0xc]
+| |||||||   0x080001a0      and   r3, 0x100
+| ========< 0x080001a8      jne32 r3, 0x0, +0x66
+| |||||||   0x080001b0      ldxh  r3, [r4+0xc]
+| |||||||   0x080001b8      and   r3, 0x400
+| ========< 0x080001c0      jne32 r3, 0x0, +0x63
+| |||||||   ;-- LBB0_11:
+| --------> 0x080001c8      mov64 r3, r10
+| |||||||   0x080001d0      add64 r3, 0xffffffb8
+| |||||||   0x080001d8      mov   r5, 0x2
+| |||||||   0x080001e0      stxb  [r3], r5
+| |||||||   0x080001e8      ldxb  r5, [r2+0x1]
+| |||||||   0x080001f0      stxb  [r3+0xc], r5
+| |||||||   0x080001f8      ldxb  r5, [r2+0x9]
+| |||||||   0x08000200      stxb  [r3+0x1], r5
+| |||||||   0x08000208      ldxh  r5, [r2+0x2]
+| |||||||   0x08000210      be16  r5
+| |||||||   0x08000218      stxh  [r3+0x6], r5
+| |||||||   0x08000220      ldxw  r5, [r2+0xc]
+| |||||||   0x08000228      stxw  [r3+0x10], r5
+| |||||||   0x08000230      ldxw  r2, [r2+0x10]
+| |||||||   0x08000238      stxw  [r3+0x20], r2
+| |||||||   0x08000240      ldxh  r2, [r4]
+| |||||||   0x08000248      stxh  [r3+0x2], r2
+| |||||||   0x08000250      ldxh  r2, [r4+0x2]
+| |||||||   0x08000258      stxh  [r3+0x4], r2
+| ========< 0x08000260      ja    +0x3c
+| |||||||   ;-- LBB0_12:
+| |||||`--> 0x08000268      mov64 r4, r10
+| ||||| |   0x08000270      add64 r4, 0xffffffb8
+| ||||| |   0x08000278      mov64 r5, r6
+| ||||| |   0x08000280      add64 r5, 0x3a
+| |||||,==< 0x08000288      jgt   r5, r3, +0x4a
+| |||||||   0x08000290      ldxb  r5, [r2+0x7]
+| ========< 0x08000298      jlt32 r5, 0x2, +0x48
+| |||||||   0x080002a0      mov64 r5, r6
+| |||||||   0x080002a8      add64 r5, 0x36
+| |||||||   0x080002b0      ldxb  r7, [r2+0x6]
+| ========< 0x080002b8      jne32 r7, 0x6, +0x8
+| |||||||   0x080002c0      add64 r6, 0x4a
+| ========< 0x080002c8      jgt   r6, r3, +0x42
+| |||||||   0x080002d0      ldxh  r3, [r5+0xc]
+| |||||||   0x080002d8      and   r3, 0x100
+| ========< 0x080002e0      jne32 r3, 0x0, +0x3f
+| |||||||   0x080002e8      ldxh  r3, [r5+0xc]
+| |||||||   0x080002f0      and   r3, 0x400
+| ========< 0x080002f8      jne32 r3, 0x0, +0x3c
+| |||||||   ;-- LBB0_18:
+| --------> 0x08000300      mov64 r0, 0x20
+| |||||||   0x08000308      mov64 r3, r4
+| |||||||   0x08000310      add64 r3, r0
+| |||||||   0x08000318      mov64 r0, 0x10
+| |||||||   0x08000320      mov64 r6, r4
+| |||||||   0x08000328      add64 r6, r0
+| |||||||   0x08000330      mov64 r0, r10
+| |||||||   0x08000338      add64 r0, 0xffffffb8
+| |||||||   0x08000340      mov   r7, 0xa
+| |||||||   0x08000348      stxb  [r0], r7
+| |||||||   0x08000350      ldxb  r7, [r2+0x6]
+| |||||||   0x08000358      stxb  [r0+0x1], r7
+| |||||||   0x08000360      ldxh  r7, [r2+0x4]
+| |||||||   0x08000368      be16  r7
+| |||||||   0x08000370      stxh  [r0+0x6], r7
+| |||||||   0x08000378      mov64 r7, 0x8
+| |||||||   0x08000380      mov64 r8, r2
+| |||||||   0x08000388      add64 r8, r7
+| |||||||   0x08000390      ldxw  r7, [r8+0xc]
+| |||||||   0x08000398      stxw  [r6+0xc], r7
+| |||||||   0x080003a0      ldxw  r7, [r8+0x8]
+| |||||||   0x080003a8      stxw  [r6+0x8], r7
+| |||||||   0x080003b0      ldxw  r7, [r8+0x4]
+| |||||||   0x080003b8      stxw  [r6+0x4], r7
+| |||||||   0x080003c0      ldxw  r6, [r2+0x8]
+| |||||||   0x080003c8      stxw  [r4+0x10], r6
+| |||||||   0x080003d0      mov64 r6, 0x18
+| |||||||   0x080003d8      mov64 r7, r2
+| |||||||   0x080003e0      add64 r7, r6
+| |||||||   0x080003e8      ldxw  r6, [r7+0x8]
+| |||||||   0x080003f0      stxw  [r3+0x8], r6
+| |||||||   0x080003f8      ldxw  r6, [r7+0xc]
+| |||||||   0x08000400      stxw  [r3+0xc], r6
+| |||||||   0x08000408      ldxw  r2, [r2+0x18]
+| |||||||   0x08000410      stxw  [r4+0x20], r2
+| |||||||   0x08000418      ldxw  r2, [r7+0x4]
+| |||||||   0x08000420      stxw  [r3+0x4], r2
+| |||||||   0x08000428      ldxh  r2, [r5]
+| |||||||   0x08000430      stxh  [r0+0x2], r2
+| |||||||   0x08000438      ldxh  r2, [r5+0x2]
+| |||||||   0x08000440      stxh  [r0+0x4], r2
+| |||||||   ; CODE XREF from sym.xdp_flowtable_do_lookup @ 0x8000260
+| |||||||   ;-- LBB0_19:
+| --------> 0x08000448      mov64 r2, r10
+| |||||||   0x08000450      add64 r2, 0xffffffb8
+| |||||||   0x08000458      mov64 r3, r10
+| |||||||   0x08000460      add64 r3, 0xfffffffc
+| |||||||   0x08000468      mov   r4, 0x4
+| |||||||   0x08000470      call  -0x1
+| |||||||   0x08000478      mov64 r1, r0
+| |||||||   0x08000480      mov   r0, 0x2
+| ========< 0x08000488      jeq   r1, 0x0, +0xa
+| |||||||   0x08000490      mov64 r2, r10
+| |||||||   0x08000498      add64 r2, 0xffffffb4
+| |||||||   0x080004a0      lddw  r1, 0x0
+| |||||||   0x080004b0      call  0x1                                  ; int xdp_flowtable_do_lookup(struct xdp_md *ctx)
+| |||||||   0x080004b8      mov64 r1, r0
+| |||||||   ; CALL XREF from sym.xdp_flowtable_do_lookup @ 0x80004b0
+| |||||||   0x080004c0      mov   r0, 0x2
+| ========< 0x080004c8      jeq   r1, 0x0, +0x2
+| |||||||   0x080004d0      mov   r2, 0x1
+| |||||||   0x080004d8      aadd  [r1], r2
+| |||||||   ;-- LBB0_22:
+\ ```````-> 0x080004e0      exit
+address: 0x8000338
+opcode: add64 r0, 0xffffffb8
+disasm: add64 r0, 0xffffffb8
+mnemonic: add64
+mask: ffffffffffffffff
+prefix: 0
+id: 18
+bytes: 07000000b8ffffff
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r0"
+    - type: "imm"
+      value: 0xffffffb8
+family: cpu
+address: 0x80002e0
+opcode: jne32 r3, 0x0, +0x3f
+disasm: jne32 r3, 0x0, +0x3f
+mnemonic: jne32
+mask: ff00000000000000
+prefix: 0
+id: 89
+bytes: 56033f0000000000
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "r3"
+    - type: "imm"
+      value: 0x0
+    - type: "off"
+      value: 0x3f
+jump: 0x080004e0
+fail: 0x080002e8
+cond: al
+family: cpu
+pc = 0x0000000000000000
+sp = 0x0000000000000000
+R0 = 0x0000000000000000
+R1 = 0x0000000000000000
+R2 = 0x0000000000000000
+R3 = 0x0000000000000000
+R4 = 0x0000000000000000
+R5 = 0x0000000000000000
+R6 = 0x0000000000000000
+R7 = 0x0000000000000000
+R8 = 0x0000000000000000
+R9 = 0x0000000000000000
+EOF
+RUN
