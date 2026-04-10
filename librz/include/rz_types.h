@@ -25,6 +25,14 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
+#if HAVE___BUILTIN_EXPECT
+#define RZ_LIKELY(x)   __builtin_expect(x, 1)
+#define RZ_UNLIKELY(x) __builtin_expect(x, 0)
+#else
+#define RZ_LIKELY(x)   (x)
+#define RZ_UNLIKELY(x) (x)
+#endif
+
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */

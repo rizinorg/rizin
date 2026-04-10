@@ -15,6 +15,7 @@ on:
     - 'dev'
     - 'stable'
     - 'container-*'
+    - '**'
   pull_request:
     paths:
     - '**.c'

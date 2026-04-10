@@ -5,6 +5,94 @@
 #include <stdio.h>
 #include <rz_util.h>
 
+static void rz_list_pool_free(RzListPool *pool) {
+	if (!pool) {
+		return;
+	}
+	RzListSlab *slab = pool->slabs;
+	while (slab) {
+		RzListSlab *next = slab->next_slab;
+		free(slab);
+		slab = next;
+	}
+	free(pool);
+}
+
+static inline RzListPool *_pool_of(RzList *list) {
+	if (RZ_UNLIKELY(!list)) {
+		return NULL;
+	}
+	return list->pool;
+}
+
+/**
+ * \brief Allocates an RzListIter from the pool, growing by one slab if needed.
+ */
+static inline RzListIter *pool_alloc(RzListPool *pool) {
+	if (RZ_UNLIKELY(!pool)) {
+		return RZ_NEW0(RzListIter);
+	}
+	if (RZ_UNLIKELY(!pool->freelist)) {
+		RzListSlab *slab = RZ_NEW0(RzListSlab);
+		if (!slab) {
+			return NULL;
+		}
+		slab->next_slab = pool->slabs;
+		pool->slabs = slab;
+		for (int i = 0; i < RZ_LIST_SLAB_SIZE - 1; i++) {
+			slab->nodes[i].next = &slab->nodes[i + 1];
+		}
+		slab->nodes[RZ_LIST_SLAB_SIZE - 1].next = NULL;
+		pool->freelist = &slab->nodes[0];
+	}
+	RzListIter *n = pool->freelist;
+	pool->freelist = n->next;
+	n->next = NULL;
+	n->prev = NULL;
+	n->val = NULL;
+	return n;
+}
+
+/**
+ * \brief Returns an RzListIter back to the pool freelist.
+ */
+static inline void pool_free(RzListPool *pool, RzListIter *node) {
+	if (RZ_UNLIKELY(!node)) {
+		return;
+	}
+	if (RZ_UNLIKELY(!pool)) {
+		free(node);
+		return;
+	}
+	node->val = NULL;
+	node->prev = NULL;
+	node->next = pool->freelist;
+	pool->freelist = node;
+}
+
+/**
+ * \brief Returns the RzListIter at position \p n, traversing from whichever
+ *        end is closer. Returns NULL if \p n is out of bounds.
+ **/
+static inline RzListIter *rz_list_iter_at(const RzList *list, ut32 n) {
+	if (n >= list->length) {
+		return NULL;
+	}
+	RzListIter *it;
+	if (n < list->length / 2) {
+		it = list->head;
+		for (ut32 i = 0; i < n; i++) {
+			it = it->next;
+		}
+	} else {
+		it = list->tail;
+		for (ut32 i = list->length - 1; i > n; i--) {
+			it = it->prev;
+		}
+	}
+	return it;
+}
+
 /**
  * \brief returns the value stored in the prev RzList iterator
  *
@@ -100,6 +188,7 @@ RZ_API void rz_list_init(RZ_NONNULL RzList *list) {
 	list->free = NULL;
 	list->length = 0;
 	list->sorted = false;
+	list->pool = RZ_NEW0(RzListPool);
 }
 
 /**
@@ -114,21 +203,23 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 }
 
 static void _list_purge_with_free(RzList *list) {
+	RzListPool *pool = _pool_of(list);
 	RzListIter *it = list->head;
 	RzListFree fn = list->free;
 	while (it) {
 		RzListIter *next = it->next;
 		fn(it->val);
-		free(it);
+		pool_free(pool, it);
 		it = next;
 	}
 }
 
 static void _list_purge_no_free(RzList *list) {
+	RzListPool *pool = _pool_of(list);
 	RzListIter *it = list->head;
 	while (it) {
 		RzListIter *next = it->next;
-		free(it);
+		pool_free(pool, it);
 		it = next;
 	}
 }
@@ -159,6 +250,7 @@ RZ_API void rz_list_free(RZ_NULLABLE RzList *list) {
 		return;
 	}
 	rz_list_purge(list);
+	rz_list_pool_free(list->pool);
 	free(list);
 }
 
@@ -199,7 +291,7 @@ RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter
 		list->free(iter->val);
 	}
 	iter->val = NULL;
-	free(iter);
+	pool_free(_pool_of(list), iter);
 }
 
 /**
@@ -207,24 +299,35 @@ RZ_API void rz_list_delete(RZ_NONNULL RzList *list, RZ_OWN RZ_NONNULL RzListIter
  *
  **/
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2) {
-	rz_return_val_if_fail(list1 && list2, 0);
-
-	if (!(list2->length)) {
+	rz_return_val_if_fail(list1 && list2, false);
+	if (!list2->length) {
 		return false;
 	}
-	if (!(list1->length)) {
-		list1->head = list2->head;
-		list1->tail = list2->tail;
-	} else {
-		list1->tail->next = list2->head;
-		list2->head->prev = list1->tail;
-		list1->tail = list2->tail;
-		list1->tail->next = NULL;
-		list1->sorted = false;
+
+	RzListPool *pool1 = _pool_of(list1);
+	RzListIter *it = list2->head;
+	while (it) {
+		RzListIter *n = pool_alloc(pool1);
+		if (!n) {
+			return false;
+		}
+		n->val = it->val;
+		n->prev = list1->tail;
+		n->next = NULL;
+		if (list1->tail) {
+			list1->tail->next = n;
+		}
+		list1->tail = n;
+		if (!list1->head) {
+			list1->head = n;
+		}
+		list1->length++;
+		it = it->next;
 	}
-	list1->length += list2->length;
-	list2->length = 0;
-	list2->head = list2->tail = NULL;
+
+	list1->sorted = false;
+
+	rz_list_purge(list2);
 	return true;
 }
 
@@ -296,7 +399,7 @@ RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator 
  *
  **/
 RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data) {
-	RzListIter *item = RZ_NEW0(RzListIter);
+	RzListIter *item = pool_alloc(NULL);
 	if (item) {
 		item->val = data;
 	}
@@ -312,7 +415,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 
 	rz_return_val_if_fail(list, NULL);
 
-	item = RZ_NEW(RzListIter);
+	item = pool_alloc(_pool_of(list));
 	if (!item) {
 		return item;
 	}
@@ -338,7 +441,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL 
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data) {
 	rz_return_val_if_fail(list, NULL);
 
-	RzListIter *item = RZ_NEW0(RzListIter);
+	RzListIter *item = pool_alloc(_pool_of(list));
 	if (!item) {
 		return NULL;
 	}
@@ -362,33 +465,30 @@ RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data) {
-	RzListIter *it, *item;
-	ut32 i;
-
 	rz_return_val_if_fail(list, NULL);
-
 	if (!list->head || !n) {
 		return rz_list_prepend(list, data);
 	}
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			item = RZ_NEW(RzListIter);
-			if (!item) {
-				return NULL;
-			}
-			item->val = data;
-			item->next = it;
-			item->prev = it->prev;
-			if (it->prev) {
-				it->prev->next = item;
-			}
-			it->prev = item;
-			list->length++;
-			list->sorted = true;
-			return item;
-		}
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (!it) {
+		return rz_list_append(list, data);
 	}
-	return rz_list_append(list, data);
+	RzListIter *item = pool_alloc(_pool_of(list));
+	if (!item) {
+		return NULL;
+	}
+	item->val = data;
+	item->next = it;
+	item->prev = it->prev;
+	if (it->prev) {
+		it->prev->next = item;
+	} else {
+		list->head = item;
+	}
+	it->prev = item;
+	list->length++;
+	list->sorted = false;
+	return item;
 }
 
 /**
@@ -410,7 +510,7 @@ RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list) {
 			list->tail->next = NULL;
 		}
 		data = iter->val;
-		free(iter);
+		pool_free(_pool_of(list), iter);
 		list->length--;
 	}
 	return data;
@@ -434,7 +534,7 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
 			list->head->prev = NULL;
 		}
 		data = iter->val;
-		free(iter);
+		pool_free(_pool_of(list), iter);
 		list->length--;
 	}
 	return data;
@@ -445,30 +545,13 @@ RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list) {
  *
  **/
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n) {
-	RzListIter *it;
-	ut32 i;
-
 	rz_return_val_if_fail(list, false);
-
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			if (!it->prev && !it->next) {
-				list->head = list->tail = NULL;
-			} else if (!it->prev) {
-				it->next->prev = NULL;
-				list->head = it->next;
-			} else if (!it->next) {
-				it->prev->next = NULL;
-				list->tail = it->prev;
-			} else {
-				it->prev->next = it->next;
-				it->next->prev = it->prev;
-			}
-			rz_list_delete(list, it);
-			return true;
-		}
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (!it) {
+		return false;
 	}
-	return false;
+	rz_list_delete(list, it);
+	return true;
 }
 
 /**
@@ -480,7 +563,7 @@ RZ_API void rz_list_reverse(RZ_NONNULL RzList *list) {
 
 	rz_return_if_fail(list);
 
-	for (it = list->head; it && it->val; it = it->prev) {
+	for (it = list->head; it; it = it->prev) {
 		tmp = it->prev;
 		it->prev = it->next;
 		it->next = tmp;
@@ -523,7 +606,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
 	for (it = list->head; it && it->val && cmp(data, it->val, user) > 0; it = it->next) {
 	}
 	if (it) {
-		item = RZ_NEW0(RzListIter);
+		item = pool_alloc(_pool_of(list));
 		if (!item) {
 			return NULL;
 		}
@@ -549,21 +632,17 @@ RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONN
  *
  **/
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data) {
-	RzListIter *it;
-	ut32 i;
-
 	rz_return_val_if_fail(list, false);
-	for (it = list->head, i = 0; it; it = it->next, i++) {
-		if (i == n) {
-			if (list->free) {
-				list->free(it->val);
-			}
-			it->val = data;
-			list->sorted = false;
-			return true;
-		}
+	RzListIter *it = rz_list_iter_at(list, n);
+	if (!it) {
+		return false;
 	}
-	return false;
+	if (list->free) {
+		list->free(it->val);
+	}
+	it->val = data;
+	list->sorted = false;
+	return true;
 }
 
 /**
@@ -571,20 +650,9 @@ RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data
  *
  **/
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
-	RzListIter *it;
-	ut32 i;
-
 	rz_return_val_if_fail(list, NULL);
-	if (n >= list->length) {
-		return NULL;
-	}
-
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			return it->val;
-		}
-	}
-	return NULL;
+	RzListIter *it = rz_list_iter_at(list, n);
+	return it ? it->val : NULL;
 }
 
 /**
