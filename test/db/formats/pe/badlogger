@@ -21,7 +21,6 @@ baddr    0x00400000
 binsz    0x00003c00
 bintype  pe
 bits     16
-retguard false
 class    PE32
 cmp.csum 0x0000b155
 compiled Sat Aug  8 17:30:59 2015 UTC
@@ -41,20 +40,17 @@ overlay  false
 cc       arm16
 pcalign  2
 rpath    N/A
-signed   false
 subsys   Windows CUI
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
-canary   false
-PIE      true
-RELROCS  false
-NX       true
+canary   true
+pie      true
+relrocs  false
+nx       true
      vaddr      paddr type                        name        
 --------------------------------------------------------------
 0x00001000 0x00000400 IMAGE_REL_BASED_ABSOLUTE    pe_00001000
