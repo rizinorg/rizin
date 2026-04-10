@@ -2928,7 +2928,13 @@ bool MACH0_(has_nx)(struct MACH0_(obj_t) * bin) {
 }
 
 bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
-	return bin->has_pac_sections;
+	if (bin->has_pac_sections) {
+		return true;
+	}
+
+	// if we have arm64e then probably we have ARM PAC support
+	const ut32 subtype = (bin->hdr.cpusubtype & CPU_SUBTYPE_MASK);
+	return bin->hdr.cputype == CPU_TYPE_ARM64 && subtype == CPU_SUBTYPE_ARM64E;
 }
 
 static bool mach0_find_entitlement(const struct MACH0_(obj_t) * bin, const char *key, bool *boolean) {
