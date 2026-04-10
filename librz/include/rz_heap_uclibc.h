@@ -18,6 +18,6 @@ typedef struct heap_free_area {
 	ut64 prev; ///< pointer to previous free area
 } RzHeapFreeAreaUClibc;
 
-RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 
 #endif // RZ_HEAP_UCLIBC_H

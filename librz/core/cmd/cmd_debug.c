@@ -3446,9 +3446,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_signal_option_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_debug_heap_uclibc_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_uclibc_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (!rz_core_is_core_dump(core)) {
 		CMD_CHECK_DEBUG_DEAD(core);
 	}
-	return rz_heap_uclibc_print_handler(core, argc, argv);
+	return rz_heap_uclibc_print_handler(core, argc, argv, state);
 }

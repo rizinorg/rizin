@@ -23523,10 +23523,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_heap_jemalloc_ei_cd = rz_cmd_desc_argv_new(core->rcmd, dmhj_cd, "dmhjei", rz_cmd_debug_heap_jemalloc_ei_handler, &cmd_debug_heap_jemalloc_ei_help);
 	rz_warn_if_fail(cmd_debug_heap_jemalloc_ei_cd);
 
-	RzCmdDesc *dmhu_cd = rz_cmd_desc_group_new(core->rcmd, dmh_cd, "dmhu", rz_cmd_debug_heap_uclibc_handler, &cmd_debug_heap_uclibc_help, &dmhu_help);
+	RzCmdDesc *dmhu_cd = rz_cmd_desc_group_state_new(core->rcmd, dmh_cd, "dmhu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_heap_uclibc_handler, &cmd_debug_heap_uclibc_help, &dmhu_help);
 	rz_warn_if_fail(dmhu_cd);
-	RzCmdDesc *cmd_debug_heap_uclibc_cd = rz_cmd_desc_argv_new(core->rcmd, dmhu_cd, "dmhu", rz_cmd_debug_heap_uclibc_handler, &cmd_debug_heap_uclibc_help);
-	rz_warn_if_fail(cmd_debug_heap_uclibc_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_QUIETEST, rz_cmd_debug_dmi_handler, &cmd_debug_dmi_help, &dmi_help);
 	rz_warn_if_fail(dmi_cd);

@@ -159,6 +159,10 @@ commands:
       - name: dmhu
         summary: Print uClibc heap free list starting at current offset or given address.
         cname: cmd_debug_heap_uclibc
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
