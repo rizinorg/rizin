@@ -4679,7 +4679,7 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 	res->klass = -1;
 	res->offset = UT64_MAX;
 	res->shortcut_w = 0;
-	res->gnode = rz_graph_add_node(g->graph, res, NULL);
+	res->gnode = rz_graph_add_node(g->graph, res);
 	if (RZ_STR_ISNOTEMPTY(res->title) && !g->is_il) {
 		ht_sp_update(g->nodes, res->title, res);
 		char *s, *estr, *b;

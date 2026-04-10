@@ -27,7 +27,7 @@ typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
  * \brief Macro to cast an integer to a void pointer.
  * Useful for graphs which use integers as node data.
  */
-#define RZ_GRAPH_INT_TO_ID(n) ((void *)(utptr)n)
+#define RZ_GRAPH_INT_AS_DATA(n) ((void *)(utptr)n)
 
 typedef enum {
 	RZ_GRAPH_IMPL_LIST,
@@ -40,10 +40,10 @@ RZ_API void rz_graph_free(RzGraph *g);
 RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *node_data, RZ_NULLABLE const void *identifier);
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, RZ_NULLABLE const void *identifier);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *node_data);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data);
 RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
-RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identifier);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 
 // Edges
 RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
@@ -99,7 +99,7 @@ RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGr
 RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph *g);
 RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g);
 RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g);
-RZ_API ut64 rz_graph_node_get_hash_id(RZ_NONNULL const RzGraphNode *node);
+RZ_API ut64 rz_graph_node_get_id(RZ_NONNULL const RzGraphNode *node);
 RZ_API const void *rz_graph_node_get_data(RZ_NONNULL const RzGraphNode *node);
 RZ_API RZ_BORROW void *rz_graph_node_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphNode *node);
 RZ_API void rz_graph_edge_set_data(RZ_NONNULL RZ_BORROW RzGraphEdge *edge, RZ_NULLABLE RZ_OWN void *data);
@@ -109,18 +109,18 @@ RZ_API const RzGraphNode *rz_graph_edge_get_from(RZ_NONNULL const RzGraphEdge *e
 RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edge);
 
 // Node/edge operations by identifier object
-RZ_API bool rz_graph_del_node_by_id(RzGraph *g, const void *identifier);
-RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, const void *from_id, const void *to_id, void *edge_data);
-RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
-RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, const void *from_id, const void *to_id);
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, const void *identifier);
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, const void *identifier);
-RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, const void *identifier);
-RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, const void *identifier);
-RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, const void *identifier, ut64 nth, bool out_neighbor);
+RZ_API bool rz_graph_del_node_by_id(RzGraph *g, ut64 id);
+RZ_API bool rz_graph_add_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id, void *edge_data);
+RZ_API bool rz_graph_del_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API bool rz_graph_has_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, ut64 id);
+RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, ut64 id);
+RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, ut64 id, ut64 nth, bool out_neighbor);
 
 // Graph algorithms
 /**

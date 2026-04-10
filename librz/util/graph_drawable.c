@@ -159,7 +159,7 @@ RZ_API RzGraphNode *rz_graph_add_node_info(RzGraph /*<RzGraphNodeInfo *, None *>
 	if (!data) {
 		return NULL;
 	}
-	RzGraphNode *node = rz_graph_add_node(graph, data, NULL);
+	RzGraphNode *node = rz_graph_add_node(graph, data);
 	if (!node) {
 		rz_graph_free_node_info(data);
 	}
