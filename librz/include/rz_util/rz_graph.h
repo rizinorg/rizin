@@ -99,7 +99,7 @@ RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGr
 RZ_API RzGraphImplType rz_graph_get_impl_type(RZ_NONNULL const RzGraph *g);
 RZ_API ut64 rz_graph_get_n_nodes(RZ_NONNULL const RzGraph *g);
 RZ_API ut64 rz_graph_get_n_edges(RZ_NONNULL const RzGraph *g);
-RZ_API ut64 rz_graph_node_get_id(RZ_NONNULL const RzGraphNode *node);
+RZ_API ut64 rz_graph_node_get_hash_id(RZ_NONNULL const RzGraphNode *node);
 RZ_API const void *rz_graph_node_get_data(RZ_NONNULL const RzGraphNode *node);
 RZ_API RZ_BORROW void *rz_graph_node_get_data_mut(RZ_NONNULL RZ_BORROW RzGraphNode *node);
 RZ_API void rz_graph_edge_set_data(RZ_NONNULL RZ_BORROW RzGraphEdge *edge, RZ_NULLABLE RZ_OWN void *data);

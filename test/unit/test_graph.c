@@ -23,9 +23,9 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq(rz_graph_count_nodes(g), 0, "n_nodes.reset");
 
 	RzGraphNode *gn = rz_graph_add_node(g, (void *)1, (void *)1);
-	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_id(gn)), gn, "get_node.1");
+	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_hash_id(gn)), gn, "get_node.1");
 	RzGraphNode *gn2 = rz_graph_add_node(g, (void *)2, (void *)2);
-	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_id(gn2)), gn2, "get_node.2");
+	mu_assert_ptreq(rz_graph_find_node_by_hashid(g, rz_graph_node_get_hash_id(gn2)), gn2, "get_node.2");
 	rz_graph_add_edge(g, gn, gn2, NULL);
 	mu_assert_true(rz_graph_has_edge(g, gn, gn2), "is_adjacent.1");
 

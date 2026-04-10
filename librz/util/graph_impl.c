@@ -1745,7 +1745,12 @@ RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph /*<NodeType *, EdgeType
 	return NULL;
 }
 
-RZ_API ut64 rz_graph_node_get_id(RZ_NONNULL const RzGraphNode *node) {
+/**
+ * \brief Returns the hash of the node's identifier.
+ * That is either the hash value of the node's identifier or the node itself.
+ * Depending if an identifier was passed to rz_graph_add_node() or not.
+ */
+RZ_API ut64 rz_graph_node_get_hash_id(RZ_NONNULL const RzGraphNode *node) {
 	rz_return_val_if_fail(node, 0);
 	return node->hash_id;
 }

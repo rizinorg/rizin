@@ -128,7 +128,7 @@ static bool test_graph_edge_deletion(void) {
 }
 
 static bool dst_is_n3(const RzGraphEdge *e, void *user) {
-	return rz_graph_node_get_id(rz_graph_edge_get_to(e)) == 3;
+	return rz_graph_node_get_hash_id(rz_graph_edge_get_to(e)) == 3;
 }
 
 static bool test_graph_edge_deletion_multi(void) {
