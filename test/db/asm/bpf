@@ -1,0 +1,50 @@
+d "add r4, 0xe15660e8" 04b497a8e86056e1
+d "ja -0x4f8f" 05c771b0431fb9f5
+d "add64 r6, 0x8bfe09c4" 07760128c409fe8b
+d "add r2, r4" 0c420a4858c4ef37
+d "add64 r9, r0" 0f09405467242f88
+d "sub r9, 0x2a93076f" 14d9bab86f07932a
+d "jeq r10, 0x4db79d1a, +0x389f" 156a9f381a9db74d
+d "lddw r3, 0x2f2ba4d8ffa5f0de" 18a35c14def0a5ff9a7e10eed8a42b2f
+d "sub r3, r7" 1c7368a48b5b931f
+d "jeq r1, r2, +0x4d20" 1d21204de347af1b
+d "ldabsw [skb-0x35e5be26]" 20c70c70da411aca
+d "mul r6, 0x25ecefe3" 24b66966e3efec25
+d "jgt r9, -0x3f758ce7, +0x53da" 2589da5319738ac0
+d "mul64 r1, 0x8c2cabd4" 27b1961dd4ab2c8c
+d "mul r8, r7" 2c7803f6292915fc
+d "jgt r8, r1, -0x2a5" 2d185bfd8f533bf0
+d "ldabsb [skb+0x4b7c6685]" 305ffefc85667c4b
+d "div r6, 0xcbd472e1" 34460000e172d4cb
+d "jge r5, 0x3da1375b, -0x46be" 35a542b95b37a13d
+d "div64 r6, r3" 3f3600007e07597a
+d "ldindw [skb+r9]" 4095c2396be7d7c4
+d "or r6, 0x949202f7" 4416f798f7029294
+d "jset r2, 0x1e2de714, -0xd5e" 4512a2f214e72d1e
+d "or64 r6, 0x4d5804be" 4736f4d5be04584d
+d "or r1, r8" 4c810a66fc3261c4
+d "and r0, 0xfbabe84a" 54400a6a4ae8abfb
+d "jne r9, -0x69374370, -0x7f5d" 55b9a38090bcc896
+d "ldxw r8, [r2-0x124e]" 6128b2edb8cfb5e4
+d "stw [r5-0x1f21], 0x78957d14" 62a5dfe0147d9578
+d "stxw [r7-0x30d1], r7" 63772fcf76b7d3fa
+d "lsh r8, 0xebd29288" 6468c1f48892d2eb
+d "ldxh r4, [r1-0x7139]" 6914c78e0bc1ad69
+d "stxh [r4-0xaa8], r3" 6b3458f5c8279e14
+d "ldxb r0, [r10-0x415]" 71a0ebfb3d6b5845
+d "stb [r2+0x1bc1], 0xdc4a2f25" 72e2c11b252f4adc
+d "rsh r0, 0x3515042f" 74e023232f041535
+d "rsh64 r9, 0x23fa6e3c" 77093aa73c6efa23
+d "ldxdw r9, [r10+0x7b5c]" 79a95c7b161ffb01
+d "stdw [r8+0x46b], 0x7551f076" 7ad86b0476f05175
+d "neg r4" 8414d4af60e14118
+d "call 0x5dbd3d83" 85d3a5e2833dbd5d
+d "exit" 95f2d18353a9099f
+d "mov r1, 0x1f773ff9" b4a10000f93f771f
+d "mov64 r0, 0x992a525b" b77000005b522a99
+d "mov r2, r7" bc720000c98a56d6
+d "mov64 r6, r8" bf860000b26d1403
+d "arsh r6, 0x2bc5687c" c4b6e2e07c68c52b
+d "le64 r3" d4533f0c40000000
+d "be32 r2" dcb2a35020000000
+d "callx r2" 8d00000002000000
