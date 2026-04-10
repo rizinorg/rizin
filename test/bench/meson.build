@@ -22,7 +22,8 @@ if get_option('enable_benchmarks')
     'bitvector',
     'il',
     'ht',
-    'util'
+    'util',
+    'list'
   ]
 
   # Create benchmark executables

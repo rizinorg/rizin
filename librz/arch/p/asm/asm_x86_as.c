@@ -3,11 +3,12 @@
 
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include "../binutils_as.h"
 
 #define ASSEMBLER "RZ_X86_AS"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 #if __i386__ || __x86_64__
 	const char *as = "as";
 #else

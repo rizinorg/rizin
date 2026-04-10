@@ -1192,10 +1192,10 @@ aat
 pdf~bar.
 EOF
 EXPECT=<<EOF
-|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
-|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
+| 0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+| 0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+| 0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+| 0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1216,10 +1216,10 @@ pdf~bar.
 EOF
 EXPECT=<<EOF
 
-|           0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
-|           0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
-|           0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
-|           0x0000001d      48895808       mov   qword [rax+bar.c], rbx
+| 0x00000007      488b5004       mov   rdx, qword [rax+bar.b]
+| 0x0000000b      488b4808       mov   rcx, qword [rax+bar.c]
+| 0x0000000f      483b5004       cmp   rdx, qword [rax+bar.b]
+| 0x0000001d      48895808       mov   qword [rax+bar.c], rbx
 EOF
 RUN
 
@@ -1266,15 +1266,15 @@ aat main
 pdf~Books
 EOF
 EXPECT=<<EOF
-|           ; var struct Books Books @ stack - 0xe8
-|           0x00000684      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x00000695      488910         mov   qword [rax], rdx      ; Books.title[0]
-|           0x00000698      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author[0]
-|           0x000006b0      488d8520ffff.  lea   rax, qword [Books.title]
-|           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject[0]
-|           0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
-|           0x000006d5      b800000000     mov   eax, 0x00             ; Books.subject[0]
+| ; var struct Books Books @ stack - 0xe8
+| 0x00000684      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x00000695      488910         mov   qword [rax], rdx                ; Books.title[0]
+| 0x00000698      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x000006ad      488908         mov   qword [rax], rcx                ; Books.author[0]
+| 0x000006b0      488d8520ffff.  lea   rax, qword [Books.title]
+| 0x000006c5      488930         mov   qword [rax], rsi                ; Books.subject[0]
+| 0x000006c8      66c740086700   mov   word [rax+Books.subject[8]], 0x67 ; 'g'
+| 0x000006d5      b800000000     mov   eax, 0x00                       ; Books.subject[0]
 EOF
 RUN
 
@@ -2079,10 +2079,10 @@ s sym.range_or
 pd 1~ch
 EOF
 EXPECT=<<EOF
-|           ; var int64_t var_ch  { > 0xa} @ stack - 0xc
-|           ; var int64_t var_1ch  { > 0x0 && <= 0x9} @ stack - 0x1c
-|           ; var int64_t var_ch  { > 0x64 && <= 0xc7} @ stack - 0xc
-|           ; var int64_t var_ch  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ stack - 0xc
+| ; var int64_t var_ch  { > 0xa} @ stack - 0xc
+| ; var int64_t var_1ch  { > 0x0 && <= 0x9} @ stack - 0x1c
+| ; var int64_t var_ch  { > 0x64 && <= 0xc7} @ stack - 0xc
+| ; var int64_t var_ch  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ stack - 0xc
 EOF
 RUN
 

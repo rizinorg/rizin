@@ -5,7 +5,7 @@
 
 /*
 	debugesil performs step into + esil conditionals
-	ESIL conditionals can be used to detect when a specific address is
+	esil conditionals can be used to detect when a specific address is
 	accessed, or a register. Those esil conditionals must be evaluated
 	every iteration to ensure the register values are updated. Think
 	in DebugESIL as software-watchpoints.
@@ -24,9 +24,8 @@ RzDebug *dbg = NULL;
 static int has_match = 0;
 static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
-RzList *esil_watchpoints = NULL;
+static RzList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
-#define ESIL dbg->analysis->esil
 
 static int exprmatch(RzDebug *dbg, ut64 addr, const char *expr) {
 	char *e = rz_str_dup(expr);
@@ -210,13 +209,14 @@ RZ_API void rz_debug_esil_prestep(RzDebug *d, int p) {
 
 RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	RzAnalysisOp op = { 0 };
+	RzAnalysisEsil *esil = rz_analysis_get_esil(d->analysis);
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;
-	if (!ESIL) {
-		ESIL = rz_analysis_esil_new(32, true, 64);
+	if (!esil) {
+		esil = rz_analysis_esil_new(32, true, 64);
 		// TODO setup something?
-		if (!ESIL) {
+		if (!esil) {
 			return 0;
 		}
 	}
@@ -228,10 +228,10 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	// dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
 	// dbg->analysis->reg = dbg->reg; // hack
-	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
-	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
-	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
-	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
+	esil->cb.hook_mem_read = &esilbreak_mem_read;
+	esil->cb.hook_mem_write = &esilbreak_mem_write;
+	esil->cb.hook_reg_read = &esilbreak_reg_read;
+	esil->cb.hook_reg_write = &esilbreak_reg_write;
 
 	if (prestep) {
 		// required when a exxpression is like <= == ..
@@ -249,11 +249,11 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 			eprintf("STOP AT 0x%08" PFMT64x "\n", opc);
 			ret = 0;
 		} else {
-			rz_analysis_esil_set_pc(ESIL, opc);
+			rz_analysis_esil_set_pc(esil, opc);
 			eprintf("0x%08" PFMT64x "  %s\n", opc, RZ_STRBUF_SAFEGET(&op.esil));
-			(void)rz_analysis_esil_parse(ESIL, RZ_STRBUF_SAFEGET(&op.esil));
-			// rz_analysis_esil_dumpstack (ESIL);
-			rz_analysis_esil_stack_free(ESIL);
+			(void)rz_analysis_esil_parse(esil, RZ_STRBUF_SAFEGET(&op.esil));
+			// rz_analysis_esil_dumpstack (esil);
+			rz_analysis_esil_stack_free(esil);
 			ret = 1;
 		}
 	}

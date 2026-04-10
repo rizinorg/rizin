@@ -11,6 +11,7 @@ adAeI 16 32 64   arm         BSD     ARM Capstone-based disassembler
 a____ 16 32 64   arm.as      LGPL3   as ARM Assembler (use RZ_ARM32_AS and RZ_ARM64_AS environment) (by pancake)
 adAeI 8 16       avr         LGPL3   Atmel AVR disassembler
 adA_I 16 32 64   bf          LGPL3   Brainfuck (by pancake, nibble) v4.0.0
+_dA__ 32         cbpf        LGPL3   CBPF disassembly plugin
 _dA__ 32         chip8       LGPL3   Chip8 disassembler
 _dA__ 16 32 64   cil         LGPL3   .NET CIL/MSIL (Common Intermediate Language) bytecode disassembler
 _dA__ 16         cr16        LGPL3   CompactRISC CR16 disassembler
@@ -30,7 +31,7 @@ _d___ 32         lanai       GPL3    Google LANAI disassembler
 _d___ 8          lh5801      LGPL3   SHARP LH5801 disassembler
 _d___ 32         lm32        BSD     Lattice Micro 32 ISA disassembler (by Felix Held)
 _dA__ 32 64      loongarch   LGPL3   Loongson LoongArch disassembler
-adA__ 8          luac        LGPL3   Lua bytecode (LUAC) disassembler
+adA__ 32         luac        LGPL3   Lua bytecode (LUAC) disassembler
 _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
 _dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)

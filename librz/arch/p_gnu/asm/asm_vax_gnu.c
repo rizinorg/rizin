@@ -64,7 +64,7 @@ static int generic_fprintf_func(void *stream, void *data, const char *format, ..
 	return ret;
 }
 
-static int vax_gnu_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int vax_gnu_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	VaxContext *ctx = (VaxContext *)a->plugin_data;
 	struct disassemble_info disasm_obj;
 	if (len < 4) {

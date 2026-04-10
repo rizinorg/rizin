@@ -73,11 +73,8 @@ static RZ_OWN RzList /*<RzIOMap *>*/ *core_get_boundaries_generic(RzCore *core, 
  * \return     On success a valid pointer (can be an empty list), otherwise NULL
  */
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_raw(RZ_NONNULL RzCore *core, const RzInterval interval) {
-	rz_return_val_if_fail(core, NULL);
-
-	ut64 size = rz_io_size(core->io);
-	// raw/file is always RWX
-	return core_get_boundaries_generic(core, 0, size, interval, RZ_PERM_RWX);
+	rz_return_val_if_fail(core && core->io, NULL);
+	return rz_io_get_boundaries_raw(core->io, interval);
 }
 
 /**
@@ -235,35 +232,8 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_current_bin_segment
  * \return     On success a valid pointer (can be an empty list), otherwise NULL
  */
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_maps(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask) {
-	rz_return_val_if_fail(core, NULL);
-
-	void **it;
-	RzList *list = NULL;
-	RzPVector *maps = rz_io_maps(core->io);
-
-	// rz_io_map_free does not exist.
-	list = rz_list_newf(free);
-	if (!list) {
-		RZ_LOG_ERROR("core: failed to allocate RzList for io.maps boundaries.\n");
-		return NULL;
-	}
-
-	rz_pvector_foreach (maps, it) {
-		RzIOMap *map = *it;
-		if ((map->perm & perms_mask) != perms) {
-			continue;
-		}
-		if (!(map->perm & RZ_PERM_R)) {
-			RZ_LOG_WARN("Skip adding map '%s' to boundaries, because it is not readable.\n", map->name);
-			continue;
-		}
-		if (!add_interval(core->io, list, map->itv, interval, map->perm)) {
-			rz_list_free(list);
-			return NULL;
-		}
-	}
-
-	return list;
+	rz_return_val_if_fail(core && core->io, NULL);
+	return rz_io_get_boundaries_io_maps(core->io, interval, perms, perms_mask);
 }
 
 /**
@@ -278,31 +248,7 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_maps(RZ_NONNULL 
  */
 RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_get_boundaries_io_skyline(RZ_NONNULL RzCore *core, const RzInterval interval, int perms, int perms_mask) {
 	rz_return_val_if_fail(core, NULL);
-
-	RzList *list = NULL;
-	RzVector *skyline = core->io ? &core->io->map_skyline.v : NULL;
-	size_t skyline_size = skyline ? rz_vector_len(skyline) : 0;
-
-	// rz_io_map_free does not exist.
-	list = rz_list_newf(free);
-	if (!list) {
-		RZ_LOG_ERROR("core: failed to allocate RzList for io.sky boundaries.\n");
-		return NULL;
-	}
-
-	for (size_t i = 0; i < skyline_size; i++) {
-		const RzSkylineItem *item = rz_vector_index_ptr(skyline, i);
-		RzIOMap *map = ((RzIOMap *)item->user);
-		if ((map->perm & perms_mask) != perms) {
-			continue;
-		}
-		if (!add_interval(core->io, list, item->itv, interval, map->perm)) {
-			rz_list_free(list);
-			return NULL;
-		}
-	}
-
-	return list;
+	return rz_io_get_boundaries_io_skyline(core->io, interval, perms, perms_mask);
 }
 
 /**

@@ -203,6 +203,14 @@ ERROR: rz-hash: error, input string is not a number
 EOF
 RUN
 
+NAME=rz-hash -a jenkins -s jenkinshash
+TOOL=rz-hash
+ARGS=-a jenkins -s jenkinshash
+EXPECT=<<EOF
+string: 0x00000000-0x0000000b jenkins: c652f619
+EOF
+RUN
+
 NAME=rz-hash -L
 TOOL=rz-hash
 ARGS=-L
@@ -273,6 +281,8 @@ ____h_ fletcher16     LGPL3      deroad                         Fletcher16 check
 ____h_ fletcher32     LGPL3      deroad                         Fletcher32 checksum
 ____h_ fletcher64     LGPL3      deroad                         Fletcher64 checksum
 ____h_ fletcher8      LGPL3      deroad                         Fletcher8 checksum
+____h_ fnv1a          LGPL3      cheese-cakee                   FNV-1a 32-bit non-cryptographic hash
+____h_ jenkins        LGPL3      shessaanand                    Jenkins non-cryptographic hash
 ____hm keccak-256     BSD-3      Andrey Jivsov                  KECCAK-256 cryptographic hash
 ____hm keccak-384     BSD-3      Andrey Jivsov                  KECCAK-384 cryptographic hash
 ____hm keccak-512     BSD-3      Andrey Jivsov                  KECCAK-512 cryptographic hash
@@ -280,6 +290,9 @@ ____hm md2            LGPL3      swedenspy                      MD2 cryptographi
 ____hm md4            LGPL3      deroad                         MD4 cryptographic hash
 ____hm md5            LGPL2      Alan DeKok                     MD5 cryptographic hash
 ____h_ mod255         LGPL3      deroad                         Modulo 255 checksum
+____h_ murmur3-x64-128 MIT        Austin Appleby                 MurmurHash3 x64 128-bit non-cryptographic hash
+____h_ murmur3-x86-128 MIT        Austin Appleby                 MurmurHash3 x86 128-bit non-cryptographic hash
+____h_ murmur3-x86-32 MIT        Austin Appleby                 MurmurHash3 x86 32-bit non-cryptographic hash
 ____h_ parity         LGPL3      deroad                         Parity checksum
 ____hm sha1           LGPL3      deroad                         SHA-1 cryptographic hash
 ____hm sha256         BSD-3      Aaron D. Gifford               SHA-256 cryptographic hash
@@ -295,6 +308,7 @@ ____h_ temperature    LGPL3      Seva                           Binary temperatu
 ____h_ xor16          LGPL3      deroad                         XOR-16 checksum
 ____h_ xor8           LGPL3      deroad                         XOR-8 checksum
 ____h_ xxhash32       LGPL3      deroad                         xxHash32 non-cryptographic hash
+____h_ xxhash64       LGPL3      cheese-cakee                   xxHash64 non-cryptographic hash
 _D____ ror            LGPL-3     pancake                        Rotate Right symmetric-key block cipher
 __ed__ base85         LGPL-3     Ahmed Ibrahim                  Base85 encoder/decoder
 E_____ rol            LGPL-3     pancake                        Rotate Left symmetric-key block cipher
@@ -746,6 +760,8 @@ string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expect
 string: 0x00000000-0x00000005 fletcher32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher64: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher8: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 fnv1a: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 jenkins: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 keccak-256: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 keccak-384: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 keccak-512: computed hash doesn't match the expected one
@@ -753,6 +769,9 @@ string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 string: 0x00000000-0x00000005 mod255: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x64-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-128: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 murmur3-x86-32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 parity: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha1: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 sha256: computed hash doesn't match the expected one
@@ -768,6 +787,7 @@ string: 0x00000000-0x00000005 temperature: computed hash doesn't match the expec
 string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 xxhash64: computed hash doesn't match the expected one
 EOF
 RUN
 

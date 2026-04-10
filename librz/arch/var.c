@@ -3,11 +3,10 @@
 // SPDX-FileCopyrightText: 2010-2020 oddcoder <ahmedsoliman@oddcoder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
-#include <rz_cons.h>
+#include "analysis_private.h"
 #include <rz_core.h>
-#include <rz_list.h>
+#include <rz_flag.h>
+#include <rz_cons.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
@@ -902,7 +901,7 @@ RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	rz_return_if_fail(var);
 	RzAnalysisFunction *fcn = var->fcn;
-	if (fcn->inst_vars) {
+	if (fcn && fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {

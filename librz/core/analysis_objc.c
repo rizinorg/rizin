@@ -175,7 +175,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	}
 	RzCoreObjc *o = RZ_NEW0(RzCoreObjc);
 	o->core = core;
-	o->word_size = (core->rasm->bits == 64) ? 8 : 4;
+	o->word_size = rz_asm_is_bits(core->rasm, 64) ? 8 : 4;
 	if (o->word_size != 8) {
 		RZ_LOG_WARN("aao is experimental on 32bit binaries\n");
 	}

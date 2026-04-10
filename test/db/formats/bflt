@@ -27,7 +27,6 @@ baddr    0x06908000
 binsz    0x00003134
 bintype  bflt
 bits     32
-retguard false
 class    bflt
 compiler N/A
 dbg_file N/A
@@ -45,18 +44,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   uClinux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 bflt:
   guessed_arch: "arm"
   Magic: "62 46 4c 54                                     |bFLT            |"
@@ -218,7 +215,6 @@ baddr    0x04080000
 binsz    0x00035bcc
 bintype  bflt
 bits     32
-retguard false
 class    bflt
 compiler N/A
 dbg_file N/A
@@ -236,18 +232,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   uClinux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 bflt:
   guessed_arch: "arm"
   Magic: "62 46 4c 54                                     |bFLT            |"
@@ -306,7 +300,6 @@ baddr    0x41e40000
 binsz    0x0002c6b8
 bintype  bflt
 bits     32
-retguard false
 class    bflt
 compiler N/A
 dbg_file N/A
@@ -317,23 +310,23 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  unknown
-minopsz  1
+maxopsz  4
+minopsz  2
 os       Linux
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   uClinux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 bflt:
   guessed_arch: "m68k"
   Magic: "62 46 4c 54                                     |bFLT            |"

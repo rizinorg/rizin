@@ -32,16 +32,6 @@ RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
 }
 
 /**
- * \brief Sets the value stored in the list iterator and returns true if succeeds
- *
- **/
-RZ_API bool rz_list_iter_set_data(RZ_NONNULL RzListIter *iter, RZ_NULLABLE void *data) {
-	rz_return_val_if_fail(iter, false);
-	iter->val = data;
-	return true;
-}
-
-/**
  * \brief swaps the data held by two iterators and returns true if succeeds
  *
  **/
@@ -113,6 +103,26 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 	return list->length;
 }
 
+static void _list_purge_with_free(RzList *list) {
+	RzListIter *it = list->head;
+	RzListFree fn = list->free;
+	while (it) {
+		RzListIter *next = it->next;
+		fn(it->val);
+		free(it);
+		it = next;
+	}
+}
+
+static void _list_purge_no_free(RzList *list) {
+	RzListIter *it = list->head;
+	while (it) {
+		RzListIter *next = it->next;
+		free(it);
+		it = next;
+	}
+}
+
 /**
  * \brief Empties the list without freeing the list pointer
  *
@@ -120,14 +130,14 @@ RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
 RZ_API void rz_list_purge(RZ_NONNULL RzList *list) {
 	rz_return_if_fail(list);
 
-	RzListIter *it = list->head;
-	while (it) {
-		RzListIter *next = it->next;
-		rz_list_delete(list, it);
-		it = next;
+	if (list->free) {
+		_list_purge_with_free(list);
+	} else {
+		_list_purge_no_free(list);
 	}
+	list->head = NULL;
+	list->tail = NULL;
 	list->length = 0;
-	list->head = list->tail = NULL;
 }
 
 /**

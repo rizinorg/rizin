@@ -3,8 +3,7 @@
 // SPDX-FileCopyrightText: 2009-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util.h"
-#include "rz_analysis.h"
+#include "analysis_private.h"
 
 #define VTABLE_BUFF_SIZE 10
 

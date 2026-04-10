@@ -226,7 +226,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		} break;
 		case 'd':
 		case 'D': {
-			char *p = strchr(opt.arg, ':');
+			char *p = (char *)strchr(opt.arg, ':');
 			if (p) {
 				*p = '\0';
 				ut64 n, off = rz_num_math(NULL, opt.arg);
@@ -269,7 +269,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			pattern = opt.arg;
 			break;
 		case 'c': {
-			char *p = strchr(opt.arg, '=');
+			char *p = (char *)strchr(opt.arg, '=');
 			if (p) {
 				*p++ = 0;
 				rz_egg_option_set(egg, opt.arg, p);

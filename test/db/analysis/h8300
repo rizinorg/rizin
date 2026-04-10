@@ -89,8 +89,7 @@ EXPECT=<<EOF
 0x00000834    3 40           dbg.st_led_is_on
 0x0000085c    4 42           dbg.st_led_color
 0x00000886    6 142          dbg.st_ssu_out
-0x00000914    1 31           dbg.st_ssu_out_singleton
-0x00000933    3 63           fcn.00000933
+0x00000914    3 94           dbg.st_ssu_out_singleton
 0x00000972    1 18           dbg.st_init
 offset: 0x00000478
 name: dbg.main
@@ -358,8 +357,7 @@ EXPECT=<<EOF
 0x00000834    3 40           loc._st_led_is_on
 0x0000085c    4 42           loc._st_led_color
 0x00000886    6 142          loc._st_ssu_out
-0x00000914    1 31           loc._st_ssu_out_singleton
-0x00000933    3 63           fcn.00000933
+0x00000914    3 94           loc._st_ssu_out_singleton
 0x00000972    1 18           loc._st_init
 offset: 0x00000478
 name: entry0

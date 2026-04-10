@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_il/rz_il_opbuilder_begin.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include "pic_midrange.h"
 #include "pic_il.inc"
 

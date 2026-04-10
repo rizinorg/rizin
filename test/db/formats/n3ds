@@ -9,7 +9,6 @@ baddr    ----------
 binsz    0x0002d800
 bintype  N/A
 bits     32
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -28,17 +27,15 @@ pcalign  4
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
      paddr    size      vaddr   vsize align perm name             type                    flags 
 ------------------------------------------------------------------------------------------------
 0x00000200 0x17c00 0x18180000 0x17c00   0x0 -rwx sysmodule.arm11  Arm11 SysModule         xdma

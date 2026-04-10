@@ -1350,9 +1350,9 @@ RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const
 // "dmhgt"
 RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, const char **argv);
 // "dmhw"
-RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_heaps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dmhwb"
-RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_cmd_debug_process_heap_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dmhwbf"
 RZ_IPI RzCmdStatus rz_cmd_debug_heap_block_flag_handler(RzCore *core, int argc, const char **argv);
 // "dmhja"
@@ -2123,6 +2123,8 @@ RZ_IPI RzCmdStatus rz_print_instructions_function_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_print_current_block_json_handler(RzCore *core, int argc, const char **argv);
 // "plf"
 RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const char **argv);
+// "plF"
+RZ_IPI RzCmdStatus rz_print_function_rzil_enriched_handler(RzCore *core, int argc, const char **argv);
 // "pp0"
 RZ_IPI RzCmdStatus rz_print_pattern0_handler(RzCore *core, int argc, const char **argv);
 // "pp1"

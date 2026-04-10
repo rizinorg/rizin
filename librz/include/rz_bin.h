@@ -247,6 +247,15 @@ typedef struct rz_bin_file_hash_t {
 	const char *hex;
 } RzBinFileHash;
 
+typedef enum {
+	RZ_BIN_SANITIZER_NONE = 0,
+	RZ_BIN_SANITIZER_GENERIC = (1 << 0),
+	RZ_BIN_SANITIZER_UBSAN = (1 << 1),
+	RZ_BIN_SANITIZER_ASAN = (1 << 2),
+	RZ_BIN_SANITIZER_MSAN = (1 << 3),
+	RZ_BIN_SANITIZER_TSAN = (1 << 4),
+} RzBinSanitizer;
+
 typedef struct rz_bin_info_t {
 	char *file;
 	char *type;
@@ -266,24 +275,28 @@ typedef struct rz_bin_info_t {
 	char *default_cc;
 	RzPVector /*<RzBinFileHash *>*/ *file_hashes;
 	int bits;
-	int has_va;
-	int has_pi; // pic/pie
-	int has_canary;
-	int has_retguard;
-	int has_sanitizers;
-	int has_crypto;
-	int has_nx;
+	bool has_va; ///< Virtual Addressing
+	bool has_pie; ///< Position-independent executable/code
+	bool has_canary; ///< Binary has stack canaries
+	bool is_encrypted; ///< Binary is encrypted fully or partially (Apple FairPlay, encrypted region, etc..)
+	bool is_signed; ///< Binary is digitally signed
+	bool has_nx; ///< Non-Executable Memory/Bit
+	bool has_objc_arc; ///< Automatic Reference Counting (Objective-C's compile-time memory management)
+	bool has_ptr_auth; ///< ARM Pointer Authentication Code
+	bool has_fortify_source; ///< Fortify Source (FORTIFY_SOURCE)
+	bool has_retguard; ///< OpenBSD retguard stack protector
 	bool has_nobtcfi; ///< OpenBSD, linked with -Wl,-z,nobtcfi to opt-out of IBT/BTI
-	int big_endian;
+	ut32 sanitizers; ///< (RzBinSanitizer) Binary was compiled with ASan, TSan, etc..
+	bool big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;
-	int pe_overlay;
-	bool signature;
+	bool pe_overlay;
 	ut64 dbg_info;
 	RzBinHash sum[3];
 	ut64 baddr;
 	char *intrp;
 	char *compiler;
+	HtSS *extra_dict;
 } RzBinInfo;
 
 typedef struct rz_bin_file_load_options_t {
@@ -865,6 +878,7 @@ typedef char *(*RzBinGetName)(RzBin *bin, int type, int idx);
 typedef const RzPVector *(*RzBinGetSections)(RzBinObject *obj);
 typedef RzBinSection *(*RzBinGetSectionAt)(RzBin *bin, ut64 addr);
 typedef char *(*RzBinDemangle)(RzBin *bin, const char *language, const char *mangled);
+typedef RzBinObject *(*RzBinGetObject)(RzBin *bin);
 
 typedef struct rz_bin_bind_t {
 	RzBin *bin;
@@ -873,6 +887,7 @@ typedef struct rz_bin_bind_t {
 	RzBinGetSections get_sections;
 	RzBinGetSectionAt get_vsect_at;
 	RzBinDemangle demangle;
+	RzBinGetObject get_bin_object;
 	ut32 visibility;
 } RzBinBind;
 

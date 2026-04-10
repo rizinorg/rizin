@@ -1174,7 +1174,7 @@ static RZ_OWN char *sh_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
+static int sh_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
 	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		/* fall-thru */
@@ -1196,7 +1196,7 @@ RzAnalysisPlugin rz_analysis_plugin_sh = {
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "sh",
-	.archinfo = archinfo,
+	.archinfo = sh_archinfo,
 	.bits = 32,
 	.op = &sh_op,
 	.get_reg_profile = &sh_get_reg_profile,

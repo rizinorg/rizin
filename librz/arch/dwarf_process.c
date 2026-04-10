@@ -2,11 +2,8 @@
 // SPDX-FileCopyrightText: 2024 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util.h>
-#include <rz_type.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_bin_dwarf.h>
-#include <string.h>
 
 typedef struct {
 	char *c_str;

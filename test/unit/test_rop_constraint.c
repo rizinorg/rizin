@@ -4,6 +4,7 @@
 #include <rz_core.h>
 #include "minunit.h"
 #include <rz_rop.h>
+#include "analysis_private.h"
 
 // Define the register profile string for your architecture
 #define REGISTER_PROFILE_STRING \
@@ -28,7 +29,8 @@
 	"gpr    ebx    .32    40    0\n" \
 	"gpr    bx     .16    40    0\n" \
 	"gpr    bl     .8     40    0\n" \
-	"gpr    bh     .8     41    0\n"
+	"gpr    bh     .8     41    0\n" \
+	"gpr    ecx    .32    44    0\n"
 
 static void setup_rz_core(RzCore *core) {
 	rz_config_set(core->config, "analysis.arch", "x86");
@@ -43,17 +45,17 @@ bool test_parse_reg_to_const(void) {
 
 	// Test case 1: Valid register to constant
 	char str1[] = " eax =    123 ";
-	RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, str1);
+	RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, str1);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_CONST, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
 	mu_assert_null(rop_constraint->args[SRC_REG], "Source register should be NULL");
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "123", "Invalid constant value");
-
 	rz_core_rop_constraint_free(rop_constraint);
+
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
-	rop_constraint = rop_constraint_parse_args(core, str2);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
 	rz_core_rop_constraint_free(rop_constraint);
 
@@ -68,7 +70,7 @@ bool test_parse_reg_to_reg(void) {
 
 	// Test case 1: Valid register to register
 	char str1[] = "eax = ebx  ";
-	RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, str1);
+	RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, str1);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_REG, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
@@ -77,7 +79,7 @@ bool test_parse_reg_to_reg(void) {
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =";
-	rop_constraint = rop_constraint_parse_args(core, str2);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
 	rz_core_rop_constraint_free(rop_constraint);
 
@@ -92,25 +94,24 @@ bool test_parse_reg_op_const(void) {
 
 	// Test case 1: Valid register operation with constant
 	char str1[] = "eax=eax+3";
-	RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, str1);
+	RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, str1);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_CONST, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
 	mu_assert_streq(rop_constraint->args[SRC_REG], "eax", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
 	mu_assert_streq(rop_constraint->args[SRC_CONST], "3", "Invalid constant value");
-
 	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 2: Invalid format
 	char str2[] = "eax=eax+";
-	rop_constraint = rop_constraint_parse_args(core, str2);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
 	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 3: Valid register operation with increment operator
 	char str3[] = "eax++";
-	rop_constraint = rop_constraint_parse_args(core, str3);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str3);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_CONST, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
@@ -121,7 +122,7 @@ bool test_parse_reg_op_const(void) {
 
 	// Test case 4: Valid register operation with decrement operator
 	char str4[] = "eax--";
-	rop_constraint = rop_constraint_parse_args(core, str4);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str4);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_CONST, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
@@ -132,7 +133,7 @@ bool test_parse_reg_op_const(void) {
 
 	// Test case 5: Valid register operation with compound operator
 	char str5[] = "eax  *=   1";
-	rop_constraint = rop_constraint_parse_args(core, str5);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str5);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_CONST, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
@@ -152,32 +153,32 @@ bool test_parse_reg_op_reg(void) {
 
 	// Test case 1: Valid register operation with register
 	char str1[] = "eax=ebx-ecx";
-	RzRopConstraint *rop_constraint = rop_constraint_parse_args(core, str1);
+	RzRopConstraint *rop_constraint = rz_core_rop_constraint_parse_args(core, str1);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_REG, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
 	mu_assert_streq(rop_constraint->args[SRC_REG], "ebx", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[OP], "sub", "Invalid operator");
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ecx", "Invalid destination constant register");
-
 	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 2: Invalid format
 	char str2[] = "eax =  eax+ ";
-	rop_constraint = rop_constraint_parse_args(core, str2);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str2);
 	mu_assert_null(rop_constraint, "parse_reg_constraints failed on invalid input");
+	rz_core_rop_constraint_free(rop_constraint);
 
 	// Test case 3: Valid register operation with register
 	char str3[] = "eax  +=  ebx";
-	rop_constraint = rop_constraint_parse_args(core, str3);
+	rop_constraint = rz_core_rop_constraint_parse_args(core, str3);
 	mu_assert_notnull(rop_constraint, "parse_reg_constraints failed on valid input");
 	mu_assert_eq(rop_constraint->type, MOV_OP_REG, "Invalid constraint type");
 	mu_assert_streq(rop_constraint->args[DST_REG], "eax", "Invalid destination register");
 	mu_assert_streq(rop_constraint->args[SRC_REG], "eax", "Invalid source register");
 	mu_assert_streq(rop_constraint->args[SRC_REG_SECOND], "ebx", "Invalid destination constant register");
 	mu_assert_streq(rop_constraint->args[OP], "add", "Invalid operator");
-
 	rz_core_rop_constraint_free(rop_constraint);
+
 	rz_core_free(core);
 	mu_end;
 }

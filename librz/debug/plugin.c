@@ -17,6 +17,7 @@ RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	rz_return_val_if_fail(dbg, false);
+	const char *arch = RZ_SYS_ARCH;
 	RzDebugPlugin *new_plugin = NULL;
 	if (name) {
 		bool found = false;
@@ -36,18 +37,32 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *name) {
 	if (!dbg->cur) {
 		return true;
 	}
-	if (dbg->analysis && dbg->analysis->cur) {
-		rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits);
+
+	if (dbg->analysis) {
+		arch = rz_analysis_get_arch(dbg->analysis);
 	}
+	rz_debug_set_arch(dbg, arch, dbg->bits);
+
 	dbg->bp->breakpoint = dbg->cur->breakpoint;
 	dbg->bp->user = dbg;
-	if (dbg->cur->init) {
-		dbg->cur->init(dbg, &dbg->plugin_data);
+	if (dbg->cur->init && !dbg->cur->init(dbg, &dbg->plugin_data)) {
+		goto err;
 	}
 	// Syncing the reg profile here may fail if the plugin is not ready, but it should
 	// at least clean up the old RzReg contents.
-	rz_debug_reg_profile_sync(dbg);
+	if (!rz_debug_reg_profile_sync(dbg)) {
+		goto err;
+	}
 	return true;
+
+err:
+	if (dbg->cur && dbg->cur->fini) {
+		dbg->cur->fini(dbg, dbg->plugin_data);
+	}
+	dbg->plugin_data = NULL;
+	dbg->bp->breakpoint = NULL;
+	dbg->cur = NULL;
+	return false;
 }
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RZ_NONNULL RzDebugPlugin *plugin) {

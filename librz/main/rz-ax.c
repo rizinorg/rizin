@@ -184,7 +184,7 @@ static void print_hex_from_base2(char *base2) {
 }
 
 static void print_ascii_table(void) {
-	printf("%s", ret_ascii_table());
+	printf("%s", rz_get_ascii_table());
 }
 
 static int help(void) {

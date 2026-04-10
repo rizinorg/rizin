@@ -3,11 +3,8 @@
 // SPDX-FileCopyrightText: 2010-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util/rz_regex.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_parse.h>
-#include <rz_util.h>
-#include <rz_list.h>
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
@@ -334,16 +331,38 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 	rz_list_free(xrefs);
 }
 
-typedef struct {
-	ut64 op_addr;
-	ut64 leaddr;
-	char *reg;
-} leaddr_pair;
+static void analysis_le_addr_pair_free(RZ_NULLABLE AnalysisLeAddrPair *pair) {
+	if (!pair) {
+		return;
+	}
+	free(pair->reg_name);
+	free(pair);
+}
 
-static void free_leaddr_pair(void *pair) {
-	leaddr_pair *_pair = pair;
-	free(_pair->reg);
-	free(_pair);
+RZ_DEPRECATE RZ_API bool rz_analysis_le_addr_pair_reset(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	rz_list_free(analysis->leaddrs);
+	analysis->leaddrs = rz_list_newf((RzListFree)analysis_le_addr_pair_free);
+	return analysis->leaddrs != NULL;
+}
+
+static bool analysis_le_addr_pair_add(RZ_NONNULL RzAnalysis *analysis, ut64 op_addr, ut64 le_addr, RZ_NULLABLE const char *reg_name) {
+	rz_return_val_if_fail(analysis, false);
+
+	AnalysisLeAddrPair *pair = RZ_NEW(AnalysisLeAddrPair);
+	if (!pair) {
+		return false;
+	}
+	pair->op_addr = op_addr;
+	pair->le_addr = le_addr;
+	pair->reg_name = rz_str_dup(reg_name);
+
+	if (rz_list_append(analysis->leaddrs, pair)) {
+		return true;
+	}
+
+	analysis_le_addr_pair_free(pair);
+	return false;
 }
 
 static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
@@ -460,7 +479,7 @@ static void fcn_takeover_block_recursive(RzAnalysisFunction *fcn, RzAnalysisBloc
 }
 
 static const char *retpoline_reg(RzAnalysis *analysis, ut64 addr) {
-	RzFlagItem *flag = analysis->flag_get(analysis->flb.f, addr);
+	RzFlagItem *flag = analysis->cb.flag_get(analysis->flb.f, addr);
 	if (flag) {
 		const char *token = "x86_indirect_thunk_";
 		const char *thunk = strstr(flag->name, token);
@@ -574,7 +593,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	ut64 len = RZ_MIN(analysis->opt.bb_max_size, RZ_ANALYSIS_BLOCK_MAX_SIZE);
 	ReadAhead read_ahead_cache = { 0 };
 	const int continue_after_jump = analysis->opt.afterjmp;
-	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
 	char *movbasereg = NULL;
 	RzAnalysisBlock *bb = item->block;
@@ -664,12 +682,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	// its entry sp value to our current tracked sp.
 	bb->sp_entry = sp;
 
-	if (!analysis->leaddrs) {
-		analysis->leaddrs = rz_list_newf(free_leaddr_pair);
-		if (!analysis->leaddrs) {
-			RZ_LOG_ERROR("Cannot allocate list of pairs<reg, addr> values.\n");
-			gotoBeach(RZ_ANALYSIS_RET_ERROR);
-		}
+	if (!analysis->leaddrs && !rz_analysis_le_addr_pair_reset(analysis)) {
+		RZ_LOG_ERROR("Cannot allocate list of pairs<reg, addr> values.\n");
+		gotoBeach(RZ_ANALYSIS_RET_ERROR);
 	}
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
@@ -677,7 +692,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool last_is_mov_lr_pc = false;
 	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
-	if (analysis->limit && addr + idx < analysis->limit->from) {
+	if (rz_analysis_has_valid_limits(analysis) && addr + idx < rz_itv_begin(analysis->limit)) {
 		gotoBeach(RZ_ANALYSIS_RET_END);
 	}
 	RzAnalysisFunction *tmp_fcn = rz_analysis_get_fcn_in(analysis, addr, 0);
@@ -690,7 +705,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
 	ut64 movscale = 0;
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
-	int maxlen = len * addrbytes;
+	int maxlen = len;
 	if (is_dalvik) {
 		bool skipAnalysis = false;
 		if (!strncmp(fcn->name, "sym.", 4)) {
@@ -704,7 +719,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
 	}
-	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
+	if ((maxlen - (idx)) > MAX_SCAN_SIZE) {
 		// XXX idx is always 0 here, and maxlen comes from amalysis.bb.maxsize. This makes no sense.
 		RZ_LOG_DEBUG("Skipping large memory region during basic block analysis.\n");
 		maxlen = 0;
@@ -717,11 +732,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			free(last_reg_mov_lea_name);
 			last_reg_mov_lea_name = NULL;
 		}
-		if (analysis->limit && analysis->limit->to <= addr + idx) {
+		if (rz_analysis_has_valid_limits(analysis) && rz_itv_end(analysis->limit) <= addr + idx) {
 			break;
 		}
 	repeat:
-		at_delta = addrbytes * idx;
+		at_delta = idx;
 		at = addr + at_delta;
 		if (rz_cons_is_breaked()) {
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
@@ -883,7 +898,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
-				rz_analysis_block_set_size(bb, (ut64)addrbytes * (ut64)delay.after);
+				rz_analysis_block_set_size(bb, (ut64)delay.after);
 				fcn->ninstr--;
 				RZ_LOG_DEBUG("Correct for branch delay @ 0x%08" PFMT64x " bb.addr=0x%08" PFMT64x " corrected.bb=%" PFMT64u " f.uncorr=%" PFMT64u "\n",
 					addr + idx - oplen, bb->addr, bb->size, rz_analysis_function_linear_size(fcn));
@@ -970,19 +985,15 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			last_is_reg_mov_lea = false;
 			// if first byte in op.ptr is 0xff, then set leaddr assuming its a jumptable
 			if (op.ptr != UT64_MAX) {
-				leaddr_pair *pair = RZ_NEW(leaddr_pair);
-				if (!pair) {
+				const char *reg_name = op.reg;
+				if (!reg_name && op.dst && op.dst->reg) {
+					reg_name = op.dst->reg->name;
+				}
+				// XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
+				if (!analysis_le_addr_pair_add(analysis, op.addr, op.ptr, reg_name)) {
 					RZ_LOG_ERROR("Cannot allocate pair<reg, addr> structure\n");
 					gotoBeach(RZ_ANALYSIS_RET_ERROR);
 				}
-				pair->op_addr = op.addr;
-				pair->leaddr = op.ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
-				pair->reg = op.reg
-					? rz_str_dup(op.reg)
-					: op.dst && op.dst->reg
-					? rz_str_dup(op.dst->reg->name)
-					: NULL;
-				rz_list_append(analysis->leaddrs, pair);
 			}
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
 				fcn->bp_off = -sp - op.src[0]->delta;
@@ -1358,7 +1369,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				} else if (movdisp != UT64_MAX) {
 					ut64 lea_op_off = UT64_MAX;
 					RzListIter *iter;
-					leaddr_pair *pair;
+					AnalysisLeAddrPair *pair;
 					params.jmptbl_off = 0;
 					if (movbasereg) {
 						// find nearest candidate leaddr before op.addr
@@ -1366,9 +1377,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 							if (pair->op_addr >= op.addr) {
 								continue;
 							}
-							if ((lea_op_off == UT64_MAX || lea_op_off > op.addr - pair->op_addr) && pair->reg && !strcmp(movbasereg, pair->reg)) {
+							if ((lea_op_off == UT64_MAX || lea_op_off > op.addr - pair->op_addr) &&
+								pair->reg_name && !strcmp(movbasereg, pair->reg_name)) {
 								lea_op_off = op.addr - pair->op_addr;
-								params.jmptbl_off = pair->leaddr;
+								params.jmptbl_off = pair->le_addr;
 							}
 						}
 					}
