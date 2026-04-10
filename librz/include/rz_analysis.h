@@ -1094,9 +1094,45 @@ typedef struct rz_analysis_plugin_t {
 	RzAnalysisILConfigCB il_config; ///< return an IL config to execute lifted code of the given analysis' arch/cpu/bits
 
 	// Deprecated.
-	bool (*esil_init)(RzAnalysisEsil *esil);
-	bool (*esil_fini)(RzAnalysisEsil *esil);
+	bool (*esil_init)(void *esil);
+	bool (*esil_fini)(void *esil);
 } RzAnalysisPlugin;
+
+typedef enum {
+	RZ_IL_TRACE_OP_READ, ///< read
+	RZ_IL_TRACE_OP_WRITE ///< write
+} RzILTraceOpType;
+
+typedef struct {
+	ut64 addr; ///< memory address
+	RzILTraceOpType behavior; ///< read or write, see RzILTraceOpType enums
+	ut8 data_buf[32]; ///< data either written to or read from
+	int data_len; ///< data length
+} RzILTraceMemOp;
+
+typedef struct {
+	const char *reg_name; ///< name of register
+	RzILTraceOpType behavior; ///< READ or WRITE, see RzILTraceOpType enums
+	ut64 value; ///< data either written to or read from
+} RzILTraceRegOp;
+
+typedef enum {
+	RZ_IL_TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
+	RZ_IL_TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
+	RZ_IL_TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
+	RZ_IL_TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
+} RzILTraceInsOp;
+
+typedef struct rz_il_trace_instruction_t {
+	ut64 addr; ///< Address of instruction
+	ut32 stats; ///< Has write/read to reg/mem ? see RZ_IL_TRACE_INS_HAS_* enums
+
+	RzPVector /*<RzILTraceMemOp *>*/ *write_mem_ops; ///< Vector<RzILTraceMemOp>
+	RzPVector /*<RzILTraceMemOp *>*/ *read_mem_ops; ///< Vector<RzILTraceMemOp>
+
+	RzPVector /*<RzILTraceRegOp *>*/ *write_reg_ops; ///< Vector<RzILTraceRegOp>
+	RzPVector /*<RzILTraceRegOp *>*/ *read_reg_ops; ///< Vector<RzILTraceRegOp>
+} RzILTraceInstruction;
 
 /*----------------------------------------------------------------------------------------------*/
 
@@ -1406,43 +1442,6 @@ RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
 RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op);
-
-/* new trace implementation */
-typedef enum {
-	RZ_IL_TRACE_OP_READ, ///< read
-	RZ_IL_TRACE_OP_WRITE ///< write
-} RzILTraceOpType;
-
-typedef struct {
-	ut64 addr; ///< memory address
-	RzILTraceOpType behavior; ///< read or write, see RzILTraceOpType enums
-	ut8 data_buf[32]; ///< data either written to or read from
-	int data_len; ///< data length
-} RzILTraceMemOp;
-
-typedef struct {
-	const char *reg_name; ///< name of register
-	RzILTraceOpType behavior; ///< READ or WRITE, see RzILTraceOpType enums
-	ut64 value; ///< data either written to or read from
-} RzILTraceRegOp;
-
-typedef enum {
-	RZ_IL_TRACE_INS_HAS_MEM_R = 0x1U, ///< instruction include memory read
-	RZ_IL_TRACE_INS_HAS_MEM_W = 0x2U, ///< instruction include memory write
-	RZ_IL_TRACE_INS_HAS_REG_R = 0x4U, ///< instruction include register read
-	RZ_IL_TRACE_INS_HAS_REG_W = 0x8U ///< instruction include register write
-} RzILTraceInsOp;
-
-typedef struct rz_il_trace_instruction_t {
-	ut64 addr; ///< Address of instruction
-	ut32 stats; ///< Has write/read to reg/mem ? see RZ_IL_TRACE_INS_HAS_* enums
-
-	RzPVector /*<RzILTraceMemOp *>*/ *write_mem_ops; ///< Vector<RzILTraceMemOp>
-	RzPVector /*<RzILTraceMemOp *>*/ *read_mem_ops; ///< Vector<RzILTraceMemOp>
-
-	RzPVector /*<RzILTraceRegOp *>*/ *write_reg_ops; ///< Vector<RzILTraceRegOp>
-	RzPVector /*<RzILTraceRegOp *>*/ *read_reg_ops; ///< Vector<RzILTraceRegOp>
-} RzILTraceInstruction;
 
 /* Independent Trace Functions */
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);

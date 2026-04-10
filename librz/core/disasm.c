@@ -4296,7 +4296,7 @@ static int mymemwrite1(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len)
 }
 
 static int mymemwrite2(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
 	return (addr >= estate->emustack_min && addr < estate->emustack_max);
 }
 
@@ -4332,7 +4332,7 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *siz
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	RzCore *core = esil->core;
+	RzCore *core = esil->pcore;
 	bool big_endian = core ? rz_asm_is_big_endian_set(core->rasm) : false;
 	RzDisasmState *ds = esil->user;
 	if (!ds) {

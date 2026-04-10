@@ -1921,7 +1921,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	rz_analysis_esil_trace_op(esil, op);
+	const char *eexpr = rz_strbuf_get(&op->esil);
+	rz_analysis_esil_trace_op(esil, op->addr, eexpr);
 	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }

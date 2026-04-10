@@ -718,14 +718,15 @@ static bool contains(RzList /*<char *>*/ *list, const char *name) {
 static int mymemwrite(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	RzListIter *iter;
 	RzAnalysisEsilMemoryRegion *n;
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
+	RzCore *core = esil->pcore;
 	RzList *memwrites = estate->memwrites;
 	rz_list_foreach (memwrites, iter, n) {
 		if (addr == n->addr) {
 			return len;
 		}
 	}
-	if (!rz_io_is_valid_offset(esil->core->io, addr, 0)) {
+	if (!rz_io_is_valid_offset(core->io, addr, 0)) {
 		return false;
 	}
 	n = RZ_NEW(RzAnalysisEsilMemoryRegion);
@@ -740,14 +741,15 @@ static int mymemwrite(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) 
 static int mymemread(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzListIter *iter;
 	RzAnalysisEsilMemoryRegion *n;
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
+	RzCore *core = esil->pcore;
 	RzList *memreads = estate->memreads;
 	rz_list_foreach (memreads, iter, n) {
 		if (addr == n->addr) {
 			return len;
 		}
 	}
-	if (!rz_io_is_valid_offset(esil->core->io, addr, 0)) {
+	if (!rz_io_is_valid_offset(core->io, addr, 0)) {
 		return false;
 	}
 	n = RZ_NEW(RzAnalysisEsilMemoryRegion);

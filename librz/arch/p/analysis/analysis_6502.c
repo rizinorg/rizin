@@ -1844,19 +1844,17 @@ static char *_6502_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static bool _6502_esil_init(RzAnalysisEsil *esil) {
-	if (esil->analysis && esil->analysis->reg) { // initial values
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "pc", -1), 0x0000);
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xff);
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "a", -1), 0x00);
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "x", -1), 0x00);
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "y", -1), 0x00);
-		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "flags", -1), 0x00);
+static bool _6502_esil_init(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
+	RzAnalysis *analysis = esil->panalysis;
+	if (analysis && analysis->reg) { // initial values
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "pc", -1), 0x0000);
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "sp", -1), 0xff);
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "a", -1), 0x00);
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "x", -1), 0x00);
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "y", -1), 0x00);
+		rz_reg_set_value(analysis->reg, rz_reg_get(analysis->reg, "flags", -1), 0x00);
 	}
-	return true;
-}
-
-static bool _6502_esil_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
@@ -1904,7 +1902,6 @@ RzAnalysisPlugin rz_analysis_plugin_6502 = {
 	.get_reg_profile = &_6502_get_reg_profile,
 	.esil = true,
 	.esil_init = _6502_esil_init,
-	.esil_fini = _6502_esil_fini,
 	.il_config = _6502_il_config,
 	.archinfo = _6502_archinfo,
 };

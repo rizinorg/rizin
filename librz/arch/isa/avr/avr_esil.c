@@ -1405,9 +1405,10 @@ static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 }
 
 static bool avr_custom_des(RzAnalysisEsil *esil) {
-	if (!esil || !esil->analysis || !esil->analysis->reg) {
+	if (!esil) {
 		return false;
 	}
+
 	ut64 arg;
 	if (!__esil_pop_argument(esil, &arg)) {
 		return false;
@@ -1487,9 +1488,10 @@ static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	ut64 addr, page_size_bits, i;
 
 	// sanity check
-	if (!esil || !esil->analysis || !esil->analysis->reg) {
+	if (!esil || !esil->panalysis) {
 		return false;
 	}
+	RzAnalysis *analysis = esil->panalysis;
 
 	// get target address
 	if (!__esil_pop_argument(esil, &addr)) {
@@ -1497,7 +1499,7 @@ static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	}
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model(esil->analysis->cpu);
+	cpu = get_cpu_model(analysis->cpu);
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align base address to page_size_bits
@@ -1521,9 +1523,10 @@ static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	ut8 r0, r1;
 
 	// sanity check
-	if (!esil || !esil->analysis || !esil->analysis->reg) {
+	if (!esil || !esil->panalysis) {
 		return false;
 	}
+	RzAnalysis *analysis = esil->panalysis;
 
 	// get target address, r0, r1
 	if (!__esil_pop_argument(esil, &addr)) {
@@ -1541,7 +1544,7 @@ static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model(esil->analysis->cpu);
+	cpu = get_cpu_model(analysis->cpu);
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
@@ -1562,9 +1565,10 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 	ut64 addr, page_size_bits, tmp_page;
 
 	// sanity check
-	if (!esil || !esil->analysis || !esil->analysis->reg) {
+	if (!esil || !esil->panalysis) {
 		return false;
 	}
+	RzAnalysis *analysis = esil->panalysis;
 
 	// get target address
 	if (!__esil_pop_argument(esil, &addr)) {
@@ -1573,7 +1577,7 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
-	cpu = get_cpu_model(esil->analysis->cpu);
+	cpu = get_cpu_model(analysis->cpu);
 	page_size_bits = const_get_value(const_by_name(cpu, CPU_CONST_PARAM, "page_size"));
 	rz_analysis_esil_reg_read(esil, "_page", &tmp_page, NULL);
 
@@ -1595,12 +1599,13 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	CPU_MODEL *cpu;
 
-	if (!esil || !esil->analysis) {
+	if (!esil || !esil->panalysis) {
 		return 0;
 	}
+	RzAnalysis *analysis = esil->panalysis;
 
 	// select cpu info
-	cpu = get_cpu_model(esil->analysis->cpu);
+	cpu = get_cpu_model(analysis->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp(name, "pc")) {
@@ -1618,7 +1623,8 @@ static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 
 	return 0;
 }
 
-RZ_IPI bool rz_avr_esil_init(RzAnalysisEsil *esil) {
+RZ_IPI bool rz_avr_esil_init(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
 	if (!esil) {
 		return false;
 	}

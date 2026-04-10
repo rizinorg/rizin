@@ -21,6 +21,7 @@ static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegO
 
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
+	RzAnalysis *analysis = esil->panalysis;
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
@@ -49,11 +50,10 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		RZ_LOG_ERROR("esil: Cannot allocate stack for trace\n");
 		goto error;
 	}
-	esil->analysis->iob.read_at(esil->analysis->iob.io, trace->stack_addr,
-		trace->stack_data, trace->stack_size);
+	analysis->iob.read_at(analysis->iob.io, trace->stack_addr, trace->stack_data, trace->stack_size);
 	// Save initial registers arenas
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzRegArena *a = esil->analysis->reg->regset[i].arena;
+		RzRegArena *a = analysis->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new(a->size);
 		if (!b) {
 			RZ_LOG_ERROR("esil: Cannot allocate register arena for trace\n");
@@ -131,13 +131,14 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		ret = esil->cb.reg_read(esil, name, res, size);
 	}
 	if (ret) {
+		RzAnalysis *analysis = esil->panalysis;
 		// Trace reg read behavior
 		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
 		if (!reg_read) {
 			RZ_LOG_ERROR("failed to init reg read trace\n");
 			return 0;
 		}
-		reg_read->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
+		reg_read->reg_name = rz_str_constpool_get(&analysis->constpool, name);
 		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
 		if (!esil_add_reg_trace(esil->trace, reg_read)) {
@@ -149,6 +150,7 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 
 static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
+	RzAnalysis *analysis = esil->panalysis;
 
 	// add reg write to trace
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
@@ -156,14 +158,14 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 		RZ_LOG_ERROR("failed to init reg write\n");
 		return ret;
 	}
-	reg_write->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
+	reg_write->reg_name = rz_str_constpool_get(&analysis->constpool, name);
 	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
 	if (!esil_add_reg_trace(esil->trace, reg_write)) {
 		RZ_FREE(reg_write);
 	}
 
-	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
+	RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
 	if (esil->esilinterstate->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
@@ -254,7 +256,7 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
  * \param idx int, index of instruction
  * \return RzILTraceInstruction *, instruction trace at index
  */
-RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx) {
+RZ_API RZ_BORROW void /*RzILTraceInstruction*/ *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx) {
 	rz_return_val_if_fail(etrace, NULL);
 	if (idx < 0 || idx >= rz_pvector_len(etrace->instructions)) {
 		return NULL;
@@ -262,10 +264,9 @@ RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ
 	return rz_pvector_at(etrace->instructions, idx);
 }
 
-RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysisOp *op) {
-	rz_return_if_fail(esil && op);
-	const char *expr = rz_strbuf_get(&op->esil);
-	if (RZ_STR_ISEMPTY(expr)) {
+RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE const char *esil_expr) {
+	rz_return_if_fail(esil);
+	if (RZ_STR_ISEMPTY(esil_expr)) {
 		// do nothing
 		return;
 	}
@@ -288,11 +289,12 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	esil->esilinterstate->callbacks = esil->cb;
 	esil->esilinterstate->callbacks_set = true;
 
-	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
+	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(pc);
 	rz_pvector_push(esil->trace->instructions, instruction);
 
-	RzRegItem *pc_ri = rz_reg_get(esil->analysis->reg, "PC", -1);
-	add_reg_change(esil->trace, esil->trace->idx, pc_ri, op->addr);
+	RzAnalysis *analysis = esil->panalysis;
+	RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
+	add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
 	/* set hooks */
 	esil->verbose = 0;
 	esil->cb.hook_reg_read = trace_hook_reg_read;
@@ -301,7 +303,7 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 
 	/* evaluate esil expression */
-	rz_analysis_esil_parse(esil, expr);
+	rz_analysis_esil_parse(esil, esil_expr);
 	rz_analysis_esil_stack_free(esil);
 	/* restore hooks */
 	esil->cb = esil->esilinterstate->callbacks;
@@ -319,8 +321,9 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 
 	rz_vector_upper_bound(vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
 	if (index > 0 && index <= vmem->len) {
+		RzAnalysis *analysis = esil->panalysis;
 		RzAnalysisEsilMemChange *c = rz_vector_index_ptr(vmem, index - 1);
-		esil->analysis->iob.write_at(esil->analysis->iob.io, key, &c->data, 1);
+		analysis->iob.write_at(analysis->iob.io, key, &c->data, 1);
 	}
 	return true;
 }
@@ -331,8 +334,9 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 	if (vreg) {
 		rz_vector_upper_bound(vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
+			RzAnalysis *analysis = esil->panalysis;
 			RzAnalysisEsilRegChange *c = rz_vector_index_ptr(vreg, index - 1);
-			rz_reg_set_value(esil->analysis->reg, ri, c->data);
+			rz_reg_set_value(analysis->reg, ri, c->data);
 		}
 	}
 	return true;
@@ -341,26 +345,27 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	rz_return_if_fail(esil);
 	size_t i;
+	RzAnalysis *analysis = esil->panalysis;
 	RzAnalysisEsilTrace *trace = esil->trace;
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			RzRegArena *a = esil->analysis->reg->regset[i].arena;
+			RzRegArena *a = analysis->reg->regset[i].arena;
 			RzRegArena *b = trace->arena[i];
 			if (a && b) {
 				memcpy(a->bytes, b->bytes, a->size);
 			}
 		}
 		// Restore initial stack memory
-		esil->analysis->iob.write_at(esil->analysis->iob.io, trace->stack_addr,
+		analysis->iob.write_at(analysis->iob.io, trace->stack_addr,
 			trace->stack_data, trace->stack_size);
 	}
 	// Apply latest changes to registers and memory
 	esil->trace->idx = idx;
 	RzListIter *iter;
 	RzRegItem *ri;
-	rz_list_foreach (esil->analysis->reg->allregs, iter, ri) {
+	rz_list_foreach (analysis->reg->allregs, iter, ri) {
 		restore_register(esil, ri, idx);
 	}
 	ht_up_foreach(trace->memory, restore_memory_cb, esil);
