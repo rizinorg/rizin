@@ -111,6 +111,21 @@ typedef struct rz_analysis_esil_callbacks_t {
 	int (*reg_write)(RzAnalysisEsil *esil, const char *name, ut64 val);
 } RzAnalysisEsilCallbacks;
 
+/* During the analysis RzAnalysisEsil could be reset multiple times,
+ * thus there is a need to preserve some values between those runs.
+ */
+typedef struct rz_analysis_esil_inter_state_t {
+	bool analysis_stop;
+	ut64 last_read;
+	ut64 last_data;
+	ut64 emustack_min;
+	ut64 emustack_max;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memreads;
+	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memwrites;
+	RzAnalysisEsilCallbacks callbacks;
+	bool callbacks_set;
+} RzAnalysisEsilInterState;
+
 struct rz_analysis_esil_t {
 	RzCore *core;
 	RzAnalysis *analysis;
@@ -163,22 +178,8 @@ struct rz_analysis_esil_t {
 	void *user;
 	int stack_fd; // ahem, let's not do this
 	bool in_cmd_step;
+	RzAnalysisEsilInterState *esilinterstate;
 };
-
-/* During the analysis RzAnalysisEsil could be reset multiple times,
- * thus there is a need to preserve some values between those runs.
- */
-typedef struct rz_analysis_esil_inter_state_t {
-	bool analysis_stop;
-	ut64 last_read;
-	ut64 last_data;
-	ut64 emustack_min;
-	ut64 emustack_max;
-	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memreads;
-	RzList /*<RzAnalysisEsilMemoryRegion *>*/ *memwrites;
-	RzAnalysisEsilCallbacks callbacks;
-	bool callbacks_set;
-} RzAnalysisEsilInterState;
 
 /* Alias RegChange and MemChange */
 typedef RzAnalysisEsilRegChange RzAnalysisRzilRegChange;

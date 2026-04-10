@@ -98,6 +98,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	rz_analysis_esil_interrupts_init(esil);
 	esil->addrmask = genmask(addrsize - 1);
 	rz_strbuf_init(&esil->current_opstr);
+	esil->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
 	return esil;
 }
 
@@ -169,6 +170,7 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	free(esil->cmd_step);
 	free(esil->cmd_step_out);
 	free(esil->cmd_ioer);
+	free(esil->esilinterstate);
 	free(esil);
 }
 

@@ -121,10 +121,10 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		// RZ_LOG_WARN("Register not found in profile\n");
 		return 0;
 	}
-	if (esil->analysis->esilinterstate->callbacks.hook_reg_read) {
+	if (esil->esilinterstate->callbacks.hook_reg_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = esil->analysis->esilinterstate->callbacks;
-		ret = esil->analysis->esilinterstate->callbacks.hook_reg_read(esil, name, res, size);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_reg_read(esil, name, res, size);
 		esil->cb = cbs;
 	}
 	if (!ret && esil->cb.reg_read) {
@@ -165,10 +165,10 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 
 	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
-	if (esil->analysis->esilinterstate->callbacks.hook_reg_write) {
+	if (esil->esilinterstate->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = esil->analysis->esilinterstate->callbacks;
-		ret = esil->analysis->esilinterstate->callbacks.hook_reg_write(esil, name, val);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_reg_write(esil, name, val);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -201,10 +201,10 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 		RZ_FREE(mem_read);
 	}
 
-	if (esil->analysis->esilinterstate->callbacks.hook_mem_read) {
+	if (esil->esilinterstate->callbacks.hook_mem_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = esil->analysis->esilinterstate->callbacks;
-		ret = esil->analysis->esilinterstate->callbacks.hook_mem_read(esil, addr, buf, len);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_mem_read(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -239,10 +239,10 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
 
-	if (esil->analysis->esilinterstate->callbacks.hook_mem_write) {
+	if (esil->esilinterstate->callbacks.hook_mem_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = esil->analysis->esilinterstate->callbacks;
-		ret = esil->analysis->esilinterstate->callbacks.hook_mem_write(esil, addr, buf, len);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_mem_write(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -282,11 +282,11 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	}
 	/* save old callbacks */
 	int esil_verbose = esil->verbose;
-	if (esil->analysis->esilinterstate->callbacks_set) {
+	if (esil->esilinterstate->callbacks_set) {
 		RZ_LOG_ERROR("esil: Cannot call recursively\n");
 	}
-	esil->analysis->esilinterstate->callbacks = esil->cb;
-	esil->analysis->esilinterstate->callbacks_set = true;
+	esil->esilinterstate->callbacks = esil->cb;
+	esil->esilinterstate->callbacks_set = true;
 
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
 	rz_pvector_push(esil->trace->instructions, instruction);
@@ -304,8 +304,8 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 	rz_analysis_esil_parse(esil, expr);
 	rz_analysis_esil_stack_free(esil);
 	/* restore hooks */
-	esil->cb = esil->analysis->esilinterstate->callbacks;
-	esil->analysis->esilinterstate->callbacks_set = false;
+	esil->cb = esil->esilinterstate->callbacks;
+	esil->esilinterstate->callbacks_set = false;
 	esil->verbose = esil_verbose;
 	/* increment idx */
 	esil->trace->idx++;
