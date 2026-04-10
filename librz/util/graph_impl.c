@@ -13,6 +13,7 @@ typedef struct rz_graph_list_edge_impl_t {
 
 typedef struct rz_graph_matrix_edge_impl_t {
 	RzGraphEdge **matrix; // index by matrix[from_vec_id][to_vec_id]
+	RzVector *edge_offsets; ///< Stores the offsets into the matrix where edges are present.
 	ut64 capacity;
 } RzGraphMatrixImpl;
 
@@ -140,6 +141,17 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	return true;
 }
 
+static void remove_free_edge_list(RzGraph *g, RzPVector *edges, size_t index, bool free_data) {
+	RzGraphEdge *e = rz_pvector_at(edges, index);
+	// free user data
+	if (free_data && g->edge_data_free && e->data) {
+		g->edge_data_free(e->data);
+	}
+	e->data = NULL;
+	edge_free(e);
+	rz_pvector_remove_at(edges, index);
+}
+
 /**
  * \brief Delete a directed edge (from -> to) in the adjacency list implementation.
  *
@@ -165,27 +177,54 @@ static bool rz_graph_list_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	if (eid == -1) {
 		return false;
 	}
-	RzGraphEdge *oe = rz_pvector_at(out_vec, eid);
-	// free user data
-	if (g->edge_data_free && oe->data) {
-		g->edge_data_free(oe->data);
-	}
-	oe->data = NULL;
-	edge_free(oe);
-	rz_pvector_remove_at(out_vec, eid);
+	remove_free_edge_list(g, out_vec, eid, true);
 
 	// remove in edge
 	RzPVector /*<RzGraphEdge *>*/ *in_vec = ht_up_find(impl->in_edges, to->hash_id, &found);
 	if (found && in_vec) {
 		eid = edge_vec_find_eid(in_vec, from, to);
 		if (eid != -1) {
-			RzGraphEdge *ie = rz_pvector_at(in_vec, eid);
-			ie->data = NULL;
-			edge_free(ie);
-			rz_pvector_remove_at(in_vec, eid);
+			remove_free_edge_list(g, in_vec, eid, false);
 		}
 	}
 
+	return true;
+}
+
+static bool rz_graph_list_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, false);
+	RzGraphListImpl *impl = g->impl;
+	RzIterator *iter = ht_up_as_iter(impl->in_edges);
+	size_t removed = 0;
+	RzPVector **node_in_edges;
+	rz_iterator_foreach(iter, node_in_edges) {
+		size_t i = 0;
+		while (i < rz_pvector_len(*node_in_edges)) {
+			RzGraphEdge *edge = rz_pvector_at(*node_in_edges, i);
+			if (cb && !cb(edge, cb_data)) {
+				++i;
+				continue;
+			}
+			remove_free_edge_list(g, *node_in_edges, i, true);
+			removed++;
+		}
+	}
+	rz_iterator_free(iter);
+
+	iter = ht_up_as_iter(impl->out_edges);
+	RzPVector **node_out_edges;
+	rz_iterator_foreach(iter, node_out_edges) {
+		size_t i = 0;
+		while (i < rz_pvector_len(*node_out_edges)) {
+			if (cb && !cb(rz_pvector_at(*node_out_edges, i), cb_data)) {
+				++i;
+				continue;
+			}
+			remove_free_edge_list(g, *node_out_edges, i, false);
+		}
+	}
+	rz_iterator_free(iter);
+	g->n_edges -= removed;
 	return true;
 }
 
@@ -531,7 +570,7 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 
 	RzGraphEdge **new_matrix = RZ_NEWS0(RzGraphEdge *, new_cap * new_cap);
 	if (!new_matrix) {
-		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u, new_cap);
+		RZ_LOG_WARN("Failed to adjust matrix capacity to %" PFMT64u "\n", new_cap);
 		return false;
 	}
 
@@ -546,6 +585,15 @@ static bool rz_graph_matrix_impl_require_capacity(RzGraphMatrixImpl *impl, ut64 
 	impl->matrix = new_matrix;
 	impl->capacity = new_cap;
 	return true;
+}
+
+static int cmp(ut64 *a, ut64 *b, void *user) {
+	if (*a < *b) {
+		return -1;
+	} else if (*a > *b) {
+		return 1;
+	}
+	return 0;
 }
 
 /**
@@ -572,7 +620,33 @@ static bool rz_graph_matrix_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 	if (!e) {
 		return false;
 	}
+	ut64 ptr_off = cell - impl->matrix;
+	rz_vector_insert_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
 	*cell = e;
+	return true;
+}
+
+static bool rz_graph_matrix_impl_del_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, false);
+	RzGraphMatrixImpl *impl = g->impl;
+	size_t i = 0;
+	while (i < rz_vector_len(impl->edge_offsets)) {
+		ut64 *cell_offset = rz_vector_index_ptr(impl->edge_offsets, i);
+		RzGraphEdge **cell = impl->matrix + *cell_offset;
+		if (cb && !cb(*cell, cb_data)) {
+			i++;
+			continue;
+		}
+		if (g->edge_data_free) {
+			g->edge_data_free(*cell);
+		}
+		ut64 ptr_off = cell - impl->matrix;
+		size_t i = rz_vector_find_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
+		rz_vector_remove_at(impl->edge_offsets, i, NULL);
+		edge_free(*cell);
+		*cell = NULL;
+		g->n_edges--;
+	}
 	return true;
 }
 
@@ -599,6 +673,10 @@ static bool rz_graph_matrix_impl_del_edge(RzGraph /*<NodeType *, EdgeType *>*/ *
 	if (g->edge_data_free && (*cell)->data) {
 		g->edge_data_free((*cell)->data);
 	}
+	ut64 ptr_off = cell - impl->matrix;
+	size_t i = rz_vector_find_sorted(impl->edge_offsets, &ptr_off, (RzVectorComparator)cmp, NULL);
+	rz_vector_remove_at(impl->edge_offsets, i, NULL);
+
 	edge_free(*cell);
 	*cell = NULL;
 	return true;
@@ -819,6 +897,7 @@ static void rz_matrix_fini(void *impl) {
 		}
 	}
 	free(matrix_impl->matrix);
+	rz_vector_free(matrix_impl->edge_offsets);
 	free(matrix_impl);
 }
 
@@ -837,9 +916,10 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 		return NULL;
 	}
 	impl->capacity = capacity ? capacity : MATRIX_DEFAULT_CAPACITY;
+	impl->edge_offsets = rz_vector_new(sizeof(RzGraphEdge *), NULL, NULL);
 	impl->matrix = RZ_NEWS0(RzGraphEdge *, impl->capacity * impl->capacity);
-	if (!impl->matrix) {
-		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u, impl->capacity)
+	if (!impl->matrix || !impl->edge_offsets) {
+		RZ_LOG_WARN("Failed to init graph matrix with capacity %" PFMT64u "\n", impl->capacity)
 		rz_matrix_fini(impl);
 		return NULL;
 	}
@@ -850,6 +930,7 @@ static RzGraphMatrixImpl *rz_graph_matrix_impl_init(ut64 capacity) {
 static const RzGraphImplOps list_impl_ops = {
 	.add_edge = rz_graph_list_impl_add_edge,
 	.del_edge = rz_graph_list_impl_del_edge,
+	.del_edges = rz_graph_list_impl_del_edges,
 	.has_edge = rz_graph_list_impl_has_edge,
 	.find_edge = rz_graph_list_impl_find_edge,
 	.get_out_edges = rz_graph_list_impl_get_out_edges,
@@ -862,6 +943,7 @@ static const RzGraphImplOps list_impl_ops = {
 static const RzGraphImplOps matrix_impl_ops = {
 	.add_edge = rz_graph_matrix_impl_add_edge,
 	.del_edge = rz_graph_matrix_impl_del_edge,
+	.del_edges = rz_graph_matrix_impl_del_edges,
 	.has_edge = rz_graph_matrix_has_edge,
 	.find_edge = rz_graph_matrix_find_edge,
 	.get_out_edges = rz_graph_matrix_impl_get_out_edges,
@@ -1184,19 +1266,19 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	case RZ_GRAPH_IMPL_LIST:
 		g->impl = rz_graph_list_impl_init();
 		if (!g->impl) {
-			RZ_LOG_WARN("Failed to reset, clear data only");
+			RZ_LOG_WARN("Failed to reset, clear data only\n");
 			return;
 		}
 		break;
 	case RZ_GRAPH_IMPL_MATRIX:
 		g->impl = rz_graph_matrix_impl_init(MATRIX_DEFAULT_CAPACITY);
 		if (!g->impl) {
-			RZ_LOG_WARN("Failed to reset, clear data only");
+			RZ_LOG_WARN("Failed to reset, clear data only\n");
 			return;
 		}
 		break;
 	default:
-		RZ_LOG_WARN("Unknown graph impl type %d, failed to reset, clear data only", g->impl_type);
+		RZ_LOG_WARN("Unknown graph impl type %d, failed to reset, clear data only\n", g->impl_type);
 	}
 }
 
@@ -1304,13 +1386,13 @@ RZ_API bool rz_graph_del_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN Rz
 	bool found = false;
 	ht_up_find(g->nodes, node->hash_id, &found);
 	if (!found) {
-		RZ_LOG_WARN("Node not exist, failed to delete");
+		RZ_LOG_WARN("Node not exist, failed to delete\n");
 		return false;
 	}
 
 	// dispatch to impl to maintain edge data struct if needed
 	if (!g->impl_ops->del_node(g, node)) {
-		RZ_LOG_WARN("Impl failed to delete node, failed to delete");
+		RZ_LOG_WARN("Impl failed to delete node, failed to delete\n");
 		return false;
 	}
 
@@ -1705,6 +1787,19 @@ RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *
 RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(RZ_NONNULL const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 	rz_return_val_if_fail(g, NULL);
 	return g->node_vec;
+}
+
+/**
+ * \brief Delete all edges for which \p cb returns true.
+ * If \p cb is NULL, it will delete all edges in the graph.
+ *
+ * \param g The graph.
+ * \param cb The callback to decide which edge to delete. Can be NULL if all edges should be deleted.
+ * \return True if deletion was successful or no edge was deleted. False in case of failure.
+ */
+RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+	rz_return_val_if_fail(g, false);
+	return g->impl_ops->del_edges(g, cb, cb_data);
 }
 
 /**

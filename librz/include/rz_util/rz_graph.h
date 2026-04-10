@@ -21,6 +21,7 @@ typedef struct rz_graph_impl_ops_t RzGraphImplOps;
 typedef ut64 (*RzGraphIdentifierHash)(RZ_NULLABLE const void *data);
 typedef void (*RzGraphNodeDataFree)(void *data);
 typedef void (*RzGraphEdgeDataFree)(void *data);
+typedef bool (*RzGraphEdgeChooser)(const RzGraphEdge *data, void *cb_data);
 
 /**
  * \brief Macro to cast an integer to a void pointer.
@@ -47,6 +48,7 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, const void *identif
 // Edges
 RZ_API bool rz_graph_add_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to, void *edge_data);
 RZ_API bool rz_graph_del_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
+RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data);
 RZ_API bool rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 

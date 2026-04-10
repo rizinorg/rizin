@@ -127,6 +127,41 @@ static bool test_graph_edge_deletion(void) {
 	mu_end;
 }
 
+static bool dst_is_n3(const RzGraphEdge *e, void *user) {
+	return rz_graph_node_get_id(rz_graph_edge_get_to(e)) == 3;
+}
+
+static bool test_graph_edge_deletion_multi(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
+
+	RzGraphNode *n1 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(1), RZ_GRAPH_INT_TO_ID(1));
+	RzGraphNode *n2 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(2), RZ_GRAPH_INT_TO_ID(2));
+	RzGraphNode *n3 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(3), RZ_GRAPH_INT_TO_ID(3));
+	RzGraphNode *n4 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(4), RZ_GRAPH_INT_TO_ID(4));
+
+	rz_graph_add_edge(g, n1, n2, NULL);
+	rz_graph_add_edge(g, n1, n3, NULL);
+	rz_graph_add_edge(g, n1, n4, NULL);
+	rz_graph_add_edge(g, n2, n3, NULL);
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
+
+	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
+	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
+
+	bool has_edge = rz_graph_has_edge(g, n1, n2);
+	mu_assert_true(has_edge, "has_edge.1->2.exists");
+	has_edge = rz_graph_has_edge(g, n1, n4);
+	mu_assert_true(has_edge, "has_edge.1->4.exists");
+
+	success = rz_graph_del_edges(g, NULL, NULL);
+	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // Test out-edges iterator
 static bool test_graph_in_out_edges(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash, NULL, NULL);
@@ -535,6 +570,37 @@ static bool test_graph_edge_deletion_matrix(void) {
 	mu_end;
 }
 
+static bool test_graph_edge_deletion_multi_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
+
+	RzGraphNode *n1 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(1), RZ_GRAPH_INT_TO_ID(1));
+	RzGraphNode *n2 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(2), RZ_GRAPH_INT_TO_ID(2));
+	RzGraphNode *n3 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(3), RZ_GRAPH_INT_TO_ID(3));
+	RzGraphNode *n4 = rz_graph_add_node(g, RZ_GRAPH_INT_TO_ID(4), RZ_GRAPH_INT_TO_ID(4));
+
+	rz_graph_add_edge(g, n1, n2, NULL);
+	rz_graph_add_edge(g, n1, n3, NULL);
+	rz_graph_add_edge(g, n1, n4, NULL);
+	rz_graph_add_edge(g, n2, n3, NULL);
+	mu_assert_eq(rz_graph_count_edges(g), 4, "n_edges.initial");
+
+	bool success = rz_graph_del_edges(g, dst_is_n3, NULL);
+	mu_assert_true(success, "del_edge x->3");
+	mu_assert_eq(rz_graph_count_edges(g), 2, "n_edges.after_del");
+
+	bool has_edge = rz_graph_has_edge(g, n1, n2);
+	mu_assert_true(has_edge, "has_edge.1->2.exists");
+	has_edge = rz_graph_has_edge(g, n1, n4);
+	mu_assert_true(has_edge, "has_edge.1->4.exists");
+
+	success = rz_graph_del_edges(g, NULL, NULL);
+	mu_assert_true(success, "del_edge all");
+	mu_assert_eq(rz_graph_count_edges(g), 0, "n_edges.after_del");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // Test out-edges iterator
 static bool test_graph_in_out_edges_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash, NULL, NULL);
@@ -914,6 +980,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_nodes);
 	mu_run_test(test_graph_edges);
 	mu_run_test(test_graph_edge_deletion);
+	mu_run_test(test_graph_edge_deletion_multi);
 	mu_run_test(test_graph_in_out_edges);
 	mu_run_test(test_graph_in_out_neighbors);
 	mu_run_test(test_graph_node_deletion);
@@ -928,6 +995,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_nodes_matrix);
 	mu_run_test(test_graph_edges_matrix);
 	mu_run_test(test_graph_edge_deletion_matrix);
+	mu_run_test(test_graph_edge_deletion_multi_matrix);
 	mu_run_test(test_graph_in_out_edges_matrix);
 	mu_run_test(test_graph_in_out_neighbors_matrix);
 	mu_run_test(test_graph_node_deletion_matrix);
