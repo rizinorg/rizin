@@ -1235,9 +1235,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 	bool gp_fixed = rz_config_get_i(core->config, "analysis.gpfixed");
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
 	ut64 refptr = 0LL;
 	const char *pcname;
+	RzAnalysisEsilInterState *estate = NULL;
 	RzAnalysisOp op = RZ_EMPTY;
 	ut8 *buf = NULL;
 	ut64 iend;
@@ -1261,7 +1261,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		RZ_LOG_ERROR("core: cannot allocate %" PFMT64u "\n", (iend + 2));
 		return;
 	}
-	estate->last_read = UT64_MAX;
 	rz_io_read_at_mapped(core->io, start, buf, iend + 1);
 	rz_reg_arena_push(rreg);
 
@@ -1275,6 +1274,8 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
+	estate = rz_analysis_get_esil_inter_state(core->analysis);
+	estate->last_read = UT64_MAX;
 	const char *spname = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
 	EsilBreakCtx ctx = {
 		.op = &op,
