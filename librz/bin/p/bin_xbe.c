@@ -94,13 +94,10 @@ static bool xbe_check_buffer(RzBuffer *b) {
 }
 
 static bool xbe_load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *sdb) {
-	ut8 dbg_name[256];
+	ut8 tmp[256];
 	rz_bin_xbe_obj_t *obj = RZ_NEW(rz_bin_xbe_obj_t);
-	if (!obj) {
-		return false;
-	}
-	if (!read_xbe_header(&obj->header, buf, 0)) {
-		RZ_FREE(obj);
+	if (!obj || !read_xbe_header(&obj->header, buf, 0)) {
+		free(obj);
 		return false;
 	}
 
@@ -118,9 +115,9 @@ static bool xbe_load_buffer(RzBinFile *bf, RzBinObject *o, RzBuffer *buf, Sdb *s
 		obj->kt_key = XBE_KP_RETAIL;
 	}
 
-	memset(dbg_name, 0, sizeof(dbg_name));
-	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof(dbg_name));
-	obj->dbg_name = rz_str_ndup((char *)dbg_name, sizeof(dbg_name));
+	memset(tmp, 0, sizeof(tmp));
+	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, tmp, sizeof(tmp));
+	obj->dbg_name = rz_str_ndup((char *)tmp, sizeof(tmp));
 
 	rz_vector_init(&obj->sections, sizeof(xbe_section), NULL, NULL);
 	rz_vector_init(&obj->libs, sizeof(xbe_lib), NULL, NULL);
@@ -156,6 +153,7 @@ static void xbe_destroy(RzBinFile *bf) {
 	}
 	rz_vector_fini(&obj->sections);
 	rz_vector_fini(&obj->libs);
+	free(obj->dbg_name);
 	RZ_FREE(bf->o->bin_obj);
 }
 
@@ -406,6 +404,7 @@ static RzBinInfo *xbe_info(RzBinFile *bf) {
 	ret->bits = 32;
 	ret->has_va = true;
 	ret->is_signed = xbe_is_signed(&obj->header);
+	ret->dbg_info = RZ_BIN_DBG_SYMS;
 	return ret;
 }
 
