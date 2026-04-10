@@ -489,7 +489,9 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 
 		rz_strbuf_init(&sb);
 		if (unicode) {
-			if (!rz_il_op_effect_stringify_unicode(op->il_op, &sb)) {
+			const int addr_len = snprintf(NULL, 0, "0x%" PFMT64x, op->addr);
+			RzILStringifyCtx ctx = { .indent = addr_len + 1 };
+			if (!rz_il_op_effect_stringify_unicode(&ctx, op->il_op, &sb)) {
 				RZ_LOG_ERROR("Failed to stringify IL at 0x%08" PFMT64x "\n", op->addr);
 				rz_strbuf_fini(&sb);
 				break;
