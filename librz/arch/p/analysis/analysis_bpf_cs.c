@@ -6,7 +6,6 @@
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 #include <capstone/bpf.h>
-#include <string.h>
 
 typedef struct {
 	csh handle;
@@ -152,7 +151,10 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_MOD: op->type = RZ_ANALYSIS_OP_TYPE_MOD; break;
 	case BPF_INS_XOR: op->type = RZ_ANALYSIS_OP_TYPE_XOR; break;
 	case BPF_INS_MOV: op->type = RZ_ANALYSIS_OP_TYPE_MOV; break;
-	case BPF_INS_ARSH: op->type = RZ_ANALYSIS_OP_TYPE_SAR; break;
+	case BPF_INS_ARSH:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		op->sign = true;
+		break;
 
 	/* ALU64 */
 	case BPF_INS_ADD64: op->type = RZ_ANALYSIS_OP_TYPE_ADD; break;
@@ -169,13 +171,20 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_MOV64: op->type = RZ_ANALYSIS_OP_TYPE_MOV; break;
 	case BPF_INS_ARSH64:
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		op->sign = true;
 		break;
 
 #if CS_API_MAJOR >= 6
 	case BPF_INS_SDIV:
-	case BPF_INS_SDIV64: op->type = RZ_ANALYSIS_OP_TYPE_DIV; break;
+	case BPF_INS_SDIV64:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		op->sign = true;
+		break;
 	case BPF_INS_SMOD:
-	case BPF_INS_SMOD64: op->type = RZ_ANALYSIS_OP_TYPE_MOD; break;
+	case BPF_INS_SMOD64:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOD;
+		op->sign = true;
+		break;
 	case BPF_INS_MOVSB:
 	case BPF_INS_MOVSH:
 	case BPF_INS_MOVSB64:
@@ -201,11 +210,8 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_LDXB:
 	case BPF_INS_LDXDW:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		if (insn->detail->bpf.op_count > 0) {
-			//		op->reg = insn->detail->bpf.operands[0].reg; // destination register
-		}
 		break;
-	case BPF_INS_LDW: // same value as BPF_INS_LD in Capstone v5
+	case BPF_INS_LDW:
 	case BPF_INS_LDH:
 	case BPF_INS_LDB:
 	case BPF_INS_LDDW:
@@ -228,11 +234,8 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_STXB:
 	case BPF_INS_STXDW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		if (insn->detail->bpf.op_count > 1) {
-			//		op->reg = insn->detail->bpf.operands[1].reg; // source register
-		}
 		break;
-	case BPF_INS_STW: // same value as BPF_INS_ST in Capstone v5
+	case BPF_INS_STW:
 	case BPF_INS_STH:
 	case BPF_INS_STB:
 	case BPF_INS_STDW:
@@ -266,7 +269,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JMP:
 #endif
 		if (insn->detail->bpf.op_count > 0) {
-			op->jump = addr + 8 + insn->detail->bpf.operands[0].off * 8;
+			op->jump = addr + (insn->detail->bpf.operands[0].off + 1) * 8;
 		}
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
@@ -277,18 +280,24 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JGE:
 	case BPF_INS_JSET:
 	case BPF_INS_JNE:
-	case BPF_INS_JSGT:
-	case BPF_INS_JSGE:
 	case BPF_INS_JLT:
 	case BPF_INS_JLE:
-	case BPF_INS_JSLT:
-	case BPF_INS_JSLE:
-		// For conditional jumps: operands[2] holds the true-branch offset
 		if (insn->detail->bpf.op_count > 2) {
 			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
 		}
-		op->fail = addr + 8; // fall-through (false branch)
+		op->fail = addr + 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		break;
+	case BPF_INS_JSGT:
+	case BPF_INS_JSGE:
+	case BPF_INS_JSLT:
+	case BPF_INS_JSLE:
+		if (insn->detail->bpf.op_count > 2) {
+			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
+			op->fail = addr + 8;
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			op->sign = insn->detail->bpf.operands[2].is_signed;
+		}
 		break;
 
 		/* Conditional jumps 32-bit operands */
@@ -297,7 +306,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 		if (insn->detail->bpf.op_count > 0) {
 			op->jump = addr + (insn->detail->bpf.operands[0].imm + 1) * 8;
 		}
-		op->fail = addr + 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		break;
 	case BPF_INS_JSET32:
@@ -306,6 +314,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JSGT32:
 	case BPF_INS_JSGE32:
 		op->sign = true;
+		/* fallthrough */
 	case BPF_INS_JEQ32:
 	case BPF_INS_JGT32:
 	case BPF_INS_JGE32:
@@ -313,7 +322,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_JLT32:
 	case BPF_INS_JLE32:
 		if (insn->detail->bpf.op_count > 2) {
-			op->jump = addr + (insn->detail->bpf.operands[2].imm + 1) * 8;
+			op->jump = addr + (insn->detail->bpf.operands[2].off + 1) * 8;
 		}
 		op->fail = addr + 8;
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -322,14 +331,15 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 
 	case BPF_INS_CALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		if (insn->detail->bpf.op_count > 0) {
+			op->jump = addr + (insn->detail->bpf.operands[0].imm + 1) * 8;
+		}
 		break;
 	case BPF_INS_CALLX:
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 		break;
 
-	/* Return */
 	case BPF_INS_EXIT:
-	case BPF_INS_RET: // cBPF return
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 
@@ -374,7 +384,7 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		return -1;
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		op->mnemonic = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
+		op->mnemonic = rz_str_newf("%s %s", insn->mnemonic, insn->op_str);
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		op->opex = bpf_opex(ctx->handle, insn);
