@@ -3,7 +3,7 @@
 
 #include "gadget_internal.h"
 
-static bool rz_gadget_rop_is_cond_end_gadget(const RzAnalysisOp *aop) {
+static bool is_cond_end_gadget(const RzAnalysisOp *aop) {
 	switch (aop->type) {
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
 	case RZ_ANALYSIS_OP_TYPE_UCJMP:
@@ -31,7 +31,7 @@ bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_condi
 	case RZ_ANALYSIS_OP_TYPE_JMP:
 	case RZ_ANALYSIS_OP_TYPE_CALL:
 		if (allow_conditional) {
-			return rz_gadget_rop_is_cond_end_gadget(aop);
+			return is_cond_end_gadget(aop);
 		}
 		return true;
 	default:
@@ -43,7 +43,7 @@ bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow
 	switch (aop->type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
 		if (allow_conditional) {
-			return rz_gadget_rop_is_cond_end_gadget(aop);
+			return is_cond_end_gadget(aop);
 		}
 		return true;
 	default:

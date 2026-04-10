@@ -9,7 +9,7 @@
 #include <rz_gadget.h>
 #include "gadget_internal.h"
 
-static bool rz_gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzCore *core, const RzCoreAsmHit *hit, const bool allow_conditional) {
+static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzCore *core, const RzCoreAsmHit *hit, const bool allow_conditional) {
 	rz_return_val_if_fail(core && core->analysis && hit, false);
 	bool status = false;
 	RzAnalysisOp aop = { 0 };
@@ -37,7 +37,7 @@ static bool rz_gadget_is_valid_terminator(const RzGadgetType gadget_type, const 
 	return status;
 }
 
-static bool rz_gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzAnalysisOp *aop, const bool allow_conditional) {
+static bool gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzAnalysisOp *aop, const bool allow_conditional) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
 	}
@@ -50,7 +50,7 @@ static bool rz_gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const 
 	}
 }
 
-static bool rz_gadget_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp *asmop, RzAnalysisOp *aop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
+static bool gadget_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp *asmop, RzAnalysisOp *aop, unsigned int *size, char **asmop_str, char **asmop_hex_str) {
 	ut8 *buf = malloc(hit->len);
 	if (!buf) {
 		return false;
@@ -85,7 +85,7 @@ static bool rz_gadget_process_asm_op(const RzCore *core, const RzCoreAsmHit *hit
 	return true;
 }
 
-static bool rz_gadget_hitlist_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist,
+static bool gadget_hitlist_print_table_mode(const RzCore *core, const RzCoreAsmHit *hit, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist,
 	ut32 *size, char **asmop_str, char **asmop_hex_str, RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && hitlist, false);
 	RzAnalysisOp aop = RZ_EMPTY;
@@ -94,7 +94,7 @@ static bool rz_gadget_hitlist_print_table_mode(const RzCore *core, const RzCoreA
 		return false;
 	}
 
-	if (!rz_gadget_process_asm_op(core, hit, asmop, &aop, size, asmop_str, asmop_hex_str)) {
+	if (!gadget_process_asm_op(core, hit, asmop, &aop, size, asmop_str, asmop_hex_str)) {
 		rz_asm_op_free(asmop);
 		return false;
 	}
@@ -107,12 +107,12 @@ static bool rz_gadget_hitlist_print_table_mode(const RzCore *core, const RzCoreA
 	return true;
 }
 
-static bool rz_gadget_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp **asmop_out, RzAnalysisOp *aop, ut32 *size) {
+static bool gadget_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, RzAsmOp **asmop_out, RzAnalysisOp *aop, ut32 *size) {
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
 		return false;
 	}
-	if (!rz_gadget_process_asm_op(core, hit, asmop, aop, size, NULL, NULL)) {
+	if (!gadget_process_asm_op(core, hit, asmop, aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
 		return false;
 	}
@@ -144,14 +144,14 @@ static RZ_OWN char *get_colored_asm(const RzCore *core, RzAsmOp *asmop, RzAnalys
 	return ret_str_asm;
 }
 
-static bool rz_gadget_hitlist_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
+static bool gadget_hitlist_print_quiet_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
 	if (!core || !context) {
 		return false;
 	}
 
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = NULL;
-	if (!rz_gadget_prepare_asm_op(core, hit, &asmop, &aop, size)) {
+	if (!gadget_prepare_asm_op(core, hit, &asmop, &aop, size)) {
 		return false;
 	}
 
@@ -173,11 +173,11 @@ static bool rz_gadget_hitlist_print_quiet_mode(const RzCore *core, const RzCoreA
 	return true;
 }
 
-static bool rz_gadget_hitlist_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
+static bool gadget_hitlist_print_standard_mode(const RzCore *core, const RzCoreAsmHit *hit, ut32 *size, RzGadgetSearchContext *context) {
 	rz_return_val_if_fail(core && context, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = NULL;
-	if (!rz_gadget_prepare_asm_op(core, hit, &asmop, &aop, size)) {
+	if (!gadget_prepare_asm_op(core, hit, &asmop, &aop, size)) {
 		return false;
 	}
 
@@ -226,14 +226,14 @@ static bool rz_gadget_hitlist_print_standard_mode(const RzCore *core, const RzCo
 	return true;
 }
 
-static bool rz_gadget_hitlist_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
+static bool gadget_hitlist_print_json_mode(const RzCore *core, const RzCoreAsmHit *hit, unsigned int *size, PJ *pj) {
 	rz_return_val_if_fail(core && hit && pj, false);
 	RzAnalysisOp aop = RZ_EMPTY;
 	RzAsmOp *asmop = rz_asm_op_new();
 	if (!asmop) {
 		return false;
 	}
-	if (!rz_gadget_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
+	if (!gadget_process_asm_op(core, hit, asmop, &aop, size, NULL, NULL)) {
 		rz_asm_op_free(asmop);
 		return false;
 	}
@@ -595,7 +595,7 @@ RZ_API RZ_OWN RzPVector /*<RzGadgetRegInfo *>*/ *rz_core_gadget_get_reg_info_by_
 	return result;
 }
 
-static void rz_gadget_info_add_dependency(const RzCore *core, RzGadgetInfo *gadget_info, const RzILEvent *evt, RzGadgetRegInfo *reg_info) {
+static void gadget_info_add_dependency(const RzCore *core, RzGadgetInfo *gadget_info, const RzILEvent *evt, RzGadgetRegInfo *reg_info) {
 	rz_return_if_fail(core && core->analysis);
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
@@ -672,7 +672,7 @@ static bool is_handle_il_event_read(const RzCore *core, const RzILEventVarRead *
 		return false;
 	}
 	var_read_add_reg_info(core, event, var_read, &reg_info);
-	rz_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
+	gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
 	rz_core_gadget_reg_info_free(reg_info);
 	return true;
 }
@@ -723,7 +723,7 @@ static bool fill_gadget_info_from_events(RzCore *core, RzGadgetInfo *gadget_info
 					break;
 				}
 			}
-			rz_gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
+			gadget_info_add_dependency(core, gadget_info, curr_event, reg_info);
 			if (is_stack_evt) {
 				rz_core_gadget_reg_info_free(reg_info);
 			}
@@ -842,7 +842,7 @@ cleanup:
 	return ret;
 }
 
-static void rz_gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *gadget_info) {
+static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *gadget_info) {
 	rz_return_if_fail(core && core->analysis && gadget_info);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	if (!rreg) {
@@ -885,7 +885,7 @@ static void rz_gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo
 	rz_cons_printf("\n");
 }
 
-static void rz_gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj) {
+static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj) {
 	rz_return_if_fail(gadget_info && pj);
 
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
@@ -1013,7 +1013,7 @@ static void print_gadget_long_info(const RzGadgetInfo *gadget_info, RzVector /*<
 	}
 }
 
-static void rz_gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
+static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context) {
 	rz_return_if_fail(core && core->analysis);
 
 	ut64 addr = gadget_info->address;
@@ -1094,13 +1094,13 @@ static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_inf
 
 	switch (context->state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_gadget_print_json_mode(core, gadget_info, context->state->d.pj);
+		gadget_print_json_mode(core, gadget_info, context->state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_gadget_print_standard_mode(core, gadget_info);
+		gadget_print_standard_mode(core, gadget_info);
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_gadget_print_long_mode(core, gadget_info, context);
+		gadget_print_long_mode(core, gadget_info, context);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -1143,16 +1143,16 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 				if (!state->d.pj) {
 					break;
 				}
-				result = rz_gadget_hitlist_print_json_mode(core, hit, &size, state->d.pj);
+				result = gadget_hitlist_print_json_mode(core, hit, &size, state->d.pj);
 				break;
 			case RZ_OUTPUT_MODE_QUIET:
-				result = rz_gadget_hitlist_print_quiet_mode(core, hit, &size, context);
+				result = gadget_hitlist_print_quiet_mode(core, hit, &size, context);
 				break;
 			case RZ_OUTPUT_MODE_STANDARD:
-				result = rz_gadget_hitlist_print_standard_mode(core, hit, &size, context);
+				result = gadget_hitlist_print_standard_mode(core, hit, &size, context);
 				break;
 			case RZ_OUTPUT_MODE_TABLE:
-				result = rz_gadget_hitlist_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str, context);
+				result = gadget_hitlist_print_table_mode(core, hit, hitlist, &size, &asmop_str, &asmop_hex_str, context);
 				break;
 			default:
 				rz_warn_if_reached();
@@ -1254,7 +1254,7 @@ static bool process_instruction(const RzGadgetType type, const RzCore *core, RzA
 	if (error < 0 || (aop->type == RZ_ANALYSIS_OP_TYPE_NOP && aop->size == 0)) {
 		return false;
 	}
-	if (rz_gadget_is_valid_end_gadget(type, aop, 0)) {
+	if (gadget_is_valid_end_gadget(type, aop, 0)) {
 		(*end_gadget_cnt)++;
 	}
 	return true;
@@ -1397,7 +1397,7 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
 		rz_analysis_set_gadget_semantics(core->analysis, ht_gadget_semantics);
 	}
 	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_pvector_at(hitlist, rz_pvector_len(hitlist) - 1);
-	if (!rz_gadget_is_valid_terminator(type, core, hit_last, allow_conditional)) {
+	if (!gadget_is_valid_terminator(type, core, hit_last, allow_conditional)) {
 		return gadget_info;
 	}
 	const ut64 addr_start = ((RzCoreAsmHit *)rz_pvector_at(hitlist, 0))->addr;
@@ -1507,7 +1507,7 @@ static RzList /*<RzGadgetEndListPair *>*/ *compute_end_gadget_list(const RzCore 
 			continue;
 		}
 
-		if (rz_gadget_is_valid_end_gadget(context->type, &end_gadget, context->allow_conditional)) {
+		if (gadget_is_valid_end_gadget(context->type, &end_gadget, context->allow_conditional)) {
 			RzGadgetEndListPair *epair = RZ_NEW0(RzGadgetEndListPair);
 			if (epair) {
 				epair->instr_offset = i + (end_gadget.delay ? context->increment : 0);

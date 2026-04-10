@@ -45,7 +45,7 @@ struct search_parameters {
 	bool regex_search;
 };
 
-static RzGadgetType rz_gadget_type_from_cmd(const char *cmd_name) {
+static RzGadgetType gadget_type_from_cmd(const char *cmd_name) {
 	rz_return_val_if_fail(cmd_name && cmd_name[0] && cmd_name[1], RZ_GADGET_TYPE_ROP);
 	switch (cmd_name[1]) {
 	case 'J':
@@ -64,7 +64,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_gadget_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzGadgetType gadget_type = rz_gadget_type_from_cmd(argv[0]);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
@@ -81,7 +81,7 @@ RZ_IPI RzCmdStatus rz_cmd_query_gadget_handler(RzCore *core, int argc, const cha
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzGadgetType gadget_type = rz_gadget_type_from_cmd(argv[0]);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, NULL, false,
 		RZ_GADGET_PRINT | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
@@ -101,7 +101,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzGadgetType gadget_type = rz_gadget_type_from_cmd(argv[0]);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, true, RZ_GADGET_PRINT, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_search(core, context);
@@ -112,7 +112,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_gadget_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_detail_gadget_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = argc > 1 ? argv[1] : "";
 
-	RzGadgetType gadget_type = rz_gadget_type_from_cmd(argv[0]);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, input, false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_NON, state);
 	RzCmdStatus status = rz_core_gadget_search(core, context);
@@ -129,7 +129,7 @@ RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const
 
 RZ_IPI RzCmdStatus rz_cmd_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 
-	RzGadgetType gadget_type = rz_gadget_type_from_cmd(argv[0]);
+	RzGadgetType gadget_type = gadget_type_from_cmd(argv[0]);
 
 	RzGadgetSearchContext *context = rz_core_gadget_search_context_new(core, gadget_type, argv[1], false, RZ_GADGET_PRINT_DETAIL | RZ_GADGET_ANALYZE, RZ_GADGET_DETAIL_SEARCH_SIZE, state);
 	RzCmdStatus status = rz_core_gadget_info(core, context);
