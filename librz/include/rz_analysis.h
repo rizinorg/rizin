@@ -395,7 +395,7 @@ typedef struct rz_analysis_callbacks_t {
 	bool (*read_at)(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len);
 } RzAnalysisCallbacks;
 
-typedef struct rz_analysis_rzil_trace_t {
+typedef struct rz_analysis_il_trace_t {
 	int idx;
 	int end_idx;
 	HtUP *registers;
@@ -405,7 +405,7 @@ typedef struct rz_analysis_rzil_trace_t {
 	ut64 stack_size;
 	ut8 *stack_data;
 	RzPVector /*<RzILTraceInstruction *>*/ *instructions;
-} RzAnalysisRzilTrace;
+} RzAnalysisILTrace;
 
 typedef struct rz_analysis_options_t {
 	int depth;
@@ -1483,9 +1483,9 @@ RZ_API bool rz_analysis_il_vm_set_bool(RZ_NONNULL RzAnalysis *analysis, RZ_NULLA
 RZ_API bool rz_analysis_il_vm_set_float(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, long double value);
 
 /* trace */
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil);
-RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op);
+RZ_API RzAnalysisILTrace *rz_analysis_il_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil);
+RZ_API void rz_analysis_il_trace_free(RzAnalysisILTrace *trace);
+RZ_API void rz_analysis_il_trace_op(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil, RZ_NONNULL RzAnalysisLiftedILOp op);
 
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
 
