@@ -7,7 +7,6 @@ on:
       - "dev"
       - "stable"
       - "container-*"
-      - "**"
     tags:
       - v*
   schedule:
