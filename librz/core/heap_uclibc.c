@@ -6,6 +6,14 @@
 #include <rz_heap_uclibc.h>
 #include <rz_heap_glibc.h>
 
+static inline ut8 uclibc_ptr_size(RzCore *core) {
+	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
+	if (!bits) {
+		bits = (ut8)core->dbg->bits;
+	}
+	return bits ? (ut8)(bits / 8) : 0;
+}
+
 /**
  * \brief Get the virtual address of __malloc_heap symbol from a uClibc library map.
  *
@@ -84,7 +92,7 @@ static ut64 uclibc_find_heap_ptr(RzCore *core) {
 				ut64 heap_sym = uclibc_get_heap_base(core, map);
 				if (heap_sym != UT64_MAX) {
 					ut64 heap_ptr = 0;
-					ut8 ptr_size = (core->rasm->bits == 64) ? 8 : 4;
+					ut8 ptr_size = uclibc_ptr_size(core);
 					if (rz_io_read_at_mapped(core->io, heap_sym, (ut8 *)&heap_ptr, ptr_size)) {
 						return heap_ptr;
 					}
@@ -149,8 +157,7 @@ static bool uclibc_get_heap_bounds(RzCore *core, ut64 *brk_start, ut64 *brk_end)
  */
 static bool uclibc_read_free_area(RzCore *core, ut64 addr, RzHeapFreeAreaUClibc *out) {
 	rz_return_val_if_fail(core && out, false);
-	ut8 bits = (ut8)core->rasm->bits;
-	int ptr_size = bits / 8;
+	ut8 ptr_size = uclibc_ptr_size(core);
 	int struct_size = 3 * ptr_size;
 	ut8 buf[24] = { 0 };
 
@@ -158,7 +165,7 @@ static bool uclibc_read_free_area(RzCore *core, ut64 addr, RzHeapFreeAreaUClibc 
 		return false;
 	}
 
-	if (bits == 64) {
+	if (ptr_size == 8) {
 		out->size = rz_read_le64(buf);
 		out->next = rz_read_le64(buf + 8);
 		out->prev = rz_read_le64(buf + 16);
@@ -168,26 +175,6 @@ static bool uclibc_read_free_area(RzCore *core, ut64 addr, RzHeapFreeAreaUClibc 
 		out->prev = rz_read_le32(buf + 8);
 	}
 	return true;
-}
-
-/**
- * \brief Print a single free area in standard output format.
- *
- * \param core RzCore instance
- * \param addr Address of the free area
- * \param area Pointer to the free area structure
- */
-static void uclibc_print_free_area(RzCore *core, ut64 addr, const RzHeapFreeAreaUClibc *area) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("  ");
-	PRINTF_BA("0x%016" PFMT64x, addr);
-	rz_cons_printf("  ");
-	PRINTF_YA("0x%08" PFMT64x, area->size);
-	rz_cons_printf("  ");
-	PRINTF_GA("0x%016" PFMT64x, area->next);
-	rz_cons_printf("  ");
-	PRINTF_RA("0x%016" PFMT64x, area->prev);
-	rz_cons_newline();
 }
 
 /**
@@ -225,7 +212,6 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 	ut32 count = 0;
 	ut64 total_size = 0, largest = 0, smallest = UT64_MAX;
 	const ut32 max_chunks = 1024;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	RzOutputMode mode = state->mode;
 	PJ *pj = state->d.pj;
 
@@ -248,13 +234,9 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 		}
 
 		if (area.size < sizeof(ut64) * 3 || area.size > 0x10000000) {
-			if (mode != RZ_OUTPUT_MODE_JSON) {
-				PRINTF_RA("Invalid size at 0x%" PFMT64x ": 0x%" PFMT64x "\n", addr, area.size);
-			}
 			break;
 		}
 
-		// Track stats
 		total_size += area.size;
 		if (area.size > largest) {
 			largest = area.size;
@@ -271,13 +253,14 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 			pj_kn(pj, "prev", area.prev);
 			pj_end(pj);
 		} else {
-			uclibc_print_free_area(core, addr, &area);
+			rz_cons_printf("  0x%016" PFMT64x "  0x%08" PFMT64x "  0x%016" PFMT64x "  0x%016" PFMT64x "\n",
+				addr, area.size, area.next, area.prev);
 
 			if (area.next == 0 || area.next == start) {
 				break;
 			}
 			if (brk_start && brk_end && (area.next < brk_start || area.next > brk_end)) {
-				PRINT_RA("  [WARNING: next pointer outside heap bounds]\n");
+				rz_cons_printf("  [WARNING: next pointer outside heap bounds]\n");
 			}
 		}
 
