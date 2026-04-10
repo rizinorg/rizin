@@ -877,92 +877,6 @@ err_chars:
 	}
 }
 
-RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
-	char cmd[128], *p;
-	ut64 addr = core->offset;
-	int size = (core->analysis->bits / 4);
-	int count = atoi(str);
-	int i, n;
-	if (count < 1) {
-		count = 1;
-	}
-	// skipspaces
-	while (*str >= '0' && *str <= '9') {
-		str++;
-	}
-	// "px/" alone isn't a full command.
-	if (!str[0]) {
-		return;
-	}
-	switch (str[1]) {
-	case 'b': size = 1; break;
-	case 'h': size = 2; break;
-	case 'd': size = 4; break;
-	case 'w': size = 4; break;
-	case 'g': size = 8; break;
-	}
-	if ((p = strchr(str, ' '))) {
-		*p++ = 0;
-		addr = rz_num_math(core->num, p);
-	}
-	switch (*str) {
-	case '?':
-		eprintf(
-			"Format is x/[num][format][size]\n"
-			"Num specifies the number of format elements to display\n"
-			"Format letters are o(octal), x(hex), d(decimal), u(unsigned decimal),\n"
-			"  t(binary), f(float), a(address), i(instruction), c(char) and s(string),\n"
-			"  T(OSType), A(floating point values in hex).\n"
-			"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n");
-		break;
-	case 's': // "x/s"
-		rz_core_cmdf(core, "psb @! %d @ 0x%" PFMT64x, count * size, addr);
-		break;
-	case 'o': // "x/o"
-		rz_core_cmdf(core, "pxo %d @ 0x%" PFMT64x, count * size, addr);
-		break;
-	case 'f':
-	case 'A': // XXX (float in hex)
-		n = 3;
-		snprintf(cmd, sizeof(cmd), "pxo %d @ 0x%" PFMT64x,
-			count * size, addr);
-		strcpy(cmd, "pf ");
-		for (i = 0; i < count && n < sizeof(cmd); i++) {
-			cmd[n++] = 'f';
-		}
-		cmd[n] = 0;
-		rz_core_cmd0(core, cmd);
-		break;
-	case 'x':
-		switch (size) {
-		default:
-		case 1:
-			rz_core_cmdf(core, "px %d @ 0x%" PFMT64x, count, addr);
-			break;
-		case 2:
-			rz_core_cmdf(core, "px%c %d @ 0x%" PFMT64x,
-				'h', count * 2, addr);
-			break;
-		case 4:
-			rz_core_cmdf(core, "px%c %d @ 0x%" PFMT64x,
-				'w', count * 4, addr);
-			break;
-		case 8:
-			rz_core_cmdf(core, "px%c %d @ 0x%" PFMT64x,
-				'q', count * 8, addr);
-			break;
-		}
-		break;
-	case 'a':
-	case 'd':
-		rz_core_cmdf(core, "pxw %d @ 0x%" PFMT64x, count * size, addr);
-		break;
-	case 'i':
-		rz_core_cmdf(core, "pdq %d @ 0x%" PFMT64x, count, addr);
-		break;
-	}
-}
-
 static bool cmd_print_pxA(RzCore *core, int len, RzOutputMode mode) {
 	if (!len) {
 		return false;
@@ -1392,7 +1306,8 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = rz_config_get_i(core->config, "asm.flags");
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
-	core->analysis->gp = saved_gp;
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	rz_analysis_set_gp(core->analysis, saved_gp);
 	if (fromHere) {
 		if (b->addr < core->offset) {
 			core->cons->null = true;
@@ -1403,14 +1318,14 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
-			rz_reg_arena_poke(core->analysis->reg, b->parent_reg_arena);
+			rz_reg_arena_poke(rreg, b->parent_reg_arena);
 			RZ_FREE(b->parent_reg_arena);
-			gp = rz_reg_getv(core->analysis->reg, "gp");
+			gp = rz_reg_getv(rreg, "gp");
 			if (gp) {
-				core->analysis->gp = gp;
+				rz_analysis_set_gp(core->analysis, gp);
 			}
 		} else {
-			rz_reg_arena_poke(core->analysis->reg, saved_arena);
+			rz_reg_arena_poke(rreg, saved_arena);
 		}
 	}
 	rz_config_set_b(core->config, "asm.bb.middle", false);
@@ -1423,8 +1338,9 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 		if (b->jump > b->addr) {
 			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at(b->analysis, b->jump);
 			if (jumpbb && rz_list_contains(jumpbb->fcns, fcn)) {
-				if (emu && core->analysis->last_disasm_reg && !jumpbb->parent_reg_arena) {
-					jumpbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
+				ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
+				if (emu && last_disasm_reg && !jumpbb->parent_reg_arena) {
+					jumpbb->parent_reg_arena = rz_reg_arena_dup(rreg, last_disasm_reg);
 				}
 			}
 		}
@@ -1436,8 +1352,9 @@ static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, boo
 		if (b->fail > b->addr) {
 			RzAnalysisBlock *failbb = rz_analysis_get_block_at(b->analysis, b->fail);
 			if (failbb && rz_list_contains(failbb->fcns, fcn)) {
-				if (emu && core->analysis->last_disasm_reg && !failbb->parent_reg_arena) {
-					failbb->parent_reg_arena = rz_reg_arena_dup(core->analysis->reg, core->analysis->last_disasm_reg);
+				ut8 *last_disasm_reg = rz_analysis_get_last_disasm_reg(core->analysis);
+				if (emu && last_disasm_reg && !failbb->parent_reg_arena) {
+					failbb->parent_reg_arena = rz_reg_arena_dup(rreg, last_disasm_reg);
 				}
 			}
 		}
@@ -1574,13 +1491,14 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 		}
 		rz_cmd_state_output_array_end(state);
 	} else {
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
 		bool asm_lines = rz_config_get_i(core->config, "asm.lines.bb");
 		bool emu = rz_config_get_i(core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena = NULL;
 		if (emu) {
-			saved_gp = core->analysis->gp;
-			saved_arena = rz_reg_arena_peek(core->analysis->reg);
+			saved_gp = rz_analysis_get_gp(core->analysis);
+			saved_arena = rz_reg_arena_peek(rreg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
 
@@ -1589,9 +1507,9 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I', fromHere);
 		}
 		if (emu) {
-			core->analysis->gp = saved_gp;
+			rz_analysis_set_gp(core->analysis, saved_gp);
 			if (saved_arena) {
-				rz_reg_arena_poke(core->analysis->reg, saved_arena);
+				rz_reg_arena_poke(rreg, saved_arena);
 				RZ_FREE(saved_arena);
 			}
 		}
@@ -1704,7 +1622,7 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 	}
 
 	const ut8 *buf = core->block;
-	bool be = core->analysis->big_endian;
+	bool be = rz_asm_is_big_endian_set(core->rasm);
 	int end = RZ_MIN(core->blocksize, len);
 	int bitsize = wordsize * 8;
 	RzOutputMode mode = state->mode;
@@ -3110,7 +3028,29 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const 
 		goto exit;
 	}
 
-	rz_core_il_cons_print(core, ops, false);
+	rz_core_il_cons_print(core, ops, false, false);
+	rz_iterator_free(ops);
+	return RZ_CMD_STATUS_OK;
+exit:
+	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_print_function_rzil_enriched_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_config_get_b(core->config, "scr.utf8")) {
+		RZ_LOG_ERROR("Config variable 'scr.utf8' is not set\n");
+		goto exit;
+	}
+	RzAnalysisFunction *f = rz_analysis_first_function_in(core->analysis, core->offset);
+	if (!f) {
+		goto exit;
+	}
+
+	RzIterator *ops = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
+	if (!ops) {
+		goto exit;
+	}
+
+	rz_core_il_cons_print(core, ops, false, true);
 	rz_iterator_free(ops);
 	return RZ_CMD_STATUS_OK;
 exit:
@@ -3402,13 +3342,14 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			free(buf);
 		}
 	} else {
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
 		bool asm_lines = rz_config_get_i(core->config, "asm.lines.bb");
 		bool emu = rz_config_get_i(core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena = NULL;
 		if (emu) {
-			saved_gp = core->analysis->gp;
-			saved_arena = rz_reg_arena_peek(core->analysis->reg);
+			saved_gp = rz_analysis_get_gp(core->analysis);
+			saved_arena = rz_reg_arena_peek(rreg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
 		rz_pvector_foreach (f->bbs, iter) {
@@ -3416,9 +3357,9 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
 		if (emu) {
-			core->analysis->gp = saved_gp;
+			rz_analysis_set_gp(core->analysis, saved_gp);
 			if (saved_arena) {
-				rz_reg_arena_poke(core->analysis->reg, saved_arena);
+				rz_reg_arena_poke(rreg, saved_arena);
 				RZ_FREE(saved_arena);
 			}
 		}
@@ -6280,12 +6221,14 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_handler(RzCore *core, int argc, const cha
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_delete_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_db_format_delete(core->analysis->typedb, argv[1]);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_format_delete(typedb, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_delete_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_db_format_purge(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_format_purge(typedb);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6297,7 +6240,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_apply_handler(RzCore *core, int argc, con
 	const char *typename = argv[1];
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
 
-	const char *fmt = rz_type_db_format_get(core->analysis->typedb, typename);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	const char *fmt = rz_type_db_format_get(typedb, typename);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		RZ_LOG_ERROR("Format with \"%s\" name not found\n", typename);
 		return RZ_CMD_STATUS_ERROR;
@@ -6322,11 +6266,12 @@ static int compare_type_formats(const RzTypeFormat *a, const RzTypeFormat *b, RZ
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (argc < 2) {
 		// List all named formats
 		RzListIter *iter;
 		RzTypeFormat *fmt = NULL;
-		RzList *formats = rz_type_db_format_all(core->analysis->typedb);
+		RzList *formats = rz_type_db_format_all(typedb);
 		rz_list_sort(formats, (RzListComparator)compare_type_formats, NULL);
 		rz_list_foreach (formats, iter, fmt) {
 			rz_cons_printf("%s \"%s\"\n", fmt->name, fmt->body);
@@ -6335,7 +6280,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, con
 		return RZ_CMD_STATUS_OK;
 	} else if (argc < 3) {
 		// Show the format string for a named format
-		const char *fmt = rz_type_db_format_get(core->analysis->typedb, argv[1]);
+		const char *fmt = rz_type_db_format_get(typedb, argv[1]);
 		if (RZ_STR_ISEMPTY(fmt)) {
 			RZ_LOG_ERROR("Format with \"%s\" name not found\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
@@ -6343,7 +6288,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, con
 		rz_cons_printf("%s\n", fmt);
 		return RZ_CMD_STATUS_OK;
 	}
-	rz_type_db_format_set(core->analysis->typedb, argv[1], argv[2]);
+	rz_type_db_format_set(typedb, argv[1], argv[2]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6395,7 +6340,8 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, cons
 	if (rz_str_endswith(argv[1], ".h")) {
 		char *error_msg = NULL;
 		const char *dir = rz_config_get(core->config, "dir.types");
-		int result = rz_type_parse_file(core->analysis->typedb, path, dir, &error_msg);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		int result = rz_type_parse_file(typedb, path, dir, &error_msg);
 		if (!result) {
 			// TODO: Use the API here
 			rz_core_cmd0(core, ".ts*");
@@ -6416,12 +6362,13 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_cmd_print_format_size_handler(RzCore *core, int argc, const char **argv) {
-	const char *format = rz_type_db_format_get(core->analysis->typedb, argv[1]);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	const char *format = rz_type_db_format_get(typedb, argv[1]);
 	if (!format) {
 		RZ_LOG_ERROR("Format \"%s\" could not be found\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	int fmtsz = rz_type_format_struct_size(core->analysis->typedb, format, RZ_PRINT_MUSTSEE, 0);
+	int fmtsz = rz_type_format_struct_size(typedb, format, RZ_PRINT_MUSTSEE, 0);
 	rz_cons_printf("%d\n", fmtsz);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6520,7 +6467,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const
 		return RZ_CMD_STATUS_OK;
 	}
 	const char *format = argv[2];
-	size_t width = format_width_to_num(core->analysis ? core->analysis->bits : 0, argv[3]);
+	size_t width = format_width_to_num(rz_asm_get_bits(core->rasm), argv[3]);
 	switch (format[0]) {
 	default:
 		RZ_LOG_ERROR("Invalid format: '%s'.\n", format);

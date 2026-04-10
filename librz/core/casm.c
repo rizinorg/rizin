@@ -66,7 +66,7 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 
 static const char *has_esil(RzCore *core, const char *name) {
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	RzIterator *iter = ht_sp_as_iter(core->analysis->plugins);
+	RzIterator *iter = rz_analysis_plugin_iterator(core->analysis);
 	RzAnalysisPlugin **val;
 	rz_iterator_foreach(iter, val) {
 		RzAnalysisPlugin *h = *val;

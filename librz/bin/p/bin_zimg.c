@@ -473,7 +473,7 @@ static RzBinInfo *zimage_info(RzBinFile *bf) {
 	ret->lang = "C";
 	ret->bits = zimage_bits(zo);
 	ret->big_endian = zimage_big_endian(zo);
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 
 	return ret;
 }

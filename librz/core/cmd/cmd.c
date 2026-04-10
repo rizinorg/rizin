@@ -28,9 +28,6 @@
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
 
-RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
-RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
-
 #include "cmd_debug.c"
 #include "cmd_analysis.c"
 #include "cmd_magic.c"
@@ -194,7 +191,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
 		char *error_msg = NULL;
-		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
+		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+		int result = rz_type_parse_file(typedb, file, dir, &error_msg);
 		if (error_msg) {
 			rz_str_trim_tail(error_msg);
 			RZ_LOG_ERROR("core: %s\n", error_msg);
@@ -2355,7 +2353,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *meta;
-	rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
+	RzIntervalTree *meta_tree = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (meta_tree, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
@@ -2427,7 +2426,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		RzList *list = rz_list_newf(free);
 		RzListIter *iter;
 		rz_list_foreach (head, iter, item) {
-			if (item->size != core->analysis->bits) {
+			if (!rz_asm_is_bits(core->rasm, item->size)) {
 				continue;
 			}
 			if (item->type != i) {
@@ -2622,7 +2621,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
 	RzAnalysisFunction *fcn;
-	RzList *list = core->analysis->fcns;
+	RzList *list = rz_analysis_function_list(core->analysis);
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push(NULL, NULL);
@@ -3074,7 +3073,7 @@ RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	char *tmp = NULL;
-	char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
+	const char *p = (*cmd != '"') ? strchr(cmd, '|') : NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return rz_core_cmd_str(core, cmd);
 	}

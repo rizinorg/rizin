@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 #include <rz_windows.h>
 #include "minunit.h"
@@ -16,7 +16,8 @@ static size_t blocks_count(RzAnalysis *analysis) {
 	size_t count = 0;
 	RBIter iter;
 	RzAnalysisBlock *block;
-	rz_rbtree_foreach (analysis->bb_tree, iter, block, RzAnalysisBlock, _rb) {
+	RBTree *bb_tree = rz_analysis_get_bb_tree(analysis);
+	rz_rbtree_foreach ((*bb_tree), iter, block, RzAnalysisBlock, _rb) {
 		count++;
 	}
 	return count;
@@ -855,8 +856,9 @@ bool test_rz_analysis_block_analyze_ops(void) {
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
+	RzIOBind *iob = rz_analysis_get_io_bind(a);
 	io_mock_init(&io, 0x1000, example_code, sizeof(example_code));
-	io_mock_bind(&io, &a->iob);
+	io_mock_bind(&io, iob);
 
 	// clean block with valid code
 	RzAnalysisBlock *block = rz_analysis_create_block(a, 0x1000, 0x18);
@@ -932,8 +934,9 @@ bool test_rz_analysis_block_analyze_ops_sp(void) {
 	rz_analysis_use(a, "x86");
 	rz_analysis_set_bits(a, 64);
 	IOMock io;
+	RzIOBind *iob = rz_analysis_get_io_bind(a);
 	io_mock_init(&io, 0x1000, example_code_sp, sizeof(example_code_sp));
-	io_mock_bind(&io, &a->iob);
+	io_mock_bind(&io, iob);
 
 	RzAnalysisBlock *block = rz_analysis_create_block(a, 0x1000, 0xa);
 	mu_assert_eq(block->ninstr, 0, "clean block");

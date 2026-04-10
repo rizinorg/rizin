@@ -266,7 +266,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 		// Gets renamed with the refactor.
 		.max_str_length = core->bin->str_search_cfg.max_length,
 		.min_str_length = RZ_MAX(re_pattern_len, core->bin->str_search_cfg.min_length),
-		.prefer_big_endian = core->analysis->big_endian,
+		.prefer_big_endian = rz_asm_is_big_endian_set(core->rasm),
 		.check_ascii_freq = core->bin->str_search_cfg.check_ascii_freq,
 	};
 

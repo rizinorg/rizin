@@ -138,11 +138,47 @@ RUN
 NAME=objc_stubs arm64e
 FILE=bins/mach0/hello-macos-arm64e-objc-stubs-stripped
 CMDS=<<EOF
+iI
 aalos
 fl@F:objc-stubs
 fl@F:objc-stubs@e:asm.flags.real=1
 EOF
 EXPECT=<<EOF
+arch     arm
+cpu      arm64e
+features N/A
+baddr    0x100000000
+binsz    0x0000c5e8
+bintype  mach0
+bits     64
+class    MACH064
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    /usr/lib/dyld
+laddr    0x00000000
+lang     objc
+machine  arm64e
+maxopsz  4
+minopsz  4
+os       darwin
+cc       N/A
+pcalign  4
+rpath    N/A
+subsys   macOS
+stripped false
+havecode true
+va       true
+static   false
+linenum  false
+lsyms    false
+canary   false
+pie      true
+relrocs  false
+nx       false
+ptr_auth true
 0x100003d80 32 stub.objc_msgSend_methodWithOneArg:
 0x100003da0 32 stub.objc_msgSend_methodWithReturn
 0x100003dc0 32 stub.objc_msgSend_methodWithTwoArgs:secondArg:

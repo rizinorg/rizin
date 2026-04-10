@@ -109,17 +109,16 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_qnx_map_get(RzDebug *dbg) {
 
 static int rz_debug_qnx_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
-	int bits = dbg->analysis->bits;
-	const char *pcname = rz_reg_get_name(dbg->analysis->reg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(dbg->analysis->reg, pcname, 0);
+	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
+	int bits = rz_analysis_get_bits(dbg->analysis);
+	const char *pcname = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
+	RzRegItem *reg = rz_reg_get(rreg, pcname, 0);
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;
 	}
-	if (reg) {
-		if (dbg->analysis->bits != reg->size) {
-			bits = reg->size;
-		}
+	if (reg && bits != reg->size) {
+		bits = reg->size;
 	}
 	free(rz_reg_get_bytes(dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
@@ -182,7 +181,7 @@ static int rz_debug_qnx_attach(RzDebug *dbg, int pid) {
 		if (!strcmp("qnx", d->plugin->name)) {
 			RzIOQnx *g = d->data;
 			int arch = rz_sys_arch_id(dbg->arch);
-			int bits = dbg->analysis->bits;
+			int bits = rz_analysis_get_bits(dbg->analysis);
 			if ((desc = &g->desc)) {
 				switch (arch) {
 				case RZ_SYS_ARCH_X86:
@@ -224,7 +223,7 @@ static int rz_debug_qnx_detach(RzDebug *dbg, int pid) {
 
 static const char *rz_debug_qnx_reg_profile(RzDebug *dbg) {
 	int arch = rz_sys_arch_id(dbg->arch);
-	int bits = dbg->analysis->bits;
+	int bits = rz_analysis_get_bits(dbg->analysis);
 	switch (arch) {
 	case RZ_SYS_ARCH_X86:
 		return rz_str_dup(

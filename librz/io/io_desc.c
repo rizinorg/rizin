@@ -367,7 +367,7 @@ RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, size_t
 /* lifecycle */
 
 // TODO: move into io.c : rz_io_init
-RZ_IPI bool rz_io_desc_init(RzIO *io) {
+RZ_API bool rz_io_desc_init(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	rz_io_desc_fini(io);
 	// TODO: it leaks if called twice
@@ -389,7 +389,7 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 }
 
 // closes all descs and frees all descs and io->files
-RZ_IPI bool rz_io_desc_fini(RzIO *io) {
+RZ_API bool rz_io_desc_fini(RzIO *io) {
 	rz_return_val_if_fail(io, false);
 	if (io->files) {
 		rz_id_storage_foreach(io->files, desc_fini_cb, io);

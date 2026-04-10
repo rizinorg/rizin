@@ -277,6 +277,9 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+RZ_IPI void rz_save_panels_layout(RzCore *core, const char *_name);
+RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name);
+
 /* init */
 static bool __init(RzCore *core, RzPanelsTab *tab, int w, int h);
 static void __init_sdb(RzCore *core);
@@ -3025,8 +3028,9 @@ void __init_panel_param(RzCore *core, RzPanel *p, const char *title, const char 
 		__set_dcb(core, p);
 		__set_rcb(visual->panels_root->active_tab, p);
 		if (__check_panel_type(p, PANEL_CMD_STACK)) {
-			const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-			const ut64 stackbase = rz_reg_getv(core->analysis->reg, sp);
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+			const ut64 stackbase = rz_reg_getv(rreg, sp);
 			m->baseAddr = stackbase;
 			__set_panel_addr(core, p, stackbase - rz_config_get_i(core->config, "stack.delta"));
 		}
@@ -4269,6 +4273,15 @@ RZ_OWN RzPanelsMenuItem *rz_panels_menu_item_new(RZ_NULLABLE const char *name, R
 	return item;
 }
 
+static void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
+	if (!panel) {
+		return;
+	}
+	rz_panel_model_free(panel->model);
+	free(panel->view);
+	free(panel);
+}
+
 void rz_panels_menu_item_free(RZ_NULLABLE RzPanelsMenuItem *item) {
 	if (!item) {
 		return;
@@ -4925,11 +4938,12 @@ void __panels_check_stackbase(RzCore *core) {
 	if (!visual->panels_root->active_tab) {
 		return;
 	}
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
 	if (!sp) {
 		return;
 	}
-	const ut64 stackbase = rz_reg_getv(core->analysis->reg, sp);
+	const ut64 stackbase = rz_reg_getv(rreg, sp);
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	for (int i = 1; i < tab->n_panels; i++) {
 		RzPanel *panel = __get_panel(tab, i);
@@ -6110,15 +6124,6 @@ static void rz_panels_menu_free(RZ_NULLABLE RzPanelsMenu *menu) {
 	free(menu->history);
 	free(menu->refreshPanels);
 	free(menu);
-}
-
-RZ_IPI void rz_panel_free(RZ_NULLABLE RzPanel *panel) {
-	if (!panel) {
-		return;
-	}
-	rz_panel_model_free(panel->model);
-	free(panel->view);
-	free(panel);
 }
 
 void rz_panels_tab_free(RZ_NULLABLE RzPanelsTab *tab) {

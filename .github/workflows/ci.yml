@@ -372,7 +372,7 @@ jobs:
           gcovr --gcov-ignore-parse-errors=all --txt build/coverage.txt --cobertura build/coverage.xml --merge-mode-functions=separate build
       - name: Upload coverage to Codecov
         if: matrix.coverage && matrix.enabled
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: build/
@@ -935,6 +935,37 @@ jobs:
           cmake -G Ninja ..
           ninja
           .\rizin_cmake_test
+
+  test-riscv-inside-qemu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-riscv64 \
+            gcc-riscv64-linux-gnu \
+            g++-riscv64-linux-gnu \
+            binutils-riscv64-linux-gnu \
+            cpio
+          pip3 install meson ninja
+
+      - name: Setup RISC-V QEMU environment
+        run: |
+          cd ..
+          sh rizin/.github/riscv-qemu-setup-all.sh /rizin -hh
+
+      - name: Run inside RISC-V QEMU
+        run: |
+          cd ..
+          qemu-system-riscv64 \
+            -machine virt -cpu rv64 -m 512M \
+            -kernel linux-image/boot/vmlinux-6.12.73+deb13-riscv64 \
+            -initrd initrd.cpio.gz \
+            -append "console=ttyS0,115200 earlycon" \
+            -nographic
+
 
   create-release:
     name: Create draft release and upload artifacts

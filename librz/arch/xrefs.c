@@ -4,7 +4,7 @@
 // SPDX-FileCopyrightText: 2009-2019 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_cons.h>
 
 /*

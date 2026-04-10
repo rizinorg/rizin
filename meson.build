@@ -44,7 +44,7 @@ cc = meson.get_compiler('c')
 cc_native = meson.get_compiler('c', native: true)
 
 platform_deps = []
-platform_inc = ['.', 'librz', 'librz/include', 'subprojects/rzheap']
+platform_inc = ['.', 'librz', 'librz/include']
 if host_machine.system() == 'windows'
   add_project_arguments('-DPSAPI_VERSION=1', language: 'c')
   platform_deps = [

@@ -737,7 +737,7 @@ struct dummy_rz_analysis_t {
  * \brief The hacky way to get the RzAsm pointer from RzAnalysis.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL const void /*<RzAnalysis>*/ *rz_analysis) {
 	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_analysis_t *analysis = (struct dummy_rz_analysis_t *)rz_analysis;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)analysis->core;

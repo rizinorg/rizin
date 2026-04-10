@@ -2287,9 +2287,9 @@ e asm.bits=64
 wx 90905152539090 ; pd 7 ~&5,push
 EOF
 EXPECT=<<EOF
-            0x00000002      51             push  rcx
-            0x00000003      52             push  rdx
-            0x00000004      53             push  rbx
+  0x00000002      51             push  rcx
+  0x00000003      52             push  rdx
+  0x00000004      53             push  rbx
 EOF
 RUN
 

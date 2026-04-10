@@ -601,10 +601,10 @@ RZ_API char *rz_egg_lang_mkvar(RzEgg *egg, char *out, const char *_str, int delt
 	return ret;
 }
 
-static void rcc_fun(RzEgg *egg, const char *str) {
+static void rcc_fun(RzEgg *egg, char *str) {
 	char *ptr, *ptr2;
 	RzEggEmit *e = egg->remit;
-	str = skipspaces(str);
+	str = (char *)skipspaces(str);
 	if (CTX) {
 		ptr = strchr(str, '=');
 		if (ptr) {
@@ -616,7 +616,7 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 				rcc_set_callname(egg, skipspaces(ptr));
 			}
 		} else {
-			str = skipspaces(str);
+			str = (char *)skipspaces(str);
 			rcc_set_callname(egg, skipspaces(str));
 			egg->remit->comment(egg, "rcc_fun %d (%s)",
 				CTX, egg->lang.callname);

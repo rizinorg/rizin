@@ -34,24 +34,25 @@ static bool is_branch_type_to_method(RzAnalysisOp *op) {
 /**
  * \brief initialises stack and registers for tainting
  */
-static void rz_track_init(RzAnalysis *analysis, RzCore *core) {
+static void track_init(RzCore *core) {
 	// Random Memory allocation representing function stack
 	rz_core_analysis_esil_init_mem(core, NULL, 0x1000, 0x1050);
 	rz_core_analysis_il_reinit(core); // initializing VM
 	// TODO : Make general for other archs
-	if (!rz_str_cmp(analysis->arch_target->arch, "x86", -1)) {
-		rz_core_analysis_il_vm_set(core, "rbp", 0x1fff);
-		rz_core_analysis_il_vm_set(core, "rsp", 0x1fff);
-	} else if (!rz_str_cmp(analysis->arch_target->arch, "arm", -1)) {
-		rz_core_analysis_il_vm_set(core, "fp", 0x1fff);
-		rz_core_analysis_il_vm_set(core, "sp", 0x1fff);
+	if (rz_asm_is_arch(core->rasm, "x86")) {
+		rz_analysis_il_vm_set_unsigned(core->analysis, "rbp", 0x1fff);
+		rz_analysis_il_vm_set_unsigned(core->analysis, "rsp", 0x1fff);
+	} else if (rz_asm_is_arch(core->rasm, "arm")) {
+		rz_analysis_il_vm_set_unsigned(core->analysis, "fp", 0x1fff);
+		rz_analysis_il_vm_set_unsigned(core->analysis, "sp", 0x1fff);
 	} else {
-		RZ_LOG_WARN("arch %s not supported", analysis->arch_target->arch);
+		const char *arch = rz_core_get_arch(core);
+		RZ_LOG_WARN("arch %s not supported", arch);
 	}
 }
 
 static ut64 get_reg_value(RzAnalysis *analysis, const char *reg_name) {
-	RzAnalysisILVM *vm = analysis->il_vm;
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
 	RzILVal *il_c_reg = rz_il_vm_get_var_value(vm->vm, RZ_IL_VAR_KIND_GLOBAL, reg_name);
 	if (!il_c_reg) {
 		return UT64_MAX;
@@ -145,11 +146,11 @@ static RzSetU *allocator_xrefs(RzAnalysis *analysis) {
 
 static void add_virtual_xrefs(RzAnalysis *analysis, const char *method_name, ut64 addr) {
 	bool found = false;
-	HtSP *virtual_xrefs = analysis->ht_virtual_xrefs;
-	RzSetU *set = ht_sp_find(virtual_xrefs, method_name, &found);
+	HtSP *ht_virtual_xrefs = rz_analysis_get_virtual_xrefs(analysis);
+	RzSetU *set = ht_sp_find(ht_virtual_xrefs, method_name, &found);
 	if (!found) {
 		set = rz_set_u_new();
-		ht_sp_insert(virtual_xrefs, method_name, set);
+		ht_sp_insert(ht_virtual_xrefs, method_name, set);
 	}
 	rz_set_u_add(set, addr);
 }
@@ -179,7 +180,7 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 	ut64 start = function->addr; // start of the function
 	ut64 end = rz_analysis_function_max_addr(function);
 	RzAnalysisOp *op = rz_analysis_op_new();
-	rz_track_init(core->analysis, core);
+	track_init(core);
 
 	ut8 *bytes = malloc(end - start);
 	if (!rz_io_read_at_mapped(core->io, start, bytes, end - start)) {
@@ -201,7 +202,7 @@ static void devirtualize_msg_dispatch(RzCore *core, RzSetU *msg_dispatch_addr) {
 		if (rz_set_u_contains(xref_addrs, start)) {
 			// continue track past allocator call
 			ut64 val = get_reg_value(core->analysis, cl_reg);
-			rz_core_analysis_il_vm_set(core, ret_reg, val);
+			rz_analysis_il_vm_set_unsigned(core->analysis, ret_reg, val);
 		}
 
 		if (rz_set_u_contains(msg_dispatch_addr, op->addr)) {
@@ -269,9 +270,8 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
  *
  * \param core The RzCore instance to work with.
  */
-RZ_API void rz_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core) {
+RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core) {
 	if (!core) {
-		RZ_LOG_ERROR("devirtualization analysis failed");
 		return;
 	}
 	RzBinFile *bf = rz_bin_cur(core->bin);

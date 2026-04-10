@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#ifndef __WINDOWS__
 static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
@@ -54,6 +55,8 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	}
 	return list;
 }
+#endif
+
 // XXX: Do this work correctly?
 static RzList /*<RzDebugFrame *>*/ *backtrace_x86_64_analysis(RzDebug *dbg, ut64 at) {
 	int i;

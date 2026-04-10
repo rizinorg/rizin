@@ -4,9 +4,8 @@
 #ifndef _8051_IL_H_
 #define _8051_IL_H_
 
-#include <rz_types.h>
+#include "analysis_private.h"
 #include <rz_il.h>
-#include <rz_analysis.h>
 
 typedef enum {
 	I_UNDEFINED = 0,

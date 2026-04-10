@@ -4,10 +4,8 @@
 #ifndef TMS320_C64X_CAPSTONE_H
 #define TMS320_C64X_CAPSTONE_H
 
-#include <rz_asm.h>
 #include "asm_private.h"
-#include <rz_util.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <capstone/capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H

@@ -5,20 +5,34 @@ CMDS=q!
 EXPECT=
 RUN
 
-NAME=NES: Pong - detection
+NAME=NES: Pong - detection, mapping and iH
 FILE=bins/nes/Pong.nes
-CMDS=iI~os
+CMDS=<<EOF
+iI~os
+echo ---
+oml
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 os       nes
-EOF
-RUN
-
-NAME=NES: Mapping
-FILE=bins/nes/Pong.nes
-CMDS=oml
-EXPECT=<<EOF
+---
  1 fd: 3 +0x00000010 0x00008000 * 0x0000bfff r-x fmap.ROM
  2 fd: 4 +0x00000000 0x00010000 - 0x00013fff r-x mmap.ROM_MIRROR
  3 fd: 3 +0x00000010 0x0000c000 - 0x0000ffff r-x fmap.ROM_MIRROR
+---
+nes:
+  magic: "4e45531a"
+  prg_pages: 1
+  chr_pages: 1
+  prg_size: 0x4000
+  chr_size: 0x2000
+  mapper: 0x1
+  mirroring: "horizontal"
+  battery: false
+  trainer: false
+  alternative_nametable_layout: false
+  ram_banks: 0
+
 EOF
 RUN

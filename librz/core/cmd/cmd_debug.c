@@ -26,7 +26,7 @@
 	} while (0)
 
 struct dot_trace_ght {
-	RzGraph /*<struct trace_node *>*/ *graph;
+	RzGraph /*<struct trace_node *, None *>*/ *graph;
 	Sdb *graphnodes;
 };
 
@@ -62,7 +62,8 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 			if (sig == -1) { // trace ALL syscalls
 				syscalls[i] = -1;
 			} else if (sig == 0) {
-				if (!rz_syscall_get_num(core->analysis->syscall, sysnumstr, &sig)) {
+				RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
+				if (!rz_syscall_get_num(sysc, sysnumstr, &sig)) {
 					RZ_LOG_ERROR("core: Unknown syscall number\n");
 					free(str);
 					free(syscalls);
@@ -85,14 +86,14 @@ static void cmd_debug_cont_syscall(RzCore *core, const char *_str) {
 	free(syscalls);
 }
 
-static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *>*/ *g, Sdb *nodes, struct trace_node *tn) {
+static RzGraphNode *get_graphtrace_node(RzGraph /*<struct trace_node *, None *>*/ *g, Sdb *nodes, struct trace_node *tn) {
 	RzGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 
 	snprintf(tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
 	gn = (RzGraphNode *)(size_t)sdb_num_get(nodes, tn_key);
 	if (!gn) {
-		gn = rz_graph_add_node(g, tn);
+		gn = rz_graph_add_node(g, tn, NULL);
 		sdb_num_set(nodes, tn_key, (ut64)(size_t)gn);
 	}
 	return gn;
@@ -117,8 +118,8 @@ static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 		RzGraphNode *gn = get_graphtrace_node(g, gnodes, tn);
 		RzGraphNode *gn_parent = get_graphtrace_node(g, gnodes, tn_parent);
 
-		if (!rz_graph_adjacent(g, gn_parent, gn))
-			rz_graph_add_edge(g, gn_parent, gn);
+		if (!rz_graph_has_edge(g, gn_parent, gn, NULL))
+			rz_graph_add_edge(g, gn_parent, gn, NULL);
 	}
 }
 
@@ -126,8 +127,6 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 	const char *gfont = rz_config_get(core->config, "graph.font");
 	struct dot_trace_ght aux_data;
 	RTreeVisitor vis = { 0 };
-	const RzList *nodes;
-	RzListIter *iter;
 	RzGraphNode *n;
 
 	if (fmt == 'i') {
@@ -136,7 +135,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 		rz_core_agraph_print_interactive(core);
 		return;
 	}
-	aux_data.graph = rz_graph_new();
+	aux_data.graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, NULL, NULL);
 	aux_data.graphnodes = sdb_new0();
 
 	/* build a callgraph from the execution trace */
@@ -146,7 +145,14 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 	rz_tree_bfs(t, &vis);
 
 	/* traverse the callgraph to print the dot file */
-	nodes = rz_graph_get_nodes(aux_data.graph);
+	RzIterator *it_nodes = rz_graph_get_nodes(aux_data.graph);
+	if (!it_nodes) {
+		RZ_LOG_ERROR("Failed to get graph nodes\n");
+		rz_graph_free(aux_data.graph);
+		sdb_free(aux_data.graphnodes);
+		return;
+	}
+
 	if (fmt == 0) {
 		rz_cons_printf("digraph code {\n"
 			       "graph [bgcolor=white];\n"
@@ -154,10 +160,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 			       " shape=box fontname=\"%s\" fontsize=\"8\"];\n",
 			gfont);
 	}
-	rz_list_foreach (nodes, iter, n) {
-		struct trace_node *tn = (struct trace_node *)n->data;
-		const RzList *neighbours = rz_graph_get_neighbours(aux_data.graph, n);
-		RzListIter *it_n;
+	rz_iterator_foreach(it_nodes, n) {
+		const struct trace_node *tn = rz_graph_node_get_data(n);
 		RzGraphNode *w;
 
 		if (!fmt && tn) {
@@ -166,8 +170,14 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				       " (%d)\"]\n",
 				tn->addr, tn->addr, tn->addr, tn->refs);
 		}
-		rz_list_foreach (neighbours, it_n, w) {
-			struct trace_node *tv = (struct trace_node *)w->data;
+
+		RzIterator *it_neighbours = rz_graph_out_neighbors(aux_data.graph, n);
+		if (!it_neighbours) {
+			continue;
+		}
+
+		rz_iterator_foreach(it_neighbours, w) {
+			const struct trace_node *tv = rz_graph_node_get_data(w);
 
 			if (tv && tn) {
 				if (fmt) {
@@ -182,7 +192,10 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				}
 			}
 		}
+		rz_iterator_free(it_neighbours);
 	}
+	rz_iterator_free(it_nodes);
+
 	if (!fmt) {
 		rz_cons_printf("}\n");
 	}
@@ -225,8 +238,9 @@ static int step_until(RzCore *core, ut64 addr) {
 }
 
 static int step_until_esil(RzCore *core, const char *esilstr) {
-	if (!core || !esilstr || !core->dbg || !core->dbg->analysis || !core->dbg->analysis->esil) {
-		RZ_LOG_ERROR("core: Not initialized %p. Run 'aei' first.\n", core->analysis->esil);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (!esil || !esilstr || !core->dbg || !core->dbg->analysis) {
+		RZ_LOG_ERROR("core: Not initialized %p. Run 'aei' first.\n", esil);
 		return false;
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -241,7 +255,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 		}
 		rz_debug_step(core->dbg, 1);
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, false);
-		if (rz_analysis_esil_condition(core->analysis->esil, esilstr)) {
+		if (rz_analysis_esil_condition(esil, esilstr)) {
 			RZ_LOG_WARN("core: esil condition breakpoint!\n");
 			break;
 		}
@@ -363,7 +377,8 @@ static bool step_until_optype(RzCore *core, RzList /*<char *>*/ *optypes_list) {
 			}
 		} else {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			pc = rz_reg_getv(core->analysis->reg, "PC");
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			pc = rz_reg_getv(rreg, "PC");
 		}
 		rz_io_read_at_mapped(core->io, pc, buf, sizeof(buf));
 		rz_analysis_op_init(&op);
@@ -1440,15 +1455,15 @@ static void backtrace_vars(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
 	// analysis vs debug ?
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
+	RzReg *r = rz_analysis_get_reg(core->analysis);
+	const char *sp = rz_reg_get_name(r, RZ_REG_NAME_SP);
+	const char *bp = rz_reg_get_name(r, RZ_REG_NAME_BP);
 	if (!sp) {
 		sp = "SP";
 	}
 	if (!bp) {
 		bp = "BP";
 	}
-	RzReg *r = core->analysis->reg;
 	ut64 dsp = rz_reg_getv(r, sp);
 	ut64 dbp = rz_reg_getv(r, bp);
 	int n = 0;
@@ -1487,16 +1502,17 @@ static void asciiart_backtrace(RzCore *core, RzList /*<RzDebugFrame *>*/ *frames
 	RzListIter *iter;
 	bool mymap = false;
 	// analysis vs debug ?
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+	const char *bp = rz_reg_get_name(rreg, RZ_REG_NAME_BP);
 	if (!sp) {
 		sp = "SP";
 	}
 	if (!bp) {
 		bp = "BP";
 	}
-	ut64 dsp = rz_reg_getv(core->analysis->reg, sp);
-	ut64 dbp = rz_reg_getv(core->analysis->reg, bp);
+	ut64 dsp = rz_reg_getv(rreg, sp);
+	ut64 dbp = rz_reg_getv(rreg, bp);
 	RzDebugMap *map = rz_debug_map_get(core->dbg, dsp);
 	if (!map) {
 		mymap = true;
@@ -1872,23 +1888,26 @@ RZ_IPI RzCmdStatus rz_cmd_debug_trace_calls_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_esil_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init(core);
 	int idx = rz_num_math(core->num, argv[1]);
-	rz_analysis_esil_trace_show(core->analysis->esil, idx);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	rz_analysis_esil_trace_show(esil, idx);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dtel
 RZ_IPI RzCmdStatus rz_cmd_debug_trace_esils_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init(core);
-	rz_analysis_esil_trace_list(core->analysis->esil);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	rz_analysis_esil_trace_list(esil);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dte-*
 RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_delete_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_init(core);
-	if (core->analysis->esil) {
-		rz_pvector_free(core->analysis->esil->trace->instructions);
-		core->analysis->esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		rz_pvector_free(esil->trace->instructions);
+		esil->trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -1901,7 +1920,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_traces_esil_i_handler(RzCore *core, int argc, co
 		RZ_LOG_ERROR("Cannot analyze opcode at 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_esil_trace_op(core->analysis->esil, op);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	rz_analysis_esil_trace_op(esil, op);
 	rz_analysis_op_free(op);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2917,7 +2937,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_skip_handler(RzCore *core, int argc, const 
 }
 
 #define CMD_REGS_PREFIX   debug
-#define CMD_REGS_REG_PATH dbg->reg
+#define CMD_REGS_REG_PATH core->dbg->reg
 static bool cmd_regs_sync(RzCore *core, RzRegisterType type, bool write) {
 	return rz_debug_reg_sync(core->dbg, type, write);
 }
