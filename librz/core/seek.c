@@ -214,7 +214,8 @@ RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 		rz_analysis_op_fini(&aop);
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		RzList *fcns = rz_analysis_function_list(core->analysis);
+		rz_list_foreach (fcns, iter, fcni) {
 			if (fcni->addr < next && fcni->addr > core->offset) {
 				next = fcni->addr;
 			}
@@ -247,7 +248,8 @@ RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 		RZ_LOG_WARN("core: TODO: rz_core_seek_prev (opc)\n");
 	} else if (strstr(type, "fun")) {
 		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		RzList *fcns = rz_analysis_function_list(core->analysis);
+		rz_list_foreach (fcns, iter, fcni) {
 			if (fcni->addr > next && fcni->addr < core->offset) {
 				next = fcni->addr;
 			}

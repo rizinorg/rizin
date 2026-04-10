@@ -5,6 +5,7 @@
 #define MIPS_INTERNAL_H
 
 #include <rz_arch.h>
+#include "analysis_private.h"
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
 

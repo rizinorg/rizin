@@ -33,16 +33,12 @@ static RzBinJavaClass *core_java_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
 	}
-	RzAnalysis *analysis = core->analysis;
-	if (!analysis || !analysis->binb.bin) {
+	RzBin *bin = core->bin;
+	if (!bin || !bin->cur || !bin->cur->o) {
 		return NULL;
 	}
-	RzBin *b = analysis->binb.bin;
-	if (!b->cur || !b->cur->o) {
-		return NULL;
-	}
-	RzBinPlugin *plugin = b->cur->o->plugin;
-	return plugin && !strcmp(plugin->name, "java") ? (RzBinJavaClass *)b->cur->o->bin_obj : NULL;
+	RzBinPlugin *plugin = bin->cur->o->plugin;
+	return plugin && !strcmp(plugin->name, "java") ? (RzBinJavaClass *)bin->cur->o->bin_obj : NULL;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_javac_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

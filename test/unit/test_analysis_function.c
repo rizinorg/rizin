@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_util.h>
 #include "minunit.h"
-#include "rz_util/rz_str.h"
 #include "test_config.h"
+#include "analysis_private.h"
 
 #include "test_analysis_block_invars.inl"
 

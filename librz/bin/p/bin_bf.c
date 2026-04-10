@@ -41,8 +41,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->arch = rz_str_dup("bf");
 	ret->has_va = 1;
 	ret->bits = 64; // RzIL emulation of bf uses 64bit values
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 
 	RZ_LOG_INFO("Brainfuck debugger setup:\n"
 		    "f input 128 @ 0x3000\n"

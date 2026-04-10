@@ -20,9 +20,6 @@
 #define rtr_n    core->rtr_n
 #define rtr_host core->rtr_host
 
-static RzSocket *s = NULL;
-static RzThread *rapthread = NULL;
-
 struct rz_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -45,11 +42,6 @@ typedef struct {
 
 RZ_API void rz_core_wait(RzCore *core) {
 	rz_cons_singleton()->context->breaked = true;
-	if (rapthread) {
-		RapThread *rt = rz_th_get_user(rapthread);
-		rz_atomic_bool_set(rt->loop, false);
-		rz_th_wait(rapthread);
-	}
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {

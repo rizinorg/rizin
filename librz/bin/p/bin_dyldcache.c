@@ -126,7 +126,7 @@ static RzBinInfo *dyldcache_info(RzBinFile *bf) {
 	ret->type = rz_str_dup(rz_dyldcache_get_type_str(cache));
 	ret->has_va = true;
 	ret->big_endian = big_endian;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

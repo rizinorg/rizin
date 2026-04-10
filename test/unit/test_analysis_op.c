@@ -107,13 +107,14 @@ bool test_rz_analysis_op_val() {
 
 bool test_rz_core_analysis_bytes() {
 	RzCore *core = rz_core_new();
-	rz_core_set_asm_configs(core, "x86", 64, 0);
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
 	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
 	mu_assert_notnull(iter, "rz_core_analysis_bytes");
 
-	RzAnalysisBytes *ab = rz_iterator_next(iter);
+	RzCoreDecodedBytes *ab = rz_iterator_next(iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");
 
 	ab = rz_iterator_next(iter);
@@ -132,7 +133,8 @@ bool test_rz_core_analysis_bytes() {
 bool test_rz_core_print_disasm() {
 	RzCore *core = rz_core_new();
 	rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RX, 0644, 0, NULL); // needed to get arrow info (is_valid_offset checks)
-	rz_core_set_asm_configs(core, "x86", 64, 0);
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+
 	rz_config_set_b(core->config, "asm.lines", false); // arrow info in struct, but not in textual disasm
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfcebf8", buf);
@@ -178,10 +180,63 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+bool test_rz_core_print_disasm_resolve_aav_symbols() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new failed");
+	RzIODesc *io_desc = rz_io_open_at(core->io, "malloc://0x200000", RZ_PERM_RWX, 0644, 0, NULL);
+	mu_assert_notnull(io_desc, "io open failed");
+	bool arch_configured = rz_core_arch_configure(core, "x86", 32, NULL, NULL, NULL);
+	mu_assert_true(arch_configured, "rz_core_arch_configure failed");
+	bool analysis_arch_set = rz_analysis_use(core->analysis, "x86");
+	mu_assert_true(analysis_arch_set, "rz_analysis_use failed");
+	bool analysis_bits_set = rz_analysis_set_bits(core->analysis, 32);
+	mu_assert_true(analysis_bits_set, "rz_analysis_set_bits failed");
+	rz_config_set_i(core->config, "scr.color", 0);
+	rz_config_set_b(core->config, "asm.sub.names", true);
+	rz_config_set_b(core->config, "asm.sub.rel", true);
+	rz_config_set_i(core->config, "asm.sub.varmin", 0);
+
+	ut8 code[] = { 0xa1, 0x20, 0x00, 0x10, 0x00 }; // mov eax, dword [0x100020]
+	ut8 ptr[] = { 0x40, 0x00, 0x10, 0x00 }; // *(0x100020) = 0x100040
+	rz_io_write_at(core->io, 0x100020, ptr, sizeof(ptr));
+
+	rz_flag_space_set(core->flags, "symbols");
+	rz_flag_set(core->flags, "aav.0x00100020", 0x100020, 4);
+	rz_flag_set(core->flags, "obj.__stack_chk_guard", 0x100040, 4);
+
+	RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
+	mu_assert_notnull(vec, "rz_core_print_disasm vec not null");
+	RzCoreDisasmOptions options = {
+		.vec = vec,
+		.cbytes = 1,
+	};
+	rz_core_print_disasm(core, 0, code, sizeof(code), sizeof(code), NULL, &options);
+
+	size_t line_count = rz_pvector_len(vec);
+	mu_assert_true(line_count >= 1, "rz_core_print_disasm should produce at least one line");
+	RzAnalysisDisasmText *t = rz_pvector_at(vec, 0);
+	mu_assert_notnull(t, "first disasm line");
+	char *insn = rz_str_dup(t->text);
+	mu_assert_notnull(insn, "instruction line copy");
+	char *comment = strchr(insn, ';');
+	if (comment) {
+		*comment = '\0';
+	}
+	mu_assert_strcontains(insn, "obj.__stack_chk_guard", "aav.aav symbol should be resolved to preferred symbol");
+	char *aav_symbol = strstr(insn, "aav.aav.");
+	mu_assert_null(aav_symbol, "aav.aav symbol should not be present in instruction operand");
+	free(insn);
+
+	rz_core_free(core);
+	rz_pvector_free(vec);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_op_val);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_print_disasm);
+	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	return tests_passed != tests_run;
 }
 

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2015-2020 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)(y))->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)(y))->idx)

@@ -104,7 +104,7 @@ static const char *skip_comment_py(const char *code) {
 	if (*code != '#') {
 		return code;
 	}
-	char *end = strchr(code, '\n');
+	const char *end = (const char *)strchr(code, '\n');
 	if (end) {
 		code = end;
 	}
@@ -118,9 +118,9 @@ RZ_API char *rz_hex_from_py_array(char *out, const char *code) {
 	}
 	code++;
 	for (; *code; code++) {
-		char *comma = strchr(code, ',');
+		const char *comma = (const char *)strchr(code, ',');
 		if (!comma) {
-			comma = strchr(code, ']');
+			comma = (const char *)strchr(code, ']');
 		}
 		if (!comma) {
 			break;
@@ -155,7 +155,7 @@ RZ_API char *rz_hex_from_py(const char *code) {
 	}
 	*ret = '\0';
 	char *out = ret;
-	const char *tmp_code = strchr(code, '=');
+	const char *tmp_code = (const char *)strchr(code, '=');
 	if (tmp_code) {
 		code = tmp_code;
 	}
@@ -233,14 +233,14 @@ RZ_API char *rz_hex_from_c_str(char *out, const char **code) {
 
 const char *skip_comment_c(const char *code) {
 	if (!strncmp(code, "/*", 2)) {
-		char *end = strstr(code, "*/");
+		const char *end = (const char *)strstr(code, "*/");
 		if (end) {
 			code = end + 2;
 		} else {
-			eprintf("Missing closing comment\n");
+			RZ_LOG_ERROR("hex: missing closing comment\n");
 		}
 	} else if (!strncmp(code, "//", 2)) {
-		char *end = strchr(code, '\n');
+		const char *end = (const char *)strchr(code, '\n');
 		if (end) {
 			code = end + 2;
 		}
@@ -258,9 +258,9 @@ RZ_API char *rz_hex_from_c_array(char *out, const char *code) {
 	}
 	code++;
 	for (; *code; code++) {
-		const char *comma = strchr(code, ',');
+		const char *comma = (const char *)strchr(code, ',');
 		if (!comma) {
-			comma = strchr(code, '}');
+			comma = (const char *)strchr(code, '}');
 		}
 		char *_word = rz_str_ndup(code, comma - code);
 		const char *word = _word;
@@ -298,7 +298,7 @@ RZ_API char *rz_hex_from_c(const char *code) {
 	}
 	*ret = '\0';
 	char *out = ret;
-	const char *tmp_code = strchr(code, '=');
+	const char *tmp_code = (const char *)strchr(code, '=');
 	if (tmp_code) {
 		code = tmp_code;
 	}
@@ -316,8 +316,8 @@ RZ_API char *rz_hex_from_c(const char *code) {
 			if (!out) {
 				break;
 			}
-			s1 = strchr(code + 1, '"');
-			s2 = strchr(code + 1, ';');
+			s1 = (const char *)strchr(code + 1, '"');
+			s2 = (const char *)strchr(code + 1, ';');
 		} while (s1 && s2 && (s1 <= s2));
 	}
 	if (!out) {
@@ -329,21 +329,21 @@ RZ_API char *rz_hex_from_c(const char *code) {
 }
 
 RZ_API char *rz_hex_from_js(const char *code) {
-	char *s1 = strchr(code, '\'');
-	char *s2 = strchr(code, '"');
+	const char *s1 = (const char *)strchr(code, '\'');
+	const char *s2 = (const char *)strchr(code, '"');
 
 	/* there are no strings in the input */
 	if (!(s1 || s2)) {
 		return NULL;
 	}
 
-	char *start, *end;
+	const char *start, *end;
 	if (s1 < s2) {
 		start = s1;
-		end = strchr(start + 1, '\'');
+		end = (const char *)strchr(start + 1, '\'');
 	} else {
 		start = s2;
-		end = strchr(start + 1, '"');
+		end = (const char *)strchr(start + 1, '"');
 	}
 
 	/* the string isn't properly terminated */
@@ -402,7 +402,7 @@ RZ_API char *rz_hex_no_code(const char *code) {
 	*ret = '\0';
 	char *out = ret;
 	out = rz_hex_from_c_str(out, &code);
-	code = strchr(code + 1, '"');
+	code = (const char *)strchr(code + 1, '"');
 	if (!out) {
 		free(ret);
 		return NULL;
@@ -411,7 +411,7 @@ RZ_API char *rz_hex_no_code(const char *code) {
 	while (out && code) {
 		*out = '\0';
 		out = rz_hex_from_c_str(out, &code);
-		code = strchr(code + 1, '"');
+		code = (const char *)strchr(code + 1, '"');
 	}
 	return ret;
 }
@@ -444,7 +444,7 @@ RZ_API int rz_hex_pair2bin(const char *arg) {
 		}
 		d = c;
 		if (*ptr != '.' && rz_hex_to_byte(&c, *ptr)) {
-			eprintf("Invalid hexa string at char '%c' (%s).\n",
+			RZ_LOG_ERROR("hex: invalid hexadecimal char '%c' (%s).\n",
 				*ptr, arg);
 			return -1;
 		}

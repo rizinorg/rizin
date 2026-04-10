@@ -491,7 +491,7 @@ RZ_IPI RZ_OWN char *rz_core_print_hexdump_refs(RZ_NONNULL RzCore *core, ut64 add
 	}
 
 	const int ocols = core->print->cols;
-	int bitsize = core->rasm->bits;
+	int bitsize = rz_asm_get_bits(core->rasm);
 	/* Thumb is 16bit arm but handles 32bit data */
 	if (bitsize == 16) {
 		bitsize = 32;
@@ -540,10 +540,10 @@ RZ_API RZ_OWN char *rz_core_print_bytes_with_inst(RZ_NONNULL RzCore *core, RZ_NO
 }
 
 static void core_handle_call(RzCore *core, char *line, char **str) {
-	rz_return_if_fail(core && line && str && core->rasm && core->rasm->cur);
-	if (strstr(core->rasm->cur->arch, "x86")) {
+	rz_return_if_fail(core && line && str && core->rasm);
+	if (rz_asm_is_arch(core->rasm, "x86")) {
 		*str = strstr(line, "call ");
-	} else if (strstr(core->rasm->cur->arch, "arm")) {
+	} else if (rz_asm_is_arch(core->rasm, "arm")) {
 		*str = strstr(line, " b ");
 		if (*str && strstr(*str, " 0x")) {
 			/*
@@ -719,7 +719,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		const char *linecolor = NULL;
 		char *string = NULL;
 		if (qo) {
-			char *qoe = strrchr(qo + 1, '"');
+			const char *qoe = strrchr(qo + 1, '"');
 			if (qoe) {
 				int raw_len = qoe - qo - 1;
 				int actual_len = 0;
@@ -758,7 +758,7 @@ RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCore
 		}
 		char *string2 = NULL;
 		if (ox) {
-			char *qoe = strchr(ox + 3, ' ');
+			const char *qoe = strchr(ox + 3, ' ');
 			if (!qoe) {
 				qoe = strchr(ox + 3, '\x1b');
 			}
@@ -972,7 +972,7 @@ RZ_IPI const char *rz_core_print_stack_command(RZ_NONNULL RzCore *core) {
 	if (rz_config_get_b(core->config, "stack.bytes")) {
 		return "px";
 	}
-	switch (core->rasm->bits) {
+	switch (rz_asm_get_bits(core->rasm)) {
 	case 64: return "pxq"; break;
 	case 32: return "pxw"; break;
 	}
@@ -1052,6 +1052,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	core->print->reg = rz_core_reg_default(core);
 	core->print->get_register = rz_reg_get;
 	core->print->get_register_value = rz_reg_get_value;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 
 	rz_core_seek(core, address, true);
 
@@ -1060,7 +1061,7 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	char *fmtname = pf_get_format_name(fmt);
 	if (fmtname) {
 		// To be sure it's the format name, receive the format string
-		const char *format = rz_type_db_format_get(core->analysis->typedb, fmtname);
+		const char *format = rz_type_db_format_get(typedb, fmtname);
 		if (format) {
 			comp = parse_named_pf_string(fmt);
 			// Value was passed not through "="
@@ -1072,9 +1073,9 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	int struct_sz = 0;
 	if (comp) {
 		// If the split into components is finished, use the only format name
-		struct_sz = rz_type_format_struct_size(core->analysis->typedb, comp->name, mode, 0);
+		struct_sz = rz_type_format_struct_size(typedb, comp->name, mode, 0);
 	} else {
-		struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
+		struct_sz = rz_type_format_struct_size(typedb, fmt, mode, 0);
 	}
 	size_t size = RZ_MAX(core->blocksize, struct_sz);
 	// Make sure the whole format will be processed
@@ -1091,10 +1092,10 @@ static RZ_OWN char *core_print_format(RzCore *core, const char *fmt, const char 
 	free(fmtname);
 	// Use the component-based data formatting if split was correct
 	if (comp) {
-		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+		result = rz_type_format_data(typedb, core->print, core->offset,
 			buf, size, comp->name, mode, comp->value, comp->field);
 	} else {
-		result = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
+		result = rz_type_format_data(typedb, core->print, core->offset,
 			buf, size, fmt, mode, value, NULL);
 	}
 	free(buf);

@@ -71,6 +71,8 @@ if get_option('enable_tests')
     'float',
     'glob',
     'graph',
+    'graph_new',
+    'graph_new_cfg',
     'hash',
     'hex',
     'ht',

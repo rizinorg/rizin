@@ -118,7 +118,8 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	rz_flag_foreach(core->flags, hudstuff_append, list);
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *mi;
-	rz_interval_tree_foreach (&core->analysis->meta, it, mi) {
+	RzIntervalTree *tmeta = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (tmeta, it, mi) {
 		if (mi->type == RZ_META_TYPE_COMMENT) {
 			char *s = rz_str_newf("0x%08" PFMT64x " %s", rz_interval_tree_iter_get(&it)->start, mi->str);
 			if (s) {

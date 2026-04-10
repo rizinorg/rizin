@@ -1888,7 +1888,8 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	opts.analysis_a = analysis_a;
 	opts.analysis_b = analysis_b;
 
-	result = rz_analysis_match_functions(list_a, analysis_b->fcns, &opts);
+	RzList *fcns_b = rz_analysis_function_list(analysis_b);
+	result = rz_analysis_match_functions(list_a, fcns_b, &opts);
 	if (result && rz_list_length(result->matches) > 0) {
 		pair = (RzAnalysisMatchPair *)rz_list_first_val(result->matches);
 		match = (RzAnalysisFunction *)pair->pair_b;
@@ -2138,8 +2139,8 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 	}
 
 	rz_list_sort(result->matches, (RzListComparator)comparePairFunctions, NULL);
-	rz_list_sort(result->unmatch_a, core_a->analysis->columnSort, NULL);
-	rz_list_sort(result->unmatch_b, core_b->analysis->columnSort, NULL);
+	rz_list_sort(result->unmatch_a, rz_analysis_get_column_sort(core_a->analysis), NULL);
+	rz_list_sort(result->unmatch_b, rz_analysis_get_column_sort(core_b->analysis), NULL);
 
 	if (mode == DIFF_MODE_JSON) {
 		pj = pj_new();

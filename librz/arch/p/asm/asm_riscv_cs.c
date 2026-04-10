@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(riscv_asm);
 
-static int riscv_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int riscv_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int ret = -1;

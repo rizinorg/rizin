@@ -19,7 +19,6 @@ baddr    0x00000000
 binsz    0x00000400
 bintype  zimg
 bits     32
-retguard false
 class    Linux zImage Kernel (3.16-4.14)
 compiler N/A
 dbg_file N/A
@@ -37,18 +36,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "ARM32 LE"
@@ -104,7 +101,6 @@ baddr    0x00000000
 binsz    0x00000200
 bintype  zimg
 bits     32
-retguard false
 class    Linux zImage Kernel (2.6-3.16)
 compiler N/A
 dbg_file N/A
@@ -122,18 +118,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "ARM32 LE"
@@ -188,7 +182,6 @@ baddr    0x00200000
 binsz    0x00000200
 bintype  zimg
 bits     64
-retguard false
 class    Linux zImage Kernel (5.2+)
 compiler N/A
 dbg_file N/A
@@ -206,18 +199,16 @@ cc       N/A
 pcalign  2
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "RISC-V"

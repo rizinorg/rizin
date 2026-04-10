@@ -10,7 +10,6 @@ baddr    ----------
 binsz    0x000067d4
 bintype  N/A
 bits     32
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -21,23 +20,23 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  68000
-minopsz  1
+maxopsz  4
+minopsz  2
 os       AmigaOS
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 [Imports]
 nth vaddr bind type lib name 

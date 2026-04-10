@@ -162,7 +162,7 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 				}
 			}
 
-			mflags = rz_core_bin_method_flags_str(m->method_flags, 0);
+			mflags = rz_core_bin_method_flags_str(m->method_flags, RZ_OUTPUT_MODE_STANDARD);
 
 			if (show_color) {
 				if (rz_str_startswith(name, _c->name)) {

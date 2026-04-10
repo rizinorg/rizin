@@ -365,7 +365,7 @@ static void emit_trap(RzEgg *egg) {
 static void emit_load_ptr(RzEgg *egg, const char *dst) {
 	int d = atoi(dst);
 	if (d == 0) { // hack to handle stackvarptrz
-		char *p = strchr(dst, '+');
+		const char *p = strchr(dst, '+');
 		if (p) {
 			d = atoi(p + 1);
 		}

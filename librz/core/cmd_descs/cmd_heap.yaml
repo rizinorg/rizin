@@ -93,16 +93,20 @@ commands:
       - name: dmhw
         summary: List process heaps
         cname: cmd_debug_process_heaps
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
-          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
+        default_mode: RZ_OUTPUT_MODE_TABLE
         args: []
       - name: dmhwb
         summary: List allocated heap blocks
         cname: cmd_debug_process_heap_block
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
-          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_TABLE
           - RZ_OUTPUT_MODE_JSON
+        default_mode: RZ_OUTPUT_MODE_TABLE
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM

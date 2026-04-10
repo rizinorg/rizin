@@ -781,7 +781,6 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		ctx->omode = mode;
 		ctx->obits = analysis->bits;
 	}
-	analysis->pcalign = 2;
 	op->addr = addr;
 	if (len < 2) {
 		return -1;
@@ -792,7 +791,7 @@ int analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(ctx->hndl, CS_OPT_DETAIL, CS_OPT_ON | CS_OPT_DETAIL_REAL);
 	}
 	n = cs_disasm(ctx->hndl, (ut8 *)buf, len, addr, 1, &insn);
 
@@ -1932,7 +1931,6 @@ beach:
 		op_fillval(analysis, op, &ctx->hndl, insn);
 	}
 	cs_free(insn, n);
-	// cs_close (&handle);
 fin:
 	return opsize;
 }
@@ -2262,6 +2260,7 @@ static void set_stack_effect(RzAnalysisOp *op, cs_insn *insn) {
 static bool riscv_fini(void *user) {
 	RiscvContext *ctx = (RiscvContext *)user;
 	if (ctx) {
+		cs_close(&ctx->hndl);
 		RZ_FREE(ctx);
 	}
 	return true;

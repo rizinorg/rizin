@@ -2,8 +2,6 @@
 // SPDX-FileCopyrightText: 2024 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util.h>
-#include <rz_analysis.h>
 #include <xtensa/xtensa.h>
 #include <capstone/xtensa.h>
 

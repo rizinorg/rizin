@@ -897,6 +897,13 @@ bool test_set_u(void) {
 	rz_iterator_free(it);
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_take(set_u), UT64_MAX, "Invalid take should return UT64_MAX");
+	rz_set_u_add(set_u, 100000000);
+	mu_assert_eq(rz_set_u_size(set_u), 1, "Add failed");
+	mu_assert_eq(rz_set_u_take(set_u), 100000000, "Take failed");
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Take did not remove element");
+
 	rz_set_u_free(set_u);
 	mu_end;
 }

@@ -58,7 +58,8 @@ static bool test_analysis_xrefs_comment() {
 
 	RzAnalysis *analysis = core->analysis;
 	mu_assert_notnull(analysis, "analysis is null");
-	analysis->iob.is_valid_offset = always_valid;
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
+	iob->is_valid_offset = always_valid;
 
 	mu_assert_true(rz_analysis_set_bits(analysis, 64), "set bits failed");
 	mu_assert_true(rz_analysis_use(analysis, "x86"), "use x86 failed");

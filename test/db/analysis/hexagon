@@ -1632,3 +1632,32 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=hexagon asm token patterns
+FILE==
+ARGS=-a hexagon
+CMDS=<<EOF
+wx 2040006400401d67104000672a4002673c40006d0a408c9e6ed0879a14c032630040000005ff3f8c0fe0ffa602ffe0a610dae0a6e7401f92e0ea0892
+pi 16
+EOF
+EXPECT=<<EOF
+?   CSwi(R0)
+?   SGP0 = SP
+?   EVB = R0
+?   ISDBEN = R2
+?   S61:60 = R1:0
+?   R11:10 = memb_fifo(R12++M0:brev)
+?   R15:14 = memb_fifo(R7=##0x3)
+[   C21:20 = R19:18
+/   immext(##0x0)
+\   R5 = add(clb(LR),#0x3f)
+[   mxmem(LR,R0):after:retain.uh = acc:2x1
+[   mxmem(R0,LR):before:sat.uh = acc:2x1
+[   cvt.hf = acc(R0)
+/   activation.f8 = mxmem(LR,R0):above
+\   weight.b = mxmem(R8,R10)
+[   invalid
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
