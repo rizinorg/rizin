@@ -101,7 +101,7 @@ typedef struct {
 static bool menuet_parse_header(RzBuffer *buf, MenuetHeader *hdr) {
 	rz_return_val_if_fail(buf && hdr, false);
 	const ut64 sz = rz_buf_size(buf);
-	if (sz < 36) {
+	if (sz < 32) {
 		return false;
 	}
 	memset(hdr, 0, sizeof(*hdr));
@@ -113,16 +113,28 @@ static bool menuet_parse_header(RzBuffer *buf, MenuetHeader *hdr) {
 		!rz_buf_read_le32_offset(buf, &off, &hdr->program_start) ||
 		!rz_buf_read_le32_offset(buf, &off, &hdr->image_size) ||
 		!rz_buf_read_le32_offset(buf, &off, &hdr->memory_size) ||
-		!rz_buf_read_le32_offset(buf, &off, &hdr->field_24) ||
-		!rz_buf_read_le32_offset(buf, &off, &hdr->field_28) ||
-		!rz_buf_read_le32_offset(buf, &off, &hdr->field_32)) {
+		!rz_buf_read_le32_offset(buf, &off, &hdr->field_24)) {
 		return false;
 	}
 
 	hdr->version_char = MENUET_VERSION(hdr->magic);
-	if (hdr->version_char != '2') {
+	if (hdr->version_char == '0') {
 		return true;
 	}
+
+	if (!rz_buf_read_le32_offset(buf, &off, &hdr->field_28) ||
+		!rz_buf_read_le32_offset(buf, &off, &hdr->field_32)) {
+		return false;
+	}
+
+	if (hdr->version_char == '1') {
+		return true;
+	}
+
+	if (hdr->version_char != '2') {
+		return false;
+	}
+
 	if (sz < 52) {
 		hdr->truncated_v2 = true;
 		return true;
