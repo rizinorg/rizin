@@ -2957,6 +2957,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETDESC(n, "Select page size for jemalloc heap parsing (auto-detected if 'auto')");
 	SETOPTIONS(n, "auto", "4k", "16k", "64k", NULL);
 
+	n = NODECB("dbg.windows.version", "auto", NULL);
+	SETDESC(n, "Set Windows 10 version for heap parsing (default '1511' if 'auto')");
+	SETOPTIONS(n, "auto",
+		"1511", "1607", "1703", "1709", "1803", "1809",
+		"1903", "1909", "2004", "20H2", "21H1", "21H2", "22H2", NULL);
+
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
