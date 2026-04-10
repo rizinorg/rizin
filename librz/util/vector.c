@@ -277,21 +277,32 @@ RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *
 	if (rz_vector_empty(vec)) {
 		return rz_vector_push(vec, elem);
 	}
-	size_t i = vec->reverse_sorted ? rz_vector_len(vec) - 1 : 0;
-	int inc = vec->reverse_sorted ? -1 : 1;
 
-	do {
-		void *velem = ((char *)vec->a) + (vec->elem_size * i);
-		if (cmp(velem, elem, user) >= 0) {
-			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
+	size_t left = 0;
+	size_t right = rz_vector_len(vec);
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+
+		void *velem = ((char *)vec->a) + (vec->elem_size * mid);
+
+		int cmp_res = cmp(velem, elem, user);
+
+		if (vec->reverse_sorted) {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		} else {
+			if (cmp_res < 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
 		}
-		if (i == 0 && inc == -1) {
-			// Overflow is undefined. So lets not depend on it.
-			break;
-		}
-		i += inc;
-	} while (i >= 0 && i < rz_vector_len(vec));
-	return vec->reverse_sorted ? rz_vector_push_front(vec, elem) : rz_vector_push(vec, elem);
+	}
+	return rz_vector_insert(vec, left, elem);
 }
 
 static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user, RZ_OUT size_t *i) {
