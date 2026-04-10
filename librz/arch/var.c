@@ -901,7 +901,7 @@ RZ_API void rz_analysis_var_remove_access_at(RzAnalysisVar *var, ut64 address) {
 RZ_API void rz_analysis_var_clear_accesses(RzAnalysisVar *var) {
 	rz_return_if_fail(var);
 	RzAnalysisFunction *fcn = var->fcn;
-	if (fcn->inst_vars) {
+	if (fcn && fcn->inst_vars) {
 		// remove all inverse references to the var's accesses
 		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
