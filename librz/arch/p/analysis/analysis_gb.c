@@ -2005,7 +2005,7 @@ static char *gb_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int gb_esil_init(RzAnalysisEsil *esil) {
+static bool gb_esil_init(RzAnalysisEsil *esil) {
 	GBUser *user = RZ_NEW0(GBUser);
 	rz_analysis_esil_set_op(esil, "daa", gb_custom_daa, 1, 1, RZ_ANALYSIS_ESIL_OP_TYPE_MATH | RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
@@ -2028,7 +2028,7 @@ static int gb_esil_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int gb_esil_fini(RzAnalysisEsil *esil) {
+static bool gb_esil_fini(RzAnalysisEsil *esil) {
 	RZ_FREE(esil->cb.user);
 	return true;
 }

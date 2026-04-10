@@ -5,8 +5,7 @@
 #define RZ_AVR_ESIL_H
 #include "analysis_private.h"
 
-RZ_IPI int rz_avr_esil_init(RzAnalysisEsil *esil);
-RZ_IPI int rz_avr_esil_fini(RzAnalysisEsil *esil);
+RZ_IPI bool rz_avr_esil_init(RzAnalysisEsil *esil);
 RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 
 #endif /* RZ_AVR_ESIL_H */

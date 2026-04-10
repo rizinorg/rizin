@@ -2,10 +2,8 @@
 // SPDX-FileCopyrightText: 2014-2021 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
-#include <rz_types.h>
-#include <rz_util.h>
-#include <rz_bind.h>
 
 #define FLG(x) RZ_ANALYSIS_ESIL_FLAG_##x
 #define cpuflag(x, y) \
@@ -130,14 +128,6 @@ static bool rz_analysis_esil_fire_trap(RzAnalysisEsil *esil, int trap_type, int 
 	if (esil->cmd) {
 		if (esil->cmd(esil, esil->cmd_trap, trap_type, trap_code)) {
 			return true;
-		}
-	}
-	if (esil->analysis) {
-		RzAnalysisPlugin *ap = esil->analysis->cur;
-		if (ap && ap->esil_trap) {
-			if (ap->esil_trap(esil, trap_type, trap_code)) {
-				return true;
-			}
 		}
 	}
 	return false;

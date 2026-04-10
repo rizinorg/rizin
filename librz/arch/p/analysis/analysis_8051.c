@@ -983,7 +983,7 @@ static int i8051_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 }
 #endif
 
-static int esil_i8051_init(RzAnalysisEsil *esil) {
+static bool esil_i8051_init(RzAnalysisEsil *esil) {
 	// reset emulation control registers based on cpu
 	set_cpu_model(esil->analysis, true);
 
@@ -1005,7 +1005,7 @@ static int esil_i8051_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int esil_i8051_fini(RzAnalysisEsil *esil) {
+static bool esil_i8051_fini(RzAnalysisEsil *esil) {
 	RZ_FREE(esil->cb.user);
 	return true;
 }

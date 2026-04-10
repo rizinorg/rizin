@@ -169,10 +169,6 @@ repeat:
 			core->dbg->reg = reg;
 		} else if (RZ_STR_ISNOTEMPTY(e)) {
 			rz_analysis_esil_parse(esil, e);
-			const RzAnalysisPlugin *cur = rz_analysis_plugin_current(core->analysis);
-			if (cur && cur->esil_post_loop) {
-				cur->esil_post_loop(esil, &op);
-			}
 			rz_analysis_esil_stack_free(esil);
 		}
 		bool isNextFall = false;

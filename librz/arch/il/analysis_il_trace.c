@@ -20,7 +20,7 @@
 RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *rzil) {
 	rz_return_val_if_fail(rzil, NULL);
 	size_t i;
-	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
+	RzAnalysisRzilTrace *trace = RZ_NEW0(RzAnalysisRzilTrace);
 	if (!trace) {
 		return NULL;
 	}
@@ -59,7 +59,7 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysis *analysis, RZ_
 	}
 	return trace;
 error:
-	rz_analysis_esil_trace_free(trace);
+	rz_analysis_rzil_trace_free(trace);
 	return NULL;
 }
 
@@ -67,7 +67,7 @@ error:
  * Free an IL trace
  * \param trace trace to be free
  */
-RZ_API void rz_analysis_rzil_trace_free(RzAnalysisEsilTrace *trace) {
+RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace) {
 	size_t i;
 	if (!trace) {
 		return;

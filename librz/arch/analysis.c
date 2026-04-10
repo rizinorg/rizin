@@ -645,16 +645,6 @@ RZ_API RZ_BORROW bool rz_analysis_get_recursive_noreturn(RZ_NONNULL RzAnalysis *
 	return analysis->recursive_noreturn;
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsilInterState *rz_analysis_get_esil_inter_state(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	return analysis->esilinterstate;
-}
-
-RZ_DEPRECATE RZ_API void rz_analysis_set_esil_inter_state(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsilInterState *esilinterstate) {
-	rz_return_if_fail(analysis);
-	analysis->esilinterstate = esilinterstate;
-}
-
 RZ_DEPRECATE RZ_API void rz_analysis_set_core(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE void *core) {
 	rz_return_if_fail(analysis);
 	analysis->core = core;
@@ -663,16 +653,6 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_core(RZ_NONNULL RzAnalysis *analysis, R
 RZ_DEPRECATE RZ_API void rz_analysis_set_event(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzEvent *ev) {
 	rz_return_if_fail(analysis);
 	analysis->ev = ev;
-}
-
-RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	return analysis->esil;
-}
-
-RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil) {
-	rz_return_if_fail(analysis);
-	analysis->esil = esil;
 }
 
 RZ_DEPRECATE RZ_API const char *rz_analysis_get_arch(RZ_NONNULL const RzAnalysis *analysis) {
@@ -1271,4 +1251,24 @@ RZ_API void rz_analysis_remove_import(RzAnalysis *analysis, const char *imp) {
 
 RZ_API void rz_analysis_purge_imports(RzAnalysis *analysis) {
 	rz_list_purge(analysis->imports);
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsilInterState *rz_analysis_get_esil_inter_state(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->esilinterstate;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_esil_inter_state(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsilInterState *esilinterstate) {
+	rz_return_if_fail(analysis);
+	analysis->esilinterstate = esilinterstate;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->esil;
+}
+
+RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil) {
+	rz_return_if_fail(analysis);
+	analysis->esil = esil;
 }

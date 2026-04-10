@@ -1844,7 +1844,7 @@ static char *_6502_get_reg_profile(RzAnalysis *analysis) {
 	return rz_str_dup(p);
 }
 
-static int _6502_esil_init(RzAnalysisEsil *esil) {
+static bool _6502_esil_init(RzAnalysisEsil *esil) {
 	if (esil->analysis && esil->analysis->reg) { // initial values
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "pc", -1), 0x0000);
 		rz_reg_set_value(esil->analysis->reg, rz_reg_get(esil->analysis->reg, "sp", -1), 0xff);
@@ -1856,7 +1856,7 @@ static int _6502_esil_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int _6502_esil_fini(RzAnalysisEsil *esil) {
+static bool _6502_esil_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 

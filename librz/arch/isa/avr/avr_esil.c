@@ -1618,7 +1618,7 @@ static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 
 	return 0;
 }
 
-RZ_IPI int rz_avr_esil_init(RzAnalysisEsil *esil) {
+RZ_IPI bool rz_avr_esil_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
@@ -1628,10 +1628,6 @@ RZ_IPI int rz_avr_esil_init(RzAnalysisEsil *esil) {
 	rz_analysis_esil_set_op(esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, RZ_ANALYSIS_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 
-	return true;
-}
-
-RZ_IPI int rz_avr_esil_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
