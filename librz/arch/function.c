@@ -161,7 +161,12 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	fcn->is_noreturn = rz_analysis_noreturn_at_addr(analysis, fcn->addr);
 	rz_list_append(analysis->fcns, fcn);
-	return ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
+	bool inserted = ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn) && ht_up_insert(analysis->ht_addr_fun, fcn->addr, fcn);
+	if (inserted && analysis->ev) {
+		RzEventAnalysisFunction ev = { fcn };
+		rz_event_send(analysis->ev, RZ_EVENT_FCN_NEW, &ev);
+	}
+	return inserted;
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, const char *name, ut64 addr, RzAnalysisFcnType type) {
@@ -191,7 +196,13 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 }
 
 RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn) {
-	return rz_list_delete_val(fcn->analysis->fcns, fcn);
+	rz_return_val_if_fail(fcn && fcn->analysis, false);
+	RzAnalysis *analysis = fcn->analysis;
+	if (analysis->ev) {
+		RzEventAnalysisFunctionDel ev = { fcn->addr, fcn->name };
+		rz_event_send(analysis->ev, RZ_EVENT_FCN_DEL, &ev);
+	}
+	return rz_list_delete_val(analysis->fcns, fcn);
 }
 
 /**
@@ -287,13 +298,18 @@ RZ_API bool rz_analysis_function_rename(RZ_NONNULL RzAnalysisFunction *fcn, RZ_N
 	if (!newname) {
 		return false;
 	}
+	char *oldname = fcn->name;
 	bool in_tree = ht_sp_delete(analysis->ht_name_fun, fcn->name);
-	free(fcn->name);
 	fcn->name = newname;
 	if (in_tree) {
 		// only re-insert if it really was in the tree before
 		ht_sp_insert(analysis->ht_name_fun, fcn->name, fcn);
 	}
+	if (analysis->ev) {
+		RzEventAnalysisFunctionRename ev = { fcn, oldname };
+		rz_event_send(analysis->ev, RZ_EVENT_FCN_RENAME, &ev);
+	}
+	free(oldname);
 	return true;
 }
 
