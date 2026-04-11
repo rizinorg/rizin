@@ -107,11 +107,11 @@ typedef enum {
  * \brief Filter conditions while searching gadgets by stack changes.
  */
 typedef enum {
-	RZ_GADGET_DETAIL_CMP_EQ = 1, // ==
-	RZ_GADGET_DETAIL_CMP_GT = 1 << 1, // >
-	RZ_GADGET_DETAIL_CMP_GE = RZ_GADGET_DETAIL_CMP_GT | RZ_GADGET_DETAIL_CMP_EQ, // >=
-	RZ_GADGET_DETAIL_CMP_LT = 1 << 2, // <
-	RZ_GADGET_DETAIL_CMP_LE = RZ_GADGET_DETAIL_CMP_LT | RZ_GADGET_DETAIL_CMP_EQ, // <=
+	RZ_GADGET_DETAIL_CMP_EQ = 1, ///< ==
+	RZ_GADGET_DETAIL_CMP_GT = 1 << 1, ///< >
+	RZ_GADGET_DETAIL_CMP_GE = RZ_GADGET_DETAIL_CMP_GT | RZ_GADGET_DETAIL_CMP_EQ, ///< >=
+	RZ_GADGET_DETAIL_CMP_LT = 1 << 2, ///< <
+	RZ_GADGET_DETAIL_CMP_LE = RZ_GADGET_DETAIL_CMP_LT | RZ_GADGET_DETAIL_CMP_EQ, ///< <=
 } RzGadgetDetailSearchCmpOp;
 
 /**
@@ -166,7 +166,7 @@ typedef enum {
 	RZ_GADGET_EVENT_MEM_READ,
 	RZ_GADGET_EVENT_MEM_WRITE,
 	RZ_GADGET_EVENT_PC_WRITE,
-	RZ_GADGET_EVENT_COUNT // This should always be the last element
+	RZ_GADGET_EVENT_COUNT ///< This should always be the last element.
 } RzGadgetEvent;
 
 /**
