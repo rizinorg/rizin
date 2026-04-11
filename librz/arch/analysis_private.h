@@ -52,7 +52,6 @@ struct rz_analysis_t {
 	int maxreflines; // asm.lines.maxref
 	ut32 pcalign; // asm.pcalign
 	RzAnalysisEsil *esil;
-	RzAnalysisEsilInterState *esilinterstate;
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	RzAnalysisPlugin *cur;
 	RzInterval limit; // analysis.from, analysis.to

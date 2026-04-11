@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2018 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
-#include <rz_util.h>
-#include <rz_lib.h>
 
 static void interrupt_free(RzAnalysisEsilInterrupt *i) {
 	rz_analysis_esil_interrupt_free(i->esil, i);
