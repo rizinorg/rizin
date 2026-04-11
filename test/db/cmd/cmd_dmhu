@@ -8,3 +8,26 @@ EXPECT=<<EOF
 Debugging is not enabled. Run ood?
 EOF
 RUN
+
+NAME=dmhu with explicit address no debug
+FILE==
+ARGS=
+CMDS=<<EOF
+dmhu 0x1000
+EOF
+EXPECT=<<EOF
+Debugging is not enabled. Run ood?
+EOF
+RUN
+
+NAME=dmhu help
+FILE==
+ARGS=
+CMDS=<<EOF
+dmhu?
+EOF
+EXPECT=<<EOF
+Usage: dmhu[?]   # uClibc heap commands
+| dmhu [<addr>] # Print uClibc heap free list starting at current offset or given address.
+EOF
+RUN

@@ -56,7 +56,7 @@ static ut64 uclibc_get_heap_base(RzCore *core, RzDebugMap *map) {
 		RzBinSymbol *s;
 		rz_pvector_foreach (syms, iter) {
 			s = *iter;
-			if (!strcmp(s->name, "__malloc_heap")) {
+			if (!strcmp(s->name, "__malloc_heap") || !strcmp(s->name, "__malloc_state")) {
 				vaddr = s->vaddr;
 				break;
 			}
