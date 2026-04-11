@@ -1246,21 +1246,6 @@ RZ_API void rz_analysis_purge_imports(RzAnalysis *analysis) {
 	rz_list_purge(analysis->imports);
 }
 
-RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsilInterState *rz_analysis_get_esil_inter_state(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	if (!analysis->esil) {
-		return NULL;
-	}
-	return analysis->esil->esilinterstate;
-}
-
-RZ_DEPRECATE RZ_API void rz_analysis_set_esil_inter_state(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsilInterState *esilinterstate) {
-	rz_return_if_fail(analysis);
-	if (analysis->esil) {
-		analysis->esil->esilinterstate = esilinterstate;
-	}
-}
-
 RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->esil;

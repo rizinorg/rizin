@@ -837,8 +837,10 @@ enum {
 
 static void cccb(void *u) {
 	RzCore *core = u;
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
-	estate->analysis_stop = true;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (esil) {
+		esil->esilinterstate->analysis_stop = true;
+	}
 	eprintf("^C\n");
 }
 
@@ -928,7 +930,7 @@ static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, 
 static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzCore *core = esil->pcore;
 	bool big_endian = rz_asm_is_big_endian_set(core->rasm);
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
 
 	if (addr != UT64_MAX) {
 		estate->last_read = addr;
@@ -1274,7 +1276,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
-	estate = rz_analysis_get_esil_inter_state(core->analysis);
+	estate = esil->esilinterstate;
 	estate->last_read = UT64_MAX;
 	const char *spname = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
 	EsilBreakCtx ctx = {

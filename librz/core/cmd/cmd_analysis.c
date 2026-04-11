@@ -889,7 +889,6 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	aea_stats_init(&stats);
 
 	rz_reg_arena_push(rreg);
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
 	bool iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	int romem = rz_config_get_i(core->config, "esil.romem");
@@ -900,6 +899,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	rz_analysis_esil_setup(esil, core->analysis, romem, stats1, noNULL, core); // setup io
 #define hasNext(x) (x & 1) ? (addr < addr_end) : (ops < ops_end)
 
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
 	estate->memreads = rz_list_new();
 	estate->memwrites = rz_list_new();
 	esil->user = &stats;

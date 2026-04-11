@@ -1388,8 +1388,6 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_core(RZ_NONNULL RzAnalysis *analysis, R
 RZ_DEPRECATE RZ_API void rz_analysis_set_event(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzEvent *ev);
 RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil);
-RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsilInterState *rz_analysis_get_esil_inter_state(RZ_NONNULL RzAnalysis *analysis);
-RZ_DEPRECATE RZ_API void rz_analysis_set_esil_inter_state(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsilInterState *esilinterstate);
 RZ_DEPRECATE RZ_API const char *rz_analysis_get_arch(RZ_NONNULL const RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API int rz_analysis_get_bits(RZ_NONNULL const RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API bool rz_analysis_is_big_endian_set(RZ_NONNULL const RzAnalysis *analysis);
