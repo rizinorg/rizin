@@ -4,7 +4,6 @@
 #include "core_private.h"
 #include <rz_core.h>
 #include <rz_heap_uclibc.h>
-#include <rz_heap_glibc.h>
 
 static inline ut8 uclibc_ptr_size(RzCore *core) {
 	ut8 bits = (ut8)rz_asm_get_bits(core->rasm);
@@ -15,9 +14,9 @@ static inline ut8 uclibc_ptr_size(RzCore *core) {
 }
 
 /**
- * \brief Get the virtual address of __malloc_heap symbol from a uClibc library map.
+ * \brief Get the virtual address of __heap_free_areas symbol from a uClibc library map.
  *
- * Opens the library file and searches for the __malloc_heap symbol,
+ * Opens the library file and searches for the __heap_free_areas symbol,
  * returning its virtual address adjusted by the map's base address.
  *
  * \param core RzCore instance
@@ -56,7 +55,7 @@ static ut64 uclibc_get_heap_base(RzCore *core, RzDebugMap *map) {
 		RzBinSymbol *s;
 		rz_pvector_foreach (syms, iter) {
 			s = *iter;
-			if (!strcmp(s->name, "__malloc_heap") || !strcmp(s->name, "__malloc_state")) {
+			if (!strcmp(s->name, "__heap_free_areas")) {
 				vaddr = s->vaddr;
 				break;
 			}
@@ -75,7 +74,7 @@ static ut64 uclibc_get_heap_base(RzCore *core, RzDebugMap *map) {
  * \brief Find the uClibc heap pointer by searching debug maps for uClibc libraries.
  *
  * Iterates through debug maps looking for uClibc/uClibc-ng libraries,
- * then reads the __malloc_heap pointer from the library's data section.
+ * then reads the __heap_free_areas pointer from the library's data section.
  *
  * \param core RzCore instance
  * \return Heap pointer value, or UT64_MAX if not found
@@ -87,8 +86,9 @@ static ut64 uclibc_find_heap_ptr(RzCore *core) {
 		rz_debug_map_sync(core->dbg);
 		rz_list_foreach (core->dbg->maps, iter, map) {
 			if (map->name && (strstr(map->name, "uClibc") ||
-			                   strstr(map->name, "/libc.") ||
-			                   strstr(map->name, "libuClibc"))) {
+			                   strstr(map->name, "libuClibc-ng") ||
+			                   strstr(map->name, "libuClibc") ||
+			                   (strstr(map->name, "libc.so.0")))) {
 				ut64 heap_sym = uclibc_get_heap_base(core, map);
 				if (heap_sym != UT64_MAX) {
 					ut64 heap_ptr = 0;
@@ -160,19 +160,20 @@ static bool uclibc_read_free_area(RzCore *core, ut64 addr, RzHeapFreeAreaUClibc 
 	ut8 ptr_size = uclibc_ptr_size(core);
 	int struct_size = 3 * ptr_size;
 	ut8 buf[24] = { 0 };
+	bool be = rz_config_get_b(core->config, "cfg.bigendian");
 
 	if (!rz_io_read_at_mapped(core->io, addr, buf, struct_size)) {
 		return false;
 	}
 
 	if (ptr_size == 8) {
-		out->size = rz_read_le64(buf);
-		out->next = rz_read_le64(buf + 8);
-		out->prev = rz_read_le64(buf + 16);
+		out->size = rz_read_ble64(buf, be);
+		out->next = rz_read_ble64(buf + 8, be);
+		out->prev = rz_read_ble64(buf + 16, be);
 	} else {
-		out->size = rz_read_le32(buf);
-		out->next = rz_read_le32(buf + 4);
-		out->prev = rz_read_le32(buf + 8);
+		out->size = rz_read_ble32(buf, be);
+		out->next = rz_read_ble32(buf + 4, be);
+		out->prev = rz_read_ble32(buf + 8, be);
 	}
 	return true;
 }
@@ -225,15 +226,37 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 		rz_cons_println("uClibc Heap Free List:");
 		rz_cons_println("Addr               Size         Next                Prev");
 		rz_cons_println("----------------------------------------------------------------");
-	}
+}
 
+	ut8 ptr_size = uclibc_ptr_size(core);
 	while (count < max_chunks) {
 		RzHeapFreeAreaUClibc area;
 		if (!uclibc_read_free_area(core, addr, &area)) {
 			break;
 		}
 
-		if (area.size < sizeof(ut64) * 3 || area.size > 0x10000000) {
+		bool corrupt_next = false, corrupt_prev = false;
+		ut64 next_prev_val = 0, prev_next_val = 0;
+		if (area.next) {
+			RzHeapFreeAreaUClibc next_area = { 0 };
+			if (uclibc_read_free_area(core, area.next, &next_area)) {
+				next_prev_val = next_area.prev;
+				if (next_area.prev != addr) {
+					corrupt_next = true;
+				}
+			}
+		}
+		if (area.prev) {
+			RzHeapFreeAreaUClibc prev_area = { 0 };
+			if (uclibc_read_free_area(core, area.prev, &prev_area)) {
+				prev_next_val = prev_area.next;
+				if (prev_area.next != addr) {
+					corrupt_prev = true;
+				}
+			}
+		}
+
+		if (area.size < (ut64)(3 * ptr_size) || area.size > 0x10000000) {
 			break;
 		}
 
@@ -251,13 +274,20 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 			pj_kn(pj, "size", area.size);
 			pj_kn(pj, "next", area.next);
 			pj_kn(pj, "prev", area.prev);
+			if (corrupt_next || corrupt_prev) {
+				pj_kb(pj, "corrupt", true);
+			}
 			pj_end(pj);
 		} else {
 			rz_cons_printf("  0x%016" PFMT64x "  0x%08" PFMT64x "  0x%016" PFMT64x "  0x%016" PFMT64x "\n",
 				addr, area.size, area.next, area.prev);
-
-			if (area.next == 0 || area.next == start) {
-				break;
+			if (corrupt_next) {
+				rz_cons_printf("  [CORRUPT: next(0x%" PFMT64x ")->prev = 0x%" PFMT64x ", expected 0x%" PFMT64x " - possible unlink attack]\n",
+					area.next, next_prev_val, addr);
+			}
+			if (corrupt_prev) {
+				rz_cons_printf("  [CORRUPT: prev(0x%" PFMT64x ")->next = 0x%" PFMT64x ", expected 0x%" PFMT64x " - possible unlink attack]\n",
+					area.prev, prev_next_val, addr);
 			}
 			if (brk_start && brk_end && (area.next < brk_start || area.next > brk_end)) {
 				rz_cons_printf("  [WARNING: next pointer outside heap bounds]\n");
