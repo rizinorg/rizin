@@ -558,6 +558,10 @@ typedef struct rz_cons_t {
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	unsigned long term_raw, term_buf, term_pty;
+	void *saved_input_handle;
+	void *saved_output_handle;
+	bool saved_input_console;
+	bool saved_output_console;
 	unsigned long old_input_mode, old_output_mode;
 	ut32 old_cp;
 	ut32 old_ocp;

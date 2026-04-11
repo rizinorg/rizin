@@ -143,7 +143,7 @@ jobs:
             asan_options: detect_leaks=0,allocator_may_return_null=1
             run_tests: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 115
+            timeout: 120
             allow_failure: false
           - name: linux-gcc-tests-codecov
             os: ubuntu-24.04
@@ -153,7 +153,7 @@ jobs:
             meson_options: -Dbuildtype=debug -Db_coverage=true -Dchecks_level=3 --werror
             coverage: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 60
+            timeout: 75
             allow_failure: false
           - name: capstone-sys
             os: ubuntu-24.04

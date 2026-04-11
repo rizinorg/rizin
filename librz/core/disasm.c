@@ -561,6 +561,7 @@ static void RzBinSourceLineCacheItem_free(RzBinSourceLineCacheItem *x) {
 }
 
 static RzDisasmState *ds_init(RzCore *core) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	RzDisasmState *ds = RZ_NEW0(RzDisasmState);
 	if (!ds) {
 		return NULL;
@@ -669,15 +670,14 @@ static RzDisasmState *ds_init(RzCore *core) {
 	ds->show_emu_ssa = rz_config_get_b(core->config, "emu.ssa");
 	ds->show_emu_stack = rz_config_get_b(core->config, "emu.stack");
 	ds->stackFd = -1;
-	if (ds->show_emu_stack) {
+	if (ds->show_emu_stack && esil) {
 		// TODO: initialize fake stack in here
 		const char *uri = "malloc://32K";
 		ut64 size = rz_num_get(core->num, "32K");
 		RzReg *rreg = rz_analysis_get_reg(core->analysis);
-		RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(core->analysis);
 		ut64 addr = rz_reg_getv(rreg, "SP") - (size / 2);
-		estate->emustack_min = addr;
-		estate->emustack_max = addr + size;
+		esil->esilinterstate->emustack_min = addr;
+		esil->esilinterstate->emustack_max = addr + size;
 		ds->stackFd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
 		RzIOMap *map = rz_io_map_add(core->io, ds->stackFd, RZ_PERM_RW, 0LL, addr, size);
 		if (!map) {
@@ -4296,7 +4296,7 @@ static int mymemwrite1(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len)
 }
 
 static int mymemwrite2(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RzAnalysisEsilInterState *estate = rz_analysis_get_esil_inter_state(esil->analysis);
+	RzAnalysisEsilInterState *estate = esil->esilinterstate;
 	return (addr >= estate->emustack_min && addr < estate->emustack_max);
 }
 
@@ -4332,7 +4332,7 @@ static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *siz
 
 static int myregwrite(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	RzCore *core = esil->core;
+	RzCore *core = esil->pcore;
 	bool big_endian = core ? rz_asm_is_big_endian_set(core->rasm) : false;
 	RzDisasmState *ds = esil->user;
 	if (!ds) {

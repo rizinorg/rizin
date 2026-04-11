@@ -11,7 +11,9 @@
 #include <rz_util/rz_strbuf.h>
 #include <rz_vector.h>
 #include <rz_util/rz_print.h>
+#define RZ_NO_ESIL 1
 #include <rz_analysis.h>
+#undef RZ_NO_ESIL
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

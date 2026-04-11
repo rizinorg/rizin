@@ -490,7 +490,6 @@ RzAnalysisPlugin rz_analysis_plugin_avr = {
 	.op = &avr_op,
 	.get_reg_profile = &get_reg_profile,
 	.esil_init = rz_avr_esil_init,
-	.esil_fini = rz_avr_esil_fini,
 	.il_config = rz_avr_il_config,
 	.analysis_mask = analysis_mask_avr,
 };
