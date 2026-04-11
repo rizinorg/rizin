@@ -2029,27 +2029,33 @@ static bool scr_vtmode(void *user, void *data) {
 
 	DWORD mode;
 	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(input, &mode);
-	if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
-		SetConsoleMode(input, mode & ENABLE_VIRTUAL_TERMINAL_INPUT);
-		cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
-	} else {
-		SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
-		cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+	if (GetConsoleMode(input, &mode)) {
+		if (node->i_value == RZ_VIRT_TERM_MODE_COMPLETE) {
+			// Enabling VT input must preserve the rest of the console input flags.
+			SetConsoleMode(input, mode | ENABLE_VIRTUAL_TERMINAL_INPUT);
+			cons->term_raw |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+		} else {
+			SetConsoleMode(input, mode & ~ENABLE_VIRTUAL_TERMINAL_INPUT);
+			cons->term_raw &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+		}
 	}
 	HANDLE streams[] = { GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE) };
 	int i;
 	if (node->i_value > RZ_VIRT_TERM_MODE_DISABLE) {
 		for (i = 0; i < RZ_ARRAY_SIZE(streams); i++) {
-			GetConsoleMode(streams[i], &mode);
-			SetConsoleMode(streams[i],
-				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+			if (GetConsoleMode(streams[i], &mode)) {
+				// Output VT mode is an additive toggle on the current console output state.
+				SetConsoleMode(streams[i],
+					mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+			}
 		}
 	} else {
 		for (i = 0; i < RZ_ARRAY_SIZE(streams); i++) {
-			GetConsoleMode(streams[i], &mode);
-			SetConsoleMode(streams[i],
-				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
+			if (GetConsoleMode(streams[i], &mode)) {
+				// Disabling VT output should only clear the bits enabled by this callback.
+				SetConsoleMode(streams[i],
+					mode & ~(ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_WRAP_AT_EOL_OUTPUT));
+			}
 		}
 	}
 	return true;
