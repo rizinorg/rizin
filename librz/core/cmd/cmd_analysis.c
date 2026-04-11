@@ -699,10 +699,11 @@ static void aea_stats_init(AeaStats *stats) {
 }
 
 static void aea_stats_fini(AeaStats *stats) {
-	RZ_FREE(stats->regs);
-	RZ_FREE(stats->regread);
-	RZ_FREE(stats->regwrite);
-	RZ_FREE(stats->inputregs);
+	RZ_FREE_CUSTOM(stats->regs, rz_list_free);
+	RZ_FREE_CUSTOM(stats->regread, rz_list_free);
+	RZ_FREE_CUSTOM(stats->regwrite, rz_list_free);
+	RZ_FREE_CUSTOM(stats->regvalues, rz_list_free);
+	RZ_FREE_CUSTOM(stats->inputregs, rz_list_free);
 }
 
 static bool contains(RzList /*<char *>*/ *list, const char *name) {
@@ -849,15 +850,16 @@ static void showmem_json(RzList /*<RzAnalysisEsilMemoryRegion *>*/ *list, PJ *pj
 }
 
 static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
-	RzAnalysisEsil *esil;
+	RzAnalysisEsil *esil = NULL;
+	bool ret = false;
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	int ptr, ops, ops_end = 0, len, buf_sz, maxopsize;
-	ut64 addr_end;
-	AeaStats stats;
-	const char *esilstr;
+	int ptr = 0, ops = 0, ops_end = 0, len = 0, buf_sz = 0, maxopsize = 0;
+	ut64 addr_end = 0;
+	AeaStats stats = { 0 };
+	const char *esilstr = NULL;
 	RzAnalysisOp aop = RZ_EMPTY;
-	ut8 *buf;
-	RzList *regnow;
+	ut8 *buf = NULL;
+	RzList *regnow = NULL;
 	PJ *pj = NULL;
 	if (!core) {
 		return false;
@@ -927,7 +929,6 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
 	// esil_fini (core);
-	rz_analysis_esil_free(esil);
 	rz_reg_arena_pop(rreg);
 	regnow = rz_list_newf(free);
 	{
@@ -963,7 +964,7 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	} else if ((mode >> 4) & 1) {
 		pj = pj_new();
 		if (!pj) {
-			return false;
+			goto fail;
 		}
 		pj_o(pj);
 		pj_k(pj, "A");
@@ -1030,15 +1031,16 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 			showmem(estate->memwrites);
 		}
 	}
+	ret = true;
 
+fail:
 	rz_list_free(estate->memreads);
 	rz_list_free(estate->memwrites);
-	estate->memreads = NULL;
-	estate->memwrites = NULL;
 	aea_stats_fini(&stats);
 	free(buf);
-	RZ_FREE(regnow);
-	return true;
+	rz_list_free(regnow);
+	rz_analysis_esil_free(esil);
+	return ret;
 }
 
 // aeC
@@ -6357,6 +6359,7 @@ RZ_IPI RzCmdStatus rz_analyze_esil_insn_access_handler(RzCore *core, int argc, c
 		}
 		ut64 newPC = core->offset + op->size;
 		rz_reg_setv(reg, "PC", newPC);
+		rz_analysis_op_free(op);
 	}
 
 	const char cmd_type = argv[2][0];
