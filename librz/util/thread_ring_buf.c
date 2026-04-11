@@ -102,11 +102,11 @@ RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size) {
 
 err_free:
 	rz_warn_if_reached();
-	free(rbuf->buf);
-	rz_th_lock_free(rbuf->lock);
-	rz_th_lock_free(rbuf->counter_lock);
-	rz_th_cond_free(rbuf->writer_wait_cond);
 	rz_th_cond_free(rbuf->reader_wait_cond);
+	rz_th_cond_free(rbuf->writer_wait_cond);
+	rz_th_lock_free(rbuf->counter_lock);
+	rz_th_lock_free(rbuf->lock);
+	free(rbuf->buf);
 	return NULL;
 }
 
