@@ -85,10 +85,7 @@ static ut64 uclibc_find_heap_ptr(RzCore *core) {
 		RzDebugMap *map;
 		rz_debug_map_sync(core->dbg);
 		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (map->name && (strstr(map->name, "uClibc") ||
-			                   strstr(map->name, "libuClibc-ng") ||
-			                   strstr(map->name, "libuClibc") ||
-			                   (strstr(map->name, "libc.so.0")))) {
+			if (map->name && (strstr(map->name, "uClibc") || strstr(map->name, "libuClibc-ng") || strstr(map->name, "libuClibc") || (strstr(map->name, "libc.so.0")))) {
 				ut64 heap_sym = uclibc_get_heap_base(core, map);
 				if (heap_sym != UT64_MAX) {
 					ut64 heap_ptr = 0;
@@ -226,7 +223,7 @@ RZ_IPI RzCmdStatus rz_heap_uclibc_print_handler(RzCore *core, int argc, const ch
 		rz_cons_println("uClibc Heap Free List:");
 		rz_cons_println("Addr               Size         Next                Prev");
 		rz_cons_println("----------------------------------------------------------------");
-}
+	}
 
 	ut8 ptr_size = uclibc_ptr_size(core);
 	while (count < max_chunks) {
