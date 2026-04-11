@@ -6,6 +6,16 @@
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_sys.h>
 
+/**
+ * \file A ring buffer implementation.
+ *
+ * Functionally it is equivalent to a fixed size queue, except that it
+ * copies the data into the buffer.
+ *
+ * Suitable if you need to pass data between threads, but don't want to
+ * think about pointer ownership or lifetime.
+ */
+
 #define LEAVE_RBUF() \
 	rz_th_lock_enter(rbuf->counter_lock); \
 	rbuf->threads_awaiting--; \
