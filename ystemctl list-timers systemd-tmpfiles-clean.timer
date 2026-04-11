@@ -1,0 +1,9 @@
+[0;1;32m●[0m systemd-tmpfiles-clean.timer - Daily Cleanup of Temporary Directories
+     Loaded: loaded (]8;;file://jagath-p/usr/lib/systemd/system/systemd-tmpfiles-clean.timer/usr/lib/systemd/system/systemd-tmpfiles-clean.timer]8;;; static[0;1;32m[0m)
+     Active: [0;1;32mactive (waiting)[0m since Sat 2026-06-13 15:01:33 IST; 47min ago
+    Trigger: Sun 2026-06-14 15:16:33 IST; 23h left
+   Triggers: ● systemd-tmpfiles-clean.service
+       Docs: ]8;;man:tmpfiles.d(5)man:tmpfiles.d(5)]8;;
+             ]8;;man:systemd-tmpfiles(8)man:systemd-tmpfiles(8)]8;;
+
+Jun 13 15:01:33 jagath-p systemd[1]: Started systemd-tmpfiles-clean.timer - Daily Cleanup of Temporary Directories.
