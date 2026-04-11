@@ -7,7 +7,7 @@
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_io.h>
-#include "../../subprojects/rzheap/rz_windows/windows_heap_types.h"
+#include <rz_windows/windows_heap_types.h>
 
 #ifdef __cplusplus
 extern "C" {
