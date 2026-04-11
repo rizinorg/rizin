@@ -372,6 +372,7 @@ asi = 0x0000000000000000
 fsr = 0x0000000000000000
 EOF
 EXPECT_ERR=<<EOF
+WARNING: Number of sections is 0.
 WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
 WARNING: The segment 0 at 0x40 seems to be invalid.
 WARNING: phdr entry: p_offset and p_vaddr are not congruent for p_align.
@@ -503,7 +504,9 @@ csr = 0x0000000000000000
 asi = 0x0000000000000000
 fsr = 0x0000000000000000
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Number of sections is 0.
+EOF
 RUN
 
 NAME=core regs linux mipsel
