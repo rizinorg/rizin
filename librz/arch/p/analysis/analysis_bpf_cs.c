@@ -206,16 +206,44 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 
 		/* Load */
 	case BPF_INS_LDXW:
-	case BPF_INS_LDXH:
-	case BPF_INS_LDXB:
-	case BPF_INS_LDXDW:
+		op->refptr = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDXH:
+		op->refptr = 2;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDXB:
+		op->refptr = 1;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDXDW:
+		op->refptr = 8;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
 	case BPF_INS_LDW:
-	case BPF_INS_LDH:
-	case BPF_INS_LDB:
-	case BPF_INS_LDDW:
+		op->refptr = 4;
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDH:
+		op->refptr = 2;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDB:
+		op->refptr = 1;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
+		break;
+	case BPF_INS_LDDW:
+		op->refptr = 8;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
 #if CS_API_MAJOR >= 6
 	case BPF_INS_LDABSW:
@@ -225,6 +253,7 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_LDINDH:
 	case BPF_INS_LDINDB:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->direction = RZ_ANALYSIS_OP_DIR_READ;
 		break;
 #endif /* CS_API_MAJOR >= 6 */
 
@@ -234,16 +263,20 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 	case BPF_INS_STXB:
 	case BPF_INS_STXDW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 		break;
 	case BPF_INS_STW:
 	case BPF_INS_STH:
 	case BPF_INS_STB:
 	case BPF_INS_STDW:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 		break;
 	case BPF_INS_XADDW:
 	case BPF_INS_XADDDW:
-		op->type = RZ_ANALYSIS_OP_TYPE_STORE; // atomic add-and-store
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		// atomic add-and-store
+		op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 		break;
 
 		/*
@@ -331,9 +364,6 @@ static void ebpf_op_type(RzAnalysisOp *op, ut64 addr, cs_insn *insn) {
 
 	case BPF_INS_CALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		if (insn->detail->bpf.op_count > 0) {
-			op->jump = addr + (insn->detail->bpf.operands[0].imm + 1) * 8;
-		}
 		break;
 	case BPF_INS_CALLX:
 		op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
@@ -389,6 +419,7 @@ static int bpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		op->opex = bpf_opex(ctx->handle, insn);
 	}
+	op->nopcode = 1;
 	ebpf_op_type(op, addr, insn);
 	cs_free(insn, n);
 	return op->size;
