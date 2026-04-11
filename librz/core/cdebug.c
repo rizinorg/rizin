@@ -836,6 +836,7 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 			rz_debug_kill(dbg, dbg->pid, dbg->pid, SIGKILL);
 			rz_debug_detach(dbg, dbg->pid);
 		}
+		rz_list_free(list);
 	}
 	// Remove the target's registers from the flag list
 	rz_core_debug_clear_register_flags(core);
@@ -869,6 +870,7 @@ RZ_API bool rz_core_debug_process_detach(RzCore *core) {
 		} else {
 			rz_debug_detach(dbg, dbg->pid);
 		}
+		rz_list_free(list);
 	}
 	// Remove the target's registers from the flag list
 	rz_core_debug_clear_register_flags(core);
