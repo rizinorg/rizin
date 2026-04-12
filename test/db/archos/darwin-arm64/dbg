@@ -38,6 +38,22 @@ c88
 EOF
 RUN
 
+NAME=dpa issue
+FILE==
+CMDS=<<EOF
+!sh -c "./bins/mach0/sleep-macos-arm64 100 >/dev/null 2>&1 &"
+dpa $(!pgrep sleep-macos-arm64)
+pi 3 @ pc
+!pkill sleep-macos-arm64
+EOF
+REGEXP_FILTER_OUT=((b\.lo)|(pacibsp)|(stp fp, lr, \[sp, -0x10\]!))
+EXPECT=<<EOF
+b.lo
+pacibsp
+stp fp, lr, [sp, -0x10]!
+EOF
+RUN
+
 NAME=maps
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
