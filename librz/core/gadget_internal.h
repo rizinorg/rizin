@@ -7,7 +7,7 @@
 #include <rz_analysis.h>
 
 // ROP (Return-Oriented Programming)
-bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_conditional);
-bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional);
+RZ_IPI bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_conditional);
+RZ_IPI bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional);
 
 #endif

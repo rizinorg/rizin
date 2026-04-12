@@ -16,7 +16,7 @@ static bool is_cond_end_gadget(const RzAnalysisOp *aop) {
 	}
 }
 
-bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_conditional) {
+RZ_IPI bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_conditional) {
 	switch (aop->type) {
 	case RZ_ANALYSIS_OP_TYPE_TRAP:
 	case RZ_ANALYSIS_OP_TYPE_RET:
@@ -39,7 +39,7 @@ bool rz_gadget_rop_is_end_gadget(const RzAnalysisOp *aop, const bool allow_condi
 	}
 }
 
-bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional) {
+RZ_IPI bool rz_gadget_rop_is_valid_terminator(const RzAnalysisOp *aop, const bool allow_conditional) {
 	switch (aop->type) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
 		if (allow_conditional) {
