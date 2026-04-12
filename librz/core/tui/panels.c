@@ -1137,12 +1137,11 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 }
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
-	char *out = malloc(strlen(panel->model->cmd) + 1024);
+	char *out = rz_str_dup(panel->model->cmd);
 	if (!out) {
 		RZ_LOG_ERROR("Fail to allocate the memory\n");
-		return out;
+		return NULL;
 	}
-	strcpy(out, panel->model->cmd);
 	void **iter;
 	rz_pvector_foreach (&panel->model->filter, iter) {
 		char *filter = *iter;
@@ -1150,14 +1149,29 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 			(void)__show_status(core, "filter is too big.");
 			return out;
 		}
-		strcat(out, "~");
-		strcat(out, filter);
+		char *tmp = rz_str_append(out, "~");
+		// stop there itself if dyn cmd growth fails.
+		if (!tmp) {
+			free(out);
+			return NULL;
+		}
+		out = tmp;
+		tmp = rz_str_append(out, filter);
+		if (!tmp) {
+			free(out);
+			return NULL;
+		}
+		out = tmp;
 	}
 	return out;
 }
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd(core, panel);
+	// avoid failed cmd build into rz_core_cmd_str.
+	if (!cmd) {
+		return NULL;
+	}
 	RzCoreVisual *visual = core->visual;
 	RzPanelsTab *tab = visual->panels_root->active_tab;
 	bool b = core->print->cur_enabled && __get_cur_panel(tab) != panel;
