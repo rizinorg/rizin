@@ -1152,11 +1152,13 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 		char *tmp = rz_str_append(out, "~");
 		// stop there itself if dyn cmd growth fails.
 		if (!tmp) {
+			free(out);
 			return NULL;
 		}
 		out = tmp;
 		tmp = rz_str_append(out, filter);
 		if (!tmp) {
+			free(out);
 			return NULL;
 		}
 		out = tmp;
