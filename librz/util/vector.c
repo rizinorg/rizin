@@ -167,6 +167,9 @@ RZ_API bool rz_vector_clone_into(
 RZ_API RZ_OWN RzVector *rz_vector_clone(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
 	RzVector *dst = rz_vector_clonef(vec, NULL);
+	if (!dst) {
+		return NULL;
+	}
 	dst->free = NULL;
 	dst->free_user = NULL;
 	return dst;
