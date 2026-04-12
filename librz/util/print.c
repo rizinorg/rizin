@@ -1087,36 +1087,35 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	return rz_strbuf_drain(sb);
 }
 
-static const char *getbytediff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getbytediff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	if (*fmt) {
 		if (a == b) {
-			// fmt[64] is known at call, so just preventing overflow.
-			snprintf(fmt, 64, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_true, a);
 		} else {
-			snprintf(fmt, 64, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
+			snprintf(fmt, fmt_sz, "%s%02x" Color_RESET, p->cons->context->pal.graph_false, a);
 		}
 	} else {
-		snprintf(fmt, 64, "%02x", a);
+		snprintf(fmt, fmt_sz, "%02x", a);
 	}
 	return fmt;
 }
 
-static const char *getchardiff(RzPrint *p, char *fmt, ut8 a, ut8 b) {
+static const char *getchardiff(RzPrint *p, char *fmt, size_t fmt_sz, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE(a) ? a : '.';
 	if (*fmt) {
 		if (a == b) {
-			snprintf(fmt, 64, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_true, ch);
 		} else {
-			snprintf(fmt, 64, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
+			snprintf(fmt, fmt_sz, "%s%c" Color_RESET, p->cons->context->pal.graph_false, ch);
 		}
 	} else {
-		snprintf(fmt, 64, "%c", ch);
+		snprintf(fmt, fmt_sz, "%c", ch);
 	}
 	return fmt;
 }
 
-#define BD(a, b) getbytediff(p, fmt, (a)[i + j], (b)[i + j])
-#define CD(a, b) getchardiff(p, fmt, (a)[i + j], (b)[i + j])
+#define BD(a, b) getbytediff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff(p, fmt, sizeof(fmt), (a)[i + j], (b)[i + j])
 
 static ut8 *M(const ut8 *b, int len) {
 	ut8 *r = malloc(len + 16);
