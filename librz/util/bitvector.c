@@ -32,16 +32,29 @@ ut8 reverse_lt_8bits(ut8 x, ut8 w) {
 /**
  * \brief Resize or allocate bv->large_a to \p new_size bytes.
  */
-static void resize_large_a(RzBitVector *bv, size_t n_bytes) {
+static bool resize_large_a(RzBitVector *bv, size_t n_bytes) {
 	if (bv->stack_alloc) {
-		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		ut8 *tmp = RZ_NEWS0(ut8, n_bytes);
+		// dont drop stack backed contents unless heap alloc succeeded.
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 		bv->stack_alloc = false;
 	} else if (!bv->bits.large_a) {
 		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		if (!bv->bits.large_a) {
+			return false;
+		}
 	} else {
-		bv->bits.large_a = realloc(bv->bits.large_a, n_bytes);
+		ut8 *tmp = realloc(bv->bits.large_a, n_bytes);
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 	}
 	bv->_elem_len = n_bytes;
+	return true;
 }
 
 /**
@@ -2269,7 +2282,10 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 	}
 	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
 		// The bit vector needs a larger buffer.
-		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
+		// abort the cast if storage couldnt be extended, esle resize as needed.
+		if (!resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE))) {
+			return false;
+		}
 	}
 	size_t old_size = bv->len;
 	if (bv->len <= 64) {
