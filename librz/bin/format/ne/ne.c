@@ -4,6 +4,8 @@
 
 #include "ne.h"
 
+#define NE_64K (64 * 1024)
+
 static char *ne_get_target_os(ne_t *bin) {
 	switch (bin->ne_header->targOS) {
 	case 1:
@@ -136,8 +138,8 @@ RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *ne_get_sections(RZ_NONNULL ne_t *b
 		if (!bs) {
 			break;
 		}
-		bs->size = se->seg_bytes ? se->seg_bytes : (64 * 1024);
-		bs->vsize = se->min_alloc ? se->min_alloc : (64 * 1024);
+		bs->size = se->seg_bytes ? se->seg_bytes : NE_64K;
+		bs->vsize = se->min_alloc ? se->min_alloc : NE_64K;
 		bs->bits = RZ_SYS_BITS_16;
 		bs->type = se->seg_flags & SEGFLAGS_TYPE_MASK;
 		bs->is_data = bs->type == SEGFLAGS_TYPE_DATA;
