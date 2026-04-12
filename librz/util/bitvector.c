@@ -2282,8 +2282,9 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 	}
 	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
 		// The bit vector needs a larger buffer.
-		// abort the cast if storage couldnt be extended, esle resize as needed.
+		// warn and abort the cast if the backing storage cant be extended.
 		if (!resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE))) {
+			rz_warn_if_reached();
 			return false;
 		}
 	}
