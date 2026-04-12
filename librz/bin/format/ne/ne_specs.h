@@ -72,7 +72,7 @@ typedef struct ne_seg_relocation_entry_s {
 		} import_name;
 		struct {
 			ut16 mod_ref_table_index; // index into module reference table
-			ut16 ordinal_number; // ordinal number of the procedure (index into entry table)
+			ut16 ordinal_number; // ordinal number of the procedure (index of sdb entry)
 		} import_ordinal;
 		struct {
 			ut16 os_fixup_type; // see OS_FIXUP_TYPE_*
@@ -89,7 +89,7 @@ typedef struct ne_seg_relocation_entry_s {
  *    ut16 ordinal_number; ///< index into entry table
  * } NE_resident_name_entry;
  *
- * we need to simplify this in the parser.
+ * but we simplify it for parsing as we don't cast it.
  */
 typedef struct ne_resident_name_entry_s {
 	char *name;

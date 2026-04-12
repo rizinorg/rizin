@@ -21,7 +21,7 @@ static char *ne_get_target_os(ne_t *bin) {
 	}
 }
 
-RZ_IPI RzList /*<char *>*/ *ne_convert_section_flag_to_rzlist(ut64 flag) {
+RZ_IPI RZ_OWN RzList /*<char *>*/ *ne_convert_section_flag_to_rzlist(ut64 flag) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -38,7 +38,7 @@ RZ_IPI RzList /*<char *>*/ *ne_convert_section_flag_to_rzlist(ut64 flag) {
 	return list;
 }
 
-RZ_IPI char *ne_convert_section_type_to_string(ut64 type) {
+RZ_IPI RZ_OWN char *ne_convert_section_type_to_string(ut64 type) {
 	switch (type) {
 	case SEGFLAGS_TYPE_CODE:
 		return rz_str_dup("CODE");
@@ -122,7 +122,9 @@ static int ne_segment_flags_to_perms(const NE_image_segment_entry *se) {
 	return RZ_PERM_RWX;
 }
 
-RZ_IPI RzPVector /*<RzBinSection *>*/ *ne_get_sections(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *ne_get_sections(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!sections) {
 		return NULL;
@@ -238,7 +240,9 @@ static void ne_convert_resident_name_entries_to_symbols(ne_t *bin, RzVector /*<N
 	}
 }
 
-RZ_IPI RzPVector /*<RzBinSymbol *>*/ *ne_get_symbols(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinSymbol *>*/ *ne_get_symbols(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!symbols) {
 		return NULL;
@@ -457,7 +461,9 @@ static RzBinImport *ne_convert_import_name_to_bin_import(ne_t *bin, const NE_rel
 	return ne_new_bin_import(name, module, 0);
 }
 
-RZ_IPI RzPVector /*<RzBinImport *>*/ *ne_get_imports(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinImport *>*/ *ne_get_imports(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *imports = rz_pvector_new((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
@@ -511,7 +517,9 @@ static RzBinAddr *ne_new_bin_addr(ut64 addr, int type) {
 	return baddr;
 }
 
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *ne_get_entrypoints(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *ne_get_entrypoints(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *entries = rz_pvector_new(free);
 	if (!entries) {
 		return NULL;
@@ -675,7 +683,9 @@ static RzBinReloc *ne_convert_to_bin_reloc(ne_t *bin, const NE_relocation_entry 
 	return reloc;
 }
 
-RZ_IPI RzPVector /*<RzBinReloc *>*/ *ne_get_relocs(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinReloc *>*/ *ne_get_relocs(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *relocs = rz_pvector_new((RzPVectorFree)rz_bin_reloc_free);
 	if (!relocs) {
 		return NULL;
@@ -744,7 +754,9 @@ static RzBinResource *ne_convert_resource_to_bin_resource(const rz_ne_resource_e
 	return br;
 }
 
-RZ_IPI RzPVector /*<char *>*/ *ne_get_libraries(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<char *>*/ *ne_get_libraries(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *libs = rz_pvector_new(free);
 	if (!libs) {
 		return NULL;
@@ -763,7 +775,9 @@ RZ_IPI RzPVector /*<char *>*/ *ne_get_libraries(ne_t *bin) {
 	return libs;
 }
 
-RZ_IPI RzPVector /*<RzBinResource *>*/ *ne_get_resources(ne_t *bin) {
+RZ_IPI RZ_OWN RzPVector /*<RzBinResource *>*/ *ne_get_resources(RZ_NONNULL ne_t *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzPVector *resources = rz_pvector_new((RzPVectorFree)rz_bin_resource_free);
 	if (!resources) {
 		return NULL;
@@ -1125,7 +1139,7 @@ static bool ne_buf_init(RzBuffer *buf, ne_t *bin) {
 	return true;
 }
 
-RZ_IPI void ne_free(ne_t *bin) {
+RZ_IPI void ne_free(RZ_NULLABLE ne_t *bin) {
 	if (!bin) {
 		return;
 	}
@@ -1142,12 +1156,11 @@ RZ_IPI void ne_free(ne_t *bin) {
 	free(bin);
 }
 
-RZ_IPI ne_t *ne_new_buf(RzBuffer *buf) {
+RZ_IPI RZ_OWN ne_t *ne_new_buf(RZ_NONNULL RzBuffer *buf) {
+	rz_return_val_if_fail(buf, NULL);
+
 	ne_t *bin = RZ_NEW0(ne_t);
-	if (!bin) {
-		return NULL;
-	}
-	if (!ne_buf_init(buf, bin)) {
+	if (!bin || !ne_buf_init(buf, bin)) {
 		ne_free(bin);
 		return NULL;
 	}

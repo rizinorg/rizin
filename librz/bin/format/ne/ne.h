@@ -39,16 +39,16 @@ typedef struct ne_s {
 	char *os;
 } ne_t;
 
-RZ_IPI void ne_free(ne_t *bin);
-RZ_IPI ne_t *ne_new_buf(RzBuffer *buf);
-RZ_IPI RzPVector /*<RzBinReloc *>*/ *ne_get_relocs(ne_t *bin);
-RZ_IPI RzPVector /*<RzBinImport *>*/ *ne_get_imports(ne_t *bin);
-RZ_IPI RzPVector /*<RzBinSymbol *>*/ *ne_get_symbols(ne_t *bin);
-RZ_IPI RzPVector /*<RzBinSection *>*/ *ne_get_sections(ne_t *bin);
-RZ_IPI RzPVector /*<RzBinAddr *>*/ *ne_get_entrypoints(ne_t *bin);
-RZ_IPI RzPVector /*<RzBinResource *>*/ *ne_get_resources(ne_t *bin);
-RZ_IPI RzPVector /*<char *>*/ *ne_get_libraries(ne_t *bin);
-RZ_IPI RzList /*<char *>*/ *ne_convert_section_flag_to_rzlist(ut64 flag);
-RZ_IPI char *ne_convert_section_type_to_string(ut64 type);
+RZ_IPI void ne_free(RZ_NULLABLE ne_t *bin);
+RZ_IPI RZ_OWN ne_t *ne_new_buf(RZ_NONNULL RzBuffer *buf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinReloc *>*/ *ne_get_relocs(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<RzBinImport *>*/ *ne_get_imports(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSymbol *>*/ *ne_get_symbols(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *ne_get_sections(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *ne_get_entrypoints(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<RzBinResource *>*/ *ne_get_resources(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzPVector /*<char *>*/ *ne_get_libraries(RZ_NONNULL ne_t *bin);
+RZ_IPI RZ_OWN RzList /*<char *>*/ *ne_convert_section_flag_to_rzlist(ut64 flag);
+RZ_IPI RZ_OWN char *ne_convert_section_type_to_string(ut64 type);
 
 #endif
