@@ -239,6 +239,10 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 			}
 			newlen *= 2;
 			p = realloc(sb->ptr, newlen);
+			// preserve the existing buffer on OOM
+			if (!p) {
+				return false;
+			}
 			memset((char *)p + sb->ptrlen, 0, newlen - sb->ptrlen);
 		} else {
 			allocated = false;
