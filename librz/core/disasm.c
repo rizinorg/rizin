@@ -2706,7 +2706,6 @@ static void ds_print_lines_right(RzDisasmState *ds) {
 }
 
 static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color) {
-	int pre;
 	if (cols < 8) {
 		cols = 8;
 	}
@@ -2725,14 +2724,21 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 		sect[cols] = 0;
 	}
 	if (ds->show_color) {
-		pre = strlen(color) + 1;
-		snprintf(out, outsz - pre, "%s %s", color, sect);
-		strcat(out, COLOR_RESET(ds));
-		out[outsz - 1] = 0;
+		int written = snprintf(out, outsz, "%s %s", color, sect);
+		// append the reset seq with the remaining capacity.
+		if (written > 0 && written < outsz) {
+			snprintf(out + written, outsz - written, "%s", COLOR_RESET(ds));
+		}
 	} else {
 		rz_str_ncpy(out + 1, sect, outsz - 2);
 	}
-	strcat(out, " ");
+	char *tmp = rz_str_appendch(out, ' ');
+	// keep the actual buffer alive if the helper cant extend it.
+	if (!tmp) {
+		free(out);
+		return;
+	}
+	out = tmp;
 	rz_cons_strcat(out);
 	free(out);
 }
