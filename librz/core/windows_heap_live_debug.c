@@ -3,6 +3,7 @@
 
 #include <rz_windows.h>
 #include <rz_core.h>
+#include <rz_windows_heap.h>
 #include <TlHelp32.h>
 #include <windows_heap.h>
 #include "..\..\debug\p\native\maps\windows_maps.h"

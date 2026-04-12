@@ -32,7 +32,6 @@
 #include <rz_crypto.h>
 #include <rz_bind.h>
 #include <rz_util/rz_annotated_code.h>
-#include <rz_windows_heap.h>
 #include <rz_mark.h>
 
 #ifdef __cplusplus
@@ -624,6 +623,7 @@ RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
 RZ_API bool rz_core_debug_process_close(RzCore *core);
+RZ_API bool rz_core_debug_process_detach(RzCore *core);
 RZ_API bool rz_core_debug_step_until_frame(RzCore *core);
 RZ_API bool rz_core_debug_step_back(RzCore *core, int steps);
 RZ_API bool rz_core_debug_step_over(RzCore *core, int steps);
@@ -1018,9 +1018,6 @@ RZ_API void rz_core_sysenv_begin(RzCore *core);
 RZ_API void rz_core_sysenv_end(RzCore *core);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
-
-/* cmd_windows_heap.c */
-RZ_API RZ_OWN RzList /*<RzWindowsHeapEntry *>*/ *rz_core_heap_windows_blocks_list(RzCore *core);
 
 // XXX dupe from rz_bin.h
 /* bin.c */
