@@ -1137,8 +1137,9 @@ char *__find_cmd_str_cache(RzCore *core, RzPanel *panel) {
 }
 
 char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
-	char *out = rz_str_dup(panel->model->cmd);
-	if (!out) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	if (!rz_strbuf_set(&sb, panel->model->cmd)) {
 		RZ_LOG_ERROR("Fail to allocate the memory\n");
 		return NULL;
 	}
@@ -1147,23 +1148,15 @@ char *__apply_filter_cmd(RzCore *core, RzPanel *panel) {
 		char *filter = *iter;
 		if (strlen(filter) > 1024) {
 			(void)__show_status(core, "filter is too big.");
-			return out;
+			return rz_strbuf_drain_nofree(&sb);
 		}
-		char *tmp = rz_str_append(out, "~");
-		// stop there itself if dyn cmd growth fails.
-		if (!tmp) {
-			free(out);
+		// stop if the filtered cmd cant be extended.
+		if (!rz_strbuf_append(&sb, "~") || !rz_strbuf_append(&sb, filter)) {
+			rz_strbuf_fini(&sb);
 			return NULL;
 		}
-		out = tmp;
-		tmp = rz_str_append(out, filter);
-		if (!tmp) {
-			free(out);
-			return NULL;
-		}
-		out = tmp;
 	}
-	return out;
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache) {
