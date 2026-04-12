@@ -856,6 +856,12 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_store(RzILMemIndex mem, RZ_NONNULL RzIL
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_storew(RzILMemIndex mem, RZ_NONNULL RzILOpBitVector *key, RZ_NONNULL RzILOpBitVector *value);
 
 // Printing/Export
+
+typedef struct rz_il_stringify_ctx {
+	size_t indent;
+	size_t indent_inc;
+} RzILStringifyCtx;
+
 RZ_API RZ_NONNULL const char *rz_il_op_effect_code_stringify(RzILOpEffectCode code);
 RZ_API RZ_NONNULL const char *rz_il_op_pure_code_stringify(RzILOpPureCode code);
 
@@ -868,8 +874,8 @@ RZ_API void rz_il_op_effect_stringify(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL Rz
 RZ_API void rz_il_op_pure_json(RZ_NONNULL RzILOpPure *op, RZ_NONNULL PJ *pj);
 RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj);
 
-RZ_API bool rz_il_op_pure_stringify_unicode(RZ_NONNULL RzILOpPure *op, RZ_NONNULL RzStrBuf *sb);
-RZ_API bool rz_il_op_effect_stringify_unicode(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL RzStrBuf *sb);
+RZ_API bool rz_il_op_pure_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpPure *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
+RZ_API bool rz_il_op_effect_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpEffect *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 
 #ifdef __cplusplus
 }
