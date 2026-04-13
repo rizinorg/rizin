@@ -4267,9 +4267,9 @@ static inline bool is_user_defined_unprintable(const RzStrStringifyOpt *option, 
 	if (!option || !option->user_unprintable) {
 		return false;
 	}
-	const RzCodePoint *user_unprintable = (const RzCodePoint *)rz_vector_head(option->user_unprintable);
-	for (size_t i = 0, count = rz_vector_len(option->user_unprintable); i < count; i++) {
-		if (user_unprintable[i] == cp) {
+	RzCodePoint *it;
+	rz_vector_foreach (option->user_unprintable, it) {
+		if (*it == cp) {
 			return true;
 		}
 	}

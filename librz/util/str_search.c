@@ -93,9 +93,9 @@ static inline bool is_user_defined_unprintable(const RzUtilStrScanOptions *opt, 
 	if (!opt || !opt->user_unprintable) {
 		return false;
 	}
-	const RzCodePoint *user_unprintable = (const RzCodePoint *)rz_vector_head(opt->user_unprintable);
-	for (size_t i = 0, count = rz_vector_len(opt->user_unprintable); i < count; i++) {
-		if (user_unprintable[i] == cp) {
+	RzCodePoint *it;
+	rz_vector_foreach (opt->user_unprintable, it) {
+		if (*it == cp) {
 			return true;
 		}
 	}
