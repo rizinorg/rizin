@@ -37,6 +37,17 @@ static bool gadget_is_valid_terminator(const RzGadgetType gadget_type, const RzC
 	return status;
 }
 
+static RzCoreAsmHit *find_gadget_terminator(const RzPVector *hitlist, int delay_size) {
+	if (!hitlist || delay_size < 0) {
+		return NULL;
+	}
+	const size_t len = rz_pvector_len(hitlist);
+	if ((size_t)delay_size >= len) {
+		return NULL;
+	}
+	return rz_pvector_at(hitlist, len - 1 - (size_t)delay_size);
+}
+
 static bool gadget_is_valid_end_gadget(const RzGadgetType gadget_type, const RzAnalysisOp *aop, const bool allow_conditional) {
 	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
@@ -1391,7 +1402,7 @@ cleanup:
 	return hitlist;
 }
 
-static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *core, const bool allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *core, const bool allow_conditional, const RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	rz_return_val_if_fail(core && core->analysis && hitlist, NULL);
 	RzGadgetInfo *gadget_info = NULL;
 
@@ -1400,8 +1411,9 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
 		ht_gadget_semantics = ht_up_new(NULL, (HtUPFreeValue)rz_core_gadget_info_free);
 		rz_analysis_set_gadget_semantics(core->analysis, ht_gadget_semantics);
 	}
-	const RzCoreAsmHit *hit_last = (RzCoreAsmHit *)rz_pvector_at(hitlist, rz_pvector_len(hitlist) - 1);
-	if (!gadget_is_valid_terminator(type, core, hit_last, allow_conditional)) {
+
+	const RzCoreAsmHit *terminator_hit = find_gadget_terminator(hitlist, delay_size);
+	if (!gadget_is_valid_terminator(type, core, terminator_hit, allow_conditional)) {
 		return gadget_info;
 	}
 	const ut64 addr_start = ((RzCoreAsmHit *)rz_pvector_at(hitlist, 0))->addr;
@@ -1439,7 +1451,7 @@ static RzGadgetInfo *perform_gadget_analysis(const RzGadgetType type, RzCore *co
  */
 
 RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNULL RzGadgetSearchContext *context,
-	RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist) {
+	RZ_NONNULL RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size) {
 	rz_return_val_if_fail(core && core->analysis && hitlist && context, false);
 	if (context->mask & RZ_GADGET_PRINT) {
 		if (context->subchains) {
@@ -1460,7 +1472,7 @@ RZ_API bool rz_core_handle_gadget_request_type(RZ_NONNULL RzCore *core, RZ_NONNU
 	RzGadgetInfo *gadget_info = NULL;
 	bool is_analysis = false;
 	if (context->mask & RZ_GADGET_ANALYZE) {
-		gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, delay_size);
 		is_analysis = true;
 	}
 
@@ -1737,7 +1749,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->constraints && !rz_pvector_empty(context->constraints)) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
 		if (!gadget_info || !match_constraints(gadget_info, context->constraints)) {
 			rz_pvector_free(hitlist);
 			goto fini;
@@ -1745,7 +1757,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 	}
 
 	if (context->detail_mask) {
-		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist);
+		RzGadgetInfo *gadget_info = perform_gadget_analysis(context->type, core, context->allow_conditional, hitlist, end_gadget->delay_size);
 		if (!gadget_info) {
 			goto fini;
 		}
@@ -1768,7 +1780,7 @@ static bool process_disassembly(RzCore *core, ut8 *buf, const int idx, RzGadgetS
 		goto fini;
 	}
 
-	if (!rz_core_handle_gadget_request_type(core, context, hitlist)) {
+	if (!rz_core_handle_gadget_request_type(core, context, hitlist, end_gadget->delay_size)) {
 		rz_pvector_free(hitlist);
 		goto fini;
 	}

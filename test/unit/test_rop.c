@@ -129,7 +129,7 @@ bool test_rz_direct_solver() {
 		RzPVector /*<RzCoreAsmHit *>*/ *hitlist =
 			setup_rop_hitlist(core, buf, addr, len, ht_rop_analysis);
 		mu_assert_notnull(hitlist, "setup_rop_hitlist failed");
-		rz_core_handle_gadget_request_type(core, context, hitlist);
+		rz_core_handle_gadget_request_type(core, context, hitlist, 0);
 		addr += len + 1;
 		rz_pvector_free(hitlist);
 	}

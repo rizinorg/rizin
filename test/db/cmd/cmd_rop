@@ -3995,3 +3995,43 @@ Gadget size: 4
 
 EOF
 RUN
+
+NAME= detail rop search  (/Rg)  on mips (1 delay slot)
+FILE==
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=32
+wa "addiu sp, sp, 0x20; jr ra; nop"
+pi 3
+echo "================================================"
+/R
+echo "================================================"
+/Rg 
+EOF
+EXPECT=<<EOF
+addiu sp, sp, 0x20
+jr ra
+nop
+================================================
+  0x00000000           2000bd27  addiu sp, sp, 0x20
+  0x00000004           0800e003  jr ra
+  0x00000008           00000000  nop
+Gadget size: 12
+
+  0x00000004           0800e003  jr ra
+  0x00000008           00000000  nop
+Gadget size: 8
+
+================================================
+Gadget 0x0
+Stack change: 0x20
+Changed registers: sp 
+Register dependencies:
+
+Gadget 0x4
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+EOF
+RUN
