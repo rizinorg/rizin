@@ -1,28 +1,24 @@
 // SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_list.h"
-#include "rz_util/ht_up.h"
-#include "rz_util/ht_uu.h"
+#include "rz_types_base.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
-#include "rz_util/rz_itv.h"
-#include "rz_util/rz_log.h"
-#include <rz_inquiry.h>
+#include "rz_util/rz_iterator.h"
+#include <rz_inquiry/rz_bb_graph.h>
+
+static ut64 hash_node(const void *data) {
+	const RzInquiryBB *bb = data;
+	return bb->addr;
+}
 
 RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new() {
 	RzInquiryBBCFG *bb_cfg = RZ_NEW0(RzInquiryBBCFG);
 	if (!bb_cfg) {
 		return NULL;
 	}
-	bb_cfg->basic_blocks = ht_up_new(NULL, free);
-	bb_cfg->bb_gnode_map = ht_up_new(NULL, NULL);
-	bb_cfg->bb_gidx_map = ht_uu_new();
-	bb_cfg->graph = rz_graph_new();
-	if (!bb_cfg->basic_blocks ||
-		!bb_cfg->bb_gnode_map ||
-		!bb_cfg->bb_gidx_map ||
-		!bb_cfg->graph) {
+	bb_cfg->graph = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, hash_node, free, NULL);
+	if (!bb_cfg->graph) {
 		rz_inquiry_bb_cfg_free(bb_cfg);
 		return NULL;
 	}
@@ -33,66 +29,22 @@ RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg) {
 	if (!bb_cfg) {
 		return;
 	}
-	ht_uu_free(bb_cfg->bb_gidx_map);
-	ht_up_free(bb_cfg->basic_blocks);
-	ht_up_free(bb_cfg->bb_gnode_map);
 	rz_graph_free(bb_cfg->graph);
 	free(bb_cfg);
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_add_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
-	RzInterval *bb = ht_up_find(cfg->basic_blocks, addr, NULL);
-	if (bb && bb->size == size) {
-		return true;
-	} else if (bb && bb->size != size) {
-		RZ_LOG_ERROR("inquiry: Attempt to overwrite basic block size. Ignoring new version: "
-			     "previous: (0x%" PFMT64x ", %" PFMT64d ") - new: (0x%" PFMT64x ", %" PFMT64d ")\n",
-			bb->addr, bb->size, addr, size);
-		return false;
-	}
-	bb = rz_itv_new(addr, size);
-	ht_up_insert(cfg->basic_blocks, addr, bb);
-
-	return true;
-}
-
-static /*const*/ RZ_BORROW RzGraphNode *get_node(RzInquiryBBCFG *cfg, ut64 bb_addr) {
-	return ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
-}
-
-/**
- * \brief Adds new node or returns existing one.
- */
-static /*const*/ RZ_BORROW RzGraphNode *get_add_node_to_cfg(RzInquiryBBCFG *cfg, ut64 bb_addr) {
-	RzGraphNode *n = get_node(cfg, bb_addr);
-	if (n) {
-		return n;
-	}
-	n = rz_graph_add_node(cfg->graph, (void *)bb_addr);
-	if (!n) {
-		return NULL;
-	}
-	ht_uu_insert(cfg->bb_gidx_map, bb_addr, n->idx);
-	ht_up_insert(cfg->bb_gnode_map, bb_addr, n);
-	return n;
+static bool edge_from(const RzGraphEdge *e, void *addr) {
+	ut64 from_addr = (utptr) addr;
+	return rz_graph_node_get_id(rz_graph_edge_get_from(e)) == from_addr;
 }
 
 RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
-	RzGraphNode *f = get_node(cfg, bb_addr);
-	rz_return_val_if_fail(f, false);
-	const RzList /*<RzGraphNode *>*/ *neighs = rz_inquiry_bb_cfg_get_neighbours_from(cfg, bb_addr);
-	RzGraphNode *t;
-	RzListIter *it;
-	RzList *ptr_clones = rz_list_clone(neighs);
-	rz_list_foreach (ptr_clones, it, t) {
-		rz_graph_del_edge(cfg->graph, f, t);
-	}
-	rz_list_free(ptr_clones);
-	return true;
+	return rz_graph_del_edges(cfg->graph, edge_from, RZ_GRAPH_INT_AS_DATA(bb_addr));
 }
 
 /**
  * \brief Adds an edge to the basic block CFG.
+ * If one of the blocks doesn't exist, it creates one with size 1.
  *
  * \param cfg The basic block CFG to edit.
  * \param from_bb The address of the basic block with the branch.
@@ -101,129 +53,84 @@ RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
  *
  * \return False if an error occurred. True otherwise.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb) {
-	RzGraphNode *f = get_add_node_to_cfg(cfg, from_bb);
-	RzGraphNode *t = get_add_node_to_cfg(cfg, to_bb);
-	if (!f || !t) {
+RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
+	bool existed;
+	RzInquiryBB *f_bb = RZ_NEW(RzInquiryBB);
+	RzInquiryBB *t_bb = RZ_NEW(RzInquiryBB);
+	if (!f_bb || !t_bb) {
+		free(f_bb);
+		free(t_bb);
+		return false;
+	}
+	f_bb->addr = from_bb;
+	f_bb->size = 1;
+	t_bb->addr = to_bb;
+	t_bb->size = 1;
+
+	if (!rz_graph_add_get_node(cfg->graph, f_bb, &existed)) {
+		free(f_bb);
+		free(t_bb);
 		rz_warn_if_reached();
 		return false;
 	}
-	const RzList /*<RzGraphNode *>*/ *neighs = rz_inquiry_bb_cfg_get_neighbours_from(cfg, from_bb);
-	if (rz_list_contains(neighs, t)) {
-		// Edge already added.
-		return true;
+	if (existed) {
+		free(f_bb);
 	}
-	rz_graph_add_edge(cfg->graph, f, t);
-	return true;
+	if (!rz_graph_add_get_node(cfg->graph, t_bb, &existed)) {
+		free(t_bb);
+		rz_warn_if_reached();
+		return false;
+	}
+	if (existed) {
+		free(t_bb);
+	}
+	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
 }
 
-RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInterval *bb) {
+RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInquiryBB *bb) {
 	rz_return_val_if_fail(cfg && bb, false);
-	const RzInterval *itv = ht_up_find(cfg->basic_blocks, bb_addr, NULL);
-	if (!itv) {
+	const RzGraphNode *n = rz_graph_find_node(cfg->graph, bb_addr);
+	if (!n) {
 		RZ_LOG_WARN("Could not find BB at 0x%" PFMT64x "\n", bb_addr);
 		return false;
 	}
-	bb->addr = itv->addr;
-	bb->size = itv->size;
+	const RzInquiryBB *n_data = rz_graph_node_get_data(n);
+	bb->addr = n_data->addr;
+	bb->size = n_data->size;
 	return true;
 }
 
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
-
-	const RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
-	if (!n) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	return rz_graph_get_neighbours(cfg->graph, n);
+	return rz_graph_out_neighbors_by_id(cfg->graph, bb_addr);
 }
 
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
+RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr) {
 	rz_return_val_if_fail(cfg, NULL);
-
-	const RzGraphNode *n = ht_up_find(cfg->bb_gnode_map, bb_addr, NULL);
-	if (!n) {
-		rz_warn_if_reached();
-		return NULL;
-	}
-	return rz_graph_innodes(cfg->graph, n);
+	return rz_graph_in_neighbors_by_id(cfg->graph, bb_addr);
 }
 
 /**
- * \brief Add edges from \p insn_to_insn_edges to the cfg.
- * These are edges statically known by checking RzAnalysisOp->jump and fail.
- *
- * TODO: Crazy inefficient.
- * But for now it is left in here. The problem is that the graph has basic blocks as nodes.
- * But the xrefs are instruction to instruction. So we have this super expansive |bb| * |E| lookup.
- *
- * It would be way faster if we have an R-Tree to get bbs by an address it covers.
- * Or just do a better design all along.
+ * \brief Does not update the BB if it is already present.
+ * Returns false if it already exists.
  */
-RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
-	// Add the instruction to instruction edges.
-	RzAnalysisXRef *i2i_edge;
-	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
-
-		// First check if the edge is already in the CFG.
-		// If so (not unlikely), skip the step where it iterates over all BBs.
-		const RzList *incoming = rz_inquiry_bb_cfg_get_neighbours_to(iq->bb_cfg, i2i_edge->to);
-		if (!incoming) {
-			// Basic block not present.
-			continue;
-		}
-		if (rz_list_length(incoming) == 0) {
-			// No incoming edges in the CFG yet.
-			// Find the basic block this edge originates from.
-			goto find_bb;
-		}
-
-		RzGraphNode *gn;
-		RzListIter *lit;
-		rz_list_foreach (incoming, lit, gn) {
-			RzInterval *bb = ht_up_find(iq->bb_cfg->basic_blocks, (ut64)gn->data, NULL);
-			if (!bb) {
-				continue;
-			}
-			if (rz_itv_contain(*bb, i2i_edge->from)) {
-				// This edge was already covered.
-				goto next_i2i_edge;
-			}
-		}
-
-	find_bb: {
-		// Edge isn't in the CFG yet.
-		// Now we have to do the crazy expansive |bb| * |E| search.
-		void **it;
-		RzIterator *bb_iter = ht_up_as_iter(iq->bb_cfg->basic_blocks);
-		rz_iterator_foreach(bb_iter, it) {
-			RzInterval *bb = *it;
-			if (!rz_itv_contain(*bb, i2i_edge->from)) {
-				continue;
-			}
-			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to);
-		}
-		rz_iterator_free(bb_iter);
-	}
-	next_i2i_edge:
-		continue;
-	}
-	return true;
-}
-
 RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size) {
-	if (ht_up_find(cfg->basic_blocks, addr, NULL)) {
-		return true;
-	}
-
-	if (!get_add_node_to_cfg(cfg, addr)) {
-		rz_warn_if_reached();
+	RzInquiryBB *bb = RZ_NEW(RzInquiryBB);
+	if (!bb) {
 		return false;
 	}
-	RzInterval *bb = rz_itv_new(addr, size);
-	if (!bb || !ht_up_insert(cfg->basic_blocks, addr, bb)) {
+	bb->addr = addr;
+	bb->size = size;
+	bool existed;
+	RzGraphNode *n = rz_graph_add_get_node(cfg->graph, bb, &existed);
+	if (!n) {
+		return false;
+	}
+	if (existed) {
+		free(bb);
+	}
+	const RzInquiryBB *nbb = rz_graph_node_get_data(n);
+	if (!nbb || nbb->addr != addr) {
 		rz_warn_if_reached();
 		return false;
 	}
@@ -248,20 +155,22 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 	// Index is end address of bb, values are starting address of bbs with that end address.
 	HtUP *overlapping_bbs = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 
-	RzIterator *iter = ht_up_as_iter(cfg->basic_blocks);
-	void **it;
-	rz_iterator_foreach(iter, it) {
-		RzInterval *bb = *it;
+	RzIterator *iter = rz_graph_get_nodes(cfg->graph);
+	RzGraphNode *n;
+	rz_iterator_foreach(iter, n) {
+		const RzInquiryBB *bb = rz_graph_node_get_data(n);
 		ut64 end = bb->addr + bb->size;
 		RzVector *start_addresses = ht_up_find(overlapping_bbs, end, NULL);
 		if (!start_addresses) {
 			start_addresses = rz_vector_new(sizeof(ut64), NULL, NULL);
 			ht_up_insert(overlapping_bbs, end, start_addresses);
 		}
-		rz_vector_push(start_addresses, &bb->addr);
+		// Cast due to not constified vector API.
+		rz_vector_push(start_addresses, (void *)&bb->addr);
 	}
 	rz_iterator_free(iter);
 
+	void **it;
 	iter = ht_up_as_iter(overlapping_bbs);
 	rz_iterator_foreach(iter, it) {
 		RzVector *addrs = *it;
@@ -276,13 +185,13 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 			rz_goto_if_fail(small_bb_addr > big_bb_addr, fail);
 
 			// Change size of big bb
-			RzInterval *big_bb = ht_up_find(cfg->basic_blocks, big_bb_addr, NULL);
+			RzInquiryBB *big_bb = rz_graph_node_get_data_mut(rz_graph_find_node(cfg->graph, big_bb_addr));
 			rz_goto_if_fail(big_bb, fail);
 			big_bb->size = small_bb_addr - big_bb_addr;
 
 			// add edge between big to small bb, remove old edges.
 			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
-			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr)) {
+			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
 				goto fail;
 			}
 		}

@@ -10,6 +10,7 @@
 #include "rz_cons.h"
 #include "rz_il/definitions/mem.h"
 #include "rz_il/rz_il_vm.h"
+#include "rz_inquiry/rz_bb_graph.h"
 #include "rz_inquiry/rz_interpreter.h"
 #include "rz_inquiry_plugins.h"
 #include "rz_th.h"
@@ -19,6 +20,7 @@
 #include "rz_util/ht_up.h"
 #include "rz_util/rz_bitvector.h"
 #include "rz_util/rz_buf.h"
+#include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
 #include "rz_util/rz_log.h"
 #include "rz_util/rz_set.h"
@@ -111,14 +113,65 @@ RZ_API RZ_OWN char *rz_inquiry_function_str(const RzInquiryFunction *fcn) {
 		rz_strbuf_appendf(buf, "%s0x%" PFMT64x, (i++ > 0 ? ", " : " "), *it);
 	}
 	rz_strbuf_append(buf, " ]\n");
-	RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
-	RzInterval **itv;
-	rz_iterator_foreach(iter, itv) {
-		RzInterval *bb = *itv;
+	RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+	RzInquiryBB *bb;
+	rz_iterator_foreach(iter, bb) {
 		rz_strbuf_appendf(buf, "\t0x%" PFMT64x ":0x%" PFMT64x "\n", bb->addr, bb->size);
 	}
 	rz_iterator_free(iter);
 	return rz_strbuf_drain(buf);
+}
+
+/**
+ * \brief Add edges from \p insn_to_insn_edges to the cfg.
+ * These are edges statically known by checking RzAnalysisOp->jump and fail.
+ *
+ * TODO: Crazy inefficient.
+ * But for now it is left in here. The problem is that the graph has basic blocks as nodes.
+ * But the xrefs are instruction to instruction. So we have this super expansive |bb| * |E| lookup.
+ *
+ * It would be way faster if we have an R-Tree to get bbs by an address it covers.
+ * Or just do a better design all along.
+ */
+RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges) {
+	// Add the instruction to instruction edges.
+	RzAnalysisXRef *i2i_edge;
+	rz_vector_foreach (insn_to_insn_edges, i2i_edge) {
+
+		// First check if the edge is already in the CFG.
+		// If so (not unlikely), skip the step where it iterates over all BBs.
+		RzIterator *incoming = rz_inquiry_bb_cfg_get_neighbours_to(iq->bb_cfg, i2i_edge->to);
+		if (!incoming) {
+			// Basic block not present.
+			continue;
+		}
+		RzGraphNode *gn;
+		rz_iterator_foreach(incoming, gn) {
+			const RzInquiryBB *bb = rz_graph_node_get_data(gn);
+			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
+				rz_iterator_free(incoming);
+				// This edge was already covered.
+				goto next_i2i_edge;
+			}
+		}
+		rz_iterator_free(incoming);
+
+		// Edge isn't in the CFG yet.
+		// Now we have to do the crazy expansive |bb| * |E| search.
+		RzGraphNode *n;
+		RzIterator *bb_iter = rz_graph_get_nodes(iq->bb_cfg->graph);
+		rz_iterator_foreach(bb_iter, n) {
+			const RzInquiryBB *bb = rz_graph_node_get_data(n);
+			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
+				continue;
+			}
+			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
+		}
+		rz_iterator_free(bb_iter);
+	next_i2i_edge:
+		continue;
+	}
+	return true;
 }
 
 RZ_API RZ_OWN RzInquiry *rz_inquiry_new(void) {
@@ -163,7 +216,7 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
 	rz_vector_push(iq->xrefs, (void *)xref);
 	if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
-		rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, xref->bb_addr, xref->to);
+		rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
 	}
 }
 
@@ -380,7 +433,7 @@ static bool send_next_il_bb(RzCore *core,
 		// This is the basic block for the imported function.
 		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
 	}
-	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr);
+	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
 	rz_th_queue_push(il_queue, (void *)bb, true);
 	return true;
 }
@@ -775,10 +828,9 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 	const RzPVector /*<RzBinSymbol *>*/ *symbols) {
 	// Add all discovered binary blocks to analysis
 
-	RzIterator *iter = ht_up_as_iter(inquiry->bb_cfg->basic_blocks);
-	RzInterval **it_bb;
-	rz_iterator_foreach(iter, it_bb) {
-		RzInterval *bb = *it_bb;
+	RzIterator *iter = rz_graph_get_nodes(inquiry->bb_cfg->graph);
+	RzInquiryBB *bb;
+	rz_iterator_foreach(iter, bb) {
 		rz_analysis_add_bb(analysis, bb->addr, bb->size);
 	}
 	rz_iterator_free(iter);
@@ -807,25 +859,31 @@ static bool convert_and_add_to_analysis(RzAnalysis *analysis, RzInquiry *inquiry
 			continue;
 		}
 
-		void **it2;
-		RzIterator *iter = ht_up_as_iter(fcn->bb_cfg->basic_blocks);
-		rz_iterator_foreach(iter, it2) {
-			RzInterval *bb = *it2;
+		RzIterator *iter = rz_graph_get_nodes(fcn->bb_cfg->graph);
+		RzInquiryBB *bb;
+		rz_iterator_foreach(iter, bb) {
 			RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, bb->addr);
 			if (!abb && !(abb = rz_analysis_create_block(analysis, bb->addr, bb->size))) {
 				rz_warn_if_reached();
 				continue;
 			}
-			const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
+			RzIterator *successors = rz_inquiry_bb_cfg_get_neighbours_from(inquiry->bb_cfg, bb->addr);
 			RzGraphNode *n;
-			if (rz_list_length(successors) > 0) {
-				n = rz_list_get_n(successors, 0);
-				abb->jump = (ut64)n->data;
+			size_t i = 0;
+			rz_iterator_foreach(successors, n) {
+				if (i == 0) {
+					abb->jump = rz_graph_node_get_id(n);
+				} else if (i == 1) {
+					abb->fail = rz_graph_node_get_id(n);
+				} else {
+					RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges. "
+						"Rizin can't model this currently :(\n", rz_graph_node_get_id(n));
+					break;
+				}
+				i++;
 			}
-			if (rz_list_length(successors) > 1) {
-				n = rz_list_get_n(successors, 1);
-				abb->fail = (ut64)n->data;
-			}
+			rz_iterator_free(successors);
+
 			RzAnalysisCallCandidate *cc;
 			if ((cc = ht_up_find(inquiry->call_candidates, bb->addr, NULL))) {
 				// Calls need an edge between the call instruction and its return address.

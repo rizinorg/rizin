@@ -40,10 +40,11 @@
  */
 
 #include "rz_analysis.h"
-#include "rz_list.h"
+#include "rz_inquiry/rz_bb_graph.h"
 #include "rz_types_base.h"
 #include "rz_util/ht_up.h"
 #include "rz_util/rz_assert.h"
+#include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
@@ -89,7 +90,7 @@ static void recurse_into_fcn_bbs(
 	//
 	// Add edge
 	//
-	RzInterval this_bb = { 0 };
+	RzInquiryBB this_bb = { 0 };
 	if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, this_bb_addr, &this_bb)) {
 		rz_warn_if_reached();
 		goto err_return;
@@ -100,7 +101,7 @@ static void recurse_into_fcn_bbs(
 	}
 
 	if (predecessor_bb_addr != UT64_MAX) {
-		RzInterval from_bb = { 0 };
+		RzInquiryBB from_bb = { 0 };
 		if (!rz_inquiry_bb_cfg_get_basic_block(binary_bb_cfg, predecessor_bb_addr, &from_bb)) {
 			rz_warn_if_reached();
 			goto err_return;
@@ -109,7 +110,7 @@ static void recurse_into_fcn_bbs(
 			rz_warn_if_reached();
 			goto err_return;
 		}
-		if (!rz_inquiry_bb_cfg_add_edge(fcn->bb_cfg, predecessor_bb_addr, this_bb_addr)) {
+		if (!rz_inquiry_bb_cfg_add_edge(fcn->bb_cfg, predecessor_bb_addr, this_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
 			rz_warn_if_reached();
 			goto err_return;
 		}
@@ -118,16 +119,15 @@ static void recurse_into_fcn_bbs(
 	//
 	// Visit neighbors
 	//
-	const RzList *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, this_bb_addr);
+	RzIterator *successors = rz_inquiry_bb_cfg_get_neighbours_from(binary_bb_cfg, this_bb_addr);
 	if (!successors) {
 		rz_warn_if_reached();
 		goto err_return;
 	}
 
-	RzListIter *lit;
 	const RzGraphNode *s;
-	rz_list_foreach (successors, lit, s) {
-		ut64 succ_addr = (ut64)s->data;
+	rz_iterator_foreach (successors, s) {
+		ut64 succ_addr = rz_graph_node_get_id(s);
 		if (rz_set_u_contains((RzSetU *)return_addresses, succ_addr)) {
 			// Ignore tail called functions and return points
 			// because they belong to a different function.
@@ -159,6 +159,7 @@ static void recurse_into_fcn_bbs(
 			binary_bb_cfg,
 			ignored_code);
 	}
+	rz_iterator_free(successors);
 	return;
 
 err_return:
@@ -175,12 +176,13 @@ static void fill_cfep_and_ret_addresses(
 	rz_iterator_foreach(iter, it) {
 		RzAnalysisCallCandidate *cc = *it;
 		ut64 ret_addr = cc->npc;
-		const RzList *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
-		if (predecessor && rz_list_length(predecessor) > 0) {
+		RzIterator *predecessor = rz_inquiry_bb_cfg_get_neighbours_to(binary_bb_cfg, ret_addr);
+		if (rz_iterator_next(predecessor)) {
 			rz_set_u_add(return_addresses, ret_addr);
 		}
 		RZ_LOG_DEBUG("Add cfep at 0x%llx based on BB 0x%llx\n", cc->candidate_addr, cc->target);
 		rz_vector_push(cfep_addresses, &cc->target);
+		rz_iterator_free(predecessor);
 	}
 	rz_iterator_free(iter);
 	rz_vector_sort(cfep_addresses, cmp, false, NULL);
