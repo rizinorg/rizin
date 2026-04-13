@@ -4035,3 +4035,16 @@ Register dependencies:
 
 EOF
 RUN
+
+NAME=consistency check between /R and /Rg
+FILE=bins/elf/analysis/mips64r2-busybox
+CMDS=<<EOF
+aaa
+/R~Gadget~?
+/Rg~Gadget~?
+EOF
+EXPECT=<<EOF
+1951
+1951
+EOF
+RUN
