@@ -98,9 +98,12 @@ static bool gadget_hitlist_print_table_mode(const RzCore *core, const RzCoreAsmH
 		rz_asm_op_free(asmop);
 		return false;
 	}
-	const RzCoreAsmHit *last_hit = rz_pvector_at(hitlist, rz_pvector_len(hitlist) - 1);
-	if (last_hit->addr != hit->addr) {
-		*asmop_str = rz_str_append(*asmop_str, "; ");
+	size_t len = rz_pvector_len(hitlist);
+	if (len > 0) {
+		const RzCoreAsmHit *last_hit = rz_pvector_at(hitlist, len - 1);
+		if (last_hit->addr != hit->addr) {
+			*asmop_str = rz_str_append(*asmop_str, "; ");
+		}
 	}
 	rz_asm_op_free(asmop);
 	rz_analysis_op_fini(&aop);
