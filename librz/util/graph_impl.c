@@ -1804,7 +1804,7 @@ RZ_API bool rz_graph_del_node_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut6
  * \return True if edge was added. False if one of the nodes did not exist or in case of failure.
  */
 RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id, void *edge_data) {
-	rz_return_val_if_fail(g && from_id && to_id, false);
+	rz_return_val_if_fail(g, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
@@ -1822,7 +1822,7 @@ RZ_API bool rz_graph_add_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut6
  * \return True if edge was deleted. False if no edge existed or failure.
  */
 RZ_API bool rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id) {
-	rz_return_val_if_fail(g && from_id && to_id, false);
+	rz_return_val_if_fail(g, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
@@ -1840,7 +1840,7 @@ RZ_API bool rz_graph_del_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut6
  * \return True if edge exists. False if not or failure.
  */
 RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id) {
-	rz_return_val_if_fail(g && from_id && to_id, false);
+	rz_return_val_if_fail(g, false);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
@@ -1858,7 +1858,7 @@ RZ_API bool rz_graph_has_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut6
  * \return The edge data. Or NULL, if the edge has no data or in case of failure.
  */
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 from_id, ut64 to_id) {
-	rz_return_val_if_fail(g && from_id && to_id, NULL);
+	rz_return_val_if_fail(g, NULL);
 	RzGraphNode *from = rz_graph_find_node(g, from_id);
 	RzGraphNode *to = rz_graph_find_node(g, to_id);
 	if (!from || !to) {
