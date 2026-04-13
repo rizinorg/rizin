@@ -1051,9 +1051,9 @@ RZ_API const RzGraphNode *rz_graph_edge_get_to(RZ_NONNULL const RzGraphEdge *edg
  * \param impl_type RZ_GRAPH_IMPL_LIST or RZ_GRAPH_IMPL_MATRIX
  * \param id_hash_fcn Hash function to generate the unique id for a node.
  *                    If it is NULL, then the graph will use the pointers as hash ids.
- *                    In the common case that the nodes should be identified by integers and have no data at all,
- *                    the user must initialize the graph with id_hash_fcn == NULL.
- *                    Then pass `RZ_GRAPH_INT_AS_DATA(<node_int_id>)` to the `const void *identifier` parameter of API functions.
+ *                    In the common case that the nodes should be integers only and without any data at all,
+ *                    the user can initialize the graph with id_hash_fcn == NULL.
+ *                    Then pass `RZ_GRAPH_INT_AS_DATA(<node_int_id>)` to the `const void *node_data` parameter of API functions.
  * \param node_free callback to free node user data, or NULL
  * \param edge_free callback to free edge user data, or NULL
  * \return A new RzGraphNew, or NULL on failure.
