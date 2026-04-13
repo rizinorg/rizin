@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_analysis.h"
 #include "rz_types_base.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
@@ -44,46 +45,15 @@ RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr) {
 
 /**
  * \brief Adds an edge to the basic block CFG.
- * If one of the blocks doesn't exist, it creates one with size 1.
  *
  * \param cfg The basic block CFG to edit.
  * \param from_bb The address of the basic block with the branch.
  *                Not the address of the branch instruction!
  * \param to_bb The address of the basic block the branch leads to.
  *
- * \return False if an error occurred. True otherwise.
+ * \return True if edge was added. False for error or if a node doesn't exist.
  */
 RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb, RzInquiryBBCFGEdgeType type) {
-	bool existed;
-	RzInquiryBB *f_bb = RZ_NEW(RzInquiryBB);
-	RzInquiryBB *t_bb = RZ_NEW(RzInquiryBB);
-	if (!f_bb || !t_bb) {
-		free(f_bb);
-		free(t_bb);
-		return false;
-	}
-	f_bb->addr = from_bb;
-	f_bb->size = 1;
-	t_bb->addr = to_bb;
-	t_bb->size = 1;
-
-	if (!rz_graph_add_get_node(cfg->graph, f_bb, &existed)) {
-		free(f_bb);
-		free(t_bb);
-		rz_warn_if_reached();
-		return false;
-	}
-	if (existed) {
-		free(f_bb);
-	}
-	if (!rz_graph_add_get_node(cfg->graph, t_bb, &existed)) {
-		free(t_bb);
-		rz_warn_if_reached();
-		return false;
-	}
-	if (existed) {
-		free(t_bb);
-	}
 	return rz_graph_add_edge_by_id(cfg->graph, from_bb, to_bb, RZ_GRAPH_INT_AS_DATA(type));
 }
 
@@ -126,13 +96,25 @@ RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut
 	if (!n) {
 		return false;
 	}
+	const RzInquiryBB *nbb = rz_graph_node_get_data(n);
+	if (nbb->size != size) {
+		rz_warn_if_reached();
+	}
 	if (existed) {
 		free(bb);
 	}
-	const RzInquiryBB *nbb = rz_graph_node_get_data(n);
-	if (!nbb || nbb->addr != addr) {
-		rz_warn_if_reached();
-		return false;
+	return true;
+}
+
+RZ_IPI bool rz_inquiry_bb_cfg_add_xrefs(RzInquiryBBCFG *cfg, RzVector /*<RzAnalysisXRef>*/ *xrefs) {
+	RzAnalysisXRef *xref;
+	rz_vector_foreach (xrefs, xref) {
+		if (xref->type != RZ_ANALYSIS_XREF_TYPE_CODE) {
+			continue;
+		}
+		if (!rz_inquiry_bb_cfg_add_edge(cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+			RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", xref->bb_addr, xref->to);
+		}
 	}
 	return true;
 }
@@ -155,8 +137,8 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 	// Index is end address of bb, values are starting address of bbs with that end address.
 	HtUP *overlapping_bbs = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 
-	RzIterator *iter = rz_graph_get_nodes(cfg->graph);
 	RzGraphNode *n;
+	RzIterator *iter = rz_graph_get_nodes(cfg->graph);
 	rz_iterator_foreach(iter, n) {
 		const RzInquiryBB *bb = rz_graph_node_get_data(n);
 		ut64 end = bb->addr + bb->size;
@@ -178,6 +160,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 		if (i == 1) {
 			continue;
 		}
+		// Sort start addresses.
 		rz_vector_sort(addrs, (RzVectorComparator)cmp, false, NULL);
 		for (i = i - 1; i > 0; i--) {
 			ut64 small_bb_addr = *((ut64 *)rz_vector_index_ptr(addrs, i));
@@ -192,6 +175,7 @@ RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg) {
 			// add edge between big to small bb, remove old edges.
 			rz_inquiry_bb_cfg_del_out_edges(cfg, big_bb_addr);
 			if (!rz_inquiry_bb_cfg_add_edge(cfg, big_bb_addr, small_bb_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_CF)) {
+				RZ_LOG_DEBUG("Did not add edge: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", big_bb_addr, small_bb_addr);
 				goto fail;
 			}
 		}
