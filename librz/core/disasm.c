@@ -2709,13 +2709,6 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 	if (cols < 8) {
 		cols = 8;
 	}
-	int outsz = cols + 32;
-	char *out = malloc(outsz);
-	if (!out) {
-		return;
-	}
-	memset(out, ' ', outsz);
-	out[outsz - 1] = 0;
 	int sect_len = strlen(sect);
 
 	if (sect_len > cols) {
@@ -2723,22 +2716,25 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
+	int outsz;
+	char *out;
 	if (ds->show_color) {
-		int written = snprintf(out, outsz, "%s %s", color, sect);
-		// append the reset seq with the remaining capacity.
-		if (written > 0 && written < outsz) {
-			snprintf(out + written, outsz - written, "%s", COLOR_RESET(ds));
-		}
+		outsz = snprintf(NULL, 0, "%s %s%s ", color, sect, COLOR_RESET(ds));
 	} else {
-		rz_str_ncpy(out + 1, sect, outsz - 2);
+		outsz = snprintf(NULL, 0, " %s ", sect);
 	}
-	char *tmp = rz_str_appendch(out, ' ');
-	// keep the actual buffer alive if the helper cant extend it.
-	if (!tmp) {
-		free(out);
+	if (outsz < 0) {
 		return;
 	}
-	out = tmp;
+	out = malloc((size_t)outsz + 1);
+	if (!out) {
+		return;
+	}
+	if (ds->show_color) {
+		snprintf(out, (size_t)outsz + 1, "%s %s%s ", color, sect, COLOR_RESET(ds));
+	} else {
+		snprintf(out, (size_t)outsz + 1, " %s ", sect);
+	}
 	rz_cons_strcat(out);
 	free(out);
 }
