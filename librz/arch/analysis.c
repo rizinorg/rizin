@@ -271,6 +271,11 @@ RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPl
 	return ht_sp_delete(analysis->plugins, p->name);
 }
 
+RZ_API RZ_BORROW HtSP /*<RzAnalysisPlugin *>*/ *rz_analysis_get_plugins(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->plugins;
+}
+
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, false);
 	if (analysis->cur && !strcmp(analysis->cur->name, name)) {
