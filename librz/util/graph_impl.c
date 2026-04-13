@@ -1329,13 +1329,19 @@ static RzGraphNode *internal_add(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN
  * \param node_data Data attached to the node. NULL is considered valid data!
  * \return The previous or new node, or NULL in case of failure.
  */
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data) {
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_NULLABLE RZ_OWN void *node_data, RZ_OUT RZ_NULLABLE bool *existed) {
 	rz_return_val_if_fail(g, NULL);
 	ut64 hash_id = g->hash_func(node_data);
 
 	RzGraphNode *node = ht_up_find(g->nodes, hash_id, NULL);
 	if (node) {
+		if (existed) {
+			*existed = true;
+		}
 		return node;
+	}
+	if (existed) {
+		*existed = false;
 	}
 	return internal_add(g, node_data, hash_id);
 }

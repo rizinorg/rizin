@@ -46,10 +46,15 @@ static bool test_graph_nodes(void) {
 	mu_assert_notnull(n1, "add_node.1");
 	mu_assert_eq(rz_graph_count_nodes(g), 1, "n_nodes.1");
 	mu_assert_ptreq(rz_graph_node_get_data(n1), (ut8 *)1, "node_data.1");
-	RzGraphNode *n1_same = rz_graph_add_get_node(g, (ut8 *)1);
+	bool existed;
+	RzGraphNode *n1_same = rz_graph_add_get_node(g, (ut8 *)1, &existed);
+	mu_assert_true(existed, "Flag was not set correctly");
+	mu_assert_eq(n1, n1_same, "rz_graph_add_get_node() did not return same node");
+	n1_same = rz_graph_add_get_node(g, (ut8 *)1, NULL);
 	mu_assert_eq(n1, n1_same, "rz_graph_add_get_node() did not return same node");
 
-	RzGraphNode *n2 = rz_graph_add_node(g, (ut8 *)2);
+	RzGraphNode *n2 = rz_graph_add_get_node(g, (ut8 *)2, &existed);
+	mu_assert_false(existed, "Flag was not set correctly");
 	mu_assert_notnull(n2, "add_node.2");
 	mu_assert_eq(rz_graph_count_nodes(g), 2, "n_nodes.2");
 

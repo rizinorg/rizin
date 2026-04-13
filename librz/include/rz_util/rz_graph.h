@@ -41,7 +41,7 @@ RZ_API void rz_graph_reset(RzGraph *g);
 
 // Nodes
 RZ_API RZ_BORROW RzGraphNode *rz_graph_add_node(RzGraph *g, void *node_data);
-RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data);
+RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OWN void *node_data, RZ_OUT RZ_NULLABLE bool *existed);
 RZ_API bool rz_graph_del_node(RzGraph *g, RZ_OWN RzGraphNode *node);
 RZ_API RZ_BORROW RzGraphNode *rz_graph_find_node(RzGraph *g, ut64 id);
 
