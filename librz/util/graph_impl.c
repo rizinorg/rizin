@@ -13,7 +13,7 @@ typedef struct rz_graph_list_edge_impl_t {
 
 typedef struct rz_graph_matrix_edge_impl_t {
 	RzGraphEdge **matrix; // index by matrix[from_vec_id][to_vec_id]
-	RzVector *edge_offsets; ///< Stores the offsets into the matrix where edges are present.
+	RzVector /*<ut64>*/ *edge_offsets; ///< Stores the offsets into the matrix where edges are present.
 	ut64 capacity;
 } RzGraphMatrixImpl;
 
@@ -141,7 +141,7 @@ static bool rz_graph_list_impl_add_edge(RzGraph /*<NodeType *, EdgeType *>*/ *g,
 	return true;
 }
 
-static void remove_free_edge_list(RzGraph *g, RzPVector *edges, size_t index, bool free_data) {
+static void remove_free_edge_list(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzPVector /*<RzGraphEdge *>*/ *edges, size_t index, bool free_data) {
 	RzGraphEdge *e = rz_pvector_at(edges, index);
 	// free user data
 	if (free_data && g->edge_data_free && e->data) {
@@ -1786,7 +1786,7 @@ RZ_DEPRECATE RZ_API const RzPVector /*<RzGraphNode *>*/ *rz_graph_get_node_vec(R
  * \param cb The callback to decide which edge to delete. Can be NULL if all edges should be deleted.
  * \return True if deletion was successful or no edge was deleted. False in case of failure.
  */
-RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
+RZ_API bool rz_graph_del_edges(RZ_BORROW RzGraph /*<NodeType *, EdgeTypde *>*/ *g, RZ_NULLABLE RzGraphEdgeChooser cb, void *cb_data) {
 	rz_return_val_if_fail(g, false);
 	return g->impl_ops->del_edges(g, cb, cb_data);
 }
@@ -1884,9 +1884,9 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<No
  *
  * \param g The graph.
  * \param hash_id The node identifier.
- * \return The iterator or NULL in case of failure.
+ * \return The iterator over <RZ_BORROW RzGraphEdge *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
@@ -1900,9 +1900,9 @@ RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_out_edges_by_id
  *
  * \param g The graph.
  * \param hash_id The node identifier.
- * \return The iterator or NULL in case of failure.
+ * \return The iterator over <RZ_BORROW RzGraphEdge *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
@@ -1916,9 +1916,9 @@ RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphEdge *>*/ *rz_graph_in_edges_by_id(
  *
  * \param g The graph.
  * \param hash_id The node identifier.
- * \return The iterator or NULL in case of failure.
+ * \return The iterator over <RZ_BORROW RzGraphNode *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphNode *>*/ *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
@@ -1932,9 +1932,9 @@ RZ_API RZ_OWN RzIterator /*<RZ_BORROW RzGraphNode *>*/ *rz_graph_out_neighbors_b
  *
  * \param g The graph.
  * \param hash_id The node identifier.
- * \return The iterator or NULL in case of failure.
+ * \return The iterator over <RZ_BORROW RzGraphNode *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator /*<RzGraphNode *>*/ *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
 	rz_return_val_if_fail(g, NULL);
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
