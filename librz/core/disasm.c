@@ -2716,8 +2716,8 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 		sect[cols - 1] = '.';
 		sect[cols] = 0;
 	}
-	int outsz;
-	char *out;
+	int outsz = 0;
+	char *out = NULL;
 	if (ds->show_color) {
 		outsz = snprintf(NULL, 0, "%s %s%s ", color, sect, COLOR_RESET(ds));
 	} else {
