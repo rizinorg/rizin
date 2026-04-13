@@ -259,6 +259,44 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
 	return p;
 }
 
+static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user, RZ_OUT size_t *i) {
+	size_t vlen = rz_vector_len(vec);
+	if (vlen == 0) {
+		*i = 0;
+		return false;
+	}
+
+	size_t left = 0;
+	size_t right = vlen;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		int cmp_res = cmp(elem, rz_vector_index_ptr(vec, mid), user);
+
+		if (cmp_res == 0) {
+			*i = mid;
+			return true;
+		}
+
+		if (vec->reverse_sorted) {
+			if (cmp_res > 0) {
+				right = mid;
+			} else {
+				left = mid + 1;
+			}
+		} else {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+	}
+
+	*i = left;
+	return false;
+}
+
 /**
  * \brief Inserts an element into a sorted vector keeping the order.
  * NOTE: This function assumes the vector is already sorted!
@@ -278,61 +316,11 @@ RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *
 		return rz_vector_push(vec, elem);
 	}
 
-	size_t left = 0;
-	size_t right = rz_vector_len(vec);
+	size_t insert_index = 0;
 
-	while (left < right) {
-		size_t mid = left + (right - left) / 2;
+	bin_search_range(vec, elem, cmp, user, &insert_index);
 
-		void *velem = ((char *)vec->a) + (vec->elem_size * mid);
-
-		int cmp_res = cmp(velem, elem, user);
-
-		if (vec->reverse_sorted) {
-			if (cmp_res > 0) {
-				left = mid + 1;
-			} else {
-				right = mid;
-			}
-		} else {
-			if (cmp_res < 0) {
-				left = mid + 1;
-			} else {
-				right = mid;
-			}
-		}
-	}
-	return rz_vector_insert(vec, left, elem);
-}
-
-static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user, RZ_OUT size_t *i) {
-	size_t vlen = rz_vector_len(vec);
-	if (vlen == 0) {
-		return false;
-	}
-
-	int inc = vec->reverse_sorted ? -1 : 1;
-	ssize_t low = vec->reverse_sorted ? vlen - 1 : 0;
-	ssize_t hi = vec->reverse_sorted ? 0 : vlen - 1;
-
-	do {
-		size_t mid = (low + hi) >> 1;
-		if (cmp(elem, rz_vector_index_ptr(vec, mid), user) == 0) {
-			*i = mid;
-			return true;
-		}
-		if (low == hi) {
-			break;
-		}
-		if (cmp(elem, rz_vector_index_ptr(vec, mid), user) > 0) {
-			low = mid + inc;
-		}
-		if (cmp(elem, rz_vector_index_ptr(vec, mid), user) < 0) {
-			hi = mid - inc;
-		}
-	} while (vec->reverse_sorted ? hi <= low : low <= hi);
-
-	return false;
+	return rz_vector_insert(vec, insert_index, elem);
 }
 
 /**
