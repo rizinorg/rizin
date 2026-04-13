@@ -1,11 +1,6 @@
 NAME=Indirect call x86
 FILE=bins/inquiry/interpreter/prototype/x86_icall_malloc
 CMDS=<<EOF
-# This test is incomplete.
-# The graph view of the main function will show the instructions
-# 0x0800005d and 0x08000061 twice.
-# Because they are part of two basic blocks.
-# Once of BB 0x0800005d and once 0x08000040
 aaaaIp sym.main
 pd 48 @ sym.main
 axl
@@ -393,10 +388,6 @@ RUN
 NAME=Indirect call arm
 FILE=bins/inquiry/interpreter/prototype/arm_icall_malloc
 CMDS=<<EOF
-# This test is incomplete for the same reasons as Sparc's test.
-# The state of the VM is pushed onto the stack. And the stack is not added to
-# VM state hash. So when it returns the second time from the call, it
-# quits because it has seen the state hash before.
 aaaaIp sym.main
 pd 69
 axl
