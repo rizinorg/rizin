@@ -19,6 +19,7 @@ features noreorder pic cpic o32 n32
             ;-- __start:
             ;-- _start:
             ;-- pc:
+            ;-- start:
 / entry0();
 |           ; var int32_t var_4h @ stack - 0x4
 |           0x000804d0      bal   0x804d8                              ; [06] -r-x section size 304 named .text ;  entry0(void)

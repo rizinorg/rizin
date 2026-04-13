@@ -3965,9 +3965,10 @@ static RzType *var_type_from_size(RzTypeDB *typedb, size_t sz) {
 
 static void core_analysis_analyze_global_var(RzCore *core) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
-	rz_return_if_fail(typedb);
 	RzBinObject *o = rz_bin_cur_object(core->bin);
-	rz_return_if_fail(o);
+	if (!typedb || !o) {
+		return;
+	}
 
 	const RzPVector *symbols = rz_bin_object_get_symbols(o);
 	void **it;
@@ -3976,7 +3977,7 @@ static void core_analysis_analyze_global_var(RzCore *core) {
 		if (global_var_exists(core->analysis, sym)) {
 			continue;
 		}
-		if (RZ_STR_NE(sym->type, "OBJ") || RZ_STR_NE(sym->bind, "GLOBAL")) {
+		if (RZ_STR_NE(sym->type, RZ_BIN_TYPE_OBJECT_STR) || RZ_STR_NE(sym->bind, RZ_BIN_BIND_GLOBAL_STR)) {
 			continue;
 		}
 

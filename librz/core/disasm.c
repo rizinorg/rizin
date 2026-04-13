@@ -5396,7 +5396,7 @@ toro:
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
 		RzAnalysisVarGlobal *gv = rz_analysis_var_global_get_byaddr_at(core->analysis, ds->addr + idx);
-		if (gv) {
+		if (gv && !f) {
 			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 			char *fmt = rz_type_as_format_pair(typedb, gv->type);
 			const char *typename = rz_type_identifier(gv->type);
