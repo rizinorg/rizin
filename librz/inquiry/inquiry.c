@@ -165,7 +165,9 @@ RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXR
 			if (RZ_BETWEEN_EXCL(bb->addr, i2i_edge->from, bb->addr + bb->size)) {
 				continue;
 			}
-			rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
+			if (!rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, bb->addr, i2i_edge->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP)) {
+				rz_warn_if_reached();
+			}
 		}
 		rz_iterator_free(bb_iter);
 	next_i2i_edge:
@@ -215,9 +217,6 @@ RZ_API void rz_inquiry_free(RZ_OWN RZ_NULLABLE RzInquiry *iq) {
 
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref) {
 	rz_vector_push(iq->xrefs, (void *)xref);
-	if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
-		rz_inquiry_bb_cfg_add_edge(iq->bb_cfg, xref->bb_addr, xref->to, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
-	}
 }
 
 RZ_API bool rz_inquiry_xref_interpreter_filter(ut64 *xref_to_addr, RZ_NONNULL const RzPVector /*<RzBinSection *>*/ *allowed_segments) {
@@ -433,7 +432,9 @@ static bool send_next_il_bb(RzCore *core,
 		// This is the basic block for the imported function.
 		rz_inquiry_bb_cfg_add_basic_block(core->inquiry->bb_cfg, branch->target_addr, 1);
 	}
-	rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
+	if (RZ_LIKELY(branch->branching_bb_addr)) {
+		rz_inquiry_bb_cfg_add_edge(core->inquiry->bb_cfg, branch->branching_bb_addr, branch->target_addr, RZ_INQUIRY_BB_CFG_EDGE_TYPE_JMP);
+	}
 	rz_th_queue_push(il_queue, (void *)bb, true);
 	return true;
 }
@@ -799,6 +800,9 @@ fatal_error:
 		eprintf("\n");
 	}
 	if (!rz_inquiry_bb_cfg_reduce(core->inquiry->bb_cfg)) {
+		rz_warn_if_reached();
+	}
+	if (!rz_inquiry_bb_cfg_add_xrefs(core->inquiry->bb_cfg, core->inquiry->xrefs)) {
 		rz_warn_if_reached();
 	}
 	if (!user_sent_signal) {
