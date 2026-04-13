@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #include <rz_inquiry/rz_interpreter.h>
+#include <rz_inquiry/rz_bb_graph.h>
 
 /**
  * \brief The number of iterations inquiry checks for a user given signal.
@@ -24,32 +25,6 @@ extern "C" {
 typedef struct rz_inquiry_plugin_t {
 	RzInterpreterPlugin *p_interpreter;
 } RzInquiryPlugin;
-
-/**
- * \brief A control flow graph with basic blocks as nodes.
- */
-typedef struct {
-	/**
-	 * \brief Indexed by start address of basic block.
-	 */
-	HtUP /*<RzInterval *>*/ *basic_blocks;
-
-	/**
-	 * \brief Maps a basic block address to its node index in the RzGraph instance.
-	 */
-	HtUU *bb_gidx_map;
-
-	/**
-	 * \brief Maps a basic block address to the RzgraphNode pointer of the RzGraph instance.
-	 */
-	HtUP /*<const RzGraphNode *>*/ *bb_gnode_map;
-
-	/**
-	 * \brief The CFG discovered during interpretation.
-	 * The node data are the addresses of basic blocks, cast to (void *).
-	 */
-	RzGraph *graph;
-} RzInquiryBBCFG;
 
 typedef struct {
 	/**
@@ -63,17 +38,7 @@ typedef struct {
 	RzInquiryBBCFG *bb_cfg; ///< The control flow graph all the basic blocks build.
 } RzInquiry;
 
-RZ_IPI RZ_OWN RzInquiryBBCFG *rz_inquiry_bb_cfg_new();
-RZ_IPI void rz_inquiry_bb_cfg_free(RZ_NULLABLE RZ_OWN RzInquiryBBCFG *bb_cfg);
-RZ_IPI bool rz_inquiry_bb_cfg_add_basic_block(RzInquiryBBCFG *cfg, ut64 addr, ut64 size);
-RZ_IPI bool rz_inquiry_bb_cfg_get_basic_block(const RzInquiryBBCFG *cfg, ut64 bb_addr, RZ_OUT RzInterval *bb);
-RZ_IPI bool rz_inquiry_bb_cfg_del_out_edges(RzInquiryBBCFG *cfg, ut64 bb_addr);
-RZ_IPI bool rz_inquiry_bb_cfg_add_edge(RzInquiryBBCFG *cfg, ut64 from_bb, ut64 to_bb);
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_from(const RzInquiryBBCFG *cfg, ut64 bb_addr);
-RZ_API const RzList /*<RzGraphNode *>*/ *rz_inquiry_bb_cfg_get_neighbours_to(const RzInquiryBBCFG *cfg, ut64 bb_addr);
-
 RZ_IPI bool rz_inquiry_bb_cfg_complement(RzInquiry *iq, RzVector /*<RzAnalysisXRef>*/ *insn_to_insn_edges);
-RZ_IPI bool rz_inquiry_bb_cfg_reduce(RzInquiryBBCFG *cfg);
 
 RZ_IPI void rz_inquiry_add_xref(RzInquiry *iq, const RzAnalysisXRef *xref);
 
