@@ -1719,18 +1719,6 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, co
 	return count;
 }
 
-RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, NULL);
-
-	bool found;
-	RzGraphNode *node = ht_up_find(g->nodes, hash_id, &found);
-	if (found && node) {
-		return node;
-	}
-
-	return NULL;
-}
-
 /**
  * \brief Returns the node's identifier.
  */

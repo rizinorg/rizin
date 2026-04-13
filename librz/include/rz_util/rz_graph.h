@@ -89,9 +89,6 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph *g, const RzGraphNode *
 RZ_API ut64 rz_graph_out_degree(const RzGraph *g, const RzGraphNode *n);
 RZ_API ut64 rz_graph_in_degree(const RzGraph *g, const RzGraphNode *n);
 
-// Node/edge lookup by raw hash_id (ut64)
-RZ_API RzGraphNode *rz_graph_find_node_by_hashid(RzGraph *g, ut64 hash_id);
-
 // Getters and setters
 RZ_DEPRECATE RZ_API ut64 rz_graph_node_get_vec_id(RZ_NONNULL const RzGraphNode *node);
 RZ_DEPRECATE RZ_API const RzPVector *rz_graph_get_node_vec(RZ_NONNULL const RzGraph *g);
