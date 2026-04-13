@@ -2606,7 +2606,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 	}
 end:
 	rz_cons_newline();
-	free(g);
+	rz_agraph_free(g);
 	free(top_data);
 	free(top_title);
 	rz_list_free(chunks);
