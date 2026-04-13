@@ -28,7 +28,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 
 #define rz_warn_if_fail(expr) \
 	do { \
-		if (!(expr)) { \
+		if (RZ_UNLIKELY(!(expr))) { \
 			rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
 		} \
@@ -117,7 +117,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
  */
 #define rz_return_if_fail(expr) \
 	do { \
-		if (!(expr)) { \
+		if (RZ_UNLIKELY(!(expr))) { \
 			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting function\n", RZ_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
@@ -125,7 +125,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 
 #define rz_return_val_if_fail(expr, val) \
 	do { \
-		if (!(expr)) { \
+		if (RZ_UNLIKELY(!(expr))) { \
 			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); returning %s\n", RZ_FUNCTION, #expr, __LINE__, #val); \
 			return (val); \
 		} \
@@ -145,7 +145,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 
 #define rz_goto_if_fail(expr, where) \
 	do { \
-		if (!(expr)) { \
+		if (RZ_UNLIKELY(!(expr))) { \
 			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); jumping to %s\n", RZ_FUNCTION, #expr, __LINE__, #where); \
 			goto where; \
 		} \
@@ -159,7 +159,7 @@ RZ_API void rz_assert_log(RzLogLevel level, const char *fmt, ...) RZ_PRINTF_CHEC
 
 #define rz_break_if_fail(expr) \
 	{ \
-		if (!(expr)) { \
+		if (RZ_UNLIKELY(!(expr))) { \
 			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); exiting loop\n", RZ_FUNCTION, #expr, __LINE__); \
 			break; \
 		} \
