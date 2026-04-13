@@ -1333,15 +1333,13 @@ RZ_API RZ_BORROW RzGraphNode *rz_graph_add_get_node(RzGraph /*<NodeType *, EdgeT
 	rz_return_val_if_fail(g, NULL);
 	ut64 hash_id = g->hash_func(node_data);
 
-	RzGraphNode *node = ht_up_find(g->nodes, hash_id, NULL);
-	if (node) {
-		if (existed) {
-			*existed = true;
-		}
-		return node;
-	}
+	bool found;
+	RzGraphNode *node = ht_up_find(g->nodes, hash_id, &found);
 	if (existed) {
-		*existed = false;
+		*existed = found;
+	}
+	if (node) {
+		return node;
 	}
 	return internal_add(g, node_data, hash_id);
 }
