@@ -52,10 +52,27 @@ typedef ut32 LUA_INSTRUCTION;
 /* Lua Constant Tag */
 #define makevariant(t, v) ((t) | ((v) << 4))
 
-#define LUA_TNIL          0
-#define LUA_TBOOLEAN      1
-#define LUA_TNUMBER       3
-#define LUA_TSTRING       4
+#define LUA_TNIL     0
+#define LUA_TBOOLEAN 1
+#define LUA_TNUMBER  3
+#define LUA_TSTRING  4
+
+/**
+ * Why OpenWrt Patches Lua's Number Handling
+ * Standard Lua 5.1 represents all numbers as double (64-bit floating point).
+ * This is wasteful on embedded/MIPS routers like the TP-Link Archer AX21, where:
+ * - Most numerical operations involve small integers (loop counters, table indices, port numbers, etc.)
+ * - Double-precision floating point is expensive on resource-constrained hardware
+ * - Memory is limited
+ *
+ * The LNUM patch modifies Lua to natively distinguish between integers and floating-point numbers, allowing the VM to:
+ * - Store integer constants in 4 bytes instead of 8
+ * - Use faster integer arithmetic when possible
+ * - Reduce memory footprint of compiled bytecode
+ *
+ * This is a well-known OpenWrt modification to Lua 5.1, as documented in Chinese-language firmware
+ * reverse engineering resources discussing OpenWrt Lua bytecode differences from vanilla Lua
+ */
 #define LUA_OPENWRT_INT32 9 ///< 4 bytes (2 - le, 2 - 00 00)
 
 /* Macros of tag */
