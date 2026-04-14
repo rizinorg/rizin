@@ -57,6 +57,7 @@ static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
 	block->op_pos_size = DFLT_NINSTR;
 	block->sp_entry = ST32_MAX;
 	rz_vector_init(&block->sp_delta, sizeof(st16), NULL, NULL);
+	rz_vector_init(&block->_succ_addrs, sizeof(RzAnalysisSuccAddr), NULL, NULL);
 	block->cmpval = UT64_MAX;
 	block->fcns = rz_list_new();
 	if (size) {
@@ -75,8 +76,153 @@ static void block_free(RzAnalysisBlock *block) {
 	rz_list_free(block->fcns);
 	free(block->op_pos);
 	rz_vector_fini(&block->sp_delta);
+	rz_vector_fini(&block->_succ_addrs);
 	free(block->parent_reg_arena);
 	free(block);
+}
+
+/**
+ * \brief Returns the block's successor addresses.
+ *
+ * \param block The block to get the successors from.
+ *
+ * \return A vector with the successor addresses, or NULL in case of failure.
+ */
+RZ_API const RzVector /*<RzAnalysisSuccAddr>*/ *rz_analysis_block_succ(const RZ_NONNULL RzAnalysisBlock *block) {
+	rz_return_val_if_fail(block, NULL);
+	return &block->_succ_addrs;
+}
+
+/**
+ * \brief Returns the block's mutable successor addresses.
+ *
+ * \param block The block to get the successors from.
+ *
+ * \return A mutable vector with the successor addresses, or NULL in case of failure.
+ */
+RZ_API RZ_BORROW RzVector /*<RzAnalysisSuccAddr>*/ *rz_analysis_block_succ_mut(RZ_NONNULL RzAnalysisBlock *block) {
+	rz_return_val_if_fail(block, NULL);
+	return &block->_succ_addrs;
+}
+
+/**
+ * \brief Adds an successor address to block.
+ *
+ * \param block The block to add the successors to.
+ * \param addr The successor address.
+ * \param cond The condition under which this successor is followed.
+ *
+ * \return A vector with the successor addresses, or NULL in case of failure.
+ */
+RZ_API void rz_analysis_block_add_succ(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr, RzTypeCond cond) {
+	rz_return_if_fail(block);
+	RzAnalysisSuccAddr succ = { 0 };
+	succ.addr = addr;
+	succ.cond = cond;
+	rz_vector_push(&block->_succ_addrs, &succ);
+}
+
+/**
+ * \brief Sets the successor address of condition type SUCC to the given address.
+ *
+ * DEPRECATED:
+ * Use rz_analysis_block_add_succ()/rz_analysis_block_succ_mut() instead.
+ * This function is equivalent to legacy `RzAnalysisBlock.jump = addr`.
+ * If multiple addresses with a SUCC condition exist, it is undefined which one is set.
+ *
+ * \param block The block to add the successors to.
+ * \param addr The successor address.
+ */
+RZ_DEPRECATE RZ_API void rz_analysis_block_set_jump(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr) {
+	rz_return_if_fail(block);
+
+	RzAnalysisSuccAddr *succ;
+	rz_vector_foreach (&block->_succ_addrs, succ) {
+		if (succ->cond == RZ_TYPE_COND_SUCC) {
+			succ->addr = addr;
+			return;
+		}
+	}
+	RzAnalysisSuccAddr jump = { 0 };
+	jump.addr = addr;
+	jump.cond = RZ_TYPE_COND_SUCC;
+	rz_vector_push(&block->_succ_addrs, &jump);
+}
+
+/**
+ * \brief Sets the successor address of condition type FAIL to the given address.
+ *
+ * DEPRECATED:
+ * Use rz_analysis_block_add_succ()/rz_analysis_block_succ_mut() instead.
+ * This function is equivalent to legacy `RzAnalysisBlock.jump = addr`.
+ * If multiple addresses with a FAIL condition exist, it is undefined which one is set.
+ *
+ * \param block The block to add the successors to.
+ * \param addr The successor address.
+ */
+RZ_DEPRECATE RZ_API void rz_analysis_block_set_fail(RZ_BORROW RZ_NONNULL RzAnalysisBlock *block, ut64 addr) {
+	rz_return_if_fail(block);
+	RzAnalysisSuccAddr *succ;
+	rz_vector_foreach (&block->_succ_addrs, succ) {
+		if (succ->cond == RZ_TYPE_COND_FAIL) {
+			succ->addr = addr;
+			return;
+		}
+	}
+	RzAnalysisSuccAddr fail = { 0 };
+	fail.addr = addr;
+	fail.cond = RZ_TYPE_COND_FAIL;
+	rz_vector_push(&block->_succ_addrs, &fail);
+}
+
+/**
+ * \brief Returns the address a block jumps under an `SUCC` condition.
+ *
+ * DEPRECATED:
+ * Use rz_analysis_block_succ() instead.
+ * This function returns the equivalent address of the removed `RzAnalysisBlock.jump`.
+ * If multiple addresses with a SUCC condition exist, it is undefined which one is returned.
+ *
+ * \param block The block to get the successor address from.
+ *
+ * \return Returns successor address followed to under a true or always condition,
+ *         or UT64_MAX if no such successor exists.
+ */
+RZ_DEPRECATE RZ_API ut64 rz_analysis_block_jump(const RZ_NONNULL RzAnalysisBlock *block) {
+	rz_return_val_if_fail(block, UT64_MAX);
+
+	RzAnalysisSuccAddr *succ;
+	rz_vector_foreach (&block->_succ_addrs, succ) {
+		if (succ->cond == RZ_TYPE_COND_SUCC) {
+			return succ->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+/**
+ * \brief Returns the address a block jumps under an `FAIL` condition.
+ *
+ * DEPRECATED:
+ * Use rz_analysis_block_succ() instead.
+ * This function returns the equivalent address of the removed `RzAnalysisBlock.fail`.
+ * If multiple addresses with a FAIL condition exist, it is undefined which one is returned.
+ *
+ * \param block The block to get the successor address from.
+ *
+ * \return Returns successor address followed to under a `FAIL` condition,
+ *         or UT64_MAX if no such successor exists.
+ */
+RZ_DEPRECATE RZ_API ut64 rz_analysis_block_fail(const RZ_NONNULL RzAnalysisBlock *block) {
+	rz_return_val_if_fail(block, UT64_MAX);
+
+	RzAnalysisSuccAddr *succ;
+	rz_vector_foreach (&block->_succ_addrs, succ) {
+		if (succ->cond == RZ_TYPE_COND_FAIL) {
+			return succ->addr;
+		}
+	}
+	return UT64_MAX;
 }
 
 void __block_free_rb(RBNode *node, void *user) {
@@ -267,7 +413,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	if (!bb) {
 		return NULL;
 	}
-	bb->jump = bbi->jump;
+	bb->jump = rz_analysis_block_jump(bbi);
 	bb->fail = bbi->fail;
 	bb->sp_entry = rz_analysis_block_get_sp_at(bbi, addr);
 	bb->switch_op = bbi->switch_op;
@@ -517,8 +663,8 @@ RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnal
 	do {
 		RecurseDepthFirstCtx *cur_ctx = rz_vector_index_ptr(&path, path.len - 1);
 		cur_bb = cur_ctx->bb;
-		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv(visited, cur_bb->jump, NULL)) {
-			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->jump);
+		if (rz_analysis_block_jump(cur_bb) != UT64_MAX && !ht_up_find_kv(visited, cur_bb->jump, NULL)) {
+			cur_bb = rz_analysis_get_block_at(analysis, rz_analysis_block_jump(cur_bb));
 		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv(visited, cur_bb->fail, NULL)) {
 			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->fail);
 		} else {

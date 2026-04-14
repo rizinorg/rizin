@@ -210,11 +210,16 @@ typedef enum {
 	RZ_TYPE_COND_VC, ///< No overflow                Not unordered
 	RZ_TYPE_COND_HI, ///< Unsigned higher            Greater than, or unordered
 	RZ_TYPE_COND_LS, ///< Unsigned lower or same     Less than or equal
+	RZ_TYPE_COND_EXCEPTION, ///< Condition is that an exception occurred.
+	RZ_TYPE_COND_SUCC, ///< If some previous condition succeeded.
+	RZ_TYPE_COND_FAIL, ///< If some previous condition failed.
+	RZ_TYPE_COND_RUNTIME_VAL, ///< If some previous value is only known during runtime (statically unknown).
+
+	// Architecture specific conditions
 	RZ_TYPE_COND_HEX_SCL_TRUE, // Hexagon only: Scalar instruction if(Pu)
 	RZ_TYPE_COND_HEX_SCL_FALSE, // Hexagon only: Scalar instruction if(!Pu)
 	RZ_TYPE_COND_HEX_VEC_TRUE, // Hexagon only: Vector instruction if(Pu)
 	RZ_TYPE_COND_HEX_VEC_FALSE, // Hexagon only: Vector instruction if(!Pu)
-	RZ_TYPE_COND_EXCEPTION, // when the jump is taken only during an exception
 } RzTypeCond;
 
 /**

@@ -505,6 +505,9 @@ RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc) {
 	case RZ_TYPE_COND_HEX_VEC_TRUE: return "vec-t";
 	case RZ_TYPE_COND_HEX_VEC_FALSE: return "vec-f";
 	case RZ_TYPE_COND_EXCEPTION: return "excptn";
+	case RZ_TYPE_COND_SUCC: return "succ";
+	case RZ_TYPE_COND_FAIL: return "fail";
+	case RZ_TYPE_COND_RUNTIME_VAL: return "runtime";
 	}
 	return "??";
 }
